@@ -45,16 +45,16 @@ Transcode:
   - binding 0: `GET /v1/{name=notes/*}`;
   - binding 1: `GET /v1/{name=users/*/notes/*}`.
 
-Described by [`descriptorGetNote`](#descriptorGetNote).
+Codecs: JSON. Described by [`descriptorGetNote`](#descriptorGetNote).
 
 -}
-getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
+getNote : Notes.V1.GetNoteRequest -> Rpc.Call Rpc.Json Notes.V1.GetNoteRequest Notes.V1.Note
 getNote =
     Rpc.call
-        (Proto.Method.method Notes.V1.encodeGetNoteRequest
-            Notes.V1.decodeNote
-            "notes.v1.NotesService"
+        (Proto.Method.json "notes.v1.NotesService"
             "GetNote"
+            Notes.V1.encodeGetNoteRequest
+            Notes.V1.decodeNote
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
             |> Proto.Method.withRoutes [ routeGetNote0, routeGetNote1 ]
         )
@@ -64,16 +64,16 @@ getNote =
 Connect: `POST /notes.v1.NotesService/ListNotes`.
 Transcode: `GET /v1/{parent=users/*}/notes` response body `notes`.
 
-Described by [`descriptorListNotes`](#descriptorListNotes).
+Codecs: JSON. Described by [`descriptorListNotes`](#descriptorListNotes).
 
 -}
-listNotes : Notes.V1.ListNotesRequest -> Rpc.Call Notes.V1.ListNotesRequest Notes.V1.ListNotesResponse
+listNotes : Notes.V1.ListNotesRequest -> Rpc.Call Rpc.Json Notes.V1.ListNotesRequest Notes.V1.ListNotesResponse
 listNotes =
     Rpc.call
-        (Proto.Method.method Notes.V1.encodeListNotesRequest
-            Notes.V1.decodeListNotesResponse
-            "notes.v1.NotesService"
+        (Proto.Method.json "notes.v1.NotesService"
             "ListNotes"
+            Notes.V1.encodeListNotesRequest
+            Notes.V1.decodeListNotesResponse
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
             |> Proto.Method.withRoutes [ routeListNotes0 ]
         )
@@ -83,16 +83,16 @@ listNotes =
 Connect: `POST /notes.v1.NotesService/CreateNote`.
 Transcode: `POST /v1/{parent=users/*}/notes` body `note`.
 
-Described by [`descriptorCreateNote`](#descriptorCreateNote).
+Codecs: JSON. Described by [`descriptorCreateNote`](#descriptorCreateNote).
 
 -}
-createNote : Notes.V1.CreateNoteRequest -> Rpc.Call Notes.V1.CreateNoteRequest Notes.V1.Note
+createNote : Notes.V1.CreateNoteRequest -> Rpc.Call Rpc.Json Notes.V1.CreateNoteRequest Notes.V1.Note
 createNote =
     Rpc.call
-        (Proto.Method.method Notes.V1.encodeCreateNoteRequest
-            Notes.V1.decodeNote
-            "notes.v1.NotesService"
+        (Proto.Method.json "notes.v1.NotesService"
             "CreateNote"
+            Notes.V1.encodeCreateNoteRequest
+            Notes.V1.decodeNote
             |> Proto.Method.withRoutes [ routeCreateNote0 ]
         )
 
@@ -101,16 +101,16 @@ createNote =
 Connect: `POST /notes.v1.NotesService/UpdateNote`.
 Transcode: `PATCH /v1/{note.name=notes/*}` body `note`.
 
-Described by [`descriptorUpdateNote`](#descriptorUpdateNote).
+Codecs: JSON. Described by [`descriptorUpdateNote`](#descriptorUpdateNote).
 
 -}
-updateNote : Notes.V1.UpdateNoteRequest -> Rpc.Call Notes.V1.UpdateNoteRequest Notes.V1.Note
+updateNote : Notes.V1.UpdateNoteRequest -> Rpc.Call Rpc.Json Notes.V1.UpdateNoteRequest Notes.V1.Note
 updateNote =
     Rpc.call
-        (Proto.Method.method Notes.V1.encodeUpdateNoteRequest
-            Notes.V1.decodeNote
-            "notes.v1.NotesService"
+        (Proto.Method.json "notes.v1.NotesService"
             "UpdateNote"
+            Notes.V1.encodeUpdateNoteRequest
+            Notes.V1.decodeNote
             |> Proto.Method.withRoutes [ routeUpdateNote0 ]
         )
 
@@ -119,16 +119,16 @@ updateNote =
 Connect: `POST /notes.v1.NotesService/ReplaceNote`.
 Transcode: `PUT /v1/{name=notes/*}` body `*`.
 
-Described by [`descriptorReplaceNote`](#descriptorReplaceNote).
+Codecs: JSON. Described by [`descriptorReplaceNote`](#descriptorReplaceNote).
 
 -}
-replaceNote : Notes.V1.Note -> Rpc.Call Notes.V1.Note Notes.V1.Note
+replaceNote : Notes.V1.Note -> Rpc.Call Rpc.Json Notes.V1.Note Notes.V1.Note
 replaceNote =
     Rpc.call
-        (Proto.Method.method Notes.V1.encodeNote
-            Notes.V1.decodeNote
-            "notes.v1.NotesService"
+        (Proto.Method.json "notes.v1.NotesService"
             "ReplaceNote"
+            Notes.V1.encodeNote
+            Notes.V1.decodeNote
             |> Proto.Method.withRoutes [ routeReplaceNote0 ]
         )
 
@@ -137,16 +137,16 @@ replaceNote =
 Connect: `POST /notes.v1.NotesService/DeleteNote`.
 Transcode: `DELETE /v1/{name=notes/*}`.
 
-Described by [`descriptorDeleteNote`](#descriptorDeleteNote).
+Codecs: JSON. Described by [`descriptorDeleteNote`](#descriptorDeleteNote).
 
 -}
-deleteNote : Notes.V1.DeleteNoteRequest -> Rpc.Call Notes.V1.DeleteNoteRequest ()
+deleteNote : Notes.V1.DeleteNoteRequest -> Rpc.Call Rpc.Json Notes.V1.DeleteNoteRequest ()
 deleteNote =
     Rpc.call
-        (Proto.Method.method Notes.V1.encodeDeleteNoteRequest
-            Proto.Json.empty
-            "notes.v1.NotesService"
+        (Proto.Method.json "notes.v1.NotesService"
             "DeleteNote"
+            Notes.V1.encodeDeleteNoteRequest
+            Proto.Json.empty
             |> Proto.Method.withRoutes [ routeDeleteNote0 ]
         )
 
@@ -155,16 +155,16 @@ deleteNote =
 Connect: `POST /notes.v1.NotesService/ArchiveNote`.
 Transcode: `POST /v1/{name=notes/*}:archive` body `*`.
 
-Described by [`descriptorArchiveNote`](#descriptorArchiveNote).
+Codecs: JSON. Described by [`descriptorArchiveNote`](#descriptorArchiveNote).
 
 -}
-archiveNote : Notes.V1.ArchiveNoteRequest -> Rpc.Call Notes.V1.ArchiveNoteRequest Notes.V1.Note
+archiveNote : Notes.V1.ArchiveNoteRequest -> Rpc.Call Rpc.Json Notes.V1.ArchiveNoteRequest Notes.V1.Note
 archiveNote =
     Rpc.call
-        (Proto.Method.method Notes.V1.encodeArchiveNoteRequest
-            Notes.V1.decodeNote
-            "notes.v1.NotesService"
+        (Proto.Method.json "notes.v1.NotesService"
             "ArchiveNote"
+            Notes.V1.encodeArchiveNoteRequest
+            Notes.V1.decodeNote
             |> Proto.Method.withRoutes [ routeArchiveNote0 ]
         )
 
@@ -173,16 +173,16 @@ archiveNote =
 Connect: `POST /notes.v1.NotesService/ReadFile`.
 Transcode: `HEAD /v1/{path=files/**}`.
 
-Described by [`descriptorReadFile`](#descriptorReadFile).
+Codecs: JSON. Described by [`descriptorReadFile`](#descriptorReadFile).
 
 -}
-readFile : Notes.V1.ReadFileRequest -> Rpc.Call Notes.V1.ReadFileRequest Notes.V1.Summary
+readFile : Notes.V1.ReadFileRequest -> Rpc.Call Rpc.Json Notes.V1.ReadFileRequest Notes.V1.Summary
 readFile =
     Rpc.call
-        (Proto.Method.method Notes.V1.encodeReadFileRequest
-            Notes.V1.decodeSummary
-            "notes.v1.NotesService"
+        (Proto.Method.json "notes.v1.NotesService"
             "ReadFile"
+            Notes.V1.encodeReadFileRequest
+            Notes.V1.decodeSummary
             |> Proto.Method.withRoutes [ routeReadFile0 ]
         )
 
@@ -191,16 +191,16 @@ readFile =
 Connect: `POST /notes.v1.NotesService/Ping`.
 Transcode: `GET /v1/ping`.
 
-Described by [`descriptorPing`](#descriptorPing).
+Codecs: JSON. Described by [`descriptorPing`](#descriptorPing).
 
 -}
-ping : () -> Rpc.Call () ()
+ping : () -> Rpc.Call Rpc.Json () ()
 ping =
     Rpc.call
-        (Proto.Method.method Proto.Json.encodeEmpty
-            Proto.Json.empty
-            "notes.v1.NotesService"
+        (Proto.Method.json "notes.v1.NotesService"
             "Ping"
+            Proto.Json.encodeEmpty
+            Proto.Json.empty
             |> Proto.Method.withRoutes [ routePing0 ]
         )
 
@@ -211,16 +211,16 @@ ping =
 Connect: `POST /notes.v1.NotesService/Summarize`.
 Transcode: no HTTP rule, follows the Connect path.
 
-Described by [`descriptorSummarize`](#descriptorSummarize).
+Codecs: JSON. Described by [`descriptorSummarize`](#descriptorSummarize).
 
 -}
-summarize : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Summary
+summarize : Notes.V1.GetNoteRequest -> Rpc.Call Rpc.Json Notes.V1.GetNoteRequest Notes.V1.Summary
 summarize =
     Rpc.call
-        (Proto.Method.method Notes.V1.encodeGetNoteRequest
-            Notes.V1.decodeSummary
-            "notes.v1.NotesService"
+        (Proto.Method.json "notes.v1.NotesService"
             "Summarize"
+            Notes.V1.encodeGetNoteRequest
+            Notes.V1.decodeSummary
         )
 
 
@@ -233,15 +233,15 @@ summarize =
 routeGetNote0 : Notes.V1.GetNoteRequest -> Proto.Route.Route
 routeGetNote0 request_ =
     let
-        value0_ =
+        name_ =
             request_.name
     in
     { method = "GET"
-    , path = "v1/" ++ Proto.Route.segments value0_
+    , path = "v1/" ++ Proto.Route.segments name_
     , query = []
     , body = Nothing
     , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] value0_
+    , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] name_
     }
 
 
@@ -250,15 +250,15 @@ routeGetNote0 request_ =
 routeGetNote1 : Notes.V1.GetNoteRequest -> Proto.Route.Route
 routeGetNote1 request_ =
     let
-        value0_ =
+        name_ =
             request_.name
     in
     { method = "GET"
-    , path = "v1/" ++ Proto.Route.segments value0_
+    , path = "v1/" ++ Proto.Route.segments name_
     , query = []
     , body = Nothing
     , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "name" [ "users", "*", "notes", "*" ] value0_
+    , invalid = Proto.Route.checkSegments "name" [ "users", "*", "notes", "*" ] name_
     }
 
 
@@ -267,15 +267,15 @@ routeGetNote1 request_ =
 routeListNotes0 : Notes.V1.ListNotesRequest -> Proto.Route.Route
 routeListNotes0 request_ =
     let
-        value0_ =
+        parent_ =
             request_.parent
     in
     { method = "GET"
-    , path = "v1/" ++ Proto.Route.segments value0_ ++ "/notes"
+    , path = "v1/" ++ Proto.Route.segments parent_ ++ "/notes"
     , query = Notes.V1.queryOfListNotesRequest request_
     , body = Nothing
     , responseBody = Just "notes"
-    , invalid = Proto.Route.checkSegments "parent" [ "users", "*" ] value0_
+    , invalid = Proto.Route.checkSegments "parent" [ "users", "*" ] parent_
     }
 
 
@@ -284,15 +284,15 @@ routeListNotes0 request_ =
 routeCreateNote0 : Notes.V1.CreateNoteRequest -> Proto.Route.Route
 routeCreateNote0 request_ =
     let
-        value0_ =
+        parent_ =
             request_.parent
     in
     { method = "POST"
-    , path = "v1/" ++ Proto.Route.segments value0_ ++ "/notes"
+    , path = "v1/" ++ Proto.Route.segments parent_ ++ "/notes"
     , query = []
     , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Notes.V1.encodeNote request_.note))
     , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "parent" [ "users", "*" ] value0_
+    , invalid = Proto.Route.checkSegments "parent" [ "users", "*" ] parent_
     }
 
 
@@ -301,15 +301,15 @@ routeCreateNote0 request_ =
 routeUpdateNote0 : Notes.V1.UpdateNoteRequest -> Proto.Route.Route
 routeUpdateNote0 request_ =
     let
-        value0_ =
+        noteName_ =
             Maybe.withDefault "" (Maybe.map .name request_.note)
     in
     { method = "PATCH"
-    , path = "v1/" ++ Proto.Route.segments value0_
+    , path = "v1/" ++ Proto.Route.segments noteName_
     , query = Notes.V1.queryOfUpdateNoteRequest request_
     , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Notes.V1.encodeNote request_.note))
     , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "note.name" [ "notes", "*" ] value0_
+    , invalid = Proto.Route.checkSegments "note.name" [ "notes", "*" ] noteName_
     }
 
 
@@ -318,15 +318,15 @@ routeUpdateNote0 request_ =
 routeReplaceNote0 : Notes.V1.Note -> Proto.Route.Route
 routeReplaceNote0 request_ =
     let
-        value0_ =
+        name_ =
             request_.name
     in
     { method = "PUT"
-    , path = "v1/" ++ Proto.Route.segments value0_
+    , path = "v1/" ++ Proto.Route.segments name_
     , query = []
     , body = Just (Proto.Route.without [ [ "name" ] ] (Notes.V1.encodeNote request_))
     , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] value0_
+    , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] name_
     }
 
 
@@ -335,15 +335,15 @@ routeReplaceNote0 request_ =
 routeDeleteNote0 : Notes.V1.DeleteNoteRequest -> Proto.Route.Route
 routeDeleteNote0 request_ =
     let
-        value0_ =
+        name_ =
             request_.name
     in
     { method = "DELETE"
-    , path = "v1/" ++ Proto.Route.segments value0_
+    , path = "v1/" ++ Proto.Route.segments name_
     , query = Notes.V1.queryOfDeleteNoteRequest request_
     , body = Nothing
     , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] value0_
+    , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] name_
     }
 
 
@@ -352,15 +352,15 @@ routeDeleteNote0 request_ =
 routeArchiveNote0 : Notes.V1.ArchiveNoteRequest -> Proto.Route.Route
 routeArchiveNote0 request_ =
     let
-        value0_ =
+        name_ =
             request_.name
     in
     { method = "POST"
-    , path = "v1/" ++ Proto.Route.segments value0_ ++ ":archive"
+    , path = "v1/" ++ Proto.Route.segments name_ ++ ":archive"
     , query = []
     , body = Just (Proto.Route.without [ [ "name" ] ] (Notes.V1.encodeArchiveNoteRequest request_))
     , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] value0_
+    , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] name_
     }
 
 
@@ -369,15 +369,15 @@ routeArchiveNote0 request_ =
 routeReadFile0 : Notes.V1.ReadFileRequest -> Proto.Route.Route
 routeReadFile0 request_ =
     let
-        value0_ =
+        path_ =
             request_.path
     in
     { method = "HEAD"
-    , path = "v1/" ++ Proto.Route.segments value0_
+    , path = "v1/" ++ Proto.Route.segments path_
     , query = []
     , body = Nothing
     , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "path" [ "files", "**" ] value0_
+    , invalid = Proto.Route.checkSegments "path" [ "files", "**" ] path_
     }
 
 

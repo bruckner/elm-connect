@@ -1,6 +1,6 @@
 module RpcFuzzTest exposing (suite)
 
-{-| Structural laws of `Rpc.request` over the Transcode transport, fuzzed over
+{-| Structural laws of `Rpc.request` over the Transcode protocol, fuzzed over
 requests to methods of the generated `Routes.V1.Routes`: a path variable's
 segment percent-decodes to its value, a field bound in the path is in neither
 the query nor a `*` body, a field in the body is not in the query, and the URL
@@ -18,7 +18,7 @@ import Routes.V1.Routes
 import Rpc
 import Rpc.Body
 import Rpc.Call
-import Rpc.Transport
+import Rpc.Protocol
 import Test exposing (Test, describe, fuzz)
 
 
@@ -35,16 +35,12 @@ suite =
         ]
 
 
-transcode : Rpc.Config
+transcode : Rpc.Client Rpc.Json
 transcode =
-    let
-        base =
-            Rpc.config ""
-    in
-    { base | transport = Rpc.Transport.transcode }
+    Rpc.client Rpc.Protocol.transcode ""
 
 
-send : (req -> Rpc.Call req res) -> req -> Rpc.Request
+send : (req -> Rpc.Call Rpc.Json req res) -> req -> Rpc.Request
 send method message =
     Rpc.request transcode (method message)
 
@@ -52,7 +48,7 @@ send method message =
 {-| The request over binding `index`; the binding of binding 0 when the method
 has no such binding, which the tests below never ask for.
 -}
-sendVia : Int -> (req -> Rpc.Call req res) -> req -> Rpc.Request
+sendVia : Int -> (req -> Rpc.Call Rpc.Json req res) -> req -> Rpc.Request
 sendVia index method message =
     Rpc.Call.viaBinding index (method message)
         |> Maybe.withDefault (method message)

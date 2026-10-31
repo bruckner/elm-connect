@@ -10,17 +10,17 @@ discussion is the design record.
 ## 1. What this is
 
 A code generator and a runtime that let an Elm application call a
-protobuf-defined API over JSON. Two transports are supported from the
+protobuf-defined API over JSON. Two protocols are supported from the
 same generated code:
 
-| Transport | Wire | Server side |
+| Protocol | Wire | Server side |
 |---|---|---|
 | **Connect** | `POST /<pkg>.<Service>/<Method>`, JSON body, Connect error JSON | connect-go, connect-es, connect-python, Envoy's Connect-gRPC bridge in front of a gRPC server |
 | **Transcode** | REST paths from `google.api.http`, proto3 JSON, `google.rpc.Status` errors | grpc-gateway, Envoy's gRPC-JSON transcoder, Vanguard, any hand-written REST layer that honours the annotations |
 
 The generator is written in Rust. The runtime is an Elm package,
 `bruckner/elm-connect`. Both live in this repository.
-The specifications behind both transports are listed in
+The specifications behind both protocols are listed in
 [specs.md](specs.md).
 
 The runtime is written for the browser and runs wherever elm/http
@@ -47,16 +47,17 @@ services actually expose to browsers.
 This generator grew out of an in-house Elixir protoc plugin that has
 generated a production Elm client since early 2026. That plugin proved the
 JSON-only, zero-wrapper-type approach. This is its portable rewrite with
-a second transport and a public interface designed to be kept.
+a second protocol and a public interface designed to be kept.
 
 ### 1.2 Goals
 
 - Generated code a reader can open and understand without the runtime's
   source. Plain records, plain custom types, plain decoders.
-- Generated code is transport-neutral: a call is data, and the
-  transport is chosen in the config it is sent with (§2). Every method
-  can be called over either transport; a method without a
-  `google.api.http` rule goes over the implicit route (§4).
+- Generated code is protocol-neutral within its codec: a call is data,
+  and the protocol is chosen in the client it is sent with (§2). Every
+  method generated with proto3 JSON can be called over either protocol;
+  a method without a `google.api.http` rule goes over the implicit
+  route (§4).
 - Diagnostics in the register of Elm's own compiler: the proto source
   with the problem underlined, and a sentence saying what was expected.
 - One binary, no protoc required, on every platform Elm runs on. And
@@ -67,7 +68,7 @@ a second transport and a public interface designed to be kept.
 
 ### 1.3 Non-goals (for 1.0)
 
-- Streaming of any kind, on either transport. Connect streaming uses
+- Streaming of any kind, on either protocol. Connect streaming uses
   enveloped frames; grpc-gateway streams newline-delimited JSON, and
   Envoy a JSON array by default. A streaming method is a diagnostic, or
   with `streaming=skip` is left out (§3.8). Server streaming is planned
@@ -90,32 +91,37 @@ a second transport and a public interface designed to be kept.
 
 ## 2. The layering
 
-Generated code carries no transport. Three layers, the first two data:
+Generated code carries no protocol. Three layers, the first two data:
 
 1. **Types and JSON codecs.** Records for messages, custom types for
    enums and oneofs, `encode*` and `decode*` for each, in the package's
-   module (`Notes.V1`). Identical under either transport because both
+   module (`Notes.V1`). Identical under either protocol because both
    use proto3 JSON.
 2. **Calls are data.** One module per service (`Notes.V1.NotesService`),
    with one function per method that, applied to a request, gives an
-   `Rpc.Call req res`: the service and method names, idempotency, the
-   request and response codecs, and the method's `google.api.http`
-   bindings, all as data (§4). Nothing in a call picks a transport.
-3. **Config is data, and one runtime module sends.** An `Rpc.Config`
-   says where and how: the transport and its options, base URL,
-   headers, timeout, credentials and retry, with no function in it
-   (§5.1). The runtime's one module, `Rpc`, takes a config and a call
-   and sends it as a `Task` or a `Cmd`, or gives the HTTP request it
-   stands for and reads the answer without sending anything (§5.2).
+   `Rpc.Call codec req res`: the service and method names,
+   idempotency, the request and response codecs and the method's route
+   functions (§4). Nothing in a call picks a protocol; its type says
+   the codec its generated code has (`Rpc.Json`, `Rpc.Proto`, or free
+   under `codec=both`).
+3. **A client says where and how, and one runtime module sends.** An
+   `Rpc.Client codec` holds a protocol (`Rpc.Protocol`: Connect over
+   JSON or protobuf binary, or transcoding, with their options), base
+   URL, headers, timeout, credentials and retry (§5.1). The runtime's
+   one module, `Rpc`, takes a client and a call of the same codec and
+   sends it as a `Task` or a `Cmd`, or gives the HTTP request it stands
+   for and reads the answer without sending anything (§5.2).
 
 This is connect-es's shape since its v2 (service descriptors from
 `protoc-gen-es`, transport in the runtime) and the shape anmolitor's
 protoc-gen-elm uses (service module as data, elm-grpc as transport).
-One plugin emits layers 1 and 2, whichever transport a call takes; the
-transport is chosen in the config, which an application builds once or
+One plugin emits layers 1 and 2, whichever protocol a call takes; the
+protocol is chosen in the client, which an application builds once or
 per call.
 
-Every method can be called over either transport. A method without an
+Every method with JSON codecs can be called over either protocol. A
+method without an
+
 HTTP rule goes over the implicit route the transcoders serve (§4), so
 whether a method has a rule is not in its type: in the type, it would
 split every helper an application writes around calls into two, to
@@ -180,25 +186,25 @@ import Rpc
 -- CALLS
 
 
-getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
+getNote : Notes.V1.GetNoteRequest -> Rpc.Call Rpc.Json Notes.V1.GetNoteRequest Notes.V1.Note
 getNote =
     Rpc.call
-        (Proto.Method.method Notes.V1.encodeGetNoteRequest
-            Notes.V1.decodeNote
-            "notes.v1.NotesService"
+        (Proto.Method.json "notes.v1.NotesService"
             "GetNote"
+            Notes.V1.encodeGetNoteRequest
+            Notes.V1.decodeNote
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
             |> Proto.Method.withRoutes [ routeGetNote0 ]
         )
 
 
-summarize : Notes.V1.SummarizeRequest -> Rpc.Call Notes.V1.SummarizeRequest Notes.V1.Summary
+summarize : Notes.V1.SummarizeRequest -> Rpc.Call Rpc.Json Notes.V1.SummarizeRequest Notes.V1.Summary
 summarize =
     Rpc.call
-        (Proto.Method.method Notes.V1.encodeSummarizeRequest
-            Notes.V1.decodeSummary
-            "notes.v1.NotesService"
+        (Proto.Method.json "notes.v1.NotesService"
             "Summarize"
+            Notes.V1.encodeSummarizeRequest
+            Notes.V1.decodeSummary
         )
 
 
@@ -209,15 +215,15 @@ summarize =
 routeGetNote0 : Notes.V1.GetNoteRequest -> Proto.Route.Route
 routeGetNote0 request_ =
     let
-        value0_ =
+        name_ =
             request_.name
     in
     { method = "GET"
-    , path = "v1/" ++ Proto.Route.segments value0_
+    , path = "v1/" ++ Proto.Route.segments name_
     , query = []
     , body = Nothing
     , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] value0_
+    , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] name_
     }
 
 
@@ -258,40 +264,46 @@ descriptorSummarize =
 ```
 
 Application code applies a method to its request and sends the call
-with a config:
+with a client:
 
 ```elm
 import Notes.V1.NotesService as Notes
 import Rpc
+import Rpc.Protocol
 
 
-config : Rpc.Config
-config =
-    Rpc.config "https://api.example.com"
+client : Rpc.Client Rpc.Json
+client =
+    Rpc.client Rpc.Protocol.connect "https://api.example.com"
+
+
+rest : Rpc.Client Rpc.Json
+rest =
+    Rpc.client Rpc.Protocol.transcode "https://api.example.com"
 
 
 -- POST https://api.example.com/notes.v1.NotesService/GetNote
-Notes.getNote { name = "notes/42" } |> Rpc.task config
+Notes.getNote { name = "notes/42" } |> Rpc.task client
     : Task Rpc.Error Note
 
 -- the same, as a command giving GotNote the result
-Notes.getNote { name = "notes/42" } |> Rpc.send config GotNote
+Notes.getNote { name = "notes/42" } |> Rpc.send client GotNote
     : Cmd Msg
 
 -- GET https://api.example.com/v1/notes/42
-Notes.getNote { name = "notes/42" } |> Rpc.task { config | transport = Rpc.Transport.transcode }
+Notes.getNote { name = "notes/42" } |> Rpc.task rest
 
 -- POST https://api.example.com/notes.v1.NotesService/Summarize, the implicit route
-Notes.summarize request |> Rpc.task { config | transport = Rpc.Transport.transcode }
+Notes.summarize request |> Rpc.task rest
 ```
 
 An application usually sends every call through one function of its
-own, which derives the config from its state:
+own, which builds the client from its state:
 
 ```elm
-rpc : Shared -> Rpc.Call req res -> Task Rpc.Error res
+rpc : Shared -> Rpc.Call Rpc.Json req res -> Task Rpc.Error res
 rpc shared call =
-    Rpc.task (config shared) call
+    Rpc.task (client shared) call
 ```
 
 ## 3. Generated types
@@ -303,7 +315,7 @@ rpc shared call =
   descriptor, and the unions its descriptor holds. Several types to a
   module is the normal Elm shape (`Http`, `Html`). So `Proto.Message`
   holds `Message a` and `Descriptor`, `Proto.Enum` holds `Enum a` and
-  `Descriptor`, `Proto.Method` holds `Method req res` and `Descriptor`,
+  `Descriptor`, `Proto.Method` holds `Method codec req res` and `Descriptor`,
   `Proto.Field` holds `Descriptor` with `Cardinality`, `Kind` and
   `Scalar`, and `Proto.EnumValue` holds `Descriptor`. (2) A builder is
   named for the type it builds, in every module: `message` builds a
@@ -319,19 +331,22 @@ rpc shared call =
   the package needs but does not promise: a constructor two public
   modules must build or match (`Rpc.Internal.Call`, built by `Rpc`,
   read and modified by `Rpc.Call`; `Rpc.Internal.Trace`, built by
-  `Rpc`, read by `Rpc.Trace`; `Rpc.Internal.Transport`,
-  `Rpc.Internal.Retry`; `Proto.Internal.Binding`, built by
+  `Rpc`, read by `Rpc.Trace`; `Rpc.Internal.Protocol` and
+  `Rpc.Internal.Client`, built by `Rpc.Protocol` and `Rpc.Client` and
+  read by `Rpc`; `Rpc.Internal.Retry`; `Proto.Internal.Binding`, built by
   `Proto.Http` and read by `Proto.Internal.Interpret`, the interpreter
   `Proto.Method.withBindings` reaches; `Proto.Internal.Any`;
   `Proto.Internal.Method` and `Proto.Internal.Message`, the unions
   `Proto.Method.Method` and `Proto.Message.Message` alias, §8.3;
   `Proto.Internal.Binary`, the decoder type `Proto.Binary` aliases and
-  `Proto.Message` holds, §5.5), or
-  implementation kept out of the public modules so that they read as API
-  (`Rpc.Internal.Http`, the elm/http adapter; `Rpc.Internal.Route`,
+  `Proto.Message` holds, §5.5; `Proto.Internal.Codec`, the codec tags
+  `Proto.Method` indexes a method by and `Rpc.Protocol` and `Rpc`
+  alias, a leaf so that no `Proto` module imports `Rpc` for them, §5.1),
+  or implementation kept out of the public modules so that they read as
+  API (`Rpc.Internal.Http`, the elm/http adapter; `Rpc.Internal.Send`,
   `Rpc.Internal.Wire` and `Rpc.Internal.Answer`, §5.2;
   `Proto.Internal.Percent`, the percent-encoding `Proto.Route` and the
-  transports share, under `Proto` so that the route helpers reach no
+  protocols share, under `Proto` so that the route helpers reach no
   `Rpc` module, rule 7). A type one
   module both builds and reads is an ordinary opaque type in that module
   (`Rpc.Body`). The internal modules are one per shared type rather than
@@ -339,7 +354,7 @@ rpc shared call =
   a `Request`, which holds a `Body`. (5) A record several modules depend
   on lives in a leaf module that imports nothing above it, so that none
   of them imports the facade: `Rpc.Request` and `Rpc.Response`. The
-  functions that make them stay in `Rpc`, because they take a `Config`
+  functions that make them stay in `Rpc`, because they take a `Client`
   and a `Call`: `Rpc.request` builds a `Request`, and `Rpc.response`
   reads an answer into the errors that keep a `Response`. (6) The JSON
   helpers (`Proto.Json`) are named by role: a decoder is a noun naming
@@ -352,12 +367,14 @@ rpc shared call =
   noun, and no helper shares a name with an elm/json function of
   another type (`Json.Encode.object`, `Json.Encode.dict`). Every well-known type's codecs are
   there, `Any`'s included. (7) The imports point one way: no `Proto`
-  module imports an `Rpc` one, and `Rpc` reads three internal modules of
-  the `Proto` side, `Proto.Internal.Binding`, `Proto.Internal.Any` and
-  `Proto.Internal.Method` (for the bytes path a method with binary codecs
-  carries, whose types are therefore elm/core's, elm/bytes' and
-  elm/http's, §5.3), and no others, so that the codecs could become a package of their own
-  without changing ([decisions.md](decisions.md#no-package-split)).
+  module imports an `Rpc` one, and `Rpc` reads four internal modules of
+  the `Proto` side, `Proto.Internal.Any`, `Proto.Internal.Codec` (the
+  codec tags), `Proto.Internal.Method` (a method's codec halves, whose
+  types are therefore elm/core's, elm/json's and elm/bytes', §5.1) and
+  `Proto.Internal.Percent`, and no others, so that the codecs could
+  become a package of their own without changing
+  ([decisions.md](decisions.md#no-package-split)).
+
 - **Generated codecs are `encodeX` and `decodeX`.** A package module's codecs for a message or enum are the
   pair `encodeNote : Note -> Json.Encode.Value` and
   `decodeNote : Json.Decode.Decoder Note`, so a type's two codecs sit
@@ -1328,7 +1345,7 @@ As the `naming` and `naming_collision` cases show:
   the two sit side by side and read as a pair, at the cost the bullet
   above names. A type `FooBytes` beside `Foo` has JSON codecs
   `encodeFooBytes` and `decodeFooBytes`, which are `Foo`'s binary
-  codecs; under `codec=both`, or under `codec=binary` for an enum
+  codecs; under `codec=both`, or under `codec=proto` for an enum
   `FooBytes` (an enum keeps its JSON codecs), that is
   `naming::codec_collision`, pointing at both types, its help naming
   the `rename` of the `Bytes` one (`codec_name_clash` case). A oneof's
@@ -1633,7 +1650,7 @@ registry =
   value documented (what the field is, and its oneof). The package
   module's sections are types, defaults, typed values (each enum's,
   then each message's), the registry, encoders and decoders, then
-  under `codec=binary` or `codec=both` binary encoders and binary
+  under `codec=proto` or `codec=both` binary encoders and binary
   decoders (§3.10); a package without types has the registry alone.
 
 - The naming: `Proto.Thing.Descriptor` is the data-only tree,
@@ -1641,7 +1658,7 @@ registry =
   codecs and default, in one module (§3.1): `Proto.Message.Descriptor`
   and `Proto.Message.Message a`, `Proto.Enum.Descriptor` and
   `Proto.Enum.Enum a`, `Proto.Method.Descriptor` and
-  `Proto.Method.Method req res` (§4, which holds the codecs of its types
+  `Proto.Method.Method codec req res` (§4, which holds the codecs of its types
   but not their typed values). Nothing about a type is
   written twice: an enum's names and numbers are its descriptor's, and
   `Proto.Enum` reads them through the codecs (below).
@@ -1650,12 +1667,13 @@ registry =
   decoder default descriptor` (read by `encode`, `decoder`, `default`,
   `toDescriptor`), `Proto.Enum.enum encode decoder zero descriptor`
   (likewise, with `toName`, `fromName`, `toNumber`, `fromNumber`) and
-  `Proto.Method.method encodeRequest responseDecoder service name` (§4,
+  `Proto.Method.json service name encodeRequest responseDecoder` (§4,
   given its idempotency and routes by `withIdempotency` and
-  `withRoutes`), and given binary codecs by a modifier, `Proto.Message.withBinary` and
-  `Proto.Method.withBinary`, or built with them alone by
-  `Proto.Message.messageBinary` and `Proto.Method.methodBinary`
-  (§3.10). Why: an Elm record alias that generated code writes
+  `withRoutes`, and built from its binary codecs by
+  `Proto.Method.proto` or from both by `Proto.Method.both`), and a
+  message given binary codecs by a modifier, `Proto.Message.withBinary`,
+  or built with them alone by `Proto.Message.messageBinary` (§3.10).
+  Why: an Elm record alias that generated code writes
   as a literal can never gain a field. The field is a major by Elm's
   package rules, and every module generated before it stops compiling
   on the literal rather than on the sentinel (§8.2). Built by a
@@ -1818,7 +1836,7 @@ registry =
   `json`, whose output is byte for byte what it was before the option
   existed. The second header line records it like the others
   (`-- Options: codec=both`), and `check` regenerates with it.
-- **What `binary` and `both` add.** Two sections after the decoders,
+- **What `proto` and `both` add.** Two sections after the decoders,
   binary encoders and binary decoders, written against `Proto.Binary`
   (§5.5): per message `encodeFooBytes : Foo -> Bytes.Encode.Encoder`,
   `mergeFooBytes : Foo -> Proto.Binary.Decoder Foo` and
@@ -1844,21 +1862,23 @@ registry =
   `Proto.Binary.messageEncoder` and `Proto.Binary.messageDecoder`.
   `int64=` and `bytes=` choose the codecs as they choose the JSON ones
   (`int64AsInt`, `bytesAsBytes`).
-- **The attachment.** Under `both` each typed value and method is built
-  as before and given its binary codecs by a modifier:
-  `Proto.Message.message … |> Proto.Message.withBinary encodeNoteBytes
-  decodeNoteBytes`, `Proto.Method.method … |> Proto.Method.withBinary
-  …`, the arguments stacked as `Proto.Method.method`'s are. Under
-  `binary` messages, oneofs and wrappers get no JSON codecs (enums keep
-  theirs, which `Proto.Enum.Enum` holds), and the values are built by
-  `Proto.Message.messageBinary` and `Proto.Method.methodBinary`, whose
-  JSON encoder writes `null` and whose JSON decoder fails. Such a
-  method gets no route functions, nor its messages query encoders:
-  transcoding takes JSON (§5.3).
-  `Proto.Message.encodeBytes`/`bytesDecoder`,
-  `Proto.Method.encodeRequestBytes`/`responseBytesDecoder` (each a
-  `Maybe`) and `Proto.Method.hasJson` read them back. A program that
-  never builds a value with binary codecs carries none of their code.
+- **The attachment.** Under `both` each typed value is built as before
+  and given its binary codecs by a modifier, `Proto.Message.message …
+  |> Proto.Message.withBinary encodeNoteBytes decodeNoteBytes`, and each
+  method is built by `Proto.Method.both` from its four codecs, the
+  arguments stacked. Under `proto` messages, oneofs and wrappers get no
+  JSON codecs (enums keep theirs, which `Proto.Enum.Enum` holds), and the
+  values are built by `Proto.Message.messageBinary`, whose JSON encoder
+  writes `null` and whose JSON decoder fails, and `Proto.Method.proto`.
+  Such a method gets no route functions, nor its messages query
+  encoders: transcoding takes JSON (§5.3). A method's codec is in its
+  type, and so in its call's (§4): `Rpc.Json` under `json`, `Rpc.Proto`
+  under `proto`, free under `both`. `Proto.Message.encodeBytes` and
+  `bytesDecoder` read a typed value's binary codecs back, and
+  `Proto.Method.hasJson` tells a method built with `proto`. A program
+  that never builds a value with binary codecs carries none of their
+  code.
+
 - **Names** are §3.7's: the JSON names with `Bytes` at the end, and
   `naming::codec_collision` where a type's name meets them.
 - **`Any` fields** are written, under `both`, with
@@ -1874,12 +1894,12 @@ registry =
   every message's JSON decoder and binary encoder, and no descriptors;
   one that reads descriptors keeps no codecs. An `Any` is read with
   plain `Proto.Binary.any`, which needs no conversion, so a program that
-  only reads binary keeps none of them. Under `binary`, which has no
+  only reads binary keeps none of them. Under `proto`, which has no
   JSON decoders, `Any` fields take `Proto.Binary.any`, which writes an
   `Any` holding JSON alone with its type URL alone.
 - **Checked** by the binary round trips (§7) and the corpus cases
   `codec_both` (the codec protos under `codec=both`) and
-  `codec_binary`.
+  `codec_proto`.
 
 ## 4. Calls
 
@@ -1903,15 +1923,15 @@ Transcode:
   - binding 0: `GET /v1/{name=notes/*}`;
   - binding 1: `GET /v1/{name=users/*/notes/*}`.
 
-Described by [`descriptorGetNote`](#descriptorGetNote).
+Codecs: JSON. Described by [`descriptorGetNote`](#descriptorGetNote).
 -}
-getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
+getNote : Notes.V1.GetNoteRequest -> Rpc.Call Rpc.Json Notes.V1.GetNoteRequest Notes.V1.Note
 getNote =
     Rpc.call
-        (Proto.Method.method Notes.V1.encodeGetNoteRequest
-            Notes.V1.decodeNote
-            "notes.v1.NotesService"
+        (Proto.Method.json "notes.v1.NotesService"
             "GetNote"
+            Notes.V1.encodeGetNoteRequest
+            Notes.V1.decodeNote
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
             |> Proto.Method.withRoutes [ routeGetNote0, routeGetNote1 ]
         )
@@ -1926,15 +1946,15 @@ getNote =
 routeGetNote0 : Notes.V1.GetNoteRequest -> Proto.Route.Route
 routeGetNote0 request_ =
     let
-        value0_ =
+        name_ =
             request_.name
     in
     { method = "GET"
-    , path = "v1/" ++ Proto.Route.segments value0_
+    , path = "v1/" ++ Proto.Route.segments name_
     , query = []
     , body = Nothing
     , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] value0_
+    , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] name_
     }
 
 
@@ -1977,8 +1997,8 @@ arguments, so a method without bindings (`[]`) reads like one with
 them; the emitter asks the printer for that layout, which elm-format
 keeps. The modifiers follow one per line, each only when it says
 something: `withIdempotency` when the proto declares a level other
-than `IDEMPOTENCY_UNKNOWN`, `withRoutes` when the method has a rule,
-`withBinary` under `codec=both`.
+than `IDEMPOTENCY_UNKNOWN`, `withRoutes` when the method has a rule
+(never under `codec=proto`).
 
 - **A method's documentation shows its routes.** A call's doc comment gives the method's comment
   (§3.1), then its declaration line, its Connect path on a line of its
@@ -1986,7 +2006,10 @@ than `IDEMPOTENCY_UNKNOWN`, `withRoutes` when the method has a rule,
   each with its `body` and `response_body` where set: one binding on
   the Transcode line, several as a list numbered as
   `Rpc.Call.viaBinding` counts them, binding 0 the rule's own; then, as
-  a paragraph of its own, a line linking its descriptor;
+  a paragraph of its own, the codecs it was generated with (`Codecs:
+  JSON.`, `protobuf binary.` or `JSON and protobuf binary.`), which a
+  compiler error about a client of the other codec points back at, and
+  a line linking its descriptor;
   `Transcode: no HTTP rule, follows the Connect path.` for a method
   without a rule, and `Deprecated.` first for a deprecated method. The
   request and response types in the declaration line are named as the
@@ -2012,28 +2035,35 @@ than `IDEMPOTENCY_UNKNOWN`, `withRoutes` when the method has a rule,
   method's name can clash with nothing but another method's call, route
   function or descriptor in its service, whatever it is: `value`,
   `identity` or `encodeNote` are all fine method names (the namespace
-  rule is in the IR bullets below). A route function binds `request_`
-  and `value0_`, `value1_` … for its path values (and `member_`,
-  `message_` reading a oneof member), names no method's value can take,
-  since a value name ends in `_` only as a reserved word's escape.
-- `Rpc.call` takes the method's `Proto.Method.Method req res` (§3.9),
-  built by `Proto.Method.method` from its request type's encoder and its
+  rule is in the IR bullets below). A route function binds `request_`,
+  a local per path value named for its field's JSON path
+  (`name_`, `noteName_`), and `member_` and `message_` reading a oneof
+  member, names no method's value can take, since a value name ends in
+  `_` only as a reserved word's escape; a path value's local that would
+  meet another gains a number.
+- `Rpc.call` takes the method's `Proto.Method.Method codec req res`
+  (§3.9), built by `Proto.Method.json` from the fully-qualified service
+  name and the method's name as declared, together its Connect path,
+  then its request type's encoder and its
   response type's decoder (`Notes.V1.encodeGetNoteRequest`,
   `Notes.V1.decodeNote`; for a well-known type the runtime's codecs a
   field of that type uses, `Proto.Json.encodeEmpty` and
   `Proto.Json.empty` for `Empty`, `Proto.Json.encodeInt64AsInt` for
   `Int64Value` under `int64=int`, `Basics.identity` qualified for
-  `Value` so that a method called `identity` cannot capture it), the
-  fully-qualified service name and the method's name as declared,
-  together its Connect path; then `withIdempotency` with its level and
+  `Value` so that a method called `identity` cannot capture it); then
+  `withIdempotency` with its level and
   `withRoutes` with its route functions (below).
-  Under `codec=both` the method is given its binary codecs by
-  `|> Proto.Method.withBinary`, the request type's `encode…Bytes` and
-  the response type's `decode…Bytes`; under `codec=binary` it is built
-  by `Proto.Method.methodBinary` from those alone (§3.10), with no
-  routes. `withBinary` builds the method's bytes path there, as closures
-  in the method's value (§5.3, the proto codec), so only a program whose
-  methods have binary codecs carries it.
+  Under `codec=both` it is built by `Proto.Method.both` from the names,
+  those two codecs and the request type's `encode…Bytes` and the response type's
+  `decode…Bytes`; under `codec=proto` by `Proto.Method.proto` from the
+  binary two alone (§3.10), with no routes. A method holds both codec
+  halves always: the one it was not built with is a filler, a leaf
+  constructor no protocol of the method's codec calls (§5.1), so only a
+  program whose methods have binary codecs carries their code. The
+  builder fixes the method's codec, the first type parameter of
+  `Proto.Method.Method` and of its calls: `Rpc.Call Rpc.Json` under
+  `json`, `Rpc.Call Rpc.Proto` under `proto`, free in it under `both`,
+  so that a client of either codec sends it.
   No `Proto.Method.Method` value is generated; `Rpc.Call.method` reads
   the method back from any call of it, and `Rpc.Call.serviceName`,
   `methodName`, `procedure` (`/notes.v1.NotesService/GetNote`, the path
@@ -2059,7 +2089,7 @@ than `IDEMPOTENCY_UNKNOWN`, `withRoutes` when the method has a rule,
   but not to cache. Transcoding takes its verb from the rule.
   `Rpc.Call.idempotency` reads it from a call. The generated call sets
   it with `withIdempotency` only when the proto declares a level;
-  `Proto.Method.method` starts from `IdempotencyUnknown`.
+  each builder starts from `IdempotencyUnknown`.
 - **Routes are generated functions.** Each binding of the method's
   `google.api.http` rule (§4 routes, below), the rule's own first and
   then its `additional_bindings` in order, becomes a function of the
@@ -2070,7 +2100,9 @@ than `IDEMPOTENCY_UNKNOWN`, `withRoutes` when the method has a rule,
   first path value its variable's template cannot match: the route is
   built whatever the request holds, so `Rpc.request` can show any
   request, and sending refuses an invalid one (`InvalidPathValue`,
-  §5.1). The path reads each variable's field (through `Maybe.map` for a
+  §5.1). Encoders are total: they cannot refuse a value, so what a
+  request cannot carry is found by sending, never by encoding. The
+  path reads each variable's field (through `Maybe.map` for a
   message on the way, a `case` for a oneof member, the field's default
   when unset) and checks it with `Proto.Route.checkSegment` or
   `checkSegments`; a value's text is its proto3 JSON text (a string as
@@ -2108,7 +2140,8 @@ than `IDEMPOTENCY_UNKNOWN`, `withRoutes` when the method has a rule,
   interpreter.
 - **The implicit route.** A method without a rule has no routes and
   `bindings = []` in its descriptor, and nothing else is generated for
-  it: under the Transcode transport
+  it: over the transcode protocol
+
   the runtime sends it as `POST /<package>.<Service>/<Method>` with the
   request as its JSON body (§5.3), which grpc-gateway
   (`generate_unbound_methods`), Envoy's transcoder (`auto_mapping`) and
@@ -2124,7 +2157,7 @@ than `IDEMPOTENCY_UNKNOWN`, `withRoutes` when the method has a rule,
   and an API whose
   every method has a rule loses nothing either way; strict is one
   option away for the rest.
-- `Rpc.Call req res` keeps the request type, not just the response
+- `Rpc.Call codec req res` keeps the request type, not just the response
   type. A call is a value an application can hold, log
   (`Rpc.Call.toJson`), read back (`Rpc.Call.requestMessage`) and send
   again, so a retry or token-refresh wrapper closes over it, and a
@@ -2223,9 +2256,10 @@ descriptor; the runtime never parses a template.
   (`/v1/at/2026-10-20T12%3A34%3A56Z`), as grpc-gateway reads it. `Empty`,
   `Any`, `Struct`, `Value` and `ListValue` stay refused, as does a
   repeated one (`routes_well_known_path` case).
-- The client does not check a value against the variable's template
-  (`notes/42` against `notes/*`): the server matches, and a mismatch is
-  its 404.
+- The client checks a value against its variable's template
+  (`notes/42` against `notes/*`) before sending: one that cannot match
+  is refused unsent with `NoAnswer (InvalidPathValue { field, template
+  })` (§5.1), since no server could route it to the method.
 - `body` is empty, `*`, or a top-level singular message field
   (`route::body_field` otherwise). A path variable inside the body field
   (`patch: "/v1/{book.name=books/*}" body: "book"`, AIP-134's update
@@ -2249,28 +2283,32 @@ codecs inlined into every generated module: a shared type (`Duration`)
 must be one type across every generated module and the application,
 which inlining cannot give; the codecs for timestamps as `Time.Posix`
 and the `Int64` helpers are one copy rather than one per module; and
-the transports belong in it too.
+the protocols belong in it too.
 
-### 5.1 Config
+### 5.1 Protocol and client
 
 ```elm
-type alias Config =                       -- frozen (§8.3)
-    { transport : Rpc.Transport.Transport
-    , baseUrl : String                    -- a trailing "/" is dropped; no "?" or "#"
-    , headers : List ( String, String )   -- e.g. ( "Authorization", "Bearer …" )
-    , timeout : Maybe Float               -- ms, > 0; Connect also sends Connect-Timeout-Ms
-    , withCredentials : Bool              -- Http.riskyRequest when True
-    , retry : Maybe Rpc.Retry.Retry
-    }
+-- Rpc.Protocol: opaque, indexed by codec
+type alias Json = Proto.Internal.Codec.Json      -- the codec tags; no values
+type alias Proto = Proto.Internal.Codec.Proto
+connect : Protocol Json                   -- Connect, proto3 JSON, every call POSTed
+connectProto : Protocol Proto             -- Connect, protobuf binary (application/proto)
+transcode : Protocol Json                 -- google.api.http REST; the implicit route without a rule
+withConnectGet : Protocol codec -> Protocol codec      -- Connect: NO_SIDE_EFFECTS as GET; others unchanged
+withMaxGetUrl, withReadMaxBytes, withWriteMaxBytes : Int -> Protocol codec -> Protocol codec
+name : Protocol codec -> String           -- "connect" | "transcode"
+codec : Protocol codec -> String          -- "json" | "proto"
+toJson : Protocol codec -> Json.Encode.Value
 
-config : String -> Config                 -- Connect, POST only, nothing else set
-checkConfig : Config -> List String       -- the config's problems, [] when none
-
--- Rpc.Transport: opaque
-connect, connectGet, transcode : Transport
-withMaxGetUrl : Int -> Transport -> Transport
-withReadMaxBytes, withWriteMaxBytes : Int -> Transport -> Transport
-name : Transport -> String                -- "connect" | "transcode"
+-- Rpc.Client: opaque
+client : Protocol codec -> String -> Client codec       -- also Rpc.client; a trailing "/" is dropped
+withHeaders : List ( String, String ) -> Client codec -> Client codec
+withTimeout : Float -> Client codec -> Client codec     -- ms, > 0; Connect also sends Connect-Timeout-Ms
+withCredentials : Client codec -> Client codec          -- Http.riskyRequest
+withRetry : Rpc.Retry.Retry -> Client codec -> Client codec
+protocol, baseUrl, headers, timeout, credentials, retry -- readers
+problems : Client codec -> List String    -- the client's problems, [] when none
+toJson : Client codec -> Json.Encode.Value
 
 -- Rpc.Retry: opaque
 on : List Rpc.Code.Code -> Retry          -- 3 attempts, 200 ms doubling, 30 s cap, jitter, idempotent only
@@ -2281,63 +2319,103 @@ withoutJitter, allowNonIdempotent : Retry -> Retry
 next : Retry -> { tried : Int, code : Rpc.Code.Code, idempotency : Proto.Method.Idempotency, now : Time.Posix, elapsed : Float } -> Maybe Float
 ```
 
-The config is data: a record with no function in it, transport options
-inside the opaque `Transport` and retry options inside the opaque
-`Retry`, both data too, so `==` still holds. That is the point of it. Elm 0.19
-throws at run time on `==` over functions, so a config holding one
-could not be compared, kept in a model safely, or passed through
-`Html.Lazy`; data can also be printed, stored, and built per call from
-an application's shared state with record syntax
-(`{ base | headers = auth shared }`).
+A client says where and how a call is sent: a protocol, the server's
+base URL, and the headers, timeout, credentials and retry policy every
+call takes. A protocol says how: Connect over proto3 JSON or protobuf
+binary, or HTTP transcoding, with its options. Both carry a codec in
+their type, `Rpc.Json` or `Rpc.Proto` (`Rpc` re-exports the tags, so
+annotations and compiler errors read `Rpc.Json`), and a client sends
+only calls of its codec: a `Client Json` takes the calls of code
+generated with `codec=json` or `codec=both`, a `Client Proto` those of
+`codec=proto` or `codec=both`. A pairing with no codecs in common is a
+type error where the call is sent, not a failure at run time
+(decisions.md: Protocol and client, indexed by codec).
 
-So there are no interceptors, no token provider and no logger in it.
-Every use of an interceptor maps onto something else:
+**A protocol holds its code.** `Protocol codec` is one value with a data
+half (its name, its codec, and its options: `get`, `maxGetUrl`,
+`readMaxBytes`, `writeMaxBytes`) and a function half, its wire: `Text`
+(proto3 JSON) or `Binary` (protobuf binary), each a record of top-level
+functions that build a request and read an answer (`build`, `message`,
+the limit checks `tooLarge` and `overRead`, `timeoutHeader`, and for
+bytes `base64` and `width`). A constructor chooses them, so a program
+carries only the code of the protocols it names: a Connect program no
+route code, a JSON program no protobuf binary and none of elm/bytes'
+kernel. Each function takes the options as an argument rather than
+closing over them, so two protocols built alike hold the same functions
+and equal data.
 
-- onto data: headers, timeout, credentials and retry are fields;
+**Modifiers install behaviour.** `withConnectGet` installs the GET
+builder, `withReadMaxBytes` and `withWriteMaxBytes` the limit checks,
+and `Rpc.Retry.on` puts the policy's math (`wait`, `budget`) on the
+policy (`Retry Policy Math`); a protocol or a policy that names none of
+them carries none of their code. Two rules keep this safe
+(decisions.md: Modifiers install behaviour):
+
+- every modifier that installs a function also writes a data field
+  that sorts before the function fields (`options` before `wire`, a
+  policy's knobs before its math), so `==` on two clients or protocols
+  answers at the data before it could reach a function, on which Elm's
+  `==` throws; built alike, they hold the same top-level functions,
+  which `==` compares by reference first. Clients built alike are `==`,
+  and two differing in one modifier compare unequal without throwing;
+- every installed binary check takes its measure from the wire
+  (`width`), never `Bytes.width` directly: a modifier names both wires'
+  checks, so a JSON program naming `withReadMaxBytes` carries the binary
+  one, but only a binary constructor names `width`, so it still reaches
+  no elm/bytes.
+
+`withConnectGet` and `withMaxGetUrl` are no-ops off Connect, as
+documented: transcoding takes its verb from the rule. A client holds
+functions, so it belongs in code (a top-level value, one built in
+`init`, or one a wrapper builds per call from the application's state),
+never in a message; `Rpc.Client.toJson` and `Rpc.Protocol.toJson` give
+it as data, for logs and tests.
+
+**Nothing else is a hook.** There are no interceptors, no token provider
+and no logger on a client yet. Every use of an interceptor maps onto
+something else:
+
+- onto settings: headers, timeout, credentials and retry are the
+  client's;
 - onto update-time handling: logging reads the `Trace` (§5.2) a
   traced send returns, and refreshing a token is the application
-  shell's job, single-flight, before it builds the config;
+  shell's job, single-flight, before it builds the client;
 - onto the pure halves: arbitrary rewriting of a request is
   `Rpc.request`, then any change, then `Rpc.taskFromRequest`.
 
 [calling.md](calling.md) shows the wrapper pattern this asks of an
-application: one function, `rpc shared call = Rpc.task (config shared)
+application: one function, `rpc shared call = Rpc.task (client shared)
 call`, through which every call goes, and a generic retry or refresh
 wrapper that closes over the call value, which is data and can be sent
-again. If a need for hooks appears, an opaque `Rpc.Client` built from a
-`Config` plus hooks can be added beside `task : Config -> …` without
-breaking it (roadmap).
+again. The client is where hooks would attach if a need for them
+appears, each a field of the opaque record and a minor (roadmap).
 
-- `Config` stays a record, so it is built per call with record syntax,
-  and is frozen: a new knob never becomes a field of it. Each has a
-  home that can grow within a major: a protocol-level knob (a binary
-  format, compression, gRPC-web, `Grpc-Timeout` for transcoding, a
-  proxy's quirks, stream framing) on `Transport`; a retry knob on
-  `Retry`; a per-call one on `Call`; hooks on a future opaque
-  `Rpc.Client` (an addition, so a minor); and JSON codec options are
-  the generator's, decided when code is generated. As an exposed union,
-  `Transport` would change with nearly every protocol on the roadmap,
-  and as a record `Retry` with every new setting, each a major
-  (decisions.md: The config frozen).
+- `Client` and `Protocol` are opaque, so a new knob is a new modifier, a
+  minor: a protocol-level knob (a binary format, compression,
+  gRPC-Web, `Grpc-Timeout` for transcoding, a proxy's quirks, stream
+  framing) on `Protocol`; a retry knob on `Retry`; a per-call one on
+  `Call`; a per-client one on `Client`; and JSON codec options are the
+  generator's, decided when code is generated.
 - Headers are name–value pairs rather than `Http.Header`, which is
   opaque, so a built request can be inspected and compared.
 - GET is off by default (`connect`), as in connect-es: a GET is only
   worth it where a cache sits in front of the server, and the
   application knows that, not the generator.
-  `connectGet` sends an `IdempotencyNoSideEffects` method's call as a
-  GET, which
+  `withConnectGet` sends an `IdempotencyNoSideEffects` method's call as
+  a GET, which
   puts the request in URLs, and so in history and logs;
   `withMaxGetUrl n` POSTs a call whose GET URL would be longer than `n`
   characters, for servers and proxies that cap URL length. `name` gives
   the protocol for traces and logs.
 - `withReadMaxBytes n` refuses a successful answer whose body is longer
-  than `n` bytes of UTF-8, before decoding it, on either transport:
+  than `n` bytes of UTF-8 (of protobuf binary over `connectProto`),
+  before decoding it, on every protocol:
   connect-go's `WithReadMaxBytes` (4 MiB by default, 0 for none) and
   connect-node's `readMaxBytes` (none by default); connect-web, the
   browser transport, has no such knob. No limit by default here, as in
   connect-node: the browser has downloaded the body before the limit
   applies, so a default would surprise without saving bandwidth. It is
-  a protocol-level knob, so it is on `Transport`, not in `Config`. The call fails with
+  a protocol-level knob, so it is on `Protocol`. The call fails with
   `NoAnswer (ResponseTooLarge { limit, size })` (§5.4). The size is the body as
   the browser decoded it, counted back into UTF-8 by a kernel loop
   (`String.foldl`) rather than a recursion, so a long body cannot
@@ -2345,7 +2423,7 @@ breaking it (roadmap).
   browser has received the body by then, so the limit bounds what is
   decoded and held, not what is downloaded. An error answer is read
   whatever its size, for its status. A limit below 1 refuses every body
-  with anything in it, and `checkConfig` reports it.
+  with anything in it, and `Rpc.Client.problems` reports it.
 - `withWriteMaxBytes n` is its twin for the request: connect-go's
   `WithSendMaxBytes` and connect-node's `writeMaxBytes`, no limit by
   default. A call whose request message, as the JSON a POST sends (for
@@ -2357,11 +2435,12 @@ breaking it (roadmap).
   URL and the invalid header, and never retried, since nothing was sent
   and nothing would change. The size is the call's message, not a
   request rewritten for `taskFromRequest`. A limit below 1 refuses
-  every call, and `checkConfig` reports it.
+  every call, and `Rpc.Client.problems` reports it.
+
 - A timeout is also the elm/http timeout, so the client gives up at the
   same moment it asked the server to. A timeout that is not a positive
   number (`0`, negative, NaN, infinite) is no timeout, as `Nothing` is,
-  and a call's such timeout leaves the config's in force: elm/http
+  and a call's such timeout leaves the client's in force: elm/http
   hands the value to XHR, whose unsigned conversion makes a negative
   one weeks long and `0` or NaN none, while the header would claim
   1 ms or the maximum.
@@ -2369,13 +2448,13 @@ breaking it (roadmap).
   or `#` would put it in the query or fragment. Such a call is not
   sent: every way of sending fails it with `NoAnswer (BadUrl url)`,
   the URL it would have used, and it is never retried. The pure `Rpc.request` still
-  builds that URL, since it has no error to give. `Rpc.checkConfig`
-  reports it where the application builds its config, at start-up or
+  builds that URL, since it has no error to give. `Rpc.Client.problems`
+  reports it where the application builds its client, at start-up or
   when its settings change, rather than at the first call: a pure
-  `Config -> List String`, empty when nothing is wrong, read as a list
-  so later releases can report more. It reports invalid config headers
-  too (below), each by name, its value left out since it may be a
-  credential.
+  `Client codec -> List String`, empty when nothing is wrong, read as a
+  list so later releases can report more. It reports invalid client
+  headers too (below), each by name, its value left out since it may
+  be a credential, and a read or write limit below 1.
 - A header a browser refuses is never handed to elm/http: a name that is
   not an RFC 9110 token, or a value that, once the spaces and tabs at
   either end are trimmed, holds NUL, CR or LF or a character above
@@ -2385,7 +2464,8 @@ breaking it (roadmap).
   (a token with a newline, a display name in CJK) would stop every Elm
   process for good: no HTTP, no ports, no timers. Every way of sending (`send`,
   `sendTraced`, `task`, `taskTraced`, `taskFromRequest`) checks the
-  config's and the call's headers first, and a call with one fails
+  client's and the call's headers first, and a call with one fails
+
   with `NoAnswer (InvalidHeader name)`, nothing sent and never retried
   (the trace's `attempts` is `0`, as for a bad `baseUrl`). A header is
   never altered to fit: a changed credential would fail later and less
@@ -2451,16 +2531,21 @@ breaking it (roadmap).
   loop (to show a wait, to cancel, to refresh between attempts) sends
   each attempt `withoutRetry` and takes the policy's schedule from it.
   The loop and `next` call the same function in
-  `Rpc.Internal.Retry`, so the two cannot drift.
+  `Rpc.Internal.Retry`, so the two cannot drift: `Rpc.Retry.on` puts it
+  on the policy, beside the budget a deadline leaves, and the loop
+  reaches both only through a policy, so a program that never builds
+  one carries the loop alone (decisions.md: Modifiers install
+  behaviour).
 
 ### 5.2 Rpc
 
 The runtime has two roots: `Proto.*` is the data, `Rpc.*` the calling.
 `Rpc` is the one module that sends, beside a
 module per type it takes or gives: `Rpc.Call` (below),
-`Rpc.Transport` and `Rpc.Retry` (§5.1), `Rpc.Trace`, `Rpc.Body`,
-`Rpc.Request`, `Rpc.Response`, `Rpc.Error` and `Rpc.Code` (§5.4). The
-first five are opaque. `Call`, `Transport`, `Retry` and `Trace` have
+`Rpc.Protocol`, `Rpc.Client` and `Rpc.Retry` (§5.1), `Rpc.Trace`,
+`Rpc.Body`, `Rpc.Request`, `Rpc.Response`, `Rpc.Error` and `Rpc.Code`
+(§5.4). The first six are opaque. `Call`, `Protocol`, `Client`, `Retry`
+and `Trace` have
 their constructors in `Rpc.Internal.*` (where the rest of the internals
 live) so that `Rpc` can build or read them and users cannot, and each
 public module names its type by an alias; `Body`, which no other module
@@ -2471,15 +2556,19 @@ cycle (§3.1, rule 5); `Rpc` aliases both, so annotations name them
 `Rpc.Request` and `Rpc.Response`. `Rpc` itself holds
 the public API and the running of a call (sending, retrying, timing a
 trace); the work it runs is internal, a module per responsibility:
-`Rpc.Internal.Route` maps a call onto its binding's route, the URL
-and the body (the route itself built by the method's route function,
-§4),
-`Rpc.Internal.Wire` builds the request each transport sends,
-`Rpc.Internal.Answer` reads an answer into a result or an `Error`,
+`Rpc.Internal.Send` is the one place a call's method meets its
+client's protocol, a `plan` made by one `case` on the wire kind (text
+or bytes) that holds the request to build, the route's invalid path
+value and `response_body` (the route itself built once, by the
+method's route function, §4), the write-limit check and the answer's
+reader, monomorphic from there on;
+`Rpc.Internal.Wire` holds the request builders the protocols install,
+`Rpc.Internal.Answer` the answer readers, reading an answer into a
+result or an `Error`,
 `Rpc.Internal.Retry` holds the policy math and the attempt loop, and
 `Rpc.Internal.Http` is the elm/http adapter, with the checks that decide
 whether a request can be sent. The data modules, which generated code
-calls whatever the transport, are the codecs (`Proto.Json`,
+calls whatever the protocol, are the codecs (`Proto.Json`,
 `Proto.Binary` (§5.5), `Proto.Timestamp`, `Proto.Duration`, `Proto.Int64`,
 `Proto.Bytes`), the typed values
 and descriptor trees (`Proto.Message`, `Proto.Enum`, `Proto.Method`, and
@@ -2489,7 +2578,7 @@ generated route functions and query encoders call (`Proto.Route`,
 `Proto.Query`), the well-known types' values
 (`Proto.WellKnown`), `Proto.Registry` (§3.9) and `Proto.Any` (§3.5).
 The names `Rpc` and `Proto.*` say what the modules are: proto data, and
-RPC calls over either transport, with no product prefix tying proto3
+RPC calls over any protocol, with no product prefix tying proto3
 JSON to one of the two (decisions.md: `Rpc` and `Proto` as the
 top-level names). The
 cost of short names is collision: an application with a module of its
@@ -2515,64 +2604,81 @@ type alias Response =
     , headers : Dict String String, body : Rpc.Body.Body }
 
 -- Rpc.Call
-type Call req res      -- opaque: method, request, binding, per-call adjustments
+type Call codec req res      -- opaque: method, request, binding, per-call adjustments
 
--- per call
-withHeaders : List ( String, String ) -> Call req res -> Call req res   -- after the config's
-withTimeout : Float -> Call req res -> Call req res                     -- replaces the config's
-withRetry : Rpc.Retry.Retry -> Call req res -> Call req res             -- replaces the config's
-withoutRetry : Call req res -> Call req res                             -- no policy, whatever the config's
-withTracker : String -> Call req res -> Call req res                    -- send without a policy in effect only
-viaBinding : Int -> Call req res -> Maybe (Call req res)                -- transcoding only
+-- per call (each `Call codec req res -> Call codec req res`)
+withHeaders : List ( String, String ) -> …   -- after the client's
+withTimeout : Float -> …                     -- replaces the client's
+withRetry : Rpc.Retry.Retry -> …             -- replaces the client's
+withoutRetry : …                             -- no policy, whatever the client's
+withTracker : String -> …                    -- send without a policy in effect only
+viaBinding : Int -> Call codec req res -> Maybe (Call codec req res)   -- transcoding only
 
 -- reading
-method : Call req res -> Proto.Method.Method req res
-descriptor : Call req res -> Proto.Method.Descriptor
-serviceName, methodName, requestMessage, requestJson
-idempotency : Call req res -> Proto.Method.Idempotency
-toJson : Call req res -> Json.Encode.Value   -- {"service","method","request"}
+method : Call codec req res -> Proto.Method.Method codec req res
+procedure, serviceName, methodName, requestMessage, requestJson
+idempotency : Call codec req res -> Proto.Method.Idempotency
+toJson : Call codec req res -> Json.Encode.Value   -- {"service","method","procedure","request"}
 
 -- Rpc
-type alias Call req res = Rpc.Call.Call req res
-call : Proto.Method.Method req res -> req -> Call req res
+type alias Json = Rpc.Protocol.Json
+type alias Proto = Rpc.Protocol.Proto
+type alias Call codec req res = Rpc.Call.Call codec req res
+type alias Client codec = Rpc.Client.Client codec
+call : Proto.Method.Method codec req res -> req -> Call codec req res
+client : Rpc.Protocol.Protocol codec -> String -> Client codec
 
 -- sending
-task : Config -> Call req res -> Task Error res
-send : Config -> (Result Error res -> msg) -> Call req res -> Cmd msg
-taskTraced : Config -> Call req res -> Task Never ( Rpc.Trace.Trace, Result Error res )
-sendTraced : Config -> (Rpc.Trace.Trace -> Result Error res -> msg) -> Call req res -> Cmd msg
-cancel : String -> Cmd msg                                              -- Http.cancel by tracker; reports nothing
+task : Client codec -> Call codec req res -> Task Error res
+send : Client codec -> (Result Error res -> msg) -> Call codec req res -> Cmd msg
+taskTraced : Client codec -> Call codec req res -> Task Never ( Rpc.Trace.Trace, Result Error res )
+sendTraced : Client codec -> (Rpc.Trace.Trace -> Result Error res -> msg) -> Call codec req res -> Cmd msg
+cancel : String -> Cmd msg                   -- Http.cancel by tracker; reports nothing
 
 -- pure halves
 type alias Request = Rpc.Request.Request
 type alias Response = Rpc.Response.Response
-request : Config -> Call req res -> Request
-response : Config -> Call req res -> Http.Response String -> Result Error res
-responseBytes : Config -> Call req res -> Http.Response Bytes -> Result Error res
-taskFromRequest : Config -> Call req res -> Request -> Task Error res
+request : Client codec -> Call codec req res -> Request
+response : Client Json -> Call Json req res -> Http.Response String -> Result Error res
+responseBytes : Client Proto -> Call Proto req res -> Http.Response Bytes -> Result Error res
+taskFromRequest : Client codec -> Call codec req res -> Request -> Task Error res
+
 splitTrailers : Dict String String -> { headers : Dict String String, trailers : Dict String String }
 ```
 
 - A call is data: a generated function per method applied to the
   request (§4). Per-call adjustments ride on it; `toJson` gives it a
   stable JSON form for logs, deduplication keys and queues.
-- The codecs are the method's, read by `Proto.Method.encodeRequest`
-  and `responseDecoder` (the typed values' `Proto.Message.encode` and
-  `decoder` for `Any` and error details), and its binary codecs, given
-  by the modifier `Proto.Method.withBinary` (§3.10), read by
-  `encodeRequestBytes` and `responseBytesDecoder`.
+- The codecs are the method's: both halves, JSON and binary, always
+  present, the one the method was not built with a filler (§4, §3.10).
+  `Proto.Method.encodeRequest` and `responseDecoder` read the JSON
+  half, `hasJson` whether it is real; the typed values'
+  `Proto.Message.encode` and `decoder` serve `Any` and error details.
+- **The codec is in the type.** `Method`, `Call`, `Protocol` and
+  `Client` carry a phantom codec, `Rpc.Json` or `Rpc.Proto`, so a
+  client only sends a call whose method has the half its protocol
+  speaks, and the send path reads that half without asking which halves
+  are real (decisions.md: Protocol and client, indexed by codec;
+  Fillers, not optional halves). A pairing the phantom rules out cannot
+  be built through the builders; were one built, its answer would fail
+  to decode as an ordinary bad response, as "the body is not the
+  response of svc/Method in protobuf binary". `Rpc.response` and
+  `responseBytes` take only the client of their codec; the text or
+  bytes branch each cannot reach reads the answer as the failure it
+  would be, adding no reader.
 - A call's modifiers and readers live in `Rpc.Call`, the module its
   type is named in, as each opaque type has its own; `Rpc.call`, the
   constructor generated code applies, stays in `Rpc` beside an alias
   `Rpc.Call` of the type, so generated code imports `Rpc` alone and
-  its `Rpc.Call req res` annotations name the alias. In `Rpc`,
-  `Rpc.descriptor` would read as too generic beside the config, errors
-  and requests the module also handles.
-- The readers are `method` (the `Method`), `descriptor` (its
-  descriptor), `serviceName`, `methodName` and `idempotency` (the
-  descriptor's, §4).
+  its `Rpc.Call Rpc.Json req res` annotations name the alias, and
+  `Rpc.Json`, an alias in `Rpc` too, so that annotations, the package
+  docs and compiler errors name the tags `Rpc.Json` and `Rpc.Proto`
+  rather than the internal module that defines them.
+- The readers are `method` (the `Method`), `procedure`,
+  `serviceName`, `methodName` and `idempotency` (the method's, §4).
 - `viaBinding n` is `Just` the call over binding `n` when the
-  descriptor has one (`0` the rule's own, `1` and up its additional
+  method has a route for it (`0` the rule's own, `1` and up its additional
+
   bindings), `Nothing` otherwise; a method without a rule gives
   `Nothing` for every number, and its unadjusted call takes the
   implicit route (§5.3). A call therefore always has a route, and
@@ -2594,21 +2700,21 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
   the browser has replaced what is not UTF-8 by then. Two functions
   rather than one reading bytes: a JSON answer read as text is decoded
   by the browser, natively, and a program that reads none as bytes
-  carries no elm/bytes. `send`, `task` and `taskTraced` pick the one the
-  call's codec needs.
+  carries no elm/bytes. `send`, `task` and `taskTraced` take the one
+  the protocol's wire installed.
 - `task` is `taskFromRequest` of `request`; the retry loop lives in
   `taskFromRequest`, between attempts `Process.sleep`, so a rewritten
   request is retried too.
 - `send` and `sendTraced` take the message before the call, as
   `Task.attempt` and `Http.expectJson` take theirs before the data, so
   a call pipes into them as into `task`: `Notes.getNote req |> Rpc.send
-  config GotNote`.
-- The policy in effect is the call's when it has one and the config's
-  otherwise: `withRetry` puts another in the config's place, as
+  client GotNote`.
+- The policy in effect is the call's when it has one and the client's
+  otherwise: `withRetry` puts another in the client's place, as
   `withTimeout` does the timeout, and `withoutRetry` puts none, so one
-  config serves calls that retry and calls that must not, a call the
+  client serves calls that retry and calls that must not, a call the
   user may cancel or one the application retries itself. Every way of
-  sending resolves the call's choice, then the config's, before the
+  sending resolves the call's choice, then the client's, before the
   attempt loop runs.
 - `send` without a retry policy in effect is one `Http.request`,
   carrying the call's tracker; with one, it is `Task.attempt` over
@@ -2638,7 +2744,8 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
   reporting exactly one outcome is on the roadmap.
 - `Rpc.Trace` is opaque, made only by the runtime and read by
   accessors: `serviceName` and `methodName` (as a call's are named),
-  `transport` (`Rpc.Transport.name` of the config's), `binding`
+  `procedure`, `protocol` and `codec` (`Rpc.Protocol.name` and `codec`
+  of the client's), `binding`
   (`Nothing` when none was used: Connect, the implicit route),
   `request`, `httpStatus` (the last answer's, `Nothing` when none
   came), `headers` and `trailers` (its response metadata as
@@ -2647,11 +2754,13 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
   success, so a timeout is `Just DeadlineExceeded`), `duration`
   (milliseconds by `Time.now` before the first attempt and after the
   last) and `attempts`. `toJson` gives every field under stable keys
-  (`service`, `method`, `transport`, `binding`, `request` with
+  (`service`, `method`, `procedure`, `protocol`, `codec`, `binding`,
+  `request` with
   `method`, `url`, `headers` as pairs, `body`, `timeout` and
   `withCredentials`, `httpStatus`, `headers` and `trailers` as objects,
-  `code` as Connect spells it or `"ok"`, `duration`, `attempts`); `service`
-  and `method` are `Rpc.Call.toJson`'s keys for a call. `toString` is one
+  `code` as Connect spells it or `"ok"`, `duration`, `attempts`); `service`,
+  `method` and `procedure` are `Rpc.Call.toJson`'s keys for a call. `toString` is one
+
   log line without the request, whose URL and body hold the message
   and whose headers may hold credentials. It is opaque so that a new
   field (per-attempt statuses, sizes once compression exists) is a
@@ -2660,7 +2769,7 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
   a header named `trailer-<name>`, in any case, is the trailer
   `<name>`, and the rest are headers; every name is lowercased. A
   header named `trailer-` alone names no trailer and stays a header.
-  The trace applies it whatever the transport; the halves' caller
+  The trace applies it whatever the protocol; the halves' caller
   applies it to `Http.Metadata` itself. A header sent more than once
   arrives as one value: the browser's `getAllResponseHeaders` and
   elm/http's `_Http_parseHeaders` join repeated names' values with
@@ -2689,7 +2798,7 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
   headers and trailers pass both through the halves and through
   `sendTraced`.
 
-### 5.3 Transports
+### 5.3 Protocols
 
 #### Connect
 
@@ -2700,7 +2809,7 @@ all 40 passing.
 
 - Unary only. POST to `baseUrl/<service>/<Method>` with the request's
   JSON as an `application/json` body and `Connect-Protocol-Version: 1`.
-  With `connectGet`, a call of an `IdempotencyNoSideEffects` method is a GET of the same URL with
+  With `withConnectGet`, a call of an `IdempotencyNoSideEffects` method is a GET of the same URL with
   `?connect=v1&encoding=json&message=<JSON>`, the JSON percent-encoded
   (every byte but RFC 3986's unreserved characters), in the order the
   protocol recommends; no protocol-version header, which GET carries in
@@ -2721,55 +2830,51 @@ all 40 passing.
 
 #### The proto codec
 
-`Rpc.Transport.withCodec Proto` sends Connect's proto codec; `Json`, the
-default, is everything above. Run by the live suite against connect-go
-(`cases/proto.json`: every method, the five ways of sending, errors with
-details, both size limits, GET), and by the Connect conformance suite's
-unary test cases with the proto codec (§7).
+`Rpc.Protocol.connectProto` is Connect's proto codec, a `Protocol
+Proto`; `connect`, a `Protocol Json`, is everything above. Run by the
+live suite against connect-go (`cases/proto.json`: every method, the
+five ways of sending, errors with details, both size limits, GET), and
+by the Connect conformance suite's unary test cases with the proto
+codec (§7).
 
-- **The setting is data.** The codec is a flag in the `Connect`
-  transport's options, so transports built alike are still `==` and a
-  config holds no function (§5.1). `withCodec` leaves `transcode` as it
-  is, as `withMaxGetUrl` does: transcoding is JSON by definition, and so
-  is the implicit route.
-- **Requests.** A POST carries `Proto.Binary.encode` of the request as an
-  `application/proto` body (`Rpc.Body.bytes`). A GET carries
+- **The codec is the protocol's.** `connectProto`'s wire is `Binary`,
+  so only a call of a method with binary codecs (`codec=proto` or
+  `codec=both`) can be sent over it, and the compiler says so of any
+  other (§5.2). `transcode` is a `Protocol Json`: transcoding is JSON by
+  definition, and so is the implicit route.
+- **Requests.** A POST carries the request's protobuf binary as an
+  `application/proto` body (`Rpc.Body.bytes`). A GET
+  (`withConnectGet`) carries
   `?connect=v1&base64=1&encoding=proto&message=<base64>`, the binary in
   unpadded URL-safe base64, in the order the protocol recommends; the
   base64 is computed only for a call that goes as a GET.
 - **Answers.** A 200 is the response's protobuf binary, read as bytes,
   and must come as `application/proto` or with no content type, or it is
   a `BadResponse` keeping the bytes. Any other answer is the protocol's
-  JSON error, decoded as UTF-8 and read as under `Json` (§5.4), so errors
-  are JSON whatever the codec. `withReadMaxBytes` measures the answer's
-  bytes, `withWriteMaxBytes` the request's binary, encoded only when a
-  limit is set. A trace gives a bytes request body as `body: null` and
+  JSON error, decoded as UTF-8 and read as over `connect` (§5.4), so
+  errors are JSON whatever the codec. A body that does not decode is
+  `BadResponse "the body is not the response of svc/Method in protobuf
+  binary"`. `withReadMaxBytes` measures the answer's bytes,
+  `withWriteMaxBytes` the request's binary, encoded only when a limit is
+  set. A trace gives a bytes request body as `body: null` and
   `bodyBase64`.
-- **`MissingCodec`.** A call of a method without binary codecs under
-  `Proto`, or of one with binary codecs alone (`codec=binary`) under
-  `Json` or over transcoding, is `NoAnswer (MissingCodec { method,
-  codec })`, `Internal`, refused before the retry loop runs and before
-  any other check, since no attempt could succeed and the method has no
-  message to read path values from. It is not a fallback to the other
-  codec: a call that silently changed codec would change what the server
-  sees.
-- **The bytes path lives in the method.** `Proto.Method.withBinary`
-  builds, from the method's binary codecs, closures in its value: the
-  request as Connect sends it (the POST body, and the GET's base64 behind
-  a thunk), the write-limit check, the reading of a binary answer, and a
-  body's base64 for a trace; `Proto.Message.withBinary` builds an `Any`'s
-  base64 halves likewise. `Rpc` reaches them only through a method under
-  the proto codec. Elm's dead-code elimination is by reference, so a
-  program whose methods carry no binary codecs reaches no
-  `Proto.Binary`, no `Proto.Bytes` and none of elm/bytes, whose kernel
-  comes whole with a single `Bytes.width` anywhere on the generic path.
-  What such a program still pays, a few hundred bytes gzipped, is the
-  setting itself: the codec dispatch and the `MissingCodec` check, the
-  bytes kind of `Body` and the choice between a text and a bytes answer,
-  and `Any`'s binary-aware payload. Nothing below it could carry less
-  while the codec stays a transport setting chosen at run time; choosing
-  it where the method is built would be a different public shape
-  (decisions.md: the codec is a transport setting).
+- **The binary code lives in the protocol and the method.** The method
+  holds its binary half as its request's encoder and a reading of its
+  response (§4); `connectProto`'s wire holds the functions that run them
+  (`Bytes.Encode.encode` of the request, the reading of a binary answer,
+  `width` for the limits, base64 for a GET and a trace).
+  `Proto.Message.withBinary` builds an `Any`'s base64 halves likewise.
+  Elm's dead-code elimination is by reference, so a program that names
+  no binary protocol reaches none of that code, no `Proto.Binary` and
+  none of elm/bytes, whose kernel comes whole with a single
+  `Bytes.width` anywhere it calls. A method generated without binary
+  codecs holds the binary filler, `\_ -> Bytes.Encode.unsignedInt8 0`
+  and `\_ -> Nothing`, a constructor rather than
+  `Bytes.Encode.sequence []`, which measures widths and so would reach
+  the kernel (590 B gzipped on a minimal program). What a JSON program
+  still pays for the binary path is the two-way case on the wire kind
+  and the bytes kind of `Body` (decisions.md: Fillers, not optional
+  halves).
 
 #### Transcode
 
@@ -2987,12 +3092,12 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
   where a 400 means a proxy or the transport refused the request, so it
   reads as `Internal`, not `InvalidArgument`.
 
-- One error type for every transport. The wire forms differ (`"code":
+- One error type for every protocol. The wire forms differ (`"code":
   "not_found"` against `"code": 5`), and knowing which one arrived
   tells a developer which side misbehaved: `source` keeps that
   information without making every caller handle two types, and a
   server behind a transcoder can answer in either form.
-- A failed answer is read by one reader whatever the transport, in
+- A failed answer is read by one reader whatever the protocol, in
   order, and is an `RpcStatus` error when one of three readers finds a
   status: a Connect error body (`code` a string the protocol names; an
   unknown name reads as `Unknown`; `message` `""` and `details` `[]`
@@ -3107,7 +3212,7 @@ a handful of field helpers that binary codecs are written with
 read; `implicit`, `optional`, `present`, `list`, `listUnpacked`,
 `dict`, `boolMap` to write). Generated code calls it; an application
 meets `decode`, `encode` and `Decoder`. The generator writes binary
-codecs against it under `codec=binary` or `codec=both` (§3.10), and
+codecs against it under `codec=proto` or `codec=both` (§3.10), and
 Connect's proto codec sends them (§5.3).
 
 - **A decoder knows its length.** elm/bytes has no end-of-input test,
@@ -3160,9 +3265,15 @@ Connect's proto codec sends them (§5.3).
   varint longer than ten bytes fail the decode.
 - **`Any`**, read, holds the packed message's binary, which
   `Proto.Any.unpack` decodes with a message that has binary codecs
-  (`Problem.Binary` when it does not decode). `Proto.Any.pack` of such a
-  message keeps its binary beside its JSON, so the `Any` is written in
-  either form, and so does a Connect error detail with `debug`. Written,
+  (`Problem.Binary` when it does not decode). `Proto.Any.pack` holds what
+  the message's codecs write: its JSON alone for a message built with
+  `Proto.Message.message` (`codec=json`), its binary alone for one built
+  with `messageBinary` (`codec=proto`), whose JSON encoder is a filler
+  writing `null`, and both for one given `withBinary` (`codec=both`), so
+  the `Any` is written in either form; a Connect error detail with
+  `debug` holds both too. Which form a message has is data on it, read
+  only here and by the readers, never by the codecs. Written,
+
   an `Any` holding binary writes it back. One holding a message's JSON
   alone, as one read from proto3 JSON does, needs the message's codecs
   to be written as binary: `Proto.Binary.anyWith registry` takes them
@@ -3171,7 +3282,7 @@ Connect's proto codec sends them (§5.3).
   alone for a type the registry lacks; plain `any` has none. The
   conversion, the well-known types' included, is in the registry rather
   than in the writer, so a program pays for the JSON decoders only of
-  the types its registry lists: a program generated with `codec=binary`
+  the types its registry lists: a program generated with `codec=proto`
   reaches no `Proto.Json` and no `Proto.Timestamp` through an `Any`.
 - A `Timestamp` drops nanoseconds past the millisecond when read, as the
   JSON codec does.
@@ -3309,7 +3420,7 @@ any, in `expected/warnings.txt`, rendered as `diagnostics.txt` is.
   Both ends are checked: in Rust against a reference built on
   prost-reflect's proto3 JSON parser and field presence, independent of
   the JSON walk the runtime does, and in Elm by replaying each fixture
-  through `Rpc.request` with a Transcode config, the call built by the
+  through `Rpc.request` with a transcode client, the call built by the
   generated service module and its binding chosen with
   `Rpc.Call.viaBinding` (a fixture naming a binding the method lacks fails
   rather than falling back to the implicit route). Bodies compare with
@@ -3389,7 +3500,7 @@ any, in `expected/warnings.txt`, rendered as `diagnostics.txt` is.
   `Any`'s packed message re-encoded the same way and a kind-less `Value`
   given `null_value`), and checks that prost-reflect reads each back as
   the sample. The protos are generated under `codec=both` (also with
-  `int64=int` and with `bytes=bytes`) and `codec=binary`, and
+  `int64=int` and with `bytes=bytes`) and `codec=proto`, and
   `tests/Codec/BinaryRoundTripTest.elm` decodes every sample's binary
   with the generated decoder and re-encodes it to the same bytes, with
   unknown fields of every wire type appended and without; where the set
@@ -3440,7 +3551,7 @@ request builder), which unit tests cannot run. It has five parts:
    error body, reusing the route fixtures' expectations where they
    overlap.
 4. **Examples**: `examples/notes/` holds a browser application over
-   either transport and a walkthrough, and the README's snippets live
+   either protocol and a walkthrough, and the README's snippets live
    in it, so CI compiles them.
 5. **CI**: a `live` job on Ubuntu, built with the
    runner and given its caches with the examples.
@@ -3481,12 +3592,12 @@ Decisions:
 The live suite (`conformance/live/`, layout in `conformance/README.md`): the
 example API and server under `examples/notes/`, the runner (`Live.elm`,
 a dispatch table per service, `run.mjs`) and the smoke suite
-`cases/notes.json`, which runs every method over both transports, the
+`cases/notes.json`, which runs every method over both protocols, the
 error reader's four sources (a Connect body, a `google.rpc.Status`
 body, `grpc-status` headers, a bare status) with `ErrorInfo` and
 `BadRequest` details decoded from each body, timeouts (a
 `NoAnswer Timeout`, the server never answering first), retries,
-Connect GET (with the config's and the call's headers) and `maxGetUrl`,
+Connect GET (with the client's and the call's headers) and `maxGetUrl`,
 percent-encoded path values, `viaBinding`
 in and out of range, and `sendTraced`, `send`, `task` and
 `taskFromRequest` (a header rewritten between `Rpc.request` and it,
@@ -3589,7 +3700,7 @@ mask, archives and deletes notes, and shows each error's code, message,
 source and details (`google.rpc.BadRequest` and `ErrorInfo` by type,
 from `Google.Rpc`, which buf generates from googleapis'
 `error_details.proto` with `buf.gen.google-rpc.yaml`), with a toggle
-between the two transports. Every call goes through one function,
+between the two protocols. Every call goes through one function,
 `Api.rpc`, the wrapper §5.1 describes. It reuses the generated
 tree the runner compiles, `examples/notes/elm/generated`, whose drift
 `just live-gen` checks. The server's `-static` flag serves the page and
@@ -3718,7 +3829,8 @@ which the runtime reads as `GrpcHeaders`, without details.
   message; and the header-only form carries no details.
 
 What is verified live, against connect-go, Vanguard, grpc-gateway
-and Envoy: every method of the example API over both transports, from
+and Envoy: every method of the example API over both protocols, from
+
 Node in CI (transcoding under all three transcoders) and by hand from
 the example in a browser (under Vanguard); `task`, `send`, `sendTraced`,
 retries, timeouts, `withCredentials`, trackers and Connect GET; an
@@ -3799,9 +3911,12 @@ roadmap.
   or install the package version the generated code names. Before 1.0
   a minor may change what generated code looks like, and the runtime
   keeps only the values of minors whose code it compiles: 0.2 changed
-  how methods are built (§4), so it exposes `v0_2` alone, and code
-  generated by 0.1 fails on its `v0_1` rather than on a type mismatch
-  deeper in. 1.0.0 exposes `v1_0` alone, and from then on a major keeps
+  how methods are built and what a call's type carries (§4: its routes,
+  then its codec), so it exposes `v0_2` alone, and code generated by
+  0.1 fails on its `v0_1` rather than on a type mismatch deeper in. A
+  minor's value names the release, not each change in it: changes made
+  while 0.2 is unreleased keep `v0_2`, since no generated code of an
+  earlier 0.2 shape was ever published. 1.0.0 exposes `v1_0` alone, and from then on a major keeps
   every minor's value.
 - The sentinel is strict: generated code names the release that
   generated it, not the oldest runtime it could run against, so the
@@ -3844,9 +3959,10 @@ Within a major version:
   `Proto.Enum.Enum`, `Proto.Method.Method`, and the descriptor trees,
   the `Descriptor` of `Proto.Message`, `Proto.Field`, `Proto.Enum`,
   `Proto.EnumValue` and `Proto.Method` (§3.9), with `Rpc.Call`, `Proto.Any.Any` and
-  `Proto.Registry.Registry`; so are the types a config holds or the
-  runtime gives, `Rpc.Transport.Transport`, `Rpc.Retry.Retry`,
-  `Rpc.Trace.Trace` and `Rpc.Body.Body`. `Proto.Method.Method` and
+  `Proto.Registry.Registry`; so are the types an application builds to
+  send or the runtime gives, `Rpc.Protocol.Protocol`,
+  `Rpc.Client.Client`, `Rpc.Retry.Retry`, `Rpc.Trace.Trace` and
+  `Rpc.Body.Body`. `Proto.Method.Method` and
   `Proto.Message.Message` are aliases of unions in
   `Proto.Internal.Method` and `Proto.Internal.Message`, the descriptor a
   type parameter, so that what another runtime module must read from
@@ -3854,12 +3970,12 @@ Within a major version:
   public module turned into an alias is one, so the change came before
   the first publish. The records an application
   builds or reads with record syntax are frozen within a major:
-  `Rpc.Config`, `Rpc.Request.Request`, `Rpc.Response.Response`
-  (which `Rpc` also names `Rpc.Request` and `Rpc.Response`) and
-  `Rpc.Error.StatusError`. A new
-  config knob goes where §5.1 routes it (a protocol's on `Transport`, a retry's on
-  `Retry`, a call's on `Call`, hooks on a future `Rpc.Client`), never
-  into `Config`. The public unions are
+  `Rpc.Request.Request`, `Rpc.Response.Response` (which `Rpc` also
+  names `Rpc.Request` and `Rpc.Response`) and `Rpc.Error.StatusError`.
+  A new knob goes where §5.1 routes it: a protocol's on `Protocol`, a
+  client's on `Client`, a retry's on `Retry`, a call's on `Call`. The
+  codec tags `Rpc.Json` and `Rpc.Proto` have no values and gain none.
+  The public unions are
   frozen within a major, since users match on them exhaustively:
   `Proto.Field.Cardinality` (with `CardinalityRequired` reserved for
   proto2), `Kind` (whose `KindEnum` holds the enum's descriptor and

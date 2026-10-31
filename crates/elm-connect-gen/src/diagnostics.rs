@@ -115,7 +115,7 @@ codes! {
     /// one and the message's descriptor) get the same value name in its
     /// descriptor module.
     ValueCollision => "naming::value_collision",
-    /// Under `codec=binary` or `codec=both`, a type named for another
+    /// Under `codec=proto` or `codec=both`, a type named for another
     /// with `Bytes` at the end has JSON codecs that take the names of the
     /// other's binary codecs.
     CodecCollision => "naming::codec_collision",
@@ -707,7 +707,7 @@ impl Problem {
                  the end (`encodeNoteBytes` beside `encodeNote`), so the JSON codecs of a type \
                  named for another with `Bytes` at the end (`NoteBytes` beside `Note`) take the \
                  same names, and a module cannot define two values with one name. Enums keep \
-                 their JSON codecs under `codec=binary`; messages and oneofs have them under \
+                 their JSON codecs under `codec=proto`; messages and oneofs have them under \
                  `codec=both`. {}",
                 rename_escape(
                     renamed,
@@ -1287,6 +1287,19 @@ impl Problem {
                 "`{key}` is {}; left out, it is {default}.",
                 join_alternatives(&quoted)
             ),
+            Vec::new(),
+        )
+    }
+
+    /// `codec=binary`, the name the binary codecs alone had before they
+    /// were named for the `Rpc.Proto` tag their calls carry.
+    pub fn codec_binary() -> Self {
+        Problem::new(
+            Code::UnknownOption,
+            "The option `codec` is `binary`, which is now spelled `proto`.".to_owned(),
+            "`codec=proto` generates the protobuf binary codecs alone, as `codec=binary` \
+             did, and its calls are `Rpc.Call Rpc.Proto`. `codec` is `json`, `proto` or \
+             `both`; left out, it is `json`.",
             Vec::new(),
         )
     }

@@ -33,7 +33,7 @@ client but loses proto3 JSON's rules and cannot switch to Connect.
 What elm-connect adds:
 
 - One generated client, switched between Connect and `google.api.http`
-  transcoding in its config
+  transcoding by the protocol it is sent over
 - Generated codecs for proto3 canonical JSON mapping
 - The Connect conformance suite and live transcoders in CI, with the
   transcoders' differences published
@@ -66,7 +66,7 @@ transcoders.
 Releases before 1.0 carry prebuilt binaries and put the crates on
 crates.io; the Elm package reaches the package index at 1.0.
 Messages travel as proto3 JSON, or over Connect as protobuf binary
-with the generator's `codec=both` or `codec=binary`
+with the generator's `codec=both` or `codec=proto`
 ([docs/calling.md](docs/calling.md#choosing-the-codec)). Streaming and
 gRPC-Web are out of scope for 1.x; [docs/roadmap.md](docs/roadmap.md)
 says what may come, and whether it would be a minor or a major
@@ -116,44 +116,44 @@ service NotesService {
 one function per method:
 
 ```elm examples/notes/elm/generated/Notes/V1/NotesService.elm excerpt
-getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note
-ping : () -> Rpc.Call () ()
+getNote : Notes.V1.GetNoteRequest -> Rpc.Call Rpc.Json Notes.V1.GetNoteRequest Notes.V1.Note
+ping : () -> Rpc.Call Rpc.Json () ()
 ```
 
 Each type, call and descriptor carries the proto's comment and its
 one-line declaration as its doc, so editor hover and `elm repl` show
 what the proto says.
 
-A call goes over either transport, from the same generated code:
+A call goes over either protocol, from the same generated code:
 
 ```elm examples/notes/elm/src/Snippets/Sending.elm#sending
 import Notes.V1
 import Notes.V1.NotesService as Notes
 import Rpc
-import Rpc.Transport
+import Rpc.Protocol
 
 
 type Msg
     = GotNote (Result Rpc.Error Notes.V1.Note)
 
 
-config : Rpc.Config
-config =
-    Rpc.config "https://api.example.com"
+client : Rpc.Client Rpc.Json
+client =
+    Rpc.client Rpc.Protocol.connect "https://api.example.com"
 
 
 viaConnect : Cmd Msg
 viaConnect =
     -- POST https://api.example.com/notes.v1.NotesService/GetNote
     Notes.getNote { name = "notes/42" }
-        |> Rpc.send config GotNote
+        |> Rpc.send client GotNote
 
 
 viaTranscoding : Cmd Msg
 viaTranscoding =
     -- GET https://api.example.com/v1/notes/42
     Notes.getNote { name = "notes/42" }
-        |> Rpc.send { config | transport = Rpc.Transport.transcode } GotNote
+        |> Rpc.send (Rpc.client Rpc.Protocol.transcode "https://api.example.com") GotNote
 ```
 
 [docs/quickstart.md](docs/quickstart.md) goes on from here: reading the
@@ -164,14 +164,14 @@ result, trying calls in `elm repl`, and testing without a server.
 - Unary methods only. A streaming method is a diagnostic, or is left
   out under `streaming=skip`.
 - Calls in proto3 JSON, or over Connect in protobuf binary, with the
-  codecs the generator writes under `codec=both` or `codec=binary`
+  codecs the generator writes under `codec=both` or `codec=proto`
   ([docs/generator.md](docs/generator.md#binary-codecs)). Transcoding is
   JSON.
 - proto3 only. A proto2 file is the diagnostic `input::not_proto3`, and
   a file that declares an edition is `input::editions`.
 - No streaming, no gRPC-Web.
-- No interceptors: the config is data, so an application sends every
-  call through one function of its own
+- No interceptors: an application sends every call through one
+  function of its own, which builds the client
   ([docs/calling.md](docs/calling.md#wrapping-the-sending-once)).
 
 Check out [docs/roadmap.md](docs/roadmap.md) to see what we have planned

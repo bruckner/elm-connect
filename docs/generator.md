@@ -49,10 +49,10 @@ otherwise.
 | a recursive message (`repeated Node children`) | the field that closes the cycle holds a wrapper, `List Node_`, with `type Node_ = Node_ Node`; fields that close no cycle hold the record itself |
 | a nested message or enum (`Outer.Inner`) | a type named by its path, `OuterInner`, in the package's module |
 | a type of another generated package | the type from that package's module, `Users.V1.User` |
-| `service NotesService` | a module `Notes.V1.NotesService`: per unary method a call, `getNote : Notes.V1.GetNoteRequest -> Rpc.Call Notes.V1.GetNoteRequest Notes.V1.Note`; per binding of its `google.api.http` rule a route function, `routeGetNote0 : Notes.V1.GetNoteRequest -> Proto.Route.Route`, which the call holds ([transcoding.md](transcoding.md)); and its method descriptor, `descriptorGetNote`, the proto's facts about it as data, which the call does not hold |
+| `service NotesService` | a module `Notes.V1.NotesService`: per unary method a call, `getNote : Notes.V1.GetNoteRequest -> Rpc.Call Rpc.Json Notes.V1.GetNoteRequest Notes.V1.Note`; per binding of its `google.api.http` rule a route function, `routeGetNote0 : Notes.V1.GetNoteRequest -> Proto.Route.Route`, which the call holds ([transcoding.md](transcoding.md)); and its method descriptor, `descriptorGetNote`, the proto's facts about it as data, which the call does not hold |
 | a request message whose bindings put fields in the query | `queryOfListNotesRequest : ListNotesRequest -> List ( String, String )` in its package's module, the query parameters its route functions share |
 | a streaming method | a diagnostic; under `streaming=skip`, left out with a warning |
-| comments and `deprecated` | each type, call and descriptor is documented with the proto's comment for it, its one-line declaration, and `Deprecated.` where the proto says so; a call also names its Connect path and its HTTP bindings, and a package's module carries the comment on its `package` statement |
+| comments and `deprecated` | each type, call and descriptor is documented with the proto's comment for it, its one-line declaration, and `Deprecated.` where the proto says so; a call also names its Connect path, its HTTP bindings and its codecs (`Codecs: JSON.`), and a package's module carries the comment on its `package` statement |
 | `google.protobuf` itself | nothing: the well-known types map to the runtime |
 
 Every generated module starts with a line naming the elm-connect
@@ -99,7 +99,7 @@ Both binaries take the same options: the protoc plugin as
 | `unbound_methods` | `--unbound-methods` | `implicit` (default), `error` | What a method without a `google.api.http` rule gets. `implicit`: a call like any other, sent over transcoding on the implicit route ([transcoding.md](transcoding.md#methods-without-an-http-rule)). `error`: a `services::unbound_method` diagnostic, for servers that serve rules alone. |
 | `streaming` | `--streaming` | `error` (default), `skip` | What a client, server or bidirectional streaming method gets. `error`: a `services::streaming` diagnostic. `skip`: left out of its service's module, with a warning on stderr, and the rest generated. |
 | `enum_unknown` | `--enum-unknown` | `fail` (default), `zero` | What an enum value name the client does not know reads as; an unknown number reads as the zero value either way. `fail`: the decode fails, as protobuf's own parsers do. `zero`: the zero value, so a value the server adds after the client was generated does not fail the message it is in, at the cost of telling it apart from the zero value. It applies to every enum of the invocation. Packages can take different values only from separate invocations, each into its own out directory and checked the same way, and only when no message of one refers to a type of another, since a reference to a package the invocation does not generate is `generate::not_generated`. |
-| `codec` | `--codec` | `json` (default), `binary`, `both` | Which codecs messages get. `json`: proto3 JSON, which Connect's JSON codec and transcoding speak. `both`: protobuf binary codecs beside the JSON ones. `binary`: the binary codecs alone; enums keep their JSON codecs. See [Binary codecs](#binary-codecs); Connect's proto codec sends them ([calling.md](calling.md#choosing-the-codec)). |
+| `codec` | `--codec` | `json` (default), `proto`, `both` | Which codecs messages get, and so which clients send the calls. `json`: proto3 JSON, which Connect's JSON codec and transcoding speak; calls are `Rpc.Call Rpc.Json req res`. `proto`: protobuf binary codecs alone, which Connect's proto codec speaks; enums keep their JSON codecs, and calls are `Rpc.Call Rpc.Proto req res`. `both`: the binary codecs beside the JSON ones; calls are `Rpc.Call codec req res`, which any client sends. See [Binary codecs](#binary-codecs) and [calling.md](calling.md#choosing-the-codec). The value `binary` is refused, with a message naming `proto`, the binary codecs alone. |
 | `rename` | `--rename` | `<proto full name>:<Elm name>`, repeatable | An Elm name in place of the one the naming rules derive, for a package (its module), service, method, message, enum, field, oneof or enum value. The escape for names that collide or have no Elm form. |
 | `module_prefix` | `--module-prefix` | dot-separated Elm module segments, such as `Api.Notes` | A module every generated module goes inside: with `Api`, `notes.v1` becomes `Api.Notes.V1`, written to `Api/Notes/V1.elm`, and its services' modules follow. A renamed package's module is prefixed too. The runtime's modules are never prefixed. |
 
@@ -141,7 +141,7 @@ the CLI record the same options the same way.
 
 ## Binary codecs
 
-Under `codec=both` or `codec=binary` each package module gains two
+Under `codec=both` or `codec=proto` each package module gains two
 sections after its decoders, binary encoders and binary decoders,
 written against the runtime's `Proto.Binary`:
 
@@ -164,34 +164,37 @@ messageLeaf =
         |> Proto.Message.withBinary encodeLeafBytes decodeLeafBytes
 ```
 
-and a method by `Proto.Method.method … |> Proto.Method.withBinary`,
-given the request type's `encode…Bytes` and the response type's
-`decode…Bytes`. Under `codec=binary` both are built from the binary
-codecs alone (the `codec_binary` case):
+and a method by `Proto.Method.both`, given its service's full name and
+its name, the request type's `encode…` and the response type's
+`decode…`, then their `encode…Bytes` and `decode…Bytes`, and its
+idempotency and routes as under `json`. Under
+`codec=proto` both are built from the binary codecs alone (the
+`codec_proto` case):
 
-```elm conformance/cases/codec_binary/expected/Ledger/V1/LedgerService.elm excerpt
+```elm conformance/cases/codec_proto/expected/Ledger/V1/LedgerService.elm excerpt
+getEntry : Ledger.V1.GetEntryRequest -> Rpc.Call Rpc.Proto Ledger.V1.GetEntryRequest Ledger.V1.Entry
 getEntry =
     Rpc.call
-        (Proto.Method.methodBinary Ledger.V1.encodeGetEntryRequestBytes
-            Ledger.V1.decodeEntryBytes
-            "ledger.v1.LedgerService"
+        (Proto.Method.proto "ledger.v1.LedgerService"
             "GetEntry"
+            Ledger.V1.encodeGetEntryRequestBytes
+            Ledger.V1.decodeEntryBytes
         )
 ```
 
-`Proto.Message.encodeBytes` and `bytesDecoder`, and
-`Proto.Method.encodeRequestBytes` and `responseBytesDecoder`, read them
-back (`Nothing` without binary codecs); `Proto.Binary.encode` and
+`Proto.Message.encodeBytes` and `bytesDecoder` read a typed value's
+binary codecs back (`Nothing` without them); `Proto.Binary.encode` and
 `Proto.Binary.decode` run them on a whole body.
 
-`codec=binary` drops the JSON codecs of messages, oneofs and recursion
+`codec=proto` drops the JSON codecs of messages, oneofs and recursion
 wrappers: `encodeNote` and `decodeNote` are not generated. Enums keep
 theirs, since `Proto.Enum.Enum` holds them. The typed values are built
 by `Proto.Message.messageBinary` and the methods by
-`Proto.Method.methodBinary`, whose JSON encoder writes `null` and whose
-JSON decoder fails; `Proto.Method.hasJson` tells such a method apart.
-Such a method cannot be sent over transcoding, which speaks JSON only,
-so it gets no route functions and its messages no query encoders.
+`Proto.Method.proto`; `Proto.Method.hasJson` tells such a method apart.
+Its calls are `Rpc.Call Rpc.Proto req res`, which only a
+`Rpc.Protocol.connectProto` client sends: transcoding speaks JSON only,
+so such a method gets no route functions and its messages no query
+encoders.
 
 `int64` and `bytes` apply to the binary codecs as to the JSON ones: the
 same Elm types, so a value read from binary is the record JSON would
@@ -202,7 +205,7 @@ trip.
 The binary names are the JSON ones with `Bytes` at the end. A type
 named for another with `Bytes` at the end, `NoteBytes` beside `Note`,
 would have JSON codecs of the same names, so under `codec=both`, or
-under `codec=binary` for an enum, that is `naming::codec_collision`;
+under `codec=proto` for an enum, that is `naming::codec_collision`;
 `rename` one of the two. Under `codec=json` nothing is reserved.
 
 Under `codec=both` the package module also holds `binaryRegistry`, a
@@ -214,14 +217,15 @@ so that an `Any` read from proto3 JSON is written as its message's
 binary; one of a type it lacks is written with its type URL alone.
 `registry` stays descriptors only, so a program that reads descriptors
 keeps no codecs, and one that writes binary keeps no descriptors.
-Under `codec=binary`, which has no JSON decoders, there is no
+Under `codec=proto`, which has no JSON decoders, there is no
 `binaryRegistry`.
 
-Calls go as protobuf binary over Connect under
-`Rpc.Transport.withCodec Rpc.Transport.Proto`
-([calling.md](calling.md#choosing-the-codec)); a call of a method
-generated under `codec=binary` under JSON or over transcoding fails with
-`NoAnswer (MissingCodec …)`, unsent.
+Calls go as protobuf binary over Connect with a client of
+`Rpc.Protocol.connectProto`
+([calling.md](calling.md#choosing-the-codec)). A call of a method
+generated under `codec=proto` given to a client speaking JSON, or one
+generated under `codec=json` given to a `connectProto` client, does not
+compile.
 
 ## Imported packages
 

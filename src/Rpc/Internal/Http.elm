@@ -1,4 +1,4 @@
-module Rpc.Internal.Http exposing (badBaseUrl, bytesText, configProblems, invalidHeader, metadataOf, overLimit, requestTooLarge, send, splitTrailers, task, utf8Length, validHeaderName, validHeaderValue)
+module Rpc.Internal.Http exposing (badBaseUrl, bytesText, invalidHeader, metadataOf, overLimit, send, splitTrailers, task, utf8Length, validHeaderName, validHeaderValue)
 
 {-| The elm/http adapter: sending a built `Rpc.Request` and reading an
 answer's metadata, with what decides whether a request can be sent at all
@@ -12,10 +12,7 @@ import Bytes exposing (Bytes)
 import Bytes.Decode
 import Dict exposing (Dict)
 import Http
-import Json.Encode
 import Rpc.Body
-import Rpc.Error as Error
-import Rpc.Internal.Transport as Transport exposing (Transport)
 import Rpc.Request exposing (Request)
 import Task exposing (Task)
 
@@ -93,53 +90,6 @@ cannot go.
 badBaseUrl : String -> Bool
 badBaseUrl url =
     String.contains "?" url || String.contains "#" url
-
-
-{-| What `Rpc.checkConfig` reports of a config's transport, base URL and
-headers, one sentence each. A header is named but its value left out, since
-it may be a credential.
--}
-configProblems : Transport -> String -> List ( String, String ) -> List String
-configProblems transport baseUrl headers =
-    (if badBaseUrl baseUrl then
-        [ "baseUrl " ++ baseUrl ++ " holds a query or a fragment (? or #), after which a call's path cannot go" ]
-
-     else
-        []
-    )
-        ++ List.filterMap
-            (\( name, value ) ->
-                if not (validHeaderName name) then
-                    Just ("header " ++ quote name ++ " has a name that is not an HTTP token")
-
-                else if not (validHeaderValue value) then
-                    Just ("header " ++ quote name ++ " has a value a request cannot carry (NUL, CR, LF or a character above U+00FF)")
-
-                else
-                    Nothing
-            )
-            headers
-        ++ belowOne "readMaxBytes" "every response with a body is refused" (Transport.readMaxBytes transport)
-        ++ belowOne "writeMaxBytes" "every call is refused unsent" (Transport.writeMaxBytes transport)
-
-
-belowOne : String -> String -> Maybe Int -> List String
-belowOne knob consequence setting =
-    case setting of
-        Just limit ->
-            if limit < 1 then
-                [ knob ++ " " ++ String.fromInt limit ++ " is below 1, so " ++ consequence ]
-
-            else
-                []
-
-        Nothing ->
-            []
-
-
-quote : String -> String
-quote text =
-    Json.Encode.encode 0 (Json.Encode.string text)
 
 
 {-| The request as a task, its response read by `resolver`. A body is sent
@@ -326,17 +276,3 @@ utf8Width code =
 
     else
         3
-
-
-{-| Why a call whose request message `json` encodes must not be sent over a
-transport: its UTF-8 length is over the transport's write limit. The message
-is encoded only when the transport has a limit to measure it against.
--}
-requestTooLarge : Transport -> (() -> String) -> Maybe Error.Reason
-requestTooLarge transport json =
-    Transport.writeMaxBytes transport
-        |> Maybe.andThen
-            (\limit ->
-                overLimit limit (json ())
-                    |> Maybe.map (\size -> Error.RequestTooLarge { limit = limit, size = size })
-            )

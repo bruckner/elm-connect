@@ -19,10 +19,10 @@ type Msg
     = GotNote Rpc.Trace.Trace (Result Rpc.Error Notes.V1.Note)
 
 
-traced : Rpc.Config -> Cmd Msg
-traced config =
+traced : Rpc.Client Rpc.Json -> Cmd Msg
+traced client =
     Notes.getNote { name = "notes/42" }
-        |> Rpc.sendTraced config GotNote
+        |> Rpc.sendTraced client GotNote
 
 
 log : Rpc.Trace.Trace -> String

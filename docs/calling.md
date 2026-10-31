@@ -1,12 +1,13 @@
 # Calling
 
 A generated service function applied to a request gives a call,
-`Rpc.Call req res`: data saying which method to call with what. A config,
-`Rpc.Config`, also data, says where and how. `Rpc`'s functions take both
-and send the call, or give the HTTP request it stands for without
-sending anything. This page covers the config, each way of sending, and
-what comes back.
-The Connect protocol and the other documents the transports follow are
+`Rpc.Call Rpc.Json req res`: data saying which method to call with
+what. A client, `Rpc.Client Rpc.Json`, says where and how: a protocol, a
+base URL and what every call takes. `Rpc`'s functions take both and send
+the call, or give the HTTP request it stands for without sending
+anything. This page covers the client, each way of sending, and what
+comes back.
+The Connect protocol and the other documents the protocols follow are
 listed in [specs.md](specs.md).
 
 Until the package is published, its API reference is the documentation
@@ -26,9 +27,10 @@ calling:
 
 | Module | Holds |
 |---|---|
-| `Rpc` | building a call, config, sending over Connect or HTTP transcoding |
+| `Rpc` | building a call and a client, sending over Connect or HTTP transcoding |
 | `Rpc.Call` | a call: adjusting it and reading it back |
-| `Rpc.Transport`, `Rpc.Retry` | a config's protocol and retry policy |
+| `Rpc.Client` | a client: its headers, timeout, credentials and retry policy, read back and checked |
+| `Rpc.Protocol`, `Rpc.Retry` | a client's protocol and retry policy |
 | `Rpc.Trace` | what happened when a call was sent, for logs |
 | `Rpc.Request`, `Rpc.Response`, `Rpc.Body` | a request and an answer as data, in the pure halves and errors |
 | `Rpc.Error` | why a call failed: its kind, code, message and details |
@@ -48,57 +50,65 @@ calling:
 
 The `Proto` modules are [descriptors.md](descriptors.md)'s subject.
 
-## The config
+## The client
 
 ```elm src/Rpc.elm excerpt
-type alias Config =
-    { transport : Transport
-    , baseUrl : String
-    , headers : List ( String, String )
-    , timeout : Maybe Float
-    , withCredentials : Bool
-    , retry : Maybe Retry
-    }
-
-config : String -> Config
+client : Protocol codec -> String -> Client codec
 ```
 
-`Rpc.config baseUrl` is Connect with every call POSTed, no extra
-headers, no timeout, no credentials cross-origin and no retries. The
-config has no functions in it, so it can be stored in a model, compared
-with `==`, and changed with record syntax:
+```elm src/Rpc/Client.elm excerpt
+withHeaders : List ( String, String ) -> Client codec -> Client codec
+withTimeout : Float -> Client codec -> Client codec
+withCredentials : Client codec -> Client codec
+withRetry : Retry -> Client codec -> Client codec
+```
 
-| Field | Type | Meaning |
+`Rpc.client protocol baseUrl` is a client of the server at `baseUrl`
+over a protocol ([Protocols](#protocols)), with no extra headers, no
+timeout, no credentials cross-origin and no retries. `Rpc.Client` adds
+them:
+
+| Piece | Set by | Meaning |
 |---|---|---|
-| `transport` | `Rpc.Transport.Transport` | the protocol, with its own options (below) |
-| `baseUrl` | `String` | the server, with any routing prefix (`https://api.example.com`, `/api`); a trailing `/` is dropped. It can hold no query or fragment: a call is then not sent, and fails with `NoAnswer (BadUrl url)` |
-| `headers` | `List ( String, String )` | sent with every call, before the call's own |
-| `timeout` | `Maybe Float` | milliseconds; over Connect also sent as `Connect-Timeout-Ms`, rounded up to a whole millisecond. A value that is not a positive number means no timeout |
-| `withCredentials` | `Bool` | send cookies and other credentials cross-origin (`Http.riskyRequest`) |
-| `retry` | `Maybe Rpc.Retry.Retry` | whether and when to try a failed call again (below) |
+| protocol | `Rpc.client` | the protocol, with its own options (below) |
+| base URL | `Rpc.client` | the server, with any routing prefix (`https://api.example.com`, `/api`); a trailing `/` is dropped. It can hold no query or fragment: a call is then not sent, and fails with `NoAnswer (BadUrl url)` |
+| headers | `Rpc.Client.withHeaders` | sent with every call, before the call's own; each list given goes after those given before |
+| timeout | `Rpc.Client.withTimeout` | milliseconds; over Connect also sent as `Connect-Timeout-Ms`, rounded up to a whole millisecond. A value that is not a positive number means no timeout |
+| credentials | `Rpc.Client.withCredentials` | send cookies and other credentials cross-origin (`Http.riskyRequest`) |
+| retry policy | `Rpc.Client.withRetry` | whether and when to try a failed call again ([Retries](#retries)) |
+
+`Rpc.Client.protocol`, `baseUrl`, `headers`, `timeout`, `credentials`
+and `retry` read them back, and `Rpc.Client.toJson` gives the whole
+client as data, for logs and tests. A client's type carries its
+protocol's codec, `Rpc.Client Rpc.Json` or `Rpc.Client Rpc.Proto`
+([Choosing the codec](#choosing-the-codec)). A client holds its
+protocol's functions, so it belongs in code: a top-level value, one
+built in `init`, or one a wrapper builds per call from the
+application's state ([Wrapping the sending once](#wrapping-the-sending-once)).
+Clients built alike are `==`; a client never belongs in a message.
 
 A header name must be an HTTP token, and a value can hold no NUL, CR or
 LF and no character above U+00FF, which a browser refuses. A call with
 such a header is not sent: it fails with `NoAnswer (InvalidHeader
 name)`, and the header is never altered to fit.
 
-### Checking a config
+### Checking a client
 
-```elm src/Rpc.elm excerpt
-checkConfig : Config -> List String
+```elm src/Rpc/Client.elm excerpt
+problems : Client codec -> List String
 ```
 
-`Rpc.checkConfig` reports a config's problems, one sentence each, where
-the application builds it rather than at the first call: today a
-`baseUrl` with a query or a fragment, headers a request cannot carry
+`Rpc.Client.problems` reports a client's problems, one sentence each,
+where the application builds it rather than at the first call: today a
+base URL with a query or a fragment, headers a request cannot carry
 (named, without their values), and a size limit below 1.
 
-```elm examples/notes/elm/src/Snippets/Configuring.elm#check-config
-checked : Rpc.Config -> Result String Rpc.Config
-checked cfg =
-    case Rpc.checkConfig cfg of
+```elm examples/notes/elm/src/Snippets/Configuring.elm#check-client
+checked : Rpc.Client codec -> Result String (Rpc.Client codec)
+checked client =
+    case Rpc.Client.problems client of
         [] ->
-            Ok cfg
+            Ok client
 
         problems ->
             Err (String.join "; " problems)
@@ -107,91 +117,100 @@ checked cfg =
 Later releases may find more, so read the result as a list rather than
 matching it.
 
-## Transports
+## Protocols
 
-```elm src/Rpc/Transport.elm excerpt
-connect : Transport
-connectGet : Transport
-transcode : Transport
-withMaxGetUrl : Int -> Transport -> Transport
+```elm src/Rpc/Protocol.elm excerpt
+connect : Protocol Json
+connectProto : Protocol Proto
+transcode : Protocol Json
+withConnectGet : Protocol codec -> Protocol codec
+withMaxGetUrl : Int -> Protocol codec -> Protocol codec
 ```
 
-- `Rpc.Transport.connect`: the Connect protocol, every call a POST to
+- `Rpc.Protocol.connect`: the Connect protocol, every call a POST to
   `baseUrl/<package>.<Service>/<Method>` with the request's JSON as its
   body and `Connect-Protocol-Version: 1`.
-- `Rpc.Transport.connectGet`: Connect, with a call of a method declared
-  `option idempotency_level = NO_SIDE_EFFECTS;` sent as a GET with the
-  request in the query (`connect=v1&encoding=json&message=…`), which
-  caches can serve. Any other call is POSTed, whatever its
-  `google.api.http` rule says. The request then appears in URLs, so in
-  browser history and in server and proxy logs.
-  `Rpc.Transport.withMaxGetUrl n` POSTs a call whose GET URL would be
-  longer than `n` characters (2048 is a common safe value).
-- `Rpc.Transport.transcode`: HTTP transcoding, by the method's
+- `Rpc.Protocol.connectProto`: the Connect protocol over protobuf
+  binary ([Choosing the codec](#choosing-the-codec)).
+- `Rpc.Protocol.transcode`: HTTP transcoding, by the method's
   `google.api.http` rule: the rule's verb, the path filled from the
   request, the query from the fields outside the path and the body, and
   the body as the rule says. A method without a rule goes over the
   implicit route ([transcoding.md](transcoding.md)).
 
-```elm examples/notes/elm/src/Snippets/Configuring.elm#transports
-connectGet : Rpc.Config
+`Rpc.Protocol.withConnectGet` makes Connect send a call of a method
+declared `option idempotency_level = NO_SIDE_EFFECTS;` as a GET with the
+request in the query (`connect=v1&encoding=json&message=…`), which
+caches can serve. Any other call is POSTed, whatever its
+`google.api.http` rule says. The request then appears in URLs, so in
+browser history and in server and proxy logs.
+`Rpc.Protocol.withMaxGetUrl n` POSTs a call whose GET URL would be
+longer than `n` characters (2048 is a common safe value). Only Connect
+sends a GET, so both leave `transcode` as it is.
+
+```elm examples/notes/elm/src/Snippets/Configuring.elm#protocols
+connectGet : Rpc.Client Rpc.Json
 connectGet =
-    let
-        base =
-            Rpc.config "https://api.example.com"
-    in
     -- GetNote, ListNotes and Ping, declared NO_SIDE_EFFECTS, become GETs;
     -- a GET whose URL would pass 2048 characters is POSTed instead.
-    { base
-        | transport =
-            Rpc.Transport.connectGet
-                |> Rpc.Transport.withMaxGetUrl 2048
-    }
+    Rpc.client
+        (Rpc.Protocol.connect
+            |> Rpc.Protocol.withConnectGet
+            |> Rpc.Protocol.withMaxGetUrl 2048
+        )
+        "https://api.example.com"
 ```
 
-Transports built alike are `==`. `Rpc.Transport.name` gives
-`"connect"` or `"transcode"`, for logs.
+Protocols built alike are `==`. `Rpc.Protocol.name` gives
+`"connect"` or `"transcode"`, and `Rpc.Protocol.codec` `"json"` or
+`"proto"`, for logs; `Rpc.Protocol.toJson` gives a protocol with its
+options.
 
 ### Choosing the codec
 
-```elm src/Rpc/Transport.elm excerpt
-type Codec
-    = Json
-    | Proto
-withCodec : Codec -> Transport -> Transport
-codec : Transport -> Codec
+```elm src/Rpc.elm excerpt
+type alias Json =
+type alias Proto =
 ```
 
-Messages travel as proto3 JSON unless a Connect transport is given
-`Rpc.Transport.withCodec Rpc.Transport.Proto`: then a POST carries the
-request's protobuf binary as `application/proto`, a GET the query
+Messages travel as proto3 JSON over `connect` and `transcode`, and as
+protobuf binary over `connectProto`: a POST carries the request's
+binary as `application/proto`, a GET the query
 `connect=v1&base64=1&encoding=proto&message=…` with the binary in
 unpadded URL-safe base64, and a successful answer is read as binary,
 which must come as `application/proto` or with no content type. Error
 answers are JSON whatever the codec, as the protocol sends them, and are
-read as they are under `Json`. Binary needs the codecs the generator
-writes with `codec=both` (binary beside JSON, so either codec works) or
-`codec=binary` (binary alone, for Connect's proto codec only;
-[generator.md](generator.md)). Pick it for a server that serves only
-`application/proto`, for smaller messages (a 1,000-element repeated
-message takes 55 % fewer bytes than its JSON, 39 % fewer once both are
-gzipped), or to read error details that arrive
-without their JSON; JSON stays the readable default, which every
-transcoder takes and a browser's network panel shows.
+read as they are over `connect`.
 
-A call whose method lacks the codec the transport sends, one generated
-with JSON alone under `Proto` or with binary alone under `Json` or over
-transcoding, is not sent: it fails with
-`NoAnswer (MissingCodec { method, codec })`, code `Internal`, before any
-retry, rather than falling back to the other codec. `transcode` is JSON
-by definition, so `withCodec` leaves it as it is, as `withMaxGetUrl`
-does ([transcoding.md](transcoding.md)).
+The codec is in the types. A protocol is a `Protocol Rpc.Json` or a
+`Protocol Rpc.Proto`, the client built on it an `Rpc.Client Rpc.Json`
+or an `Rpc.Client Rpc.Proto`, and a call carries the codecs the
+generator wrote for its method ([generator.md](generator.md)):
+
+| Generated with | A call's type | Sent by |
+|---|---|---|
+| `codec=json` (the default) | `Rpc.Call Rpc.Json req res` | a `connect` or `transcode` client |
+| `codec=proto` | `Rpc.Call Rpc.Proto req res` | a `connectProto` client |
+| `codec=both` | `Rpc.Call codec req res` | any client |
+
+A client sends only calls of its codec, and the compiler says where one
+does not, so a call never reaches the network without the codec its
+client sends, and never falls back to the other one. `transcode` is
+JSON by definition, so binary goes over Connect alone
+([transcoding.md](transcoding.md)).
+
+Pick binary for a server that serves only `application/proto`, for
+smaller messages (a 1,000-element repeated message takes 55 % fewer
+bytes than its JSON, 39 % fewer once both are gzipped), or to read error
+details that arrive without their JSON; JSON stays the readable
+default, which every transcoder takes and a browser's network panel
+shows.
 
 ### Size limits
 
-`Rpc.Transport.withReadMaxBytes n` caps a successful answer's body at
-`n` bytes (of UTF-8, or of the binary under the proto codec), on either
-transport, as connect-go's
+`Rpc.Protocol.withReadMaxBytes n` caps a successful answer's body at
+`n` bytes (of UTF-8, or of the binary under the proto codec), on any
+protocol, as connect-go's
 `WithReadMaxBytes` and connect-node's `readMaxBytes` do. A body over it is
 dropped before decoding and the call fails with
 `NoAnswer (ResponseTooLarge { limit, size })`, code `ResourceExhausted`;
@@ -199,13 +218,13 @@ an error answer is still read for its status. The browser has received
 the body by then, so the limit bounds what is decoded and held, not what
 is downloaded.
 
-`Rpc.Transport.withWriteMaxBytes n` caps the request message's JSON, or
+`Rpc.Protocol.withWriteMaxBytes n` caps the request message's JSON, or
 its binary under the proto codec, the same way, as connect-go's `WithSendMaxBytes` and connect-node's
 `writeMaxBytes` do: a call over it is never sent, and fails with
 `NoAnswer (RequestTooLarge { limit, size })`. Neither has a limit by
 default, as in connect-node; connect-go reads at most 4 MiB unless told
 otherwise, and connect-web, the browser transport, has no such knob.
-`Rpc.checkConfig` reports a limit below 1.
+`Rpc.Client.problems` reports a limit below 1.
 
 ## Retries
 
@@ -240,20 +259,15 @@ end past it, and each attempt's timeout, `Connect-Timeout-Ms` included,
 is cut to what is left of it.
 
 ```elm examples/notes/elm/src/Snippets/Configuring.elm#retry
-retrying : Rpc.Config
+retrying : Rpc.Client Rpc.Json
 retrying =
-    let
-        base =
-            Rpc.config "https://api.example.com"
-    in
-    { base
-        | retry =
-            Rpc.Retry.on [ Rpc.Code.Unavailable, Rpc.Code.ResourceExhausted ]
+    Rpc.client Rpc.Protocol.connect "https://api.example.com"
+        |> Rpc.Client.withRetry
+            (Rpc.Retry.on [ Rpc.Code.Unavailable, Rpc.Code.ResourceExhausted ]
                 |> Rpc.Retry.withAttempts 5
                 |> Rpc.Retry.withBackoff 500
                 |> Rpc.Retry.withMaxBackoff 10000
-                |> Just
-    }
+            )
 ```
 
 Every error is judged by its code, so a network failure reads as
@@ -304,7 +318,7 @@ decides which retry a failure should get.
   or may cancel, since a policy's waits are invisible and `send` with a
   policy takes no tracker ([Cancelling](#cancelling)). An application
   that retries a call on its own sends it with `Rpc.Call.withoutRetry`
-  (or with `retry = Nothing` in that call's config), unless it means the
+  (or sends it with a client that has no policy), unless it means the
   two to stack.
 - **Both**, the common shape: the policy covers the blips and the
   application the structural failures. They multiply: every replay the
@@ -354,7 +368,7 @@ attemptNote : Int -> Cmd NoteMsg
 attemptNote tried =
     Notes.getNote { name = "notes/42" }
         |> Rpc.Call.withoutRetry
-        |> Rpc.task (Rpc.config "https://api.example.com")
+        |> Rpc.task (Rpc.client Rpc.Protocol.connect "https://api.example.com")
         |> Task.map Ok
         |> Task.onError (\err -> Task.succeed (Err err))
         |> Task.andThen (\result -> Task.map (\now -> GotNote tried now result) Time.now)
@@ -392,17 +406,17 @@ updateNote msg model =
 ## Adjusting one call
 
 ```elm src/Rpc/Call.elm excerpt
-withHeaders : List ( String, String ) -> Call req res -> Call req res
-withTimeout : Float -> Call req res -> Call req res
-withRetry : Retry -> Call req res -> Call req res
-withoutRetry : Call req res -> Call req res
-withTracker : String -> Call req res -> Call req res
-viaBinding : Int -> Call req res -> Maybe (Call req res)
+withHeaders : List ( String, String ) -> Call codec req res -> Call codec req res
+withTimeout : Float -> Call codec req res -> Call codec req res
+withRetry : Retry -> Call codec req res -> Call codec req res
+withoutRetry : Call codec req res -> Call codec req res
+withTracker : String -> Call codec req res -> Call codec req res
+viaBinding : Int -> Call codec req res -> Maybe (Call codec req res)
 ```
 
-`Rpc.Call` adjusts a call before it is sent: headers after the config's,
-a timeout in milliseconds in place of the config's, a retry policy in
-place of the config's (`withRetry`) or none (`withoutRetry`), a tracker
+`Rpc.Call` adjusts a call before it is sent: headers after the client's,
+a timeout in milliseconds in place of the client's, a retry policy in
+place of the client's (`withRetry`) or none (`withoutRetry`), a tracker
 for cancelling, and, for transcoding, another of the rule's bindings (`0` is
 the rule's own, `1` and up its `additional_bindings`).
 
@@ -413,7 +427,7 @@ perCall toMsg =
         |> Rpc.Call.withTimeout 10000
         |> Rpc.Call.withHeaders [ ( "X-Request-Id", "req-7" ) ]
         |> Rpc.Call.withTracker "note-42"
-        |> Rpc.send (Rpc.config "https://api.example.com") toMsg
+        |> Rpc.send (Rpc.client Rpc.Protocol.connect "https://api.example.com") toMsg
 
 
 withdraw : Cmd msg
@@ -430,8 +444,8 @@ on the call: name it, `Notes.V1.NotesService.descriptorGetNote`.
 ## Sending
 
 ```elm src/Rpc.elm excerpt
-task : Config -> Call req res -> Task Error res
-send : Config -> (Result Error res -> msg) -> Call req res -> Cmd msg
+task : Client codec -> Call codec req res -> Task Error res
+send : Client codec -> (Result Error res -> msg) -> Call codec req res -> Cmd msg
 cancel : String -> Cmd msg
 ```
 
@@ -449,7 +463,7 @@ call where it cancels, and ignores a result that arrives after: an
 answer already queued when the cancel ran is still delivered.
 
 Only `Rpc.send` without a retry policy in effect puts the tracker on its
-request; under a config with a policy, a call the user may cancel is
+request; under a client with a policy, a call the user may cancel is
 sent with `Rpc.Call.withoutRetry`. A call sent with a retry policy, or
 with `Rpc.task`, `Rpc.taskTraced` or `Rpc.sendTraced`, cannot be
 cancelled this way.
@@ -476,7 +490,7 @@ the bytes could stop sooner, and this one does not.
 
 ## Errors
 
-A failed call gives `Rpc.Error`, one type for both transports, defined
+A failed call gives `Rpc.Error`, one type for every protocol, defined
 in `Rpc.Error` with its readers:
 
 ```elm src/Rpc/Error.elm excerpt
@@ -505,9 +519,7 @@ type Error
   `InvalidPathValue`, a transcoded call's path value its template
   cannot match (`InvalidArgument`, never sent), a request or
   answer over a size limit (`RequestTooLarge`, `ResponseTooLarge`,
-  both `ResourceExhausted`), or a method without the codec the
-  transport sends (`MissingCodec`, `Internal`, never sent; see
-  [Choosing the codec](#choosing-the-codec)).
+  both `ResourceExhausted`).
 
 The first three keep the answer itself, an `Rpc.Response` with its URL,
 status, headers and body, for errors in a shape the runtime does not
@@ -560,7 +572,7 @@ does not serve.
 ### Where a status comes from
 
 `StatusError.source`, an `Rpc.Error.Source`, says where the status was
-read; the runtime tries each in this order, whatever the transport:
+read; the runtime tries each in this order, whatever the protocol:
 
 - `ConnectBody`: a Connect error body, `{"code": "not_found", …}`. A
   string `code` that is not one of Connect's names still makes the body
@@ -577,12 +589,12 @@ An answer with none of these is an `HttpStatus` error.
 ## Tracing
 
 ```elm src/Rpc.elm excerpt
-taskTraced : Config -> Call req res -> Task Never ( Trace, Result Error res )
-sendTraced : Config -> (Trace -> Result Error res -> msg) -> Call req res -> Cmd msg
+taskTraced : Client codec -> Call codec req res -> Task Never ( Trace, Result Error res )
+sendTraced : Client codec -> (Trace -> Result Error res -> msg) -> Call codec req res -> Cmd msg
 ```
 
 A traced send gives an `Rpc.Trace` beside the result: the call's service
-and method, the transport and binding, the request sent, the last
+and method, the protocol, codec and binding, the request sent, the last
 answer's HTTP status, headers and trailers, the error's code, the
 duration in milliseconds and the number of attempts.
 
@@ -591,10 +603,10 @@ type Msg
     = GotNote Rpc.Trace.Trace (Result Rpc.Error Notes.V1.Note)
 
 
-traced : Rpc.Config -> Cmd Msg
-traced config =
+traced : Rpc.Client Rpc.Json -> Cmd Msg
+traced client =
     Notes.getNote { name = "notes/42" }
-        |> Rpc.sendTraced config GotNote
+        |> Rpc.sendTraced client GotNote
 
 
 log : Rpc.Trace.Trace -> String
@@ -604,10 +616,11 @@ log trace =
 ```
 
 `Rpc.Trace.toJson` writes every field under keys that stay: `service`,
-`method`, `procedure`, `transport`, `binding`, `request` (`method`, `url`, `headers`,
-`body`, `timeout`, `withCredentials`), `httpStatus`, `headers`,
+`method`, `procedure`, `protocol`, `codec`, `binding`, `request` (`method`, `url`, `headers`,
+`body`, `timeout`, `withCredentials`, and `bodyBase64` for a binary
+body, which `body` then gives as `null`), `httpStatus`, `headers`,
 `trailers`, `code` (`"ok"` on success), `duration` and `attempts`. The
-request holds what was sent, the config's headers included, so a bearer
+request holds what was sent, the client's headers included, so a bearer
 token in them is in the JSON too. `Rpc.Trace.toString` is one line that
 leaves the request out:
 
@@ -618,10 +631,10 @@ notes.v1.NotesService/GetNote over connect: ok, HTTP 200, 1 attempt, 12 ms
 ## The pure halves
 
 ```elm src/Rpc.elm excerpt
-request : Config -> Call req res -> Request
-response : Config -> Call req res -> Http.Response String -> Result Error res
-responseBytes : Config -> Call req res -> Http.Response Bytes -> Result Error res
-taskFromRequest : Config -> Call req res -> Request -> Task Error res
+request : Client codec -> Call codec req res -> Request
+response : Client Json -> Call Json req res -> Http.Response String -> Result Error res
+responseBytes : Client Proto -> Call Proto req res -> Http.Response Bytes -> Result Error res
+taskFromRequest : Client codec -> Call codec req res -> Request -> Task Error res
 ```
 
 `Rpc.task` and `Rpc.send` are `Rpc.request` and `Rpc.response` over
@@ -632,20 +645,20 @@ as the call's answer. Both are pure, so a test can check what a call
 sends and how it reads an answer without a server
 ([quickstart.md](quickstart.md#7-test-without-a-server)), and
 `Rpc.taskFromRequest` sends a request in place of the call's own and
-reads the answer as the call's, with the config's retry policy.
+reads the answer as the call's, with the client's retry policy.
 
 Under the proto codec a successful answer is binary, which text cannot
 hold (the browser has replaced what is not UTF-8 by then), so a call
-sent by hand reads its answer as bytes, with `Http.expectBytesResponse`
-and `Rpc.responseBytes`; read as text, it is a `BadResponse` naming
-`Rpc.responseBytes`. Under JSON both work, and `Rpc.response` is the one
-to pair with `Http.expectStringResponse`: the browser decodes the text
-natively, and a program that reads nothing as bytes carries no
-elm/bytes. `Rpc.Transport.codec` says which a config needs. A request's
+sent by hand over a `Client Rpc.Proto` reads its answer as bytes, with
+`Http.expectBytesResponse` and `Rpc.responseBytes`. Over a
+`Client Rpc.Json`, `Rpc.response` reads it as text, paired with
+`Http.expectStringResponse`: the browser decodes the text natively, and
+a program that reads nothing as bytes carries no elm/bytes. The client's
+type says which one applies. A request's
 body is text (`Rpc.Body.toText`) or bytes (`Rpc.Body.toBytes`), sent as
 the type `Rpc.Body.contentType` gives.
 
-A request's `headers` are those the runtime and the config add, not all
+A request's `headers` are those the runtime and the client add, not all
 that go out: sending a request with a body adds its `Content-Type`
 (`application/json`, or `application/proto` under the proto codec), which
 elm/http sets from the body, and
@@ -657,33 +670,27 @@ reads answers through the halves.
 
 ## Wrapping the sending once
 
-The config holds no functions (no interceptors, no token provider), so
-an application sends every call through one function of its own that
-builds the config from its state:
+A client has no interceptors and no token provider, so an application
+sends every call through one function of its own that builds the client
+from its state:
 
 ```elm examples/notes/elm/src/Api.elm#wrapper
-rpc : Shared -> Rpc.Call req res -> Task Rpc.Error res
+rpc : Shared -> Rpc.Call Rpc.Json req res -> Task Rpc.Error res
 rpc shared call =
-    Rpc.task (config shared) call
+    Rpc.task (client shared) call
 
 
-config : Shared -> Rpc.Config
-config shared =
-    let
-        base =
-            Rpc.config shared.apiUrl
-    in
-    { base
-        | transport = shared.transport
-        , headers = [ ( "Authorization", "Bearer " ++ shared.token ) ]
-    }
+client : Shared -> Rpc.Client Rpc.Json
+client shared =
+    Rpc.client shared.protocol shared.apiUrl
+        |> Rpc.Client.withHeaders [ ( "Authorization", "Bearer " ++ shared.token ) ]
 ```
 
 Since a call is a value, a wrapper can send it again. Refreshing an
 expired token and retrying once:
 
 ```elm examples/notes/elm/src/Snippets/Refresh.elm#refresh
-withRefresh : Task Rpc.Error Shared -> Shared -> Rpc.Call req res -> Task Rpc.Error res
+withRefresh : Task Rpc.Error Shared -> Shared -> Rpc.Call Rpc.Json req res -> Task Rpc.Error res
 withRefresh refresh shared call =
     rpc shared call
         |> Task.onError
@@ -698,23 +705,23 @@ withRefresh refresh shared call =
 
 Several calls failing at once would each refresh; an application that
 cares keeps the refresh single-flight in its update. For retrying on
-codes such as `Unavailable`, the config's `retry` policy needs no
-wrapper.
+codes such as `Unavailable`, the client's retry policy
+(`Rpc.Client.withRetry`) needs no wrapper.
 
 ## Rewriting a request
 
-Anything the config cannot say is a function between `Rpc.request` and
+Anything a client cannot say is a function between `Rpc.request` and
 `Rpc.taskFromRequest`:
 
 ```elm examples/notes/elm/src/Snippets/Signed.elm#signed
-signed : Rpc.Config -> Rpc.Call req res -> Task Rpc.Error res
-signed cfg call =
+signed : Rpc.Client codec -> Rpc.Call codec req res -> Task Rpc.Error res
+signed client call =
     let
         request =
-            Rpc.request cfg call
+            Rpc.request client call
     in
     { request | headers = ( "X-Signature", sign request ) :: request.headers }
-        |> Rpc.taskFromRequest cfg call
+        |> Rpc.taskFromRequest client call
 ```
 
 A request's body is sent as its content type, which elm/http adds:

@@ -355,10 +355,9 @@ live-conformance: live-conformance-gen live-build
 # and the corpus covers the generator), and the runner built against them
 # from conformance/live/both; then the example server called over
 # application/proto (cases/proto.json), the JSON cases again on that build,
-# a method with one codec refused under the other (cases/proto-missing.json),
 # and the Connect conformance suite with the proto codec
 # (conformance-proto.yaml), through the pure halves and with Rpc.sendTraced.
-# Transcoding stays JSON whatever the codec, so its legs above cover it.
+# Transcoding speaks JSON alone, so its legs above cover it.
 live-proto: live-gen live-conformance-gen live-build
     #!/usr/bin/env bash
     set -euo pipefail
@@ -372,7 +371,7 @@ live-proto: live-gen live-conformance-gen live-build
     (cd conformance/live/both && (elm make > /dev/null 2>&1 || true) && elm make ../src/Live.elm --output=../build/elm-both.js)
     server="$bin/notes-server"
     both=conformance/live/build/elm-both.js
-    node conformance/live/run.mjs --serve "$server" --elm "$both" conformance/live/cases/proto.json conformance/live/cases/proto-missing.json
+    node conformance/live/run.mjs --serve "$server" --elm "$both" conformance/live/cases/proto.json
     node conformance/live/run.mjs --serve "$server" --elm "$both" conformance/live/cases/notes.json
     node conformance/live/run.mjs --serve "$server" --elm "$both" conformance/live/cases/transcode.json
     cd conformance/live

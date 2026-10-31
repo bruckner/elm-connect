@@ -37,16 +37,16 @@ Transcode:
   - binding 0: `GET /v1/{name=messages/*}`;
   - binding 1: `GET /v1/messages/{id}`.
 
-Described by [`descriptorGetMessage`](#descriptorGetMessage).
+Codecs: JSON. Described by [`descriptorGetMessage`](#descriptorGetMessage).
 
 -}
-getMessage : Msgs.V1.MessageRequest -> Rpc.Call Msgs.V1.MessageRequest Msgs.V1.Message
+getMessage : Msgs.V1.MessageRequest -> Rpc.Call Rpc.Json Msgs.V1.MessageRequest Msgs.V1.Message
 getMessage =
     Rpc.call
-        (Proto.Method.method Msgs.V1.encodeMessageRequest
-            Msgs.V1.decodeMessage
-            "msgs.v1.Messages"
+        (Proto.Method.json "msgs.v1.Messages"
             "GetMessage"
+            Msgs.V1.encodeMessageRequest
+            Msgs.V1.decodeMessage
             |> Proto.Method.withRoutes [ routeGetMessage0, routeGetMessage1 ]
         )
 
@@ -57,16 +57,16 @@ getMessage =
 Connect: `POST /msgs.v1.Messages/GetSub`.
 Transcode: `GET /v1/messages/{id}/{sub}`.
 
-Described by [`descriptorGetSub`](#descriptorGetSub).
+Codecs: JSON. Described by [`descriptorGetSub`](#descriptorGetSub).
 
 -}
-getSub : Msgs.V1.MessageRequest -> Rpc.Call Msgs.V1.MessageRequest Msgs.V1.Message
+getSub : Msgs.V1.MessageRequest -> Rpc.Call Rpc.Json Msgs.V1.MessageRequest Msgs.V1.Message
 getSub =
     Rpc.call
-        (Proto.Method.method Msgs.V1.encodeMessageRequest
-            Msgs.V1.decodeMessage
-            "msgs.v1.Messages"
+        (Proto.Method.json "msgs.v1.Messages"
             "GetSub"
+            Msgs.V1.encodeMessageRequest
+            Msgs.V1.decodeMessage
             |> Proto.Method.withRoutes [ routeGetSub0 ]
         )
 
@@ -77,16 +77,16 @@ getSub =
 Connect: `POST /msgs.v1.Messages/UpdateMessage`.
 Transcode: `PATCH /v1/{name=messages/*}` body `*`.
 
-Described by [`descriptorUpdateMessage`](#descriptorUpdateMessage).
+Codecs: JSON. Described by [`descriptorUpdateMessage`](#descriptorUpdateMessage).
 
 -}
-updateMessage : Msgs.V1.MessageRequest -> Rpc.Call Msgs.V1.MessageRequest Msgs.V1.Message
+updateMessage : Msgs.V1.MessageRequest -> Rpc.Call Rpc.Json Msgs.V1.MessageRequest Msgs.V1.Message
 updateMessage =
     Rpc.call
-        (Proto.Method.method Msgs.V1.encodeMessageRequest
-            Msgs.V1.decodeMessage
-            "msgs.v1.Messages"
+        (Proto.Method.json "msgs.v1.Messages"
             "UpdateMessage"
+            Msgs.V1.encodeMessageRequest
+            Msgs.V1.decodeMessage
             |> Proto.Method.withRoutes [ routeUpdateMessage0 ]
         )
 
@@ -95,16 +95,16 @@ updateMessage =
 Connect: `POST /msgs.v1.Messages/ListMessages`.
 Transcode: `GET /v1/messages`.
 
-Described by [`descriptorListMessages`](#descriptorListMessages).
+Codecs: JSON. Described by [`descriptorListMessages`](#descriptorListMessages).
 
 -}
-listMessages : Msgs.V1.MessageRequest -> Rpc.Call Msgs.V1.MessageRequest Msgs.V1.Message
+listMessages : Msgs.V1.MessageRequest -> Rpc.Call Rpc.Json Msgs.V1.MessageRequest Msgs.V1.Message
 listMessages =
     Rpc.call
-        (Proto.Method.method Msgs.V1.encodeMessageRequest
-            Msgs.V1.decodeMessage
-            "msgs.v1.Messages"
+        (Proto.Method.json "msgs.v1.Messages"
             "ListMessages"
+            Msgs.V1.encodeMessageRequest
+            Msgs.V1.decodeMessage
             |> Proto.Method.withRoutes [ routeListMessages0 ]
         )
 
@@ -115,16 +115,16 @@ listMessages =
 Connect: `POST /msgs.v1.Messages/CheckMessage`.
 Transcode: `HEAD /v1/{name=messages/*}:check`.
 
-Described by [`descriptorCheckMessage`](#descriptorCheckMessage).
+Codecs: JSON. Described by [`descriptorCheckMessage`](#descriptorCheckMessage).
 
 -}
-checkMessage : Msgs.V1.MessageRequest -> Rpc.Call Msgs.V1.MessageRequest Msgs.V1.Message
+checkMessage : Msgs.V1.MessageRequest -> Rpc.Call Rpc.Json Msgs.V1.MessageRequest Msgs.V1.Message
 checkMessage =
     Rpc.call
-        (Proto.Method.method Msgs.V1.encodeMessageRequest
-            Msgs.V1.decodeMessage
-            "msgs.v1.Messages"
+        (Proto.Method.json "msgs.v1.Messages"
             "CheckMessage"
+            Msgs.V1.encodeMessageRequest
+            Msgs.V1.decodeMessage
             |> Proto.Method.withRoutes [ routeCheckMessage0 ]
         )
 
@@ -133,16 +133,16 @@ checkMessage =
 Connect: `POST /msgs.v1.Messages/CheckById`.
 Transcode: `HEAD /v1/messages/{id}:check`.
 
-Described by [`descriptorCheckById`](#descriptorCheckById).
+Codecs: JSON. Described by [`descriptorCheckById`](#descriptorCheckById).
 
 -}
-checkById : Msgs.V1.MessageRequest -> Rpc.Call Msgs.V1.MessageRequest Msgs.V1.Message
+checkById : Msgs.V1.MessageRequest -> Rpc.Call Rpc.Json Msgs.V1.MessageRequest Msgs.V1.Message
 checkById =
     Rpc.call
-        (Proto.Method.method Msgs.V1.encodeMessageRequest
-            Msgs.V1.decodeMessage
-            "msgs.v1.Messages"
+        (Proto.Method.json "msgs.v1.Messages"
             "CheckById"
+            Msgs.V1.encodeMessageRequest
+            Msgs.V1.decodeMessage
             |> Proto.Method.withRoutes [ routeCheckById0 ]
         )
 
@@ -153,16 +153,16 @@ checkById =
 Connect: `POST /msgs.v1.Messages/Touch`.
 Transcode: `POST /msgs.v1.Messages/ListMessages` body `*`.
 
-Described by [`descriptorTouch`](#descriptorTouch).
+Codecs: JSON. Described by [`descriptorTouch`](#descriptorTouch).
 
 -}
-touch : Msgs.V1.MessageRequest -> Rpc.Call Msgs.V1.MessageRequest Msgs.V1.Message
+touch : Msgs.V1.MessageRequest -> Rpc.Call Rpc.Json Msgs.V1.MessageRequest Msgs.V1.Message
 touch =
     Rpc.call
-        (Proto.Method.method Msgs.V1.encodeMessageRequest
-            Msgs.V1.decodeMessage
-            "msgs.v1.Messages"
+        (Proto.Method.json "msgs.v1.Messages"
             "Touch"
+            Msgs.V1.encodeMessageRequest
+            Msgs.V1.decodeMessage
             |> Proto.Method.withRoutes [ routeTouch0 ]
         )
 
@@ -176,15 +176,15 @@ touch =
 routeGetMessage0 : Msgs.V1.MessageRequest -> Proto.Route.Route
 routeGetMessage0 request_ =
     let
-        value0_ =
+        name_ =
             request_.name
     in
     { method = "GET"
-    , path = "v1/" ++ Proto.Route.segments value0_
+    , path = "v1/" ++ Proto.Route.segments name_
     , query = Proto.Query.except [ "name" ] (Msgs.V1.queryOfMessageRequest request_)
     , body = Nothing
     , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "name" [ "messages", "*" ] value0_
+    , invalid = Proto.Route.checkSegments "name" [ "messages", "*" ] name_
     }
 
 
@@ -193,15 +193,15 @@ routeGetMessage0 request_ =
 routeGetMessage1 : Msgs.V1.MessageRequest -> Proto.Route.Route
 routeGetMessage1 request_ =
     let
-        value0_ =
+        id_ =
             request_.id
     in
     { method = "GET"
-    , path = "v1/messages/" ++ Proto.Route.segment value0_
+    , path = "v1/messages/" ++ Proto.Route.segment id_
     , query = Proto.Query.except [ "id" ] (Msgs.V1.queryOfMessageRequest request_)
     , body = Nothing
     , responseBody = Nothing
-    , invalid = Proto.Route.checkSegment "id" "*" value0_
+    , invalid = Proto.Route.checkSegment "id" "*" id_
     }
 
 
@@ -210,21 +210,21 @@ routeGetMessage1 request_ =
 routeGetSub0 : Msgs.V1.MessageRequest -> Proto.Route.Route
 routeGetSub0 request_ =
     let
-        value0_ =
+        id_ =
             request_.id
 
-        value1_ =
+        sub_ =
             request_.sub
     in
     { method = "GET"
-    , path = "v1/messages/" ++ Proto.Route.segment value0_ ++ "/" ++ Proto.Route.segment value1_
+    , path = "v1/messages/" ++ Proto.Route.segment id_ ++ "/" ++ Proto.Route.segment sub_
     , query = Proto.Query.except [ "id", "sub" ] (Msgs.V1.queryOfMessageRequest request_)
     , body = Nothing
     , responseBody = Nothing
     , invalid =
         Proto.Route.firstInvalid
-            [ Proto.Route.checkSegment "id" "*" value0_
-            , Proto.Route.checkSegment "sub" "*" value1_
+            [ Proto.Route.checkSegment "id" "*" id_
+            , Proto.Route.checkSegment "sub" "*" sub_
             ]
     }
 
@@ -234,15 +234,15 @@ routeGetSub0 request_ =
 routeUpdateMessage0 : Msgs.V1.MessageRequest -> Proto.Route.Route
 routeUpdateMessage0 request_ =
     let
-        value0_ =
+        name_ =
             request_.name
     in
     { method = "PATCH"
-    , path = "v1/" ++ Proto.Route.segments value0_
+    , path = "v1/" ++ Proto.Route.segments name_
     , query = []
     , body = Just (Proto.Route.without [ [ "name" ] ] (Msgs.V1.encodeMessageRequest request_))
     , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "name" [ "messages", "*" ] value0_
+    , invalid = Proto.Route.checkSegments "name" [ "messages", "*" ] name_
     }
 
 
@@ -264,15 +264,15 @@ routeListMessages0 request_ =
 routeCheckMessage0 : Msgs.V1.MessageRequest -> Proto.Route.Route
 routeCheckMessage0 request_ =
     let
-        value0_ =
+        name_ =
             request_.name
     in
     { method = "HEAD"
-    , path = "v1/" ++ Proto.Route.segments value0_ ++ ":check"
+    , path = "v1/" ++ Proto.Route.segments name_ ++ ":check"
     , query = Proto.Query.except [ "name" ] (Msgs.V1.queryOfMessageRequest request_)
     , body = Nothing
     , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "name" [ "messages", "*" ] value0_
+    , invalid = Proto.Route.checkSegments "name" [ "messages", "*" ] name_
     }
 
 
@@ -281,15 +281,15 @@ routeCheckMessage0 request_ =
 routeCheckById0 : Msgs.V1.MessageRequest -> Proto.Route.Route
 routeCheckById0 request_ =
     let
-        value0_ =
+        id_ =
             request_.id
     in
     { method = "HEAD"
-    , path = "v1/messages/" ++ Proto.Route.segment value0_ ++ ":check"
+    , path = "v1/messages/" ++ Proto.Route.segment id_ ++ ":check"
     , query = Proto.Query.except [ "id" ] (Msgs.V1.queryOfMessageRequest request_)
     , body = Nothing
     , responseBody = Nothing
-    , invalid = Proto.Route.checkSegment "id" "*" value0_
+    , invalid = Proto.Route.checkSegment "id" "*" id_
     }
 
 

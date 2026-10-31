@@ -1,7 +1,7 @@
-module Snippets.Sending exposing (Msg(..), config, milk, viaConnect, viaTranscoding)
+module Snippets.Sending exposing (Msg(..), client, milk, viaConnect, viaTranscoding)
 
 {-| The README's quick start and docs/quickstart.md's first call: a call sent
-over each transport, and a message built from its default.
+over each protocol, and a message built from its default.
 -}
 
 -- region sending
@@ -9,30 +9,30 @@ over each transport, and a message built from its default.
 import Notes.V1
 import Notes.V1.NotesService as Notes
 import Rpc
-import Rpc.Transport
+import Rpc.Protocol
 
 
 type Msg
     = GotNote (Result Rpc.Error Notes.V1.Note)
 
 
-config : Rpc.Config
-config =
-    Rpc.config "https://api.example.com"
+client : Rpc.Client Rpc.Json
+client =
+    Rpc.client Rpc.Protocol.connect "https://api.example.com"
 
 
 viaConnect : Cmd Msg
 viaConnect =
     -- POST https://api.example.com/notes.v1.NotesService/GetNote
     Notes.getNote { name = "notes/42" }
-        |> Rpc.send config GotNote
+        |> Rpc.send client GotNote
 
 
 viaTranscoding : Cmd Msg
 viaTranscoding =
     -- GET https://api.example.com/v1/notes/42
     Notes.getNote { name = "notes/42" }
-        |> Rpc.send { config | transport = Rpc.Transport.transcode } GotNote
+        |> Rpc.send (Rpc.client Rpc.Protocol.transcode "https://api.example.com") GotNote
 
 
 

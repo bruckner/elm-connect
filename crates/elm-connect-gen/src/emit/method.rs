@@ -69,16 +69,19 @@ impl Emitter {
         ))
     }
 
-    /// `getNote : GetNoteRequest -> Rpc.Call GetNoteRequest Note`:
-    /// `Rpc.call` of the method's `Proto.Method.Method`, built by
-    /// `Proto.Method.method` from the encoder of its request, the decoder
-    /// of its response, its service's full name and its name, then
-    /// `withIdempotency` when the proto declares one, `withRoutes` with its
-    /// route functions ([`Self::method_routes`]) or, when one of its
+    /// `getNote : GetNoteRequest -> Rpc.Call Rpc.Json GetNoteRequest
+    /// Note`: `Rpc.call` of the method's `Proto.Method.Method`, built from
+    /// its service's full name, its name and its codecs by
+    /// `Proto.Method.json` (the request's JSON encoder, the response's JSON
+    /// decoder), `Proto.Method.proto` (their binary codecs) or
+    /// `Proto.Method.both` (all four) as the `codec` option says, then
+    /// `withIdempotency` when the proto declares one, and `withRoutes` with
+    /// its route functions ([`Self::method_routes`]) or, when one of its
     /// bindings cannot be typed, `withBindings` with its descriptor's
-    /// bindings, and `withBinary` under `codec=both`. Under `codec=binary`
-    /// it is built by `Proto.Method.methodBinary` and has no routes: its
-    /// calls cannot be transcoded, which takes JSON.
+    /// bindings. Under `codec=proto` it has no routes: its calls cannot be
+    /// transcoded, which takes JSON. The call's codec is `Rpc.Json` under
+    /// `codec=json`, `Rpc.Proto` under `codec=proto`, and a type variable
+    /// under `codec=both`, so that any client sends it.
     ///
     /// The value binds no locals and every library name in it is
     /// qualified, so it cannot clash with the package module's names or
@@ -89,29 +92,21 @@ impl Emitter {
     pub(super) fn method(&mut self, service: &str, method: &Method, routes: &Routes) -> Decl {
         let request = self.method_type(&method.input);
         let response = self.method_type(&method.output);
-        let names = [string(service), string(method.proto_name.clone())];
-        let (built, binary) = match self.codec {
-            Codec::Json | Codec::Both => {
-                let encode_request = self.request_encoder(&method.input);
-                let response_decoder = self.response_decoder(&method.output);
-                let [service, name] = names;
-                let built = stacked_apply(
-                    self.reference((PROTO_METHOD, "method")),
-                    [encode_request, response_decoder, service, name],
-                );
-                (built, self.codec == Codec::Both)
-            }
-            Codec::Binary => {
-                let encode = self.request_encoder_bytes(&method.input);
-                let decode = self.response_decoder_bytes(&method.output);
-                let [service, name] = names;
-                let built = stacked_apply(
-                    self.reference((PROTO_METHOD, "methodBinary")),
-                    [encode, decode, service, name],
-                );
-                (built, false)
-            }
+        let mut codecs = vec![string(service), string(method.proto_name.clone())];
+        if self.codec.json() {
+            codecs.push(self.request_encoder(&method.input));
+            codecs.push(self.response_decoder(&method.output));
+        }
+        if self.codec.binary() {
+            codecs.push(self.request_encoder_bytes(&method.input));
+            codecs.push(self.response_decoder_bytes(&method.output));
+        }
+        let (builder, tag) = match self.codec {
+            Codec::Json => ("json", Some("Json")),
+            Codec::Proto => ("proto", Some("Proto")),
+            Codec::Both => ("both", None),
         };
+        let built = stacked_apply(self.reference((PROTO_METHOD, builder)), codecs);
         let mut steps = Vec::new();
         if method.idempotency != Idempotency::Unknown {
             let level = self.idempotency(method);
@@ -142,16 +137,14 @@ impl Emitter {
                 ));
             }
         }
-        if binary {
-            let encode = self.request_encoder_bytes(&method.input);
-            let decode = self.response_decoder_bytes(&method.output);
-            let with = self.reference((PROTO_METHOD, "withBinary"));
-            steps.push(stacked_apply(with, [encode, decode]));
-        }
         let body = apply(self.reference((RPC, "call")), [pipeline(built, steps)]);
-        let call = self.library_type(RPC, "Call", [request.clone(), response]);
+        let codec = match tag {
+            Some(tag) => self.library_type(RPC, tag, []),
+            None => Type::Var("codec".to_owned()),
+        };
+        let call = self.library_type(RPC, "Call", [codec, request.clone(), response]);
         Decl::Value {
-            doc: Some(docs::method(service, method)),
+            doc: Some(docs::method(service, method, self.codec)),
             name: method.elm_name.clone(),
             annotation: ty_fn([request], call),
             params: Vec::new(),
@@ -163,7 +156,7 @@ impl Emitter {
     /// Proto.Route.Route`, one per binding of its HTTP rule, and how its
     /// call takes its routes: from them, from its bindings as data when one
     /// of them cannot be typed ([`super::route_fn`]), or not at all, for a
-    /// method without a rule and under `codec=binary`.
+    /// method without a rule and under `codec=proto`.
     ///
     /// Each binding is typed on a copy of the emitter first, so that a
     /// method that falls back imports nothing its typed routes would have.
@@ -173,7 +166,7 @@ impl Emitter {
         queries: &Queries,
         method: &Method,
     ) -> (Vec<Decl>, Routes) {
-        if method.routes.is_empty() || self.codec == Codec::Binary {
+        if method.routes.is_empty() || self.codec == Codec::Proto {
             return (Vec::new(), Routes::None);
         }
         let mut scratch = self.clone();
@@ -333,7 +326,7 @@ impl Emitter {
 
 /// How a method's call takes its routes for transcoding.
 pub(super) enum Routes {
-    /// None: a method without an HTTP rule, or under `codec=binary`.
+    /// None: a method without an HTTP rule, or under `codec=proto`.
     None,
     /// Its route functions, as many as its bindings.
     Functions(usize),

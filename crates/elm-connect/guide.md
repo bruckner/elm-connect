@@ -81,7 +81,7 @@ generator, or use the runtime the generated code names
 
 `Rpc.request` gives the HTTP request a call stands for, without sending
 it, so `elm repl` in the application's directory shows the method, URL,
-headers and body of any call under either transport
+headers and body of any call under either protocol
 ([quickstart.md](quickstart.md#6-try-it-in-elm-repl)). `Rpc.response`
 reads a canned answer, so a test can check a call end to end without a
 server ([quickstart.md](quickstart.md#7-test-without-a-server)).

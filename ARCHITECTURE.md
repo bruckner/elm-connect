@@ -95,24 +95,28 @@ point of `elm-format`: the corpus's formatted check and
   names (§8.2).
 - `Rpc.*` is the calling: `Rpc` builds requests, sends them and reads
   answers, beside a module per type it takes or gives (`Rpc.Call`,
-  `Rpc.Transport`, `Rpc.Retry`, `Rpc.Trace`, `Rpc.Body`, `Rpc.Request`,
+  `Rpc.Client`, `Rpc.Protocol`, `Rpc.Retry`, `Rpc.Trace`, `Rpc.Body`, `Rpc.Request`,
   `Rpc.Response`, `Rpc.Error`, `Rpc.Code`).
 
 Imports point one way: no `Proto` module imports an `Rpc` one, and `Rpc`
-reads only three internal modules of the `Proto` side,
+reads only four internal modules of the `Proto` side,
 `Proto.Internal.Any`, `Proto.Internal.Percent`, the percent-encoding
-both sides share, and `Proto.Internal.Method`, whose routes and bytes
-path the `Proto.Method` modifiers build into a method (§3.1, rule 7;
+both sides share, `Proto.Internal.Codec`, the codec tags `Rpc.Json` and
+`Rpc.Proto` alias, and `Proto.Internal.Method`, whose codec halves and
+routes the `Proto.Method` builders put into a method (§3.1, rule 7;
 §5.3).
 
 The `Internal` modules (`src/Rpc/Internal/`, `src/Proto/Internal/`) are
 not exposed. They exist for two reasons (§3.1, rule 4): an opaque type
 that two public modules must build or match keeps its constructor in one
-(`Rpc.Internal.Call`, built by `Rpc` and read by `Rpc.Call`), and
+(`Rpc.Internal.Call`, built by `Rpc` and read by `Rpc.Call`;
+`Rpc.Internal.Protocol` and `Rpc.Internal.Client`, built by
+`Rpc.Protocol` and `Rpc.Client` and read by `Rpc`), and
 implementation stays out of the public modules so that they read as API:
-`Rpc.Internal.Route` maps a call onto its binding's route,
+`Rpc.Internal.Send` plans a call over its client's protocol, its
+binding's route included,
 `Proto.Internal.Interpret` reads a binding written as data, `Wire` builds the
-request each transport sends, `Answer` reads an answer into a result or
+request each protocol sends, `Answer` reads an answer into a result or
 an error, `Retry` runs the attempts, `Http` adapts elm/http (§5.2). They
 are one module per shared type, not one `Rpc.Internal`, because a single
 module would form an import cycle.

@@ -1,22 +1,23 @@
-module Api exposing (Shared, config, rpc)
+module Api exposing (Shared, client, rpc)
 
 {-| How this application sends a call: every call goes through `rpc`, which
-builds the config from the application's state. docs/calling.md's "Wrapping
+builds the client from the application's state. docs/calling.md's "Wrapping
 the sending once" and this example's walkthrough quote it.
 -}
 
 import Rpc
-import Rpc.Transport
+import Rpc.Client
+import Rpc.Protocol
 import Task exposing (Task)
 
 
-{-| What the config is built from: where the API is, the token every call
-carries, and the transport the page's toggle chose.
+{-| What the client is built from: where the API is, the token every call
+carries, and the protocol the page's toggle chose.
 -}
 type alias Shared =
     { apiUrl : String
     , token : String
-    , transport : Rpc.Transport.Transport
+    , protocol : Rpc.Protocol.Protocol Rpc.Json
     }
 
 
@@ -24,21 +25,15 @@ type alias Shared =
 -- region wrapper
 
 
-rpc : Shared -> Rpc.Call req res -> Task Rpc.Error res
+rpc : Shared -> Rpc.Call Rpc.Json req res -> Task Rpc.Error res
 rpc shared call =
-    Rpc.task (config shared) call
+    Rpc.task (client shared) call
 
 
-config : Shared -> Rpc.Config
-config shared =
-    let
-        base =
-            Rpc.config shared.apiUrl
-    in
-    { base
-        | transport = shared.transport
-        , headers = [ ( "Authorization", "Bearer " ++ shared.token ) ]
-    }
+client : Shared -> Rpc.Client Rpc.Json
+client shared =
+    Rpc.client shared.protocol shared.apiUrl
+        |> Rpc.Client.withHeaders [ ( "Authorization", "Bearer " ++ shared.token ) ]
 
 
 

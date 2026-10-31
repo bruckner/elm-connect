@@ -41,7 +41,7 @@ leaves them out with a warning rather than an error (server streaming
 is on the [roadmap](roadmap.md)). `Say` becomes:
 
 ```elm examples/eliza/generated/Connectrpc/Eliza/V1/ElizaService.elm excerpt
-say : Connectrpc.Eliza.V1.SayRequest -> Rpc.Call Connectrpc.Eliza.V1.SayRequest Connectrpc.Eliza.V1.SayResponse
+say : Connectrpc.Eliza.V1.SayRequest -> Rpc.Call Rpc.Json Connectrpc.Eliza.V1.SayRequest Connectrpc.Eliza.V1.SayResponse
 ```
 
 ## 3. The page
@@ -62,6 +62,7 @@ import Html.Attributes as Attributes
 import Html.Events as Events
 import Rpc
 import Rpc.Error
+import Rpc.Protocol
 
 
 type alias Model =
@@ -95,7 +96,7 @@ update msg model =
         Asked ->
             ( model
             , ElizaService.say { sentence = model.sentence }
-                |> Rpc.send (Rpc.config "https://demo.connectrpc.com") GotReply
+                |> Rpc.send (Rpc.client Rpc.Protocol.connect "https://demo.connectrpc.com") GotReply
             )
 
         GotReply (Ok response) ->
@@ -128,7 +129,7 @@ testing without a server.
 
 ## Over transcoding, from a file server
 
-Over `Rpc.Transport.transcode`, a method with a `get` rule is a plain
+Over `Rpc.Protocol.transcode`, a method with a `get` rule is a plain
 `GET` of the rule's path, so a static file server answers it with a JSON
 file there. Eliza has no rules; the quick start's `GetNote`,
 `get: "/v1/{name=notes/*}"`, sends `GET /v1/notes/42`. With a page

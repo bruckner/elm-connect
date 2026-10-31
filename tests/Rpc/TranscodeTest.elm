@@ -14,10 +14,11 @@ import Proto.Method exposing (Idempotency(..), Method)
 import Rpc
 import Rpc.Body
 import Rpc.Call
+import Rpc.Client
 import Rpc.Code exposing (Code(..))
 import Rpc.Error exposing (Error(..), Reason(..), Source(..))
-import Rpc.Internal.Wire
-import Rpc.Transport
+import Rpc.Internal.Send
+import Rpc.Protocol
 import Test exposing (Test, describe, test)
 
 
@@ -82,29 +83,33 @@ var fieldPath =
 {-| A method whose request is its JSON, and whose response is its `title`,
 bound by `bindings`.
 -}
-raw : List Rule -> Method Value String
+raw : List Rule -> Method Rpc.Json Value String
 raw bindings =
-    Proto.Method.method identity
-        (Json.Decode.field "title" Json.Decode.string)
-        "t.v1.T"
+    Proto.Method.json "t.v1.T"
         "M"
+        identity
+        (Json.Decode.field "title" Json.Decode.string)
         |> Proto.Method.withBindings (List.map Proto.Http.binding bindings)
 
 
 {-| A call of the method bound by `r` alone.
 -}
-bound : Rule -> String -> Rpc.Call Value String
+bound : Rule -> String -> Rpc.Call Rpc.Json Value String
 bound r request =
     Rpc.call (raw [ r ]) (json request)
 
 
-config : Rpc.Config
-config =
-    let
-        base =
-            Rpc.config "https://api.example.com"
-    in
-    { base | transport = Rpc.Transport.transcode }
+transcoding : Rpc.Client Rpc.Json
+transcoding =
+    Rpc.client Rpc.Protocol.transcode "https://api.example.com"
+
+
+{-| The first path value of a call that its route's template cannot match,
+over a client.
+-}
+invalidPathValue : Rpc.Client Rpc.Json -> Rpc.Call Rpc.Json Value String -> Maybe { field : String, template : String }
+invalidPathValue client c =
+    (Rpc.Internal.Send.plan client c).invalid
 
 
 json : String -> Value
@@ -115,12 +120,12 @@ json text =
 
 url : Rule -> String -> String
 url r request =
-    (Rpc.request config (bound r request)).url
+    (Rpc.request transcoding (bound r request)).url
 
 
 body : Rule -> String -> Maybe String
 body r request =
-    Rpc.Body.toText (Rpc.request config (bound r request)).body
+    Rpc.Body.toText (Rpc.request transcoding (bound r request)).body
 
 
 suite : Test
@@ -194,7 +199,7 @@ paths =
                     |> Expect.equal "https://api.example.com/v1/x/42/1.5/true:cancel"
         , test "an absent string is empty, and a trailing slash on the base URL is dropped" <|
             \_ ->
-                (Rpc.request { config | baseUrl = "/api/" }
+                (Rpc.request (Rpc.client Rpc.Protocol.transcode "/api/")
                     (bound { rule | path = [ Proto.Http.literal "v1", var [ sub "sub" "sub", string "subfield" "subfield" ] ] } """{"sub":null}""")
                 ).url
                     |> Expect.equal "/api/v1/"
@@ -241,7 +246,7 @@ template of the first path value that cannot match, or `Nothing`.
 -}
 refused : Rule -> String -> Maybe { field : String, template : String }
 refused r request =
-    Rpc.Internal.Wire.invalidPathValue config (bound r request)
+    invalidPathValue transcoding (bound r request)
 
 
 notes : List Proto.Http.Segment
@@ -339,8 +344,8 @@ pathValues =
                     |> Expect.equal "https://api.example.com/v1/notes/a/b"
         , test "Connect, and a method without a rule, have no path to refuse" <|
             \_ ->
-                [ Rpc.Internal.Wire.invalidPathValue { config | transport = Rpc.Transport.connect } (bound (named notes) """{"name":""}""")
-                , Rpc.Internal.Wire.invalidPathValue config (Rpc.call (raw []) (json """{"name":""}"""))
+                [ invalidPathValue (Rpc.client Rpc.Protocol.connect "https://api.example.com") (bound (named notes) """{"name":""}""")
+                , invalidPathValue transcoding (Rpc.call (raw []) (json """{"name":""}"""))
                 ]
                     |> Expect.equal [ Nothing, Nothing ]
         , test "the error is InvalidArgument, naming the field and the template without the value" <|
@@ -448,7 +453,12 @@ bodies =
                 bound { rule | method = "PATCH" } "{}"
                     |> Rpc.Call.withHeaders [ ( "X-Call", "1" ) ]
                     |> Rpc.Call.withTimeout 10
-                    |> Rpc.request { config | headers = [ ( "Authorization", "Bearer t" ) ], timeout = Just 30, withCredentials = True }
+                    |> Rpc.request
+                        (transcoding
+                            |> Rpc.Client.withHeaders [ ( "Authorization", "Bearer t" ) ]
+                            |> Rpc.Client.withTimeout 30
+                            |> Rpc.Client.withCredentials
+                        )
                     |> (\r -> ( ( r.method, r.headers ), ( r.timeout, r.withCredentials ) ))
                     |> Expect.equal ( ( "PATCH", [ ( "Authorization", "Bearer t" ), ( "X-Call", "1" ) ] ), ( Just 10, True ) )
         ]
@@ -472,34 +482,34 @@ routes =
     describe "routes"
         [ test "the rule's own binding by default" <|
             \_ ->
-                (Rpc.request config twice).url
+                (Rpc.request transcoding twice).url
                     |> Expect.equal "https://api.example.com/v1/first"
         , test "viaBinding picks an additional binding" <|
             \_ ->
                 Rpc.Call.viaBinding 1 twice
-                    |> Maybe.map (Rpc.request config >> (\r -> ( r.method, r.url, Rpc.Body.toText r.body )))
+                    |> Maybe.map (Rpc.request transcoding >> (\r -> ( r.method, r.url, Rpc.Body.toText r.body )))
                     |> Expect.equal (Just ( "POST", "https://api.example.com/v1/second", Just """{"a":1}""" ))
         , test "viaBinding 0 is the rule's own" <|
             \_ ->
                 Rpc.Call.viaBinding 0 twice
-                    |> Maybe.map (Rpc.request config >> .url)
+                    |> Maybe.map (Rpc.request transcoding >> .url)
                     |> Expect.equal (Just "https://api.example.com/v1/first")
         , test "a method without a rule is the Connect POST, verbatim" <|
             \_ ->
-                Rpc.request { config | timeout = Just 20 } unbound
+                Rpc.request (Rpc.Client.withTimeout 20 transcoding) unbound
                     |> Expect.equal
                         (Rpc.request
-                            { config | transport = Rpc.Transport.connect, timeout = Just 20 }
+                            (Rpc.client Rpc.Protocol.connect "https://api.example.com" |> Rpc.Client.withTimeout 20)
                             unbound
                         )
         , test "the implicit route is a POST to the service and method" <|
             \_ ->
-                Rpc.request config unbound
+                Rpc.request transcoding unbound
                     |> (\r -> ( r.method, r.url, r.headers ))
                     |> Expect.equal ( "POST", "https://api.example.com/t.v1.T/M", [ ( "Connect-Protocol-Version", "1" ) ] )
         , test "the implicit route reads any 2xx, an empty body as {}" <|
             \_ ->
-                Rpc.response config unbound (Http.GoodStatus_ (metadata 201 "Created" []) """{"title":"hi"}""")
+                Rpc.response transcoding unbound (Http.GoodStatus_ (metadata 201 "Created" []) """{"title":"hi"}""")
                     |> Expect.equal (Ok "hi")
         , test "there is no binding past the end, and none for a method without a rule" <|
             \_ ->
@@ -520,7 +530,7 @@ metadata status text headers =
 
 respond : Rule -> Http.Response String -> Result Error String
 respond r =
-    Rpc.response config (bound r "{}")
+    Rpc.response transcoding (bound r "{}")
 
 
 responses : Test
@@ -532,9 +542,9 @@ responses =
                     |> Expect.equal (Ok "hi")
         , test "an empty body reads as {}" <|
             \_ ->
-                Rpc.response config
+                Rpc.response transcoding
                     (Rpc.call
-                        (Proto.Method.method identity (Json.Decode.succeed ()) "t" "m"
+                        (Proto.Method.json "t" "m" identity (Json.Decode.succeed ())
                             |> Proto.Method.withBindings [ Proto.Http.binding rule ]
                         )
                         Json.Encode.null
@@ -598,7 +608,7 @@ stated code message source =
     Err (RpcStatus { code = code, message = message, details = [], source = source } blank)
 
 
-{-| The shared reader of failed answers, which both transports use.
+{-| The shared reader of failed answers, which both protocols use.
 -}
 errors : Test
 errors =
@@ -659,7 +669,7 @@ errors =
                 [ """{"code":5}""", "" ]
                     |> List.map
                         (\answer ->
-                            Rpc.response (Rpc.config "https://api.example.com")
+                            Rpc.response (Rpc.client Rpc.Protocol.connect "https://api.example.com")
                                 (Rpc.call (raw []) Json.Encode.null)
                                 (Http.BadStatus_ (metadata 503 "" [ ( "grpc-status", "14" ) ]) answer)
                                 |> withoutResponse

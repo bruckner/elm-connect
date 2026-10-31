@@ -4,6 +4,11 @@ module Proto.Internal.Message exposing (Binary, Message(..))
 here so that other modules of the package can reach what a message type holds
 while users cannot. The descriptor is a parameter because its type, with its
 readers, stays in `Proto.Message`.
+
+`json` says whether the JSON codecs are the message's own: a message with
+binary codecs alone holds a JSON encoder writing `null` and a decoder that
+fails, and an `Any` packed from it holds its binary alone.
+
 -}
 
 import Bytes.Encode
@@ -19,6 +24,7 @@ type Message descriptor a
         , default : a
         , descriptor : descriptor
         , binary : Maybe (Binary a)
+        , json : Bool
         }
 
 

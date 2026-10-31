@@ -28,7 +28,7 @@ reads it back.
 
 import Json.Encode exposing (Value)
 import Proto.Internal.Method
-import Proto.Method as Method exposing (Idempotency, Method)
+import Proto.Method exposing (Idempotency, Method)
 import Rpc.Internal.Call as Internal
 import Rpc.Retry exposing (Retry)
 
@@ -37,7 +37,7 @@ import Rpc.Retry exposing (Retry)
 per-call adjustments made to it. Generated code builds one per method with
 [`Rpc.call`](Rpc#call):
 
-    Notes.V1.NotesService.getNote : GetNoteRequest -> Rpc.Call GetNoteRequest Note
+    Notes.V1.NotesService.getNote : GetNoteRequest -> Rpc.Call Rpc.Json GetNoteRequest Note
 
 It is opaque, and the same type as [`Rpc.Call`](Rpc#Call): adjust one with
 the functions below and send it with [`Rpc.send`](Rpc#send) or
@@ -50,48 +50,48 @@ calls fails at run time, and the debugger cannot import or export a history
 whose messages hold one. Compare [`toJson`](#toJson) instead.
 
 -}
-type alias Call req res =
-    Internal.Call req res
+type alias Call codec req res =
+    Internal.Call codec req res
 
 
 
 -- ADJUSTING A CALL
 
 
-{-| Headers to send with this call, after the config's.
+{-| Headers to send with this call, after the client's.
 
     Notes.getNote { name = "notes/42" }
         |> Rpc.Call.withHeaders [ ( "X-Request-Id", "req-7" ) ]
 
-They are held to the rule for the config's headers
-([`Rpc.Config`](Rpc#Config)): a call with a name that is not an HTTP token,
+They are held to the rule for the client's headers
+([`Rpc.Client.withHeaders`](Rpc-Client#withHeaders)): a call with a name that is not an HTTP token,
 or a value holding NUL, CR, LF or a character above U+00FF, is not sent, and
 fails with `NoAnswer (InvalidHeader name)`.
 
 -}
-withHeaders : List ( String, String ) -> Call req res -> Call req res
+withHeaders : List ( String, String ) -> Call codec req res -> Call codec req res
 withHeaders extra (Internal.Call c) =
     Internal.Call { c | headers = c.headers ++ extra }
 
 
-{-| A timeout for this call in milliseconds, in place of the config's.
+{-| A timeout for this call in milliseconds, in place of the client's.
 
     Notes.getNote { name = "notes/42" }
         |> Rpc.Call.withTimeout 10000
 
 One that is not a positive number (`0`, a negative number, NaN or infinity)
-is ignored, and the config's applies. With a retry policy in effect
+is ignored, and the client's applies. With a retry policy in effect
 ([`withRetry`](#withRetry)), the timeout applies to each attempt, and a
 policy's deadline ([`Rpc.Retry.withDeadline`](Rpc-Retry#withDeadline))
 shortens it to what is left of the deadline.
 
 -}
-withTimeout : Float -> Call req res -> Call req res
+withTimeout : Float -> Call codec req res -> Call codec req res
 withTimeout ms (Internal.Call c) =
     Internal.Call { c | timeout = Just ms }
 
 
-{-| A retry policy for this call, in place of the config's `retry`
+{-| A retry policy for this call, in place of the client's `retry`
 ([`Rpc.Retry`](Rpc-Retry)).
 
     Notes.getNote { name = "notes/42" }
@@ -101,33 +101,33 @@ withTimeout ms (Internal.Call c) =
             )
 
 -}
-withRetry : Retry -> Call req res -> Call req res
+withRetry : Retry -> Call codec req res -> Call codec req res
 withRetry policy (Internal.Call c) =
     Internal.Call { c | retry = Internal.OwnRetry policy }
 
 
-{-| Send this call once, whatever the config's `retry` says: for a call the
+{-| Send this call once, whatever the client's `retry` says: for a call the
 user may cancel ([`withTracker`](#withTracker)), and for a call the
 application retries on its own ([`Rpc.Retry.next`](Rpc-Retry#next)).
 
     Notes.getNote { name = "notes/42" }
         |> Rpc.Call.withoutRetry
         |> Rpc.Call.withTracker "note-42"
-        |> Rpc.send config GotNote
+        |> Rpc.send client GotNote
 
 -}
-withoutRetry : Call req res -> Call req res
+withoutRetry : Call codec req res -> Call codec req res
 withoutRetry (Internal.Call c) =
     Internal.Call { c | retry = Internal.NoRetry }
 
 
 {-| A tracker for this call, so [`Rpc.cancel`](Rpc#cancel) can cancel it.
 elm/http tracks commands only, so only [`Rpc.send`](Rpc#send) without a retry
-policy in effect uses it: with no `retry` in the config, or with
+policy in effect uses it: with no `retry` in the client, or with
 [`withoutRetry`](#withoutRetry) on the call. The other ways of sending ignore
 it.
 -}
-withTracker : String -> Call req res -> Call req res
+withTracker : String -> Call codec req res -> Call codec req res
 withTracker tracker (Internal.Call c) =
     Internal.Call { c | tracker = Just tracker }
 
@@ -140,11 +140,11 @@ implicit route. Connect has no use for bindings and ignores the choice.
 
     Notes.getNote { name = "users/7/notes/42" }
         |> Rpc.Call.viaBinding 1
-        |> Maybe.map (Rpc.send config GotNote)
+        |> Maybe.map (Rpc.send client GotNote)
         |> Maybe.withDefault Cmd.none
 
 -}
-viaBinding : Int -> Call req res -> Maybe (Call req res)
+viaBinding : Int -> Call codec req res -> Maybe (Call codec req res)
 viaBinding index (Internal.Call c) =
     if index >= 0 && index < routeCount c.method then
         Just (Internal.Call { c | binding = index })
@@ -153,7 +153,7 @@ viaBinding index (Internal.Call c) =
         Nothing
 
 
-routeCount : Method req res -> Int
+routeCount : Method codec req res -> Int
 routeCount (Proto.Internal.Method.Method m) =
     List.length m.routes
 
@@ -164,7 +164,7 @@ routeCount (Proto.Internal.Method.Method m) =
 
 {-| The method the call is of.
 -}
-method : Call req res -> Method req res
+method : Call codec req res -> Method codec req res
 method (Internal.Call c) =
     c.method
 
@@ -173,14 +173,14 @@ method (Internal.Call c) =
 method's name, `/notes.v1.NotesService/GetNote`, which Connect sends the
 call to under the base URL.
 -}
-procedure : Call req res -> String
+procedure : Call codec req res -> String
 procedure c =
     "/" ++ serviceName c ++ "/" ++ methodName c
 
 
 {-| The fully-qualified service name, such as `notes.v1.NotesService`.
 -}
-serviceName : Call req res -> String
+serviceName : Call codec req res -> String
 serviceName (Internal.Call c) =
     let
         (Proto.Internal.Method.Method m) =
@@ -191,7 +191,7 @@ serviceName (Internal.Call c) =
 
 {-| The method name as declared, such as `GetNote`.
 -}
-methodName : Call req res -> String
+methodName : Call codec req res -> String
 methodName (Internal.Call c) =
     let
         (Proto.Internal.Method.Method m) =
@@ -206,7 +206,7 @@ than the first time (`IdempotencyIdempotent`), or nothing it says
 (`IdempotencyUnknown`). A retry policy retries only the first two unless told
 otherwise.
 -}
-idempotency : Call req res -> Idempotency
+idempotency : Call codec req res -> Idempotency
 idempotency (Internal.Call c) =
     let
         (Proto.Internal.Method.Method m) =
@@ -217,16 +217,25 @@ idempotency (Internal.Call c) =
 
 {-| The request the call sends.
 -}
-requestMessage : Call req res -> req
+requestMessage : Call codec req res -> req
 requestMessage (Internal.Call c) =
     c.message
 
 
-{-| The request's proto3 JSON.
+{-| The request's proto3 JSON; `null` for a call of a method generated with
+protobuf binary codecs alone (`codec=proto`).
 -}
-requestJson : Call req res -> Value
+requestJson : Call codec req res -> Value
 requestJson (Internal.Call c) =
-    Method.encodeRequest c.method c.message
+    let
+        (Proto.Internal.Method.Method m) =
+            c.method
+    in
+    if m.codecs.json then
+        m.json.encode c.message
+
+    else
+        Json.Encode.null
 
 
 {-| The call as JSON, `{"service": …, "method": …, "procedure": …, "request": …}`,
@@ -241,7 +250,7 @@ calls by this, as `==` on the calls themselves fails at run time:
         == Json.Encode.encode 0 (Rpc.Call.toJson b)
 
 -}
-toJson : Call req res -> Value
+toJson : Call codec req res -> Value
 toJson c =
     Json.Encode.object
         [ ( "service", Json.Encode.string (serviceName c) )

@@ -1,6 +1,6 @@
 # HTTP transcoding
 
-Over `Rpc.Transport.transcode`, a call is sent as the REST request its
+Over `Rpc.Protocol.transcode`, a call is sent as the REST request its
 method's `google.api.http` rule describes, for a server behind
 grpc-gateway, Envoy's gRPC-JSON transcoder or Vanguard. This page says
 what the runtime sends, what it reads back, which server options it
@@ -64,12 +64,12 @@ not (grpc-gateway, [below](#where-the-transcoders-differ)).
 A success is any 2xx, an empty body reading as `{}`, and the response
 decoded from the field `response_body` names when the rule names one.
 
-Transcoding stays JSON whatever the codec: `Rpc.Transport.withCodec
-Rpc.Transport.Proto` sends protobuf binary over Connect only, and leaves
-`transcode` as it is, the implicit route included. A method generated
-with binary codecs alone (`codec=binary`) has no JSON to send, so its
-call over transcoding fails with `NoAnswer (MissingCodec { method,
-codec = "json" })`, unsent ([calling.md](calling.md#choosing-the-codec)).
+Transcoding is JSON: `transcode` is a `Protocol Rpc.Json`, the
+implicit route included, and protobuf binary goes over Connect alone
+(`Rpc.Protocol.connectProto`). A method generated with binary codecs
+alone (`codec=proto`) has no JSON to send and no routes, and its call,
+an `Rpc.Call Rpc.Proto`, does not compile with a `transcode` client
+([calling.md](calling.md#choosing-the-codec)).
 
 ## How the request is built
 
@@ -176,8 +176,8 @@ filter so.
 
 ## Request headers and metadata
 
-The runtime sends the config's and the call's headers as they are,
-over both transports. Which of them reach the service is the
+The runtime sends the client's and the call's headers as they are,
+over both protocols. Which of them reach the service is the
 transcoder's choice. grpc-gateway's default (`runtime.DefaultHeaderMatcher`)
 forwards the standard HTTP headers, such as `Authorization` and
 `Cookie`, as metadata prefixed `grpcgateway-`, and a header named

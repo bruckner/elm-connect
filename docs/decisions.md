@@ -38,8 +38,9 @@ only encodes and decodes. Splitting Connect from transcoding was
 weighed too: the transcode-only code is about a tenth of the call
 layer, and a split would first force `Rpc.Transport` open. What is kept
 instead is a rule: no `Proto` module imports an `Rpc` one, and `Rpc`
-reads no `Proto.Internal` module beyond those two, so a split stays
-possible. It would be a major (modules leave the package) and is
+reads no `Proto.Internal` module beyond the few design §3.1 lists
+(since 2026-10-27 `Proto.Internal.Any`, `Codec`, `Method` and
+`Percent`), so a split stays possible. It would be a major (modules leave the package) and is
 revisited only for a transport whose runtime is mostly its own. Where:
 design §3.1.
 
@@ -554,7 +555,8 @@ design §4.
 
 ### Config is data, with no interceptors
 
-*2026-10-13.*
+*2026-10-13; the record replaced 2026-10-27 by the client (Protocol and
+client, indexed by codec), the rest kept.*
 
 `Rpc.Config` is a record with no function in it, so it can be
 compared, kept in a model, passed through `Html.Lazy`, printed, and
@@ -632,12 +634,14 @@ design §3.5, §5.4.
 
 *2026-10-20.*
 
-`Rpc.Transport.withReadMaxBytes` refuses a successful answer longer
+`withReadMaxBytes` (on `Rpc.Transport` until 2026-10-27, on
+`Rpc.Protocol` since) refuses a successful answer longer
 than a limit before decoding it, and `withWriteMaxBytes` refuses to
 send a request message longer than one; neither has a default, as in
 connect-node. connect-go reads at most 4 MiB unless told otherwise, and
 connect-web, the browser transport, has no such knob. They are protocol knobs, so they are on
-`Rpc.Transport`, not in the frozen `Config`. The failures are two new
+the protocol, not on the client. The failures are two new
+
 reasons, `ResponseTooLarge` and `RequestTooLarge`, added before 1.0
 because `Rpc.Error.Reason` freezes then, and kept apart so a caller can
 tell a request it must shrink from an answer it chose not to read. A
@@ -650,7 +654,8 @@ message against the same limit. Where: design §1, §5.1, §5.4.
 
 ### The codec is a transport setting
 
-*2026-10-25.*
+*2026-10-25; superseded 2026-10-27 by Protocol and client, indexed by
+codec, which made the codec a type and dropped `MissingCodec`.*
 
 Connect's proto codec is chosen by `Rpc.Transport.withCodec`, as
 connect-go and connect-es choose a codec on the client or transport, not
@@ -734,7 +739,9 @@ per module, and the transports belong there too. Where: design §5.
 
 ### The config frozen
 
-*2026-10-13; frozen 2026-10-16.*
+*2026-10-13; frozen 2026-10-16; the record gone 2026-10-27 (Protocol
+and client, indexed by codec): every knob is now a modifier of an
+opaque type.*
 
 `Rpc.Config` stays a record and never gains a field; a new knob goes
 on the opaque `Transport`, `Retry` or `Call`, or on a later
@@ -958,7 +965,103 @@ never transcodes appears. The price accepted: a route bug is fixed by
 regenerating, not by upgrading the runtime, and the generated service
 modules carry a function per binding. Where: design §4, §5.3.
 
+### Protocol and client, indexed by codec
+
+*2026-10-27.*
+
+The config record and `Rpc.Transport` are replaced by two opaque
+types: `Rpc.Protocol codec` (`connect`, `connectProto`, `transcode`,
+with `withConnectGet`, `withMaxGetUrl`, `withReadMaxBytes`,
+`withWriteMaxBytes`), which holds its data and the top-level functions
+that build its requests and read its answers, and `Rpc.Client codec`, a
+protocol with a base URL, headers, timeout, credentials and retry.
+Methods, calls, protocols and clients carry a phantom codec, `Rpc.Json`
+or `Rpc.Proto`; generated calls are `Rpc.Call Rpc.Json`,
+`Rpc.Call Rpc.Proto`, or free in it under `codec=both`. A client of one
+codec sending a call generated without it is a compile error where it
+is sent, so `MissingCodec` and `withCodec` go, and with them the run-time
+dispatch every program paid for. The tags are defined in a leaf module,
+`Proto.Internal.Codec`, since `Proto.Method` indexes by them and cannot
+import `Rpc`; `Rpc` aliases them, so annotations and compiler errors
+read `Rpc.Json`.
+
+Measured on the interface spike against the stack it started from
+(`elm make --optimize`, terser, gzip -9): 1.4 to 1.9 KB gzipped
+smaller on every program, the send path equal or faster, transcoded
+requests 25 to 44 % faster (a call's JSON is encoded only when a
+builder sends it whole), and the reading of a tiny answer 0.05 us
+slower. Considered and rejected: a client over the old config, which
+keeps the dispatch and `MissingCodec`; generating every codec and
+choosing by import, which at 300 messages makes `codec=both` take 2.3
+times `codec=json` to compile; a `dynamic` protocol chosen at run time,
+which would bring back the error the types remove (an application that
+switches codec at run time holds two clients). `Rpc.Client.problems`
+stays: whether a client's problems can be ruled out by construction is
+revisited before 1.0. Where: design §2, §5.1, §5.2, §5.3.
+
+### Fillers, not optional halves
+
+*2026-10-27.*
+
+A method holds both codec halves always: the half its builder was not
+given is a leaf filler, `\_ -> Json.Encode.null` with a failing decoder,
+or `\_ -> Bytes.Encode.unsignedInt8 0` with `\_ -> Nothing`, which no
+protocol of the method's codec calls. The binary half holds the
+request's encoder, not its bytes, so only a binary protocol's functions
+run elm/bytes. Measured on the spike against `Maybe` halves with an
+internal error for the pairing the phantom rules out: 153 to 194 B
+gzipped smaller, and the two-way case on the wire kind costs 18 to 93 B
+over a runtime with no bytes wire at all, against 195 to 250 B with the
+`Maybe` branches. The filler encoder must be a constructor:
+`Bytes.Encode.sequence []` measures widths and brings elm/bytes' kernel
+(590 B gzipped on a minimal program). What is given up: an impossible
+pairing, unreachable through the builders, would read as an ordinary
+decode failure, not as the broken invariant. Which halves are real
+stays data on the method (and on a message, for `Proto.Any.pack`), read
+only by what reports on it, never by sending. Where: design §4, §5.2,
+§5.3.
+
+### Modifiers install behaviour
+
+*2026-10-27.*
+
+A modifier that changes how a request is built or an answer read
+installs the function that does it: `withConnectGet` the GET builder,
+`withReadMaxBytes` and `withWriteMaxBytes` the limit checks, and
+`Rpc.Retry.on` the policy's math. A program that names none carries
+none of their code: 137 to 202 B gzipped for the GET, 238 B for the
+limits and 355 to 462 B for the retry math, out of a minimal program.
+Two rules make it safe. Each installing modifier also writes a data
+field that sorts before the function fields, so `==` on two clients
+answers at the data before it could reach a function, on which Elm
+throws; clients built alike hold the same top-level functions and are
+`==` (checked over every protocol, in tests and in an `--optimize`
+build). Each installed binary check measures with the wire's `width`,
+so a JSON program naming a limit reaches no `Bytes.width`, which would
+bring elm/bytes' kernel (989 B before this rule). `withConnectGet` is a
+no-op off Connect, so it is one modifier for either wire; a JSON GET
+program carries the binary builder it installs too, about 110 B.
+Where: design §5.1.
+
+### `codec=proto`
+
+*2026-10-27.*
+
+The generator's option value for the binary codecs alone is `proto`,
+the name of the tag its calls carry (`Rpc.Call Rpc.Proto`) and of the
+codec on Connect's wire (`application/proto`), where it was `binary`.
+`binary` is refused with a diagnostic that says it is now `proto`,
+rather than accepted as an alias, so that one spelling is written. The
+builders are named alike, `Proto.Method.json`, `proto` and `both`, and
+take the service's and the method's names first, so that a generated
+call reads as its Connect path before its codecs. A route function binds
+each path value to a local named for its field's JSON path (`name_`,
+`noteName_`), where it bound `value0_`. The
+registry's `binaryRegistry` and `Proto.Registry.withBinary` keep their
+names for now. Where: design §3.10, §6.
+
 ## Input and versioning
+
 
 ### Editions and proto2 refused in 1.0
 

@@ -38,16 +38,16 @@ elmConnectVersion_ =
 Connect: `POST /connectrpc.eliza.v1.ElizaService/Say`.
 Transcode: no HTTP rule, follows the Connect path.
 
-Described by [`descriptorSay`](#descriptorSay).
+Codecs: JSON. Described by [`descriptorSay`](#descriptorSay).
 
 -}
-say : Connectrpc.Eliza.V1.SayRequest -> Rpc.Call Connectrpc.Eliza.V1.SayRequest Connectrpc.Eliza.V1.SayResponse
+say : Connectrpc.Eliza.V1.SayRequest -> Rpc.Call Rpc.Json Connectrpc.Eliza.V1.SayRequest Connectrpc.Eliza.V1.SayResponse
 say =
     Rpc.call
-        (Proto.Method.method Connectrpc.Eliza.V1.encodeSayRequest
-            Connectrpc.Eliza.V1.decodeSayResponse
-            "connectrpc.eliza.v1.ElizaService"
+        (Proto.Method.json "connectrpc.eliza.v1.ElizaService"
             "Say"
+            Connectrpc.Eliza.V1.encodeSayRequest
+            Connectrpc.Eliza.V1.decodeSayResponse
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
         )
 

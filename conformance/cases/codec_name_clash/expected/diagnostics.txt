@@ -20,7 +20,7 @@ naming::codec_collision
         JSON codecs of a type named for another with `Bytes` at the end
         (`NoteBytes` beside `Note`) take the same names, and a module cannot
         define two values with one name. Enums keep their JSON codecs under
-        `codec=binary`; messages and oneofs have them under `codec=both`.
+        `codec=proto`; messages and oneofs have them under `codec=both`.
         Rename one of them in the proto, or rename one with
         `rename=shelf.v1.BookBytes:<Elm name>`.
 
@@ -48,7 +48,7 @@ naming::codec_collision
         JSON codecs of a type named for another with `Bytes` at the end
         (`NoteBytes` beside `Note`) take the same names, and a module cannot
         define two values with one name. Enums keep their JSON codecs under
-        `codec=binary`; messages and oneofs have them under `codec=both`.
+        `codec=proto`; messages and oneofs have them under `codec=both`.
         Rename one of them in the proto, or rename one with
         `rename=shelf.v1.ChoicePickBytes:<Elm name>`.
 
@@ -74,6 +74,6 @@ naming::codec_collision
         JSON codecs of a type named for another with `Bytes` at the end
         (`NoteBytes` beside `Note`) take the same names, and a module cannot
         define two values with one name. Enums keep their JSON codecs under
-        `codec=binary`; messages and oneofs have them under `codec=both`.
+        `codec=proto`; messages and oneofs have them under `codec=both`.
         Rename one of them in the proto, or rename one with
         `rename=shelf.v1.ShelfBytes:<Elm name>`.

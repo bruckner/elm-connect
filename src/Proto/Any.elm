@@ -80,9 +80,9 @@ is message any =
 
 
 {-| A message as an `Any`, its type URL prefixed `type.googleapis.com/`, as
-protobuf's own libraries write it. It holds the message's JSON, and its
-protobuf binary too when the message has binary codecs (`codec=both`), so
-it can be written in either form.
+protobuf's own libraries write it. It holds what the message's codecs
+write: its JSON (`codec=json`), its protobuf binary (`codec=proto`), or both
+(`codec=both`), so that it can be written in either form.
 -}
 pack : Message a -> a -> Any
 pack message value =
@@ -106,14 +106,18 @@ packWith prefix message value =
     Internal.Any (slashed ++ Message.typeName (Message.toDescriptor message)) (payloadOf message value)
 
 
-{-| A value's JSON, and its binary too when its message has binary codecs, so
-the `Any` can be written in either form.
+{-| A value in the forms its message has codecs for: its JSON, its binary,
+or both, so the `Any` can be written in either form.
 -}
 payloadOf : Message a -> a -> Payload
 payloadOf ((Proto.Internal.Message.Message m) as message) value =
     case m.binary of
         Just binary ->
-            InBoth (Message.encode message value) (binary.toBase64 value)
+            if m.json then
+                InBoth (Message.encode message value) (binary.toBase64 value)
+
+            else
+                InBinary (binary.toBase64 value)
 
         Nothing ->
             InJson (Message.encode message value)

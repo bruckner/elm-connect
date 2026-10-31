@@ -1,12 +1,18 @@
-module Rpc.Internal.Retry exposing (Moment, Outcome, Policy, Retry(..), attemptTimeout, budget, delay, jitter, maxDelay, run, step, wait)
+module Rpc.Internal.Retry exposing (Math, Moment, Outcome, Policy, Retry(..), attemptTimeout, budget, delay, jitter, math, maxDelay, run, startBudget, step, wait)
 
 {-| When to try a call again. Not exposed. Two public modules need the
 constructor: `Rpc.Retry` builds and modifies a policy and aliases the type,
 and `Rpc` reads it through `run`, the attempt loop. The loop decides each
-wait with [`step`](#step), which is [`wait`](#wait), the policy math
-(`delay`, `jitter` and the deadline), applied to a failed attempt; the math
-is kept pure and here so it can be tested without sending anything. A knob
-can be added without breaking code that builds a policy.
+wait with [`step`](#step), which is the policy's math (`wait`: `delay`,
+`jitter` and the deadline), applied to a failed attempt; the math is kept
+pure and here so it can be tested without sending anything. A knob can be
+added without breaking code that builds a policy.
+
+A policy holds its math as top-level functions (`Math`), which `Rpc.Retry.on`
+puts there: the loop reaches them only through a policy, so a program that
+never builds one carries the loop alone. Policies built alike hold the same
+functions, so `==` holds between them.
+
 -}
 
 import Bitwise
@@ -18,10 +24,26 @@ import Task exposing (Task)
 import Time
 
 
-{-| A retry policy.
+{-| A retry policy: its knobs, and its math.
 -}
 type Retry
-    = Retry Policy
+    = Retry Policy Math
+
+
+{-| The math a policy decides with: the wait after a failed attempt
+([`wait`](#wait)) and what is left of its deadline ([`budget`](#budget)).
+-}
+type alias Math =
+    { wait : Retry -> Moment -> Maybe Float
+    , budget : Retry -> Float -> Maybe Float
+    }
+
+
+{-| The math every policy holds.
+-}
+math : Math
+math =
+    { wait = wait, budget = budget }
 
 
 {-| What a policy holds: `attempts` tries in all, when an attempt fails with
@@ -90,7 +112,7 @@ run retry idempotency retryCode once =
                                 toFloat (Time.posixToMillis time - Time.posixToMillis start)
 
                             loop tried elapsed =
-                                once (budget policy elapsed)
+                                once (startBudget policy elapsed)
                                     |> Task.andThen
                                         (\( metadata, result ) ->
                                             Time.now
@@ -118,11 +140,11 @@ cannot help (`retryCode` gives `Nothing`) always is.
 step : Maybe Retry -> Idempotency -> (e -> Maybe Code) -> { tried : Int, now : Time.Posix, elapsed : Float } -> Result e a -> Maybe Float
 step retry idempotency retryCode at result =
     case ( retry, result ) of
-        ( Just policy, Err error ) ->
+        ( Just ((Retry _ m) as policy), Err error ) ->
             retryCode error
                 |> Maybe.andThen
                     (\code ->
-                        wait policy
+                        m.wait policy
                             { tried = at.tried
                             , code = code
                             , idempotency = idempotency
@@ -162,7 +184,7 @@ wait retry moment =
 milliseconds; any other value means none, as for a timeout.
 -}
 deadline : Retry -> Maybe Float
-deadline (Retry policy) =
+deadline (Retry policy _) =
     case policy.deadline of
         Just ms ->
             if ms > 0 && not (isInfinite ms) then
@@ -173,6 +195,14 @@ deadline (Retry policy) =
 
         Nothing ->
             Nothing
+
+
+{-| What is left of a policy's deadline `elapsed` milliseconds after the
+first attempt began, by the policy's own math.
+-}
+startBudget : Retry -> Float -> Maybe Float
+startBudget ((Retry _ m) as retry) elapsed =
+    m.budget retry elapsed
 
 
 {-| What is left of the deadline `elapsed` milliseconds after the first
@@ -217,7 +247,7 @@ call of a method of this idempotency whose last one failed with `code`, or
 [`jitter`](#jitter) draws the wait below it.
 -}
 delay : Retry -> Idempotency -> Int -> Code -> Maybe Float
-delay (Retry policy) idempotency tried code =
+delay (Retry policy _) idempotency tried code =
     if
         tried
             < policy.attempts
@@ -258,7 +288,7 @@ the attempt failed, and of `tried`, so it needs no `Random` generator and
 consecutive attempts draw differently.
 -}
 jitter : Retry -> Int -> Int -> Float -> Float
-jitter (Retry policy) seed tried bound =
+jitter (Retry policy _) seed tried bound =
     if policy.jitter then
         fraction (Bitwise.xor seed (tried * 0x9E3779B9)) * bound
 

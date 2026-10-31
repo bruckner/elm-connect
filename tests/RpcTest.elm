@@ -17,16 +17,17 @@ import Proto.WellKnown
 import Rpc
 import Rpc.Body
 import Rpc.Call
+import Rpc.Client
 import Rpc.Code exposing (Code(..))
 import Rpc.Error exposing (Error(..), Reason(..), Source(..))
 import Rpc.Internal.Call
 import Rpc.Internal.Http
 import Rpc.Internal.Retry as Retry
+import Rpc.Internal.Send
 import Rpc.Internal.Trace
-import Rpc.Internal.Wire
+import Rpc.Protocol
 import Rpc.Retry
 import Rpc.Trace
-import Rpc.Transport
 import Test exposing (Test, describe, fuzz, test)
 import Time
 
@@ -48,35 +49,35 @@ title =
         (Proto.Message.descriptor "notes.v1.Note" [])
 
 
-notes : String -> Idempotency -> List Proto.Http.Binding -> GetNote -> Rpc.Call GetNote String
+notes : String -> Idempotency -> List Proto.Http.Binding -> GetNote -> Rpc.Call Rpc.Json GetNote String
 notes name idempotency bindings =
     Rpc.call
-        (Proto.Method.method encodeGetNote (Proto.Message.decoder title) "notes.v1.Notes" name
+        (Proto.Method.json "notes.v1.Notes" name encodeGetNote (Proto.Message.decoder title)
             |> Proto.Method.withIdempotency idempotency
             |> Proto.Method.withBindings bindings
         )
 
 
-getNote : GetNote -> Rpc.Call GetNote String
+getNote : GetNote -> Rpc.Call Rpc.Json GetNote String
 getNote =
     notes "GetNote" IdempotencyNoSideEffects []
 
 
-createNote : GetNote -> Rpc.Call GetNote String
+createNote : GetNote -> Rpc.Call Rpc.Json GetNote String
 createNote =
     notes "CreateNote" IdempotencyUnknown []
 
 
 {-| A method whose repeat changes nothing more, though it has effects.
 -}
-deleteNote : GetNote -> Rpc.Call GetNote String
+deleteNote : GetNote -> Rpc.Call Rpc.Json GetNote String
 deleteNote =
     notes "DeleteNote" IdempotencyIdempotent []
 
 
 {-| A method with a rule and one additional binding.
 -}
-listNotes : GetNote -> Rpc.Call GetNote String
+listNotes : GetNote -> Rpc.Call Rpc.Json GetNote String
 listNotes =
     notes "ListNotes"
         IdempotencyNoSideEffects
@@ -85,22 +86,41 @@ listNotes =
         ]
 
 
-base : Rpc.Config
+base : Rpc.Client Rpc.Json
 base =
-    Rpc.config "https://api.example.com"
+    over Rpc.Protocol.connect
 
 
-getting : Maybe Int -> Rpc.Config
+{-| A client of the test server over a protocol, with nothing else set.
+-}
+over : Rpc.Protocol.Protocol Rpc.Json -> Rpc.Client Rpc.Json
+over protocol =
+    Rpc.client protocol "https://api.example.com"
+
+
+connectGet : Rpc.Protocol.Protocol Rpc.Json
+connectGet =
+    Rpc.Protocol.withConnectGet Rpc.Protocol.connect
+
+
+getting : Maybe Int -> Rpc.Client Rpc.Json
 getting maxGetUrl =
-    { base
-        | transport =
-            case maxGetUrl of
-                Just limit ->
-                    Rpc.Transport.withMaxGetUrl limit Rpc.Transport.connectGet
+    over
+        (case maxGetUrl of
+            Just limit ->
+                Rpc.Protocol.withMaxGetUrl limit connectGet
 
-                Nothing ->
-                    Rpc.Transport.connectGet
-    }
+            Nothing ->
+                connectGet
+        )
+
+
+{-| The request an attempt sends with `left` milliseconds of a retry deadline
+to go.
+-}
+withBudget : Rpc.Client Rpc.Json -> Rpc.Call Rpc.Json GetNote String -> Maybe Float -> Rpc.Request -> Rpc.Request
+withBudget client c =
+    Rpc.Internal.Send.withBudget (Rpc.Internal.Send.plan client c)
 
 
 metadata : Int -> String -> Http.Metadata
@@ -182,8 +202,8 @@ suite =
         , responses
         , keptResponses
         , retries
-        , transports
-        , configs
+        , protocols
+        , problems
         , receiveLimits
         , sendLimits
         , headerRules
@@ -266,7 +286,7 @@ calls =
             \_ ->
                 let
                     bare =
-                        Rpc.call (Proto.Method.method encodeGetNote (Proto.Message.decoder title) "notes.v1.Notes" "GetNote") { name = "x" }
+                        Rpc.call (Proto.Method.json "notes.v1.Notes" "GetNote" encodeGetNote (Proto.Message.decoder title)) { name = "x" }
                 in
                 ( Rpc.Call.idempotency bare, Rpc.Call.viaBinding 0 bare |> Maybe.map Rpc.Call.procedure )
                     |> Expect.equal ( IdempotencyUnknown, Nothing )
@@ -309,38 +329,38 @@ requests =
                         , timeout = Nothing
                         , withCredentials = False
                         }
-        , test "the config's headers come first, and a trailing slash is dropped" <|
+        , test "the client's headers come first, and a trailing slash is dropped" <|
             \_ ->
                 Rpc.request
-                    { base | baseUrl = "/api/", headers = [ ( "Authorization", "Bearer t" ) ] }
+                    (Rpc.client Rpc.Protocol.connect "/api/" |> Rpc.Client.withHeaders [ ( "Authorization", "Bearer t" ) ])
                     (getNote { name = "x" })
                     |> (\r -> ( r.url, r.headers ))
                     |> Expect.equal
                         ( "/api/notes.v1.Notes/GetNote"
                         , [ ( "Authorization", "Bearer t" ), ( "Connect-Protocol-Version", "1" ) ]
                         )
-        , test "a call's headers follow the config's, in the order added" <|
+        , test "a call's headers follow the client's, in the order added" <|
             \_ ->
                 getNote { name = "x" }
                     |> Rpc.Call.withHeaders [ ( "X-A", "1" ) ]
                     |> Rpc.Call.withHeaders [ ( "X-B", "2" ) ]
-                    |> Rpc.request { base | headers = [ ( "Authorization", "Bearer t" ) ] }
+                    |> Rpc.request (Rpc.Client.withHeaders [ ( "Authorization", "Bearer t" ) ] base)
                     |> .headers
                     |> Expect.equal
                         [ ( "Authorization", "Bearer t" ), ( "X-A", "1" ), ( "X-B", "2" ), ( "Connect-Protocol-Version", "1" ) ]
         , test "a timeout is sent in whole milliseconds, rounded up" <|
             \_ ->
-                Rpc.request { base | timeout = Just 1500.2 } (getNote { name = "x" })
+                Rpc.request (Rpc.Client.withTimeout 1500.2 base) (getNote { name = "x" })
                     |> (\r -> ( r.headers, r.timeout ))
                     |> Expect.equal
                         ( [ ( "Connect-Protocol-Version", "1" ), ( "Connect-Timeout-Ms", "1501" ) ]
                         , Just 1500.2
                         )
-        , test "a call's timeout replaces the config's" <|
+        , test "a call's timeout replaces the client's" <|
             \_ ->
                 getNote { name = "x" }
                     |> Rpc.Call.withTimeout 20
-                    |> Rpc.request { base | timeout = Just 1000 }
+                    |> Rpc.request (Rpc.Client.withTimeout 1000 base)
                     |> (\r -> ( r.headers, r.timeout ))
                     |> Expect.equal
                         ( [ ( "Connect-Protocol-Version", "1" ), ( "Connect-Timeout-Ms", "20" ) ]
@@ -349,7 +369,7 @@ requests =
         , test "a timeout is at least one millisecond and at most ten digits" <|
             \_ ->
                 [ 0.4, 1.0e12 ]
-                    |> List.map (\t -> (Rpc.request { base | timeout = Just t } (getNote { name = "x" })).headers)
+                    |> List.map (\t -> (Rpc.request (Rpc.Client.withTimeout t base) (getNote { name = "x" })).headers)
                     |> Expect.equal
                         [ [ ( "Connect-Protocol-Version", "1" ), ( "Connect-Timeout-Ms", "1" ) ]
                         , [ ( "Connect-Protocol-Version", "1" ), ( "Connect-Timeout-Ms", "9999999999" ) ]
@@ -357,22 +377,22 @@ requests =
         , test "a timeout that is not a positive number is no timeout" <|
             \_ ->
                 [ 0, -5, 0 / 0, 1 / 0, -(1 / 0) ]
-                    |> List.map (\t -> Rpc.request { base | timeout = Just t } (getNote { name = "x" }))
+                    |> List.map (\t -> Rpc.request (Rpc.Client.withTimeout t base) (getNote { name = "x" }))
                     |> List.map (\r -> ( r.headers, r.timeout ))
                     |> Expect.equal (List.repeat 5 ( [ ( "Connect-Protocol-Version", "1" ) ], Nothing ))
-        , test "a call's timeout that is not a positive number leaves the config's" <|
+        , test "a call's timeout that is not a positive number leaves the client's" <|
             \_ ->
                 [ 0, -5, 0 / 0 ]
-                    |> List.map (\t -> Rpc.request { base | timeout = Just 1000 } (Rpc.Call.withTimeout t (getNote { name = "x" })))
+                    |> List.map (\t -> Rpc.request (Rpc.Client.withTimeout 1000 base) (Rpc.Call.withTimeout t (getNote { name = "x" })))
                     |> List.map (\r -> ( r.headers, r.timeout ))
                     |> Expect.equal (List.repeat 3 ( [ ( "Connect-Protocol-Version", "1" ), ( "Connect-Timeout-Ms", "1000" ) ], Just 1000 ))
         , test "withCredentials is carried to the request" <|
             \_ ->
-                (Rpc.request { base | withCredentials = True } (getNote { name = "x" })).withCredentials
+                (Rpc.request (Rpc.Client.withCredentials base) (getNote { name = "x" })).withCredentials
                     |> Expect.equal True
-        , test "connectGet sends a call without side effects as a GET with the message in the query" <|
+        , test "withConnectGet sends a call without side effects as a GET with the message in the query" <|
             \_ ->
-                Rpc.request { base | transport = Rpc.Transport.connectGet, timeout = Just 20 }
+                Rpc.request (Rpc.Client.withTimeout 20 (over connectGet))
                     (getNote { name = "notes/42 é" })
                     |> Expect.equal
                         { method = "GET"
@@ -385,27 +405,26 @@ requests =
                         , timeout = Just 20
                         , withCredentials = False
                         }
-        , test "a GET carries the config's headers, then the call's, then the timeout, and no protocol version" <|
+        , test "a GET carries the client's headers, then the call's, then the timeout, and no protocol version" <|
             \_ ->
                 getNote { name = "x" }
                     |> Rpc.Call.withHeaders [ ( "X-A", "1" ) ]
                     |> Rpc.Call.withHeaders [ ( "X-B", "2" ) ]
                     |> Rpc.request
-                        { base
-                            | transport = Rpc.Transport.connectGet
-                            , headers = [ ( "Authorization", "Bearer t" ) ]
-                            , timeout = Just 20
-                        }
+                        (over connectGet
+                            |> Rpc.Client.withHeaders [ ( "Authorization", "Bearer t" ) ]
+                            |> Rpc.Client.withTimeout 20
+                        )
                     |> (\r -> ( r.method, r.headers ))
                     |> Expect.equal
                         ( "GET"
                         , [ ( "Authorization", "Bearer t" ), ( "X-A", "1" ), ( "X-B", "2" ), ( "Connect-Timeout-Ms", "20" ) ]
                         )
-        , test "connectGet still POSTs a call with side effects" <|
+        , test "withConnectGet still POSTs a call with side effects" <|
             \_ ->
                 (Rpc.request (getting Nothing) (createNote { name = "x" })).method
                     |> Expect.equal "POST"
-        , test "connectGet POSTs an idempotent call with effects: only IdempotencyNoSideEffects is a GET" <|
+        , test "withConnectGet POSTs an idempotent call with effects: only IdempotencyNoSideEffects is a GET" <|
             \_ ->
                 ( (Rpc.request (getting Nothing) (deleteNote { name = "x" })).method, Rpc.Call.idempotency (deleteNote { name = "x" }) )
                     |> Expect.equal ( "POST", Proto.Method.IdempotencyIdempotent )
@@ -1000,12 +1019,9 @@ deadlines policy =
             let
                 c =
                     getNote { name = "notes/42" } |> Rpc.Call.withTimeout 5000
-
-                cfg =
-                    { base | timeout = Nothing }
             in
-            Rpc.request cfg c
-                |> Rpc.Internal.Wire.withBudget cfg c (Just 299.5)
+            Rpc.request base c
+                |> withBudget base c (Just 299.5)
                 |> (\sent -> ( sent.timeout, List.filter (\( name, _ ) -> name == "Connect-Timeout-Ms") sent.headers ))
                 |> Expect.equal ( Just 299.5, [ ( "Connect-Timeout-Ms", "300" ) ] )
     , test "an attempt without a timeout takes the budget as its timeout" <|
@@ -1015,7 +1031,7 @@ deadlines policy =
                     getNote { name = "notes/42" }
             in
             Rpc.request base c
-                |> Rpc.Internal.Wire.withBudget base c (Just 700)
+                |> withBudget base c (Just 700)
                 |> (\sent -> ( sent.timeout, List.member ( "Connect-Timeout-Ms", "700" ) sent.headers ))
                 |> Expect.equal ( Just 700, True )
     , test "an attempt within the budget, or without one, is sent as it is" <|
@@ -1027,8 +1043,8 @@ deadlines policy =
                 sent =
                     Rpc.request base c
             in
-            ( Rpc.Internal.Wire.withBudget base c (Just 700) sent == sent
-            , Rpc.Internal.Wire.withBudget base c Nothing sent == sent
+            ( withBudget base c (Just 700) sent == sent
+            , withBudget base c Nothing sent == sent
             )
                 |> Expect.equal ( True, True )
     , test "a transcoded attempt over a binding is clipped without a header" <|
@@ -1037,13 +1053,13 @@ deadlines policy =
                 c =
                     listNotes { name = "notes/42" }
 
-                cfg =
-                    { base | transport = Rpc.Transport.transcode }
+                client =
+                    over Rpc.Protocol.transcode
 
                 sent =
-                    Rpc.request cfg c
+                    Rpc.request client c
             in
-            Rpc.Internal.Wire.withBudget cfg c (Just 700) sent
+            withBudget client c (Just 700) sent
                 |> Expect.equal { sent | timeout = Just 700 }
     ]
 
@@ -1052,19 +1068,19 @@ overrides : Rpc.Retry.Retry -> List Test
 overrides policy =
     let
         retrying =
-            { base | retry = Just policy }
+            Rpc.Client.withRetry policy base
 
         own =
             Rpc.Retry.on [ NotFound ]
 
-        inEffect cfg c =
-            Rpc.Internal.Call.retryIn cfg.retry c
+        inEffect client c =
+            Rpc.Internal.Call.retryIn (Rpc.Client.retry client) c
     in
-    [ test "a call without a choice takes the config's" <|
+    [ test "a call without a choice takes the client's" <|
         \_ ->
             ( inEffect retrying (getNote { name = "x" }), inEffect base (getNote { name = "x" }) )
                 |> Expect.equal ( Just policy, Nothing )
-    , test "withRetry replaces the config's, or gives one where it has none" <|
+    , test "withRetry replaces the client's, or gives one where it has none" <|
         \_ ->
             ( inEffect retrying (getNote { name = "x" } |> Rpc.Call.withRetry own)
             , inEffect base (getNote { name = "x" } |> Rpc.Call.withRetry own)
@@ -1138,66 +1154,81 @@ jitters policy =
     ]
 
 
-transports : Test
-transports =
-    describe "transports"
-        [ test "the names" <|
+protocols : Test
+protocols =
+    describe "protocols"
+        [ test "the names and codecs" <|
             \_ ->
-                List.map Rpc.Transport.name [ Rpc.Transport.connect, Rpc.Transport.connectGet, Rpc.Transport.withMaxGetUrl 10 Rpc.Transport.connectGet, Rpc.Transport.transcode ]
-                    |> Expect.equal [ "connect", "connect", "connect", "transcode" ]
-        , test "withMaxGetUrl leaves a transport that sends no GET as it was" <|
+                [ Rpc.Protocol.connect, connectGet, Rpc.Protocol.withMaxGetUrl 10 connectGet, Rpc.Protocol.transcode ]
+                    |> List.map (\protocol -> ( Rpc.Protocol.name protocol, Rpc.Protocol.codec protocol ))
+                    |> Expect.equal [ ( "connect", "json" ), ( "connect", "json" ), ( "connect", "json" ), ( "transcode", "json" ) ]
+        , test "withMaxGetUrl leaves a protocol that sends no GET as it was" <|
             \_ ->
-                ( Rpc.request { base | transport = Rpc.Transport.withMaxGetUrl 1 Rpc.Transport.connect } (getNote { name = "x" })
-                , Rpc.Transport.withMaxGetUrl 1 Rpc.Transport.transcode
+                ( Rpc.request (over (Rpc.Protocol.withMaxGetUrl 1 Rpc.Protocol.connect)) (getNote { name = "x" })
+                , Rpc.Protocol.withMaxGetUrl 1 Rpc.Protocol.transcode
                 )
-                    |> Expect.equal ( Rpc.request base (getNote { name = "x" }), Rpc.Transport.transcode )
-        , test "the config's default is Connect, POST only" <|
+                    |> Expect.equal ( Rpc.request base (getNote { name = "x" }), Rpc.Protocol.transcode )
+        , test "withConnectGet leaves transcoding as it was, and its requests unchanged" <|
             \_ ->
-                base.transport
-                    |> Expect.equal Rpc.Transport.connect
+                let
+                    unchanged call =
+                        Rpc.request (over (Rpc.Protocol.withConnectGet Rpc.Protocol.transcode)) call
+                            == Rpc.request (over Rpc.Protocol.transcode) call
+                in
+                ( Rpc.Protocol.withConnectGet Rpc.Protocol.transcode == Rpc.Protocol.transcode
+                , List.map (\method -> unchanged (method { name = "x" })) [ getNote, createNote, deleteNote, listNotes ]
+                , (Rpc.request (over (Rpc.Protocol.withConnectGet Rpc.Protocol.transcode)) (getNote { name = "x" })).method
+                )
+                    |> Expect.equal ( True, [ True, True, True, True ], "POST" )
+        , test "Connect starts POST only, and a client holds the protocol it was built over" <|
+            \_ ->
+                ( Rpc.Client.protocol base == Rpc.Protocol.connect
+                , Rpc.Protocol.connect == connectGet
+                )
+                    |> Expect.equal ( True, False )
         ]
 
 
-configs : Test
-configs =
-    describe "checkConfig"
+problems : Test
+problems =
+    let
+        at =
+            Rpc.client Rpc.Protocol.connect
+    in
+    describe "Rpc.Client.problems"
         [ test "a base URL that is an origin or a path is fine" <|
             \_ ->
                 [ "https://api.example.com", "https://api.example.com/v1/", "/api", "" ]
-                    |> List.map (Rpc.config >> Rpc.checkConfig)
+                    |> List.map (at >> Rpc.Client.problems)
                     |> Expect.equal [ [], [], [], [] ]
         , test "a base URL holding a query or a fragment is reported" <|
             \_ ->
                 [ "https://api.example.com/?key=1", "https://api.example.com/#top" ]
-                    |> List.map (Rpc.config >> Rpc.checkConfig >> List.length)
+                    |> List.map (at >> Rpc.Client.problems >> List.length)
                     |> Expect.equal [ 1, 1 ]
         , test "the report names the base URL" <|
             \_ ->
-                Rpc.checkConfig (Rpc.config "https://api.example.com/?key=1")
+                Rpc.Client.problems (at "https://api.example.com/?key=1")
                     |> List.all (String.contains "https://api.example.com/?key=1")
                     |> Expect.equal True
         , test "a header a request cannot carry is reported by name, its value left out" <|
             \_ ->
-                let
-                    cfg =
-                        Rpc.config "https://api.example.com"
-                in
-                Rpc.checkConfig { cfg | headers = [ ( "Authorization", "Bearer s3cr3t\n" ), ( "X-Fine", "  ok  " ), ( "Bad Name", "v" ) ] }
+                Rpc.Client.problems (Rpc.Client.withHeaders [ ( "Authorization", "Bearer s3cr3t\n" ), ( "X-Fine", "  ok  " ), ( "Bad Name", "v" ) ] base)
                     |> List.map (\problem -> ( String.contains "\"Authorization\"" problem || String.contains "\"Bad Name\"" problem, String.contains "s3cr3t" problem ))
                     |> Expect.equal [ ( True, False ), ( True, False ) ]
         ]
 
 
-limited : Rpc.Transport.Transport -> Int -> Rpc.Config
-limited transport limit =
-    { base | transport = Rpc.Transport.withReadMaxBytes limit transport }
+limited : Rpc.Protocol.Protocol Rpc.Json -> Int -> Rpc.Client Rpc.Json
+limited protocol limit =
+    over (Rpc.Protocol.withReadMaxBytes limit protocol)
 
 
-{-| A 200 answer with this body to `getNote`, read under a config.
+{-| A 200 answer with this body to `getNote`, read by a client.
 -}
-readAs : Rpc.Config -> String -> Result Error String
-readAs cfg body =
-    Rpc.response cfg (getNote { name = "x" }) (Http.GoodStatus_ (metadata 200 "OK") body)
+readAs : Rpc.Client Rpc.Json -> String -> Result Error String
+readAs client body =
+    Rpc.response client (getNote { name = "x" }) (Http.GoodStatus_ (metadata 200 "OK") body)
 
 
 receiveLimits : Test
@@ -1220,8 +1251,8 @@ receiveLimits =
                     |> Expect.equal 10000000
         , test "a body at the limit is read, one byte over is refused with both sizes" <|
             \_ ->
-                [ Rpc.Transport.connect, Rpc.Transport.connectGet, Rpc.Transport.transcode ]
-                    |> List.map (\transport -> List.map (\limit -> readAs (limited transport limit) note |> withCode) [ 14, 13 ])
+                [ Rpc.Protocol.connect, connectGet, Rpc.Protocol.transcode ]
+                    |> List.map (\protocol -> List.map (\limit -> readAs (limited protocol limit) note |> withCode) [ 14, 13 ])
                     |> List.concat
                     |> Expect.equal
                         (List.concat
@@ -1231,14 +1262,14 @@ receiveLimits =
                                 ]
                             )
                         )
-        , test "every transport starts with no limit" <|
+        , test "every protocol starts with no limit" <|
             \_ ->
-                [ Rpc.Transport.connect, Rpc.Transport.connectGet, Rpc.Transport.transcode ]
-                    |> List.map (\transport -> readAs { base | transport = transport } ("{\"title\":\"" ++ String.repeat 100000 "x" ++ "\"}") |> Result.map String.length)
+                [ Rpc.Protocol.connect, connectGet, Rpc.Protocol.transcode ]
+                    |> List.map (\protocol -> readAs (over protocol) ("{\"title\":\"" ++ String.repeat 100000 "x" ++ "\"}") |> Result.map String.length)
                     |> Expect.equal [ Ok 100000, Ok 100000, Ok 100000 ]
         , test "an error answer is read whatever its size" <|
             \_ ->
-                Rpc.response (limited Rpc.Transport.connect 1) (getNote { name = "x" }) (Http.BadStatus_ (metadata 404 "Not Found") "{\"code\":\"not_found\",\"message\":\"no note\"}")
+                Rpc.response (limited Rpc.Protocol.connect 1) (getNote { name = "x" }) (Http.BadStatus_ (metadata 404 "Not Found") "{\"code\":\"not_found\",\"message\":\"no note\"}")
                     |> Result.mapError (\error -> ( Rpc.Error.code error, Rpc.Error.message error ))
                     |> Expect.equal (Err ( NotFound, "no note" ))
         , test "a limit below 1 refuses any body but an empty one" <|
@@ -1246,15 +1277,15 @@ receiveLimits =
                 [ ( -5, "" ), ( 0, "" ), ( 0, "{}" ), ( -5, "{}" ) ]
                     |> List.map (\( limit, body ) -> Rpc.Internal.Http.overLimit limit body)
                     |> Expect.equal [ Nothing, Nothing, Just 2, Just 2 ]
-        , test "checkConfig reports a limit below 1, not one of 1 or more" <|
+        , test "problems reports a limit below 1, not one of 1 or more" <|
             \_ ->
                 [ 0, -1, 1, 1000000 ]
-                    |> List.map (limited Rpc.Transport.connect >> Rpc.checkConfig >> List.length)
+                    |> List.map (limited Rpc.Protocol.connect >> Rpc.Client.problems >> List.length)
                     |> Expect.equal [ 1, 1, 0, 0 ]
         , test "the knob keeps the protocol and its other options" <|
             \_ ->
-                ( List.map (Rpc.Transport.withReadMaxBytes 10 >> Rpc.Transport.name) [ Rpc.Transport.connect, Rpc.Transport.transcode ]
-                , Rpc.request (limited (Rpc.Transport.withMaxGetUrl 30 Rpc.Transport.connectGet) 10) (getNote { name = "x" })
+                ( List.map (Rpc.Protocol.withReadMaxBytes 10 >> Rpc.Protocol.name) [ Rpc.Protocol.connect, Rpc.Protocol.transcode ]
+                , Rpc.request (limited (Rpc.Protocol.withMaxGetUrl 30 connectGet) 10) (getNote { name = "x" })
                     == Rpc.request (getting (Just 30)) (getNote { name = "x" })
                 )
                     |> Expect.equal ( [ "connect", "transcode" ], True )
@@ -1271,9 +1302,18 @@ sendLimits =
         json =
             Json.Encode.encode 0 (Rpc.Call.requestJson call)
 
-        refused transport limit =
-            Rpc.Internal.Http.requestTooLarge (Rpc.Transport.withWriteMaxBytes limit transport) (\() -> json)
+        tooLarge protocol c =
+            (Rpc.Internal.Send.plan (over protocol) c).tooLarge ()
+
+        refused protocol limit =
+            tooLarge (Rpc.Protocol.withWriteMaxBytes limit protocol) call
                 |> Maybe.map (\reason -> ( reason, Rpc.Error.code (NoAnswer reason), Rpc.Error.message (NoAnswer reason) ))
+
+        -- A call whose request stops the test if it is ever encoded.
+        unencodable =
+            Rpc.call
+                (Proto.Method.json "notes.v1.Notes" "GetNote" (\_ -> Debug.todo "the message was encoded") (Proto.Message.decoder title))
+                { name = "x" }
     in
     describe "withWriteMaxBytes"
         [ test "the request measured is the JSON a POST sends" <|
@@ -1282,8 +1322,8 @@ sendLimits =
                     |> Expect.equal ( Just json, 12 )
         , test "a request at the limit is sent, one byte over is refused with both sizes" <|
             \_ ->
-                [ Rpc.Transport.connect, Rpc.Transport.connectGet, Rpc.Transport.transcode ]
-                    |> List.concatMap (\transport -> [ refused transport 13, refused transport 12 ])
+                [ Rpc.Protocol.connect, connectGet, Rpc.Protocol.transcode ]
+                    |> List.concatMap (\protocol -> [ refused protocol 13, refused protocol 12 ])
                     |> Expect.equal
                         (List.concat
                             (List.repeat 3
@@ -1292,25 +1332,25 @@ sendLimits =
                                 ]
                             )
                         )
-        , test "every transport starts with no limit" <|
+        , test "every protocol starts with no limit" <|
             \_ ->
-                [ Rpc.Transport.connect, Rpc.Transport.connectGet, Rpc.Transport.transcode ]
-                    |> List.map (\transport -> Rpc.Internal.Http.requestTooLarge transport (\() -> String.repeat 100000 "x"))
+                [ Rpc.Protocol.connect, connectGet, Rpc.Protocol.transcode ]
+                    |> List.map (\protocol -> tooLarge protocol (getNote { name = String.repeat 100000 "x" }))
                     |> Expect.equal [ Nothing, Nothing, Nothing ]
         , test "with no limit the message is not encoded to be measured" <|
             \_ ->
-                [ Rpc.Transport.connect, Rpc.Transport.connectGet, Rpc.Transport.transcode ]
-                    |> List.map (\transport -> Rpc.Internal.Http.requestTooLarge transport (\() -> Debug.todo "the message was encoded"))
+                [ Rpc.Protocol.connect, connectGet, Rpc.Protocol.transcode ]
+                    |> List.map (\protocol -> tooLarge protocol unencodable)
                     |> Expect.equal [ Nothing, Nothing, Nothing ]
-        , test "checkConfig reports a limit below 1, not one of 1 or more" <|
+        , test "problems reports a limit below 1, not one of 1 or more" <|
             \_ ->
                 [ 0, -1, 1, 1000000 ]
-                    |> List.map (\limit -> Rpc.checkConfig { base | transport = Rpc.Transport.withWriteMaxBytes limit Rpc.Transport.transcode } |> List.length)
+                    |> List.map (\limit -> Rpc.Client.problems (over (Rpc.Protocol.withWriteMaxBytes limit Rpc.Protocol.transcode)) |> List.length)
                     |> Expect.equal [ 1, 1, 0, 0 ]
         , test "the knob keeps the protocol and its other options" <|
             \_ ->
-                ( List.map (Rpc.Transport.withWriteMaxBytes 10 >> Rpc.Transport.name) [ Rpc.Transport.connect, Rpc.Transport.transcode ]
-                , Rpc.request { base | transport = Rpc.Transport.withWriteMaxBytes 10 (Rpc.Transport.withMaxGetUrl 30 Rpc.Transport.connectGet) } call
+                ( List.map (Rpc.Protocol.withWriteMaxBytes 10 >> Rpc.Protocol.name) [ Rpc.Protocol.connect, Rpc.Protocol.transcode ]
+                , Rpc.request (over (Rpc.Protocol.withWriteMaxBytes 10 (Rpc.Protocol.withMaxGetUrl 30 connectGet))) call
                     == Rpc.request (getting (Just 30)) call
                 )
                     |> Expect.equal ( [ "connect", "transcode" ], True )
@@ -1408,7 +1448,8 @@ traces =
             Rpc.Internal.Trace.Trace
                 { serviceName = "notes.v1.Notes"
                 , methodName = "GetNote"
-                , transport = "connect"
+                , protocol = "connect"
+                , codec = "json"
                 , binding = Nothing
                 , request = sent
                 , requestBase64 = Nothing
@@ -1428,7 +1469,7 @@ traces =
             \_ ->
                 Json.Encode.encode 0 (Rpc.Trace.toJson succeeded)
                     |> Expect.equal
-                        ("""{"service":"notes.v1.Notes","method":"GetNote","procedure":"/notes.v1.Notes/GetNote","transport":"connect","binding":null,"""
+                        ("""{"service":"notes.v1.Notes","method":"GetNote","procedure":"/notes.v1.Notes/GetNote","protocol":"connect","codec":"json","binding":null,"""
                             ++ """"request":{"method":"POST","url":"https://api.example.com/notes.v1.Notes/GetNote","headers":[["Connect-Protocol-Version","1"]],"body":"{\\"name\\":\\"notes/42\\"}","timeout":null,"withCredentials":false},"""
                             ++ """"httpStatus":200,"headers":{"content-type":"application/json"},"trailers":{},"code":"ok","duration":12.4,"attempts":1}"""
                         )
@@ -1453,12 +1494,12 @@ traces =
                     |> Expect.equal "/notes.v1.Notes/GetNote"
         , test "the accessors" <|
             \_ ->
-                ( ( Rpc.Trace.serviceName succeeded, Rpc.Trace.methodName succeeded, Rpc.Trace.transport succeeded )
+                ( ( Rpc.Trace.serviceName succeeded, Rpc.Trace.methodName succeeded, ( Rpc.Trace.protocol succeeded, Rpc.Trace.codec succeeded ) )
                 , ( Rpc.Trace.binding succeeded, Rpc.Trace.request succeeded == sent, Rpc.Trace.httpStatus succeeded )
                 , ( Rpc.Trace.code succeeded, Rpc.Trace.duration succeeded, Rpc.Trace.attempts succeeded )
                 )
                     |> Expect.equal
-                        ( ( "notes.v1.Notes", "GetNote", "connect" )
+                        ( ( "notes.v1.Notes", "GetNote", ( "connect", "json" ) )
                         , ( Nothing, True, Just 200 )
                         , ( Nothing, 12.4, 1 )
                         )

@@ -28,16 +28,16 @@ elmConnectVersion_ =
 Connect: `POST /chat.v1.Chat/Send`.
 Transcode: no HTTP rule, follows the Connect path.
 
-Described by [`descriptorSend`](#descriptorSend).
+Codecs: JSON. Described by [`descriptorSend`](#descriptorSend).
 
 -}
-send : Chat.V1.Line -> Rpc.Call Chat.V1.Line Chat.V1.Line
+send : Chat.V1.Line -> Rpc.Call Rpc.Json Chat.V1.Line Chat.V1.Line
 send =
     Rpc.call
-        (Proto.Method.method Chat.V1.encodeLine
-            Chat.V1.decodeLine
-            "chat.v1.Chat"
+        (Proto.Method.json "chat.v1.Chat"
             "Send"
+            Chat.V1.encodeLine
+            Chat.V1.decodeLine
         )
 
 

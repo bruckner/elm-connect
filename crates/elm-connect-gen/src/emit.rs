@@ -34,10 +34,10 @@
 //!   calls, routes, then descriptors (routes only when a method has one).
 //!   Each method's call is a function from its request to an `Rpc.Call`,
 //!   written point-free as `Rpc.call` of the method's
-//!   `Proto.Method.Method`, built by `Proto.Method.method` from the
-//!   encoder of its request and the decoder of its response
-//!   (`Notes.V1.encodeGetNoteRequest`, or the runtime's for a well-known
-//!   type), its service's full name and its own, then piped through
+//!   `Proto.Method.Method`, built by `Proto.Method.json` from its
+//!   service's full name and its own, the encoder of its request and the
+//!   decoder of its response (`Notes.V1.encodeGetNoteRequest`, or the
+//!   runtime's for a well-known type), then piped through
 //!   `Proto.Method.withIdempotency` when the proto declares one and
 //!   `Proto.Method.withRoutes` with its route functions. Each route
 //!   function, `routeGetNote0 : GetNoteRequest -> Proto.Route.Route`,
@@ -147,15 +147,16 @@
 //!   fields holds the wrapper, and the wrapper's decoder reads the message
 //!   through `Json.Decode.lazy`. A oneof member that closes a cycle decodes
 //!   through `Json.Decode.lazy` too (design §3.2).
-//! - Under `codec=binary` or `codec=both` each message, enum, oneof and
+//! - Under `codec=proto` or `codec=both` each message, enum, oneof and
 //!   recursion wrapper also gets protobuf binary codecs, in two sections
 //!   after the decoders ([`binary`]); the typed values and the methods
-//!   carry them (`Proto.Message.withBinary`, `Proto.Method.withBinary`).
-//!   Under `codec=binary` messages, oneofs and wrappers get no JSON codecs
-//!   (enums keep theirs, which their typed values hold), and the typed
-//!   values and methods are built by `Proto.Message.messageBinary` and
-//!   `Proto.Method.methodBinary`, and methods get no routes, which take
-//!   JSON.
+//!   carry them (`Proto.Message.withBinary`, `Proto.Method.both`). Under
+//!   `codec=proto` messages, oneofs and wrappers get no JSON codecs (enums
+//!   keep theirs, which their typed values hold), and the typed values and
+//!   methods are built by `Proto.Message.messageBinary` and
+//!   `Proto.Method.proto`, and methods get no routes, which take JSON. A
+//!   call's type carries its codec: `Rpc.Call Rpc.Json`, `Rpc.Call
+//!   Rpc.Proto`, or free in it under `codec=both`.
 //! - A message that the request of a generated method's binding puts in the
 //!   query gets a query encoder in its package's module, in a last
 //!   section, `queryOfListNotesRequest : ListNotesRequest -> List ( String,
@@ -294,12 +295,12 @@ pub fn emit_with_queries(
     let mut emitter = Emitter::new(&package.module, options);
     let mut decls = emitter.package(package);
     let mut encoders = Vec::new();
-    // Route functions take JSON, which `codec=binary` does not generate,
+    // Route functions take JSON, which `codec=proto` does not generate,
     // so it generates no routes, and no query encoders for them.
     for message in package
         .messages
         .iter()
-        .filter(|_| options.codec != Codec::Binary)
+        .filter(|_| options.codec != Codec::Proto)
     {
         if let Some(params) = queries.get(&message.proto_full_name)
             && let Some(decl) = emitter.query_encoder(&messages, message, params)
@@ -630,7 +631,7 @@ impl Emitter {
         for enumeration in &package.enums {
             types.push(self.enum_type(&package.module, enumeration));
             values.push(self.enum_record(&package.module, enumeration));
-            // An enum keeps its JSON codecs under `codec=binary`: its typed
+            // An enum keeps its JSON codecs under `codec=proto`: its typed
             // value holds them, and they are small.
             encoders.push(self.enum_encoder(enumeration));
             decoders.push(self.enum_decoder(enumeration));
@@ -678,7 +679,7 @@ impl Emitter {
             binary_encoders.clear();
             binary_decoders.clear();
         }
-        // Under `codec=binary` a package of messages alone has no JSON
+        // Under `codec=proto` a package of messages alone has no JSON
         // codecs.
         if encoders.len() == 1 {
             encoders.clear();
@@ -1296,11 +1297,11 @@ mod tests {
         assert_eq!(sections, ["CALLS", "DESCRIPTORS"]);
         let printed = crate::elm::print::print_module(&module);
         for expected in [
-            "(Proto.Method.method T.V1.encodeA\n            T.V1.decodeA\n            \
-             \"t.v1.S\"\n            \"Get\"\n        )\n",
+            "(Proto.Method.json \"t.v1.S\"\n            \"Get\"\n            \
+             T.V1.encodeA\n            T.V1.decodeA\n        )\n",
             // Qualified, or `identity` would be the method itself.
-            "(Proto.Method.method Basics.identity\n            Proto.Json.empty\n",
-            "(Proto.Method.method Proto.Json.encodeInt64AsInt\n            Proto.Json.any\n",
+            "\n            Basics.identity\n            Proto.Json.empty\n",
+            "\n            Proto.Json.encodeInt64AsInt\n            Proto.Json.any\n",
             "descriptorGet : Proto.Method.Descriptor\ndescriptorGet =\n    \
              Proto.Method.descriptor \"t.v1.S\"\n        \"Get\"\n        \
              Proto.Method.IdempotencyUnknown\n        \"t.v1.A\"\n        \"t.v1.A\"\n        []\n",

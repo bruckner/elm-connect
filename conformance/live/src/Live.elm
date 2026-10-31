@@ -10,16 +10,16 @@ import Dict exposing (Dict)
 import Http
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
-import Live.Call exposing (Entry, Envelope, Outcome, Sending(..), Transport(..))
+import Live.Call exposing (Client(..), Entry, Envelope, Outcome, Sending(..), Transport(..))
 import Live.Conformance
 import Live.Notes
-import Live.OneCodec
 import Live.Routes
 import Process
 import Rpc
+import Rpc.Client
 import Rpc.Code
+import Rpc.Protocol
 import Rpc.Retry
-import Rpc.Transport
 import Set exposing (Set)
 import Task
 
@@ -34,7 +34,7 @@ port results : Value -> Cmd msg
 -}
 tables : Dict ( String, String ) (Entry Msg)
 tables =
-    Dict.fromList (Live.Notes.table ++ Live.Conformance.table ++ Live.Routes.table ++ Live.OneCodec.table)
+    Dict.fromList (Live.Notes.table ++ Live.Conformance.table ++ Live.Routes.table)
 
 
 main : Program () Model Msg
@@ -251,25 +251,50 @@ oneOfNames what names =
             )
 
 
-config : Transport -> Decoder Rpc.Config
+config : Transport -> Decoder Client
 config t =
     Decode.map8
-        (\baseUrl headers timeout withCredentials useGet maxGetUrl withLimits retry ->
-            { transport =
-                (case t of
-                    Connect ->
-                        connectTransport useGet maxGetUrl
+        (\baseUrl headers timeout withCredentials useGet maxGetUrl ( readMaxBytes, writeMaxBytes, codec ) retry ->
+            let
+                -- Let-bound, so each is taken at the codec of the client it builds.
+                limited protocol =
+                    protocol
+                        |> maybeApply Rpc.Protocol.withReadMaxBytes readMaxBytes
+                        |> maybeApply Rpc.Protocol.withWriteMaxBytes writeMaxBytes
 
-                    Transcode ->
-                        Rpc.Transport.transcode
-                )
-                    |> withLimits
-            , baseUrl = baseUrl
-            , headers = headers
-            , timeout = timeout
-            , withCredentials = withCredentials
-            , retry = retry
-            }
+                connectOver protocol =
+                    (if useGet then
+                        Rpc.Protocol.withConnectGet protocol
+
+                     else
+                        protocol
+                    )
+                        |> maybeApply Rpc.Protocol.withMaxGetUrl maxGetUrl
+
+                over protocol =
+                    Rpc.client (limited protocol) baseUrl
+                        |> Rpc.Client.withHeaders headers
+                        |> maybeApply Rpc.Client.withTimeout timeout
+                        |> (if withCredentials then
+                                Rpc.Client.withCredentials
+
+                            else
+                                identity
+                           )
+                        |> maybeApply Rpc.Client.withRetry retry
+            in
+            case ( t, codec ) of
+                ( Connect, "proto" ) ->
+                    Decode.succeed (ProtoClient (over (connectOver Rpc.Protocol.connectProto)))
+
+                ( Connect, _ ) ->
+                    Decode.succeed (JsonClient (over (connectOver Rpc.Protocol.connect)))
+
+                ( Transcode, "proto" ) ->
+                    Decode.fail "transcode speaks proto3 JSON alone"
+
+                ( Transcode, _ ) ->
+                    Decode.succeed (JsonClient (over Rpc.Protocol.transcode))
         )
         (Decode.field "baseUrl" Decode.string)
         (optional "headers" (Decode.list pair) [])
@@ -277,26 +302,23 @@ config t =
         (optional "withCredentials" Decode.bool False)
         (optional "useGet" Decode.bool False)
         (optional "maxGetUrl" (Decode.nullable Decode.int) Nothing)
-        limits
-        (optional "retry" (Decode.nullable retryPolicy) Nothing)
-
-
-{-| The size limits `readMaxBytes` and `writeMaxBytes` set and the codec
-`codec` names (`"json"`, the default, or `"proto"`), applied to a transport.
--}
-limits : Decoder (Rpc.Transport.Transport -> Rpc.Transport.Transport)
-limits =
-    let
-        limit name knob =
-            optional name (Decode.nullable Decode.int) Nothing
-                |> Decode.map (Maybe.map knob >> Maybe.withDefault identity)
-    in
-    Decode.map3 (\a b c -> a >> b >> c)
-        (limit "readMaxBytes" Rpc.Transport.withReadMaxBytes)
-        (limit "writeMaxBytes" Rpc.Transport.withWriteMaxBytes)
-        (optional "codec" (oneOfNames "codec" [ ( "json", Rpc.Transport.Json ), ( "proto", Rpc.Transport.Proto ) ]) Rpc.Transport.Json
-            |> Decode.map Rpc.Transport.withCodec
+        (Decode.map3 (\a b c -> ( a, b, c ))
+            (optional "readMaxBytes" (Decode.nullable Decode.int) Nothing)
+            (optional "writeMaxBytes" (Decode.nullable Decode.int) Nothing)
+            (optional "codec" (oneOfNames "codec" [ ( "json", "json" ), ( "proto", "proto" ) ]) "json")
         )
+        (optional "retry" (Decode.nullable retryPolicy) Nothing)
+        |> Decode.andThen identity
+
+
+maybeApply : (a -> b -> b) -> Maybe a -> b -> b
+maybeApply f setting =
+    case setting of
+        Just value ->
+            f value
+
+        Nothing ->
+            identity
 
 
 pair : Decoder ( String, String )
@@ -304,26 +326,6 @@ pair =
     Decode.map2 Tuple.pair
         (Decode.index 0 Decode.string)
         (Decode.index 1 Decode.string)
-
-
-{-| The Connect transport an envelope's `useGet` and `maxGetUrl` describe.
--}
-connectTransport : Bool -> Maybe Int -> Rpc.Transport.Transport
-connectTransport useGet maxGetUrl =
-    let
-        connectOrGet =
-            if useGet then
-                Rpc.Transport.connectGet
-
-            else
-                Rpc.Transport.connect
-    in
-    case maxGetUrl of
-        Just limit ->
-            Rpc.Transport.withMaxGetUrl limit connectOrGet
-
-        Nothing ->
-            connectOrGet
 
 
 {-| A retry policy as a case writes it: `codes` and `attempts`, `backoff`

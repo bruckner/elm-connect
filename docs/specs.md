@@ -11,8 +11,8 @@ beside each link says what the runtime or the generator does about it.
 - [Connect protocol](https://connectrpc.com/docs/protocol/): the unary
   request and response over HTTP, `Connect-Protocol-Version`, the JSON
   error shape and its codes, the mapping from an HTTP status to a code,
-  and GET for methods without side effects. `Rpc.Transport.connect` and
-  `connectGet` ([calling.md](calling.md)).
+  and GET for methods without side effects. `Rpc.Protocol.connect`,
+  `connectProto` and `withConnectGet` ([calling.md](calling.md)).
 - [Connect conformance suite](https://github.com/connectrpc/conformance):
   the official test runner; the live suite runs the runtime under it
   with the features
@@ -26,7 +26,7 @@ beside each link says what the runtime or the generator does about it.
   [edition](https://protobuf.dev/editions/overview/) are refused
   ([diagnostics.md](diagnostics.md), [roadmap.md](roadmap.md)).
 - [ProtoJSON format](https://protobuf.dev/programming-guides/json/):
-  the JSON the generated codecs write and read, on both transports
+  the JSON the generated codecs write and read, over both protocols
   ([generator.md](generator.md)).
 - [Protobuf conformance suite](https://github.com/protocolbuffers/protobuf/tree/main/conformance):
   protobuf's test runner for parsers and serializers. `just
@@ -55,7 +55,7 @@ beside each link says what the runtime or the generator does about it.
 
 - [`google.api.http`](https://github.com/googleapis/googleapis/blob/master/google/api/http.proto):
   the `HttpRule` grammar, in the comments of the proto itself, that
-  `Rpc.Transport.transcode` follows ([transcoding.md](transcoding.md)).
+  `Rpc.Protocol.transcode` follows ([transcoding.md](transcoding.md)).
 - [AIP-127](https://google.aip.dev/127), HTTP and gRPC transcoding;
   [AIP-134](https://google.aip.dev/134), update masks under PATCH;
   [AIP-126](https://google.aip.dev/126), enums: the API design rules the
@@ -80,7 +80,7 @@ beside each link says what the runtime or the generator does about it.
   headers a transcoder may answer with, which the runtime reads
   ([transcoding.md](transcoding.md)).
 - [gRPC-Web](https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-WEB.md):
-  not a transport of the runtime ([roadmap.md](roadmap.md)).
+  not a protocol of the runtime ([roadmap.md](roadmap.md)).
 
 ## HTTP and formats
 

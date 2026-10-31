@@ -1,7 +1,7 @@
 module Replay exposing (Expected, Fixture, fixture, normalize, replay)
 
 {-| Replaying the route fixtures (`conformance/routes`) and the route
-properties through `Rpc.request` with the Transcode transport: `RouteFixtures`
+properties through `Rpc.request` over the Transcode protocol: `RouteFixtures`
 and `RouteProperties` are generated from them, and `RouteFixturesTest` and
 `RoutePropertiesTest` check each.
 -}
@@ -12,7 +12,7 @@ import Json.Encode exposing (Value)
 import Rpc
 import Rpc.Body
 import Rpc.Call
-import Rpc.Transport
+import Rpc.Protocol
 import Test exposing (Test, test)
 
 
@@ -39,7 +39,7 @@ whose call is left as it is), its request as proto3 JSON, and the request
 expected. A binding the method does not have is a failure, not the implicit
 route.
 -}
-fixture : String -> Decoder req -> (req -> Rpc.Call req res) -> Maybe Int -> String -> Expected -> Fixture
+fixture : String -> Decoder req -> (req -> Rpc.Call Rpc.Json req res) -> Maybe Int -> String -> Expected -> Fixture
 fixture name decoder method binding json expected =
     { name = name
     , actual =
@@ -85,13 +85,9 @@ replay case_ =
                             }
 
 
-transcode : Rpc.Config
+transcode : Rpc.Client Rpc.Json
 transcode =
-    let
-        base =
-            Rpc.config ""
-    in
-    { base | transport = Rpc.Transport.transcode }
+    Rpc.client Rpc.Protocol.transcode ""
 
 
 {-| A JSON body, normalized as the Rust half of the fixtures normalizes it:

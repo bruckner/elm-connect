@@ -123,7 +123,7 @@ impl Emitter {
                     built
                 }
             }
-            crate::options::Codec::Binary => {
+            crate::options::Codec::Proto => {
                 let builder = self.reference((PROTO_MESSAGE, "messageBinary"));
                 apply(
                     builder,

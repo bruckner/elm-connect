@@ -35,16 +35,16 @@ elmConnectVersion_ =
 Connect: `POST /clock.v1.Clock/Now`.
 Transcode: no HTTP rule, follows the Connect path.
 
-Described by [`descriptorNow`](#descriptorNow).
+Codecs: JSON. Described by [`descriptorNow`](#descriptorNow).
 
 -}
-now : () -> Rpc.Call () Time.Posix
+now : () -> Rpc.Call Rpc.Json () Time.Posix
 now =
     Rpc.call
-        (Proto.Method.method Proto.Json.encodeEmpty
-            Proto.Json.timestamp
-            "clock.v1.Clock"
+        (Proto.Method.json "clock.v1.Clock"
             "Now"
+            Proto.Json.encodeEmpty
+            Proto.Json.timestamp
         )
 
 
@@ -52,16 +52,16 @@ now =
 Connect: `POST /clock.v1.Clock/Sleep`.
 Transcode: no HTTP rule, follows the Connect path.
 
-Described by [`descriptorSleep`](#descriptorSleep).
+Codecs: JSON. Described by [`descriptorSleep`](#descriptorSleep).
 
 -}
-sleep : Duration -> Rpc.Call Duration ()
+sleep : Duration -> Rpc.Call Rpc.Json Duration ()
 sleep =
     Rpc.call
-        (Proto.Method.method Proto.Json.encodeDuration
-            Proto.Json.empty
-            "clock.v1.Clock"
+        (Proto.Method.json "clock.v1.Clock"
             "Sleep"
+            Proto.Json.encodeDuration
+            Proto.Json.empty
         )
 
 
@@ -69,16 +69,16 @@ sleep =
 Connect: `POST /clock.v1.Clock/Mask`.
 Transcode: no HTTP rule, follows the Connect path.
 
-Described by [`descriptorMask`](#descriptorMask).
+Codecs: JSON. Described by [`descriptorMask`](#descriptorMask).
 
 -}
-mask : List String -> Rpc.Call (List String) (Dict String Json.Encode.Value)
+mask : List String -> Rpc.Call Rpc.Json (List String) (Dict String Json.Encode.Value)
 mask =
     Rpc.call
-        (Proto.Method.method Proto.Json.encodeFieldMask
-            Proto.Json.struct
-            "clock.v1.Clock"
+        (Proto.Method.json "clock.v1.Clock"
             "Mask"
+            Proto.Json.encodeFieldMask
+            Proto.Json.struct
         )
 
 
@@ -86,16 +86,16 @@ mask =
 Connect: `POST /clock.v1.Clock/Echo`.
 Transcode: no HTTP rule, follows the Connect path.
 
-Described by [`descriptorEcho`](#descriptorEcho).
+Codecs: JSON. Described by [`descriptorEcho`](#descriptorEcho).
 
 -}
-echo : Json.Encode.Value -> Rpc.Call Json.Encode.Value (List Json.Encode.Value)
+echo : Json.Encode.Value -> Rpc.Call Rpc.Json Json.Encode.Value (List Json.Encode.Value)
 echo =
     Rpc.call
-        (Proto.Method.method Basics.identity
-            Proto.Json.listValue
-            "clock.v1.Clock"
+        (Proto.Method.json "clock.v1.Clock"
             "Echo"
+            Basics.identity
+            Proto.Json.listValue
         )
 
 
@@ -103,16 +103,16 @@ echo =
 Connect: `POST /clock.v1.Clock/Ticks`.
 Transcode: no HTTP rule, follows the Connect path.
 
-Described by [`descriptorTicks`](#descriptorTicks).
+Codecs: JSON. Described by [`descriptorTicks`](#descriptorTicks).
 
 -}
-ticks : Int -> Rpc.Call Int Int
+ticks : Int -> Rpc.Call Rpc.Json Int Int
 ticks =
     Rpc.call
-        (Proto.Method.method Proto.Json.encodeInt64AsInt
-            Proto.Json.uint64AsInt
-            "clock.v1.Clock"
+        (Proto.Method.json "clock.v1.Clock"
             "Ticks"
+            Proto.Json.encodeInt64AsInt
+            Proto.Json.uint64AsInt
         )
 
 
@@ -120,16 +120,16 @@ ticks =
 Connect: `POST /clock.v1.Clock/Count`.
 Transcode: no HTTP rule, follows the Connect path.
 
-Described by [`descriptorCount`](#descriptorCount).
+Codecs: JSON. Described by [`descriptorCount`](#descriptorCount).
 
 -}
-count : Int -> Rpc.Call Int Int
+count : Int -> Rpc.Call Rpc.Json Int Int
 count =
     Rpc.call
-        (Proto.Method.method Json.Encode.int
-            Proto.Json.uint32
-            "clock.v1.Clock"
+        (Proto.Method.json "clock.v1.Clock"
             "Count"
+            Json.Encode.int
+            Proto.Json.uint32
         )
 
 
@@ -137,16 +137,16 @@ count =
 Connect: `POST /clock.v1.Clock/Ratio`.
 Transcode: no HTTP rule, follows the Connect path.
 
-Described by [`descriptorRatio`](#descriptorRatio).
+Codecs: JSON. Described by [`descriptorRatio`](#descriptorRatio).
 
 -}
-ratio : Float -> Rpc.Call Float Float
+ratio : Float -> Rpc.Call Rpc.Json Float Float
 ratio =
     Rpc.call
-        (Proto.Method.method Proto.Json.encodeFloat
-            Proto.Json.float32
-            "clock.v1.Clock"
+        (Proto.Method.json "clock.v1.Clock"
             "Ratio"
+            Proto.Json.encodeFloat
+            Proto.Json.float32
         )
 
 
@@ -154,16 +154,16 @@ ratio =
 Connect: `POST /clock.v1.Clock/Name`.
 Transcode: no HTTP rule, follows the Connect path.
 
-Described by [`descriptorName`](#descriptorName).
+Codecs: JSON. Described by [`descriptorName`](#descriptorName).
 
 -}
-name : String -> Rpc.Call String Bool
+name : String -> Rpc.Call Rpc.Json String Bool
 name =
     Rpc.call
-        (Proto.Method.method Json.Encode.string
-            Json.Decode.bool
-            "clock.v1.Clock"
+        (Proto.Method.json "clock.v1.Clock"
             "Name"
+            Json.Encode.string
+            Json.Decode.bool
         )
 
 
@@ -171,16 +171,16 @@ name =
 Connect: `POST /clock.v1.Clock/Raw`.
 Transcode: no HTTP rule, follows the Connect path.
 
-Described by [`descriptorRaw`](#descriptorRaw).
+Codecs: JSON. Described by [`descriptorRaw`](#descriptorRaw).
 
 -}
-raw : String -> Rpc.Call String String
+raw : String -> Rpc.Call Rpc.Json String String
 raw =
     Rpc.call
-        (Proto.Method.method Proto.Json.encodeBytes
-            Proto.Json.bytes
-            "clock.v1.Clock"
+        (Proto.Method.json "clock.v1.Clock"
             "Raw"
+            Proto.Json.encodeBytes
+            Proto.Json.bytes
         )
 
 
@@ -188,16 +188,16 @@ raw =
 Connect: `POST /clock.v1.Clock/Zone`.
 Transcode: no HTTP rule, follows the Connect path.
 
-Described by [`descriptorZone`](#descriptorZone).
+Codecs: JSON. Described by [`descriptorZone`](#descriptorZone).
 
 -}
-zone : Zones.V1.ZoneRequest -> Rpc.Call Zones.V1.ZoneRequest Zones.V1.Zone
+zone : Zones.V1.ZoneRequest -> Rpc.Call Rpc.Json Zones.V1.ZoneRequest Zones.V1.Zone
 zone =
     Rpc.call
-        (Proto.Method.method Zones.V1.encodeZoneRequest
-            Zones.V1.decodeZone
-            "clock.v1.Clock"
+        (Proto.Method.json "clock.v1.Clock"
             "Zone"
+            Zones.V1.encodeZoneRequest
+            Zones.V1.decodeZone
         )
 
 
@@ -205,16 +205,16 @@ zone =
 Connect: `POST /clock.v1.Clock/Set`.
 Transcode: no HTTP rule, follows the Connect path.
 
-Described by [`descriptorSet`](#descriptorSet).
+Codecs: JSON. Described by [`descriptorSet`](#descriptorSet).
 
 -}
-set : Clock.V1.Alarm -> Rpc.Call Clock.V1.Alarm Clock.V1.Alarm
+set : Clock.V1.Alarm -> Rpc.Call Rpc.Json Clock.V1.Alarm Clock.V1.Alarm
 set =
     Rpc.call
-        (Proto.Method.method Clock.V1.encodeAlarm
-            Clock.V1.decodeAlarm
-            "clock.v1.Clock"
+        (Proto.Method.json "clock.v1.Clock"
             "Set"
+            Clock.V1.encodeAlarm
+            Clock.V1.decodeAlarm
         )
 
 

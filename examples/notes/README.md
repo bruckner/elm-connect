@@ -120,35 +120,28 @@ application outside the repository.
 
 ## Sending every call through one function
 
-A config is data, with no function in it, so the application builds it
-from its own state in one place and sends every call through one
-function. `Api.elm`:
+The application builds its client from its own state in one place and
+sends every call through one function. `Api.elm`:
 
 ```elm examples/notes/elm/src/Api.elm#wrapper
-rpc : Shared -> Rpc.Call req res -> Task Rpc.Error res
+rpc : Shared -> Rpc.Call Rpc.Json req res -> Task Rpc.Error res
 rpc shared call =
-    Rpc.task (config shared) call
+    Rpc.task (client shared) call
 
 
-config : Shared -> Rpc.Config
-config shared =
-    let
-        base =
-            Rpc.config shared.apiUrl
-    in
-    { base
-        | transport = shared.transport
-        , headers = [ ( "Authorization", "Bearer " ++ shared.token ) ]
-    }
+client : Shared -> Rpc.Client Rpc.Json
+client shared =
+    Rpc.client shared.protocol shared.apiUrl
+        |> Rpc.Client.withHeaders [ ( "Authorization", "Bearer " ++ shared.token ) ]
 ```
 
-`Shared` holds the page's origin, a token and the transport the page's
+`Shared` holds the page's origin, a token and the protocol the page's
 toggle chose. The token is a fixed string here; the server ignores it,
 and it shows in the network tab as the `Authorization` header.
 
 ## A first call
 
-A generated method applied to its request is an `Rpc.Call`; `Api.rpc`
+A generated method applied to its request is an `Rpc.Call Rpc.Json`; `Api.rpc`
 sends it as a `Task`. Listing the notes, from `Main.elm`:
 
 ```elm examples/notes/elm/src/Main.elm#first-call
@@ -163,7 +156,7 @@ list model =
     )
 ```
 
-`record` keeps `Rpc.request (Api.config shared) call`, the HTTP request
+`record` keeps `Rpc.request (Api.client shared) call`, the HTTP request
 the call becomes, built without sending anything; the page lists the
 last few under "Sent".
 
@@ -252,9 +245,9 @@ Over Connect the error arrives as a Connect error body
 runtime does not read, or one that drifted from the schema, can still be
 shown, as the `HttpStatus` and `BadResponse` branches do.
 
-## The transport toggle
+## The protocol toggle
 
-The toggle sets the transport in `Shared`, and the API's URL with it:
+The toggle sets the protocol in `Shared`, and the API's URL with it:
 the server's own origin for Connect and for Vanguard's transcoding, the
 `/gateway` beneath it for grpc-gateway's. Every call after it, from the
 same generated code, goes over the other wire form:
@@ -265,21 +258,21 @@ SetWire wire ->
         shared =
             model.shared
 
-        ( transport, path ) =
+        ( protocol, path ) =
             case wire of
                 ViaConnect ->
-                    ( Rpc.Transport.connect, "" )
+                    ( Rpc.Protocol.connect, "" )
 
                 ViaVanguard ->
-                    ( Rpc.Transport.transcode, "" )
+                    ( Rpc.Protocol.transcode, "" )
 
                 ViaGateway ->
-                    ( Rpc.Transport.transcode, "/gateway" )
+                    ( Rpc.Protocol.transcode, "/gateway" )
     in
     list
         { model
             | wire = wire
-            , shared = { shared | transport = transport, apiUrl = model.origin ++ path }
+            , shared = { shared | protocol = protocol, apiUrl = model.origin ++ path }
         }
 ```
 
@@ -322,7 +315,7 @@ updateRequest draft =
 
 ## What to look at in the network tab
 
-The same actions, over each transport (requests to `127.0.0.1:8080`):
+The same actions, over each protocol (requests to `127.0.0.1:8080`):
 
 | Action | Connect | HTTP transcoding |
 |---|---|---|
@@ -397,7 +390,7 @@ The server serves the transcoding routes a second time under `/gateway`,
 through [grpc-gateway](https://github.com/grpc-ecosystem/grpc-gateway)
 v2, so the live suite runs the runtime against both transcoders. A client
 of it needs only another `baseUrl`, `http://127.0.0.1:8080/gateway`; the
-page's third transport choice, "HTTP transcoding via grpc-gateway", is
+page's third protocol choice, "HTTP transcoding via grpc-gateway", is
 that URL (the toggle, above):
 
 ```sh

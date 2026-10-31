@@ -1,7 +1,7 @@
 module Snippets.Configuring exposing (NoteMsg(..), NoteState(..), Retrying, attemptNote, checked, connectGet, perCall, retrying, updateNote, withdraw)
 
-{-| docs/calling.md's configs: a transport with its options, a retry policy,
-a retry loop the application drives, checking a config, and the adjustments
+{-| docs/calling.md's clients: a protocol with its options, a retry policy,
+a retry loop the application drives, checking a client, and the adjustments
 of one call.
 -}
 
@@ -10,52 +10,45 @@ import Notes.V1.NotesService as Notes
 import Process
 import Rpc
 import Rpc.Call
+import Rpc.Client
 import Rpc.Code
 import Rpc.Error
+import Rpc.Protocol
 import Rpc.Retry
-import Rpc.Transport
 import Task
 import Time
 
 
 
--- region transports
+-- region protocols
 
 
-connectGet : Rpc.Config
+connectGet : Rpc.Client Rpc.Json
 connectGet =
-    let
-        base =
-            Rpc.config "https://api.example.com"
-    in
     -- GetNote, ListNotes and Ping, declared NO_SIDE_EFFECTS, become GETs;
     -- a GET whose URL would pass 2048 characters is POSTed instead.
-    { base
-        | transport =
-            Rpc.Transport.connectGet
-                |> Rpc.Transport.withMaxGetUrl 2048
-    }
+    Rpc.client
+        (Rpc.Protocol.connect
+            |> Rpc.Protocol.withConnectGet
+            |> Rpc.Protocol.withMaxGetUrl 2048
+        )
+        "https://api.example.com"
 
 
 
--- endregion transports
+-- endregion protocols
 -- region retry
 
 
-retrying : Rpc.Config
+retrying : Rpc.Client Rpc.Json
 retrying =
-    let
-        base =
-            Rpc.config "https://api.example.com"
-    in
-    { base
-        | retry =
-            Rpc.Retry.on [ Rpc.Code.Unavailable, Rpc.Code.ResourceExhausted ]
+    Rpc.client Rpc.Protocol.connect "https://api.example.com"
+        |> Rpc.Client.withRetry
+            (Rpc.Retry.on [ Rpc.Code.Unavailable, Rpc.Code.ResourceExhausted ]
                 |> Rpc.Retry.withAttempts 5
                 |> Rpc.Retry.withBackoff 500
                 |> Rpc.Retry.withMaxBackoff 10000
-                |> Just
-    }
+            )
 
 
 
@@ -90,7 +83,7 @@ attemptNote : Int -> Cmd NoteMsg
 attemptNote tried =
     Notes.getNote { name = "notes/42" }
         |> Rpc.Call.withoutRetry
-        |> Rpc.task (Rpc.config "https://api.example.com")
+        |> Rpc.task (Rpc.client Rpc.Protocol.connect "https://api.example.com")
         |> Task.map Ok
         |> Task.onError (\err -> Task.succeed (Err err))
         |> Task.andThen (\result -> Task.map (\now -> GotNote tried now result) Time.now)
@@ -127,21 +120,21 @@ updateNote msg model =
 
 
 -- endregion driving
--- region check-config
+-- region check-client
 
 
-checked : Rpc.Config -> Result String Rpc.Config
-checked cfg =
-    case Rpc.checkConfig cfg of
+checked : Rpc.Client codec -> Result String (Rpc.Client codec)
+checked client =
+    case Rpc.Client.problems client of
         [] ->
-            Ok cfg
+            Ok client
 
         problems ->
             Err (String.join "; " problems)
 
 
 
--- endregion check-config
+-- endregion check-client
 -- region per-call
 
 
@@ -151,7 +144,7 @@ perCall toMsg =
         |> Rpc.Call.withTimeout 10000
         |> Rpc.Call.withHeaders [ ( "X-Request-Id", "req-7" ) ]
         |> Rpc.Call.withTracker "note-42"
-        |> Rpc.send (Rpc.config "https://api.example.com") toMsg
+        |> Rpc.send (Rpc.client Rpc.Protocol.connect "https://api.example.com") toMsg
 
 
 withdraw : Cmd msg

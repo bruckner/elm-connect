@@ -1,6 +1,6 @@
 module Proto.Method exposing
-    ( Method, method, methodBinary, withIdempotency, withRoutes, withBindings, withBinary
-    , encodeRequest, responseDecoder, encodeRequestBytes, responseBytesDecoder, hasJson
+    ( Method, json, proto, both, withIdempotency, withRoutes, withBindings
+    , encodeRequest, responseDecoder, hasJson
     , Descriptor, descriptor
     , service, name, idempotency, input, output, bindings
     , Idempotency(..)
@@ -13,13 +13,17 @@ service's module and gives the typed value to [`Rpc.call`](Rpc#call):
 
     getNote =
         Rpc.call
-            (Proto.Method.method Notes.V1.encodeGetNoteRequest
-                Notes.V1.decodeNote
-                "notes.v1.NotesService"
+            (Proto.Method.json "notes.v1.NotesService"
                 "GetNote"
+                Notes.V1.encodeGetNoteRequest
+                Notes.V1.decodeNote
                 |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
                 |> Proto.Method.withRoutes [ routeGetNote0 ]
             )
+
+A method's first type parameter is its codec, [`Rpc.Json`](Rpc#Json) or
+[`Rpc.Proto`](Rpc#Proto): the codecs it was generated with, which decide the
+protocols its calls can go over. A method with both is free in it.
 
 The descriptor (`descriptorGetNote : Descriptor`) is a separate value: a
 program keeps it only if it names it.
@@ -28,12 +32,12 @@ The idempotency is a union whose constructors carry its name as a prefix
 (`IdempotencyNoSideEffects`), so it can be exposed with `(..)` beside any
 other union.
 
-@docs Method, method, methodBinary, withIdempotency, withRoutes, withBindings, withBinary
+@docs Method, json, proto, both, withIdempotency, withRoutes, withBindings
 
 
 # Reading a typed value
 
-@docs encodeRequest, responseDecoder, encodeRequestBytes, responseBytesDecoder, hasJson
+@docs encodeRequest, responseDecoder, hasJson
 
 
 # Descriptors
@@ -52,27 +56,23 @@ other union.
 
 -}
 
-import Bytes
-import Bytes.Decode
 import Bytes.Encode
-import Dict
-import Http
 import Json.Decode
 import Json.Encode
 import Proto.Binary
-import Proto.Bytes
 import Proto.Http exposing (Binding)
 import Proto.Internal.Binding
+import Proto.Internal.Codec
 import Proto.Internal.Interpret
-import Proto.Internal.Method as Internal exposing (Read(..))
+import Proto.Internal.Method as Internal
 import Proto.Route exposing (Route)
 
 
-{-| A method taking a `req` and answering a `res`. It is opaque: built by
-[`method`](#method) or [`methodBinary`](#methodBinary), adjusted by the
-`with` functions, and read by the functions below. The package site and
-compiler errors may show it as `Proto.Internal.Method.Method`, its name
-inside the package.
+{-| A method taking a `req` and answering a `res`, with the codecs `codec`
+says. It is opaque: built by [`json`](#json), [`proto`](#proto) or
+[`both`](#both), adjusted by the `with` functions, and read by the functions
+below. The package site and compiler errors may show it as
+`Proto.Internal.Method.Method`, its name inside the package.
 
 It holds what sending a call needs: the request's encoder, the response's
 decoder, the full name of the method's service, its name, its idempotency,
@@ -81,55 +81,88 @@ and its routes for HTTP transcoding. The types'
 trees, and the method's [`Descriptor`](#Descriptor) are not part of it.
 
 -}
-type alias Method req res =
-    Internal.Method Idempotency req res
+type alias Method codec req res =
+    Internal.Method Idempotency codec req res
 
 
-{-| A method from its request's proto3 JSON encoder, its response's proto3
-JSON decoder, the full name of its service (`notes.v1.NotesService`) and its
-name as declared (`GetNote`). Its idempotency is `IdempotencyUnknown` until
+{-| A method with proto3 JSON codecs, as generated code under `codec=json`
+writes it: from the full name of its service (`notes.v1.NotesService`), its
+name as declared (`GetNote`), its request's JSON encoder and its response's
+JSON decoder. Its calls go over a protocol speaking JSON.
+
+Its idempotency is `IdempotencyUnknown` until
 [`withIdempotency`](#withIdempotency) says otherwise, and it has no routes
 until [`withRoutes`](#withRoutes) or [`withBindings`](#withBindings) gives
 them, so that transcoding sends it over the implicit route.
+
 -}
-method : (req -> Json.Encode.Value) -> Json.Decode.Decoder res -> String -> String -> Method req res
-method encode decoder serviceName methodName =
+json : String -> String -> (req -> Json.Encode.Value) -> Json.Decode.Decoder res -> Method Proto.Internal.Codec.Json req res
+json serviceName methodName encode decoder =
     Internal.Method
         { service = serviceName
         , name = methodName
         , idempotency = IdempotencyUnknown
-        , encodeRequest = encode
-        , responseDecoder = decoder
-        , binary = Nothing
-        , json = True
+        , codecs = { json = True, binary = False }
+        , json = { encode = encode, decoder = decoder }
+        , binary = Internal.noBinary
         , routes = []
         }
 
 
-{-| A method with protobuf binary codecs alone, as generated code under
-`codec=binary` writes it, from its request's binary encoder, its response's
-binary decoder, its service's full name and its name. Its JSON encoder
-writes `null` and its JSON decoder fails, so its calls are for Connect's
-protobuf binary codec, not for transcoding.
+{-| A method with protobuf binary codecs, as generated code under
+`codec=proto` writes it: from its service's full name, its name, its
+request's binary encoder and its response's binary decoder. Its calls go over a
+protocol speaking protobuf binary, which transcoding is not, so it takes no
+routes.
 -}
-methodBinary : (req -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder res -> String -> String -> Method req res
-methodBinary encodeBinary binaryDecoder serviceName methodName =
+proto : String -> String -> (req -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder res -> Method Proto.Internal.Codec.Proto req res
+proto serviceName methodName encode decoder =
     Internal.Method
         { service = serviceName
         , name = methodName
         , idempotency = IdempotencyUnknown
-        , encodeRequest = \_ -> Json.Encode.null
-        , responseDecoder = Json.Decode.fail (serviceName ++ "/" ++ methodName ++ " was generated with protobuf binary codecs alone (codec=binary)")
-        , binary = Just (binary encodeBinary binaryDecoder (serviceName ++ "/" ++ methodName))
-        , json = False
+        , codecs = { json = False, binary = True }
+        , json = Internal.noJson
+        , binary = binaryHalf encode decoder
         , routes = []
         }
+
+
+{-| A method with both codecs, as generated code under `codec=both` writes
+it: free in the codec, so its calls go over any protocol.
+
+    Proto.Method.both "notes.v1.NotesService"
+        "GetNote"
+        Notes.V1.encodeGetNoteRequest
+        Notes.V1.decodeNote
+        Notes.V1.encodeGetNoteRequestBytes
+        Notes.V1.decodeNoteBytes
+
+-}
+both : String -> String -> (req -> Json.Encode.Value) -> Json.Decode.Decoder res -> (req -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder res -> Method codec req res
+both serviceName methodName encode decoder encodeBinary binaryDecoder =
+    Internal.Method
+        { service = serviceName
+        , name = methodName
+        , idempotency = IdempotencyUnknown
+        , codecs = { json = True, binary = True }
+        , json = { encode = encode, decoder = decoder }
+        , binary = binaryHalf encodeBinary binaryDecoder
+        , routes = []
+        }
+
+
+binaryHalf : (req -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder res -> Internal.BinaryHalf req res
+binaryHalf encode decoder =
+    { encode = encode
+    , decode = Proto.Binary.decode decoder
+    }
 
 
 {-| The method's declared `idempotency_level`. Generated code writes it only
 for a method that declares one.
 -}
-withIdempotency : Idempotency -> Method req res -> Method req res
+withIdempotency : Idempotency -> Method codec req res -> Method codec req res
 withIdempotency level (Internal.Method m) =
     Internal.Method { m | idempotency = level }
 
@@ -141,7 +174,7 @@ then its `additional_bindings` in order, as generated code writes them
 request holds, with the first path value its variable's template cannot
 match, which sending refuses.
 -}
-withRoutes : List (req -> Route) -> Method req res -> Method req res
+withRoutes : List (req -> Route) -> Method codec req res -> Method codec req res
 withRoutes routes (Internal.Method m) =
     Internal.Method { m | routes = routes }
 
@@ -151,229 +184,47 @@ withRoutes routes (Internal.Method m) =
 read from the request's proto3 JSON. Only a program naming this function
 carries the code that reads a binding.
 
-    Proto.Method.method encodeGetNoteRequest
-        decodeNote
-        "notes.v1.NotesService"
+    Proto.Method.json "notes.v1.NotesService"
         "GetNote"
+        encodeGetNoteRequest
+        decodeNote
         |> Proto.Method.withBindings
             [ Proto.Http.binding { … } ]
 
 -}
-withBindings : List Binding -> Method req res -> Method req res
+withBindings : List Binding -> Method codec req res -> Method codec req res
 withBindings methodBindings (Internal.Method m) =
     Internal.Method
         { m
             | routes =
                 List.map
-                    (\(Proto.Internal.Binding.Binding rule) req -> Proto.Internal.Interpret.route rule (m.encodeRequest req))
+                    (\(Proto.Internal.Binding.Binding rule) req -> Proto.Internal.Interpret.route rule (m.json.encode req))
                     methodBindings
         }
 
 
-{-| The method with protobuf binary codecs too, as generated code under
-`codec=both` writes it:
-
-    getNote =
-        Rpc.call
-            (Proto.Method.method Notes.V1.encodeGetNoteRequest
-                Notes.V1.decodeNote
-                "notes.v1.NotesService"
-                "GetNote"
-                |> Proto.Method.withBinary
-                    Notes.V1.encodeGetNoteRequestBytes
-                    Notes.V1.decodeNoteBytes
-            )
-
+{-| A request as proto3 JSON; `null` for a method built with
+[`proto`](#proto), which has no JSON codecs.
 -}
-withBinary : (req -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder res -> Method req res -> Method req res
-withBinary encodeBinary binaryDecoder (Internal.Method m) =
-    Internal.Method { m | binary = Just (binary encodeBinary binaryDecoder (m.service ++ "/" ++ m.name)) }
+encodeRequest : Method codec req res -> req -> Json.Encode.Value
+encodeRequest (Internal.Method m) =
+    m.json.encode
 
 
-{-| The binary codecs and the bytes path Connect's proto codec takes with
-them. They are built here, under `withBinary`, so that a program without
-binary codecs carries none of that code, nor elm/bytes': a single
-`Bytes.width` on the path every call takes would bring its kernel whole.
+{-| The response's proto3 JSON decoder; one that always fails for a method
+built with [`proto`](#proto).
 -}
-binary : (req -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder res -> String -> Internal.Binary req res
-binary encodeBinary binaryDecoder procedure =
-    { encodeRequest = encodeBinary
-    , responseDecoder = binaryDecoder
-    , message =
-        \value ->
-            let
-                bytes =
-                    Proto.Binary.encode encodeBinary value
-            in
-            { bytes = bytes, base64Url = \() -> base64Url (Proto.Bytes.toBase64 bytes) }
-    , tooLarge =
-        \limit value ->
-            limit
-                |> Maybe.andThen
-                    (\most ->
-                        let
-                            size =
-                                Bytes.width (Proto.Binary.encode encodeBinary value)
-                        in
-                        if size > max 0 most then
-                            Just { limit = most, size = size }
-
-                        else
-                            Nothing
-                    )
-    , read = read binaryDecoder procedure
-    , base64 = Proto.Bytes.toBase64
-    }
-
-
-{-| A 200 must come as `application/proto` or with no content type; every
-other answer is text.
--}
-read : Proto.Binary.Decoder res -> String -> Maybe Int -> Http.Response Bytes.Bytes -> Read res
-read binaryDecoder procedure limit answer =
-    case answer of
-        Http.GoodStatus_ metadata raw ->
-            if metadata.statusCode /= 200 then
-                AsText (Http.GoodStatus_ metadata (text raw))
-
-            else
-                case contentType metadata of
-                    Just other ->
-                        if other == "application/proto" then
-                            readBinary binaryDecoder procedure limit metadata raw
-
-                        else
-                            NotBinary ("content-type " ++ other ++ ", not application/proto") metadata raw
-
-                    Nothing ->
-                        readBinary binaryDecoder procedure limit metadata raw
-
-        Http.BadStatus_ metadata raw ->
-            AsText (Http.BadStatus_ metadata (text raw))
-
-        Http.BadUrl_ url ->
-            AsText (Http.BadUrl_ url)
-
-        Http.Timeout_ ->
-            AsText Http.Timeout_
-
-        Http.NetworkError_ ->
-            AsText Http.NetworkError_
-
-
-readBinary : Proto.Binary.Decoder res -> String -> Maybe Int -> Http.Metadata -> Bytes.Bytes -> Read res
-readBinary binaryDecoder procedure limit metadata raw =
-    let
-        size =
-            Bytes.width raw
-    in
-    case limit of
-        Just most ->
-            if size > max 0 most then
-                TooLong { limit = most, size = size }
-
-            else
-                decodeBinary binaryDecoder procedure metadata raw
-
-        Nothing ->
-            decodeBinary binaryDecoder procedure metadata raw
-
-
-decodeBinary : Proto.Binary.Decoder res -> String -> Http.Metadata -> Bytes.Bytes -> Read res
-decodeBinary binaryDecoder procedure metadata raw =
-    case Proto.Binary.decode binaryDecoder raw of
-        Just value ->
-            Read value
-
-        Nothing ->
-            NotBinary ("the body is not the response of " ++ procedure ++ " in protobuf binary") metadata raw
-
-
-{-| Bytes as UTF-8 text; `""` when they are not UTF-8.
--}
-text : Bytes.Bytes -> String
-text raw =
-    Bytes.Decode.decode (Bytes.Decode.string (Bytes.width raw)) raw
-        |> Maybe.withDefault ""
-
-
-{-| The answer's content type without its parameters, lowercased, whatever
-the header name's case.
--}
-contentType : Http.Metadata -> Maybe String
-contentType metadata =
-    metadata.headers
-        |> Dict.toList
-        |> List.filter (\( k, _ ) -> String.toLower k == "content-type")
-        |> List.head
-        |> Maybe.map
-            (\( _, value ) ->
-                String.split ";" value
-                    |> List.head
-                    |> Maybe.withDefault ""
-                    |> String.trim
-                    |> String.toLower
-            )
-
-
-{-| Base64 in the URL-safe alphabet without padding, as Connect's GET carries
-binary.
--}
-base64Url : String -> String
-base64Url =
-    String.foldr
-        (\char done ->
-            case char of
-                '+' ->
-                    String.cons '-' done
-
-                '/' ->
-                    String.cons '_' done
-
-                '=' ->
-                    done
-
-                _ ->
-                    String.cons char done
-        )
-        ""
-
-
-{-| The request's protobuf binary encoder, when the method has one.
--}
-encodeRequestBytes : Method req res -> Maybe (req -> Bytes.Encode.Encoder)
-encodeRequestBytes (Internal.Method m) =
-    Maybe.map .encodeRequest m.binary
-
-
-{-| The response's protobuf binary decoder, when the method has one.
--}
-responseBytesDecoder : Method req res -> Maybe (Proto.Binary.Decoder res)
-responseBytesDecoder (Internal.Method m) =
-    Maybe.map .responseDecoder m.binary
+responseDecoder : Method codec req res -> Json.Decode.Decoder res
+responseDecoder (Internal.Method m) =
+    m.json.decoder
 
 
 {-| Whether the method has proto3 JSON codecs: `False` for one built with
-[`methodBinary`](#methodBinary), whose calls only Connect's proto codec
-([`Rpc.Transport.withCodec`](Rpc-Transport#withCodec)) can send.
+[`proto`](#proto).
 -}
-hasJson : Method req res -> Bool
+hasJson : Method codec req res -> Bool
 hasJson (Internal.Method m) =
-    m.json
-
-
-{-| A request as proto3 JSON.
--}
-encodeRequest : Method req res -> req -> Json.Encode.Value
-encodeRequest (Internal.Method m) =
-    m.encodeRequest
-
-
-{-| The response's proto3 JSON decoder.
--}
-responseDecoder : Method req res -> Json.Decode.Decoder res
-responseDecoder (Internal.Method m) =
-    m.responseDecoder
+    m.codecs.json
 
 
 {-| What the proto says about a method, as data: its service and name, its
