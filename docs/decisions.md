@@ -25,7 +25,9 @@ cheapest now. Where: the README.
 
 ### No package split
 
-*2026-10-20; revisited 2026-10-21.*
+*2026-10-20; revisited 2026-10-21. `Rpc.Transport` was replaced on
+2026-10-27 by the opaque `Rpc.Protocol`, of which transcoding is one
+value (Protocol and client, indexed by codec).*
 
 One Elm package holds both the codecs and descriptors (`Proto.*`) and
 the calls (`Rpc.*`). Considered: a codec package and a call package,
@@ -575,7 +577,10 @@ without breaking it. Where: design §5.1; the pattern in
 
 ### One module per opaque type, plain names
 
-*2026-10-16.*
+*2026-10-16. Since 2026-10-27 the opaque types of the calling side are
+`Rpc.Protocol`, `Rpc.Client`, `Rpc.Retry`, `Rpc.Trace` and `Rpc.Body`;
+`Rpc.Transport` and the config record are gone (Protocol and client,
+indexed by codec).*
 
 Every type generated code builds, and every type a config holds or the
 runtime gives, is opaque: built by functions, read by accessors, in a
