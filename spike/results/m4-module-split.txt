@@ -1,0 +1,12 @@
+rep1 binary-300: status 0, 4.38 s, peak RSS 3361 MB, js 1317826 bytes, free 34434728 KiB
+rep1 binary-3x100: status 0, 1.01 s, peak RSS 1680 MB, js 1326304 bytes, free 34434784 KiB
+rep1 both-300: status 0, 9.54 s, peak RSS 3905 MB, js 1770131 bytes, free 34433432 KiB
+rep1 both-3x100: status 0, 1.44 s, peak RSS 2394 MB, js 1783943 bytes, free 34433444 KiB
+rep2 binary-300: status 0, 3.85 s, peak RSS 4122 MB, js 1317826 bytes, free 34431772 KiB
+rep2 binary-3x100: status 0, 1.02 s, peak RSS 1682 MB, js 1326304 bytes, free 34431556 KiB
+rep2 both-300: status 0, 8.92 s, peak RSS 4164 MB, js 1770131 bytes, free 34431556 KiB
+rep2 both-3x100: status 0, 1.46 s, peak RSS 2393 MB, js 1783943 bytes, free 34430544 KiB
+rep3 binary-300: status 0, 4.02 s, peak RSS 4125 MB, js 1317826 bytes, free 34430496 KiB
+rep3 binary-3x100: status 0, 1.01 s, peak RSS 1679 MB, js 1326304 bytes, free 34430564 KiB
+rep3 both-300: status 0, 8.34 s, peak RSS 4338 MB, js 1770131 bytes, free 34430520 KiB
+rep3 both-3x100: status 0, 1.43 s, peak RSS 2389 MB, js 1783943 bytes, free 34430352 KiB

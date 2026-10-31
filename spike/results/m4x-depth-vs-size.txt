@@ -1,0 +1,9 @@
+rep1 both-300-c30: status 0, 1.04 s, peak RSS 1502 MB, js 1759607 bytes, free 34363636 KiB
+rep1 both-300-c100: status 0, 1.78 s, peak RSS 2097 MB, js 1767796 bytes, free 34361860 KiB
+rep1 both-3x100: status 0, 1.50 s, peak RSS 2387 MB, js 1783943 bytes, free 34360112 KiB
+rep2 both-300-c30: status 0, 1.04 s, peak RSS 1503 MB, js 1759607 bytes, free 34362860 KiB
+rep2 both-300-c100: status 0, 1.78 s, peak RSS 2100 MB, js 1767796 bytes, free 34362884 KiB
+rep2 both-3x100: status 0, 1.44 s, peak RSS 2390 MB, js 1783943 bytes, free 34362864 KiB
+rep3 both-300-c30: status 0, 1.05 s, peak RSS 1501 MB, js 1759607 bytes, free 34362840 KiB
+rep3 both-300-c100: status 0, 1.87 s, peak RSS 2095 MB, js 1767796 bytes, free 34362836 KiB
+rep3 both-3x100: status 0, 1.49 s, peak RSS 2393 MB, js 1783943 bytes, free 34362800 KiB
