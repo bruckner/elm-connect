@@ -1,7 +1,7 @@
 module Proto.Binary exposing
     ( decode, encode, Decoder, map
     , Codec
-    , merge, field, fieldInto, repeated, mapEntry, insertBool, skip
+    , merge, mergeTable, field, fieldInto, repeated, mapEntry, insertBool, skip
     , implicit, optional, present, list, listUnpacked, dict, boolMap
     , double, float
     , int32, sint32, sfixed32, uint32, fixed32
@@ -48,7 +48,7 @@ outside ±(2^53 − 1).
 
 # Decoding a message
 
-@docs merge, field, fieldInto, repeated, mapEntry, insertBool, skip
+@docs merge, mergeTable, field, fieldInto, repeated, mapEntry, insertBool, skip
 
 
 # Encoding a message
@@ -205,6 +205,37 @@ read into a value add to its elements.
 merge : (Int -> Int -> a -> D.Decoder ( Int, a )) -> (a -> a) -> a -> Decoder a
 merge step finish start =
     Internal.Decoder (\width -> D.loop ( width, finish start ) (messageStep step finish))
+
+
+{-| [`merge`](#merge) with the step given as a table: each field's number
+beside the reader of that field, which takes the wire type and the value so
+far. A number not in the table is skipped as an unknown field. The table is
+built once per message type when the result is a top-level value.
+
+    mergeLeafBytes : Leaf -> Proto.Binary.Decoder Leaf
+    mergeLeafBytes =
+        Proto.Binary.mergeTable
+            [ ( 1, \w r -> Proto.Binary.field Proto.Binary.string (\v -> { r | name = v }) w r )
+            ]
+            identity
+
+-}
+mergeTable : List ( Int, Int -> a -> D.Decoder ( Int, a ) ) -> (a -> a) -> a -> Decoder a
+mergeTable entries finish =
+    let
+        table =
+            Dict.fromList entries
+    in
+    merge
+        (\number wire current ->
+            case Dict.get number table of
+                Just read ->
+                    read wire current
+
+                Nothing ->
+                    skip wire current
+        )
+        finish
 
 
 message : a -> (Int -> Int -> a -> D.Decoder ( Int, a )) -> (a -> a) -> Int -> D.Decoder a
