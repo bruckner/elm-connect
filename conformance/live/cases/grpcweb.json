@@ -5,7 +5,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "grpcweb",
+      "protocol": "grpcweb",
       "request": {
         "name": "notes/welcome"
       },
@@ -82,7 +82,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "ListNotes",
-      "transport": "grpcweb",
+      "protocol": "grpcweb",
       "request": {
         "pageSize": 10,
         "filter": "Welcome",
@@ -133,7 +133,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "CreateNote",
-      "transport": "grpcweb",
+      "protocol": "grpcweb",
       "request": {
         "note": {
           "name": "notes/from-proto",
@@ -224,7 +224,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "CreateNote",
-      "transport": "grpcweb",
+      "protocol": "grpcweb",
       "request": {
         "note": {
           "name": "notes/from-proto-any",
@@ -257,7 +257,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "UpdateNote",
-      "transport": "grpcweb",
+      "protocol": "grpcweb",
       "request": {
         "note": {
           "name": "notes/from-proto",
@@ -285,7 +285,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "ArchiveNote",
-      "transport": "grpcweb",
+      "protocol": "grpcweb",
       "request": {
         "name": "notes/from-proto"
       },
@@ -313,7 +313,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "DeleteNote",
-      "transport": "grpcweb",
+      "protocol": "grpcweb",
       "request": {
         "name": "notes/from-proto"
       },
@@ -337,7 +337,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "grpcweb",
+      "protocol": "grpcweb",
       "request": {
         "name": "notes/from-proto"
       },
@@ -369,7 +369,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "CreateNote",
-      "transport": "grpcweb",
+      "protocol": "grpcweb",
       "request": {
         "note": {
           "body": "untitled"
@@ -400,7 +400,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "Ping",
-      "transport": "grpcweb",
+      "protocol": "grpcweb",
       "request": {},
       "config": {
         "codec": "proto"
@@ -432,7 +432,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "grpcweb",
+      "protocol": "grpcweb",
       "request": {
         "name": "notes/welcome"
       },
@@ -457,7 +457,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "grpcweb",
+      "protocol": "grpcweb",
       "request": {
         "name": "notes/welcome"
       },
@@ -481,7 +481,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "grpcweb",
+      "protocol": "grpcweb",
       "request": {
         "name": "notes/welcome"
       },
@@ -504,7 +504,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "grpcweb",
+      "protocol": "grpcweb",
       "request": {
         "name": "notes/welcome"
       },
@@ -552,7 +552,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "grpcweb",
+      "protocol": "grpcweb",
       "request": {
         "name": "notes/missing"
       },
@@ -580,7 +580,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "grpcweb",
+      "protocol": "grpcweb",
       "request": {
         "name": "notes/welcome"
       },
@@ -621,7 +621,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "grpcweb",
+      "protocol": "grpcweb",
       "request": {
         "name": "notes/missing"
       },
@@ -647,7 +647,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "grpcweb",
+      "protocol": "grpcweb",
       "request": {
         "name": "notes/welcome"
       },
@@ -700,7 +700,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "grpcweb",
+      "protocol": "grpcweb",
       "request": {
         "name": "notes/flaky"
       },
@@ -740,7 +740,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "Ping",
-      "transport": "grpcweb",
+      "protocol": "grpcweb",
       "request": {},
       "config": {
         "codec": "proto",
@@ -764,7 +764,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "Ping",
-      "transport": "grpcweb",
+      "protocol": "grpcweb",
       "request": {},
       "config": {
         "codec": "proto",
@@ -786,7 +786,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "grpcweb",
+      "protocol": "grpcweb",
       "request": {
         "name": "notes/welcome"
       },
@@ -853,7 +853,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "grpcweb",
+      "protocol": "grpcweb",
       "request": {
         "name": "notes/welcome"
       },
@@ -886,7 +886,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "grpcweb",
+      "protocol": "grpcweb",
       "request": {
         "name": "notes/slow"
       },

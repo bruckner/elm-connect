@@ -1,4 +1,4 @@
-module Live.Call exposing (Calls, Client(..), Entry, Envelope, Outcome, Sending(..), Sent, Transport(..), entryWith)
+module Live.Call exposing (Calls, Client(..), Entry, Envelope, Outcome, Protocol(..), Sending(..), Sent, entryWith)
 
 {-| What the live runner sends: an envelope read from JSON, and an entry of a
 dispatch table, which turns one into a sent call and its result into JSON.
@@ -35,7 +35,7 @@ import Rpc.Trace
 import Task
 
 
-{-| One call to make: the method, its request as proto3 JSON, the transport,
+{-| One call to make: the method, its request as proto3 JSON, the protocol,
 the client, the binding, if one is chosen, the call's own headers, the
 headers `FromRequest` rewrites, and the milliseconds after which to cancel
 it, if it is to be.
@@ -45,7 +45,7 @@ type alias Envelope =
     , service : String
     , method : String
     , request : Value
-    , transport : Transport
+    , protocol : Protocol
     , client : Client
     , binding : Maybe Int
     , headers : List ( String, String )
@@ -71,9 +71,9 @@ type Sending
     | FromRequest
 
 
-{-| The transport a call goes over, as the envelope names it.
+{-| The protocol a call goes over, as the envelope names it.
 -}
-type Transport
+type Protocol
     = Connect
     | Transcode
     | GrpcWeb

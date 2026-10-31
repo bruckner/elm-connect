@@ -10,7 +10,7 @@
 //     --known-failing @known-failing.txt -- node conformance.mjs [--send MODE] [--elm PATH]
 //
 // A request for the proto codec is sent with the envelope's `codec: "proto"`,
-// and one over gRPC-Web with `transport: "grpcweb"` as well; both need a
+// and one over gRPC-Web with `protocol: "grpcweb"` as well; both need a
 // program built against bindings with binary codecs (`--elm
 // build/elm-both.js`, which `just live-proto` builds).
 // MODE is how the runner sends each call (an envelope's `send`): `halves`,
@@ -98,7 +98,7 @@ async function answer(runner, send, request) {
     service,
     method: request.method,
     request: toJson(types.request, message, { registry }),
-    transport: request.protocol === Protocol.GRPC_WEB ? "grpcweb" : "connect",
+    protocol: request.protocol === Protocol.GRPC_WEB ? "grpcweb" : "connect",
     config,
     send,
     cancelAfterMs,

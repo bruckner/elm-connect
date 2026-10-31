@@ -212,7 +212,7 @@ live: live-gen live-build example-notes-build && live-envoy live-conformance liv
     node conformance/live/run.mjs --serve {{target}}/live/bin/notes-server conformance/live/cases/notes.json
     node conformance/live/run.mjs --serve {{target}}/live/bin/notes-server conformance/live/cases/transcode.json
     node conformance/live/routes.mjs --serve {{target}}/live/bin/notes-server --known conformance/live/known-divergent-vanguard.json
-    node conformance/live/run.mjs --serve {{target}}/live/bin/notes-server --prefix /gateway --transport transcode conformance/live/cases/notes.json conformance/live/cases/transcode.json
+    node conformance/live/run.mjs --serve {{target}}/live/bin/notes-server --prefix /gateway --protocol transcode conformance/live/cases/notes.json conformance/live/cases/transcode.json
     node conformance/live/routes.mjs --serve {{target}}/live/bin/notes-server --prefix /gateway --known conformance/live/known-divergent-gateway.json
 
 # Envoy, the live suite's third transcoder: the release func-e runs (one
@@ -268,7 +268,7 @@ live-envoy: live-build live-both envoy-install
             sleep 0.2
         done
     done
-    node conformance/live/run.mjs --server http://127.0.0.1:{{envoy_port}} --origin http://127.0.0.1:{{envoy_origin_port}} --transport transcode conformance/live/cases/notes.json conformance/live/cases/transcode.json
+    node conformance/live/run.mjs --server http://127.0.0.1:{{envoy_port}} --origin http://127.0.0.1:{{envoy_origin_port}} --protocol transcode conformance/live/cases/notes.json conformance/live/cases/transcode.json
     node conformance/live/routes.mjs --server http://127.0.0.1:{{envoy_port}} --known conformance/live/known-divergent-envoy.json
     node conformance/live/run.mjs --server http://127.0.0.1:{{envoy_headers_port}} conformance/live/cases/envoy.json
     node conformance/live/run.mjs --server http://127.0.0.1:{{envoy_grpcweb_port}} --origin http://127.0.0.1:{{envoy_origin_port}} --elm conformance/live/build/elm-both.js conformance/live/cases/grpcweb.json
