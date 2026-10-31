@@ -3817,7 +3817,7 @@ runs `just live`, which builds the example.
 grpc-gateway: the example server mounts grpc-gateway
 v2.32.0 under `/gateway` beside Vanguard, in front of the same service,
 and `just live` runs the transcode cases of `cases/notes.json` (`run.mjs
---transport transcode`; they make the notes they delete, so they run
+--protocol transcode`; they make the notes they delete, so they run
 alone), `cases/transcode.json` and the route fixtures against it
 (`--prefix /gateway`), each fixture's divergence recorded
 in `conformance/live/known-divergent-gateway.json` as Vanguard's are in

@@ -4,7 +4,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "name": "notes/welcome"
       }
@@ -72,7 +72,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "ListNotes",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "pageSize": 10,
         "filter": "Welcome",
@@ -107,7 +107,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "CreateNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "note": {
           "name": "notes/from-connect",
@@ -185,7 +185,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "UpdateNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "note": {
           "name": "notes/from-connect",
@@ -223,7 +223,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "ArchiveNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "name": "notes/from-connect"
       }
@@ -248,7 +248,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "DeleteNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "name": "notes/from-connect"
       }
@@ -268,7 +268,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "name": "notes/from-connect"
       }
@@ -302,7 +302,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "CreateNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "note": {
           "body": "untitled"
@@ -339,7 +339,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "Ping",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {}
     },
     "expect": {
@@ -363,7 +363,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "name": "notes/welcome"
       },
@@ -402,7 +402,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "Ping",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {},
       "config": {
         "useGet": true
@@ -427,7 +427,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "CreateNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "note": {}
       },
@@ -453,7 +453,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "name": "notes/welcome"
       },
@@ -486,7 +486,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "name": "notes/welcome"
       },
@@ -561,7 +561,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "Ping",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {},
       "config": {
         "headers": [
@@ -612,7 +612,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "name": "notes/slow"
       },
@@ -656,7 +656,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "name": "notes/slow"
       },
@@ -681,7 +681,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "name": "notes/flaky"
       },
@@ -722,7 +722,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "Ping",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {},
       "config": {
         "withCredentials": true
@@ -749,7 +749,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "Ping",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {},
       "config": {
         "baseUrl": "{server}/status/404"
@@ -775,7 +775,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "Ping",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {},
       "config": {
         "baseUrl": "{server}/grpc-status/8"
@@ -802,7 +802,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "name": "notes/welcome"
       },
@@ -829,7 +829,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "name": "notes/missing"
       },
@@ -856,7 +856,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "name": "notes/welcome"
       },
@@ -889,7 +889,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "name": "notes/welcome"
       },
@@ -919,7 +919,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "Ping",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {},
       "config": {
         "baseUrl": "http://127.0.0.1:1"
@@ -940,7 +940,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "Ping",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {},
       "config": {
         "baseUrl": "http://exa mple.com"
@@ -961,7 +961,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "Ping",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {},
       "config": {
         "headers": [
@@ -995,7 +995,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "Ping",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {},
       "config": {
         "headers": [
@@ -1019,7 +1019,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "name": "notes/welcome"
       },
@@ -1044,7 +1044,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "CreateNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "note": {
           "name": "notes/tracked",
@@ -1071,7 +1071,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "name": "notes/flaky"
       },
@@ -1108,7 +1108,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "name": "notes/missing"
       },
@@ -1140,7 +1140,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "name": "notes/welcome"
       },
@@ -1194,7 +1194,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "name": "notes/flaky"
       },
@@ -1271,7 +1271,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "transcode",
+      "protocol": "transcode",
       "request": {
         "name": "notes/welcome"
       }
@@ -1326,7 +1326,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "transcode",
+      "protocol": "transcode",
       "request": {
         "name": "notes/welcome"
       },
@@ -1353,7 +1353,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "transcode",
+      "protocol": "transcode",
       "request": {
         "name": "notes/welcome"
       },
@@ -1385,7 +1385,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "ListNotes",
-      "transport": "transcode",
+      "protocol": "transcode",
       "request": {
         "pageSize": 1,
         "filter": "Welcome",
@@ -1418,7 +1418,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "ListNotes",
-      "transport": "transcode",
+      "protocol": "transcode",
       "request": {
         "pageSize": 1
       }
@@ -1448,7 +1448,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "CreateNote",
-      "transport": "transcode",
+      "protocol": "transcode",
       "request": {
         "note": {
           "name": "notes/from-transcode",
@@ -1556,7 +1556,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "UpdateNote",
-      "transport": "transcode",
+      "protocol": "transcode",
       "request": {
         "note": {
           "name": "notes/from-transcode",
@@ -1595,7 +1595,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "ArchiveNote",
-      "transport": "transcode",
+      "protocol": "transcode",
       "request": {
         "name": "notes/from-transcode"
       }
@@ -1629,7 +1629,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "DeleteNote",
-      "transport": "transcode",
+      "protocol": "transcode",
       "request": {
         "name": "notes/from-transcode"
       }
@@ -1654,7 +1654,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "transcode",
+      "protocol": "transcode",
       "request": {
         "name": "notes/from-transcode"
       }
@@ -1688,7 +1688,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "CreateNote",
-      "transport": "transcode",
+      "protocol": "transcode",
       "request": {
         "note": {
           "body": "untitled"
@@ -1725,7 +1725,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "transcode",
+      "protocol": "transcode",
       "request": {
         "name": "notes/a b+c"
       }
@@ -1762,7 +1762,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "transcode",
+      "protocol": "transcode",
       "request": {
         "name": "notes/welcome"
       },
@@ -1794,7 +1794,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "transcode",
+      "protocol": "transcode",
       "request": {
         "name": "notes/welcome"
       },
@@ -1817,7 +1817,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "Ping",
-      "transport": "transcode",
+      "protocol": "transcode",
       "request": {}
     },
     "expect": {
@@ -1848,7 +1848,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "transcode",
+      "protocol": "transcode",
       "request": {
         "name": "notes/welcome"
       },
@@ -1891,7 +1891,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "transcode",
+      "protocol": "transcode",
       "request": {
         "name": "notes/slow"
       },
@@ -1924,7 +1924,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "transcode",
+      "protocol": "transcode",
       "request": {
         "name": "notes/flaky"
       },
@@ -1965,7 +1965,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "ArchiveNote",
-      "transport": "transcode",
+      "protocol": "transcode",
       "request": {
         "name": "notes/flaky"
       },
@@ -2003,7 +2003,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "transcode",
+      "protocol": "transcode",
       "request": {
         "name": "notes/flaky"
       }
@@ -2021,11 +2021,11 @@
   },
   {
     "name": "transcode CreateNote, for Rpc.send to delete",
-    "note": "The transcode cases make the notes they delete, so that they run alone (run.mjs --transport transcode), as they do under grpc-gateway.",
+    "note": "The transcode cases make the notes they delete, so that they run alone (run.mjs --protocol transcode), as they do under grpc-gateway.",
     "call": {
       "service": "notes.v1.NotesService",
       "method": "CreateNote",
-      "transport": "transcode",
+      "protocol": "transcode",
       "request": {
         "note": {
           "name": "notes/sent",
@@ -2046,7 +2046,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "DeleteNote",
-      "transport": "transcode",
+      "protocol": "transcode",
       "request": {
         "name": "notes/sent"
       },
@@ -2069,7 +2069,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "transcode",
+      "protocol": "transcode",
       "request": {
         "name": "notes/sent"
       },
@@ -2100,7 +2100,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "transcode",
+      "protocol": "transcode",
       "request": {
         "name": "notes/welcome"
       },
@@ -2122,7 +2122,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "transcode",
+      "protocol": "transcode",
       "request": {
         "name": "notes/welcome"
       },
@@ -2141,7 +2141,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "Ping",
-      "transport": "transcode",
+      "protocol": "transcode",
       "request": {},
       "binding": 0
     },

@@ -5,7 +5,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "transcode",
+      "protocol": "transcode",
       "request": { "name": "notes/welcome" }
     },
     "expect": {
@@ -19,7 +19,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "transcode",
+      "protocol": "transcode",
       "request": { "name": "notes/missing" }
     },
     "expect": {
@@ -41,7 +41,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "CreateNote",
-      "transport": "transcode",
+      "protocol": "transcode",
       "request": { "note": { "body": "untitled" } }
     },
     "expect": {
@@ -63,7 +63,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "transcode",
+      "protocol": "transcode",
       "request": { "name": "notes/welcome" },
       "config": { "baseUrl": "{server}/nowhere" }
     },
@@ -81,7 +81,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "transcode",
+      "protocol": "transcode",
       "request": { "name": "notes/welcome" },
       "config": { "baseUrl": "{server}/status/418" }
     },

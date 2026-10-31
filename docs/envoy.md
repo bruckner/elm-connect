@@ -458,7 +458,7 @@ the config with them into `target/live/envoy.yaml`. Against an Envoy
 you started yourself:
 
 ```sh
-node conformance/live/run.mjs --server http://127.0.0.1:18081 --origin http://127.0.0.1:18080 --transport transcode conformance/live/cases/notes.json conformance/live/cases/transcode.json
+node conformance/live/run.mjs --server http://127.0.0.1:18081 --origin http://127.0.0.1:18080 --protocol transcode conformance/live/cases/notes.json conformance/live/cases/transcode.json
 node conformance/live/routes.mjs --server http://127.0.0.1:18081 --known conformance/live/known-divergent-envoy.json
 node conformance/live/run.mjs --server http://127.0.0.1:18082 conformance/live/cases/envoy.json
 node conformance/live/run.mjs --server http://127.0.0.1:18083 --origin http://127.0.0.1:18080 --elm conformance/live/build/elm-both.js conformance/live/cases/grpcweb.json
