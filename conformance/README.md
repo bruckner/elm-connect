@@ -577,9 +577,10 @@ envelope's `codec: "proto"` set from the suite's request and the result
 read back from `okBinary` and `detailsBinary`. The suite runs its
 error-body cases only when the proto codec is listed, so the proto run
 has 56 test cases to the JSON run's 40; `known-failing-proto.txt` lists
-the four it fails, none about the codec (a Connect error body without a
-code, or with an unknown one, and a 200 of another content type), and
-the `sendTraced` run adds `known-failing-send.txt`. Transcoding is JSON
+the three it fails, none about the codec (a Connect error body without a
+code, or with an unknown one), and the `sendTraced` run adds
+`known-failing-send.txt`: 53 of 56 pass through the halves and 52 with
+`sendTraced`. Transcoding is JSON
 alone, so the transcoding legs above cover it.
 
 ### gRPC-Web, live
@@ -602,15 +603,14 @@ frame). Its own cases check the wire (`X-Grpc-Web`, `grpc-timeout`, the
 content type), a timeout, and the body's trailers in the trace.
 
 The suite selects 85 test cases. `known-failing-grpcweb.txt` lists the
-four the runtime fails whichever way it sends: a unary answer with
+three the runtime fails whichever way it sends: a unary answer with
 status 0 and no message or two, which the suite wants `unimplemented`
-and the runtime reads as a `BadResponse` (`internal`), as over Connect,
-and a 200 of another content type with no status, which it wants
-`unknown`. The halves run adds `known-failing-grpcweb-halves.txt`: twelve
+and the runtime reads as a `BadResponse` (`internal`), as over Connect.
+The halves run adds `known-failing-grpcweb-halves.txt`: twelve
 cases asserting trailers, which a gRPC-Web answer carries in its body,
 where an application reading the elm/http response itself cannot see
 them and `sendTraced` gives them. The `sendTraced` run adds
-`known-failing-send.txt`. 69 of 85 pass through the halves and 79 with
+`known-failing-send.txt`. 70 of 85 pass through the halves and 80 with
 `sendTraced`.
 
 `suite/buf.gen.yaml` generates both from `suite/proto/`, the suite's

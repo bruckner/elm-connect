@@ -1,5 +1,6 @@
 module Rpc.Internal.Connect exposing
-    ( connectGet
+    ( Label(..)
+    , connectGet
     , connectGetBinary
     , connectMessage
     , connectPost
@@ -7,6 +8,7 @@ module Rpc.Internal.Connect exposing
     , connectProtoMessage
     , connectTimeout
     , connectUrl
+    , label
     )
 
 {-| The Connect protocol: its POST, and its GET of a method without side
@@ -15,7 +17,8 @@ codec. Not exposed; `Rpc.Protocol.connect` and `connectProto` install these
 functions and `withConnectGet` the GET builders (`Rpc.Internal.Protocol`), so a
 program carries only the builders of the options it names: a POST-only program
 no percent-encoding, a JSON program no elm/bytes. A failure is read as every
-protocol's is (`Rpc.Internal.Status`).
+protocol's is (`Rpc.Internal.Status`), and so is a 200 whose content type is
+not Connect's (`label`).
 -}
 
 import Bytes exposing (Bytes)
@@ -196,7 +199,8 @@ connectProtoMessage overRead options procedure answer =
     Internal.bytesMessage overRead options procedure (connectProtoRead answer)
 
 
-{-| Connect's reading of a JSON answer: success is status 200.
+{-| Connect's reading of a JSON answer: success is status 200, as
+`application/json` or with no content type (`label`).
 -}
 connectRead : Http.Response String -> Result Error GoodText
 connectRead answer =
@@ -206,14 +210,22 @@ connectRead answer =
                 Err (Status.failure metadata raw)
 
             else
-                Ok { metadata = metadata, raw = raw, text = raw, field = Nothing }
+                case label connectType [ "application/json" ] metadata of
+                    Accepted ->
+                        Ok { metadata = metadata, raw = raw, text = raw, field = Nothing }
+
+                    Unaccepted problem ->
+                        Err (Error.BadResponse problem (Status.answerOf metadata raw))
+
+                    Foreign ->
+                        Err (Status.failure metadata raw)
 
         _ ->
             Err (Status.otherFailure answer)
 
 
-{-| Connect's reading of a protobuf binary answer: a 200 must come as
-`application/proto` or with no content type, and is the response's
+{-| Connect's reading of a protobuf binary answer: a 200 as
+`application/proto` or with no content type (`label`) is the response's
 binary; every other answer is JSON, read as under the JSON codec.
 -}
 connectProtoRead : Http.Response Bytes -> ( Maybe Http.Metadata, Result Error GoodBytes )
@@ -225,20 +237,67 @@ connectProtoRead answer =
                 Err (Status.bytesFailure answer)
 
             else
-                case contentType metadata of
-                    Just other ->
-                        if other == "application/proto" then
-                            Ok { metadata = metadata, raw = raw, message = raw }
-
-                        else
-                            Err (Error.BadResponse ("content-type " ++ other ++ ", not application/proto") (Internal.bytesAnswer metadata raw))
-
-                    Nothing ->
+                case label connectType [ "application/proto" ] metadata of
+                    Accepted ->
                         Ok { metadata = metadata, raw = raw, message = raw }
+
+                    Unaccepted problem ->
+                        Err (Error.BadResponse problem (Internal.bytesAnswer metadata raw))
+
+                    Foreign ->
+                        Err (Status.bytesFailure answer)
 
         _ ->
             Err (Status.bytesFailure answer)
     )
+
+
+{-| Whether a content type is one of Connect's: its unary codecs' and its
+streaming codecs'.
+-}
+connectType : String -> Bool
+connectType found =
+    List.member found [ "application/json", "application/proto", "application/connect+json", "application/connect+proto" ]
+
+
+{-| What a 200's content type makes of it.
+-}
+type Label
+    = Accepted
+    | Unaccepted String
+    | Foreign
+
+
+{-| A 200 by its content type, against the protocol's types (`family`) and
+the ones this call reads (`accepted`):
+
+  - `Accepted`: one of `accepted`, or none at all, since a proxy may drop
+    the header; the body is the answer.
+  - `Unaccepted`: another of the protocol's types, a codec the call does not
+    read; the problem names both, and the answer is a `BadResponse`.
+  - `Foreign`: not the protocol's at all, as a proxy's HTML page is. The
+    protocol's server did not send it, so it is read as a failure, as an
+    answer of another status is: a status it carries is the error, and
+    one without is an `HttpStatus` error, whose code a 200 gives as
+    `Unknown`. connect-go draws the same line, and the Connect conformance
+    suite holds a client to it.
+
+-}
+label : (String -> Bool) -> List String -> Http.Metadata -> Label
+label family accepted metadata =
+    case contentType metadata of
+        Nothing ->
+            Accepted
+
+        Just found ->
+            if List.member found accepted then
+                Accepted
+
+            else if family found then
+                Unaccepted ("content-type " ++ found ++ ", not " ++ String.join " or " accepted)
+
+            else
+                Foreign
 
 
 {-| The answer's content type without its parameters, lowercased, whatever

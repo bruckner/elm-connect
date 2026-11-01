@@ -280,6 +280,10 @@ by the table the Connect protocol and gRPC's HTTP mapping share: 400 is
 `Internal`, 401 `Unauthenticated`, 403 `PermissionDenied`, 404 `Unimplemented`,
 429, 502, 503 and 504 `Unavailable`, and every other status `Unknown`.
 
+A 200 reaches it only for a success that is not the protocol's answer, such as
+a proxy's HTML page in place of a Connect or gRPC-Web answer, and reads as
+`Unknown`.
+
 It is not the inverse of [`toHttpStatus`](#toHttpStatus), which says why.
 A REST server's bare 404 thus reads as `Unimplemented`; see
 [`Rpc.Error.code`](Rpc-Error#code).

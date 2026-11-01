@@ -373,6 +373,39 @@ answers =
 
                     other ->
                         Expect.fail (Debug.toString other)
+        , test "a 200 as application/grpc-web, or of no content type, is read as gRPC-Web" <|
+            \_ ->
+                [ answer 200 [ ( "Content-Type", "application/grpc-web" ) ] [ frame 0 titleHi, trailers ok ]
+                , answer 200 [ ( "content-type", "application/grpc-web+proto; charset=x" ) ] [ frame 0 titleHi, trailers ok ]
+                , answer 200 [] [ frame 0 titleHi, trailers ok ]
+                ]
+                    |> Expect.equal [ Ok "hi", Ok "hi", Ok "hi" ]
+        , test "a 200 of another gRPC-Web content type is a BadResponse naming the ones read" <|
+            \_ ->
+                [ answer 200 [ ( "content-type", "application/grpc-web+json" ) ] [ frame 0 titleHi, trailers ok ]
+                , answer 200 [ ( "content-type", "application/grpc-web-text" ) ] []
+                ]
+                    |> List.map (Result.mapError Rpc.Error.message)
+                    |> Expect.equal
+                        [ Err "bad response body: content-type application/grpc-web+json, not application/grpc-web or application/grpc-web+proto"
+                        , Err "bad response body: content-type application/grpc-web-text, not application/grpc-web or application/grpc-web+proto"
+                        ]
+        , test "a 200 that is not gRPC-Web's is read as a failure: an HttpStatus error, code Unknown, when it states no status" <|
+            \_ ->
+                case Rpc.responseBytes grpcWeb (getNote { name = "" }) (Http.GoodStatus_ (metadata 200 [ ( "content-type", "text/html" ) ]) (E.encode (E.string "<html></html>"))) of
+                    Err ((HttpStatus response) as error) ->
+                        ( Rpc.Error.code error, response.statusCode, Rpc.Body.toText response.body )
+                            |> Expect.equal ( Unknown, 200, Just "<html></html>" )
+
+                    other ->
+                        Expect.fail (Debug.toString other)
+        , test "a 200 that is not gRPC-Web's is read as a failure: its grpc-status headers or Connect body are the error" <|
+            \_ ->
+                [ answer 200 [ ( "content-type", "text/plain" ), ( "grpc-status", "14" ), ( "grpc-message", "down" ) ] []
+                , Rpc.responseBytes grpcWeb (getNote { name = "" }) (Http.GoodStatus_ (metadata 200 [ ( "content-type", "image/jpeg" ) ]) (E.encode (E.string "{\"code\":\"unavailable\",\"message\":\"down\"}")))
+                ]
+                    |> List.map statusOf
+                    |> Expect.equal [ Just ( Unavailable, "down", GrpcHeaders ), Just ( Unavailable, "down", ConnectBody ) ]
         , test "another HTTP status with grpc-status headers is read from them" <|
             \_ ->
                 Rpc.responseBytes grpcWeb (getNote { name = "" }) (Http.BadStatus_ (metadata 503 [ ( "grpc-status", "14" ) ]) (body []))
