@@ -558,7 +558,7 @@ responses =
         , test "an undecodable body is a bad response, the answer kept" <|
             \_ ->
                 case respond rule (Http.GoodStatus_ (metadata 201 "Created" []) "[]") of
-                    Err (BadResponse _ answer) ->
+                    Err (BadResponse _ _ answer) ->
                         ( answer.statusCode, Maybe.withDefault "" (Rpc.Body.toText answer.body) )
                             |> Expect.equal ( 201, "[]" )
 

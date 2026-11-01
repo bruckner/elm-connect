@@ -200,7 +200,7 @@ viewError error =
                 , pre [] [ text (Maybe.withDefault "" (Rpc.Body.toText answer.body)) ]
                 ]
 
-        Rpc.Error.BadResponse _ answer ->
+        Rpc.Error.BadResponse _ _ answer ->
             section [ class "error" ]
                 [ h2 [] [ text (Rpc.Code.toString (Rpc.Error.code error)) ]
                 , p [] [ text (Rpc.Error.message error) ]

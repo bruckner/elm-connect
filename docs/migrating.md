@@ -331,6 +331,9 @@ with each one ([install.md](install.md#versions)).
 - `Rpc.Error.Reason` has a new constructor, `InvalidPathValue { field,
   template }`: a transcoded call whose path value its template cannot
   match is not sent. A `case` on `Reason` needs the branch.
+- `Rpc.Error.BadResponse` carries the code `Rpc.Error.code` gives it
+  first: a pattern `BadResponse problem answer` becomes
+  `BadResponse _ problem answer`.
 - `Rpc.Call.withRetry` and `Rpc.Call.withoutRetry` set one call's retry
   policy, and `Rpc.Retry.withDeadline` and `Rpc.Retry.next` are new
   ([calling.md](calling.md#retries)).

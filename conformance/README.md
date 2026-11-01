@@ -602,15 +602,15 @@ error trailers-only) or `GrpcTrailers` (Envoy answers it in a trailers
 frame). Its own cases check the wire (`X-Grpc-Web`, `grpc-timeout`, the
 content type), a timeout, and the body's trailers in the trace.
 
-The suite selects 85 test cases. `known-failing-grpcweb.txt` lists the
-three the runtime fails whichever way it sends: a unary answer with
-status 0 and no message or two, which the suite wants `unimplemented`
-and the runtime reads as a `BadResponse` (`internal`), as over Connect.
+The suite selects 85 test cases. `known-failing-grpcweb.txt` lists those
+the runtime fails whichever way it sends, none today: a unary answer
+with status 0 and no message or two, which the suite wants
+`unimplemented`, is a `BadResponse` whose code is `Unimplemented`.
 The halves run adds `known-failing-grpcweb-halves.txt`: twelve
 cases asserting trailers, which a gRPC-Web answer carries in its body,
 where an application reading the elm/http response itself cannot see
 them and `sendTraced` gives them. The `sendTraced` run adds
-`known-failing-send.txt`. 70 of 85 pass through the halves and 80 with
+`known-failing-send.txt`. 73 of 85 pass through the halves and 83 with
 `sendTraced`.
 
 `suite/buf.gen.yaml` generates both from `suite/proto/`, the suite's

@@ -29,6 +29,7 @@ import Proto.Internal.Percent as Percent
 import Proto.Method exposing (Idempotency(..))
 import Proto.Route exposing (Route)
 import Rpc.Body as Body exposing (Body)
+import Rpc.Code as Code
 import Rpc.Error as Error exposing (Error, Reason)
 import Rpc.Internal.Http as Internal
 import Rpc.Internal.Protocol exposing (BytesMessage, GoodBytes, GoodText, Options, Settings)
@@ -215,7 +216,7 @@ connectRead answer =
                         Ok { metadata = metadata, raw = raw, text = raw, field = Nothing }
 
                     Unaccepted problem ->
-                        Err (Error.BadResponse problem (Status.answerOf metadata raw))
+                        Err (Error.BadResponse Code.Internal problem (Status.answerOf metadata raw))
 
                     Foreign ->
                         Err (Status.failure metadata raw)
@@ -242,7 +243,7 @@ connectProtoRead answer =
                         Ok { metadata = metadata, raw = raw, message = raw }
 
                     Unaccepted problem ->
-                        Err (Error.BadResponse problem (Internal.bytesAnswer metadata raw))
+                        Err (Error.BadResponse Code.Internal problem (Internal.bytesAnswer metadata raw))
 
                     Foreign ->
                         Err (Status.bytesFailure answer)

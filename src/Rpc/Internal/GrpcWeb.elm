@@ -143,7 +143,7 @@ read failure answer =
                             fromFrames metadata raw
 
                     Connect.Unaccepted problem ->
-                        ( Just metadata, Err (Error.BadResponse problem (answerOf metadata raw)) )
+                        ( Just metadata, Err (Error.BadResponse Code.Internal problem (answerOf metadata raw)) )
 
                     Connect.Foreign ->
                         ( Just metadata, Err (failure (Http.GoodStatus_ metadata (Internal.bytesText raw))) )
@@ -177,10 +177,10 @@ fromFrames metadata raw =
             )
 
         Just ( _, Nothing ) ->
-            ( Just metadata, Err (Error.BadResponse "a gRPC-Web answer without trailers" (answerOf metadata raw)) )
+            ( Just metadata, Err (Error.BadResponse Code.Internal "a gRPC-Web answer without trailers" (answerOf metadata raw)) )
 
         Nothing ->
-            ( Just metadata, Err (Error.BadResponse "a gRPC-Web body that is not a sequence of uncompressed frames" (answerOf metadata raw)) )
+            ( Just metadata, Err (Error.BadResponse Code.Internal "a gRPC-Web body that is not a sequence of uncompressed frames" (answerOf metadata raw)) )
 
 
 {-| The result a status (`status`, names lowercased) and the message frames
@@ -196,8 +196,11 @@ settle source metadata raw status messages =
         ( Just (Just 0), [ message ] ) ->
             Ok { metadata = metadata, raw = raw, message = message }
 
+        ( Just (Just 0), [] ) ->
+            Err (Error.BadResponse Code.Unimplemented "a unary gRPC-Web answer with status 0 and no message" answer)
+
         ( Just (Just 0), _ ) ->
-            Err (Error.BadResponse "a unary gRPC-Web answer with status 0 and not one message" answer)
+            Err (Error.BadResponse Code.Unimplemented "a unary gRPC-Web answer with status 0 and more than one message" answer)
 
         ( Just (Just number), _ ) ->
             Err
@@ -218,7 +221,7 @@ settle source metadata raw status messages =
                 )
 
         _ ->
-            Err (Error.BadResponse "a gRPC-Web answer without a numeric grpc-status" answer)
+            Err (Error.BadResponse Code.Internal "a gRPC-Web answer without a numeric grpc-status" answer)
 
 
 {-| The `details` of a `google.rpc.Status` (field 3, repeated `Any`), its code

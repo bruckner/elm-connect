@@ -139,8 +139,7 @@ async function answer(runner, send, request) {
   } else if (result.canceled !== undefined) {
     response.error = { code: Code.CANCELED, message: "" };
   } else if (result.badResponse !== undefined) {
-    // Rpc.Error.code reads a BadResponse as internal.
-    response.error = { code: Code.INTERNAL, message: `BadResponse ${result.badResponse.problem}` };
+    response.error = { code: codeOf(result.badResponse.code), message: `BadResponse ${result.badResponse.problem}` };
   } else {
     response.error = noAnswerError(result.noAnswer);
   }

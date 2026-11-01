@@ -439,11 +439,12 @@ encodeResult responseMessage result =
                   )
                 ]
 
-        Err (Rpc.Error.BadResponse problem answer) ->
+        Err (Rpc.Error.BadResponse code problem answer) ->
             Encode.object
                 [ ( "badResponse"
                   , Encode.object
-                        [ ( "problem", Encode.string problem )
+                        [ ( "code", Encode.string (Rpc.Code.toString code) )
+                        , ( "problem", Encode.string problem )
                         , ( "response", encodeResponse_ answer )
                         ]
                   )
