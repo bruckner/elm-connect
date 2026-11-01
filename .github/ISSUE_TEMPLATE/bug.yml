@@ -50,5 +50,5 @@ body:
   - type: textarea
     id: server
     attributes:
-      label: Server and transport
-      description: For a call that fails, the server (connect-go, Envoy, grpc-gateway, …) and the transport (Connect or transcoding).
+      label: Server and protocol
+      description: For a call that fails, the server (connect-go, Envoy, grpc-gateway, …) and the protocol (Connect, gRPC-Web or transcoding).
