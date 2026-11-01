@@ -11,10 +11,12 @@ An independent Elm implementation of [ConnectRPC](https://connectrpc.com/)
 the browser.
 
 elm-connect provides idiomatic Elm code generation from `.proto` files:
-types, JSON codecs, defaults, descriptors, and type-safe API clients built
-from gRPC service definitions. The runtime library allows generated
-clients to use the [Connect protocol](https://connectrpc.com/docs/protocol/)
-(e.g., to a Connect server or Envoy's Connect-gRPC bridge) or REST through
+types, JSON and protobuf binary codecs, defaults, descriptors, and
+type-safe API clients built from gRPC service definitions. The runtime
+library allows generated clients to use the
+[Connect protocol](https://connectrpc.com/docs/protocol/) (e.g., to a
+Connect server or Envoy's Connect-gRPC bridge), gRPC-Web (e.g., to
+Envoy's gRPC-Web filter), or REST through
 `google.api.http` gRPC transcoding (e.g., to grpc-gateway, Envoy's 
 gRPC-JSON transcoder, or Vanguard).
 

@@ -333,7 +333,7 @@ live/
 just live                                     # regenerate, build, start the server, run
 node conformance/live/run.mjs --server http://127.0.0.1:8080 conformance/live/cases/notes.json
 node conformance/live/run.mjs --serve target/live/bin/notes-server --print conformance/live/cases/notes.json
-node conformance/live/run.mjs --serve target/live/bin/notes-server --prefix /gateway --transport transcode conformance/live/cases/notes.json
+node conformance/live/run.mjs --serve target/live/bin/notes-server --prefix /gateway --protocol transcode conformance/live/cases/notes.json
 node conformance/live/run.mjs --server http://127.0.0.1:18081 --origin http://127.0.0.1:18080 conformance/live/cases/transcode.json
 ```
 
@@ -345,8 +345,8 @@ under `CARGO_TARGET_DIR` when that is set) and `Live.elm`
 path to the server's URL for the cases' `baseUrl`: the server serves
 transcoding twice, by Vanguard at its root and by grpc-gateway under
 `/gateway`, and `just live` runs the transcoding cases under both, and
-under Envoy (below). `--transport` runs only the cases of one
-transport; the transcode cases of `notes.json` make the notes they
+under Envoy (below). `--protocol` runs only the cases of one
+protocol; the transcode cases of `notes.json` make the notes they
 change, so they run alone. `--origin` names the example server when
 `--server` is a proxy in front of it, as Envoy is: `{server}` in a case
 (below) then stands for the origin, not the proxy.
@@ -359,7 +359,7 @@ An **envelope**, what the runner sends:
   "service": "notes.v1.NotesService",
   "method": "GetNote",
   "request": { "name": "notes/welcome" },
-  "transport": "connect",
+  "protocol": "connect",
   "config": {
     "baseUrl": "http://127.0.0.1:8080",
     "headers": [["x-echo", "hi"]],
@@ -381,13 +381,13 @@ An **envelope**, what the runner sends:
 }
 ```
 
-`request` is proto3 JSON (`{}` when absent); `transport` is `connect`,
+`request` is proto3 JSON (`{}` when absent); `protocol` is `connect`,
 `transcode` or `grpcweb`; everything in `config` but `baseUrl` is optional, as are
 `binding` (applied with `Rpc.Call.viaBinding`), `headers` (the call's
 own, `Rpc.Call.withHeaders`, sent after the client's), `send` (`sendTraced`, the
 default, `send`, `task`, `halves` or `taskFromRequest`), `rewrite`, `tracker` (`Rpc.Call.withTracker`) and
-`cancelAfterMs`. `config` builds the client: `transport` and `codec`
-(`json`, the default, or `proto`) pick its protocol,
+`cancelAfterMs`. `config` builds the client: `protocol` and `codec`
+(`json`, the default, or `proto`) pick its `Rpc.Protocol`,
 `Rpc.Protocol.connect`, `connectProto`, `transcode` or `grpcWeb`
 (`transcode` with `proto` is refused, since transcoding is JSON, and
 `grpcweb` with anything but `proto`, since gRPC-Web is binary; a
@@ -473,7 +473,7 @@ A **case file** is a JSON array of cases, run in order:
 {
   "name": "connect GetNote",
   "note": "optional prose",
-  "call": { "service": "…", "method": "…", "request": {}, "transport": "connect", "config": {} },
+  "call": { "service": "…", "method": "…", "request": {}, "protocol": "connect", "config": {} },
   "expect": { "result": { "ok": { "name": "notes/welcome" } }, "trace": { "attempts": 1 } },
   "skip": "optional: why the case is not run"
 }
@@ -589,7 +589,7 @@ same build: `cases/grpcweb.json` against the example server, whose
 gRPC-Web connect-go serves, and the Connect conformance suite with
 `conformance-grpcweb.yaml` (unary, protobuf binary, HTTP/1.1, no
 compression), through the halves and with `sendTraced`, each request
-over gRPC-Web sent as an envelope with `transport: "grpcweb"`.
+over gRPC-Web sent as an envelope with `protocol: "grpcweb"`.
 `live-envoy` runs `cases/grpcweb.json` again against Envoy's gRPC-Web
 filter (its `grpc_web` listener), with the canned answers reached at the
 server (`--origin`).
@@ -627,7 +627,7 @@ the example), under Vanguard and under grpc-gateway, each method
 echoing the request the transcoder decoded: the request itself when the
 response is of its type, otherwise the request as proto3 JSON in
 `Message.text` or `Resource.display_name`. `routes.mjs` sends every
-fixture through the runner (`transport` `transcode`, the fixture's
+fixture through the runner (`protocol` `transcode`, the fixture's
 `binding`, its request) and checks:
 
 - the request: verb, the path and the query pairs exactly as sent

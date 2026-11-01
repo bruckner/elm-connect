@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // The route fixtures, live: every fixture in conformance/routes/ is sent by
-// the runtime over the Transcode transport to the example server, which
+// the runtime over the transcode protocol to the example server, which
 // serves routes.v1.Routes under a transcoder, Vanguard at its root and
 // grpc-gateway under /gateway, and echoes each request as the transcoder
 // decoded it. For each fixture it checks
@@ -503,7 +503,7 @@ export async function runFixtures(runner, url, { log = console.log, known } = {}
         service: fixture.method.slice(0, dot),
         method: fixture.method.slice(dot + 1),
         request: fixture.request,
-        transport: "transcode",
+        protocol: "transcode",
         config: { baseUrl },
         binding: fixture.binding,
       });

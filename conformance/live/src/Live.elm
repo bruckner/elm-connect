@@ -10,7 +10,7 @@ import Dict exposing (Dict)
 import Http
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
-import Live.Call exposing (Client(..), Entry, Envelope, Outcome, Sending(..), Transport(..))
+import Live.Call exposing (Client(..), Entry, Envelope, Outcome, Protocol(..), Sending(..))
 import Live.Conformance
 import Live.Notes
 import Live.Routes
@@ -203,7 +203,7 @@ refuse id problem =
 
 envelope : Decoder Envelope
 envelope =
-    Decode.field "transport" transport
+    Decode.field "protocol" protocolName
         |> Decode.andThen
             (\t ->
                 Decode.succeed Envelope
@@ -227,9 +227,9 @@ with =
     Decode.map2 (|>)
 
 
-transport : Decoder Transport
-transport =
-    oneOfNames "transport" [ ( "connect", Connect ), ( "transcode", Transcode ), ( "grpcweb", GrpcWeb ) ]
+protocolName : Decoder Protocol
+protocolName =
+    oneOfNames "protocol" [ ( "connect", Connect ), ( "transcode", Transcode ), ( "grpcweb", GrpcWeb ) ]
 
 
 sending : Decoder Sending
@@ -251,7 +251,7 @@ oneOfNames what names =
             )
 
 
-config : Transport -> Decoder Client
+config : Protocol -> Decoder Client
 config t =
     Decode.map8
         (\baseUrl headers timeout withCredentials useGet maxGetUrl ( readMaxBytes, writeMaxBytes, codec ) retry ->

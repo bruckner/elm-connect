@@ -5,7 +5,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "name": "notes/welcome"
       },
@@ -81,7 +81,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "ListNotes",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "pageSize": 10,
         "filter": "Welcome",
@@ -128,7 +128,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "CreateNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "note": {
           "name": "notes/from-proto",
@@ -215,7 +215,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "CreateNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "note": {
           "name": "notes/from-proto-any",
@@ -248,7 +248,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "UpdateNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "note": {
           "name": "notes/from-proto",
@@ -276,7 +276,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "ArchiveNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "name": "notes/from-proto"
       },
@@ -304,7 +304,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "DeleteNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "name": "notes/from-proto"
       },
@@ -331,7 +331,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "name": "notes/from-proto"
       },
@@ -379,7 +379,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "CreateNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "note": {
           "body": "untitled"
@@ -416,7 +416,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "Ping",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {},
       "config": {
         "codec": "proto"
@@ -449,7 +449,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "name": "notes/welcome"
       },
@@ -494,7 +494,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "Ping",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {},
       "config": {
         "codec": "proto",
@@ -520,7 +520,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "name": "notes/welcome"
       },
@@ -549,7 +549,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "name": "notes/welcome"
       },
@@ -574,7 +574,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "name": "notes/welcome"
       },
@@ -598,7 +598,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "name": "notes/welcome"
       },
@@ -621,7 +621,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "name": "notes/welcome"
       },
@@ -665,7 +665,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "name": "notes/missing"
       },
@@ -691,7 +691,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "name": "notes/welcome"
       },
@@ -728,7 +728,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "name": "notes/missing"
       },
@@ -752,7 +752,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "name": "notes/welcome"
       },
@@ -805,7 +805,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {
         "name": "notes/flaky"
       },
@@ -845,7 +845,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "Ping",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {},
       "config": {
         "codec": "proto",
@@ -869,7 +869,7 @@
     "call": {
       "service": "notes.v1.NotesService",
       "method": "Ping",
-      "transport": "connect",
+      "protocol": "connect",
       "request": {},
       "config": {
         "codec": "proto",

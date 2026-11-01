@@ -92,17 +92,17 @@ point of `elm-format`: the corpus's formatted check and
   as data (`Proto.Http`), the routes generated route functions build
   (`Proto.Route`, `Proto.Query`), `Proto.Registry`, `Proto.Any`, `Proto.WellKnown`, and
   `Proto.Version`, the compatibility sentinel every generated module
-  names (§8.2).
+  names (§8.2), and `Proto.Codec`, the codec tags `Rpc.Json` and
+  `Rpc.Proto` alias (§3.1, rule 5).
 - `Rpc.*` is the calling: `Rpc` builds requests, sends them and reads
   answers, beside a module per type it takes or gives (`Rpc.Call`,
   `Rpc.Client`, `Rpc.Protocol`, `Rpc.Retry`, `Rpc.Trace`, `Rpc.Body`, `Rpc.Request`,
   `Rpc.Response`, `Rpc.Error`, `Rpc.Code`).
 
 Imports point one way: no `Proto` module imports an `Rpc` one, and `Rpc`
-reads only four internal modules of the `Proto` side,
+reads only three internal modules of the `Proto` side,
 `Proto.Internal.Any`, `Proto.Internal.Percent`, the percent-encoding
-both sides share, `Proto.Internal.Codec`, the codec tags `Rpc.Json` and
-`Rpc.Proto` alias, and `Proto.Internal.Method`, whose codec halves and
+both sides share, and `Proto.Internal.Method`, whose codec halves and
 routes the `Proto.Method` builders put into a method (§3.1, rule 7;
 §5.3).
 
