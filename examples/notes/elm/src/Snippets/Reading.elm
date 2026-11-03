@@ -44,7 +44,7 @@ describe error =
             -- A failure with no status in it, such as a proxy's 502 page.
             "HTTP " ++ String.fromInt response.statusCode
 
-        Rpc.Error.BadResponse problem _ ->
+        Rpc.Error.BadResponse _ problem _ ->
             -- A success whose body is not the response.
             "unexpected answer: " ++ problem
 

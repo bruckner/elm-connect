@@ -3,9 +3,3 @@
 # is sent; known-failing-grpcweb-halves.txt adds those only the pure halves
 # fail, and known-failing-send.txt those Rpc.sendTraced fails. Format as in
 # known-failing.txt.
-
-# A unary answer with status 0 and no message, or with two messages: the
-# suite wants `unimplemented`; the runtime reads a malformed answer as a
-# BadResponse, whose code is `internal`, as it does over Connect.
-gRPC-Web Unexpected Responses/**/unary/ok-but-no-response
-gRPC-Web Unexpected Responses/**/unary/multiple-responses

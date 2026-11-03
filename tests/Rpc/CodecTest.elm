@@ -275,7 +275,7 @@ answers =
                     |> Result.mapError
                         (\error ->
                             case error of
-                                BadResponse problem answer ->
+                                BadResponse _ problem answer ->
                                     ( problem, Maybe.map Bytes.width (Rpc.Body.toBytes answer.body) )
 
                                 _ ->

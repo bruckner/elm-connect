@@ -502,7 +502,7 @@ responses =
                         "[\"" ++ String.repeat 10000 "x" ++ "\"]"
                 in
                 case Rpc.response base (getNote { name = "x" }) (Http.GoodStatus_ (metadata 200 "OK") body) of
-                    Err ((BadResponse problem _) as error) ->
+                    Err ((BadResponse _ problem _) as error) ->
                         ( ( String.length (Rpc.Error.message error), String.endsWith "…" (Rpc.Error.message error) )
                         , ( String.startsWith "bad response body: " (Rpc.Error.message error), String.length problem > 10000 )
                         )
@@ -513,9 +513,9 @@ responses =
         , test "200 with a body that does not decode is a bad response, the answer kept" <|
             \_ ->
                 case Rpc.response base (getNote { name = "x" }) (Http.GoodStatus_ (metadata 200 "OK") "{}") of
-                    Err (BadResponse _ answer) ->
-                        ( answer.statusCode, Maybe.withDefault "" (Rpc.Body.toText answer.body), answer.url )
-                            |> Expect.equal ( 200, "{}", "https://api.example.com/notes.v1.Notes/GetNote" )
+                    Err (BadResponse badCode _ answer) ->
+                        ( badCode, ( answer.statusCode, Maybe.withDefault "" (Rpc.Body.toText answer.body), answer.url ) )
+                            |> Expect.equal ( Internal, ( 200, "{}", "https://api.example.com/notes.v1.Notes/GetNote" ) )
 
                     other ->
                         Expect.fail (Debug.toString other)
@@ -639,7 +639,7 @@ responses =
                         ]
         , test "an error without a stated status has the code the Connect clients give it" <|
             \_ ->
-                [ NoAnswer Timeout, NoAnswer NetworkError, NoAnswer (BadUrl "::"), NoAnswer (RequestTooLarge { limit = 10, size = 11 }), NoAnswer (ResponseTooLarge { limit = 10, size = 11 }), BadResponse "oops" blank ]
+                [ NoAnswer Timeout, NoAnswer NetworkError, NoAnswer (BadUrl "::"), NoAnswer (RequestTooLarge { limit = 10, size = 11 }), NoAnswer (ResponseTooLarge { limit = 10, size = 11 }), BadResponse Internal "oops" blank ]
                     |> List.map (\error -> ( Rpc.Error.code error, Rpc.Error.message error ))
                     |> Expect.equal
                         [ ( DeadlineExceeded, "timeout" )
@@ -674,7 +674,7 @@ responses =
                 , NoAnswer (BadUrl "::")
                 , NoAnswer (RequestTooLarge { limit = 10, size = 11 })
                 , NoAnswer (ResponseTooLarge { limit = 10, size = 11 })
-                , BadResponse "oops" blank
+                , BadResponse Internal "oops" blank
                 ]
                     |> List.map Rpc.Error.toString
                     |> Expect.equal

@@ -51,6 +51,7 @@ import Http
 import Json.Encode exposing (Value)
 import Proto.Bytes
 import Rpc.Body
+import Rpc.Code as Code
 import Rpc.Error as Error exposing (Error, Reason)
 import Rpc.Internal.Protocol exposing (BytesMessage, GoodBytes, GoodText, Options)
 import Rpc.Request exposing (Request)
@@ -465,7 +466,7 @@ bytesMessage overRead options procedure ( metadata, read ) =
                     Nothing ->
                         Ok
                             { bytes = good.message
-                            , bad = \() -> Error.BadResponse ("the body is not the response of " ++ procedure ++ " in protobuf binary") (bytesAnswer good.metadata good.raw)
+                            , bad = \() -> Error.BadResponse Code.Internal ("the body is not the response of " ++ procedure ++ " in protobuf binary") (bytesAnswer good.metadata good.raw)
                             }
             )
     )

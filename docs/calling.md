@@ -514,7 +514,7 @@ in `Rpc.Error` with its readers:
 type Error
     = RpcStatus StatusError Response
     | HttpStatus Response
-    | BadResponse String Response
+    | BadResponse Code String Response
     | NoAnswer Reason
 ```
 
@@ -536,9 +536,12 @@ type Error
   decode as the response, as when the schema drifted between client and
   server, or came as another of the protocol's content types than the
   call reads (`application/json` under the proto codec,
-  `application/grpc-web+json` over `grpcWeb`); code `Internal`, the
-  message quoting elm/json's problem or naming the content type. A
-  success with no content type is read as the answer.
+  `application/grpc-web+json` over `grpcWeb`): the code, then the
+  problem, then the answer. The code is the runtime's, as the Connect
+  clients give it: `Internal`, or `Unimplemented` for a unary gRPC-Web
+  answer with status 0 and no message or more than one. The message
+  quotes elm/json's problem or names the content type. A success with
+  no content type is read as the answer.
 - `NoAnswer`: nothing came back, or nothing was sent: a `Timeout`
   (`DeadlineExceeded`), a `NetworkError` (`Unavailable`, which is also
   how a browser's CORS refusal arrives), a `BadUrl` or an

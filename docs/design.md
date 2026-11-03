@@ -3105,7 +3105,10 @@ conformance suite's gRPC-Web client cases (§7).
   codecs. `source` is `GrpcTrailers` from a body and `GrpcHeaders` from
   headers. Any other HTTP status goes through the shared error reader
   (§5.4). Status 0 with no message or two, a compressed frame, a frame
-  running past the end, or no status anywhere is a `BadResponse`.
+  running past the end, or no status anywhere is a `BadResponse`; the
+  first two are `Unimplemented`, as connect-es and connect-go give them,
+  and the rest `Internal` (decisions.md: A refused answer carries its
+  code).
 - **Limits.** `withReadMaxBytes` measures the response message, not its
   frame, so a limit means the same as over `connectProto`;
   `withWriteMaxBytes` the request's binary. An error is read whatever
@@ -3147,7 +3150,7 @@ is not met: connect-go, the suite's reference server, always sends it.
 type Error
     = RpcStatus StatusError Response    -- the server stated an RPC status
     | HttpStatus Response               -- a failure, or a success not the protocol's, stating none
-    | BadResponse String Response       -- it answered 2xx and the body did not decode (the problem)
+    | BadResponse Code String Response  -- it answered 2xx and the runtime refused the body (its code, the problem)
     | NoAnswer Reason                   -- nothing came back, nothing was sent, or the answer was refused unread
 
 type Reason                             -- frozen (§8.3)
@@ -3253,7 +3256,8 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
   `Rpc.Error.code`, `message`, `details` and `toString`.
 - Every error has a code, the one the Connect clients give it when the
   server stated none: an `HttpStatus` error's by the status table, a
-  `BadResponse` `Internal`, and a `NoAnswer` by its reason: `Timeout`
+  `BadResponse` its own, which the runtime gives it, and a `NoAnswer`
+  by its reason: `Timeout`
   `DeadlineExceeded`, `NetworkError` `Unavailable`, `BadUrl` and
   `InvalidHeader` `Internal`, `InvalidPathValue` `InvalidArgument` (a
   server checking the value would say so), `RequestTooLarge` and
@@ -3957,11 +3961,11 @@ grpc-gateway have no gRPC-Web leg: the example server answers a gRPC-Web
 call at its procedure path with connect-go before Vanguard's routes, and
 grpc-gateway serves REST alone. The Connect conformance suite's gRPC-Web
 client cases (`conformance-grpcweb.yaml`: unary, protobuf binary,
-HTTP/1.1, no compression) select 85; 70 pass through the halves and 80
-through `sendTraced`. `known-failing-grpcweb.txt` lists, whichever way,
-status 0 with no message or two, which the suite wants `unimplemented`
-and the runtime reads as a `BadResponse` (`internal`), as over Connect.
-`known-failing-grpcweb-halves.txt` adds the twelve cases that
+HTTP/1.1, no compression) select 85; 73 pass through the halves and 83
+through `sendTraced`. Status 0 with no message or two passes, as a
+`BadResponse` whose code is `Unimplemented`, and
+`known-failing-grpcweb.txt` lists nothing.
+`known-failing-grpcweb-halves.txt` lists the twelve cases that
 assert trailers, which a gRPC-Web answer carries in its body, where the
 halves do not read them and `sendTraced` does (§5.3); `sendTraced`
 fails the two cancellation cases of `known-failing-send.txt`, as over

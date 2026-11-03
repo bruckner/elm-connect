@@ -45,7 +45,9 @@ import Rpc.Response exposing (Response)
     reads any success as its answer, whatever its content type.
   - `BadResponse`: the server answered with success, but the body did not
     decode as the response, or came as another of the protocol's content
-    types than the call reads; the problem, then the answer.
+    types than the call reads; the code, then the problem, then the answer.
+    The code is the runtime's: `Internal`, or `Unimplemented` for a unary
+    gRPC-Web answer that carried no message or more than one.
   - `NoAnswer`: nothing came back, nothing was sent, or what came back was
     refused unread ([`Reason`](#Reason)).
 
@@ -70,7 +72,7 @@ found in an answer that was read is a `BadResponse`.
 type Error
     = RpcStatus StatusError Response
     | HttpStatus Response
-    | BadResponse String Response
+    | BadResponse Code String Response
     | NoAnswer Reason
 
 
@@ -164,7 +166,8 @@ type Source
   - `HttpStatus`: inferred from the HTTP status by
     [`Rpc.Code.fromHttpStatus`](Rpc-Code#fromHttpStatus), so a 200 that is
     not the protocol's answer is `Unknown`.
-  - `BadResponse`: `Internal`.
+  - `BadResponse`: its own, `Internal` or `Unimplemented` (see
+    [`Error`](#Error)).
   - `NoAnswer`: a timeout is `DeadlineExceeded`, a network failure
     `Unavailable`, a bad URL or an invalid header `Internal`, an invalid path
     value `InvalidArgument`, a request or a response over its limit
@@ -187,8 +190,8 @@ code error =
         HttpStatus answer ->
             Code.fromHttpStatus answer.statusCode
 
-        BadResponse _ _ ->
-            Code.Internal
+        BadResponse badCode _ _ ->
+            badCode
 
         NoAnswer Timeout ->
             Code.DeadlineExceeded
@@ -246,7 +249,7 @@ message error =
             else
                 answer.statusText
 
-        BadResponse problem _ ->
+        BadResponse _ problem _ ->
             "bad response body: " ++ excerpt problem
 
         NoAnswer Timeout ->

@@ -902,6 +902,31 @@ frozen, `InvalidHeader` became a reason, `Canceled` went with the
 synthetic cancel outcome, and the module became `Rpc.Error`, whose
 `toString` was `Rpc.errorToString`. Where: design §5.4.
 
+### A refused answer carries its code
+
+*2026-11-01.*
+
+`BadResponse` is `BadResponse Code String Response`, and
+`Rpc.Error.code` of one is its code. The constructor still means that
+the server answered with success and the runtime refused the body; the
+code is the runtime's, never the server's. It is not an `RpcStatus`:
+that constructor means the server stated a status, its `Source` says
+where it was read, and a refusal was read from nowhere. Every refusal
+is `Internal`, as before, except two shapes of a unary gRPC-Web answer:
+status 0 with no message frame (in the body's trailers or
+trailers-only) and status 0 with more than one. Those are
+`Unimplemented`, which is what connect-es and connect-go give
+("protocol error: missing/extra output message for unary method") and
+what the Connect conformance suite's `gRPC-Web Unexpected Responses`
+cases `trailers-in-body/unary/ok-but-no-response`,
+`trailers-in-body/unary/multiple-responses` and
+`trailers-only/unary/ok-but-no-response` require, with no alternative.
+grpc-go gives `Internal` for the same fault, and neither protocol's
+specification names a code; the suite's choice is followed because
+the runtime speaks Connect's gRPC-Web. The suite allows `internal` for
+the other refusals (no status, no trailers), which keep it. Where:
+design §5.4, §7.
+
 ### A path value that cannot match is not sent
 
 *2026-10-24.*

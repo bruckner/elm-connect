@@ -161,11 +161,24 @@ statusOf result =
 isBadResponse : Result Error String -> Bool
 isBadResponse result =
     case result of
-        Err (BadResponse _ _) ->
+        Err (BadResponse _ _ _) ->
             True
 
         _ ->
             False
+
+
+{-| A `BadResponse`'s own code, its problem, and the code `Rpc.Error.code`
+reads from it.
+-}
+badResponseOf : Result Error String -> Maybe ( Code, String, Code )
+badResponseOf result =
+    case result of
+        Err ((BadResponse badCode problem _) as error) ->
+            Just ( badCode, problem, Rpc.Error.code error )
+
+        _ ->
+            Nothing
 
 
 ok : String
@@ -344,14 +357,23 @@ answers =
                 answer 200 [] [ trailers "grpc-status: 99\u{000D}\n" ]
                     |> statusOf
                     |> Expect.equal (Just ( Unknown, "", GrpcTrailers ))
-        , test "status 0 without a message, or with two, is a BadResponse" <|
+        , test "status 0 without a message, or with two, is a BadResponse whose code is Unimplemented" <|
             \_ ->
                 [ answer 200 [] [ trailers ok ]
-                , answer 200 [] [ frame 0 titleHi, frame 0 titleHi, trailers ok ]
                 , answer 200 [ ( "grpc-status", "0" ) ] []
+                , answer 200 [] [ frame 0 titleHi, frame 0 titleHi, trailers ok ]
                 ]
-                    |> List.map isBadResponse
-                    |> Expect.equal [ True, True, True ]
+                    |> List.map badResponseOf
+                    |> Expect.equal
+                        [ Just ( Unimplemented, "a unary gRPC-Web answer with status 0 and no message", Unimplemented )
+                        , Just ( Unimplemented, "a unary gRPC-Web answer with status 0 and no message", Unimplemented )
+                        , Just ( Unimplemented, "a unary gRPC-Web answer with status 0 and more than one message", Unimplemented )
+                        ]
+        , test "a body without trailers is a BadResponse whose code is Internal" <|
+            \_ ->
+                answer 200 [] [ frame 0 titleHi ]
+                    |> badResponseOf
+                    |> Expect.equal (Just ( Internal, "a gRPC-Web answer without trailers", Internal ))
         , test "no grpc-status anywhere is a BadResponse" <|
             \_ ->
                 [ answer 200 [] [ frame 0 titleHi ], answer 200 [] [ frame 0 titleHi, trailers "grpc-message: x\u{000D}\n" ], answer 200 [] [] ]
@@ -368,7 +390,7 @@ answers =
         , test "a message that is not the response is a BadResponse naming the method" <|
             \_ ->
                 case answer 200 [] [ frame 0 (bytesOf [ 0x0A, 0x05 ]), trailers ok ] of
-                    Err (BadResponse problem _) ->
+                    Err (BadResponse _ problem _) ->
                         problem |> Expect.equal "the body is not the response of notes.v1.Notes/GetNote in protobuf binary"
 
                     other ->
@@ -467,7 +489,7 @@ traces =
                             reader response
 
                         TextReader _ ->
-                            ( Nothing, Err (BadResponse "read as text" { url = "", statusCode = 0, statusText = "", headers = Dict.empty, body = Rpc.Body.none }) )
+                            ( Nothing, Err (BadResponse Internal "read as text" { url = "", statusCode = 0, statusText = "", headers = Dict.empty, body = Rpc.Body.none }) )
             in
             Rpc.Internal.Trace.init (Rpc.Client.protocol grpcWeb) c plan (plan.request ()) { attempts = 1, metadata = read, result = result } 1
     in

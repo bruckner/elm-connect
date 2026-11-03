@@ -22,6 +22,7 @@ import Json.Decode exposing (Decoder)
 import Json.Encode
 import Proto.Internal.Method exposing (Method(..))
 import Proto.Route exposing (PathError)
+import Rpc.Code as Code
 import Rpc.Error as Error exposing (Error, Reason)
 import Rpc.Internal.Call exposing (Call(..))
 import Rpc.Internal.Client exposing (Client(..))
@@ -192,7 +193,7 @@ decoder does not read it, keeping the answer.
 -}
 badText : GoodText -> Json.Decode.Error -> Error
 badText good problem =
-    Error.BadResponse (Json.Decode.errorToString problem) (Status.answerOf good.metadata good.raw)
+    Error.BadResponse Code.Internal (Json.Decode.errorToString problem) (Status.answerOf good.metadata good.raw)
 
 
 {-| Why `sent`, the plan's request or one an application rewrote, must not
