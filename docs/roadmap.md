@@ -171,19 +171,16 @@ application that never transcodes. Deferred until requested: today such
 an application deletes the `google.api.http` annotations from the
 protos it generates from. A minor (a new option).
 
-## `Any` and the registry
+## One registry for every package
 
-Three rough edges of `Proto.Any` under the binary codecs. The table
-that converts an `Any`'s JSON to binary has no mirror, so an `Any` read
-as binary and written as JSON falls back to Connect's `{type, value}`
-form rather than the message's own JSON. The generated
-`binaryRegistry` is the table that converts an `Any`'s JSON to binary,
-which its name does not say. And every `codec=both` package carries the
-conversion table as soon as one of its fields is an `Any`. A pass over
-them is a minor if it adds the mirror and keeps the name; renaming
-`binaryRegistry` is a break, so it is done before 1.0 or not at all.
-The descriptors are already apart, in `Proto.Descriptors`, so
-`Proto.Registry` holds that table alone.
+Under `codec=both` each package's `registry` holds its own types and its
+imports', and an application whose `Any`s cross packages that do not
+import each other joins them itself (`Proto.Registry.unionAll`,
+`Rpc.withRegistry`). A generator option, `registry=<Module>`, could
+emit one module holding the union of every input package's `registry`
+and `descriptors`: a leaf only the application imports, so no import
+cycle. It needs every input in one plugin invocation (buf's
+`strategy: all`). A minor (a new option).
 
 ## Validation
 

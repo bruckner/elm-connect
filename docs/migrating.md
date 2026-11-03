@@ -13,7 +13,9 @@ In short:
 2. Replace each `Rpc.Config` with an `Rpc.Client`
    ([The client and the protocol](#the-client-and-the-protocol)).
 3. Add the codec to the annotations that name `Rpc.Call`
-   ([The codec in the type](#the-codec-in-the-type)).
+   ([The codec in the type](#the-codec-in-the-type)), `Proto.Message.Message`
+   and `Proto.Any.Any`, and read error details with `detailsJson` under
+   `codec=json` ([Any, typed values and error details](#any-typed-values-and-error-details)).
 4. Follow the compiler through the rest: the pure halves, traces and
    any method written by hand.
 
@@ -207,7 +209,7 @@ then its codecs, and modifiers set the rest:
 getNote : Notes.V1.GetNoteRequest -> Rpc.Call Rpc.Json Notes.V1.GetNoteRequest Notes.V1.Note
 getNote =
     Rpc.call
-        (Proto.Method.json "notes.v1.NotesService"
+        (Proto.Method.initJson "notes.v1.NotesService"
             "GetNote"
             Notes.V1.encodeGetNoteRequest
             Notes.V1.decodeNote
@@ -238,10 +240,11 @@ getNoteBinding =
         }
 ```
 
-- `Proto.Method.json` builds a method with JSON codecs,
-  `Proto.Method.proto` one with binary codecs, and
-  `Proto.Method.both` one with both. A method's type gains its codec,
-  `Proto.Method.Method codec req res`.
+- `Proto.Method.initJson` builds a method with JSON codecs,
+  `Proto.Method.initProto` one with binary codecs, and
+  `Proto.Method.init` one with both, its JSON codecs taking a registry
+  and the registry its calls use by default. A method's type gains its
+  codec, `Proto.Method.Method codec req res`.
 - A method's idempotency is `IdempotencyUnknown` unless
   `Proto.Method.withIdempotency` sets it.
 - `Proto.Method.withBindings` gives the routes for transcoding as
@@ -306,8 +309,79 @@ noteFields =
 ```
 
 `Proto.Any.describe` takes the `Descriptors`. `Proto.Registry` now holds
-binary codecs alone, which `codec=both` generates as `binaryRegistry`,
-unchanged for now; a later release renames and widens it before 1.0.
+codecs alone, which `codec=both` generates as `registry`
+([Any, typed values and error details](#any-typed-values-and-error-details)).
+`Proto.Message`'s reader of a descriptor's full name is
+`Proto.Message.fullName`, which was `typeName`.
+
+## Any, typed values and error details
+
+A message's typed value and an `Any` carry the codec, as calls do, and
+hold one form: `Proto.Message.Message Rpc.Json Note` and
+`Proto.Any.Any Rpc.Json` under `codec=json`, `Rpc.Proto` under
+`codec=proto` and `codec=both`, where an `Any` holds its message's
+binary.
+
+- `Proto.Message.message encode decoder default descriptor` is
+  `Proto.Message.initJson "notes.v1.Note" encode decoder`, and
+  `messageBinary` is `initProto`; `withBinary` is gone. A typed value
+  holds its full name and codecs alone: `encode`, `decoder`, `default`,
+  `toDescriptor`, `encodeBytes` and `bytesDecoder` are gone, and the
+  generated `encodeNote`, `decodeNote`, `defaultNote` and
+  `Notes.V1.Note.descriptor` are what they gave. `typeName` reads the
+  typed value.
+- `Proto.WellKnown` gives each well-known type once per codec, the
+  binary one with `Proto` at the end (`timestamp`, `timestampProto`).
+- `Proto.Any.pack` takes a `Message Rpc.Proto a`, and `packJson` a
+  `Message Rpc.Json a`. `Proto.Any.unpack` gives a `Maybe a`, `Nothing`
+  for another type or a payload that does not decode, where it gave
+  `Maybe (Result Problem a)`; `unpackJson` likewise, and `tryUnpack` and
+  `tryUnpackJson` give the `Result`. `Problem` is `TypeMismatch name`,
+  `InvalidProto`, `InvalidJson error` and `UnregisteredType name`;
+  `BinaryOnly`, `Binary` and `Json` are gone, the first a compile error
+  now.
+- `Proto.Json.any` and `encodeAny` read and write an `Any Rpc.Json`;
+  `Proto.Json.anyWith` and `encodeAnyWith` an `Any Rpc.Proto` through a
+  registry. `Proto.Binary.anyWith` is gone: `Proto.Binary.any` reads and
+  writes an `Any Rpc.Proto` as it is.
+- `binaryRegistry` is `registry`, and `Proto.Registry.withBinary` and
+  `toBinary` are `withCodecs`, taking a message's four codecs, and
+  `toJson` and `toBytes`. Under `codec=both` a message that holds an
+  `Any`, directly or through its fields, has `encodeNoteWith registry`,
+  giving a `Result`, in place of `encodeNote`, and `decodeNoteWith`
+  beside `decodeNote` ([generator.md](generator.md#the-registry)).
+  `Rpc.withRegistry` gives a client a wider registry.
+- `Rpc.Error.Reason` has a new constructor, `UnregisteredType name`: a
+  request holding an `Any` the registry cannot write is not sent over
+  JSON. A `case` on `Reason` needs the branch.
+- `Rpc.Error.StatusError.details` is a `List Rpc.Error.Detail`, each the
+  forms a detail arrived in. `Rpc.Error.details` takes a
+  `Message Rpc.Proto a` and reads their binary; code generated with
+  `codec=json` reads their JSON with `Rpc.Error.detailsJson`:
+
+```elm examples/notes/elm/src/Snippets/Migrating.elm#before-details
+violations : Rpc.Error -> List String
+violations error =
+    Rpc.Error.details Google.Rpc.messageBadRequest error
+        |> List.concatMap .fieldViolations
+        |> List.map .description
+```
+
+```elm examples/notes/elm/src/Snippets/Details.elm#details
+import Google.Rpc
+import Rpc
+import Rpc.Error
+
+
+violations : Rpc.Error -> List String
+violations error =
+    Rpc.Error.detailsJson Google.Rpc.messageBadRequest error
+        |> List.concatMap .fieldViolations
+        |> List.map .description
+```
+
+A Connect detail sent without `debug` has no JSON
+([calling.md](calling.md#error-details) says what to do).
 
 ## The generator
 

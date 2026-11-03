@@ -18,6 +18,7 @@ import Notes.V1.ReadFileRequest
 import Notes.V1.Summary
 import Notes.V1.UpdateNoteRequest
 import Notes.V1.Visibility
+import Proto.Codec
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
@@ -311,81 +312,81 @@ enumVisibility =
     Proto.Enum.enum encodeVisibility decodeVisibility VisibilityUnspecified Notes.V1.Visibility.descriptor
 
 
-{-| The typed value of [`Note`](#Note): its codecs, default and descriptor together.
+{-| The typed value of [`Note`](#Note): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageNote : Proto.Message.Message Note
+messageNote : Proto.Message.Message Proto.Codec.Json Note
 messageNote =
-    Proto.Message.message encodeNote decodeNote defaultNote Notes.V1.Note.descriptor
+    Proto.Message.initJson "notes.v1.Note" encodeNote decodeNote
 
 
-{-| The typed value of [`GetNoteRequest`](#GetNoteRequest): its codecs, default and descriptor together.
+{-| The typed value of [`GetNoteRequest`](#GetNoteRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageGetNoteRequest : Proto.Message.Message GetNoteRequest
+messageGetNoteRequest : Proto.Message.Message Proto.Codec.Json GetNoteRequest
 messageGetNoteRequest =
-    Proto.Message.message encodeGetNoteRequest decodeGetNoteRequest defaultGetNoteRequest Notes.V1.GetNoteRequest.descriptor
+    Proto.Message.initJson "notes.v1.GetNoteRequest" encodeGetNoteRequest decodeGetNoteRequest
 
 
-{-| The typed value of [`ListNotesRequest`](#ListNotesRequest): its codecs, default and descriptor together.
+{-| The typed value of [`ListNotesRequest`](#ListNotesRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageListNotesRequest : Proto.Message.Message ListNotesRequest
+messageListNotesRequest : Proto.Message.Message Proto.Codec.Json ListNotesRequest
 messageListNotesRequest =
-    Proto.Message.message encodeListNotesRequest decodeListNotesRequest defaultListNotesRequest Notes.V1.ListNotesRequest.descriptor
+    Proto.Message.initJson "notes.v1.ListNotesRequest" encodeListNotesRequest decodeListNotesRequest
 
 
-{-| The typed value of [`ListNotesRequestFilter`](#ListNotesRequestFilter): its codecs, default and descriptor together.
+{-| The typed value of [`ListNotesRequestFilter`](#ListNotesRequestFilter): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageListNotesRequestFilter : Proto.Message.Message ListNotesRequestFilter
+messageListNotesRequestFilter : Proto.Message.Message Proto.Codec.Json ListNotesRequestFilter
 messageListNotesRequestFilter =
-    Proto.Message.message encodeListNotesRequestFilter decodeListNotesRequestFilter defaultListNotesRequestFilter Notes.V1.ListNotesRequestFilter.descriptor
+    Proto.Message.initJson "notes.v1.ListNotesRequest.Filter" encodeListNotesRequestFilter decodeListNotesRequestFilter
 
 
-{-| The typed value of [`ListNotesResponse`](#ListNotesResponse): its codecs, default and descriptor together.
+{-| The typed value of [`ListNotesResponse`](#ListNotesResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageListNotesResponse : Proto.Message.Message ListNotesResponse
+messageListNotesResponse : Proto.Message.Message Proto.Codec.Json ListNotesResponse
 messageListNotesResponse =
-    Proto.Message.message encodeListNotesResponse decodeListNotesResponse defaultListNotesResponse Notes.V1.ListNotesResponse.descriptor
+    Proto.Message.initJson "notes.v1.ListNotesResponse" encodeListNotesResponse decodeListNotesResponse
 
 
-{-| The typed value of [`CreateNoteRequest`](#CreateNoteRequest): its codecs, default and descriptor together.
+{-| The typed value of [`CreateNoteRequest`](#CreateNoteRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageCreateNoteRequest : Proto.Message.Message CreateNoteRequest
+messageCreateNoteRequest : Proto.Message.Message Proto.Codec.Json CreateNoteRequest
 messageCreateNoteRequest =
-    Proto.Message.message encodeCreateNoteRequest decodeCreateNoteRequest defaultCreateNoteRequest Notes.V1.CreateNoteRequest.descriptor
+    Proto.Message.initJson "notes.v1.CreateNoteRequest" encodeCreateNoteRequest decodeCreateNoteRequest
 
 
-{-| The typed value of [`UpdateNoteRequest`](#UpdateNoteRequest): its codecs, default and descriptor together.
+{-| The typed value of [`UpdateNoteRequest`](#UpdateNoteRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageUpdateNoteRequest : Proto.Message.Message UpdateNoteRequest
+messageUpdateNoteRequest : Proto.Message.Message Proto.Codec.Json UpdateNoteRequest
 messageUpdateNoteRequest =
-    Proto.Message.message encodeUpdateNoteRequest decodeUpdateNoteRequest defaultUpdateNoteRequest Notes.V1.UpdateNoteRequest.descriptor
+    Proto.Message.initJson "notes.v1.UpdateNoteRequest" encodeUpdateNoteRequest decodeUpdateNoteRequest
 
 
-{-| The typed value of [`DeleteNoteRequest`](#DeleteNoteRequest): its codecs, default and descriptor together.
+{-| The typed value of [`DeleteNoteRequest`](#DeleteNoteRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageDeleteNoteRequest : Proto.Message.Message DeleteNoteRequest
+messageDeleteNoteRequest : Proto.Message.Message Proto.Codec.Json DeleteNoteRequest
 messageDeleteNoteRequest =
-    Proto.Message.message encodeDeleteNoteRequest decodeDeleteNoteRequest defaultDeleteNoteRequest Notes.V1.DeleteNoteRequest.descriptor
+    Proto.Message.initJson "notes.v1.DeleteNoteRequest" encodeDeleteNoteRequest decodeDeleteNoteRequest
 
 
-{-| The typed value of [`ArchiveNoteRequest`](#ArchiveNoteRequest): its codecs, default and descriptor together.
+{-| The typed value of [`ArchiveNoteRequest`](#ArchiveNoteRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageArchiveNoteRequest : Proto.Message.Message ArchiveNoteRequest
+messageArchiveNoteRequest : Proto.Message.Message Proto.Codec.Json ArchiveNoteRequest
 messageArchiveNoteRequest =
-    Proto.Message.message encodeArchiveNoteRequest decodeArchiveNoteRequest defaultArchiveNoteRequest Notes.V1.ArchiveNoteRequest.descriptor
+    Proto.Message.initJson "notes.v1.ArchiveNoteRequest" encodeArchiveNoteRequest decodeArchiveNoteRequest
 
 
-{-| The typed value of [`ReadFileRequest`](#ReadFileRequest): its codecs, default and descriptor together.
+{-| The typed value of [`ReadFileRequest`](#ReadFileRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageReadFileRequest : Proto.Message.Message ReadFileRequest
+messageReadFileRequest : Proto.Message.Message Proto.Codec.Json ReadFileRequest
 messageReadFileRequest =
-    Proto.Message.message encodeReadFileRequest decodeReadFileRequest defaultReadFileRequest Notes.V1.ReadFileRequest.descriptor
+    Proto.Message.initJson "notes.v1.ReadFileRequest" encodeReadFileRequest decodeReadFileRequest
 
 
-{-| The typed value of [`Summary`](#Summary): its codecs, default and descriptor together.
+{-| The typed value of [`Summary`](#Summary): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageSummary : Proto.Message.Message Summary
+messageSummary : Proto.Message.Message Proto.Codec.Json Summary
 messageSummary =
-    Proto.Message.message encodeSummary decodeSummary defaultSummary Notes.V1.Summary.descriptor
+    Proto.Message.initJson "notes.v1.Summary" encodeSummary decodeSummary
 
 
 

@@ -11,6 +11,7 @@ another generated package, generated under `int64=int`.
 import Clock.V1.Alarm
 import Json.Decode
 import Json.Encode
+import Proto.Codec
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
@@ -55,11 +56,11 @@ defaultAlarm =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Alarm`](#Alarm): its codecs, default and descriptor together.
+{-| The typed value of [`Alarm`](#Alarm): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageAlarm : Proto.Message.Message Alarm
+messageAlarm : Proto.Message.Message Proto.Codec.Json Alarm
 messageAlarm =
-    Proto.Message.message encodeAlarm decodeAlarm defaultAlarm Clock.V1.Alarm.descriptor
+    Proto.Message.initJson "clock.v1.Alarm" encodeAlarm decodeAlarm
 
 
 

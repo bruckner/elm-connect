@@ -1,4 +1,4 @@
-module Live.Call exposing (Calls, Client(..), Entry, Envelope, Outcome, Protocol(..), Sending(..), Sent, entryWith)
+module Live.Call exposing (Calls, Client(..), Entry, Envelope, Outcome, Protocol(..), Respond, Sending(..), Sent, entryWith)
 
 {-| What the live runner sends: an envelope read from JSON, and an entry of a
 dispatch table, which turns one into a sent call and its result into JSON.
@@ -21,10 +21,10 @@ import Dict
 import Http
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
+import Proto.Any
 import Proto.Binary
 import Proto.Bytes
 import Proto.Json
-import Proto.Message
 import Rpc
 import Rpc.Body
 import Rpc.Call
@@ -120,12 +120,20 @@ type alias Outcome =
     { id : String, result : Value, trace : Value, response : Value }
 
 
-{-| The entry for a method, from its generated call functions, its request's
-decoder and its response's message. An envelope whose codec the build has no
-call function in is refused.
+{-| A response as the result's fields: its proto3 JSON under `ok`, and its
+protobuf binary as base64 under `okBinary` when the build has binary codecs.
+Each build's `Live.Codec` writes it from the response's typed value.
 -}
-entryWith : Calls req res -> Decoder req -> Proto.Message.Message res -> Entry msg
-entryWith calls requestDecoder responseMessage envelope toMsg =
+type alias Respond res =
+    res -> List ( String, Value )
+
+
+{-| The entry for a method, from its generated call functions, its request's
+decoder and how its response is written. An envelope whose codec the build
+has no call function in is refused.
+-}
+entryWith : Calls req res -> Decoder req -> Respond res -> Entry msg
+entryWith calls requestDecoder respond envelope toMsg =
     case Decode.decodeValue requestDecoder envelope.request of
         Err problem ->
             Err ("the request does not decode: " ++ Decode.errorToString problem)
@@ -144,7 +152,7 @@ entryWith calls requestDecoder responseMessage envelope toMsg =
                                     (sendWith client
                                         (\c deliver -> Http.expectStringResponse deliver (\answer -> Ok ( encodeAnswer answer, Rpc.response client c answer )))
                                         envelope
-                                        responseMessage
+                                        respond
                                         toMsg
                                     )
 
@@ -159,7 +167,7 @@ entryWith calls requestDecoder responseMessage envelope toMsg =
                                     (sendWith client
                                         (\c deliver -> Http.expectBytesResponse deliver (\answer -> Ok ( encodeAnswer answer, Rpc.responseBytes client c answer )))
                                         envelope
-                                        responseMessage
+                                        respond
                                         toMsg
                                     )
 
@@ -207,8 +215,8 @@ and `send` with a retry policy ignore the tracker, so a call sent so with `cance
 refused rather than reported cancelled while it runs on. A call to be
 cancelled without a tracker of its own gets its id as one.
 -}
-sendWith : Rpc.Client codec -> Reading codec req res msg -> Envelope -> Proto.Message.Message res -> (Outcome -> msg) -> Rpc.Call codec req res -> Result String (Sent msg)
-sendWith client reading envelope responseMessage toMsg c =
+sendWith : Rpc.Client codec -> Reading codec req res msg -> Envelope -> Respond res -> (Outcome -> msg) -> Rpc.Call codec req res -> Result String (Sent msg)
+sendWith client reading envelope respond toMsg c =
     let
         tracker =
             case ( envelope.tracker, envelope.cancelAfter ) of
@@ -235,7 +243,7 @@ sendWith client reading envelope responseMessage toMsg c =
         reportWith trace answer result =
             toMsg
                 { id = envelope.id
-                , result = encodeResult responseMessage result
+                , result = encodeResult respond result
                 , trace = trace
                 , response = answer
                 }
@@ -392,25 +400,35 @@ encodeAnswer answer =
             Encode.null
 
 
-{-| A result as JSON: the response as proto3 JSON under `ok`, and as base64
-protobuf binary under `okBinary` when its message has binary codecs; an
-error's details likewise under `details` and `detailsBinary` (each an `Any`'s
-binary).
+{-| A detail's proto3 JSON, or Connect's form of one that has only its
+binary.
 -}
-encodeResult : Proto.Message.Message res -> Result Rpc.Error res -> Value
-encodeResult responseMessage result =
+encodeDetail : Rpc.Error.Detail -> Value
+encodeDetail detail =
+    case ( detail.json, detail.proto ) of
+        ( Just json, _ ) ->
+            Proto.Json.encodeAny json
+
+        ( Nothing, Just proto ) ->
+            Encode.object
+                [ ( "type", Encode.string (Proto.Any.typeName proto) )
+                , ( "value", Encode.string (Proto.Bytes.toBase64 (Proto.Any.bytes proto)) )
+                ]
+
+        ( Nothing, Nothing ) ->
+            Encode.null
+
+
+{-| A result as JSON: the response's fields (`Respond`); an error's details
+under `details`, each its proto3 JSON, or Connect's `{"type", "value"}` form
+for one that has only its binary, and under `detailsBinary` each one's `Any`
+in protobuf binary, for those that have it.
+-}
+encodeResult : Respond res -> Result Rpc.Error res -> Value
+encodeResult respond result =
     case result of
         Ok response ->
-            Encode.object
-                (( "ok", Proto.Message.encode responseMessage response )
-                    :: (case Proto.Message.encodeBytes responseMessage of
-                            Just encode ->
-                                [ ( "okBinary", Encode.string (Proto.Bytes.toBase64 (Proto.Binary.encode encode response)) ) ]
-
-                            Nothing ->
-                                []
-                       )
-                )
+            Encode.object (respond response)
 
         Err (Rpc.Error.RpcStatus status answer) ->
             Encode.object
@@ -418,8 +436,8 @@ encodeResult responseMessage result =
                   , Encode.object
                         [ ( "code", Encode.string (Rpc.Code.toString status.code) )
                         , ( "message", Encode.string status.message )
-                        , ( "details", Encode.list Proto.Json.encodeAny status.details )
-                        , ( "detailsBinary", Encode.list (Proto.Binary.encode (Proto.Binary.messageEncoder Proto.Binary.any) >> Proto.Bytes.toBase64 >> Encode.string) status.details )
+                        , ( "details", Encode.list encodeDetail status.details )
+                        , ( "detailsBinary", Encode.list (Proto.Binary.encode (Proto.Binary.messageEncoder Proto.Binary.any) >> Proto.Bytes.toBase64 >> Encode.string) (List.filterMap .proto status.details) )
                         , ( "source", Encode.string (sourceToString status.source) )
                         , ( "response", encodeResponse_ answer )
                         ]
@@ -432,7 +450,7 @@ encodeResult responseMessage result =
                   , Encode.object
                         [ ( "code", Encode.string (Rpc.Code.toString (Rpc.Error.code error)) )
                         , ( "message", Encode.string (Rpc.Error.message error) )
-                        , ( "details", Encode.list Proto.Json.encodeAny [] )
+                        , ( "details", Encode.list identity [] )
                         , ( "source", Encode.string "HttpStatus" )
                         , ( "response", encodeResponse_ answer )
                         ]
@@ -516,3 +534,6 @@ reasonToString reason =
 
         Rpc.Error.ResponseTooLarge { limit, size } ->
             "ResponseTooLarge " ++ String.fromInt size ++ " " ++ String.fromInt limit
+
+        Rpc.Error.UnregisteredType name ->
+            "UnregisteredType " ++ name

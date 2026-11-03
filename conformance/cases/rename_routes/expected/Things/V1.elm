@@ -6,6 +6,7 @@ module Things.V1 exposing (..)
 
 import Json.Decode
 import Json.Encode
+import Proto.Codec
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
@@ -101,25 +102,25 @@ defaultGetThingRequest =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Thing`](#Thing): its codecs, default and descriptor together.
+{-| The typed value of [`Thing`](#Thing): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageThing : Proto.Message.Message Thing
+messageThing : Proto.Message.Message Proto.Codec.Json Thing
 messageThing =
-    Proto.Message.message encodeThing decodeThing defaultThing Things.V1.Thing.descriptor
+    Proto.Message.initJson "things.v1.Thing" encodeThing decodeThing
 
 
-{-| The typed value of [`Criteria`](#Criteria): its codecs, default and descriptor together.
+{-| The typed value of [`Criteria`](#Criteria): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageCriteria : Proto.Message.Message Criteria
+messageCriteria : Proto.Message.Message Proto.Codec.Json Criteria
 messageCriteria =
-    Proto.Message.message encodeCriteria decodeCriteria defaultCriteria Things.V1.Criteria.descriptor
+    Proto.Message.initJson "things.v1.Filter" encodeCriteria decodeCriteria
 
 
-{-| The typed value of [`GetThingRequest`](#GetThingRequest): its codecs, default and descriptor together.
+{-| The typed value of [`GetThingRequest`](#GetThingRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageGetThingRequest : Proto.Message.Message GetThingRequest
+messageGetThingRequest : Proto.Message.Message Proto.Codec.Json GetThingRequest
 messageGetThingRequest =
-    Proto.Message.message encodeGetThingRequest decodeGetThingRequest defaultGetThingRequest Things.V1.GetThingRequest.descriptor
+    Proto.Message.initJson "things.v1.GetThingRequest" encodeGetThingRequest decodeGetThingRequest
 
 
 

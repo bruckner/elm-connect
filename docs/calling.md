@@ -38,14 +38,14 @@ calling:
 | `Proto.Json` | the proto3 JSON helpers generated codecs call |
 | `Proto.Binary` | the protobuf binary wire format over elm/bytes, for binary codecs |
 | `Proto.Timestamp`, `Proto.Duration`, `Proto.Int64`, `Proto.Bytes` | the well-known types' Elm forms, and conversions for 64-bit integers and bytes |
-| `Proto.Message`, `Proto.Enum` | a type's typed value (its codecs with its default and descriptor) and its descriptor as data |
+| `Proto.Message`, `Proto.Enum` | a type's typed value (a message's full name and codecs, which `Any` packs with; an enum's codecs with its zero value and descriptor) and its descriptor as data |
 | `Proto.Field`, `Proto.EnumValue` | the parts of a descriptor: a field with its unions and its `google.api.field_behavior`, an enum value |
 | `Proto.Method` | a method's typed value (request encoder, response decoder, service and method name, idempotency and routes) and its descriptor as data |
 | `Proto.Route`, `Proto.Query` | the route a binding sends a call over, and the helpers generated route functions and query encoders call ([transcoding.md](transcoding.md)) |
 | `Proto.Http` | a method's `google.api.http` rule as data, in its descriptor or for a method written by hand |
 | `Proto.WellKnown` | the well-known types' typed values |
 | `Proto.Descriptors` | descriptors by full name |
-| `Proto.Registry` | the codecs an `Any` is written as protobuf binary with |
+| `Proto.Registry` | the codecs an `Any` holding binary is read from and written as proto3 JSON with |
 | `Proto.Any` | `google.protobuf.Any`: packing, unpacking and describing |
 | `Proto.Version` | the releases generated code can name ([install.md](install.md#versions)) |
 
@@ -55,6 +55,7 @@ The `Proto` modules are [descriptors.md](descriptors.md)'s subject.
 
 ```elm src/Rpc.elm excerpt
 client : Protocol codec -> String -> Client codec
+withRegistry : Registry -> Client codec -> Client codec
 ```
 
 ```elm src/Rpc/Client.elm excerpt
@@ -77,6 +78,7 @@ them:
 | timeout | `Rpc.Client.withTimeout` | milliseconds; over Connect also sent as `Connect-Timeout-Ms`, rounded up to a whole millisecond, and over gRPC-Web as `grpc-timeout`. A value that is not a positive number means no timeout |
 | credentials | `Rpc.Client.withCredentials` | send cookies and other credentials cross-origin (`Http.riskyRequest`) |
 | retry policy | `Rpc.Client.withRetry` | whether and when to try a failed call again ([Retries](#retries)) |
+| registry | `Rpc.withRegistry` | code generated with `codec=both`: the table a `google.protobuf.Any` converts through, in place of each method's package's ([The registry](#the-registry)) |
 
 `Rpc.Client.protocol`, `baseUrl`, `headers`, `timeout`, `credentials`
 and `retry` read them back, and `Rpc.Client.toJson` gives the whole
@@ -92,6 +94,39 @@ A header name must be an HTTP token, and a value can hold no NUL, CR or
 LF and no character above U+00FF, which a browser refuses. A call with
 such a header is not sent: it fails with `NoAnswer (InvalidHeader
 name)`, and the header is never altered to fit.
+
+### The registry
+
+Under `codec=both` an `Any` holds its message's protobuf binary, and its
+proto3 JSON comes from the codecs of its type, which a registry holds
+([generator.md](generator.md#the-registry)). A call over JSON uses its
+method's package's `registry`, which has the package's types, its
+imports' and the well-known types it holds. An application whose `Any`s
+hold types from packages the method's does not import builds a wider one
+from the packages' registries, as the live suite's runner does for the
+packages it calls:
+
+```elm conformance/live/both/src/Live/Codec.elm#registry
+{-| Every type the build's packages hold.
+-}
+registry : Registry
+registry =
+    Proto.Registry.unionAll
+        [ Notes.V1.registry
+        , Routes.V1.registry
+        , Connectrpc.Conformance.V1.registry
+        , Proto.Registry.wellKnown
+        ]
+```
+
+and gives it to its client once, `Rpc.withRegistry registry client`.
+
+A call whose request holds an `Any` of a type the registry lacks is not
+sent over JSON: it fails with `NoAnswer (UnregisteredType name)`, the type
+named. A response holding one fails to decode, a `BadResponse`. Over
+protobuf binary an `Any` needs no registry. The registry also completes
+an error's details (below). Code generated with `codec=json` or
+`codec=proto` has no registry, and a client's is ignored.
 
 ### Checking a client
 
@@ -548,9 +583,11 @@ type Error
   how a browser's CORS refusal arrives), a `BadUrl` or an
   `InvalidHeader` (both `Internal`, and never sent), an
   `InvalidPathValue`, a transcoded call's path value its template
-  cannot match (`InvalidArgument`, never sent), a request or
-  answer over a size limit (`RequestTooLarge`, `ResponseTooLarge`,
-  both `ResourceExhausted`).
+  cannot match (`InvalidArgument`, never sent), an `UnregisteredType`,
+  a request holding a `google.protobuf.Any` the registry cannot write as
+  JSON (`Internal`, never sent; [The registry](#the-registry)), a
+  request or answer over a size limit (`RequestTooLarge`,
+  `ResponseTooLarge`, both `ResourceExhausted`).
 
 The first three keep the answer itself, an `Rpc.Response` with its URL,
 status, headers and body, for errors in a shape the runtime does not
@@ -581,13 +618,14 @@ last four apart by the response's `statusCode`, not by the code.
 ```elm src/Rpc/Error.elm excerpt
 code : Error -> Code
 message : Error -> String
-details : Message a -> Error -> List a
+details : Message Proto a -> Error -> List a
+detailsJson : Message Json a -> Error -> List a
 toString : Error -> String
 ```
 
 Every error has a code and a message. `Rpc.Error.toString` is the two
-for logs (`not_found: no such note`). `Rpc.Error.details` gives the
-status details of one type ([descriptors.md](descriptors.md#error-details)).
+for logs (`not_found: no such note`). `Rpc.Error.details` and
+`detailsJson` give the status details of one type (below).
 
 An `Rpc.Error` is what the call's answer was, and none of its
 constructors fits a failure the application finds in a good answer,
@@ -599,6 +637,65 @@ map into it where the application sends its calls, with `Task.mapError`
 on the task (see [Wrapping the sending once](#wrapping-the-sending-once))
 and `Task.andThen` failing with its own constructor when the answer
 does not serve.
+
+### Error details
+
+A status's details are `google.protobuf.Any`s, each an `Rpc.Error.Detail`
+holding the forms it arrived in: `proto`, its protobuf binary, and
+`json`, its proto3 JSON.
+
+```elm src/Rpc/Error.elm excerpt
+type alias Detail =
+    { proto : Maybe (Any Proto)
+    , json : Maybe (Any Json)
+    }
+```
+
+A Connect error body carries each detail's binary, and its JSON too as
+`debug` when the server sends it; a `google.rpc.Status` body carries the
+JSON; gRPC-Web carries the binary. `Rpc.Error.details` reads the binary
+side with a typed value of the proto world, `detailsJson` the JSON side
+with one of the JSON world, each giving the details of that type that
+decode, in order:
+
+```elm examples/notes/elm/src/Snippets/Details.elm#details
+import Google.Rpc
+import Rpc
+import Rpc.Error
+
+
+violations : Rpc.Error -> List String
+violations error =
+    Rpc.Error.detailsJson Google.Rpc.messageBadRequest error
+        |> List.concatMap .fieldViolations
+        |> List.map .description
+```
+
+Code generated with `codec=both` reads either way: the call's registry
+([The registry](#the-registry)) fills in the missing form of every detail
+whose type it has. A program generated with `codec=json` reads a Connect
+detail's JSON only if the server sent `debug`. connect-go sends it with
+the JSON codec. Against a server that does not, the program reads them
+from their binary by generating the detail types, usually
+`google/rpc/error_details.proto`, with `codec=proto`, in a template of
+their own beside the API's, as the notes example generates them (with
+the default codec) in `buf.gen.google-rpc.yaml`:
+
+```yaml
+version: v2
+inputs:
+  - directory: .
+    paths:
+      - third_party/googleapis/google/rpc/error_details.proto
+plugins:
+  - local: protoc-gen-elm-connect
+    out: elm/generated
+    opt: codec=proto
+```
+
+`Google.Rpc.messageBadRequest` is then a `Message Rpc.Proto BadRequest`,
+and `Rpc.Error.details Google.Rpc.messageBadRequest error` reads every
+`BadRequest` that arrived as binary, whatever the API's own codec.
 
 ### Where a status comes from
 

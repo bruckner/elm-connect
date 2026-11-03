@@ -14,6 +14,7 @@ import Codec.Other.V1.Shade
 import Json.Decode
 import Json.Encode
 import Proto.Binary
+import Proto.Codec
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
@@ -85,12 +86,11 @@ enumShade =
     Proto.Enum.enum encodeShade decodeShade ShadeUnspecified Codec.Other.V1.Shade.descriptor
 
 
-{-| The typed value of [`Remote`](#Remote): its codecs, default and descriptor together.
+{-| The typed value of [`Remote`](#Remote): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageRemote : Proto.Message.Message Remote
+messageRemote : Proto.Message.Message Proto.Codec.Proto Remote
 messageRemote =
-    Proto.Message.message encodeRemote decodeRemote defaultRemote Codec.Other.V1.Remote.descriptor
-        |> Proto.Message.withBinary encodeRemoteBytes decodeRemoteBytes
+    Proto.Message.initProto "codec.other.v1.Remote" encodeRemoteBytes decodeRemoteBytes
 
 
 
@@ -111,12 +111,14 @@ descriptors =
         Proto.Descriptors.wellKnown
 
 
-{-| The protobuf binary codecs of this package's messages, of those of the packages it imports and of the well-known types they hold, by full name: the binary encoders write a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) with it, so that one holding a message's JSON, as one read from proto3 JSON does, is written as the message's binary.
+{-| The codecs of this package's messages, of those of the packages it imports and of the well-known types they hold, by full name: the JSON codecs of a message holding a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) convert it through this registry, or one wider.
 -}
-binaryRegistry : Proto.Registry.Registry
-binaryRegistry =
-    Proto.Registry.empty
-        |> Proto.Registry.withBinary "codec.other.v1.Remote" decodeRemote encodeRemoteBytes
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.unionAll
+        [ Proto.Registry.empty
+            |> Proto.Registry.withCodecs "codec.other.v1.Remote" (\_ -> decodeRemote) encodeRemoteBytes decodeRemoteBytes (\_ -> Ok << encodeRemote)
+        ]
 
 
 

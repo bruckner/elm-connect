@@ -9,6 +9,7 @@ import Catalog.V1.GetEntryRequest
 import Catalog.V1.Part
 import Json.Decode
 import Json.Encode
+import Proto.Codec
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
@@ -121,25 +122,25 @@ defaultGetEntryRequest =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Entry`](#Entry): its codecs, default and descriptor together.
+{-| The typed value of [`Entry`](#Entry): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageEntry : Proto.Message.Message Entry
+messageEntry : Proto.Message.Message Proto.Codec.Json Entry
 messageEntry =
-    Proto.Message.message encodeEntry decodeEntry defaultEntry Catalog.V1.Entry.descriptor
+    Proto.Message.initJson "catalog.v1.Entry" encodeEntry decodeEntry
 
 
-{-| The typed value of [`Part`](#Part): its codecs, default and descriptor together.
+{-| The typed value of [`Part`](#Part): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messagePart : Proto.Message.Message Part
+messagePart : Proto.Message.Message Proto.Codec.Json Part
 messagePart =
-    Proto.Message.message encodePart decodePart defaultPart Catalog.V1.Part.descriptor
+    Proto.Message.initJson "catalog.v1.Part" encodePart decodePart
 
 
-{-| The typed value of [`GetEntryRequest`](#GetEntryRequest): its codecs, default and descriptor together.
+{-| The typed value of [`GetEntryRequest`](#GetEntryRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageGetEntryRequest : Proto.Message.Message GetEntryRequest
+messageGetEntryRequest : Proto.Message.Message Proto.Codec.Json GetEntryRequest
 messageGetEntryRequest =
-    Proto.Message.message encodeGetEntryRequest decodeGetEntryRequest defaultGetEntryRequest Catalog.V1.GetEntryRequest.descriptor
+    Proto.Message.initJson "catalog.v1.GetEntryRequest" encodeGetEntryRequest decodeGetEntryRequest
 
 
 

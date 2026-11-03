@@ -10,6 +10,7 @@ module Scalars.V1 exposing (..)
 
 import Json.Decode
 import Json.Encode
+import Proto.Codec
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
@@ -117,18 +118,18 @@ defaultEmpty =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Scalars`](#Scalars): its codecs, default and descriptor together.
+{-| The typed value of [`Scalars`](#Scalars): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageScalars : Proto.Message.Message Scalars
+messageScalars : Proto.Message.Message Proto.Codec.Json Scalars
 messageScalars =
-    Proto.Message.message encodeScalars decodeScalars defaultScalars Scalars.V1.Scalars.descriptor
+    Proto.Message.initJson "scalars.v1.Scalars" encodeScalars decodeScalars
 
 
-{-| The typed value of [`Empty`](#Empty): its codecs, default and descriptor together.
+{-| The typed value of [`Empty`](#Empty): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageEmpty : Proto.Message.Message Empty
+messageEmpty : Proto.Message.Message Proto.Codec.Json Empty
 messageEmpty =
-    Proto.Message.message encodeEmpty decodeEmpty defaultEmpty Scalars.V1.Empty.descriptor
+    Proto.Message.initJson "scalars.v1.Empty" encodeEmpty decodeEmpty
 
 
 

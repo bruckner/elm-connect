@@ -12,6 +12,7 @@ in the query.
 import Clock.V1.Moment
 import Json.Decode
 import Json.Encode
+import Proto.Codec
 import Proto.Descriptors
 import Proto.Duration exposing (Duration)
 import Proto.Json
@@ -75,11 +76,11 @@ defaultMoment =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Moment`](#Moment): its codecs, default and descriptor together.
+{-| The typed value of [`Moment`](#Moment): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageMoment : Proto.Message.Message Moment
+messageMoment : Proto.Message.Message Proto.Codec.Json Moment
 messageMoment =
-    Proto.Message.message encodeMoment decodeMoment defaultMoment Clock.V1.Moment.descriptor
+    Proto.Message.initJson "clock.v1.Moment" encodeMoment decodeMoment
 
 
 

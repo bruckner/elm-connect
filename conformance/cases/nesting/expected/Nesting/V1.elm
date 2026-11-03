@@ -22,6 +22,7 @@ import Nesting.V1.OuterInnerDeepest
 import Nesting.V1.OuterInnerKind
 import Nesting.V1.Person
 import Nesting.V1.Sum
+import Proto.Codec
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
@@ -291,67 +292,67 @@ enumOuterInnerKind =
     Proto.Enum.enum encodeOuterInnerKind decodeOuterInnerKind OuterInnerKindUnspecified Nesting.V1.OuterInnerKind.descriptor
 
 
-{-| The typed value of [`Outer`](#Outer): its codecs, default and descriptor together.
+{-| The typed value of [`Outer`](#Outer): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageOuter : Proto.Message.Message Outer
+messageOuter : Proto.Message.Message Proto.Codec.Json Outer
 messageOuter =
-    Proto.Message.message encodeOuter decodeOuter defaultOuter Nesting.V1.Outer.descriptor
+    Proto.Message.initJson "nesting.v1.Outer" encodeOuter decodeOuter
 
 
-{-| The typed value of [`OuterInner`](#OuterInner): its codecs, default and descriptor together.
+{-| The typed value of [`OuterInner`](#OuterInner): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageOuterInner : Proto.Message.Message OuterInner
+messageOuterInner : Proto.Message.Message Proto.Codec.Json OuterInner
 messageOuterInner =
-    Proto.Message.message encodeOuterInner decodeOuterInner defaultOuterInner Nesting.V1.OuterInner.descriptor
+    Proto.Message.initJson "nesting.v1.Outer.Inner" encodeOuterInner decodeOuterInner
 
 
-{-| The typed value of [`OuterInnerDeepest`](#OuterInnerDeepest): its codecs, default and descriptor together.
+{-| The typed value of [`OuterInnerDeepest`](#OuterInnerDeepest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageOuterInnerDeepest : Proto.Message.Message OuterInnerDeepest
+messageOuterInnerDeepest : Proto.Message.Message Proto.Codec.Json OuterInnerDeepest
 messageOuterInnerDeepest =
-    Proto.Message.message encodeOuterInnerDeepest decodeOuterInnerDeepest defaultOuterInnerDeepest Nesting.V1.OuterInnerDeepest.descriptor
+    Proto.Message.initJson "nesting.v1.Outer.Inner.Deepest" encodeOuterInnerDeepest decodeOuterInnerDeepest
 
 
-{-| The typed value of [`Node`](#Node): its codecs, default and descriptor together.
+{-| The typed value of [`Node`](#Node): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageNode : Proto.Message.Message Node
+messageNode : Proto.Message.Message Proto.Codec.Json Node
 messageNode =
-    Proto.Message.message encodeNode decodeNode defaultNode Nesting.V1.Node.descriptor
+    Proto.Message.initJson "nesting.v1.Node" encodeNode decodeNode
 
 
-{-| The typed value of [`Person`](#Person): its codecs, default and descriptor together.
+{-| The typed value of [`Person`](#Person): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messagePerson : Proto.Message.Message Person
+messagePerson : Proto.Message.Message Proto.Codec.Json Person
 messagePerson =
-    Proto.Message.message encodePerson decodePerson defaultPerson Nesting.V1.Person.descriptor
+    Proto.Message.initJson "nesting.v1.Person" encodePerson decodePerson
 
 
-{-| The typed value of [`Company`](#Company): its codecs, default and descriptor together.
+{-| The typed value of [`Company`](#Company): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageCompany : Proto.Message.Message Company
+messageCompany : Proto.Message.Message Proto.Codec.Json Company
 messageCompany =
-    Proto.Message.message encodeCompany decodeCompany defaultCompany Nesting.V1.Company.descriptor
+    Proto.Message.initJson "nesting.v1.Company" encodeCompany decodeCompany
 
 
-{-| The typed value of [`Forest`](#Forest): its codecs, default and descriptor together.
+{-| The typed value of [`Forest`](#Forest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageForest : Proto.Message.Message Forest
+messageForest : Proto.Message.Message Proto.Codec.Json Forest
 messageForest =
-    Proto.Message.message encodeForest decodeForest defaultForest Nesting.V1.Forest.descriptor
+    Proto.Message.initJson "nesting.v1.Forest" encodeForest decodeForest
 
 
-{-| The typed value of [`Expr`](#Expr): its codecs, default and descriptor together.
+{-| The typed value of [`Expr`](#Expr): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageExpr : Proto.Message.Message Expr
+messageExpr : Proto.Message.Message Proto.Codec.Json Expr
 messageExpr =
-    Proto.Message.message encodeExpr decodeExpr defaultExpr Nesting.V1.Expr.descriptor
+    Proto.Message.initJson "nesting.v1.Expr" encodeExpr decodeExpr
 
 
-{-| The typed value of [`Sum`](#Sum): its codecs, default and descriptor together.
+{-| The typed value of [`Sum`](#Sum): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageSum : Proto.Message.Message Sum
+messageSum : Proto.Message.Message Proto.Codec.Json Sum
 messageSum =
-    Proto.Message.message encodeSum decodeSum defaultSum Nesting.V1.Sum.descriptor
+    Proto.Message.initJson "nesting.v1.Sum" encodeSum decodeSum
 
 
 

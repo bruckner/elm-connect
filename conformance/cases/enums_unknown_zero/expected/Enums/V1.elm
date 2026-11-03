@@ -14,6 +14,7 @@ import Enums.V1.Status
 import Enums.V1.Task
 import Json.Decode
 import Json.Encode
+import Proto.Codec
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
@@ -115,11 +116,11 @@ enumPriority =
     Proto.Enum.enum encodePriority decodePriority PriorityNone Enums.V1.Priority.descriptor
 
 
-{-| The typed value of [`Task`](#Task): its codecs, default and descriptor together.
+{-| The typed value of [`Task`](#Task): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageTask : Proto.Message.Message Task
+messageTask : Proto.Message.Message Proto.Codec.Json Task
 messageTask =
-    Proto.Message.message encodeTask decodeTask defaultTask Enums.V1.Task.descriptor
+    Proto.Message.initJson "enums.v1.Task" encodeTask decodeTask
 
 
 

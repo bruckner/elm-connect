@@ -12,6 +12,7 @@ carried whole.
 
 import Json.Decode
 import Json.Encode
+import Proto.Codec
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
@@ -131,18 +132,18 @@ enumState =
     Proto.Enum.enum encodeState decodeState StateUnspecified Tasks.V1.State.descriptor
 
 
-{-| The typed value of [`Task`](#Task): its codecs, default and descriptor together.
+{-| The typed value of [`Task`](#Task): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageTask : Proto.Message.Message Task
+messageTask : Proto.Message.Message Proto.Codec.Json Task
 messageTask =
-    Proto.Message.message encodeTask decodeTask defaultTask Tasks.V1.Task.descriptor
+    Proto.Message.initJson "tasks.v1.Task" encodeTask decodeTask
 
 
-{-| The typed value of [`GetTaskRequest`](#GetTaskRequest): its codecs, default and descriptor together.
+{-| The typed value of [`GetTaskRequest`](#GetTaskRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageGetTaskRequest : Proto.Message.Message GetTaskRequest
+messageGetTaskRequest : Proto.Message.Message Proto.Codec.Json GetTaskRequest
 messageGetTaskRequest =
-    Proto.Message.message encodeGetTaskRequest decodeGetTaskRequest defaultGetTaskRequest Tasks.V1.GetTaskRequest.descriptor
+    Proto.Message.initJson "tasks.v1.GetTaskRequest" encodeGetTaskRequest decodeGetTaskRequest
 
 
 

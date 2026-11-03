@@ -9,6 +9,7 @@ import Events.V1.ListEventsRequest
 import Events.V1.ListEventsResponse
 import Json.Decode
 import Json.Encode
+import Proto.Codec
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
@@ -122,25 +123,25 @@ defaultListEventsResponse =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Event`](#Event): its codecs, default and descriptor together.
+{-| The typed value of [`Event`](#Event): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageEvent : Proto.Message.Message Event
+messageEvent : Proto.Message.Message Proto.Codec.Json Event
 messageEvent =
-    Proto.Message.message encodeEvent decodeEvent defaultEvent Events.V1.Event.descriptor
+    Proto.Message.initJson "events.v1.Event" encodeEvent decodeEvent
 
 
-{-| The typed value of [`ListEventsRequest`](#ListEventsRequest): its codecs, default and descriptor together.
+{-| The typed value of [`ListEventsRequest`](#ListEventsRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageListEventsRequest : Proto.Message.Message ListEventsRequest
+messageListEventsRequest : Proto.Message.Message Proto.Codec.Json ListEventsRequest
 messageListEventsRequest =
-    Proto.Message.message encodeListEventsRequest decodeListEventsRequest defaultListEventsRequest Events.V1.ListEventsRequest.descriptor
+    Proto.Message.initJson "events.v1.ListEventsRequest" encodeListEventsRequest decodeListEventsRequest
 
 
-{-| The typed value of [`ListEventsResponse`](#ListEventsResponse): its codecs, default and descriptor together.
+{-| The typed value of [`ListEventsResponse`](#ListEventsResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageListEventsResponse : Proto.Message.Message ListEventsResponse
+messageListEventsResponse : Proto.Message.Message Proto.Codec.Json ListEventsResponse
 messageListEventsResponse =
-    Proto.Message.message encodeListEventsResponse decodeListEventsResponse defaultListEventsResponse Events.V1.ListEventsResponse.descriptor
+    Proto.Message.initJson "events.v1.ListEventsResponse" encodeListEventsResponse decodeListEventsResponse
 
 
 

@@ -14,6 +14,7 @@ the enum NullValue as () without presence.
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
+import Proto.Codec
 import Proto.Descriptors
 import Proto.Duration exposing (Duration)
 import Proto.Json
@@ -178,11 +179,11 @@ defaultEvent =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Event`](#Event): its codecs, default and descriptor together.
+{-| The typed value of [`Event`](#Event): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageEvent : Proto.Message.Message Event
+messageEvent : Proto.Message.Message Proto.Codec.Json Event
 messageEvent =
-    Proto.Message.message encodeEvent decodeEvent defaultEvent WellKnown.V1.Event.descriptor
+    Proto.Message.initJson "well_known.v1.Event" encodeEvent decodeEvent
 
 
 

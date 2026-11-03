@@ -14,6 +14,7 @@ JSON, and for a method without a rule, serves the implicit route.
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
+import Proto.Codec
 import Proto.Descriptors
 import Proto.Duration exposing (Duration)
 import Proto.Enum
@@ -374,74 +375,74 @@ enumKind =
     Proto.Enum.enum encodeKind decodeKind KindUnspecified Routes.V1.Kind.descriptor
 
 
-{-| The typed value of [`GetMessageRequest`](#GetMessageRequest): its codecs, default and descriptor together.
+{-| The typed value of [`GetMessageRequest`](#GetMessageRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageGetMessageRequest : Proto.Message.Message GetMessageRequest
+messageGetMessageRequest : Proto.Message.Message Proto.Codec.Json GetMessageRequest
 messageGetMessageRequest =
-    Proto.Message.message encodeGetMessageRequest decodeGetMessageRequest defaultGetMessageRequest Routes.V1.GetMessageRequest.descriptor
+    Proto.Message.initJson "routes.v1.GetMessageRequest" encodeGetMessageRequest decodeGetMessageRequest
 
 
-{-| The typed value of [`GetMessageRequestSubMessage`](#GetMessageRequestSubMessage): its codecs, default and descriptor together.
+{-| The typed value of [`GetMessageRequestSubMessage`](#GetMessageRequestSubMessage): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageGetMessageRequestSubMessage : Proto.Message.Message GetMessageRequestSubMessage
+messageGetMessageRequestSubMessage : Proto.Message.Message Proto.Codec.Json GetMessageRequestSubMessage
 messageGetMessageRequestSubMessage =
-    Proto.Message.message encodeGetMessageRequestSubMessage decodeGetMessageRequestSubMessage defaultGetMessageRequestSubMessage Routes.V1.GetMessageRequestSubMessage.descriptor
+    Proto.Message.initJson "routes.v1.GetMessageRequest.SubMessage" encodeGetMessageRequestSubMessage decodeGetMessageRequestSubMessage
 
 
-{-| The typed value of [`Message`](#Message): its codecs, default and descriptor together.
+{-| The typed value of [`Message`](#Message): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageMessage : Proto.Message.Message Message
+messageMessage : Proto.Message.Message Proto.Codec.Json Message
 messageMessage =
-    Proto.Message.message encodeMessage decodeMessage defaultMessage Routes.V1.Message.descriptor
+    Proto.Message.initJson "routes.v1.Message" encodeMessage decodeMessage
 
 
-{-| The typed value of [`UpdateMessageRequest`](#UpdateMessageRequest): its codecs, default and descriptor together.
+{-| The typed value of [`UpdateMessageRequest`](#UpdateMessageRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageUpdateMessageRequest : Proto.Message.Message UpdateMessageRequest
+messageUpdateMessageRequest : Proto.Message.Message Proto.Codec.Json UpdateMessageRequest
 messageUpdateMessageRequest =
-    Proto.Message.message encodeUpdateMessageRequest decodeUpdateMessageRequest defaultUpdateMessageRequest Routes.V1.UpdateMessageRequest.descriptor
+    Proto.Message.initJson "routes.v1.UpdateMessageRequest" encodeUpdateMessageRequest decodeUpdateMessageRequest
 
 
-{-| The typed value of [`Everything`](#Everything): its codecs, default and descriptor together.
+{-| The typed value of [`Everything`](#Everything): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageEverything : Proto.Message.Message Everything
+messageEverything : Proto.Message.Message Proto.Codec.Json Everything
 messageEverything =
-    Proto.Message.message encodeEverything decodeEverything defaultEverything Routes.V1.Everything.descriptor
+    Proto.Message.initJson "routes.v1.Everything" encodeEverything decodeEverything
 
 
-{-| The typed value of [`Inner`](#Inner): its codecs, default and descriptor together.
+{-| The typed value of [`Inner`](#Inner): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageInner : Proto.Message.Message Inner
+messageInner : Proto.Message.Message Proto.Codec.Json Inner
 messageInner =
-    Proto.Message.message encodeInner decodeInner defaultInner Routes.V1.Inner.descriptor
+    Proto.Message.initJson "routes.v1.Inner" encodeInner decodeInner
 
 
-{-| The typed value of [`Deep`](#Deep): its codecs, default and descriptor together.
+{-| The typed value of [`Deep`](#Deep): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageDeep : Proto.Message.Message Deep
+messageDeep : Proto.Message.Message Proto.Codec.Json Deep
 messageDeep =
-    Proto.Message.message encodeDeep decodeDeep defaultDeep Routes.V1.Deep.descriptor
+    Proto.Message.initJson "routes.v1.Deep" encodeDeep decodeDeep
 
 
-{-| The typed value of [`FileRequest`](#FileRequest): its codecs, default and descriptor together.
+{-| The typed value of [`FileRequest`](#FileRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageFileRequest : Proto.Message.Message FileRequest
+messageFileRequest : Proto.Message.Message Proto.Codec.Json FileRequest
 messageFileRequest =
-    Proto.Message.message encodeFileRequest decodeFileRequest defaultFileRequest Routes.V1.FileRequest.descriptor
+    Proto.Message.initJson "routes.v1.FileRequest" encodeFileRequest decodeFileRequest
 
 
-{-| The typed value of [`Resource`](#Resource): its codecs, default and descriptor together.
+{-| The typed value of [`Resource`](#Resource): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageResource : Proto.Message.Message Resource
+messageResource : Proto.Message.Message Proto.Codec.Json Resource
 messageResource =
-    Proto.Message.message encodeResource decodeResource defaultResource Routes.V1.Resource.descriptor
+    Proto.Message.initJson "routes.v1.Resource" encodeResource decodeResource
 
 
-{-| The typed value of [`UpdateResourceRequest`](#UpdateResourceRequest): its codecs, default and descriptor together.
+{-| The typed value of [`UpdateResourceRequest`](#UpdateResourceRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageUpdateResourceRequest : Proto.Message.Message UpdateResourceRequest
+messageUpdateResourceRequest : Proto.Message.Message Proto.Codec.Json UpdateResourceRequest
 messageUpdateResourceRequest =
-    Proto.Message.message encodeUpdateResourceRequest decodeUpdateResourceRequest defaultUpdateResourceRequest Routes.V1.UpdateResourceRequest.descriptor
+    Proto.Message.initJson "routes.v1.UpdateResourceRequest" encodeUpdateResourceRequest decodeUpdateResourceRequest
 
 
 

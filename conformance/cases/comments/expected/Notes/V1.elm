@@ -31,6 +31,7 @@ import Notes.V1.ListNotesResponse
 import Notes.V1.Note
 import Notes.V1.NoteEdit
 import Notes.V1.Visibility
+import Proto.Codec
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
@@ -290,53 +291,53 @@ enumLegacy =
     Proto.Enum.enum encodeLegacy decodeLegacy LegacyUnspecified Notes.V1.Legacy.descriptor
 
 
-{-| The typed value of [`Note`](#Note): its codecs, default and descriptor together.
+{-| The typed value of [`Note`](#Note): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageNote : Proto.Message.Message Note
+messageNote : Proto.Message.Message Proto.Codec.Json Note
 messageNote =
-    Proto.Message.message encodeNote decodeNote defaultNote Notes.V1.Note.descriptor
+    Proto.Message.initJson "notes.v1.Note" encodeNote decodeNote
 
 
-{-| The typed value of [`NoteEdit`](#NoteEdit): its codecs, default and descriptor together.
+{-| The typed value of [`NoteEdit`](#NoteEdit): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageNoteEdit : Proto.Message.Message NoteEdit
+messageNoteEdit : Proto.Message.Message Proto.Codec.Json NoteEdit
 messageNoteEdit =
-    Proto.Message.message encodeNoteEdit decodeNoteEdit defaultNoteEdit Notes.V1.NoteEdit.descriptor
+    Proto.Message.initJson "notes.v1.Note.Edit" encodeNoteEdit decodeNoteEdit
 
 
-{-| The typed value of [`Draft`](#Draft): its codecs, default and descriptor together.
+{-| The typed value of [`Draft`](#Draft): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageDraft : Proto.Message.Message Draft
+messageDraft : Proto.Message.Message Proto.Codec.Json Draft
 messageDraft =
-    Proto.Message.message encodeDraft decodeDraft defaultDraft Notes.V1.Draft.descriptor
+    Proto.Message.initJson "notes.v1.Draft" encodeDraft decodeDraft
 
 
-{-| The typed value of [`GetNoteRequest`](#GetNoteRequest): its codecs, default and descriptor together.
+{-| The typed value of [`GetNoteRequest`](#GetNoteRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageGetNoteRequest : Proto.Message.Message GetNoteRequest
+messageGetNoteRequest : Proto.Message.Message Proto.Codec.Json GetNoteRequest
 messageGetNoteRequest =
-    Proto.Message.message encodeGetNoteRequest decodeGetNoteRequest defaultGetNoteRequest Notes.V1.GetNoteRequest.descriptor
+    Proto.Message.initJson "notes.v1.GetNoteRequest" encodeGetNoteRequest decodeGetNoteRequest
 
 
-{-| The typed value of [`ListNotesRequest`](#ListNotesRequest): its codecs, default and descriptor together.
+{-| The typed value of [`ListNotesRequest`](#ListNotesRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageListNotesRequest : Proto.Message.Message ListNotesRequest
+messageListNotesRequest : Proto.Message.Message Proto.Codec.Json ListNotesRequest
 messageListNotesRequest =
-    Proto.Message.message encodeListNotesRequest decodeListNotesRequest defaultListNotesRequest Notes.V1.ListNotesRequest.descriptor
+    Proto.Message.initJson "notes.v1.ListNotesRequest" encodeListNotesRequest decodeListNotesRequest
 
 
-{-| The typed value of [`ListNotesResponse`](#ListNotesResponse): its codecs, default and descriptor together.
+{-| The typed value of [`ListNotesResponse`](#ListNotesResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageListNotesResponse : Proto.Message.Message ListNotesResponse
+messageListNotesResponse : Proto.Message.Message Proto.Codec.Json ListNotesResponse
 messageListNotesResponse =
-    Proto.Message.message encodeListNotesResponse decodeListNotesResponse defaultListNotesResponse Notes.V1.ListNotesResponse.descriptor
+    Proto.Message.initJson "notes.v1.ListNotesResponse" encodeListNotesResponse decodeListNotesResponse
 
 
-{-| The typed value of [`CreateNoteRequest`](#CreateNoteRequest): its codecs, default and descriptor together.
+{-| The typed value of [`CreateNoteRequest`](#CreateNoteRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageCreateNoteRequest : Proto.Message.Message CreateNoteRequest
+messageCreateNoteRequest : Proto.Message.Message Proto.Codec.Json CreateNoteRequest
 messageCreateNoteRequest =
-    Proto.Message.message encodeCreateNoteRequest decodeCreateNoteRequest defaultCreateNoteRequest Notes.V1.CreateNoteRequest.descriptor
+    Proto.Message.initJson "notes.v1.CreateNoteRequest" encodeCreateNoteRequest decodeCreateNoteRequest
 
 
 

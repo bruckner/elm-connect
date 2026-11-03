@@ -14,6 +14,7 @@ import Envelope.V1.Envelope
 import Json.Decode
 import Json.Encode
 import Proto.Any
+import Proto.Codec
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
@@ -42,9 +43,9 @@ elmConnectVersion_ =
 -}
 type alias Envelope =
     { id : String
-    , payload : Maybe Proto.Any.Any
-    , attachments : List Proto.Any.Any
-    , headers : Dict String Proto.Any.Any
+    , payload : Maybe (Proto.Any.Any Proto.Codec.Json)
+    , attachments : List (Proto.Any.Any Proto.Codec.Json)
+    , headers : Dict String (Proto.Any.Any Proto.Codec.Json)
     , body : EnvelopeBody
     }
 
@@ -58,7 +59,7 @@ type alias Envelope =
 -}
 type EnvelopeBody
     = EnvelopeBodyUnset
-    | EnvelopeBodyPacked Proto.Any.Any
+    | EnvelopeBodyPacked (Proto.Any.Any Proto.Codec.Json)
     | EnvelopeBodyText String
 
 
@@ -82,11 +83,11 @@ defaultEnvelope =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Envelope`](#Envelope): its codecs, default and descriptor together.
+{-| The typed value of [`Envelope`](#Envelope): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageEnvelope : Proto.Message.Message Envelope
+messageEnvelope : Proto.Message.Message Proto.Codec.Json Envelope
 messageEnvelope =
-    Proto.Message.message encodeEnvelope decodeEnvelope defaultEnvelope Envelope.V1.Envelope.descriptor
+    Proto.Message.initJson "envelope.v1.Envelope" encodeEnvelope decodeEnvelope
 
 
 

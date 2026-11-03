@@ -56,6 +56,7 @@ import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
 import Proto.Any
+import Proto.Codec
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
@@ -342,7 +343,7 @@ type alias ClientCompatRequest =
     , streamType : StreamType
     , useGetHttpMethod : Bool
     , requestHeaders : List Header
-    , requestMessages : List Proto.Any.Any
+    , requestMessages : List (Proto.Any.Any Proto.Codec.Json)
     , timeoutMs : Maybe Int
     , requestDelayMs : Int
     , cancel : Maybe ClientCompatRequestCancel
@@ -1027,7 +1028,7 @@ type alias ConformancePayload =
 type alias ConformancePayloadRequestInfo =
     { requestHeaders : List Header
     , timeoutMs : Maybe String
-    , requests : List Proto.Any.Any
+    , requests : List (Proto.Any.Any Proto.Codec.Json)
     , connectGetInfo : Maybe ConformancePayloadConnectGetInfo
     }
 
@@ -1059,7 +1060,7 @@ type alias ConformancePayloadConnectGetInfo =
 type alias Error =
     { code : Code
     , message : Maybe String
-    , details : List Proto.Any.Any
+    , details : List (Proto.Any.Any Proto.Codec.Json)
     }
 
 
@@ -1165,7 +1166,7 @@ type MessageContentsData
     = MessageContentsDataUnset
     | MessageContentsDataBinary String
     | MessageContentsDataText String
-    | MessageContentsDataBinaryMessage Proto.Any.Any
+    | MessageContentsDataBinaryMessage (Proto.Any.Any Proto.Codec.Json)
 
 
 {-| StreamContents represents a sequence of messages in a request body.
@@ -1839,284 +1840,284 @@ enumTestSuiteConnectVersionMode =
     Proto.Enum.enum encodeTestSuiteConnectVersionMode decodeTestSuiteConnectVersionMode TestSuiteConnectVersionModeUnspecified Connectrpc.Conformance.V1.TestSuiteConnectVersionMode.descriptor
 
 
-{-| The typed value of [`ClientCompatRequest`](#ClientCompatRequest): its codecs, default and descriptor together.
+{-| The typed value of [`ClientCompatRequest`](#ClientCompatRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageClientCompatRequest : Proto.Message.Message ClientCompatRequest
+messageClientCompatRequest : Proto.Message.Message Proto.Codec.Json ClientCompatRequest
 messageClientCompatRequest =
-    Proto.Message.message encodeClientCompatRequest decodeClientCompatRequest defaultClientCompatRequest Connectrpc.Conformance.V1.ClientCompatRequest.descriptor
+    Proto.Message.initJson "connectrpc.conformance.v1.ClientCompatRequest" encodeClientCompatRequest decodeClientCompatRequest
 
 
-{-| The typed value of [`ClientCompatRequestCancel`](#ClientCompatRequestCancel): its codecs, default and descriptor together.
+{-| The typed value of [`ClientCompatRequestCancel`](#ClientCompatRequestCancel): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageClientCompatRequestCancel : Proto.Message.Message ClientCompatRequestCancel
+messageClientCompatRequestCancel : Proto.Message.Message Proto.Codec.Json ClientCompatRequestCancel
 messageClientCompatRequestCancel =
-    Proto.Message.message encodeClientCompatRequestCancel decodeClientCompatRequestCancel defaultClientCompatRequestCancel Connectrpc.Conformance.V1.ClientCompatRequestCancel.descriptor
+    Proto.Message.initJson "connectrpc.conformance.v1.ClientCompatRequest.Cancel" encodeClientCompatRequestCancel decodeClientCompatRequestCancel
 
 
-{-| The typed value of [`ClientCompatResponse`](#ClientCompatResponse): its codecs, default and descriptor together.
+{-| The typed value of [`ClientCompatResponse`](#ClientCompatResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageClientCompatResponse : Proto.Message.Message ClientCompatResponse
+messageClientCompatResponse : Proto.Message.Message Proto.Codec.Json ClientCompatResponse
 messageClientCompatResponse =
-    Proto.Message.message encodeClientCompatResponse decodeClientCompatResponse defaultClientCompatResponse Connectrpc.Conformance.V1.ClientCompatResponse.descriptor
+    Proto.Message.initJson "connectrpc.conformance.v1.ClientCompatResponse" encodeClientCompatResponse decodeClientCompatResponse
 
 
-{-| The typed value of [`ClientResponseResult`](#ClientResponseResult): its codecs, default and descriptor together.
+{-| The typed value of [`ClientResponseResult`](#ClientResponseResult): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageClientResponseResult : Proto.Message.Message ClientResponseResult
+messageClientResponseResult : Proto.Message.Message Proto.Codec.Json ClientResponseResult
 messageClientResponseResult =
-    Proto.Message.message encodeClientResponseResult decodeClientResponseResult defaultClientResponseResult Connectrpc.Conformance.V1.ClientResponseResult.descriptor
+    Proto.Message.initJson "connectrpc.conformance.v1.ClientResponseResult" encodeClientResponseResult decodeClientResponseResult
 
 
-{-| The typed value of [`ClientErrorResult`](#ClientErrorResult): its codecs, default and descriptor together.
+{-| The typed value of [`ClientErrorResult`](#ClientErrorResult): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageClientErrorResult : Proto.Message.Message ClientErrorResult
+messageClientErrorResult : Proto.Message.Message Proto.Codec.Json ClientErrorResult
 messageClientErrorResult =
-    Proto.Message.message encodeClientErrorResult decodeClientErrorResult defaultClientErrorResult Connectrpc.Conformance.V1.ClientErrorResult.descriptor
+    Proto.Message.initJson "connectrpc.conformance.v1.ClientErrorResult" encodeClientErrorResult decodeClientErrorResult
 
 
-{-| The typed value of [`WireDetails`](#WireDetails): its codecs, default and descriptor together.
+{-| The typed value of [`WireDetails`](#WireDetails): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageWireDetails : Proto.Message.Message WireDetails
+messageWireDetails : Proto.Message.Message Proto.Codec.Json WireDetails
 messageWireDetails =
-    Proto.Message.message encodeWireDetails decodeWireDetails defaultWireDetails Connectrpc.Conformance.V1.WireDetails.descriptor
+    Proto.Message.initJson "connectrpc.conformance.v1.WireDetails" encodeWireDetails decodeWireDetails
 
 
-{-| The typed value of [`Config`](#Config): its codecs, default and descriptor together.
+{-| The typed value of [`Config`](#Config): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageConfig : Proto.Message.Message Config
+messageConfig : Proto.Message.Message Proto.Codec.Json Config
 messageConfig =
-    Proto.Message.message encodeConfig decodeConfig defaultConfig Connectrpc.Conformance.V1.Config.descriptor
+    Proto.Message.initJson "connectrpc.conformance.v1.Config" encodeConfig decodeConfig
 
 
-{-| The typed value of [`Features`](#Features): its codecs, default and descriptor together.
+{-| The typed value of [`Features`](#Features): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageFeatures : Proto.Message.Message Features
+messageFeatures : Proto.Message.Message Proto.Codec.Json Features
 messageFeatures =
-    Proto.Message.message encodeFeatures decodeFeatures defaultFeatures Connectrpc.Conformance.V1.Features.descriptor
+    Proto.Message.initJson "connectrpc.conformance.v1.Features" encodeFeatures decodeFeatures
 
 
-{-| The typed value of [`ConfigCase`](#ConfigCase): its codecs, default and descriptor together.
+{-| The typed value of [`ConfigCase`](#ConfigCase): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageConfigCase : Proto.Message.Message ConfigCase
+messageConfigCase : Proto.Message.Message Proto.Codec.Json ConfigCase
 messageConfigCase =
-    Proto.Message.message encodeConfigCase decodeConfigCase defaultConfigCase Connectrpc.Conformance.V1.ConfigCase.descriptor
+    Proto.Message.initJson "connectrpc.conformance.v1.ConfigCase" encodeConfigCase decodeConfigCase
 
 
-{-| The typed value of [`TLSCreds`](#TLSCreds): its codecs, default and descriptor together.
+{-| The typed value of [`TLSCreds`](#TLSCreds): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageTLSCreds : Proto.Message.Message TLSCreds
+messageTLSCreds : Proto.Message.Message Proto.Codec.Json TLSCreds
 messageTLSCreds =
-    Proto.Message.message encodeTLSCreds decodeTLSCreds defaultTLSCreds Connectrpc.Conformance.V1.TLSCreds.descriptor
+    Proto.Message.initJson "connectrpc.conformance.v1.TLSCreds" encodeTLSCreds decodeTLSCreds
 
 
-{-| The typed value of [`ServerCompatRequest`](#ServerCompatRequest): its codecs, default and descriptor together.
+{-| The typed value of [`ServerCompatRequest`](#ServerCompatRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageServerCompatRequest : Proto.Message.Message ServerCompatRequest
+messageServerCompatRequest : Proto.Message.Message Proto.Codec.Json ServerCompatRequest
 messageServerCompatRequest =
-    Proto.Message.message encodeServerCompatRequest decodeServerCompatRequest defaultServerCompatRequest Connectrpc.Conformance.V1.ServerCompatRequest.descriptor
+    Proto.Message.initJson "connectrpc.conformance.v1.ServerCompatRequest" encodeServerCompatRequest decodeServerCompatRequest
 
 
-{-| The typed value of [`ServerCompatResponse`](#ServerCompatResponse): its codecs, default and descriptor together.
+{-| The typed value of [`ServerCompatResponse`](#ServerCompatResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageServerCompatResponse : Proto.Message.Message ServerCompatResponse
+messageServerCompatResponse : Proto.Message.Message Proto.Codec.Json ServerCompatResponse
 messageServerCompatResponse =
-    Proto.Message.message encodeServerCompatResponse decodeServerCompatResponse defaultServerCompatResponse Connectrpc.Conformance.V1.ServerCompatResponse.descriptor
+    Proto.Message.initJson "connectrpc.conformance.v1.ServerCompatResponse" encodeServerCompatResponse decodeServerCompatResponse
 
 
-{-| The typed value of [`UnaryResponseDefinition`](#UnaryResponseDefinition): its codecs, default and descriptor together.
+{-| The typed value of [`UnaryResponseDefinition`](#UnaryResponseDefinition): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageUnaryResponseDefinition : Proto.Message.Message UnaryResponseDefinition
+messageUnaryResponseDefinition : Proto.Message.Message Proto.Codec.Json UnaryResponseDefinition
 messageUnaryResponseDefinition =
-    Proto.Message.message encodeUnaryResponseDefinition decodeUnaryResponseDefinition defaultUnaryResponseDefinition Connectrpc.Conformance.V1.UnaryResponseDefinition.descriptor
+    Proto.Message.initJson "connectrpc.conformance.v1.UnaryResponseDefinition" encodeUnaryResponseDefinition decodeUnaryResponseDefinition
 
 
-{-| The typed value of [`StreamResponseDefinition`](#StreamResponseDefinition): its codecs, default and descriptor together.
+{-| The typed value of [`StreamResponseDefinition`](#StreamResponseDefinition): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageStreamResponseDefinition : Proto.Message.Message StreamResponseDefinition
+messageStreamResponseDefinition : Proto.Message.Message Proto.Codec.Json StreamResponseDefinition
 messageStreamResponseDefinition =
-    Proto.Message.message encodeStreamResponseDefinition decodeStreamResponseDefinition defaultStreamResponseDefinition Connectrpc.Conformance.V1.StreamResponseDefinition.descriptor
+    Proto.Message.initJson "connectrpc.conformance.v1.StreamResponseDefinition" encodeStreamResponseDefinition decodeStreamResponseDefinition
 
 
-{-| The typed value of [`UnaryRequest`](#UnaryRequest): its codecs, default and descriptor together.
+{-| The typed value of [`UnaryRequest`](#UnaryRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageUnaryRequest : Proto.Message.Message UnaryRequest
+messageUnaryRequest : Proto.Message.Message Proto.Codec.Json UnaryRequest
 messageUnaryRequest =
-    Proto.Message.message encodeUnaryRequest decodeUnaryRequest defaultUnaryRequest Connectrpc.Conformance.V1.UnaryRequest.descriptor
+    Proto.Message.initJson "connectrpc.conformance.v1.UnaryRequest" encodeUnaryRequest decodeUnaryRequest
 
 
-{-| The typed value of [`UnaryResponse`](#UnaryResponse): its codecs, default and descriptor together.
+{-| The typed value of [`UnaryResponse`](#UnaryResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageUnaryResponse : Proto.Message.Message UnaryResponse
+messageUnaryResponse : Proto.Message.Message Proto.Codec.Json UnaryResponse
 messageUnaryResponse =
-    Proto.Message.message encodeUnaryResponse decodeUnaryResponse defaultUnaryResponse Connectrpc.Conformance.V1.UnaryResponse.descriptor
+    Proto.Message.initJson "connectrpc.conformance.v1.UnaryResponse" encodeUnaryResponse decodeUnaryResponse
 
 
-{-| The typed value of [`IdempotentUnaryRequest`](#IdempotentUnaryRequest): its codecs, default and descriptor together.
+{-| The typed value of [`IdempotentUnaryRequest`](#IdempotentUnaryRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageIdempotentUnaryRequest : Proto.Message.Message IdempotentUnaryRequest
+messageIdempotentUnaryRequest : Proto.Message.Message Proto.Codec.Json IdempotentUnaryRequest
 messageIdempotentUnaryRequest =
-    Proto.Message.message encodeIdempotentUnaryRequest decodeIdempotentUnaryRequest defaultIdempotentUnaryRequest Connectrpc.Conformance.V1.IdempotentUnaryRequest.descriptor
+    Proto.Message.initJson "connectrpc.conformance.v1.IdempotentUnaryRequest" encodeIdempotentUnaryRequest decodeIdempotentUnaryRequest
 
 
-{-| The typed value of [`IdempotentUnaryResponse`](#IdempotentUnaryResponse): its codecs, default and descriptor together.
+{-| The typed value of [`IdempotentUnaryResponse`](#IdempotentUnaryResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageIdempotentUnaryResponse : Proto.Message.Message IdempotentUnaryResponse
+messageIdempotentUnaryResponse : Proto.Message.Message Proto.Codec.Json IdempotentUnaryResponse
 messageIdempotentUnaryResponse =
-    Proto.Message.message encodeIdempotentUnaryResponse decodeIdempotentUnaryResponse defaultIdempotentUnaryResponse Connectrpc.Conformance.V1.IdempotentUnaryResponse.descriptor
+    Proto.Message.initJson "connectrpc.conformance.v1.IdempotentUnaryResponse" encodeIdempotentUnaryResponse decodeIdempotentUnaryResponse
 
 
-{-| The typed value of [`ServerStreamRequest`](#ServerStreamRequest): its codecs, default and descriptor together.
+{-| The typed value of [`ServerStreamRequest`](#ServerStreamRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageServerStreamRequest : Proto.Message.Message ServerStreamRequest
+messageServerStreamRequest : Proto.Message.Message Proto.Codec.Json ServerStreamRequest
 messageServerStreamRequest =
-    Proto.Message.message encodeServerStreamRequest decodeServerStreamRequest defaultServerStreamRequest Connectrpc.Conformance.V1.ServerStreamRequest.descriptor
+    Proto.Message.initJson "connectrpc.conformance.v1.ServerStreamRequest" encodeServerStreamRequest decodeServerStreamRequest
 
 
-{-| The typed value of [`ServerStreamResponse`](#ServerStreamResponse): its codecs, default and descriptor together.
+{-| The typed value of [`ServerStreamResponse`](#ServerStreamResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageServerStreamResponse : Proto.Message.Message ServerStreamResponse
+messageServerStreamResponse : Proto.Message.Message Proto.Codec.Json ServerStreamResponse
 messageServerStreamResponse =
-    Proto.Message.message encodeServerStreamResponse decodeServerStreamResponse defaultServerStreamResponse Connectrpc.Conformance.V1.ServerStreamResponse.descriptor
+    Proto.Message.initJson "connectrpc.conformance.v1.ServerStreamResponse" encodeServerStreamResponse decodeServerStreamResponse
 
 
-{-| The typed value of [`ClientStreamRequest`](#ClientStreamRequest): its codecs, default and descriptor together.
+{-| The typed value of [`ClientStreamRequest`](#ClientStreamRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageClientStreamRequest : Proto.Message.Message ClientStreamRequest
+messageClientStreamRequest : Proto.Message.Message Proto.Codec.Json ClientStreamRequest
 messageClientStreamRequest =
-    Proto.Message.message encodeClientStreamRequest decodeClientStreamRequest defaultClientStreamRequest Connectrpc.Conformance.V1.ClientStreamRequest.descriptor
+    Proto.Message.initJson "connectrpc.conformance.v1.ClientStreamRequest" encodeClientStreamRequest decodeClientStreamRequest
 
 
-{-| The typed value of [`ClientStreamResponse`](#ClientStreamResponse): its codecs, default and descriptor together.
+{-| The typed value of [`ClientStreamResponse`](#ClientStreamResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageClientStreamResponse : Proto.Message.Message ClientStreamResponse
+messageClientStreamResponse : Proto.Message.Message Proto.Codec.Json ClientStreamResponse
 messageClientStreamResponse =
-    Proto.Message.message encodeClientStreamResponse decodeClientStreamResponse defaultClientStreamResponse Connectrpc.Conformance.V1.ClientStreamResponse.descriptor
+    Proto.Message.initJson "connectrpc.conformance.v1.ClientStreamResponse" encodeClientStreamResponse decodeClientStreamResponse
 
 
-{-| The typed value of [`BidiStreamRequest`](#BidiStreamRequest): its codecs, default and descriptor together.
+{-| The typed value of [`BidiStreamRequest`](#BidiStreamRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageBidiStreamRequest : Proto.Message.Message BidiStreamRequest
+messageBidiStreamRequest : Proto.Message.Message Proto.Codec.Json BidiStreamRequest
 messageBidiStreamRequest =
-    Proto.Message.message encodeBidiStreamRequest decodeBidiStreamRequest defaultBidiStreamRequest Connectrpc.Conformance.V1.BidiStreamRequest.descriptor
+    Proto.Message.initJson "connectrpc.conformance.v1.BidiStreamRequest" encodeBidiStreamRequest decodeBidiStreamRequest
 
 
-{-| The typed value of [`BidiStreamResponse`](#BidiStreamResponse): its codecs, default and descriptor together.
+{-| The typed value of [`BidiStreamResponse`](#BidiStreamResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageBidiStreamResponse : Proto.Message.Message BidiStreamResponse
+messageBidiStreamResponse : Proto.Message.Message Proto.Codec.Json BidiStreamResponse
 messageBidiStreamResponse =
-    Proto.Message.message encodeBidiStreamResponse decodeBidiStreamResponse defaultBidiStreamResponse Connectrpc.Conformance.V1.BidiStreamResponse.descriptor
+    Proto.Message.initJson "connectrpc.conformance.v1.BidiStreamResponse" encodeBidiStreamResponse decodeBidiStreamResponse
 
 
-{-| The typed value of [`UnimplementedRequest`](#UnimplementedRequest): its codecs, default and descriptor together.
+{-| The typed value of [`UnimplementedRequest`](#UnimplementedRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageUnimplementedRequest : Proto.Message.Message UnimplementedRequest
+messageUnimplementedRequest : Proto.Message.Message Proto.Codec.Json UnimplementedRequest
 messageUnimplementedRequest =
-    Proto.Message.message encodeUnimplementedRequest decodeUnimplementedRequest defaultUnimplementedRequest Connectrpc.Conformance.V1.UnimplementedRequest.descriptor
+    Proto.Message.initJson "connectrpc.conformance.v1.UnimplementedRequest" encodeUnimplementedRequest decodeUnimplementedRequest
 
 
-{-| The typed value of [`UnimplementedResponse`](#UnimplementedResponse): its codecs, default and descriptor together.
+{-| The typed value of [`UnimplementedResponse`](#UnimplementedResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageUnimplementedResponse : Proto.Message.Message UnimplementedResponse
+messageUnimplementedResponse : Proto.Message.Message Proto.Codec.Json UnimplementedResponse
 messageUnimplementedResponse =
-    Proto.Message.message encodeUnimplementedResponse decodeUnimplementedResponse defaultUnimplementedResponse Connectrpc.Conformance.V1.UnimplementedResponse.descriptor
+    Proto.Message.initJson "connectrpc.conformance.v1.UnimplementedResponse" encodeUnimplementedResponse decodeUnimplementedResponse
 
 
-{-| The typed value of [`ConformancePayload`](#ConformancePayload): its codecs, default and descriptor together.
+{-| The typed value of [`ConformancePayload`](#ConformancePayload): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageConformancePayload : Proto.Message.Message ConformancePayload
+messageConformancePayload : Proto.Message.Message Proto.Codec.Json ConformancePayload
 messageConformancePayload =
-    Proto.Message.message encodeConformancePayload decodeConformancePayload defaultConformancePayload Connectrpc.Conformance.V1.ConformancePayload.descriptor
+    Proto.Message.initJson "connectrpc.conformance.v1.ConformancePayload" encodeConformancePayload decodeConformancePayload
 
 
-{-| The typed value of [`ConformancePayloadRequestInfo`](#ConformancePayloadRequestInfo): its codecs, default and descriptor together.
+{-| The typed value of [`ConformancePayloadRequestInfo`](#ConformancePayloadRequestInfo): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageConformancePayloadRequestInfo : Proto.Message.Message ConformancePayloadRequestInfo
+messageConformancePayloadRequestInfo : Proto.Message.Message Proto.Codec.Json ConformancePayloadRequestInfo
 messageConformancePayloadRequestInfo =
-    Proto.Message.message encodeConformancePayloadRequestInfo decodeConformancePayloadRequestInfo defaultConformancePayloadRequestInfo Connectrpc.Conformance.V1.ConformancePayloadRequestInfo.descriptor
+    Proto.Message.initJson "connectrpc.conformance.v1.ConformancePayload.RequestInfo" encodeConformancePayloadRequestInfo decodeConformancePayloadRequestInfo
 
 
-{-| The typed value of [`ConformancePayloadConnectGetInfo`](#ConformancePayloadConnectGetInfo): its codecs, default and descriptor together.
+{-| The typed value of [`ConformancePayloadConnectGetInfo`](#ConformancePayloadConnectGetInfo): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageConformancePayloadConnectGetInfo : Proto.Message.Message ConformancePayloadConnectGetInfo
+messageConformancePayloadConnectGetInfo : Proto.Message.Message Proto.Codec.Json ConformancePayloadConnectGetInfo
 messageConformancePayloadConnectGetInfo =
-    Proto.Message.message encodeConformancePayloadConnectGetInfo decodeConformancePayloadConnectGetInfo defaultConformancePayloadConnectGetInfo Connectrpc.Conformance.V1.ConformancePayloadConnectGetInfo.descriptor
+    Proto.Message.initJson "connectrpc.conformance.v1.ConformancePayload.ConnectGetInfo" encodeConformancePayloadConnectGetInfo decodeConformancePayloadConnectGetInfo
 
 
-{-| The typed value of [`Error`](#Error): its codecs, default and descriptor together.
+{-| The typed value of [`Error`](#Error): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageError : Proto.Message.Message Error
+messageError : Proto.Message.Message Proto.Codec.Json Error
 messageError =
-    Proto.Message.message encodeError decodeError defaultError Connectrpc.Conformance.V1.Error.descriptor
+    Proto.Message.initJson "connectrpc.conformance.v1.Error" encodeError decodeError
 
 
-{-| The typed value of [`Header`](#Header): its codecs, default and descriptor together.
+{-| The typed value of [`Header`](#Header): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageHeader : Proto.Message.Message Header
+messageHeader : Proto.Message.Message Proto.Codec.Json Header
 messageHeader =
-    Proto.Message.message encodeHeader decodeHeader defaultHeader Connectrpc.Conformance.V1.Header.descriptor
+    Proto.Message.initJson "connectrpc.conformance.v1.Header" encodeHeader decodeHeader
 
 
-{-| The typed value of [`RawHTTPRequest`](#RawHTTPRequest): its codecs, default and descriptor together.
+{-| The typed value of [`RawHTTPRequest`](#RawHTTPRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageRawHTTPRequest : Proto.Message.Message RawHTTPRequest
+messageRawHTTPRequest : Proto.Message.Message Proto.Codec.Json RawHTTPRequest
 messageRawHTTPRequest =
-    Proto.Message.message encodeRawHTTPRequest decodeRawHTTPRequest defaultRawHTTPRequest Connectrpc.Conformance.V1.RawHTTPRequest.descriptor
+    Proto.Message.initJson "connectrpc.conformance.v1.RawHTTPRequest" encodeRawHTTPRequest decodeRawHTTPRequest
 
 
-{-| The typed value of [`RawHTTPRequestEncodedQueryParam`](#RawHTTPRequestEncodedQueryParam): its codecs, default and descriptor together.
+{-| The typed value of [`RawHTTPRequestEncodedQueryParam`](#RawHTTPRequestEncodedQueryParam): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageRawHTTPRequestEncodedQueryParam : Proto.Message.Message RawHTTPRequestEncodedQueryParam
+messageRawHTTPRequestEncodedQueryParam : Proto.Message.Message Proto.Codec.Json RawHTTPRequestEncodedQueryParam
 messageRawHTTPRequestEncodedQueryParam =
-    Proto.Message.message encodeRawHTTPRequestEncodedQueryParam decodeRawHTTPRequestEncodedQueryParam defaultRawHTTPRequestEncodedQueryParam Connectrpc.Conformance.V1.RawHTTPRequestEncodedQueryParam.descriptor
+    Proto.Message.initJson "connectrpc.conformance.v1.RawHTTPRequest.EncodedQueryParam" encodeRawHTTPRequestEncodedQueryParam decodeRawHTTPRequestEncodedQueryParam
 
 
-{-| The typed value of [`MessageContents`](#MessageContents): its codecs, default and descriptor together.
+{-| The typed value of [`MessageContents`](#MessageContents): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageMessageContents : Proto.Message.Message MessageContents
+messageMessageContents : Proto.Message.Message Proto.Codec.Json MessageContents
 messageMessageContents =
-    Proto.Message.message encodeMessageContents decodeMessageContents defaultMessageContents Connectrpc.Conformance.V1.MessageContents.descriptor
+    Proto.Message.initJson "connectrpc.conformance.v1.MessageContents" encodeMessageContents decodeMessageContents
 
 
-{-| The typed value of [`StreamContents`](#StreamContents): its codecs, default and descriptor together.
+{-| The typed value of [`StreamContents`](#StreamContents): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageStreamContents : Proto.Message.Message StreamContents
+messageStreamContents : Proto.Message.Message Proto.Codec.Json StreamContents
 messageStreamContents =
-    Proto.Message.message encodeStreamContents decodeStreamContents defaultStreamContents Connectrpc.Conformance.V1.StreamContents.descriptor
+    Proto.Message.initJson "connectrpc.conformance.v1.StreamContents" encodeStreamContents decodeStreamContents
 
 
-{-| The typed value of [`StreamContentsStreamItem`](#StreamContentsStreamItem): its codecs, default and descriptor together.
+{-| The typed value of [`StreamContentsStreamItem`](#StreamContentsStreamItem): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageStreamContentsStreamItem : Proto.Message.Message StreamContentsStreamItem
+messageStreamContentsStreamItem : Proto.Message.Message Proto.Codec.Json StreamContentsStreamItem
 messageStreamContentsStreamItem =
-    Proto.Message.message encodeStreamContentsStreamItem decodeStreamContentsStreamItem defaultStreamContentsStreamItem Connectrpc.Conformance.V1.StreamContentsStreamItem.descriptor
+    Proto.Message.initJson "connectrpc.conformance.v1.StreamContents.StreamItem" encodeStreamContentsStreamItem decodeStreamContentsStreamItem
 
 
-{-| The typed value of [`RawHTTPResponse`](#RawHTTPResponse): its codecs, default and descriptor together.
+{-| The typed value of [`RawHTTPResponse`](#RawHTTPResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageRawHTTPResponse : Proto.Message.Message RawHTTPResponse
+messageRawHTTPResponse : Proto.Message.Message Proto.Codec.Json RawHTTPResponse
 messageRawHTTPResponse =
-    Proto.Message.message encodeRawHTTPResponse decodeRawHTTPResponse defaultRawHTTPResponse Connectrpc.Conformance.V1.RawHTTPResponse.descriptor
+    Proto.Message.initJson "connectrpc.conformance.v1.RawHTTPResponse" encodeRawHTTPResponse decodeRawHTTPResponse
 
 
-{-| The typed value of [`TestSuite`](#TestSuite): its codecs, default and descriptor together.
+{-| The typed value of [`TestSuite`](#TestSuite): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageTestSuite : Proto.Message.Message TestSuite
+messageTestSuite : Proto.Message.Message Proto.Codec.Json TestSuite
 messageTestSuite =
-    Proto.Message.message encodeTestSuite decodeTestSuite defaultTestSuite Connectrpc.Conformance.V1.TestSuite.descriptor
+    Proto.Message.initJson "connectrpc.conformance.v1.TestSuite" encodeTestSuite decodeTestSuite
 
 
-{-| The typed value of [`TestCase`](#TestCase): its codecs, default and descriptor together.
+{-| The typed value of [`TestCase`](#TestCase): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageTestCase : Proto.Message.Message TestCase
+messageTestCase : Proto.Message.Message Proto.Codec.Json TestCase
 messageTestCase =
-    Proto.Message.message encodeTestCase decodeTestCase defaultTestCase Connectrpc.Conformance.V1.TestCase.descriptor
+    Proto.Message.initJson "connectrpc.conformance.v1.TestCase" encodeTestCase decodeTestCase
 
 
-{-| The typed value of [`TestCaseExpandedSize`](#TestCaseExpandedSize): its codecs, default and descriptor together.
+{-| The typed value of [`TestCaseExpandedSize`](#TestCaseExpandedSize): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageTestCaseExpandedSize : Proto.Message.Message TestCaseExpandedSize
+messageTestCaseExpandedSize : Proto.Message.Message Proto.Codec.Json TestCaseExpandedSize
 messageTestCaseExpandedSize =
-    Proto.Message.message encodeTestCaseExpandedSize decodeTestCaseExpandedSize defaultTestCaseExpandedSize Connectrpc.Conformance.V1.TestCaseExpandedSize.descriptor
+    Proto.Message.initJson "connectrpc.conformance.v1.TestCase.ExpandedSize" encodeTestCaseExpandedSize decodeTestCaseExpandedSize
 
 
 

@@ -15,6 +15,7 @@ import Oneofs.V1.Choice
 import Oneofs.V1.Color
 import Oneofs.V1.Created
 import Oneofs.V1.NoteEvent
+import Proto.Codec
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
@@ -177,25 +178,25 @@ enumColor =
     Proto.Enum.enum encodeColor decodeColor ColorUnspecified Oneofs.V1.Color.descriptor
 
 
-{-| The typed value of [`Created`](#Created): its codecs, default and descriptor together.
+{-| The typed value of [`Created`](#Created): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageCreated : Proto.Message.Message Created
+messageCreated : Proto.Message.Message Proto.Codec.Json Created
 messageCreated =
-    Proto.Message.message encodeCreated decodeCreated defaultCreated Oneofs.V1.Created.descriptor
+    Proto.Message.initJson "oneofs.v1.Created" encodeCreated decodeCreated
 
 
-{-| The typed value of [`NoteEvent`](#NoteEvent): its codecs, default and descriptor together.
+{-| The typed value of [`NoteEvent`](#NoteEvent): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageNoteEvent : Proto.Message.Message NoteEvent
+messageNoteEvent : Proto.Message.Message Proto.Codec.Json NoteEvent
 messageNoteEvent =
-    Proto.Message.message encodeNoteEvent decodeNoteEvent defaultNoteEvent Oneofs.V1.NoteEvent.descriptor
+    Proto.Message.initJson "oneofs.v1.NoteEvent" encodeNoteEvent decodeNoteEvent
 
 
-{-| The typed value of [`Choice`](#Choice): its codecs, default and descriptor together.
+{-| The typed value of [`Choice`](#Choice): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageChoice : Proto.Message.Message Choice
+messageChoice : Proto.Message.Message Proto.Codec.Json Choice
 messageChoice =
-    Proto.Message.message encodeChoice decodeChoice defaultChoice Oneofs.V1.Choice.descriptor
+    Proto.Message.initJson "oneofs.v1.Choice" encodeChoice decodeChoice
 
 
 

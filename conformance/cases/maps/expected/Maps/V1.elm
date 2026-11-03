@@ -16,6 +16,7 @@ import Json.Encode
 import Maps.V1.Member
 import Maps.V1.Role
 import Maps.V1.Team
+import Proto.Codec
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
@@ -135,18 +136,18 @@ enumRole =
     Proto.Enum.enum encodeRole decodeRole RoleUnspecified Maps.V1.Role.descriptor
 
 
-{-| The typed value of [`Member`](#Member): its codecs, default and descriptor together.
+{-| The typed value of [`Member`](#Member): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageMember : Proto.Message.Message Member
+messageMember : Proto.Message.Message Proto.Codec.Json Member
 messageMember =
-    Proto.Message.message encodeMember decodeMember defaultMember Maps.V1.Member.descriptor
+    Proto.Message.initJson "maps.v1.Member" encodeMember decodeMember
 
 
-{-| The typed value of [`Team`](#Team): its codecs, default and descriptor together.
+{-| The typed value of [`Team`](#Team): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageTeam : Proto.Message.Message Team
+messageTeam : Proto.Message.Message Proto.Codec.Json Team
 messageTeam =
-    Proto.Message.message encodeTeam decodeTeam defaultTeam Maps.V1.Team.descriptor
+    Proto.Message.initJson "maps.v1.Team" encodeTeam decodeTeam
 
 
 

@@ -51,7 +51,7 @@ Codecs: JSON. Described by [`descriptorPing`](#descriptorPing).
 ping : () -> Rpc.Call Rpc.Json () ()
 ping =
     Rpc.call
-        (Proto.Method.json "awkward.v1.AwkwardService"
+        (Proto.Method.initJson "awkward.v1.AwkwardService"
             "Ping"
             Proto.Json.encodeEmpty
             Proto.Json.empty

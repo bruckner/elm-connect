@@ -73,7 +73,7 @@ beside each link says what the runtime or the generator does about it.
   [`google.rpc.Code`](https://github.com/googleapis/googleapis/blob/master/google/rpc/code.proto)
   and the [error details](https://github.com/googleapis/googleapis/blob/master/google/rpc/error_details.proto):
   the error body under transcoding, the codes `Rpc.Code` names, and the
-  details `Rpc.Error.details` reads ([calling.md](calling.md),
+  details `Rpc.Error.details` and `detailsJson` read ([calling.md](calling.md),
   [descriptors.md](descriptors.md)).
 - [gRPC over HTTP/2](https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-HTTP2.md):
   the `grpc-status`, `grpc-message` and `grpc-status-details-bin`

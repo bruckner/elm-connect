@@ -1,7 +1,7 @@
 [
   {
     "name": "grpc-web GetNote",
-    "note": "Over Connect: The answer is read from protobuf binary; an Any read from binary holds its bytes and writes the Connect detail form.",
+    "note": "Over Connect: The answer is read from protobuf binary; an Any read from binary holds its bytes, and its JSON is converted through the build's registries.",
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
@@ -35,8 +35,8 @@
           },
           "link": "https://example.com/welcome",
           "attachment": {
-            "type": "google.protobuf.Timestamp",
-            "value": "CKXr3MoG"
+            "@type": "type.googleapis.com/google.protobuf.Timestamp",
+            "value": "2026-01-02T03:04:05Z"
           },
           "revision": "9007199254740993"
         }
@@ -99,8 +99,8 @@
             {
               "name": "notes/welcome",
               "attachment": {
-                "type": "google.protobuf.Timestamp",
-                "value": "CKXr3MoG"
+                "@type": "type.googleapis.com/google.protobuf.Timestamp",
+                "value": "2026-01-02T03:04:05Z"
               }
             }
           ]
@@ -129,7 +129,7 @@
   },
   {
     "name": "grpc-web CreateNote",
-    "note": "Over Connect: The request Any holds a Timestamp read from JSON; the binary encoder converts it, so the server stores its value.",
+    "note": "Over Connect: The request Any holds a Timestamp read from JSON, converted to binary through the package's registry, so the server stores its value.",
     "call": {
       "service": "notes.v1.NotesService",
       "method": "CreateNote",
@@ -192,8 +192,8 @@
           },
           "text": "hello",
           "attachment": {
-            "type": "google.protobuf.Timestamp",
-            "value": "CKXr3MoG"
+            "@type": "type.googleapis.com/google.protobuf.Timestamp",
+            "value": "2026-01-02T03:04:05Z"
           }
         }
       },
@@ -220,7 +220,7 @@
   },
   {
     "name": "grpc-web CreateNote with a message of the package in its Any",
-    "note": "Over Connect: The request Any holds a notes.v1.GetNoteRequest read from JSON; the package's registry, which the binary encoder writes the Any with, has its binary codecs.",
+    "note": "Over Connect: The request Any holds a notes.v1.GetNoteRequest read from JSON, converted to binary through the package's registry, which has its codecs.",
     "call": {
       "service": "notes.v1.NotesService",
       "method": "CreateNote",
@@ -245,8 +245,8 @@
           "name": "notes/from-proto-any",
           "title": "Packed",
           "attachment": {
-            "type": "notes.v1.GetNoteRequest",
-            "value": "Cg1ub3Rlcy93ZWxjb21l"
+            "@type": "type.googleapis.com/notes.v1.GetNoteRequest",
+            "name": "notes/welcome"
           }
         }
       }
@@ -518,8 +518,8 @@
         "ok": {
           "name": "notes/welcome",
           "attachment": {
-            "type": "google.protobuf.Timestamp",
-            "value": "CKXr3MoG"
+            "@type": "type.googleapis.com/google.protobuf.Timestamp",
+            "value": "2026-01-02T03:04:05Z"
           }
         }
       },

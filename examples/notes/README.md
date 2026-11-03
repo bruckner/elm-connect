@@ -182,12 +182,12 @@ viewError error =
                 , ul []
                     (List.map
                         (\violation -> li [] [ code [] [ text violation.field ], text (": " ++ violation.description) ])
-                        (Rpc.Error.details Google.Rpc.messageBadRequest error |> List.concatMap .fieldViolations)
+                        (Rpc.Error.detailsJson Google.Rpc.messageBadRequest error |> List.concatMap .fieldViolations)
                     )
                 , ul []
                     (List.map
                         (\info -> li [] [ text (info.reason ++ " from " ++ info.domain) ])
-                        (Rpc.Error.details Google.Rpc.messageErrorInfo error)
+                        (Rpc.Error.detailsJson Google.Rpc.messageErrorInfo error)
                     )
                 , div [] (List.map viewDetail status.details)
                 ]
@@ -212,9 +212,14 @@ viewError error =
             section [ class "error" ] [ p [] [ text (Rpc.Error.toString error) ] ]
 
 
-viewDetail : Proto.Any.Any -> Html msg
+viewDetail : Rpc.Error.Detail -> Html msg
 viewDetail detail =
-    pre [] [ text (Json.Encode.encode 2 (Proto.Json.encodeAny detail)) ]
+    case detail.json of
+        Just json ->
+            pre [] [ text (Json.Encode.encode 2 (Proto.Json.encodeAny json)) ]
+
+        Nothing ->
+            p [] [ text (Maybe.withDefault "A detail" (Maybe.map Proto.Any.typeName detail.proto) ++ " arrived as protobuf binary alone.") ]
 
 
 sourceToString : Rpc.Error.Source -> String

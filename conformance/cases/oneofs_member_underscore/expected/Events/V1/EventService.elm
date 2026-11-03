@@ -40,7 +40,7 @@ Codecs: JSON. Described by [`descriptorListEvents`](#descriptorListEvents).
 listEvents : Events.V1.ListEventsRequest -> Rpc.Call Rpc.Json Events.V1.ListEventsRequest Events.V1.ListEventsResponse
 listEvents =
     Rpc.call
-        (Proto.Method.json "events.v1.EventService"
+        (Proto.Method.initJson "events.v1.EventService"
             "ListEvents"
             Events.V1.encodeListEventsRequest
             Events.V1.decodeListEventsResponse

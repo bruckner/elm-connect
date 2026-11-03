@@ -6,6 +6,7 @@ module Zones.V1 exposing (..)
 
 import Json.Decode
 import Json.Encode
+import Proto.Codec
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
@@ -72,18 +73,18 @@ defaultZone =
 -- TYPED VALUES
 
 
-{-| The typed value of [`ZoneRequest`](#ZoneRequest): its codecs, default and descriptor together.
+{-| The typed value of [`ZoneRequest`](#ZoneRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageZoneRequest : Proto.Message.Message ZoneRequest
+messageZoneRequest : Proto.Message.Message Proto.Codec.Json ZoneRequest
 messageZoneRequest =
-    Proto.Message.message encodeZoneRequest decodeZoneRequest defaultZoneRequest Zones.V1.ZoneRequest.descriptor
+    Proto.Message.initJson "zones.v1.ZoneRequest" encodeZoneRequest decodeZoneRequest
 
 
-{-| The typed value of [`Zone`](#Zone): its codecs, default and descriptor together.
+{-| The typed value of [`Zone`](#Zone): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageZone : Proto.Message.Message Zone
+messageZone : Proto.Message.Message Proto.Codec.Json Zone
 messageZone =
-    Proto.Message.message encodeZone decodeZone defaultZone Zones.V1.Zone.descriptor
+    Proto.Message.initJson "zones.v1.Zone" encodeZone decodeZone
 
 
 

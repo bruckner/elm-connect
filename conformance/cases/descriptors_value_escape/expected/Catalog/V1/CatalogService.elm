@@ -42,7 +42,7 @@ Codecs: JSON. Described by [`descriptorGetEntry`](#descriptorGetEntry).
 getEntry : Catalog.V1.GetEntryRequest -> Rpc.Call Rpc.Json Catalog.V1.GetEntryRequest Catalog.V1.Entry
 getEntry =
     Rpc.call
-        (Proto.Method.json "catalog.v1.CatalogService"
+        (Proto.Method.initJson "catalog.v1.CatalogService"
             "GetEntry"
             Catalog.V1.encodeGetEntryRequest
             Catalog.V1.decodeEntry

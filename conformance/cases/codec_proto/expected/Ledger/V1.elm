@@ -18,6 +18,7 @@ import Ledger.V1.Entry
 import Ledger.V1.GetEntryRequest
 import Ledger.V1.Kind
 import Proto.Binary
+import Proto.Codec
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
@@ -128,18 +129,18 @@ enumKind =
     Proto.Enum.enum encodeKind decodeKind KindUnspecified Ledger.V1.Kind.descriptor
 
 
-{-| The typed value of [`Entry`](#Entry): its codecs, default and descriptor together.
+{-| The typed value of [`Entry`](#Entry): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageEntry : Proto.Message.Message Entry
+messageEntry : Proto.Message.Message Proto.Codec.Proto Entry
 messageEntry =
-    Proto.Message.messageBinary encodeEntryBytes decodeEntryBytes defaultEntry Ledger.V1.Entry.descriptor
+    Proto.Message.initProto "ledger.v1.Entry" encodeEntryBytes decodeEntryBytes
 
 
-{-| The typed value of [`GetEntryRequest`](#GetEntryRequest): its codecs, default and descriptor together.
+{-| The typed value of [`GetEntryRequest`](#GetEntryRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageGetEntryRequest : Proto.Message.Message GetEntryRequest
+messageGetEntryRequest : Proto.Message.Message Proto.Codec.Proto GetEntryRequest
 messageGetEntryRequest =
-    Proto.Message.messageBinary encodeGetEntryRequestBytes decodeGetEntryRequestBytes defaultGetEntryRequest Ledger.V1.GetEntryRequest.descriptor
+    Proto.Message.initProto "ledger.v1.GetEntryRequest" encodeGetEntryRequestBytes decodeGetEntryRequestBytes
 
 
 

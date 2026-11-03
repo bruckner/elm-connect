@@ -2,22 +2,27 @@
 
 Besides its types and codecs, generated code describes the protos as
 data: each message, enum, field and method has a descriptor, and each
-package holds its descriptors by full name. They are what `Proto.Any` and
-`Rpc.Error.details` read, and what a program uses to walk a message it
-was not written for.
+package holds its descriptors by full name. They are what
+`Proto.Any.describe` reads, and what a program uses to walk a message it
+was not written for; `Proto.Any` and `Rpc.Error.details` pack and read
+with the typed values.
 `google.rpc.Status`, the error detail types and the well-known types
 are listed with the other specifications in [specs.md](specs.md).
 
 ## Typed values
 
-Each message and enum has a typed value, holding its codecs, its
-default and its descriptor: `Notes.V1.messageNote :
-Proto.Message.Message Note` and `Notes.V1.enumVisibility :
-Proto.Enum.Enum Visibility`. `Proto.Message.encode`, `decoder`,
-`default` and `toDescriptor` read one; `Proto.Enum` adds `toName`,
-`fromName`, `toNumber` and `fromNumber`. A function that takes a typed
-value works for every message, as `Proto.Any.pack` and
-`Rpc.Error.details` below do.
+Each message has a typed value, holding its full name and the codecs of
+its world: `Notes.V1.messageNote : Proto.Message.Message Rpc.Json Note`
+under `codec=json`, a `Message Rpc.Proto Note` of binary codecs under
+`codec=proto` and `codec=both`. `Proto.Message.typeName` reads its name;
+the descriptor is `Notes.V1.Note.descriptor` and the default
+`Notes.V1.defaultNote`. Each enum's, `Notes.V1.enumVisibility :
+Proto.Enum.Enum Visibility`, holds its codecs, zero value and descriptor,
+read by `Proto.Enum.encode`, `decoder`, `default`, `toDescriptor`,
+`toName`, `fromName`, `toNumber` and `fromNumber`. A function that takes a
+typed value works for every message, as `Proto.Any.pack` and
+`Rpc.Error.details` below do. `Proto.WellKnown` gives the well-known
+types' in each world (`timestamp`, `timestampProto`).
 
 ## Descriptors
 
@@ -66,43 +71,51 @@ noteFields =
 ## Any
 
 `Proto.Any` packs a message into a `google.protobuf.Any` with its typed
-value, and unpacks one the same way: `Nothing` when it holds another
-type, `Just (Err problem)` when it holds this type but cannot be read.
+value, and unpacks one the same way. An `Any` holds the message in one
+form, its codec's: code generated with `codec=json` holds an `Any
+Rpc.Json`, packed with `packJson` and unpacked with `unpackJson`
+(`Nothing` when it holds another type or JSON not its message); with
+`codec=proto` or `codec=both` an `Any Rpc.Proto`, holding binary, packed
+with `pack` and unpacked with `unpack`. `tryUnpack` and `tryUnpackJson`
+say why one cannot be read: `TypeMismatch` naming the type it holds,
+`InvalidProto` or `InvalidJson`.
 
 ```elm examples/notes/elm/src/Snippets/Any.elm#any
 import Notes.V1
 import Proto.Any
+import Rpc
 
 
-packed : Proto.Any.Any
+packed : Proto.Any.Any Rpc.Json
 packed =
     -- {"@type": "type.googleapis.com/notes.v1.Note", "title": "groceries"}
     let
         note =
             Notes.V1.defaultNote
     in
-    Proto.Any.pack Notes.V1.messageNote { note | title = "groceries" }
+    Proto.Any.packJson Notes.V1.messageNote { note | title = "groceries" }
 
 
-title : Proto.Any.Any -> Maybe String
+title : Proto.Any.Any Rpc.Json -> Maybe String
 title any =
-    case Proto.Any.unpack Notes.V1.messageNote any of
-        Just (Ok note) ->
-            Just note.title
-
-        _ ->
-            Nothing
+    Proto.Any.unpackJson Notes.V1.messageNote any
+        |> Maybe.map .title
 ```
 
 `Proto.Any.is` tests an `Any`'s type, `typeUrl` and `typeName` read it,
-and `Proto.Any.describe descriptors any` finds its descriptor.
+`bytes` and `json` read its message, and `Proto.Any.describe descriptors
+any` finds its descriptor. Under `codec=both` an `Any`'s proto3 JSON goes
+through the package's `registry` ([generator.md](generator.md#the-registry)),
+and `Proto.Any.toJson` and `toProto` convert one between the forms with
+it.
 
 ## Error details
 
-An error's details are `Any`s, and `Rpc.Error.details` gives those of one
-type, here `google.rpc.BadRequest` from a package generated from
-`google/rpc/error_details.proto` (the notes example generates it with buf
-from googleapis):
+An error's details are `Any`s, each an `Rpc.Error.Detail` holding the
+forms it arrived in, and `Rpc.Error.details` and `detailsJson` give those
+of one type, here `google.rpc.BadRequest` from a package generated from
+`google/rpc/error_details.proto` (the notes example generates it, with the
+default codec, with buf from googleapis):
 
 ```elm examples/notes/elm/src/Snippets/Details.elm#details
 import Google.Rpc
@@ -112,7 +125,7 @@ import Rpc.Error
 
 violations : Rpc.Error -> List String
 violations error =
-    Rpc.Error.details Google.Rpc.messageBadRequest error
+    Rpc.Error.detailsJson Google.Rpc.messageBadRequest error
         |> List.concatMap .fieldViolations
         |> List.map .description
 ```
@@ -121,8 +134,9 @@ violations error =
 googleapis' `google/rpc/error_details.proto` like any other proto
 ([`examples/notes/buf.gen.google-rpc.yaml`](../examples/notes/buf.gen.google-rpc.yaml)
 does). A Connect server sends each detail as protobuf binary, with its
-JSON beside it as `debug` when it chooses to; a detail without `debug`
-keeps its type but does not unpack (`Proto.Any.BinaryOnly`).
+JSON beside it as `debug` when it chooses to; `detailsJson` reads only the
+JSON, and `details` only the binary. [calling.md](calling.md#error-details)
+says which to use when.
 
 ## Update masks
 
@@ -136,12 +150,18 @@ descriptors:
 {-| The `google.protobuf.FieldMask` of what changed from `before` to
 `after`, for an update request such as `UpdateNoteRequest`.
 -}
-updateMask : Descriptors -> Message a -> a -> a -> List String
+updateMask : Descriptors -> Message Json a -> a -> a -> List String
 updateMask descriptors message before after =
-    changedPaths descriptors
-        (Message.toDescriptor message)
-        (Message.encode message before)
-        (Message.encode message after)
+    let
+        json value =
+            Proto.Any.json (Proto.Any.packJson message value)
+    in
+    case Descriptors.message (Message.typeName message) descriptors of
+        Just descriptor ->
+            changedPaths descriptors descriptor (json before) (json after)
+
+        Nothing ->
+            []
 ```
 
 `changedPaths`, in the same file, compares the two values' JSON field by

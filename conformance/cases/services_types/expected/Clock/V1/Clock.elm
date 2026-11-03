@@ -41,7 +41,7 @@ Codecs: JSON. Described by [`descriptorNow`](#descriptorNow).
 now : () -> Rpc.Call Rpc.Json () Time.Posix
 now =
     Rpc.call
-        (Proto.Method.json "clock.v1.Clock"
+        (Proto.Method.initJson "clock.v1.Clock"
             "Now"
             Proto.Json.encodeEmpty
             Proto.Json.timestamp
@@ -58,7 +58,7 @@ Codecs: JSON. Described by [`descriptorSleep`](#descriptorSleep).
 sleep : Duration -> Rpc.Call Rpc.Json Duration ()
 sleep =
     Rpc.call
-        (Proto.Method.json "clock.v1.Clock"
+        (Proto.Method.initJson "clock.v1.Clock"
             "Sleep"
             Proto.Json.encodeDuration
             Proto.Json.empty
@@ -75,7 +75,7 @@ Codecs: JSON. Described by [`descriptorMask`](#descriptorMask).
 mask : List String -> Rpc.Call Rpc.Json (List String) (Dict String Json.Encode.Value)
 mask =
     Rpc.call
-        (Proto.Method.json "clock.v1.Clock"
+        (Proto.Method.initJson "clock.v1.Clock"
             "Mask"
             Proto.Json.encodeFieldMask
             Proto.Json.struct
@@ -92,7 +92,7 @@ Codecs: JSON. Described by [`descriptorEcho`](#descriptorEcho).
 echo : Json.Encode.Value -> Rpc.Call Rpc.Json Json.Encode.Value (List Json.Encode.Value)
 echo =
     Rpc.call
-        (Proto.Method.json "clock.v1.Clock"
+        (Proto.Method.initJson "clock.v1.Clock"
             "Echo"
             Basics.identity
             Proto.Json.listValue
@@ -109,7 +109,7 @@ Codecs: JSON. Described by [`descriptorTicks`](#descriptorTicks).
 ticks : Int -> Rpc.Call Rpc.Json Int Int
 ticks =
     Rpc.call
-        (Proto.Method.json "clock.v1.Clock"
+        (Proto.Method.initJson "clock.v1.Clock"
             "Ticks"
             Proto.Json.encodeInt64AsInt
             Proto.Json.uint64AsInt
@@ -126,7 +126,7 @@ Codecs: JSON. Described by [`descriptorCount`](#descriptorCount).
 count : Int -> Rpc.Call Rpc.Json Int Int
 count =
     Rpc.call
-        (Proto.Method.json "clock.v1.Clock"
+        (Proto.Method.initJson "clock.v1.Clock"
             "Count"
             Json.Encode.int
             Proto.Json.uint32
@@ -143,7 +143,7 @@ Codecs: JSON. Described by [`descriptorRatio`](#descriptorRatio).
 ratio : Float -> Rpc.Call Rpc.Json Float Float
 ratio =
     Rpc.call
-        (Proto.Method.json "clock.v1.Clock"
+        (Proto.Method.initJson "clock.v1.Clock"
             "Ratio"
             Proto.Json.encodeFloat
             Proto.Json.float32
@@ -160,7 +160,7 @@ Codecs: JSON. Described by [`descriptorName`](#descriptorName).
 name : String -> Rpc.Call Rpc.Json String Bool
 name =
     Rpc.call
-        (Proto.Method.json "clock.v1.Clock"
+        (Proto.Method.initJson "clock.v1.Clock"
             "Name"
             Json.Encode.string
             Json.Decode.bool
@@ -177,7 +177,7 @@ Codecs: JSON. Described by [`descriptorRaw`](#descriptorRaw).
 raw : String -> Rpc.Call Rpc.Json String String
 raw =
     Rpc.call
-        (Proto.Method.json "clock.v1.Clock"
+        (Proto.Method.initJson "clock.v1.Clock"
             "Raw"
             Proto.Json.encodeBytes
             Proto.Json.bytes
@@ -194,7 +194,7 @@ Codecs: JSON. Described by [`descriptorZone`](#descriptorZone).
 zone : Zones.V1.ZoneRequest -> Rpc.Call Rpc.Json Zones.V1.ZoneRequest Zones.V1.Zone
 zone =
     Rpc.call
-        (Proto.Method.json "clock.v1.Clock"
+        (Proto.Method.initJson "clock.v1.Clock"
             "Zone"
             Zones.V1.encodeZoneRequest
             Zones.V1.decodeZone
@@ -211,7 +211,7 @@ Codecs: JSON. Described by [`descriptorSet`](#descriptorSet).
 set : Clock.V1.Alarm -> Rpc.Call Rpc.Json Clock.V1.Alarm Clock.V1.Alarm
 set =
     Rpc.call
-        (Proto.Method.json "clock.v1.Clock"
+        (Proto.Method.initJson "clock.v1.Clock"
             "Set"
             Clock.V1.encodeAlarm
             Clock.V1.decodeAlarm

@@ -14,6 +14,7 @@ import FieldOrder.V1.DraftMargin
 import FieldOrder.V1.Mood
 import Json.Decode
 import Json.Encode
+import Proto.Codec
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
@@ -128,18 +129,18 @@ enumMood =
     Proto.Enum.enum encodeMood decodeMood MoodUnspecified FieldOrder.V1.Mood.descriptor
 
 
-{-| The typed value of [`Draft`](#Draft): its codecs, default and descriptor together.
+{-| The typed value of [`Draft`](#Draft): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageDraft : Proto.Message.Message Draft
+messageDraft : Proto.Message.Message Proto.Codec.Json Draft
 messageDraft =
-    Proto.Message.message encodeDraft decodeDraft defaultDraft FieldOrder.V1.Draft.descriptor
+    Proto.Message.initJson "field_order.v1.Draft" encodeDraft decodeDraft
 
 
-{-| The typed value of [`DraftMargin`](#DraftMargin): its codecs, default and descriptor together.
+{-| The typed value of [`DraftMargin`](#DraftMargin): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageDraftMargin : Proto.Message.Message DraftMargin
+messageDraftMargin : Proto.Message.Message Proto.Codec.Json DraftMargin
 messageDraftMargin =
-    Proto.Message.message encodeDraftMargin decodeDraftMargin defaultDraftMargin FieldOrder.V1.DraftMargin.descriptor
+    Proto.Message.initJson "field_order.v1.Draft.Margin" encodeDraftMargin decodeDraftMargin
 
 
 

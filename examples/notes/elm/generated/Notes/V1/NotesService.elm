@@ -60,7 +60,7 @@ Codecs: JSON. Described by [`descriptorGetNote`](#descriptorGetNote).
 getNote : Notes.V1.GetNoteRequest -> Rpc.Call Rpc.Json Notes.V1.GetNoteRequest Notes.V1.Note
 getNote =
     Rpc.call
-        (Proto.Method.json "notes.v1.NotesService"
+        (Proto.Method.initJson "notes.v1.NotesService"
             "GetNote"
             Notes.V1.encodeGetNoteRequest
             Notes.V1.decodeNote
@@ -81,7 +81,7 @@ Codecs: JSON. Described by [`descriptorListNotes`](#descriptorListNotes).
 listNotes : Notes.V1.ListNotesRequest -> Rpc.Call Rpc.Json Notes.V1.ListNotesRequest Notes.V1.ListNotesResponse
 listNotes =
     Rpc.call
-        (Proto.Method.json "notes.v1.NotesService"
+        (Proto.Method.initJson "notes.v1.NotesService"
             "ListNotes"
             Notes.V1.encodeListNotesRequest
             Notes.V1.decodeListNotesResponse
@@ -104,7 +104,7 @@ Codecs: JSON. Described by [`descriptorCreateNote`](#descriptorCreateNote).
 createNote : Notes.V1.CreateNoteRequest -> Rpc.Call Rpc.Json Notes.V1.CreateNoteRequest Notes.V1.Note
 createNote =
     Rpc.call
-        (Proto.Method.json "notes.v1.NotesService"
+        (Proto.Method.initJson "notes.v1.NotesService"
             "CreateNote"
             Notes.V1.encodeCreateNoteRequest
             Notes.V1.decodeNote
@@ -124,7 +124,7 @@ Codecs: JSON. Described by [`descriptorUpdateNote`](#descriptorUpdateNote).
 updateNote : Notes.V1.UpdateNoteRequest -> Rpc.Call Rpc.Json Notes.V1.UpdateNoteRequest Notes.V1.Note
 updateNote =
     Rpc.call
-        (Proto.Method.json "notes.v1.NotesService"
+        (Proto.Method.initJson "notes.v1.NotesService"
             "UpdateNote"
             Notes.V1.encodeUpdateNoteRequest
             Notes.V1.decodeNote
@@ -144,7 +144,7 @@ Codecs: JSON. Described by [`descriptorDeleteNote`](#descriptorDeleteNote).
 deleteNote : Notes.V1.DeleteNoteRequest -> Rpc.Call Rpc.Json Notes.V1.DeleteNoteRequest ()
 deleteNote =
     Rpc.call
-        (Proto.Method.json "notes.v1.NotesService"
+        (Proto.Method.initJson "notes.v1.NotesService"
             "DeleteNote"
             Notes.V1.encodeDeleteNoteRequest
             Proto.Json.empty
@@ -164,7 +164,7 @@ Codecs: JSON. Described by [`descriptorArchiveNote`](#descriptorArchiveNote).
 archiveNote : Notes.V1.ArchiveNoteRequest -> Rpc.Call Rpc.Json Notes.V1.ArchiveNoteRequest Notes.V1.Note
 archiveNote =
     Rpc.call
-        (Proto.Method.json "notes.v1.NotesService"
+        (Proto.Method.initJson "notes.v1.NotesService"
             "ArchiveNote"
             Notes.V1.encodeArchiveNoteRequest
             Notes.V1.decodeNote
@@ -185,7 +185,7 @@ Codecs: JSON. Described by [`descriptorPing`](#descriptorPing).
 ping : () -> Rpc.Call Rpc.Json () ()
 ping =
     Rpc.call
-        (Proto.Method.json "notes.v1.NotesService"
+        (Proto.Method.initJson "notes.v1.NotesService"
             "Ping"
             Proto.Json.encodeEmpty
             Proto.Json.empty

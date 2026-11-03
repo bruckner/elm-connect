@@ -142,7 +142,7 @@ describe trace =
 getNote : Notes.V1.GetNoteRequest -> Rpc.Call Rpc.Json Notes.V1.GetNoteRequest Notes.V1.Note
 getNote =
     Rpc.call
-        (Proto.Method.json "notes.v1.NotesService"
+        (Proto.Method.initJson "notes.v1.NotesService"
             "GetNote"
             Notes.V1.encodeGetNoteRequest
             Notes.V1.decodeNote
@@ -199,6 +199,15 @@ procedure call =
 
 
 -- endregion procedure
+{-
+   -- region before-details
+   violations : Rpc.Error -> List String
+   violations error =
+       Rpc.Error.details Google.Rpc.messageBadRequest error
+           |> List.concatMap .fieldViolations
+           |> List.map .description
+   -- endregion before-details
+-}
 {-
    -- region before-note-fields
    noteFields : List String

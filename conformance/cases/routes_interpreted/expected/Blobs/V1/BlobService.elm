@@ -40,7 +40,7 @@ Codecs: JSON. Described by [`descriptorGetBlob`](#descriptorGetBlob).
 getBlob : Blobs.V1.Blob -> Rpc.Call Rpc.Json Blobs.V1.Blob Blobs.V1.Blob
 getBlob =
     Rpc.call
-        (Proto.Method.json "blobs.v1.BlobService"
+        (Proto.Method.initJson "blobs.v1.BlobService"
             "GetBlob"
             Blobs.V1.encodeBlob
             Blobs.V1.decodeBlob
@@ -58,7 +58,7 @@ Codecs: JSON. Described by [`descriptorFindBlob`](#descriptorFindBlob).
 findBlob : Blobs.V1.Blob -> Rpc.Call Rpc.Json Blobs.V1.Blob Blobs.V1.Blob
 findBlob =
     Rpc.call
-        (Proto.Method.json "blobs.v1.BlobService"
+        (Proto.Method.initJson "blobs.v1.BlobService"
             "FindBlob"
             Blobs.V1.encodeBlob
             Blobs.V1.decodeBlob

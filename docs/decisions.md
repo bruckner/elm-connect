@@ -1083,7 +1083,9 @@ Where: design §5.1.
 
 ### `codec=proto`
 
-*2026-10-27.*
+*2026-10-27. The builders became `initJson`, `initProto` and `init`, and
+`binaryRegistry` became `registry`, on 2026-11-03 (Message is the value
+Any packs with; The registry is plumbed, not global).*
 
 The generator's option value for the binary codecs alone is `proto`,
 the name of the tag its calls carry (`Rpc.Call Rpc.Proto`) and of the
@@ -1179,6 +1181,106 @@ message resolves through: Go's `protoregistry.Files` and `Types`, C++'s
 `Registry`. `descriptors` is all lowercase like `registry` was, so no
 generated prefix and type name takes it, and `registry` stays free on
 the same terms. Where: design §3.9.
+
+### Message is the value Any packs with
+
+*2026-11-03.*
+
+`Proto.Message.Message codec a` holds a type name and the codecs of one
+world, nothing else: the descriptor is the generated `descriptor`, the
+default the generated `defaultNote`, and the readers that handed them
+back (`encode`, `decoder`, `default`, `encodeBytes`, `bytesDecoder`,
+`toDescriptor`) are gone, with `withBinary`, the `json` flag and the
+fillers. What remains is what `Proto.Any` packs and unpacks with, and its
+codec phantom is the one `Rpc.Protocol`, `Client`, `Call` and
+`Proto.Method` carry, so an application has one vocabulary: `codec=json`
+gives a `Message Json a`, `codec=proto` and `codec=both` a
+`Message Proto a`. The builders are `initJson` and `initProto`, and
+`Proto.Method`'s become `initJson`, `initProto` and `init` (they were
+`json`, `proto` and `both`) so that the two read alike; `typeName` reads the typed value, so the
+descriptor's reader of a full name is `fullName`. `Proto.WellKnown` gives
+each type once per world, the proto world's with `Proto` at the end. The
+road not taken: dissolving `Message` into the codec modules
+(`Proto.Json.Codec`, `Proto.Binary.Codec`) and packing with codecs
+directly. It would drop a type, but leave `Any`'s pack and unpack taking a
+pair of functions and a name an application must keep together, and
+split the codec vocabulary the rest of the API shares. Where: design
+§3.9.
+
+### Any is one form per tag
+
+*2026-11-03.*
+
+`Proto.Any.Any codec` holds the packed message in one form: an `Any
+Proto` its protobuf binary, an `Any Json` its proto3 JSON. Code generated
+with `codec=json` holds an `Any Json`, with `codec=proto` or `codec=both`
+an `Any Proto`: binary is canonical, as in Go, Java and protobuf-es, and
+under `both` the JSON is a projection through a registry, strict when
+read (an unknown type fails, as protojson does) and failing when written.
+The json world needs no table: its holder's codecs keep the form as it
+arrived, and the type is resolved once, when the application unpacks.
+The three-state payload (JSON, binary, both) goes, and with it the
+run-time mismatches it allowed: a binary-only `Any` written as JSON in a
+form no reader takes, a JSON-only one written to binary without its
+payload, and an unpack that found the wrong form (`BinaryOnly`), each now
+a compile error or a `Result`. The binary is held as base64 text, since
+Elm's `==` finds any two `Bytes` equal and an `Any` should compare by its
+content. One `Problem` type serves both unpacks and the encoders
+(`TypeMismatch`, `InvalidProto`, `InvalidJson`, `UnregisteredType`), each
+function documented with the ones it gives, rather than three types
+whose constructor names would have to differ. Where: design §3.5.
+
+### The registry is plumbed, not global
+
+*2026-11-03.*
+
+Writing an `Any Proto` as proto3 JSON needs the codecs of its type, and
+Elm has no global to look them up in. Each package generated with
+`codec=both` gets `registry`, a closed table of its messages' codecs, its
+imports' registries and the well-known types it holds. Its entries take
+the registry they are called through, so an application's wider table,
+a union of packages that do not import each other, reaches an `Any` at
+every depth: the driving case is an Envoy-style extension point, where a
+core message holds an `Any` of a plugin type the core package has never
+heard of. Every message, oneof and wrapper that reaches an `Any` has its
+JSON codecs in a pair, `decodeNoteWith : Registry -> Decoder Note` with
+`decodeNote` that applied to the package's table, and `encodeNoteWith :
+Registry -> Note -> Result Problem Value` with no default encoder: a
+total one would need a fallback form for a type the table lacks, and
+every candidate (Connect's detail form, `{"@type", "value"}`, the type
+URL alone) is a form some reader refuses or, worse, misreads. A method's
+calls apply the client's table (`Rpc.withRegistry`), else the package's,
+and a request the table cannot write is refused before it is sent,
+`NoAnswer (UnregisteredType name)`. The table is a value apart from the
+descriptors, built from codecs. Each generated method holds its
+package's table as its default, which also completes its errors'
+details, so a program calling a `codec=both` method keeps the table
+whatever its protocol: 14.3 KB gzipped on the codec corpus's packages,
+where binding an empty default to the methods whose types reach no
+`Any` would drop it from such programs and leave their details to the
+client's table. A program that only encodes and decodes messages that
+reach no `Any` keeps none of it. A generator option emitting
+one module with the union of every input package's tables is a later
+convenience. Where: design §3.5, §3.10, §5.1.
+
+### Error details are stored as they arrived
+
+*2026-11-03.*
+
+`Rpc.Error` is not indexed by codec, and a detail can arrive as binary
+(gRPC-Web, a Connect body's `value`), as JSON (a `google.rpc.Status`
+body) or both (a Connect body with `debug`). `StatusError.details` is a
+`List Detail`, a transparent record `{ proto : Maybe (Any Proto), json :
+Maybe (Any Json) }` of the forms that arrived, read by `details` (the
+binary side, with a `Message Proto a`) and `detailsJson` (the JSON side,
+with a `Message Json a`). Under `codec=both` the protocol completes the
+missing side of every detail whose type the registry in use has, so
+either reader works; a type it lacks stays one-sided. The json world's
+answer to a Connect detail without `debug` is documentation rather than
+code: enable `debug` on the server, or generate the detail types
+(usually `google/rpc/error_details.proto`) under `codec=proto` or `both`
+and read them with `details`. Bundling those codecs in the runtime was
+declined as heavy for every program. Where: design §5.4, calling.md.
 
 ## Input and versioning
 

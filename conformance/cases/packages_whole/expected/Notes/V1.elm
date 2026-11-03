@@ -15,6 +15,7 @@ import Json.Decode
 import Json.Encode
 import Notes.V1.Note
 import Notes.V1.Tag
+import Proto.Codec
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
@@ -79,18 +80,18 @@ defaultTag =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Note`](#Note): its codecs, default and descriptor together.
+{-| The typed value of [`Note`](#Note): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageNote : Proto.Message.Message Note
+messageNote : Proto.Message.Message Proto.Codec.Json Note
 messageNote =
-    Proto.Message.message encodeNote decodeNote defaultNote Notes.V1.Note.descriptor
+    Proto.Message.initJson "notes.v1.Note" encodeNote decodeNote
 
 
-{-| The typed value of [`Tag`](#Tag): its codecs, default and descriptor together.
+{-| The typed value of [`Tag`](#Tag): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageTag : Proto.Message.Message Tag
+messageTag : Proto.Message.Message Proto.Codec.Json Tag
 messageTag =
-    Proto.Message.message encodeTag decodeTag defaultTag Notes.V1.Tag.descriptor
+    Proto.Message.initJson "notes.v1.Tag" encodeTag decodeTag
 
 
 

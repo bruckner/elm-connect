@@ -17,6 +17,7 @@ import Awkward.V1.Docs
 import Awkward.V1.Marks
 import Json.Decode
 import Json.Encode
+import Proto.Codec
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
@@ -196,18 +197,18 @@ enumMarks =
     Proto.Enum.enum encodeMarks decodeMarks MarksUnspecified Awkward.V1.Marks.descriptor
 
 
-{-| The typed value of [`Delimiters`](#Delimiters): its codecs, default and descriptor together.
+{-| The typed value of [`Delimiters`](#Delimiters): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageDelimiters : Proto.Message.Message Delimiters
+messageDelimiters : Proto.Message.Message Proto.Codec.Json Delimiters
 messageDelimiters =
-    Proto.Message.message encodeDelimiters decodeDelimiters defaultDelimiters Awkward.V1.Delimiters.descriptor
+    Proto.Message.initJson "awkward.v1.Delimiters" encodeDelimiters decodeDelimiters
 
 
-{-| The typed value of [`Docs`](#Docs): its codecs, default and descriptor together.
+{-| The typed value of [`Docs`](#Docs): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageDocs : Proto.Message.Message Docs
+messageDocs : Proto.Message.Message Proto.Codec.Json Docs
 messageDocs =
-    Proto.Message.message encodeDocs decodeDocs defaultDocs Awkward.V1.Docs.descriptor
+    Proto.Message.initJson "awkward.v1.Docs" encodeDocs decodeDocs
 
 
 

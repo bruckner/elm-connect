@@ -12,6 +12,7 @@ import Json.Encode
 import Naming.V1.HttpMethod
 import Naming.V1.Shape
 import Naming.V1.Tag
+import Proto.Codec
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
@@ -146,11 +147,11 @@ enumHttpMethod =
     Proto.Enum.enum encodeHttpMethod decodeHttpMethod HttpMethodUnspecified Naming.V1.HttpMethod.descriptor
 
 
-{-| The typed value of [`Tag`](#Tag): its codecs, default and descriptor together.
+{-| The typed value of [`Tag`](#Tag): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageTag : Proto.Message.Message Tag
+messageTag : Proto.Message.Message Proto.Codec.Json Tag
 messageTag =
-    Proto.Message.message encodeTag decodeTag defaultTag Naming.V1.Tag.descriptor
+    Proto.Message.initJson "naming.v1.Tag" encodeTag decodeTag
 
 
 

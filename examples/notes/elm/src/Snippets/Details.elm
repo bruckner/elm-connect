@@ -13,7 +13,7 @@ import Rpc.Error
 
 violations : Rpc.Error -> List String
 violations error =
-    Rpc.Error.details Google.Rpc.messageBadRequest error
+    Rpc.Error.detailsJson Google.Rpc.messageBadRequest error
         |> List.concatMap .fieldViolations
         |> List.map .description
 

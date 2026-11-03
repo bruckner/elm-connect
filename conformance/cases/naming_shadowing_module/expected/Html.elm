@@ -13,6 +13,7 @@ depends on elm/html cannot import `Html`. Its descriptor module
 import Html.Attributes
 import Json.Decode
 import Json.Encode
+import Proto.Codec
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
@@ -56,11 +57,11 @@ defaultAttributes =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Attributes`](#Attributes): its codecs, default and descriptor together.
+{-| The typed value of [`Attributes`](#Attributes): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageAttributes : Proto.Message.Message Attributes
+messageAttributes : Proto.Message.Message Proto.Codec.Json Attributes
 messageAttributes =
-    Proto.Message.message encodeAttributes decodeAttributes defaultAttributes Html.Attributes.descriptor
+    Proto.Message.initJson "html.Attributes" encodeAttributes decodeAttributes
 
 
 
