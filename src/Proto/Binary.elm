@@ -9,7 +9,7 @@ module Proto.Binary exposing
     , int64AsInt, sint64AsInt, sfixed64AsInt, uint64AsInt, fixed64AsInt
     , bool, string, bytes, bytesAsBytes, enum
     , embedded, messageEncoder, messageDecoder
-    , timestamp, duration, fieldMask, empty, struct, listValue, value, any, anyWith
+    , timestamp, duration, fieldMask, empty, struct, listValue, value, any
     , doubleValue, floatValue, int64Value, int64ValueAsInt, uint64Value, uint64ValueAsInt
     , int32Value, uint32Value, boolValue, stringValue, bytesValue, bytesValueAsBytes
     )
@@ -72,7 +72,7 @@ outside ±(2^53 − 1).
 
 # Well-known types
 
-@docs timestamp, duration, fieldMask, empty, struct, listValue, value, any, anyWith
+@docs timestamp, duration, fieldMask, empty, struct, listValue, value, any
 @docs doubleValue, floatValue, int64Value, int64ValueAsInt, uint64Value, uint64ValueAsInt
 @docs int32Value, uint32Value, boolValue, stringValue, bytesValue, bytesValueAsBytes
 
@@ -86,10 +86,10 @@ import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
 import Proto.Bytes
+import Proto.Codec exposing (Proto)
 import Proto.Duration exposing (Duration)
 import Proto.Internal.Any as InternalAny exposing (Any, Payload(..))
 import Proto.Internal.Binary as Internal
-import Proto.Registry exposing (Registry)
 import Time
 
 
@@ -1414,34 +1414,17 @@ writeValue json =
             present int32 1 0
 
 
-{-| `google.protobuf.Any`: read, it holds the packed message's binary, which
-[`Proto.Any.unpack`](Proto-Any#unpack) decodes with a message that has binary
-codecs. Written, an `Any` packed from such a message writes that binary; one
-holding a message's JSON alone, as one read from proto3 JSON does, is written
-with its type URL alone, since no binary encoder is at hand: generated code
-under `codec=both` writes with [`anyWith`](#anyWith) its package's
-`binaryRegistry`, which converts the JSON. One that arrives twice is merged field by field: the
-type URL or the value the later one carries replaces the earlier one's.
+{-| `google.protobuf.Any`, holding the packed message's binary, which
+[`Proto.Any.unpack`](Proto-Any#unpack) decodes. One that arrives twice is
+merged field by field: the type URL or the value the later one carries
+replaces the earlier one's.
 -}
-any : Codec Any
+any : Codec (Any Proto)
 any =
-    anyWith Proto.Registry.empty
+    embedded writeAny anyInto InternalAny.emptyProto
 
 
-{-| [`any`](#any), writing an `Any` that holds a message's JSON alone as the
-message's binary when the registry has the message's codecs
-([`Proto.Registry.withBinary`](Proto-Registry#withBinary)), and with its type
-URL alone when it does not.
-
-    Proto.Binary.optional (Proto.Binary.anyWith Notes.V1.binaryRegistry) 13 value.attachment
-
--}
-anyWith : Registry -> Codec Any
-anyWith registry =
-    embedded (writeAny registry) anyInto (InternalAny.Any "" (InBinary ""))
-
-
-anyInto : Any -> Decoder Any
+anyInto : Any Proto -> Decoder (Any Proto)
 anyInto (InternalAny.Any start payload) =
     Internal.Decoder
         (message ( start, payload )
@@ -1451,7 +1434,7 @@ anyInto (InternalAny.Any start payload) =
                         field string (\v -> ( v, current )) wire ( url, current )
 
                     2 ->
-                        field bytes (\v -> ( url, InBinary v )) wire ( url, current )
+                        field bytes (\v -> ( url, InProto v )) wire ( url, current )
 
                     _ ->
                         skip wire ( url, current )
@@ -1461,22 +1444,9 @@ anyInto (InternalAny.Any start payload) =
         )
 
 
-writeAny : Registry -> Any -> Encoder
-writeAny registry (InternalAny.Any url payload) =
-    case payload of
-        InBinary base64 ->
-            E.sequence [ implicit string 1 url, implicit bytes 2 base64 ]
-
-        InBoth _ base64 ->
-            E.sequence [ implicit string 1 url, implicit bytes 2 base64 ]
-
-        InJson json ->
-            case Proto.Registry.toBinary (InternalAny.nameOf url) json registry of
-                Just body ->
-                    E.sequence [ implicit string 1 url, implicit bytesAsBytes 2 body ]
-
-                Nothing ->
-                    implicit string 1 url
+writeAny : Any Proto -> Encoder
+writeAny (InternalAny.Any url payload) =
+    E.sequence [ implicit string 1 url, implicit bytes 2 (InternalAny.base64Of payload) ]
 
 
 wrapper : Codec v -> Codec v

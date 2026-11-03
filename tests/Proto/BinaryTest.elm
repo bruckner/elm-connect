@@ -18,10 +18,10 @@ import Fuzz
 import Json.Encode
 import Proto.Any
 import Proto.Binary as B
+import Proto.Bytes
+import Proto.Codec exposing (Proto)
 import Proto.Duration
-import Proto.Json
-import Proto.Message
-import Proto.WellKnown
+import Proto.Internal.Any
 import Test exposing (Test, describe, fuzz, test)
 import Time
 
@@ -683,7 +683,7 @@ wellKnown =
             \_ ->
                 let
                     one =
-                        single B.any (Proto.Message.default Proto.WellKnown.any)
+                        single B.any Proto.Internal.Any.emptyProto
 
                     hex =
                         "0a0d0a07612f622e632e4412020801"
@@ -692,7 +692,7 @@ wellKnown =
                         B.decode one.decode (fromHex hex)
                 in
                 Expect.all
-                    [ \_ -> decoded |> Maybe.map anyText |> Expect.equal (Just """{"type":"b.c.D","value":"CAE="}""")
+                    [ \_ -> decoded |> Maybe.map anyText |> Expect.equal (Just "b.c.D CAE=")
                     , \_ -> decoded |> Maybe.map (toHex << B.encode one.encode) |> Expect.equal (Just hex)
                     ]
                     ()
@@ -772,8 +772,8 @@ wellKnownMerges =
         , test "Any merges field by field: the later type URL or value replaces the earlier" <|
             \_ ->
                 Expect.all
-                    [ \_ -> mergesTo B.any anyText "0a090a03612f7812020801 0a0412020802" (Just """{"type":"x","value":"CAI="}""")
-                    , \_ -> mergesTo B.any anyText "0a090a03612f7812020801 0a050a03612f79" (Just """{"type":"y","value":"CAE="}""")
+                    [ \_ -> mergesTo B.any anyText "0a090a03612f7812020801 0a0412020802" (Just "x CAI=")
+                    , \_ -> mergesTo B.any anyText "0a090a03612f7812020801 0a050a03612f79" (Just "y CAE=")
                     ]
                     ()
         ]
@@ -807,9 +807,9 @@ posixText =
     String.fromInt << Time.posixToMillis
 
 
-anyText : Proto.Any.Any -> String
-anyText =
-    Json.Encode.encode 0 << Proto.Json.encodeAny
+anyText : Proto.Any.Any Proto -> String
+anyText any =
+    Proto.Any.typeName any ++ " " ++ Proto.Bytes.toBase64 (Proto.Any.bytes any)
 
 
 
