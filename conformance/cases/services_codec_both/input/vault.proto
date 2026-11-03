@@ -1,0 +1,46 @@
+// Under codec=both a service's methods are built by Proto.Method.both,
+// with JSON and binary codecs and, for GetItem, its route. The package's
+// binaryRegistry sits beside the service, and Item's binary encoder writes
+// its Any fields with Proto.Binary.anyWith binaryRegistry.
+syntax = "proto3";
+
+package vault.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/any.proto";
+
+enum Status {
+  STATUS_UNSPECIFIED = 0;
+  STATUS_SEALED = 1;
+  STATUS_OPEN = 2;
+}
+
+message Item {
+  string name = 1;
+  int64 size = 2;
+  Status status = 3;
+  google.protobuf.Any payload = 4;
+  repeated google.protobuf.Any attachments = 5;
+}
+
+message GetItemRequest {
+  string name = 1;
+}
+
+message ListItemsRequest {
+  int32 page_size = 1;
+}
+
+message ListItemsResponse {
+  repeated Item items = 1;
+}
+
+service VaultService {
+  rpc GetItem(GetItemRequest) returns (Item) {
+    option (google.api.http) = {
+      get: "/v1/{name=items/*}"
+    };
+  }
+  rpc ListItems(ListItemsRequest) returns (ListItemsResponse);
+  rpc PutItem(Item) returns (Item);
+}

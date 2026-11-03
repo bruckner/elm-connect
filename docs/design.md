@@ -1904,8 +1904,8 @@ registry =
   JSON decoders, `Any` fields take `Proto.Binary.any`, which writes an
   `Any` holding JSON alone with its type URL alone.
 - **Checked** by the binary round trips (§7) and the corpus cases
-  `codec_both` (the codec protos under `codec=both`) and
-  `codec_proto`.
+  `codec_both` (the codec protos under `codec=both`), `codec_proto`
+  and `services_codec_both` (a service under `codec=both`).
 
 ## 4. Calls
 
