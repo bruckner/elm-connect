@@ -2,6 +2,7 @@ module Proto.Json exposing
     ( field, fieldEither, valueField, valueFieldEither, emptyMessage
     , objectOfFields
     , implicitField, implicitFloatField, implicitBytesField, repeatedField, dictField, boolMapField
+    , tryObjectOfFields, tryOptionalField, tryRepeatedField, tryDictField, tryBoolMapField
     , oneof, members, Member, member, memberEither
     , emptyMember, emptyMemberEither, valueMember, valueMemberEither
     , nullValueMember, nullValueMemberEither
@@ -56,6 +57,25 @@ reads a missing field as its default, so nothing is lost.
 
 @docs objectOfFields
 @docs implicitField, implicitFloatField, implicitBytesField, repeatedField, dictField, boolMapField
+
+
+# Encoding fields that can fail
+
+A message that holds a `google.protobuf.Any`, directly or through its fields,
+is encoded by a function that can fail, when the `Any`'s type cannot be
+written as JSON. Its fields are encoded with the helpers above wrapped in
+`Ok`, and with these where a value's encoder gives a `Result`. Each is the
+helper named without `try`, taking an encoder that gives a `Result`, and gives
+the first `Err` its values meet, else `Ok` of what the other would.
+
+    encodeEnvelopeWith : Registry -> Envelope -> Result Problem Value
+    encodeEnvelopeWith types value =
+        tryObjectOfFields
+            [ ( "id", Ok (implicitField "" Json.Encode.string value.id) )
+            , ( "payload", tryOptionalField (encodeAnyWith types) value.payload )
+            ]
+
+@docs tryObjectOfFields, tryOptionalField, tryRepeatedField, tryDictField, tryBoolMapField
 
 
 # Oneofs
@@ -591,6 +611,84 @@ boolMapField encode pairs =
 
     else
         Just (encodeBoolMap encode pairs)
+
+
+{-| [`objectOfFields`](#objectOfFields) of fields whose JSON may have failed:
+the first `Err`, in order, or the object.
+-}
+tryObjectOfFields : List ( String, Result x (Maybe Value) ) -> Result x Value
+tryObjectOfFields fields =
+    collect (\( key, result ) -> Result.map (Tuple.pair key) result) fields
+        |> Result.map objectOfFields
+
+
+{-| A field with presence: `Ok Nothing` when it is `Nothing`, else its value's
+JSON, or that value's `Err`.
+-}
+tryOptionalField : (a -> Result x Value) -> Maybe a -> Result x (Maybe Value)
+tryOptionalField encode value =
+    case value of
+        Just present ->
+            Result.map Just (encode present)
+
+        Nothing ->
+            Ok Nothing
+
+
+{-| [`repeatedField`](#repeatedField): the first element's `Err`, or the
+field.
+-}
+tryRepeatedField : (a -> Result x Value) -> List a -> Result x (Maybe Value)
+tryRepeatedField encode values =
+    collect encode values
+        |> Result.map (repeatedField identity)
+
+
+{-| [`dictField`](#dictField): the first value's `Err`, by key order, or the
+field.
+-}
+tryDictField : (k -> String) -> (v -> Result x Value) -> Dict.Dict k v -> Result x (Maybe Value)
+tryDictField key encode entries =
+    collect (\( k, v ) -> Result.map (Tuple.pair (key k)) (encode v)) (Dict.toList entries)
+        |> Result.map
+            (\pairs ->
+                if List.isEmpty pairs then
+                    Nothing
+
+                else
+                    Just (objectOf pairs)
+            )
+
+
+{-| [`boolMapField`](#boolMapField): the first value's `Err`, in order, or
+the field.
+-}
+tryBoolMapField : (a -> Result x Value) -> List ( Bool, a ) -> Result x (Maybe Value)
+tryBoolMapField encode pairs =
+    collect (\( k, v ) -> Result.map (Tuple.pair k) (encode v)) pairs
+        |> Result.map (boolMapField identity)
+
+
+{-| Each item's result, in order, stopping at the first `Err`.
+-}
+collect : (a -> Result x b) -> List a -> Result x (List b)
+collect f items =
+    collectHelp f items []
+
+
+collectHelp : (a -> Result x b) -> List a -> List b -> Result x (List b)
+collectHelp f items done =
+    case items of
+        [] ->
+            Ok (List.reverse done)
+
+        item :: rest ->
+            case f item of
+                Ok value ->
+                    collectHelp f rest (value :: done)
+
+                Err problem ->
+                    Err problem
 
 
 {-| Decode a oneof in a decoding pipeline: unlike [`field`](#field), the
