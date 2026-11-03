@@ -1,7 +1,7 @@
 module Rpc exposing
     ( Json, Proto
     , Call, call
-    , Client, client
+    , Client, client, withRegistry
     , task, send, cancel
     , taskTraced, sendTraced
     , Error, Response
@@ -61,7 +61,7 @@ instead.
 
 # Clients
 
-@docs Client, client
+@docs Client, client, withRegistry
 
 [`Rpc.Client`](Rpc-Client) sets a client's headers, timeout, credentials and
 retry policy, and [`Rpc.Protocol`](Rpc-Protocol) its protocol.
@@ -100,6 +100,7 @@ import Bytes exposing (Bytes)
 import Dict exposing (Dict)
 import Http
 import Proto.Method exposing (Method)
+import Proto.Registry exposing (Registry)
 import Rpc.Call
 import Rpc.Client
 import Rpc.Code exposing (Code)
@@ -166,7 +167,7 @@ applies it to each method's [`Method`](Proto-Method#Method):
 
     getNote =
         Rpc.call
-            (Method.json "notes.v1.NotesService"
+            (Method.initJson "notes.v1.NotesService"
                 "GetNote"
                 Notes.V1.encodeGetNoteRequest
                 Notes.V1.decodeNote
@@ -206,6 +207,26 @@ type alias Client codec =
 client : Protocol codec -> String -> Client codec
 client =
     Rpc.Client.client
+
+
+{-| The registry the client's calls convert a `google.protobuf.Any` through,
+in place of the one each method was generated with (its package's
+`registry`): one wider than a package's, holding the types an application
+packs from packages the method's does not import.
+
+    Rpc.client Rpc.Protocol.connect "https://api.example.com"
+        |> Rpc.withRegistry (Proto.Registry.unionAll [ Notes.V1.registry, Plugins.V1.registry ])
+
+Over JSON, a call whose request holds an `Any` of a type the registry lacks is
+not sent: it fails with `NoAnswer (UnregisteredType name)`, and a response
+holding one fails to decode. Over protobuf binary an `Any` needs no registry.
+Either way, an error's details are completed through it
+([`Rpc.Error.Detail`](Rpc-Error#Detail)).
+
+-}
+withRegistry : Registry -> Client codec -> Client codec
+withRegistry registry (Client.Client c) =
+    Client.Client { c | registry = Just registry }
 
 
 

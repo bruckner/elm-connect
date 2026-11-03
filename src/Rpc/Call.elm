@@ -222,8 +222,10 @@ requestMessage (Internal.Call c) =
     c.message
 
 
-{-| The request's proto3 JSON; `null` for a call of a method generated with
-protobuf binary codecs alone (`codec=proto`).
+{-| The request's proto3 JSON, with the method's own registry; `null` for a
+call of a method generated with protobuf binary codecs alone (`codec=proto`),
+and for a request holding a `google.protobuf.Any` of a type the registry
+lacks.
 -}
 requestJson : Call codec req res -> Value
 requestJson (Internal.Call c) =
@@ -232,7 +234,7 @@ requestJson (Internal.Call c) =
             c.method
     in
     if m.codecs.json then
-        m.json.encode c.message
+        Proto.Method.encodeRequest c.method c.message
 
     else
         Json.Encode.null

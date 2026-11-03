@@ -20,7 +20,9 @@ import Bytes exposing (Bytes)
 import Http
 import Json.Decode exposing (Decoder)
 import Json.Encode
+import Proto.Any exposing (Problem(..))
 import Proto.Internal.Method exposing (Method(..))
+import Proto.Registry
 import Proto.Route exposing (PathError)
 import Rpc.Code as Code
 import Rpc.Error as Error exposing (Error, Reason)
@@ -37,6 +39,9 @@ import Rpc.Request exposing (Request)
 
   - `request`: the request it sends, built when asked for.
   - `invalid`: the first path value its route's template cannot match.
+  - `unencodable`: over JSON, the type of an `Any` its request holds that
+    the registry in use cannot write, found when asked for and only for a
+    method whose encoder can fail.
   - `tooLarge`: whether its message is over the protocol's write limit,
     measured when asked for.
   - `reader`: how its answer is read, as text or as bytes.
@@ -51,6 +56,7 @@ import Rpc.Request exposing (Request)
 type alias Plan res =
     { request : () -> Request
     , invalid : Maybe PathError
+    , unencodable : () -> Maybe String
     , tooLarge : () -> Maybe Reason
     , reader : Reader res
     , binding : Maybe Int
@@ -68,7 +74,9 @@ type Reader res
 
 
 {-| A call's plan over a client. The route is built only over a protocol
-that reads routes, once, and shared by the request and the answer.
+that reads routes, once, and shared by the request and the answer. The
+method's JSON codecs, and the reading of a status's details, use the
+client's registry, else the method's own.
 -}
 plan : Client codec -> Call codec req res -> Plan res
 plan (Client cl) (Call c) =
@@ -78,6 +86,14 @@ plan (Client cl) (Call c) =
 
         (Method m) =
             c.method
+
+        registry =
+            case cl.registry of
+                Just given ->
+                    given
+
+                Nothing ->
+                    Maybe.withDefault Proto.Registry.empty m.registry
 
         -- Built only for a request: reading an answer needs none of it.
         settings () =
@@ -110,18 +126,31 @@ plan (Client cl) (Call c) =
                     Maybe.andThen .responseBody route
 
                 json () =
-                    m.json.encode c.message
+                    Result.withDefault Json.Encode.null (m.json.encode registry c.message)
             in
             { request = \() -> wire.build p.options (settings ()) route json
             , invalid = Maybe.andThen .invalid route
+            , unencodable =
+                \() ->
+                    m.registry
+                        |> Maybe.andThen
+                            (\_ ->
+                                case m.json.encode registry c.message of
+                                    Ok _ ->
+                                        Nothing
+
+                                    Err problem ->
+                                        Just (unregistered problem)
+                            )
             , tooLarge = \() -> wire.tooLarge p.options json
             , reader =
                 TextReader
                     (\answer ->
                         wire.message wire.overRead p.options responseBody answer
+                            |> Result.mapError (Status.completeDetails registry)
                             |> Result.andThen
                                 (\good ->
-                                    Json.Decode.decodeString (fieldDecoder good.field m.json.decoder) good.text
+                                    Json.Decode.decodeString (fieldDecoder good.field (m.json.decoder registry)) good.text
                                         |> Result.mapError (badText good)
                                 )
                     )
@@ -138,6 +167,7 @@ plan (Client cl) (Call c) =
             in
             { request = \() -> wire.build wire.base64 p.options (settings ()) (encoder ())
             , invalid = Nothing
+            , unencodable = \() -> Nothing
             , tooLarge = \() -> wire.tooLarge wire.width p.options encoder
             , reader =
                 BytesReader
@@ -147,16 +177,16 @@ plan (Client cl) (Call c) =
                                 wire.message (wire.overRead wire.width) p.options (m.service ++ "/" ++ m.name) answer
                         in
                         ( metadata
-                        , Result.andThen
-                            (\message ->
-                                case m.binary.decode message.bytes of
-                                    Just value ->
-                                        Ok value
+                        , Result.mapError (Status.completeDetails registry) read
+                            |> Result.andThen
+                                (\message ->
+                                    case m.binary.decode message.bytes of
+                                        Just value ->
+                                            Ok value
 
-                                    Nothing ->
-                                        Err (message.bad ())
-                            )
-                            read
+                                        Nothing ->
+                                            Err (message.bad ())
+                                )
                         )
                     )
             , binding = Nothing
@@ -164,6 +194,25 @@ plan (Client cl) (Call c) =
             , timeoutHeader = wire.timeoutHeader
             , base64 = Just wire.base64
             }
+
+
+{-| The type a request encoder could not write. Encoders give only
+`UnregisteredType`; the other problems are unpacking's.
+-}
+unregistered : Problem -> String
+unregistered problem =
+    case problem of
+        UnregisteredType name ->
+            name
+
+        TypeMismatch name ->
+            name
+
+        InvalidProto ->
+            ""
+
+        InvalidJson _ ->
+            ""
 
 
 {-| The response decoder reading the answer as the field `responseBody` names,
@@ -197,7 +246,8 @@ badText good problem =
 
 
 {-| Why `sent`, the plan's request or one an application rewrote, must not
-reach elm/http: a base URL holding a query or a fragment; a path value its
+reach elm/http: a base URL holding a query or a fragment; a request holding
+an `Any` the registry in use cannot write as JSON; a path value its
 variable's template cannot match, which no server can route to the method; a
 header a browser refuses, on which XHR's `setRequestHeader` throws outside
 elm/http's handler and stops the program for good; or a request message over
@@ -210,14 +260,17 @@ refused baseUrl p sent =
         Just (Error.NoAnswer (Error.BadUrl sent.url))
 
     else
-        case ( p.invalid, Internal.invalidHeader sent.headers ) of
-            ( Just path, _ ) ->
+        case ( p.unencodable (), p.invalid, Internal.invalidHeader sent.headers ) of
+            ( Just name, _, _ ) ->
+                Just (Error.NoAnswer (Error.UnregisteredType name))
+
+            ( Nothing, Just path, _ ) ->
                 Just (Error.NoAnswer (Error.InvalidPathValue path))
 
-            ( Nothing, Just name ) ->
+            ( Nothing, Nothing, Just name ) ->
                 Just (Error.NoAnswer (Error.InvalidHeader name))
 
-            ( Nothing, Nothing ) ->
+            ( Nothing, Nothing, Nothing ) ->
                 p.tooLarge () |> Maybe.map Error.NoAnswer
 
 

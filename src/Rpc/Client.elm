@@ -70,6 +70,7 @@ client over url =
         , timeout = Nothing
         , withCredentials = False
         , retry = Nothing
+        , registry = Nothing
         }
 
 

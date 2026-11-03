@@ -11,6 +11,7 @@ import Json.Encode
 import Proto.Binary
 import Proto.Bytes
 import Proto.Method exposing (Idempotency(..))
+import Proto.Registry
 import Rpc
 import Rpc.Body
 import Rpc.Call
@@ -67,17 +68,17 @@ getNoteIn =
 -}
 both : GetNote -> Rpc.Call codec GetNote String
 both =
-    Rpc.call (getNoteIn (Proto.Method.both "notes.v1.Notes" "GetNote" encodeGetNote decodeTitle encodeGetNoteBytes decodeTitleBytes))
+    Rpc.call (getNoteIn (Proto.Method.init "notes.v1.Notes" "GetNote" Proto.Registry.empty (\_ -> encodeGetNote >> Ok) (\_ -> decodeTitle) encodeGetNoteBytes decodeTitleBytes))
 
 
 jsonOnly : GetNote -> Rpc.Call Rpc.Json GetNote String
 jsonOnly =
-    Rpc.call (getNoteIn (Proto.Method.json "notes.v1.Notes" "GetNote" encodeGetNote decodeTitle))
+    Rpc.call (getNoteIn (Proto.Method.initJson "notes.v1.Notes" "GetNote" encodeGetNote decodeTitle))
 
 
 binaryOnly : GetNote -> Rpc.Call Rpc.Proto GetNote String
 binaryOnly =
-    Rpc.call (getNoteIn (Proto.Method.proto "notes.v1.Notes" "GetNote" encodeGetNoteBytes decodeTitleBytes))
+    Rpc.call (getNoteIn (Proto.Method.initProto "notes.v1.Notes" "GetNote" encodeGetNoteBytes decodeTitleBytes))
 
 
 base : Rpc.Client Rpc.Json
