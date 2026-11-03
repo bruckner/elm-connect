@@ -6,6 +6,7 @@ module Range.V1 exposing (..)
 
 import Json.Decode
 import Json.Encode
+import Proto.Codec
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
@@ -61,11 +62,11 @@ defaultBounds =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Bounds`](#Bounds): its codecs, default and descriptor together.
+{-| The typed value of [`Bounds`](#Bounds): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageBounds : Proto.Message.Message Bounds
+messageBounds : Proto.Message.Message Proto.Codec.Json Bounds
 messageBounds =
-    Proto.Message.message encodeBounds decodeBounds defaultBounds Range.V1.Bounds.descriptor
+    Proto.Message.initJson "range.v1.Bounds" encodeBounds decodeBounds
 
 
 

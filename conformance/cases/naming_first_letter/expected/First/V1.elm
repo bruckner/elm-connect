@@ -14,6 +14,7 @@ import First.V1.Link
 import First.V1.URLPath
 import Json.Decode
 import Json.Encode
+import Proto.Codec
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
@@ -135,18 +136,18 @@ defaultLink =
 -- TYPED VALUES
 
 
-{-| The typed value of [`URLPath`](#URLPath): its codecs, default and descriptor together.
+{-| The typed value of [`URLPath`](#URLPath): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageURLPath : Proto.Message.Message URLPath
+messageURLPath : Proto.Message.Message Proto.Codec.Json URLPath
 messageURLPath =
-    Proto.Message.message encodeURLPath decodeURLPath defaultURLPath First.V1.URLPath.descriptor
+    Proto.Message.initJson "first.v1.URLPath" encodeURLPath decodeURLPath
 
 
-{-| The typed value of [`Link`](#Link): its codecs, default and descriptor together.
+{-| The typed value of [`Link`](#Link): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageLink : Proto.Message.Message Link
+messageLink : Proto.Message.Message Proto.Codec.Json Link
 messageLink =
-    Proto.Message.message encodeLink decodeLink defaultLink First.V1.Link.descriptor
+    Proto.Message.initJson "first.v1.Link" encodeLink decodeLink
 
 
 

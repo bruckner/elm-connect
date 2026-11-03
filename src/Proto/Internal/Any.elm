@@ -1,7 +1,13 @@
-module Proto.Internal.Any exposing (Any(..), Payload(..), jsonOf, nameOf)
+module Proto.Internal.Any exposing (Any(..), Payload(..), base64Of, emptyJson, emptyProto, jsonOf, nameOf)
 
-{-| The `Any` type, defined here so that `Rpc` can build one from a Connect
-error detail, which `Proto.Any` exposes only opaquely.
+{-| The `Any` type, defined here so that `Rpc` can build one from an error
+detail, which `Proto.Any` exposes only opaquely.
+
+The `codec` phantom says which payload an `Any` holds: one in `Json` holds
+`InJson`, one in `Proto` holds `InProto`. Only this package's functions build
+one, each in its own world, so a function on an `Any Proto` never meets
+`InJson`, and the reverse.
+
 -}
 
 import Json.Encode
@@ -9,19 +15,30 @@ import Json.Encode
 
 {-| A type URL and the packed message.
 -}
-type Any
+type Any codec
     = Any String Payload
 
 
 {-| The packed message: its proto3 JSON form (for a well-known type with a
-JSON form of its own, that form, not the `"value"` object around it), or only
-its protobuf binary, base64-encoded, when nothing gave its JSON, or both, when
-it was packed from a value whose message has binary codecs.
+JSON form of its own, that form, not the `"value"` object around it), or its
+protobuf binary as base64. The binary is held as text, not `Bytes`, so that
+`==` compares two `Any`s by their content.
 -}
 type Payload
     = InJson Json.Encode.Value
-    | InBinary String
-    | InBoth Json.Encode.Value String
+    | InProto String
+
+
+{-| The empty `Any`, with no type URL, in each world.
+-}
+emptyJson : Any codec
+emptyJson =
+    Any "" (InJson (Json.Encode.object []))
+
+
+emptyProto : Any codec
+emptyProto =
+    Any "" (InProto "")
 
 
 {-| A message's full name from its type URL: the URL after its last `/`.
@@ -34,7 +51,7 @@ nameOf url =
         |> Maybe.withDefault url
 
 
-{-| The packed message's JSON, `null` when only its binary arrived.
+{-| The packed message's JSON.
 -}
 jsonOf : Payload -> Json.Encode.Value
 jsonOf payload =
@@ -42,8 +59,17 @@ jsonOf payload =
         InJson json ->
             json
 
-        InBoth json _ ->
-            json
-
-        InBinary _ ->
+        InProto _ ->
             Json.Encode.null
+
+
+{-| The packed message's binary, as base64.
+-}
+base64Of : Payload -> String
+base64Of payload =
+    case payload of
+        InProto base64 ->
+            base64
+
+        InJson _ ->
+            ""

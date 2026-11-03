@@ -85,7 +85,7 @@ bound by `bindings`.
 -}
 raw : List Rule -> Method Rpc.Json Value String
 raw bindings =
-    Proto.Method.json "t.v1.T"
+    Proto.Method.initJson "t.v1.T"
         "M"
         identity
         (Json.Decode.field "title" Json.Decode.string)
@@ -544,7 +544,7 @@ responses =
             \_ ->
                 Rpc.response transcoding
                     (Rpc.call
-                        (Proto.Method.json "t" "m" identity (Json.Decode.succeed ())
+                        (Proto.Method.initJson "t" "m" identity (Json.Decode.succeed ())
                             |> Proto.Method.withBindings [ Proto.Http.binding rule ]
                         )
                         Json.Encode.null
@@ -620,7 +620,7 @@ errors =
                         (\error ->
                             case error of
                                 RpcStatus r _ ->
-                                    Just ( ( r.code, r.source ), r.message, List.map (Proto.Json.encodeAny >> Json.Encode.encode 0) r.details )
+                                    Just ( ( r.code, r.source ), r.message, List.filterMap (.json >> Maybe.map (Proto.Json.encodeAny >> Json.Encode.encode 0)) r.details )
 
                                 _ ->
                                     Nothing

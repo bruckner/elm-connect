@@ -12,6 +12,7 @@ with no methods, and so gets no module.
 import Chat.V1.Line
 import Json.Decode
 import Json.Encode
+import Proto.Codec
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
@@ -55,11 +56,11 @@ defaultLine =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Line`](#Line): its codecs, default and descriptor together.
+{-| The typed value of [`Line`](#Line): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageLine : Proto.Message.Message Line
+messageLine : Proto.Message.Message Proto.Codec.Json Line
 messageLine =
-    Proto.Message.message encodeLine decodeLine defaultLine Chat.V1.Line.descriptor
+    Proto.Message.initJson "chat.v1.Line" encodeLine decodeLine
 
 
 

@@ -11,6 +11,7 @@ runtime may add a module of the same name in any release.
 
 import Json.Decode
 import Json.Encode
+import Proto.Codec
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
@@ -55,11 +56,11 @@ defaultPing =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Ping`](#Ping): its codecs, default and descriptor together.
+{-| The typed value of [`Ping`](#Ping): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messagePing : Proto.Message.Message Ping
+messagePing : Proto.Message.Message Proto.Codec.Json Ping
 messagePing =
-    Proto.Message.message encodePing decodePing defaultPing Rpc.V1.Ping.descriptor
+    Proto.Message.initJson "rpc.v1.Ping" encodePing decodePing
 
 
 

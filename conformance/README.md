@@ -237,10 +237,9 @@ and with `bytes=bytes`) and `codec=proto` too, and
 generated decoder and re-encodes it to the same bytes, with unknown fields
 of every wire type appended and without; where the set has JSON codecs, it
 checks that the value read from binary writes the JSON the value read from
-JSON writes (an `Any` read from binary holds its message's binary, so it
-is written in Connect's error-detail form, `binaryJson` in the data), and
-that the value read from JSON encodes to the same bytes, but where it
-holds an `Any`, which the binary encoder writes with its type URL alone.
+JSON writes (an `Any`'s packed message as its canonical JSON, converted
+through the package's registry, `binaryJson` in the data), and that the
+value read from JSON encodes to the same bytes.
 Since the encoders write prost-reflect's bytes exactly, prost-reflect reads
 what they write. The corpus case `codec_both` is these protos under
 `codec=both`, blessed like any other.

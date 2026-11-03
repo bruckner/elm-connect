@@ -956,6 +956,9 @@ impl Builder {
         if self.codec.binary() {
             self.check_codec_names(proto_name, &types, &messages, &enums);
         }
+        if self.codec == Codec::Both {
+            self.check_registry_codec_names(proto_name, &types, &messages, files);
+        }
 
         let mut services = Vec::new();
         for file in files {
@@ -1620,6 +1623,99 @@ impl Builder {
             self.diagnostics.push(Problem::codec_collision(
                 package,
                 &values,
+                first_site,
+                second_site,
+                &self.rename_of(second.proto.as_deref().or(first.proto.as_deref())),
+                self.renamed_by(renamed.as_ref()).as_deref(),
+            ));
+        }
+    }
+
+    /// Reports each type of `package` named for a message or oneof that
+    /// reaches a `google.protobuf.Any` with `With` at the end (`NoteWith`
+    /// beside `Note`), under `codec=both`: the JSON codecs of such a
+    /// message or oneof take the registry and are named with `With` at the
+    /// end (`encodeNoteWith`, `decodeNoteWith`), so the JSON codecs of the
+    /// other take those names.
+    fn check_registry_codec_names(
+        &mut self,
+        package: &str,
+        types: &Namespace,
+        messages: &[Message],
+        files: &[FileDescriptor],
+    ) {
+        let Some(pool) = files.first().map(FileDescriptor::parent_pool) else {
+            return;
+        };
+        let reaches = |ty: &TypeRef| match ty {
+            TypeRef::WellKnown(WellKnown::Any) => true,
+            TypeRef::Message(name) => {
+                pool_reaches_any(pool, &name.proto_full_name, &mut Vec::new())
+            }
+            _ => false,
+        };
+        let mut names: Vec<&String> = types.claimed.keys().collect();
+        names.sort();
+        for name in names {
+            let Some(stem) = name.strip_suffix(naming::WITH_SUFFIX) else {
+                continue;
+            };
+            let Some(first) = types.claimed.get(stem) else {
+                continue;
+            };
+            let message = messages.iter().find(|m| m.elm_name == stem);
+            let oneof = messages
+                .iter()
+                .flat_map(|m| &m.oneofs)
+                .find(|o| o.elm_type_name == stem);
+            let reaching = match (message, oneof) {
+                (Some(message), _) => {
+                    message.fields.iter().any(|field| reaches(&field.ty))
+                        || message
+                            .oneofs
+                            .iter()
+                            .flat_map(|o| &o.variants)
+                            .any(|variant| reaches(&variant.ty))
+                }
+                (None, Some(oneof)) => oneof.variants.iter().any(|variant| reaches(&variant.ty)),
+                (None, None) => false,
+            };
+            if !reaching {
+                continue;
+            }
+            let second = &types.claimed[name.as_str()];
+            let values = [
+                naming::with_registry(naming::encoder_name(stem)),
+                naming::with_registry(naming::decoder_name(stem)),
+            ];
+            let listed = values
+                .iter()
+                .map(|value| format!("`{value}`"))
+                .collect::<Vec<_>>()
+                .join(" and ");
+            let first_site = Site {
+                label: format!(
+                    "the JSON codecs of {} taking the registry become {listed}",
+                    first.what
+                ),
+                ..first.site.clone()
+            };
+            let second_site = Site {
+                label: format!("and so do the JSON codecs of {}", second.what),
+                ..second.site.clone()
+            };
+            let renamed = [second, first]
+                .into_iter()
+                .find(|claim| {
+                    claim
+                        .given
+                        .as_ref()
+                        .is_some_and(|(given, _)| given == name || given == stem)
+                })
+                .and_then(|claim| Some((claim.proto.clone()?, claim.given.clone()?.0)));
+            self.diagnostics.push(Problem::registry_codec_collision(
+                package,
+                &format!("values {listed}"),
                 first_site,
                 second_site,
                 &self.rename_of(second.proto.as_deref().or(first.proto.as_deref())),
@@ -2632,5 +2728,31 @@ fn map_key(kind: &Kind) -> Option<MapKey> {
         Kind::String => MapKey::String,
         Kind::Bool => MapKey::Bool,
         _ => return None,
+    })
+}
+
+/// Whether the message `full_name` of `pool` holds a `google.protobuf.Any`, in
+/// a field, a map value or a oneof member, or holds a message that does;
+/// `seen` holds the messages on the way, so that a cycle ends.
+fn pool_reaches_any(pool: &DescriptorPool, full_name: &str, seen: &mut Vec<String>) -> bool {
+    if full_name == "google.protobuf.Any" {
+        return true;
+    }
+    if seen.iter().any(|name| name == full_name) {
+        return false;
+    }
+    seen.push(full_name.to_owned());
+    let Some(message) = pool.get_message_by_name(full_name) else {
+        return false;
+    };
+    message.fields().any(|field| {
+        let kind = match field.kind() {
+            Kind::Message(entry) if field.is_map() => entry.map_entry_value_field().kind(),
+            kind => kind,
+        };
+        match kind {
+            Kind::Message(held) => pool_reaches_any(pool, held.full_name(), seen),
+            _ => false,
+        }
     })
 }

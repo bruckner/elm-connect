@@ -12,6 +12,7 @@ named ones; the unspecified zero is dropped.
 import Drafts.V1.Draft
 import Json.Decode
 import Json.Encode
+import Proto.Codec
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
@@ -61,11 +62,11 @@ defaultDraft =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Draft`](#Draft): its codecs, default and descriptor together.
+{-| The typed value of [`Draft`](#Draft): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageDraft : Proto.Message.Message Draft
+messageDraft : Proto.Message.Message Proto.Codec.Json Draft
 messageDraft =
-    Proto.Message.message encodeDraft decodeDraft defaultDraft Drafts.V1.Draft.descriptor
+    Proto.Message.initJson "drafts.v1.Draft" encodeDraft decodeDraft
 
 
 

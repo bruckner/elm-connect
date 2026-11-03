@@ -3,11 +3,13 @@
 
 use super::scalar::{Holding, Repr};
 use super::{
-    CORE_DICT, CORE_STRING, Emitter, JSON_DECODE, JSON_ENCODE, PROTO_ANY, PROTO_DURATION,
-    PROTO_JSON, TIME, call, scalar,
+    CORE_DICT, CORE_STRING, Emitter, JSON_DECODE, JSON_ENCODE, PROTO_ANY, PROTO_CODEC,
+    PROTO_DURATION, PROTO_JSON, TIME, call, scalar,
 };
 use crate::elm::ast::{Expr, Type};
 use crate::elm::build::{apply, list, qualified, ty, var};
+use crate::naming::{REGISTRY_ARGUMENT, with_registry};
+use crate::options::Codec;
 use std::collections::HashMap;
 
 use crate::options::Int64;
@@ -126,8 +128,9 @@ pub(super) enum Present<'p> {
     /// A generated message.
     Message(&'p TypeName),
     /// A recursive message, held in its wrapper because the field closes a
-    /// cycle of record fields ([`Field::cyclic`]).
-    Wrapped(&'p Wrapper),
+    /// cycle of record fields ([`Field::cyclic`]), with the message's full
+    /// name.
+    Wrapped(&'p Wrapper, &'p str),
     /// A wrapper such as `google.protobuf.Int32Value`: its scalar, which
     /// is left out of the JSON when unset.
     Wrapper(Repr),
@@ -143,7 +146,8 @@ pub(super) enum Present<'p> {
     /// `google.protobuf.ListValue`: a JSON array, a
     /// `List Json.Encode.Value`.
     ListValue,
-    /// `google.protobuf.Any`: the runtime's `Proto.Any.Any`.
+    /// `google.protobuf.Any`: the runtime's `Proto.Any.Any`, holding JSON
+    /// under `codec=json` and binary otherwise.
     Any,
 }
 
@@ -265,6 +269,72 @@ impl Emitter {
         apply(helper, args.into_iter().chain([value]))
     }
 
+    /// The JSON of a field of a message that reaches an `Any`, as a
+    /// `Result Proto.Any.Problem (Maybe Json.Encode.Value)` for
+    /// `Proto.Json.tryObjectOfFields`: the `try` helper of its kind when its
+    /// values reach one, else what [`Self::encode_field`] gives, in `Ok`.
+    pub(super) fn try_encode_field(&mut self, shape: FieldShape, value: Expr) -> Expr {
+        let (helper, args) = match shape {
+            FieldShape::Maybe(inner) if self.reaches(inner) => {
+                let encoder = self.value_encoder(inner);
+                ("tryOptionalField", vec![encoder])
+            }
+            FieldShape::List(inner) if self.reaches(inner) => {
+                let encoder = self.value_encoder(inner);
+                ("tryRepeatedField", vec![encoder])
+            }
+            FieldShape::Dict(key, inner) if self.reaches(inner) => {
+                let encoder = self.value_encoder(inner);
+                let key = if key.is_int() {
+                    qualified(CORE_STRING, "fromInt")
+                } else {
+                    var("identity")
+                };
+                ("tryDictField", vec![key, encoder])
+            }
+            FieldShape::BoolMap(inner) if self.reaches(inner) => {
+                let encoder = self.value_encoder(inner);
+                ("tryBoolMapField", vec![encoder])
+            }
+            shape => {
+                let encoded = self.encode_field(shape, value);
+                let ok = self.core("Ok");
+                return apply(var(ok), [encoded]);
+            }
+        };
+        let helper = self.reference((PROTO_JSON, helper));
+        apply(helper, args.into_iter().chain([value]))
+    }
+
+    /// Whether a field's values reach an `Any` ([`Self::reaches`]).
+    pub(super) fn field_reaches(&self, shape: FieldShape) -> bool {
+        match shape {
+            FieldShape::Maybe(value)
+            | FieldShape::List(value)
+            | FieldShape::Dict(_, value)
+            | FieldShape::BoolMap(value) => self.reaches(value),
+            FieldShape::Plain(_) | FieldShape::Json => false,
+        }
+    }
+
+    /// Whether a value is or reaches a `google.protobuf.Any` under
+    /// `codec=both`, so that its JSON codecs take the registry and its
+    /// encoder gives a `Result`. Under the other options an `Any` is
+    /// written as it is held, and no codec takes one.
+    pub(super) fn reaches(&self, value: ValueShape) -> bool {
+        if self.codec != Codec::Both {
+            return false;
+        }
+        match value {
+            ValueShape::Present(Present::Any) => true,
+            ValueShape::Present(Present::Message(name)) => {
+                self.reach.message(&name.proto_full_name)
+            }
+            ValueShape::Present(Present::Wrapped(_, full_name)) => self.reach.message(full_name),
+            ValueShape::Present(_) | ValueShape::Zeroed(_) => false,
+        }
+    }
+
     /// The decoder of a field, and the value an absent or `null` field
     /// reads as; `None` for [`FieldShape::Json`], which
     /// `Proto.Json.valueField` reads whole, since for it `null` is not
@@ -343,9 +413,17 @@ impl Emitter {
                 let value = self.library_type(JSON_ENCODE, "Value", []);
                 ty(self.core("List"), [value])
             }
-            ValueShape::Present(Present::Any) => self.library_type(PROTO_ANY, "Any", []),
+            ValueShape::Present(Present::Any) => {
+                let tag = if self.codec == Codec::Json {
+                    "Json"
+                } else {
+                    "Proto"
+                };
+                let tag = self.library_type(PROTO_CODEC, tag, []);
+                self.library_type(PROTO_ANY, "Any", [tag])
+            }
             ValueShape::Zeroed(Zeroed::Empty | Zeroed::Null) => Type::Unit,
-            ValueShape::Present(Present::Wrapped(wrapper)) => ty(wrapper.elm_name.clone(), []),
+            ValueShape::Present(Present::Wrapped(wrapper, _)) => ty(wrapper.elm_name.clone(), []),
         }
     }
 
@@ -358,8 +436,22 @@ impl Emitter {
         }
     }
 
-    /// The encoder of one value.
+    /// The encoder of one value. One that reaches an `Any` under
+    /// `codec=both` takes the registry and gives a `Result`
+    /// ([`Self::reaches`]).
     pub(super) fn value_encoder(&mut self, value: ValueShape) -> Expr {
+        if self.reaches(value) {
+            let encoder = match value {
+                ValueShape::Present(Present::Message(name)) => {
+                    self.generated_value(&name.module, with_registry(name.encoder_name()))
+                }
+                ValueShape::Present(Present::Wrapped(wrapper, _)) => {
+                    var(with_registry(wrapper.encoder_name()))
+                }
+                _ => self.reference((PROTO_JSON, "encodeAnyWith")),
+            };
+            return apply(encoder, [var(REGISTRY_ARGUMENT)]);
+        }
         match value {
             ValueShape::Zeroed(Zeroed::Scalar(repr))
             | ValueShape::Present(Present::Wrapper(repr)) => self.reference(scalar::encoder(repr)),
@@ -384,12 +476,25 @@ impl Emitter {
             ValueShape::Present(Present::Any) => self.reference((PROTO_JSON, "encodeAny")),
             ValueShape::Zeroed(Zeroed::Empty) => self.reference((PROTO_JSON, "encodeEmpty")),
             ValueShape::Zeroed(Zeroed::Null) => self.reference((PROTO_JSON, "encodeNullValue")),
-            ValueShape::Present(Present::Wrapped(wrapper)) => var(wrapper.encoder_name()),
+            ValueShape::Present(Present::Wrapped(wrapper, _)) => var(wrapper.encoder_name()),
         }
     }
 
-    /// The decoder of one value.
+    /// The decoder of one value, taking the registry when it reaches an
+    /// `Any` under `codec=both`.
     pub(super) fn value_decoder(&mut self, value: ValueShape) -> Expr {
+        if self.reaches(value) {
+            let decoder = match value {
+                ValueShape::Present(Present::Message(name)) => {
+                    self.generated_value(&name.module, with_registry(name.decoder_name()))
+                }
+                ValueShape::Present(Present::Wrapped(wrapper, _)) => {
+                    var(with_registry(wrapper.decoder_name()))
+                }
+                _ => self.reference((PROTO_JSON, "anyWith")),
+            };
+            return apply(decoder, [var(REGISTRY_ARGUMENT)]);
+        }
         match value {
             ValueShape::Zeroed(Zeroed::Scalar(repr))
             | ValueShape::Present(Present::Wrapper(repr)) => self.reference(scalar::decoder(repr)),
@@ -406,7 +511,7 @@ impl Emitter {
             ValueShape::Present(Present::Any) => self.reference((PROTO_JSON, "any")),
             ValueShape::Zeroed(Zeroed::Empty) => self.reference((PROTO_JSON, "empty")),
             ValueShape::Zeroed(Zeroed::Null) => self.reference((PROTO_JSON, "nullValue")),
-            ValueShape::Present(Present::Wrapped(wrapper)) => var(wrapper.decoder_name()),
+            ValueShape::Present(Present::Wrapped(wrapper, _)) => var(wrapper.decoder_name()),
         }
     }
 }
@@ -428,7 +533,7 @@ pub(super) fn field_shape<'m>(
                 .wrapper
                 .as_ref()
                 .expect("a message on a cycle has a wrapper");
-            ValueShape::Present(Present::Wrapped(wrapper))
+            ValueShape::Present(Present::Wrapped(wrapper, &name.proto_full_name))
         }
         ty => value_shape(ty, field_holding(field.jstype, holding)),
     };

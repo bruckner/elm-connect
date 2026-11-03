@@ -15,6 +15,7 @@ import Json.Decode
 import Json.Encode
 import Proto.Any
 import Proto.Binary
+import Proto.Codec
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
@@ -65,8 +66,8 @@ type alias Item =
     { name : String
     , size : String
     , status : Status
-    , payload : Maybe Proto.Any.Any
-    , attachments : List Proto.Any.Any
+    , payload : Maybe (Proto.Any.Any Proto.Codec.Proto)
+    , attachments : List (Proto.Any.Any Proto.Codec.Proto)
     }
 
 
@@ -151,36 +152,32 @@ enumStatus =
     Proto.Enum.enum encodeStatus decodeStatus StatusUnspecified Vault.V1.Status.descriptor
 
 
-{-| The typed value of [`Item`](#Item): its codecs, default and descriptor together.
+{-| The typed value of [`Item`](#Item): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageItem : Proto.Message.Message Item
+messageItem : Proto.Message.Message Proto.Codec.Proto Item
 messageItem =
-    Proto.Message.message encodeItem decodeItem defaultItem Vault.V1.Item.descriptor
-        |> Proto.Message.withBinary encodeItemBytes decodeItemBytes
+    Proto.Message.initProto "vault.v1.Item" encodeItemBytes decodeItemBytes
 
 
-{-| The typed value of [`GetItemRequest`](#GetItemRequest): its codecs, default and descriptor together.
+{-| The typed value of [`GetItemRequest`](#GetItemRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageGetItemRequest : Proto.Message.Message GetItemRequest
+messageGetItemRequest : Proto.Message.Message Proto.Codec.Proto GetItemRequest
 messageGetItemRequest =
-    Proto.Message.message encodeGetItemRequest decodeGetItemRequest defaultGetItemRequest Vault.V1.GetItemRequest.descriptor
-        |> Proto.Message.withBinary encodeGetItemRequestBytes decodeGetItemRequestBytes
+    Proto.Message.initProto "vault.v1.GetItemRequest" encodeGetItemRequestBytes decodeGetItemRequestBytes
 
 
-{-| The typed value of [`ListItemsRequest`](#ListItemsRequest): its codecs, default and descriptor together.
+{-| The typed value of [`ListItemsRequest`](#ListItemsRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageListItemsRequest : Proto.Message.Message ListItemsRequest
+messageListItemsRequest : Proto.Message.Message Proto.Codec.Proto ListItemsRequest
 messageListItemsRequest =
-    Proto.Message.message encodeListItemsRequest decodeListItemsRequest defaultListItemsRequest Vault.V1.ListItemsRequest.descriptor
-        |> Proto.Message.withBinary encodeListItemsRequestBytes decodeListItemsRequestBytes
+    Proto.Message.initProto "vault.v1.ListItemsRequest" encodeListItemsRequestBytes decodeListItemsRequestBytes
 
 
-{-| The typed value of [`ListItemsResponse`](#ListItemsResponse): its codecs, default and descriptor together.
+{-| The typed value of [`ListItemsResponse`](#ListItemsResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageListItemsResponse : Proto.Message.Message ListItemsResponse
+messageListItemsResponse : Proto.Message.Message Proto.Codec.Proto ListItemsResponse
 messageListItemsResponse =
-    Proto.Message.message encodeListItemsResponse decodeListItemsResponse defaultListItemsResponse Vault.V1.ListItemsResponse.descriptor
-        |> Proto.Message.withBinary encodeListItemsResponseBytes decodeListItemsResponseBytes
+    Proto.Message.initProto "vault.v1.ListItemsResponse" encodeListItemsResponseBytes decodeListItemsResponseBytes
 
 
 
@@ -204,16 +201,18 @@ descriptors =
         Proto.Descriptors.wellKnown
 
 
-{-| The protobuf binary codecs of this package's messages, of those of the packages it imports and of the well-known types they hold, by full name: the binary encoders write a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) with it, so that one holding a message's JSON, as one read from proto3 JSON does, is written as the message's binary.
+{-| The codecs of this package's messages, of those of the packages it imports and of the well-known types they hold, by full name: the JSON codecs of a message holding a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) convert it through this registry, or one wider.
 -}
-binaryRegistry : Proto.Registry.Registry
-binaryRegistry =
-    Proto.Registry.empty
-        |> Proto.Registry.withBinary "vault.v1.Item" decodeItem encodeItemBytes
-        |> Proto.Registry.withBinary "vault.v1.GetItemRequest" decodeGetItemRequest encodeGetItemRequestBytes
-        |> Proto.Registry.withBinary "vault.v1.ListItemsRequest" decodeListItemsRequest encodeListItemsRequestBytes
-        |> Proto.Registry.withBinary "vault.v1.ListItemsResponse" decodeListItemsResponse encodeListItemsResponseBytes
-        |> Proto.Registry.withBinary "google.protobuf.Any" Proto.Json.any (\value -> Proto.Binary.messageEncoder (Proto.Binary.anyWith binaryRegistry) value)
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.unionAll
+        [ Proto.Registry.empty
+            |> Proto.Registry.withCodecs "vault.v1.Item" decodeItemWith encodeItemBytes decodeItemBytes encodeItemWith
+            |> Proto.Registry.withCodecs "vault.v1.GetItemRequest" (\_ -> decodeGetItemRequest) encodeGetItemRequestBytes decodeGetItemRequestBytes (\_ -> Ok << encodeGetItemRequest)
+            |> Proto.Registry.withCodecs "vault.v1.ListItemsRequest" (\_ -> decodeListItemsRequest) encodeListItemsRequestBytes decodeListItemsRequestBytes (\_ -> Ok << encodeListItemsRequest)
+            |> Proto.Registry.withCodecs "vault.v1.ListItemsResponse" decodeListItemsResponseWith encodeListItemsResponseBytes decodeListItemsResponseBytes encodeListItemsResponseWith
+        , Proto.Registry.wellKnown
+        ]
 
 
 
@@ -235,16 +234,16 @@ encodeStatus value =
             Json.Encode.string "STATUS_OPEN"
 
 
-{-| Encodes an [`Item`](#Item) as proto3 JSON.
+{-| Encodes an [`Item`](#Item) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeItem : Item -> Json.Encode.Value
-encodeItem value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        , ( "size", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.size )
-        , ( "status", Proto.Json.implicitField StatusUnspecified encodeStatus value.status )
-        , ( "payload", Maybe.map Proto.Json.encodeAny value.payload )
-        , ( "attachments", Proto.Json.repeatedField Proto.Json.encodeAny value.attachments )
+encodeItemWith : Proto.Registry.Registry -> Item -> Result Proto.Any.Problem Json.Encode.Value
+encodeItemWith types value =
+    Proto.Json.tryObjectOfFields
+        [ ( "name", Ok (Proto.Json.implicitField "" Json.Encode.string value.name) )
+        , ( "size", Ok (Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.size) )
+        , ( "status", Ok (Proto.Json.implicitField StatusUnspecified encodeStatus value.status) )
+        , ( "payload", Proto.Json.tryOptionalField (Proto.Json.encodeAnyWith types) value.payload )
+        , ( "attachments", Proto.Json.tryRepeatedField (Proto.Json.encodeAnyWith types) value.attachments )
         ]
 
 
@@ -266,12 +265,12 @@ encodeListItemsRequest value =
         ]
 
 
-{-| Encodes a [`ListItemsResponse`](#ListItemsResponse) as proto3 JSON.
+{-| Encodes a [`ListItemsResponse`](#ListItemsResponse) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeListItemsResponse : ListItemsResponse -> Json.Encode.Value
-encodeListItemsResponse value =
-    Proto.Json.objectOfFields
-        [ ( "items", Proto.Json.repeatedField encodeItem value.items )
+encodeListItemsResponseWith : Proto.Registry.Registry -> ListItemsResponse -> Result Proto.Any.Problem Json.Encode.Value
+encodeListItemsResponseWith types value =
+    Proto.Json.tryObjectOfFields
+        [ ( "items", Proto.Json.tryRepeatedField (encodeItemWith types) value.items )
         ]
 
 
@@ -291,16 +290,23 @@ decodeStatus =
         ]
 
 
-{-| Decodes an [`Item`](#Item) from proto3 JSON.
+{-| Decodes an [`Item`](#Item) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
 -}
-decodeItem : Json.Decode.Decoder Item
-decodeItem =
+decodeItemWith : Proto.Registry.Registry -> Json.Decode.Decoder Item
+decodeItemWith types =
     Json.Decode.succeed Item
         |> Proto.Json.field "name" "" Proto.Json.string
         |> Proto.Json.field "size" "0" Proto.Json.int64
         |> Proto.Json.field "status" StatusUnspecified decodeStatus
-        |> Proto.Json.field "payload" Nothing (Json.Decode.map Just Proto.Json.any)
-        |> Proto.Json.field "attachments" [] (Json.Decode.list Proto.Json.any)
+        |> Proto.Json.field "payload" Nothing (Json.Decode.map Just (Proto.Json.anyWith types))
+        |> Proto.Json.field "attachments" [] (Json.Decode.list (Proto.Json.anyWith types))
+
+
+{-| Decodes an [`Item`](#Item) from proto3 JSON, with this package's `registry`.
+-}
+decodeItem : Json.Decode.Decoder Item
+decodeItem =
+    decodeItemWith registry
 
 
 {-| Decodes a [`GetItemRequest`](#GetItemRequest) from proto3 JSON.
@@ -319,12 +325,19 @@ decodeListItemsRequest =
         |> Proto.Json.fieldEither "pageSize" "page_size" 0 Proto.Json.int32
 
 
-{-| Decodes a [`ListItemsResponse`](#ListItemsResponse) from proto3 JSON.
+{-| Decodes a [`ListItemsResponse`](#ListItemsResponse) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
+-}
+decodeListItemsResponseWith : Proto.Registry.Registry -> Json.Decode.Decoder ListItemsResponse
+decodeListItemsResponseWith types =
+    Json.Decode.succeed ListItemsResponse
+        |> Proto.Json.field "items" [] (Json.Decode.list (decodeItemWith types))
+
+
+{-| Decodes a [`ListItemsResponse`](#ListItemsResponse) from proto3 JSON, with this package's `registry`.
 -}
 decodeListItemsResponse : Json.Decode.Decoder ListItemsResponse
 decodeListItemsResponse =
-    Json.Decode.succeed ListItemsResponse
-        |> Proto.Json.field "items" [] (Json.Decode.list decodeItem)
+    decodeListItemsResponseWith registry
 
 
 
@@ -354,8 +367,8 @@ encodeItemBytes value =
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         , Proto.Binary.implicit Proto.Binary.int64 2 value.size
         , Proto.Binary.implicit (Proto.Binary.enum encodeStatusBytes decodeStatusBytes) 3 value.status
-        , Proto.Binary.optional (Proto.Binary.anyWith binaryRegistry) 4 value.payload
-        , Proto.Binary.list (Proto.Binary.anyWith binaryRegistry) 5 value.attachments
+        , Proto.Binary.optional Proto.Binary.any 4 value.payload
+        , Proto.Binary.list Proto.Binary.any 5 value.attachments
         ]
 
 

@@ -13,6 +13,7 @@ import Dict exposing (Dict)
 import Int64Option.V1.Counters
 import Json.Decode
 import Json.Encode
+import Proto.Codec
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
@@ -105,11 +106,11 @@ defaultCounters =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Counters`](#Counters): its codecs, default and descriptor together.
+{-| The typed value of [`Counters`](#Counters): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageCounters : Proto.Message.Message Counters
+messageCounters : Proto.Message.Message Proto.Codec.Json Counters
 messageCounters =
-    Proto.Message.message encodeCounters decodeCounters defaultCounters Int64Option.V1.Counters.descriptor
+    Proto.Message.initJson "int64_option.v1.Counters" encodeCounters decodeCounters
 
 
 

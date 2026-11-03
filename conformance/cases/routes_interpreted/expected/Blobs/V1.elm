@@ -16,6 +16,7 @@ import Bytes
 import Json.Decode
 import Json.Encode
 import Proto.Bytes
+import Proto.Codec
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
@@ -65,11 +66,11 @@ defaultBlob =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Blob`](#Blob): its codecs, default and descriptor together.
+{-| The typed value of [`Blob`](#Blob): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageBlob : Proto.Message.Message Blob
+messageBlob : Proto.Message.Message Proto.Codec.Json Blob
 messageBlob =
-    Proto.Message.message encodeBlob decodeBlob defaultBlob Blobs.V1.Blob.descriptor
+    Proto.Message.initJson "blobs.v1.Blob" encodeBlob decodeBlob
 
 
 

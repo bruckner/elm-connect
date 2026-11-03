@@ -32,8 +32,9 @@ request to `Testee.elm` over a port, which reads a
 or proto3 JSON with the generated decoder and writes it back in the
 format asked for with the generated encoder, or answers that the input
 failed to parse. The messages are generated under `codec=both`, so an
-`Any` read from JSON is written to binary through the generated
-`binaryRegistry`.
+`Any` holds its message's binary, and is read from and written as proto3
+JSON through the generated `registry`; one of a type it lacks fails to
+parse, and to serialize.
 
 1,468 cases run (1,135 Required, 333 Recommended), counting those that
 must fail to parse or to serialize, by the formats of their request:

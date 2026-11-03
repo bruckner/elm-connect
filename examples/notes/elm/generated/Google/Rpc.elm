@@ -21,6 +21,7 @@ import Google.Rpc.ResourceInfo
 import Google.Rpc.RetryInfo
 import Json.Decode
 import Json.Encode
+import Proto.Codec
 import Proto.Descriptors
 import Proto.Duration exposing (Duration)
 import Proto.Json
@@ -601,102 +602,102 @@ defaultLocalizedMessage =
 -- TYPED VALUES
 
 
-{-| The typed value of [`ErrorInfo`](#ErrorInfo): its codecs, default and descriptor together.
+{-| The typed value of [`ErrorInfo`](#ErrorInfo): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageErrorInfo : Proto.Message.Message ErrorInfo
+messageErrorInfo : Proto.Message.Message Proto.Codec.Json ErrorInfo
 messageErrorInfo =
-    Proto.Message.message encodeErrorInfo decodeErrorInfo defaultErrorInfo Google.Rpc.ErrorInfo.descriptor
+    Proto.Message.initJson "google.rpc.ErrorInfo" encodeErrorInfo decodeErrorInfo
 
 
-{-| The typed value of [`RetryInfo`](#RetryInfo): its codecs, default and descriptor together.
+{-| The typed value of [`RetryInfo`](#RetryInfo): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageRetryInfo : Proto.Message.Message RetryInfo
+messageRetryInfo : Proto.Message.Message Proto.Codec.Json RetryInfo
 messageRetryInfo =
-    Proto.Message.message encodeRetryInfo decodeRetryInfo defaultRetryInfo Google.Rpc.RetryInfo.descriptor
+    Proto.Message.initJson "google.rpc.RetryInfo" encodeRetryInfo decodeRetryInfo
 
 
-{-| The typed value of [`DebugInfo`](#DebugInfo): its codecs, default and descriptor together.
+{-| The typed value of [`DebugInfo`](#DebugInfo): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageDebugInfo : Proto.Message.Message DebugInfo
+messageDebugInfo : Proto.Message.Message Proto.Codec.Json DebugInfo
 messageDebugInfo =
-    Proto.Message.message encodeDebugInfo decodeDebugInfo defaultDebugInfo Google.Rpc.DebugInfo.descriptor
+    Proto.Message.initJson "google.rpc.DebugInfo" encodeDebugInfo decodeDebugInfo
 
 
-{-| The typed value of [`QuotaFailure`](#QuotaFailure): its codecs, default and descriptor together.
+{-| The typed value of [`QuotaFailure`](#QuotaFailure): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageQuotaFailure : Proto.Message.Message QuotaFailure
+messageQuotaFailure : Proto.Message.Message Proto.Codec.Json QuotaFailure
 messageQuotaFailure =
-    Proto.Message.message encodeQuotaFailure decodeQuotaFailure defaultQuotaFailure Google.Rpc.QuotaFailure.descriptor
+    Proto.Message.initJson "google.rpc.QuotaFailure" encodeQuotaFailure decodeQuotaFailure
 
 
-{-| The typed value of [`QuotaFailureViolation`](#QuotaFailureViolation): its codecs, default and descriptor together.
+{-| The typed value of [`QuotaFailureViolation`](#QuotaFailureViolation): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageQuotaFailureViolation : Proto.Message.Message QuotaFailureViolation
+messageQuotaFailureViolation : Proto.Message.Message Proto.Codec.Json QuotaFailureViolation
 messageQuotaFailureViolation =
-    Proto.Message.message encodeQuotaFailureViolation decodeQuotaFailureViolation defaultQuotaFailureViolation Google.Rpc.QuotaFailureViolation.descriptor
+    Proto.Message.initJson "google.rpc.QuotaFailure.Violation" encodeQuotaFailureViolation decodeQuotaFailureViolation
 
 
-{-| The typed value of [`PreconditionFailure`](#PreconditionFailure): its codecs, default and descriptor together.
+{-| The typed value of [`PreconditionFailure`](#PreconditionFailure): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messagePreconditionFailure : Proto.Message.Message PreconditionFailure
+messagePreconditionFailure : Proto.Message.Message Proto.Codec.Json PreconditionFailure
 messagePreconditionFailure =
-    Proto.Message.message encodePreconditionFailure decodePreconditionFailure defaultPreconditionFailure Google.Rpc.PreconditionFailure.descriptor
+    Proto.Message.initJson "google.rpc.PreconditionFailure" encodePreconditionFailure decodePreconditionFailure
 
 
-{-| The typed value of [`PreconditionFailureViolation`](#PreconditionFailureViolation): its codecs, default and descriptor together.
+{-| The typed value of [`PreconditionFailureViolation`](#PreconditionFailureViolation): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messagePreconditionFailureViolation : Proto.Message.Message PreconditionFailureViolation
+messagePreconditionFailureViolation : Proto.Message.Message Proto.Codec.Json PreconditionFailureViolation
 messagePreconditionFailureViolation =
-    Proto.Message.message encodePreconditionFailureViolation decodePreconditionFailureViolation defaultPreconditionFailureViolation Google.Rpc.PreconditionFailureViolation.descriptor
+    Proto.Message.initJson "google.rpc.PreconditionFailure.Violation" encodePreconditionFailureViolation decodePreconditionFailureViolation
 
 
-{-| The typed value of [`BadRequest`](#BadRequest): its codecs, default and descriptor together.
+{-| The typed value of [`BadRequest`](#BadRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageBadRequest : Proto.Message.Message BadRequest
+messageBadRequest : Proto.Message.Message Proto.Codec.Json BadRequest
 messageBadRequest =
-    Proto.Message.message encodeBadRequest decodeBadRequest defaultBadRequest Google.Rpc.BadRequest.descriptor
+    Proto.Message.initJson "google.rpc.BadRequest" encodeBadRequest decodeBadRequest
 
 
-{-| The typed value of [`BadRequestFieldViolation`](#BadRequestFieldViolation): its codecs, default and descriptor together.
+{-| The typed value of [`BadRequestFieldViolation`](#BadRequestFieldViolation): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageBadRequestFieldViolation : Proto.Message.Message BadRequestFieldViolation
+messageBadRequestFieldViolation : Proto.Message.Message Proto.Codec.Json BadRequestFieldViolation
 messageBadRequestFieldViolation =
-    Proto.Message.message encodeBadRequestFieldViolation decodeBadRequestFieldViolation defaultBadRequestFieldViolation Google.Rpc.BadRequestFieldViolation.descriptor
+    Proto.Message.initJson "google.rpc.BadRequest.FieldViolation" encodeBadRequestFieldViolation decodeBadRequestFieldViolation
 
 
-{-| The typed value of [`RequestInfo`](#RequestInfo): its codecs, default and descriptor together.
+{-| The typed value of [`RequestInfo`](#RequestInfo): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageRequestInfo : Proto.Message.Message RequestInfo
+messageRequestInfo : Proto.Message.Message Proto.Codec.Json RequestInfo
 messageRequestInfo =
-    Proto.Message.message encodeRequestInfo decodeRequestInfo defaultRequestInfo Google.Rpc.RequestInfo.descriptor
+    Proto.Message.initJson "google.rpc.RequestInfo" encodeRequestInfo decodeRequestInfo
 
 
-{-| The typed value of [`ResourceInfo`](#ResourceInfo): its codecs, default and descriptor together.
+{-| The typed value of [`ResourceInfo`](#ResourceInfo): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageResourceInfo : Proto.Message.Message ResourceInfo
+messageResourceInfo : Proto.Message.Message Proto.Codec.Json ResourceInfo
 messageResourceInfo =
-    Proto.Message.message encodeResourceInfo decodeResourceInfo defaultResourceInfo Google.Rpc.ResourceInfo.descriptor
+    Proto.Message.initJson "google.rpc.ResourceInfo" encodeResourceInfo decodeResourceInfo
 
 
-{-| The typed value of [`Help`](#Help): its codecs, default and descriptor together.
+{-| The typed value of [`Help`](#Help): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageHelp : Proto.Message.Message Help
+messageHelp : Proto.Message.Message Proto.Codec.Json Help
 messageHelp =
-    Proto.Message.message encodeHelp decodeHelp defaultHelp Google.Rpc.Help.descriptor
+    Proto.Message.initJson "google.rpc.Help" encodeHelp decodeHelp
 
 
-{-| The typed value of [`HelpLink`](#HelpLink): its codecs, default and descriptor together.
+{-| The typed value of [`HelpLink`](#HelpLink): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageHelpLink : Proto.Message.Message HelpLink
+messageHelpLink : Proto.Message.Message Proto.Codec.Json HelpLink
 messageHelpLink =
-    Proto.Message.message encodeHelpLink decodeHelpLink defaultHelpLink Google.Rpc.HelpLink.descriptor
+    Proto.Message.initJson "google.rpc.Help.Link" encodeHelpLink decodeHelpLink
 
 
-{-| The typed value of [`LocalizedMessage`](#LocalizedMessage): its codecs, default and descriptor together.
+{-| The typed value of [`LocalizedMessage`](#LocalizedMessage): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageLocalizedMessage : Proto.Message.Message LocalizedMessage
+messageLocalizedMessage : Proto.Message.Message Proto.Codec.Json LocalizedMessage
 messageLocalizedMessage =
-    Proto.Message.message encodeLocalizedMessage decodeLocalizedMessage defaultLocalizedMessage Google.Rpc.LocalizedMessage.descriptor
+    Proto.Message.initJson "google.rpc.LocalizedMessage" encodeLocalizedMessage decodeLocalizedMessage
 
 
 

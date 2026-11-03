@@ -19,6 +19,7 @@ import Notes.Api.Audience
 import Notes.Api.Edit
 import Notes.Api.GetNoteRequest
 import Notes.Api.Memo
+import Proto.Codec
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
@@ -139,25 +140,25 @@ enumAudience =
     Proto.Enum.enum encodeAudience decodeAudience AudienceUnspecified Notes.Api.Audience.descriptor
 
 
-{-| The typed value of [`Memo`](#Memo): its codecs, default and descriptor together.
+{-| The typed value of [`Memo`](#Memo): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageMemo : Proto.Message.Message Memo
+messageMemo : Proto.Message.Message Proto.Codec.Json Memo
 messageMemo =
-    Proto.Message.message encodeMemo decodeMemo defaultMemo Notes.Api.Memo.descriptor
+    Proto.Message.initJson "notes.v1.Note" encodeMemo decodeMemo
 
 
-{-| The typed value of [`Edit`](#Edit): its codecs, default and descriptor together.
+{-| The typed value of [`Edit`](#Edit): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageEdit : Proto.Message.Message Edit
+messageEdit : Proto.Message.Message Proto.Codec.Json Edit
 messageEdit =
-    Proto.Message.message encodeEdit decodeEdit defaultEdit Notes.Api.Edit.descriptor
+    Proto.Message.initJson "notes.v1.Note.Revision" encodeEdit decodeEdit
 
 
-{-| The typed value of [`GetNoteRequest`](#GetNoteRequest): its codecs, default and descriptor together.
+{-| The typed value of [`GetNoteRequest`](#GetNoteRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageGetNoteRequest : Proto.Message.Message GetNoteRequest
+messageGetNoteRequest : Proto.Message.Message Proto.Codec.Json GetNoteRequest
 messageGetNoteRequest =
-    Proto.Message.message encodeGetNoteRequest decodeGetNoteRequest defaultGetNoteRequest Notes.Api.GetNoteRequest.descriptor
+    Proto.Message.initJson "notes.v1.GetNoteRequest" encodeGetNoteRequest decodeGetNoteRequest
 
 
 

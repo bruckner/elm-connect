@@ -6,7 +6,5 @@
   `Proto.Any.describe` takes a `Descriptors`. Rename
   `Proto.Registry.message "…" Notes.V1.registry` to
   `Proto.Descriptors.message "…" Notes.V1.descriptors`, and regenerate.
-- `Proto.Registry` holds the codecs an `Any` is written as protobuf
-  binary with, and nothing else: `Registry`, `empty`, `union`,
-  `withBinary` and `toBinary`. The generated `binaryRegistry` is
-  unchanged in this release; the next one renames and widens it.
+- `Proto.Registry` holds codecs alone, the table an `Any` resolves
+  through; its new shape is in the typed `Any` notes.

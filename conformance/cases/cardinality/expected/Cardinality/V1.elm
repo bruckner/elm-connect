@@ -12,6 +12,7 @@ import Cardinality.V1.Author
 import Cardinality.V1.Note
 import Json.Decode
 import Json.Encode
+import Proto.Codec
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
@@ -109,18 +110,18 @@ defaultNote =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Author`](#Author): its codecs, default and descriptor together.
+{-| The typed value of [`Author`](#Author): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageAuthor : Proto.Message.Message Author
+messageAuthor : Proto.Message.Message Proto.Codec.Json Author
 messageAuthor =
-    Proto.Message.message encodeAuthor decodeAuthor defaultAuthor Cardinality.V1.Author.descriptor
+    Proto.Message.initJson "cardinality.v1.Author" encodeAuthor decodeAuthor
 
 
-{-| The typed value of [`Note`](#Note): its codecs, default and descriptor together.
+{-| The typed value of [`Note`](#Note): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageNote : Proto.Message.Message Note
+messageNote : Proto.Message.Message Proto.Codec.Json Note
 messageNote =
-    Proto.Message.message encodeNote decodeNote defaultNote Cardinality.V1.Note.descriptor
+    Proto.Message.initJson "cardinality.v1.Note" encodeNote decodeNote
 
 
 

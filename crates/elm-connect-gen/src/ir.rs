@@ -41,12 +41,14 @@ mod build;
 pub mod comments;
 pub mod declaration;
 mod graph;
+mod reach;
 mod rename;
 
 use std::fmt;
 
 pub(crate) use build::declared_fields;
 pub use build::{Built, build, build_with, build_with_imports, name_site, unbound_methods};
+pub use reach::AnyReach;
 
 /// Everything generated from one proto package, across all of its files:
 /// the content of one Elm module.

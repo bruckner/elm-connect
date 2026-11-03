@@ -46,7 +46,7 @@ suite =
                     descriptors =
                         Descriptors.fromDescriptors [ note "title" ] [ visibility ]
                 in
-                ( Descriptors.message "notes.v1.Note" descriptors |> Maybe.map Message.typeName
+                ( Descriptors.message "notes.v1.Note" descriptors |> Maybe.map Message.fullName
                 , Descriptors.enum "notes.v1.Visibility" descriptors |> Maybe.map Enum.typeName
                 , ( Descriptors.message "notes.v1.Visibility" descriptors, Descriptors.enum "notes.v1.Note" descriptors )
                 )
@@ -78,7 +78,7 @@ suite =
         , test "the well-known types" <|
             \_ ->
                 Descriptors.messages Descriptors.wellKnown
-                    |> List.map Message.typeName
+                    |> List.map Message.fullName
                     |> Expect.equal
                         [ "google.protobuf.Any"
                         , "google.protobuf.BoolValue"

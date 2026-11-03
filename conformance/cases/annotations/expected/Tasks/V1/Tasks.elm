@@ -34,7 +34,7 @@ Codecs: JSON. Described by [`descriptorGetTask`](#descriptorGetTask).
 getTask : Tasks.V1.GetTaskRequest -> Rpc.Call Rpc.Json Tasks.V1.GetTaskRequest Tasks.V1.Task
 getTask =
     Rpc.call
-        (Proto.Method.json "tasks.v1.Tasks"
+        (Proto.Method.initJson "tasks.v1.Tasks"
             "GetTask"
             Tasks.V1.encodeGetTaskRequest
             Tasks.V1.decodeTask
@@ -52,7 +52,7 @@ Codecs: JSON. Described by [`descriptorPutTask`](#descriptorPutTask).
 putTask : Tasks.V1.Task -> Rpc.Call Rpc.Json Tasks.V1.Task Tasks.V1.Task
 putTask =
     Rpc.call
-        (Proto.Method.json "tasks.v1.Tasks"
+        (Proto.Method.initJson "tasks.v1.Tasks"
             "PutTask"
             Tasks.V1.encodeTask
             Tasks.V1.decodeTask
@@ -70,7 +70,7 @@ Codecs: JSON. Described by [`descriptorCloseTask`](#descriptorCloseTask).
 closeTask : Tasks.V1.GetTaskRequest -> Rpc.Call Rpc.Json Tasks.V1.GetTaskRequest Tasks.V1.Task
 closeTask =
     Rpc.call
-        (Proto.Method.json "tasks.v1.Tasks"
+        (Proto.Method.initJson "tasks.v1.Tasks"
             "CloseTask"
             Tasks.V1.encodeGetTaskRequest
             Tasks.V1.decodeTask

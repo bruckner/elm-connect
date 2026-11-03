@@ -16,6 +16,7 @@ import Json.Decode
 import Json.Encode
 import Msgs.V1.Message
 import Msgs.V1.MessageRequest
+import Proto.Codec
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
@@ -84,18 +85,18 @@ defaultMessage =
 -- TYPED VALUES
 
 
-{-| The typed value of [`MessageRequest`](#MessageRequest): its codecs, default and descriptor together.
+{-| The typed value of [`MessageRequest`](#MessageRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageMessageRequest : Proto.Message.Message MessageRequest
+messageMessageRequest : Proto.Message.Message Proto.Codec.Json MessageRequest
 messageMessageRequest =
-    Proto.Message.message encodeMessageRequest decodeMessageRequest defaultMessageRequest Msgs.V1.MessageRequest.descriptor
+    Proto.Message.initJson "msgs.v1.MessageRequest" encodeMessageRequest decodeMessageRequest
 
 
-{-| The typed value of [`Message`](#Message): its codecs, default and descriptor together.
+{-| The typed value of [`Message`](#Message): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageMessage : Proto.Message.Message Message
+messageMessage : Proto.Message.Message Proto.Codec.Json Message
 messageMessage =
-    Proto.Message.message encodeMessage decodeMessage defaultMessage Msgs.V1.Message.descriptor
+    Proto.Message.initJson "msgs.v1.Message" encodeMessage decodeMessage
 
 
 

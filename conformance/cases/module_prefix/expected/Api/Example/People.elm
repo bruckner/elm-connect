@@ -11,6 +11,7 @@ import Api.Example.People.Role
 import Api.Example.People.User
 import Json.Decode
 import Json.Encode
+import Proto.Codec
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
@@ -76,11 +77,11 @@ enumRole =
     Proto.Enum.enum encodeRole decodeRole RoleUnspecified Api.Example.People.Role.descriptor
 
 
-{-| The typed value of [`User`](#User): its codecs, default and descriptor together.
+{-| The typed value of [`User`](#User): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageUser : Proto.Message.Message User
+messageUser : Proto.Message.Message Proto.Codec.Json User
 messageUser =
-    Proto.Message.message encodeUser decodeUser defaultUser Api.Example.People.User.descriptor
+    Proto.Message.initJson "users.v1.User" encodeUser decodeUser
 
 
 

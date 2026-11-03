@@ -6,29 +6,28 @@
 //! (`title`), and `descriptor : Proto.Message.Descriptor` built from
 //! them; an enum's, `Notes.V1.Visibility`, holds `descriptor :
 //! Proto.Enum.Descriptor`. The package's module holds the typed values,
-//! `messageNote : Proto.Message.Message Note` and `enumVisibility :
-//! Proto.Enum.Enum Visibility`, each built from its type's codecs,
-//! default and descriptor, and `descriptors :
+//! `messageNote : Proto.Message.Message Proto.Codec.Json Note`, built
+//! from the message's full name and the codecs of its world, and
+//! `enumVisibility : Proto.Enum.Enum Visibility`, built from the enum's
+//! codecs, zero value and descriptor, and `descriptors :
 //! Proto.Descriptors.Descriptors`, built from the descriptors alone; under
-//! `codec=both`, also `binaryRegistry : Proto.Registry.Registry`, built
-//! from codecs alone, which the binary encoders write an `Any` with.
+//! `codec=both`, also `registry : Proto.Registry.Registry`, built from
+//! codecs alone, which the JSON codecs convert an `Any` through.
 
 use std::collections::BTreeSet;
 
-use super::binary::{PROTO_BINARY, bytes_name, well_known_codec};
-use super::field::value_shape;
-use super::scalar::Holding;
+use super::binary::bytes_name;
 use super::{
-    Emitter, MessageShape, PROTO_DESCRIPTORS, PROTO_ENUM, PROTO_ENUM_VALUE, PROTO_FIELD,
-    PROTO_MESSAGE, PROTO_REGISTRY, PROTO_WELL_KNOWN, RecordField, docs,
+    Emitter, MessageShape, PROTO_CODEC, PROTO_DESCRIPTORS, PROTO_ENUM, PROTO_ENUM_VALUE,
+    PROTO_FIELD, PROTO_MESSAGE, PROTO_REGISTRY, PROTO_WELL_KNOWN, RecordField, docs,
 };
-use crate::elm::ast::{Decl, Expr};
-use crate::elm::build::{apply, inline_list, int, lambda, list, pipe, pvar, string, ty, var};
+use crate::elm::ast::{BinOp, Decl, Expr, Pattern};
+use crate::elm::build::{apply, binop, inline_list, int, lambda, list, pipe, string, ty, var};
 use crate::ir::{
     Annotations, Cardinality, Doc, Enum, FieldBehavior, MapKey, ModuleName, Package, ScalarKind,
     TypeRef, WellKnown,
 };
-use crate::naming::{BINARY_REGISTRY, DESCRIPTOR_VALUE, DESCRIPTORS, ENCODER_ARGUMENT};
+use crate::naming::{DESCRIPTOR_VALUE, DESCRIPTORS, REGISTRY, with_registry};
 
 /// One field or oneof member of a message, as its descriptor module
 /// declares it.
@@ -91,54 +90,43 @@ impl Emitter {
         decls
     }
 
-    /// `messageFoo : Proto.Message.Message Foo`, built by
-    /// `Proto.Message.message` from the message's encoder, decoder and
-    /// default, and its descriptor.
-    pub(super) fn message_record(&mut self, package: &ModuleName, shape: &MessageShape) -> Decl {
+    /// `messageFoo : Proto.Message.Message Proto.Codec.Json Foo`, built by
+    /// `Proto.Message.initJson` from the message's full name and its JSON
+    /// codecs under `codec=json`; `Proto.Message.Message Proto.Codec.Proto
+    /// Foo`, built by `Proto.Message.initProto` from its binary codecs,
+    /// under `codec=proto` and `codec=both`.
+    pub(super) fn message_record(&mut self, _package: &ModuleName, shape: &MessageShape) -> Decl {
         let message = shape.message;
-        let annotation =
-            self.library_type(PROTO_MESSAGE, "Message", [ty(message.elm_name.clone(), [])]);
-        let descriptor = self.generated_value(
-            &message.descriptor_module(package),
-            DESCRIPTOR_VALUE.to_owned(),
-        );
-        let encode_bytes = var(super::binary::bytes_name(message.encoder_name()));
-        let decode_bytes = var(super::binary::bytes_name(message.decoder_name()));
-        let body = match self.codec {
-            crate::options::Codec::Json | crate::options::Codec::Both => {
-                let builder = self.reference((PROTO_MESSAGE, "message"));
-                let built = apply(
-                    builder,
-                    [
-                        var(message.encoder_name()),
-                        var(message.decoder_name()),
-                        var(message.default_name()),
-                        descriptor,
-                    ],
-                );
-                if self.codec == crate::options::Codec::Both {
-                    let with = self.reference((PROTO_MESSAGE, "withBinary"));
-                    crate::elm::build::pipe(built, apply(with, [encode_bytes, decode_bytes]))
-                } else {
-                    built
-                }
-            }
-            crate::options::Codec::Proto => {
-                let builder = self.reference((PROTO_MESSAGE, "messageBinary"));
-                apply(
-                    builder,
-                    [
-                        encode_bytes,
-                        decode_bytes,
-                        var(message.default_name()),
-                        descriptor,
-                    ],
-                )
-            }
+        let (builder, tag, codecs) = match self.codec {
+            crate::options::Codec::Json => (
+                "initJson",
+                "Json",
+                [var(message.encoder_name()), var(message.decoder_name())],
+            ),
+            crate::options::Codec::Proto | crate::options::Codec::Both => (
+                "initProto",
+                "Proto",
+                [
+                    var(bytes_name(message.encoder_name())),
+                    var(bytes_name(message.decoder_name())),
+                ],
+            ),
         };
+        let tag = self.library_type(PROTO_CODEC, tag, []);
+        let annotation = self.library_type(
+            PROTO_MESSAGE,
+            "Message",
+            [tag, ty(message.elm_name.clone(), [])],
+        );
+        let builder = self.reference((PROTO_MESSAGE, builder));
+        let body = apply(
+            builder,
+            std::iter::once(string(message.proto_full_name.clone())).chain(codecs),
+        );
         Decl::Value {
             doc: Some(format!(
-                "The typed value of {}: its codecs, default and descriptor together.",
+                "The typed value of {}: its full name and codecs, which a \
+                 `google.protobuf.Any` packs and unpacks with.",
                 docs::local(&message.elm_name)
             )),
             name: message.value_name(),
@@ -273,79 +261,71 @@ impl Emitter {
         }
     }
 
-    /// `binaryRegistry : Proto.Registry.Registry`, under `codec=both`: the
-    /// conversion of each of the package's messages, and of each
-    /// well-known type they hold, from proto3 JSON to protobuf binary
-    /// (`Proto.Registry.withBinary`), after those of the generated packages
-    /// whose messages they hold. The binary encoders write an `Any` field
-    /// with it (`Proto.Binary.anyWith`), so that one holding a message's
-    /// JSON alone, as one read from proto3 JSON does, is written as the
-    /// message's binary.
+    /// `registry : Proto.Registry.Registry`, under `codec=both`: the codecs
+    /// of each of the package's messages (`Proto.Registry.withCodecs`),
+    /// then the registries of the generated packages whose messages they
+    /// hold, then the well-known types' when they hold one, joined by
+    /// `Proto.Registry.unionAll`. A message that reaches an `Any` registers
+    /// its JSON codecs taking the registry, unapplied, so that a wider
+    /// table reaches the `Any`s it holds; any other registers its own
+    /// under `\_ ->`. No entry refers to `registry` itself.
     ///
     /// It is apart from `descriptors` and built from the codecs, not the
     /// typed values, so that it brings no descriptors: a program that
-    /// encodes a message holding an `Any` keeps every message's JSON
-    /// decoder and binary encoder, and no more.
-    pub(super) fn binary_registry(&mut self, package: &Package) -> Decl {
-        let union = self.reference((PROTO_REGISTRY, "union"));
-        let imported: Vec<Expr> = packages_of_messages_held(package)
-            .into_iter()
-            .map(|module| self.generated_value(&module, BINARY_REGISTRY.to_owned()))
-            .collect();
-        let mut body = match imported
-            .into_iter()
-            .rev()
-            .reduce(|right, left| apply(union.clone(), [left, right]))
-        {
-            Some(registries) => registries,
-            None => self.reference((PROTO_REGISTRY, "empty")),
-        };
-        let with_binary = self.reference((PROTO_REGISTRY, "withBinary"));
+    /// writes or reads an `Any` as JSON keeps every message's four codecs,
+    /// and no more.
+    pub(super) fn registry(&mut self, package: &Package) -> Decl {
+        let with_codecs = self.reference((PROTO_REGISTRY, "withCodecs"));
+        let mut own = self.reference((PROTO_REGISTRY, "empty"));
+        let by_name = super::messages_by_name(package);
         for message in &package.messages {
-            let entry = apply(
-                with_binary.clone(),
-                [
-                    string(message.proto_full_name.clone()),
-                    var(message.decoder_name()),
-                    var(bytes_name(message.encoder_name())),
-                ],
-            );
-            body = pipe(body, entry);
-        }
-        for known in well_known_held(package) {
-            let decoder =
-                self.value_decoder(value_shape(&TypeRef::WellKnown(known), Holding::TEXT));
-            let codec = self.reference((PROTO_BINARY, well_known_codec(known, Holding::TEXT)));
-            let encoder = self.reference((PROTO_BINARY, "messageEncoder"));
-            // `Any`'s binary encoder writes with this registry, under a
-            // lambda, so that the value does not refer to itself directly.
-            let encode = if known == WellKnown::Any {
-                let with = self.reference((PROTO_BINARY, "anyWith"));
-                lambda(
-                    [pvar(ENCODER_ARGUMENT)],
-                    apply(
-                        encoder,
-                        [apply(with, [var(BINARY_REGISTRY)]), var(ENCODER_ARGUMENT)],
-                    ),
+            let shape = super::message_shape(message, &by_name, self.holding);
+            let (decoder, encoder) = if self.message_reaches(&shape) {
+                (
+                    var(with_registry(message.decoder_name())),
+                    var(with_registry(message.encoder_name())),
                 )
             } else {
-                apply(encoder, [codec])
+                let ok = var(self.core("Ok"));
+                (
+                    lambda([Pattern::Wildcard], var(message.decoder_name())),
+                    lambda(
+                        [Pattern::Wildcard],
+                        binop(BinOp::ComposeL, ok, var(message.encoder_name())),
+                    ),
+                )
             };
             let entry = apply(
-                with_binary.clone(),
-                [string(known.proto_full_name().to_owned()), decoder, encode],
+                with_codecs.clone(),
+                [
+                    string(message.proto_full_name.clone()),
+                    decoder,
+                    var(bytes_name(message.encoder_name())),
+                    var(bytes_name(message.decoder_name())),
+                    encoder,
+                ],
             );
-            body = pipe(body, entry);
+            own = pipe(own, entry);
         }
+        let mut parts = vec![own];
+        for module in packages_of_messages_held(package) {
+            parts.push(self.generated_value(&module, REGISTRY.to_owned()));
+        }
+        if !well_known_held(package).is_empty() {
+            parts.push(self.reference((PROTO_REGISTRY, "wellKnown")));
+        }
+        let union = self.reference((PROTO_REGISTRY, "unionAll"));
         Decl::Value {
             doc: Some(format!(
-                "The protobuf binary codecs of this package's messages, of those of the                  packages it imports and of the well-known types they hold, by full name:                  the binary encoders write a {} with it, so that one holding a message's                  JSON, as one read from proto3 JSON does, is written as the message's binary.",
+                "The codecs of this package's messages, of those of the packages it imports \
+                 and of the well-known types they hold, by full name: the JSON codecs of a \
+                 message holding a {} convert it through this registry, or one wider.",
                 docs::runtime("Proto.Any", "Any")
             )),
-            name: BINARY_REGISTRY.to_owned(),
+            name: REGISTRY.to_owned(),
             annotation: self.library_type(PROTO_REGISTRY, "Registry", []),
             params: Vec::new(),
-            body,
+            body: apply(union, [list(parts)]),
         }
     }
 
@@ -470,7 +450,7 @@ fn imported_packages(package: &Package) -> BTreeSet<ModuleName> {
 
 /// The other generated packages whose messages the package's messages
 /// hold, as [`imported_packages`] finds them but for enums: a package of
-/// enums alone has no `binaryRegistry`.
+/// enums alone has no `registry`.
 fn packages_of_messages_held(package: &Package) -> BTreeSet<ModuleName> {
     held_types(package)
         .filter_map(|ty| match ty {

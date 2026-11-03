@@ -34,7 +34,7 @@ Codecs: JSON. Described by [`descriptorSend`](#descriptorSend).
 send : Chat.V1.Line -> Rpc.Call Rpc.Json Chat.V1.Line Chat.V1.Line
 send =
     Rpc.call
-        (Proto.Method.json "chat.v1.Chat"
+        (Proto.Method.initJson "chat.v1.Chat"
             "Send"
             Chat.V1.encodeLine
             Chat.V1.decodeLine

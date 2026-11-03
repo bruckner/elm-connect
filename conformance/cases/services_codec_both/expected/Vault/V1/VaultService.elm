@@ -37,10 +37,11 @@ Codecs: JSON and protobuf binary. Described by [`descriptorGetItem`](#descriptor
 getItem : Vault.V1.GetItemRequest -> Rpc.Call codec Vault.V1.GetItemRequest Vault.V1.Item
 getItem =
     Rpc.call
-        (Proto.Method.both "vault.v1.VaultService"
+        (Proto.Method.init "vault.v1.VaultService"
             "GetItem"
-            Vault.V1.encodeGetItemRequest
-            Vault.V1.decodeItem
+            Vault.V1.registry
+            (\_ -> Ok << Vault.V1.encodeGetItemRequest)
+            Vault.V1.decodeItemWith
             Vault.V1.encodeGetItemRequestBytes
             Vault.V1.decodeItemBytes
             |> Proto.Method.withRoutes [ routeGetItem0 ]
@@ -57,10 +58,11 @@ Codecs: JSON and protobuf binary. Described by [`descriptorListItems`](#descript
 listItems : Vault.V1.ListItemsRequest -> Rpc.Call codec Vault.V1.ListItemsRequest Vault.V1.ListItemsResponse
 listItems =
     Rpc.call
-        (Proto.Method.both "vault.v1.VaultService"
+        (Proto.Method.init "vault.v1.VaultService"
             "ListItems"
-            Vault.V1.encodeListItemsRequest
-            Vault.V1.decodeListItemsResponse
+            Vault.V1.registry
+            (\_ -> Ok << Vault.V1.encodeListItemsRequest)
+            Vault.V1.decodeListItemsResponseWith
             Vault.V1.encodeListItemsRequestBytes
             Vault.V1.decodeListItemsResponseBytes
         )
@@ -76,10 +78,11 @@ Codecs: JSON and protobuf binary. Described by [`descriptorPutItem`](#descriptor
 putItem : Vault.V1.Item -> Rpc.Call codec Vault.V1.Item Vault.V1.Item
 putItem =
     Rpc.call
-        (Proto.Method.both "vault.v1.VaultService"
+        (Proto.Method.init "vault.v1.VaultService"
             "PutItem"
-            Vault.V1.encodeItem
-            Vault.V1.decodeItem
+            Vault.V1.registry
+            Vault.V1.encodeItemWith
+            Vault.V1.decodeItemWith
             Vault.V1.encodeItemBytes
             Vault.V1.decodeItemBytes
         )

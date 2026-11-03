@@ -1,84 +1,158 @@
 module Proto.Registry exposing
-    ( Registry, empty, union
-    , withBinary, toBinary
+    ( Registry, empty, union, unionAll, wellKnown
+    , withCodecs, toJson, toBytes
     )
 
-{-| The table an [`Any`](Proto-Any#Any) resolves through: messages' codecs
-by full name, so that an `Any` holding a message's JSON alone, as one read
-from proto3 JSON does, can be written as protobuf binary
-([`Proto.Binary.anyWith`](Proto-Binary#anyWith)). Code generated with
-`codec=both` gives each package one, `binaryRegistry`
-(`Notes.V1.binaryRegistry`), holding the codecs of the package's messages,
-of those of every package it imports and of the well-known types they hold,
-and its binary encoders write an `Any` with it.
+{-| The table an [`Any`](Proto-Any#Any) resolves through: each message's codecs
+by full name, so that an `Any` holding a message's protobuf binary can be
+written as proto3 JSON and read back from it. Code generated with
+`codec=both` gives each package one, `registry` (`Notes.V1.registry`): the
+codecs of the package's messages, its imports' registries and the well-known
+types it holds. Its JSON codecs of a message holding an `Any` take a registry
+(`Notes.V1.encodeNoteWith`, `Notes.V1.decodeNoteWith`), and its calls use
+the package's, or the client's ([`Rpc.withRegistry`](Rpc#withRegistry)).
 
 A registry holds no descriptors; those are
-[`Proto.Descriptors`](Proto-Descriptors). A program reading descriptors keeps
-no codecs for it, nor one writing binary any descriptors.
+[`Proto.Descriptors`](Proto-Descriptors). The package site may show the type
+as `Proto.Internal.Registry.Registry`, its name inside the package.
 
-@docs Registry, empty, union
+@docs Registry, empty, union, unionAll, wellKnown
 
 
-# Binary codecs
+# Codecs
 
-@docs withBinary, toBinary
+@docs withCodecs, toJson, toBytes
 
 -}
 
 import Bytes exposing (Bytes)
 import Bytes.Encode
-import Dict exposing (Dict)
-import Json.Decode
-import Json.Encode
+import Dict
+import Json.Decode exposing (Decoder)
+import Json.Encode exposing (Value)
+import Proto.Any exposing (Problem)
+import Proto.Binary
+import Proto.Internal.Registry as Internal
+import Proto.Json
 
 
-{-| Messages' conversions from proto3 JSON to protobuf binary, each by the
-message's full name. A registry holds functions, so `==` on it fails at run
-time.
+{-| Messages' codecs by full name. A registry holds functions, so `==` on it
+fails at run time.
 -}
-type Registry
-    = Registry (Dict String (Json.Encode.Value -> Maybe Bytes))
+type alias Registry =
+    Internal.Registry
 
 
 {-| The registry with nothing in it.
 -}
 empty : Registry
 empty =
-    Registry Dict.empty
+    Internal.Registry Dict.empty
 
 
-{-| Both registries' codecs. Of two for one name, the left one's are kept.
+{-| Both registries' entries. Of two for one name, the left one's is kept.
 -}
 union : Registry -> Registry -> Registry
-union (Registry left) (Registry right) =
-    Registry (Dict.union left right)
+union (Internal.Registry left) (Internal.Registry right) =
+    Internal.Registry (Dict.union left right)
+
+
+{-| Every registry's entries. Of two for one name, the earlier one's is kept.
+-}
+unionAll : List Registry -> Registry
+unionAll registries =
+    List.foldr union empty registries
 
 
 {-| The registry with a message's codecs too, by its full name: its proto3
-JSON decoder and its protobuf binary encoder, so that its JSON can be written
-as binary ([`toBinary`](#toBinary)). Of two codecs for one name, the later is
-kept.
+JSON decoder and encoder, each given the registry it is used through, and
+its protobuf binary encoder and decoder. Of two entries for one name, the
+later is kept.
 
     Proto.Registry.empty
-        |> Proto.Registry.withBinary "notes.v1.Note" Notes.V1.decodeNote Notes.V1.encodeNoteBytes
+        |> Proto.Registry.withCodecs "notes.v1.Note"
+            Notes.V1.decodeNoteWith
+            Notes.V1.encodeNoteBytes
+            Notes.V1.decodeNoteBytes
+            Notes.V1.encodeNoteWith
+
+A message holding no `Any` has codecs that take no registry, and goes in
+with `\_ -> Notes.V1.decodeNote` and `\_ -> Ok << Notes.V1.encodeNote`.
 
 -}
-withBinary : String -> Json.Decode.Decoder a -> (a -> Bytes.Encode.Encoder) -> Registry -> Registry
-withBinary typeName decoder encode (Registry registry) =
+withCodecs : String -> (Registry -> Decoder a) -> (a -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder a -> (Registry -> a -> Result Problem Value) -> Registry -> Registry
+withCodecs typeName decoder encodeBinary binaryDecoder encode (Internal.Registry entries) =
     let
-        convert json =
-            Json.Decode.decodeValue decoder json
-                |> Result.toMaybe
-                |> Maybe.map (encode >> Bytes.Encode.encode)
+        entry =
+            { toJson =
+                \registry binary ->
+                    Proto.Binary.decode binaryDecoder binary
+                        |> Maybe.andThen (encode registry >> Result.toMaybe)
+            , toBytes =
+                \registry json ->
+                    Json.Decode.decodeValue (decoder registry) json
+                        |> Result.toMaybe
+                        |> Maybe.map (encodeBinary >> Bytes.Encode.encode)
+            }
     in
-    Registry (Dict.insert typeName convert registry)
+    Internal.Registry (Dict.insert typeName entry entries)
 
 
-{-| A message's protobuf binary from its proto3 JSON, by the message's full
-name: `Nothing` when the registry has no codecs for it
-([`withBinary`](#withBinary)) or the JSON is not the message's.
+{-| A message's proto3 JSON from its protobuf binary, by its full name:
+`Nothing` when the registry has no entry for it, the binary is not the
+message, or the message holds an `Any` of a type the registry has no entry
+for.
 -}
-toBinary : String -> Json.Encode.Value -> Registry -> Maybe Bytes
-toBinary typeName json (Registry registry) =
-    Dict.get typeName registry
-        |> Maybe.andThen (\convert -> convert json)
+toJson : Registry -> String -> Bytes -> Maybe Value
+toJson =
+    Internal.toJson
+
+
+{-| A message's protobuf binary from its proto3 JSON, by its full name:
+`Nothing` when the registry has no entry for it, or the JSON is not the
+message.
+-}
+toBytes : Registry -> String -> Value -> Maybe Bytes
+toBytes =
+    Internal.toBytes
+
+
+{-| The well-known message types: `google.protobuf.Any`, `Timestamp`,
+`Duration`, `FieldMask`, `Empty`, `Struct`, `Value`, `ListValue` and the
+wrappers.
+-}
+wellKnown : Registry
+wellKnown =
+    empty
+        |> total "google.protobuf.Timestamp" Proto.Json.timestamp Proto.Json.encodeTimestamp Proto.Binary.timestamp
+        |> total "google.protobuf.Duration" Proto.Json.duration Proto.Json.encodeDuration Proto.Binary.duration
+        |> total "google.protobuf.FieldMask" Proto.Json.fieldMask Proto.Json.encodeFieldMask Proto.Binary.fieldMask
+        |> total "google.protobuf.Empty" Proto.Json.empty Proto.Json.encodeEmpty Proto.Binary.empty
+        |> total "google.protobuf.Struct" Proto.Json.struct Proto.Json.encodeStruct Proto.Binary.struct
+        |> total "google.protobuf.Value" Json.Decode.value identity Proto.Binary.value
+        |> total "google.protobuf.ListValue" Proto.Json.listValue Proto.Json.encodeListValue Proto.Binary.listValue
+        |> total "google.protobuf.DoubleValue" Proto.Json.float Proto.Json.encodeFloat Proto.Binary.doubleValue
+        |> total "google.protobuf.FloatValue" Proto.Json.float32 Proto.Json.encodeFloat Proto.Binary.floatValue
+        |> total "google.protobuf.Int64Value" Proto.Json.int64 Proto.Json.encodeInt64 Proto.Binary.int64Value
+        |> total "google.protobuf.UInt64Value" Proto.Json.uint64 Proto.Json.encodeInt64 Proto.Binary.uint64Value
+        |> total "google.protobuf.Int32Value" Proto.Json.int32 Json.Encode.int Proto.Binary.int32Value
+        |> total "google.protobuf.UInt32Value" Proto.Json.uint32 Json.Encode.int Proto.Binary.uint32Value
+        |> total "google.protobuf.BoolValue" Json.Decode.bool Json.Encode.bool Proto.Binary.boolValue
+        |> total "google.protobuf.StringValue" Proto.Json.string Json.Encode.string Proto.Binary.stringValue
+        |> total "google.protobuf.BytesValue" Proto.Json.bytes Proto.Json.encodeBytes Proto.Binary.bytesValue
+        |> withCodecs "google.protobuf.Any"
+            Proto.Json.anyWith
+            (Proto.Binary.messageEncoder Proto.Binary.any)
+            (Proto.Binary.messageDecoder Proto.Binary.any)
+            Proto.Json.encodeAnyWith
+
+
+{-| An entry of codecs that hold no `Any`.
+-}
+total : String -> Decoder a -> (a -> Value) -> Proto.Binary.Codec a -> Registry -> Registry
+total typeName decoder encode codec =
+    withCodecs typeName
+        (\_ -> decoder)
+        (Proto.Binary.messageEncoder codec)
+        (Proto.Binary.messageDecoder codec)
+        (\_ -> encode >> Ok)

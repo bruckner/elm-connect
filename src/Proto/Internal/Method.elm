@@ -11,9 +11,9 @@ halves and one route function per HTTP binding, not its descriptor: the
 descriptor's type names and bindings as data are a separate value a program
 keeps only if it names it.
 
-The `codec` parameter is a phantom: `Proto.Method.json` gives a method in
-`Json`, `Proto.Method.proto` one in `Proto`, and `Proto.Method.both`, free in
-the codec, one with both. A protocol in a codec only meets a method in the
+The `codec` parameter is a phantom: `Proto.Method.initJson` gives a method
+in `Json`, `Proto.Method.initProto` one in `Proto`, and `Proto.Method.init`,
+free in the codec, one with both. A protocol in a codec only meets a method in the
 same codec, so the half it reads is always one the generated code gave.
 
 Both halves are always present, so sending has no branch for a missing one:
@@ -28,6 +28,8 @@ import Bytes exposing (Bytes)
 import Bytes.Encode
 import Json.Decode
 import Json.Encode
+import Proto.Any exposing (Problem)
+import Proto.Internal.Registry exposing (Registry)
 import Proto.Route exposing (Route)
 
 
@@ -39,6 +41,7 @@ type Method idempotency codec req res
         , codecs : Codecs
         , json : JsonHalf req res
         , binary : BinaryHalf req res
+        , registry : Maybe Registry
         , routes : List (req -> Route)
         }
 
@@ -51,11 +54,16 @@ type alias Codecs =
     }
 
 
-{-| A request's proto3 JSON and the response's decoder.
+{-| A request's proto3 JSON and the response's decoder, given the registry
+an `Any` they hold converts through: the client's, else the method's own
+`registry`. A request holding an `Any` of a type the registry lacks has no
+JSON. Only a method built with `Proto.Method.init` has a registry of its own,
+and only its encoder can fail, so a method without one is never encoded to be
+checked.
 -}
 type alias JsonHalf req res =
-    { encode : req -> Json.Encode.Value
-    , decoder : Json.Decode.Decoder res
+    { encode : Registry -> req -> Result Problem Json.Encode.Value
+    , decoder : Registry -> Json.Decode.Decoder res
     }
 
 
@@ -77,8 +85,8 @@ response.
 -}
 noJson : JsonHalf req res
 noJson =
-    { encode = \_ -> Json.Encode.null
-    , decoder = Json.Decode.fail "a method without proto3 JSON codecs"
+    { encode = \_ _ -> Ok Json.Encode.null
+    , decoder = \_ -> Json.Decode.fail "a method without proto3 JSON codecs"
     }
 
 

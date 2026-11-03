@@ -20,7 +20,7 @@ otherwise.
 
 | Proto | Elm |
 |---|---|
-| `message Note` | `type alias Note = { … }`, a record with a field per proto field in declaration order, named in lowerCamelCase (`create_time` → `createTime`); with it `defaultNote`, `encodeNote`, `decodeNote` and `messageNote : Proto.Message.Message Note`, its typed value. Build a message from its default by record update, `{ defaultNote | title = "x" }`, rather than as a record literal: the update keeps compiling when the message gains a field. Elm's record update takes an unqualified name, so `{ Notes.V1.defaultNote | … }` does not compile; bind the default first, `let note = Notes.V1.defaultNote in { note | title = "x" }` ([quick start](quickstart.md#4-send-a-call)) |
+| `message Note` | `type alias Note = { … }`, a record with a field per proto field in declaration order, named in lowerCamelCase (`create_time` → `createTime`); with it `defaultNote`, `encodeNote`, `decodeNote` and `messageNote : Proto.Message.Message Proto.Codec.Json Note`, its typed value (its full name and codecs, which a `google.protobuf.Any` packs with). Build a message from its default by record update, `{ defaultNote | title = "x" }`, rather than as a record literal: the update keeps compiling when the message gains a field. Elm's record update takes an unqualified name, so `{ Notes.V1.defaultNote | … }` does not compile; bind the default first, `let note = Notes.V1.defaultNote in { note | title = "x" }` ([quick start](quickstart.md#4-send-a-call)) |
 | `string`, `bool` | `String`, `Bool` |
 | `int32`, `uint32`, `sint32`, `fixed32`, `sfixed32` | `Int` |
 | `double`, `float` | `Float` |
@@ -44,7 +44,7 @@ otherwise.
 | `google.protobuf.Value` | `Maybe Json.Encode.Value`; `Just` the JSON `null` is a `Value` set to null |
 | `google.protobuf.ListValue` | `Maybe (List Json.Encode.Value)` |
 | the wrappers (`StringValue`, `Int32Value`, …) | `Maybe` of the wrapped type's form: `Maybe String`, `Maybe Int`; `Int64Value` and `UInt64Value` follow `int64`, `BytesValue` follows `bytes` |
-| `google.protobuf.Any` | `Maybe Proto.Any.Any` ([descriptors.md](descriptors.md#any)) |
+| `google.protobuf.Any` | `Maybe (Proto.Any.Any Proto.Codec.Json)`, holding its message's JSON; `Proto.Codec.Proto`, holding its binary, under `codec=proto` and `codec=both` ([descriptors.md](descriptors.md#any)) |
 | `google.protobuf.NullValue` | `()`, written `null`: a singular field, `optional` too, is never written, since its one value is the default; a list or map holds `null`s; a oneof member has no argument and `null` sets it |
 | a recursive message (`repeated Node children`) | the field that closes the cycle holds a wrapper, `List Node_`, with `type Node_ = Node_ Node`; fields that close no cycle hold the record itself |
 | a nested message or enum (`Outer.Inner`) | a type named by its path, `OuterInner`, in the package's module |
@@ -153,48 +153,60 @@ written against the runtime's `Proto.Binary`:
 | a recursive message's wrapper | `encodeNode_Bytes` and `mergeNode_Bytes` |
 | `repeated int32 marks = 7 [packed = false];` | written one element per field, as declared; every other repeated scalar is packed |
 
-The typed values and the methods carry them. Under `codec=both` a
-typed value is built as under `json` and given its binary codecs by
-`Proto.Message.withBinary` (the `codec_both` corpus case):
+The typed values and the methods carry them. Under `codec=proto` and
+`codec=both` a message's typed value holds its binary codecs (the
+`codec_both` corpus case), the form its `google.protobuf.Any`s hold:
 
 ```elm conformance/cases/codec_both/expected/Codec/V1.elm excerpt
-messageLeaf : Proto.Message.Message Leaf
+messageLeaf : Proto.Message.Message Proto.Codec.Proto Leaf
 messageLeaf =
-    Proto.Message.message encodeLeaf decodeLeaf defaultLeaf Codec.V1.Leaf.descriptor
-        |> Proto.Message.withBinary encodeLeafBytes decodeLeafBytes
+    Proto.Message.initProto "codec.v1.Leaf" encodeLeafBytes decodeLeafBytes
 ```
 
-and a method by `Proto.Method.both`, given its service's full name and
-its name, the request type's `encode…` and the response type's
-`decode…`, then their `encode…Bytes` and `decode…Bytes`, and its
-idempotency and routes as under `json`. Under
-`codec=proto` both are built from the binary codecs alone (the
+Under `codec=proto` a method is built from the binary codecs alone (the
 `codec_proto` case):
 
 ```elm conformance/cases/codec_proto/expected/Ledger/V1/LedgerService.elm excerpt
 getEntry : Ledger.V1.GetEntryRequest -> Rpc.Call Rpc.Proto Ledger.V1.GetEntryRequest Ledger.V1.Entry
 getEntry =
     Rpc.call
-        (Proto.Method.proto "ledger.v1.LedgerService"
+        (Proto.Method.initProto "ledger.v1.LedgerService"
             "GetEntry"
             Ledger.V1.encodeGetEntryRequestBytes
             Ledger.V1.decodeEntryBytes
         )
 ```
 
-`Proto.Message.encodeBytes` and `bytesDecoder` read a typed value's
-binary codecs back (`Nothing` without them); `Proto.Binary.encode` and
-`Proto.Binary.decode` run them on a whole body.
+and under `codec=both` by `Proto.Method.init`, given its service's full
+name and its name, the registry of its types' packages, the JSON codecs
+taking a registry, then the binary codecs, and its idempotency and routes
+as under `json` (the `services_codec_both` case, whose `Item` holds an
+`Any` and `GetItemRequest` does not):
+
+```elm conformance/cases/services_codec_both/expected/Vault/V1/VaultService.elm excerpt
+getItem : Vault.V1.GetItemRequest -> Rpc.Call codec Vault.V1.GetItemRequest Vault.V1.Item
+getItem =
+    Rpc.call
+        (Proto.Method.init "vault.v1.VaultService"
+            "GetItem"
+            Vault.V1.registry
+            (\_ -> Ok << Vault.V1.encodeGetItemRequest)
+            Vault.V1.decodeItemWith
+            Vault.V1.encodeGetItemRequestBytes
+            Vault.V1.decodeItemBytes
+```
+
+`Proto.Binary.encode` and `Proto.Binary.decode` run the binary codecs on
+a whole body.
 
 `codec=proto` drops the JSON codecs of messages, oneofs and recursion
 wrappers: `encodeNote` and `decodeNote` are not generated. Enums keep
-theirs, since `Proto.Enum.Enum` holds them. The typed values are built
-by `Proto.Message.messageBinary` and the methods by
-`Proto.Method.proto`; `Proto.Method.hasJson` tells such a method apart.
+theirs, since `Proto.Enum.Enum` holds them. The methods are built by
+`Proto.Method.initProto`; `Proto.Method.hasJson` tells such a method apart.
 Its calls are `Rpc.Call Rpc.Proto req res`, which only a
-`Rpc.Protocol.connectProto` client sends: transcoding speaks JSON only,
-so such a method gets no route functions and its messages no query
-encoders.
+`Rpc.Protocol.connectProto` or `grpcWeb` client sends: transcoding speaks
+JSON only, so such a method gets no route functions and its messages no
+query encoders.
 
 `int64` and `bytes` apply to the binary codecs as to the JSON ones: the
 same Elm types, so a value read from binary is the record JSON would
@@ -208,18 +220,57 @@ would have JSON codecs of the same names, so under `codec=both`, or
 under `codec=proto` for an enum, that is `naming::codec_collision`;
 `rename` one of the two. Under `codec=json` nothing is reserved.
 
-Under `codec=both` the package module also holds `binaryRegistry`, a
-`Proto.Registry.Registry` of the conversions from proto3 JSON to binary
-of the package's messages and of the well-known types they hold, after
-those of the packages whose messages they hold. The binary encoders
-write an `Any` field with it (`Proto.Binary.anyWith binaryRegistry`),
-so that an `Any` read from proto3 JSON is written as its message's
-binary; one of a type it lacks is written with its type URL alone.
-`descriptors`, a `Proto.Descriptors.Descriptors`, holds no codecs, so
-a program that reads descriptors keeps no codecs, and one that writes
-binary keeps no descriptors.
-Under `codec=proto`, which has no JSON decoders, there is no
-`binaryRegistry`.
+### The registry
+
+Under `codec=both` an `Any` holds its message's binary, and its proto3
+JSON is converted through a table of codecs. The package module holds
+`registry`, a `Proto.Registry.Registry` of its messages' codecs, then the
+`registry` of each package whose messages they hold, then the well-known
+types' when they hold one:
+
+```elm conformance/cases/services_codec_both/expected/Vault/V1.elm excerpt
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.unionAll
+        [ Proto.Registry.empty
+            |> Proto.Registry.withCodecs "vault.v1.Item" decodeItemWith encodeItemBytes decodeItemBytes encodeItemWith
+            |> Proto.Registry.withCodecs "vault.v1.GetItemRequest" (\_ -> decodeGetItemRequest) encodeGetItemRequestBytes decodeGetItemRequestBytes (\_ -> Ok << encodeGetItemRequest)
+```
+
+A message, oneof or recursion wrapper that holds an `Any`, directly or
+through its fields, in this package or another, has JSON codecs taking
+the registry, whose name ends in `With`. Its decoder comes in a pair,
+`decodeItemWith` and `decodeItem`, that with the package's `registry`;
+its encoder gives a `Result`, which is `Err (Proto.Any.UnregisteredType
+name)` for an `Any` of a type the registry lacks, and has no `encodeItem`
+beside it:
+
+```elm conformance/cases/services_codec_both/expected/Vault/V1.elm excerpt
+encodeItemWith : Proto.Registry.Registry -> Item -> Result Proto.Any.Problem Json.Encode.Value
+encodeItemWith types value =
+    Proto.Json.tryObjectOfFields
+        [ ( "name", Ok (Proto.Json.implicitField "" Json.Encode.string value.name) )
+```
+
+```elm conformance/cases/services_codec_both/expected/Vault/V1.elm excerpt
+decodeItem : Json.Decode.Decoder Item
+decodeItem =
+    decodeItemWith registry
+```
+
+Code that encodes such a message itself passes a registry and handles the
+`Result` (`Vault.V1.encodeItemWith Vault.V1.registry item`); a call does
+that for the application, with the client's registry when it has one
+([calling.md](calling.md#the-registry)). A type named for one of these
+with `With` at the end, `ItemWith` beside `Item`, would have JSON codecs
+of the same names: that is `naming::codec_collision` too. Each method
+holds its package's `registry` as its default, so a program that calls
+one keeps the table, whatever its protocol; one that only encodes and
+decodes messages that hold no `Any` keeps none.
+`descriptors`, a `Proto.Descriptors.Descriptors`, holds no codecs, so a
+program that reads descriptors keeps no codecs, and one that converts an
+`Any` keeps no descriptors. Under `codec=proto` there is no `registry`:
+an `Any` holds binary, read and written as it is.
 
 Calls go as protobuf binary over Connect with a client of
 `Rpc.Protocol.connectProto`

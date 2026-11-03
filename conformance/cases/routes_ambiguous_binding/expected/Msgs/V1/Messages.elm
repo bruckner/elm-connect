@@ -43,7 +43,7 @@ Codecs: JSON. Described by [`descriptorGetMessage`](#descriptorGetMessage).
 getMessage : Msgs.V1.MessageRequest -> Rpc.Call Rpc.Json Msgs.V1.MessageRequest Msgs.V1.Message
 getMessage =
     Rpc.call
-        (Proto.Method.json "msgs.v1.Messages"
+        (Proto.Method.initJson "msgs.v1.Messages"
             "GetMessage"
             Msgs.V1.encodeMessageRequest
             Msgs.V1.decodeMessage
@@ -63,7 +63,7 @@ Codecs: JSON. Described by [`descriptorGetSub`](#descriptorGetSub).
 getSub : Msgs.V1.MessageRequest -> Rpc.Call Rpc.Json Msgs.V1.MessageRequest Msgs.V1.Message
 getSub =
     Rpc.call
-        (Proto.Method.json "msgs.v1.Messages"
+        (Proto.Method.initJson "msgs.v1.Messages"
             "GetSub"
             Msgs.V1.encodeMessageRequest
             Msgs.V1.decodeMessage
@@ -83,7 +83,7 @@ Codecs: JSON. Described by [`descriptorUpdateMessage`](#descriptorUpdateMessage)
 updateMessage : Msgs.V1.MessageRequest -> Rpc.Call Rpc.Json Msgs.V1.MessageRequest Msgs.V1.Message
 updateMessage =
     Rpc.call
-        (Proto.Method.json "msgs.v1.Messages"
+        (Proto.Method.initJson "msgs.v1.Messages"
             "UpdateMessage"
             Msgs.V1.encodeMessageRequest
             Msgs.V1.decodeMessage
@@ -101,7 +101,7 @@ Codecs: JSON. Described by [`descriptorListMessages`](#descriptorListMessages).
 listMessages : Msgs.V1.MessageRequest -> Rpc.Call Rpc.Json Msgs.V1.MessageRequest Msgs.V1.Message
 listMessages =
     Rpc.call
-        (Proto.Method.json "msgs.v1.Messages"
+        (Proto.Method.initJson "msgs.v1.Messages"
             "ListMessages"
             Msgs.V1.encodeMessageRequest
             Msgs.V1.decodeMessage
@@ -121,7 +121,7 @@ Codecs: JSON. Described by [`descriptorCheckMessage`](#descriptorCheckMessage).
 checkMessage : Msgs.V1.MessageRequest -> Rpc.Call Rpc.Json Msgs.V1.MessageRequest Msgs.V1.Message
 checkMessage =
     Rpc.call
-        (Proto.Method.json "msgs.v1.Messages"
+        (Proto.Method.initJson "msgs.v1.Messages"
             "CheckMessage"
             Msgs.V1.encodeMessageRequest
             Msgs.V1.decodeMessage
@@ -139,7 +139,7 @@ Codecs: JSON. Described by [`descriptorCheckById`](#descriptorCheckById).
 checkById : Msgs.V1.MessageRequest -> Rpc.Call Rpc.Json Msgs.V1.MessageRequest Msgs.V1.Message
 checkById =
     Rpc.call
-        (Proto.Method.json "msgs.v1.Messages"
+        (Proto.Method.initJson "msgs.v1.Messages"
             "CheckById"
             Msgs.V1.encodeMessageRequest
             Msgs.V1.decodeMessage
@@ -159,7 +159,7 @@ Codecs: JSON. Described by [`descriptorTouch`](#descriptorTouch).
 touch : Msgs.V1.MessageRequest -> Rpc.Call Rpc.Json Msgs.V1.MessageRequest Msgs.V1.Message
 touch =
     Rpc.call
-        (Proto.Method.json "msgs.v1.Messages"
+        (Proto.Method.initJson "msgs.v1.Messages"
             "Touch"
             Msgs.V1.encodeMessageRequest
             Msgs.V1.decodeMessage

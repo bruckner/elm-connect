@@ -6,6 +6,7 @@ module Unused.V1 exposing (..)
 
 import Json.Decode
 import Json.Encode
+import Proto.Codec
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
@@ -155,46 +156,46 @@ enumChar =
     Proto.Enum.enum encodeChar decodeChar CharUnspecified Unused.V1.Char.descriptor
 
 
-{-| The typed value of [`Dict`](#Dict): its codecs, default and descriptor together.
+{-| The typed value of [`Dict`](#Dict): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageDict : Proto.Message.Message Dict
+messageDict : Proto.Message.Message Proto.Codec.Json Dict
 messageDict =
-    Proto.Message.message encodeDict decodeDict defaultDict Unused.V1.Dict.descriptor
+    Proto.Message.initJson "unused.v1.Dict" encodeDict decodeDict
 
 
-{-| The typed value of [`Result`](#Result): its codecs, default and descriptor together.
+{-| The typed value of [`Result`](#Result): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageResult : Proto.Message.Message Result
+messageResult : Proto.Message.Message Proto.Codec.Json Result
 messageResult =
-    Proto.Message.message encodeResult decodeResult defaultResult Unused.V1.Result.descriptor
+    Proto.Message.initJson "unused.v1.Result" encodeResult decodeResult
 
 
-{-| The typed value of [`Order`](#Order): its codecs, default and descriptor together.
+{-| The typed value of [`Order`](#Order): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageOrder : Proto.Message.Message Order
+messageOrder : Proto.Message.Message Proto.Codec.Json Order
 messageOrder =
-    Proto.Message.message encodeOrder decodeOrder defaultOrder Unused.V1.Order.descriptor
+    Proto.Message.initJson "unused.v1.Order" encodeOrder decodeOrder
 
 
-{-| The typed value of [`Never`](#Never): its codecs, default and descriptor together.
+{-| The typed value of [`Never`](#Never): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageNever : Proto.Message.Message Never
+messageNever : Proto.Message.Message Proto.Codec.Json Never
 messageNever =
-    Proto.Message.message encodeNever decodeNever defaultNever Unused.V1.Never.descriptor
+    Proto.Message.initJson "unused.v1.Never" encodeNever decodeNever
 
 
-{-| The typed value of [`Cmd`](#Cmd): its codecs, default and descriptor together.
+{-| The typed value of [`Cmd`](#Cmd): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageCmd : Proto.Message.Message Cmd
+messageCmd : Proto.Message.Message Proto.Codec.Json Cmd
 messageCmd =
-    Proto.Message.message encodeCmd decodeCmd defaultCmd Unused.V1.Cmd.descriptor
+    Proto.Message.initJson "unused.v1.Cmd" encodeCmd decodeCmd
 
 
-{-| The typed value of [`True`](#True): its codecs, default and descriptor together.
+{-| The typed value of [`True`](#True): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageTrue : Proto.Message.Message True
+messageTrue : Proto.Message.Message Proto.Codec.Json True
 messageTrue =
-    Proto.Message.message encodeTrue decodeTrue defaultTrue Unused.V1.True.descriptor
+    Proto.Message.initJson "unused.v1.True" encodeTrue decodeTrue
 
 
 

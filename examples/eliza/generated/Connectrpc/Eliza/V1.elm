@@ -12,6 +12,7 @@ import Connectrpc.Eliza.V1.SayRequest
 import Connectrpc.Eliza.V1.SayResponse
 import Json.Decode
 import Json.Encode
+import Proto.Codec
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
@@ -159,46 +160,46 @@ defaultIntroduceResponse =
 -- TYPED VALUES
 
 
-{-| The typed value of [`SayRequest`](#SayRequest): its codecs, default and descriptor together.
+{-| The typed value of [`SayRequest`](#SayRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageSayRequest : Proto.Message.Message SayRequest
+messageSayRequest : Proto.Message.Message Proto.Codec.Json SayRequest
 messageSayRequest =
-    Proto.Message.message encodeSayRequest decodeSayRequest defaultSayRequest Connectrpc.Eliza.V1.SayRequest.descriptor
+    Proto.Message.initJson "connectrpc.eliza.v1.SayRequest" encodeSayRequest decodeSayRequest
 
 
-{-| The typed value of [`SayResponse`](#SayResponse): its codecs, default and descriptor together.
+{-| The typed value of [`SayResponse`](#SayResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageSayResponse : Proto.Message.Message SayResponse
+messageSayResponse : Proto.Message.Message Proto.Codec.Json SayResponse
 messageSayResponse =
-    Proto.Message.message encodeSayResponse decodeSayResponse defaultSayResponse Connectrpc.Eliza.V1.SayResponse.descriptor
+    Proto.Message.initJson "connectrpc.eliza.v1.SayResponse" encodeSayResponse decodeSayResponse
 
 
-{-| The typed value of [`ConverseRequest`](#ConverseRequest): its codecs, default and descriptor together.
+{-| The typed value of [`ConverseRequest`](#ConverseRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageConverseRequest : Proto.Message.Message ConverseRequest
+messageConverseRequest : Proto.Message.Message Proto.Codec.Json ConverseRequest
 messageConverseRequest =
-    Proto.Message.message encodeConverseRequest decodeConverseRequest defaultConverseRequest Connectrpc.Eliza.V1.ConverseRequest.descriptor
+    Proto.Message.initJson "connectrpc.eliza.v1.ConverseRequest" encodeConverseRequest decodeConverseRequest
 
 
-{-| The typed value of [`ConverseResponse`](#ConverseResponse): its codecs, default and descriptor together.
+{-| The typed value of [`ConverseResponse`](#ConverseResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageConverseResponse : Proto.Message.Message ConverseResponse
+messageConverseResponse : Proto.Message.Message Proto.Codec.Json ConverseResponse
 messageConverseResponse =
-    Proto.Message.message encodeConverseResponse decodeConverseResponse defaultConverseResponse Connectrpc.Eliza.V1.ConverseResponse.descriptor
+    Proto.Message.initJson "connectrpc.eliza.v1.ConverseResponse" encodeConverseResponse decodeConverseResponse
 
 
-{-| The typed value of [`IntroduceRequest`](#IntroduceRequest): its codecs, default and descriptor together.
+{-| The typed value of [`IntroduceRequest`](#IntroduceRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageIntroduceRequest : Proto.Message.Message IntroduceRequest
+messageIntroduceRequest : Proto.Message.Message Proto.Codec.Json IntroduceRequest
 messageIntroduceRequest =
-    Proto.Message.message encodeIntroduceRequest decodeIntroduceRequest defaultIntroduceRequest Connectrpc.Eliza.V1.IntroduceRequest.descriptor
+    Proto.Message.initJson "connectrpc.eliza.v1.IntroduceRequest" encodeIntroduceRequest decodeIntroduceRequest
 
 
-{-| The typed value of [`IntroduceResponse`](#IntroduceResponse): its codecs, default and descriptor together.
+{-| The typed value of [`IntroduceResponse`](#IntroduceResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageIntroduceResponse : Proto.Message.Message IntroduceResponse
+messageIntroduceResponse : Proto.Message.Message Proto.Codec.Json IntroduceResponse
 messageIntroduceResponse =
-    Proto.Message.message encodeIntroduceResponse decodeIntroduceResponse defaultIntroduceResponse Connectrpc.Eliza.V1.IntroduceResponse.descriptor
+    Proto.Message.initJson "connectrpc.eliza.v1.IntroduceResponse" encodeIntroduceResponse decodeIntroduceResponse
 
 
 

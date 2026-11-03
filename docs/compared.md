@@ -36,7 +36,7 @@ that closes a cycle. What differs:
 | a oneof is `Maybe` of a custom type, `Nothing` when unset | a custom type with an `…Unset` constructor, such as `NoteKindUnset`, as protobuf-es's `{ case: undefined }` |
 | 64-bit integers are `Protobuf.Types.Int64`, opaque | `String`, the exact decimal; under `int64=int`, `Int` |
 | `bytes` is `Bytes.Bytes` | the base64 `String`; under `bytes=bytes`, `Bytes.Bytes` |
-| the well-known types come from elm-protoc-types (`Proto.Google.Protobuf.*`) | the runtime maps them: `Time.Posix`, `Proto.Duration.Duration`, `Maybe` for the wrappers, `Proto.Any.Any` ([generator.md](generator.md#what-a-proto-becomes)) |
+| the well-known types come from elm-protoc-types (`Proto.Google.Protobuf.*`) | the runtime maps them: `Time.Posix`, `Proto.Duration.Duration`, `Maybe` for the wrappers, `Proto.Any.Any codec` ([generator.md](generator.md#what-a-proto-becomes)) |
 | `Grpc.new rpc req \|> Grpc.addHeader … \|> Grpc.toCmd` | `Rpc.send client toMsg call`, with headers, timeout and retry on the client or on the call ([calling.md](calling.md)) |
 | calls go over gRPC-Web, in protobuf binary | a client of `Rpc.Protocol.grpcWeb`, with code generated under `codec=proto` or `codec=both` ([calling.md](calling.md#choosing-the-codec)) |
 | modules under `Proto.` (`Proto.Notes.V1`) | the package's own name (`Notes.V1`); `module_prefix=Proto` gives `Proto.Notes.V1`, except where a package would take one of the runtime's own `Proto.*` modules, which is the diagnostic `naming::reserved_module` |

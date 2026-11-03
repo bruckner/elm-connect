@@ -44,7 +44,7 @@ Codecs: JSON. Described by [`descriptorSay`](#descriptorSay).
 say : Connectrpc.Eliza.V1.SayRequest -> Rpc.Call Rpc.Json Connectrpc.Eliza.V1.SayRequest Connectrpc.Eliza.V1.SayResponse
 say =
     Rpc.call
-        (Proto.Method.json "connectrpc.eliza.v1.ElizaService"
+        (Proto.Method.initJson "connectrpc.eliza.v1.ElizaService"
             "Say"
             Connectrpc.Eliza.V1.encodeSayRequest
             Connectrpc.Eliza.V1.decodeSayResponse

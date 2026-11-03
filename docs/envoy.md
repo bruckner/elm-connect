@@ -271,7 +271,7 @@ What `Rpc.Error` gives the application:
 | `Rpc.Error.code` | `Rpc.Code.NotFound`, `Rpc.Code.InvalidArgument` | the same |
 | `Rpc.Error.message` | the service's message | the same, percent-decoded |
 | `source` | `StatusBody` | `GrpcHeaders` |
-| `Rpc.Error.details` | the `ErrorInfo` and `BadRequest` | none: Envoy forwards no `grpc-status-details-bin` |
+| `Rpc.Error.detailsJson` | the `ErrorInfo` and `BadRequest` | none: Envoy forwards no `grpc-status-details-bin` |
 
 So convert errors when the client reads details; `Google.Rpc`'s
 `BadRequest` field violations, for one, only arrive that way. Either

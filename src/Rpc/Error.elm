@@ -1,6 +1,6 @@
 module Rpc.Error exposing
-    ( Error(..), Reason(..), StatusError, Source(..)
-    , code, message, details, toString
+    ( Error(..), Reason(..), StatusError, Source(..), Detail
+    , code, message, details, detailsJson, toString
     )
 
 {-| Why a call failed: what [`Rpc.task`](Rpc#task), [`Rpc.send`](Rpc#send) and
@@ -16,17 +16,18 @@ error has:
         _ ->
             showMessage (Rpc.Error.message error)
 
-@docs Error, Reason, StatusError, Source
+@docs Error, Reason, StatusError, Source, Detail
 
 
 # Reading an error
 
-@docs code, message, details, toString
+@docs code, message, details, detailsJson, toString
 
 -}
 
 import Json.Encode
 import Proto.Any exposing (Any)
+import Proto.Codec exposing (Json, Proto)
 import Proto.Message exposing (Message)
 import Rpc.Code as Code exposing (Code)
 import Rpc.Response exposing (Response)
@@ -99,6 +100,10 @@ type Error
     (`size`), than the protocol reads (`limit`,
     [`withReadMaxBytes`](Rpc-Protocol#withReadMaxBytes)). The body was
     dropped without decoding, so the error keeps no `Response`.
+  - `UnregisteredType`: over JSON, the request holds a
+    [`google.protobuf.Any`](Proto-Any) whose type, named here, the registry
+    in use cannot write as JSON (see
+    [`Rpc.withRegistry`](Rpc#withRegistry)). Nothing was sent.
 
 These are every way a request can fail before an answer is read, and the type
 is fixed.
@@ -112,19 +117,32 @@ type Reason
     | InvalidPathValue { field : String, template : String }
     | RequestTooLarge { limit : Int, size : Int }
     | ResponseTooLarge { limit : Int, size : Int }
+    | UnregisteredType String
 
 
 {-| A status the server stated: its code, its message (which may be empty), its
-details and where it was found. Each detail is a message packed in an
-[`Any`](Proto-Any#Any), read with [`details`](#details) or
-[`Proto.Any.unpack`](Proto-Any#unpack). The code is a [`Code`](Rpc-Code#Code),
-which has no `ok`: an answer claiming `ok` while failing reads as `Unknown`.
+details and where it was found. The code is a [`Code`](Rpc-Code#Code), which
+has no `ok`: an answer claiming `ok` while failing reads as `Unknown`.
 -}
 type alias StatusError =
     { code : Code
     , message : String
-    , details : List Any
+    , details : List Detail
     , source : Source
+    }
+
+
+{-| One of a status's details, a message packed in an [`Any`](Proto-Any#Any),
+in the forms it arrived in: its protobuf binary (`proto`), its proto3 JSON
+(`json`), or both. A Connect error body carries the binary, and the JSON too
+when the server sends `debug`; a `google.rpc.Status` body carries the JSON;
+gRPC-Web carries the binary. A call of code generated with `codec=both` fills
+in the missing form of each detail whose type its registry has. Read them with
+[`details`](#details) and [`detailsJson`](#detailsJson).
+-}
+type alias Detail =
+    { proto : Maybe (Any Proto)
+    , json : Maybe (Any Json)
     }
 
 
@@ -169,9 +187,9 @@ type Source
   - `BadResponse`: its own, `Internal` or `Unimplemented` (see
     [`Error`](#Error)).
   - `NoAnswer`: a timeout is `DeadlineExceeded`, a network failure
-    `Unavailable`, a bad URL or an invalid header `Internal`, an invalid path
-    value `InvalidArgument`, a request or a response over its limit
-    `ResourceExhausted`.
+    `Unavailable`, a bad URL, an invalid header or an unregistered type
+    `Internal`, an invalid path value `InvalidArgument`, a request or a
+    response over its limit `ResourceExhausted`.
 
 An `HttpStatus` code follows gRPC's table, so a 404 that carries no status
 reads as `Unimplemented`, not `NotFound`. That is right for Connect, whose
@@ -214,6 +232,9 @@ code error =
         NoAnswer (ResponseTooLarge _) ->
             Code.ResourceExhausted
 
+        NoAnswer (UnregisteredType _) ->
+            Code.Internal
+
 
 {-| An error's message:
 
@@ -225,7 +246,7 @@ code error =
     then `…`; the whole problem stays in the error.
   - `NoAnswer`: `timeout`, `network error`, `bad URL: <url>`,
     `invalid header "<name>"`, `path field "<field>" does not match
-    <template>` or, as connect-es words them,
+    <template>`, `unregistered type "<name>"` or, as connect-es words them,
     `message size <size> is larger than configured writeMaxBytes <limit>`
     for a request and `… readMaxBytes <limit>` for a response, both in
     bytes. A bad URL is printed as its scheme, host and path, without the
@@ -272,6 +293,9 @@ message error =
 
         NoAnswer (ResponseTooLarge { limit, size }) ->
             "message size " ++ String.fromInt size ++ " is larger than configured readMaxBytes " ++ String.fromInt limit
+
+        NoAnswer (UnregisteredType name) ->
+            "unregistered type " ++ Json.Encode.encode 0 (Json.Encode.string name)
 
 
 {-| The first 300 characters of a text, and `…` when there were more.
@@ -340,9 +364,9 @@ withoutUserInfo url =
             url
 
 
-{-| The details of an error that are of this message type, in the order the
-server sent them, leaving out any that do not decode. Only an `RpcStatus`
-error has any.
+{-| The details of an error that are of this message type, read from their
+protobuf binary, in the order the server sent them, leaving out any that do
+not decode or arrived without their binary. Only an `RpcStatus` error has any.
 
     case Rpc.Error.details Google.Rpc.messageBadRequest error of
         badRequest :: _ ->
@@ -352,11 +376,26 @@ error has any.
             showMessage (Rpc.Error.message error)
 
 -}
-details : Message a -> Error -> List a
+details : Message Proto a -> Error -> List a
 details proto error =
+    statusDetails (.proto >> Maybe.andThen (Proto.Any.unpack proto)) error
+
+
+{-| [`details`](#details), read from their proto3 JSON, for code generated with
+`codec=json`. A Connect server sends a detail's JSON only as its `debug`,
+which connect-go writes with the JSON codec; a detail that arrived without it
+is left out.
+-}
+detailsJson : Message Json a -> Error -> List a
+detailsJson proto error =
+    statusDetails (.json >> Maybe.andThen (Proto.Any.unpackJson proto)) error
+
+
+statusDetails : (Detail -> Maybe a) -> Error -> List a
+statusDetails read error =
     case error of
         RpcStatus status _ ->
-            List.filterMap (Proto.Any.unpack proto >> Maybe.andThen Result.toMaybe) status.details
+            List.filterMap read status.details
 
         _ ->
             []

@@ -12,6 +12,7 @@ import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
 import Notes.V1.Note
+import Proto.Codec
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
@@ -84,11 +85,11 @@ defaultNote =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Note`](#Note): its codecs, default and descriptor together.
+{-| The typed value of [`Note`](#Note): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageNote : Proto.Message.Message Note
+messageNote : Proto.Message.Message Proto.Codec.Json Note
 messageNote =
-    Proto.Message.message encodeNote decodeNote defaultNote Notes.V1.Note.descriptor
+    Proto.Message.initJson "notes.v1.Note" encodeNote decodeNote
 
 
 
