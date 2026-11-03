@@ -15,6 +15,7 @@ import Json.Decode
 import Json.Encode
 import Proto.Any
 import Proto.Binary
+import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
 import Proto.Message
@@ -188,10 +189,10 @@ messageListItemsResponse =
 
 {-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) (its source at this release; the package site documents it once the runtime is published there).
 -}
-registry : Proto.Registry.Registry
-registry =
-    Proto.Registry.union
-        (Proto.Registry.fromDescriptors
+descriptors : Proto.Descriptors.Descriptors
+descriptors =
+    Proto.Descriptors.union
+        (Proto.Descriptors.fromDescriptors
             [ Vault.V1.Item.descriptor
             , Vault.V1.GetItemRequest.descriptor
             , Vault.V1.ListItemsRequest.descriptor
@@ -200,7 +201,7 @@ registry =
             [ Vault.V1.Status.descriptor
             ]
         )
-        Proto.Registry.wellKnown
+        Proto.Descriptors.wellKnown
 
 
 {-| The protobuf binary codecs of this package's messages, of those of the packages it imports and of the well-known types they hold, by full name: the binary encoders write a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) with it, so that one holding a message's JSON, as one read from proto3 JSON does, is written as the message's binary.
