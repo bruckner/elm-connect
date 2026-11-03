@@ -2841,9 +2841,22 @@ all 40 passing.
 - `Connect-Timeout-Ms` is the timeout rounded up to a whole
   millisecond, between 1 and 9,999,999,999 (ten digits); a timeout that
   is not a positive number sends none (§5.1).
-- Success is status 200 with a body the response decoder accepts; a 200
-  whose body it rejects is `BadResponse problem answer`. Any other
-  answer is read as an error (§5.4).
+- Success is status 200, as `application/json` or with no content type
+  (parameters such as `charset` ignored), with a body the response
+  decoder accepts; a 200 whose body it rejects is `BadResponse problem
+  answer`. Any other answer is read as an error (§5.4).
+- A 200 of another of Connect's content types (`application/proto`,
+  `application/connect+json`, `application/connect+proto`) is a
+  `BadResponse` naming both types: the server answered, in a codec the
+  call does not read. A 200 of a type that is not Connect's at all
+  (`image/jpeg`, a proxy's `text/html`) is not the server's answer, and
+  is read as an error is (§5.4): a status it carries is the error, and
+  one without is an `HttpStatus` error, code `Unknown`. connect-go draws
+  the same line, and the conformance suite holds a client to it
+  (`unexpected-content-type` wants `unknown`, `unexpected-codec`
+  `internal`). No content type is the answer, since a proxy may drop the
+  header. Transcoding keeps none of this: it reads any 2xx as its
+  answer, since a hand-written REST server may label JSON `text/plain`.
 - Bindings are carried on the call and ignored, `viaBinding` too:
   Connect has one route per method.
 - The runtime's dependencies beyond core, json and time: elm/http
@@ -2873,8 +2886,10 @@ codec (§7).
   unpadded URL-safe base64, in the order the protocol recommends; the
   base64 is computed only for a call that goes as a GET.
 - **Answers.** A 200 is the response's protobuf binary, read as bytes,
-  and must come as `application/proto` or with no content type, or it is
-  a `BadResponse` keeping the bytes. Any other answer is the protocol's
+  and must come as `application/proto` or with no content type; another
+  of Connect's types is a `BadResponse` keeping the bytes, and a type
+  that is not Connect's is read as an error, as under `connect`. Any
+  other answer is the protocol's
   JSON error, decoded as UTF-8 and read as over `connect` (§5.4), so
   errors are JSON whatever the codec. A body that does not decode is
   `BadResponse "the body is not the response of svc/Method in protobuf
@@ -3071,7 +3086,14 @@ conformance suite's gRPC-Web client cases (§7).
   A timeout is `grpc-timeout`: milliseconds rounded up, or seconds or
   hours (`S`, `H`) when milliseconds take more than eight digits; a
   retry deadline rewrites it as it rewrites `Connect-Timeout-Ms`.
-- **Answers.** A 200 with a body is read as frames: the trailers frame
+- **Answers.** A 200 must come as `application/grpc-web` or
+  `application/grpc-web+proto`, or with no content type. Another
+  gRPC-Web type (`application/grpc-web+json`, `application/grpc-web-text`)
+  is a `BadResponse` naming the types the call reads, whose framing would
+  fail or decode garbage; a type that is not gRPC-Web's goes through the
+  shared error reader (§5.4), as over Connect, so a
+  proxy's page with no status is an `HttpStatus` error, code `Unknown`.
+  A 200 with a body is read as frames: the trailers frame
   (flag `0x80`, `name: value` lines, names lowercased) holds the status,
   which wins over any `grpc-status` header. A 200 without a body is
   trailers-only, its status in the headers. Status 0 with exactly one
@@ -3124,7 +3146,7 @@ is not met: connect-go, the suite's reference server, always sends it.
 -- Rpc.Error; Rpc aliases the type (type alias Error = Rpc.Error.Error)
 type Error
     = RpcStatus StatusError Response    -- the server stated an RPC status
-    | HttpStatus Response               -- it answered with a failure and stated none
+    | HttpStatus Response               -- a failure, or a success not the protocol's, stating none
     | BadResponse String Response       -- it answered 2xx and the body did not decode (the problem)
     | NoAnswer Reason                   -- nothing came back, nothing was sent, or the answer was refused unread
 
@@ -3200,7 +3222,11 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
   protocol's table, `message` is the status text (`HTTP <status>` when
   empty), and it has no details. gRPC-Web's 200 carries its status in a
   trailers frame or its headers, which gRPC-Web's own reader reads
-  first (§5.3); any other status of it comes to this reader.
+  first (§5.3); any other status of it comes to this reader. So does a
+  200 over Connect or gRPC-Web whose content type is not the
+  protocol's (§5.3): not the protocol's answer, read as a failure, so
+  with no status it is an `HttpStatus` error whose code
+  `fromHttpStatus 200` gives as `Unknown`.
 - Every error that had an answer keeps it, a
   `Response`: the URL it came from (after any redirect), the status and
   status text and the headers as elm/http's `Http.Metadata` gives
@@ -3931,12 +3957,11 @@ grpc-gateway have no gRPC-Web leg: the example server answers a gRPC-Web
 call at its procedure path with connect-go before Vanguard's routes, and
 grpc-gateway serves REST alone. The Connect conformance suite's gRPC-Web
 client cases (`conformance-grpcweb.yaml`: unary, protobuf binary,
-HTTP/1.1, no compression) select 85; 69 pass through the halves and 79
-through `sendTraced`. `known-failing-grpcweb.txt` lists, whichever way:
+HTTP/1.1, no compression) select 85; 70 pass through the halves and 80
+through `sendTraced`. `known-failing-grpcweb.txt` lists, whichever way,
 status 0 with no message or two, which the suite wants `unimplemented`
-and the runtime reads as a `BadResponse` (`internal`), as over Connect;
-and a 200 of another content type with no status, which it wants
-`unknown`. `known-failing-grpcweb-halves.txt` adds the twelve cases that
+and the runtime reads as a `BadResponse` (`internal`), as over Connect.
+`known-failing-grpcweb-halves.txt` adds the twelve cases that
 assert trailers, which a gRPC-Web answer carries in its body, where the
 halves do not read them and `sendTraced` does (§5.3); `sendTraced`
 fails the two cancellation cases of `known-failing-send.txt`, as over

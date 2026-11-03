@@ -9,8 +9,3 @@
 # BadResponse, whose code is `internal`, as it does over Connect.
 gRPC-Web Unexpected Responses/**/unary/ok-but-no-response
 gRPC-Web Unexpected Responses/**/unary/multiple-responses
-
-# A 200 whose content type is not gRPC-Web's and whose body holds no status:
-# the suite wants `unknown`, the runtime gives a BadResponse (`internal`), as
-# for Connect's unexpected-content-type in known-failing-proto.txt.
-gRPC-Web Unexpected Responses/**/unexpected-content-type

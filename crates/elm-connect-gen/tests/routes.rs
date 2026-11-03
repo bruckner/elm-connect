@@ -19,7 +19,7 @@
 //!   the conformance corpus, the modules' header version as its
 //!   placeholder (`ELM_CONNECT_BLESS=1` rewrites them), and
 //!   `tests/RouteFixturesTest.elm` replays them through `Rpc.request`
-//!   with the Transcode transport, choosing the binding with
+//!   over the transcoding protocol, choosing the binding with
 //!   `Rpc.Call.viaBinding`; a fixture naming a binding the generated method
 //!   lacks fails there.
 //!

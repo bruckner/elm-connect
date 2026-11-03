@@ -269,7 +269,7 @@ view : Model -> Html Msg
 view model =
     div []
         [ h1 [] [ text "Notes" ]
-        , viewTransport model.wire
+        , viewProtocol model.wire
         , Maybe.map viewError model.failure |> Maybe.withDefault (text "")
         , section []
             [ h2 [] [ text "Notes" ]
@@ -288,17 +288,17 @@ view model =
         ]
 
 
-viewTransport : Wire -> Html Msg
-viewTransport wire =
+viewProtocol : Wire -> Html Msg
+viewProtocol wire =
     let
         option label_ choice =
             label []
-                [ input [ type_ "radio", name "transport", checked (wire == choice), onClick (SetWire choice) ] []
+                [ input [ type_ "radio", name "protocol", checked (wire == choice), onClick (SetWire choice) ] []
                 , text label_
                 ]
     in
     p []
-        [ text "Transport: "
+        [ text "Protocol: "
         , option " Connect " ViaConnect
         , option " HTTP transcoding " ViaVanguard
         , option " HTTP transcoding via grpc-gateway" ViaGateway

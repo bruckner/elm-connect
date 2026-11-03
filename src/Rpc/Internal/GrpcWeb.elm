@@ -9,8 +9,9 @@ and a four-byte big-endian length before its bytes.
 
 Not exposed. `Rpc.Protocol.grpcWeb` installs `grpcWeb`, `grpcWebTimeout` and
 `grpcWebMessage`, and nothing else reaches this module, so a program that
-never names it carries none of it. A failure that is not a gRPC-Web answer is
-read as every protocol's is (`Rpc.Internal.Status`).
+never names it carries none of it. A failure that is not a gRPC-Web answer,
+and a 200 whose content type is not gRPC-Web's, is read as every protocol's
+failure is (`Rpc.Internal.Status`).
 
 -}
 
@@ -119,8 +120,11 @@ states the call's status in a trailers frame after its message frame, or in
 its headers when the body is empty ("trailers-only"); a body's trailers win
 over its headers. Status 0 with one message is the response's bytes, which
 the method's binary codec decodes; any other status is the error it states,
-with its details. Any other answer is the error `failure` reads from it as
-text, as every protocol's error is.
+with its details. A 200 must come as `application/grpc-web` or
+`application/grpc-web+proto`, or with no content type; another gRPC-Web type
+(`+json`, `-text`) is a `BadResponse`, and a type that is not gRPC-Web's at
+all makes the answer one `failure` reads (`Connect.label`). Any other answer
+is the error `failure` reads from it as text, as every protocol's error is.
 -}
 read : (Http.Response String -> Error) -> Http.Response Bytes -> ( Maybe Http.Metadata, Result Error GoodBytes )
 read failure answer =
@@ -129,25 +133,20 @@ read failure answer =
             if metadata.statusCode /= 200 then
                 ( Just metadata, Err (failure (Http.GoodStatus_ metadata (Internal.bytesText raw))) )
 
-            else if Bytes.width raw == 0 then
-                ( Just metadata, settle Error.GrpcHeaders metadata raw (lowered metadata.headers) [] )
-
             else
-                case D.decode (frames (Bytes.width raw)) raw of
-                    Just ( messages, Just trailers ) ->
-                        let
-                            merged =
-                                { metadata | headers = Dict.foldl (\name value -> Dict.insert ("trailer-" ++ name) value) metadata.headers trailers }
-                        in
-                        ( Just merged
-                        , settle Error.GrpcTrailers merged raw trailers messages
-                        )
+                case Connect.label (String.startsWith "application/grpc-web") [ "application/grpc-web", "application/grpc-web+proto" ] metadata of
+                    Connect.Accepted ->
+                        if Bytes.width raw == 0 then
+                            ( Just metadata, settle Error.GrpcHeaders metadata raw (lowered metadata.headers) [] )
 
-                    Just ( _, Nothing ) ->
-                        ( Just metadata, Err (Error.BadResponse "a gRPC-Web answer without trailers" (answerOf metadata raw)) )
+                        else
+                            fromFrames metadata raw
 
-                    Nothing ->
-                        ( Just metadata, Err (Error.BadResponse "a gRPC-Web body that is not a sequence of uncompressed frames" (answerOf metadata raw)) )
+                    Connect.Unaccepted problem ->
+                        ( Just metadata, Err (Error.BadResponse problem (answerOf metadata raw)) )
+
+                    Connect.Foreign ->
+                        ( Just metadata, Err (failure (Http.GoodStatus_ metadata (Internal.bytesText raw))) )
 
         Http.BadStatus_ metadata raw ->
             ( Just metadata, Err (failure (Http.BadStatus_ metadata (Internal.bytesText raw))) )
@@ -160,6 +159,28 @@ read failure answer =
 
         Http.NetworkError_ ->
             ( Nothing, Err (failure Http.NetworkError_) )
+
+
+{-| A 200 body's frames as the answer: its status from the trailers frame,
+and its trailers added to the metadata.
+-}
+fromFrames : Http.Metadata -> Bytes -> ( Maybe Http.Metadata, Result Error GoodBytes )
+fromFrames metadata raw =
+    case D.decode (frames (Bytes.width raw)) raw of
+        Just ( messages, Just trailers ) ->
+            let
+                merged =
+                    { metadata | headers = Dict.foldl (\name value -> Dict.insert ("trailer-" ++ name) value) metadata.headers trailers }
+            in
+            ( Just merged
+            , settle Error.GrpcTrailers merged raw trailers messages
+            )
+
+        Just ( _, Nothing ) ->
+            ( Just metadata, Err (Error.BadResponse "a gRPC-Web answer without trailers" (answerOf metadata raw)) )
+
+        Nothing ->
+            ( Just metadata, Err (Error.BadResponse "a gRPC-Web body that is not a sequence of uncompressed frames" (answerOf metadata raw)) )
 
 
 {-| The result a status (`status`, names lowercased) and the message frames

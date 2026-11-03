@@ -131,6 +131,28 @@ codeAndMessage =
     Result.mapError (\error -> ( Rpc.Error.code error, Rpc.Error.message error ))
 
 
+statusOf : Result Error a -> Maybe ( Code, String, Source )
+statusOf result =
+    case result of
+        Err (RpcStatus status _) ->
+            Just ( status.code, status.message, status.source )
+
+        _ ->
+            Nothing
+
+
+{-| An `HttpStatus` error's code, HTTP status and body text.
+-}
+httpStatusOf : Result Error a -> Maybe ( Code, Int, Maybe String )
+httpStatusOf result =
+    case result of
+        Err ((HttpStatus response) as error) ->
+            Just ( Rpc.Error.code error, response.statusCode, Rpc.Body.toText response.body )
+
+        _ ->
+            Nothing
+
+
 suite : Test
 suite =
     describe "codecs"
@@ -235,6 +257,9 @@ answers =
     let
         readBytes client answer =
             Rpc.responseBytes client (both { name = "x" }) answer
+
+        readText answer =
+            Rpc.response base (both { name = "x" }) answer
     in
     describe "answers"
         [ test "a 200 of application/proto, or of no content type, decodes as binary" <|
@@ -244,7 +269,7 @@ answers =
                 , readBytes proto (Http.GoodStatus_ (metadata 200 []) titleHi)
                 ]
                     |> Expect.equal [ Ok "hi", Ok "hi", Ok "hi" ]
-        , test "a 200 of another content type is a BadResponse keeping the bytes" <|
+        , test "a 200 of another Connect codec's content type is a BadResponse keeping the bytes" <|
             \_ ->
                 readBytes proto (Http.GoodStatus_ (metadata 200 [ ( "content-type", "application/json" ) ]) (utf8 "{\"title\":\"hi\"}"))
                     |> Result.mapError
@@ -257,6 +282,56 @@ answers =
                                     ( "other", Nothing )
                         )
                     |> Expect.equal (Err ( "content-type application/json, not application/proto", Just 14 ))
+        , test "a 200 of another Connect content type is a BadResponse naming both, under either codec" <|
+            \_ ->
+                [ readText (Http.GoodStatus_ (metadata 200 [ ( "content-type", "application/proto" ) ]) "{\"title\":\"hi\"}")
+                , readText (Http.GoodStatus_ (metadata 200 [ ( "content-type", "Application/Connect+JSON; charset=utf-8" ) ]) "{\"title\":\"hi\"}")
+                , readBytes proto (Http.GoodStatus_ (metadata 200 [ ( "content-type", "application/connect+proto" ) ]) titleHi)
+                ]
+                    |> List.map codeAndMessage
+                    |> Expect.equal
+                        [ Err ( Internal, "bad response body: content-type application/proto, not application/json" )
+                        , Err ( Internal, "bad response body: content-type application/connect+json, not application/json" )
+                        , Err ( Internal, "bad response body: content-type application/connect+proto, not application/proto" )
+                        ]
+        , test "a 200 under the JSON codec as application/json, or of no content type, is the answer" <|
+            \_ ->
+                [ readText (Http.GoodStatus_ (metadata 200 [ ( "Content-Type", "application/json; charset=utf-8" ) ]) "{\"title\":\"hi\"}")
+                , readText (Http.GoodStatus_ (metadata 200 []) "{\"title\":\"hi\"}")
+                ]
+                    |> Expect.equal [ Ok "hi", Ok "hi" ]
+        , test "a 200 that is not Connect's holding a Connect error body is that error, under either codec" <|
+            \_ ->
+                let
+                    jpeg =
+                        metadata 200 [ ( "content-type", "image/jpeg" ) ]
+
+                    errorBody =
+                        "{\"code\":\"unavailable\",\"message\":\"down\"}"
+                in
+                [ readText (Http.GoodStatus_ jpeg errorBody)
+                , readBytes proto (Http.GoodStatus_ jpeg (utf8 errorBody))
+                ]
+                    |> List.map statusOf
+                    |> Expect.equal [ Just ( Unavailable, "down", ConnectBody ), Just ( Unavailable, "down", ConnectBody ) ]
+        , test "a 200 that is not Connect's holding no status is an HttpStatus error, code Unknown" <|
+            \_ ->
+                let
+                    html =
+                        "<html><body>Sign in</body></html>"
+                in
+                [ readText (Http.GoodStatus_ (metadata 200 [ ( "content-type", "image/jpeg" ) ]) "")
+                , readText (Http.GoodStatus_ (metadata 200 [ ( "content-type", "text/html; charset=utf-8" ) ]) html)
+                , readBytes proto (Http.GoodStatus_ (metadata 200 [ ( "content-type", "image/jpeg" ) ]) (utf8 ""))
+                , readBytes proto (Http.GoodStatus_ (metadata 200 [ ( "content-type", "text/html" ) ]) (utf8 html))
+                ]
+                    |> List.map httpStatusOf
+                    |> Expect.equal
+                        [ Just ( Unknown, 200, Just "" )
+                        , Just ( Unknown, 200, Just html )
+                        , Just ( Unknown, 200, Just "" )
+                        , Just ( Unknown, 200, Just html )
+                        ]
         , test "bytes that are not the message are a BadResponse" <|
             \_ ->
                 readBytes proto (Http.GoodStatus_ (metadata 200 []) (bytesOf [ 0x0A, 0x05, 0x68 ]))

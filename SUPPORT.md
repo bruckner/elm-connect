@@ -17,7 +17,7 @@ A question is quicker to answer when it carries:
 - the options you pass (CLI flags, `--elm-connect_opt=`, or `opt:` in
   `buf.gen.yaml`);
 - the generated code in question, or the diagnostic, as text;
-- for a call that fails: the server, the transport (Connect or
+- for a call that fails: the server, the protocol (Connect, gRPC-Web or
   transcoding) and what the `Rpc.Error` says.
 
 Bugs and feature requests have their own issue forms. Security

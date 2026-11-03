@@ -183,7 +183,8 @@ protobuf binary over `connectProto` and `grpcWeb`. Over `connectProto`, a POST c
 binary as `application/proto`, a GET the query
 `connect=v1&base64=1&encoding=proto&message=…` with the binary in
 unpadded URL-safe base64, and a successful answer is read as binary,
-which must come as `application/proto` or with no content type. Error
+which must come as `application/proto` or with no content type, as one
+over `connect` must come as `application/json` or with none. Error
 answers are JSON whatever the codec, as the protocol sends them, and are
 read as they are over `connect`.
 
@@ -519,15 +520,25 @@ type Error
 
 - `RpcStatus`: the server stated a status: its code (an
   `Rpc.Code.Code`), message, details and where it was read from.
-- `HttpStatus`: the server answered with a failure and stated no
-  status; the code is inferred from the HTTP status, by the table
-  Connect and gRPC share (`Rpc.Code.fromHttpStatus`: 404 is
-  `Unimplemented`; 429, 502, 503 and 504 are `Unavailable`).
+- `HttpStatus`: the server answered with a failure, or with a success
+  that is not the protocol's answer, and stated no status; the code is
+  inferred from the HTTP status, by the table Connect and gRPC share
+  (`Rpc.Code.fromHttpStatus`: 404 is `Unimplemented`; 429, 502, 503 and
+  504 are `Unavailable`; a 200 is `Unknown`). Over Connect and gRPC-Web,
+  a 200 whose content type is none of the protocol's (Connect's
+  `application/json`, `application/proto`, `application/connect+json`
+  and `application/connect+proto`; any `application/grpc-web…`), such
+  as a proxy's HTML page, is not the protocol's answer, and is read as
+  a failure is: a status it carries is an `RpcStatus`. Transcoding
+  reads any success as its answer, whatever its content type, since a
+  REST server may label JSON `text/plain`.
 - `BadResponse`: the server answered with success, but the body did not
   decode as the response, as when the schema drifted between client and
-  server, or under the proto codec came as another content type than
-  `application/proto`; code `Internal`, the message quoting elm/json's
-  problem or naming the content type.
+  server, or came as another of the protocol's content types than the
+  call reads (`application/json` under the proto codec,
+  `application/grpc-web+json` over `grpcWeb`); code `Internal`, the
+  message quoting elm/json's problem or naming the content type. A
+  success with no content type is read as the answer.
 - `NoAnswer`: nothing came back, or nothing was sent: a `Timeout`
   (`DeadlineExceeded`), a `NetworkError` (`Unavailable`, which is also
   how a browser's CORS refusal arrives), a `BadUrl` or an
@@ -603,7 +614,8 @@ read; the runtime tries each in this order, whatever the protocol:
 - `GrpcTrailers`: the `grpc-status`, `grpc-message` and
   `grpc-status-details-bin` trailers that end a gRPC-Web answer's body.
 
-An answer with none of these is an `HttpStatus` error.
+A failure with none of these is an `HttpStatus` error, and so is a 200
+that is not the protocol's answer and carries none.
 
 ## Tracing
 

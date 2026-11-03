@@ -37,10 +37,15 @@ import Rpc.Response exposing (Response)
   - `RpcStatus`: the server stated an RPC status, in a Connect error body, a
     `google.rpc.Status` body or the `grpc-status` headers
     ([`StatusError`](#StatusError)), with the answer itself.
-  - `HttpStatus`: the server answered with a failure and stated no status;
-    [`code`](#code) infers one from the HTTP status.
+  - `HttpStatus`: the server answered with a failure, or with a success that
+    is not the protocol's answer, and stated no status; [`code`](#code)
+    infers one from the HTTP status. Over Connect and gRPC-Web, a 200 whose
+    content type is not the protocol's at all, such as a proxy's HTML page,
+    is not the protocol's answer, and is read as a failure is; transcoding
+    reads any success as its answer, whatever its content type.
   - `BadResponse`: the server answered with success, but the body did not
-    decode as the response; the problem, then the answer.
+    decode as the response, or came as another of the protocol's content
+    types than the call reads; the problem, then the answer.
   - `NoAnswer`: nothing came back, nothing was sent, or what came back was
     refused unread ([`Reason`](#Reason)).
 
@@ -135,7 +140,8 @@ type alias StatusError =
   - `GrpcTrailers`: the `grpc-status`, `grpc-message` and
     `grpc-status-details-bin` trailers that end a gRPC-Web answer's body.
 
-An answer with none of these is an `HttpStatus` error.
+A failure with none of these is an `HttpStatus` error, and so is a success
+that is not the protocol's answer and states none (see [`Error`](#Error)).
 
 One more is reserved for streaming calls, which this release does not make,
 so it never gives it; a `case` on a `Source` covers it all the same:
@@ -156,7 +162,8 @@ type Source
 
   - `RpcStatus`: the server's.
   - `HttpStatus`: inferred from the HTTP status by
-    [`Rpc.Code.fromHttpStatus`](Rpc-Code#fromHttpStatus).
+    [`Rpc.Code.fromHttpStatus`](Rpc-Code#fromHttpStatus), so a 200 that is
+    not the protocol's answer is `Unknown`.
   - `BadResponse`: `Internal`.
   - `NoAnswer`: a timeout is `DeadlineExceeded`, a network failure
     `Unavailable`, a bad URL or an invalid header `Internal`, an invalid path
