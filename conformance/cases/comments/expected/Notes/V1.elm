@@ -31,10 +31,10 @@ import Notes.V1.ListNotesResponse
 import Notes.V1.Note
 import Notes.V1.NoteEdit
 import Notes.V1.Visibility
+import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
 import Proto.Message
-import Proto.Registry
 import Proto.Version
 import Time
 
@@ -345,10 +345,10 @@ messageCreateNoteRequest =
 
 {-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) (its source at this release; the package site documents it once the runtime is published there).
 -}
-registry : Proto.Registry.Registry
-registry =
-    Proto.Registry.union
-        (Proto.Registry.fromDescriptors
+descriptors : Proto.Descriptors.Descriptors
+descriptors =
+    Proto.Descriptors.union
+        (Proto.Descriptors.fromDescriptors
             [ Notes.V1.Note.descriptor
             , Notes.V1.NoteEdit.descriptor
             , Notes.V1.Draft.descriptor
@@ -361,7 +361,7 @@ registry =
             , Notes.V1.Legacy.descriptor
             ]
         )
-        Proto.Registry.wellKnown
+        Proto.Descriptors.wellKnown
 
 
 

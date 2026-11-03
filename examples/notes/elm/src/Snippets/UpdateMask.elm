@@ -8,9 +8,9 @@ and a check of a mask's paths, both by walking the message's descriptor.
 
 import Json.Decode
 import Json.Encode exposing (Value)
+import Proto.Descriptors as Descriptors exposing (Descriptors)
 import Proto.Field as Field exposing (Cardinality(..), Kind(..))
 import Proto.Message as Message exposing (Message)
-import Proto.Registry as Registry exposing (Registry)
 
 
 
@@ -20,9 +20,9 @@ import Proto.Registry as Registry exposing (Registry)
 {-| The `google.protobuf.FieldMask` of what changed from `before` to
 `after`, for an update request such as `UpdateNoteRequest`.
 -}
-updateMask : Registry -> Message a -> a -> a -> List String
-updateMask registry message before after =
-    changedPaths registry
+updateMask : Descriptors -> Message a -> a -> a -> List String
+updateMask descriptors message before after =
+    changedPaths descriptors
         (Message.toDescriptor message)
         (Message.encode message before)
         (Message.encode message after)
@@ -33,13 +33,13 @@ updateMask registry message before after =
 
 
 {-| The paths of the fields whose JSON differs, by proto name. A singular
-message field set on both sides is walked into, its type found in the
-registry, so its changed fields are named rather than all of it. Repeated
+message field set on both sides is walked into, its type found among the
+descriptors, so its changed fields are named rather than all of it. Repeated
 fields, maps, oneof members and the well-known types are leaves: a mask names
 them whole.
 -}
-changedPaths : Registry -> Message.Descriptor -> Value -> Value -> List String
-changedPaths registry descriptor before after =
+changedPaths : Descriptors -> Message.Descriptor -> Value -> Value -> List String
+changedPaths descriptors descriptor before after =
     Message.fields descriptor
         |> List.concatMap
             (\field ->
@@ -54,10 +54,10 @@ changedPaths registry descriptor before after =
                     []
 
                 else
-                    case ( walkable registry field, old, new ) of
+                    case ( walkable descriptors field, old, new ) of
                         ( Just nested, Just oldValue, Just newValue ) ->
                             if isObject oldValue && isObject newValue then
-                                changedPaths registry nested oldValue newValue
+                                changedPaths descriptors nested oldValue newValue
                                     |> List.map (\path -> Field.name field ++ "." ++ path)
 
                             else
@@ -72,13 +72,13 @@ changedPaths registry descriptor before after =
 message the segment before it names, and every segment but the last a
 singular message field.
 -}
-validMask : Registry -> Message.Descriptor -> List String -> Bool
-validMask registry descriptor paths =
-    List.all (String.split "." >> validPath registry descriptor) paths
+validMask : Descriptors -> Message.Descriptor -> List String -> Bool
+validMask descriptors descriptor paths =
+    List.all (String.split "." >> validPath descriptors descriptor) paths
 
 
-validPath : Registry -> Message.Descriptor -> List String -> Bool
-validPath registry descriptor segments =
+validPath : Descriptors -> Message.Descriptor -> List String -> Bool
+validPath descriptors descriptor segments =
     case segments of
         [] ->
             False
@@ -86,12 +86,12 @@ validPath registry descriptor segments =
         name :: rest ->
             case List.filter (\field -> Field.name field == name) (Message.fields descriptor) of
                 [ field ] ->
-                    case ( rest, walkable registry field ) of
+                    case ( rest, walkable descriptors field ) of
                         ( [], _ ) ->
                             True
 
                         ( _, Just nested ) ->
-                            validPath registry nested rest
+                            validPath descriptors nested rest
 
                         ( _, Nothing ) ->
                             False
@@ -101,18 +101,18 @@ validPath registry descriptor segments =
 
 
 {-| The message a field holds one of, if a mask may name its fields: a
-singular message field outside any oneof, of a type the registry has that is
-not a well-known type (whose JSON is not an object of its fields).
+singular message field outside any oneof, of a type the descriptors have that
+is not a well-known type (whose JSON is not an object of its fields).
 -}
-walkable : Registry -> Field.Descriptor -> Maybe Message.Descriptor
-walkable registry field =
+walkable : Descriptors -> Field.Descriptor -> Maybe Message.Descriptor
+walkable descriptors field =
     case ( Field.cardinality field, Field.kind field, Field.oneof field ) of
         ( CardinalitySingular, KindMessage typeName, Nothing ) ->
             if String.startsWith "google.protobuf." typeName then
                 Nothing
 
             else
-                Registry.message typeName registry
+                Descriptors.message typeName descriptors
 
         _ ->
             Nothing

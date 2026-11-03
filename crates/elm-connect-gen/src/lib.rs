@@ -137,7 +137,7 @@ pub struct Generated {
 /// as protoc plugins do: a reference to any other package (bar
 /// `google.protobuf`, mapped to the runtime) is `generate::not_generated`,
 /// whose help names the ways to request it (design §3.1). A package of
-/// services alone still gets a package module, holding its registry. A
+/// services alone still gets a package module, holding its descriptors. A
 /// service without methods, declared so or left so by `streaming=skip`,
 /// gets no module: Elm rejects a module that declares nothing.
 ///

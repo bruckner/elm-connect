@@ -44,7 +44,8 @@ calling:
 | `Proto.Route`, `Proto.Query` | the route a binding sends a call over, and the helpers generated route functions and query encoders call ([transcoding.md](transcoding.md)) |
 | `Proto.Http` | a method's `google.api.http` rule as data, in its descriptor or for a method written by hand |
 | `Proto.WellKnown` | the well-known types' typed values |
-| `Proto.Registry` | descriptors by full name |
+| `Proto.Descriptors` | descriptors by full name |
+| `Proto.Registry` | the codecs an `Any` is written as protobuf binary with |
 | `Proto.Any` | `google.protobuf.Any`: packing, unpacking and describing |
 | `Proto.Version` | the releases generated code can name ([install.md](install.md#versions)) |
 

@@ -15,10 +15,10 @@ import Oneofs.V1.Choice
 import Oneofs.V1.Color
 import Oneofs.V1.Created
 import Oneofs.V1.NoteEvent
+import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
 import Proto.Message
-import Proto.Registry
 import Proto.Version
 
 
@@ -204,10 +204,10 @@ messageChoice =
 
 {-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) (its source at this release; the package site documents it once the runtime is published there).
 -}
-registry : Proto.Registry.Registry
-registry =
-    Proto.Registry.union
-        (Proto.Registry.fromDescriptors
+descriptors : Proto.Descriptors.Descriptors
+descriptors =
+    Proto.Descriptors.union
+        (Proto.Descriptors.fromDescriptors
             [ Oneofs.V1.Created.descriptor
             , Oneofs.V1.NoteEvent.descriptor
             , Oneofs.V1.Choice.descriptor
@@ -215,7 +215,7 @@ registry =
             [ Oneofs.V1.Color.descriptor
             ]
         )
-        Proto.Registry.wellKnown
+        Proto.Descriptors.wellKnown
 
 
 

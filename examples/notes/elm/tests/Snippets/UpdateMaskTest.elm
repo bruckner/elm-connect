@@ -32,7 +32,7 @@ defaultNote =
 -}
 noteMask : Note -> Note -> List String
 noteMask before after =
-    updateMask Notes.V1.registry
+    updateMask Notes.V1.descriptors
         Notes.V1.messageUpdateNoteRequest
         { note = Just before, updateMask = Nothing }
         { note = Just after, updateMask = Nothing }
@@ -67,7 +67,7 @@ suite =
                     |> Expect.equal [ "note.text", "note.link" ]
         , test "a message set on one side only is named whole" <|
             \_ ->
-                updateMask Notes.V1.registry
+                updateMask Notes.V1.descriptors
                     Notes.V1.messageUpdateNoteRequest
                     { note = Nothing, updateMask = Nothing }
                     { note = Just note, updateMask = Nothing }
@@ -82,6 +82,6 @@ suite =
                 , [ "note." ]
                 , [ "" ]
                 ]
-                    |> List.map (validMask Notes.V1.registry Notes.V1.UpdateNoteRequest.descriptor)
+                    |> List.map (validMask Notes.V1.descriptors Notes.V1.UpdateNoteRequest.descriptor)
                     |> Expect.equal [ True, True, False, False, False, False, False ]
         ]

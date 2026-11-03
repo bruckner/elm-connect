@@ -7,9 +7,9 @@ module Snippets.Descriptors exposing (noteFields, noteUrl)
 
 import Notes.V1
 import Notes.V1.Note
+import Proto.Descriptors
 import Proto.Field
 import Proto.Message
-import Proto.Registry
 
 
 noteUrl : String
@@ -21,7 +21,7 @@ noteUrl =
 noteFields : List String
 noteFields =
     -- the proto names of Note's fields, in declaration order
-    Proto.Registry.message "notes.v1.Note" Notes.V1.registry
+    Proto.Descriptors.message "notes.v1.Note" Notes.V1.descriptors
         |> Maybe.map (Proto.Message.fields >> List.map Proto.Field.name)
         |> Maybe.withDefault []
 

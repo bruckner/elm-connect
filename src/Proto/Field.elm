@@ -79,7 +79,7 @@ message by its full name (`google.protobuf.Timestamp` for a well-known type).
 
 An enum's values, its zero value first, can be read from the field alone
 ([`Proto.Enum.values`](Proto-Enum#values)). A message's fields are found by
-resolving its name in a [`Proto.Registry`](Proto-Registry).
+resolving its name in [`Proto.Descriptors`](Proto-Descriptors).
 
 -}
 type Kind

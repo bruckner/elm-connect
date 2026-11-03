@@ -2,7 +2,7 @@
 
 Besides its types and codecs, generated code describes the protos as
 data: each message, enum, field and method has a descriptor, and each
-package a registry of them by full name. They are what `Proto.Any` and
+package holds its descriptors by full name. They are what `Proto.Any` and
 `Rpc.Error.details` read, and what a program uses to walk a message it
 was not written for.
 `google.rpc.Status`, the error detail types and the well-known types
@@ -35,17 +35,18 @@ read through the module of their concept (`Proto.Message`, with
 `Proto.Field` for a field; `Proto.Enum` with `Proto.EnumValue`;
 `Proto.Method`).
 
-## The registry
+## A package's descriptors
 
-`Notes.V1.registry` holds the descriptors of the package, of every
-package it imports and of the well-known types, by full name:
+`Notes.V1.descriptors`, a `Proto.Descriptors.Descriptors`, holds the
+descriptors of the package, of every package it imports and of the
+well-known types, by full name:
 
 ```elm examples/notes/elm/src/Snippets/Descriptors.elm#descriptors
 import Notes.V1
 import Notes.V1.Note
+import Proto.Descriptors
 import Proto.Field
 import Proto.Message
-import Proto.Registry
 
 
 noteUrl : String
@@ -57,7 +58,7 @@ noteUrl =
 noteFields : List String
 noteFields =
     -- the proto names of Note's fields, in declaration order
-    Proto.Registry.message "notes.v1.Note" Notes.V1.registry
+    Proto.Descriptors.message "notes.v1.Note" Notes.V1.descriptors
         |> Maybe.map (Proto.Message.fields >> List.map Proto.Field.name)
         |> Maybe.withDefault []
 ```
@@ -94,7 +95,7 @@ title any =
 ```
 
 `Proto.Any.is` tests an `Any`'s type, `typeUrl` and `typeName` read it,
-and `Proto.Any.describe registry any` finds its descriptor.
+and `Proto.Any.describe descriptors any` finds its descriptor.
 
 ## Error details
 
@@ -128,15 +129,16 @@ keeps its type but does not unpack (`Proto.Any.BinaryOnly`).
 The descriptors are enough to walk a message. The example's
 `Snippets.UpdateMask` builds an update request's
 `google.protobuf.FieldMask` from the value before and after an edit,
-naming a nested message's changed fields through the registry:
+naming a nested message's changed fields through the package's
+descriptors:
 
 ```elm examples/notes/elm/src/Snippets/UpdateMask.elm#update-mask-use
 {-| The `google.protobuf.FieldMask` of what changed from `before` to
 `after`, for an update request such as `UpdateNoteRequest`.
 -}
-updateMask : Registry -> Message a -> a -> a -> List String
-updateMask registry message before after =
-    changedPaths registry
+updateMask : Descriptors -> Message a -> a -> a -> List String
+updateMask descriptors message before after =
+    changedPaths descriptors
         (Message.toDescriptor message)
         (Message.encode message before)
         (Message.encode message after)

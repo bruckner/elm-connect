@@ -1,4 +1,4 @@
-module Snippets.Migrating exposing (client, clientFor, describe, fetch, getNote, getNoteBinding, procedure)
+module Snippets.Migrating exposing (client, clientFor, describe, fetch, getNote, getNoteBinding, noteFields, procedure)
 
 {-| docs/migrating.md's code: what a 0.1 application writes in 0.2.
 
@@ -10,7 +10,10 @@ example's 0.1.0 generated code.
 
 import Notes.V1
 import Notes.V1.GetNoteRequest
+import Proto.Descriptors
+import Proto.Field
 import Proto.Http
+import Proto.Message
 import Proto.Method
 import Rpc
 import Rpc.Call
@@ -196,3 +199,24 @@ procedure call =
 
 
 -- endregion procedure
+{-
+   -- region before-note-fields
+   noteFields : List String
+   noteFields =
+       Proto.Registry.message "notes.v1.Note" Notes.V1.registry
+           |> Maybe.map (Proto.Message.fields >> List.map Proto.Field.name)
+           |> Maybe.withDefault []
+   -- endregion before-note-fields
+-}
+-- region note-fields
+
+
+noteFields : List String
+noteFields =
+    Proto.Descriptors.message "notes.v1.Note" Notes.V1.descriptors
+        |> Maybe.map (Proto.Message.fields >> List.map Proto.Field.name)
+        |> Maybe.withDefault []
+
+
+
+-- endregion note-fields

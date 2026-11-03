@@ -182,6 +182,8 @@ which its name does not say. And every `codec=both` package carries the
 conversion table as soon as one of its fields is an `Any`. A pass over
 them is a minor if it adds the mirror and keeps the name; renaming
 `binaryRegistry` is a break, so it is done before 1.0 or not at all.
+The descriptors are already apart, in `Proto.Descriptors`, so
+`Proto.Registry` holds that table alone.
 
 ## Validation
 

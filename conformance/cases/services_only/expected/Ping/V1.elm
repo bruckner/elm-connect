@@ -8,7 +8,7 @@ module Ping.V1 exposing (..)
 its registry alone, and must still compile beside the service module.
 -}
 
-import Proto.Registry
+import Proto.Descriptors
 import Proto.Version
 
 
@@ -25,6 +25,6 @@ elmConnectVersion_ =
 
 {-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) (its source at this release; the package site documents it once the runtime is published there).
 -}
-registry : Proto.Registry.Registry
-registry =
-    Proto.Registry.wellKnown
+descriptors : Proto.Descriptors.Descriptors
+descriptors =
+    Proto.Descriptors.wellKnown

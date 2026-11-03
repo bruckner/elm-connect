@@ -33,6 +33,7 @@ descriptor =
     Proto.Message.descriptor "catalog.v1.Entry"
         [ name
         , descriptor_
+        , descriptors
         ]
 
 
@@ -48,3 +49,14 @@ name =
 descriptor_ : Proto.Field.Descriptor
 descriptor_ =
     Proto.Field.descriptor "descriptor" "descriptor" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+
+
+{-| `descriptors` is a value here and in `Catalog.V1`, which holds the
+package's descriptors, a module apart, so neither escapes.
+
+`string descriptors = 3;`
+
+-}
+descriptors : Proto.Field.Descriptor
+descriptors =
+    Proto.Field.descriptor "descriptors" "descriptors" 3 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)

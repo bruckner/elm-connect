@@ -11,10 +11,10 @@ import Api.Example.People.Role
 import Api.Example.People.User
 import Json.Decode
 import Json.Encode
+import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
 import Proto.Message
-import Proto.Registry
 import Proto.Version
 
 
@@ -89,16 +89,16 @@ messageUser =
 
 {-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) (its source at this release; the package site documents it once the runtime is published there).
 -}
-registry : Proto.Registry.Registry
-registry =
-    Proto.Registry.union
-        (Proto.Registry.fromDescriptors
+descriptors : Proto.Descriptors.Descriptors
+descriptors =
+    Proto.Descriptors.union
+        (Proto.Descriptors.fromDescriptors
             [ Api.Example.People.User.descriptor
             ]
             [ Api.Example.People.Role.descriptor
             ]
         )
-        Proto.Registry.wellKnown
+        Proto.Descriptors.wellKnown
 
 
 

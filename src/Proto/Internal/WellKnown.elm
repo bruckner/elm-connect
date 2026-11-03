@@ -23,7 +23,7 @@ module Proto.Internal.WellKnown exposing
 
 {-| The descriptors of the `google.protobuf` types elm-connect maps, as
 `descriptor.proto` and the well-known type files declare them. Here rather than
-in `Proto.WellKnown` so that `Proto.Registry` can hold them without depending
+in `Proto.WellKnown` so that `Proto.Descriptors` can hold them without depending
 on the codecs.
 -}
 

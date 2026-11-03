@@ -64,8 +64,8 @@ code has a row in [docs/diagnostics.md](docs/diagnostics.md).
 **Emit** (`emit.rs` and `emit/`) turns one IR package into its Elm
 modules: the package module of types and codecs (`message.rs`,
 `enumeration.rs`, `oneof.rs`, `field.rs`, `scalar.rs`, `recursion.rs`),
-a descriptor module per message and enum with the registry
-(`descriptor.rs`, §3.9), and a module of calls per service (`method.rs`,
+a descriptor module per message and enum with the package's
+`descriptors` (`descriptor.rs`, §3.9), and a module of calls per service (`method.rs`,
 §4) with a route function per HTTP binding and the query encoders in the
 package module they read (`route_fn.rs`, §5.2). `docs.rs` writes the doc comments. The emitter decides which
 declarations exist and what they say; every name comes from the IR and
@@ -90,7 +90,8 @@ point of `elm-format`: the corpus's formatted check and
   the typed values and descriptor trees (`Proto.Message`, `Proto.Enum`,
   `Proto.Method`, `Proto.Field`, `Proto.EnumValue`), the HTTP bindings
   as data (`Proto.Http`), the routes generated route functions build
-  (`Proto.Route`, `Proto.Query`), `Proto.Registry`, `Proto.Any`, `Proto.WellKnown`, and
+  (`Proto.Route`, `Proto.Query`), `Proto.Descriptors`, `Proto.Registry`,
+  `Proto.Any`, `Proto.WellKnown`, and
   `Proto.Version`, the compatibility sentinel every generated module
   names (§8.2), and `Proto.Codec`, the codec tags `Rpc.Json` and
   `Rpc.Proto` alias (§3.1, rule 5).

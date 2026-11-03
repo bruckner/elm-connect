@@ -280,6 +280,35 @@ Transcoding reads the route functions rather than the descriptor's
 bindings, so the call no longer holds the descriptor, and a program
 that does not name it carries none.
 
+## Descriptors
+
+0.1's `Proto.Registry` held the descriptors by full name. In 0.2 they
+are `Proto.Descriptors`, with the same functions (`empty`, `fromDescriptors`,
+`union`, `wellKnown`, `message`, `enum`, `messages`, `enums`), and each
+generated package module's `registry` is `descriptors`. 0.1 code:
+
+```elm examples/notes/elm/src/Snippets/Migrating.elm#before-note-fields
+noteFields : List String
+noteFields =
+    Proto.Registry.message "notes.v1.Note" Notes.V1.registry
+        |> Maybe.map (Proto.Message.fields >> List.map Proto.Field.name)
+        |> Maybe.withDefault []
+```
+
+and in 0.2:
+
+```elm examples/notes/elm/src/Snippets/Migrating.elm#note-fields
+noteFields : List String
+noteFields =
+    Proto.Descriptors.message "notes.v1.Note" Notes.V1.descriptors
+        |> Maybe.map (Proto.Message.fields >> List.map Proto.Field.name)
+        |> Maybe.withDefault []
+```
+
+`Proto.Any.describe` takes the `Descriptors`. `Proto.Registry` now holds
+binary codecs alone, which `codec=both` generates as `binaryRegistry`,
+unchanged for now; a later release renames and widens it before 1.0.
+
 ## The generator
 
 - `codec=proto` (CLI `--codec proto`) generates the protobuf binary
