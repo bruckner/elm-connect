@@ -1,24 +1,18 @@
 module Proto.Message exposing
-    ( Message, message, withBinary, messageBinary
-    , encode, decoder, default, toDescriptor, encodeBytes, bytesDecoder
+    ( Message, initJson, initProto, typeName
     , Descriptor, descriptor
-    , typeName, typeUrl, fields, oneofs
+    , fullName, typeUrl, fields, oneofs
     )
 
-{-| A message type: its typed value, which holds its proto3 JSON codecs, its
-default and its descriptor together, and its descriptor, what the proto says
-about it as data. Generated code gives one of each per message: the typed
-value in the package's module (`Notes.V1.messageNote : Message Note`), the
-descriptor in a module of the message's own, beside one value per field
+{-| A message type: its typed value, which holds its full name and its codecs,
+and its descriptor, what the proto says about it as data. Generated code gives
+one of each per message: the typed value in the package's module
+(`Notes.V1.messageNote : Message Rpc.Json Note`), the descriptor in a module of
+the message's own, beside one value per field
 (`Notes.V1.Note.descriptor : Descriptor`, `Notes.V1.Note.title`); and
-[`Proto.WellKnown`](Proto-WellKnown) gives one per well-known type.
+[`Proto.WellKnown`](Proto-WellKnown) gives one per well-known type and codec.
 
-@docs Message, message, withBinary, messageBinary
-
-
-# Reading a typed value
-
-@docs encode, decoder, default, toDescriptor, encodeBytes, bytesDecoder
+@docs Message, initJson, initProto, typeName
 
 
 # Descriptors
@@ -28,142 +22,64 @@ descriptor in a module of the message's own, beside one value per field
 
 # Reading a descriptor
 
-@docs typeName, typeUrl, fields, oneofs
+@docs fullName, typeUrl, fields, oneofs
 
 -}
 
 import Bytes.Encode
 import Json.Decode
 import Json.Encode
-import Proto.Bytes
+import Proto.Codec exposing (Json, Proto)
 import Proto.Field as Field
 import Proto.Internal.Binary
 import Proto.Internal.Message as Internal
 
 
-{-| A message type whose Elm values are `a`. It is opaque: built by
-[`message`](#message) and read by the functions below. The package site and
-compiler errors may show it as `Proto.Internal.Message.Message`, its name
-inside the package.
+{-| A message type whose Elm values are `a`, with the codecs `codec` names:
+[`Proto.Codec.Json`](Proto-Codec#Json), proto3 JSON, or
+[`Proto.Codec.Proto`](Proto-Codec#Proto), protobuf binary. Code generated with
+`codec=json` gives a `Message Json a`, with `codec=proto` or `codec=both` a
+`Message Proto a`. It is what [`Proto.Any`](Proto-Any) packs and unpacks
+with, and is opaque: the package site and compiler errors may show it as
+`Proto.Internal.Message.Message`, its name inside the package.
 -}
-type alias Message a =
-    Internal.Message Descriptor a
+type alias Message codec a =
+    Internal.Message codec a
 
 
-{-| A message type from its proto3 JSON encoder and decoder, its default (the
-value with every field at its proto3 default, which an empty JSON object
-decodes to) and its descriptor. Generated code writes:
+{-| A message type from its full name and its proto3 JSON encoder and decoder,
+as generated code under `codec=json` writes it:
 
-    messageNote : Proto.Message.Message Note
+    messageNote : Proto.Message.Message Rpc.Json Note
     messageNote =
-        Proto.Message.message encodeNote decodeNote defaultNote Notes.V1.Note.descriptor
+        Proto.Message.initJson "notes.v1.Note" encodeNote decodeNote
 
 -}
-message : (a -> Json.Encode.Value) -> Json.Decode.Decoder a -> a -> Descriptor -> Message a
-message encodeJson jsonDecoder defaultValue messageDescriptor =
-    Internal.Message
-        { encode = encodeJson
-        , decoder = jsonDecoder
-        , default = defaultValue
-        , descriptor = messageDescriptor
-        , binary = Nothing
-        , json = True
-        }
+initJson : String -> (a -> Json.Encode.Value) -> Json.Decode.Decoder a -> Message Json a
+initJson name encode decoder =
+    Internal.Message name (Internal.JsonCodecs encode decoder)
 
 
-{-| The message type with protobuf binary codecs too, as generated code under
-`codec=both` writes it:
+{-| A message type from its full name and its protobuf binary encoder and
+decoder, as generated code under `codec=proto` and `codec=both` writes it:
 
     messageNote =
-        Proto.Message.message encodeNote decodeNote defaultNote Notes.V1.Note.descriptor
-            |> Proto.Message.withBinary encodeNoteBytes decodeNoteBytes
+        Proto.Message.initProto "notes.v1.Note" encodeNoteBytes decodeNoteBytes
 
 The binary decoder is a [`Proto.Binary.Decoder`](Proto-Binary#Decoder), which
 the package site may show as `Proto.Internal.Binary.Decoder`.
 
 -}
-withBinary : (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> Message a -> Message a
-withBinary encodeBinary binaryDecoder (Internal.Message m) =
-    Internal.Message { m | binary = Just (binary encodeBinary binaryDecoder) }
+initProto : String -> (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> Message Proto a
+initProto name encode decoder =
+    Internal.Message name (Internal.ProtoCodecs encode decoder)
 
 
-{-| A message type with protobuf binary codecs alone, as generated code under
-`codec=proto` writes it:
-
-    messageNote =
-        Proto.Message.messageBinary encodeNoteBytes decodeNoteBytes defaultNote Notes.V1.Note.descriptor
-
-Its JSON encoder writes `null` and its JSON decoder fails.
-
+{-| The message's full name, such as `notes.v1.Note`.
 -}
-messageBinary : (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> a -> Descriptor -> Message a
-messageBinary encodeBinary binaryDecoder defaultValue messageDescriptor =
-    Internal.Message
-        { encode = \_ -> Json.Encode.null
-        , decoder = Json.Decode.fail (typeName messageDescriptor ++ " was generated with protobuf binary codecs alone (codec=proto)")
-        , default = defaultValue
-        , descriptor = messageDescriptor
-        , binary = Just (binary encodeBinary binaryDecoder)
-        , json = False
-        }
-
-
-{-| The binary codecs, with a value's binary as base64 and back, which an
-`Any` holds. They are built here, under `withBinary`, so that a program
-without binary codecs carries none of that code.
--}
-binary : (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> Internal.Binary a
-binary encodeBinary binaryDecoder =
-    { encode = encodeBinary
-    , decoder = binaryDecoder
-    , toBase64 = \value -> Proto.Bytes.toBase64 (Bytes.Encode.encode (encodeBinary value))
-    , fromBase64 =
-        \base64 ->
-            Proto.Bytes.fromBase64 base64
-                |> Maybe.andThen (Proto.Internal.Binary.run binaryDecoder)
-    }
-
-
-{-| The protobuf binary encoder, when the message type has one.
--}
-encodeBytes : Message a -> Maybe (a -> Bytes.Encode.Encoder)
-encodeBytes (Internal.Message m) =
-    Maybe.map .encode m.binary
-
-
-{-| The protobuf binary decoder, when the message type has one.
--}
-bytesDecoder : Message a -> Maybe (Proto.Internal.Binary.Decoder a)
-bytesDecoder (Internal.Message m) =
-    Maybe.map .decoder m.binary
-
-
-{-| A value as proto3 JSON.
--}
-encode : Message a -> a -> Json.Encode.Value
-encode (Internal.Message m) =
-    m.encode
-
-
-{-| The proto3 JSON decoder.
--}
-decoder : Message a -> Json.Decode.Decoder a
-decoder (Internal.Message m) =
-    m.decoder
-
-
-{-| The value with every field at its proto3 default.
--}
-default : Message a -> a
-default (Internal.Message m) =
-    m.default
-
-
-{-| What the proto says about the message, read by the functions below.
--}
-toDescriptor : Message a -> Descriptor
-toDescriptor (Internal.Message m) =
-    m.descriptor
+typeName : Message codec a -> String
+typeName (Internal.Message name _) =
+    name
 
 
 {-| A message type's descriptor: its full name, its fields, and the names of
@@ -210,9 +126,9 @@ oneof is not one of them: such a field is
 
 -}
 descriptor : String -> List Field.Descriptor -> Descriptor
-descriptor fullName messageFields =
+descriptor name messageFields =
     Descriptor
-        { typeName = fullName
+        { typeName = name
         , fields = messageFields
         , oneofs = oneofsOf messageFields
         }
@@ -241,8 +157,8 @@ oneofsOf messageFields =
 {-| The message's full name, such as `notes.v1.Note`, or
 `notes.v1.Note.Revision` for a nested message.
 -}
-typeName : Descriptor -> String
-typeName (Descriptor m) =
+fullName : Descriptor -> String
+fullName (Descriptor m) =
     m.typeName
 
 
@@ -251,7 +167,7 @@ typeName (Descriptor m) =
 -}
 typeUrl : Descriptor -> String
 typeUrl messageDescriptor =
-    "type.googleapis.com/" ++ typeName messageDescriptor
+    "type.googleapis.com/" ++ fullName messageDescriptor
 
 
 {-| Every field in declaration order, the members of its oneofs among them.

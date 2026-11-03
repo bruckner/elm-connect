@@ -1,13 +1,14 @@
-module Proto.Internal.Message exposing (Binary, Message(..))
+module Proto.Internal.Message exposing (Codecs(..), Message(..))
 
 {-| The `Message` type, which `Proto.Message` names by an alias. It is defined
 here so that other modules of the package can reach what a message type holds
-while users cannot. The descriptor is a parameter because its type, with its
-readers, stays in `Proto.Message`.
+while users cannot.
 
-`json` says whether the JSON codecs are the message's own: a message with
-binary codecs alone holds a JSON encoder writing `null` and a decoder that
-fails, and an `Any` packed from it holds its binary alone.
+A message type is its full name and the codecs of one world, which the
+`codec` phantom names: `Proto.Message.initJson` gives one in `Json` holding
+`JsonCodecs`, `Proto.Message.initProto` one in `Proto` holding `ProtoCodecs`.
+The builders are the only way in, so a function on a `Message Proto a` never
+meets `JsonCodecs`, and the reverse.
 
 -}
 
@@ -17,25 +18,10 @@ import Json.Encode
 import Proto.Internal.Binary
 
 
-type Message descriptor a
-    = Message
-        { encode : a -> Json.Encode.Value
-        , decoder : Json.Decode.Decoder a
-        , default : a
-        , descriptor : descriptor
-        , binary : Maybe (Binary a)
-        , json : Bool
-        }
+type Message codec a
+    = Message String (Codecs a)
 
 
-{-| The protobuf binary codecs, which `Proto.Message.withBinary` and
-`Proto.Message.messageBinary` give, and a value's binary as base64 and back,
-which an `Any` holds. Only a message with binary codecs carries that code, so
-a program without any carries none of it.
--}
-type alias Binary a =
-    { encode : a -> Bytes.Encode.Encoder
-    , decoder : Proto.Internal.Binary.Decoder a
-    , toBase64 : a -> String
-    , fromBase64 : String -> Maybe a
-    }
+type Codecs a
+    = JsonCodecs (a -> Json.Encode.Value) (Json.Decode.Decoder a)
+    | ProtoCodecs (a -> Bytes.Encode.Encoder) (Proto.Internal.Binary.Decoder a)
