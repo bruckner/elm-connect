@@ -1,13 +1,16 @@
 //! A message's four declarations: its record type alias, its default
 //! value, its encoder and its decoder.
 
-use super::{Emitter, JSON_DECODE, JSON_ENCODE, MessageShape, PROTO_JSON, RecordField, call, docs};
+use super::{
+    Emitter, JSON_DECODE, JSON_ENCODE, MessageShape, PROTO_ANY, PROTO_JSON, PROTO_REGISTRY,
+    RecordField, call, docs,
+};
 use crate::elm::ast::{BinOp, Decl, Expr, Pattern, Type};
 use crate::elm::build::{
-    access, apply, binop, list, pipeline, pvar, record, string, tuple2, ty, var,
+    access, apply, binop, list, pipeline, pvar, qualified, record, string, tuple2, ty, ty_fn, var,
 };
 use crate::ir::ModuleName;
-use crate::naming::ENCODER_ARGUMENT;
+use crate::naming::{ENCODER_ARGUMENT, REGISTRY, REGISTRY_ARGUMENT, with_registry};
 
 impl Emitter {
     /// `type alias Foo = { ... }`, one record field per proto field and per
@@ -87,6 +90,9 @@ impl Emitter {
     /// nothing in JSON, so the fields come first, whatever the declaration
     /// order.
     pub(super) fn message_encoder(&mut self, shape: &MessageShape) -> Decl {
+        if self.message_reaches(shape) {
+            return self.message_encoder_with(shape);
+        }
         let pairs: Vec<Expr> = shape
             .fields
             .iter()
@@ -146,6 +152,99 @@ impl Emitter {
         }
     }
 
+    /// Whether a message reaches an `Any` under `codec=both`: one of its
+    /// fields' or oneofs' values does.
+    pub(super) fn message_reaches(&self, shape: &MessageShape) -> bool {
+        shape
+            .fields
+            .iter()
+            .any(|&(_, value)| self.field_reaches(value))
+            || shape.oneofs.iter().any(|oneof| self.oneof_reaches(oneof))
+    }
+
+    /// `encodeFooWith : Proto.Registry.Registry -> Foo -> Result
+    /// Proto.Any.Problem Json.Encode.Value`, for a message that reaches an
+    /// `Any` under `codec=both`: `Proto.Json.tryObjectOfFields` of every
+    /// field ([`Self::try_encode_field`]) and of each oneof's members, the
+    /// first `Err` failing the whole. It has no `encodeFoo`: writing an
+    /// `Any` can fail, and a total encoder would need a fallback form.
+    fn message_encoder_with(&mut self, shape: &MessageShape) -> Decl {
+        let pairs: Vec<Expr> = shape
+            .fields
+            .iter()
+            .map(|&(field, value)| {
+                let field_value = access(var(ENCODER_ARGUMENT), field.elm_name.clone());
+                tuple2(
+                    string(field.json_name.clone()),
+                    self.try_encode_field(value, field_value),
+                )
+            })
+            .collect();
+        let oneofs: Vec<Expr> = shape
+            .oneofs
+            .iter()
+            .map(|oneof| {
+                let field_value = access(var(ENCODER_ARGUMENT), oneof.oneof.elm_field_name.clone());
+                if self.oneof_reaches(oneof) {
+                    apply(
+                        var(with_registry(oneof.oneof.encoder_name())),
+                        [var(REGISTRY_ARGUMENT), field_value],
+                    )
+                } else {
+                    // A oneof that reaches no `Any` gives its members' JSON;
+                    // each is lifted into `Ok`.
+                    let ok = var(self.core("Ok"));
+                    apply(
+                        qualified("List", "map"),
+                        [
+                            apply(qualified("Tuple", "mapSecond"), [ok]),
+                            apply(var(oneof.oneof.encoder_name()), [field_value]),
+                        ],
+                    )
+                }
+            })
+            .collect();
+        let parts = (!pairs.is_empty() || oneofs.is_empty())
+            .then(|| list(pairs))
+            .into_iter()
+            .chain(oneofs);
+        let members = parts
+            .rev()
+            .reduce(|right, left| binop(BinOp::Append, left, right))
+            .expect("at least the fields' list");
+        let object = self.reference((PROTO_JSON, "tryObjectOfFields"));
+        let annotation = self.encoder_with_type(ty(shape.message.elm_name.clone(), []));
+        Decl::Value {
+            doc: Some(format!(
+                "Encodes {} as proto3 JSON, writing each `Any` it holds with the registry: \
+                 an `Err` names the first type the registry cannot write.",
+                docs::a_local(&shape.message.elm_name)
+            )),
+            name: with_registry(shape.message.encoder_name()),
+            annotation,
+            params: vec![pvar(REGISTRY_ARGUMENT), pvar(ENCODER_ARGUMENT)],
+            body: apply(object, [members]),
+        }
+    }
+
+    /// `Proto.Registry.Registry -> of -> Result Proto.Any.Problem
+    /// Json.Encode.Value`: the type of an encoder taking the registry.
+    pub(super) fn encoder_with_type(&mut self, of: Type) -> Type {
+        let registry = self.library_type(PROTO_REGISTRY, "Registry", []);
+        let problem = self.library_type(PROTO_ANY, "Problem", []);
+        let value = self.library_type(JSON_ENCODE, "Value", []);
+        let result = ty(self.core("Result"), [problem, value]);
+        ty_fn([registry, of], result)
+    }
+
+    /// `Proto.Registry.Registry -> Json.Decode.Decoder of`: the type of a
+    /// decoder taking the registry.
+    pub(super) fn decoder_with_type(&mut self, of: Type) -> Type {
+        let registry = self.library_type(PROTO_REGISTRY, "Registry", []);
+        let decoder = self.library_type(JSON_DECODE, "Decoder", [of]);
+        ty_fn([registry], decoder)
+    }
+
     /// A decoding pipeline step reading the field `json_name`, also
     /// accepted under `proto_name` as proto3 JSON requires:
     /// `Proto.Json.<one> json_name ...` when the two are equal, else
@@ -175,7 +274,12 @@ impl Emitter {
     /// `Proto.Json.valueField` for a singular `google.protobuf.Value`), a
     /// `Proto.Json.oneof` per oneof; `Proto.Json.emptyMessage` for a message
     /// without fields.
-    pub(super) fn message_decoder(&mut self, shape: &MessageShape) -> Decl {
+    ///
+    /// A message that reaches an `Any` under `codec=both` gets
+    /// `decodeFooWith : Proto.Registry.Registry -> Json.Decode.Decoder Foo`,
+    /// whose steps read each `Any` with the registry, and `decodeFoo`,
+    /// that with the package's `registry`.
+    pub(super) fn message_decoder(&mut self, shape: &MessageShape) -> Vec<Decl> {
         let name = &shape.message.elm_name;
         let body = if shape.fields.is_empty() && shape.oneofs.is_empty() {
             // An empty message decodes to the empty record, from a JSON
@@ -203,22 +307,59 @@ impl Emitter {
                     },
                     RecordField::Oneof(oneof) => {
                         let step = self.reference((PROTO_JSON, "oneof"));
-                        apply(step, [var(oneof.oneof.decoder_name())])
+                        let decoder = if self.oneof_reaches(oneof) {
+                            apply(
+                                var(with_registry(oneof.oneof.decoder_name())),
+                                [var(REGISTRY_ARGUMENT)],
+                            )
+                        } else {
+                            var(oneof.oneof.decoder_name())
+                        };
+                        apply(step, [decoder])
                     }
                 })
                 .collect();
             pipeline(apply(succeed, [var(name.clone())]), steps)
         };
-        let annotation = self.library_type(JSON_DECODE, "Decoder", [ty(name.clone(), [])]);
-        Decl::Value {
-            doc: Some(format!(
-                "Decodes {} from proto3 JSON.",
-                docs::a_local(&shape.message.elm_name)
-            )),
-            name: shape.message.decoder_name(),
-            annotation,
-            params: Vec::new(),
-            body,
+        let doc = format!(
+            "Decodes {} from proto3 JSON.",
+            docs::a_local(&shape.message.elm_name)
+        );
+        if !self.message_reaches(shape) {
+            let annotation = self.library_type(JSON_DECODE, "Decoder", [ty(name.clone(), [])]);
+            return vec![Decl::Value {
+                doc: Some(doc),
+                name: shape.message.decoder_name(),
+                annotation,
+                params: Vec::new(),
+                body,
+            }];
         }
+        let with = with_registry(shape.message.decoder_name());
+        let annotation = self.decoder_with_type(ty(name.clone(), []));
+        let default = self.library_type(JSON_DECODE, "Decoder", [ty(name.clone(), [])]);
+        vec![
+            Decl::Value {
+                doc: Some(format!(
+                    "Decodes {} from proto3 JSON, reading each `Any` it holds with the \
+                     registry: one of a type the registry lacks fails.",
+                    docs::a_local(&shape.message.elm_name)
+                )),
+                name: with.clone(),
+                annotation,
+                params: vec![pvar(REGISTRY_ARGUMENT)],
+                body,
+            },
+            Decl::Value {
+                doc: Some(format!(
+                    "Decodes {} from proto3 JSON, with this package's `registry`.",
+                    docs::a_local(&shape.message.elm_name)
+                )),
+                name: shape.message.decoder_name(),
+                annotation: default,
+                params: Vec::new(),
+                body: apply(var(with), [var(REGISTRY)]),
+            },
+        ]
     }
 }

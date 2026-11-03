@@ -1,0 +1,26 @@
+// Under codec=both the JSON codecs of a message or oneof that holds a
+// google.protobuf.Any take the registry and end in `With`: those of `Box`
+// are `encodeBoxWith` and `decodeBoxWith`, which are also the JSON codecs
+// of the message `BoxWith`. `Plain` holds no Any, so `PlainWith` meets
+// nothing.
+syntax = "proto3";
+
+package shelf.v1;
+
+import "google/protobuf/any.proto";
+
+message Box {
+  google.protobuf.Any content = 1;
+}
+
+message BoxWith {
+  string label = 1;
+}
+
+message Plain {
+  string label = 1;
+}
+
+message PlainWith {
+  string label = 1;
+}

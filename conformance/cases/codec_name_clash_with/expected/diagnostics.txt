@@ -1,0 +1,24 @@
+naming::codec_collision
+
+  × The package `shelf.v1` has two definitions whose codecs both become the
+  │ Elm values `encodeBoxWith` and `decodeBoxWith`.
+    ╭─[shelf.proto:12:9]
+ 11 │
+ 12 │ message Box {
+    ·         ─┬─
+    ·          ╰── the JSON codecs of message `shelf.v1.Box` taking the registry become `encodeBoxWith` and `decodeBoxWith`
+ 13 │   google.protobuf.Any content = 1;
+ 14 │ }
+ 15 │
+ 16 │ message BoxWith {
+    ·         ───┬───
+    ·            ╰── and so do the JSON codecs of message `shelf.v1.BoxWith`
+ 17 │   string label = 1;
+    ╰────
+  help: Under `codec=both` the JSON codecs of a message or oneof that holds a
+        `google.protobuf.Any`, directly or through its fields, take the
+        registry and are named with `With` at the end (`encodeNoteWith`), so
+        the JSON codecs of a type named for it with `With` at the end
+        (`NoteWith` beside `Note`) take the same names, and a module cannot
+        define two values with one name. Rename one of them in the proto, or
+        rename one with `rename=shelf.v1.BoxWith:<Elm name>`.

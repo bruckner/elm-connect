@@ -10,12 +10,14 @@
 use super::field::{ValueShape, Zeroed, value_shape};
 use super::route_fn::{Messages, PROTO_ROUTE, Queries, REQUEST};
 use super::scalar::Holding;
-use super::{Emitter, PROTO_HTTP, PROTO_METHOD, RPC, docs};
-use crate::elm::ast::{Decl, Expr, Type};
+use super::{Emitter, PROTO_HTTP, PROTO_JSON, PROTO_METHOD, PROTO_REGISTRY, RPC, docs};
+use crate::elm::ast::{BinOp, Decl, Expr, Pattern, Type};
 use crate::elm::build::{
-    apply, inline_list, list, pipeline, pvar, qualified, record, stacked_apply, string, ty_fn, var,
+    apply, binop, inline_list, lambda, list, pipeline, pvar, qualified, record, stacked_apply,
+    string, ty_fn, var,
 };
 use crate::ir::{Idempotency, Method, TypeRef};
+use crate::naming::{REGISTRY, with_registry};
 use crate::options::Codec;
 use crate::route::{Body, FieldRef, PathSegment, QueryParam, Route, Segment};
 
@@ -72,9 +74,11 @@ impl Emitter {
     /// `getNote : GetNoteRequest -> Rpc.Call Rpc.Json GetNoteRequest
     /// Note`: `Rpc.call` of the method's `Proto.Method.Method`, built from
     /// its service's full name, its name and its codecs by
-    /// `Proto.Method.json` (the request's JSON encoder, the response's JSON
-    /// decoder), `Proto.Method.proto` (their binary codecs) or
-    /// `Proto.Method.both` (all four) as the `codec` option says, then
+    /// `Proto.Method.initJson` (the request's JSON encoder, the response's
+    /// JSON decoder), `Proto.Method.initProto` (their binary codecs) or
+    /// `Proto.Method.init` (the registry of its types' packages, the JSON
+    /// codecs taking a registry, and the binary codecs) as the `codec`
+    /// option says, then
     /// `withIdempotency` when the proto declares one, and `withRoutes` with
     /// its route functions ([`Self::method_routes`]) or, when one of its
     /// bindings cannot be typed, `withBindings` with its descriptor's
@@ -93,7 +97,11 @@ impl Emitter {
         let request = self.method_type(&method.input);
         let response = self.method_type(&method.output);
         let mut codecs = vec![string(service), string(method.proto_name.clone())];
-        if self.codec.json() {
+        if self.codec == Codec::Both {
+            codecs.push(self.method_registry(method));
+            codecs.push(self.request_encoder_with(&method.input));
+            codecs.push(self.response_decoder_with(&method.output));
+        } else if self.codec.json() {
             codecs.push(self.request_encoder(&method.input));
             codecs.push(self.response_decoder(&method.output));
         }
@@ -102,9 +110,9 @@ impl Emitter {
             codecs.push(self.response_decoder_bytes(&method.output));
         }
         let (builder, tag) = match self.codec {
-            Codec::Json => ("json", Some("Json")),
-            Codec::Proto => ("proto", Some("Proto")),
-            Codec::Both => ("both", None),
+            Codec::Json => ("initJson", Some("Json")),
+            Codec::Proto => ("initProto", Some("Proto")),
+            Codec::Both => ("init", None),
         };
         let built = stacked_apply(self.reference((PROTO_METHOD, builder)), codecs);
         let mut steps = Vec::new();
@@ -211,6 +219,74 @@ impl Emitter {
             ValueShape::Zeroed(Zeroed::Json) => qualified("Basics", "identity"),
             shape => self.value_encoder(shape),
         }
+    }
+
+    /// Under `codec=both`, the registry a method's calls use unless the
+    /// client gives one: that of its request's package, and of its
+    /// response's when that is another, each holding its imports'; the
+    /// well-known types' for a well-known request and response.
+    fn method_registry(&mut self, method: &Method) -> Expr {
+        let mut modules: Vec<&crate::ir::ModuleName> = Vec::new();
+        for ty in [&method.input, &method.output] {
+            if let TypeRef::Message(name) = ty
+                && !modules.contains(&&name.module)
+            {
+                modules.push(&name.module);
+            }
+        }
+        let mut parts: Vec<Expr> = modules
+            .into_iter()
+            .map(|module| self.generated_value(module, REGISTRY.to_owned()))
+            .collect();
+        if [&method.input, &method.output]
+            .iter()
+            .any(|ty| matches!(ty, TypeRef::WellKnown(_)))
+        {
+            parts.push(self.reference((PROTO_REGISTRY, "wellKnown")));
+        }
+        match parts.len() {
+            1 => parts.pop().expect("one"),
+            _ => {
+                let union = self.reference((PROTO_REGISTRY, "unionAll"));
+                apply(union, [inline_list(parts)])
+            }
+        }
+    }
+
+    /// Under `codec=both`, the JSON encoder of a method's request type taking
+    /// the registry: the generated `encodeFooWith` of a message that
+    /// reaches an `Any`, `Proto.Json.encodeAnyWith` for an `Any`, and
+    /// otherwise [`Self::request_encoder`]'s under `\_ -> Ok <<`.
+    fn request_encoder_with(&mut self, ty: &TypeRef) -> Expr {
+        let shape = method_shape(ty, self.holding);
+        if self.reaches(shape) {
+            return match ty {
+                TypeRef::Message(name) => {
+                    self.generated_value(&name.module, with_registry(name.encoder_name()))
+                }
+                _ => self.reference((PROTO_JSON, "encodeAnyWith")),
+            };
+        }
+        let encoder = self.request_encoder(ty);
+        let ok = var(self.core("Ok"));
+        lambda([Pattern::Wildcard], binop(BinOp::ComposeL, ok, encoder))
+    }
+
+    /// Under `codec=both`, the JSON decoder of a method's response type
+    /// taking the registry, as [`Self::request_encoder_with`] finds the
+    /// encoder.
+    fn response_decoder_with(&mut self, ty: &TypeRef) -> Expr {
+        let shape = method_shape(ty, self.holding);
+        if self.reaches(shape) {
+            return match ty {
+                TypeRef::Message(name) => {
+                    self.generated_value(&name.module, with_registry(name.decoder_name()))
+                }
+                _ => self.reference((PROTO_JSON, "anyWith")),
+            };
+        }
+        let decoder = self.response_decoder(ty);
+        lambda([Pattern::Wildcard], decoder)
     }
 
     /// The JSON decoder of a method's response type, as

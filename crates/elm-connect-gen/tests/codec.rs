@@ -39,9 +39,9 @@
 
 use std::fs;
 
-use elm_connect_gen::elm::ast::{Decl, Exposing, Expr, Import, Module, ModuleName, Type};
+use elm_connect_gen::elm::ast::{BinOp, Decl, Exposing, Expr, Import, Module, ModuleName, Type};
 use elm_connect_gen::elm::build::{
-    apply, list, qualified, record, string, tuple2, ty, ty_qualified, var,
+    apply, binop, list, qualified, record, string, tuple2, ty, ty_qualified, var,
 };
 use elm_connect_gen::{Options, generate};
 use prost::Message as _;
@@ -409,7 +409,8 @@ struct Sample {
     /// What the generated JSON encoder writes after the binary decoder
     /// reads [`Sample::binary`], when that is not what it writes after the
     /// JSON decoder reads the canonical form: an `Any` read from binary
-    /// holds the packed message's binary ([`binary_view`]).
+    /// is written as its packed message's canonical JSON, through the
+    /// registry, where one read from JSON is written as it arrived.
     binary_json: Option<Json>,
 }
 
@@ -434,8 +435,7 @@ fn sample(name: String, message: DynamicMessage) -> Sample {
     let descriptor = message.descriptor();
     let binary_message = canonical_message(&message);
     let binary = encode_sorted(&binary_message);
-    let mut viewed = serialize(&binary_message, true, false);
-    binary_view(&binary_message, &mut viewed);
+    let viewed = serialize(&binary_message, true, false);
     let canonical = serialize(&message, true, false);
     let mut expected = canonical.clone();
     allowed_differences(&message, &mut expected, &canonical);
@@ -629,87 +629,6 @@ fn elm_key_order(a: &MapKey, b: &MapKey) -> std::cmp::Ordering {
         (MapKey::Bool(x), MapKey::Bool(y)) => x.cmp(y),
         _ => text(a).cmp(&text(b)),
     }
-}
-
-/// `json`, `message`'s canonical JSON, with each `Any` (but inside an
-/// `Any`) as the generated JSON encoder writes one read from binary:
-/// Connect's error-detail form, `{"type": name, "value": base64}`, or
-/// `{}` for the empty `Any`.
-fn binary_view(message: &DynamicMessage, json: &mut Json) {
-    for (field, value) in message.fields() {
-        let Some(target) = json.get_mut(field.json_name()) else {
-            continue;
-        };
-        let each = |value: &Value, target: &mut Json| {
-            if let Value::Message(inner) = value {
-                if is_well_known(&kind_of_value(&field), "Any") {
-                    *target = any_view(inner);
-                } else if walked(&kind_of_value(&field)).is_some() {
-                    binary_view(inner, target);
-                }
-            }
-        };
-        match value {
-            Value::List(items) => {
-                if let Json::Array(targets) = target {
-                    for (item, target) in items.iter().zip(targets) {
-                        each(item, target);
-                    }
-                }
-            }
-            Value::Map(entries) => {
-                for (key, item) in entries {
-                    if let Some(target) = target.get_mut(key_text(key)) {
-                        each(item, target);
-                    }
-                }
-            }
-            value => each(value, target),
-        }
-    }
-}
-
-/// The kind of `field`'s values: a map's value kind, else its own.
-fn kind_of_value(field: &FieldDescriptor) -> Kind {
-    match field.kind() {
-        Kind::Message(entry) if field.is_map() => entry.map_entry_value_field().kind(),
-        kind => kind,
-    }
-}
-
-fn any_view(any: &DynamicMessage) -> Json {
-    let url = any
-        .get_field_by_name("type_url")
-        .and_then(|v| v.as_str().map(str::to_owned))
-        .unwrap_or_default();
-    let bytes = any
-        .get_field_by_name("value")
-        .and_then(|v| v.as_bytes().cloned())
-        .unwrap_or_default();
-    if url.is_empty() && bytes.is_empty() {
-        return serde_json::json!({});
-    }
-    serde_json::json!({
-        "type": url.rsplit('/').next().unwrap_or(&url),
-        "value": base64(&bytes),
-    })
-}
-
-/// Standard base64 with padding, as `Proto.Bytes.toBase64` writes it.
-fn base64(bytes: &[u8]) -> String {
-    const ALPHABET: &[u8] = b"ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
-    let mut out = String::new();
-    for chunk in bytes.chunks(3) {
-        let n = chunk.iter().fold(0u32, |n, b| (n << 8) | u32::from(*b)) << (8 * (3 - chunk.len()));
-        for i in 0..4 {
-            if i <= chunk.len() {
-                out.push(ALPHABET[((n >> (18 - 6 * i)) & 63) as usize] as char);
-            } else {
-                out.push('=');
-            }
-        }
-    }
-    out
 }
 
 fn hex(bytes: &[u8]) -> String {
@@ -1066,12 +985,37 @@ fn data_module(name: &str, profile: &str, samples: &[Sample]) -> Module {
 /// codecs of those that have them (`bothBinary`, ...), beside the JSON
 /// codecs where the set has both.
 fn codecs_module(pool: &DescriptorPool) -> Module {
-    let mut imports = vec![import("Codec.RoundTrip"), import("Codec.BinaryRoundTrip")];
+    let mut imports = vec![
+        import("Codec.RoundTrip"),
+        import("Codec.BinaryRoundTrip"),
+        import("Json.Encode"),
+    ];
     let mut decls = Vec::new();
     for set in &SETS {
         let module = format!("Generated.Codec.{}.Codec.V1", set.prefix);
         imports.push(import(&module));
         let value = |name: String| qualified(module.as_str(), name);
+        // Under codec=both a message that reaches an `Any` has no total
+        // JSON encoder: it is written with the package's registry, `null`
+        // standing for an `Err`, which no sample expects.
+        let encoder = |descriptor: &MessageDescriptor| {
+            let name = descriptor.name();
+            if set.json && set.binary && reaches_any(descriptor, &mut Vec::new()) {
+                binop(
+                    BinOp::ComposeR,
+                    apply(
+                        value(format!("encode{name}With")),
+                        [value("registry".to_owned())],
+                    ),
+                    apply(
+                        qualified("Result", "withDefault"),
+                        [qualified("Json.Encode", "null")],
+                    ),
+                )
+            } else {
+                value(format!("encode{name}"))
+            }
+        };
         if set.json {
             let rows = messages(pool).into_iter().map(|descriptor| {
                 tuple2(
@@ -1080,7 +1024,7 @@ fn codecs_module(pool: &DescriptorPool) -> Module {
                         qualified("Codec.RoundTrip", "codec"),
                         [
                             value(format!("decode{}", descriptor.name())),
-                            value(format!("encode{}", descriptor.name())),
+                            encoder(&descriptor),
                         ],
                     ),
                 )
@@ -1097,7 +1041,7 @@ fn codecs_module(pool: &DescriptorPool) -> Module {
                             value(format!("decode{name}Bytes")),
                             value(format!("encode{name}Bytes")),
                             value(format!("decode{name}")),
-                            value(format!("encode{name}")),
+                            encoder(&descriptor),
                         ],
                     )
                 } else {
@@ -1134,6 +1078,28 @@ fn codecs_module(pool: &DescriptorPool) -> Module {
 }
 
 /// `name : List ( String, <module>.Codec )` holding `rows`.
+/// Whether `descriptor` holds a `google.protobuf.Any`, in a field, a map
+/// value or a oneof member, or a message that does; `seen` holds the
+/// messages on the way, so that a cycle ends.
+fn reaches_any(descriptor: &MessageDescriptor, seen: &mut Vec<String>) -> bool {
+    if seen.iter().any(|name| name == descriptor.full_name()) {
+        return false;
+    }
+    seen.push(descriptor.full_name().to_owned());
+    descriptor.fields().any(|field| match field.kind() {
+        Kind::Message(entry) if field.is_map() => match entry.map_entry_value_field().kind() {
+            Kind::Message(value) => {
+                value.full_name() == "google.protobuf.Any" || reaches_any(&value, seen)
+            }
+            _ => false,
+        },
+        Kind::Message(message) => {
+            message.full_name() == "google.protobuf.Any" || reaches_any(&message, seen)
+        }
+        _ => false,
+    })
+}
+
 fn table(name: String, module: &str, rows: Expr) -> Decl {
     Decl::Value {
         doc: None,

@@ -718,6 +718,39 @@ impl Problem {
         )
     }
 
+    /// Under `codec=both`, a type of `package` named for a message or oneof
+    /// that reaches a `google.protobuf.Any` with `With` at the end, whose
+    /// JSON codecs take the names of the other's codecs that take the
+    /// registry.
+    pub fn registry_codec_collision(
+        package: &str,
+        values: &str,
+        first: Site,
+        second: Site,
+        rename: &str,
+        renamed: Option<&str>,
+    ) -> Self {
+        Problem::new(
+            Code::CodecCollision,
+            format!(
+                "The package `{package}` has two definitions whose codecs both become the Elm \
+                 {values}."
+            ),
+            format!(
+                "Under `codec=both` the JSON codecs of a message or oneof that holds a \
+                 `google.protobuf.Any`, directly or through its fields, take the registry and \
+                 are named with `With` at the end (`encodeNoteWith`), so the JSON codecs of a \
+                 type named for it with `With` at the end (`NoteWith` beside `Note`) take the \
+                 same names, and a module cannot define two values with one name. {}",
+                rename_escape(
+                    renamed,
+                    format!("Rename one of them in the proto, or rename one with {rename}.")
+                )
+            ),
+            vec![first, second],
+        )
+    }
+
     /// Two fields or oneof members of `message` become the same Elm value
     /// `elm_name` in the message's descriptor module.
     pub fn field_value_collision(

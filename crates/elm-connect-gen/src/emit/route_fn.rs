@@ -286,6 +286,11 @@ impl Emitter {
                         PathSegment::Literal(_) => None,
                     })
                     .collect();
+                // A request that reaches an `Any` under `codec=both` has no
+                // total encoder; its routes are read from its bindings.
+                if self.reaches(field::value_shape(input, self.holding)) {
+                    return None;
+                }
                 let encode_request = self.request_encoder(input);
                 let json = apply(encode_request, [var(REQUEST)]);
                 let json = if paths.is_empty() {
@@ -307,7 +312,7 @@ impl Emitter {
                     return None;
                 }
                 let shape = match field::field_shape(field, &HashMap::new(), self.holding) {
-                    FieldShape::Maybe(value) => value,
+                    FieldShape::Maybe(value) if !self.reaches(value) => value,
                     _ => return None,
                 };
                 let encoder = self.value_encoder(shape);
