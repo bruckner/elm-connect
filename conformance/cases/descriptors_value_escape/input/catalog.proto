@@ -10,6 +10,9 @@ import "google/api/annotations.proto";
 message Entry {
   string name = 1;
   string descriptor = 2;
+  // `descriptors` is a value here and in `Catalog.V1`, which holds the
+  // package's descriptors, a module apart, so neither escapes.
+  string descriptors = 3;
 }
 
 // A oneof member named `descriptor` takes `descriptor_` too.

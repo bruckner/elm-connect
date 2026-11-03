@@ -25,6 +25,7 @@
         "Proto.EnumValue",
         "Proto.Method",
         "Proto.Codec",
+        "Proto.Descriptors",
         "Proto.Registry",
         "Proto.WellKnown",
         "Proto.Any",

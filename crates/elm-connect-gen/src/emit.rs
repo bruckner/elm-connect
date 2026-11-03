@@ -18,12 +18,14 @@
 //!   `Proto.Version` value of the release it was generated for, which the
 //!   compiler refuses unless the runtime package is of a compatible
 //!   release (design §8). A package's module then holds six sections in
-//!   order: types, defaults, typed values, registry, encoders, decoders.
+//!   order: types, defaults, typed values, registry (the package's
+//!   descriptors, and its binary registry under `codec=both`), encoders,
+//!   decoders.
 //!   Each section has the enums, then the messages, each followed by its
 //!   recursion wrapper and its oneofs; the defaults section has the
 //!   messages alone, and is left out when there are none, and the typed
 //!   values section has each enum's and message's typed value. A package
-//!   without types has the registry alone.
+//!   without types has the registry section alone.
 //! - Each message and enum has a descriptor module of its own inside its
 //!   package's, `Notes.V1.Note` (design §3.1): what the proto says about
 //!   it, while the package's module holds the values a program sends and
@@ -75,10 +77,10 @@
 //!   `messageFoo : Proto.Message.Message Foo`, built by
 //!   `Proto.Message.message` from its encoder, decoder, default and
 //!   descriptor, and `enumBar : Proto.Enum.Enum Bar` likewise with its
-//!   zero value. The package's `registry` holds its own descriptors (the
+//!   zero value. The package's `descriptors` holds its own descriptors (the
 //!   descriptor modules' values, so a program using it keeps no codecs),
-//!   then the registries of the packages its module imports and the
-//!   well-known types', so it is transitive.
+//!   then those of the packages its module imports and the well-known
+//!   types', so it is transitive.
 //! - A declaration a proto element becomes is documented with what the
 //!   proto says about it: its comment and its one-line declaration, as
 //!   [`docs`] lays them out; a method's call with its Connect path and
@@ -228,7 +230,10 @@ const PROTO_METHOD: &str = "Proto.Method";
 const PROTO_ENUM: &str = "Proto.Enum";
 /// The runtime package's enum values' descriptors.
 const PROTO_ENUM_VALUE: &str = "Proto.EnumValue";
-/// The runtime package's registry of descriptors.
+/// The runtime package's descriptors by full name.
+const PROTO_DESCRIPTORS: &str = "Proto.Descriptors";
+/// The runtime package's registry of codecs, which an `Any` resolves
+/// through.
 const PROTO_REGISTRY: &str = "Proto.Registry";
 /// The runtime package's `google.protobuf.Any`.
 const PROTO_ANY: &str = "Proto.Any";
@@ -613,7 +618,7 @@ impl Emitter {
             .iter()
             .map(|message| message_shape(message, &by_name, self.holding))
             .collect();
-        let mut registry = vec![Decl::Comment("REGISTRY".into()), self.registry(package)];
+        let mut registry = vec![Decl::Comment("REGISTRY".into()), self.descriptors(package)];
         if self.codec.json() && self.codec.binary() && !messages.is_empty() {
             registry.push(self.binary_registry(package));
         }
@@ -991,9 +996,9 @@ mod tests {
             [
                 "Json.Decode",
                 "Json.Encode",
+                "Proto.Descriptors",
                 "Proto.Json",
                 "Proto.Message",
-                "Proto.Registry",
                 "Proto.Version",
                 "T.V1.A"
             ]
@@ -1016,9 +1021,9 @@ mod tests {
             [
                 "Json.Decode",
                 "Json.Encode",
+                "Proto.Descriptors",
                 "Proto.Json",
                 "Proto.Message",
-                "Proto.Registry",
                 "Proto.Version",
                 "T.V1.E"
             ]
@@ -1033,7 +1038,7 @@ mod tests {
     }
 
     #[test]
-    fn descriptors_hold_the_fields_and_the_registry() {
+    fn descriptors_hold_the_fields_and_the_package_s_types() {
         let one = package(vec![message(
             "A",
             vec![field(
@@ -1062,10 +1067,10 @@ mod tests {
         let on = crate::elm::print::print_module(&emit(&one, &Options::default()).expect("emits"));
         assert!(
             on.contains(
-                "registry =\n    Proto.Registry.union\n        \
-                 (Proto.Registry.fromDescriptors\n            \
+                "descriptors =\n    Proto.Descriptors.union\n        \
+                 (Proto.Descriptors.fromDescriptors\n            \
                  [ T.V1.A.descriptor\n            ]\n            []\n        \
-                 )\n        Proto.Registry.wellKnown"
+                 )\n        Proto.Descriptors.wellKnown"
             ),
             "{on}"
         );
@@ -1079,7 +1084,7 @@ mod tests {
         let printed =
             crate::elm::print::print_module(&emit(&nothing, &Options::default()).expect("emits"));
         assert!(
-            printed.contains("registry =\n    Proto.Registry.wellKnown"),
+            printed.contains("descriptors =\n    Proto.Descriptors.wellKnown"),
             "{printed}"
         );
     }
@@ -1165,9 +1170,9 @@ mod tests {
                 "Json.Decode",
                 "Json.Encode",
                 "Other.V1",
+                "Proto.Descriptors",
                 "Proto.Json",
                 "Proto.Message",
-                "Proto.Registry",
                 "Proto.Version",
                 "T.V1.A"
             ]
@@ -1175,7 +1180,9 @@ mod tests {
         let printed = crate::elm::print::print_module(&module);
         assert!(printed.contains("b : Maybe Other.V1.B"), "{printed}");
         assert!(
-            printed.contains("(Proto.Registry.union Other.V1.registry Proto.Registry.wellKnown)"),
+            printed.contains(
+                "(Proto.Descriptors.union Other.V1.descriptors Proto.Descriptors.wellKnown)"
+            ),
             "{printed}"
         );
         assert!(

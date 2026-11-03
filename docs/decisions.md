@@ -1159,6 +1159,27 @@ joined the write limits in `Http`, Connect's content-type reading went
 to `Connect`, and what remained, a failure's status read from any
 protocol's error shapes, is `Rpc.Internal.Status`. Where: design §5.2.
 
+### Descriptors apart from the registry
+
+*2026-11-02.*
+
+`Proto.Registry` held two things in one type: the descriptors by full
+name, which serve reflection and resolve the message names a
+descriptor only mentions, and the codecs an `Any` holding JSON alone is
+written as binary with. The descriptors are now `Proto.Descriptors`,
+type `Descriptors`, and each generated package's `registry` is
+`descriptors`; `Proto.Registry` keeps the codecs alone, the table an
+`Any` resolves through. Generated code already kept them in two values
+(`registry` and `binaryRegistry`) so that a program using one keeps
+nothing of the other; two types say so, and leave the codec table free
+to change shape without touching reflection. The names follow the
+split other runtimes make between a pool of descriptors and the types a
+message resolves through: Go's `protoregistry.Files` and `Types`, C++'s
+`DescriptorPool` and `TypeResolver`, protobuf-es's `FileRegistry` and
+`Registry`. `descriptors` is all lowercase like `registry` was, so no
+generated prefix and type name takes it, and `registry` stays free on
+the same terms. Where: design §3.9.
+
 ## Input and versioning
 
 

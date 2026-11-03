@@ -29,7 +29,7 @@ The rest are reference pages, for when a question comes up.
   options, `check`, and running the plugin.
 - [calling.md](calling.md): clients, protocols, retries, errors,
   tracing, cancelling, and the pure halves.
-- [descriptors.md](descriptors.md): descriptors, the registry, `Any`,
+- [descriptors.md](descriptors.md): descriptors, `Any`,
   error details and update masks.
 - [transcoding.md](transcoding.md): `google.api.http` in practice,
   server options, and where transcoders differ.

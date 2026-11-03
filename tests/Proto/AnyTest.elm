@@ -4,11 +4,11 @@ import Expect
 import Json.Decode
 import Json.Encode
 import Proto.Any as Any exposing (Any, Problem(..))
+import Proto.Descriptors as Descriptors
 import Proto.Duration as Duration exposing (Duration)
 import Proto.Field as Field exposing (Cardinality(..), Kind(..), Scalar(..))
 import Proto.Json
 import Proto.Message as Message exposing (Message)
-import Proto.Registry as Registry
 import Proto.WellKnown as WellKnown
 import Test exposing (Test, describe, test)
 
@@ -158,17 +158,17 @@ suite =
                     |> Result.map (Any.unpack messageNote >> outcome)
                 )
                     |> Expect.equal ( Nothing, Ok (Just (Err "json")) )
-        , test "describe finds the type in a registry" <|
+        , test "describe finds the type among descriptors" <|
             \_ ->
                 let
-                    registry =
-                        Registry.union (Registry.fromDescriptors [ descriptorNote ] []) Registry.wellKnown
+                    descriptors =
+                        Descriptors.union (Descriptors.fromDescriptors [ descriptorNote ] []) Descriptors.wellKnown
                 in
                 [ Any.pack messageNote note
                 , Any.pack WellKnown.timestamp (Message.default WellKnown.timestamp)
                 , Any.packWith "example.com" (noteAs (Message.descriptor "other.v1.Thing" [])) note
                 ]
-                    |> List.map (Any.describe registry >> Maybe.map (\found -> ( Message.typeName found, List.map Field.jsonName (Message.fields found) )))
+                    |> List.map (Any.describe descriptors >> Maybe.map (\found -> ( Message.typeName found, List.map Field.jsonName (Message.fields found) )))
                     |> Expect.equal
                         [ Just ( "notes.v1.Note", [ "title", "pinned" ] )
                         , Just ( "google.protobuf.Timestamp", [ "seconds", "nanos" ] )

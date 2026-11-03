@@ -404,7 +404,7 @@ rpc shared call =
 - **Values in the package module, descriptions beside it.** The package module holds what a program sends and
   receives: the types (messages, oneofs, recursion wrappers, enums),
   their defaults and codecs, the typed values (`messageNote`,
-  `enumVisibility`) and the registry. What the proto says about a type
+  `enumVisibility`) and the package's `descriptors`. What the proto says about a type
   lives in a module of the type's own inside the package's, named by
   its Elm type name: `Notes.V1.Note` holds one
   `Proto.Field.Descriptor` per field, named as its record field
@@ -416,7 +416,7 @@ rpc shared call =
   name is (§3.7), so that one naming rule names
   both. Imports go one way:
   the package module imports its descriptor modules (for the typed
-  values and the registry), a message's descriptor module imports the
+  values and `descriptors`), a message's descriptor module imports the
   descriptor modules of the enums its fields hold (another package's
   included), and a service module imports the descriptor modules its
   routes name (§4); nothing imports a package module from below, so no
@@ -566,7 +566,7 @@ rpc shared call =
   comment and line, `, in oneof kind` for a member (so a field's comment
   is in both places), and an enum's descriptor every declared name with
   its line and comment; codecs, defaults and typed values get one
-  sentence naming their type, and no proto text, and `registry` two
+  sentence naming their type, and no proto text, and `descriptors` two
   saying what it holds and resolves. A deprecated element's
   doc starts with `Deprecated.`, a field's item with it. A comment of
   several paragraphs stays whole in its item, which makes the list
@@ -1142,9 +1142,9 @@ In detail:
   `/`), else the decoded value or a `Problem`: `Json` for JSON that
   does not decode, `BinaryOnly` for a binary payload, which the
   runtime does not read. `is` tests the type, `typeUrl` and
-  `typeName` read it, and `describe` looks its descriptor up in a
-  `Proto.Registry`. `Proto.WellKnown.any : Message Any` is its typed value,
-  and `Proto.Registry.wellKnown` holds its tree (`type_url`, `value`).
+  `typeName` read it, and `describe` looks its descriptor up in
+  `Proto.Descriptors`. `Proto.WellKnown.any : Message Any` is its typed value,
+  and `Proto.Descriptors.wellKnown` holds its tree (`type_url`, `value`).
 - `Any` on the wire is proto3 JSON's: the packed message's own object
   plus `"@type"`, or, for a well-known type with a JSON form of its own
   (`Timestamp`, `Duration`, `FieldMask`, `Empty`, `Struct`, `Value`,
@@ -1343,7 +1343,9 @@ As the `naming` and `naming_collision` cases show:
   (§3.9), and `queryOfFoo`, a request message's query encoder (§4). Type
   names are unique in a module and start with an uppercase letter, and
   no prefix is another's, so these never collide. The one other,
-  `registry`, is all lowercase, so it is none of them. The typed values
+  `descriptors`, is all lowercase, so it is none of them, though it
+  starts with `descriptor`, the prefix of a method's descriptor in its
+  service's module; `registry` is kept free on the same terms. The typed values
   take a prefix too, since under a suffix `encodeFooMessage` would be
   both the encoder of `FooMessage` and the typed value of `EncodeFoo`.
 - The binary codecs (§3.10) reserve `encodeFooBytes`, `decodeFooBytes`
@@ -1637,17 +1639,17 @@ messageNote =
     Proto.Message.message encodeNote decodeNote defaultNote Notes.V1.Note.descriptor
 
 
-registry : Proto.Registry.Registry
-registry =
-    Proto.Registry.union
-        (Proto.Registry.fromDescriptors
+descriptors : Proto.Descriptors.Descriptors
+descriptors =
+    Proto.Descriptors.union
+        (Proto.Descriptors.fromDescriptors
             [ Notes.V1.Note.descriptor
             , …
             ]
             [ Notes.V1.Visibility.descriptor
             ]
         )
-        (Proto.Registry.union Users.V1.registry Proto.Registry.wellKnown)
+        (Proto.Descriptors.union Users.V1.descriptors Proto.Descriptors.wellKnown)
 ```
 
 - **The layout.** A descriptor module holds
@@ -1655,9 +1657,10 @@ registry =
   in declaration order, each oneof's members where the oneof is, each
   value documented (what the field is, and its oneof). The package
   module's sections are types, defaults, typed values (each enum's,
-  then each message's), the registry, encoders and decoders, then
+  then each message's), the registry (`descriptors`, and
+  `binaryRegistry` under `codec=both`), encoders and decoders, then
   under `codec=proto` or `codec=both` binary encoders and binary
-  decoders (§3.10); a package without types has the registry alone.
+  decoders (§3.10); a package without types has `descriptors` alone.
 
 - The naming: `Proto.Thing.Descriptor` is the data-only tree,
   `Proto.Thing.Thing a` the typed value carrying it beside the type's
@@ -1723,7 +1726,7 @@ registry =
   for proto2's `required`, which the generator, reading proto3 alone,
   never gives. A field of a message type refers to it by full name,
   never by value, since a message can contain itself and Elm forbids
-  cyclic values; a `Proto.Registry` resolves the names. A field of an
+  cyclic values; `Proto.Descriptors` resolves the names. A field of an
   enum type holds the enum's descriptor, `KindEnum
   Notes.V1.Visibility.descriptor`: an enum contains nothing, so it
   cannot lead back to the field, and its zero value's name is wanted
@@ -1757,8 +1760,8 @@ registry =
   the descriptor pool has it, which it does exactly when a proto
   imports it; a number this release does not name is kept as
   `BehaviorUnknown` and the unspecified zero is dropped.
-- **Descriptor data is added sparingly.** A program that uses the
-  registry keeps every tree in it, and every program pays for the
+- **Descriptor data is added sparingly.** A program that uses a
+  package's `descriptors` keeps every tree in it, and every program pays for the
   trees' source size, so a property joins the trees only when a use
   needs it: behavior for update masks and forms, deprecation for
   tooling. Comments (which are in the documentation, §3.1), proto2
@@ -1780,18 +1783,18 @@ registry =
   `Proto.WellKnown` (`empty`, `timestamp`, `duration`, `fieldMask`,
   `any`, `struct`, `value`, `listValue` and the wrappers, the 64-bit
   ones in both `int64` forms), built with `Proto.Message.message`, and
-  `Proto.Registry.wellKnown` holds their trees. They live apart from
+  `Proto.Descriptors.wellKnown` holds their trees. They live apart from
   `Proto.Message` so that the value for `google.protobuf.Any`
   (`Proto.Any`, §3.5), whose module needs `Proto.Message` and
-  `Proto.Registry`, can join them without an import cycle.
+  `Proto.Descriptors`, can join them without an import cycle.
 - The typed values serve `Any` (§3.5), error details (§5.4) and
   reflection; calls carry codecs only (§4), because Elm's dead-code
   elimination keeps a top-level value whole: a method holding a typed
   value would bring the type's default and descriptor tree into every
   program that calls it. For the same reason
   each descriptor is a top-level value of its own (in its descriptor
-  module) and the registry is built from those, never from the typed
-  values: a registry of
+  module) and a package's `descriptors` is built from those, never from
+  the typed values: one built from
   `messageFoo.descriptor` would keep every type's codecs and default in any
   program that uses it, which on a large API is most of the program.
 - Each method's descriptor is a value of its own in its service's
@@ -1807,28 +1810,40 @@ registry =
   one, and a service module's namespace is its methods' calls, route
   functions and descriptors, so any fixed value name could collide with
   a method.
-- **The registry.** Each package module has a registry section,
-  `registry : Proto.Registry.Registry`, transitive: the package's
-  own descriptors, then the registries of the generated packages its
-  module imports (each holding its own imports'), then
-  `Proto.Registry.wellKnown`, joined with `Proto.Registry.union`, which
-  keeps the left one of two with one name (diamonds hold each type
-  once). Packages a service refers to but the package's types do not are
-  not in it: importing them could make a cycle Elm rejects. It is a
-  top-level constant, built once at start-up and dropped by dead-code
-  elimination when nothing uses it. A package without types has a
-  module holding its registry alone. It names each descriptor module's
-  `descriptor`, so the package module imports every one of them.
+- **The package's descriptors.** Each package module has a registry
+  section holding `descriptors : Proto.Descriptors.Descriptors`,
+  transitive: the package's own descriptors, then the `descriptors` of
+  the generated packages its module imports (each holding its own
+  imports'), then `Proto.Descriptors.wellKnown`, joined with
+  `Proto.Descriptors.union`, which keeps the left one of two with one
+  name (diamonds hold each type once). Packages a service refers to but
+  the package's types do not are not in it: importing them could make a
+  cycle Elm rejects. It is a top-level constant, built once at start-up
+  and dropped by dead-code elimination when nothing uses it. A package
+  without types has a module holding its `descriptors` alone. It names
+  each descriptor module's `descriptor`, so the package module imports
+  every one of them. The name is all lowercase, so no prefix and type
+  name can take it (§3.7).
+- **Descriptors apart from the registry.** `Proto.Descriptors` serves
+  reflection and resolves the names a descriptor only mentions;
+  `Proto.Registry` is the table an `Any` resolves through (§3.10,
+  §5.5), holding codecs and no descriptors. They are two types so that
+  a program using one keeps nothing of the other, and the names follow
+  the split other runtimes make between a pool of descriptors and the
+  types a message resolves through: Go's `protoregistry.Files` and
+  `Types`, C++'s `DescriptorPool` and `TypeResolver`, protobuf-es's
+  `FileRegistry` and `Registry` (decisions.md: Descriptors apart from
+  the registry).
 - **No option to leave the trees out.** Such an option would save
   generated bytes only, and would make a tree with no fields mean
   either a message with none or descriptors switched off, a doubt every
-  reader of the trees (`Proto.Any.describe`, a registry lookup,
+  reader of the trees (`Proto.Any.describe`, a `Proto.Descriptors` lookup,
   `Proto.Enum`'s names and numbers) would carry (decisions.md: No
   option to leave the descriptors out).
 - **Cost.** The trees are always written, and the cost falls on the
   programs that use them. Dead-code elimination works per top-level
-  value, so a program pays for what it reaches: one that leaves the
-  registry unused keeps no message tree, one that only encodes and
+  value, so a program pays for what it reaches: one that leaves
+  `descriptors` unused keeps no message tree, one that only encodes and
   decodes keeps no descriptor at all, and `elmConnectVersion_` is
   dropped from every bundle. Each descriptor module adds a header,
   imports and `elmConnectVersion_`, and each field a top-level value
@@ -1889,12 +1904,12 @@ registry =
   `naming::codec_collision` where a type's name meets them.
 - **`Any` fields** are written, under `both`, with
   `Proto.Binary.anyWith binaryRegistry` (§5.5): `binaryRegistry`, beside
-  `registry` in the package's module, holds the conversion of each of the
+  `descriptors` in the package's module, holds the conversion of each of the
   package's messages (`Proto.Registry.withBinary "notes.v1.Note"
   decodeNote encodeNoteBytes`) and of each well-known type they hold from
   proto3 JSON to binary, after the `binaryRegistry` of each package whose
   messages they hold, so that an `Any` read from proto3 JSON is written
-  as its message's binary. It is a value apart from `registry`, built
+  as its message's binary. It is a value apart from `descriptors`, built
   from codecs rather than typed values, so that neither brings the
   other's code: a program that writes a message holding an `Any` keeps
   every message's JSON decoder and binary encoder, and no descriptors;
@@ -2600,7 +2615,8 @@ and descriptor trees (`Proto.Message`, `Proto.Enum`, `Proto.Method`, and
 HTTP bindings as data (`Proto.Http`), the route record and helpers
 generated route functions and query encoders call (`Proto.Route`,
 `Proto.Query`), the well-known types' values
-(`Proto.WellKnown`), `Proto.Registry` (§3.9) and `Proto.Any` (§3.5).
+(`Proto.WellKnown`), `Proto.Descriptors` (§3.9), `Proto.Registry`
+(§3.10) and `Proto.Any` (§3.5).
 The names `Rpc` and `Proto.*` say what the modules are: proto data, and
 RPC calls over any protocol, with no product prefix tying proto3
 JSON to one of the two (decisions.md: `Rpc` and `Proto` as the
@@ -4102,7 +4118,8 @@ Within a major version:
   generated by an earlier minor keeps compiling: `Proto.Message.Message`,
   `Proto.Enum.Enum`, `Proto.Method.Method`, and the descriptor trees,
   the `Descriptor` of `Proto.Message`, `Proto.Field`, `Proto.Enum`,
-  `Proto.EnumValue` and `Proto.Method` (§3.9), with `Rpc.Call`, `Proto.Any.Any` and
+  `Proto.EnumValue` and `Proto.Method` (§3.9), with `Rpc.Call`,
+  `Proto.Any.Any`, `Proto.Descriptors.Descriptors` and
   `Proto.Registry.Registry`; so are the types an application builds to
   send or the runtime gives, `Rpc.Protocol.Protocol`,
   `Rpc.Client.Client`, `Rpc.Retry.Retry`, `Rpc.Trace.Trace` and
