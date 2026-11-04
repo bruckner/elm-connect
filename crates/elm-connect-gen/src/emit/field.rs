@@ -3,13 +3,12 @@
 
 use super::scalar::{Holding, Repr};
 use super::{
-    CORE_DICT, CORE_STRING, Emitter, JSON_DECODE, JSON_ENCODE, PROTO_ANY, PROTO_CODEC,
-    PROTO_DURATION, PROTO_JSON, TIME, call, scalar,
+    CORE_DICT, CORE_STRING, Emitter, JSON_DECODE, JSON_ENCODE, PROTO_ANY, PROTO_DURATION,
+    PROTO_JSON, TIME, call, scalar,
 };
 use crate::elm::ast::{Expr, Type};
 use crate::elm::build::{apply, list, qualified, ty, var};
 use crate::naming::{REGISTRY_ARGUMENT, with_registry};
-use crate::options::Codec;
 use std::collections::HashMap;
 
 use crate::options::Int64;
@@ -317,14 +316,9 @@ impl Emitter {
         }
     }
 
-    /// Whether a value is or reaches a `google.protobuf.Any` under
-    /// `codec=both`, so that its JSON codecs take the registry and its
-    /// encoder gives a `Result`. Under the other options an `Any` is
-    /// written as it is held, and no codec takes one.
+    /// Whether a value is or reaches a `google.protobuf.Any`, so that its
+    /// JSON codecs take the registry and its encoder gives a `Result`.
     pub(super) fn reaches(&self, value: ValueShape) -> bool {
-        if self.codec != Codec::Both {
-            return false;
-        }
         match value {
             ValueShape::Present(Present::Any) => true,
             ValueShape::Present(Present::Message(name)) => {
@@ -413,15 +407,7 @@ impl Emitter {
                 let value = self.library_type(JSON_ENCODE, "Value", []);
                 ty(self.core("List"), [value])
             }
-            ValueShape::Present(Present::Any) => {
-                let tag = if self.codec == Codec::Json {
-                    "Json"
-                } else {
-                    "Proto"
-                };
-                let tag = self.library_type(PROTO_CODEC, tag, []);
-                self.library_type(PROTO_ANY, "Any", [tag])
-            }
+            ValueShape::Present(Present::Any) => self.library_type(PROTO_ANY, "Any", []),
             ValueShape::Zeroed(Zeroed::Empty | Zeroed::Null) => Type::Unit,
             ValueShape::Present(Present::Wrapped(wrapper, _)) => ty(wrapper.elm_name.clone(), []),
         }

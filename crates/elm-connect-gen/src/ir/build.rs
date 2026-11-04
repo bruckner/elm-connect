@@ -18,7 +18,7 @@ use super::{
 use super::{declaration, rename};
 use crate::diagnostics::{Diagnostics, LineColSpan, Problem, Referrer, Site, Spans, closest, tag};
 use crate::naming::{self, NameError};
-use crate::options::{Codec, Options, Spelling, Streaming};
+use crate::options::{Options, Spelling, Streaming};
 use crate::route::{self, Route};
 
 /// What a rename's help names in place of the proto element's full name.
@@ -90,7 +90,6 @@ pub fn build_with_imports(
     let mut builder = Builder {
         streaming: options.streaming,
         spelling: options.spelling,
-        codec: options.codec,
         ..Builder::default()
     };
 
@@ -564,8 +563,6 @@ struct Builder {
     references: Vec<Reference>,
     /// What a streaming method gets.
     streaming: Streaming,
-    /// Which codecs the package modules define, whose names they claim.
-    codec: Codec,
     /// The rename map's entries that name a generated element and suit it:
     /// Elm names by proto full name (an enum value's under its enum's).
     renames: HashMap<String, String>,
@@ -953,12 +950,8 @@ impl Builder {
             }
         }
 
-        if self.codec.binary() {
-            self.check_codec_names(proto_name, &types, &messages, &enums);
-        }
-        if self.codec == Codec::Both {
-            self.check_registry_codec_names(proto_name, &types, &messages, files);
-        }
+        self.check_codec_names(proto_name, &types, &messages, &enums);
+        self.check_registry_codec_names(proto_name, &types, &messages, files);
 
         let mut services = Vec::new();
         for file in files {
@@ -1558,9 +1551,7 @@ impl Builder {
     /// `decodeNoteBytes`). A type's binary codecs are its JSON codecs'
     /// names with `Bytes` at the end, and only a message's merge starts
     /// with `merge`, which no JSON codec does, so these are the only
-    /// generated values the binary codecs can meet. Enums keep their JSON
-    /// codecs under `codec=proto`; messages and oneofs have them only
-    /// under `codec=both`.
+    /// generated values the binary codecs can meet.
     fn check_codec_names(
         &mut self,
         package: &str,
@@ -1579,9 +1570,6 @@ impl Builder {
             };
             let second = &types.claimed[name.as_str()];
             let is_enum = |elm: &str| enums.iter().any(|e| e.elm_name == elm);
-            if !(self.codec.json() || is_enum(name)) {
-                continue;
-            }
             // A oneof's binary codec is an encoder alone.
             let decodes = is_enum(stem) || messages.iter().any(|m| m.elm_name == stem);
             let mut values = vec![naming::encoder_name(name)];

@@ -34,11 +34,6 @@ fn collisions(diagnostics: &Diagnostics) -> Vec<String> {
 }
 
 #[test]
-fn json_codecs_alone_claim_no_bytes_names() {
-    assert!(build(BESIDE, Codec::Json, &[]).is_ok());
-}
-
-#[test]
 fn both_codecs_meet_a_type_named_with_bytes() {
     let diagnostics = build(BESIDE, Codec::Both, &[]).expect_err("two collisions");
     let messages = collisions(&diagnostics);
@@ -54,13 +49,12 @@ fn both_codecs_meet_a_type_named_with_bytes() {
 }
 
 #[test]
-fn binary_codecs_alone_meet_only_an_enum() {
-    // Under codec=proto the message `NoteBytes` has no JSON codecs, but
-    // the enum `StatusBytes` keeps its.
-    let diagnostics = build(BESIDE, Codec::Proto, &[]).expect_err("one collision");
-    let messages = collisions(&diagnostics);
-    assert_eq!(messages.len(), 1, "{messages:?}");
-    assert!(messages[0].contains("`encodeStatusBytes`"), "{messages:?}");
+fn every_option_meets_a_type_named_with_bytes() {
+    // Package modules carry both codecs whatever the option.
+    for codec in [Codec::Json, Codec::Proto] {
+        let diagnostics = build(BESIDE, codec, &[]).expect_err("two collisions");
+        assert_eq!(collisions(&diagnostics).len(), 2);
+    }
 }
 
 #[test]

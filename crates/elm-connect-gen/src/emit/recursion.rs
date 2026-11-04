@@ -6,7 +6,6 @@ use crate::elm::ast::{Decl, Pattern, Type, Variant};
 use crate::elm::build::{apply, lambda, pctor, pvar, ty, var};
 use crate::ir::{Message, Wrapper};
 use crate::naming::{ENCODER_ARGUMENT, REGISTRY_ARGUMENT, with_registry};
-use crate::options::Codec;
 
 impl Emitter {
     /// `type Node_ = Node_ Node`.
@@ -26,10 +25,10 @@ impl Emitter {
         }
     }
 
-    /// Whether a recursive message reaches an `Any` under `codec=both`, so
-    /// its wrapper's JSON codecs take the registry as its own do.
+    /// Whether a recursive message reaches an `Any`, so its wrapper's JSON
+    /// codecs take the registry as its own do.
     fn wrapper_reaches(&self, message: &Message) -> bool {
-        self.codec == Codec::Both && self.reach.message(&message.proto_full_name)
+        self.reach.message(&message.proto_full_name)
     }
 
     /// `encodeNode_ (Node_ value) = encodeNode value`; under `codec=both`,

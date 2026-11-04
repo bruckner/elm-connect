@@ -97,19 +97,16 @@ impl Emitter {
         let request = self.method_type(&method.input);
         let response = self.method_type(&method.output);
         let mut codecs = vec![string(service), string(method.proto_name.clone())];
-        if self.codec == Codec::Both {
+        if self.wiring.json() {
             codecs.push(self.method_registry(method));
             codecs.push(self.request_encoder_with(&method.input));
             codecs.push(self.response_decoder_with(&method.output));
-        } else if self.codec.json() {
-            codecs.push(self.request_encoder(&method.input));
-            codecs.push(self.response_decoder(&method.output));
         }
-        if self.codec.binary() {
+        if self.wiring.binary() {
             codecs.push(self.request_encoder_bytes(&method.input));
             codecs.push(self.response_decoder_bytes(&method.output));
         }
-        let (builder, tag) = match self.codec {
+        let (builder, tag) = match self.wiring {
             Codec::Json => ("initJson", Some("Json")),
             Codec::Proto => ("initProto", Some("Proto")),
             Codec::Both => ("init", None),
@@ -152,7 +149,7 @@ impl Emitter {
         };
         let call = self.library_type(RPC, "Call", [codec, request.clone(), response]);
         Decl::Value {
-            doc: Some(docs::method(service, method, self.codec)),
+            doc: Some(docs::method(service, method, self.wiring)),
             name: method.elm_name.clone(),
             annotation: ty_fn([request], call),
             params: Vec::new(),
@@ -174,7 +171,7 @@ impl Emitter {
         queries: &Queries,
         method: &Method,
     ) -> (Vec<Decl>, Routes) {
-        if method.routes.is_empty() || self.codec == Codec::Proto {
+        if method.routes.is_empty() || self.wiring == Codec::Proto {
             return (Vec::new(), Routes::None);
         }
         let mut scratch = self.clone();
@@ -221,11 +218,19 @@ impl Emitter {
         }
     }
 
-    /// Under `codec=both`, the registry a method's calls use unless the
-    /// client gives one: that of its request's package, and of its
-    /// response's when that is another, each holding its imports'; the
-    /// well-known types' for a well-known request and response.
+    /// The registry a JSON-wired method's calls use unless the client
+    /// gives one: `Proto.Registry.empty` when neither its request nor its
+    /// response reaches an `Any`, so that a program calling it keeps no
+    /// table; else that of its request's package, and of its response's
+    /// when that is another, each holding its imports'; the well-known
+    /// types' for a well-known request and response.
     fn method_registry(&mut self, method: &Method) -> Expr {
+        let reaches = [&method.input, &method.output]
+            .into_iter()
+            .any(|ty| self.reaches(method_shape(ty, self.holding)));
+        if !reaches {
+            return self.reference((PROTO_REGISTRY, "empty"));
+        }
         let mut modules: Vec<&crate::ir::ModuleName> = Vec::new();
         for ty in [&method.input, &method.output] {
             if let TypeRef::Message(name) = ty

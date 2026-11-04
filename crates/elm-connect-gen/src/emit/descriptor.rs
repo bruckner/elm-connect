@@ -18,8 +18,8 @@ use std::collections::BTreeSet;
 
 use super::binary::bytes_name;
 use super::{
-    Emitter, MessageShape, PROTO_CODEC, PROTO_DESCRIPTORS, PROTO_ENUM, PROTO_ENUM_VALUE,
-    PROTO_FIELD, PROTO_MESSAGE, PROTO_REGISTRY, PROTO_WELL_KNOWN, RecordField, docs,
+    Emitter, MessageShape, PROTO_DESCRIPTORS, PROTO_ENUM, PROTO_ENUM_VALUE, PROTO_FIELD,
+    PROTO_MESSAGE, PROTO_REGISTRY, PROTO_WELL_KNOWN, RecordField, docs,
 };
 use crate::elm::ast::{BinOp, Decl, Expr, Pattern};
 use crate::elm::build::{apply, binop, inline_list, int, lambda, list, pipe, string, ty, var};
@@ -90,34 +90,29 @@ impl Emitter {
         decls
     }
 
-    /// `messageFoo : Proto.Message.Message Proto.Codec.Json Foo`, built by
-    /// `Proto.Message.initJson` from the message's full name and its JSON
-    /// codecs under `codec=json`; `Proto.Message.Message Proto.Codec.Proto
-    /// Foo`, built by `Proto.Message.initProto` from its binary codecs,
-    /// under `codec=proto` and `codec=both`.
+    /// `messageFoo : Proto.Message.Message Foo`, built by
+    /// `Proto.Message.init` from the message's full name, its JSON codecs
+    /// and its binary codecs; by `Proto.Message.initWith`, with the JSON
+    /// codecs taking the registry, for a message that reaches an `Any`.
     pub(super) fn message_record(&mut self, _package: &ModuleName, shape: &MessageShape) -> Decl {
         let message = shape.message;
-        let (builder, tag, codecs) = match self.codec {
-            crate::options::Codec::Json => (
-                "initJson",
-                "Json",
-                [var(message.encoder_name()), var(message.decoder_name())],
-            ),
-            crate::options::Codec::Proto | crate::options::Codec::Both => (
-                "initProto",
-                "Proto",
-                [
-                    var(bytes_name(message.encoder_name())),
-                    var(bytes_name(message.decoder_name())),
-                ],
-            ),
+        let (builder, encoder, decoder) = if self.message_reaches(shape) {
+            (
+                "initWith",
+                with_registry(message.encoder_name()),
+                with_registry(message.decoder_name()),
+            )
+        } else {
+            ("init", message.encoder_name(), message.decoder_name())
         };
-        let tag = self.library_type(PROTO_CODEC, tag, []);
-        let annotation = self.library_type(
-            PROTO_MESSAGE,
-            "Message",
-            [tag, ty(message.elm_name.clone(), [])],
-        );
+        let codecs = [
+            var(encoder),
+            var(decoder),
+            var(bytes_name(message.encoder_name())),
+            var(bytes_name(message.decoder_name())),
+        ];
+        let annotation =
+            self.library_type(PROTO_MESSAGE, "Message", [ty(message.elm_name.clone(), [])]);
         let builder = self.reference((PROTO_MESSAGE, builder));
         let body = apply(
             builder,
