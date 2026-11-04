@@ -1,0 +1,8 @@
+## 142 build
+group                        optimized    min    gz
+only-in-142                       9466   2284   759
+Any+detail-completion             4143   1009   314
+Proto.Bytes+elm/bytes            13219   3538  1179
+## base build
+group                        optimized    min    gz
+only-in-base                      1962    443   140

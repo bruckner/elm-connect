@@ -1,0 +1,6 @@
+synth30 (a) status=0 real=1.24 rss_bytes=1205518336 js=485554 free_kib=36661856
+synth30 (a) optimized=485554 minified=116535 gzip=25964
+synth30 (b) status=0 real=0.95 rss_bytes=1438089216 js=485805 free_kib=36661148
+synth30 (b) optimized=485805 minified=116583 gzip=25989
+synth30 (c) status=0 real=0.65 rss_bytes=1432289280 js=185248 free_kib=36660508
+synth30 (c) optimized=185248 minified=50789 gzip=16547

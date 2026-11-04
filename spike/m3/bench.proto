@@ -1,0 +1,29 @@
+// M3's messages: an envelope holding one Any of a registered type, and the
+// same envelope holding the message directly, for the floor.
+syntax = "proto3";
+
+package bench.v1;
+
+import "google/protobuf/any.proto";
+
+message Payload {
+  string title = 1;
+  string body = 2;
+  repeated string tags = 3;
+  int64 size = 4;
+  bool pinned = 5;
+}
+
+message Envelope {
+  string id = 1;
+  repeated string labels = 2;
+  google.protobuf.Any payload = 3;
+  string note = 4;
+}
+
+message Plain {
+  string id = 1;
+  repeated string labels = 2;
+  Payload payload = 3;
+  string note = 4;
+}

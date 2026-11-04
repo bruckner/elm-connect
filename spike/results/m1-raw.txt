@@ -1,0 +1,61 @@
+n=100 chain1 (a) module_bytes=266776 module_lines=8447
+n=100 chain1 (a) run1 status=0 real=1.17 rss_bytes=1262682112 js=235363 free_kib=36707064
+n=100 chain1 (a) run2 status=0 real=0.65 rss_bytes=1401634816 js=235363 free_kib=36706972
+n=100 chain1 (a) run3 status=0 real=0.63 rss_bytes=1440792576 js=235363 free_kib=36706956
+n=100 chain1 (a) optimized=235363 minified=51915 gzip=9946
+n=100 chain1 (b) module_bytes=706591 module_lines=21866
+n=100 chain1 (b) run1 status=0 real=0.75 rss_bytes=1433452544 js=560176 free_kib=36705084
+n=100 chain1 (b) run2 status=0 real=0.70 rss_bytes=1431552000 js=560176 free_kib=36704496
+n=100 chain1 (b) run3 status=0 real=0.65 rss_bytes=1443037184 js=560176 free_kib=36704616
+n=100 chain1 (b) optimized=560176 minified=131315 gzip=15466
+n=100 chain1 (c) module_bytes=706650 module_lines=21865
+n=100 chain1 (c) run1 status=0 real=0.70 rss_bytes=1441906688 js=235363 free_kib=36703192
+n=100 chain1 (c) run2 status=0 real=0.64 rss_bytes=1441955840 js=235363 free_kib=36699540
+n=100 chain1 (c) run3 status=0 real=0.64 rss_bytes=1441906688 js=235363 free_kib=36704720
+n=100 chain1 (c) optimized=235363 minified=51915 gzip=9946
+n=100 chain5 (a) module_bytes=266992 module_lines=8447
+n=100 chain5 (a) run1 status=0 real=0.61 rss_bytes=1440890880 js=235435 free_kib=36703560
+n=100 chain5 (a) run2 status=0 real=0.60 rss_bytes=1440841728 js=235435 free_kib=36703300
+n=100 chain5 (a) run3 status=0 real=0.63 rss_bytes=1440776192 js=235435 free_kib=36703048
+n=100 chain5 (a) optimized=235435 minified=51915 gzip=10195
+n=100 chain5 (b) module_bytes=707239 module_lines=21866
+n=100 chain5 (b) run1 status=0 real=0.76 rss_bytes=1399226368 js=651886 free_kib=36701504
+n=100 chain5 (b) run2 status=0 real=0.78 rss_bytes=1443938304 js=651886 free_kib=36698800
+n=100 chain5 (b) run3 status=0 real=0.69 rss_bytes=1444036608 js=651886 free_kib=36698756
+n=100 chain5 (b) optimized=651886 minified=145239 gzip=17205
+n=100 chain5 (c) module_bytes=707298 module_lines=21865
+n=100 chain5 (c) run1 status=0 real=0.68 rss_bytes=1442955264 js=235435 free_kib=36697364
+n=100 chain5 (c) run2 status=0 real=0.74 rss_bytes=1442938880 js=235435 free_kib=36697112
+n=100 chain5 (c) run3 status=0 real=0.64 rss_bytes=1443004416 js=235435 free_kib=36697284
+n=100 chain5 (c) optimized=235435 minified=51915 gzip=10195
+n=300 chain1 (a) module_bytes=783376 module_lines=24247
+n=300 chain1 (a) run1 status=0 real=0.70 rss_bytes=1483948032 js=517763 free_kib=36698844
+n=300 chain1 (a) run2 status=0 real=0.67 rss_bytes=1482915840 js=517763 free_kib=36702248
+n=300 chain1 (a) run3 status=0 real=0.66 rss_bytes=1484013568 js=517763 free_kib=36702760
+n=300 chain1 (a) optimized=517763 minified=105515 gzip=12530
+n=300 chain1 (b) module_bytes=2096991 module_lines=63866
+n=300 chain1 (b) run1 status=0 real=1.03 rss_bytes=1517256704 js=1422976 free_kib=36698624
+n=300 chain1 (b) run2 status=0 real=0.91 rss_bytes=1517355008 js=1422976 free_kib=36697492
+n=300 chain1 (b) run3 status=0 real=0.92 rss_bytes=1512931328 js=1422976 free_kib=36697484
+n=300 chain1 (b) optimized=1422976 minified=322315 gzip=22859
+n=300 chain1 (c) module_bytes=2097650 module_lines=63865
+n=300 chain1 (c) run1 status=0 real=1.13 rss_bytes=1466974208 js=517763 free_kib=36692932
+n=300 chain1 (c) run2 status=0 real=1.13 rss_bytes=1459879936 js=517763 free_kib=36692116
+n=300 chain1 (c) run3 status=0 real=0.92 rss_bytes=1517305856 js=517763 free_kib=36691720
+n=300 chain1 (c) optimized=517763 minified=105515 gzip=12530
+n=300 chain5 (a) module_bytes=784552 module_lines=24247
+n=300 chain5 (a) run1 status=0 real=0.85 rss_bytes=1467678720 js=518155 free_kib=36688224
+n=300 chain5 (a) run2 status=0 real=0.75 rss_bytes=1484963840 js=518155 free_kib=36687580
+n=300 chain5 (a) run3 status=0 real=0.79 rss_bytes=1484980224 js=518155 free_kib=36687580
+n=300 chain5 (a) optimized=518155 minified=105515 gzip=13240
+n=300 chain5 (b) module_bytes=2100519 module_lines=63866
+n=300 chain5 (b) run1 status=0 real=1.09 rss_bytes=1519239168 js=1701166 free_kib=36683520
+n=300 chain5 (b) run2 status=0 real=1.03 rss_bytes=1519370240 js=1701166 free_kib=36682356
+n=300 chain5 (b) run3 status=0 real=1.02 rss_bytes=1520238592 js=1701166 free_kib=36682268
+n=300 chain5 (b) optimized=1701166 minified=363919 gzip=27302
+n=300 chain5 (c) module_bytes=2101178 module_lines=63865
+n=300 chain5 (c) run1 status=0 real=1.01 rss_bytes=1518190592 js=518155 free_kib=36678764
+n=300 chain5 (c) run2 status=0 real=1.10 rss_bytes=1513504768 js=518155 free_kib=36677844
+n=300 chain5 (c) run3 status=0 real=0.95 rss_bytes=1518288896 js=518155 free_kib=36675012
+n=300 chain5 (c) optimized=518155 minified=105515 gzip=13238
+exit 0

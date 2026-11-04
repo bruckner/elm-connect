@@ -1,0 +1,128 @@
+Public names of the runtime package, 023fa5d4 (#142) against this branch, from elm make --docs.
+## Proto.Any
+  removed: ctor Problem.InvalidJson, json, packJson, packJsonWith, toProto, tryUnpackJson, unpackJson
+  changed: alias Any 
+    before: codec = Proto.Internal.Any.Any codec 
+    after:   = Proto.Internal.Any.Any
+  changed: bytes 
+    before: Proto.Any.Any Proto.Codec.Proto -> Bytes.Bytes 
+    after:  Proto.Any.Any -> Bytes.Bytes
+  changed: describe 
+    before: Proto.Descriptors.Descriptors -> Proto.Any.Any codec -> Maybe.Maybe Proto.Message.Descriptor 
+    after:  Proto.Descriptors.Descriptors -> Proto.Any.Any -> Maybe.Maybe Proto.Message.Descriptor
+  changed: is 
+    before: Proto.Message.Message codec a -> Proto.Any.Any form -> Basics.Bool 
+    after:  Proto.Message.Message a -> Proto.Any.Any -> Basics.Bool
+  changed: pack 
+    before: Proto.Message.Message Proto.Codec.Proto a -> a -> Proto.Any.Any Proto.Codec.Proto 
+    after:  Proto.Message.Message a -> a -> Proto.Any.Any
+  changed: packWith 
+    before: String.String -> Proto.Message.Message Proto.Codec.Proto a -> a -> Proto.Any.Any Proto.Codec.Proto 
+    after:  String.String -> Proto.Message.Message a -> a -> Proto.Any.Any
+  changed: toJson 
+    before: Proto.Internal.Registry.Registry -> Proto.Any.Any Proto.Codec.Proto -> Maybe.Maybe (Proto.Any.Any Proto.Codec.Json) 
+    after:  Proto.Internal.Registry.Registry -> Proto.Any.Any -> Maybe.Maybe Json.Encode.Value
+  changed: tryUnpack 
+    before: Proto.Message.Message Proto.Codec.Proto a -> Proto.Any.Any Proto.Codec.Proto -> Result.Result Proto.Any.Problem a 
+    after:  Proto.Message.Message a -> Proto.Any.Any -> Result.Result Proto.Any.Problem a
+  changed: typeName 
+    before: Proto.Any.Any codec -> String.String 
+    after:  Proto.Any.Any -> String.String
+  changed: typeUrl 
+    before: Proto.Any.Any codec -> String.String 
+    after:  Proto.Any.Any -> String.String
+  changed: unpack 
+    before: Proto.Message.Message Proto.Codec.Proto a -> Proto.Any.Any Proto.Codec.Proto -> Maybe.Maybe a 
+    after:  Proto.Message.Message a -> Proto.Any.Any -> Maybe.Maybe a
+## Proto.Binary
+  changed: any 
+    before: Proto.Binary.Codec (Proto.Internal.Any.Any Proto.Codec.Proto) 
+    after:  Proto.Binary.Codec Proto.Internal.Any.Any
+## Proto.Json
+  removed: any, encodeAny
+  changed: anyWith 
+    before: Proto.Internal.Registry.Registry -> Json.Decode.Decoder (Proto.Any.Any Proto.Codec.Proto) 
+    after:  Proto.Internal.Registry.Registry -> Json.Decode.Decoder Proto.Any.Any
+  changed: encodeAnyWith 
+    before: Proto.Internal.Registry.Registry -> Proto.Any.Any Proto.Codec.Proto -> Result.Result Proto.Any.Problem Json.Encode.Value 
+    after:  Proto.Internal.Registry.Registry -> Proto.Any.Any -> Result.Result Proto.Any.Problem Json.Encode.Value
+## Proto.Message
+  removed: initJson, initProto
+  added: init, initWith
+  changed: alias Message 
+    before: codec a = Proto.Internal.Message.Message codec a 
+    after:  a = Proto.Internal.Message.Message a
+  changed: typeName 
+    before: Proto.Message.Message codec a -> String.String 
+    after:  Proto.Message.Message a -> String.String
+## Proto.Method
+  changed: initJson 
+    before: String.String -> String.String -> (req -> Json.Encode.Value) -> Json.Decode.Decoder res -> Proto.Method.Method Proto.Codec.Json req res 
+    after:  String.String -> String.String -> Proto.Registry.Registry -> (Proto.Registry.Registry -> req -> Result.Result Proto.Any.Problem Json.Encode.Value) -> (Proto.Registry.Registry -> Json.Decode.Decoder res) -> Proto.Method.Method Proto.Codec.Json req res
+## Proto.WellKnown
+  removed: anyProto, boolValueProto, bytesValueProto, doubleValueProto, durationProto, emptyProto, fieldMaskProto, floatValueProto, int32ValueProto, int64ValueAsIntProto, int64ValueProto, listValueProto, stringValueProto, structProto, timestampProto, uint32ValueProto, uint64ValueAsIntProto, uint64ValueProto, valueProto
+  changed: any 
+    before: Proto.Message.Message Proto.Codec.Json (Proto.Any.Any Proto.Codec.Json) 
+    after:  Proto.Message.Message Proto.Any.Any
+  changed: boolValue 
+    before: Proto.Message.Message Proto.Codec.Json Basics.Bool 
+    after:  Proto.Message.Message Basics.Bool
+  changed: bytesValue 
+    before: Proto.Message.Message Proto.Codec.Json String.String 
+    after:  Proto.Message.Message String.String
+  changed: doubleValue 
+    before: Proto.Message.Message Proto.Codec.Json Basics.Float 
+    after:  Proto.Message.Message Basics.Float
+  changed: duration 
+    before: Proto.Message.Message Proto.Codec.Json Proto.Duration.Duration 
+    after:  Proto.Message.Message Proto.Duration.Duration
+  changed: empty 
+    before: Proto.Message.Message Proto.Codec.Json () 
+    after:  Proto.Message.Message ()
+  changed: fieldMask 
+    before: Proto.Message.Message Proto.Codec.Json (List.List String.String) 
+    after:  Proto.Message.Message (List.List String.String)
+  changed: floatValue 
+    before: Proto.Message.Message Proto.Codec.Json Basics.Float 
+    after:  Proto.Message.Message Basics.Float
+  changed: int32Value 
+    before: Proto.Message.Message Proto.Codec.Json Basics.Int 
+    after:  Proto.Message.Message Basics.Int
+  changed: int64Value 
+    before: Proto.Message.Message Proto.Codec.Json String.String 
+    after:  Proto.Message.Message String.String
+  changed: int64ValueAsInt 
+    before: Proto.Message.Message Proto.Codec.Json Basics.Int 
+    after:  Proto.Message.Message Basics.Int
+  changed: listValue 
+    before: Proto.Message.Message Proto.Codec.Json (List.List Json.Encode.Value) 
+    after:  Proto.Message.Message (List.List Json.Encode.Value)
+  changed: stringValue 
+    before: Proto.Message.Message Proto.Codec.Json String.String 
+    after:  Proto.Message.Message String.String
+  changed: struct 
+    before: Proto.Message.Message Proto.Codec.Json (Dict.Dict String.String Json.Encode.Value) 
+    after:  Proto.Message.Message (Dict.Dict String.String Json.Encode.Value)
+  changed: timestamp 
+    before: Proto.Message.Message Proto.Codec.Json Time.Posix 
+    after:  Proto.Message.Message Time.Posix
+  changed: uint32Value 
+    before: Proto.Message.Message Proto.Codec.Json Basics.Int 
+    after:  Proto.Message.Message Basics.Int
+  changed: uint64Value 
+    before: Proto.Message.Message Proto.Codec.Json String.String 
+    after:  Proto.Message.Message String.String
+  changed: uint64ValueAsInt 
+    before: Proto.Message.Message Proto.Codec.Json Basics.Int 
+    after:  Proto.Message.Message Basics.Int
+  changed: value 
+    before: Proto.Message.Message Proto.Codec.Json Json.Encode.Value 
+    after:  Proto.Message.Message Json.Encode.Value
+## Rpc.Error
+  removed: detailsJson
+  changed: alias Detail 
+    before:  = { proto : Maybe.Maybe (Proto.Any.Any Proto.Codec.Proto), json : Maybe.Maybe (Proto.Any.Any Proto.Codec.Json) } 
+    after:   = Proto.Any.Any
+  changed: details 
+    before: Proto.Message.Message Proto.Codec.Proto a -> Rpc.Error.Error -> List.List a 
+    after:  Proto.Message.Message a -> Rpc.Error.Error -> List.List a

@@ -1,0 +1,7 @@
+Line and byte counts, 023fa5d4 (#142) -> 37fe2d56 (this branch's generator and runtime).
+runtime src/**/*.elm lines: 13973 -> 13675
+generator crates/elm-connect-gen/src/**/*.rs lines: 21646 -> 21608
+corpus codec_both expected *.elm lines: 5926 -> 5924; bytes 192448 -> 192461
+corpus codec_proto expected *.elm lines: 636 -> 720; bytes 16938 -> 20333
+corpus services expected *.elm lines: 1951 -> 2661; bytes 59301 -> 84714
+corpus services_codec_both expected *.elm lines: 981 -> 980; bytes 28966 -> 28997

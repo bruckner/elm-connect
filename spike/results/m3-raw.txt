@@ -1,0 +1,15 @@
+task                                old us      new us   change   n
+decode.any                           2.313      56.359    2336%   8000
+encode.any                           1.234      48.318    3816%  20000
+unpack.any                           2.967      43.309    1360%   8000
+decode.plain                         4.698       4.801       2%   8000
+encode.plain                         1.189       1.180      -1%  20000
+## second run, same builds
+task                                old us      new us   change   n
+decode.any                           2.318      58.431    2421%   8000
+encode.any                           1.251      49.125    3827%  20000
+unpack.any                           2.950      43.699    1381%   8000
+decode.plain                         5.331       5.170      -3%   8000
+encode.plain                         1.217       1.220       0%  20000
+bench 142 optimized=105121 minified=28931 gzip=9191
+bench base optimized=209624 minified=55683 gzip=17210

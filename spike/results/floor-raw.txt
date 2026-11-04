@@ -1,0 +1,4 @@
+floor 142 status=0 real=0.88 rss_bytes=1186414592 js=187050 free_kib=36672888
+floor 142 optimized=187050 minified=50907 gzip=16483
+floor base status=0 real=0.75 rss_bytes=1209188352 js=179013 free_kib=36668264
+floor base optimized=179013 minified=48807 gzip=15857

@@ -1,0 +1,42 @@
+module Main exposing (main)
+
+{-| M2's program: one JSON call over Connect answering @MODULE@.@TYPE@,
+built by hand as generated code would build it, with the registry the
+variant names.
+-}
+
+import @MODULE@
+import Proto.Json
+import Proto.Method
+import Proto.Registry
+import Rpc
+import Rpc.Protocol
+
+
+type Msg
+    = Got (Result Rpc.Error @MODULE@.@TYPE@)
+
+
+get : () -> Rpc.Call Rpc.Json () @MODULE@.@TYPE@
+get =
+    Rpc.call
+        (Proto.Method.initJson "bench.v1.Svc"
+            "Get"
+            @REGISTRY@
+            (\_ -> Ok << Proto.Json.encodeEmpty)
+            @DECODER@
+        )
+
+
+client : Rpc.Client Rpc.Json
+client =
+    Rpc.client Rpc.Protocol.connect "https://api.example.com"@CLIENT@
+
+
+main : Program () () Msg
+main =
+    Platform.worker
+        { init = \_ -> ( (), Rpc.send client Got (get ()) )
+        , update = \_ m -> ( m, Cmd.none )
+        , subscriptions = \_ -> Sub.none
+        }

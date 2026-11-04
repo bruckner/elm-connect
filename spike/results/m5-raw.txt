@@ -1,0 +1,11 @@
+m5 one service_module_bytes=21665 lines=683
+m5 one run1 status=0 real=0.95 rss_bytes=907051008 js=179013 free_kib=36841836
+m5 one run2 status=0 real=0.72 rss_bytes=1126940672 js=179013 free_kib=36844460
+m5 one run3 status=0 real=0.86 rss_bytes=1200390144 js=179013 free_kib=36844260
+m5 one optimized=179013 minified=48807 gzip=15857
+10 proto calls added: getNoteProto, listNotesProto, createNoteProto, updateNoteProto, replaceNoteProto, deleteNoteProto, archiveNoteProto, readFileProto, pingProto, summarizeProto
+m5 two service_module_bytes=27540 lines=861
+m5 two run1 status=0 real=0.83 rss_bytes=1331527680 js=179013 free_kib=36842716
+m5 two run2 status=0 real=0.91 rss_bytes=1426866176 js=179013 free_kib=36838192
+m5 two run3 status=0 real=0.69 rss_bytes=1401667584 js=179013 free_kib=36837400
+m5 two optimized=179013 minified=48807 gzip=15857

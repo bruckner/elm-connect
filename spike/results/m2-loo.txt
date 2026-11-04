@@ -1,0 +1,80 @@
+## codec_both (a), over (c)
+group                        optimized    min    gz
+table entries                    11015   2035   533
+Proto.Registry                    1873    496   147
+binary codecs                    75735  16191  3529
+Proto.Binary                     44134  11256  3882
+elm/bytes                         2769    904   291
+all five                        135526  30022  7805
+other generated                  61344  13977  4401
+other runtime/kernel             37550  10418  3659
+everything over floor           234420  53835 15127
+  table entries: 3 definitions
+  Proto.Registry: 5 definitions
+  binary codecs: 59 definitions
+  Proto.Binary: 121 definitions
+  elm/bytes: 25 definitions
+  all five: 213 definitions
+  other generated: 110 definitions
+  other runtime/kernel: 121 definitions
+  everything over floor: 444 definitions
+## codec_both (b), over (c)
+group                        optimized    min    gz
+table entries                    11015   2035   506
+Proto.Registry                    1873    496   135
+binary codecs                    75735  16191  3599
+Proto.Binary                     44134  11256  3859
+elm/bytes                         2769    904   296
+all five                        135526  30022  7790
+other generated                  61344  13977  4467
+other runtime/kernel             37722  10467  3598
+everything over floor           234592  53884 15168
+  table entries: 3 definitions
+  Proto.Registry: 5 definitions
+  binary codecs: 59 definitions
+  Proto.Binary: 121 definitions
+  elm/bytes: 25 definitions
+  all five: 213 definitions
+  other generated: 110 definitions
+  other runtime/kernel: 122 definitions
+  everything over floor: 445 definitions
+## synth60 (a), over (c)
+group                        optimized    min    gz
+table entries                    31669   3591  1578
+Proto.Registry                    1873    540   157
+binary codecs                   228880  50788  2555
+Proto.Binary                     39931  11615  3123
+elm/bytes                         2227    767   228
+all five                        304580  64540  7315
+other generated                 181569  38261  2976
+other runtime/kernel             32521   9144  3280
+everything over floor           518670 110478 12942
+  table entries: 2 definitions
+  Proto.Registry: 5 definitions
+  binary codecs: 200 definitions
+  Proto.Binary: 108 definitions
+  elm/bytes: 19 definitions
+  all five: 334 definitions
+  other generated: 285 definitions
+  other runtime/kernel: 101 definitions
+  everything over floor: 720 definitions
+## synth60 (b), over (c)
+group                        optimized    min    gz
+table entries                    31669   3591  1559
+Proto.Registry                    1873    540   146
+binary codecs                   228880  50788  2611
+Proto.Binary                     39931  11615  3148
+elm/bytes                         2227    767   195
+all five                        304580  64540  7316
+other generated                 181569  38261  2972
+other runtime/kernel             32692   9192  3275
+everything over floor           518841 110526 12982
+  table entries: 2 definitions
+  Proto.Registry: 5 definitions
+  binary codecs: 200 definitions
+  Proto.Binary: 108 definitions
+  elm/bytes: 19 definitions
+  all five: 334 definitions
+  other generated: 285 definitions
+  other runtime/kernel: 102 definitions
+  everything over floor: 721 definitions

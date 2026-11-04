@@ -1,0 +1,12 @@
+codec_both (a) status=0 real=0.92 rss_bytes=1238138880 js=428331 free_kib=36669528
+codec_both (a) optimized=428331 minified=106340 gzip=31464
+codec_both (b) status=0 real=1.10 rss_bytes=1389608960 js=428583 free_kib=36668928
+codec_both (b) optimized=428583 minified=106389 gzip=31535
+codec_both (c) status=0 real=0.71 rss_bytes=1427947520 js=196847 free_kib=36668488
+codec_both (c) optimized=196847 minified=53478 gzip=17390
+synth60 (a) status=0 real=0.72 rss_bytes=1439662080 js=702919 free_kib=36666496
+synth60 (a) optimized=702919 minified=159159 gzip=27472
+synth60 (b) status=0 real=0.66 rss_bytes=1439678464 js=703170 free_kib=36665592
+synth60 (b) optimized=703170 minified=159207 gzip=27540
+synth60 (c) status=0 real=0.63 rss_bytes=1439612928 js=185248 free_kib=36664680
+synth60 (c) optimized=185248 minified=50789 gzip=16547

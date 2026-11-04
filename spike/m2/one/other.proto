@@ -1,0 +1,17 @@
+// A second package, which codec.proto refers to across the package
+// boundary (docs/design.md §7, conformance/README.md "Codec round trips").
+syntax = "proto3";
+
+package codec.other.v1;
+
+enum Shade {
+  SHADE_UNSPECIFIED = 0;
+  SHADE_LIGHT = 1;
+  SHADE_DARK = 2;
+}
+
+message Remote {
+  string id = 1;
+  Shade shade = 2;
+  int64 version = 3;
+}
