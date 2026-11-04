@@ -1,4 +1,4 @@
-module Live.Codec exposing (empty, entry)
+module Live.Codec exposing (clientRegistry, empty, entry)
 
 {-| The dispatch tables' entries, for the build against bindings generated
 with `codec=json`: a generated call is `Rpc.Call Rpc.Json`, so an entry has
@@ -39,6 +39,15 @@ entry toCall _ decoder message =
                 ]
         , detail = Live.Call.detailWith (Proto.Registry.union Google.Rpc.registry registry)
         }
+
+
+{-| The registry every client the runner builds converts through: every
+type the build's packages hold, lenient, so that an error detail of a type
+none holds, such as a google.rpc one, is kept as its JSON.
+-}
+clientRegistry : Registry
+clientRegistry =
+    Proto.Registry.lenient registry
 
 
 {-| Every type the build's packages hold.

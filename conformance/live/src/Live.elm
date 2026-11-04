@@ -11,6 +11,7 @@ import Http
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Live.Call exposing (Client(..), Entry, Envelope, Outcome, Protocol(..), Sending(..))
+import Live.Codec
 import Live.Conformance
 import Live.Notes
 import Live.Routes
@@ -282,6 +283,7 @@ config t =
                                 identity
                            )
                         |> maybeApply Rpc.Client.withRetry retry
+                        |> Rpc.withRegistry Live.Codec.clientRegistry
             in
             case ( t, codec ) of
                 ( Connect, "proto" ) ->

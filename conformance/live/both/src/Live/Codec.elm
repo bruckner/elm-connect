@@ -1,4 +1,4 @@
-module Live.Codec exposing (empty, entry)
+module Live.Codec exposing (clientRegistry, empty, entry)
 
 {-| The dispatch tables' entries, for the build against bindings generated
 with `codec=both`: a generated call is free in its codec, so an entry has it
@@ -66,6 +66,15 @@ registry =
 
 
 -- endregion registry
+
+
+{-| The registry every client the runner builds converts through: every
+type the build's packages hold, lenient, so that an error detail of a type
+none holds, such as a google.rpc one, is kept as its JSON.
+-}
+clientRegistry : Registry
+clientRegistry =
+    Proto.Registry.lenient registry
 
 
 {-| `google.protobuf.Empty`'s typed value in this build's world.
