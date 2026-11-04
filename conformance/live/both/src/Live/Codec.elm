@@ -42,7 +42,7 @@ entry toJsonCall toProtoCall decoder message =
                   , Proto.Any.toJson registry packed
                         |> Maybe.withDefault Json.Encode.null
                   )
-                , ( "okBinary", Json.Encode.string (Proto.Bytes.toBase64 (Proto.Any.bytes packed)) )
+                , ( "okBinary", Json.Encode.string (Proto.Bytes.toBase64 (Maybe.withDefault Proto.Bytes.empty (Proto.Any.bytes packed))) )
                 ]
         , detail = Live.Call.detailWith (Proto.Registry.union Google.Rpc.registry registry)
         }

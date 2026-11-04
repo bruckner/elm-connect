@@ -2190,7 +2190,9 @@ object with `"@type"`, holding the message's fields or, for a well-known type
 with a JSON form of its own, `"value"`. An object without `"@type"` fails, but
 for `{}`, the empty `Any`, and so does one whose `"@type"` is not a type URL:
 it must hold a `/` with a type name after the last one. A type the registry has
-no entry for fails, as does JSON that is not its message.
+no entry for fails, unless the registry is
+[lenient](Proto-Registry#lenient): then the `Any` holds the JSON alone. JSON
+that is not its message fails.
 -}
 anyWith : Registry -> Decoder Any
 anyWith registry =
@@ -2204,7 +2206,11 @@ anyWith registry =
                                 Json.Decode.succeed (InternalAny.Any url (InternalAny.Both (Proto.Bytes.toBase64 binary) message))
 
                             Nothing ->
-                                Json.Decode.fail ("Expecting an Any of a type the registry has, holding that message, but got one of " ++ quote (InternalAny.nameOf url))
+                                if InternalRegistry.isLenient registry && not (InternalRegistry.has (InternalAny.nameOf url) registry) then
+                                    Json.Decode.succeed (InternalAny.Any url (InternalAny.Json message))
+
+                                else
+                                    Json.Decode.fail ("Expecting an Any of a type the registry has, holding that message, but got one of " ++ quote (InternalAny.nameOf url))
 
                     Nothing ->
                         Json.Decode.succeed InternalAny.empty
@@ -2294,6 +2300,9 @@ encodeAnyWith registry ((InternalAny.Any url payload) as value) =
     else
         case payload of
             InternalAny.Both _ json ->
+                Ok (anyObject url json)
+
+            InternalAny.Json json ->
                 Ok (anyObject url json)
 
             InternalAny.Binary base64 ->

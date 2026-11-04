@@ -416,7 +416,7 @@ detailWith registry detail =
         Err _ ->
             Encode.object
                 [ ( "type", Encode.string (Proto.Any.typeName detail) )
-                , ( "value", Encode.string (Proto.Bytes.toBase64 (Proto.Any.bytes detail)) )
+                , ( "value", Encode.string (Proto.Bytes.toBase64 (Maybe.withDefault Proto.Bytes.empty (Proto.Any.bytes detail))) )
                 ]
 
 

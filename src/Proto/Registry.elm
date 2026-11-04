@@ -1,5 +1,5 @@
 module Proto.Registry exposing
-    ( Registry, empty, union, unionAll, wellKnown
+    ( Registry, empty, union, unionAll, wellKnown, lenient
     , withCodecs, toJson, toBytes
     )
 
@@ -16,7 +16,7 @@ A registry holds no descriptors; those are
 [`Proto.Descriptors`](Proto-Descriptors). The package site may show the type
 as `Proto.Internal.Registry.Registry`, its name inside the package.
 
-@docs Registry, empty, union, unionAll, wellKnown
+@docs Registry, empty, union, unionAll, wellKnown, lenient
 
 
 # Codecs
@@ -47,14 +47,26 @@ type alias Registry =
 -}
 empty : Registry
 empty =
-    Internal.Registry Dict.empty
+    Internal.Registry False Dict.empty
+
+
+{-| The registry, reading an `Any` of a type it has no entry for from proto3
+JSON as that `Any`'s JSON alone instead of failing. Such an `Any` has no
+binary ([`Proto.Any.bytes`](Proto-Any#bytes) is `Nothing`): written as JSON
+it is the JSON it holds, written as binary its type URL alone, and it
+unpacks with the message's JSON decoder.
+-}
+lenient : Registry -> Registry
+lenient (Internal.Registry _ entries) =
+    Internal.Registry True entries
 
 
 {-| Both registries' entries. Of two for one name, the left one's is kept.
+The union is [`lenient`](#lenient) when either is.
 -}
 union : Registry -> Registry -> Registry
-union (Internal.Registry left) (Internal.Registry right) =
-    Internal.Registry (Dict.union left right)
+union (Internal.Registry leftLenient left) (Internal.Registry rightLenient right) =
+    Internal.Registry (leftLenient || rightLenient) (Dict.union left right)
 
 
 {-| Every registry's entries. Of two for one name, the earlier one's is kept.
@@ -81,7 +93,7 @@ with `\_ -> Notes.V1.decodeNote` and `\_ -> Ok << Notes.V1.encodeNote`.
 
 -}
 withCodecs : String -> (Registry -> Decoder a) -> (a -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder a -> (Registry -> a -> Result Problem Value) -> Registry -> Registry
-withCodecs typeName decoder encodeBinary binaryDecoder encode (Internal.Registry entries) =
+withCodecs typeName decoder encodeBinary binaryDecoder encode (Internal.Registry isLenient entries) =
     let
         entry =
             { toJson =
@@ -95,7 +107,7 @@ withCodecs typeName decoder encodeBinary binaryDecoder encode (Internal.Registry
                         |> Maybe.map (encodeBinary >> Bytes.Encode.encode)
             }
     in
-    Internal.Registry (Dict.insert typeName entry entries)
+    Internal.Registry isLenient (Dict.insert typeName entry entries)
 
 
 {-| A message's proto3 JSON from its protobuf binary, by its full name:

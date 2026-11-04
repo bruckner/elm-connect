@@ -1426,7 +1426,7 @@ any =
 anyInto : Any -> Decoder Any
 anyInto (InternalAny.Any start payload) =
     Internal.Decoder
-        (message ( start, InternalAny.base64Of payload )
+        (message ( start, Maybe.withDefault "" (InternalAny.base64Of payload) )
             (\number wire ( url, current ) ->
                 case number of
                     1 ->
@@ -1445,7 +1445,8 @@ anyInto (InternalAny.Any start payload) =
 
 writeAny : Any -> Encoder
 writeAny (InternalAny.Any url payload) =
-    E.sequence [ implicit string 1 url, implicit bytes 2 (InternalAny.base64Of payload) ]
+    -- An `Any` held as JSON alone has no binary to write: its type URL is.
+    E.sequence [ implicit string 1 url, implicit bytes 2 (Maybe.withDefault "" (InternalAny.base64Of payload)) ]
 
 
 wrapper : Codec v -> Codec v

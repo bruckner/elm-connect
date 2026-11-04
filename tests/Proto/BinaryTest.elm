@@ -809,7 +809,7 @@ posixText =
 
 anyText : Proto.Any.Any -> String
 anyText any =
-    Proto.Any.typeName any ++ " " ++ Proto.Bytes.toBase64 (Proto.Any.bytes any)
+    Proto.Any.typeName any ++ " " ++ Proto.Bytes.toBase64 (Maybe.withDefault Proto.Bytes.empty (Proto.Any.bytes any))
 
 
 

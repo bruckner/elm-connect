@@ -14,7 +14,8 @@ type Any
 
 
 {-| The packed message: its protobuf binary, as base64, and beside it the
-message's proto3 JSON when the `Any` was read from JSON or packed. The binary
+message's proto3 JSON when the `Any` was read from JSON or packed; or its
+JSON alone, when a lenient registry read it without an entry for its type. The binary
 is held as text, not `Bytes`, so that `==` compares two `Any`s by their
 content; it compares the JSON beside it too, so an `Any` read from binary and
 the same one read from JSON differ.
@@ -22,6 +23,7 @@ the same one read from JSON differ.
 type Payload
     = Binary String
     | Both String Value
+    | Json Value
 
 
 {-| The empty `Any`, with no type URL.
@@ -31,16 +33,19 @@ empty =
     Any "" (Binary "")
 
 
-{-| The packed message's binary, as base64.
+{-| The packed message's binary, as base64, unless it is held as JSON alone.
 -}
-base64Of : Payload -> String
+base64Of : Payload -> Maybe String
 base64Of payload =
     case payload of
         Binary base64 ->
-            base64
+            Just base64
 
         Both base64 _ ->
-            base64
+            Just base64
+
+        Json _ ->
+            Nothing
 
 
 {-| A message's full name from its type URL: the URL after its last `/`.

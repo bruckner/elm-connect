@@ -106,8 +106,8 @@ suite =
             \_ ->
                 Any.pack messageTitle "hi"
                     |> Any.bytes
-                    |> Proto.Bytes.toBase64
-                    |> Expect.equal "CgJoaQ=="
+                    |> Maybe.map Proto.Bytes.toBase64
+                    |> Expect.equal (Just "CgJoaQ==")
         , test "binary that is not the message is InvalidProto, another type a TypeMismatch" <|
             \_ ->
                 ( Proto.Bytes.fromBase64 "CiJ0eXBlLmdvb2dsZWFwaXMuY29tL25vdGVzLnYxLlRpdGxlEgIKBQ=="
@@ -170,6 +170,28 @@ suite =
                 , readWith registry "{}" |> Result.map (\any -> ( Any.typeUrl any, writtenWith registry any ))
                 )
                     |> Expect.equal ( ( Nothing, Nothing ), Ok ( "", Ok "{}" ) )
+        , test "a lenient registry reads a type it lacks as JSON alone, which unpacks and writes back" <|
+            \_ ->
+                let
+                    text =
+                        """{"@type":"type.googleapis.com/notes.v1.Title","title":"hi"}"""
+
+                    read =
+                        readWith (Registry.lenient Registry.wellKnown) text
+                in
+                ( ( readWith Registry.wellKnown text |> Result.toMaybe
+                  , read |> Result.toMaybe |> Maybe.map Any.bytes
+                  , read |> Result.toMaybe |> Maybe.andThen (Any.unpack messageTitle)
+                  )
+                , ( read |> Result.toMaybe |> Maybe.map (writtenWith Registry.empty)
+                  , read |> Result.toMaybe |> Maybe.map base64
+                  , readWith (Registry.lenient registry) """{"@type":"type.googleapis.com/notes.v1.Title","title":7}""" |> Result.toMaybe
+                  )
+                )
+                    |> Expect.equal
+                        ( ( Nothing, Just Nothing, Just "hi" )
+                        , ( Just (Ok text), Just "CiJ0eXBlLmdvb2dsZWFwaXMuY29tL25vdGVzLnYxLlRpdGxl", Nothing )
+                        )
         , test "toJson converts through the registry, Nothing for a type it lacks" <|
             \_ ->
                 ( Any.toJson registry (Any.pack messageTitle "hi")

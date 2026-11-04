@@ -223,7 +223,7 @@ fromBody code message =
 -}
 forms : Rpc.Error.Detail -> ( String, String )
 forms detail =
-    ( Proto.Any.typeUrl detail, Proto.Bytes.toBase64 (Proto.Any.bytes detail) )
+    ( Proto.Any.typeUrl detail, Proto.Bytes.toBase64 (Maybe.withDefault Proto.Bytes.empty (Proto.Any.bytes detail)) )
 
 
 suite : Test

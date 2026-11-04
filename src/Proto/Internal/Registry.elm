@@ -1,4 +1,4 @@
-module Proto.Internal.Registry exposing (Entry, Registry(..), toBytes, toJson)
+module Proto.Internal.Registry exposing (Entry, Registry(..), has, isLenient, toBytes, toJson)
 
 {-| The `Registry` type, which `Proto.Registry` names by an alias. It is
 defined here so that `Proto.Any` and `Proto.Json`, which `Proto.Registry`
@@ -15,8 +15,11 @@ import Dict exposing (Dict)
 import Json.Encode exposing (Value)
 
 
+{-| Whether it is lenient, and its entries. A lenient registry reads an
+`Any` of a type it has no entry for as that `Any`'s JSON alone.
+-}
 type Registry
-    = Registry (Dict String Entry)
+    = Registry Bool (Dict String Entry)
 
 
 type alias Entry =
@@ -30,7 +33,7 @@ registry has no entry for it, the bytes are not the message, or the message
 holds an `Any` that cannot be written.
 -}
 toJson : Registry -> String -> Bytes -> Maybe Value
-toJson ((Registry entries) as registry) name bytes =
+toJson ((Registry _ entries) as registry) name bytes =
     Dict.get name entries |> Maybe.andThen (\entry -> entry.toJson registry bytes)
 
 
@@ -38,5 +41,19 @@ toJson ((Registry entries) as registry) name bytes =
 registry has no entry for it or the JSON is not the message.
 -}
 toBytes : Registry -> String -> Value -> Maybe Bytes
-toBytes ((Registry entries) as registry) name json =
+toBytes ((Registry _ entries) as registry) name json =
     Dict.get name entries |> Maybe.andThen (\entry -> entry.toBytes registry json)
+
+
+{-| Whether the registry has an entry for the full name.
+-}
+has : String -> Registry -> Bool
+has name (Registry _ entries) =
+    Dict.member name entries
+
+
+{-| Whether the registry reads an `Any` of a type it lacks as its JSON alone.
+-}
+isLenient : Registry -> Bool
+isLenient (Registry lenient _) =
+    lenient

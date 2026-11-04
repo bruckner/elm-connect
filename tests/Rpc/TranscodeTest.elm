@@ -6,11 +6,13 @@ import Http
 import Json.Decode
 import Json.Encode exposing (Value)
 import Proto.Any
+import Proto.Binary
 import Proto.Enum
 import Proto.EnumValue
 import Proto.Field exposing (Cardinality(..), Kind(..), Scalar(..))
 import Proto.Http
 import Proto.Json
+import Proto.Message
 import Proto.Method exposing (Idempotency(..), Method)
 import Proto.Registry
 import Rpc
@@ -575,6 +577,27 @@ responses =
         ]
 
 
+{-| `google.rpc.ErrorInfo`'s `reason` alone, as a message type.
+-}
+messageErrorInfo : Proto.Message.Message String
+messageErrorInfo =
+    Proto.Message.init "google.rpc.ErrorInfo"
+        (\reason -> Json.Encode.object [ ( "reason", Json.Encode.string reason ) ])
+        (Json.Decode.field "reason" Json.Decode.string)
+        (\reason -> Proto.Binary.implicit Proto.Binary.string 1 reason)
+        (Proto.Binary.merge
+            (\number wire value ->
+                if number == 1 then
+                    Proto.Binary.field Proto.Binary.string identity wire value
+
+                else
+                    Proto.Binary.skip wire value
+            )
+            identity
+            ""
+        )
+
+
 failed : Int -> String -> List ( String, String ) -> String -> Result Error String
 failed status text headers raw_ =
     respond rule (Http.BadStatus_ (metadata status text headers) raw_)
@@ -630,6 +653,23 @@ errors =
                         )
                     |> Expect.equal
                         (Err (Just ( ( NotFound, StatusBody ), "no such note", [] )))
+        , test "a lenient client keeps a google.rpc.Status detail of a type it lacks, which unpacks from its JSON" <|
+            \_ ->
+                Rpc.response (Rpc.withRegistry (Proto.Registry.lenient Proto.Registry.empty) transcoding)
+                    (bound rule "{}")
+                    (Http.BadStatus_ (metadata 404 "Not Found" []) """{"code":5,"message":"no such note","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"GONE"}]}""")
+                    |> Result.mapError
+                        (\error ->
+                            case error of
+                                RpcStatus r _ ->
+                                    ( List.map (\d -> ( Proto.Any.typeUrl d, Proto.Any.bytes d )) r.details
+                                    , Rpc.Error.details messageErrorInfo error
+                                    )
+
+                                _ ->
+                                    ( [], [] )
+                        )
+                    |> Expect.equal (Err ( [ ( "type.googleapis.com/google.rpc.ErrorInfo", Nothing ) ], [ "GONE" ] ))
         , test "a code outside 1 to 16 is Unknown" <|
             \_ ->
                 [ failed 500 "" [] """{"code":42}""", failed 500 "" [] """{"code":0,"message":"ok?"}""" ]

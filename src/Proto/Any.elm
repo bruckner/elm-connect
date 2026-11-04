@@ -131,7 +131,7 @@ binary, or not at all.
 -}
 emptyRegistry : Registry
 emptyRegistry =
-    Registry.Registry Dict.empty
+    Registry.Registry False Dict.empty
 
 
 prefixed : String -> Message a -> String
@@ -175,6 +175,11 @@ tryUnpack ((InternalMessage.Message _ codecs) as message) ((Internal.Any _ paylo
             Internal.Binary base64 ->
                 fromBinary base64
 
+            Internal.Json json ->
+                -- An `Any` it holds is read as leniently as it was.
+                Json.Decode.decodeValue (codecs.decoder (Registry.Registry True Dict.empty)) json
+                    |> Result.mapError (\_ -> InvalidProto)
+
     else
         Err (TypeMismatch (typeName any))
 
@@ -197,12 +202,13 @@ type Problem
 -- READING
 
 
-{-| The packed message's protobuf binary.
+{-| The packed message's protobuf binary: `Nothing` for an `Any` held as JSON
+alone, which a [lenient](Proto-Registry#lenient) registry reads.
 -}
-bytes : Any -> Bytes
+bytes : Any -> Maybe Bytes
 bytes (Internal.Any _ payload) =
-    Proto.Bytes.fromBase64 (Internal.base64Of payload)
-        |> Maybe.withDefault Proto.Bytes.empty
+    Internal.base64Of payload
+        |> Maybe.map (Proto.Bytes.fromBase64 >> Maybe.withDefault Proto.Bytes.empty)
 
 
 
@@ -225,8 +231,12 @@ toJson registry ((Internal.Any url payload) as any) =
             Internal.Both _ json ->
                 Just json
 
-            Internal.Binary _ ->
-                Registry.toJson registry (typeName any) (bytes any)
+            Internal.Json json ->
+                Just json
+
+            Internal.Binary base64 ->
+                Proto.Bytes.fromBase64 base64
+                    |> Maybe.andThen (Registry.toJson registry (typeName any))
 
 
 
