@@ -1651,6 +1651,7 @@
   },
   {
     "name": "transcode NOT_FOUND with ErrorInfo",
+    "note": "The base reads a google.rpc.Status body's details through the client's registry, else the method's; neither holds google.rpc's types here, so the detail is dropped and the code and message stay.",
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
@@ -1665,16 +1666,7 @@
           "code": "not_found",
           "message": "notes/from-transcode does not exist",
           "source": "StatusBody",
-          "details": [
-            {
-              "@type": "type.googleapis.com/google.rpc.ErrorInfo",
-              "reason": "NOTE_NOT_FOUND",
-              "domain": "notes.example.com",
-              "metadata": {
-                "name": "notes/from-transcode"
-              }
-            }
-          ]
+          "details": []
         }
       },
       "trace": {
@@ -1685,6 +1677,7 @@
   },
   {
     "name": "transcode INVALID_ARGUMENT with BadRequest",
+    "note": "The base reads a google.rpc.Status body's details through the client's registry, else the method's; neither holds google.rpc's types here, so the detail is dropped and the code and message stay.",
     "call": {
       "service": "notes.v1.NotesService",
       "method": "CreateNote",
@@ -1701,17 +1694,7 @@
           "code": "invalid_argument",
           "message": "a note needs a title",
           "source": "StatusBody",
-          "details": [
-            {
-              "@type": "type.googleapis.com/google.rpc.BadRequest",
-              "fieldViolations": [
-                {
-                  "field": "title",
-                  "description": "a note needs a title"
-                }
-              ]
-            }
-          ]
+          "details": []
         }
       },
       "trace": {
@@ -1722,6 +1705,7 @@
   },
   {
     "name": "transcode percent-encoded path",
+    "note": "The base reads a google.rpc.Status body's details through the client's registry, else the method's; neither holds google.rpc's types here, so the detail is dropped and the code and message stay.",
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
@@ -1736,16 +1720,7 @@
           "code": "not_found",
           "message": "notes/a b+c does not exist",
           "source": "StatusBody",
-          "details": [
-            {
-              "@type": "type.googleapis.com/google.rpc.ErrorInfo",
-              "reason": "NOTE_NOT_FOUND",
-              "domain": "notes.example.com",
-              "metadata": {
-                "name": "notes/a b+c"
-              }
-            }
-          ]
+          "details": []
         }
       },
       "trace": {
@@ -2066,6 +2041,7 @@
   },
   {
     "name": "transcode Rpc.task",
+    "note": "The base reads a google.rpc.Status body's details through the client's registry, else the method's; neither holds google.rpc's types here, so the detail is dropped and the code and message stay.",
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
@@ -2081,16 +2057,7 @@
           "code": "not_found",
           "message": "notes/sent does not exist",
           "source": "StatusBody",
-          "details": [
-            {
-              "@type": "type.googleapis.com/google.rpc.ErrorInfo",
-              "reason": "NOTE_NOT_FOUND",
-              "domain": "notes.example.com",
-              "metadata": {
-                "name": "notes/sent"
-              }
-            }
-          ]
+          "details": []
         }
       }
     }
