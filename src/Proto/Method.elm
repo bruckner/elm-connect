@@ -15,8 +15,9 @@ service's module and gives the typed value to [`Rpc.call`](Rpc#call):
         Rpc.call
             (Proto.Method.initJson "notes.v1.NotesService"
                 "GetNote"
-                Notes.V1.encodeGetNoteRequest
-                Notes.V1.decodeNote
+                Proto.Registry.empty
+                (\_ -> Ok << Notes.V1.encodeGetNoteRequest)
+                (\_ -> Notes.V1.decodeNote)
                 |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
                 |> Proto.Method.withRoutes [ routeGetNote0 ]
             )
@@ -89,8 +90,17 @@ type alias Method codec req res =
 
 {-| A method with proto3 JSON codecs, as generated code under `codec=json`
 writes it: from the full name of its service (`notes.v1.NotesService`), its
-name as declared (`GetNote`), its request's JSON encoder and its response's
-JSON decoder. Its calls go over a protocol speaking JSON.
+name as declared (`GetNote`), the registry its calls use unless the client
+gives another ([`Rpc.withRegistry`](Rpc#withRegistry)), its request's JSON
+encoder and its response's JSON decoder, each taking the registry an
+[`Any`](Proto-Any#Any) they hold converts through. Its calls go over a
+protocol speaking JSON.
+
+    Proto.Method.initJson "notes.v1.NotesService"
+        "GetNote"
+        Proto.Registry.empty
+        (\_ -> Ok << Notes.V1.encodeGetNoteRequest)
+        (\_ -> Notes.V1.decodeNote)
 
 Its idempotency is `IdempotencyUnknown` until
 [`withIdempotency`](#withIdempotency) says otherwise, and it has no routes
@@ -98,16 +108,16 @@ until [`withRoutes`](#withRoutes) or [`withBindings`](#withBindings) gives
 them, so that transcoding sends it over the implicit route.
 
 -}
-initJson : String -> String -> (req -> Json.Encode.Value) -> Json.Decode.Decoder res -> Method Proto.Codec.Json req res
-initJson serviceName methodName encode decoder =
+initJson : String -> String -> Registry -> (Registry -> req -> Result Problem Json.Encode.Value) -> (Registry -> Json.Decode.Decoder res) -> Method Proto.Codec.Json req res
+initJson serviceName methodName registry encode decoder =
     Internal.Method
         { service = serviceName
         , name = methodName
         , idempotency = IdempotencyUnknown
         , codecs = { json = True, binary = False }
-        , json = { encode = \_ req -> Ok (encode req), decoder = \_ -> decoder }
+        , json = { encode = encode, decoder = decoder }
         , binary = Internal.noBinary
-        , registry = Nothing
+        , registry = Just registry
         , routes = []
         }
 
@@ -140,9 +150,9 @@ another ([`Rpc.withRegistry`](Rpc#withRegistry)):
 
     Proto.Method.init "notes.v1.NotesService"
         "GetNote"
-        Notes.V1.registry
+        Proto.Registry.empty
         (\_ -> Ok << Notes.V1.encodeGetNoteRequest)
-        Notes.V1.decodeNoteWith
+        (\_ -> Notes.V1.decodeNote)
         Notes.V1.encodeGetNoteRequestBytes
         Notes.V1.decodeNoteBytes
 
@@ -198,8 +208,9 @@ carries the code that reads a binding.
 
     Proto.Method.initJson "notes.v1.NotesService"
         "GetNote"
-        encodeGetNoteRequest
-        decodeNote
+        Proto.Registry.empty
+        (\_ -> Ok << encodeGetNoteRequest)
+        (\_ -> decodeNote)
         |> Proto.Method.withBindings
             [ Proto.Http.binding { … } ]
 

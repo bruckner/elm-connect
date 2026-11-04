@@ -12,10 +12,8 @@ import Bytes exposing (Bytes)
 import Dict
 import Http
 import Json.Decode exposing (Decoder)
-import Proto.Any
 import Proto.Internal.Any
 import Proto.Internal.Percent as Percent
-import Proto.Json
 import Proto.Registry exposing (Registry)
 import Rpc.Body
 import Rpc.Code as Code exposing (Code)
@@ -129,14 +127,13 @@ fromGrpc number =
 
 
 {-| A `google.rpc.Status` body: an integer `code`, an optional `message` and
-optional `details`.
+optional `details`. Its details are proto3 JSON, which are left out.
 -}
 statusBody : Decoder Error.StatusError
 statusBody =
-    Json.Decode.map3 (\number text found -> { code = fromGrpc number, message = text, details = found, source = Error.StatusBody })
+    Json.Decode.map2 (\number text -> { code = fromGrpc number, message = text, details = [], source = Error.StatusBody })
         (Json.Decode.field "code" Json.Decode.int)
         (optional "message" Json.Decode.string "")
-        (optional "details" detailList [])
 
 
 {-| A Connect error body: a `code` the protocol names (an unknown name reads as
@@ -149,34 +146,27 @@ connectBody =
             |> Json.Decode.map (Code.fromString >> Maybe.withDefault Code.Unknown)
         )
         (optional "message" Json.Decode.string "")
-        (optional "details" detailList [])
+        (optional "details" (detailList connectDetail) [])
 
 
-{-| An error's details, each in the form its body holds it: a
-`google.rpc.Status` body holds proto3 JSON `Any` objects, a Connect body
-`{"type", "value", "debug"}` objects. A detail in neither form is left out
-rather than losing the error's code and message with it.
+{-| An error's details as `read` reads each: a Connect body holds
+`{"type", "value", "debug"}` objects, a `google.rpc.Status` body proto3 JSON
+`Any` objects. A detail `read` cannot read is left out rather than losing the
+error's code and message with it.
 -}
-detailList : Decoder (List Error.Detail)
-detailList =
-    Json.Decode.list
-        (Json.Decode.maybe
-            (Json.Decode.oneOf
-                [ Proto.Json.any |> Json.Decode.map (\any -> { proto = Nothing, json = Just any })
-                , connectDetail
-                ]
-            )
-        )
+detailList : Decoder Error.Detail -> Decoder (List Error.Detail)
+detailList read =
+    Json.Decode.list (Json.Decode.maybe read)
         |> Json.Decode.map (List.filterMap identity)
 
 
-{-| A Connect error detail: the message's full name as `type`, its protobuf
-binary as base64 `value`, and optionally its JSON as `debug`.
+{-| A Connect error detail: the message's full name as `type` and its
+protobuf binary as base64 `value`; its JSON, `debug`, is not read.
 -}
 connectDetail : Decoder Error.Detail
 connectDetail =
-    Json.Decode.map3
-        (\name binary debug ->
+    Json.Decode.map2
+        (\name binary ->
             let
                 url =
                     if String.contains "/" name then
@@ -185,39 +175,18 @@ connectDetail =
                     else
                         "type.googleapis.com/" ++ name
             in
-            { proto = Just (Proto.Internal.Any.Any url (Proto.Internal.Any.InProto binary))
-            , json = Maybe.map (\json -> Proto.Internal.Any.Any url (Proto.Internal.Any.InJson json)) debug
-            }
+            Proto.Internal.Any.Any url binary
         )
         (Json.Decode.field "type" Json.Decode.string)
         (optional "value" Json.Decode.string "")
-        (optional "debug" (Json.Decode.map Just Json.Decode.value) Nothing)
 
 
-{-| An error with each of its details' missing form filled in, where the
-registry has the detail's type.
+{-| An error as it was read: a detail holds its binary as it arrived, and a
+`google.rpc.Status` body's details, which are proto3 JSON, are left out.
 -}
 completeDetails : Registry -> Error -> Error
-completeDetails registry error =
-    case error of
-        Error.RpcStatus status answer ->
-            Error.RpcStatus { status | details = List.map (completeDetail registry) status.details } answer
-
-        _ ->
-            error
-
-
-completeDetail : Registry -> Error.Detail -> Error.Detail
-completeDetail registry detail =
-    case ( detail.proto, detail.json ) of
-        ( Just proto, Nothing ) ->
-            { detail | json = Proto.Any.toJson registry proto }
-
-        ( Nothing, Just json ) ->
-            { detail | proto = Proto.Any.toProto registry json }
-
-        _ ->
-            detail
+completeDetails _ error =
+    error
 
 
 optional : String -> Decoder a -> a -> Decoder a

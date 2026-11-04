@@ -24,7 +24,6 @@ import Http
 import Proto.Any exposing (Any)
 import Proto.Binary
 import Proto.Bytes
-import Proto.Codec exposing (Proto)
 import Proto.Internal.Percent as Percent
 import Rpc.Body
 import Rpc.Code as Code
@@ -216,7 +215,6 @@ settle source metadata raw status messages =
                             |> Maybe.andThen (String.trim >> Proto.Bytes.fromBase64)
                             |> Maybe.andThen (Proto.Binary.decode statusDetails)
                             |> Maybe.withDefault []
-                            |> List.map (\any -> { proto = Just any, json = Nothing })
                     , source = source
                     }
                     answer
@@ -230,7 +228,7 @@ settle source metadata raw status messages =
 and message skipped: the status's own are in `grpc-status` and
 `grpc-message`.
 -}
-statusDetails : Proto.Binary.Decoder (List (Any Proto))
+statusDetails : Proto.Binary.Decoder (List Any)
 statusDetails =
     Proto.Binary.merge
         (\number wire details ->

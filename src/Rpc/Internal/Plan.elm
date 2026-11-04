@@ -211,9 +211,6 @@ unregistered problem =
         InvalidProto ->
             ""
 
-        InvalidJson _ ->
-            ""
-
 
 {-| The response decoder reading the answer as the field `responseBody` names,
 when it names one.

@@ -57,7 +57,7 @@ type alias Codecs =
 {-| A request's proto3 JSON and the response's decoder, given the registry
 an `Any` they hold converts through: the client's, else the method's own
 `registry`. A request holding an `Any` of a type the registry lacks has no
-JSON. Only a method built with `Proto.Method.init` has a registry of its own,
+JSON. Only a method built with `Proto.Method.init` or `initJson` has a registry of its own,
 and only its encoder can fail, so a method without one is never encoded to be
 checked.
 -}

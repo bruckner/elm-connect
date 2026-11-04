@@ -86,9 +86,8 @@ import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
 import Proto.Bytes
-import Proto.Codec exposing (Proto)
 import Proto.Duration exposing (Duration)
-import Proto.Internal.Any as InternalAny exposing (Any, Payload(..))
+import Proto.Internal.Any as InternalAny exposing (Any)
 import Proto.Internal.Binary as Internal
 import Time
 
@@ -1419,12 +1418,12 @@ writeValue json =
 merged field by field: the type URL or the value the later one carries
 replaces the earlier one's.
 -}
-any : Codec (Any Proto)
+any : Codec Any
 any =
-    embedded writeAny anyInto InternalAny.emptyProto
+    embedded writeAny anyInto InternalAny.empty
 
 
-anyInto : Any Proto -> Decoder (Any Proto)
+anyInto : Any -> Decoder Any
 anyInto (InternalAny.Any start payload) =
     Internal.Decoder
         (message ( start, payload )
@@ -1434,7 +1433,7 @@ anyInto (InternalAny.Any start payload) =
                         field string (\v -> ( v, current )) wire ( url, current )
 
                     2 ->
-                        field bytes (\v -> ( url, InProto v )) wire ( url, current )
+                        field bytes (\v -> ( url, v )) wire ( url, current )
 
                     _ ->
                         skip wire ( url, current )
@@ -1444,9 +1443,9 @@ anyInto (InternalAny.Any start payload) =
         )
 
 
-writeAny : Any Proto -> Encoder
+writeAny : Any -> Encoder
 writeAny (InternalAny.Any url payload) =
-    E.sequence [ implicit string 1 url, implicit bytes 2 (InternalAny.base64Of payload) ]
+    E.sequence [ implicit string 1 url, implicit bytes 2 payload ]
 
 
 wrapper : Codec v -> Codec v

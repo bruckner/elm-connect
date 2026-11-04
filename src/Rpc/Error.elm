@@ -1,6 +1,6 @@
 module Rpc.Error exposing
     ( Error(..), Reason(..), StatusError, Source(..), Detail
-    , code, message, details, detailsJson, toString
+    , code, message, details, toString
     )
 
 {-| Why a call failed: what [`Rpc.task`](Rpc#task), [`Rpc.send`](Rpc#send) and
@@ -21,13 +21,12 @@ error has:
 
 # Reading an error
 
-@docs code, message, details, detailsJson, toString
+@docs code, message, details, toString
 
 -}
 
 import Json.Encode
 import Proto.Any exposing (Any)
-import Proto.Codec exposing (Json, Proto)
 import Proto.Message exposing (Message)
 import Rpc.Code as Code exposing (Code)
 import Rpc.Response exposing (Response)
@@ -133,17 +132,15 @@ type alias StatusError =
 
 
 {-| One of a status's details, a message packed in an [`Any`](Proto-Any#Any),
-in the forms it arrived in: its protobuf binary (`proto`), its proto3 JSON
-(`json`), or both. A Connect error body carries the binary, and the JSON too
-when the server sends `debug`; a `google.rpc.Status` body carries the JSON;
-gRPC-Web carries the binary. A call of code generated with `codec=both` fills
-in the missing form of each detail whose type its registry has. Read them with
-[`details`](#details) and [`detailsJson`](#detailsJson).
+which holds its protobuf binary. A Connect error body and gRPC-Web carry the
+binary; a `google.rpc.Status` body carries proto3 JSON, which a call reads
+through the client's registry, else its method's
+([`Rpc.withRegistry`](Rpc#withRegistry)), leaving out a detail of a type
+neither has, never the error's code and message. Read them with
+[`details`](#details).
 -}
 type alias Detail =
-    { proto : Maybe (Any Proto)
-    , json : Maybe (Any Json)
-    }
+    Any
 
 
 {-| Where a status was read from, tried in this order:
@@ -364,9 +361,9 @@ withoutUserInfo url =
             url
 
 
-{-| The details of an error that are of this message type, read from their
-protobuf binary, in the order the server sent them, leaving out any that do
-not decode or arrived without their binary. Only an `RpcStatus` error has any.
+{-| The details of an error that are of this message type, in the order the
+server sent them, leaving out any that do not decode. Only an `RpcStatus`
+error has any.
 
     case Rpc.Error.details Google.Rpc.messageBadRequest error of
         badRequest :: _ ->
@@ -376,26 +373,11 @@ not decode or arrived without their binary. Only an `RpcStatus` error has any.
             showMessage (Rpc.Error.message error)
 
 -}
-details : Message Proto a -> Error -> List a
+details : Message a -> Error -> List a
 details proto error =
-    statusDetails (.proto >> Maybe.andThen (Proto.Any.unpack proto)) error
-
-
-{-| [`details`](#details), read from their proto3 JSON, for code generated with
-`codec=json`. A Connect server sends a detail's JSON only as its `debug`,
-which connect-go writes with the JSON codec; a detail that arrived without it
-is left out.
--}
-detailsJson : Message Json a -> Error -> List a
-detailsJson proto error =
-    statusDetails (.json >> Maybe.andThen (Proto.Any.unpackJson proto)) error
-
-
-statusDetails : (Detail -> Maybe a) -> Error -> List a
-statusDetails read error =
     case error of
         RpcStatus status _ ->
-            List.filterMap read status.details
+            List.filterMap (Proto.Any.unpack proto) status.details
 
         _ ->
             []

@@ -1,27 +1,26 @@
 module Proto.WellKnown exposing
-    ( empty, emptyProto, timestamp, timestampProto, duration, durationProto
-    , fieldMask, fieldMaskProto, any, anyProto
-    , struct, structProto, value, valueProto, listValue, listValueProto, nullValue
-    , doubleValue, doubleValueProto, floatValue, floatValueProto
-    , int64Value, int64ValueProto, int64ValueAsInt, int64ValueAsIntProto
-    , uint64Value, uint64ValueProto, uint64ValueAsInt, uint64ValueAsIntProto
-    , int32Value, int32ValueProto, uint32Value, uint32ValueProto
-    , boolValue, boolValueProto, stringValue, stringValueProto, bytesValue, bytesValueProto
+    ( empty, timestamp, duration
+    , fieldMask, any
+    , struct, value, listValue, nullValue
+    , doubleValue, floatValue
+    , int64Value, int64ValueAsInt
+    , uint64Value, uint64ValueAsInt
+    , int32Value, uint32Value
+    , boolValue, stringValue, bytesValue
     )
 
 {-| The `google.protobuf` types elm-connect maps, as
 [`Message`](Proto-Message#Message) values, each in the Elm form generated code
-gives the type: one with proto3 JSON codecs, and one with protobuf binary
-codecs, named with `Proto` at the end. Pack and unpack an `Any` of one with
+gives the type, with both its codecs. Pack and unpack an `Any` of one with
 them.
 
-@docs empty, emptyProto, timestamp, timestampProto, duration, durationProto
-@docs fieldMask, fieldMaskProto, any, anyProto
+@docs empty, timestamp, duration
+@docs fieldMask, any
 
 
 # JSON
 
-@docs struct, structProto, value, valueProto, listValue, listValueProto, nullValue
+@docs struct, value, listValue, nullValue
 
 
 # Wrappers
@@ -29,11 +28,11 @@ them.
 A wrapper's Elm form is its scalar; a field of one is a `Maybe` of it. The
 64-bit wrappers come in both forms the `int64` option chooses between.
 
-@docs doubleValue, doubleValueProto, floatValue, floatValueProto
-@docs int64Value, int64ValueProto, int64ValueAsInt, int64ValueAsIntProto
-@docs uint64Value, uint64ValueProto, uint64ValueAsInt, uint64ValueAsIntProto
-@docs int32Value, int32ValueProto, uint32Value, uint32ValueProto
-@docs boolValue, boolValueProto, stringValue, stringValueProto, bytesValue, bytesValueProto
+@docs doubleValue, floatValue
+@docs int64Value, int64ValueAsInt
+@docs uint64Value, uint64ValueAsInt
+@docs int32Value, uint32Value
+@docs boolValue, stringValue, bytesValue
 
 -}
 
@@ -42,279 +41,145 @@ import Json.Decode
 import Json.Encode
 import Proto.Any exposing (Any)
 import Proto.Binary
-import Proto.Codec exposing (Json, Proto)
 import Proto.Duration exposing (Duration)
 import Proto.Enum exposing (Enum, enum)
 import Proto.Internal.WellKnown as Descriptors
 import Proto.Json
-import Proto.Message exposing (Message, initJson, initProto)
+import Proto.Message exposing (Message, init, initWith)
 import Time
 
 
 {-| `google.protobuf.Empty`: `()`, written `{}`.
 -}
-empty : Message Json ()
+empty : Message ()
 empty =
-    initJson "google.protobuf.Empty" Proto.Json.encodeEmpty Proto.Json.empty
-
-
-{-| [`empty`](#empty) with protobuf binary codecs.
--}
-emptyProto : Message Proto ()
-emptyProto =
-    initProto "google.protobuf.Empty" (Proto.Binary.messageEncoder Proto.Binary.empty) (Proto.Binary.messageDecoder Proto.Binary.empty)
+    init "google.protobuf.Empty" Proto.Json.encodeEmpty Proto.Json.empty (Proto.Binary.messageEncoder Proto.Binary.empty) (Proto.Binary.messageDecoder Proto.Binary.empty)
 
 
 {-| `google.protobuf.Timestamp`: a `Time.Posix`, written in RFC 3339.
 -}
-timestamp : Message Json Time.Posix
+timestamp : Message Time.Posix
 timestamp =
-    initJson "google.protobuf.Timestamp" Proto.Json.encodeTimestamp Proto.Json.timestamp
-
-
-{-| [`timestamp`](#timestamp) with protobuf binary codecs.
--}
-timestampProto : Message Proto Time.Posix
-timestampProto =
-    initProto "google.protobuf.Timestamp" (Proto.Binary.messageEncoder Proto.Binary.timestamp) (Proto.Binary.messageDecoder Proto.Binary.timestamp)
+    init "google.protobuf.Timestamp" Proto.Json.encodeTimestamp Proto.Json.timestamp (Proto.Binary.messageEncoder Proto.Binary.timestamp) (Proto.Binary.messageDecoder Proto.Binary.timestamp)
 
 
 {-| `google.protobuf.Duration`, written as seconds (`"1.5s"`).
 -}
-duration : Message Json Duration
+duration : Message Duration
 duration =
-    initJson "google.protobuf.Duration" Proto.Json.encodeDuration Proto.Json.duration
-
-
-{-| [`duration`](#duration) with protobuf binary codecs.
--}
-durationProto : Message Proto Duration
-durationProto =
-    initProto "google.protobuf.Duration" (Proto.Binary.messageEncoder Proto.Binary.duration) (Proto.Binary.messageDecoder Proto.Binary.duration)
+    init "google.protobuf.Duration" Proto.Json.encodeDuration Proto.Json.duration (Proto.Binary.messageEncoder Proto.Binary.duration) (Proto.Binary.messageDecoder Proto.Binary.duration)
 
 
 {-| `google.protobuf.FieldMask`: its paths, written comma-separated.
 -}
-fieldMask : Message Json (List String)
+fieldMask : Message (List String)
 fieldMask =
-    initJson "google.protobuf.FieldMask" Proto.Json.encodeFieldMask Proto.Json.fieldMask
-
-
-{-| [`fieldMask`](#fieldMask) with protobuf binary codecs.
--}
-fieldMaskProto : Message Proto (List String)
-fieldMaskProto =
-    initProto "google.protobuf.FieldMask" (Proto.Binary.messageEncoder Proto.Binary.fieldMask) (Proto.Binary.messageDecoder Proto.Binary.fieldMask)
+    init "google.protobuf.FieldMask" Proto.Json.encodeFieldMask Proto.Json.fieldMask (Proto.Binary.messageEncoder Proto.Binary.fieldMask) (Proto.Binary.messageDecoder Proto.Binary.fieldMask)
 
 
 {-| `google.protobuf.Any`, a [`Proto.Any.Any`](Proto-Any#Any).
 -}
-any : Message Json (Any Json)
+any : Message Any
 any =
-    initJson "google.protobuf.Any" Proto.Json.encodeAny Proto.Json.any
-
-
-{-| [`any`](#any) with protobuf binary codecs.
--}
-anyProto : Message Proto (Any Proto)
-anyProto =
-    initProto "google.protobuf.Any" (Proto.Binary.messageEncoder Proto.Binary.any) (Proto.Binary.messageDecoder Proto.Binary.any)
+    initWith "google.protobuf.Any" Proto.Json.encodeAnyWith Proto.Json.anyWith (Proto.Binary.messageEncoder Proto.Binary.any) (Proto.Binary.messageDecoder Proto.Binary.any)
 
 
 {-| `google.protobuf.Struct`: a JSON object.
 -}
-struct : Message Json (Dict String Json.Encode.Value)
+struct : Message (Dict String Json.Encode.Value)
 struct =
-    initJson "google.protobuf.Struct" Proto.Json.encodeStruct Proto.Json.struct
-
-
-{-| [`struct`](#struct) with protobuf binary codecs.
--}
-structProto : Message Proto (Dict String Json.Encode.Value)
-structProto =
-    initProto "google.protobuf.Struct" (Proto.Binary.messageEncoder Proto.Binary.struct) (Proto.Binary.messageDecoder Proto.Binary.struct)
+    init "google.protobuf.Struct" Proto.Json.encodeStruct Proto.Json.struct (Proto.Binary.messageEncoder Proto.Binary.struct) (Proto.Binary.messageDecoder Proto.Binary.struct)
 
 
 {-| `google.protobuf.Value`: any JSON.
 -}
-value : Message Json Json.Encode.Value
+value : Message Json.Encode.Value
 value =
-    initJson "google.protobuf.Value" identity Json.Decode.value
-
-
-{-| [`value`](#value) with protobuf binary codecs.
--}
-valueProto : Message Proto Json.Encode.Value
-valueProto =
-    initProto "google.protobuf.Value" (Proto.Binary.messageEncoder Proto.Binary.value) (Proto.Binary.messageDecoder Proto.Binary.value)
+    init "google.protobuf.Value" identity Json.Decode.value (Proto.Binary.messageEncoder Proto.Binary.value) (Proto.Binary.messageDecoder Proto.Binary.value)
 
 
 {-| `google.protobuf.ListValue`: a JSON array.
 -}
-listValue : Message Json (List Json.Encode.Value)
+listValue : Message (List Json.Encode.Value)
 listValue =
-    initJson "google.protobuf.ListValue" Proto.Json.encodeListValue Proto.Json.listValue
-
-
-{-| [`listValue`](#listValue) with protobuf binary codecs.
--}
-listValueProto : Message Proto (List Json.Encode.Value)
-listValueProto =
-    initProto "google.protobuf.ListValue" (Proto.Binary.messageEncoder Proto.Binary.listValue) (Proto.Binary.messageDecoder Proto.Binary.listValue)
+    init "google.protobuf.ListValue" Proto.Json.encodeListValue Proto.Json.listValue (Proto.Binary.messageEncoder Proto.Binary.listValue) (Proto.Binary.messageDecoder Proto.Binary.listValue)
 
 
 {-| `google.protobuf.DoubleValue`.
 -}
-doubleValue : Message Json Float
+doubleValue : Message Float
 doubleValue =
-    initJson "google.protobuf.DoubleValue" Proto.Json.encodeFloat Proto.Json.float
-
-
-{-| [`doubleValue`](#doubleValue) with protobuf binary codecs.
--}
-doubleValueProto : Message Proto Float
-doubleValueProto =
-    initProto "google.protobuf.DoubleValue" (Proto.Binary.messageEncoder Proto.Binary.doubleValue) (Proto.Binary.messageDecoder Proto.Binary.doubleValue)
+    init "google.protobuf.DoubleValue" Proto.Json.encodeFloat Proto.Json.float (Proto.Binary.messageEncoder Proto.Binary.doubleValue) (Proto.Binary.messageDecoder Proto.Binary.doubleValue)
 
 
 {-| `google.protobuf.FloatValue`.
 -}
-floatValue : Message Json Float
+floatValue : Message Float
 floatValue =
-    initJson "google.protobuf.FloatValue" Proto.Json.encodeFloat Proto.Json.float32
-
-
-{-| [`floatValue`](#floatValue) with protobuf binary codecs.
--}
-floatValueProto : Message Proto Float
-floatValueProto =
-    initProto "google.protobuf.FloatValue" (Proto.Binary.messageEncoder Proto.Binary.floatValue) (Proto.Binary.messageDecoder Proto.Binary.floatValue)
+    init "google.protobuf.FloatValue" Proto.Json.encodeFloat Proto.Json.float32 (Proto.Binary.messageEncoder Proto.Binary.floatValue) (Proto.Binary.messageDecoder Proto.Binary.floatValue)
 
 
 {-| `google.protobuf.Int64Value`, its decimal string.
 -}
-int64Value : Message Json String
+int64Value : Message String
 int64Value =
-    initJson "google.protobuf.Int64Value" Proto.Json.encodeInt64 Proto.Json.int64
-
-
-{-| [`int64Value`](#int64Value) with protobuf binary codecs.
--}
-int64ValueProto : Message Proto String
-int64ValueProto =
-    initProto "google.protobuf.Int64Value" (Proto.Binary.messageEncoder Proto.Binary.int64Value) (Proto.Binary.messageDecoder Proto.Binary.int64Value)
+    init "google.protobuf.Int64Value" Proto.Json.encodeInt64 Proto.Json.int64 (Proto.Binary.messageEncoder Proto.Binary.int64Value) (Proto.Binary.messageDecoder Proto.Binary.int64Value)
 
 
 {-| `google.protobuf.Int64Value` as an `Int`, under the `int64=int` option.
 -}
-int64ValueAsInt : Message Json Int
+int64ValueAsInt : Message Int
 int64ValueAsInt =
-    initJson "google.protobuf.Int64Value" Proto.Json.encodeInt64AsInt Proto.Json.int64AsInt
-
-
-{-| [`int64ValueAsInt`](#int64ValueAsInt) with protobuf binary codecs.
--}
-int64ValueAsIntProto : Message Proto Int
-int64ValueAsIntProto =
-    initProto "google.protobuf.Int64Value" (Proto.Binary.messageEncoder Proto.Binary.int64ValueAsInt) (Proto.Binary.messageDecoder Proto.Binary.int64ValueAsInt)
+    init "google.protobuf.Int64Value" Proto.Json.encodeInt64AsInt Proto.Json.int64AsInt (Proto.Binary.messageEncoder Proto.Binary.int64ValueAsInt) (Proto.Binary.messageDecoder Proto.Binary.int64ValueAsInt)
 
 
 {-| `google.protobuf.UInt64Value`, its decimal string.
 -}
-uint64Value : Message Json String
+uint64Value : Message String
 uint64Value =
-    initJson "google.protobuf.UInt64Value" Proto.Json.encodeInt64 Proto.Json.uint64
-
-
-{-| [`uint64Value`](#uint64Value) with protobuf binary codecs.
--}
-uint64ValueProto : Message Proto String
-uint64ValueProto =
-    initProto "google.protobuf.UInt64Value" (Proto.Binary.messageEncoder Proto.Binary.uint64Value) (Proto.Binary.messageDecoder Proto.Binary.uint64Value)
+    init "google.protobuf.UInt64Value" Proto.Json.encodeInt64 Proto.Json.uint64 (Proto.Binary.messageEncoder Proto.Binary.uint64Value) (Proto.Binary.messageDecoder Proto.Binary.uint64Value)
 
 
 {-| `google.protobuf.UInt64Value` as an `Int`, under the `int64=int` option.
 -}
-uint64ValueAsInt : Message Json Int
+uint64ValueAsInt : Message Int
 uint64ValueAsInt =
-    initJson "google.protobuf.UInt64Value" Proto.Json.encodeInt64AsInt Proto.Json.uint64AsInt
-
-
-{-| [`uint64ValueAsInt`](#uint64ValueAsInt) with protobuf binary codecs.
--}
-uint64ValueAsIntProto : Message Proto Int
-uint64ValueAsIntProto =
-    initProto "google.protobuf.UInt64Value" (Proto.Binary.messageEncoder Proto.Binary.uint64ValueAsInt) (Proto.Binary.messageDecoder Proto.Binary.uint64ValueAsInt)
+    init "google.protobuf.UInt64Value" Proto.Json.encodeInt64AsInt Proto.Json.uint64AsInt (Proto.Binary.messageEncoder Proto.Binary.uint64ValueAsInt) (Proto.Binary.messageDecoder Proto.Binary.uint64ValueAsInt)
 
 
 {-| `google.protobuf.Int32Value`.
 -}
-int32Value : Message Json Int
+int32Value : Message Int
 int32Value =
-    initJson "google.protobuf.Int32Value" Json.Encode.int Proto.Json.int32
-
-
-{-| [`int32Value`](#int32Value) with protobuf binary codecs.
--}
-int32ValueProto : Message Proto Int
-int32ValueProto =
-    initProto "google.protobuf.Int32Value" (Proto.Binary.messageEncoder Proto.Binary.int32Value) (Proto.Binary.messageDecoder Proto.Binary.int32Value)
+    init "google.protobuf.Int32Value" Json.Encode.int Proto.Json.int32 (Proto.Binary.messageEncoder Proto.Binary.int32Value) (Proto.Binary.messageDecoder Proto.Binary.int32Value)
 
 
 {-| `google.protobuf.UInt32Value`.
 -}
-uint32Value : Message Json Int
+uint32Value : Message Int
 uint32Value =
-    initJson "google.protobuf.UInt32Value" Json.Encode.int Proto.Json.uint32
-
-
-{-| [`uint32Value`](#uint32Value) with protobuf binary codecs.
--}
-uint32ValueProto : Message Proto Int
-uint32ValueProto =
-    initProto "google.protobuf.UInt32Value" (Proto.Binary.messageEncoder Proto.Binary.uint32Value) (Proto.Binary.messageDecoder Proto.Binary.uint32Value)
+    init "google.protobuf.UInt32Value" Json.Encode.int Proto.Json.uint32 (Proto.Binary.messageEncoder Proto.Binary.uint32Value) (Proto.Binary.messageDecoder Proto.Binary.uint32Value)
 
 
 {-| `google.protobuf.BoolValue`.
 -}
-boolValue : Message Json Bool
+boolValue : Message Bool
 boolValue =
-    initJson "google.protobuf.BoolValue" Json.Encode.bool Json.Decode.bool
-
-
-{-| [`boolValue`](#boolValue) with protobuf binary codecs.
--}
-boolValueProto : Message Proto Bool
-boolValueProto =
-    initProto "google.protobuf.BoolValue" (Proto.Binary.messageEncoder Proto.Binary.boolValue) (Proto.Binary.messageDecoder Proto.Binary.boolValue)
+    init "google.protobuf.BoolValue" Json.Encode.bool Json.Decode.bool (Proto.Binary.messageEncoder Proto.Binary.boolValue) (Proto.Binary.messageDecoder Proto.Binary.boolValue)
 
 
 {-| `google.protobuf.StringValue`.
 -}
-stringValue : Message Json String
+stringValue : Message String
 stringValue =
-    initJson "google.protobuf.StringValue" Json.Encode.string Proto.Json.string
-
-
-{-| [`stringValue`](#stringValue) with protobuf binary codecs.
--}
-stringValueProto : Message Proto String
-stringValueProto =
-    initProto "google.protobuf.StringValue" (Proto.Binary.messageEncoder Proto.Binary.stringValue) (Proto.Binary.messageDecoder Proto.Binary.stringValue)
+    init "google.protobuf.StringValue" Json.Encode.string Proto.Json.string (Proto.Binary.messageEncoder Proto.Binary.stringValue) (Proto.Binary.messageDecoder Proto.Binary.stringValue)
 
 
 {-| `google.protobuf.BytesValue`, its base64 text.
 -}
-bytesValue : Message Json String
+bytesValue : Message String
 bytesValue =
-    initJson "google.protobuf.BytesValue" Proto.Json.encodeBytes Proto.Json.bytes
-
-
-{-| [`bytesValue`](#bytesValue) with protobuf binary codecs.
--}
-bytesValueProto : Message Proto String
-bytesValueProto =
-    initProto "google.protobuf.BytesValue" (Proto.Binary.messageEncoder Proto.Binary.bytesValue) (Proto.Binary.messageDecoder Proto.Binary.bytesValue)
+    init "google.protobuf.BytesValue" Proto.Json.encodeBytes Proto.Json.bytes (Proto.Binary.messageEncoder Proto.Binary.bytesValue) (Proto.Binary.messageDecoder Proto.Binary.bytesValue)
 
 
 {-| The enum `google.protobuf.NullValue`: `()`, its one value `NULL_VALUE`,

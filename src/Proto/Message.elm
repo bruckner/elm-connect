@@ -1,5 +1,5 @@
 module Proto.Message exposing
-    ( Message, initJson, initProto, typeName
+    ( Message, init, initWith, typeName
     , Descriptor, descriptor
     , fullName, typeUrl, fields, oneofs
     )
@@ -7,12 +7,12 @@ module Proto.Message exposing
 {-| A message type: its typed value, which holds its full name and its codecs,
 and its descriptor, what the proto says about it as data. Generated code gives
 one of each per message: the typed value in the package's module
-(`Notes.V1.messageNote : Message Rpc.Json Note`), the descriptor in a module of
-the message's own, beside one value per field
-(`Notes.V1.Note.descriptor : Descriptor`, `Notes.V1.Note.title`); and
-[`Proto.WellKnown`](Proto-WellKnown) gives one per well-known type and codec.
+(`Notes.V1.messageNote : Message Note`), the descriptor in a module of the
+message's own, beside one value per field (`Notes.V1.Note.descriptor :
+Descriptor`, `Notes.V1.Note.title`); and [`Proto.WellKnown`](Proto-WellKnown)
+gives one per well-known type.
 
-@docs Message, initJson, initProto, typeName
+@docs Message, init, initWith, typeName
 
 
 # Descriptors
@@ -29,55 +29,64 @@ the message's own, beside one value per field
 import Bytes.Encode
 import Json.Decode
 import Json.Encode
-import Proto.Codec exposing (Json, Proto)
 import Proto.Field as Field
 import Proto.Internal.Binary
 import Proto.Internal.Message as Internal
+import Proto.Internal.Registry exposing (Registry)
 
 
-{-| A message type whose Elm values are `a`, with the codecs `codec` names:
-[`Proto.Codec.Json`](Proto-Codec#Json), proto3 JSON, or
-[`Proto.Codec.Proto`](Proto-Codec#Proto), protobuf binary. Code generated with
-`codec=json` gives a `Message Json a`, with `codec=proto` or `codec=both` a
-`Message Proto a`. It is what [`Proto.Any`](Proto-Any) packs and unpacks
+{-| A message type whose Elm values are `a`, with both its codecs: proto3 JSON
+and protobuf binary. It is what [`Proto.Any`](Proto-Any) packs and unpacks
 with, and is opaque: the package site and compiler errors may show it as
 `Proto.Internal.Message.Message`, its name inside the package.
 -}
-type alias Message codec a =
-    Internal.Message codec a
+type alias Message a =
+    Internal.Message a
 
 
-{-| A message type from its full name and its proto3 JSON encoder and decoder,
-as generated code under `codec=json` writes it:
+{-| A message type from its full name, its proto3 JSON encoder and decoder,
+and its protobuf binary encoder and decoder, as generated code writes it for
+a message that holds no `google.protobuf.Any`:
 
-    messageNote : Proto.Message.Message Rpc.Json Note
+    messageNote : Proto.Message.Message Note
     messageNote =
-        Proto.Message.initJson "notes.v1.Note" encodeNote decodeNote
-
--}
-initJson : String -> (a -> Json.Encode.Value) -> Json.Decode.Decoder a -> Message Json a
-initJson name encode decoder =
-    Internal.Message name (Internal.JsonCodecs encode decoder)
-
-
-{-| A message type from its full name and its protobuf binary encoder and
-decoder, as generated code under `codec=proto` and `codec=both` writes it:
-
-    messageNote =
-        Proto.Message.initProto "notes.v1.Note" encodeNoteBytes decodeNoteBytes
+        Proto.Message.init "notes.v1.Note" encodeNote decodeNote encodeNoteBytes decodeNoteBytes
 
 The binary decoder is a [`Proto.Binary.Decoder`](Proto-Binary#Decoder), which
 the package site may show as `Proto.Internal.Binary.Decoder`.
 
 -}
-initProto : String -> (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> Message Proto a
-initProto name encode decoder =
-    Internal.Message name (Internal.ProtoCodecs encode decoder)
+init : String -> (a -> Json.Encode.Value) -> Json.Decode.Decoder a -> (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> Message a
+init name encodeJson decoder encode decode =
+    Internal.Message name
+        { encodeJson = \_ value -> Just (encodeJson value)
+        , decoder = \_ -> decoder
+        , encode = encode
+        , decode = decode
+        }
+
+
+{-| [`init`](#init) for a message that holds a `google.protobuf.Any`, directly
+or through its fields: its proto3 JSON codecs take the registry the `Any`
+converts through, and its encoder can fail.
+
+    messageEnvelope =
+        Proto.Message.initWith "notes.v1.Envelope" encodeEnvelopeWith decodeEnvelopeWith encodeEnvelopeBytes decodeEnvelopeBytes
+
+-}
+initWith : String -> (Registry -> a -> Result problem Json.Encode.Value) -> (Registry -> Json.Decode.Decoder a) -> (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> Message a
+initWith name encodeJson decoder encode decode =
+    Internal.Message name
+        { encodeJson = \registry value -> Result.toMaybe (encodeJson registry value)
+        , decoder = decoder
+        , encode = encode
+        , decode = decode
+        }
 
 
 {-| The message's full name, such as `notes.v1.Note`.
 -}
-typeName : Message codec a -> String
+typeName : Message a -> String
 typeName (Internal.Message name _) =
     name
 

@@ -169,8 +169,9 @@ applies it to each method's [`Method`](Proto-Method#Method):
         Rpc.call
             (Method.initJson "notes.v1.NotesService"
                 "GetNote"
-                Notes.V1.encodeGetNoteRequest
-                Notes.V1.decodeNote
+                Proto.Registry.empty
+                (\_ -> Ok << Notes.V1.encodeGetNoteRequest)
+                (\_ -> Notes.V1.decodeNote)
                 |> Method.withIdempotency Method.IdempotencyNoSideEffects
                 |> Method.withRoutes [ routeGetNote0 ]
             )
@@ -211,7 +212,8 @@ client =
 
 {-| The registry the client's calls convert a `google.protobuf.Any` through,
 in place of the one each method was generated with (its package's
-`registry`): one wider than a package's, holding the types an application
+`registry` for a method whose types hold an `Any`, else the empty one): one
+wider than a package's, holding the types an application
 packs from packages the method's does not import.
 
     Rpc.client Rpc.Protocol.connect "https://api.example.com"
@@ -220,7 +222,7 @@ packs from packages the method's does not import.
 Over JSON, a call whose request holds an `Any` of a type the registry lacks is
 not sent: it fails with `NoAnswer (UnregisteredType name)`, and a response
 holding one fails to decode. Over protobuf binary an `Any` needs no registry.
-Either way, an error's details are completed through it
+Either way, an error's details that arrive as proto3 JSON are read through it
 ([`Rpc.Error.Detail`](Rpc-Error#Detail)).
 
 -}
