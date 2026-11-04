@@ -211,8 +211,9 @@ getNote =
     Rpc.call
         (Proto.Method.initJson "notes.v1.NotesService"
             "GetNote"
-            Notes.V1.encodeGetNoteRequest
-            Notes.V1.decodeNote
+            Proto.Registry.empty
+            (\_ -> Ok << Notes.V1.encodeGetNoteRequest)
+            (\_ -> Notes.V1.decodeNote)
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
             |> Proto.Method.withBindings [ getNoteBinding ]
         )
@@ -375,7 +376,7 @@ import Rpc.Error
 
 violations : Rpc.Error -> List String
 violations error =
-    Rpc.Error.detailsJson Google.Rpc.messageBadRequest error
+    Rpc.Error.details Google.Rpc.messageBadRequest error
         |> List.concatMap .fieldViolations
         |> List.map .description
 ```

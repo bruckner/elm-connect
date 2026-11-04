@@ -9,6 +9,7 @@ module Notes.Api.Memos exposing (..)
 
 import Notes.Api
 import Proto.Method
+import Proto.Registry
 import Proto.Version
 import Rpc
 
@@ -36,8 +37,9 @@ fetchMemo =
     Rpc.call
         (Proto.Method.initJson "notes.v1.NotesService"
             "GetNote"
-            Notes.Api.encodeGetNoteRequest
-            Notes.Api.decodeMemo
+            Proto.Registry.empty
+            (\_ -> Ok << Notes.Api.encodeGetNoteRequest)
+            (\_ -> Notes.Api.decodeMemo)
         )
 
 

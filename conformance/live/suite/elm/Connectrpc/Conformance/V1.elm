@@ -4,6 +4,7 @@
 
 module Connectrpc.Conformance.V1 exposing (..)
 
+import Bytes.Encode
 import Connectrpc.Conformance.V1.BidiStreamRequest
 import Connectrpc.Conformance.V1.BidiStreamResponse
 import Connectrpc.Conformance.V1.ClientCompatRequest
@@ -56,11 +57,12 @@ import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
 import Proto.Any
-import Proto.Codec
+import Proto.Binary
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 import Proto.Version
 
 
@@ -343,7 +345,7 @@ type alias ClientCompatRequest =
     , streamType : StreamType
     , useGetHttpMethod : Bool
     , requestHeaders : List Header
-    , requestMessages : List (Proto.Any.Any Proto.Codec.Json)
+    , requestMessages : List Proto.Any.Any
     , timeoutMs : Maybe Int
     , requestDelayMs : Int
     , cancel : Maybe ClientCompatRequestCancel
@@ -1028,7 +1030,7 @@ type alias ConformancePayload =
 type alias ConformancePayloadRequestInfo =
     { requestHeaders : List Header
     , timeoutMs : Maybe String
-    , requests : List (Proto.Any.Any Proto.Codec.Json)
+    , requests : List Proto.Any.Any
     , connectGetInfo : Maybe ConformancePayloadConnectGetInfo
     }
 
@@ -1060,7 +1062,7 @@ type alias ConformancePayloadConnectGetInfo =
 type alias Error =
     { code : Code
     , message : Maybe String
-    , details : List (Proto.Any.Any Proto.Codec.Json)
+    , details : List Proto.Any.Any
     }
 
 
@@ -1166,7 +1168,7 @@ type MessageContentsData
     = MessageContentsDataUnset
     | MessageContentsDataBinary String
     | MessageContentsDataText String
-    | MessageContentsDataBinaryMessage (Proto.Any.Any Proto.Codec.Json)
+    | MessageContentsDataBinaryMessage Proto.Any.Any
 
 
 {-| StreamContents represents a sequence of messages in a request body.
@@ -1842,282 +1844,282 @@ enumTestSuiteConnectVersionMode =
 
 {-| The typed value of [`ClientCompatRequest`](#ClientCompatRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageClientCompatRequest : Proto.Message.Message Proto.Codec.Json ClientCompatRequest
+messageClientCompatRequest : Proto.Message.Message ClientCompatRequest
 messageClientCompatRequest =
-    Proto.Message.initJson "connectrpc.conformance.v1.ClientCompatRequest" encodeClientCompatRequest decodeClientCompatRequest
+    Proto.Message.initWith "connectrpc.conformance.v1.ClientCompatRequest" encodeClientCompatRequestWith decodeClientCompatRequestWith encodeClientCompatRequestBytes decodeClientCompatRequestBytes
 
 
 {-| The typed value of [`ClientCompatRequestCancel`](#ClientCompatRequestCancel): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageClientCompatRequestCancel : Proto.Message.Message Proto.Codec.Json ClientCompatRequestCancel
+messageClientCompatRequestCancel : Proto.Message.Message ClientCompatRequestCancel
 messageClientCompatRequestCancel =
-    Proto.Message.initJson "connectrpc.conformance.v1.ClientCompatRequest.Cancel" encodeClientCompatRequestCancel decodeClientCompatRequestCancel
+    Proto.Message.init "connectrpc.conformance.v1.ClientCompatRequest.Cancel" encodeClientCompatRequestCancel decodeClientCompatRequestCancel encodeClientCompatRequestCancelBytes decodeClientCompatRequestCancelBytes
 
 
 {-| The typed value of [`ClientCompatResponse`](#ClientCompatResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageClientCompatResponse : Proto.Message.Message Proto.Codec.Json ClientCompatResponse
+messageClientCompatResponse : Proto.Message.Message ClientCompatResponse
 messageClientCompatResponse =
-    Proto.Message.initJson "connectrpc.conformance.v1.ClientCompatResponse" encodeClientCompatResponse decodeClientCompatResponse
+    Proto.Message.initWith "connectrpc.conformance.v1.ClientCompatResponse" encodeClientCompatResponseWith decodeClientCompatResponseWith encodeClientCompatResponseBytes decodeClientCompatResponseBytes
 
 
 {-| The typed value of [`ClientResponseResult`](#ClientResponseResult): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageClientResponseResult : Proto.Message.Message Proto.Codec.Json ClientResponseResult
+messageClientResponseResult : Proto.Message.Message ClientResponseResult
 messageClientResponseResult =
-    Proto.Message.initJson "connectrpc.conformance.v1.ClientResponseResult" encodeClientResponseResult decodeClientResponseResult
+    Proto.Message.initWith "connectrpc.conformance.v1.ClientResponseResult" encodeClientResponseResultWith decodeClientResponseResultWith encodeClientResponseResultBytes decodeClientResponseResultBytes
 
 
 {-| The typed value of [`ClientErrorResult`](#ClientErrorResult): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageClientErrorResult : Proto.Message.Message Proto.Codec.Json ClientErrorResult
+messageClientErrorResult : Proto.Message.Message ClientErrorResult
 messageClientErrorResult =
-    Proto.Message.initJson "connectrpc.conformance.v1.ClientErrorResult" encodeClientErrorResult decodeClientErrorResult
+    Proto.Message.init "connectrpc.conformance.v1.ClientErrorResult" encodeClientErrorResult decodeClientErrorResult encodeClientErrorResultBytes decodeClientErrorResultBytes
 
 
 {-| The typed value of [`WireDetails`](#WireDetails): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageWireDetails : Proto.Message.Message Proto.Codec.Json WireDetails
+messageWireDetails : Proto.Message.Message WireDetails
 messageWireDetails =
-    Proto.Message.initJson "connectrpc.conformance.v1.WireDetails" encodeWireDetails decodeWireDetails
+    Proto.Message.init "connectrpc.conformance.v1.WireDetails" encodeWireDetails decodeWireDetails encodeWireDetailsBytes decodeWireDetailsBytes
 
 
 {-| The typed value of [`Config`](#Config): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageConfig : Proto.Message.Message Proto.Codec.Json Config
+messageConfig : Proto.Message.Message Config
 messageConfig =
-    Proto.Message.initJson "connectrpc.conformance.v1.Config" encodeConfig decodeConfig
+    Proto.Message.init "connectrpc.conformance.v1.Config" encodeConfig decodeConfig encodeConfigBytes decodeConfigBytes
 
 
 {-| The typed value of [`Features`](#Features): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageFeatures : Proto.Message.Message Proto.Codec.Json Features
+messageFeatures : Proto.Message.Message Features
 messageFeatures =
-    Proto.Message.initJson "connectrpc.conformance.v1.Features" encodeFeatures decodeFeatures
+    Proto.Message.init "connectrpc.conformance.v1.Features" encodeFeatures decodeFeatures encodeFeaturesBytes decodeFeaturesBytes
 
 
 {-| The typed value of [`ConfigCase`](#ConfigCase): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageConfigCase : Proto.Message.Message Proto.Codec.Json ConfigCase
+messageConfigCase : Proto.Message.Message ConfigCase
 messageConfigCase =
-    Proto.Message.initJson "connectrpc.conformance.v1.ConfigCase" encodeConfigCase decodeConfigCase
+    Proto.Message.init "connectrpc.conformance.v1.ConfigCase" encodeConfigCase decodeConfigCase encodeConfigCaseBytes decodeConfigCaseBytes
 
 
 {-| The typed value of [`TLSCreds`](#TLSCreds): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageTLSCreds : Proto.Message.Message Proto.Codec.Json TLSCreds
+messageTLSCreds : Proto.Message.Message TLSCreds
 messageTLSCreds =
-    Proto.Message.initJson "connectrpc.conformance.v1.TLSCreds" encodeTLSCreds decodeTLSCreds
+    Proto.Message.init "connectrpc.conformance.v1.TLSCreds" encodeTLSCreds decodeTLSCreds encodeTLSCredsBytes decodeTLSCredsBytes
 
 
 {-| The typed value of [`ServerCompatRequest`](#ServerCompatRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageServerCompatRequest : Proto.Message.Message Proto.Codec.Json ServerCompatRequest
+messageServerCompatRequest : Proto.Message.Message ServerCompatRequest
 messageServerCompatRequest =
-    Proto.Message.initJson "connectrpc.conformance.v1.ServerCompatRequest" encodeServerCompatRequest decodeServerCompatRequest
+    Proto.Message.init "connectrpc.conformance.v1.ServerCompatRequest" encodeServerCompatRequest decodeServerCompatRequest encodeServerCompatRequestBytes decodeServerCompatRequestBytes
 
 
 {-| The typed value of [`ServerCompatResponse`](#ServerCompatResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageServerCompatResponse : Proto.Message.Message Proto.Codec.Json ServerCompatResponse
+messageServerCompatResponse : Proto.Message.Message ServerCompatResponse
 messageServerCompatResponse =
-    Proto.Message.initJson "connectrpc.conformance.v1.ServerCompatResponse" encodeServerCompatResponse decodeServerCompatResponse
+    Proto.Message.init "connectrpc.conformance.v1.ServerCompatResponse" encodeServerCompatResponse decodeServerCompatResponse encodeServerCompatResponseBytes decodeServerCompatResponseBytes
 
 
 {-| The typed value of [`UnaryResponseDefinition`](#UnaryResponseDefinition): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageUnaryResponseDefinition : Proto.Message.Message Proto.Codec.Json UnaryResponseDefinition
+messageUnaryResponseDefinition : Proto.Message.Message UnaryResponseDefinition
 messageUnaryResponseDefinition =
-    Proto.Message.initJson "connectrpc.conformance.v1.UnaryResponseDefinition" encodeUnaryResponseDefinition decodeUnaryResponseDefinition
+    Proto.Message.initWith "connectrpc.conformance.v1.UnaryResponseDefinition" encodeUnaryResponseDefinitionWith decodeUnaryResponseDefinitionWith encodeUnaryResponseDefinitionBytes decodeUnaryResponseDefinitionBytes
 
 
 {-| The typed value of [`StreamResponseDefinition`](#StreamResponseDefinition): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageStreamResponseDefinition : Proto.Message.Message Proto.Codec.Json StreamResponseDefinition
+messageStreamResponseDefinition : Proto.Message.Message StreamResponseDefinition
 messageStreamResponseDefinition =
-    Proto.Message.initJson "connectrpc.conformance.v1.StreamResponseDefinition" encodeStreamResponseDefinition decodeStreamResponseDefinition
+    Proto.Message.initWith "connectrpc.conformance.v1.StreamResponseDefinition" encodeStreamResponseDefinitionWith decodeStreamResponseDefinitionWith encodeStreamResponseDefinitionBytes decodeStreamResponseDefinitionBytes
 
 
 {-| The typed value of [`UnaryRequest`](#UnaryRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageUnaryRequest : Proto.Message.Message Proto.Codec.Json UnaryRequest
+messageUnaryRequest : Proto.Message.Message UnaryRequest
 messageUnaryRequest =
-    Proto.Message.initJson "connectrpc.conformance.v1.UnaryRequest" encodeUnaryRequest decodeUnaryRequest
+    Proto.Message.initWith "connectrpc.conformance.v1.UnaryRequest" encodeUnaryRequestWith decodeUnaryRequestWith encodeUnaryRequestBytes decodeUnaryRequestBytes
 
 
 {-| The typed value of [`UnaryResponse`](#UnaryResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageUnaryResponse : Proto.Message.Message Proto.Codec.Json UnaryResponse
+messageUnaryResponse : Proto.Message.Message UnaryResponse
 messageUnaryResponse =
-    Proto.Message.initJson "connectrpc.conformance.v1.UnaryResponse" encodeUnaryResponse decodeUnaryResponse
+    Proto.Message.initWith "connectrpc.conformance.v1.UnaryResponse" encodeUnaryResponseWith decodeUnaryResponseWith encodeUnaryResponseBytes decodeUnaryResponseBytes
 
 
 {-| The typed value of [`IdempotentUnaryRequest`](#IdempotentUnaryRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageIdempotentUnaryRequest : Proto.Message.Message Proto.Codec.Json IdempotentUnaryRequest
+messageIdempotentUnaryRequest : Proto.Message.Message IdempotentUnaryRequest
 messageIdempotentUnaryRequest =
-    Proto.Message.initJson "connectrpc.conformance.v1.IdempotentUnaryRequest" encodeIdempotentUnaryRequest decodeIdempotentUnaryRequest
+    Proto.Message.initWith "connectrpc.conformance.v1.IdempotentUnaryRequest" encodeIdempotentUnaryRequestWith decodeIdempotentUnaryRequestWith encodeIdempotentUnaryRequestBytes decodeIdempotentUnaryRequestBytes
 
 
 {-| The typed value of [`IdempotentUnaryResponse`](#IdempotentUnaryResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageIdempotentUnaryResponse : Proto.Message.Message Proto.Codec.Json IdempotentUnaryResponse
+messageIdempotentUnaryResponse : Proto.Message.Message IdempotentUnaryResponse
 messageIdempotentUnaryResponse =
-    Proto.Message.initJson "connectrpc.conformance.v1.IdempotentUnaryResponse" encodeIdempotentUnaryResponse decodeIdempotentUnaryResponse
+    Proto.Message.initWith "connectrpc.conformance.v1.IdempotentUnaryResponse" encodeIdempotentUnaryResponseWith decodeIdempotentUnaryResponseWith encodeIdempotentUnaryResponseBytes decodeIdempotentUnaryResponseBytes
 
 
 {-| The typed value of [`ServerStreamRequest`](#ServerStreamRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageServerStreamRequest : Proto.Message.Message Proto.Codec.Json ServerStreamRequest
+messageServerStreamRequest : Proto.Message.Message ServerStreamRequest
 messageServerStreamRequest =
-    Proto.Message.initJson "connectrpc.conformance.v1.ServerStreamRequest" encodeServerStreamRequest decodeServerStreamRequest
+    Proto.Message.initWith "connectrpc.conformance.v1.ServerStreamRequest" encodeServerStreamRequestWith decodeServerStreamRequestWith encodeServerStreamRequestBytes decodeServerStreamRequestBytes
 
 
 {-| The typed value of [`ServerStreamResponse`](#ServerStreamResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageServerStreamResponse : Proto.Message.Message Proto.Codec.Json ServerStreamResponse
+messageServerStreamResponse : Proto.Message.Message ServerStreamResponse
 messageServerStreamResponse =
-    Proto.Message.initJson "connectrpc.conformance.v1.ServerStreamResponse" encodeServerStreamResponse decodeServerStreamResponse
+    Proto.Message.initWith "connectrpc.conformance.v1.ServerStreamResponse" encodeServerStreamResponseWith decodeServerStreamResponseWith encodeServerStreamResponseBytes decodeServerStreamResponseBytes
 
 
 {-| The typed value of [`ClientStreamRequest`](#ClientStreamRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageClientStreamRequest : Proto.Message.Message Proto.Codec.Json ClientStreamRequest
+messageClientStreamRequest : Proto.Message.Message ClientStreamRequest
 messageClientStreamRequest =
-    Proto.Message.initJson "connectrpc.conformance.v1.ClientStreamRequest" encodeClientStreamRequest decodeClientStreamRequest
+    Proto.Message.initWith "connectrpc.conformance.v1.ClientStreamRequest" encodeClientStreamRequestWith decodeClientStreamRequestWith encodeClientStreamRequestBytes decodeClientStreamRequestBytes
 
 
 {-| The typed value of [`ClientStreamResponse`](#ClientStreamResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageClientStreamResponse : Proto.Message.Message Proto.Codec.Json ClientStreamResponse
+messageClientStreamResponse : Proto.Message.Message ClientStreamResponse
 messageClientStreamResponse =
-    Proto.Message.initJson "connectrpc.conformance.v1.ClientStreamResponse" encodeClientStreamResponse decodeClientStreamResponse
+    Proto.Message.initWith "connectrpc.conformance.v1.ClientStreamResponse" encodeClientStreamResponseWith decodeClientStreamResponseWith encodeClientStreamResponseBytes decodeClientStreamResponseBytes
 
 
 {-| The typed value of [`BidiStreamRequest`](#BidiStreamRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageBidiStreamRequest : Proto.Message.Message Proto.Codec.Json BidiStreamRequest
+messageBidiStreamRequest : Proto.Message.Message BidiStreamRequest
 messageBidiStreamRequest =
-    Proto.Message.initJson "connectrpc.conformance.v1.BidiStreamRequest" encodeBidiStreamRequest decodeBidiStreamRequest
+    Proto.Message.initWith "connectrpc.conformance.v1.BidiStreamRequest" encodeBidiStreamRequestWith decodeBidiStreamRequestWith encodeBidiStreamRequestBytes decodeBidiStreamRequestBytes
 
 
 {-| The typed value of [`BidiStreamResponse`](#BidiStreamResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageBidiStreamResponse : Proto.Message.Message Proto.Codec.Json BidiStreamResponse
+messageBidiStreamResponse : Proto.Message.Message BidiStreamResponse
 messageBidiStreamResponse =
-    Proto.Message.initJson "connectrpc.conformance.v1.BidiStreamResponse" encodeBidiStreamResponse decodeBidiStreamResponse
+    Proto.Message.initWith "connectrpc.conformance.v1.BidiStreamResponse" encodeBidiStreamResponseWith decodeBidiStreamResponseWith encodeBidiStreamResponseBytes decodeBidiStreamResponseBytes
 
 
 {-| The typed value of [`UnimplementedRequest`](#UnimplementedRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageUnimplementedRequest : Proto.Message.Message Proto.Codec.Json UnimplementedRequest
+messageUnimplementedRequest : Proto.Message.Message UnimplementedRequest
 messageUnimplementedRequest =
-    Proto.Message.initJson "connectrpc.conformance.v1.UnimplementedRequest" encodeUnimplementedRequest decodeUnimplementedRequest
+    Proto.Message.init "connectrpc.conformance.v1.UnimplementedRequest" encodeUnimplementedRequest decodeUnimplementedRequest encodeUnimplementedRequestBytes decodeUnimplementedRequestBytes
 
 
 {-| The typed value of [`UnimplementedResponse`](#UnimplementedResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageUnimplementedResponse : Proto.Message.Message Proto.Codec.Json UnimplementedResponse
+messageUnimplementedResponse : Proto.Message.Message UnimplementedResponse
 messageUnimplementedResponse =
-    Proto.Message.initJson "connectrpc.conformance.v1.UnimplementedResponse" encodeUnimplementedResponse decodeUnimplementedResponse
+    Proto.Message.init "connectrpc.conformance.v1.UnimplementedResponse" encodeUnimplementedResponse decodeUnimplementedResponse encodeUnimplementedResponseBytes decodeUnimplementedResponseBytes
 
 
 {-| The typed value of [`ConformancePayload`](#ConformancePayload): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageConformancePayload : Proto.Message.Message Proto.Codec.Json ConformancePayload
+messageConformancePayload : Proto.Message.Message ConformancePayload
 messageConformancePayload =
-    Proto.Message.initJson "connectrpc.conformance.v1.ConformancePayload" encodeConformancePayload decodeConformancePayload
+    Proto.Message.initWith "connectrpc.conformance.v1.ConformancePayload" encodeConformancePayloadWith decodeConformancePayloadWith encodeConformancePayloadBytes decodeConformancePayloadBytes
 
 
 {-| The typed value of [`ConformancePayloadRequestInfo`](#ConformancePayloadRequestInfo): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageConformancePayloadRequestInfo : Proto.Message.Message Proto.Codec.Json ConformancePayloadRequestInfo
+messageConformancePayloadRequestInfo : Proto.Message.Message ConformancePayloadRequestInfo
 messageConformancePayloadRequestInfo =
-    Proto.Message.initJson "connectrpc.conformance.v1.ConformancePayload.RequestInfo" encodeConformancePayloadRequestInfo decodeConformancePayloadRequestInfo
+    Proto.Message.initWith "connectrpc.conformance.v1.ConformancePayload.RequestInfo" encodeConformancePayloadRequestInfoWith decodeConformancePayloadRequestInfoWith encodeConformancePayloadRequestInfoBytes decodeConformancePayloadRequestInfoBytes
 
 
 {-| The typed value of [`ConformancePayloadConnectGetInfo`](#ConformancePayloadConnectGetInfo): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageConformancePayloadConnectGetInfo : Proto.Message.Message Proto.Codec.Json ConformancePayloadConnectGetInfo
+messageConformancePayloadConnectGetInfo : Proto.Message.Message ConformancePayloadConnectGetInfo
 messageConformancePayloadConnectGetInfo =
-    Proto.Message.initJson "connectrpc.conformance.v1.ConformancePayload.ConnectGetInfo" encodeConformancePayloadConnectGetInfo decodeConformancePayloadConnectGetInfo
+    Proto.Message.init "connectrpc.conformance.v1.ConformancePayload.ConnectGetInfo" encodeConformancePayloadConnectGetInfo decodeConformancePayloadConnectGetInfo encodeConformancePayloadConnectGetInfoBytes decodeConformancePayloadConnectGetInfoBytes
 
 
 {-| The typed value of [`Error`](#Error): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageError : Proto.Message.Message Proto.Codec.Json Error
+messageError : Proto.Message.Message Error
 messageError =
-    Proto.Message.initJson "connectrpc.conformance.v1.Error" encodeError decodeError
+    Proto.Message.initWith "connectrpc.conformance.v1.Error" encodeErrorWith decodeErrorWith encodeErrorBytes decodeErrorBytes
 
 
 {-| The typed value of [`Header`](#Header): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageHeader : Proto.Message.Message Proto.Codec.Json Header
+messageHeader : Proto.Message.Message Header
 messageHeader =
-    Proto.Message.initJson "connectrpc.conformance.v1.Header" encodeHeader decodeHeader
+    Proto.Message.init "connectrpc.conformance.v1.Header" encodeHeader decodeHeader encodeHeaderBytes decodeHeaderBytes
 
 
 {-| The typed value of [`RawHTTPRequest`](#RawHTTPRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageRawHTTPRequest : Proto.Message.Message Proto.Codec.Json RawHTTPRequest
+messageRawHTTPRequest : Proto.Message.Message RawHTTPRequest
 messageRawHTTPRequest =
-    Proto.Message.initJson "connectrpc.conformance.v1.RawHTTPRequest" encodeRawHTTPRequest decodeRawHTTPRequest
+    Proto.Message.initWith "connectrpc.conformance.v1.RawHTTPRequest" encodeRawHTTPRequestWith decodeRawHTTPRequestWith encodeRawHTTPRequestBytes decodeRawHTTPRequestBytes
 
 
 {-| The typed value of [`RawHTTPRequestEncodedQueryParam`](#RawHTTPRequestEncodedQueryParam): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageRawHTTPRequestEncodedQueryParam : Proto.Message.Message Proto.Codec.Json RawHTTPRequestEncodedQueryParam
+messageRawHTTPRequestEncodedQueryParam : Proto.Message.Message RawHTTPRequestEncodedQueryParam
 messageRawHTTPRequestEncodedQueryParam =
-    Proto.Message.initJson "connectrpc.conformance.v1.RawHTTPRequest.EncodedQueryParam" encodeRawHTTPRequestEncodedQueryParam decodeRawHTTPRequestEncodedQueryParam
+    Proto.Message.initWith "connectrpc.conformance.v1.RawHTTPRequest.EncodedQueryParam" encodeRawHTTPRequestEncodedQueryParamWith decodeRawHTTPRequestEncodedQueryParamWith encodeRawHTTPRequestEncodedQueryParamBytes decodeRawHTTPRequestEncodedQueryParamBytes
 
 
 {-| The typed value of [`MessageContents`](#MessageContents): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageMessageContents : Proto.Message.Message Proto.Codec.Json MessageContents
+messageMessageContents : Proto.Message.Message MessageContents
 messageMessageContents =
-    Proto.Message.initJson "connectrpc.conformance.v1.MessageContents" encodeMessageContents decodeMessageContents
+    Proto.Message.initWith "connectrpc.conformance.v1.MessageContents" encodeMessageContentsWith decodeMessageContentsWith encodeMessageContentsBytes decodeMessageContentsBytes
 
 
 {-| The typed value of [`StreamContents`](#StreamContents): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageStreamContents : Proto.Message.Message Proto.Codec.Json StreamContents
+messageStreamContents : Proto.Message.Message StreamContents
 messageStreamContents =
-    Proto.Message.initJson "connectrpc.conformance.v1.StreamContents" encodeStreamContents decodeStreamContents
+    Proto.Message.initWith "connectrpc.conformance.v1.StreamContents" encodeStreamContentsWith decodeStreamContentsWith encodeStreamContentsBytes decodeStreamContentsBytes
 
 
 {-| The typed value of [`StreamContentsStreamItem`](#StreamContentsStreamItem): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageStreamContentsStreamItem : Proto.Message.Message Proto.Codec.Json StreamContentsStreamItem
+messageStreamContentsStreamItem : Proto.Message.Message StreamContentsStreamItem
 messageStreamContentsStreamItem =
-    Proto.Message.initJson "connectrpc.conformance.v1.StreamContents.StreamItem" encodeStreamContentsStreamItem decodeStreamContentsStreamItem
+    Proto.Message.initWith "connectrpc.conformance.v1.StreamContents.StreamItem" encodeStreamContentsStreamItemWith decodeStreamContentsStreamItemWith encodeStreamContentsStreamItemBytes decodeStreamContentsStreamItemBytes
 
 
 {-| The typed value of [`RawHTTPResponse`](#RawHTTPResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageRawHTTPResponse : Proto.Message.Message Proto.Codec.Json RawHTTPResponse
+messageRawHTTPResponse : Proto.Message.Message RawHTTPResponse
 messageRawHTTPResponse =
-    Proto.Message.initJson "connectrpc.conformance.v1.RawHTTPResponse" encodeRawHTTPResponse decodeRawHTTPResponse
+    Proto.Message.initWith "connectrpc.conformance.v1.RawHTTPResponse" encodeRawHTTPResponseWith decodeRawHTTPResponseWith encodeRawHTTPResponseBytes decodeRawHTTPResponseBytes
 
 
 {-| The typed value of [`TestSuite`](#TestSuite): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageTestSuite : Proto.Message.Message Proto.Codec.Json TestSuite
+messageTestSuite : Proto.Message.Message TestSuite
 messageTestSuite =
-    Proto.Message.initJson "connectrpc.conformance.v1.TestSuite" encodeTestSuite decodeTestSuite
+    Proto.Message.initWith "connectrpc.conformance.v1.TestSuite" encodeTestSuiteWith decodeTestSuiteWith encodeTestSuiteBytes decodeTestSuiteBytes
 
 
 {-| The typed value of [`TestCase`](#TestCase): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageTestCase : Proto.Message.Message Proto.Codec.Json TestCase
+messageTestCase : Proto.Message.Message TestCase
 messageTestCase =
-    Proto.Message.initJson "connectrpc.conformance.v1.TestCase" encodeTestCase decodeTestCase
+    Proto.Message.initWith "connectrpc.conformance.v1.TestCase" encodeTestCaseWith decodeTestCaseWith encodeTestCaseBytes decodeTestCaseBytes
 
 
 {-| The typed value of [`TestCaseExpandedSize`](#TestCaseExpandedSize): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageTestCaseExpandedSize : Proto.Message.Message Proto.Codec.Json TestCaseExpandedSize
+messageTestCaseExpandedSize : Proto.Message.Message TestCaseExpandedSize
 messageTestCaseExpandedSize =
-    Proto.Message.initJson "connectrpc.conformance.v1.TestCase.ExpandedSize" encodeTestCaseExpandedSize decodeTestCaseExpandedSize
+    Proto.Message.init "connectrpc.conformance.v1.TestCase.ExpandedSize" encodeTestCaseExpandedSize decodeTestCaseExpandedSize encodeTestCaseExpandedSizeBytes decodeTestCaseExpandedSizeBytes
 
 
 
@@ -2182,6 +2184,56 @@ descriptors =
             ]
         )
         Proto.Descriptors.wellKnown
+
+
+{-| The codecs of this package's messages, of those of the packages it imports and of the well-known types they hold, by full name: the JSON codecs of a message holding a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.0/src/Proto/Any.elm) convert it through this registry, or one wider.
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.unionAll
+        [ Proto.Registry.empty
+            |> Proto.Registry.withCodecs "connectrpc.conformance.v1.ClientCompatRequest" decodeClientCompatRequestWith encodeClientCompatRequestBytes decodeClientCompatRequestBytes encodeClientCompatRequestWith
+            |> Proto.Registry.withCodecs "connectrpc.conformance.v1.ClientCompatRequest.Cancel" (\_ -> decodeClientCompatRequestCancel) encodeClientCompatRequestCancelBytes decodeClientCompatRequestCancelBytes (\_ -> Ok << encodeClientCompatRequestCancel)
+            |> Proto.Registry.withCodecs "connectrpc.conformance.v1.ClientCompatResponse" decodeClientCompatResponseWith encodeClientCompatResponseBytes decodeClientCompatResponseBytes encodeClientCompatResponseWith
+            |> Proto.Registry.withCodecs "connectrpc.conformance.v1.ClientResponseResult" decodeClientResponseResultWith encodeClientResponseResultBytes decodeClientResponseResultBytes encodeClientResponseResultWith
+            |> Proto.Registry.withCodecs "connectrpc.conformance.v1.ClientErrorResult" (\_ -> decodeClientErrorResult) encodeClientErrorResultBytes decodeClientErrorResultBytes (\_ -> Ok << encodeClientErrorResult)
+            |> Proto.Registry.withCodecs "connectrpc.conformance.v1.WireDetails" (\_ -> decodeWireDetails) encodeWireDetailsBytes decodeWireDetailsBytes (\_ -> Ok << encodeWireDetails)
+            |> Proto.Registry.withCodecs "connectrpc.conformance.v1.Config" (\_ -> decodeConfig) encodeConfigBytes decodeConfigBytes (\_ -> Ok << encodeConfig)
+            |> Proto.Registry.withCodecs "connectrpc.conformance.v1.Features" (\_ -> decodeFeatures) encodeFeaturesBytes decodeFeaturesBytes (\_ -> Ok << encodeFeatures)
+            |> Proto.Registry.withCodecs "connectrpc.conformance.v1.ConfigCase" (\_ -> decodeConfigCase) encodeConfigCaseBytes decodeConfigCaseBytes (\_ -> Ok << encodeConfigCase)
+            |> Proto.Registry.withCodecs "connectrpc.conformance.v1.TLSCreds" (\_ -> decodeTLSCreds) encodeTLSCredsBytes decodeTLSCredsBytes (\_ -> Ok << encodeTLSCreds)
+            |> Proto.Registry.withCodecs "connectrpc.conformance.v1.ServerCompatRequest" (\_ -> decodeServerCompatRequest) encodeServerCompatRequestBytes decodeServerCompatRequestBytes (\_ -> Ok << encodeServerCompatRequest)
+            |> Proto.Registry.withCodecs "connectrpc.conformance.v1.ServerCompatResponse" (\_ -> decodeServerCompatResponse) encodeServerCompatResponseBytes decodeServerCompatResponseBytes (\_ -> Ok << encodeServerCompatResponse)
+            |> Proto.Registry.withCodecs "connectrpc.conformance.v1.UnaryResponseDefinition" decodeUnaryResponseDefinitionWith encodeUnaryResponseDefinitionBytes decodeUnaryResponseDefinitionBytes encodeUnaryResponseDefinitionWith
+            |> Proto.Registry.withCodecs "connectrpc.conformance.v1.StreamResponseDefinition" decodeStreamResponseDefinitionWith encodeStreamResponseDefinitionBytes decodeStreamResponseDefinitionBytes encodeStreamResponseDefinitionWith
+            |> Proto.Registry.withCodecs "connectrpc.conformance.v1.UnaryRequest" decodeUnaryRequestWith encodeUnaryRequestBytes decodeUnaryRequestBytes encodeUnaryRequestWith
+            |> Proto.Registry.withCodecs "connectrpc.conformance.v1.UnaryResponse" decodeUnaryResponseWith encodeUnaryResponseBytes decodeUnaryResponseBytes encodeUnaryResponseWith
+            |> Proto.Registry.withCodecs "connectrpc.conformance.v1.IdempotentUnaryRequest" decodeIdempotentUnaryRequestWith encodeIdempotentUnaryRequestBytes decodeIdempotentUnaryRequestBytes encodeIdempotentUnaryRequestWith
+            |> Proto.Registry.withCodecs "connectrpc.conformance.v1.IdempotentUnaryResponse" decodeIdempotentUnaryResponseWith encodeIdempotentUnaryResponseBytes decodeIdempotentUnaryResponseBytes encodeIdempotentUnaryResponseWith
+            |> Proto.Registry.withCodecs "connectrpc.conformance.v1.ServerStreamRequest" decodeServerStreamRequestWith encodeServerStreamRequestBytes decodeServerStreamRequestBytes encodeServerStreamRequestWith
+            |> Proto.Registry.withCodecs "connectrpc.conformance.v1.ServerStreamResponse" decodeServerStreamResponseWith encodeServerStreamResponseBytes decodeServerStreamResponseBytes encodeServerStreamResponseWith
+            |> Proto.Registry.withCodecs "connectrpc.conformance.v1.ClientStreamRequest" decodeClientStreamRequestWith encodeClientStreamRequestBytes decodeClientStreamRequestBytes encodeClientStreamRequestWith
+            |> Proto.Registry.withCodecs "connectrpc.conformance.v1.ClientStreamResponse" decodeClientStreamResponseWith encodeClientStreamResponseBytes decodeClientStreamResponseBytes encodeClientStreamResponseWith
+            |> Proto.Registry.withCodecs "connectrpc.conformance.v1.BidiStreamRequest" decodeBidiStreamRequestWith encodeBidiStreamRequestBytes decodeBidiStreamRequestBytes encodeBidiStreamRequestWith
+            |> Proto.Registry.withCodecs "connectrpc.conformance.v1.BidiStreamResponse" decodeBidiStreamResponseWith encodeBidiStreamResponseBytes decodeBidiStreamResponseBytes encodeBidiStreamResponseWith
+            |> Proto.Registry.withCodecs "connectrpc.conformance.v1.UnimplementedRequest" (\_ -> decodeUnimplementedRequest) encodeUnimplementedRequestBytes decodeUnimplementedRequestBytes (\_ -> Ok << encodeUnimplementedRequest)
+            |> Proto.Registry.withCodecs "connectrpc.conformance.v1.UnimplementedResponse" (\_ -> decodeUnimplementedResponse) encodeUnimplementedResponseBytes decodeUnimplementedResponseBytes (\_ -> Ok << encodeUnimplementedResponse)
+            |> Proto.Registry.withCodecs "connectrpc.conformance.v1.ConformancePayload" decodeConformancePayloadWith encodeConformancePayloadBytes decodeConformancePayloadBytes encodeConformancePayloadWith
+            |> Proto.Registry.withCodecs "connectrpc.conformance.v1.ConformancePayload.RequestInfo" decodeConformancePayloadRequestInfoWith encodeConformancePayloadRequestInfoBytes decodeConformancePayloadRequestInfoBytes encodeConformancePayloadRequestInfoWith
+            |> Proto.Registry.withCodecs "connectrpc.conformance.v1.ConformancePayload.ConnectGetInfo" (\_ -> decodeConformancePayloadConnectGetInfo) encodeConformancePayloadConnectGetInfoBytes decodeConformancePayloadConnectGetInfoBytes (\_ -> Ok << encodeConformancePayloadConnectGetInfo)
+            |> Proto.Registry.withCodecs "connectrpc.conformance.v1.Error" decodeErrorWith encodeErrorBytes decodeErrorBytes encodeErrorWith
+            |> Proto.Registry.withCodecs "connectrpc.conformance.v1.Header" (\_ -> decodeHeader) encodeHeaderBytes decodeHeaderBytes (\_ -> Ok << encodeHeader)
+            |> Proto.Registry.withCodecs "connectrpc.conformance.v1.RawHTTPRequest" decodeRawHTTPRequestWith encodeRawHTTPRequestBytes decodeRawHTTPRequestBytes encodeRawHTTPRequestWith
+            |> Proto.Registry.withCodecs "connectrpc.conformance.v1.RawHTTPRequest.EncodedQueryParam" decodeRawHTTPRequestEncodedQueryParamWith encodeRawHTTPRequestEncodedQueryParamBytes decodeRawHTTPRequestEncodedQueryParamBytes encodeRawHTTPRequestEncodedQueryParamWith
+            |> Proto.Registry.withCodecs "connectrpc.conformance.v1.MessageContents" decodeMessageContentsWith encodeMessageContentsBytes decodeMessageContentsBytes encodeMessageContentsWith
+            |> Proto.Registry.withCodecs "connectrpc.conformance.v1.StreamContents" decodeStreamContentsWith encodeStreamContentsBytes decodeStreamContentsBytes encodeStreamContentsWith
+            |> Proto.Registry.withCodecs "connectrpc.conformance.v1.StreamContents.StreamItem" decodeStreamContentsStreamItemWith encodeStreamContentsStreamItemBytes decodeStreamContentsStreamItemBytes encodeStreamContentsStreamItemWith
+            |> Proto.Registry.withCodecs "connectrpc.conformance.v1.RawHTTPResponse" decodeRawHTTPResponseWith encodeRawHTTPResponseBytes decodeRawHTTPResponseBytes encodeRawHTTPResponseWith
+            |> Proto.Registry.withCodecs "connectrpc.conformance.v1.TestSuite" decodeTestSuiteWith encodeTestSuiteBytes decodeTestSuiteBytes encodeTestSuiteWith
+            |> Proto.Registry.withCodecs "connectrpc.conformance.v1.TestCase" decodeTestCaseWith encodeTestCaseBytes decodeTestCaseBytes encodeTestCaseWith
+            |> Proto.Registry.withCodecs "connectrpc.conformance.v1.TestCase.ExpandedSize" (\_ -> decodeTestCaseExpandedSize) encodeTestCaseExpandedSizeBytes decodeTestCaseExpandedSizeBytes (\_ -> Ok << encodeTestCaseExpandedSize)
+        , Proto.Registry.wellKnown
+        ]
 
 
 
@@ -2380,31 +2432,31 @@ encodeTestSuiteConnectVersionMode value =
             Json.Encode.string "CONNECT_VERSION_MODE_IGNORE"
 
 
-{-| Encodes a [`ClientCompatRequest`](#ClientCompatRequest) as proto3 JSON.
+{-| Encodes a [`ClientCompatRequest`](#ClientCompatRequest) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeClientCompatRequest : ClientCompatRequest -> Json.Encode.Value
-encodeClientCompatRequest value =
-    Proto.Json.objectOfFields
-        [ ( "testName", Proto.Json.implicitField "" Json.Encode.string value.testName )
-        , ( "httpVersion", Proto.Json.implicitField HTTPVersionUnspecified encodeHTTPVersion value.httpVersion )
-        , ( "protocol", Proto.Json.implicitField ProtocolUnspecified encodeProtocol value.protocol )
-        , ( "codec", Proto.Json.implicitField CodecUnspecified encodeCodec value.codec )
-        , ( "compression", Proto.Json.implicitField CompressionUnspecified encodeCompression value.compression )
-        , ( "host", Proto.Json.implicitField "" Json.Encode.string value.host )
-        , ( "port", Proto.Json.implicitField 0 Json.Encode.int value.port_ )
-        , ( "serverTlsCert", Proto.Json.implicitField "" Proto.Json.encodeBytes value.serverTlsCert )
-        , ( "clientTlsCreds", Maybe.map encodeTLSCreds value.clientTlsCreds )
-        , ( "messageReceiveLimit", Proto.Json.implicitField 0 Json.Encode.int value.messageReceiveLimit )
-        , ( "service", Maybe.map Json.Encode.string value.service )
-        , ( "method", Maybe.map Json.Encode.string value.method )
-        , ( "streamType", Proto.Json.implicitField StreamTypeUnspecified encodeStreamType value.streamType )
-        , ( "useGetHttpMethod", Proto.Json.implicitField False Json.Encode.bool value.useGetHttpMethod )
-        , ( "requestHeaders", Proto.Json.repeatedField encodeHeader value.requestHeaders )
-        , ( "requestMessages", Proto.Json.repeatedField Proto.Json.encodeAny value.requestMessages )
-        , ( "timeoutMs", Maybe.map Json.Encode.int value.timeoutMs )
-        , ( "requestDelayMs", Proto.Json.implicitField 0 Json.Encode.int value.requestDelayMs )
-        , ( "cancel", Maybe.map encodeClientCompatRequestCancel value.cancel )
-        , ( "rawRequest", Maybe.map encodeRawHTTPRequest value.rawRequest )
+encodeClientCompatRequestWith : Proto.Registry.Registry -> ClientCompatRequest -> Result Proto.Any.Problem Json.Encode.Value
+encodeClientCompatRequestWith types value =
+    Proto.Json.tryObjectOfFields
+        [ ( "testName", Ok (Proto.Json.implicitField "" Json.Encode.string value.testName) )
+        , ( "httpVersion", Ok (Proto.Json.implicitField HTTPVersionUnspecified encodeHTTPVersion value.httpVersion) )
+        , ( "protocol", Ok (Proto.Json.implicitField ProtocolUnspecified encodeProtocol value.protocol) )
+        , ( "codec", Ok (Proto.Json.implicitField CodecUnspecified encodeCodec value.codec) )
+        , ( "compression", Ok (Proto.Json.implicitField CompressionUnspecified encodeCompression value.compression) )
+        , ( "host", Ok (Proto.Json.implicitField "" Json.Encode.string value.host) )
+        , ( "port", Ok (Proto.Json.implicitField 0 Json.Encode.int value.port_) )
+        , ( "serverTlsCert", Ok (Proto.Json.implicitField "" Proto.Json.encodeBytes value.serverTlsCert) )
+        , ( "clientTlsCreds", Ok (Maybe.map encodeTLSCreds value.clientTlsCreds) )
+        , ( "messageReceiveLimit", Ok (Proto.Json.implicitField 0 Json.Encode.int value.messageReceiveLimit) )
+        , ( "service", Ok (Maybe.map Json.Encode.string value.service) )
+        , ( "method", Ok (Maybe.map Json.Encode.string value.method) )
+        , ( "streamType", Ok (Proto.Json.implicitField StreamTypeUnspecified encodeStreamType value.streamType) )
+        , ( "useGetHttpMethod", Ok (Proto.Json.implicitField False Json.Encode.bool value.useGetHttpMethod) )
+        , ( "requestHeaders", Ok (Proto.Json.repeatedField encodeHeader value.requestHeaders) )
+        , ( "requestMessages", Proto.Json.tryRepeatedField (Proto.Json.encodeAnyWith types) value.requestMessages )
+        , ( "timeoutMs", Ok (Maybe.map Json.Encode.int value.timeoutMs) )
+        , ( "requestDelayMs", Ok (Proto.Json.implicitField 0 Json.Encode.int value.requestDelayMs) )
+        , ( "cancel", Ok (Maybe.map encodeClientCompatRequestCancel value.cancel) )
+        , ( "rawRequest", Proto.Json.tryOptionalField (encodeRawHTTPRequestWith types) value.rawRequest )
         ]
 
 
@@ -2436,46 +2488,46 @@ encodeClientCompatRequestCancelCancelTiming value =
             ]
 
 
-{-| Encodes a [`ClientCompatResponse`](#ClientCompatResponse) as proto3 JSON.
+{-| Encodes a [`ClientCompatResponse`](#ClientCompatResponse) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeClientCompatResponse : ClientCompatResponse -> Json.Encode.Value
-encodeClientCompatResponse value =
-    Proto.Json.objectOfFields
-        ([ ( "testName", Proto.Json.implicitField "" Json.Encode.string value.testName )
+encodeClientCompatResponseWith : Proto.Registry.Registry -> ClientCompatResponse -> Result Proto.Any.Problem Json.Encode.Value
+encodeClientCompatResponseWith types value =
+    Proto.Json.tryObjectOfFields
+        ([ ( "testName", Ok (Proto.Json.implicitField "" Json.Encode.string value.testName) )
          ]
-            ++ encodeClientCompatResponseResult value.result
+            ++ encodeClientCompatResponseResultWith types value.result
         )
 
 
 {-| Encodes a [`ClientCompatResponseResult`](#ClientCompatResponseResult) as the members of its message's JSON object.
 -}
-encodeClientCompatResponseResult : ClientCompatResponseResult -> List ( String, Maybe Json.Encode.Value )
-encodeClientCompatResponseResult value =
+encodeClientCompatResponseResultWith : Proto.Registry.Registry -> ClientCompatResponseResult -> List ( String, Result Proto.Any.Problem (Maybe Json.Encode.Value) )
+encodeClientCompatResponseResultWith types value =
     case value of
         ClientCompatResponseResultUnset ->
             []
 
         ClientCompatResponseResultResponse member ->
-            [ ( "response", Just (encodeClientResponseResult member) )
+            [ ( "response", Result.map Just (encodeClientResponseResultWith types member) )
             ]
 
         ClientCompatResponseResultError member ->
-            [ ( "error", Just (encodeClientErrorResult member) )
+            [ ( "error", Ok (Just (encodeClientErrorResult member)) )
             ]
 
 
-{-| Encodes a [`ClientResponseResult`](#ClientResponseResult) as proto3 JSON.
+{-| Encodes a [`ClientResponseResult`](#ClientResponseResult) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeClientResponseResult : ClientResponseResult -> Json.Encode.Value
-encodeClientResponseResult value =
-    Proto.Json.objectOfFields
-        [ ( "responseHeaders", Proto.Json.repeatedField encodeHeader value.responseHeaders )
-        , ( "payloads", Proto.Json.repeatedField encodeConformancePayload value.payloads )
-        , ( "error", Maybe.map encodeError value.error )
-        , ( "responseTrailers", Proto.Json.repeatedField encodeHeader value.responseTrailers )
-        , ( "numUnsentRequests", Proto.Json.implicitField 0 Json.Encode.int value.numUnsentRequests )
-        , ( "httpStatusCode", Maybe.map Json.Encode.int value.httpStatusCode )
-        , ( "feedback", Proto.Json.repeatedField Json.Encode.string value.feedback )
+encodeClientResponseResultWith : Proto.Registry.Registry -> ClientResponseResult -> Result Proto.Any.Problem Json.Encode.Value
+encodeClientResponseResultWith types value =
+    Proto.Json.tryObjectOfFields
+        [ ( "responseHeaders", Ok (Proto.Json.repeatedField encodeHeader value.responseHeaders) )
+        , ( "payloads", Proto.Json.tryRepeatedField (encodeConformancePayloadWith types) value.payloads )
+        , ( "error", Proto.Json.tryOptionalField (encodeErrorWith types) value.error )
+        , ( "responseTrailers", Ok (Proto.Json.repeatedField encodeHeader value.responseTrailers) )
+        , ( "numUnsentRequests", Ok (Proto.Json.implicitField 0 Json.Encode.int value.numUnsentRequests) )
+        , ( "httpStatusCode", Ok (Maybe.map Json.Encode.int value.httpStatusCode) )
+        , ( "feedback", Ok (Proto.Json.repeatedField Json.Encode.string value.feedback) )
         ]
 
 
@@ -2582,144 +2634,144 @@ encodeServerCompatResponse value =
         ]
 
 
-{-| Encodes an [`UnaryResponseDefinition`](#UnaryResponseDefinition) as proto3 JSON.
+{-| Encodes an [`UnaryResponseDefinition`](#UnaryResponseDefinition) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeUnaryResponseDefinition : UnaryResponseDefinition -> Json.Encode.Value
-encodeUnaryResponseDefinition value =
-    Proto.Json.objectOfFields
-        ([ ( "responseHeaders", Proto.Json.repeatedField encodeHeader value.responseHeaders )
-         , ( "responseTrailers", Proto.Json.repeatedField encodeHeader value.responseTrailers )
-         , ( "responseDelayMs", Proto.Json.implicitField 0 Json.Encode.int value.responseDelayMs )
-         , ( "rawResponse", Maybe.map encodeRawHTTPResponse value.rawResponse )
+encodeUnaryResponseDefinitionWith : Proto.Registry.Registry -> UnaryResponseDefinition -> Result Proto.Any.Problem Json.Encode.Value
+encodeUnaryResponseDefinitionWith types value =
+    Proto.Json.tryObjectOfFields
+        ([ ( "responseHeaders", Ok (Proto.Json.repeatedField encodeHeader value.responseHeaders) )
+         , ( "responseTrailers", Ok (Proto.Json.repeatedField encodeHeader value.responseTrailers) )
+         , ( "responseDelayMs", Ok (Proto.Json.implicitField 0 Json.Encode.int value.responseDelayMs) )
+         , ( "rawResponse", Proto.Json.tryOptionalField (encodeRawHTTPResponseWith types) value.rawResponse )
          ]
-            ++ encodeUnaryResponseDefinitionResponse value.response
+            ++ encodeUnaryResponseDefinitionResponseWith types value.response
         )
 
 
 {-| Encodes an [`UnaryResponseDefinitionResponse`](#UnaryResponseDefinitionResponse) as the members of its message's JSON object.
 -}
-encodeUnaryResponseDefinitionResponse : UnaryResponseDefinitionResponse -> List ( String, Maybe Json.Encode.Value )
-encodeUnaryResponseDefinitionResponse value =
+encodeUnaryResponseDefinitionResponseWith : Proto.Registry.Registry -> UnaryResponseDefinitionResponse -> List ( String, Result Proto.Any.Problem (Maybe Json.Encode.Value) )
+encodeUnaryResponseDefinitionResponseWith types value =
     case value of
         UnaryResponseDefinitionResponseUnset ->
             []
 
         UnaryResponseDefinitionResponseResponseData member ->
-            [ ( "responseData", Just (Proto.Json.encodeBytes member) )
+            [ ( "responseData", Ok (Just (Proto.Json.encodeBytes member)) )
             ]
 
         UnaryResponseDefinitionResponseError member ->
-            [ ( "error", Just (encodeError member) )
+            [ ( "error", Result.map Just (encodeErrorWith types member) )
             ]
 
 
-{-| Encodes a [`StreamResponseDefinition`](#StreamResponseDefinition) as proto3 JSON.
+{-| Encodes a [`StreamResponseDefinition`](#StreamResponseDefinition) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeStreamResponseDefinition : StreamResponseDefinition -> Json.Encode.Value
-encodeStreamResponseDefinition value =
-    Proto.Json.objectOfFields
-        [ ( "responseHeaders", Proto.Json.repeatedField encodeHeader value.responseHeaders )
-        , ( "responseData", Proto.Json.repeatedField Proto.Json.encodeBytes value.responseData )
-        , ( "responseDelayMs", Proto.Json.implicitField 0 Json.Encode.int value.responseDelayMs )
-        , ( "error", Maybe.map encodeError value.error )
-        , ( "responseTrailers", Proto.Json.repeatedField encodeHeader value.responseTrailers )
-        , ( "rawResponse", Maybe.map encodeRawHTTPResponse value.rawResponse )
+encodeStreamResponseDefinitionWith : Proto.Registry.Registry -> StreamResponseDefinition -> Result Proto.Any.Problem Json.Encode.Value
+encodeStreamResponseDefinitionWith types value =
+    Proto.Json.tryObjectOfFields
+        [ ( "responseHeaders", Ok (Proto.Json.repeatedField encodeHeader value.responseHeaders) )
+        , ( "responseData", Ok (Proto.Json.repeatedField Proto.Json.encodeBytes value.responseData) )
+        , ( "responseDelayMs", Ok (Proto.Json.implicitField 0 Json.Encode.int value.responseDelayMs) )
+        , ( "error", Proto.Json.tryOptionalField (encodeErrorWith types) value.error )
+        , ( "responseTrailers", Ok (Proto.Json.repeatedField encodeHeader value.responseTrailers) )
+        , ( "rawResponse", Proto.Json.tryOptionalField (encodeRawHTTPResponseWith types) value.rawResponse )
         ]
 
 
-{-| Encodes an [`UnaryRequest`](#UnaryRequest) as proto3 JSON.
+{-| Encodes an [`UnaryRequest`](#UnaryRequest) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeUnaryRequest : UnaryRequest -> Json.Encode.Value
-encodeUnaryRequest value =
-    Proto.Json.objectOfFields
-        [ ( "responseDefinition", Maybe.map encodeUnaryResponseDefinition value.responseDefinition )
-        , ( "requestData", Proto.Json.implicitField "" Proto.Json.encodeBytes value.requestData )
+encodeUnaryRequestWith : Proto.Registry.Registry -> UnaryRequest -> Result Proto.Any.Problem Json.Encode.Value
+encodeUnaryRequestWith types value =
+    Proto.Json.tryObjectOfFields
+        [ ( "responseDefinition", Proto.Json.tryOptionalField (encodeUnaryResponseDefinitionWith types) value.responseDefinition )
+        , ( "requestData", Ok (Proto.Json.implicitField "" Proto.Json.encodeBytes value.requestData) )
         ]
 
 
-{-| Encodes an [`UnaryResponse`](#UnaryResponse) as proto3 JSON.
+{-| Encodes an [`UnaryResponse`](#UnaryResponse) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeUnaryResponse : UnaryResponse -> Json.Encode.Value
-encodeUnaryResponse value =
-    Proto.Json.objectOfFields
-        [ ( "payload", Maybe.map encodeConformancePayload value.payload )
+encodeUnaryResponseWith : Proto.Registry.Registry -> UnaryResponse -> Result Proto.Any.Problem Json.Encode.Value
+encodeUnaryResponseWith types value =
+    Proto.Json.tryObjectOfFields
+        [ ( "payload", Proto.Json.tryOptionalField (encodeConformancePayloadWith types) value.payload )
         ]
 
 
-{-| Encodes an [`IdempotentUnaryRequest`](#IdempotentUnaryRequest) as proto3 JSON.
+{-| Encodes an [`IdempotentUnaryRequest`](#IdempotentUnaryRequest) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeIdempotentUnaryRequest : IdempotentUnaryRequest -> Json.Encode.Value
-encodeIdempotentUnaryRequest value =
-    Proto.Json.objectOfFields
-        [ ( "responseDefinition", Maybe.map encodeUnaryResponseDefinition value.responseDefinition )
-        , ( "requestData", Proto.Json.implicitField "" Proto.Json.encodeBytes value.requestData )
+encodeIdempotentUnaryRequestWith : Proto.Registry.Registry -> IdempotentUnaryRequest -> Result Proto.Any.Problem Json.Encode.Value
+encodeIdempotentUnaryRequestWith types value =
+    Proto.Json.tryObjectOfFields
+        [ ( "responseDefinition", Proto.Json.tryOptionalField (encodeUnaryResponseDefinitionWith types) value.responseDefinition )
+        , ( "requestData", Ok (Proto.Json.implicitField "" Proto.Json.encodeBytes value.requestData) )
         ]
 
 
-{-| Encodes an [`IdempotentUnaryResponse`](#IdempotentUnaryResponse) as proto3 JSON.
+{-| Encodes an [`IdempotentUnaryResponse`](#IdempotentUnaryResponse) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeIdempotentUnaryResponse : IdempotentUnaryResponse -> Json.Encode.Value
-encodeIdempotentUnaryResponse value =
-    Proto.Json.objectOfFields
-        [ ( "payload", Maybe.map encodeConformancePayload value.payload )
+encodeIdempotentUnaryResponseWith : Proto.Registry.Registry -> IdempotentUnaryResponse -> Result Proto.Any.Problem Json.Encode.Value
+encodeIdempotentUnaryResponseWith types value =
+    Proto.Json.tryObjectOfFields
+        [ ( "payload", Proto.Json.tryOptionalField (encodeConformancePayloadWith types) value.payload )
         ]
 
 
-{-| Encodes a [`ServerStreamRequest`](#ServerStreamRequest) as proto3 JSON.
+{-| Encodes a [`ServerStreamRequest`](#ServerStreamRequest) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeServerStreamRequest : ServerStreamRequest -> Json.Encode.Value
-encodeServerStreamRequest value =
-    Proto.Json.objectOfFields
-        [ ( "responseDefinition", Maybe.map encodeStreamResponseDefinition value.responseDefinition )
-        , ( "requestData", Proto.Json.implicitField "" Proto.Json.encodeBytes value.requestData )
+encodeServerStreamRequestWith : Proto.Registry.Registry -> ServerStreamRequest -> Result Proto.Any.Problem Json.Encode.Value
+encodeServerStreamRequestWith types value =
+    Proto.Json.tryObjectOfFields
+        [ ( "responseDefinition", Proto.Json.tryOptionalField (encodeStreamResponseDefinitionWith types) value.responseDefinition )
+        , ( "requestData", Ok (Proto.Json.implicitField "" Proto.Json.encodeBytes value.requestData) )
         ]
 
 
-{-| Encodes a [`ServerStreamResponse`](#ServerStreamResponse) as proto3 JSON.
+{-| Encodes a [`ServerStreamResponse`](#ServerStreamResponse) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeServerStreamResponse : ServerStreamResponse -> Json.Encode.Value
-encodeServerStreamResponse value =
-    Proto.Json.objectOfFields
-        [ ( "payload", Maybe.map encodeConformancePayload value.payload )
+encodeServerStreamResponseWith : Proto.Registry.Registry -> ServerStreamResponse -> Result Proto.Any.Problem Json.Encode.Value
+encodeServerStreamResponseWith types value =
+    Proto.Json.tryObjectOfFields
+        [ ( "payload", Proto.Json.tryOptionalField (encodeConformancePayloadWith types) value.payload )
         ]
 
 
-{-| Encodes a [`ClientStreamRequest`](#ClientStreamRequest) as proto3 JSON.
+{-| Encodes a [`ClientStreamRequest`](#ClientStreamRequest) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeClientStreamRequest : ClientStreamRequest -> Json.Encode.Value
-encodeClientStreamRequest value =
-    Proto.Json.objectOfFields
-        [ ( "responseDefinition", Maybe.map encodeUnaryResponseDefinition value.responseDefinition )
-        , ( "requestData", Proto.Json.implicitField "" Proto.Json.encodeBytes value.requestData )
+encodeClientStreamRequestWith : Proto.Registry.Registry -> ClientStreamRequest -> Result Proto.Any.Problem Json.Encode.Value
+encodeClientStreamRequestWith types value =
+    Proto.Json.tryObjectOfFields
+        [ ( "responseDefinition", Proto.Json.tryOptionalField (encodeUnaryResponseDefinitionWith types) value.responseDefinition )
+        , ( "requestData", Ok (Proto.Json.implicitField "" Proto.Json.encodeBytes value.requestData) )
         ]
 
 
-{-| Encodes a [`ClientStreamResponse`](#ClientStreamResponse) as proto3 JSON.
+{-| Encodes a [`ClientStreamResponse`](#ClientStreamResponse) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeClientStreamResponse : ClientStreamResponse -> Json.Encode.Value
-encodeClientStreamResponse value =
-    Proto.Json.objectOfFields
-        [ ( "payload", Maybe.map encodeConformancePayload value.payload )
+encodeClientStreamResponseWith : Proto.Registry.Registry -> ClientStreamResponse -> Result Proto.Any.Problem Json.Encode.Value
+encodeClientStreamResponseWith types value =
+    Proto.Json.tryObjectOfFields
+        [ ( "payload", Proto.Json.tryOptionalField (encodeConformancePayloadWith types) value.payload )
         ]
 
 
-{-| Encodes a [`BidiStreamRequest`](#BidiStreamRequest) as proto3 JSON.
+{-| Encodes a [`BidiStreamRequest`](#BidiStreamRequest) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeBidiStreamRequest : BidiStreamRequest -> Json.Encode.Value
-encodeBidiStreamRequest value =
-    Proto.Json.objectOfFields
-        [ ( "responseDefinition", Maybe.map encodeStreamResponseDefinition value.responseDefinition )
-        , ( "fullDuplex", Proto.Json.implicitField False Json.Encode.bool value.fullDuplex )
-        , ( "requestData", Proto.Json.implicitField "" Proto.Json.encodeBytes value.requestData )
+encodeBidiStreamRequestWith : Proto.Registry.Registry -> BidiStreamRequest -> Result Proto.Any.Problem Json.Encode.Value
+encodeBidiStreamRequestWith types value =
+    Proto.Json.tryObjectOfFields
+        [ ( "responseDefinition", Proto.Json.tryOptionalField (encodeStreamResponseDefinitionWith types) value.responseDefinition )
+        , ( "fullDuplex", Ok (Proto.Json.implicitField False Json.Encode.bool value.fullDuplex) )
+        , ( "requestData", Ok (Proto.Json.implicitField "" Proto.Json.encodeBytes value.requestData) )
         ]
 
 
-{-| Encodes a [`BidiStreamResponse`](#BidiStreamResponse) as proto3 JSON.
+{-| Encodes a [`BidiStreamResponse`](#BidiStreamResponse) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeBidiStreamResponse : BidiStreamResponse -> Json.Encode.Value
-encodeBidiStreamResponse value =
-    Proto.Json.objectOfFields
-        [ ( "payload", Maybe.map encodeConformancePayload value.payload )
+encodeBidiStreamResponseWith : Proto.Registry.Registry -> BidiStreamResponse -> Result Proto.Any.Problem Json.Encode.Value
+encodeBidiStreamResponseWith types value =
+    Proto.Json.tryObjectOfFields
+        [ ( "payload", Proto.Json.tryOptionalField (encodeConformancePayloadWith types) value.payload )
         ]
 
 
@@ -2737,25 +2789,25 @@ encodeUnimplementedResponse _ =
     Json.Encode.object []
 
 
-{-| Encodes a [`ConformancePayload`](#ConformancePayload) as proto3 JSON.
+{-| Encodes a [`ConformancePayload`](#ConformancePayload) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeConformancePayload : ConformancePayload -> Json.Encode.Value
-encodeConformancePayload value =
-    Proto.Json.objectOfFields
-        [ ( "data", Proto.Json.implicitField "" Proto.Json.encodeBytes value.data )
-        , ( "requestInfo", Maybe.map encodeConformancePayloadRequestInfo value.requestInfo )
+encodeConformancePayloadWith : Proto.Registry.Registry -> ConformancePayload -> Result Proto.Any.Problem Json.Encode.Value
+encodeConformancePayloadWith types value =
+    Proto.Json.tryObjectOfFields
+        [ ( "data", Ok (Proto.Json.implicitField "" Proto.Json.encodeBytes value.data) )
+        , ( "requestInfo", Proto.Json.tryOptionalField (encodeConformancePayloadRequestInfoWith types) value.requestInfo )
         ]
 
 
-{-| Encodes a [`ConformancePayloadRequestInfo`](#ConformancePayloadRequestInfo) as proto3 JSON.
+{-| Encodes a [`ConformancePayloadRequestInfo`](#ConformancePayloadRequestInfo) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeConformancePayloadRequestInfo : ConformancePayloadRequestInfo -> Json.Encode.Value
-encodeConformancePayloadRequestInfo value =
-    Proto.Json.objectOfFields
-        [ ( "requestHeaders", Proto.Json.repeatedField encodeHeader value.requestHeaders )
-        , ( "timeoutMs", Maybe.map Proto.Json.encodeInt64 value.timeoutMs )
-        , ( "requests", Proto.Json.repeatedField Proto.Json.encodeAny value.requests )
-        , ( "connectGetInfo", Maybe.map encodeConformancePayloadConnectGetInfo value.connectGetInfo )
+encodeConformancePayloadRequestInfoWith : Proto.Registry.Registry -> ConformancePayloadRequestInfo -> Result Proto.Any.Problem Json.Encode.Value
+encodeConformancePayloadRequestInfoWith types value =
+    Proto.Json.tryObjectOfFields
+        [ ( "requestHeaders", Ok (Proto.Json.repeatedField encodeHeader value.requestHeaders) )
+        , ( "timeoutMs", Ok (Maybe.map Proto.Json.encodeInt64 value.timeoutMs) )
+        , ( "requests", Proto.Json.tryRepeatedField (Proto.Json.encodeAnyWith types) value.requests )
+        , ( "connectGetInfo", Ok (Maybe.map encodeConformancePayloadConnectGetInfo value.connectGetInfo) )
         ]
 
 
@@ -2768,14 +2820,14 @@ encodeConformancePayloadConnectGetInfo value =
         ]
 
 
-{-| Encodes an [`Error`](#Error) as proto3 JSON.
+{-| Encodes an [`Error`](#Error) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeError : Error -> Json.Encode.Value
-encodeError value =
-    Proto.Json.objectOfFields
-        [ ( "code", Proto.Json.implicitField CodeUnspecified encodeCode value.code )
-        , ( "message", Maybe.map Json.Encode.string value.message )
-        , ( "details", Proto.Json.repeatedField Proto.Json.encodeAny value.details )
+encodeErrorWith : Proto.Registry.Registry -> Error -> Result Proto.Any.Problem Json.Encode.Value
+encodeErrorWith types value =
+    Proto.Json.tryObjectOfFields
+        [ ( "code", Ok (Proto.Json.implicitField CodeUnspecified encodeCode value.code) )
+        , ( "message", Ok (Maybe.map Json.Encode.string value.message) )
+        , ( "details", Proto.Json.tryRepeatedField (Proto.Json.encodeAnyWith types) value.details )
         ]
 
 
@@ -2789,160 +2841,160 @@ encodeHeader value =
         ]
 
 
-{-| Encodes a [`RawHTTPRequest`](#RawHTTPRequest) as proto3 JSON.
+{-| Encodes a [`RawHTTPRequest`](#RawHTTPRequest) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeRawHTTPRequest : RawHTTPRequest -> Json.Encode.Value
-encodeRawHTTPRequest value =
-    Proto.Json.objectOfFields
-        ([ ( "verb", Proto.Json.implicitField "" Json.Encode.string value.verb )
-         , ( "uri", Proto.Json.implicitField "" Json.Encode.string value.uri )
-         , ( "headers", Proto.Json.repeatedField encodeHeader value.headers )
-         , ( "rawQueryParams", Proto.Json.repeatedField encodeHeader value.rawQueryParams )
-         , ( "encodedQueryParams", Proto.Json.repeatedField encodeRawHTTPRequestEncodedQueryParam value.encodedQueryParams )
+encodeRawHTTPRequestWith : Proto.Registry.Registry -> RawHTTPRequest -> Result Proto.Any.Problem Json.Encode.Value
+encodeRawHTTPRequestWith types value =
+    Proto.Json.tryObjectOfFields
+        ([ ( "verb", Ok (Proto.Json.implicitField "" Json.Encode.string value.verb) )
+         , ( "uri", Ok (Proto.Json.implicitField "" Json.Encode.string value.uri) )
+         , ( "headers", Ok (Proto.Json.repeatedField encodeHeader value.headers) )
+         , ( "rawQueryParams", Ok (Proto.Json.repeatedField encodeHeader value.rawQueryParams) )
+         , ( "encodedQueryParams", Proto.Json.tryRepeatedField (encodeRawHTTPRequestEncodedQueryParamWith types) value.encodedQueryParams )
          ]
-            ++ encodeRawHTTPRequestBody value.body
+            ++ encodeRawHTTPRequestBodyWith types value.body
         )
 
 
 {-| Encodes a [`RawHTTPRequestBody`](#RawHTTPRequestBody) as the members of its message's JSON object.
 -}
-encodeRawHTTPRequestBody : RawHTTPRequestBody -> List ( String, Maybe Json.Encode.Value )
-encodeRawHTTPRequestBody value =
+encodeRawHTTPRequestBodyWith : Proto.Registry.Registry -> RawHTTPRequestBody -> List ( String, Result Proto.Any.Problem (Maybe Json.Encode.Value) )
+encodeRawHTTPRequestBodyWith types value =
     case value of
         RawHTTPRequestBodyUnset ->
             []
 
         RawHTTPRequestBodyUnary member ->
-            [ ( "unary", Just (encodeMessageContents member) )
+            [ ( "unary", Result.map Just (encodeMessageContentsWith types member) )
             ]
 
         RawHTTPRequestBodyStream member ->
-            [ ( "stream", Just (encodeStreamContents member) )
+            [ ( "stream", Result.map Just (encodeStreamContentsWith types member) )
             ]
 
 
-{-| Encodes a [`RawHTTPRequestEncodedQueryParam`](#RawHTTPRequestEncodedQueryParam) as proto3 JSON.
+{-| Encodes a [`RawHTTPRequestEncodedQueryParam`](#RawHTTPRequestEncodedQueryParam) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeRawHTTPRequestEncodedQueryParam : RawHTTPRequestEncodedQueryParam -> Json.Encode.Value
-encodeRawHTTPRequestEncodedQueryParam value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        , ( "value", Maybe.map encodeMessageContents value.value )
-        , ( "base64Encode", Proto.Json.implicitField False Json.Encode.bool value.base64Encode )
+encodeRawHTTPRequestEncodedQueryParamWith : Proto.Registry.Registry -> RawHTTPRequestEncodedQueryParam -> Result Proto.Any.Problem Json.Encode.Value
+encodeRawHTTPRequestEncodedQueryParamWith types value =
+    Proto.Json.tryObjectOfFields
+        [ ( "name", Ok (Proto.Json.implicitField "" Json.Encode.string value.name) )
+        , ( "value", Proto.Json.tryOptionalField (encodeMessageContentsWith types) value.value )
+        , ( "base64Encode", Ok (Proto.Json.implicitField False Json.Encode.bool value.base64Encode) )
         ]
 
 
-{-| Encodes a [`MessageContents`](#MessageContents) as proto3 JSON.
+{-| Encodes a [`MessageContents`](#MessageContents) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeMessageContents : MessageContents -> Json.Encode.Value
-encodeMessageContents value =
-    Proto.Json.objectOfFields
-        ([ ( "compression", Proto.Json.implicitField CompressionUnspecified encodeCompression value.compression )
+encodeMessageContentsWith : Proto.Registry.Registry -> MessageContents -> Result Proto.Any.Problem Json.Encode.Value
+encodeMessageContentsWith types value =
+    Proto.Json.tryObjectOfFields
+        ([ ( "compression", Ok (Proto.Json.implicitField CompressionUnspecified encodeCompression value.compression) )
          ]
-            ++ encodeMessageContentsData value.data
+            ++ encodeMessageContentsDataWith types value.data
         )
 
 
 {-| Encodes a [`MessageContentsData`](#MessageContentsData) as the members of its message's JSON object.
 -}
-encodeMessageContentsData : MessageContentsData -> List ( String, Maybe Json.Encode.Value )
-encodeMessageContentsData value =
+encodeMessageContentsDataWith : Proto.Registry.Registry -> MessageContentsData -> List ( String, Result Proto.Any.Problem (Maybe Json.Encode.Value) )
+encodeMessageContentsDataWith types value =
     case value of
         MessageContentsDataUnset ->
             []
 
         MessageContentsDataBinary member ->
-            [ ( "binary", Just (Proto.Json.encodeBytes member) )
+            [ ( "binary", Ok (Just (Proto.Json.encodeBytes member)) )
             ]
 
         MessageContentsDataText member ->
-            [ ( "text", Just (Json.Encode.string member) )
+            [ ( "text", Ok (Just (Json.Encode.string member)) )
             ]
 
         MessageContentsDataBinaryMessage member ->
-            [ ( "binaryMessage", Just (Proto.Json.encodeAny member) )
+            [ ( "binaryMessage", Result.map Just (Proto.Json.encodeAnyWith types member) )
             ]
 
 
-{-| Encodes a [`StreamContents`](#StreamContents) as proto3 JSON.
+{-| Encodes a [`StreamContents`](#StreamContents) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeStreamContents : StreamContents -> Json.Encode.Value
-encodeStreamContents value =
-    Proto.Json.objectOfFields
-        [ ( "items", Proto.Json.repeatedField encodeStreamContentsStreamItem value.items )
+encodeStreamContentsWith : Proto.Registry.Registry -> StreamContents -> Result Proto.Any.Problem Json.Encode.Value
+encodeStreamContentsWith types value =
+    Proto.Json.tryObjectOfFields
+        [ ( "items", Proto.Json.tryRepeatedField (encodeStreamContentsStreamItemWith types) value.items )
         ]
 
 
-{-| Encodes a [`StreamContentsStreamItem`](#StreamContentsStreamItem) as proto3 JSON.
+{-| Encodes a [`StreamContentsStreamItem`](#StreamContentsStreamItem) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeStreamContentsStreamItem : StreamContentsStreamItem -> Json.Encode.Value
-encodeStreamContentsStreamItem value =
-    Proto.Json.objectOfFields
-        [ ( "flags", Proto.Json.implicitField 0 Json.Encode.int value.flags )
-        , ( "length", Maybe.map Json.Encode.int value.length )
-        , ( "payload", Maybe.map encodeMessageContents value.payload )
+encodeStreamContentsStreamItemWith : Proto.Registry.Registry -> StreamContentsStreamItem -> Result Proto.Any.Problem Json.Encode.Value
+encodeStreamContentsStreamItemWith types value =
+    Proto.Json.tryObjectOfFields
+        [ ( "flags", Ok (Proto.Json.implicitField 0 Json.Encode.int value.flags) )
+        , ( "length", Ok (Maybe.map Json.Encode.int value.length) )
+        , ( "payload", Proto.Json.tryOptionalField (encodeMessageContentsWith types) value.payload )
         ]
 
 
-{-| Encodes a [`RawHTTPResponse`](#RawHTTPResponse) as proto3 JSON.
+{-| Encodes a [`RawHTTPResponse`](#RawHTTPResponse) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeRawHTTPResponse : RawHTTPResponse -> Json.Encode.Value
-encodeRawHTTPResponse value =
-    Proto.Json.objectOfFields
-        ([ ( "statusCode", Proto.Json.implicitField 0 Json.Encode.int value.statusCode )
-         , ( "headers", Proto.Json.repeatedField encodeHeader value.headers )
-         , ( "trailers", Proto.Json.repeatedField encodeHeader value.trailers )
+encodeRawHTTPResponseWith : Proto.Registry.Registry -> RawHTTPResponse -> Result Proto.Any.Problem Json.Encode.Value
+encodeRawHTTPResponseWith types value =
+    Proto.Json.tryObjectOfFields
+        ([ ( "statusCode", Ok (Proto.Json.implicitField 0 Json.Encode.int value.statusCode) )
+         , ( "headers", Ok (Proto.Json.repeatedField encodeHeader value.headers) )
+         , ( "trailers", Ok (Proto.Json.repeatedField encodeHeader value.trailers) )
          ]
-            ++ encodeRawHTTPResponseBody value.body
+            ++ encodeRawHTTPResponseBodyWith types value.body
         )
 
 
 {-| Encodes a [`RawHTTPResponseBody`](#RawHTTPResponseBody) as the members of its message's JSON object.
 -}
-encodeRawHTTPResponseBody : RawHTTPResponseBody -> List ( String, Maybe Json.Encode.Value )
-encodeRawHTTPResponseBody value =
+encodeRawHTTPResponseBodyWith : Proto.Registry.Registry -> RawHTTPResponseBody -> List ( String, Result Proto.Any.Problem (Maybe Json.Encode.Value) )
+encodeRawHTTPResponseBodyWith types value =
     case value of
         RawHTTPResponseBodyUnset ->
             []
 
         RawHTTPResponseBodyUnary member ->
-            [ ( "unary", Just (encodeMessageContents member) )
+            [ ( "unary", Result.map Just (encodeMessageContentsWith types member) )
             ]
 
         RawHTTPResponseBodyStream member ->
-            [ ( "stream", Just (encodeStreamContents member) )
+            [ ( "stream", Result.map Just (encodeStreamContentsWith types member) )
             ]
 
 
-{-| Encodes a [`TestSuite`](#TestSuite) as proto3 JSON.
+{-| Encodes a [`TestSuite`](#TestSuite) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeTestSuite : TestSuite -> Json.Encode.Value
-encodeTestSuite value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        , ( "mode", Proto.Json.implicitField TestSuiteTestModeUnspecified encodeTestSuiteTestMode value.mode )
-        , ( "testCases", Proto.Json.repeatedField encodeTestCase value.testCases )
-        , ( "relevantProtocols", Proto.Json.repeatedField encodeProtocol value.relevantProtocols )
-        , ( "relevantHttpVersions", Proto.Json.repeatedField encodeHTTPVersion value.relevantHttpVersions )
-        , ( "relevantCodecs", Proto.Json.repeatedField encodeCodec value.relevantCodecs )
-        , ( "relevantCompressions", Proto.Json.repeatedField encodeCompression value.relevantCompressions )
-        , ( "connectVersionMode", Proto.Json.implicitField TestSuiteConnectVersionModeUnspecified encodeTestSuiteConnectVersionMode value.connectVersionMode )
-        , ( "reliesOnTls", Proto.Json.implicitField False Json.Encode.bool value.reliesOnTls )
-        , ( "reliesOnTlsClientCerts", Proto.Json.implicitField False Json.Encode.bool value.reliesOnTlsClientCerts )
-        , ( "reliesOnConnectGet", Proto.Json.implicitField False Json.Encode.bool value.reliesOnConnectGet )
-        , ( "reliesOnMessageReceiveLimit", Proto.Json.implicitField False Json.Encode.bool value.reliesOnMessageReceiveLimit )
+encodeTestSuiteWith : Proto.Registry.Registry -> TestSuite -> Result Proto.Any.Problem Json.Encode.Value
+encodeTestSuiteWith types value =
+    Proto.Json.tryObjectOfFields
+        [ ( "name", Ok (Proto.Json.implicitField "" Json.Encode.string value.name) )
+        , ( "mode", Ok (Proto.Json.implicitField TestSuiteTestModeUnspecified encodeTestSuiteTestMode value.mode) )
+        , ( "testCases", Proto.Json.tryRepeatedField (encodeTestCaseWith types) value.testCases )
+        , ( "relevantProtocols", Ok (Proto.Json.repeatedField encodeProtocol value.relevantProtocols) )
+        , ( "relevantHttpVersions", Ok (Proto.Json.repeatedField encodeHTTPVersion value.relevantHttpVersions) )
+        , ( "relevantCodecs", Ok (Proto.Json.repeatedField encodeCodec value.relevantCodecs) )
+        , ( "relevantCompressions", Ok (Proto.Json.repeatedField encodeCompression value.relevantCompressions) )
+        , ( "connectVersionMode", Ok (Proto.Json.implicitField TestSuiteConnectVersionModeUnspecified encodeTestSuiteConnectVersionMode value.connectVersionMode) )
+        , ( "reliesOnTls", Ok (Proto.Json.implicitField False Json.Encode.bool value.reliesOnTls) )
+        , ( "reliesOnTlsClientCerts", Ok (Proto.Json.implicitField False Json.Encode.bool value.reliesOnTlsClientCerts) )
+        , ( "reliesOnConnectGet", Ok (Proto.Json.implicitField False Json.Encode.bool value.reliesOnConnectGet) )
+        , ( "reliesOnMessageReceiveLimit", Ok (Proto.Json.implicitField False Json.Encode.bool value.reliesOnMessageReceiveLimit) )
         ]
 
 
-{-| Encodes a [`TestCase`](#TestCase) as proto3 JSON.
+{-| Encodes a [`TestCase`](#TestCase) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeTestCase : TestCase -> Json.Encode.Value
-encodeTestCase value =
-    Proto.Json.objectOfFields
-        [ ( "request", Maybe.map encodeClientCompatRequest value.request )
-        , ( "expandRequests", Proto.Json.repeatedField encodeTestCaseExpandedSize value.expandRequests )
-        , ( "expectedResponse", Maybe.map encodeClientResponseResult value.expectedResponse )
-        , ( "otherAllowedErrorCodes", Proto.Json.repeatedField encodeCode value.otherAllowedErrorCodes )
+encodeTestCaseWith : Proto.Registry.Registry -> TestCase -> Result Proto.Any.Problem Json.Encode.Value
+encodeTestCaseWith types value =
+    Proto.Json.tryObjectOfFields
+        [ ( "request", Proto.Json.tryOptionalField (encodeClientCompatRequestWith types) value.request )
+        , ( "expandRequests", Ok (Proto.Json.repeatedField encodeTestCaseExpandedSize value.expandRequests) )
+        , ( "expectedResponse", Proto.Json.tryOptionalField (encodeClientResponseResultWith types) value.expectedResponse )
+        , ( "otherAllowedErrorCodes", Ok (Proto.Json.repeatedField encodeCode value.otherAllowedErrorCodes) )
         ]
 
 
@@ -3079,10 +3131,10 @@ decodeTestSuiteConnectVersionMode =
         ]
 
 
-{-| Decodes a [`ClientCompatRequest`](#ClientCompatRequest) from proto3 JSON.
+{-| Decodes a [`ClientCompatRequest`](#ClientCompatRequest) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
 -}
-decodeClientCompatRequest : Json.Decode.Decoder ClientCompatRequest
-decodeClientCompatRequest =
+decodeClientCompatRequestWith : Proto.Registry.Registry -> Json.Decode.Decoder ClientCompatRequest
+decodeClientCompatRequestWith types =
     Json.Decode.succeed ClientCompatRequest
         |> Proto.Json.fieldEither "testName" "test_name" "" Proto.Json.string
         |> Proto.Json.fieldEither "httpVersion" "http_version" HTTPVersionUnspecified decodeHTTPVersion
@@ -3099,11 +3151,18 @@ decodeClientCompatRequest =
         |> Proto.Json.fieldEither "streamType" "stream_type" StreamTypeUnspecified decodeStreamType
         |> Proto.Json.fieldEither "useGetHttpMethod" "use_get_http_method" False Json.Decode.bool
         |> Proto.Json.fieldEither "requestHeaders" "request_headers" [] (Json.Decode.list decodeHeader)
-        |> Proto.Json.fieldEither "requestMessages" "request_messages" [] (Json.Decode.list Proto.Json.any)
+        |> Proto.Json.fieldEither "requestMessages" "request_messages" [] (Json.Decode.list (Proto.Json.anyWith types))
         |> Proto.Json.fieldEither "timeoutMs" "timeout_ms" Nothing (Json.Decode.map Just Proto.Json.uint32)
         |> Proto.Json.fieldEither "requestDelayMs" "request_delay_ms" 0 Proto.Json.uint32
         |> Proto.Json.field "cancel" Nothing (Json.Decode.map Just decodeClientCompatRequestCancel)
-        |> Proto.Json.fieldEither "rawRequest" "raw_request" Nothing (Json.Decode.map Just decodeRawHTTPRequest)
+        |> Proto.Json.fieldEither "rawRequest" "raw_request" Nothing (Json.Decode.map Just (decodeRawHTTPRequestWith types))
+
+
+{-| Decodes a [`ClientCompatRequest`](#ClientCompatRequest) from proto3 JSON, with this package's `registry`.
+-}
+decodeClientCompatRequest : Json.Decode.Decoder ClientCompatRequest
+decodeClientCompatRequest =
+    decodeClientCompatRequestWith registry
 
 
 {-| Decodes a [`ClientCompatRequestCancel`](#ClientCompatRequestCancel) from proto3 JSON.
@@ -3126,38 +3185,52 @@ decodeClientCompatRequestCancelCancelTiming =
         ]
 
 
-{-| Decodes a [`ClientCompatResponse`](#ClientCompatResponse) from proto3 JSON.
+{-| Decodes a [`ClientCompatResponse`](#ClientCompatResponse) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
+-}
+decodeClientCompatResponseWith : Proto.Registry.Registry -> Json.Decode.Decoder ClientCompatResponse
+decodeClientCompatResponseWith types =
+    Json.Decode.succeed ClientCompatResponse
+        |> Proto.Json.fieldEither "testName" "test_name" "" Proto.Json.string
+        |> Proto.Json.oneof (decodeClientCompatResponseResultWith types)
+
+
+{-| Decodes a [`ClientCompatResponse`](#ClientCompatResponse) from proto3 JSON, with this package's `registry`.
 -}
 decodeClientCompatResponse : Json.Decode.Decoder ClientCompatResponse
 decodeClientCompatResponse =
-    Json.Decode.succeed ClientCompatResponse
-        |> Proto.Json.fieldEither "testName" "test_name" "" Proto.Json.string
-        |> Proto.Json.oneof decodeClientCompatResponseResult
+    decodeClientCompatResponseWith registry
 
 
 {-| Decodes a [`ClientCompatResponseResult`](#ClientCompatResponseResult) from the members of its message's JSON object.
 -}
-decodeClientCompatResponseResult : Json.Decode.Decoder ClientCompatResponseResult
-decodeClientCompatResponseResult =
+decodeClientCompatResponseResultWith : Proto.Registry.Registry -> Json.Decode.Decoder ClientCompatResponseResult
+decodeClientCompatResponseResultWith types =
     Proto.Json.members "result"
         ClientCompatResponseResultUnset
-        [ Proto.Json.member "response" (Json.Decode.map ClientCompatResponseResultResponse decodeClientResponseResult)
+        [ Proto.Json.member "response" (Json.Decode.map ClientCompatResponseResultResponse (decodeClientResponseResultWith types))
         , Proto.Json.member "error" (Json.Decode.map ClientCompatResponseResultError decodeClientErrorResult)
         ]
 
 
-{-| Decodes a [`ClientResponseResult`](#ClientResponseResult) from proto3 JSON.
+{-| Decodes a [`ClientResponseResult`](#ClientResponseResult) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
 -}
-decodeClientResponseResult : Json.Decode.Decoder ClientResponseResult
-decodeClientResponseResult =
+decodeClientResponseResultWith : Proto.Registry.Registry -> Json.Decode.Decoder ClientResponseResult
+decodeClientResponseResultWith types =
     Json.Decode.succeed ClientResponseResult
         |> Proto.Json.fieldEither "responseHeaders" "response_headers" [] (Json.Decode.list decodeHeader)
-        |> Proto.Json.field "payloads" [] (Json.Decode.list decodeConformancePayload)
-        |> Proto.Json.field "error" Nothing (Json.Decode.map Just decodeError)
+        |> Proto.Json.field "payloads" [] (Json.Decode.list (decodeConformancePayloadWith types))
+        |> Proto.Json.field "error" Nothing (Json.Decode.map Just (decodeErrorWith types))
         |> Proto.Json.fieldEither "responseTrailers" "response_trailers" [] (Json.Decode.list decodeHeader)
         |> Proto.Json.fieldEither "numUnsentRequests" "num_unsent_requests" 0 Proto.Json.int32
         |> Proto.Json.fieldEither "httpStatusCode" "http_status_code" Nothing (Json.Decode.map Just Proto.Json.int32)
         |> Proto.Json.field "feedback" [] (Json.Decode.list Proto.Json.string)
+
+
+{-| Decodes a [`ClientResponseResult`](#ClientResponseResult) from proto3 JSON, with this package's `registry`.
+-}
+decodeClientResponseResult : Json.Decode.Decoder ClientResponseResult
+decodeClientResponseResult =
+    decodeClientResponseResultWith registry
 
 
 {-| Decodes a [`ClientErrorResult`](#ClientErrorResult) from proto3 JSON.
@@ -3255,126 +3328,210 @@ decodeServerCompatResponse =
         |> Proto.Json.fieldEither "pemCert" "pem_cert" "" Proto.Json.bytes
 
 
-{-| Decodes an [`UnaryResponseDefinition`](#UnaryResponseDefinition) from proto3 JSON.
+{-| Decodes an [`UnaryResponseDefinition`](#UnaryResponseDefinition) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
+-}
+decodeUnaryResponseDefinitionWith : Proto.Registry.Registry -> Json.Decode.Decoder UnaryResponseDefinition
+decodeUnaryResponseDefinitionWith types =
+    Json.Decode.succeed UnaryResponseDefinition
+        |> Proto.Json.fieldEither "responseHeaders" "response_headers" [] (Json.Decode.list decodeHeader)
+        |> Proto.Json.oneof (decodeUnaryResponseDefinitionResponseWith types)
+        |> Proto.Json.fieldEither "responseTrailers" "response_trailers" [] (Json.Decode.list decodeHeader)
+        |> Proto.Json.fieldEither "responseDelayMs" "response_delay_ms" 0 Proto.Json.uint32
+        |> Proto.Json.fieldEither "rawResponse" "raw_response" Nothing (Json.Decode.map Just (decodeRawHTTPResponseWith types))
+
+
+{-| Decodes an [`UnaryResponseDefinition`](#UnaryResponseDefinition) from proto3 JSON, with this package's `registry`.
 -}
 decodeUnaryResponseDefinition : Json.Decode.Decoder UnaryResponseDefinition
 decodeUnaryResponseDefinition =
-    Json.Decode.succeed UnaryResponseDefinition
-        |> Proto.Json.fieldEither "responseHeaders" "response_headers" [] (Json.Decode.list decodeHeader)
-        |> Proto.Json.oneof decodeUnaryResponseDefinitionResponse
-        |> Proto.Json.fieldEither "responseTrailers" "response_trailers" [] (Json.Decode.list decodeHeader)
-        |> Proto.Json.fieldEither "responseDelayMs" "response_delay_ms" 0 Proto.Json.uint32
-        |> Proto.Json.fieldEither "rawResponse" "raw_response" Nothing (Json.Decode.map Just decodeRawHTTPResponse)
+    decodeUnaryResponseDefinitionWith registry
 
 
 {-| Decodes an [`UnaryResponseDefinitionResponse`](#UnaryResponseDefinitionResponse) from the members of its message's JSON object.
 -}
-decodeUnaryResponseDefinitionResponse : Json.Decode.Decoder UnaryResponseDefinitionResponse
-decodeUnaryResponseDefinitionResponse =
+decodeUnaryResponseDefinitionResponseWith : Proto.Registry.Registry -> Json.Decode.Decoder UnaryResponseDefinitionResponse
+decodeUnaryResponseDefinitionResponseWith types =
     Proto.Json.members "response"
         UnaryResponseDefinitionResponseUnset
         [ Proto.Json.memberEither "responseData" "response_data" (Json.Decode.map UnaryResponseDefinitionResponseResponseData Proto.Json.bytes)
-        , Proto.Json.member "error" (Json.Decode.map UnaryResponseDefinitionResponseError decodeError)
+        , Proto.Json.member "error" (Json.Decode.map UnaryResponseDefinitionResponseError (decodeErrorWith types))
         ]
 
 
-{-| Decodes a [`StreamResponseDefinition`](#StreamResponseDefinition) from proto3 JSON.
+{-| Decodes a [`StreamResponseDefinition`](#StreamResponseDefinition) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
 -}
-decodeStreamResponseDefinition : Json.Decode.Decoder StreamResponseDefinition
-decodeStreamResponseDefinition =
+decodeStreamResponseDefinitionWith : Proto.Registry.Registry -> Json.Decode.Decoder StreamResponseDefinition
+decodeStreamResponseDefinitionWith types =
     Json.Decode.succeed StreamResponseDefinition
         |> Proto.Json.fieldEither "responseHeaders" "response_headers" [] (Json.Decode.list decodeHeader)
         |> Proto.Json.fieldEither "responseData" "response_data" [] (Json.Decode.list Proto.Json.bytes)
         |> Proto.Json.fieldEither "responseDelayMs" "response_delay_ms" 0 Proto.Json.uint32
-        |> Proto.Json.field "error" Nothing (Json.Decode.map Just decodeError)
+        |> Proto.Json.field "error" Nothing (Json.Decode.map Just (decodeErrorWith types))
         |> Proto.Json.fieldEither "responseTrailers" "response_trailers" [] (Json.Decode.list decodeHeader)
-        |> Proto.Json.fieldEither "rawResponse" "raw_response" Nothing (Json.Decode.map Just decodeRawHTTPResponse)
+        |> Proto.Json.fieldEither "rawResponse" "raw_response" Nothing (Json.Decode.map Just (decodeRawHTTPResponseWith types))
 
 
-{-| Decodes an [`UnaryRequest`](#UnaryRequest) from proto3 JSON.
+{-| Decodes a [`StreamResponseDefinition`](#StreamResponseDefinition) from proto3 JSON, with this package's `registry`.
+-}
+decodeStreamResponseDefinition : Json.Decode.Decoder StreamResponseDefinition
+decodeStreamResponseDefinition =
+    decodeStreamResponseDefinitionWith registry
+
+
+{-| Decodes an [`UnaryRequest`](#UnaryRequest) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
+-}
+decodeUnaryRequestWith : Proto.Registry.Registry -> Json.Decode.Decoder UnaryRequest
+decodeUnaryRequestWith types =
+    Json.Decode.succeed UnaryRequest
+        |> Proto.Json.fieldEither "responseDefinition" "response_definition" Nothing (Json.Decode.map Just (decodeUnaryResponseDefinitionWith types))
+        |> Proto.Json.fieldEither "requestData" "request_data" "" Proto.Json.bytes
+
+
+{-| Decodes an [`UnaryRequest`](#UnaryRequest) from proto3 JSON, with this package's `registry`.
 -}
 decodeUnaryRequest : Json.Decode.Decoder UnaryRequest
 decodeUnaryRequest =
-    Json.Decode.succeed UnaryRequest
-        |> Proto.Json.fieldEither "responseDefinition" "response_definition" Nothing (Json.Decode.map Just decodeUnaryResponseDefinition)
-        |> Proto.Json.fieldEither "requestData" "request_data" "" Proto.Json.bytes
+    decodeUnaryRequestWith registry
 
 
-{-| Decodes an [`UnaryResponse`](#UnaryResponse) from proto3 JSON.
+{-| Decodes an [`UnaryResponse`](#UnaryResponse) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
+-}
+decodeUnaryResponseWith : Proto.Registry.Registry -> Json.Decode.Decoder UnaryResponse
+decodeUnaryResponseWith types =
+    Json.Decode.succeed UnaryResponse
+        |> Proto.Json.field "payload" Nothing (Json.Decode.map Just (decodeConformancePayloadWith types))
+
+
+{-| Decodes an [`UnaryResponse`](#UnaryResponse) from proto3 JSON, with this package's `registry`.
 -}
 decodeUnaryResponse : Json.Decode.Decoder UnaryResponse
 decodeUnaryResponse =
-    Json.Decode.succeed UnaryResponse
-        |> Proto.Json.field "payload" Nothing (Json.Decode.map Just decodeConformancePayload)
+    decodeUnaryResponseWith registry
 
 
-{-| Decodes an [`IdempotentUnaryRequest`](#IdempotentUnaryRequest) from proto3 JSON.
+{-| Decodes an [`IdempotentUnaryRequest`](#IdempotentUnaryRequest) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
+-}
+decodeIdempotentUnaryRequestWith : Proto.Registry.Registry -> Json.Decode.Decoder IdempotentUnaryRequest
+decodeIdempotentUnaryRequestWith types =
+    Json.Decode.succeed IdempotentUnaryRequest
+        |> Proto.Json.fieldEither "responseDefinition" "response_definition" Nothing (Json.Decode.map Just (decodeUnaryResponseDefinitionWith types))
+        |> Proto.Json.fieldEither "requestData" "request_data" "" Proto.Json.bytes
+
+
+{-| Decodes an [`IdempotentUnaryRequest`](#IdempotentUnaryRequest) from proto3 JSON, with this package's `registry`.
 -}
 decodeIdempotentUnaryRequest : Json.Decode.Decoder IdempotentUnaryRequest
 decodeIdempotentUnaryRequest =
-    Json.Decode.succeed IdempotentUnaryRequest
-        |> Proto.Json.fieldEither "responseDefinition" "response_definition" Nothing (Json.Decode.map Just decodeUnaryResponseDefinition)
-        |> Proto.Json.fieldEither "requestData" "request_data" "" Proto.Json.bytes
+    decodeIdempotentUnaryRequestWith registry
 
 
-{-| Decodes an [`IdempotentUnaryResponse`](#IdempotentUnaryResponse) from proto3 JSON.
+{-| Decodes an [`IdempotentUnaryResponse`](#IdempotentUnaryResponse) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
+-}
+decodeIdempotentUnaryResponseWith : Proto.Registry.Registry -> Json.Decode.Decoder IdempotentUnaryResponse
+decodeIdempotentUnaryResponseWith types =
+    Json.Decode.succeed IdempotentUnaryResponse
+        |> Proto.Json.field "payload" Nothing (Json.Decode.map Just (decodeConformancePayloadWith types))
+
+
+{-| Decodes an [`IdempotentUnaryResponse`](#IdempotentUnaryResponse) from proto3 JSON, with this package's `registry`.
 -}
 decodeIdempotentUnaryResponse : Json.Decode.Decoder IdempotentUnaryResponse
 decodeIdempotentUnaryResponse =
-    Json.Decode.succeed IdempotentUnaryResponse
-        |> Proto.Json.field "payload" Nothing (Json.Decode.map Just decodeConformancePayload)
+    decodeIdempotentUnaryResponseWith registry
 
 
-{-| Decodes a [`ServerStreamRequest`](#ServerStreamRequest) from proto3 JSON.
+{-| Decodes a [`ServerStreamRequest`](#ServerStreamRequest) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
+-}
+decodeServerStreamRequestWith : Proto.Registry.Registry -> Json.Decode.Decoder ServerStreamRequest
+decodeServerStreamRequestWith types =
+    Json.Decode.succeed ServerStreamRequest
+        |> Proto.Json.fieldEither "responseDefinition" "response_definition" Nothing (Json.Decode.map Just (decodeStreamResponseDefinitionWith types))
+        |> Proto.Json.fieldEither "requestData" "request_data" "" Proto.Json.bytes
+
+
+{-| Decodes a [`ServerStreamRequest`](#ServerStreamRequest) from proto3 JSON, with this package's `registry`.
 -}
 decodeServerStreamRequest : Json.Decode.Decoder ServerStreamRequest
 decodeServerStreamRequest =
-    Json.Decode.succeed ServerStreamRequest
-        |> Proto.Json.fieldEither "responseDefinition" "response_definition" Nothing (Json.Decode.map Just decodeStreamResponseDefinition)
-        |> Proto.Json.fieldEither "requestData" "request_data" "" Proto.Json.bytes
+    decodeServerStreamRequestWith registry
 
 
-{-| Decodes a [`ServerStreamResponse`](#ServerStreamResponse) from proto3 JSON.
+{-| Decodes a [`ServerStreamResponse`](#ServerStreamResponse) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
+-}
+decodeServerStreamResponseWith : Proto.Registry.Registry -> Json.Decode.Decoder ServerStreamResponse
+decodeServerStreamResponseWith types =
+    Json.Decode.succeed ServerStreamResponse
+        |> Proto.Json.field "payload" Nothing (Json.Decode.map Just (decodeConformancePayloadWith types))
+
+
+{-| Decodes a [`ServerStreamResponse`](#ServerStreamResponse) from proto3 JSON, with this package's `registry`.
 -}
 decodeServerStreamResponse : Json.Decode.Decoder ServerStreamResponse
 decodeServerStreamResponse =
-    Json.Decode.succeed ServerStreamResponse
-        |> Proto.Json.field "payload" Nothing (Json.Decode.map Just decodeConformancePayload)
+    decodeServerStreamResponseWith registry
 
 
-{-| Decodes a [`ClientStreamRequest`](#ClientStreamRequest) from proto3 JSON.
+{-| Decodes a [`ClientStreamRequest`](#ClientStreamRequest) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
 -}
-decodeClientStreamRequest : Json.Decode.Decoder ClientStreamRequest
-decodeClientStreamRequest =
+decodeClientStreamRequestWith : Proto.Registry.Registry -> Json.Decode.Decoder ClientStreamRequest
+decodeClientStreamRequestWith types =
     Json.Decode.succeed ClientStreamRequest
-        |> Proto.Json.fieldEither "responseDefinition" "response_definition" Nothing (Json.Decode.map Just decodeUnaryResponseDefinition)
+        |> Proto.Json.fieldEither "responseDefinition" "response_definition" Nothing (Json.Decode.map Just (decodeUnaryResponseDefinitionWith types))
         |> Proto.Json.fieldEither "requestData" "request_data" "" Proto.Json.bytes
 
 
-{-| Decodes a [`ClientStreamResponse`](#ClientStreamResponse) from proto3 JSON.
+{-| Decodes a [`ClientStreamRequest`](#ClientStreamRequest) from proto3 JSON, with this package's `registry`.
+-}
+decodeClientStreamRequest : Json.Decode.Decoder ClientStreamRequest
+decodeClientStreamRequest =
+    decodeClientStreamRequestWith registry
+
+
+{-| Decodes a [`ClientStreamResponse`](#ClientStreamResponse) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
+-}
+decodeClientStreamResponseWith : Proto.Registry.Registry -> Json.Decode.Decoder ClientStreamResponse
+decodeClientStreamResponseWith types =
+    Json.Decode.succeed ClientStreamResponse
+        |> Proto.Json.field "payload" Nothing (Json.Decode.map Just (decodeConformancePayloadWith types))
+
+
+{-| Decodes a [`ClientStreamResponse`](#ClientStreamResponse) from proto3 JSON, with this package's `registry`.
 -}
 decodeClientStreamResponse : Json.Decode.Decoder ClientStreamResponse
 decodeClientStreamResponse =
-    Json.Decode.succeed ClientStreamResponse
-        |> Proto.Json.field "payload" Nothing (Json.Decode.map Just decodeConformancePayload)
+    decodeClientStreamResponseWith registry
 
 
-{-| Decodes a [`BidiStreamRequest`](#BidiStreamRequest) from proto3 JSON.
+{-| Decodes a [`BidiStreamRequest`](#BidiStreamRequest) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
 -}
-decodeBidiStreamRequest : Json.Decode.Decoder BidiStreamRequest
-decodeBidiStreamRequest =
+decodeBidiStreamRequestWith : Proto.Registry.Registry -> Json.Decode.Decoder BidiStreamRequest
+decodeBidiStreamRequestWith types =
     Json.Decode.succeed BidiStreamRequest
-        |> Proto.Json.fieldEither "responseDefinition" "response_definition" Nothing (Json.Decode.map Just decodeStreamResponseDefinition)
+        |> Proto.Json.fieldEither "responseDefinition" "response_definition" Nothing (Json.Decode.map Just (decodeStreamResponseDefinitionWith types))
         |> Proto.Json.fieldEither "fullDuplex" "full_duplex" False Json.Decode.bool
         |> Proto.Json.fieldEither "requestData" "request_data" "" Proto.Json.bytes
 
 
-{-| Decodes a [`BidiStreamResponse`](#BidiStreamResponse) from proto3 JSON.
+{-| Decodes a [`BidiStreamRequest`](#BidiStreamRequest) from proto3 JSON, with this package's `registry`.
+-}
+decodeBidiStreamRequest : Json.Decode.Decoder BidiStreamRequest
+decodeBidiStreamRequest =
+    decodeBidiStreamRequestWith registry
+
+
+{-| Decodes a [`BidiStreamResponse`](#BidiStreamResponse) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
+-}
+decodeBidiStreamResponseWith : Proto.Registry.Registry -> Json.Decode.Decoder BidiStreamResponse
+decodeBidiStreamResponseWith types =
+    Json.Decode.succeed BidiStreamResponse
+        |> Proto.Json.field "payload" Nothing (Json.Decode.map Just (decodeConformancePayloadWith types))
+
+
+{-| Decodes a [`BidiStreamResponse`](#BidiStreamResponse) from proto3 JSON, with this package's `registry`.
 -}
 decodeBidiStreamResponse : Json.Decode.Decoder BidiStreamResponse
 decodeBidiStreamResponse =
-    Json.Decode.succeed BidiStreamResponse
-        |> Proto.Json.field "payload" Nothing (Json.Decode.map Just decodeConformancePayload)
+    decodeBidiStreamResponseWith registry
 
 
 {-| Decodes a [`UnimplementedRequest`](#UnimplementedRequest) from proto3 JSON.
@@ -3391,24 +3548,38 @@ decodeUnimplementedResponse =
     Proto.Json.emptyMessage
 
 
-{-| Decodes a [`ConformancePayload`](#ConformancePayload) from proto3 JSON.
+{-| Decodes a [`ConformancePayload`](#ConformancePayload) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
+-}
+decodeConformancePayloadWith : Proto.Registry.Registry -> Json.Decode.Decoder ConformancePayload
+decodeConformancePayloadWith types =
+    Json.Decode.succeed ConformancePayload
+        |> Proto.Json.field "data" "" Proto.Json.bytes
+        |> Proto.Json.fieldEither "requestInfo" "request_info" Nothing (Json.Decode.map Just (decodeConformancePayloadRequestInfoWith types))
+
+
+{-| Decodes a [`ConformancePayload`](#ConformancePayload) from proto3 JSON, with this package's `registry`.
 -}
 decodeConformancePayload : Json.Decode.Decoder ConformancePayload
 decodeConformancePayload =
-    Json.Decode.succeed ConformancePayload
-        |> Proto.Json.field "data" "" Proto.Json.bytes
-        |> Proto.Json.fieldEither "requestInfo" "request_info" Nothing (Json.Decode.map Just decodeConformancePayloadRequestInfo)
+    decodeConformancePayloadWith registry
 
 
-{-| Decodes a [`ConformancePayloadRequestInfo`](#ConformancePayloadRequestInfo) from proto3 JSON.
+{-| Decodes a [`ConformancePayloadRequestInfo`](#ConformancePayloadRequestInfo) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
 -}
-decodeConformancePayloadRequestInfo : Json.Decode.Decoder ConformancePayloadRequestInfo
-decodeConformancePayloadRequestInfo =
+decodeConformancePayloadRequestInfoWith : Proto.Registry.Registry -> Json.Decode.Decoder ConformancePayloadRequestInfo
+decodeConformancePayloadRequestInfoWith types =
     Json.Decode.succeed ConformancePayloadRequestInfo
         |> Proto.Json.fieldEither "requestHeaders" "request_headers" [] (Json.Decode.list decodeHeader)
         |> Proto.Json.fieldEither "timeoutMs" "timeout_ms" Nothing (Json.Decode.map Just Proto.Json.int64)
-        |> Proto.Json.field "requests" [] (Json.Decode.list Proto.Json.any)
+        |> Proto.Json.field "requests" [] (Json.Decode.list (Proto.Json.anyWith types))
         |> Proto.Json.fieldEither "connectGetInfo" "connect_get_info" Nothing (Json.Decode.map Just decodeConformancePayloadConnectGetInfo)
+
+
+{-| Decodes a [`ConformancePayloadRequestInfo`](#ConformancePayloadRequestInfo) from proto3 JSON, with this package's `registry`.
+-}
+decodeConformancePayloadRequestInfo : Json.Decode.Decoder ConformancePayloadRequestInfo
+decodeConformancePayloadRequestInfo =
+    decodeConformancePayloadRequestInfoWith registry
 
 
 {-| Decodes a [`ConformancePayloadConnectGetInfo`](#ConformancePayloadConnectGetInfo) from proto3 JSON.
@@ -3419,14 +3590,21 @@ decodeConformancePayloadConnectGetInfo =
         |> Proto.Json.fieldEither "queryParams" "query_params" [] (Json.Decode.list decodeHeader)
 
 
-{-| Decodes an [`Error`](#Error) from proto3 JSON.
+{-| Decodes an [`Error`](#Error) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
 -}
-decodeError : Json.Decode.Decoder Error
-decodeError =
+decodeErrorWith : Proto.Registry.Registry -> Json.Decode.Decoder Error
+decodeErrorWith types =
     Json.Decode.succeed Error
         |> Proto.Json.field "code" CodeUnspecified decodeCode
         |> Proto.Json.field "message" Nothing (Json.Decode.map Just Proto.Json.string)
-        |> Proto.Json.field "details" [] (Json.Decode.list Proto.Json.any)
+        |> Proto.Json.field "details" [] (Json.Decode.list (Proto.Json.anyWith types))
+
+
+{-| Decodes an [`Error`](#Error) from proto3 JSON, with this package's `registry`.
+-}
+decodeError : Json.Decode.Decoder Error
+decodeError =
+    decodeErrorWith registry
 
 
 {-| Decodes a [`Header`](#Header) from proto3 JSON.
@@ -3438,109 +3616,151 @@ decodeHeader =
         |> Proto.Json.field "value" [] (Json.Decode.list Proto.Json.string)
 
 
-{-| Decodes a [`RawHTTPRequest`](#RawHTTPRequest) from proto3 JSON.
+{-| Decodes a [`RawHTTPRequest`](#RawHTTPRequest) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
 -}
-decodeRawHTTPRequest : Json.Decode.Decoder RawHTTPRequest
-decodeRawHTTPRequest =
+decodeRawHTTPRequestWith : Proto.Registry.Registry -> Json.Decode.Decoder RawHTTPRequest
+decodeRawHTTPRequestWith types =
     Json.Decode.succeed RawHTTPRequest
         |> Proto.Json.field "verb" "" Proto.Json.string
         |> Proto.Json.field "uri" "" Proto.Json.string
         |> Proto.Json.field "headers" [] (Json.Decode.list decodeHeader)
         |> Proto.Json.fieldEither "rawQueryParams" "raw_query_params" [] (Json.Decode.list decodeHeader)
-        |> Proto.Json.fieldEither "encodedQueryParams" "encoded_query_params" [] (Json.Decode.list decodeRawHTTPRequestEncodedQueryParam)
-        |> Proto.Json.oneof decodeRawHTTPRequestBody
+        |> Proto.Json.fieldEither "encodedQueryParams" "encoded_query_params" [] (Json.Decode.list (decodeRawHTTPRequestEncodedQueryParamWith types))
+        |> Proto.Json.oneof (decodeRawHTTPRequestBodyWith types)
+
+
+{-| Decodes a [`RawHTTPRequest`](#RawHTTPRequest) from proto3 JSON, with this package's `registry`.
+-}
+decodeRawHTTPRequest : Json.Decode.Decoder RawHTTPRequest
+decodeRawHTTPRequest =
+    decodeRawHTTPRequestWith registry
 
 
 {-| Decodes a [`RawHTTPRequestBody`](#RawHTTPRequestBody) from the members of its message's JSON object.
 -}
-decodeRawHTTPRequestBody : Json.Decode.Decoder RawHTTPRequestBody
-decodeRawHTTPRequestBody =
+decodeRawHTTPRequestBodyWith : Proto.Registry.Registry -> Json.Decode.Decoder RawHTTPRequestBody
+decodeRawHTTPRequestBodyWith types =
     Proto.Json.members "body"
         RawHTTPRequestBodyUnset
-        [ Proto.Json.member "unary" (Json.Decode.map RawHTTPRequestBodyUnary decodeMessageContents)
-        , Proto.Json.member "stream" (Json.Decode.map RawHTTPRequestBodyStream decodeStreamContents)
+        [ Proto.Json.member "unary" (Json.Decode.map RawHTTPRequestBodyUnary (decodeMessageContentsWith types))
+        , Proto.Json.member "stream" (Json.Decode.map RawHTTPRequestBodyStream (decodeStreamContentsWith types))
         ]
 
 
-{-| Decodes a [`RawHTTPRequestEncodedQueryParam`](#RawHTTPRequestEncodedQueryParam) from proto3 JSON.
+{-| Decodes a [`RawHTTPRequestEncodedQueryParam`](#RawHTTPRequestEncodedQueryParam) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
 -}
-decodeRawHTTPRequestEncodedQueryParam : Json.Decode.Decoder RawHTTPRequestEncodedQueryParam
-decodeRawHTTPRequestEncodedQueryParam =
+decodeRawHTTPRequestEncodedQueryParamWith : Proto.Registry.Registry -> Json.Decode.Decoder RawHTTPRequestEncodedQueryParam
+decodeRawHTTPRequestEncodedQueryParamWith types =
     Json.Decode.succeed RawHTTPRequestEncodedQueryParam
         |> Proto.Json.field "name" "" Proto.Json.string
-        |> Proto.Json.field "value" Nothing (Json.Decode.map Just decodeMessageContents)
+        |> Proto.Json.field "value" Nothing (Json.Decode.map Just (decodeMessageContentsWith types))
         |> Proto.Json.fieldEither "base64Encode" "base64_encode" False Json.Decode.bool
 
 
-{-| Decodes a [`MessageContents`](#MessageContents) from proto3 JSON.
+{-| Decodes a [`RawHTTPRequestEncodedQueryParam`](#RawHTTPRequestEncodedQueryParam) from proto3 JSON, with this package's `registry`.
+-}
+decodeRawHTTPRequestEncodedQueryParam : Json.Decode.Decoder RawHTTPRequestEncodedQueryParam
+decodeRawHTTPRequestEncodedQueryParam =
+    decodeRawHTTPRequestEncodedQueryParamWith registry
+
+
+{-| Decodes a [`MessageContents`](#MessageContents) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
+-}
+decodeMessageContentsWith : Proto.Registry.Registry -> Json.Decode.Decoder MessageContents
+decodeMessageContentsWith types =
+    Json.Decode.succeed MessageContents
+        |> Proto.Json.oneof (decodeMessageContentsDataWith types)
+        |> Proto.Json.field "compression" CompressionUnspecified decodeCompression
+
+
+{-| Decodes a [`MessageContents`](#MessageContents) from proto3 JSON, with this package's `registry`.
 -}
 decodeMessageContents : Json.Decode.Decoder MessageContents
 decodeMessageContents =
-    Json.Decode.succeed MessageContents
-        |> Proto.Json.oneof decodeMessageContentsData
-        |> Proto.Json.field "compression" CompressionUnspecified decodeCompression
+    decodeMessageContentsWith registry
 
 
 {-| Decodes a [`MessageContentsData`](#MessageContentsData) from the members of its message's JSON object.
 -}
-decodeMessageContentsData : Json.Decode.Decoder MessageContentsData
-decodeMessageContentsData =
+decodeMessageContentsDataWith : Proto.Registry.Registry -> Json.Decode.Decoder MessageContentsData
+decodeMessageContentsDataWith types =
     Proto.Json.members "data"
         MessageContentsDataUnset
         [ Proto.Json.member "binary" (Json.Decode.map MessageContentsDataBinary Proto.Json.bytes)
         , Proto.Json.member "text" (Json.Decode.map MessageContentsDataText Proto.Json.string)
-        , Proto.Json.memberEither "binaryMessage" "binary_message" (Json.Decode.map MessageContentsDataBinaryMessage Proto.Json.any)
+        , Proto.Json.memberEither "binaryMessage" "binary_message" (Json.Decode.map MessageContentsDataBinaryMessage (Proto.Json.anyWith types))
         ]
 
 
-{-| Decodes a [`StreamContents`](#StreamContents) from proto3 JSON.
+{-| Decodes a [`StreamContents`](#StreamContents) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
+-}
+decodeStreamContentsWith : Proto.Registry.Registry -> Json.Decode.Decoder StreamContents
+decodeStreamContentsWith types =
+    Json.Decode.succeed StreamContents
+        |> Proto.Json.field "items" [] (Json.Decode.list (decodeStreamContentsStreamItemWith types))
+
+
+{-| Decodes a [`StreamContents`](#StreamContents) from proto3 JSON, with this package's `registry`.
 -}
 decodeStreamContents : Json.Decode.Decoder StreamContents
 decodeStreamContents =
-    Json.Decode.succeed StreamContents
-        |> Proto.Json.field "items" [] (Json.Decode.list decodeStreamContentsStreamItem)
+    decodeStreamContentsWith registry
 
 
-{-| Decodes a [`StreamContentsStreamItem`](#StreamContentsStreamItem) from proto3 JSON.
+{-| Decodes a [`StreamContentsStreamItem`](#StreamContentsStreamItem) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
 -}
-decodeStreamContentsStreamItem : Json.Decode.Decoder StreamContentsStreamItem
-decodeStreamContentsStreamItem =
+decodeStreamContentsStreamItemWith : Proto.Registry.Registry -> Json.Decode.Decoder StreamContentsStreamItem
+decodeStreamContentsStreamItemWith types =
     Json.Decode.succeed StreamContentsStreamItem
         |> Proto.Json.field "flags" 0 Proto.Json.uint32
         |> Proto.Json.field "length" Nothing (Json.Decode.map Just Proto.Json.uint32)
-        |> Proto.Json.field "payload" Nothing (Json.Decode.map Just decodeMessageContents)
+        |> Proto.Json.field "payload" Nothing (Json.Decode.map Just (decodeMessageContentsWith types))
 
 
-{-| Decodes a [`RawHTTPResponse`](#RawHTTPResponse) from proto3 JSON.
+{-| Decodes a [`StreamContentsStreamItem`](#StreamContentsStreamItem) from proto3 JSON, with this package's `registry`.
 -}
-decodeRawHTTPResponse : Json.Decode.Decoder RawHTTPResponse
-decodeRawHTTPResponse =
+decodeStreamContentsStreamItem : Json.Decode.Decoder StreamContentsStreamItem
+decodeStreamContentsStreamItem =
+    decodeStreamContentsStreamItemWith registry
+
+
+{-| Decodes a [`RawHTTPResponse`](#RawHTTPResponse) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
+-}
+decodeRawHTTPResponseWith : Proto.Registry.Registry -> Json.Decode.Decoder RawHTTPResponse
+decodeRawHTTPResponseWith types =
     Json.Decode.succeed RawHTTPResponse
         |> Proto.Json.fieldEither "statusCode" "status_code" 0 Proto.Json.uint32
         |> Proto.Json.field "headers" [] (Json.Decode.list decodeHeader)
-        |> Proto.Json.oneof decodeRawHTTPResponseBody
+        |> Proto.Json.oneof (decodeRawHTTPResponseBodyWith types)
         |> Proto.Json.field "trailers" [] (Json.Decode.list decodeHeader)
+
+
+{-| Decodes a [`RawHTTPResponse`](#RawHTTPResponse) from proto3 JSON, with this package's `registry`.
+-}
+decodeRawHTTPResponse : Json.Decode.Decoder RawHTTPResponse
+decodeRawHTTPResponse =
+    decodeRawHTTPResponseWith registry
 
 
 {-| Decodes a [`RawHTTPResponseBody`](#RawHTTPResponseBody) from the members of its message's JSON object.
 -}
-decodeRawHTTPResponseBody : Json.Decode.Decoder RawHTTPResponseBody
-decodeRawHTTPResponseBody =
+decodeRawHTTPResponseBodyWith : Proto.Registry.Registry -> Json.Decode.Decoder RawHTTPResponseBody
+decodeRawHTTPResponseBodyWith types =
     Proto.Json.members "body"
         RawHTTPResponseBodyUnset
-        [ Proto.Json.member "unary" (Json.Decode.map RawHTTPResponseBodyUnary decodeMessageContents)
-        , Proto.Json.member "stream" (Json.Decode.map RawHTTPResponseBodyStream decodeStreamContents)
+        [ Proto.Json.member "unary" (Json.Decode.map RawHTTPResponseBodyUnary (decodeMessageContentsWith types))
+        , Proto.Json.member "stream" (Json.Decode.map RawHTTPResponseBodyStream (decodeStreamContentsWith types))
         ]
 
 
-{-| Decodes a [`TestSuite`](#TestSuite) from proto3 JSON.
+{-| Decodes a [`TestSuite`](#TestSuite) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
 -}
-decodeTestSuite : Json.Decode.Decoder TestSuite
-decodeTestSuite =
+decodeTestSuiteWith : Proto.Registry.Registry -> Json.Decode.Decoder TestSuite
+decodeTestSuiteWith types =
     Json.Decode.succeed TestSuite
         |> Proto.Json.field "name" "" Proto.Json.string
         |> Proto.Json.field "mode" TestSuiteTestModeUnspecified decodeTestSuiteTestMode
-        |> Proto.Json.fieldEither "testCases" "test_cases" [] (Json.Decode.list decodeTestCase)
+        |> Proto.Json.fieldEither "testCases" "test_cases" [] (Json.Decode.list (decodeTestCaseWith types))
         |> Proto.Json.fieldEither "relevantProtocols" "relevant_protocols" [] (Json.Decode.list decodeProtocol)
         |> Proto.Json.fieldEither "relevantHttpVersions" "relevant_http_versions" [] (Json.Decode.list decodeHTTPVersion)
         |> Proto.Json.fieldEither "relevantCodecs" "relevant_codecs" [] (Json.Decode.list decodeCodec)
@@ -3552,15 +3772,29 @@ decodeTestSuite =
         |> Proto.Json.fieldEither "reliesOnMessageReceiveLimit" "relies_on_message_receive_limit" False Json.Decode.bool
 
 
-{-| Decodes a [`TestCase`](#TestCase) from proto3 JSON.
+{-| Decodes a [`TestSuite`](#TestSuite) from proto3 JSON, with this package's `registry`.
+-}
+decodeTestSuite : Json.Decode.Decoder TestSuite
+decodeTestSuite =
+    decodeTestSuiteWith registry
+
+
+{-| Decodes a [`TestCase`](#TestCase) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
+-}
+decodeTestCaseWith : Proto.Registry.Registry -> Json.Decode.Decoder TestCase
+decodeTestCaseWith types =
+    Json.Decode.succeed TestCase
+        |> Proto.Json.field "request" Nothing (Json.Decode.map Just (decodeClientCompatRequestWith types))
+        |> Proto.Json.fieldEither "expandRequests" "expand_requests" [] (Json.Decode.list decodeTestCaseExpandedSize)
+        |> Proto.Json.fieldEither "expectedResponse" "expected_response" Nothing (Json.Decode.map Just (decodeClientResponseResultWith types))
+        |> Proto.Json.fieldEither "otherAllowedErrorCodes" "other_allowed_error_codes" [] (Json.Decode.list decodeCode)
+
+
+{-| Decodes a [`TestCase`](#TestCase) from proto3 JSON, with this package's `registry`.
 -}
 decodeTestCase : Json.Decode.Decoder TestCase
 decodeTestCase =
-    Json.Decode.succeed TestCase
-        |> Proto.Json.field "request" Nothing (Json.Decode.map Just decodeClientCompatRequest)
-        |> Proto.Json.fieldEither "expandRequests" "expand_requests" [] (Json.Decode.list decodeTestCaseExpandedSize)
-        |> Proto.Json.fieldEither "expectedResponse" "expected_response" Nothing (Json.Decode.map Just decodeClientResponseResult)
-        |> Proto.Json.fieldEither "otherAllowedErrorCodes" "other_allowed_error_codes" [] (Json.Decode.list decodeCode)
+    decodeTestCaseWith registry
 
 
 {-| Decodes a [`TestCaseExpandedSize`](#TestCaseExpandedSize) from proto3 JSON.
@@ -3569,3 +3803,3609 @@ decodeTestCaseExpandedSize : Json.Decode.Decoder TestCaseExpandedSize
 decodeTestCaseExpandedSize =
     Json.Decode.succeed TestCaseExpandedSize
         |> Proto.Json.fieldEither "sizeRelativeToLimit" "size_relative_to_limit" Nothing (Json.Decode.map Just Proto.Json.int32)
+
+
+
+-- BINARY ENCODERS
+
+
+{-| The number protobuf binary writes an [`HTTPVersion`](#HTTPVersion) as.
+-}
+encodeHTTPVersionBytes : HTTPVersion -> Int
+encodeHTTPVersionBytes value =
+    case value of
+        HTTPVersionUnspecified ->
+            0
+
+        HTTPVersion1 ->
+            1
+
+        HTTPVersion2 ->
+            2
+
+        HTTPVersion3 ->
+            3
+
+
+{-| The number protobuf binary writes a [`Protocol`](#Protocol) as.
+-}
+encodeProtocolBytes : Protocol -> Int
+encodeProtocolBytes value =
+    case value of
+        ProtocolUnspecified ->
+            0
+
+        ProtocolConnect ->
+            1
+
+        ProtocolGrpc ->
+            2
+
+        ProtocolGrpcWeb ->
+            3
+
+
+{-| The number protobuf binary writes a [`Codec`](#Codec) as.
+-}
+encodeCodecBytes : Codec -> Int
+encodeCodecBytes value =
+    case value of
+        CodecUnspecified ->
+            0
+
+        CodecProto ->
+            1
+
+        CodecJson ->
+            2
+
+        CodecText ->
+            3
+
+
+{-| The number protobuf binary writes a [`Compression`](#Compression) as.
+-}
+encodeCompressionBytes : Compression -> Int
+encodeCompressionBytes value =
+    case value of
+        CompressionUnspecified ->
+            0
+
+        CompressionIdentity ->
+            1
+
+        CompressionGzip ->
+            2
+
+        CompressionBr ->
+            3
+
+        CompressionZstd ->
+            4
+
+        CompressionDeflate ->
+            5
+
+        CompressionSnappy ->
+            6
+
+
+{-| The number protobuf binary writes a [`StreamType`](#StreamType) as.
+-}
+encodeStreamTypeBytes : StreamType -> Int
+encodeStreamTypeBytes value =
+    case value of
+        StreamTypeUnspecified ->
+            0
+
+        StreamTypeUnary ->
+            1
+
+        StreamTypeClientStream ->
+            2
+
+        StreamTypeServerStream ->
+            3
+
+        StreamTypeHalfDuplexBidiStream ->
+            4
+
+        StreamTypeFullDuplexBidiStream ->
+            5
+
+
+{-| The number protobuf binary writes a [`Code`](#Code) as.
+-}
+encodeCodeBytes : Code -> Int
+encodeCodeBytes value =
+    case value of
+        CodeUnspecified ->
+            0
+
+        CodeCanceled ->
+            1
+
+        CodeUnknown ->
+            2
+
+        CodeInvalidArgument ->
+            3
+
+        CodeDeadlineExceeded ->
+            4
+
+        CodeNotFound ->
+            5
+
+        CodeAlreadyExists ->
+            6
+
+        CodePermissionDenied ->
+            7
+
+        CodeResourceExhausted ->
+            8
+
+        CodeFailedPrecondition ->
+            9
+
+        CodeAborted ->
+            10
+
+        CodeOutOfRange ->
+            11
+
+        CodeUnimplemented ->
+            12
+
+        CodeInternal ->
+            13
+
+        CodeUnavailable ->
+            14
+
+        CodeDataLoss ->
+            15
+
+        CodeUnauthenticated ->
+            16
+
+
+{-| The number protobuf binary writes a [`TestSuiteTestMode`](#TestSuiteTestMode) as.
+-}
+encodeTestSuiteTestModeBytes : TestSuiteTestMode -> Int
+encodeTestSuiteTestModeBytes value =
+    case value of
+        TestSuiteTestModeUnspecified ->
+            0
+
+        TestSuiteTestModeClient ->
+            1
+
+        TestSuiteTestModeServer ->
+            2
+
+
+{-| The number protobuf binary writes a [`TestSuiteConnectVersionMode`](#TestSuiteConnectVersionMode) as.
+-}
+encodeTestSuiteConnectVersionModeBytes : TestSuiteConnectVersionMode -> Int
+encodeTestSuiteConnectVersionModeBytes value =
+    case value of
+        TestSuiteConnectVersionModeUnspecified ->
+            0
+
+        TestSuiteConnectVersionModeRequire ->
+            1
+
+        TestSuiteConnectVersionModeIgnore ->
+            2
+
+
+{-| Encodes a [`ClientCompatRequest`](#ClientCompatRequest) as protobuf binary.
+-}
+encodeClientCompatRequestBytes : ClientCompatRequest -> Bytes.Encode.Encoder
+encodeClientCompatRequestBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.testName
+        , Proto.Binary.implicit (Proto.Binary.enum encodeHTTPVersionBytes decodeHTTPVersionBytes) 2 value.httpVersion
+        , Proto.Binary.implicit (Proto.Binary.enum encodeProtocolBytes decodeProtocolBytes) 3 value.protocol
+        , Proto.Binary.implicit (Proto.Binary.enum encodeCodecBytes decodeCodecBytes) 4 value.codec
+        , Proto.Binary.implicit (Proto.Binary.enum encodeCompressionBytes decodeCompressionBytes) 5 value.compression
+        , Proto.Binary.implicit Proto.Binary.string 6 value.host
+        , Proto.Binary.implicit Proto.Binary.uint32 7 value.port_
+        , Proto.Binary.implicit Proto.Binary.bytes 8 value.serverTlsCert
+        , Proto.Binary.optional (Proto.Binary.embedded encodeTLSCredsBytes mergeTLSCredsBytes defaultTLSCreds) 9 value.clientTlsCreds
+        , Proto.Binary.implicit Proto.Binary.uint32 10 value.messageReceiveLimit
+        , Proto.Binary.optional Proto.Binary.string 11 value.service
+        , Proto.Binary.optional Proto.Binary.string 12 value.method
+        , Proto.Binary.implicit (Proto.Binary.enum encodeStreamTypeBytes decodeStreamTypeBytes) 13 value.streamType
+        , Proto.Binary.implicit Proto.Binary.bool 14 value.useGetHttpMethod
+        , Proto.Binary.list (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) 15 value.requestHeaders
+        , Proto.Binary.list Proto.Binary.any 16 value.requestMessages
+        , Proto.Binary.optional Proto.Binary.uint32 17 value.timeoutMs
+        , Proto.Binary.implicit Proto.Binary.uint32 18 value.requestDelayMs
+        , Proto.Binary.optional (Proto.Binary.embedded encodeClientCompatRequestCancelBytes mergeClientCompatRequestCancelBytes defaultClientCompatRequestCancel) 19 value.cancel
+        , Proto.Binary.optional (Proto.Binary.embedded encodeRawHTTPRequestBytes mergeRawHTTPRequestBytes defaultRawHTTPRequest) 20 value.rawRequest
+        ]
+
+
+{-| Encodes a [`ClientCompatRequestCancel`](#ClientCompatRequestCancel) as protobuf binary.
+-}
+encodeClientCompatRequestCancelBytes : ClientCompatRequestCancel -> Bytes.Encode.Encoder
+encodeClientCompatRequestCancelBytes value =
+    Bytes.Encode.sequence
+        [ encodeClientCompatRequestCancelCancelTimingBytes value.cancelTiming
+        ]
+
+
+{-| Encodes a [`ClientCompatRequestCancelCancelTiming`](#ClientCompatRequestCancelCancelTiming) as protobuf binary: its set member's field.
+-}
+encodeClientCompatRequestCancelCancelTimingBytes : ClientCompatRequestCancelCancelTiming -> Bytes.Encode.Encoder
+encodeClientCompatRequestCancelCancelTimingBytes value =
+    case value of
+        ClientCompatRequestCancelCancelTimingUnset ->
+            Bytes.Encode.sequence []
+
+        ClientCompatRequestCancelCancelTimingBeforeCloseSend ->
+            Proto.Binary.present Proto.Binary.empty 1 ()
+
+        ClientCompatRequestCancelCancelTimingAfterCloseSendMs member ->
+            Proto.Binary.present Proto.Binary.uint32 2 member
+
+        ClientCompatRequestCancelCancelTimingAfterNumResponses member ->
+            Proto.Binary.present Proto.Binary.uint32 3 member
+
+
+{-| Encodes a [`ClientCompatResponse`](#ClientCompatResponse) as protobuf binary.
+-}
+encodeClientCompatResponseBytes : ClientCompatResponse -> Bytes.Encode.Encoder
+encodeClientCompatResponseBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.testName
+        , encodeClientCompatResponseResultBytes value.result
+        ]
+
+
+{-| Encodes a [`ClientCompatResponseResult`](#ClientCompatResponseResult) as protobuf binary: its set member's field.
+-}
+encodeClientCompatResponseResultBytes : ClientCompatResponseResult -> Bytes.Encode.Encoder
+encodeClientCompatResponseResultBytes value =
+    case value of
+        ClientCompatResponseResultUnset ->
+            Bytes.Encode.sequence []
+
+        ClientCompatResponseResultResponse member ->
+            Proto.Binary.present (Proto.Binary.embedded encodeClientResponseResultBytes mergeClientResponseResultBytes defaultClientResponseResult) 2 member
+
+        ClientCompatResponseResultError member ->
+            Proto.Binary.present (Proto.Binary.embedded encodeClientErrorResultBytes mergeClientErrorResultBytes defaultClientErrorResult) 3 member
+
+
+{-| Encodes a [`ClientResponseResult`](#ClientResponseResult) as protobuf binary.
+-}
+encodeClientResponseResultBytes : ClientResponseResult -> Bytes.Encode.Encoder
+encodeClientResponseResultBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.list (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) 1 value.responseHeaders
+        , Proto.Binary.list (Proto.Binary.embedded encodeConformancePayloadBytes mergeConformancePayloadBytes defaultConformancePayload) 2 value.payloads
+        , Proto.Binary.optional (Proto.Binary.embedded encodeErrorBytes mergeErrorBytes defaultError) 3 value.error
+        , Proto.Binary.list (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) 4 value.responseTrailers
+        , Proto.Binary.implicit Proto.Binary.int32 5 value.numUnsentRequests
+        , Proto.Binary.optional Proto.Binary.int32 6 value.httpStatusCode
+        , Proto.Binary.list Proto.Binary.string 7 value.feedback
+        ]
+
+
+{-| Encodes a [`ClientErrorResult`](#ClientErrorResult) as protobuf binary.
+-}
+encodeClientErrorResultBytes : ClientErrorResult -> Bytes.Encode.Encoder
+encodeClientErrorResultBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.message
+        ]
+
+
+{-| Encodes a [`WireDetails`](#WireDetails) as protobuf binary.
+-}
+encodeWireDetailsBytes : WireDetails -> Bytes.Encode.Encoder
+encodeWireDetailsBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.int32 1 value.actualStatusCode
+        , Proto.Binary.optional Proto.Binary.struct 2 value.connectErrorRaw
+        , Proto.Binary.list (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) 3 value.actualHttpTrailers
+        , Proto.Binary.optional Proto.Binary.string 4 value.actualGrpcwebTrailers
+        ]
+
+
+{-| Encodes a [`Config`](#Config) as protobuf binary.
+-}
+encodeConfigBytes : Config -> Bytes.Encode.Encoder
+encodeConfigBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.optional (Proto.Binary.embedded encodeFeaturesBytes mergeFeaturesBytes defaultFeatures) 1 value.features
+        , Proto.Binary.list (Proto.Binary.embedded encodeConfigCaseBytes mergeConfigCaseBytes defaultConfigCase) 2 value.includeCases
+        , Proto.Binary.list (Proto.Binary.embedded encodeConfigCaseBytes mergeConfigCaseBytes defaultConfigCase) 3 value.excludeCases
+        ]
+
+
+{-| Encodes a [`Features`](#Features) as protobuf binary.
+-}
+encodeFeaturesBytes : Features -> Bytes.Encode.Encoder
+encodeFeaturesBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.list (Proto.Binary.enum encodeHTTPVersionBytes decodeHTTPVersionBytes) 1 value.versions
+        , Proto.Binary.list (Proto.Binary.enum encodeProtocolBytes decodeProtocolBytes) 2 value.protocols
+        , Proto.Binary.list (Proto.Binary.enum encodeCodecBytes decodeCodecBytes) 3 value.codecs
+        , Proto.Binary.list (Proto.Binary.enum encodeCompressionBytes decodeCompressionBytes) 4 value.compressions
+        , Proto.Binary.list (Proto.Binary.enum encodeStreamTypeBytes decodeStreamTypeBytes) 5 value.streamTypes
+        , Proto.Binary.optional Proto.Binary.bool 6 value.supportsH2c
+        , Proto.Binary.optional Proto.Binary.bool 7 value.supportsTls
+        , Proto.Binary.optional Proto.Binary.bool 8 value.supportsTlsClientCerts
+        , Proto.Binary.optional Proto.Binary.bool 9 value.supportsTrailers
+        , Proto.Binary.optional Proto.Binary.bool 10 value.supportsHalfDuplexBidiOverHttp1
+        , Proto.Binary.optional Proto.Binary.bool 11 value.supportsConnectGet
+        , Proto.Binary.optional Proto.Binary.bool 12 value.supportsMessageReceiveLimit
+        ]
+
+
+{-| Encodes a [`ConfigCase`](#ConfigCase) as protobuf binary.
+-}
+encodeConfigCaseBytes : ConfigCase -> Bytes.Encode.Encoder
+encodeConfigCaseBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit (Proto.Binary.enum encodeHTTPVersionBytes decodeHTTPVersionBytes) 1 value.version
+        , Proto.Binary.implicit (Proto.Binary.enum encodeProtocolBytes decodeProtocolBytes) 2 value.protocol
+        , Proto.Binary.implicit (Proto.Binary.enum encodeCodecBytes decodeCodecBytes) 3 value.codec
+        , Proto.Binary.implicit (Proto.Binary.enum encodeCompressionBytes decodeCompressionBytes) 4 value.compression
+        , Proto.Binary.implicit (Proto.Binary.enum encodeStreamTypeBytes decodeStreamTypeBytes) 5 value.streamType
+        , Proto.Binary.optional Proto.Binary.bool 6 value.useTls
+        , Proto.Binary.optional Proto.Binary.bool 7 value.useTlsClientCerts
+        , Proto.Binary.optional Proto.Binary.bool 8 value.useMessageReceiveLimit
+        ]
+
+
+{-| Encodes a [`TLSCreds`](#TLSCreds) as protobuf binary.
+-}
+encodeTLSCredsBytes : TLSCreds -> Bytes.Encode.Encoder
+encodeTLSCredsBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.bytes 1 value.cert
+        , Proto.Binary.implicit Proto.Binary.bytes 2 value.key
+        ]
+
+
+{-| Encodes a [`ServerCompatRequest`](#ServerCompatRequest) as protobuf binary.
+-}
+encodeServerCompatRequestBytes : ServerCompatRequest -> Bytes.Encode.Encoder
+encodeServerCompatRequestBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit (Proto.Binary.enum encodeProtocolBytes decodeProtocolBytes) 1 value.protocol
+        , Proto.Binary.implicit (Proto.Binary.enum encodeHTTPVersionBytes decodeHTTPVersionBytes) 2 value.httpVersion
+        , Proto.Binary.implicit Proto.Binary.bool 4 value.useTls
+        , Proto.Binary.implicit Proto.Binary.bytes 5 value.clientTlsCert
+        , Proto.Binary.implicit Proto.Binary.uint32 6 value.messageReceiveLimit
+        , Proto.Binary.optional (Proto.Binary.embedded encodeTLSCredsBytes mergeTLSCredsBytes defaultTLSCreds) 7 value.serverCreds
+        ]
+
+
+{-| Encodes a [`ServerCompatResponse`](#ServerCompatResponse) as protobuf binary.
+-}
+encodeServerCompatResponseBytes : ServerCompatResponse -> Bytes.Encode.Encoder
+encodeServerCompatResponseBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.host
+        , Proto.Binary.implicit Proto.Binary.uint32 2 value.port_
+        , Proto.Binary.implicit Proto.Binary.bytes 3 value.pemCert
+        ]
+
+
+{-| Encodes an [`UnaryResponseDefinition`](#UnaryResponseDefinition) as protobuf binary.
+-}
+encodeUnaryResponseDefinitionBytes : UnaryResponseDefinition -> Bytes.Encode.Encoder
+encodeUnaryResponseDefinitionBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.list (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) 1 value.responseHeaders
+        , encodeUnaryResponseDefinitionResponseBytes value.response
+        , Proto.Binary.list (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) 4 value.responseTrailers
+        , Proto.Binary.optional (Proto.Binary.embedded encodeRawHTTPResponseBytes mergeRawHTTPResponseBytes defaultRawHTTPResponse) 5 value.rawResponse
+        , Proto.Binary.implicit Proto.Binary.uint32 6 value.responseDelayMs
+        ]
+
+
+{-| Encodes an [`UnaryResponseDefinitionResponse`](#UnaryResponseDefinitionResponse) as protobuf binary: its set member's field.
+-}
+encodeUnaryResponseDefinitionResponseBytes : UnaryResponseDefinitionResponse -> Bytes.Encode.Encoder
+encodeUnaryResponseDefinitionResponseBytes value =
+    case value of
+        UnaryResponseDefinitionResponseUnset ->
+            Bytes.Encode.sequence []
+
+        UnaryResponseDefinitionResponseResponseData member ->
+            Proto.Binary.present Proto.Binary.bytes 2 member
+
+        UnaryResponseDefinitionResponseError member ->
+            Proto.Binary.present (Proto.Binary.embedded encodeErrorBytes mergeErrorBytes defaultError) 3 member
+
+
+{-| Encodes a [`StreamResponseDefinition`](#StreamResponseDefinition) as protobuf binary.
+-}
+encodeStreamResponseDefinitionBytes : StreamResponseDefinition -> Bytes.Encode.Encoder
+encodeStreamResponseDefinitionBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.list (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) 1 value.responseHeaders
+        , Proto.Binary.list Proto.Binary.bytes 2 value.responseData
+        , Proto.Binary.implicit Proto.Binary.uint32 3 value.responseDelayMs
+        , Proto.Binary.optional (Proto.Binary.embedded encodeErrorBytes mergeErrorBytes defaultError) 4 value.error
+        , Proto.Binary.list (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) 5 value.responseTrailers
+        , Proto.Binary.optional (Proto.Binary.embedded encodeRawHTTPResponseBytes mergeRawHTTPResponseBytes defaultRawHTTPResponse) 6 value.rawResponse
+        ]
+
+
+{-| Encodes an [`UnaryRequest`](#UnaryRequest) as protobuf binary.
+-}
+encodeUnaryRequestBytes : UnaryRequest -> Bytes.Encode.Encoder
+encodeUnaryRequestBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.optional (Proto.Binary.embedded encodeUnaryResponseDefinitionBytes mergeUnaryResponseDefinitionBytes defaultUnaryResponseDefinition) 1 value.responseDefinition
+        , Proto.Binary.implicit Proto.Binary.bytes 2 value.requestData
+        ]
+
+
+{-| Encodes an [`UnaryResponse`](#UnaryResponse) as protobuf binary.
+-}
+encodeUnaryResponseBytes : UnaryResponse -> Bytes.Encode.Encoder
+encodeUnaryResponseBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.optional (Proto.Binary.embedded encodeConformancePayloadBytes mergeConformancePayloadBytes defaultConformancePayload) 1 value.payload
+        ]
+
+
+{-| Encodes an [`IdempotentUnaryRequest`](#IdempotentUnaryRequest) as protobuf binary.
+-}
+encodeIdempotentUnaryRequestBytes : IdempotentUnaryRequest -> Bytes.Encode.Encoder
+encodeIdempotentUnaryRequestBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.optional (Proto.Binary.embedded encodeUnaryResponseDefinitionBytes mergeUnaryResponseDefinitionBytes defaultUnaryResponseDefinition) 1 value.responseDefinition
+        , Proto.Binary.implicit Proto.Binary.bytes 2 value.requestData
+        ]
+
+
+{-| Encodes an [`IdempotentUnaryResponse`](#IdempotentUnaryResponse) as protobuf binary.
+-}
+encodeIdempotentUnaryResponseBytes : IdempotentUnaryResponse -> Bytes.Encode.Encoder
+encodeIdempotentUnaryResponseBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.optional (Proto.Binary.embedded encodeConformancePayloadBytes mergeConformancePayloadBytes defaultConformancePayload) 1 value.payload
+        ]
+
+
+{-| Encodes a [`ServerStreamRequest`](#ServerStreamRequest) as protobuf binary.
+-}
+encodeServerStreamRequestBytes : ServerStreamRequest -> Bytes.Encode.Encoder
+encodeServerStreamRequestBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.optional (Proto.Binary.embedded encodeStreamResponseDefinitionBytes mergeStreamResponseDefinitionBytes defaultStreamResponseDefinition) 1 value.responseDefinition
+        , Proto.Binary.implicit Proto.Binary.bytes 2 value.requestData
+        ]
+
+
+{-| Encodes a [`ServerStreamResponse`](#ServerStreamResponse) as protobuf binary.
+-}
+encodeServerStreamResponseBytes : ServerStreamResponse -> Bytes.Encode.Encoder
+encodeServerStreamResponseBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.optional (Proto.Binary.embedded encodeConformancePayloadBytes mergeConformancePayloadBytes defaultConformancePayload) 1 value.payload
+        ]
+
+
+{-| Encodes a [`ClientStreamRequest`](#ClientStreamRequest) as protobuf binary.
+-}
+encodeClientStreamRequestBytes : ClientStreamRequest -> Bytes.Encode.Encoder
+encodeClientStreamRequestBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.optional (Proto.Binary.embedded encodeUnaryResponseDefinitionBytes mergeUnaryResponseDefinitionBytes defaultUnaryResponseDefinition) 1 value.responseDefinition
+        , Proto.Binary.implicit Proto.Binary.bytes 2 value.requestData
+        ]
+
+
+{-| Encodes a [`ClientStreamResponse`](#ClientStreamResponse) as protobuf binary.
+-}
+encodeClientStreamResponseBytes : ClientStreamResponse -> Bytes.Encode.Encoder
+encodeClientStreamResponseBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.optional (Proto.Binary.embedded encodeConformancePayloadBytes mergeConformancePayloadBytes defaultConformancePayload) 1 value.payload
+        ]
+
+
+{-| Encodes a [`BidiStreamRequest`](#BidiStreamRequest) as protobuf binary.
+-}
+encodeBidiStreamRequestBytes : BidiStreamRequest -> Bytes.Encode.Encoder
+encodeBidiStreamRequestBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.optional (Proto.Binary.embedded encodeStreamResponseDefinitionBytes mergeStreamResponseDefinitionBytes defaultStreamResponseDefinition) 1 value.responseDefinition
+        , Proto.Binary.implicit Proto.Binary.bool 2 value.fullDuplex
+        , Proto.Binary.implicit Proto.Binary.bytes 3 value.requestData
+        ]
+
+
+{-| Encodes a [`BidiStreamResponse`](#BidiStreamResponse) as protobuf binary.
+-}
+encodeBidiStreamResponseBytes : BidiStreamResponse -> Bytes.Encode.Encoder
+encodeBidiStreamResponseBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.optional (Proto.Binary.embedded encodeConformancePayloadBytes mergeConformancePayloadBytes defaultConformancePayload) 1 value.payload
+        ]
+
+
+{-| Encodes a [`UnimplementedRequest`](#UnimplementedRequest) as protobuf binary.
+-}
+encodeUnimplementedRequestBytes : UnimplementedRequest -> Bytes.Encode.Encoder
+encodeUnimplementedRequestBytes _ =
+    Bytes.Encode.sequence []
+
+
+{-| Encodes a [`UnimplementedResponse`](#UnimplementedResponse) as protobuf binary.
+-}
+encodeUnimplementedResponseBytes : UnimplementedResponse -> Bytes.Encode.Encoder
+encodeUnimplementedResponseBytes _ =
+    Bytes.Encode.sequence []
+
+
+{-| Encodes a [`ConformancePayload`](#ConformancePayload) as protobuf binary.
+-}
+encodeConformancePayloadBytes : ConformancePayload -> Bytes.Encode.Encoder
+encodeConformancePayloadBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.bytes 1 value.data
+        , Proto.Binary.optional (Proto.Binary.embedded encodeConformancePayloadRequestInfoBytes mergeConformancePayloadRequestInfoBytes defaultConformancePayloadRequestInfo) 2 value.requestInfo
+        ]
+
+
+{-| Encodes a [`ConformancePayloadRequestInfo`](#ConformancePayloadRequestInfo) as protobuf binary.
+-}
+encodeConformancePayloadRequestInfoBytes : ConformancePayloadRequestInfo -> Bytes.Encode.Encoder
+encodeConformancePayloadRequestInfoBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.list (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) 1 value.requestHeaders
+        , Proto.Binary.optional Proto.Binary.int64 2 value.timeoutMs
+        , Proto.Binary.list Proto.Binary.any 3 value.requests
+        , Proto.Binary.optional (Proto.Binary.embedded encodeConformancePayloadConnectGetInfoBytes mergeConformancePayloadConnectGetInfoBytes defaultConformancePayloadConnectGetInfo) 4 value.connectGetInfo
+        ]
+
+
+{-| Encodes a [`ConformancePayloadConnectGetInfo`](#ConformancePayloadConnectGetInfo) as protobuf binary.
+-}
+encodeConformancePayloadConnectGetInfoBytes : ConformancePayloadConnectGetInfo -> Bytes.Encode.Encoder
+encodeConformancePayloadConnectGetInfoBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.list (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) 1 value.queryParams
+        ]
+
+
+{-| Encodes an [`Error`](#Error) as protobuf binary.
+-}
+encodeErrorBytes : Error -> Bytes.Encode.Encoder
+encodeErrorBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit (Proto.Binary.enum encodeCodeBytes decodeCodeBytes) 1 value.code
+        , Proto.Binary.optional Proto.Binary.string 2 value.message
+        , Proto.Binary.list Proto.Binary.any 3 value.details
+        ]
+
+
+{-| Encodes a [`Header`](#Header) as protobuf binary.
+-}
+encodeHeaderBytes : Header -> Bytes.Encode.Encoder
+encodeHeaderBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.name
+        , Proto.Binary.list Proto.Binary.string 2 value.value
+        ]
+
+
+{-| Encodes a [`RawHTTPRequest`](#RawHTTPRequest) as protobuf binary.
+-}
+encodeRawHTTPRequestBytes : RawHTTPRequest -> Bytes.Encode.Encoder
+encodeRawHTTPRequestBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.verb
+        , Proto.Binary.implicit Proto.Binary.string 2 value.uri
+        , Proto.Binary.list (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) 3 value.headers
+        , Proto.Binary.list (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) 4 value.rawQueryParams
+        , Proto.Binary.list (Proto.Binary.embedded encodeRawHTTPRequestEncodedQueryParamBytes mergeRawHTTPRequestEncodedQueryParamBytes defaultRawHTTPRequestEncodedQueryParam) 5 value.encodedQueryParams
+        , encodeRawHTTPRequestBodyBytes value.body
+        ]
+
+
+{-| Encodes a [`RawHTTPRequestBody`](#RawHTTPRequestBody) as protobuf binary: its set member's field.
+-}
+encodeRawHTTPRequestBodyBytes : RawHTTPRequestBody -> Bytes.Encode.Encoder
+encodeRawHTTPRequestBodyBytes value =
+    case value of
+        RawHTTPRequestBodyUnset ->
+            Bytes.Encode.sequence []
+
+        RawHTTPRequestBodyUnary member ->
+            Proto.Binary.present (Proto.Binary.embedded encodeMessageContentsBytes mergeMessageContentsBytes defaultMessageContents) 6 member
+
+        RawHTTPRequestBodyStream member ->
+            Proto.Binary.present (Proto.Binary.embedded encodeStreamContentsBytes mergeStreamContentsBytes defaultStreamContents) 7 member
+
+
+{-| Encodes a [`RawHTTPRequestEncodedQueryParam`](#RawHTTPRequestEncodedQueryParam) as protobuf binary.
+-}
+encodeRawHTTPRequestEncodedQueryParamBytes : RawHTTPRequestEncodedQueryParam -> Bytes.Encode.Encoder
+encodeRawHTTPRequestEncodedQueryParamBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.name
+        , Proto.Binary.optional (Proto.Binary.embedded encodeMessageContentsBytes mergeMessageContentsBytes defaultMessageContents) 2 value.value
+        , Proto.Binary.implicit Proto.Binary.bool 3 value.base64Encode
+        ]
+
+
+{-| Encodes a [`MessageContents`](#MessageContents) as protobuf binary.
+-}
+encodeMessageContentsBytes : MessageContents -> Bytes.Encode.Encoder
+encodeMessageContentsBytes value =
+    Bytes.Encode.sequence
+        [ encodeMessageContentsDataBytes value.data
+        , Proto.Binary.implicit (Proto.Binary.enum encodeCompressionBytes decodeCompressionBytes) 4 value.compression
+        ]
+
+
+{-| Encodes a [`MessageContentsData`](#MessageContentsData) as protobuf binary: its set member's field.
+-}
+encodeMessageContentsDataBytes : MessageContentsData -> Bytes.Encode.Encoder
+encodeMessageContentsDataBytes value =
+    case value of
+        MessageContentsDataUnset ->
+            Bytes.Encode.sequence []
+
+        MessageContentsDataBinary member ->
+            Proto.Binary.present Proto.Binary.bytes 1 member
+
+        MessageContentsDataText member ->
+            Proto.Binary.present Proto.Binary.string 2 member
+
+        MessageContentsDataBinaryMessage member ->
+            Proto.Binary.present Proto.Binary.any 3 member
+
+
+{-| Encodes a [`StreamContents`](#StreamContents) as protobuf binary.
+-}
+encodeStreamContentsBytes : StreamContents -> Bytes.Encode.Encoder
+encodeStreamContentsBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.list (Proto.Binary.embedded encodeStreamContentsStreamItemBytes mergeStreamContentsStreamItemBytes defaultStreamContentsStreamItem) 1 value.items
+        ]
+
+
+{-| Encodes a [`StreamContentsStreamItem`](#StreamContentsStreamItem) as protobuf binary.
+-}
+encodeStreamContentsStreamItemBytes : StreamContentsStreamItem -> Bytes.Encode.Encoder
+encodeStreamContentsStreamItemBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.uint32 1 value.flags
+        , Proto.Binary.optional Proto.Binary.uint32 2 value.length
+        , Proto.Binary.optional (Proto.Binary.embedded encodeMessageContentsBytes mergeMessageContentsBytes defaultMessageContents) 3 value.payload
+        ]
+
+
+{-| Encodes a [`RawHTTPResponse`](#RawHTTPResponse) as protobuf binary.
+-}
+encodeRawHTTPResponseBytes : RawHTTPResponse -> Bytes.Encode.Encoder
+encodeRawHTTPResponseBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.uint32 1 value.statusCode
+        , Proto.Binary.list (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) 2 value.headers
+        , encodeRawHTTPResponseBodyBytes value.body
+        , Proto.Binary.list (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) 5 value.trailers
+        ]
+
+
+{-| Encodes a [`RawHTTPResponseBody`](#RawHTTPResponseBody) as protobuf binary: its set member's field.
+-}
+encodeRawHTTPResponseBodyBytes : RawHTTPResponseBody -> Bytes.Encode.Encoder
+encodeRawHTTPResponseBodyBytes value =
+    case value of
+        RawHTTPResponseBodyUnset ->
+            Bytes.Encode.sequence []
+
+        RawHTTPResponseBodyUnary member ->
+            Proto.Binary.present (Proto.Binary.embedded encodeMessageContentsBytes mergeMessageContentsBytes defaultMessageContents) 3 member
+
+        RawHTTPResponseBodyStream member ->
+            Proto.Binary.present (Proto.Binary.embedded encodeStreamContentsBytes mergeStreamContentsBytes defaultStreamContents) 4 member
+
+
+{-| Encodes a [`TestSuite`](#TestSuite) as protobuf binary.
+-}
+encodeTestSuiteBytes : TestSuite -> Bytes.Encode.Encoder
+encodeTestSuiteBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.name
+        , Proto.Binary.implicit (Proto.Binary.enum encodeTestSuiteTestModeBytes decodeTestSuiteTestModeBytes) 2 value.mode
+        , Proto.Binary.list (Proto.Binary.embedded encodeTestCaseBytes mergeTestCaseBytes defaultTestCase) 3 value.testCases
+        , Proto.Binary.list (Proto.Binary.enum encodeProtocolBytes decodeProtocolBytes) 4 value.relevantProtocols
+        , Proto.Binary.list (Proto.Binary.enum encodeHTTPVersionBytes decodeHTTPVersionBytes) 5 value.relevantHttpVersions
+        , Proto.Binary.list (Proto.Binary.enum encodeCodecBytes decodeCodecBytes) 6 value.relevantCodecs
+        , Proto.Binary.list (Proto.Binary.enum encodeCompressionBytes decodeCompressionBytes) 7 value.relevantCompressions
+        , Proto.Binary.implicit (Proto.Binary.enum encodeTestSuiteConnectVersionModeBytes decodeTestSuiteConnectVersionModeBytes) 8 value.connectVersionMode
+        , Proto.Binary.implicit Proto.Binary.bool 9 value.reliesOnTls
+        , Proto.Binary.implicit Proto.Binary.bool 10 value.reliesOnTlsClientCerts
+        , Proto.Binary.implicit Proto.Binary.bool 11 value.reliesOnConnectGet
+        , Proto.Binary.implicit Proto.Binary.bool 12 value.reliesOnMessageReceiveLimit
+        ]
+
+
+{-| Encodes a [`TestCase`](#TestCase) as protobuf binary.
+-}
+encodeTestCaseBytes : TestCase -> Bytes.Encode.Encoder
+encodeTestCaseBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.optional (Proto.Binary.embedded encodeClientCompatRequestBytes mergeClientCompatRequestBytes defaultClientCompatRequest) 1 value.request
+        , Proto.Binary.list (Proto.Binary.embedded encodeTestCaseExpandedSizeBytes mergeTestCaseExpandedSizeBytes defaultTestCaseExpandedSize) 2 value.expandRequests
+        , Proto.Binary.optional (Proto.Binary.embedded encodeClientResponseResultBytes mergeClientResponseResultBytes defaultClientResponseResult) 3 value.expectedResponse
+        , Proto.Binary.list (Proto.Binary.enum encodeCodeBytes decodeCodeBytes) 4 value.otherAllowedErrorCodes
+        ]
+
+
+{-| Encodes a [`TestCaseExpandedSize`](#TestCaseExpandedSize) as protobuf binary.
+-}
+encodeTestCaseExpandedSizeBytes : TestCaseExpandedSize -> Bytes.Encode.Encoder
+encodeTestCaseExpandedSizeBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.optional Proto.Binary.int32 1 value.sizeRelativeToLimit
+        ]
+
+
+
+-- BINARY DECODERS
+
+
+{-| An [`HTTPVersion`](#HTTPVersion) from the number protobuf binary carries.
+-}
+decodeHTTPVersionBytes : Int -> HTTPVersion
+decodeHTTPVersionBytes number =
+    case number of
+        1 ->
+            HTTPVersion1
+
+        2 ->
+            HTTPVersion2
+
+        3 ->
+            HTTPVersion3
+
+        _ ->
+            HTTPVersionUnspecified
+
+
+{-| A [`Protocol`](#Protocol) from the number protobuf binary carries.
+-}
+decodeProtocolBytes : Int -> Protocol
+decodeProtocolBytes number =
+    case number of
+        1 ->
+            ProtocolConnect
+
+        2 ->
+            ProtocolGrpc
+
+        3 ->
+            ProtocolGrpcWeb
+
+        _ ->
+            ProtocolUnspecified
+
+
+{-| A [`Codec`](#Codec) from the number protobuf binary carries.
+-}
+decodeCodecBytes : Int -> Codec
+decodeCodecBytes number =
+    case number of
+        1 ->
+            CodecProto
+
+        2 ->
+            CodecJson
+
+        3 ->
+            CodecText
+
+        _ ->
+            CodecUnspecified
+
+
+{-| A [`Compression`](#Compression) from the number protobuf binary carries.
+-}
+decodeCompressionBytes : Int -> Compression
+decodeCompressionBytes number =
+    case number of
+        1 ->
+            CompressionIdentity
+
+        2 ->
+            CompressionGzip
+
+        3 ->
+            CompressionBr
+
+        4 ->
+            CompressionZstd
+
+        5 ->
+            CompressionDeflate
+
+        6 ->
+            CompressionSnappy
+
+        _ ->
+            CompressionUnspecified
+
+
+{-| A [`StreamType`](#StreamType) from the number protobuf binary carries.
+-}
+decodeStreamTypeBytes : Int -> StreamType
+decodeStreamTypeBytes number =
+    case number of
+        1 ->
+            StreamTypeUnary
+
+        2 ->
+            StreamTypeClientStream
+
+        3 ->
+            StreamTypeServerStream
+
+        4 ->
+            StreamTypeHalfDuplexBidiStream
+
+        5 ->
+            StreamTypeFullDuplexBidiStream
+
+        _ ->
+            StreamTypeUnspecified
+
+
+{-| A [`Code`](#Code) from the number protobuf binary carries.
+-}
+decodeCodeBytes : Int -> Code
+decodeCodeBytes number =
+    case number of
+        1 ->
+            CodeCanceled
+
+        2 ->
+            CodeUnknown
+
+        3 ->
+            CodeInvalidArgument
+
+        4 ->
+            CodeDeadlineExceeded
+
+        5 ->
+            CodeNotFound
+
+        6 ->
+            CodeAlreadyExists
+
+        7 ->
+            CodePermissionDenied
+
+        8 ->
+            CodeResourceExhausted
+
+        9 ->
+            CodeFailedPrecondition
+
+        10 ->
+            CodeAborted
+
+        11 ->
+            CodeOutOfRange
+
+        12 ->
+            CodeUnimplemented
+
+        13 ->
+            CodeInternal
+
+        14 ->
+            CodeUnavailable
+
+        15 ->
+            CodeDataLoss
+
+        16 ->
+            CodeUnauthenticated
+
+        _ ->
+            CodeUnspecified
+
+
+{-| A [`TestSuiteTestMode`](#TestSuiteTestMode) from the number protobuf binary carries.
+-}
+decodeTestSuiteTestModeBytes : Int -> TestSuiteTestMode
+decodeTestSuiteTestModeBytes number =
+    case number of
+        1 ->
+            TestSuiteTestModeClient
+
+        2 ->
+            TestSuiteTestModeServer
+
+        _ ->
+            TestSuiteTestModeUnspecified
+
+
+{-| A [`TestSuiteConnectVersionMode`](#TestSuiteConnectVersionMode) from the number protobuf binary carries.
+-}
+decodeTestSuiteConnectVersionModeBytes : Int -> TestSuiteConnectVersionMode
+decodeTestSuiteConnectVersionModeBytes number =
+    case number of
+        1 ->
+            TestSuiteConnectVersionModeRequire
+
+        2 ->
+            TestSuiteConnectVersionModeIgnore
+
+        _ ->
+            TestSuiteConnectVersionModeUnspecified
+
+
+{-| Decodes a [`ClientCompatRequest`](#ClientCompatRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeClientCompatRequestBytes : ClientCompatRequest -> Proto.Binary.Decoder ClientCompatRequest
+mergeClientCompatRequestBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | testName = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeHTTPVersionBytes decodeHTTPVersionBytes)
+                        (\v ->
+                            { value
+                                | httpVersion = v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeProtocolBytes decodeProtocolBytes)
+                        (\v ->
+                            { value
+                                | protocol = v
+                            }
+                        )
+                        wire
+                        value
+
+                4 ->
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeCodecBytes decodeCodecBytes)
+                        (\v ->
+                            { value
+                                | codec = v
+                            }
+                        )
+                        wire
+                        value
+
+                5 ->
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeCompressionBytes decodeCompressionBytes)
+                        (\v ->
+                            { value
+                                | compression = v
+                            }
+                        )
+                        wire
+                        value
+
+                6 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | host = v
+                            }
+                        )
+                        wire
+                        value
+
+                7 ->
+                    Proto.Binary.field
+                        Proto.Binary.uint32
+                        (\v ->
+                            { value
+                                | port_ = v
+                            }
+                        )
+                        wire
+                        value
+
+                8 ->
+                    Proto.Binary.field
+                        Proto.Binary.bytes
+                        (\v ->
+                            { value
+                                | serverTlsCert = v
+                            }
+                        )
+                        wire
+                        value
+
+                9 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeTLSCredsBytes mergeTLSCredsBytes defaultTLSCreds)
+                        value.clientTlsCreds
+                        (\v ->
+                            { value
+                                | clientTlsCreds = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                10 ->
+                    Proto.Binary.field
+                        Proto.Binary.uint32
+                        (\v ->
+                            { value
+                                | messageReceiveLimit = v
+                            }
+                        )
+                        wire
+                        value
+
+                11 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | service = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                12 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | method = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                13 ->
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeStreamTypeBytes decodeStreamTypeBytes)
+                        (\v ->
+                            { value
+                                | streamType = v
+                            }
+                        )
+                        wire
+                        value
+
+                14 ->
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { value
+                                | useGetHttpMethod = v
+                            }
+                        )
+                        wire
+                        value
+
+                15 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
+                        (\v ->
+                            { value
+                                | requestHeaders = v
+                            }
+                        )
+                        value.requestHeaders
+                        wire
+                        value
+
+                16 ->
+                    Proto.Binary.repeated
+                        Proto.Binary.any
+                        (\v ->
+                            { value
+                                | requestMessages = v
+                            }
+                        )
+                        value.requestMessages
+                        wire
+                        value
+
+                17 ->
+                    Proto.Binary.field
+                        Proto.Binary.uint32
+                        (\v ->
+                            { value
+                                | timeoutMs = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                18 ->
+                    Proto.Binary.field
+                        Proto.Binary.uint32
+                        (\v ->
+                            { value
+                                | requestDelayMs = v
+                            }
+                        )
+                        wire
+                        value
+
+                19 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeClientCompatRequestCancelBytes mergeClientCompatRequestCancelBytes defaultClientCompatRequestCancel)
+                        value.cancel
+                        (\v ->
+                            { value
+                                | cancel = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                20 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeRawHTTPRequestBytes mergeRawHTTPRequestBytes defaultRawHTTPRequest)
+                        value.rawRequest
+                        (\v ->
+                            { value
+                                | rawRequest = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | requestHeaders = List.reverse value.requestHeaders
+                , requestMessages = List.reverse value.requestMessages
+            }
+        )
+
+
+{-| Decodes a [`ClientCompatRequest`](#ClientCompatRequest) from protobuf binary.
+-}
+decodeClientCompatRequestBytes : Proto.Binary.Decoder ClientCompatRequest
+decodeClientCompatRequestBytes =
+    mergeClientCompatRequestBytes defaultClientCompatRequest
+
+
+{-| Decodes a [`ClientCompatRequestCancel`](#ClientCompatRequestCancel) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeClientCompatRequestCancelBytes : ClientCompatRequestCancel -> Proto.Binary.Decoder ClientCompatRequestCancel
+mergeClientCompatRequestCancelBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.empty
+                        (\_ ->
+                            { value
+                                | cancelTiming = ClientCompatRequestCancelCancelTimingBeforeCloseSend
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.uint32
+                        (\v ->
+                            { value
+                                | cancelTiming = ClientCompatRequestCancelCancelTimingAfterCloseSendMs v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.field
+                        Proto.Binary.uint32
+                        (\v ->
+                            { value
+                                | cancelTiming = ClientCompatRequestCancelCancelTimingAfterNumResponses v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`ClientCompatRequestCancel`](#ClientCompatRequestCancel) from protobuf binary.
+-}
+decodeClientCompatRequestCancelBytes : Proto.Binary.Decoder ClientCompatRequestCancel
+decodeClientCompatRequestCancelBytes =
+    mergeClientCompatRequestCancelBytes defaultClientCompatRequestCancel
+
+
+{-| Decodes a [`ClientCompatResponse`](#ClientCompatResponse) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeClientCompatResponseBytes : ClientCompatResponse -> Proto.Binary.Decoder ClientCompatResponse
+mergeClientCompatResponseBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | testName = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeClientResponseResultBytes mergeClientResponseResultBytes defaultClientResponseResult)
+                        (case value.result of
+                            ClientCompatResponseResultResponse member ->
+                                Just member
+
+                            _ ->
+                                Nothing
+                        )
+                        (\v ->
+                            { value
+                                | result = ClientCompatResponseResultResponse v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeClientErrorResultBytes mergeClientErrorResultBytes defaultClientErrorResult)
+                        (case value.result of
+                            ClientCompatResponseResultError member ->
+                                Just member
+
+                            _ ->
+                                Nothing
+                        )
+                        (\v ->
+                            { value
+                                | result = ClientCompatResponseResultError v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`ClientCompatResponse`](#ClientCompatResponse) from protobuf binary.
+-}
+decodeClientCompatResponseBytes : Proto.Binary.Decoder ClientCompatResponse
+decodeClientCompatResponseBytes =
+    mergeClientCompatResponseBytes defaultClientCompatResponse
+
+
+{-| Decodes a [`ClientResponseResult`](#ClientResponseResult) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeClientResponseResultBytes : ClientResponseResult -> Proto.Binary.Decoder ClientResponseResult
+mergeClientResponseResultBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
+                        (\v ->
+                            { value
+                                | responseHeaders = v
+                            }
+                        )
+                        value.responseHeaders
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeConformancePayloadBytes mergeConformancePayloadBytes defaultConformancePayload)
+                        (\v ->
+                            { value
+                                | payloads = v
+                            }
+                        )
+                        value.payloads
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeErrorBytes mergeErrorBytes defaultError)
+                        value.error
+                        (\v ->
+                            { value
+                                | error = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                4 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
+                        (\v ->
+                            { value
+                                | responseTrailers = v
+                            }
+                        )
+                        value.responseTrailers
+                        wire
+                        value
+
+                5 ->
+                    Proto.Binary.field
+                        Proto.Binary.int32
+                        (\v ->
+                            { value
+                                | numUnsentRequests = v
+                            }
+                        )
+                        wire
+                        value
+
+                6 ->
+                    Proto.Binary.field
+                        Proto.Binary.int32
+                        (\v ->
+                            { value
+                                | httpStatusCode = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                7 ->
+                    Proto.Binary.repeated
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | feedback = v
+                            }
+                        )
+                        value.feedback
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | responseHeaders = List.reverse value.responseHeaders
+                , payloads = List.reverse value.payloads
+                , responseTrailers = List.reverse value.responseTrailers
+                , feedback = List.reverse value.feedback
+            }
+        )
+
+
+{-| Decodes a [`ClientResponseResult`](#ClientResponseResult) from protobuf binary.
+-}
+decodeClientResponseResultBytes : Proto.Binary.Decoder ClientResponseResult
+decodeClientResponseResultBytes =
+    mergeClientResponseResultBytes defaultClientResponseResult
+
+
+{-| Decodes a [`ClientErrorResult`](#ClientErrorResult) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeClientErrorResultBytes : ClientErrorResult -> Proto.Binary.Decoder ClientErrorResult
+mergeClientErrorResultBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | message = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`ClientErrorResult`](#ClientErrorResult) from protobuf binary.
+-}
+decodeClientErrorResultBytes : Proto.Binary.Decoder ClientErrorResult
+decodeClientErrorResultBytes =
+    mergeClientErrorResultBytes defaultClientErrorResult
+
+
+{-| Decodes a [`WireDetails`](#WireDetails) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeWireDetailsBytes : WireDetails -> Proto.Binary.Decoder WireDetails
+mergeWireDetailsBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.int32
+                        (\v ->
+                            { value
+                                | actualStatusCode = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.struct
+                        (\v ->
+                            { value
+                                | connectErrorRaw = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
+                        (\v ->
+                            { value
+                                | actualHttpTrailers = v
+                            }
+                        )
+                        value.actualHttpTrailers
+                        wire
+                        value
+
+                4 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | actualGrpcwebTrailers = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | actualHttpTrailers = List.reverse value.actualHttpTrailers
+            }
+        )
+
+
+{-| Decodes a [`WireDetails`](#WireDetails) from protobuf binary.
+-}
+decodeWireDetailsBytes : Proto.Binary.Decoder WireDetails
+decodeWireDetailsBytes =
+    mergeWireDetailsBytes defaultWireDetails
+
+
+{-| Decodes a [`Config`](#Config) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeConfigBytes : Config -> Proto.Binary.Decoder Config
+mergeConfigBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeFeaturesBytes mergeFeaturesBytes defaultFeatures)
+                        value.features
+                        (\v ->
+                            { value
+                                | features = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeConfigCaseBytes mergeConfigCaseBytes defaultConfigCase)
+                        (\v ->
+                            { value
+                                | includeCases = v
+                            }
+                        )
+                        value.includeCases
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeConfigCaseBytes mergeConfigCaseBytes defaultConfigCase)
+                        (\v ->
+                            { value
+                                | excludeCases = v
+                            }
+                        )
+                        value.excludeCases
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | includeCases = List.reverse value.includeCases
+                , excludeCases = List.reverse value.excludeCases
+            }
+        )
+
+
+{-| Decodes a [`Config`](#Config) from protobuf binary.
+-}
+decodeConfigBytes : Proto.Binary.Decoder Config
+decodeConfigBytes =
+    mergeConfigBytes defaultConfig
+
+
+{-| Decodes a [`Features`](#Features) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeFeaturesBytes : Features -> Proto.Binary.Decoder Features
+mergeFeaturesBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.enum encodeHTTPVersionBytes decodeHTTPVersionBytes)
+                        (\v ->
+                            { value
+                                | versions = v
+                            }
+                        )
+                        value.versions
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.enum encodeProtocolBytes decodeProtocolBytes)
+                        (\v ->
+                            { value
+                                | protocols = v
+                            }
+                        )
+                        value.protocols
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.enum encodeCodecBytes decodeCodecBytes)
+                        (\v ->
+                            { value
+                                | codecs = v
+                            }
+                        )
+                        value.codecs
+                        wire
+                        value
+
+                4 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.enum encodeCompressionBytes decodeCompressionBytes)
+                        (\v ->
+                            { value
+                                | compressions = v
+                            }
+                        )
+                        value.compressions
+                        wire
+                        value
+
+                5 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.enum encodeStreamTypeBytes decodeStreamTypeBytes)
+                        (\v ->
+                            { value
+                                | streamTypes = v
+                            }
+                        )
+                        value.streamTypes
+                        wire
+                        value
+
+                6 ->
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { value
+                                | supportsH2c = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                7 ->
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { value
+                                | supportsTls = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                8 ->
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { value
+                                | supportsTlsClientCerts = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                9 ->
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { value
+                                | supportsTrailers = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                10 ->
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { value
+                                | supportsHalfDuplexBidiOverHttp1 = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                11 ->
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { value
+                                | supportsConnectGet = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                12 ->
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { value
+                                | supportsMessageReceiveLimit = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | versions = List.reverse value.versions
+                , protocols = List.reverse value.protocols
+                , codecs = List.reverse value.codecs
+                , compressions = List.reverse value.compressions
+                , streamTypes = List.reverse value.streamTypes
+            }
+        )
+
+
+{-| Decodes a [`Features`](#Features) from protobuf binary.
+-}
+decodeFeaturesBytes : Proto.Binary.Decoder Features
+decodeFeaturesBytes =
+    mergeFeaturesBytes defaultFeatures
+
+
+{-| Decodes a [`ConfigCase`](#ConfigCase) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeConfigCaseBytes : ConfigCase -> Proto.Binary.Decoder ConfigCase
+mergeConfigCaseBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeHTTPVersionBytes decodeHTTPVersionBytes)
+                        (\v ->
+                            { value
+                                | version = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeProtocolBytes decodeProtocolBytes)
+                        (\v ->
+                            { value
+                                | protocol = v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeCodecBytes decodeCodecBytes)
+                        (\v ->
+                            { value
+                                | codec = v
+                            }
+                        )
+                        wire
+                        value
+
+                4 ->
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeCompressionBytes decodeCompressionBytes)
+                        (\v ->
+                            { value
+                                | compression = v
+                            }
+                        )
+                        wire
+                        value
+
+                5 ->
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeStreamTypeBytes decodeStreamTypeBytes)
+                        (\v ->
+                            { value
+                                | streamType = v
+                            }
+                        )
+                        wire
+                        value
+
+                6 ->
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { value
+                                | useTls = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                7 ->
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { value
+                                | useTlsClientCerts = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                8 ->
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { value
+                                | useMessageReceiveLimit = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`ConfigCase`](#ConfigCase) from protobuf binary.
+-}
+decodeConfigCaseBytes : Proto.Binary.Decoder ConfigCase
+decodeConfigCaseBytes =
+    mergeConfigCaseBytes defaultConfigCase
+
+
+{-| Decodes a [`TLSCreds`](#TLSCreds) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeTLSCredsBytes : TLSCreds -> Proto.Binary.Decoder TLSCreds
+mergeTLSCredsBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.bytes
+                        (\v ->
+                            { value
+                                | cert = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.bytes
+                        (\v ->
+                            { value
+                                | key = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`TLSCreds`](#TLSCreds) from protobuf binary.
+-}
+decodeTLSCredsBytes : Proto.Binary.Decoder TLSCreds
+decodeTLSCredsBytes =
+    mergeTLSCredsBytes defaultTLSCreds
+
+
+{-| Decodes a [`ServerCompatRequest`](#ServerCompatRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeServerCompatRequestBytes : ServerCompatRequest -> Proto.Binary.Decoder ServerCompatRequest
+mergeServerCompatRequestBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeProtocolBytes decodeProtocolBytes)
+                        (\v ->
+                            { value
+                                | protocol = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeHTTPVersionBytes decodeHTTPVersionBytes)
+                        (\v ->
+                            { value
+                                | httpVersion = v
+                            }
+                        )
+                        wire
+                        value
+
+                4 ->
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { value
+                                | useTls = v
+                            }
+                        )
+                        wire
+                        value
+
+                5 ->
+                    Proto.Binary.field
+                        Proto.Binary.bytes
+                        (\v ->
+                            { value
+                                | clientTlsCert = v
+                            }
+                        )
+                        wire
+                        value
+
+                6 ->
+                    Proto.Binary.field
+                        Proto.Binary.uint32
+                        (\v ->
+                            { value
+                                | messageReceiveLimit = v
+                            }
+                        )
+                        wire
+                        value
+
+                7 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeTLSCredsBytes mergeTLSCredsBytes defaultTLSCreds)
+                        value.serverCreds
+                        (\v ->
+                            { value
+                                | serverCreds = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`ServerCompatRequest`](#ServerCompatRequest) from protobuf binary.
+-}
+decodeServerCompatRequestBytes : Proto.Binary.Decoder ServerCompatRequest
+decodeServerCompatRequestBytes =
+    mergeServerCompatRequestBytes defaultServerCompatRequest
+
+
+{-| Decodes a [`ServerCompatResponse`](#ServerCompatResponse) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeServerCompatResponseBytes : ServerCompatResponse -> Proto.Binary.Decoder ServerCompatResponse
+mergeServerCompatResponseBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | host = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.uint32
+                        (\v ->
+                            { value
+                                | port_ = v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.field
+                        Proto.Binary.bytes
+                        (\v ->
+                            { value
+                                | pemCert = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`ServerCompatResponse`](#ServerCompatResponse) from protobuf binary.
+-}
+decodeServerCompatResponseBytes : Proto.Binary.Decoder ServerCompatResponse
+decodeServerCompatResponseBytes =
+    mergeServerCompatResponseBytes defaultServerCompatResponse
+
+
+{-| Decodes an [`UnaryResponseDefinition`](#UnaryResponseDefinition) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeUnaryResponseDefinitionBytes : UnaryResponseDefinition -> Proto.Binary.Decoder UnaryResponseDefinition
+mergeUnaryResponseDefinitionBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
+                        (\v ->
+                            { value
+                                | responseHeaders = v
+                            }
+                        )
+                        value.responseHeaders
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.bytes
+                        (\v ->
+                            { value
+                                | response = UnaryResponseDefinitionResponseResponseData v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeErrorBytes mergeErrorBytes defaultError)
+                        (case value.response of
+                            UnaryResponseDefinitionResponseError member ->
+                                Just member
+
+                            _ ->
+                                Nothing
+                        )
+                        (\v ->
+                            { value
+                                | response = UnaryResponseDefinitionResponseError v
+                            }
+                        )
+                        wire
+                        value
+
+                4 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
+                        (\v ->
+                            { value
+                                | responseTrailers = v
+                            }
+                        )
+                        value.responseTrailers
+                        wire
+                        value
+
+                5 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeRawHTTPResponseBytes mergeRawHTTPResponseBytes defaultRawHTTPResponse)
+                        value.rawResponse
+                        (\v ->
+                            { value
+                                | rawResponse = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                6 ->
+                    Proto.Binary.field
+                        Proto.Binary.uint32
+                        (\v ->
+                            { value
+                                | responseDelayMs = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | responseHeaders = List.reverse value.responseHeaders
+                , responseTrailers = List.reverse value.responseTrailers
+            }
+        )
+
+
+{-| Decodes an [`UnaryResponseDefinition`](#UnaryResponseDefinition) from protobuf binary.
+-}
+decodeUnaryResponseDefinitionBytes : Proto.Binary.Decoder UnaryResponseDefinition
+decodeUnaryResponseDefinitionBytes =
+    mergeUnaryResponseDefinitionBytes defaultUnaryResponseDefinition
+
+
+{-| Decodes a [`StreamResponseDefinition`](#StreamResponseDefinition) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeStreamResponseDefinitionBytes : StreamResponseDefinition -> Proto.Binary.Decoder StreamResponseDefinition
+mergeStreamResponseDefinitionBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
+                        (\v ->
+                            { value
+                                | responseHeaders = v
+                            }
+                        )
+                        value.responseHeaders
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.repeated
+                        Proto.Binary.bytes
+                        (\v ->
+                            { value
+                                | responseData = v
+                            }
+                        )
+                        value.responseData
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.field
+                        Proto.Binary.uint32
+                        (\v ->
+                            { value
+                                | responseDelayMs = v
+                            }
+                        )
+                        wire
+                        value
+
+                4 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeErrorBytes mergeErrorBytes defaultError)
+                        value.error
+                        (\v ->
+                            { value
+                                | error = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                5 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
+                        (\v ->
+                            { value
+                                | responseTrailers = v
+                            }
+                        )
+                        value.responseTrailers
+                        wire
+                        value
+
+                6 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeRawHTTPResponseBytes mergeRawHTTPResponseBytes defaultRawHTTPResponse)
+                        value.rawResponse
+                        (\v ->
+                            { value
+                                | rawResponse = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | responseHeaders = List.reverse value.responseHeaders
+                , responseData = List.reverse value.responseData
+                , responseTrailers = List.reverse value.responseTrailers
+            }
+        )
+
+
+{-| Decodes a [`StreamResponseDefinition`](#StreamResponseDefinition) from protobuf binary.
+-}
+decodeStreamResponseDefinitionBytes : Proto.Binary.Decoder StreamResponseDefinition
+decodeStreamResponseDefinitionBytes =
+    mergeStreamResponseDefinitionBytes defaultStreamResponseDefinition
+
+
+{-| Decodes an [`UnaryRequest`](#UnaryRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeUnaryRequestBytes : UnaryRequest -> Proto.Binary.Decoder UnaryRequest
+mergeUnaryRequestBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeUnaryResponseDefinitionBytes mergeUnaryResponseDefinitionBytes defaultUnaryResponseDefinition)
+                        value.responseDefinition
+                        (\v ->
+                            { value
+                                | responseDefinition = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.bytes
+                        (\v ->
+                            { value
+                                | requestData = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes an [`UnaryRequest`](#UnaryRequest) from protobuf binary.
+-}
+decodeUnaryRequestBytes : Proto.Binary.Decoder UnaryRequest
+decodeUnaryRequestBytes =
+    mergeUnaryRequestBytes defaultUnaryRequest
+
+
+{-| Decodes an [`UnaryResponse`](#UnaryResponse) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeUnaryResponseBytes : UnaryResponse -> Proto.Binary.Decoder UnaryResponse
+mergeUnaryResponseBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeConformancePayloadBytes mergeConformancePayloadBytes defaultConformancePayload)
+                        value.payload
+                        (\v ->
+                            { value
+                                | payload = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes an [`UnaryResponse`](#UnaryResponse) from protobuf binary.
+-}
+decodeUnaryResponseBytes : Proto.Binary.Decoder UnaryResponse
+decodeUnaryResponseBytes =
+    mergeUnaryResponseBytes defaultUnaryResponse
+
+
+{-| Decodes an [`IdempotentUnaryRequest`](#IdempotentUnaryRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeIdempotentUnaryRequestBytes : IdempotentUnaryRequest -> Proto.Binary.Decoder IdempotentUnaryRequest
+mergeIdempotentUnaryRequestBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeUnaryResponseDefinitionBytes mergeUnaryResponseDefinitionBytes defaultUnaryResponseDefinition)
+                        value.responseDefinition
+                        (\v ->
+                            { value
+                                | responseDefinition = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.bytes
+                        (\v ->
+                            { value
+                                | requestData = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes an [`IdempotentUnaryRequest`](#IdempotentUnaryRequest) from protobuf binary.
+-}
+decodeIdempotentUnaryRequestBytes : Proto.Binary.Decoder IdempotentUnaryRequest
+decodeIdempotentUnaryRequestBytes =
+    mergeIdempotentUnaryRequestBytes defaultIdempotentUnaryRequest
+
+
+{-| Decodes an [`IdempotentUnaryResponse`](#IdempotentUnaryResponse) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeIdempotentUnaryResponseBytes : IdempotentUnaryResponse -> Proto.Binary.Decoder IdempotentUnaryResponse
+mergeIdempotentUnaryResponseBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeConformancePayloadBytes mergeConformancePayloadBytes defaultConformancePayload)
+                        value.payload
+                        (\v ->
+                            { value
+                                | payload = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes an [`IdempotentUnaryResponse`](#IdempotentUnaryResponse) from protobuf binary.
+-}
+decodeIdempotentUnaryResponseBytes : Proto.Binary.Decoder IdempotentUnaryResponse
+decodeIdempotentUnaryResponseBytes =
+    mergeIdempotentUnaryResponseBytes defaultIdempotentUnaryResponse
+
+
+{-| Decodes a [`ServerStreamRequest`](#ServerStreamRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeServerStreamRequestBytes : ServerStreamRequest -> Proto.Binary.Decoder ServerStreamRequest
+mergeServerStreamRequestBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeStreamResponseDefinitionBytes mergeStreamResponseDefinitionBytes defaultStreamResponseDefinition)
+                        value.responseDefinition
+                        (\v ->
+                            { value
+                                | responseDefinition = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.bytes
+                        (\v ->
+                            { value
+                                | requestData = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`ServerStreamRequest`](#ServerStreamRequest) from protobuf binary.
+-}
+decodeServerStreamRequestBytes : Proto.Binary.Decoder ServerStreamRequest
+decodeServerStreamRequestBytes =
+    mergeServerStreamRequestBytes defaultServerStreamRequest
+
+
+{-| Decodes a [`ServerStreamResponse`](#ServerStreamResponse) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeServerStreamResponseBytes : ServerStreamResponse -> Proto.Binary.Decoder ServerStreamResponse
+mergeServerStreamResponseBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeConformancePayloadBytes mergeConformancePayloadBytes defaultConformancePayload)
+                        value.payload
+                        (\v ->
+                            { value
+                                | payload = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`ServerStreamResponse`](#ServerStreamResponse) from protobuf binary.
+-}
+decodeServerStreamResponseBytes : Proto.Binary.Decoder ServerStreamResponse
+decodeServerStreamResponseBytes =
+    mergeServerStreamResponseBytes defaultServerStreamResponse
+
+
+{-| Decodes a [`ClientStreamRequest`](#ClientStreamRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeClientStreamRequestBytes : ClientStreamRequest -> Proto.Binary.Decoder ClientStreamRequest
+mergeClientStreamRequestBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeUnaryResponseDefinitionBytes mergeUnaryResponseDefinitionBytes defaultUnaryResponseDefinition)
+                        value.responseDefinition
+                        (\v ->
+                            { value
+                                | responseDefinition = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.bytes
+                        (\v ->
+                            { value
+                                | requestData = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`ClientStreamRequest`](#ClientStreamRequest) from protobuf binary.
+-}
+decodeClientStreamRequestBytes : Proto.Binary.Decoder ClientStreamRequest
+decodeClientStreamRequestBytes =
+    mergeClientStreamRequestBytes defaultClientStreamRequest
+
+
+{-| Decodes a [`ClientStreamResponse`](#ClientStreamResponse) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeClientStreamResponseBytes : ClientStreamResponse -> Proto.Binary.Decoder ClientStreamResponse
+mergeClientStreamResponseBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeConformancePayloadBytes mergeConformancePayloadBytes defaultConformancePayload)
+                        value.payload
+                        (\v ->
+                            { value
+                                | payload = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`ClientStreamResponse`](#ClientStreamResponse) from protobuf binary.
+-}
+decodeClientStreamResponseBytes : Proto.Binary.Decoder ClientStreamResponse
+decodeClientStreamResponseBytes =
+    mergeClientStreamResponseBytes defaultClientStreamResponse
+
+
+{-| Decodes a [`BidiStreamRequest`](#BidiStreamRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeBidiStreamRequestBytes : BidiStreamRequest -> Proto.Binary.Decoder BidiStreamRequest
+mergeBidiStreamRequestBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeStreamResponseDefinitionBytes mergeStreamResponseDefinitionBytes defaultStreamResponseDefinition)
+                        value.responseDefinition
+                        (\v ->
+                            { value
+                                | responseDefinition = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { value
+                                | fullDuplex = v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.field
+                        Proto.Binary.bytes
+                        (\v ->
+                            { value
+                                | requestData = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`BidiStreamRequest`](#BidiStreamRequest) from protobuf binary.
+-}
+decodeBidiStreamRequestBytes : Proto.Binary.Decoder BidiStreamRequest
+decodeBidiStreamRequestBytes =
+    mergeBidiStreamRequestBytes defaultBidiStreamRequest
+
+
+{-| Decodes a [`BidiStreamResponse`](#BidiStreamResponse) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeBidiStreamResponseBytes : BidiStreamResponse -> Proto.Binary.Decoder BidiStreamResponse
+mergeBidiStreamResponseBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeConformancePayloadBytes mergeConformancePayloadBytes defaultConformancePayload)
+                        value.payload
+                        (\v ->
+                            { value
+                                | payload = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`BidiStreamResponse`](#BidiStreamResponse) from protobuf binary.
+-}
+decodeBidiStreamResponseBytes : Proto.Binary.Decoder BidiStreamResponse
+decodeBidiStreamResponseBytes =
+    mergeBidiStreamResponseBytes defaultBidiStreamResponse
+
+
+{-| Decodes a [`UnimplementedRequest`](#UnimplementedRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeUnimplementedRequestBytes : UnimplementedRequest -> Proto.Binary.Decoder UnimplementedRequest
+mergeUnimplementedRequestBytes =
+    Proto.Binary.merge (\_ wire value -> Proto.Binary.skip wire value) identity
+
+
+{-| Decodes a [`UnimplementedRequest`](#UnimplementedRequest) from protobuf binary.
+-}
+decodeUnimplementedRequestBytes : Proto.Binary.Decoder UnimplementedRequest
+decodeUnimplementedRequestBytes =
+    mergeUnimplementedRequestBytes defaultUnimplementedRequest
+
+
+{-| Decodes a [`UnimplementedResponse`](#UnimplementedResponse) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeUnimplementedResponseBytes : UnimplementedResponse -> Proto.Binary.Decoder UnimplementedResponse
+mergeUnimplementedResponseBytes =
+    Proto.Binary.merge (\_ wire value -> Proto.Binary.skip wire value) identity
+
+
+{-| Decodes a [`UnimplementedResponse`](#UnimplementedResponse) from protobuf binary.
+-}
+decodeUnimplementedResponseBytes : Proto.Binary.Decoder UnimplementedResponse
+decodeUnimplementedResponseBytes =
+    mergeUnimplementedResponseBytes defaultUnimplementedResponse
+
+
+{-| Decodes a [`ConformancePayload`](#ConformancePayload) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeConformancePayloadBytes : ConformancePayload -> Proto.Binary.Decoder ConformancePayload
+mergeConformancePayloadBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.bytes
+                        (\v ->
+                            { value
+                                | data = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeConformancePayloadRequestInfoBytes mergeConformancePayloadRequestInfoBytes defaultConformancePayloadRequestInfo)
+                        value.requestInfo
+                        (\v ->
+                            { value
+                                | requestInfo = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`ConformancePayload`](#ConformancePayload) from protobuf binary.
+-}
+decodeConformancePayloadBytes : Proto.Binary.Decoder ConformancePayload
+decodeConformancePayloadBytes =
+    mergeConformancePayloadBytes defaultConformancePayload
+
+
+{-| Decodes a [`ConformancePayloadRequestInfo`](#ConformancePayloadRequestInfo) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeConformancePayloadRequestInfoBytes : ConformancePayloadRequestInfo -> Proto.Binary.Decoder ConformancePayloadRequestInfo
+mergeConformancePayloadRequestInfoBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
+                        (\v ->
+                            { value
+                                | requestHeaders = v
+                            }
+                        )
+                        value.requestHeaders
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.int64
+                        (\v ->
+                            { value
+                                | timeoutMs = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.repeated
+                        Proto.Binary.any
+                        (\v ->
+                            { value
+                                | requests = v
+                            }
+                        )
+                        value.requests
+                        wire
+                        value
+
+                4 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeConformancePayloadConnectGetInfoBytes mergeConformancePayloadConnectGetInfoBytes defaultConformancePayloadConnectGetInfo)
+                        value.connectGetInfo
+                        (\v ->
+                            { value
+                                | connectGetInfo = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | requestHeaders = List.reverse value.requestHeaders
+                , requests = List.reverse value.requests
+            }
+        )
+
+
+{-| Decodes a [`ConformancePayloadRequestInfo`](#ConformancePayloadRequestInfo) from protobuf binary.
+-}
+decodeConformancePayloadRequestInfoBytes : Proto.Binary.Decoder ConformancePayloadRequestInfo
+decodeConformancePayloadRequestInfoBytes =
+    mergeConformancePayloadRequestInfoBytes defaultConformancePayloadRequestInfo
+
+
+{-| Decodes a [`ConformancePayloadConnectGetInfo`](#ConformancePayloadConnectGetInfo) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeConformancePayloadConnectGetInfoBytes : ConformancePayloadConnectGetInfo -> Proto.Binary.Decoder ConformancePayloadConnectGetInfo
+mergeConformancePayloadConnectGetInfoBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
+                        (\v ->
+                            { value
+                                | queryParams = v
+                            }
+                        )
+                        value.queryParams
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | queryParams = List.reverse value.queryParams
+            }
+        )
+
+
+{-| Decodes a [`ConformancePayloadConnectGetInfo`](#ConformancePayloadConnectGetInfo) from protobuf binary.
+-}
+decodeConformancePayloadConnectGetInfoBytes : Proto.Binary.Decoder ConformancePayloadConnectGetInfo
+decodeConformancePayloadConnectGetInfoBytes =
+    mergeConformancePayloadConnectGetInfoBytes defaultConformancePayloadConnectGetInfo
+
+
+{-| Decodes an [`Error`](#Error) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeErrorBytes : Error -> Proto.Binary.Decoder Error
+mergeErrorBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeCodeBytes decodeCodeBytes)
+                        (\v ->
+                            { value
+                                | code = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | message = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.repeated
+                        Proto.Binary.any
+                        (\v ->
+                            { value
+                                | details = v
+                            }
+                        )
+                        value.details
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | details = List.reverse value.details
+            }
+        )
+
+
+{-| Decodes an [`Error`](#Error) from protobuf binary.
+-}
+decodeErrorBytes : Proto.Binary.Decoder Error
+decodeErrorBytes =
+    mergeErrorBytes defaultError
+
+
+{-| Decodes a [`Header`](#Header) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeHeaderBytes : Header -> Proto.Binary.Decoder Header
+mergeHeaderBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | name = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.repeated
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | value = v
+                            }
+                        )
+                        value.value
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | value = List.reverse value.value
+            }
+        )
+
+
+{-| Decodes a [`Header`](#Header) from protobuf binary.
+-}
+decodeHeaderBytes : Proto.Binary.Decoder Header
+decodeHeaderBytes =
+    mergeHeaderBytes defaultHeader
+
+
+{-| Decodes a [`RawHTTPRequest`](#RawHTTPRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeRawHTTPRequestBytes : RawHTTPRequest -> Proto.Binary.Decoder RawHTTPRequest
+mergeRawHTTPRequestBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | verb = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | uri = v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
+                        (\v ->
+                            { value
+                                | headers = v
+                            }
+                        )
+                        value.headers
+                        wire
+                        value
+
+                4 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
+                        (\v ->
+                            { value
+                                | rawQueryParams = v
+                            }
+                        )
+                        value.rawQueryParams
+                        wire
+                        value
+
+                5 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeRawHTTPRequestEncodedQueryParamBytes mergeRawHTTPRequestEncodedQueryParamBytes defaultRawHTTPRequestEncodedQueryParam)
+                        (\v ->
+                            { value
+                                | encodedQueryParams = v
+                            }
+                        )
+                        value.encodedQueryParams
+                        wire
+                        value
+
+                6 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeMessageContentsBytes mergeMessageContentsBytes defaultMessageContents)
+                        (case value.body of
+                            RawHTTPRequestBodyUnary member ->
+                                Just member
+
+                            _ ->
+                                Nothing
+                        )
+                        (\v ->
+                            { value
+                                | body = RawHTTPRequestBodyUnary v
+                            }
+                        )
+                        wire
+                        value
+
+                7 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeStreamContentsBytes mergeStreamContentsBytes defaultStreamContents)
+                        (case value.body of
+                            RawHTTPRequestBodyStream member ->
+                                Just member
+
+                            _ ->
+                                Nothing
+                        )
+                        (\v ->
+                            { value
+                                | body = RawHTTPRequestBodyStream v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | headers = List.reverse value.headers
+                , rawQueryParams = List.reverse value.rawQueryParams
+                , encodedQueryParams = List.reverse value.encodedQueryParams
+            }
+        )
+
+
+{-| Decodes a [`RawHTTPRequest`](#RawHTTPRequest) from protobuf binary.
+-}
+decodeRawHTTPRequestBytes : Proto.Binary.Decoder RawHTTPRequest
+decodeRawHTTPRequestBytes =
+    mergeRawHTTPRequestBytes defaultRawHTTPRequest
+
+
+{-| Decodes a [`RawHTTPRequestEncodedQueryParam`](#RawHTTPRequestEncodedQueryParam) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeRawHTTPRequestEncodedQueryParamBytes : RawHTTPRequestEncodedQueryParam -> Proto.Binary.Decoder RawHTTPRequestEncodedQueryParam
+mergeRawHTTPRequestEncodedQueryParamBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | name = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeMessageContentsBytes mergeMessageContentsBytes defaultMessageContents)
+                        value.value
+                        (\v ->
+                            { value
+                                | value = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { value
+                                | base64Encode = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`RawHTTPRequestEncodedQueryParam`](#RawHTTPRequestEncodedQueryParam) from protobuf binary.
+-}
+decodeRawHTTPRequestEncodedQueryParamBytes : Proto.Binary.Decoder RawHTTPRequestEncodedQueryParam
+decodeRawHTTPRequestEncodedQueryParamBytes =
+    mergeRawHTTPRequestEncodedQueryParamBytes defaultRawHTTPRequestEncodedQueryParam
+
+
+{-| Decodes a [`MessageContents`](#MessageContents) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeMessageContentsBytes : MessageContents -> Proto.Binary.Decoder MessageContents
+mergeMessageContentsBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.bytes
+                        (\v ->
+                            { value
+                                | data = MessageContentsDataBinary v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | data = MessageContentsDataText v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.field
+                        Proto.Binary.any
+                        (\v ->
+                            { value
+                                | data = MessageContentsDataBinaryMessage v
+                            }
+                        )
+                        wire
+                        value
+
+                4 ->
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeCompressionBytes decodeCompressionBytes)
+                        (\v ->
+                            { value
+                                | compression = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`MessageContents`](#MessageContents) from protobuf binary.
+-}
+decodeMessageContentsBytes : Proto.Binary.Decoder MessageContents
+decodeMessageContentsBytes =
+    mergeMessageContentsBytes defaultMessageContents
+
+
+{-| Decodes a [`StreamContents`](#StreamContents) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeStreamContentsBytes : StreamContents -> Proto.Binary.Decoder StreamContents
+mergeStreamContentsBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeStreamContentsStreamItemBytes mergeStreamContentsStreamItemBytes defaultStreamContentsStreamItem)
+                        (\v ->
+                            { value
+                                | items = v
+                            }
+                        )
+                        value.items
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | items = List.reverse value.items
+            }
+        )
+
+
+{-| Decodes a [`StreamContents`](#StreamContents) from protobuf binary.
+-}
+decodeStreamContentsBytes : Proto.Binary.Decoder StreamContents
+decodeStreamContentsBytes =
+    mergeStreamContentsBytes defaultStreamContents
+
+
+{-| Decodes a [`StreamContentsStreamItem`](#StreamContentsStreamItem) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeStreamContentsStreamItemBytes : StreamContentsStreamItem -> Proto.Binary.Decoder StreamContentsStreamItem
+mergeStreamContentsStreamItemBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.uint32
+                        (\v ->
+                            { value
+                                | flags = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.uint32
+                        (\v ->
+                            { value
+                                | length = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeMessageContentsBytes mergeMessageContentsBytes defaultMessageContents)
+                        value.payload
+                        (\v ->
+                            { value
+                                | payload = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`StreamContentsStreamItem`](#StreamContentsStreamItem) from protobuf binary.
+-}
+decodeStreamContentsStreamItemBytes : Proto.Binary.Decoder StreamContentsStreamItem
+decodeStreamContentsStreamItemBytes =
+    mergeStreamContentsStreamItemBytes defaultStreamContentsStreamItem
+
+
+{-| Decodes a [`RawHTTPResponse`](#RawHTTPResponse) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeRawHTTPResponseBytes : RawHTTPResponse -> Proto.Binary.Decoder RawHTTPResponse
+mergeRawHTTPResponseBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.uint32
+                        (\v ->
+                            { value
+                                | statusCode = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
+                        (\v ->
+                            { value
+                                | headers = v
+                            }
+                        )
+                        value.headers
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeMessageContentsBytes mergeMessageContentsBytes defaultMessageContents)
+                        (case value.body of
+                            RawHTTPResponseBodyUnary member ->
+                                Just member
+
+                            _ ->
+                                Nothing
+                        )
+                        (\v ->
+                            { value
+                                | body = RawHTTPResponseBodyUnary v
+                            }
+                        )
+                        wire
+                        value
+
+                4 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeStreamContentsBytes mergeStreamContentsBytes defaultStreamContents)
+                        (case value.body of
+                            RawHTTPResponseBodyStream member ->
+                                Just member
+
+                            _ ->
+                                Nothing
+                        )
+                        (\v ->
+                            { value
+                                | body = RawHTTPResponseBodyStream v
+                            }
+                        )
+                        wire
+                        value
+
+                5 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
+                        (\v ->
+                            { value
+                                | trailers = v
+                            }
+                        )
+                        value.trailers
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | headers = List.reverse value.headers
+                , trailers = List.reverse value.trailers
+            }
+        )
+
+
+{-| Decodes a [`RawHTTPResponse`](#RawHTTPResponse) from protobuf binary.
+-}
+decodeRawHTTPResponseBytes : Proto.Binary.Decoder RawHTTPResponse
+decodeRawHTTPResponseBytes =
+    mergeRawHTTPResponseBytes defaultRawHTTPResponse
+
+
+{-| Decodes a [`TestSuite`](#TestSuite) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeTestSuiteBytes : TestSuite -> Proto.Binary.Decoder TestSuite
+mergeTestSuiteBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | name = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeTestSuiteTestModeBytes decodeTestSuiteTestModeBytes)
+                        (\v ->
+                            { value
+                                | mode = v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeTestCaseBytes mergeTestCaseBytes defaultTestCase)
+                        (\v ->
+                            { value
+                                | testCases = v
+                            }
+                        )
+                        value.testCases
+                        wire
+                        value
+
+                4 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.enum encodeProtocolBytes decodeProtocolBytes)
+                        (\v ->
+                            { value
+                                | relevantProtocols = v
+                            }
+                        )
+                        value.relevantProtocols
+                        wire
+                        value
+
+                5 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.enum encodeHTTPVersionBytes decodeHTTPVersionBytes)
+                        (\v ->
+                            { value
+                                | relevantHttpVersions = v
+                            }
+                        )
+                        value.relevantHttpVersions
+                        wire
+                        value
+
+                6 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.enum encodeCodecBytes decodeCodecBytes)
+                        (\v ->
+                            { value
+                                | relevantCodecs = v
+                            }
+                        )
+                        value.relevantCodecs
+                        wire
+                        value
+
+                7 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.enum encodeCompressionBytes decodeCompressionBytes)
+                        (\v ->
+                            { value
+                                | relevantCompressions = v
+                            }
+                        )
+                        value.relevantCompressions
+                        wire
+                        value
+
+                8 ->
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeTestSuiteConnectVersionModeBytes decodeTestSuiteConnectVersionModeBytes)
+                        (\v ->
+                            { value
+                                | connectVersionMode = v
+                            }
+                        )
+                        wire
+                        value
+
+                9 ->
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { value
+                                | reliesOnTls = v
+                            }
+                        )
+                        wire
+                        value
+
+                10 ->
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { value
+                                | reliesOnTlsClientCerts = v
+                            }
+                        )
+                        wire
+                        value
+
+                11 ->
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { value
+                                | reliesOnConnectGet = v
+                            }
+                        )
+                        wire
+                        value
+
+                12 ->
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { value
+                                | reliesOnMessageReceiveLimit = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | testCases = List.reverse value.testCases
+                , relevantProtocols = List.reverse value.relevantProtocols
+                , relevantHttpVersions = List.reverse value.relevantHttpVersions
+                , relevantCodecs = List.reverse value.relevantCodecs
+                , relevantCompressions = List.reverse value.relevantCompressions
+            }
+        )
+
+
+{-| Decodes a [`TestSuite`](#TestSuite) from protobuf binary.
+-}
+decodeTestSuiteBytes : Proto.Binary.Decoder TestSuite
+decodeTestSuiteBytes =
+    mergeTestSuiteBytes defaultTestSuite
+
+
+{-| Decodes a [`TestCase`](#TestCase) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeTestCaseBytes : TestCase -> Proto.Binary.Decoder TestCase
+mergeTestCaseBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeClientCompatRequestBytes mergeClientCompatRequestBytes defaultClientCompatRequest)
+                        value.request
+                        (\v ->
+                            { value
+                                | request = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeTestCaseExpandedSizeBytes mergeTestCaseExpandedSizeBytes defaultTestCaseExpandedSize)
+                        (\v ->
+                            { value
+                                | expandRequests = v
+                            }
+                        )
+                        value.expandRequests
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeClientResponseResultBytes mergeClientResponseResultBytes defaultClientResponseResult)
+                        value.expectedResponse
+                        (\v ->
+                            { value
+                                | expectedResponse = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                4 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.enum encodeCodeBytes decodeCodeBytes)
+                        (\v ->
+                            { value
+                                | otherAllowedErrorCodes = v
+                            }
+                        )
+                        value.otherAllowedErrorCodes
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | expandRequests = List.reverse value.expandRequests
+                , otherAllowedErrorCodes = List.reverse value.otherAllowedErrorCodes
+            }
+        )
+
+
+{-| Decodes a [`TestCase`](#TestCase) from protobuf binary.
+-}
+decodeTestCaseBytes : Proto.Binary.Decoder TestCase
+decodeTestCaseBytes =
+    mergeTestCaseBytes defaultTestCase
+
+
+{-| Decodes a [`TestCaseExpandedSize`](#TestCaseExpandedSize) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeTestCaseExpandedSizeBytes : TestCaseExpandedSize -> Proto.Binary.Decoder TestCaseExpandedSize
+mergeTestCaseExpandedSizeBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.int32
+                        (\v ->
+                            { value
+                                | sizeRelativeToLimit = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`TestCaseExpandedSize`](#TestCaseExpandedSize) from protobuf binary.
+-}
+decodeTestCaseExpandedSizeBytes : Proto.Binary.Decoder TestCaseExpandedSize
+decodeTestCaseExpandedSizeBytes =
+    mergeTestCaseExpandedSizeBytes defaultTestCaseExpandedSize

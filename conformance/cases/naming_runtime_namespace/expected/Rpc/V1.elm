@@ -9,12 +9,14 @@ module Rpc.V1 exposing (..)
 runtime may add a module of the same name in any release.
 -}
 
+import Bytes.Encode
 import Json.Decode
 import Json.Encode
-import Proto.Codec
+import Proto.Binary
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 import Proto.Version
 import Rpc.V1.Ping
 
@@ -58,9 +60,9 @@ defaultPing =
 
 {-| The typed value of [`Ping`](#Ping): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messagePing : Proto.Message.Message Proto.Codec.Json Ping
+messagePing : Proto.Message.Message Ping
 messagePing =
-    Proto.Message.initJson "rpc.v1.Ping" encodePing decodePing
+    Proto.Message.init "rpc.v1.Ping" encodePing decodePing encodePingBytes decodePingBytes
 
 
 
@@ -78,6 +80,16 @@ descriptors =
             []
         )
         Proto.Descriptors.wellKnown
+
+
+{-| The codecs of this package's messages, of those of the packages it imports and of the well-known types they hold, by full name: the JSON codecs of a message holding a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) convert it through this registry, or one wider.
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.unionAll
+        [ Proto.Registry.empty
+            |> Proto.Registry.withCodecs "rpc.v1.Ping" (\_ -> decodePing) encodePingBytes decodePingBytes (\_ -> Ok << encodePing)
+        ]
 
 
 
@@ -103,3 +115,51 @@ decodePing : Json.Decode.Decoder Ping
 decodePing =
     Json.Decode.succeed Ping
         |> Proto.Json.field "text" "" Proto.Json.string
+
+
+
+-- BINARY ENCODERS
+
+
+{-| Encodes a [`Ping`](#Ping) as protobuf binary.
+-}
+encodePingBytes : Ping -> Bytes.Encode.Encoder
+encodePingBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.text
+        ]
+
+
+
+-- BINARY DECODERS
+
+
+{-| Decodes a [`Ping`](#Ping) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergePingBytes : Ping -> Proto.Binary.Decoder Ping
+mergePingBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | text = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`Ping`](#Ping) from protobuf binary.
+-}
+decodePingBytes : Proto.Binary.Decoder Ping
+decodePingBytes =
+    mergePingBytes defaultPing

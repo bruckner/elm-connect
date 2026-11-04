@@ -5,12 +5,14 @@ import Expect
 import Http
 import Json.Decode
 import Json.Encode exposing (Value)
+import Proto.Any
 import Proto.Enum
 import Proto.EnumValue
 import Proto.Field exposing (Cardinality(..), Kind(..), Scalar(..))
 import Proto.Http
 import Proto.Json
 import Proto.Method exposing (Idempotency(..), Method)
+import Proto.Registry
 import Rpc
 import Rpc.Body
 import Rpc.Call
@@ -87,8 +89,9 @@ raw : List Rule -> Method Rpc.Json Value String
 raw bindings =
     Proto.Method.initJson "t.v1.T"
         "M"
-        identity
-        (Json.Decode.field "title" Json.Decode.string)
+        Proto.Registry.empty
+        (\_ -> Ok << identity)
+        (\_ -> Json.Decode.field "title" Json.Decode.string)
         |> Proto.Method.withBindings (List.map Proto.Http.binding bindings)
 
 
@@ -544,7 +547,7 @@ responses =
             \_ ->
                 Rpc.response transcoding
                     (Rpc.call
-                        (Proto.Method.initJson "t" "m" identity (Json.Decode.succeed ())
+                        (Proto.Method.initJson "t" "m" Proto.Registry.empty (\_ -> Ok << identity) (\_ -> Json.Decode.succeed ())
                             |> Proto.Method.withBindings [ Proto.Http.binding rule ]
                         )
                         Json.Encode.null
@@ -620,13 +623,13 @@ errors =
                         (\error ->
                             case error of
                                 RpcStatus r _ ->
-                                    Just ( ( r.code, r.source ), r.message, List.filterMap (.json >> Maybe.map (Proto.Json.encodeAny >> Json.Encode.encode 0)) r.details )
+                                    Just ( ( r.code, r.source ), r.message, List.map Proto.Any.typeUrl r.details )
 
                                 _ ->
                                     Nothing
                         )
                     |> Expect.equal
-                        (Err (Just ( ( NotFound, StatusBody ), "no such note", [ """{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"GONE"}""" ] )))
+                        (Err (Just ( ( NotFound, StatusBody ), "no such note", [] )))
         , test "a code outside 1 to 16 is Unknown" <|
             \_ ->
                 [ failed 500 "" [] """{"code":42}""", failed 500 "" [] """{"code":0,"message":"ok?"}""" ]

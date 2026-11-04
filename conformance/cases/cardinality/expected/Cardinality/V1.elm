@@ -8,14 +8,16 @@ module Cardinality.V1 exposing (..)
 singular message fields, and repeated scalars and messages.
 -}
 
+import Bytes.Encode
 import Cardinality.V1.Author
 import Cardinality.V1.Note
 import Json.Decode
 import Json.Encode
-import Proto.Codec
+import Proto.Binary
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 import Proto.Version
 
 
@@ -112,16 +114,16 @@ defaultNote =
 
 {-| The typed value of [`Author`](#Author): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageAuthor : Proto.Message.Message Proto.Codec.Json Author
+messageAuthor : Proto.Message.Message Author
 messageAuthor =
-    Proto.Message.initJson "cardinality.v1.Author" encodeAuthor decodeAuthor
+    Proto.Message.init "cardinality.v1.Author" encodeAuthor decodeAuthor encodeAuthorBytes decodeAuthorBytes
 
 
 {-| The typed value of [`Note`](#Note): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageNote : Proto.Message.Message Proto.Codec.Json Note
+messageNote : Proto.Message.Message Note
 messageNote =
-    Proto.Message.initJson "cardinality.v1.Note" encodeNote decodeNote
+    Proto.Message.init "cardinality.v1.Note" encodeNote decodeNote encodeNoteBytes decodeNoteBytes
 
 
 
@@ -140,6 +142,17 @@ descriptors =
             []
         )
         Proto.Descriptors.wellKnown
+
+
+{-| The codecs of this package's messages, of those of the packages it imports and of the well-known types they hold, by full name: the JSON codecs of a message holding a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) convert it through this registry, or one wider.
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.unionAll
+        [ Proto.Registry.empty
+            |> Proto.Registry.withCodecs "cardinality.v1.Author" (\_ -> decodeAuthor) encodeAuthorBytes decodeAuthorBytes (\_ -> Ok << encodeAuthor)
+            |> Proto.Registry.withCodecs "cardinality.v1.Note" (\_ -> decodeNote) encodeNoteBytes decodeNoteBytes (\_ -> Ok << encodeNote)
+        ]
 
 
 
@@ -206,3 +219,250 @@ decodeNote =
         |> Proto.Json.fieldEither "relatedLinks" "related_links" [] (Json.Decode.list Proto.Json.string)
         |> Proto.Json.fieldEither "isDraft" "is_draft" Nothing (Json.Decode.map Just Json.Decode.bool)
         |> Proto.Json.field "title" "" Proto.Json.string
+
+
+
+-- BINARY ENCODERS
+
+
+{-| Encodes an [`Author`](#Author) as protobuf binary.
+-}
+encodeAuthorBytes : Author -> Bytes.Encode.Encoder
+encodeAuthorBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.name
+        ]
+
+
+{-| Encodes a [`Note`](#Note) as protobuf binary.
+-}
+encodeNoteBytes : Note -> Bytes.Encode.Encoder
+encodeNoteBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.optional Proto.Binary.string 1 value.subtitle
+        , Proto.Binary.optional Proto.Binary.int32 2 value.stars
+        , Proto.Binary.optional Proto.Binary.double 3 value.score
+        , Proto.Binary.optional Proto.Binary.int64 4 value.views
+        , Proto.Binary.optional (Proto.Binary.embedded encodeAuthorBytes mergeAuthorBytes defaultAuthor) 5 value.author
+        , Proto.Binary.optional (Proto.Binary.embedded encodeAuthorBytes mergeAuthorBytes defaultAuthor) 6 value.editor
+        , Proto.Binary.list Proto.Binary.string 7 value.tags
+        , Proto.Binary.list Proto.Binary.int32 8 value.counts
+        , Proto.Binary.list Proto.Binary.float 9 value.weights
+        , Proto.Binary.list (Proto.Binary.embedded encodeAuthorBytes mergeAuthorBytes defaultAuthor) 10 value.reviewers
+        , Proto.Binary.implicit Proto.Binary.string 11 value.title
+        , Proto.Binary.list Proto.Binary.string 12 value.relatedLinks
+        , Proto.Binary.optional Proto.Binary.bool 13 value.isDraft
+        ]
+
+
+
+-- BINARY DECODERS
+
+
+{-| Decodes an [`Author`](#Author) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeAuthorBytes : Author -> Proto.Binary.Decoder Author
+mergeAuthorBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | name = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes an [`Author`](#Author) from protobuf binary.
+-}
+decodeAuthorBytes : Proto.Binary.Decoder Author
+decodeAuthorBytes =
+    mergeAuthorBytes defaultAuthor
+
+
+{-| Decodes a [`Note`](#Note) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeNoteBytes : Note -> Proto.Binary.Decoder Note
+mergeNoteBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | subtitle = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.int32
+                        (\v ->
+                            { value
+                                | stars = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.field
+                        Proto.Binary.double
+                        (\v ->
+                            { value
+                                | score = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                4 ->
+                    Proto.Binary.field
+                        Proto.Binary.int64
+                        (\v ->
+                            { value
+                                | views = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                5 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeAuthorBytes mergeAuthorBytes defaultAuthor)
+                        value.author
+                        (\v ->
+                            { value
+                                | author = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                6 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeAuthorBytes mergeAuthorBytes defaultAuthor)
+                        value.editor
+                        (\v ->
+                            { value
+                                | editor = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                7 ->
+                    Proto.Binary.repeated
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | tags = v
+                            }
+                        )
+                        value.tags
+                        wire
+                        value
+
+                8 ->
+                    Proto.Binary.repeated
+                        Proto.Binary.int32
+                        (\v ->
+                            { value
+                                | counts = v
+                            }
+                        )
+                        value.counts
+                        wire
+                        value
+
+                9 ->
+                    Proto.Binary.repeated
+                        Proto.Binary.float
+                        (\v ->
+                            { value
+                                | weights = v
+                            }
+                        )
+                        value.weights
+                        wire
+                        value
+
+                10 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeAuthorBytes mergeAuthorBytes defaultAuthor)
+                        (\v ->
+                            { value
+                                | reviewers = v
+                            }
+                        )
+                        value.reviewers
+                        wire
+                        value
+
+                11 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | title = v
+                            }
+                        )
+                        wire
+                        value
+
+                12 ->
+                    Proto.Binary.repeated
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | relatedLinks = v
+                            }
+                        )
+                        value.relatedLinks
+                        wire
+                        value
+
+                13 ->
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { value
+                                | isDraft = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | tags = List.reverse value.tags
+                , counts = List.reverse value.counts
+                , weights = List.reverse value.weights
+                , reviewers = List.reverse value.reviewers
+                , relatedLinks = List.reverse value.relatedLinks
+            }
+        )
+
+
+{-| Decodes a [`Note`](#Note) from protobuf binary.
+-}
+decodeNoteBytes : Proto.Binary.Decoder Note
+decodeNoteBytes =
+    mergeNoteBytes defaultNote

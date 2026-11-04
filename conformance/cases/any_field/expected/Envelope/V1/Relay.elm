@@ -9,9 +9,9 @@ module Envelope.V1.Relay exposing (..)
 
 import Envelope.V1
 import Proto.Any
-import Proto.Codec
 import Proto.Json
 import Proto.Method
+import Proto.Registry
 import Proto.Version
 import Rpc
 
@@ -34,13 +34,14 @@ Transcode: no HTTP rule, follows the Connect path.
 Codecs: JSON. Described by [`descriptorForward`](#descriptorForward).
 
 -}
-forward : Proto.Any.Any Proto.Codec.Json -> Rpc.Call Rpc.Json (Proto.Any.Any Proto.Codec.Json) (Proto.Any.Any Proto.Codec.Json)
+forward : Proto.Any.Any -> Rpc.Call Rpc.Json Proto.Any.Any Proto.Any.Any
 forward =
     Rpc.call
         (Proto.Method.initJson "envelope.v1.Relay"
             "Forward"
-            Proto.Json.encodeAny
-            Proto.Json.any
+            Proto.Registry.wellKnown
+            Proto.Json.encodeAnyWith
+            Proto.Json.anyWith
         )
 
 
@@ -56,8 +57,9 @@ send =
     Rpc.call
         (Proto.Method.initJson "envelope.v1.Relay"
             "Send"
-            Envelope.V1.encodeEnvelope
-            Envelope.V1.decodeEnvelope
+            Envelope.V1.registry
+            Envelope.V1.encodeEnvelopeWith
+            Envelope.V1.decodeEnvelopeWith
         )
 
 

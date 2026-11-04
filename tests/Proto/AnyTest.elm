@@ -5,12 +5,13 @@ import Expect
 import Json.Decode
 import Json.Encode
 import Proto.Any as Any exposing (Any, Problem(..))
-import Proto.Codec exposing (Json)
+import Proto.Binary
 import Proto.Descriptors as Descriptors
 import Proto.Duration as Duration
 import Proto.Field as Field exposing (Cardinality(..), Kind(..), Scalar(..))
 import Proto.Json
 import Proto.Message as Message exposing (Message)
+import Proto.Registry as Registry exposing (Registry)
 import Proto.WellKnown as WellKnown
 import Test exposing (Test, describe, test)
 import Time
@@ -20,9 +21,9 @@ type alias Note =
     { title : String, pinned : Bool }
 
 
-{-| A message as generated code under `codec=json` gives one.
+{-| A message as generated code gives one.
 -}
-messageNote : Message Json Note
+messageNote : Message Note
 messageNote =
     noteAs "notes.v1.Note"
 
@@ -37,19 +38,60 @@ descriptorNote =
 
 {-| Note's codecs under another full name.
 -}
-noteAs : String -> Message Json Note
+noteAs : String -> Message Note
 noteAs name =
-    Message.initJson name
-        (\value ->
-            Json.Encode.object
-                [ ( "title", Json.Encode.string value.title )
-                , ( "pinned", Json.Encode.bool value.pinned )
-                ]
+    Message.init name encodeNote decodeNote encodeNoteBytes decodeNoteBytes
+
+
+encodeNote : Note -> Json.Encode.Value
+encodeNote value =
+    Json.Encode.object
+        [ ( "title", Json.Encode.string value.title )
+        , ( "pinned", Json.Encode.bool value.pinned )
+        ]
+
+
+decodeNote : Json.Decode.Decoder Note
+decodeNote =
+    Json.Decode.map2 Note
+        (Json.Decode.field "title" Json.Decode.string)
+        (Json.Decode.field "pinned" Json.Decode.bool)
+
+
+encodeNoteBytes : Note -> Bytes.Encode.Encoder
+encodeNoteBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.title
+        , Proto.Binary.implicit Proto.Binary.bool 2 value.pinned
+        ]
+
+
+decodeNoteBytes : Proto.Binary.Decoder Note
+decodeNoteBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | title = v }) wire value
+
+                2 ->
+                    Proto.Binary.field Proto.Binary.bool (\v -> { value | pinned = v }) wire value
+
+                _ ->
+                    Proto.Binary.skip wire value
         )
-        (Json.Decode.map2 Note
-            (Json.Decode.field "title" Json.Decode.string)
-            (Json.Decode.field "pinned" Json.Decode.bool)
-        )
+        identity
+        { title = "", pinned = False }
+
+
+{-| The registry generated code gives a package of `notes.v1.Note`, with the
+well-known types.
+-}
+registry : Registry
+registry =
+    Registry.empty
+        |> Registry.withCodecs "notes.v1.Note" (\_ -> decodeNote) encodeNoteBytes decodeNoteBytes (\_ -> encodeNote >> Ok)
+        |> Registry.union Registry.wellKnown
 
 
 note : Note
@@ -57,20 +99,22 @@ note =
     { title = "groceries", pinned = True }
 
 
-written : Any Json -> String
+written : Any -> String
 written any =
-    Json.Encode.encode 0 (Proto.Json.encodeAny any)
+    Proto.Json.encodeAnyWith registry any
+        |> Result.map (Json.Encode.encode 0)
+        |> Result.withDefault "unwritable"
 
 
-read : String -> Result String (Any Json)
+read : String -> Result String Any
 read text =
-    Json.Decode.decodeString Proto.Json.any text
+    Json.Decode.decodeString (Proto.Json.anyWith registry) text
         |> Result.mapError Json.Decode.errorToString
 
 
 {-| Through JSON and back.
 -}
-roundTrip : Any Json -> Result String (Any Json)
+roundTrip : Any -> Result String Any
 roundTrip any =
     read (written any)
 
@@ -88,9 +132,6 @@ word =
                 InvalidProto ->
                     "proto"
 
-                InvalidJson _ ->
-                    "json"
-
                 UnregisteredType name ->
                     "unregistered " ++ name
         )
@@ -101,18 +142,18 @@ suite =
     describe "Proto.Any"
         [ test "a message is its own object plus @type" <|
             \_ ->
-                written (Any.packJson messageNote note)
+                written (Any.pack messageNote note)
                     |> Expect.equal """{"@type":"type.googleapis.com/notes.v1.Note","title":"groceries","pinned":true}"""
         , test "a message unpacks after a round trip through JSON" <|
             \_ ->
-                roundTrip (Any.packJson messageNote note)
-                    |> Result.map (Any.unpackJson messageNote)
+                roundTrip (Any.pack messageNote note)
+                    |> Result.map (Any.unpack messageNote)
                     |> Expect.equal (Ok (Just note))
         , test "a well-known type with a JSON form of its own is under value" <|
             \_ ->
-                [ Any.packJson WellKnown.duration (Duration.fromMilliseconds 1500)
-                , Any.packJson WellKnown.empty ()
-                , Any.packJson WellKnown.stringValue "hi"
+                [ Any.pack WellKnown.duration (Duration.fromMilliseconds 1500)
+                , Any.pack WellKnown.empty ()
+                , Any.pack WellKnown.stringValue "hi"
                 ]
                     |> List.map written
                     |> Expect.equal
@@ -122,18 +163,18 @@ suite =
                         ]
         , test "a well-known type unpacks after a round trip through JSON" <|
             \_ ->
-                roundTrip (Any.packJson WellKnown.duration (Duration.fromMilliseconds 1500))
-                    |> Result.map (Any.unpackJson WellKnown.duration >> Maybe.map Duration.toMilliseconds)
+                roundTrip (Any.pack WellKnown.duration (Duration.fromMilliseconds 1500))
+                    |> Result.map (Any.unpack WellKnown.duration >> Maybe.map Duration.toMilliseconds)
                     |> Expect.equal (Ok (Just 1500))
         , test "an Any packs inside an Any" <|
             \_ ->
                 let
                     packed =
-                        Any.packJson WellKnown.any (Any.packJson messageNote note)
+                        Any.pack WellKnown.any (Any.pack messageNote note)
                 in
                 ( written packed
                 , roundTrip packed
-                    |> Result.map (Any.unpackJson WellKnown.any >> Maybe.andThen (Any.unpackJson messageNote))
+                    |> Result.map (Any.unpack WellKnown.any >> Maybe.andThen (Any.unpack messageNote))
                 )
                     |> Expect.equal
                         ( """{"@type":"type.googleapis.com/google.protobuf.Any","value":{"@type":"type.googleapis.com/notes.v1.Note","title":"groceries","pinned":true}}"""
@@ -143,39 +184,37 @@ suite =
             \_ ->
                 let
                     packed =
-                        Any.packJsonWith "example.com/types" messageNote note
+                        Any.packWith "example.com/types" messageNote note
                 in
                 ( ( Any.typeUrl packed, Any.typeName packed )
                 , ( Any.is messageNote packed, Any.is WellKnown.duration packed )
-                , Any.typeUrl (Any.packJsonWith "example.com/" messageNote note)
+                , Any.typeUrl (Any.packWith "example.com/" messageNote note)
                 )
                     |> Expect.equal
                         ( ( "example.com/types/notes.v1.Note", "notes.v1.Note" )
                         , ( True, False )
                         , "example.com/notes.v1.Note"
                         )
-        , test "unpacking another type is a TypeMismatch naming it, an undecodable one InvalidJson" <|
+        , test "unpacking another type is a TypeMismatch naming it" <|
             \_ ->
-                ( Any.tryUnpackJson WellKnown.duration (Any.packJson messageNote note) |> word
-                , read """{"@type":"type.googleapis.com/notes.v1.Note","title":7}"""
-                    |> Result.map (Any.tryUnpackJson messageNote >> word)
-                , Any.unpackJson WellKnown.duration (Any.packJson messageNote note)
+                ( Any.tryUnpack WellKnown.duration (Any.pack messageNote note) |> word
+                , Any.unpack WellKnown.duration (Any.pack messageNote note)
                 )
-                    |> Expect.equal ( Err "type notes.v1.Note", Ok (Err "json"), Nothing )
-        , test "json reads the message's JSON" <|
+                    |> Expect.equal ( Err "type notes.v1.Note", Nothing )
+        , test "toJson gives the message's JSON through the registry" <|
             \_ ->
-                [ Any.packJson messageNote note, Any.packJson WellKnown.stringValue "hi" ]
-                    |> List.map (Any.json >> Json.Encode.encode 0)
-                    |> Expect.equal [ """{"title":"groceries","pinned":true}""", "\"hi\"" ]
+                [ Any.pack messageNote note, Any.pack WellKnown.stringValue "hi" ]
+                    |> List.map (Any.toJson registry >> Maybe.map (Json.Encode.encode 0))
+                    |> Expect.equal [ Just """{"title":"groceries","pinned":true}""", Just "\"hi\"" ]
         , test "describe finds the type among descriptors" <|
             \_ ->
                 let
                     descriptors =
                         Descriptors.union (Descriptors.fromDescriptors [ descriptorNote ] []) Descriptors.wellKnown
                 in
-                [ Any.packJson messageNote note
-                , Any.packJson WellKnown.timestamp (Time.millisToPosix 0)
-                , Any.packJsonWith "example.com" (noteAs "other.v1.Thing") note
+                [ Any.pack messageNote note
+                , Any.pack WellKnown.timestamp (Time.millisToPosix 0)
+                , Any.packWith "example.com" (noteAs "other.v1.Thing") note
                 ]
                     |> List.map (Any.describe descriptors >> Maybe.map (\found -> ( Message.fullName found, List.map Field.jsonName (Message.fields found) )))
                     |> Expect.equal
@@ -186,8 +225,8 @@ suite =
         , test "== on Bytes finds any two equal, so an Any compares its binary as text" <|
             \_ ->
                 ( Bytes.Encode.encode (Bytes.Encode.unsignedInt8 1) == Bytes.Encode.encode (Bytes.Encode.unsignedInt8 2)
-                , Any.pack WellKnown.int32ValueProto 1 == Any.pack WellKnown.int32ValueProto 2
-                , Any.pack WellKnown.int32ValueProto 1 == Any.pack WellKnown.int32ValueProto 1
+                , Any.pack WellKnown.int32Value 1 == Any.pack WellKnown.int32Value 2
+                , Any.pack WellKnown.int32Value 1 == Any.pack WellKnown.int32Value 1
                 )
                     |> Expect.equal ( True, False, True )
         , test "an @type that is not a type URL fails" <|
@@ -199,16 +238,13 @@ suite =
                 ]
                     |> List.filter (\json -> Result.toMaybe (read json) /= Nothing)
                     |> Expect.equal []
-        , test "a well-formed type URL of an unknown type is kept" <|
+        , test "a well-formed type URL of a type the registry lacks fails" <|
             \_ ->
                 [ """{"@type":"example.com/other.v1.Thing","name":"x"}"""
                 , """{"@type":"/other.v1.Thing","name":"x"}"""
                 ]
-                    |> List.map (read >> Result.map (\any -> ( Any.typeUrl any, Any.typeName any )))
-                    |> Expect.equal
-                        [ Ok ( "example.com/other.v1.Thing", "other.v1.Thing" )
-                        , Ok ( "/other.v1.Thing", "other.v1.Thing" )
-                        ]
+                    |> List.filterMap (read >> Result.toMaybe)
+                    |> Expect.equal []
         , test "an object without @type fails, but for the empty Any" <|
             \_ ->
                 ( ( read """{"title":"groceries"}""" |> Result.map written

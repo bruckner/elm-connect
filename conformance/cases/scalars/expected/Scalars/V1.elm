@@ -8,12 +8,14 @@ module Scalars.V1 exposing (..)
 64-bit integers are Strings by default (design §3.4).
 -}
 
+import Bytes.Encode
 import Json.Decode
 import Json.Encode
-import Proto.Codec
+import Proto.Binary
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 import Proto.Version
 import Scalars.V1.Empty
 import Scalars.V1.Scalars
@@ -120,16 +122,16 @@ defaultEmpty =
 
 {-| The typed value of [`Scalars`](#Scalars): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageScalars : Proto.Message.Message Proto.Codec.Json Scalars
+messageScalars : Proto.Message.Message Scalars
 messageScalars =
-    Proto.Message.initJson "scalars.v1.Scalars" encodeScalars decodeScalars
+    Proto.Message.init "scalars.v1.Scalars" encodeScalars decodeScalars encodeScalarsBytes decodeScalarsBytes
 
 
 {-| The typed value of [`Empty`](#Empty): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageEmpty : Proto.Message.Message Proto.Codec.Json Empty
+messageEmpty : Proto.Message.Message Empty
 messageEmpty =
-    Proto.Message.initJson "scalars.v1.Empty" encodeEmpty decodeEmpty
+    Proto.Message.init "scalars.v1.Empty" encodeEmpty decodeEmpty encodeEmptyBytes decodeEmptyBytes
 
 
 
@@ -148,6 +150,17 @@ descriptors =
             []
         )
         Proto.Descriptors.wellKnown
+
+
+{-| The codecs of this package's messages, of those of the packages it imports and of the well-known types they hold, by full name: the JSON codecs of a message holding a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) convert it through this registry, or one wider.
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.unionAll
+        [ Proto.Registry.empty
+            |> Proto.Registry.withCodecs "scalars.v1.Scalars" (\_ -> decodeScalars) encodeScalarsBytes decodeScalarsBytes (\_ -> Ok << encodeScalars)
+            |> Proto.Registry.withCodecs "scalars.v1.Empty" (\_ -> decodeEmpty) encodeEmptyBytes decodeEmptyBytes (\_ -> Ok << encodeEmpty)
+        ]
 
 
 
@@ -219,3 +232,264 @@ decodeScalars =
 decodeEmpty : Json.Decode.Decoder Empty
 decodeEmpty =
     Proto.Json.emptyMessage
+
+
+
+-- BINARY ENCODERS
+
+
+{-| Encodes a [`Scalars`](#Scalars) as protobuf binary.
+-}
+encodeScalarsBytes : Scalars -> Bytes.Encode.Encoder
+encodeScalarsBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.double 1 value.doubleValue
+        , Proto.Binary.implicit Proto.Binary.float 2 value.floatValue
+        , Proto.Binary.implicit Proto.Binary.int32 3 value.int32Value
+        , Proto.Binary.implicit Proto.Binary.int64 4 value.int64Value
+        , Proto.Binary.implicit Proto.Binary.uint32 5 value.uint32Value
+        , Proto.Binary.implicit Proto.Binary.uint64 6 value.uint64Value
+        , Proto.Binary.implicit Proto.Binary.sint32 7 value.sint32Value
+        , Proto.Binary.implicit Proto.Binary.sint64 8 value.sint64Value
+        , Proto.Binary.implicit Proto.Binary.fixed32 9 value.fixed32Value
+        , Proto.Binary.implicit Proto.Binary.fixed64 10 value.fixed64Value
+        , Proto.Binary.implicit Proto.Binary.sfixed32 11 value.sfixed32Value
+        , Proto.Binary.implicit Proto.Binary.sfixed64 12 value.sfixed64Value
+        , Proto.Binary.implicit Proto.Binary.bool 13 value.boolValue
+        , Proto.Binary.implicit Proto.Binary.string 14 value.stringValue
+        , Proto.Binary.implicit Proto.Binary.bytes 15 value.bytesValue
+        , Proto.Binary.implicit Proto.Binary.int64AsInt 16 value.smallCount
+        , Proto.Binary.implicit Proto.Binary.uint64 17 value.exactTotal
+        ]
+
+
+{-| Encodes an [`Empty`](#Empty) as protobuf binary.
+-}
+encodeEmptyBytes : Empty -> Bytes.Encode.Encoder
+encodeEmptyBytes _ =
+    Bytes.Encode.sequence []
+
+
+
+-- BINARY DECODERS
+
+
+{-| Decodes a [`Scalars`](#Scalars) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeScalarsBytes : Scalars -> Proto.Binary.Decoder Scalars
+mergeScalarsBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.double
+                        (\v ->
+                            { value
+                                | doubleValue = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.float
+                        (\v ->
+                            { value
+                                | floatValue = v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.field
+                        Proto.Binary.int32
+                        (\v ->
+                            { value
+                                | int32Value = v
+                            }
+                        )
+                        wire
+                        value
+
+                4 ->
+                    Proto.Binary.field
+                        Proto.Binary.int64
+                        (\v ->
+                            { value
+                                | int64Value = v
+                            }
+                        )
+                        wire
+                        value
+
+                5 ->
+                    Proto.Binary.field
+                        Proto.Binary.uint32
+                        (\v ->
+                            { value
+                                | uint32Value = v
+                            }
+                        )
+                        wire
+                        value
+
+                6 ->
+                    Proto.Binary.field
+                        Proto.Binary.uint64
+                        (\v ->
+                            { value
+                                | uint64Value = v
+                            }
+                        )
+                        wire
+                        value
+
+                7 ->
+                    Proto.Binary.field
+                        Proto.Binary.sint32
+                        (\v ->
+                            { value
+                                | sint32Value = v
+                            }
+                        )
+                        wire
+                        value
+
+                8 ->
+                    Proto.Binary.field
+                        Proto.Binary.sint64
+                        (\v ->
+                            { value
+                                | sint64Value = v
+                            }
+                        )
+                        wire
+                        value
+
+                9 ->
+                    Proto.Binary.field
+                        Proto.Binary.fixed32
+                        (\v ->
+                            { value
+                                | fixed32Value = v
+                            }
+                        )
+                        wire
+                        value
+
+                10 ->
+                    Proto.Binary.field
+                        Proto.Binary.fixed64
+                        (\v ->
+                            { value
+                                | fixed64Value = v
+                            }
+                        )
+                        wire
+                        value
+
+                11 ->
+                    Proto.Binary.field
+                        Proto.Binary.sfixed32
+                        (\v ->
+                            { value
+                                | sfixed32Value = v
+                            }
+                        )
+                        wire
+                        value
+
+                12 ->
+                    Proto.Binary.field
+                        Proto.Binary.sfixed64
+                        (\v ->
+                            { value
+                                | sfixed64Value = v
+                            }
+                        )
+                        wire
+                        value
+
+                13 ->
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { value
+                                | boolValue = v
+                            }
+                        )
+                        wire
+                        value
+
+                14 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | stringValue = v
+                            }
+                        )
+                        wire
+                        value
+
+                15 ->
+                    Proto.Binary.field
+                        Proto.Binary.bytes
+                        (\v ->
+                            { value
+                                | bytesValue = v
+                            }
+                        )
+                        wire
+                        value
+
+                16 ->
+                    Proto.Binary.field
+                        Proto.Binary.int64AsInt
+                        (\v ->
+                            { value
+                                | smallCount = v
+                            }
+                        )
+                        wire
+                        value
+
+                17 ->
+                    Proto.Binary.field
+                        Proto.Binary.uint64
+                        (\v ->
+                            { value
+                                | exactTotal = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`Scalars`](#Scalars) from protobuf binary.
+-}
+decodeScalarsBytes : Proto.Binary.Decoder Scalars
+decodeScalarsBytes =
+    mergeScalarsBytes defaultScalars
+
+
+{-| Decodes an [`Empty`](#Empty) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeEmptyBytes : Empty -> Proto.Binary.Decoder Empty
+mergeEmptyBytes =
+    Proto.Binary.merge (\_ wire value -> Proto.Binary.skip wire value) identity
+
+
+{-| Decodes an [`Empty`](#Empty) from protobuf binary.
+-}
+decodeEmptyBytes : Proto.Binary.Decoder Empty
+decodeEmptyBytes =
+    mergeEmptyBytes defaultEmpty

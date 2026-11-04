@@ -683,7 +683,7 @@ wellKnown =
             \_ ->
                 let
                     one =
-                        single B.any Proto.Internal.Any.emptyProto
+                        single B.any Proto.Internal.Any.empty
 
                     hex =
                         "0a0d0a07612f622e632e4412020801"
@@ -807,7 +807,7 @@ posixText =
     String.fromInt << Time.posixToMillis
 
 
-anyText : Proto.Any.Any Proto -> String
+anyText : Proto.Any.Any -> String
 anyText any =
     Proto.Any.typeName any ++ " " ++ Proto.Bytes.toBase64 (Proto.Any.bytes any)
 

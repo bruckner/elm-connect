@@ -9,6 +9,7 @@ module Chat.V1.Chat exposing (..)
 
 import Chat.V1
 import Proto.Method
+import Proto.Registry
 import Proto.Version
 import Rpc
 
@@ -36,8 +37,9 @@ send =
     Rpc.call
         (Proto.Method.initJson "chat.v1.Chat"
             "Send"
-            Chat.V1.encodeLine
-            Chat.V1.decodeLine
+            Proto.Registry.empty
+            (\_ -> Ok << Chat.V1.encodeLine)
+            (\_ -> Chat.V1.decodeLine)
         )
 
 

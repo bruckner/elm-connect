@@ -22,6 +22,7 @@ import Notes.V1.UpdateNoteRequest
 import Proto.Http
 import Proto.Json
 import Proto.Method
+import Proto.Registry
 import Proto.Route
 import Proto.Version
 import Rpc
@@ -53,8 +54,9 @@ getNote =
     Rpc.call
         (Proto.Method.initJson "notes.v1.NotesService"
             "GetNote"
-            Notes.V1.encodeGetNoteRequest
-            Notes.V1.decodeNote
+            Proto.Registry.empty
+            (\_ -> Ok << Notes.V1.encodeGetNoteRequest)
+            (\_ -> Notes.V1.decodeNote)
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
             |> Proto.Method.withRoutes [ routeGetNote0, routeGetNote1 ]
         )
@@ -72,8 +74,9 @@ listNotes =
     Rpc.call
         (Proto.Method.initJson "notes.v1.NotesService"
             "ListNotes"
-            Notes.V1.encodeListNotesRequest
-            Notes.V1.decodeListNotesResponse
+            Proto.Registry.empty
+            (\_ -> Ok << Notes.V1.encodeListNotesRequest)
+            (\_ -> Notes.V1.decodeListNotesResponse)
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
             |> Proto.Method.withRoutes [ routeListNotes0 ]
         )
@@ -91,8 +94,9 @@ createNote =
     Rpc.call
         (Proto.Method.initJson "notes.v1.NotesService"
             "CreateNote"
-            Notes.V1.encodeCreateNoteRequest
-            Notes.V1.decodeNote
+            Proto.Registry.empty
+            (\_ -> Ok << Notes.V1.encodeCreateNoteRequest)
+            (\_ -> Notes.V1.decodeNote)
             |> Proto.Method.withRoutes [ routeCreateNote0 ]
         )
 
@@ -109,8 +113,9 @@ updateNote =
     Rpc.call
         (Proto.Method.initJson "notes.v1.NotesService"
             "UpdateNote"
-            Notes.V1.encodeUpdateNoteRequest
-            Notes.V1.decodeNote
+            Proto.Registry.empty
+            (\_ -> Ok << Notes.V1.encodeUpdateNoteRequest)
+            (\_ -> Notes.V1.decodeNote)
             |> Proto.Method.withRoutes [ routeUpdateNote0 ]
         )
 
@@ -127,8 +132,9 @@ replaceNote =
     Rpc.call
         (Proto.Method.initJson "notes.v1.NotesService"
             "ReplaceNote"
-            Notes.V1.encodeNote
-            Notes.V1.decodeNote
+            Proto.Registry.empty
+            (\_ -> Ok << Notes.V1.encodeNote)
+            (\_ -> Notes.V1.decodeNote)
             |> Proto.Method.withRoutes [ routeReplaceNote0 ]
         )
 
@@ -145,8 +151,9 @@ deleteNote =
     Rpc.call
         (Proto.Method.initJson "notes.v1.NotesService"
             "DeleteNote"
-            Notes.V1.encodeDeleteNoteRequest
-            Proto.Json.empty
+            Proto.Registry.empty
+            (\_ -> Ok << Notes.V1.encodeDeleteNoteRequest)
+            (\_ -> Proto.Json.empty)
             |> Proto.Method.withRoutes [ routeDeleteNote0 ]
         )
 
@@ -163,8 +170,9 @@ archiveNote =
     Rpc.call
         (Proto.Method.initJson "notes.v1.NotesService"
             "ArchiveNote"
-            Notes.V1.encodeArchiveNoteRequest
-            Notes.V1.decodeNote
+            Proto.Registry.empty
+            (\_ -> Ok << Notes.V1.encodeArchiveNoteRequest)
+            (\_ -> Notes.V1.decodeNote)
             |> Proto.Method.withRoutes [ routeArchiveNote0 ]
         )
 
@@ -181,8 +189,9 @@ readFile =
     Rpc.call
         (Proto.Method.initJson "notes.v1.NotesService"
             "ReadFile"
-            Notes.V1.encodeReadFileRequest
-            Notes.V1.decodeSummary
+            Proto.Registry.empty
+            (\_ -> Ok << Notes.V1.encodeReadFileRequest)
+            (\_ -> Notes.V1.decodeSummary)
             |> Proto.Method.withRoutes [ routeReadFile0 ]
         )
 
@@ -199,8 +208,9 @@ ping =
     Rpc.call
         (Proto.Method.initJson "notes.v1.NotesService"
             "Ping"
-            Proto.Json.encodeEmpty
-            Proto.Json.empty
+            Proto.Registry.empty
+            (\_ -> Ok << Proto.Json.encodeEmpty)
+            (\_ -> Proto.Json.empty)
             |> Proto.Method.withRoutes [ routePing0 ]
         )
 
@@ -219,8 +229,9 @@ summarize =
     Rpc.call
         (Proto.Method.initJson "notes.v1.NotesService"
             "Summarize"
-            Notes.V1.encodeGetNoteRequest
-            Notes.V1.decodeSummary
+            Proto.Registry.empty
+            (\_ -> Ok << Notes.V1.encodeGetNoteRequest)
+            (\_ -> Notes.V1.decodeSummary)
         )
 
 

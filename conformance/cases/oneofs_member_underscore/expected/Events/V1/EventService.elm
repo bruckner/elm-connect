@@ -11,6 +11,7 @@ import Events.V1
 import Events.V1.ListEventsRequest
 import Proto.Http
 import Proto.Method
+import Proto.Registry
 import Proto.Route
 import Proto.Version
 import Rpc
@@ -42,8 +43,9 @@ listEvents =
     Rpc.call
         (Proto.Method.initJson "events.v1.EventService"
             "ListEvents"
-            Events.V1.encodeListEventsRequest
-            Events.V1.decodeListEventsResponse
+            Proto.Registry.empty
+            (\_ -> Ok << Events.V1.encodeListEventsRequest)
+            (\_ -> Events.V1.decodeListEventsResponse)
             |> Proto.Method.withRoutes [ routeListEvents0 ]
         )
 

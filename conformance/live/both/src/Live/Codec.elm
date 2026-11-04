@@ -8,13 +8,13 @@ name (`json/Live/Codec.elm`).
 -}
 
 import Connectrpc.Conformance.V1
+import Google.Rpc
 import Json.Decode exposing (Decoder)
 import Json.Encode
 import Live.Call exposing (Entry)
 import Notes.V1
 import Proto.Any
 import Proto.Bytes
-import Proto.Codec exposing (Proto)
 import Proto.Message exposing (Message)
 import Proto.Registry exposing (Registry)
 import Proto.WellKnown
@@ -28,23 +28,24 @@ decoder and its response's typed value: the response is written as its
 protobuf binary, and as the proto3 JSON the build's registries convert that
 to.
 -}
-entry : (req -> Rpc.Call Rpc.Json req res) -> (req -> Rpc.Call Rpc.Proto req res) -> Decoder req -> Message Proto res -> Entry msg
+entry : (req -> Rpc.Call Rpc.Json req res) -> (req -> Rpc.Call Rpc.Proto req res) -> Decoder req -> Message res -> Entry msg
 entry toJsonCall toProtoCall decoder message =
     Live.Call.entryWith { json = Just toJsonCall, proto = Just toProtoCall }
         decoder
-        (\response ->
-            let
-                packed =
-                    Proto.Any.pack message response
-            in
-            [ ( "ok"
-              , Proto.Any.toJson registry packed
-                    |> Maybe.map Proto.Any.json
-                    |> Maybe.withDefault Json.Encode.null
-              )
-            , ( "okBinary", Json.Encode.string (Proto.Bytes.toBase64 (Proto.Any.bytes packed)) )
-            ]
-        )
+        { response =
+            \response ->
+                let
+                    packed =
+                        Proto.Any.pack message response
+                in
+                [ ( "ok"
+                  , Proto.Any.toJson registry packed
+                        |> Maybe.withDefault Json.Encode.null
+                  )
+                , ( "okBinary", Json.Encode.string (Proto.Bytes.toBase64 (Proto.Any.bytes packed)) )
+                ]
+        , detail = Live.Call.detailWith (Proto.Registry.union Google.Rpc.registry registry)
+        }
 
 
 
@@ -69,6 +70,6 @@ registry =
 
 {-| `google.protobuf.Empty`'s typed value in this build's world.
 -}
-empty : Message Proto ()
+empty : Message ()
 empty =
-    Proto.WellKnown.emptyProto
+    Proto.WellKnown.empty

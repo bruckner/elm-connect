@@ -73,7 +73,7 @@ both =
 
 jsonOnly : GetNote -> Rpc.Call Rpc.Json GetNote String
 jsonOnly =
-    Rpc.call (getNoteIn (Proto.Method.initJson "notes.v1.Notes" "GetNote" encodeGetNote decodeTitle))
+    Rpc.call (getNoteIn (Proto.Method.initJson "notes.v1.Notes" "GetNote" Proto.Registry.empty (\_ -> encodeGetNote >> Ok) (\_ -> decodeTitle)))
 
 
 binaryOnly : GetNote -> Rpc.Call Rpc.Proto GetNote String

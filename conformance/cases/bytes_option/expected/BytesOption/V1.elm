@@ -10,15 +10,17 @@ padding, wherever they appear.
 -}
 
 import Bytes
+import Bytes.Encode
 import BytesOption.V1.Blob
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
+import Proto.Binary
 import Proto.Bytes
-import Proto.Codec
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 import Proto.Version
 
 
@@ -95,9 +97,9 @@ defaultBlob =
 
 {-| The typed value of [`Blob`](#Blob): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageBlob : Proto.Message.Message Proto.Codec.Json Blob
+messageBlob : Proto.Message.Message Blob
 messageBlob =
-    Proto.Message.initJson "bytes_option.v1.Blob" encodeBlob decodeBlob
+    Proto.Message.init "bytes_option.v1.Blob" encodeBlob decodeBlob encodeBlobBytes decodeBlobBytes
 
 
 
@@ -115,6 +117,17 @@ descriptors =
             []
         )
         Proto.Descriptors.wellKnown
+
+
+{-| The codecs of this package's messages, of those of the packages it imports and of the well-known types they hold, by full name: the JSON codecs of a message holding a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) convert it through this registry, or one wider.
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.unionAll
+        [ Proto.Registry.empty
+            |> Proto.Registry.withCodecs "bytes_option.v1.Blob" (\_ -> decodeBlob) encodeBlobBytes decodeBlobBytes (\_ -> Ok << encodeBlob)
+        , Proto.Registry.wellKnown
+        ]
 
 
 
@@ -183,3 +196,169 @@ decodeBlobSource =
         [ Proto.Json.member "inline" (Json.Decode.map BlobSourceInline Proto.Json.bytesAsBytes)
         , Proto.Json.member "url" (Json.Decode.map BlobSourceUrl Proto.Json.string)
         ]
+
+
+
+-- BINARY ENCODERS
+
+
+{-| Encodes a [`Blob`](#Blob) as protobuf binary.
+-}
+encodeBlobBytes : Blob -> Bytes.Encode.Encoder
+encodeBlobBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.bytesAsBytes 1 value.data
+        , Proto.Binary.optional Proto.Binary.bytesAsBytes 2 value.maybeData
+        , Proto.Binary.list Proto.Binary.bytesAsBytes 3 value.chunks
+        , Proto.Binary.dict Proto.Binary.string Proto.Binary.bytesAsBytes 4 value.byName
+        , Proto.Binary.optional Proto.Binary.bytesValueAsBytes 5 value.wrapped
+        , Proto.Binary.list Proto.Binary.bytesValueAsBytes 6 value.wrappedChunks
+        , encodeBlobSourceBytes value.source
+        , Proto.Binary.implicit Proto.Binary.string 9 value.name
+        ]
+
+
+{-| Encodes a [`BlobSource`](#BlobSource) as protobuf binary: its set member's field.
+-}
+encodeBlobSourceBytes : BlobSource -> Bytes.Encode.Encoder
+encodeBlobSourceBytes value =
+    case value of
+        BlobSourceUnset ->
+            Bytes.Encode.sequence []
+
+        BlobSourceInline member ->
+            Proto.Binary.present Proto.Binary.bytesAsBytes 7 member
+
+        BlobSourceUrl member ->
+            Proto.Binary.present Proto.Binary.string 8 member
+
+
+
+-- BINARY DECODERS
+
+
+{-| Decodes a [`Blob`](#Blob) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeBlobBytes : Blob -> Proto.Binary.Decoder Blob
+mergeBlobBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.bytesAsBytes
+                        (\v ->
+                            { value
+                                | data = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.bytesAsBytes
+                        (\v ->
+                            { value
+                                | maybeData = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.repeated
+                        Proto.Binary.bytesAsBytes
+                        (\v ->
+                            { value
+                                | chunks = v
+                            }
+                        )
+                        value.chunks
+                        wire
+                        value
+
+                4 ->
+                    Proto.Binary.mapEntry
+                        Proto.Binary.string
+                        Proto.Binary.bytesAsBytes
+                        (\k v ->
+                            { value
+                                | byName = Dict.insert k v value.byName
+                            }
+                        )
+                        wire
+                        value
+
+                5 ->
+                    Proto.Binary.field
+                        Proto.Binary.bytesValueAsBytes
+                        (\v ->
+                            { value
+                                | wrapped = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                6 ->
+                    Proto.Binary.repeated
+                        Proto.Binary.bytesValueAsBytes
+                        (\v ->
+                            { value
+                                | wrappedChunks = v
+                            }
+                        )
+                        value.wrappedChunks
+                        wire
+                        value
+
+                7 ->
+                    Proto.Binary.field
+                        Proto.Binary.bytesAsBytes
+                        (\v ->
+                            { value
+                                | source = BlobSourceInline v
+                            }
+                        )
+                        wire
+                        value
+
+                8 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | source = BlobSourceUrl v
+                            }
+                        )
+                        wire
+                        value
+
+                9 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | name = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | chunks = List.reverse value.chunks
+                , wrappedChunks = List.reverse value.wrappedChunks
+            }
+        )
+
+
+{-| Decodes a [`Blob`](#Blob) from protobuf binary.
+-}
+decodeBlobBytes : Proto.Binary.Decoder Blob
+decodeBlobBytes =
+    mergeBlobBytes defaultBlob

@@ -4,6 +4,7 @@
 
 module Google.Rpc exposing (..)
 
+import Bytes.Encode
 import Dict exposing (Dict)
 import Google.Rpc.BadRequest
 import Google.Rpc.BadRequestFieldViolation
@@ -21,11 +22,12 @@ import Google.Rpc.ResourceInfo
 import Google.Rpc.RetryInfo
 import Json.Decode
 import Json.Encode
-import Proto.Codec
+import Proto.Binary
 import Proto.Descriptors
 import Proto.Duration exposing (Duration)
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 import Proto.Version
 
 
@@ -604,100 +606,100 @@ defaultLocalizedMessage =
 
 {-| The typed value of [`ErrorInfo`](#ErrorInfo): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageErrorInfo : Proto.Message.Message Proto.Codec.Json ErrorInfo
+messageErrorInfo : Proto.Message.Message ErrorInfo
 messageErrorInfo =
-    Proto.Message.initJson "google.rpc.ErrorInfo" encodeErrorInfo decodeErrorInfo
+    Proto.Message.init "google.rpc.ErrorInfo" encodeErrorInfo decodeErrorInfo encodeErrorInfoBytes decodeErrorInfoBytes
 
 
 {-| The typed value of [`RetryInfo`](#RetryInfo): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageRetryInfo : Proto.Message.Message Proto.Codec.Json RetryInfo
+messageRetryInfo : Proto.Message.Message RetryInfo
 messageRetryInfo =
-    Proto.Message.initJson "google.rpc.RetryInfo" encodeRetryInfo decodeRetryInfo
+    Proto.Message.init "google.rpc.RetryInfo" encodeRetryInfo decodeRetryInfo encodeRetryInfoBytes decodeRetryInfoBytes
 
 
 {-| The typed value of [`DebugInfo`](#DebugInfo): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageDebugInfo : Proto.Message.Message Proto.Codec.Json DebugInfo
+messageDebugInfo : Proto.Message.Message DebugInfo
 messageDebugInfo =
-    Proto.Message.initJson "google.rpc.DebugInfo" encodeDebugInfo decodeDebugInfo
+    Proto.Message.init "google.rpc.DebugInfo" encodeDebugInfo decodeDebugInfo encodeDebugInfoBytes decodeDebugInfoBytes
 
 
 {-| The typed value of [`QuotaFailure`](#QuotaFailure): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageQuotaFailure : Proto.Message.Message Proto.Codec.Json QuotaFailure
+messageQuotaFailure : Proto.Message.Message QuotaFailure
 messageQuotaFailure =
-    Proto.Message.initJson "google.rpc.QuotaFailure" encodeQuotaFailure decodeQuotaFailure
+    Proto.Message.init "google.rpc.QuotaFailure" encodeQuotaFailure decodeQuotaFailure encodeQuotaFailureBytes decodeQuotaFailureBytes
 
 
 {-| The typed value of [`QuotaFailureViolation`](#QuotaFailureViolation): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageQuotaFailureViolation : Proto.Message.Message Proto.Codec.Json QuotaFailureViolation
+messageQuotaFailureViolation : Proto.Message.Message QuotaFailureViolation
 messageQuotaFailureViolation =
-    Proto.Message.initJson "google.rpc.QuotaFailure.Violation" encodeQuotaFailureViolation decodeQuotaFailureViolation
+    Proto.Message.init "google.rpc.QuotaFailure.Violation" encodeQuotaFailureViolation decodeQuotaFailureViolation encodeQuotaFailureViolationBytes decodeQuotaFailureViolationBytes
 
 
 {-| The typed value of [`PreconditionFailure`](#PreconditionFailure): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messagePreconditionFailure : Proto.Message.Message Proto.Codec.Json PreconditionFailure
+messagePreconditionFailure : Proto.Message.Message PreconditionFailure
 messagePreconditionFailure =
-    Proto.Message.initJson "google.rpc.PreconditionFailure" encodePreconditionFailure decodePreconditionFailure
+    Proto.Message.init "google.rpc.PreconditionFailure" encodePreconditionFailure decodePreconditionFailure encodePreconditionFailureBytes decodePreconditionFailureBytes
 
 
 {-| The typed value of [`PreconditionFailureViolation`](#PreconditionFailureViolation): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messagePreconditionFailureViolation : Proto.Message.Message Proto.Codec.Json PreconditionFailureViolation
+messagePreconditionFailureViolation : Proto.Message.Message PreconditionFailureViolation
 messagePreconditionFailureViolation =
-    Proto.Message.initJson "google.rpc.PreconditionFailure.Violation" encodePreconditionFailureViolation decodePreconditionFailureViolation
+    Proto.Message.init "google.rpc.PreconditionFailure.Violation" encodePreconditionFailureViolation decodePreconditionFailureViolation encodePreconditionFailureViolationBytes decodePreconditionFailureViolationBytes
 
 
 {-| The typed value of [`BadRequest`](#BadRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageBadRequest : Proto.Message.Message Proto.Codec.Json BadRequest
+messageBadRequest : Proto.Message.Message BadRequest
 messageBadRequest =
-    Proto.Message.initJson "google.rpc.BadRequest" encodeBadRequest decodeBadRequest
+    Proto.Message.init "google.rpc.BadRequest" encodeBadRequest decodeBadRequest encodeBadRequestBytes decodeBadRequestBytes
 
 
 {-| The typed value of [`BadRequestFieldViolation`](#BadRequestFieldViolation): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageBadRequestFieldViolation : Proto.Message.Message Proto.Codec.Json BadRequestFieldViolation
+messageBadRequestFieldViolation : Proto.Message.Message BadRequestFieldViolation
 messageBadRequestFieldViolation =
-    Proto.Message.initJson "google.rpc.BadRequest.FieldViolation" encodeBadRequestFieldViolation decodeBadRequestFieldViolation
+    Proto.Message.init "google.rpc.BadRequest.FieldViolation" encodeBadRequestFieldViolation decodeBadRequestFieldViolation encodeBadRequestFieldViolationBytes decodeBadRequestFieldViolationBytes
 
 
 {-| The typed value of [`RequestInfo`](#RequestInfo): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageRequestInfo : Proto.Message.Message Proto.Codec.Json RequestInfo
+messageRequestInfo : Proto.Message.Message RequestInfo
 messageRequestInfo =
-    Proto.Message.initJson "google.rpc.RequestInfo" encodeRequestInfo decodeRequestInfo
+    Proto.Message.init "google.rpc.RequestInfo" encodeRequestInfo decodeRequestInfo encodeRequestInfoBytes decodeRequestInfoBytes
 
 
 {-| The typed value of [`ResourceInfo`](#ResourceInfo): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageResourceInfo : Proto.Message.Message Proto.Codec.Json ResourceInfo
+messageResourceInfo : Proto.Message.Message ResourceInfo
 messageResourceInfo =
-    Proto.Message.initJson "google.rpc.ResourceInfo" encodeResourceInfo decodeResourceInfo
+    Proto.Message.init "google.rpc.ResourceInfo" encodeResourceInfo decodeResourceInfo encodeResourceInfoBytes decodeResourceInfoBytes
 
 
 {-| The typed value of [`Help`](#Help): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageHelp : Proto.Message.Message Proto.Codec.Json Help
+messageHelp : Proto.Message.Message Help
 messageHelp =
-    Proto.Message.initJson "google.rpc.Help" encodeHelp decodeHelp
+    Proto.Message.init "google.rpc.Help" encodeHelp decodeHelp encodeHelpBytes decodeHelpBytes
 
 
 {-| The typed value of [`HelpLink`](#HelpLink): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageHelpLink : Proto.Message.Message Proto.Codec.Json HelpLink
+messageHelpLink : Proto.Message.Message HelpLink
 messageHelpLink =
-    Proto.Message.initJson "google.rpc.Help.Link" encodeHelpLink decodeHelpLink
+    Proto.Message.init "google.rpc.Help.Link" encodeHelpLink decodeHelpLink encodeHelpLinkBytes decodeHelpLinkBytes
 
 
 {-| The typed value of [`LocalizedMessage`](#LocalizedMessage): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageLocalizedMessage : Proto.Message.Message Proto.Codec.Json LocalizedMessage
+messageLocalizedMessage : Proto.Message.Message LocalizedMessage
 messageLocalizedMessage =
-    Proto.Message.initJson "google.rpc.LocalizedMessage" encodeLocalizedMessage decodeLocalizedMessage
+    Proto.Message.init "google.rpc.LocalizedMessage" encodeLocalizedMessage decodeLocalizedMessage encodeLocalizedMessageBytes decodeLocalizedMessageBytes
 
 
 
@@ -728,6 +730,30 @@ descriptors =
             []
         )
         Proto.Descriptors.wellKnown
+
+
+{-| The codecs of this package's messages, of those of the packages it imports and of the well-known types they hold, by full name: the JSON codecs of a message holding a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.0/src/Proto/Any.elm) convert it through this registry, or one wider.
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.unionAll
+        [ Proto.Registry.empty
+            |> Proto.Registry.withCodecs "google.rpc.ErrorInfo" (\_ -> decodeErrorInfo) encodeErrorInfoBytes decodeErrorInfoBytes (\_ -> Ok << encodeErrorInfo)
+            |> Proto.Registry.withCodecs "google.rpc.RetryInfo" (\_ -> decodeRetryInfo) encodeRetryInfoBytes decodeRetryInfoBytes (\_ -> Ok << encodeRetryInfo)
+            |> Proto.Registry.withCodecs "google.rpc.DebugInfo" (\_ -> decodeDebugInfo) encodeDebugInfoBytes decodeDebugInfoBytes (\_ -> Ok << encodeDebugInfo)
+            |> Proto.Registry.withCodecs "google.rpc.QuotaFailure" (\_ -> decodeQuotaFailure) encodeQuotaFailureBytes decodeQuotaFailureBytes (\_ -> Ok << encodeQuotaFailure)
+            |> Proto.Registry.withCodecs "google.rpc.QuotaFailure.Violation" (\_ -> decodeQuotaFailureViolation) encodeQuotaFailureViolationBytes decodeQuotaFailureViolationBytes (\_ -> Ok << encodeQuotaFailureViolation)
+            |> Proto.Registry.withCodecs "google.rpc.PreconditionFailure" (\_ -> decodePreconditionFailure) encodePreconditionFailureBytes decodePreconditionFailureBytes (\_ -> Ok << encodePreconditionFailure)
+            |> Proto.Registry.withCodecs "google.rpc.PreconditionFailure.Violation" (\_ -> decodePreconditionFailureViolation) encodePreconditionFailureViolationBytes decodePreconditionFailureViolationBytes (\_ -> Ok << encodePreconditionFailureViolation)
+            |> Proto.Registry.withCodecs "google.rpc.BadRequest" (\_ -> decodeBadRequest) encodeBadRequestBytes decodeBadRequestBytes (\_ -> Ok << encodeBadRequest)
+            |> Proto.Registry.withCodecs "google.rpc.BadRequest.FieldViolation" (\_ -> decodeBadRequestFieldViolation) encodeBadRequestFieldViolationBytes decodeBadRequestFieldViolationBytes (\_ -> Ok << encodeBadRequestFieldViolation)
+            |> Proto.Registry.withCodecs "google.rpc.RequestInfo" (\_ -> decodeRequestInfo) encodeRequestInfoBytes decodeRequestInfoBytes (\_ -> Ok << encodeRequestInfo)
+            |> Proto.Registry.withCodecs "google.rpc.ResourceInfo" (\_ -> decodeResourceInfo) encodeResourceInfoBytes decodeResourceInfoBytes (\_ -> Ok << encodeResourceInfo)
+            |> Proto.Registry.withCodecs "google.rpc.Help" (\_ -> decodeHelp) encodeHelpBytes decodeHelpBytes (\_ -> Ok << encodeHelp)
+            |> Proto.Registry.withCodecs "google.rpc.Help.Link" (\_ -> decodeHelpLink) encodeHelpLinkBytes decodeHelpLinkBytes (\_ -> Ok << encodeHelpLink)
+            |> Proto.Registry.withCodecs "google.rpc.LocalizedMessage" (\_ -> decodeLocalizedMessage) encodeLocalizedMessageBytes decodeLocalizedMessageBytes (\_ -> Ok << encodeLocalizedMessage)
+        , Proto.Registry.wellKnown
+        ]
 
 
 
@@ -1016,3 +1042,851 @@ decodeLocalizedMessage =
     Json.Decode.succeed LocalizedMessage
         |> Proto.Json.field "locale" "" Proto.Json.string
         |> Proto.Json.field "message" "" Proto.Json.string
+
+
+
+-- BINARY ENCODERS
+
+
+{-| Encodes an [`ErrorInfo`](#ErrorInfo) as protobuf binary.
+-}
+encodeErrorInfoBytes : ErrorInfo -> Bytes.Encode.Encoder
+encodeErrorInfoBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.reason
+        , Proto.Binary.implicit Proto.Binary.string 2 value.domain
+        , Proto.Binary.dict Proto.Binary.string Proto.Binary.string 3 value.metadata
+        ]
+
+
+{-| Encodes a [`RetryInfo`](#RetryInfo) as protobuf binary.
+-}
+encodeRetryInfoBytes : RetryInfo -> Bytes.Encode.Encoder
+encodeRetryInfoBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.optional Proto.Binary.duration 1 value.retryDelay
+        ]
+
+
+{-| Encodes a [`DebugInfo`](#DebugInfo) as protobuf binary.
+-}
+encodeDebugInfoBytes : DebugInfo -> Bytes.Encode.Encoder
+encodeDebugInfoBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.list Proto.Binary.string 1 value.stackEntries
+        , Proto.Binary.implicit Proto.Binary.string 2 value.detail
+        ]
+
+
+{-| Encodes a [`QuotaFailure`](#QuotaFailure) as protobuf binary.
+-}
+encodeQuotaFailureBytes : QuotaFailure -> Bytes.Encode.Encoder
+encodeQuotaFailureBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.list (Proto.Binary.embedded encodeQuotaFailureViolationBytes mergeQuotaFailureViolationBytes defaultQuotaFailureViolation) 1 value.violations
+        ]
+
+
+{-| Encodes a [`QuotaFailureViolation`](#QuotaFailureViolation) as protobuf binary.
+-}
+encodeQuotaFailureViolationBytes : QuotaFailureViolation -> Bytes.Encode.Encoder
+encodeQuotaFailureViolationBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.subject
+        , Proto.Binary.implicit Proto.Binary.string 2 value.description
+        , Proto.Binary.implicit Proto.Binary.string 3 value.apiService
+        , Proto.Binary.implicit Proto.Binary.string 4 value.quotaMetric
+        , Proto.Binary.implicit Proto.Binary.string 5 value.quotaId
+        , Proto.Binary.dict Proto.Binary.string Proto.Binary.string 6 value.quotaDimensions
+        , Proto.Binary.implicit Proto.Binary.int64 7 value.quotaValue
+        , Proto.Binary.optional Proto.Binary.int64 8 value.futureQuotaValue
+        ]
+
+
+{-| Encodes a [`PreconditionFailure`](#PreconditionFailure) as protobuf binary.
+-}
+encodePreconditionFailureBytes : PreconditionFailure -> Bytes.Encode.Encoder
+encodePreconditionFailureBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.list (Proto.Binary.embedded encodePreconditionFailureViolationBytes mergePreconditionFailureViolationBytes defaultPreconditionFailureViolation) 1 value.violations
+        ]
+
+
+{-| Encodes a [`PreconditionFailureViolation`](#PreconditionFailureViolation) as protobuf binary.
+-}
+encodePreconditionFailureViolationBytes : PreconditionFailureViolation -> Bytes.Encode.Encoder
+encodePreconditionFailureViolationBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.type_
+        , Proto.Binary.implicit Proto.Binary.string 2 value.subject
+        , Proto.Binary.implicit Proto.Binary.string 3 value.description
+        ]
+
+
+{-| Encodes a [`BadRequest`](#BadRequest) as protobuf binary.
+-}
+encodeBadRequestBytes : BadRequest -> Bytes.Encode.Encoder
+encodeBadRequestBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.list (Proto.Binary.embedded encodeBadRequestFieldViolationBytes mergeBadRequestFieldViolationBytes defaultBadRequestFieldViolation) 1 value.fieldViolations
+        ]
+
+
+{-| Encodes a [`BadRequestFieldViolation`](#BadRequestFieldViolation) as protobuf binary.
+-}
+encodeBadRequestFieldViolationBytes : BadRequestFieldViolation -> Bytes.Encode.Encoder
+encodeBadRequestFieldViolationBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.field
+        , Proto.Binary.implicit Proto.Binary.string 2 value.description
+        , Proto.Binary.implicit Proto.Binary.string 3 value.reason
+        , Proto.Binary.optional (Proto.Binary.embedded encodeLocalizedMessageBytes mergeLocalizedMessageBytes defaultLocalizedMessage) 4 value.localizedMessage
+        ]
+
+
+{-| Encodes a [`RequestInfo`](#RequestInfo) as protobuf binary.
+-}
+encodeRequestInfoBytes : RequestInfo -> Bytes.Encode.Encoder
+encodeRequestInfoBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.requestId
+        , Proto.Binary.implicit Proto.Binary.string 2 value.servingData
+        ]
+
+
+{-| Encodes a [`ResourceInfo`](#ResourceInfo) as protobuf binary.
+-}
+encodeResourceInfoBytes : ResourceInfo -> Bytes.Encode.Encoder
+encodeResourceInfoBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.resourceType
+        , Proto.Binary.implicit Proto.Binary.string 2 value.resourceName
+        , Proto.Binary.implicit Proto.Binary.string 3 value.owner
+        , Proto.Binary.implicit Proto.Binary.string 4 value.description
+        ]
+
+
+{-| Encodes a [`Help`](#Help) as protobuf binary.
+-}
+encodeHelpBytes : Help -> Bytes.Encode.Encoder
+encodeHelpBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.list (Proto.Binary.embedded encodeHelpLinkBytes mergeHelpLinkBytes defaultHelpLink) 1 value.links
+        ]
+
+
+{-| Encodes a [`HelpLink`](#HelpLink) as protobuf binary.
+-}
+encodeHelpLinkBytes : HelpLink -> Bytes.Encode.Encoder
+encodeHelpLinkBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.description
+        , Proto.Binary.implicit Proto.Binary.string 2 value.url
+        ]
+
+
+{-| Encodes a [`LocalizedMessage`](#LocalizedMessage) as protobuf binary.
+-}
+encodeLocalizedMessageBytes : LocalizedMessage -> Bytes.Encode.Encoder
+encodeLocalizedMessageBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.locale
+        , Proto.Binary.implicit Proto.Binary.string 2 value.message
+        ]
+
+
+
+-- BINARY DECODERS
+
+
+{-| Decodes an [`ErrorInfo`](#ErrorInfo) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeErrorInfoBytes : ErrorInfo -> Proto.Binary.Decoder ErrorInfo
+mergeErrorInfoBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | reason = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | domain = v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.mapEntry
+                        Proto.Binary.string
+                        Proto.Binary.string
+                        (\k v ->
+                            { value
+                                | metadata = Dict.insert k v value.metadata
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes an [`ErrorInfo`](#ErrorInfo) from protobuf binary.
+-}
+decodeErrorInfoBytes : Proto.Binary.Decoder ErrorInfo
+decodeErrorInfoBytes =
+    mergeErrorInfoBytes defaultErrorInfo
+
+
+{-| Decodes a [`RetryInfo`](#RetryInfo) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeRetryInfoBytes : RetryInfo -> Proto.Binary.Decoder RetryInfo
+mergeRetryInfoBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.duration
+                        (\v ->
+                            { value
+                                | retryDelay = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`RetryInfo`](#RetryInfo) from protobuf binary.
+-}
+decodeRetryInfoBytes : Proto.Binary.Decoder RetryInfo
+decodeRetryInfoBytes =
+    mergeRetryInfoBytes defaultRetryInfo
+
+
+{-| Decodes a [`DebugInfo`](#DebugInfo) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeDebugInfoBytes : DebugInfo -> Proto.Binary.Decoder DebugInfo
+mergeDebugInfoBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.repeated
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | stackEntries = v
+                            }
+                        )
+                        value.stackEntries
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | detail = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | stackEntries = List.reverse value.stackEntries
+            }
+        )
+
+
+{-| Decodes a [`DebugInfo`](#DebugInfo) from protobuf binary.
+-}
+decodeDebugInfoBytes : Proto.Binary.Decoder DebugInfo
+decodeDebugInfoBytes =
+    mergeDebugInfoBytes defaultDebugInfo
+
+
+{-| Decodes a [`QuotaFailure`](#QuotaFailure) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeQuotaFailureBytes : QuotaFailure -> Proto.Binary.Decoder QuotaFailure
+mergeQuotaFailureBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeQuotaFailureViolationBytes mergeQuotaFailureViolationBytes defaultQuotaFailureViolation)
+                        (\v ->
+                            { value
+                                | violations = v
+                            }
+                        )
+                        value.violations
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | violations = List.reverse value.violations
+            }
+        )
+
+
+{-| Decodes a [`QuotaFailure`](#QuotaFailure) from protobuf binary.
+-}
+decodeQuotaFailureBytes : Proto.Binary.Decoder QuotaFailure
+decodeQuotaFailureBytes =
+    mergeQuotaFailureBytes defaultQuotaFailure
+
+
+{-| Decodes a [`QuotaFailureViolation`](#QuotaFailureViolation) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeQuotaFailureViolationBytes : QuotaFailureViolation -> Proto.Binary.Decoder QuotaFailureViolation
+mergeQuotaFailureViolationBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | subject = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | description = v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | apiService = v
+                            }
+                        )
+                        wire
+                        value
+
+                4 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | quotaMetric = v
+                            }
+                        )
+                        wire
+                        value
+
+                5 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | quotaId = v
+                            }
+                        )
+                        wire
+                        value
+
+                6 ->
+                    Proto.Binary.mapEntry
+                        Proto.Binary.string
+                        Proto.Binary.string
+                        (\k v ->
+                            { value
+                                | quotaDimensions = Dict.insert k v value.quotaDimensions
+                            }
+                        )
+                        wire
+                        value
+
+                7 ->
+                    Proto.Binary.field
+                        Proto.Binary.int64
+                        (\v ->
+                            { value
+                                | quotaValue = v
+                            }
+                        )
+                        wire
+                        value
+
+                8 ->
+                    Proto.Binary.field
+                        Proto.Binary.int64
+                        (\v ->
+                            { value
+                                | futureQuotaValue = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`QuotaFailureViolation`](#QuotaFailureViolation) from protobuf binary.
+-}
+decodeQuotaFailureViolationBytes : Proto.Binary.Decoder QuotaFailureViolation
+decodeQuotaFailureViolationBytes =
+    mergeQuotaFailureViolationBytes defaultQuotaFailureViolation
+
+
+{-| Decodes a [`PreconditionFailure`](#PreconditionFailure) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergePreconditionFailureBytes : PreconditionFailure -> Proto.Binary.Decoder PreconditionFailure
+mergePreconditionFailureBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodePreconditionFailureViolationBytes mergePreconditionFailureViolationBytes defaultPreconditionFailureViolation)
+                        (\v ->
+                            { value
+                                | violations = v
+                            }
+                        )
+                        value.violations
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | violations = List.reverse value.violations
+            }
+        )
+
+
+{-| Decodes a [`PreconditionFailure`](#PreconditionFailure) from protobuf binary.
+-}
+decodePreconditionFailureBytes : Proto.Binary.Decoder PreconditionFailure
+decodePreconditionFailureBytes =
+    mergePreconditionFailureBytes defaultPreconditionFailure
+
+
+{-| Decodes a [`PreconditionFailureViolation`](#PreconditionFailureViolation) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergePreconditionFailureViolationBytes : PreconditionFailureViolation -> Proto.Binary.Decoder PreconditionFailureViolation
+mergePreconditionFailureViolationBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | type_ = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | subject = v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | description = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`PreconditionFailureViolation`](#PreconditionFailureViolation) from protobuf binary.
+-}
+decodePreconditionFailureViolationBytes : Proto.Binary.Decoder PreconditionFailureViolation
+decodePreconditionFailureViolationBytes =
+    mergePreconditionFailureViolationBytes defaultPreconditionFailureViolation
+
+
+{-| Decodes a [`BadRequest`](#BadRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeBadRequestBytes : BadRequest -> Proto.Binary.Decoder BadRequest
+mergeBadRequestBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeBadRequestFieldViolationBytes mergeBadRequestFieldViolationBytes defaultBadRequestFieldViolation)
+                        (\v ->
+                            { value
+                                | fieldViolations = v
+                            }
+                        )
+                        value.fieldViolations
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | fieldViolations = List.reverse value.fieldViolations
+            }
+        )
+
+
+{-| Decodes a [`BadRequest`](#BadRequest) from protobuf binary.
+-}
+decodeBadRequestBytes : Proto.Binary.Decoder BadRequest
+decodeBadRequestBytes =
+    mergeBadRequestBytes defaultBadRequest
+
+
+{-| Decodes a [`BadRequestFieldViolation`](#BadRequestFieldViolation) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeBadRequestFieldViolationBytes : BadRequestFieldViolation -> Proto.Binary.Decoder BadRequestFieldViolation
+mergeBadRequestFieldViolationBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | field = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | description = v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | reason = v
+                            }
+                        )
+                        wire
+                        value
+
+                4 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeLocalizedMessageBytes mergeLocalizedMessageBytes defaultLocalizedMessage)
+                        value.localizedMessage
+                        (\v ->
+                            { value
+                                | localizedMessage = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`BadRequestFieldViolation`](#BadRequestFieldViolation) from protobuf binary.
+-}
+decodeBadRequestFieldViolationBytes : Proto.Binary.Decoder BadRequestFieldViolation
+decodeBadRequestFieldViolationBytes =
+    mergeBadRequestFieldViolationBytes defaultBadRequestFieldViolation
+
+
+{-| Decodes a [`RequestInfo`](#RequestInfo) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeRequestInfoBytes : RequestInfo -> Proto.Binary.Decoder RequestInfo
+mergeRequestInfoBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | requestId = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | servingData = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`RequestInfo`](#RequestInfo) from protobuf binary.
+-}
+decodeRequestInfoBytes : Proto.Binary.Decoder RequestInfo
+decodeRequestInfoBytes =
+    mergeRequestInfoBytes defaultRequestInfo
+
+
+{-| Decodes a [`ResourceInfo`](#ResourceInfo) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeResourceInfoBytes : ResourceInfo -> Proto.Binary.Decoder ResourceInfo
+mergeResourceInfoBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | resourceType = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | resourceName = v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | owner = v
+                            }
+                        )
+                        wire
+                        value
+
+                4 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | description = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`ResourceInfo`](#ResourceInfo) from protobuf binary.
+-}
+decodeResourceInfoBytes : Proto.Binary.Decoder ResourceInfo
+decodeResourceInfoBytes =
+    mergeResourceInfoBytes defaultResourceInfo
+
+
+{-| Decodes a [`Help`](#Help) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeHelpBytes : Help -> Proto.Binary.Decoder Help
+mergeHelpBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeHelpLinkBytes mergeHelpLinkBytes defaultHelpLink)
+                        (\v ->
+                            { value
+                                | links = v
+                            }
+                        )
+                        value.links
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | links = List.reverse value.links
+            }
+        )
+
+
+{-| Decodes a [`Help`](#Help) from protobuf binary.
+-}
+decodeHelpBytes : Proto.Binary.Decoder Help
+decodeHelpBytes =
+    mergeHelpBytes defaultHelp
+
+
+{-| Decodes a [`HelpLink`](#HelpLink) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeHelpLinkBytes : HelpLink -> Proto.Binary.Decoder HelpLink
+mergeHelpLinkBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | description = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | url = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`HelpLink`](#HelpLink) from protobuf binary.
+-}
+decodeHelpLinkBytes : Proto.Binary.Decoder HelpLink
+decodeHelpLinkBytes =
+    mergeHelpLinkBytes defaultHelpLink
+
+
+{-| Decodes a [`LocalizedMessage`](#LocalizedMessage) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeLocalizedMessageBytes : LocalizedMessage -> Proto.Binary.Decoder LocalizedMessage
+mergeLocalizedMessageBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | locale = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | message = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`LocalizedMessage`](#LocalizedMessage) from protobuf binary.
+-}
+decodeLocalizedMessageBytes : Proto.Binary.Decoder LocalizedMessage
+decodeLocalizedMessageBytes =
+    mergeLocalizedMessageBytes defaultLocalizedMessage

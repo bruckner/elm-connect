@@ -2,6 +2,7 @@ module Snippets.UpdateMaskTest exposing (suite)
 
 import Dict
 import Expect
+import Json.Encode
 import Notes.V1 exposing (Note, NoteKind(..))
 import Notes.V1.UpdateNoteRequest
 import Proto.Duration
@@ -34,6 +35,7 @@ noteMask : Note -> Note -> List String
 noteMask before after =
     updateMask Notes.V1.descriptors
         Notes.V1.messageUpdateNoteRequest
+        (Notes.V1.encodeUpdateNoteRequestWith Notes.V1.registry >> Result.withDefault Json.Encode.null)
         { note = Just before, updateMask = Nothing }
         { note = Just after, updateMask = Nothing }
 
@@ -69,6 +71,7 @@ suite =
             \_ ->
                 updateMask Notes.V1.descriptors
                     Notes.V1.messageUpdateNoteRequest
+                    (Notes.V1.encodeUpdateNoteRequestWith Notes.V1.registry >> Result.withDefault Json.Encode.null)
                     { note = Nothing, updateMask = Nothing }
                     { note = Just note, updateMask = Nothing }
                     |> Expect.equal [ "note" ]

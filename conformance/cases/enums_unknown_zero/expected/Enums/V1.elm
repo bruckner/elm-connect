@@ -9,16 +9,18 @@ output but for each decoder, which is Proto.Json.enumOrZero, reading an
 unknown name as the zero value as it does an unknown number.
 -}
 
+import Bytes.Encode
 import Enums.V1.Priority
 import Enums.V1.Status
 import Enums.V1.Task
 import Json.Decode
 import Json.Encode
-import Proto.Codec
+import Proto.Binary
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 import Proto.Version
 
 
@@ -118,9 +120,9 @@ enumPriority =
 
 {-| The typed value of [`Task`](#Task): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageTask : Proto.Message.Message Proto.Codec.Json Task
+messageTask : Proto.Message.Message Task
 messageTask =
-    Proto.Message.initJson "enums.v1.Task" encodeTask decodeTask
+    Proto.Message.init "enums.v1.Task" encodeTask decodeTask encodeTaskBytes decodeTaskBytes
 
 
 
@@ -140,6 +142,16 @@ descriptors =
             ]
         )
         Proto.Descriptors.wellKnown
+
+
+{-| The codecs of this package's messages, of those of the packages it imports and of the well-known types they hold, by full name: the JSON codecs of a message holding a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) convert it through this registry, or one wider.
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.unionAll
+        [ Proto.Registry.empty
+            |> Proto.Registry.withCodecs "enums.v1.Task" (\_ -> decodeTask) encodeTaskBytes decodeTaskBytes (\_ -> Ok << encodeTask)
+        ]
 
 
 
@@ -232,3 +244,159 @@ decodeTask =
         |> Proto.Json.field "priority" Nothing (Json.Decode.map Just decodePriority)
         |> Proto.Json.field "history" [] (Json.Decode.list decodeStatus)
         |> Proto.Json.fieldEither "previousStatus" "previous_status" StatusUnspecified decodeStatus
+
+
+
+-- BINARY ENCODERS
+
+
+{-| The number protobuf binary writes a [`Status`](#Status) as.
+-}
+encodeStatusBytes : Status -> Int
+encodeStatusBytes value =
+    case value of
+        StatusUnspecified ->
+            0
+
+        StatusActive ->
+            1
+
+        StatusArchived ->
+            2
+
+
+{-| The number protobuf binary writes a [`Priority`](#Priority) as.
+-}
+encodePriorityBytes : Priority -> Int
+encodePriorityBytes value =
+    case value of
+        PriorityNone ->
+            0
+
+        PriorityLow ->
+            1
+
+        PriorityHigh ->
+            2
+
+        PriorityBelowZero ->
+            -1
+
+
+{-| Encodes a [`Task`](#Task) as protobuf binary.
+-}
+encodeTaskBytes : Task -> Bytes.Encode.Encoder
+encodeTaskBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit (Proto.Binary.enum encodeStatusBytes decodeStatusBytes) 1 value.status
+        , Proto.Binary.optional (Proto.Binary.enum encodePriorityBytes decodePriorityBytes) 2 value.priority
+        , Proto.Binary.list (Proto.Binary.enum encodeStatusBytes decodeStatusBytes) 3 value.history
+        , Proto.Binary.implicit (Proto.Binary.enum encodeStatusBytes decodeStatusBytes) 4 value.previousStatus
+        ]
+
+
+
+-- BINARY DECODERS
+
+
+{-| A [`Status`](#Status) from the number protobuf binary carries.
+-}
+decodeStatusBytes : Int -> Status
+decodeStatusBytes number =
+    case number of
+        1 ->
+            StatusActive
+
+        2 ->
+            StatusArchived
+
+        _ ->
+            StatusUnspecified
+
+
+{-| A [`Priority`](#Priority) from the number protobuf binary carries.
+-}
+decodePriorityBytes : Int -> Priority
+decodePriorityBytes number =
+    case number of
+        1 ->
+            PriorityLow
+
+        2 ->
+            PriorityHigh
+
+        _ ->
+            if number == -1 then
+                PriorityBelowZero
+
+            else
+                PriorityNone
+
+
+{-| Decodes a [`Task`](#Task) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeTaskBytes : Task -> Proto.Binary.Decoder Task
+mergeTaskBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeStatusBytes decodeStatusBytes)
+                        (\v ->
+                            { value
+                                | status = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodePriorityBytes decodePriorityBytes)
+                        (\v ->
+                            { value
+                                | priority = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.enum encodeStatusBytes decodeStatusBytes)
+                        (\v ->
+                            { value
+                                | history = v
+                            }
+                        )
+                        value.history
+                        wire
+                        value
+
+                4 ->
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeStatusBytes decodeStatusBytes)
+                        (\v ->
+                            { value
+                                | previousStatus = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | history = List.reverse value.history
+            }
+        )
+
+
+{-| Decodes a [`Task`](#Task) from protobuf binary.
+-}
+decodeTaskBytes : Proto.Binary.Decoder Task
+decodeTaskBytes =
+    mergeTaskBytes defaultTask

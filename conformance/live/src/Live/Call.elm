@@ -1,4 +1,4 @@
-module Live.Call exposing (Calls, Client(..), Entry, Envelope, Outcome, Protocol(..), Respond, Sending(..), Sent, entryWith)
+module Live.Call exposing (Calls, Client(..), Entry, Envelope, Outcome, Protocol(..), Respond, Sending(..), Sent, detailWith, entryWith)
 
 {-| What the live runner sends: an envelope read from JSON, and an entry of a
 dispatch table, which turns one into a sent call and its result into JSON.
@@ -25,6 +25,7 @@ import Proto.Any
 import Proto.Binary
 import Proto.Bytes
 import Proto.Json
+import Proto.Registry
 import Rpc
 import Rpc.Body
 import Rpc.Call
@@ -120,12 +121,15 @@ type alias Outcome =
     { id : String, result : Value, trace : Value, response : Value }
 
 
-{-| A response as the result's fields: its proto3 JSON under `ok`, and its
-protobuf binary as base64 under `okBinary` when the build has binary codecs.
-Each build's `Live.Codec` writes it from the response's typed value.
+{-| How a result is written: a response as the result's fields, its proto3
+JSON under `ok`, and its protobuf binary as base64 under `okBinary` when the
+build calls over binary; and an error's detail as proto3 JSON. Each build's
+`Live.Codec` writes them through the build's registry.
 -}
 type alias Respond res =
-    res -> List ( String, Value )
+    { response : res -> List ( String, Value )
+    , detail : Rpc.Error.Detail -> Value
+    }
 
 
 {-| The entry for a method, from its generated call functions, its request's
@@ -400,35 +404,31 @@ encodeAnswer answer =
             Encode.null
 
 
-{-| A detail's proto3 JSON, or Connect's form of one that has only its
-binary.
+{-| A detail's proto3 JSON, through `registry`, or Connect's
+`{"type", "value"}` form for one of a type it lacks.
 -}
-encodeDetail : Rpc.Error.Detail -> Value
-encodeDetail detail =
-    case ( detail.json, detail.proto ) of
-        ( Just json, _ ) ->
-            Proto.Json.encodeAny json
+detailWith : Proto.Registry.Registry -> Rpc.Error.Detail -> Value
+detailWith registry detail =
+    case Proto.Json.encodeAnyWith registry detail of
+        Ok json ->
+            json
 
-        ( Nothing, Just proto ) ->
+        Err _ ->
             Encode.object
-                [ ( "type", Encode.string (Proto.Any.typeName proto) )
-                , ( "value", Encode.string (Proto.Bytes.toBase64 (Proto.Any.bytes proto)) )
+                [ ( "type", Encode.string (Proto.Any.typeName detail) )
+                , ( "value", Encode.string (Proto.Bytes.toBase64 (Proto.Any.bytes detail)) )
                 ]
-
-        ( Nothing, Nothing ) ->
-            Encode.null
 
 
 {-| A result as JSON: the response's fields (`Respond`); an error's details
-under `details`, each its proto3 JSON, or Connect's `{"type", "value"}` form
-for one that has only its binary, and under `detailsBinary` each one's `Any`
-in protobuf binary, for those that have it.
+under `details`, as `Respond` writes each, and under `detailsBinary` each
+one's `Any` in protobuf binary.
 -}
 encodeResult : Respond res -> Result Rpc.Error res -> Value
 encodeResult respond result =
     case result of
         Ok response ->
-            Encode.object (respond response)
+            Encode.object (respond.response response)
 
         Err (Rpc.Error.RpcStatus status answer) ->
             Encode.object
@@ -436,8 +436,8 @@ encodeResult respond result =
                   , Encode.object
                         [ ( "code", Encode.string (Rpc.Code.toString status.code) )
                         , ( "message", Encode.string status.message )
-                        , ( "details", Encode.list encodeDetail status.details )
-                        , ( "detailsBinary", Encode.list (Proto.Binary.encode (Proto.Binary.messageEncoder Proto.Binary.any) >> Proto.Bytes.toBase64 >> Encode.string) (List.filterMap .proto status.details) )
+                        , ( "details", Encode.list respond.detail status.details )
+                        , ( "detailsBinary", Encode.list (Proto.Binary.encode (Proto.Binary.messageEncoder Proto.Binary.any) >> Proto.Bytes.toBase64 >> Encode.string) status.details )
                         , ( "source", Encode.string (sourceToString status.source) )
                         , ( "response", encodeResponse_ answer )
                         ]

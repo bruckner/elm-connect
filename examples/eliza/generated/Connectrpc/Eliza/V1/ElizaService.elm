@@ -17,6 +17,7 @@ distributions.
 
 import Connectrpc.Eliza.V1
 import Proto.Method
+import Proto.Registry
 import Proto.Version
 import Rpc
 
@@ -46,8 +47,9 @@ say =
     Rpc.call
         (Proto.Method.initJson "connectrpc.eliza.v1.ElizaService"
             "Say"
-            Connectrpc.Eliza.V1.encodeSayRequest
-            Connectrpc.Eliza.V1.decodeSayResponse
+            Proto.Registry.empty
+            (\_ -> Ok << Connectrpc.Eliza.V1.encodeSayRequest)
+            (\_ -> Connectrpc.Eliza.V1.decodeSayResponse)
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
         )
 

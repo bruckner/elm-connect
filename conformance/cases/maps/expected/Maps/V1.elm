@@ -10,17 +10,19 @@ for 32-bit integer keys, read from and written as decimal strings, and
 integer key kind has a decoder that checks its range.
 -}
 
+import Bytes.Encode
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
 import Maps.V1.Member
 import Maps.V1.Role
 import Maps.V1.Team
-import Proto.Codec
+import Proto.Binary
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 import Proto.Version
 
 
@@ -138,16 +140,16 @@ enumRole =
 
 {-| The typed value of [`Member`](#Member): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageMember : Proto.Message.Message Proto.Codec.Json Member
+messageMember : Proto.Message.Message Member
 messageMember =
-    Proto.Message.initJson "maps.v1.Member" encodeMember decodeMember
+    Proto.Message.init "maps.v1.Member" encodeMember decodeMember encodeMemberBytes decodeMemberBytes
 
 
 {-| The typed value of [`Team`](#Team): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageTeam : Proto.Message.Message Proto.Codec.Json Team
+messageTeam : Proto.Message.Message Team
 messageTeam =
-    Proto.Message.initJson "maps.v1.Team" encodeTeam decodeTeam
+    Proto.Message.init "maps.v1.Team" encodeTeam decodeTeam encodeTeamBytes decodeTeamBytes
 
 
 
@@ -167,6 +169,17 @@ descriptors =
             ]
         )
         Proto.Descriptors.wellKnown
+
+
+{-| The codecs of this package's messages, of those of the packages it imports and of the well-known types they hold, by full name: the JSON codecs of a message holding a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) convert it through this registry, or one wider.
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.unionAll
+        [ Proto.Registry.empty
+            |> Proto.Registry.withCodecs "maps.v1.Member" (\_ -> decodeMember) encodeMemberBytes decodeMemberBytes (\_ -> Ok << encodeMember)
+            |> Proto.Registry.withCodecs "maps.v1.Team" (\_ -> decodeTeam) encodeTeamBytes decodeTeamBytes (\_ -> Ok << encodeTeam)
+        ]
 
 
 
@@ -258,3 +271,289 @@ decodeTeam =
         |> Proto.Json.field "deltas" Dict.empty (Proto.Json.int64Dict Proto.Json.string)
         |> Proto.Json.fieldEither "byHash" "by_hash" Dict.empty (Proto.Json.uint64Dict Proto.Json.string)
         |> Proto.Json.fieldEither "byStamp" "by_stamp" Dict.empty (Proto.Json.int64Dict Proto.Json.string)
+
+
+
+-- BINARY ENCODERS
+
+
+{-| The number protobuf binary writes a [`Role`](#Role) as.
+-}
+encodeRoleBytes : Role -> Int
+encodeRoleBytes value =
+    case value of
+        RoleUnspecified ->
+            0
+
+        RoleOwner ->
+            1
+
+
+{-| Encodes a [`Member`](#Member) as protobuf binary.
+-}
+encodeMemberBytes : Member -> Bytes.Encode.Encoder
+encodeMemberBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.name
+        ]
+
+
+{-| Encodes a [`Team`](#Team) as protobuf binary.
+-}
+encodeTeamBytes : Team -> Bytes.Encode.Encoder
+encodeTeamBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.dict Proto.Binary.string Proto.Binary.string 1 value.labels
+        , Proto.Binary.dict Proto.Binary.int32 Proto.Binary.string 2 value.bySeat
+        , Proto.Binary.dict Proto.Binary.uint32 Proto.Binary.double 3 value.scores
+        , Proto.Binary.dict Proto.Binary.sint32 Proto.Binary.bool 4 value.flags
+        , Proto.Binary.dict Proto.Binary.fixed32 Proto.Binary.int64 5 value.totals
+        , Proto.Binary.dict Proto.Binary.int64 Proto.Binary.string 6 value.byId
+        , Proto.Binary.dict Proto.Binary.uint64 Proto.Binary.int32 7 value.counts
+        , Proto.Binary.dict Proto.Binary.string (Proto.Binary.embedded encodeMemberBytes mergeMemberBytes defaultMember) 8 value.members
+        , Proto.Binary.dict Proto.Binary.int32 (Proto.Binary.enum encodeRoleBytes decodeRoleBytes) 9 value.roles
+        , Proto.Binary.boolMap Proto.Binary.string 10 value.byFlag
+        , Proto.Binary.dict Proto.Binary.sfixed32 Proto.Binary.string 11 value.byOffset
+        , Proto.Binary.dict Proto.Binary.sint64 Proto.Binary.string 12 value.deltas
+        , Proto.Binary.dict Proto.Binary.fixed64 Proto.Binary.string 13 value.byHash
+        , Proto.Binary.dict Proto.Binary.sfixed64 Proto.Binary.string 14 value.byStamp
+        ]
+
+
+
+-- BINARY DECODERS
+
+
+{-| A [`Role`](#Role) from the number protobuf binary carries.
+-}
+decodeRoleBytes : Int -> Role
+decodeRoleBytes number =
+    case number of
+        1 ->
+            RoleOwner
+
+        _ ->
+            RoleUnspecified
+
+
+{-| Decodes a [`Member`](#Member) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeMemberBytes : Member -> Proto.Binary.Decoder Member
+mergeMemberBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | name = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`Member`](#Member) from protobuf binary.
+-}
+decodeMemberBytes : Proto.Binary.Decoder Member
+decodeMemberBytes =
+    mergeMemberBytes defaultMember
+
+
+{-| Decodes a [`Team`](#Team) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeTeamBytes : Team -> Proto.Binary.Decoder Team
+mergeTeamBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.mapEntry
+                        Proto.Binary.string
+                        Proto.Binary.string
+                        (\k v ->
+                            { value
+                                | labels = Dict.insert k v value.labels
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.mapEntry
+                        Proto.Binary.int32
+                        Proto.Binary.string
+                        (\k v ->
+                            { value
+                                | bySeat = Dict.insert k v value.bySeat
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.mapEntry
+                        Proto.Binary.uint32
+                        Proto.Binary.double
+                        (\k v ->
+                            { value
+                                | scores = Dict.insert k v value.scores
+                            }
+                        )
+                        wire
+                        value
+
+                4 ->
+                    Proto.Binary.mapEntry
+                        Proto.Binary.sint32
+                        Proto.Binary.bool
+                        (\k v ->
+                            { value
+                                | flags = Dict.insert k v value.flags
+                            }
+                        )
+                        wire
+                        value
+
+                5 ->
+                    Proto.Binary.mapEntry
+                        Proto.Binary.fixed32
+                        Proto.Binary.int64
+                        (\k v ->
+                            { value
+                                | totals = Dict.insert k v value.totals
+                            }
+                        )
+                        wire
+                        value
+
+                6 ->
+                    Proto.Binary.mapEntry
+                        Proto.Binary.int64
+                        Proto.Binary.string
+                        (\k v ->
+                            { value
+                                | byId = Dict.insert k v value.byId
+                            }
+                        )
+                        wire
+                        value
+
+                7 ->
+                    Proto.Binary.mapEntry
+                        Proto.Binary.uint64
+                        Proto.Binary.int32
+                        (\k v ->
+                            { value
+                                | counts = Dict.insert k v value.counts
+                            }
+                        )
+                        wire
+                        value
+
+                8 ->
+                    Proto.Binary.mapEntry
+                        Proto.Binary.string
+                        (Proto.Binary.embedded encodeMemberBytes mergeMemberBytes defaultMember)
+                        (\k v ->
+                            { value
+                                | members = Dict.insert k v value.members
+                            }
+                        )
+                        wire
+                        value
+
+                9 ->
+                    Proto.Binary.mapEntry
+                        Proto.Binary.int32
+                        (Proto.Binary.enum encodeRoleBytes decodeRoleBytes)
+                        (\k v ->
+                            { value
+                                | roles = Dict.insert k v value.roles
+                            }
+                        )
+                        wire
+                        value
+
+                10 ->
+                    Proto.Binary.mapEntry
+                        Proto.Binary.bool
+                        Proto.Binary.string
+                        (\k v ->
+                            { value
+                                | byFlag = Proto.Binary.insertBool k v value.byFlag
+                            }
+                        )
+                        wire
+                        value
+
+                11 ->
+                    Proto.Binary.mapEntry
+                        Proto.Binary.sfixed32
+                        Proto.Binary.string
+                        (\k v ->
+                            { value
+                                | byOffset = Dict.insert k v value.byOffset
+                            }
+                        )
+                        wire
+                        value
+
+                12 ->
+                    Proto.Binary.mapEntry
+                        Proto.Binary.sint64
+                        Proto.Binary.string
+                        (\k v ->
+                            { value
+                                | deltas = Dict.insert k v value.deltas
+                            }
+                        )
+                        wire
+                        value
+
+                13 ->
+                    Proto.Binary.mapEntry
+                        Proto.Binary.fixed64
+                        Proto.Binary.string
+                        (\k v ->
+                            { value
+                                | byHash = Dict.insert k v value.byHash
+                            }
+                        )
+                        wire
+                        value
+
+                14 ->
+                    Proto.Binary.mapEntry
+                        Proto.Binary.sfixed64
+                        Proto.Binary.string
+                        (\k v ->
+                            { value
+                                | byStamp = Dict.insert k v value.byStamp
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | byFlag = List.reverse value.byFlag
+            }
+        )
+
+
+{-| Decodes a [`Team`](#Team) from protobuf binary.
+-}
+decodeTeamBytes : Proto.Binary.Decoder Team
+decodeTeamBytes =
+    mergeTeamBytes defaultTeam

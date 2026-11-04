@@ -9,7 +9,6 @@ import Json.Encode exposing (Value)
 import Proto.Any as Any exposing (Any, Problem)
 import Proto.Binary
 import Proto.Bytes
-import Proto.Codec exposing (Proto)
 import Proto.Duration as Duration
 import Proto.Json
 import Proto.Message as Message exposing (Message)
@@ -20,11 +19,11 @@ import Time
 
 
 {-| A message holding one `Any` at field 1, named `held` in JSON, with its
-codecs as generated code under `codec=both` gives them: JSON codecs taking the
+codecs as generated code gives them: JSON codecs taking the
 registry, binary codecs without.
 -}
 type alias Holder =
-    { held : Maybe (Any Proto) }
+    { held : Maybe Any }
 
 
 encodeHolderWith : Registry -> Holder -> Result Problem Value
@@ -66,9 +65,9 @@ holder name =
     Registry.withCodecs name decodeHolderWith encodeHolderBytes decodeHolderBytes encodeHolderWith
 
 
-messageHolder : String -> Message Proto Holder
+messageHolder : String -> Message Holder
 messageHolder name =
-    Message.initProto name encodeHolderBytes decodeHolderBytes
+    Message.initWith name encodeHolderWith decodeHolderWith encodeHolderBytes decodeHolderBytes
 
 
 {-| A message holding no `Any`: a string at field 1, `{"text": …}` in JSON.
@@ -96,9 +95,11 @@ leafBytes =
         ""
 
 
-messageLeaf : String -> Message Proto String
+messageLeaf : String -> Message String
 messageLeaf name =
-    Message.initProto name
+    Message.init name
+        (\t -> Json.Encode.object [ ( "text", Json.Encode.string t ) ])
+        (Json.Decode.field "text" Json.Decode.string)
         (\t -> Bytes.Encode.sequence [ Proto.Binary.implicit Proto.Binary.string 1 t ])
         leafBytes
 
@@ -183,12 +184,12 @@ suite =
                     |> Expect.equal [ Just """{"text":"hi"}""", Just "\"other\"", Just "\"other\"", Nothing ]
         , test "the well-known types convert with their own JSON forms" <|
             \_ ->
-                [ Any.pack WellKnown.durationProto (Duration.fromMilliseconds 1500)
-                , Any.pack WellKnown.timestampProto (Time.millisToPosix 0)
-                , Any.pack WellKnown.emptyProto ()
-                , Any.pack WellKnown.fieldMaskProto [ "a.b", "c" ]
-                , Any.pack WellKnown.structProto (Dict.fromList [ ( "k", Json.Encode.int 1 ) ])
-                , Any.pack WellKnown.int64ValueProto "5"
+                [ Any.pack WellKnown.duration (Duration.fromMilliseconds 1500)
+                , Any.pack WellKnown.timestamp (Time.millisToPosix 0)
+                , Any.pack WellKnown.empty ()
+                , Any.pack WellKnown.fieldMask [ "a.b", "c" ]
+                , Any.pack WellKnown.struct (Dict.fromList [ ( "k", Json.Encode.int 1 ) ])
+                , Any.pack WellKnown.int64Value "5"
                 ]
                     |> List.map (Proto.Json.encodeAnyWith Registry.wellKnown >> Result.map (Json.Encode.encode 0))
                     |> Expect.equal

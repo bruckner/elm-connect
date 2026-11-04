@@ -15,6 +15,7 @@ A service kept for older clients.
 import Proto.Http
 import Proto.Json
 import Proto.Method
+import Proto.Registry
 import Proto.Route
 import Proto.Version
 import Rpc
@@ -43,8 +44,9 @@ clear =
     Rpc.call
         (Proto.Method.initJson "notes.v1.LegacyService"
             "Clear"
-            Proto.Json.encodeEmpty
-            Proto.Json.empty
+            Proto.Registry.empty
+            (\_ -> Ok << Proto.Json.encodeEmpty)
+            (\_ -> Proto.Json.empty)
             |> Proto.Method.withRoutes [ routeClear0 ]
         )
 

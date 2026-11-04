@@ -284,22 +284,6 @@ fn each_value(
     }
 }
 
-/// `target`, a message of type `descriptor` as canonical JSON, with each
-/// `Any` replaced by the one in `source`, the same message in another
-/// form: the runtime writes an `Any`'s packed message back as it arrived
-/// (§3.5), defaults and proto names included.
-fn take_anys(descriptor: &MessageDescriptor, target: &mut Json, source: &Json) {
-    for field in descriptor.fields() {
-        each_value(&field, target, source, &mut |kind, value, from| {
-            if is_well_known(kind, "Any") {
-                *value = from.clone();
-            } else if let Some(inner) = walked(kind) {
-                take_anys(inner, value, from);
-            }
-        });
-    }
-}
-
 /// The key the `unknown` form adds to every message object.
 const UNKNOWN: &str = "zzUnknownField";
 
@@ -407,10 +391,9 @@ struct Sample {
     /// encoder must write after its decoder reads it.
     binary: Vec<u8>,
     /// What the generated JSON encoder writes after the binary decoder
-    /// reads [`Sample::binary`], when that is not what it writes after the
-    /// JSON decoder reads the canonical form: an `Any` read from binary
-    /// is written as its packed message's canonical JSON, through the
-    /// registry, where one read from JSON is written as it arrived.
+    /// reads [`Sample::binary`], when that is not what prost-reflect
+    /// writes: an `Any` is written as its packed message's canonical JSON,
+    /// through the registry, whichever form it was read from.
     binary_json: Option<Json>,
 }
 
@@ -448,7 +431,6 @@ fn sample(name: String, message: DynamicMessage) -> Sample {
     .into_iter()
     .map(|(form, input)| {
         let mut own = canonical.clone();
-        take_anys(&descriptor, &mut own, &input);
         allowed_differences(&message, &mut own, &input);
         Form {
             form,
@@ -995,12 +977,12 @@ fn codecs_module(pool: &DescriptorPool) -> Module {
         let module = format!("Generated.Codec.{}.Codec.V1", set.prefix);
         imports.push(import(&module));
         let value = |name: String| qualified(module.as_str(), name);
-        // Under codec=both a message that reaches an `Any` has no total
-        // JSON encoder: it is written with the package's registry, `null`
-        // standing for an `Err`, which no sample expects.
+        // A message that reaches an `Any` has no total JSON encoder: it is
+        // written with the package's registry, `null` standing for an
+        // `Err`, which no sample expects.
         let encoder = |descriptor: &MessageDescriptor| {
             let name = descriptor.name();
-            if set.json && set.binary && reaches_any(descriptor, &mut Vec::new()) {
+            if reaches_any(descriptor, &mut Vec::new()) {
                 binop(
                     BinOp::ComposeR,
                     apply(

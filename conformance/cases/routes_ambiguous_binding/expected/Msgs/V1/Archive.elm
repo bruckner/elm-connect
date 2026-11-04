@@ -11,6 +11,7 @@ import Msgs.V1
 import Msgs.V1.MessageRequest
 import Proto.Http
 import Proto.Method
+import Proto.Registry
 import Proto.Route
 import Proto.Version
 import Rpc
@@ -41,8 +42,9 @@ listArchived =
     Rpc.call
         (Proto.Method.initJson "msgs.v1.Archive"
             "ListArchived"
-            Msgs.V1.encodeMessageRequest
-            Msgs.V1.decodeMessage
+            Proto.Registry.empty
+            (\_ -> Ok << Msgs.V1.encodeMessageRequest)
+            (\_ -> Msgs.V1.decodeMessage)
             |> Proto.Method.withRoutes [ routeListArchived0 ]
         )
 

@@ -8,6 +8,7 @@ module Rpc.V1.Pinger exposing (..)
 -}
 
 import Proto.Method
+import Proto.Registry
 import Proto.Version
 import Rpc
 import Rpc.V1
@@ -36,8 +37,9 @@ send =
     Rpc.call
         (Proto.Method.initJson "rpc.v1.Pinger"
             "Send"
-            Rpc.V1.encodePing
-            Rpc.V1.decodePing
+            Proto.Registry.empty
+            (\_ -> Ok << Rpc.V1.encodePing)
+            (\_ -> Rpc.V1.decodePing)
         )
 
 

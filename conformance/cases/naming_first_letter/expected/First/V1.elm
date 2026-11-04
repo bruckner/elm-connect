@@ -10,14 +10,16 @@ lowercase letter follows, and taking a lone `s` after it with it (a
 plural acronym). Types keep their names as written.
 -}
 
+import Bytes.Encode
 import First.V1.Link
 import First.V1.URLPath
 import Json.Decode
 import Json.Encode
-import Proto.Codec
+import Proto.Binary
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 import Proto.Version
 
 
@@ -138,16 +140,16 @@ defaultLink =
 
 {-| The typed value of [`URLPath`](#URLPath): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageURLPath : Proto.Message.Message Proto.Codec.Json URLPath
+messageURLPath : Proto.Message.Message URLPath
 messageURLPath =
-    Proto.Message.initJson "first.v1.URLPath" encodeURLPath decodeURLPath
+    Proto.Message.init "first.v1.URLPath" encodeURLPath decodeURLPath encodeURLPathBytes decodeURLPathBytes
 
 
 {-| The typed value of [`Link`](#Link): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageLink : Proto.Message.Message Proto.Codec.Json Link
+messageLink : Proto.Message.Message Link
 messageLink =
-    Proto.Message.initJson "first.v1.Link" encodeLink decodeLink
+    Proto.Message.init "first.v1.Link" encodeLink decodeLink encodeLinkBytes decodeLinkBytes
 
 
 
@@ -166,6 +168,17 @@ descriptors =
             []
         )
         Proto.Descriptors.wellKnown
+
+
+{-| The codecs of this package's messages, of those of the packages it imports and of the well-known types they hold, by full name: the JSON codecs of a message holding a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) convert it through this registry, or one wider.
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.unionAll
+        [ Proto.Registry.empty
+            |> Proto.Registry.withCodecs "first.v1.URLPath" (\_ -> decodeURLPath) encodeURLPathBytes decodeURLPathBytes (\_ -> Ok << encodeURLPath)
+            |> Proto.Registry.withCodecs "first.v1.Link" (\_ -> decodeLink) encodeLinkBytes decodeLinkBytes (\_ -> Ok << encodeLink)
+        ]
 
 
 
@@ -265,3 +278,296 @@ decodeLinkTarget =
         [ Proto.Json.member "URL" (Json.Decode.map LinkTargetURL Proto.Json.string)
         , Proto.Json.member "Count" (Json.Decode.map LinkTargetCount Proto.Json.int32)
         ]
+
+
+
+-- BINARY ENCODERS
+
+
+{-| Encodes a [`URLPath`](#URLPath) as protobuf binary.
+-}
+encodeURLPathBytes : URLPath -> Bytes.Encode.Encoder
+encodeURLPathBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.label
+        , Proto.Binary.implicit Proto.Binary.string 2 value.id
+        , Proto.Binary.implicit Proto.Binary.string 3 value.url
+        , Proto.Binary.implicit Proto.Binary.string 4 value.urlPath
+        , Proto.Binary.implicit Proto.Binary.string 5 value.httpRequest
+        , Proto.Binary.implicit Proto.Binary.double 6 value.xCoord
+        , Proto.Binary.implicit Proto.Binary.string 7 value.abcDef
+        , Proto.Binary.implicit Proto.Binary.string 8 value.internal
+        , Proto.Binary.implicit Proto.Binary.string 10 value.displayName
+        , Proto.Binary.implicit Proto.Binary.string 11 value.type_
+        , Proto.Binary.list Proto.Binary.string 12 value.ids
+        , Proto.Binary.list Proto.Binary.string 13 value.urls
+        , Proto.Binary.list Proto.Binary.string 14 value.apis
+        , Proto.Binary.list Proto.Binary.string 15 value.uuids
+        ]
+
+
+{-| Encodes a [`Link`](#Link) as protobuf binary.
+-}
+encodeLinkBytes : Link -> Bytes.Encode.Encoder
+encodeLinkBytes value =
+    Bytes.Encode.sequence
+        [ encodeLinkTargetBytes value.target
+        , Proto.Binary.implicit Proto.Binary.string 9 value.label
+        ]
+
+
+{-| Encodes a [`LinkTarget`](#LinkTarget) as protobuf binary: its set member's field.
+-}
+encodeLinkTargetBytes : LinkTarget -> Bytes.Encode.Encoder
+encodeLinkTargetBytes value =
+    case value of
+        LinkTargetUnset ->
+            Bytes.Encode.sequence []
+
+        LinkTargetURL member ->
+            Proto.Binary.present Proto.Binary.string 1 member
+
+        LinkTargetCount member ->
+            Proto.Binary.present Proto.Binary.int32 2 member
+
+
+
+-- BINARY DECODERS
+
+
+{-| Decodes a [`URLPath`](#URLPath) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeURLPathBytes : URLPath -> Proto.Binary.Decoder URLPath
+mergeURLPathBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | label = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | id = v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | url = v
+                            }
+                        )
+                        wire
+                        value
+
+                4 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | urlPath = v
+                            }
+                        )
+                        wire
+                        value
+
+                5 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | httpRequest = v
+                            }
+                        )
+                        wire
+                        value
+
+                6 ->
+                    Proto.Binary.field
+                        Proto.Binary.double
+                        (\v ->
+                            { value
+                                | xCoord = v
+                            }
+                        )
+                        wire
+                        value
+
+                7 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | abcDef = v
+                            }
+                        )
+                        wire
+                        value
+
+                8 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | internal = v
+                            }
+                        )
+                        wire
+                        value
+
+                10 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | displayName = v
+                            }
+                        )
+                        wire
+                        value
+
+                11 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | type_ = v
+                            }
+                        )
+                        wire
+                        value
+
+                12 ->
+                    Proto.Binary.repeated
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | ids = v
+                            }
+                        )
+                        value.ids
+                        wire
+                        value
+
+                13 ->
+                    Proto.Binary.repeated
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | urls = v
+                            }
+                        )
+                        value.urls
+                        wire
+                        value
+
+                14 ->
+                    Proto.Binary.repeated
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | apis = v
+                            }
+                        )
+                        value.apis
+                        wire
+                        value
+
+                15 ->
+                    Proto.Binary.repeated
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | uuids = v
+                            }
+                        )
+                        value.uuids
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | ids = List.reverse value.ids
+                , urls = List.reverse value.urls
+                , apis = List.reverse value.apis
+                , uuids = List.reverse value.uuids
+            }
+        )
+
+
+{-| Decodes a [`URLPath`](#URLPath) from protobuf binary.
+-}
+decodeURLPathBytes : Proto.Binary.Decoder URLPath
+decodeURLPathBytes =
+    mergeURLPathBytes defaultURLPath
+
+
+{-| Decodes a [`Link`](#Link) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeLinkBytes : Link -> Proto.Binary.Decoder Link
+mergeLinkBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | target = LinkTargetURL v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.int32
+                        (\v ->
+                            { value
+                                | target = LinkTargetCount v
+                            }
+                        )
+                        wire
+                        value
+
+                9 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | label = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`Link`](#Link) from protobuf binary.
+-}
+decodeLinkBytes : Proto.Binary.Decoder Link
+decodeLinkBytes =
+    mergeLinkBytes defaultLink

@@ -9,6 +9,7 @@ module Things.V1.ThingService exposing (..)
 
 import Proto.Http
 import Proto.Method
+import Proto.Registry
 import Proto.Route
 import Proto.Version
 import Rpc
@@ -40,8 +41,9 @@ getThing =
     Rpc.call
         (Proto.Method.initJson "things.v1.ThingService"
             "GetThing"
-            Things.V1.encodeGetThingRequest
-            Things.V1.decodeThing
+            Proto.Registry.empty
+            (\_ -> Ok << Things.V1.encodeGetThingRequest)
+            (\_ -> Things.V1.decodeThing)
             |> Proto.Method.withRoutes [ routeGetThing0 ]
         )
 

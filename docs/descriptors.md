@@ -83,22 +83,22 @@ say why one cannot be read: `TypeMismatch` naming the type it holds,
 ```elm examples/notes/elm/src/Snippets/Any.elm#any
 import Notes.V1
 import Proto.Any
-import Rpc
 
 
-packed : Proto.Any.Any Rpc.Json
+packed : Proto.Any.Any
 packed =
     -- {"@type": "type.googleapis.com/notes.v1.Note", "title": "groceries"}
+    -- as proto3 JSON, through Notes.V1.registry
     let
         note =
             Notes.V1.defaultNote
     in
-    Proto.Any.packJson Notes.V1.messageNote { note | title = "groceries" }
+    Proto.Any.pack Notes.V1.messageNote { note | title = "groceries" }
 
 
-title : Proto.Any.Any Rpc.Json -> Maybe String
+title : Proto.Any.Any -> Maybe String
 title any =
-    Proto.Any.unpackJson Notes.V1.messageNote any
+    Proto.Any.unpack Notes.V1.messageNote any
         |> Maybe.map .title
 ```
 
@@ -125,7 +125,7 @@ import Rpc.Error
 
 violations : Rpc.Error -> List String
 violations error =
-    Rpc.Error.detailsJson Google.Rpc.messageBadRequest error
+    Rpc.Error.details Google.Rpc.messageBadRequest error
         |> List.concatMap .fieldViolations
         |> List.map .description
 ```
@@ -150,15 +150,11 @@ descriptors:
 {-| The `google.protobuf.FieldMask` of what changed from `before` to
 `after`, for an update request such as `UpdateNoteRequest`.
 -}
-updateMask : Descriptors -> Message Json a -> a -> a -> List String
-updateMask descriptors message before after =
-    let
-        json value =
-            Proto.Any.json (Proto.Any.packJson message value)
-    in
+updateMask : Descriptors -> Message a -> (a -> Value) -> a -> a -> List String
+updateMask descriptors message encode before after =
     case Descriptors.message (Message.typeName message) descriptors of
         Just descriptor ->
-            changedPaths descriptors descriptor (json before) (json after)
+            changedPaths descriptors descriptor (encode before) (encode after)
 
         Nothing ->
             []

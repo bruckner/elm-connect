@@ -11,16 +11,18 @@ for any client or server that follows google/api/http.proto and proto3
 JSON, and for a method without a rule, serves the implicit route.
 -}
 
+import Bytes.Encode
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
-import Proto.Codec
+import Proto.Binary
 import Proto.Descriptors
 import Proto.Duration exposing (Duration)
 import Proto.Enum
 import Proto.Json
 import Proto.Message
 import Proto.Query
+import Proto.Registry
 import Proto.Route
 import Proto.Timestamp
 import Proto.Version
@@ -377,72 +379,72 @@ enumKind =
 
 {-| The typed value of [`GetMessageRequest`](#GetMessageRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageGetMessageRequest : Proto.Message.Message Proto.Codec.Json GetMessageRequest
+messageGetMessageRequest : Proto.Message.Message GetMessageRequest
 messageGetMessageRequest =
-    Proto.Message.initJson "routes.v1.GetMessageRequest" encodeGetMessageRequest decodeGetMessageRequest
+    Proto.Message.init "routes.v1.GetMessageRequest" encodeGetMessageRequest decodeGetMessageRequest encodeGetMessageRequestBytes decodeGetMessageRequestBytes
 
 
 {-| The typed value of [`GetMessageRequestSubMessage`](#GetMessageRequestSubMessage): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageGetMessageRequestSubMessage : Proto.Message.Message Proto.Codec.Json GetMessageRequestSubMessage
+messageGetMessageRequestSubMessage : Proto.Message.Message GetMessageRequestSubMessage
 messageGetMessageRequestSubMessage =
-    Proto.Message.initJson "routes.v1.GetMessageRequest.SubMessage" encodeGetMessageRequestSubMessage decodeGetMessageRequestSubMessage
+    Proto.Message.init "routes.v1.GetMessageRequest.SubMessage" encodeGetMessageRequestSubMessage decodeGetMessageRequestSubMessage encodeGetMessageRequestSubMessageBytes decodeGetMessageRequestSubMessageBytes
 
 
 {-| The typed value of [`Message`](#Message): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageMessage : Proto.Message.Message Proto.Codec.Json Message
+messageMessage : Proto.Message.Message Message
 messageMessage =
-    Proto.Message.initJson "routes.v1.Message" encodeMessage decodeMessage
+    Proto.Message.init "routes.v1.Message" encodeMessage decodeMessage encodeMessageBytes decodeMessageBytes
 
 
 {-| The typed value of [`UpdateMessageRequest`](#UpdateMessageRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageUpdateMessageRequest : Proto.Message.Message Proto.Codec.Json UpdateMessageRequest
+messageUpdateMessageRequest : Proto.Message.Message UpdateMessageRequest
 messageUpdateMessageRequest =
-    Proto.Message.initJson "routes.v1.UpdateMessageRequest" encodeUpdateMessageRequest decodeUpdateMessageRequest
+    Proto.Message.init "routes.v1.UpdateMessageRequest" encodeUpdateMessageRequest decodeUpdateMessageRequest encodeUpdateMessageRequestBytes decodeUpdateMessageRequestBytes
 
 
 {-| The typed value of [`Everything`](#Everything): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageEverything : Proto.Message.Message Proto.Codec.Json Everything
+messageEverything : Proto.Message.Message Everything
 messageEverything =
-    Proto.Message.initJson "routes.v1.Everything" encodeEverything decodeEverything
+    Proto.Message.init "routes.v1.Everything" encodeEverything decodeEverything encodeEverythingBytes decodeEverythingBytes
 
 
 {-| The typed value of [`Inner`](#Inner): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageInner : Proto.Message.Message Proto.Codec.Json Inner
+messageInner : Proto.Message.Message Inner
 messageInner =
-    Proto.Message.initJson "routes.v1.Inner" encodeInner decodeInner
+    Proto.Message.init "routes.v1.Inner" encodeInner decodeInner encodeInnerBytes decodeInnerBytes
 
 
 {-| The typed value of [`Deep`](#Deep): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageDeep : Proto.Message.Message Proto.Codec.Json Deep
+messageDeep : Proto.Message.Message Deep
 messageDeep =
-    Proto.Message.initJson "routes.v1.Deep" encodeDeep decodeDeep
+    Proto.Message.init "routes.v1.Deep" encodeDeep decodeDeep encodeDeepBytes decodeDeepBytes
 
 
 {-| The typed value of [`FileRequest`](#FileRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageFileRequest : Proto.Message.Message Proto.Codec.Json FileRequest
+messageFileRequest : Proto.Message.Message FileRequest
 messageFileRequest =
-    Proto.Message.initJson "routes.v1.FileRequest" encodeFileRequest decodeFileRequest
+    Proto.Message.init "routes.v1.FileRequest" encodeFileRequest decodeFileRequest encodeFileRequestBytes decodeFileRequestBytes
 
 
 {-| The typed value of [`Resource`](#Resource): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageResource : Proto.Message.Message Proto.Codec.Json Resource
+messageResource : Proto.Message.Message Resource
 messageResource =
-    Proto.Message.initJson "routes.v1.Resource" encodeResource decodeResource
+    Proto.Message.init "routes.v1.Resource" encodeResource decodeResource encodeResourceBytes decodeResourceBytes
 
 
 {-| The typed value of [`UpdateResourceRequest`](#UpdateResourceRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageUpdateResourceRequest : Proto.Message.Message Proto.Codec.Json UpdateResourceRequest
+messageUpdateResourceRequest : Proto.Message.Message UpdateResourceRequest
 messageUpdateResourceRequest =
-    Proto.Message.initJson "routes.v1.UpdateResourceRequest" encodeUpdateResourceRequest decodeUpdateResourceRequest
+    Proto.Message.init "routes.v1.UpdateResourceRequest" encodeUpdateResourceRequest decodeUpdateResourceRequest encodeUpdateResourceRequestBytes decodeUpdateResourceRequestBytes
 
 
 
@@ -470,6 +472,26 @@ descriptors =
             ]
         )
         Proto.Descriptors.wellKnown
+
+
+{-| The codecs of this package's messages, of those of the packages it imports and of the well-known types they hold, by full name: the JSON codecs of a message holding a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) convert it through this registry, or one wider.
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.unionAll
+        [ Proto.Registry.empty
+            |> Proto.Registry.withCodecs "routes.v1.GetMessageRequest" (\_ -> decodeGetMessageRequest) encodeGetMessageRequestBytes decodeGetMessageRequestBytes (\_ -> Ok << encodeGetMessageRequest)
+            |> Proto.Registry.withCodecs "routes.v1.GetMessageRequest.SubMessage" (\_ -> decodeGetMessageRequestSubMessage) encodeGetMessageRequestSubMessageBytes decodeGetMessageRequestSubMessageBytes (\_ -> Ok << encodeGetMessageRequestSubMessage)
+            |> Proto.Registry.withCodecs "routes.v1.Message" (\_ -> decodeMessage) encodeMessageBytes decodeMessageBytes (\_ -> Ok << encodeMessage)
+            |> Proto.Registry.withCodecs "routes.v1.UpdateMessageRequest" (\_ -> decodeUpdateMessageRequest) encodeUpdateMessageRequestBytes decodeUpdateMessageRequestBytes (\_ -> Ok << encodeUpdateMessageRequest)
+            |> Proto.Registry.withCodecs "routes.v1.Everything" (\_ -> decodeEverything) encodeEverythingBytes decodeEverythingBytes (\_ -> Ok << encodeEverything)
+            |> Proto.Registry.withCodecs "routes.v1.Inner" (\_ -> decodeInner) encodeInnerBytes decodeInnerBytes (\_ -> Ok << encodeInner)
+            |> Proto.Registry.withCodecs "routes.v1.Deep" (\_ -> decodeDeep) encodeDeepBytes decodeDeepBytes (\_ -> Ok << encodeDeep)
+            |> Proto.Registry.withCodecs "routes.v1.FileRequest" (\_ -> decodeFileRequest) encodeFileRequestBytes decodeFileRequestBytes (\_ -> Ok << encodeFileRequest)
+            |> Proto.Registry.withCodecs "routes.v1.Resource" (\_ -> decodeResource) encodeResourceBytes decodeResourceBytes (\_ -> Ok << encodeResource)
+            |> Proto.Registry.withCodecs "routes.v1.UpdateResourceRequest" (\_ -> decodeUpdateResourceRequest) encodeUpdateResourceRequestBytes decodeUpdateResourceRequestBytes (\_ -> Ok << encodeUpdateResourceRequest)
+        , Proto.Registry.wellKnown
+        ]
 
 
 
@@ -770,6 +792,892 @@ decodeUpdateResourceRequest =
     Json.Decode.succeed UpdateResourceRequest
         |> Proto.Json.field "resource" Nothing (Json.Decode.map Just decodeResource)
         |> Proto.Json.fieldEither "updateMask" "update_mask" Nothing (Json.Decode.map Just Proto.Json.fieldMask)
+
+
+
+-- BINARY ENCODERS
+
+
+{-| The number protobuf binary writes a [`Kind`](#Kind) as.
+-}
+encodeKindBytes : Kind -> Int
+encodeKindBytes value =
+    case value of
+        KindUnspecified ->
+            0
+
+        KindText ->
+            1
+
+        KindImage ->
+            2
+
+
+{-| Encodes a [`GetMessageRequest`](#GetMessageRequest) as protobuf binary.
+-}
+encodeGetMessageRequestBytes : GetMessageRequest -> Bytes.Encode.Encoder
+encodeGetMessageRequestBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.messageId
+        , Proto.Binary.implicit Proto.Binary.int64 2 value.revision
+        , Proto.Binary.optional (Proto.Binary.embedded encodeGetMessageRequestSubMessageBytes mergeGetMessageRequestSubMessageBytes defaultGetMessageRequestSubMessage) 3 value.sub
+        , Proto.Binary.implicit Proto.Binary.string 4 value.userId
+        , Proto.Binary.implicit Proto.Binary.string 5 value.name
+        ]
+
+
+{-| Encodes a [`GetMessageRequestSubMessage`](#GetMessageRequestSubMessage) as protobuf binary.
+-}
+encodeGetMessageRequestSubMessageBytes : GetMessageRequestSubMessage -> Bytes.Encode.Encoder
+encodeGetMessageRequestSubMessageBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.subfield
+        ]
+
+
+{-| Encodes a [`Message`](#Message) as protobuf binary.
+-}
+encodeMessageBytes : Message -> Bytes.Encode.Encoder
+encodeMessageBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.messageId
+        , Proto.Binary.implicit Proto.Binary.string 2 value.text
+        ]
+
+
+{-| Encodes an [`UpdateMessageRequest`](#UpdateMessageRequest) as protobuf binary.
+-}
+encodeUpdateMessageRequestBytes : UpdateMessageRequest -> Bytes.Encode.Encoder
+encodeUpdateMessageRequestBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.messageId
+        , Proto.Binary.optional (Proto.Binary.embedded encodeMessageBytes mergeMessageBytes defaultMessage) 2 value.message
+        ]
+
+
+{-| Encodes an [`Everything`](#Everything) as protobuf binary.
+-}
+encodeEverythingBytes : Everything -> Bytes.Encode.Encoder
+encodeEverythingBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.name
+        , Proto.Binary.implicit Proto.Binary.int32 2 value.count
+        , Proto.Binary.implicit Proto.Binary.int64 3 value.big
+        , Proto.Binary.implicit Proto.Binary.uint64 4 value.ubig
+        , Proto.Binary.implicit Proto.Binary.bool 5 value.flag
+        , Proto.Binary.implicit Proto.Binary.double 6 value.ratio
+        , Proto.Binary.implicit Proto.Binary.float 7 value.scale
+        , Proto.Binary.implicit Proto.Binary.bytes 8 value.data
+        , Proto.Binary.implicit (Proto.Binary.enum encodeKindBytes decodeKindBytes) 9 value.kind
+        , Proto.Binary.list Proto.Binary.string 10 value.tags
+        , Proto.Binary.list (Proto.Binary.enum encodeKindBytes decodeKindBytes) 11 value.kinds
+        , Proto.Binary.list Proto.Binary.int32 12 value.numbers
+        , Proto.Binary.optional Proto.Binary.int32 13 value.maybeCount
+        , Proto.Binary.optional Proto.Binary.string 14 value.maybeName
+        , Proto.Binary.optional Proto.Binary.timestamp 15 value.at
+        , Proto.Binary.optional Proto.Binary.duration 16 value.wait
+        , Proto.Binary.optional Proto.Binary.fieldMask 17 value.mask
+        , Proto.Binary.optional Proto.Binary.int32Value 18 value.limit
+        , Proto.Binary.optional Proto.Binary.stringValue 19 value.label
+        , Proto.Binary.optional (Proto.Binary.embedded encodeInnerBytes mergeInnerBytes defaultInner) 20 value.inner
+        , encodeEverythingChoiceBytes value.choice
+        ]
+
+
+{-| Encodes an [`EverythingChoice`](#EverythingChoice) as protobuf binary: its set member's field.
+-}
+encodeEverythingChoiceBytes : EverythingChoice -> Bytes.Encode.Encoder
+encodeEverythingChoiceBytes value =
+    case value of
+        EverythingChoiceUnset ->
+            Bytes.Encode.sequence []
+
+        EverythingChoiceText member ->
+            Proto.Binary.present Proto.Binary.string 21 member
+
+        EverythingChoiceNumber member ->
+            Proto.Binary.present Proto.Binary.int32 22 member
+
+
+{-| Encodes an [`Inner`](#Inner) as protobuf binary.
+-}
+encodeInnerBytes : Inner -> Bytes.Encode.Encoder
+encodeInnerBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.a
+        , Proto.Binary.optional (Proto.Binary.embedded encodeDeepBytes mergeDeepBytes defaultDeep) 2 value.deep
+        ]
+
+
+{-| Encodes a [`Deep`](#Deep) as protobuf binary.
+-}
+encodeDeepBytes : Deep -> Bytes.Encode.Encoder
+encodeDeepBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.int32 1 value.b
+        , Proto.Binary.list Proto.Binary.string 2 value.c
+        ]
+
+
+{-| Encodes a [`FileRequest`](#FileRequest) as protobuf binary.
+-}
+encodeFileRequestBytes : FileRequest -> Bytes.Encode.Encoder
+encodeFileRequestBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.path
+        ]
+
+
+{-| Encodes a [`Resource`](#Resource) as protobuf binary.
+-}
+encodeResourceBytes : Resource -> Bytes.Encode.Encoder
+encodeResourceBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.name
+        , Proto.Binary.implicit Proto.Binary.string 2 value.displayName
+        , Proto.Binary.dict Proto.Binary.string Proto.Binary.string 3 value.labels
+        , Proto.Binary.dict Proto.Binary.int64 (Proto.Binary.enum encodeKindBytes decodeKindBytes) 4 value.kinds
+        , Proto.Binary.boolMap Proto.Binary.double 5 value.weights
+        ]
+
+
+{-| Encodes an [`UpdateResourceRequest`](#UpdateResourceRequest) as protobuf binary.
+-}
+encodeUpdateResourceRequestBytes : UpdateResourceRequest -> Bytes.Encode.Encoder
+encodeUpdateResourceRequestBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.optional (Proto.Binary.embedded encodeResourceBytes mergeResourceBytes defaultResource) 1 value.resource
+        , Proto.Binary.optional Proto.Binary.fieldMask 2 value.updateMask
+        ]
+
+
+
+-- BINARY DECODERS
+
+
+{-| A [`Kind`](#Kind) from the number protobuf binary carries.
+-}
+decodeKindBytes : Int -> Kind
+decodeKindBytes number =
+    case number of
+        1 ->
+            KindText
+
+        2 ->
+            KindImage
+
+        _ ->
+            KindUnspecified
+
+
+{-| Decodes a [`GetMessageRequest`](#GetMessageRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeGetMessageRequestBytes : GetMessageRequest -> Proto.Binary.Decoder GetMessageRequest
+mergeGetMessageRequestBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | messageId = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.int64
+                        (\v ->
+                            { value
+                                | revision = v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeGetMessageRequestSubMessageBytes mergeGetMessageRequestSubMessageBytes defaultGetMessageRequestSubMessage)
+                        value.sub
+                        (\v ->
+                            { value
+                                | sub = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                4 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | userId = v
+                            }
+                        )
+                        wire
+                        value
+
+                5 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | name = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`GetMessageRequest`](#GetMessageRequest) from protobuf binary.
+-}
+decodeGetMessageRequestBytes : Proto.Binary.Decoder GetMessageRequest
+decodeGetMessageRequestBytes =
+    mergeGetMessageRequestBytes defaultGetMessageRequest
+
+
+{-| Decodes a [`GetMessageRequestSubMessage`](#GetMessageRequestSubMessage) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeGetMessageRequestSubMessageBytes : GetMessageRequestSubMessage -> Proto.Binary.Decoder GetMessageRequestSubMessage
+mergeGetMessageRequestSubMessageBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | subfield = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`GetMessageRequestSubMessage`](#GetMessageRequestSubMessage) from protobuf binary.
+-}
+decodeGetMessageRequestSubMessageBytes : Proto.Binary.Decoder GetMessageRequestSubMessage
+decodeGetMessageRequestSubMessageBytes =
+    mergeGetMessageRequestSubMessageBytes defaultGetMessageRequestSubMessage
+
+
+{-| Decodes a [`Message`](#Message) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeMessageBytes : Message -> Proto.Binary.Decoder Message
+mergeMessageBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | messageId = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | text = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`Message`](#Message) from protobuf binary.
+-}
+decodeMessageBytes : Proto.Binary.Decoder Message
+decodeMessageBytes =
+    mergeMessageBytes defaultMessage
+
+
+{-| Decodes an [`UpdateMessageRequest`](#UpdateMessageRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeUpdateMessageRequestBytes : UpdateMessageRequest -> Proto.Binary.Decoder UpdateMessageRequest
+mergeUpdateMessageRequestBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | messageId = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeMessageBytes mergeMessageBytes defaultMessage)
+                        value.message
+                        (\v ->
+                            { value
+                                | message = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes an [`UpdateMessageRequest`](#UpdateMessageRequest) from protobuf binary.
+-}
+decodeUpdateMessageRequestBytes : Proto.Binary.Decoder UpdateMessageRequest
+decodeUpdateMessageRequestBytes =
+    mergeUpdateMessageRequestBytes defaultUpdateMessageRequest
+
+
+{-| Decodes an [`Everything`](#Everything) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeEverythingBytes : Everything -> Proto.Binary.Decoder Everything
+mergeEverythingBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | name = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.int32
+                        (\v ->
+                            { value
+                                | count = v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.field
+                        Proto.Binary.int64
+                        (\v ->
+                            { value
+                                | big = v
+                            }
+                        )
+                        wire
+                        value
+
+                4 ->
+                    Proto.Binary.field
+                        Proto.Binary.uint64
+                        (\v ->
+                            { value
+                                | ubig = v
+                            }
+                        )
+                        wire
+                        value
+
+                5 ->
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { value
+                                | flag = v
+                            }
+                        )
+                        wire
+                        value
+
+                6 ->
+                    Proto.Binary.field
+                        Proto.Binary.double
+                        (\v ->
+                            { value
+                                | ratio = v
+                            }
+                        )
+                        wire
+                        value
+
+                7 ->
+                    Proto.Binary.field
+                        Proto.Binary.float
+                        (\v ->
+                            { value
+                                | scale = v
+                            }
+                        )
+                        wire
+                        value
+
+                8 ->
+                    Proto.Binary.field
+                        Proto.Binary.bytes
+                        (\v ->
+                            { value
+                                | data = v
+                            }
+                        )
+                        wire
+                        value
+
+                9 ->
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeKindBytes decodeKindBytes)
+                        (\v ->
+                            { value
+                                | kind = v
+                            }
+                        )
+                        wire
+                        value
+
+                10 ->
+                    Proto.Binary.repeated
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | tags = v
+                            }
+                        )
+                        value.tags
+                        wire
+                        value
+
+                11 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.enum encodeKindBytes decodeKindBytes)
+                        (\v ->
+                            { value
+                                | kinds = v
+                            }
+                        )
+                        value.kinds
+                        wire
+                        value
+
+                12 ->
+                    Proto.Binary.repeated
+                        Proto.Binary.int32
+                        (\v ->
+                            { value
+                                | numbers = v
+                            }
+                        )
+                        value.numbers
+                        wire
+                        value
+
+                13 ->
+                    Proto.Binary.field
+                        Proto.Binary.int32
+                        (\v ->
+                            { value
+                                | maybeCount = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                14 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | maybeName = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                15 ->
+                    Proto.Binary.field
+                        Proto.Binary.timestamp
+                        (\v ->
+                            { value
+                                | at = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                16 ->
+                    Proto.Binary.field
+                        Proto.Binary.duration
+                        (\v ->
+                            { value
+                                | wait = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                17 ->
+                    Proto.Binary.field
+                        Proto.Binary.fieldMask
+                        (\v ->
+                            { value
+                                | mask = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                18 ->
+                    Proto.Binary.field
+                        Proto.Binary.int32Value
+                        (\v ->
+                            { value
+                                | limit = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                19 ->
+                    Proto.Binary.field
+                        Proto.Binary.stringValue
+                        (\v ->
+                            { value
+                                | label = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                20 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeInnerBytes mergeInnerBytes defaultInner)
+                        value.inner
+                        (\v ->
+                            { value
+                                | inner = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                21 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | choice = EverythingChoiceText v
+                            }
+                        )
+                        wire
+                        value
+
+                22 ->
+                    Proto.Binary.field
+                        Proto.Binary.int32
+                        (\v ->
+                            { value
+                                | choice = EverythingChoiceNumber v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | tags = List.reverse value.tags
+                , kinds = List.reverse value.kinds
+                , numbers = List.reverse value.numbers
+            }
+        )
+
+
+{-| Decodes an [`Everything`](#Everything) from protobuf binary.
+-}
+decodeEverythingBytes : Proto.Binary.Decoder Everything
+decodeEverythingBytes =
+    mergeEverythingBytes defaultEverything
+
+
+{-| Decodes an [`Inner`](#Inner) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeInnerBytes : Inner -> Proto.Binary.Decoder Inner
+mergeInnerBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | a = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeDeepBytes mergeDeepBytes defaultDeep)
+                        value.deep
+                        (\v ->
+                            { value
+                                | deep = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes an [`Inner`](#Inner) from protobuf binary.
+-}
+decodeInnerBytes : Proto.Binary.Decoder Inner
+decodeInnerBytes =
+    mergeInnerBytes defaultInner
+
+
+{-| Decodes a [`Deep`](#Deep) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeDeepBytes : Deep -> Proto.Binary.Decoder Deep
+mergeDeepBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.int32
+                        (\v ->
+                            { value
+                                | b = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.repeated
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | c = v
+                            }
+                        )
+                        value.c
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | c = List.reverse value.c
+            }
+        )
+
+
+{-| Decodes a [`Deep`](#Deep) from protobuf binary.
+-}
+decodeDeepBytes : Proto.Binary.Decoder Deep
+decodeDeepBytes =
+    mergeDeepBytes defaultDeep
+
+
+{-| Decodes a [`FileRequest`](#FileRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeFileRequestBytes : FileRequest -> Proto.Binary.Decoder FileRequest
+mergeFileRequestBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | path = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`FileRequest`](#FileRequest) from protobuf binary.
+-}
+decodeFileRequestBytes : Proto.Binary.Decoder FileRequest
+decodeFileRequestBytes =
+    mergeFileRequestBytes defaultFileRequest
+
+
+{-| Decodes a [`Resource`](#Resource) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeResourceBytes : Resource -> Proto.Binary.Decoder Resource
+mergeResourceBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | name = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | displayName = v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.mapEntry
+                        Proto.Binary.string
+                        Proto.Binary.string
+                        (\k v ->
+                            { value
+                                | labels = Dict.insert k v value.labels
+                            }
+                        )
+                        wire
+                        value
+
+                4 ->
+                    Proto.Binary.mapEntry
+                        Proto.Binary.int64
+                        (Proto.Binary.enum encodeKindBytes decodeKindBytes)
+                        (\k v ->
+                            { value
+                                | kinds = Dict.insert k v value.kinds
+                            }
+                        )
+                        wire
+                        value
+
+                5 ->
+                    Proto.Binary.mapEntry
+                        Proto.Binary.bool
+                        Proto.Binary.double
+                        (\k v ->
+                            { value
+                                | weights = Proto.Binary.insertBool k v value.weights
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | weights = List.reverse value.weights
+            }
+        )
+
+
+{-| Decodes a [`Resource`](#Resource) from protobuf binary.
+-}
+decodeResourceBytes : Proto.Binary.Decoder Resource
+decodeResourceBytes =
+    mergeResourceBytes defaultResource
+
+
+{-| Decodes an [`UpdateResourceRequest`](#UpdateResourceRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeUpdateResourceRequestBytes : UpdateResourceRequest -> Proto.Binary.Decoder UpdateResourceRequest
+mergeUpdateResourceRequestBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeResourceBytes mergeResourceBytes defaultResource)
+                        value.resource
+                        (\v ->
+                            { value
+                                | resource = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.fieldMask
+                        (\v ->
+                            { value
+                                | updateMask = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes an [`UpdateResourceRequest`](#UpdateResourceRequest) from protobuf binary.
+-}
+decodeUpdateResourceRequestBytes : Proto.Binary.Decoder UpdateResourceRequest
+decodeUpdateResourceRequestBytes =
+    mergeUpdateResourceRequestBytes defaultUpdateResourceRequest
 
 
 

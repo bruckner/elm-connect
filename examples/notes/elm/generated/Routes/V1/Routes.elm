@@ -11,6 +11,7 @@ import Json.Encode
 import Proto.Http
 import Proto.Method
 import Proto.Query
+import Proto.Registry
 import Proto.Route
 import Proto.Version
 import Routes.V1
@@ -57,8 +58,9 @@ getMessage =
     Rpc.call
         (Proto.Method.initJson "routes.v1.Routes"
             "GetMessage"
-            Routes.V1.encodeGetMessageRequest
-            Routes.V1.decodeMessage
+            Proto.Registry.empty
+            (\_ -> Ok << Routes.V1.encodeGetMessageRequest)
+            (\_ -> Routes.V1.decodeMessage)
             |> Proto.Method.withRoutes [ routeGetMessage0, routeGetMessage1, routeGetMessage2, routeGetMessage3 ]
         )
 
@@ -77,8 +79,9 @@ updateMessage =
     Rpc.call
         (Proto.Method.initJson "routes.v1.Routes"
             "UpdateMessage"
-            Routes.V1.encodeUpdateMessageRequest
-            Routes.V1.decodeMessage
+            Proto.Registry.empty
+            (\_ -> Ok << Routes.V1.encodeUpdateMessageRequest)
+            (\_ -> Routes.V1.decodeMessage)
             |> Proto.Method.withRoutes [ routeUpdateMessage0 ]
         )
 
@@ -95,8 +98,9 @@ updateMessageWhole =
     Rpc.call
         (Proto.Method.initJson "routes.v1.Routes"
             "UpdateMessageWhole"
-            Routes.V1.encodeMessage
-            Routes.V1.decodeMessage
+            Proto.Registry.empty
+            (\_ -> Ok << Routes.V1.encodeMessage)
+            (\_ -> Routes.V1.decodeMessage)
             |> Proto.Method.withRoutes [ routeUpdateMessageWhole0 ]
         )
 
@@ -113,8 +117,9 @@ postSub =
     Rpc.call
         (Proto.Method.initJson "routes.v1.Routes"
             "PostSub"
-            Routes.V1.encodeGetMessageRequest
-            Routes.V1.decodeMessage
+            Proto.Registry.empty
+            (\_ -> Ok << Routes.V1.encodeGetMessageRequest)
+            (\_ -> Routes.V1.decodeMessage)
             |> Proto.Method.withRoutes [ routePostSub0 ]
         )
 
@@ -131,8 +136,9 @@ query =
     Rpc.call
         (Proto.Method.initJson "routes.v1.Routes"
             "Query"
-            Routes.V1.encodeEverything
-            Routes.V1.decodeEverything
+            Proto.Registry.empty
+            (\_ -> Ok << Routes.V1.encodeEverything)
+            (\_ -> Routes.V1.decodeEverything)
             |> Proto.Method.withRoutes [ routeQuery0 ]
         )
 
@@ -149,8 +155,9 @@ single =
     Rpc.call
         (Proto.Method.initJson "routes.v1.Routes"
             "Single"
-            Routes.V1.encodeEverything
-            Routes.V1.decodeEverything
+            Proto.Registry.empty
+            (\_ -> Ok << Routes.V1.encodeEverything)
+            (\_ -> Routes.V1.decodeEverything)
             |> Proto.Method.withRoutes [ routeSingle0 ]
         )
 
@@ -167,8 +174,9 @@ multi =
     Rpc.call
         (Proto.Method.initJson "routes.v1.Routes"
             "Multi"
-            Routes.V1.encodeEverything
-            Routes.V1.decodeEverything
+            Proto.Registry.empty
+            (\_ -> Ok << Routes.V1.encodeEverything)
+            (\_ -> Routes.V1.decodeEverything)
             |> Proto.Method.withRoutes [ routeMulti0 ]
         )
 
@@ -185,8 +193,9 @@ typed =
     Rpc.call
         (Proto.Method.initJson "routes.v1.Routes"
             "Typed"
-            Routes.V1.encodeEverything
-            Routes.V1.decodeEverything
+            Proto.Registry.empty
+            (\_ -> Ok << Routes.V1.encodeEverything)
+            (\_ -> Routes.V1.decodeEverything)
             |> Proto.Method.withRoutes [ routeTyped0 ]
         )
 
@@ -203,8 +212,9 @@ files =
     Rpc.call
         (Proto.Method.initJson "routes.v1.Routes"
             "Files"
-            Routes.V1.encodeFileRequest
-            Routes.V1.decodeFileRequest
+            Proto.Registry.empty
+            (\_ -> Ok << Routes.V1.encodeFileRequest)
+            (\_ -> Routes.V1.decodeFileRequest)
             |> Proto.Method.withRoutes [ routeFiles0 ]
         )
 
@@ -221,8 +231,9 @@ cancel =
     Rpc.call
         (Proto.Method.initJson "routes.v1.Routes"
             "Cancel"
-            Routes.V1.encodeResource
-            Routes.V1.decodeResource
+            Proto.Registry.empty
+            (\_ -> Ok << Routes.V1.encodeResource)
+            (\_ -> Routes.V1.decodeResource)
             |> Proto.Method.withRoutes [ routeCancel0 ]
         )
 
@@ -239,8 +250,9 @@ updateResource =
     Rpc.call
         (Proto.Method.initJson "routes.v1.Routes"
             "UpdateResource"
-            Routes.V1.encodeUpdateResourceRequest
-            Routes.V1.decodeResource
+            Proto.Registry.empty
+            (\_ -> Ok << Routes.V1.encodeUpdateResourceRequest)
+            (\_ -> Routes.V1.decodeResource)
             |> Proto.Method.withRoutes [ routeUpdateResource0 ]
         )
 
@@ -257,8 +269,9 @@ head =
     Rpc.call
         (Proto.Method.initJson "routes.v1.Routes"
             "Head"
-            Routes.V1.encodeFileRequest
-            Routes.V1.decodeFileRequest
+            Proto.Registry.empty
+            (\_ -> Ok << Routes.V1.encodeFileRequest)
+            (\_ -> Routes.V1.decodeFileRequest)
             |> Proto.Method.withRoutes [ routeHead0 ]
         )
 
@@ -279,8 +292,9 @@ unbound =
     Rpc.call
         (Proto.Method.initJson "routes.v1.Routes"
             "Unbound"
-            Routes.V1.encodeGetMessageRequest
-            Routes.V1.decodeMessage
+            Proto.Registry.empty
+            (\_ -> Ok << Routes.V1.encodeGetMessageRequest)
+            (\_ -> Routes.V1.decodeMessage)
         )
 
 

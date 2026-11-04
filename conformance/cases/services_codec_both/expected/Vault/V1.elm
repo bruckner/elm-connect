@@ -15,7 +15,6 @@ import Json.Decode
 import Json.Encode
 import Proto.Any
 import Proto.Binary
-import Proto.Codec
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
@@ -66,8 +65,8 @@ type alias Item =
     { name : String
     , size : String
     , status : Status
-    , payload : Maybe (Proto.Any.Any Proto.Codec.Proto)
-    , attachments : List (Proto.Any.Any Proto.Codec.Proto)
+    , payload : Maybe Proto.Any.Any
+    , attachments : List Proto.Any.Any
     }
 
 
@@ -154,30 +153,30 @@ enumStatus =
 
 {-| The typed value of [`Item`](#Item): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageItem : Proto.Message.Message Proto.Codec.Proto Item
+messageItem : Proto.Message.Message Item
 messageItem =
-    Proto.Message.initProto "vault.v1.Item" encodeItemBytes decodeItemBytes
+    Proto.Message.initWith "vault.v1.Item" encodeItemWith decodeItemWith encodeItemBytes decodeItemBytes
 
 
 {-| The typed value of [`GetItemRequest`](#GetItemRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageGetItemRequest : Proto.Message.Message Proto.Codec.Proto GetItemRequest
+messageGetItemRequest : Proto.Message.Message GetItemRequest
 messageGetItemRequest =
-    Proto.Message.initProto "vault.v1.GetItemRequest" encodeGetItemRequestBytes decodeGetItemRequestBytes
+    Proto.Message.init "vault.v1.GetItemRequest" encodeGetItemRequest decodeGetItemRequest encodeGetItemRequestBytes decodeGetItemRequestBytes
 
 
 {-| The typed value of [`ListItemsRequest`](#ListItemsRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageListItemsRequest : Proto.Message.Message Proto.Codec.Proto ListItemsRequest
+messageListItemsRequest : Proto.Message.Message ListItemsRequest
 messageListItemsRequest =
-    Proto.Message.initProto "vault.v1.ListItemsRequest" encodeListItemsRequestBytes decodeListItemsRequestBytes
+    Proto.Message.init "vault.v1.ListItemsRequest" encodeListItemsRequest decodeListItemsRequest encodeListItemsRequestBytes decodeListItemsRequestBytes
 
 
 {-| The typed value of [`ListItemsResponse`](#ListItemsResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageListItemsResponse : Proto.Message.Message Proto.Codec.Proto ListItemsResponse
+messageListItemsResponse : Proto.Message.Message ListItemsResponse
 messageListItemsResponse =
-    Proto.Message.initProto "vault.v1.ListItemsResponse" encodeListItemsResponseBytes decodeListItemsResponseBytes
+    Proto.Message.initWith "vault.v1.ListItemsResponse" encodeListItemsResponseWith decodeListItemsResponseWith encodeListItemsResponseBytes decodeListItemsResponseBytes
 
 
 

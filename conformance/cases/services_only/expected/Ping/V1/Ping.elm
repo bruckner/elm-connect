@@ -9,6 +9,7 @@ module Ping.V1.Ping exposing (..)
 
 import Proto.Json
 import Proto.Method
+import Proto.Registry
 import Proto.Version
 import Rpc
 import Time
@@ -37,8 +38,9 @@ ping =
     Rpc.call
         (Proto.Method.initJson "ping.v1.Ping"
             "Ping"
-            Proto.Json.encodeEmpty
-            Proto.Json.timestamp
+            Proto.Registry.empty
+            (\_ -> Ok << Proto.Json.encodeEmpty)
+            (\_ -> Proto.Json.timestamp)
         )
 
 

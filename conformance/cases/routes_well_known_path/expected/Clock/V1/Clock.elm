@@ -14,6 +14,7 @@ import Proto.Http
 import Proto.Json
 import Proto.Method
 import Proto.Query
+import Proto.Registry
 import Proto.Route
 import Proto.Timestamp
 import Proto.Version
@@ -43,8 +44,9 @@ getMoment =
     Rpc.call
         (Proto.Method.initJson "clock.v1.Clock"
             "GetMoment"
-            Clock.V1.encodeMoment
-            Clock.V1.decodeMoment
+            Proto.Registry.empty
+            (\_ -> Ok << Clock.V1.encodeMoment)
+            (\_ -> Clock.V1.decodeMoment)
             |> Proto.Method.withRoutes [ routeGetMoment0 ]
         )
 
@@ -61,8 +63,9 @@ maskMoment =
     Rpc.call
         (Proto.Method.initJson "clock.v1.Clock"
             "MaskMoment"
-            Clock.V1.encodeMoment
-            Clock.V1.decodeMoment
+            Proto.Registry.empty
+            (\_ -> Ok << Clock.V1.encodeMoment)
+            (\_ -> Clock.V1.decodeMoment)
             |> Proto.Method.withRoutes [ routeMaskMoment0 ]
         )
 
@@ -79,8 +82,9 @@ countMoment =
     Rpc.call
         (Proto.Method.initJson "clock.v1.Clock"
             "CountMoment"
-            Clock.V1.encodeMoment
-            Clock.V1.decodeMoment
+            Proto.Registry.empty
+            (\_ -> Ok << Clock.V1.encodeMoment)
+            (\_ -> Clock.V1.decodeMoment)
             |> Proto.Method.withRoutes [ routeCountMoment0 ]
         )
 
@@ -97,8 +101,9 @@ waitMoment =
     Rpc.call
         (Proto.Method.initJson "clock.v1.Clock"
             "WaitMoment"
-            Clock.V1.encodeMoment
-            Clock.V1.decodeMoment
+            Proto.Registry.empty
+            (\_ -> Ok << Clock.V1.encodeMoment)
+            (\_ -> Clock.V1.decodeMoment)
             |> Proto.Method.withRoutes [ routeWaitMoment0 ]
         )
 

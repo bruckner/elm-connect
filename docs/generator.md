@@ -158,9 +158,9 @@ The typed values and the methods carry them. Under `codec=proto` and
 `codec_both` corpus case), the form its `google.protobuf.Any`s hold:
 
 ```elm conformance/cases/codec_both/expected/Codec/V1.elm excerpt
-messageLeaf : Proto.Message.Message Proto.Codec.Proto Leaf
+messageLeaf : Proto.Message.Message Leaf
 messageLeaf =
-    Proto.Message.initProto "codec.v1.Leaf" encodeLeafBytes decodeLeafBytes
+    Proto.Message.init "codec.v1.Leaf" encodeLeaf decodeLeaf encodeLeafBytes decodeLeafBytes
 ```
 
 Under `codec=proto` a method is built from the binary codecs alone (the

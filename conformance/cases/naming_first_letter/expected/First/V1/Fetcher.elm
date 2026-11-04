@@ -9,6 +9,7 @@ module First.V1.Fetcher exposing (..)
 
 import First.V1
 import Proto.Method
+import Proto.Registry
 import Proto.Version
 import Rpc
 
@@ -36,8 +37,9 @@ getNote =
     Rpc.call
         (Proto.Method.initJson "first.v1.Fetcher"
             "GetNote"
-            First.V1.encodeURLPath
-            First.V1.decodeURLPath
+            Proto.Registry.empty
+            (\_ -> Ok << First.V1.encodeURLPath)
+            (\_ -> First.V1.decodeURLPath)
         )
 
 
@@ -53,8 +55,9 @@ httpGet =
     Rpc.call
         (Proto.Method.initJson "first.v1.Fetcher"
             "HTTPGet"
-            First.V1.encodeURLPath
-            First.V1.decodeURLPath
+            Proto.Registry.empty
+            (\_ -> Ok << First.V1.encodeURLPath)
+            (\_ -> First.V1.decodeURLPath)
         )
 
 
@@ -70,8 +73,9 @@ ping =
     Rpc.call
         (Proto.Method.initJson "first.v1.Fetcher"
             "_Ping"
-            First.V1.encodeURLPath
-            First.V1.decodeURLPath
+            Proto.Registry.empty
+            (\_ -> Ok << First.V1.encodeURLPath)
+            (\_ -> First.V1.decodeURLPath)
         )
 
 
@@ -87,8 +91,9 @@ type_ =
     Rpc.call
         (Proto.Method.initJson "first.v1.Fetcher"
             "Type"
-            First.V1.encodeURLPath
-            First.V1.decodeURLPath
+            Proto.Registry.empty
+            (\_ -> Ok << First.V1.encodeURLPath)
+            (\_ -> First.V1.decodeURLPath)
         )
 
 

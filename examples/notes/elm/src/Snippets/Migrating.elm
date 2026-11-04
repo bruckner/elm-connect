@@ -15,6 +15,7 @@ import Proto.Field
 import Proto.Http
 import Proto.Message
 import Proto.Method
+import Proto.Registry
 import Rpc
 import Rpc.Call
 import Rpc.Client
@@ -144,8 +145,9 @@ getNote =
     Rpc.call
         (Proto.Method.initJson "notes.v1.NotesService"
             "GetNote"
-            Notes.V1.encodeGetNoteRequest
-            Notes.V1.decodeNote
+            Proto.Registry.empty
+            (\_ -> Ok << Notes.V1.encodeGetNoteRequest)
+            (\_ -> Notes.V1.decodeNote)
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
             |> Proto.Method.withBindings [ getNoteBinding ]
         )

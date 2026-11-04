@@ -15,13 +15,15 @@ and a method's doc too.
 import Awkward.V1.Delimiters
 import Awkward.V1.Docs
 import Awkward.V1.Marks
+import Bytes.Encode
 import Json.Decode
 import Json.Encode
-import Proto.Codec
+import Proto.Binary
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 import Proto.Version
 
 
@@ -199,16 +201,16 @@ enumMarks =
 
 {-| The typed value of [`Delimiters`](#Delimiters): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageDelimiters : Proto.Message.Message Proto.Codec.Json Delimiters
+messageDelimiters : Proto.Message.Message Delimiters
 messageDelimiters =
-    Proto.Message.initJson "awkward.v1.Delimiters" encodeDelimiters decodeDelimiters
+    Proto.Message.init "awkward.v1.Delimiters" encodeDelimiters decodeDelimiters encodeDelimitersBytes decodeDelimitersBytes
 
 
 {-| The typed value of [`Docs`](#Docs): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageDocs : Proto.Message.Message Proto.Codec.Json Docs
+messageDocs : Proto.Message.Message Docs
 messageDocs =
-    Proto.Message.initJson "awkward.v1.Docs" encodeDocs decodeDocs
+    Proto.Message.init "awkward.v1.Docs" encodeDocs decodeDocs encodeDocsBytes decodeDocsBytes
 
 
 
@@ -228,6 +230,17 @@ descriptors =
             ]
         )
         Proto.Descriptors.wellKnown
+
+
+{-| The codecs of this package's messages, of those of the packages it imports and of the well-known types they hold, by full name: the JSON codecs of a message holding a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) convert it through this registry, or one wider.
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.unionAll
+        [ Proto.Registry.empty
+            |> Proto.Registry.withCodecs "awkward.v1.Delimiters" (\_ -> decodeDelimiters) encodeDelimitersBytes decodeDelimitersBytes (\_ -> Ok << encodeDelimiters)
+            |> Proto.Registry.withCodecs "awkward.v1.Docs" (\_ -> decodeDocs) encodeDocsBytes decodeDocsBytes (\_ -> Ok << encodeDocs)
+        ]
 
 
 
@@ -309,3 +322,193 @@ decodeDocs : Json.Decode.Decoder Docs
 decodeDocs =
     Json.Decode.succeed Docs
         |> Proto.Json.field "field" "" Proto.Json.string
+
+
+
+-- BINARY ENCODERS
+
+
+{-| The number protobuf binary writes a [`Marks`](#Marks) as.
+-}
+encodeMarksBytes : Marks -> Int
+encodeMarksBytes value =
+    case value of
+        MarksUnspecified ->
+            0
+
+        MarksList ->
+            1
+
+        MarksDelimited ->
+            2
+
+
+{-| Encodes a [`Delimiters`](#Delimiters) as protobuf binary.
+-}
+encodeDelimitersBytes : Delimiters -> Bytes.Encode.Encoder
+encodeDelimitersBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.lists
+        , Proto.Binary.implicit Proto.Binary.string 2 value.blocks
+        , Proto.Binary.implicit Proto.Binary.string 3 value.code
+        , Proto.Binary.implicit Proto.Binary.string 4 value.inline
+        , Proto.Binary.implicit Proto.Binary.string 5 value.text
+        , Proto.Binary.implicit Proto.Binary.string 6 value.whitespaceOnly
+        , Proto.Binary.implicit Proto.Binary.string 7 value.unclosed
+        ]
+
+
+{-| Encodes a [`Docs`](#Docs) as protobuf binary.
+-}
+encodeDocsBytes : Docs -> Bytes.Encode.Encoder
+encodeDocsBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.field
+        ]
+
+
+
+-- BINARY DECODERS
+
+
+{-| A [`Marks`](#Marks) from the number protobuf binary carries.
+-}
+decodeMarksBytes : Int -> Marks
+decodeMarksBytes number =
+    case number of
+        1 ->
+            MarksList
+
+        2 ->
+            MarksDelimited
+
+        _ ->
+            MarksUnspecified
+
+
+{-| Decodes a [`Delimiters`](#Delimiters) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeDelimitersBytes : Delimiters -> Proto.Binary.Decoder Delimiters
+mergeDelimitersBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | lists = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | blocks = v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | code = v
+                            }
+                        )
+                        wire
+                        value
+
+                4 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | inline = v
+                            }
+                        )
+                        wire
+                        value
+
+                5 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | text = v
+                            }
+                        )
+                        wire
+                        value
+
+                6 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | whitespaceOnly = v
+                            }
+                        )
+                        wire
+                        value
+
+                7 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | unclosed = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`Delimiters`](#Delimiters) from protobuf binary.
+-}
+decodeDelimitersBytes : Proto.Binary.Decoder Delimiters
+decodeDelimitersBytes =
+    mergeDelimitersBytes defaultDelimiters
+
+
+{-| Decodes a [`Docs`](#Docs) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeDocsBytes : Docs -> Proto.Binary.Decoder Docs
+mergeDocsBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | field = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`Docs`](#Docs) from protobuf binary.
+-}
+decodeDocsBytes : Proto.Binary.Decoder Docs
+decodeDocsBytes =
+    mergeDocsBytes defaultDocs

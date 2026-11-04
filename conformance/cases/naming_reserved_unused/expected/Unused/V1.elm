@@ -4,13 +4,15 @@
 
 module Unused.V1 exposing (..)
 
+import Bytes.Encode
 import Json.Decode
 import Json.Encode
-import Proto.Codec
+import Proto.Binary
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 import Proto.Version
 import Unused.V1.Char
 import Unused.V1.Cmd
@@ -158,44 +160,44 @@ enumChar =
 
 {-| The typed value of [`Dict`](#Dict): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageDict : Proto.Message.Message Proto.Codec.Json Dict
+messageDict : Proto.Message.Message Dict
 messageDict =
-    Proto.Message.initJson "unused.v1.Dict" encodeDict decodeDict
+    Proto.Message.init "unused.v1.Dict" encodeDict decodeDict encodeDictBytes decodeDictBytes
 
 
 {-| The typed value of [`Result`](#Result): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageResult : Proto.Message.Message Proto.Codec.Json Result
+messageResult : Proto.Message.Message Result
 messageResult =
-    Proto.Message.initJson "unused.v1.Result" encodeResult decodeResult
+    Proto.Message.init "unused.v1.Result" encodeResult decodeResult encodeResultBytes decodeResultBytes
 
 
 {-| The typed value of [`Order`](#Order): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageOrder : Proto.Message.Message Proto.Codec.Json Order
+messageOrder : Proto.Message.Message Order
 messageOrder =
-    Proto.Message.initJson "unused.v1.Order" encodeOrder decodeOrder
+    Proto.Message.init "unused.v1.Order" encodeOrder decodeOrder encodeOrderBytes decodeOrderBytes
 
 
 {-| The typed value of [`Never`](#Never): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageNever : Proto.Message.Message Proto.Codec.Json Never
+messageNever : Proto.Message.Message Never
 messageNever =
-    Proto.Message.initJson "unused.v1.Never" encodeNever decodeNever
+    Proto.Message.init "unused.v1.Never" encodeNever decodeNever encodeNeverBytes decodeNeverBytes
 
 
 {-| The typed value of [`Cmd`](#Cmd): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageCmd : Proto.Message.Message Proto.Codec.Json Cmd
+messageCmd : Proto.Message.Message Cmd
 messageCmd =
-    Proto.Message.initJson "unused.v1.Cmd" encodeCmd decodeCmd
+    Proto.Message.init "unused.v1.Cmd" encodeCmd decodeCmd encodeCmdBytes decodeCmdBytes
 
 
 {-| The typed value of [`True`](#True): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageTrue : Proto.Message.Message Proto.Codec.Json True
+messageTrue : Proto.Message.Message True
 messageTrue =
-    Proto.Message.initJson "unused.v1.True" encodeTrue decodeTrue
+    Proto.Message.init "unused.v1.True" encodeTrue decodeTrue encodeTrueBytes decodeTrueBytes
 
 
 
@@ -219,6 +221,21 @@ descriptors =
             ]
         )
         Proto.Descriptors.wellKnown
+
+
+{-| The codecs of this package's messages, of those of the packages it imports and of the well-known types they hold, by full name: the JSON codecs of a message holding a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) convert it through this registry, or one wider.
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.unionAll
+        [ Proto.Registry.empty
+            |> Proto.Registry.withCodecs "unused.v1.Dict" (\_ -> decodeDict) encodeDictBytes decodeDictBytes (\_ -> Ok << encodeDict)
+            |> Proto.Registry.withCodecs "unused.v1.Result" (\_ -> decodeResult) encodeResultBytes decodeResultBytes (\_ -> Ok << encodeResult)
+            |> Proto.Registry.withCodecs "unused.v1.Order" (\_ -> decodeOrder) encodeOrderBytes decodeOrderBytes (\_ -> Ok << encodeOrder)
+            |> Proto.Registry.withCodecs "unused.v1.Never" (\_ -> decodeNever) encodeNeverBytes decodeNeverBytes (\_ -> Ok << encodeNever)
+            |> Proto.Registry.withCodecs "unused.v1.Cmd" (\_ -> decodeCmd) encodeCmdBytes decodeCmdBytes (\_ -> Ok << encodeCmd)
+            |> Proto.Registry.withCodecs "unused.v1.True" (\_ -> decodeTrue) encodeTrueBytes decodeTrueBytes (\_ -> Ok << encodeTrue)
+        ]
 
 
 
@@ -344,3 +361,229 @@ decodeCmd =
 decodeTrue : Json.Decode.Decoder True
 decodeTrue =
     Proto.Json.emptyMessage
+
+
+
+-- BINARY ENCODERS
+
+
+{-| The number protobuf binary writes a [`Char`](#Char) as.
+-}
+encodeCharBytes : Char -> Int
+encodeCharBytes value =
+    case value of
+        CharUnspecified ->
+            0
+
+        CharA ->
+            1
+
+
+{-| Encodes a [`Dict`](#Dict) as protobuf binary.
+-}
+encodeDictBytes : Dict -> Bytes.Encode.Encoder
+encodeDictBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.name
+        ]
+
+
+{-| Encodes a [`Result`](#Result) as protobuf binary.
+-}
+encodeResultBytes : Result -> Bytes.Encode.Encoder
+encodeResultBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.bool 1 value.ok
+        , Proto.Binary.optional (Proto.Binary.embedded encodeDictBytes mergeDictBytes defaultDict) 2 value.dict
+        , Proto.Binary.list (Proto.Binary.enum encodeCharBytes decodeCharBytes) 3 value.chars
+        ]
+
+
+{-| Encodes an [`Order`](#Order) as protobuf binary.
+-}
+encodeOrderBytes : Order -> Bytes.Encode.Encoder
+encodeOrderBytes _ =
+    Bytes.Encode.sequence []
+
+
+{-| Encodes a [`Never`](#Never) as protobuf binary.
+-}
+encodeNeverBytes : Never -> Bytes.Encode.Encoder
+encodeNeverBytes _ =
+    Bytes.Encode.sequence []
+
+
+{-| Encodes a [`Cmd`](#Cmd) as protobuf binary.
+-}
+encodeCmdBytes : Cmd -> Bytes.Encode.Encoder
+encodeCmdBytes _ =
+    Bytes.Encode.sequence []
+
+
+{-| Encodes a [`True`](#True) as protobuf binary.
+-}
+encodeTrueBytes : True -> Bytes.Encode.Encoder
+encodeTrueBytes _ =
+    Bytes.Encode.sequence []
+
+
+
+-- BINARY DECODERS
+
+
+{-| A [`Char`](#Char) from the number protobuf binary carries.
+-}
+decodeCharBytes : Int -> Char
+decodeCharBytes number =
+    case number of
+        1 ->
+            CharA
+
+        _ ->
+            CharUnspecified
+
+
+{-| Decodes a [`Dict`](#Dict) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeDictBytes : Dict -> Proto.Binary.Decoder Dict
+mergeDictBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | name = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`Dict`](#Dict) from protobuf binary.
+-}
+decodeDictBytes : Proto.Binary.Decoder Dict
+decodeDictBytes =
+    mergeDictBytes defaultDict
+
+
+{-| Decodes a [`Result`](#Result) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeResultBytes : Result -> Proto.Binary.Decoder Result
+mergeResultBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { value
+                                | ok = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeDictBytes mergeDictBytes defaultDict)
+                        value.dict
+                        (\v ->
+                            { value
+                                | dict = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.enum encodeCharBytes decodeCharBytes)
+                        (\v ->
+                            { value
+                                | chars = v
+                            }
+                        )
+                        value.chars
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | chars = List.reverse value.chars
+            }
+        )
+
+
+{-| Decodes a [`Result`](#Result) from protobuf binary.
+-}
+decodeResultBytes : Proto.Binary.Decoder Result
+decodeResultBytes =
+    mergeResultBytes defaultResult
+
+
+{-| Decodes an [`Order`](#Order) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeOrderBytes : Order -> Proto.Binary.Decoder Order
+mergeOrderBytes =
+    Proto.Binary.merge (\_ wire value -> Proto.Binary.skip wire value) identity
+
+
+{-| Decodes an [`Order`](#Order) from protobuf binary.
+-}
+decodeOrderBytes : Proto.Binary.Decoder Order
+decodeOrderBytes =
+    mergeOrderBytes defaultOrder
+
+
+{-| Decodes a [`Never`](#Never) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeNeverBytes : Never -> Proto.Binary.Decoder Never
+mergeNeverBytes =
+    Proto.Binary.merge (\_ wire value -> Proto.Binary.skip wire value) identity
+
+
+{-| Decodes a [`Never`](#Never) from protobuf binary.
+-}
+decodeNeverBytes : Proto.Binary.Decoder Never
+decodeNeverBytes =
+    mergeNeverBytes defaultNever
+
+
+{-| Decodes a [`Cmd`](#Cmd) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeCmdBytes : Cmd -> Proto.Binary.Decoder Cmd
+mergeCmdBytes =
+    Proto.Binary.merge (\_ wire value -> Proto.Binary.skip wire value) identity
+
+
+{-| Decodes a [`Cmd`](#Cmd) from protobuf binary.
+-}
+decodeCmdBytes : Proto.Binary.Decoder Cmd
+decodeCmdBytes =
+    mergeCmdBytes defaultCmd
+
+
+{-| Decodes a [`True`](#True) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeTrueBytes : True -> Proto.Binary.Decoder True
+mergeTrueBytes =
+    Proto.Binary.merge (\_ wire value -> Proto.Binary.skip wire value) identity
+
+
+{-| Decodes a [`True`](#True) from protobuf binary.
+-}
+decodeTrueBytes : Proto.Binary.Decoder True
+decodeTrueBytes =
+    mergeTrueBytes defaultTrue

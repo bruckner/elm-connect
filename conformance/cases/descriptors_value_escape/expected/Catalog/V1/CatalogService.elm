@@ -12,6 +12,7 @@ import Catalog.V1.GetEntryRequest
 import Catalog.V1.Part
 import Proto.Http
 import Proto.Method
+import Proto.Registry
 import Proto.Route
 import Proto.Version
 import Rpc
@@ -44,8 +45,9 @@ getEntry =
     Rpc.call
         (Proto.Method.initJson "catalog.v1.CatalogService"
             "GetEntry"
-            Catalog.V1.encodeGetEntryRequest
-            Catalog.V1.decodeEntry
+            Proto.Registry.empty
+            (\_ -> Ok << Catalog.V1.encodeGetEntryRequest)
+            (\_ -> Catalog.V1.decodeEntry)
             |> Proto.Method.withRoutes [ routeGetEntry0 ]
         )
 

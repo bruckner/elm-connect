@@ -10,13 +10,15 @@ depends on elm/html cannot import `Html`. Its descriptor module
 `Html.Attributes` is one of elm/html's too.
 -}
 
+import Bytes.Encode
 import Html.Attributes
 import Json.Decode
 import Json.Encode
-import Proto.Codec
+import Proto.Binary
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 import Proto.Version
 
 
@@ -59,9 +61,9 @@ defaultAttributes =
 
 {-| The typed value of [`Attributes`](#Attributes): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageAttributes : Proto.Message.Message Proto.Codec.Json Attributes
+messageAttributes : Proto.Message.Message Attributes
 messageAttributes =
-    Proto.Message.initJson "html.Attributes" encodeAttributes decodeAttributes
+    Proto.Message.init "html.Attributes" encodeAttributes decodeAttributes encodeAttributesBytes decodeAttributesBytes
 
 
 
@@ -79,6 +81,16 @@ descriptors =
             []
         )
         Proto.Descriptors.wellKnown
+
+
+{-| The codecs of this package's messages, of those of the packages it imports and of the well-known types they hold, by full name: the JSON codecs of a message holding a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) convert it through this registry, or one wider.
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.unionAll
+        [ Proto.Registry.empty
+            |> Proto.Registry.withCodecs "html.Attributes" (\_ -> decodeAttributes) encodeAttributesBytes decodeAttributesBytes (\_ -> Ok << encodeAttributes)
+        ]
 
 
 
@@ -104,3 +116,51 @@ decodeAttributes : Json.Decode.Decoder Attributes
 decodeAttributes =
     Json.Decode.succeed Attributes
         |> Proto.Json.field "class" "" Proto.Json.string
+
+
+
+-- BINARY ENCODERS
+
+
+{-| Encodes an [`Attributes`](#Attributes) as protobuf binary.
+-}
+encodeAttributesBytes : Attributes -> Bytes.Encode.Encoder
+encodeAttributesBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.class
+        ]
+
+
+
+-- BINARY DECODERS
+
+
+{-| Decodes an [`Attributes`](#Attributes) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeAttributesBytes : Attributes -> Proto.Binary.Decoder Attributes
+mergeAttributesBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | class = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes an [`Attributes`](#Attributes) from protobuf binary.
+-}
+decodeAttributesBytes : Proto.Binary.Decoder Attributes
+decodeAttributesBytes =
+    mergeAttributesBytes defaultAttributes

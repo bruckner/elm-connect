@@ -16,6 +16,7 @@ Test servers must implement the service as described.
 
 import Connectrpc.Conformance.V1
 import Proto.Method
+import Proto.Registry
 import Proto.Version
 import Rpc
 
@@ -58,8 +59,9 @@ unary =
     Rpc.call
         (Proto.Method.initJson "connectrpc.conformance.v1.ConformanceService"
             "Unary"
-            Connectrpc.Conformance.V1.encodeUnaryRequest
-            Connectrpc.Conformance.V1.decodeUnaryResponse
+            Connectrpc.Conformance.V1.registry
+            Connectrpc.Conformance.V1.encodeUnaryRequestWith
+            Connectrpc.Conformance.V1.decodeUnaryResponseWith
         )
 
 
@@ -78,8 +80,9 @@ unimplemented =
     Rpc.call
         (Proto.Method.initJson "connectrpc.conformance.v1.ConformanceService"
             "Unimplemented"
-            Connectrpc.Conformance.V1.encodeUnimplementedRequest
-            Connectrpc.Conformance.V1.decodeUnimplementedResponse
+            Proto.Registry.empty
+            (\_ -> Ok << Connectrpc.Conformance.V1.encodeUnimplementedRequest)
+            (\_ -> Connectrpc.Conformance.V1.decodeUnimplementedResponse)
         )
 
 
@@ -99,8 +102,9 @@ idempotentUnary =
     Rpc.call
         (Proto.Method.initJson "connectrpc.conformance.v1.ConformanceService"
             "IdempotentUnary"
-            Connectrpc.Conformance.V1.encodeIdempotentUnaryRequest
-            Connectrpc.Conformance.V1.decodeIdempotentUnaryResponse
+            Connectrpc.Conformance.V1.registry
+            Connectrpc.Conformance.V1.encodeIdempotentUnaryRequestWith
+            Connectrpc.Conformance.V1.decodeIdempotentUnaryResponseWith
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
         )
 

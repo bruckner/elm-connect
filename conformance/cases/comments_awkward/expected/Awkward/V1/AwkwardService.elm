@@ -17,6 +17,7 @@ module Awkward.V1.AwkwardService exposing (..)
 import Proto.Http
 import Proto.Json
 import Proto.Method
+import Proto.Registry
 import Proto.Route
 import Proto.Version
 import Rpc
@@ -53,8 +54,9 @@ ping =
     Rpc.call
         (Proto.Method.initJson "awkward.v1.AwkwardService"
             "Ping"
-            Proto.Json.encodeEmpty
-            Proto.Json.empty
+            Proto.Registry.empty
+            (\_ -> Ok << Proto.Json.encodeEmpty)
+            (\_ -> Proto.Json.empty)
             |> Proto.Method.withRoutes [ routePing0 ]
         )
 

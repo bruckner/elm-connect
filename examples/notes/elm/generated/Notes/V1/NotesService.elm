@@ -18,7 +18,6 @@ Behaviours the live suite relies on:
 
 -}
 
-import Json.Encode
 import Notes.V1
 import Notes.V1.ArchiveNoteRequest
 import Notes.V1.CreateNoteRequest
@@ -30,6 +29,7 @@ import Notes.V1.UpdateNoteRequest
 import Proto.Http
 import Proto.Json
 import Proto.Method
+import Proto.Registry
 import Proto.Route
 import Proto.Version
 import Rpc
@@ -62,8 +62,9 @@ getNote =
     Rpc.call
         (Proto.Method.initJson "notes.v1.NotesService"
             "GetNote"
-            Notes.V1.encodeGetNoteRequest
-            Notes.V1.decodeNote
+            Notes.V1.registry
+            (\_ -> Ok << Notes.V1.encodeGetNoteRequest)
+            Notes.V1.decodeNoteWith
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
             |> Proto.Method.withRoutes [ routeGetNote0 ]
         )
@@ -83,8 +84,9 @@ listNotes =
     Rpc.call
         (Proto.Method.initJson "notes.v1.NotesService"
             "ListNotes"
-            Notes.V1.encodeListNotesRequest
-            Notes.V1.decodeListNotesResponse
+            Notes.V1.registry
+            (\_ -> Ok << Notes.V1.encodeListNotesRequest)
+            Notes.V1.decodeListNotesResponseWith
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
             |> Proto.Method.withRoutes [ routeListNotes0 ]
         )
@@ -106,9 +108,10 @@ createNote =
     Rpc.call
         (Proto.Method.initJson "notes.v1.NotesService"
             "CreateNote"
-            Notes.V1.encodeCreateNoteRequest
-            Notes.V1.decodeNote
-            |> Proto.Method.withRoutes [ routeCreateNote0 ]
+            Notes.V1.registry
+            Notes.V1.encodeCreateNoteRequestWith
+            Notes.V1.decodeNoteWith
+            |> Proto.Method.withBindings (Proto.Method.bindings descriptorCreateNote)
         )
 
 
@@ -126,9 +129,10 @@ updateNote =
     Rpc.call
         (Proto.Method.initJson "notes.v1.NotesService"
             "UpdateNote"
-            Notes.V1.encodeUpdateNoteRequest
-            Notes.V1.decodeNote
-            |> Proto.Method.withRoutes [ routeUpdateNote0 ]
+            Notes.V1.registry
+            Notes.V1.encodeUpdateNoteRequestWith
+            Notes.V1.decodeNoteWith
+            |> Proto.Method.withBindings (Proto.Method.bindings descriptorUpdateNote)
         )
 
 
@@ -146,8 +150,9 @@ deleteNote =
     Rpc.call
         (Proto.Method.initJson "notes.v1.NotesService"
             "DeleteNote"
-            Notes.V1.encodeDeleteNoteRequest
-            Proto.Json.empty
+            Proto.Registry.empty
+            (\_ -> Ok << Notes.V1.encodeDeleteNoteRequest)
+            (\_ -> Proto.Json.empty)
             |> Proto.Method.withRoutes [ routeDeleteNote0 ]
         )
 
@@ -166,8 +171,9 @@ archiveNote =
     Rpc.call
         (Proto.Method.initJson "notes.v1.NotesService"
             "ArchiveNote"
-            Notes.V1.encodeArchiveNoteRequest
-            Notes.V1.decodeNote
+            Notes.V1.registry
+            (\_ -> Ok << Notes.V1.encodeArchiveNoteRequest)
+            Notes.V1.decodeNoteWith
             |> Proto.Method.withRoutes [ routeArchiveNote0 ]
         )
 
@@ -187,8 +193,9 @@ ping =
     Rpc.call
         (Proto.Method.initJson "notes.v1.NotesService"
             "Ping"
-            Proto.Json.encodeEmpty
-            Proto.Json.empty
+            Proto.Registry.empty
+            (\_ -> Ok << Proto.Json.encodeEmpty)
+            (\_ -> Proto.Json.empty)
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
         )
 
@@ -224,36 +231,6 @@ routeListNotes0 request_ =
     , body = Nothing
     , responseBody = Nothing
     , invalid = Nothing
-    }
-
-
-{-| The route of [`createNote`](#createNote) over binding 0: `POST /v1/notes` body `note`.
--}
-routeCreateNote0 : Notes.V1.CreateNoteRequest -> Proto.Route.Route
-routeCreateNote0 request_ =
-    { method = "POST"
-    , path = "v1/notes"
-    , query = []
-    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Notes.V1.encodeNote request_.note))
-    , responseBody = Nothing
-    , invalid = Nothing
-    }
-
-
-{-| The route of [`updateNote`](#updateNote) over binding 0: `PATCH /v1/{note.name=notes/*}` body `note`.
--}
-routeUpdateNote0 : Notes.V1.UpdateNoteRequest -> Proto.Route.Route
-routeUpdateNote0 request_ =
-    let
-        noteName_ =
-            Maybe.withDefault "" (Maybe.map .name request_.note)
-    in
-    { method = "PATCH"
-    , path = "v1/" ++ Proto.Route.segments noteName_
-    , query = Notes.V1.queryOfUpdateNoteRequest request_
-    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Notes.V1.encodeNote request_.note))
-    , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "note.name" [ "notes", "*" ] noteName_
     }
 
 

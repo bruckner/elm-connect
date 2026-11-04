@@ -14,7 +14,6 @@ import Codec.Other.V1.Shade
 import Json.Decode
 import Json.Encode
 import Proto.Binary
-import Proto.Codec
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
@@ -88,9 +87,9 @@ enumShade =
 
 {-| The typed value of [`Remote`](#Remote): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageRemote : Proto.Message.Message Proto.Codec.Proto Remote
+messageRemote : Proto.Message.Message Remote
 messageRemote =
-    Proto.Message.initProto "codec.other.v1.Remote" encodeRemoteBytes decodeRemoteBytes
+    Proto.Message.init "codec.other.v1.Remote" encodeRemote decodeRemote encodeRemoteBytes decodeRemoteBytes
 
 
 

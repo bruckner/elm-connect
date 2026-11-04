@@ -340,7 +340,7 @@ answers =
             \_ ->
                 case answer 200 [] [ trailers ("grpc-status: 5\u{000D}\ngrpc-message: gone\u{000D}\ngrpc-status-details-bin: " ++ Proto.Bytes.toBase64 statusWithDetails ++ "\u{000D}\n") ] of
                     Err (RpcStatus status _) ->
-                        List.filterMap (.proto >> Maybe.map Proto.Any.typeUrl) status.details
+                        List.map Proto.Any.typeUrl status.details
                             |> Expect.equal [ "type.googleapis.com/google.rpc.ErrorInfo", "type.googleapis.com/google.rpc.BadRequest" ]
 
                     other ->

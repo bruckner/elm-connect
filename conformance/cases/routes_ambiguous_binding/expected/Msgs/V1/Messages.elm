@@ -12,6 +12,7 @@ import Msgs.V1.MessageRequest
 import Proto.Http
 import Proto.Method
 import Proto.Query
+import Proto.Registry
 import Proto.Route
 import Proto.Version
 import Rpc
@@ -45,8 +46,9 @@ getMessage =
     Rpc.call
         (Proto.Method.initJson "msgs.v1.Messages"
             "GetMessage"
-            Msgs.V1.encodeMessageRequest
-            Msgs.V1.decodeMessage
+            Proto.Registry.empty
+            (\_ -> Ok << Msgs.V1.encodeMessageRequest)
+            (\_ -> Msgs.V1.decodeMessage)
             |> Proto.Method.withRoutes [ routeGetMessage0, routeGetMessage1 ]
         )
 
@@ -65,8 +67,9 @@ getSub =
     Rpc.call
         (Proto.Method.initJson "msgs.v1.Messages"
             "GetSub"
-            Msgs.V1.encodeMessageRequest
-            Msgs.V1.decodeMessage
+            Proto.Registry.empty
+            (\_ -> Ok << Msgs.V1.encodeMessageRequest)
+            (\_ -> Msgs.V1.decodeMessage)
             |> Proto.Method.withRoutes [ routeGetSub0 ]
         )
 
@@ -85,8 +88,9 @@ updateMessage =
     Rpc.call
         (Proto.Method.initJson "msgs.v1.Messages"
             "UpdateMessage"
-            Msgs.V1.encodeMessageRequest
-            Msgs.V1.decodeMessage
+            Proto.Registry.empty
+            (\_ -> Ok << Msgs.V1.encodeMessageRequest)
+            (\_ -> Msgs.V1.decodeMessage)
             |> Proto.Method.withRoutes [ routeUpdateMessage0 ]
         )
 
@@ -103,8 +107,9 @@ listMessages =
     Rpc.call
         (Proto.Method.initJson "msgs.v1.Messages"
             "ListMessages"
-            Msgs.V1.encodeMessageRequest
-            Msgs.V1.decodeMessage
+            Proto.Registry.empty
+            (\_ -> Ok << Msgs.V1.encodeMessageRequest)
+            (\_ -> Msgs.V1.decodeMessage)
             |> Proto.Method.withRoutes [ routeListMessages0 ]
         )
 
@@ -123,8 +128,9 @@ checkMessage =
     Rpc.call
         (Proto.Method.initJson "msgs.v1.Messages"
             "CheckMessage"
-            Msgs.V1.encodeMessageRequest
-            Msgs.V1.decodeMessage
+            Proto.Registry.empty
+            (\_ -> Ok << Msgs.V1.encodeMessageRequest)
+            (\_ -> Msgs.V1.decodeMessage)
             |> Proto.Method.withRoutes [ routeCheckMessage0 ]
         )
 
@@ -141,8 +147,9 @@ checkById =
     Rpc.call
         (Proto.Method.initJson "msgs.v1.Messages"
             "CheckById"
-            Msgs.V1.encodeMessageRequest
-            Msgs.V1.decodeMessage
+            Proto.Registry.empty
+            (\_ -> Ok << Msgs.V1.encodeMessageRequest)
+            (\_ -> Msgs.V1.decodeMessage)
             |> Proto.Method.withRoutes [ routeCheckById0 ]
         )
 
@@ -161,8 +168,9 @@ touch =
     Rpc.call
         (Proto.Method.initJson "msgs.v1.Messages"
             "Touch"
-            Msgs.V1.encodeMessageRequest
-            Msgs.V1.decodeMessage
+            Proto.Registry.empty
+            (\_ -> Ok << Msgs.V1.encodeMessageRequest)
+            (\_ -> Msgs.V1.decodeMessage)
             |> Proto.Method.withRoutes [ routeTouch0 ]
         )
 

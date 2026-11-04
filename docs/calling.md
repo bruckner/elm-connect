@@ -618,14 +618,13 @@ last four apart by the response's `statusCode`, not by the code.
 ```elm src/Rpc/Error.elm excerpt
 code : Error -> Code
 message : Error -> String
-details : Message Proto a -> Error -> List a
-detailsJson : Message Json a -> Error -> List a
+details : Message a -> Error -> List a
 toString : Error -> String
 ```
 
 Every error has a code and a message. `Rpc.Error.toString` is the two
-for logs (`not_found: no such note`). `Rpc.Error.details` and
-`detailsJson` give the status details of one type (below).
+for logs (`not_found: no such note`). `Rpc.Error.details` gives the
+status details of one type (below).
 
 An `Rpc.Error` is what the call's answer was, and none of its
 constructors fits a failure the application finds in a good answer,
@@ -641,14 +640,11 @@ does not serve.
 ### Error details
 
 A status's details are `google.protobuf.Any`s, each an `Rpc.Error.Detail`
-holding the forms it arrived in: `proto`, its protobuf binary, and
-`json`, its proto3 JSON.
+holding its protobuf binary.
 
 ```elm src/Rpc/Error.elm excerpt
 type alias Detail =
-    { proto : Maybe (Any Proto)
-    , json : Maybe (Any Json)
-    }
+    Any
 ```
 
 A Connect error body carries each detail's binary, and its JSON too as
@@ -666,7 +662,7 @@ import Rpc.Error
 
 violations : Rpc.Error -> List String
 violations error =
-    Rpc.Error.detailsJson Google.Rpc.messageBadRequest error
+    Rpc.Error.details Google.Rpc.messageBadRequest error
         |> List.concatMap .fieldViolations
         |> List.map .description
 ```

@@ -8,8 +8,6 @@ and a check of a mask's paths, both by walking the message's descriptor.
 
 import Json.Decode
 import Json.Encode exposing (Value)
-import Proto.Any
-import Proto.Codec exposing (Json)
 import Proto.Descriptors as Descriptors exposing (Descriptors)
 import Proto.Field as Field exposing (Cardinality(..), Kind(..))
 import Proto.Message as Message exposing (Message)
@@ -22,15 +20,11 @@ import Proto.Message as Message exposing (Message)
 {-| The `google.protobuf.FieldMask` of what changed from `before` to
 `after`, for an update request such as `UpdateNoteRequest`.
 -}
-updateMask : Descriptors -> Message Json a -> a -> a -> List String
-updateMask descriptors message before after =
-    let
-        json value =
-            Proto.Any.json (Proto.Any.packJson message value)
-    in
+updateMask : Descriptors -> Message a -> (a -> Value) -> a -> a -> List String
+updateMask descriptors message encode before after =
     case Descriptors.message (Message.typeName message) descriptors of
         Just descriptor ->
-            changedPaths descriptors descriptor (json before) (json after)
+            changedPaths descriptors descriptor (encode before) (encode after)
 
         Nothing ->
             []

@@ -7,7 +7,6 @@ import Json.Encode
 import Proto.Any as Any exposing (Any, Problem(..))
 import Proto.Binary
 import Proto.Bytes
-import Proto.Codec exposing (Json, Proto)
 import Proto.Json
 import Proto.Message as Message exposing (Message)
 import Proto.Registry as Registry exposing (Registry)
@@ -45,19 +44,14 @@ decodeTitle =
     Json.Decode.field "title" Json.Decode.string
 
 
-{-| A message as generated code under `codec=proto` or `codec=both` gives one.
+{-| A message as generated code gives one.
 -}
-messageTitle : Message Proto String
+messageTitle : Message String
 messageTitle =
-    Message.initProto "notes.v1.Title" encodeTitleBytes decodeTitleBytes
+    Message.init "notes.v1.Title" encodeTitle decodeTitle encodeTitleBytes decodeTitleBytes
 
 
-jsonTitle : Message Json String
-jsonTitle =
-    Message.initJson "notes.v1.Title" encodeTitle decodeTitle
-
-
-{-| The registry generated code under `codec=both` gives a package of
+{-| The registry generated code gives a package of
 `notes.v1.Title`, with the well-known types.
 -}
 registry : Registry
@@ -69,25 +63,25 @@ registry =
 
 {-| An `Any` written as binary and read back.
 -}
-throughBinary : Any Proto -> Maybe (Any Proto)
+throughBinary : Any -> Maybe Any
 throughBinary any =
     Proto.Binary.decode (Proto.Binary.messageDecoder Proto.Binary.any) (Proto.Binary.encode (Proto.Binary.messageEncoder Proto.Binary.any) any)
 
 
-base64 : Any Proto -> String
+base64 : Any -> String
 base64 any =
     Proto.Bytes.toBase64 (Proto.Binary.encode (Proto.Binary.messageEncoder Proto.Binary.any) any)
 
 
 {-| An `Any` read from proto3 JSON through a registry.
 -}
-readWith : Registry -> String -> Result String (Any Proto)
+readWith : Registry -> String -> Result String Any
 readWith reg text =
     Json.Decode.decodeString (Proto.Json.anyWith reg) text
         |> Result.mapError Json.Decode.errorToString
 
 
-writtenWith : Registry -> Any Proto -> Result Problem String
+writtenWith : Registry -> Any -> Result Problem String
 writtenWith reg any =
     Proto.Json.encodeAnyWith reg any |> Result.map (Json.Encode.encode 0)
 
@@ -112,14 +106,14 @@ suite =
                 ( Proto.Bytes.fromBase64 "CiJ0eXBlLmdvb2dsZWFwaXMuY29tL25vdGVzLnYxLlRpdGxlEgIKBQ=="
                     |> Maybe.andThen (Proto.Binary.decode (Proto.Binary.messageDecoder Proto.Binary.any))
                     |> Maybe.map (Any.tryUnpack messageTitle)
-                , Any.tryUnpack WellKnown.int32ValueProto (Any.pack messageTitle "hi")
+                , Any.tryUnpack WellKnown.int32Value (Any.pack messageTitle "hi")
                 )
                     |> Expect.equal ( Just (Err InvalidProto), Err (TypeMismatch "notes.v1.Title") )
         , test "written as proto3 JSON through the registry's entry for its type" <|
             \_ ->
                 [ writtenWith registry (Any.pack messageTitle "hi")
-                , writtenWith registry (Any.pack WellKnown.stringValueProto "hi")
-                , writtenWith registry (Any.pack WellKnown.anyProto (Any.pack WellKnown.boolValueProto True))
+                , writtenWith registry (Any.pack WellKnown.stringValue "hi")
+                , writtenWith registry (Any.pack WellKnown.any (Any.pack WellKnown.boolValue True))
                 ]
                     |> Expect.equal
                         [ Ok """{"@type":"type.googleapis.com/notes.v1.Title","title":"hi"}"""
@@ -129,7 +123,7 @@ suite =
         , test "a type the registry lacks, at any depth, is UnregisteredType naming it" <|
             \_ ->
                 [ writtenWith Registry.wellKnown (Any.pack messageTitle "hi")
-                , writtenWith Registry.wellKnown (Any.pack WellKnown.anyProto (Any.pack messageTitle "hi"))
+                , writtenWith Registry.wellKnown (Any.pack WellKnown.any (Any.pack messageTitle "hi"))
                 ]
                     |> Expect.equal [ Err (UnregisteredType "notes.v1.Title"), Err (UnregisteredType "google.protobuf.Any") ]
         , test "read from proto3 JSON through the registry, as its binary" <|
@@ -154,15 +148,11 @@ suite =
                 , readWith registry "{}" |> Result.map (\any -> ( Any.typeUrl any, writtenWith registry any ))
                 )
                     |> Expect.equal ( ( Nothing, Nothing ), Ok ( "", Ok "{}" ) )
-        , test "toJson and toProto convert through the registry, Nothing for a type it lacks" <|
+        , test "toJson converts through the registry, Nothing for a type it lacks" <|
             \_ ->
                 ( Any.toJson registry (Any.pack messageTitle "hi")
-                    |> Maybe.andThen (Any.unpackJson jsonTitle)
-                , Any.toJson registry (Any.pack messageTitle "hi")
-                    |> Maybe.andThen (Any.toProto registry)
-                , ( Any.toJson Registry.wellKnown (Any.pack messageTitle "hi")
-                  , Any.toProto Registry.wellKnown (Any.packJson jsonTitle "hi")
-                  )
+                    |> Maybe.andThen (Json.Decode.decodeValue decodeTitle >> Result.toMaybe)
+                , Any.toJson Registry.wellKnown (Any.pack messageTitle "hi")
                 )
-                    |> Expect.equal ( Just "hi", Just (Any.pack messageTitle "hi"), ( Nothing, Nothing ) )
+                    |> Expect.equal ( Just "hi", Nothing )
         ]

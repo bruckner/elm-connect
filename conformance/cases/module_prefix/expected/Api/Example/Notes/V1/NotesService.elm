@@ -11,6 +11,7 @@ import Api.Example.Notes.V1
 import Api.Example.Notes.V1.GetNoteRequest
 import Proto.Http
 import Proto.Method
+import Proto.Registry
 import Proto.Route
 import Proto.Version
 import Rpc
@@ -39,8 +40,9 @@ getNote =
     Rpc.call
         (Proto.Method.initJson "notes.v1.NotesService"
             "GetNote"
-            Api.Example.Notes.V1.encodeGetNoteRequest
-            Api.Example.Notes.V1.decodeNote
+            Proto.Registry.empty
+            (\_ -> Ok << Api.Example.Notes.V1.encodeGetNoteRequest)
+            (\_ -> Api.Example.Notes.V1.decodeNote)
             |> Proto.Method.withRoutes [ routeGetNote0 ]
         )
 

@@ -4,12 +4,14 @@
 
 module Range.V1 exposing (..)
 
+import Bytes.Encode
 import Json.Decode
 import Json.Encode
-import Proto.Codec
+import Proto.Binary
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 import Proto.Version
 import Range.V1.Bounds
 
@@ -64,9 +66,9 @@ defaultBounds =
 
 {-| The typed value of [`Bounds`](#Bounds): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageBounds : Proto.Message.Message Proto.Codec.Json Bounds
+messageBounds : Proto.Message.Message Bounds
 messageBounds =
-    Proto.Message.initJson "range.v1.Bounds" encodeBounds decodeBounds
+    Proto.Message.init "range.v1.Bounds" encodeBounds decodeBounds encodeBoundsBytes decodeBoundsBytes
 
 
 
@@ -84,6 +86,16 @@ descriptors =
             []
         )
         Proto.Descriptors.wellKnown
+
+
+{-| The codecs of this package's messages, of those of the packages it imports and of the well-known types they hold, by full name: the JSON codecs of a message holding a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) convert it through this registry, or one wider.
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.unionAll
+        [ Proto.Registry.empty
+            |> Proto.Registry.withCodecs "range.v1.Bounds" (\_ -> decodeBounds) encodeBoundsBytes decodeBoundsBytes (\_ -> Ok << encodeBounds)
+        ]
 
 
 
@@ -113,3 +125,75 @@ decodeBounds =
         |> Proto.Json.field "max" 0 Proto.Json.int32
         |> Proto.Json.field "min" 0 Proto.Json.int32
         |> Proto.Json.field "always" False Json.Decode.bool
+
+
+
+-- BINARY ENCODERS
+
+
+{-| Encodes a [`Bounds`](#Bounds) as protobuf binary.
+-}
+encodeBoundsBytes : Bounds -> Bytes.Encode.Encoder
+encodeBoundsBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.int32 1 value.max
+        , Proto.Binary.implicit Proto.Binary.int32 2 value.min
+        , Proto.Binary.implicit Proto.Binary.bool 3 value.always
+        ]
+
+
+
+-- BINARY DECODERS
+
+
+{-| Decodes a [`Bounds`](#Bounds) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeBoundsBytes : Bounds -> Proto.Binary.Decoder Bounds
+mergeBoundsBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.int32
+                        (\v ->
+                            { value
+                                | max = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.int32
+                        (\v ->
+                            { value
+                                | min = v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { value
+                                | always = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`Bounds`](#Bounds) from protobuf binary.
+-}
+decodeBoundsBytes : Proto.Binary.Decoder Bounds
+decodeBoundsBytes =
+    mergeBoundsBytes defaultBounds

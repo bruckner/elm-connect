@@ -14,6 +14,7 @@ import Json.Encode
 import Proto.Duration exposing (Duration)
 import Proto.Json
 import Proto.Method
+import Proto.Registry
 import Proto.Version
 import Rpc
 import Time
@@ -43,8 +44,9 @@ now =
     Rpc.call
         (Proto.Method.initJson "clock.v1.Clock"
             "Now"
-            Proto.Json.encodeEmpty
-            Proto.Json.timestamp
+            Proto.Registry.empty
+            (\_ -> Ok << Proto.Json.encodeEmpty)
+            (\_ -> Proto.Json.timestamp)
         )
 
 
@@ -60,8 +62,9 @@ sleep =
     Rpc.call
         (Proto.Method.initJson "clock.v1.Clock"
             "Sleep"
-            Proto.Json.encodeDuration
-            Proto.Json.empty
+            Proto.Registry.empty
+            (\_ -> Ok << Proto.Json.encodeDuration)
+            (\_ -> Proto.Json.empty)
         )
 
 
@@ -77,8 +80,9 @@ mask =
     Rpc.call
         (Proto.Method.initJson "clock.v1.Clock"
             "Mask"
-            Proto.Json.encodeFieldMask
-            Proto.Json.struct
+            Proto.Registry.empty
+            (\_ -> Ok << Proto.Json.encodeFieldMask)
+            (\_ -> Proto.Json.struct)
         )
 
 
@@ -94,8 +98,9 @@ echo =
     Rpc.call
         (Proto.Method.initJson "clock.v1.Clock"
             "Echo"
-            Basics.identity
-            Proto.Json.listValue
+            Proto.Registry.empty
+            (\_ -> Ok << Basics.identity)
+            (\_ -> Proto.Json.listValue)
         )
 
 
@@ -111,8 +116,9 @@ ticks =
     Rpc.call
         (Proto.Method.initJson "clock.v1.Clock"
             "Ticks"
-            Proto.Json.encodeInt64AsInt
-            Proto.Json.uint64AsInt
+            Proto.Registry.empty
+            (\_ -> Ok << Proto.Json.encodeInt64AsInt)
+            (\_ -> Proto.Json.uint64AsInt)
         )
 
 
@@ -128,8 +134,9 @@ count =
     Rpc.call
         (Proto.Method.initJson "clock.v1.Clock"
             "Count"
-            Json.Encode.int
-            Proto.Json.uint32
+            Proto.Registry.empty
+            (\_ -> Ok << Json.Encode.int)
+            (\_ -> Proto.Json.uint32)
         )
 
 
@@ -145,8 +152,9 @@ ratio =
     Rpc.call
         (Proto.Method.initJson "clock.v1.Clock"
             "Ratio"
-            Proto.Json.encodeFloat
-            Proto.Json.float32
+            Proto.Registry.empty
+            (\_ -> Ok << Proto.Json.encodeFloat)
+            (\_ -> Proto.Json.float32)
         )
 
 
@@ -162,8 +170,9 @@ name =
     Rpc.call
         (Proto.Method.initJson "clock.v1.Clock"
             "Name"
-            Json.Encode.string
-            Json.Decode.bool
+            Proto.Registry.empty
+            (\_ -> Ok << Json.Encode.string)
+            (\_ -> Json.Decode.bool)
         )
 
 
@@ -179,8 +188,9 @@ raw =
     Rpc.call
         (Proto.Method.initJson "clock.v1.Clock"
             "Raw"
-            Proto.Json.encodeBytes
-            Proto.Json.bytes
+            Proto.Registry.empty
+            (\_ -> Ok << Proto.Json.encodeBytes)
+            (\_ -> Proto.Json.bytes)
         )
 
 
@@ -196,8 +206,9 @@ zone =
     Rpc.call
         (Proto.Method.initJson "clock.v1.Clock"
             "Zone"
-            Zones.V1.encodeZoneRequest
-            Zones.V1.decodeZone
+            Proto.Registry.empty
+            (\_ -> Ok << Zones.V1.encodeZoneRequest)
+            (\_ -> Zones.V1.decodeZone)
         )
 
 
@@ -213,8 +224,9 @@ set =
     Rpc.call
         (Proto.Method.initJson "clock.v1.Clock"
             "Set"
-            Clock.V1.encodeAlarm
-            Clock.V1.decodeAlarm
+            Proto.Registry.empty
+            (\_ -> Ok << Clock.V1.encodeAlarm)
+            (\_ -> Clock.V1.decodeAlarm)
         )
 
 

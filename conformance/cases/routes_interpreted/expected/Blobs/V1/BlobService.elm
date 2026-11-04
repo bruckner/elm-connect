@@ -11,6 +11,7 @@ import Blobs.V1
 import Blobs.V1.Blob
 import Proto.Http
 import Proto.Method
+import Proto.Registry
 import Proto.Route
 import Proto.Version
 import Rpc
@@ -42,8 +43,9 @@ getBlob =
     Rpc.call
         (Proto.Method.initJson "blobs.v1.BlobService"
             "GetBlob"
-            Blobs.V1.encodeBlob
-            Blobs.V1.decodeBlob
+            Proto.Registry.empty
+            (\_ -> Ok << Blobs.V1.encodeBlob)
+            (\_ -> Blobs.V1.decodeBlob)
             |> Proto.Method.withBindings (Proto.Method.bindings descriptorGetBlob)
         )
 
@@ -60,8 +62,9 @@ findBlob =
     Rpc.call
         (Proto.Method.initJson "blobs.v1.BlobService"
             "FindBlob"
-            Blobs.V1.encodeBlob
-            Blobs.V1.decodeBlob
+            Proto.Registry.empty
+            (\_ -> Ok << Blobs.V1.encodeBlob)
+            (\_ -> Blobs.V1.decodeBlob)
             |> Proto.Method.withRoutes [ routeFindBlob0 ]
         )
 

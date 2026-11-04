@@ -182,12 +182,12 @@ viewError error =
                 , ul []
                     (List.map
                         (\violation -> li [] [ code [] [ text violation.field ], text (": " ++ violation.description) ])
-                        (Rpc.Error.detailsJson Google.Rpc.messageBadRequest error |> List.concatMap .fieldViolations)
+                        (Rpc.Error.details Google.Rpc.messageBadRequest error |> List.concatMap .fieldViolations)
                     )
                 , ul []
                     (List.map
                         (\info -> li [] [ text (info.reason ++ " from " ++ info.domain) ])
-                        (Rpc.Error.detailsJson Google.Rpc.messageErrorInfo error)
+                        (Rpc.Error.details Google.Rpc.messageErrorInfo error)
                     )
                 , div [] (List.map viewDetail status.details)
                 ]
@@ -214,12 +214,12 @@ viewError error =
 
 viewDetail : Rpc.Error.Detail -> Html msg
 viewDetail detail =
-    case detail.json of
+    case Proto.Any.toJson Google.Rpc.registry detail of
         Just json ->
-            pre [] [ text (Json.Encode.encode 2 (Proto.Json.encodeAny json)) ]
+            pre [] [ text (Proto.Any.typeName detail ++ " " ++ Json.Encode.encode 2 json) ]
 
         Nothing ->
-            p [] [ text (Maybe.withDefault "A detail" (Maybe.map Proto.Any.typeName detail.proto) ++ " arrived as protobuf binary alone.") ]
+            p [] [ text (Proto.Any.typeName detail ++ ", a type this page has no codecs for.") ]
 
 
 sourceToString : Rpc.Error.Source -> String

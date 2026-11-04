@@ -9,14 +9,16 @@ Elm Ints, decoded only within ±(2^53 − 1) and encoded as decimal
 strings, wherever they appear, unless a field's jstype says otherwise.
 -}
 
+import Bytes.Encode
 import Dict exposing (Dict)
 import Int64Option.V1.Counters
 import Json.Decode
 import Json.Encode
-import Proto.Codec
+import Proto.Binary
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 import Proto.Version
 
 
@@ -108,9 +110,9 @@ defaultCounters =
 
 {-| The typed value of [`Counters`](#Counters): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
-messageCounters : Proto.Message.Message Proto.Codec.Json Counters
+messageCounters : Proto.Message.Message Counters
 messageCounters =
-    Proto.Message.initJson "int64_option.v1.Counters" encodeCounters decodeCounters
+    Proto.Message.init "int64_option.v1.Counters" encodeCounters decodeCounters encodeCountersBytes decodeCountersBytes
 
 
 
@@ -128,6 +130,17 @@ descriptors =
             []
         )
         Proto.Descriptors.wellKnown
+
+
+{-| The codecs of this package's messages, of those of the packages it imports and of the well-known types they hold, by full name: the JSON codecs of a message holding a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) convert it through this registry, or one wider.
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.unionAll
+        [ Proto.Registry.empty
+            |> Proto.Registry.withCodecs "int64_option.v1.Counters" (\_ -> decodeCounters) encodeCountersBytes decodeCountersBytes (\_ -> Ok << encodeCounters)
+        , Proto.Registry.wellKnown
+        ]
 
 
 
@@ -206,3 +219,229 @@ decodeCountersLimit =
         [ Proto.Json.memberEither "atMost" "at_most" (Json.Decode.map CountersLimitAtMost Proto.Json.int64AsInt)
         , Proto.Json.member "exactly" (Json.Decode.map CountersLimitExactly Proto.Json.int64)
         ]
+
+
+
+-- BINARY ENCODERS
+
+
+{-| Encodes a [`Counters`](#Counters) as protobuf binary.
+-}
+encodeCountersBytes : Counters -> Bytes.Encode.Encoder
+encodeCountersBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.int64AsInt 1 value.int64Value
+        , Proto.Binary.implicit Proto.Binary.uint64AsInt 2 value.uint64Value
+        , Proto.Binary.implicit Proto.Binary.sint64AsInt 3 value.sint64Value
+        , Proto.Binary.implicit Proto.Binary.fixed64AsInt 4 value.fixed64Value
+        , Proto.Binary.implicit Proto.Binary.sfixed64AsInt 5 value.sfixed64Value
+        , Proto.Binary.implicit Proto.Binary.int64 6 value.exactId
+        , Proto.Binary.implicit Proto.Binary.int64AsInt 7 value.normal
+        , Proto.Binary.optional Proto.Binary.int64AsInt 8 value.maybeCount
+        , Proto.Binary.list Proto.Binary.int64AsInt 9 value.samples
+        , Proto.Binary.list Proto.Binary.uint64 10 value.exactSamples
+        , Proto.Binary.dict Proto.Binary.int64 Proto.Binary.int64AsInt 11 value.byId
+        , Proto.Binary.optional Proto.Binary.int64ValueAsInt 12 value.wrapped
+        , encodeCountersLimitBytes value.limit
+        ]
+
+
+{-| Encodes a [`CountersLimit`](#CountersLimit) as protobuf binary: its set member's field.
+-}
+encodeCountersLimitBytes : CountersLimit -> Bytes.Encode.Encoder
+encodeCountersLimitBytes value =
+    case value of
+        CountersLimitUnset ->
+            Bytes.Encode.sequence []
+
+        CountersLimitAtMost member ->
+            Proto.Binary.present Proto.Binary.int64AsInt 13 member
+
+        CountersLimitExactly member ->
+            Proto.Binary.present Proto.Binary.int64 14 member
+
+
+
+-- BINARY DECODERS
+
+
+{-| Decodes a [`Counters`](#Counters) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeCountersBytes : Counters -> Proto.Binary.Decoder Counters
+mergeCountersBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.int64AsInt
+                        (\v ->
+                            { value
+                                | int64Value = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.uint64AsInt
+                        (\v ->
+                            { value
+                                | uint64Value = v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.field
+                        Proto.Binary.sint64AsInt
+                        (\v ->
+                            { value
+                                | sint64Value = v
+                            }
+                        )
+                        wire
+                        value
+
+                4 ->
+                    Proto.Binary.field
+                        Proto.Binary.fixed64AsInt
+                        (\v ->
+                            { value
+                                | fixed64Value = v
+                            }
+                        )
+                        wire
+                        value
+
+                5 ->
+                    Proto.Binary.field
+                        Proto.Binary.sfixed64AsInt
+                        (\v ->
+                            { value
+                                | sfixed64Value = v
+                            }
+                        )
+                        wire
+                        value
+
+                6 ->
+                    Proto.Binary.field
+                        Proto.Binary.int64
+                        (\v ->
+                            { value
+                                | exactId = v
+                            }
+                        )
+                        wire
+                        value
+
+                7 ->
+                    Proto.Binary.field
+                        Proto.Binary.int64AsInt
+                        (\v ->
+                            { value
+                                | normal = v
+                            }
+                        )
+                        wire
+                        value
+
+                8 ->
+                    Proto.Binary.field
+                        Proto.Binary.int64AsInt
+                        (\v ->
+                            { value
+                                | maybeCount = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                9 ->
+                    Proto.Binary.repeated
+                        Proto.Binary.int64AsInt
+                        (\v ->
+                            { value
+                                | samples = v
+                            }
+                        )
+                        value.samples
+                        wire
+                        value
+
+                10 ->
+                    Proto.Binary.repeated
+                        Proto.Binary.uint64
+                        (\v ->
+                            { value
+                                | exactSamples = v
+                            }
+                        )
+                        value.exactSamples
+                        wire
+                        value
+
+                11 ->
+                    Proto.Binary.mapEntry
+                        Proto.Binary.int64
+                        Proto.Binary.int64AsInt
+                        (\k v ->
+                            { value
+                                | byId = Dict.insert k v value.byId
+                            }
+                        )
+                        wire
+                        value
+
+                12 ->
+                    Proto.Binary.field
+                        Proto.Binary.int64ValueAsInt
+                        (\v ->
+                            { value
+                                | wrapped = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                13 ->
+                    Proto.Binary.field
+                        Proto.Binary.int64AsInt
+                        (\v ->
+                            { value
+                                | limit = CountersLimitAtMost v
+                            }
+                        )
+                        wire
+                        value
+
+                14 ->
+                    Proto.Binary.field
+                        Proto.Binary.int64
+                        (\v ->
+                            { value
+                                | limit = CountersLimitExactly v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | samples = List.reverse value.samples
+                , exactSamples = List.reverse value.exactSamples
+            }
+        )
+
+
+{-| Decodes a [`Counters`](#Counters) from protobuf binary.
+-}
+decodeCountersBytes : Proto.Binary.Decoder Counters
+decodeCountersBytes =
+    mergeCountersBytes defaultCounters

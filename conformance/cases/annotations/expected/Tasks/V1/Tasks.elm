@@ -8,6 +8,7 @@ module Tasks.V1.Tasks exposing (..)
 -}
 
 import Proto.Method
+import Proto.Registry
 import Proto.Version
 import Rpc
 import Tasks.V1
@@ -36,8 +37,9 @@ getTask =
     Rpc.call
         (Proto.Method.initJson "tasks.v1.Tasks"
             "GetTask"
-            Tasks.V1.encodeGetTaskRequest
-            Tasks.V1.decodeTask
+            Proto.Registry.empty
+            (\_ -> Ok << Tasks.V1.encodeGetTaskRequest)
+            (\_ -> Tasks.V1.decodeTask)
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
         )
 
@@ -54,8 +56,9 @@ putTask =
     Rpc.call
         (Proto.Method.initJson "tasks.v1.Tasks"
             "PutTask"
-            Tasks.V1.encodeTask
-            Tasks.V1.decodeTask
+            Proto.Registry.empty
+            (\_ -> Ok << Tasks.V1.encodeTask)
+            (\_ -> Tasks.V1.decodeTask)
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyIdempotent
         )
 
@@ -72,8 +75,9 @@ closeTask =
     Rpc.call
         (Proto.Method.initJson "tasks.v1.Tasks"
             "CloseTask"
-            Tasks.V1.encodeGetTaskRequest
-            Tasks.V1.decodeTask
+            Proto.Registry.empty
+            (\_ -> Ok << Tasks.V1.encodeGetTaskRequest)
+            (\_ -> Tasks.V1.decodeTask)
         )
 
 
