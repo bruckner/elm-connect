@@ -14,6 +14,7 @@ import Http
 import Json.Decode exposing (Decoder)
 import Proto.Internal.Any
 import Proto.Internal.Percent as Percent
+import Proto.Json
 import Proto.Registry exposing (Registry)
 import Rpc.Body
 import Rpc.Code as Code exposing (Code)
@@ -127,7 +128,8 @@ fromGrpc number =
 
 
 {-| A `google.rpc.Status` body: an integer `code`, an optional `message` and
-optional `details`. Its details are proto3 JSON, which are left out.
+optional `details`. Its details are proto3 JSON, which only a registry reads
+([`completeDetails`](#completeDetails)), so it is read here without them.
 -}
 statusBody : Decoder Error.StatusError
 statusBody =
@@ -181,12 +183,39 @@ connectDetail =
         (optional "value" Json.Decode.string "")
 
 
-{-| An error as it was read: a detail holds its binary as it arrived, and a
-`google.rpc.Status` body's details, which are proto3 JSON, are left out.
+{-| An error with its details read again from its body, with the registry
+reading those that arrived as proto3 JSON: a `google.rpc.Status` body's, or
+a Connect body's in that form. A detail of a type the registry lacks is left
+out. A status from gRPC headers or trailers carries its details as binary,
+and is kept as it is.
 -}
 completeDetails : Registry -> Error -> Error
-completeDetails _ error =
-    error
+completeDetails registry error =
+    case error of
+        Error.RpcStatus status answer ->
+            case status.source of
+                Error.StatusBody ->
+                    Error.RpcStatus { status | details = bodyDetails registry answer } answer
+
+                Error.ConnectBody ->
+                    Error.RpcStatus { status | details = bodyDetails registry answer } answer
+
+                _ ->
+                    error
+
+        _ ->
+            error
+
+
+bodyDetails : Registry -> Response -> List Error.Detail
+bodyDetails registry answer =
+    Rpc.Body.toText answer.body
+        |> Maybe.andThen
+            (Json.Decode.decodeString
+                (optional "details" (detailList (Json.Decode.oneOf [ Proto.Json.anyWith registry, connectDetail ])) [])
+                >> Result.toMaybe
+            )
+        |> Maybe.withDefault []
 
 
 optional : String -> Decoder a -> a -> Decoder a
