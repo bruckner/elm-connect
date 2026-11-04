@@ -10,12 +10,12 @@ tool (
 )
 
 require (
-	connectrpc.com/connect/v2 v2.0.1
+	connectrpc.com/connect/v2 v2.0.2
 	connectrpc.com/vanguard v0.5.0
-	github.com/grpc-ecosystem/grpc-gateway/v2 v2.32.0
-	google.golang.org/genproto/googleapis/api v0.0.0-20261012220534-4341edf3f941
-	google.golang.org/genproto/googleapis/rpc v0.0.0-20261012220534-4341edf3f941
-	google.golang.org/grpc v1.84.0
+	github.com/grpc-ecosystem/grpc-gateway/v2 v2.33.0
+	google.golang.org/genproto/googleapis/api v0.0.0-20261026165753-2ffab32bce7e
+	google.golang.org/genproto/googleapis/rpc v0.0.0-20261019180522-ce908d29299b
+	google.golang.org/grpc v1.85.0
 	google.golang.org/protobuf v1.36.12
 )
 
