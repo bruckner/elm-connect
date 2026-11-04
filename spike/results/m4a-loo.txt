@@ -1,0 +1,72 @@
+## floor base
+group                        optimized    min    gz
+payload type                        99     17    13
+JSON reader                       1432    394   122
+JSON writer                          0      0     0
+binary codec                         0      0     0
+registry                           424    100    31
+all five                          1955    509   165
+## floor cache
+group                        optimized    min    gz
+payload type                       337    100    32
+JSON reader                       1567    406   130
+JSON writer                          0      0     0
+binary codec                         0      0     0
+registry                           424    100    40
+all five                          2328    602   189
+## floor lenient
+group                        optimized    min    gz
+payload type                       423    134    39
+JSON reader                       1922    458   163
+JSON writer                          0      0     0
+binary codec                         0      0     0
+registry                           961    280    84
+all five                          3306    853   264
+## codec-b base
+group                        optimized    min    gz
+payload type                        99     18    15
+JSON reader                       1432    390   150
+JSON writer                        676    131    55
+binary codec                      1547    398    54
+registry                          1677    434   124
+all five                          5431   1368   381
+## codec-b cache
+group                        optimized    min    gz
+payload type                       529    136    35
+JSON reader                       1567    402   128
+JSON writer                        925    194    65
+binary codec                      1722    416    76
+registry                          1677    434   128
+all five                          6420   1568   432
+## codec-b lenient
+group                        optimized    min    gz
+payload type                       722    242    54
+JSON reader                       1922    454   160
+JSON writer                       1086    244    80
+binary codec                      1828    434    81
+registry                          2470    679   202
+all five                          8028   2024   559
+## synth-b base
+group                        optimized    min    gz
+payload type                        99     18    16
+JSON reader                       1432    390   110
+JSON writer                        676    131    61
+binary codec                      1547    398    84
+registry                          1677    478   133
+all five                          5431   1412   430
+## synth-b cache
+group                        optimized    min    gz
+payload type                       529    136    34
+JSON reader                       1567    402   118
+JSON writer                        925    194    79
+binary codec                      1722    416    92
+registry                          1677    478   127
+all five                          6420   1612   475
+## synth-b lenient
+group                        optimized    min    gz
+payload type                       722    242    64
+JSON reader                       1922    454   164
+JSON writer                       1086    244   116
+binary codec                      1828    434   122
+registry                          2470    723   219
+all five                          8028   2068   623

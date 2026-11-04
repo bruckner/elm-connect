@@ -1,0 +1,122 @@
+## codec_both (i) over (c)
+group                        optimized    min    gz
+table entries                    11015   2035   535
+Proto.Registry                    2129    561   184
+binary codecs                    75735  16191  3551
+Proto.Binary                     44415  11292  3876
+elm/bytes                         2769    904   252
+all five                        136063  30123  7837
+other generated                  61344  13977  4408
+other runtime/kernel             38259  10637  3702
+everything over floor           235666  54147 15194
+  table entries: 3 definitions
+  Proto.Registry: 5 definitions
+  binary codecs: 59 definitions
+  Proto.Binary: 121 definitions
+  elm/bytes: 25 definitions
+  all five: 213 definitions
+  other generated: 110 definitions
+  other runtime/kernel: 122 definitions
+  everything over floor: 445 definitions
+## synth60 (i) over (c)
+group                        optimized    min    gz
+table entries                    31669   3591  1558
+Proto.Registry                    2129    605   184
+binary codecs                   228880  50788  2560
+Proto.Binary                     40212  11651  3108
+elm/bytes                         2227    767   213
+all five                        305117  64641  7346
+other generated                 181569  38261  2989
+other runtime/kernel             33230   9363  3318
+everything over floor           519916 110790 13027
+  table entries: 2 definitions
+  Proto.Registry: 5 definitions
+  binary codecs: 200 definitions
+  Proto.Binary: 108 definitions
+  elm/bytes: 19 definitions
+  all five: 334 definitions
+  other generated: 285 definitions
+  other runtime/kernel: 102 definitions
+  everything over floor: 721 definitions
+## codec_both (ii) over (c)
+group                        optimized    min    gz
+table entries                    11015   2035   512
+Proto.Registry                    2293    607   178
+binary codecs                    75735  16191  3618
+Proto.Binary                     44415  11292  3881
+elm/bytes                         2769    904   264
+all five                        136227  30169  7854
+other generated                  61344  13977  4459
+other runtime/kernel             38431  10686  3664
+everything over floor           236002  54242 15284
+  table entries: 3 definitions
+  Proto.Registry: 6 definitions
+  binary codecs: 59 definitions
+  Proto.Binary: 121 definitions
+  elm/bytes: 25 definitions
+  all five: 214 definitions
+  other generated: 110 definitions
+  other runtime/kernel: 123 definitions
+  everything over floor: 447 definitions
+## synth60 (ii) over (c)
+group                        optimized    min    gz
+table entries                    31669   3591  1573
+Proto.Registry                    2293    651   214
+binary codecs                   228880  50788  2629
+Proto.Binary                     40212  11651  3148
+elm/bytes                         2227    767   204
+all five                        305281  64687  7374
+other generated                 181569  38261  2993
+other runtime/kernel             33401   9411  3323
+everything over floor           520251 110884 13091
+  table entries: 2 definitions
+  Proto.Registry: 6 definitions
+  binary codecs: 200 definitions
+  Proto.Binary: 108 definitions
+  elm/bytes: 19 definitions
+  all five: 335 definitions
+  other generated: 285 definitions
+  other runtime/kernel: 103 definitions
+  everything over floor: 723 definitions
+## codec_both (iii) over (c)
+## synth60 (iii) over (c)
+## names in codec_both (iii) beyond (c)
+## only in A: 1
+  Codec$V1$decodeWellKnown                                       2973      0
+## only in B: 3
+  Codec$V1$decodeWellKnownWith                                      0   3404
+  Proto$Registry$lenient                                            0    163
+  Rpc$withRegistry                                                  0    171
+## changed in length: 6
+  Codec$V1$WellKnown                                             1001   1070
+  Main$client                                                     130    250
+  Main$get                                                        373    345
+  _Bytes_decodeFailure                                             55     58
+  _Scheduler_step                                                 724    733
+  _Time_getZoneName                                               324    312
+## names in synth60 (iii) beyond (c)
+## only in A: 1
+  Synth$V1$decodeMsg0                                            1005      0
+## only in B: 3
+  Proto$Registry$lenient                                            0    163
+  Rpc$withRegistry                                                  0    170
+  Synth$V1$decodeMsg0With                                           0   1308
+## changed in length: 18
+  Main$client                                                     130    250
+  Main$get                                                        368    340
+  Rpc$Internal$Connect$connectRequest                             442    443
+  Rpc$Internal$Http$body                                          566    569
+  Rpc$Internal$Http$send                                          539    540
+  Rpc$Internal$Http$task                                          511    512
+  Rpc$Internal$Status$answerOf                                    224    225
+  Rpc$Internal$Status$bodyDetails                                 715    716
+  Synth$V1$Msg0                                                   196    213
+  $elm$http$Http$cmdMap                                           367    369
+  $elm$http$Http$request                                          190    192
+  $elm$http$Http$riskyRequest                                     194    196
+  $elm$http$Http$riskyTask                                        214    216
+  $elm$http$Http$task                                             210    212
+  _Bytes_decodeFailure                                             55     58
+  _Http_toTask                                                    893    896
+  _Scheduler_step                                                 724    733
+  _Time_getZoneName                                               324    312

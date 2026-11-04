@@ -1,0 +1,13 @@
+## base
+plain ErrorInfo: code=notes/from-transcode does not exist details=[] errorInfo=[] badRequest=[]
+plain BadRequest: code=a note needs a title details=[] errorInfo=[] badRequest=[]
+## cache
+plain ErrorInfo: code=notes/from-transcode does not exist details=[] errorInfo=[] badRequest=[]
+plain BadRequest: code=a note needs a title details=[] errorInfo=[] badRequest=[]
+## lenient
+plain ErrorInfo: code=notes/from-transcode does not exist details=[] errorInfo=[] badRequest=[]
+plain BadRequest: code=a note needs a title details=[] errorInfo=[] badRequest=[]
+lenient ErrorInfo: code=notes/from-transcode does not exist details=[google.rpc.ErrorInfo] errorInfo=["NOTE_NOT_FOUND/notes.example.com/notes/from-transcode"] badRequest=[]
+lenient BadRequest: code=a note needs a title details=[google.rpc.BadRequest] errorInfo=[] badRequest=["title:a note needs a title"]
+lenientNotes ErrorInfo: code=notes/from-transcode does not exist details=[google.rpc.ErrorInfo] errorInfo=["NOTE_NOT_FOUND/notes.example.com/notes/from-transcode"] badRequest=[]
+lenientNotes BadRequest: code=a note needs a title details=[google.rpc.BadRequest] errorInfo=[] badRequest=["title:a note needs a title"]

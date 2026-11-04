@@ -1,0 +1,20 @@
+Wrote 20 modules under $WORK/m4c/gen-one.
+Wrote 71 modules under $WORK/m4c/synth-any/generated.
+Wrote 20 modules under $WORK/m4c/gen-none.
+Wrote 71 modules under $WORK/m4c/synth-none/generated.
+codec_both (i) status=0 real=0.90 rss_bytes=1282031616 js=430928 free_kib=37357412
+codec_both (i) optimized=430928 minified=106960 gzip=31626
+synth60 (i) status=0 real=0.90 rss_bytes=1399193600 js=705516 free_kib=37357044
+synth60 (i) optimized=705516 minified=159779 gzip=27647
+codec_both (ii) status=0 real=0.62 rss_bytes=1427980288 js=431384 free_kib=37356076
+codec_both (ii) optimized=431384 minified=107043 gzip=31714
+synth60 (ii) status=0 real=0.72 rss_bytes=1396506624 js=705971 free_kib=37353868
+synth60 (ii) optimized=705971 minified=159861 gzip=27733
+codec_both (iii) status=0 real=0.60 rss_bytes=1427996672 js=199126 free_kib=37356208
+codec_both (iii) optimized=199126 minified=53952 gzip=17535
+synth60 (iii) status=0 real=0.94 rss_bytes=1444528128 js=187367 free_kib=37355848
+synth60 (iii) optimized=187367 minified=51272 gzip=16672
+codec_both (c) status=0 real=0.60 rss_bytes=1427996672 js=198198 free_kib=37355524
+codec_both (c) optimized=198198 minified=53787 gzip=17459
+synth60 (c) status=0 real=0.69 rss_bytes=1439744000 js=186599 free_kib=37354608
+synth60 (c) optimized=186599 minified=51098 gzip=16622

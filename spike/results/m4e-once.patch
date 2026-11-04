@@ -1,0 +1,27 @@
+diff --git a/src/Rpc/Internal/Plan.elm b/src/Rpc/Internal/Plan.elm
+index 80160e5d..44ecaa86 100644
+--- a/src/Rpc/Internal/Plan.elm
++++ b/src/Rpc/Internal/Plan.elm
+@@ -125,8 +125,12 @@ plan (Client cl) (Call c) =
+                 responseBody =
+                     Maybe.andThen .responseBody route
+ 
++                -- Encoded once, for the body and for the check that it can be.
++                encoded =
++                    m.json.encode registry c.message
++
+                 json () =
+-                    Result.withDefault Json.Encode.null (m.json.encode registry c.message)
++                    Result.withDefault Json.Encode.null encoded
+             in
+             { request = \() -> wire.build p.options (settings ()) route json
+             , invalid = Maybe.andThen .invalid route
+@@ -135,7 +139,7 @@ plan (Client cl) (Call c) =
+                     m.registry
+                         |> Maybe.andThen
+                             (\_ ->
+-                                case m.json.encode registry c.message of
++                                case encoded of
+                                     Ok _ ->
+                                         Nothing
+ 

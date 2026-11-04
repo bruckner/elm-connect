@@ -1,0 +1,20 @@
+Wrote 20 modules under $WORK/m4a/gen-one.
+Wrote 71 modules under $WORK/m4a/synth-any/generated.
+floor base status=0 real=0.88 rss_bytes=1425981440 js=179013 free_kib=37360396
+floor base optimized=179013 minified=48807 gzip=15857
+codec_both (b) base status=0 real=0.59 rss_bytes=1428078592 js=428583 free_kib=37359448
+codec_both (b) base optimized=428583 minified=106389 gzip=31535
+synth60 (b) base status=0 real=0.61 rss_bytes=1439776768 js=703170 free_kib=37357816
+synth60 (b) base optimized=703170 minified=159207 gzip=27540
+floor cache status=0 real=0.53 rss_bytes=1426997248 js=179386 free_kib=37356648
+floor cache optimized=179386 minified=48898 gzip=15882
+codec_both (b) cache status=0 real=0.56 rss_bytes=1427963904 js=429572 free_kib=37356388
+codec_both (b) cache optimized=429572 minified=106586 gzip=31578
+synth60 (b) cache status=0 real=0.78 rss_bytes=1439760384 js=704159 free_kib=37355780
+synth60 (b) cache optimized=704159 minified=159404 gzip=27597
+floor lenient status=0 real=0.55 rss_bytes=1426898944 js=180364 free_kib=37354540
+floor lenient optimized=180364 minified=49116 gzip=15937
+codec_both (b) lenient status=0 real=0.58 rss_bytes=1428013056 js=431180 free_kib=37354276
+codec_both (b) lenient optimized=431180 minified=107009 gzip=31697
+synth60 (b) lenient status=0 real=0.61 rss_bytes=1439744000 js=705767 free_kib=37353668
+synth60 (b) lenient optimized=705767 minified=159827 gzip=27719

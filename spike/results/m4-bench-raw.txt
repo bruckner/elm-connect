@@ -1,0 +1,84 @@
+Wrote 4 modules under $WORK/bench/generated.
+bench base optimized=285928 minified=76652 gzip=24019
+bench cache optimized=287792 minified=77068 gzip=24153
+bench lenient optimized=289836 minified=77571 gzip=24318
+bench basefix optimized=285897 minified=76632 gzip=24026
+## base against cache
+task                                old us      new us   change   n
+decode.any                          60.348      60.984       1%    400
+encode.any                          54.811       1.683     -97%    400
+encode.bare                         51.353      52.744       3%    400
+unpack.any                          46.769       3.079     -93%    800
+unpack.bare                         43.093      47.566      10%    800
+pack                                54.973      55.038       0%    400
+send.any                            94.913       2.867     -97%    400
+send.bare                           94.319      95.560       1%    400
+send.plain                           2.220       2.214      -0%  16000
+decode.plain                         4.733       4.684      -1%   8000
+encode.plain                         1.219       1.214      -0%  20000
+## base against lenient
+task                                old us      new us   change   n
+decode.any                          60.799      61.345       1%    400
+encode.any                          54.033       1.599     -97%    400
+encode.bare                         50.674      52.667       4%    400
+unpack.any                          45.926       3.129     -93%    800
+unpack.bare                         43.199      46.260       7%    800
+pack                                54.974      56.035       2%    400
+send.any                            95.042       2.889     -97%    200
+send.bare                           95.911      95.046      -1%    400
+send.plain                           2.194       2.202       0%  16000
+decode.plain                         4.759       4.742      -0%   8000
+encode.plain                         1.186       1.191       0%  20000
+## base against basefix
+task                                old us      new us   change   n
+decode.any                          61.316      61.903       1%    400
+encode.any                          54.932      55.367       1%    400
+encode.bare                         51.189      52.689       3%    400
+unpack.any                          46.229      46.858       1%    800
+unpack.bare                         43.170      43.311       0%    800
+pack                                55.246      54.689      -1%    400
+send.any                            94.756      48.501     -49%    400
+send.bare                           95.962      49.987     -48%    400
+send.plain                           2.171       1.539     -29%  16000
+decode.plain                         4.757       4.730      -1%   8000
+encode.plain                         1.196       1.200       0%  20000
+## second run, same builds
+## base against cache
+task                                old us      new us   change   n
+decode.any                          61.171      61.098      -0%    400
+encode.any                          54.445       1.690     -97%    400
+encode.bare                         50.934      58.034      14%    400
+unpack.any                          46.006       3.142     -93%    800
+unpack.bare                         42.765      46.857      10%    800
+pack                                55.330      55.506       0%    400
+send.any                            96.929       2.756     -97%    400
+send.bare                           94.872      94.585      -0%    400
+send.plain                           2.172       2.216       2%  16000
+decode.plain                         4.772       4.750      -0%   8000
+encode.plain                         1.194       1.179      -1%  20000
+## base against lenient
+task                                old us      new us   change   n
+decode.any                          61.441      62.088       1%    400
+encode.any                          55.667       1.633     -97%    400
+encode.bare                         51.574      52.619       2%    400
+unpack.any                          46.104       3.157     -93%    800
+unpack.bare                         43.404      47.554      10%    800
+pack                                54.598      55.539       2%    400
+send.any                            94.832       2.963     -97%    200
+send.bare                           94.860      93.409      -2%    400
+send.plain                           2.203       2.194      -0%  16000
+decode.plain                         4.811       4.736      -2%   8000
+encode.plain                         1.212       1.211      -0%  20000
+## base against basefix
+task                                old us      new us   change   n
+decode.any                          61.705      61.571      -0%    400
+encode.any                          54.767      54.701      -0%    400
+encode.bare                         51.934      52.535       1%    400
+unpack.any                          46.953      47.231       1%    800
+unpack.bare                         43.432      43.630       0%    800
+pack                                55.216      54.795      -1%    400
+send.any                            96.698      50.101     -48%    400
+send.bare                           95.351      49.429     -48%    400
+send.plain                           2.182       1.538     -30%  16000
+decode.plain                         4.786       4.822       1%   8000
+encode.plain                         1.199       1.192      -1%  20000

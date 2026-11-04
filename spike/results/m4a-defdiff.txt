@@ -1,0 +1,85 @@
+=== floor base->cache
+## only in A: 0
+## only in B: 2
+  Proto$Internal$Any$Binary                                         0     87
+  Proto$Internal$Any$Both                                           0    102
+## changed in length: 3
+  Proto$Internal$Any$empty                                         98    145
+  Proto$Json$anyWith                                              973   1052
+  Rpc$Internal$Status$connectDetail                               457    513
+=== floor cache->lenient
+## only in A: 0
+## only in B: 4
+  Proto$Internal$Any$Json                                           0     85
+  Proto$Internal$Registry$has                                       0    156
+  Proto$Internal$Registry$isLenient                                 0    114
+  $elm$core$Dict$member                                             0    171
+## changed in length: 4
+  Proto$Internal$Registry$Registry                                 81    111
+  Proto$Internal$Registry$toBytes                                 276    278
+  Proto$Json$anyWith                                             1052   1407
+  Proto$Registry$empty                                             64    125
+=== codec-b base->cache
+## only in A: 0
+## only in B: 3
+  Proto$Internal$Any$Binary                                         0     87
+  Proto$Internal$Any$Both                                           0    102
+  Proto$Internal$Any$base64Of                                       0    191
+## changed in length: 6
+  Proto$Binary$anyInto                                           1182   1295
+  Proto$Binary$writeAny                                           363    425
+  Proto$Internal$Any$empty                                         98    145
+  Proto$Json$anyWith                                              973   1052
+  Proto$Json$encodeAnyWith                                        675    924
+  Rpc$Internal$Status$connectDetail                               457    513
+=== codec-b cache->lenient
+## only in A: 0
+## only in B: 4
+  Proto$Internal$Any$Json                                           0     85
+  Proto$Internal$Registry$has                                       0    156
+  Proto$Internal$Registry$isLenient                                 0    114
+  $elm$core$Dict$member                                             0    171
+## changed in length: 11
+  Proto$Binary$anyInto                                           1295   1348
+  Proto$Binary$writeAny                                           425    478
+  Proto$Internal$Any$base64Of                                     191    298
+  Proto$Internal$Registry$Registry                                 81    111
+  Proto$Internal$Registry$toBytes                                 276    278
+  Proto$Internal$Registry$toJson                                  277    279
+  Proto$Json$anyWith                                             1052   1407
+  Proto$Json$encodeAnyWith                                        924   1085
+  Proto$Registry$empty                                             64    125
+  Proto$Registry$union                                            159    311
+  Proto$Registry$withCodecs                                       814    916
+=== synth-b base->cache
+## only in A: 0
+## only in B: 3
+  Proto$Internal$Any$Binary                                         0     87
+  Proto$Internal$Any$Both                                           0    102
+  Proto$Internal$Any$base64Of                                       0    191
+## changed in length: 6
+  Proto$Binary$anyInto                                           1182   1295
+  Proto$Binary$writeAny                                           363    425
+  Proto$Internal$Any$empty                                         98    145
+  Proto$Json$anyWith                                              973   1052
+  Proto$Json$encodeAnyWith                                        675    924
+  Rpc$Internal$Status$connectDetail                               457    513
+=== synth-b cache->lenient
+## only in A: 0
+## only in B: 4
+  Proto$Internal$Any$Json                                           0     85
+  Proto$Internal$Registry$has                                       0    156
+  Proto$Internal$Registry$isLenient                                 0    114
+  $elm$core$Dict$member                                             0    171
+## changed in length: 11
+  Proto$Binary$anyInto                                           1295   1348
+  Proto$Binary$writeAny                                           425    478
+  Proto$Internal$Any$base64Of                                     191    298
+  Proto$Internal$Registry$Registry                                 81    111
+  Proto$Internal$Registry$toBytes                                 276    278
+  Proto$Internal$Registry$toJson                                  277    279
+  Proto$Json$anyWith                                             1052   1407
+  Proto$Json$encodeAnyWith                                        924   1085
+  Proto$Registry$empty                                             64    125
+  Proto$Registry$union                                            159    311
+  Proto$Registry$withCodecs                                       814    916
