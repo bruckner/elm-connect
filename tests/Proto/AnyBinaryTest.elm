@@ -68,6 +68,13 @@ throughBinary any =
     Proto.Binary.decode (Proto.Binary.messageDecoder Proto.Binary.any) (Proto.Binary.encode (Proto.Binary.messageEncoder Proto.Binary.any) any)
 
 
+{-| An `Any` as read from binary, holding no JSON.
+-}
+bare : Any -> Any
+bare any =
+    throughBinary any |> Maybe.withDefault any
+
+
 base64 : Any -> String
 base64 any =
     Proto.Bytes.toBase64 (Proto.Binary.encode (Proto.Binary.messageEncoder Proto.Binary.any) any)
@@ -122,10 +129,25 @@ suite =
                         ]
         , test "a type the registry lacks, at any depth, is UnregisteredType naming it" <|
             \_ ->
-                [ writtenWith Registry.wellKnown (Any.pack messageTitle "hi")
-                , writtenWith Registry.wellKnown (Any.pack WellKnown.any (Any.pack messageTitle "hi"))
+                [ writtenWith Registry.wellKnown (bare (Any.pack messageTitle "hi"))
+                , writtenWith Registry.wellKnown (bare (Any.pack WellKnown.any (Any.pack messageTitle "hi")))
                 ]
                     |> Expect.equal [ Err (UnregisteredType "notes.v1.Title"), Err (UnregisteredType "google.protobuf.Any") ]
+        , test "packed or read from JSON, it holds its JSON and writes it whatever the registry" <|
+            \_ ->
+                ( writtenWith Registry.empty (Any.pack messageTitle "hi")
+                , readWith registry """{"@type":"type.googleapis.com/notes.v1.Title","title":"hi"}"""
+                    |> Result.toMaybe
+                    |> Maybe.map (writtenWith Registry.empty)
+                , readWith registry """{"@type":"type.googleapis.com/notes.v1.Title","title":"hi"}"""
+                    |> Result.toMaybe
+                    |> Maybe.andThen (Any.unpack messageTitle)
+                )
+                    |> Expect.equal
+                        ( Ok """{"@type":"type.googleapis.com/notes.v1.Title","title":"hi"}"""
+                        , Just (Ok """{"@type":"type.googleapis.com/notes.v1.Title","title":"hi"}""")
+                        , Just "hi"
+                        )
         , test "read from proto3 JSON through the registry, as its binary" <|
             \_ ->
                 [ """{"@type":"type.googleapis.com/google.protobuf.Timestamp","value":"2026-01-02T03:04:05Z"}"""
@@ -152,7 +174,7 @@ suite =
             \_ ->
                 ( Any.toJson registry (Any.pack messageTitle "hi")
                     |> Maybe.andThen (Json.Decode.decodeValue decodeTitle >> Result.toMaybe)
-                , Any.toJson Registry.wellKnown (Any.pack messageTitle "hi")
+                , Any.toJson Registry.wellKnown (bare (Any.pack messageTitle "hi"))
                 )
                     |> Expect.equal ( Just "hi", Nothing )
         ]

@@ -149,8 +149,14 @@ suite =
                         Any.pack (messageHolder "core.Core")
                             { held = Just (Any.pack (messageHolder "ext.Ext") { held = Just (Any.pack (messageLeaf "ext2.Leaf") "deep") }) }
 
+                    -- Read back from binary, so that it holds no JSON.
+                    bare =
+                        Proto.Binary.encode (Proto.Binary.messageEncoder Proto.Binary.any) packed
+                            |> Proto.Binary.decode (Proto.Binary.messageDecoder Proto.Binary.any)
+                            |> Maybe.withDefault packed
+
                     written registry =
-                        Proto.Json.encodeAnyWith registry packed |> Result.map (Json.Encode.encode 0)
+                        Proto.Json.encodeAnyWith registry bare |> Result.map (Json.Encode.encode 0)
 
                     expected =
                         """{"@type":"type.googleapis.com/core.Core","held":{"@type":"type.googleapis.com/ext.Ext","held":{"@type":"type.googleapis.com/ext2.Leaf","text":"deep"}}}"""

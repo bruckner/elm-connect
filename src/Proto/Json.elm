@@ -2184,7 +2184,8 @@ encodeListValue =
 
 
 {-| Decode a `google.protobuf.Any` into one holding its message's protobuf
-binary, which the registry's entry for its type converts the JSON to: an
+binary, which the registry's entry for its type converts the JSON to, and
+the JSON beside it: an
 object with `"@type"`, holding the message's fields or, for a well-known type
 with a JSON form of its own, `"value"`. An object without `"@type"` fails, but
 for `{}`, the empty `Any`, and so does one whose `"@type"` is not a type URL:
@@ -2200,7 +2201,7 @@ anyWith registry =
                     Just ( url, message ) ->
                         case InternalRegistry.toBytes registry (InternalAny.nameOf url) message of
                             Just binary ->
-                                Json.Decode.succeed (InternalAny.Any url (Proto.Bytes.toBase64 binary))
+                                Json.Decode.succeed (InternalAny.Any url (InternalAny.Both (Proto.Bytes.toBase64 binary) message))
 
                             Nothing ->
                                 Json.Decode.fail ("Expecting an Any of a type the registry has, holding that message, but got one of " ++ quote (InternalAny.nameOf url))
@@ -2279,21 +2280,27 @@ pairValue key pairs =
 
 {-| Encode a `google.protobuf.Any`: the message's own JSON object with
 `"@type"` added, or `{"@type": …, "value": …}` for a well-known type with a
-JSON form of its own, its message's JSON converted from the binary by the
-registry's entry for its type. The empty `Any`, with no type URL, is `{}`. It
-fails with [`UnregisteredType`](Proto-Any#Problem) when the registry has no
-entry for the type, or the binary is not that message.
+JSON form of its own: the JSON it was read from or packed with, else its
+message's JSON converted from the binary by the registry's entry for its type.
+The empty `Any`, with no type URL, is `{}`. It fails with
+[`UnregisteredType`](Proto-Any#Problem) when it holds no JSON and the registry
+has no entry for the type, or the binary is not that message.
 -}
 encodeAnyWith : Registry -> Any -> Result Problem Value
-encodeAnyWith registry ((InternalAny.Any url base64) as value) =
+encodeAnyWith registry ((InternalAny.Any url payload) as value) =
     if String.isEmpty url then
         Ok (Json.Encode.object [])
 
     else
-        Proto.Bytes.fromBase64 base64
-            |> Maybe.andThen (InternalRegistry.toJson registry (InternalAny.nameOf url))
-            |> Maybe.map (anyObject url)
-            |> Result.fromMaybe (UnregisteredType (Proto.Any.typeName value))
+        case payload of
+            InternalAny.Both _ json ->
+                Ok (anyObject url json)
+
+            InternalAny.Binary base64 ->
+                Proto.Bytes.fromBase64 base64
+                    |> Maybe.andThen (InternalRegistry.toJson registry (InternalAny.nameOf url))
+                    |> Maybe.map (anyObject url)
+                    |> Result.fromMaybe (UnregisteredType (Proto.Any.typeName value))
 
 
 {-| An `Any`'s JSON object, from its type URL and its message's JSON.

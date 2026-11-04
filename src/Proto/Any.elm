@@ -48,6 +48,8 @@ generated code gives each message:
 
 import Bytes exposing (Bytes)
 import Bytes.Encode
+import Dict
+import Json.Decode
 import Json.Encode
 import Proto.Bytes
 import Proto.Descriptors as Descriptors exposing (Descriptors)
@@ -60,7 +62,9 @@ import Proto.Message as Message exposing (Message)
 
 {-| A packed message's protobuf binary and its type URL. It is opaque: build
 one with [`pack`](#pack), or decode one, and read it with the functions here.
-`==` compares two by their type URL and content. The package site and compiler
+`==` compares two by their type URL and content, the JSON one holds beside
+its binary when it was read from JSON or packed included, so an `Any` read
+from binary and the same one read from JSON differ. The package site and compiler
 errors may show it as `Proto.Internal.Any.Any`, its name inside the package.
 -}
 type alias Any =
@@ -107,8 +111,27 @@ messageNote note` has the type URL `example.com/types/notes.v1.Note`.
 -}
 packWith : String -> Message a -> a -> Any
 packWith prefix ((InternalMessage.Message _ codecs) as message) value =
+    let
+        base64 =
+            Proto.Bytes.toBase64 (Bytes.Encode.encode (codecs.encode value))
+    in
     Internal.Any (prefixed prefix message)
-        (Proto.Bytes.toBase64 (Bytes.Encode.encode (codecs.encode value)))
+        (case codecs.encodeJson emptyRegistry value of
+            Just json ->
+                Internal.Both base64 json
+
+            Nothing ->
+                Internal.Binary base64
+        )
+
+
+{-| The registry a packed or unpacked message's own JSON codecs are given:
+an `Any` it holds converts through the JSON that `Any` holds beside its
+binary, or not at all.
+-}
+emptyRegistry : Registry
+emptyRegistry =
+    Registry.Registry Dict.empty
 
 
 prefixed : String -> Message a -> String
@@ -128,14 +151,29 @@ unpack message any =
 
 
 {-| The packed message, or why it cannot be read: `TypeMismatch` or
-`InvalidProto`.
+`InvalidProto`. An `Any` holding its message's JSON is read from that, else
+from its binary.
 -}
 tryUnpack : Message a -> Any -> Result Problem a
-tryUnpack ((InternalMessage.Message _ codecs) as message) ((Internal.Any _ base64) as any) =
+tryUnpack ((InternalMessage.Message _ codecs) as message) ((Internal.Any _ payload) as any) =
+    let
+        fromBinary base64 =
+            Proto.Bytes.fromBase64 base64
+                |> Maybe.andThen (Proto.Internal.Binary.run codecs.decode)
+                |> Result.fromMaybe InvalidProto
+    in
     if is message any then
-        Proto.Bytes.fromBase64 base64
-            |> Maybe.andThen (Proto.Internal.Binary.run codecs.decode)
-            |> Result.fromMaybe InvalidProto
+        case payload of
+            Internal.Both base64 json ->
+                case Json.Decode.decodeValue (codecs.decoder emptyRegistry) json of
+                    Ok value ->
+                        Ok value
+
+                    Err _ ->
+                        fromBinary base64
+
+            Internal.Binary base64 ->
+                fromBinary base64
 
     else
         Err (TypeMismatch (typeName any))
@@ -162,8 +200,8 @@ type Problem
 {-| The packed message's protobuf binary.
 -}
 bytes : Any -> Bytes
-bytes (Internal.Any _ base64) =
-    Proto.Bytes.fromBase64 base64
+bytes (Internal.Any _ payload) =
+    Proto.Bytes.fromBase64 (Internal.base64Of payload)
         |> Maybe.withDefault Proto.Bytes.empty
 
 
@@ -172,17 +210,23 @@ bytes (Internal.Any _ base64) =
 
 
 {-| The packed message's proto3 JSON (for a well-known type with a JSON form
-of its own, such as `google.protobuf.Timestamp`, that form), converted from
-its binary through the registry's entry for its type: `Nothing` when it has
-none, or the binary is not that message.
+of its own, such as `google.protobuf.Timestamp`, that form): the JSON it was
+read from or packed with, else converted from its binary through the
+registry's entry for its type, `Nothing` when it has none, or the binary is
+not that message.
 -}
 toJson : Registry -> Any -> Maybe Json.Encode.Value
-toJson registry ((Internal.Any url _) as any) =
+toJson registry ((Internal.Any url payload) as any) =
     if String.isEmpty url then
         Just (Json.Encode.object [])
 
     else
-        Registry.toJson registry (typeName any) (bytes any)
+        case payload of
+            Internal.Both _ json ->
+                Just json
+
+            Internal.Binary _ ->
+                Registry.toJson registry (typeName any) (bytes any)
 
 
 

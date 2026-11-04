@@ -177,7 +177,7 @@ connectDetail =
                     else
                         "type.googleapis.com/" ++ name
             in
-            Proto.Internal.Any.Any url binary
+            Proto.Internal.Any.Any url (Proto.Internal.Any.Binary binary)
         )
         (Json.Decode.field "type" Json.Decode.string)
         (optional "value" Json.Decode.string "")
