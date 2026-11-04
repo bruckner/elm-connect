@@ -2205,7 +2205,9 @@ than `IDEMPOTENCY_UNKNOWN`, `withRoutes` when the method has a rule
   held as `Bytes`) makes the method take its bindings as data instead,
   `withBindings (Proto.Method.bindings descriptorGetNote)`, which the
   runtime's interpreter (`Proto.Internal.Interpret`) reads over the
-  request's proto3 JSON into the same route (`routes_interpreted` case).
+  request's proto3 JSON into the same route (`routes_interpreted` case),
+  the JSON a send encodes once, with the client's registry else the
+  method's, for the path, the query and the body alike.
   A method written by hand does the same with its own `Proto.Http`
   bindings. Only a program naming `withBindings` carries the
   interpreter.
@@ -2634,9 +2636,17 @@ trace); the work it runs is internal, a module per responsibility:
 `Rpc.Internal.Plan` is the one place a call's method meets its
 client's protocol, a `plan` made by one `case` on the wire kind (text
 or bytes) that holds the request to build, the route's invalid path
-value and `response_body` (the route itself built once, by the
-method's route function, §4), the write-limit check and the answer's
-reader, monomorphic from there on.
+value and `response_body` (a typed route built once, by the method's
+route function, §4), the unregistered-type and write-limit checks and
+the answer's reader, monomorphic from there on. Over JSON a send's plan
+(`toSend`) encodes the request at most once, as it is made and only
+when a part of the send reads the JSON (the body, a route read from the
+JSON by `withBindings`, the unregistered-type check of a method built
+with `init`, or a write limit), and hands that one value to each; a
+plan made only to read an answer (`Rpc.response`) encodes nothing, and
+one made to build the request (`Rpc.request`) encodes it when the body
+or the route reads it. A route read from JSON names its
+`response_body` without the JSON.
 The functions a protocol is built of are one module per protocol, each
 holding every function `Rpc.Protocol` installs for it:
 `Rpc.Internal.Connect` Connect's POST and GET builders, for either
@@ -2748,8 +2758,9 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
   every call it sends and to the details of its errors (§5.4). A
   request whose `Any` the registry cannot write is refused before
   anything is sent, `NoAnswer (UnregisteredType name)`; the check
-  encodes the request only for a method built with `init`, whose encoder
-  alone can fail. A response holding an `Any` of a type the registry
+  reads the request's JSON only for a method built with `init`, whose
+  encoder alone can fail, and reads the JSON the send encodes for its
+  body, not an encoding of its own. A response holding an `Any` of a type the registry
   lacks fails to decode, a `BadResponse` (decisions.md: The registry is
   plumbed, not global).
 - **The codec is in the type.** `Method`, `Call`, `Protocol` and

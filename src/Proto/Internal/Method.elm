@@ -1,4 +1,4 @@
-module Proto.Internal.Method exposing (BinaryHalf, Codecs, JsonHalf, Method(..), noBinary, noJson)
+module Proto.Internal.Method exposing (BinaryHalf, Codecs, JsonHalf, Method(..), RouteOf(..), noBinary, noJson)
 
 {-| The `Method` type, which `Proto.Method` names by an alias. It is defined
 here so that `Rpc` can read what a method holds while users cannot. The
@@ -42,8 +42,20 @@ type Method idempotency codec req res
         , json : JsonHalf req res
         , binary : BinaryHalf req res
         , registry : Maybe Registry
-        , routes : List (req -> Route)
+        , routes : List (RouteOf req)
         }
+
+
+{-| One binding's route of a request: built from the typed request
+(`Typed`, a generated route function), or from the request's proto3 JSON
+(`FromJson`, a binding written as data, with its `response_body`), which a
+send encodes once for the route and its body together. A route from JSON
+names its response field without the JSON, so reading an answer encodes
+nothing.
+-}
+type RouteOf req
+    = Typed (req -> Route)
+    | FromJson (Maybe String) (Json.Encode.Value -> Route)
 
 
 {-| Which halves the method was built with.
