@@ -98,8 +98,9 @@ type Wire
     only when there is a limit.
   - `overRead`: whether a successful answer's body is over the read limit;
     installed by `withReadMaxBytes`.
-  - `timeoutHeader`: the header the protocol carries a timeout in over a
-    route, and how it writes one, for a retry deadline that shortens it.
+  - `timeoutHeader`: the header the protocol carries a timeout in, given
+    whether the call goes over a route, and how it writes one, for a retry
+    deadline that shortens it.
 
 -}
 type alias TextWire =
@@ -108,7 +109,7 @@ type alias TextWire =
     , message : (Options -> String -> Maybe Reason) -> Options -> Maybe String -> Http.Response String -> Result Error GoodText
     , tooLarge : Options -> (() -> Value) -> Maybe Reason
     , overRead : Options -> String -> Maybe Reason
-    , timeoutHeader : Maybe Route -> Maybe ( String, Float -> String )
+    , timeoutHeader : Bool -> Maybe ( String, Float -> String )
     }
 
 

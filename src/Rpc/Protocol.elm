@@ -120,7 +120,7 @@ connectProto =
                 , message = Connect.connectProtoMessage
                 , tooLarge = Http.bytesUnlimited
                 , overRead = Http.bytesUnlimited
-                , timeoutHeader = Connect.connectTimeout Nothing
+                , timeoutHeader = Connect.connectTimeout False
                 , base64 = Http.base64
                 , width = Http.width
                 }

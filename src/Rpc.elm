@@ -251,7 +251,7 @@ task : Client codec -> Call codec req res -> Task Error res
 task cl c =
     let
         plan =
-            Plan.plan cl c
+            Plan.toSend Plan.Built cl c
     in
     fromPlan cl c plan (plan.request ())
 
@@ -270,7 +270,7 @@ send : Client codec -> (Result Error res -> msg) -> Call codec req res -> Cmd ms
 send ((Client.Client cl) as client_) toMsg ((Rpc.Internal.Call.Call fields) as c) =
     let
         plan =
-            Plan.plan client_ c
+            Plan.toSend Plan.Built client_ c
 
         sent =
             plan.request ()
@@ -343,7 +343,7 @@ taskTraced : Client codec -> Call codec req res -> Task Never ( Trace, Result Er
 taskTraced ((Client.Client cl) as client_) c =
     let
         plan =
-            Plan.plan client_ c
+            Plan.toSend Plan.Built client_ c
 
         sent =
             plan.request ()
@@ -487,7 +487,7 @@ ignored, as with [`task`](#task).
 -}
 taskFromRequest : Client codec -> Call codec req res -> Request -> Task Error res
 taskFromRequest cl c sent =
-    fromPlan cl c (Plan.plan cl c) sent
+    fromPlan cl c (Plan.toSend Plan.Given cl c) sent
 
 
 fromPlan : Client codec -> Call codec req res -> Plan res -> Request -> Task Error res

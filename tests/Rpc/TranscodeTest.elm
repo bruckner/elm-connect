@@ -109,7 +109,7 @@ over a client.
 -}
 invalidPathValue : Rpc.Client Rpc.Json -> Rpc.Call Rpc.Json Value String -> Maybe { field : String, template : String }
 invalidPathValue client c =
-    (Rpc.Internal.Plan.plan client c).invalid
+    (Rpc.Internal.Plan.plan client c).invalid ()
 
 
 json : String -> Value

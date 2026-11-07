@@ -188,13 +188,14 @@ match, which sending refuses.
 -}
 withRoutes : List (req -> Route) -> Method codec req res -> Method codec req res
 withRoutes routes (Internal.Method m) =
-    Internal.Method { m | routes = routes }
+    Internal.Method { m | routes = List.map Internal.Typed routes }
 
 
 {-| The method's routes from its `google.api.http` bindings written as
 [`Proto.Http`](Proto-Http) data, for a method written by hand: each route is
-read from the request's proto3 JSON. Only a program naming this function
-carries the code that reads a binding.
+read from the request's proto3 JSON, written with the registry in use and
+encoded once per send for the route and the body alike. Only a program
+naming this function carries the code that reads a binding.
 
     Proto.Method.initJson "notes.v1.NotesService"
         "GetNote"
@@ -210,7 +211,7 @@ withBindings methodBindings (Internal.Method m) =
         { m
             | routes =
                 List.map
-                    (\(Proto.Internal.Binding.Binding rule) req -> Proto.Internal.Interpret.route rule (Result.withDefault Json.Encode.null (m.json.encode (ownRegistry m.registry) req)))
+                    (\(Proto.Internal.Binding.Binding rule) -> Internal.FromJson rule.responseBody (Proto.Internal.Interpret.route rule))
                     methodBindings
         }
 

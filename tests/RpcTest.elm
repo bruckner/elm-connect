@@ -12,6 +12,7 @@ import Proto.Binary
 import Proto.Bytes
 import Proto.Codec exposing (Json, Proto)
 import Proto.Duration
+import Proto.Field exposing (Cardinality(..), Kind(..), Scalar(..))
 import Proto.Http
 import Proto.Internal.Percent
 import Proto.Json
@@ -246,6 +247,7 @@ suite =
         , problems
         , receiveLimits
         , sendLimits
+        , encodings
         , headerRules
         , bodies
         , traces
@@ -1419,6 +1421,103 @@ sendLimits =
                     == Rpc.request (getting (Just 30)) call
                 )
                     |> Expect.equal ( [ "connect", "transcode" ], True )
+        ]
+
+
+encodings : Test
+encodings =
+    let
+        -- A method whose request stops the test if it is ever encoded, built
+        -- without a registry and with one (its encoder can fail, so a send
+        -- checks it).
+        neverEncoded =
+            [ Rpc.call (Proto.Method.initJson "notes.v1.Notes" "GetNote" (\_ -> Debug.todo "the message was encoded") decodeTitle)
+            , Rpc.call
+                (Proto.Method.init "notes.v1.Notes"
+                    "GetNote"
+                    noteRegistry
+                    (\_ _ -> Debug.todo "the message was encoded")
+                    (\_ -> decodeTitle)
+                    (\_ -> Bytes.Encode.sequence [])
+                    decodeTitleBytes
+                )
+            ]
+
+        -- The same over a binding read from the JSON, whose answer is the
+        -- response's `title` field.
+        routedNeverEncoded =
+            Rpc.call
+                (Proto.Method.initJson "notes.v1.Notes" "GetNote" (\_ -> Debug.todo "the message was encoded") decodeTitle
+                    |> Proto.Method.withBindings
+                        [ Proto.Http.binding { method = "GET", path = [ Proto.Http.literal "v1", Proto.Http.literal "notes" ], customVerb = Nothing, body = Proto.Http.noBody, responseBody = Just (Proto.Field.descriptor "title" "title" 1 CardinalitySingular (KindScalar ScalarString)), query = [] } ]
+                )
+
+        read client c body =
+            Rpc.response client (c { name = "x" }) (Http.GoodStatus_ (metadata 200 "OK") body)
+
+        -- A request whose JSON says which registry wrote it, in the field
+        -- its path binds and the field its body holds alike.
+        tagged registry r =
+            let
+                tag =
+                    case Proto.Registry.toJson registry "notes.v1.Note" (Bytes.Encode.encode (Bytes.Encode.sequence [])) of
+                        Just _ ->
+                            "registered"
+
+                        Nothing ->
+                            "plain"
+            in
+            Ok (Json.Encode.object [ ( "name", Json.Encode.string ("notes/" ++ r.name ++ "-" ++ tag) ), ( "text", Json.Encode.string tag ) ])
+
+        update =
+            Rpc.call
+                (Proto.Method.init "notes.v1.Notes"
+                    "UpdateNote"
+                    Proto.Registry.empty
+                    tagged
+                    (\_ -> decodeTitle)
+                    (\_ -> Bytes.Encode.sequence [])
+                    decodeTitleBytes
+                    |> Proto.Method.withBindings
+                        [ Proto.Http.binding
+                            { method = "PATCH"
+                            , path =
+                                [ Proto.Http.literal "v1"
+                                , Proto.Http.variable { fieldPath = [ Proto.Field.descriptor "name" "name" 1 CardinalitySingular (KindScalar ScalarString) ], template = [ Proto.Http.literal "notes", Proto.Http.wildcard ] }
+                                ]
+                            , customVerb = Nothing
+                            , body = Proto.Http.wholeBody
+                            , responseBody = Nothing
+                            , query = []
+                            }
+                        ]
+                )
+                { name = "42" }
+
+        built client =
+            let
+                sent =
+                    (Rpc.Internal.Plan.toSend Rpc.Internal.Plan.Built client update).request ()
+            in
+            ( ( sent.method, sent.url, Rpc.Body.toText sent.body ), sent == Rpc.request client update )
+    in
+    describe "a request's JSON"
+        [ test "an answer is read without encoding the request" <|
+            \_ ->
+                ( [ Rpc.Protocol.connect, connectGet, Rpc.Protocol.transcode ]
+                    |> List.concatMap (\protocol -> List.map (\c -> read (over protocol) c "{\"title\":\"t\"}") neverEncoded)
+                , ( read base routedNeverEncoded "{\"title\":\"t\"}", read (over Rpc.Protocol.transcode) routedNeverEncoded "\"t\"" )
+                )
+                    |> Expect.equal ( List.repeat 6 (Ok "t"), ( Ok "t", Ok "t" ) )
+        , test "an interpreted route binds its path and its body from one encoding, the client's registry's" <|
+            \_ ->
+                ( built (over Rpc.Protocol.transcode)
+                , built (Rpc.withRegistry noteRegistry (over Rpc.Protocol.transcode))
+                )
+                    |> Expect.equal
+                        ( ( ( "PATCH", "https://api.example.com/v1/notes/42-plain", Just "{\"text\":\"plain\"}" ), True )
+                        , ( ( "PATCH", "https://api.example.com/v1/notes/42-registered", Just "{\"text\":\"registered\"}" ), True )
+                        )
         ]
 
 

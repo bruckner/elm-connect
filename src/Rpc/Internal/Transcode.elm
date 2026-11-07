@@ -70,14 +70,13 @@ query pairs =
 {-| Transcoding carries none over a route, and Connect's over the implicit
 route.
 -}
-transcodeTimeout : Maybe Route -> Maybe ( String, Float -> String )
-transcodeTimeout route =
-    case route of
-        Just _ ->
-            Nothing
+transcodeTimeout : Bool -> Maybe ( String, Float -> String )
+transcodeTimeout routed =
+    if routed then
+        Nothing
 
-        Nothing ->
-            Just ( "Connect-Timeout-Ms", Internal.timeoutMs )
+    else
+        Just ( "Connect-Timeout-Ms", Internal.timeoutMs )
 
 
 
