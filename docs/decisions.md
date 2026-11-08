@@ -1064,6 +1064,48 @@ was data on the method, read only by what reported on it, never by
 sending, until the readers were typed at `Json` (above). Where: design
 §4, §5.2, §5.3.
 
+### Wire chosen by import, not by a free-codec value
+
+*Proposed 2026-11-07, under review; not adopted.*
+
+A service's calls are the one part of its generated code bound to a
+wire: a route function is `req -> Proto.Route.Route` with no codec, and
+transcoding, the one protocol that reads routes, speaks JSON; a
+descriptor is data. So the generator writes the service's module,
+`Notes.V1.NotesService`, with the routes and descriptors and nothing
+wire-bound, and inside it a calls module per codec the option wires,
+`Notes.V1.NotesService.Json` (`initJson`, taking the parent's routes)
+and `Notes.V1.NotesService.Proto` (`initProto`). `codec=json` writes the
+first, `codec=proto` the second, `codec=both` the two, under the same
+names whatever the option, so moving a package from `json` to `both`
+changes no import and a module's wire is its one import line. No
+generated method is then free in the codec, and `Proto.Method.init`, the
+free-codec builder, has no emitter and goes; the `codec` phantom stays
+for the send's static check. Both calls modules are claimed by the
+module-name check under every option (`naming::module_collision`,
+`services_calls_module_collision` case), as the binary codec names are
+(`codec_collision`).
+
+The option keeps its name, `codec`; renaming it `wire`, since it now says
+which wire modules exist rather than which codecs messages have, is
+left to a follow-on. Considered: one module per service under `json` or
+`proto`, as before, and the split into three only under `both`. It
+generates the fewest modules, but a package's import lines would change
+when its option moves to `both`, and `json` and `both` code would no
+longer read alike. "Protocol and client, indexed by codec" rejected
+choosing by import when it meant generating every message's codecs
+twice; since "Binary is the Any's canonical form" every message has both
+codecs anyway, and the split adds only the calls modules.
+
+Measured against the stack below it (`elm make`, Elm 0.19.2; terser
+5.36.0, gzip -9): the `services` corpus tree grew 1,399 B of source (one
+module more), `services_codec_both` 2,874 B (two more), the notes
+example's generated tree 2,554 B; a cold build of a consumer importing
+one calls module took the same time within noise (0.7 to 1.0 s, three
+alternating runs); the notes example's bundle under `codec=json` came to
+36,238 B gzipped against 36,235 B, and under `codec=both` importing only
+`.Json` to the same 36,238 B as `codec=json`. Where: design §3.10, §4.
+
 ### Modifiers install behaviour
 
 *2026-10-27.*
