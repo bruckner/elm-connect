@@ -154,8 +154,9 @@ connectBody =
 
 
 {-| A Connect error detail: the message's full name as `type` (a type URL
-when it holds a `/`) and its protobuf binary as base64 `value`, which may
-be left out for an empty message. Its JSON, `debug`, is not read.
+when it holds a `/`), its protobuf binary as base64 `value`, which may be
+left out for an empty message, and optionally its proto3 JSON as `debug`,
+which the `Any` keeps beside the binary, as the server wrote it.
 -}
 connectDetail : Value -> Result Error.DetailProblem Any
 connectDetail detail =
@@ -175,7 +176,16 @@ connectDetail detail =
                     |> Maybe.andThen canonicalBase64
             of
                 Just base64 ->
-                    Ok (Proto.Internal.Any.Any url base64)
+                    Ok
+                        (Proto.Internal.Any.Any url
+                            (case Json.Decode.decodeValue (optional "debug" (Json.Decode.map Just Json.Decode.value) Nothing) detail of
+                                Ok (Just json) ->
+                                    Proto.Internal.Any.Both base64 json
+
+                                _ ->
+                                    Proto.Internal.Any.Binary base64
+                            )
+                        )
 
                 Nothing ->
                     Err (Error.InvalidDetail (Just url) "a Connect detail whose value is not base64")

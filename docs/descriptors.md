@@ -99,14 +99,17 @@ title any =
 
 `Proto.Any.is` tests an `Any`'s type, `typeUrl` and `typeName` read it,
 `bytes` reads its binary, and `Proto.Any.describe descriptors any` finds
-its descriptor.
+its descriptor. An `Any` read from JSON, or packed, also keeps its
+message's JSON, which writing it as JSON writes back with no
+conversion; `==` sees that JSON, so compare two `Any`s with
+`Proto.Any.equal`, which reads the type URL and binary alone.
 
 ### Registries
 
 An `Any`'s proto3 JSON is converted from and to its binary through a
 `Proto.Registry`: reading an `Any` from JSON (`Proto.Json.anyWith`),
 writing one as JSON (`Proto.Json.encodeAnyWith`), and
-`Proto.Any.toJson`. A type the registry lacks is a loud miss, as in
+`Proto.Any.toJson`, but for one that keeps its JSON. A type the registry lacks is a loud miss, as in
 protobuf's own runtimes: the read fails naming its type URL, and the
 write gives `UnregisteredType` with it. Over protobuf binary no
 registry is needed.

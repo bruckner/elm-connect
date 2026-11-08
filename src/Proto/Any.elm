@@ -3,6 +3,7 @@ module Proto.Any exposing
     , pack, packWith
     , unpack, tryUnpack, Problem(..)
     , bytes
+    , equal
     , toJson
     , describe
     )
@@ -35,6 +36,11 @@ generated code gives each message:
 @docs bytes
 
 
+# Comparing
+
+@docs equal
+
+
 # Converting
 
 @docs toJson
@@ -48,6 +54,7 @@ generated code gives each message:
 
 import Bytes exposing (Bytes)
 import Bytes.Encode
+import Dict
 import Json.Encode
 import Proto.Bytes
 import Proto.Descriptors as Descriptors exposing (Descriptors)
@@ -60,8 +67,17 @@ import Proto.Message as Message exposing (Message)
 
 {-| A packed message's protobuf binary and its type URL. It is opaque: build
 one with [`pack`](#pack), or decode one, and read it with the functions here.
-`==` compares two by their type URL and content. The package site and compiler
-errors may show it as `Proto.Internal.Any.Any`, its name inside the package.
+
+An `Any` read from proto3 JSON, or packed, also keeps its message's JSON
+beside the binary, so that writing it as JSON again needs no conversion.
+`==` sees that JSON: an `Any` read from binary and the same one read from
+JSON, or two read from JSON written differently (one with its defaults),
+are not `==`. Compare two `Any`s with [`equal`](#equal), which reads the
+type URL and the binary alone.
+
+The package site and compiler errors may show it as `Proto.Internal.Any.Any`,
+its name inside the package.
+
 -}
 type alias Any =
     Internal.Any
@@ -95,7 +111,9 @@ is message any =
 
 
 {-| A message as an `Any`, its type URL prefixed `type.googleapis.com/`, as
-protobuf's own libraries write it.
+protobuf's own libraries write it. It holds the message's JSON too, so that
+writing it as JSON needs no registry, unless the message holds an `Any`
+with no JSON of its own, read from binary.
 -}
 pack : Message a -> a -> Any
 pack message value =
@@ -107,8 +125,27 @@ messageNote note` has the type URL `example.com/types/notes.v1.Note`.
 -}
 packWith : String -> Message a -> a -> Any
 packWith prefix ((InternalMessage.Message _ codecs) as message) value =
+    let
+        base64 =
+            Proto.Bytes.toBase64 (Bytes.Encode.encode (codecs.encode value))
+    in
     Internal.Any (prefixed prefix message)
-        (Proto.Bytes.toBase64 (Bytes.Encode.encode (codecs.encode value)))
+        (case codecs.encodeJson noTypes value of
+            Just json ->
+                Internal.Both base64 json
+
+            Nothing ->
+                Internal.Binary base64
+        )
+
+
+{-| The registry a packed message's JSON is written through: an `Any` it
+holds is written from the JSON that `Any` keeps, or the packed `Any` keeps
+no JSON.
+-}
+noTypes : Registry
+noTypes =
+    Registry.Registry Dict.empty
 
 
 prefixed : String -> Message a -> String
@@ -128,12 +165,12 @@ unpack message any =
 
 
 {-| The packed message, or why it cannot be read: `TypeMismatch` or
-`InvalidProto`.
+`InvalidProto`. It is read from the binary, whatever JSON the `Any` keeps.
 -}
 tryUnpack : Message a -> Any -> Result Problem a
-tryUnpack ((InternalMessage.Message _ codecs) as message) ((Internal.Any _ base64) as any) =
+tryUnpack ((InternalMessage.Message _ codecs) as message) ((Internal.Any _ payload) as any) =
     if is message any then
-        Proto.Bytes.fromBase64 base64
+        Proto.Bytes.fromBase64 (Internal.base64Of payload)
             |> Maybe.andThen (Proto.Internal.Binary.run codecs.decode)
             |> Result.fromMaybe InvalidProto
 
@@ -174,9 +211,23 @@ type Problem
 {-| The packed message's protobuf binary.
 -}
 bytes : Any -> Bytes
-bytes (Internal.Any _ base64) =
-    Proto.Bytes.fromBase64 base64
+bytes (Internal.Any _ payload) =
+    Proto.Bytes.fromBase64 (Internal.base64Of payload)
         |> Maybe.withDefault Proto.Bytes.empty
+
+
+
+-- COMPARING
+
+
+{-| Whether two `Any`s hold the same type URL and the same binary, whatever
+JSON either keeps beside it: what `==` would say if it did not see that JSON
+([`Any`](#Any)). Two binaries of one message written in a different field
+order are not equal.
+-}
+equal : Any -> Any -> Bool
+equal (Internal.Any leftUrl left) (Internal.Any rightUrl right) =
+    leftUrl == rightUrl && Internal.base64Of left == Internal.base64Of right
 
 
 
@@ -184,30 +235,36 @@ bytes (Internal.Any _ base64) =
 
 
 {-| The packed message's proto3 JSON (for a well-known type with a JSON form
-of its own, such as `google.protobuf.Timestamp`, that form), converted from
+of its own, such as `google.protobuf.Timestamp`, that form): the JSON the
+`Any` keeps, the JSON it was read from or packed with, else converted from
 its binary through the registry's entry for its type: for showing an `Any`,
 and what [`Proto.Json.encodeAnyWith`](Proto-Json#encodeAnyWith) writes with
-its `"@type"`. The empty `Any`, with no type URL, gives `{}`. It fails with
-`UnregisteredType`, `InvalidProto` or `UnwritableAny` ([`Problem`](#Problem)).
+its `"@type"`. The empty `Any`, with no type URL, gives `{}`. Converting fails with
+`UnregisteredType`, `InvalidProto` or `UnwritableAny` ([`Problem`](#Problem));
+the JSON an `Any` keeps needs no registry.
 -}
 toJson : Registry -> Any -> Result Problem Json.Encode.Value
-toJson registry ((Internal.Any url base64) as any) =
-    if String.isEmpty url then
-        Ok (Json.Encode.object [])
+toJson registry ((Internal.Any url payload) as any) =
+    case ( String.isEmpty url, payload ) of
+        ( True, _ ) ->
+            Ok (Json.Encode.object [])
 
-    else
-        case Registry.toJson registry (typeName any) base64 of
-            Just (Ok json) ->
-                Ok json
+        ( False, Internal.Both _ json ) ->
+            Ok json
 
-            Just (Err Registry.NotTheMessage) ->
-                Err InvalidProto
+        ( False, Internal.Binary base64 ) ->
+            case Registry.toJson registry (typeName any) base64 of
+                Just (Ok json) ->
+                    Ok json
 
-            Just (Err Registry.HoldsUnwritable) ->
-                Err (UnwritableAny url)
+                Just (Err Registry.NotTheMessage) ->
+                    Err InvalidProto
 
-            Nothing ->
-                Err (UnregisteredType url)
+                Just (Err Registry.HoldsUnwritable) ->
+                    Err (UnwritableAny url)
+
+                Nothing ->
+                    Err (UnregisteredType url)
 
 
 

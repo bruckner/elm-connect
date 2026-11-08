@@ -85,13 +85,9 @@ formTest maybeCodec sample form =
                     Expect.fail ("no codec for " ++ sample.message)
 
                 Just run ->
-                    -- An Any is read into its binary through the registry and
-                    -- written back from it, so every form of a sample holding
-                    -- one writes what its binary does.
                     roundTrip run
                         form.input
-                        (sample.binaryJson
-                            |> orElse form.expected
+                        (form.expected
                             |> orElse sample.expected
                             |> Maybe.withDefault sample.canonical
                         )

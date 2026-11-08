@@ -112,7 +112,7 @@ registry, as an `Any` of it converts.
 -}
 json : Registry -> String -> Bytes -> Maybe String
 json registry name binary =
-    Any.toJson registry (Proto.Internal.Any.Any ("type.googleapis.com/" ++ name) (Proto.Bytes.toBase64 binary))
+    Any.toJson registry (Proto.Internal.Any.Any ("type.googleapis.com/" ++ name) (Proto.Internal.Any.Binary (Proto.Bytes.toBase64 binary)))
         |> Result.toMaybe
         |> Maybe.map (Json.Encode.encode 0)
 
@@ -168,8 +168,14 @@ suite =
                         Any.pack (messageHolder "core.Core")
                             { held = Just (Any.pack (messageHolder "ext.Ext") { held = Just (Any.pack (messageLeaf "ext2.Leaf") "deep") }) }
 
+                    -- Read back from binary, so that it keeps no JSON.
+                    bare =
+                        Proto.Binary.encode (Proto.Binary.messageEncoder Proto.Binary.any) packed
+                            |> Proto.Binary.decode (Proto.Binary.messageDecoder Proto.Binary.any)
+                            |> Maybe.withDefault packed
+
                     written registry =
-                        Proto.Json.encodeAnyWith registry packed |> Result.map (Json.Encode.encode 0)
+                        Proto.Json.encodeAnyWith registry bare |> Result.map (Json.Encode.encode 0)
 
                     expected =
                         """{"@type":"type.googleapis.com/core.Core","held":{"@type":"type.googleapis.com/ext.Ext","held":{"@type":"type.googleapis.com/ext2.Leaf","text":"deep"}}}"""
@@ -178,13 +184,13 @@ suite =
                 , written (Registry.unionAll [ core, ext ])
                 , Result.toMaybe (written wide)
                     |> Maybe.andThen (Json.Decode.decodeString (Proto.Json.anyWith wide) >> Result.toMaybe)
-                    |> Maybe.map ((==) packed)
+                    |> Maybe.map (Any.equal packed)
                 )
                     |> Expect.equal ( Ok expected, Err (Any.UnwritableAny "type.googleapis.com/core.Core"), Just True )
         , test "a missing type is named by its URL, and binary that is not the message is InvalidProto" <|
             \_ ->
-                ( Proto.Json.encodeAnyWith Registry.empty (Any.pack (messageLeaf "t.Leaf") "hi")
-                , Any.toJson (leaf "t.Leaf" Registry.empty) (Proto.Internal.Any.Any "type.googleapis.com/t.Leaf" "/w==")
+                ( Proto.Json.encodeAnyWith Registry.empty (Proto.Internal.Any.Any "type.googleapis.com/t.Leaf" (Proto.Internal.Any.Binary "CgJoaQ=="))
+                , Any.toJson (leaf "t.Leaf" Registry.empty) (Proto.Internal.Any.Any "type.googleapis.com/t.Leaf" (Proto.Internal.Any.Binary "/w=="))
                 , Json.Decode.decodeString (Proto.Json.anyWith Registry.empty) """{"@type":"example.com/t.Leaf","text":"hi"}"""
                     |> Result.mapError (Json.Decode.errorToString >> String.contains "\"example.com/t.Leaf\"")
                 )

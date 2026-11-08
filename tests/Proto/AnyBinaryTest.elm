@@ -68,6 +68,13 @@ throughBinary any =
     Proto.Binary.decode (Proto.Binary.messageDecoder Proto.Binary.any) (Proto.Binary.encode (Proto.Binary.messageEncoder Proto.Binary.any) any)
 
 
+{-| An `Any` as read from binary, keeping no JSON: what a registry converts.
+-}
+bare : Any -> Any
+bare any =
+    throughBinary any |> Maybe.withDefault any
+
+
 base64 : Any -> String
 base64 any =
     Proto.Bytes.toBase64 (Proto.Binary.encode (Proto.Binary.messageEncoder Proto.Binary.any) any)
@@ -111,9 +118,9 @@ suite =
                     |> Expect.equal ( Just (Err InvalidProto), Err (TypeMismatch "notes.v1.Title") )
         , test "written as proto3 JSON through the registry's entry for its type" <|
             \_ ->
-                [ writtenWith registry (Any.pack messageTitle "hi")
-                , writtenWith registry (Any.pack WellKnown.stringValue "hi")
-                , writtenWith registry (Any.pack WellKnown.any (Any.pack WellKnown.boolValue True))
+                [ writtenWith registry (bare (Any.pack messageTitle "hi"))
+                , writtenWith registry (bare (Any.pack WellKnown.stringValue "hi"))
+                , writtenWith registry (bare (Any.pack WellKnown.any (Any.pack WellKnown.boolValue True)))
                 ]
                     |> Expect.equal
                         [ Ok """{"@type":"type.googleapis.com/notes.v1.Title","title":"hi"}"""
@@ -122,8 +129,8 @@ suite =
                         ]
         , test "a type the registry lacks is UnregisteredType naming its URL; inside another Any, UnwritableAny naming that one's" <|
             \_ ->
-                [ writtenWith Registry.wellKnown (Any.pack messageTitle "hi")
-                , writtenWith Registry.wellKnown (Any.pack WellKnown.any (Any.pack messageTitle "hi"))
+                [ writtenWith Registry.wellKnown (bare (Any.pack messageTitle "hi"))
+                , writtenWith Registry.wellKnown (bare (Any.pack WellKnown.any (bare (Any.pack messageTitle "hi"))))
                 ]
                     |> Expect.equal [ Err (UnregisteredType "type.googleapis.com/notes.v1.Title"), Err (UnwritableAny "type.googleapis.com/google.protobuf.Any") ]
         , test "read from proto3 JSON through the registry, as its binary" <|
@@ -153,7 +160,43 @@ suite =
                 ( Any.toJson registry (Any.pack messageTitle "hi")
                     |> Result.toMaybe
                     |> Maybe.andThen (Json.Decode.decodeValue decodeTitle >> Result.toMaybe)
-                , Any.toJson Registry.wellKnown (Any.pack messageTitle "hi")
+                , Any.toJson Registry.wellKnown (bare (Any.pack messageTitle "hi"))
                 )
                     |> Expect.equal ( Just "hi", Err (Any.UnregisteredType "type.googleapis.com/notes.v1.Title") )
+        , test "packed, or read from JSON, it keeps its JSON and writes that back with no registry" <|
+            \_ ->
+                let
+                    text =
+                        """{"@type":"type.googleapis.com/notes.v1.Title","title":"hi","pinned":false}"""
+                in
+                ( writtenWith Registry.empty (Any.pack messageTitle "hi")
+                , readWith registry text |> Result.toMaybe |> Maybe.map (writtenWith Registry.empty)
+                , readWith registry text |> Result.toMaybe |> Maybe.map (\any -> ( Any.unpack messageTitle any, base64 any == base64 (Any.pack messageTitle "hi") ))
+                )
+                    |> Expect.equal
+                        ( Ok """{"@type":"type.googleapis.com/notes.v1.Title","title":"hi"}"""
+                        , Just (Ok text)
+                        , Just ( Just "hi", True )
+                        )
+        , test "a packed Any holding one with no JSON keeps none, and converts through the registry" <|
+            \_ ->
+                ( writtenWith Registry.wellKnown (Any.pack WellKnown.any (bare (Any.pack messageTitle "hi")))
+                , writtenWith registry (Any.pack WellKnown.any (bare (Any.pack messageTitle "hi")))
+                )
+                    |> Expect.equal
+                        ( Err (UnwritableAny "type.googleapis.com/google.protobuf.Any")
+                        , Ok """{"@type":"type.googleapis.com/google.protobuf.Any","value":{"@type":"type.googleapis.com/notes.v1.Title","title":"hi"}}"""
+                        )
+        , test "== sees the JSON an Any keeps; equal compares the type URL and the binary alone" <|
+            \_ ->
+                let
+                    packed =
+                        Any.pack messageTitle "hi"
+                in
+                ( ( packed == bare packed, Any.equal packed (bare packed) )
+                , ( Any.equal packed (Any.pack messageTitle "ho")
+                  , Any.equal packed (Any.packWith "example.com" messageTitle "hi")
+                  )
+                )
+                    |> Expect.equal ( ( False, True ), ( False, False ) )
         ]

@@ -2184,8 +2184,9 @@ encodeListValue =
 
 
 {-| Decode a `google.protobuf.Any` into one holding its message's protobuf
-binary, which the registry's entry for its type converts the JSON to: an
-object with `"@type"`, holding the message's fields or, for a well-known type
+binary, which the registry's entry for its type converts the JSON to, and
+the message's JSON as it arrived, which writing the `Any` as JSON writes
+back ([`encodeAnyWith`](#encodeAnyWith)): an object with `"@type"`, holding the message's fields or, for a well-known type
 with a JSON form of its own, `"value"`. An object without `"@type"` fails, but
 for `{}`, the empty `Any`, and so does one whose `"@type"` is not a type URL:
 it must hold a `/` with a type name after the last one. As protobuf's own
@@ -2202,7 +2203,7 @@ anyWith registry =
                     Just ( url, message ) ->
                         case InternalRegistry.toBytes registry (InternalAny.nameOf url) message of
                             Just (Ok base64) ->
-                                Json.Decode.succeed (InternalAny.Any url base64)
+                                Json.Decode.succeed (InternalAny.Any url (InternalAny.Both base64 message))
 
                             Just (Err problem) ->
                                 Json.Decode.fail ("Expecting an Any of " ++ quote url ++ " to hold that message: " ++ problem)
@@ -2284,10 +2285,12 @@ pairValue key pairs =
 
 {-| Encode a `google.protobuf.Any`: the message's own JSON object with
 `"@type"` added, or `{"@type": …, "value": …}` for a well-known type with a
-JSON form of its own, its message's JSON converted from the binary by the
-registry's entry for its type ([`Proto.Any.toJson`](Proto-Any#toJson)). The
-empty `Any`, with no type URL, is `{}`. As protobuf's own JSON writers do, it
-fails for a type the registry has no entry for, with
+JSON form of its own ([`Proto.Any.toJson`](Proto-Any#toJson)). The message's
+JSON is the JSON the `Any` keeps, the JSON it was read from or packed with,
+as it was, defaults and proto names included; else it is converted from the
+binary by the registry's entry for its type. The empty `Any`, with no type
+URL, is `{}`. Converting, as protobuf's own JSON writers do, fails for a
+type the registry has no entry for, with
 [`UnregisteredType`](Proto-Any#Problem) naming its type URL, and for a
 binary that is not that message; [`Problem`](Proto-Any#Problem) says what
 to do about each.

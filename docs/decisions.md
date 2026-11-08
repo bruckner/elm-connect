@@ -626,8 +626,9 @@ vendored rather than installed. Where: design §5.2.
 
 ### `Any` in the runtime
 
-*2026-10-13; its payload made binary alone on 2026-11-07 (Binary is
-the Any's canonical form).*
+*2026-10-13; its payload made binary on 2026-11-07 (Binary is the
+Any's canonical form), with the JSON it was read with kept beside it
+(Any keeps the JSON it was read with).*
 
 `google.protobuf.Any` is the opaque `Proto.Any.Any`: it packs and
 unpacks through the typed values, describes its type through a
@@ -1220,11 +1221,55 @@ convert through (about 14 KB gz on a 31-message package, about 50 B
 gz a message, half of it binary machinery), and each operation on a
 message holding an `Any` costs 43–58 µs instead of 1–3 µs, 15–39×
 slower, the JSON-to-binary round trip through base64 and elm/bytes.
-A cache of the JSON beside the binary, and a lenient registry that
-holds an unknown type as JSON, were spiked and are deferred to a later
-change; the default stays strict (design §1.2's rule: correctness
+A cache of the JSON beside the binary landed after it (Any keeps the
+JSON it was read with); a lenient registry that holds an unknown type
+as JSON was spiked and is deferred to a later change; the default stays
+strict (design §1.2's rule: correctness
 first, the cheaper or laxer reading an opt-in). Where: design §3.5,
 §3.10, §5.5.
+
+### Any keeps the JSON it was read with
+
+*2026-11-07.*
+
+An `Any` read from proto3 JSON keeps the message's JSON beside its
+binary, `pack` keeps the JSON the message's encoder writes, and a
+Connect error detail keeps its `debug`; writing the `Any` as JSON
+writes that JSON back as it arrived, with no conversion and no
+registry. It is internal: no public name or type changed but the new
+`Proto.Any.equal`. The read is as strict as before (an unregistered
+type fails, the binary is still made), `unpack` reads the binary, and
+binary writes ignore the JSON, so the binary stays the canonical form
+and the JSON a cache of one projection of it. Measured against the
+binary-canonical code alone (a message holding a 1 KB `Any`, Node,
+median of 11, a loaded machine): writing it back as JSON after reading
+it from JSON drops from 63–66 µs to about 2, and so does sending it
+over a JSON call (46–54 µs to about 2.4); reading it (62–75 µs),
+unpacking it and `pack` cost what they did. The read still converts,
+and the conversion is not most of its cost: unpacking an `Any` read
+from binary, base64 text to `Bytes` to the message with no JSON in it,
+is 52–60 µs alone, against 4.8 µs to read the same message as a plain
+JSON field, so the base64 text and elm/bytes dominate and only what
+skips them gains. Every program pays bytes for the second payload state
+and the `debug` read: the no-`Any` floor 62 B gz (15,343 → 15,405), the
+notes example over JSON 104–106 B gz. The written JSON is the input's,
+so an `Any` read with defaults, proto names or fields the message lacks
+is written back with them, as a proxy would forward it; protojson writes
+its canonical form instead.
+
+`==` is the cost. Elm's `==` compares every field of a custom type, a
+JSON value's too, and there is no field it skips (a function in one
+makes `==` throw), so no representation lets the JSON be kept and
+`==` ignore it, and a type cannot give `==` a meaning of its own. So
+`==` on two `Any`s
+of the same type and binary is `False` when only one keeps JSON, or
+when they keep different JSON, and `Proto.Any`'s documentation says
+so; `Proto.Any.equal` compares the type URL and the binary, which is
+what `==` meant before. Weighed: no cache (every JSON write of an `Any`
+converts, about 30× slower on a send of one read from JSON), and a cache
+behind an opt-in (a second way to configure the same reading for no
+correctness gain: the cached JSON is what was read). Where: design
+§3.5, §3.10, §5.4.
 
 ### Normalized per-package registries
 

@@ -1152,14 +1152,17 @@ In detail:
   phantom: binary is the canonical form and proto3 JSON a projection
   through a registry (`Proto.Registry`, §3.9). It holds the binary as
   base64 text, so that `==` compares two by content (Elm's `==` finds any
-  two `Bytes` equal). `pack` (prefix `type.googleapis.com/`) and
+  two `Bytes` equal), and beside it the message's JSON when it was read
+  from JSON or packed (§3.10), which `==` sees too; `equal` compares the
+  type URL and the binary alone. `pack` (prefix `type.googleapis.com/`) and
   `packWith` (another prefix) take the message's typed value (§3.9) and
   a value; `tryUnpack` gives the value or a `Problem`, `TypeMismatch`
   naming the type inside or `InvalidProto` for binary that is not the
-  message, and `unpack` is that as a `Maybe`. `is` tests the type,
-  `typeUrl` and `typeName` read it, `bytes` reads the binary, `toJson
-  registry` gives the payload's proto3 JSON (for showing an `Any`, and
-  what the JSON encoder writes), and `describe` looks its descriptor up
+  message, and `unpack` is that as a `Maybe`; both read the binary. `is`
+  tests the type, `typeUrl` and `typeName` read it, `bytes` reads the
+  binary, `toJson registry` gives the payload's proto3 JSON (for showing
+  an `Any`, and what the JSON encoder writes: the JSON it keeps, else
+  converted), and `describe` looks its descriptor up
   in `Proto.Descriptors`. `Problem` holds only what can happen, and each
   constructor's documentation says what to do about it: `toJson` gives
   `UnregisteredType` with the type URL for a type the registry lacks,
@@ -1174,7 +1177,8 @@ In detail:
   `ListValue`, the wrappers and `Any` itself), `{"@type": …, "value":
   <that form>}`. The codecs are `Proto.Json.anyWith registry`, which
   converts the JSON to binary through the registry's entry for the type,
-  and `Proto.Json.encodeAnyWith registry`, which converts back, beside
+  and `Proto.Json.encodeAnyWith registry`, which writes the JSON the `Any`
+  keeps or converts back, beside
   every other well-known type's codecs. Both are strict, as protojson,
   Java's `JsonFormat` and protobuf-es are: an `"@type"` the registry
   lacks fails the read, naming the URL, and an unregistered type fails
@@ -1959,6 +1963,25 @@ registry =
   diagnostic meets a type named for one (`codec_name_clash_with` case).
 - **`Any` fields** hold binary, read and written with `Proto.Binary.any`,
   which needs no table. Their proto3 JSON goes through a registry (§3.5).
+- **The JSON an `Any` keeps.** An `Any` read from proto3 JSON keeps the
+  message's JSON as it arrived beside the binary the registry converted
+  it to (the read is as strict as without it: an unregistered type still
+  fails, and the binary is still made); `pack` keeps the JSON the
+  message's own encoder writes (through the empty registry, so a message
+  holding an `Any` read from binary keeps none); a Connect error
+  detail keeps its `debug`, as the server wrote it (§5.4). Writing the
+  `Any` as JSON writes the kept JSON, defaults, proto names and unknown
+  fields included, with no conversion and no registry; one read from
+  binary keeps none and converts as before, and so does one whose binary
+  is replaced by a merge. `unpack` and `tryUnpack` read the binary
+  whatever is kept, and binary writes ignore it. On this representation
+  the conversion is a small part of an `Any`'s cost (the base64 text and
+  elm/bytes are most of it), so the cache saves on what skips the
+  conversion entirely: writing an `Any` read from JSON, or packed, back
+  as JSON (decisions.md: Any keeps the JSON it was read with). `==`
+  sees the kept JSON, so an `Any` read from binary and the same one read
+  from JSON are not `==`; `Proto.Any.equal` compares the type URL and
+  binary.
 - **The registry, normalized.** `registry : Proto.Registry.Registry`,
   beside `descriptors` in the package's module, holds the package's own
   messages, nested ones included, and nothing else: no imported
@@ -3439,7 +3462,8 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
     `type.googleapis.com/` prefixed unless the name holds a `/`, its
     base64 in either alphabet, padded or not, held in the canonical form
     (checked on the text, so reading an error reaches no bytes code).
-    `debug` is not read. A detail with no `type`, or whose `value` is not
+    `debug`, the message's JSON, is kept beside the binary as the server
+    wrote it, and is what writing the detail as JSON gives (§3.10). A detail with no `type`, or whose `value` is not
     base64, is `Err (InvalidDetail …)`.
   - **A `google.rpc.Status` body detail** (transcoding: grpc-gateway,
     Envoy, Vanguard) is a proto3 JSON `Any`, converted to binary through

@@ -618,11 +618,21 @@ responses =
                               ]
                             )
                         )
-        , test "a Connect detail is read from its binary, not its debug JSON" <|
+        , test "a Connect detail unpacks from its binary, and keeps its debug JSON, which it is written as" <|
             \_ ->
-                failed 404 "Not Found" """{"code":"not_found","details":[{"type":"notes.v1.Note","value":"CgJoaQ==","debug":{"title":"other"}}]}"""
-                    |> Result.mapError (detailsOf title)
-                    |> Expect.equal (Err [ "hi" ])
+                failed 404 "Not Found" """{"code":"not_found","details":[{"type":"notes.v1.Note","value":"CgJoaQ==","debug":{"title":"other"}},{"type":"notes.v1.Note","value":"CgJoaQ==","debug":null}]}"""
+                    |> Result.mapError
+                        (\error ->
+                            ( detailsOf title error
+                            , case error of
+                                RpcStatus r _ ->
+                                    List.map (Result.toMaybe >> Maybe.andThen (Proto.Json.encodeAnyWith Proto.Registry.empty >> Result.toMaybe) >> Maybe.map (Json.Encode.encode 0)) r.details
+
+                                _ ->
+                                    []
+                            )
+                        )
+                    |> Expect.equal (Err ( [ "hi", "hi" ], [ Just """{"@type":"type.googleapis.com/notes.v1.Note","title":"other"}""", Nothing ] ))
         , test "a Connect detail with no type, or whose value is not base64, is a problem, and the rest are read" <|
             \_ ->
                 failed 404 "Not Found" """{"code":"not_found","message":"gone","details":[{"value":"CgJoaQ=="},{"type":"notes.v1.Note","value":"*"},{"type":"notes.v1.Note","value":"CgJoaQ"},"text"]}"""

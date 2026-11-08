@@ -4,13 +4,23 @@ import Dict
 import Expect
 import Json.Decode
 import Json.Encode
-import Proto.Any as Any
+import Proto.Any as Any exposing (Any)
+import Proto.Binary
 import Proto.Duration as Duration
 import Proto.ErrorDetails as ErrorDetails
 import Proto.Json
 import Proto.Registry as Registry
 import Proto.WellKnown
 import Test exposing (Test, describe, test)
+
+
+{-| An `Any` as read from binary, keeping no JSON: what a registry converts.
+-}
+bare : Any -> Any
+bare any =
+    Proto.Binary.encode (Proto.Binary.messageEncoder Proto.Binary.any) any
+        |> Proto.Binary.decode (Proto.Binary.messageDecoder Proto.Binary.any)
+        |> Maybe.withDefault any
 
 
 suite : Test
@@ -35,6 +45,7 @@ suite =
                     |> List.map
                         (Json.Decode.decodeString (Proto.Json.anyWith ErrorDetails.registry)
                             >> Result.mapError Json.Decode.errorToString
+                            >> Result.map bare
                             >> Result.andThen (Proto.Json.encodeAnyWith ErrorDetails.registry >> Result.mapError (\_ -> "unwritable"))
                             >> Result.map (Json.Encode.encode 0)
                         )
@@ -45,7 +56,7 @@ suite =
                         ]
         , test "the registry holds no well-known type" <|
             \_ ->
-                Proto.Json.encodeAnyWith ErrorDetails.registry (Any.pack Proto.WellKnown.duration (Duration.fromMilliseconds 1))
+                Proto.Json.encodeAnyWith ErrorDetails.registry (bare (Any.pack Proto.WellKnown.duration (Duration.fromMilliseconds 1)))
                     |> Expect.equal (Err (Any.UnregisteredType "type.googleapis.com/google.protobuf.Duration"))
         , test "a RetryInfo's delay unpacks" <|
             \_ ->

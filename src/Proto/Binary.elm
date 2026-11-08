@@ -1414,7 +1414,8 @@ writeValue json =
 
 
 {-| `google.protobuf.Any`, holding the packed message's binary, which
-[`Proto.Any.unpack`](Proto-Any#unpack) decodes. One that arrives twice is
+[`Proto.Any.unpack`](Proto-Any#unpack) decodes. One read from binary keeps
+no JSON beside it. One that arrives twice is
 merged field by field: the type URL or the value the later one carries
 replaces the earlier one's.
 -}
@@ -1426,7 +1427,7 @@ any =
 anyInto : Any -> Decoder Any
 anyInto (InternalAny.Any start payload) =
     Internal.Decoder
-        (message ( start, payload )
+        (message ( start, InternalAny.base64Of payload )
             (\number wire ( url, current ) ->
                 case number of
                     1 ->
@@ -1439,13 +1440,13 @@ anyInto (InternalAny.Any start payload) =
                         skip wire ( url, current )
             )
             identity
-            >> D.map (\( url, current ) -> InternalAny.Any url current)
+            >> D.map (\( url, current ) -> InternalAny.Any url (InternalAny.Binary current))
         )
 
 
 writeAny : Any -> Encoder
 writeAny (InternalAny.Any url payload) =
-    E.sequence [ implicit string 1 url, implicit bytes 2 payload ]
+    E.sequence [ implicit string 1 url, implicit bytes 2 (InternalAny.base64Of payload) ]
 
 
 wrapper : Codec v -> Codec v

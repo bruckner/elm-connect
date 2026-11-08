@@ -323,7 +323,8 @@ JSON.
   `BinaryOnly`; it is now `TypeMismatch`, `InvalidProto`,
   `UnregisteredType` and `UnwritableAny`, each documented with what to
   do about it. `bytes` reads the binary and `toJson registry` its proto3
-  JSON.
+  JSON. An `Any` read from JSON, or packed, keeps its JSON too, which
+  `==` sees: compare two with `Proto.Any.equal`.
 - Proto3 JSON of an `Any` goes through a registry: `Proto.Json.anyWith
   registry` and `encodeAnyWith registry` replace `any` and `encodeAny`.
   An `"@type"` the registry lacks fails the read, naming the URL, and
