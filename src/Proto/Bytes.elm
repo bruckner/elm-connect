@@ -49,167 +49,209 @@ that does not fit the length.
 -}
 fromBase64 : String -> Maybe Bytes
 fromBase64 text =
-    -- Checked first: only text of these characters is safe to read from the
-    -- end, as `String.any` and `String.toList` do (see `base64Char`).
-    if String.all base64Char text then
-        decodeBase64 text
-
-    else
-        Nothing
-
-
-{-| A character base64 text can hold: either alphabet or padding. elm/core's
-`String.all` reads a string from its end and takes a low surrogate without its
-high half together with the code unit before it, a letter perhaps, as one
-character two units long; at the start of the text, with what lies before the
-string, where reading on would never return. Its length refuses it.
--}
-base64Char : Char -> Bool
-base64Char char =
-    String.length (String.fromChar char) == 1 && (Char.isAlphaNum char || String.contains (String.fromChar char) "+/-_=")
-
-
-decodeBase64 : String -> Maybe Bytes
-decodeBase64 text =
     let
-        body =
-            dropPadding text
+        -- A character outside ASCII, a lone surrogate among them, encodes
+        -- as bytes the first of which is 0x80 or more and lies before any
+        -- trailing `=`, where `sextet` refuses it.
+        ascii =
+            Bytes.Encode.encode (Bytes.Encode.string text)
+
+        -- A third `=` from the end is left in the body, where `sextet`
+        -- refuses it.
+        padding =
+            if String.endsWith "==" text then
+                2
+
+            else if String.endsWith "=" text then
+                1
+
+            else
+                0
 
         length =
-            String.length body
-
-        padding =
-            String.length text - length
+            Bytes.width ascii - padding
 
         partial =
             modBy 4 length
-
-        standard =
-            String.any (\char -> char == '+' || char == '/') body
-
-        urlSafe =
-            String.any (\char -> char == '-' || char == '_') body
     in
     if
         (partial == 1)
-            || (padding /= 0 && (partial == 0 || padding /= 4 - partial))
-            || (standard && urlSafe)
+            || (padding /= 0 && padding /= 4 - partial)
+            || ((String.contains "+" text || String.contains "/" text)
+                    && (String.contains "-" text || String.contains "_" text)
+               )
     then
         Nothing
 
     else
-        decodeGroups (String.toList body) []
-            |> Maybe.map (\encoders -> Bytes.Encode.encode (Bytes.Encode.sequence (List.reverse encoders)))
+        Bytes.Decode.decode (Bytes.Decode.loop ( length, [] ) decodeStep) ascii
+            |> Maybe.andThen identity
+            |> Maybe.map (\done -> Bytes.Encode.encode (Bytes.Encode.sequence (List.reverse done)))
 
 
-{-| The bytes of base64 characters four at a time, each group's three bytes
-pushed onto `done` in reverse; a final group of two or three characters holds
-one or two bytes.
+{-| One step of `fromBase64`: the next sixteen characters as twelve bytes,
+the next four as three, or the last two or three as one or two, pushed onto
+`done` in reverse; `Nothing` at a character that is not base64.
 -}
-decodeGroups : List Char -> List Bytes.Encode.Encoder -> Maybe (List Bytes.Encode.Encoder)
-decodeGroups chars done =
-    case chars of
-        a :: b :: c :: d :: rest ->
-            let
-                group =
-                    sextets [ a, b, c, d ]
-            in
-            if group < 0 then
-                Nothing
+decodeStep : ( Int, List Bytes.Encode.Encoder ) -> Bytes.Decode.Decoder (Bytes.Decode.Step ( Int, List Bytes.Encode.Encoder ) (Maybe (List Bytes.Encode.Encoder)))
+decodeStep ( remaining, done ) =
+    if remaining >= 16 then
+        Bytes.Decode.map4
+            (\w0 w1 w2 w3 ->
+                let
+                    g0 =
+                        group w0
 
-            else
-                decodeGroups rest (byte group 0 :: byte group 8 :: byte group 16 :: done)
+                    g1 =
+                        group w1
 
-        [ a, b, c ] ->
-            let
-                group =
-                    sextets [ a, b, c, 'A' ]
-            in
-            if group < 0 then
-                Nothing
+                    g2 =
+                        group w2
 
-            else
-                Just (byte group 8 :: byte group 16 :: done)
+                    g3 =
+                        group w3
+                in
+                if Bitwise.or (Bitwise.or g0 g1) (Bitwise.or g2 g3) < 0 then
+                    Bytes.Decode.Done Nothing
 
-        [ a, b ] ->
-            let
-                group =
-                    sextets [ a, b, 'A', 'A' ]
-            in
-            if group < 0 then
-                Nothing
+                else
+                    Bytes.Decode.Loop
+                        ( remaining - 16
+                        , word (Bitwise.or (Bitwise.shiftLeftBy 24 g2) g3)
+                            :: word (Bitwise.or (Bitwise.shiftLeftBy 16 g1) (Bitwise.shiftRightZfBy 8 g2))
+                            :: word (Bitwise.or (Bitwise.shiftLeftBy 8 g0) (Bitwise.shiftRightZfBy 16 g1))
+                            :: done
+                        )
+            )
+            word32
+            word32
+            word32
+            word32
 
-            else
-                Just (byte group 16 :: done)
+    else if remaining >= 4 then
+        Bytes.Decode.map
+            (\w ->
+                let
+                    g =
+                        group w
+                in
+                if g < 0 then
+                    Bytes.Decode.Done Nothing
 
-        [] ->
-            Just done
+                else
+                    Bytes.Decode.Loop
+                        ( remaining - 4
+                        , Bytes.Encode.unsignedInt8 (Bitwise.and 0xFF g)
+                            :: Bytes.Encode.unsignedInt16 Bytes.BE (Bitwise.shiftRightZfBy 8 g)
+                            :: done
+                        )
+            )
+            word32
 
-        -- A length with one character over a group is rejected before.
-        _ ->
-            Nothing
+    else if remaining == 3 then
+        Bytes.Decode.map2
+            (\w c ->
+                let
+                    g =
+                        group (Bitwise.or (Bitwise.shiftLeftBy 16 w) (Bitwise.or (Bitwise.shiftLeftBy 8 c) 0x41))
+                in
+                if g < 0 then
+                    Bytes.Decode.Done Nothing
+
+                else
+                    Bytes.Decode.Done (Just (Bytes.Encode.unsignedInt16 Bytes.BE (Bitwise.shiftRightZfBy 8 g) :: done))
+            )
+            word16
+            Bytes.Decode.unsignedInt8
+
+    else if remaining == 2 then
+        Bytes.Decode.map
+            (\w ->
+                let
+                    g =
+                        group (Bitwise.or (Bitwise.shiftLeftBy 16 w) 0x4141)
+                in
+                if g < 0 then
+                    Bytes.Decode.Done Nothing
+
+                else
+                    Bytes.Decode.Done (Just (Bytes.Encode.unsignedInt8 (Bitwise.shiftRightZfBy 16 g) :: done))
+            )
+            word16
+
+    else
+        Bytes.Decode.succeed (Bytes.Decode.Done (Just done))
 
 
-{-| The 24 bits four base64 characters hold, or -1 when one is not a base64
-character.
+{-| The 24 bits four base64 characters hold, given their codes as one
+big-endian 32-bit word, or a negative number when one is not a base64
+character: a refused character's -1, shifted left, keeps the sign bit. The
+last two or three characters are read with `A`s, worth 0, after them.
 -}
-sextets : List Char -> Int
-sextets chars =
-    List.foldl
-        (\char group ->
-            let
-                value =
-                    sextet char
-            in
-            if group < 0 || value < 0 then
-                -1
-
-            else
-                Bitwise.or (Bitwise.shiftLeftBy 6 group) value
+group : Int -> Int
+group w =
+    Bitwise.or
+        (Bitwise.or
+            (Bitwise.shiftLeftBy 18 (sextet (Bitwise.shiftRightZfBy 24 w)))
+            (Bitwise.shiftLeftBy 12 (sextet (Bitwise.and 0xFF (Bitwise.shiftRightZfBy 16 w))))
         )
-        0
-        chars
+        (Bitwise.or
+            (Bitwise.shiftLeftBy 6 (sextet (Bitwise.and 0xFF (Bitwise.shiftRightZfBy 8 w))))
+            (sextet (Bitwise.and 0xFF w))
+        )
 
 
-{-| The value of a base64 character of either alphabet, or -1.
+{-| The value of a base64 character of either alphabet, from its code, or -1.
 -}
-sextet : Char -> Int
-sextet char =
-    let
-        code =
-            Char.toCode char
-    in
-    if code >= 0x41 && code <= 0x5A then
-        code - 0x41
+sextet : Int -> Int
+sextet code =
+    if code >= 0x61 then
+        if code <= 0x7A then
+            code - 0x61 + 26
 
-    else if code >= 0x61 && code <= 0x7A then
-        code - 0x61 + 26
+        else
+            -1
 
-    else if code >= 0x30 && code <= 0x39 then
-        code - 0x30 + 52
+    else if code >= 0x41 then
+        if code <= 0x5A then
+            code - 0x41
 
-    else if char == '+' || char == '-' then
+        else if code == 0x5F then
+            63
+
+        else
+            -1
+
+    else if code >= 0x30 then
+        if code <= 0x39 then
+            code - 0x30 + 52
+
+        else
+            -1
+
+    else if code == 0x2B || code == 0x2D then
         62
 
-    else if char == '/' || char == '_' then
+    else if code == 0x2F then
         63
 
     else
         -1
 
 
-byte : Int -> Int -> Bytes.Encode.Encoder
-byte group shift =
-    Bytes.Encode.unsignedInt8 (Bitwise.and 0xFF (Bitwise.shiftRightZfBy shift group))
+word32 : Bytes.Decode.Decoder Int
+word32 =
+    Bytes.Decode.unsignedInt32 Bytes.BE
 
 
-dropPadding : String -> String
-dropPadding text =
-    if String.endsWith "=" text then
-        dropPadding (String.dropRight 1 text)
+word16 : Bytes.Decode.Decoder Int
+word16 =
+    Bytes.Decode.unsignedInt16 Bytes.BE
 
-    else
-        text
+
+word : Int -> Bytes.Encode.Encoder
+word =
+    Bytes.Encode.unsignedInt32 Bytes.BE
 
 
 {-| Bytes as base64 text, as proto3 JSON writes them: the standard alphabet,
@@ -220,76 +262,98 @@ padded with `=` to a multiple of four characters.
 -}
 toBase64 : Bytes -> String
 toBase64 bytes =
-    Bytes.Decode.decode (Bytes.Decode.loop ( Bytes.width bytes, [] ) encodeGroup) bytes
+    let
+        width =
+            Bytes.width bytes
+
+        chars =
+            Bytes.Decode.decode (Bytes.Decode.loop ( width, [] ) encodeStep) bytes
+                |> Maybe.withDefault []
+                |> List.reverse
+                |> Bytes.Encode.sequence
+                |> Bytes.Encode.encode
+    in
+    Bytes.Decode.decode (Bytes.Decode.string (4 * ((width + 2) // 3))) chars
         |> Maybe.withDefault ""
 
 
-{-| One step of `toBase64`: the next three bytes as four characters, pushed
-onto `done` in reverse, or the last one or two bytes as padded characters.
+{-| One step of `toBase64`: the next twelve bytes as sixteen characters, the
+next three as four, or the last one or two as four with padding, each four
+characters' codes as one big-endian 32-bit word, pushed onto `done` in
+reverse.
 -}
-encodeGroup : ( Int, List Char ) -> Bytes.Decode.Decoder (Bytes.Decode.Step ( Int, List Char ) String)
-encodeGroup ( remaining, done ) =
-    if remaining >= 3 then
+encodeStep : ( Int, List Bytes.Encode.Encoder ) -> Bytes.Decode.Decoder (Bytes.Decode.Step ( Int, List Bytes.Encode.Encoder ) (List Bytes.Encode.Encoder))
+encodeStep ( remaining, done ) =
+    if remaining >= 12 then
         Bytes.Decode.map3
-            (\a b c ->
-                Bytes.Decode.Loop ( remaining - 3, groupChars 4 (triple a b c) done )
+            (\w0 w1 w2 ->
+                Bytes.Decode.Loop
+                    ( remaining - 12
+                    , word (characters (Bitwise.and 0x00FFFFFF w2))
+                        :: word (characters (Bitwise.or (Bitwise.shiftLeftBy 8 (Bitwise.and 0xFFFF w1)) (Bitwise.shiftRightZfBy 24 w2)))
+                        :: word (characters (Bitwise.or (Bitwise.shiftLeftBy 16 (Bitwise.and 0xFF w0)) (Bitwise.shiftRightZfBy 16 w1)))
+                        :: word (characters (Bitwise.shiftRightZfBy 8 w0))
+                        :: done
+                    )
             )
-            Bytes.Decode.unsignedInt8
-            Bytes.Decode.unsignedInt8
+            word32
+            word32
+            word32
+
+    else if remaining >= 3 then
+        Bytes.Decode.map2
+            (\w b -> Bytes.Decode.Loop ( remaining - 3, word (characters (Bitwise.or (Bitwise.shiftLeftBy 8 w) b)) :: done ))
+            word16
             Bytes.Decode.unsignedInt8
 
     else if remaining == 2 then
-        Bytes.Decode.map2
-            (\a b -> Bytes.Decode.Done (finish ('=' :: groupChars 3 (triple a b 0) done)))
-            Bytes.Decode.unsignedInt8
-            Bytes.Decode.unsignedInt8
+        Bytes.Decode.map
+            (\w -> Bytes.Decode.Done (word (Bitwise.or (Bitwise.and 0xFFFFFF00 (characters (Bitwise.shiftLeftBy 8 w))) 0x3D) :: done))
+            word16
 
     else if remaining == 1 then
         Bytes.Decode.map
-            (\a -> Bytes.Decode.Done (finish ('=' :: '=' :: groupChars 2 (triple a 0 0) done)))
+            (\b -> Bytes.Decode.Done (word (Bitwise.or (Bitwise.and 0xFFFF0000 (characters (Bitwise.shiftLeftBy 16 b))) 0x3D3D) :: done))
             Bytes.Decode.unsignedInt8
 
     else
-        Bytes.Decode.succeed (Bytes.Decode.Done (finish done))
+        Bytes.Decode.succeed (Bytes.Decode.Done done)
 
 
-triple : Int -> Int -> Int -> Int
-triple a b c =
-    Bitwise.or (Bitwise.shiftLeftBy 16 a) (Bitwise.or (Bitwise.shiftLeftBy 8 b) c)
-
-
-{-| The first `count` characters of a 24-bit group, most significant first,
-pushed onto `done` in reverse.
+{-| The codes of the four characters that write 24 bits, as one big-endian
+32-bit word.
 -}
-groupChars : Int -> Int -> List Char -> List Char
-groupChars count bits done =
-    List.foldl
-        (\index acc -> character (Bitwise.and 0x3F (Bitwise.shiftRightZfBy (18 - 6 * index) bits)) :: acc)
-        done
-        (List.range 0 (count - 1))
+characters : Int -> Int
+characters bits =
+    Bitwise.or
+        (Bitwise.or
+            (Bitwise.shiftLeftBy 24 (character (Bitwise.shiftRightZfBy 18 bits)))
+            (Bitwise.shiftLeftBy 16 (character (Bitwise.and 0x3F (Bitwise.shiftRightZfBy 12 bits))))
+        )
+        (Bitwise.or
+            (Bitwise.shiftLeftBy 8 (character (Bitwise.and 0x3F (Bitwise.shiftRightZfBy 6 bits))))
+            (character (Bitwise.and 0x3F bits))
+        )
 
 
-character : Int -> Char
+{-| The code of the standard alphabet's character for a value from 0 to 63.
+-}
+character : Int -> Int
 character value =
     if value < 26 then
-        Char.fromCode (0x41 + value)
+        value + 0x41
 
     else if value < 52 then
-        Char.fromCode (0x61 + value - 26)
+        value - 26 + 0x61
 
     else if value < 62 then
-        Char.fromCode (0x30 + value - 52)
+        value - 52 + 0x30
 
     else if value == 62 then
-        '+'
+        0x2B
 
     else
-        '/'
-
-
-finish : List Char -> String
-finish done =
-    String.fromList (List.reverse done)
+        0x2F
 
 
 {-| No bytes: the zero value of a `bytes` field held as `Bytes`.
