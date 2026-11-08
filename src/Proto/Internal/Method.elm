@@ -1,4 +1,4 @@
-module Proto.Internal.Method exposing (BinaryHalf, Codecs, JsonHalf, Method(..), noBinary, noJson)
+module Proto.Internal.Method exposing (BinaryHalf, Codecs, JsonHalf, Method(..), RouteOf(..), noBinary, noJson)
 
 {-| The `Method` type, which `Proto.Method` names by an alias. It is defined
 here so that `Rpc` can read what a method holds while users cannot. The
@@ -11,9 +11,9 @@ halves and one route function per HTTP binding, not its descriptor: the
 descriptor's type names and bindings as data are a separate value a program
 keeps only if it names it.
 
-The `codec` parameter is a phantom: `Proto.Method.json` gives a method in
-`Json`, `Proto.Method.proto` one in `Proto`, and `Proto.Method.both`, free in
-the codec, one with both. A protocol in a codec only meets a method in the
+The `codec` parameter is a phantom: `Proto.Method.initJson` gives a method
+in `Json`, `Proto.Method.initProto` one in `Proto`, and `Proto.Method.init`,
+free in the codec, one with both. A protocol in a codec only meets a method in the
 same codec, so the half it reads is always one the generated code gave.
 
 Both halves are always present, so sending has no branch for a missing one:
@@ -28,6 +28,8 @@ import Bytes exposing (Bytes)
 import Bytes.Encode
 import Json.Decode
 import Json.Encode
+import Proto.Any exposing (Problem)
+import Proto.Internal.Registry exposing (Registry)
 import Proto.Route exposing (Route)
 
 
@@ -39,8 +41,20 @@ type Method idempotency codec req res
         , codecs : Codecs
         , json : JsonHalf req res
         , binary : BinaryHalf req res
-        , routes : List (req -> Route)
+        , routes : List (RouteOf req)
         }
+
+
+{-| One binding's route of a request: built from the typed request
+(`Typed`, a generated route function), or from the request's proto3 JSON
+(`FromJson`, a binding written as data, with its `response_body`), which a
+send encodes once for the route and its body together. A route from JSON
+names its response field without the JSON, so reading an answer encodes
+nothing.
+-}
+type RouteOf req
+    = Typed (req -> Route)
+    | FromJson (Maybe String) (Json.Encode.Value -> Route)
 
 
 {-| Which halves the method was built with.
@@ -51,11 +65,14 @@ type alias Codecs =
     }
 
 
-{-| A request's proto3 JSON and the response's decoder.
+{-| A request's proto3 JSON and the response's decoder, given the registry
+an `Any` they hold converts through, which is the client's: a method holds
+none. A request holding an `Any` the registry cannot write has no JSON. A
+type that reaches no `Any` ignores the registry, and its encoder never fails.
 -}
 type alias JsonHalf req res =
-    { encode : req -> Json.Encode.Value
-    , decoder : Json.Decode.Decoder res
+    { encode : Registry -> req -> Result Problem Json.Encode.Value
+    , decoder : Registry -> Json.Decode.Decoder res
     }
 
 
@@ -77,8 +94,8 @@ response.
 -}
 noJson : JsonHalf req res
 noJson =
-    { encode = \_ -> Json.Encode.null
-    , decoder = Json.Decode.fail "a method without proto3 JSON codecs"
+    { encode = \_ _ -> Ok Json.Encode.null
+    , decoder = \_ -> Json.Decode.fail "a method without proto3 JSON codecs"
     }
 
 

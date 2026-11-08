@@ -1,7 +1,7 @@
 module Rpc exposing
     ( Json, Proto
     , Call, call
-    , Client, client
+    , Client, client, withRegistry
     , task, send, cancel
     , taskTraced, sendTraced
     , Error, Response
@@ -61,7 +61,7 @@ instead.
 
 # Clients
 
-@docs Client, client
+@docs Client, client, withRegistry
 
 [`Rpc.Client`](Rpc-Client) sets a client's headers, timeout, credentials and
 retry policy, and [`Rpc.Protocol`](Rpc-Protocol) its protocol.
@@ -100,6 +100,7 @@ import Bytes exposing (Bytes)
 import Dict exposing (Dict)
 import Http
 import Proto.Method exposing (Method)
+import Proto.Registry exposing (Registry)
 import Rpc.Call
 import Rpc.Client
 import Rpc.Code exposing (Code)
@@ -166,10 +167,10 @@ applies it to each method's [`Method`](Proto-Method#Method):
 
     getNote =
         Rpc.call
-            (Method.json "notes.v1.NotesService"
+            (Method.initJson "notes.v1.NotesService"
                 "GetNote"
-                Notes.V1.encodeGetNoteRequest
-                Notes.V1.decodeNote
+                (\_ -> Ok << Notes.V1.encodeGetNoteRequest)
+                (\_ -> Notes.V1.decodeNote)
                 |> Method.withIdempotency Method.IdempotencyNoSideEffects
                 |> Method.withRoutes [ routeGetNote0 ]
             )
@@ -208,6 +209,35 @@ client =
     Rpc.Client.client
 
 
+{-| The registry the client's calls convert a `google.protobuf.Any` through
+between proto3 JSON and protobuf binary: the one table a program has, the
+empty one until this sets it. A method holds none.
+
+    Rpc.client Rpc.Protocol.connect "https://api.example.com"
+        |> Rpc.withRegistry
+            (Proto.Registry.unionAll
+                [ Notes.V1.registry
+                , Proto.Registry.wellKnown
+                , Proto.ErrorDetails.registry
+                ]
+            )
+
+A program whose calls speak JSON and whose messages hold an `Any` sets one,
+as protobuf's own JSON codecs require: over JSON, a call whose request holds
+an `Any` the registry cannot write is not sent (it fails with
+[`NoAnswer (UnwritableRequest problem)`](Rpc-Error#Reason)), and a response
+holding one of a type it lacks fails to decode. Over protobuf binary an `Any`
+needs no registry. Whatever the protocol, a status's details that arrive as
+proto3 JSON (a `google.rpc.Status` body, over transcoding) are read through
+it; one of a type it lacks reads as
+[`UnregisteredType`](Rpc-Error#DetailProblem), the error kept.
+
+-}
+withRegistry : Registry -> Client codec -> Client codec
+withRegistry registry (Client.Client c) =
+    Client.Client { c | registry = registry }
+
+
 
 -- SENDING
 
@@ -230,7 +260,7 @@ task : Client codec -> Call codec req res -> Task Error res
 task cl c =
     let
         plan =
-            Plan.plan cl c
+            Plan.toSend cl c
     in
     fromPlan cl c plan (plan.request ())
 
@@ -249,7 +279,7 @@ send : Client codec -> (Result Error res -> msg) -> Call codec req res -> Cmd ms
 send ((Client.Client cl) as client_) toMsg ((Rpc.Internal.Call.Call fields) as c) =
     let
         plan =
-            Plan.plan client_ c
+            Plan.toSend client_ c
 
         sent =
             plan.request ()
@@ -322,7 +352,7 @@ taskTraced : Client codec -> Call codec req res -> Task Never ( Trace, Result Er
 taskTraced ((Client.Client cl) as client_) c =
     let
         plan =
-            Plan.plan client_ c
+            Plan.toSend client_ c
 
         sent =
             plan.request ()
@@ -466,7 +496,7 @@ ignored, as with [`task`](#task).
 -}
 taskFromRequest : Client codec -> Call codec req res -> Request -> Task Error res
 taskFromRequest cl c sent =
-    fromPlan cl c (Plan.plan cl c) sent
+    fromPlan cl c (Plan.toSend cl c) sent
 
 
 fromPlan : Client codec -> Call codec req res -> Plan res -> Request -> Task Error res

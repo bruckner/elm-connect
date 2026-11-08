@@ -5,6 +5,7 @@ exposed. Two public modules need the constructor: `Rpc.Client` builds and
 reads one and aliases the type, `Rpc` sends through it.
 -}
 
+import Proto.Registry exposing (Registry)
 import Rpc.Internal.Protocol exposing (Protocol)
 import Rpc.Internal.Retry exposing (Retry)
 
@@ -17,4 +18,5 @@ type Client codec
         , timeout : Maybe Float
         , withCredentials : Bool
         , retry : Maybe Retry
+        , registry : Registry
         }
