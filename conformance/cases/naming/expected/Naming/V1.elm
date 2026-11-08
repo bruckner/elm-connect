@@ -7,15 +7,18 @@ module Naming.V1 exposing (..)
 {-| The naming rules of design section 3.7.
 -}
 
+import Bytes.Encode
 import Json.Decode
 import Json.Encode
 import Naming.V1.HttpMethod
 import Naming.V1.Shape
 import Naming.V1.Tag
+import Proto.Binary
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 import Proto.Version
 
 
@@ -146,11 +149,11 @@ enumHttpMethod =
     Proto.Enum.enum encodeHttpMethod decodeHttpMethod HttpMethodUnspecified Naming.V1.HttpMethod.descriptor
 
 
-{-| The typed value of [`Tag`](#Tag): its codecs, default and descriptor together.
+{-| The typed value of [`Tag`](#Tag): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageTag : Proto.Message.Message Tag
 messageTag =
-    Proto.Message.message encodeTag decodeTag defaultTag Naming.V1.Tag.descriptor
+    Proto.Message.init "naming.v1.Tag" encodeTag decodeTag encodeTagBytes decodeTagBytes
 
 
 
@@ -170,6 +173,14 @@ descriptors =
             ]
         )
         Proto.Descriptors.wellKnown
+
+
+{-| The codecs of this package's messages, for converting a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) that holds one between proto3 JSON and protobuf binary. It holds no other package's types and no well-known type: give a client the union of the registries its `Any`s need (`Proto.Registry.unionAll`, `Rpc.withRegistry`).
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.empty
+        |> Proto.Registry.register messageTag
 
 
 
@@ -300,3 +311,251 @@ decodeTagCase =
         [ Proto.Json.member "then" (Json.Decode.map TagCaseThen Proto.Json.string)
         , Proto.Json.member "of" (Json.Decode.map TagCaseOf Proto.Json.int32)
         ]
+
+
+
+-- BINARY ENCODERS
+
+
+{-| The number protobuf binary writes a [`Shape`](#Shape) as.
+-}
+encodeShapeBytes : Shape -> Int
+encodeShapeBytes value =
+    case value of
+        ShapeUnspecified ->
+            0
+
+        Shape2d ->
+            1
+
+        ShapeCube ->
+            2
+
+        ShapeV3Mesh ->
+            3
+
+
+{-| The number protobuf binary writes a [`HttpMethod`](#HttpMethod) as.
+-}
+encodeHttpMethodBytes : HttpMethod -> Int
+encodeHttpMethodBytes value =
+    case value of
+        HttpMethodUnspecified ->
+            0
+
+        HttpMethodGet ->
+            1
+
+        HttpMethodPost ->
+            2
+
+
+{-| Encodes a [`Tag`](#Tag) as protobuf binary.
+-}
+encodeTagBytes : Tag -> Bytes.Encode.Encoder
+encodeTagBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.type_
+        , Proto.Binary.implicit Proto.Binary.bool 2 value.if_
+        , Proto.Binary.implicit Proto.Binary.int32 3 value.port_
+        , Proto.Binary.implicit Proto.Binary.string 4 value.alias
+        , Proto.Binary.implicit Proto.Binary.string 5 value.displayName
+        , Proto.Binary.implicit Proto.Binary.string 6 value.httpUrl
+        , Proto.Binary.implicit Proto.Binary.int32 7 value.v2Count
+        , Proto.Binary.implicit (Proto.Binary.enum encodeShapeBytes decodeShapeBytes) 8 value.shape
+        , Proto.Binary.implicit (Proto.Binary.enum encodeHttpMethodBytes decodeHttpMethodBytes) 9 value.method
+        , encodeTagCaseBytes value.case_
+        ]
+
+
+{-| Encodes a [`TagCase`](#TagCase) as protobuf binary: its set member's field.
+-}
+encodeTagCaseBytes : TagCase -> Bytes.Encode.Encoder
+encodeTagCaseBytes value =
+    case value of
+        TagCaseUnset ->
+            Bytes.Encode.sequence []
+
+        TagCaseThen member ->
+            Proto.Binary.present Proto.Binary.string 10 member
+
+        TagCaseOf member ->
+            Proto.Binary.present Proto.Binary.int32 11 member
+
+
+
+-- BINARY DECODERS
+
+
+{-| A [`Shape`](#Shape) from the number protobuf binary carries.
+-}
+decodeShapeBytes : Int -> Shape
+decodeShapeBytes number =
+    case number of
+        1 ->
+            Shape2d
+
+        2 ->
+            ShapeCube
+
+        3 ->
+            ShapeV3Mesh
+
+        _ ->
+            ShapeUnspecified
+
+
+{-| A [`HttpMethod`](#HttpMethod) from the number protobuf binary carries.
+-}
+decodeHttpMethodBytes : Int -> HttpMethod
+decodeHttpMethodBytes number =
+    case number of
+        1 ->
+            HttpMethodGet
+
+        2 ->
+            HttpMethodPost
+
+        _ ->
+            HttpMethodUnspecified
+
+
+{-| Decodes a [`Tag`](#Tag) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeTagBytes : Tag -> Proto.Binary.Decoder Tag
+mergeTagBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | type_ = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { value
+                                | if_ = v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.field
+                        Proto.Binary.int32
+                        (\v ->
+                            { value
+                                | port_ = v
+                            }
+                        )
+                        wire
+                        value
+
+                4 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | alias = v
+                            }
+                        )
+                        wire
+                        value
+
+                5 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | displayName = v
+                            }
+                        )
+                        wire
+                        value
+
+                6 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | httpUrl = v
+                            }
+                        )
+                        wire
+                        value
+
+                7 ->
+                    Proto.Binary.field
+                        Proto.Binary.int32
+                        (\v ->
+                            { value
+                                | v2Count = v
+                            }
+                        )
+                        wire
+                        value
+
+                8 ->
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeShapeBytes decodeShapeBytes)
+                        (\v ->
+                            { value
+                                | shape = v
+                            }
+                        )
+                        wire
+                        value
+
+                9 ->
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeHttpMethodBytes decodeHttpMethodBytes)
+                        (\v ->
+                            { value
+                                | method = v
+                            }
+                        )
+                        wire
+                        value
+
+                10 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | case_ = TagCaseThen v
+                            }
+                        )
+                        wire
+                        value
+
+                11 ->
+                    Proto.Binary.field
+                        Proto.Binary.int32
+                        (\v ->
+                            { value
+                                | case_ = TagCaseOf v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`Tag`](#Tag) from protobuf binary.
+-}
+decodeTagBytes : Proto.Binary.Decoder Tag
+decodeTagBytes =
+    mergeTagBytes defaultTag

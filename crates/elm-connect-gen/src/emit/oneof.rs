@@ -2,11 +2,11 @@
 //! decoder (design §3.6).
 
 use super::field::{ValueShape, Zeroed};
-use super::{Emitter, JSON_DECODE, JSON_ENCODE, OneofShape, PROTO_JSON, docs};
+use super::{Emitter, JSON_DECODE, JSON_ENCODE, OneofShape, PROTO_ANY, PROTO_JSON, docs};
 use crate::elm::ast::{Decl, Expr, Type, Variant};
-use crate::elm::build::{apply, case, list, pctor, pvar, string, ty, var};
+use crate::elm::build::{apply, case, list, pctor, pvar, qualified, string, ty, ty_fn, var};
 use crate::ir::{Message, ModuleName};
-use crate::naming::{ENCODER_ARGUMENT, ONEOF_MEMBER};
+use crate::naming::{ENCODER_ARGUMENT, ONEOF_MEMBER, REGISTRY_ARGUMENT, with_registry};
 
 impl Emitter {
     /// `type FooKind = FooKindUnset | FooKindBar Bar | ...`: the unset case
@@ -53,7 +53,13 @@ impl Emitter {
     /// is always `Just`, even at its type's default: being set is what a
     /// oneof says. A member of `google.protobuf.Empty` encodes as `{}`, one
     /// of `google.protobuf.NullValue` as `null`.
+    ///
+    /// A oneof with a member that reaches an `Any` gets
+    /// `encodeFooKindWith`, taking the registry first, whose members' JSON
+    /// is a `Result`: a member that reaches one gives its encoder's, the
+    /// others `Ok`.
     pub(super) fn oneof_encoder(&mut self, shape: &OneofShape) -> Decl {
+        let with = self.oneof_reaches(shape);
         let unset = (pctor(shape.oneof.unset_ctor.clone(), []), list([]));
         let members: Vec<_> = shape
             .variants
@@ -74,33 +80,61 @@ impl Emitter {
                         self.encode_value(value, var(ONEOF_MEMBER)),
                     )
                 };
+                let just = var(self.core("Just"));
+                let json = if !with {
+                    apply(just, [encoded])
+                } else if self.reaches(value) {
+                    apply(qualified("Result", "map"), [just, encoded])
+                } else {
+                    let ok = var(self.core("Ok"));
+                    apply(ok, [apply(just, [encoded])])
+                };
                 (
                     pattern,
-                    list([Expr::Tuple(vec![
-                        string(variant.json_name.clone()),
-                        apply(var(self.core("Just")), [encoded]),
-                    ])]),
+                    list([Expr::Tuple(vec![string(variant.json_name.clone()), json])]),
                 )
             })
             .collect();
         let value_type = self.library_type(JSON_ENCODE, "Value", []);
-        let pair = Type::Tuple(vec![
-            ty(self.core("String"), []),
-            ty(self.core("Maybe"), [value_type]),
-        ]);
+        let maybe = ty(self.core("Maybe"), [value_type]);
+        let member = if with {
+            let problem = self.library_type(PROTO_ANY, "Problem", []);
+            ty(self.core("Result"), [problem, maybe])
+        } else {
+            maybe
+        };
+        let pair = Type::Tuple(vec![ty(self.core("String"), []), member]);
+        let oneof = ty(shape.oneof.elm_type_name.clone(), []);
+        let members_type = ty(self.core("List"), [pair]);
+        let (name, annotation, params) = if with {
+            let registry = self.library_type(super::PROTO_REGISTRY, "Registry", []);
+            (
+                with_registry(shape.oneof.encoder_name()),
+                ty_fn([registry, oneof], members_type),
+                vec![pvar(REGISTRY_ARGUMENT), pvar(ENCODER_ARGUMENT)],
+            )
+        } else {
+            (
+                shape.oneof.encoder_name(),
+                ty_fn([oneof], members_type),
+                vec![pvar(ENCODER_ARGUMENT)],
+            )
+        };
         Decl::Value {
             doc: Some(format!(
                 "Encodes {} as the members of its message's JSON object.",
                 docs::a_local(&shape.oneof.elm_type_name)
             )),
-            name: shape.oneof.encoder_name(),
-            annotation: Type::Function(
-                Box::new(ty(shape.oneof.elm_type_name.clone(), [])),
-                Box::new(ty(self.core("List"), [pair])),
-            ),
-            params: vec![pvar(ENCODER_ARGUMENT)],
+            name,
+            annotation,
+            params,
             body: case(var(ENCODER_ARGUMENT), std::iter::once(unset).chain(members)),
         }
+    }
+
+    /// Whether a member of a oneof reaches an `Any`.
+    pub(super) fn oneof_reaches(&self, shape: &OneofShape) -> bool {
+        shape.variants.iter().any(|&(_, value)| self.reaches(value))
     }
 
     /// `decodeFooKind : Json.Decode.Decoder FooKind`:
@@ -117,7 +151,9 @@ impl Emitter {
     /// holds an object. A member of `google.protobuf.Value` is a
     /// `valueMember` step given its constructor, for which `null` is set,
     /// as protobuf's parsers read it, and a member of
-    /// `google.protobuf.NullValue` a `nullValueMember` step likewise.
+    /// `google.protobuf.NullValue` a `nullValueMember` step likewise. A oneof
+    /// with a member that reaches an `Any` gets
+    /// `decodeFooKindWith`, taking the registry.
     pub(super) fn oneof_decoder(&mut self, shape: &OneofShape) -> Decl {
         let steps: Vec<Expr> = shape
             .variants
@@ -155,19 +191,28 @@ impl Emitter {
             })
             .collect();
         let members = self.reference((PROTO_JSON, "members"));
-        let annotation = self.library_type(
-            JSON_DECODE,
-            "Decoder",
-            [ty(shape.oneof.elm_type_name.clone(), [])],
-        );
+        let oneof = ty(shape.oneof.elm_type_name.clone(), []);
+        let (name, annotation, params) = if self.oneof_reaches(shape) {
+            (
+                with_registry(shape.oneof.decoder_name()),
+                self.decoder_with_type(oneof),
+                vec![pvar(REGISTRY_ARGUMENT)],
+            )
+        } else {
+            (
+                shape.oneof.decoder_name(),
+                self.library_type(JSON_DECODE, "Decoder", [oneof]),
+                Vec::new(),
+            )
+        };
         Decl::Value {
             doc: Some(format!(
                 "Decodes {} from the members of its message's JSON object.",
                 docs::a_local(&shape.oneof.elm_type_name)
             )),
-            name: shape.oneof.decoder_name(),
+            name,
             annotation,
-            params: Vec::new(),
+            params,
             body: apply(
                 members,
                 [

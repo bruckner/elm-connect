@@ -8,13 +8,16 @@ module Notes.V1 exposing (..)
 other module's name, which the module imports.
 -}
 
+import Bytes.Encode
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
 import Notes.V1.Note
+import Proto.Binary
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 import Proto.Version
 import Users.V1
 
@@ -84,11 +87,11 @@ defaultNote =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Note`](#Note): its codecs, default and descriptor together.
+{-| The typed value of [`Note`](#Note): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageNote : Proto.Message.Message Note
 messageNote =
-    Proto.Message.message encodeNote decodeNote defaultNote Notes.V1.Note.descriptor
+    Proto.Message.init "notes.v1.Note" encodeNote decodeNote encodeNoteBytes decodeNoteBytes
 
 
 
@@ -106,6 +109,14 @@ descriptors =
             []
         )
         (Proto.Descriptors.union Users.V1.descriptors Proto.Descriptors.wellKnown)
+
+
+{-| The codecs of this package's messages, for converting a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) that holds one between proto3 JSON and protobuf binary. It holds no other package's types and no well-known type: give a client the union of the registries its `Any`s need (`Proto.Registry.unionAll`, `Rpc.withRegistry`).
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.empty
+        |> Proto.Registry.register messageNote
 
 
 
@@ -170,3 +181,151 @@ decodeNoteOwner =
         [ Proto.Json.member "user" (Json.Decode.map NoteOwnerUser Users.V1.decodeUser)
         , Proto.Json.member "team" (Json.Decode.map NoteOwnerTeam Proto.Json.string)
         ]
+
+
+
+-- BINARY ENCODERS
+
+
+{-| Encodes a [`Note`](#Note) as protobuf binary.
+-}
+encodeNoteBytes : Note -> Bytes.Encode.Encoder
+encodeNoteBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.title
+        , Proto.Binary.optional (Proto.Binary.embedded Users.V1.encodeUserBytes Users.V1.mergeUserBytes Users.V1.defaultUser) 2 value.author
+        , Proto.Binary.implicit (Proto.Binary.enum Users.V1.encodeRoleBytes Users.V1.decodeRoleBytes) 3 value.requiredRole
+        , Proto.Binary.list (Proto.Binary.embedded Users.V1.encodeUserBytes Users.V1.mergeUserBytes Users.V1.defaultUser) 4 value.readers
+        , Proto.Binary.dict Proto.Binary.string (Proto.Binary.enum Users.V1.encodeRoleBytes Users.V1.decodeRoleBytes) 5 value.roles
+        , encodeNoteOwnerBytes value.owner
+        ]
+
+
+{-| Encodes a [`NoteOwner`](#NoteOwner) as protobuf binary: its set member's field.
+-}
+encodeNoteOwnerBytes : NoteOwner -> Bytes.Encode.Encoder
+encodeNoteOwnerBytes value =
+    case value of
+        NoteOwnerUnset ->
+            Bytes.Encode.sequence []
+
+        NoteOwnerUser member ->
+            Proto.Binary.present (Proto.Binary.embedded Users.V1.encodeUserBytes Users.V1.mergeUserBytes Users.V1.defaultUser) 6 member
+
+        NoteOwnerTeam member ->
+            Proto.Binary.present Proto.Binary.string 7 member
+
+
+
+-- BINARY DECODERS
+
+
+{-| Decodes a [`Note`](#Note) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeNoteBytes : Note -> Proto.Binary.Decoder Note
+mergeNoteBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | title = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded Users.V1.encodeUserBytes Users.V1.mergeUserBytes Users.V1.defaultUser)
+                        value.author
+                        (\v ->
+                            { value
+                                | author = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.field
+                        (Proto.Binary.enum Users.V1.encodeRoleBytes Users.V1.decodeRoleBytes)
+                        (\v ->
+                            { value
+                                | requiredRole = v
+                            }
+                        )
+                        wire
+                        value
+
+                4 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded Users.V1.encodeUserBytes Users.V1.mergeUserBytes Users.V1.defaultUser)
+                        (\v ->
+                            { value
+                                | readers = v
+                            }
+                        )
+                        value.readers
+                        wire
+                        value
+
+                5 ->
+                    Proto.Binary.mapEntry
+                        Proto.Binary.string
+                        (Proto.Binary.enum Users.V1.encodeRoleBytes Users.V1.decodeRoleBytes)
+                        (\k v ->
+                            { value
+                                | roles = Dict.insert k v value.roles
+                            }
+                        )
+                        wire
+                        value
+
+                6 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded Users.V1.encodeUserBytes Users.V1.mergeUserBytes Users.V1.defaultUser)
+                        (case value.owner of
+                            NoteOwnerUser member ->
+                                Just member
+
+                            _ ->
+                                Nothing
+                        )
+                        (\v ->
+                            { value
+                                | owner = NoteOwnerUser v
+                            }
+                        )
+                        wire
+                        value
+
+                7 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | owner = NoteOwnerTeam v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | readers = List.reverse value.readers
+            }
+        )
+
+
+{-| Decodes a [`Note`](#Note) from protobuf binary.
+-}
+decodeNoteBytes : Proto.Binary.Decoder Note
+decodeNoteBytes =
+    mergeNoteBytes defaultNote

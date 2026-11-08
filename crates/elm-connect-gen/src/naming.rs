@@ -51,7 +51,7 @@ pub const REPOSITORY_BLOBS: &str = repository_blobs!();
 pub const REPOSITORY_FILES: &str = concat!(repository_blobs!(), env!("CARGO_PKG_VERSION"), "/");
 
 /// The runtime package's exposed modules, as its `elm.json` lists them.
-pub const RUNTIME_MODULES: [&str; 31] = [
+pub const RUNTIME_MODULES: [&str; 32] = [
     "Rpc",
     "Rpc.Call",
     "Rpc.Code",
@@ -75,6 +75,7 @@ pub const RUNTIME_MODULES: [&str; 31] = [
     "Proto.Descriptors",
     "Proto.Registry",
     "Proto.WellKnown",
+    "Proto.ErrorDetails",
     "Proto.Any",
     "Proto.Json",
     "Proto.Binary",
@@ -542,14 +543,29 @@ pub fn query_encoder_name(type_elm_name: &str) -> String {
 /// though it starts with the prefix of a method's descriptor.
 pub const DESCRIPTORS: &str = "descriptors";
 
-/// A name kept for a package module's registry, all lowercase like
-/// [`DESCRIPTORS`] so that no prefix and type name can take it.
+/// The value holding the typed values of a package's own messages
+/// (`Proto.Registry.Registry`), all lowercase like [`DESCRIPTORS`] so
+/// that no prefix and type name can take it.
 pub const REGISTRY: &str = "registry";
 
-/// The value holding the binary codecs of a package's messages, under
-/// `codec=both` (`Proto.Registry.Registry`). It starts with no prefix
-/// [`default_name`] lists, so it is not a prefix and a type name either.
-pub const BINARY_REGISTRY: &str = "binaryRegistry";
+/// The JSON codec of a message, oneof or wrapper that reaches a
+/// `google.protobuf.Any`, which takes the registry:
+/// its codec's name with `With` at the end (`encodeNoteWith`,
+/// `decodeNoteWith`). Like the binary codecs' `Bytes`, the suffix breaks
+/// the prefix rule of [`default_name`]: the JSON codecs of a type
+/// `NoteWith` would take these names, which the IR builder reports
+/// (`naming::codec_collision`).
+pub fn with_registry(codec_name: String) -> String {
+    format!("{codec_name}{WITH_SUFFIX}")
+}
+
+/// The suffix of [`with_registry`].
+pub const WITH_SUFFIX: &str = "With";
+
+/// The parameter a codec taking the registry binds it to. Like
+/// [`ENCODER_ARGUMENT`], it must not be the name of a top-level value of a
+/// generated module.
+pub const REGISTRY_ARGUMENT: &str = "types";
 
 /// The value every generated module defines, naming the `Proto.Version`
 /// value of the release that generated it (design §8). Its trailing
@@ -563,7 +579,7 @@ pub const VERSION_VALUE: &str = "elmConnectVersion_";
 /// local name that shadows a top-level one, so no top-level value of a
 /// generated module may take this name; every top-level name generated
 /// today starts with one of the prefixes [`default_name`] lists, or is
-/// [`DESCRIPTORS`], [`BINARY_REGISTRY`] or [`VERSION_VALUE`], or is a
+/// [`DESCRIPTORS`], [`REGISTRY`] or [`VERSION_VALUE`], or is a
 /// method's.
 pub const ENCODER_ARGUMENT: &str = "value";
 
@@ -825,7 +841,7 @@ mod tests {
             }
         }
         assert_ne!(ENCODER_ARGUMENT, ONEOF_MEMBER);
-        for name in [ENCODER_ARGUMENT, ONEOF_MEMBER, REGISTRY] {
+        for name in [ENCODER_ARGUMENT, ONEOF_MEMBER, REGISTRY, REGISTRY_ARGUMENT] {
             assert!(prefixes.iter().all(|prefix| !name.starts_with(prefix)));
             assert_eq!(name, name.to_ascii_lowercase());
         }
@@ -833,22 +849,26 @@ mod tests {
         // continues in uppercase.
         assert_eq!(DESCRIPTORS, DESCRIPTORS.to_ascii_lowercase());
         assert_ne!(method_descriptor_name("s"), DESCRIPTORS);
-        assert!(![ENCODER_ARGUMENT, ONEOF_MEMBER].contains(&REGISTRY));
-        assert!(![ENCODER_ARGUMENT, ONEOF_MEMBER, REGISTRY].contains(&DESCRIPTORS));
+        assert!(![ENCODER_ARGUMENT, ONEOF_MEMBER, REGISTRY_ARGUMENT].contains(&REGISTRY));
         assert!(
-            prefixes
-                .iter()
-                .all(|prefix| !BINARY_REGISTRY.starts_with(prefix))
+            ![ENCODER_ARGUMENT, ONEOF_MEMBER, REGISTRY, REGISTRY_ARGUMENT].contains(&DESCRIPTORS)
         );
-        assert!(
-            ![ENCODER_ARGUMENT, ONEOF_MEMBER, REGISTRY, DESCRIPTORS].contains(&BINARY_REGISTRY)
-        );
+        assert!(![ENCODER_ARGUMENT, ONEOF_MEMBER].contains(&REGISTRY_ARGUMENT));
         assert!(
             prefixes
                 .iter()
                 .all(|prefix| !VERSION_VALUE.starts_with(prefix))
         );
-        assert!(![ENCODER_ARGUMENT, ONEOF_MEMBER, REGISTRY, DESCRIPTORS].contains(&VERSION_VALUE));
+        assert!(
+            ![
+                ENCODER_ARGUMENT,
+                ONEOF_MEMBER,
+                REGISTRY,
+                REGISTRY_ARGUMENT,
+                DESCRIPTORS
+            ]
+            .contains(&VERSION_VALUE)
+        );
     }
 
     #[test]

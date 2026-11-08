@@ -9,12 +9,15 @@ module Api.Example.People exposing (..)
 
 import Api.Example.People.Role
 import Api.Example.People.User
+import Bytes.Encode
 import Json.Decode
 import Json.Encode
+import Proto.Binary
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 import Proto.Version
 
 
@@ -76,11 +79,11 @@ enumRole =
     Proto.Enum.enum encodeRole decodeRole RoleUnspecified Api.Example.People.Role.descriptor
 
 
-{-| The typed value of [`User`](#User): its codecs, default and descriptor together.
+{-| The typed value of [`User`](#User): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageUser : Proto.Message.Message User
 messageUser =
-    Proto.Message.message encodeUser decodeUser defaultUser Api.Example.People.User.descriptor
+    Proto.Message.init "users.v1.User" encodeUser decodeUser encodeUserBytes decodeUserBytes
 
 
 
@@ -99,6 +102,14 @@ descriptors =
             ]
         )
         Proto.Descriptors.wellKnown
+
+
+{-| The codecs of this package's messages, for converting a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) that holds one between proto3 JSON and protobuf binary. It holds no other package's types and no well-known type: give a client the union of the registries its `Any`s need (`Proto.Registry.unionAll`, `Rpc.withRegistry`).
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.empty
+        |> Proto.Registry.register messageUser
 
 
 
@@ -149,3 +160,87 @@ decodeUser =
     Json.Decode.succeed User
         |> Proto.Json.field "name" "" Proto.Json.string
         |> Proto.Json.field "role" RoleUnspecified decodeRole
+
+
+
+-- BINARY ENCODERS
+
+
+{-| The number protobuf binary writes a [`Role`](#Role) as.
+-}
+encodeRoleBytes : Role -> Int
+encodeRoleBytes value =
+    case value of
+        RoleUnspecified ->
+            0
+
+        RoleEditor ->
+            1
+
+
+{-| Encodes a [`User`](#User) as protobuf binary.
+-}
+encodeUserBytes : User -> Bytes.Encode.Encoder
+encodeUserBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.name
+        , Proto.Binary.implicit (Proto.Binary.enum encodeRoleBytes decodeRoleBytes) 2 value.role
+        ]
+
+
+
+-- BINARY DECODERS
+
+
+{-| A [`Role`](#Role) from the number protobuf binary carries.
+-}
+decodeRoleBytes : Int -> Role
+decodeRoleBytes number =
+    case number of
+        1 ->
+            RoleEditor
+
+        _ ->
+            RoleUnspecified
+
+
+{-| Decodes a [`User`](#User) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeUserBytes : User -> Proto.Binary.Decoder User
+mergeUserBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | name = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeRoleBytes decodeRoleBytes)
+                        (\v ->
+                            { value
+                                | role = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`User`](#User) from protobuf binary.
+-}
+decodeUserBytes : Proto.Binary.Decoder User
+decodeUserBytes =
+    mergeUserBytes defaultUser

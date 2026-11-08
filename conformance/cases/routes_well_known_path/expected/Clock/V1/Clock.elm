@@ -41,10 +41,10 @@ Codecs: JSON. Described by [`descriptorGetMoment`](#descriptorGetMoment).
 getMoment : Clock.V1.Moment -> Rpc.Call Rpc.Json Clock.V1.Moment Clock.V1.Moment
 getMoment =
     Rpc.call
-        (Proto.Method.json "clock.v1.Clock"
+        (Proto.Method.initJson "clock.v1.Clock"
             "GetMoment"
-            Clock.V1.encodeMoment
-            Clock.V1.decodeMoment
+            (\_ -> Ok << Clock.V1.encodeMoment)
+            (\_ -> Clock.V1.decodeMoment)
             |> Proto.Method.withRoutes [ routeGetMoment0 ]
         )
 
@@ -59,10 +59,10 @@ Codecs: JSON. Described by [`descriptorMaskMoment`](#descriptorMaskMoment).
 maskMoment : Clock.V1.Moment -> Rpc.Call Rpc.Json Clock.V1.Moment Clock.V1.Moment
 maskMoment =
     Rpc.call
-        (Proto.Method.json "clock.v1.Clock"
+        (Proto.Method.initJson "clock.v1.Clock"
             "MaskMoment"
-            Clock.V1.encodeMoment
-            Clock.V1.decodeMoment
+            (\_ -> Ok << Clock.V1.encodeMoment)
+            (\_ -> Clock.V1.decodeMoment)
             |> Proto.Method.withRoutes [ routeMaskMoment0 ]
         )
 
@@ -77,10 +77,10 @@ Codecs: JSON. Described by [`descriptorCountMoment`](#descriptorCountMoment).
 countMoment : Clock.V1.Moment -> Rpc.Call Rpc.Json Clock.V1.Moment Clock.V1.Moment
 countMoment =
     Rpc.call
-        (Proto.Method.json "clock.v1.Clock"
+        (Proto.Method.initJson "clock.v1.Clock"
             "CountMoment"
-            Clock.V1.encodeMoment
-            Clock.V1.decodeMoment
+            (\_ -> Ok << Clock.V1.encodeMoment)
+            (\_ -> Clock.V1.decodeMoment)
             |> Proto.Method.withRoutes [ routeCountMoment0 ]
         )
 
@@ -95,10 +95,10 @@ Codecs: JSON. Described by [`descriptorWaitMoment`](#descriptorWaitMoment).
 waitMoment : Clock.V1.Moment -> Rpc.Call Rpc.Json Clock.V1.Moment Clock.V1.Moment
 waitMoment =
     Rpc.call
-        (Proto.Method.json "clock.v1.Clock"
+        (Proto.Method.initJson "clock.v1.Clock"
             "WaitMoment"
-            Clock.V1.encodeMoment
-            Clock.V1.decodeMoment
+            (\_ -> Ok << Clock.V1.encodeMoment)
+            (\_ -> Clock.V1.decodeMoment)
             |> Proto.Method.withRoutes [ routeWaitMoment0 ]
         )
 

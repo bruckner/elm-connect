@@ -34,10 +34,10 @@ Codecs: JSON. Described by [`descriptorGetNote`](#descriptorGetNote).
 getNote : First.V1.URLPath -> Rpc.Call Rpc.Json First.V1.URLPath First.V1.URLPath
 getNote =
     Rpc.call
-        (Proto.Method.json "first.v1.Fetcher"
+        (Proto.Method.initJson "first.v1.Fetcher"
             "GetNote"
-            First.V1.encodeURLPath
-            First.V1.decodeURLPath
+            (\_ -> Ok << First.V1.encodeURLPath)
+            (\_ -> First.V1.decodeURLPath)
         )
 
 
@@ -51,10 +51,10 @@ Codecs: JSON. Described by [`descriptorHttpGet`](#descriptorHttpGet).
 httpGet : First.V1.URLPath -> Rpc.Call Rpc.Json First.V1.URLPath First.V1.URLPath
 httpGet =
     Rpc.call
-        (Proto.Method.json "first.v1.Fetcher"
+        (Proto.Method.initJson "first.v1.Fetcher"
             "HTTPGet"
-            First.V1.encodeURLPath
-            First.V1.decodeURLPath
+            (\_ -> Ok << First.V1.encodeURLPath)
+            (\_ -> First.V1.decodeURLPath)
         )
 
 
@@ -68,10 +68,10 @@ Codecs: JSON. Described by [`descriptorPing`](#descriptorPing).
 ping : First.V1.URLPath -> Rpc.Call Rpc.Json First.V1.URLPath First.V1.URLPath
 ping =
     Rpc.call
-        (Proto.Method.json "first.v1.Fetcher"
+        (Proto.Method.initJson "first.v1.Fetcher"
             "_Ping"
-            First.V1.encodeURLPath
-            First.V1.decodeURLPath
+            (\_ -> Ok << First.V1.encodeURLPath)
+            (\_ -> First.V1.decodeURLPath)
         )
 
 
@@ -85,10 +85,10 @@ Codecs: JSON. Described by [`descriptorType_`](#descriptorType_).
 type_ : First.V1.URLPath -> Rpc.Call Rpc.Json First.V1.URLPath First.V1.URLPath
 type_ =
     Rpc.call
-        (Proto.Method.json "first.v1.Fetcher"
+        (Proto.Method.initJson "first.v1.Fetcher"
             "Type"
-            First.V1.encodeURLPath
-            First.V1.decodeURLPath
+            (\_ -> Ok << First.V1.encodeURLPath)
+            (\_ -> First.V1.decodeURLPath)
         )
 
 

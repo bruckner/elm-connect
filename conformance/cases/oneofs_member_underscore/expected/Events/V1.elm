@@ -4,15 +4,18 @@
 
 module Events.V1 exposing (..)
 
+import Bytes.Encode
 import Events.V1.Event
 import Events.V1.ListEventsRequest
 import Events.V1.ListEventsResponse
 import Json.Decode
 import Json.Encode
+import Proto.Binary
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
 import Proto.Query
+import Proto.Registry
 import Proto.Version
 
 
@@ -122,25 +125,25 @@ defaultListEventsResponse =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Event`](#Event): its codecs, default and descriptor together.
+{-| The typed value of [`Event`](#Event): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageEvent : Proto.Message.Message Event
 messageEvent =
-    Proto.Message.message encodeEvent decodeEvent defaultEvent Events.V1.Event.descriptor
+    Proto.Message.init "events.v1.Event" encodeEvent decodeEvent encodeEventBytes decodeEventBytes
 
 
-{-| The typed value of [`ListEventsRequest`](#ListEventsRequest): its codecs, default and descriptor together.
+{-| The typed value of [`ListEventsRequest`](#ListEventsRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageListEventsRequest : Proto.Message.Message ListEventsRequest
 messageListEventsRequest =
-    Proto.Message.message encodeListEventsRequest decodeListEventsRequest defaultListEventsRequest Events.V1.ListEventsRequest.descriptor
+    Proto.Message.init "events.v1.ListEventsRequest" encodeListEventsRequest decodeListEventsRequest encodeListEventsRequestBytes decodeListEventsRequestBytes
 
 
-{-| The typed value of [`ListEventsResponse`](#ListEventsResponse): its codecs, default and descriptor together.
+{-| The typed value of [`ListEventsResponse`](#ListEventsResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageListEventsResponse : Proto.Message.Message ListEventsResponse
 messageListEventsResponse =
-    Proto.Message.message encodeListEventsResponse decodeListEventsResponse defaultListEventsResponse Events.V1.ListEventsResponse.descriptor
+    Proto.Message.init "events.v1.ListEventsResponse" encodeListEventsResponse decodeListEventsResponse encodeListEventsResponseBytes decodeListEventsResponseBytes
 
 
 
@@ -160,6 +163,16 @@ descriptors =
             []
         )
         Proto.Descriptors.wellKnown
+
+
+{-| The codecs of this package's messages, for converting a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) that holds one between proto3 JSON and protobuf binary. It holds no other package's types and no well-known type: give a client the union of the registries its `Any`s need (`Proto.Registry.unionAll`, `Rpc.withRegistry`).
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.empty
+        |> Proto.Registry.register messageEvent
+        |> Proto.Registry.register messageListEventsRequest
+        |> Proto.Registry.register messageListEventsResponse
 
 
 
@@ -276,6 +289,201 @@ decodeListEventsResponse : Json.Decode.Decoder ListEventsResponse
 decodeListEventsResponse =
     Json.Decode.succeed ListEventsResponse
         |> Proto.Json.field "events" [] (Json.Decode.list decodeEvent)
+
+
+
+-- BINARY ENCODERS
+
+
+{-| Encodes an [`Event`](#Event) as protobuf binary.
+-}
+encodeEventBytes : Event -> Bytes.Encode.Encoder
+encodeEventBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.name
+        , encodeEventKindBytes value.kind
+        ]
+
+
+{-| Encodes an [`EventKind`](#EventKind) as protobuf binary: its set member's field.
+-}
+encodeEventKindBytes : EventKind -> Bytes.Encode.Encoder
+encodeEventKindBytes value =
+    case value of
+        EventKindUnset ->
+            Bytes.Encode.sequence []
+
+        EventKindLegacy member ->
+            Proto.Binary.present Proto.Binary.string 2 member
+
+        EventKindCount member ->
+            Proto.Binary.present Proto.Binary.int32 3 member
+
+
+{-| Encodes a [`ListEventsRequest`](#ListEventsRequest) as protobuf binary.
+-}
+encodeListEventsRequestBytes : ListEventsRequest -> Bytes.Encode.Encoder
+encodeListEventsRequestBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.parent
+        , encodeListEventsRequestFilterBytes value.filter
+        ]
+
+
+{-| Encodes a [`ListEventsRequestFilter`](#ListEventsRequestFilter) as protobuf binary: its set member's field.
+-}
+encodeListEventsRequestFilterBytes : ListEventsRequestFilter -> Bytes.Encode.Encoder
+encodeListEventsRequestFilterBytes value =
+    case value of
+        ListEventsRequestFilterUnset ->
+            Bytes.Encode.sequence []
+
+        ListEventsRequestFilterLegacy member ->
+            Proto.Binary.present Proto.Binary.string 2 member
+
+
+{-| Encodes a [`ListEventsResponse`](#ListEventsResponse) as protobuf binary.
+-}
+encodeListEventsResponseBytes : ListEventsResponse -> Bytes.Encode.Encoder
+encodeListEventsResponseBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.list (Proto.Binary.embedded encodeEventBytes mergeEventBytes defaultEvent) 1 value.events
+        ]
+
+
+
+-- BINARY DECODERS
+
+
+{-| Decodes an [`Event`](#Event) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeEventBytes : Event -> Proto.Binary.Decoder Event
+mergeEventBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | name = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | kind = EventKindLegacy v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.field
+                        Proto.Binary.int32
+                        (\v ->
+                            { value
+                                | kind = EventKindCount v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes an [`Event`](#Event) from protobuf binary.
+-}
+decodeEventBytes : Proto.Binary.Decoder Event
+decodeEventBytes =
+    mergeEventBytes defaultEvent
+
+
+{-| Decodes a [`ListEventsRequest`](#ListEventsRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeListEventsRequestBytes : ListEventsRequest -> Proto.Binary.Decoder ListEventsRequest
+mergeListEventsRequestBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | parent = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | filter = ListEventsRequestFilterLegacy v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`ListEventsRequest`](#ListEventsRequest) from protobuf binary.
+-}
+decodeListEventsRequestBytes : Proto.Binary.Decoder ListEventsRequest
+decodeListEventsRequestBytes =
+    mergeListEventsRequestBytes defaultListEventsRequest
+
+
+{-| Decodes a [`ListEventsResponse`](#ListEventsResponse) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeListEventsResponseBytes : ListEventsResponse -> Proto.Binary.Decoder ListEventsResponse
+mergeListEventsResponseBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeEventBytes mergeEventBytes defaultEvent)
+                        (\v ->
+                            { value
+                                | events = v
+                            }
+                        )
+                        value.events
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | events = List.reverse value.events
+            }
+        )
+
+
+{-| Decodes a [`ListEventsResponse`](#ListEventsResponse) from protobuf binary.
+-}
+decodeListEventsResponseBytes : Proto.Binary.Decoder ListEventsResponse
+decodeListEventsResponseBytes =
+    mergeListEventsResponseBytes defaultListEventsResponse
 
 
 

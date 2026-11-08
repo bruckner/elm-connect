@@ -126,11 +126,12 @@ struct GenArgs {
     /// its own `--out`.
     #[arg(long, value_name = "fail|zero", default_value = "fail")]
     enum_unknown: EnumUnknown,
-    /// Which codecs messages get: `json`, `proto` or `both`.
+    /// Which codecs the service methods are wired with: `json`, `proto` or
+    /// `both`. Messages get both codecs whatever it says.
     ///
     /// `json`: proto3 JSON, for Connect's JSON codec and transcoding.
-    /// `proto`: protobuf binary alone, for Connect's proto codec. `both`:
-    /// the binary codecs beside the JSON ones.
+    /// `proto`: protobuf binary, for Connect's proto codec and gRPC-Web.
+    /// `both`: either, so a method's calls go over any protocol.
     #[arg(long, value_name = "json|proto|both", default_value = "json")]
     codec: Codec,
     /// An Elm name for a proto element, such as `notes.v1.Note:Memo`.

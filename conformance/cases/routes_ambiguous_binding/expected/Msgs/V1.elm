@@ -12,14 +12,17 @@ compared as the method it names, and a custom verb (`:check`) is kept.
 Paths of another shape, or of another method, do not warn.
 -}
 
+import Bytes.Encode
 import Json.Decode
 import Json.Encode
 import Msgs.V1.Message
 import Msgs.V1.MessageRequest
+import Proto.Binary
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
 import Proto.Query
+import Proto.Registry
 import Proto.Version
 
 
@@ -84,18 +87,18 @@ defaultMessage =
 -- TYPED VALUES
 
 
-{-| The typed value of [`MessageRequest`](#MessageRequest): its codecs, default and descriptor together.
+{-| The typed value of [`MessageRequest`](#MessageRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageMessageRequest : Proto.Message.Message MessageRequest
 messageMessageRequest =
-    Proto.Message.message encodeMessageRequest decodeMessageRequest defaultMessageRequest Msgs.V1.MessageRequest.descriptor
+    Proto.Message.init "msgs.v1.MessageRequest" encodeMessageRequest decodeMessageRequest encodeMessageRequestBytes decodeMessageRequestBytes
 
 
-{-| The typed value of [`Message`](#Message): its codecs, default and descriptor together.
+{-| The typed value of [`Message`](#Message): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageMessage : Proto.Message.Message Message
 messageMessage =
-    Proto.Message.message encodeMessage decodeMessage defaultMessage Msgs.V1.Message.descriptor
+    Proto.Message.init "msgs.v1.Message" encodeMessage decodeMessage encodeMessageBytes decodeMessageBytes
 
 
 
@@ -114,6 +117,15 @@ descriptors =
             []
         )
         Proto.Descriptors.wellKnown
+
+
+{-| The codecs of this package's messages, for converting a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) that holds one between proto3 JSON and protobuf binary. It holds no other package's types and no well-known type: give a client the union of the registries its `Any`s need (`Proto.Registry.unionAll`, `Rpc.withRegistry`).
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.empty
+        |> Proto.Registry.register messageMessageRequest
+        |> Proto.Registry.register messageMessage
 
 
 
@@ -160,6 +172,118 @@ decodeMessage : Json.Decode.Decoder Message
 decodeMessage =
     Json.Decode.succeed Message
         |> Proto.Json.field "name" "" Proto.Json.string
+
+
+
+-- BINARY ENCODERS
+
+
+{-| Encodes a [`MessageRequest`](#MessageRequest) as protobuf binary.
+-}
+encodeMessageRequestBytes : MessageRequest -> Bytes.Encode.Encoder
+encodeMessageRequestBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.name
+        , Proto.Binary.implicit Proto.Binary.string 2 value.id
+        , Proto.Binary.implicit Proto.Binary.string 3 value.sub
+        ]
+
+
+{-| Encodes a [`Message`](#Message) as protobuf binary.
+-}
+encodeMessageBytes : Message -> Bytes.Encode.Encoder
+encodeMessageBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.name
+        ]
+
+
+
+-- BINARY DECODERS
+
+
+{-| Decodes a [`MessageRequest`](#MessageRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeMessageRequestBytes : MessageRequest -> Proto.Binary.Decoder MessageRequest
+mergeMessageRequestBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | name = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | id = v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | sub = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`MessageRequest`](#MessageRequest) from protobuf binary.
+-}
+decodeMessageRequestBytes : Proto.Binary.Decoder MessageRequest
+decodeMessageRequestBytes =
+    mergeMessageRequestBytes defaultMessageRequest
+
+
+{-| Decodes a [`Message`](#Message) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeMessageBytes : Message -> Proto.Binary.Decoder Message
+mergeMessageBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | name = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`Message`](#Message) from protobuf binary.
+-}
+decodeMessageBytes : Proto.Binary.Decoder Message
+decodeMessageBytes =
+    mergeMessageBytes defaultMessage
 
 
 

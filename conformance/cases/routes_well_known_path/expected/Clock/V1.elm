@@ -9,14 +9,17 @@ the variable's text is that JSON value, and the field is not repeated
 in the query.
 -}
 
+import Bytes.Encode
 import Clock.V1.Moment
 import Json.Decode
 import Json.Encode
+import Proto.Binary
 import Proto.Descriptors
 import Proto.Duration exposing (Duration)
 import Proto.Json
 import Proto.Message
 import Proto.Query
+import Proto.Registry
 import Proto.Route
 import Proto.Timestamp
 import Proto.Version
@@ -75,11 +78,11 @@ defaultMoment =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Moment`](#Moment): its codecs, default and descriptor together.
+{-| The typed value of [`Moment`](#Moment): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageMoment : Proto.Message.Message Moment
 messageMoment =
-    Proto.Message.message encodeMoment decodeMoment defaultMoment Clock.V1.Moment.descriptor
+    Proto.Message.init "clock.v1.Moment" encodeMoment decodeMoment encodeMomentBytes decodeMomentBytes
 
 
 
@@ -97,6 +100,14 @@ descriptors =
             []
         )
         Proto.Descriptors.wellKnown
+
+
+{-| The codecs of this package's messages, for converting a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) that holds one between proto3 JSON and protobuf binary. It holds no other package's types and no well-known type: give a client the union of the registries its `Any`s need (`Proto.Registry.unionAll`, `Rpc.withRegistry`).
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.empty
+        |> Proto.Registry.register messageMoment
 
 
 
@@ -132,6 +143,114 @@ decodeMoment =
         |> Proto.Json.field "seen" Nothing (Json.Decode.map Just Json.Decode.bool)
         |> Proto.Json.field "wait" Nothing (Json.Decode.map Just Proto.Json.duration)
         |> Proto.Json.field "note" "" Proto.Json.string
+
+
+
+-- BINARY ENCODERS
+
+
+{-| Encodes a [`Moment`](#Moment) as protobuf binary.
+-}
+encodeMomentBytes : Moment -> Bytes.Encode.Encoder
+encodeMomentBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.optional Proto.Binary.timestamp 1 value.at
+        , Proto.Binary.optional Proto.Binary.fieldMask 2 value.mask
+        , Proto.Binary.optional Proto.Binary.int32Value 3 value.count
+        , Proto.Binary.optional Proto.Binary.boolValue 4 value.seen
+        , Proto.Binary.optional Proto.Binary.duration 5 value.wait
+        , Proto.Binary.implicit Proto.Binary.string 6 value.note
+        ]
+
+
+
+-- BINARY DECODERS
+
+
+{-| Decodes a [`Moment`](#Moment) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeMomentBytes : Moment -> Proto.Binary.Decoder Moment
+mergeMomentBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.timestamp
+                        (\v ->
+                            { value
+                                | at = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.fieldMask
+                        (\v ->
+                            { value
+                                | mask = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.field
+                        Proto.Binary.int32Value
+                        (\v ->
+                            { value
+                                | count = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                4 ->
+                    Proto.Binary.field
+                        Proto.Binary.boolValue
+                        (\v ->
+                            { value
+                                | seen = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                5 ->
+                    Proto.Binary.field
+                        Proto.Binary.duration
+                        (\v ->
+                            { value
+                                | wait = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                6 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | note = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`Moment`](#Moment) from protobuf binary.
+-}
+decodeMomentBytes : Proto.Binary.Decoder Moment
+decodeMomentBytes =
+    mergeMomentBytes defaultMoment
 
 
 

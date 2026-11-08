@@ -9,15 +9,18 @@ the file declares them in, not their numbers. The record constructor is
 positional, so this order is the generated API.
 -}
 
+import Bytes.Encode
 import FieldOrder.V1.Draft
 import FieldOrder.V1.DraftMargin
 import FieldOrder.V1.Mood
 import Json.Decode
 import Json.Encode
+import Proto.Binary
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 import Proto.Version
 
 
@@ -128,18 +131,18 @@ enumMood =
     Proto.Enum.enum encodeMood decodeMood MoodUnspecified FieldOrder.V1.Mood.descriptor
 
 
-{-| The typed value of [`Draft`](#Draft): its codecs, default and descriptor together.
+{-| The typed value of [`Draft`](#Draft): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageDraft : Proto.Message.Message Draft
 messageDraft =
-    Proto.Message.message encodeDraft decodeDraft defaultDraft FieldOrder.V1.Draft.descriptor
+    Proto.Message.init "field_order.v1.Draft" encodeDraft decodeDraft encodeDraftBytes decodeDraftBytes
 
 
-{-| The typed value of [`DraftMargin`](#DraftMargin): its codecs, default and descriptor together.
+{-| The typed value of [`DraftMargin`](#DraftMargin): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageDraftMargin : Proto.Message.Message DraftMargin
 messageDraftMargin =
-    Proto.Message.message encodeDraftMargin decodeDraftMargin defaultDraftMargin FieldOrder.V1.DraftMargin.descriptor
+    Proto.Message.init "field_order.v1.Draft.Margin" encodeDraftMargin decodeDraftMargin encodeDraftMarginBytes decodeDraftMarginBytes
 
 
 
@@ -159,6 +162,15 @@ descriptors =
             ]
         )
         Proto.Descriptors.wellKnown
+
+
+{-| The codecs of this package's messages, for converting a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) that holds one between proto3 JSON and protobuf binary. It holds no other package's types and no well-known type: give a client the union of the registries its `Any`s need (`Proto.Registry.unionAll`, `Rpc.withRegistry`).
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.empty
+        |> Proto.Registry.register messageDraft
+        |> Proto.Registry.register messageDraftMargin
 
 
 
@@ -263,3 +275,218 @@ decodeDraftMargin =
     Json.Decode.succeed DraftMargin
         |> Proto.Json.field "left" 0 Proto.Json.int32
         |> Proto.Json.field "right" 0 Proto.Json.int32
+
+
+
+-- BINARY ENCODERS
+
+
+{-| The number protobuf binary writes a [`Mood`](#Mood) as.
+-}
+encodeMoodBytes : Mood -> Int
+encodeMoodBytes value =
+    case value of
+        MoodUnspecified ->
+            0
+
+        MoodCalm ->
+            1
+
+
+{-| Encodes a [`Draft`](#Draft) as protobuf binary.
+-}
+encodeDraftBytes : Draft -> Bytes.Encode.Encoder
+encodeDraftBytes value =
+    Bytes.Encode.sequence
+        [ case value.body of
+            DraftBodyBlob member ->
+                Proto.Binary.present Proto.Binary.bytes 1 member
+
+            _ ->
+                Bytes.Encode.sequence []
+        , Proto.Binary.list Proto.Binary.string 2 value.tags
+        , Proto.Binary.optional (Proto.Binary.embedded encodeDraftMarginBytes mergeDraftMarginBytes defaultDraftMargin) 3 value.margin
+        , Proto.Binary.implicit Proto.Binary.string 4 value.title
+        , Proto.Binary.implicit (Proto.Binary.enum encodeMoodBytes decodeMoodBytes) 6 value.mood
+        , case value.body of
+            DraftBodyText member ->
+                Proto.Binary.present Proto.Binary.string 8 member
+
+            _ ->
+                Bytes.Encode.sequence []
+        ]
+
+
+{-| Encodes a [`DraftBody`](#DraftBody) as protobuf binary: its set member's field.
+-}
+encodeDraftBodyBytes : DraftBody -> Bytes.Encode.Encoder
+encodeDraftBodyBytes value =
+    case value of
+        DraftBodyUnset ->
+            Bytes.Encode.sequence []
+
+        DraftBodyText member ->
+            Proto.Binary.present Proto.Binary.string 8 member
+
+        DraftBodyBlob member ->
+            Proto.Binary.present Proto.Binary.bytes 1 member
+
+
+{-| Encodes a [`DraftMargin`](#DraftMargin) as protobuf binary.
+-}
+encodeDraftMarginBytes : DraftMargin -> Bytes.Encode.Encoder
+encodeDraftMarginBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.int32 1 value.right
+        , Proto.Binary.implicit Proto.Binary.int32 2 value.left
+        ]
+
+
+
+-- BINARY DECODERS
+
+
+{-| A [`Mood`](#Mood) from the number protobuf binary carries.
+-}
+decodeMoodBytes : Int -> Mood
+decodeMoodBytes number =
+    case number of
+        1 ->
+            MoodCalm
+
+        _ ->
+            MoodUnspecified
+
+
+{-| Decodes a [`Draft`](#Draft) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeDraftBytes : Draft -> Proto.Binary.Decoder Draft
+mergeDraftBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.bytes
+                        (\v ->
+                            { value
+                                | body = DraftBodyBlob v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.repeated
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | tags = v
+                            }
+                        )
+                        value.tags
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeDraftMarginBytes mergeDraftMarginBytes defaultDraftMargin)
+                        value.margin
+                        (\v ->
+                            { value
+                                | margin = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                4 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | title = v
+                            }
+                        )
+                        wire
+                        value
+
+                6 ->
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeMoodBytes decodeMoodBytes)
+                        (\v ->
+                            { value
+                                | mood = v
+                            }
+                        )
+                        wire
+                        value
+
+                8 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | body = DraftBodyText v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | tags = List.reverse value.tags
+            }
+        )
+
+
+{-| Decodes a [`Draft`](#Draft) from protobuf binary.
+-}
+decodeDraftBytes : Proto.Binary.Decoder Draft
+decodeDraftBytes =
+    mergeDraftBytes defaultDraft
+
+
+{-| Decodes a [`DraftMargin`](#DraftMargin) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeDraftMarginBytes : DraftMargin -> Proto.Binary.Decoder DraftMargin
+mergeDraftMarginBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.int32
+                        (\v ->
+                            { value
+                                | right = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.int32
+                        (\v ->
+                            { value
+                                | left = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`DraftMargin`](#DraftMargin) from protobuf binary.
+-}
+decodeDraftMarginBytes : Proto.Binary.Decoder DraftMargin
+decodeDraftMarginBytes =
+    mergeDraftMarginBytes defaultDraftMargin

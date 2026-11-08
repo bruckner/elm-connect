@@ -11,13 +11,16 @@ Compiled but not requested; its package is, so it is generated.
 
 -}
 
+import Bytes.Encode
 import Json.Decode
 import Json.Encode
 import Notes.V1.Note
 import Notes.V1.Tag
+import Proto.Binary
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 import Proto.Version
 
 
@@ -79,18 +82,18 @@ defaultTag =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Note`](#Note): its codecs, default and descriptor together.
+{-| The typed value of [`Note`](#Note): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageNote : Proto.Message.Message Note
 messageNote =
-    Proto.Message.message encodeNote decodeNote defaultNote Notes.V1.Note.descriptor
+    Proto.Message.init "notes.v1.Note" encodeNote decodeNote encodeNoteBytes decodeNoteBytes
 
 
-{-| The typed value of [`Tag`](#Tag): its codecs, default and descriptor together.
+{-| The typed value of [`Tag`](#Tag): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageTag : Proto.Message.Message Tag
 messageTag =
-    Proto.Message.message encodeTag decodeTag defaultTag Notes.V1.Tag.descriptor
+    Proto.Message.init "notes.v1.Tag" encodeTag decodeTag encodeTagBytes decodeTagBytes
 
 
 
@@ -109,6 +112,15 @@ descriptors =
             []
         )
         Proto.Descriptors.wellKnown
+
+
+{-| The codecs of this package's messages, for converting a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) that holds one between proto3 JSON and protobuf binary. It holds no other package's types and no well-known type: give a client the union of the registries its `Any`s need (`Proto.Registry.unionAll`, `Rpc.withRegistry`).
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.empty
+        |> Proto.Registry.register messageNote
+        |> Proto.Registry.register messageTag
 
 
 
@@ -153,3 +165,108 @@ decodeTag : Json.Decode.Decoder Tag
 decodeTag =
     Json.Decode.succeed Tag
         |> Proto.Json.field "label" "" Proto.Json.string
+
+
+
+-- BINARY ENCODERS
+
+
+{-| Encodes a [`Note`](#Note) as protobuf binary.
+-}
+encodeNoteBytes : Note -> Bytes.Encode.Encoder
+encodeNoteBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.title
+        , Proto.Binary.list (Proto.Binary.embedded encodeTagBytes mergeTagBytes defaultTag) 2 value.tags
+        ]
+
+
+{-| Encodes a [`Tag`](#Tag) as protobuf binary.
+-}
+encodeTagBytes : Tag -> Bytes.Encode.Encoder
+encodeTagBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.label
+        ]
+
+
+
+-- BINARY DECODERS
+
+
+{-| Decodes a [`Note`](#Note) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeNoteBytes : Note -> Proto.Binary.Decoder Note
+mergeNoteBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | title = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeTagBytes mergeTagBytes defaultTag)
+                        (\v ->
+                            { value
+                                | tags = v
+                            }
+                        )
+                        value.tags
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | tags = List.reverse value.tags
+            }
+        )
+
+
+{-| Decodes a [`Note`](#Note) from protobuf binary.
+-}
+decodeNoteBytes : Proto.Binary.Decoder Note
+decodeNoteBytes =
+    mergeNoteBytes defaultNote
+
+
+{-| Decodes a [`Tag`](#Tag) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeTagBytes : Tag -> Proto.Binary.Decoder Tag
+mergeTagBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | label = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`Tag`](#Tag) from protobuf binary.
+-}
+decodeTagBytes : Proto.Binary.Decoder Tag
+decodeTagBytes =
+    mergeTagBytes defaultTag

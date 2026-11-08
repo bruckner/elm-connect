@@ -13,12 +13,15 @@ request's JSON. Its other methods keep their route functions.
 
 import Blobs.V1.Blob
 import Bytes
+import Bytes.Encode
 import Json.Decode
 import Json.Encode
+import Proto.Binary
 import Proto.Bytes
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 import Proto.Version
 
 
@@ -65,11 +68,11 @@ defaultBlob =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Blob`](#Blob): its codecs, default and descriptor together.
+{-| The typed value of [`Blob`](#Blob): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageBlob : Proto.Message.Message Blob
 messageBlob =
-    Proto.Message.message encodeBlob decodeBlob defaultBlob Blobs.V1.Blob.descriptor
+    Proto.Message.init "blobs.v1.Blob" encodeBlob decodeBlob encodeBlobBytes decodeBlobBytes
 
 
 
@@ -87,6 +90,14 @@ descriptors =
             []
         )
         Proto.Descriptors.wellKnown
+
+
+{-| The codecs of this package's messages, for converting a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) that holds one between proto3 JSON and protobuf binary. It holds no other package's types and no well-known type: give a client the union of the registries its `Any`s need (`Proto.Registry.unionAll`, `Rpc.withRegistry`).
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.empty
+        |> Proto.Registry.register messageBlob
 
 
 
@@ -116,3 +127,75 @@ decodeBlob =
         |> Proto.Json.field "digest" Proto.Bytes.empty Proto.Json.bytesAsBytes
         |> Proto.Json.field "name" "" Proto.Json.string
         |> Proto.Json.field "salt" Proto.Bytes.empty Proto.Json.bytesAsBytes
+
+
+
+-- BINARY ENCODERS
+
+
+{-| Encodes a [`Blob`](#Blob) as protobuf binary.
+-}
+encodeBlobBytes : Blob -> Bytes.Encode.Encoder
+encodeBlobBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.bytesAsBytes 1 value.digest
+        , Proto.Binary.implicit Proto.Binary.string 2 value.name
+        , Proto.Binary.implicit Proto.Binary.bytesAsBytes 3 value.salt
+        ]
+
+
+
+-- BINARY DECODERS
+
+
+{-| Decodes a [`Blob`](#Blob) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeBlobBytes : Blob -> Proto.Binary.Decoder Blob
+mergeBlobBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.bytesAsBytes
+                        (\v ->
+                            { value
+                                | digest = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | name = v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.field
+                        Proto.Binary.bytesAsBytes
+                        (\v ->
+                            { value
+                                | salt = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`Blob`](#Blob) from protobuf binary.
+-}
+decodeBlobBytes : Proto.Binary.Decoder Blob
+decodeBlobBytes =
+    mergeBlobBytes defaultBlob

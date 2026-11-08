@@ -4,15 +4,18 @@
 
 module Catalog.V1 exposing (..)
 
+import Bytes.Encode
 import Catalog.V1.Entry
 import Catalog.V1.GetEntryRequest
 import Catalog.V1.Part
 import Json.Decode
 import Json.Encode
+import Proto.Binary
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
 import Proto.Query
+import Proto.Registry
 import Proto.Version
 
 
@@ -121,25 +124,25 @@ defaultGetEntryRequest =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Entry`](#Entry): its codecs, default and descriptor together.
+{-| The typed value of [`Entry`](#Entry): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageEntry : Proto.Message.Message Entry
 messageEntry =
-    Proto.Message.message encodeEntry decodeEntry defaultEntry Catalog.V1.Entry.descriptor
+    Proto.Message.init "catalog.v1.Entry" encodeEntry decodeEntry encodeEntryBytes decodeEntryBytes
 
 
-{-| The typed value of [`Part`](#Part): its codecs, default and descriptor together.
+{-| The typed value of [`Part`](#Part): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messagePart : Proto.Message.Message Part
 messagePart =
-    Proto.Message.message encodePart decodePart defaultPart Catalog.V1.Part.descriptor
+    Proto.Message.init "catalog.v1.Part" encodePart decodePart encodePartBytes decodePartBytes
 
 
-{-| The typed value of [`GetEntryRequest`](#GetEntryRequest): its codecs, default and descriptor together.
+{-| The typed value of [`GetEntryRequest`](#GetEntryRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageGetEntryRequest : Proto.Message.Message GetEntryRequest
 messageGetEntryRequest =
-    Proto.Message.message encodeGetEntryRequest decodeGetEntryRequest defaultGetEntryRequest Catalog.V1.GetEntryRequest.descriptor
+    Proto.Message.init "catalog.v1.GetEntryRequest" encodeGetEntryRequest decodeGetEntryRequest encodeGetEntryRequestBytes decodeGetEntryRequestBytes
 
 
 
@@ -159,6 +162,16 @@ descriptors =
             []
         )
         Proto.Descriptors.wellKnown
+
+
+{-| The codecs of this package's messages, for converting a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) that holds one between proto3 JSON and protobuf binary. It holds no other package's types and no well-known type: give a client the union of the registries its `Any`s need (`Proto.Registry.unionAll`, `Rpc.withRegistry`).
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.empty
+        |> Proto.Registry.register messageEntry
+        |> Proto.Registry.register messagePart
+        |> Proto.Registry.register messageGetEntryRequest
 
 
 
@@ -252,6 +265,209 @@ decodeGetEntryRequest =
         |> Proto.Json.field "name" "" Proto.Json.string
         |> Proto.Json.field "descriptor" "" Proto.Json.string
         |> Proto.Json.field "part" Nothing (Json.Decode.map Just decodePart)
+
+
+
+-- BINARY ENCODERS
+
+
+{-| Encodes an [`Entry`](#Entry) as protobuf binary.
+-}
+encodeEntryBytes : Entry -> Bytes.Encode.Encoder
+encodeEntryBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.name
+        , Proto.Binary.implicit Proto.Binary.string 2 value.descriptor
+        , Proto.Binary.implicit Proto.Binary.string 3 value.descriptors
+        ]
+
+
+{-| Encodes a [`Part`](#Part) as protobuf binary.
+-}
+encodePartBytes : Part -> Bytes.Encode.Encoder
+encodePartBytes value =
+    Bytes.Encode.sequence
+        [ encodePartKindBytes value.kind
+        ]
+
+
+{-| Encodes a [`PartKind`](#PartKind) as protobuf binary: its set member's field.
+-}
+encodePartKindBytes : PartKind -> Bytes.Encode.Encoder
+encodePartKindBytes value =
+    case value of
+        PartKindUnset ->
+            Bytes.Encode.sequence []
+
+        PartKindDescriptor member ->
+            Proto.Binary.present Proto.Binary.string 1 member
+
+        PartKindCount member ->
+            Proto.Binary.present Proto.Binary.int32 2 member
+
+
+{-| Encodes a [`GetEntryRequest`](#GetEntryRequest) as protobuf binary.
+-}
+encodeGetEntryRequestBytes : GetEntryRequest -> Bytes.Encode.Encoder
+encodeGetEntryRequestBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.name
+        , Proto.Binary.implicit Proto.Binary.string 2 value.descriptor
+        , Proto.Binary.optional (Proto.Binary.embedded encodePartBytes mergePartBytes defaultPart) 3 value.part
+        ]
+
+
+
+-- BINARY DECODERS
+
+
+{-| Decodes an [`Entry`](#Entry) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeEntryBytes : Entry -> Proto.Binary.Decoder Entry
+mergeEntryBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | name = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | descriptor = v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | descriptors = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes an [`Entry`](#Entry) from protobuf binary.
+-}
+decodeEntryBytes : Proto.Binary.Decoder Entry
+decodeEntryBytes =
+    mergeEntryBytes defaultEntry
+
+
+{-| Decodes a [`Part`](#Part) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergePartBytes : Part -> Proto.Binary.Decoder Part
+mergePartBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | kind = PartKindDescriptor v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.int32
+                        (\v ->
+                            { value
+                                | kind = PartKindCount v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`Part`](#Part) from protobuf binary.
+-}
+decodePartBytes : Proto.Binary.Decoder Part
+decodePartBytes =
+    mergePartBytes defaultPart
+
+
+{-| Decodes a [`GetEntryRequest`](#GetEntryRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeGetEntryRequestBytes : GetEntryRequest -> Proto.Binary.Decoder GetEntryRequest
+mergeGetEntryRequestBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | name = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | descriptor = v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodePartBytes mergePartBytes defaultPart)
+                        value.part
+                        (\v ->
+                            { value
+                                | part = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`GetEntryRequest`](#GetEntryRequest) from protobuf binary.
+-}
+decodeGetEntryRequestBytes : Proto.Binary.Decoder GetEntryRequest
+decodeGetEntryRequestBytes =
+    mergeGetEntryRequestBytes defaultGetEntryRequest
 
 
 

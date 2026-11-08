@@ -36,10 +36,10 @@ Codecs: JSON. Described by [`descriptorForward`](#descriptorForward).
 forward : Proto.Any.Any -> Rpc.Call Rpc.Json Proto.Any.Any Proto.Any.Any
 forward =
     Rpc.call
-        (Proto.Method.json "envelope.v1.Relay"
+        (Proto.Method.initJson "envelope.v1.Relay"
             "Forward"
-            Proto.Json.encodeAny
-            Proto.Json.any
+            Proto.Json.encodeAnyWith
+            Proto.Json.anyWith
         )
 
 
@@ -53,10 +53,10 @@ Codecs: JSON. Described by [`descriptorSend`](#descriptorSend).
 send : Envelope.V1.Envelope -> Rpc.Call Rpc.Json Envelope.V1.Envelope Envelope.V1.Envelope
 send =
     Rpc.call
-        (Proto.Method.json "envelope.v1.Relay"
+        (Proto.Method.initJson "envelope.v1.Relay"
             "Send"
-            Envelope.V1.encodeEnvelope
-            Envelope.V1.decodeEnvelope
+            Envelope.V1.encodeEnvelopeWith
+            Envelope.V1.decodeEnvelopeWith
         )
 
 

@@ -4,11 +4,14 @@
 
 module Zones.V1 exposing (..)
 
+import Bytes.Encode
 import Json.Decode
 import Json.Encode
+import Proto.Binary
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 import Proto.Version
 import Zones.V1.Zone
 import Zones.V1.ZoneRequest
@@ -72,18 +75,18 @@ defaultZone =
 -- TYPED VALUES
 
 
-{-| The typed value of [`ZoneRequest`](#ZoneRequest): its codecs, default and descriptor together.
+{-| The typed value of [`ZoneRequest`](#ZoneRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageZoneRequest : Proto.Message.Message ZoneRequest
 messageZoneRequest =
-    Proto.Message.message encodeZoneRequest decodeZoneRequest defaultZoneRequest Zones.V1.ZoneRequest.descriptor
+    Proto.Message.init "zones.v1.ZoneRequest" encodeZoneRequest decodeZoneRequest encodeZoneRequestBytes decodeZoneRequestBytes
 
 
-{-| The typed value of [`Zone`](#Zone): its codecs, default and descriptor together.
+{-| The typed value of [`Zone`](#Zone): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageZone : Proto.Message.Message Zone
 messageZone =
-    Proto.Message.message encodeZone decodeZone defaultZone Zones.V1.Zone.descriptor
+    Proto.Message.init "zones.v1.Zone" encodeZone decodeZone encodeZoneBytes decodeZoneBytes
 
 
 
@@ -102,6 +105,15 @@ descriptors =
             []
         )
         Proto.Descriptors.wellKnown
+
+
+{-| The codecs of this package's messages, for converting a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) that holds one between proto3 JSON and protobuf binary. It holds no other package's types and no well-known type: give a client the union of the registries its `Any`s need (`Proto.Registry.unionAll`, `Rpc.withRegistry`).
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.empty
+        |> Proto.Registry.register messageZoneRequest
+        |> Proto.Registry.register messageZone
 
 
 
@@ -146,3 +158,103 @@ decodeZone =
     Json.Decode.succeed Zone
         |> Proto.Json.field "name" "" Proto.Json.string
         |> Proto.Json.fieldEither "offsetSeconds" "offset_seconds" 0 Proto.Json.int64AsInt
+
+
+
+-- BINARY ENCODERS
+
+
+{-| Encodes a [`ZoneRequest`](#ZoneRequest) as protobuf binary.
+-}
+encodeZoneRequestBytes : ZoneRequest -> Bytes.Encode.Encoder
+encodeZoneRequestBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.name
+        ]
+
+
+{-| Encodes a [`Zone`](#Zone) as protobuf binary.
+-}
+encodeZoneBytes : Zone -> Bytes.Encode.Encoder
+encodeZoneBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.name
+        , Proto.Binary.implicit Proto.Binary.int64AsInt 2 value.offsetSeconds
+        ]
+
+
+
+-- BINARY DECODERS
+
+
+{-| Decodes a [`ZoneRequest`](#ZoneRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeZoneRequestBytes : ZoneRequest -> Proto.Binary.Decoder ZoneRequest
+mergeZoneRequestBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | name = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`ZoneRequest`](#ZoneRequest) from protobuf binary.
+-}
+decodeZoneRequestBytes : Proto.Binary.Decoder ZoneRequest
+decodeZoneRequestBytes =
+    mergeZoneRequestBytes defaultZoneRequest
+
+
+{-| Decodes a [`Zone`](#Zone) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeZoneBytes : Zone -> Proto.Binary.Decoder Zone
+mergeZoneBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | name = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.int64AsInt
+                        (\v ->
+                            { value
+                                | offsetSeconds = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`Zone`](#Zone) from protobuf binary.
+-}
+decodeZoneBytes : Proto.Binary.Decoder Zone
+decodeZoneBytes =
+    mergeZoneBytes defaultZone

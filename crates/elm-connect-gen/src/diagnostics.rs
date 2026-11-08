@@ -115,9 +115,10 @@ codes! {
     /// one and the message's descriptor) get the same value name in its
     /// descriptor module.
     ValueCollision => "naming::value_collision",
-    /// Under `codec=proto` or `codec=both`, a type named for another
-    /// with `Bytes` at the end has JSON codecs that take the names of the
-    /// other's binary codecs.
+    /// A type named for another with `Bytes` at the end has JSON codecs
+    /// that take the names of the other's binary codecs, or one named with
+    /// `With` at the end those of the other's codecs that take the
+    /// registry.
     CodecCollision => "naming::codec_collision",
     /// Two generated modules, each a package's, a service's or a type's
     /// descriptor module, get the same Elm module name.
@@ -706,9 +707,41 @@ impl Problem {
                 "A type's protobuf binary codecs are named for its JSON codecs with `Bytes` at \
                  the end (`encodeNoteBytes` beside `encodeNote`), so the JSON codecs of a type \
                  named for another with `Bytes` at the end (`NoteBytes` beside `Note`) take the \
-                 same names, and a module cannot define two values with one name. Enums keep \
-                 their JSON codecs under `codec=proto`; messages and oneofs have them under \
-                 `codec=both`. {}",
+                 same names, and a module cannot define two values with one name. Every type \
+                 has both codecs, whatever the `codec` option says. {}",
+                rename_escape(
+                    renamed,
+                    format!("Rename one of them in the proto, or rename one with {rename}.")
+                )
+            ),
+            vec![first, second],
+        )
+    }
+
+    /// A type of `package` named for a message or oneof
+    /// that reaches a `google.protobuf.Any` with `With` at the end, whose
+    /// JSON codecs take the names of the other's codecs that take the
+    /// registry.
+    pub fn registry_codec_collision(
+        package: &str,
+        values: &str,
+        first: Site,
+        second: Site,
+        rename: &str,
+        renamed: Option<&str>,
+    ) -> Self {
+        Problem::new(
+            Code::CodecCollision,
+            format!(
+                "The package `{package}` has two definitions whose codecs both become the Elm \
+                 {values}."
+            ),
+            format!(
+                "The JSON codecs of a message or oneof that holds a \
+                 `google.protobuf.Any`, directly or through its fields, take the registry and \
+                 are named with `With` at the end (`encodeNoteWith`), so the JSON codecs of a \
+                 type named for it with `With` at the end (`NoteWith` beside `Note`) take the \
+                 same names, and a module cannot define two values with one name. {}",
                 rename_escape(
                     renamed,
                     format!("Rename one of them in the proto, or rename one with {rename}.")
@@ -1297,9 +1330,9 @@ impl Problem {
         Problem::new(
             Code::UnknownOption,
             "The option `codec` is `binary`, which is now spelled `proto`.".to_owned(),
-            "`codec=proto` generates the protobuf binary codecs alone, as `codec=binary` \
-             did, and its calls are `Rpc.Call Rpc.Proto`. `codec` is `json`, `proto` or \
-             `both`; left out, it is `json`.",
+            "`codec=proto` wires the service methods with the protobuf binary codecs \
+             alone, as `codec=binary` did, and its calls are `Rpc.Call Rpc.Proto`. `codec` \
+             is `json`, `proto` or `both`; left out, it is `json`.",
             Vec::new(),
         )
     }

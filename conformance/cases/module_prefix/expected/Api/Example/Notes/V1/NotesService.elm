@@ -37,10 +37,10 @@ Codecs: JSON. Described by [`descriptorGetNote`](#descriptorGetNote).
 getNote : Api.Example.Notes.V1.GetNoteRequest -> Rpc.Call Rpc.Json Api.Example.Notes.V1.GetNoteRequest Api.Example.Notes.V1.Note
 getNote =
     Rpc.call
-        (Proto.Method.json "notes.v1.NotesService"
+        (Proto.Method.initJson "notes.v1.NotesService"
             "GetNote"
-            Api.Example.Notes.V1.encodeGetNoteRequest
-            Api.Example.Notes.V1.decodeNote
+            (\_ -> Ok << Api.Example.Notes.V1.encodeGetNoteRequest)
+            (\_ -> Api.Example.Notes.V1.decodeNote)
             |> Proto.Method.withRoutes [ routeGetNote0 ]
         )
 

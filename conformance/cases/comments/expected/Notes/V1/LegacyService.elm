@@ -41,10 +41,10 @@ Codecs: JSON. Described by [`descriptorClear`](#descriptorClear).
 clear : () -> Rpc.Call Rpc.Json () ()
 clear =
     Rpc.call
-        (Proto.Method.json "notes.v1.LegacyService"
+        (Proto.Method.initJson "notes.v1.LegacyService"
             "Clear"
-            Proto.Json.encodeEmpty
-            Proto.Json.empty
+            (\_ -> Ok << Proto.Json.encodeEmpty)
+            (\_ -> Proto.Json.empty)
             |> Proto.Method.withRoutes [ routeClear0 ]
         )
 

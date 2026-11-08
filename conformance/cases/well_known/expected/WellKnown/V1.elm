@@ -11,13 +11,16 @@ Value as a Maybe of JSON, the wrappers as a Maybe of their scalar, and
 the enum NullValue as () without presence.
 -}
 
+import Bytes.Encode
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
+import Proto.Binary
 import Proto.Descriptors
 import Proto.Duration exposing (Duration)
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 import Proto.Version
 import Time
 import WellKnown.V1.Event
@@ -178,11 +181,11 @@ defaultEvent =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Event`](#Event): its codecs, default and descriptor together.
+{-| The typed value of [`Event`](#Event): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageEvent : Proto.Message.Message Event
 messageEvent =
-    Proto.Message.message encodeEvent decodeEvent defaultEvent WellKnown.V1.Event.descriptor
+    Proto.Message.init "well_known.v1.Event" encodeEvent decodeEvent encodeEventBytes decodeEventBytes
 
 
 
@@ -200,6 +203,14 @@ descriptors =
             []
         )
         Proto.Descriptors.wellKnown
+
+
+{-| The codecs of this package's messages, for converting a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) that holds one between proto3 JSON and protobuf binary. It holds no other package's types and no well-known type: give a client the union of the registries its `Any`s need (`Proto.Registry.unionAll`, `Rpc.withRegistry`).
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.empty
+        |> Proto.Registry.register messageEvent
 
 
 
@@ -336,3 +347,551 @@ decodeEventWhen =
         , Proto.Json.member "dates" (Json.Decode.map EventWhenDates Proto.Json.listValue)
         , Proto.Json.nullValueMember "never" EventWhenNever
         ]
+
+
+
+-- BINARY ENCODERS
+
+
+{-| Encodes an [`Event`](#Event) as protobuf binary.
+-}
+encodeEventBytes : Event -> Bytes.Encode.Encoder
+encodeEventBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.optional Proto.Binary.timestamp 1 value.createdAt
+        , Proto.Binary.optional Proto.Binary.duration 2 value.timeout
+        , Proto.Binary.optional Proto.Binary.fieldMask 3 value.updateMask
+        , Proto.Binary.present Proto.Binary.empty 4 value.marker
+        , Proto.Binary.optional Proto.Binary.struct 5 value.metadata
+        , Proto.Binary.optional Proto.Binary.value 6 value.payload
+        , Proto.Binary.optional Proto.Binary.listValue 7 value.items
+        , Proto.Binary.optional Proto.Binary.doubleValue 8 value.ratio
+        , Proto.Binary.optional Proto.Binary.floatValue 9 value.weight
+        , Proto.Binary.optional Proto.Binary.int64Value 10 value.bigCount
+        , Proto.Binary.optional Proto.Binary.uint64Value 11 value.bigTotal
+        , Proto.Binary.optional Proto.Binary.int32Value 12 value.count
+        , Proto.Binary.optional Proto.Binary.uint32Value 13 value.total
+        , Proto.Binary.optional Proto.Binary.boolValue 14 value.enabled
+        , Proto.Binary.optional Proto.Binary.stringValue 15 value.nickname
+        , Proto.Binary.optional Proto.Binary.bytesValue 16 value.avatar
+        , Proto.Binary.list Proto.Binary.timestamp 17 value.history
+        , Proto.Binary.dict Proto.Binary.string Proto.Binary.duration 18 value.limits
+        , Proto.Binary.list Proto.Binary.value 19 value.values
+        , Proto.Binary.list Proto.Binary.int32Value 20 value.counts
+        , case value.when of
+            EventWhenAt member ->
+                Proto.Binary.present Proto.Binary.timestamp 21 member
+
+            EventWhenAfter member ->
+                Proto.Binary.present Proto.Binary.duration 22 member
+
+            EventWhenWhenever member ->
+                Proto.Binary.present Proto.Binary.value 23 member
+
+            _ ->
+                Bytes.Encode.sequence []
+        , Proto.Binary.present Proto.Binary.empty 24 value.acked
+        , Proto.Binary.list Proto.Binary.empty 25 value.pings
+        , Proto.Binary.dict Proto.Binary.string Proto.Binary.empty 26 value.seen
+        , Proto.Binary.list Proto.Binary.struct 27 value.records
+        , Proto.Binary.dict Proto.Binary.string Proto.Binary.listValue 28 value.columns
+        , case value.when of
+            EventWhenSchedule member ->
+                Proto.Binary.present Proto.Binary.struct 29 member
+
+            EventWhenDates member ->
+                Proto.Binary.present Proto.Binary.listValue 30 member
+
+            _ ->
+                Bytes.Encode.sequence []
+        , Proto.Binary.optional Proto.Binary.value 31 value.lastValue
+        , Proto.Binary.dict Proto.Binary.string Proto.Binary.value 32 value.settings
+        , Proto.Binary.implicit (Proto.Binary.enum (\_ -> 0) (\_ -> ())) 33 value.nothing
+        , Proto.Binary.implicit (Proto.Binary.enum (\_ -> 0) (\_ -> ())) 34 value.maybeNothing
+        , Proto.Binary.list (Proto.Binary.enum (\_ -> 0) (\_ -> ())) 35 value.nulls
+        , Proto.Binary.dict Proto.Binary.string (Proto.Binary.enum (\_ -> 0) (\_ -> ())) 36 value.nullMap
+        , case value.when of
+            EventWhenNever ->
+                Proto.Binary.present (Proto.Binary.enum (\_ -> 0) (\_ -> ())) 37 ()
+
+            _ ->
+                Bytes.Encode.sequence []
+        ]
+
+
+{-| Encodes an [`EventWhen`](#EventWhen) as protobuf binary: its set member's field.
+-}
+encodeEventWhenBytes : EventWhen -> Bytes.Encode.Encoder
+encodeEventWhenBytes value =
+    case value of
+        EventWhenUnset ->
+            Bytes.Encode.sequence []
+
+        EventWhenAt member ->
+            Proto.Binary.present Proto.Binary.timestamp 21 member
+
+        EventWhenAfter member ->
+            Proto.Binary.present Proto.Binary.duration 22 member
+
+        EventWhenWhenever member ->
+            Proto.Binary.present Proto.Binary.value 23 member
+
+        EventWhenSchedule member ->
+            Proto.Binary.present Proto.Binary.struct 29 member
+
+        EventWhenDates member ->
+            Proto.Binary.present Proto.Binary.listValue 30 member
+
+        EventWhenNever ->
+            Proto.Binary.present (Proto.Binary.enum (\_ -> 0) (\_ -> ())) 37 ()
+
+
+
+-- BINARY DECODERS
+
+
+{-| Decodes an [`Event`](#Event) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeEventBytes : Event -> Proto.Binary.Decoder Event
+mergeEventBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.timestamp
+                        (\v ->
+                            { value
+                                | createdAt = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.duration
+                        (\v ->
+                            { value
+                                | timeout = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.field
+                        Proto.Binary.fieldMask
+                        (\v ->
+                            { value
+                                | updateMask = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                4 ->
+                    Proto.Binary.field
+                        Proto.Binary.empty
+                        (\v ->
+                            { value
+                                | marker = v
+                            }
+                        )
+                        wire
+                        value
+
+                5 ->
+                    Proto.Binary.field
+                        Proto.Binary.struct
+                        (\v ->
+                            { value
+                                | metadata = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                6 ->
+                    Proto.Binary.field
+                        Proto.Binary.value
+                        (\v ->
+                            { value
+                                | payload = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                7 ->
+                    Proto.Binary.field
+                        Proto.Binary.listValue
+                        (\v ->
+                            { value
+                                | items = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                8 ->
+                    Proto.Binary.field
+                        Proto.Binary.doubleValue
+                        (\v ->
+                            { value
+                                | ratio = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                9 ->
+                    Proto.Binary.field
+                        Proto.Binary.floatValue
+                        (\v ->
+                            { value
+                                | weight = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                10 ->
+                    Proto.Binary.field
+                        Proto.Binary.int64Value
+                        (\v ->
+                            { value
+                                | bigCount = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                11 ->
+                    Proto.Binary.field
+                        Proto.Binary.uint64Value
+                        (\v ->
+                            { value
+                                | bigTotal = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                12 ->
+                    Proto.Binary.field
+                        Proto.Binary.int32Value
+                        (\v ->
+                            { value
+                                | count = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                13 ->
+                    Proto.Binary.field
+                        Proto.Binary.uint32Value
+                        (\v ->
+                            { value
+                                | total = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                14 ->
+                    Proto.Binary.field
+                        Proto.Binary.boolValue
+                        (\v ->
+                            { value
+                                | enabled = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                15 ->
+                    Proto.Binary.field
+                        Proto.Binary.stringValue
+                        (\v ->
+                            { value
+                                | nickname = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                16 ->
+                    Proto.Binary.field
+                        Proto.Binary.bytesValue
+                        (\v ->
+                            { value
+                                | avatar = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                17 ->
+                    Proto.Binary.repeated
+                        Proto.Binary.timestamp
+                        (\v ->
+                            { value
+                                | history = v
+                            }
+                        )
+                        value.history
+                        wire
+                        value
+
+                18 ->
+                    Proto.Binary.mapEntry
+                        Proto.Binary.string
+                        Proto.Binary.duration
+                        (\k v ->
+                            { value
+                                | limits = Dict.insert k v value.limits
+                            }
+                        )
+                        wire
+                        value
+
+                19 ->
+                    Proto.Binary.repeated
+                        Proto.Binary.value
+                        (\v ->
+                            { value
+                                | values = v
+                            }
+                        )
+                        value.values
+                        wire
+                        value
+
+                20 ->
+                    Proto.Binary.repeated
+                        Proto.Binary.int32Value
+                        (\v ->
+                            { value
+                                | counts = v
+                            }
+                        )
+                        value.counts
+                        wire
+                        value
+
+                21 ->
+                    Proto.Binary.field
+                        Proto.Binary.timestamp
+                        (\v ->
+                            { value
+                                | when = EventWhenAt v
+                            }
+                        )
+                        wire
+                        value
+
+                22 ->
+                    Proto.Binary.field
+                        Proto.Binary.duration
+                        (\v ->
+                            { value
+                                | when = EventWhenAfter v
+                            }
+                        )
+                        wire
+                        value
+
+                23 ->
+                    Proto.Binary.field
+                        Proto.Binary.value
+                        (\v ->
+                            { value
+                                | when = EventWhenWhenever v
+                            }
+                        )
+                        wire
+                        value
+
+                24 ->
+                    Proto.Binary.field
+                        Proto.Binary.empty
+                        (\v ->
+                            { value
+                                | acked = v
+                            }
+                        )
+                        wire
+                        value
+
+                25 ->
+                    Proto.Binary.repeated
+                        Proto.Binary.empty
+                        (\v ->
+                            { value
+                                | pings = v
+                            }
+                        )
+                        value.pings
+                        wire
+                        value
+
+                26 ->
+                    Proto.Binary.mapEntry
+                        Proto.Binary.string
+                        Proto.Binary.empty
+                        (\k v ->
+                            { value
+                                | seen = Dict.insert k v value.seen
+                            }
+                        )
+                        wire
+                        value
+
+                27 ->
+                    Proto.Binary.repeated
+                        Proto.Binary.struct
+                        (\v ->
+                            { value
+                                | records = v
+                            }
+                        )
+                        value.records
+                        wire
+                        value
+
+                28 ->
+                    Proto.Binary.mapEntry
+                        Proto.Binary.string
+                        Proto.Binary.listValue
+                        (\k v ->
+                            { value
+                                | columns = Dict.insert k v value.columns
+                            }
+                        )
+                        wire
+                        value
+
+                29 ->
+                    Proto.Binary.field
+                        Proto.Binary.struct
+                        (\v ->
+                            { value
+                                | when = EventWhenSchedule v
+                            }
+                        )
+                        wire
+                        value
+
+                30 ->
+                    Proto.Binary.field
+                        Proto.Binary.listValue
+                        (\v ->
+                            { value
+                                | when = EventWhenDates v
+                            }
+                        )
+                        wire
+                        value
+
+                31 ->
+                    Proto.Binary.field
+                        Proto.Binary.value
+                        (\v ->
+                            { value
+                                | lastValue = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                32 ->
+                    Proto.Binary.mapEntry
+                        Proto.Binary.string
+                        Proto.Binary.value
+                        (\k v ->
+                            { value
+                                | settings = Dict.insert k v value.settings
+                            }
+                        )
+                        wire
+                        value
+
+                33 ->
+                    Proto.Binary.field
+                        (Proto.Binary.enum (\_ -> 0) (\_ -> ()))
+                        (\v ->
+                            { value
+                                | nothing = v
+                            }
+                        )
+                        wire
+                        value
+
+                34 ->
+                    Proto.Binary.field
+                        (Proto.Binary.enum (\_ -> 0) (\_ -> ()))
+                        (\v ->
+                            { value
+                                | maybeNothing = v
+                            }
+                        )
+                        wire
+                        value
+
+                35 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.enum (\_ -> 0) (\_ -> ()))
+                        (\v ->
+                            { value
+                                | nulls = v
+                            }
+                        )
+                        value.nulls
+                        wire
+                        value
+
+                36 ->
+                    Proto.Binary.mapEntry
+                        Proto.Binary.string
+                        (Proto.Binary.enum (\_ -> 0) (\_ -> ()))
+                        (\k v ->
+                            { value
+                                | nullMap = Dict.insert k v value.nullMap
+                            }
+                        )
+                        wire
+                        value
+
+                37 ->
+                    Proto.Binary.field
+                        (Proto.Binary.enum (\_ -> 0) (\_ -> ()))
+                        (\_ ->
+                            { value
+                                | when = EventWhenNever
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | history = List.reverse value.history
+                , values = List.reverse value.values
+                , counts = List.reverse value.counts
+                , pings = List.reverse value.pings
+                , records = List.reverse value.records
+                , nulls = List.reverse value.nulls
+            }
+        )
+
+
+{-| Decodes an [`Event`](#Event) from protobuf binary.
+-}
+decodeEventBytes : Proto.Binary.Decoder Event
+decodeEventBytes =
+    mergeEventBytes defaultEvent

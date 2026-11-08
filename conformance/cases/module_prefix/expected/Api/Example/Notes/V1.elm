@@ -13,11 +13,14 @@ the prefixed names; the runtime's modules are not prefixed.
 import Api.Example.Notes.V1.GetNoteRequest
 import Api.Example.Notes.V1.Note
 import Api.Example.People
+import Bytes.Encode
 import Json.Decode
 import Json.Encode
+import Proto.Binary
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 import Proto.Version
 
 
@@ -82,18 +85,18 @@ defaultGetNoteRequest =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Note`](#Note): its codecs, default and descriptor together.
+{-| The typed value of [`Note`](#Note): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageNote : Proto.Message.Message Note
 messageNote =
-    Proto.Message.message encodeNote decodeNote defaultNote Api.Example.Notes.V1.Note.descriptor
+    Proto.Message.init "notes.v1.Note" encodeNote decodeNote encodeNoteBytes decodeNoteBytes
 
 
-{-| The typed value of [`GetNoteRequest`](#GetNoteRequest): its codecs, default and descriptor together.
+{-| The typed value of [`GetNoteRequest`](#GetNoteRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageGetNoteRequest : Proto.Message.Message GetNoteRequest
 messageGetNoteRequest =
-    Proto.Message.message encodeGetNoteRequest decodeGetNoteRequest defaultGetNoteRequest Api.Example.Notes.V1.GetNoteRequest.descriptor
+    Proto.Message.init "notes.v1.GetNoteRequest" encodeGetNoteRequest decodeGetNoteRequest encodeGetNoteRequestBytes decodeGetNoteRequestBytes
 
 
 
@@ -112,6 +115,15 @@ descriptors =
             []
         )
         (Proto.Descriptors.union Api.Example.People.descriptors Proto.Descriptors.wellKnown)
+
+
+{-| The codecs of this package's messages, for converting a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) that holds one between proto3 JSON and protobuf binary. It holds no other package's types and no well-known type: give a client the union of the registries its `Any`s need (`Proto.Registry.unionAll`, `Rpc.withRegistry`).
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.empty
+        |> Proto.Registry.register messageNote
+        |> Proto.Registry.register messageGetNoteRequest
 
 
 
@@ -158,3 +170,116 @@ decodeGetNoteRequest : Json.Decode.Decoder GetNoteRequest
 decodeGetNoteRequest =
     Json.Decode.succeed GetNoteRequest
         |> Proto.Json.field "name" "" Proto.Json.string
+
+
+
+-- BINARY ENCODERS
+
+
+{-| Encodes a [`Note`](#Note) as protobuf binary.
+-}
+encodeNoteBytes : Note -> Bytes.Encode.Encoder
+encodeNoteBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.name
+        , Proto.Binary.optional (Proto.Binary.embedded Api.Example.People.encodeUserBytes Api.Example.People.mergeUserBytes Api.Example.People.defaultUser) 2 value.author
+        , Proto.Binary.implicit (Proto.Binary.enum Api.Example.People.encodeRoleBytes Api.Example.People.decodeRoleBytes) 3 value.requiredRole
+        ]
+
+
+{-| Encodes a [`GetNoteRequest`](#GetNoteRequest) as protobuf binary.
+-}
+encodeGetNoteRequestBytes : GetNoteRequest -> Bytes.Encode.Encoder
+encodeGetNoteRequestBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.name
+        ]
+
+
+
+-- BINARY DECODERS
+
+
+{-| Decodes a [`Note`](#Note) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeNoteBytes : Note -> Proto.Binary.Decoder Note
+mergeNoteBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | name = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded Api.Example.People.encodeUserBytes Api.Example.People.mergeUserBytes Api.Example.People.defaultUser)
+                        value.author
+                        (\v ->
+                            { value
+                                | author = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.field
+                        (Proto.Binary.enum Api.Example.People.encodeRoleBytes Api.Example.People.decodeRoleBytes)
+                        (\v ->
+                            { value
+                                | requiredRole = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`Note`](#Note) from protobuf binary.
+-}
+decodeNoteBytes : Proto.Binary.Decoder Note
+decodeNoteBytes =
+    mergeNoteBytes defaultNote
+
+
+{-| Decodes a [`GetNoteRequest`](#GetNoteRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeGetNoteRequestBytes : GetNoteRequest -> Proto.Binary.Decoder GetNoteRequest
+mergeGetNoteRequestBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | name = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`GetNoteRequest`](#GetNoteRequest) from protobuf binary.
+-}
+decodeGetNoteRequestBytes : Proto.Binary.Decoder GetNoteRequest
+decodeGetNoteRequestBytes =
+    mergeGetNoteRequestBytes defaultGetNoteRequest
