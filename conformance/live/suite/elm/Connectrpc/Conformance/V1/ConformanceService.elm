@@ -56,10 +56,10 @@ Codecs: JSON. Described by [`descriptorUnary`](#descriptorUnary).
 unary : Connectrpc.Conformance.V1.UnaryRequest -> Rpc.Call Rpc.Json Connectrpc.Conformance.V1.UnaryRequest Connectrpc.Conformance.V1.UnaryResponse
 unary =
     Rpc.call
-        (Proto.Method.json "connectrpc.conformance.v1.ConformanceService"
+        (Proto.Method.initJson "connectrpc.conformance.v1.ConformanceService"
             "Unary"
-            Connectrpc.Conformance.V1.encodeUnaryRequest
-            Connectrpc.Conformance.V1.decodeUnaryResponse
+            Connectrpc.Conformance.V1.encodeUnaryRequestWith
+            Connectrpc.Conformance.V1.decodeUnaryResponseWith
         )
 
 
@@ -76,10 +76,10 @@ Codecs: JSON. Described by [`descriptorUnimplemented`](#descriptorUnimplemented)
 unimplemented : Connectrpc.Conformance.V1.UnimplementedRequest -> Rpc.Call Rpc.Json Connectrpc.Conformance.V1.UnimplementedRequest Connectrpc.Conformance.V1.UnimplementedResponse
 unimplemented =
     Rpc.call
-        (Proto.Method.json "connectrpc.conformance.v1.ConformanceService"
+        (Proto.Method.initJson "connectrpc.conformance.v1.ConformanceService"
             "Unimplemented"
-            Connectrpc.Conformance.V1.encodeUnimplementedRequest
-            Connectrpc.Conformance.V1.decodeUnimplementedResponse
+            (\_ -> Ok << Connectrpc.Conformance.V1.encodeUnimplementedRequest)
+            (\_ -> Connectrpc.Conformance.V1.decodeUnimplementedResponse)
         )
 
 
@@ -97,10 +97,10 @@ Codecs: JSON. Described by [`descriptorIdempotentUnary`](#descriptorIdempotentUn
 idempotentUnary : Connectrpc.Conformance.V1.IdempotentUnaryRequest -> Rpc.Call Rpc.Json Connectrpc.Conformance.V1.IdempotentUnaryRequest Connectrpc.Conformance.V1.IdempotentUnaryResponse
 idempotentUnary =
     Rpc.call
-        (Proto.Method.json "connectrpc.conformance.v1.ConformanceService"
+        (Proto.Method.initJson "connectrpc.conformance.v1.ConformanceService"
             "IdempotentUnary"
-            Connectrpc.Conformance.V1.encodeIdempotentUnaryRequest
-            Connectrpc.Conformance.V1.decodeIdempotentUnaryResponse
+            Connectrpc.Conformance.V1.encodeIdempotentUnaryRequestWith
+            Connectrpc.Conformance.V1.decodeIdempotentUnaryResponseWith
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
         )
 

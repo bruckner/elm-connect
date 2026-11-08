@@ -31,7 +31,7 @@ resolves kind =
             Descriptors.message name Descriptors.wellKnown /= Nothing
 
         KindEnum descriptor ->
-            Descriptors.enum (Enum.typeName descriptor) Descriptors.wellKnown /= Nothing
+            Descriptors.enum (Enum.fullName descriptor) Descriptors.wellKnown /= Nothing
 
         KindScalar _ ->
             True
@@ -46,8 +46,8 @@ suite =
                     descriptors =
                         Descriptors.fromDescriptors [ note "title" ] [ visibility ]
                 in
-                ( Descriptors.message "notes.v1.Note" descriptors |> Maybe.map Message.typeName
-                , Descriptors.enum "notes.v1.Visibility" descriptors |> Maybe.map Enum.typeName
+                ( Descriptors.message "notes.v1.Note" descriptors |> Maybe.map Message.fullName
+                , Descriptors.enum "notes.v1.Visibility" descriptors |> Maybe.map Enum.fullName
                 , ( Descriptors.message "notes.v1.Visibility" descriptors, Descriptors.enum "notes.v1.Note" descriptors )
                 )
                     |> Expect.equal ( Just "notes.v1.Note", Just "notes.v1.Visibility", ( Nothing, Nothing ) )
@@ -78,7 +78,7 @@ suite =
         , test "the well-known types" <|
             \_ ->
                 Descriptors.messages Descriptors.wellKnown
-                    |> List.map Message.typeName
+                    |> List.map Message.fullName
                     |> Expect.equal
                         [ "google.protobuf.Any"
                         , "google.protobuf.BoolValue"

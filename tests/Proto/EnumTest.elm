@@ -60,7 +60,7 @@ suite =
     describe "Proto.Enum"
         [ test "the type name is the descriptor's" <|
             \_ ->
-                Enum.typeName (Enum.toDescriptor enumPriority)
+                Enum.fullName (Enum.toDescriptor enumPriority)
                     |> Expect.equal "t.v1.Priority"
         , test "a value's name is the one its encoder writes, its number the one declared for it" <|
             \_ ->
@@ -88,7 +88,7 @@ suite =
                             , EnumValue.descriptor "LEVEL_URGENT" 1 |> EnumValue.withDeprecated
                             ]
                 in
-                ( Enum.typeName level
+                ( Enum.fullName level
                 , Enum.values level |> List.map (\v -> ( EnumValue.name v, EnumValue.number v, EnumValue.deprecated v ))
                 )
                     |> Expect.equal

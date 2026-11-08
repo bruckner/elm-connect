@@ -4,60 +4,64 @@ import Dict
 import Expect
 import Json.Decode
 import Json.Encode
+import Proto.Any as Any
+import Proto.Descriptors as Descriptors
 import Proto.Duration as Duration
 import Proto.Enum as Enum
 import Proto.Field as Field exposing (Cardinality(..), Kind(..), Scalar(..))
+import Proto.Json
 import Proto.Message as Message exposing (Message)
+import Proto.Registry as Registry
 import Proto.WellKnown as WellKnown
 import Test exposing (Test, describe, test)
 import Time
 
 
-{-| The type name of a well-known message, and whether its default survives a
-round trip through its JSON.
+{-| The type name of a well-known message, and whether a value survives
+packing and unpacking.
 -}
-check : Message a -> ( String, Bool )
-check message =
-    ( Message.typeName (Message.toDescriptor message)
-    , Json.Decode.decodeValue (Message.decoder message) (Message.encode message (Message.default message)) == Ok (Message.default message)
+check : Message a -> a -> ( String, Bool )
+check message value =
+    ( Message.typeName message
+    , Any.unpack message (Any.pack message value) == Just value
     )
 
 
-fieldsOf : Message a -> List Field.Descriptor
-fieldsOf =
-    Message.toDescriptor >> Message.fields
+fieldsOf : String -> List Field.Descriptor
+fieldsOf name =
+    Descriptors.message name Descriptors.wellKnown
+        |> Maybe.map Message.fields
+        |> Maybe.withDefault []
 
 
 suite : Test
 suite =
     describe "Proto.WellKnown"
-        [ test "each is the well-known type it says, and its default round-trips" <|
+        [ test "each is the well-known type it says, and a value survives an Any" <|
             \_ ->
-                [ check WellKnown.empty
-                , check WellKnown.timestamp
-                , check WellKnown.duration
-                , check WellKnown.fieldMask
-                , check WellKnown.any
-                , check WellKnown.struct
-                , check WellKnown.listValue
-                , check WellKnown.doubleValue
-                , check WellKnown.floatValue
-                , check WellKnown.int64Value
-                , check WellKnown.int64ValueAsInt
-                , check WellKnown.uint64Value
-                , check WellKnown.uint64ValueAsInt
-                , check WellKnown.int32Value
-                , check WellKnown.uint32Value
-                , check WellKnown.boolValue
-                , check WellKnown.stringValue
-                , check WellKnown.bytesValue
+                [ check WellKnown.empty ()
+                , check WellKnown.timestamp (Time.millisToPosix 1500)
+                , check WellKnown.duration (Duration.fromMilliseconds 1500)
+                , check WellKnown.fieldMask [ "a.b" ]
+                , check WellKnown.struct (Dict.fromList [ ( "k", Json.Encode.string "v" ) ])
+                , check WellKnown.listValue [ Json.Encode.string "v" ]
+                , check WellKnown.doubleValue 1.5
+                , check WellKnown.floatValue 1.5
+                , check WellKnown.int64Value "-7"
+                , check WellKnown.int64ValueAsInt -7
+                , check WellKnown.uint64Value "7"
+                , check WellKnown.uint64ValueAsInt 7
+                , check WellKnown.int32Value -7
+                , check WellKnown.uint32Value 7
+                , check WellKnown.boolValue True
+                , check WellKnown.stringValue "hi"
+                , check WellKnown.bytesValue "aGk="
                 ]
                     |> Expect.equal
                         [ ( "google.protobuf.Empty", True )
                         , ( "google.protobuf.Timestamp", True )
                         , ( "google.protobuf.Duration", True )
                         , ( "google.protobuf.FieldMask", True )
-                        , ( "google.protobuf.Any", True )
                         , ( "google.protobuf.Struct", True )
                         , ( "google.protobuf.ListValue", True )
                         , ( "google.protobuf.DoubleValue", True )
@@ -72,57 +76,53 @@ suite =
                         , ( "google.protobuf.StringValue", True )
                         , ( "google.protobuf.BytesValue", True )
                         ]
+        , test "Value, and Any inside Any" <|
+            \_ ->
+                ( Message.typeName WellKnown.value
+                , Any.unpack WellKnown.value (Any.pack WellKnown.value Json.Encode.null) |> Maybe.map (Json.Encode.encode 0)
+                , Any.pack WellKnown.any (Any.pack WellKnown.boolValue True)
+                    |> Any.unpack WellKnown.any
+                    |> Maybe.andThen (Any.unpack WellKnown.boolValue)
+                )
+                    |> Expect.equal ( "google.protobuf.Value", Just "null", Just True )
         , test "FloatValue reads only a float's range, DoubleValue a double's" <|
             \_ ->
-                ( Json.Decode.decodeString (Message.decoder WellKnown.floatValue) "1e300" |> Result.toMaybe
-                , Json.Decode.decodeString (Message.decoder WellKnown.doubleValue) "1e300" |> Result.toMaybe
+                let
+                    holding name =
+                        Json.Decode.decodeString Json.Decode.value ("{\"@type\":\"type.googleapis.com/google.protobuf." ++ name ++ "\",\"value\":1e300}")
+                            |> Result.andThen (Json.Decode.decodeValue (Proto.Json.anyWith Registry.wellKnown))
+                            |> Result.toMaybe
+                in
+                ( holding "FloatValue" |> Maybe.andThen (Any.unpack WellKnown.floatValue)
+                , holding "DoubleValue" |> Maybe.andThen (Any.unpack WellKnown.doubleValue)
                 )
                     |> Expect.equal ( Nothing, Just 1.0e300 )
         , test "NullValue's typed value: its descriptor, name and number" <|
             \_ ->
-                ( ( Enum.typeName (Enum.toDescriptor WellKnown.nullValue), Enum.toName WellKnown.nullValue () )
+                ( ( Enum.fullName (Enum.toDescriptor WellKnown.nullValue), Enum.toName WellKnown.nullValue () )
                 , ( Enum.toNumber WellKnown.nullValue (), Enum.fromName WellKnown.nullValue "NULL_VALUE", Enum.fromNumber WellKnown.nullValue 0 )
                 , Json.Encode.encode 0 (Enum.encode WellKnown.nullValue (Enum.default WellKnown.nullValue))
                 )
                     |> Expect.equal ( ( "google.protobuf.NullValue", "" ), ( 0, Just (), Just () ), "null" )
-        , test "StringValue refuses a surrogate without its pair" <|
-            \_ ->
-                [ "\"a\"", "\"\\udc00\"" ]
-                    |> List.map (Json.Decode.decodeString (Message.decoder WellKnown.stringValue) >> Result.toMaybe)
-                    |> Expect.equal [ Just "a", Nothing ]
-        , test "Value's default is null" <|
-            \_ ->
-                ( Message.typeName (Message.toDescriptor WellKnown.value), Json.Encode.encode 0 (Message.default WellKnown.value) )
-                    |> Expect.equal ( "google.protobuf.Value", "null" )
-        , test "the defaults are the zero values" <|
-            \_ ->
-                ( ( Time.posixToMillis (Message.default WellKnown.timestamp), Duration.toMilliseconds (Message.default WellKnown.duration) )
-                , ( Message.default WellKnown.int64Value, Dict.isEmpty (Message.default WellKnown.struct) )
-                )
-                    |> Expect.equal ( ( 0, 0 ), ( "0", True ) )
         , test "the wire forms are the well-known types' own" <|
             \_ ->
-                [ Message.encode WellKnown.empty ()
-                , Message.encode WellKnown.timestamp (Time.millisToPosix 1500)
-                , Message.encode WellKnown.duration (Duration.fromMilliseconds 1500)
-                , Message.encode WellKnown.fieldMask [ "display_name", "author.email" ]
-                , Message.encode WellKnown.int64ValueAsInt 7
+                [ Any.pack WellKnown.empty ()
+                , Any.pack WellKnown.timestamp (Time.millisToPosix 1500)
+                , Any.pack WellKnown.duration (Duration.fromMilliseconds 1500)
+                , Any.pack WellKnown.fieldMask [ "display_name", "author.email" ]
+                , Any.pack WellKnown.int64ValueAsInt 7
                 ]
-                    |> List.map (Json.Encode.encode 0)
+                    |> List.filterMap (Any.toJson Registry.wellKnown >> Result.toMaybe >> Maybe.map (Json.Encode.encode 0))
                     |> Expect.equal [ "{}", "\"1970-01-01T00:00:01.500Z\"", "\"1.500s\"", "\"displayName,author.email\"", "\"7\"" ]
         , test "the descriptors are protobuf's" <|
             \_ ->
-                ( fieldsOf WellKnown.timestamp |> List.map (\field -> ( Field.name field, Field.number field, Field.kind field ))
-                , fieldsOf WellKnown.fieldMask |> List.map (\field -> ( Field.name field, Field.cardinality field ))
-                , fieldsOf WellKnown.uint64ValueAsInt |> List.map Field.kind
+                ( fieldsOf "google.protobuf.Timestamp" |> List.map (\field -> ( Field.name field, Field.number field, Field.kind field ))
+                , fieldsOf "google.protobuf.FieldMask" |> List.map (\field -> ( Field.name field, Field.cardinality field ))
+                , fieldsOf "google.protobuf.UInt64Value" |> List.map Field.kind
                 )
                     |> Expect.equal
                         ( [ ( "seconds", 1, KindScalar ScalarInt64 ), ( "nanos", 2, KindScalar ScalarInt32 ) ]
                         , [ ( "paths", CardinalityRepeated ) ]
                         , [ KindScalar ScalarUint64 ]
                         )
-        , test "a type URL names the type" <|
-            \_ ->
-                Message.typeUrl (Message.toDescriptor WellKnown.duration)
-                    |> Expect.equal "type.googleapis.com/google.protobuf.Duration"
         ]

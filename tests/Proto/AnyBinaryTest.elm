@@ -1,6 +1,5 @@
 module Proto.AnyBinaryTest exposing (suite)
 
-import Bytes.Decode
 import Bytes.Encode
 import Expect
 import Json.Decode
@@ -11,20 +10,8 @@ import Proto.Bytes
 import Proto.Json
 import Proto.Message as Message exposing (Message)
 import Proto.Registry as Registry exposing (Registry)
+import Proto.WellKnown as WellKnown
 import Test exposing (Test, describe, test)
-
-
-descriptor : Message.Descriptor
-descriptor =
-    Message.descriptor "notes.v1.Title" []
-
-
-jsonOnly : Message String
-jsonOnly =
-    Message.message (\t -> Json.Encode.object [ ( "title", Json.Encode.string t ) ])
-        (Json.Decode.field "title" Json.Decode.string)
-        ""
-        descriptor
 
 
 decodeTitleBytes : Proto.Binary.Decoder String
@@ -47,18 +34,31 @@ encodeTitleBytes t =
     Bytes.Encode.sequence [ Proto.Binary.implicit Proto.Binary.string 1 t ]
 
 
-withBinary : Message String
-withBinary =
-    jsonOnly
-        |> Message.withBinary encodeTitleBytes decodeTitleBytes
+encodeTitle : String -> Json.Encode.Value
+encodeTitle t =
+    Json.Encode.object [ ( "title", Json.Encode.string t ) ]
 
 
-{-| A message with binary codecs alone, as generated code under `codec=proto`
-writes it.
+decodeTitle : Json.Decode.Decoder String
+decodeTitle =
+    Json.Decode.field "title" Json.Decode.string
+
+
+{-| A message as generated code gives one.
 -}
-binaryOnly : Message String
-binaryOnly =
-    Message.messageBinary encodeTitleBytes decodeTitleBytes "" descriptor
+messageTitle : Message String
+messageTitle =
+    Message.init "notes.v1.Title" encodeTitle decodeTitle encodeTitleBytes decodeTitleBytes
+
+
+{-| The registry generated code gives a package of
+`notes.v1.Title`, with the well-known types.
+-}
+registry : Registry
+registry =
+    Registry.empty
+        |> Registry.register messageTitle
+        |> Registry.union Registry.wellKnown
 
 
 {-| An `Any` written as binary and read back.
@@ -73,136 +73,87 @@ base64 any =
     Proto.Bytes.toBase64 (Proto.Binary.encode (Proto.Binary.messageEncoder Proto.Binary.any) any)
 
 
-{-| An `Any` written as binary with the registry's conversions.
+{-| An `Any` read from proto3 JSON through a registry.
 -}
-base64With : Registry -> Any -> String
-base64With reg any =
-    Proto.Bytes.toBase64 (Proto.Binary.encode (Proto.Binary.messageEncoder (Proto.Binary.anyWith reg)) any)
+readWith : Registry -> String -> Result String Any
+readWith reg text =
+    Json.Decode.decodeString (Proto.Json.anyWith reg) text
+        |> Result.mapError Json.Decode.errorToString
 
 
-{-| The binary registry generated code under `codec=both` gives a package
-of `notes.v1.Title` whose messages hold these well-known types.
--}
-registry : Registry
-registry =
-    Registry.empty
-        |> Registry.withBinary "notes.v1.Title" (Message.decoder jsonOnly) (\t -> Bytes.Encode.sequence [ Proto.Binary.implicit Proto.Binary.string 1 t ])
-        |> Registry.withBinary "google.protobuf.Timestamp" Proto.Json.timestamp (Proto.Binary.messageEncoder Proto.Binary.timestamp)
-        |> Registry.withBinary "google.protobuf.StringValue" Json.Decode.string (Proto.Binary.messageEncoder Proto.Binary.stringValue)
-        |> Registry.withBinary "google.protobuf.BoolValue" Json.Decode.bool (Proto.Binary.messageEncoder Proto.Binary.boolValue)
-        |> Registry.withBinary "google.protobuf.Any" Proto.Json.any (\any -> Proto.Binary.messageEncoder (Proto.Binary.anyWith registry) any)
-
-
-word : Maybe (Result Problem a) -> Maybe (Result String a)
-word =
-    Maybe.map
-        (Result.mapError
-            (\problem ->
-                case problem of
-                    Json _ ->
-                        "json"
-
-                    BinaryOnly ->
-                        "binary only"
-
-                    Binary ->
-                        "binary"
-            )
-        )
+writtenWith : Registry -> Any -> Result Problem String
+writtenWith reg any =
+    Proto.Json.encodeAnyWith reg any |> Result.map (Json.Encode.encode 0)
 
 
 suite : Test
 suite =
-    describe "Proto.Any with binary codecs"
-        [ packing
-        , test "a packed message with binary codecs survives a binary round trip" <|
+    describe "Proto.Any holding binary"
+        [ test "a packed message survives a binary round trip" <|
             \_ ->
-                Any.pack withBinary "hi"
+                Any.pack messageTitle "hi"
                     |> throughBinary
-                    |> Maybe.andThen (Any.unpack withBinary)
-                    |> word
-                    |> Expect.equal (Just (Ok "hi"))
-        , test "its JSON is as without binary codecs" <|
+                    |> Maybe.andThen (Any.unpack messageTitle)
+                    |> Expect.equal (Just "hi")
+        , test "bytes reads the message's binary" <|
             \_ ->
-                ( Json.Encode.encode 0 (Proto.Json.encodeAny (Any.pack withBinary "hi"))
-                , Any.unpack withBinary (Any.pack withBinary "hi") |> word
-                )
-                    |> Expect.equal ( Json.Encode.encode 0 (Proto.Json.encodeAny (Any.pack jsonOnly "hi")), Just (Ok "hi") )
-        , test "binary alone: BinaryOnly without binary codecs, Binary when it does not decode" <|
+                Any.pack messageTitle "hi"
+                    |> Any.bytes
+                    |> Proto.Bytes.toBase64
+                    |> Expect.equal "CgJoaQ=="
+        , test "binary that is not the message is InvalidProto, another type a TypeMismatch" <|
             \_ ->
-                [ Any.pack withBinary "hi" |> throughBinary |> Maybe.andThen (Any.unpack jsonOnly) |> word
-                , Proto.Bytes.fromBase64 "CiJ0eXBlLmdvb2dsZWFwaXMuY29tL25vdGVzLnYxLlRpdGxlEgIKBQ=="
+                ( Proto.Bytes.fromBase64 "CiJ0eXBlLmdvb2dsZWFwaXMuY29tL25vdGVzLnYxLlRpdGxlEgIKBQ=="
                     |> Maybe.andThen (Proto.Binary.decode (Proto.Binary.messageDecoder Proto.Binary.any))
-                    |> Maybe.andThen (Any.unpack withBinary)
-                    |> word
+                    |> Maybe.map (Any.tryUnpack messageTitle)
+                , Any.tryUnpack WellKnown.int32Value (Any.pack messageTitle "hi")
+                )
+                    |> Expect.equal ( Just (Err InvalidProto), Err (TypeMismatch "notes.v1.Title") )
+        , test "written as proto3 JSON through the registry's entry for its type" <|
+            \_ ->
+                [ writtenWith registry (Any.pack messageTitle "hi")
+                , writtenWith registry (Any.pack WellKnown.stringValue "hi")
+                , writtenWith registry (Any.pack WellKnown.any (Any.pack WellKnown.boolValue True))
                 ]
-                    |> Expect.equal [ Just (Err "binary only"), Just (Err "binary") ]
-        , test "a message held as JSON alone is written with its type URL alone" <|
+                    |> Expect.equal
+                        [ Ok """{"@type":"type.googleapis.com/notes.v1.Title","title":"hi"}"""
+                        , Ok """{"@type":"type.googleapis.com/google.protobuf.StringValue","value":"hi"}"""
+                        , Ok """{"@type":"type.googleapis.com/google.protobuf.Any","value":{"@type":"type.googleapis.com/google.protobuf.BoolValue","value":true}}"""
+                        ]
+        , test "a type the registry lacks is UnregisteredType naming its URL; inside another Any, UnwritableAny naming that one's" <|
             \_ ->
-                Any.pack jsonOnly "hi"
-                    |> throughBinary
-                    |> Maybe.andThen (Any.unpack withBinary)
-                    |> word
-                    |> Expect.equal (Just (Ok ""))
-        , test "anyWith writes a message held as JSON alone as its binary when the registry has its codecs" <|
-            \_ ->
-                [ base64With registry (Any.pack jsonOnly "hi")
-                , base64With Registry.empty (Any.pack jsonOnly "hi")
+                [ writtenWith Registry.wellKnown (Any.pack messageTitle "hi")
+                , writtenWith Registry.wellKnown (Any.pack WellKnown.any (Any.pack messageTitle "hi"))
                 ]
-                    |> Expect.equal [ base64 (Any.pack withBinary "hi"), base64 (Any.pack jsonOnly "hi") ]
-        , test "a well-known type read from proto3 JSON alone is written with its type URL alone by any" <|
-            \_ ->
-                """{"@type":"type.googleapis.com/google.protobuf.StringValue","value":"hi"}"""
-                    |> Json.Decode.decodeString Proto.Json.any
-                    |> Result.toMaybe
-                    |> Maybe.map base64
-                    |> Expect.equal (Just "Ci90eXBlLmdvb2dsZWFwaXMuY29tL2dvb2dsZS5wcm90b2J1Zi5TdHJpbmdWYWx1ZQ==")
-        , test "a well-known type read from proto3 JSON is written as its binary by anyWith its registry" <|
+                    |> Expect.equal [ Err (UnregisteredType "type.googleapis.com/notes.v1.Title"), Err (UnwritableAny "type.googleapis.com/google.protobuf.Any") ]
+        , test "read from proto3 JSON through the registry, as its binary" <|
             \_ ->
                 [ """{"@type":"type.googleapis.com/google.protobuf.Timestamp","value":"2026-01-02T03:04:05Z"}"""
                 , """{"@type":"type.googleapis.com/google.protobuf.StringValue","value":"hi"}"""
                 , """{"@type":"type.googleapis.com/google.protobuf.Any","value":{"@type":"type.googleapis.com/google.protobuf.BoolValue","value":true}}"""
+                , """{"@type":"type.googleapis.com/notes.v1.Title","title":"hi"}"""
                 ]
-                    |> List.map (Json.Decode.decodeString Proto.Json.any >> Result.toMaybe >> Maybe.map (base64With registry))
+                    |> List.map (readWith registry >> Result.map base64)
                     |> Expect.equal
-                        [ Just "Ci10eXBlLmdvb2dsZWFwaXMuY29tL2dvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASBgil69zKBg=="
-                        , Just "Ci90eXBlLmdvb2dsZWFwaXMuY29tL2dvb2dsZS5wcm90b2J1Zi5TdHJpbmdWYWx1ZRIECgJoaQ=="
-                        , Just "Cid0eXBlLmdvb2dsZWFwaXMuY29tL2dvb2dsZS5wcm90b2J1Zi5BbnkSMwotdHlwZS5nb29nbGVhcGlzLmNvbS9nb29nbGUucHJvdG9idWYuQm9vbFZhbHVlEgIIAQ=="
+                        [ Ok "Ci10eXBlLmdvb2dsZWFwaXMuY29tL2dvb2dsZS5wcm90b2J1Zi5UaW1lc3RhbXASBgil69zKBg=="
+                        , Ok "Ci90eXBlLmdvb2dsZWFwaXMuY29tL2dvb2dsZS5wcm90b2J1Zi5TdHJpbmdWYWx1ZRIECgJoaQ=="
+                        , Ok "Cid0eXBlLmdvb2dsZWFwaXMuY29tL2dvb2dsZS5wcm90b2J1Zi5BbnkSMwotdHlwZS5nb29nbGVhcGlzLmNvbS9nb29nbGUucHJvdG9idWYuQm9vbFZhbHVlEgIIAQ=="
+                        , Ok (base64 (Any.pack messageTitle "hi"))
                         ]
-        ]
-
-
-{-| What `pack` holds for each way a message is built: JSON alone, both, or
-binary alone.
--}
-packing : Test
-packing =
-    let
-        json any =
-            Json.Encode.encode 0 (Proto.Json.encodeAny any)
-    in
-    describe "pack holds the forms the message has codecs for"
-        [ test "a message with binary codecs alone packs its binary, which unpack reads back" <|
+        , test "reading a type the registry lacks, or JSON not its message, fails; {} is the empty Any" <|
             \_ ->
-                ( Any.unpack binaryOnly (Any.pack binaryOnly "hi") |> word
-                , Any.pack binaryOnly "hi" |> throughBinary |> Maybe.andThen (Any.unpack binaryOnly) |> word
+                ( ( readWith Registry.wellKnown """{"@type":"type.googleapis.com/notes.v1.Title","title":"hi"}""" |> Result.toMaybe
+                  , readWith registry """{"@type":"type.googleapis.com/notes.v1.Title","title":7}""" |> Result.toMaybe
+                  )
+                , readWith registry "{}" |> Result.map (\any -> ( Any.typeUrl any, writtenWith registry any ))
                 )
-                    |> Expect.equal ( Just (Ok "hi"), Just (Ok "hi") )
-        , test "its JSON form is the binary-only one, the base64 of its binary, not a null message" <|
+                    |> Expect.equal ( ( Nothing, Nothing ), Ok ( "", Ok "{}" ) )
+        , test "toJson converts through the registry, UnregisteredType for a type it lacks" <|
             \_ ->
-                ( json (Any.pack binaryOnly "hi"), base64 (Any.pack binaryOnly "hi") )
-                    |> Expect.equal ( """{"type":"notes.v1.Title","value":"CgJoaQ=="}""", base64 (Any.pack withBinary "hi") )
-        , test "a message with JSON codecs alone packs its JSON alone" <|
-            \_ ->
-                ( json (Any.pack jsonOnly "hi"), Any.pack jsonOnly "hi" |> throughBinary |> Maybe.andThen (Any.unpack withBinary) |> word )
-                    |> Expect.equal ( """{"@type":"type.googleapis.com/notes.v1.Title","title":"hi"}""", Just (Ok "") )
-        , test "a message with both packs both: its JSON, and its binary" <|
-            \_ ->
-                ( json (Any.pack withBinary "hi"), Any.pack withBinary "hi" |> throughBinary |> Maybe.andThen (Any.unpack binaryOnly) |> word )
-                    |> Expect.equal ( """{"@type":"type.googleapis.com/notes.v1.Title","title":"hi"}""", Just (Ok "hi") )
-        , test "a binary-only payload is BinaryOnly to a message with JSON codecs alone" <|
-            \_ ->
-                Any.unpack jsonOnly (Any.pack binaryOnly "hi")
-                    |> word
-                    |> Expect.equal (Just (Err "binary only"))
+                ( Any.toJson registry (Any.pack messageTitle "hi")
+                    |> Result.toMaybe
+                    |> Maybe.andThen (Json.Decode.decodeValue decodeTitle >> Result.toMaybe)
+                , Any.toJson Registry.wellKnown (Any.pack messageTitle "hi")
+                )
+                    |> Expect.equal ( Just "hi", Err (Any.UnregisteredType "type.googleapis.com/notes.v1.Title") )
         ]

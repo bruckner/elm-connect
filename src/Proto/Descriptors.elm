@@ -52,8 +52,8 @@ the first is kept.
 fromDescriptors : List Message.Descriptor -> List Enum.Descriptor -> Descriptors
 fromDescriptors messageDescriptors enumDescriptors =
     Descriptors
-        { messages = keyed Message.typeName messageDescriptors
-        , enums = keyed Enum.typeName enumDescriptors
+        { messages = keyed Message.fullName messageDescriptors
+        , enums = keyed Enum.fullName enumDescriptors
         }
 
 
