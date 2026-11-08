@@ -1,7 +1,7 @@
 module Proto.Field exposing
-    ( Descriptor, descriptor, inOneof, withBehavior, withDeprecated
+    ( Descriptor, descriptor, inOneof, withBehavior, withDeprecated, withUnpacked
     , name, jsonName, number, cardinality, kind, oneof
-    , behavior, deprecated
+    , behavior, deprecated, unpacked
     , Cardinality(..), Kind(..), Scalar(..), Behavior(..)
     )
 
@@ -17,7 +17,7 @@ all four can be exposed with `(..)` beside each other and beside the other
 modules' unions: `CardinalityRequired` and `BehaviorRequired` mean different
 things.
 
-@docs Descriptor, descriptor, inOneof, withBehavior, withDeprecated
+@docs Descriptor, descriptor, inOneof, withBehavior, withDeprecated, withUnpacked
 
 
 # Reading
@@ -27,7 +27,7 @@ things.
 
 # Annotations
 
-@docs behavior, deprecated
+@docs behavior, deprecated, unpacked
 
 
 # Unions
@@ -52,6 +52,7 @@ type Descriptor
         , oneof : Maybe String
         , behavior : List Behavior
         , deprecated : Bool
+        , unpacked : Bool
         }
 
 
@@ -158,6 +159,7 @@ descriptor protoName json fieldNumber howMany valueKind =
         , oneof = Nothing
         , behavior = []
         , deprecated = False
+        , unpacked = False
         }
 
 
@@ -181,6 +183,14 @@ withBehavior annotations (Descriptor f) =
 withDeprecated : Descriptor -> Descriptor
 withDeprecated (Descriptor f) =
     Descriptor { f | deprecated = True }
+
+
+{-| The field as a repeated scalar or enum declared `[packed = false]`,
+whose elements protobuf binary writes one per field key.
+-}
+withUnpacked : Descriptor -> Descriptor
+withUnpacked (Descriptor f) =
+    Descriptor { f | unpacked = True }
 
 
 {-| Its proto name, such as `page_size`: the name a field mask's paths use.
@@ -239,3 +249,12 @@ behavior (Descriptor f) =
 deprecated : Descriptor -> Bool
 deprecated (Descriptor f) =
     f.deprecated
+
+
+{-| Whether it is a repeated scalar or enum declared `[packed = false]`:
+protobuf binary writes its elements one per field key rather than as one
+packed run.
+-}
+unpacked : Descriptor -> Bool
+unpacked (Descriptor f) =
+    f.unpacked

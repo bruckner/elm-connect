@@ -41,6 +41,8 @@ struct FieldValue<'m> {
     ty: &'m TypeRef,
     /// The proto name of the oneof it is a member of.
     oneof: Option<&'m str>,
+    /// Whether it is a repeated scalar or enum declared `[packed = false]`.
+    unpacked: bool,
     annotations: &'m Annotations,
     doc: &'m Doc,
 }
@@ -370,6 +372,9 @@ impl Emitter {
         if annotations.deprecated {
             built = pipe(built, self.reference((PROTO_FIELD, "withDeprecated")));
         }
+        if field.unpacked {
+            built = pipe(built, self.reference((PROTO_FIELD, "withUnpacked")));
+        }
         built
     }
 
@@ -495,6 +500,7 @@ fn field_values<'m>(shape: &MessageShape<'m>) -> Vec<FieldValue<'m>> {
                 cardinality: Some(field.cardinality),
                 ty: &field.ty,
                 oneof: None,
+                unpacked: field.unpacked,
                 annotations: &field.annotations,
                 doc: &field.doc,
             }),
@@ -508,6 +514,7 @@ fn field_values<'m>(shape: &MessageShape<'m>) -> Vec<FieldValue<'m>> {
                         cardinality: None,
                         ty: &variant.ty,
                         oneof: Some(&oneof.oneof.proto_name),
+                        unpacked: false,
                         annotations: &variant.annotations,
                         doc: &variant.doc,
                     });

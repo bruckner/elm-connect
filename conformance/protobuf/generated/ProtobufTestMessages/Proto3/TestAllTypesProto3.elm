@@ -618,6 +618,7 @@ packedNestedEnum =
 unpackedInt32 : Proto.Field.Descriptor
 unpackedInt32 =
     Proto.Field.descriptor "unpacked_int32" "unpackedInt32" 89 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarInt32)
+        |> Proto.Field.withUnpacked
 
 
 {-| `repeated int64 unpacked_int64 = 90 [packed = false];`
@@ -625,6 +626,7 @@ unpackedInt32 =
 unpackedInt64 : Proto.Field.Descriptor
 unpackedInt64 =
     Proto.Field.descriptor "unpacked_int64" "unpackedInt64" 90 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarInt64)
+        |> Proto.Field.withUnpacked
 
 
 {-| `repeated uint32 unpacked_uint32 = 91 [packed = false];`
@@ -632,6 +634,7 @@ unpackedInt64 =
 unpackedUint32 : Proto.Field.Descriptor
 unpackedUint32 =
     Proto.Field.descriptor "unpacked_uint32" "unpackedUint32" 91 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarUint32)
+        |> Proto.Field.withUnpacked
 
 
 {-| `repeated uint64 unpacked_uint64 = 92 [packed = false];`
@@ -639,6 +642,7 @@ unpackedUint32 =
 unpackedUint64 : Proto.Field.Descriptor
 unpackedUint64 =
     Proto.Field.descriptor "unpacked_uint64" "unpackedUint64" 92 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarUint64)
+        |> Proto.Field.withUnpacked
 
 
 {-| `repeated sint32 unpacked_sint32 = 93 [packed = false];`
@@ -646,6 +650,7 @@ unpackedUint64 =
 unpackedSint32 : Proto.Field.Descriptor
 unpackedSint32 =
     Proto.Field.descriptor "unpacked_sint32" "unpackedSint32" 93 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarSint32)
+        |> Proto.Field.withUnpacked
 
 
 {-| `repeated sint64 unpacked_sint64 = 94 [packed = false];`
@@ -653,6 +658,7 @@ unpackedSint32 =
 unpackedSint64 : Proto.Field.Descriptor
 unpackedSint64 =
     Proto.Field.descriptor "unpacked_sint64" "unpackedSint64" 94 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarSint64)
+        |> Proto.Field.withUnpacked
 
 
 {-| `repeated fixed32 unpacked_fixed32 = 95 [packed = false];`
@@ -660,6 +666,7 @@ unpackedSint64 =
 unpackedFixed32 : Proto.Field.Descriptor
 unpackedFixed32 =
     Proto.Field.descriptor "unpacked_fixed32" "unpackedFixed32" 95 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarFixed32)
+        |> Proto.Field.withUnpacked
 
 
 {-| `repeated fixed64 unpacked_fixed64 = 96 [packed = false];`
@@ -667,6 +674,7 @@ unpackedFixed32 =
 unpackedFixed64 : Proto.Field.Descriptor
 unpackedFixed64 =
     Proto.Field.descriptor "unpacked_fixed64" "unpackedFixed64" 96 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarFixed64)
+        |> Proto.Field.withUnpacked
 
 
 {-| `repeated sfixed32 unpacked_sfixed32 = 97 [packed = false];`
@@ -674,6 +682,7 @@ unpackedFixed64 =
 unpackedSfixed32 : Proto.Field.Descriptor
 unpackedSfixed32 =
     Proto.Field.descriptor "unpacked_sfixed32" "unpackedSfixed32" 97 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarSfixed32)
+        |> Proto.Field.withUnpacked
 
 
 {-| `repeated sfixed64 unpacked_sfixed64 = 98 [packed = false];`
@@ -681,6 +690,7 @@ unpackedSfixed32 =
 unpackedSfixed64 : Proto.Field.Descriptor
 unpackedSfixed64 =
     Proto.Field.descriptor "unpacked_sfixed64" "unpackedSfixed64" 98 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarSfixed64)
+        |> Proto.Field.withUnpacked
 
 
 {-| `repeated float unpacked_float = 99 [packed = false];`
@@ -688,6 +698,7 @@ unpackedSfixed64 =
 unpackedFloat : Proto.Field.Descriptor
 unpackedFloat =
     Proto.Field.descriptor "unpacked_float" "unpackedFloat" 99 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarFloat)
+        |> Proto.Field.withUnpacked
 
 
 {-| `repeated double unpacked_double = 100 [packed = false];`
@@ -695,6 +706,7 @@ unpackedFloat =
 unpackedDouble : Proto.Field.Descriptor
 unpackedDouble =
     Proto.Field.descriptor "unpacked_double" "unpackedDouble" 100 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarDouble)
+        |> Proto.Field.withUnpacked
 
 
 {-| `repeated bool unpacked_bool = 101 [packed = false];`
@@ -702,6 +714,7 @@ unpackedDouble =
 unpackedBool : Proto.Field.Descriptor
 unpackedBool =
     Proto.Field.descriptor "unpacked_bool" "unpackedBool" 101 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarBool)
+        |> Proto.Field.withUnpacked
 
 
 {-| `repeated protobuf_test_messages.proto3.TestAllTypesProto3.NestedEnum unpacked_nested_enum = 102 [packed = false];`
@@ -709,6 +722,7 @@ unpackedBool =
 unpackedNestedEnum : Proto.Field.Descriptor
 unpackedNestedEnum =
     Proto.Field.descriptor "unpacked_nested_enum" "unpackedNestedEnum" 102 Proto.Field.CardinalityRepeated (Proto.Field.KindEnum ProtobufTestMessages.Proto3.TestAllTypesProto3NestedEnum.descriptor)
+        |> Proto.Field.withUnpacked
 
 
 {-| Map

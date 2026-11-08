@@ -87,3 +87,4 @@ reversal =
 marks : Proto.Field.Descriptor
 marks =
     Proto.Field.descriptor "marks" "marks" 7 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarInt32)
+        |> Proto.Field.withUnpacked
