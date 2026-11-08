@@ -185,6 +185,7 @@ attempts (Internal.Trace t) =
         "headers": {"content-type": "application/json"},
         "trailers": {},
         "code": "ok",
+        "detailProblems": [],
         "duration": 12,
         "attempts": 1
     }
@@ -193,7 +194,11 @@ attempts (Internal.Trace t) =
 [`Rpc.Call.toJson`](Rpc-Call#toJson) gives a call. The request's headers are pairs, in order, since a name may repeat; the
 answer's are an object. `code` is the outcome as Connect spells it
 (`"not_found"`), `"ok"` on success; `duration` and the request's `timeout`
-are in milliseconds; `binding`, `httpStatus`, the body and the timeout are
+are in milliseconds; `detailProblems` names, one string each, the
+[`DetailProblem`](Rpc-Error#DetailProblem)s of the status the call ended
+with, such as `unregistered type "type.googleapis.com/google.rpc.ErrorInfo"`
+(`[]` when every detail was read, or there was no status); `binding`,
+`httpStatus`, the body and the timeout are
 `null` when absent. A request body of protobuf binary
 (a client speaking [`Rpc.Proto`](Rpc#Proto)) is `null` as `body` and is
 given as base64 under one more key, `bodyBase64`.
@@ -234,6 +239,7 @@ toJson (Internal.Trace t) =
         , ( "headers", Encode.dict identity Encode.string t.headers )
         , ( "trailers", Encode.dict identity Encode.string t.trailers )
         , ( "code", Encode.string (Maybe.map Code.toString t.code |> Maybe.withDefault "ok") )
+        , ( "detailProblems", Encode.list Encode.string t.detailProblems )
         , ( "duration", Encode.float t.duration )
         , ( "attempts", Encode.int t.attempts )
         ]
@@ -244,12 +250,14 @@ maybe encode value =
     Maybe.map encode value |> Maybe.withDefault Encode.null
 
 
-{-| One line for a log: the method, the protocol, how the call ended, the
-last answer's HTTP status, the attempts and the duration in whole
-milliseconds.
+{-| One line for a log: the method, the protocol, how the call ended (with
+how many of its status's details could not be read, when any could not;
+[`toJson`](#toJson) says why), the last answer's HTTP status, the attempts
+and the duration in whole milliseconds.
 
     notes.v1.NotesService/GetNote over connect: ok, HTTP 200, 1 attempt, 12 ms
     notes.v1.NotesService/ListNotes over transcode (binding 1): unavailable, no answer, 3 attempts, 610 ms
+    notes.v1.NotesService/GetNote over transcode: not_found (1 detail unread), HTTP 404, 1 attempt, 9 ms
 
 It leaves out the request, whose URL and body hold the request message and
 whose headers may hold credentials.
@@ -271,6 +279,16 @@ toString (Internal.Trace t) =
            )
         ++ ": "
         ++ (Maybe.map Code.toString t.code |> Maybe.withDefault "ok")
+        ++ (case List.length t.detailProblems of
+                0 ->
+                    ""
+
+                1 ->
+                    " (1 detail unread)"
+
+                unread ->
+                    " (" ++ String.fromInt unread ++ " details unread)"
+           )
         ++ ", "
         ++ (case t.httpStatus of
                 Just status ->
