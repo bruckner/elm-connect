@@ -1,10 +1,13 @@
-module Proto.Internal.Any exposing (Any(..), Payload(..), base64Of, empty, nameOf)
+module Proto.Internal.Any exposing (Any(..), Payload(..), bytesOf, empty, nameOf, sameBytes)
 
 {-| The `Any` type, defined here so that `Rpc` can build one from an error
 detail, which `Proto.Any` exposes only opaquely.
 -}
 
+import Bytes exposing (Bytes)
+import Bytes.Decode
 import Json.Encode exposing (Value)
+import Proto.Bytes
 
 
 {-| A type URL and the packed message.
@@ -13,17 +16,15 @@ type Any
     = Any String Payload
 
 
-{-| The packed message: its protobuf binary, as base64, alone or with the
-message's proto3 JSON beside it, the JSON it was read from or packed with;
-or that JSON alone, when a lenient registry read it without an entry for
-its type. The binary is held as text, not `Bytes`, so that `==` compares two
-`Any`s by their content. `==` compares the JSON too, so an `Any` read from
-binary and the same one read from JSON differ; `Proto.Any.equal` compares
-the binary alone.
+{-| The packed message: its protobuf binary, alone or with the message's
+proto3 JSON beside it, the JSON it was read from or packed with; or that
+JSON alone, when a lenient registry read it without an entry for its type.
+Elm's `==` finds any two `Bytes` equal, so two `Any`s of one type URL that
+hold different binaries are `==`; `Proto.Any.equal` compares the binary.
 -}
 type Payload
-    = Binary String
-    | Both String Value
+    = Binary Bytes
+    | Both Bytes Value
     | Json Value
 
 
@@ -31,22 +32,46 @@ type Payload
 -}
 empty : Any
 empty =
-    Any "" (Binary "")
+    Any "" (Binary Proto.Bytes.empty)
 
 
-{-| The packed message's binary, as base64, unless it is held as JSON alone.
+{-| The packed message's binary, unless it is held as JSON alone.
 -}
-base64Of : Payload -> Maybe String
-base64Of payload =
+bytesOf : Payload -> Maybe Bytes
+bytesOf payload =
     case payload of
-        Binary base64 ->
-            Just base64
+        Binary binary ->
+            Just binary
 
-        Both base64 _ ->
-            Just base64
+        Both binary _ ->
+            Just binary
 
         Json _ ->
             Nothing
+
+
+{-| Whether two `Bytes` hold the same bytes, read four at a time.
+-}
+sameBytes : Bytes -> Bytes -> Bool
+sameBytes left right =
+    Bytes.width left
+        == Bytes.width right
+        && (Bytes.Decode.decode (words (Bytes.width left)) left == Bytes.Decode.decode (words (Bytes.width right)) right)
+
+
+words : Int -> Bytes.Decode.Decoder (List Int)
+words width =
+    Bytes.Decode.loop ( width, [] )
+        (\( remaining, acc ) ->
+            if remaining >= 4 then
+                Bytes.Decode.map (\w -> Bytes.Decode.Loop ( remaining - 4, w :: acc )) (Bytes.Decode.unsignedInt32 Bytes.BE)
+
+            else if remaining > 0 then
+                Bytes.Decode.map (\b -> Bytes.Decode.Loop ( remaining - 1, b :: acc )) Bytes.Decode.unsignedInt8
+
+            else
+                Bytes.Decode.succeed (Bytes.Decode.Done acc)
+        )
 
 
 {-| A message's full name from its type URL: the URL after its last `/`.

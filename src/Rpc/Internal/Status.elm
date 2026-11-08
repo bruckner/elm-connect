@@ -13,6 +13,7 @@ import Dict
 import Http
 import Json.Decode exposing (Decoder, Value)
 import Proto.Any exposing (Any)
+import Proto.Bytes
 import Proto.Internal.Any
 import Proto.Internal.Percent as Percent
 import Proto.Internal.Registry as InternalRegistry exposing (Registry)
@@ -154,9 +155,10 @@ connectBody =
 
 
 {-| A Connect error detail: the message's full name as `type` (a type URL
-when it holds a `/`), its protobuf binary as base64 `value`, which may be
-left out for an empty message, and optionally its proto3 JSON as `debug`,
-which the `Any` keeps beside the binary, as the server wrote it.
+when it holds a `/`), its protobuf binary as base64 `value` in either
+alphabet, with or without padding, which may be left out for an empty
+message, and optionally its proto3 JSON as `debug`, which the `Any` keeps
+beside the binary, as the server wrote it.
 -}
 connectDetail : Value -> Result Error.DetailProblem Any
 connectDetail detail =
@@ -173,17 +175,17 @@ connectDetail detail =
             case
                 Json.Decode.decodeValue (optional "value" Json.Decode.string "") detail
                     |> Result.toMaybe
-                    |> Maybe.andThen canonicalBase64
+                    |> Maybe.andThen Proto.Bytes.fromBase64
             of
-                Just base64 ->
+                Just binary ->
                     Ok
                         (Proto.Internal.Any.Any url
                             (case Json.Decode.decodeValue (optional "debug" (Json.Decode.map Just Json.Decode.value) Nothing) detail of
                                 Ok (Just json) ->
-                                    Proto.Internal.Any.Both base64 json
+                                    Proto.Internal.Any.Both binary json
 
                                 _ ->
-                                    Proto.Internal.Any.Binary base64
+                                    Proto.Internal.Any.Binary binary
                             )
                         )
 
@@ -192,71 +194,6 @@ connectDetail detail =
 
         Err _ ->
             Err (Error.InvalidDetail Nothing "a Connect detail with no type")
-
-
-{-| Base64 text in the form an `Any` holds its binary in, the standard
-alphabet padded with `=`, from either alphabet with or without padding;
-`Nothing` for text that is not base64. It works on the text, without
-decoding it, so that reading an error reaches no bytes code.
--}
-canonicalBase64 : String -> Maybe String
-canonicalBase64 text =
-    let
-        body =
-            dropPadding text
-
-        partial =
-            modBy 4 (String.length body)
-
-        padding =
-            String.length text - String.length body
-
-        standard =
-            String.any (\char -> char == '+' || char == '/') body
-
-        urlSafe =
-            String.any (\char -> char == '-' || char == '_') body
-    in
-    if
-        not (String.all base64Char body)
-            || (partial == 1)
-            || (padding /= 0 && (partial == 0 || padding /= 4 - partial))
-            || (standard && urlSafe)
-    then
-        Nothing
-
-    else
-        Just (String.map standardChar body ++ String.repeat (modBy 4 (4 - partial)) "=")
-
-
-{-| A character of either base64 alphabet. `String.fromChar` keeps a lone
-surrogate, which `String.all` would read with its neighbour, from passing.
--}
-base64Char : Char -> Bool
-base64Char char =
-    String.length (String.fromChar char) == 1 && (Char.isAlphaNum char || String.contains (String.fromChar char) "+/-_")
-
-
-standardChar : Char -> Char
-standardChar char =
-    case char of
-        '-' ->
-            '+'
-
-        '_' ->
-            '/'
-
-        _ ->
-            char
-
-
-dropPadding : String -> String
-dropPadding text =
-    if String.endsWith "=" text then
-        dropPadding (String.dropRight 1 text)
-
-    else
-        text
 
 
 {-| An error with the details of a `google.rpc.Status` body read, through the

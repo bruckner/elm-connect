@@ -10,6 +10,7 @@ and no entry refers to a table of its own.
 
 -}
 
+import Bytes exposing (Bytes)
 import Dict exposing (Dict)
 import Json.Encode exposing (Value)
 
@@ -32,14 +33,12 @@ type Leniency
     | Lossless
 
 
-{-| A message's conversions: its binary, as the base64 text an `Any` holds,
-to its proto3 JSON, and back, the latter failing with the JSON decoder's
-error as text. They take and give the text, not `Bytes`, so that only a
-program that registers a message reaches elm/bytes through them.
+{-| A message's conversions: its binary, as an `Any` holds it, to its proto3
+JSON, and back, the latter failing with the JSON decoder's error as text.
 -}
 type alias Entry =
-    { toJson : Registry -> String -> Result Failure Value
-    , toBytes : Registry -> Value -> Result String String
+    { toJson : Registry -> Bytes -> Result Failure Value
+    , toBytes : Registry -> Value -> Result String Bytes
     }
 
 
@@ -51,18 +50,18 @@ type Failure
     | HoldsUnwritable
 
 
-{-| A message's proto3 JSON from its binary as base64, by full name;
-`Nothing` when the registry has no entry for it.
+{-| A message's proto3 JSON from its binary, by full name; `Nothing` when the
+registry has no entry for it.
 -}
-toJson : Registry -> String -> String -> Maybe (Result Failure Value)
-toJson ((Registry _ entries) as registry) name base64 =
-    Dict.get name entries |> Maybe.map (\entry -> entry.toJson registry base64)
+toJson : Registry -> String -> Bytes -> Maybe (Result Failure Value)
+toJson ((Registry _ entries) as registry) name binary =
+    Dict.get name entries |> Maybe.map (\entry -> entry.toJson registry binary)
 
 
-{-| A message's binary as base64 from its proto3 JSON, by full name;
-`Nothing` when the registry has no entry for it.
+{-| A message's binary from its proto3 JSON, by full name; `Nothing` when
+the registry has no entry for it.
 -}
-toBytes : Registry -> String -> Value -> Maybe (Result String String)
+toBytes : Registry -> String -> Value -> Maybe (Result String Bytes)
 toBytes ((Registry _ entries) as registry) name json =
     Dict.get name entries |> Maybe.map (\entry -> entry.toBytes registry json)
 

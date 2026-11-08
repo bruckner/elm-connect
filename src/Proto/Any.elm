@@ -57,7 +57,6 @@ import Bytes.Encode
 import Dict
 import Json.Decode
 import Json.Encode
-import Proto.Bytes
 import Proto.Descriptors as Descriptors exposing (Descriptors)
 import Proto.Internal.Any as Internal
 import Proto.Internal.Binary
@@ -71,10 +70,11 @@ one with [`pack`](#pack), or decode one, and read it with the functions here.
 
 An `Any` read from proto3 JSON, or packed, also keeps its message's JSON
 beside the binary, so that writing it as JSON again needs no conversion.
-`==` sees that JSON: an `Any` read from binary and the same one read from
-JSON, or two read from JSON written differently (one with its defaults),
-are not `==`. Compare two `Any`s with [`equal`](#equal), which reads the
-type URL and the binary alone.
+Do not compare `Any`s with `==`: it does not see the binary, which is
+`Bytes` (two `Any`s of one type URL holding different messages are `==`),
+and it does see that JSON (an `Any` read from binary and the same one read
+from JSON are not). Compare two `Any`s with [`equal`](#equal), which reads
+the type URL and the binary alone.
 
 An `Any` of a type the registry lacks, read through a
 [lenient](Proto-Registry#lenient) registry, holds its JSON alone, and no
@@ -131,13 +131,13 @@ messageNote note` has the type URL `example.com/types/notes.v1.Note`.
 packWith : String -> Message a -> a -> Any
 packWith prefix ((InternalMessage.Message _ codecs) as message) value =
     let
-        base64 () =
-            Proto.Bytes.toBase64 (Bytes.Encode.encode (codecs.encode value))
+        binary () =
+            Bytes.Encode.encode (codecs.encode value)
     in
     Internal.Any (prefixed prefix message)
         (case codecs.encodeJson (Registry.Registry Registry.Lossless Dict.empty) value of
             Just json ->
-                Internal.Both (base64 ()) json
+                Internal.Both (binary ()) json
 
             Nothing ->
                 case codecs.encodeJson (Registry.Registry Registry.Strict Dict.empty) value of
@@ -147,7 +147,7 @@ packWith prefix ((InternalMessage.Message _ codecs) as message) value =
                         Internal.Json json
 
                     Nothing ->
-                        Internal.Binary (base64 ())
+                        Internal.Binary (binary ())
         )
 
 
@@ -182,8 +182,7 @@ tryUnpack ((InternalMessage.Message _ codecs) as message) ((Internal.Any _ paylo
                     |> Result.mapError (\_ -> InvalidProto)
 
             _ ->
-                Internal.base64Of payload
-                    |> Maybe.andThen Proto.Bytes.fromBase64
+                Internal.bytesOf payload
                     |> Maybe.andThen (Proto.Internal.Binary.run codecs.decode)
                     |> Result.fromMaybe InvalidProto
 
@@ -224,15 +223,15 @@ type Problem
 -- READING
 
 
-{-| The packed message's protobuf binary: `Nothing` for an `Any` held as JSON
-alone, which a [lenient](Proto-Registry#lenient) registry reads, and which
-is written as protobuf binary as its type URL alone. `Just` an empty
-`Bytes` is an empty message.
+{-| The packed message's protobuf binary, as the `Any` holds it, with no
+conversion: `Nothing` for an `Any` held as JSON alone, which a
+[lenient](Proto-Registry#lenient) registry reads, and which is written as
+protobuf binary as its type URL alone. `Just` an empty `Bytes` is an empty
+message.
 -}
 bytes : Any -> Maybe Bytes
 bytes (Internal.Any _ payload) =
-    Internal.base64Of payload
-        |> Maybe.map (Proto.Bytes.fromBase64 >> Maybe.withDefault Proto.Bytes.empty)
+    Internal.bytesOf payload
 
 
 
@@ -255,7 +254,12 @@ equal (Internal.Any leftUrl left) (Internal.Any rightUrl right) =
                     Json.Encode.encode 0 leftJson == Json.Encode.encode 0 rightJson
 
                 _ ->
-                    Internal.base64Of left == Internal.base64Of right
+                    case ( Internal.bytesOf left, Internal.bytesOf right ) of
+                        ( Just leftBytes, Just rightBytes ) ->
+                            Internal.sameBytes leftBytes rightBytes
+
+                        _ ->
+                            False
            )
 
 
@@ -288,8 +292,8 @@ toJson registry ((Internal.Any url payload) as any) =
             else
                 Err (UnregisteredType url)
 
-        ( False, Internal.Binary base64 ) ->
-            case Registry.toJson registry (typeName any) base64 of
+        ( False, Internal.Binary binary ) ->
+            case Registry.toJson registry (typeName any) binary of
                 Just (Ok json) ->
                     Ok json
 

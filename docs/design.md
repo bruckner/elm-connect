@@ -1151,10 +1151,10 @@ In detail:
   protobuf-es, whatever codec the calls use. One type, no codec
   phantom: binary is the canonical form and proto3 JSON a projection
   through a registry (`Proto.Registry`, §3.9). It holds the binary as
-  base64 text, so that `==` compares two by content (Elm's `==` finds any
-  two `Bytes` equal), and beside it the message's JSON when it was read
-  from JSON or packed (§3.10), which `==` sees too; `equal` compares the
-  type URL and the binary alone. `pack` (prefix `type.googleapis.com/`) and
+  `Bytes`, which `==` does not see (Elm's `==` finds any two `Bytes`
+  equal), and beside it the message's JSON when it was read from JSON or
+  packed (§3.10), which `==` does see; `equal` compares the type URL and
+  the binary alone, and is the only comparison of two `Any`s. `pack` (prefix `type.googleapis.com/`) and
   `packWith` (another prefix) take the message's typed value (§3.9) and
   a value; `tryUnpack` gives the value or a `Problem`, `TypeMismatch`
   naming the type inside or `InvalidProto` for binary that is not the
@@ -1976,8 +1976,8 @@ registry =
   binary keeps none and converts as before, and so does one whose binary
   is replaced by a merge. `unpack` and `tryUnpack` read the binary
   whatever is kept, and binary writes ignore it. On this representation
-  the conversion is a small part of an `Any`'s cost (the base64 text and
-  elm/bytes are most of it), so the cache saves on what skips the
+  the conversion is a small part of an `Any`'s cost (elm/bytes is most
+  of it), so the cache saves on what skips the
   conversion entirely: writing an `Any` read from JSON, or packed, back
   as JSON (decisions.md: Any keeps the JSON it was read with). `==`
   sees the kept JSON, so an `Any` read from binary and the same one read

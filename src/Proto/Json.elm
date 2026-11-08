@@ -2205,8 +2205,8 @@ anyWith registry =
                 case parts of
                     Just ( url, message ) ->
                         case InternalRegistry.toBytes (InternalRegistry.strict registry) (InternalAny.nameOf url) message of
-                            Just (Ok base64) ->
-                                Json.Decode.succeed (InternalAny.Any url (InternalAny.Both base64 message))
+                            Just (Ok binary) ->
+                                Json.Decode.succeed (InternalAny.Any url (InternalAny.Both binary message))
 
                             Just (Err problem) ->
                                 if InternalRegistry.isLenient registry then

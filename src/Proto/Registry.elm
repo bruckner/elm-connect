@@ -57,7 +57,6 @@ as `Proto.Internal.Registry.Registry`, its name inside the package.
 import Bytes.Encode
 import Dict
 import Json.Decode
-import Proto.Bytes
 import Proto.Internal.Binary
 import Proto.Internal.Message as Message exposing (Message)
 import Proto.Internal.Registry as Internal exposing (Failure(..))
@@ -90,8 +89,8 @@ register (Message.Message name codecs) (Internal.Registry leniency entries) =
     let
         entry =
             { toJson =
-                \registry base64 ->
-                    case Proto.Bytes.fromBase64 base64 |> Maybe.andThen (Proto.Internal.Binary.run codecs.decode) of
+                \registry binary ->
+                    case Proto.Internal.Binary.run codecs.decode binary of
                         Just value ->
                             codecs.encodeJson registry value
                                 |> Result.fromMaybe HoldsUnwritable
@@ -101,7 +100,7 @@ register (Message.Message name codecs) (Internal.Registry leniency entries) =
             , toBytes =
                 \registry json ->
                     Json.Decode.decodeValue (codecs.decoder registry) json
-                        |> Result.map (codecs.encode >> Bytes.Encode.encode >> Proto.Bytes.toBase64)
+                        |> Result.map (codecs.encode >> Bytes.Encode.encode)
                         |> Result.mapError Json.Decode.errorToString
             }
     in
