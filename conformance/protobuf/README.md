@@ -31,9 +31,11 @@ request to `Testee.elm` over a port, which reads a
 `protobuf_test_messages.proto3.TestAllTypesProto3` from protobuf binary
 or proto3 JSON with the generated decoder and writes it back in the
 format asked for with the generated encoder, or answers that the input
-failed to parse. The messages are generated under `codec=both`, so an
-`Any` read from JSON is written to binary through the generated
-`binaryRegistry`.
+failed to parse. An `Any` holds its message's binary; its proto3 JSON
+is converted through the testee's registry, the generated package's
+`registry` and `Proto.Registry.wellKnown` joined explicitly (a generated
+registry holds its own package's messages alone), and one of a type it
+lacks fails to parse and to serialize.
 
 1,468 cases run (1,135 Required, 333 Recommended), counting those that
 must fail to parse or to serialize, by the formats of their request:

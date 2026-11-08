@@ -3,6 +3,7 @@
     "name": "envoy headers GetNote",
     "note": "Run against Envoy's listener with convert_grpc_status off (conformance/live/envoy/envoy.yaml); a success is as under the other.",
     "call": {
+      "config": { "registry": "build" },
       "service": "notes.v1.NotesService",
       "method": "GetNote",
       "protocol": "transcode",

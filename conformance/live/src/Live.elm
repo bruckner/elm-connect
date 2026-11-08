@@ -11,10 +11,13 @@ import Http
 import Json.Decode as Decode exposing (Decoder)
 import Json.Encode as Encode exposing (Value)
 import Live.Call exposing (Client(..), Entry, Envelope, Outcome, Protocol(..), Sending(..))
+import Live.Codec
 import Live.Conformance
 import Live.Notes
 import Live.Routes
 import Process
+import Proto.ErrorDetails
+import Proto.Registry
 import Rpc
 import Rpc.Client
 import Rpc.Code
@@ -254,7 +257,7 @@ oneOfNames what names =
 config : Protocol -> Decoder Client
 config t =
     Decode.map8
-        (\baseUrl headers timeout withCredentials useGet maxGetUrl ( readMaxBytes, writeMaxBytes, codec ) retry ->
+        (\baseUrl headers timeout withCredentials useGet maxGetUrl ( readMaxBytes, writeMaxBytes, ( codec, registry ) ) retry ->
             let
                 -- Let-bound, so each is taken at the codec of the client it builds.
                 limited protocol =
@@ -282,6 +285,7 @@ config t =
                                 identity
                            )
                         |> maybeApply Rpc.Client.withRetry retry
+                        |> Rpc.withRegistry registry
             in
             case ( t, codec ) of
                 ( Connect, "proto" ) ->
@@ -308,13 +312,28 @@ config t =
         (optional "withCredentials" Decode.bool False)
         (optional "useGet" Decode.bool False)
         (optional "maxGetUrl" (Decode.nullable Decode.int) Nothing)
-        (Decode.map3 (\a b c -> ( a, b, c ))
+        (Decode.map4 (\a b c d -> ( a, b, ( c, d ) ))
             (optional "readMaxBytes" (Decode.nullable Decode.int) Nothing)
             (optional "writeMaxBytes" (Decode.nullable Decode.int) Nothing)
             (optional "codec" (oneOfNames "codec" [ ( "json", "json" ), ( "proto", "proto" ) ]) "json")
+            (optional "registry" registryName Proto.Registry.empty)
         )
         (optional "retry" (Decode.nullable retryPolicy) Nothing)
         |> Decode.andThen identity
+
+
+{-| The client's registry as a case's config names it: `"empty"` (the
+default, as a client starts), `"errorDetails"` (`Proto.ErrorDetails.registry`
+alone) or `"build"` (the build's packages and the well-known types,
+`Live.Codec.registry`).
+-}
+registryName : Decoder Proto.Registry.Registry
+registryName =
+    oneOfNames "registry"
+        [ ( "empty", Proto.Registry.empty )
+        , ( "errorDetails", Proto.ErrorDetails.registry )
+        , ( "build", Live.Codec.registry )
+        ]
 
 
 maybeApply : (a -> b -> b) -> Maybe a -> b -> b

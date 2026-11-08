@@ -12,6 +12,8 @@ import Proto.Any
 packed : Proto.Any.Any
 packed =
     -- {"@type": "type.googleapis.com/notes.v1.Note", "title": "groceries"}
+    -- as proto3 JSON (Proto.Any.toJson, through a registry holding notes.v1.Note);
+    -- the Any itself holds the note's protobuf binary
     let
         note =
             Notes.V1.defaultNote
@@ -21,12 +23,8 @@ packed =
 
 title : Proto.Any.Any -> Maybe String
 title any =
-    case Proto.Any.unpack Notes.V1.messageNote any of
-        Just (Ok note) ->
-            Just note.title
-
-        _ ->
-            Nothing
+    Proto.Any.unpack Notes.V1.messageNote any
+        |> Maybe.map .title
 
 
 

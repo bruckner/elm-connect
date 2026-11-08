@@ -8,7 +8,6 @@ through it.
 
 import Api exposing (Shared)
 import Browser
-import Google.Rpc
 import Html exposing (Html, button, code, div, form, h1, h2, input, label, li, p, pre, section, text, textarea, ul)
 import Html.Attributes exposing (checked, class, name, placeholder, type_, value)
 import Html.Events exposing (onClick, onInput, onSubmit)
@@ -16,7 +15,9 @@ import Json.Encode
 import Notes.V1 exposing (Note)
 import Notes.V1.NotesService as Notes
 import Proto.Any
+import Proto.ErrorDetails
 import Proto.Json
+import Proto.Message
 import Rpc
 import Rpc.Body
 import Rpc.Code
@@ -352,12 +353,12 @@ viewError error =
                 , ul []
                     (List.map
                         (\violation -> li [] [ code [] [ text violation.field ], text (": " ++ violation.description) ])
-                        (Rpc.Error.details Google.Rpc.messageBadRequest error |> List.concatMap .fieldViolations)
+                        (unpacked Proto.ErrorDetails.badRequest status.details |> List.concatMap .fieldViolations)
                     )
                 , ul []
                     (List.map
                         (\info -> li [] [ text (info.reason ++ " from " ++ info.domain) ])
-                        (Rpc.Error.details Google.Rpc.messageErrorInfo error)
+                        (unpacked Proto.ErrorDetails.errorInfo status.details)
                     )
                 , div [] (List.map viewDetail status.details)
                 ]
@@ -382,9 +383,29 @@ viewError error =
             section [ class "error" ] [ p [] [ text (Rpc.Error.toString error) ] ]
 
 
-viewDetail : Proto.Any.Any -> Html msg
+{-| A status's details that were read and are of this type.
+-}
+unpacked : Proto.Message.Message a -> List (Result Rpc.Error.DetailProblem Proto.Any.Any) -> List a
+unpacked message details =
+    List.filterMap (Result.toMaybe >> Maybe.andThen (Proto.Any.unpack message)) details
+
+
+viewDetail : Result Rpc.Error.DetailProblem Proto.Any.Any -> Html msg
 viewDetail detail =
-    pre [] [ text (Json.Encode.encode 2 (Proto.Json.encodeAny detail)) ]
+    case detail of
+        Ok any ->
+            case Proto.Any.toJson Api.registry any of
+                Ok json ->
+                    pre [] [ text (Proto.Any.typeName any ++ " " ++ Json.Encode.encode 2 json) ]
+
+                Err _ ->
+                    p [] [ text (Proto.Any.typeName any ++ ", a type this page has no codecs for.") ]
+
+        Err (Rpc.Error.UnregisteredType url) ->
+            p [] [ text (url ++ ", a type this page has no codecs for.") ]
+
+        Err (Rpc.Error.InvalidDetail _ reason) ->
+            p [] [ text ("A detail that could not be read: " ++ reason) ]
 
 
 sourceToString : Rpc.Error.Source -> String

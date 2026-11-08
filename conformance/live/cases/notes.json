@@ -2,6 +2,7 @@
   {
     "name": "connect GetNote",
     "call": {
+      "config": { "registry": "build" },
       "service": "notes.v1.NotesService",
       "method": "GetNote",
       "protocol": "connect",
@@ -70,6 +71,7 @@
   {
     "name": "connect ListNotes",
     "call": {
+      "config": { "registry": "build" },
       "service": "notes.v1.NotesService",
       "method": "ListNotes",
       "protocol": "connect",
@@ -105,6 +107,7 @@
   {
     "name": "connect CreateNote",
     "call": {
+      "config": { "registry": "build" },
       "service": "notes.v1.NotesService",
       "method": "CreateNote",
       "protocol": "connect",
@@ -183,6 +186,7 @@
   {
     "name": "connect UpdateNote",
     "call": {
+      "config": { "registry": "build" },
       "service": "notes.v1.NotesService",
       "method": "UpdateNote",
       "protocol": "connect",
@@ -221,6 +225,7 @@
   {
     "name": "connect ArchiveNote",
     "call": {
+      "config": { "registry": "build" },
       "service": "notes.v1.NotesService",
       "method": "ArchiveNote",
       "protocol": "connect",
@@ -246,6 +251,7 @@
   {
     "name": "connect DeleteNote",
     "call": {
+      "config": { "registry": "build" },
       "service": "notes.v1.NotesService",
       "method": "DeleteNote",
       "protocol": "connect",
@@ -265,7 +271,9 @@
   },
   {
     "name": "connect NOT_FOUND with ErrorInfo",
+    "note": "With the empty registry: a Connect detail carries its message's binary, which reads into an Any with no table (the runner writes its JSON through its own).",
     "call": {
+      "config": { "registry": "empty" },
       "service": "notes.v1.NotesService",
       "method": "GetNote",
       "protocol": "connect",
@@ -368,6 +376,7 @@
         "name": "notes/welcome"
       },
       "config": {
+        "registry": "build",
         "useGet": true
       }
     },
@@ -458,6 +467,7 @@
         "name": "notes/welcome"
       },
       "config": {
+        "registry": "build",
         "useGet": true,
         "maxGetUrl": 40
       }
@@ -491,6 +501,7 @@
         "name": "notes/welcome"
       },
       "config": {
+        "registry": "build",
         "useGet": true,
         "headers": [
           [
@@ -894,6 +905,7 @@
         "name": "notes/welcome"
       },
       "config": {
+        "registry": "build",
         "useGet": true,
         "writeMaxBytes": 24
       }
@@ -1017,6 +1029,7 @@
   {
     "name": "connect Rpc.send",
     "call": {
+      "config": { "registry": "build" },
       "service": "notes.v1.NotesService",
       "method": "GetNote",
       "protocol": "connect",
@@ -1145,6 +1158,7 @@
         "name": "notes/welcome"
       },
       "config": {
+        "registry": "build",
         "headers": [
           [
             "Authorization",
@@ -1269,6 +1283,7 @@
   {
     "name": "transcode GetNote",
     "call": {
+      "config": { "registry": "build" },
       "service": "notes.v1.NotesService",
       "method": "GetNote",
       "protocol": "transcode",
@@ -1383,6 +1398,7 @@
   {
     "name": "transcode ListNotes",
     "call": {
+      "config": { "registry": "build" },
       "service": "notes.v1.NotesService",
       "method": "ListNotes",
       "protocol": "transcode",
@@ -1446,6 +1462,7 @@
   {
     "name": "transcode CreateNote",
     "call": {
+      "config": { "registry": "build" },
       "service": "notes.v1.NotesService",
       "method": "CreateNote",
       "protocol": "transcode",
@@ -1554,6 +1571,7 @@
   {
     "name": "transcode UpdateNote",
     "call": {
+      "config": { "registry": "build" },
       "service": "notes.v1.NotesService",
       "method": "UpdateNote",
       "protocol": "transcode",
@@ -1593,6 +1611,7 @@
   {
     "name": "transcode ArchiveNote",
     "call": {
+      "config": { "registry": "build" },
       "service": "notes.v1.NotesService",
       "method": "ArchiveNote",
       "protocol": "transcode",
@@ -1627,6 +1646,7 @@
   {
     "name": "transcode DeleteNote",
     "call": {
+      "config": { "registry": "build" },
       "service": "notes.v1.NotesService",
       "method": "DeleteNote",
       "protocol": "transcode",
@@ -1651,7 +1671,9 @@
   },
   {
     "name": "transcode NOT_FOUND with ErrorInfo",
+    "note": "With google.rpc's registry (Proto.ErrorDetails.registry) on the client, the google.rpc.Status body's details read and unpack.",
     "call": {
+      "config": { "registry": "errorDetails" },
       "service": "notes.v1.NotesService",
       "method": "GetNote",
       "protocol": "transcode",
@@ -1684,8 +1706,38 @@
     }
   },
   {
-    "name": "transcode INVALID_ARGUMENT with BadRequest",
+    "name": "transcode NOT_FOUND with ErrorInfo, empty registry",
+    "note": "With the empty registry, a google.rpc.Status body's details are UnregisteredType, the code and message kept.",
     "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "protocol": "transcode",
+      "request": {
+        "name": "notes/from-transcode"
+      }
+    },
+    "expect": {
+      "result": {
+        "error": {
+          "code": "not_found",
+          "message": "notes/from-transcode does not exist",
+          "source": "StatusBody",
+          "details": [
+            { "unregisteredType": "type.googleapis.com/google.rpc.ErrorInfo" }
+          ]
+        }
+      },
+      "trace": {
+        "httpStatus": 404,
+        "code": "not_found"
+      }
+    }
+  },
+  {
+    "name": "transcode INVALID_ARGUMENT with BadRequest",
+    "note": "With google.rpc's registry (Proto.ErrorDetails.registry) on the client, the google.rpc.Status body's details read and unpack.",
+    "call": {
+      "config": { "registry": "errorDetails" },
       "service": "notes.v1.NotesService",
       "method": "CreateNote",
       "protocol": "transcode",
@@ -1721,8 +1773,40 @@
     }
   },
   {
-    "name": "transcode percent-encoded path",
+    "name": "transcode INVALID_ARGUMENT with BadRequest, empty registry",
+    "note": "With the empty registry, a google.rpc.Status body's details are UnregisteredType, the code and message kept.",
     "call": {
+      "service": "notes.v1.NotesService",
+      "method": "CreateNote",
+      "protocol": "transcode",
+      "request": {
+        "note": {
+          "body": "untitled"
+        }
+      }
+    },
+    "expect": {
+      "result": {
+        "error": {
+          "code": "invalid_argument",
+          "message": "a note needs a title",
+          "source": "StatusBody",
+          "details": [
+            { "unregisteredType": "type.googleapis.com/google.rpc.BadRequest" }
+          ]
+        }
+      },
+      "trace": {
+        "httpStatus": 400,
+        "code": "invalid_argument"
+      }
+    }
+  },
+  {
+    "name": "transcode percent-encoded path",
+    "note": "With google.rpc's registry (Proto.ErrorDetails.registry) on the client, the google.rpc.Status body's details read and unpack.",
+    "call": {
+      "config": { "registry": "errorDetails" },
       "service": "notes.v1.NotesService",
       "method": "GetNote",
       "protocol": "transcode",
@@ -1745,6 +1829,37 @@
                 "name": "notes/a b+c"
               }
             }
+          ]
+        }
+      },
+      "trace": {
+        "request": {
+          "url": {
+            "$match": "/v1/notes/a%20b%2Bc$"
+          }
+        }
+      }
+    }
+  },
+  {
+    "name": "transcode percent-encoded path, empty registry",
+    "note": "With the empty registry, a google.rpc.Status body's details are UnregisteredType, the code and message kept.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "protocol": "transcode",
+      "request": {
+        "name": "notes/a b+c"
+      }
+    },
+    "expect": {
+      "result": {
+        "error": {
+          "code": "not_found",
+          "message": "notes/a b+c does not exist",
+          "source": "StatusBody",
+          "details": [
+            { "unregisteredType": "type.googleapis.com/google.rpc.ErrorInfo" }
           ]
         }
       },
@@ -1853,6 +1968,7 @@
         "name": "notes/welcome"
       },
       "config": {
+        "registry": "build",
         "headers": [
           [
             "x-echo",
@@ -2066,7 +2182,9 @@
   },
   {
     "name": "transcode Rpc.task",
+    "note": "With google.rpc's registry (Proto.ErrorDetails.registry) on the client, the google.rpc.Status body's details read and unpack.",
     "call": {
+      "config": { "registry": "errorDetails" },
       "service": "notes.v1.NotesService",
       "method": "GetNote",
       "protocol": "transcode",
@@ -2096,8 +2214,34 @@
     }
   },
   {
+    "name": "transcode Rpc.task, empty registry",
+    "note": "With the empty registry, a google.rpc.Status body's details are UnregisteredType, the code and message kept.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "protocol": "transcode",
+      "request": {
+        "name": "notes/sent"
+      },
+      "send": "task"
+    },
+    "expect": {
+      "result": {
+        "error": {
+          "code": "not_found",
+          "message": "notes/sent does not exist",
+          "source": "StatusBody",
+          "details": [
+            { "unregisteredType": "type.googleapis.com/google.rpc.ErrorInfo" }
+          ]
+        }
+      }
+    }
+  },
+  {
     "name": "transcode binding 0 named",
     "call": {
+      "config": { "registry": "build" },
       "service": "notes.v1.NotesService",
       "method": "GetNote",
       "protocol": "transcode",

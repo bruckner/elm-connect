@@ -133,11 +133,16 @@ client : Shared -> Rpc.Client Rpc.Json
 client shared =
     Rpc.client shared.protocol shared.apiUrl
         |> Rpc.Client.withHeaders [ ( "Authorization", "Bearer " ++ shared.token ) ]
+        |> Rpc.withRegistry registry
 ```
 
 `Shared` holds the page's origin, a token and the protocol the page's
 toggle chose. The token is a fixed string here; the server ignores it,
-and it shows in the network tab as the `Authorization` header.
+and it shows in the network tab as the `Authorization` header. The
+client's registry (`Api.registry`: the notes package's messages, the
+well-known types and `Proto.ErrorDetails.registry`) is what a note's
+`Any` attachment and a transcoder's error details are read through as
+proto3 JSON; a JSON client whose messages hold an `Any` needs one.
 
 ## A first call
 
@@ -166,7 +171,7 @@ Creating a note without a title fails with `INVALID_ARGUMENT` and a
 `google.rpc.BadRequest` detail; "Get notes/missing" fails with
 `NOT_FOUND` and a `google.rpc.ErrorInfo`. The page shows the code, the
 message, where the error was read from, the details it knows by type,
-and every detail as JSON; an answer that stated no status, or a
+and every detail as JSON, or why it could not be read; an answer that stated no status, or a
 successful one whose body is not the response, shows its code and the
 body as it came:
 
@@ -182,12 +187,12 @@ viewError error =
                 , ul []
                     (List.map
                         (\violation -> li [] [ code [] [ text violation.field ], text (": " ++ violation.description) ])
-                        (Rpc.Error.details Google.Rpc.messageBadRequest error |> List.concatMap .fieldViolations)
+                        (unpacked Proto.ErrorDetails.badRequest status.details |> List.concatMap .fieldViolations)
                     )
                 , ul []
                     (List.map
                         (\info -> li [] [ text (info.reason ++ " from " ++ info.domain) ])
-                        (Rpc.Error.details Google.Rpc.messageErrorInfo error)
+                        (unpacked Proto.ErrorDetails.errorInfo status.details)
                     )
                 , div [] (List.map viewDetail status.details)
                 ]
@@ -212,9 +217,29 @@ viewError error =
             section [ class "error" ] [ p [] [ text (Rpc.Error.toString error) ] ]
 
 
-viewDetail : Proto.Any.Any -> Html msg
+{-| A status's details that were read and are of this type.
+-}
+unpacked : Proto.Message.Message a -> List (Result Rpc.Error.DetailProblem Proto.Any.Any) -> List a
+unpacked message details =
+    List.filterMap (Result.toMaybe >> Maybe.andThen (Proto.Any.unpack message)) details
+
+
+viewDetail : Result Rpc.Error.DetailProblem Proto.Any.Any -> Html msg
 viewDetail detail =
-    pre [] [ text (Json.Encode.encode 2 (Proto.Json.encodeAny detail)) ]
+    case detail of
+        Ok any ->
+            case Proto.Any.toJson Api.registry any of
+                Ok json ->
+                    pre [] [ text (Proto.Any.typeName any ++ " " ++ Json.Encode.encode 2 json) ]
+
+                Err _ ->
+                    p [] [ text (Proto.Any.typeName any ++ ", a type this page has no codecs for.") ]
+
+        Err (Rpc.Error.UnregisteredType url) ->
+            p [] [ text (url ++ ", a type this page has no codecs for.") ]
+
+        Err (Rpc.Error.InvalidDetail _ reason) ->
+            p [] [ text ("A detail that could not be read: " ++ reason) ]
 
 
 sourceToString : Rpc.Error.Source -> String
@@ -237,10 +262,14 @@ sourceToString source =
 ```
 
 Over Connect the error arrives as a Connect error body
-(`{"code": "invalid_argument", …}`, each detail with its JSON as
-`debug`); over transcoding Vanguard sends a `google.rpc.Status` body
-(`{"code": 3, …}`). The error is the same `Rpc.Error` either way, and
-`source` says which body it was. The answer rides with the error as
+(`{"code": "invalid_argument", …}`, each detail as its protobuf binary,
+which needs no registry); over transcoding Vanguard sends a
+`google.rpc.Status` body (`{"code": 3, …}`), its details as proto3 JSON,
+read through the client's registry. The error is the same `Rpc.Error`
+either way, and `source` says which body it was. Each detail is an
+`Any` or the problem that kept it from being read, and
+`Proto.Any.unpack` with `Proto.ErrorDetails`' typed values reads those
+of one type. The answer rides with the error as
 `Rpc.Response`, its status, headers and body, so a body in a shape the
 runtime does not read, or one that drifted from the schema, can still be
 shown, as the `HttpStatus` and `BadResponse` branches do.

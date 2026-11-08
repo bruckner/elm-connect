@@ -370,6 +370,7 @@ An **envelope**, what the runner sends:
     "readMaxBytes": null,
     "writeMaxBytes": null,
     "codec": "json",
+    "registry": "empty",
     "retry": { "attempts": 2, "backoff": 10, "codes": ["unavailable"], "idempotentOnly": false }
   },
   "binding": null,
@@ -395,7 +396,12 @@ default, `send`, `task`, `halves` or `taskFromRequest`), `rewrite`, `tracker` (`
 `maxGetUrl` apply `Rpc.Protocol.withConnectGet` and `withMaxGetUrl` over
 Connect; `readMaxBytes` and `writeMaxBytes` apply
 `Rpc.Protocol.withReadMaxBytes` and `withWriteMaxBytes` to any
-protocol; and the rest are the `Rpc.Client` settings. `retry` builds an
+protocol; `registry` sets the client's registry (`Rpc.withRegistry`):
+`empty` (the default, as a client starts), `errorDetails`
+(`Proto.ErrorDetails.registry` alone) or `build` (every package of the
+build and the well-known types, `Live.Codec.registry`, which a call over
+JSON whose messages hold an `Any` needs); and the rest are the
+`Rpc.Client` settings. `retry` builds an
 `Rpc.Retry` from `codes` and `attempts`, with `backoff` (default 0),
 `maxBackoff` (default the runtime's), `idempotentOnly` (default false) and
 `jitter` (default false, so a case's waits are the bounds it states).
@@ -442,17 +448,23 @@ A **result**, what comes back:
 `result` is one of `{"ok": <response as proto3 JSON>}` (with `okBinary`, the response's
 protobuf binary in base64, when its message has binary codecs), `{"error":
 {"code", "message", "details", "source", "response"}}` (the code as
-Connect names it, each detail as `Proto.Json.encodeAny` writes it, the
+Connect names it, each detail read as its proto3 JSON through the
+runner's own table (every package of the build, the well-known types and
+`Proto.ErrorDetails.registry`, whatever the client's), or as `{"type",
+"value"}` for a type that table lacks, and each detail that could not be
+read as `{"unregisteredType": <type URL>}` or `{"invalidDetail":
+{"type": <type URL or null>, "reason"}}`, the
 source as `ConnectBody`, `StatusBody`, `GrpcHeaders` or `HttpStatus`
 for a code inferred from the status, and `response` the answer the
 error was read from: `statusCode`, `statusText` and `body`, and
 `bodyBase64` for an answer read as bytes; `detailsBinary` holds each
-detail's binary as an `Any`, in base64),
+detail's binary as an `Any`, in base64, `null` for one not read),
 `{"badResponse": {"problem", "response"}}` for a successful answer whose
 body did not decode (elm/json's problem, and the answer as above),
 `{"noAnswer": "Timeout"}` (or `NetworkError`, `BadUrl <url>`,
 `InvalidHeader <name>`, `RequestTooLarge <size> <limit>`,
-`ResponseTooLarge <size> <limit>`, `InvalidPathValue <field> <template>`) for an
+`ResponseTooLarge <size> <limit>`, `InvalidPathValue <field> <template>`,
+`UnwritableRequest <problem>`) for an
 `Rpc.Error.NoAnswer`, `{"canceled": true}` for a call
 the runner withdrew with `Rpc.cancel`, and `{"runner": <why>}` for an
 envelope the runner could not send: one that does not decode, an unknown
@@ -525,13 +537,14 @@ as `readMaxBytes`, and `cancel.after_close_send_ms` as
 `cancelAfterMs` (a unary call's request is sent whole, so the count starts
 when the call is sent). The other cancel timings, `before_close_send` and
 `after_num_responses`, are for streams, which `conformance.yaml` declares
-unsupported; a request with one is refused. The runner calls the method through
+unsupported; a request with one is refused. Its client's registry is
+`build`, the suite's messages holding `Any`s of its own types. The runner calls the method through
 `Live.Conformance`, whose calls come from the Elm protoc-gen-elm-connect
 generates from the same protos (`suite/elm/`, `streaming=skip`), and the
 result is translated back: the response's payload, or the error's code,
-message and details (a detail that came as JSON is read back from its
-`"@type"` form; one that came as protobuf binary only, `{"type",
-"value"}`, is forwarded as the `Any`'s bytes as they came), the answer's
+message and details (a detail written as proto3 JSON is read back from
+its `"@type"` form; one in `{"type", "value"}` form is forwarded as the
+`Any`'s bytes as they came), the answer's
 headers, and as trailers those prefixed `trailer-`, which is how Connect
 sends a unary call's trailers. With `halves` the wrapper splits the
 answer's headers itself; with `sendTraced` it reports the `Trace`'s
