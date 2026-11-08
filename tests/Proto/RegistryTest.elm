@@ -125,7 +125,8 @@ bytes registry name fields =
     Json.Decode.decodeValue (Proto.Json.anyWith registry)
         (Json.Encode.object (( "@type", Json.Encode.string ("type.googleapis.com/" ++ name) ) :: fields))
         |> Result.toMaybe
-        |> Maybe.map (Any.bytes >> Proto.Bytes.toBase64)
+        |> Maybe.andThen Any.bytes
+        |> Maybe.map Proto.Bytes.toBase64
 
 
 suite : Test

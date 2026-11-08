@@ -106,8 +106,8 @@ suite =
             \_ ->
                 Any.pack messageTitle "hi"
                     |> Any.bytes
-                    |> Proto.Bytes.toBase64
-                    |> Expect.equal "CgJoaQ=="
+                    |> Maybe.map Proto.Bytes.toBase64
+                    |> Expect.equal (Just "CgJoaQ==")
         , test "binary that is not the message is InvalidProto, another type a TypeMismatch" <|
             \_ ->
                 ( Proto.Bytes.fromBase64 "CiJ0eXBlLmdvb2dsZWFwaXMuY29tL25vdGVzLnYxLlRpdGxlEgIKBQ=="
@@ -187,6 +187,101 @@ suite =
                         ( Err (UnwritableAny "type.googleapis.com/google.protobuf.Any")
                         , Ok """{"@type":"type.googleapis.com/google.protobuf.Any","value":{"@type":"type.googleapis.com/notes.v1.Title","title":"hi"}}"""
                         )
+        , test "a lenient registry reads a type it lacks as JSON alone, which unpacks and is written back as JSON" <|
+            \_ ->
+                let
+                    text =
+                        """{"@type":"type.googleapis.com/notes.v1.Title","title":"hi","extra":1}"""
+
+                    read =
+                        readWith (Registry.lenient Registry.wellKnown) text |> Result.toMaybe
+                in
+                ( ( readWith Registry.wellKnown text |> Result.toMaybe
+                  , read |> Maybe.map Any.bytes
+                  , read |> Maybe.andThen (Any.unpack messageTitle)
+                  )
+                , ( read |> Maybe.map (writtenWith Registry.empty)
+                  , read |> Maybe.map (Any.toJson Registry.empty >> Result.map (Json.Encode.encode 0))
+                  , readWith (Registry.lenient registry) """{"@type":"type.googleapis.com/notes.v1.Title","title":7}""" |> Result.toMaybe
+                  )
+                )
+                    |> Expect.equal
+                        ( ( Nothing, Just Nothing, Just "hi" )
+                        , ( Just (Ok text), Just (Ok """{"title":"hi","extra":1}"""), Nothing )
+                        )
+        , test "an Any held as JSON alone is written as binary as its type URL alone, and its JSON fails to unpack as InvalidProto" <|
+            \_ ->
+                let
+                    read =
+                        readWith (Registry.lenient Registry.empty) """{"@type":"type.googleapis.com/notes.v1.Title","title":7}""" |> Result.toMaybe
+                in
+                ( read |> Maybe.map base64
+                , read |> Maybe.andThen throughBinary |> Maybe.map (\any -> ( Any.typeUrl any, Any.bytes any |> Maybe.map Proto.Bytes.toBase64 ))
+                , read |> Maybe.map (Any.tryUnpack messageTitle)
+                )
+                    |> Expect.equal
+                        ( Just "CiJ0eXBlLmdvb2dsZWFwaXMuY29tL25vdGVzLnYxLlRpdGxl"
+                        , Just ( "type.googleapis.com/notes.v1.Title", Just "" )
+                        , Just (Err InvalidProto)
+                        )
+        , test "a known type read through a lenient registry reads an Any inside it leniently" <|
+            \_ ->
+                let
+                    text =
+                        """{"@type":"type.googleapis.com/google.protobuf.Any","value":{"@type":"type.googleapis.com/notes.v1.Title","title":"hi"}}"""
+
+                    inner =
+                        Maybe.andThen (Any.unpack WellKnown.any)
+                in
+                ( readWith Registry.wellKnown text |> Result.toMaybe
+                , readWith (Registry.lenient Registry.wellKnown) text
+                    |> Result.toMaybe
+                    |> (\read -> ( Maybe.map Any.bytes (inner read) |> Maybe.map ((==) Nothing), inner read |> Maybe.andThen (Any.unpack messageTitle), Maybe.map (writtenWith Registry.empty) read ))
+                )
+                    |> Expect.equal ( Nothing, ( Just True, Just "hi", Just (Ok text) ) )
+        , test "packing a message that holds an Any held as JSON alone holds the packed one as JSON alone too" <|
+            \_ ->
+                let
+                    packed =
+                        readWith (Registry.lenient Registry.empty) """{"@type":"type.googleapis.com/notes.v1.Title","title":"hi"}"""
+                            |> Result.toMaybe
+                            |> Maybe.map (Any.pack WellKnown.any)
+                in
+                ( packed |> Maybe.map Any.bytes
+                , packed |> Maybe.andThen (Any.unpack WellKnown.any) |> Maybe.andThen (Any.unpack messageTitle)
+                , packed |> Maybe.map (writtenWith Registry.empty)
+                )
+                    |> Expect.equal
+                        ( Just Nothing
+                        , Just "hi"
+                        , Just (Ok """{"@type":"type.googleapis.com/google.protobuf.Any","value":{"@type":"type.googleapis.com/notes.v1.Title","title":"hi"}}""")
+                        )
+        , test "registries are strict until made lenient, and a union is lenient when any side is" <|
+            \_ ->
+                let
+                    reads table =
+                        readWith table """{"@type":"type.googleapis.com/x.Unknown","a":1}""" |> Result.toMaybe |> (/=) Nothing
+                in
+                [ reads Registry.empty
+                , reads registry
+                , reads (Registry.lenient Registry.empty)
+                , reads (Registry.union registry (Registry.lenient Registry.empty))
+                , reads (Registry.union (Registry.lenient Registry.empty) registry)
+                , reads (Registry.unionAll [ registry, Registry.wellKnown, Registry.lenient Registry.empty ])
+                , reads (Registry.lenient Registry.empty |> Registry.register messageTitle)
+                ]
+                    |> Expect.equal [ False, False, True, True, True, True, True ]
+        , test "equal compares Anys held as JSON alone by type URL and JSON text" <|
+            \_ ->
+                let
+                    read text =
+                        readWith (Registry.lenient Registry.empty) text |> Result.withDefault (Any.pack messageTitle "")
+                in
+                ( Any.equal (read """{"@type":"type.googleapis.com/notes.v1.Title","title":"hi"}""") (read """{"@type":"type.googleapis.com/notes.v1.Title","title":"hi"}""")
+                , Any.equal (read """{"@type":"type.googleapis.com/notes.v1.Title","title":"hi"}""") (read """{"@type":"type.googleapis.com/notes.v1.Title","title":"ho"}""")
+                , Any.equal (read """{"@type":"type.googleapis.com/notes.v1.Title","title":"hi"}""") (Any.pack messageTitle "hi")
+                )
+                    |> Expect.equal ( True, False, False )
         , test "== sees the JSON an Any keeps; equal compares the type URL and the binary alone" <|
             \_ ->
                 let

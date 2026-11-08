@@ -55,6 +55,7 @@ generated code gives each message:
 import Bytes exposing (Bytes)
 import Bytes.Encode
 import Dict
+import Json.Decode
 import Json.Encode
 import Proto.Bytes
 import Proto.Descriptors as Descriptors exposing (Descriptors)
@@ -74,6 +75,10 @@ beside the binary, so that writing it as JSON again needs no conversion.
 JSON, or two read from JSON written differently (one with its defaults),
 are not `==`. Compare two `Any`s with [`equal`](#equal), which reads the
 type URL and the binary alone.
+
+An `Any` of a type the registry lacks, read through a
+[lenient](Proto-Registry#lenient) registry, holds its JSON alone, and no
+binary ([`bytes`](#bytes)).
 
 The package site and compiler errors may show it as `Proto.Internal.Any.Any`,
 its name inside the package.
@@ -126,26 +131,24 @@ messageNote note` has the type URL `example.com/types/notes.v1.Note`.
 packWith : String -> Message a -> a -> Any
 packWith prefix ((InternalMessage.Message _ codecs) as message) value =
     let
-        base64 =
+        base64 () =
             Proto.Bytes.toBase64 (Bytes.Encode.encode (codecs.encode value))
     in
     Internal.Any (prefixed prefix message)
-        (case codecs.encodeJson noTypes value of
+        (case codecs.encodeJson (Registry.Registry Registry.Lossless Dict.empty) value of
             Just json ->
-                Internal.Both base64 json
+                Internal.Both (base64 ()) json
 
             Nothing ->
-                Internal.Binary base64
+                case codecs.encodeJson (Registry.Registry Registry.Strict Dict.empty) value of
+                    Just json ->
+                        -- It holds an `Any` held as JSON alone, which its
+                        -- binary would lose.
+                        Internal.Json json
+
+                    Nothing ->
+                        Internal.Binary (base64 ())
         )
-
-
-{-| The registry a packed message's JSON is written through: an `Any` it
-holds is written from the JSON that `Any` keeps, or the packed `Any` keeps
-no JSON.
--}
-noTypes : Registry
-noTypes =
-    Registry.Registry Dict.empty
 
 
 prefixed : String -> Message a -> String
@@ -165,14 +168,24 @@ unpack message any =
 
 
 {-| The packed message, or why it cannot be read: `TypeMismatch` or
-`InvalidProto`. It is read from the binary, whatever JSON the `Any` keeps.
+`InvalidProto`. It is read from the binary, whatever JSON the `Any` keeps;
+an `Any` held as JSON alone, which a [lenient](Proto-Registry#lenient)
+registry reads, is read from its JSON with the message's JSON decoder, an
+`Any` inside it read leniently too.
 -}
 tryUnpack : Message a -> Any -> Result Problem a
 tryUnpack ((InternalMessage.Message _ codecs) as message) ((Internal.Any _ payload) as any) =
     if is message any then
-        Proto.Bytes.fromBase64 (Internal.base64Of payload)
-            |> Maybe.andThen (Proto.Internal.Binary.run codecs.decode)
-            |> Result.fromMaybe InvalidProto
+        case payload of
+            Internal.Json json ->
+                Json.Decode.decodeValue (codecs.decoder (Registry.Registry Registry.Lenient Dict.empty)) json
+                    |> Result.mapError (\_ -> InvalidProto)
+
+            _ ->
+                Internal.base64Of payload
+                    |> Maybe.andThen Proto.Bytes.fromBase64
+                    |> Maybe.andThen (Proto.Internal.Binary.run codecs.decode)
+                    |> Result.fromMaybe InvalidProto
 
     else
         Err (TypeMismatch (typeName any))
@@ -183,8 +196,9 @@ tryUnpack ((InternalMessage.Message _ codecs) as message) ((Internal.Any _ paylo
   - `TypeMismatch`: [`tryUnpack`](#tryUnpack) was given the typed value of
     another type than the one it holds, whose full name is here. Test the
     type with [`is`](#is) first, or unpack with that type's typed value.
-  - `InvalidProto`: its binary is not a message of the type its URL names:
-    the sender's message and yours disagree. Nothing in the program fixes
+  - `InvalidProto`: its binary is not a message of the type its URL names,
+    or, for an `Any` held as JSON alone, its JSON is not: the sender's
+    message and yours disagree. Nothing in the program fixes
     it; report it as the sender's.
   - `UnregisteredType`: [`toJson`](#toJson) and
     [`Proto.Json.encodeAnyWith`](Proto-Json#encodeAnyWith) were given a
@@ -192,6 +206,8 @@ tryUnpack ((InternalMessage.Message _ codecs) as message) ((Internal.Any _ paylo
     its package's `registry`, [`Proto.Registry.wellKnown`](Proto-Registry#wellKnown),
     [`Proto.ErrorDetails.registry`](Proto-ErrorDetails#registry), or
     [`Proto.Registry.register`](Proto-Registry#register) of its typed value.
+    Reading it would have failed the same way, unless the registry it was
+    read through is [lenient](Proto-Registry#lenient).
   - `UnwritableAny`: as `UnregisteredType` or `InvalidProto`, but for an
     `Any` held inside the message of the `Any` whose type URL is named
     here, at any depth. Register the types its `Any`s hold.
@@ -208,12 +224,15 @@ type Problem
 -- READING
 
 
-{-| The packed message's protobuf binary.
+{-| The packed message's protobuf binary: `Nothing` for an `Any` held as JSON
+alone, which a [lenient](Proto-Registry#lenient) registry reads, and which
+is written as protobuf binary as its type URL alone. `Just` an empty
+`Bytes` is an empty message.
 -}
-bytes : Any -> Bytes
+bytes : Any -> Maybe Bytes
 bytes (Internal.Any _ payload) =
-    Proto.Bytes.fromBase64 (Internal.base64Of payload)
-        |> Maybe.withDefault Proto.Bytes.empty
+    Internal.base64Of payload
+        |> Maybe.map (Proto.Bytes.fromBase64 >> Maybe.withDefault Proto.Bytes.empty)
 
 
 
@@ -223,11 +242,21 @@ bytes (Internal.Any _ payload) =
 {-| Whether two `Any`s hold the same type URL and the same binary, whatever
 JSON either keeps beside it: what `==` would say if it did not see that JSON
 ([`Any`](#Any)). Two binaries of one message written in a different field
-order are not equal.
+order are not equal. Two `Any`s held as JSON alone are equal when their type
+URLs and their JSON, as text, are; one held as JSON alone never equals one
+holding binary, since without a registry the two cannot be compared.
 -}
 equal : Any -> Any -> Bool
 equal (Internal.Any leftUrl left) (Internal.Any rightUrl right) =
-    leftUrl == rightUrl && Internal.base64Of left == Internal.base64Of right
+    leftUrl
+        == rightUrl
+        && (case ( left, right ) of
+                ( Internal.Json leftJson, Internal.Json rightJson ) ->
+                    Json.Encode.encode 0 leftJson == Json.Encode.encode 0 rightJson
+
+                _ ->
+                    Internal.base64Of left == Internal.base64Of right
+           )
 
 
 
@@ -251,6 +280,13 @@ toJson registry ((Internal.Any url payload) as any) =
 
         ( False, Internal.Both _ json ) ->
             Ok json
+
+        ( False, Internal.Json json ) ->
+            if Registry.writesJsonAlone registry then
+                Ok json
+
+            else
+                Err (UnregisteredType url)
 
         ( False, Internal.Binary base64 ) ->
             case Registry.toJson registry (typeName any) base64 of

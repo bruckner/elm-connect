@@ -172,16 +172,6 @@ application that never transcodes. Deferred until requested: today such
 an application deletes the `google.api.http` annotations from the
 protos it generates from. A minor (a new option).
 
-## `Any`: a lenient registry
-
-An `Any` of a type the client's registry lacks fails a proto3 JSON
-read. A lenient registry, spiked and deferred, would hold such an `Any`
-as its JSON instead, for a program that passes `Any`s through without
-unpacking them (it would read a transcoder's `google.rpc` details
-without `Proto.ErrorDetails`, 80–179 B gz). A minor: an addition to
-`Proto.Registry` and an internal state of `Any`. The default stays
-strict.
-
 ## Validation
 
 Checking a request on the client before it is sent, from what the

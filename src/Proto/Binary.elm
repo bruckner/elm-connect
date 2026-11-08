@@ -1415,7 +1415,10 @@ writeValue json =
 
 {-| `google.protobuf.Any`, holding the packed message's binary, which
 [`Proto.Any.unpack`](Proto-Any#unpack) decodes. One read from binary keeps
-no JSON beside it. One that arrives twice is
+no JSON beside it. One held as JSON alone, which a
+[lenient](Proto-Registry#lenient) registry reads, is written as its type URL
+alone: its message is lost ([`Proto.Any.bytes`](Proto-Any#bytes) tells it
+first). One that arrives twice is
 merged field by field: the type URL or the value the later one carries
 replaces the earlier one's.
 -}
@@ -1427,7 +1430,7 @@ any =
 anyInto : Any -> Decoder Any
 anyInto (InternalAny.Any start payload) =
     Internal.Decoder
-        (message ( start, InternalAny.base64Of payload )
+        (message ( start, Maybe.withDefault "" (InternalAny.base64Of payload) )
             (\number wire ( url, current ) ->
                 case number of
                     1 ->
@@ -1446,7 +1449,9 @@ anyInto (InternalAny.Any start payload) =
 
 writeAny : Any -> Encoder
 writeAny (InternalAny.Any url payload) =
-    E.sequence [ implicit string 1 url, implicit bytes 2 (InternalAny.base64Of payload) ]
+    -- An `Any` held as JSON alone has no binary to write: its type URL is
+    -- written alone.
+    E.sequence [ implicit string 1 url, implicit bytes 2 (Maybe.withDefault "" (InternalAny.base64Of payload)) ]
 
 
 wrapper : Codec v -> Codec v

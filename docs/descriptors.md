@@ -109,10 +109,19 @@ conversion; `==` sees that JSON, so compare two `Any`s with
 An `Any`'s proto3 JSON is converted from and to its binary through a
 `Proto.Registry`: reading an `Any` from JSON (`Proto.Json.anyWith`),
 writing one as JSON (`Proto.Json.encodeAnyWith`), and
-`Proto.Any.toJson`, but for one that keeps its JSON. A type the registry lacks is a loud miss, as in
-protobuf's own runtimes: the read fails naming its type URL, and the
-write gives `UnregisteredType` with it. Over protobuf binary no
-registry is needed.
+`Proto.Any.toJson`, but for one that keeps its JSON. A type the
+registry lacks is a loud miss, as in protobuf's own runtimes: the read
+fails naming its type URL, and the write gives `UnregisteredType` with
+it. Over protobuf binary no registry is needed.
+
+A program that passes `Any`s along without registering every type it
+may meet makes its registry lenient, `Proto.Registry.lenient
+Proto.Registry.empty` or a composed one piped through it: an `Any` of a
+type it lacks is then read as its JSON alone, written back as JSON as
+it arrived, and unpacked with its typed value. It has no binary
+(`Proto.Any.bytes` is `Nothing`), and written as protobuf binary it is
+its type URL alone, its message lost, so test `bytes` before sending one
+over binary, or register its type.
 
 Each generated package has a `registry` holding its own messages and
 nothing else; the runtime has `Proto.Registry.wellKnown` and
@@ -177,7 +186,8 @@ registry. A transcoder (grpc-gateway, Envoy, Vanguard) sends a
 `google.rpc.Status` body whose details are proto3 JSON, which the
 client reads through its registry: without `Proto.ErrorDetails.registry`
 in it they read as `Err (UnregisteredType url)`, the error's code and
-message kept. A detail that is not one at all is `InvalidDetail`, with
+message kept; under a lenient registry they read as `Any`s held as JSON
+alone, which unpack the same way. A detail that is not one at all is `InvalidDetail`, with
 what was wrong; `Rpc.Trace.toJson` lists both kinds.
 
 ## Update masks

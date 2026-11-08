@@ -2186,13 +2186,16 @@ encodeListValue =
 {-| Decode a `google.protobuf.Any` into one holding its message's protobuf
 binary, which the registry's entry for its type converts the JSON to, and
 the message's JSON as it arrived, which writing the `Any` as JSON writes
-back ([`encodeAnyWith`](#encodeAnyWith)): an object with `"@type"`, holding the message's fields or, for a well-known type
-with a JSON form of its own, `"value"`. An object without `"@type"` fails, but
-for `{}`, the empty `Any`, and so does one whose `"@type"` is not a type URL:
-it must hold a `/` with a type name after the last one. As protobuf's own
+back ([`encodeAnyWith`](#encodeAnyWith)): an object with `"@type"`, holding
+the message's fields or, for a well-known type with a JSON form of its own,
+`"value"`. An object without `"@type"` fails, but for `{}`, the empty `Any`,
+and so does one whose `"@type"` is not a type URL: it must hold a `/` with a
+type name after the last one. As protobuf's own
 JSON readers do, it fails for a type the registry has no entry for, naming
 its type URL (register the type, see [`Proto.Registry`](Proto-Registry)),
-and for JSON that is not its message.
+unless the registry is [lenient](Proto-Registry#lenient): then the `Any`
+holds the JSON alone. It fails for JSON that is not its message, lenient
+or not.
 -}
 anyWith : Registry -> Decoder Any
 anyWith registry =
@@ -2201,15 +2204,30 @@ anyWith registry =
             (\parts ->
                 case parts of
                     Just ( url, message ) ->
-                        case InternalRegistry.toBytes registry (InternalAny.nameOf url) message of
+                        case InternalRegistry.toBytes (InternalRegistry.strict registry) (InternalAny.nameOf url) message of
                             Just (Ok base64) ->
                                 Json.Decode.succeed (InternalAny.Any url (InternalAny.Both base64 message))
 
                             Just (Err problem) ->
-                                Json.Decode.fail ("Expecting an Any of " ++ quote url ++ " to hold that message: " ++ problem)
+                                if InternalRegistry.isLenient registry then
+                                    -- Read leniently, it may hold an `Any` its binary
+                                    -- would lose: it is held as JSON alone.
+                                    case InternalRegistry.toBytes registry (InternalAny.nameOf url) message of
+                                        Just (Ok _) ->
+                                            Json.Decode.succeed (InternalAny.Any url (InternalAny.Json message))
+
+                                        _ ->
+                                            Json.Decode.fail ("Expecting an Any of " ++ quote url ++ " to hold that message: " ++ problem)
+
+                                else
+                                    Json.Decode.fail ("Expecting an Any of " ++ quote url ++ " to hold that message: " ++ problem)
 
                             Nothing ->
-                                Json.Decode.fail ("Expecting an Any of a type the registry has, but got the unregistered type " ++ quote url)
+                                if InternalRegistry.isLenient registry then
+                                    Json.Decode.succeed (InternalAny.Any url (InternalAny.Json message))
+
+                                else
+                                    Json.Decode.fail ("Expecting an Any of a type the registry has, but got the unregistered type " ++ quote url)
 
                     Nothing ->
                         Json.Decode.succeed InternalAny.empty

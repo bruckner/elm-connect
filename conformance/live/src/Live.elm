@@ -324,8 +324,9 @@ config t =
 
 {-| The client's registry as a case's config names it: `"empty"` (the
 default, as a client starts), `"errorDetails"` (`Proto.ErrorDetails.registry`
-alone) or `"build"` (the build's packages and the well-known types,
-`Live.Codec.registry`).
+alone), `"build"` (the build's packages and the well-known types,
+`Live.Codec.registry`) or `"lenient"` (the empty registry made lenient,
+which holds an `Any` of any type as its JSON).
 -}
 registryName : Decoder Proto.Registry.Registry
 registryName =
@@ -333,6 +334,7 @@ registryName =
         [ ( "empty", Proto.Registry.empty )
         , ( "errorDetails", Proto.ErrorDetails.registry )
         , ( "build", Live.Codec.registry )
+        , ( "lenient", Proto.Registry.empty |> Proto.Registry.lenient )
         ]
 
 

@@ -1221,10 +1221,10 @@ convert through (about 14 KB gz on a 31-message package, about 50 B
 gz a message, half of it binary machinery), and each operation on a
 message holding an `Any` costs 43–58 µs instead of 1–3 µs, 15–39×
 slower, the JSON-to-binary round trip through base64 and elm/bytes.
-A cache of the JSON beside the binary landed after it (Any keeps the
-JSON it was read with); a lenient registry that holds an unknown type
-as JSON was spiked and is deferred to a later change; the default stays
-strict (design §1.2's rule: correctness
+A cache of the JSON beside the binary and a lenient registry that
+holds an unknown type as JSON landed after it (Any keeps the JSON it
+was read with; Lenient registries hold JSON-only payloads); the default
+stays strict (design §1.2's rule: correctness
 first, the cheaper or laxer reading an opt-in). Where: design §3.5,
 §3.10, §5.5.
 
@@ -1270,6 +1270,57 @@ converts, about 30× slower on a send of one read from JSON), and a cache
 behind an opt-in (a second way to configure the same reading for no
 correctness gain: the cached JSON is what was read). Where: design
 §3.5, §3.10, §5.4.
+
+### Lenient registries hold JSON-only payloads
+
+*2026-11-07.*
+
+`Proto.Registry.lenient` marks a registry so that a proto3 JSON read of
+an `Any` of a type it lacks holds the `Any` as its JSON alone instead of
+failing. Such an `Any` is written back as JSON as it arrived, unpacks
+with its message's JSON decoder, has no binary (`Proto.Any.bytes :
+Any -> Maybe Bytes`, `Nothing` for it), and is written as protobuf
+binary as its type URL alone. That write loses the message, and is the
+accepted cost: a program that passes `Any`s along over JSON loses
+nothing, and one that sends them over binary tests `bytes` first or
+registers the type. The read keeps the loss to the JSON-alone state: a
+registered type is read strictly first and is held as JSON alone only
+when an `Any` inside it is unknown, and `pack` holds a message holding
+a JSON-alone `Any` as JSON alone, so an `Any` whose `bytes` is `Just`
+never has binary that dropped something.
+
+It is opt-in because the strict reading is protojson's, and a type
+the program never registered is more often a mistake than a choice; a
+lenient registry makes the miss silent. Its documentation is the
+place a program learns the trade: when it is safe (passing through,
+reading a few types by their typed values), what it costs (the lossy
+binary write), and that the failure it removes is `UnregisteredType`.
+It is on the registry, not on the client, because the registry is
+what every read takes, at any depth: a decoder given a lenient table
+reads its nested `Any`s leniently whatever calls it, `Proto.Json`
+codecs used without a client included, and a union carries the mark,
+lenient when any side is, so a lenient piece cannot be dropped by
+composing it with a strict one. A client knob would cover only the
+client's reads. `Proto.Any.bytes` became a `Maybe`: the binary
+canonical `Any` was not released with `bytes : Any -> Bytes`, so this
+breaks no release, but adding the state after one would have been a
+major. `==` follows the cache's rule (Any keeps the JSON it was read
+with), seeing the JSON, and `Proto.Any.equal` compares two JSON-alone
+`Any`s by type URL and JSON text and never
+finds one equal to an `Any` holding binary, since without a registry
+the two cannot be compared. Weighed: a lenient flag on the client
+(misses `Proto.Json` reads), a `{"type", "value"}` fallback (a form
+readers refuse), and leaving the state out (a transcoder's
+`google.rpc` details then need `Proto.ErrorDetails.registry`, which
+stays the strict way to read them). Measured (as for the cache): the
+state costs every program bytes, the no-`Any` floor 78 B gz over the
+cache (15,405 → 15,483) and the notes example 162–182; the notes
+example over JSON given `Proto.Registry.lenient Proto.Registry.empty`
+instead of its table is 30,510 B gz, against 33,985 with
+`Notes.V1.registry` alone and 36,601 with its full table, since no entry
+and none of their codecs are reached; and reading the 1 KB `Any`
+through that lenient empty table takes 3.4 µs, unpacking it 3.7,
+against 62–76 for the strict read. Where: design §3.10, §3.5, §5.4.
 
 ### Normalized per-package registries
 

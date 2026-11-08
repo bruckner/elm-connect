@@ -24,7 +24,9 @@ import Json.Encode as Encode exposing (Value)
 import Proto.Any
 import Proto.Binary
 import Proto.Bytes
+import Proto.ErrorDetails
 import Proto.Json
+import Proto.Message exposing (Message)
 import Proto.Registry
 import Rpc
 import Rpc.Body
@@ -407,21 +409,34 @@ encodeAnswer answer =
 {-| A detail read, as its proto3 JSON through `registry` (the runner's own
 table, whatever the client's), or Connect's `{"type", "value"}` form for one
 of a type it lacks; a detail problem as `{"unregisteredType": url}` or
-`{"invalidDetail": {"type": url or null, "reason": …}}`.
+`{"invalidDetail": {"type": url or null, "reason": …}}`. A detail held as
+JSON alone, which a lenient client registry reads, is unpacked with its
+`google.rpc` typed value and written as that value, so that a case's
+expected JSON says it unpacks; `{"notUnpacked": url}` when it does not.
 -}
 detailWith : Proto.Registry.Registry -> Result Rpc.Error.DetailProblem Proto.Any.Any -> Value
 detailWith registry detail =
     case detail of
         Ok any ->
-            case Proto.Json.encodeAnyWith registry any of
-                Ok json ->
-                    json
+            case Proto.Any.bytes any of
+                Just binary ->
+                    case Proto.Json.encodeAnyWith registry any of
+                        Ok json ->
+                            json
 
-                Err _ ->
-                    Encode.object
-                        [ ( "type", Encode.string (Proto.Any.typeName any) )
-                        , ( "value", Encode.string (Proto.Bytes.toBase64 (Proto.Any.bytes any)) )
-                        ]
+                        Err _ ->
+                            Encode.object
+                                [ ( "type", Encode.string (Proto.Any.typeName any) )
+                                , ( "value", Encode.string (Proto.Bytes.toBase64 binary) )
+                                ]
+
+                Nothing ->
+                    case unpackedDetail any |> Maybe.andThen (Proto.Json.encodeAnyWith registry >> Result.toMaybe) of
+                        Just json ->
+                            json
+
+                        Nothing ->
+                            Encode.object [ ( "notUnpacked", Encode.string (Proto.Any.typeUrl any) ) ]
 
         Err (Rpc.Error.UnregisteredType url) ->
             Encode.object [ ( "unregisteredType", Encode.string url ) ]
@@ -435,6 +450,30 @@ detailWith registry detail =
                         ]
                   )
                 ]
+
+
+{-| A detail unpacked with its `google.rpc` typed value and packed again.
+-}
+unpackedDetail : Proto.Any.Any -> Maybe Proto.Any.Any
+unpackedDetail any =
+    [ repacked Proto.ErrorDetails.errorInfo
+    , repacked Proto.ErrorDetails.retryInfo
+    , repacked Proto.ErrorDetails.debugInfo
+    , repacked Proto.ErrorDetails.quotaFailure
+    , repacked Proto.ErrorDetails.preconditionFailure
+    , repacked Proto.ErrorDetails.badRequest
+    , repacked Proto.ErrorDetails.requestInfo
+    , repacked Proto.ErrorDetails.resourceInfo
+    , repacked Proto.ErrorDetails.help
+    , repacked Proto.ErrorDetails.localizedMessage
+    ]
+        |> List.filterMap (\unpack -> unpack any)
+        |> List.head
+
+
+repacked : Message a -> Proto.Any.Any -> Maybe Proto.Any.Any
+repacked message any =
+    Proto.Any.unpack message any |> Maybe.map (Proto.Any.pack message)
 
 
 {-| A result as JSON: the response's fields (`Respond`); an error's details
