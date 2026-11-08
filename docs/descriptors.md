@@ -2,22 +2,25 @@
 
 Besides its types and codecs, generated code describes the protos as
 data: each message, enum, field and method has a descriptor, and each
-package holds its descriptors by full name. They are what `Proto.Any` and
-`Rpc.Error.details` read, and what a program uses to walk a message it
-was not written for.
+package holds its descriptors by full name. They are what
+`Proto.Any.describe` reads, and what a program uses to walk a message
+it was not written for.
 `google.rpc.Status`, the error detail types and the well-known types
 are listed with the other specifications in [specs.md](specs.md).
 
 ## Typed values
 
-Each message and enum has a typed value, holding its codecs, its
-default and its descriptor: `Notes.V1.messageNote :
-Proto.Message.Message Note` and `Notes.V1.enumVisibility :
-Proto.Enum.Enum Visibility`. `Proto.Message.encode`, `decoder`,
-`default` and `toDescriptor` read one; `Proto.Enum` adds `toName`,
-`fromName`, `toNumber` and `fromNumber`. A function that takes a typed
-value works for every message, as `Proto.Any.pack` and
-`Rpc.Error.details` below do.
+Each message and enum has a typed value: `Notes.V1.messageNote :
+Proto.Message.Message Note` holds the message's full name and both its
+codecs, proto3 JSON and protobuf binary, whatever the `codec` option
+says; `Notes.V1.enumVisibility : Proto.Enum.Enum Visibility` holds an
+enum's codecs, zero value and descriptor. `Proto.Message.typeName`
+reads a message's; `Proto.Enum` reads an enum's with `encode`,
+`decoder`, `default`, `toDescriptor`, `toName`, `fromName`, `toNumber`
+and `fromNumber`. A function that takes a typed value works for every
+message, as `Proto.Any.pack` and `Proto.Registry.register` below do. A
+message's descriptor and default are the generated
+`Notes.V1.Note.descriptor` and `Notes.V1.defaultNote`.
 
 ## Descriptors
 
@@ -66,8 +69,10 @@ noteFields =
 ## Any
 
 `Proto.Any` packs a message into a `google.protobuf.Any` with its typed
-value, and unpacks one the same way: `Nothing` when it holds another
-type, `Just (Err problem)` when it holds this type but cannot be read.
+value, and unpacks one the same way. An `Any` holds a type URL and the
+message's protobuf binary, whatever codec the calls use; `unpack` gives
+`Nothing` when it holds another type or its binary is not the message,
+and `tryUnpack` says which (`TypeMismatch`, `InvalidProto`).
 
 ```elm examples/notes/elm/src/Snippets/Any.elm#any
 import Notes.V1
@@ -77,6 +82,8 @@ import Proto.Any
 packed : Proto.Any.Any
 packed =
     -- {"@type": "type.googleapis.com/notes.v1.Note", "title": "groceries"}
+    -- as proto3 JSON (Proto.Any.toJson, through a registry holding notes.v1.Note);
+    -- the Any itself holds the note's protobuf binary
     let
         note =
             Notes.V1.defaultNote
@@ -86,43 +93,89 @@ packed =
 
 title : Proto.Any.Any -> Maybe String
 title any =
-    case Proto.Any.unpack Notes.V1.messageNote any of
-        Just (Ok note) ->
-            Just note.title
-
-        _ ->
-            Nothing
+    Proto.Any.unpack Notes.V1.messageNote any
+        |> Maybe.map .title
 ```
 
 `Proto.Any.is` tests an `Any`'s type, `typeUrl` and `typeName` read it,
-and `Proto.Any.describe descriptors any` finds its descriptor.
+`bytes` reads its binary, and `Proto.Any.describe descriptors any` finds
+its descriptor.
+
+### Registries
+
+An `Any`'s proto3 JSON is converted from and to its binary through a
+`Proto.Registry`: reading an `Any` from JSON (`Proto.Json.anyWith`),
+writing one as JSON (`Proto.Json.encodeAnyWith`), and
+`Proto.Any.toJson`. A type the registry lacks is a loud miss, as in
+protobuf's own runtimes: the read fails naming its type URL, and the
+write gives `UnregisteredType` with it. Over protobuf binary no
+registry is needed.
+
+Each generated package has a `registry` holding its own messages and
+nothing else; the runtime has `Proto.Registry.wellKnown` and
+`Proto.ErrorDetails.registry`. A program composes the one its `Any`s
+need and gives it to its client, which converts its calls' `Any`s and
+its errors' details through it:
+
+```elm examples/notes/elm/src/Api.elm#registry
+{-| The types an `Any` this page reads as proto3 JSON may hold: a note's
+attachment (the package's own messages or a well-known type), and the
+`google.rpc` error details a transcoder's status body carries.
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.unionAll
+        [ Notes.V1.registry
+        , Proto.Registry.wellKnown
+        , Proto.ErrorDetails.registry
+        ]
+```
+
+`Proto.Registry.register` adds one message by its typed value, in a
+pipeline (`Proto.Registry.empty |> Proto.Registry.register
+Notes.V1.messageNote`). Registering a message needs nothing else
+registered but the types its `Any`s hold: an entry converts a nested
+`Any` through the registry it is read through.
 
 ## Error details
 
-An error's details are `Any`s, and `Rpc.Error.details` gives those of one
-type, here `google.rpc.BadRequest` from a package generated from
-`google/rpc/error_details.proto` (the notes example generates it with buf
-from googleapis):
+A status's details are `List (Result Rpc.Error.DetailProblem
+Proto.Any.Any)`, in the order the server sent them: each an `Any`, or
+why it could not be read. Unpack those of one type with its typed
+value, here `google.rpc.BadRequest` from the runtime's
+`Proto.ErrorDetails`:
 
 ```elm examples/notes/elm/src/Snippets/Details.elm#details
-import Google.Rpc
+import Proto.Any
+import Proto.ErrorDetails
 import Rpc
 import Rpc.Error
 
 
 violations : Rpc.Error -> List String
 violations error =
-    Rpc.Error.details Google.Rpc.messageBadRequest error
-        |> List.concatMap .fieldViolations
-        |> List.map .description
+    case error of
+        Rpc.Error.RpcStatus status _ ->
+            status.details
+                |> List.filterMap Result.toMaybe
+                |> List.filterMap (Proto.Any.unpack Proto.ErrorDetails.badRequest)
+                |> List.concatMap .fieldViolations
+                |> List.map .description
+
+        _ ->
+            []
 ```
 
-`google.rpc`'s types are not part of the runtime: generate them from
-googleapis' `google/rpc/error_details.proto` like any other proto
-([`examples/notes/buf.gen.google-rpc.yaml`](../examples/notes/buf.gen.google-rpc.yaml)
-does). A Connect server sends each detail as protobuf binary, with its
-JSON beside it as `debug` when it chooses to; a detail without `debug`
-keeps its type but does not unpack (`Proto.Any.BinaryOnly`).
+`Proto.ErrorDetails` holds `google/rpc/error_details.proto`'s messages
+(`ErrorInfo`, `BadRequest` and the rest, a nested message named as the
+generator flattens it, `BadRequestFieldViolation`). A Connect server
+and gRPC-Web send each detail as protobuf binary, which needs no
+registry. A transcoder (grpc-gateway, Envoy, Vanguard) sends a
+`google.rpc.Status` body whose details are proto3 JSON, which the
+client reads through its registry: without `Proto.ErrorDetails.registry`
+in it they read as `Err (UnregisteredType url)`, the error's code and
+message kept. A detail that is not one at all is `InvalidDetail`, with
+what was wrong; `Rpc.Trace.toJson` lists both kinds.
 
 ## Update masks
 
@@ -136,12 +189,14 @@ descriptors:
 {-| The `google.protobuf.FieldMask` of what changed from `before` to
 `after`, for an update request such as `UpdateNoteRequest`.
 -}
-updateMask : Descriptors -> Message a -> a -> a -> List String
-updateMask descriptors message before after =
-    changedPaths descriptors
-        (Message.toDescriptor message)
-        (Message.encode message before)
-        (Message.encode message after)
+updateMask : Descriptors -> Message a -> (a -> Value) -> a -> a -> List String
+updateMask descriptors message encode before after =
+    case Descriptors.message (Message.typeName message) descriptors of
+        Just descriptor ->
+            changedPaths descriptors descriptor (encode before) (encode after)
+
+        Nothing ->
+            []
 ```
 
 `changedPaths`, in the same file, compares the two values' JSON field by

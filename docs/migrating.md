@@ -207,10 +207,10 @@ then its codecs, and modifiers set the rest:
 getNote : Notes.V1.GetNoteRequest -> Rpc.Call Rpc.Json Notes.V1.GetNoteRequest Notes.V1.Note
 getNote =
     Rpc.call
-        (Proto.Method.json "notes.v1.NotesService"
+        (Proto.Method.initJson "notes.v1.NotesService"
             "GetNote"
-            Notes.V1.encodeGetNoteRequest
-            Notes.V1.decodeNote
+            (\_ -> Ok << Notes.V1.encodeGetNoteRequest)
+            Notes.V1.decodeNoteWith
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
             |> Proto.Method.withBindings [ getNoteBinding ]
         )
@@ -305,15 +305,67 @@ noteFields =
         |> Maybe.withDefault []
 ```
 
-`Proto.Any.describe` takes the `Descriptors`. `Proto.Registry` now holds
-binary codecs alone, which `codec=both` generates as `binaryRegistry`,
-unchanged for now; a later release renames and widens it before 1.0.
+`Proto.Any.describe` takes the `Descriptors`. A descriptor's full name
+is `Proto.Message.fullName` and `Proto.Enum.fullName`, where 0.1 had
+`typeName`, which is now a message's typed value's
+(`Proto.Message.typeName : Message a -> String`).
+
+## Any, the registry and error details
+
+An `Any` holds its message's protobuf binary, as in protobuf's own
+runtimes, whatever codec the calls use. In 0.1 it held the message's
+JSON.
+
+- `Proto.Any.unpack : Message a -> Any -> Maybe a` gives the value, or
+  `Nothing` for another type or binary that is not the message;
+  `tryUnpack` gives `Result Problem a` with why. 0.1's `unpack` gave
+  `Maybe (Result Problem a)`, and its `Problem` was `Json` or
+  `BinaryOnly`; it is now `TypeMismatch`, `InvalidProto`,
+  `UnregisteredType` and `UnwritableAny`, each documented with what to
+  do about it. `bytes` reads the binary and `toJson registry` its proto3
+  JSON.
+- Proto3 JSON of an `Any` goes through a registry: `Proto.Json.anyWith
+  registry` and `encodeAnyWith registry` replace `any` and `encodeAny`.
+  An `"@type"` the registry lacks fails the read, naming the URL, and
+  the write gives `UnregisteredType`, as protojson does.
+- A message's typed value holds its full name and both codecs:
+  `Proto.Message.init "notes.v1.Note" encodeNote decodeNote
+  encodeNoteBytes decodeNoteBytes` (`initWith` for one that reaches an
+  `Any`) replaces 0.1's `Proto.Message.message encode decoder default
+  descriptor`, and the readers `encode`, `decoder`, `default` and
+  `toDescriptor` are gone: use the generated codecs, `defaultNote` and
+  `Notes.V1.Note.descriptor`.
+- A generated message that reaches an `Any` has `decodeNoteWith` and
+  `encodeNoteWith`, which take the registry (the encoder gives a
+  `Result`), in place of `decodeNote` and `encodeNote`.
+- `Proto.Registry` is the table: each generated package's `registry`
+  holds its own messages, `Proto.Registry.wellKnown` the well-known
+  types and `Proto.ErrorDetails.registry` `google.rpc`'s error details;
+  `register`, `union` and `unionAll` compose them. Give the client the
+  one its `Any`s need with `Rpc.withRegistry`; a JSON client whose
+  messages hold an `Any` needs one, and a request whose `Any` it cannot
+  write fails with `NoAnswer (UnwritableRequest problem)`.
+- A method holds no registry: a hand-written method's JSON codecs take
+  the client's (`Proto.Method.initJson "notes.v1.NotesService" "GetNote"
+  (\_ -> Ok << encodeGetNoteRequest) (\_ -> decodeNote)`).
+  `Proto.Method.encodeRequest`, `responseDecoder`, `Rpc.Call.requestJson`
+  and `Rpc.Call.toJson` take a registry, and the first, third and fourth
+  give a `Result`.
+- `StatusError.details` is `List (Result Rpc.Error.DetailProblem
+  Proto.Any.Any)`: each detail, or why it could not be read
+  (`UnregisteredType url` for a `google.rpc.Status` body's detail of a
+  type the client's registry lacks, `InvalidDetail`). `Rpc.Error.details`
+  is gone; unpack with `Proto.Any.unpack` and the type's typed value,
+  `Proto.ErrorDetails.badRequest` for `google.rpc.BadRequest`
+  ([descriptors.md](descriptors.md#error-details)).
 
 ## The generator
 
-- `codec=proto` (CLI `--codec proto`) generates the protobuf binary
-  codecs alone, and `codec=both` adds them beside the JSON ones. The
-  default, `codec=json`, generates JSON codecs alone, as 0.1 did. A
+- Every message gets both codecs, proto3 JSON and protobuf binary, its
+  typed value and its package's `registry`, whatever the options say.
+  `codec` says which codecs the service methods are wired with:
+  `codec=proto` (CLI `--codec proto`) binary, `codec=both` either, and
+  the default, `codec=json`, proto3 JSON as 0.1's were. A
   build of `main` before 0.2 named the binary codecs alone
   `codec=binary`, which is now refused with `options::unknown_option`:
   "The option `codec` is `binary`, which is now spelled `proto`."
@@ -324,9 +376,6 @@ unchanged for now; a later release renames and widens it before 1.0.
   method named for one (`RouteGetNote0` beside `GetNote`) is
   `naming::value_collision`, and a `rename` resolves it. Under
   `codec=proto` a method gets no routes, since transcoding takes JSON.
-- `Proto.Any.pack` of a message generated under `codec=proto` holds its
-  binary alone. A build of `main` before 0.2 held a `null` JSON beside
-  it.
 
 ## Regenerating
 
@@ -345,9 +394,9 @@ The `Proto.Version` module does not expose a `v0_1` variable. These names seem
 close though:
 
     Proto.Version.v0_2
-    Proto.Json.any
     Proto.Json.enum
-    Proto.Json.int32
+    Proto.Json.bytes
+    Proto.Json.empty
 ```
 
 Regenerate with the 0.2 binary, with the options used before.

@@ -626,7 +626,8 @@ vendored rather than installed. Where: design §5.2.
 
 ### `Any` in the runtime
 
-*2026-10-13.*
+*2026-10-13; its payload made binary alone on 2026-11-07 (Binary is
+the Any's canonical form).*
 
 `google.protobuf.Any` is the opaque `Proto.Any.Any`: it packs and
 unpacks through the typed values, describes its type through a
@@ -1083,7 +1084,10 @@ Where: design §5.1.
 
 ### `codec=proto`
 
-*2026-10-27.*
+*2026-10-27; on 2026-11-07 the option came to say only how the methods
+are wired, every message having both codecs (Binary is the Any's
+canonical form), and the builders became `init`, `initJson` and
+`initProto`.*
 
 The generator's option value for the binary codecs alone is `proto`,
 the name of the tag its calls carry (`Rpc.Call Rpc.Proto`) and of the
@@ -1179,6 +1183,119 @@ message resolves through: Go's `protoregistry.Files` and `Types`, C++'s
 `Registry`. `descriptors` is all lowercase like `registry` was, so no
 generated prefix and type name takes it, and `registry` stays free on
 the same terms. Where: design §3.9.
+
+### Binary is the Any's canonical form
+
+*2026-11-07.*
+
+An `Any` is a type URL and its message's protobuf binary, as in Go,
+Java and protobuf-es: one type, `Proto.Any.Any`, with no codec phantom
+and no `*Json` twins (`pack`, `packWith`, `is`, `typeUrl`, `typeName`,
+`bytes`, `unpack`, `tryUnpack`, `toJson`, `describe`). Proto3 JSON is a
+projection through a registry, strict both ways as protojson is: an
+`"@type"` the registry lacks fails the read, naming the URL, and an
+unregistered type fails the write, `UnregisteredType`. `Message a`
+lost its phantom too: every message has both codecs (`Proto.Message.init`,
+`initWith` for one whose JSON codecs take a registry), and every
+package gets its binary codecs, typed values and `registry` whatever
+`codec=` says, which now says only how the methods are wired. `Problem`
+holds only the constructors that can happen, each saying what the user
+does about it (`TypeMismatch`, `InvalidProto`, `UnregisteredType`, and
+`UnwritableAny` for an `Any` nested in another, whose own problem the
+outer entry cannot name, since `Proto.Message` cannot import
+`Proto.Any`).
+
+The alternative was the typed `Any codec` drafted first: an `Any Json` holding
+proto3 JSON under `codec=json`, an `Any Proto` holding binary under
+`proto` and `both`, with `packJson`, `unpackJson` and the rest. The
+spikes measured both. A `codec=json` program that reaches no `Any`
+compiles to the same bundle whichever design, binary codecs and typed
+values being dead code (within 2 B gz on synthetic packages of 100 and
+300 messages, compile time within 1.3×). The floor, a json-wired
+`getNote` over Connect, is 626 B gz smaller in the base (15,857 B
+against 16,483 B), since it never converts a detail's bytes to JSON.
+The reading is strict as protojson's. The cost, accepted, falls on
+programs that hold an `Any` and speak JSON: they carry the table they
+convert through (about 14 KB gz on a 31-message package, about 50 B
+gz a message, half of it binary machinery), and each operation on a
+message holding an `Any` costs 43–58 µs instead of 1–3 µs, 15–39×
+slower, the JSON-to-binary round trip through base64 and elm/bytes.
+A cache of the JSON beside the binary, and a lenient registry that
+holds an unknown type as JSON, were spiked and are deferred to a later
+change; the default stays strict (design §1.2's rule: correctness
+first, the cheaper or laxer reading an opt-in). Where: design §3.5,
+§3.10, §5.5.
+
+### Normalized per-package registries
+
+*2026-11-07.*
+
+A generated package's `registry` holds the package's own messages,
+nested ones included, built from their typed values (`Proto.Registry.empty
+|> Proto.Registry.register messageNote |> …`), and nothing else: no
+imported package's table, no well-known type, no error detail. An
+application composes what it needs:
+`Proto.Registry.unionAll [ Notes.V1.registry, Proto.Registry.wellKnown,
+Proto.ErrorDetails.registry ]`. A typed value's codecs are closed over
+its fields' types and take the reading registry at read time, so an
+entry needs nothing beside it and a nested `Any` converts through the
+same table at any depth. The package is then a unit that needs no
+maintenance when its imports change, the grain an application composes
+and pays at (about 50 B gz a message registered), and a type the
+application did not compose in is a loud miss rather than a table that
+happens to hold it through some import. `Proto.Registry`'s surface is
+`empty`, `register`, `union`, `unionAll` and `wellKnown`; the builder
+from raw codecs (`withCodecs`) is internal, so an entry is always a
+typed value's. There is no `registerAll`: a list of `Message a` cannot
+hold different `a`s, so it would be `unionAll` by another name.
+
+The alternative was the first draft's transitive table, each package's holding
+its imports' and the well-known types it holds: convenient, but it
+grows with every import, a program pays for types it never packs, and a
+missing type is found only when some package does not happen to import
+it. Where: design §3.10.
+
+### One table, the client's
+
+*2026-11-07.*
+
+A method holds no registry. Its JSON codecs take the registry at use
+time (`Registry -> req -> Result Problem Value`, `Registry -> Decoder
+res`; a type that reaches no `Any` ignores it, under the wrapper the
+generator writes), and the client passes its own, `Rpc.withRegistry`,
+`Proto.Registry.empty` until set. So `Proto.Method.init` and
+`initJson` take no registry, and `encodeRequest`, `responseDecoder`,
+`Rpc.Call.requestJson` and `Rpc.Call.toJson` take one and give a
+`Result`, never `null` for a request they cannot write. A JSON program
+with `Any` fields configures a registry, as protojson and connect-es
+require; over binary none is needed. The first draft gave each method a default
+table, its package's, with the client's in its place when set: two
+places to look, and a program calling any method of an `Any`-holding
+package kept that package's table whatever its protocol. The send path
+encodes the request once (`Rpc.Internal.Plan.toSend`) and checks that
+its `Any`s can be written whenever the JSON is what is sent. Where:
+design §4, §5.2.
+
+### Error details as results
+
+*2026-11-07.*
+
+`StatusError.details : List (Result DetailProblem Any)`, in wire
+order, with `DetailProblem = UnregisteredType String | InvalidDetail
+(Maybe String) String`. `Any` is the type `google.rpc.Status` holds, so
+a detail is one, and the read says what it could not do instead of
+dropping a detail silently: a Connect body's and gRPC-Web's details are
+binary and always read; a `google.rpc.Status` body's are proto3 JSON,
+read through the client's registry, so one of a type it lacks is
+`UnregisteredType` with its URL, which `Proto.ErrorDetails.registry`
+fixes for `google.rpc`'s. A detail problem never fails the status read.
+The reasons are strings, for a log line, which keeps `Error` comparable;
+the trace names them. There is one pathway: `Proto.Any.tryUnpack` and
+a typed value; `Rpc.Error.details`, `detailsJson` and the `Detail`
+record are gone. Weighed: dropping unreadable details (the spike's base;
+silent), two fields of details read and details not read (a second
+pathway to keep in step), and an opaque detail type with readers (hides
+the `Any` the wire holds). Where: design §5.4.
 
 ## Input and versioning
 

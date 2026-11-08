@@ -271,10 +271,12 @@ What `Rpc.Error` gives the application:
 | `Rpc.Error.code` | `Rpc.Code.NotFound`, `Rpc.Code.InvalidArgument` | the same |
 | `Rpc.Error.message` | the service's message | the same, percent-decoded |
 | `source` | `StatusBody` | `GrpcHeaders` |
-| `Rpc.Error.details` | the `ErrorInfo` and `BadRequest` | none: Envoy forwards no `grpc-status-details-bin` |
+| `details` | the `ErrorInfo` and `BadRequest`, read through the client's registry (`Proto.ErrorDetails.registry`) | `[]`: Envoy forwards no `grpc-status-details-bin` |
 
-So convert errors when the client reads details; `Google.Rpc`'s
-`BadRequest` field violations, for one, only arrive that way. Either
+So convert errors when the client reads details; `google.rpc.BadRequest`'s
+field violations, for one, only arrive that way. Give the client
+`Proto.ErrorDetails.registry` too, or the details read as
+`UnregisteredType`. Either
 way the runtime reads the code from the status, not from the HTTP
 status.
 
