@@ -8,8 +8,7 @@
 - `Proto.Message.withBinary` and `Proto.Message.messageBinary` attach
   the binary codecs to a typed value, and `Proto.Message.encodeBytes`
   and `bytesDecoder` read them back. `Proto.Method.proto` builds a
-  method with binary codecs alone and `Proto.Method.both` one with both,
-  and `Proto.Method.hasJson` says whether a method has JSON codecs.
+  method with binary codecs alone and `Proto.Method.both` one with both.
 - `naming::codec_collision`: under `codec=both`, or `codec=proto` for an
   enum, a type named for another with `Bytes` at the end (`NoteBytes`
   beside `Note`) has JSON codecs that take the other's binary codecs'

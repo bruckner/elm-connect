@@ -154,7 +154,7 @@ entryWith calls requestDecoder respond envelope toMsg =
                 JsonClient client ->
                     case calls.json of
                         Just toCall ->
-                            prepare envelope (toCall request)
+                            prepare (viaBinding envelope) envelope (toCall request)
                                 |> Result.andThen
                                     (sendWith client
                                         (\c deliver -> Http.expectStringResponse deliver (\answer -> Ok ( encodeAnswer answer, Rpc.response client c answer )))
@@ -169,7 +169,7 @@ entryWith calls requestDecoder respond envelope toMsg =
                 ProtoClient client ->
                     case calls.proto of
                         Just toCall ->
-                            prepare envelope (toCall request)
+                            prepare (\_ _ -> Err "a binding is chosen on a call over JSON") envelope (toCall request)
                                 |> Result.andThen
                                     (sendWith client
                                         (\c deliver -> Http.expectBytesResponse deliver (\answer -> Ok ( encodeAnswer answer, Rpc.responseBytes client c answer )))
@@ -182,10 +182,12 @@ entryWith calls requestDecoder respond envelope toMsg =
                             missing "protobuf binary"
 
 
-{-| A call with the envelope's headers, over its binding when it names one.
+{-| A call with the envelope's headers, over its binding when it names one,
+which `via` takes: transcoding's bindings are JSON's, so a binary call has
+none.
 -}
-prepare : Envelope -> Rpc.Call codec req res -> Result String (Rpc.Call codec req res)
-prepare envelope call =
+prepare : (Int -> Rpc.Call codec req res -> Result String (Rpc.Call codec req res)) -> Envelope -> Rpc.Call codec req res -> Result String (Rpc.Call codec req res)
+prepare via envelope call =
     let
         plain =
             Rpc.Call.withHeaders envelope.headers call
@@ -195,16 +197,23 @@ prepare envelope call =
             Ok plain
 
         Just index ->
-            Rpc.Call.viaBinding index plain
-                |> Result.fromMaybe
-                    ("binding "
-                        ++ String.fromInt index
-                        ++ " is not one "
-                        ++ envelope.service
-                        ++ "/"
-                        ++ envelope.method
-                        ++ " has"
-                    )
+            via index plain
+
+
+{-| A JSON call over its binding `index`, or why it has none.
+-}
+viaBinding : Envelope -> Int -> Rpc.Call Rpc.Json req res -> Result String (Rpc.Call Rpc.Json req res)
+viaBinding envelope index call =
+    Rpc.Call.viaBinding index call
+        |> Result.fromMaybe
+            ("binding "
+                ++ String.fromInt index
+                ++ " is not one "
+                ++ envelope.service
+                ++ "/"
+                ++ envelope.method
+                ++ " has"
+            )
 
 
 {-| How the pure halves read an answer for a client: as text through
