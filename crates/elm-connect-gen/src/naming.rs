@@ -611,6 +611,25 @@ pub fn service_module(
     })
 }
 
+/// The last segment of a service's module of calls over proto3 JSON,
+/// inside the service's module: `Notes.V1.NotesService.Json`.
+pub const JSON_CALLS: &str = "Json";
+
+/// The last segment of a service's module of calls over protobuf binary:
+/// `Notes.V1.NotesService.Proto`.
+pub const PROTO_CALLS: &str = "Proto";
+
+/// A service's module of calls in one codec, inside the service's module,
+/// which holds its routes and descriptors (design §4): `segment` is
+/// [`JSON_CALLS`] or [`PROTO_CALLS`]. The names do not depend on the
+/// `codec` option, which says only which of the two are generated, so a
+/// program changes its wire by an import line.
+pub fn calls_module(service_module: &ModuleName, segment: &str) -> ModuleName {
+    let mut segments = service_module.segments().to_vec();
+    segments.push(segment.to_owned());
+    ModuleName::new(segments).expect("a calls module's segment is a valid module segment")
+}
+
 /// PascalCase of one proto identifier: drop underscores and uppercase the
 /// first letter of every underscore-separated word, leaving the rest of
 /// each word as written (`foo_bar` becomes `FooBar`, `HTTPRequest` stays).
@@ -1118,6 +1137,15 @@ mod tests {
             let module = service_module(&package, service).unwrap();
             assert_eq!(module.to_string(), expected, "{service}");
         }
+        let service = service_module(&package, "NotesService").unwrap();
+        assert_eq!(
+            calls_module(&service, JSON_CALLS).to_string(),
+            "Notes.V1.NotesService.Json"
+        );
+        assert_eq!(
+            calls_module(&service, PROTO_CALLS).to_string(),
+            "Notes.V1.NotesService.Proto"
+        );
         for service in ["_", "_1x"] {
             assert_eq!(
                 service_module(&package, service),

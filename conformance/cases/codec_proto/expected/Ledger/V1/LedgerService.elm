@@ -5,12 +5,13 @@
 module Ledger.V1.LedgerService exposing (..)
 
 {-| `service ledger.v1.LedgerService`
+
+Its calls are in [`Ledger.V1.LedgerService.Proto`](Ledger-V1-LedgerService-Proto) over protobuf binary.
+
 -}
 
-import Ledger.V1
 import Proto.Method
 import Proto.Version
-import Rpc
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -18,27 +19,6 @@ import Rpc
 elmConnectVersion_ : Proto.Version.Generated
 elmConnectVersion_ =
     Proto.Version.v0_2
-
-
-
--- CALLS
-
-
-{-| `rpc GetEntry(GetEntryRequest) returns (Entry)`.
-Connect: `POST /ledger.v1.LedgerService/GetEntry`.
-Transcode: no HTTP rule, follows the Connect path.
-
-Codecs: protobuf binary. Described by [`descriptorGetEntry`](#descriptorGetEntry).
-
--}
-getEntry : Ledger.V1.GetEntryRequest -> Rpc.Call Rpc.Proto Ledger.V1.GetEntryRequest Ledger.V1.Entry
-getEntry =
-    Rpc.call
-        (Proto.Method.initProto "ledger.v1.LedgerService"
-            "GetEntry"
-            Ledger.V1.encodeGetEntryRequestBytes
-            Ledger.V1.decodeEntryBytes
-        )
 
 
 

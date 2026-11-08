@@ -110,12 +110,14 @@ Generated code carries no protocol. Three layers, the first two data:
    module (`Notes.V1`). Identical under either protocol because both
    use proto3 JSON.
 2. **Calls are data.** One module per service (`Notes.V1.NotesService`),
+   holding each method's route functions and descriptor, and inside it
+   one calls module per codec the generator wires (`.Json`, `.Proto`),
    with one function per method that, applied to a request, gives an
    `Rpc.Call codec req res`: the service and method names,
    idempotency, the request and response codecs and the method's route
    functions (§4). Nothing in a call picks a protocol; its type says
-   the codec its generated code has (`Rpc.Json`, `Rpc.Proto`, or free
-   under `codec=both`).
+   the codec of its module (`Rpc.Json` or `Rpc.Proto`), so a program
+   picks its wire by the module it imports.
 3. **A client says where and how, and one runtime module sends.** An
    `Rpc.Client codec` holds a protocol (`Rpc.Protocol`: Connect over
    JSON or protobuf binary, or transcoding, with their options), base
@@ -178,19 +180,18 @@ getNote config request toMsg =
 ```
 
 Under this design the package module `Notes.V1` holds the types and
-codecs, and the service gets a module of its own (§4):
+codecs, and the service gets a module of its own, with its calls in a
+module inside it (§4):
 
 ```elm
--- Notes/V1/NotesService.elm (generated)
+-- Notes/V1/NotesService/Json.elm (generated)
 
 
-module Notes.V1.NotesService exposing (..)
+module Notes.V1.NotesService.Json exposing (..)
 
 import Notes.V1
-import Notes.V1.GetNoteRequest
-import Proto.Http
+import Notes.V1.NotesService
 import Proto.Method
-import Proto.Route
 import Rpc
 
 
@@ -206,7 +207,7 @@ getNote =
             (\_ -> Ok << Notes.V1.encodeGetNoteRequest)
             (\_ -> Notes.V1.decodeNote)
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
-            |> Proto.Method.withRoutes [ routeGetNote0 ]
+            |> Proto.Method.withRoutes [ Notes.V1.NotesService.routeGetNote0 ]
         )
 
 
@@ -218,6 +219,19 @@ summarize =
             (\_ -> Ok << Notes.V1.encodeSummarizeRequest)
             (\_ -> Notes.V1.decodeSummary)
         )
+```
+
+```elm
+-- Notes/V1/NotesService.elm (generated)
+
+
+module Notes.V1.NotesService exposing (..)
+
+import Notes.V1
+import Notes.V1.GetNoteRequest
+import Proto.Http
+import Proto.Method
+import Proto.Route
 
 
 
@@ -279,7 +293,7 @@ Application code applies a method to its request and sends the call
 with a client:
 
 ```elm
-import Notes.V1.NotesService as Notes
+import Notes.V1.NotesService.Json as Notes
 import Rpc
 import Rpc.Protocol
 
@@ -332,7 +346,7 @@ rpc shared call =
   `Scalar`, and `Proto.EnumValue` holds `Descriptor`. (2) A builder is
   named for the type it builds (`descriptor` a `Descriptor`, `enum` an
   `Enum`), or `init` for a typed value of codecs (`Proto.Message.init`,
-  `Proto.Method.init`). Readers are plain nouns
+  `Proto.Method.initJson`, `initProto`). Readers are plain nouns
   (`name`, `fields`); a typed value's reader for its descriptor is
   `toDescriptor`, a conversion like `Url.toString`. No reader name is
   shared by two types in one module: a message's typed value is read by
@@ -431,9 +445,9 @@ rpc shared call =
   the package module imports its descriptor modules (for the typed
   values and `descriptors`), a message's descriptor module imports the
   descriptor modules of the enums its fields hold (another package's
-  included), and a service module imports the descriptor modules its
-  routes name (§4); nothing imports a package module from below, so no
-  cycle can form. Why: a field's descriptor is something a program can
+  included), a service module imports the descriptor modules its
+  routes name, and its calls modules import it (§4); nothing imports a
+  package module from below, so no cycle can form. Why: a field's descriptor is something a program can
   name (`Notes.V1.Note.title`), which routes build on (§5.3) and UI
   code can, and the package module of values reads as the API a
   program uses. The cost is a module per type, which a program pays
@@ -446,7 +460,11 @@ rpc shared call =
   `notes.v1.note`), or like another type but for case (`ShopItem`,
   `Shopitem`) is `naming::module_collision`, with `rename` the escape
   (`descriptors_module_collision` and `descriptors_module_case`
-  cases).
+  cases). A service's calls modules, `Notes.V1.NotesService.Json` and
+  `.Proto`, are claimed too, both under every `codec` value, so that
+  changing the option meets no new collision: a package nested in the
+  service's name (`notes.v1.notes_service.json`) is
+  `naming::module_collision` (`services_calls_module_collision` case).
 - **A descriptor module's values.** Its
   values share a namespace with the message's field names, so the
   generator claims as few names there as it can. It claims one,
@@ -1584,8 +1602,13 @@ case names it):
   names coincide (`Archive` and `archive`), a service module that is
   also a package's (`NotesService` in `notes.v1` beside the package
   `notes.v1.notes_service`), and two packages with one module name
-  (`naming::module_collision`, `services_module_collision` case); and a
-  service whose name has no module form (`naming::invalid_service`,
+  (`naming::module_collision`, `services_module_collision` case); a
+  package that takes the name of a service's calls module
+  (`notes.v1.vault.json` beside the service `notes.v1.Vault`, whose JSON
+  calls are `Notes.V1.Vault.Json`), claimed under every `codec` value
+  (`naming::module_collision`, `services_calls_module_collision` case),
+  not reported again when the service's own module already collides;
+  and a service whose name has no module form (`naming::invalid_service`,
   `services_invalid` case). Escape: rename the service or package with
   `rename=` (§3.7). Two module names that differ only in case (`Shop.Api`
   and `Shop.API`) collide too, since their files are one file on the
@@ -1728,7 +1751,7 @@ registry =
   `Proto.Method.initJson service name encodeRequest responseDecoder`
   (§4, given its idempotency and routes by `withIdempotency` and
   `withRoutes`, and built from its binary codecs by
-  `Proto.Method.initProto` or from both by `Proto.Method.init`, §3.10).
+  `Proto.Method.initProto`, §3.10).
   Why: an Elm record alias that generated code writes
   as a literal can never gain a field. The field is a major by Elm's
   package rules, and every module generated before it stops compiling
@@ -1857,8 +1880,9 @@ registry =
   method named for it (`DescriptorGetNote` beside `GetNote`), which is
   diagnosed, as is one named for a route function (`RouteGetNote0`).
   There is no service, file or package descriptor: nothing consumes
-  one, and a service module's namespace is its methods' calls, route
-  functions and descriptors, so any fixed value name could collide with
+  one, and a service's names, its methods' calls, route functions and
+  descriptors, are claimed as one namespace although the calls are in
+  modules of their own (§4), so any fixed value name could collide with
   a method.
 - **The package's descriptors.** Each package module has a registry
   section holding `descriptors : Proto.Descriptors.Descriptors`,
@@ -1941,20 +1965,23 @@ registry =
   default `json`, says which codecs the service methods are wired with,
   and so which protocols their calls go over. The second header line
   records it like the others (`-- Options: codec=both`), and `check`
-  regenerates with it. Under `json` each method is built by
-  `Proto.Method.initJson`, under `proto` by `Proto.Method.initProto`
-  from its binary codecs, under `both` by `Proto.Method.init` from all
-  four, the arguments stacked. A method's JSON codecs take the client's
+  regenerates with it. It says which of a service's calls modules are
+  generated (§4): under `json` the `.Json` module, whose methods are built
+  by `Proto.Method.initJson`; under `proto` the `.Proto` module, whose
+  methods are built by `Proto.Method.initProto` from their binary codecs;
+  under `both` the two. The modules' names do not depend on the option,
+  so moving a package from `json` to `both` changes no import. A
+  method's JSON codecs take the client's
   registry (§5.1): `Notes.V1.encodeGetNoteRequestWith` for a type that
   reaches an `Any`, else the plain codec under the generator's ignoring
   wrapper, `\_ -> Ok << Notes.V1.encodeGetNoteRequest` and `\_ ->
-  Notes.V1.decodeNote`. A method wired with `proto` gets no route
+  Notes.V1.decodeNote`. Under `proto` a service gets no route
   functions, nor its messages query encoders: transcoding takes JSON
   (§5.3). A method's codec is in its type, and so in its call's (§4):
-  `Rpc.Json` under `json`, `Rpc.Proto` under `proto`, free under `both`;
-  what reads a method's JSON half or takes its routes is typed at
-  `Rpc.Json` (§5.1), so the type alone tells a method built with
-  `initProto`.
+  `Rpc.Json` in the `.Json` module, `Rpc.Proto` in the `.Proto` one; no
+  generated method is free in it. What reads a method's JSON half or
+  takes its routes is typed at `Rpc.Json` (§5.1), so the type alone
+  tells a method built with `initProto`.
 - **Names** are §3.7's: the JSON names with `Bytes` at the end, and
   `naming::codec_collision` where a type's name meets them, under every
   option. The JSON codecs taking the registry end in `With`, and the same
@@ -1997,15 +2024,23 @@ registry =
 ## 4. Calls
 
 Each service is an Elm module of its own, `Notes.V1.NotesService`
-beside the package's `Notes.V1`, holding a calls section with one
-function per method from its request to an `Rpc.Call` (§5.2), a routes
-section with one function per HTTP binding of each method, and then a
-descriptors section with each method's `Proto.Method.Descriptor`: what
-a program uses comes first and its description after, as a message's
-descriptor sits in a module apart from its type (§3.1). The `services`
-conformance case pins the output:
+beside the package's `Notes.V1`, holding a routes section with one
+function per HTTP binding of each method and then a descriptors section
+with each method's `Proto.Method.Descriptor`, and nothing bound to a
+wire. Its calls, one function per method from its request to an
+`Rpc.Call` (§5.2), are in a calls module per codec inside it:
+`Notes.V1.NotesService.Json`, built from the JSON codecs and taking the
+routes, and `Notes.V1.NotesService.Proto`, built from the binary codecs.
+The `codec` option (§3.10) says which exist: `json` the first, `proto`
+the second, `both` the two; their names do not depend on it, so moving a
+package from `json` to `both` changes no import, and a module's wire is
+its one import line. The `services` conformance case pins the output,
+the calls module first:
 
 ```elm
+-- Notes/V1/NotesService/Json.elm
+
+
 -- CALLS
 
 
@@ -2016,7 +2051,7 @@ Transcode:
   - binding 0: `GET /v1/{name=notes/*}`;
   - binding 1: `GET /v1/{name=users/*/notes/*}`.
 
-Codecs: JSON. Described by [`descriptorGetNote`](#descriptorGetNote).
+Codecs: JSON. Described by [`descriptorGetNote`](Notes-V1-NotesService#descriptorGetNote).
 -}
 getNote : Notes.V1.GetNoteRequest -> Rpc.Call Rpc.Json Notes.V1.GetNoteRequest Notes.V1.Note
 getNote =
@@ -2026,15 +2061,18 @@ getNote =
             (\_ -> Ok << Notes.V1.encodeGetNoteRequest)
             (\_ -> Notes.V1.decodeNote)
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
-            |> Proto.Method.withRoutes [ routeGetNote0, routeGetNote1 ]
+            |> Proto.Method.withRoutes [ Notes.V1.NotesService.routeGetNote0, Notes.V1.NotesService.routeGetNote1 ]
         )
+```
 
+```elm
+-- Notes/V1/NotesService.elm
 
 
 -- ROUTES
 
 
-{-| The route of [`getNote`](#getNote) over binding 0: `GET /v1/{name=notes/*}`.
+{-| The route of [`getNote`](Notes-V1-NotesService-Json#getNote) over binding 0: `GET /v1/{name=notes/*}`.
 -}
 routeGetNote0 : Notes.V1.GetNoteRequest -> Proto.Route.Route
 routeGetNote0 request_ =
@@ -2093,16 +2131,33 @@ something: `withIdempotency` when the proto declares a level other
 than `IDEMPOTENCY_UNKNOWN`, `withRoutes` when the method has a rule
 (never under `codec=proto`).
 
+- **Only the calls are bound to a wire, so only they move.** A route
+  function is `req -> Proto.Route.Route`, built from the typed request
+  with no codec, and transcoding, the one protocol that reads routes,
+  speaks JSON; a descriptor is data. The calls are the one part that
+  names a codec, through the builder and the `Rpc.Call` tag, so they
+  alone are split by wire, into a module each, while routes and
+  descriptors stay in the service's module, which both calls modules
+  could share. Why: a program then picks its wire by an import line and
+  meets a codec error at that import, every generated method is in one
+  codec, so no builder free in the codec is needed (`Proto.Method.init`
+  went), and a JSON program never names a binary call. Considered: one
+  module under `json` or `proto`, as before, and the three only under
+  `both`; rejected because a package's import lines would then change
+  when its option moves to `both`, which stable names avoid. The cost:
+  a service is two modules where it was one, and three under `both`
+  (decisions.md: Wire chosen by import, not by a free-codec value,
+  proposed).
 - **A method's documentation shows its routes.** A call's doc comment gives the method's comment
   (§3.1), then its declaration line, its Connect path on a line of its
   own and its HTTP bindings as its `google.api.http` rule writes them,
   each with its `body` and `response_body` where set: one binding on
   the Transcode line, several as a list numbered as
   `Rpc.Call.viaBinding` counts them, binding 0 the rule's own; then, as
-  a paragraph of its own, the codecs it was generated with (`Codecs:
-  JSON.`, `protobuf binary.` or `JSON and protobuf binary.`), which a
-  compiler error about a client of the other codec points back at, and
-  a line linking its descriptor;
+  a paragraph of its own, the codecs of its module (`Codecs: JSON.` or
+  `protobuf binary.`), which a compiler error about a client of the
+  other codec points back at, and a line linking its descriptor in the
+  service's module;
   `Transcode: no HTTP rule, follows the Connect path.` for a method
   without a rule, and `Deprecated.` first for a deprecated method. The
   request and response types in the declaration line are named as the
@@ -2111,19 +2166,24 @@ than `IDEMPOTENCY_UNKNOWN`, `withRoutes` when the method has a rule
   annotation already names their Elm types. Why: the call is the
   value a program uses, and the descriptor shows the routes it may take
   only as `Proto.Http` data. The descriptor carries the
-  comment and the declaration line; each route function names its call
-  and its binding as the call's documentation writes it.
+  comment and the declaration line; each route function names its JSON
+  call, a link into the `.Json` module, and its binding as the call's
+  documentation writes it.
   A service has no declaration of its own, so its module's
-  documentation carries its comment and `` `service
-  notes.v1.NotesService` ``.
-- The service module imports `Rpc`, `Proto.Method` (for the method
-  and its descriptor), `Proto.Route` (for the route functions),
-  `Proto.Http` (for the bindings), the descriptor
-  modules of the messages its bindings' fields belong to
-  (`Notes.V1.GetNoteRequest`, §3.1), the package module and the modules of any other package
-  its request and response types come from (`Proto.Json`, `Proto.Any`,
-  `Json.Encode` or `Json.Decode` for a well-known type's codecs), and
-  refers to every one of them qualified. Each method is written
+  documentation carries its comment, `` `service
+  notes.v1.NotesService` `` and links to its calls modules, and each
+  calls module's documentation says whose calls it holds over which
+  wire and links back.
+- The service module imports `Proto.Method` (for the descriptors),
+  `Proto.Route` (for the route functions), `Proto.Http` (for the
+  bindings), the descriptor modules of the messages its bindings' fields
+  belong to (`Notes.V1.GetNoteRequest`, §3.1), and the package module and
+  the modules of any other package its request types come from. A calls
+  module imports `Rpc`, `Proto.Method`, the package module and the
+  modules of any other package its request and response types come from
+  (`Proto.Json`, `Proto.Any`, `Json.Encode` or `Json.Decode` for a
+  well-known type's codecs), and, for the JSON calls of a method with a
+  rule, the service module. Both refer to every name qualified. Each method is written
   point-free, `getNote = Rpc.call (…)`, binding no local name. So a
   method's name can clash with nothing but another method's call, route
   function or descriptor in its service, whatever it is: `value`,
@@ -2148,11 +2208,10 @@ than `IDEMPOTENCY_UNKNOWN`, `withRoutes` when the method has a rule
   `Int64Value` under `int64=int`, `Basics.identity` qualified for
   `Value` so that a method called `identity` cannot capture it); then
   `withIdempotency` with its level and
-  `withRoutes` with its route functions (below).
-  Under `codec=both` it is built by `Proto.Method.init` from the names,
-  those two codecs and the request type's `encode…Bytes` and the response type's
-  `decode…Bytes`; under `codec=proto` by `Proto.Method.initProto` from the
-  binary two alone (§3.10), with no routes. A method holds no registry:
+  `withRoutes` with its route functions (below), named in the service module.
+  In the `.Proto` module it is built by `Proto.Method.initProto` from the
+  names, the request type's `encode…Bytes` and the response type's
+  `decode…Bytes` (§3.10), with no routes. A method holds no registry:
   the client's is the one table (§5.1). A route whose body would hold an
   `Any` is read from the method's binding (`withBindings`), since its body
   has no total encoder. A method holds both codec
@@ -2160,9 +2219,10 @@ than `IDEMPOTENCY_UNKNOWN`, `withRoutes` when the method has a rule
   constructor no protocol of the method's codec calls (§5.1), so only a
   program whose methods have binary codecs carries their code. The
   builder fixes the method's codec, the first type parameter of
-  `Proto.Method.Method` and of its calls: `Rpc.Call Rpc.Json` under
-  `json`, `Rpc.Call Rpc.Proto` under `proto`, free in it under `both`,
-  so that a client of either codec sends it.
+  `Proto.Method.Method` and of its calls: `Rpc.Call Rpc.Json` in the
+  `.Json` module, `Rpc.Call Rpc.Proto` in the `.Proto` one. No builder
+  gives a method free in the codec: a hand-written method that would be
+  sent over both wires is two methods.
   No `Proto.Method.Method` value is generated; `Rpc.Call.method` reads
   the method back from any call of it, and `Rpc.Call.serviceName`,
   `methodName`, `procedure` (`/notes.v1.NotesService/GetNote`, the path
@@ -2302,7 +2362,11 @@ In the IR (`ir::Service`, `ir::Method`):
   site labelled. So is a service named like a type of its package,
   whose descriptor module has the service module's name (§3.1): proto
   forbids the same name, but not two that convert to one
-  (`notes_service` and `NotesService`).
+  (`notes_service` and `NotesService`). So is a package that takes a
+  calls module's name (`notes.v1.vault.json` beside the service
+  `notes.v1.Vault`), both calls modules claimed under every `codec`
+  value (`services_calls_module_collision` case); a service whose own
+  module collides claims no calls module, so one mistake is one problem.
 - A method of `google.protobuf.Empty` or another supported well-known
   type takes or gives that type's Elm form (`()` for `Empty`), through
   the runtime's codecs for it (`services_types` case). Any other
@@ -2430,9 +2494,10 @@ binary, HTTP transcoding, or gRPC-Web over protobuf binary, with its
 options. Both carry a codec in
 their type, `Rpc.Json` or `Rpc.Proto` (`Rpc` re-exports the tags, so
 annotations and compiler errors read `Rpc.Json`), and a client sends
-only calls of its codec: a `Client Json` takes the calls of code
-generated with `codec=json` or `codec=both`, a `Client Proto` those of
-`codec=proto` or `codec=both`. A pairing with no codecs in common is a
+only calls of its codec: a `Client Json` takes the calls of a service's
+`.Json` module (generated under `codec=json` or `codec=both`), a
+`Client Proto` those of its `.Proto` module (`codec=proto` or
+`codec=both`). A pairing with no codecs in common is a
 type error where the call is sent, not a failure at run time
 (decisions.md: Protocol and client, indexed by codec).
 
@@ -2826,8 +2891,7 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
 - `viaBinding n` is `Just` the call over binding `n` when the
   method has a route for it (`0` the rule's own, `1` and up its additional
   bindings), `Nothing` otherwise. It takes and gives a `Call Json`, since
-  transcoding speaks JSON: a call free in the codec (`codec=both`) is
-  pinned to JSON by it, and a binary-only call is refused by the
+  transcoding speaks JSON: a call of a `.Proto` module is refused by the
   compiler. A method without a rule gives
   `Nothing` for every number, and its unadjusted call takes the
   implicit route (§5.3). A call therefore always has a route, and
@@ -3000,8 +3064,8 @@ by the Connect conformance suite's unary test cases with the proto
 codec (§7).
 
 - **The codec is the protocol's.** `connectProto`'s wire is `Binary`,
-  so only a call of a method with binary codecs (`codec=proto` or
-  `codec=both`) can be sent over it, and the compiler says so of any
+  so only a call of a method with binary codecs, of a `.Proto` module,
+  can be sent over it, and the compiler says so of any
   other (§5.2). `transcode` is a `Protocol Json`: transcoding is JSON by
   definition, and so is the implicit route.
 - **Requests.** A POST carries the request's protobuf binary as an

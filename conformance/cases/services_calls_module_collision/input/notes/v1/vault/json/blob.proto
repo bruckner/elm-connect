@@ -1,0 +1,7 @@
+syntax = "proto3";
+
+package notes.v1.vault.json;
+
+message Blob {
+  string name = 1;
+}

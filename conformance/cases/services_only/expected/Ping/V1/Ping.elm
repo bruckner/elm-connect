@@ -5,13 +5,13 @@
 module Ping.V1.Ping exposing (..)
 
 {-| `service ping.v1.Ping`
+
+Its calls are in [`Ping.V1.Ping.Json`](Ping-V1-Ping-Json) over proto3 JSON.
+
 -}
 
-import Proto.Json
 import Proto.Method
 import Proto.Version
-import Rpc
-import Time
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -19,27 +19,6 @@ import Time
 elmConnectVersion_ : Proto.Version.Generated
 elmConnectVersion_ =
     Proto.Version.v0_2
-
-
-
--- CALLS
-
-
-{-| `rpc Ping(google.protobuf.Empty) returns (google.protobuf.Timestamp)`.
-Connect: `POST /ping.v1.Ping/Ping`.
-Transcode: no HTTP rule, follows the Connect path.
-
-Codecs: JSON. Described by [`descriptorPing`](#descriptorPing).
-
--}
-ping : () -> Rpc.Call Rpc.Json () Time.Posix
-ping =
-    Rpc.call
-        (Proto.Method.initJson "ping.v1.Ping"
-            "Ping"
-            (\_ -> Ok << Proto.Json.encodeEmpty)
-            (\_ -> Proto.Json.timestamp)
-        )
 
 
 

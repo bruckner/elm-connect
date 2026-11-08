@@ -12,14 +12,14 @@ module Awkward.V1.AwkwardService exposing (..)
 
 `service awkward.v1.AwkwardService`
 
+Its calls are in [`Awkward.V1.AwkwardService.Json`](Awkward-V1-AwkwardService-Json) over proto3 JSON.
+
 -}
 
 import Proto.Http
-import Proto.Json
 import Proto.Method
 import Proto.Route
 import Proto.Version
-import Rpc
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -30,40 +30,10 @@ elmConnectVersion_ =
 
 
 
--- CALLS
-
-
-{-|
-
-```text
-HEAD /v1/{name=*}
-
-An unclosed fence in a method's comment.
-```
-
-`rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty)`.
-Connect: `POST /awkward.v1.AwkwardService/Ping`.
-Transcode: `HEAD /v1/ping`.
-
-Codecs: JSON. Described by [`descriptorPing`](#descriptorPing).
-
--}
-ping : () -> Rpc.Call Rpc.Json () ()
-ping =
-    Rpc.call
-        (Proto.Method.initJson "awkward.v1.AwkwardService"
-            "Ping"
-            (\_ -> Ok << Proto.Json.encodeEmpty)
-            (\_ -> Proto.Json.empty)
-            |> Proto.Method.withRoutes [ routePing0 ]
-        )
-
-
-
 -- ROUTES
 
 
-{-| The route of [`ping`](#ping) over binding 0: `HEAD /v1/ping`.
+{-| The route of [`ping`](Awkward-V1-AwkwardService-Json#ping) over binding 0: `HEAD /v1/ping`.
 -}
 routePing0 : () -> Proto.Route.Route
 routePing0 request_ =

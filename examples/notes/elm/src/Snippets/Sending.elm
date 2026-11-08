@@ -7,7 +7,7 @@ over each protocol, and a message built from its default.
 -- region sending
 
 import Notes.V1
-import Notes.V1.NotesService as Notes
+import Notes.V1.NotesService.Json as Notes
 import Rpc
 import Rpc.Protocol
 

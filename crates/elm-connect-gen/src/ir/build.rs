@@ -18,7 +18,7 @@ use super::{
 use super::{declaration, rename};
 use crate::diagnostics::{Diagnostics, LineColSpan, Problem, Referrer, Site, Spans, closest, tag};
 use crate::naming::{self, NameError};
-use crate::options::{Options, Spelling, Streaming};
+use crate::options::{Codec, Options, Spelling, Streaming};
 use crate::route::{self, Route};
 
 /// What a rename's help names in place of the proto element's full name.
@@ -89,6 +89,7 @@ pub fn build_with_imports(
 ) -> Result<Built, Diagnostics> {
     let mut builder = Builder {
         streaming: options.streaming,
+        codec: options.codec,
         spelling: options.spelling,
         ..Builder::default()
     };
@@ -563,6 +564,8 @@ struct Builder {
     references: Vec<Reference>,
     /// What a streaming method gets.
     streaming: Streaming,
+    /// Which of a service's calls modules are generated.
+    codec: Codec,
     /// The rename map's entries that name a generated element and suit it:
     /// Elm names by proto full name (an enum value's under its enum's).
     renames: HashMap<String, String>,
@@ -964,6 +967,9 @@ impl Builder {
                     }
                     None => naming::service_module(module, service.name()),
                 };
+                // A problem with the service's module is the one problem of
+                // its calls modules too, which are not claimed then.
+                let mut calls_claimable = false;
                 let service_module = match service_module {
                     Ok(service_module) => {
                         let what = format!("service `{full_name}`");
@@ -974,7 +980,9 @@ impl Builder {
                             what,
                             Some(full_name),
                         );
+                        let before = self.diagnostics.len();
                         self.claim_module(&service_module, origin, full_name);
+                        calls_claimable = self.diagnostics.len() == before;
                         Some(service_module)
                     }
                     Err(_) => {
@@ -993,6 +1001,33 @@ impl Builder {
                 for method in service.methods() {
                     if let Some(built) = self.method(file, &method, &mut values) {
                         methods.push(built);
+                    }
+                }
+                // Both calls modules are claimed under every `codec`, so
+                // that changing the option never meets a new collision; one
+                // the option leaves out is not named in the runtime
+                // namespace's warning, since it is not written.
+                if let Some(service_module) = &service_module
+                    && calls_claimable
+                    && !methods.is_empty()
+                {
+                    for (segment, wire, generated) in [
+                        (naming::JSON_CALLS, "JSON", self.codec.json()),
+                        (naming::PROTO_CALLS, "protobuf binary", self.codec.binary()),
+                    ] {
+                        let calls = naming::calls_module(service_module, segment);
+                        let what = format!("the {wire} calls module of service `{full_name}`");
+                        let origin = self.origin(
+                            file,
+                            service.path(),
+                            tag::SERVICE_NAME,
+                            what,
+                            Some(full_name),
+                        );
+                        self.claim_module(&calls, origin, full_name);
+                        if !generated {
+                            self.runtime_namespace.remove(&calls.to_string());
+                        }
                     }
                 }
                 let deprecated = service

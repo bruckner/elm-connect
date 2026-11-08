@@ -6,7 +6,7 @@ of one call.
 -}
 
 import Notes.V1
-import Notes.V1.NotesService as Notes
+import Notes.V1.NotesService.Json as Notes
 import Process
 import Rpc
 import Rpc.Call

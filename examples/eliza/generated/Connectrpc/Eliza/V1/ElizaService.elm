@@ -13,12 +13,12 @@ distributions.
 
 `service connectrpc.eliza.v1.ElizaService`
 
+Its calls are in [`Connectrpc.Eliza.V1.ElizaService.Json`](Connectrpc-Eliza-V1-ElizaService-Json) over proto3 JSON.
+
 -}
 
-import Connectrpc.Eliza.V1
 import Proto.Method
 import Proto.Version
-import Rpc
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -26,30 +26,6 @@ import Rpc
 elmConnectVersion_ : Proto.Version.Generated
 elmConnectVersion_ =
     Proto.Version.v0_2
-
-
-
--- CALLS
-
-
-{-| Say is a unary RPC. Eliza responds to the prompt with a single sentence.
-
-`rpc Say(SayRequest) returns (SayResponse)`.
-Connect: `POST /connectrpc.eliza.v1.ElizaService/Say`.
-Transcode: no HTTP rule, follows the Connect path.
-
-Codecs: JSON. Described by [`descriptorSay`](#descriptorSay).
-
--}
-say : Connectrpc.Eliza.V1.SayRequest -> Rpc.Call Rpc.Json Connectrpc.Eliza.V1.SayRequest Connectrpc.Eliza.V1.SayResponse
-say =
-    Rpc.call
-        (Proto.Method.initJson "connectrpc.eliza.v1.ElizaService"
-            "Say"
-            (\_ -> Ok << Connectrpc.Eliza.V1.encodeSayRequest)
-            (\_ -> Connectrpc.Eliza.V1.decodeSayResponse)
-            |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
-        )
 
 
 

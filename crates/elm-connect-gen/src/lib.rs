@@ -132,8 +132,9 @@ pub struct Generated {
 /// Generates one Elm module per proto package declared by the files in
 /// `generate` (names as `pool` knows them), each in full from every file of
 /// `pool` that declares it, one per message and enum of each holding its
-/// descriptor, and one per service of each that has a method, sorted by
-/// path. Only packages with a file in `generate` are generated,
+/// descriptor, and per service of each that has a method one holding its
+/// routes and descriptors and one of calls per wire the `codec` option
+/// names (`.Json`, `.Proto`), sorted by path. Only packages with a file in `generate` are generated,
 /// as protoc plugins do: a reference to any other package (bar
 /// `google.protobuf`, mapped to the runtime) is `generate::not_generated`,
 /// whose help names the ways to request it (design §3.1). A package of
@@ -181,9 +182,10 @@ pub fn generate_with_imports(
                     files.push(file(&descriptors));
                 }
                 for service in package.services.iter().filter(|s| !s.methods.is_empty()) {
-                    files.push(file(&emit::emit_service(
-                        package, service, options, &packages, &queries,
-                    )));
+                    for module in emit::emit_service(package, service, options, &packages, &queries)
+                    {
+                        files.push(file(&module));
+                    }
                 }
             }
             Err(reserved) => {

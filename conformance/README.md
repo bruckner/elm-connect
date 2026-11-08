@@ -273,11 +273,6 @@ live/
   src/Live/Call.elm   the envelope, its client, and `entryWith`, which makes
                       a dispatch table's entry from a build's call functions
                       and codecs
-  src/Live/Notes.elm  the dispatch table of notes.v1.NotesService
-  src/Live/Conformance.elm
-                      the dispatch table of the Connect conformance suite's
-                      ConformanceService (its unary methods)
-  src/Live/Routes.elm the dispatch table of routes.v1.Routes (routes/)
   xhr.mjs             an XMLHttpRequest over node:http, the subset elm/http
                       uses, reporting each exchange
   run.mjs             loads build/elm.js; a module (`createRunner`,
@@ -310,10 +305,18 @@ live/
   envoy/envoy-version the Envoy release func-e runs
   cases/envoy.json    Envoy's errors in grpc-status headers, and its own answers
   json/Live/Codec.elm `entry` for this build: the JSON call function alone
+  json/Live/Notes.elm the dispatch table of notes.v1.NotesService, from its
+                      .Json calls module
+  json/Live/Conformance.elm
+                      the dispatch table of the Connect conformance suite's
+                      ConformanceService (its unary methods)
+  json/Live/Routes.elm
+                      the dispatch table of routes.v1.Routes (routes/)
   both/               the runner against bindings generated with codec=both
-                      (build/both/, gitignored): elm.json, and
-                      src/Live/Codec.elm, `entry` with the call function at
-                      each codec
+                      (build/both/, gitignored): elm.json,
+                      src/Live/Codec.elm, `entry` with a JSON and a binary
+                      call function, and src/Live/{Notes,Conformance,
+                      Routes}.elm, the tables over both calls modules
   cases/proto.json    every method over Connect's proto codec
   conformance-proto.yaml
                       the suite's features with the proto codec

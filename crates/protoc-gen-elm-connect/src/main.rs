@@ -429,7 +429,12 @@ mod tests {
             .collect();
         assert_eq!(
             names,
-            ["Chat/V1.elm", "Chat/V1/Chat.elm", "Chat/V1/Line.elm"]
+            [
+                "Chat/V1.elm",
+                "Chat/V1/Chat.elm",
+                "Chat/V1/Chat/Json.elm",
+                "Chat/V1/Line.elm"
+            ]
         );
         assert!(warnings.starts_with("services::streaming\n"), "{warnings}");
         assert!(warnings.contains("`chat.v1.Chat.Listen`"), "{warnings}");
@@ -526,6 +531,7 @@ mod tests {
                 "Notes/V1/ListNotesResponse.elm",
                 "Notes/V1/Note.elm",
                 "Notes/V1/NotesService.elm",
+                "Notes/V1/NotesService/Json.elm",
                 "Notes/V1/ReadFileRequest.elm",
                 "Notes/V1/Summary.elm",
                 "Notes/V1/UpdateNoteRequest.elm",
@@ -633,7 +639,12 @@ service Notes {
         assert_eq!(warnings, "");
         assert_eq!(
             names(&response),
-            ["Notes/V1.elm", "Notes/V1/Note.elm", "Notes/V1/Notes.elm"],
+            [
+                "Notes/V1.elm",
+                "Notes/V1/Note.elm",
+                "Notes/V1/Notes.elm",
+                "Notes/V1/Notes/Json.elm"
+            ],
             "no Google/Api.elm"
         );
     }
@@ -713,7 +724,8 @@ service Uploads {
                 "Google/Api.elm",
                 "Google/Api/HttpBody.elm",
                 "Uploads/V1.elm",
-                "Uploads/V1/Uploads.elm"
+                "Uploads/V1/Uploads.elm",
+                "Uploads/V1/Uploads/Json.elm"
             ]
         );
         let api = response.file[0].content.as_deref().expect("content");

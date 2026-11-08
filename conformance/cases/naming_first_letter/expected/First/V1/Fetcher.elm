@@ -5,12 +5,13 @@
 module First.V1.Fetcher exposing (..)
 
 {-| `service first.v1.Fetcher`
+
+Its calls are in [`First.V1.Fetcher.Json`](First-V1-Fetcher-Json) over proto3 JSON.
+
 -}
 
-import First.V1
 import Proto.Method
 import Proto.Version
-import Rpc
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -18,78 +19,6 @@ import Rpc
 elmConnectVersion_ : Proto.Version.Generated
 elmConnectVersion_ =
     Proto.Version.v0_2
-
-
-
--- CALLS
-
-
-{-| `rpc GetNote(URLPath) returns (URLPath)`.
-Connect: `POST /first.v1.Fetcher/GetNote`.
-Transcode: no HTTP rule, follows the Connect path.
-
-Codecs: JSON. Described by [`descriptorGetNote`](#descriptorGetNote).
-
--}
-getNote : First.V1.URLPath -> Rpc.Call Rpc.Json First.V1.URLPath First.V1.URLPath
-getNote =
-    Rpc.call
-        (Proto.Method.initJson "first.v1.Fetcher"
-            "GetNote"
-            (\_ -> Ok << First.V1.encodeURLPath)
-            (\_ -> First.V1.decodeURLPath)
-        )
-
-
-{-| `rpc HTTPGet(URLPath) returns (URLPath)`.
-Connect: `POST /first.v1.Fetcher/HTTPGet`.
-Transcode: no HTTP rule, follows the Connect path.
-
-Codecs: JSON. Described by [`descriptorHttpGet`](#descriptorHttpGet).
-
--}
-httpGet : First.V1.URLPath -> Rpc.Call Rpc.Json First.V1.URLPath First.V1.URLPath
-httpGet =
-    Rpc.call
-        (Proto.Method.initJson "first.v1.Fetcher"
-            "HTTPGet"
-            (\_ -> Ok << First.V1.encodeURLPath)
-            (\_ -> First.V1.decodeURLPath)
-        )
-
-
-{-| `rpc _Ping(URLPath) returns (URLPath)`.
-Connect: `POST /first.v1.Fetcher/_Ping`.
-Transcode: no HTTP rule, follows the Connect path.
-
-Codecs: JSON. Described by [`descriptorPing`](#descriptorPing).
-
--}
-ping : First.V1.URLPath -> Rpc.Call Rpc.Json First.V1.URLPath First.V1.URLPath
-ping =
-    Rpc.call
-        (Proto.Method.initJson "first.v1.Fetcher"
-            "_Ping"
-            (\_ -> Ok << First.V1.encodeURLPath)
-            (\_ -> First.V1.decodeURLPath)
-        )
-
-
-{-| `rpc Type(URLPath) returns (URLPath)`.
-Connect: `POST /first.v1.Fetcher/Type`.
-Transcode: no HTTP rule, follows the Connect path.
-
-Codecs: JSON. Described by [`descriptorType_`](#descriptorType_).
-
--}
-type_ : First.V1.URLPath -> Rpc.Call Rpc.Json First.V1.URLPath First.V1.URLPath
-type_ =
-    Rpc.call
-        (Proto.Method.initJson "first.v1.Fetcher"
-            "Type"
-            (\_ -> Ok << First.V1.encodeURLPath)
-            (\_ -> First.V1.decodeURLPath)
-        )
 
 
 

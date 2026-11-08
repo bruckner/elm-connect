@@ -11,9 +11,9 @@ what a [`Client`](Rpc-Client#Client) speaks.
     Rpc.client Rpc.Protocol.connect "https://api.example.com"
 
 A protocol's type says its codec: `Protocol Json` for proto3 JSON,
-`Protocol Proto` for protobuf binary. A client of one only sends calls whose
-generated code has that codec (`codec=json`, `codec=proto` or `codec=both`),
-and the compiler says so where it does not.
+`Protocol Proto` for protobuf binary. A client of one only sends calls of
+that codec, those of a service's `.Json` or `.Proto` module, and the compiler
+says so where it does not.
 
 Protocols built alike are `==`.
 

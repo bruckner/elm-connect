@@ -5,12 +5,13 @@
 module Chat.V1.Chat exposing (..)
 
 {-| `service chat.v1.Chat`
+
+Its calls are in [`Chat.V1.Chat.Json`](Chat-V1-Chat-Json) over proto3 JSON.
+
 -}
 
-import Chat.V1
 import Proto.Method
 import Proto.Version
-import Rpc
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -18,27 +19,6 @@ import Rpc
 elmConnectVersion_ : Proto.Version.Generated
 elmConnectVersion_ =
     Proto.Version.v0_2
-
-
-
--- CALLS
-
-
-{-| `rpc Send(Line) returns (Line)`.
-Connect: `POST /chat.v1.Chat/Send`.
-Transcode: no HTTP rule, follows the Connect path.
-
-Codecs: JSON. Described by [`descriptorSend`](#descriptorSend).
-
--}
-send : Chat.V1.Line -> Rpc.Call Rpc.Json Chat.V1.Line Chat.V1.Line
-send =
-    Rpc.call
-        (Proto.Method.initJson "chat.v1.Chat"
-            "Send"
-            (\_ -> Ok << Chat.V1.encodeLine)
-            (\_ -> Chat.V1.decodeLine)
-        )
 
 
 

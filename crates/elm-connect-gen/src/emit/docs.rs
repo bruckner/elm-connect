@@ -18,7 +18,10 @@
 use std::fmt::Display;
 
 use crate::elm::markdown;
-use crate::ir::{Doc, Enum, FieldBehavior, HttpRule, Message, Method, Oneof, Package, Service};
+use crate::ir::{
+    Doc, Enum, FieldBehavior, HttpRule, Message, Method, ModuleName, Oneof, Package, Service,
+};
+use crate::naming;
 use crate::naming::REPOSITORY_FILES;
 use crate::options::Codec;
 
@@ -437,12 +440,13 @@ pub(super) fn enum_descriptor(enumeration: &Enum, described: &str) -> String {
     ]))
 }
 
-/// The doc of a method's call: the proto's part, then its declaration,
-/// its Connect path and its HTTP bindings as its rule writes them (one
-/// on the Transcode line; several as a list, numbered as
-/// `Rpc.Call.viaBinding` counts them), and the codecs it was generated
-/// with and its descriptor, as a link, in a paragraph of their own.
-pub(super) fn method(service: &str, method: &Method, codec: Codec) -> String {
+/// The doc of a method's call in a calls module: the proto's part, then
+/// its declaration, its Connect path and its HTTP bindings as its rule
+/// writes them (one on the Transcode line; several as a list, numbered as
+/// `Rpc.Call.viaBinding` counts them), and the codecs of its module and
+/// its descriptor, a link into `parent`, the service's module, in a
+/// paragraph of their own.
+pub(super) fn method(service: &str, parent: &ModuleName, method: &Method, codec: Codec) -> String {
     let (transcode, bindings) = match &method.http {
         Some(rule) if rule.additional_bindings.is_empty() => {
             (format!("Transcode: {}.", binding(rule)), String::new())
@@ -475,11 +479,12 @@ pub(super) fn method(service: &str, method: &Method, codec: Codec) -> String {
     let codecs = match codec {
         Codec::Json => "JSON",
         Codec::Proto => "protobuf binary",
-        Codec::Both => "JSON and protobuf binary",
+        Codec::Both => unreachable!("a calls module is in one codec"),
     };
+    let descriptor = method.descriptor_name();
     let described = format!(
         "Codecs: {codecs}. Described by {}.",
-        local(&method.descriptor_name())
+        link(&descriptor, &format!("{}#{descriptor}", page(parent)))
     );
     paragraphs(
         proto_part(&method.doc)
@@ -489,18 +494,21 @@ pub(super) fn method(service: &str, method: &Method, codec: Codec) -> String {
 }
 
 /// The doc of a method's route function over binding `index` of its HTTP
-/// rule (the rule's own is 0, its additional bindings follow): the binding,
-/// as the call's doc gives it.
-pub(super) fn route(method: &Method, index: usize) -> String {
+/// rule (the rule's own is 0, its additional bindings follow), in
+/// `service`, the service's module: the binding, as the call's doc gives
+/// it, and a link to the JSON call that takes it.
+pub(super) fn route(service: &ModuleName, method: &Method, index: usize) -> String {
     let rule = method.http.as_ref().and_then(|rule| {
         std::iter::once(rule)
             .chain(&rule.additional_bindings)
             .nth(index)
     });
     let shown = rule.map(binding).unwrap_or_default();
+    let calls = naming::calls_module(service, naming::JSON_CALLS);
+    let call = &method.elm_name;
     format!(
         "The route of {} over binding {index}: {shown}.",
-        local(&method.elm_name)
+        link(call, &format!("{}#{call}", page(&calls)))
     )
 }
 
@@ -528,12 +536,55 @@ fn binding(rule: &HttpRule) -> String {
 
 /// The doc of a service's module: the proto's part and the service's
 /// declaration.
-pub(super) fn service(service: &Service) -> String {
-    paragraphs(
-        proto_part(&service.doc)
-            .into_iter()
-            .chain([code(&service.doc.declaration)]),
-    )
+/// The doc of a service's module: the proto's part, then its
+/// declaration, then where its calls are, one module per wire `codec`
+/// generates.
+pub(super) fn service(service: &Service, codec: Codec) -> String {
+    let modules: Vec<String> = codec
+        .wires()
+        .iter()
+        .map(|&wire| {
+            let module = naming::calls_module(&service.module, calls_segment(wire));
+            format!(
+                "{} over {}",
+                link(&module.to_string(), &page(&module)),
+                wire_words(wire)
+            )
+        })
+        .collect();
+    paragraphs(proto_part(&service.doc).into_iter().chain([
+        code(&service.doc.declaration),
+        format!("Its calls are in {}.", modules.join(" and ")),
+    ]))
+}
+
+/// The doc of a service's calls module in `wire`: what it holds, and a
+/// link to the service's module.
+pub(super) fn calls(service: &Service, wire: Codec) -> String {
+    paragraphs([format!(
+        "The calls of {} over {}; the service's module is {}.",
+        code(&service.doc.declaration),
+        wire_words(wire),
+        link(&service.module.to_string(), &page(&service.module))
+    )])
+}
+
+/// The last segment of the calls module of `wire`.
+pub(super) fn calls_segment(wire: Codec) -> &'static str {
+    match wire {
+        Codec::Json => naming::JSON_CALLS,
+        Codec::Proto => naming::PROTO_CALLS,
+        Codec::Both => unreachable!("a calls module is in one codec"),
+    }
+}
+
+/// A wire as a doc names it.
+fn wire_words(wire: Codec) -> &'static str {
+    match wire {
+        Codec::Json => "proto3 JSON",
+        Codec::Proto => "protobuf binary",
+        Codec::Both => unreachable!("a calls module is in one codec"),
+    }
 }
 
 /// The doc of a package's module: the package's comments, each settled

@@ -1,11 +1,13 @@
-//! A method's declarations in its service's module (design §4): its
-//! call, a function from the request to an `Rpc.Call`, built point-free
-//! with `Rpc.call` from the codecs of its request and response, its
-//! service's and its own name, its idempotency when the proto declares one,
-//! and its route functions ([`super::route_fn`]); and its descriptor,
+//! A method's declarations (design §4): in its service's module, its
+//! route functions ([`super::route_fn`]) and its descriptor,
 //! `descriptorGetNote`, built by `Proto.Method.descriptor` with its HTTP
-//! bindings written out as data, which the call does not refer to. Both
-//! builders are stacked, one argument per line, however short.
+//! bindings written out as data; and in each of the service's calls
+//! modules, its call, a function from the request to an `Rpc.Call` in that
+//! module's codec, built point-free with `Rpc.call` from the codecs of its
+//! request and response, its service's and its own name, its idempotency
+//! when the proto declares one, and, over JSON, its route functions. The
+//! call does not refer to the descriptor unless a binding cannot be typed.
+//! Both builders are stacked, one argument per line, however short.
 
 use super::field::{ValueShape, Zeroed, value_shape};
 use super::route_fn::{Messages, PROTO_ROUTE, Queries, REQUEST};
@@ -16,7 +18,7 @@ use crate::elm::build::{
     apply, binop, inline_list, lambda, list, pipeline, pvar, qualified, record, stacked_apply,
     string, ty_fn, var,
 };
-use crate::ir::{Idempotency, Method, TypeRef};
+use crate::ir::{Idempotency, Method, ModuleName as IrModule, TypeRef};
 use crate::naming::with_registry;
 use crate::options::Codec;
 use crate::route::{Body, FieldRef, PathSegment, QueryParam, Route, Segment};
@@ -72,43 +74,46 @@ impl Emitter {
     }
 
     /// `getNote : GetNoteRequest -> Rpc.Call Rpc.Json GetNoteRequest
-    /// Note`: `Rpc.call` of the method's `Proto.Method.Method`, built from
-    /// its service's full name, its name and its codecs by
-    /// `Proto.Method.initJson` (the request's JSON encoder, the response's
-    /// JSON decoder), `Proto.Method.initProto` (their binary codecs) or
-    /// `Proto.Method.init` (the JSON codecs and the binary codecs) as the
-    /// `codec` option says, the JSON codecs taking the client's registry
-    /// (ignored by a type that reaches no `Any`), then
-    /// `withIdempotency` when the proto declares one, and `withRoutes` with
-    /// its route functions ([`Self::method_routes`]) or, when one of its
-    /// bindings cannot be typed, `withBindings` with its descriptor's
-    /// bindings. Under `codec=proto` it has no routes: its calls cannot be
-    /// transcoded, which takes JSON. The call's codec is `Rpc.Json` under
-    /// `codec=json`, `Rpc.Proto` under `codec=proto`, and a type variable
-    /// under `codec=both`, so that any client sends it.
+    /// Note`, in the calls module of the emitter's wire, `Rpc.Json` or
+    /// `Rpc.Proto`: `Rpc.call` of the method's `Proto.Method.Method`, built
+    /// from its service's full name, its name and its codecs by
+    /// `Proto.Method.initJson` (the request's JSON encoder and the
+    /// response's JSON decoder, each taking the client's registry, which a
+    /// type that reaches no `Any` ignores) or `Proto.Method.initProto`
+    /// (their binary codecs), then `withIdempotency` when the proto
+    /// declares one, and over JSON `withRoutes` with its route functions
+    /// ([`Self::method_routes`]) or, when one of its bindings cannot be
+    /// typed, `withBindings` with its descriptor's bindings, both from
+    /// `parent`, the service's module. A binary call has no routes: it
+    /// cannot be transcoded, which takes JSON.
     ///
-    /// The value binds no locals and every library name in it is
-    /// qualified, so it cannot clash with the package module's names or
-    /// the runtime's, whatever the method is called; the route functions
-    /// and descriptor it refers to are the module's own. Its documentation
+    /// The value binds no locals and every name in it is qualified, so it
+    /// cannot clash with the package module's names, the service module's
+    /// or the runtime's, whatever the method is called. Its documentation
     /// names its Connect path, under `service`, the full name of its
     /// service.
-    pub(super) fn method(&mut self, service: &str, method: &Method, routes: &Routes) -> Decl {
+    pub(super) fn method(
+        &mut self,
+        service: &str,
+        parent: &IrModule,
+        method: &Method,
+        routes: &Routes,
+    ) -> Decl {
         let request = self.method_type(&method.input);
         let response = self.method_type(&method.output);
         let mut codecs = vec![string(service), string(method.proto_name.clone())];
-        if self.wiring.json() {
-            codecs.push(self.request_encoder_with(&method.input));
-            codecs.push(self.response_decoder_with(&method.output));
-        }
-        if self.wiring.binary() {
-            codecs.push(self.request_encoder_bytes(&method.input));
-            codecs.push(self.response_decoder_bytes(&method.output));
-        }
         let (builder, tag) = match self.wiring {
-            Codec::Json => ("initJson", Some("Json")),
-            Codec::Proto => ("initProto", Some("Proto")),
-            Codec::Both => ("init", None),
+            Codec::Json => {
+                codecs.push(self.request_encoder_with(&method.input));
+                codecs.push(self.response_decoder_with(&method.output));
+                ("initJson", "Json")
+            }
+            Codec::Proto => {
+                codecs.push(self.request_encoder_bytes(&method.input));
+                codecs.push(self.response_decoder_bytes(&method.output));
+                ("initProto", "Proto")
+            }
+            Codec::Both => unreachable!("a calls module is in one codec"),
         };
         let built = stacked_apply(self.reference((PROTO_METHOD, builder)), codecs);
         let mut steps = Vec::new();
@@ -120,10 +125,11 @@ impl Emitter {
             ));
         }
         match routes {
+            _ if self.wiring != Codec::Json => {}
             Routes::None => {}
             Routes::Functions(count) => {
                 let functions: Vec<Expr> = (0..*count)
-                    .map(|index| var(route_name(method, index)))
+                    .map(|index| self.generated_value(parent, route_name(method, index)))
                     .collect();
                 steps.push(apply(
                     self.reference((PROTO_METHOD, "withRoutes")),
@@ -131,10 +137,8 @@ impl Emitter {
                 ));
             }
             Routes::Bindings => {
-                let bindings = apply(
-                    self.reference((PROTO_METHOD, "bindings")),
-                    [var(method.descriptor_name())],
-                );
+                let descriptor = self.generated_value(parent, method.descriptor_name());
+                let bindings = apply(self.reference((PROTO_METHOD, "bindings")), [descriptor]);
                 steps.push(apply(
                     self.reference((PROTO_METHOD, "withBindings")),
                     [bindings],
@@ -142,13 +146,10 @@ impl Emitter {
             }
         }
         let body = apply(self.reference((RPC, "call")), [pipeline(built, steps)]);
-        let codec = match tag {
-            Some(tag) => self.library_type(RPC, tag, []),
-            None => Type::Var("codec".to_owned()),
-        };
+        let codec = self.library_type(RPC, tag, []);
         let call = self.library_type(RPC, "Call", [codec, request.clone(), response]);
         Decl::Value {
-            doc: Some(docs::method(service, method, self.wiring)),
+            doc: Some(docs::method(service, parent, method, self.wiring)),
             name: method.elm_name.clone(),
             annotation: ty_fn([request], call),
             params: Vec::new(),
@@ -189,7 +190,7 @@ impl Emitter {
             let request = self.method_type(&method.input);
             let built = self.library_type(PROTO_ROUTE, "Route", []);
             decls.push(Decl::Value {
-                doc: Some(docs::route(method, index)),
+                doc: Some(docs::route(&self.module, method, index)),
                 name: route_name(method, index),
                 annotation: ty_fn([request], built),
                 params: vec![pvar(REQUEST)],

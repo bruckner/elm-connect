@@ -10,14 +10,14 @@ A service kept for older clients.
 
 `service notes.v1.LegacyService`
 
+Its calls are in [`Notes.V1.LegacyService.Json`](Notes-V1-LegacyService-Json) over proto3 JSON.
+
 -}
 
 import Proto.Http
-import Proto.Json
 import Proto.Method
 import Proto.Route
 import Proto.Version
-import Rpc
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -28,32 +28,10 @@ elmConnectVersion_ =
 
 
 
--- CALLS
-
-
-{-| `rpc Clear(google.protobuf.Empty) returns (google.protobuf.Empty)`.
-Connect: `POST /notes.v1.LegacyService/Clear`.
-Transcode: `PURGE /v1/notes`.
-
-Codecs: JSON. Described by [`descriptorClear`](#descriptorClear).
-
--}
-clear : () -> Rpc.Call Rpc.Json () ()
-clear =
-    Rpc.call
-        (Proto.Method.initJson "notes.v1.LegacyService"
-            "Clear"
-            (\_ -> Ok << Proto.Json.encodeEmpty)
-            (\_ -> Proto.Json.empty)
-            |> Proto.Method.withRoutes [ routeClear0 ]
-        )
-
-
-
 -- ROUTES
 
 
-{-| The route of [`clear`](#clear) over binding 0: `PURGE /v1/notes`.
+{-| The route of [`clear`](Notes-V1-LegacyService-Json#clear) over binding 0: `PURGE /v1/notes`.
 -}
 routeClear0 : () -> Proto.Route.Route
 routeClear0 request_ =

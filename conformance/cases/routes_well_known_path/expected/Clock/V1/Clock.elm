@@ -5,6 +5,9 @@
 module Clock.V1.Clock exposing (..)
 
 {-| `service clock.v1.Clock`
+
+Its calls are in [`Clock.V1.Clock.Json`](Clock-V1-Clock-Json) over proto3 JSON.
+
 -}
 
 import Clock.V1
@@ -17,7 +20,6 @@ import Proto.Query
 import Proto.Route
 import Proto.Timestamp
 import Proto.Version
-import Rpc
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -28,86 +30,10 @@ elmConnectVersion_ =
 
 
 
--- CALLS
-
-
-{-| `rpc GetMoment(Moment) returns (Moment)`.
-Connect: `POST /clock.v1.Clock/GetMoment`.
-Transcode: `GET /v1/at/{at}`.
-
-Codecs: JSON. Described by [`descriptorGetMoment`](#descriptorGetMoment).
-
--}
-getMoment : Clock.V1.Moment -> Rpc.Call Rpc.Json Clock.V1.Moment Clock.V1.Moment
-getMoment =
-    Rpc.call
-        (Proto.Method.initJson "clock.v1.Clock"
-            "GetMoment"
-            (\_ -> Ok << Clock.V1.encodeMoment)
-            (\_ -> Clock.V1.decodeMoment)
-            |> Proto.Method.withRoutes [ routeGetMoment0 ]
-        )
-
-
-{-| `rpc MaskMoment(Moment) returns (Moment)`.
-Connect: `POST /clock.v1.Clock/MaskMoment`.
-Transcode: `GET /v1/at/{at}/mask/{mask}`.
-
-Codecs: JSON. Described by [`descriptorMaskMoment`](#descriptorMaskMoment).
-
--}
-maskMoment : Clock.V1.Moment -> Rpc.Call Rpc.Json Clock.V1.Moment Clock.V1.Moment
-maskMoment =
-    Rpc.call
-        (Proto.Method.initJson "clock.v1.Clock"
-            "MaskMoment"
-            (\_ -> Ok << Clock.V1.encodeMoment)
-            (\_ -> Clock.V1.decodeMoment)
-            |> Proto.Method.withRoutes [ routeMaskMoment0 ]
-        )
-
-
-{-| `rpc CountMoment(Moment) returns (Moment)`.
-Connect: `POST /clock.v1.Clock/CountMoment`.
-Transcode: `GET /v1/count/{count}/seen/{seen}`.
-
-Codecs: JSON. Described by [`descriptorCountMoment`](#descriptorCountMoment).
-
--}
-countMoment : Clock.V1.Moment -> Rpc.Call Rpc.Json Clock.V1.Moment Clock.V1.Moment
-countMoment =
-    Rpc.call
-        (Proto.Method.initJson "clock.v1.Clock"
-            "CountMoment"
-            (\_ -> Ok << Clock.V1.encodeMoment)
-            (\_ -> Clock.V1.decodeMoment)
-            |> Proto.Method.withRoutes [ routeCountMoment0 ]
-        )
-
-
-{-| `rpc WaitMoment(Moment) returns (Moment)`.
-Connect: `POST /clock.v1.Clock/WaitMoment`.
-Transcode: `POST /v1/wait/{wait}` body `*`.
-
-Codecs: JSON. Described by [`descriptorWaitMoment`](#descriptorWaitMoment).
-
--}
-waitMoment : Clock.V1.Moment -> Rpc.Call Rpc.Json Clock.V1.Moment Clock.V1.Moment
-waitMoment =
-    Rpc.call
-        (Proto.Method.initJson "clock.v1.Clock"
-            "WaitMoment"
-            (\_ -> Ok << Clock.V1.encodeMoment)
-            (\_ -> Clock.V1.decodeMoment)
-            |> Proto.Method.withRoutes [ routeWaitMoment0 ]
-        )
-
-
-
 -- ROUTES
 
 
-{-| The route of [`getMoment`](#getMoment) over binding 0: `GET /v1/at/{at}`.
+{-| The route of [`getMoment`](Clock-V1-Clock-Json#getMoment) over binding 0: `GET /v1/at/{at}`.
 -}
 routeGetMoment0 : Clock.V1.Moment -> Proto.Route.Route
 routeGetMoment0 request_ =
@@ -124,7 +50,7 @@ routeGetMoment0 request_ =
     }
 
 
-{-| The route of [`maskMoment`](#maskMoment) over binding 0: `GET /v1/at/{at}/mask/{mask}`.
+{-| The route of [`maskMoment`](Clock-V1-Clock-Json#maskMoment) over binding 0: `GET /v1/at/{at}/mask/{mask}`.
 -}
 routeMaskMoment0 : Clock.V1.Moment -> Proto.Route.Route
 routeMaskMoment0 request_ =
@@ -148,7 +74,7 @@ routeMaskMoment0 request_ =
     }
 
 
-{-| The route of [`countMoment`](#countMoment) over binding 0: `GET /v1/count/{count}/seen/{seen}`.
+{-| The route of [`countMoment`](Clock-V1-Clock-Json#countMoment) over binding 0: `GET /v1/count/{count}/seen/{seen}`.
 -}
 routeCountMoment0 : Clock.V1.Moment -> Proto.Route.Route
 routeCountMoment0 request_ =
@@ -172,7 +98,7 @@ routeCountMoment0 request_ =
     }
 
 
-{-| The route of [`waitMoment`](#waitMoment) over binding 0: `POST /v1/wait/{wait}` body `*`.
+{-| The route of [`waitMoment`](Clock-V1-Clock-Json#waitMoment) over binding 0: `POST /v1/wait/{wait}` body `*`.
 -}
 routeWaitMoment0 : Clock.V1.Moment -> Proto.Route.Route
 routeWaitMoment0 request_ =

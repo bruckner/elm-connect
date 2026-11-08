@@ -66,10 +66,11 @@ fn a_tree_just_generated_is_current() {
     let check = check_tree(&files, &out);
     assert!(check.is_current(), "{check:?}");
     assert!(check.other_options.is_empty());
-    // The package's module, its service's, and one per message and enum.
-    assert_eq!(check.modules, 14);
+    // The package's module, its service's and the service's JSON calls
+    // module, and one per message and enum.
+    assert_eq!(check.modules, 15);
     assert!(
-        check.render(GEN).contains("14 generated modules"),
+        check.render(GEN).contains("15 generated modules"),
         "{}",
         check.render(GEN)
     );

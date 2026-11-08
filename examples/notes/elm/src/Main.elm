@@ -1,7 +1,7 @@
 module Main exposing (main)
 
 {-| The notes example: list, create, edit, archive and delete notes through the
-generated `Notes.V1.NotesService`, over Connect or over HTTP transcoding (by
+generated `Notes.V1.NotesService.Json`, over Connect or over HTTP transcoding (by
 Vanguard or by grpc-gateway), and show what each call sent and how it failed. `examples/notes/README.md` walks
 through it.
 -}
@@ -13,7 +13,7 @@ import Html.Attributes exposing (checked, class, name, placeholder, type_, value
 import Html.Events exposing (onClick, onInput, onSubmit)
 import Json.Encode
 import Notes.V1 exposing (Note)
-import Notes.V1.NotesService as Notes
+import Notes.V1.NotesService.Json as Notes
 import Proto.Any
 import Proto.ErrorDetails
 import Proto.Json

@@ -5,14 +5,14 @@ module RouteFixtures exposing (..)
 
 import Replay
 import Routes.V1
-import Routes.V1.Routes
+import Routes.V1.Routes.Json
 
 
 fixtures : List Replay.Fixture
 fixtures =
     [ Replay.fixture "bodies: body * leaves out a nested path field"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.postSub
+        Routes.V1.Routes.Json.postSub
         (Just 0)
         "{\"messageId\":\"m\",\"revision\":\"3\",\"sub\":{\"subfield\":\"s\"}}"
         { method = "POST"
@@ -22,7 +22,7 @@ fixtures =
         }
     , Replay.fixture "bodies: a body field is sent whole, a field the path holds included (AIP-134)"
         Routes.V1.decodeUpdateResourceRequest
-        Routes.V1.Routes.updateResource
+        Routes.V1.Routes.Json.updateResource
         (Just 0)
         "{\"resource\":{\"displayName\":\"R\",\"name\":\"resources/r1\"},\"updateMask\":\"displayName\"}"
         { method = "PATCH"
@@ -32,7 +32,7 @@ fixtures =
         }
     , Replay.fixture "bodies: an unset body field is an empty object"
         Routes.V1.decodeUpdateMessageRequest
-        Routes.V1.Routes.updateMessage
+        Routes.V1.Routes.Json.updateMessage
         (Just 0)
         "{\"messageId\":\"1\"}"
         { method = "PATCH"
@@ -42,7 +42,7 @@ fixtures =
         }
     , Replay.fixture "encoding: a single-segment variable escapes / and every reserved character"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.single
+        Routes.V1.Routes.Json.single
         (Just 0)
         "{\"name\":\"a/b c?d#e[f]@g!$&'()*+,;=h\"}"
         { method = "GET"
@@ -52,7 +52,7 @@ fixtures =
         }
     , Replay.fixture "encoding: unreserved characters are kept, and the rest is UTF-8"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.single
+        Routes.V1.Routes.Json.single
         (Just 0)
         "{\"name\":\"Az09-_.~é✓😀%\"}"
         { method = "GET"
@@ -62,7 +62,7 @@ fixtures =
         }
     , Replay.fixture "encoding: a multi-segment variable keeps /"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.multi
+        Routes.V1.Routes.Json.multi
         (Just 0)
         "{\"name\":\"things/x y:z\"}"
         { method = "GET"
@@ -72,7 +72,7 @@ fixtures =
         }
     , Replay.fixture "encoding: ** keeps every /"
         Routes.V1.decodeFileRequest
-        Routes.V1.Routes.files
+        Routes.V1.Routes.Json.files
         (Just 0)
         "{\"path\":\"files/a/b c/d.txt\"}"
         { method = "GET"
@@ -82,7 +82,7 @@ fixtures =
         }
     , Replay.fixture "encoding: a custom HTTP method"
         Routes.V1.decodeFileRequest
-        Routes.V1.Routes.head
+        Routes.V1.Routes.Json.head
         (Just 0)
         "{\"path\":\"files/a\"}"
         { method = "HEAD"
@@ -92,7 +92,7 @@ fixtures =
         }
     , Replay.fixture "encoding: a custom verb follows the path"
         Routes.V1.decodeResource
-        Routes.V1.Routes.cancel
+        Routes.V1.Routes.Json.cancel
         (Just 0)
         "{\"displayName\":\"Op\",\"name\":\"operations/op-1\"}"
         { method = "POST"
@@ -102,7 +102,7 @@ fixtures =
         }
     , Replay.fixture "encoding: query values are escaped like single-segment path values"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.query
+        Routes.V1.Routes.Json.query
         (Just 0)
         "{\"name\":\"a&b=c+d e/f\",\"tags\":[\"x,y\",\"é\"]}"
         { method = "GET"
@@ -112,7 +112,7 @@ fixtures =
         }
     , Replay.fixture "http_proto: a variable with a multi-segment template"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 0)
         "{\"name\":\"messages/123456\"}"
         { method = "GET"
@@ -122,7 +122,7 @@ fixtures =
         }
     , Replay.fixture "http_proto: fields outside the path become query parameters"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 2)
         "{\"messageId\":\"123456\",\"revision\":\"2\",\"sub\":{\"subfield\":\"foo\"}}"
         { method = "GET"
@@ -132,7 +132,7 @@ fixtures =
         }
     , Replay.fixture "http_proto: a nested field in the path"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 1)
         "{\"messageId\":\"123456\",\"sub\":{\"subfield\":\"foo\"}}"
         { method = "GET"
@@ -142,7 +142,7 @@ fixtures =
         }
     , Replay.fixture "http_proto: an additional binding"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 3)
         "{\"messageId\":\"123456\",\"userId\":\"me\"}"
         { method = "GET"
@@ -152,7 +152,7 @@ fixtures =
         }
     , Replay.fixture "http_proto: a body field"
         Routes.V1.decodeUpdateMessageRequest
-        Routes.V1.Routes.updateMessage
+        Routes.V1.Routes.Json.updateMessage
         (Just 0)
         "{\"message\":{\"text\":\"Hi!\"},\"messageId\":\"123456\"}"
         { method = "PATCH"
@@ -162,7 +162,7 @@ fixtures =
         }
     , Replay.fixture "http_proto: body * holds every field not in the path"
         Routes.V1.decodeMessage
-        Routes.V1.Routes.updateMessageWhole
+        Routes.V1.Routes.Json.updateMessageWhole
         (Just 0)
         "{\"messageId\":\"123456\",\"text\":\"Hi!\"}"
         { method = "PATCH"
@@ -172,7 +172,7 @@ fixtures =
         }
     , Replay.fixture "implicit: a method without a rule is POSTed whole to its service and method"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.unbound
+        Routes.V1.Routes.Json.unbound
         Nothing
         "{\"messageId\":\"m/1\",\"name\":\"messages/x y\",\"revision\":\"2\",\"sub\":{\"subfield\":\"s\"}}"
         { method = "POST"
@@ -184,7 +184,7 @@ fixtures =
         }
     , Replay.fixture "implicit: an empty request is an empty object"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.unbound
+        Routes.V1.Routes.Json.unbound
         Nothing
         "{}"
         { method = "POST"
@@ -196,7 +196,7 @@ fixtures =
         }
     , Replay.fixture "query: fields at their defaults are left out"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.query
+        Routes.V1.Routes.Json.query
         (Just 0)
         "{\"big\":\"0\",\"count\":0,\"flag\":false,\"kind\":\"KIND_UNSPECIFIED\",\"name\":\"\",\"tags\":[]}"
         { method = "GET"
@@ -206,7 +206,7 @@ fixtures =
         }
     , Replay.fixture "query: scalars and enums as proto3 JSON writes them"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.query
+        Routes.V1.Routes.Json.query
         (Just 0)
         "{\"big\":\"9007199254740993\",\"count\":-3,\"data\":\"aGk=\",\"flag\":true,\"kind\":\"KIND_TEXT\",\"name\":\"n\",\"ratio\":0.5,\"scale\":1.5,\"ubig\":\"18446744073709551615\"}"
         { method = "GET"
@@ -216,7 +216,7 @@ fixtures =
         }
     , Replay.fixture "query: repeated fields repeat, defaults and all"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.query
+        Routes.V1.Routes.Json.query
         (Just 0)
         "{\"kinds\":[\"KIND_UNSPECIFIED\",\"KIND_IMAGE\"],\"numbers\":[1,0,2],\"tags\":[\"a\",\"b\"]}"
         { method = "GET"
@@ -226,7 +226,7 @@ fixtures =
         }
     , Replay.fixture "query: fields with presence are sent at their defaults when set"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.query
+        Routes.V1.Routes.Json.query
         (Just 0)
         "{\"label\":\"\",\"limit\":0,\"maybeCount\":0,\"maybeName\":\"\",\"number\":0}"
         { method = "GET"
@@ -236,7 +236,7 @@ fixtures =
         }
     , Replay.fixture "query: well-known types in their JSON string forms"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.query
+        Routes.V1.Routes.Json.query
         (Just 0)
         "{\"at\":\"2024-01-02T03:04:05.678Z\",\"mask\":\"displayName,inner.a\",\"wait\":\"1.5s\"}"
         { method = "GET"
@@ -246,7 +246,7 @@ fixtures =
         }
     , Replay.fixture "query: nested messages by dotted proto path, and a oneof member"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.query
+        Routes.V1.Routes.Json.query
         (Just 0)
         "{\"inner\":{\"a\":\"x\",\"deep\":{\"b\":2,\"c\":[\"p\",\"q\"]}},\"text\":\"hello\"}"
         { method = "GET"
@@ -256,7 +256,7 @@ fixtures =
         }
     , Replay.fixture "query: integers, booleans and enums in the path"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.typed
+        Routes.V1.Routes.Json.typed
         (Just 0)
         "{\"big\":\"-5\",\"count\":7,\"flag\":true,\"inner\":{\"deep\":{\"b\":9}},\"kind\":\"KIND_IMAGE\",\"name\":\"q\"}"
         { method = "DELETE"
@@ -266,7 +266,7 @@ fixtures =
         }
     , Replay.fixture "query: a path value under an unset message is its default; defaults are written"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.typed
+        Routes.V1.Routes.Json.typed
         (Just 0)
         "{}"
         { method = "DELETE"

@@ -782,9 +782,9 @@ impl Problem {
         )
     }
 
-    /// Two generated modules, each a package's, a service's or a message's
-    /// or enum's descriptor module, become the same Elm module
-    /// `elm_module`.
+    /// Two generated modules, each a package's, a service's, one of a
+    /// service's calls modules or a message's or enum's descriptor module,
+    /// become the same Elm module `elm_module`.
     pub fn module_collision(
         elm_module: &str,
         first: Site,
@@ -799,7 +799,9 @@ impl Problem {
                 "Every package becomes an Elm module (`notes.v1` becomes `Notes.V1`), and every \
                  service, message and enum becomes a module inside its package's \
                  (`notes.v1.NotesService` becomes `Notes.V1.NotesService`, the descriptors of \
-                 `notes.v1.Note` are in `Notes.V1.Note`), each segment in PascalCase, so one can \
+                 `notes.v1.Note` are in `Notes.V1.Note`), each segment in PascalCase; a \
+                 service's calls are in modules inside its own, `Notes.V1.NotesService.Json` \
+                 and `Notes.V1.NotesService.Proto`, whatever the `codec` option. So one can \
                  take the name of another or of a package nested in its own, and names that \
                  differ only in case or underscores end up the same. {}",
                 rename_escape(

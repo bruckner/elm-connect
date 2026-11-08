@@ -40,7 +40,7 @@ scope: elm-connect generates unary calls only, and `--streaming skip`
 leaves them out with a warning rather than an error (server streaming
 is on the [roadmap](roadmap.md)). `Say` becomes:
 
-```elm examples/eliza/generated/Connectrpc/Eliza/V1/ElizaService.elm excerpt
+```elm examples/eliza/generated/Connectrpc/Eliza/V1/ElizaService/Json.elm excerpt
 say : Connectrpc.Eliza.V1.SayRequest -> Rpc.Call Rpc.Json Connectrpc.Eliza.V1.SayRequest Connectrpc.Eliza.V1.SayResponse
 ```
 
@@ -56,7 +56,7 @@ module Main exposing (main)
 
 import Browser
 import Connectrpc.Eliza.V1
-import Connectrpc.Eliza.V1.ElizaService as ElizaService
+import Connectrpc.Eliza.V1.ElizaService.Json as ElizaService
 import Html exposing (Html)
 import Html.Attributes as Attributes
 import Html.Events as Events

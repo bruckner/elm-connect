@@ -9,7 +9,7 @@ it reads an answer, checked with the pure halves.
 import Dict
 import Expect
 import Http
-import Notes.V1.NotesService as Notes
+import Notes.V1.NotesService.Json as Notes
 import Rpc
 import Rpc.Code
 import Rpc.Error

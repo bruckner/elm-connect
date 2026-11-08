@@ -712,23 +712,26 @@ responses =
                 let
                     unregistered =
                         Rpc.call
-                            (Proto.Method.init "notes.v1.Notes"
+                            (Proto.Method.initJson "notes.v1.Notes"
                                 "GetNote"
                                 (\_ _ -> Err (Proto.Any.UnregisteredType "type.googleapis.com/ext.v1.Thing"))
                                 (\_ -> decodeTitle)
-                                (\_ -> Bytes.Encode.sequence [])
-                                decodeTitleBytes
                             )
                             { name = "x" }
+
+                    -- The same request over binary, which holds the Any's
+                    -- bytes and needs no registry.
+                    overBinary =
+                        Rpc.call (Proto.Method.initProto "notes.v1.Notes" "GetNote" (\_ -> Bytes.Encode.sequence []) decodeTitleBytes) { name = "x" }
 
                     unwritable =
                         UnwritableRequest (Proto.Any.UnregisteredType "type.googleapis.com/ext.v1.Thing")
 
-                    refusal client =
-                        Rpc.Internal.Plan.refused "https://api.example.com" (Rpc.Internal.Plan.plan client unregistered) (Rpc.request client unregistered)
+                    refusal client call =
+                        Rpc.Internal.Plan.refused "https://api.example.com" (Rpc.Internal.Plan.plan client call) (Rpc.request client call)
                 in
-                ( refusal base
-                , refusal (Rpc.client Rpc.Protocol.connectProto "https://api.example.com")
+                ( refusal base unregistered
+                , refusal (Rpc.client Rpc.Protocol.connectProto "https://api.example.com") overBinary
                 , ( Rpc.Error.code (NoAnswer unwritable), Rpc.Error.message (NoAnswer unwritable) )
                 )
                     |> Expect.equal
@@ -1501,19 +1504,9 @@ sendLimits =
 encodings : Test
 encodings =
     let
-        -- A method whose request stops the test if it is ever encoded, with
-        -- JSON codecs alone and with both.
+        -- A method whose request stops the test if it is ever encoded.
         neverEncoded =
-            [ Rpc.call (Proto.Method.initJson "notes.v1.Notes" "GetNote" (\_ _ -> Debug.todo "the message was encoded") (\_ -> decodeTitle))
-            , Rpc.call
-                (Proto.Method.init "notes.v1.Notes"
-                    "GetNote"
-                    (\_ _ -> Debug.todo "the message was encoded")
-                    (\_ -> decodeTitle)
-                    (\_ -> Bytes.Encode.sequence [])
-                    decodeTitleBytes
-                )
-            ]
+            Rpc.call (Proto.Method.initJson "notes.v1.Notes" "GetNote" (\_ _ -> Debug.todo "the message was encoded") (\_ -> decodeTitle))
 
         -- The same over a binding read from the JSON, whose answer is the
         -- response's `title` field.
@@ -1542,12 +1535,10 @@ encodings =
 
         update =
             Rpc.call
-                (Proto.Method.init "notes.v1.Notes"
+                (Proto.Method.initJson "notes.v1.Notes"
                     "UpdateNote"
                     tagged
                     (\_ -> decodeTitle)
-                    (\_ -> Bytes.Encode.sequence [])
-                    decodeTitleBytes
                     |> Proto.Method.withBindings
                         [ Proto.Http.binding
                             { method = "PATCH"
@@ -1575,10 +1566,10 @@ encodings =
         [ test "an answer is read without encoding the request" <|
             \_ ->
                 ( [ Rpc.Protocol.connect, connectGet, Rpc.Protocol.transcode ]
-                    |> List.concatMap (\protocol -> List.map (\c -> read (over protocol) c "{\"title\":\"t\"}") neverEncoded)
+                    |> List.map (\protocol -> read (over protocol) neverEncoded "{\"title\":\"t\"}")
                 , ( read base routedNeverEncoded "{\"title\":\"t\"}", read (over Rpc.Protocol.transcode) routedNeverEncoded "\"t\"" )
                 )
-                    |> Expect.equal ( List.repeat 6 (Ok "t"), ( Ok "t", Ok "t" ) )
+                    |> Expect.equal ( List.repeat 3 (Ok "t"), ( Ok "t", Ok "t" ) )
         , test "an interpreted route binds its path and its body from one encoding, the client's registry's" <|
             \_ ->
                 ( built (over Rpc.Protocol.transcode)

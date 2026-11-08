@@ -1,10 +1,10 @@
 module Live.Codec exposing (empty, entry, registry)
 
 {-| The dispatch tables' entries, for the build against bindings generated
-with `codec=both`: a generated call is free in its codec, so an entry has it
-as a JSON call and as a protobuf binary one, and sends an envelope in the
+with `codec=both`: a service has a `.Json` and a `.Proto` calls module, so an
+entry has a JSON call and a protobuf binary one, and sends an envelope in the
 codec it names. The build against `codec=json` has its own module of this
-name (`json/Live/Codec.elm`).
+name (`json/Live/Codec.elm`), and its own tables.
 -}
 
 import Connectrpc.Conformance.V1
@@ -22,9 +22,8 @@ import Routes.V1
 import Rpc
 
 
-{-| The entry for a method, from its generated call function, given twice
-(an argument holds one type, so one is taken at each codec), its request's
-decoder and its response's typed value: the response is written as its
+{-| The entry for a method, from its generated JSON and binary call
+functions, its request's decoder and its response's typed value: the response is written as its
 protobuf binary, and as the proto3 JSON the build's registries convert that
 to.
 -}

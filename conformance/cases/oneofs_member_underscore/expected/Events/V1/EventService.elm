@@ -5,6 +5,9 @@
 module Events.V1.EventService exposing (..)
 
 {-| `service events.v1.EventService`
+
+Its calls are in [`Events.V1.EventService.Json`](Events-V1-EventService-Json) over proto3 JSON.
+
 -}
 
 import Events.V1
@@ -13,7 +16,6 @@ import Proto.Http
 import Proto.Method
 import Proto.Route
 import Proto.Version
-import Rpc
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -24,35 +26,10 @@ elmConnectVersion_ =
 
 
 
--- CALLS
-
-
-{-| `_legacy` is a query parameter, named by
-`Events.V1.ListEventsRequest.legacy`.
-
-`rpc ListEvents(ListEventsRequest) returns (ListEventsResponse)`.
-Connect: `POST /events.v1.EventService/ListEvents`.
-Transcode: `GET /v1/{parent=feeds/*}/events`.
-
-Codecs: JSON. Described by [`descriptorListEvents`](#descriptorListEvents).
-
--}
-listEvents : Events.V1.ListEventsRequest -> Rpc.Call Rpc.Json Events.V1.ListEventsRequest Events.V1.ListEventsResponse
-listEvents =
-    Rpc.call
-        (Proto.Method.initJson "events.v1.EventService"
-            "ListEvents"
-            (\_ -> Ok << Events.V1.encodeListEventsRequest)
-            (\_ -> Events.V1.decodeListEventsResponse)
-            |> Proto.Method.withRoutes [ routeListEvents0 ]
-        )
-
-
-
 -- ROUTES
 
 
-{-| The route of [`listEvents`](#listEvents) over binding 0: `GET /v1/{parent=feeds/*}/events`.
+{-| The route of [`listEvents`](Events-V1-EventService-Json#listEvents) over binding 0: `GET /v1/{parent=feeds/*}/events`.
 -}
 routeListEvents0 : Events.V1.ListEventsRequest -> Proto.Route.Route
 routeListEvents0 request_ =

@@ -7,7 +7,6 @@ import Dict
 import Expect
 import Http
 import Json.Decode
-import Json.Encode
 import Proto.Any
 import Proto.Binary
 import Proto.Bytes
@@ -57,20 +56,6 @@ getNote =
     Rpc.call
         (Proto.Method.initProto "notes.v1.Notes" "GetNote" encodeGetNoteBytes decodeTitleBytes
             |> Proto.Method.withIdempotency IdempotencyNoSideEffects
-        )
-
-
-{-| The same method with both codecs, as `codec=both` generates it.
--}
-both : GetNote -> Rpc.Call codec GetNote String
-both =
-    Rpc.call
-        (Proto.Method.init "notes.v1.Notes"
-            "GetNote"
-            (\_ r -> Ok (Json.Encode.object [ ( "name", Json.Encode.string r.name ) ]))
-            (\_ -> Json.Decode.field "title" Json.Decode.string)
-            encodeGetNoteBytes
-            decodeTitleBytes
         )
 
 
@@ -296,12 +281,6 @@ requests =
                 , (Rpc.Protocol.grpcWeb |> Rpc.Protocol.withConnectGet |> Rpc.Protocol.withMaxGetUrl 10) == Rpc.Protocol.grpcWeb
                 )
                     |> Expect.equal ( "POST", True )
-        , test "a method with both codecs is sent as its binary" <|
-            \_ ->
-                (Rpc.request grpcWeb (both { name = "hi" })).body
-                    |> Rpc.Body.toBytes
-                    |> Maybe.map decodeAll
-                    |> Expect.equal (Just [ 0, 0, 0, 0, 4, 0x0A, 0x02, 0x68, 0x69 ])
         , test "its name and codec" <|
             \_ ->
                 ( Rpc.Protocol.name Rpc.Protocol.grpcWeb, Rpc.Protocol.codec Rpc.Protocol.grpcWeb )

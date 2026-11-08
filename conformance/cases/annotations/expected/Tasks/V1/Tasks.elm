@@ -5,12 +5,13 @@
 module Tasks.V1.Tasks exposing (..)
 
 {-| `service tasks.v1.Tasks`
+
+Its calls are in [`Tasks.V1.Tasks.Json`](Tasks-V1-Tasks-Json) over proto3 JSON.
+
 -}
 
 import Proto.Method
 import Proto.Version
-import Rpc
-import Tasks.V1
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -18,63 +19,6 @@ import Tasks.V1
 elmConnectVersion_ : Proto.Version.Generated
 elmConnectVersion_ =
     Proto.Version.v0_2
-
-
-
--- CALLS
-
-
-{-| `rpc GetTask(GetTaskRequest) returns (Task)`.
-Connect: `POST /tasks.v1.Tasks/GetTask`.
-Transcode: no HTTP rule, follows the Connect path.
-
-Codecs: JSON. Described by [`descriptorGetTask`](#descriptorGetTask).
-
--}
-getTask : Tasks.V1.GetTaskRequest -> Rpc.Call Rpc.Json Tasks.V1.GetTaskRequest Tasks.V1.Task
-getTask =
-    Rpc.call
-        (Proto.Method.initJson "tasks.v1.Tasks"
-            "GetTask"
-            (\_ -> Ok << Tasks.V1.encodeGetTaskRequest)
-            (\_ -> Tasks.V1.decodeTask)
-            |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
-        )
-
-
-{-| `rpc PutTask(Task) returns (Task)`.
-Connect: `POST /tasks.v1.Tasks/PutTask`.
-Transcode: no HTTP rule, follows the Connect path.
-
-Codecs: JSON. Described by [`descriptorPutTask`](#descriptorPutTask).
-
--}
-putTask : Tasks.V1.Task -> Rpc.Call Rpc.Json Tasks.V1.Task Tasks.V1.Task
-putTask =
-    Rpc.call
-        (Proto.Method.initJson "tasks.v1.Tasks"
-            "PutTask"
-            (\_ -> Ok << Tasks.V1.encodeTask)
-            (\_ -> Tasks.V1.decodeTask)
-            |> Proto.Method.withIdempotency Proto.Method.IdempotencyIdempotent
-        )
-
-
-{-| `rpc CloseTask(GetTaskRequest) returns (Task)`.
-Connect: `POST /tasks.v1.Tasks/CloseTask`.
-Transcode: no HTTP rule, follows the Connect path.
-
-Codecs: JSON. Described by [`descriptorCloseTask`](#descriptorCloseTask).
-
--}
-closeTask : Tasks.V1.GetTaskRequest -> Rpc.Call Rpc.Json Tasks.V1.GetTaskRequest Tasks.V1.Task
-closeTask =
-    Rpc.call
-        (Proto.Method.initJson "tasks.v1.Tasks"
-            "CloseTask"
-            (\_ -> Ok << Tasks.V1.encodeGetTaskRequest)
-            (\_ -> Tasks.V1.decodeTask)
-        )
 
 
 

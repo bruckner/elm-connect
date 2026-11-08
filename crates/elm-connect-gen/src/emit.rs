@@ -32,16 +32,20 @@
 //!   receives. It imports the runtime and the descriptor modules of the
 //!   enums its fields hold, never a package's module, so the package's
 //!   module can import it.
-//! - A service's module, `Notes.V1.NotesService`, holds three sections:
-//!   calls, routes, then descriptors (routes only when a method has one).
-//!   Each method's call is a function from its request to an `Rpc.Call`,
-//!   written point-free as `Rpc.call` of the method's
-//!   `Proto.Method.Method`, built by `Proto.Method.initJson` from its
-//!   service's full name and its own, the encoder of its request and the
-//!   decoder of its response (`Notes.V1.encodeGetNoteRequest`, or the
-//!   runtime's for a well-known type), then piped through
-//!   `Proto.Method.withIdempotency` when the proto declares one and
-//!   `Proto.Method.withRoutes` with its route functions. Each route
+//! - A service's module, `Notes.V1.NotesService`, holds two sections:
+//!   routes, then descriptors (routes only when a method has one), and
+//!   nothing bound to a wire. Its calls are in a calls module per wire the
+//!   `codec` option names, `Notes.V1.NotesService.Json` and
+//!   `Notes.V1.NotesService.Proto`, whose names do not depend on the
+//!   option. Each method's call is a function from its request to an
+//!   `Rpc.Call` in its module's codec, written point-free as `Rpc.call` of
+//!   the method's `Proto.Method.Method`, built by `Proto.Method.initJson`
+//!   (or `initProto`, from the binary codecs) from its service's full name
+//!   and its own, the encoder of its request and the decoder of its
+//!   response (`Notes.V1.encodeGetNoteRequest`, or the runtime's for a
+//!   well-known type), then piped through `Proto.Method.withIdempotency`
+//!   when the proto declares one and, over JSON, `Proto.Method.withRoutes`
+//!   with its route functions from the service's module. Each route
 //!   function, `routeGetNote0 : GetNoteRequest -> Proto.Route.Route`,
 //!   builds one binding's path, query and body from the typed request
 //!   ([`route_fn`]); a method with a binding the emitter cannot type takes
@@ -197,7 +201,7 @@ use crate::ir::{
     AnyReach, Element, Field, Message, ModuleName as IrModule, Oneof, OneofVariant, Package,
     Service, TypeName,
 };
-use crate::naming::VERSION_VALUE;
+use crate::naming::{self, VERSION_VALUE};
 use crate::options::{Codec, EnumUnknown, Options};
 use crate::{DEFAULT_OPTIONS, HEADER_PREFIX, OPTIONS_PREFIX, SENTINEL, VERSION};
 
@@ -423,30 +427,31 @@ fn messages_by_name(package: &Package) -> HashMap<&str, &Message> {
         .collect()
 }
 
-/// The Elm module of `service`, one of `package`'s: a call and a
-/// descriptor per method, in two sections, the calls a program uses
-/// first.
+/// The Elm modules of `service`, one of `package`'s: its own, with a
+/// route function per binding and a descriptor per method, in two
+/// sections, and then one calls module per wire the `codec` option
+/// generates (`.Json`, `.Proto`), each with a call per method in that
+/// codec, the JSON calls taking the routes of the service's module.
 pub fn emit_service(
     package: &Package,
     service: &Service,
     options: &Options,
     packages: &[Package],
     queries: &Queries,
-) -> Module {
+) -> Vec<Module> {
     let messages = all_messages(package, packages);
+    let reach = AnyReach::of(packages.iter().chain(std::iter::once(package)));
     let mut emitter = Emitter::new(&service.module, options);
-    emitter.reach = AnyReach::of(packages.iter().chain(std::iter::once(package)));
+    emitter.reach = reach.clone();
     let mut decls = Vec::new();
+    let mut taken = Vec::new();
     if !service.methods.is_empty() {
-        let mut calls = Vec::new();
         let mut routes = Vec::new();
         for method in &service.methods {
-            let (functions, taken) = emitter.method_routes(&messages, queries, method);
-            calls.push(emitter.method(&service.proto_full_name, method, &taken));
+            let (functions, takes) = emitter.method_routes(&messages, queries, method);
             routes.extend(functions);
+            taken.push(takes);
         }
-        decls.push(Decl::Comment("CALLS".into()));
-        decls.extend(calls);
         if !routes.is_empty() {
             decls.push(Decl::Comment("ROUTES".into()));
             decls.extend(routes);
@@ -457,8 +462,25 @@ pub fn emit_service(
         }
     }
     let mut module = emitter.module(package, decls);
-    module.doc = Some(docs::service(service));
-    module
+    module.doc = Some(docs::service(service, options.codec));
+    let mut modules = vec![module];
+    for &wire in options.codec.wires() {
+        let name = naming::calls_module(&service.module, docs::calls_segment(wire));
+        let mut emitter = Emitter::new(&name, options);
+        emitter.wiring = wire;
+        emitter.reach = reach.clone();
+        let mut decls = Vec::new();
+        if !service.methods.is_empty() {
+            decls.push(Decl::Comment("CALLS".into()));
+        }
+        for (method, takes) in service.methods.iter().zip(&taken) {
+            decls.push(emitter.method(&service.proto_full_name, &service.module, method, takes));
+        }
+        let mut module = emitter.module(package, decls);
+        module.doc = Some(docs::calls(service, wire));
+        modules.push(module);
+    }
+    modules
 }
 
 /// Every message of `packages` and `package` by full proto name.
@@ -956,17 +978,24 @@ mod tests {
             methods: Vec::new(),
             doc: crate::ir::Doc::default(),
         };
-        let module = emit_service(
+        let modules = emit_service(
             &package(Vec::new()),
             &service,
-            &Options::default(),
+            &Options {
+                codec: Codec::Both,
+                ..Options::default()
+            },
             &[],
             &Queries::new(),
         );
-        assert!(matches!(
-            module.decls.as_slice(),
-            [Decl::Value { name, .. }] if name == VERSION_VALUE
-        ));
+        let names: Vec<&str> = modules.iter().map(|m| m.name.as_str()).collect();
+        assert_eq!(names, ["T.V1.S", "T.V1.S.Json", "T.V1.S.Proto"]);
+        for module in &modules {
+            assert!(matches!(
+                module.decls.as_slice(),
+                [Decl::Value { name, .. }] if name == VERSION_VALUE
+            ));
+        }
     }
 
     #[test]
@@ -1281,13 +1310,16 @@ mod tests {
             int64: Int64::Int,
             ..Options::default()
         };
-        let module = emit_service(
+        let modules = emit_service(
             &package(Vec::new()),
             &service,
             &options,
             &[],
             &Queries::new(),
         );
+        let [parent, module] = modules.as_slice() else {
+            panic!("a service module and its JSON calls module")
+        };
         let imports: Vec<&str> = module.imports.iter().map(|i| i.module.as_str()).collect();
         assert_eq!(
             imports,
@@ -1301,17 +1333,22 @@ mod tests {
                 "T.V1"
             ]
         );
-        let sections: Vec<&str> = module
-            .decls
-            .iter()
-            .filter_map(|decl| match decl {
-                Decl::Comment(section) => Some(section.as_str()),
-                _ => None,
-            })
-            .collect();
-        // No method has a rule, so the module has no route functions.
-        assert_eq!(sections, ["CALLS", "DESCRIPTORS"]);
-        let printed = crate::elm::print::print_module(&module);
+        let sections = |module: &Module| -> Vec<String> {
+            module
+                .decls
+                .iter()
+                .filter_map(|decl| match decl {
+                    Decl::Comment(section) => Some(section.clone()),
+                    _ => None,
+                })
+                .collect()
+        };
+        // No method has a rule, so the service's module has no route
+        // functions, and the calls do not import it.
+        assert_eq!(sections(parent), ["DESCRIPTORS"]);
+        assert_eq!(sections(module), ["CALLS"]);
+        let printed = crate::elm::print::print_module(module);
+        let described = crate::elm::print::print_module(parent);
         for expected in [
             "(Proto.Method.initJson \"t.v1.S\"\n            \"Get\"\n            \
              (\\_ -> Ok << T.V1.encodeA)\n            \
@@ -1320,11 +1357,12 @@ mod tests {
             "\n            (\\_ -> Ok << Basics.identity)\n            (\\_ -> Proto.Json.empty)\n",
             "\n            \"Ticks\"\n            \
              (\\_ -> Ok << Proto.Json.encodeInt64AsInt)\n            Proto.Json.anyWith\n",
-            "descriptorGet : Proto.Method.Descriptor\ndescriptorGet =\n    \
-             Proto.Method.descriptor \"t.v1.S\"\n        \"Get\"\n        \
-             Proto.Method.IdempotencyUnknown\n        \"t.v1.A\"\n        \"t.v1.A\"\n        []\n",
         ] {
             assert!(printed.contains(expected), "{expected}\n{printed}");
         }
+        let descriptor = "descriptorGet : Proto.Method.Descriptor\ndescriptorGet =\n    \
+             Proto.Method.descriptor \"t.v1.S\"\n        \"Get\"\n        \
+             Proto.Method.IdempotencyUnknown\n        \"t.v1.A\"\n        \"t.v1.A\"\n        []\n";
+        assert!(described.contains(descriptor), "{described}");
     }
 }

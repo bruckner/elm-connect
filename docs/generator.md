@@ -12,8 +12,10 @@ listed, with links, in [specs.md](specs.md).
 ## What a proto becomes
 
 Each package becomes a module of its types and their codecs
-(`notes.v1` → `Notes.V1`), each service a module of one function per
-method (`Notes.V1.NotesService`), and each message and enum a module of
+(`notes.v1` → `Notes.V1`), each service a module of its routes and
+descriptors (`Notes.V1.NotesService`) with a module of one function per
+method inside it per codec (`Notes.V1.NotesService.Json`,
+`Notes.V1.NotesService.Proto`), and each message and enum a module of
 its descriptor (`Notes.V1.Note`, [descriptors.md](descriptors.md)). The
 forms below are those of the default options unless a row says
 otherwise.
@@ -49,7 +51,7 @@ otherwise.
 | a recursive message (`repeated Node children`) | the field that closes the cycle holds a wrapper, `List Node_`, with `type Node_ = Node_ Node`; fields that close no cycle hold the record itself |
 | a nested message or enum (`Outer.Inner`) | a type named by its path, `OuterInner`, in the package's module |
 | a type of another generated package | the type from that package's module, `Users.V1.User` |
-| `service NotesService` | a module `Notes.V1.NotesService`: per unary method a call, `getNote : Notes.V1.GetNoteRequest -> Rpc.Call Rpc.Json Notes.V1.GetNoteRequest Notes.V1.Note`; per binding of its `google.api.http` rule a route function, `routeGetNote0 : Notes.V1.GetNoteRequest -> Proto.Route.Route`, which the call holds ([transcoding.md](transcoding.md)); and its method descriptor, `descriptorGetNote`, the proto's facts about it as data, which the call does not hold |
+| `service NotesService` | a module `Notes.V1.NotesService`: per binding of a method's `google.api.http` rule a route function, `routeGetNote0 : Notes.V1.GetNoteRequest -> Proto.Route.Route`, which the JSON call holds ([transcoding.md](transcoding.md)), and per method its descriptor, `descriptorGetNote`, the proto's facts about it as data, which the call does not hold; and inside it, per codec the `codec` option wires, a calls module, `Notes.V1.NotesService.Json` (per unary method a call, `getNote : Notes.V1.GetNoteRequest -> Rpc.Call Rpc.Json Notes.V1.GetNoteRequest Notes.V1.Note`) or `Notes.V1.NotesService.Proto` (the same calls as `Rpc.Call Rpc.Proto`) |
 | a request message whose bindings put fields in the query | `queryOfListNotesRequest : ListNotesRequest -> List ( String, String )` in its package's module, the query parameters its route functions share. It exists when a service generated in the same run binds the message's fields to the query, so a service's module and its request messages' module generated in separate runs can disagree, and the compiler reports the missing `queryOf`: generate a service with the packages it uses in one run |
 | a streaming method | a diagnostic; under `streaming=skip`, left out with a warning |
 | comments and `deprecated` | each type, call and descriptor is documented with the proto's comment for it, its one-line declaration, and `Deprecated.` where the proto says so; a call also names its Connect path, its HTTP bindings and its codecs (`Codecs: JSON.`), and a package's module carries the comment on its `package` statement |
@@ -99,7 +101,7 @@ Both binaries take the same options: the protoc plugin as
 | `unbound_methods` | `--unbound-methods` | `implicit` (default), `error` | What a method without a `google.api.http` rule gets. `implicit`: a call like any other, sent over transcoding on the implicit route ([transcoding.md](transcoding.md#methods-without-an-http-rule)). `error`: a `services::unbound_method` diagnostic, for servers that serve rules alone. |
 | `streaming` | `--streaming` | `error` (default), `skip` | What a client, server or bidirectional streaming method gets. `error`: a `services::streaming` diagnostic. `skip`: left out of its service's module, with a warning on stderr, and the rest generated. |
 | `enum_unknown` | `--enum-unknown` | `fail` (default), `zero` | What an enum value name the client does not know reads as; an unknown number reads as the zero value either way. `fail`: the decode fails, as protobuf's own parsers do. `zero`: the zero value, so a value the server adds after the client was generated does not fail the message it is in, at the cost of telling it apart from the zero value. It applies to every enum of the invocation. Packages can take different values only from separate invocations, each into its own out directory and checked the same way, and only when no message of one refers to a type of another, since a reference to a package the invocation does not generate is `generate::not_generated`. |
-| `codec` | `--codec` | `json` (default), `proto`, `both` | Which codecs the service methods are wired with, and so which clients send the calls. Every message gets both codecs, its typed value and its package's `registry` whatever it says. `json`: proto3 JSON, which Connect's JSON codec and transcoding speak; calls are `Rpc.Call Rpc.Json req res`. `proto`: protobuf binary, which Connect's proto codec and gRPC-Web speak; calls are `Rpc.Call Rpc.Proto req res`. `both`: either; calls are `Rpc.Call codec req res`, which any client sends. See [Binary codecs](#binary-codecs) and [calling.md](calling.md#choosing-the-codec). The value `binary` is refused, with a message naming `proto`. |
+| `codec` | `--codec` | `json` (default), `proto`, `both` | Which codecs the service methods are wired with, and so which calls modules a service gets and which clients send the calls. Every message gets both codecs, its typed value and its package's `registry` whatever it says. `json`: proto3 JSON, which Connect's JSON codec and transcoding speak, in `Notes.V1.NotesService.Json`, whose calls are `Rpc.Call Rpc.Json req res`. `proto`: protobuf binary, which Connect's proto codec and gRPC-Web speak, in `Notes.V1.NotesService.Proto`, whose calls are `Rpc.Call Rpc.Proto req res`. `both`: the two modules; a program picks its wire by the one it imports. The modules' names do not depend on the option. See [Binary codecs](#binary-codecs) and [calling.md](calling.md#choosing-the-codec). The value `binary` is refused, with a message naming `proto`. |
 | `rename` | `--rename` | `<proto full name>:<Elm name>`, repeatable | An Elm name in place of the one the naming rules derive, for a package (its module), service, method, message, enum, field, oneof or enum value. The escape for names that collide or have no Elm form. |
 | `module_prefix` | `--module-prefix` | dot-separated Elm module segments, such as `Api.Notes` | A module every generated module goes inside: with `Api`, `notes.v1` becomes `Api.Notes.V1`, written to `Api/Notes/V1.elm`, and its services' modules follow. A renamed package's module is prefixed too. The runtime's modules are never prefixed. |
 
@@ -166,17 +168,18 @@ messageLeaf =
 and one whose fields reach a `google.protobuf.Any` by
 `Proto.Message.initWith`, from `encodeNoteWith` and `decodeNoteWith`,
 the JSON codecs that take a registry (below). The `codec` option says
-which codecs a method is wired with. Under `json` a method is built by
-`Proto.Method.initJson` from its service's full name, its name, and its
-request's JSON encoder and response's JSON decoder, each taking the
-client's registry (`\_ -> Ok << Notes.V1.encodeGetNoteRequest` and
-`\_ -> Notes.V1.decodeNote` for a type that reaches no `Any`). Under
-`both` it is built by `Proto.Method.init` from those, then the request
-type's `encode…Bytes` and the response type's `decode…Bytes`, and its
-idempotency and routes as under `json`. Under `codec=proto` it is built
-from the binary codecs alone (the `codec_proto` case):
+which codecs the methods are wired with, by which calls modules a
+service gets: `json` (the default) the `.Json` module, `proto` the
+`.Proto` module, `both` the two. In the `.Json` module a method is
+built by `Proto.Method.initJson` from its service's full name, its name,
+and its request's JSON encoder and response's JSON decoder, each taking
+the client's registry (`\_ -> Ok << Notes.V1.encodeGetNoteRequest` and
+`\_ -> Notes.V1.decodeNote` for a type that reaches no `Any`), with its
+idempotency and its routes from the service's module. In the `.Proto`
+module it is built from the binary codecs alone (the `codec_proto`
+case):
 
-```elm conformance/cases/codec_proto/expected/Ledger/V1/LedgerService.elm excerpt
+```elm conformance/cases/codec_proto/expected/Ledger/V1/LedgerService/Proto.elm excerpt
 getEntry : Ledger.V1.GetEntryRequest -> Rpc.Call Rpc.Proto Ledger.V1.GetEntryRequest Ledger.V1.Entry
 getEntry =
     Rpc.call

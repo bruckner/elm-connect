@@ -5,7 +5,7 @@ module Main exposing (main)
 
 import Browser
 import Connectrpc.Eliza.V1
-import Connectrpc.Eliza.V1.ElizaService as ElizaService
+import Connectrpc.Eliza.V1.ElizaService.Json as ElizaService
 import Html exposing (Html)
 import Html.Attributes as Attributes
 import Html.Events as Events

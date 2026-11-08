@@ -5,14 +5,14 @@ module RouteProperties exposing (..)
 
 import Replay
 import Routes.V1
-import Routes.V1.Routes
+import Routes.V1.Routes.Json
 
 
 fixtures : List Replay.Fixture
 fixtures =
     [ Replay.fixture "Cancel 0 #0"
         Routes.V1.decodeResource
-        Routes.V1.Routes.cancel
+        Routes.V1.Routes.Json.cancel
         (Just 0)
         "{\"displayName\":\"𐍈=#😀,\\n'\\\\\",\"kinds\":{\"-283\":\"KIND_UNSPECIFIED\",\"1468361642629552560\":\"KIND_IMAGE\",\"603\":\"KIND_UNSPECIFIED\"},\"labels\":{\"\u{007F}AA\":\"[\"},\"weights\":{\"false\":0.1}}"
         { method = "POST"
@@ -22,7 +22,7 @@ fixtures =
         }
     , Replay.fixture "Cancel 0 #1"
         Routes.V1.decodeResource
-        Routes.V1.Routes.cancel
+        Routes.V1.Routes.Json.cancel
         (Just 0)
         "{\"displayName\":\".\",\"labels\":{\"$Z9$Z\":\"$%\\\"\",\")\u{007F}(\":\"a\\u0001\",\"+aA ,\":\"中ß\\u0001_\\\"']ß\"},\"name\":\".\"}"
         { method = "POST"
@@ -32,7 +32,7 @@ fixtures =
         }
     , Replay.fixture "Cancel 0 #2"
         Routes.V1.decodeResource
-        Routes.V1.Routes.cancel
+        Routes.V1.Routes.Json.cancel
         (Just 0)
         "{\"display_name\":\"ßzz\",\"kinds\":{\"-1269681750333210077\":\"KIND_UNSPECIFIED\",\"8398642343334479438\":\"KIND_IMAGE\",\"9007199254740993\":\"KIND_UNSPECIFIED\"},\"labels\":{\"\\t\":\"$\",\"𐍈-*\":\"\"},\"weights\":{\"true\":111.0}}"
         { method = "POST"
@@ -42,7 +42,7 @@ fixtures =
         }
     , Replay.fixture "Cancel 0 #3"
         Routes.V1.decodeResource
-        Routes.V1.Routes.cancel
+        Routes.V1.Routes.Json.cancel
         (Just 0)
         "{\"displayName\":\"\",\"kinds\":{\"-103\":\"KIND_IMAGE\",\"-490\":\"KIND_IMAGE\"},\"labels\":{\"\":\"\",\"!\\u0001\\\"中\u{007F}\":\"\"},\"name\":\"中a&]@0z*\",\"weights\":{}}"
         { method = "POST"
@@ -52,7 +52,7 @@ fixtures =
         }
     , Replay.fixture "Cancel 0 #4"
         Routes.V1.decodeResource
-        Routes.V1.Routes.cancel
+        Routes.V1.Routes.Json.cancel
         (Just 0)
         "{\"displayName\":\"'$\\\\\",\"weights\":{\"true\":2.625}}"
         { method = "POST"
@@ -62,7 +62,7 @@ fixtures =
         }
     , Replay.fixture "Cancel 0 #5"
         Routes.V1.decodeResource
-        Routes.V1.Routes.cancel
+        Routes.V1.Routes.Json.cancel
         (Just 0)
         "{\"displayName\":\"\",\"kinds\":{},\"labels\":{\"0.\":\"]\\\\[\"},\"name\":\"*&[*$\",\"weights\":{}}"
         { method = "POST"
@@ -72,7 +72,7 @@ fixtures =
         }
     , Replay.fixture "Cancel 0 #6"
         Routes.V1.decodeResource
-        Routes.V1.Routes.cancel
+        Routes.V1.Routes.Json.cancel
         (Just 0)
         "{\"kinds\":{\"9007199254740991\":\"KIND_IMAGE\"},\"name\":\"%𐍈+é:\",\"weights\":{\"true\":\"Infinity\"}}"
         { method = "POST"
@@ -82,7 +82,7 @@ fixtures =
         }
     , Replay.fixture "Cancel 0 #7"
         Routes.V1.decodeResource
-        Routes.V1.Routes.cancel
+        Routes.V1.Routes.Json.cancel
         (Just 0)
         "{\"display_name\":\"&\",\"kinds\":{\"665026870281902009\":\"KIND_UNSPECIFIED\",\"8546819391313132744\":\"KIND_IMAGE\"},\"labels\":{\"\\\"$Z😀)(]z\":\"-**\\t-(%)\",\"=ß[@é\":\"\\u0001) ß\\u0001\"},\"weights\":{\"false\":5e-324,\"true\":2.2250738585072014e-308}}"
         { method = "POST"
@@ -92,7 +92,7 @@ fixtures =
         }
     , Replay.fixture "Cancel 0 #8"
         Routes.V1.decodeResource
-        Routes.V1.Routes.cancel
+        Routes.V1.Routes.Json.cancel
         (Just 0)
         "{\"displayName\":\"=ß[\",\"kinds\":{\"539\":\"KIND_IMAGE\",\"5633806295648663163\":\"KIND_UNSPECIFIED\"},\"labels\":{\"\":\"( -;.\\u0001&,\"},\"weights\":{\"true\":\"-Infinity\"}}"
         { method = "POST"
@@ -102,7 +102,7 @@ fixtures =
         }
     , Replay.fixture "Cancel 0 #9"
         Routes.V1.decodeResource
-        Routes.V1.Routes.cancel
+        Routes.V1.Routes.Json.cancel
         (Just 0)
         "{\"displayName\":\"\\t&\\u0001~é$@\u{007F}\",\"kinds\":{\"2055001093292393142\":\"KIND_IMAGE\"},\"labels\":{\"=\\n0\":\"\",\"?😀:\":\"=?+$\u{007F}\",\"_[\\u0001\":\"ß*)Aé\"},\"name\":\"\\\"\",\"weights\":{\"true\":-1.1184147189943073e-302}}"
         { method = "POST"
@@ -112,7 +112,7 @@ fixtures =
         }
     , Replay.fixture "Cancel 0 #10"
         Routes.V1.decodeResource
-        Routes.V1.Routes.cancel
+        Routes.V1.Routes.Json.cancel
         (Just 0)
         "{\"displayName\":\"中\\\\#!a\",\"kinds\":{\"-823\":\"KIND_UNSPECIFIED\",\"-9007199254740993\":\"KIND_TEXT\"},\"name\":\".:\\t 😀@]\u{007F}\"}"
         { method = "POST"
@@ -122,7 +122,7 @@ fixtures =
         }
     , Replay.fixture "Cancel 0 #11"
         Routes.V1.decodeResource
-        Routes.V1.Routes.cancel
+        Routes.V1.Routes.Json.cancel
         (Just 0)
         "{\"display_name\":\"~.\\\\\",\"kinds\":{\"-4\":\"KIND_TEXT\",\"-8982517262395337581\":\"KIND_UNSPECIFIED\"},\"labels\":{\"\":\" \\u0001✓\",\"+A\u{007F}\":\"!\",\"Z&\\\"a✓[[z\":\"\\\"*=✓\\u0001%\u{007F}\\n\"},\"name\":\"\",\"weights\":{\"false\":-90.75}}"
         { method = "POST"
@@ -132,7 +132,7 @@ fixtures =
         }
     , Replay.fixture "Cancel 0 #12"
         Routes.V1.decodeResource
-        Routes.V1.Routes.cancel
+        Routes.V1.Routes.Json.cancel
         (Just 0)
         "{\"displayName\":\"),\",\"kinds\":{\"-1572916249048998463\":\"KIND_UNSPECIFIED\",\"3615633847564636636\":\"KIND_UNSPECIFIED\"},\"labels\":{\"😀A!]0\":\"𐍈;\"},\"name\":\"/\\t_\",\"weights\":{\"false\":-10.25}}"
         { method = "POST"
@@ -142,7 +142,7 @@ fixtures =
         }
     , Replay.fixture "Cancel 0 #13"
         Routes.V1.decodeResource
-        Routes.V1.Routes.cancel
+        Routes.V1.Routes.Json.cancel
         (Just 0)
         "{\"kinds\":{\"1806308174931204929\":\"KIND_TEXT\",\"309\":\"KIND_IMAGE\"},\"labels\":{\"[z_\":\"\"},\"weights\":{\"false\":\"NaN\"}}"
         { method = "POST"
@@ -152,7 +152,7 @@ fixtures =
         }
     , Replay.fixture "Cancel 0 #14"
         Routes.V1.decodeResource
-        Routes.V1.Routes.cancel
+        Routes.V1.Routes.Json.cancel
         (Just 0)
         "{\"kinds\":{\"-242\":\"KIND_TEXT\",\"310\":\"KIND_IMAGE\",\"9007199254740992\":\"KIND_IMAGE\"},\"labels\":{\"\\\"\":\"é,\"},\"weights\":{\"false\":-6.47581401617438e-107,\"true\":121.875}}"
         { method = "POST"
@@ -162,7 +162,7 @@ fixtures =
         }
     , Replay.fixture "Cancel 0 #15"
         Routes.V1.decodeResource
-        Routes.V1.Routes.cancel
+        Routes.V1.Routes.Json.cancel
         (Just 0)
         "{\"display_name\":\"'~-\",\"kinds\":{\"-9007199254740993\":\"KIND_IMAGE\",\"232\":\"KIND_UNSPECIFIED\",\"9007199254740991\":\"KIND_UNSPECIFIED\"},\"labels\":{\":z,%&\":\"#/],@\"},\"weights\":{\"false\":\"Infinity\",\"true\":\"Infinity\"}}"
         { method = "POST"
@@ -172,7 +172,7 @@ fixtures =
         }
     , Replay.fixture "Files 0 #0"
         Routes.V1.decodeFileRequest
-        Routes.V1.Routes.files
+        Routes.V1.Routes.Json.files
         (Just 0)
         "{\"path\":\"(;中\"}"
         { method = "GET"
@@ -182,7 +182,7 @@ fixtures =
         }
     , Replay.fixture "Files 0 #1"
         Routes.V1.decodeFileRequest
-        Routes.V1.Routes.files
+        Routes.V1.Routes.Json.files
         (Just 0)
         "{\"path\":\".\"}"
         { method = "GET"
@@ -192,7 +192,7 @@ fixtures =
         }
     , Replay.fixture "Files 0 #2"
         Routes.V1.decodeFileRequest
-        Routes.V1.Routes.files
+        Routes.V1.Routes.Json.files
         (Just 0)
         "{}"
         { method = "GET"
@@ -202,7 +202,7 @@ fixtures =
         }
     , Replay.fixture "Files 0 #3"
         Routes.V1.decodeFileRequest
-        Routes.V1.Routes.files
+        Routes.V1.Routes.Json.files
         (Just 0)
         "{}"
         { method = "GET"
@@ -212,7 +212,7 @@ fixtures =
         }
     , Replay.fixture "Files 0 #4"
         Routes.V1.decodeFileRequest
-        Routes.V1.Routes.files
+        Routes.V1.Routes.Json.files
         (Just 0)
         "{\"path\":\"9,é\"}"
         { method = "GET"
@@ -222,7 +222,7 @@ fixtures =
         }
     , Replay.fixture "Files 0 #5"
         Routes.V1.decodeFileRequest
-        Routes.V1.Routes.files
+        Routes.V1.Routes.Json.files
         (Just 0)
         "{}"
         { method = "GET"
@@ -232,7 +232,7 @@ fixtures =
         }
     , Replay.fixture "Files 0 #6"
         Routes.V1.decodeFileRequest
-        Routes.V1.Routes.files
+        Routes.V1.Routes.Json.files
         (Just 0)
         "{}"
         { method = "GET"
@@ -242,7 +242,7 @@ fixtures =
         }
     , Replay.fixture "Files 0 #7"
         Routes.V1.decodeFileRequest
-        Routes.V1.Routes.files
+        Routes.V1.Routes.Json.files
         (Just 0)
         "{}"
         { method = "GET"
@@ -252,7 +252,7 @@ fixtures =
         }
     , Replay.fixture "Files 0 #8"
         Routes.V1.decodeFileRequest
-        Routes.V1.Routes.files
+        Routes.V1.Routes.Json.files
         (Just 0)
         "{}"
         { method = "GET"
@@ -262,7 +262,7 @@ fixtures =
         }
     , Replay.fixture "Files 0 #9"
         Routes.V1.decodeFileRequest
-        Routes.V1.Routes.files
+        Routes.V1.Routes.Json.files
         (Just 0)
         "{\"path\":\"_$a\u{007F}@@&a\"}"
         { method = "GET"
@@ -272,7 +272,7 @@ fixtures =
         }
     , Replay.fixture "Files 0 #10"
         Routes.V1.decodeFileRequest
-        Routes.V1.Routes.files
+        Routes.V1.Routes.Json.files
         (Just 0)
         "{\"path\":\"\"}"
         { method = "GET"
@@ -282,7 +282,7 @@ fixtures =
         }
     , Replay.fixture "Files 0 #11"
         Routes.V1.decodeFileRequest
-        Routes.V1.Routes.files
+        Routes.V1.Routes.Json.files
         (Just 0)
         "{\"path\":\":\"}"
         { method = "GET"
@@ -292,7 +292,7 @@ fixtures =
         }
     , Replay.fixture "Files 0 #12"
         Routes.V1.decodeFileRequest
-        Routes.V1.Routes.files
+        Routes.V1.Routes.Json.files
         (Just 0)
         "{}"
         { method = "GET"
@@ -302,7 +302,7 @@ fixtures =
         }
     , Replay.fixture "Files 0 #13"
         Routes.V1.decodeFileRequest
-        Routes.V1.Routes.files
+        Routes.V1.Routes.Json.files
         (Just 0)
         "{\"path\":\"'\"}"
         { method = "GET"
@@ -312,7 +312,7 @@ fixtures =
         }
     , Replay.fixture "Files 0 #14"
         Routes.V1.decodeFileRequest
-        Routes.V1.Routes.files
+        Routes.V1.Routes.Json.files
         (Just 0)
         "{}"
         { method = "GET"
@@ -322,7 +322,7 @@ fixtures =
         }
     , Replay.fixture "Files 0 #15"
         Routes.V1.decodeFileRequest
-        Routes.V1.Routes.files
+        Routes.V1.Routes.Json.files
         (Just 0)
         "{}"
         { method = "GET"
@@ -332,7 +332,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 0 #0"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 0)
         "{\"revision\":\"3169939764605394302\"}"
         { method = "GET"
@@ -342,7 +342,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 0 #1"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 0)
         "{\"messageId\":\"\",\"name\":\")ß\",\"revision\":\"-2757201091328298557\",\"sub\":{\"subfield\":\"\"},\"userId\":\"#中z\"}"
         { method = "GET"
@@ -352,7 +352,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 0 #2"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 0)
         "{\"message_id\":\"!]/@..\\n\\n\",\"sub\":{},\"user_id\":\"ß\"}"
         { method = "GET"
@@ -362,7 +362,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 0 #3"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 0)
         "{\"messageId\":\"~Ω,\",\"sub\":{},\"userId\":\"[!#9\u{007F}@\\u0001✓\"}"
         { method = "GET"
@@ -372,7 +372,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 0 #4"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 0)
         "{\"revision\":\"-287\",\"sub\":{},\"user_id\":\":.\\n\"}"
         { method = "GET"
@@ -382,7 +382,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 0 #5"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 0)
         "{\"message_id\":\"Zz-_&\",\"user_id\":\"a&=\u{007F}[\"}"
         { method = "GET"
@@ -392,7 +392,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 0 #6"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 0)
         "{\"revision\":\"-3482030501471106405\",\"userId\":\",;-:~-✓?\"}"
         { method = "GET"
@@ -402,7 +402,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 0 #7"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 0)
         "{\"message_id\":\":\\\"!\",\"revision\":\"2081413663898643427\"}"
         { method = "GET"
@@ -412,7 +412,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 0 #8"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 0)
         "{\"sub\":{},\"userId\":\"@中[\"}"
         { method = "GET"
@@ -422,7 +422,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 0 #9"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 0)
         "{\"messageId\":\"&.A$-0,z\",\"name\":\"\\\"$.,\u{007F}\",\"revision\":\"869454502440615220\",\"sub\":{\"subfield\":\"\"},\"userId\":\"'@\\\"/A😀Ω\u{007F}\"}"
         { method = "GET"
@@ -432,7 +432,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 0 #10"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 0)
         "{\"messageId\":\"&\",\"revision\":\"9007199254740991\",\"userId\":\"\\t\"}"
         { method = "GET"
@@ -442,7 +442,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 0 #11"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 0)
         "{\"messageId\":\"\u{007F}:+\",\"name\":\"&\\n\",\"revision\":\"-8753471106455127574\",\"sub\":{\"subfield\":\";*;\"}}"
         { method = "GET"
@@ -452,7 +452,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 0 #12"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 0)
         "{\"messageId\":\"\\n%\",\"name\":\"_*=a&\\\\A中\",\"sub\":{},\"userId\":\"𐍈\"}"
         { method = "GET"
@@ -462,7 +462,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 0 #13"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 0)
         "{\"message_id\":\"(\",\"name\":\"&\",\"revision\":\"-6124610281782475369\",\"sub\":{\"subfield\":\"✓#\\\"%#\"},\"user_id\":\"\"}"
         { method = "GET"
@@ -472,7 +472,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 0 #14"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 0)
         "{\"messageId\":\"'0ß\\\\$\",\"name\":\"'😀/ z! +\",\"sub\":{},\"userId\":\"~0\"}"
         { method = "GET"
@@ -482,7 +482,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 0 #15"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 0)
         "{\"message_id\":\"$a😀中)a(A\",\"revision\":\"-5561714994315507521\",\"user_id\":\"& \"}"
         { method = "GET"
@@ -492,7 +492,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 1 #0"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 1)
         "{\"messageId\":\"@\u{007F}$$\\u0001\",\"name\":\" \",\"revision\":\"-9007199254740993\",\"sub\":{\"subfield\":\"\u{007F}~\u{007F}\u{007F}._+é\"},\"userId\":\"é\\n(\"}"
         { method = "GET"
@@ -502,7 +502,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 1 #1"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 1)
         "{\"messageId\":\"\",\"name\":\"\",\"revision\":\"0\",\"userId\":\"\"}"
         { method = "GET"
@@ -512,7 +512,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 1 #2"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 1)
         "{\"name\":\"中 😀\",\"sub\":{\"subfield\":\"(,✓\\t%9):\"}}"
         { method = "GET"
@@ -522,7 +522,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 1 #3"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 1)
         "{\"messageId\":\",!9z\\n\",\"name\":\"\",\"revision\":\"685\",\"sub\":{\"subfield\":\"\"},\"userId\":\"!:;\\\"'\"}"
         { method = "GET"
@@ -532,7 +532,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 1 #4"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 1)
         "{\"messageId\":\"%\",\"name\":\";z.\",\"revision\":\"7114067656806944568\",\"sub\":{},\"userId\":\"$/\\\\\"}"
         { method = "GET"
@@ -542,7 +542,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 1 #5"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 1)
         "{\"messageId\":\"..✓,~\",\"name\":\"-\\\"𐍈=(\",\"revision\":\"909\",\"userId\":\"'\"}"
         { method = "GET"
@@ -552,7 +552,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 1 #6"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 1)
         "{\"messageId\":\"$]  ?\"}"
         { method = "GET"
@@ -562,7 +562,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 1 #7"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 1)
         "{\"messageId\":\"0$\\\\~=\",\"name\":\"\\u0001\",\"sub\":{\"subfield\":\"9#😀a_*=a\"},\"userId\":\"=~\"}"
         { method = "GET"
@@ -572,7 +572,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 1 #8"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 1)
         "{\"messageId\":\"#Z\",\"name\":\"\",\"revision\":\"2028279062145339073\",\"sub\":{\"subfield\":\"\"},\"userId\":\"-&'\"}"
         { method = "GET"
@@ -582,7 +582,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 1 #9"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 1)
         "{\"sub\":{},\"userId\":\" **\\tA\"}"
         { method = "GET"
@@ -592,7 +592,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 1 #10"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 1)
         "{\"message_id\":\"z9Ω\\t\\t_𐍈$\"}"
         { method = "GET"
@@ -602,7 +602,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 1 #11"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 1)
         "{\"message_id\":\"%'𐍈\",\"name\":\"\",\"revision\":\"0\",\"sub\":{\"subfield\":\"\"},\"user_id\":\"a\\\"?Ω(\"}"
         { method = "GET"
@@ -612,7 +612,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 1 #12"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 1)
         "{\"messageId\":\"]\\n0(&Z,,\",\"revision\":\"9007199254740993\"}"
         { method = "GET"
@@ -622,7 +622,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 1 #13"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 1)
         "{\"messageId\":\"\",\"name\":\"._ß\",\"revision\":\"-1393000095491235757\",\"sub\":{\"subfield\":\"\"},\"userId\":\"-✓A_0:z#\"}"
         { method = "GET"
@@ -632,7 +632,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 1 #14"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 1)
         "{\"name\":\"Z\\n\u{007F}\",\"sub\":{}}"
         { method = "GET"
@@ -642,7 +642,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 1 #15"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 1)
         "{\"messageId\":\"\",\"name\":\"\",\"revision\":\"-6326122587870533557\",\"userId\":\"@\"}"
         { method = "GET"
@@ -652,7 +652,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 2 #0"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 2)
         "{\"messageId\":\"\",\"name\":\"\",\"revision\":\"-8313972064171641675\",\"sub\":{\"subfield\":\"\"},\"userId\":\"\"}"
         { method = "GET"
@@ -662,7 +662,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 2 #1"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 2)
         "{\"messageId\":\".😀 \",\"name\":\"[✓z\",\"revision\":\"-8219826530000765953\",\"userId\":\"]$A-\\\"\\\"\\n]\"}"
         { method = "GET"
@@ -672,7 +672,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 2 #2"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 2)
         "{\"messageId\":\"\\u0001=𐍈\",\"name\":\"\",\"revision\":\"0\",\"userId\":\";_'+(Ω.:\"}"
         { method = "GET"
@@ -682,7 +682,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 2 #3"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 2)
         "{\"message_id\":\"中\",\"name\":\"\",\"revision\":\"-769\",\"sub\":{\"subfield\":\"\"},\"user_id\":\"\"}"
         { method = "GET"
@@ -692,7 +692,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 2 #4"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 2)
         "{\"message_id\":\"\",\"name\":\"\",\"revision\":\"-1905371113219215703\",\"sub\":{\"subfield\":\"\"},\"user_id\":\"_\\u0001\\t.@.$/\"}"
         { method = "GET"
@@ -702,7 +702,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 2 #5"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 2)
         "{\"revision\":\"9007199254740993\",\"sub\":{\"subfield\":\"?9]? \"}}"
         { method = "GET"
@@ -712,7 +712,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 2 #6"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 2)
         "{\"messageId\":\"#\",\"revision\":\"-707\",\"sub\":{},\"userId\":\".#\"}"
         { method = "GET"
@@ -722,7 +722,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 2 #7"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 2)
         "{\"messageId\":\"-#;/$\",\"name\":\"\",\"revision\":\"-9007199254740993\",\"sub\":{\"subfield\":\"\"},\"userId\":\"[)\\tßaA\u{007F}中\"}"
         { method = "GET"
@@ -732,7 +732,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 2 #8"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 2)
         "{\"messageId\":\"@_z,/$\\tZ\",\"name\":\"中\",\"sub\":{},\"userId\":\":~:\"}"
         { method = "GET"
@@ -742,7 +742,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 2 #9"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 2)
         "{\"userId\":\"#9*\"}"
         { method = "GET"
@@ -752,7 +752,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 2 #10"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 2)
         "{\"revision\":\"-914\",\"userId\":\"'.\"}"
         { method = "GET"
@@ -762,7 +762,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 2 #11"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 2)
         "{\"messageId\":\"😀 😀\",\"name\":\"/\",\"userId\":\".\"}"
         { method = "GET"
@@ -772,7 +772,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 2 #12"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 2)
         "{\"message_id\":\":)\\t\",\"name\":\")\",\"revision\":\"-9007199254740993\",\"sub\":{\"subfield\":\"\"},\"user_id\":\"+\"}"
         { method = "GET"
@@ -782,7 +782,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 2 #13"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 2)
         "{\"messageId\":\"']\\\\_Z\",\"name\":\"\",\"revision\":\"-655915060523341578\",\"userId\":\"\"}"
         { method = "GET"
@@ -792,7 +792,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 2 #14"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 2)
         "{\"message_id\":\"?~!\",\"name\":\"=&\\n\",\"revision\":\"-5663515859206404196\",\"user_id\":\"\\u0001:Z𐍈: @✓\"}"
         { method = "GET"
@@ -802,7 +802,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 2 #15"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 2)
         "{\"messageId\":\"aa;\\n0($?\",\"name\":\"z✓\",\"sub\":{\"subfield\":\"+Z中/+\"}}"
         { method = "GET"
@@ -812,7 +812,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 3 #0"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 3)
         "{\"name\":\"𐍈✓_\",\"sub\":{\"subfield\":\"')]z(\"},\"userId\":\"_\"}"
         { method = "GET"
@@ -822,7 +822,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 3 #1"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 3)
         "{\"name\":\"éZΩA\\t*Ω=\",\"revision\":\"9007199254740993\",\"userId\":\" *'.𐍈]?#\"}"
         { method = "GET"
@@ -832,7 +832,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 3 #2"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 3)
         "{\"messageId\":\"\\na\",\"name\":\"中-~\",\"revision\":\"825\",\"sub\":{\"subfield\":\"\"},\"userId\":\"\"}"
         { method = "GET"
@@ -842,7 +842,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 3 #3"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 3)
         "{\"revision\":\"7904315661018351761\",\"userId\":\"9ß\\u0001\"}"
         { method = "GET"
@@ -852,7 +852,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 3 #4"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 3)
         "{\"name\":\"~aß\",\"revision\":\"-1472167303987536431\",\"sub\":{}}"
         { method = "GET"
@@ -862,7 +862,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 3 #5"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 3)
         "{\"messageId\":\"_𐍈\\\"$ ✓ #\",\"name\":\"\",\"revision\":\"0\",\"sub\":{\"subfield\":\"\"},\"userId\":\"a\"}"
         { method = "GET"
@@ -872,7 +872,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 3 #6"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 3)
         "{\"messageId\":\"✓\",\"revision\":\"44\",\"userId\":\"]=9\"}"
         { method = "GET"
@@ -882,7 +882,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 3 #7"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 3)
         "{\"revision\":\"9007199254740991\",\"sub\":{},\"userId\":\"#\"}"
         { method = "GET"
@@ -892,7 +892,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 3 #8"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 3)
         "{\"message_id\":\"'\\t\",\"name\":\"&\\\\😀𐍈/(\\\\.\",\"revision\":\"8529673452476444549\",\"sub\":{}}"
         { method = "GET"
@@ -902,7 +902,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 3 #9"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 3)
         "{\"messageId\":\"Ω𐍈a\",\"name\":\";%\",\"revision\":\"282\",\"userId\":\"中\"}"
         { method = "GET"
@@ -912,7 +912,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 3 #10"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 3)
         "{\"revision\":\"-4480079401607667651\",\"sub\":{\"subfield\":\"$$\\n\"},\"user_id\":\"😀\\\"A\\t(\\n??\"}"
         { method = "GET"
@@ -922,7 +922,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 3 #11"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 3)
         "{\"name\":\"+\",\"revision\":\"-9213985715402769590\"}"
         { method = "GET"
@@ -932,7 +932,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 3 #12"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 3)
         "{\"message_id\":\"中%&'@ΩZ?\",\"name\":\"+,'\",\"revision\":\"-8630025449974083029\",\"user_id\":\")Ωa\"}"
         { method = "GET"
@@ -942,7 +942,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 3 #13"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 3)
         "{\"messageId\":\"],?\",\"name\":\"\",\"revision\":\"-563208580812484034\",\"sub\":{\"subfield\":\"\"},\"userId\":\"\\\"\\t\\u0001Ω-\"}"
         { method = "GET"
@@ -952,7 +952,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 3 #14"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 3)
         "{\"messageId\":\"\",\"name\":\":+\\\"\",\"revision\":\"-9223372036854775808\",\"sub\":{\"subfield\":\"\"},\"userId\":\"\"}"
         { method = "GET"
@@ -962,7 +962,7 @@ fixtures =
         }
     , Replay.fixture "GetMessage 3 #15"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.getMessage
+        Routes.V1.Routes.Json.getMessage
         (Just 3)
         "{\"sub\":{\"subfield\":\"\\nA_\"}}"
         { method = "GET"
@@ -972,7 +972,7 @@ fixtures =
         }
     , Replay.fixture "Head 0 #0"
         Routes.V1.decodeFileRequest
-        Routes.V1.Routes.head
+        Routes.V1.Routes.Json.head
         (Just 0)
         "{}"
         { method = "HEAD"
@@ -982,7 +982,7 @@ fixtures =
         }
     , Replay.fixture "Head 0 #1"
         Routes.V1.decodeFileRequest
-        Routes.V1.Routes.head
+        Routes.V1.Routes.Json.head
         (Just 0)
         "{\"path\":\"/@\"}"
         { method = "HEAD"
@@ -992,7 +992,7 @@ fixtures =
         }
     , Replay.fixture "Head 0 #2"
         Routes.V1.decodeFileRequest
-        Routes.V1.Routes.head
+        Routes.V1.Routes.Json.head
         (Just 0)
         "{\"path\":\"(\"}"
         { method = "HEAD"
@@ -1002,7 +1002,7 @@ fixtures =
         }
     , Replay.fixture "Head 0 #3"
         Routes.V1.decodeFileRequest
-        Routes.V1.Routes.head
+        Routes.V1.Routes.Json.head
         (Just 0)
         "{}"
         { method = "HEAD"
@@ -1012,7 +1012,7 @@ fixtures =
         }
     , Replay.fixture "Head 0 #4"
         Routes.V1.decodeFileRequest
-        Routes.V1.Routes.head
+        Routes.V1.Routes.Json.head
         (Just 0)
         "{\"path\":\"#Ω[#@\"}"
         { method = "HEAD"
@@ -1022,7 +1022,7 @@ fixtures =
         }
     , Replay.fixture "Head 0 #5"
         Routes.V1.decodeFileRequest
-        Routes.V1.Routes.head
+        Routes.V1.Routes.Json.head
         (Just 0)
         "{\"path\":\")\"}"
         { method = "HEAD"
@@ -1032,7 +1032,7 @@ fixtures =
         }
     , Replay.fixture "Head 0 #6"
         Routes.V1.decodeFileRequest
-        Routes.V1.Routes.head
+        Routes.V1.Routes.Json.head
         (Just 0)
         "{\"path\":\"+😀\"}"
         { method = "HEAD"
@@ -1042,7 +1042,7 @@ fixtures =
         }
     , Replay.fixture "Head 0 #7"
         Routes.V1.decodeFileRequest
-        Routes.V1.Routes.head
+        Routes.V1.Routes.Json.head
         (Just 0)
         "{\"path\":\"' *中9\"}"
         { method = "HEAD"
@@ -1052,7 +1052,7 @@ fixtures =
         }
     , Replay.fixture "Head 0 #8"
         Routes.V1.decodeFileRequest
-        Routes.V1.Routes.head
+        Routes.V1.Routes.Json.head
         (Just 0)
         "{}"
         { method = "HEAD"
@@ -1062,7 +1062,7 @@ fixtures =
         }
     , Replay.fixture "Head 0 #9"
         Routes.V1.decodeFileRequest
-        Routes.V1.Routes.head
+        Routes.V1.Routes.Json.head
         (Just 0)
         "{\"path\":\"&)\"}"
         { method = "HEAD"
@@ -1072,7 +1072,7 @@ fixtures =
         }
     , Replay.fixture "Head 0 #10"
         Routes.V1.decodeFileRequest
-        Routes.V1.Routes.head
+        Routes.V1.Routes.Json.head
         (Just 0)
         "{\"path\":\"A9'[]!,a\"}"
         { method = "HEAD"
@@ -1082,7 +1082,7 @@ fixtures =
         }
     , Replay.fixture "Head 0 #11"
         Routes.V1.decodeFileRequest
-        Routes.V1.Routes.head
+        Routes.V1.Routes.Json.head
         (Just 0)
         "{\"path\":\"\"}"
         { method = "HEAD"
@@ -1092,7 +1092,7 @@ fixtures =
         }
     , Replay.fixture "Head 0 #12"
         Routes.V1.decodeFileRequest
-        Routes.V1.Routes.head
+        Routes.V1.Routes.Json.head
         (Just 0)
         "{\"path\":\")\"}"
         { method = "HEAD"
@@ -1102,7 +1102,7 @@ fixtures =
         }
     , Replay.fixture "Head 0 #13"
         Routes.V1.decodeFileRequest
-        Routes.V1.Routes.head
+        Routes.V1.Routes.Json.head
         (Just 0)
         "{}"
         { method = "HEAD"
@@ -1112,7 +1112,7 @@ fixtures =
         }
     , Replay.fixture "Head 0 #14"
         Routes.V1.decodeFileRequest
-        Routes.V1.Routes.head
+        Routes.V1.Routes.Json.head
         (Just 0)
         "{}"
         { method = "HEAD"
@@ -1122,7 +1122,7 @@ fixtures =
         }
     , Replay.fixture "Head 0 #15"
         Routes.V1.decodeFileRequest
-        Routes.V1.Routes.head
+        Routes.V1.Routes.Json.head
         (Just 0)
         "{\"path\":\"./'\"}"
         { method = "HEAD"
@@ -1132,7 +1132,7 @@ fixtures =
         }
     , Replay.fixture "Multi 0 #0"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.multi
+        Routes.V1.Routes.Json.multi
         (Just 0)
         "{\"at\":\"0001-01-01T00:00:00.659Z\",\"big\":\"0\",\"count\":0,\"data\":\"pdzbu0yZ\",\"flag\":false,\"inner\":{\"a\":\"\",\"deep\":{\"b\":334174040,\"c\":[\"/\"]}},\"kind\":\"KIND_UNSPECIFIED\",\"kinds\":[\"KIND_UNSPECIFIED\"],\"label\":\"\",\"mask\":\"xxza.mWzg6,ue9aJ.wjFf,q07E\",\"maybeCount\":0,\"name\":\"\\u0001😀Z(&ΩΩ@\",\"numbers\":[-1395439420,-2131446981],\"ratio\":\"Infinity\",\"scale\":\"NaN\",\"tags\":[\"*\",\",%(😀!\"],\"text\":\"\",\"ubig\":\"105\",\"wait\":\"165537480972.226s\"}"
         { method = "GET"
@@ -1142,7 +1142,7 @@ fixtures =
         }
     , Replay.fixture "Multi 0 #1"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.multi
+        Routes.V1.Routes.Json.multi
         (Just 0)
         "{\"at\":\"0001-01-01T00:00:00.780Z\",\"big\":\"3203975903859131380\",\"count\":1750804392,\"inner\":{\"deep\":{}},\"kinds\":[\"KIND_TEXT\"],\"limit\":5893276,\"maybeCount\":-1518835952,\"name\":\"\\\\**\",\"number\":-1824935992,\"numbers\":[-1344939029],\"ratio\":1.7976931348623157e+308,\"scale\":-2.3465438686335897e+21,\"wait\":\"-1.167139s\"}"
         { method = "GET"
@@ -1152,7 +1152,7 @@ fixtures =
         }
     , Replay.fixture "Multi 0 #2"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.multi
+        Routes.V1.Routes.Json.multi
         (Just 0)
         "{\"big\":\"0\",\"count\":-1786481598,\"data\":\"kkQMn48=\",\"flag\":false,\"inner\":{\"a\":\":9𐍈?/中z-\",\"deep\":{\"b\":0,\"c\":[]}},\"kind\":\"KIND_UNSPECIFIED\",\"kinds\":[\"KIND_TEXT\",\"KIND_IMAGE\"],\"label\":\"\",\"limit\":-2127651869,\"mask\":\"fE9.x8n.hiA6wk\",\"name\":\"\",\"numbers\":[-1016133020,-1202546197],\"ratio\":-5.282968840738826e-68,\"scale\":-170022487982080.0,\"tags\":[\"Zé$\\n\\u0001\",\"*-\"],\"ubig\":\"1\",\"wait\":\"0s\"}"
         { method = "GET"
@@ -1162,7 +1162,7 @@ fixtures =
         }
     , Replay.fixture "Multi 0 #3"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.multi
+        Routes.V1.Routes.Json.multi
         (Just 0)
         "{\"at\":\"1970-01-01T00:00:00Z\",\"count\":254,\"data\":\"0SZY\",\"inner\":{},\"kinds\":[\"KIND_IMAGE\"],\"label\":\"\",\"mask\":\"\",\"maybeCount\":0,\"maybeName\":\"\",\"number\":1,\"numbers\":[36251797,-1832669870],\"ratio\":1e+21,\"scale\":15713530.0,\"tags\":[\"\\n\u{007F}✓/:/;Ω\",\"aa\"],\"ubig\":\"696\"}"
         { method = "GET"
@@ -1172,7 +1172,7 @@ fixtures =
         }
     , Replay.fixture "Multi 0 #4"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.multi
+        Routes.V1.Routes.Json.multi
         (Just 0)
         "{\"at\":\"1970-01-01T00:00:00Z\",\"big\":\"-2695884449183654863\",\"count\":2147483647,\"data\":\"Jw==\",\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_TEXT\",\"KIND_TEXT\",\"KIND_IMAGE\"],\"mask\":\"eU2.o,h1c0.ju.hsj2Smog\",\"maybeCount\":-920,\"maybeName\":\"\",\"name\":\"a\",\"number\":-1,\"numbers\":[1761929309],\"ratio\":5.1613033831881294e-26,\"ubig\":\"18446744073709551615\",\"wait\":\"0.366s\"}"
         { method = "GET"
@@ -1182,7 +1182,7 @@ fixtures =
         }
     , Replay.fixture "Multi 0 #5"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.multi
+        Routes.V1.Routes.Json.multi
         (Just 0)
         "{\"at\":\"1970-01-01T00:00:00.013Z\",\"big\":\"247\",\"count\":1,\"data\":\"pQ==\",\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_IMAGE\",\"KIND_TEXT\",\"KIND_TEXT\"],\"mask\":\"zzzD4.yffiVof\",\"maybeCount\":457643887,\"name\":\"@\",\"numbers\":[-675545396,-1497676340,643518634],\"ratio\":103.25,\"scale\":-4.3193823855044836e-20,\"tags\":[\"\u{007F}😀9中ß\"],\"ubig\":\"18446744073709551615\",\"wait\":\"218250531280.120971204s\"}"
         { method = "GET"
@@ -1192,7 +1192,7 @@ fixtures =
         }
     , Replay.fixture "Multi 0 #6"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.multi
+        Routes.V1.Routes.Json.multi
         (Just 0)
         "{\"at\":\"1970-01-01T00:00:00Z\",\"big\":\"129\",\"count\":2099552417,\"data\":\"m6SJBpU=\",\"flag\":true,\"inner\":{\"a\":\"\"},\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_UNSPECIFIED\",\"KIND_IMAGE\"],\"limit\":0,\"maybeCount\":-2083993523,\"name\":\"\u{007F}\",\"numbers\":[],\"ratio\":0.1,\"scale\":\"Infinity\",\"tags\":[\"0中\",\"\",\";\"],\"ubig\":\"0\",\"wait\":\"-315576000000.272s\"}"
         { method = "GET"
@@ -1202,7 +1202,7 @@ fixtures =
         }
     , Replay.fixture "Multi 0 #7"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.multi
+        Routes.V1.Routes.Json.multi
         (Just 0)
         "{\"at\":\"5846-01-30T19:59:52.803Z\",\"big\":\"-2300068429761585064\",\"count\":-485572234,\"data\":\"0QRBLyg=\",\"flag\":true,\"inner\":{\"a\":\"\"},\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_IMAGE\",\"KIND_TEXT\"],\"label\":\"\",\"maybeCount\":0,\"maybeName\":\"#\\\"\",\"name\":\"\",\"number\":686,\"numbers\":[449482840],\"ratio\":-1.7976931348623157e+308,\"scale\":0.0,\"tags\":[\"+:$\",\"[=9😀z;-)\"],\"ubig\":\"887\"}"
         { method = "GET"
@@ -1212,7 +1212,7 @@ fixtures =
         }
     , Replay.fixture "Multi 0 #8"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.multi
+        Routes.V1.Routes.Json.multi
         (Just 0)
         "{\"at\":\"1970-01-01T00:00:00Z\",\"big\":\"-5004963082756417856\",\"flag\":true,\"inner\":{\"deep\":{\"b\":-144,\"c\":[\"Z\",\"AΩ)𐍈\\\\\"]}},\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_TEXT\",\"KIND_UNSPECIFIED\"],\"label\":\"[)/\",\"limit\":-2112457825,\"maybeName\":\"?\",\"numbers\":[1683128754,-2147483648],\"ratio\":38.125,\"scale\":1.9495991268734158e+31,\"tags\":[\"\"],\"ubig\":\"13647584104688374215\",\"wait\":\"0s\"}"
         { method = "GET"
@@ -1222,7 +1222,7 @@ fixtures =
         }
     , Replay.fixture "Multi 0 #9"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.multi
+        Routes.V1.Routes.Json.multi
         (Just 0)
         "{\"at\":\"0001-01-01T00:00:00.529Z\",\"count\":-838,\"data\":\"ygnU\",\"inner\":{\"a\":\"\u{007F}!𐍈\",\"deep\":{\"b\":-57844863}},\"kinds\":[\"KIND_UNSPECIFIED\",\"KIND_UNSPECIFIED\",\"KIND_IMAGE\"],\"limit\":0,\"mask\":\"\",\"maybeName\":\"$9\",\"name\":\",\",\"numbers\":[-2147483648,-2147483648,1481210312],\"ratio\":-88.625,\"scale\":-4.784841820435253e-32,\"text\":\"\",\"ubig\":\"715\"}"
         { method = "GET"
@@ -1232,7 +1232,7 @@ fixtures =
         }
     , Replay.fixture "Multi 0 #10"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.multi
+        Routes.V1.Routes.Json.multi
         (Just 0)
         "{\"at\":\"1970-01-01T00:00:00Z\",\"inner\":{\"a\":\"𐍈9\"},\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_UNSPECIFIED\"],\"label\":\"\",\"maybe_name\":\"\\t\\t\\t_9\",\"name\":\"ß)𐍈é_\",\"number\":-267359485,\"numbers\":[-546,-2147483648],\"ratio\":\"Infinity\",\"scale\":-69.75,\"tags\":[\"9\\t\",\"\"]}"
         { method = "GET"
@@ -1242,7 +1242,7 @@ fixtures =
         }
     , Replay.fixture "Multi 0 #11"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.multi
+        Routes.V1.Routes.Json.multi
         (Just 0)
         "{\"at\":\"1970-01-01T00:00:00Z\",\"flag\":true,\"kind\":\"KIND_IMAGE\",\"kinds\":[\"KIND_TEXT\"],\"label\":\"\",\"mask\":\"\",\"maybe_count\":0,\"maybe_name\":\"99ß\",\"name\":\"a:\",\"numbers\":[-2147483648,-534363289],\"ratio\":3.77822473700892e+24,\"tags\":[\"!\\u0001('\\n_0✓\"],\"text\":\"\",\"ubig\":\"664\"}"
         { method = "GET"
@@ -1252,7 +1252,7 @@ fixtures =
         }
     , Replay.fixture "Multi 0 #12"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.multi
+        Routes.V1.Routes.Json.multi
         (Just 0)
         "{\"at\":\"8198-06-25T14:25:52.537Z\",\"count\":-883,\"data\":\"b13XDP8=\",\"inner\":{},\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_UNSPECIFIED\",\"KIND_TEXT\"],\"label\":\"\",\"limit\":0,\"mask\":\"\",\"maybe_name\":\"\",\"name\":\"\u{007F}\",\"numbers\":[-322861129,1211472066],\"scale\":59.5,\"tags\":[\"Z𐍈ßZ\\\"\",\"\\\"&\\n\",\"\\\"\\\\/&#\"],\"ubig\":\"9232569243950882856\",\"wait\":\"0s\"}"
         { method = "GET"
@@ -1262,7 +1262,7 @@ fixtures =
         }
     , Replay.fixture "Multi 0 #13"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.multi
+        Routes.V1.Routes.Json.multi
         (Just 0)
         "{\"at\":\"1970-01-01T00:00:00Z\",\"big\":\"-3622872475147587477\",\"data\":\"JS8O5v8=\",\"inner\":{},\"kinds\":[\"KIND_UNSPECIFIED\"],\"label\":\"])9-:$𐍈a\",\"limit\":-28526453,\"mask\":\"\",\"maybeCount\":0,\"maybeName\":\"9\u{007F}~~&!*%\",\"scale\":115.625,\"tags\":[\"é0\"]}"
         { method = "GET"
@@ -1272,7 +1272,7 @@ fixtures =
         }
     , Replay.fixture "Multi 0 #14"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.multi
+        Routes.V1.Routes.Json.multi
         (Just 0)
         "{\"at\":\"1970-01-01T00:00:00Z\",\"big\":\"3667050524442151373\",\"count\":-652,\"inner\":{\"deep\":{}},\"kind\":\"KIND_TEXT\",\"label\":\"\",\"limit\":0,\"maybeCount\":-1129520583,\"name\":\"&+\",\"ratio\":-1.7976931348623157e+308,\"tags\":[\"ß~:!:😀\\n\\t\",\"中Aéß?\"],\"ubig\":\"934\"}"
         { method = "GET"
@@ -1282,7 +1282,7 @@ fixtures =
         }
     , Replay.fixture "Multi 0 #15"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.multi
+        Routes.V1.Routes.Json.multi
         (Just 0)
         "{\"big\":\"2639573502247670460\",\"data\":\"IAyZqAlu\",\"kind\":\"KIND_IMAGE\",\"kinds\":[\"KIND_TEXT\"],\"label\":\"\",\"mask\":\"\",\"maybeCount\":1,\"maybeName\":\"😀#[\",\"name\":\"é\\\"Z'Ω\",\"ratio\":3.719299763271474e-213,\"scale\":\"Infinity\",\"tags\":[\"\"],\"text\":\"Z; ,#\",\"ubig\":\"17565094500207163319\",\"wait\":\"211567072952.076037s\"}"
         { method = "GET"
@@ -1292,7 +1292,7 @@ fixtures =
         }
     , Replay.fixture "PostSub 0 #0"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.postSub
+        Routes.V1.Routes.Json.postSub
         (Just 0)
         "{\"messageId\":\"\",\"name\":\"\",\"revision\":\"-857\",\"sub\":{\"subfield\":\"\"},\"userId\":\"\"}"
         { method = "POST"
@@ -1302,7 +1302,7 @@ fixtures =
         }
     , Replay.fixture "PostSub 0 #1"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.postSub
+        Routes.V1.Routes.Json.postSub
         (Just 0)
         "{\"message_id\":\"\",\"name\":\"\",\"revision\":\"-6208336515568067295\",\"sub\":{\"subfield\":\"\"},\"user_id\":\"✓😀\"}"
         { method = "POST"
@@ -1312,7 +1312,7 @@ fixtures =
         }
     , Replay.fixture "PostSub 0 #2"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.postSub
+        Routes.V1.Routes.Json.postSub
         (Just 0)
         "{\"messageId\":\"中\",\"revision\":\"-951\",\"userId\":\"😀0中\"}"
         { method = "POST"
@@ -1322,7 +1322,7 @@ fixtures =
         }
     , Replay.fixture "PostSub 0 #3"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.postSub
+        Routes.V1.Routes.Json.postSub
         (Just 0)
         "{\"messageId\":\"ß=*.@\",\"name\":\"\\t;\",\"revision\":\"-9029711485355144822\",\"userId\":\"\\\"\\u0001\\\\\\\"+\"}"
         { method = "POST"
@@ -1332,7 +1332,7 @@ fixtures =
         }
     , Replay.fixture "PostSub 0 #4"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.postSub
+        Routes.V1.Routes.Json.postSub
         (Just 0)
         "{\"messageId\":\"*0\",\"sub\":{},\"userId\":\"9~,\"}"
         { method = "POST"
@@ -1342,7 +1342,7 @@ fixtures =
         }
     , Replay.fixture "PostSub 0 #5"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.postSub
+        Routes.V1.Routes.Json.postSub
         (Just 0)
         "{\"messageId\":\"~&中中;\",\"revision\":\"707\",\"sub\":{},\"userId\":\"?Ω%*𐍈@$✓\"}"
         { method = "POST"
@@ -1352,7 +1352,7 @@ fixtures =
         }
     , Replay.fixture "PostSub 0 #6"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.postSub
+        Routes.V1.Routes.Json.postSub
         (Just 0)
         "{\"message_id\":\"😀a\\t\u{007F}?9,?\",\"revision\":\"-9223372036854775808\",\"sub\":{\"subfield\":\"é\u{007F}z\"},\"user_id\":\"!-0:*(=a\"}"
         { method = "POST"
@@ -1362,7 +1362,7 @@ fixtures =
         }
     , Replay.fixture "PostSub 0 #7"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.postSub
+        Routes.V1.Routes.Json.postSub
         (Just 0)
         "{\"revision\":\"-7257277155779566424\",\"userId\":\"𐍈[?\"}"
         { method = "POST"
@@ -1372,7 +1372,7 @@ fixtures =
         }
     , Replay.fixture "PostSub 0 #8"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.postSub
+        Routes.V1.Routes.Json.postSub
         (Just 0)
         "{\"message_id\":\"~A#\",\"name\":\"\\tA%😀.~0$\",\"revision\":\"3388886690771344756\",\"sub\":{\"subfield\":\"\u{007F}:\"},\"user_id\":\"a9(\"}"
         { method = "POST"
@@ -1382,7 +1382,7 @@ fixtures =
         }
     , Replay.fixture "PostSub 0 #9"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.postSub
+        Routes.V1.Routes.Json.postSub
         (Just 0)
         "{\"messageId\":\"'):z,\",\"name\":\"Ω~\\\\a-\",\"revision\":\"-9223372036854775808\",\"userId\":\"),#)@\"}"
         { method = "POST"
@@ -1392,7 +1392,7 @@ fixtures =
         }
     , Replay.fixture "PostSub 0 #10"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.postSub
+        Routes.V1.Routes.Json.postSub
         (Just 0)
         "{\"messageId\":\"中\",\"name\":\"é𐍈%(\\nß\\\"中\",\"revision\":\"-585\",\"sub\":{},\"userId\":\")$?@\\t\"}"
         { method = "POST"
@@ -1402,7 +1402,7 @@ fixtures =
         }
     , Replay.fixture "PostSub 0 #11"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.postSub
+        Routes.V1.Routes.Json.postSub
         (Just 0)
         "{\"revision\":\"-834355110138601489\",\"user_id\":\"_~z\\\\0?;\\t\"}"
         { method = "POST"
@@ -1412,7 +1412,7 @@ fixtures =
         }
     , Replay.fixture "PostSub 0 #12"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.postSub
+        Routes.V1.Routes.Json.postSub
         (Just 0)
         "{\"message_id\":\"(\u{007F}\",\"revision\":\"-2110993853302474027\"}"
         { method = "POST"
@@ -1422,7 +1422,7 @@ fixtures =
         }
     , Replay.fixture "PostSub 0 #13"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.postSub
+        Routes.V1.Routes.Json.postSub
         (Just 0)
         "{\"messageId\":\"\",\"name\":\"\",\"revision\":\"0\",\"sub\":{\"subfield\":\"\"},\"userId\":\"\"}"
         { method = "POST"
@@ -1432,7 +1432,7 @@ fixtures =
         }
     , Replay.fixture "PostSub 0 #14"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.postSub
+        Routes.V1.Routes.Json.postSub
         (Just 0)
         "{\"revision\":\"-226\",\"sub\":{},\"userId\":\"%0\"}"
         { method = "POST"
@@ -1442,7 +1442,7 @@ fixtures =
         }
     , Replay.fixture "PostSub 0 #15"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.postSub
+        Routes.V1.Routes.Json.postSub
         (Just 0)
         "{\"messageId\":\"\u{007F}\",\"revision\":\"-548\",\"sub\":{},\"userId\":\",\"}"
         { method = "POST"
@@ -1452,7 +1452,7 @@ fixtures =
         }
     , Replay.fixture "Query 0 #0"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.query
+        Routes.V1.Routes.Json.query
         (Just 0)
         "{\"at\":\"1970-01-01T00:00:00Z\",\"big\":\"-924\",\"count\":-1,\"data\":\"0Hw=\",\"flag\":false,\"inner\":{\"a\":\"\"},\"kind\":\"KIND_UNSPECIFIED\",\"kinds\":[\"KIND_TEXT\",\"KIND_IMAGE\",\"KIND_UNSPECIFIED\"],\"label\":\"\",\"mask\":\"svmb.er7x\",\"maybeCount\":0,\"maybeName\":\"✓*\",\"name\":\" \",\"number\":0,\"numbers\":[2147483647,1989681598],\"ratio\":6.017648351784816e+192,\"scale\":-3.54174262150128e-21,\"tags\":[\"9(\",\"\\t\"],\"ubig\":\"14651437106564103444\",\"wait\":\"1.974424532s\"}"
         { method = "GET"
@@ -1462,7 +1462,7 @@ fixtures =
         }
     , Replay.fixture "Query 0 #1"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.query
+        Routes.V1.Routes.Json.query
         (Just 0)
         "{\"big\":\"2159580824704092434\",\"count\":574459529,\"inner\":{\"deep\":{\"b\":992,\"c\":[\"\",\"@:Z\\\"-\",\"/.~ 😀%a=\"]}},\"kinds\":[\"KIND_TEXT\"],\"limit\":0,\"maybeCount\":-1887946097,\"maybeName\":\"=0✓😀9Z[-\",\"numbers\":[447],\"ratio\":-4.293780545546807e+39,\"tags\":[\".\",\"\",\"é\"],\"ubig\":\"18446744073709551615\",\"wait\":\"0s\"}"
         { method = "GET"
@@ -1472,7 +1472,7 @@ fixtures =
         }
     , Replay.fixture "Query 0 #2"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.query
+        Routes.V1.Routes.Json.query
         (Just 0)
         "{\"at\":\"1970-01-01T00:00:00Z\",\"count\":2147483647,\"flag\":true,\"inner\":{},\"kinds\":[\"KIND_IMAGE\",\"KIND_UNSPECIFIED\",\"KIND_UNSPECIFIED\"],\"label\":\"+ \",\"maybe_name\":\"=;0$ΩaA𐍈\",\"name\":\"%\",\"numbers\":[-1083359086,-945],\"ratio\":5e-324,\"scale\":\"-Infinity\",\"tags\":[\"ß\u{007F}\"],\"ubig\":\"10354575596230037153\"}"
         { method = "GET"
@@ -1482,7 +1482,7 @@ fixtures =
         }
     , Replay.fixture "Query 0 #3"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.query
+        Routes.V1.Routes.Json.query
         (Just 0)
         "{\"data\":\"tNOhQf6J\",\"flag\":true,\"inner\":{\"a\":\"😀*ßé\\n@\\t&\",\"deep\":{\"b\":2146816319,\"c\":[\"~Z😀\",\"(+\"]}},\"kinds\":[\"KIND_UNSPECIFIED\"],\"label\":\"\",\"limit\":0,\"maybe_count\":0,\"numbers\":[-422723188],\"scale\":101.75,\"ubig\":\"9560352039664595623\"}"
         { method = "GET"
@@ -1492,7 +1492,7 @@ fixtures =
         }
     , Replay.fixture "Query 0 #4"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.query
+        Routes.V1.Routes.Json.query
         (Just 0)
         "{\"at\":\"3554-07-14T13:04:44.541Z\",\"data\":\"ztDO+Cg=\",\"flag\":true,\"inner\":{},\"kind\":\"KIND_IMAGE\",\"kinds\":[\"KIND_TEXT\",\"KIND_IMAGE\"],\"label\":\"#é((Ω\\u0001?✓\",\"limit\":0,\"mask\":\"s,o2cm.yhS29u.s9df,flbO731.w\",\"maybeCount\":0,\"maybeName\":\"\",\"number\":-1,\"numbers\":[2147483647,-1],\"ratio\":1.7628176903537238e+175,\"ubig\":\"571\",\"wait\":\"0s\"}"
         { method = "GET"
@@ -1502,7 +1502,7 @@ fixtures =
         }
     , Replay.fixture "Query 0 #5"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.query
+        Routes.V1.Routes.Json.query
         (Just 0)
         "{\"big\":\"1290355086451593392\",\"count\":2147483647,\"flag\":true,\"inner\":{\"a\":\"0@$?&\",\"deep\":{\"b\":905}},\"kind\":\"KIND_TEXT\",\"label\":\"\",\"limit\":0,\"mask\":\"\",\"maybe_count\":-1,\"maybe_name\":\"\",\"number\":-1711457817,\"numbers\":[593197477],\"scale\":5.625,\"ubig\":\"5405173464796099079\",\"wait\":\"0s\"}"
         { method = "GET"
@@ -1512,7 +1512,7 @@ fixtures =
         }
     , Replay.fixture "Query 0 #6"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.query
+        Routes.V1.Routes.Json.query
         (Just 0)
         "{\"at\":\"0001-01-01T00:00:00.841Z\",\"big\":\"9223372036854775807\",\"count\":1485004003,\"data\":\"yDumRJ1b\",\"inner\":{},\"kinds\":[\"KIND_UNSPECIFIED\"],\"label\":\"\",\"mask\":\"\",\"maybe_count\":0,\"maybe_name\":\"😀𐍈\",\"number\":-2147483648,\"numbers\":[-248845142,-2147483648],\"scale\":-1.2418144734738235e-8,\"ubig\":\"1\"}"
         { method = "GET"
@@ -1522,7 +1522,7 @@ fixtures =
         }
     , Replay.fixture "Query 0 #7"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.query
+        Routes.V1.Routes.Json.query
         (Just 0)
         "{\"count\":1157070779,\"data\":\"ug==\",\"kinds\":[\"KIND_UNSPECIFIED\",\"KIND_TEXT\"],\"label\":\"\",\"limit\":358,\"mask\":\"\",\"number\":4648617,\"numbers\":[-1,-102],\"ratio\":1e-7,\"scale\":100.0,\"tags\":[\"\"],\"wait\":\"1.925s\"}"
         { method = "GET"
@@ -1532,7 +1532,7 @@ fixtures =
         }
     , Replay.fixture "Query 0 #8"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.query
+        Routes.V1.Routes.Json.query
         (Just 0)
         "{\"at\":\"1970-01-01T00:00:00.910Z\",\"big\":\"9007199254740993\",\"count\":-561772445,\"data\":\"FYo=\",\"flag\":true,\"inner\":{\"a\":\"\\\\;\",\"deep\":{}},\"maybeCount\":844354786,\"maybeName\":\"\",\"numbers\":[363],\"ratio\":6.952660309849176e-28,\"text\":\"\",\"ubig\":\"9031594320036859890\",\"wait\":\"1.291049s\"}"
         { method = "GET"
@@ -1542,7 +1542,7 @@ fixtures =
         }
     , Replay.fixture "Query 0 #9"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.query
+        Routes.V1.Routes.Json.query
         (Just 0)
         "{\"big\":\"9007199254740993\",\"count\":113,\"data\":\"3kE7gg==\",\"flag\":false,\"kind\":\"KIND_UNSPECIFIED\",\"kinds\":[\"KIND_IMAGE\",\"KIND_TEXT\"],\"label\":\"\",\"limit\":0,\"maybe_count\":1688930334,\"maybe_name\":\"\",\"name\":\"-A/\",\"numbers\":[1761426735],\"ratio\":5e-324,\"scale\":\"Infinity\",\"tags\":[\")@ Z@\",\"zz\\\\(\u{007F}.😀.\",\",,\"],\"ubig\":\"636\"}"
         { method = "GET"
@@ -1552,7 +1552,7 @@ fixtures =
         }
     , Replay.fixture "Query 0 #10"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.query
+        Routes.V1.Routes.Json.query
         (Just 0)
         "{\"big\":\"142\",\"count\":2147483647,\"data\":\"Is/l\",\"kinds\":[\"KIND_IMAGE\",\"KIND_TEXT\"],\"label\":\"\",\"limit\":0,\"maybeCount\":0,\"maybeName\":\"𐍈\",\"name\":\"#\",\"ratio\":-1.7976931348623157e+308,\"scale\":0.10000000149011612,\"tags\":[\"\",\"]_\"],\"ubig\":\"10261337662509643330\",\"wait\":\"0s\"}"
         { method = "GET"
@@ -1562,7 +1562,7 @@ fixtures =
         }
     , Replay.fixture "Query 0 #11"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.query
+        Routes.V1.Routes.Json.query
         (Just 0)
         "{\"big\":\"0\",\"count\":230460287,\"data\":\"\",\"flag\":false,\"inner\":{\"a\":\"\"},\"kind\":\"KIND_UNSPECIFIED\",\"kinds\":[],\"label\":\"\",\"mask\":\"\",\"maybeName\":\"\",\"name\":\"\",\"number\":0,\"numbers\":[447,1320515623],\"ratio\":2.2250738585072014e-308,\"scale\":1.3672824485707793e-37,\"tags\":[],\"ubig\":\"14055918840688712008\",\"wait\":\"0s\"}"
         { method = "GET"
@@ -1572,7 +1572,7 @@ fixtures =
         }
     , Replay.fixture "Query 0 #12"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.query
+        Routes.V1.Routes.Json.query
         (Just 0)
         "{\"big\":\"9\",\"count\":0,\"data\":\"\",\"flag\":false,\"inner\":{\"a\":\"\"},\"kind\":\"KIND_UNSPECIFIED\",\"kinds\":[\"KIND_UNSPECIFIED\",\"KIND_TEXT\"],\"label\":\"\",\"limit\":0,\"mask\":\"\",\"maybe_count\":2147483647,\"maybe_name\":\"\",\"name\":\";@\u{007F}=.ßß0\",\"numbers\":[-2147483648,713,-2147483648],\"ratio\":0.0,\"scale\":0.0,\"tags\":[\"~✓\",\"*&\",\"/!$, \u{007F}]\\\"\"],\"text\":\"\",\"ubig\":\"157\",\"wait\":\"-1s\"}"
         { method = "GET"
@@ -1582,7 +1582,7 @@ fixtures =
         }
     , Replay.fixture "Query 0 #13"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.query
+        Routes.V1.Routes.Json.query
         (Just 0)
         "{\"at\":\"1970-01-01T00:00:00Z\",\"inner\":{},\"kinds\":[\"KIND_IMAGE\",\"KIND_UNSPECIFIED\",\"KIND_TEXT\"],\"label\":\"\",\"limit\":-1857926690,\"maybe_count\":915806473,\"maybe_name\":\"😀Ω𐍈#A\",\"numbers\":[1569798670,-435169034,934],\"ratio\":-75.125,\"scale\":-0.0052990177646279335,\"tags\":[\"@'\",\"😀é)*😀\",\";✓[%\\u0001\"],\"text\":\"*ß\",\"wait\":\"1.101385448s\"}"
         { method = "GET"
@@ -1592,7 +1592,7 @@ fixtures =
         }
     , Replay.fixture "Query 0 #14"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.query
+        Routes.V1.Routes.Json.query
         (Just 0)
         "{\"count\":1344008945,\"data\":\"9bdwLg==\",\"inner\":{},\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_IMAGE\",\"KIND_UNSPECIFIED\"],\"label\":\"\",\"limit\":0,\"mask\":\"\",\"maybeName\":\"é!\",\"name\":\",Ω0\",\"number\":474,\"tags\":[\"%Zé\",\"z,😀\"],\"ubig\":\"6045146161204584417\",\"wait\":\"0s\"}"
         { method = "GET"
@@ -1602,7 +1602,7 @@ fixtures =
         }
     , Replay.fixture "Query 0 #15"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.query
+        Routes.V1.Routes.Json.query
         (Just 0)
         "{\"big\":\"-6008831496571678304\",\"data\":\"J/qu9Lc=\",\"flag\":true,\"inner\":{\"a\":\"az$#]\",\"deep\":{}},\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_UNSPECIFIED\",\"KIND_UNSPECIFIED\"],\"label\":\"\",\"limit\":666,\"maybeCount\":0,\"maybeName\":\"\",\"ratio\":-1.3298682067488851e+219,\"tags\":[\"Z!!\"],\"text\":\"\",\"ubig\":\"18446744073709551615\",\"wait\":\"0s\"}"
         { method = "GET"
@@ -1612,7 +1612,7 @@ fixtures =
         }
     , Replay.fixture "Single 0 #0"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.single
+        Routes.V1.Routes.Json.single
         (Just 0)
         "{\"at\":\"9999-12-31T23:59:59.975Z\",\"big\":\"613\",\"count\":-536820048,\"data\":\"\",\"flag\":true,\"inner\":{\"a\":\"\"},\"kind\":\"KIND_UNSPECIFIED\",\"kinds\":[\"KIND_TEXT\",\"KIND_IMAGE\"],\"label\":\"\",\"mask\":\"\",\"maybeCount\":-2147483648,\"maybeName\":\"0\",\"name\":\"_\",\"numbers\":[-714698129,-905,1857400567],\"ratio\":0.0,\"scale\":0.0,\"tags\":[],\"text\":\"中Z\",\"ubig\":\"0\",\"wait\":\"-0.750843s\"}"
         { method = "GET"
@@ -1622,7 +1622,7 @@ fixtures =
         }
     , Replay.fixture "Single 0 #1"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.single
+        Routes.V1.Routes.Json.single
         (Just 0)
         "{\"at\":\"0062-03-04T23:14:09.374Z\",\"count\":-133695121,\"data\":\"FdUSMA==\",\"inner\":{},\"label\":\"\",\"limit\":0,\"mask\":\"\",\"maybeName\":\" - *!\",\"name\":\"\u{007F},中\",\"numbers\":[1136162062,-2147483648],\"ratio\":-2.1720327659964925e+203,\"tags\":[\"\",\"\"],\"text\":\"\",\"ubig\":\"16185905306214555950\",\"wait\":\"0s\"}"
         { method = "GET"
@@ -1632,7 +1632,7 @@ fixtures =
         }
     , Replay.fixture "Single 0 #2"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.single
+        Routes.V1.Routes.Json.single
         (Just 0)
         "{\"at\":\"1970-01-01T00:00:00Z\",\"big\":\"5\",\"count\":2147483647,\"data\":\"\",\"flag\":false,\"inner\":{\"a\":\"😀*\"},\"kind\":\"KIND_UNSPECIFIED\",\"kinds\":[],\"label\":\"\",\"maybeCount\":-1,\"maybeName\":\"\",\"name\":\"\",\"numbers\":[1136245046,68545285],\"ratio\":2.2250738585072014e-308,\"scale\":-24.75,\"tags\":[\"]?\",\"\"],\"text\":\"中[:\\t\\\\\",\"ubig\":\"987\"}"
         { method = "GET"
@@ -1642,7 +1642,7 @@ fixtures =
         }
     , Replay.fixture "Single 0 #3"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.single
+        Routes.V1.Routes.Json.single
         (Just 0)
         "{\"at\":\"1970-01-01T00:00:00Z\",\"count\":2147483647,\"data\":\"dveZxw==\",\"kind\":\"KIND_TEXT\",\"label\":\"\",\"limit\":-1,\"maybeName\":\"\",\"numbers\":[1,2071035195],\"ratio\":-1.7976931348623157e+308,\"scale\":7.547377666542797e+17,\"tags\":[\"]A中\",\"\",\"!\u{007F}\"],\"ubig\":\"9808826019666685257\",\"wait\":\"0s\"}"
         { method = "GET"
@@ -1652,7 +1652,7 @@ fixtures =
         }
     , Replay.fixture "Single 0 #4"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.single
+        Routes.V1.Routes.Json.single
         (Just 0)
         "{\"at\":\"1970-01-01T00:00:00Z\",\"big\":\"-9007199254740993\",\"count\":-12,\"data\":\"\",\"flag\":false,\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_IMAGE\",\"KIND_TEXT\"],\"limit\":911,\"mask\":\"vslsH,wyJ,e95aE9i6\",\"maybeName\":\"\",\"name\":\"\",\"numbers\":[-278502445,522747331,107],\"ratio\":-2.454322601253408e+104,\"scale\":112.75,\"tags\":[\"-9;?=\",\"\u{007F}#*\"],\"text\":\"/𐍈#\",\"ubig\":\"0\",\"wait\":\"315576000000.732436498s\"}"
         { method = "GET"
@@ -1662,7 +1662,7 @@ fixtures =
         }
     , Replay.fixture "Single 0 #5"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.single
+        Routes.V1.Routes.Json.single
         (Just 0)
         "{\"at\":\"0001-01-01T00:00:00.346Z\",\"flag\":true,\"inner\":{\"a\":\"/Z\"},\"kind\":\"KIND_IMAGE\",\"kinds\":[\"KIND_TEXT\"],\"label\":\"\",\"limit\":-1070702396,\"maybeName\":\"\",\"name\":\",;Ω:@\",\"number\":0,\"numbers\":[454743971,347927524],\"tags\":[\"é✓\\tΩ/ß'~\"],\"wait\":\"0s\"}"
         { method = "GET"
@@ -1672,7 +1672,7 @@ fixtures =
         }
     , Replay.fixture "Single 0 #6"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.single
+        Routes.V1.Routes.Json.single
         (Just 0)
         "{\"at\":\"1970-01-01T00:00:00Z\",\"big\":\"-443\",\"count\":1,\"data\":\"mHANCFjn\",\"inner\":{\"a\":\"中# 9@;\\\\:\",\"deep\":{}},\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_IMAGE\",\"KIND_UNSPECIFIED\",\"KIND_TEXT\"],\"label\":\"\",\"limit\":0,\"mask\":\"\",\"maybeCount\":0,\"name\":\":0A0\\u0001\",\"number\":0,\"ratio\":108.375,\"tags\":[\"(\",\"\"],\"ubig\":\"902\",\"wait\":\"-219016854079.746025s\"}"
         { method = "GET"
@@ -1682,7 +1682,7 @@ fixtures =
         }
     , Replay.fixture "Single 0 #7"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.single
+        Routes.V1.Routes.Json.single
         (Just 0)
         "{\"big\":\"9007199254740993\",\"count\":-854,\"data\":\"EvsZAgYY\",\"flag\":false,\"inner\":{\"a\":\"\"},\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_IMAGE\",\"KIND_IMAGE\",\"KIND_IMAGE\"],\"maybe_count\":-9,\"name\":\" 0\",\"numbers\":[-438133359,-1462318135],\"ratio\":29.625,\"scale\":\"-Infinity\",\"tags\":[\"/%\"],\"ubig\":\"540\"}"
         { method = "GET"
@@ -1692,7 +1692,7 @@ fixtures =
         }
     , Replay.fixture "Single 0 #8"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.single
+        Routes.V1.Routes.Json.single
         (Just 0)
         "{\"at\":\"1970-01-01T00:00:00.254Z\",\"big\":\"499\",\"flag\":true,\"inner\":{},\"kind\":\"KIND_TEXT\",\"limit\":420,\"mask\":\"\",\"maybeCount\":-897433581,\"maybeName\":\"~'\",\"numbers\":[325,-2147483648],\"ratio\":1.4216671258314296e+273,\"tags\":[\"✓\",\"\"],\"text\":\"!&?\",\"ubig\":\"360\",\"wait\":\"315576000000.768870s\"}"
         { method = "GET"
@@ -1702,7 +1702,7 @@ fixtures =
         }
     , Replay.fixture "Single 0 #9"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.single
+        Routes.V1.Routes.Json.single
         (Just 0)
         "{\"at\":\"7615-12-11T08:02:09.008Z\",\"count\":2147483647,\"data\":\"Kznw\",\"inner\":{\"a\":\"[\u{007F}\",\"deep\":{\"c\":[\"\\\\,!..#0a\",\"(~\\u0001\\\"ß9Z~\",\"/😀\"]}},\"kinds\":[\"KIND_IMAGE\"],\"label\":\"\",\"limit\":1724166977,\"mask\":\"\",\"maybeCount\":0,\"maybeName\":\"\",\"name\":\"=$中\",\"ratio\":-2.4332258490553456e-32,\"scale\":-49.75,\"tags\":[\"&中\",\"\\\"]Z'\\\"%(=\",\"\"],\"text\":\"\",\"ubig\":\"5368326946889118811\"}"
         { method = "GET"
@@ -1712,7 +1712,7 @@ fixtures =
         }
     , Replay.fixture "Single 0 #10"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.single
+        Routes.V1.Routes.Json.single
         (Just 0)
         "{\"big\":\"-133060520034638345\",\"count\":932,\"inner\":{},\"kinds\":[\"KIND_UNSPECIFIED\",\"KIND_IMAGE\"],\"label\":\"\",\"limit\":0,\"mask\":\"\",\"maybe_name\":\"\",\"numbers\":[-1,-1251258732],\"ratio\":4.243091986308529e+180,\"scale\":\"NaN\",\"tags\":[\"!\\n✓\"],\"text\":\"\",\"ubig\":\"8598054623522517371\",\"wait\":\"0s\"}"
         { method = "GET"
@@ -1722,7 +1722,7 @@ fixtures =
         }
     , Replay.fixture "Single 0 #11"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.single
+        Routes.V1.Routes.Json.single
         (Just 0)
         "{\"at\":\"5872-11-20T02:34:37.199Z\",\"count\":413,\"inner\":{},\"kinds\":[\"KIND_UNSPECIFIED\",\"KIND_UNSPECIFIED\",\"KIND_UNSPECIFIED\"],\"label\":\"\",\"mask\":\"\",\"numbers\":[295826711,-2147483648,-846575462],\"tags\":[\"=%\",\"中\"],\"ubig\":\"916\",\"wait\":\"-0.018711150s\"}"
         { method = "GET"
@@ -1732,7 +1732,7 @@ fixtures =
         }
     , Replay.fixture "Single 0 #12"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.single
+        Routes.V1.Routes.Json.single
         (Just 0)
         "{\"at\":\"1970-01-01T00:00:00Z\",\"big\":\"3501817451301772671\",\"inner\":{\"deep\":{\"b\":-385556194,\"c\":[\"✓a$中✓%_;\",\"\",\"中✓z\"]}},\"kinds\":[\"KIND_IMAGE\",\"KIND_TEXT\",\"KIND_UNSPECIFIED\"],\"limit\":1306932827,\"maybeCount\":0,\"maybeName\":\"\",\"name\":\"=:;✓ \",\"number\":1365510694,\"numbers\":[597],\"ratio\":-95.25,\"scale\":-7.244102294831104e+16,\"tags\":[\"%a09é#[\\t\"],\"ubig\":\"142\"}"
         { method = "GET"
@@ -1742,7 +1742,7 @@ fixtures =
         }
     , Replay.fixture "Single 0 #13"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.single
+        Routes.V1.Routes.Json.single
         (Just 0)
         "{\"big\":\"-6227008015077420157\",\"count\":-1125244805,\"data\":\"7ZqX2FOB\",\"flag\":true,\"kind\":\"KIND_UNSPECIFIED\",\"kinds\":[\"KIND_TEXT\"],\"limit\":0,\"mask\":\"\",\"maybeCount\":0,\"name\":\"中9\",\"numbers\":[],\"ratio\":-0.0,\"scale\":0.0,\"tags\":[\"Ω+\\\"!-\"],\"text\":\"-\\\\*😀é\",\"ubig\":\"413\",\"wait\":\"1.417536s\"}"
         { method = "GET"
@@ -1752,7 +1752,7 @@ fixtures =
         }
     , Replay.fixture "Single 0 #14"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.single
+        Routes.V1.Routes.Json.single
         (Just 0)
         "{\"big\":\"-9223372036854775808\",\"data\":\"6D9o\",\"inner\":{\"a\":\"\\\\&-\",\"deep\":{}},\"kinds\":[\"KIND_IMAGE\",\"KIND_IMAGE\"],\"limit\":-672,\"maybeCount\":0,\"maybeName\":\"\",\"numbers\":[-1351914608,-1066921953,2147483647],\"scale\":0.10000000149011612,\"ubig\":\"105\",\"wait\":\"0s\"}"
         { method = "GET"
@@ -1762,7 +1762,7 @@ fixtures =
         }
     , Replay.fixture "Single 0 #15"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.single
+        Routes.V1.Routes.Json.single
         (Just 0)
         "{\"at\":\"0447-07-22T03:56:43.384Z\",\"data\":\"FEmE\",\"kind\":\"KIND_TEXT\",\"limit\":-2147483648,\"mask\":\"\",\"maybe_name\":\"~中\",\"numbers\":[-1903556881,-1273750108],\"ratio\":1.827723369251931e-216,\"scale\":-1.1230150810653156e+24,\"tags\":[\"A\",\"@\",\"!0\"],\"text\":\"\"}"
         { method = "GET"
@@ -1772,7 +1772,7 @@ fixtures =
         }
     , Replay.fixture "Typed 0 #0"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.typed
+        Routes.V1.Routes.Json.typed
         (Just 0)
         "{\"at\":\"1970-01-01T00:00:00Z\",\"big\":\"-9007199254740993\",\"count\":527,\"data\":\"\",\"flag\":false,\"kind\":\"KIND_UNSPECIFIED\",\"kinds\":[\"KIND_UNSPECIFIED\"],\"label\":\"\",\"limit\":0,\"mask\":\"\",\"maybeCount\":0,\"maybeName\":\"\",\"name\":\"\u{007F}\",\"number\":0,\"numbers\":[340],\"ratio\":0.0,\"scale\":\"-Infinity\",\"tags\":[\"0?AZ\\t\\u0001😀!\",\"0Ω\",\")é😀\"],\"ubig\":\"18446744073709551615\",\"wait\":\"0s\"}"
         { method = "DELETE"
@@ -1782,7 +1782,7 @@ fixtures =
         }
     , Replay.fixture "Typed 0 #1"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.typed
+        Routes.V1.Routes.Json.typed
         (Just 0)
         "{\"big\":\"9007199254740991\",\"count\":-2007194383,\"flag\":true,\"inner\":{},\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_TEXT\",\"KIND_IMAGE\",\"KIND_TEXT\"],\"limit\":719,\"mask\":\"eRx.q,dd.vk7Mb5v,vou9.xpj\",\"maybeName\":\"\",\"name\":\"~\",\"ratio\":5.417634414430635e-127,\"scale\":-109.375,\"tags\":[\"A@#;@(0 \",\"@.\"],\"ubig\":\"1\",\"wait\":\"0s\"}"
         { method = "DELETE"
@@ -1792,7 +1792,7 @@ fixtures =
         }
     , Replay.fixture "Typed 0 #2"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.typed
+        Routes.V1.Routes.Json.typed
         (Just 0)
         "{\"big\":\"-4003266398864472889\",\"kind\":\"KIND_IMAGE\",\"kinds\":[\"KIND_IMAGE\"],\"limit\":0,\"mask\":\"z,l46\",\"maybeName\":\"\",\"numbers\":[1951287735,2042947309],\"ratio\":-3.378918486785976e+76,\"scale\":5.718679485729305e+33,\"tags\":[\"中\"],\"ubig\":\"2590428547117403287\"}"
         { method = "DELETE"
@@ -1802,7 +1802,7 @@ fixtures =
         }
     , Replay.fixture "Typed 0 #3"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.typed
+        Routes.V1.Routes.Json.typed
         (Just 0)
         "{\"at\":\"1970-01-01T00:00:00Z\",\"count\":850,\"data\":\"EP4=\",\"flag\":true,\"inner\":{},\"kinds\":[\"KIND_UNSPECIFIED\"],\"label\":\"\",\"mask\":\"m.rT.onL\",\"number\":-706956838,\"ratio\":-1.7976931348623157e+308,\"scale\":-109.625,\"tags\":[\"Ω) \",\"),.%&a]é\",\"\"],\"wait\":\"0s\"}"
         { method = "DELETE"
@@ -1812,7 +1812,7 @@ fixtures =
         }
     , Replay.fixture "Typed 0 #4"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.typed
+        Routes.V1.Routes.Json.typed
         (Just 0)
         "{\"at\":\"7542-08-23T07:42:47.602Z\",\"big\":\"9007199254740991\",\"inner\":{},\"kinds\":[\"KIND_IMAGE\"],\"label\":\".(\",\"limit\":1,\"mask\":\"az38.ds5r,i3,cm\",\"maybe_count\":0,\"maybe_name\":\"Ω(,~&\",\"ratio\":-1.1997460868520202e+226,\"scale\":2.5977001190185547,\"tags\":[\"[$\u{007F}zZ\",\"\"],\"wait\":\"0s\"}"
         { method = "DELETE"
@@ -1822,7 +1822,7 @@ fixtures =
         }
     , Replay.fixture "Typed 0 #5"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.typed
+        Routes.V1.Routes.Json.typed
         (Just 0)
         "{\"big\":\"6654468406208717861\",\"count\":307,\"inner\":{\"deep\":{}},\"kinds\":[\"KIND_UNSPECIFIED\",\"KIND_IMAGE\"],\"label\":\"\",\"limit\":0,\"maybe_count\":0,\"maybe_name\":\") \",\"name\":\"%\",\"number\":-640,\"numbers\":[-46,1379104283,256],\"ratio\":4.57675641020625e+108,\"ubig\":\"14790631967721779880\",\"wait\":\"0s\"}"
         { method = "DELETE"
@@ -1832,7 +1832,7 @@ fixtures =
         }
     , Replay.fixture "Typed 0 #6"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.typed
+        Routes.V1.Routes.Json.typed
         (Just 0)
         "{\"at\":\"8707-10-07T08:45:02.543Z\",\"big\":\"0\",\"count\":0,\"data\":\"\",\"flag\":false,\"inner\":{\"a\":\"\"},\"kind\":\"KIND_UNSPECIFIED\",\"kinds\":[],\"limit\":0,\"maybeCount\":-1,\"maybeName\":\"\",\"name\":\"~:\\n,9\",\"numbers\":[-827,-1,1178262612],\"ratio\":1.8222970640799816e-130,\"scale\":0.0,\"tags\":[\"\",\"\",\"@\\\"\"],\"ubig\":\"9007199254740993\",\"wait\":\"0s\"}"
         { method = "DELETE"
@@ -1842,7 +1842,7 @@ fixtures =
         }
     , Replay.fixture "Typed 0 #7"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.typed
+        Routes.V1.Routes.Json.typed
         (Just 0)
         "{\"big\":\"6006268771204053974\",\"count\":1,\"data\":\"/Olyrw==\",\"flag\":true,\"kinds\":[\"KIND_IMAGE\",\"KIND_TEXT\",\"KIND_TEXT\"],\"label\":\"✓\",\"limit\":0,\"maybeCount\":0,\"maybeName\":\"\",\"numbers\":[963912325,1,-339355546],\"ratio\":7.21935429326281e-80,\"scale\":-229564.375,\"text\":\"😀#ß\u{007F}\\t\",\"wait\":\"-315576000000.153711s\"}"
         { method = "DELETE"
@@ -1852,7 +1852,7 @@ fixtures =
         }
     , Replay.fixture "Typed 0 #8"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.typed
+        Routes.V1.Routes.Json.typed
         (Just 0)
         "{\"at\":\"9999-12-31T23:59:59.642Z\",\"big\":\"9007199254740992\",\"data\":\"L3T7GEeg\",\"flag\":true,\"inner\":{\"a\":\"0;_ß\\\"+Ω\\u0001\",\"deep\":{}},\"label\":\"\",\"limit\":0,\"maybe_count\":0,\"maybe_name\":\"\",\"number\":43973270,\"numbers\":[-80507747,-1724498803,192],\"ratio\":-1.1923275954302756e+170,\"scale\":-115.875,\"tags\":[\"\\u0001:a%$\"],\"ubig\":\"18446744073709551615\",\"wait\":\"0s\"}"
         { method = "DELETE"
@@ -1862,7 +1862,7 @@ fixtures =
         }
     , Replay.fixture "Typed 0 #9"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.typed
+        Routes.V1.Routes.Json.typed
         (Just 0)
         "{\"big\":\"4184467195036125388\",\"count\":1,\"data\":\"DvjWzw==\",\"inner\":{},\"kinds\":[\"KIND_TEXT\"],\"label\":\"ß\\\\*A0*+#\",\"limit\":396,\"mask\":\"\",\"maybeName\":\"\",\"name\":\"中++\\t\\tZ~𐍈\",\"numbers\":[383,-165729814,26880545],\"ratio\":87.5,\"tags\":[\"\\\\-\",\"\"],\"wait\":\"-128872044719s\"}"
         { method = "DELETE"
@@ -1872,7 +1872,7 @@ fixtures =
         }
     , Replay.fixture "Typed 0 #10"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.typed
+        Routes.V1.Routes.Json.typed
         (Just 0)
         "{\"big\":\"665\",\"data\":\"XrGN\",\"flag\":true,\"inner\":{},\"label\":\"\",\"limit\":0,\"mask\":\"\",\"maybeCount\":2147483647,\"numbers\":[623,504217422],\"ratio\":0.1,\"scale\":54.5,\"tags\":[\"\"]}"
         { method = "DELETE"
@@ -1882,7 +1882,7 @@ fixtures =
         }
     , Replay.fixture "Typed 0 #11"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.typed
+        Routes.V1.Routes.Json.typed
         (Just 0)
         "{\"at\":\"0001-01-01T00:00:00.857Z\",\"big\":\"611\",\"count\":1,\"data\":\"UirCvy8=\",\"flag\":true,\"inner\":{\"deep\":{}},\"kind\":\"KIND_TEXT\",\"limit\":0,\"mask\":\"\",\"maybeCount\":0,\"numbers\":[-2119421391],\"scale\":0.10000000149011612,\"text\":\"\",\"ubig\":\"16554549578425825131\"}"
         { method = "DELETE"
@@ -1892,7 +1892,7 @@ fixtures =
         }
     , Replay.fixture "Typed 0 #12"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.typed
+        Routes.V1.Routes.Json.typed
         (Just 0)
         "{\"at\":\"1970-01-01T00:00:00Z\",\"big\":\"2585536901227699356\",\"flag\":true,\"inner\":{\"a\":\"\\\\\"},\"kind\":\"KIND_TEXT\",\"limit\":0,\"mask\":\"\",\"maybeCount\":0,\"maybeName\":\"\",\"numbers\":[-171,-722686364,1],\"ratio\":3.474838272322468e+59,\"text\":\"$@&@\u{007F}\",\"ubig\":\"18446744073709551615\"}"
         { method = "DELETE"
@@ -1902,7 +1902,7 @@ fixtures =
         }
     , Replay.fixture "Typed 0 #13"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.typed
+        Routes.V1.Routes.Json.typed
         (Just 0)
         "{\"big\":\"-9223372036854775808\",\"count\":-1,\"data\":\"vg==\",\"flag\":false,\"inner\":{\"a\":\"\"},\"kind\":\"KIND_UNSPECIFIED\",\"kinds\":[\"KIND_IMAGE\",\"KIND_IMAGE\",\"KIND_UNSPECIFIED\"],\"label\":\"\",\"limit\":-1200752975,\"mask\":\"\",\"maybe_count\":-1849024419,\"name\":\"\\t\",\"numbers\":[988,-1690335205],\"ratio\":-3.3884060930568713e-180,\"scale\":-6.720587577495263e+37,\"tags\":[\"/a\\\\'中\",\"A@;;a A(\"],\"ubig\":\"14948386337900077507\",\"wait\":\"0s\"}"
         { method = "DELETE"
@@ -1912,7 +1912,7 @@ fixtures =
         }
     , Replay.fixture "Typed 0 #14"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.typed
+        Routes.V1.Routes.Json.typed
         (Just 0)
         "{\"big\":\"4789314191003182945\",\"count\":698905289,\"data\":\"Whb+MA2g\",\"flag\":false,\"inner\":{\"a\":\"\"},\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_IMAGE\"],\"mask\":\"\",\"maybeCount\":0,\"maybeName\":\"\",\"name\":\"ß0\",\"numbers\":[],\"ratio\":\"Infinity\",\"scale\":0.0,\"tags\":[],\"ubig\":\"926\",\"wait\":\"124060455436s\"}"
         { method = "DELETE"
@@ -1922,7 +1922,7 @@ fixtures =
         }
     , Replay.fixture "Typed 0 #15"
         Routes.V1.decodeEverything
-        Routes.V1.Routes.typed
+        Routes.V1.Routes.Json.typed
         (Just 0)
         "{\"big\":\"-111\",\"data\":\"o/Zu\",\"inner\":{},\"kinds\":[\"KIND_IMAGE\"],\"limit\":1,\"maybeName\":\"\",\"number\":-1440721975,\"scale\":3.4028234663852886e+38,\"ubig\":\"9223372036854775808\"}"
         { method = "DELETE"
@@ -1932,7 +1932,7 @@ fixtures =
         }
     , Replay.fixture "Unbound #0"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.unbound
+        Routes.V1.Routes.Json.unbound
         Nothing
         "{\"messageId\":\"0=\",\"name\":\"[?*z$𐍈9.\",\"revision\":\"206\",\"sub\":{\"subfield\":\"0✓😀\"},\"userId\":\"\"}"
         { method = "POST"
@@ -1944,7 +1944,7 @@ fixtures =
         }
     , Replay.fixture "Unbound #1"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.unbound
+        Routes.V1.Routes.Json.unbound
         Nothing
         "{\"name\":\"?#;=😀\"}"
         { method = "POST"
@@ -1956,7 +1956,7 @@ fixtures =
         }
     , Replay.fixture "Unbound #2"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.unbound
+        Routes.V1.Routes.Json.unbound
         Nothing
         "{\"message_id\":\"中a$\",\"name\":\"*-)𐍈~'\u{007F}=\",\"revision\":\"-992198351176069858\",\"sub\":{}}"
         { method = "POST"
@@ -1968,7 +1968,7 @@ fixtures =
         }
     , Replay.fixture "Unbound #3"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.unbound
+        Routes.V1.Routes.Json.unbound
         Nothing
         "{\"messageId\":\"ß\",\"name\":\"\\\"\",\"revision\":\"-6608592607648792749\",\"sub\":{\"subfield\":\"\\u0001😀\"}}"
         { method = "POST"
@@ -1980,7 +1980,7 @@ fixtures =
         }
     , Replay.fixture "Unbound #4"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.unbound
+        Routes.V1.Routes.Json.unbound
         Nothing
         "{\"messageId\":\".\",\"name\":\"~\",\"revision\":\"-857\",\"sub\":{},\"userId\":\"0::\"}"
         { method = "POST"
@@ -1992,7 +1992,7 @@ fixtures =
         }
     , Replay.fixture "Unbound #5"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.unbound
+        Routes.V1.Routes.Json.unbound
         Nothing
         "{\"name\":\"\\u0001\",\"user_id\":\"\u{007F}. \"}"
         { method = "POST"
@@ -2004,7 +2004,7 @@ fixtures =
         }
     , Replay.fixture "Unbound #6"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.unbound
+        Routes.V1.Routes.Json.unbound
         Nothing
         "{\"revision\":\"9007199254740992\",\"sub\":{},\"userId\":\"0=[😀.\"}"
         { method = "POST"
@@ -2016,7 +2016,7 @@ fixtures =
         }
     , Replay.fixture "Unbound #7"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.unbound
+        Routes.V1.Routes.Json.unbound
         Nothing
         "{\"messageId\":\"\\u0001\",\"name\":\";Ω#,\u{007F}\",\"revision\":\"-8955008781393032691\",\"sub\":{\"subfield\":\"\"},\"userId\":\"\"}"
         { method = "POST"
@@ -2028,7 +2028,7 @@ fixtures =
         }
     , Replay.fixture "Unbound #8"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.unbound
+        Routes.V1.Routes.Json.unbound
         Nothing
         "{\"name\":\";0\"}"
         { method = "POST"
@@ -2040,7 +2040,7 @@ fixtures =
         }
     , Replay.fixture "Unbound #9"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.unbound
+        Routes.V1.Routes.Json.unbound
         Nothing
         "{\"messageId\":\"ZA%/z-;Z\",\"revision\":\"859\",\"sub\":{}}"
         { method = "POST"
@@ -2052,7 +2052,7 @@ fixtures =
         }
     , Replay.fixture "Unbound #10"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.unbound
+        Routes.V1.Routes.Json.unbound
         Nothing
         "{\"message_id\":\"Z\\n\u{007F}$]&中)\",\"revision\":\"-9067597702402907331\",\"sub\":{},\"user_id\":\"_&ß\\u0001✓\"}"
         { method = "POST"
@@ -2064,7 +2064,7 @@ fixtures =
         }
     , Replay.fixture "Unbound #11"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.unbound
+        Routes.V1.Routes.Json.unbound
         Nothing
         "{\"revision\":\"-2529862257877640940\",\"sub\":{}}"
         { method = "POST"
@@ -2076,7 +2076,7 @@ fixtures =
         }
     , Replay.fixture "Unbound #12"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.unbound
+        Routes.V1.Routes.Json.unbound
         Nothing
         "{\"messageId\":\"\",\"name\":\"$\\t$\",\"revision\":\"-7352619285146871359\",\"sub\":{\"subfield\":\"\"},\"userId\":\"✓A$\"}"
         { method = "POST"
@@ -2088,7 +2088,7 @@ fixtures =
         }
     , Replay.fixture "Unbound #13"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.unbound
+        Routes.V1.Routes.Json.unbound
         Nothing
         "{\"revision\":\"5273694424788633440\"}"
         { method = "POST"
@@ -2100,7 +2100,7 @@ fixtures =
         }
     , Replay.fixture "Unbound #14"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.unbound
+        Routes.V1.Routes.Json.unbound
         Nothing
         "{\"message_id\":\"!\\\\\",\"name\":\"9=\",\"revision\":\"238\",\"sub\":{\"subfield\":\"\"},\"user_id\":\"\"}"
         { method = "POST"
@@ -2112,7 +2112,7 @@ fixtures =
         }
     , Replay.fixture "Unbound #15"
         Routes.V1.decodeGetMessageRequest
-        Routes.V1.Routes.unbound
+        Routes.V1.Routes.Json.unbound
         Nothing
         "{\"messageId\":\"\",\"name\":\"!)\",\"revision\":\"0\",\"userId\":\"%*/)%+ΩA\"}"
         { method = "POST"
@@ -2124,7 +2124,7 @@ fixtures =
         }
     , Replay.fixture "UpdateMessage 0 #0"
         Routes.V1.decodeUpdateMessageRequest
-        Routes.V1.Routes.updateMessage
+        Routes.V1.Routes.Json.updateMessage
         (Just 0)
         "{\"message\":{}}"
         { method = "PATCH"
@@ -2134,7 +2134,7 @@ fixtures =
         }
     , Replay.fixture "UpdateMessage 0 #1"
         Routes.V1.decodeUpdateMessageRequest
-        Routes.V1.Routes.updateMessage
+        Routes.V1.Routes.Json.updateMessage
         (Just 0)
         "{\"message\":{}}"
         { method = "PATCH"
@@ -2144,7 +2144,7 @@ fixtures =
         }
     , Replay.fixture "UpdateMessage 0 #2"
         Routes.V1.decodeUpdateMessageRequest
-        Routes.V1.Routes.updateMessage
+        Routes.V1.Routes.Json.updateMessage
         (Just 0)
         "{\"message\":{\"messageId\":\"中Z)\"},\"messageId\":\"Ω\\\"\"}"
         { method = "PATCH"
@@ -2154,7 +2154,7 @@ fixtures =
         }
     , Replay.fixture "UpdateMessage 0 #3"
         Routes.V1.decodeUpdateMessageRequest
-        Routes.V1.Routes.updateMessage
+        Routes.V1.Routes.Json.updateMessage
         (Just 0)
         "{\"message\":{},\"messageId\":\".-\"}"
         { method = "PATCH"
@@ -2164,7 +2164,7 @@ fixtures =
         }
     , Replay.fixture "UpdateMessage 0 #4"
         Routes.V1.decodeUpdateMessageRequest
-        Routes.V1.Routes.updateMessage
+        Routes.V1.Routes.Json.updateMessage
         (Just 0)
         "{\"message\":{\"message_id\":\"\",\"text\":\"\"},\"message_id\":\"/!.\"}"
         { method = "PATCH"
@@ -2174,7 +2174,7 @@ fixtures =
         }
     , Replay.fixture "UpdateMessage 0 #5"
         Routes.V1.decodeUpdateMessageRequest
-        Routes.V1.Routes.updateMessage
+        Routes.V1.Routes.Json.updateMessage
         (Just 0)
         "{\"message\":{\"messageId\":\"\",\"text\":\"\"},\"messageId\":\"&\\u0001/𐍈\\\"\"}"
         { method = "PATCH"
@@ -2184,7 +2184,7 @@ fixtures =
         }
     , Replay.fixture "UpdateMessage 0 #6"
         Routes.V1.decodeUpdateMessageRequest
-        Routes.V1.Routes.updateMessage
+        Routes.V1.Routes.Json.updateMessage
         (Just 0)
         "{\"message\":{\"message_id\":\"ß:a\u{007F}&ß_𐍈\"},\"message_id\":\"+\\\"Ω\"}"
         { method = "PATCH"
@@ -2194,7 +2194,7 @@ fixtures =
         }
     , Replay.fixture "UpdateMessage 0 #7"
         Routes.V1.decodeUpdateMessageRequest
-        Routes.V1.Routes.updateMessage
+        Routes.V1.Routes.Json.updateMessage
         (Just 0)
         "{\"message\":{\"messageId\":\"𐍈(%\",\"text\":\"\"},\"messageId\":\"#~?#&\"}"
         { method = "PATCH"
@@ -2204,7 +2204,7 @@ fixtures =
         }
     , Replay.fixture "UpdateMessage 0 #8"
         Routes.V1.decodeUpdateMessageRequest
-        Routes.V1.Routes.updateMessage
+        Routes.V1.Routes.Json.updateMessage
         (Just 0)
         "{\"messageId\":\")é中\"}"
         { method = "PATCH"
@@ -2214,7 +2214,7 @@ fixtures =
         }
     , Replay.fixture "UpdateMessage 0 #9"
         Routes.V1.decodeUpdateMessageRequest
-        Routes.V1.Routes.updateMessage
+        Routes.V1.Routes.Json.updateMessage
         (Just 0)
         "{\"message\":{\"text\":\"\\\\,&))\"}}"
         { method = "PATCH"
@@ -2224,7 +2224,7 @@ fixtures =
         }
     , Replay.fixture "UpdateMessage 0 #10"
         Routes.V1.decodeUpdateMessageRequest
-        Routes.V1.Routes.updateMessage
+        Routes.V1.Routes.Json.updateMessage
         (Just 0)
         "{\"message\":{}}"
         { method = "PATCH"
@@ -2234,7 +2234,7 @@ fixtures =
         }
     , Replay.fixture "UpdateMessage 0 #11"
         Routes.V1.decodeUpdateMessageRequest
-        Routes.V1.Routes.updateMessage
+        Routes.V1.Routes.Json.updateMessage
         (Just 0)
         "{\"message\":{}}"
         { method = "PATCH"
@@ -2244,7 +2244,7 @@ fixtures =
         }
     , Replay.fixture "UpdateMessage 0 #12"
         Routes.V1.decodeUpdateMessageRequest
-        Routes.V1.Routes.updateMessage
+        Routes.V1.Routes.Json.updateMessage
         (Just 0)
         "{\"message_id\":\",!\"}"
         { method = "PATCH"
@@ -2254,7 +2254,7 @@ fixtures =
         }
     , Replay.fixture "UpdateMessage 0 #13"
         Routes.V1.decodeUpdateMessageRequest
-        Routes.V1.Routes.updateMessage
+        Routes.V1.Routes.Json.updateMessage
         (Just 0)
         "{\"message\":{\"messageId\":\"\",\"text\":\"\"},\"messageId\":\"\"}"
         { method = "PATCH"
@@ -2264,7 +2264,7 @@ fixtures =
         }
     , Replay.fixture "UpdateMessage 0 #14"
         Routes.V1.decodeUpdateMessageRequest
-        Routes.V1.Routes.updateMessage
+        Routes.V1.Routes.Json.updateMessage
         (Just 0)
         "{\"message\":{\"messageId\":\"=\u{007F}.(✓ &'\",\"text\":\"\\u0001\"}}"
         { method = "PATCH"
@@ -2274,7 +2274,7 @@ fixtures =
         }
     , Replay.fixture "UpdateMessage 0 #15"
         Routes.V1.decodeUpdateMessageRequest
-        Routes.V1.Routes.updateMessage
+        Routes.V1.Routes.Json.updateMessage
         (Just 0)
         "{\"message_id\":\"中😀[✓)\"}"
         { method = "PATCH"
@@ -2284,7 +2284,7 @@ fixtures =
         }
     , Replay.fixture "UpdateMessageWhole 0 #0"
         Routes.V1.decodeMessage
-        Routes.V1.Routes.updateMessageWhole
+        Routes.V1.Routes.Json.updateMessageWhole
         (Just 0)
         "{\"messageId\":\"\",\"text\":\"-\"}"
         { method = "PATCH"
@@ -2294,7 +2294,7 @@ fixtures =
         }
     , Replay.fixture "UpdateMessageWhole 0 #1"
         Routes.V1.decodeMessage
-        Routes.V1.Routes.updateMessageWhole
+        Routes.V1.Routes.Json.updateMessageWhole
         (Just 0)
         "{\"text\":\"z\"}"
         { method = "PATCH"
@@ -2304,7 +2304,7 @@ fixtures =
         }
     , Replay.fixture "UpdateMessageWhole 0 #2"
         Routes.V1.decodeMessage
-        Routes.V1.Routes.updateMessageWhole
+        Routes.V1.Routes.Json.updateMessageWhole
         (Just 0)
         "{\"messageId\":\"\\n9?aΩ #Z\",\"text\":\"\\u0001😀\"}"
         { method = "PATCH"
@@ -2314,7 +2314,7 @@ fixtures =
         }
     , Replay.fixture "UpdateMessageWhole 0 #3"
         Routes.V1.decodeMessage
-        Routes.V1.Routes.updateMessageWhole
+        Routes.V1.Routes.Json.updateMessageWhole
         (Just 0)
         "{\"messageId\":\"/a0中~\",\"text\":\"!*\"}"
         { method = "PATCH"
@@ -2324,7 +2324,7 @@ fixtures =
         }
     , Replay.fixture "UpdateMessageWhole 0 #4"
         Routes.V1.decodeMessage
-        Routes.V1.Routes.updateMessageWhole
+        Routes.V1.Routes.Json.updateMessageWhole
         (Just 0)
         "{}"
         { method = "PATCH"
@@ -2334,7 +2334,7 @@ fixtures =
         }
     , Replay.fixture "UpdateMessageWhole 0 #5"
         Routes.V1.decodeMessage
-        Routes.V1.Routes.updateMessageWhole
+        Routes.V1.Routes.Json.updateMessageWhole
         (Just 0)
         "{}"
         { method = "PATCH"
@@ -2344,7 +2344,7 @@ fixtures =
         }
     , Replay.fixture "UpdateMessageWhole 0 #6"
         Routes.V1.decodeMessage
-        Routes.V1.Routes.updateMessageWhole
+        Routes.V1.Routes.Json.updateMessageWhole
         (Just 0)
         "{\"messageId\":\"\\t\"}"
         { method = "PATCH"
@@ -2354,7 +2354,7 @@ fixtures =
         }
     , Replay.fixture "UpdateMessageWhole 0 #7"
         Routes.V1.decodeMessage
-        Routes.V1.Routes.updateMessageWhole
+        Routes.V1.Routes.Json.updateMessageWhole
         (Just 0)
         "{\"messageId\":\"%é9~-\"}"
         { method = "PATCH"
@@ -2364,7 +2364,7 @@ fixtures =
         }
     , Replay.fixture "UpdateMessageWhole 0 #8"
         Routes.V1.decodeMessage
-        Routes.V1.Routes.updateMessageWhole
+        Routes.V1.Routes.Json.updateMessageWhole
         (Just 0)
         "{\"message_id\":\"-a)=\\\\[#-\",\"text\":\"+?!~z/:\\\"\"}"
         { method = "PATCH"
@@ -2374,7 +2374,7 @@ fixtures =
         }
     , Replay.fixture "UpdateMessageWhole 0 #9"
         Routes.V1.decodeMessage
-        Routes.V1.Routes.updateMessageWhole
+        Routes.V1.Routes.Json.updateMessageWhole
         (Just 0)
         "{}"
         { method = "PATCH"
@@ -2384,7 +2384,7 @@ fixtures =
         }
     , Replay.fixture "UpdateMessageWhole 0 #10"
         Routes.V1.decodeMessage
-        Routes.V1.Routes.updateMessageWhole
+        Routes.V1.Routes.Json.updateMessageWhole
         (Just 0)
         "{\"text\":\"~=+😀/%'~\"}"
         { method = "PATCH"
@@ -2394,7 +2394,7 @@ fixtures =
         }
     , Replay.fixture "UpdateMessageWhole 0 #11"
         Routes.V1.decodeMessage
-        Routes.V1.Routes.updateMessageWhole
+        Routes.V1.Routes.Json.updateMessageWhole
         (Just 0)
         "{}"
         { method = "PATCH"
@@ -2404,7 +2404,7 @@ fixtures =
         }
     , Replay.fixture "UpdateMessageWhole 0 #12"
         Routes.V1.decodeMessage
-        Routes.V1.Routes.updateMessageWhole
+        Routes.V1.Routes.Json.updateMessageWhole
         (Just 0)
         "{\"message_id\":\"\",\"text\":\"a%\"}"
         { method = "PATCH"
@@ -2414,7 +2414,7 @@ fixtures =
         }
     , Replay.fixture "UpdateMessageWhole 0 #13"
         Routes.V1.decodeMessage
-        Routes.V1.Routes.updateMessageWhole
+        Routes.V1.Routes.Json.updateMessageWhole
         (Just 0)
         "{\"messageId\":\"\\tΩ\u{007F}\"}"
         { method = "PATCH"
@@ -2424,7 +2424,7 @@ fixtures =
         }
     , Replay.fixture "UpdateMessageWhole 0 #14"
         Routes.V1.decodeMessage
-        Routes.V1.Routes.updateMessageWhole
+        Routes.V1.Routes.Json.updateMessageWhole
         (Just 0)
         "{\"messageId\":\"\\\\\\u0001@\"}"
         { method = "PATCH"
@@ -2434,7 +2434,7 @@ fixtures =
         }
     , Replay.fixture "UpdateMessageWhole 0 #15"
         Routes.V1.decodeMessage
-        Routes.V1.Routes.updateMessageWhole
+        Routes.V1.Routes.Json.updateMessageWhole
         (Just 0)
         "{\"messageId\":\"é😀ßAΩ.-0\",\"text\":\"\"}"
         { method = "PATCH"
@@ -2444,7 +2444,7 @@ fixtures =
         }
     , Replay.fixture "UpdateResource 0 #0"
         Routes.V1.decodeUpdateResourceRequest
-        Routes.V1.Routes.updateResource
+        Routes.V1.Routes.Json.updateResource
         (Just 0)
         "{\"resource\":{\"displayName\":\"@]9\",\"kinds\":{\"269\":\"KIND_TEXT\"},\"name\":\"%]9[9\",\"weights\":{\"true\":\"Infinity\"}},\"updateMask\":\"\"}"
         { method = "PATCH"
@@ -2454,7 +2454,7 @@ fixtures =
         }
     , Replay.fixture "UpdateResource 0 #1"
         Routes.V1.decodeUpdateResourceRequest
-        Routes.V1.Routes.updateResource
+        Routes.V1.Routes.Json.updateResource
         (Just 0)
         "{}"
         { method = "PATCH"
@@ -2464,7 +2464,7 @@ fixtures =
         }
     , Replay.fixture "UpdateResource 0 #2"
         Routes.V1.decodeUpdateResourceRequest
-        Routes.V1.Routes.updateResource
+        Routes.V1.Routes.Json.updateResource
         (Just 0)
         "{\"resource\":{\"displayName\":\"\\u0001+\\\"ß\u{007F}\",\"kinds\":{\"1586296619098746415\":\"KIND_UNSPECIFIED\",\"8737377337352903402\":\"KIND_UNSPECIFIED\"},\"labels\":{\"$=\\u0001a=\":\"\",\"*z@=,=z~\":\"$\",\".\\t_✓ß\":\"!\"},\"name\":\"_𐍈#_a* a\",\"weights\":{\"false\":-0.0,\"true\":0.1}},\"updateMask\":\"\"}"
         { method = "PATCH"
@@ -2474,7 +2474,7 @@ fixtures =
         }
     , Replay.fixture "UpdateResource 0 #3"
         Routes.V1.decodeUpdateResourceRequest
-        Routes.V1.Routes.updateResource
+        Routes.V1.Routes.Json.updateResource
         (Just 0)
         "{}"
         { method = "PATCH"
@@ -2484,7 +2484,7 @@ fixtures =
         }
     , Replay.fixture "UpdateResource 0 #4"
         Routes.V1.decodeUpdateResourceRequest
-        Routes.V1.Routes.updateResource
+        Routes.V1.Routes.Json.updateResource
         (Just 0)
         "{\"resource\":{},\"update_mask\":\"j8jcBd.iyx5T92,mn,kj.b8zQ2.x\"}"
         { method = "PATCH"
@@ -2494,7 +2494,7 @@ fixtures =
         }
     , Replay.fixture "UpdateResource 0 #5"
         Routes.V1.decodeUpdateResourceRequest
-        Routes.V1.Routes.updateResource
+        Routes.V1.Routes.Json.updateResource
         (Just 0)
         "{\"resource\":{}}"
         { method = "PATCH"
@@ -2504,7 +2504,7 @@ fixtures =
         }
     , Replay.fixture "UpdateResource 0 #6"
         Routes.V1.decodeUpdateResourceRequest
-        Routes.V1.Routes.updateResource
+        Routes.V1.Routes.Json.updateResource
         (Just 0)
         "{\"resource\":{\"displayName\":\"\",\"kinds\":{},\"labels\":{},\"name\":\"\",\"weights\":{}},\"updateMask\":\"gcI8ng,fxBh.u.o,gn91\"}"
         { method = "PATCH"
@@ -2514,7 +2514,7 @@ fixtures =
         }
     , Replay.fixture "UpdateResource 0 #7"
         Routes.V1.decodeUpdateResourceRequest
-        Routes.V1.Routes.updateResource
+        Routes.V1.Routes.Json.updateResource
         (Just 0)
         "{\"updateMask\":\"\"}"
         { method = "PATCH"
@@ -2524,7 +2524,7 @@ fixtures =
         }
     , Replay.fixture "UpdateResource 0 #8"
         Routes.V1.decodeUpdateResourceRequest
-        Routes.V1.Routes.updateResource
+        Routes.V1.Routes.Json.updateResource
         (Just 0)
         "{\"resource\":{}}"
         { method = "PATCH"
@@ -2534,7 +2534,7 @@ fixtures =
         }
     , Replay.fixture "UpdateResource 0 #9"
         Routes.V1.decodeUpdateResourceRequest
-        Routes.V1.Routes.updateResource
+        Routes.V1.Routes.Json.updateResource
         (Just 0)
         "{\"update_mask\":\"\"}"
         { method = "PATCH"
@@ -2544,7 +2544,7 @@ fixtures =
         }
     , Replay.fixture "UpdateResource 0 #10"
         Routes.V1.decodeUpdateResourceRequest
-        Routes.V1.Routes.updateResource
+        Routes.V1.Routes.Json.updateResource
         (Just 0)
         "{\"resource\":{\"display_name\":\"&\",\"kinds\":{\"-9007199254740993\":\"KIND_UNSPECIFIED\"},\"labels\":{\"$\":\"(\\u00019\",\"a@aß_\":\"9a=~/\"},\"name\":\"\",\"weights\":{}},\"update_mask\":\"\"}"
         { method = "PATCH"
@@ -2554,7 +2554,7 @@ fixtures =
         }
     , Replay.fixture "UpdateResource 0 #11"
         Routes.V1.decodeUpdateResourceRequest
-        Routes.V1.Routes.updateResource
+        Routes.V1.Routes.Json.updateResource
         (Just 0)
         "{\"resource\":{},\"updateMask\":\"\"}"
         { method = "PATCH"
@@ -2564,7 +2564,7 @@ fixtures =
         }
     , Replay.fixture "UpdateResource 0 #12"
         Routes.V1.decodeUpdateResourceRequest
-        Routes.V1.Routes.updateResource
+        Routes.V1.Routes.Json.updateResource
         (Just 0)
         "{\"resource\":{\"weights\":{\"true\":1e-7}}}"
         { method = "PATCH"
@@ -2574,7 +2574,7 @@ fixtures =
         }
     , Replay.fixture "UpdateResource 0 #13"
         Routes.V1.decodeUpdateResourceRequest
-        Routes.V1.Routes.updateResource
+        Routes.V1.Routes.Json.updateResource
         (Just 0)
         "{\"resource\":{},\"update_mask\":\"\"}"
         { method = "PATCH"
@@ -2584,7 +2584,7 @@ fixtures =
         }
     , Replay.fixture "UpdateResource 0 #14"
         Routes.V1.decodeUpdateResourceRequest
-        Routes.V1.Routes.updateResource
+        Routes.V1.Routes.Json.updateResource
         (Just 0)
         "{}"
         { method = "PATCH"
@@ -2594,7 +2594,7 @@ fixtures =
         }
     , Replay.fixture "UpdateResource 0 #15"
         Routes.V1.decodeUpdateResourceRequest
-        Routes.V1.Routes.updateResource
+        Routes.V1.Routes.Json.updateResource
         (Just 0)
         "{\"resource\":{\"displayName\":\"+'𐍈✓#'0#\",\"labels\":{\"+9#\":\"中@&é'\",\"é\\t\":\"+😀\"}},\"updateMask\":\"\"}"
         { method = "PATCH"

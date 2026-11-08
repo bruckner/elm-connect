@@ -37,6 +37,7 @@ use elm_connect_gen::elm::build::{
     apply, int, list, qualified, record, string, tuple2, ty_qualified, var,
 };
 use elm_connect_gen::ir::{self, HttpRule, Method};
+use elm_connect_gen::naming;
 use elm_connect_gen::route::{Body, PathSegment, Route};
 use elm_connect_gen::{Options, generate};
 use prost_reflect::{
@@ -117,7 +118,7 @@ fn pool() -> prost_reflect::DescriptorPool {
 }
 
 /// A method of `routes.proto`: as the IR holds it, its request type, and
-/// its service's Elm module.
+/// its service's JSON calls module, whose calls take the routes.
 struct Known {
     method: Method,
     input: MessageDescriptor,
@@ -144,7 +145,7 @@ fn methods(pool: &prost_reflect::DescriptorPool) -> HashMap<String, Known> {
                 Known {
                     method: method.clone(),
                     input,
-                    module: service.module.to_string(),
+                    module: naming::calls_module(&service.module, naming::JSON_CALLS).to_string(),
                 },
             );
         }

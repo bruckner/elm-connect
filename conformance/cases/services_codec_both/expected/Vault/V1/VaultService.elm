@@ -5,13 +5,15 @@
 module Vault.V1.VaultService exposing (..)
 
 {-| `service vault.v1.VaultService`
+
+Its calls are in [`Vault.V1.VaultService.Json`](Vault-V1-VaultService-Json) over proto3 JSON and [`Vault.V1.VaultService.Proto`](Vault-V1-VaultService-Proto) over protobuf binary.
+
 -}
 
 import Proto.Http
 import Proto.Method
 import Proto.Route
 import Proto.Version
-import Rpc
 import Vault.V1
 import Vault.V1.GetItemRequest
 
@@ -24,72 +26,10 @@ elmConnectVersion_ =
 
 
 
--- CALLS
-
-
-{-| `rpc GetItem(GetItemRequest) returns (Item)`.
-Connect: `POST /vault.v1.VaultService/GetItem`.
-Transcode: `GET /v1/{name=items/*}`.
-
-Codecs: JSON and protobuf binary. Described by [`descriptorGetItem`](#descriptorGetItem).
-
--}
-getItem : Vault.V1.GetItemRequest -> Rpc.Call codec Vault.V1.GetItemRequest Vault.V1.Item
-getItem =
-    Rpc.call
-        (Proto.Method.init "vault.v1.VaultService"
-            "GetItem"
-            (\_ -> Ok << Vault.V1.encodeGetItemRequest)
-            Vault.V1.decodeItemWith
-            Vault.V1.encodeGetItemRequestBytes
-            Vault.V1.decodeItemBytes
-            |> Proto.Method.withRoutes [ routeGetItem0 ]
-        )
-
-
-{-| `rpc ListItems(ListItemsRequest) returns (ListItemsResponse)`.
-Connect: `POST /vault.v1.VaultService/ListItems`.
-Transcode: no HTTP rule, follows the Connect path.
-
-Codecs: JSON and protobuf binary. Described by [`descriptorListItems`](#descriptorListItems).
-
--}
-listItems : Vault.V1.ListItemsRequest -> Rpc.Call codec Vault.V1.ListItemsRequest Vault.V1.ListItemsResponse
-listItems =
-    Rpc.call
-        (Proto.Method.init "vault.v1.VaultService"
-            "ListItems"
-            (\_ -> Ok << Vault.V1.encodeListItemsRequest)
-            Vault.V1.decodeListItemsResponseWith
-            Vault.V1.encodeListItemsRequestBytes
-            Vault.V1.decodeListItemsResponseBytes
-        )
-
-
-{-| `rpc PutItem(Item) returns (Item)`.
-Connect: `POST /vault.v1.VaultService/PutItem`.
-Transcode: no HTTP rule, follows the Connect path.
-
-Codecs: JSON and protobuf binary. Described by [`descriptorPutItem`](#descriptorPutItem).
-
--}
-putItem : Vault.V1.Item -> Rpc.Call codec Vault.V1.Item Vault.V1.Item
-putItem =
-    Rpc.call
-        (Proto.Method.init "vault.v1.VaultService"
-            "PutItem"
-            Vault.V1.encodeItemWith
-            Vault.V1.decodeItemWith
-            Vault.V1.encodeItemBytes
-            Vault.V1.decodeItemBytes
-        )
-
-
-
 -- ROUTES
 
 
-{-| The route of [`getItem`](#getItem) over binding 0: `GET /v1/{name=items/*}`.
+{-| The route of [`getItem`](Vault-V1-VaultService-Json#getItem) over binding 0: `GET /v1/{name=items/*}`.
 -}
 routeGetItem0 : Vault.V1.GetItemRequest -> Proto.Route.Route
 routeGetItem0 request_ =

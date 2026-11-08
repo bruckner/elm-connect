@@ -202,14 +202,21 @@ traced call gives a body's trailers as the trace's trailers.
 
 The codec is in the types. A protocol is a `Protocol Rpc.Json` or a
 `Protocol Rpc.Proto`, the client built on it an `Rpc.Client Rpc.Json`
-or an `Rpc.Client Rpc.Proto`, and a call carries the codecs the
-generator wrote for its method ([generator.md](generator.md)):
+or an `Rpc.Client Rpc.Proto`, and a call carries the codecs of the
+module it comes from: a service's calls are in one module per codec,
+which the generator's `codec` option says it writes
+([generator.md](generator.md)):
 
-| Generated with | A call's type | Sent by |
-|---|---|---|
-| `codec=json` (the default) | `Rpc.Call Rpc.Json req res` | a `connect` or `transcode` client |
-| `codec=proto` | `Rpc.Call Rpc.Proto req res` | a `connectProto` or `grpcWeb` client |
-| `codec=both` | `Rpc.Call codec req res` | any client |
+| Calls module | Generated under | A call's type | Sent by |
+|---|---|---|---|
+| `Notes.V1.NotesService.Json` | `codec=json` (the default), `codec=both` | `Rpc.Call Rpc.Json req res` | a `connect` or `transcode` client |
+| `Notes.V1.NotesService.Proto` | `codec=proto`, `codec=both` | `Rpc.Call Rpc.Proto req res` | a `connectProto` or `grpcWeb` client |
+
+A program picks its wire by the module it imports: under `codec=both`,
+`import Notes.V1.NotesService.Proto as Notes` in place of `.Json` moves a
+module's calls to binary, and the names are the same under every option,
+so regenerating with another `codec` changes no import that still has its
+module.
 
 A client sends only calls of its codec, and the compiler says where one
 does not, so a call never reaches the network without the codec its
@@ -437,8 +444,7 @@ a timeout in milliseconds in place of the client's, a retry policy in
 place of the client's (`withRetry`) or none (`withoutRetry`), a tracker
 for cancelling, and, for transcoding, another of the rule's bindings (`0` is
 the rule's own, `1` and up its `additional_bindings`). Transcoding speaks
-JSON, so `viaBinding` takes a JSON call: one generated under `codec=both`
-becomes a `Call Rpc.Json` where it is applied.
+JSON, so `viaBinding` takes a JSON call, one of a `.Json` module.
 
 ```elm examples/notes/elm/src/Snippets/Configuring.elm#per-call
 perCall : (Result Rpc.Error Notes.V1.Note -> msg) -> Cmd msg
@@ -458,8 +464,8 @@ withdraw =
 `Rpc.Call` also reads a call back: `serviceName`, `methodName`,
 `procedure` (the Connect path, `/notes.v1.NotesService/GetNote`),
 `idempotency`, `requestMessage`, `requestJson` and `toJson`, the last
-two of a JSON call, since a call generated under `codec=proto` has no
-JSON to write. The method's descriptor, with its type names and HTTP rule as data, is not
+two of a JSON call, since a call of a `.Proto` module has no JSON to
+write. The method's descriptor, with its type names and HTTP rule as data, is not
 on the call: name it, `Notes.V1.NotesService.descriptorGetNote`.
 
 ## Sending

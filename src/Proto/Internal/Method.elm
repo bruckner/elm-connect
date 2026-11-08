@@ -12,9 +12,9 @@ descriptor's type names and bindings as data are a separate value a program
 keeps only if it names it.
 
 The `codec` parameter is a phantom: `Proto.Method.initJson` gives a method
-in `Json`, `Proto.Method.initProto` one in `Proto`, and `Proto.Method.init`,
-free in the codec, one with both. A protocol in a codec only meets a method in the
-same codec, so the half it reads is always one the generated code gave.
+in `Json`, `Proto.Method.initProto` one in `Proto`, and no builder gives one
+free in it. A protocol in a codec only meets a method in the same codec, so
+the half it reads is always one the generated code gave.
 
 Both halves are always present, so sending has no branch for a missing one:
 the half a builder is not given is a filler ([`noJson`](#noJson),

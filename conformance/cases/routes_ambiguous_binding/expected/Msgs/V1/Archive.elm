@@ -5,6 +5,9 @@
 module Msgs.V1.Archive exposing (..)
 
 {-| `service msgs.v1.Archive`
+
+Its calls are in [`Msgs.V1.Archive.Json`](Msgs-V1-Archive-Json) over proto3 JSON.
+
 -}
 
 import Msgs.V1
@@ -13,7 +16,6 @@ import Proto.Http
 import Proto.Method
 import Proto.Route
 import Proto.Version
-import Rpc
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -24,34 +26,10 @@ elmConnectVersion_ =
 
 
 
--- CALLS
-
-
-{-| The same binding as `Messages.ListMessages`, in another service: warns.
-
-`rpc ListArchived(MessageRequest) returns (Message)`.
-Connect: `POST /msgs.v1.Archive/ListArchived`.
-Transcode: `GET /v1/messages`.
-
-Codecs: JSON. Described by [`descriptorListArchived`](#descriptorListArchived).
-
--}
-listArchived : Msgs.V1.MessageRequest -> Rpc.Call Rpc.Json Msgs.V1.MessageRequest Msgs.V1.Message
-listArchived =
-    Rpc.call
-        (Proto.Method.initJson "msgs.v1.Archive"
-            "ListArchived"
-            (\_ -> Ok << Msgs.V1.encodeMessageRequest)
-            (\_ -> Msgs.V1.decodeMessage)
-            |> Proto.Method.withRoutes [ routeListArchived0 ]
-        )
-
-
-
 -- ROUTES
 
 
-{-| The route of [`listArchived`](#listArchived) over binding 0: `GET /v1/messages`.
+{-| The route of [`listArchived`](Msgs-V1-Archive-Json#listArchived) over binding 0: `GET /v1/messages`.
 -}
 routeListArchived0 : Msgs.V1.MessageRequest -> Proto.Route.Route
 routeListArchived0 request_ =

@@ -5,12 +5,13 @@
 module Notes.Api.Memos exposing (..)
 
 {-| `service notes.v1.NotesService`
+
+Its calls are in [`Notes.Api.Memos.Json`](Notes-Api-Memos-Json) over proto3 JSON.
+
 -}
 
-import Notes.Api
 import Proto.Method
 import Proto.Version
-import Rpc
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -18,27 +19,6 @@ import Rpc
 elmConnectVersion_ : Proto.Version.Generated
 elmConnectVersion_ =
     Proto.Version.v0_2
-
-
-
--- CALLS
-
-
-{-| `rpc GetNote(GetNoteRequest) returns (Note)`.
-Connect: `POST /notes.v1.NotesService/GetNote`.
-Transcode: no HTTP rule, follows the Connect path.
-
-Codecs: JSON. Described by [`descriptorFetchMemo`](#descriptorFetchMemo).
-
--}
-fetchMemo : Notes.Api.GetNoteRequest -> Rpc.Call Rpc.Json Notes.Api.GetNoteRequest Notes.Api.Memo
-fetchMemo =
-    Rpc.call
-        (Proto.Method.initJson "notes.v1.NotesService"
-            "GetNote"
-            (\_ -> Ok << Notes.Api.encodeGetNoteRequest)
-            (\_ -> Notes.Api.decodeMemo)
-        )
 
 
 

@@ -5,6 +5,9 @@
 module Api.Example.Notes.V1.NotesService exposing (..)
 
 {-| `service notes.v1.NotesService`
+
+Its calls are in [`Api.Example.Notes.V1.NotesService.Json`](Api-Example-Notes-V1-NotesService-Json) over proto3 JSON.
+
 -}
 
 import Api.Example.Notes.V1
@@ -13,7 +16,6 @@ import Proto.Http
 import Proto.Method
 import Proto.Route
 import Proto.Version
-import Rpc
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -24,32 +26,10 @@ elmConnectVersion_ =
 
 
 
--- CALLS
-
-
-{-| `rpc GetNote(GetNoteRequest) returns (Note)`.
-Connect: `POST /notes.v1.NotesService/GetNote`.
-Transcode: `GET /v1/{name=notes/*}`.
-
-Codecs: JSON. Described by [`descriptorGetNote`](#descriptorGetNote).
-
--}
-getNote : Api.Example.Notes.V1.GetNoteRequest -> Rpc.Call Rpc.Json Api.Example.Notes.V1.GetNoteRequest Api.Example.Notes.V1.Note
-getNote =
-    Rpc.call
-        (Proto.Method.initJson "notes.v1.NotesService"
-            "GetNote"
-            (\_ -> Ok << Api.Example.Notes.V1.encodeGetNoteRequest)
-            (\_ -> Api.Example.Notes.V1.decodeNote)
-            |> Proto.Method.withRoutes [ routeGetNote0 ]
-        )
-
-
-
 -- ROUTES
 
 
-{-| The route of [`getNote`](#getNote) over binding 0: `GET /v1/{name=notes/*}`.
+{-| The route of [`getNote`](Api-Example-Notes-V1-NotesService-Json#getNote) over binding 0: `GET /v1/{name=notes/*}`.
 -}
 routeGetNote0 : Api.Example.Notes.V1.GetNoteRequest -> Proto.Route.Route
 routeGetNote0 request_ =

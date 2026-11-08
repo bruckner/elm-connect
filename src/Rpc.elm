@@ -23,10 +23,10 @@ as proto3 JSON, or over Connect and gRPC-Web as protobuf binary
 
     fetch : Cmd Msg
     fetch =
-        Notes.V1.NotesService.getNote { name = "notes/42" }
+        Notes.V1.NotesService.Json.getNote { name = "notes/42" }
             |> Rpc.send client GotNote
 
-A generated service module has one function per method, which applied to a
+A service's generated calls module has one function per method, which applied to a
 request gives a [`Call`](#Call). A [`Client`](#Client) says where and how;
 the functions here take both and send the call as a `Task` or a `Cmd`, or
 give the HTTP request it stands for and read the answer, without sending
@@ -126,8 +126,9 @@ import Time
 
 {-| The codec tag of proto3 JSON: [`Rpc.Protocol.Json`](Rpc-Protocol#Json).
 A client of [`Rpc.Protocol.connect`](Rpc-Protocol#connect) or
-[`transcode`](Rpc-Protocol#transcode) is a `Client Json`, and sends calls of
-code generated with `codec=json` (the default) or `codec=both`.
+[`transcode`](Rpc-Protocol#transcode) is a `Client Json`, and sends the calls
+of a service's `.Json` module (`Notes.V1.NotesService.Json`), generated under
+`codec=json` (the default) or `codec=both`.
 -}
 type alias Json =
     Rpc.Protocol.Json
@@ -135,7 +136,8 @@ type alias Json =
 
 {-| The codec tag of protobuf binary: [`Rpc.Protocol.Proto`](Rpc-Protocol#Proto).
 A client of [`Rpc.Protocol.connectProto`](Rpc-Protocol#connectProto) or
-[`Rpc.Protocol.grpcWeb`](Rpc-Protocol#grpcWeb) is a `Client Proto`, and sends calls of code generated with `codec=proto` or
+[`Rpc.Protocol.grpcWeb`](Rpc-Protocol#grpcWeb) is a `Client Proto`, and sends
+the calls of a service's `.Proto` module, generated under `codec=proto` or
 `codec=both`.
 -}
 type alias Proto =
@@ -148,14 +150,15 @@ type alias Proto =
 
 {-| A method applied to its request, as generated code builds one per method:
 
-    Notes.V1.NotesService.getNote : GetNoteRequest -> Rpc.Call Rpc.Json GetNoteRequest Note
+    Notes.V1.NotesService.Json.getNote : GetNoteRequest -> Rpc.Call Rpc.Json GetNoteRequest Note
 
 It is [`Rpc.Call.Call`](Rpc-Call#Call), where a call is adjusted
 (`withHeaders`, `withTimeout`, `withRetry`, `withoutRetry`, `withTracker`,
 `viaBinding`) and read (`serviceName`, `methodName`, `procedure`, `toJson`,
 …).
-Code generated with `codec=both` gives calls free in the codec
-(`Rpc.Call codec GetNoteRequest Note`), which any client sends.
+A service's calls are in one module per codec, `Notes.V1.NotesService.Json`
+and `Notes.V1.NotesService.Proto`, so a program picks its wire by the module
+it imports.
 
 -}
 type alias Call codec req res =

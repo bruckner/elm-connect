@@ -5,6 +5,9 @@
 module Blobs.V1.BlobService exposing (..)
 
 {-| `service blobs.v1.BlobService`
+
+Its calls are in [`Blobs.V1.BlobService.Json`](Blobs-V1-BlobService-Json) over proto3 JSON.
+
 -}
 
 import Blobs.V1
@@ -13,7 +16,6 @@ import Proto.Http
 import Proto.Method
 import Proto.Route
 import Proto.Version
-import Rpc
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -24,53 +26,10 @@ elmConnectVersion_ =
 
 
 
--- CALLS
-
-
-{-| `rpc GetBlob(Blob) returns (Blob)`.
-Connect: `POST /blobs.v1.BlobService/GetBlob`.
-Transcode:
-
-  - binding 0: `GET /v1/blobs/{digest}`;
-  - binding 1: `GET /v1/{name=shelves/*/blobs/*}`.
-
-Codecs: JSON. Described by [`descriptorGetBlob`](#descriptorGetBlob).
-
--}
-getBlob : Blobs.V1.Blob -> Rpc.Call Rpc.Json Blobs.V1.Blob Blobs.V1.Blob
-getBlob =
-    Rpc.call
-        (Proto.Method.initJson "blobs.v1.BlobService"
-            "GetBlob"
-            (\_ -> Ok << Blobs.V1.encodeBlob)
-            (\_ -> Blobs.V1.decodeBlob)
-            |> Proto.Method.withBindings (Proto.Method.bindings descriptorGetBlob)
-        )
-
-
-{-| `rpc FindBlob(Blob) returns (Blob)`.
-Connect: `POST /blobs.v1.BlobService/FindBlob`.
-Transcode: `POST /v1/{name=blobs/*}:find` body `*`.
-
-Codecs: JSON. Described by [`descriptorFindBlob`](#descriptorFindBlob).
-
--}
-findBlob : Blobs.V1.Blob -> Rpc.Call Rpc.Json Blobs.V1.Blob Blobs.V1.Blob
-findBlob =
-    Rpc.call
-        (Proto.Method.initJson "blobs.v1.BlobService"
-            "FindBlob"
-            (\_ -> Ok << Blobs.V1.encodeBlob)
-            (\_ -> Blobs.V1.decodeBlob)
-            |> Proto.Method.withRoutes [ routeFindBlob0 ]
-        )
-
-
-
 -- ROUTES
 
 
-{-| The route of [`findBlob`](#findBlob) over binding 0: `POST /v1/{name=blobs/*}:find` body `*`.
+{-| The route of [`findBlob`](Blobs-V1-BlobService-Json#findBlob) over binding 0: `POST /v1/{name=blobs/*}:find` body `*`.
 -}
 routeFindBlob0 : Blobs.V1.Blob -> Proto.Route.Route
 routeFindBlob0 request_ =

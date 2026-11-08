@@ -6,7 +6,7 @@ trace as JSON for a log.
 
 import Json.Encode
 import Notes.V1
-import Notes.V1.NotesService as Notes
+import Notes.V1.NotesService.Json as Notes
 import Rpc
 import Rpc.Trace
 

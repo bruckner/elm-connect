@@ -5,12 +5,13 @@
 module Rpc.V1.Pinger exposing (..)
 
 {-| `service rpc.v1.Pinger`
+
+Its calls are in [`Rpc.V1.Pinger.Json`](Rpc-V1-Pinger-Json) over proto3 JSON.
+
 -}
 
 import Proto.Method
 import Proto.Version
-import Rpc
-import Rpc.V1
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -18,27 +19,6 @@ import Rpc.V1
 elmConnectVersion_ : Proto.Version.Generated
 elmConnectVersion_ =
     Proto.Version.v0_2
-
-
-
--- CALLS
-
-
-{-| `rpc Send(Ping) returns (Ping)`.
-Connect: `POST /rpc.v1.Pinger/Send`.
-Transcode: no HTTP rule, follows the Connect path.
-
-Codecs: JSON. Described by [`descriptorSend`](#descriptorSend).
-
--}
-send : Rpc.V1.Ping -> Rpc.Call Rpc.Json Rpc.V1.Ping Rpc.V1.Ping
-send =
-    Rpc.call
-        (Proto.Method.initJson "rpc.v1.Pinger"
-            "Send"
-            (\_ -> Ok << Rpc.V1.encodePing)
-            (\_ -> Rpc.V1.decodePing)
-        )
 
 
 

@@ -63,11 +63,12 @@ buf generate
 ```
 
 Both write the same modules: `Notes.V1`, the types and their JSON
-codecs; `Notes.V1.NotesService`, one function per method; and a module of
-descriptors per message and enum, such as `Notes.V1.Note`. Each method's
-function gives a call:
+codecs; `Notes.V1.NotesService`, the service's method descriptors and HTTP
+routes; `Notes.V1.NotesService.Json`, one function per method; and a
+module of descriptors per message and enum, such as `Notes.V1.Note`. Each
+method's function gives a call:
 
-```elm examples/notes/elm/generated/Notes/V1/NotesService.elm excerpt
+```elm examples/notes/elm/generated/Notes/V1/NotesService/Json.elm excerpt
 getNote : Notes.V1.GetNoteRequest -> Rpc.Call Rpc.Json Notes.V1.GetNoteRequest Notes.V1.Note
 ping : () -> Rpc.Call Rpc.Json () ()
 ```
@@ -90,7 +91,7 @@ and gives the result to a message:
 
 ```elm examples/notes/elm/src/Snippets/Sending.elm#sending
 import Notes.V1
-import Notes.V1.NotesService as Notes
+import Notes.V1.NotesService.Json as Notes
 import Rpc
 import Rpc.Protocol
 
@@ -207,7 +208,7 @@ it. From the application's directory, `elm repl` shows what each
 protocol sends:
 
 ```text
-> import Notes.V1.NotesService as Notes
+> import Notes.V1.NotesService.Json as Notes
 > import Rpc
 > import Rpc.Protocol
 > Rpc.request (Rpc.client Rpc.Protocol.connect "https://api.example.com") (Notes.getNote { name = "notes/42" })
@@ -255,7 +256,7 @@ result) and creates `tests/`. A test module in `tests/`, run by
 import Dict
 import Expect
 import Http
-import Notes.V1.NotesService as Notes
+import Notes.V1.NotesService.Json as Notes
 import Rpc
 import Rpc.Code
 import Rpc.Error

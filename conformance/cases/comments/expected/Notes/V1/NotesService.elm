@@ -10,6 +10,8 @@ Every method reads or writes notes.
 
 `service notes.v1.NotesService`
 
+Its calls are in [`Notes.V1.NotesService.Json`](Notes-V1-NotesService-Json) over proto3 JSON.
+
 -}
 
 import Json.Encode
@@ -20,11 +22,9 @@ import Notes.V1.ListNotesRequest
 import Notes.V1.ListNotesResponse
 import Notes.V1.Note
 import Proto.Http
-import Proto.Json
 import Proto.Method
 import Proto.Route
 import Proto.Version
-import Rpc
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -35,118 +35,10 @@ elmConnectVersion_ =
 
 
 
--- CALLS
-
-
-{-| Gets a note by name.
-
-`rpc GetNote(GetNoteRequest) returns (Note)`.
-Connect: `POST /notes.v1.NotesService/GetNote`.
-Transcode:
-
-  - binding 0: `GET /v1/{name=notes/*}`;
-  - binding 1: `GET /v1/{name=users/*/notes/*}`.
-
-Codecs: JSON. Described by [`descriptorGetNote`](#descriptorGetNote).
-
--}
-getNote : Notes.V1.GetNoteRequest -> Rpc.Call Rpc.Json Notes.V1.GetNoteRequest Notes.V1.Note
-getNote =
-    Rpc.call
-        (Proto.Method.initJson "notes.v1.NotesService"
-            "GetNote"
-            (\_ -> Ok << Notes.V1.encodeGetNoteRequest)
-            (\_ -> Notes.V1.decodeNote)
-            |> Proto.Method.withRoutes [ routeGetNote0, routeGetNote1 ]
-        )
-
-
-{-| Lists a user's notes; the response is the list alone.
-
-`rpc ListNotes(ListNotesRequest) returns (ListNotesResponse)`.
-Connect: `POST /notes.v1.NotesService/ListNotes`.
-Transcode: `GET /v1/{parent=users/*}/notes` response body `notes`.
-
-Codecs: JSON. Described by [`descriptorListNotes`](#descriptorListNotes).
-
--}
-listNotes : Notes.V1.ListNotesRequest -> Rpc.Call Rpc.Json Notes.V1.ListNotesRequest Notes.V1.ListNotesResponse
-listNotes =
-    Rpc.call
-        (Proto.Method.initJson "notes.v1.NotesService"
-            "ListNotes"
-            (\_ -> Ok << Notes.V1.encodeListNotesRequest)
-            (\_ -> Notes.V1.decodeListNotesResponse)
-            |> Proto.Method.withRoutes [ routeListNotes0 ]
-        )
-
-
-{-| Creates a note from the `note` field.
-
-`rpc CreateNote(CreateNoteRequest) returns (Note)`.
-Connect: `POST /notes.v1.NotesService/CreateNote`.
-Transcode: `POST /v1/notes` body `note`.
-
-Codecs: JSON. Described by [`descriptorCreateNote`](#descriptorCreateNote).
-
--}
-createNote : Notes.V1.CreateNoteRequest -> Rpc.Call Rpc.Json Notes.V1.CreateNoteRequest Notes.V1.Note
-createNote =
-    Rpc.call
-        (Proto.Method.initJson "notes.v1.NotesService"
-            "CreateNote"
-            (\_ -> Ok << Notes.V1.encodeCreateNoteRequest)
-            (\_ -> Notes.V1.decodeNote)
-            |> Proto.Method.withRoutes [ routeCreateNote0 ]
-        )
-
-
-{-| Deprecated.
-
-Replaces a note: the body is the whole request.
-
-`rpc ReplaceNote(Note) returns (Note)`.
-Connect: `POST /notes.v1.NotesService/ReplaceNote`.
-Transcode: `PUT /v1/{name=notes/*}` body `*`.
-
-Codecs: JSON. Described by [`descriptorReplaceNote`](#descriptorReplaceNote).
-
--}
-replaceNote : Notes.V1.Note -> Rpc.Call Rpc.Json Notes.V1.Note Notes.V1.Note
-replaceNote =
-    Rpc.call
-        (Proto.Method.initJson "notes.v1.NotesService"
-            "ReplaceNote"
-            (\_ -> Ok << Notes.V1.encodeNote)
-            (\_ -> Notes.V1.decodeNote)
-            |> Proto.Method.withRoutes [ routeReplaceNote0 ]
-        )
-
-
-{-| Answers without an HTTP rule, over the Connect path.
-
-`rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty)`.
-Connect: `POST /notes.v1.NotesService/Ping`.
-Transcode: no HTTP rule, follows the Connect path.
-
-Codecs: JSON. Described by [`descriptorPing`](#descriptorPing).
-
--}
-ping : () -> Rpc.Call Rpc.Json () ()
-ping =
-    Rpc.call
-        (Proto.Method.initJson "notes.v1.NotesService"
-            "Ping"
-            (\_ -> Ok << Proto.Json.encodeEmpty)
-            (\_ -> Proto.Json.empty)
-        )
-
-
-
 -- ROUTES
 
 
-{-| The route of [`getNote`](#getNote) over binding 0: `GET /v1/{name=notes/*}`.
+{-| The route of [`getNote`](Notes-V1-NotesService-Json#getNote) over binding 0: `GET /v1/{name=notes/*}`.
 -}
 routeGetNote0 : Notes.V1.GetNoteRequest -> Proto.Route.Route
 routeGetNote0 request_ =
@@ -163,7 +55,7 @@ routeGetNote0 request_ =
     }
 
 
-{-| The route of [`getNote`](#getNote) over binding 1: `GET /v1/{name=users/*/notes/*}`.
+{-| The route of [`getNote`](Notes-V1-NotesService-Json#getNote) over binding 1: `GET /v1/{name=users/*/notes/*}`.
 -}
 routeGetNote1 : Notes.V1.GetNoteRequest -> Proto.Route.Route
 routeGetNote1 request_ =
@@ -180,7 +72,7 @@ routeGetNote1 request_ =
     }
 
 
-{-| The route of [`listNotes`](#listNotes) over binding 0: `GET /v1/{parent=users/*}/notes` response body `notes`.
+{-| The route of [`listNotes`](Notes-V1-NotesService-Json#listNotes) over binding 0: `GET /v1/{parent=users/*}/notes` response body `notes`.
 -}
 routeListNotes0 : Notes.V1.ListNotesRequest -> Proto.Route.Route
 routeListNotes0 request_ =
@@ -197,7 +89,7 @@ routeListNotes0 request_ =
     }
 
 
-{-| The route of [`createNote`](#createNote) over binding 0: `POST /v1/notes` body `note`.
+{-| The route of [`createNote`](Notes-V1-NotesService-Json#createNote) over binding 0: `POST /v1/notes` body `note`.
 -}
 routeCreateNote0 : Notes.V1.CreateNoteRequest -> Proto.Route.Route
 routeCreateNote0 request_ =
@@ -210,7 +102,7 @@ routeCreateNote0 request_ =
     }
 
 
-{-| The route of [`replaceNote`](#replaceNote) over binding 0: `PUT /v1/{name=notes/*}` body `*`.
+{-| The route of [`replaceNote`](Notes-V1-NotesService-Json#replaceNote) over binding 0: `PUT /v1/{name=notes/*}` body `*`.
 -}
 routeReplaceNote0 : Notes.V1.Note -> Proto.Route.Route
 routeReplaceNote0 request_ =

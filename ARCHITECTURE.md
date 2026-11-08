@@ -65,9 +65,11 @@ code has a row in [docs/diagnostics.md](docs/diagnostics.md).
 modules: the package module of types and codecs (`message.rs`,
 `enumeration.rs`, `oneof.rs`, `field.rs`, `scalar.rs`, `recursion.rs`),
 a descriptor module per message and enum with the package's
-`descriptors` (`descriptor.rs`, §3.9), and a module of calls per service (`method.rs`,
-§4) with a route function per HTTP binding and the query encoders in the
-package module they read (`route_fn.rs`, §5.2). `docs.rs` writes the doc comments. The emitter decides which
+`descriptors` (`descriptor.rs`, §3.9), and per service a module of its
+method descriptors and a route function per HTTP binding, with the query
+encoders in the package module they read (`route_fn.rs`, §5.2), and a
+calls module per wire the `codec` option names, `.Json` and `.Proto`
+(`method.rs`, §4). `docs.rs` writes the doc comments. The emitter decides which
 declarations exist and what they say; every name comes from the IR and
 every layout from the printer.
 

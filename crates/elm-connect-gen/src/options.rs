@@ -492,6 +492,17 @@ impl Codec {
     pub fn binary(self) -> bool {
         matches!(self, Codec::Proto | Codec::Both)
     }
+
+    /// The wires a service's calls are generated in, one module each
+    /// (design §4): [`Codec::Json`], [`Codec::Proto`], or both in that
+    /// order.
+    pub fn wires(self) -> &'static [Codec] {
+        match self {
+            Codec::Json => &[Codec::Json],
+            Codec::Proto => &[Codec::Proto],
+            Codec::Both => &[Codec::Json, Codec::Proto],
+        }
+    }
 }
 
 impl std::str::FromStr for Codec {

@@ -5,6 +5,9 @@
 module Msgs.V1.Messages exposing (..)
 
 {-| `service msgs.v1.Messages`
+
+Its calls are in [`Msgs.V1.Messages.Json`](Msgs-V1-Messages-Json) over proto3 JSON.
+
 -}
 
 import Msgs.V1
@@ -14,7 +17,6 @@ import Proto.Method
 import Proto.Query
 import Proto.Route
 import Proto.Version
-import Rpc
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -25,153 +27,10 @@ elmConnectVersion_ =
 
 
 
--- CALLS
-
-
-{-| Different text, one shape: warns.
-
-`rpc GetMessage(MessageRequest) returns (Message)`.
-Connect: `POST /msgs.v1.Messages/GetMessage`.
-Transcode:
-
-  - binding 0: `GET /v1/{name=messages/*}`;
-  - binding 1: `GET /v1/messages/{id}`.
-
-Codecs: JSON. Described by [`descriptorGetMessage`](#descriptorGetMessage).
-
--}
-getMessage : Msgs.V1.MessageRequest -> Rpc.Call Rpc.Json Msgs.V1.MessageRequest Msgs.V1.Message
-getMessage =
-    Rpc.call
-        (Proto.Method.initJson "msgs.v1.Messages"
-            "GetMessage"
-            (\_ -> Ok << Msgs.V1.encodeMessageRequest)
-            (\_ -> Msgs.V1.decodeMessage)
-            |> Proto.Method.withRoutes [ routeGetMessage0, routeGetMessage1 ]
-        )
-
-
-{-| One more segment: another shape, no warning.
-
-`rpc GetSub(MessageRequest) returns (Message)`.
-Connect: `POST /msgs.v1.Messages/GetSub`.
-Transcode: `GET /v1/messages/{id}/{sub}`.
-
-Codecs: JSON. Described by [`descriptorGetSub`](#descriptorGetSub).
-
--}
-getSub : Msgs.V1.MessageRequest -> Rpc.Call Rpc.Json Msgs.V1.MessageRequest Msgs.V1.Message
-getSub =
-    Rpc.call
-        (Proto.Method.initJson "msgs.v1.Messages"
-            "GetSub"
-            (\_ -> Ok << Msgs.V1.encodeMessageRequest)
-            (\_ -> Msgs.V1.decodeMessage)
-            |> Proto.Method.withRoutes [ routeGetSub0 ]
-        )
-
-
-{-| GetMessage's template under another method: no warning.
-
-`rpc UpdateMessage(MessageRequest) returns (Message)`.
-Connect: `POST /msgs.v1.Messages/UpdateMessage`.
-Transcode: `PATCH /v1/{name=messages/*}` body `*`.
-
-Codecs: JSON. Described by [`descriptorUpdateMessage`](#descriptorUpdateMessage).
-
--}
-updateMessage : Msgs.V1.MessageRequest -> Rpc.Call Rpc.Json Msgs.V1.MessageRequest Msgs.V1.Message
-updateMessage =
-    Rpc.call
-        (Proto.Method.initJson "msgs.v1.Messages"
-            "UpdateMessage"
-            (\_ -> Ok << Msgs.V1.encodeMessageRequest)
-            (\_ -> Msgs.V1.decodeMessage)
-            |> Proto.Method.withRoutes [ routeUpdateMessage0 ]
-        )
-
-
-{-| `rpc ListMessages(MessageRequest) returns (Message)`.
-Connect: `POST /msgs.v1.Messages/ListMessages`.
-Transcode: `GET /v1/messages`.
-
-Codecs: JSON. Described by [`descriptorListMessages`](#descriptorListMessages).
-
--}
-listMessages : Msgs.V1.MessageRequest -> Rpc.Call Rpc.Json Msgs.V1.MessageRequest Msgs.V1.Message
-listMessages =
-    Rpc.call
-        (Proto.Method.initJson "msgs.v1.Messages"
-            "ListMessages"
-            (\_ -> Ok << Msgs.V1.encodeMessageRequest)
-            (\_ -> Msgs.V1.decodeMessage)
-            |> Proto.Method.withRoutes [ routeListMessages0 ]
-        )
-
-
-{-| Two custom kinds of one method and shape: warns.
-
-`rpc CheckMessage(MessageRequest) returns (Message)`.
-Connect: `POST /msgs.v1.Messages/CheckMessage`.
-Transcode: `HEAD /v1/{name=messages/*}:check`.
-
-Codecs: JSON. Described by [`descriptorCheckMessage`](#descriptorCheckMessage).
-
--}
-checkMessage : Msgs.V1.MessageRequest -> Rpc.Call Rpc.Json Msgs.V1.MessageRequest Msgs.V1.Message
-checkMessage =
-    Rpc.call
-        (Proto.Method.initJson "msgs.v1.Messages"
-            "CheckMessage"
-            (\_ -> Ok << Msgs.V1.encodeMessageRequest)
-            (\_ -> Msgs.V1.decodeMessage)
-            |> Proto.Method.withRoutes [ routeCheckMessage0 ]
-        )
-
-
-{-| `rpc CheckById(MessageRequest) returns (Message)`.
-Connect: `POST /msgs.v1.Messages/CheckById`.
-Transcode: `HEAD /v1/messages/{id}:check`.
-
-Codecs: JSON. Described by [`descriptorCheckById`](#descriptorCheckById).
-
--}
-checkById : Msgs.V1.MessageRequest -> Rpc.Call Rpc.Json Msgs.V1.MessageRequest Msgs.V1.Message
-checkById =
-    Rpc.call
-        (Proto.Method.initJson "msgs.v1.Messages"
-            "CheckById"
-            (\_ -> Ok << Msgs.V1.encodeMessageRequest)
-            (\_ -> Msgs.V1.decodeMessage)
-            |> Proto.Method.withRoutes [ routeCheckById0 ]
-        )
-
-
-{-| A rule on another method's implicit route: warns.
-
-`rpc Touch(MessageRequest) returns (Message)`.
-Connect: `POST /msgs.v1.Messages/Touch`.
-Transcode: `POST /msgs.v1.Messages/ListMessages` body `*`.
-
-Codecs: JSON. Described by [`descriptorTouch`](#descriptorTouch).
-
--}
-touch : Msgs.V1.MessageRequest -> Rpc.Call Rpc.Json Msgs.V1.MessageRequest Msgs.V1.Message
-touch =
-    Rpc.call
-        (Proto.Method.initJson "msgs.v1.Messages"
-            "Touch"
-            (\_ -> Ok << Msgs.V1.encodeMessageRequest)
-            (\_ -> Msgs.V1.decodeMessage)
-            |> Proto.Method.withRoutes [ routeTouch0 ]
-        )
-
-
-
 -- ROUTES
 
 
-{-| The route of [`getMessage`](#getMessage) over binding 0: `GET /v1/{name=messages/*}`.
+{-| The route of [`getMessage`](Msgs-V1-Messages-Json#getMessage) over binding 0: `GET /v1/{name=messages/*}`.
 -}
 routeGetMessage0 : Msgs.V1.MessageRequest -> Proto.Route.Route
 routeGetMessage0 request_ =
@@ -188,7 +47,7 @@ routeGetMessage0 request_ =
     }
 
 
-{-| The route of [`getMessage`](#getMessage) over binding 1: `GET /v1/messages/{id}`.
+{-| The route of [`getMessage`](Msgs-V1-Messages-Json#getMessage) over binding 1: `GET /v1/messages/{id}`.
 -}
 routeGetMessage1 : Msgs.V1.MessageRequest -> Proto.Route.Route
 routeGetMessage1 request_ =
@@ -205,7 +64,7 @@ routeGetMessage1 request_ =
     }
 
 
-{-| The route of [`getSub`](#getSub) over binding 0: `GET /v1/messages/{id}/{sub}`.
+{-| The route of [`getSub`](Msgs-V1-Messages-Json#getSub) over binding 0: `GET /v1/messages/{id}/{sub}`.
 -}
 routeGetSub0 : Msgs.V1.MessageRequest -> Proto.Route.Route
 routeGetSub0 request_ =
@@ -229,7 +88,7 @@ routeGetSub0 request_ =
     }
 
 
-{-| The route of [`updateMessage`](#updateMessage) over binding 0: `PATCH /v1/{name=messages/*}` body `*`.
+{-| The route of [`updateMessage`](Msgs-V1-Messages-Json#updateMessage) over binding 0: `PATCH /v1/{name=messages/*}` body `*`.
 -}
 routeUpdateMessage0 : Msgs.V1.MessageRequest -> Proto.Route.Route
 routeUpdateMessage0 request_ =
@@ -246,7 +105,7 @@ routeUpdateMessage0 request_ =
     }
 
 
-{-| The route of [`listMessages`](#listMessages) over binding 0: `GET /v1/messages`.
+{-| The route of [`listMessages`](Msgs-V1-Messages-Json#listMessages) over binding 0: `GET /v1/messages`.
 -}
 routeListMessages0 : Msgs.V1.MessageRequest -> Proto.Route.Route
 routeListMessages0 request_ =
@@ -259,7 +118,7 @@ routeListMessages0 request_ =
     }
 
 
-{-| The route of [`checkMessage`](#checkMessage) over binding 0: `HEAD /v1/{name=messages/*}:check`.
+{-| The route of [`checkMessage`](Msgs-V1-Messages-Json#checkMessage) over binding 0: `HEAD /v1/{name=messages/*}:check`.
 -}
 routeCheckMessage0 : Msgs.V1.MessageRequest -> Proto.Route.Route
 routeCheckMessage0 request_ =
@@ -276,7 +135,7 @@ routeCheckMessage0 request_ =
     }
 
 
-{-| The route of [`checkById`](#checkById) over binding 0: `HEAD /v1/messages/{id}:check`.
+{-| The route of [`checkById`](Msgs-V1-Messages-Json#checkById) over binding 0: `HEAD /v1/messages/{id}:check`.
 -}
 routeCheckById0 : Msgs.V1.MessageRequest -> Proto.Route.Route
 routeCheckById0 request_ =
@@ -293,7 +152,7 @@ routeCheckById0 request_ =
     }
 
 
-{-| The route of [`touch`](#touch) over binding 0: `POST /msgs.v1.Messages/ListMessages` body `*`.
+{-| The route of [`touch`](Msgs-V1-Messages-Json#touch) over binding 0: `POST /msgs.v1.Messages/ListMessages` body `*`.
 -}
 routeTouch0 : Msgs.V1.MessageRequest -> Proto.Route.Route
 routeTouch0 request_ =

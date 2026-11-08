@@ -5,6 +5,9 @@
 module Catalog.V1.CatalogService exposing (..)
 
 {-| `service catalog.v1.CatalogService`
+
+Its calls are in [`Catalog.V1.CatalogService.Json`](Catalog-V1-CatalogService-Json) over proto3 JSON.
+
 -}
 
 import Catalog.V1
@@ -14,7 +17,6 @@ import Proto.Http
 import Proto.Method
 import Proto.Route
 import Proto.Version
-import Rpc
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -25,36 +27,10 @@ elmConnectVersion_ =
 
 
 
--- CALLS
-
-
-{-| `descriptor` and `part.descriptor` are query parameters, named by
-`Catalog.V1.GetEntryRequest.descriptor_` and
-`Catalog.V1.Part.descriptor_`.
-
-`rpc GetEntry(GetEntryRequest) returns (Entry)`.
-Connect: `POST /catalog.v1.CatalogService/GetEntry`.
-Transcode: `GET /v1/{name=entries/*}`.
-
-Codecs: JSON. Described by [`descriptorGetEntry`](#descriptorGetEntry).
-
--}
-getEntry : Catalog.V1.GetEntryRequest -> Rpc.Call Rpc.Json Catalog.V1.GetEntryRequest Catalog.V1.Entry
-getEntry =
-    Rpc.call
-        (Proto.Method.initJson "catalog.v1.CatalogService"
-            "GetEntry"
-            (\_ -> Ok << Catalog.V1.encodeGetEntryRequest)
-            (\_ -> Catalog.V1.decodeEntry)
-            |> Proto.Method.withRoutes [ routeGetEntry0 ]
-        )
-
-
-
 -- ROUTES
 
 
-{-| The route of [`getEntry`](#getEntry) over binding 0: `GET /v1/{name=entries/*}`.
+{-| The route of [`getEntry`](Catalog-V1-CatalogService-Json#getEntry) over binding 0: `GET /v1/{name=entries/*}`.
 -}
 routeGetEntry0 : Catalog.V1.GetEntryRequest -> Proto.Route.Route
 routeGetEntry0 request_ =

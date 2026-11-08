@@ -5,13 +5,15 @@
 module Things.V1.ThingService exposing (..)
 
 {-| `service things.v1.ThingService`
+
+Its calls are in [`Things.V1.ThingService.Json`](Things-V1-ThingService-Json) over proto3 JSON.
+
 -}
 
 import Proto.Http
 import Proto.Method
 import Proto.Route
 import Proto.Version
-import Rpc
 import Things.V1
 import Things.V1.Criteria
 import Things.V1.GetThingRequest
@@ -25,32 +27,10 @@ elmConnectVersion_ =
 
 
 
--- CALLS
-
-
-{-| `rpc GetThing(GetThingRequest) returns (Thing)`.
-Connect: `POST /things.v1.ThingService/GetThing`.
-Transcode: `GET /v1/{name=things/*}`.
-
-Codecs: JSON. Described by [`descriptorGetThing`](#descriptorGetThing).
-
--}
-getThing : Things.V1.GetThingRequest -> Rpc.Call Rpc.Json Things.V1.GetThingRequest Things.V1.Thing
-getThing =
-    Rpc.call
-        (Proto.Method.initJson "things.v1.ThingService"
-            "GetThing"
-            (\_ -> Ok << Things.V1.encodeGetThingRequest)
-            (\_ -> Things.V1.decodeThing)
-            |> Proto.Method.withRoutes [ routeGetThing0 ]
-        )
-
-
-
 -- ROUTES
 
 
-{-| The route of [`getThing`](#getThing) over binding 0: `GET /v1/{name=things/*}`.
+{-| The route of [`getThing`](Things-V1-ThingService-Json#getThing) over binding 0: `GET /v1/{name=things/*}`.
 -}
 routeGetThing0 : Things.V1.GetThingRequest -> Proto.Route.Route
 routeGetThing0 request_ =

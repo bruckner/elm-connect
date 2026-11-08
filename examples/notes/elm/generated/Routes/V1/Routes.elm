@@ -5,6 +5,9 @@
 module Routes.V1.Routes exposing (..)
 
 {-| `service routes.v1.Routes`
+
+Its calls are in [`Routes.V1.Routes.Json`](Routes-V1-Routes-Json) over proto3 JSON.
+
 -}
 
 import Json.Encode
@@ -24,7 +27,6 @@ import Routes.V1.Message
 import Routes.V1.Resource
 import Routes.V1.UpdateMessageRequest
 import Routes.V1.UpdateResourceRequest
-import Rpc
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -35,260 +37,10 @@ elmConnectVersion_ =
 
 
 
--- CALLS
-
-
-{-| google/api/http.proto's GET examples, as one rule and its bindings.
-
-`rpc GetMessage(GetMessageRequest) returns (Message)`.
-Connect: `POST /routes.v1.Routes/GetMessage`.
-Transcode:
-
-  - binding 0: `GET /v1/{name=messages/*}`;
-  - binding 1: `GET /v1/messages/{message_id}/{sub.subfield}`;
-  - binding 2: `GET /v1/messages/{message_id}`;
-  - binding 3: `GET /v1/users/{user_id}/messages/{message_id}`.
-
-Codecs: JSON. Described by [`descriptorGetMessage`](#descriptorGetMessage).
-
--}
-getMessage : Routes.V1.GetMessageRequest -> Rpc.Call Rpc.Json Routes.V1.GetMessageRequest Routes.V1.Message
-getMessage =
-    Rpc.call
-        (Proto.Method.initJson "routes.v1.Routes"
-            "GetMessage"
-            (\_ -> Ok << Routes.V1.encodeGetMessageRequest)
-            (\_ -> Routes.V1.decodeMessage)
-            |> Proto.Method.withRoutes [ routeGetMessage0, routeGetMessage1, routeGetMessage2, routeGetMessage3 ]
-        )
-
-
-{-| google/api/http.proto's body examples.
-
-`rpc UpdateMessage(UpdateMessageRequest) returns (Message)`.
-Connect: `POST /routes.v1.Routes/UpdateMessage`.
-Transcode: `PATCH /v1/messages/{message_id}` body `message`.
-
-Codecs: JSON. Described by [`descriptorUpdateMessage`](#descriptorUpdateMessage).
-
--}
-updateMessage : Routes.V1.UpdateMessageRequest -> Rpc.Call Rpc.Json Routes.V1.UpdateMessageRequest Routes.V1.Message
-updateMessage =
-    Rpc.call
-        (Proto.Method.initJson "routes.v1.Routes"
-            "UpdateMessage"
-            (\_ -> Ok << Routes.V1.encodeUpdateMessageRequest)
-            (\_ -> Routes.V1.decodeMessage)
-            |> Proto.Method.withRoutes [ routeUpdateMessage0 ]
-        )
-
-
-{-| `rpc UpdateMessageWhole(Message) returns (Message)`.
-Connect: `POST /routes.v1.Routes/UpdateMessageWhole`.
-Transcode: `PATCH /v1/messages/{message_id}` body `*`.
-
-Codecs: JSON. Described by [`descriptorUpdateMessageWhole`](#descriptorUpdateMessageWhole).
-
--}
-updateMessageWhole : Routes.V1.Message -> Rpc.Call Rpc.Json Routes.V1.Message Routes.V1.Message
-updateMessageWhole =
-    Rpc.call
-        (Proto.Method.initJson "routes.v1.Routes"
-            "UpdateMessageWhole"
-            (\_ -> Ok << Routes.V1.encodeMessage)
-            (\_ -> Routes.V1.decodeMessage)
-            |> Proto.Method.withRoutes [ routeUpdateMessageWhole0 ]
-        )
-
-
-{-| `rpc PostSub(GetMessageRequest) returns (Message)`.
-Connect: `POST /routes.v1.Routes/PostSub`.
-Transcode: `POST /v1/subs/{sub.subfield}` body `*`.
-
-Codecs: JSON. Described by [`descriptorPostSub`](#descriptorPostSub).
-
--}
-postSub : Routes.V1.GetMessageRequest -> Rpc.Call Rpc.Json Routes.V1.GetMessageRequest Routes.V1.Message
-postSub =
-    Rpc.call
-        (Proto.Method.initJson "routes.v1.Routes"
-            "PostSub"
-            (\_ -> Ok << Routes.V1.encodeGetMessageRequest)
-            (\_ -> Routes.V1.decodeMessage)
-            |> Proto.Method.withRoutes [ routePostSub0 ]
-        )
-
-
-{-| `rpc Query(Everything) returns (Everything)`.
-Connect: `POST /routes.v1.Routes/Query`.
-Transcode: `GET /v1/query`.
-
-Codecs: JSON. Described by [`descriptorQuery`](#descriptorQuery).
-
--}
-query : Routes.V1.Everything -> Rpc.Call Rpc.Json Routes.V1.Everything Routes.V1.Everything
-query =
-    Rpc.call
-        (Proto.Method.initJson "routes.v1.Routes"
-            "Query"
-            (\_ -> Ok << Routes.V1.encodeEverything)
-            (\_ -> Routes.V1.decodeEverything)
-            |> Proto.Method.withRoutes [ routeQuery0 ]
-        )
-
-
-{-| `rpc Single(Everything) returns (Everything)`.
-Connect: `POST /routes.v1.Routes/Single`.
-Transcode: `GET /v1/single/{name}`.
-
-Codecs: JSON. Described by [`descriptorSingle`](#descriptorSingle).
-
--}
-single : Routes.V1.Everything -> Rpc.Call Rpc.Json Routes.V1.Everything Routes.V1.Everything
-single =
-    Rpc.call
-        (Proto.Method.initJson "routes.v1.Routes"
-            "Single"
-            (\_ -> Ok << Routes.V1.encodeEverything)
-            (\_ -> Routes.V1.decodeEverything)
-            |> Proto.Method.withRoutes [ routeSingle0 ]
-        )
-
-
-{-| `rpc Multi(Everything) returns (Everything)`.
-Connect: `POST /routes.v1.Routes/Multi`.
-Transcode: `GET /v1/{name=things/*}`.
-
-Codecs: JSON. Described by [`descriptorMulti`](#descriptorMulti).
-
--}
-multi : Routes.V1.Everything -> Rpc.Call Rpc.Json Routes.V1.Everything Routes.V1.Everything
-multi =
-    Rpc.call
-        (Proto.Method.initJson "routes.v1.Routes"
-            "Multi"
-            (\_ -> Ok << Routes.V1.encodeEverything)
-            (\_ -> Routes.V1.decodeEverything)
-            |> Proto.Method.withRoutes [ routeMulti0 ]
-        )
-
-
-{-| `rpc Typed(Everything) returns (Everything)`.
-Connect: `POST /routes.v1.Routes/Typed`.
-Transcode: `DELETE /v1/typed/{count}/{flag}/{kind}/{big}/{inner.deep.b}`.
-
-Codecs: JSON. Described by [`descriptorTyped`](#descriptorTyped).
-
--}
-typed : Routes.V1.Everything -> Rpc.Call Rpc.Json Routes.V1.Everything Routes.V1.Everything
-typed =
-    Rpc.call
-        (Proto.Method.initJson "routes.v1.Routes"
-            "Typed"
-            (\_ -> Ok << Routes.V1.encodeEverything)
-            (\_ -> Routes.V1.decodeEverything)
-            |> Proto.Method.withRoutes [ routeTyped0 ]
-        )
-
-
-{-| `rpc Files(FileRequest) returns (FileRequest)`.
-Connect: `POST /routes.v1.Routes/Files`.
-Transcode: `GET /v1/{path=files/**}`.
-
-Codecs: JSON. Described by [`descriptorFiles`](#descriptorFiles).
-
--}
-files : Routes.V1.FileRequest -> Rpc.Call Rpc.Json Routes.V1.FileRequest Routes.V1.FileRequest
-files =
-    Rpc.call
-        (Proto.Method.initJson "routes.v1.Routes"
-            "Files"
-            (\_ -> Ok << Routes.V1.encodeFileRequest)
-            (\_ -> Routes.V1.decodeFileRequest)
-            |> Proto.Method.withRoutes [ routeFiles0 ]
-        )
-
-
-{-| `rpc Cancel(Resource) returns (Resource)`.
-Connect: `POST /routes.v1.Routes/Cancel`.
-Transcode: `POST /v1/{name=operations/*}:cancel` body `*`.
-
-Codecs: JSON. Described by [`descriptorCancel`](#descriptorCancel).
-
--}
-cancel : Routes.V1.Resource -> Rpc.Call Rpc.Json Routes.V1.Resource Routes.V1.Resource
-cancel =
-    Rpc.call
-        (Proto.Method.initJson "routes.v1.Routes"
-            "Cancel"
-            (\_ -> Ok << Routes.V1.encodeResource)
-            (\_ -> Routes.V1.decodeResource)
-            |> Proto.Method.withRoutes [ routeCancel0 ]
-        )
-
-
-{-| `rpc UpdateResource(UpdateResourceRequest) returns (Resource)`.
-Connect: `POST /routes.v1.Routes/UpdateResource`.
-Transcode: `PATCH /v1/{resource.name=resources/*}` body `resource`.
-
-Codecs: JSON. Described by [`descriptorUpdateResource`](#descriptorUpdateResource).
-
--}
-updateResource : Routes.V1.UpdateResourceRequest -> Rpc.Call Rpc.Json Routes.V1.UpdateResourceRequest Routes.V1.Resource
-updateResource =
-    Rpc.call
-        (Proto.Method.initJson "routes.v1.Routes"
-            "UpdateResource"
-            (\_ -> Ok << Routes.V1.encodeUpdateResourceRequest)
-            (\_ -> Routes.V1.decodeResource)
-            |> Proto.Method.withRoutes [ routeUpdateResource0 ]
-        )
-
-
-{-| `rpc Head(FileRequest) returns (FileRequest)`.
-Connect: `POST /routes.v1.Routes/Head`.
-Transcode: `HEAD /v1/{path=files/**}`.
-
-Codecs: JSON. Described by [`descriptorHead`](#descriptorHead).
-
--}
-head : Routes.V1.FileRequest -> Rpc.Call Rpc.Json Routes.V1.FileRequest Routes.V1.FileRequest
-head =
-    Rpc.call
-        (Proto.Method.initJson "routes.v1.Routes"
-            "Head"
-            (\_ -> Ok << Routes.V1.encodeFileRequest)
-            (\_ -> Routes.V1.decodeFileRequest)
-            |> Proto.Method.withRoutes [ routeHead0 ]
-        )
-
-
-{-| No rule: the implicit route, POST /routes.v1.Routes/Unbound with the
-request as its body, as grpc-gateway (generate\_unbound\_methods),
-Envoy's transcoder (auto\_mapping) and a Connect handler serve it.
-
-`rpc Unbound(GetMessageRequest) returns (Message)`.
-Connect: `POST /routes.v1.Routes/Unbound`.
-Transcode: no HTTP rule, follows the Connect path.
-
-Codecs: JSON. Described by [`descriptorUnbound`](#descriptorUnbound).
-
--}
-unbound : Routes.V1.GetMessageRequest -> Rpc.Call Rpc.Json Routes.V1.GetMessageRequest Routes.V1.Message
-unbound =
-    Rpc.call
-        (Proto.Method.initJson "routes.v1.Routes"
-            "Unbound"
-            (\_ -> Ok << Routes.V1.encodeGetMessageRequest)
-            (\_ -> Routes.V1.decodeMessage)
-        )
-
-
-
 -- ROUTES
 
 
-{-| The route of [`getMessage`](#getMessage) over binding 0: `GET /v1/{name=messages/*}`.
+{-| The route of [`getMessage`](Routes-V1-Routes-Json#getMessage) over binding 0: `GET /v1/{name=messages/*}`.
 -}
 routeGetMessage0 : Routes.V1.GetMessageRequest -> Proto.Route.Route
 routeGetMessage0 request_ =
@@ -305,7 +57,7 @@ routeGetMessage0 request_ =
     }
 
 
-{-| The route of [`getMessage`](#getMessage) over binding 1: `GET /v1/messages/{message_id}/{sub.subfield}`.
+{-| The route of [`getMessage`](Routes-V1-Routes-Json#getMessage) over binding 1: `GET /v1/messages/{message_id}/{sub.subfield}`.
 -}
 routeGetMessage1 : Routes.V1.GetMessageRequest -> Proto.Route.Route
 routeGetMessage1 request_ =
@@ -329,7 +81,7 @@ routeGetMessage1 request_ =
     }
 
 
-{-| The route of [`getMessage`](#getMessage) over binding 2: `GET /v1/messages/{message_id}`.
+{-| The route of [`getMessage`](Routes-V1-Routes-Json#getMessage) over binding 2: `GET /v1/messages/{message_id}`.
 -}
 routeGetMessage2 : Routes.V1.GetMessageRequest -> Proto.Route.Route
 routeGetMessage2 request_ =
@@ -346,7 +98,7 @@ routeGetMessage2 request_ =
     }
 
 
-{-| The route of [`getMessage`](#getMessage) over binding 3: `GET /v1/users/{user_id}/messages/{message_id}`.
+{-| The route of [`getMessage`](Routes-V1-Routes-Json#getMessage) over binding 3: `GET /v1/users/{user_id}/messages/{message_id}`.
 -}
 routeGetMessage3 : Routes.V1.GetMessageRequest -> Proto.Route.Route
 routeGetMessage3 request_ =
@@ -370,7 +122,7 @@ routeGetMessage3 request_ =
     }
 
 
-{-| The route of [`updateMessage`](#updateMessage) over binding 0: `PATCH /v1/messages/{message_id}` body `message`.
+{-| The route of [`updateMessage`](Routes-V1-Routes-Json#updateMessage) over binding 0: `PATCH /v1/messages/{message_id}` body `message`.
 -}
 routeUpdateMessage0 : Routes.V1.UpdateMessageRequest -> Proto.Route.Route
 routeUpdateMessage0 request_ =
@@ -387,7 +139,7 @@ routeUpdateMessage0 request_ =
     }
 
 
-{-| The route of [`updateMessageWhole`](#updateMessageWhole) over binding 0: `PATCH /v1/messages/{message_id}` body `*`.
+{-| The route of [`updateMessageWhole`](Routes-V1-Routes-Json#updateMessageWhole) over binding 0: `PATCH /v1/messages/{message_id}` body `*`.
 -}
 routeUpdateMessageWhole0 : Routes.V1.Message -> Proto.Route.Route
 routeUpdateMessageWhole0 request_ =
@@ -404,7 +156,7 @@ routeUpdateMessageWhole0 request_ =
     }
 
 
-{-| The route of [`postSub`](#postSub) over binding 0: `POST /v1/subs/{sub.subfield}` body `*`.
+{-| The route of [`postSub`](Routes-V1-Routes-Json#postSub) over binding 0: `POST /v1/subs/{sub.subfield}` body `*`.
 -}
 routePostSub0 : Routes.V1.GetMessageRequest -> Proto.Route.Route
 routePostSub0 request_ =
@@ -421,7 +173,7 @@ routePostSub0 request_ =
     }
 
 
-{-| The route of [`query`](#query) over binding 0: `GET /v1/query`.
+{-| The route of [`query`](Routes-V1-Routes-Json#query) over binding 0: `GET /v1/query`.
 -}
 routeQuery0 : Routes.V1.Everything -> Proto.Route.Route
 routeQuery0 request_ =
@@ -434,7 +186,7 @@ routeQuery0 request_ =
     }
 
 
-{-| The route of [`single`](#single) over binding 0: `GET /v1/single/{name}`.
+{-| The route of [`single`](Routes-V1-Routes-Json#single) over binding 0: `GET /v1/single/{name}`.
 -}
 routeSingle0 : Routes.V1.Everything -> Proto.Route.Route
 routeSingle0 request_ =
@@ -451,7 +203,7 @@ routeSingle0 request_ =
     }
 
 
-{-| The route of [`multi`](#multi) over binding 0: `GET /v1/{name=things/*}`.
+{-| The route of [`multi`](Routes-V1-Routes-Json#multi) over binding 0: `GET /v1/{name=things/*}`.
 -}
 routeMulti0 : Routes.V1.Everything -> Proto.Route.Route
 routeMulti0 request_ =
@@ -468,7 +220,7 @@ routeMulti0 request_ =
     }
 
 
-{-| The route of [`typed`](#typed) over binding 0: `DELETE /v1/typed/{count}/{flag}/{kind}/{big}/{inner.deep.b}`.
+{-| The route of [`typed`](Routes-V1-Routes-Json#typed) over binding 0: `DELETE /v1/typed/{count}/{flag}/{kind}/{big}/{inner.deep.b}`.
 -}
 routeTyped0 : Routes.V1.Everything -> Proto.Route.Route
 routeTyped0 request_ =
@@ -504,7 +256,7 @@ routeTyped0 request_ =
     }
 
 
-{-| The route of [`files`](#files) over binding 0: `GET /v1/{path=files/**}`.
+{-| The route of [`files`](Routes-V1-Routes-Json#files) over binding 0: `GET /v1/{path=files/**}`.
 -}
 routeFiles0 : Routes.V1.FileRequest -> Proto.Route.Route
 routeFiles0 request_ =
@@ -521,7 +273,7 @@ routeFiles0 request_ =
     }
 
 
-{-| The route of [`cancel`](#cancel) over binding 0: `POST /v1/{name=operations/*}:cancel` body `*`.
+{-| The route of [`cancel`](Routes-V1-Routes-Json#cancel) over binding 0: `POST /v1/{name=operations/*}:cancel` body `*`.
 -}
 routeCancel0 : Routes.V1.Resource -> Proto.Route.Route
 routeCancel0 request_ =
@@ -538,7 +290,7 @@ routeCancel0 request_ =
     }
 
 
-{-| The route of [`updateResource`](#updateResource) over binding 0: `PATCH /v1/{resource.name=resources/*}` body `resource`.
+{-| The route of [`updateResource`](Routes-V1-Routes-Json#updateResource) over binding 0: `PATCH /v1/{resource.name=resources/*}` body `resource`.
 -}
 routeUpdateResource0 : Routes.V1.UpdateResourceRequest -> Proto.Route.Route
 routeUpdateResource0 request_ =
@@ -555,7 +307,7 @@ routeUpdateResource0 request_ =
     }
 
 
-{-| The route of [`head`](#head) over binding 0: `HEAD /v1/{path=files/**}`.
+{-| The route of [`head`](Routes-V1-Routes-Json#head) over binding 0: `HEAD /v1/{path=files/**}`.
 -}
 routeHead0 : Routes.V1.FileRequest -> Proto.Route.Route
 routeHead0 request_ =

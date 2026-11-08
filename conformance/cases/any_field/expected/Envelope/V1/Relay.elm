@@ -5,14 +5,13 @@
 module Envelope.V1.Relay exposing (..)
 
 {-| `service envelope.v1.Relay`
+
+Its calls are in [`Envelope.V1.Relay.Json`](Envelope-V1-Relay-Json) over proto3 JSON.
+
 -}
 
-import Envelope.V1
-import Proto.Any
-import Proto.Json
 import Proto.Method
 import Proto.Version
-import Rpc
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -20,44 +19,6 @@ import Rpc
 elmConnectVersion_ : Proto.Version.Generated
 elmConnectVersion_ =
     Proto.Version.v0_2
-
-
-
--- CALLS
-
-
-{-| `rpc Forward(google.protobuf.Any) returns (google.protobuf.Any)`.
-Connect: `POST /envelope.v1.Relay/Forward`.
-Transcode: no HTTP rule, follows the Connect path.
-
-Codecs: JSON. Described by [`descriptorForward`](#descriptorForward).
-
--}
-forward : Proto.Any.Any -> Rpc.Call Rpc.Json Proto.Any.Any Proto.Any.Any
-forward =
-    Rpc.call
-        (Proto.Method.initJson "envelope.v1.Relay"
-            "Forward"
-            Proto.Json.encodeAnyWith
-            Proto.Json.anyWith
-        )
-
-
-{-| `rpc Send(Envelope) returns (Envelope)`.
-Connect: `POST /envelope.v1.Relay/Send`.
-Transcode: no HTTP rule, follows the Connect path.
-
-Codecs: JSON. Described by [`descriptorSend`](#descriptorSend).
-
--}
-send : Envelope.V1.Envelope -> Rpc.Call Rpc.Json Envelope.V1.Envelope Envelope.V1.Envelope
-send =
-    Rpc.call
-        (Proto.Method.initJson "envelope.v1.Relay"
-            "Send"
-            Envelope.V1.encodeEnvelopeWith
-            Envelope.V1.decodeEnvelopeWith
-        )
 
 
 

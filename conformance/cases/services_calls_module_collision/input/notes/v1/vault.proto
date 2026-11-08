@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package notes.v1;
+
+message Item {
+  string name = 1;
+}
+
+// `Vault` is the module `Notes.V1.Vault`, and its calls are in
+// `Notes.V1.Vault.Json` and `Notes.V1.Vault.Proto` whatever the `codec`
+// option, so the packages `notes.v1.vault.json` and `notes.v1.vault.proto`
+// take its calls modules' names.
+service Vault {
+  rpc GetItem(Item) returns (Item);
+}

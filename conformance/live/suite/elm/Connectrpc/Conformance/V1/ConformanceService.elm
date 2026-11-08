@@ -12,12 +12,12 @@ Test servers must implement the service as described.
 
 `service connectrpc.conformance.v1.ConformanceService`
 
+Its calls are in [`Connectrpc.Conformance.V1.ConformanceService.Json`](Connectrpc-Conformance-V1-ConformanceService-Json) over proto3 JSON.
+
 -}
 
-import Connectrpc.Conformance.V1
 import Proto.Method
 import Proto.Version
-import Rpc
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -25,84 +25,6 @@ import Rpc
 elmConnectVersion_ : Proto.Version.Generated
 elmConnectVersion_ =
     Proto.Version.v0_2
-
-
-
--- CALLS
-
-
-{-| A unary operation. The request indicates the response headers and trailers
-and also indicates either a response message or an error to send back.
-
-Response message data is specified as bytes. The service should echo back
-request properties in the ConformancePayload and then include the message
-data in the data field.
-
-If the response\_delay\_ms duration is specified, the server should wait the
-given duration after reading the request before sending the corresponding
-response.
-
-Servers should allow the response definition to be unset in the request and
-if it is, set no response headers or trailers and return no response data.
-The returned payload should only contain the request info.
-
-`rpc Unary(UnaryRequest) returns (UnaryResponse)`.
-Connect: `POST /connectrpc.conformance.v1.ConformanceService/Unary`.
-Transcode: no HTTP rule, follows the Connect path.
-
-Codecs: JSON. Described by [`descriptorUnary`](#descriptorUnary).
-
--}
-unary : Connectrpc.Conformance.V1.UnaryRequest -> Rpc.Call Rpc.Json Connectrpc.Conformance.V1.UnaryRequest Connectrpc.Conformance.V1.UnaryResponse
-unary =
-    Rpc.call
-        (Proto.Method.initJson "connectrpc.conformance.v1.ConformanceService"
-            "Unary"
-            Connectrpc.Conformance.V1.encodeUnaryRequestWith
-            Connectrpc.Conformance.V1.decodeUnaryResponseWith
-        )
-
-
-{-| A unary endpoint that the server should not implement and should instead
-return an unimplemented error when invoked.
-
-`rpc Unimplemented(UnimplementedRequest) returns (UnimplementedResponse)`.
-Connect: `POST /connectrpc.conformance.v1.ConformanceService/Unimplemented`.
-Transcode: no HTTP rule, follows the Connect path.
-
-Codecs: JSON. Described by [`descriptorUnimplemented`](#descriptorUnimplemented).
-
--}
-unimplemented : Connectrpc.Conformance.V1.UnimplementedRequest -> Rpc.Call Rpc.Json Connectrpc.Conformance.V1.UnimplementedRequest Connectrpc.Conformance.V1.UnimplementedResponse
-unimplemented =
-    Rpc.call
-        (Proto.Method.initJson "connectrpc.conformance.v1.ConformanceService"
-            "Unimplemented"
-            (\_ -> Ok << Connectrpc.Conformance.V1.encodeUnimplementedRequest)
-            (\_ -> Connectrpc.Conformance.V1.decodeUnimplementedResponse)
-        )
-
-
-{-| A unary endpoint denoted as having no side effects (i.e. idempotent).
-Implementations should use an HTTP GET when invoking this endpoint and
-leverage query parameters to send data.
-
-`rpc IdempotentUnary(IdempotentUnaryRequest) returns (IdempotentUnaryResponse)`.
-Connect: `POST /connectrpc.conformance.v1.ConformanceService/IdempotentUnary`.
-Transcode: no HTTP rule, follows the Connect path.
-
-Codecs: JSON. Described by [`descriptorIdempotentUnary`](#descriptorIdempotentUnary).
-
--}
-idempotentUnary : Connectrpc.Conformance.V1.IdempotentUnaryRequest -> Rpc.Call Rpc.Json Connectrpc.Conformance.V1.IdempotentUnaryRequest Connectrpc.Conformance.V1.IdempotentUnaryResponse
-idempotentUnary =
-    Rpc.call
-        (Proto.Method.initJson "connectrpc.conformance.v1.ConformanceService"
-            "IdempotentUnary"
-            Connectrpc.Conformance.V1.encodeIdempotentUnaryRequestWith
-            Connectrpc.Conformance.V1.decodeIdempotentUnaryResponseWith
-            |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
-        )
 
 
 

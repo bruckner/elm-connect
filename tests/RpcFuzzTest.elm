@@ -1,7 +1,7 @@
 module RpcFuzzTest exposing (suite)
 
 {-| Structural laws of `Rpc.request` over the Transcode protocol, fuzzed over
-requests to methods of the generated `Routes.V1.Routes`: a path variable's
+requests to methods of the generated `Routes.V1.Routes.Json`: a path variable's
 segment percent-decodes to its value, a field bound in the path is in neither
 the query nor a `*` body, a field in the body is not in the query, and the URL
 holds nothing a URL may not. The route fixtures (`RouteFixturesTest`) and the
@@ -14,7 +14,7 @@ import Fuzzers
 import Json.Decode
 import Json.Encode
 import Routes.V1
-import Routes.V1.Routes
+import Routes.V1.Routes.Json
 import Rpc
 import Rpc.Body
 import Rpc.Call
@@ -117,7 +117,7 @@ singleSegment : Test
 singleSegment =
     fuzz (Fuzzers.everything Fuzzers.float) "a single-segment variable is one segment that percent-decodes to its value" <|
         \x ->
-            case (url (send Routes.V1.Routes.single x)).segments of
+            case (url (send Routes.V1.Routes.Json.single x)).segments of
                 [ "v1", "single", segment ] ->
                     Expect.all
                         [ \_ -> decoded segment |> Expect.equal (Just x.name)
@@ -134,7 +134,7 @@ multiSegment =
     describe "a multi-segment variable keeps / and percent-decodes to its value"
         [ fuzz (Fuzzers.everything Fuzzers.float) "{name=things/*}" <|
             \x ->
-                (url (send Routes.V1.Routes.multi x)).segments
+                (url (send Routes.V1.Routes.Json.multi x)).segments
                     |> List.drop 1
                     |> String.join "/"
                     |> decoded
@@ -143,7 +143,7 @@ multiSegment =
             \path ->
                 let
                     request =
-                        send Routes.V1.Routes.files { path = path }
+                        send Routes.V1.Routes.Json.files { path = path }
                 in
                 Expect.all
                     [ \_ ->
@@ -164,7 +164,7 @@ boundFields =
         \x ->
             let
                 request =
-                    sendVia 1 Routes.V1.Routes.getMessage x
+                    sendVia 1 Routes.V1.Routes.Json.getMessage x
 
                 subfield =
                     Maybe.map .subfield x.sub |> Maybe.withDefault ""
@@ -206,7 +206,7 @@ typedPath =
                 b =
                     x.inner |> Maybe.andThen .deep |> Maybe.map .b |> Maybe.withDefault 0
             in
-            (url (send Routes.V1.Routes.typed x)).segments
+            (url (send Routes.V1.Routes.Json.typed x)).segments
                 |> List.map decoded
                 |> Expect.equal
                     (List.map Just
@@ -236,7 +236,7 @@ bodies =
             \x ->
                 let
                     request =
-                        send Routes.V1.Routes.postSub x
+                        send Routes.V1.Routes.Json.postSub x
                 in
                 Expect.all
                     [ \_ ->
@@ -254,7 +254,7 @@ bodies =
             \( resource, mask ) ->
                 let
                     request =
-                        send Routes.V1.Routes.updateResource { resource = resource, updateMask = mask }
+                        send Routes.V1.Routes.Json.updateResource { resource = resource, updateMask = mask }
                 in
                 Expect.all
                     [ \_ ->
@@ -275,7 +275,7 @@ bodies =
                     ()
         , fuzz (Fuzzers.resource niceFloat) "body * holds map fields whole" <|
             \x ->
-                send Routes.V1.Routes.cancel x
+                send Routes.V1.Routes.Json.cancel x
                     |> .body
                     |> Rpc.Body.toText
                     |> Maybe.map (Json.Decode.decodeString Routes.V1.decodeResource)
@@ -284,7 +284,7 @@ bodies =
             \( messageId, message ) ->
                 let
                     request =
-                        send Routes.V1.Routes.updateMessage { messageId = messageId, message = message }
+                        send Routes.V1.Routes.Json.updateMessage { messageId = messageId, message = message }
                 in
                 Expect.all
                     [ \_ -> (url request).query |> Expect.equal []
@@ -322,7 +322,7 @@ queryValues =
         \x ->
             let
                 pairs =
-                    (url (send Routes.V1.Routes.query x)).query
+                    (url (send Routes.V1.Routes.Json.query x)).query
                         |> List.map (Tuple.mapBoth decoded decoded)
 
                 valuesOf name =
@@ -366,16 +366,16 @@ requests =
             Fuzzers.everything Fuzzers.float
     in
     Fuzz.oneOf
-        [ Fuzz.map (\x -> ( "Query", send Routes.V1.Routes.query x )) everything
-        , Fuzz.map (\x -> ( "Single", send Routes.V1.Routes.single x )) everything
-        , Fuzz.map (\x -> ( "Multi", send Routes.V1.Routes.multi x )) everything
-        , Fuzz.map (\x -> ( "Typed", send Routes.V1.Routes.typed x )) everything
-        , Fuzz.map2 (\index x -> ( "GetMessage " ++ String.fromInt index, sendVia index Routes.V1.Routes.getMessage x ))
+        [ Fuzz.map (\x -> ( "Query", send Routes.V1.Routes.Json.query x )) everything
+        , Fuzz.map (\x -> ( "Single", send Routes.V1.Routes.Json.single x )) everything
+        , Fuzz.map (\x -> ( "Multi", send Routes.V1.Routes.Json.multi x )) everything
+        , Fuzz.map (\x -> ( "Typed", send Routes.V1.Routes.Json.typed x )) everything
+        , Fuzz.map2 (\index x -> ( "GetMessage " ++ String.fromInt index, sendVia index Routes.V1.Routes.Json.getMessage x ))
             (Fuzz.intRange 0 3)
             Fuzzers.getMessageRequest
-        , Fuzz.map (\x -> ( "PostSub", send Routes.V1.Routes.postSub x )) Fuzzers.getMessageRequest
-        , Fuzz.map (\x -> ( "Cancel", send Routes.V1.Routes.cancel x )) (Fuzzers.resource Fuzzers.float)
-        , Fuzz.map (\x -> ( "Files", send Routes.V1.Routes.files { path = x } )) Fuzzers.awkwardString
+        , Fuzz.map (\x -> ( "PostSub", send Routes.V1.Routes.Json.postSub x )) Fuzzers.getMessageRequest
+        , Fuzz.map (\x -> ( "Cancel", send Routes.V1.Routes.Json.cancel x )) (Fuzzers.resource Fuzzers.float)
+        , Fuzz.map (\x -> ( "Files", send Routes.V1.Routes.Json.files { path = x } )) Fuzzers.awkwardString
         ]
 
 

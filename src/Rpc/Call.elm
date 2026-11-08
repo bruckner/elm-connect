@@ -8,7 +8,7 @@ module Rpc.Call exposing
 function gives and [`Rpc`](Rpc)'s functions send. This module adjusts one and
 reads it back.
 
-    Notes.V1.NotesService.getNote { name = "notes/42" }
+    Notes.V1.NotesService.Json.getNote { name = "notes/42" }
         |> Rpc.Call.withTimeout 5000
         |> Rpc.Call.withHeaders [ ( "X-Request-Id", requestId ) ]
 
@@ -40,7 +40,7 @@ import Rpc.Retry exposing (Retry)
 per-call adjustments made to it. Generated code builds one per method with
 [`Rpc.call`](Rpc#call):
 
-    Notes.V1.NotesService.getNote : GetNoteRequest -> Rpc.Call Rpc.Json GetNoteRequest Note
+    Notes.V1.NotesService.Json.getNote : GetNoteRequest -> Rpc.Call Rpc.Json GetNoteRequest Note
 
 It is opaque, and the same type as [`Rpc.Call`](Rpc#Call): adjust one with
 the functions below and send it with [`Rpc.send`](Rpc#send) or
@@ -141,9 +141,9 @@ its `additional_bindings` in order. `Nothing` when the method has no binding
 of that number; a method without a rule has none, and its call goes over the
 implicit route. Connect has no use for bindings and ignores the choice.
 
-Transcoding speaks JSON, so a binding is chosen on a JSON call: one generated
-under `codec=both`, free in the codec, becomes a `Call Rpc.Json`, and one
-generated under `codec=proto` is refused by the compiler.
+Transcoding speaks JSON, so a binding is chosen on a JSON call, one of a
+service's `.Json` module: a call of its `.Proto` module is refused by the
+compiler.
 
     Notes.getNote { name = "users/7/notes/42" }
         |> Rpc.Call.viaBinding 1

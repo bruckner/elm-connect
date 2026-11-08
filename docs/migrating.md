@@ -10,11 +10,13 @@ In short:
 
 1. Upgrade the runtime and the binary together, and regenerate
    ([Regenerating](#regenerating)).
-2. Replace each `Rpc.Config` with an `Rpc.Client`
+2. Import each service's calls from its `.Json` module
+   ([The calls module](#the-calls-module)).
+3. Replace each `Rpc.Config` with an `Rpc.Client`
    ([The client and the protocol](#the-client-and-the-protocol)).
-3. Add the codec to the annotations that name `Rpc.Call`
+4. Add the codec to the annotations that name `Rpc.Call`
    ([The codec in the type](#the-codec-in-the-type)).
-4. Follow the compiler through the rest: the pure halves, traces and
+5. Follow the compiler through the rest: the pure halves, traces and
    any method written by hand.
 
 The release notes ([CHANGELOG.md](../CHANGELOG.md)) list every change,
@@ -108,13 +110,28 @@ over its proto codec, and `Rpc.Protocol.grpcWeb`, gRPC-Web
 wrote `connectProto` as `Rpc.Transport.connect |>
 Rpc.Transport.withCodec Rpc.Transport.Proto`.
 
+## The calls module
+
+A service's calls move from its module to a module inside it, one per
+codec: `Notes.V1.NotesService.Json` under the default `codec=json`,
+`Notes.V1.NotesService.Proto` under `codec=proto`, both under
+`codec=both`. The service's module, `Notes.V1.NotesService`, keeps the
+method descriptors and the HTTP route functions. The edit is the import
+line, with the alias kept so that the calls read as before: 0.1's
+`import Notes.V1.NotesService as Notes` becomes
+`import Notes.V1.NotesService.Json as Notes`.
+
+Code naming a descriptor (`Notes.V1.NotesService.descriptorGetNote`)
+keeps importing the service's module. The names do not depend on the
+option, so moving to `codec=both` later adds `.Proto` beside `.Json`
+and changes no import.
+
 ## The codec in the type
 
 A call, a client and a protocol carry their codec as their first type
-parameter, `Rpc.Json` or `Rpc.Proto`. Code generated with `codec=json`,
-the default, gives `Rpc.Call Rpc.Json` calls; `codec=proto` gives
-`Rpc.Call Rpc.Proto`; and `codec=both` gives calls free in the codec,
-which a client of either sends. An annotation that named
+parameter, `Rpc.Json` or `Rpc.Proto`. The calls of a `.Json` module are
+`Rpc.Call Rpc.Json` and those of a `.Proto` module `Rpc.Call Rpc.Proto`.
+An annotation that named
 `Rpc.Call req res` gains the parameter: `Rpc.Call Rpc.Json req res`
 for one codec, or a variable shared with the client for a function over
 any call.
@@ -140,9 +157,7 @@ A build of `main` before 0.2 failed that call at run time with
 `Rpc.Error.MissingCodec`, which is gone. What reads a call's JSON or
 picks its binding takes a JSON call: `Rpc.Call.viaBinding`,
 `requestJson` and `toJson`, and `Proto.Method.encodeRequest` and
-`responseDecoder` of a method. A call generated under `codec=both` is
-pinned to `Rpc.Json` where one of them is applied, as a call of 0.1's
-always was.
+`responseDecoder` of a method, as every call of 0.1's was.
 
 ## The pure halves
 
@@ -368,7 +383,8 @@ JSON.
 
 - Every message gets both codecs, proto3 JSON and protobuf binary, its
   typed value and its package's `registry`, whatever the options say.
-  `codec` says which codecs the service methods are wired with:
+  `codec` says which codecs the service methods are wired with, by the
+  calls modules it writes ([The calls module](#the-calls-module)):
   `codec=proto` (CLI `--codec proto`) binary, `codec=both` either, and
   the default, `codec=json`, proto3 JSON as 0.1's were. A
   build of `main` before 0.2 named the binary codecs alone

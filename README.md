@@ -118,10 +118,11 @@ service NotesService {
 ```
 
 `elm-connect gen -I proto notes/v1/notes.proto --out generated` writes
-`Notes.V1`, the types and their JSON codecs, and `Notes.V1.NotesService`,
+`Notes.V1`, the types and their JSON codecs, `Notes.V1.NotesService`,
+the method descriptors and HTTP routes, and `Notes.V1.NotesService.Json`,
 one function per method:
 
-```elm examples/notes/elm/generated/Notes/V1/NotesService.elm excerpt
+```elm examples/notes/elm/generated/Notes/V1/NotesService/Json.elm excerpt
 getNote : Notes.V1.GetNoteRequest -> Rpc.Call Rpc.Json Notes.V1.GetNoteRequest Notes.V1.Note
 ping : () -> Rpc.Call Rpc.Json () ()
 ```
@@ -134,7 +135,7 @@ A call goes over either protocol, from the same generated code:
 
 ```elm examples/notes/elm/src/Snippets/Sending.elm#sending
 import Notes.V1
-import Notes.V1.NotesService as Notes
+import Notes.V1.NotesService.Json as Notes
 import Rpc
 import Rpc.Protocol
 
