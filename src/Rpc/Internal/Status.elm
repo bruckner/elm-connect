@@ -182,10 +182,10 @@ connectDetail detail =
                         (Proto.Internal.Any.Any url
                             (case Json.Decode.decodeValue (optional "debug" (Json.Decode.map Just Json.Decode.value) Nothing) detail of
                                 Ok (Just json) ->
-                                    Proto.Internal.Any.Both binary json
+                                    Proto.Internal.Any.Both (Proto.Internal.Any.blob binary) json
 
                                 _ ->
-                                    Proto.Internal.Any.Binary binary
+                                    Proto.Internal.Any.Binary (Proto.Internal.Any.blob binary)
                             )
                         )
 

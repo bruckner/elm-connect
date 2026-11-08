@@ -1151,10 +1151,12 @@ In detail:
   protobuf-es, whatever codec the calls use. One type, no codec
   phantom: binary is the canonical form and proto3 JSON a projection
   through a registry (`Proto.Registry`, §3.9). It holds the binary as
-  `Bytes`, which `==` does not see (Elm's `==` finds any two `Bytes`
-  equal), and beside it the message's JSON when it was read from JSON or
-  packed (§3.10), which `==` does see; `equal` compares the type URL and
-  the binary alone, and is the only comparison of two `Any`s. `pack` (prefix `type.googleapis.com/`) and
+  `Bytes` with its width and a 32-bit content hash taken when the `Any`
+  is made, so that `==` tells two binaries apart unless their hashes
+  collide (Elm's `==` finds any two `Bytes` equal), and beside it the
+  message's JSON when it was read from JSON or packed (§3.10), which
+  `==` sees too; `equal` compares the type URL and the binary alone,
+  byte for byte. `pack` (prefix `type.googleapis.com/`) and
   `packWith` (another prefix) take the message's typed value (§3.9) and
   a value; `tryUnpack` gives the value or a `Problem`, `TypeMismatch`
   naming the type inside or `InvalidProto` for binary that is not the

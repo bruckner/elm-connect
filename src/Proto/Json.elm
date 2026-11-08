@@ -2206,7 +2206,7 @@ anyWith registry =
                     Just ( url, message ) ->
                         case InternalRegistry.toBytes (InternalRegistry.strict registry) (InternalAny.nameOf url) message of
                             Just (Ok binary) ->
-                                Json.Decode.succeed (InternalAny.Any url (InternalAny.Both binary message))
+                                Json.Decode.succeed (InternalAny.Any url (InternalAny.Both (InternalAny.blob binary) message))
 
                             Just (Err problem) ->
                                 if InternalRegistry.isLenient registry then

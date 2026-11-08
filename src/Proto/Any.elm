@@ -70,11 +70,11 @@ one with [`pack`](#pack), or decode one, and read it with the functions here.
 
 An `Any` read from proto3 JSON, or packed, also keeps its message's JSON
 beside the binary, so that writing it as JSON again needs no conversion.
-Do not compare `Any`s with `==`: it does not see the binary, which is
-`Bytes` (two `Any`s of one type URL holding different messages are `==`),
-and it does see that JSON (an `Any` read from binary and the same one read
-from JSON are not). Compare two `Any`s with [`equal`](#equal), which reads
-the type URL and the binary alone.
+`==` compares the binary by its width and a 32-bit hash of its content
+(two `Any`s holding different messages are `==` only if the hashes
+collide), and it sees that JSON: an `Any` read from binary and the same one
+read from JSON are not `==`. Compare two `Any`s with [`equal`](#equal),
+which reads the type URL and the binary alone, byte for byte.
 
 An `Any` of a type the registry lacks, read through a
 [lenient](Proto-Registry#lenient) registry, holds its JSON alone, and no
@@ -132,7 +132,7 @@ packWith : String -> Message a -> a -> Any
 packWith prefix ((InternalMessage.Message _ codecs) as message) value =
     let
         binary () =
-            Bytes.Encode.encode (codecs.encode value)
+            Internal.blob (Bytes.Encode.encode (codecs.encode value))
     in
     Internal.Any (prefixed prefix message)
         (case codecs.encodeJson (Registry.Registry Registry.Lossless Dict.empty) value of
@@ -254,9 +254,9 @@ equal (Internal.Any leftUrl left) (Internal.Any rightUrl right) =
                     Json.Encode.encode 0 leftJson == Json.Encode.encode 0 rightJson
 
                 _ ->
-                    case ( Internal.bytesOf left, Internal.bytesOf right ) of
-                        ( Just leftBytes, Just rightBytes ) ->
-                            Internal.sameBytes leftBytes rightBytes
+                    case ( Internal.blobOf left, Internal.blobOf right ) of
+                        ( Just leftBlob, Just rightBlob ) ->
+                            Internal.sameBlob leftBlob rightBlob
 
                         _ ->
                             False
@@ -292,7 +292,7 @@ toJson registry ((Internal.Any url payload) as any) =
             else
                 Err (UnregisteredType url)
 
-        ( False, Internal.Binary binary ) ->
+        ( False, Internal.Binary (Internal.Blob _ _ binary) ) ->
             case Registry.toJson registry (typeName any) binary of
                 Just (Ok json) ->
                     Ok json
