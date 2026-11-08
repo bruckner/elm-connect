@@ -1,6 +1,6 @@
 module Proto.Binary exposing
     ( decode, encode, Decoder, map
-    , Codec
+    , Codec, mapCodec
     , merge, field, fieldInto, repeated, mapEntry, insertBool, skip
     , implicit, optional, present, list, listUnpacked, dict, boolMap
     , double, float
@@ -43,7 +43,7 @@ outside ±(2^53 − 1).
 
 # Codecs
 
-@docs Codec
+@docs Codec, mapCodec
 
 
 # Decoding a message
@@ -154,6 +154,25 @@ type Codec a
         , writeBody : a -> Encoder
         , readBody : Int -> D.Decoder a
         , readInto : a -> D.Decoder ( Int, a )
+        }
+
+
+{-| A codec whose values are held as another type: `there` converts each
+value read, `back` each value to write. Descriptor-driven code holds every
+field's values in one union this way.
+-}
+mapCodec : (a -> b) -> (b -> a) -> Codec a -> Codec b
+mapCodec there back (Codec c) =
+    Codec
+        { wire = c.wire
+        , read = D.map (Tuple.mapSecond there) c.read
+        , write = back >> c.write
+        , isDefault = back >> c.isDefault
+        , zero = there c.zero
+        , packable = c.packable
+        , writeBody = back >> c.writeBody
+        , readBody = \length -> D.map there (c.readBody length)
+        , readInto = \existing -> D.map (Tuple.mapSecond there) (c.readInto (back existing))
         }
 
 

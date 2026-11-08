@@ -1,6 +1,7 @@
 module Proto.Registry exposing
     ( Registry, empty, union, unionAll, wellKnown
     , withCodecs, toJson, toBytes
+    , fromDescriptors
     )
 
 {-| The table an [`Any`](Proto-Any#Any) resolves through: each message's codecs
@@ -23,6 +24,11 @@ as `Proto.Internal.Registry.Registry`, its name inside the package.
 
 @docs withCodecs, toJson, toBytes
 
+
+# From descriptors
+
+@docs fromDescriptors
+
 -}
 
 import Bytes exposing (Bytes)
@@ -32,6 +38,8 @@ import Json.Decode exposing (Decoder)
 import Json.Encode exposing (Value)
 import Proto.Any exposing (Problem)
 import Proto.Binary
+import Proto.Descriptors exposing (Descriptors)
+import Proto.Internal.Dynamic as Dynamic
 import Proto.Internal.Registry as Internal
 import Proto.Json
 
@@ -156,3 +164,32 @@ total typeName decoder encode codec =
         (Proto.Binary.messageEncoder codec)
         (Proto.Binary.messageDecoder codec)
         (\_ -> encode >> Ok)
+
+
+{-| A registry of every message the descriptors hold, converting each by
+walking its descriptor rather than through generated codecs. An `Any` a
+message holds converts through the registry the entry is called through, so
+a union with a codec registry serves both. The descriptors must hold every
+type a converted message's fields refer to; a package's generated
+`descriptors` holds its imports' and the well-known types.
+
+    Proto.Registry.fromDescriptors Notes.V1.descriptors
+
+-}
+fromDescriptors : Descriptors -> Registry
+fromDescriptors descriptors =
+    let
+        table =
+            Dynamic.compile descriptors
+    in
+    Dynamic.names table
+        |> List.map
+            (\name ->
+                ( name
+                , { toJson = \registry binary -> Dynamic.toJson registry table name binary
+                  , toBytes = \registry json -> Dynamic.toBytes registry table name json
+                  }
+                )
+            )
+        |> Dict.fromList
+        |> Internal.Registry
