@@ -28,6 +28,7 @@ reads it back.
 
 import Json.Encode exposing (Value)
 import Proto.Any exposing (Problem)
+import Proto.Codec exposing (Json)
 import Proto.Internal.Method
 import Proto.Method exposing (Idempotency, Method)
 import Proto.Registry exposing (Registry)
@@ -140,13 +141,17 @@ its `additional_bindings` in order. `Nothing` when the method has no binding
 of that number; a method without a rule has none, and its call goes over the
 implicit route. Connect has no use for bindings and ignores the choice.
 
+Transcoding speaks JSON, so a binding is chosen on a JSON call: one generated
+under `codec=both`, free in the codec, becomes a `Call Rpc.Json`, and one
+generated under `codec=proto` is refused by the compiler.
+
     Notes.getNote { name = "users/7/notes/42" }
         |> Rpc.Call.viaBinding 1
         |> Maybe.map (Rpc.send client GotNote)
         |> Maybe.withDefault Cmd.none
 
 -}
-viaBinding : Int -> Call codec req res -> Maybe (Call codec req res)
+viaBinding : Int -> Call Json req res -> Maybe (Call Json req res)
 viaBinding index (Internal.Call c) =
     if index >= 0 && index < routeCount c.method then
         Just (Internal.Call { c | binding = index })
@@ -155,7 +160,7 @@ viaBinding index (Internal.Call c) =
         Nothing
 
 
-routeCount : Method codec req res -> Int
+routeCount : Method Json req res -> Int
 routeCount (Proto.Internal.Method.Method m) =
     List.length m.routes
 
@@ -226,28 +231,20 @@ requestMessage (Internal.Call c) =
 
 {-| The request's proto3 JSON, writing an `Any` it holds through the
 registry, as a call over JSON sends it (see
-[`Proto.Any.Problem`](Proto-Any#Problem) for why that can fail); `Ok null`
-for a call of a method generated with protobuf binary codecs alone
-(`codec=proto`). A request that reaches no `Any` ignores the registry.
+[`Proto.Any.Problem`](Proto-Any#Problem) for why that can fail). A request
+that reaches no `Any` ignores the registry. It takes a JSON call: one
+generated under `codec=proto` has no JSON, and is refused by the compiler.
 -}
-requestJson : Registry -> Call codec req res -> Result Problem Value
+requestJson : Registry -> Call Json req res -> Result Problem Value
 requestJson registry (Internal.Call c) =
-    let
-        (Proto.Internal.Method.Method m) =
-            c.method
-    in
-    if m.codecs.json then
-        Proto.Method.encodeRequest registry c.method c.message
-
-    else
-        Ok Json.Encode.null
+    Proto.Method.encodeRequest registry c.method c.message
 
 
 {-| The call as JSON, `{"service": …, "method": …, "procedure": …, "request": …}`,
 for logs,
 deduplication keys or a queue of calls to send later, its request written
-as [`requestJson`](#requestJson) writes it. Per-call adjustments are not
-included.
+as [`requestJson`](#requestJson) writes it, so it too takes a JSON call.
+Per-call adjustments are not included.
 
 Two calls of one method with equal requests give the same JSON, so compare
 calls by this, as `==` on the calls themselves fails at run time:
@@ -256,7 +253,7 @@ calls by this, as `==` on the calls themselves fails at run time:
         == Result.map (Json.Encode.encode 0) (Rpc.Call.toJson registry b)
 
 -}
-toJson : Registry -> Call codec req res -> Result Problem Value
+toJson : Registry -> Call Json req res -> Result Problem Value
 toJson registry c =
     requestJson registry c
         |> Result.map

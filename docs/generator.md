@@ -188,8 +188,8 @@ getEntry =
 ```
 
 `Proto.Binary.encode` and `Proto.Binary.decode` run the binary codecs
-on a whole body. `Proto.Method.hasJson` tells a method wired with
-`proto` apart. Its calls are `Rpc.Call Rpc.Proto req res`, which only a
+on a whole body. A method wired with `proto` is told apart by its type.
+Its calls are `Rpc.Call Rpc.Proto req res`, which only a
 `Rpc.Protocol.connectProto` or `grpcWeb` client sends: transcoding
 speaks JSON only, so such a method gets no route functions and its
 messages no query encoders.

@@ -1040,7 +1040,11 @@ revisited before 1.0. Where: design §2, §5.1, §5.2, §5.3.
 
 ### Fillers, not optional halves
 
-*2026-10-27.*
+*2026-10-27; on 2026-11-07 which halves are real stopped being data on
+the method: `Rpc.Call.viaBinding`, `requestJson` and `toJson`, and
+`Proto.Method.encodeRequest` and `responseDecoder`, take a JSON call or
+method, so the codec carries the fact once and `Proto.Method.hasJson`
+and the method's flags went.*
 
 A method holds both codec halves always: the half its builder was not
 given is a leaf filler, `\_ -> Json.Encode.null` with a failing decoder,
@@ -1056,9 +1060,9 @@ over a runtime with no bytes wire at all, against 195 to 250 B with the
 (590 B gzipped on a minimal program). What is given up: an impossible
 pairing, unreachable through the builders, would read as an ordinary
 decode failure, not as the broken invariant. Which halves are real
-stays data on the method (and on a message, for `Proto.Any.pack`), read
-only by what reports on it, never by sending. Where: design §4, §5.2,
-§5.3.
+was data on the method, read only by what reported on it, never by
+sending, until the readers were typed at `Json` (above). Where: design
+§4, §5.2, §5.3.
 
 ### Modifiers install behaviour
 

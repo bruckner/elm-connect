@@ -216,26 +216,21 @@ requests =
 methods : Test
 methods =
     describe "a method's codecs"
-        [ test "hasJson is whether the method was built with JSON codecs" <|
+        [ test "a call free in the codec reads as a JSON call" <|
             \_ ->
-                [ Proto.Method.hasJson (Rpc.Call.method (jsonOnly { name = "x" }))
-                , Proto.Method.hasJson (Rpc.Call.method (binaryOnly { name = "x" }))
-                , Proto.Method.hasJson (Rpc.Call.method (both { name = "x" }))
-                ]
-                    |> Expect.equal [ True, False, True ]
-        , test "requestJson is null for a method with binary codecs alone" <|
-            \_ ->
-                [ Rpc.Call.requestJson Proto.Registry.empty (binaryOnly { name = "x" })
-                , Rpc.Call.requestJson Proto.Registry.empty (both { name = "x" })
-                , Rpc.Call.requestJson Proto.Registry.empty (jsonOnly { name = "x" })
-                ]
-                    |> List.map (Result.map (Json.Encode.encode 0))
-                    |> Expect.equal [ Ok "null", Ok "{\"name\":\"x\"}", Ok "{\"name\":\"x\"}" ]
-        , test "toJson of a binary-only call holds a null request and still names the method" <|
-            \_ ->
-                Rpc.Call.toJson Proto.Registry.empty (binaryOnly { name = "x" })
+                -- Which halves are real is the codec: `requestJson`, `toJson`
+                -- and `viaBinding` take a `Call Rpc.Json`, so a `codec=both`
+                -- call is pinned to JSON by them, and a binary-only call
+                -- does not compile with them.
+                ( Rpc.Call.requestJson Proto.Registry.empty (both { name = "x" })
                     |> Result.map (Json.Encode.encode 0)
-                    |> Expect.equal (Ok "{\"service\":\"notes.v1.Notes\",\"method\":\"GetNote\",\"procedure\":\"/notes.v1.Notes/GetNote\",\"request\":null}")
+                , Rpc.Call.toJson Proto.Registry.empty (both { name = "x" })
+                    |> Result.map (Json.Encode.encode 0)
+                )
+                    |> Expect.equal
+                        ( Ok "{\"name\":\"x\"}"
+                        , Ok "{\"service\":\"notes.v1.Notes\",\"method\":\"GetNote\",\"procedure\":\"/notes.v1.Notes/GetNote\",\"request\":{\"name\":\"x\"}}"
+                        )
         , test "a binary-only call over Connect proto sends the method's binary and reads the answer by responseBytes" <|
             \_ ->
                 ( Rpc.request proto (binaryOnly { name = "x" })

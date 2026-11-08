@@ -1,6 +1,6 @@
 module Proto.Method exposing
     ( Method, init, initJson, initProto, withIdempotency, withRoutes, withBindings
-    , encodeRequest, responseDecoder, hasJson
+    , encodeRequest, responseDecoder
     , Descriptor, descriptor
     , service, name, idempotency, input, output, bindings
     , Idempotency(..)
@@ -37,7 +37,7 @@ other union.
 
 # Reading a typed value
 
-@docs encodeRequest, responseDecoder, hasJson
+@docs encodeRequest, responseDecoder
 
 
 # Descriptors
@@ -112,7 +112,6 @@ initJson serviceName methodName encode decoder =
         { service = serviceName
         , name = methodName
         , idempotency = IdempotencyUnknown
-        , codecs = { json = True, binary = False }
         , json = { encode = encode, decoder = decoder }
         , binary = Internal.noBinary
         , routes = []
@@ -131,7 +130,6 @@ initProto serviceName methodName encode decoder =
         { service = serviceName
         , name = methodName
         , idempotency = IdempotencyUnknown
-        , codecs = { json = False, binary = True }
         , json = Internal.noJson
         , binary = binaryHalf encode decoder
         , routes = []
@@ -162,7 +160,6 @@ init serviceName methodName encode decoder encodeBinary binaryDecoder =
         { service = serviceName
         , name = methodName
         , idempotency = IdempotencyUnknown
-        , codecs = { json = True, binary = True }
         , json = { encode = encode, decoder = decoder }
         , binary = binaryHalf encodeBinary binaryDecoder
         , routes = []
@@ -222,30 +219,22 @@ withBindings methodBindings (Internal.Method m) =
 
 
 {-| A request as proto3 JSON, writing an `Any` it holds through the registry
-(see [`Proto.Any.Problem`](Proto-Any#Problem) for why that can fail);
-`Ok null` for a method built with [`initProto`](#initProto), which has no
-JSON codecs.
+(see [`Proto.Any.Problem`](Proto-Any#Problem) for why that can fail). It
+takes a method with JSON codecs: one built with [`initProto`](#initProto)
+has none, and is refused by the compiler.
 -}
-encodeRequest : Registry -> Method codec req res -> req -> Result Problem Json.Encode.Value
+encodeRequest : Registry -> Method Proto.Codec.Json req res -> req -> Result Problem Json.Encode.Value
 encodeRequest registry (Internal.Method m) req =
     m.json.encode registry req
 
 
 {-| The response's proto3 JSON decoder, reading an `Any` it holds through the
-registry; one that always fails for a method built with
-[`initProto`](#initProto).
+registry, for a method with JSON codecs, as for
+[`encodeRequest`](#encodeRequest).
 -}
-responseDecoder : Registry -> Method codec req res -> Json.Decode.Decoder res
+responseDecoder : Registry -> Method Proto.Codec.Json req res -> Json.Decode.Decoder res
 responseDecoder registry (Internal.Method m) =
     m.json.decoder registry
-
-
-{-| Whether the method has proto3 JSON codecs: `False` for one built with
-[`initProto`](#initProto).
--}
-hasJson : Method codec req res -> Bool
-hasJson (Internal.Method m) =
-    m.codecs.json
 
 
 {-| What the proto says about a method, as data: its service and name, its
