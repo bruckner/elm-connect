@@ -155,7 +155,9 @@ type alias StatusError =
     body) whose type, its URL here, the client's registry has no entry for.
     Register the type ([`Rpc.withRegistry`](Rpc#withRegistry)); for
     `google.rpc` details such as `ErrorInfo` or `BadRequest`, that is
-    [`Proto.ErrorDetails.registry`](Proto-ErrorDetails#registry).
+    [`Proto.ErrorDetails.registry`](Proto-ErrorDetails#registry). A
+    [lenient](Proto-Registry#lenient) registry reads it instead, as its
+    JSON alone.
   - `InvalidDetail`: it is not a detail of its form: a Connect detail with
     no `type`, or whose `value` is not base64; proto3 JSON with no
     `"@type"`, or that is not the message its `"@type"` names; or, over

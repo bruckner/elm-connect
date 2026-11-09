@@ -275,8 +275,8 @@ What `Rpc.Error` gives the application:
 
 So convert errors when the client reads details; `google.rpc.BadRequest`'s
 field violations, for one, only arrive that way. Give the client
-`Proto.ErrorDetails.registry` too, or the details read as
-`UnregisteredType`. Either
+`Proto.ErrorDetails.registry` too, or a lenient registry, or the details
+read as `UnregisteredType`. Either
 way the runtime reads the code from the status, not from the HTTP
 status.
 

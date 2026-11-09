@@ -112,7 +112,7 @@ registry, as an `Any` of it converts.
 -}
 json : Registry -> String -> Bytes -> Maybe String
 json registry name binary =
-    Any.toJson registry (Proto.Internal.Any.Any ("type.googleapis.com/" ++ name) (Proto.Bytes.toBase64 binary))
+    Any.toJson registry (Proto.Internal.Any.Any ("type.googleapis.com/" ++ name) (Proto.Internal.Any.Binary (Proto.Bytes.toBase64 binary)))
         |> Result.toMaybe
         |> Maybe.map (Json.Encode.encode 0)
 
@@ -125,7 +125,8 @@ bytes registry name fields =
     Json.Decode.decodeValue (Proto.Json.anyWith registry)
         (Json.Encode.object (( "@type", Json.Encode.string ("type.googleapis.com/" ++ name) ) :: fields))
         |> Result.toMaybe
-        |> Maybe.map (Any.bytes >> Proto.Bytes.toBase64)
+        |> Maybe.andThen Any.bytes
+        |> Maybe.map Proto.Bytes.toBase64
 
 
 suite : Test
@@ -184,7 +185,7 @@ suite =
         , test "a missing type is named by its URL, and binary that is not the message is InvalidProto" <|
             \_ ->
                 ( Proto.Json.encodeAnyWith Registry.empty (Any.pack (messageLeaf "t.Leaf") "hi")
-                , Any.toJson (leaf "t.Leaf" Registry.empty) (Proto.Internal.Any.Any "type.googleapis.com/t.Leaf" "/w==")
+                , Any.toJson (leaf "t.Leaf" Registry.empty) (Proto.Internal.Any.Any "type.googleapis.com/t.Leaf" (Proto.Internal.Any.Binary "/w=="))
                 , Json.Decode.decodeString (Proto.Json.anyWith Registry.empty) """{"@type":"example.com/t.Leaf","text":"hi"}"""
                     |> Result.mapError (Json.Decode.errorToString >> String.contains "\"example.com/t.Leaf\"")
                 )

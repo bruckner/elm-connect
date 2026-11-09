@@ -225,7 +225,7 @@ fromBody code message =
 -}
 forms : Result Rpc.Error.DetailProblem Proto.Any.Any -> Result Rpc.Error.DetailProblem ( String, String )
 forms =
-    Result.map (\detail -> ( Proto.Any.typeUrl detail, Proto.Bytes.toBase64 (Proto.Any.bytes detail) ))
+    Result.map (\detail -> ( Proto.Any.typeUrl detail, Maybe.withDefault "(JSON alone)" (Maybe.map Proto.Bytes.toBase64 (Proto.Any.bytes detail)) ))
 
 
 {-| An error's details that were read and unpack as this message.
@@ -679,6 +679,36 @@ responses =
                               ]
                             )
                         , Err [ Rpc.Error.UnregisteredType "type.googleapis.com/google.protobuf.Duration", noType ]
+                        )
+        , test "a lenient client registry reads a Status body's detail of a type it lacks as JSON alone, which unpacks" <|
+            \_ ->
+                let
+                    body =
+                        """{"code":5,"message":"no note","details":[{"@type":"type.googleapis.com/notes.v1.Note","title":"hi"},{"@type":"type.googleapis.com/google.protobuf.Duration","value":"2s"},{"no":"type"},{"@type":"type.googleapis.com/notes.v1.Note","title":7}]}"""
+
+                    read registry =
+                        Rpc.response (Rpc.withRegistry registry base) (getNote { name = "x" }) (Http.BadStatus_ (metadata 404 "Not Found") body)
+                            |> Result.mapError
+                                (\error ->
+                                    ( ( detailsOf title error
+                                      , detailsOf Proto.WellKnown.duration error |> List.map Proto.Duration.toMilliseconds
+                                      )
+                                    , case error of
+                                        RpcStatus r _ ->
+                                            List.map (Result.map (Proto.Any.bytes >> (/=) Nothing)) r.details
+                                                |> List.map (Result.mapError (\_ -> ()))
+
+                                        _ ->
+                                            []
+                                    )
+                                )
+                in
+                ( read (Proto.Registry.lenient Proto.Registry.empty)
+                , read (Proto.Registry.lenient noteRegistry)
+                )
+                    |> Expect.equal
+                        ( Err ( ( [ "hi" ], [ 2000 ] ), [ Ok False, Ok False, Err (), Ok False ] )
+                        , Err ( ( [ "hi" ], [ 2000 ] ), [ Ok True, Ok False, Err (), Err () ] )
                         )
         , test "a Status body's detail of a registered type that is not its message is InvalidDetail with its URL" <|
             \_ ->

@@ -85,7 +85,7 @@ compared =
 
 
 names : Registry -> List String
-names (Proto.Internal.Registry.Registry entries) =
+names (Proto.Internal.Registry.Registry _ entries) =
     Dict.keys entries
 
 

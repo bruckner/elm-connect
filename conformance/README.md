@@ -436,9 +436,13 @@ Connect; `readMaxBytes` and `writeMaxBytes` apply
 `Rpc.Protocol.withReadMaxBytes` and `withWriteMaxBytes` to any
 protocol; `registry` sets the client's registry (`Rpc.withRegistry`):
 `empty` (the default, as a client starts), `errorDetails`
-(`Proto.ErrorDetails.registry` alone) or `build` (every package of the
+(`Proto.ErrorDetails.registry` alone), `build` (every package of the
 build and the well-known types, `Live.Codec.registry`, which a call over
-JSON whose messages hold an `Any` needs); and the rest are the
+JSON whose messages hold an `Any` needs) or `lenient`
+(`Proto.Registry.lenient Proto.Registry.empty`, under which a detail of
+any type is held as its JSON; the runner writes such a detail as its
+`google.rpc` typed value, so a case's expected JSON says it unpacks); and
+the rest are the
 `Rpc.Client` settings. `retry` builds an
 `Rpc.Retry` from `codes` and `attempts`, with `backoff` (default 0),
 `maxBackoff` (default the runtime's), `idempotentOnly` (default false) and

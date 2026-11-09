@@ -328,7 +328,10 @@ JSON.
 - Proto3 JSON of an `Any` goes through a registry: `Proto.Json.anyWith
   registry` and `encodeAnyWith registry` replace `any` and `encodeAny`.
   An `"@type"` the registry lacks fails the read, naming the URL, and
-  the write gives `UnregisteredType`, as protojson does.
+  the write gives `UnregisteredType`, as protojson does; 0.1 kept such
+  an `Any` as JSON. `Proto.Registry.lenient` makes a registry keep it as
+  JSON again, with no binary (`Proto.Any.bytes` is a `Maybe`), written as
+  protobuf binary as its type URL alone.
 - A message's typed value holds its full name and both codecs:
   `Proto.Message.init "notes.v1.Note" encodeNote decodeNote
   encodeNoteBytes decodeNoteBytes` (`initWith` for one that reaches an

@@ -175,7 +175,7 @@ connectDetail detail =
                     |> Maybe.andThen canonicalBase64
             of
                 Just base64 ->
-                    Ok (Proto.Internal.Any.Any url base64)
+                    Ok (Proto.Internal.Any.Any url (Proto.Internal.Any.Binary base64))
 
                 Nothing ->
                     Err (Error.InvalidDetail (Just url) "a Connect detail whose value is not base64")

@@ -45,7 +45,7 @@ calling:
 | `Proto.Http` | a method's `google.api.http` rule as data, in its descriptor or for a method written by hand |
 | `Proto.WellKnown` | the well-known types' typed values |
 | `Proto.Descriptors` | descriptors by full name |
-| `Proto.Registry` | the codecs an `Any` is written as protobuf binary with |
+| `Proto.Registry` | the table an `Any` is converted through between proto3 JSON and protobuf binary, strict until made lenient |
 | `Proto.Any` | `google.protobuf.Any`: packing, unpacking and describing |
 | `Proto.Version` | the releases generated code can name ([install.md](install.md#versions)) |
 

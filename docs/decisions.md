@@ -1220,11 +1220,79 @@ convert through (about 14 KB gz on a 31-message package, about 50 B
 gz a message, half of it binary machinery), and each operation on a
 message holding an `Any` costs 43–58 µs instead of 1–3 µs, 15–39×
 slower, the JSON-to-binary round trip through base64 and elm/bytes.
-A cache of the JSON beside the binary, and a lenient registry that
-holds an unknown type as JSON, were spiked and are deferred to a later
-change; the default stays strict (design §1.2's rule: correctness
-first, the cheaper or laxer reading an opt-in). Where: design §3.5,
-§3.10, §5.5.
+A lenient registry that holds an unknown type as JSON landed after it
+(Lenient registries hold JSON-only payloads); a cache of the JSON beside
+the binary was spiked and dropped (An Any has one shape, so `==` is
+exact). The default stays strict (design §1.2's rule: correctness first,
+the cheaper or laxer reading an opt-in). Where: design §3.5, §3.10,
+§5.5.
+
+### An Any has one shape, so `==` is exact
+
+*2026-11-09.*
+
+Under a strict registry an `Any` has one shape, the base64 text of its
+binary, however it was read or packed, so `==` compares content exactly.
+A cache of the JSON beside the binary was built and dropped: it made
+writing a JSON-read `Any` back as JSON about 40× faster, but Elm's `==`
+walks every field, so two shapes for one message broke `==` on the
+`Any`, on every generated message that reaches one through any field and
+on every application model holding one, and per-message equality
+functions are not a library a user can trust by default. A lenient
+registry's JSON-alone `Any` is the one exception, and an opt-in (below).
+
+### Lenient registries hold JSON-only payloads
+
+*2026-11-07.*
+
+`Proto.Registry.lenient` marks a registry so that a proto3 JSON read of
+an `Any` of a type it lacks holds the `Any` as its JSON alone instead of
+failing. Such an `Any` is written back as JSON as it arrived, unpacks
+with its message's JSON decoder, has no binary (`Proto.Any.bytes :
+Any -> Maybe Bytes`, `Nothing` for it), and is written as protobuf
+binary as its type URL alone. That write loses the message, and is the
+accepted cost: a program that passes `Any`s along over JSON loses
+nothing, and one that sends them over binary tests `bytes` first or
+registers the type. The read keeps the loss to the JSON-alone state: a
+registered type is read strictly first and is held as JSON alone only
+when an `Any` inside it is unknown, and `pack` holds a message holding
+a JSON-alone `Any` as JSON alone, so an `Any` whose `bytes` is `Just`
+never has binary that dropped something, but for the one edge design
+§3.10 names (a message holding an `Any` of each state).
+
+It is opt-in because the strict reading is protojson's, and a type
+the program never registered is more often a mistake than a choice; a
+lenient registry makes the miss silent. Its documentation is the
+place a program learns the trade: when it is safe (passing through,
+reading a few types by their typed values), what it costs (the lossy
+binary write), and that the failure it removes is `UnregisteredType`.
+It is on the registry, not on the client, because the registry is
+what every read takes, at any depth: a decoder given a lenient table
+reads its nested `Any`s leniently whatever calls it, `Proto.Json`
+codecs used without a client included, and a union carries the mark,
+lenient when any side is, so a lenient piece cannot be dropped by
+composing it with a strict one. A client knob would cover only the
+client's reads. `Proto.Any.bytes` became a `Maybe`: the binary
+canonical `Any` was not released with `bytes : Any -> Bytes`, so this
+breaks no release, but adding the state after one would have been a
+major. `==` compares two JSON-alone `Any`s by Elm's structural equality
+on their JSON, which is not protobuf's equality (one written with its
+defaults differs from one without), and never finds one equal to an
+`Any` holding binary, since without a registry the two cannot be
+compared: the documented exception to one shape, which a strict
+registry never produces. Weighed: a lenient flag on the client
+(misses `Proto.Json` reads), a `{"type", "value"}` fallback (a form
+readers refuse), and leaving the state out (a transcoder's
+`google.rpc` details then need `Proto.ErrorDetails.registry`, which
+stays the strict way to read them). Measured: the state costs every
+program bytes, the no-`Any` floor 98 B gz (15,343 → 15,441) and the
+notes example over JSON 178–203; the notes
+example over JSON given `Proto.Registry.lenient Proto.Registry.empty`
+instead of its table is 30,409 B gz, against 33,897 with
+`Notes.V1.registry` alone and 36,516 with its full table, since no
+entry and none of their codecs are reached; and reading a 1 KB `Any`
+through that lenient empty table took 3.4 µs, unpacking it 3.7, against
+62–76 for the strict read. Where: design §3.10, §3.5, §5.4.
 
 ### Normalized per-package registries
 

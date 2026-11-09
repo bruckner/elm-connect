@@ -172,21 +172,6 @@ application that never transcodes. Deferred until requested: today such
 an application deletes the `google.api.http` annotations from the
 protos it generates from. A minor (a new option).
 
-## `Any`: a cache and a lenient registry
-
-An `Any` holds binary, and its JSON is converted through the client's
-registry each time, which costs a program holding one 43–58 µs per
-operation against 1–3 µs for one without. Two opt-ins were spiked and
-deferred: keeping the JSON an `Any` was read from beside its binary, so
-that writing it back as JSON or unpacking it with the JSON decoder
-skips the round trip (about 33× faster on a send, 25–57 B gz for every
-program); and a lenient registry, which holds an `Any` of a type it
-lacks as its JSON instead of failing the read, for a program that
-passes `Any`s through without unpacking them (it would read a
-transcoder's `google.rpc` details without `Proto.ErrorDetails`, 80–179
-B gz). Both are minors: additions to `Proto.Registry` and internal
-states of `Any`. The default stays strict.
-
 ## Validation
 
 Checking a request on the client before it is sent, from what the
