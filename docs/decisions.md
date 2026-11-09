@@ -1253,7 +1253,14 @@ The alternative was the first draft's transitive table, each package's holding
 its imports' and the well-known types it holds: convenient, but it
 grows with every import, a program pays for types it never packs, and a
 missing type is found only when some package does not happen to import
-it. Where: design §3.10.
+it. The package's `descriptors` keeps the transitive form on purpose: a
+message descriptor names the messages its fields hold rather than
+containing them, so a `Descriptors` value is the environment those
+names resolve in and must be closed under reference, and that closure
+runs along the imports; a codec is closed over its fields' types, so a
+registry needs no such closure. The same split as Java's file
+descriptors carrying their dependencies against its `TypeRegistry`, or
+Go's `protoregistry.Files` against `Types`. Where: design §3.10.
 
 ### One table, the client's
 
