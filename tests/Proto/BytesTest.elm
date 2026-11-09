@@ -98,6 +98,47 @@ fromBase64Tests =
         , rejects "aGk!"
         , rejects "+/-_"
         , rejects "aGkß"
+        , rejects "AAß"
+        , rejects "AAAAAAAAAAAAAAß"
+        , rejects "AA\u{D800}="
+        , rejects "AAA\u{D800}"
+        , rejects "AAAAAAAAAAAAAAA\u{D800}"
+        , rejects (String.repeat 20 "A" ++ "+" ++ String.repeat 20 "A" ++ "_")
+        , rejects (String.repeat 16 "A" ++ "-" ++ String.repeat 16 "A" ++ "/A")
+        , test "a character outside base64 at any place in the text fails" <|
+            \_ ->
+                let
+                    valid =
+                        String.repeat 37 "Q"
+                in
+                List.range 0 36
+                    |> List.concatMap (\at -> List.map (\char -> String.left at valid ++ char ++ String.dropLeft (at + 1) valid) [ "!", "=", "ß", "\u{DC00}", "\u{0000}", "\u{007F}" ])
+                    |> List.filter (\text -> Proto.Bytes.fromBase64 text /= Nothing)
+                    |> Expect.equal []
+        , test "every ASCII character but padding, in each place of a group, is read only when it is base64" <|
+            \_ ->
+                let
+                    alphabet =
+                        "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/-_"
+
+                    accepted text =
+                        isJust (Proto.Bytes.fromBase64 text)
+
+                    expected code =
+                        String.contains (String.fromChar (Char.fromCode code)) alphabet
+                in
+                List.range 0 127
+                    |> List.filter ((/=) 0x3D)
+                    |> List.filter
+                        (\code ->
+                            let
+                                c =
+                                    String.fromChar (Char.fromCode code)
+                            in
+                            List.map accepted [ c ++ "AAA", "A" ++ c ++ "AA", "AA" ++ c ++ "A", "AAA" ++ c, "AA" ++ c, "A" ++ c ]
+                                /= List.repeat 6 (expected code)
+                        )
+                    |> Expect.equal []
         ]
 
 
@@ -115,6 +156,19 @@ toBase64Tests =
         , writes [ 0x68, 0x69, 0x21 ] "aGkh"
         , writes [ 0xFB, 0xFF, 0xBF ] "+/+/"
         , writes [ 0, 0, 0, 0 ] "AAAAAA=="
+        , test "every byte value, at every place in a group, writes as the reference does" <|
+            \_ ->
+                List.range 0 2
+                    |> List.map (\shift -> List.map (\i -> modBy 256 (i + shift)) (List.range 0 255))
+                    |> List.filter (\ints -> Proto.Bytes.toBase64 (fromList ints) /= Fuzzers.base64 ints)
+                    |> Expect.equal []
+        , test "lengths on either side of a piece of the text, and 10 KB, write as the reference does" <|
+            \_ ->
+                (List.range 0 8 ++ List.range 381 387 ++ List.range 765 771 ++ [ 7500 ])
+                    |> List.map (\length -> List.map (\i -> modBy 256 (i * 37 + length)) (List.range 1 length))
+                    |> List.filter (\ints -> Proto.Bytes.toBase64 (fromList ints) /= Fuzzers.base64 ints)
+                    |> List.map List.length
+                    |> Expect.equal []
         , test "empty holds no bytes" <|
             \_ -> Proto.Bytes.empty |> Bytes.width |> Expect.equal 0
         ]
