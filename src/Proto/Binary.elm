@@ -1443,7 +1443,7 @@ anyInto (InternalAny.Any start payload) =
                         skip wire ( url, current )
             )
             identity
-            >> D.map (\( url, current ) -> InternalAny.Any url (InternalAny.Binary (InternalAny.blob current)))
+            >> D.map (\( url, current ) -> InternalAny.Any url (InternalAny.Binary (InternalAny.held current)))
         )
 
 
