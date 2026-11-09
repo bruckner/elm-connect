@@ -175,7 +175,7 @@ it: a singular message field is
 [`CardinalitySingular`](Proto-Field#Cardinality) of a
 [`KindMessage`](Proto-Field#Kind), though Elm holds it as a `Maybe`. A field
 refers to a message by full name, never by value, so a message can contain
-itself; a [`Registry`](Proto-Registry) resolves the names.
+itself; [`Proto.Descriptors`](Proto-Descriptors) resolves the names.
 
     import Proto.Field
     import Proto.Message

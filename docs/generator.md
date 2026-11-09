@@ -215,8 +215,9 @@ those of the packages whose messages they hold. The binary encoders
 write an `Any` field with it (`Proto.Binary.anyWith binaryRegistry`),
 so that an `Any` read from proto3 JSON is written as its message's
 binary; one of a type it lacks is written with its type URL alone.
-`registry` stays descriptors only, so a program that reads descriptors
-keeps no codecs, and one that writes binary keeps no descriptors.
+`descriptors`, a `Proto.Descriptors.Descriptors`, holds no codecs, so
+a program that reads descriptors keeps no codecs, and one that writes
+binary keeps no descriptors.
 Under `codec=proto`, which has no JSON decoders, there is no
 `binaryRegistry`.
 

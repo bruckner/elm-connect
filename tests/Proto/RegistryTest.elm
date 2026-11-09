@@ -1,127 +1,66 @@
 module Proto.RegistryTest exposing (suite)
 
+import Bytes exposing (Bytes)
+import Bytes.Decode
+import Bytes.Encode
 import Expect
-import Proto.Enum as Enum
-import Proto.EnumValue as EnumValue
-import Proto.Field as Field exposing (Cardinality(..), Kind(..), Scalar(..))
-import Proto.Message as Message
-import Proto.Registry as Registry
+import Json.Decode
+import Json.Encode
+import Proto.Registry as Registry exposing (Registry)
 import Test exposing (Test, describe, test)
 
 
-note : String -> Message.Descriptor
-note title =
-    Message.descriptor "notes.v1.Note" [ Field.descriptor title title 1 CardinalitySingular (KindScalar ScalarString) ]
+{-| A codec that writes a JSON string as its UTF-8 bytes, behind `prefix`.
+-}
+withString : String -> String -> Registry -> Registry
+withString typeName prefix =
+    Registry.withBinary typeName Json.Decode.string (\json -> Bytes.Encode.string (prefix ++ json))
 
 
-visibility : Enum.Descriptor
-visibility =
-    Enum.descriptor "notes.v1.Visibility" [ EnumValue.descriptor "VISIBILITY_UNSPECIFIED" 0 ]
-
-
-fieldName : Maybe Message.Descriptor -> Maybe String
-fieldName =
-    Maybe.andThen (Message.fields >> List.head) >> Maybe.map Field.name
-
-
-resolves : Kind -> Bool
-resolves kind =
-    case kind of
-        KindMessage name ->
-            Registry.message name Registry.wellKnown /= Nothing
-
-        KindEnum descriptor ->
-            Registry.enum (Enum.typeName descriptor) Registry.wellKnown /= Nothing
-
-        KindScalar _ ->
-            True
+text : Maybe Bytes -> Maybe String
+text =
+    Maybe.andThen (\bytes -> Bytes.Decode.decode (Bytes.Decode.string (Bytes.width bytes)) bytes)
 
 
 suite : Test
 suite =
     describe "Proto.Registry"
-        [ test "a message and an enum by full name" <|
+        [ test "a message's JSON as binary, by full name" <|
             \_ ->
                 let
                     registry =
-                        Registry.fromDescriptors [ note "title" ] [ visibility ]
+                        withString "notes.v1.Note" "" Registry.empty
                 in
-                ( Registry.message "notes.v1.Note" registry |> Maybe.map Message.typeName
-                , Registry.enum "notes.v1.Visibility" registry |> Maybe.map Enum.typeName
-                , ( Registry.message "notes.v1.Visibility" registry, Registry.enum "notes.v1.Note" registry )
+                ( Registry.toBinary "notes.v1.Note" (Json.Encode.string "hi") registry |> text
+                , Registry.toBinary "notes.v1.Other" (Json.Encode.string "hi") registry |> text
                 )
-                    |> Expect.equal ( Just "notes.v1.Note", Just "notes.v1.Visibility", ( Nothing, Nothing ) )
+                    |> Expect.equal ( Just "hi", Nothing )
+        , test "JSON that is not the message's has no binary" <|
+            \_ ->
+                withString "notes.v1.Note" "" Registry.empty
+                    |> Registry.toBinary "notes.v1.Note" (Json.Encode.int 1)
+                    |> Expect.equal Nothing
         , test "the empty registry has nothing" <|
             \_ ->
-                ( Registry.messages Registry.empty, Registry.enums Registry.empty )
-                    |> Expect.equal ( [], [] )
-        , test "of two descriptors with one name, the first is kept" <|
+                Registry.toBinary "notes.v1.Note" (Json.Encode.string "hi") Registry.empty
+                    |> Expect.equal Nothing
+        , test "of two codecs for one name, the later is kept" <|
             \_ ->
-                Registry.fromDescriptors [ note "first", note "second" ] []
-                    |> Registry.message "notes.v1.Note"
-                    |> fieldName
-                    |> Expect.equal (Just "first")
+                Registry.empty
+                    |> withString "notes.v1.Note" "first:"
+                    |> withString "notes.v1.Note" "second:"
+                    |> Registry.toBinary "notes.v1.Note" (Json.Encode.string "hi")
+                    |> text
+                    |> Expect.equal (Just "second:hi")
         , test "a union keeps the left one's" <|
             \_ ->
-                Registry.union (Registry.fromDescriptors [ note "left" ] []) (Registry.fromDescriptors [ note "right" ] [ visibility ])
-                    |> (\registry -> ( Registry.message "notes.v1.Note" registry |> fieldName, List.length (Registry.enums registry) ))
-                    |> Expect.equal ( Just "left", 1 )
-        , test "a union of a diamond holds each type once" <|
-            \_ ->
-                let
-                    shared =
-                        Registry.fromDescriptors [ note "title" ] [ visibility ]
-                in
-                Registry.union (Registry.union shared Registry.wellKnown) (Registry.union shared Registry.wellKnown)
-                    |> (\registry -> ( List.length (Registry.messages registry), List.length (Registry.enums registry) ))
-                    |> Expect.equal ( 18, 2 )
-        , test "the well-known types" <|
-            \_ ->
-                Registry.messages Registry.wellKnown
-                    |> List.map Message.typeName
-                    |> Expect.equal
-                        [ "google.protobuf.Any"
-                        , "google.protobuf.BoolValue"
-                        , "google.protobuf.BytesValue"
-                        , "google.protobuf.DoubleValue"
-                        , "google.protobuf.Duration"
-                        , "google.protobuf.Empty"
-                        , "google.protobuf.FieldMask"
-                        , "google.protobuf.FloatValue"
-                        , "google.protobuf.Int32Value"
-                        , "google.protobuf.Int64Value"
-                        , "google.protobuf.ListValue"
-                        , "google.protobuf.StringValue"
-                        , "google.protobuf.Struct"
-                        , "google.protobuf.Timestamp"
-                        , "google.protobuf.UInt32Value"
-                        , "google.protobuf.UInt64Value"
-                        , "google.protobuf.Value"
-                        ]
-        , test "every type a well-known message refers to is in the registry" <|
-            \_ ->
-                Registry.messages Registry.wellKnown
-                    |> List.concatMap Message.fields
-                    |> List.filter (\field -> not (resolves (Field.kind field)))
-                    |> Expect.equal []
-        , test "Value is a oneof of its six kinds, and Struct a map of Values" <|
-            \_ ->
-                ( Registry.message "google.protobuf.Value" Registry.wellKnown
-                    |> Maybe.map (\value -> ( Message.oneofs value, List.map (\field -> ( Field.jsonName field, Field.oneof field )) (Message.fields value) ))
-                , Registry.message "google.protobuf.Struct" Registry.wellKnown
-                    |> Maybe.map (Message.fields >> List.map (\field -> ( Field.cardinality field, Field.kind field )))
-                )
-                    |> Expect.equal
-                        ( Just
-                            ( [ "kind" ]
-                            , [ ( "nullValue", Just "kind" )
-                              , ( "numberValue", Just "kind" )
-                              , ( "stringValue", Just "kind" )
-                              , ( "boolValue", Just "kind" )
-                              , ( "structValue", Just "kind" )
-                              , ( "listValue", Just "kind" )
-                              ]
+                Registry.union
+                    (withString "notes.v1.Note" "left:" Registry.empty)
+                    (Registry.empty |> withString "notes.v1.Note" "right:" |> withString "notes.v1.Tag" "right:")
+                    |> (\registry ->
+                            ( Registry.toBinary "notes.v1.Note" (Json.Encode.string "hi") registry |> text
+                            , Registry.toBinary "notes.v1.Tag" (Json.Encode.string "hi") registry |> text
                             )
-                        , Just [ ( CardinalityMap ScalarString, KindMessage "google.protobuf.Value" ) ]
-                        )
+                       )
+                    |> Expect.equal ( Just "left:hi", Just "right:hi" )
         ]

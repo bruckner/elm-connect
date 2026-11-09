@@ -36,10 +36,10 @@ codecs of an `Any` are [`Proto.Json.any`](Proto-Json#any) and
 -}
 
 import Json.Decode
+import Proto.Descriptors as Descriptors exposing (Descriptors)
 import Proto.Internal.Any as Internal exposing (Payload(..))
 import Proto.Internal.Message
 import Proto.Message as Message exposing (Message)
-import Proto.Registry as Registry exposing (Registry)
 
 
 {-| A packed message and its type URL. It is opaque: build one with
@@ -170,8 +170,8 @@ type Problem
 -- DESCRIBING
 
 
-{-| The descriptor of the packed message's type, if the registry has it.
+{-| The descriptor of the packed message's type, if the descriptors have it.
 -}
-describe : Registry -> Any -> Maybe Message.Descriptor
-describe registry any =
-    Registry.message (typeName any) registry
+describe : Descriptors -> Any -> Maybe Message.Descriptor
+describe descriptors any =
+    Descriptors.message (typeName any) descriptors

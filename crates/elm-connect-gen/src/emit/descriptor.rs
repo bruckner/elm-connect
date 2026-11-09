@@ -1,5 +1,5 @@
 //! The descriptors of a package's messages and enums, their typed values
-//! and the package's registry (design §3.9).
+//! and the package's descriptors by full name (design §3.9).
 //!
 //! A message's descriptor module, `Notes.V1.Note`, holds one
 //! `Proto.Field.Descriptor` per field, named as its record field
@@ -8,10 +8,10 @@
 //! Proto.Enum.Descriptor`. The package's module holds the typed values,
 //! `messageNote : Proto.Message.Message Note` and `enumVisibility :
 //! Proto.Enum.Enum Visibility`, each built from its type's codecs,
-//! default and descriptor, and `registry : Proto.Registry.Registry`,
-//! built from the descriptors alone; under `codec=both`, also
-//! `binaryRegistry`, built from codecs alone, which the binary encoders
-//! write an `Any` with.
+//! default and descriptor, and `descriptors :
+//! Proto.Descriptors.Descriptors`, built from the descriptors alone; under
+//! `codec=both`, also `binaryRegistry : Proto.Registry.Registry`, built
+//! from codecs alone, which the binary encoders write an `Any` with.
 
 use std::collections::BTreeSet;
 
@@ -19,8 +19,8 @@ use super::binary::{PROTO_BINARY, bytes_name, well_known_codec};
 use super::field::value_shape;
 use super::scalar::Holding;
 use super::{
-    Emitter, MessageShape, PROTO_ENUM, PROTO_ENUM_VALUE, PROTO_FIELD, PROTO_MESSAGE,
-    PROTO_REGISTRY, PROTO_WELL_KNOWN, RecordField, docs,
+    Emitter, MessageShape, PROTO_DESCRIPTORS, PROTO_ENUM, PROTO_ENUM_VALUE, PROTO_FIELD,
+    PROTO_MESSAGE, PROTO_REGISTRY, PROTO_WELL_KNOWN, RecordField, docs,
 };
 use crate::elm::ast::{Decl, Expr};
 use crate::elm::build::{apply, inline_list, int, lambda, list, pipe, pvar, string, ty, var};
@@ -28,7 +28,7 @@ use crate::ir::{
     Annotations, Cardinality, Doc, Enum, FieldBehavior, MapKey, ModuleName, Package, ScalarKind,
     TypeRef, WellKnown,
 };
-use crate::naming::{BINARY_REGISTRY, DESCRIPTOR_VALUE, ENCODER_ARGUMENT, REGISTRY};
+use crate::naming::{BINARY_REGISTRY, DESCRIPTOR_VALUE, DESCRIPTORS, ENCODER_ARGUMENT};
 
 /// One field or oneof member of a message, as its descriptor module
 /// declares it.
@@ -216,17 +216,17 @@ impl Emitter {
         }
     }
 
-    /// `registry : Proto.Registry.Registry`: the package's own descriptors,
-    /// then the registries of the generated packages its module imports,
+    /// `descriptors : Proto.Descriptors.Descriptors`: the package's own
+    /// descriptors, then those of the generated packages its module imports,
     /// each of which holds those of its own imports, then the well-known
     /// types'. Of two descriptors with one full name the first is kept,
     /// though a full name is never in two packages.
     ///
     /// It lists the descriptor modules' `descriptor` values, not the
     /// typed values: Elm's dead-code elimination keeps a top-level value
-    /// whole, so a registry built from `messageFoo` would keep every type's
-    /// codecs and default in a program that uses it.
-    pub(super) fn registry(&mut self, package: &Package) -> Decl {
+    /// whole, so descriptors built from `messageFoo` would keep every
+    /// type's codecs and default in a program that uses them.
+    pub(super) fn descriptors(&mut self, package: &Package) -> Decl {
         let messages: Vec<Expr> = package
             .messages
             .iter()
@@ -243,16 +243,16 @@ impl Emitter {
                 self.generated_value(&module, DESCRIPTOR_VALUE.to_owned())
             })
             .collect();
-        let union = self.reference((PROTO_REGISTRY, "union"));
+        let union = self.reference((PROTO_DESCRIPTORS, "union"));
         let mut parts: Vec<Expr> = Vec::new();
         if !messages.is_empty() || !enums.is_empty() {
-            let own = self.reference((PROTO_REGISTRY, "fromDescriptors"));
+            let own = self.reference((PROTO_DESCRIPTORS, "fromDescriptors"));
             parts.push(apply(own, [list(messages), list(enums)]));
         }
         for module in imported_packages(package) {
-            parts.push(self.generated_value(&module, REGISTRY.to_owned()));
+            parts.push(self.generated_value(&module, DESCRIPTORS.to_owned()));
         }
-        parts.push(self.reference((PROTO_REGISTRY, "wellKnown")));
+        parts.push(self.reference((PROTO_DESCRIPTORS, "wellKnown")));
         let body = parts
             .into_iter()
             .rev()
@@ -266,8 +266,8 @@ impl Emitter {
                  package site documents it once the runtime is published there).",
                 docs::runtime("Proto.Any", "Any")
             )),
-            name: REGISTRY.to_owned(),
-            annotation: self.library_type(PROTO_REGISTRY, "Registry", []),
+            name: DESCRIPTORS.to_owned(),
+            annotation: self.library_type(PROTO_DESCRIPTORS, "Descriptors", []),
             params: Vec::new(),
             body,
         }
@@ -282,7 +282,7 @@ impl Emitter {
     /// JSON alone, as one read from proto3 JSON does, is written as the
     /// message's binary.
     ///
-    /// It is apart from `registry` and built from the codecs, not the
+    /// It is apart from `descriptors` and built from the codecs, not the
     /// typed values, so that it brings no descriptors: a program that
     /// encodes a message holding an `Any` keeps every message's JSON
     /// decoder and binary encoder, and no more.

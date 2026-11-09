@@ -9,10 +9,10 @@ import Catalog.V1.GetEntryRequest
 import Catalog.V1.Part
 import Json.Decode
 import Json.Encode
+import Proto.Descriptors
 import Proto.Json
 import Proto.Message
 import Proto.Query
-import Proto.Registry
 import Proto.Version
 
 
@@ -35,11 +35,14 @@ elmConnectVersion_ =
 
   - [`name`](Catalog-V1-Entry#name)
   - [`descriptor`](Catalog-V1-Entry#descriptor_)
+  - [`descriptors`](Catalog-V1-Entry#descriptors): `descriptors` is a value here and in `Catalog.V1`, which holds the
+    package's descriptors, a module apart, so neither escapes.
 
 -}
 type alias Entry =
     { name : String
     , descriptor : String
+    , descriptors : String
     }
 
 
@@ -92,6 +95,7 @@ defaultEntry : Entry
 defaultEntry =
     { name = ""
     , descriptor = ""
+    , descriptors = ""
     }
 
 
@@ -144,17 +148,17 @@ messageGetEntryRequest =
 
 {-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) (its source at this release; the package site documents it once the runtime is published there).
 -}
-registry : Proto.Registry.Registry
-registry =
-    Proto.Registry.union
-        (Proto.Registry.fromDescriptors
+descriptors : Proto.Descriptors.Descriptors
+descriptors =
+    Proto.Descriptors.union
+        (Proto.Descriptors.fromDescriptors
             [ Catalog.V1.Entry.descriptor
             , Catalog.V1.Part.descriptor
             , Catalog.V1.GetEntryRequest.descriptor
             ]
             []
         )
-        Proto.Registry.wellKnown
+        Proto.Descriptors.wellKnown
 
 
 
@@ -168,6 +172,7 @@ encodeEntry value =
     Proto.Json.objectOfFields
         [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
         , ( "descriptor", Proto.Json.implicitField "" Json.Encode.string value.descriptor )
+        , ( "descriptors", Proto.Json.implicitField "" Json.Encode.string value.descriptors )
         ]
 
 
@@ -217,6 +222,7 @@ decodeEntry =
     Json.Decode.succeed Entry
         |> Proto.Json.field "name" "" Proto.Json.string
         |> Proto.Json.field "descriptor" "" Proto.Json.string
+        |> Proto.Json.field "descriptors" "" Proto.Json.string
 
 
 {-| Decodes a [`Part`](#Part) from proto3 JSON.

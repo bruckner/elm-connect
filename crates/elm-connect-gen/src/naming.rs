@@ -51,7 +51,7 @@ pub const REPOSITORY_BLOBS: &str = repository_blobs!();
 pub const REPOSITORY_FILES: &str = concat!(repository_blobs!(), env!("CARGO_PKG_VERSION"), "/");
 
 /// The runtime package's exposed modules, as its `elm.json` lists them.
-pub const RUNTIME_MODULES: [&str; 30] = [
+pub const RUNTIME_MODULES: [&str; 31] = [
     "Rpc",
     "Rpc.Call",
     "Rpc.Code",
@@ -72,6 +72,7 @@ pub const RUNTIME_MODULES: [&str; 30] = [
     "Proto.EnumValue",
     "Proto.Method",
     "Proto.Codec",
+    "Proto.Descriptors",
     "Proto.Registry",
     "Proto.WellKnown",
     "Proto.Any",
@@ -535,13 +536,18 @@ pub fn query_encoder_name(type_elm_name: &str) -> String {
 }
 
 /// The value holding a package's descriptors and those of every package
-/// it imports (`Proto.Registry.Registry`). Every other top-level value of a
-/// package module is a prefix and a type name, whose first letter is
-/// uppercase, so an all-lowercase name cannot be one of them.
+/// it imports (`Proto.Descriptors.Descriptors`). Every other top-level
+/// value of a package module is a prefix and a type name, whose first
+/// letter is uppercase, so an all-lowercase name cannot be one of them,
+/// though it starts with the prefix of a method's descriptor.
+pub const DESCRIPTORS: &str = "descriptors";
+
+/// A name kept for a package module's registry, all lowercase like
+/// [`DESCRIPTORS`] so that no prefix and type name can take it.
 pub const REGISTRY: &str = "registry";
 
 /// The value holding the binary codecs of a package's messages, under
-/// `codec=both` (`Proto.Registry.Registry` too). It starts with no prefix
+/// `codec=both` (`Proto.Registry.Registry`). It starts with no prefix
 /// [`default_name`] lists, so it is not a prefix and a type name either.
 pub const BINARY_REGISTRY: &str = "binaryRegistry";
 
@@ -557,7 +563,7 @@ pub const VERSION_VALUE: &str = "elmConnectVersion_";
 /// local name that shadows a top-level one, so no top-level value of a
 /// generated module may take this name; every top-level name generated
 /// today starts with one of the prefixes [`default_name`] lists, or is
-/// [`REGISTRY`], [`BINARY_REGISTRY`] or [`VERSION_VALUE`], or is a
+/// [`DESCRIPTORS`], [`BINARY_REGISTRY`] or [`VERSION_VALUE`], or is a
 /// method's.
 pub const ENCODER_ARGUMENT: &str = "value";
 
@@ -823,19 +829,26 @@ mod tests {
             assert!(prefixes.iter().all(|prefix| !name.starts_with(prefix)));
             assert_eq!(name, name.to_ascii_lowercase());
         }
+        // `descriptors` starts with a prefix, but a prefix and a type name
+        // continues in uppercase.
+        assert_eq!(DESCRIPTORS, DESCRIPTORS.to_ascii_lowercase());
+        assert_ne!(method_descriptor_name("s"), DESCRIPTORS);
         assert!(![ENCODER_ARGUMENT, ONEOF_MEMBER].contains(&REGISTRY));
+        assert!(![ENCODER_ARGUMENT, ONEOF_MEMBER, REGISTRY].contains(&DESCRIPTORS));
         assert!(
             prefixes
                 .iter()
                 .all(|prefix| !BINARY_REGISTRY.starts_with(prefix))
         );
-        assert!(![ENCODER_ARGUMENT, ONEOF_MEMBER, REGISTRY].contains(&BINARY_REGISTRY));
+        assert!(
+            ![ENCODER_ARGUMENT, ONEOF_MEMBER, REGISTRY, DESCRIPTORS].contains(&BINARY_REGISTRY)
+        );
         assert!(
             prefixes
                 .iter()
                 .all(|prefix| !VERSION_VALUE.starts_with(prefix))
         );
-        assert!(![ENCODER_ARGUMENT, ONEOF_MEMBER, REGISTRY].contains(&VERSION_VALUE));
+        assert!(![ENCODER_ARGUMENT, ONEOF_MEMBER, REGISTRY, DESCRIPTORS].contains(&VERSION_VALUE));
     }
 
     #[test]

@@ -14,12 +14,12 @@ JSON, and for a method without a rule, serves the implicit route.
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
+import Proto.Descriptors
 import Proto.Duration exposing (Duration)
 import Proto.Enum
 import Proto.Json
 import Proto.Message
 import Proto.Query
-import Proto.Registry
 import Proto.Route
 import Proto.Timestamp
 import Proto.Version
@@ -450,10 +450,10 @@ messageUpdateResourceRequest =
 
 {-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) (its source at this release; the package site documents it once the runtime is published there).
 -}
-registry : Proto.Registry.Registry
-registry =
-    Proto.Registry.union
-        (Proto.Registry.fromDescriptors
+descriptors : Proto.Descriptors.Descriptors
+descriptors =
+    Proto.Descriptors.union
+        (Proto.Descriptors.fromDescriptors
             [ Routes.V1.GetMessageRequest.descriptor
             , Routes.V1.GetMessageRequestSubMessage.descriptor
             , Routes.V1.Message.descriptor
@@ -468,7 +468,7 @@ registry =
             [ Routes.V1.Kind.descriptor
             ]
         )
-        Proto.Registry.wellKnown
+        Proto.Descriptors.wellKnown
 
 
 

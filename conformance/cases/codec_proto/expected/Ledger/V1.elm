@@ -18,10 +18,10 @@ import Ledger.V1.Entry
 import Ledger.V1.GetEntryRequest
 import Ledger.V1.Kind
 import Proto.Binary
+import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
 import Proto.Message
-import Proto.Registry
 import Proto.Version
 
 
@@ -148,17 +148,17 @@ messageGetEntryRequest =
 
 {-| The descriptors of this package's types, of the packages it imports and of the well-known types, by full name. It resolves the message types a descriptor names, and the type of a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) (its source at this release; the package site documents it once the runtime is published there).
 -}
-registry : Proto.Registry.Registry
-registry =
-    Proto.Registry.union
-        (Proto.Registry.fromDescriptors
+descriptors : Proto.Descriptors.Descriptors
+descriptors =
+    Proto.Descriptors.union
+        (Proto.Descriptors.fromDescriptors
             [ Ledger.V1.Entry.descriptor
             , Ledger.V1.GetEntryRequest.descriptor
             ]
             [ Ledger.V1.Kind.descriptor
             ]
         )
-        Proto.Registry.wellKnown
+        Proto.Descriptors.wellKnown
 
 
 
