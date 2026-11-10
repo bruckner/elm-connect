@@ -2,7 +2,7 @@
 //! decoder (design §3.6).
 
 use super::field::{ValueShape, Zeroed};
-use super::{Emitter, JSON_DECODE, JSON_ENCODE, OneofShape, PROTO_ANY, PROTO_JSON, docs};
+use super::{Emitter, JSON_DECODE, JSON_ENCODE, OneofShape, PROTO_ERROR, PROTO_JSON, docs};
 use crate::elm::ast::{Decl, Expr, Type, Variant};
 use crate::elm::build::{apply, case, list, pctor, pvar, qualified, string, ty, ty_fn, var};
 use crate::ir::{Message, ModuleName};
@@ -98,7 +98,7 @@ impl Emitter {
         let value_type = self.library_type(JSON_ENCODE, "Value", []);
         let maybe = ty(self.core("Maybe"), [value_type]);
         let member = if with {
-            let problem = self.library_type(PROTO_ANY, "Problem", []);
+            let problem = self.library_type(PROTO_ERROR, "Error", []);
             ty(self.core("Result"), [problem, maybe])
         } else {
             maybe

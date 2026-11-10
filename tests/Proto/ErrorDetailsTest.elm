@@ -6,6 +6,7 @@ import Json.Decode
 import Json.Encode
 import Proto.Any as Any
 import Proto.Duration as Duration
+import Proto.Error
 import Proto.ErrorDetails as ErrorDetails
 import Proto.Json
 import Proto.Registry as Registry
@@ -46,7 +47,7 @@ suite =
         , test "the registry holds no well-known type" <|
             \_ ->
                 Proto.Json.encodeAnyWith ErrorDetails.registry (Any.pack Proto.WellKnown.duration (Duration.fromMilliseconds 1))
-                    |> Expect.equal (Err (Any.UnregisteredType "type.googleapis.com/google.protobuf.Duration"))
+                    |> Expect.equal (Err (Proto.Error.UnregisteredType "type.googleapis.com/google.protobuf.Duration"))
         , test "a RetryInfo's delay unpacks" <|
             \_ ->
                 Json.Decode.decodeString (Proto.Json.anyWith (Registry.union ErrorDetails.registry Registry.empty)) """{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"2s"}"""

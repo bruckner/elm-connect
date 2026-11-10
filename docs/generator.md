@@ -214,7 +214,7 @@ wrapper that reaches an `Any`, through its fields at any depth and
 across packages, has JSON codecs taking one, `decodeNoteWith :
 Proto.Registry.Registry -> Json.Decode.Decoder Note` and
 `encodeNoteWith : Proto.Registry.Registry -> Note -> Result
-Proto.Any.Problem Json.Encode.Value`, and no `decodeNote` or
+Proto.Error.Error Json.Encode.Value`, and no `decodeNote` or
 `encodeNote`. A type named for one of them with `With` at the end
 (`NoteWith`) is `naming::codec_collision`.
 

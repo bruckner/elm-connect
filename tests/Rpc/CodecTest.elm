@@ -338,7 +338,7 @@ answers =
             \_ ->
                 readBytes proto (Http.GoodStatus_ (metadata 200 []) (bytesOf [ 0x0A, 0x05, 0x68 ]))
                     |> codeAndMessage
-                    |> Expect.equal (Err ( Internal, "bad response body: the body is not the response of notes.v1.Notes/GetNote in protobuf binary" ))
+                    |> Expect.equal (Err ( Internal, "bad response body: Not a notes.v1.Title in protobuf binary: the input ends in the middle of a field, at byte 1, in field 1 of notes.v1.Title." ))
         , test "an error answer is JSON whatever the codec, its body kept as text" <|
             \_ ->
                 readBytes proto (Http.BadStatus_ (metadata 404 [ ( "content-type", "application/json" ) ]) (utf8 "{\"code\":\"not_found\",\"message\":\"no note\"}"))

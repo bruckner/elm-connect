@@ -27,7 +27,7 @@ unpacks with these values and no registry. Over transcoding, a
 `google.rpc.Status` body carries them as proto3 JSON, which the client reads
 through its registry: give it [`registry`](#registry)
 ([`Rpc.withRegistry`](Rpc#withRegistry)), or the details read as
-[`UnregisteredType`](Rpc-Error#DetailProblem).
+[`UnregisteredType`](Proto-Error#Error).
 
 `google.rpc.Status` itself is not here: [`Rpc.Error`](Rpc-Error) reads it.
 

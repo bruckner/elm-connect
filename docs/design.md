@@ -1154,19 +1154,20 @@ In detail:
   base64 text, so that `==` compares two by content (Elm's `==` finds any
   two `Bytes` equal). `pack` (prefix `type.googleapis.com/`) and
   `packWith` (another prefix) take the message's typed value (§3.9) and
-  a value; `tryUnpack` gives the value or a `Problem`, `TypeMismatch`
-  naming the type inside or `InvalidProto` for binary that is not the
-  message, and `unpack` is that as a `Maybe`. `is` tests the type,
+  a value; `tryUnpack` gives the value or a `Proto.Error.Error`
+  (§5.4), `TypeMismatch` naming the type asked for and the URL inside or
+  `BadBinary` for binary that is not the message (`BadJson` for an `Any`
+  a lenient registry holds as JSON alone, read with the message's JSON
+  decoder), and `unpack` is that as a `Maybe`. `is` tests the type,
   `typeUrl` and `typeName` read it, `bytes` reads the binary (`Nothing`
   for one a lenient registry holds as JSON alone, §3.10), `toJson
   registry` gives the payload's proto3 JSON (for showing an `Any`, and
   what the JSON encoder writes), and `describe` looks its descriptor up
-  in `Proto.Descriptors`. `Problem` holds only what can happen, and each
-  constructor's documentation says what to do about it: `toJson` gives
-  `UnregisteredType` with the type URL for a type the registry lacks,
-  `InvalidProto`, or `UnwritableAny` with the outer URL when the message
-  holds an `Any` that cannot be written (an entry erases its message's
-  own problem, since `Proto.Message` cannot name `Proto.Any`'s type).
+  in `Proto.Descriptors`. `toJson` gives `UnregisteredType` with the
+  type URL for a type the registry lacks, or the `BadBinary` of binary
+  that is not the message; an `Any` the message holds, at any depth,
+  fails the same ways, named by its own type, since a message's codecs
+  carry `Proto.Error`, which sits below `Proto.Message`.
   `Proto.WellKnown.any : Message Any` is its typed value, and
   `Proto.WellKnown.descriptors` holds its tree (`type_url`, `value`).
 - `Any` on the wire is proto3 JSON's: the packed message's own object
@@ -1196,7 +1197,7 @@ In detail:
   fields at any depth and across packages, recursion included
   (`ir::reach`), has JSON codecs taking the registry:
   `decodeNoteWith : Registry -> Decoder Note` and `encodeNoteWith :
-  Registry -> Note -> Result Problem Value`, built from `Proto.Json`'s
+  Registry -> Note -> Result Proto.Error.Error Value`, built from `Proto.Json`'s
   `try` field encoders, and no `decodeNote` or `encodeNote`: a total
   encoder would need a fallback form, and a decoder bound to the
   package's own registry would read only that package's `Any`s. A
@@ -2257,7 +2258,7 @@ than `IDEMPOTENCY_UNKNOWN`, `withRoutes` when the method has a rule
   JSON, the response field the answer is read from, and `invalid`, the
   first path value its variable's template cannot match: the route is
   built whatever the request holds, so `Rpc.request` can show any
-  request, and sending refuses an invalid one (`InvalidPathValue`,
+  request, and sending refuses an invalid one (`BadPathValue`,
   §5.1). Encoders are total: they cannot refuse a value, so what a
   request cannot carry is found by sending, never by encoding. The
   path reads each variable's field (through `Maybe.map` for a
@@ -2420,7 +2421,7 @@ descriptor; the runtime never parses a template.
   repeated one (`routes_well_known_path` case).
 - The client checks a value against its variable's template
   (`notes/42` against `notes/*`) before sending: one that cannot match
-  is refused unsent with `NoAnswer (InvalidPathValue { field, template
+  is refused unsent with `NoAnswer (BadPathValue { field, template
   })` (§5.1), since no server could route it to the method.
 - `body` is empty, `*`, or a top-level singular message field
   (`route::body_field` otherwise). A path variable inside the body field
@@ -2632,7 +2633,7 @@ appears, each a field of the opaque record and a minor (roadmap).
   `sendTraced`, `task`, `taskTraced`, `taskFromRequest`) checks the
   client's and the call's headers first, and a call with one fails
 
-  with `NoAnswer (InvalidHeader name)`, nothing sent and never retried
+  with `NoAnswer (BadHeader name)`, nothing sent and never retried
   (the trace's `attempts` is `0`, as for a bad `baseUrl`). A header is
   never altered to fit: a changed credential would fail later and less
   clearly. The pure `Rpc.request` still builds the request, which has
@@ -2640,7 +2641,7 @@ appears, each a field of the opaque record and a minor (roadmap).
 - A transcoded call whose path value its variable's template cannot
   match is never handed to elm/http either: every way of sending checks
   the call's path values, and one that cannot match fails with
-  `NoAnswer (InvalidPathValue { field, template })`, the field by its
+  `NoAnswer (BadPathValue { field, template })`, the field by its
   JSON names joined with `.`, nothing sent and never retried. A value
   matches as `google.api.http` defines it: it is non-empty; a variable
   of one segment (`{name}`, `{name=*}`, or a literal alone, which only
@@ -3332,22 +3333,18 @@ type Error
     | NoAnswer Reason                   -- nothing came back, nothing was sent, or the answer was refused unread
 
 type Reason                             -- frozen (§8.3)
-    = Timeout | NetworkError | BadUrl String | InvalidHeader String
-    | InvalidPathValue { field : String, template : String }
+    = Timeout | NetworkError | BadUrl String | BadHeader String
+    | BadPathValue { field : String, template : String }
     | RequestTooLarge { limit : Int, size : Int }
     | ResponseTooLarge { limit : Int, size : Int }
-    | UnwritableRequest Proto.Any.Problem
+    | UnwritableRequest Proto.Error.Error
 
 type alias StatusError =                -- frozen (§8.3)
     { code : Rpc.Code.Code
     , message : String
-    , details : List (Result DetailProblem Proto.Any.Any)   -- in wire order
+    , details : List (Result Proto.Error.Error Proto.Any.Any)   -- in wire order
     , source : Source
     }
-
-type DetailProblem
-    = UnregisteredType String           -- the type URL; register the type
-    | InvalidDetail (Maybe String) String  -- the type URL if the entry named one; what was wrong
 
 type Source
     = ConnectBody                       -- {"code": "not_found", …}
@@ -3441,7 +3438,7 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
   `BadResponse` its own, which the runtime gives it, and a `NoAnswer`
   by its reason: `Timeout`
   `DeadlineExceeded`, `NetworkError` `Unavailable`, `BadUrl` and
-  `InvalidHeader` and `UnwritableRequest` `Internal`, `InvalidPathValue`
+  `BadHeader` and `UnwritableRequest` `Internal`, `BadPathValue`
   `InvalidArgument` (a server checking the value would say so),
   `RequestTooLarge` and `ResponseTooLarge` `ResourceExhausted`. So a client timeout reads as
   `DeadlineExceeded` through `code`, while the constructor
@@ -3450,7 +3447,9 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
   "<name>"`, `path field "<field>" does not match <template>`, the
   value left out, connect-es's `message size <size> is larger than
   configured writeMaxBytes <limit>` and `… readMaxBytes <limit>`,
-  `bad response body: <problem>`), and `toString` is the code and the message for all of
+  `unwritable request: ` and `Proto.Error.toString`'s text,
+  `bad response body: <problem>`, a binary body's problem
+  `Proto.Error.toString`'s text too), and `toString` is the code and the message for all of
   them. elm/json's problem quotes the JSON it rejected, which can be
   the whole response, so the message keeps the first 300 characters of
   it and `…`; the whole problem stays in the error. A bad URL is
@@ -3465,7 +3464,7 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
   problem says what. A bad URL, an invalid header, an invalid path
   value and a request over the write limit are never retried,
   whatever the policy's codes: nothing was sent, and nothing would
-  change. `InvalidHeader` has its home here rather than in a
+  change. `BadHeader` has its home here rather than in a
   constructor of its own beside `NoAnswer`, since it is one more reason
   nothing was sent (§5.1).
 - `ResponseTooLarge { limit, size }` is the answer over the receive limit
@@ -3488,12 +3487,11 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
   major forces none here; `BadResponse` keeps the answer, the status
   and body a developer most needs when a schema drifts (decisions.md:
   Errors by what came back).
-- **Error details are `List (Result DetailProblem Any)`**, in wire order:
-  `Any` is the type `google.rpc.Status` holds (§3.5), and a detail that
-  cannot be read says why rather than vanishing. A detail problem never
-  fails the status read: the code, message and source are kept. The
-  reasons are `String`s, for a log line, so that `Error` stays
-  comparable with `==`. The three wire forms:
+- **Error details are `List (Result Proto.Error.Error Any)`**, in wire
+  order: `Any` is the type `google.rpc.Status` holds (§3.5), and a detail
+  that cannot be read says why rather than vanishing, with the proto
+  layer's own error (below). A detail problem never fails the status
+  read: the code, message and source are kept. The three wire forms:
   - **A Connect body detail**, `{"type": <name>, "value": <base64
     binary>, "debug": <JSON, optional>}`: `value` is the message's
     binary, so it reads into `Ok (Any url bytes)` with no registry,
@@ -3501,14 +3499,19 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
     base64 in either alphabet, padded or not, held in the canonical form
     (checked on the text, so reading an error reaches no bytes code).
     `debug` is not read. A detail with no `type`, or whose `value` is not
-    base64, is `Err (InvalidDetail …)`.
+    base64, is `Err (BadJson …)`, elm/json's error over the detail.
   - **A `google.rpc.Status` body detail** (transcoding: grpc-gateway,
     Envoy, Vanguard) is a proto3 JSON `Any`, converted to binary through
     the client's registry (§5.2): an `"@type"` the registry lacks is
     `Err (UnregisteredType url)`, or, under a lenient registry, `Ok` with
-    the `Any` held as its JSON alone (§3.10), a known type whose JSON is
-    not its message `Err (InvalidDetail (Just url) reason)`, and an entry
-    with no `"@type"` `Err (InvalidDetail Nothing reason)`. The status is read
+    the `Any` held as its JSON alone (§3.10), and a known type whose JSON
+    is not its message, and an entry with no `"@type"`, `Err (BadJson …)`.
+    The miss is found in the JSON decoder's failure after the fact: the
+    only channel out of a `Json.Decode.Decoder` is `Json.Decode.Error`,
+    and the `Any` decoder fails a type it lacks with the `Any`'s object
+    as the leaf failure's value, which `Proto.Registry.unregistered`
+    reads (its `"@type"`, not in the registry); messages are for people,
+    the value for programs. The status is read
     without the registry where the protocol reads the answer, and its
     details again through the client's in the plan (`Status.completeDetails`).
     `Proto.ErrorDetails.registry` holds `google/rpc/error_details.proto`'s
@@ -3516,13 +3519,15 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
     the fix for these details.
   - **gRPC-Web's `grpc-status-details-bin`**: a binary `google.rpc.Status`
     whose details are each `Ok`; a header that does not decode is one
-    `Err (InvalidDetail Nothing …)` standing for the whole list.
+    `Err (BadBinary …)` of `google.rpc.Status` standing for the whole
+    list (a header that is not base64 at all, `Truncated` at byte 0).
   Details a proxy stripped (Envoy forwards none over transcoding, §7)
   are `[]`, not a problem. Unpack one with `Proto.Any.tryUnpack` and the
   type's typed value (`Proto.ErrorDetails.badRequest`, or a generated
   one); there is no reader of typed details beside it (decisions.md:
   Error details as results). A call's trace names its detail problems
-  (`detailProblems` in `Rpc.Trace.toJson`, and a count in `toString`), so
+  (`detailProblems` in `Rpc.Trace.toJson`, each its
+  `Proto.Error.toString`, and a count in `toString`), so
   a logged trace shows them without code.
 - **`Proto.ErrorDetails`** is written by hand like `Proto.WellKnown`:
   Elm records and typed values of `google/rpc/error_details.proto`'s
@@ -3545,7 +3550,9 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
 
 `Proto.Error` is the one error type of the `Proto` modules, a leaf
 that imports only elm/json, so every module below `Proto.Any` can
-carry it.
+carry it: a message's codecs (`Proto.Message`) and the registry's
+entries hold it, so a nested `Any`'s failure reaches the caller as it
+was, never erased to a failure of the outer one.
 
 ```elm
 -- Proto.Error
@@ -3577,7 +3584,30 @@ toString : Error -> String              -- for a log, as Json.Decode.errorToStri
   failure unwinds. Field names are not in it: a decoder carries message
   names and field numbers, and `Proto.Descriptors` holds the names.
   `Unlocated` is the decoder's backstop, reachable only through a bug in
-  its readers.
+  its readers. `Proto.Descriptors.fieldName descriptors typeName number`
+  gives a path entry's declared field name, for a program that keeps
+  descriptors and wants names in a report; `Proto.Error` stays a leaf.
+- **The names.** `typeName` is always the full name of the type the
+  program asked for (the message it decoded, the typed value it
+  unpacked with); `typeUrl` is what came off the wire, an `Any`'s type
+  URL. `UnregisteredType` takes the URL alone, so it is bare;
+  `TypeMismatch` is a record, since its two strings need telling apart.
+  `BadJson` carries elm/json's error alone: its path locates the
+  failure, and a type name would have to be plumbed from every caller.
+- **What each operation gives.**
+
+  | Operation | Gives | Fails with |
+  |---|---|---|
+  | `Proto.Binary.decode` | `Result Binary a` | the report |
+  | `Proto.Any.tryUnpack` | `Result Error a` | `TypeMismatch`, `BadBinary` |
+  | `Proto.Any.toJson`, `Proto.Json.encodeAnyWith`, generated `encodeNoteWith` | `Result Error Value` | `UnregisteredType`, or the `BadBinary` of the `Any` that failed, at any depth, named by its own type |
+  | `Proto.Json.anyWith`, generated `decodeNoteWith` | `Json.Decode.Decoder` | elm/json's error; `Proto.Registry.unregistered` names a registry miss in it |
+  | `Rpc.Error.UnwritableRequest` | `Error` | as `encodeNoteWith` |
+  | `StatusError.details` | `List (Result Error Any)` | `UnregisteredType`, `BadJson`, `BadBinary` (above) |
+
+  A binary answer that is not the response stays a `BadResponse`, an
+  answer read but not understood, its problem `toString` of its
+  `BadBinary`.
 - `toString` holds every reason's text, one clause each, with the path
   innermost first and the offset: `Not a notes.v1.Note in protobuf
   binary: a string is not UTF-8, at byte 36, in field 1 of
@@ -4435,7 +4465,7 @@ Within a major version:
   `BehaviorUnknown Int` holding a number this release does not name, so
   that naming it later is a minor), `Proto.Method.Idempotency`,
   `Rpc.Code`, and `Rpc.Error`'s `Error`, `Reason` (`Timeout`,
-  `NetworkError`, `BadUrl`, `InvalidHeader`, `InvalidPathValue`,
+  `NetworkError`, `BadUrl`, `BadHeader`, `BadPathValue`,
   `RequestTooLarge`,
   `ResponseTooLarge`) and `Source` (with `ConnectEndStream` reserved
   for server streaming, which reads a status from there, so that it can

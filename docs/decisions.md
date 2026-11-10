@@ -1479,6 +1479,55 @@ without being threaded through them. An option to read every string of
 a generation unchecked is deferred until someone asks (operator,
 2026-11-10). Where: design §5.5.
 
+### One error type for the proto layer
+
+*2026-11-10.*
+
+`Proto.Error.Error = BadBinary Binary | BadJson Json.Decode.Error |
+TypeMismatch { typeName, typeUrl } | UnregisteredType String`, in a
+leaf module that imports only elm/json. The proto layer had grown four
+shapes one at a time: `Proto.Any.Problem` (four constructors serving
+three operations, each with a branch it could not reach),
+`Proto.Internal.Registry.Failure` (an erased twin of a nested write
+failure, which is why `UnwritableAny` named the outer `Any` instead of
+the one that failed), `Rpc.Error.DetailProblem` (a second
+`UnregisteredType`, and a `member` check that rebuilt a reason after the
+fact) and `Maybe` from every binary decoder. The erasure came from
+`Proto.Message` sitting below `Proto.Any` and Elm exposing a custom
+type's constructors only from its defining module; a leaf below
+`Proto.Message` lets a message's codecs and the registry's entries carry
+the type, so a nested failure reaches the caller as it was.
+
+The middle ground between one union and a type per operation: an
+operation that fails one way gives that way's record
+(`Proto.Binary.decode` gives a `Binary`), and one that fails several
+ways, or lifts another's failure, gives the union. Weighed: a type per
+operation, as SwiftProtobuf's `BinaryDecodingError`, `JSONDecodingError`
+and `AnyUnpackError` (each exact, but an operation that lifts another's
+failure, a JSON write of a message holding an `Any` whose binary does
+not decode, needs a sum of them anyway, and a caller logging any of them
+wants one `toString`); one union for everything, `Binary` folded in
+(every caller of `decode` would match constructors it cannot get); and
+Java's single exception class (no structure to match on). The names
+follow elm/http and `Rpc.Error`: `Bad*` for what came in wrong,
+`UnregisteredType` rather than protobuf's "unknown", which means fields
+a reader does not model. `typeName` is always the type the program
+asked for and `typeUrl` what came off the wire. `BadJson` carries
+elm/json's error alone, whose path locates a failure; a type name would
+have to be plumbed from every caller, and a method holding its message
+types would keep a JSON program's binary codecs alive.
+
+A registry miss while reading JSON can leave a decoder only as
+`Json.Decode.Error`, so it is found after the fact:
+`Proto.Registry.unregistered` reads the leaf failure whose value is the
+`Any`'s object and whose `"@type"` the registry lacks, rather than a
+message convention; messages are for people. `Rpc.Error.BadResponse`
+keeps its shape: a binary answer that is not the response is an answer
+read but not understood, and its problem is now the report's text.
+`Rpc.Error.Reason`'s `InvalidHeader` and `InvalidPathValue` became
+`BadHeader` and `BadPathValue` in the same pass, the module's `Bad*`
+form (operator, 2026-11-10). Where: design §5.4.
+
 ## Input and versioning
 
 

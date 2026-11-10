@@ -29,6 +29,7 @@ gives one per well-known type.
 import Bytes.Encode
 import Json.Decode
 import Json.Encode
+import Proto.Error
 import Proto.Field as Field
 import Proto.Internal.Binary
 import Proto.Internal.Message as Internal
@@ -59,7 +60,7 @@ the package site may show as `Proto.Internal.Binary.Decoder`.
 init : String -> (a -> Json.Encode.Value) -> Json.Decode.Decoder a -> (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> Message a
 init name encodeJson decodeJson encodeBinary decodeBinary =
     Internal.Message name
-        { encodeJson = \_ value -> Just (encodeJson value)
+        { encodeJson = \_ value -> Ok (encodeJson value)
         , decodeJson = \_ -> decodeJson
         , encodeBinary = encodeBinary
         , decodeBinary = decodeBinary
@@ -69,17 +70,18 @@ init name encodeJson decodeJson encodeBinary decodeBinary =
 {-| [`init`](#init) for a message that holds a `google.protobuf.Any`, directly
 or through its fields: its proto3 JSON codecs take the registry the `Any`
 converts through, and its encoder can fail, with a
-[`Proto.Any.Problem`](Proto-Any#Problem) as generated code writes it (the
-type is free here because `Proto.Any` is built on this module).
+[`Proto.Error.Error`](Proto-Error#Error): the `Any`'s type is not in the
+registry (`UnregisteredType`), or its binary is not that type's message
+(`BadBinary`), at any depth.
 
     messageEnvelope =
         Proto.Message.initWith "notes.v1.Envelope" encodeEnvelopeWith decodeEnvelopeWith encodeEnvelopeBytes decodeEnvelopeBytes
 
 -}
-initWith : String -> (Registry -> a -> Result problem Json.Encode.Value) -> (Registry -> Json.Decode.Decoder a) -> (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> Message a
+initWith : String -> (Registry -> a -> Result Proto.Error.Error Json.Encode.Value) -> (Registry -> Json.Decode.Decoder a) -> (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> Message a
 initWith name encodeJson decodeJson encodeBinary decodeBinary =
     Internal.Message name
-        { encodeJson = \registry value -> Result.toMaybe (encodeJson registry value)
+        { encodeJson = encodeJson
         , decodeJson = decodeJson
         , encodeBinary = encodeBinary
         , decodeBinary = decodeBinary

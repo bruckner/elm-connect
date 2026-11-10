@@ -152,8 +152,8 @@ crossed convert hand generated =
 encodeJson : Message a -> a -> String
 encodeJson (Internal.Message _ c) value =
     c.encodeJson Proto.Registry.empty value
-        |> Maybe.map (Json.Encode.encode 0)
-        |> Maybe.withDefault "unwritable"
+        |> Result.map (Json.Encode.encode 0)
+        |> Result.withDefault "unwritable"
 
 
 decoder : Message a -> Json.Decode.Decoder a

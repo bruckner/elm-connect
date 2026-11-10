@@ -1,6 +1,7 @@
 module Proto.Registry exposing
     ( Registry, empty, register, union, unionAll
     , lenient
+    , unregistered
     )
 
 {-| The table a [`google.protobuf.Any`](Proto-Any#Any) is converted through
@@ -24,9 +25,10 @@ package's own messages and nothing else), and gives it to its client
             ]
 
 An `Any` of a type the registry lacks is a loud miss: reading it from JSON
-fails, and writing it gives [`UnregisteredType`](Proto-Any#Problem) naming
-its type URL. A program that passes such `Any`s along without knowing their
-types can make its registry [`lenient`](#lenient) instead.
+fails, which [`unregistered`](#unregistered) tells apart from other
+failures, and writing it gives [`UnregisteredType`](Proto-Error#Error)
+naming its type URL. A program that passes such `Any`s along without
+knowing their types can make its registry [`lenient`](#lenient) instead.
 
 A message's codecs are closed over its fields' types, and each entry takes
 the registry it is read through, so an `Any` nested in a registered message
@@ -52,15 +54,22 @@ as `Proto.Internal.Registry.Registry`, its name inside the package.
 
 @docs lenient
 
+
+# Reading a failure
+
+@docs unregistered
+
 -}
 
 import Bytes.Encode
 import Dict
 import Json.Decode
 import Proto.Bytes
+import Proto.Error exposing (Error(..))
+import Proto.Internal.Any
 import Proto.Internal.Binary
 import Proto.Internal.Message as Message exposing (Message)
-import Proto.Internal.Registry as Internal exposing (Failure(..))
+import Proto.Internal.Registry as Internal
 
 
 {-| Messages' codecs by full name. A registry holds functions, so `==` on it
@@ -93,15 +102,14 @@ register (Message.Message name codecs) (Internal.Registry leniency entries) =
                     case Proto.Internal.Binary.runBase64 codecs.decodeBinary base64 of
                         Ok value ->
                             codecs.encodeJson registry value
-                                |> Result.fromMaybe HoldsUnwritable
 
-                        Err _ ->
-                            Err NotTheMessage
+                        Err problem ->
+                            Err (BadBinary problem)
             , toBytes =
                 \registry json ->
                     Json.Decode.decodeValue (codecs.decodeJson registry) json
                         |> Result.map (codecs.encodeBinary >> Bytes.Encode.encode >> Proto.Bytes.toBase64)
-                        |> Result.mapError Json.Decode.errorToString
+                        |> Result.mapError BadJson
             }
     in
     Internal.Registry leniency (Dict.insert name entry entries)
@@ -136,8 +144,8 @@ unionAll registries =
 
 {-| The registry, reading an `Any` of a type it has no entry for from proto3
 JSON as that `Any`'s JSON alone, where a registry fails the read: the
-failure that is [`UnregisteredType`](Proto-Any#Problem) on a write, and a
-detail's [`UnregisteredType`](Rpc-Error#DetailProblem) in an error. It
+failure that is [`UnregisteredType`](Proto-Error#Error) on a write and
+among an error's details. It
 reads a type it has an entry for as before, and JSON that is not its
 message still fails.
 
@@ -166,3 +174,60 @@ codecs.
 lenient : Registry -> Registry
 lenient (Internal.Registry _ entries) =
     Internal.Registry Internal.Lenient entries
+
+
+
+-- READING A FAILURE
+
+
+{-| The type URL of the `google.protobuf.Any` a JSON read failed on because
+the registry has no entry for its type, if that is why it failed.
+
+Reading an `Any` from proto3 JSON ([`Proto.Json.anyWith`](Proto-Json#anyWith),
+and the generated decoders that take a registry) fails for a type the
+registry lacks with the `Any`'s object as the failure's value, and the
+message is for a person; this finds that failure in the error, its
+`"@type"`, and tests the registry:
+
+    case Json.Decode.decodeValue (Proto.Json.anyWith types) json of
+        Err problem ->
+            case Proto.Registry.unregistered types problem of
+                Just url ->
+                    -- register the type of url
+                    ...
+
+                Nothing ->
+                    -- not an Any of a registered type, for another reason
+                    ...
+
+        Ok any ->
+            ...
+
+An `Any` of a registered type that holds one of an unregistered type fails
+at the outer `Any`, whose type the registry has, so it gives `Nothing`.
+
+-}
+unregistered : Registry -> Json.Decode.Error -> Maybe String
+unregistered registry error =
+    case error of
+        Json.Decode.Field _ inner ->
+            unregistered registry inner
+
+        Json.Decode.Index _ inner ->
+            unregistered registry inner
+
+        Json.Decode.OneOf errors ->
+            List.filterMap (unregistered registry) errors |> List.head
+
+        Json.Decode.Failure _ value ->
+            case Json.Decode.decodeValue (Json.Decode.field "@type" Json.Decode.string) value of
+                Ok url ->
+                    -- A "@type" that is not a type URL fails for that.
+                    if not (String.contains "/" url) || String.endsWith "/" url || Internal.member (Proto.Internal.Any.nameOf url) registry then
+                        Nothing
+
+                    else
+                        Just url
+
+                Err _ ->
+                    Nothing

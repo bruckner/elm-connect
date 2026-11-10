@@ -147,11 +147,11 @@ type alias BinaryWire =
 
 
 {-| A successful binary answer's message, and the error it stands for when
-the method's decoder does not read it.
+the method's decoder does not read it, given why.
 -}
 type alias BytesMessage =
     { bytes : Bytes
-    , bad : () -> Error
+    , bad : String -> Error
     }
 
 

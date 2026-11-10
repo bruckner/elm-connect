@@ -2,7 +2,7 @@
 //! value, its encoder and its decoder.
 
 use super::{
-    Emitter, JSON_DECODE, JSON_ENCODE, MessageShape, PROTO_ANY, PROTO_JSON, PROTO_REGISTRY,
+    Emitter, JSON_DECODE, JSON_ENCODE, MessageShape, PROTO_ERROR, PROTO_JSON, PROTO_REGISTRY,
     RecordField, call, docs,
 };
 use crate::elm::ast::{BinOp, Decl, Expr, Pattern, Type};
@@ -163,7 +163,7 @@ impl Emitter {
     }
 
     /// `encodeFooWith : Proto.Registry.Registry -> Foo -> Result
-    /// Proto.Any.Problem Json.Encode.Value`, for a message that reaches an
+    /// Proto.Error.Error Json.Encode.Value`, for a message that reaches an
     /// `Any`: `Proto.Json.tryObjectOfFields` of every
     /// field ([`Self::try_encode_field`]) and of each oneof's members, the
     /// first `Err` failing the whole. It has no `encodeFoo`: writing an
@@ -227,11 +227,11 @@ impl Emitter {
         }
     }
 
-    /// `Proto.Registry.Registry -> of -> Result Proto.Any.Problem
+    /// `Proto.Registry.Registry -> of -> Result Proto.Error.Error
     /// Json.Encode.Value`: the type of an encoder taking the registry.
     pub(super) fn encoder_with_type(&mut self, of: Type) -> Type {
         let registry = self.library_type(PROTO_REGISTRY, "Registry", []);
-        let problem = self.library_type(PROTO_ANY, "Problem", []);
+        let problem = self.library_type(PROTO_ERROR, "Error", []);
         let value = self.library_type(JSON_ENCODE, "Value", []);
         let result = ty(self.core("Result"), [problem, value]);
         ty_fn([registry, of], result)

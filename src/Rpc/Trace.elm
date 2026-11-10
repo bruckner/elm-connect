@@ -194,9 +194,11 @@ attempts (Internal.Trace t) =
 [`Rpc.Call.toJson`](Rpc-Call#toJson) gives a call. The request's headers are pairs, in order, since a name may repeat; the
 answer's are an object. `code` is the outcome as Connect spells it
 (`"not_found"`), `"ok"` on success; `duration` and the request's `timeout`
-are in milliseconds; `detailProblems` names, one string each, the
-[`DetailProblem`](Rpc-Error#DetailProblem)s of the status the call ended
-with, such as `unregistered type "type.googleapis.com/google.rpc.ErrorInfo"`
+are in milliseconds; `detailProblems` gives, one string each, the
+[`Proto.Error.toString`](Proto-Error#toString) of each detail the status the
+call ended with could not read, such as `An Any holding
+type.googleapis.com/google.rpc.ErrorInfo was converted through a registry
+that has no entry for its type.`
 (`[]` when every detail was read, or there was no status); `binding`,
 `httpStatus`, the body and the timeout are
 `null` when absent. A request body of protobuf binary

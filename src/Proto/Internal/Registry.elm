@@ -1,8 +1,10 @@
-module Proto.Internal.Registry exposing (Entry, Failure(..), Leniency(..), Registry(..), isLenient, member, strict, toBytes, toJson, writesJsonAlone)
+module Proto.Internal.Registry exposing (Entry, Leniency(..), Registry(..), isLenient, member, strict, toBytes, toJson, writesJsonAlone)
 
-{-| The `Registry` type, which `Proto.Registry` names by an alias. It is
-defined here so that `Proto.Any` and `Proto.Json` can convert through one
-with the functions below, which `Proto.Registry` does not expose.
+{-| The `Registry` type, which `Proto.Registry` names by an alias, and the
+conversions through one, which `Proto.Registry` does not expose: `Proto.Any`
+and `Proto.Json` call them. The type is defined here because a message's
+codecs (`Proto.Internal.Message`) take a registry, and `Proto.Registry`
+builds entries from those codecs.
 
 Each entry takes the registry it is called through, so a message holding an
 `Any` converts that `Any` with the same table, however wide, at any depth,
@@ -12,6 +14,7 @@ and no entry refers to a table of its own.
 
 import Dict exposing (Dict)
 import Json.Encode exposing (Value)
+import Proto.Error exposing (Error)
 
 
 {-| How it reads an `Any` of a type it has no entry for, and its entries.
@@ -33,28 +36,22 @@ type Leniency
 
 
 {-| A message's conversions: its binary, as the base64 text an `Any` holds,
-to its proto3 JSON, and back, the latter failing with the JSON decoder's
-error as text. They take and give the text, not `Bytes`, so that only a
-program that registers a message reaches elm/bytes through them.
+to its proto3 JSON, and back. They take and give the text, not `Bytes`, so
+that only a program that registers a message reaches elm/bytes through them.
+Writing JSON fails with the binary's `BadBinary`, or with the error of an
+`Any` the message holds, as that `Any`'s conversion gave it; reading fails
+with the JSON's `BadJson`.
 -}
 type alias Entry =
-    { toJson : Registry -> String -> Result Failure Value
-    , toBytes : Registry -> Value -> Result String String
+    { toJson : Registry -> String -> Result Error Value
+    , toBytes : Registry -> Value -> Result Error String
     }
-
-
-{-| Why an entry could not write a message's binary as JSON: the bytes are
-not the message, or the message holds an `Any` that cannot be written.
--}
-type Failure
-    = NotTheMessage
-    | HoldsUnwritable
 
 
 {-| A message's proto3 JSON from its binary as base64, by full name;
 `Nothing` when the registry has no entry for it.
 -}
-toJson : Registry -> String -> String -> Maybe (Result Failure Value)
+toJson : Registry -> String -> String -> Maybe (Result Error Value)
 toJson ((Registry _ entries) as registry) name base64 =
     Dict.get name entries |> Maybe.map (\entry -> entry.toJson registry base64)
 
@@ -62,7 +59,7 @@ toJson ((Registry _ entries) as registry) name base64 =
 {-| A message's binary as base64 from its proto3 JSON, by full name;
 `Nothing` when the registry has no entry for it.
 -}
-toBytes : Registry -> String -> Value -> Maybe (Result String String)
+toBytes : Registry -> String -> Value -> Maybe (Result Error String)
 toBytes ((Registry _ entries) as registry) name json =
     Dict.get name entries |> Maybe.map (\entry -> entry.toBytes registry json)
 

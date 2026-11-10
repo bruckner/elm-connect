@@ -29,7 +29,6 @@ import Bytes exposing (Bytes)
 import Bytes.Encode
 import Json.Decode
 import Json.Encode
-import Proto.Any exposing (Problem)
 import Proto.Error
 import Proto.Internal.Registry exposing (Registry)
 import Proto.Route exposing (Route)
@@ -73,7 +72,7 @@ none. A request holding an `Any` the registry cannot write has no JSON. A
 type that reaches no `Any` ignores the registry, and its encoder never fails.
 -}
 type alias JsonHalf req res =
-    { encode : Registry -> req -> Result Problem Json.Encode.Value
+    { encode : Registry -> req -> Result Proto.Error.Error Json.Encode.Value
     , decoder : Registry -> Json.Decode.Decoder res
     }
 
@@ -103,8 +102,8 @@ noJson =
 
 {-| The binary half of a method built with JSON codecs alone. As with
 [`noJson`](#noJson), an impossible pairing (unreachable through the
-builders) would surface as the ordinary decode failure "the body is not the
-response of svc/Method in protobuf binary".
+builders) would surface as an ordinary decode failure, a `BadResponse`
+whose report is `Unlocated`, as a bug's is.
 
 The encoder must be a constructor: `Bytes.Encode.sequence []` measures
 widths, which reaches elm/bytes' whole kernel (590 B gzipped on a minimal

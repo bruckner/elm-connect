@@ -453,8 +453,8 @@ withinText overRead options good =
 
 {-| A successful binary answer's message, unless it is over the read limit.
 -}
-bytesMessage : (Options -> Bytes -> Maybe Reason) -> Options -> String -> ( Maybe Http.Metadata, Result Error GoodBytes ) -> ( Maybe Http.Metadata, Result Error BytesMessage )
-bytesMessage overRead options procedure ( metadata, read ) =
+bytesMessage : (Options -> Bytes -> Maybe Reason) -> Options -> ( Maybe Http.Metadata, Result Error GoodBytes ) -> ( Maybe Http.Metadata, Result Error BytesMessage )
+bytesMessage overRead options ( metadata, read ) =
     ( metadata
     , read
         |> Result.andThen
@@ -466,7 +466,7 @@ bytesMessage overRead options procedure ( metadata, read ) =
                     Nothing ->
                         Ok
                             { bytes = good.message
-                            , bad = \() -> Error.BadResponse Code.Internal ("the body is not the response of " ++ procedure ++ " in protobuf binary") (bytesAnswer good.metadata good.raw)
+                            , bad = \problem -> Error.BadResponse Code.Internal problem (bytesAnswer good.metadata good.raw)
                             }
             )
     )

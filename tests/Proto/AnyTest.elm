@@ -4,10 +4,11 @@ import Bytes.Encode
 import Expect
 import Json.Decode
 import Json.Encode
-import Proto.Any as Any exposing (Any, Problem(..))
+import Proto.Any as Any exposing (Any)
 import Proto.Binary
 import Proto.Descriptors as Descriptors
 import Proto.Duration as Duration
+import Proto.Error exposing (Error(..))
 import Proto.Field as Field exposing (Cardinality(..), Kind(..), Scalar(..))
 import Proto.Json
 import Proto.Message as Message exposing (Message)
@@ -121,22 +122,22 @@ roundTrip any =
 
 {-| A problem reduced to a word.
 -}
-word : Result Problem a -> Result String a
+word : Result Error a -> Result String a
 word =
     Result.mapError
         (\problem ->
             case problem of
-                TypeMismatch name ->
-                    "type " ++ name
+                TypeMismatch { typeName, typeUrl } ->
+                    "type " ++ typeUrl ++ " as " ++ typeName
 
-                InvalidProto ->
-                    "proto"
+                BadBinary binary ->
+                    "binary " ++ binary.typeName
 
-                UnregisteredType name ->
-                    "unregistered " ++ name
+                BadJson _ ->
+                    "json"
 
-                UnwritableAny name ->
-                    "unwritable " ++ name
+                UnregisteredType url ->
+                    "unregistered " ++ url
         )
 
 
@@ -198,12 +199,12 @@ suite =
                         , ( True, False )
                         , "example.com/notes.v1.Note"
                         )
-        , test "unpacking another type is a TypeMismatch naming it" <|
+        , test "unpacking another type is a TypeMismatch naming both" <|
             \_ ->
                 ( Any.tryUnpack WellKnown.duration (Any.pack messageNote note) |> word
                 , Any.unpack WellKnown.duration (Any.pack messageNote note)
                 )
-                    |> Expect.equal ( Err "type notes.v1.Note", Nothing )
+                    |> Expect.equal ( Err "type type.googleapis.com/notes.v1.Note as google.protobuf.Duration", Nothing )
         , test "toJson gives the message's JSON through the registry" <|
             \_ ->
                 [ Any.pack messageNote note, Any.pack WellKnown.stringValue "hi" ]

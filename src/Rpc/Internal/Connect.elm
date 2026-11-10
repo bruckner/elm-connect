@@ -196,8 +196,8 @@ connectMessage overRead options _ answer =
 {-| Connect's message of a protobuf binary answer.
 -}
 connectProtoMessage : (Options -> Bytes -> Maybe Reason) -> Options -> String -> Http.Response Bytes -> ( Maybe Http.Metadata, Result Error BytesMessage )
-connectProtoMessage overRead options procedure answer =
-    Internal.bytesMessage overRead options procedure (connectProtoRead answer)
+connectProtoMessage overRead options _ answer =
+    Internal.bytesMessage overRead options (connectProtoRead answer)
 
 
 {-| Connect's reading of a JSON answer: success is status 200, as

@@ -13,10 +13,11 @@ import Dict
 import Http
 import Json.Decode exposing (Decoder, Value)
 import Proto.Any exposing (Any)
+import Proto.Error
 import Proto.Internal.Any
 import Proto.Internal.Percent as Percent
-import Proto.Internal.Registry as InternalRegistry exposing (Registry)
 import Proto.Json
+import Proto.Registry exposing (Registry)
 import Rpc.Body
 import Rpc.Code as Code exposing (Code)
 import Rpc.Error as Error exposing (Error)
@@ -155,9 +156,10 @@ connectBody =
 
 {-| A Connect error detail: the message's full name as `type` (a type URL
 when it holds a `/`) and its protobuf binary as base64 `value`, which may
-be left out for an empty message. Its JSON, `debug`, is not read.
+be left out for an empty message. Its JSON, `debug`, is not read. A detail
+with no `type`, or whose `value` is not base64, is its `BadJson`.
 -}
-connectDetail : Value -> Result Error.DetailProblem Any
+connectDetail : Value -> Result Proto.Error.Error Any
 connectDetail detail =
     case Json.Decode.decodeValue (Json.Decode.field "type" Json.Decode.string) detail of
         Ok name ->
@@ -178,10 +180,13 @@ connectDetail detail =
                     Ok (Proto.Internal.Any.Any url (Proto.Internal.Any.Binary base64))
 
                 Nothing ->
-                    Err (Error.InvalidDetail (Just url) "a Connect detail whose value is not base64")
+                    -- elm/json's own error, at the field, holding the value.
+                    Json.Decode.decodeValue (Json.Decode.field "value" (Json.Decode.fail "Expecting base64 text, standard or URL-safe")) detail
+                        |> Result.map (\_ -> Proto.Internal.Any.empty)
+                        |> Result.mapError Proto.Error.BadJson
 
-        Err _ ->
-            Err (Error.InvalidDetail Nothing "a Connect detail with no type")
+        Err problem ->
+            Err (Proto.Error.BadJson problem)
 
 
 {-| Base64 text in the form an `Any` holds its binary in, the standard
@@ -268,7 +273,7 @@ completeDetails registry error =
             error
 
 
-bodyDetails : Registry -> Response -> List (Result Error.DetailProblem Any)
+bodyDetails : Registry -> Response -> List (Result Proto.Error.Error Any)
 bodyDetails registry answer =
     Rpc.Body.toText answer.body
         |> Maybe.andThen
@@ -280,25 +285,23 @@ bodyDetails registry answer =
 
 
 {-| A `google.rpc.Status` detail: a proto3 JSON `Any`, converted to its
-message's binary through the registry.
+message's binary through the registry. A type the registry lacks is
+`UnregisteredType`, read from the failure (`Proto.Registry.unregistered`);
+any other failure, a detail with no `"@type"` among them, is its `BadJson`.
 -}
-statusDetail : Registry -> Value -> Result Error.DetailProblem Any
+statusDetail : Registry -> Value -> Result Proto.Error.Error Any
 statusDetail registry detail =
-    case Json.Decode.decodeValue (Json.Decode.field "@type" Json.Decode.string) detail of
-        Ok url ->
-            case Json.Decode.decodeValue (Proto.Json.anyWith registry) detail of
-                Ok any ->
-                    Ok any
+    case Json.Decode.decodeValue (Json.Decode.field "@type" Json.Decode.string |> Json.Decode.andThen (\_ -> Proto.Json.anyWith registry)) detail of
+        Ok any ->
+            Ok any
 
-                Err problem ->
-                    if InternalRegistry.member (Proto.Internal.Any.nameOf url) registry then
-                        Err (Error.InvalidDetail (Just url) (Json.Decode.errorToString problem))
+        Err problem ->
+            case Proto.Registry.unregistered registry problem of
+                Just url ->
+                    Err (Proto.Error.UnregisteredType url)
 
-                    else
-                        Err (Error.UnregisteredType url)
-
-        Err _ ->
-            Err (Error.InvalidDetail Nothing "a detail with no \"@type\"")
+                Nothing ->
+                    Err (Proto.Error.BadJson problem)
 
 
 optional : String -> Decoder a -> a -> Decoder a

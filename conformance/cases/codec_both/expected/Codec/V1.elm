@@ -37,6 +37,7 @@ import Proto.Binary
 import Proto.Descriptors
 import Proto.Duration exposing (Duration)
 import Proto.Enum
+import Proto.Error
 import Proto.Json
 import Proto.Message
 import Proto.Registry
@@ -1208,7 +1209,7 @@ encodeTreeLink value =
 
 {-| Encodes a [`WellKnown`](#WellKnown) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeWellKnownWith : Proto.Registry.Registry -> WellKnown -> Result Proto.Any.Problem Json.Encode.Value
+encodeWellKnownWith : Proto.Registry.Registry -> WellKnown -> Result Proto.Error.Error Json.Encode.Value
 encodeWellKnownWith types value =
     Proto.Json.tryObjectOfFields
         [ ( "any", Proto.Json.tryOptionalField (Proto.Json.encodeAnyWith types) value.any )
@@ -1275,7 +1276,7 @@ encodeLeaf value =
 
 {-| Encodes an [`Everything`](#Everything) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeEverythingWith : Proto.Registry.Registry -> Everything -> Result Proto.Any.Problem Json.Encode.Value
+encodeEverythingWith : Proto.Registry.Registry -> Everything -> Result Proto.Error.Error Json.Encode.Value
 encodeEverythingWith types value =
     Proto.Json.tryObjectOfFields
         [ ( "scalars", Ok (Maybe.map encodeScalars value.scalars) )
@@ -1295,7 +1296,7 @@ encodeEverythingWith types value =
 
 {-| Encodes an [`Everything_`](#Everything_) as proto3 JSON, writing each `Any` it holds with the registry.
 -}
-encodeEverything_With : Proto.Registry.Registry -> Everything_ -> Result Proto.Any.Problem Json.Encode.Value
+encodeEverything_With : Proto.Registry.Registry -> Everything_ -> Result Proto.Error.Error Json.Encode.Value
 encodeEverything_With types (Everything_ value) =
     encodeEverythingWith types value
 

@@ -60,6 +60,7 @@ import Proto.Any
 import Proto.Binary
 import Proto.Descriptors
 import Proto.Enum
+import Proto.Error
 import Proto.Json
 import Proto.Message
 import Proto.Registry
@@ -2432,7 +2433,7 @@ encodeTestSuiteConnectVersionMode value =
 
 {-| Encodes a [`ClientCompatRequest`](#ClientCompatRequest) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeClientCompatRequestWith : Proto.Registry.Registry -> ClientCompatRequest -> Result Proto.Any.Problem Json.Encode.Value
+encodeClientCompatRequestWith : Proto.Registry.Registry -> ClientCompatRequest -> Result Proto.Error.Error Json.Encode.Value
 encodeClientCompatRequestWith types value =
     Proto.Json.tryObjectOfFields
         [ ( "testName", Ok (Proto.Json.implicitField "" Json.Encode.string value.testName) )
@@ -2488,7 +2489,7 @@ encodeClientCompatRequestCancelCancelTiming value =
 
 {-| Encodes a [`ClientCompatResponse`](#ClientCompatResponse) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeClientCompatResponseWith : Proto.Registry.Registry -> ClientCompatResponse -> Result Proto.Any.Problem Json.Encode.Value
+encodeClientCompatResponseWith : Proto.Registry.Registry -> ClientCompatResponse -> Result Proto.Error.Error Json.Encode.Value
 encodeClientCompatResponseWith types value =
     Proto.Json.tryObjectOfFields
         ([ ( "testName", Ok (Proto.Json.implicitField "" Json.Encode.string value.testName) )
@@ -2499,7 +2500,7 @@ encodeClientCompatResponseWith types value =
 
 {-| Encodes a [`ClientCompatResponseResult`](#ClientCompatResponseResult) as the members of its message's JSON object.
 -}
-encodeClientCompatResponseResultWith : Proto.Registry.Registry -> ClientCompatResponseResult -> List ( String, Result Proto.Any.Problem (Maybe Json.Encode.Value) )
+encodeClientCompatResponseResultWith : Proto.Registry.Registry -> ClientCompatResponseResult -> List ( String, Result Proto.Error.Error (Maybe Json.Encode.Value) )
 encodeClientCompatResponseResultWith types value =
     case value of
         ClientCompatResponseResultUnset ->
@@ -2516,7 +2517,7 @@ encodeClientCompatResponseResultWith types value =
 
 {-| Encodes a [`ClientResponseResult`](#ClientResponseResult) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeClientResponseResultWith : Proto.Registry.Registry -> ClientResponseResult -> Result Proto.Any.Problem Json.Encode.Value
+encodeClientResponseResultWith : Proto.Registry.Registry -> ClientResponseResult -> Result Proto.Error.Error Json.Encode.Value
 encodeClientResponseResultWith types value =
     Proto.Json.tryObjectOfFields
         [ ( "responseHeaders", Ok (Proto.Json.repeatedField encodeHeader value.responseHeaders) )
@@ -2634,7 +2635,7 @@ encodeServerCompatResponse value =
 
 {-| Encodes an [`UnaryResponseDefinition`](#UnaryResponseDefinition) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeUnaryResponseDefinitionWith : Proto.Registry.Registry -> UnaryResponseDefinition -> Result Proto.Any.Problem Json.Encode.Value
+encodeUnaryResponseDefinitionWith : Proto.Registry.Registry -> UnaryResponseDefinition -> Result Proto.Error.Error Json.Encode.Value
 encodeUnaryResponseDefinitionWith types value =
     Proto.Json.tryObjectOfFields
         ([ ( "responseHeaders", Ok (Proto.Json.repeatedField encodeHeader value.responseHeaders) )
@@ -2648,7 +2649,7 @@ encodeUnaryResponseDefinitionWith types value =
 
 {-| Encodes an [`UnaryResponseDefinitionResponse`](#UnaryResponseDefinitionResponse) as the members of its message's JSON object.
 -}
-encodeUnaryResponseDefinitionResponseWith : Proto.Registry.Registry -> UnaryResponseDefinitionResponse -> List ( String, Result Proto.Any.Problem (Maybe Json.Encode.Value) )
+encodeUnaryResponseDefinitionResponseWith : Proto.Registry.Registry -> UnaryResponseDefinitionResponse -> List ( String, Result Proto.Error.Error (Maybe Json.Encode.Value) )
 encodeUnaryResponseDefinitionResponseWith types value =
     case value of
         UnaryResponseDefinitionResponseUnset ->
@@ -2665,7 +2666,7 @@ encodeUnaryResponseDefinitionResponseWith types value =
 
 {-| Encodes a [`StreamResponseDefinition`](#StreamResponseDefinition) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeStreamResponseDefinitionWith : Proto.Registry.Registry -> StreamResponseDefinition -> Result Proto.Any.Problem Json.Encode.Value
+encodeStreamResponseDefinitionWith : Proto.Registry.Registry -> StreamResponseDefinition -> Result Proto.Error.Error Json.Encode.Value
 encodeStreamResponseDefinitionWith types value =
     Proto.Json.tryObjectOfFields
         [ ( "responseHeaders", Ok (Proto.Json.repeatedField encodeHeader value.responseHeaders) )
@@ -2679,7 +2680,7 @@ encodeStreamResponseDefinitionWith types value =
 
 {-| Encodes an [`UnaryRequest`](#UnaryRequest) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeUnaryRequestWith : Proto.Registry.Registry -> UnaryRequest -> Result Proto.Any.Problem Json.Encode.Value
+encodeUnaryRequestWith : Proto.Registry.Registry -> UnaryRequest -> Result Proto.Error.Error Json.Encode.Value
 encodeUnaryRequestWith types value =
     Proto.Json.tryObjectOfFields
         [ ( "responseDefinition", Proto.Json.tryOptionalField (encodeUnaryResponseDefinitionWith types) value.responseDefinition )
@@ -2689,7 +2690,7 @@ encodeUnaryRequestWith types value =
 
 {-| Encodes an [`UnaryResponse`](#UnaryResponse) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeUnaryResponseWith : Proto.Registry.Registry -> UnaryResponse -> Result Proto.Any.Problem Json.Encode.Value
+encodeUnaryResponseWith : Proto.Registry.Registry -> UnaryResponse -> Result Proto.Error.Error Json.Encode.Value
 encodeUnaryResponseWith types value =
     Proto.Json.tryObjectOfFields
         [ ( "payload", Proto.Json.tryOptionalField (encodeConformancePayloadWith types) value.payload )
@@ -2698,7 +2699,7 @@ encodeUnaryResponseWith types value =
 
 {-| Encodes an [`IdempotentUnaryRequest`](#IdempotentUnaryRequest) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeIdempotentUnaryRequestWith : Proto.Registry.Registry -> IdempotentUnaryRequest -> Result Proto.Any.Problem Json.Encode.Value
+encodeIdempotentUnaryRequestWith : Proto.Registry.Registry -> IdempotentUnaryRequest -> Result Proto.Error.Error Json.Encode.Value
 encodeIdempotentUnaryRequestWith types value =
     Proto.Json.tryObjectOfFields
         [ ( "responseDefinition", Proto.Json.tryOptionalField (encodeUnaryResponseDefinitionWith types) value.responseDefinition )
@@ -2708,7 +2709,7 @@ encodeIdempotentUnaryRequestWith types value =
 
 {-| Encodes an [`IdempotentUnaryResponse`](#IdempotentUnaryResponse) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeIdempotentUnaryResponseWith : Proto.Registry.Registry -> IdempotentUnaryResponse -> Result Proto.Any.Problem Json.Encode.Value
+encodeIdempotentUnaryResponseWith : Proto.Registry.Registry -> IdempotentUnaryResponse -> Result Proto.Error.Error Json.Encode.Value
 encodeIdempotentUnaryResponseWith types value =
     Proto.Json.tryObjectOfFields
         [ ( "payload", Proto.Json.tryOptionalField (encodeConformancePayloadWith types) value.payload )
@@ -2717,7 +2718,7 @@ encodeIdempotentUnaryResponseWith types value =
 
 {-| Encodes a [`ServerStreamRequest`](#ServerStreamRequest) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeServerStreamRequestWith : Proto.Registry.Registry -> ServerStreamRequest -> Result Proto.Any.Problem Json.Encode.Value
+encodeServerStreamRequestWith : Proto.Registry.Registry -> ServerStreamRequest -> Result Proto.Error.Error Json.Encode.Value
 encodeServerStreamRequestWith types value =
     Proto.Json.tryObjectOfFields
         [ ( "responseDefinition", Proto.Json.tryOptionalField (encodeStreamResponseDefinitionWith types) value.responseDefinition )
@@ -2727,7 +2728,7 @@ encodeServerStreamRequestWith types value =
 
 {-| Encodes a [`ServerStreamResponse`](#ServerStreamResponse) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeServerStreamResponseWith : Proto.Registry.Registry -> ServerStreamResponse -> Result Proto.Any.Problem Json.Encode.Value
+encodeServerStreamResponseWith : Proto.Registry.Registry -> ServerStreamResponse -> Result Proto.Error.Error Json.Encode.Value
 encodeServerStreamResponseWith types value =
     Proto.Json.tryObjectOfFields
         [ ( "payload", Proto.Json.tryOptionalField (encodeConformancePayloadWith types) value.payload )
@@ -2736,7 +2737,7 @@ encodeServerStreamResponseWith types value =
 
 {-| Encodes a [`ClientStreamRequest`](#ClientStreamRequest) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeClientStreamRequestWith : Proto.Registry.Registry -> ClientStreamRequest -> Result Proto.Any.Problem Json.Encode.Value
+encodeClientStreamRequestWith : Proto.Registry.Registry -> ClientStreamRequest -> Result Proto.Error.Error Json.Encode.Value
 encodeClientStreamRequestWith types value =
     Proto.Json.tryObjectOfFields
         [ ( "responseDefinition", Proto.Json.tryOptionalField (encodeUnaryResponseDefinitionWith types) value.responseDefinition )
@@ -2746,7 +2747,7 @@ encodeClientStreamRequestWith types value =
 
 {-| Encodes a [`ClientStreamResponse`](#ClientStreamResponse) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeClientStreamResponseWith : Proto.Registry.Registry -> ClientStreamResponse -> Result Proto.Any.Problem Json.Encode.Value
+encodeClientStreamResponseWith : Proto.Registry.Registry -> ClientStreamResponse -> Result Proto.Error.Error Json.Encode.Value
 encodeClientStreamResponseWith types value =
     Proto.Json.tryObjectOfFields
         [ ( "payload", Proto.Json.tryOptionalField (encodeConformancePayloadWith types) value.payload )
@@ -2755,7 +2756,7 @@ encodeClientStreamResponseWith types value =
 
 {-| Encodes a [`BidiStreamRequest`](#BidiStreamRequest) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeBidiStreamRequestWith : Proto.Registry.Registry -> BidiStreamRequest -> Result Proto.Any.Problem Json.Encode.Value
+encodeBidiStreamRequestWith : Proto.Registry.Registry -> BidiStreamRequest -> Result Proto.Error.Error Json.Encode.Value
 encodeBidiStreamRequestWith types value =
     Proto.Json.tryObjectOfFields
         [ ( "responseDefinition", Proto.Json.tryOptionalField (encodeStreamResponseDefinitionWith types) value.responseDefinition )
@@ -2766,7 +2767,7 @@ encodeBidiStreamRequestWith types value =
 
 {-| Encodes a [`BidiStreamResponse`](#BidiStreamResponse) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeBidiStreamResponseWith : Proto.Registry.Registry -> BidiStreamResponse -> Result Proto.Any.Problem Json.Encode.Value
+encodeBidiStreamResponseWith : Proto.Registry.Registry -> BidiStreamResponse -> Result Proto.Error.Error Json.Encode.Value
 encodeBidiStreamResponseWith types value =
     Proto.Json.tryObjectOfFields
         [ ( "payload", Proto.Json.tryOptionalField (encodeConformancePayloadWith types) value.payload )
@@ -2789,7 +2790,7 @@ encodeUnimplementedResponse _ =
 
 {-| Encodes a [`ConformancePayload`](#ConformancePayload) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeConformancePayloadWith : Proto.Registry.Registry -> ConformancePayload -> Result Proto.Any.Problem Json.Encode.Value
+encodeConformancePayloadWith : Proto.Registry.Registry -> ConformancePayload -> Result Proto.Error.Error Json.Encode.Value
 encodeConformancePayloadWith types value =
     Proto.Json.tryObjectOfFields
         [ ( "data", Ok (Proto.Json.implicitField "" Proto.Json.encodeBytes value.data) )
@@ -2799,7 +2800,7 @@ encodeConformancePayloadWith types value =
 
 {-| Encodes a [`ConformancePayloadRequestInfo`](#ConformancePayloadRequestInfo) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeConformancePayloadRequestInfoWith : Proto.Registry.Registry -> ConformancePayloadRequestInfo -> Result Proto.Any.Problem Json.Encode.Value
+encodeConformancePayloadRequestInfoWith : Proto.Registry.Registry -> ConformancePayloadRequestInfo -> Result Proto.Error.Error Json.Encode.Value
 encodeConformancePayloadRequestInfoWith types value =
     Proto.Json.tryObjectOfFields
         [ ( "requestHeaders", Ok (Proto.Json.repeatedField encodeHeader value.requestHeaders) )
@@ -2820,7 +2821,7 @@ encodeConformancePayloadConnectGetInfo value =
 
 {-| Encodes an [`Error`](#Error) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeErrorWith : Proto.Registry.Registry -> Error -> Result Proto.Any.Problem Json.Encode.Value
+encodeErrorWith : Proto.Registry.Registry -> Error -> Result Proto.Error.Error Json.Encode.Value
 encodeErrorWith types value =
     Proto.Json.tryObjectOfFields
         [ ( "code", Ok (Proto.Json.implicitField CodeUnspecified encodeCode value.code) )
@@ -2841,7 +2842,7 @@ encodeHeader value =
 
 {-| Encodes a [`RawHTTPRequest`](#RawHTTPRequest) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeRawHTTPRequestWith : Proto.Registry.Registry -> RawHTTPRequest -> Result Proto.Any.Problem Json.Encode.Value
+encodeRawHTTPRequestWith : Proto.Registry.Registry -> RawHTTPRequest -> Result Proto.Error.Error Json.Encode.Value
 encodeRawHTTPRequestWith types value =
     Proto.Json.tryObjectOfFields
         ([ ( "verb", Ok (Proto.Json.implicitField "" Json.Encode.string value.verb) )
@@ -2856,7 +2857,7 @@ encodeRawHTTPRequestWith types value =
 
 {-| Encodes a [`RawHTTPRequestBody`](#RawHTTPRequestBody) as the members of its message's JSON object.
 -}
-encodeRawHTTPRequestBodyWith : Proto.Registry.Registry -> RawHTTPRequestBody -> List ( String, Result Proto.Any.Problem (Maybe Json.Encode.Value) )
+encodeRawHTTPRequestBodyWith : Proto.Registry.Registry -> RawHTTPRequestBody -> List ( String, Result Proto.Error.Error (Maybe Json.Encode.Value) )
 encodeRawHTTPRequestBodyWith types value =
     case value of
         RawHTTPRequestBodyUnset ->
@@ -2873,7 +2874,7 @@ encodeRawHTTPRequestBodyWith types value =
 
 {-| Encodes a [`RawHTTPRequestEncodedQueryParam`](#RawHTTPRequestEncodedQueryParam) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeRawHTTPRequestEncodedQueryParamWith : Proto.Registry.Registry -> RawHTTPRequestEncodedQueryParam -> Result Proto.Any.Problem Json.Encode.Value
+encodeRawHTTPRequestEncodedQueryParamWith : Proto.Registry.Registry -> RawHTTPRequestEncodedQueryParam -> Result Proto.Error.Error Json.Encode.Value
 encodeRawHTTPRequestEncodedQueryParamWith types value =
     Proto.Json.tryObjectOfFields
         [ ( "name", Ok (Proto.Json.implicitField "" Json.Encode.string value.name) )
@@ -2884,7 +2885,7 @@ encodeRawHTTPRequestEncodedQueryParamWith types value =
 
 {-| Encodes a [`MessageContents`](#MessageContents) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeMessageContentsWith : Proto.Registry.Registry -> MessageContents -> Result Proto.Any.Problem Json.Encode.Value
+encodeMessageContentsWith : Proto.Registry.Registry -> MessageContents -> Result Proto.Error.Error Json.Encode.Value
 encodeMessageContentsWith types value =
     Proto.Json.tryObjectOfFields
         ([ ( "compression", Ok (Proto.Json.implicitField CompressionUnspecified encodeCompression value.compression) )
@@ -2895,7 +2896,7 @@ encodeMessageContentsWith types value =
 
 {-| Encodes a [`MessageContentsData`](#MessageContentsData) as the members of its message's JSON object.
 -}
-encodeMessageContentsDataWith : Proto.Registry.Registry -> MessageContentsData -> List ( String, Result Proto.Any.Problem (Maybe Json.Encode.Value) )
+encodeMessageContentsDataWith : Proto.Registry.Registry -> MessageContentsData -> List ( String, Result Proto.Error.Error (Maybe Json.Encode.Value) )
 encodeMessageContentsDataWith types value =
     case value of
         MessageContentsDataUnset ->
@@ -2916,7 +2917,7 @@ encodeMessageContentsDataWith types value =
 
 {-| Encodes a [`StreamContents`](#StreamContents) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeStreamContentsWith : Proto.Registry.Registry -> StreamContents -> Result Proto.Any.Problem Json.Encode.Value
+encodeStreamContentsWith : Proto.Registry.Registry -> StreamContents -> Result Proto.Error.Error Json.Encode.Value
 encodeStreamContentsWith types value =
     Proto.Json.tryObjectOfFields
         [ ( "items", Proto.Json.tryRepeatedField (encodeStreamContentsStreamItemWith types) value.items )
@@ -2925,7 +2926,7 @@ encodeStreamContentsWith types value =
 
 {-| Encodes a [`StreamContentsStreamItem`](#StreamContentsStreamItem) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeStreamContentsStreamItemWith : Proto.Registry.Registry -> StreamContentsStreamItem -> Result Proto.Any.Problem Json.Encode.Value
+encodeStreamContentsStreamItemWith : Proto.Registry.Registry -> StreamContentsStreamItem -> Result Proto.Error.Error Json.Encode.Value
 encodeStreamContentsStreamItemWith types value =
     Proto.Json.tryObjectOfFields
         [ ( "flags", Ok (Proto.Json.implicitField 0 Json.Encode.int value.flags) )
@@ -2936,7 +2937,7 @@ encodeStreamContentsStreamItemWith types value =
 
 {-| Encodes a [`RawHTTPResponse`](#RawHTTPResponse) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeRawHTTPResponseWith : Proto.Registry.Registry -> RawHTTPResponse -> Result Proto.Any.Problem Json.Encode.Value
+encodeRawHTTPResponseWith : Proto.Registry.Registry -> RawHTTPResponse -> Result Proto.Error.Error Json.Encode.Value
 encodeRawHTTPResponseWith types value =
     Proto.Json.tryObjectOfFields
         ([ ( "statusCode", Ok (Proto.Json.implicitField 0 Json.Encode.int value.statusCode) )
@@ -2949,7 +2950,7 @@ encodeRawHTTPResponseWith types value =
 
 {-| Encodes a [`RawHTTPResponseBody`](#RawHTTPResponseBody) as the members of its message's JSON object.
 -}
-encodeRawHTTPResponseBodyWith : Proto.Registry.Registry -> RawHTTPResponseBody -> List ( String, Result Proto.Any.Problem (Maybe Json.Encode.Value) )
+encodeRawHTTPResponseBodyWith : Proto.Registry.Registry -> RawHTTPResponseBody -> List ( String, Result Proto.Error.Error (Maybe Json.Encode.Value) )
 encodeRawHTTPResponseBodyWith types value =
     case value of
         RawHTTPResponseBodyUnset ->
@@ -2966,7 +2967,7 @@ encodeRawHTTPResponseBodyWith types value =
 
 {-| Encodes a [`TestSuite`](#TestSuite) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeTestSuiteWith : Proto.Registry.Registry -> TestSuite -> Result Proto.Any.Problem Json.Encode.Value
+encodeTestSuiteWith : Proto.Registry.Registry -> TestSuite -> Result Proto.Error.Error Json.Encode.Value
 encodeTestSuiteWith types value =
     Proto.Json.tryObjectOfFields
         [ ( "name", Ok (Proto.Json.implicitField "" Json.Encode.string value.name) )
@@ -2986,7 +2987,7 @@ encodeTestSuiteWith types value =
 
 {-| Encodes a [`TestCase`](#TestCase) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeTestCaseWith : Proto.Registry.Registry -> TestCase -> Result Proto.Any.Problem Json.Encode.Value
+encodeTestCaseWith : Proto.Registry.Registry -> TestCase -> Result Proto.Error.Error Json.Encode.Value
 encodeTestCaseWith types value =
     Proto.Json.tryObjectOfFields
         [ ( "request", Proto.Json.tryOptionalField (encodeClientCompatRequestWith types) value.request )

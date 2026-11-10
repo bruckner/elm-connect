@@ -79,7 +79,7 @@ client over url =
 `( "Authorization", "Bearer …" )`. A name must be an HTTP token (letters,
 digits and `` !#$%&'*+-.^_`|~ ``), and a value can hold no NUL, CR or LF
 and no character above U+00FF, which a browser refuses. A call with such a
-header is not sent, and fails with `NoAnswer (InvalidHeader name)`.
+header is not sent, and fails with `NoAnswer (BadHeader name)`.
 -}
 withHeaders : List ( String, String ) -> Client codec -> Client codec
 withHeaders extra (Internal.Client c) =

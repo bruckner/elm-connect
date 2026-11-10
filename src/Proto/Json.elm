@@ -68,7 +68,7 @@ written as JSON. Its fields are encoded with the helpers above wrapped in
 helper named without `try`, taking an encoder that gives a `Result`, and gives
 the first `Err` its values meet, else `Ok` of what the other would.
 
-    encodeEnvelopeWith : Registry -> Envelope -> Result Problem Value
+    encodeEnvelopeWith : Registry -> Envelope -> Result Proto.Error.Error Value
     encodeEnvelopeWith types value =
         tryObjectOfFields
             [ ( "id", Ok (implicitField "" Json.Encode.string value.id) )
@@ -156,12 +156,14 @@ import Bytes exposing (Bytes)
 import Dict
 import Json.Decode exposing (Decoder)
 import Json.Encode exposing (Value)
-import Proto.Any exposing (Any, Problem)
+import Proto.Any exposing (Any)
 import Proto.Bytes
 import Proto.Duration exposing (Duration)
+import Proto.Error exposing (Error)
 import Proto.Int64
 import Proto.Internal.Any as InternalAny
-import Proto.Internal.Registry as InternalRegistry exposing (Registry)
+import Proto.Internal.Registry as InternalRegistry
+import Proto.Registry exposing (Registry)
 import Proto.Timestamp
 import Time
 
@@ -2190,10 +2192,11 @@ with a JSON form of its own, `"value"`. An object without `"@type"` fails, but
 for `{}`, the empty `Any`, and so does one whose `"@type"` is not a type URL:
 it must hold a `/` with a type name after the last one. As protobuf's own
 JSON readers do, it fails for a type the registry has no entry for, naming
-its type URL (register the type, see [`Proto.Registry`](Proto-Registry)),
-unless the registry is [lenient](Proto-Registry#lenient): then the `Any`
-holds the JSON alone. It fails for JSON that is not its message, lenient
-or not.
+its type URL, the failure's value the `Any`'s object, which
+[`Proto.Registry.unregistered`](Proto-Registry#unregistered) reads (register
+the type, see [`Proto.Registry`](Proto-Registry)), unless the registry is
+[lenient](Proto-Registry#lenient): then the `Any` holds the JSON alone. It
+fails for JSON that is not its message, lenient or not.
 -}
 anyWith : Registry -> Decoder Any
 anyWith registry =
@@ -2215,10 +2218,10 @@ anyWith registry =
                                             Json.Decode.succeed (InternalAny.Any url (InternalAny.Json message))
 
                                         _ ->
-                                            Json.Decode.fail ("Expecting an Any of " ++ quote url ++ " to hold that message: " ++ problem)
+                                            Json.Decode.fail ("Expecting an Any of " ++ quote url ++ " to hold that message: " ++ Proto.Error.toString problem)
 
                                 else
-                                    Json.Decode.fail ("Expecting an Any of " ++ quote url ++ " to hold that message: " ++ problem)
+                                    Json.Decode.fail ("Expecting an Any of " ++ quote url ++ " to hold that message: " ++ Proto.Error.toString problem)
 
                             Nothing ->
                                 if InternalRegistry.isLenient registry then
@@ -2305,13 +2308,14 @@ JSON form of its own, its message's JSON converted from the binary by the
 registry's entry for its type ([`Proto.Any.toJson`](Proto-Any#toJson)). The
 empty `Any`, with no type URL, is `{}`. As protobuf's own JSON writers do, it
 fails for a type the registry has no entry for, with
-[`UnregisteredType`](Proto-Any#Problem) naming its type URL, and for a
-binary that is not that message; [`Problem`](Proto-Any#Problem) says what
-to do about each. An `Any` held as JSON alone, which a
+[`UnregisteredType`](Proto-Error#Error) naming its type URL, and for a
+binary that is not that message, with its [`BadBinary`](Proto-Error#Error);
+an `Any` the message holds fails the same ways, at any depth, named by its
+own type. An `Any` held as JSON alone, which a
 [lenient](Proto-Registry#lenient) registry reads, is written as that JSON,
 with no registry.
 -}
-encodeAnyWith : Registry -> Any -> Result Problem Value
+encodeAnyWith : Registry -> Any -> Result Error Value
 encodeAnyWith registry ((InternalAny.Any url _) as value) =
     if String.isEmpty url then
         Ok (Json.Encode.object [])

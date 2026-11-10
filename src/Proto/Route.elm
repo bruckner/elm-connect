@@ -50,7 +50,7 @@ type alias Route =
 {-| A path value its variable's template cannot match: the variable's field,
 as its dotted JSON field path, and its template as `google.api.http` writes
 it. Sending the call fails with
-[`InvalidPathValue`](Rpc-Error#Reason), which carries this record.
+[`BadPathValue`](Rpc-Error#Reason), which carries this record.
 -}
 type alias PathError =
     { field : String, template : String }

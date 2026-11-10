@@ -17,6 +17,7 @@ import Json.Encode
 import Proto.Any
 import Proto.Binary
 import Proto.Descriptors
+import Proto.Error
 import Proto.Json
 import Proto.Message
 import Proto.Registry
@@ -124,7 +125,7 @@ registry =
 
 {-| Encodes an [`Envelope`](#Envelope) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeEnvelopeWith : Proto.Registry.Registry -> Envelope -> Result Proto.Any.Problem Json.Encode.Value
+encodeEnvelopeWith : Proto.Registry.Registry -> Envelope -> Result Proto.Error.Error Json.Encode.Value
 encodeEnvelopeWith types value =
     Proto.Json.tryObjectOfFields
         ([ ( "id", Ok (Proto.Json.implicitField "" Json.Encode.string value.id) )
@@ -138,7 +139,7 @@ encodeEnvelopeWith types value =
 
 {-| Encodes an [`EnvelopeBody`](#EnvelopeBody) as the members of its message's JSON object.
 -}
-encodeEnvelopeBodyWith : Proto.Registry.Registry -> EnvelopeBody -> List ( String, Result Proto.Any.Problem (Maybe Json.Encode.Value) )
+encodeEnvelopeBodyWith : Proto.Registry.Registry -> EnvelopeBody -> List ( String, Result Proto.Error.Error (Maybe Json.Encode.Value) )
 encodeEnvelopeBodyWith types value =
     case value of
         EnvelopeBodyUnset ->

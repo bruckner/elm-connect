@@ -24,6 +24,7 @@ import Json.Encode as Encode exposing (Value)
 import Proto.Any
 import Proto.Binary
 import Proto.Bytes
+import Proto.Error
 import Proto.ErrorDetails
 import Proto.Json
 import Proto.Message exposing (Message)
@@ -130,7 +131,7 @@ build calls over binary; and an error's detail as proto3 JSON. Each build's
 -}
 type alias Respond res =
     { response : res -> List ( String, Value )
-    , detail : Result Rpc.Error.DetailProblem Proto.Any.Any -> Value
+    , detail : Result Proto.Error.Error Proto.Any.Any -> Value
     }
 
 
@@ -408,13 +409,13 @@ encodeAnswer answer =
 
 {-| A detail read, as its proto3 JSON through `registry` (the runner's own
 table, whatever the client's), or Connect's `{"type", "value"}` form for one
-of a type it lacks; a detail problem as `{"unregisteredType": url}` or
-`{"invalidDetail": {"type": url or null, "reason": …}}`. A detail held as
-JSON alone, which a lenient client registry reads, is unpacked with its
-`google.rpc` typed value and written as that value, so that a case's
+of a type it lacks; a detail problem as `{"unregisteredType": url}`, or
+`{"invalidDetail": reason}` with the error's text for any other. A detail
+held as JSON alone, which a lenient client registry reads, is unpacked with
+its `google.rpc` typed value and written as that value, so that a case's
 expected JSON says it unpacks; `{"notUnpacked": url}` when it does not.
 -}
-detailWith : Proto.Registry.Registry -> Result Rpc.Error.DetailProblem Proto.Any.Any -> Value
+detailWith : Proto.Registry.Registry -> Result Proto.Error.Error Proto.Any.Any -> Value
 detailWith registry detail =
     case detail of
         Ok any ->
@@ -438,18 +439,11 @@ detailWith registry detail =
                         Nothing ->
                             Encode.object [ ( "notUnpacked", Encode.string (Proto.Any.typeUrl any) ) ]
 
-        Err (Rpc.Error.UnregisteredType url) ->
+        Err (Proto.Error.UnregisteredType url) ->
             Encode.object [ ( "unregisteredType", Encode.string url ) ]
 
-        Err (Rpc.Error.InvalidDetail url reason) ->
-            Encode.object
-                [ ( "invalidDetail"
-                  , Encode.object
-                        [ ( "type", Maybe.map Encode.string url |> Maybe.withDefault Encode.null )
-                        , ( "reason", Encode.string reason )
-                        ]
-                  )
-                ]
+        Err problem ->
+            Encode.object [ ( "invalidDetail", Encode.string (Proto.Error.toString problem) ) ]
 
 
 {-| A detail unpacked with its `google.rpc` typed value and packed again.
@@ -585,11 +579,11 @@ reasonToString reason =
         Rpc.Error.BadUrl url ->
             "BadUrl " ++ url
 
-        Rpc.Error.InvalidHeader name ->
-            "InvalidHeader " ++ name
+        Rpc.Error.BadHeader name ->
+            "BadHeader " ++ name
 
-        Rpc.Error.InvalidPathValue { field, template } ->
-            "InvalidPathValue " ++ field ++ " " ++ template
+        Rpc.Error.BadPathValue { field, template } ->
+            "BadPathValue " ++ field ++ " " ++ template
 
         Rpc.Error.RequestTooLarge { limit, size } ->
             "RequestTooLarge " ++ String.fromInt size ++ " " ++ String.fromInt limit
@@ -600,15 +594,15 @@ reasonToString reason =
         Rpc.Error.UnwritableRequest problem ->
             "UnwritableRequest "
                 ++ (case problem of
-                        Proto.Any.UnregisteredType url ->
+                        Proto.Error.UnregisteredType url ->
                             "UnregisteredType " ++ url
 
-                        Proto.Any.UnwritableAny url ->
-                            "UnwritableAny " ++ url
+                        Proto.Error.BadBinary binary ->
+                            "BadBinary " ++ binary.typeName
 
-                        Proto.Any.InvalidProto ->
-                            "InvalidProto"
+                        Proto.Error.BadJson _ ->
+                            "BadJson"
 
-                        Proto.Any.TypeMismatch name ->
-                            "TypeMismatch " ++ name
+                        Proto.Error.TypeMismatch { typeName } ->
+                            "TypeMismatch " ++ typeName
                    )

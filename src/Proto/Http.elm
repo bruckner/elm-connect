@@ -98,7 +98,7 @@ bytes, `false`, `0` for any number, and an enum's zero value's name. Proto3
 reads the field as its default, and a server parsing the segment as the
 field's type rejects an empty one. Sending refuses a call whose value the
 template cannot match, `""` included, with
-[`InvalidPathValue`](Rpc-Error#Reason); [`Rpc.request`](Rpc#request) still
+[`BadPathValue`](Rpc-Error#Reason); [`Rpc.request`](Rpc#request) still
 builds its URL.
 
 -}

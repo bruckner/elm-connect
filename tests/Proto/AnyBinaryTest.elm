@@ -4,9 +4,10 @@ import Bytes.Encode
 import Expect
 import Json.Decode
 import Json.Encode
-import Proto.Any as Any exposing (Any, Problem(..))
+import Proto.Any as Any exposing (Any)
 import Proto.Binary
 import Proto.Bytes
+import Proto.Error exposing (Error(..), Reason(..))
 import Proto.Json
 import Proto.Message as Message exposing (Message)
 import Proto.Registry as Registry exposing (Registry)
@@ -82,7 +83,32 @@ readWith reg text =
         |> Result.mapError Json.Decode.errorToString
 
 
-writtenWith : Registry -> Any -> Result Problem String
+{-| An `Any` of `notes.v1.Title` whose binary stops inside its field 1.
+-}
+badTitle : Maybe Any
+badTitle =
+    Proto.Bytes.fromBase64 "CiJ0eXBlLmdvb2dsZWFwaXMuY29tL25vdGVzLnYxLlRpdGxlEgIKBQ=="
+        |> Maybe.andThen (Proto.Binary.decode (Proto.Binary.messageDecoder Proto.Binary.any) >> Result.toMaybe)
+
+
+truncatedTitle : Proto.Error.Binary
+truncatedTitle =
+    { typeName = "notes.v1.Title", reason = Truncated, path = [ ( "notes.v1.Title", 1 ) ], offset = 1 }
+
+
+{-| Whether a result failed with `BadJson`.
+-}
+isBadJson : Result Error a -> Bool
+isBadJson result =
+    case result of
+        Err (BadJson _) ->
+            True
+
+        _ ->
+            False
+
+
+writtenWith : Registry -> Any -> Result Error String
 writtenWith reg any =
     Proto.Json.encodeAnyWith reg any |> Result.map (Json.Encode.encode 0)
 
@@ -102,14 +128,15 @@ suite =
                     |> Any.bytes
                     |> Maybe.map Proto.Bytes.toBase64
                     |> Expect.equal (Just "CgJoaQ==")
-        , test "binary that is not the message is InvalidProto, another type a TypeMismatch" <|
+        , test "binary that is not the message is its BadBinary, another type a TypeMismatch" <|
             \_ ->
-                ( Proto.Bytes.fromBase64 "CiJ0eXBlLmdvb2dsZWFwaXMuY29tL25vdGVzLnYxLlRpdGxlEgIKBQ=="
-                    |> Maybe.andThen (Proto.Binary.decode (Proto.Binary.messageDecoder Proto.Binary.any) >> Result.toMaybe)
-                    |> Maybe.map (Any.tryUnpack messageTitle)
+                ( Maybe.map (Any.tryUnpack messageTitle) badTitle
                 , Any.tryUnpack WellKnown.int32Value (Any.pack messageTitle "hi")
                 )
-                    |> Expect.equal ( Just (Err InvalidProto), Err (TypeMismatch "notes.v1.Title") )
+                    |> Expect.equal
+                        ( Just (Err (BadBinary truncatedTitle))
+                        , Err (TypeMismatch { typeName = "google.protobuf.Int32Value", typeUrl = "type.googleapis.com/notes.v1.Title" })
+                        )
         , test "written as proto3 JSON through the registry's entry for its type" <|
             \_ ->
                 [ writtenWith registry (Any.pack messageTitle "hi")
@@ -121,12 +148,18 @@ suite =
                         , Ok """{"@type":"type.googleapis.com/google.protobuf.StringValue","value":"hi"}"""
                         , Ok """{"@type":"type.googleapis.com/google.protobuf.Any","value":{"@type":"type.googleapis.com/google.protobuf.BoolValue","value":true}}"""
                         ]
-        , test "a type the registry lacks is UnregisteredType naming its URL; inside another Any, UnwritableAny naming that one's" <|
+        , test "a type the registry lacks is UnregisteredType naming its URL, at any depth" <|
             \_ ->
                 [ writtenWith WellKnown.registry (Any.pack messageTitle "hi")
                 , writtenWith WellKnown.registry (Any.pack WellKnown.any (Any.pack messageTitle "hi"))
                 ]
-                    |> Expect.equal [ Err (UnregisteredType "type.googleapis.com/notes.v1.Title"), Err (UnwritableAny "type.googleapis.com/google.protobuf.Any") ]
+                    |> Expect.equal [ Err (UnregisteredType "type.googleapis.com/notes.v1.Title"), Err (UnregisteredType "type.googleapis.com/notes.v1.Title") ]
+        , test "binary that is not its message, inside another Any, is that message's BadBinary" <|
+            \_ ->
+                ( Maybe.map (writtenWith registry) badTitle
+                , Maybe.map (Any.pack WellKnown.any >> writtenWith registry) badTitle
+                )
+                    |> Expect.equal ( Just (Err (BadBinary truncatedTitle)), Just (Err (BadBinary truncatedTitle)) )
         , test "read from proto3 JSON through the registry, as its binary" <|
             \_ ->
                 [ """{"@type":"type.googleapis.com/google.protobuf.Timestamp","value":"2026-01-02T03:04:05Z"}"""
@@ -156,7 +189,7 @@ suite =
                     |> Maybe.andThen (Json.Decode.decodeValue decodeTitle >> Result.toMaybe)
                 , Any.toJson WellKnown.registry (Any.pack messageTitle "hi")
                 )
-                    |> Expect.equal ( Just "hi", Err (Any.UnregisteredType "type.googleapis.com/notes.v1.Title") )
+                    |> Expect.equal ( Just "hi", Err (UnregisteredType "type.googleapis.com/notes.v1.Title") )
         , test "a lenient registry reads a type it lacks as JSON alone, which unpacks and is written back as JSON" <|
             \_ ->
                 let
@@ -179,7 +212,7 @@ suite =
                         ( ( Nothing, Just Nothing, Just "hi" )
                         , ( Just (Ok text), Just (Ok """{"title":"hi","extra":1}"""), Nothing )
                         )
-        , test "an Any held as JSON alone is written as binary as its type URL alone, and its JSON fails to unpack as InvalidProto" <|
+        , test "an Any held as JSON alone is written as binary as its type URL alone, and its JSON fails to unpack as its BadJson" <|
             \_ ->
                 let
                     read =
@@ -187,12 +220,12 @@ suite =
                 in
                 ( read |> Maybe.map base64
                 , read |> Maybe.andThen throughBinary |> Maybe.map (\any -> ( Any.typeUrl any, Any.bytes any |> Maybe.map Proto.Bytes.toBase64 ))
-                , read |> Maybe.map (Any.tryUnpack messageTitle)
+                , read |> Maybe.map (Any.tryUnpack messageTitle >> isBadJson)
                 )
                     |> Expect.equal
                         ( Just "CiJ0eXBlLmdvb2dsZWFwaXMuY29tL25vdGVzLnYxLlRpdGxl"
                         , Just ( "type.googleapis.com/notes.v1.Title", Just "" )
-                        , Just (Err InvalidProto)
+                        , Just True
                         )
         , test "a known type read through a lenient registry reads an Any inside it leniently" <|
             \_ ->

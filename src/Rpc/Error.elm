@@ -1,5 +1,5 @@
 module Rpc.Error exposing
-    ( Error(..), Reason(..), StatusError, DetailProblem(..), Source(..)
+    ( Error(..), Reason(..), StatusError, Source(..)
     , code, message, toString
     )
 
@@ -16,7 +16,7 @@ error has:
         _ ->
             showMessage (Rpc.Error.message error)
 
-@docs Error, Reason, StatusError, DetailProblem, Source
+@docs Error, Reason, StatusError, Source
 
 
 # Reading an error
@@ -26,7 +26,8 @@ error has:
 -}
 
 import Json.Encode
-import Proto.Any exposing (Any, Problem)
+import Proto.Any exposing (Any)
+import Proto.Error
 import Rpc.Code as Code exposing (Code)
 import Rpc.Response exposing (Response)
 
@@ -82,10 +83,10 @@ type Error
     unreachable or a browser's CORS check refused the answer.
   - `BadUrl`: the URL the call would be sent to cannot be: a `baseUrl` holding
     `?` or `#`, or one the browser refuses. Nothing was sent.
-  - `InvalidHeader`: a header, named here, that a request cannot carry: its
+  - `BadHeader`: a header, named here, that a request cannot carry: its
     name is not an HTTP token, or its value holds NUL, CR, LF or a character
     above U+00FF. Nothing was sent.
-  - `InvalidPathValue`: over transcoding, a request field the path holds
+  - `BadPathValue`: over transcoding, a request field the path holds
     (`field`, its JSON names joined with `.`) whose value the variable's
     `template` cannot match, such as `""` or `notes/a/b` for
     `{name=notes/*}`, or which holds a surrogate without its pair, as text
@@ -100,10 +101,10 @@ type Error
     dropped without decoding, so the error keeps no `Response`.
   - `UnwritableRequest`: over JSON, the request holds a
     [`google.protobuf.Any`](Proto-Any) the client's registry cannot write
-    as JSON, for the [`Problem`](Proto-Any#Problem) given (never
-    `TypeMismatch`): most often `UnregisteredType`, which the client's
-    registry fixes ([`Rpc.withRegistry`](Rpc#withRegistry)). Nothing was
-    sent.
+    as JSON, for the [`Proto.Error`](Proto-Error#Error) given:
+    `UnregisteredType`, which the client's registry fixes
+    ([`Rpc.withRegistry`](Rpc#withRegistry)), or the `BadBinary` of an
+    `Any` whose binary is not its type's message. Nothing was sent.
 
 These are every way a request can fail before an answer is read, and the type
 is fixed.
@@ -113,11 +114,11 @@ type Reason
     = Timeout
     | NetworkError
     | BadUrl String
-    | InvalidHeader String
-    | InvalidPathValue { field : String, template : String }
+    | BadHeader String
+    | BadPathValue { field : String, template : String }
     | RequestTooLarge { limit : Int, size : Int }
     | ResponseTooLarge { limit : Int, size : Int }
-    | UnwritableRequest Problem
+    | UnwritableRequest Proto.Error.Error
 
 
 {-| A status the server stated: its code, its message (which may be empty), its
@@ -125,9 +126,26 @@ details and where it was found. The code is a [`Code`](Rpc-Code#Code), which
 has no `ok`: an answer claiming `ok` while failing reads as `Unknown`.
 
 Each detail is a message packed in an [`Any`](Proto-Any#Any), in the order
-the server sent them, or the [`DetailProblem`](#DetailProblem) that kept one
+the server sent them, or the [`Proto.Error`](Proto-Error#Error) that kept one
 from being read; a problem with a detail never loses the error's code,
-message and source. Unpack one with
+message and source:
+
+  - `UnregisteredType`: it arrived as proto3 JSON (a `google.rpc.Status`
+    body) whose type, its URL here, the client's registry has no entry for.
+    Register the type ([`Rpc.withRegistry`](Rpc#withRegistry)); for
+    `google.rpc` details such as `ErrorInfo` or `BadRequest`, that is
+    [`Proto.ErrorDetails.registry`](Proto-ErrorDetails#registry). A
+    [lenient](Proto-Registry#lenient) registry reads it instead, as its
+    JSON alone.
+  - `BadJson`: it is not a detail of its form: a Connect detail with no
+    `type`, or whose `value` is not base64; proto3 JSON with no `"@type"`,
+    or that is not the message its `"@type"` names. elm/json's error holds
+    the detail and what was wrong, for a log.
+  - `BadBinary`: over gRPC-Web, a `grpc-status-details-bin` that does not
+    decode as a `google.rpc.Status`, which then stands for all of them.
+
+Nothing in the program fixes a `BadJson` or a `BadBinary`; report it as
+the server's. Unpack one with
 [`Proto.Any.tryUnpack`](Proto-Any#tryUnpack):
 
     status.details
@@ -144,32 +162,9 @@ simply absent, `[]`.
 type alias StatusError =
     { code : Code
     , message : String
-    , details : List (Result DetailProblem Any)
+    , details : List (Result Proto.Error.Error Any)
     , source : Source
     }
-
-
-{-| Why one of a status's details could not be read:
-
-  - `UnregisteredType`: it arrived as proto3 JSON (a `google.rpc.Status`
-    body) whose type, its URL here, the client's registry has no entry for.
-    Register the type ([`Rpc.withRegistry`](Rpc#withRegistry)); for
-    `google.rpc` details such as `ErrorInfo` or `BadRequest`, that is
-    [`Proto.ErrorDetails.registry`](Proto-ErrorDetails#registry). A
-    [lenient](Proto-Registry#lenient) registry reads it instead, as its
-    JSON alone.
-  - `InvalidDetail`: it is not a detail of its form: a Connect detail with
-    no `type`, or whose `value` is not base64; proto3 JSON with no
-    `"@type"`, or that is not the message its `"@type"` names; or, over
-    gRPC-Web, a `grpc-status-details-bin` that does not decode, which then
-    stands for all of them. It holds the detail's type URL when the detail
-    named one, and what was wrong, for a log. Nothing in the program fixes
-    it; report it as the server's.
-
--}
-type DetailProblem
-    = UnregisteredType String
-    | InvalidDetail (Maybe String) String
 
 
 {-| Where a status was read from, tried in this order:
@@ -213,8 +208,8 @@ type Source
   - `BadResponse`: its own, `Internal` or `Unimplemented` (see
     [`Error`](#Error)).
   - `NoAnswer`: a timeout is `DeadlineExceeded`, a network failure
-    `Unavailable`, a bad URL, an invalid header or an unwritable request
-    `Internal`, an invalid path value `InvalidArgument`, a request or a
+    `Unavailable`, a bad URL, a bad header or an unwritable request
+    `Internal`, a bad path value `InvalidArgument`, a request or a
     response over its limit `ResourceExhausted`.
 
 An `HttpStatus` code follows gRPC's table, so a 404 that carries no status
@@ -246,10 +241,10 @@ code error =
         NoAnswer (BadUrl _) ->
             Code.Internal
 
-        NoAnswer (InvalidHeader _) ->
+        NoAnswer (BadHeader _) ->
             Code.Internal
 
-        NoAnswer (InvalidPathValue _) ->
+        NoAnswer (BadPathValue _) ->
             Code.InvalidArgument
 
         NoAnswer (RequestTooLarge _) ->
@@ -272,8 +267,8 @@ code error =
     then `…`; the whole problem stays in the error.
   - `NoAnswer`: `timeout`, `network error`, `bad URL: <url>`,
     `invalid header "<name>"`, `path field "<field>" does not match
-    <template>`, for an unwritable request `unregistered type "<url>"`,
-    `unwritable Any inside "<url>"` or `an Any's binary is not its type`, or,
+    <template>`, for an unwritable request `unwritable request:` and
+    [`Proto.Error.toString`](Proto-Error#toString)'s text, or,
     as connect-es words them,
     `message size <size> is larger than configured writeMaxBytes <limit>`
     for a request and `… readMaxBytes <limit>` for a response, both in
@@ -281,8 +276,8 @@ code error =
     user and password a URL can hold, and without its query and fragment,
     which over Connect's GET hold the request:
     `bad URL: https://api.example.com/base (query omitted)`. The whole URL
-    stays in the error. An invalid header is named, its value left out, since
-    it may be a credential; an invalid path value is left out too.
+    stays in the error. A bad header is named, its value left out, since
+    it may be a credential; a bad path value is left out too.
 
 -}
 message : Error -> String
@@ -310,10 +305,10 @@ message error =
         NoAnswer (BadUrl url) ->
             "bad URL: " ++ printableUrl url
 
-        NoAnswer (InvalidHeader name) ->
+        NoAnswer (BadHeader name) ->
             "invalid header " ++ Json.Encode.encode 0 (Json.Encode.string name)
 
-        NoAnswer (InvalidPathValue { field, template }) ->
+        NoAnswer (BadPathValue { field, template }) ->
             "path field " ++ Json.Encode.encode 0 (Json.Encode.string field) ++ " does not match " ++ template
 
         NoAnswer (RequestTooLarge { limit, size }) ->
@@ -323,23 +318,7 @@ message error =
             "message size " ++ String.fromInt size ++ " is larger than configured readMaxBytes " ++ String.fromInt limit
 
         NoAnswer (UnwritableRequest problem) ->
-            case problem of
-                Proto.Any.UnregisteredType url ->
-                    "unregistered type " ++ quote url
-
-                Proto.Any.UnwritableAny url ->
-                    "unwritable Any inside " ++ quote url
-
-                Proto.Any.InvalidProto ->
-                    "an Any's binary is not its type"
-
-                Proto.Any.TypeMismatch name ->
-                    "type mismatch " ++ quote name
-
-
-quote : String -> String
-quote text =
-    Json.Encode.encode 0 (Json.Encode.string text)
+            "unwritable request: " ++ Proto.Error.toString problem
 
 
 {-| The first 300 characters of a text, and `…` when there were more.

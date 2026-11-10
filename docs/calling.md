@@ -90,7 +90,7 @@ Clients built alike are `==`; a client never belongs in a message.
 
 A header name must be an HTTP token, and a value can hold no NUL, CR or
 LF and no character above U+00FF, which a browser refuses. A call with
-such a header is not sent: it fails with `NoAnswer (InvalidHeader
+such a header is not sent: it fails with `NoAnswer (BadHeader
 name)`, and the header is never altered to fit.
 
 ### Checking a client
@@ -545,9 +545,9 @@ type Error
   no content type is read as the answer.
 - `NoAnswer`: nothing came back, or nothing was sent: a `Timeout`
   (`DeadlineExceeded`), a `NetworkError` (`Unavailable`, which is also
-  how a browser's CORS refusal arrives), a `BadUrl` or an
-  `InvalidHeader` (both `Internal`, and never sent), an
-  `InvalidPathValue`, a transcoded call's path value its template
+  how a browser's CORS refusal arrives), a `BadUrl` or a
+  `BadHeader` (both `Internal`, and never sent), a
+  `BadPathValue`, a transcoded call's path value its template
   cannot match (`InvalidArgument`, never sent), a request or
   answer over a size limit (`RequestTooLarge`, `ResponseTooLarge`,
   both `ResourceExhausted`).

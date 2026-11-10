@@ -72,7 +72,8 @@ noteFields =
 value, and unpacks one the same way. An `Any` holds a type URL and the
 message's protobuf binary, whatever codec the calls use; `unpack` gives
 `Nothing` when it holds another type or its binary is not the message,
-and `tryUnpack` says which (`TypeMismatch`, `InvalidProto`).
+and `tryUnpack` says which with a `Proto.Error` (`TypeMismatch`,
+`BadBinary`).
 
 ```elm examples/notes/elm/src/Snippets/Any.elm#any
 import Notes.V1
@@ -148,7 +149,7 @@ registered but the types its `Any`s hold: an entry converts a nested
 
 ## Error details
 
-A status's details are `List (Result Rpc.Error.DetailProblem
+A status's details are `List (Result Proto.Error.Error
 Proto.Any.Any)`, in the order the server sent them: each an `Any`, or
 why it could not be read. Unpack those of one type with its typed
 value, here `google.rpc.BadRequest` from the runtime's
@@ -185,8 +186,8 @@ client reads through its registry: without `Proto.ErrorDetails.registry`
 in it they read as `Err (UnregisteredType url)`, the error's code and
 message kept; under a lenient registry they read as `Any`s held as JSON
 alone, which unpack the same way. A detail that is not one at all is
-`InvalidDetail`, with what was wrong; `Rpc.Trace.toJson` lists both
-kinds.
+`BadJson`, or over gRPC-Web `BadBinary`, with what was wrong;
+`Rpc.Trace.toJson` lists every kind.
 
 ## Update masks
 
