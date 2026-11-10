@@ -343,15 +343,7 @@ mergeMemberBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | name = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | name = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -374,181 +366,51 @@ mergeTeamBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.string
-                        Proto.Binary.string
-                        (\k v ->
-                            { value
-                                | labels = Dict.insert k v value.labels
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.string Proto.Binary.string (\k v -> { value | labels = Dict.insert k v value.labels }) wire value
 
                 2 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.int32
-                        Proto.Binary.string
-                        (\k v ->
-                            { value
-                                | bySeat = Dict.insert k v value.bySeat
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.int32 Proto.Binary.string (\k v -> { value | bySeat = Dict.insert k v value.bySeat }) wire value
 
                 3 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.uint32
-                        Proto.Binary.double
-                        (\k v ->
-                            { value
-                                | scores = Dict.insert k v value.scores
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.uint32 Proto.Binary.double (\k v -> { value | scores = Dict.insert k v value.scores }) wire value
 
                 4 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.sint32
-                        Proto.Binary.bool
-                        (\k v ->
-                            { value
-                                | flags = Dict.insert k v value.flags
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.sint32 Proto.Binary.bool (\k v -> { value | flags = Dict.insert k v value.flags }) wire value
 
                 5 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.fixed32
-                        Proto.Binary.int64
-                        (\k v ->
-                            { value
-                                | totals = Dict.insert k v value.totals
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.fixed32 Proto.Binary.int64 (\k v -> { value | totals = Dict.insert k v value.totals }) wire value
 
                 6 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.int64
-                        Proto.Binary.string
-                        (\k v ->
-                            { value
-                                | byId = Dict.insert k v value.byId
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.int64 Proto.Binary.string (\k v -> { value | byId = Dict.insert k v value.byId }) wire value
 
                 7 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.uint64
-                        Proto.Binary.int32
-                        (\k v ->
-                            { value
-                                | counts = Dict.insert k v value.counts
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.uint64 Proto.Binary.int32 (\k v -> { value | counts = Dict.insert k v value.counts }) wire value
 
                 8 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.string
-                        (Proto.Binary.embedded encodeMemberBytes mergeMemberBytes defaultMember)
-                        (\k v ->
-                            { value
-                                | members = Dict.insert k v value.members
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.string (Proto.Binary.embedded encodeMemberBytes mergeMemberBytes defaultMember) (\k v -> { value | members = Dict.insert k v value.members }) wire value
 
                 9 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.int32
-                        (Proto.Binary.enum encodeRoleBytes decodeRoleBytes)
-                        (\k v ->
-                            { value
-                                | roles = Dict.insert k v value.roles
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.int32 (Proto.Binary.enum encodeRoleBytes decodeRoleBytes) (\k v -> { value | roles = Dict.insert k v value.roles }) wire value
 
                 10 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.bool
-                        Proto.Binary.string
-                        (\k v ->
-                            { value
-                                | byFlag = Proto.Binary.insertBool k v value.byFlag
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.bool Proto.Binary.string (\k v -> { value | byFlag = Proto.Binary.insertBool k v value.byFlag }) wire value
 
                 11 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.sfixed32
-                        Proto.Binary.string
-                        (\k v ->
-                            { value
-                                | byOffset = Dict.insert k v value.byOffset
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.sfixed32 Proto.Binary.string (\k v -> { value | byOffset = Dict.insert k v value.byOffset }) wire value
 
                 12 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.sint64
-                        Proto.Binary.string
-                        (\k v ->
-                            { value
-                                | deltas = Dict.insert k v value.deltas
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.sint64 Proto.Binary.string (\k v -> { value | deltas = Dict.insert k v value.deltas }) wire value
 
                 13 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.fixed64
-                        Proto.Binary.string
-                        (\k v ->
-                            { value
-                                | byHash = Dict.insert k v value.byHash
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.fixed64 Proto.Binary.string (\k v -> { value | byHash = Dict.insert k v value.byHash }) wire value
 
                 14 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.sfixed64
-                        Proto.Binary.string
-                        (\k v ->
-                            { value
-                                | byStamp = Dict.insert k v value.byStamp
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.sfixed64 Proto.Binary.string (\k v -> { value | byStamp = Dict.insert k v value.byStamp }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value ->
-            { value
-                | byFlag = List.reverse value.byFlag
-            }
-        )
+        (\value -> { value | byFlag = List.reverse value.byFlag })
 
 
 {-| Decodes a [`Team`](#Team) from protobuf binary.

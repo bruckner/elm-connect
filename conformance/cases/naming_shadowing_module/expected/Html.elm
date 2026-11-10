@@ -142,15 +142,7 @@ mergeAttributesBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | class = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | class = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value

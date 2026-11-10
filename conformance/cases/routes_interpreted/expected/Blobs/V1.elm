@@ -157,37 +157,13 @@ mergeBlobBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.bytesAsBytes
-                        (\v ->
-                            { value
-                                | digest = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bytesAsBytes (\v -> { value | digest = v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | name = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | name = v }) wire value
 
                 3 ->
-                    Proto.Binary.field
-                        Proto.Binary.bytesAsBytes
-                        (\v ->
-                            { value
-                                | salt = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bytesAsBytes (\v -> { value | salt = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value

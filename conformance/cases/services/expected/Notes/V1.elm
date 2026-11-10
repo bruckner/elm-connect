@@ -850,58 +850,21 @@ mergeNoteBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | name = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | name = v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | title = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | title = v }) wire value
 
                 3 ->
-                    Proto.Binary.field
-                        (Proto.Binary.enum encodeVisibilityBytes decodeVisibilityBytes)
-                        (\v ->
-                            { value
-                                | visibility = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field (Proto.Binary.enum encodeVisibilityBytes decodeVisibilityBytes) (\v -> { value | visibility = v }) wire value
 
                 4 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | tags = v
-                            }
-                        )
-                        value.tags
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.string (\v -> { value | tags = v }) value.tags wire value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value ->
-            { value
-                | tags = List.reverse value.tags
-            }
-        )
+        (\value -> { value | tags = List.reverse value.tags })
 
 
 {-| Decodes a [`Note`](#Note) from protobuf binary.
@@ -919,15 +882,7 @@ mergeGetNoteRequestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | name = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | name = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -950,92 +905,30 @@ mergeListNotesRequestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | parent = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | parent = v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | pageSize = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | pageSize = v }) wire value
 
                 3 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | pageToken = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | pageToken = v }) wire value
 
                 4 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeListNotesRequestFilterBytes mergeListNotesRequestFilterBytes defaultListNotesRequestFilter)
-                        value.filter
-                        (\v ->
-                            { value
-                                | filter = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeListNotesRequestFilterBytes mergeListNotesRequestFilterBytes defaultListNotesRequestFilter) value.filter (\v -> { value | filter = Just v }) wire value
 
                 5 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | tags = v
-                            }
-                        )
-                        value.tags
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.string (\v -> { value | tags = v }) value.tags wire value
 
                 6 ->
-                    Proto.Binary.field
-                        Proto.Binary.bool
-                        (\v ->
-                            { value
-                                | archived = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bool (\v -> { value | archived = Just v }) wire value
 
                 7 ->
-                    Proto.Binary.field
-                        Proto.Binary.int64
-                        (\v ->
-                            { value
-                                | revision = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int64 (\v -> { value | revision = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value ->
-            { value
-                | tags = List.reverse value.tags
-            }
-        )
+        (\value -> { value | tags = List.reverse value.tags })
 
 
 {-| Decodes a [`ListNotesRequest`](#ListNotesRequest) from protobuf binary.
@@ -1053,26 +946,10 @@ mergeListNotesRequestFilterBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        (Proto.Binary.enum encodeVisibilityBytes decodeVisibilityBytes)
-                        (\v ->
-                            { value
-                                | visibility = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field (Proto.Binary.enum encodeVisibilityBytes decodeVisibilityBytes) (\v -> { value | visibility = v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.timestamp
-                        (\v ->
-                            { value
-                                | since = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.timestamp (\v -> { value | since = Just v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -1095,36 +972,15 @@ mergeListNotesResponseBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeNoteBytes mergeNoteBytes defaultNote)
-                        (\v ->
-                            { value
-                                | notes = v
-                            }
-                        )
-                        value.notes
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.embedded encodeNoteBytes mergeNoteBytes defaultNote) (\v -> { value | notes = v }) value.notes wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | nextPageToken = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | nextPageToken = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value ->
-            { value
-                | notes = List.reverse value.notes
-            }
-        )
+        (\value -> { value | notes = List.reverse value.notes })
 
 
 {-| Decodes a [`ListNotesResponse`](#ListNotesResponse) from protobuf binary.
@@ -1142,27 +998,10 @@ mergeCreateNoteRequestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | parent = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | parent = v }) wire value
 
                 2 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeNoteBytes mergeNoteBytes defaultNote)
-                        value.note
-                        (\v ->
-                            { value
-                                | note = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeNoteBytes mergeNoteBytes defaultNote) value.note (\v -> { value | note = Just v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -1185,27 +1024,10 @@ mergeUpdateNoteRequestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeNoteBytes mergeNoteBytes defaultNote)
-                        value.note
-                        (\v ->
-                            { value
-                                | note = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeNoteBytes mergeNoteBytes defaultNote) value.note (\v -> { value | note = Just v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.fieldMask
-                        (\v ->
-                            { value
-                                | updateMask = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.fieldMask (\v -> { value | updateMask = Just v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -1228,26 +1050,10 @@ mergeDeleteNoteRequestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | name = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | name = v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.bool
-                        (\v ->
-                            { value
-                                | force = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bool (\v -> { value | force = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -1270,26 +1076,10 @@ mergeArchiveNoteRequestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | name = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | name = v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | reason = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | reason = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -1312,15 +1102,7 @@ mergeReadFileRequestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | path = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | path = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -1343,15 +1125,7 @@ mergeSummaryBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | text = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | text = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value

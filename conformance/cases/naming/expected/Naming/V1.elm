@@ -429,125 +429,37 @@ mergeTagBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | type_ = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | type_ = v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.bool
-                        (\v ->
-                            { value
-                                | if_ = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bool (\v -> { value | if_ = v }) wire value
 
                 3 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | port_ = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | port_ = v }) wire value
 
                 4 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | alias = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | alias = v }) wire value
 
                 5 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | displayName = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | displayName = v }) wire value
 
                 6 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | httpUrl = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | httpUrl = v }) wire value
 
                 7 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | v2Count = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | v2Count = v }) wire value
 
                 8 ->
-                    Proto.Binary.field
-                        (Proto.Binary.enum encodeShapeBytes decodeShapeBytes)
-                        (\v ->
-                            { value
-                                | shape = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field (Proto.Binary.enum encodeShapeBytes decodeShapeBytes) (\v -> { value | shape = v }) wire value
 
                 9 ->
-                    Proto.Binary.field
-                        (Proto.Binary.enum encodeHttpMethodBytes decodeHttpMethodBytes)
-                        (\v ->
-                            { value
-                                | method = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field (Proto.Binary.enum encodeHttpMethodBytes decodeHttpMethodBytes) (\v -> { value | method = v }) wire value
 
                 10 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | case_ = TagCaseThen v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | case_ = TagCaseThen v }) wire value
 
                 11 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | case_ = TagCaseOf v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | case_ = TagCaseOf v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value

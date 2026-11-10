@@ -364,37 +364,13 @@ mergeEventBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | name = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | name = v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | kind = EventKindLegacy v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | kind = EventKindLegacy v }) wire value
 
                 3 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | kind = EventKindCount v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | kind = EventKindCount v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -417,26 +393,10 @@ mergeListEventsRequestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | parent = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | parent = v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | filter = ListEventsRequestFilterLegacy v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | filter = ListEventsRequestFilterLegacy v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -459,25 +419,12 @@ mergeListEventsResponseBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeEventBytes mergeEventBytes defaultEvent)
-                        (\v ->
-                            { value
-                                | events = v
-                            }
-                        )
-                        value.events
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.embedded encodeEventBytes mergeEventBytes defaultEvent) (\v -> { value | events = v }) value.events wire value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value ->
-            { value
-                | events = List.reverse value.events
-            }
-        )
+        (\value -> { value | events = List.reverse value.events })
 
 
 {-| Decodes a [`ListEventsResponse`](#ListEventsResponse) from protobuf binary.

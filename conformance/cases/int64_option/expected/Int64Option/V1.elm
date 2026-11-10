@@ -271,161 +271,46 @@ mergeCountersBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.int64AsInt
-                        (\v ->
-                            { value
-                                | int64Value = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int64AsInt (\v -> { value | int64Value = v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.uint64AsInt
-                        (\v ->
-                            { value
-                                | uint64Value = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.uint64AsInt (\v -> { value | uint64Value = v }) wire value
 
                 3 ->
-                    Proto.Binary.field
-                        Proto.Binary.sint64AsInt
-                        (\v ->
-                            { value
-                                | sint64Value = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.sint64AsInt (\v -> { value | sint64Value = v }) wire value
 
                 4 ->
-                    Proto.Binary.field
-                        Proto.Binary.fixed64AsInt
-                        (\v ->
-                            { value
-                                | fixed64Value = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.fixed64AsInt (\v -> { value | fixed64Value = v }) wire value
 
                 5 ->
-                    Proto.Binary.field
-                        Proto.Binary.sfixed64AsInt
-                        (\v ->
-                            { value
-                                | sfixed64Value = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.sfixed64AsInt (\v -> { value | sfixed64Value = v }) wire value
 
                 6 ->
-                    Proto.Binary.field
-                        Proto.Binary.int64
-                        (\v ->
-                            { value
-                                | exactId = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int64 (\v -> { value | exactId = v }) wire value
 
                 7 ->
-                    Proto.Binary.field
-                        Proto.Binary.int64AsInt
-                        (\v ->
-                            { value
-                                | normal = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int64AsInt (\v -> { value | normal = v }) wire value
 
                 8 ->
-                    Proto.Binary.field
-                        Proto.Binary.int64AsInt
-                        (\v ->
-                            { value
-                                | maybeCount = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int64AsInt (\v -> { value | maybeCount = Just v }) wire value
 
                 9 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.int64AsInt
-                        (\v ->
-                            { value
-                                | samples = v
-                            }
-                        )
-                        value.samples
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.int64AsInt (\v -> { value | samples = v }) value.samples wire value
 
                 10 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.uint64
-                        (\v ->
-                            { value
-                                | exactSamples = v
-                            }
-                        )
-                        value.exactSamples
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.uint64 (\v -> { value | exactSamples = v }) value.exactSamples wire value
 
                 11 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.int64
-                        Proto.Binary.int64AsInt
-                        (\k v ->
-                            { value
-                                | byId = Dict.insert k v value.byId
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.int64 Proto.Binary.int64AsInt (\k v -> { value | byId = Dict.insert k v value.byId }) wire value
 
                 12 ->
-                    Proto.Binary.field
-                        Proto.Binary.int64ValueAsInt
-                        (\v ->
-                            { value
-                                | wrapped = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int64ValueAsInt (\v -> { value | wrapped = Just v }) wire value
 
                 13 ->
-                    Proto.Binary.field
-                        Proto.Binary.int64AsInt
-                        (\v ->
-                            { value
-                                | limit = CountersLimitAtMost v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int64AsInt (\v -> { value | limit = CountersLimitAtMost v }) wire value
 
                 14 ->
-                    Proto.Binary.field
-                        Proto.Binary.int64
-                        (\v ->
-                            { value
-                                | limit = CountersLimitExactly v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int64 (\v -> { value | limit = CountersLimitExactly v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value

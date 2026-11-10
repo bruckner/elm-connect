@@ -203,36 +203,15 @@ mergeNoteBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | title = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | title = v }) wire value
 
                 2 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeTagBytes mergeTagBytes defaultTag)
-                        (\v ->
-                            { value
-                                | tags = v
-                            }
-                        )
-                        value.tags
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.embedded encodeTagBytes mergeTagBytes defaultTag) (\v -> { value | tags = v }) value.tags wire value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value ->
-            { value
-                | tags = List.reverse value.tags
-            }
-        )
+        (\value -> { value | tags = List.reverse value.tags })
 
 
 {-| Decodes a [`Note`](#Note) from protobuf binary.
@@ -250,15 +229,7 @@ mergeTagBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | label = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | label = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
