@@ -25,8 +25,9 @@ pub struct Options {
     /// What an enum value the generated decoder does not know reads as
     /// (`enum_unknown=`, design §3.3).
     pub enum_unknown: EnumUnknown,
-    /// Which codecs messages get (`codec=`): proto3 JSON, protobuf binary,
-    /// or both.
+    /// Which codecs the service methods are wired with (`codec=`): proto3
+    /// JSON, protobuf binary, or both. Every message gets both codecs
+    /// whatever it says.
     pub codec: Codec,
     /// The rename map (`rename=`, design §3.7): Elm names given by proto
     /// full name, each used in place of the name the naming rules would
@@ -454,16 +455,18 @@ impl std::str::FromStr for EnumUnknown {
     }
 }
 
-/// Which codecs the generated messages get.
+/// Which codecs the generated service methods are wired with. Messages
+/// get both codecs, their typed values and the package's `registry`
+/// whatever the option says.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum Codec {
     /// proto3 JSON, which Connect's JSON codec and transcoding speak.
     #[default]
     Json,
     /// Protobuf binary alone (`encodeNoteBytes`, `decodeNoteBytes`), for
-    /// Connect's proto codec; messages get no JSON codecs.
+    /// Connect's proto codec and gRPC-Web.
     Proto,
-    /// Both, the binary codecs beside the JSON ones.
+    /// Both, so a method's calls go over any protocol.
     Both,
 }
 
@@ -480,12 +483,12 @@ impl Codec {
         }
     }
 
-    /// Whether messages get proto3 JSON codecs.
+    /// Whether methods are wired with proto3 JSON codecs.
     pub fn json(self) -> bool {
         matches!(self, Codec::Json | Codec::Both)
     }
 
-    /// Whether messages get protobuf binary codecs.
+    /// Whether methods are wired with protobuf binary codecs.
     pub fn binary(self) -> bool {
         matches!(self, Codec::Proto | Codec::Both)
     }

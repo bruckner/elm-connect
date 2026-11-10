@@ -19,8 +19,8 @@
 //!   compiler refuses unless the runtime package is of a compatible
 //!   release (design §8). A package's module then holds six sections in
 //!   order: types, defaults, typed values, registry (the package's
-//!   descriptors, and its binary registry under `codec=both`), encoders,
-//!   decoders.
+//!   descriptors and its registry of codecs), encoders, decoders, binary
+//!   encoders, binary decoders.
 //!   Each section has the enums, then the messages, each followed by its
 //!   recursion wrapper and its oneofs; the defaults section has the
 //!   messages alone, and is left out when there are none, and the typed
@@ -36,7 +36,7 @@
 //!   calls, routes, then descriptors (routes only when a method has one).
 //!   Each method's call is a function from its request to an `Rpc.Call`,
 //!   written point-free as `Rpc.call` of the method's
-//!   `Proto.Method.Method`, built by `Proto.Method.json` from its
+//!   `Proto.Method.Method`, built by `Proto.Method.initJson` from its
 //!   service's full name and its own, the encoder of its request and the
 //!   decoder of its response (`Notes.V1.encodeGetNoteRequest`, or the
 //!   runtime's for a well-known type), then piped through
@@ -73,11 +73,12 @@
 //!   An enum's, `descriptor : Proto.Enum.Descriptor`, holds every
 //!   declared name with its number (`Proto.EnumValue.descriptor`), each
 //!   deprecated one marked (`withDeprecated`). Each type's typed value,
-//!   in the package's module, is
-//!   `messageFoo : Proto.Message.Message Foo`, built by
-//!   `Proto.Message.message` from its encoder, decoder, default and
-//!   descriptor, and `enumBar : Proto.Enum.Enum Bar` likewise with its
-//!   zero value. The package's `descriptors` holds its own descriptors (the
+//!   in the package's module, is `messageFoo : Proto.Message.Message Foo`,
+//!   built by `Proto.Message.init` from its full name and both its codecs
+//!   (`initWith`, with the JSON codecs taking the registry, for a message
+//!   that reaches an `Any`), and `enumBar :
+//!   Proto.Enum.Enum Bar`, built by `Proto.Enum.enum` from its codecs, zero
+//!   value and descriptor. The package's `descriptors` holds its own descriptors (the
 //!   descriptor modules' values, so a program using it keeps no codecs),
 //!   then those of the packages its module imports and the well-known
 //!   types', so it is transitive.
@@ -137,7 +138,8 @@
 //! - A field or member whose JSON name differs from its proto name is
 //!   read under either, and an object holding both fails (design §3.4).
 //! - The well-known types map to `Time.Posix`, the runtime's `Duration`,
-//!   `List String` (field masks), `()` (`Empty`), `Proto.Any.Any`,
+//!   `List String` (field masks), `()` (`Empty`), `Proto.Any.Any`, holding
+//!   its message's binary,
 //!   `Dict String Json.Encode.Value` (`Struct`), `List Json.Encode.Value`
 //!   (`ListValue`), `Json.Encode.Value` (`Value`) and the wrappers'
 //!   scalars (design §3.5). All but `Empty` and `Value` are messages, held
@@ -149,16 +151,22 @@
 //!   fields holds the wrapper, and the wrapper's decoder reads the message
 //!   through `Json.Decode.lazy`. A oneof member that closes a cycle decodes
 //!   through `Json.Decode.lazy` too (design §3.2).
-//! - Under `codec=proto` or `codec=both` each message, enum, oneof and
-//!   recursion wrapper also gets protobuf binary codecs, in two sections
-//!   after the decoders ([`binary`]); the typed values and the methods
-//!   carry them (`Proto.Message.withBinary`, `Proto.Method.both`). Under
-//!   `codec=proto` messages, oneofs and wrappers get no JSON codecs (enums
-//!   keep theirs, which their typed values hold), and the typed values and
-//!   methods are built by `Proto.Message.messageBinary` and
-//!   `Proto.Method.proto`, and methods get no routes, which take JSON. A
-//!   call's type carries its codec: `Rpc.Call Rpc.Json`, `Rpc.Call
-//!   Rpc.Proto`, or free in it under `codec=both`.
+//! - Each message, enum, oneof and recursion wrapper also gets protobuf
+//!   binary codecs, in two sections after the decoders ([`binary`]),
+//!   whatever the `codec` option, which decides only which halves the
+//!   methods carry: `Proto.Method.initJson` (JSON), `initProto` (binary;
+//!   no routes, which take JSON) or `init` (both). A call's type carries
+//!   its codec: `Rpc.Call Rpc.Json`, `Rpc.Call Rpc.Proto`, or free in it
+//!   under `codec=both`.
+//! - An `Any` holds its message's binary, and its proto3
+//!   JSON goes through a registry ([`crate::ir::AnyReach`]): each message,
+//!   oneof and wrapper that reaches one has JSON codecs taking it,
+//!   `decodeFooWith` and `encodeFooWith`, the encoder giving a `Result`
+//!   through `Proto.Json`'s `try` helpers, and no `decodeFoo` or
+//!   `encodeFoo`. The package's `registry` holds its own messages' typed
+//!   values and nothing else; a method's JSON codecs take the client's
+//!   registry, and a route whose body reaches an `Any` is read from its
+//!   binding.
 //! - A message that the request of a generated method's binding puts in the
 //!   query gets a query encoder in its package's module, in a last
 //!   section, `queryOfListNotesRequest : ListNotesRequest -> List ( String,
@@ -186,8 +194,8 @@ use crate::diagnostics::{Problem, Site};
 use crate::elm::ast::{Decl, Exposed, Exposing, Expr, Import, Module, ModuleName, Type};
 use crate::elm::build::{apply, qualified, ty, ty_qualified, var};
 use crate::ir::{
-    Element, Field, Message, ModuleName as IrModule, Oneof, OneofVariant, Package, Service,
-    TypeName,
+    AnyReach, Element, Field, Message, ModuleName as IrModule, Oneof, OneofVariant, Package,
+    Service, TypeName,
 };
 use crate::naming::VERSION_VALUE;
 use crate::options::{Codec, EnumUnknown, Options};
@@ -235,7 +243,8 @@ const PROTO_DESCRIPTORS: &str = "Proto.Descriptors";
 /// The runtime package's registry of codecs, which an `Any` resolves
 /// through.
 const PROTO_REGISTRY: &str = "Proto.Registry";
-/// The runtime package's `google.protobuf.Any`.
+/// The runtime package's `google.protobuf.Any`, and the problems of
+/// writing one.
 const PROTO_ANY: &str = "Proto.Any";
 /// The runtime package's typed values of the well-known types, home of
 /// `Proto.WellKnown.nullValue`, which a descriptor of a `NullValue` field
@@ -247,7 +256,7 @@ const PROTO_VERSION: &str = "Proto.Version";
 /// The names of elm/core's default imports that generated code uses
 /// unqualified, each with its module and its kind: a type or constructor
 /// of the same name and kind in a generated module would take its place.
-const DEFAULT_IMPORTS: [(&str, &str, Kind); 9] = [
+const DEFAULT_IMPORTS: [(&str, &str, Kind); 11] = [
     ("Int", "Basics", Kind::Type),
     ("Float", "Basics", Kind::Type),
     ("Bool", "Basics", Kind::Type),
@@ -257,6 +266,8 @@ const DEFAULT_IMPORTS: [(&str, &str, Kind); 9] = [
     ("Maybe", "Maybe", Kind::Type),
     ("Just", "Maybe", Kind::Constructor),
     ("Nothing", "Maybe", Kind::Constructor),
+    ("Result", "Result", Kind::Type),
+    ("Ok", "Result", Kind::Constructor),
 ];
 
 /// Elm's two namespaces of capitalized names, which do not meet: a type
@@ -298,6 +309,7 @@ pub fn emit_with_queries(
 ) -> Result<Module, Vec<ReservedName>> {
     let messages = all_messages(package, packages);
     let mut emitter = Emitter::new(&package.module, options);
+    emitter.reach = AnyReach::of(packages.iter().chain(std::iter::once(package)));
     let mut decls = emitter.package(package);
     let mut encoders = Vec::new();
     // Route functions take JSON, which `codec=proto` does not generate,
@@ -423,6 +435,7 @@ pub fn emit_service(
 ) -> Module {
     let messages = all_messages(package, packages);
     let mut emitter = Emitter::new(&service.module, options);
+    emitter.reach = AnyReach::of(packages.iter().chain(std::iter::once(package)));
     let mut decls = Vec::new();
     if !service.methods.is_empty() {
         let mut calls = Vec::new();
@@ -547,8 +560,11 @@ struct Emitter {
     holding: Holding,
     /// What an unknown enum value name reads as.
     enum_unknown: EnumUnknown,
-    /// Which codecs messages get.
-    codec: Codec,
+    /// Which codecs the option wires into methods; package modules emit
+    /// both whatever it says.
+    wiring: Codec,
+    /// The messages of the build that reach a `google.protobuf.Any`.
+    reach: AnyReach,
     /// The options as the header's second line records them.
     recorded: String,
 }
@@ -561,7 +577,8 @@ impl Emitter {
             unqualified: BTreeMap::new(),
             holding: Holding::of(options),
             enum_unknown: options.enum_unknown,
-            codec: options.codec,
+            wiring: options.codec,
+            reach: AnyReach::default(),
             recorded: match options.recorded() {
                 pairs if pairs.is_empty() => DEFAULT_OPTIONS.to_owned(),
                 pairs => pairs.join(", "),
@@ -619,8 +636,8 @@ impl Emitter {
             .map(|message| message_shape(message, &by_name, self.holding))
             .collect();
         let mut registry = vec![Decl::Comment("REGISTRY".into()), self.descriptors(package)];
-        if self.codec.json() && self.codec.binary() && !messages.is_empty() {
-            registry.push(self.binary_registry(package));
+        if !messages.is_empty() || !package.enums.is_empty() {
+            registry.push(self.registry(package));
         }
         if messages.is_empty() && package.enums.is_empty() {
             return registry;
@@ -632,63 +649,36 @@ impl Emitter {
         let mut decoders = vec![Decl::Comment("DECODERS".into())];
         let mut binary_encoders = vec![Decl::Comment("BINARY ENCODERS".into())];
         let mut binary_decoders = vec![Decl::Comment("BINARY DECODERS".into())];
-        let (json, binary) = (self.codec.json(), self.codec.binary());
         for enumeration in &package.enums {
             types.push(self.enum_type(&package.module, enumeration));
             values.push(self.enum_record(&package.module, enumeration));
-            // An enum keeps its JSON codecs under `codec=proto`: its typed
-            // value holds them, and they are small.
             encoders.push(self.enum_encoder(enumeration));
             decoders.push(self.enum_decoder(enumeration));
-            if binary {
-                binary_encoders.push(self.enum_encoder_bytes(enumeration));
-                binary_decoders.push(self.enum_decoder_bytes(enumeration));
-            }
+            binary_encoders.push(self.enum_encoder_bytes(enumeration));
+            binary_decoders.push(self.enum_decoder_bytes(enumeration));
         }
         for shape in &messages {
             types.push(self.message_alias(&package.module, shape));
             defaults.push(self.message_default(shape));
             values.push(self.message_record(&package.module, shape));
-            if json {
-                encoders.push(self.message_encoder(shape));
-                decoders.push(self.message_decoder(shape));
-            }
-            if binary {
-                binary_encoders.push(self.message_encoder_bytes(shape));
-                binary_decoders.push(self.message_merge_bytes(shape));
-                binary_decoders.push(self.message_decoder_bytes(shape));
-            }
+            encoders.push(self.message_encoder(shape));
+            decoders.extend(self.message_decoder(shape));
+            binary_encoders.push(self.message_encoder_bytes(shape));
+            binary_decoders.push(self.message_merge_bytes(shape));
+            binary_decoders.push(self.message_decoder_bytes(shape));
             if let Some(wrapper) = &shape.message.wrapper {
                 types.push(self.wrapper_type(shape.message, wrapper));
-                if json {
-                    encoders.push(self.wrapper_encoder(shape.message, wrapper));
-                    decoders.push(self.wrapper_decoder(shape.message, wrapper));
-                }
-                if binary {
-                    binary_encoders.push(self.wrapper_encoder_bytes(shape.message, wrapper));
-                    binary_decoders.push(self.wrapper_decoder_bytes(shape.message, wrapper));
-                }
+                encoders.push(self.wrapper_encoder(shape.message, wrapper));
+                decoders.push(self.wrapper_decoder(shape.message, wrapper));
+                binary_encoders.push(self.wrapper_encoder_bytes(shape.message, wrapper));
+                binary_decoders.push(self.wrapper_decoder_bytes(shape.message, wrapper));
             }
             for oneof in &shape.oneofs {
                 types.push(self.oneof_type(&package.module, shape.message, oneof));
-                if json {
-                    encoders.push(self.oneof_encoder(oneof));
-                    decoders.push(self.oneof_decoder(oneof));
-                }
-                if binary {
-                    binary_encoders.push(self.oneof_encoder_bytes(oneof));
-                }
+                encoders.push(self.oneof_encoder(oneof));
+                decoders.push(self.oneof_decoder(oneof));
+                binary_encoders.push(self.oneof_encoder_bytes(oneof));
             }
-        }
-        if !binary {
-            binary_encoders.clear();
-            binary_decoders.clear();
-        }
-        // Under `codec=proto` a package of messages alone has no JSON
-        // codecs.
-        if encoders.len() == 1 {
-            encoders.clear();
-            decoders.clear();
         }
         // A package of enums alone has no defaults.
         if messages.is_empty() {
@@ -994,12 +984,16 @@ mod tests {
         assert_eq!(
             imports,
             [
+                "Bytes.Encode",
                 "Json.Decode",
                 "Json.Encode",
+                "Proto.Binary",
                 "Proto.Descriptors",
                 "Proto.Json",
                 "Proto.Message",
+                "Proto.Registry",
                 "Proto.Version",
+                "Proto.WellKnown",
                 "T.V1.A"
             ]
         );
@@ -1019,12 +1013,16 @@ mod tests {
         assert_eq!(
             imports,
             [
+                "Bytes.Encode",
                 "Json.Decode",
                 "Json.Encode",
+                "Proto.Binary",
                 "Proto.Descriptors",
                 "Proto.Json",
                 "Proto.Message",
+                "Proto.Registry",
                 "Proto.Version",
+                "Proto.WellKnown",
                 "T.V1.E"
             ]
         );
@@ -1070,13 +1068,13 @@ mod tests {
                 "descriptors =\n    Proto.Descriptors.union\n        \
                  (Proto.Descriptors.fromDescriptors\n            \
                  [ T.V1.A.descriptor\n            ]\n            []\n        \
-                 )\n        Proto.Descriptors.wellKnown"
+                 )\n        Proto.WellKnown.descriptors"
             ),
             "{on}"
         );
         assert!(
             on.contains(
-                "messageA =\n    Proto.Message.message encodeA decodeA defaultA T.V1.A.descriptor"
+                "messageA =\n    Proto.Message.init \"t.v1.A\" encodeA decodeA encodeABytes decodeABytes"
             ),
             "{on}"
         );
@@ -1084,7 +1082,7 @@ mod tests {
         let printed =
             crate::elm::print::print_module(&emit(&nothing, &Options::default()).expect("emits"));
         assert!(
-            printed.contains("descriptors =\n    Proto.Descriptors.wellKnown"),
+            printed.contains("descriptors =\n    Proto.WellKnown.descriptors"),
             "{printed}"
         );
     }
@@ -1111,7 +1109,9 @@ mod tests {
                 "TYPED VALUES",
                 "REGISTRY",
                 "ENCODERS",
-                "DECODERS"
+                "DECODERS",
+                "BINARY ENCODERS",
+                "BINARY DECODERS"
             ]
         );
         let printed = crate::elm::print::print_module(&emit(&one, &Options::default()).unwrap());
@@ -1139,7 +1139,15 @@ mod tests {
         );
         assert_eq!(
             sections(&enums_only),
-            ["TYPES", "TYPED VALUES", "REGISTRY", "ENCODERS", "DECODERS"]
+            [
+                "TYPES",
+                "TYPED VALUES",
+                "REGISTRY",
+                "ENCODERS",
+                "DECODERS",
+                "BINARY ENCODERS",
+                "BINARY DECODERS"
+            ]
         );
         assert_eq!(sections(&package(Vec::new())), ["REGISTRY"]);
     }
@@ -1167,13 +1175,17 @@ mod tests {
         assert_eq!(
             imports,
             [
+                "Bytes.Encode",
                 "Json.Decode",
                 "Json.Encode",
                 "Other.V1",
+                "Proto.Binary",
                 "Proto.Descriptors",
                 "Proto.Json",
                 "Proto.Message",
+                "Proto.Registry",
                 "Proto.Version",
+                "Proto.WellKnown",
                 "T.V1.A"
             ]
         );
@@ -1181,7 +1193,7 @@ mod tests {
         assert!(printed.contains("b : Maybe Other.V1.B"), "{printed}");
         assert!(
             printed.contains(
-                "(Proto.Descriptors.union Other.V1.descriptors Proto.Descriptors.wellKnown)"
+                "(Proto.Descriptors.union Other.V1.descriptors Proto.WellKnown.descriptors)"
             ),
             "{printed}"
         );
@@ -1304,11 +1316,13 @@ mod tests {
         assert_eq!(sections, ["CALLS", "DESCRIPTORS"]);
         let printed = crate::elm::print::print_module(&module);
         for expected in [
-            "(Proto.Method.json \"t.v1.S\"\n            \"Get\"\n            \
-             T.V1.encodeA\n            T.V1.decodeA\n        )\n",
+            "(Proto.Method.initJson \"t.v1.S\"\n            \"Get\"\n            \
+             (\\_ -> Ok << T.V1.encodeA)\n            \
+             (\\_ -> T.V1.decodeA)\n        )\n",
             // Qualified, or `identity` would be the method itself.
-            "\n            Basics.identity\n            Proto.Json.empty\n",
-            "\n            Proto.Json.encodeInt64AsInt\n            Proto.Json.any\n",
+            "\n            (\\_ -> Ok << Basics.identity)\n            (\\_ -> Proto.Json.empty)\n",
+            "\n            \"Ticks\"\n            \
+             (\\_ -> Ok << Proto.Json.encodeInt64AsInt)\n            Proto.Json.anyWith\n",
             "descriptorGet : Proto.Method.Descriptor\ndescriptorGet =\n    \
              Proto.Method.descriptor \"t.v1.S\"\n        \"Get\"\n        \
              Proto.Method.IdempotencyUnknown\n        \"t.v1.A\"\n        \"t.v1.A\"\n        []\n",

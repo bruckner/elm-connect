@@ -9,13 +9,17 @@ as `Proto.Field.BehaviorUnknown` with the number, in its place among the
 named ones; the unspecified zero is dropped.
 -}
 
+import Bytes.Encode
 import Drafts.V1.Draft
 import Json.Decode
 import Json.Encode
+import Proto.Binary
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 import Proto.Version
+import Proto.WellKnown
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -61,11 +65,11 @@ defaultDraft =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Draft`](#Draft): its codecs, default and descriptor together.
+{-| The typed value of [`Draft`](#Draft): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageDraft : Proto.Message.Message Draft
 messageDraft =
-    Proto.Message.message encodeDraft decodeDraft defaultDraft Drafts.V1.Draft.descriptor
+    Proto.Message.init "drafts.v1.Draft" encodeDraft decodeDraft encodeDraftBytes decodeDraftBytes
 
 
 
@@ -82,7 +86,15 @@ descriptors =
             ]
             []
         )
-        Proto.Descriptors.wellKnown
+        Proto.WellKnown.descriptors
+
+
+{-| The codecs of this package's messages, for converting a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) that holds one between proto3 JSON and protobuf binary. It holds no other package's types and no well-known type: give a client the union of the registries its `Any`s need (`Proto.Registry.unionAll`, `Rpc.withRegistry`).
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.empty
+        |> Proto.Registry.register messageDraft
 
 
 
@@ -112,3 +124,75 @@ decodeDraft =
         |> Proto.Json.field "name" "" Proto.Json.string
         |> Proto.Json.field "body" "" Proto.Json.string
         |> Proto.Json.field "owner" "" Proto.Json.string
+
+
+
+-- BINARY ENCODERS
+
+
+{-| Encodes a [`Draft`](#Draft) as protobuf binary.
+-}
+encodeDraftBytes : Draft -> Bytes.Encode.Encoder
+encodeDraftBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.name
+        , Proto.Binary.implicit Proto.Binary.string 2 value.body
+        , Proto.Binary.implicit Proto.Binary.string 3 value.owner
+        ]
+
+
+
+-- BINARY DECODERS
+
+
+{-| Decodes a [`Draft`](#Draft) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeDraftBytes : Draft -> Proto.Binary.Decoder Draft
+mergeDraftBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | name = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | body = v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | owner = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`Draft`](#Draft) from protobuf binary.
+-}
+decodeDraftBytes : Proto.Binary.Decoder Draft
+decodeDraftBytes =
+    mergeDraftBytes defaultDraft

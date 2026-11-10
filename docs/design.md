@@ -67,6 +67,15 @@ a second protocol and a public interface designed to be kept.
 - A conformance corpus that pins the generated output and the routes it
   produces, so a server-side transcoder and this client cannot drift.
 
+The rule that orders them: correctness and protocol conformance come
+first, with no surprises out of the box; convenience, and size or speed
+beyond that, are opt-ins, easy to find when looked for (progressive
+discovery). A default that is wrong for some programs, or lossy where
+the protocol is exact, is not a convenience: an `Any` of a type the
+client cannot convert fails loudly rather than travelling in a form no
+other reader accepts (§3.5), and a cheaper reading is something a
+program asks for by name.
+
 ### 1.3 Non-goals (for 1.0)
 
 - Streaming of any kind, on any protocol. Connect streaming uses
@@ -192,10 +201,10 @@ import Rpc
 getNote : Notes.V1.GetNoteRequest -> Rpc.Call Rpc.Json Notes.V1.GetNoteRequest Notes.V1.Note
 getNote =
     Rpc.call
-        (Proto.Method.json "notes.v1.NotesService"
+        (Proto.Method.initJson "notes.v1.NotesService"
             "GetNote"
-            Notes.V1.encodeGetNoteRequest
-            Notes.V1.decodeNote
+            (\_ -> Ok << Notes.V1.encodeGetNoteRequest)
+            (\_ -> Notes.V1.decodeNote)
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
             |> Proto.Method.withRoutes [ routeGetNote0 ]
         )
@@ -204,10 +213,10 @@ getNote =
 summarize : Notes.V1.SummarizeRequest -> Rpc.Call Rpc.Json Notes.V1.SummarizeRequest Notes.V1.Summary
 summarize =
     Rpc.call
-        (Proto.Method.json "notes.v1.NotesService"
+        (Proto.Method.initJson "notes.v1.NotesService"
             "Summarize"
-            Notes.V1.encodeSummarizeRequest
-            Notes.V1.decodeSummary
+            (\_ -> Ok << Notes.V1.encodeSummarizeRequest)
+            (\_ -> Notes.V1.decodeSummary)
         )
 
 
@@ -321,12 +330,14 @@ rpc shared call =
   `Descriptor`, `Proto.Method` holds `Method codec req res` and `Descriptor`,
   `Proto.Field` holds `Descriptor` with `Cardinality`, `Kind` and
   `Scalar`, and `Proto.EnumValue` holds `Descriptor`. (2) A builder is
-  named for the type it builds, in every module: `message` builds a
-  `Message`, `descriptor` a `Descriptor`. Readers are plain nouns
+  named for the type it builds (`descriptor` a `Descriptor`, `enum` an
+  `Enum`), or `init` for a typed value of codecs (`Proto.Message.init`,
+  `Proto.Method.init`). Readers are plain nouns
   (`name`, `fields`); a typed value's reader for its descriptor is
-  `toDescriptor`, a conversion like `Url.toString`. `typeName` and
-  `typeUrl` read the descriptor, not the typed value, so no reader name
-  is shared by two types in one module. (3) A union's constructors carry
+  `toDescriptor`, a conversion like `Url.toString`. No reader name is
+  shared by two types in one module: a message's typed value is read by
+  `typeName`, and a descriptor's full name is `fullName`, for messages
+  and enums alike. (3) A union's constructors carry
   the union's name as a prefix, without exception
   (`CardinalitySingular`, `KindMessage`, `ScalarString`), so any of them
   can be exposed with `(..)` beside another union's and beside
@@ -365,9 +376,11 @@ rpc shared call =
   `Rpc` (rule 7), and are public, so that `Proto.Method`'s signatures
   name a module the package site documents (§5.1). (6) The JSON
   helpers (`Proto.Json`) are named by role: a decoder is a noun naming
-  what it reads (`int64`, `timestamp`, `boolMap`, `any`), a value's
-  encoder is `encode` and that noun (`encodeInt64`, `encodeBoolMap`,
-  `encodeAny`), and a field's encoder, which gives `Nothing` to leave
+  what it reads (`int64`, `timestamp`, `boolMap`), a value's
+  encoder is `encode` and that noun (`encodeInt64`, `encodeBoolMap`),
+  with `With` at the end of both for a codec taking a registry
+  (`anyWith`, `encodeAnyWith`), a field's encoder that can fail begins
+  with `try` (`tryOptionalField`), and a field's encoder, which gives `Nothing` to leave
   the field out, ends in `Field` (`implicitField`, `repeatedField`,
   `dictField`, `boolMapField`), with `objectOfFields` building a
   message's object from them. So a decoder and its encoders share a
@@ -1038,7 +1051,7 @@ The runtime provides the Elm types.
 | `google.protobuf.ListValue` | `List Json.Encode.Value` | a JSON array; see below |
 | `google.protobuf.Value` | `Json.Encode.Value`; a singular field `Maybe Json.Encode.Value` | it *is* JSON; see below |
 | `google.protobuf.*Value` wrappers | `Maybe` of the scalar | null or the value on the wire |
-| `google.protobuf.Any` | `Proto.Any.Any` (opaque: type URL and payload) | the message's JSON plus `"@type"` on the wire |
+| `google.protobuf.Any` | `Proto.Any.Any` (opaque: type URL and the message's protobuf binary) | the message's JSON plus `"@type"` on the wire |
 | `google.protobuf.NullValue` (an enum) | `()`, without presence | `null` on the wire; see below |
 
 The runtime package is required anyway (§5), so the RFC 3339 parser
@@ -1133,41 +1146,63 @@ In detail:
   writes each field name in lowerCamelCase, as proto3 JSON requires.
   A mask whose wire form holds an `_` fails to decode: lowerCamelCase
   has none, and protobuf's parsers refuse it.
-- `Any` is in the runtime as `Proto.Any`: an opaque `Any`
-  holding the type URL and the packed message, either as its JSON or, when only
-  its protobuf binary arrived, as that binary (base64) alone. `pack`
-  (prefix `type.googleapis.com/`) and `packWith` (another prefix) take
-  the message's typed value (§3.9) and a value; `unpack` gives
-  `Nothing` for another type (by full name, the type URL after its last
-  `/`), else the decoded value or a `Problem`: `Json` for JSON that
-  does not decode, `BinaryOnly` for a binary payload, which the
-  runtime does not read. `is` tests the type, `typeUrl` and
-  `typeName` read it, and `describe` looks its descriptor up in
-  `Proto.Descriptors`. `Proto.WellKnown.any : Message Any` is its typed value,
-  and `Proto.Descriptors.wellKnown` holds its tree (`type_url`, `value`).
+- `Any` is in the runtime as `Proto.Any`: an opaque `Any` holding a
+  type URL and the packed message's protobuf binary, as in Go, Java and
+  protobuf-es, whatever codec the calls use. One type, no codec
+  phantom: binary is the canonical form and proto3 JSON a projection
+  through a registry (`Proto.Registry`, §3.9). It holds the binary as
+  base64 text, so that `==` compares two by content (Elm's `==` finds any
+  two `Bytes` equal). `pack` (prefix `type.googleapis.com/`) and
+  `packWith` (another prefix) take the message's typed value (§3.9) and
+  a value; `tryUnpack` gives the value or a `Problem`, `TypeMismatch`
+  naming the type inside or `InvalidProto` for binary that is not the
+  message, and `unpack` is that as a `Maybe`. `is` tests the type,
+  `typeUrl` and `typeName` read it, `bytes` reads the binary, `toJson
+  registry` gives the payload's proto3 JSON (for showing an `Any`, and
+  what the JSON encoder writes), and `describe` looks its descriptor up
+  in `Proto.Descriptors`. `Problem` holds only what can happen, and each
+  constructor's documentation says what to do about it: `toJson` gives
+  `UnregisteredType` with the type URL for a type the registry lacks,
+  `InvalidProto`, or `UnwritableAny` with the outer URL when the message
+  holds an `Any` that cannot be written (an entry erases its message's
+  own problem, since `Proto.Message` cannot name `Proto.Any`'s type).
+  `Proto.WellKnown.any : Message Any` is its typed value, and
+  `Proto.WellKnown.descriptors` holds its tree (`type_url`, `value`).
 - `Any` on the wire is proto3 JSON's: the packed message's own object
   plus `"@type"`, or, for a well-known type with a JSON form of its own
   (`Timestamp`, `Duration`, `FieldMask`, `Empty`, `Struct`, `Value`,
   `ListValue`, the wrappers and `Any` itself), `{"@type": …, "value":
-  <that form>}`. The codecs are `Proto.Json.any` and
-  `Proto.Json.encodeAny`, beside every other well-known type's, and that
-  list lives with them. `Proto.Json.any` fails
-  on an object without `"@type"`, except `{}`, which is the empty `Any`
-  (no type URL; the typed value's default), as protojson reads it, and
-  on a `"@type"` that is not a type URL: empty, without a `/`, or with
-  nothing after the last one. A well-formed URL of a type the client
-  does not know is kept, and unpacks as it always did. A
-  binary-only `Any` has no proto3 JSON form; `encodeAny` writes it as
-  a Connect error detail, `{"type": <name>, "value": <base64>}`, which
-  `Proto.Json.any` does not read back. They are in `Proto.Json` so that
-  generated code reaches every well-known type's codecs there.
+  <that form>}`. The codecs are `Proto.Json.anyWith registry`, which
+  converts the JSON to binary through the registry's entry for the type,
+  and `Proto.Json.encodeAnyWith registry`, which converts back, beside
+  every other well-known type's codecs. Both are strict, as protojson,
+  Java's `JsonFormat` and protobuf-es are: an `"@type"` the registry
+  lacks fails the read, naming the URL, and an unregistered type fails
+  the write with `UnregisteredType`; there is no lossy form and no
+  `{"type", "value"}` fallback, since every form but proto3 JSON's is one
+  a reader mistakes or refuses. `anyWith` fails on an object without
+  `"@type"`, except `{}`, which is the empty `Any` (no type URL), as
+  protojson reads it, and on a `"@type"` that is not a type URL: empty,
+  without a `/`, or with nothing after the last one. They are in
+  `Proto.Json` so that generated code reaches every well-known type's
+  codecs there. `Proto.Binary.any : Codec Any` reads and writes the
+  binary as it is and needs no registry.
 - A field of `Any` is a message field, so a singular one is a
   `Maybe Proto.Any.Any`; repeated it is `List Proto.Any.Any`, as a map
-  value `Dict K Proto.Any.Any`, and a oneof member holds it bare. It is
-  encoded and decoded with `Proto.Json.encodeAny` and `Proto.Json.any`,
-  and its descriptor kind is `Message "google.protobuf.Any"`. A method
-  taking or returning one uses those codecs too (`any_field` case). Unpacking
-  is left to the application, which knows the types it expects.
+  value `Dict K Proto.Any.Any`, and a oneof member holds it bare. Every
+  message, oneof and recursion wrapper that reaches an `Any`, through its
+  fields at any depth and across packages, recursion included
+  (`ir::reach`), has JSON codecs taking the registry:
+  `decodeNoteWith : Registry -> Decoder Note` and `encodeNoteWith :
+  Registry -> Note -> Result Problem Value`, built from `Proto.Json`'s
+  `try` field encoders, and no `decodeNote` or `encodeNote`: a total
+  encoder would need a fallback form, and a decoder bound to the
+  package's own registry would read only that package's `Any`s. A
+  message that reaches no `Any` keeps its plain codecs. A method's calls
+  pass the client's registry (§5.1). Its descriptor kind is `Message
+  "google.protobuf.Any"`. A method taking or returning one uses the same
+  codecs (`any_field` case). Unpacking is left to the application, which
+  knows the types it expects.
 - An `Any` field has no query form: its JSON is the packed message's,
   whose fields the route cannot know (`route::query_field`, §5.3).
 
@@ -1353,9 +1388,8 @@ As the `naming` and `naming_collision` cases show:
   the two sit side by side and read as a pair, at the cost the bullet
   above names. A type `FooBytes` beside `Foo` has JSON codecs
   `encodeFooBytes` and `decodeFooBytes`, which are `Foo`'s binary
-  codecs; under `codec=both`, or under `codec=proto` for an enum
-  `FooBytes` (an enum keeps its JSON codecs), that is
-  `naming::codec_collision`, pointing at both types, its help naming
+  codecs; whatever the `codec` option, since every type has both, that
+  is `naming::codec_collision`, pointing at both types, its help naming
   the `rename` of the `Bytes` one (`codec_name_clash` case). A oneof's
   binary codec is an encoder alone, so a type named for a oneof's with
   `Bytes` meets only that. `merge` begins no JSON codec, so a merge
@@ -1589,7 +1623,9 @@ case names it):
 
 Every message and enum gets a descriptor, in a module of its own
 beside the package's (§3.1), and a typed value, in the package's
-module, which holds its codecs and default with the descriptor:
+module: an enum's holds its codecs and zero value with the descriptor,
+a message's its full name and both its codecs, which `Any` packs and
+unpacks with and a registry registers:
 
 ```elm
 -- Notes/V1/Visibility.elm
@@ -1636,7 +1672,7 @@ enumVisibility =
 
 messageNote : Proto.Message.Message Note
 messageNote =
-    Proto.Message.message encodeNote decodeNote defaultNote Notes.V1.Note.descriptor
+    Proto.Message.init "notes.v1.Note" encodeNote decodeNote encodeNoteBytes decodeNoteBytes
 
 
 descriptors : Proto.Descriptors.Descriptors
@@ -1649,7 +1685,14 @@ descriptors =
             [ Notes.V1.Visibility.descriptor
             ]
         )
-        (Proto.Descriptors.union Users.V1.descriptors Proto.Descriptors.wellKnown)
+        (Proto.Descriptors.union Users.V1.descriptors Proto.WellKnown.descriptors)
+
+
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.empty
+        |> Proto.Registry.register messageNote
+        |> …
 ```
 
 - **The layout.** A descriptor module holds
@@ -1657,31 +1700,35 @@ descriptors =
   in declaration order, each oneof's members where the oneof is, each
   value documented (what the field is, and its oneof). The package
   module's sections are types, defaults, typed values (each enum's,
-  then each message's), the registry (`descriptors`, and
-  `binaryRegistry` under `codec=both`), encoders and decoders, then
-  under `codec=proto` or `codec=both` binary encoders and binary
-  decoders (§3.10); a package without types has `descriptors` alone.
+  then each message's), the registry section (`descriptors` and
+  `registry`), encoders and decoders, then binary encoders and binary
+  decoders (§3.10), whatever the `codec` option says; a package without
+  types has `descriptors` alone.
 
 - The naming: `Proto.Thing.Descriptor` is the data-only tree,
-  `Proto.Thing.Thing a` the typed value carrying it beside the type's
-  codecs and default, in one module (§3.1): `Proto.Message.Descriptor`
-  and `Proto.Message.Message a`, `Proto.Enum.Descriptor` and
-  `Proto.Enum.Enum a`, `Proto.Method.Descriptor` and
-  `Proto.Method.Method codec req res` (§4, which holds the codecs of its types
-  but not their typed values). Nothing about a type is
+  `Proto.Thing.Thing` the typed value beside it, in one module (§3.1):
+  `Proto.Message.Descriptor` and `Proto.Message.Message a`, which holds
+  the type's full name and both codecs but not its descriptor or
+  default (those are the generated `descriptor` and `defaultNote`),
+  `Proto.Enum.Descriptor` and `Proto.Enum.Enum a`, which carries its
+  descriptor, `Proto.Method.Descriptor` and `Proto.Method.Method codec
+  req res` (§4, which holds the codecs of its types but not their typed
+  values). A message's typed value has no codec phantom: every message
+  has both codecs. Nothing about a type is
   written twice: an enum's names and numbers are its descriptor's, and
   `Proto.Enum` reads them through the codecs (below).
 - **The typed values are opaque**, built by positional functions and
-  read by functions of the same module: `Proto.Message.message encode
-  decoder default descriptor` (read by `encode`, `decoder`, `default`,
-  `toDescriptor`), `Proto.Enum.enum encode decoder zero descriptor`
-  (likewise, with `toName`, `fromName`, `toNumber`, `fromNumber`) and
-  `Proto.Method.json service name encodeRequest responseDecoder` (§4,
-  given its idempotency and routes by `withIdempotency` and
+  read by functions of the same module: `Proto.Message.init name encode
+  decoder encodeBytes decodeBytes`, and `initWith` for a message that
+  reaches an `Any`, whose JSON codecs take the registry and whose
+  encoder gives a `Result` (read by `typeName`; `Proto.Any` and
+  `Proto.Registry` reach the codecs), `Proto.Enum.enum encode decoder
+  zero descriptor` (read by `encode`, `decoder`, `default`,
+  `toDescriptor`, `toName`, `fromName`, `toNumber`, `fromNumber`) and
+  `Proto.Method.initJson service name encodeRequest responseDecoder`
+  (§4, given its idempotency and routes by `withIdempotency` and
   `withRoutes`, and built from its binary codecs by
-  `Proto.Method.proto` or from both by `Proto.Method.both`), and a
-  message given binary codecs by a modifier, `Proto.Message.withBinary`,
-  or built with them alone by `Proto.Message.messageBinary` (§3.10).
+  `Proto.Method.initProto` or from both by `Proto.Method.init`, §3.10).
   Why: an Elm record alias that generated code writes
   as a literal can never gain a field. The field is a major by Elm's
   package rules, and every module generated before it stops compiling
@@ -1692,12 +1739,12 @@ descriptors =
   argument, which would freeze the shape the same way.
 - **The trees are opaque too**, for the same reason, each built by a
   `descriptor` function and read in the module of its concept (§3.1):
-  `Proto.Message` (`descriptor typeName fields`; `typeName`, `typeUrl`,
+  `Proto.Message` (`descriptor fullName fields`; `fullName`, `typeUrl`,
   `fields`, `oneofs`), `Proto.Field` (`descriptor name jsonName number
   cardinality kind`, `inOneof`, `withBehavior`, `withDeprecated`;
   `name`, `jsonName`, `number`, `cardinality`, `kind`, `oneof`,
-  `behavior`, `deprecated`), `Proto.Enum` (`descriptor typeName
-  values`; `typeName`, `values`), `Proto.EnumValue` (`descriptor name
+  `behavior`, `deprecated`), `Proto.Enum` (`descriptor fullName
+  values`; `fullName`, `values`), `Proto.EnumValue` (`descriptor name
   number`, `withDeprecated`; `name`, `number`, `deprecated`) and
   `Proto.Method` (`descriptor service name idempotency input output
   bindings`; the same six). The unions a descriptor holds are public, to
@@ -1782,21 +1829,24 @@ descriptors =
 - The well-known types' typed values are the runtime's, in
   `Proto.WellKnown` (`empty`, `timestamp`, `duration`, `fieldMask`,
   `any`, `struct`, `value`, `listValue` and the wrappers, the 64-bit
-  ones in both `int64` forms), built with `Proto.Message.message`, and
-  `Proto.Descriptors.wellKnown` holds their trees. They live apart from
+  ones in both `int64` forms), built with `Proto.Message.init` (`any`
+  with `initWith`), and `Proto.WellKnown.descriptors` holds their trees;
+  `Proto.ErrorDetails` gives `google/rpc/error_details.proto`'s the same
+  way (§5.4). They live apart from
   `Proto.Message` so that the value for `google.protobuf.Any`
   (`Proto.Any`, §3.5), whose module needs `Proto.Message` and
   `Proto.Descriptors`, can join them without an import cycle.
-- The typed values serve `Any` (§3.5), error details (§5.4) and
-  reflection; calls carry codecs only (§4), because Elm's dead-code
+- The typed values serve `Any` (§3.5), error details (§5.4) and the
+  registry; reflection reads the descriptors; calls carry codecs only
+  (§4), because Elm's dead-code
   elimination keeps a top-level value whole: a method holding a typed
-  value would bring the type's default and descriptor tree into every
-  program that calls it. For the same reason
+  value would bring both of the type's codecs into every program that
+  calls it, whatever its protocol. For the same reason
   each descriptor is a top-level value of its own (in its descriptor
   module) and a package's `descriptors` is built from those, never from
-  the typed values: one built from
-  `messageFoo.descriptor` would keep every type's codecs and default in any
-  program that uses it, which on a large API is most of the program.
+  the typed values, which hold none; and a typed value holds no
+  descriptor, so that a program packing an `Any`, or registering a type,
+  keeps no tree.
 - Each method's descriptor is a value of its own in its service's
   module, `descriptorGetNote`, which its call does not refer to (§4):
   the call holds its service's and its own name, its idempotency and
@@ -1814,7 +1864,7 @@ descriptors =
   section holding `descriptors : Proto.Descriptors.Descriptors`,
   transitive: the package's own descriptors, then the `descriptors` of
   the generated packages its module imports (each holding its own
-  imports'), then `Proto.Descriptors.wellKnown`, joined with
+  imports'), then `Proto.WellKnown.descriptors`, joined with
   `Proto.Descriptors.union`, which keeps the left one of two with one
   name (diamonds hold each type once). Packages a service refers to but
   the package's types do not are not in it: importing them could make a
@@ -1826,8 +1876,8 @@ descriptors =
   name can take it (§3.7).
 - **Descriptors apart from the registry.** `Proto.Descriptors` serves
   reflection and resolves the names a descriptor only mentions;
-  `Proto.Registry` is the table an `Any` resolves through (§3.10,
-  §5.5), holding codecs and no descriptors. They are two types so that
+  `Proto.Registry` is the table an `Any` resolves through (§3.10),
+  holding codecs and no descriptors. They are two types so that
   a program using one keeps nothing of the other, and the names follow
   the split other runtimes make between a pool of descriptors and the
   types a message resolves through: Go's `protoregistry.Files` and
@@ -1851,13 +1901,17 @@ descriptors =
   in decisions.md (No option to leave the descriptors out; Descriptors
   in a module per type).
 
-### 3.10 Binary codecs
+### 3.10 Binary codecs and the registry
 
-- **The option.** `codec=json|binary|both` (CLI `--codec`), default
-  `json`, whose output is byte for byte what it was before the option
-  existed. The second header line records it like the others
-  (`-- Options: codec=both`), and `check` regenerates with it.
-- **What `proto` and `both` add.** Two sections after the decoders,
+- **Every message has both codecs.** Whatever the `codec` option says, a
+  package's module holds each message's proto3 JSON codecs and its
+  protobuf binary codecs, its typed value built from both
+  (`Proto.Message.init`, §3.9), and its `registry`. A program pays only
+  for what it reaches: the binary codecs and typed values of a program
+  that never packs an `Any` nor speaks binary are dead code, so a
+  `codec=json` program's bundle is what it was when they were not
+  generated (decisions.md: Binary is the Any's canonical form).
+- **Every package's binary codecs.** Two sections after the decoders,
   binary encoders and binary decoders, written against `Proto.Binary`
   (§5.5): per message `encodeFooBytes : Foo -> Bytes.Encode.Encoder`,
   `mergeFooBytes : Foo -> Proto.Binary.Decoder Foo` and
@@ -1883,44 +1937,62 @@ descriptors =
   `Proto.Binary.messageEncoder` and `Proto.Binary.messageDecoder`.
   `int64=` and `bytes=` choose the codecs as they choose the JSON ones
   (`int64AsInt`, `bytesAsBytes`).
-- **The attachment.** Under `both` each typed value is built as before
-  and given its binary codecs by a modifier, `Proto.Message.message …
-  |> Proto.Message.withBinary encodeNoteBytes decodeNoteBytes`, and each
-  method is built by `Proto.Method.both` from its four codecs, the
-  arguments stacked. Under `proto` messages, oneofs and wrappers get no
-  JSON codecs (enums keep theirs, which `Proto.Enum.Enum` holds), and the
-  values are built by `Proto.Message.messageBinary`, whose JSON encoder
-  writes `null` and whose JSON decoder fails, and `Proto.Method.proto`.
-  Such a method gets no route functions, nor its messages query
-  encoders: transcoding takes JSON (§5.3). A method's codec is in its
-  type, and so in its call's (§4): `Rpc.Json` under `json`, `Rpc.Proto`
-  under `proto`, free under `both`. `Proto.Message.encodeBytes` and
-  `bytesDecoder` read a typed value's binary codecs back, and
-  `Proto.Method.hasJson` tells a method built with `proto`. A program
-  that never builds a value with binary codecs carries none of their
-  code.
-
+- **The option is the wiring.** `codec=json|proto|both` (CLI `--codec`),
+  default `json`, says which codecs the service methods are wired with,
+  and so which protocols their calls go over. The second header line
+  records it like the others (`-- Options: codec=both`), and `check`
+  regenerates with it. Under `json` each method is built by
+  `Proto.Method.initJson`, under `proto` by `Proto.Method.initProto`
+  from its binary codecs, under `both` by `Proto.Method.init` from all
+  four, the arguments stacked. A method's JSON codecs take the client's
+  registry (§5.1): `Notes.V1.encodeGetNoteRequestWith` for a type that
+  reaches an `Any`, else the plain codec under the generator's ignoring
+  wrapper, `\_ -> Ok << Notes.V1.encodeGetNoteRequest` and `\_ ->
+  Notes.V1.decodeNote`. A method wired with `proto` gets no route
+  functions, nor its messages query encoders: transcoding takes JSON
+  (§5.3). A method's codec is in its type, and so in its call's (§4):
+  `Rpc.Json` under `json`, `Rpc.Proto` under `proto`, free under `both`.
+  `Proto.Method.hasJson` tells a method built with `initProto`.
 - **Names** are §3.7's: the JSON names with `Bytes` at the end, and
-  `naming::codec_collision` where a type's name meets them.
-- **`Any` fields** are written, under `both`, with
-  `Proto.Binary.anyWith binaryRegistry` (§5.5): `binaryRegistry`, beside
-  `descriptors` in the package's module, holds the conversion of each of the
-  package's messages (`Proto.Registry.withBinary "notes.v1.Note"
-  decodeNote encodeNoteBytes`) and of each well-known type they hold from
-  proto3 JSON to binary, after the `binaryRegistry` of each package whose
-  messages they hold, so that an `Any` read from proto3 JSON is written
-  as its message's binary. It is a value apart from `descriptors`, built
-  from codecs rather than typed values, so that neither brings the
-  other's code: a program that writes a message holding an `Any` keeps
-  every message's JSON decoder and binary encoder, and no descriptors;
-  one that reads descriptors keeps no codecs. An `Any` is read with
-  plain `Proto.Binary.any`, which needs no conversion, so a program that
-  only reads binary keeps none of them. Under `proto`, which has no
-  JSON decoders, `Any` fields take `Proto.Binary.any`, which writes an
-  `Any` holding JSON alone with its type URL alone.
-- **Checked** by the binary round trips (§7) and the corpus cases
-  `codec_both` (the codec protos under `codec=both`), `codec_proto`
-  and `services_codec_both` (a service under `codec=both`).
+  `naming::codec_collision` where a type's name meets them, under every
+  option. The JSON codecs taking the registry end in `With`, and the same
+  diagnostic meets a type named for one (`codec_name_clash_with` case).
+- **`Any` fields** hold binary, read and written with `Proto.Binary.any`,
+  which needs no table. Their proto3 JSON goes through a registry (§3.5).
+- **The registry, normalized.** `registry : Proto.Registry.Registry`,
+  beside `descriptors` in the package's module, holds the package's own
+  messages, nested ones included, and nothing else: no imported
+  package's, no well-known type's, no error detail's. It is built from
+  the typed values, `Proto.Registry.empty |> Proto.Registry.register
+  messageNote |> …`, and a package of enums alone has the empty one, so
+  every package's module has one. A typed value's codecs are closed over
+  its fields' types, and an entry takes the registry it is read through
+  at read time, so a nested `Any` converts through the same table at any
+  depth and registering one message needs nothing registered beside it
+  but the types its `Any`s hold. The package is the unit an application
+  composes, and the grain of what it pays for:
+
+  ```elm
+  Proto.Registry.unionAll
+      [ Notes.V1.registry, Proto.WellKnown.registry, Proto.ErrorDetails.registry ]
+  ```
+
+  A miss is loud (§3.5). `Proto.Registry`'s surface is `Registry`,
+  `empty`, `register : Message a -> Registry -> Registry` (message first,
+  for a pipeline), `union` and `unionAll`; the entry builder
+  from raw codecs is internal (`Proto.Internal.Registry`). The
+  well-known types' registry is `Proto.WellKnown.registry`, beside their
+  typed values. There is no
+  `registerAll`: a list of `Message a` holds one `a`, so a list of types
+  is a list of registries, which is `unionAll`. The registry is apart
+  from `descriptors` and holds no trees, so that a program converting an
+  `Any` keeps every registered message's four codecs and no descriptors,
+  and one reading descriptors keeps no codecs (decisions.md: Normalized
+  per-package registries).
+- **Checked** by the binary round trips (§7), the corpus cases
+  `codec_both` (the codec protos under `codec=both`), `codec_proto`,
+  `services_codec_both` (a service under `codec=both`) and `any_field`,
+  and the protobuf conformance suite (§7).
 
 ## 4. Calls
 
@@ -1949,10 +2021,10 @@ Codecs: JSON. Described by [`descriptorGetNote`](#descriptorGetNote).
 getNote : Notes.V1.GetNoteRequest -> Rpc.Call Rpc.Json Notes.V1.GetNoteRequest Notes.V1.Note
 getNote =
     Rpc.call
-        (Proto.Method.json "notes.v1.NotesService"
+        (Proto.Method.initJson "notes.v1.NotesService"
             "GetNote"
-            Notes.V1.encodeGetNoteRequest
-            Notes.V1.decodeNote
+            (\_ -> Ok << Notes.V1.encodeGetNoteRequest)
+            (\_ -> Notes.V1.decodeNote)
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
             |> Proto.Method.withRoutes [ routeGetNote0, routeGetNote1 ]
         )
@@ -2063,21 +2135,27 @@ than `IDEMPOTENCY_UNKNOWN`, `withRoutes` when the method has a rule
   `_` only as a reserved word's escape; a path value's local that would
   meet another gains a number.
 - `Rpc.call` takes the method's `Proto.Method.Method codec req res`
-  (§3.9), built by `Proto.Method.json` from the fully-qualified service
+  (§3.9), built by `Proto.Method.initJson` from the fully-qualified service
   name and the method's name as declared, together its Connect path,
   then its request type's encoder and its
-  response type's decoder (`Notes.V1.encodeGetNoteRequest`,
-  `Notes.V1.decodeNote`; for a well-known type the runtime's codecs a
+  response type's decoder, each taking the client's registry (§5.1):
+  `Notes.V1.encodeGetNoteRequestWith` for a type that reaches an `Any`,
+  else the plain codec under the ignoring wrapper (`\_ -> Ok <<
+  Notes.V1.encodeGetNoteRequest`, `\_ -> Notes.V1.decodeNote`; for a
+  well-known type the runtime's codecs a
   field of that type uses, `Proto.Json.encodeEmpty` and
   `Proto.Json.empty` for `Empty`, `Proto.Json.encodeInt64AsInt` for
   `Int64Value` under `int64=int`, `Basics.identity` qualified for
   `Value` so that a method called `identity` cannot capture it); then
   `withIdempotency` with its level and
   `withRoutes` with its route functions (below).
-  Under `codec=both` it is built by `Proto.Method.both` from the names,
+  Under `codec=both` it is built by `Proto.Method.init` from the names,
   those two codecs and the request type's `encode…Bytes` and the response type's
-  `decode…Bytes`; under `codec=proto` by `Proto.Method.proto` from the
-  binary two alone (§3.10), with no routes. A method holds both codec
+  `decode…Bytes`; under `codec=proto` by `Proto.Method.initProto` from the
+  binary two alone (§3.10), with no routes. A method holds no registry:
+  the client's is the one table (§5.1). A route whose body would hold an
+  `Any` is read from the method's binding (`withBindings`), since its body
+  has no total encoder. A method holds both codec
   halves always: the one it was not built with is a filler, a leaf
   constructor no protocol of the method's codec calls (§5.1), so only a
   program whose methods have binary codecs carries their code. The
@@ -2089,10 +2167,10 @@ than `IDEMPOTENCY_UNKNOWN`, `withRoutes` when the method has a rule
   the method back from any call of it, and `Rpc.Call.serviceName`,
   `methodName`, `procedure` (`/notes.v1.NotesService/GetNote`, the path
   the Connect URL is built from) and `idempotency` its identity. A
-  method carries only what the wire needs, its types' codecs and not
-  their typed values (§3.9), which hold each type's default and
-  descriptor tree and would come whole into every program that calls it
-  (decisions.md: Methods carry codecs only).
+  method carries only what the wire needs, the codecs of its wiring and
+  not its types' typed values (§3.9), which hold both codecs and would
+  bring the other into every program that calls it (decisions.md:
+  Methods carry codecs only).
 - **The descriptor is cold.** `descriptorGetNote : Proto.Method.Descriptor`,
   built by `Proto.Method.descriptor` from the service's full name, the
   method's name, its idempotency, the full names of its types and its
@@ -2158,8 +2236,9 @@ than `IDEMPOTENCY_UNKNOWN`, `withRoutes` when the method has a rule
   held as `Bytes`) makes the method take its bindings as data instead,
   `withBindings (Proto.Method.bindings descriptorGetNote)`, which the
   runtime's interpreter (`Proto.Internal.Interpret`) reads over the
-  request's proto3 JSON into the same route (`routes_interpreted` case).
-  A method written by hand does the same with its own `Proto.Http`
+  request's proto3 JSON into the same route (`routes_interpreted` case),
+  the JSON a send encodes once, with the client's registry, for the
+  path, the query and the body alike. A method written by hand does the same with its own `Proto.Http`
   bindings. Only a program naming `withBindings` carries the
   interpreter.
 - **The implicit route.** A method without a rule has no routes and
@@ -2587,9 +2666,19 @@ trace); the work it runs is internal, a module per responsibility:
 `Rpc.Internal.Plan` is the one place a call's method meets its
 client's protocol, a `plan` made by one `case` on the wire kind (text
 or bytes) that holds the request to build, the route's invalid path
-value and `response_body` (the route itself built once, by the
-method's route function, §4), the write-limit check and the answer's
-reader, monomorphic from there on.
+value and `response_body` (a typed route built once, by the method's
+route function, §4), the check that its request's `Any`s can be written,
+the write-limit check and the answer's reader, monomorphic from there
+on. Over JSON a send's plan (`toSend`) encodes the request at most once,
+as it is made and only when a part of the send reads the JSON (the
+body, a route read from the JSON by `withBindings`, the check, or a
+write limit), and hands that one value to each; a plan made only to read
+an answer (`Rpc.response`) encodes nothing, and one made to build the
+request (`Rpc.request`) encodes it when the body or the route reads it.
+The check runs whenever the JSON is what is sent, since a method's
+encoder does not say whether its type reaches an `Any`; a typed route
+holds its own body and is not checked. A route read from JSON names its
+`response_body` without the JSON.
 The functions a protocol is built of are one module per protocol, each
 holding every function `Rpc.Protocol` installs for it:
 `Rpc.Internal.Connect` Connect's POST and GET builders, for either
@@ -2691,9 +2780,24 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
   stable JSON form for logs, deduplication keys and queues.
 - The codecs are the method's: both halves, JSON and binary, always
   present, the one the method was not built with a filler (§4, §3.10).
-  `Proto.Method.encodeRequest` and `responseDecoder` read the JSON
-  half, `hasJson` whether it is real; the typed values'
-  `Proto.Message.encode` and `decoder` serve `Any` and error details.
+  `Proto.Method.encodeRequest registry` and `responseDecoder registry`
+  read the JSON half, the former a `Result` (never `null` for a request
+  it cannot write), `hasJson` whether it is real; the typed values serve
+  `Any`, the registry and error details.
+- **One table: the client's.** `Rpc.withRegistry` sets the registry a
+  client's calls convert an `Any` through between proto3 JSON and
+  binary; a client starts with `Proto.Registry.empty`, and a method holds
+  none. A method's JSON codecs take the registry at use time (a type
+  that reaches no `Any` ignores it), and the client passes its own to
+  every call it sends and to the details of its errors (§5.4). A JSON
+  program whose messages hold an `Any` configures one, as protojson and
+  connect-es require; over binary no table is needed. A request whose
+  `Any` the registry cannot write is refused before anything is sent,
+  `NoAnswer (UnwritableRequest problem)`, reading the JSON the send
+  encodes for its body, not an encoding of its own; a response holding
+  an `Any` of a type the registry lacks fails to decode, a `BadResponse`.
+  `Rpc.Call.requestJson` and `toJson` take the registry too and give a
+  `Result` (decisions.md: One table, the client's).
 - **The codec is in the type.** `Method`, `Call`, `Protocol` and
   `Client` carry a phantom codec, `Rpc.Json` or `Rpc.Proto`, so a
   client only sends a call whose method has the half its protocol
@@ -2918,7 +3022,6 @@ codec (§7).
   response (§4); `connectProto`'s wire holds the functions that run them
   (`Bytes.Encode.encode` of the request, the reading of a binary answer,
   `width` for the limits, base64 for a GET and a trace).
-  `Proto.Message.withBinary` builds an `Any`'s base64 halves likewise.
   Elm's dead-code elimination is by reference, so a program that names
   no binary protocol reaches none of that code, no `Proto.Binary` and
   none of elm/bytes, whose kernel comes whole with a single
@@ -3117,8 +3220,7 @@ conformance suite's gRPC-Web client cases (§7).
   `grpc-message` percent-decoded (kept as sent when it is not
   well-formed) and `grpc-status-details-bin` (base64, padding optional)
   read as a `google.rpc.Status` whose `details` are the error's, binary
-  `Any`s that `Proto.Any.unpack` reads with a message that has binary
-  codecs. `source` is `GrpcTrailers` from a body and `GrpcHeaders` from
+  `Any`s that need no registry (§5.4). `source` is `GrpcTrailers` from a body and `GrpcHeaders` from
   headers. Any other HTTP status goes through the shared error reader
   (§5.4). Status 0 with no message or two, a compressed frame, a frame
   running past the end, or no status anywhere is a `BadResponse`; the
@@ -3153,13 +3255,14 @@ conformance suite's gRPC-Web client cases (§7).
 ### 5.4 Errors
 
 Every source is read from a live answer by the live suite (§7): a
-Connect body and a `google.rpc.Status` body, each with details read
-as JSON (`debug` in the Connect body), `grpc-status` headers, a bare
-HTTP status, and over gRPC-Web a trailers frame and trailers-only
-headers, with details read as binary. The Connect conformance suite (§7) checks every code from a
-Connect body, with its message (Unicode included) and details, and
-`fromHttpStatus` on answers with no error body. A detail without `debug`
-is not met: connect-go, the suite's reference server, always sends it.
+Connect body, with details read from their binary, a `google.rpc.Status`
+body, with details read through the client's registry (each such case
+twice, with `Proto.ErrorDetails.registry` and with the empty registry),
+`grpc-status` headers, a bare HTTP status, and over gRPC-Web a trailers
+frame and trailers-only headers, with details read as binary. The
+Connect conformance suite (§7) checks every code from a Connect body,
+with its message (Unicode included) and details, and `fromHttpStatus`
+on answers with no error body.
 
 ```elm
 -- Rpc.Error; Rpc aliases the type (type alias Error = Rpc.Error.Error)
@@ -3174,13 +3277,18 @@ type Reason                             -- frozen (§8.3)
     | InvalidPathValue { field : String, template : String }
     | RequestTooLarge { limit : Int, size : Int }
     | ResponseTooLarge { limit : Int, size : Int }
+    | UnwritableRequest Proto.Any.Problem
 
 type alias StatusError =                -- frozen (§8.3)
     { code : Rpc.Code.Code
     , message : String
-    , details : List Proto.Any.Any
+    , details : List (Result DetailProblem Proto.Any.Any)   -- in wire order
     , source : Source
     }
+
+type DetailProblem
+    = UnregisteredType String           -- the type URL; register the type
+    | InvalidDetail (Maybe String) String  -- the type URL if the entry named one; what was wrong
 
 type Source
     = ConnectBody                       -- {"code": "not_found", …}
@@ -3191,7 +3299,6 @@ type Source
 
 code : Error -> Rpc.Code.Code           -- see below
 message : Error -> String
-details : Proto.Message.Message a -> Error -> List a
 toString : Error -> String              -- "<code>: <message>", or "<code>" when the message is empty
 
 -- Rpc.Response.Response, which Rpc aliases
@@ -3269,15 +3376,15 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
 - The errors and their readers are a module of their own, `Rpc.Error`,
   as each type has its module (§5.2); `Rpc` keeps the alias `Error`
   so annotations naming `Rpc.Error` compile, and the readers are
-  `Rpc.Error.code`, `message`, `details` and `toString`.
+  `Rpc.Error.code`, `message` and `toString`.
 - Every error has a code, the one the Connect clients give it when the
   server stated none: an `HttpStatus` error's by the status table, a
   `BadResponse` its own, which the runtime gives it, and a `NoAnswer`
   by its reason: `Timeout`
   `DeadlineExceeded`, `NetworkError` `Unavailable`, `BadUrl` and
-  `InvalidHeader` `Internal`, `InvalidPathValue` `InvalidArgument` (a
-  server checking the value would say so), `RequestTooLarge` and
-  `ResponseTooLarge` `ResourceExhausted`. So a client timeout reads as
+  `InvalidHeader` and `UnwritableRequest` `Internal`, `InvalidPathValue`
+  `InvalidArgument` (a server checking the value would say so),
+  `RequestTooLarge` and `ResponseTooLarge` `ResourceExhausted`. So a client timeout reads as
   `DeadlineExceeded` through `code`, while the constructor
   still says no answer came. `message` gives a description for those
   (`timeout`, `network error`, `bad URL: <url>`, `invalid header
@@ -3322,21 +3429,52 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
   major forces none here; `BadResponse` keeps the answer, the status
   and body a developer most needs when a schema drifts (decisions.md:
   Errors by what came back).
-- Error details are `Proto.Any.Any` values (§3.5). A `google.rpc.Status` body holds them as proto3 JSON
-  `Any` objects; a Connect body as `{"type": <name>, "value": <base64
-  binary>, "debug": <JSON, optional>}`, read as an `Any` of that type
-  (`type.googleapis.com/` prefixed unless the name holds a `/`) whose
-  payload is `debug` beside the binary when present and the binary alone
-  otherwise. Each
-  detail is read in either form whichever body it came in, the proto3
-  form first; one in neither form is left out rather than losing the
-  error's code and message with it.
-- `Rpc.Error.details : Proto.Message.Message a -> Error -> List a` gives
-  the details that are of that type and decode, in order; only an
-  `RpcStatus` error has any. A binary-only detail decodes with a message
-  that has binary codecs (`codec=both`); for one without, details meant
-  for this client need their JSON on the wire, as `debug` in a Connect
-  body or, as always, in a `google.rpc.Status` body.
+- **Error details are `List (Result DetailProblem Any)`**, in wire order:
+  `Any` is the type `google.rpc.Status` holds (§3.5), and a detail that
+  cannot be read says why rather than vanishing. A detail problem never
+  fails the status read: the code, message and source are kept. The
+  reasons are `String`s, for a log line, so that `Error` stays
+  comparable with `==`. The three wire forms:
+  - **A Connect body detail**, `{"type": <name>, "value": <base64
+    binary>, "debug": <JSON, optional>}`: `value` is the message's
+    binary, so it reads into `Ok (Any url bytes)` with no registry,
+    `type.googleapis.com/` prefixed unless the name holds a `/`, its
+    base64 in either alphabet, padded or not, held in the canonical form
+    (checked on the text, so reading an error reaches no bytes code).
+    `debug` is not read. A detail with no `type`, or whose `value` is not
+    base64, is `Err (InvalidDetail …)`.
+  - **A `google.rpc.Status` body detail** (transcoding: grpc-gateway,
+    Envoy, Vanguard) is a proto3 JSON `Any`, converted to binary through
+    the client's registry (§5.2): an `"@type"` the registry lacks is
+    `Err (UnregisteredType url)`, a known type whose JSON is not its
+    message `Err (InvalidDetail (Just url) reason)`, and an entry with no
+    `"@type"` `Err (InvalidDetail Nothing reason)`. The status is read
+    without the registry where the protocol reads the answer, and its
+    details again through the client's in the plan (`Status.completeDetails`).
+    `Proto.ErrorDetails.registry` holds `google/rpc/error_details.proto`'s
+    messages, which is what `UnregisteredType`'s documentation names as
+    the fix for these details.
+  - **gRPC-Web's `grpc-status-details-bin`**: a binary `google.rpc.Status`
+    whose details are each `Ok`; a header that does not decode is one
+    `Err (InvalidDetail Nothing …)` standing for the whole list.
+  Details a proxy stripped (Envoy forwards none over transcoding, §7)
+  are `[]`, not a problem. Unpack one with `Proto.Any.tryUnpack` and the
+  type's typed value (`Proto.ErrorDetails.badRequest`, or a generated
+  one); there is no reader of typed details beside it (decisions.md:
+  Error details as results). A call's trace names its detail problems
+  (`detailProblems` in `Rpc.Trace.toJson`, and a count in `toString`), so
+  a logged trace shows them without code.
+- **`Proto.ErrorDetails`** is written by hand like `Proto.WellKnown`:
+  Elm records and typed values of `google/rpc/error_details.proto`'s
+  messages (`ErrorInfo`, `RetryInfo`, `DebugInfo`, `QuotaFailure` and
+  `QuotaFailureViolation`, `PreconditionFailure` and
+  `PreconditionFailureViolation`, `BadRequest` and
+  `BadRequestFieldViolation`, `RequestInfo`, `ResourceInfo`, `Help` and
+  `HelpLink`, `LocalizedMessage`), nested names flattened as the
+  generator flattens them, and `registry` holding all of them. Not
+  `google.rpc.Status`, which `Rpc.Error` reads. Its codecs are
+  generated code adapted, so a program that never names it pays
+  nothing.
 
 ### 5.5 The binary wire format
 
@@ -3399,27 +3537,12 @@ Connect's proto codec sends them (§5.3).
   message read and written again loses them (roadmap: unknown fields).
   A group, field number 0, a length past the end of its message and a
   varint longer than ten bytes fail the decode.
-- **`Any`**, read, holds the packed message's binary, which
-  `Proto.Any.unpack` decodes with a message that has binary codecs
-  (`Problem.Binary` when it does not decode). `Proto.Any.pack` holds what
-  the message's codecs write: its JSON alone for a message built with
-  `Proto.Message.message` (`codec=json`), its binary alone for one built
-  with `messageBinary` (`codec=proto`), whose JSON encoder is a filler
-  writing `null`, and both for one given `withBinary` (`codec=both`), so
-  the `Any` is written in either form; a Connect error detail with
-  `debug` holds both too. Which form a message has is data on it, read
-  only here and by the readers, never by the codecs. Written,
-
-  an `Any` holding binary writes it back. One holding a message's JSON
-  alone, as one read from proto3 JSON does, needs the message's codecs
-  to be written as binary: `Proto.Binary.anyWith registry` takes them
-  from a registry (`Proto.Registry.withBinary`), as generated code does
-  with its package's `binaryRegistry` (§3.10), and writes the type URL
-  alone for a type the registry lacks; plain `any` has none. The
-  conversion, the well-known types' included, is in the registry rather
-  than in the writer, so a program pays for the JSON decoders only of
-  the types its registry lists: a program generated with `codec=proto`
-  reaches no `Proto.Json` and no `Proto.Timestamp` through an `Any`.
+- **`Any`**: `Proto.Binary.any : Codec Any` reads its type URL and
+  binary and writes them back as they are, needing no registry; an `Any`
+  always holds binary (§3.5), so a program that only speaks binary keeps
+  no table, no `Proto.Json` and no `Proto.Timestamp` through an `Any`.
+  `Proto.Any.tryUnpack` decodes the binary with the message's typed
+  value. One that arrives twice is merged field by field.
 - A `Timestamp` drops nanoseconds past the millisecond when read, as the
   JSON codec does.
 
@@ -3642,15 +3765,21 @@ any, in `expected/warnings.txt`, rendered as `diagnostics.txt` is.
   unknown fields of every wire type appended and without; where the set
   has JSON codecs, the value read from binary writes the JSON the value
   read from JSON writes, and the value read from JSON encodes to the
-  same bytes, but where it holds an `Any`, whose JSON the binary
-  encoder writes with its type URL alone (§5.5). Byte identity with
+  same bytes; an `Any` read from JSON and written back from binary is
+  converted through the registry the table builds (the packages' and
+  the well-known types', `binaryJson` in the samples). Byte identity with
   bytes prost-reflect reads is the oracle that prost-reflect reads what
   the encoders write.
 - The protobuf conformance suite: protobuf's `conformance_test_runner`
   (v32.0-rc2, as bufbuild/protobuf-conformance builds it) drives
   `conformance/protobuf/`, an Elm worker over the Elm generated under
   `codec=both` from the suite's `test_messages_proto3.proto`, with an
-  oracle independent of prost-reflect: protobuf's own parsers. Protobuf
+  oracle independent of prost-reflect: protobuf's own parsers. Its
+  registry is `Proto.Registry.unionAll [ Proto3.registry,
+  Proto.WellKnown.registry ]`, set explicitly, since a generated
+  registry holds its own package's messages alone (§3.10); an `Any` of
+  a type it lacks fails to parse and to serialize, as the suite
+  expects. Protobuf
   binary and proto3 JSON run in and out, every way between them, 1,468
   cases; JSPB, text, proto2 and editions are answered skipped. The cases
   it fails are `conformance/protobuf/failure_list.txt`, each group a
@@ -3685,7 +3814,19 @@ request builder), which unit tests cannot run. It has five parts:
 3. **Transcoding live tests**: a table of calls against the server
    asserting path, query, body, response and the `google.rpc.Status`
    error body, reusing the route fixtures' expectations where they
-   overlap.
+   overlap. A case's config names the client's registry, `"registry":
+   "empty"` (the default, as a client starts), `"errorDetails"`
+   (`Proto.ErrorDetails.registry`) or `"build"` (the build's packages
+   and the well-known types, which a case calling over JSON with an
+   `Any` in its messages needs, as an application would). Each case
+   reading a `google.rpc.Status` body's details runs twice: with
+   `"errorDetails"` its details read and unpack, and with the empty
+   registry they are `UnregisteredType` with their type URLs, the code
+   and message kept. A Connect body's and gRPC-Web's details are read
+   with the empty registry, their binary needing none. The runner writes
+   a read detail as proto3 JSON through its own table, whatever the
+   client's, and a problem as `{"unregisteredType": url}` or
+   `{"invalidDetail": {"type", "reason"}}`.
 4. **Examples**: `examples/notes/` holds a browser application over
    either protocol and a walkthrough, and the README's snippets live
    in it, so CI compiles them.

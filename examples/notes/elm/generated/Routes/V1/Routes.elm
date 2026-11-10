@@ -55,10 +55,10 @@ Codecs: JSON. Described by [`descriptorGetMessage`](#descriptorGetMessage).
 getMessage : Routes.V1.GetMessageRequest -> Rpc.Call Rpc.Json Routes.V1.GetMessageRequest Routes.V1.Message
 getMessage =
     Rpc.call
-        (Proto.Method.json "routes.v1.Routes"
+        (Proto.Method.initJson "routes.v1.Routes"
             "GetMessage"
-            Routes.V1.encodeGetMessageRequest
-            Routes.V1.decodeMessage
+            (\_ -> Ok << Routes.V1.encodeGetMessageRequest)
+            (\_ -> Routes.V1.decodeMessage)
             |> Proto.Method.withRoutes [ routeGetMessage0, routeGetMessage1, routeGetMessage2, routeGetMessage3 ]
         )
 
@@ -75,10 +75,10 @@ Codecs: JSON. Described by [`descriptorUpdateMessage`](#descriptorUpdateMessage)
 updateMessage : Routes.V1.UpdateMessageRequest -> Rpc.Call Rpc.Json Routes.V1.UpdateMessageRequest Routes.V1.Message
 updateMessage =
     Rpc.call
-        (Proto.Method.json "routes.v1.Routes"
+        (Proto.Method.initJson "routes.v1.Routes"
             "UpdateMessage"
-            Routes.V1.encodeUpdateMessageRequest
-            Routes.V1.decodeMessage
+            (\_ -> Ok << Routes.V1.encodeUpdateMessageRequest)
+            (\_ -> Routes.V1.decodeMessage)
             |> Proto.Method.withRoutes [ routeUpdateMessage0 ]
         )
 
@@ -93,10 +93,10 @@ Codecs: JSON. Described by [`descriptorUpdateMessageWhole`](#descriptorUpdateMes
 updateMessageWhole : Routes.V1.Message -> Rpc.Call Rpc.Json Routes.V1.Message Routes.V1.Message
 updateMessageWhole =
     Rpc.call
-        (Proto.Method.json "routes.v1.Routes"
+        (Proto.Method.initJson "routes.v1.Routes"
             "UpdateMessageWhole"
-            Routes.V1.encodeMessage
-            Routes.V1.decodeMessage
+            (\_ -> Ok << Routes.V1.encodeMessage)
+            (\_ -> Routes.V1.decodeMessage)
             |> Proto.Method.withRoutes [ routeUpdateMessageWhole0 ]
         )
 
@@ -111,10 +111,10 @@ Codecs: JSON. Described by [`descriptorPostSub`](#descriptorPostSub).
 postSub : Routes.V1.GetMessageRequest -> Rpc.Call Rpc.Json Routes.V1.GetMessageRequest Routes.V1.Message
 postSub =
     Rpc.call
-        (Proto.Method.json "routes.v1.Routes"
+        (Proto.Method.initJson "routes.v1.Routes"
             "PostSub"
-            Routes.V1.encodeGetMessageRequest
-            Routes.V1.decodeMessage
+            (\_ -> Ok << Routes.V1.encodeGetMessageRequest)
+            (\_ -> Routes.V1.decodeMessage)
             |> Proto.Method.withRoutes [ routePostSub0 ]
         )
 
@@ -129,10 +129,10 @@ Codecs: JSON. Described by [`descriptorQuery`](#descriptorQuery).
 query : Routes.V1.Everything -> Rpc.Call Rpc.Json Routes.V1.Everything Routes.V1.Everything
 query =
     Rpc.call
-        (Proto.Method.json "routes.v1.Routes"
+        (Proto.Method.initJson "routes.v1.Routes"
             "Query"
-            Routes.V1.encodeEverything
-            Routes.V1.decodeEverything
+            (\_ -> Ok << Routes.V1.encodeEverything)
+            (\_ -> Routes.V1.decodeEverything)
             |> Proto.Method.withRoutes [ routeQuery0 ]
         )
 
@@ -147,10 +147,10 @@ Codecs: JSON. Described by [`descriptorSingle`](#descriptorSingle).
 single : Routes.V1.Everything -> Rpc.Call Rpc.Json Routes.V1.Everything Routes.V1.Everything
 single =
     Rpc.call
-        (Proto.Method.json "routes.v1.Routes"
+        (Proto.Method.initJson "routes.v1.Routes"
             "Single"
-            Routes.V1.encodeEverything
-            Routes.V1.decodeEverything
+            (\_ -> Ok << Routes.V1.encodeEverything)
+            (\_ -> Routes.V1.decodeEverything)
             |> Proto.Method.withRoutes [ routeSingle0 ]
         )
 
@@ -165,10 +165,10 @@ Codecs: JSON. Described by [`descriptorMulti`](#descriptorMulti).
 multi : Routes.V1.Everything -> Rpc.Call Rpc.Json Routes.V1.Everything Routes.V1.Everything
 multi =
     Rpc.call
-        (Proto.Method.json "routes.v1.Routes"
+        (Proto.Method.initJson "routes.v1.Routes"
             "Multi"
-            Routes.V1.encodeEverything
-            Routes.V1.decodeEverything
+            (\_ -> Ok << Routes.V1.encodeEverything)
+            (\_ -> Routes.V1.decodeEverything)
             |> Proto.Method.withRoutes [ routeMulti0 ]
         )
 
@@ -183,10 +183,10 @@ Codecs: JSON. Described by [`descriptorTyped`](#descriptorTyped).
 typed : Routes.V1.Everything -> Rpc.Call Rpc.Json Routes.V1.Everything Routes.V1.Everything
 typed =
     Rpc.call
-        (Proto.Method.json "routes.v1.Routes"
+        (Proto.Method.initJson "routes.v1.Routes"
             "Typed"
-            Routes.V1.encodeEverything
-            Routes.V1.decodeEverything
+            (\_ -> Ok << Routes.V1.encodeEverything)
+            (\_ -> Routes.V1.decodeEverything)
             |> Proto.Method.withRoutes [ routeTyped0 ]
         )
 
@@ -201,10 +201,10 @@ Codecs: JSON. Described by [`descriptorFiles`](#descriptorFiles).
 files : Routes.V1.FileRequest -> Rpc.Call Rpc.Json Routes.V1.FileRequest Routes.V1.FileRequest
 files =
     Rpc.call
-        (Proto.Method.json "routes.v1.Routes"
+        (Proto.Method.initJson "routes.v1.Routes"
             "Files"
-            Routes.V1.encodeFileRequest
-            Routes.V1.decodeFileRequest
+            (\_ -> Ok << Routes.V1.encodeFileRequest)
+            (\_ -> Routes.V1.decodeFileRequest)
             |> Proto.Method.withRoutes [ routeFiles0 ]
         )
 
@@ -219,10 +219,10 @@ Codecs: JSON. Described by [`descriptorCancel`](#descriptorCancel).
 cancel : Routes.V1.Resource -> Rpc.Call Rpc.Json Routes.V1.Resource Routes.V1.Resource
 cancel =
     Rpc.call
-        (Proto.Method.json "routes.v1.Routes"
+        (Proto.Method.initJson "routes.v1.Routes"
             "Cancel"
-            Routes.V1.encodeResource
-            Routes.V1.decodeResource
+            (\_ -> Ok << Routes.V1.encodeResource)
+            (\_ -> Routes.V1.decodeResource)
             |> Proto.Method.withRoutes [ routeCancel0 ]
         )
 
@@ -237,10 +237,10 @@ Codecs: JSON. Described by [`descriptorUpdateResource`](#descriptorUpdateResourc
 updateResource : Routes.V1.UpdateResourceRequest -> Rpc.Call Rpc.Json Routes.V1.UpdateResourceRequest Routes.V1.Resource
 updateResource =
     Rpc.call
-        (Proto.Method.json "routes.v1.Routes"
+        (Proto.Method.initJson "routes.v1.Routes"
             "UpdateResource"
-            Routes.V1.encodeUpdateResourceRequest
-            Routes.V1.decodeResource
+            (\_ -> Ok << Routes.V1.encodeUpdateResourceRequest)
+            (\_ -> Routes.V1.decodeResource)
             |> Proto.Method.withRoutes [ routeUpdateResource0 ]
         )
 
@@ -255,10 +255,10 @@ Codecs: JSON. Described by [`descriptorHead`](#descriptorHead).
 head : Routes.V1.FileRequest -> Rpc.Call Rpc.Json Routes.V1.FileRequest Routes.V1.FileRequest
 head =
     Rpc.call
-        (Proto.Method.json "routes.v1.Routes"
+        (Proto.Method.initJson "routes.v1.Routes"
             "Head"
-            Routes.V1.encodeFileRequest
-            Routes.V1.decodeFileRequest
+            (\_ -> Ok << Routes.V1.encodeFileRequest)
+            (\_ -> Routes.V1.decodeFileRequest)
             |> Proto.Method.withRoutes [ routeHead0 ]
         )
 
@@ -277,10 +277,10 @@ Codecs: JSON. Described by [`descriptorUnbound`](#descriptorUnbound).
 unbound : Routes.V1.GetMessageRequest -> Rpc.Call Rpc.Json Routes.V1.GetMessageRequest Routes.V1.Message
 unbound =
     Rpc.call
-        (Proto.Method.json "routes.v1.Routes"
+        (Proto.Method.initJson "routes.v1.Routes"
             "Unbound"
-            Routes.V1.encodeGetMessageRequest
-            Routes.V1.decodeMessage
+            (\_ -> Ok << Routes.V1.encodeGetMessageRequest)
+            (\_ -> Routes.V1.decodeMessage)
         )
 
 

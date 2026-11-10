@@ -22,7 +22,9 @@ import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 import Proto.Version
+import Proto.WellKnown
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -128,18 +130,18 @@ enumKind =
     Proto.Enum.enum encodeKind decodeKind KindUnspecified Ledger.V1.Kind.descriptor
 
 
-{-| The typed value of [`Entry`](#Entry): its codecs, default and descriptor together.
+{-| The typed value of [`Entry`](#Entry): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageEntry : Proto.Message.Message Entry
 messageEntry =
-    Proto.Message.messageBinary encodeEntryBytes decodeEntryBytes defaultEntry Ledger.V1.Entry.descriptor
+    Proto.Message.init "ledger.v1.Entry" encodeEntry decodeEntry encodeEntryBytes decodeEntryBytes
 
 
-{-| The typed value of [`GetEntryRequest`](#GetEntryRequest): its codecs, default and descriptor together.
+{-| The typed value of [`GetEntryRequest`](#GetEntryRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageGetEntryRequest : Proto.Message.Message GetEntryRequest
 messageGetEntryRequest =
-    Proto.Message.messageBinary encodeGetEntryRequestBytes decodeGetEntryRequestBytes defaultGetEntryRequest Ledger.V1.GetEntryRequest.descriptor
+    Proto.Message.init "ledger.v1.GetEntryRequest" encodeGetEntryRequest decodeGetEntryRequest encodeGetEntryRequestBytes decodeGetEntryRequestBytes
 
 
 
@@ -158,7 +160,16 @@ descriptors =
             [ Ledger.V1.Kind.descriptor
             ]
         )
-        Proto.Descriptors.wellKnown
+        Proto.WellKnown.descriptors
+
+
+{-| The codecs of this package's messages, for converting a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) that holds one between proto3 JSON and protobuf binary. It holds no other package's types and no well-known type: give a client the union of the registries its `Any`s need (`Proto.Registry.unionAll`, `Rpc.withRegistry`).
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.empty
+        |> Proto.Registry.register messageEntry
+        |> Proto.Registry.register messageGetEntryRequest
 
 
 
@@ -180,6 +191,47 @@ encodeKind value =
             Json.Encode.string "KIND_DEBIT"
 
 
+{-| Encodes an [`Entry`](#Entry) as proto3 JSON.
+-}
+encodeEntry : Entry -> Json.Encode.Value
+encodeEntry value =
+    Proto.Json.objectOfFields
+        ([ ( "memo", Proto.Json.implicitField "" Json.Encode.string value.memo )
+         , ( "amount", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.amount )
+         , ( "kind", Proto.Json.implicitField KindUnspecified encodeKind value.kind )
+         , ( "tags", Proto.Json.dictField identity Json.Encode.int value.tags )
+         , ( "marks", Proto.Json.repeatedField Json.Encode.int value.marks )
+         ]
+            ++ encodeEntrySource value.source
+        )
+
+
+{-| Encodes an [`EntrySource`](#EntrySource) as the members of its message's JSON object.
+-}
+encodeEntrySource : EntrySource -> List ( String, Maybe Json.Encode.Value )
+encodeEntrySource value =
+    case value of
+        EntrySourceUnset ->
+            []
+
+        EntrySourceAccount member ->
+            [ ( "account", Just (Json.Encode.string member) )
+            ]
+
+        EntrySourceReversal member ->
+            [ ( "reversal", Just (encodeEntry member) )
+            ]
+
+
+{-| Encodes a [`GetEntryRequest`](#GetEntryRequest) as proto3 JSON.
+-}
+encodeGetEntryRequest : GetEntryRequest -> Json.Encode.Value
+encodeGetEntryRequest value =
+    Proto.Json.objectOfFields
+        [ ( "memo", Proto.Json.implicitField "" Json.Encode.string value.memo )
+        ]
+
+
 
 -- DECODERS
 
@@ -194,6 +246,38 @@ decodeKind =
         , ( "KIND_CREDIT", 1, KindCredit )
         , ( "KIND_DEBIT", -1, KindDebit )
         ]
+
+
+{-| Decodes an [`Entry`](#Entry) from proto3 JSON.
+-}
+decodeEntry : Json.Decode.Decoder Entry
+decodeEntry =
+    Json.Decode.succeed Entry
+        |> Proto.Json.field "memo" "" Proto.Json.string
+        |> Proto.Json.field "amount" "0" Proto.Json.int64
+        |> Proto.Json.field "kind" KindUnspecified decodeKind
+        |> Proto.Json.field "tags" Dict.empty (Proto.Json.stringDict Proto.Json.int32)
+        |> Proto.Json.oneof decodeEntrySource
+        |> Proto.Json.field "marks" [] (Json.Decode.list Proto.Json.int32)
+
+
+{-| Decodes an [`EntrySource`](#EntrySource) from the members of its message's JSON object.
+-}
+decodeEntrySource : Json.Decode.Decoder EntrySource
+decodeEntrySource =
+    Proto.Json.members "source"
+        EntrySourceUnset
+        [ Proto.Json.member "account" (Json.Decode.map EntrySourceAccount Proto.Json.string)
+        , Proto.Json.member "reversal" (Json.Decode.map EntrySourceReversal (Json.Decode.lazy (\_ -> decodeEntry)))
+        ]
+
+
+{-| Decodes a [`GetEntryRequest`](#GetEntryRequest) from proto3 JSON.
+-}
+decodeGetEntryRequest : Json.Decode.Decoder GetEntryRequest
+decodeGetEntryRequest =
+    Json.Decode.succeed GetEntryRequest
+        |> Proto.Json.field "memo" "" Proto.Json.string
 
 
 

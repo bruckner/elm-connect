@@ -211,10 +211,20 @@ settle source metadata raw status messages =
                             |> Maybe.map (\text -> Percent.percentDecode text |> Maybe.withDefault text)
                             |> Maybe.withDefault ""
                     , details =
-                        Dict.get "grpc-status-details-bin" status
-                            |> Maybe.andThen (String.trim >> Proto.Bytes.fromBase64)
-                            |> Maybe.andThen (Proto.Binary.decode statusDetails)
-                            |> Maybe.withDefault []
+                        case Dict.get "grpc-status-details-bin" status of
+                            Just text ->
+                                case
+                                    Proto.Bytes.fromBase64 (String.trim text)
+                                        |> Maybe.andThen (Proto.Binary.decode statusDetails)
+                                of
+                                    Just found ->
+                                        List.map Ok found
+
+                                    Nothing ->
+                                        [ Err (Error.InvalidDetail Nothing "grpc-status-details-bin is not a google.rpc.Status in base64") ]
+
+                            Nothing ->
+                                []
                     , source = source
                     }
                     answer

@@ -4,6 +4,7 @@
 
 module Connectrpc.Eliza.V1 exposing (..)
 
+import Bytes.Encode
 import Connectrpc.Eliza.V1.ConverseRequest
 import Connectrpc.Eliza.V1.ConverseResponse
 import Connectrpc.Eliza.V1.IntroduceRequest
@@ -12,10 +13,13 @@ import Connectrpc.Eliza.V1.SayRequest
 import Connectrpc.Eliza.V1.SayResponse
 import Json.Decode
 import Json.Encode
+import Proto.Binary
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 import Proto.Version
+import Proto.WellKnown
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -159,46 +163,46 @@ defaultIntroduceResponse =
 -- TYPED VALUES
 
 
-{-| The typed value of [`SayRequest`](#SayRequest): its codecs, default and descriptor together.
+{-| The typed value of [`SayRequest`](#SayRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageSayRequest : Proto.Message.Message SayRequest
 messageSayRequest =
-    Proto.Message.message encodeSayRequest decodeSayRequest defaultSayRequest Connectrpc.Eliza.V1.SayRequest.descriptor
+    Proto.Message.init "connectrpc.eliza.v1.SayRequest" encodeSayRequest decodeSayRequest encodeSayRequestBytes decodeSayRequestBytes
 
 
-{-| The typed value of [`SayResponse`](#SayResponse): its codecs, default and descriptor together.
+{-| The typed value of [`SayResponse`](#SayResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageSayResponse : Proto.Message.Message SayResponse
 messageSayResponse =
-    Proto.Message.message encodeSayResponse decodeSayResponse defaultSayResponse Connectrpc.Eliza.V1.SayResponse.descriptor
+    Proto.Message.init "connectrpc.eliza.v1.SayResponse" encodeSayResponse decodeSayResponse encodeSayResponseBytes decodeSayResponseBytes
 
 
-{-| The typed value of [`ConverseRequest`](#ConverseRequest): its codecs, default and descriptor together.
+{-| The typed value of [`ConverseRequest`](#ConverseRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageConverseRequest : Proto.Message.Message ConverseRequest
 messageConverseRequest =
-    Proto.Message.message encodeConverseRequest decodeConverseRequest defaultConverseRequest Connectrpc.Eliza.V1.ConverseRequest.descriptor
+    Proto.Message.init "connectrpc.eliza.v1.ConverseRequest" encodeConverseRequest decodeConverseRequest encodeConverseRequestBytes decodeConverseRequestBytes
 
 
-{-| The typed value of [`ConverseResponse`](#ConverseResponse): its codecs, default and descriptor together.
+{-| The typed value of [`ConverseResponse`](#ConverseResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageConverseResponse : Proto.Message.Message ConverseResponse
 messageConverseResponse =
-    Proto.Message.message encodeConverseResponse decodeConverseResponse defaultConverseResponse Connectrpc.Eliza.V1.ConverseResponse.descriptor
+    Proto.Message.init "connectrpc.eliza.v1.ConverseResponse" encodeConverseResponse decodeConverseResponse encodeConverseResponseBytes decodeConverseResponseBytes
 
 
-{-| The typed value of [`IntroduceRequest`](#IntroduceRequest): its codecs, default and descriptor together.
+{-| The typed value of [`IntroduceRequest`](#IntroduceRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageIntroduceRequest : Proto.Message.Message IntroduceRequest
 messageIntroduceRequest =
-    Proto.Message.message encodeIntroduceRequest decodeIntroduceRequest defaultIntroduceRequest Connectrpc.Eliza.V1.IntroduceRequest.descriptor
+    Proto.Message.init "connectrpc.eliza.v1.IntroduceRequest" encodeIntroduceRequest decodeIntroduceRequest encodeIntroduceRequestBytes decodeIntroduceRequestBytes
 
 
-{-| The typed value of [`IntroduceResponse`](#IntroduceResponse): its codecs, default and descriptor together.
+{-| The typed value of [`IntroduceResponse`](#IntroduceResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageIntroduceResponse : Proto.Message.Message IntroduceResponse
 messageIntroduceResponse =
-    Proto.Message.message encodeIntroduceResponse decodeIntroduceResponse defaultIntroduceResponse Connectrpc.Eliza.V1.IntroduceResponse.descriptor
+    Proto.Message.init "connectrpc.eliza.v1.IntroduceResponse" encodeIntroduceResponse decodeIntroduceResponse encodeIntroduceResponseBytes decodeIntroduceResponseBytes
 
 
 
@@ -220,7 +224,20 @@ descriptors =
             ]
             []
         )
-        Proto.Descriptors.wellKnown
+        Proto.WellKnown.descriptors
+
+
+{-| The codecs of this package's messages, for converting a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.0/src/Proto/Any.elm) that holds one between proto3 JSON and protobuf binary. It holds no other package's types and no well-known type: give a client the union of the registries its `Any`s need (`Proto.Registry.unionAll`, `Rpc.withRegistry`).
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.empty
+        |> Proto.Registry.register messageSayRequest
+        |> Proto.Registry.register messageSayResponse
+        |> Proto.Registry.register messageConverseRequest
+        |> Proto.Registry.register messageConverseResponse
+        |> Proto.Registry.register messageIntroduceRequest
+        |> Proto.Registry.register messageIntroduceResponse
 
 
 
@@ -331,3 +348,251 @@ decodeIntroduceResponse : Json.Decode.Decoder IntroduceResponse
 decodeIntroduceResponse =
     Json.Decode.succeed IntroduceResponse
         |> Proto.Json.field "sentence" "" Proto.Json.string
+
+
+
+-- BINARY ENCODERS
+
+
+{-| Encodes a [`SayRequest`](#SayRequest) as protobuf binary.
+-}
+encodeSayRequestBytes : SayRequest -> Bytes.Encode.Encoder
+encodeSayRequestBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.sentence
+        ]
+
+
+{-| Encodes a [`SayResponse`](#SayResponse) as protobuf binary.
+-}
+encodeSayResponseBytes : SayResponse -> Bytes.Encode.Encoder
+encodeSayResponseBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.sentence
+        ]
+
+
+{-| Encodes a [`ConverseRequest`](#ConverseRequest) as protobuf binary.
+-}
+encodeConverseRequestBytes : ConverseRequest -> Bytes.Encode.Encoder
+encodeConverseRequestBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.sentence
+        ]
+
+
+{-| Encodes a [`ConverseResponse`](#ConverseResponse) as protobuf binary.
+-}
+encodeConverseResponseBytes : ConverseResponse -> Bytes.Encode.Encoder
+encodeConverseResponseBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.sentence
+        ]
+
+
+{-| Encodes an [`IntroduceRequest`](#IntroduceRequest) as protobuf binary.
+-}
+encodeIntroduceRequestBytes : IntroduceRequest -> Bytes.Encode.Encoder
+encodeIntroduceRequestBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.name
+        ]
+
+
+{-| Encodes an [`IntroduceResponse`](#IntroduceResponse) as protobuf binary.
+-}
+encodeIntroduceResponseBytes : IntroduceResponse -> Bytes.Encode.Encoder
+encodeIntroduceResponseBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.sentence
+        ]
+
+
+
+-- BINARY DECODERS
+
+
+{-| Decodes a [`SayRequest`](#SayRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeSayRequestBytes : SayRequest -> Proto.Binary.Decoder SayRequest
+mergeSayRequestBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | sentence = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`SayRequest`](#SayRequest) from protobuf binary.
+-}
+decodeSayRequestBytes : Proto.Binary.Decoder SayRequest
+decodeSayRequestBytes =
+    mergeSayRequestBytes defaultSayRequest
+
+
+{-| Decodes a [`SayResponse`](#SayResponse) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeSayResponseBytes : SayResponse -> Proto.Binary.Decoder SayResponse
+mergeSayResponseBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | sentence = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`SayResponse`](#SayResponse) from protobuf binary.
+-}
+decodeSayResponseBytes : Proto.Binary.Decoder SayResponse
+decodeSayResponseBytes =
+    mergeSayResponseBytes defaultSayResponse
+
+
+{-| Decodes a [`ConverseRequest`](#ConverseRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeConverseRequestBytes : ConverseRequest -> Proto.Binary.Decoder ConverseRequest
+mergeConverseRequestBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | sentence = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`ConverseRequest`](#ConverseRequest) from protobuf binary.
+-}
+decodeConverseRequestBytes : Proto.Binary.Decoder ConverseRequest
+decodeConverseRequestBytes =
+    mergeConverseRequestBytes defaultConverseRequest
+
+
+{-| Decodes a [`ConverseResponse`](#ConverseResponse) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeConverseResponseBytes : ConverseResponse -> Proto.Binary.Decoder ConverseResponse
+mergeConverseResponseBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | sentence = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`ConverseResponse`](#ConverseResponse) from protobuf binary.
+-}
+decodeConverseResponseBytes : Proto.Binary.Decoder ConverseResponse
+decodeConverseResponseBytes =
+    mergeConverseResponseBytes defaultConverseResponse
+
+
+{-| Decodes an [`IntroduceRequest`](#IntroduceRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeIntroduceRequestBytes : IntroduceRequest -> Proto.Binary.Decoder IntroduceRequest
+mergeIntroduceRequestBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | name = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes an [`IntroduceRequest`](#IntroduceRequest) from protobuf binary.
+-}
+decodeIntroduceRequestBytes : Proto.Binary.Decoder IntroduceRequest
+decodeIntroduceRequestBytes =
+    mergeIntroduceRequestBytes defaultIntroduceRequest
+
+
+{-| Decodes an [`IntroduceResponse`](#IntroduceResponse) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeIntroduceResponseBytes : IntroduceResponse -> Proto.Binary.Decoder IntroduceResponse
+mergeIntroduceResponseBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | sentence = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes an [`IntroduceResponse`](#IntroduceResponse) from protobuf binary.
+-}
+decodeIntroduceResponseBytes : Proto.Binary.Decoder IntroduceResponse
+decodeIntroduceResponseBytes =
+    mergeIntroduceResponseBytes defaultIntroduceResponse

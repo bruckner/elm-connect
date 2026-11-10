@@ -1,5 +1,5 @@
 module Proto.Method exposing
-    ( Method, json, proto, both, withIdempotency, withRoutes, withBindings
+    ( Method, init, initJson, initProto, withIdempotency, withRoutes, withBindings
     , encodeRequest, responseDecoder, hasJson
     , Descriptor, descriptor
     , service, name, idempotency, input, output, bindings
@@ -13,10 +13,10 @@ service's module and gives the typed value to [`Rpc.call`](Rpc#call):
 
     getNote =
         Rpc.call
-            (Proto.Method.json "notes.v1.NotesService"
+            (Proto.Method.initJson "notes.v1.NotesService"
                 "GetNote"
-                Notes.V1.encodeGetNoteRequest
-                Notes.V1.decodeNote
+                (\_ -> Ok << Notes.V1.encodeGetNoteRequest)
+                (\_ -> Notes.V1.decodeNote)
                 |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
                 |> Proto.Method.withRoutes [ routeGetNote0 ]
             )
@@ -32,7 +32,7 @@ The idempotency is a union whose constructors carry its name as a prefix
 (`IdempotencyNoSideEffects`), so it can be exposed with `(..)` beside any
 other union.
 
-@docs Method, json, proto, both, withIdempotency, withRoutes, withBindings
+@docs Method, init, initJson, initProto, withIdempotency, withRoutes, withBindings
 
 
 # Reading a typed value
@@ -59,18 +59,20 @@ other union.
 import Bytes.Encode
 import Json.Decode
 import Json.Encode
+import Proto.Any exposing (Problem)
 import Proto.Binary
 import Proto.Codec
 import Proto.Http exposing (Binding)
 import Proto.Internal.Binding
 import Proto.Internal.Interpret
 import Proto.Internal.Method as Internal
+import Proto.Registry exposing (Registry)
 import Proto.Route exposing (Route)
 
 
 {-| A method taking a `req` and answering a `res`, with the codecs `codec`
-says. It is opaque: built by [`json`](#json), [`proto`](#proto) or
-[`both`](#both), adjusted by the `with` functions, and read by the functions
+says. It is opaque: built by [`initJson`](#initJson),
+[`initProto`](#initProto) or [`init`](#init), adjusted by the `with` functions, and read by the functions
 below. The package site and compiler errors may show it as
 `Proto.Internal.Method.Method`, its name inside the package.
 
@@ -88,7 +90,15 @@ type alias Method codec req res =
 {-| A method with proto3 JSON codecs, as generated code under `codec=json`
 writes it: from the full name of its service (`notes.v1.NotesService`), its
 name as declared (`GetNote`), its request's JSON encoder and its response's
-JSON decoder. Its calls go over a protocol speaking JSON.
+JSON decoder, each taking the registry an [`Any`](Proto-Any#Any) they hold
+converts through: the client's ([`Rpc.withRegistry`](Rpc#withRegistry)). A
+type that reaches no `Any` ignores it, as generated code writes. Its calls go
+over a protocol speaking JSON.
+
+    Proto.Method.initJson "notes.v1.NotesService"
+        "GetNote"
+        (\_ -> Ok << Notes.V1.encodeGetNoteRequest)
+        (\_ -> Notes.V1.decodeNote)
 
 Its idempotency is `IdempotencyUnknown` until
 [`withIdempotency`](#withIdempotency) says otherwise, and it has no routes
@@ -96,8 +106,8 @@ until [`withRoutes`](#withRoutes) or [`withBindings`](#withBindings) gives
 them, so that transcoding sends it over the implicit route.
 
 -}
-json : String -> String -> (req -> Json.Encode.Value) -> Json.Decode.Decoder res -> Method Proto.Codec.Json req res
-json serviceName methodName encode decoder =
+initJson : String -> String -> (Registry -> req -> Result Problem Json.Encode.Value) -> (Registry -> Json.Decode.Decoder res) -> Method Proto.Codec.Json req res
+initJson serviceName methodName encode decoder =
     Internal.Method
         { service = serviceName
         , name = methodName
@@ -115,8 +125,8 @@ request's binary encoder and its response's binary decoder. Its calls go over a
 protocol speaking protobuf binary, which transcoding is not, so it takes no
 routes.
 -}
-proto : String -> String -> (req -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder res -> Method Proto.Codec.Proto req res
-proto serviceName methodName encode decoder =
+initProto : String -> String -> (req -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder res -> Method Proto.Codec.Proto req res
+initProto serviceName methodName encode decoder =
     Internal.Method
         { service = serviceName
         , name = methodName
@@ -129,18 +139,25 @@ proto serviceName methodName encode decoder =
 
 
 {-| A method with both codecs, as generated code under `codec=both` writes
-it: free in the codec, so its calls go over any protocol.
+it: free in the codec, so its calls go over any protocol. Its JSON codecs
+take the registry an [`Any`](Proto-Any#Any) they hold converts through, the
+client's ([`Rpc.withRegistry`](Rpc#withRegistry)), as for
+[`initJson`](#initJson):
 
-    Proto.Method.both "notes.v1.NotesService"
+    Proto.Method.init "notes.v1.NotesService"
         "GetNote"
-        Notes.V1.encodeGetNoteRequest
-        Notes.V1.decodeNote
+        (\_ -> Ok << Notes.V1.encodeGetNoteRequest)
+        (\_ -> Notes.V1.decodeNote)
         Notes.V1.encodeGetNoteRequestBytes
         Notes.V1.decodeNoteBytes
 
+A call whose request holds an `Any` the client's registry cannot write is not
+sent over JSON: it fails with
+[`NoAnswer (UnwritableRequest problem)`](Rpc-Error#Reason).
+
 -}
-both : String -> String -> (req -> Json.Encode.Value) -> Json.Decode.Decoder res -> (req -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder res -> Method codec req res
-both serviceName methodName encode decoder encodeBinary binaryDecoder =
+init : String -> String -> (Registry -> req -> Result Problem Json.Encode.Value) -> (Registry -> Json.Decode.Decoder res) -> (req -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder res -> Method codec req res
+init serviceName methodName encode decoder encodeBinary binaryDecoder =
     Internal.Method
         { service = serviceName
         , name = methodName
@@ -176,18 +193,19 @@ match, which sending refuses.
 -}
 withRoutes : List (req -> Route) -> Method codec req res -> Method codec req res
 withRoutes routes (Internal.Method m) =
-    Internal.Method { m | routes = routes }
+    Internal.Method { m | routes = List.map Internal.Typed routes }
 
 
 {-| The method's routes from its `google.api.http` bindings written as
 [`Proto.Http`](Proto-Http) data, for a method written by hand: each route is
-read from the request's proto3 JSON. Only a program naming this function
-carries the code that reads a binding.
+read from the request's proto3 JSON, written with the registry in use and
+encoded once per send for the route and the body alike. Only a program
+naming this function carries the code that reads a binding.
 
-    Proto.Method.json "notes.v1.NotesService"
+    Proto.Method.initJson "notes.v1.NotesService"
         "GetNote"
-        encodeGetNoteRequest
-        decodeNote
+        (\_ -> Ok << encodeGetNoteRequest)
+        (\_ -> decodeNote)
         |> Proto.Method.withBindings
             [ Proto.Http.binding { … } ]
 
@@ -198,29 +216,32 @@ withBindings methodBindings (Internal.Method m) =
         { m
             | routes =
                 List.map
-                    (\(Proto.Internal.Binding.Binding rule) req -> Proto.Internal.Interpret.route rule (m.json.encode req))
+                    (\(Proto.Internal.Binding.Binding rule) -> Internal.FromJson rule.responseBody (Proto.Internal.Interpret.route rule))
                     methodBindings
         }
 
 
-{-| A request as proto3 JSON; `null` for a method built with
-[`proto`](#proto), which has no JSON codecs.
+{-| A request as proto3 JSON, writing an `Any` it holds through the registry
+(see [`Proto.Any.Problem`](Proto-Any#Problem) for why that can fail);
+`Ok null` for a method built with [`initProto`](#initProto), which has no
+JSON codecs.
 -}
-encodeRequest : Method codec req res -> req -> Json.Encode.Value
-encodeRequest (Internal.Method m) =
-    m.json.encode
+encodeRequest : Registry -> Method codec req res -> req -> Result Problem Json.Encode.Value
+encodeRequest registry (Internal.Method m) req =
+    m.json.encode registry req
 
 
-{-| The response's proto3 JSON decoder; one that always fails for a method
-built with [`proto`](#proto).
+{-| The response's proto3 JSON decoder, reading an `Any` it holds through the
+registry; one that always fails for a method built with
+[`initProto`](#initProto).
 -}
-responseDecoder : Method codec req res -> Json.Decode.Decoder res
-responseDecoder (Internal.Method m) =
-    m.json.decoder
+responseDecoder : Registry -> Method codec req res -> Json.Decode.Decoder res
+responseDecoder registry (Internal.Method m) =
+    m.json.decoder registry
 
 
 {-| Whether the method has proto3 JSON codecs: `False` for one built with
-[`proto`](#proto).
+[`initProto`](#initProto).
 -}
 hasJson : Method codec req res -> Bool
 hasJson (Internal.Method m) =

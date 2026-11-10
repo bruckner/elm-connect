@@ -11,7 +11,7 @@ listed, with links, in [specs.md](specs.md).
 
 ## What a proto becomes
 
-Each package becomes a module of its types and their JSON codecs
+Each package becomes a module of its types and their codecs
 (`notes.v1` → `Notes.V1`), each service a module of one function per
 method (`Notes.V1.NotesService`), and each message and enum a module of
 its descriptor (`Notes.V1.Note`, [descriptors.md](descriptors.md)). The
@@ -99,7 +99,7 @@ Both binaries take the same options: the protoc plugin as
 | `unbound_methods` | `--unbound-methods` | `implicit` (default), `error` | What a method without a `google.api.http` rule gets. `implicit`: a call like any other, sent over transcoding on the implicit route ([transcoding.md](transcoding.md#methods-without-an-http-rule)). `error`: a `services::unbound_method` diagnostic, for servers that serve rules alone. |
 | `streaming` | `--streaming` | `error` (default), `skip` | What a client, server or bidirectional streaming method gets. `error`: a `services::streaming` diagnostic. `skip`: left out of its service's module, with a warning on stderr, and the rest generated. |
 | `enum_unknown` | `--enum-unknown` | `fail` (default), `zero` | What an enum value name the client does not know reads as; an unknown number reads as the zero value either way. `fail`: the decode fails, as protobuf's own parsers do. `zero`: the zero value, so a value the server adds after the client was generated does not fail the message it is in, at the cost of telling it apart from the zero value. It applies to every enum of the invocation. Packages can take different values only from separate invocations, each into its own out directory and checked the same way, and only when no message of one refers to a type of another, since a reference to a package the invocation does not generate is `generate::not_generated`. |
-| `codec` | `--codec` | `json` (default), `proto`, `both` | Which codecs messages get, and so which clients send the calls. `json`: proto3 JSON, which Connect's JSON codec and transcoding speak; calls are `Rpc.Call Rpc.Json req res`. `proto`: protobuf binary codecs alone, which Connect's proto codec speaks; enums keep their JSON codecs, and calls are `Rpc.Call Rpc.Proto req res`. `both`: the binary codecs beside the JSON ones; calls are `Rpc.Call codec req res`, which any client sends. See [Binary codecs](#binary-codecs) and [calling.md](calling.md#choosing-the-codec). The value `binary` is refused, with a message naming `proto`, the binary codecs alone. |
+| `codec` | `--codec` | `json` (default), `proto`, `both` | Which codecs the service methods are wired with, and so which clients send the calls. Every message gets both codecs, its typed value and its package's `registry` whatever it says. `json`: proto3 JSON, which Connect's JSON codec and transcoding speak; calls are `Rpc.Call Rpc.Json req res`. `proto`: protobuf binary, which Connect's proto codec and gRPC-Web speak; calls are `Rpc.Call Rpc.Proto req res`. `both`: either; calls are `Rpc.Call codec req res`, which any client sends. See [Binary codecs](#binary-codecs) and [calling.md](calling.md#choosing-the-codec). The value `binary` is refused, with a message naming `proto`. |
 | `rename` | `--rename` | `<proto full name>:<Elm name>`, repeatable | An Elm name in place of the one the naming rules derive, for a package (its module), service, method, message, enum, field, oneof or enum value. The escape for names that collide or have no Elm form. |
 | `module_prefix` | `--module-prefix` | dot-separated Elm module segments, such as `Api.Notes` | A module every generated module goes inside: with `Api`, `notes.v1` becomes `Api.Notes.V1`, written to `Api/Notes/V1.elm`, and its services' modules follow. A renamed package's module is prefixed too. The runtime's modules are never prefixed. |
 
@@ -141,9 +141,10 @@ the CLI record the same options the same way.
 
 ## Binary codecs
 
-Under `codec=both` or `codec=proto` each package module gains two
-sections after its decoders, binary encoders and binary decoders,
-written against the runtime's `Proto.Binary`:
+Each package module has, after its decoders, two sections of binary
+encoders and binary decoders, written against the runtime's
+`Proto.Binary`, whatever the `codec` option says: a program that never
+speaks binary nor packs an `Any` drops them as dead code.
 
 | Proto | Elm |
 |---|---|
@@ -153,48 +154,45 @@ written against the runtime's `Proto.Binary`:
 | a recursive message's wrapper | `encodeNode_Bytes` and `mergeNode_Bytes` |
 | `repeated int32 marks = 7 [packed = false];` | written one element per field, as declared; every other repeated scalar is packed |
 
-The typed values and the methods carry them. Under `codec=both` a
-typed value is built as under `json` and given its binary codecs by
-`Proto.Message.withBinary` (the `codec_both` corpus case):
+A message's typed value is built from both its codecs (the `codec_both`
+corpus case):
 
 ```elm conformance/cases/codec_both/expected/Codec/V1.elm excerpt
 messageLeaf : Proto.Message.Message Leaf
 messageLeaf =
-    Proto.Message.message encodeLeaf decodeLeaf defaultLeaf Codec.V1.Leaf.descriptor
-        |> Proto.Message.withBinary encodeLeafBytes decodeLeafBytes
+    Proto.Message.init "codec.v1.Leaf" encodeLeaf decodeLeaf encodeLeafBytes decodeLeafBytes
 ```
 
-and a method by `Proto.Method.both`, given its service's full name and
-its name, the request type's `encode…` and the response type's
-`decode…`, then their `encode…Bytes` and `decode…Bytes`, and its
-idempotency and routes as under `json`. Under
-`codec=proto` both are built from the binary codecs alone (the
-`codec_proto` case):
+and one whose fields reach a `google.protobuf.Any` by
+`Proto.Message.initWith`, from `encodeNoteWith` and `decodeNoteWith`,
+the JSON codecs that take a registry (below). The `codec` option says
+which codecs a method is wired with. Under `json` a method is built by
+`Proto.Method.initJson` from its service's full name, its name, and its
+request's JSON encoder and response's JSON decoder, each taking the
+client's registry (`\_ -> Ok << Notes.V1.encodeGetNoteRequest` and
+`\_ -> Notes.V1.decodeNote` for a type that reaches no `Any`). Under
+`both` it is built by `Proto.Method.init` from those, then the request
+type's `encode…Bytes` and the response type's `decode…Bytes`, and its
+idempotency and routes as under `json`. Under `codec=proto` it is built
+from the binary codecs alone (the `codec_proto` case):
 
 ```elm conformance/cases/codec_proto/expected/Ledger/V1/LedgerService.elm excerpt
 getEntry : Ledger.V1.GetEntryRequest -> Rpc.Call Rpc.Proto Ledger.V1.GetEntryRequest Ledger.V1.Entry
 getEntry =
     Rpc.call
-        (Proto.Method.proto "ledger.v1.LedgerService"
+        (Proto.Method.initProto "ledger.v1.LedgerService"
             "GetEntry"
             Ledger.V1.encodeGetEntryRequestBytes
             Ledger.V1.decodeEntryBytes
         )
 ```
 
-`Proto.Message.encodeBytes` and `bytesDecoder` read a typed value's
-binary codecs back (`Nothing` without them); `Proto.Binary.encode` and
-`Proto.Binary.decode` run them on a whole body.
-
-`codec=proto` drops the JSON codecs of messages, oneofs and recursion
-wrappers: `encodeNote` and `decodeNote` are not generated. Enums keep
-theirs, since `Proto.Enum.Enum` holds them. The typed values are built
-by `Proto.Message.messageBinary` and the methods by
-`Proto.Method.proto`; `Proto.Method.hasJson` tells such a method apart.
-Its calls are `Rpc.Call Rpc.Proto req res`, which only a
-`Rpc.Protocol.connectProto` client sends: transcoding speaks JSON only,
-so such a method gets no route functions and its messages no query
-encoders.
+`Proto.Binary.encode` and `Proto.Binary.decode` run the binary codecs
+on a whole body. `Proto.Method.hasJson` tells a method wired with
+`proto` apart. Its calls are `Rpc.Call Rpc.Proto req res`, which only a
+`Rpc.Protocol.connectProto` or `grpcWeb` client sends: transcoding
+speaks JSON only, so such a method gets no route functions and its
+messages no query encoders.
 
 `int64` and `bytes` apply to the binary codecs as to the JSON ones: the
 same Elm types, so a value read from binary is the record JSON would
@@ -204,22 +202,38 @@ trip.
 
 The binary names are the JSON ones with `Bytes` at the end. A type
 named for another with `Bytes` at the end, `NoteBytes` beside `Note`,
-would have JSON codecs of the same names, so under `codec=both`, or
-under `codec=proto` for an enum, that is `naming::codec_collision`;
-`rename` one of the two. Under `codec=json` nothing is reserved.
+would have JSON codecs of the same names, which is
+`naming::codec_collision` under every option; `rename` one of the two.
 
-Under `codec=both` the package module also holds `binaryRegistry`, a
-`Proto.Registry.Registry` of the conversions from proto3 JSON to binary
-of the package's messages and of the well-known types they hold, after
-those of the packages whose messages they hold. The binary encoders
-write an `Any` field with it (`Proto.Binary.anyWith binaryRegistry`),
-so that an `Any` read from proto3 JSON is written as its message's
-binary; one of a type it lacks is written with its type URL alone.
-`descriptors`, a `Proto.Descriptors.Descriptors`, holds no codecs, so
-a program that reads descriptors keeps no codecs, and one that writes
-binary keeps no descriptors.
-Under `codec=proto`, which has no JSON decoders, there is no
-`binaryRegistry`.
+## `Any` and the registry
+
+A `google.protobuf.Any` holds its message's protobuf binary, so its
+binary codec (`Proto.Binary.any`) needs no table. Its proto3 JSON goes
+through a `Proto.Registry.Registry`: every message, oneof and recursion
+wrapper that reaches an `Any`, through its fields at any depth and
+across packages, has JSON codecs taking one, `decodeNoteWith :
+Proto.Registry.Registry -> Json.Decode.Decoder Note` and
+`encodeNoteWith : Proto.Registry.Registry -> Note -> Result
+Proto.Any.Problem Json.Encode.Value`, and no `decodeNote` or
+`encodeNote`. A type named for one of them with `With` at the end
+(`NoteWith`) is `naming::codec_collision`.
+
+Each package module holds `registry`, its own messages' typed values,
+nested ones included, and nothing else:
+
+```elm conformance/cases/codec_both/expected/Codec/V1.elm excerpt
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.empty
+        |> Proto.Registry.register messageScalars
+```
+
+No imported package's messages, no well-known type, no error detail: an
+application gives its client the union of the registries its `Any`s
+need (`Proto.Registry.unionAll`, `Rpc.withRegistry`,
+[descriptors.md](descriptors.md#registries)). `descriptors`, a
+`Proto.Descriptors.Descriptors`, holds no codecs and `registry` no
+descriptors, so a program using one keeps nothing of the other.
 
 Calls go as protobuf binary over Connect with a client of
 `Rpc.Protocol.connectProto`

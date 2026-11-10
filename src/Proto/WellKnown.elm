@@ -1,16 +1,22 @@
 module Proto.WellKnown exposing
-    ( empty, timestamp, duration, fieldMask, any
+    ( empty, timestamp, duration
+    , fieldMask, any
     , struct, value, listValue, nullValue
-    , doubleValue, floatValue, int64Value, int64ValueAsInt, uint64Value, uint64ValueAsInt
-    , int32Value, uint32Value, boolValue, stringValue, bytesValue
+    , doubleValue, floatValue
+    , int64Value, int64ValueAsInt
+    , uint64Value, uint64ValueAsInt
+    , int32Value, uint32Value
+    , boolValue, stringValue, bytesValue
+    , registry, descriptors
     )
 
 {-| The `google.protobuf` types elm-connect maps, as
 [`Message`](Proto-Message#Message) values, each in the Elm form generated code
-gives the type. Generated code uses them for a method whose request or response
-is a well-known type.
+gives the type, with both its codecs. Pack and unpack an `Any` of one with
+them.
 
-@docs empty, timestamp, duration, fieldMask, any
+@docs empty, timestamp, duration
+@docs fieldMask, any
 
 
 # JSON
@@ -23,8 +29,22 @@ is a well-known type.
 A wrapper's Elm form is its scalar; a field of one is a `Maybe` of it. The
 64-bit wrappers come in both forms the `int64` option chooses between.
 
-@docs doubleValue, floatValue, int64Value, int64ValueAsInt, uint64Value, uint64ValueAsInt
-@docs int32Value, uint32Value, boolValue, stringValue, bytesValue
+@docs doubleValue, floatValue
+@docs int64Value, int64ValueAsInt
+@docs uint64Value, uint64ValueAsInt
+@docs int32Value, uint32Value
+@docs boolValue, stringValue, bytesValue
+
+
+# Tables
+
+The two tables each generated package gives for its own types, here for
+these: an `Any` holding one of them converts between proto3 JSON and
+protobuf binary through a [`Proto.Registry`](Proto-Registry) with them in
+it, and a [`Proto.Descriptors`](Proto-Descriptors) with them in it finds
+their descriptors.
+
+@docs registry, descriptors
 
 -}
 
@@ -32,12 +52,14 @@ import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
 import Proto.Any exposing (Any)
-import Proto.Duration as Duration exposing (Duration)
+import Proto.Binary
+import Proto.Descriptors
+import Proto.Duration exposing (Duration)
 import Proto.Enum exposing (Enum, enum)
-import Proto.Internal.Any
 import Proto.Internal.WellKnown as Descriptors
 import Proto.Json
-import Proto.Message exposing (Message, message)
+import Proto.Message exposing (Message, init, initWith)
+import Proto.Registry
 import Time
 
 
@@ -45,59 +67,133 @@ import Time
 -}
 empty : Message ()
 empty =
-    message Proto.Json.encodeEmpty Proto.Json.empty () Descriptors.empty
+    init "google.protobuf.Empty" Proto.Json.encodeEmpty Proto.Json.empty (Proto.Binary.messageEncoder Proto.Binary.empty) (Proto.Binary.messageDecoder Proto.Binary.empty)
 
 
-{-| `google.protobuf.Timestamp`: a `Time.Posix`, written in RFC 3339; the
-default is the epoch.
+{-| `google.protobuf.Timestamp`: a `Time.Posix`, written in RFC 3339.
 -}
 timestamp : Message Time.Posix
 timestamp =
-    message Proto.Json.encodeTimestamp Proto.Json.timestamp (Time.millisToPosix 0) Descriptors.timestamp
+    init "google.protobuf.Timestamp" Proto.Json.encodeTimestamp Proto.Json.timestamp (Proto.Binary.messageEncoder Proto.Binary.timestamp) (Proto.Binary.messageDecoder Proto.Binary.timestamp)
 
 
-{-| `google.protobuf.Duration`, written as seconds (`"1.5s"`); the default is
-zero.
+{-| `google.protobuf.Duration`, written as seconds (`"1.5s"`).
 -}
 duration : Message Duration
 duration =
-    message Proto.Json.encodeDuration Proto.Json.duration (Duration.fromMilliseconds 0) Descriptors.duration
+    init "google.protobuf.Duration" Proto.Json.encodeDuration Proto.Json.duration (Proto.Binary.messageEncoder Proto.Binary.duration) (Proto.Binary.messageDecoder Proto.Binary.duration)
 
 
 {-| `google.protobuf.FieldMask`: its paths, written comma-separated.
 -}
 fieldMask : Message (List String)
 fieldMask =
-    message Proto.Json.encodeFieldMask Proto.Json.fieldMask [] Descriptors.fieldMask
+    init "google.protobuf.FieldMask" Proto.Json.encodeFieldMask Proto.Json.fieldMask (Proto.Binary.messageEncoder Proto.Binary.fieldMask) (Proto.Binary.messageDecoder Proto.Binary.fieldMask)
 
 
-{-| `google.protobuf.Any`, a [`Proto.Any.Any`](Proto-Any#Any); the default
-is the empty `Any`, with no type URL, written `{}`.
+{-| `google.protobuf.Any`, a [`Proto.Any.Any`](Proto-Any#Any).
 -}
 any : Message Any
 any =
-    message Proto.Json.encodeAny Proto.Json.any (Proto.Internal.Any.Any "" (Proto.Internal.Any.InBinary "")) Descriptors.any
+    initWith "google.protobuf.Any" Proto.Json.encodeAnyWith Proto.Json.anyWith (Proto.Binary.messageEncoder Proto.Binary.any) (Proto.Binary.messageDecoder Proto.Binary.any)
 
 
 {-| `google.protobuf.Struct`: a JSON object.
 -}
 struct : Message (Dict String Json.Encode.Value)
 struct =
-    message Proto.Json.encodeStruct Proto.Json.struct Dict.empty Descriptors.struct
+    init "google.protobuf.Struct" Proto.Json.encodeStruct Proto.Json.struct (Proto.Binary.messageEncoder Proto.Binary.struct) (Proto.Binary.messageDecoder Proto.Binary.struct)
 
 
-{-| `google.protobuf.Value`: any JSON; the default is `null`.
+{-| `google.protobuf.Value`: any JSON.
 -}
 value : Message Json.Encode.Value
 value =
-    message identity Json.Decode.value Json.Encode.null Descriptors.value
+    init "google.protobuf.Value" identity Json.Decode.value (Proto.Binary.messageEncoder Proto.Binary.value) (Proto.Binary.messageDecoder Proto.Binary.value)
 
 
 {-| `google.protobuf.ListValue`: a JSON array.
 -}
 listValue : Message (List Json.Encode.Value)
 listValue =
-    message Proto.Json.encodeListValue Proto.Json.listValue [] Descriptors.listValue
+    init "google.protobuf.ListValue" Proto.Json.encodeListValue Proto.Json.listValue (Proto.Binary.messageEncoder Proto.Binary.listValue) (Proto.Binary.messageDecoder Proto.Binary.listValue)
+
+
+{-| `google.protobuf.DoubleValue`.
+-}
+doubleValue : Message Float
+doubleValue =
+    init "google.protobuf.DoubleValue" Proto.Json.encodeFloat Proto.Json.float (Proto.Binary.messageEncoder Proto.Binary.doubleValue) (Proto.Binary.messageDecoder Proto.Binary.doubleValue)
+
+
+{-| `google.protobuf.FloatValue`.
+-}
+floatValue : Message Float
+floatValue =
+    init "google.protobuf.FloatValue" Proto.Json.encodeFloat Proto.Json.float32 (Proto.Binary.messageEncoder Proto.Binary.floatValue) (Proto.Binary.messageDecoder Proto.Binary.floatValue)
+
+
+{-| `google.protobuf.Int64Value`, its decimal string.
+-}
+int64Value : Message String
+int64Value =
+    init "google.protobuf.Int64Value" Proto.Json.encodeInt64 Proto.Json.int64 (Proto.Binary.messageEncoder Proto.Binary.int64Value) (Proto.Binary.messageDecoder Proto.Binary.int64Value)
+
+
+{-| `google.protobuf.Int64Value` as an `Int`, under the `int64=int` option.
+-}
+int64ValueAsInt : Message Int
+int64ValueAsInt =
+    init "google.protobuf.Int64Value" Proto.Json.encodeInt64AsInt Proto.Json.int64AsInt (Proto.Binary.messageEncoder Proto.Binary.int64ValueAsInt) (Proto.Binary.messageDecoder Proto.Binary.int64ValueAsInt)
+
+
+{-| `google.protobuf.UInt64Value`, its decimal string.
+-}
+uint64Value : Message String
+uint64Value =
+    init "google.protobuf.UInt64Value" Proto.Json.encodeInt64 Proto.Json.uint64 (Proto.Binary.messageEncoder Proto.Binary.uint64Value) (Proto.Binary.messageDecoder Proto.Binary.uint64Value)
+
+
+{-| `google.protobuf.UInt64Value` as an `Int`, under the `int64=int` option.
+-}
+uint64ValueAsInt : Message Int
+uint64ValueAsInt =
+    init "google.protobuf.UInt64Value" Proto.Json.encodeInt64AsInt Proto.Json.uint64AsInt (Proto.Binary.messageEncoder Proto.Binary.uint64ValueAsInt) (Proto.Binary.messageDecoder Proto.Binary.uint64ValueAsInt)
+
+
+{-| `google.protobuf.Int32Value`.
+-}
+int32Value : Message Int
+int32Value =
+    init "google.protobuf.Int32Value" Json.Encode.int Proto.Json.int32 (Proto.Binary.messageEncoder Proto.Binary.int32Value) (Proto.Binary.messageDecoder Proto.Binary.int32Value)
+
+
+{-| `google.protobuf.UInt32Value`.
+-}
+uint32Value : Message Int
+uint32Value =
+    init "google.protobuf.UInt32Value" Json.Encode.int Proto.Json.uint32 (Proto.Binary.messageEncoder Proto.Binary.uint32Value) (Proto.Binary.messageDecoder Proto.Binary.uint32Value)
+
+
+{-| `google.protobuf.BoolValue`.
+-}
+boolValue : Message Bool
+boolValue =
+    init "google.protobuf.BoolValue" Json.Encode.bool Json.Decode.bool (Proto.Binary.messageEncoder Proto.Binary.boolValue) (Proto.Binary.messageDecoder Proto.Binary.boolValue)
+
+
+{-| `google.protobuf.StringValue`.
+-}
+stringValue : Message String
+stringValue =
+    init "google.protobuf.StringValue" Json.Encode.string Proto.Json.string (Proto.Binary.messageEncoder Proto.Binary.stringValue) (Proto.Binary.messageDecoder Proto.Binary.stringValue)
+
+
+{-| `google.protobuf.BytesValue`, its base64 text.
+-}
+bytesValue : Message String
+bytesValue =
+    init "google.protobuf.BytesValue" Proto.Json.encodeBytes Proto.Json.bytes (Proto.Binary.messageEncoder Proto.Binary.bytesValue) (Proto.Binary.messageDecoder Proto.Binary.bytesValue)
 
 
 {-| The enum `google.protobuf.NullValue`: `()`, its one value `NULL_VALUE`,
@@ -111,78 +207,37 @@ nullValue =
     enum Proto.Json.encodeNullValue Proto.Json.nullValue () Descriptors.nullValue
 
 
-{-| `google.protobuf.DoubleValue`.
+{-| The well-known message types: `google.protobuf.Any`, `Timestamp`,
+`Duration`, `FieldMask`, `Empty`, `Struct`, `Value`, `ListValue` and the
+wrappers. Generated registries leave them out; add this one beside them
+when an `Any` may hold one.
 -}
-doubleValue : Message Float
-doubleValue =
-    message Proto.Json.encodeFloat Proto.Json.float 0 Descriptors.doubleValue
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.empty
+        |> Proto.Registry.register timestamp
+        |> Proto.Registry.register duration
+        |> Proto.Registry.register fieldMask
+        |> Proto.Registry.register empty
+        |> Proto.Registry.register struct
+        |> Proto.Registry.register value
+        |> Proto.Registry.register listValue
+        |> Proto.Registry.register doubleValue
+        |> Proto.Registry.register floatValue
+        |> Proto.Registry.register int64Value
+        |> Proto.Registry.register uint64Value
+        |> Proto.Registry.register int32Value
+        |> Proto.Registry.register uint32Value
+        |> Proto.Registry.register boolValue
+        |> Proto.Registry.register stringValue
+        |> Proto.Registry.register bytesValue
+        |> Proto.Registry.register any
 
 
-{-| `google.protobuf.FloatValue`.
+{-| The well-known types' descriptors: those of the messages above and of
+the enum `NullValue` that `Value` refers to. Each generated package's
+`descriptors` holds them; a program building its own table adds this one.
 -}
-floatValue : Message Float
-floatValue =
-    message Proto.Json.encodeFloat Proto.Json.float32 0 Descriptors.floatValue
-
-
-{-| `google.protobuf.Int64Value`, its decimal string.
--}
-int64Value : Message String
-int64Value =
-    message Proto.Json.encodeInt64 Proto.Json.int64 "0" Descriptors.int64Value
-
-
-{-| `google.protobuf.Int64Value` as an `Int`, under the `int64=int` option.
--}
-int64ValueAsInt : Message Int
-int64ValueAsInt =
-    message Proto.Json.encodeInt64AsInt Proto.Json.int64AsInt 0 Descriptors.int64Value
-
-
-{-| `google.protobuf.UInt64Value`, its decimal string.
--}
-uint64Value : Message String
-uint64Value =
-    message Proto.Json.encodeInt64 Proto.Json.uint64 "0" Descriptors.uint64Value
-
-
-{-| `google.protobuf.UInt64Value` as an `Int`, under the `int64=int` option.
--}
-uint64ValueAsInt : Message Int
-uint64ValueAsInt =
-    message Proto.Json.encodeInt64AsInt Proto.Json.uint64AsInt 0 Descriptors.uint64Value
-
-
-{-| `google.protobuf.Int32Value`.
--}
-int32Value : Message Int
-int32Value =
-    message Json.Encode.int Proto.Json.int32 0 Descriptors.int32Value
-
-
-{-| `google.protobuf.UInt32Value`.
--}
-uint32Value : Message Int
-uint32Value =
-    message Json.Encode.int Proto.Json.uint32 0 Descriptors.uint32Value
-
-
-{-| `google.protobuf.BoolValue`.
--}
-boolValue : Message Bool
-boolValue =
-    message Json.Encode.bool Json.Decode.bool False Descriptors.boolValue
-
-
-{-| `google.protobuf.StringValue`.
--}
-stringValue : Message String
-stringValue =
-    message Json.Encode.string Proto.Json.string "" Descriptors.stringValue
-
-
-{-| `google.protobuf.BytesValue`, its base64 text.
--}
-bytesValue : Message String
-bytesValue =
-    message Proto.Json.encodeBytes Proto.Json.bytes "" Descriptors.bytesValue
+descriptors : Proto.Descriptors.Descriptors
+descriptors =
+    Proto.Descriptors.fromDescriptors Descriptors.messages Descriptors.enums

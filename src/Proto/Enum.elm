@@ -3,7 +3,7 @@ module Proto.Enum exposing
     , encode, decoder, default, toDescriptor
     , toName, fromName, toNumber, fromNumber
     , Descriptor, descriptor
-    , typeName, values
+    , fullName, values
     )
 
 {-| An enum type: its typed value, which holds its proto3 JSON codecs, its
@@ -33,7 +33,7 @@ the descriptor in a module of the enum's own
 
 # Reading a descriptor
 
-@docs typeName, values
+@docs fullName, values
 
 -}
 
@@ -190,7 +190,7 @@ built by [`descriptor`](#descriptor) and read by the functions below.
 -}
 type Descriptor
     = Descriptor
-        { typeName : String
+        { fullName : String
         , values : List EnumValue.Descriptor
         }
 
@@ -202,15 +202,15 @@ in declaration order
 aliases.
 -}
 descriptor : String -> List EnumValue.Descriptor -> Descriptor
-descriptor fullName enumValues =
-    Descriptor { typeName = fullName, values = enumValues }
+descriptor name enumValues =
+    Descriptor { fullName = name, values = enumValues }
 
 
 {-| The enum's full name, such as `notes.v1.Visibility`.
 -}
-typeName : Descriptor -> String
-typeName (Descriptor e) =
-    e.typeName
+fullName : Descriptor -> String
+fullName (Descriptor e) =
+    e.fullName
 
 
 {-| Every value in declaration order. An alias (`allow_alias`) is a value of

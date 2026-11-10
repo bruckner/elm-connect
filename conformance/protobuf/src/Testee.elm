@@ -6,8 +6,9 @@ request on `requests` is a `protobuf_test_messages.proto3.TestAllTypesProto3`
 in protobuf binary (base64) or proto3 JSON, read with the generated decoders
 and written back in the format asked for with the generated encoders,
 answered on `responses`. The test messages are generated under `codec=both`,
-so their encoders write an `Any` holding JSON alone to binary through the
-generated `binaryRegistry`.
+so an `Any` holds its message's binary, and is read from and written to
+proto3 JSON through [`registry`](#registry), the test messages' and the
+well-known types': one of a type it lacks fails to parse, and to serialize.
 
 The other formats (JSPB, text) and the other message types (proto2,
 editions) are answered `skipped`. The answer dispatches on the output format
@@ -17,9 +18,20 @@ and `read` on the input format.
 
 import Json.Decode
 import Json.Encode
+import Proto.Any
 import Proto.Binary
 import Proto.Bytes
+import Proto.Registry exposing (Registry)
+import Proto.WellKnown
 import ProtobufTestMessages.Proto3 as Proto3
+
+
+{-| The types an `Any` of the suite's may hold: the generated package's own
+messages, and the well-known types, which a generated registry leaves out.
+-}
+registry : Registry
+registry =
+    Proto.Registry.unionAll [ Proto3.registry, Proto.WellKnown.registry ]
 
 
 port requests : (Request -> msg) -> Sub msg
@@ -67,7 +79,15 @@ answer request =
                         reply kind problem
 
                     Ok message ->
-                        reply "json" (Json.Encode.encode 0 (Proto3.encodeTestAllTypesProto3 message))
+                        case Proto3.encodeTestAllTypesProto3With registry message of
+                            Ok json ->
+                                reply "json" (Json.Encode.encode 0 json)
+
+                            Err (Proto.Any.UnregisteredType name) ->
+                                reply "serializeError" ("an Any of " ++ name ++ ", which the registry lacks")
+
+                            Err _ ->
+                                reply "serializeError" "an Any the registry cannot write"
 
             "protobuf" ->
                 case read request of
@@ -90,7 +110,7 @@ read request =
                 |> Result.fromMaybe ( "parseError", "not a TestAllTypesProto3 in protobuf binary" )
 
         "json" ->
-            Json.Decode.decodeString Proto3.decodeTestAllTypesProto3 request.payload
+            Json.Decode.decodeString (Proto3.decodeTestAllTypesProto3With registry) request.payload
                 |> Result.mapError (\problem -> ( "parseError", Json.Decode.errorToString problem ))
 
         other ->

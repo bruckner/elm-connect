@@ -13,17 +13,21 @@ value (its constructor). The names derived from a renamed one follow it:
 `AudienceUnspecified`, and the oneof `body` the type `MemoBody`.
 -}
 
+import Bytes.Encode
 import Json.Decode
 import Json.Encode
 import Notes.Api.Audience
 import Notes.Api.Edit
 import Notes.Api.GetNoteRequest
 import Notes.Api.Memo
+import Proto.Binary
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 import Proto.Version
+import Proto.WellKnown
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -139,25 +143,25 @@ enumAudience =
     Proto.Enum.enum encodeAudience decodeAudience AudienceUnspecified Notes.Api.Audience.descriptor
 
 
-{-| The typed value of [`Memo`](#Memo): its codecs, default and descriptor together.
+{-| The typed value of [`Memo`](#Memo): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageMemo : Proto.Message.Message Memo
 messageMemo =
-    Proto.Message.message encodeMemo decodeMemo defaultMemo Notes.Api.Memo.descriptor
+    Proto.Message.init "notes.v1.Note" encodeMemo decodeMemo encodeMemoBytes decodeMemoBytes
 
 
-{-| The typed value of [`Edit`](#Edit): its codecs, default and descriptor together.
+{-| The typed value of [`Edit`](#Edit): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageEdit : Proto.Message.Message Edit
 messageEdit =
-    Proto.Message.message encodeEdit decodeEdit defaultEdit Notes.Api.Edit.descriptor
+    Proto.Message.init "notes.v1.Note.Revision" encodeEdit decodeEdit encodeEditBytes decodeEditBytes
 
 
-{-| The typed value of [`GetNoteRequest`](#GetNoteRequest): its codecs, default and descriptor together.
+{-| The typed value of [`GetNoteRequest`](#GetNoteRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageGetNoteRequest : Proto.Message.Message GetNoteRequest
 messageGetNoteRequest =
-    Proto.Message.message encodeGetNoteRequest decodeGetNoteRequest defaultGetNoteRequest Notes.Api.GetNoteRequest.descriptor
+    Proto.Message.init "notes.v1.GetNoteRequest" encodeGetNoteRequest decodeGetNoteRequest encodeGetNoteRequestBytes decodeGetNoteRequestBytes
 
 
 
@@ -177,7 +181,17 @@ descriptors =
             [ Notes.Api.Audience.descriptor
             ]
         )
-        Proto.Descriptors.wellKnown
+        Proto.WellKnown.descriptors
+
+
+{-| The codecs of this package's messages, for converting a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) that holds one between proto3 JSON and protobuf binary. It holds no other package's types and no well-known type: give a client the union of the registries its `Any`s need (`Proto.Registry.unionAll`, `Rpc.withRegistry`).
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.empty
+        |> Proto.Registry.register messageMemo
+        |> Proto.Registry.register messageEdit
+        |> Proto.Registry.register messageGetNoteRequest
 
 
 
@@ -295,3 +309,222 @@ decodeGetNoteRequest : Json.Decode.Decoder GetNoteRequest
 decodeGetNoteRequest =
     Json.Decode.succeed GetNoteRequest
         |> Proto.Json.field "name" "" Proto.Json.string
+
+
+
+-- BINARY ENCODERS
+
+
+{-| The number protobuf binary writes an [`Audience`](#Audience) as.
+-}
+encodeAudienceBytes : Audience -> Int
+encodeAudienceBytes value =
+    case value of
+        AudienceUnspecified ->
+            0
+
+        Everyone ->
+            1
+
+
+{-| Encodes a [`Memo`](#Memo) as protobuf binary.
+-}
+encodeMemoBytes : Memo -> Bytes.Encode.Encoder
+encodeMemoBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.heading
+        , Proto.Binary.implicit (Proto.Binary.enum encodeAudienceBytes decodeAudienceBytes) 2 value.visibility
+        , Proto.Binary.list (Proto.Binary.embedded encodeEditBytes mergeEditBytes defaultEdit) 3 value.revisions
+        , encodeMemoBodyBytes value.body
+        ]
+
+
+{-| Encodes a [`MemoBody`](#MemoBody) as protobuf binary: its set member's field.
+-}
+encodeMemoBodyBytes : MemoBody -> Bytes.Encode.Encoder
+encodeMemoBodyBytes value =
+    case value of
+        MemoBodyUnset ->
+            Bytes.Encode.sequence []
+
+        MemoBodyText member ->
+            Proto.Binary.present Proto.Binary.string 4 member
+
+        BodyUrl member ->
+            Proto.Binary.present Proto.Binary.string 5 member
+
+
+{-| Encodes an [`Edit`](#Edit) as protobuf binary.
+-}
+encodeEditBytes : Edit -> Bytes.Encode.Encoder
+encodeEditBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.int32 1 value.number
+        ]
+
+
+{-| Encodes a [`GetNoteRequest`](#GetNoteRequest) as protobuf binary.
+-}
+encodeGetNoteRequestBytes : GetNoteRequest -> Bytes.Encode.Encoder
+encodeGetNoteRequestBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.name
+        ]
+
+
+
+-- BINARY DECODERS
+
+
+{-| An [`Audience`](#Audience) from the number protobuf binary carries.
+-}
+decodeAudienceBytes : Int -> Audience
+decodeAudienceBytes number =
+    case number of
+        1 ->
+            Everyone
+
+        _ ->
+            AudienceUnspecified
+
+
+{-| Decodes a [`Memo`](#Memo) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeMemoBytes : Memo -> Proto.Binary.Decoder Memo
+mergeMemoBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | heading = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeAudienceBytes decodeAudienceBytes)
+                        (\v ->
+                            { value
+                                | visibility = v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeEditBytes mergeEditBytes defaultEdit)
+                        (\v ->
+                            { value
+                                | revisions = v
+                            }
+                        )
+                        value.revisions
+                        wire
+                        value
+
+                4 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | body = MemoBodyText v
+                            }
+                        )
+                        wire
+                        value
+
+                5 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | body = BodyUrl v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | revisions = List.reverse value.revisions
+            }
+        )
+
+
+{-| Decodes a [`Memo`](#Memo) from protobuf binary.
+-}
+decodeMemoBytes : Proto.Binary.Decoder Memo
+decodeMemoBytes =
+    mergeMemoBytes defaultMemo
+
+
+{-| Decodes an [`Edit`](#Edit) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeEditBytes : Edit -> Proto.Binary.Decoder Edit
+mergeEditBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.int32
+                        (\v ->
+                            { value
+                                | number = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes an [`Edit`](#Edit) from protobuf binary.
+-}
+decodeEditBytes : Proto.Binary.Decoder Edit
+decodeEditBytes =
+    mergeEditBytes defaultEdit
+
+
+{-| Decodes a [`GetNoteRequest`](#GetNoteRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeGetNoteRequestBytes : GetNoteRequest -> Proto.Binary.Decoder GetNoteRequest
+mergeGetNoteRequestBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | name = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`GetNoteRequest`](#GetNoteRequest) from protobuf binary.
+-}
+decodeGetNoteRequestBytes : Proto.Binary.Decoder GetNoteRequest
+decodeGetNoteRequestBytes =
+    mergeGetNoteRequestBytes defaultGetNoteRequest

@@ -35,10 +35,10 @@ Codecs: JSON. Described by [`descriptorPing`](#descriptorPing).
 ping : () -> Rpc.Call Rpc.Json () Time.Posix
 ping =
     Rpc.call
-        (Proto.Method.json "ping.v1.Ping"
+        (Proto.Method.initJson "ping.v1.Ping"
             "Ping"
-            Proto.Json.encodeEmpty
-            Proto.Json.timestamp
+            (\_ -> Ok << Proto.Json.encodeEmpty)
+            (\_ -> Proto.Json.timestamp)
         )
 
 

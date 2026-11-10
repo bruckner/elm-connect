@@ -19,10 +19,9 @@ naming::codec_collision
         `Bytes` at the end (`encodeNoteBytes` beside `encodeNote`), so the
         JSON codecs of a type named for another with `Bytes` at the end
         (`NoteBytes` beside `Note`) take the same names, and a module cannot
-        define two values with one name. Enums keep their JSON codecs under
-        `codec=proto`; messages and oneofs have them under `codec=both`.
-        Rename one of them in the proto, or rename one with
-        `rename=shelf.v1.BookBytes:<Elm name>`.
+        define two values with one name. Every type has both codecs, whatever
+        the `codec` option says. Rename one of them in the proto, or rename
+        one with `rename=shelf.v1.BookBytes:<Elm name>`.
 
 naming::codec_collision
 
@@ -47,10 +46,9 @@ naming::codec_collision
         `Bytes` at the end (`encodeNoteBytes` beside `encodeNote`), so the
         JSON codecs of a type named for another with `Bytes` at the end
         (`NoteBytes` beside `Note`) take the same names, and a module cannot
-        define two values with one name. Enums keep their JSON codecs under
-        `codec=proto`; messages and oneofs have them under `codec=both`.
-        Rename one of them in the proto, or rename one with
-        `rename=shelf.v1.ChoicePickBytes:<Elm name>`.
+        define two values with one name. Every type has both codecs, whatever
+        the `codec` option says. Rename one of them in the proto, or rename
+        one with `rename=shelf.v1.ChoicePickBytes:<Elm name>`.
 
 naming::codec_collision
 
@@ -73,7 +71,6 @@ naming::codec_collision
         `Bytes` at the end (`encodeNoteBytes` beside `encodeNote`), so the
         JSON codecs of a type named for another with `Bytes` at the end
         (`NoteBytes` beside `Note`) take the same names, and a module cannot
-        define two values with one name. Enums keep their JSON codecs under
-        `codec=proto`; messages and oneofs have them under `codec=both`.
-        Rename one of them in the proto, or rename one with
-        `rename=shelf.v1.ShelfBytes:<Elm name>`.
+        define two values with one name. Every type has both codecs, whatever
+        the `codec` option says. Rename one of them in the proto, or rename
+        one with `rename=shelf.v1.ShelfBytes:<Elm name>`.

@@ -18,7 +18,6 @@ Behaviours the live suite relies on:
 
 -}
 
-import Json.Encode
 import Notes.V1
 import Notes.V1.ArchiveNoteRequest
 import Notes.V1.CreateNoteRequest
@@ -60,10 +59,10 @@ Codecs: JSON. Described by [`descriptorGetNote`](#descriptorGetNote).
 getNote : Notes.V1.GetNoteRequest -> Rpc.Call Rpc.Json Notes.V1.GetNoteRequest Notes.V1.Note
 getNote =
     Rpc.call
-        (Proto.Method.json "notes.v1.NotesService"
+        (Proto.Method.initJson "notes.v1.NotesService"
             "GetNote"
-            Notes.V1.encodeGetNoteRequest
-            Notes.V1.decodeNote
+            (\_ -> Ok << Notes.V1.encodeGetNoteRequest)
+            Notes.V1.decodeNoteWith
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
             |> Proto.Method.withRoutes [ routeGetNote0 ]
         )
@@ -81,10 +80,10 @@ Codecs: JSON. Described by [`descriptorListNotes`](#descriptorListNotes).
 listNotes : Notes.V1.ListNotesRequest -> Rpc.Call Rpc.Json Notes.V1.ListNotesRequest Notes.V1.ListNotesResponse
 listNotes =
     Rpc.call
-        (Proto.Method.json "notes.v1.NotesService"
+        (Proto.Method.initJson "notes.v1.NotesService"
             "ListNotes"
-            Notes.V1.encodeListNotesRequest
-            Notes.V1.decodeListNotesResponse
+            (\_ -> Ok << Notes.V1.encodeListNotesRequest)
+            Notes.V1.decodeListNotesResponseWith
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
             |> Proto.Method.withRoutes [ routeListNotes0 ]
         )
@@ -104,11 +103,11 @@ Codecs: JSON. Described by [`descriptorCreateNote`](#descriptorCreateNote).
 createNote : Notes.V1.CreateNoteRequest -> Rpc.Call Rpc.Json Notes.V1.CreateNoteRequest Notes.V1.Note
 createNote =
     Rpc.call
-        (Proto.Method.json "notes.v1.NotesService"
+        (Proto.Method.initJson "notes.v1.NotesService"
             "CreateNote"
-            Notes.V1.encodeCreateNoteRequest
-            Notes.V1.decodeNote
-            |> Proto.Method.withRoutes [ routeCreateNote0 ]
+            Notes.V1.encodeCreateNoteRequestWith
+            Notes.V1.decodeNoteWith
+            |> Proto.Method.withBindings (Proto.Method.bindings descriptorCreateNote)
         )
 
 
@@ -124,11 +123,11 @@ Codecs: JSON. Described by [`descriptorUpdateNote`](#descriptorUpdateNote).
 updateNote : Notes.V1.UpdateNoteRequest -> Rpc.Call Rpc.Json Notes.V1.UpdateNoteRequest Notes.V1.Note
 updateNote =
     Rpc.call
-        (Proto.Method.json "notes.v1.NotesService"
+        (Proto.Method.initJson "notes.v1.NotesService"
             "UpdateNote"
-            Notes.V1.encodeUpdateNoteRequest
-            Notes.V1.decodeNote
-            |> Proto.Method.withRoutes [ routeUpdateNote0 ]
+            Notes.V1.encodeUpdateNoteRequestWith
+            Notes.V1.decodeNoteWith
+            |> Proto.Method.withBindings (Proto.Method.bindings descriptorUpdateNote)
         )
 
 
@@ -144,10 +143,10 @@ Codecs: JSON. Described by [`descriptorDeleteNote`](#descriptorDeleteNote).
 deleteNote : Notes.V1.DeleteNoteRequest -> Rpc.Call Rpc.Json Notes.V1.DeleteNoteRequest ()
 deleteNote =
     Rpc.call
-        (Proto.Method.json "notes.v1.NotesService"
+        (Proto.Method.initJson "notes.v1.NotesService"
             "DeleteNote"
-            Notes.V1.encodeDeleteNoteRequest
-            Proto.Json.empty
+            (\_ -> Ok << Notes.V1.encodeDeleteNoteRequest)
+            (\_ -> Proto.Json.empty)
             |> Proto.Method.withRoutes [ routeDeleteNote0 ]
         )
 
@@ -164,10 +163,10 @@ Codecs: JSON. Described by [`descriptorArchiveNote`](#descriptorArchiveNote).
 archiveNote : Notes.V1.ArchiveNoteRequest -> Rpc.Call Rpc.Json Notes.V1.ArchiveNoteRequest Notes.V1.Note
 archiveNote =
     Rpc.call
-        (Proto.Method.json "notes.v1.NotesService"
+        (Proto.Method.initJson "notes.v1.NotesService"
             "ArchiveNote"
-            Notes.V1.encodeArchiveNoteRequest
-            Notes.V1.decodeNote
+            (\_ -> Ok << Notes.V1.encodeArchiveNoteRequest)
+            Notes.V1.decodeNoteWith
             |> Proto.Method.withRoutes [ routeArchiveNote0 ]
         )
 
@@ -185,10 +184,10 @@ Codecs: JSON. Described by [`descriptorPing`](#descriptorPing).
 ping : () -> Rpc.Call Rpc.Json () ()
 ping =
     Rpc.call
-        (Proto.Method.json "notes.v1.NotesService"
+        (Proto.Method.initJson "notes.v1.NotesService"
             "Ping"
-            Proto.Json.encodeEmpty
-            Proto.Json.empty
+            (\_ -> Ok << Proto.Json.encodeEmpty)
+            (\_ -> Proto.Json.empty)
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
         )
 
@@ -224,36 +223,6 @@ routeListNotes0 request_ =
     , body = Nothing
     , responseBody = Nothing
     , invalid = Nothing
-    }
-
-
-{-| The route of [`createNote`](#createNote) over binding 0: `POST /v1/notes` body `note`.
--}
-routeCreateNote0 : Notes.V1.CreateNoteRequest -> Proto.Route.Route
-routeCreateNote0 request_ =
-    { method = "POST"
-    , path = "v1/notes"
-    , query = []
-    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Notes.V1.encodeNote request_.note))
-    , responseBody = Nothing
-    , invalid = Nothing
-    }
-
-
-{-| The route of [`updateNote`](#updateNote) over binding 0: `PATCH /v1/{note.name=notes/*}` body `note`.
--}
-routeUpdateNote0 : Notes.V1.UpdateNoteRequest -> Proto.Route.Route
-routeUpdateNote0 request_ =
-    let
-        noteName_ =
-            Maybe.withDefault "" (Maybe.map .name request_.note)
-    in
-    { method = "PATCH"
-    , path = "v1/" ++ Proto.Route.segments noteName_
-    , query = Notes.V1.queryOfUpdateNoteRequest request_
-    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Notes.V1.encodeNote request_.note))
-    , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "note.name" [ "notes", "*" ] noteName_
     }
 
 

@@ -27,8 +27,10 @@ reads it back.
 -}
 
 import Json.Encode exposing (Value)
+import Proto.Any exposing (Problem)
 import Proto.Internal.Method
 import Proto.Method exposing (Idempotency, Method)
+import Proto.Registry exposing (Registry)
 import Rpc.Internal.Call as Internal
 import Rpc.Retry exposing (Retry)
 
@@ -222,39 +224,47 @@ requestMessage (Internal.Call c) =
     c.message
 
 
-{-| The request's proto3 JSON; `null` for a call of a method generated with
-protobuf binary codecs alone (`codec=proto`).
+{-| The request's proto3 JSON, writing an `Any` it holds through the
+registry, as a call over JSON sends it (see
+[`Proto.Any.Problem`](Proto-Any#Problem) for why that can fail); `Ok null`
+for a call of a method generated with protobuf binary codecs alone
+(`codec=proto`). A request that reaches no `Any` ignores the registry.
 -}
-requestJson : Call codec req res -> Value
-requestJson (Internal.Call c) =
+requestJson : Registry -> Call codec req res -> Result Problem Value
+requestJson registry (Internal.Call c) =
     let
         (Proto.Internal.Method.Method m) =
             c.method
     in
     if m.codecs.json then
-        m.json.encode c.message
+        Proto.Method.encodeRequest registry c.method c.message
 
     else
-        Json.Encode.null
+        Ok Json.Encode.null
 
 
 {-| The call as JSON, `{"service": …, "method": …, "procedure": …, "request": …}`,
 for logs,
-deduplication keys or a queue of calls to send later. Per-call adjustments are
-not included.
+deduplication keys or a queue of calls to send later, its request written
+as [`requestJson`](#requestJson) writes it. Per-call adjustments are not
+included.
 
 Two calls of one method with equal requests give the same JSON, so compare
 calls by this, as `==` on the calls themselves fails at run time:
 
-    Json.Encode.encode 0 (Rpc.Call.toJson a)
-        == Json.Encode.encode 0 (Rpc.Call.toJson b)
+    Result.map (Json.Encode.encode 0) (Rpc.Call.toJson registry a)
+        == Result.map (Json.Encode.encode 0) (Rpc.Call.toJson registry b)
 
 -}
-toJson : Call codec req res -> Value
-toJson c =
-    Json.Encode.object
-        [ ( "service", Json.Encode.string (serviceName c) )
-        , ( "method", Json.Encode.string (methodName c) )
-        , ( "procedure", Json.Encode.string (procedure c) )
-        , ( "request", requestJson c )
-        ]
+toJson : Registry -> Call codec req res -> Result Problem Value
+toJson registry c =
+    requestJson registry c
+        |> Result.map
+            (\request ->
+                Json.Encode.object
+                    [ ( "service", Json.Encode.string (serviceName c) )
+                    , ( "method", Json.Encode.string (methodName c) )
+                    , ( "procedure", Json.Encode.string (procedure c) )
+                    , ( "request", request )
+                    ]
+            )

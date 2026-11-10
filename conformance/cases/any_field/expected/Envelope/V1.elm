@@ -9,15 +9,19 @@ field, so singular it is a `Maybe`; repeated, a map value and a oneof
 member hold it bare. A method may take or return one.
 -}
 
+import Bytes.Encode
 import Dict exposing (Dict)
 import Envelope.V1.Envelope
 import Json.Decode
 import Json.Encode
 import Proto.Any
+import Proto.Binary
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 import Proto.Version
+import Proto.WellKnown
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -82,11 +86,11 @@ defaultEnvelope =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Envelope`](#Envelope): its codecs, default and descriptor together.
+{-| The typed value of [`Envelope`](#Envelope): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageEnvelope : Proto.Message.Message Envelope
 messageEnvelope =
-    Proto.Message.message encodeEnvelope decodeEnvelope defaultEnvelope Envelope.V1.Envelope.descriptor
+    Proto.Message.initWith "envelope.v1.Envelope" encodeEnvelopeWith decodeEnvelopeWith encodeEnvelopeBytes decodeEnvelopeBytes
 
 
 
@@ -103,41 +107,49 @@ descriptors =
             ]
             []
         )
-        Proto.Descriptors.wellKnown
+        Proto.WellKnown.descriptors
+
+
+{-| The codecs of this package's messages, for converting a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) that holds one between proto3 JSON and protobuf binary. It holds no other package's types and no well-known type: give a client the union of the registries its `Any`s need (`Proto.Registry.unionAll`, `Rpc.withRegistry`).
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.empty
+        |> Proto.Registry.register messageEnvelope
 
 
 
 -- ENCODERS
 
 
-{-| Encodes an [`Envelope`](#Envelope) as proto3 JSON.
+{-| Encodes an [`Envelope`](#Envelope) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeEnvelope : Envelope -> Json.Encode.Value
-encodeEnvelope value =
-    Proto.Json.objectOfFields
-        ([ ( "id", Proto.Json.implicitField "" Json.Encode.string value.id )
-         , ( "payload", Maybe.map Proto.Json.encodeAny value.payload )
-         , ( "attachments", Proto.Json.repeatedField Proto.Json.encodeAny value.attachments )
-         , ( "headers", Proto.Json.dictField identity Proto.Json.encodeAny value.headers )
+encodeEnvelopeWith : Proto.Registry.Registry -> Envelope -> Result Proto.Any.Problem Json.Encode.Value
+encodeEnvelopeWith types value =
+    Proto.Json.tryObjectOfFields
+        ([ ( "id", Ok (Proto.Json.implicitField "" Json.Encode.string value.id) )
+         , ( "payload", Proto.Json.tryOptionalField (Proto.Json.encodeAnyWith types) value.payload )
+         , ( "attachments", Proto.Json.tryRepeatedField (Proto.Json.encodeAnyWith types) value.attachments )
+         , ( "headers", Proto.Json.tryDictField identity (Proto.Json.encodeAnyWith types) value.headers )
          ]
-            ++ encodeEnvelopeBody value.body
+            ++ encodeEnvelopeBodyWith types value.body
         )
 
 
 {-| Encodes an [`EnvelopeBody`](#EnvelopeBody) as the members of its message's JSON object.
 -}
-encodeEnvelopeBody : EnvelopeBody -> List ( String, Maybe Json.Encode.Value )
-encodeEnvelopeBody value =
+encodeEnvelopeBodyWith : Proto.Registry.Registry -> EnvelopeBody -> List ( String, Result Proto.Any.Problem (Maybe Json.Encode.Value) )
+encodeEnvelopeBodyWith types value =
     case value of
         EnvelopeBodyUnset ->
             []
 
         EnvelopeBodyPacked member ->
-            [ ( "packed", Just (Proto.Json.encodeAny member) )
+            [ ( "packed", Result.map Just (Proto.Json.encodeAnyWith types member) )
             ]
 
         EnvelopeBodyText member ->
-            [ ( "text", Just (Json.Encode.string member) )
+            [ ( "text", Ok (Just (Json.Encode.string member)) )
             ]
 
 
@@ -145,24 +157,152 @@ encodeEnvelopeBody value =
 -- DECODERS
 
 
-{-| Decodes an [`Envelope`](#Envelope) from proto3 JSON.
+{-| Decodes an [`Envelope`](#Envelope) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
 -}
-decodeEnvelope : Json.Decode.Decoder Envelope
-decodeEnvelope =
+decodeEnvelopeWith : Proto.Registry.Registry -> Json.Decode.Decoder Envelope
+decodeEnvelopeWith types =
     Json.Decode.succeed Envelope
         |> Proto.Json.field "id" "" Proto.Json.string
-        |> Proto.Json.field "payload" Nothing (Json.Decode.map Just Proto.Json.any)
-        |> Proto.Json.field "attachments" [] (Json.Decode.list Proto.Json.any)
-        |> Proto.Json.field "headers" Dict.empty (Proto.Json.stringDict Proto.Json.any)
-        |> Proto.Json.oneof decodeEnvelopeBody
+        |> Proto.Json.field "payload" Nothing (Json.Decode.map Just (Proto.Json.anyWith types))
+        |> Proto.Json.field "attachments" [] (Json.Decode.list (Proto.Json.anyWith types))
+        |> Proto.Json.field "headers" Dict.empty (Proto.Json.stringDict (Proto.Json.anyWith types))
+        |> Proto.Json.oneof (decodeEnvelopeBodyWith types)
 
 
 {-| Decodes an [`EnvelopeBody`](#EnvelopeBody) from the members of its message's JSON object.
 -}
-decodeEnvelopeBody : Json.Decode.Decoder EnvelopeBody
-decodeEnvelopeBody =
+decodeEnvelopeBodyWith : Proto.Registry.Registry -> Json.Decode.Decoder EnvelopeBody
+decodeEnvelopeBodyWith types =
     Proto.Json.members "body"
         EnvelopeBodyUnset
-        [ Proto.Json.member "packed" (Json.Decode.map EnvelopeBodyPacked Proto.Json.any)
+        [ Proto.Json.member "packed" (Json.Decode.map EnvelopeBodyPacked (Proto.Json.anyWith types))
         , Proto.Json.member "text" (Json.Decode.map EnvelopeBodyText Proto.Json.string)
         ]
+
+
+
+-- BINARY ENCODERS
+
+
+{-| Encodes an [`Envelope`](#Envelope) as protobuf binary.
+-}
+encodeEnvelopeBytes : Envelope -> Bytes.Encode.Encoder
+encodeEnvelopeBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.id
+        , Proto.Binary.optional Proto.Binary.any 2 value.payload
+        , Proto.Binary.list Proto.Binary.any 3 value.attachments
+        , Proto.Binary.dict Proto.Binary.string Proto.Binary.any 4 value.headers
+        , encodeEnvelopeBodyBytes value.body
+        ]
+
+
+{-| Encodes an [`EnvelopeBody`](#EnvelopeBody) as protobuf binary: its set member's field.
+-}
+encodeEnvelopeBodyBytes : EnvelopeBody -> Bytes.Encode.Encoder
+encodeEnvelopeBodyBytes value =
+    case value of
+        EnvelopeBodyUnset ->
+            Bytes.Encode.sequence []
+
+        EnvelopeBodyPacked member ->
+            Proto.Binary.present Proto.Binary.any 5 member
+
+        EnvelopeBodyText member ->
+            Proto.Binary.present Proto.Binary.string 6 member
+
+
+
+-- BINARY DECODERS
+
+
+{-| Decodes an [`Envelope`](#Envelope) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeEnvelopeBytes : Envelope -> Proto.Binary.Decoder Envelope
+mergeEnvelopeBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | id = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.any
+                        (\v ->
+                            { value
+                                | payload = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.repeated
+                        Proto.Binary.any
+                        (\v ->
+                            { value
+                                | attachments = v
+                            }
+                        )
+                        value.attachments
+                        wire
+                        value
+
+                4 ->
+                    Proto.Binary.mapEntry
+                        Proto.Binary.string
+                        Proto.Binary.any
+                        (\k v ->
+                            { value
+                                | headers = Dict.insert k v value.headers
+                            }
+                        )
+                        wire
+                        value
+
+                5 ->
+                    Proto.Binary.field
+                        Proto.Binary.any
+                        (\v ->
+                            { value
+                                | body = EnvelopeBodyPacked v
+                            }
+                        )
+                        wire
+                        value
+
+                6 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | body = EnvelopeBodyText v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | attachments = List.reverse value.attachments
+            }
+        )
+
+
+{-| Decodes an [`Envelope`](#Envelope) from protobuf binary.
+-}
+decodeEnvelopeBytes : Proto.Binary.Decoder Envelope
+decodeEnvelopeBytes =
+    mergeEnvelopeBytes defaultEnvelope

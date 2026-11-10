@@ -9,13 +9,17 @@ in a namespace of the runtime: it generates, with one warning listing
 the modules.
 -}
 
+import Bytes.Encode
 import Json.Decode
 import Json.Encode
+import Proto.Binary
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
 import Proto.Notes.V1.Note
+import Proto.Registry
 import Proto.Version
+import Proto.WellKnown
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -55,11 +59,11 @@ defaultNote =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Note`](#Note): its codecs, default and descriptor together.
+{-| The typed value of [`Note`](#Note): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageNote : Proto.Message.Message Note
 messageNote =
-    Proto.Message.message encodeNote decodeNote defaultNote Proto.Notes.V1.Note.descriptor
+    Proto.Message.init "notes.v1.Note" encodeNote decodeNote encodeNoteBytes decodeNoteBytes
 
 
 
@@ -76,7 +80,15 @@ descriptors =
             ]
             []
         )
-        Proto.Descriptors.wellKnown
+        Proto.WellKnown.descriptors
+
+
+{-| The codecs of this package's messages, for converting a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) that holds one between proto3 JSON and protobuf binary. It holds no other package's types and no well-known type: give a client the union of the registries its `Any`s need (`Proto.Registry.unionAll`, `Rpc.withRegistry`).
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.empty
+        |> Proto.Registry.register messageNote
 
 
 
@@ -102,3 +114,51 @@ decodeNote : Json.Decode.Decoder Note
 decodeNote =
     Json.Decode.succeed Note
         |> Proto.Json.field "title" "" Proto.Json.string
+
+
+
+-- BINARY ENCODERS
+
+
+{-| Encodes a [`Note`](#Note) as protobuf binary.
+-}
+encodeNoteBytes : Note -> Bytes.Encode.Encoder
+encodeNoteBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.title
+        ]
+
+
+
+-- BINARY DECODERS
+
+
+{-| Decodes a [`Note`](#Note) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeNoteBytes : Note -> Proto.Binary.Decoder Note
+mergeNoteBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | title = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`Note`](#Note) from protobuf binary.
+-}
+decodeNoteBytes : Proto.Binary.Decoder Note
+decodeNoteBytes =
+    mergeNoteBytes defaultNote

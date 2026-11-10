@@ -7,6 +7,7 @@ without breaking code that reads one.
 -}
 
 import Dict exposing (Dict)
+import Json.Encode
 import Rpc.Body
 import Rpc.Call
 import Rpc.Code exposing (Code)
@@ -34,6 +35,7 @@ type Trace
         , headers : Dict String String
         , trailers : Dict String String
         , code : Maybe Code
+        , detailProblems : List String
         , duration : Float
         , attempts : Int
         }
@@ -68,6 +70,37 @@ init (Protocol p) c plan sent outcome duration =
 
                 Err error ->
                     Just (Error.code error)
+        , detailProblems =
+            case outcome.result of
+                Err (Error.RpcStatus status _) ->
+                    List.filterMap detailProblem status.details
+
+                _ ->
+                    []
         , duration = duration
         , attempts = outcome.attempts
         }
+
+
+{-| A detail's problem as a log line names it, or `Nothing` for a detail
+that was read.
+-}
+detailProblem : Result Error.DetailProblem a -> Maybe String
+detailProblem detail =
+    case detail of
+        Ok _ ->
+            Nothing
+
+        Err (Error.UnregisteredType url) ->
+            Just ("unregistered type " ++ quote url)
+
+        Err (Error.InvalidDetail (Just url) reason) ->
+            Just ("invalid detail of " ++ quote url ++ ": " ++ reason)
+
+        Err (Error.InvalidDetail Nothing reason) ->
+            Just ("invalid detail: " ++ reason)
+
+
+quote : String -> String
+quote text =
+    Json.Encode.encode 0 (Json.Encode.string text)

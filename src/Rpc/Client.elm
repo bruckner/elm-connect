@@ -35,6 +35,7 @@ a message. [`toJson`](#toJson) gives it as data, for logs and tests.
 -}
 
 import Json.Encode exposing (Value)
+import Proto.Registry
 import Rpc.Internal.Client as Internal
 import Rpc.Internal.Http
 import Rpc.Internal.Protocol as Protocol
@@ -70,6 +71,7 @@ client over url =
         , timeout = Nothing
         , withCredentials = False
         , retry = Nothing
+        , registry = Proto.Registry.empty
         }
 
 

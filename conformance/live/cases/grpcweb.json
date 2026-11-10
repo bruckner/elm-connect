@@ -1,7 +1,7 @@
 [
   {
     "name": "grpc-web GetNote",
-    "note": "Over Connect: The answer is read from protobuf binary; an Any read from binary holds its bytes and writes the Connect detail form.",
+    "note": "Over Connect: The answer is read from protobuf binary; an Any read from binary holds its bytes, and its JSON is converted through the build's registries.",
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
@@ -35,8 +35,8 @@
           },
           "link": "https://example.com/welcome",
           "attachment": {
-            "type": "google.protobuf.Timestamp",
-            "value": "CKXr3MoG"
+            "@type": "type.googleapis.com/google.protobuf.Timestamp",
+            "value": "2026-01-02T03:04:05Z"
           },
           "revision": "9007199254740993"
         }
@@ -99,8 +99,8 @@
             {
               "name": "notes/welcome",
               "attachment": {
-                "type": "google.protobuf.Timestamp",
-                "value": "CKXr3MoG"
+                "@type": "type.googleapis.com/google.protobuf.Timestamp",
+                "value": "2026-01-02T03:04:05Z"
               }
             }
           ]
@@ -129,7 +129,7 @@
   },
   {
     "name": "grpc-web CreateNote",
-    "note": "Over Connect: The request Any holds a Timestamp read from JSON; the binary encoder converts it, so the server stores its value.",
+    "note": "Over Connect: The request Any holds a Timestamp read from JSON, converted to binary through the package's registry, so the server stores its value.",
     "call": {
       "service": "notes.v1.NotesService",
       "method": "CreateNote",
@@ -192,8 +192,8 @@
           },
           "text": "hello",
           "attachment": {
-            "type": "google.protobuf.Timestamp",
-            "value": "CKXr3MoG"
+            "@type": "type.googleapis.com/google.protobuf.Timestamp",
+            "value": "2026-01-02T03:04:05Z"
           }
         }
       },
@@ -220,7 +220,7 @@
   },
   {
     "name": "grpc-web CreateNote with a message of the package in its Any",
-    "note": "Over Connect: The request Any holds a notes.v1.GetNoteRequest read from JSON; the package's registry, which the binary encoder writes the Any with, has its binary codecs.",
+    "note": "Over Connect: The request Any holds a notes.v1.GetNoteRequest read from JSON, converted to binary through the package's registry, which has its codecs.",
     "call": {
       "service": "notes.v1.NotesService",
       "method": "CreateNote",
@@ -245,8 +245,8 @@
           "name": "notes/from-proto-any",
           "title": "Packed",
           "attachment": {
-            "type": "notes.v1.GetNoteRequest",
-            "value": "Cg1ub3Rlcy93ZWxjb21l"
+            "@type": "type.googleapis.com/notes.v1.GetNoteRequest",
+            "name": "notes/welcome"
           }
         }
       }
@@ -333,7 +333,7 @@
   },
   {
     "name": "grpc-web NOT_FOUND with ErrorInfo",
-    "note": "Over Connect: An error answer stays JSON under the proto codec, and reads as the same Rpc.Error.",
+    "note": "Over Connect: An error answer stays JSON under the proto codec, and reads as the same Rpc.Error. With the empty registry: grpc-status-details-bin carries each detail's binary, which reads into an Any with no table (the runner writes its JSON through its own).",
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",
@@ -342,7 +342,8 @@
         "name": "notes/from-proto"
       },
       "config": {
-        "codec": "proto"
+        "codec": "proto",
+        "registry": "empty"
       }
     },
     "expect": {
@@ -353,6 +354,16 @@
           "source": {
             "$match": "^Grpc(Headers|Trailers)$"
           },
+          "details": [
+            {
+              "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+              "reason": "NOTE_NOT_FOUND",
+              "domain": "notes.example.com",
+              "metadata": {
+                "name": "notes/from-proto"
+              }
+            }
+          ],
           "detailsBinary": [
             "Cih0eXBlLmdvb2dsZWFwaXMuY29tL2dvb2dsZS5ycGMuRXJyb3JJbmZvEj0KDk5PVEVfTk9UX0ZPVU5EEhFub3Rlcy5leGFtcGxlLmNvbRoYCgRuYW1lEhBub3Rlcy9mcm9tLXByb3Rv"
           ]
@@ -518,8 +529,8 @@
         "ok": {
           "name": "notes/welcome",
           "attachment": {
-            "type": "google.protobuf.Timestamp",
-            "value": "CKXr3MoG"
+            "@type": "type.googleapis.com/google.protobuf.Timestamp",
+            "value": "2026-01-02T03:04:05Z"
           }
         }
       },

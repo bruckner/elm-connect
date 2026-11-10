@@ -1,5 +1,5 @@
 module Proto.Descriptors exposing
-    ( Descriptors, empty, fromDescriptors, union, wellKnown
+    ( Descriptors, empty, fromDescriptors, union
     , message, enum
     , messages, enums
     )
@@ -8,9 +8,10 @@ module Proto.Descriptors exposing
 rather than containing them (a message may contain itself), and a
 `Descriptors` resolves those names; it finds enums by name too. Generated code
 gives one per package module (`Notes.V1.descriptors`), holding the package's
-types, those of every package it imports, and the well-known types.
+types, those of every package it imports, and the well-known types,
+which are [`Proto.WellKnown.descriptors`](Proto-WellKnown#descriptors).
 
-@docs Descriptors, empty, fromDescriptors, union, wellKnown
+@docs Descriptors, empty, fromDescriptors, union
 
 
 # Looking up
@@ -26,7 +27,6 @@ types, those of every package it imports, and the well-known types.
 
 import Dict exposing (Dict)
 import Proto.Enum as Enum
-import Proto.Internal.WellKnown as WellKnown
 import Proto.Message as Message
 
 
@@ -52,8 +52,8 @@ the first is kept.
 fromDescriptors : List Message.Descriptor -> List Enum.Descriptor -> Descriptors
 fromDescriptors messageDescriptors enumDescriptors =
     Descriptors
-        { messages = keyed Message.typeName messageDescriptors
-        , enums = keyed Enum.typeName enumDescriptors
+        { messages = keyed Message.fullName messageDescriptors
+        , enums = keyed Enum.fullName enumDescriptors
         }
 
 
@@ -82,15 +82,6 @@ union (Descriptors left) (Descriptors right) =
         { messages = Dict.union left.messages right.messages
         , enums = Dict.union left.enums right.enums
         }
-
-
-{-| The `google.protobuf` types elm-connect maps: `Timestamp`, `Duration`,
-`FieldMask`, `Empty`, `Any`, `Struct`, `Value`, `ListValue` and the wrappers,
-and the enum `NullValue` that `Value` refers to.
--}
-wellKnown : Descriptors
-wellKnown =
-    fromDescriptors WellKnown.messages WellKnown.enums
 
 
 {-| The message of this full name, such as `notes.v1.Note`.

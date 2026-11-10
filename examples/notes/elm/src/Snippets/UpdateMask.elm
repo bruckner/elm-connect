@@ -20,12 +20,14 @@ import Proto.Message as Message exposing (Message)
 {-| The `google.protobuf.FieldMask` of what changed from `before` to
 `after`, for an update request such as `UpdateNoteRequest`.
 -}
-updateMask : Descriptors -> Message a -> a -> a -> List String
-updateMask descriptors message before after =
-    changedPaths descriptors
-        (Message.toDescriptor message)
-        (Message.encode message before)
-        (Message.encode message after)
+updateMask : Descriptors -> Message a -> (a -> Value) -> a -> a -> List String
+updateMask descriptors message encode before after =
+    case Descriptors.message (Message.typeName message) descriptors of
+        Just descriptor ->
+            changedPaths descriptors descriptor (encode before) (encode after)
+
+        Nothing ->
+            []
 
 
 

@@ -88,6 +88,10 @@ async function answer(runner, send, request) {
     // 0, the default, is no limit, as in connect-go.
     readMaxBytes: request.messageReceiveLimit || null,
     codec: request.codec === Codec.PROTO ? "proto" : "json",
+    // The suite's messages hold Anys of its own types, which a JSON call
+    // writes and reads through the client's registry, as an application
+    // configures one.
+    registry: "build",
   };
   // A unary call's request is sent whole, so `afterCloseSendMs` counts from
   // the call being sent; refusal turns away the streaming-only timings.
@@ -201,9 +205,9 @@ function codeOf(name) {
   return code === undefined ? Code.UNKNOWN : code;
 }
 
-// An error detail as the runtime gives it (Proto.Json.encodeAny): proto3 JSON
-// with "@type", or {"type", "value"} for a detail that arrived as protobuf
-// binary only, whose base64 value is the Any's bytes as they came.
+// An error detail as the runner writes it (Live.Call.detailWith): proto3 JSON
+// with "@type", or {"type", "value"} for a detail of a type the runner has no
+// codecs for, whose base64 value is the Any's bytes as they came.
 function detail(json) {
   if (json["@type"] === undefined && typeof json.type === "string") {
     const typeUrl = json.type.includes("/") ? json.type : `type.googleapis.com/${json.type}`;

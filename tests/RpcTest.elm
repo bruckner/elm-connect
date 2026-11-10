@@ -1,5 +1,6 @@
 module RpcTest exposing (suite)
 
+import Bytes.Encode
 import Dict
 import Expect
 import Fuzz exposing (Fuzzer)
@@ -7,12 +8,17 @@ import Http
 import Json.Decode
 import Json.Encode
 import Proto.Any
+import Proto.Binary
+import Proto.Bytes
 import Proto.Duration
+import Proto.Field exposing (Cardinality(..), Kind(..), Scalar(..))
 import Proto.Http
 import Proto.Internal.Percent
+import Proto.Internal.Registry
 import Proto.Json
 import Proto.Message exposing (Message)
 import Proto.Method exposing (Idempotency(..))
+import Proto.Registry
 import Proto.WellKnown
 import Rpc
 import Rpc.Body
@@ -41,18 +47,52 @@ encodeGetNote r =
     Json.Encode.object [ ( "name", Json.Encode.string r.name ) ]
 
 
+decodeTitle : Json.Decode.Decoder String
+decodeTitle =
+    Json.Decode.field "title" Json.Decode.string
+
+
+encodeTitle : String -> Json.Encode.Value
+encodeTitle t =
+    Json.Encode.object [ ( "title", Json.Encode.string t ) ]
+
+
 title : Message String
 title =
-    Proto.Message.message (\t -> Json.Encode.object [ ( "title", Json.Encode.string t ) ])
-        (Json.Decode.field "title" Json.Decode.string)
+    Proto.Message.init "notes.v1.Note" encodeTitle decodeTitle encodeTitleBytes decodeTitleBytes
+
+
+encodeTitleBytes : String -> Bytes.Encode.Encoder
+encodeTitleBytes t =
+    Bytes.Encode.sequence [ Proto.Binary.implicit Proto.Binary.string 1 t ]
+
+
+decodeTitleBytes : Proto.Binary.Decoder String
+decodeTitleBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            if number == 1 then
+                Proto.Binary.field Proto.Binary.string identity wire value
+
+            else
+                Proto.Binary.skip wire value
+        )
+        identity
         ""
-        (Proto.Message.descriptor "notes.v1.Note" [])
+
+
+{-| The registry generated code gives a package of
+`notes.v1.Note`.
+-}
+noteRegistry : Proto.Registry.Registry
+noteRegistry =
+    Proto.Registry.register (Proto.Message.init "notes.v1.Note" encodeTitle decodeTitle encodeTitleBytes decodeTitleBytes) Proto.Registry.empty
 
 
 notes : String -> Idempotency -> List Proto.Http.Binding -> GetNote -> Rpc.Call Rpc.Json GetNote String
 notes name idempotency bindings =
     Rpc.call
-        (Proto.Method.json "notes.v1.Notes" name encodeGetNote (Proto.Message.decoder title)
+        (Proto.Method.initJson "notes.v1.Notes" name (\_ -> encodeGetNote >> Ok) (\_ -> decodeTitle)
             |> Proto.Method.withIdempotency idempotency
             |> Proto.Method.withBindings bindings
         )
@@ -181,17 +221,44 @@ fromBody code message =
     Err (RpcStatus { code = code, message = message, details = [], source = ConnectBody } blank)
 
 
-problemWord : Proto.Any.Problem -> String
-problemWord problem =
-    case problem of
-        Proto.Any.Json _ ->
-            "json"
+{-| A detail's type URL and its binary's base64.
+-}
+forms : Result Rpc.Error.DetailProblem Proto.Any.Any -> Result Rpc.Error.DetailProblem ( String, String )
+forms =
+    Result.map (\detail -> ( Proto.Any.typeUrl detail, Proto.Bytes.toBase64 (Proto.Any.bytes detail) ))
 
-        Proto.Any.BinaryOnly ->
-            "binary only"
 
-        Proto.Any.Binary ->
-            "binary"
+{-| An error's details that were read and unpack as this message.
+-}
+detailsOf : Message a -> Error -> List a
+detailsOf message error =
+    case error of
+        RpcStatus status _ ->
+            List.filterMap (Result.toMaybe >> Maybe.andThen (Proto.Any.unpack message)) status.details
+
+        _ ->
+            []
+
+
+{-| An error's detail problems.
+-}
+problemsOf : Error -> List Rpc.Error.DetailProblem
+problemsOf error =
+    case error of
+        RpcStatus status _ ->
+            List.filterMap
+                (\detail ->
+                    case detail of
+                        Err problem ->
+                            Just problem
+
+                        Ok _ ->
+                            Nothing
+                )
+                status.details
+
+        _ ->
+            []
 
 
 suite : Test
@@ -206,6 +273,7 @@ suite =
         , problems
         , receiveLimits
         , sendLimits
+        , encodings
         , headerRules
         , bodies
         , traces
@@ -286,18 +354,19 @@ calls =
             \_ ->
                 let
                     bare =
-                        Rpc.call (Proto.Method.json "notes.v1.Notes" "GetNote" encodeGetNote (Proto.Message.decoder title)) { name = "x" }
+                        Rpc.call (Proto.Method.initJson "notes.v1.Notes" "GetNote" (\_ -> encodeGetNote >> Ok) (\_ -> decodeTitle)) { name = "x" }
                 in
                 ( Rpc.Call.idempotency bare, Rpc.Call.viaBinding 0 bare |> Maybe.map Rpc.Call.procedure )
                     |> Expect.equal ( IdempotencyUnknown, Nothing )
         , test "the method and the procedure are the ones the call was made from" <|
             \_ ->
-                ( Json.Encode.encode 0 (Proto.Method.encodeRequest (Rpc.Call.method c) { name = "x" }), Rpc.Call.procedure c )
-                    |> Expect.equal ( "{\"name\":\"x\"}", "/notes.v1.Notes/GetNote" )
+                ( Proto.Method.encodeRequest Proto.Registry.empty (Rpc.Call.method c) { name = "x" } |> Result.map (Json.Encode.encode 0), Rpc.Call.procedure c )
+                    |> Expect.equal ( Ok "{\"name\":\"x\"}", "/notes.v1.Notes/GetNote" )
         , test "requestJson is the request's JSON" <|
             \_ ->
-                Json.Encode.encode 0 (Rpc.Call.requestJson c)
-                    |> Expect.equal "{\"name\":\"notes/42\"}"
+                Rpc.Call.requestJson Proto.Registry.empty c
+                    |> Result.map (Json.Encode.encode 0)
+                    |> Expect.equal (Ok "{\"name\":\"notes/42\"}")
         , test "viaBinding gives a call for each binding the method has, and only those" <|
             \_ ->
                 [ -1, 0, 1, 2 ]
@@ -310,8 +379,9 @@ calls =
                     |> Expect.equal [ Nothing, Nothing, Nothing ]
         , test "toJson names the method and holds the request" <|
             \_ ->
-                Json.Encode.encode 0 (Rpc.Call.toJson (Rpc.Call.withTimeout 5 c))
-                    |> Expect.equal "{\"service\":\"notes.v1.Notes\",\"method\":\"GetNote\",\"procedure\":\"/notes.v1.Notes/GetNote\",\"request\":{\"name\":\"notes/42\"}}"
+                Rpc.Call.toJson Proto.Registry.empty (Rpc.Call.withTimeout 5 c)
+                    |> Result.map (Json.Encode.encode 0)
+                    |> Expect.equal (Ok "{\"service\":\"notes.v1.Notes\",\"method\":\"GetNote\",\"procedure\":\"/notes.v1.Notes/GetNote\",\"request\":{\"name\":\"notes/42\"}}")
         ]
 
 
@@ -525,16 +595,16 @@ responses =
                     |> withoutResponse
                     |> withCode
                     |> Expect.equal (Err ( httpError 204 "No Content", Unknown, "No Content" ))
-        , test "a Connect error body gives code, message and details" <|
+        , test "a Connect error body gives code, message and details, as their binary" <|
             \_ ->
                 failed 404
                     "Not Found"
-                    """{"code":"not_found","message":"no note","details":[{"type":"google.rpc.RetryInfo","value":"CgIIPA"},{"type":"notes.v1.Note","value":"CgJoaQ","debug":{"title":"hi"}}]}"""
+                    """{"code":"not_found","message":"no note","details":[{"type":"google.rpc.RetryInfo","value":"CgIIPA"},{"type":"notes.v1.Note","value":"CgJoaQ==","debug":{"title":"hi"}}]}"""
                     |> Result.mapError
                         (\error ->
                             case error of
                                 RpcStatus r _ ->
-                                    ( r.code, r.message, List.map (\detail -> ( Proto.Any.typeUrl detail, Json.Encode.encode 0 (Proto.Json.encodeAny detail) )) r.details )
+                                    ( r.code, r.message, List.map forms r.details )
 
                                 _ ->
                                     ( Internal, "not a status", [] )
@@ -543,58 +613,129 @@ responses =
                         (Err
                             ( NotFound
                             , "no note"
-                            , [ ( "type.googleapis.com/google.rpc.RetryInfo", "{\"type\":\"google.rpc.RetryInfo\",\"value\":\"CgIIPA\"}" )
-                              , ( "type.googleapis.com/notes.v1.Note", "{\"@type\":\"type.googleapis.com/notes.v1.Note\",\"title\":\"hi\"}" )
+                            , [ Ok ( "type.googleapis.com/google.rpc.RetryInfo", "CgIIPA==" )
+                              , Ok ( "type.googleapis.com/notes.v1.Note", "CgJoaQ==" )
                               ]
                             )
                         )
-        , test "a Connect detail without debug holds its binary alone" <|
+        , test "a Connect detail is read from its binary, not its debug JSON" <|
             \_ ->
-                failed 404 "Not Found" """{"code":"not_found","details":[{"type":"notes.v1.Note","value":"CgJoaQ"}]}"""
-                    |> Result.mapError
-                        (\error ->
-                            case error of
-                                RpcStatus r _ ->
-                                    List.map
-                                        (\detail ->
-                                            ( Proto.Any.typeName detail
-                                            , Proto.Any.unpack title detail |> Maybe.map (Result.mapError problemWord)
-                                            , Json.Encode.encode 0 (Proto.Json.encodeAny detail)
-                                            )
-                                        )
-                                        r.details
-
-                                _ ->
-                                    []
-                        )
-                    |> Expect.equal (Err [ ( "notes.v1.Note", Just (Err "binary only"), "{\"type\":\"notes.v1.Note\",\"value\":\"CgJoaQ\"}" ) ])
-        , test "a Status body's details are proto3 JSON Any objects" <|
+                failed 404 "Not Found" """{"code":"not_found","details":[{"type":"notes.v1.Note","value":"CgJoaQ==","debug":{"title":"other"}}]}"""
+                    |> Result.mapError (detailsOf title)
+                    |> Expect.equal (Err [ "hi" ])
+        , test "a Connect detail with no type, or whose value is not base64, is a problem, and the rest are read" <|
             \_ ->
-                failed 404
-                    "Not Found"
-                    """{"code":5,"message":"no note","details":[{"@type":"type.googleapis.com/notes.v1.Note","title":"hi"},{"@type":"type.googleapis.com/google.protobuf.Duration","value":"2s"},{"no":"type"}]}"""
-                    |> Result.mapError
-                        (\error ->
-                            ( Rpc.Error.details title error
-                            , Rpc.Error.details Proto.WellKnown.duration error |> List.map Proto.Duration.toMilliseconds
-                            , case error of
-                                RpcStatus r _ ->
-                                    Just ( r.code, r.source, List.length r.details )
-
-                                _ ->
-                                    Nothing
+                failed 404 "Not Found" """{"code":"not_found","message":"gone","details":[{"value":"CgJoaQ=="},{"type":"notes.v1.Note","value":"*"},{"type":"notes.v1.Note","value":"CgJoaQ"},"text"]}"""
+                    |> Result.mapError (\error -> ( Rpc.Error.message error, detailsOf title error, problemsOf error ))
+                    |> Expect.equal
+                        (Err
+                            ( "gone"
+                            , [ "hi" ]
+                            , [ Rpc.Error.InvalidDetail Nothing "a Connect detail with no type"
+                              , Rpc.Error.InvalidDetail (Just "type.googleapis.com/notes.v1.Note") "a Connect detail whose value is not base64"
+                              , Rpc.Error.InvalidDetail Nothing "a Connect detail with no type"
+                              ]
                             )
                         )
-                    |> Expect.equal (Err ( [ "hi" ], [ 2000 ], Just ( NotFound, StatusBody, 2 ) ))
+        , test "a Connect detail's binary needs no registry, and unpadded base64 reads as padded" <|
+            \_ ->
+                ( failed 404 "Not Found" """{"code":"not_found","details":[{"type":"notes.v1.Note","value":"CgJoaQ"}]}"""
+                , failed 404 "Not Found" """{"code":"not_found","details":[{"type":"notes.v1.Note","value":"CgJoaQ=="}]}"""
+                )
+                    |> (\( unpadded, padded ) -> ( unpadded == padded, Result.mapError (detailsOf title) unpadded ))
+                    |> Expect.equal ( True, Err [ "hi" ] )
+        , test "a Status body's details are proto3 JSON Any objects, read through the registry" <|
+            \_ ->
+                let
+                    body =
+                        """{"code":5,"message":"no note","details":[{"@type":"type.googleapis.com/notes.v1.Note","title":"hi"},{"@type":"type.googleapis.com/google.protobuf.Duration","value":"2s"},{"no":"type"}]}"""
+
+                    read client =
+                        Rpc.response client (getNote { name = "x" }) (Http.BadStatus_ (metadata 404 "Not Found") body)
+                            |> Result.mapError
+                                (\error ->
+                                    ( detailsOf title error
+                                    , detailsOf Proto.WellKnown.duration error |> List.map Proto.Duration.toMilliseconds
+                                    , problemsOf error
+                                    )
+                                )
+
+                    noType =
+                        Rpc.Error.InvalidDetail Nothing "a detail with no \"@type\""
+                in
+                ( read (Rpc.withRegistry (Proto.Registry.union noteRegistry Proto.WellKnown.registry) base)
+                , read base
+                , read (Rpc.withRegistry noteRegistry base)
+                    |> Result.mapError (\( _, _, found ) -> found)
+                )
+                    |> Expect.equal
+                        ( Err ( [ "hi" ], [ 2000 ], [ noType ] )
+                        , Err
+                            ( []
+                            , []
+                            , [ Rpc.Error.UnregisteredType "type.googleapis.com/notes.v1.Note"
+                              , Rpc.Error.UnregisteredType "type.googleapis.com/google.protobuf.Duration"
+                              , noType
+                              ]
+                            )
+                        , Err [ Rpc.Error.UnregisteredType "type.googleapis.com/google.protobuf.Duration", noType ]
+                        )
+        , test "a Status body's detail of a registered type that is not its message is InvalidDetail with its URL" <|
+            \_ ->
+                Rpc.response (Rpc.withRegistry noteRegistry base)
+                    (getNote { name = "x" })
+                    (Http.BadStatus_ (metadata 404 "Not Found") """{"code":5,"details":[{"@type":"type.googleapis.com/notes.v1.Note","title":7}]}""")
+                    |> Result.mapError
+                        (problemsOf
+                            >> List.map
+                                (\problem ->
+                                    case problem of
+                                        Rpc.Error.InvalidDetail url _ ->
+                                            Just url
+
+                                        Rpc.Error.UnregisteredType _ ->
+                                            Nothing
+                                )
+                        )
+                    |> Expect.equal (Err [ Just (Just "type.googleapis.com/notes.v1.Note") ])
         , test "details gives those of a type that decode, and an HttpStatus or NoAnswer error has none" <|
             \_ ->
                 ( failed 400
                     "Bad Request"
-                    """{"code":"invalid_argument","details":[{"type":"notes.v1.Note","value":"","debug":{"title":"one"}},{"type":"notes.v1.Note","value":"CgA"},{"type":"notes.v1.Note","value":"","debug":{"title":2}},{"type":"other.v1.Thing","value":"","debug":{"title":"no"}},{"type":"notes.v1.Note","value":"","debug":{"title":"two"}}]}"""
-                    |> Result.mapError (Rpc.Error.details title)
-                , ( Rpc.Error.details title (httpError 404 "Not Found"), Rpc.Error.details title (NoAnswer Timeout) )
+                    """{"code":"invalid_argument","details":[{"type":"notes.v1.Note","value":"CgNvbmU="},{"type":"notes.v1.Note","value":"CgVv"},{"type":"other.v1.Thing","value":"CgJubw=="},{"type":"notes.v1.Note","value":"CgN0d28="}]}"""
+                    |> Result.mapError (detailsOf title)
+                , ( detailsOf title (httpError 404 "Not Found"), detailsOf title (NoAnswer Timeout) )
                 )
                     |> Expect.equal ( Err [ "one", "two" ], ( [], [] ) )
+        , test "a request holding an Any its registry cannot write is not sent, over JSON" <|
+            \_ ->
+                let
+                    unregistered =
+                        Rpc.call
+                            (Proto.Method.init "notes.v1.Notes"
+                                "GetNote"
+                                (\_ _ -> Err (Proto.Any.UnregisteredType "type.googleapis.com/ext.v1.Thing"))
+                                (\_ -> decodeTitle)
+                                (\_ -> Bytes.Encode.sequence [])
+                                decodeTitleBytes
+                            )
+                            { name = "x" }
+
+                    unwritable =
+                        UnwritableRequest (Proto.Any.UnregisteredType "type.googleapis.com/ext.v1.Thing")
+
+                    refusal client =
+                        Rpc.Internal.Plan.refused "https://api.example.com" (Rpc.Internal.Plan.plan client unregistered) (Rpc.request client unregistered)
+                in
+                ( refusal base
+                , refusal (Rpc.client Rpc.Protocol.connectProto "https://api.example.com")
+                , ( Rpc.Error.code (NoAnswer unwritable), Rpc.Error.message (NoAnswer unwritable) )
+                )
+                    |> Expect.equal
+                        ( Just (NoAnswer unwritable)
+                        , Nothing
+                        , ( Internal, "unregistered type \"type.googleapis.com/ext.v1.Thing\"" )
+                        )
         , test "message and details are optional" <|
             \_ ->
                 failed 503 "Service Unavailable" """{"code":"unavailable"}"""
@@ -1300,7 +1441,7 @@ sendLimits =
             getNote { name = "é" }
 
         json =
-            Json.Encode.encode 0 (Rpc.Call.requestJson call)
+            Rpc.Call.requestJson Proto.Registry.empty call |> Result.map (Json.Encode.encode 0) |> Result.withDefault ""
 
         tooLarge protocol c =
             (Rpc.Internal.Plan.plan (over protocol) c).tooLarge ()
@@ -1312,7 +1453,7 @@ sendLimits =
         -- A call whose request stops the test if it is ever encoded.
         unencodable =
             Rpc.call
-                (Proto.Method.json "notes.v1.Notes" "GetNote" (\_ -> Debug.todo "the message was encoded") (Proto.Message.decoder title))
+                (Proto.Method.initJson "notes.v1.Notes" "GetNote" (\_ _ -> Debug.todo "the message was encoded") (\_ -> decodeTitle))
                 { name = "x" }
     in
     describe "withWriteMaxBytes"
@@ -1354,6 +1495,99 @@ sendLimits =
                     == Rpc.request (getting (Just 30)) call
                 )
                     |> Expect.equal ( [ "connect", "transcode" ], True )
+        ]
+
+
+encodings : Test
+encodings =
+    let
+        -- A method whose request stops the test if it is ever encoded, with
+        -- JSON codecs alone and with both.
+        neverEncoded =
+            [ Rpc.call (Proto.Method.initJson "notes.v1.Notes" "GetNote" (\_ _ -> Debug.todo "the message was encoded") (\_ -> decodeTitle))
+            , Rpc.call
+                (Proto.Method.init "notes.v1.Notes"
+                    "GetNote"
+                    (\_ _ -> Debug.todo "the message was encoded")
+                    (\_ -> decodeTitle)
+                    (\_ -> Bytes.Encode.sequence [])
+                    decodeTitleBytes
+                )
+            ]
+
+        -- The same over a binding read from the JSON, whose answer is the
+        -- response's `title` field.
+        routedNeverEncoded =
+            Rpc.call
+                (Proto.Method.initJson "notes.v1.Notes" "GetNote" (\_ _ -> Debug.todo "the message was encoded") (\_ -> decodeTitle)
+                    |> Proto.Method.withBindings
+                        [ Proto.Http.binding { method = "GET", path = [ Proto.Http.literal "v1", Proto.Http.literal "notes" ], customVerb = Nothing, body = Proto.Http.noBody, responseBody = Just (Proto.Field.descriptor "title" "title" 1 CardinalitySingular (KindScalar ScalarString)), query = [] } ]
+                )
+
+        read client c body =
+            Rpc.response client (c { name = "x" }) (Http.GoodStatus_ (metadata 200 "OK") body)
+
+        -- A request whose JSON says which registry wrote it, in the field
+        -- its path binds and the field its body holds alike.
+        tagged registry r =
+            let
+                tag =
+                    if Proto.Internal.Registry.member "notes.v1.Note" registry then
+                        "registered"
+
+                    else
+                        "plain"
+            in
+            Ok (Json.Encode.object [ ( "name", Json.Encode.string ("notes/" ++ r.name ++ "-" ++ tag) ), ( "text", Json.Encode.string tag ) ])
+
+        update =
+            Rpc.call
+                (Proto.Method.init "notes.v1.Notes"
+                    "UpdateNote"
+                    tagged
+                    (\_ -> decodeTitle)
+                    (\_ -> Bytes.Encode.sequence [])
+                    decodeTitleBytes
+                    |> Proto.Method.withBindings
+                        [ Proto.Http.binding
+                            { method = "PATCH"
+                            , path =
+                                [ Proto.Http.literal "v1"
+                                , Proto.Http.variable { fieldPath = [ Proto.Field.descriptor "name" "name" 1 CardinalitySingular (KindScalar ScalarString) ], template = [ Proto.Http.literal "notes", Proto.Http.wildcard ] }
+                                ]
+                            , customVerb = Nothing
+                            , body = Proto.Http.wholeBody
+                            , responseBody = Nothing
+                            , query = []
+                            }
+                        ]
+                )
+                { name = "42" }
+
+        built client =
+            let
+                sent =
+                    (Rpc.Internal.Plan.toSend client update).request ()
+            in
+            ( ( sent.method, sent.url, Rpc.Body.toText sent.body ), sent == Rpc.request client update )
+    in
+    describe "a request's JSON"
+        [ test "an answer is read without encoding the request" <|
+            \_ ->
+                ( [ Rpc.Protocol.connect, connectGet, Rpc.Protocol.transcode ]
+                    |> List.concatMap (\protocol -> List.map (\c -> read (over protocol) c "{\"title\":\"t\"}") neverEncoded)
+                , ( read base routedNeverEncoded "{\"title\":\"t\"}", read (over Rpc.Protocol.transcode) routedNeverEncoded "\"t\"" )
+                )
+                    |> Expect.equal ( List.repeat 6 (Ok "t"), ( Ok "t", Ok "t" ) )
+        , test "an interpreted route binds its path and its body from one encoding, the client's registry's" <|
+            \_ ->
+                ( built (over Rpc.Protocol.transcode)
+                , built (Rpc.withRegistry noteRegistry (over Rpc.Protocol.transcode))
+                )
+                    |> Expect.equal
+                        ( ( ( "PATCH", "https://api.example.com/v1/notes/42-plain", Just "{\"text\":\"plain\"}" ), True )
+                        , ( ( "PATCH", "https://api.example.com/v1/notes/42-registered", Just "{\"text\":\"registered\"}" ), True )
+                        )
         ]
 
 
@@ -1457,6 +1691,7 @@ traces =
                 , headers = Dict.fromList [ ( "content-type", "application/json" ) ]
                 , trailers = Dict.empty
                 , code = error
+                , detailProblems = []
                 , duration = 12.4
                 , attempts = attempts
                 }
@@ -1471,7 +1706,7 @@ traces =
                     |> Expect.equal
                         ("""{"service":"notes.v1.Notes","method":"GetNote","procedure":"/notes.v1.Notes/GetNote","protocol":"connect","codec":"json","binding":null,"""
                             ++ """"request":{"method":"POST","url":"https://api.example.com/notes.v1.Notes/GetNote","headers":[["Connect-Protocol-Version","1"]],"body":"{\\"name\\":\\"notes/42\\"}","timeout":null,"withCredentials":false},"""
-                            ++ """"httpStatus":200,"headers":{"content-type":"application/json"},"trailers":{},"code":"ok","duration":12.4,"attempts":1}"""
+                            ++ """"httpStatus":200,"headers":{"content-type":"application/json"},"trailers":{},"code":"ok","detailProblems":[],"duration":12.4,"attempts":1}"""
                         )
         , test "toJson gives a failure's code as Connect writes it" <|
             \_ ->
@@ -1488,6 +1723,41 @@ traces =
                         [ "notes.v1.Notes/GetNote over connect: ok, HTTP 200, 1 attempt, 12 ms"
                         , "notes.v1.Notes/GetNote over connect: unavailable, no answer, 3 attempts, 12 ms"
                         ]
+        , test "a status's detail problems are in the trace, in toJson and counted in toString" <|
+            \_ ->
+                let
+                    c =
+                        getNote { name = "notes/42" }
+
+                    plan =
+                        Rpc.Internal.Plan.plan base c
+
+                    status =
+                        { code = NotFound
+                        , message = "gone"
+                        , details =
+                            [ Err (Rpc.Error.UnregisteredType "type.googleapis.com/google.rpc.ErrorInfo")
+                            , Ok (Proto.Any.pack Proto.WellKnown.stringValue "kept")
+                            , Err (Rpc.Error.InvalidDetail Nothing "a Connect detail with no type")
+                            , Err (Rpc.Error.InvalidDetail (Just "type.googleapis.com/x.Y") "a Connect detail whose value is not base64")
+                            ]
+                        , source = ConnectBody
+                        }
+
+                    traced =
+                        Rpc.Internal.Trace.init (Rpc.Client.protocol base) c plan sent { attempts = 1, metadata = Nothing, result = Err (RpcStatus status blank) } 9
+                in
+                ( Rpc.Trace.toJson traced |> Json.Decode.decodeValue (Json.Decode.field "detailProblems" (Json.Decode.list Json.Decode.string))
+                , Rpc.Trace.toString traced
+                )
+                    |> Expect.equal
+                        ( Ok
+                            [ "unregistered type \"type.googleapis.com/google.rpc.ErrorInfo\""
+                            , "invalid detail: a Connect detail with no type"
+                            , "invalid detail of \"type.googleapis.com/x.Y\": a Connect detail whose value is not base64"
+                            ]
+                        , "notes.v1.Notes/GetNote over connect: not_found (3 details unread), no answer, 1 attempt, 9 ms"
+                        )
         , test "the procedure is the call's" <|
             \_ ->
                 Rpc.Trace.procedure succeeded

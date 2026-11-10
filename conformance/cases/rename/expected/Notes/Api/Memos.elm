@@ -34,10 +34,10 @@ Codecs: JSON. Described by [`descriptorFetchMemo`](#descriptorFetchMemo).
 fetchMemo : Notes.Api.GetNoteRequest -> Rpc.Call Rpc.Json Notes.Api.GetNoteRequest Notes.Api.Memo
 fetchMemo =
     Rpc.call
-        (Proto.Method.json "notes.v1.NotesService"
+        (Proto.Method.initJson "notes.v1.NotesService"
             "GetNote"
-            Notes.Api.encodeGetNoteRequest
-            Notes.Api.decodeMemo
+            (\_ -> Ok << Notes.Api.encodeGetNoteRequest)
+            (\_ -> Notes.Api.decodeMemo)
         )
 
 

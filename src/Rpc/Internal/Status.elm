@@ -1,4 +1,4 @@
-module Rpc.Internal.Status exposing (answerOf, bytesFailure, failure, header, otherFailure)
+module Rpc.Internal.Status exposing (answerOf, bytesFailure, completeDetails, failure, header, otherFailure)
 
 {-| A failure's status as an `Rpc.Error`, from a Connect error body, a
 `google.rpc.Status` body, or gRPC status headers and trailers, whatever the
@@ -11,10 +11,11 @@ that is not its success, and `Rpc.response` and `Rpc.responseBytes` reach
 import Bytes exposing (Bytes)
 import Dict
 import Http
-import Json.Decode exposing (Decoder)
+import Json.Decode exposing (Decoder, Value)
 import Proto.Any exposing (Any)
 import Proto.Internal.Any
 import Proto.Internal.Percent as Percent
+import Proto.Internal.Registry as InternalRegistry exposing (Registry)
 import Proto.Json
 import Rpc.Body
 import Rpc.Code as Code exposing (Code)
@@ -128,14 +129,15 @@ fromGrpc number =
 
 
 {-| A `google.rpc.Status` body: an integer `code`, an optional `message` and
-optional `details`.
+optional `details`. Its details are proto3 JSON, which only the client's
+registry reads ([`completeDetails`](#completeDetails)), so they are read
+there.
 -}
 statusBody : Decoder Error.StatusError
 statusBody =
-    Json.Decode.map3 (\number text found -> { code = fromGrpc number, message = text, details = found, source = Error.StatusBody })
+    Json.Decode.map2 (\number text -> { code = fromGrpc number, message = text, details = [], source = Error.StatusBody })
         (Json.Decode.field "code" Json.Decode.int)
         (optional "message" Json.Decode.string "")
-        (optional "details" detailList [])
 
 
 {-| A Connect error body: a `code` the protocol names (an unknown name reads as
@@ -148,47 +150,155 @@ connectBody =
             |> Json.Decode.map (Code.fromString >> Maybe.withDefault Code.Unknown)
         )
         (optional "message" Json.Decode.string "")
-        (optional "details" detailList [])
+        (optional "details" (Json.Decode.list (Json.Decode.map connectDetail Json.Decode.value)) [])
 
 
-{-| An error's details, each in either form whichever body it came in: a
-`google.rpc.Status` body holds proto3 JSON `Any` objects, a Connect body
-`{"type", "value", "debug"}` objects. A detail in neither form is left out
-rather than losing the error's code and message with it.
+{-| A Connect error detail: the message's full name as `type` (a type URL
+when it holds a `/`) and its protobuf binary as base64 `value`, which may
+be left out for an empty message. Its JSON, `debug`, is not read.
 -}
-detailList : Decoder (List Any)
-detailList =
-    Json.Decode.list (Json.Decode.maybe (Json.Decode.oneOf [ Proto.Json.any, connectDetail ]))
-        |> Json.Decode.map (List.filterMap identity)
+connectDetail : Value -> Result Error.DetailProblem Any
+connectDetail detail =
+    case Json.Decode.decodeValue (Json.Decode.field "type" Json.Decode.string) detail of
+        Ok name ->
+            let
+                url =
+                    if String.contains "/" name then
+                        name
+
+                    else
+                        "type.googleapis.com/" ++ name
+            in
+            case
+                Json.Decode.decodeValue (optional "value" Json.Decode.string "") detail
+                    |> Result.toMaybe
+                    |> Maybe.andThen canonicalBase64
+            of
+                Just base64 ->
+                    Ok (Proto.Internal.Any.Any url base64)
+
+                Nothing ->
+                    Err (Error.InvalidDetail (Just url) "a Connect detail whose value is not base64")
+
+        Err _ ->
+            Err (Error.InvalidDetail Nothing "a Connect detail with no type")
 
 
-{-| A Connect error detail: the message's full name as `type`, its protobuf
-binary as base64 `value`, and optionally its JSON as `debug`, which the `Any`
-holds beside the binary when present. Without it the `Any` holds the binary
-alone.
+{-| Base64 text in the form an `Any` holds its binary in, the standard
+alphabet padded with `=`, from either alphabet with or without padding;
+`Nothing` for text that is not base64. It works on the text, without
+decoding it, so that reading an error reaches no bytes code.
 -}
-connectDetail : Decoder Any
-connectDetail =
-    Json.Decode.map3
-        (\name binary debug ->
-            Proto.Internal.Any.Any
-                (if String.contains "/" name then
-                    name
+canonicalBase64 : String -> Maybe String
+canonicalBase64 text =
+    let
+        body =
+            dropPadding text
 
-                 else
-                    "type.googleapis.com/" ++ name
-                )
-                (case debug of
-                    Just json ->
-                        Proto.Internal.Any.InBoth json binary
+        partial =
+            modBy 4 (String.length body)
 
-                    Nothing ->
-                        Proto.Internal.Any.InBinary binary
-                )
-        )
-        (Json.Decode.field "type" Json.Decode.string)
-        (optional "value" Json.Decode.string "")
-        (optional "debug" (Json.Decode.map Just Json.Decode.value) Nothing)
+        padding =
+            String.length text - String.length body
+
+        standard =
+            String.any (\char -> char == '+' || char == '/') body
+
+        urlSafe =
+            String.any (\char -> char == '-' || char == '_') body
+    in
+    if
+        not (String.all base64Char body)
+            || (partial == 1)
+            || (padding /= 0 && (partial == 0 || padding /= 4 - partial))
+            || (standard && urlSafe)
+    then
+        Nothing
+
+    else
+        Just (String.map standardChar body ++ String.repeat (modBy 4 (4 - partial)) "=")
+
+
+{-| A character of either base64 alphabet. `String.fromChar` keeps a lone
+surrogate, which `String.all` would read with its neighbour, from passing.
+-}
+base64Char : Char -> Bool
+base64Char char =
+    String.length (String.fromChar char) == 1 && (Char.isAlphaNum char || String.contains (String.fromChar char) "+/-_")
+
+
+standardChar : Char -> Char
+standardChar char =
+    case char of
+        '-' ->
+            '+'
+
+        '_' ->
+            '/'
+
+        _ ->
+            char
+
+
+dropPadding : String -> String
+dropPadding text =
+    if String.endsWith "=" text then
+        dropPadding (String.dropRight 1 text)
+
+    else
+        text
+
+
+{-| An error with the details of a `google.rpc.Status` body read, through the
+registry: they are proto3 JSON, so [`failure`](#failure), which has no
+registry, leaves them out. Any other error is kept as it is.
+-}
+completeDetails : Registry -> Error -> Error
+completeDetails registry error =
+    case error of
+        Error.RpcStatus status answer ->
+            case status.source of
+                Error.StatusBody ->
+                    Error.RpcStatus { status | details = bodyDetails registry answer } answer
+
+                _ ->
+                    error
+
+        _ ->
+            error
+
+
+bodyDetails : Registry -> Response -> List (Result Error.DetailProblem Any)
+bodyDetails registry answer =
+    Rpc.Body.toText answer.body
+        |> Maybe.andThen
+            (Json.Decode.decodeString
+                (optional "details" (Json.Decode.list (Json.Decode.map (statusDetail registry) Json.Decode.value)) [])
+                >> Result.toMaybe
+            )
+        |> Maybe.withDefault []
+
+
+{-| A `google.rpc.Status` detail: a proto3 JSON `Any`, converted to its
+message's binary through the registry.
+-}
+statusDetail : Registry -> Value -> Result Error.DetailProblem Any
+statusDetail registry detail =
+    case Json.Decode.decodeValue (Json.Decode.field "@type" Json.Decode.string) detail of
+        Ok url ->
+            case Json.Decode.decodeValue (Proto.Json.anyWith registry) detail of
+                Ok any ->
+                    Ok any
+
+                Err problem ->
+                    if InternalRegistry.member (Proto.Internal.Any.nameOf url) registry then
+                        Err (Error.InvalidDetail (Just url) (Json.Decode.errorToString problem))
+
+                    else
+                        Err (Error.UnregisteredType url)
+
+        Err _ ->
+            Err (Error.InvalidDetail Nothing "a detail with no \"@type\"")
 
 
 optional : String -> Decoder a -> a -> Decoder a

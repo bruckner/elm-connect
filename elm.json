@@ -28,6 +28,7 @@
         "Proto.Descriptors",
         "Proto.Registry",
         "Proto.WellKnown",
+        "Proto.ErrorDetails",
         "Proto.Any",
         "Proto.Json",
         "Proto.Binary",

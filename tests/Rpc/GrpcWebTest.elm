@@ -12,6 +12,7 @@ import Proto.Any
 import Proto.Binary
 import Proto.Bytes
 import Proto.Method exposing (Idempotency(..))
+import Proto.Registry
 import Rpc
 import Rpc.Body
 import Rpc.Client
@@ -54,7 +55,7 @@ protocol sent one.
 getNote : GetNote -> Rpc.Call Rpc.Proto GetNote String
 getNote =
     Rpc.call
-        (Proto.Method.proto "notes.v1.Notes" "GetNote" encodeGetNoteBytes decodeTitleBytes
+        (Proto.Method.initProto "notes.v1.Notes" "GetNote" encodeGetNoteBytes decodeTitleBytes
             |> Proto.Method.withIdempotency IdempotencyNoSideEffects
         )
 
@@ -64,10 +65,10 @@ getNote =
 both : GetNote -> Rpc.Call codec GetNote String
 both =
     Rpc.call
-        (Proto.Method.both "notes.v1.Notes"
+        (Proto.Method.init "notes.v1.Notes"
             "GetNote"
-            (\r -> Json.Encode.object [ ( "name", Json.Encode.string r.name ) ])
-            (Json.Decode.field "title" Json.Decode.string)
+            (\_ r -> Ok (Json.Encode.object [ ( "name", Json.Encode.string r.name ) ]))
+            (\_ -> Json.Decode.field "title" Json.Decode.string)
             encodeGetNoteBytes
             decodeTitleBytes
         )
@@ -338,8 +339,17 @@ answers =
             \_ ->
                 case answer 200 [] [ trailers ("grpc-status: 5\u{000D}\ngrpc-message: gone\u{000D}\ngrpc-status-details-bin: " ++ Proto.Bytes.toBase64 statusWithDetails ++ "\u{000D}\n") ] of
                     Err (RpcStatus status _) ->
-                        List.map Proto.Any.typeUrl status.details
-                            |> Expect.equal [ "type.googleapis.com/google.rpc.ErrorInfo", "type.googleapis.com/google.rpc.BadRequest" ]
+                        List.map (Result.map Proto.Any.typeUrl) status.details
+                            |> Expect.equal [ Ok "type.googleapis.com/google.rpc.ErrorInfo", Ok "type.googleapis.com/google.rpc.BadRequest" ]
+
+                    other ->
+                        Expect.fail (Debug.toString other)
+        , test "a grpc-status-details-bin that does not decode is one problem standing for all, the status kept" <|
+            \_ ->
+                case answer 200 [] [ trailers "grpc-status: 5\u{000D}\ngrpc-message: gone\u{000D}\ngrpc-status-details-bin: !!\u{000D}\n" ] of
+                    Err (RpcStatus status _) ->
+                        ( status.code, status.message, status.details )
+                            |> Expect.equal ( NotFound, "gone", [ Err (Rpc.Error.InvalidDetail Nothing "grpc-status-details-bin is not a google.rpc.Status in base64") ] )
 
                     other ->
                         Expect.fail (Debug.toString other)

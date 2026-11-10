@@ -10,13 +10,17 @@ modifiers, written only where set; a method's idempotency level is
 carried whole.
 -}
 
+import Bytes.Encode
 import Json.Decode
 import Json.Encode
+import Proto.Binary
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 import Proto.Version
+import Proto.WellKnown
 import Tasks.V1.GetTaskRequest
 import Tasks.V1.State
 import Tasks.V1.Task
@@ -131,18 +135,18 @@ enumState =
     Proto.Enum.enum encodeState decodeState StateUnspecified Tasks.V1.State.descriptor
 
 
-{-| The typed value of [`Task`](#Task): its codecs, default and descriptor together.
+{-| The typed value of [`Task`](#Task): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageTask : Proto.Message.Message Task
 messageTask =
-    Proto.Message.message encodeTask decodeTask defaultTask Tasks.V1.Task.descriptor
+    Proto.Message.init "tasks.v1.Task" encodeTask decodeTask encodeTaskBytes decodeTaskBytes
 
 
-{-| The typed value of [`GetTaskRequest`](#GetTaskRequest): its codecs, default and descriptor together.
+{-| The typed value of [`GetTaskRequest`](#GetTaskRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageGetTaskRequest : Proto.Message.Message GetTaskRequest
 messageGetTaskRequest =
-    Proto.Message.message encodeGetTaskRequest decodeGetTaskRequest defaultGetTaskRequest Tasks.V1.GetTaskRequest.descriptor
+    Proto.Message.init "tasks.v1.GetTaskRequest" encodeGetTaskRequest decodeGetTaskRequest encodeGetTaskRequestBytes decodeGetTaskRequestBytes
 
 
 
@@ -161,7 +165,16 @@ descriptors =
             [ Tasks.V1.State.descriptor
             ]
         )
-        Proto.Descriptors.wellKnown
+        Proto.WellKnown.descriptors
+
+
+{-| The codecs of this package's messages, for converting a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) that holds one between proto3 JSON and protobuf binary. It holds no other package's types and no well-known type: give a client the union of the registries its `Any`s need (`Proto.Registry.unionAll`, `Rpc.withRegistry`).
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.empty
+        |> Proto.Registry.register messageTask
+        |> Proto.Registry.register messageGetTaskRequest
 
 
 
@@ -274,3 +287,236 @@ decodeGetTaskRequest : Json.Decode.Decoder GetTaskRequest
 decodeGetTaskRequest =
     Json.Decode.succeed GetTaskRequest
         |> Proto.Json.field "name" "" Proto.Json.string
+
+
+
+-- BINARY ENCODERS
+
+
+{-| The number protobuf binary writes a [`State`](#State) as.
+-}
+encodeStateBytes : State -> Int
+encodeStateBytes value =
+    case value of
+        StateUnspecified ->
+            0
+
+        StateOpen ->
+            1
+
+        StateStale ->
+            2
+
+
+{-| Encodes a [`Task`](#Task) as protobuf binary.
+-}
+encodeTaskBytes : Task -> Bytes.Encode.Encoder
+encodeTaskBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.name
+        , Proto.Binary.implicit Proto.Binary.string 2 value.title
+        , Proto.Binary.implicit (Proto.Binary.enum encodeStateBytes decodeStateBytes) 3 value.state
+        , Proto.Binary.list Proto.Binary.string 4 value.labels
+        , Proto.Binary.implicit Proto.Binary.string 5 value.owner
+        , Proto.Binary.implicit Proto.Binary.string 6 value.notes
+        , encodeTaskDueBytes value.due
+        , Proto.Binary.implicit Proto.Binary.string 9 value.made
+        ]
+
+
+{-| Encodes a [`TaskDue`](#TaskDue) as protobuf binary: its set member's field.
+-}
+encodeTaskDueBytes : TaskDue -> Bytes.Encode.Encoder
+encodeTaskDueBytes value =
+    case value of
+        TaskDueUnset ->
+            Bytes.Encode.sequence []
+
+        TaskDueDate member ->
+            Proto.Binary.present Proto.Binary.string 7 member
+
+        TaskDueNever member ->
+            Proto.Binary.present Proto.Binary.string 8 member
+
+
+{-| Encodes a [`GetTaskRequest`](#GetTaskRequest) as protobuf binary.
+-}
+encodeGetTaskRequestBytes : GetTaskRequest -> Bytes.Encode.Encoder
+encodeGetTaskRequestBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.name
+        ]
+
+
+
+-- BINARY DECODERS
+
+
+{-| A [`State`](#State) from the number protobuf binary carries.
+-}
+decodeStateBytes : Int -> State
+decodeStateBytes number =
+    case number of
+        1 ->
+            StateOpen
+
+        2 ->
+            StateStale
+
+        _ ->
+            StateUnspecified
+
+
+{-| Decodes a [`Task`](#Task) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeTaskBytes : Task -> Proto.Binary.Decoder Task
+mergeTaskBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | name = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | title = v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeStateBytes decodeStateBytes)
+                        (\v ->
+                            { value
+                                | state = v
+                            }
+                        )
+                        wire
+                        value
+
+                4 ->
+                    Proto.Binary.repeated
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | labels = v
+                            }
+                        )
+                        value.labels
+                        wire
+                        value
+
+                5 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | owner = v
+                            }
+                        )
+                        wire
+                        value
+
+                6 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | notes = v
+                            }
+                        )
+                        wire
+                        value
+
+                7 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | due = TaskDueDate v
+                            }
+                        )
+                        wire
+                        value
+
+                8 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | due = TaskDueNever v
+                            }
+                        )
+                        wire
+                        value
+
+                9 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | made = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | labels = List.reverse value.labels
+            }
+        )
+
+
+{-| Decodes a [`Task`](#Task) from protobuf binary.
+-}
+decodeTaskBytes : Proto.Binary.Decoder Task
+decodeTaskBytes =
+    mergeTaskBytes defaultTask
+
+
+{-| Decodes a [`GetTaskRequest`](#GetTaskRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeGetTaskRequestBytes : GetTaskRequest -> Proto.Binary.Decoder GetTaskRequest
+mergeGetTaskRequestBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | name = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`GetTaskRequest`](#GetTaskRequest) from protobuf binary.
+-}
+decodeGetTaskRequestBytes : Proto.Binary.Decoder GetTaskRequest
+decodeGetTaskRequestBytes =
+    mergeGetTaskRequestBytes defaultGetTaskRequest

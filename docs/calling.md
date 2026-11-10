@@ -581,13 +581,14 @@ last four apart by the response's `statusCode`, not by the code.
 ```elm src/Rpc/Error.elm excerpt
 code : Error -> Code
 message : Error -> String
-details : Message a -> Error -> List a
 toString : Error -> String
 ```
 
 Every error has a code and a message. `Rpc.Error.toString` is the two
-for logs (`not_found: no such note`). `Rpc.Error.details` gives the
-status details of one type ([descriptors.md](descriptors.md#error-details)).
+for logs (`not_found: no such note`). An `RpcStatus` error's details
+are `Any`s or the problems that kept them from being read, which
+`Proto.Any.unpack` reads by type
+([descriptors.md](descriptors.md#error-details)).
 
 An `Rpc.Error` is what the call's answer was, and none of its
 constructors fits a failure the application finds in a good answer,
@@ -722,6 +723,7 @@ client : Shared -> Rpc.Client Rpc.Json
 client shared =
     Rpc.client shared.protocol shared.apiUrl
         |> Rpc.Client.withHeaders [ ( "Authorization", "Bearer " ++ shared.token ) ]
+        |> Rpc.withRegistry registry
 ```
 
 Since a call is a value, a wrapper can send it again. Refreshing an

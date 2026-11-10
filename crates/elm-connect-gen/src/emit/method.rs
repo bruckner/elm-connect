@@ -10,12 +10,14 @@
 use super::field::{ValueShape, Zeroed, value_shape};
 use super::route_fn::{Messages, PROTO_ROUTE, Queries, REQUEST};
 use super::scalar::Holding;
-use super::{Emitter, PROTO_HTTP, PROTO_METHOD, RPC, docs};
-use crate::elm::ast::{Decl, Expr, Type};
+use super::{Emitter, PROTO_HTTP, PROTO_JSON, PROTO_METHOD, RPC, docs};
+use crate::elm::ast::{BinOp, Decl, Expr, Pattern, Type};
 use crate::elm::build::{
-    apply, inline_list, list, pipeline, pvar, qualified, record, stacked_apply, string, ty_fn, var,
+    apply, binop, inline_list, lambda, list, pipeline, pvar, qualified, record, stacked_apply,
+    string, ty_fn, var,
 };
 use crate::ir::{Idempotency, Method, TypeRef};
+use crate::naming::with_registry;
 use crate::options::Codec;
 use crate::route::{Body, FieldRef, PathSegment, QueryParam, Route, Segment};
 
@@ -72,9 +74,11 @@ impl Emitter {
     /// `getNote : GetNoteRequest -> Rpc.Call Rpc.Json GetNoteRequest
     /// Note`: `Rpc.call` of the method's `Proto.Method.Method`, built from
     /// its service's full name, its name and its codecs by
-    /// `Proto.Method.json` (the request's JSON encoder, the response's JSON
-    /// decoder), `Proto.Method.proto` (their binary codecs) or
-    /// `Proto.Method.both` (all four) as the `codec` option says, then
+    /// `Proto.Method.initJson` (the request's JSON encoder, the response's
+    /// JSON decoder), `Proto.Method.initProto` (their binary codecs) or
+    /// `Proto.Method.init` (the JSON codecs and the binary codecs) as the
+    /// `codec` option says, the JSON codecs taking the client's registry
+    /// (ignored by a type that reaches no `Any`), then
     /// `withIdempotency` when the proto declares one, and `withRoutes` with
     /// its route functions ([`Self::method_routes`]) or, when one of its
     /// bindings cannot be typed, `withBindings` with its descriptor's
@@ -93,18 +97,18 @@ impl Emitter {
         let request = self.method_type(&method.input);
         let response = self.method_type(&method.output);
         let mut codecs = vec![string(service), string(method.proto_name.clone())];
-        if self.codec.json() {
-            codecs.push(self.request_encoder(&method.input));
-            codecs.push(self.response_decoder(&method.output));
+        if self.wiring.json() {
+            codecs.push(self.request_encoder_with(&method.input));
+            codecs.push(self.response_decoder_with(&method.output));
         }
-        if self.codec.binary() {
+        if self.wiring.binary() {
             codecs.push(self.request_encoder_bytes(&method.input));
             codecs.push(self.response_decoder_bytes(&method.output));
         }
-        let (builder, tag) = match self.codec {
-            Codec::Json => ("json", Some("Json")),
-            Codec::Proto => ("proto", Some("Proto")),
-            Codec::Both => ("both", None),
+        let (builder, tag) = match self.wiring {
+            Codec::Json => ("initJson", Some("Json")),
+            Codec::Proto => ("initProto", Some("Proto")),
+            Codec::Both => ("init", None),
         };
         let built = stacked_apply(self.reference((PROTO_METHOD, builder)), codecs);
         let mut steps = Vec::new();
@@ -144,7 +148,7 @@ impl Emitter {
         };
         let call = self.library_type(RPC, "Call", [codec, request.clone(), response]);
         Decl::Value {
-            doc: Some(docs::method(service, method, self.codec)),
+            doc: Some(docs::method(service, method, self.wiring)),
             name: method.elm_name.clone(),
             annotation: ty_fn([request], call),
             params: Vec::new(),
@@ -166,7 +170,7 @@ impl Emitter {
         queries: &Queries,
         method: &Method,
     ) -> (Vec<Decl>, Routes) {
-        if method.routes.is_empty() || self.codec == Codec::Proto {
+        if method.routes.is_empty() || self.wiring == Codec::Proto {
             return (Vec::new(), Routes::None);
         }
         let mut scratch = self.clone();
@@ -211,6 +215,41 @@ impl Emitter {
             ValueShape::Zeroed(Zeroed::Json) => qualified("Basics", "identity"),
             shape => self.value_encoder(shape),
         }
+    }
+
+    /// The JSON encoder of a method's request type taking the registry,
+    /// which is the client's: the generated `encodeFooWith` of a message that
+    /// reaches an `Any`, `Proto.Json.encodeAnyWith` for an `Any`, and
+    /// otherwise [`Self::request_encoder`]'s under `\_ -> Ok <<`.
+    fn request_encoder_with(&mut self, ty: &TypeRef) -> Expr {
+        let shape = method_shape(ty, self.holding);
+        if self.reaches(shape) {
+            return match ty {
+                TypeRef::Message(name) => {
+                    self.generated_value(&name.module, with_registry(name.encoder_name()))
+                }
+                _ => self.reference((PROTO_JSON, "encodeAnyWith")),
+            };
+        }
+        let encoder = self.request_encoder(ty);
+        let ok = var(self.core("Ok"));
+        lambda([Pattern::Wildcard], binop(BinOp::ComposeL, ok, encoder))
+    }
+
+    /// The JSON decoder of a method's response type taking the registry, as [`Self::request_encoder_with`] finds the
+    /// encoder.
+    fn response_decoder_with(&mut self, ty: &TypeRef) -> Expr {
+        let shape = method_shape(ty, self.holding);
+        if self.reaches(shape) {
+            return match ty {
+                TypeRef::Message(name) => {
+                    self.generated_value(&name.module, with_registry(name.decoder_name()))
+                }
+                _ => self.reference((PROTO_JSON, "anyWith")),
+            };
+        }
+        let decoder = self.response_decoder(ty);
+        lambda([Pattern::Wildcard], decoder)
     }
 
     /// The JSON decoder of a method's response type, as

@@ -34,10 +34,10 @@ Codecs: JSON. Described by [`descriptorSend`](#descriptorSend).
 send : Rpc.V1.Ping -> Rpc.Call Rpc.Json Rpc.V1.Ping Rpc.V1.Ping
 send =
     Rpc.call
-        (Proto.Method.json "rpc.v1.Pinger"
+        (Proto.Method.initJson "rpc.v1.Pinger"
             "Send"
-            Rpc.V1.encodePing
-            Rpc.V1.decodePing
+            (\_ -> Ok << Rpc.V1.encodePing)
+            (\_ -> Rpc.V1.decodePing)
         )
 
 

@@ -20,6 +20,7 @@ import Proto.Json
 import Proto.Message
 import Proto.Registry
 import Proto.Version
+import Proto.WellKnown
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -85,12 +86,11 @@ enumShade =
     Proto.Enum.enum encodeShade decodeShade ShadeUnspecified Codec.Other.V1.Shade.descriptor
 
 
-{-| The typed value of [`Remote`](#Remote): its codecs, default and descriptor together.
+{-| The typed value of [`Remote`](#Remote): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageRemote : Proto.Message.Message Remote
 messageRemote =
-    Proto.Message.message encodeRemote decodeRemote defaultRemote Codec.Other.V1.Remote.descriptor
-        |> Proto.Message.withBinary encodeRemoteBytes decodeRemoteBytes
+    Proto.Message.init "codec.other.v1.Remote" encodeRemote decodeRemote encodeRemoteBytes decodeRemoteBytes
 
 
 
@@ -108,15 +108,15 @@ descriptors =
             [ Codec.Other.V1.Shade.descriptor
             ]
         )
-        Proto.Descriptors.wellKnown
+        Proto.WellKnown.descriptors
 
 
-{-| The protobuf binary codecs of this package's messages, of those of the packages it imports and of the well-known types they hold, by full name: the binary encoders write a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) with it, so that one holding a message's JSON, as one read from proto3 JSON does, is written as the message's binary.
+{-| The codecs of this package's messages, for converting a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) that holds one between proto3 JSON and protobuf binary. It holds no other package's types and no well-known type: give a client the union of the registries its `Any`s need (`Proto.Registry.unionAll`, `Rpc.withRegistry`).
 -}
-binaryRegistry : Proto.Registry.Registry
-binaryRegistry =
+registry : Proto.Registry.Registry
+registry =
     Proto.Registry.empty
-        |> Proto.Registry.withBinary "codec.other.v1.Remote" decodeRemote encodeRemoteBytes
+        |> Proto.Registry.register messageRemote
 
 
 

@@ -1,27 +1,23 @@
-module Proto.Internal.Any exposing (Any(..), Payload(..), jsonOf, nameOf)
+module Proto.Internal.Any exposing (Any(..), empty, nameOf)
 
-{-| The `Any` type, defined here so that `Rpc` can build one from a Connect
-error detail, which `Proto.Any` exposes only opaquely.
+{-| The `Any` type, defined here so that `Rpc` can build one from an error
+detail, which `Proto.Any` exposes only opaquely.
 -}
 
-import Json.Encode
 
-
-{-| A type URL and the packed message.
+{-| A type URL and the packed message's protobuf binary, as base64. The binary
+is held as text, not `Bytes`, so that `==` compares two `Any`s by their
+content.
 -}
 type Any
-    = Any String Payload
+    = Any String String
 
 
-{-| The packed message: its proto3 JSON form (for a well-known type with a
-JSON form of its own, that form, not the `"value"` object around it), or only
-its protobuf binary, base64-encoded, when nothing gave its JSON, or both, when
-it was packed from a value whose message has binary codecs.
+{-| The empty `Any`, with no type URL.
 -}
-type Payload
-    = InJson Json.Encode.Value
-    | InBinary String
-    | InBoth Json.Encode.Value String
+empty : Any
+empty =
+    Any "" ""
 
 
 {-| A message's full name from its type URL: the URL after its last `/`.
@@ -32,18 +28,3 @@ nameOf url =
         |> List.reverse
         |> List.head
         |> Maybe.withDefault url
-
-
-{-| The packed message's JSON, `null` when only its binary arrived.
--}
-jsonOf : Payload -> Json.Encode.Value
-jsonOf payload =
-    case payload of
-        InJson json ->
-            json
-
-        InBoth json _ ->
-            json
-
-        InBinary _ ->
-            Json.Encode.null

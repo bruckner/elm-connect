@@ -16,7 +16,7 @@ import Live.Codec exposing (entry)
 table : List ( ( String, String ), Entry msg )
 table =
     List.map (\( name, e ) -> ( ( "connectrpc.conformance.v1.ConformanceService", name ), e ))
-        [ ( "Unary", entry Service.unary Service.unary V1.decodeUnaryRequest V1.messageUnaryResponse )
-        , ( "IdempotentUnary", entry Service.idempotentUnary Service.idempotentUnary V1.decodeIdempotentUnaryRequest V1.messageIdempotentUnaryResponse )
+        [ ( "Unary", entry Service.unary Service.unary (V1.decodeUnaryRequestWith Live.Codec.registry) V1.messageUnaryResponse )
+        , ( "IdempotentUnary", entry Service.idempotentUnary Service.idempotentUnary (V1.decodeIdempotentUnaryRequestWith Live.Codec.registry) V1.messageIdempotentUnaryResponse )
         , ( "Unimplemented", entry Service.unimplemented Service.unimplemented V1.decodeUnimplementedRequest V1.messageUnimplementedResponse )
         ]

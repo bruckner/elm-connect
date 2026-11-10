@@ -39,10 +39,10 @@ Codecs: JSON. Described by [`descriptorListArchived`](#descriptorListArchived).
 listArchived : Msgs.V1.MessageRequest -> Rpc.Call Rpc.Json Msgs.V1.MessageRequest Msgs.V1.Message
 listArchived =
     Rpc.call
-        (Proto.Method.json "msgs.v1.Archive"
+        (Proto.Method.initJson "msgs.v1.Archive"
             "ListArchived"
-            Msgs.V1.encodeMessageRequest
-            Msgs.V1.decodeMessage
+            (\_ -> Ok << Msgs.V1.encodeMessageRequest)
+            (\_ -> Msgs.V1.decodeMessage)
             |> Proto.Method.withRoutes [ routeListArchived0 ]
         )
 

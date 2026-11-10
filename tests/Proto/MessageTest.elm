@@ -35,7 +35,7 @@ suite =
     describe "Proto.Message"
         [ test "a message's oneofs are the ones its fields name, in order of first appearance" <|
             \_ ->
-                ( Message.typeName event, Message.oneofs event, List.map Field.oneof (Message.fields event) )
+                ( Message.fullName event, Message.oneofs event, List.map Field.oneof (Message.fields event) )
                     |> Expect.equal ( "t.v1.Event", [ "body", "source" ], [ Nothing, Just "body", Just "source", Just "body", Nothing ] )
         , test "a field reads back what built it, and nothing more until a modifier says so" <|
             \_ ->

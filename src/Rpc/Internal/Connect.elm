@@ -177,7 +177,7 @@ base64Url =
 
 {-| Connect carries a timeout in `Connect-Timeout-Ms`.
 -}
-connectTimeout : Maybe Route -> Maybe ( String, Float -> String )
+connectTimeout : Bool -> Maybe ( String, Float -> String )
 connectTimeout _ =
     Just ( "Connect-Timeout-Ms", Internal.timeoutMs )
 

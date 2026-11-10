@@ -15,13 +15,17 @@ and a method's doc too.
 import Awkward.V1.Delimiters
 import Awkward.V1.Docs
 import Awkward.V1.Marks
+import Bytes.Encode
 import Json.Decode
 import Json.Encode
+import Proto.Binary
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 import Proto.Version
+import Proto.WellKnown
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -196,18 +200,18 @@ enumMarks =
     Proto.Enum.enum encodeMarks decodeMarks MarksUnspecified Awkward.V1.Marks.descriptor
 
 
-{-| The typed value of [`Delimiters`](#Delimiters): its codecs, default and descriptor together.
+{-| The typed value of [`Delimiters`](#Delimiters): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageDelimiters : Proto.Message.Message Delimiters
 messageDelimiters =
-    Proto.Message.message encodeDelimiters decodeDelimiters defaultDelimiters Awkward.V1.Delimiters.descriptor
+    Proto.Message.init "awkward.v1.Delimiters" encodeDelimiters decodeDelimiters encodeDelimitersBytes decodeDelimitersBytes
 
 
-{-| The typed value of [`Docs`](#Docs): its codecs, default and descriptor together.
+{-| The typed value of [`Docs`](#Docs): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageDocs : Proto.Message.Message Docs
 messageDocs =
-    Proto.Message.message encodeDocs decodeDocs defaultDocs Awkward.V1.Docs.descriptor
+    Proto.Message.init "awkward.v1.Docs" encodeDocs decodeDocs encodeDocsBytes decodeDocsBytes
 
 
 
@@ -226,7 +230,16 @@ descriptors =
             [ Awkward.V1.Marks.descriptor
             ]
         )
-        Proto.Descriptors.wellKnown
+        Proto.WellKnown.descriptors
+
+
+{-| The codecs of this package's messages, for converting a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) that holds one between proto3 JSON and protobuf binary. It holds no other package's types and no well-known type: give a client the union of the registries its `Any`s need (`Proto.Registry.unionAll`, `Rpc.withRegistry`).
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.empty
+        |> Proto.Registry.register messageDelimiters
+        |> Proto.Registry.register messageDocs
 
 
 
@@ -308,3 +321,193 @@ decodeDocs : Json.Decode.Decoder Docs
 decodeDocs =
     Json.Decode.succeed Docs
         |> Proto.Json.field "field" "" Proto.Json.string
+
+
+
+-- BINARY ENCODERS
+
+
+{-| The number protobuf binary writes a [`Marks`](#Marks) as.
+-}
+encodeMarksBytes : Marks -> Int
+encodeMarksBytes value =
+    case value of
+        MarksUnspecified ->
+            0
+
+        MarksList ->
+            1
+
+        MarksDelimited ->
+            2
+
+
+{-| Encodes a [`Delimiters`](#Delimiters) as protobuf binary.
+-}
+encodeDelimitersBytes : Delimiters -> Bytes.Encode.Encoder
+encodeDelimitersBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.lists
+        , Proto.Binary.implicit Proto.Binary.string 2 value.blocks
+        , Proto.Binary.implicit Proto.Binary.string 3 value.code
+        , Proto.Binary.implicit Proto.Binary.string 4 value.inline
+        , Proto.Binary.implicit Proto.Binary.string 5 value.text
+        , Proto.Binary.implicit Proto.Binary.string 6 value.whitespaceOnly
+        , Proto.Binary.implicit Proto.Binary.string 7 value.unclosed
+        ]
+
+
+{-| Encodes a [`Docs`](#Docs) as protobuf binary.
+-}
+encodeDocsBytes : Docs -> Bytes.Encode.Encoder
+encodeDocsBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.field
+        ]
+
+
+
+-- BINARY DECODERS
+
+
+{-| A [`Marks`](#Marks) from the number protobuf binary carries.
+-}
+decodeMarksBytes : Int -> Marks
+decodeMarksBytes number =
+    case number of
+        1 ->
+            MarksList
+
+        2 ->
+            MarksDelimited
+
+        _ ->
+            MarksUnspecified
+
+
+{-| Decodes a [`Delimiters`](#Delimiters) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeDelimitersBytes : Delimiters -> Proto.Binary.Decoder Delimiters
+mergeDelimitersBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | lists = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | blocks = v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | code = v
+                            }
+                        )
+                        wire
+                        value
+
+                4 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | inline = v
+                            }
+                        )
+                        wire
+                        value
+
+                5 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | text = v
+                            }
+                        )
+                        wire
+                        value
+
+                6 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | whitespaceOnly = v
+                            }
+                        )
+                        wire
+                        value
+
+                7 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | unclosed = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`Delimiters`](#Delimiters) from protobuf binary.
+-}
+decodeDelimitersBytes : Proto.Binary.Decoder Delimiters
+decodeDelimitersBytes =
+    mergeDelimitersBytes defaultDelimiters
+
+
+{-| Decodes a [`Docs`](#Docs) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeDocsBytes : Docs -> Proto.Binary.Decoder Docs
+mergeDocsBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | field = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`Docs`](#Docs) from protobuf binary.
+-}
+decodeDocsBytes : Proto.Binary.Decoder Docs
+decodeDocsBytes =
+    mergeDocsBytes defaultDocs

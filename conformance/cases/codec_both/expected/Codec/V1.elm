@@ -41,6 +41,7 @@ import Proto.Json
 import Proto.Message
 import Proto.Registry
 import Proto.Version
+import Proto.WellKnown
 import Time
 
 
@@ -768,116 +769,102 @@ enumOuterMode =
     Proto.Enum.enum encodeOuterMode decodeOuterMode OuterModeUnspecified Codec.V1.OuterMode.descriptor
 
 
-{-| The typed value of [`Scalars`](#Scalars): its codecs, default and descriptor together.
+{-| The typed value of [`Scalars`](#Scalars): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageScalars : Proto.Message.Message Scalars
 messageScalars =
-    Proto.Message.message encodeScalars decodeScalars defaultScalars Codec.V1.Scalars.descriptor
-        |> Proto.Message.withBinary encodeScalarsBytes decodeScalarsBytes
+    Proto.Message.init "codec.v1.Scalars" encodeScalars decodeScalars encodeScalarsBytes decodeScalarsBytes
 
 
-{-| The typed value of [`Optionals`](#Optionals): its codecs, default and descriptor together.
+{-| The typed value of [`Optionals`](#Optionals): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageOptionals : Proto.Message.Message Optionals
 messageOptionals =
-    Proto.Message.message encodeOptionals decodeOptionals defaultOptionals Codec.V1.Optionals.descriptor
-        |> Proto.Message.withBinary encodeOptionalsBytes decodeOptionalsBytes
+    Proto.Message.init "codec.v1.Optionals" encodeOptionals decodeOptionals encodeOptionalsBytes decodeOptionalsBytes
 
 
-{-| The typed value of [`Repeated`](#Repeated): its codecs, default and descriptor together.
+{-| The typed value of [`Repeated`](#Repeated): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageRepeated : Proto.Message.Message Repeated
 messageRepeated =
-    Proto.Message.message encodeRepeated decodeRepeated defaultRepeated Codec.V1.Repeated.descriptor
-        |> Proto.Message.withBinary encodeRepeatedBytes decodeRepeatedBytes
+    Proto.Message.init "codec.v1.Repeated" encodeRepeated decodeRepeated encodeRepeatedBytes decodeRepeatedBytes
 
 
-{-| The typed value of [`Maps`](#Maps): its codecs, default and descriptor together.
+{-| The typed value of [`Maps`](#Maps): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageMaps : Proto.Message.Message Maps
 messageMaps =
-    Proto.Message.message encodeMaps decodeMaps defaultMaps Codec.V1.Maps.descriptor
-        |> Proto.Message.withBinary encodeMapsBytes decodeMapsBytes
+    Proto.Message.init "codec.v1.Maps" encodeMaps decodeMaps encodeMapsBytes decodeMapsBytes
 
 
-{-| The typed value of [`Choice`](#Choice): its codecs, default and descriptor together.
+{-| The typed value of [`Choice`](#Choice): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageChoice : Proto.Message.Message Choice
 messageChoice =
-    Proto.Message.message encodeChoice decodeChoice defaultChoice Codec.V1.Choice.descriptor
-        |> Proto.Message.withBinary encodeChoiceBytes decodeChoiceBytes
+    Proto.Message.init "codec.v1.Choice" encodeChoice decodeChoice encodeChoiceBytes decodeChoiceBytes
 
 
-{-| The typed value of [`Names`](#Names): its codecs, default and descriptor together.
+{-| The typed value of [`Names`](#Names): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageNames : Proto.Message.Message Names
 messageNames =
-    Proto.Message.message encodeNames decodeNames defaultNames Codec.V1.Names.descriptor
-        |> Proto.Message.withBinary encodeNamesBytes decodeNamesBytes
+    Proto.Message.init "codec.v1.Names" encodeNames decodeNames encodeNamesBytes decodeNamesBytes
 
 
-{-| The typed value of [`Outer`](#Outer): its codecs, default and descriptor together.
+{-| The typed value of [`Outer`](#Outer): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageOuter : Proto.Message.Message Outer
 messageOuter =
-    Proto.Message.message encodeOuter decodeOuter defaultOuter Codec.V1.Outer.descriptor
-        |> Proto.Message.withBinary encodeOuterBytes decodeOuterBytes
+    Proto.Message.init "codec.v1.Outer" encodeOuter decodeOuter encodeOuterBytes decodeOuterBytes
 
 
-{-| The typed value of [`OuterInner`](#OuterInner): its codecs, default and descriptor together.
+{-| The typed value of [`OuterInner`](#OuterInner): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageOuterInner : Proto.Message.Message OuterInner
 messageOuterInner =
-    Proto.Message.message encodeOuterInner decodeOuterInner defaultOuterInner Codec.V1.OuterInner.descriptor
-        |> Proto.Message.withBinary encodeOuterInnerBytes decodeOuterInnerBytes
+    Proto.Message.init "codec.v1.Outer.Inner" encodeOuterInner decodeOuterInner encodeOuterInnerBytes decodeOuterInnerBytes
 
 
-{-| The typed value of [`Tree`](#Tree): its codecs, default and descriptor together.
+{-| The typed value of [`Tree`](#Tree): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageTree : Proto.Message.Message Tree
 messageTree =
-    Proto.Message.message encodeTree decodeTree defaultTree Codec.V1.Tree.descriptor
-        |> Proto.Message.withBinary encodeTreeBytes decodeTreeBytes
+    Proto.Message.init "codec.v1.Tree" encodeTree decodeTree encodeTreeBytes decodeTreeBytes
 
 
-{-| The typed value of [`WellKnown`](#WellKnown): its codecs, default and descriptor together.
+{-| The typed value of [`WellKnown`](#WellKnown): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageWellKnown : Proto.Message.Message WellKnown
 messageWellKnown =
-    Proto.Message.message encodeWellKnown decodeWellKnown defaultWellKnown Codec.V1.WellKnown.descriptor
-        |> Proto.Message.withBinary encodeWellKnownBytes decodeWellKnownBytes
+    Proto.Message.initWith "codec.v1.WellKnown" encodeWellKnownWith decodeWellKnownWith encodeWellKnownBytes decodeWellKnownBytes
 
 
-{-| The typed value of [`Wrappers`](#Wrappers): its codecs, default and descriptor together.
+{-| The typed value of [`Wrappers`](#Wrappers): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageWrappers : Proto.Message.Message Wrappers
 messageWrappers =
-    Proto.Message.message encodeWrappers decodeWrappers defaultWrappers Codec.V1.Wrappers.descriptor
-        |> Proto.Message.withBinary encodeWrappersBytes decodeWrappersBytes
+    Proto.Message.init "codec.v1.Wrappers" encodeWrappers decodeWrappers encodeWrappersBytes decodeWrappersBytes
 
 
-{-| The typed value of [`Across`](#Across): its codecs, default and descriptor together.
+{-| The typed value of [`Across`](#Across): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageAcross : Proto.Message.Message Across
 messageAcross =
-    Proto.Message.message encodeAcross decodeAcross defaultAcross Codec.V1.Across.descriptor
-        |> Proto.Message.withBinary encodeAcrossBytes decodeAcrossBytes
+    Proto.Message.init "codec.v1.Across" encodeAcross decodeAcross encodeAcrossBytes decodeAcrossBytes
 
 
-{-| The typed value of [`Leaf`](#Leaf): its codecs, default and descriptor together.
+{-| The typed value of [`Leaf`](#Leaf): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageLeaf : Proto.Message.Message Leaf
 messageLeaf =
-    Proto.Message.message encodeLeaf decodeLeaf defaultLeaf Codec.V1.Leaf.descriptor
-        |> Proto.Message.withBinary encodeLeafBytes decodeLeafBytes
+    Proto.Message.init "codec.v1.Leaf" encodeLeaf decodeLeaf encodeLeafBytes decodeLeafBytes
 
 
-{-| The typed value of [`Everything`](#Everything): its codecs, default and descriptor together.
+{-| The typed value of [`Everything`](#Everything): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageEverything : Proto.Message.Message Everything
 messageEverything =
-    Proto.Message.message encodeEverything decodeEverything defaultEverything Codec.V1.Everything.descriptor
-        |> Proto.Message.withBinary encodeEverythingBytes decodeEverythingBytes
+    Proto.Message.initWith "codec.v1.Everything" encodeEverythingWith decodeEverythingWith encodeEverythingBytes decodeEverythingBytes
 
 
 
@@ -909,45 +896,28 @@ descriptors =
             , Codec.V1.OuterMode.descriptor
             ]
         )
-        (Proto.Descriptors.union Codec.Other.V1.descriptors Proto.Descriptors.wellKnown)
+        (Proto.Descriptors.union Codec.Other.V1.descriptors Proto.WellKnown.descriptors)
 
 
-{-| The protobuf binary codecs of this package's messages, of those of the packages it imports and of the well-known types they hold, by full name: the binary encoders write a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) with it, so that one holding a message's JSON, as one read from proto3 JSON does, is written as the message's binary.
+{-| The codecs of this package's messages, for converting a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) that holds one between proto3 JSON and protobuf binary. It holds no other package's types and no well-known type: give a client the union of the registries its `Any`s need (`Proto.Registry.unionAll`, `Rpc.withRegistry`).
 -}
-binaryRegistry : Proto.Registry.Registry
-binaryRegistry =
-    Codec.Other.V1.binaryRegistry
-        |> Proto.Registry.withBinary "codec.v1.Scalars" decodeScalars encodeScalarsBytes
-        |> Proto.Registry.withBinary "codec.v1.Optionals" decodeOptionals encodeOptionalsBytes
-        |> Proto.Registry.withBinary "codec.v1.Repeated" decodeRepeated encodeRepeatedBytes
-        |> Proto.Registry.withBinary "codec.v1.Maps" decodeMaps encodeMapsBytes
-        |> Proto.Registry.withBinary "codec.v1.Choice" decodeChoice encodeChoiceBytes
-        |> Proto.Registry.withBinary "codec.v1.Names" decodeNames encodeNamesBytes
-        |> Proto.Registry.withBinary "codec.v1.Outer" decodeOuter encodeOuterBytes
-        |> Proto.Registry.withBinary "codec.v1.Outer.Inner" decodeOuterInner encodeOuterInnerBytes
-        |> Proto.Registry.withBinary "codec.v1.Tree" decodeTree encodeTreeBytes
-        |> Proto.Registry.withBinary "codec.v1.WellKnown" decodeWellKnown encodeWellKnownBytes
-        |> Proto.Registry.withBinary "codec.v1.Wrappers" decodeWrappers encodeWrappersBytes
-        |> Proto.Registry.withBinary "codec.v1.Across" decodeAcross encodeAcrossBytes
-        |> Proto.Registry.withBinary "codec.v1.Leaf" decodeLeaf encodeLeafBytes
-        |> Proto.Registry.withBinary "codec.v1.Everything" decodeEverything encodeEverythingBytes
-        |> Proto.Registry.withBinary "google.protobuf.Timestamp" Proto.Json.timestamp (Proto.Binary.messageEncoder Proto.Binary.timestamp)
-        |> Proto.Registry.withBinary "google.protobuf.Duration" Proto.Json.duration (Proto.Binary.messageEncoder Proto.Binary.duration)
-        |> Proto.Registry.withBinary "google.protobuf.FieldMask" Proto.Json.fieldMask (Proto.Binary.messageEncoder Proto.Binary.fieldMask)
-        |> Proto.Registry.withBinary "google.protobuf.Empty" Proto.Json.empty (Proto.Binary.messageEncoder Proto.Binary.empty)
-        |> Proto.Registry.withBinary "google.protobuf.Any" Proto.Json.any (\value -> Proto.Binary.messageEncoder (Proto.Binary.anyWith binaryRegistry) value)
-        |> Proto.Registry.withBinary "google.protobuf.Struct" Proto.Json.struct (Proto.Binary.messageEncoder Proto.Binary.struct)
-        |> Proto.Registry.withBinary "google.protobuf.Value" Json.Decode.value (Proto.Binary.messageEncoder Proto.Binary.value)
-        |> Proto.Registry.withBinary "google.protobuf.ListValue" Proto.Json.listValue (Proto.Binary.messageEncoder Proto.Binary.listValue)
-        |> Proto.Registry.withBinary "google.protobuf.DoubleValue" Proto.Json.float (Proto.Binary.messageEncoder Proto.Binary.doubleValue)
-        |> Proto.Registry.withBinary "google.protobuf.FloatValue" Proto.Json.float32 (Proto.Binary.messageEncoder Proto.Binary.floatValue)
-        |> Proto.Registry.withBinary "google.protobuf.Int64Value" Proto.Json.int64 (Proto.Binary.messageEncoder Proto.Binary.int64Value)
-        |> Proto.Registry.withBinary "google.protobuf.UInt64Value" Proto.Json.uint64 (Proto.Binary.messageEncoder Proto.Binary.uint64Value)
-        |> Proto.Registry.withBinary "google.protobuf.Int32Value" Proto.Json.int32 (Proto.Binary.messageEncoder Proto.Binary.int32Value)
-        |> Proto.Registry.withBinary "google.protobuf.UInt32Value" Proto.Json.uint32 (Proto.Binary.messageEncoder Proto.Binary.uint32Value)
-        |> Proto.Registry.withBinary "google.protobuf.BoolValue" Json.Decode.bool (Proto.Binary.messageEncoder Proto.Binary.boolValue)
-        |> Proto.Registry.withBinary "google.protobuf.StringValue" Proto.Json.string (Proto.Binary.messageEncoder Proto.Binary.stringValue)
-        |> Proto.Registry.withBinary "google.protobuf.BytesValue" Proto.Json.bytes (Proto.Binary.messageEncoder Proto.Binary.bytesValue)
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.empty
+        |> Proto.Registry.register messageScalars
+        |> Proto.Registry.register messageOptionals
+        |> Proto.Registry.register messageRepeated
+        |> Proto.Registry.register messageMaps
+        |> Proto.Registry.register messageChoice
+        |> Proto.Registry.register messageNames
+        |> Proto.Registry.register messageOuter
+        |> Proto.Registry.register messageOuterInner
+        |> Proto.Registry.register messageTree
+        |> Proto.Registry.register messageWellKnown
+        |> Proto.Registry.register messageWrappers
+        |> Proto.Registry.register messageAcross
+        |> Proto.Registry.register messageLeaf
+        |> Proto.Registry.register messageEverything
 
 
 
@@ -1236,29 +1206,29 @@ encodeTreeLink value =
             ]
 
 
-{-| Encodes a [`WellKnown`](#WellKnown) as proto3 JSON.
+{-| Encodes a [`WellKnown`](#WellKnown) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeWellKnown : WellKnown -> Json.Encode.Value
-encodeWellKnown value =
-    Proto.Json.objectOfFields
-        [ ( "any", Maybe.map Proto.Json.encodeAny value.any )
-        , ( "struct", Maybe.map Proto.Json.encodeStruct value.struct )
-        , ( "list", Maybe.map Proto.Json.encodeListValue value.list )
-        , ( "value", value.value )
-        , ( "timestamp", Maybe.map Proto.Json.encodeTimestamp value.timestamp )
-        , ( "duration", Maybe.map Proto.Json.encodeDuration value.duration )
-        , ( "mask", Maybe.map Proto.Json.encodeFieldMask value.mask )
-        , ( "empty", Just (Proto.Json.encodeEmpty value.empty) )
-        , ( "anys", Proto.Json.repeatedField Proto.Json.encodeAny value.anys )
-        , ( "values", Proto.Json.repeatedField identity value.values )
-        , ( "valueMap", Proto.Json.dictField identity identity value.valueMap )
-        , ( "timestamps", Proto.Json.repeatedField Proto.Json.encodeTimestamp value.timestamps )
-        , ( "durations", Proto.Json.repeatedField Proto.Json.encodeDuration value.durations )
-        , ( "empties", Proto.Json.repeatedField Proto.Json.encodeEmpty value.empties )
-        , ( "structs", Proto.Json.dictField String.fromInt Proto.Json.encodeStruct value.structs )
-        , ( "nullValue", Proto.Json.implicitField () Proto.Json.encodeNullValue value.nullValue )
-        , ( "nullValues", Proto.Json.repeatedField Proto.Json.encodeNullValue value.nullValues )
-        , ( "nullMap", Proto.Json.dictField identity Proto.Json.encodeNullValue value.nullMap )
+encodeWellKnownWith : Proto.Registry.Registry -> WellKnown -> Result Proto.Any.Problem Json.Encode.Value
+encodeWellKnownWith types value =
+    Proto.Json.tryObjectOfFields
+        [ ( "any", Proto.Json.tryOptionalField (Proto.Json.encodeAnyWith types) value.any )
+        , ( "struct", Ok (Maybe.map Proto.Json.encodeStruct value.struct) )
+        , ( "list", Ok (Maybe.map Proto.Json.encodeListValue value.list) )
+        , ( "value", Ok value.value )
+        , ( "timestamp", Ok (Maybe.map Proto.Json.encodeTimestamp value.timestamp) )
+        , ( "duration", Ok (Maybe.map Proto.Json.encodeDuration value.duration) )
+        , ( "mask", Ok (Maybe.map Proto.Json.encodeFieldMask value.mask) )
+        , ( "empty", Ok (Just (Proto.Json.encodeEmpty value.empty)) )
+        , ( "anys", Proto.Json.tryRepeatedField (Proto.Json.encodeAnyWith types) value.anys )
+        , ( "values", Ok (Proto.Json.repeatedField identity value.values) )
+        , ( "valueMap", Ok (Proto.Json.dictField identity identity value.valueMap) )
+        , ( "timestamps", Ok (Proto.Json.repeatedField Proto.Json.encodeTimestamp value.timestamps) )
+        , ( "durations", Ok (Proto.Json.repeatedField Proto.Json.encodeDuration value.durations) )
+        , ( "empties", Ok (Proto.Json.repeatedField Proto.Json.encodeEmpty value.empties) )
+        , ( "structs", Ok (Proto.Json.dictField String.fromInt Proto.Json.encodeStruct value.structs) )
+        , ( "nullValue", Ok (Proto.Json.implicitField () Proto.Json.encodeNullValue value.nullValue) )
+        , ( "nullValues", Ok (Proto.Json.repeatedField Proto.Json.encodeNullValue value.nullValues) )
+        , ( "nullMap", Ok (Proto.Json.dictField identity Proto.Json.encodeNullValue value.nullMap) )
         ]
 
 
@@ -1303,31 +1273,31 @@ encodeLeaf value =
         ]
 
 
-{-| Encodes an [`Everything`](#Everything) as proto3 JSON.
+{-| Encodes an [`Everything`](#Everything) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeEverything : Everything -> Json.Encode.Value
-encodeEverything value =
-    Proto.Json.objectOfFields
-        [ ( "scalars", Maybe.map encodeScalars value.scalars )
-        , ( "optionals", Maybe.map encodeOptionals value.optionals )
-        , ( "repeated", Maybe.map encodeRepeated value.repeated )
-        , ( "maps", Maybe.map encodeMaps value.maps )
-        , ( "choice", Maybe.map encodeChoice value.choice )
-        , ( "names", Maybe.map encodeNames value.names )
-        , ( "outer", Maybe.map encodeOuter value.outer )
-        , ( "tree", Maybe.map encodeTree value.tree )
-        , ( "wellKnown", Maybe.map encodeWellKnown value.wellKnown )
-        , ( "wrappers", Maybe.map encodeWrappers value.wrappers )
-        , ( "across", Maybe.map encodeAcross value.across )
-        , ( "more", Proto.Json.repeatedField encodeEverything_ value.more )
+encodeEverythingWith : Proto.Registry.Registry -> Everything -> Result Proto.Any.Problem Json.Encode.Value
+encodeEverythingWith types value =
+    Proto.Json.tryObjectOfFields
+        [ ( "scalars", Ok (Maybe.map encodeScalars value.scalars) )
+        , ( "optionals", Ok (Maybe.map encodeOptionals value.optionals) )
+        , ( "repeated", Ok (Maybe.map encodeRepeated value.repeated) )
+        , ( "maps", Ok (Maybe.map encodeMaps value.maps) )
+        , ( "choice", Ok (Maybe.map encodeChoice value.choice) )
+        , ( "names", Ok (Maybe.map encodeNames value.names) )
+        , ( "outer", Ok (Maybe.map encodeOuter value.outer) )
+        , ( "tree", Ok (Maybe.map encodeTree value.tree) )
+        , ( "wellKnown", Proto.Json.tryOptionalField (encodeWellKnownWith types) value.wellKnown )
+        , ( "wrappers", Ok (Maybe.map encodeWrappers value.wrappers) )
+        , ( "across", Ok (Maybe.map encodeAcross value.across) )
+        , ( "more", Proto.Json.tryRepeatedField (encodeEverything_With types) value.more )
         ]
 
 
-{-| Encodes an [`Everything_`](#Everything_) as proto3 JSON.
+{-| Encodes an [`Everything_`](#Everything_) as proto3 JSON, writing each `Any` it holds with the registry.
 -}
-encodeEverything_ : Everything_ -> Json.Encode.Value
-encodeEverything_ (Everything_ value) =
-    encodeEverything value
+encodeEverything_With : Proto.Registry.Registry -> Everything_ -> Result Proto.Any.Problem Json.Encode.Value
+encodeEverything_With types (Everything_ value) =
+    encodeEverythingWith types value
 
 
 
@@ -1545,12 +1515,12 @@ decodeTreeLink =
         ]
 
 
-{-| Decodes a [`WellKnown`](#WellKnown) from proto3 JSON.
+{-| Decodes a [`WellKnown`](#WellKnown) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
 -}
-decodeWellKnown : Json.Decode.Decoder WellKnown
-decodeWellKnown =
+decodeWellKnownWith : Proto.Registry.Registry -> Json.Decode.Decoder WellKnown
+decodeWellKnownWith types =
     Json.Decode.succeed WellKnown
-        |> Proto.Json.field "any" Nothing (Json.Decode.map Just Proto.Json.any)
+        |> Proto.Json.field "any" Nothing (Json.Decode.map Just (Proto.Json.anyWith types))
         |> Proto.Json.field "struct" Nothing (Json.Decode.map Just Proto.Json.struct)
         |> Proto.Json.field "list" Nothing (Json.Decode.map Just Proto.Json.listValue)
         |> Proto.Json.valueField "value"
@@ -1558,7 +1528,7 @@ decodeWellKnown =
         |> Proto.Json.field "duration" Nothing (Json.Decode.map Just Proto.Json.duration)
         |> Proto.Json.field "mask" Nothing (Json.Decode.map Just Proto.Json.fieldMask)
         |> Proto.Json.field "empty" () Proto.Json.empty
-        |> Proto.Json.field "anys" [] (Json.Decode.list Proto.Json.any)
+        |> Proto.Json.field "anys" [] (Json.Decode.list (Proto.Json.anyWith types))
         |> Proto.Json.field "values" [] (Json.Decode.list Json.Decode.value)
         |> Proto.Json.fieldEither "valueMap" "value_map" Dict.empty (Proto.Json.stringDict Json.Decode.value)
         |> Proto.Json.field "timestamps" [] (Json.Decode.list Proto.Json.timestamp)
@@ -1608,10 +1578,10 @@ decodeLeaf =
         |> Proto.Json.field "count" 0 Proto.Json.int32
 
 
-{-| Decodes an [`Everything`](#Everything) from proto3 JSON.
+{-| Decodes an [`Everything`](#Everything) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
 -}
-decodeEverything : Json.Decode.Decoder Everything
-decodeEverything =
+decodeEverythingWith : Proto.Registry.Registry -> Json.Decode.Decoder Everything
+decodeEverythingWith types =
     Json.Decode.succeed Everything
         |> Proto.Json.field "scalars" Nothing (Json.Decode.map Just decodeScalars)
         |> Proto.Json.field "optionals" Nothing (Json.Decode.map Just decodeOptionals)
@@ -1621,17 +1591,17 @@ decodeEverything =
         |> Proto.Json.field "names" Nothing (Json.Decode.map Just decodeNames)
         |> Proto.Json.field "outer" Nothing (Json.Decode.map Just decodeOuter)
         |> Proto.Json.field "tree" Nothing (Json.Decode.map Just decodeTree)
-        |> Proto.Json.fieldEither "wellKnown" "well_known" Nothing (Json.Decode.map Just decodeWellKnown)
+        |> Proto.Json.fieldEither "wellKnown" "well_known" Nothing (Json.Decode.map Just (decodeWellKnownWith types))
         |> Proto.Json.field "wrappers" Nothing (Json.Decode.map Just decodeWrappers)
         |> Proto.Json.field "across" Nothing (Json.Decode.map Just decodeAcross)
-        |> Proto.Json.field "more" [] (Json.Decode.list decodeEverything_)
+        |> Proto.Json.field "more" [] (Json.Decode.list (decodeEverything_With types))
 
 
-{-| Decodes an [`Everything_`](#Everything_) from proto3 JSON.
+{-| Decodes an [`Everything_`](#Everything_) from proto3 JSON, reading each `Any` it holds with the registry.
 -}
-decodeEverything_ : Json.Decode.Decoder Everything_
-decodeEverything_ =
-    Json.Decode.map Everything_ (Json.Decode.lazy (\_ -> decodeEverything))
+decodeEverything_With : Proto.Registry.Registry -> Json.Decode.Decoder Everything_
+decodeEverything_With types =
+    Json.Decode.map Everything_ (Json.Decode.lazy (\_ -> decodeEverythingWith types))
 
 
 
@@ -1949,7 +1919,7 @@ encodeTreeLinkBytes value =
 encodeWellKnownBytes : WellKnown -> Bytes.Encode.Encoder
 encodeWellKnownBytes value =
     Bytes.Encode.sequence
-        [ Proto.Binary.optional (Proto.Binary.anyWith binaryRegistry) 1 value.any
+        [ Proto.Binary.optional Proto.Binary.any 1 value.any
         , Proto.Binary.optional Proto.Binary.struct 2 value.struct
         , Proto.Binary.optional Proto.Binary.listValue 3 value.list
         , Proto.Binary.optional Proto.Binary.value 4 value.value
@@ -1957,7 +1927,7 @@ encodeWellKnownBytes value =
         , Proto.Binary.optional Proto.Binary.duration 6 value.duration
         , Proto.Binary.optional Proto.Binary.fieldMask 7 value.mask
         , Proto.Binary.present Proto.Binary.empty 8 value.empty
-        , Proto.Binary.list (Proto.Binary.anyWith binaryRegistry) 9 value.anys
+        , Proto.Binary.list Proto.Binary.any 9 value.anys
         , Proto.Binary.list Proto.Binary.value 10 value.values
         , Proto.Binary.dict Proto.Binary.string Proto.Binary.value 11 value.valueMap
         , Proto.Binary.list Proto.Binary.timestamp 12 value.timestamps

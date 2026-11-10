@@ -9,17 +9,21 @@ case, held in one record field. Encoded as the set member alone;
 decoded from the one member present and not null, else unset.
 -}
 
+import Bytes.Encode
 import Json.Decode
 import Json.Encode
 import Oneofs.V1.Choice
 import Oneofs.V1.Color
 import Oneofs.V1.Created
 import Oneofs.V1.NoteEvent
+import Proto.Binary
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 import Proto.Version
+import Proto.WellKnown
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -177,25 +181,25 @@ enumColor =
     Proto.Enum.enum encodeColor decodeColor ColorUnspecified Oneofs.V1.Color.descriptor
 
 
-{-| The typed value of [`Created`](#Created): its codecs, default and descriptor together.
+{-| The typed value of [`Created`](#Created): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageCreated : Proto.Message.Message Created
 messageCreated =
-    Proto.Message.message encodeCreated decodeCreated defaultCreated Oneofs.V1.Created.descriptor
+    Proto.Message.init "oneofs.v1.Created" encodeCreated decodeCreated encodeCreatedBytes decodeCreatedBytes
 
 
-{-| The typed value of [`NoteEvent`](#NoteEvent): its codecs, default and descriptor together.
+{-| The typed value of [`NoteEvent`](#NoteEvent): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageNoteEvent : Proto.Message.Message NoteEvent
 messageNoteEvent =
-    Proto.Message.message encodeNoteEvent decodeNoteEvent defaultNoteEvent Oneofs.V1.NoteEvent.descriptor
+    Proto.Message.init "oneofs.v1.NoteEvent" encodeNoteEvent decodeNoteEvent encodeNoteEventBytes decodeNoteEventBytes
 
 
-{-| The typed value of [`Choice`](#Choice): its codecs, default and descriptor together.
+{-| The typed value of [`Choice`](#Choice): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageChoice : Proto.Message.Message Choice
 messageChoice =
-    Proto.Message.message encodeChoice decodeChoice defaultChoice Oneofs.V1.Choice.descriptor
+    Proto.Message.init "oneofs.v1.Choice" encodeChoice decodeChoice encodeChoiceBytes decodeChoiceBytes
 
 
 
@@ -215,7 +219,17 @@ descriptors =
             [ Oneofs.V1.Color.descriptor
             ]
         )
-        Proto.Descriptors.wellKnown
+        Proto.WellKnown.descriptors
+
+
+{-| The codecs of this package's messages, for converting a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) that holds one between proto3 JSON and protobuf binary. It holds no other package's types and no well-known type: give a client the union of the registries its `Any`s need (`Proto.Registry.unionAll`, `Rpc.withRegistry`).
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.empty
+        |> Proto.Registry.register messageCreated
+        |> Proto.Registry.register messageNoteEvent
+        |> Proto.Registry.register messageChoice
 
 
 
@@ -407,3 +421,360 @@ decodeChoiceValue =
         [ Proto.Json.member "number" (Json.Decode.map ChoiceValueNumber Proto.Json.float)
         , Proto.Json.memberEither "label" "text" (Json.Decode.map ChoiceValueText Proto.Json.string)
         ]
+
+
+
+-- BINARY ENCODERS
+
+
+{-| The number protobuf binary writes a [`Color`](#Color) as.
+-}
+encodeColorBytes : Color -> Int
+encodeColorBytes value =
+    case value of
+        ColorUnspecified ->
+            0
+
+        ColorRed ->
+            1
+
+
+{-| Encodes a [`Created`](#Created) as protobuf binary.
+-}
+encodeCreatedBytes : Created -> Bytes.Encode.Encoder
+encodeCreatedBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.title
+        ]
+
+
+{-| Encodes a [`NoteEvent`](#NoteEvent) as protobuf binary.
+-}
+encodeNoteEventBytes : NoteEvent -> Bytes.Encode.Encoder
+encodeNoteEventBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.id
+        , case value.kind of
+            NoteEventKindCreated member ->
+                Proto.Binary.present (Proto.Binary.embedded encodeCreatedBytes mergeCreatedBytes defaultCreated) 2 member
+
+            NoteEventKindTitleChanged member ->
+                Proto.Binary.present Proto.Binary.string 3 member
+
+            NoteEventKindRecolored member ->
+                Proto.Binary.present (Proto.Binary.enum encodeColorBytes decodeColorBytes) 4 member
+
+            NoteEventKindDeletedAt member ->
+                Proto.Binary.present Proto.Binary.int64 5 member
+
+            _ ->
+                Bytes.Encode.sequence []
+        , encodeNoteEventSourceBytes value.source
+        , Proto.Binary.list Proto.Binary.string 8 value.tags
+        , case value.kind of
+            NoteEventKindArchived ->
+                Proto.Binary.present Proto.Binary.empty 9 ()
+
+            NoteEventKindClearedAll ->
+                Proto.Binary.present Proto.Binary.empty 10 ()
+
+            _ ->
+                Bytes.Encode.sequence []
+        ]
+
+
+{-| Encodes a [`NoteEventKind`](#NoteEventKind) as protobuf binary: its set member's field.
+-}
+encodeNoteEventKindBytes : NoteEventKind -> Bytes.Encode.Encoder
+encodeNoteEventKindBytes value =
+    case value of
+        NoteEventKindUnset ->
+            Bytes.Encode.sequence []
+
+        NoteEventKindCreated member ->
+            Proto.Binary.present (Proto.Binary.embedded encodeCreatedBytes mergeCreatedBytes defaultCreated) 2 member
+
+        NoteEventKindTitleChanged member ->
+            Proto.Binary.present Proto.Binary.string 3 member
+
+        NoteEventKindRecolored member ->
+            Proto.Binary.present (Proto.Binary.enum encodeColorBytes decodeColorBytes) 4 member
+
+        NoteEventKindDeletedAt member ->
+            Proto.Binary.present Proto.Binary.int64 5 member
+
+        NoteEventKindArchived ->
+            Proto.Binary.present Proto.Binary.empty 9 ()
+
+        NoteEventKindClearedAll ->
+            Proto.Binary.present Proto.Binary.empty 10 ()
+
+
+{-| Encodes a [`NoteEventSource`](#NoteEventSource) as protobuf binary: its set member's field.
+-}
+encodeNoteEventSourceBytes : NoteEventSource -> Bytes.Encode.Encoder
+encodeNoteEventSourceBytes value =
+    case value of
+        NoteEventSourceUnset ->
+            Bytes.Encode.sequence []
+
+        NoteEventSourceUser member ->
+            Proto.Binary.present Proto.Binary.string 6 member
+
+        NoteEventSourceAutomated member ->
+            Proto.Binary.present Proto.Binary.bool 7 member
+
+
+{-| Encodes a [`Choice`](#Choice) as protobuf binary.
+-}
+encodeChoiceBytes : Choice -> Bytes.Encode.Encoder
+encodeChoiceBytes value =
+    Bytes.Encode.sequence
+        [ encodeChoiceValueBytes value.value
+        ]
+
+
+{-| Encodes a [`ChoiceValue`](#ChoiceValue) as protobuf binary: its set member's field.
+-}
+encodeChoiceValueBytes : ChoiceValue -> Bytes.Encode.Encoder
+encodeChoiceValueBytes value =
+    case value of
+        ChoiceValueUnset ->
+            Bytes.Encode.sequence []
+
+        ChoiceValueNumber member ->
+            Proto.Binary.present Proto.Binary.double 1 member
+
+        ChoiceValueText member ->
+            Proto.Binary.present Proto.Binary.string 2 member
+
+
+
+-- BINARY DECODERS
+
+
+{-| A [`Color`](#Color) from the number protobuf binary carries.
+-}
+decodeColorBytes : Int -> Color
+decodeColorBytes number =
+    case number of
+        1 ->
+            ColorRed
+
+        _ ->
+            ColorUnspecified
+
+
+{-| Decodes a [`Created`](#Created) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeCreatedBytes : Created -> Proto.Binary.Decoder Created
+mergeCreatedBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | title = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`Created`](#Created) from protobuf binary.
+-}
+decodeCreatedBytes : Proto.Binary.Decoder Created
+decodeCreatedBytes =
+    mergeCreatedBytes defaultCreated
+
+
+{-| Decodes a [`NoteEvent`](#NoteEvent) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeNoteEventBytes : NoteEvent -> Proto.Binary.Decoder NoteEvent
+mergeNoteEventBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | id = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeCreatedBytes mergeCreatedBytes defaultCreated)
+                        (case value.kind of
+                            NoteEventKindCreated member ->
+                                Just member
+
+                            _ ->
+                                Nothing
+                        )
+                        (\v ->
+                            { value
+                                | kind = NoteEventKindCreated v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | kind = NoteEventKindTitleChanged v
+                            }
+                        )
+                        wire
+                        value
+
+                4 ->
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeColorBytes decodeColorBytes)
+                        (\v ->
+                            { value
+                                | kind = NoteEventKindRecolored v
+                            }
+                        )
+                        wire
+                        value
+
+                5 ->
+                    Proto.Binary.field
+                        Proto.Binary.int64
+                        (\v ->
+                            { value
+                                | kind = NoteEventKindDeletedAt v
+                            }
+                        )
+                        wire
+                        value
+
+                6 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | source = NoteEventSourceUser v
+                            }
+                        )
+                        wire
+                        value
+
+                7 ->
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { value
+                                | source = NoteEventSourceAutomated v
+                            }
+                        )
+                        wire
+                        value
+
+                8 ->
+                    Proto.Binary.repeated
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | tags = v
+                            }
+                        )
+                        value.tags
+                        wire
+                        value
+
+                9 ->
+                    Proto.Binary.field
+                        Proto.Binary.empty
+                        (\_ ->
+                            { value
+                                | kind = NoteEventKindArchived
+                            }
+                        )
+                        wire
+                        value
+
+                10 ->
+                    Proto.Binary.field
+                        Proto.Binary.empty
+                        (\_ ->
+                            { value
+                                | kind = NoteEventKindClearedAll
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | tags = List.reverse value.tags
+            }
+        )
+
+
+{-| Decodes a [`NoteEvent`](#NoteEvent) from protobuf binary.
+-}
+decodeNoteEventBytes : Proto.Binary.Decoder NoteEvent
+decodeNoteEventBytes =
+    mergeNoteEventBytes defaultNoteEvent
+
+
+{-| Decodes a [`Choice`](#Choice) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeChoiceBytes : Choice -> Proto.Binary.Decoder Choice
+mergeChoiceBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.double
+                        (\v ->
+                            { value
+                                | value = ChoiceValueNumber v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | value = ChoiceValueText v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`Choice`](#Choice) from protobuf binary.
+-}
+decodeChoiceBytes : Proto.Binary.Decoder Choice
+decodeChoiceBytes =
+    mergeChoiceBytes defaultChoice

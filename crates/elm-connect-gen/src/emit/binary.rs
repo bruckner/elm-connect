@@ -1,4 +1,4 @@
-//! Protobuf binary codecs, under `codec=proto` or `codec=both`: per
+//! Protobuf binary codecs, under every `codec` option: per
 //! message `encodeFooBytes : Foo -> Bytes.Encode.Encoder`,
 //! `mergeFooBytes : Foo -> Proto.Binary.Decoder Foo` (reading into a value
 //! read before, as protobuf merges a message arriving twice) and
@@ -34,7 +34,7 @@ use crate::ir::{
     Cardinality, Enum, Field, MapKey, Message, OneofVariant, ScalarKind, TypeRef, WellKnown,
     Wrapper,
 };
-use crate::naming::{BINARY_REGISTRY, ENCODER_ARGUMENT, ONEOF_MEMBER, default_name};
+use crate::naming::{ENCODER_ARGUMENT, ONEOF_MEMBER, default_name};
 use crate::options::Int64;
 
 /// elm/bytes' encoders.
@@ -157,7 +157,7 @@ fn wrapper_of<'m>(shape: FieldShape<'m>) -> Option<&'m Wrapper> {
         FieldShape::Plain(_) | FieldShape::Json => return None,
     };
     match value {
-        ValueShape::Present(Present::Wrapped(wrapper)) => Some(wrapper),
+        ValueShape::Present(Present::Wrapped(wrapper, _)) => Some(wrapper),
         _ => None,
     }
 }
@@ -176,15 +176,8 @@ impl Emitter {
     }
 
     /// The `Proto.Binary.Codec` of one value of type `ty`, held as
-    /// `holding` says; in `wrapped`, when the field closes a cycle;
-    /// `writing` in an encoder, reading in a merge.
-    fn binary_codec(
-        &mut self,
-        ty: &TypeRef,
-        holding: Holding,
-        wrapped: Option<&Wrapper>,
-        writing: bool,
-    ) -> Expr {
+    /// `holding` says; in `wrapped`, when the field closes a cycle.
+    fn binary_codec(&mut self, ty: &TypeRef, holding: Holding, wrapped: Option<&Wrapper>) -> Expr {
         match (ty, wrapped) {
             (TypeRef::Message(name), Some(wrapper)) => {
                 let default = self.generated_value(&name.module, default_name(&name.name));
@@ -219,20 +212,13 @@ impl Emitter {
                 let from_number = lambda([Pattern::Wildcard], Expr::Unit);
                 apply(codec, [to_number, from_number])
             }
-            // Under `codec=both` an `Any` is written with the package's
-            // binary registry, whose codecs write one holding a message's
-            // JSON as its binary. It is read without, so that a program
-            // that only reads binary keeps none of those codecs.
-            (TypeRef::WellKnown(WellKnown::Any), _) if writing && self.codec.json() => {
-                apply(self.binary("anyWith"), [var(BINARY_REGISTRY)])
-            }
             (TypeRef::WellKnown(known), _) => self.binary(well_known_codec(*known, holding)),
         }
     }
 
-    fn field_codec(&mut self, field: &Field, shape: FieldShape, writing: bool) -> Expr {
+    fn field_codec(&mut self, field: &Field, shape: FieldShape) -> Expr {
         let holding = field_holding(field.jstype, self.holding);
-        self.binary_codec(&field.ty, holding, wrapper_of(shape), writing)
+        self.binary_codec(&field.ty, holding, wrapper_of(shape))
     }
 
     fn bytes_encoder_type(&mut self) -> Type {
@@ -255,7 +241,7 @@ impl Emitter {
         for &(field, field_shape) in &shape.fields {
             let value = access(var(ENCODER_ARGUMENT), field.elm_name.clone());
             let number = int(field.number.into());
-            let codec = self.field_codec(field, field_shape, true);
+            let codec = self.field_codec(field, field_shape);
             let encoded = match field_shape {
                 // `()` has no presence to leave it out by; it is written,
                 // as the JSON encoder writes `{}`.
@@ -390,7 +376,7 @@ impl Emitter {
         for &(field, field_shape) in &shape.fields {
             let name = field.elm_name.as_str();
             let current = access(var(ENCODER_ARGUMENT), name);
-            let codec = self.field_codec(field, field_shape, false);
+            let codec = self.field_codec(field, field_shape);
             let step = match field_shape {
                 FieldShape::Plain(_) => {
                     let set = lambda([pvar(ITEM)], update(name, var(ITEM)));
@@ -442,7 +428,7 @@ impl Emitter {
             let name = oneof.oneof.elm_field_name.as_str();
             for &(variant, value) in &oneof.variants {
                 let holding = field_holding(variant.jstype, self.holding);
-                let codec = self.binary_codec(&variant.ty, holding, None, false);
+                let codec = self.binary_codec(&variant.ty, holding, None);
                 let set = if matches!(value, ValueShape::Zeroed(Zeroed::Empty | Zeroed::Null)) {
                     lambda(
                         [Pattern::Wildcard],
@@ -527,7 +513,7 @@ impl Emitter {
     /// whatever its value.
     fn oneof_member_bytes(&mut self, variant: &OneofVariant, value: ValueShape) -> (Pattern, Expr) {
         let holding = field_holding(variant.jstype, self.holding);
-        let codec = self.binary_codec(&variant.ty, holding, None, true);
+        let codec = self.binary_codec(&variant.ty, holding, None);
         let number = int(variant.number.into());
         let present = self.binary("present");
         if matches!(value, ValueShape::Zeroed(Zeroed::Empty | Zeroed::Null)) {

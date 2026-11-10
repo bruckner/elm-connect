@@ -8,13 +8,17 @@ module Clock.V1 exposing (..)
 another generated package, generated under `int64=int`.
 -}
 
+import Bytes.Encode
 import Clock.V1.Alarm
 import Json.Decode
 import Json.Encode
+import Proto.Binary
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 import Proto.Version
+import Proto.WellKnown
 import Time
 
 
@@ -55,11 +59,11 @@ defaultAlarm =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Alarm`](#Alarm): its codecs, default and descriptor together.
+{-| The typed value of [`Alarm`](#Alarm): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageAlarm : Proto.Message.Message Alarm
 messageAlarm =
-    Proto.Message.message encodeAlarm decodeAlarm defaultAlarm Clock.V1.Alarm.descriptor
+    Proto.Message.init "clock.v1.Alarm" encodeAlarm decodeAlarm encodeAlarmBytes decodeAlarmBytes
 
 
 
@@ -76,7 +80,15 @@ descriptors =
             ]
             []
         )
-        Proto.Descriptors.wellKnown
+        Proto.WellKnown.descriptors
+
+
+{-| The codecs of this package's messages, for converting a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) that holds one between proto3 JSON and protobuf binary. It holds no other package's types and no well-known type: give a client the union of the registries its `Any`s need (`Proto.Registry.unionAll`, `Rpc.withRegistry`).
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.empty
+        |> Proto.Registry.register messageAlarm
 
 
 
@@ -102,3 +114,51 @@ decodeAlarm : Json.Decode.Decoder Alarm
 decodeAlarm =
     Json.Decode.succeed Alarm
         |> Proto.Json.field "at" Nothing (Json.Decode.map Just Proto.Json.timestamp)
+
+
+
+-- BINARY ENCODERS
+
+
+{-| Encodes an [`Alarm`](#Alarm) as protobuf binary.
+-}
+encodeAlarmBytes : Alarm -> Bytes.Encode.Encoder
+encodeAlarmBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.optional Proto.Binary.timestamp 1 value.at
+        ]
+
+
+
+-- BINARY DECODERS
+
+
+{-| Decodes an [`Alarm`](#Alarm) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeAlarmBytes : Alarm -> Proto.Binary.Decoder Alarm
+mergeAlarmBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.timestamp
+                        (\v ->
+                            { value
+                                | at = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes an [`Alarm`](#Alarm) from protobuf binary.
+-}
+decodeAlarmBytes : Proto.Binary.Decoder Alarm
+decodeAlarmBytes =
+    mergeAlarmBytes defaultAlarm

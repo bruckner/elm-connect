@@ -84,9 +84,10 @@ A minor (a new option value); per enum through the proto options above.
 
 ## Well-known `Google.*` modules
 
-Today an application generates the `google.rpc` error details and any
-other googleapis types it uses itself, from googleapis files. Prebuilt
-modules for the common googleapis packages are an addition: a minor.
+The runtime gives `google.rpc`'s error details (`Proto.ErrorDetails`);
+an application generates any other googleapis types it uses itself,
+from googleapis files. Prebuilt modules for more of the common
+googleapis packages are an addition: a minor.
 
 ## Leaving comments out
 
@@ -171,19 +172,20 @@ application that never transcodes. Deferred until requested: today such
 an application deletes the `google.api.http` annotations from the
 protos it generates from. A minor (a new option).
 
-## `Any` and the registry
+## `Any`: a cache and a lenient registry
 
-Three rough edges of `Proto.Any` under the binary codecs. The table
-that converts an `Any`'s JSON to binary has no mirror, so an `Any` read
-as binary and written as JSON falls back to Connect's `{type, value}`
-form rather than the message's own JSON. The generated
-`binaryRegistry` is the table that converts an `Any`'s JSON to binary,
-which its name does not say. And every `codec=both` package carries the
-conversion table as soon as one of its fields is an `Any`. A pass over
-them is a minor if it adds the mirror and keeps the name; renaming
-`binaryRegistry` is a break, so it is done before 1.0 or not at all.
-The descriptors are already apart, in `Proto.Descriptors`, so
-`Proto.Registry` holds that table alone.
+An `Any` holds binary, and its JSON is converted through the client's
+registry each time, which costs a program holding one 43–58 µs per
+operation against 1–3 µs for one without. Two opt-ins were spiked and
+deferred: keeping the JSON an `Any` was read from beside its binary, so
+that writing it back as JSON or unpacking it with the JSON decoder
+skips the round trip (about 33× faster on a send, 25–57 B gz for every
+program); and a lenient registry, which holds an `Any` of a type it
+lacks as its JSON instead of failing the read, for a program that
+passes `Any`s through without unpacking them (it would read a
+transcoder's `google.rpc` details without `Proto.ErrorDetails`, 80–179
+B gz). Both are minors: additions to `Proto.Registry` and internal
+states of `Any`. The default stays strict.
 
 ## Validation
 

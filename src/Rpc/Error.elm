@@ -1,6 +1,6 @@
 module Rpc.Error exposing
-    ( Error(..), Reason(..), StatusError, Source(..)
-    , code, message, details, toString
+    ( Error(..), Reason(..), StatusError, DetailProblem(..), Source(..)
+    , code, message, toString
     )
 
 {-| Why a call failed: what [`Rpc.task`](Rpc#task), [`Rpc.send`](Rpc#send) and
@@ -16,18 +16,17 @@ error has:
         _ ->
             showMessage (Rpc.Error.message error)
 
-@docs Error, Reason, StatusError, Source
+@docs Error, Reason, StatusError, DetailProblem, Source
 
 
 # Reading an error
 
-@docs code, message, details, toString
+@docs code, message, toString
 
 -}
 
 import Json.Encode
-import Proto.Any exposing (Any)
-import Proto.Message exposing (Message)
+import Proto.Any exposing (Any, Problem)
 import Rpc.Code as Code exposing (Code)
 import Rpc.Response exposing (Response)
 
@@ -99,6 +98,12 @@ type Error
     (`size`), than the protocol reads (`limit`,
     [`withReadMaxBytes`](Rpc-Protocol#withReadMaxBytes)). The body was
     dropped without decoding, so the error keeps no `Response`.
+  - `UnwritableRequest`: over JSON, the request holds a
+    [`google.protobuf.Any`](Proto-Any) the client's registry cannot write
+    as JSON, for the [`Problem`](Proto-Any#Problem) given (never
+    `TypeMismatch`): most often `UnregisteredType`, which the client's
+    registry fixes ([`Rpc.withRegistry`](Rpc#withRegistry)). Nothing was
+    sent.
 
 These are every way a request can fail before an answer is read, and the type
 is fixed.
@@ -112,20 +117,57 @@ type Reason
     | InvalidPathValue { field : String, template : String }
     | RequestTooLarge { limit : Int, size : Int }
     | ResponseTooLarge { limit : Int, size : Int }
+    | UnwritableRequest Problem
 
 
 {-| A status the server stated: its code, its message (which may be empty), its
-details and where it was found. Each detail is a message packed in an
-[`Any`](Proto-Any#Any), read with [`details`](#details) or
-[`Proto.Any.unpack`](Proto-Any#unpack). The code is a [`Code`](Rpc-Code#Code),
-which has no `ok`: an answer claiming `ok` while failing reads as `Unknown`.
+details and where it was found. The code is a [`Code`](Rpc-Code#Code), which
+has no `ok`: an answer claiming `ok` while failing reads as `Unknown`.
+
+Each detail is a message packed in an [`Any`](Proto-Any#Any), in the order
+the server sent them, or the [`DetailProblem`](#DetailProblem) that kept one
+from being read; a problem with a detail never loses the error's code,
+message and source. Unpack one with
+[`Proto.Any.tryUnpack`](Proto-Any#tryUnpack):
+
+    status.details
+        |> List.filterMap Result.toMaybe
+        |> List.filterMap (Proto.Any.unpack Proto.ErrorDetails.badRequest)
+
+A Connect error body and gRPC-Web carry a detail's protobuf binary, which
+needs no registry. A `google.rpc.Status` body (transcoding) carries proto3
+JSON, which is read through the client's registry
+([`Rpc.withRegistry`](Rpc#withRegistry)). Details a proxy stripped are
+simply absent, `[]`.
+
 -}
 type alias StatusError =
     { code : Code
     , message : String
-    , details : List Any
+    , details : List (Result DetailProblem Any)
     , source : Source
     }
+
+
+{-| Why one of a status's details could not be read:
+
+  - `UnregisteredType`: it arrived as proto3 JSON (a `google.rpc.Status`
+    body) whose type, its URL here, the client's registry has no entry for.
+    Register the type ([`Rpc.withRegistry`](Rpc#withRegistry)); for
+    `google.rpc` details such as `ErrorInfo` or `BadRequest`, that is
+    [`Proto.ErrorDetails.registry`](Proto-ErrorDetails#registry).
+  - `InvalidDetail`: it is not a detail of its form: a Connect detail with
+    no `type`, or whose `value` is not base64; proto3 JSON with no
+    `"@type"`, or that is not the message its `"@type"` names; or, over
+    gRPC-Web, a `grpc-status-details-bin` that does not decode, which then
+    stands for all of them. It holds the detail's type URL when the detail
+    named one, and what was wrong, for a log. Nothing in the program fixes
+    it; report it as the server's.
+
+-}
+type DetailProblem
+    = UnregisteredType String
+    | InvalidDetail (Maybe String) String
 
 
 {-| Where a status was read from, tried in this order:
@@ -169,9 +211,9 @@ type Source
   - `BadResponse`: its own, `Internal` or `Unimplemented` (see
     [`Error`](#Error)).
   - `NoAnswer`: a timeout is `DeadlineExceeded`, a network failure
-    `Unavailable`, a bad URL or an invalid header `Internal`, an invalid path
-    value `InvalidArgument`, a request or a response over its limit
-    `ResourceExhausted`.
+    `Unavailable`, a bad URL, an invalid header or an unwritable request
+    `Internal`, an invalid path value `InvalidArgument`, a request or a
+    response over its limit `ResourceExhausted`.
 
 An `HttpStatus` code follows gRPC's table, so a 404 that carries no status
 reads as `Unimplemented`, not `NotFound`. That is right for Connect, whose
@@ -214,6 +256,9 @@ code error =
         NoAnswer (ResponseTooLarge _) ->
             Code.ResourceExhausted
 
+        NoAnswer (UnwritableRequest _) ->
+            Code.Internal
+
 
 {-| An error's message:
 
@@ -225,7 +270,9 @@ code error =
     then `…`; the whole problem stays in the error.
   - `NoAnswer`: `timeout`, `network error`, `bad URL: <url>`,
     `invalid header "<name>"`, `path field "<field>" does not match
-    <template>` or, as connect-es words them,
+    <template>`, for an unwritable request `unregistered type "<url>"`,
+    `unwritable Any inside "<url>"` or `an Any's binary is not its type`, or,
+    as connect-es words them,
     `message size <size> is larger than configured writeMaxBytes <limit>`
     for a request and `… readMaxBytes <limit>` for a response, both in
     bytes. A bad URL is printed as its scheme, host and path, without the
@@ -272,6 +319,25 @@ message error =
 
         NoAnswer (ResponseTooLarge { limit, size }) ->
             "message size " ++ String.fromInt size ++ " is larger than configured readMaxBytes " ++ String.fromInt limit
+
+        NoAnswer (UnwritableRequest problem) ->
+            case problem of
+                Proto.Any.UnregisteredType url ->
+                    "unregistered type " ++ quote url
+
+                Proto.Any.UnwritableAny url ->
+                    "unwritable Any inside " ++ quote url
+
+                Proto.Any.InvalidProto ->
+                    "an Any's binary is not its type"
+
+                Proto.Any.TypeMismatch name ->
+                    "type mismatch " ++ quote name
+
+
+quote : String -> String
+quote text =
+    Json.Encode.encode 0 (Json.Encode.string text)
 
 
 {-| The first 300 characters of a text, and `…` when there were more.
@@ -338,28 +404,6 @@ withoutUserInfo url =
 
         [] ->
             url
-
-
-{-| The details of an error that are of this message type, in the order the
-server sent them, leaving out any that do not decode. Only an `RpcStatus`
-error has any.
-
-    case Rpc.Error.details Google.Rpc.messageBadRequest error of
-        badRequest :: _ ->
-            showViolations badRequest.fieldViolations
-
-        [] ->
-            showMessage (Rpc.Error.message error)
-
--}
-details : Message a -> Error -> List a
-details proto error =
-    case error of
-        RpcStatus status _ ->
-            List.filterMap (Proto.Any.unpack proto >> Maybe.andThen Result.toMaybe) status.details
-
-        _ ->
-            []
 
 
 {-| A one-line description of an error, for logs: its [`code`](#code) and

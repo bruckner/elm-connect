@@ -13,10 +13,11 @@ For each sample:
     re-encodes as the same bytes, the unknown fields dropped;
   - where the set has JSON codecs too, the value read from binary writes the
     JSON the value read from the canonical JSON writes (an `Any` aside: one
-    read from binary holds its packed message's binary);
-  - and the value read from the canonical JSON encodes as the same bytes,
-    an `Any` holding JSON among them: the package's registry has the binary
-    codecs of every message and well-known type a sample packs.
+    read from binary is written as its packed message's canonical JSON);
+  - and the value read from the canonical JSON encodes as the same bytes.
+
+An `Any` is read from and written as JSON through the package's registry,
+which has the codecs of every message and well-known type a sample packs.
 
 -}
 

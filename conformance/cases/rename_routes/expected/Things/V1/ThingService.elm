@@ -38,10 +38,10 @@ Codecs: JSON. Described by [`descriptorGetThing`](#descriptorGetThing).
 getThing : Things.V1.GetThingRequest -> Rpc.Call Rpc.Json Things.V1.GetThingRequest Things.V1.Thing
 getThing =
     Rpc.call
-        (Proto.Method.json "things.v1.ThingService"
+        (Proto.Method.initJson "things.v1.ThingService"
             "GetThing"
-            Things.V1.encodeGetThingRequest
-            Things.V1.decodeThing
+            (\_ -> Ok << Things.V1.encodeGetThingRequest)
+            (\_ -> Things.V1.decodeThing)
             |> Proto.Method.withRoutes [ routeGetThing0 ]
         )
 

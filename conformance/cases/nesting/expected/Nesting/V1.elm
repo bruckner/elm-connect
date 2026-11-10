@@ -9,6 +9,7 @@ module with the enclosing names as a prefix; a field that closes a
 cycle of record fields holds the target's wrapper type.
 -}
 
+import Bytes.Encode
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
@@ -22,11 +23,14 @@ import Nesting.V1.OuterInnerDeepest
 import Nesting.V1.OuterInnerKind
 import Nesting.V1.Person
 import Nesting.V1.Sum
+import Proto.Binary
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 import Proto.Version
+import Proto.WellKnown
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -291,67 +295,67 @@ enumOuterInnerKind =
     Proto.Enum.enum encodeOuterInnerKind decodeOuterInnerKind OuterInnerKindUnspecified Nesting.V1.OuterInnerKind.descriptor
 
 
-{-| The typed value of [`Outer`](#Outer): its codecs, default and descriptor together.
+{-| The typed value of [`Outer`](#Outer): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageOuter : Proto.Message.Message Outer
 messageOuter =
-    Proto.Message.message encodeOuter decodeOuter defaultOuter Nesting.V1.Outer.descriptor
+    Proto.Message.init "nesting.v1.Outer" encodeOuter decodeOuter encodeOuterBytes decodeOuterBytes
 
 
-{-| The typed value of [`OuterInner`](#OuterInner): its codecs, default and descriptor together.
+{-| The typed value of [`OuterInner`](#OuterInner): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageOuterInner : Proto.Message.Message OuterInner
 messageOuterInner =
-    Proto.Message.message encodeOuterInner decodeOuterInner defaultOuterInner Nesting.V1.OuterInner.descriptor
+    Proto.Message.init "nesting.v1.Outer.Inner" encodeOuterInner decodeOuterInner encodeOuterInnerBytes decodeOuterInnerBytes
 
 
-{-| The typed value of [`OuterInnerDeepest`](#OuterInnerDeepest): its codecs, default and descriptor together.
+{-| The typed value of [`OuterInnerDeepest`](#OuterInnerDeepest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageOuterInnerDeepest : Proto.Message.Message OuterInnerDeepest
 messageOuterInnerDeepest =
-    Proto.Message.message encodeOuterInnerDeepest decodeOuterInnerDeepest defaultOuterInnerDeepest Nesting.V1.OuterInnerDeepest.descriptor
+    Proto.Message.init "nesting.v1.Outer.Inner.Deepest" encodeOuterInnerDeepest decodeOuterInnerDeepest encodeOuterInnerDeepestBytes decodeOuterInnerDeepestBytes
 
 
-{-| The typed value of [`Node`](#Node): its codecs, default and descriptor together.
+{-| The typed value of [`Node`](#Node): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageNode : Proto.Message.Message Node
 messageNode =
-    Proto.Message.message encodeNode decodeNode defaultNode Nesting.V1.Node.descriptor
+    Proto.Message.init "nesting.v1.Node" encodeNode decodeNode encodeNodeBytes decodeNodeBytes
 
 
-{-| The typed value of [`Person`](#Person): its codecs, default and descriptor together.
+{-| The typed value of [`Person`](#Person): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messagePerson : Proto.Message.Message Person
 messagePerson =
-    Proto.Message.message encodePerson decodePerson defaultPerson Nesting.V1.Person.descriptor
+    Proto.Message.init "nesting.v1.Person" encodePerson decodePerson encodePersonBytes decodePersonBytes
 
 
-{-| The typed value of [`Company`](#Company): its codecs, default and descriptor together.
+{-| The typed value of [`Company`](#Company): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageCompany : Proto.Message.Message Company
 messageCompany =
-    Proto.Message.message encodeCompany decodeCompany defaultCompany Nesting.V1.Company.descriptor
+    Proto.Message.init "nesting.v1.Company" encodeCompany decodeCompany encodeCompanyBytes decodeCompanyBytes
 
 
-{-| The typed value of [`Forest`](#Forest): its codecs, default and descriptor together.
+{-| The typed value of [`Forest`](#Forest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageForest : Proto.Message.Message Forest
 messageForest =
-    Proto.Message.message encodeForest decodeForest defaultForest Nesting.V1.Forest.descriptor
+    Proto.Message.init "nesting.v1.Forest" encodeForest decodeForest encodeForestBytes decodeForestBytes
 
 
-{-| The typed value of [`Expr`](#Expr): its codecs, default and descriptor together.
+{-| The typed value of [`Expr`](#Expr): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageExpr : Proto.Message.Message Expr
 messageExpr =
-    Proto.Message.message encodeExpr decodeExpr defaultExpr Nesting.V1.Expr.descriptor
+    Proto.Message.init "nesting.v1.Expr" encodeExpr decodeExpr encodeExprBytes decodeExprBytes
 
 
-{-| The typed value of [`Sum`](#Sum): its codecs, default and descriptor together.
+{-| The typed value of [`Sum`](#Sum): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageSum : Proto.Message.Message Sum
 messageSum =
-    Proto.Message.message encodeSum decodeSum defaultSum Nesting.V1.Sum.descriptor
+    Proto.Message.init "nesting.v1.Sum" encodeSum decodeSum encodeSumBytes decodeSumBytes
 
 
 
@@ -377,7 +381,23 @@ descriptors =
             [ Nesting.V1.OuterInnerKind.descriptor
             ]
         )
-        Proto.Descriptors.wellKnown
+        Proto.WellKnown.descriptors
+
+
+{-| The codecs of this package's messages, for converting a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) that holds one between proto3 JSON and protobuf binary. It holds no other package's types and no well-known type: give a client the union of the registries its `Any`s need (`Proto.Registry.unionAll`, `Rpc.withRegistry`).
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.empty
+        |> Proto.Registry.register messageOuter
+        |> Proto.Registry.register messageOuterInner
+        |> Proto.Registry.register messageOuterInnerDeepest
+        |> Proto.Registry.register messageNode
+        |> Proto.Registry.register messagePerson
+        |> Proto.Registry.register messageCompany
+        |> Proto.Registry.register messageForest
+        |> Proto.Registry.register messageExpr
+        |> Proto.Registry.register messageSum
 
 
 
@@ -646,3 +666,577 @@ decodeSum : Json.Decode.Decoder Sum
 decodeSum =
     Json.Decode.succeed Sum
         |> Proto.Json.field "terms" [] (Json.Decode.list decodeExpr)
+
+
+
+-- BINARY ENCODERS
+
+
+{-| The number protobuf binary writes an [`OuterInnerKind`](#OuterInnerKind) as.
+-}
+encodeOuterInnerKindBytes : OuterInnerKind -> Int
+encodeOuterInnerKindBytes value =
+    case value of
+        OuterInnerKindUnspecified ->
+            0
+
+        OuterInnerKindDraft ->
+            1
+
+        OuterInnerKindPublished ->
+            2
+
+
+{-| Encodes an [`Outer`](#Outer) as protobuf binary.
+-}
+encodeOuterBytes : Outer -> Bytes.Encode.Encoder
+encodeOuterBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.optional (Proto.Binary.embedded encodeOuterInnerBytes mergeOuterInnerBytes defaultOuterInner) 1 value.inner
+        , Proto.Binary.implicit (Proto.Binary.enum encodeOuterInnerKindBytes decodeOuterInnerKindBytes) 2 value.kind
+        , Proto.Binary.list (Proto.Binary.embedded encodeOuterInnerDeepestBytes mergeOuterInnerDeepestBytes defaultOuterInnerDeepest) 3 value.all
+        ]
+
+
+{-| Encodes an [`OuterInner`](#OuterInner) as protobuf binary.
+-}
+encodeOuterInnerBytes : OuterInner -> Bytes.Encode.Encoder
+encodeOuterInnerBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.optional (Proto.Binary.embedded encodeOuterInnerDeepestBytes mergeOuterInnerDeepestBytes defaultOuterInnerDeepest) 1 value.deepest
+        ]
+
+
+{-| Encodes an [`OuterInnerDeepest`](#OuterInnerDeepest) as protobuf binary.
+-}
+encodeOuterInnerDeepestBytes : OuterInnerDeepest -> Bytes.Encode.Encoder
+encodeOuterInnerDeepestBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit (Proto.Binary.enum encodeOuterInnerKindBytes decodeOuterInnerKindBytes) 1 value.kind
+        ]
+
+
+{-| Encodes a [`Node`](#Node) as protobuf binary.
+-}
+encodeNodeBytes : Node -> Bytes.Encode.Encoder
+encodeNodeBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.label
+        , Proto.Binary.list (Proto.Binary.embedded encodeNode_Bytes mergeNode_Bytes (Node_ defaultNode)) 2 value.children
+        , Proto.Binary.dict Proto.Binary.string (Proto.Binary.embedded encodeNode_Bytes mergeNode_Bytes (Node_ defaultNode)) 3 value.byName
+        ]
+
+
+{-| Encodes a [`Node_`](#Node_) as protobuf binary.
+-}
+encodeNode_Bytes : Node_ -> Bytes.Encode.Encoder
+encodeNode_Bytes (Node_ value) =
+    encodeNodeBytes value
+
+
+{-| Encodes a [`Person`](#Person) as protobuf binary.
+-}
+encodePersonBytes : Person -> Bytes.Encode.Encoder
+encodePersonBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.name
+        , Proto.Binary.optional (Proto.Binary.embedded encodeCompany_Bytes mergeCompany_Bytes (Company_ defaultCompany)) 2 value.employer
+        ]
+
+
+{-| Encodes a [`Person_`](#Person_) as protobuf binary.
+-}
+encodePerson_Bytes : Person_ -> Bytes.Encode.Encoder
+encodePerson_Bytes (Person_ value) =
+    encodePersonBytes value
+
+
+{-| Encodes a [`Company`](#Company) as protobuf binary.
+-}
+encodeCompanyBytes : Company -> Bytes.Encode.Encoder
+encodeCompanyBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.name
+        , Proto.Binary.list (Proto.Binary.embedded encodePerson_Bytes mergePerson_Bytes (Person_ defaultPerson)) 2 value.staff
+        ]
+
+
+{-| Encodes a [`Company_`](#Company_) as protobuf binary.
+-}
+encodeCompany_Bytes : Company_ -> Bytes.Encode.Encoder
+encodeCompany_Bytes (Company_ value) =
+    encodeCompanyBytes value
+
+
+{-| Encodes a [`Forest`](#Forest) as protobuf binary.
+-}
+encodeForestBytes : Forest -> Bytes.Encode.Encoder
+encodeForestBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.list (Proto.Binary.embedded encodeNodeBytes mergeNodeBytes defaultNode) 1 value.trees
+        ]
+
+
+{-| Encodes an [`Expr`](#Expr) as protobuf binary.
+-}
+encodeExprBytes : Expr -> Bytes.Encode.Encoder
+encodeExprBytes value =
+    Bytes.Encode.sequence
+        [ encodeExprValueBytes value.value
+        ]
+
+
+{-| Encodes an [`ExprValue`](#ExprValue) as protobuf binary: its set member's field.
+-}
+encodeExprValueBytes : ExprValue -> Bytes.Encode.Encoder
+encodeExprValueBytes value =
+    case value of
+        ExprValueUnset ->
+            Bytes.Encode.sequence []
+
+        ExprValueNumber member ->
+            Proto.Binary.present Proto.Binary.int64 1 member
+
+        ExprValueSum member ->
+            Proto.Binary.present (Proto.Binary.embedded encodeSumBytes mergeSumBytes defaultSum) 2 member
+
+
+{-| Encodes a [`Sum`](#Sum) as protobuf binary.
+-}
+encodeSumBytes : Sum -> Bytes.Encode.Encoder
+encodeSumBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.list (Proto.Binary.embedded encodeExprBytes mergeExprBytes defaultExpr) 1 value.terms
+        ]
+
+
+
+-- BINARY DECODERS
+
+
+{-| An [`OuterInnerKind`](#OuterInnerKind) from the number protobuf binary carries.
+-}
+decodeOuterInnerKindBytes : Int -> OuterInnerKind
+decodeOuterInnerKindBytes number =
+    case number of
+        1 ->
+            OuterInnerKindDraft
+
+        2 ->
+            OuterInnerKindPublished
+
+        _ ->
+            OuterInnerKindUnspecified
+
+
+{-| Decodes an [`Outer`](#Outer) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeOuterBytes : Outer -> Proto.Binary.Decoder Outer
+mergeOuterBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeOuterInnerBytes mergeOuterInnerBytes defaultOuterInner)
+                        value.inner
+                        (\v ->
+                            { value
+                                | inner = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeOuterInnerKindBytes decodeOuterInnerKindBytes)
+                        (\v ->
+                            { value
+                                | kind = v
+                            }
+                        )
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeOuterInnerDeepestBytes mergeOuterInnerDeepestBytes defaultOuterInnerDeepest)
+                        (\v ->
+                            { value
+                                | all = v
+                            }
+                        )
+                        value.all
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | all = List.reverse value.all
+            }
+        )
+
+
+{-| Decodes an [`Outer`](#Outer) from protobuf binary.
+-}
+decodeOuterBytes : Proto.Binary.Decoder Outer
+decodeOuterBytes =
+    mergeOuterBytes defaultOuter
+
+
+{-| Decodes an [`OuterInner`](#OuterInner) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeOuterInnerBytes : OuterInner -> Proto.Binary.Decoder OuterInner
+mergeOuterInnerBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeOuterInnerDeepestBytes mergeOuterInnerDeepestBytes defaultOuterInnerDeepest)
+                        value.deepest
+                        (\v ->
+                            { value
+                                | deepest = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes an [`OuterInner`](#OuterInner) from protobuf binary.
+-}
+decodeOuterInnerBytes : Proto.Binary.Decoder OuterInner
+decodeOuterInnerBytes =
+    mergeOuterInnerBytes defaultOuterInner
+
+
+{-| Decodes an [`OuterInnerDeepest`](#OuterInnerDeepest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeOuterInnerDeepestBytes : OuterInnerDeepest -> Proto.Binary.Decoder OuterInnerDeepest
+mergeOuterInnerDeepestBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeOuterInnerKindBytes decodeOuterInnerKindBytes)
+                        (\v ->
+                            { value
+                                | kind = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes an [`OuterInnerDeepest`](#OuterInnerDeepest) from protobuf binary.
+-}
+decodeOuterInnerDeepestBytes : Proto.Binary.Decoder OuterInnerDeepest
+decodeOuterInnerDeepestBytes =
+    mergeOuterInnerDeepestBytes defaultOuterInnerDeepest
+
+
+{-| Decodes a [`Node`](#Node) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeNodeBytes : Node -> Proto.Binary.Decoder Node
+mergeNodeBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | label = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeNode_Bytes mergeNode_Bytes (Node_ defaultNode))
+                        (\v ->
+                            { value
+                                | children = v
+                            }
+                        )
+                        value.children
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.mapEntry
+                        Proto.Binary.string
+                        (Proto.Binary.embedded encodeNode_Bytes mergeNode_Bytes (Node_ defaultNode))
+                        (\k v ->
+                            { value
+                                | byName = Dict.insert k v value.byName
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | children = List.reverse value.children
+            }
+        )
+
+
+{-| Decodes a [`Node`](#Node) from protobuf binary.
+-}
+decodeNodeBytes : Proto.Binary.Decoder Node
+decodeNodeBytes =
+    mergeNodeBytes defaultNode
+
+
+{-| Decodes a [`Node_`](#Node_) from protobuf binary into the one given.
+-}
+mergeNode_Bytes : Node_ -> Proto.Binary.Decoder Node_
+mergeNode_Bytes (Node_ value) =
+    Proto.Binary.map Node_ (mergeNodeBytes value)
+
+
+{-| Decodes a [`Person`](#Person) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergePersonBytes : Person -> Proto.Binary.Decoder Person
+mergePersonBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | name = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeCompany_Bytes mergeCompany_Bytes (Company_ defaultCompany))
+                        value.employer
+                        (\v ->
+                            { value
+                                | employer = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`Person`](#Person) from protobuf binary.
+-}
+decodePersonBytes : Proto.Binary.Decoder Person
+decodePersonBytes =
+    mergePersonBytes defaultPerson
+
+
+{-| Decodes a [`Person_`](#Person_) from protobuf binary into the one given.
+-}
+mergePerson_Bytes : Person_ -> Proto.Binary.Decoder Person_
+mergePerson_Bytes (Person_ value) =
+    Proto.Binary.map Person_ (mergePersonBytes value)
+
+
+{-| Decodes a [`Company`](#Company) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeCompanyBytes : Company -> Proto.Binary.Decoder Company
+mergeCompanyBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | name = v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodePerson_Bytes mergePerson_Bytes (Person_ defaultPerson))
+                        (\v ->
+                            { value
+                                | staff = v
+                            }
+                        )
+                        value.staff
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | staff = List.reverse value.staff
+            }
+        )
+
+
+{-| Decodes a [`Company`](#Company) from protobuf binary.
+-}
+decodeCompanyBytes : Proto.Binary.Decoder Company
+decodeCompanyBytes =
+    mergeCompanyBytes defaultCompany
+
+
+{-| Decodes a [`Company_`](#Company_) from protobuf binary into the one given.
+-}
+mergeCompany_Bytes : Company_ -> Proto.Binary.Decoder Company_
+mergeCompany_Bytes (Company_ value) =
+    Proto.Binary.map Company_ (mergeCompanyBytes value)
+
+
+{-| Decodes a [`Forest`](#Forest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeForestBytes : Forest -> Proto.Binary.Decoder Forest
+mergeForestBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeNodeBytes mergeNodeBytes defaultNode)
+                        (\v ->
+                            { value
+                                | trees = v
+                            }
+                        )
+                        value.trees
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | trees = List.reverse value.trees
+            }
+        )
+
+
+{-| Decodes a [`Forest`](#Forest) from protobuf binary.
+-}
+decodeForestBytes : Proto.Binary.Decoder Forest
+decodeForestBytes =
+    mergeForestBytes defaultForest
+
+
+{-| Decodes an [`Expr`](#Expr) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeExprBytes : Expr -> Proto.Binary.Decoder Expr
+mergeExprBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.int64
+                        (\v ->
+                            { value
+                                | value = ExprValueNumber v
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeSumBytes mergeSumBytes defaultSum)
+                        (case value.value of
+                            ExprValueSum member ->
+                                Just member
+
+                            _ ->
+                                Nothing
+                        )
+                        (\v ->
+                            { value
+                                | value = ExprValueSum v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes an [`Expr`](#Expr) from protobuf binary.
+-}
+decodeExprBytes : Proto.Binary.Decoder Expr
+decodeExprBytes =
+    mergeExprBytes defaultExpr
+
+
+{-| Decodes a [`Sum`](#Sum) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeSumBytes : Sum -> Proto.Binary.Decoder Sum
+mergeSumBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeExprBytes mergeExprBytes defaultExpr)
+                        (\v ->
+                            { value
+                                | terms = v
+                            }
+                        )
+                        value.terms
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { value
+                | terms = List.reverse value.terms
+            }
+        )
+
+
+{-| Decodes a [`Sum`](#Sum) from protobuf binary.
+-}
+decodeSumBytes : Proto.Binary.Decoder Sum
+decodeSumBytes =
+    mergeSumBytes defaultSum

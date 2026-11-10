@@ -9,13 +9,17 @@ and the rest is generated. A service whose every method streams is left
 with no methods, and so gets no module.
 -}
 
+import Bytes.Encode
 import Chat.V1.Line
 import Json.Decode
 import Json.Encode
+import Proto.Binary
 import Proto.Descriptors
 import Proto.Json
 import Proto.Message
+import Proto.Registry
 import Proto.Version
+import Proto.WellKnown
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -55,11 +59,11 @@ defaultLine =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Line`](#Line): its codecs, default and descriptor together.
+{-| The typed value of [`Line`](#Line): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageLine : Proto.Message.Message Line
 messageLine =
-    Proto.Message.message encodeLine decodeLine defaultLine Chat.V1.Line.descriptor
+    Proto.Message.init "chat.v1.Line" encodeLine decodeLine encodeLineBytes decodeLineBytes
 
 
 
@@ -76,7 +80,15 @@ descriptors =
             ]
             []
         )
-        Proto.Descriptors.wellKnown
+        Proto.WellKnown.descriptors
+
+
+{-| The codecs of this package's messages, for converting a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) that holds one between proto3 JSON and protobuf binary. It holds no other package's types and no well-known type: give a client the union of the registries its `Any`s need (`Proto.Registry.unionAll`, `Rpc.withRegistry`).
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.empty
+        |> Proto.Registry.register messageLine
 
 
 
@@ -102,3 +114,51 @@ decodeLine : Json.Decode.Decoder Line
 decodeLine =
     Json.Decode.succeed Line
         |> Proto.Json.field "text" "" Proto.Json.string
+
+
+
+-- BINARY ENCODERS
+
+
+{-| Encodes a [`Line`](#Line) as protobuf binary.
+-}
+encodeLineBytes : Line -> Bytes.Encode.Encoder
+encodeLineBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.text
+        ]
+
+
+
+-- BINARY DECODERS
+
+
+{-| Decodes a [`Line`](#Line) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeLineBytes : Line -> Proto.Binary.Decoder Line
+mergeLineBytes =
+    Proto.Binary.merge
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { value
+                                | text = v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`Line`](#Line) from protobuf binary.
+-}
+decodeLineBytes : Proto.Binary.Decoder Line
+decodeLineBytes =
+    mergeLineBytes defaultLine
