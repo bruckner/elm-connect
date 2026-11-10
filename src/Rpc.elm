@@ -230,7 +230,9 @@ holding one of a type it lacks fails to decode. Over protobuf binary an `Any`
 needs no registry. Whatever the protocol, a status's details that arrive as
 proto3 JSON (a `google.rpc.Status` body, over transcoding) are read through
 it; one of a type it lacks reads as
-[`UnregisteredType`](Rpc-Error#DetailProblem), the error kept.
+[`UnregisteredType`](Rpc-Error#DetailProblem), the error kept. A
+[lenient](Proto-Registry#lenient) registry reads such an `Any`, and such a
+detail, as its JSON alone instead, which unpacks with its typed value.
 
 -}
 withRegistry : Registry -> Client codec -> Client codec

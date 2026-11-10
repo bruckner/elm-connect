@@ -74,6 +74,47 @@
     }
   },
   {
+    "name": "transcode NOT_FOUND: a google.rpc.Status body with ErrorInfo, lenient registry",
+    "note": "With the empty registry made lenient (Proto.Registry.lenient) on the client, the google.rpc.Status body's details are held as their JSON and unpack with their typed values, which the runner writes; no detail problem is traced.",
+    "call": {
+      "config": { "registry": "lenient" },
+      "service": "notes.v1.NotesService",
+      "method": "GetNote",
+      "protocol": "transcode",
+      "request": { "name": "notes/missing" }
+    },
+    "expect": {
+      "result": {
+        "error": {
+          "code": "not_found",
+          "message": "notes/missing does not exist",
+          "source": "StatusBody",
+          "details": [
+            {
+              "@type": "type.googleapis.com/google.rpc.ErrorInfo",
+              "reason": "NOTE_NOT_FOUND",
+              "domain": "notes.example.com",
+              "metadata": { "name": "notes/missing" }
+            }
+          ]
+        }
+      },
+      "trace": { "detailProblems": [] },
+      "wire": [
+        {
+          "status": 404,
+          "responseBody": {
+            "$json": {
+              "code": 5,
+              "message": "notes/missing does not exist",
+              "details": [{ "@type": "type.googleapis.com/google.rpc.ErrorInfo", "reason": "NOTE_NOT_FOUND" }]
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
     "name": "transcode INVALID_ARGUMENT: a google.rpc.Status body with BadRequest",
     "note": "With google.rpc's registry (Proto.ErrorDetails.registry) on the client, the google.rpc.Status body's details read and unpack.",
     "call": {
@@ -131,6 +172,45 @@
           ]
         }
       },
+      "wire": [
+        {
+          "status": 400,
+          "responseBody": {
+            "$json": {
+              "code": 3,
+              "message": "a note needs a title",
+              "details": [{ "@type": "type.googleapis.com/google.rpc.BadRequest" }]
+            }
+          }
+        }
+      ]
+    }
+  },
+  {
+    "name": "transcode INVALID_ARGUMENT: a google.rpc.Status body with BadRequest, lenient registry",
+    "note": "With the empty registry made lenient (Proto.Registry.lenient) on the client, the google.rpc.Status body's details are held as their JSON and unpack with their typed values, which the runner writes; no detail problem is traced.",
+    "call": {
+      "config": { "registry": "lenient" },
+      "service": "notes.v1.NotesService",
+      "method": "CreateNote",
+      "protocol": "transcode",
+      "request": { "note": { "body": "untitled" } }
+    },
+    "expect": {
+      "result": {
+        "error": {
+          "code": "invalid_argument",
+          "message": "a note needs a title",
+          "source": "StatusBody",
+          "details": [
+            {
+              "@type": "type.googleapis.com/google.rpc.BadRequest",
+              "fieldViolations": [{ "field": "title", "description": "a note needs a title" }]
+            }
+          ]
+        }
+      },
+      "trace": { "detailProblems": [] },
       "wire": [
         {
           "status": 400,

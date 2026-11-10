@@ -1157,7 +1157,8 @@ In detail:
   a value; `tryUnpack` gives the value or a `Problem`, `TypeMismatch`
   naming the type inside or `InvalidProto` for binary that is not the
   message, and `unpack` is that as a `Maybe`. `is` tests the type,
-  `typeUrl` and `typeName` read it, `bytes` reads the binary, `toJson
+  `typeUrl` and `typeName` read it, `bytes` reads the binary (`Nothing`
+  for one a lenient registry holds as JSON alone, §3.10), `toJson
   registry` gives the payload's proto3 JSON (for showing an `Any`, and
   what the JSON encoder writes), and `describe` looks its descriptor up
   in `Proto.Descriptors`. `Problem` holds only what can happen, and each
@@ -1178,9 +1179,10 @@ In detail:
   every other well-known type's codecs. Both are strict, as protojson,
   Java's `JsonFormat` and protobuf-es are: an `"@type"` the registry
   lacks fails the read, naming the URL, and an unregistered type fails
-  the write with `UnregisteredType`; there is no lossy form and no
-  `{"type", "value"}` fallback, since every form but proto3 JSON's is one
-  a reader mistakes or refuses. `anyWith` fails on an object without
+  the write with `UnregisteredType`; there is no `{"type", "value"}`
+  fallback, since every form but proto3 JSON's is one a reader mistakes
+  or refuses. A lenient registry, the opt-in, reads an `"@type"` it lacks
+  as the `Any`'s JSON alone (§3.10). `anyWith` fails on an object without
   `"@type"`, except `{}`, which is the empty `Any` (no type URL), as
   protojson reads it, and on a `"@type"` that is not a type URL: empty,
   without a `/`, or with nothing after the last one. They are in
@@ -1993,6 +1995,62 @@ registry =
   `codec_both` (the codec protos under `codec=both`), `codec_proto`,
   `services_codec_both` (a service under `codec=both`) and `any_field`,
   and the protobuf conformance suite (§7).
+
+#### Lenient registries
+
+`Proto.Registry.lenient : Registry -> Registry` marks a registry so that
+a proto3 JSON read of an `Any` whose type it has no entry for holds the
+`Any` as its JSON alone instead of failing; every registry is strict
+until made lenient, `union` and `unionAll` are lenient when any side is,
+and `register` keeps the mark. It is the opt-in a program reaches for
+when it passes `Any`s along, or reads a few by type, without
+registering every type it may meet; what it removes is the read's
+failure, the one that is `UnregisteredType` on a write and in an
+error's details (decisions.md: Lenient registries hold JSON-only
+payloads).
+
+An `Any` is in one of two states, and the registry it was read through
+decides which:
+
+| read | strict | lenient |
+|---|---|---|
+| protobuf binary | binary | binary |
+| proto3 JSON of a registered type, every `Any` inside it of a registered type | binary | binary |
+| proto3 JSON of a registered type holding an `Any` of a type the registry lacks | fails | JSON alone |
+| proto3 JSON of a type the registry lacks | fails | JSON alone |
+| proto3 JSON that is not its type's message | fails | fails |
+| `pack` (no registry) | binary; JSON alone if the message holds an `Any` held as JSON alone | the same |
+
+What each state does, whatever registry it is written through:
+
+| state | written as proto3 JSON | written as protobuf binary | `unpack` | `Proto.Any.bytes` |
+|---|---|---|---|---|
+| binary | converted through the registry; `UnregisteredType` for a type it lacks | the binary | from the binary | `Just` |
+| JSON alone | the JSON, as read, no registry | the type URL alone: the message is lost | the message's JSON decoder, an `Any` inside it read leniently | `Nothing` |
+
+The binary write of a JSON-alone `Any` is lossy, which is the accepted
+cost: over JSON nothing is lost, and over binary a program tests
+`Proto.Any.bytes` first, or registers the type. A lenient read keeps
+the loss out of the binary state: an `Any` of a registered type is read
+strictly first, and only when that fails for an `Any` inside it is it
+read leniently, as JSON alone (so a known type holding an unknown `Any`
+never gets binary that drops it); `pack` writes the message's JSON
+through a table that refuses a JSON-alone `Any` first, and holds the
+packed `Any` as JSON alone when only that refusal failed. A message
+holding both an `Any` read from binary and one held as JSON alone packs
+as binary, losing the latter (without a registry neither can be written
+in the other's form). Under a lenient client registry a
+`google.rpc.Status` body's detail of a type it lacks is `Ok` with a
+JSON-alone `Any`, and the trace names no problem for it. A program that
+reads every `Any` through `Proto.Registry.lenient Proto.Registry.empty`
+reaches no registry entry and none of their binary codecs.
+
+The JSON-alone state is the one exception to an `Any` having one shape
+(decisions.md: An Any has one shape, so `==` is exact). `==` compares
+two JSON-alone `Any`s by Elm's structural equality on their JSON, which
+is not protobuf's (the same message written with and without its
+defaults differs), and never finds one equal to an `Any` holding
+binary. A strict registry never makes one.
 
 ## 4. Calls
 
@@ -3446,9 +3504,10 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
   - **A `google.rpc.Status` body detail** (transcoding: grpc-gateway,
     Envoy, Vanguard) is a proto3 JSON `Any`, converted to binary through
     the client's registry (§5.2): an `"@type"` the registry lacks is
-    `Err (UnregisteredType url)`, a known type whose JSON is not its
-    message `Err (InvalidDetail (Just url) reason)`, and an entry with no
-    `"@type"` `Err (InvalidDetail Nothing reason)`. The status is read
+    `Err (UnregisteredType url)`, or, under a lenient registry, `Ok` with
+    the `Any` held as its JSON alone (§3.10), a known type whose JSON is
+    not its message `Err (InvalidDetail (Just url) reason)`, and an entry
+    with no `"@type"` `Err (InvalidDetail Nothing reason)`. The status is read
     without the registry where the protocol reads the answer, and its
     details again through the client's in the plan (`Status.completeDetails`).
     `Proto.ErrorDetails.registry` holds `google/rpc/error_details.proto`'s
@@ -3823,16 +3882,20 @@ request builder), which unit tests cannot run. It has five parts:
    error body, reusing the route fixtures' expectations where they
    overlap. A case's config names the client's registry, `"registry":
    "empty"` (the default, as a client starts), `"errorDetails"`
-   (`Proto.ErrorDetails.registry`) or `"build"` (the build's packages
+   (`Proto.ErrorDetails.registry`), `"build"` (the build's packages
    and the well-known types, which a case calling over JSON with an
-   `Any` in its messages needs, as an application would). Each case
-   reading a `google.rpc.Status` body's details runs twice: with
-   `"errorDetails"` its details read and unpack, and with the empty
+   `Any` in its messages needs, as an application would) or
+   `"lenient"` (the empty registry made lenient, §3.10). Each case
+   reading a `google.rpc.Status` body's details runs three times: with
+   `"errorDetails"` its details read and unpack, with the empty
    registry they are `UnregisteredType` with their type URLs, the code
-   and message kept. A Connect body's and gRPC-Web's details are read
-   with the empty registry, their binary needing none. The runner writes
-   a read detail as proto3 JSON through its own table, whatever the
-   client's, and a problem as `{"unregisteredType": url}` or
+   and message kept, and with `"lenient"` they are read as JSON alone
+   and unpack to the same typed values, no problem traced. A Connect
+   body's and gRPC-Web's details are read with the empty registry,
+   their binary needing none. The runner writes a read detail as proto3
+   JSON through its own table, whatever the client's (one held as JSON
+   alone unpacked with its `google.rpc` typed value and written as
+   that value), and a problem as `{"unregisteredType": url}` or
    `{"invalidDetail": {"type", "reason"}}`.
 4. **Examples**: `examples/notes/` holds a browser application over
    either protocol and a walkthrough, and the README's snippets live

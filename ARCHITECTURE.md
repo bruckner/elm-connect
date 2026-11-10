@@ -101,9 +101,11 @@ point of `elm-format`: the corpus's formatted check and
   `Rpc.Response`, `Rpc.Error`, `Rpc.Code`).
 
 Imports point one way: no `Proto` module imports an `Rpc` one, and `Rpc`
-reads only three internal modules of the `Proto` side,
-`Proto.Internal.Any`, `Proto.Internal.Percent`, the percent-encoding
-both sides share, and `Proto.Internal.Method`, whose codec halves and
+reads only four internal modules of the `Proto` side,
+`Proto.Internal.Any`, `Proto.Internal.Registry`, whose membership test
+tells an error detail of an unregistered type from an invalid one,
+`Proto.Internal.Percent`, the percent-encoding both sides share, and
+`Proto.Internal.Method`, whose codec halves and
 routes the `Proto.Method` builders put into a method (§3.1, rule 7;
 §5.3).
 

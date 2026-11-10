@@ -842,7 +842,7 @@ posixText =
 
 anyText : Proto.Any.Any -> String
 anyText any =
-    Proto.Any.typeName any ++ " " ++ Proto.Bytes.toBase64 (Proto.Any.bytes any)
+    Proto.Any.typeName any ++ " " ++ Maybe.withDefault "(JSON alone)" (Maybe.map Proto.Bytes.toBase64 (Proto.Any.bytes any))
 
 
 
