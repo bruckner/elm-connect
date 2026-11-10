@@ -1167,7 +1167,7 @@ In detail:
   holds an `Any` that cannot be written (an entry erases its message's
   own problem, since `Proto.Message` cannot name `Proto.Any`'s type).
   `Proto.WellKnown.any : Message Any` is its typed value, and
-  `Proto.Descriptors.wellKnown` holds its tree (`type_url`, `value`).
+  `Proto.WellKnown.descriptors` holds its tree (`type_url`, `value`).
 - `Any` on the wire is proto3 JSON's: the packed message's own object
   plus `"@type"`, or, for a well-known type with a JSON form of its own
   (`Timestamp`, `Duration`, `FieldMask`, `Empty`, `Struct`, `Value`,
@@ -1685,7 +1685,7 @@ descriptors =
             [ Notes.V1.Visibility.descriptor
             ]
         )
-        (Proto.Descriptors.union Users.V1.descriptors Proto.Descriptors.wellKnown)
+        (Proto.Descriptors.union Users.V1.descriptors Proto.WellKnown.descriptors)
 
 
 registry : Proto.Registry.Registry
@@ -1830,7 +1830,7 @@ registry =
   `Proto.WellKnown` (`empty`, `timestamp`, `duration`, `fieldMask`,
   `any`, `struct`, `value`, `listValue` and the wrappers, the 64-bit
   ones in both `int64` forms), built with `Proto.Message.init` (`any`
-  with `initWith`), and `Proto.Descriptors.wellKnown` holds their trees;
+  with `initWith`), and `Proto.WellKnown.descriptors` holds their trees;
   `Proto.ErrorDetails` gives `google/rpc/error_details.proto`'s the same
   way (§5.4). They live apart from
   `Proto.Message` so that the value for `google.protobuf.Any`
@@ -1864,7 +1864,7 @@ registry =
   section holding `descriptors : Proto.Descriptors.Descriptors`,
   transitive: the package's own descriptors, then the `descriptors` of
   the generated packages its module imports (each holding its own
-  imports'), then `Proto.Descriptors.wellKnown`, joined with
+  imports'), then `Proto.WellKnown.descriptors`, joined with
   `Proto.Descriptors.union`, which keeps the left one of two with one
   name (diamonds hold each type once). Packages a service refers to but
   the package's types do not are not in it: importing them could make a

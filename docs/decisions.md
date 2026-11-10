@@ -1246,11 +1246,12 @@ application did not compose in is a loud miss rather than a table that
 happens to hold it through some import. `Proto.Registry`'s surface is
 `empty`, `register`, `union` and `unionAll`; the builder
 from raw codecs (`withCodecs`) is internal, so an entry is always a
-typed value's. The well-known types' registry is
-`Proto.WellKnown.registry`, beside the typed values it registers, as
-each package's and `Proto.ErrorDetails`' sit beside theirs: every
-registry lives with its types, and `Proto.Registry` holds no table of
-its own. There is no `registerAll`: a list of `Message a` cannot
+typed value's. The well-known types' registry and descriptors are
+`Proto.WellKnown.registry` and `Proto.WellKnown.descriptors`, beside
+their typed values, as each package's `registry` and `descriptors` sit
+beside its own (and `Proto.ErrorDetails.registry` beside its): every
+table lives with its types, and `Proto.Registry` and `Proto.Descriptors`
+hold no table of their own. There is no `registerAll`: a list of `Message a` cannot
 hold different `a`s, so it would be `unionAll` by another name.
 
 The alternative was the first draft's transitive table, each package's holding

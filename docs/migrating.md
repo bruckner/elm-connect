@@ -284,8 +284,9 @@ that does not name it carries none.
 
 0.1's `Proto.Registry` held the descriptors by full name. In 0.2 they
 are `Proto.Descriptors`, with the same functions (`empty`, `fromDescriptors`,
-`union`, `wellKnown`, `message`, `enum`, `messages`, `enums`), and each
-generated package module's `registry` is `descriptors`. 0.1 code:
+`union`, `message`, `enum`, `messages`, `enums`) but `wellKnown`, which is
+`Proto.WellKnown.descriptors`, and each generated package module's
+`registry` is `descriptors`. 0.1 code:
 
 ```elm examples/notes/elm/src/Snippets/Migrating.elm#before-note-fields
 noteFields : List String

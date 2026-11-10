@@ -10,6 +10,7 @@ its registry alone, and must still compile beside the service module.
 
 import Proto.Descriptors
 import Proto.Version
+import Proto.WellKnown
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -27,4 +28,4 @@ elmConnectVersion_ =
 -}
 descriptors : Proto.Descriptors.Descriptors
 descriptors =
-    Proto.Descriptors.wellKnown
+    Proto.WellKnown.descriptors

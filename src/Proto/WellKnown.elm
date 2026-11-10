@@ -7,7 +7,7 @@ module Proto.WellKnown exposing
     , uint64Value, uint64ValueAsInt
     , int32Value, uint32Value
     , boolValue, stringValue, bytesValue
-    , registry
+    , registry, descriptors
     )
 
 {-| The `google.protobuf` types elm-connect maps, as
@@ -36,12 +36,15 @@ A wrapper's Elm form is its scalar; a field of one is a `Maybe` of it. The
 @docs boolValue, stringValue, bytesValue
 
 
-# Registry
+# Tables
 
-An `Any` holding one of these converts between proto3 JSON and protobuf
-binary through a [`Proto.Registry`](Proto-Registry) with them in it.
+The two tables each generated package gives for its own types, here for
+these: an `Any` holding one of them converts between proto3 JSON and
+protobuf binary through a [`Proto.Registry`](Proto-Registry) with them in
+it, and a [`Proto.Descriptors`](Proto-Descriptors) with them in it finds
+their descriptors.
 
-@docs registry
+@docs registry, descriptors
 
 -}
 
@@ -50,6 +53,7 @@ import Json.Decode
 import Json.Encode
 import Proto.Any exposing (Any)
 import Proto.Binary
+import Proto.Descriptors
 import Proto.Duration exposing (Duration)
 import Proto.Enum exposing (Enum, enum)
 import Proto.Internal.WellKnown as Descriptors
@@ -228,3 +232,12 @@ registry =
         |> Proto.Registry.register stringValue
         |> Proto.Registry.register bytesValue
         |> Proto.Registry.register any
+
+
+{-| The well-known types' descriptors: those of the messages above and of
+the enum `NullValue` that `Value` refers to. Each generated package's
+`descriptors` holds them; a program building its own table adds this one.
+-}
+descriptors : Proto.Descriptors.Descriptors
+descriptors =
+    Proto.Descriptors.fromDescriptors Descriptors.messages Descriptors.enums

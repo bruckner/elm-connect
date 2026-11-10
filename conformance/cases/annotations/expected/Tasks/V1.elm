@@ -20,6 +20,7 @@ import Proto.Json
 import Proto.Message
 import Proto.Registry
 import Proto.Version
+import Proto.WellKnown
 import Tasks.V1.GetTaskRequest
 import Tasks.V1.State
 import Tasks.V1.Task
@@ -164,7 +165,7 @@ descriptors =
             [ Tasks.V1.State.descriptor
             ]
         )
-        Proto.Descriptors.wellKnown
+        Proto.WellKnown.descriptors
 
 
 {-| The codecs of this package's messages, for converting a [`Proto.Any.Any`](https://github.com/bruckner/elm-connect/blob/0.2.X/src/Proto/Any.elm) that holds one between proto3 JSON and protobuf binary. It holds no other package's types and no well-known type: give a client the union of the registries its `Any`s need (`Proto.Registry.unionAll`, `Rpc.withRegistry`).

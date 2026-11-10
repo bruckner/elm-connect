@@ -213,7 +213,7 @@ suite =
             \_ ->
                 let
                     descriptors =
-                        Descriptors.union (Descriptors.fromDescriptors [ descriptorNote ] []) Descriptors.wellKnown
+                        Descriptors.union (Descriptors.fromDescriptors [ descriptorNote ] []) WellKnown.descriptors
                 in
                 [ Any.pack messageNote note
                 , Any.pack WellKnown.timestamp (Time.millisToPosix 0)

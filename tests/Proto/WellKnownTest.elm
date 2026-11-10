@@ -28,7 +28,7 @@ check message value =
 
 fieldsOf : String -> List Field.Descriptor
 fieldsOf name =
-    Descriptors.message name Descriptors.wellKnown
+    Descriptors.message name WellKnown.descriptors
         |> Maybe.map Message.fields
         |> Maybe.withDefault []
 

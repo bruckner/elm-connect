@@ -235,7 +235,7 @@ impl Emitter {
         for module in imported_packages(package) {
             parts.push(self.generated_value(&module, DESCRIPTORS.to_owned()));
         }
-        parts.push(self.reference((PROTO_DESCRIPTORS, "wellKnown")));
+        parts.push(self.reference((PROTO_WELL_KNOWN, "descriptors")));
         let body = parts
             .into_iter()
             .rev()

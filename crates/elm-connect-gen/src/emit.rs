@@ -993,6 +993,7 @@ mod tests {
                 "Proto.Message",
                 "Proto.Registry",
                 "Proto.Version",
+                "Proto.WellKnown",
                 "T.V1.A"
             ]
         );
@@ -1021,6 +1022,7 @@ mod tests {
                 "Proto.Message",
                 "Proto.Registry",
                 "Proto.Version",
+                "Proto.WellKnown",
                 "T.V1.E"
             ]
         );
@@ -1066,7 +1068,7 @@ mod tests {
                 "descriptors =\n    Proto.Descriptors.union\n        \
                  (Proto.Descriptors.fromDescriptors\n            \
                  [ T.V1.A.descriptor\n            ]\n            []\n        \
-                 )\n        Proto.Descriptors.wellKnown"
+                 )\n        Proto.WellKnown.descriptors"
             ),
             "{on}"
         );
@@ -1080,7 +1082,7 @@ mod tests {
         let printed =
             crate::elm::print::print_module(&emit(&nothing, &Options::default()).expect("emits"));
         assert!(
-            printed.contains("descriptors =\n    Proto.Descriptors.wellKnown"),
+            printed.contains("descriptors =\n    Proto.WellKnown.descriptors"),
             "{printed}"
         );
     }
@@ -1183,6 +1185,7 @@ mod tests {
                 "Proto.Message",
                 "Proto.Registry",
                 "Proto.Version",
+                "Proto.WellKnown",
                 "T.V1.A"
             ]
         );
@@ -1190,7 +1193,7 @@ mod tests {
         assert!(printed.contains("b : Maybe Other.V1.B"), "{printed}");
         assert!(
             printed.contains(
-                "(Proto.Descriptors.union Other.V1.descriptors Proto.Descriptors.wellKnown)"
+                "(Proto.Descriptors.union Other.V1.descriptors Proto.WellKnown.descriptors)"
             ),
             "{printed}"
         );
