@@ -125,7 +125,7 @@ packWith : String -> Message a -> a -> Any
 packWith prefix ((InternalMessage.Message _ codecs) as message) value =
     let
         binary () =
-            Internal.Binary (Proto.Bytes.toBase64 (Bytes.Encode.encode (codecs.encode value)))
+            Internal.Binary (Proto.Bytes.toBase64 (Bytes.Encode.encode (codecs.encodeBinary value)))
     in
     Internal.Any (prefixed prefix message)
         (case codecs.encodeJson (Registry.Registry Registry.Lossless Dict.empty) value of
@@ -170,12 +170,12 @@ tryUnpack ((InternalMessage.Message _ codecs) as message) ((Internal.Any _ paylo
     if is message any then
         case payload of
             Internal.Json json ->
-                Json.Decode.decodeValue (codecs.decoder (Registry.Registry Registry.Lenient Dict.empty)) json
+                Json.Decode.decodeValue (codecs.decodeJson (Registry.Registry Registry.Lenient Dict.empty)) json
                     |> Result.mapError (\_ -> InvalidProto)
 
             Internal.Binary base64 ->
                 Proto.Bytes.fromBase64 base64
-                    |> Maybe.andThen (Proto.Internal.Binary.run codecs.decode)
+                    |> Maybe.andThen (Proto.Internal.Binary.run codecs.decodeBinary)
                     |> Result.fromMaybe InvalidProto
 
     else

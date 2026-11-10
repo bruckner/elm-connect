@@ -57,12 +57,12 @@ the package site may show as `Proto.Internal.Binary.Decoder`.
 
 -}
 init : String -> (a -> Json.Encode.Value) -> Json.Decode.Decoder a -> (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> Message a
-init name encodeJson decoder encode decode =
+init name encodeJson decodeJson encodeBinary decodeBinary =
     Internal.Message name
         { encodeJson = \_ value -> Just (encodeJson value)
-        , decoder = \_ -> decoder
-        , encode = encode
-        , decode = decode
+        , decodeJson = \_ -> decodeJson
+        , encodeBinary = encodeBinary
+        , decodeBinary = decodeBinary
         }
 
 
@@ -77,12 +77,12 @@ type is free here because `Proto.Any` is built on this module).
 
 -}
 initWith : String -> (Registry -> a -> Result problem Json.Encode.Value) -> (Registry -> Json.Decode.Decoder a) -> (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> Message a
-initWith name encodeJson decoder encode decode =
+initWith name encodeJson decodeJson encodeBinary decodeBinary =
     Internal.Message name
         { encodeJson = \registry value -> Result.toMaybe (encodeJson registry value)
-        , decoder = decoder
-        , encode = encode
-        , decode = decode
+        , decodeJson = decodeJson
+        , encodeBinary = encodeBinary
+        , decodeBinary = decodeBinary
         }
 
 
