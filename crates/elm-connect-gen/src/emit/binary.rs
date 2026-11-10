@@ -12,7 +12,8 @@
 //! first member's number falls; a oneof whose members' numbers have
 //! another field's between them is written instead as one `case` per run
 //! of members with no other field between them, each where its run falls,
-//! so the set member is in field-number order too. A merge is `Proto.Binary.merge` of a step
+//! so the set member is in field-number order too. A merge is `Proto.Binary.merge` of the
+//! message's full name, which a decoding failure's path names it by, a step
 //! that `case`s on the field number into a record update (an unknown
 //! number skipped by its wire type) and a finishing function that reverses
 //! the lists the step built front-first. A singular message field, and a
@@ -28,7 +29,8 @@ use super::scalar::Holding;
 use super::{Emitter, MessageShape, OneofShape, docs};
 use crate::elm::ast::{BinOp, Decl, Expr, Pattern, Type};
 use crate::elm::build::{
-    access, apply, binop, case, if_then_else, int, lambda, list, pctor, pvar, qualified, ty, var,
+    access, apply, binop, case, if_then_else, int, lambda, list, pctor, pvar, qualified, string,
+    ty, var,
 };
 use crate::ir::{
     Cardinality, Enum, Field, MapKey, Message, OneofVariant, ScalarKind, TypeRef, WellKnown,
@@ -505,7 +507,10 @@ impl Emitter {
             name: merge_name(shape.message.decoder_name()),
             annotation,
             params: Vec::new(),
-            body: apply(merge, [step, finish]),
+            body: apply(
+                merge,
+                [string(shape.message.proto_full_name.clone()), step, finish],
+            ),
         }
     }
 

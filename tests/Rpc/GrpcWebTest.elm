@@ -36,7 +36,7 @@ encodeGetNoteBytes r =
 
 decodeTitleBytes : Proto.Binary.Decoder String
 decodeTitleBytes =
-    Proto.Binary.merge
+    Proto.Binary.merge "notes.v1.Title"
         (\number wire value ->
             case number of
                 1 ->

@@ -210,6 +210,7 @@ decodeRoleBytes number =
 mergeUserBytes : User -> Proto.Binary.Decoder User
 mergeUserBytes =
     Proto.Binary.merge
+        "users.v1.User"
         (\number wire value ->
             case number of
                 1 ->

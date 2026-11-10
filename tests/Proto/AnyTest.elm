@@ -68,7 +68,7 @@ encodeNoteBytes value =
 
 decodeNoteBytes : Proto.Binary.Decoder Note
 decodeNoteBytes =
-    Proto.Binary.merge
+    Proto.Binary.merge "notes.v1.Note"
         (\number wire value ->
             case number of
                 1 ->

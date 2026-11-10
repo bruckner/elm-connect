@@ -260,6 +260,7 @@ encodeGetThingRequestBytes value =
 mergeThingBytes : Thing -> Proto.Binary.Decoder Thing
 mergeThingBytes =
     Proto.Binary.merge
+        "things.v1.Thing"
         (\number wire value ->
             case number of
                 1 ->
@@ -283,6 +284,7 @@ decodeThingBytes =
 mergeCriteriaBytes : Criteria -> Proto.Binary.Decoder Criteria
 mergeCriteriaBytes =
     Proto.Binary.merge
+        "things.v1.Filter"
         (\number wire value ->
             case number of
                 1 ->
@@ -306,6 +308,7 @@ decodeCriteriaBytes =
 mergeGetThingRequestBytes : GetThingRequest -> Proto.Binary.Decoder GetThingRequest
 mergeGetThingRequestBytes =
     Proto.Binary.merge
+        "things.v1.GetThingRequest"
         (\number wire value ->
             case number of
                 1 ->

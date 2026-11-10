@@ -364,6 +364,7 @@ decodeMoodBytes number =
 mergeDraftBytes : Draft -> Proto.Binary.Decoder Draft
 mergeDraftBytes =
     Proto.Binary.merge
+        "field_order.v1.Draft"
         (\number wire value ->
             case number of
                 1 ->
@@ -402,6 +403,7 @@ decodeDraftBytes =
 mergeDraftMarginBytes : DraftMargin -> Proto.Binary.Decoder DraftMargin
 mergeDraftMarginBytes =
     Proto.Binary.merge
+        "field_order.v1.Draft.Margin"
         (\number wire value ->
             case number of
                 1 ->

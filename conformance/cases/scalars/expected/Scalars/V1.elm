@@ -278,6 +278,7 @@ encodeEmptyBytes _ =
 mergeScalarsBytes : Scalars -> Proto.Binary.Decoder Scalars
 mergeScalarsBytes =
     Proto.Binary.merge
+        "scalars.v1.Scalars"
         (\number wire value ->
             case number of
                 1 ->
@@ -348,7 +349,7 @@ decodeScalarsBytes =
 -}
 mergeEmptyBytes : Empty -> Proto.Binary.Decoder Empty
 mergeEmptyBytes =
-    Proto.Binary.merge (\_ wire value -> Proto.Binary.skip wire value) identity
+    Proto.Binary.merge "scalars.v1.Empty" (\_ wire value -> Proto.Binary.skip wire value) identity
 
 
 {-| Decodes an [`Empty`](#Empty) from protobuf binary.

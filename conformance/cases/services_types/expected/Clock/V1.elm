@@ -138,6 +138,7 @@ encodeAlarmBytes value =
 mergeAlarmBytes : Alarm -> Proto.Binary.Decoder Alarm
 mergeAlarmBytes =
     Proto.Binary.merge
+        "clock.v1.Alarm"
         (\number wire value ->
             case number of
                 1 ->

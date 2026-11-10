@@ -208,6 +208,7 @@ encodeMessageBytes value =
 mergeMessageRequestBytes : MessageRequest -> Proto.Binary.Decoder MessageRequest
 mergeMessageRequestBytes =
     Proto.Binary.merge
+        "msgs.v1.MessageRequest"
         (\number wire value ->
             case number of
                 1 ->
@@ -237,6 +238,7 @@ decodeMessageRequestBytes =
 mergeMessageBytes : Message -> Proto.Binary.Decoder Message
 mergeMessageBytes =
     Proto.Binary.merge
+        "msgs.v1.Message"
         (\number wire value ->
             case number of
                 1 ->

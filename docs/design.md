@@ -1929,7 +1929,8 @@ registry =
   its first member's number falls (a oneof with another field numbered
   between its members is written as a `case` per run of members, each
   where its run falls, so the set member keeps field-number order too); a
-  merge is `Proto.Binary.merge` of a step that `case`s on the field
+  merge is `Proto.Binary.merge` of the message's full name, which a
+  decoding failure's path names it by, a step that `case`s on the field
   number into a record update and a finish that reverses the lists the
   step built front first. A
   repeated scalar declared `[packed = false]` is written with
@@ -3540,6 +3541,48 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
   (`conformance/README.md`, "Error details"); a failure is ported from
   the generated module by hand.
 
+#### The proto layer's errors
+
+`Proto.Error` is the one error type of the `Proto` modules, a leaf
+that imports only elm/json, so every module below `Proto.Any` can
+carry it.
+
+```elm
+-- Proto.Error
+type Error
+    = BadBinary Binary                  -- protobuf binary that is not the message
+    | BadJson Json.Decode.Error         -- proto3 JSON that is not the message; elm/json's path locates it
+    | TypeMismatch { typeName : String, typeUrl : String }  -- an Any unpacked as another type
+    | UnregisteredType String           -- an Any's type URL the registry has no entry for
+
+type alias Binary =
+    { typeName : String                 -- the message the program read, a full name
+    , reason : Reason
+    , path : List ( String, Int )       -- (message full name, field number), outermost first
+    , offset : Int                      -- the first byte that could not be read
+    }
+
+type Reason
+    = Truncated | LengthOverrun | InvalidTag | InvalidWireType Int
+    | MalformedVarint | OutOfRange | InvalidUtf8 | Unlocated
+
+toString : Error -> String              -- for a log, as Json.Decode.errorToString
+```
+
+- An operation that fails one way gives that way's own type, and one
+  that fails several ways gives `Error`: `Proto.Binary.decode` gives a
+  `Binary`, which lifts into `Error` as `BadBinary`.
+- `Binary` is what the binary decoder can say for nothing on the happy
+  path (§5.5): the reason, the path and the offset, built only as a
+  failure unwinds. Field names are not in it: a decoder carries message
+  names and field numbers, and `Proto.Descriptors` holds the names.
+  `Unlocated` is the decoder's backstop, reachable only through a bug in
+  its readers.
+- `toString` holds every reason's text, one clause each, with the path
+  innermost first and the offset: `Not a notes.v1.Note in protobuf
+  binary: a string is not UTF-8, at byte 36, in field 1 of
+  notes.v1.Revision in field 3 of notes.v1.Note.`
+
 ### 5.5 The binary wire format
 
 `Proto.Binary` reads and writes protobuf's binary encoding over
@@ -3559,13 +3602,36 @@ Connect's proto codec sends them (§5.3).
   counts down the message's length, which `decode` takes from
   `Bytes.width` and a nested message from its length prefix, read in
   place from the same input. `Proto.Binary.Decoder a` is opaque over
-  that `Int -> Bytes.Decode.Decoder a`, so the length stays plumbing and
-  the representation can change without touching user code; Elm
-  0.19.2's `--optimize` compiles the one-constructor wrapper to
-  `identity`. It is defined in `Proto.Internal.Binary`, since
-  `Proto.Message` holds one and `Proto.Binary` imports
+  the message's full name and two readers given that length (below),
+  so the length stays plumbing and the representation can change
+  without touching user code. It is defined in `Proto.Internal.Binary`,
+  since `Proto.Message` holds one and `Proto.Binary` imports
   `Proto.Message` through `Proto.Json`, and the package site shows the
   internal name.
+- **A decoder reads twice, only when it fails.** `decode : Decoder a ->
+  Bytes -> Result Proto.Error.Binary a`. Each decoder holds two readers
+  built by the same combinators: a fast one, which reads as protobuf
+  does and says only whether the bytes are the message, and a locating
+  one, which `decode` runs over the same input only when the fast one
+  fails. The fast reader is what every message pays for; the locating
+  reader is given the bytes left in the region it reads in (the input,
+  a message, a packed run, a map entry), never reads past them, and
+  builds the report as a failure unwinds: the message's full name (the
+  generated `merge` passes it, and every nested decoder carries its
+  own), the `Proto.Error.Reason` (§5.4), the fields it is in as (message full
+  name, field number) pairs outermost first, and the offset of the
+  first byte that could not be read. A read past the end of a region
+  is `Truncated` at the top and `LengthOverrun` inside a region the
+  input holds whole. The readers fail on the same inputs (a corpus
+  test holds them to it, and to an independently made report for each
+  failure); were they to disagree, the report is `Unlocated`, a bug. A
+  failing input pays both passes: about twice a successful decode when
+  the fast reader reads to the end before failing. The fast reader
+  does not check a length against the bytes left before reading that
+  many, so a cut input still reads to its end before failing: the check
+  saved over 90 % on that failure and cost 4 to 5 % on a successful
+  decode of a small message of strings (decisions: "The binary decoder
+  reads twice").
 - **Encoding is deterministic.** Fields go in field-number order; a
   field without presence is left out at its default (a float at `0` or
   `-0`; NaN is written), and so is a map entry's default key or value;
@@ -3600,15 +3666,29 @@ Connect's proto codec sends them (§5.3).
   it under unknown fields rather than failing; they are not kept, so a
   message read and written again loses them (roadmap: unknown fields).
   A group, field number 0, a length past the end of its message, a
-  varint longer than ten bytes and a string cut off in the middle of a
-  character fail the decode; a string is read from its own slice of the
-  input, since elm/bytes would read such a string past its end.
+  varint longer than ten bytes and a `string` that is not UTF-8 fail the
+  decode, each with its `Proto.Error.Reason`.
+- **Strings are UTF-8, as the schema says.** proto3 requires a `string`
+  field to hold UTF-8, and `Proto.Binary.string` checks it, failing the
+  field with `InvalidUtf8`; so do a map's string keys, `StringValue` and
+  an `Any`'s type URL, all proto3. Each string is read from its own
+  slice of the input, since elm/bytes takes a byte that does not begin
+  a character as the lead of four and would read a string ending on
+  one past its end. elm/bytes does not check UTF-8 itself, so the
+  bytes are checked after decoding, only when they hold a byte past
+  ASCII: elm/bytes gives one UTF-16 code unit per ASCII byte and fewer
+  units than bytes for any other, so a string as long as its bytes is
+  ASCII and valid, and costs nothing more. A string with a multi-byte
+  character costs about 8.5 ns a byte. proto2 and editions' `NONE`
+  validation would read strings unchecked, but the generator accepts
+  neither (decisions: "Strings are checked as the schema says").
 - **`Any`**: `Proto.Binary.any : Codec Any` reads its type URL and
   binary and writes them back as they are, needing no registry; an `Any`
   always holds binary (§3.5), so a program that only speaks binary keeps
   no table, no `Proto.Json` and no `Proto.Timestamp` through an `Any`.
   `Proto.Any.tryUnpack` decodes the binary with the message's typed
-  value. One that arrives twice is merged field by field.
+  value; a failure is reported as `decode` reports one (§5.4's
+  `Proto.Error`). One that arrives twice is merged field by field.
 - A `Timestamp` drops nanoseconds past the millisecond when read, as the
   JSON codec does.
 

@@ -340,6 +340,7 @@ decodeRoleBytes number =
 mergeMemberBytes : Member -> Proto.Binary.Decoder Member
 mergeMemberBytes =
     Proto.Binary.merge
+        "maps.v1.Member"
         (\number wire value ->
             case number of
                 1 ->
@@ -363,6 +364,7 @@ decodeMemberBytes =
 mergeTeamBytes : Team -> Proto.Binary.Decoder Team
 mergeTeamBytes =
     Proto.Binary.merge
+        "maps.v1.Team"
         (\number wire value ->
             case number of
                 1 ->

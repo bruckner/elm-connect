@@ -168,7 +168,7 @@ encoder (Internal.Message _ c) =
 
 decodeBytes : Message a -> Bytes -> Maybe a
 decodeBytes (Internal.Message _ c) =
-    Proto.Binary.decode c.decodeBinary
+    Proto.Binary.decode c.decodeBinary >> Result.toMaybe
 
 
 {-| The binary as base64, since Elm's `==` does not look inside `Bytes`.

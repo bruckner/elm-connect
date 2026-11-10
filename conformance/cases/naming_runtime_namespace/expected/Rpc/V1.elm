@@ -138,6 +138,7 @@ encodePingBytes value =
 mergePingBytes : Ping -> Proto.Binary.Decoder Ping
 mergePingBytes =
     Proto.Binary.merge
+        "rpc.v1.Ping"
         (\number wire value ->
             case number of
                 1 ->

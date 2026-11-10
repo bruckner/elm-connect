@@ -174,9 +174,8 @@ tryUnpack ((InternalMessage.Message _ codecs) as message) ((Internal.Any _ paylo
                     |> Result.mapError (\_ -> InvalidProto)
 
             Internal.Binary base64 ->
-                Proto.Bytes.fromBase64 base64
-                    |> Maybe.andThen (Proto.Internal.Binary.run codecs.decodeBinary)
-                    |> Result.fromMaybe InvalidProto
+                Proto.Internal.Binary.runBase64 codecs.decodeBinary base64
+                    |> Result.mapError (\_ -> InvalidProto)
 
     else
         Err (TypeMismatch (typeName any))

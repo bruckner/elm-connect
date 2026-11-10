@@ -390,6 +390,7 @@ decodeMarksBytes number =
 mergeDelimitersBytes : Delimiters -> Proto.Binary.Decoder Delimiters
 mergeDelimitersBytes =
     Proto.Binary.merge
+        "awkward.v1.Delimiters"
         (\number wire value ->
             case number of
                 1 ->
@@ -431,6 +432,7 @@ decodeDelimitersBytes =
 mergeDocsBytes : Docs -> Proto.Binary.Decoder Docs
 mergeDocsBytes =
     Proto.Binary.merge
+        "awkward.v1.Docs"
         (\number wire value ->
             case number of
                 1 ->

@@ -138,6 +138,7 @@ encodeLineBytes value =
 mergeLineBytes : Line -> Proto.Binary.Decoder Line
 mergeLineBytes =
     Proto.Binary.merge
+        "chat.v1.Line"
         (\number wire value ->
             case number of
                 1 ->

@@ -1,7 +1,7 @@
 module Proto.Binary exposing
     ( decode, encode, Decoder, map
     , Codec
-    , merge, field, fieldInto, repeated, mapEntry, insertBool, skip
+    , merge, Field, field, fieldInto, repeated, mapEntry, insertBool, skip
     , implicit, optional, present, list, listUnpacked, dict, boolMap
     , double, float
     , int32, sint32, sfixed32, uint32, fixed32
@@ -22,7 +22,7 @@ A message's [`Decoder`](#Decoder) reads it from a whole input with
 message that arrives twice.
 
     Proto.Binary.decode Notes.V1.decodeNoteBytes body
-    --> Just note
+    --> Ok note
 
 Encoders write fields in field-number order, leave out a field without
 presence at its default, and write a map's entries in the order of its
@@ -31,8 +31,9 @@ gives the same bytes. Decoders read fields in any order, the last of a
 repeated singular field winning and a message field merged into the one
 read before it, read a repeated scalar packed or not, and skip a field they
 do not know, or one of a wire type its declaration does not take, by its
-wire type; a group, a length past the end and a varint longer than ten
-bytes fail.
+wire type; a group, a length past the end, a varint longer than ten bytes
+and a `string` that is not UTF-8 fail, with a
+[`Proto.Error.Binary`](Proto-Error#Binary) saying why and where.
 
 64-bit integers are held as the generated code holds them: a decimal
 `String`, exact, or an `Int` (the `AsInt` codecs) that fails to decode
@@ -48,7 +49,7 @@ outside ±(2^53 − 1).
 
 # Decoding a message
 
-@docs merge, field, fieldInto, repeated, mapEntry, insertBool, skip
+@docs merge, Field, field, fieldInto, repeated, mapEntry, insertBool, skip
 
 
 # Encoding a message
@@ -87,8 +88,9 @@ import Json.Decode
 import Json.Encode
 import Proto.Bytes
 import Proto.Duration exposing (Duration)
+import Proto.Error exposing (Reason(..))
 import Proto.Internal.Any as InternalAny exposing (Any)
-import Proto.Internal.Binary as Internal
+import Proto.Internal.Binary as Internal exposing (Failure)
 import Time
 
 
@@ -97,9 +99,15 @@ import Time
 
 
 {-| Decode a whole input as one message, with its generated decoder
-(`decodeNoteBytes`); `Nothing` when the bytes are not that message.
+(`decodeNoteBytes`), or say why the bytes are not that message: the
+[`Reason`](Proto-Error#Reason), the fields it is in and the offset of the
+first byte that could not be read.
+
+    Proto.Binary.decode Notes.V1.decodeNoteBytes truncated
+    --> Err { typeName = "notes.v1.Note", reason = Proto.Error.Truncated, path = [ ( "notes.v1.Note", 2 ) ], offset = 9 }
+
 -}
-decode : Decoder a -> Bytes -> Maybe a
+decode : Decoder a -> Bytes -> Result Proto.Error.Binary a
 decode =
     Internal.run
 
@@ -118,13 +126,22 @@ type alias Decoder a =
 a message that closes a cycle.
 -}
 map : (a -> b) -> Decoder a -> Decoder b
-map f (Internal.Decoder decoder) =
-    Internal.Decoder (\width -> D.map f (decoder width))
+map f (Internal.Decoder d) =
+    Internal.Decoder
+        { name = d.name
+        , fast = \width -> D.map f (d.fast width)
+        , located = \width -> D.map (Result.map f) (d.located width)
+        }
 
 
-run : Decoder a -> Int -> D.Decoder a
-run (Internal.Decoder decoder) =
-    decoder
+run : Decoder a -> Int -> D.Decoder (Result Failure a)
+run (Internal.Decoder d) =
+    d.located
+
+
+fastRun : Decoder a -> Int -> D.Decoder a
+fastRun (Internal.Decoder d) =
+    d.fast
 
 
 {-| Encode a message with its generated encoder (`encodeNoteBytes`).
@@ -145,47 +162,148 @@ has one by [`embedded`](#embedded).
 -}
 type Codec a
     = Codec
+        -- Each value has two readers. The fast one (`fast`, `fastBody`,
+        -- `fastInto`) fails without saying why. The locating one (`read`,
+        -- `readBody`, `readInto`) is given the bytes left in the region it
+        -- reads in, never reads past them, and says why it failed.
         { wire : Int
-        , read : D.Decoder ( Int, a )
+        , fast : D.Decoder ( Int, a )
+        , fastBody : Int -> D.Decoder a
+        , fastInto : a -> D.Decoder ( Int, a )
+        , read : Int -> Read a
         , write : a -> Encoder
         , isDefault : a -> Bool
         , zero : a
         , packable : Bool
         , writeBody : a -> Encoder
-        , readBody : Int -> D.Decoder a
-        , readInto : a -> D.Decoder ( Int, a )
+        , readBody : Int -> D.Decoder (Result Failure a)
+        , readInto : a -> Int -> Read a
+        , name : String
         }
 
 
-scalar : Int -> D.Decoder ( Int, a ) -> (a -> Encoder) -> (a -> Bool) -> a -> Codec a
-scalar wire read write isDefault zero =
+{-| A value read and its width, or why it could not be.
+-}
+type alias Read a =
+    D.Decoder (Result Failure ( Int, a ))
+
+
+{-| A scalar's codec from its fast reader and its raw reader given the
+bytes left, which gives a negative width for a failure (see
+[`leaf`](#leaf)). `widest` is the most bytes it reads: with that many left
+it reads from one decoder built once.
+-}
+scalar : Int -> Int -> D.Decoder ( Int, a ) -> (Int -> D.Decoder ( Int, a )) -> (a -> Encoder) -> (a -> Bool) -> a -> Codec a
+scalar wire widest fast raw write isDefault zero =
+    let
+        free =
+            D.map checked (raw widest)
+    in
+    rawCodec wire
+        fast
+        (\bound ->
+            if bound >= widest then
+                free
+
+            else
+                D.map checked (raw bound)
+        )
+        write
+        isDefault
+        zero
+
+
+{-| A length-delimited scalar's codec, whose raw reader checks its length
+against the bytes left.
+-}
+delimitedScalar : D.Decoder ( Int, a ) -> (Int -> D.Decoder ( Int, a )) -> (a -> Encoder) -> (a -> Bool) -> a -> Codec a
+delimitedScalar fast raw write isDefault zero =
+    rawCodec 2 fast (\bound -> D.map checked (raw bound)) write isDefault zero
+
+
+rawCodec : Int -> D.Decoder ( Int, a ) -> (Int -> Read a) -> (a -> Encoder) -> (a -> Bool) -> a -> Codec a
+rawCodec wire fast read write isDefault zero =
     Codec
         { wire = wire
+        , fast = fast
+        , fastBody = \_ -> D.map Tuple.second fast
+        , fastInto = \_ -> fast
         , read = read
         , write = write
         , isDefault = isDefault
         , zero = zero
         , packable = wire /= 2
         , writeBody = write
-        , readBody = \_ -> D.map Tuple.second read
+        , readBody = \width -> D.map (Result.map Tuple.second) (read width)
         , readInto = \_ -> read
+        , name = ""
         }
+
+
+checked : ( Int, a ) -> Result Failure ( Int, a )
+checked (( width, _ ) as read) =
+    if width < 0 then
+        Err (leaf width)
+
+    else
+        Ok read
+
+
+{-| The failure a raw reader's negative width stands for: -1 a varint longer
+than ten bytes, -3 a value out of range, -4 a string whose bytes are not
+UTF-8, any other a read past the end of the region.
+-}
+leaf : Int -> Failure
+leaf code =
+    { reason =
+        if code == -1 then
+            MalformedVarint
+
+        else if code == -3 then
+            OutOfRange
+
+        else if code == -4 then
+            InvalidUtf8
+
+        else
+            Truncated
+    , path = []
+    , offset = 0
+    }
+
+
+pastEnd : Failure
+pastEnd =
+    leaf -2
 
 
 
 -- DECODING A MESSAGE
 
 
-{-| A message decoder reading into `start`: from a step that reads one field
-into the value so far given the field's number and wire type, and a
-function applied once every field is read. Generated code reverses its
-lists there, which is why `merge` applies it to `start` too: a finished
-value's lists turned back the way the step builds them, so repeated fields
-read into a value add to its elements.
+{-| One field read into the value so far, as a message's step gives it
+to [`merge`](#merge): built by [`field`](#field), [`fieldInto`](#fieldInto),
+[`repeated`](#repeated), [`mapEntry`](#mapEntry) or [`skip`](#skip).
+-}
+type Field a
+    = Field
+        -- The fast reader, and the locating one given the bytes left in the
+        -- region it reads in.
+        { fast : D.Decoder ( Int, a )
+        , located : Int -> Read a
+        }
+
+
+{-| A message decoder reading into `start`: from the message's full name, a
+step that reads one field into the value so far given the field's number
+and wire type, and a function applied once every field is read. Generated
+code reverses its lists there, which is why `merge` applies it to `start`
+too: a finished value's lists turned back the way the step builds them, so
+repeated fields read into a value add to its elements.
 
     mergeLeafBytes : Leaf -> Proto.Binary.Decoder Leaf
     mergeLeafBytes =
-        Proto.Binary.merge
+        Proto.Binary.merge "pkg.Leaf"
             (\number wire value ->
                 case number of
                     1 ->
@@ -201,18 +319,26 @@ read into a value add to its elements.
         mergeLeafBytes defaultLeaf
 
 -}
-merge : (Int -> Int -> a -> D.Decoder ( Int, a )) -> (a -> a) -> a -> Decoder a
-merge step finish start =
-    Internal.Decoder (\width -> D.loop ( width, finish start ) (messageStep step finish))
+merge : String -> (Int -> Int -> a -> Field a) -> (a -> a) -> a -> Decoder a
+merge name step finish start =
+    let
+        first =
+            finish start
+    in
+    Internal.Decoder
+        { name = name
+        , fast = fastMessage first step finish
+        , located = message name first step finish
+        }
 
 
-message : a -> (Int -> Int -> a -> D.Decoder ( Int, a )) -> (a -> a) -> Int -> D.Decoder a
-message default step finish width =
-    D.loop ( width, default ) (messageStep step finish)
+fastMessage : a -> (Int -> Int -> a -> Field a) -> (a -> a) -> Int -> D.Decoder a
+fastMessage start step finish width =
+    D.loop ( width, start ) (fastMessageStep step finish)
 
 
-messageStep : (Int -> Int -> a -> D.Decoder ( Int, a )) -> (a -> a) -> ( Int, a ) -> D.Decoder (Step ( Int, a ) a)
-messageStep step finish ( remaining, acc ) =
+fastMessageStep : (Int -> Int -> a -> Field a) -> (a -> a) -> ( Int, a ) -> D.Decoder (Step ( Int, a ) a)
+fastMessageStep step finish ( remaining, acc ) =
     if remaining == 0 then
         D.succeed (Done (finish acc))
 
@@ -220,7 +346,7 @@ messageStep step finish ( remaining, acc ) =
         D.fail
 
     else
-        varint32
+        fastVarint32
             |> D.andThen
                 (\( keyWidth, tag ) ->
                     let
@@ -231,8 +357,68 @@ messageStep step finish ( remaining, acc ) =
                         D.fail
 
                     else
-                        step number (Bitwise.and 7 tag) acc
-                            |> D.map (\( width, next ) -> Loop ( remaining - keyWidth - width, next ))
+                        case step number (Bitwise.and 7 tag) acc of
+                            Field f ->
+                                f.fast
+                                    |> D.map (\( width, next ) -> Loop ( remaining - keyWidth - width, next ))
+                )
+
+
+message : String -> a -> (Int -> Int -> a -> Field a) -> (a -> a) -> Int -> D.Decoder (Result Failure a)
+message name start step finish width =
+    D.loop ( width, start ) (messageStep name width step finish)
+
+
+{-| Wire types 3, 4, 6 and 7, as bits of a byte.
+-}
+invalidWire : Int -> Bool
+invalidWire wire =
+    Bitwise.and 1 (Bitwise.shiftRightZfBy wire 0xD8) == 1
+
+
+messageStep : String -> Int -> (Int -> Int -> a -> Field a) -> (a -> a) -> ( Int, a ) -> D.Decoder (Step ( Int, a ) (Result Failure a))
+messageStep name width step finish ( remaining, acc ) =
+    if remaining == 0 then
+        D.succeed (Done (Ok (finish acc)))
+
+    else
+        varint32 remaining
+            |> D.andThen
+                (\( keyWidth, tag ) ->
+                    let
+                        start =
+                            width - remaining
+                    in
+                    if keyWidth < 0 then
+                        D.succeed (Done (Err { reason = (leaf keyWidth).reason, path = [], offset = start }))
+
+                    else
+                        let
+                            number =
+                                Bitwise.shiftRightZfBy 3 tag
+
+                            wire =
+                                Bitwise.and 7 tag
+                        in
+                        if number == 0 then
+                            D.succeed (Done (Err { reason = InvalidTag, path = [ ( name, 0 ) ], offset = start }))
+
+                        else if invalidWire wire then
+                            D.succeed (Done (Err { reason = InvalidWireType wire, path = [ ( name, number ) ], offset = start }))
+
+                        else
+                            case step number wire acc of
+                                Field f ->
+                                    f.located (remaining - keyWidth)
+                                        |> D.map
+                                            (\result ->
+                                                case result of
+                                                    Ok ( fieldWidth, next ) ->
+                                                        Loop ( remaining - keyWidth - fieldWidth, next )
+
+                                                    Err failure ->
+                                                        Done (Err { reason = failure.reason, path = ( name, number ) :: failure.path, offset = failure.offset + start + keyWidth })
+                                            )
                 )
 
 
@@ -240,30 +426,47 @@ messageStep step finish ( remaining, acc ) =
 it with the function given; a field of another wire type is skipped,
 leaving `current` as it is, as protobuf reads it: an unknown field.
 -}
-field : Codec v -> (v -> a) -> Int -> a -> D.Decoder ( Int, a )
+field : Codec v -> (v -> a) -> Int -> a -> Field a
 field (Codec c) set wire current =
     if wire == c.wire then
-        D.map (\( width, v ) -> ( width, set v )) c.read
+        Field
+            { fast = D.map (\( width, v ) -> ( width, set v )) c.fast
+            , located = \bound -> D.map (setWith set) (c.read bound)
+            }
 
     else
         skip wire current
+
+
+setWith : (v -> a) -> Result Failure ( Int, v ) -> Result Failure ( Int, a )
+setWith set result =
+    case result of
+        Ok ( width, v ) ->
+            Ok ( width, set v )
+
+        Err failure ->
+            Err failure
 
 
 {-| Read a singular message field, or a oneof's message member, into the
 message read before it (`existing`, `Nothing` when none was), as protobuf
 merges a message that arrives twice, and set it with the function given.
 -}
-fieldInto : Codec v -> Maybe v -> (v -> a) -> Int -> a -> D.Decoder ( Int, a )
+fieldInto : Codec v -> Maybe v -> (v -> a) -> Int -> a -> Field a
 fieldInto (Codec c) existing set wire current =
     if wire == c.wire then
-        D.map (\( width, v ) -> ( width, set v ))
-            (case existing of
-                Just before ->
-                    c.readInto before
+        case existing of
+            Just before ->
+                Field
+                    { fast = D.map (\( width, v ) -> ( width, set v )) (c.fastInto before)
+                    , located = \bound -> D.map (setWith set) (c.readInto before bound)
+                    }
 
-                Nothing ->
-                    c.read
-            )
+            Nothing ->
+                Field
+                    { fast = D.map (\( width, v ) -> ( width, set v )) c.fast
+                    , located = \bound -> D.map (setWith set) (c.read bound)
+                    }
 
     else
         skip wire current
@@ -274,25 +477,57 @@ onto the front of the elements read so far (`existing`); the message's
 finishing function reverses the list. A field of another wire type is
 skipped, leaving `current` as it is.
 -}
-repeated : Codec v -> (List v -> a) -> List v -> Int -> a -> D.Decoder ( Int, a )
+repeated : Codec v -> (List v -> a) -> List v -> Int -> a -> Field a
 repeated (Codec c) set existing wire current =
     if wire == c.wire then
-        D.map (\( width, v ) -> ( width, set (v :: existing) )) c.read
+        Field
+            { fast = D.map (\( width, v ) -> ( width, set (v :: existing) )) c.fast
+            , located = \bound -> D.map (setWith (\v -> set (v :: existing))) (c.read bound)
+            }
 
     else if c.packable && wire == 2 then
-        varint32
-            |> D.andThen
-                (\( lengthWidth, length ) ->
-                    D.loop ( length, existing ) (packedStep c.read)
-                        |> D.map (\vs -> ( lengthWidth + length, set vs ))
-                )
+        Field
+            { fast =
+                fastVarint32
+                    |> D.andThen
+                        (\( lengthWidth, length ) ->
+                            D.loop ( length, existing ) (fastPackedStep c.fast)
+                                |> D.map (\vs -> ( lengthWidth + length, set vs ))
+                        )
+            , located = \bound -> packed c.read set existing bound
+            }
 
     else
         skip wire current
 
 
-packedStep : D.Decoder ( Int, v ) -> ( Int, List v ) -> D.Decoder (Step ( Int, List v ) (List v))
-packedStep read ( remaining, acc ) =
+packed : (Int -> Read v) -> (List v -> a) -> List v -> Int -> Read a
+packed read set existing bound =
+    varint32 bound
+        |> D.andThen
+            (\( lengthWidth, length ) ->
+                if lengthWidth < 0 then
+                    D.succeed (Err (leaf lengthWidth))
+
+                else if length > bound - lengthWidth then
+                    D.succeed (Err pastEnd)
+
+                else
+                    D.loop ( length, existing ) (packedStep read length)
+                        |> D.map
+                            (\result ->
+                                case result of
+                                    Ok vs ->
+                                        Ok ( lengthWidth + length, set vs )
+
+                                    Err failure ->
+                                        Err (Internal.crossed lengthWidth failure)
+                            )
+            )
+
+
+fastPackedStep : D.Decoder ( Int, v ) -> ( Int, List v ) -> D.Decoder (Step ( Int, List v ) (List v))
+fastPackedStep read ( remaining, acc ) =
     if remaining == 0 then
         D.succeed (Done acc)
 
@@ -303,23 +538,70 @@ packedStep read ( remaining, acc ) =
         D.map (\( width, v ) -> Loop ( remaining - width, v :: acc )) read
 
 
+packedStep : (Int -> Read v) -> Int -> ( Int, List v ) -> D.Decoder (Step ( Int, List v ) (Result Failure (List v)))
+packedStep read length ( remaining, acc ) =
+    if remaining == 0 then
+        D.succeed (Done (Ok acc))
+
+    else
+        D.map
+            (\result ->
+                case result of
+                    Ok ( width, v ) ->
+                        Loop ( remaining - width, v :: acc )
+
+                    Err failure ->
+                        Done (Err { failure | offset = failure.offset + length - remaining })
+            )
+            (read remaining)
+
+
 {-| Read one entry of a map field, its key and value defaulting to their
 codecs' defaults when left out, and insert it with the function given; an
 entry for a key read before replaces it. A field of another wire type is
 skipped, leaving `current` as it is.
 -}
-mapEntry : Codec k -> Codec v -> (k -> v -> a) -> Int -> a -> D.Decoder ( Int, a )
+mapEntry : Codec k -> Codec v -> (k -> v -> a) -> Int -> a -> Field a
 mapEntry (Codec k) (Codec v) insert wire current =
     if wire /= 2 then
         skip wire current
 
     else
-        varint32
-            |> D.andThen
-                (\( lengthWidth, length ) ->
-                    D.loop ( length, ( k.zero, v.zero ) ) (entryStep k.wire k.read v.wire v.read)
-                        |> D.map (\( key_, item ) -> ( lengthWidth + length, insert key_ item ))
-                )
+        Field
+            { fast =
+                fastVarint32
+                    |> D.andThen
+                        (\( lengthWidth, length ) ->
+                            D.loop ( length, ( k.zero, v.zero ) ) (fastEntryStep k.wire k.fast v.wire v.fast)
+                                |> D.map (\( key_, item ) -> ( lengthWidth + length, insert key_ item ))
+                        )
+            , located = \bound -> locatedEntry k.wire k.read k.zero v.wire v.read v.zero insert bound
+            }
+
+
+locatedEntry : Int -> (Int -> Read k) -> k -> Int -> (Int -> Read v) -> v -> (k -> v -> a) -> Int -> Read a
+locatedEntry keyWire readKey keyZero valueWire readItem valueZero insert bound =
+    varint32 bound
+        |> D.andThen
+            (\( lengthWidth, length ) ->
+                if lengthWidth < 0 then
+                    D.succeed (Err (leaf lengthWidth))
+
+                else if length > bound - lengthWidth then
+                    D.succeed (Err pastEnd)
+
+                else
+                    D.loop ( length, ( keyZero, valueZero ) ) (entryStep length keyWire readKey valueWire readItem)
+                        |> D.map
+                            (\result ->
+                                case result of
+                                    Ok ( key_, item ) ->
+                                        Ok ( lengthWidth + length, insert key_ item )
+
+                                    Err failure ->
+                                        Err (Internal.crossed lengthWidth failure)
+                            )
+            )
 
 
 {-| A `bool`-keyed map's entry, put in place of any for the same key.
@@ -329,8 +611,8 @@ insertBool key item entries =
     ( key, item ) :: List.filter (\( k, _ ) -> k /= key) entries
 
 
-entryStep : Int -> D.Decoder ( Int, k ) -> Int -> D.Decoder ( Int, v ) -> ( Int, ( k, v ) ) -> D.Decoder (Step ( Int, ( k, v ) ) ( k, v ))
-entryStep keyWire readKey valueWire readItem ( remaining, ( key_, item ) as current ) =
+fastEntryStep : Int -> D.Decoder ( Int, k ) -> Int -> D.Decoder ( Int, v ) -> ( Int, ( k, v ) ) -> D.Decoder (Step ( Int, ( k, v ) ) ( k, v ))
+fastEntryStep keyWire readKey valueWire readItem ( remaining, ( key_, item ) as current ) =
     if remaining == 0 then
         D.succeed (Done current)
 
@@ -338,7 +620,7 @@ entryStep keyWire readKey valueWire readItem ( remaining, ( key_, item ) as curr
         D.fail
 
     else
-        varint32
+        fastVarint32
             |> D.andThen
                 (\( tagWidth, tag ) ->
                     let
@@ -358,35 +640,133 @@ entryStep keyWire readKey valueWire readItem ( remaining, ( key_, item ) as curr
                         D.fail
 
                     else
-                        D.map (\width -> Loop ( remaining - tagWidth - width, current )) (skipValue wire)
+                        D.map (\width -> Loop ( remaining - tagWidth - width, current )) (fastSkipValue wire)
                 )
 
 
+entryStep : Int -> Int -> (Int -> Read k) -> Int -> (Int -> Read v) -> ( Int, ( k, v ) ) -> D.Decoder (Step ( Int, ( k, v ) ) (Result Failure ( k, v )))
+entryStep length keyWire readKey valueWire readItem ( remaining, ( key_, item ) as current ) =
+    if remaining == 0 then
+        D.succeed (Done (Ok current))
+
+    else
+        varint32 remaining
+            |> D.andThen
+                (\( tagWidth, tag ) ->
+                    let
+                        start =
+                            length - remaining
+
+                        number =
+                            Bitwise.shiftRightZfBy 3 tag
+
+                        wire =
+                            Bitwise.and 7 tag
+
+                        after result rebuild =
+                            case result of
+                                Ok ( width, next ) ->
+                                    Loop ( remaining - tagWidth - width, rebuild next )
+
+                                Err failure ->
+                                    Done (Err { failure | offset = failure.offset + start + tagWidth })
+                    in
+                    if tagWidth < 0 then
+                        D.succeed (Done (Err { reason = (leaf tagWidth).reason, path = [], offset = start }))
+
+                    else if number == 1 && wire == keyWire then
+                        D.map (\result -> after result (\next -> ( next, item ))) (readKey (remaining - tagWidth))
+
+                    else if number == 2 && wire == valueWire then
+                        D.map (\result -> after result (\next -> ( key_, next ))) (readItem (remaining - tagWidth))
+
+                    else if number == 0 then
+                        D.succeed (Done (Err { reason = InvalidTag, path = [], offset = start }))
+
+                    else if invalidWire wire then
+                        D.succeed (Done (Err { reason = InvalidWireType wire, path = [], offset = start }))
+
+                    else
+                        D.map (\width -> after (skipped width current) identity) (skipValue wire (remaining - tagWidth))
+                )
+
+
+skipped : Int -> a -> Result Failure ( Int, a )
+skipped width unchanged =
+    if width < 0 then
+        Err (leaf width)
+
+    else
+        Ok ( width, unchanged )
+
+
 {-| Skip a field the message does not know, by its wire type, leaving the
-value as it is. A group (wire types 3 and 4) fails.
+value as it is. A group (wire types 3 and 4) fails the fast reader here and
+the located one at the field's key.
 -}
-skip : Int -> a -> D.Decoder ( Int, a )
+skip : Int -> a -> Field a
 skip wire unchanged =
-    D.map (\width -> ( width, unchanged )) (skipValue wire)
+    Field
+        { fast = D.map (\width -> ( width, unchanged )) (fastSkipValue wire)
+        , located = \bound -> D.map (\width -> skipped width unchanged) (skipValue wire bound)
+        }
 
 
-skipValue : Int -> D.Decoder Int
-skipValue wire =
+fastSkipValue : Int -> D.Decoder Int
+fastSkipValue wire =
     case wire of
         0 ->
-            D.map Tuple.first varint32
+            D.map Tuple.first fastVarint32
 
         1 ->
             D.map (\_ -> 8) (D.bytes 8)
 
         2 ->
-            varint32 |> D.andThen (\( width, length ) -> D.map (\_ -> width + length) (D.bytes length))
+            fastVarint32 |> D.andThen (\( width, length ) -> D.map (\_ -> width + length) (D.bytes length))
 
         5 ->
             D.map (\_ -> 4) (D.bytes 4)
 
         _ ->
             D.fail
+
+
+skipValue : Int -> Int -> D.Decoder Int
+skipValue wire bound =
+    case wire of
+        0 ->
+            D.map Tuple.first (varint32 bound)
+
+        1 ->
+            if bound >= 8 then
+                D.map (\_ -> 8) (D.bytes 8)
+
+            else
+                D.succeed -2
+
+        2 ->
+            varint32 bound
+                |> D.andThen
+                    (\( width, length ) ->
+                        if width < 0 then
+                            D.succeed width
+
+                        else if length > bound - width then
+                            D.succeed -2
+
+                        else
+                            D.map (\_ -> width + length) (D.bytes length)
+                    )
+
+        5 ->
+            if bound >= 4 then
+                D.map (\_ -> 4) (D.bytes 4)
+
+            else
+                D.succeed -2
+
+        _ ->
+            D.succeed -2
 
 
 
@@ -499,11 +879,157 @@ delimited body =
 -- VARINTS
 
 
-{-| A varint's width and its low 32 bits, unsigned; up to ten bytes are
-read, the bits past the 32nd dropped.
+{-| A varint's width and its low 32 bits, unsigned, read from no more than
+`bound` bytes; up to ten bytes are read, the bits past the 32nd dropped. Its
+width is -1 when it is longer than ten bytes and -2 when it runs past
+`bound`.
 -}
-varint32 : D.Decoder ( Int, Int )
-varint32 =
+varint32 : Int -> D.Decoder ( Int, Int )
+varint32 bound =
+    if bound >= 10 then
+        varint32Free
+
+    else
+        varint32Within bound
+
+
+varint32Free : D.Decoder ( Int, Int )
+varint32Free =
+    varint32Within 10
+
+
+varint32Within : Int -> D.Decoder ( Int, Int )
+varint32Within bound =
+    if bound < 1 then
+        D.succeed ( -2, 0 )
+
+    else
+        D.unsignedInt8
+            |> D.andThen
+                (\b ->
+                    if b < 128 then
+                        D.succeed ( 1, b )
+
+                    else
+                        D.loop ( 1, b - 128 ) (varint32Step bound)
+                )
+
+
+varint32Step : Int -> ( Int, Int ) -> D.Decoder (Step ( Int, Int ) ( Int, Int ))
+varint32Step bound ( index, low ) =
+    if index >= bound then
+        D.succeed (Done ( -2, 0 ))
+
+    else
+        D.unsignedInt8
+            |> D.andThen
+                (\b ->
+                    let
+                        bits =
+                            Bitwise.and 0x7F b
+
+                        next =
+                            if index < 4 then
+                                low + bits * shift7 index
+
+                            else if index == 4 then
+                                low + Bitwise.and 0x0F bits * 268435456
+
+                            else
+                                low
+                    in
+                    if b < 128 then
+                        D.succeed (Done ( index + 1, next ))
+
+                    else if index >= 9 then
+                        D.succeed (Done ( -1, 0 ))
+
+                    else
+                        D.succeed (Loop ( index + 1, next ))
+                )
+
+
+shift7 : Int -> Int
+shift7 index =
+    case index of
+        0 ->
+            1
+
+        1 ->
+            128
+
+        2 ->
+            16384
+
+        _ ->
+            2097152
+
+
+{-| A 64-bit value as two unsigned 32-bit halves, high then low.
+-}
+type U64
+    = U64 Int Int
+
+
+varint64 : Int -> D.Decoder ( Int, U64 )
+varint64 bound =
+    if bound < 1 then
+        D.succeed ( -2, U64 0 0 )
+
+    else
+        D.unsignedInt8
+            |> D.andThen
+                (\b ->
+                    if b < 128 then
+                        D.succeed ( 1, U64 0 b )
+
+                    else
+                        D.loop ( 1, 0, b - 128 ) (varint64Step bound)
+                )
+
+
+varint64Step : Int -> ( Int, Int, Int ) -> D.Decoder (Step ( Int, Int, Int ) ( Int, U64 ))
+varint64Step bound ( index, high, low ) =
+    if index >= bound then
+        D.succeed (Done ( -2, U64 0 0 ))
+
+    else
+        D.unsignedInt8
+            |> D.andThen
+                (\b ->
+                    let
+                        bits =
+                            Bitwise.and 0x7F b
+
+                        ( nextHigh, nextLow ) =
+                            if index < 4 then
+                                ( high, low + bits * shift7 index )
+
+                            else if index == 4 then
+                                ( Bitwise.shiftRightZfBy 4 bits, low + Bitwise.and 0x0F bits * 268435456 )
+
+                            else if index < 9 then
+                                ( high + bits * (2 ^ (7 * index - 32)), low )
+
+                            else
+                                ( high + Bitwise.and 1 bits * 2147483648, low )
+                    in
+                    if b < 128 then
+                        D.succeed (Done ( index + 1, U64 nextHigh nextLow ))
+
+                    else if index >= 9 then
+                        D.succeed (Done ( -1, U64 0 0 ))
+
+                    else
+                        D.succeed (Loop ( index + 1, nextHigh, nextLow ))
+                )
+
+
+{-| A varint's width and its low 32 bits, unsigned, for the fast reader;
+up to ten bytes are read, the bits past the 32nd dropped.
+-}
+fastVarint32 : D.Decoder ( Int, Int )
+fastVarint32 =
     D.unsignedInt8
         |> D.andThen
             (\b ->
@@ -511,12 +1037,12 @@ varint32 =
                     D.succeed ( 1, b )
 
                 else
-                    D.loop ( 1, b - 128 ) varint32Step
+                    D.loop ( 1, b - 128 ) fastVarint32Step
             )
 
 
-varint32Step : ( Int, Int ) -> D.Decoder (Step ( Int, Int ) ( Int, Int ))
-varint32Step ( index, low ) =
+fastVarint32Step : ( Int, Int ) -> D.Decoder (Step ( Int, Int ) ( Int, Int ))
+fastVarint32Step ( index, low ) =
     D.unsignedInt8
         |> D.andThen
             (\b ->
@@ -545,30 +1071,8 @@ varint32Step ( index, low ) =
             )
 
 
-shift7 : Int -> Int
-shift7 index =
-    case index of
-        0 ->
-            1
-
-        1 ->
-            128
-
-        2 ->
-            16384
-
-        _ ->
-            2097152
-
-
-{-| A 64-bit value as two unsigned 32-bit halves, high then low.
--}
-type U64
-    = U64 Int Int
-
-
-varint64 : D.Decoder ( Int, U64 )
-varint64 =
+fastVarint64 : D.Decoder ( Int, U64 )
+fastVarint64 =
     D.unsignedInt8
         |> D.andThen
             (\b ->
@@ -576,12 +1080,12 @@ varint64 =
                     D.succeed ( 1, U64 0 b )
 
                 else
-                    D.loop ( 1, 0, b - 128 ) varint64Step
+                    D.loop ( 1, 0, b - 128 ) fastVarint64Step
             )
 
 
-varint64Step : ( Int, Int, Int ) -> D.Decoder (Step ( Int, Int, Int ) ( Int, U64 ))
-varint64Step ( index, high, low ) =
+fastVarint64Step : ( Int, Int, Int ) -> D.Decoder (Step ( Int, Int, Int ) ( Int, U64 ))
+fastVarint64Step ( index, high, low ) =
     D.unsignedInt8
         |> D.andThen
             (\b ->
@@ -854,9 +1358,25 @@ unzigzag64 (U64 high low) =
         (Bitwise.shiftRightZfBy 0 (Bitwise.xor (Bitwise.or (Bitwise.shiftRightZfBy 1 low) (Bitwise.shiftLeftBy 31 high)) mask))
 
 
-fixed64Read : D.Decoder ( Int, U64 )
-fixed64Read =
+fastFixed64 : D.Decoder ( Int, U64 )
+fastFixed64 =
     D.map2 (\low high -> ( 8, U64 high low )) (D.unsignedInt32 LE) (D.unsignedInt32 LE)
+
+
+fixed64Read : Int -> D.Decoder ( Int, U64 )
+fixed64Read =
+    fixed 8 (U64 0 0) (D.map2 (\low high -> ( 8, U64 high low )) (D.unsignedInt32 LE) (D.unsignedInt32 LE))
+
+
+{-| A fixed-width read of `width` bytes, or -2 when fewer are left.
+-}
+fixed : Int -> a -> D.Decoder ( Int, a ) -> Int -> D.Decoder ( Int, a )
+fixed width zero decoder bound =
+    if bound >= width then
+        decoder
+
+    else
+        D.succeed ( -2, zero )
 
 
 fixed64Write : U64 -> Encoder
@@ -864,13 +1384,20 @@ fixed64Write (U64 high low) =
     E.sequence [ E.unsignedInt32 LE low, E.unsignedInt32 LE high ]
 
 
-{-| A 64-bit codec from how the bits are read and written and how they are
-held.
+{-| A 64-bit codec from how the bits are read (fast, and given the bytes
+left) and written and how they are held; a value the holding cannot hold
+fails the fast reader and reads as -3.
 -}
-wide : Int -> D.Decoder ( Int, U64 ) -> (U64 -> Encoder) -> (U64 -> Maybe a) -> (a -> U64) -> a -> Codec a
-wide wire read write hold unhold zero =
+wide : Int -> D.Decoder ( Int, U64 ) -> (Int -> D.Decoder ( Int, U64 )) -> (U64 -> Encoder) -> (U64 -> Maybe a) -> (a -> U64) -> a -> Codec a
+wide wire fast read write hold unhold zero =
     scalar wire
-        (read
+        (if wire == 0 then
+            10
+
+         else
+            8
+        )
+        (fast
             |> D.andThen
                 (\( width, u ) ->
                     case hold u of
@@ -881,9 +1408,40 @@ wide wire read write hold unhold zero =
                             D.fail
                 )
         )
+        (\bound ->
+            read bound
+                |> D.map
+                    (\( width, u ) ->
+                        if width < 0 then
+                            ( width, zero )
+
+                        else
+                            case hold u of
+                                Just v ->
+                                    ( width, v )
+
+                                Nothing ->
+                                    ( -3, zero )
+                    )
+        )
         (write << unhold)
         ((==) zero)
         zero
+
+
+{-| A varint's low 32 bits, as `f` reads them.
+-}
+fromVarint32 : (Int -> a) -> a -> Int -> D.Decoder ( Int, a )
+fromVarint32 f zero bound =
+    D.map
+        (\( width, n ) ->
+            if width < 0 then
+                ( width, zero )
+
+            else
+                ( width, f n )
+        )
+        (varint32 bound)
 
 
 
@@ -895,14 +1453,14 @@ as a default, as `0` is.
 -}
 double : Codec Float
 double =
-    scalar 1 (D.map (\x -> ( 8, x )) (D.float64 LE)) (E.float64 LE) isZero 0
+    scalar 1 8 (D.map (\x -> ( 8, x )) (D.float64 LE)) (fixed 8 0 (D.map (\x -> ( 8, x )) (D.float64 LE))) (E.float64 LE) isZero 0
 
 
 {-| `float`.
 -}
 float : Codec Float
 float =
-    scalar 5 (D.map (\x -> ( 4, x )) (D.float32 LE)) (E.float32 LE) isZero 0
+    scalar 5 4 (D.map (\x -> ( 4, x )) (D.float32 LE)) (fixed 4 0 (D.map (\x -> ( 4, x )) (D.float32 LE))) (E.float32 LE) isZero 0
 
 
 isZero : Float -> Bool
@@ -915,7 +1473,7 @@ isZero x =
 -}
 int32 : Codec Int
 int32 =
-    scalar 0 (D.map (\( width, n ) -> ( width, signed32 n )) varint32) writeInt32 ((==) 0) 0
+    scalar 0 10 (D.map (\( width, n ) -> ( width, signed32 n )) fastVarint32) (fromVarint32 signed32 0) writeInt32 ((==) 0) 0
 
 
 {-| `sint32`, zigzag-encoded.
@@ -923,7 +1481,9 @@ int32 =
 sint32 : Codec Int
 sint32 =
     scalar 0
-        (D.map (\( width, z ) -> ( width, Bitwise.xor (Bitwise.shiftRightZfBy 1 z) (negate (Bitwise.and 1 z)) )) varint32)
+        10
+        (D.map (\( width, z ) -> ( width, Bitwise.xor (Bitwise.shiftRightZfBy 1 z) (negate (Bitwise.and 1 z)) )) fastVarint32)
+        (fromVarint32 (\z -> Bitwise.xor (Bitwise.shiftRightZfBy 1 z) (negate (Bitwise.and 1 z))) 0)
         (\n -> writeVarint32 (Bitwise.shiftRightZfBy 0 (Bitwise.xor (Bitwise.shiftLeftBy 1 n) (Bitwise.shiftRightBy 31 n))))
         ((==) 0)
         0
@@ -933,91 +1493,91 @@ sint32 =
 -}
 sfixed32 : Codec Int
 sfixed32 =
-    scalar 5 (D.map (\n -> ( 4, n )) (D.signedInt32 LE)) (E.signedInt32 LE) ((==) 0) 0
+    scalar 5 4 (D.map (\n -> ( 4, n )) (D.signedInt32 LE)) (fixed 4 0 (D.map (\n -> ( 4, n )) (D.signedInt32 LE))) (E.signedInt32 LE) ((==) 0) 0
 
 
 {-| `uint32`, a varint.
 -}
 uint32 : Codec Int
 uint32 =
-    scalar 0 varint32 writeVarint32 ((==) 0) 0
+    scalar 0 10 fastVarint32 varint32 writeVarint32 ((==) 0) 0
 
 
 {-| `fixed32`, four bytes.
 -}
 fixed32 : Codec Int
 fixed32 =
-    scalar 5 (D.map (\n -> ( 4, n )) (D.unsignedInt32 LE)) (E.unsignedInt32 LE) ((==) 0) 0
+    scalar 5 4 (D.map (\n -> ( 4, n )) (D.unsignedInt32 LE)) (fixed 4 0 (D.map (\n -> ( 4, n )) (D.unsignedInt32 LE))) (E.unsignedInt32 LE) ((==) 0) 0
 
 
 {-| `int64` held as decimal text.
 -}
 int64 : Codec String
 int64 =
-    wide 0 varint64 writeVarint64 (Just << signedText) fromText "0"
+    wide 0 fastVarint64 varint64 writeVarint64 (Just << signedText) fromText "0"
 
 
 {-| `sint64` held as decimal text.
 -}
 sint64 : Codec String
 sint64 =
-    wide 0 (D.map (Tuple.mapSecond unzigzag64) varint64) (writeVarint64 << zigzag64) (Just << signedText) fromText "0"
+    wide 0 (D.map (Tuple.mapSecond unzigzag64) fastVarint64) (varint64 >> D.map (Tuple.mapSecond unzigzag64)) (writeVarint64 << zigzag64) (Just << signedText) fromText "0"
 
 
 {-| `sfixed64` held as decimal text.
 -}
 sfixed64 : Codec String
 sfixed64 =
-    wide 1 fixed64Read fixed64Write (Just << signedText) fromText "0"
+    wide 1 fastFixed64 fixed64Read fixed64Write (Just << signedText) fromText "0"
 
 
 {-| `uint64` held as decimal text.
 -}
 uint64 : Codec String
 uint64 =
-    wide 0 varint64 writeVarint64 (Just << unsignedText) fromText "0"
+    wide 0 fastVarint64 varint64 writeVarint64 (Just << unsignedText) fromText "0"
 
 
 {-| `fixed64` held as decimal text.
 -}
 fixed64 : Codec String
 fixed64 =
-    wide 1 fixed64Read fixed64Write (Just << unsignedText) fromText "0"
+    wide 1 fastFixed64 fixed64Read fixed64Write (Just << unsignedText) fromText "0"
 
 
 {-| `int64` held as an `Int`, within ±(2^53 − 1).
 -}
 int64AsInt : Codec Int
 int64AsInt =
-    wide 0 varint64 writeVarint64 toInt64 fromInt64 0
+    wide 0 fastVarint64 varint64 writeVarint64 toInt64 fromInt64 0
 
 
 {-| `sint64` held as an `Int`.
 -}
 sint64AsInt : Codec Int
 sint64AsInt =
-    wide 0 (D.map (Tuple.mapSecond unzigzag64) varint64) (writeVarint64 << zigzag64) toInt64 fromInt64 0
+    wide 0 (D.map (Tuple.mapSecond unzigzag64) fastVarint64) (varint64 >> D.map (Tuple.mapSecond unzigzag64)) (writeVarint64 << zigzag64) toInt64 fromInt64 0
 
 
 {-| `sfixed64` held as an `Int`.
 -}
 sfixed64AsInt : Codec Int
 sfixed64AsInt =
-    wide 1 fixed64Read fixed64Write toInt64 fromInt64 0
+    wide 1 fastFixed64 fixed64Read fixed64Write toInt64 fromInt64 0
 
 
 {-| `uint64` held as an `Int`, within 0 to 2^53 − 1.
 -}
 uint64AsInt : Codec Int
 uint64AsInt =
-    wide 0 varint64 writeVarint64 toUInt64 fromInt64 0
+    wide 0 fastVarint64 varint64 writeVarint64 toUInt64 fromInt64 0
 
 
 {-| `fixed64` held as an `Int`.
 -}
 fixed64AsInt : Codec Int
 fixed64AsInt =
-    wide 1 fixed64Read fixed64Write toUInt64 fromInt64 0
+    wide 1 fastFixed64 fixed64Read fixed64Write toUInt64 fromInt64 0
 
 
 {-| `bool`, any non-zero varint reading as `True`.
@@ -1025,7 +1585,9 @@ fixed64AsInt =
 bool : Codec Bool
 bool =
     scalar 0
-        (D.map (\( width, n ) -> ( width, n /= 0 )) varint64Any)
+        10
+        (D.map (\( width, n ) -> ( width, n /= 0 )) (D.map (\( width, U64 high low ) -> ( width, high + low )) fastVarint64))
+        (\bound -> D.map (\( width, U64 high low ) -> ( width, width >= 0 && high + low /= 0 )) (varint64 bound))
         (\b ->
             if b then
                 E.unsignedInt8 1
@@ -1037,41 +1599,239 @@ bool =
         False
 
 
-varint64Any : D.Decoder ( Int, Int )
-varint64Any =
-    D.map (\( width, U64 high low ) -> ( width, high + low )) varint64
+{-| A length-delimited value's raw reader: its length, checked against the
+bytes left, then `body` of that length.
+-}
+delimitedRead : a -> (Int -> D.Decoder a) -> Int -> D.Decoder ( Int, a )
+delimitedRead zero body bound =
+    varint32 bound
+        |> D.andThen
+            (\( width, length ) ->
+                if width < 0 then
+                    D.succeed ( width, zero )
+
+                else if length > bound - width then
+                    D.succeed ( -2, zero )
+
+                else
+                    D.map (\v -> ( width + length, v )) (body length)
+            )
 
 
-{-| `string`, UTF-8. A string cut off in the middle of a character fails
-the decode.
+{-| `string`, UTF-8. A string whose bytes are not UTF-8 fails the decode,
+as proto3 requires.
 -}
 string : Codec String
 string =
-    scalar 2
-        (varint32 |> D.andThen (\( width, length ) -> D.andThen (sliceString width length) (D.bytes length)))
+    delimitedScalar fastString
+        utf8String
         (\s -> E.sequence [ writeVarint32 (E.getStringWidth s), E.string s ])
         String.isEmpty
         ""
 
 
-{-| The string a field's bytes hold, read from their own slice: elm/bytes
-reads a string without checking its characters, and takes a byte that does
-not begin one as the first of four, so a string cut off mid-character would
-otherwise read past the field and leave the decoder out of place.
+fastString : D.Decoder ( Int, String )
+fastString =
+    fastVarint32
+        |> D.andThen
+            (\( width, length ) ->
+                D.bytes length
+                    |> D.andThen
+                        (\slice ->
+                            case utf8 length slice of
+                                Just s ->
+                                    D.succeed ( width + length, s )
+
+                                Nothing ->
+                                    D.fail
+                        )
+            )
+
+
+{-| A string's raw reader: its length checked against the bytes left, then
+read as [`utf8`](#utf8) does, -4 when its bytes are not UTF-8.
 -}
-sliceString : Int -> Int -> Bytes -> D.Decoder ( Int, String )
-sliceString width length slice =
+utf8String : Int -> D.Decoder ( Int, String )
+utf8String bound =
+    varint32 bound
+        |> D.andThen
+            (\( width, length ) ->
+                if width < 0 then
+                    D.succeed ( width, "" )
+
+                else if length > bound - width then
+                    D.succeed ( -2, "" )
+
+                else
+                    D.map
+                        (\slice ->
+                            case utf8 length slice of
+                                Just s ->
+                                    ( width + length, s )
+
+                                Nothing ->
+                                    ( -4, "" )
+                        )
+                        (D.bytes length)
+            )
+
+
+{-| A string's bytes, `length` of them in a slice of their own, if they are
+UTF-8.
+
+The slice keeps elm/bytes inside the string: it reads a byte that does not
+begin a character as the lead of four, and as a string's last character
+would otherwise read on past its end. elm/bytes checks nothing else, so
+the bytes are checked here, only when they hold a byte past ASCII: elm/bytes
+gives fewer UTF-16 code units than bytes for any such byte, and one per
+byte for ASCII, so a string as long as its bytes is ASCII and valid.
+
+-}
+utf8 : Int -> Bytes -> Maybe String
+utf8 length slice =
     case D.decode (D.string length) slice of
         Just s ->
-            D.succeed ( width + length, s )
+            if String.length s == length || D.decode (D.loop ( length, 0 ) utf8Step) slice == Just 0 then
+                Just s
+
+            else
+                Nothing
 
         Nothing ->
-            D.fail
+            Nothing
 
 
-rawBytes : D.Decoder ( Int, Bytes )
+{-| A UTF-8 check over the bytes left, sixteen at a time while they are
+ASCII: the state is 0 between characters, -1 once a byte is wrong, and
+otherwise the continuation bytes still owed times 8 plus the range the next
+must be in (see `utf8Byte`).
+-}
+utf8Step : ( Int, Int ) -> D.Decoder (Step ( Int, Int ) Int)
+utf8Step ( remaining, state ) =
+    if state < 0 then
+        D.succeed (Done state)
+
+    else if remaining >= 16 then
+        D.map4
+            (\a b c d ->
+                if state == 0 && Bitwise.and (Bitwise.or (Bitwise.or a b) (Bitwise.or c d)) 0x80808080 == 0 then
+                    Loop ( remaining - 16, 0 )
+
+                else
+                    Loop ( remaining - 16, utf8Word d (utf8Word c (utf8Word b (utf8Word a state))) )
+            )
+            word
+            word
+            word
+            word
+
+    else if remaining >= 4 then
+        D.map (\w -> Loop ( remaining - 4, utf8Word w state )) word
+
+    else if remaining > 0 then
+        D.map (\b -> Loop ( remaining - 1, utf8Byte b state )) D.unsignedInt8
+
+    else
+        D.succeed (Done state)
+
+
+word : D.Decoder Int
+word =
+    D.unsignedInt32 BE
+
+
+utf8Word : Int -> Int -> Int
+utf8Word w state =
+    if state == 0 && Bitwise.and w 0x80808080 == 0 then
+        0
+
+    else
+        utf8Byte (Bitwise.and 0xFF w)
+            (utf8Byte (Bitwise.and 0xFF (Bitwise.shiftRightZfBy 8 w))
+                (utf8Byte (Bitwise.and 0xFF (Bitwise.shiftRightZfBy 16 w))
+                    (utf8Byte (Bitwise.shiftRightZfBy 24 w) state)
+                )
+            )
+
+
+{-| The state after one more byte. The ranges a continuation byte must be
+in: 0 is 80–BF, 1 A0–BF (after E0), 2 80–9F (after ED), 3 90–BF (after
+F0), 4 80–8F (after F4), which rules out overlong forms, surrogates and
+code points past U+10FFFF.
+-}
+utf8Byte : Int -> Int -> Int
+utf8Byte b state =
+    if state < 0 then
+        -1
+
+    else if state == 0 then
+        if b < 0x80 then
+            0
+
+        else if b < 0xC2 then
+            -1
+
+        else if b < 0xE0 then
+            8
+
+        else if b == 0xE0 then
+            17
+
+        else if b == 0xED then
+            18
+
+        else if b < 0xF0 then
+            16
+
+        else if b == 0xF0 then
+            27
+
+        else if b < 0xF4 then
+            24
+
+        else if b == 0xF4 then
+            28
+
+        else
+            -1
+
+    else if outOfRange (Bitwise.and 7 state) b then
+        -1
+
+    else if state < 16 then
+        0
+
+    else
+        Bitwise.shiftRightBy 3 state * 8 - 8
+
+
+outOfRange : Int -> Int -> Bool
+outOfRange range b =
+    case range of
+        1 ->
+            b < 0xA0 || b > 0xBF
+
+        2 ->
+            b < 0x80 || b > 0x9F
+
+        3 ->
+            b < 0x90 || b > 0xBF
+
+        4 ->
+            b < 0x80 || b > 0x8F
+
+        _ ->
+            b < 0x80 || b > 0xBF
+
+
+fastRawBytes : D.Decoder ( Int, Bytes )
+fastRawBytes =
+    fastVarint32 |> D.andThen (\( width, length ) -> D.map (\b -> ( width + length, b )) (D.bytes length))
+
+
+rawBytes : Int -> D.Decoder ( Int, Bytes )
 rawBytes =
-    varint32 |> D.andThen (\( width, length ) -> D.map (\b -> ( width + length, b )) (D.bytes length))
+    delimitedRead Proto.Bytes.empty D.bytes
 
 
 writeBytes : Bytes -> Encoder
@@ -1084,8 +1844,9 @@ read as standard base64 with padding, written from either alphabet.
 -}
 bytes : Codec String
 bytes =
-    scalar 2
-        (D.map (Tuple.mapSecond Proto.Bytes.toBase64) rawBytes)
+    delimitedScalar
+        (D.map (Tuple.mapSecond Proto.Bytes.toBase64) fastRawBytes)
+        (rawBytes >> D.map (Tuple.mapSecond Proto.Bytes.toBase64))
         (\text -> writeBytes (Maybe.withDefault Proto.Bytes.empty (Proto.Bytes.fromBase64 text)))
         String.isEmpty
         ""
@@ -1095,7 +1856,7 @@ bytes =
 -}
 bytesAsBytes : Codec Bytes
 bytesAsBytes =
-    scalar 2 rawBytes writeBytes (\b -> Bytes.width b == 0) Proto.Bytes.empty
+    delimitedScalar fastRawBytes rawBytes writeBytes (\b -> Bytes.width b == 0) Proto.Bytes.empty
 
 
 {-| An enum, from its generated number conversions: a number it does not
@@ -1104,7 +1865,9 @@ know reads as its zero value.
 enum : (a -> Int) -> (Int -> a) -> Codec a
 enum toNumber fromNumber =
     scalar 0
-        (D.map (\( width, n ) -> ( width, fromNumber (signed32 n) )) varint32)
+        10
+        (D.map (\( width, n ) -> ( width, fromNumber (signed32 n) )) fastVarint32)
+        (fromVarint32 (\n -> fromNumber (signed32 n)) (fromNumber 0))
         (writeInt32 << toNumber)
         (\v -> toNumber v == 0)
         (fromNumber 0)
@@ -1121,11 +1884,40 @@ length-delimited, and written whenever present.
 embedded : (a -> Encoder) -> (a -> Decoder a) -> a -> Codec a
 embedded write into zero =
     let
-        readInto existing =
-            varint32 |> D.andThen (\( width, length ) -> D.map (\v -> ( width + length, v )) (run (into existing) length))
+        readInto existing bound =
+            varint32 bound
+                |> D.andThen
+                    (\( width, length ) ->
+                        if width < 0 then
+                            D.succeed (Err (leaf width))
+
+                        else if length > bound - width then
+                            D.succeed (Err pastEnd)
+
+                        else
+                            D.map
+                                (\result ->
+                                    case result of
+                                        Ok v ->
+                                            Ok ( width + length, v )
+
+                                        Err failure ->
+                                            Err (Internal.crossed width failure)
+                                )
+                                (run (into existing) length)
+                    )
+
+        fastInto existing =
+            fastVarint32 |> D.andThen (\( width, length ) -> D.map (\v -> ( width + length, v )) (fastRun (into existing) length))
+
+        (Internal.Decoder { name }) =
+            into zero
     in
     Codec
         { wire = 2
+        , fast = fastInto zero
+        , fastBody = \length -> fastRun (into zero) length
+        , fastInto = fastInto
         , read = readInto zero
         , write = \v -> delimited (write v)
         , isDefault = \_ -> False
@@ -1134,6 +1926,7 @@ embedded write into zero =
         , writeBody = write
         , readBody = \length -> run (into zero) length
         , readInto = readInto
+        , name = name
         }
 
 
@@ -1150,7 +1943,7 @@ method answers.
 -}
 messageDecoder : Codec a -> Decoder a
 messageDecoder (Codec c) =
-    Internal.Decoder c.readBody
+    Internal.Decoder { name = c.name, fast = c.fastBody, located = c.readBody }
 
 
 
@@ -1176,15 +1969,27 @@ timestampInto existing =
         seconds =
             floor (toFloat millis / 1000)
     in
+    wellKnown "google.protobuf.Timestamp"
+        ( seconds, (millis - seconds * 1000) * 1000000 )
+        partsStep
+        (\( s, nanos ) -> Time.millisToPosix (s * 1000 + floor (toFloat nanos / 1.0e6)))
+
+
+{-| A well-known type's decoder from its full name, the value it starts
+from, its step and how its fields become its value.
+-}
+wellKnown : String -> b -> (Int -> Int -> b -> Field b) -> (b -> a) -> Decoder a
+wellKnown name start step finish =
     Internal.Decoder
-        (message ( seconds, (millis - seconds * 1000) * 1000000 ) partsStep identity
-            >> D.map (\( s, nanos ) -> Time.millisToPosix (s * 1000 + floor (toFloat nanos / 1.0e6)))
-        )
+        { name = name
+        , fast = fastMessage start step identity >> D.map finish
+        , located = message name start step identity >> D.map (Result.map finish)
+        }
 
 
 {-| A `Timestamp`'s or a `Duration`'s fields: `seconds` (1) and `nanos` (2).
 -}
-partsStep : Int -> Int -> ( Int, Int ) -> D.Decoder ( Int, ( Int, Int ) )
+partsStep : Int -> Int -> ( Int, Int ) -> Field ( Int, Int )
 partsStep number wire ( seconds, nanos ) =
     case number of
         1 ->
@@ -1225,10 +2030,10 @@ durationInto existing =
         parts =
             Proto.Duration.toParts existing
     in
-    Internal.Decoder
-        (message ( parts.seconds, parts.nanos ) partsStep identity
-            >> D.map (\( seconds, nanos ) -> Proto.Duration.fromParts seconds nanos)
-        )
+    wellKnown "google.protobuf.Duration"
+        ( parts.seconds, parts.nanos )
+        partsStep
+        (\( seconds, nanos ) -> Proto.Duration.fromParts seconds nanos)
 
 
 writeDuration : Duration -> Encoder
@@ -1247,7 +2052,7 @@ earlier one's.
 fieldMask : Codec (List String)
 fieldMask =
     embedded (list string 1)
-        (merge
+        (merge "google.protobuf.FieldMask"
             (\number wire paths ->
                 if number == 1 then
                     repeated string identity paths wire paths
@@ -1264,7 +2069,7 @@ fieldMask =
 -}
 empty : Codec ()
 empty =
-    embedded (\() -> nothing) (merge (\_ wire acc -> skip wire acc) identity) ()
+    embedded (\() -> nothing) (merge "google.protobuf.Empty" (\_ wire acc -> skip wire acc) identity) ()
 
 
 {-| `google.protobuf.Struct` as its members. One that arrives twice adds its
@@ -1315,7 +2120,7 @@ valueCodec () =
 
 structInto : Dict String Json.Encode.Value -> Decoder (Dict String Json.Encode.Value)
 structInto =
-    merge
+    merge "google.protobuf.Struct"
         (\number wire members ->
             if number == 1 then
                 mapEntry string (valueCodec ()) (\k v -> Dict.insert k v members) wire members
@@ -1333,7 +2138,7 @@ writeStruct members =
 
 listInto : List Json.Encode.Value -> Decoder (List Json.Encode.Value)
 listInto =
-    merge
+    merge "google.protobuf.ListValue"
         (\number wire items ->
             if number == 1 then
                 repeated (valueCodec ()) identity items wire items
@@ -1351,7 +2156,7 @@ writeList items =
 
 valueInto : Json.Encode.Value -> Decoder Json.Encode.Value
 valueInto =
-    merge
+    merge "google.protobuf.Value"
         (\number wire current ->
             case number of
                 1 ->
@@ -1443,22 +2248,20 @@ any =
 
 anyInto : Any -> Decoder Any
 anyInto (InternalAny.Any start payload) =
-    Internal.Decoder
-        (message ( start, Maybe.withDefault "" (InternalAny.base64Of payload) )
-            (\number wire ( url, current ) ->
-                case number of
-                    1 ->
-                        field string (\v -> ( v, current )) wire ( url, current )
+    wellKnown "google.protobuf.Any"
+        ( start, Maybe.withDefault "" (InternalAny.base64Of payload) )
+        (\number wire ( url, current ) ->
+            case number of
+                1 ->
+                    field string (\v -> ( v, current )) wire ( url, current )
 
-                    2 ->
-                        field bytes (\v -> ( url, v )) wire ( url, current )
+                2 ->
+                    field bytes (\v -> ( url, v )) wire ( url, current )
 
-                    _ ->
-                        skip wire ( url, current )
-            )
-            identity
-            >> D.map (\( url, current ) -> InternalAny.Any url (InternalAny.Binary current))
+                _ ->
+                    skip wire ( url, current )
         )
+        (\( url, current ) -> InternalAny.Any url (InternalAny.Binary current))
 
 
 writeAny : Any -> Encoder
@@ -1468,10 +2271,10 @@ writeAny (InternalAny.Any url payload) =
     E.sequence [ implicit string 1 url, implicit bytes 2 (Maybe.withDefault "" (InternalAny.base64Of payload)) ]
 
 
-wrapper : Codec v -> Codec v
-wrapper ((Codec c) as inner) =
+wrapper : String -> Codec v -> Codec v
+wrapper name ((Codec c) as inner) =
     embedded (implicit inner 1)
-        (merge
+        (merge name
             (\number wire current ->
                 if number == 1 then
                     field inner identity wire current
@@ -1488,81 +2291,81 @@ wrapper ((Codec c) as inner) =
 -}
 doubleValue : Codec Float
 doubleValue =
-    wrapper double
+    wrapper "google.protobuf.DoubleValue" double
 
 
 {-| `google.protobuf.FloatValue` as its `Float`.
 -}
 floatValue : Codec Float
 floatValue =
-    wrapper float
+    wrapper "google.protobuf.FloatValue" float
 
 
 {-| `google.protobuf.Int64Value` as decimal text.
 -}
 int64Value : Codec String
 int64Value =
-    wrapper int64
+    wrapper "google.protobuf.Int64Value" int64
 
 
 {-| `google.protobuf.Int64Value` as an `Int`.
 -}
 int64ValueAsInt : Codec Int
 int64ValueAsInt =
-    wrapper int64AsInt
+    wrapper "google.protobuf.Int64Value" int64AsInt
 
 
 {-| `google.protobuf.UInt64Value` as decimal text.
 -}
 uint64Value : Codec String
 uint64Value =
-    wrapper uint64
+    wrapper "google.protobuf.UInt64Value" uint64
 
 
 {-| `google.protobuf.UInt64Value` as an `Int`.
 -}
 uint64ValueAsInt : Codec Int
 uint64ValueAsInt =
-    wrapper uint64AsInt
+    wrapper "google.protobuf.UInt64Value" uint64AsInt
 
 
 {-| `google.protobuf.Int32Value` as its `Int`.
 -}
 int32Value : Codec Int
 int32Value =
-    wrapper int32
+    wrapper "google.protobuf.Int32Value" int32
 
 
 {-| `google.protobuf.UInt32Value` as its `Int`.
 -}
 uint32Value : Codec Int
 uint32Value =
-    wrapper uint32
+    wrapper "google.protobuf.UInt32Value" uint32
 
 
 {-| `google.protobuf.BoolValue` as its `Bool`.
 -}
 boolValue : Codec Bool
 boolValue =
-    wrapper bool
+    wrapper "google.protobuf.BoolValue" bool
 
 
 {-| `google.protobuf.StringValue` as its `String`.
 -}
 stringValue : Codec String
 stringValue =
-    wrapper string
+    wrapper "google.protobuf.StringValue" string
 
 
 {-| `google.protobuf.BytesValue` as base64 text.
 -}
 bytesValue : Codec String
 bytesValue =
-    wrapper bytes
+    wrapper "google.protobuf.BytesValue" bytes
 
 
 {-| `google.protobuf.BytesValue` as `Bytes`.
 -}
 bytesValueAsBytes : Codec Bytes
 bytesValueAsBytes =
-    wrapper bytesAsBytes
+    wrapper "google.protobuf.BytesValue" bytesAsBytes

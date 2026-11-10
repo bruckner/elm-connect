@@ -339,6 +339,7 @@ encodeLinkTargetBytes value =
 mergeURLPathBytes : URLPath -> Proto.Binary.Decoder URLPath
 mergeURLPathBytes =
     Proto.Binary.merge
+        "first.v1.URLPath"
         (\number wire value ->
             case number of
                 1 ->
@@ -408,6 +409,7 @@ decodeURLPathBytes =
 mergeLinkBytes : Link -> Proto.Binary.Decoder Link
 mergeLinkBytes =
     Proto.Binary.merge
+        "first.v1.Link"
         (\number wire value ->
             case number of
                 1 ->

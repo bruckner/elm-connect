@@ -423,3 +423,10 @@ with each one ([install.md](install.md#versions)).
   `double` or `float`, a lowercase `t` or `z` in a timestamp, an `Any`
   without a type URL, a field mask path with `_` and a string holding
   a lone surrogate now fail to decode.
+- `Proto.Binary.decode` gives `Result Proto.Error.Binary a`: the
+  message, the reason, the fields and the byte offset of a failure. A
+  build of `main` before 0.2 gave `Maybe a`; `Result.toMaybe` keeps code
+  written for it, and `Proto.Error.toString (Proto.Error.BadBinary
+  problem)` describes the failure for a log. `Proto.Binary.merge` takes
+  the message's full name first, as generated code passes it, and a
+  `string` field whose bytes are not UTF-8 now fails to decode.

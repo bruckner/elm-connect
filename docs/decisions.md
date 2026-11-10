@@ -1396,6 +1396,89 @@ to 10 % on a small message of strings and 0 to 2 % elsewhere. It does
 not validate UTF-8: a string whose bytes are not UTF-8 but end on a
 whole character still reads, as before. Where: design §5.5.
 
+### The binary decoder reads twice
+
+*2026-11-10.*
+
+`Proto.Binary.decode : Decoder a -> Bytes -> Result Proto.Error.Binary a`,
+the report naming the message, the reason, the fields the failure is
+in (message full name and field number, outermost first) and the offset
+of the first byte that could not be read. Each decoder holds two
+readers built by the same combinators: a fast one, the `Maybe` decoder
+it replaces with each string read from its own slice, and a locating
+one, run over the same input only when the fast one fails, which never
+reads past the region it is in and builds the report as the failure
+unwinds. The generated `merge` passes the message's full name, one
+string per message, and nested decoders carry theirs.
+
+Two routes were measured on a 433-byte envelope holding an `Any`, a
+392-byte message of strings (`Plain`) and `TestAllTypesProto3`, medians
+of 11, both orders. Carrying the failure through one reader (route 1)
+cost `Plain` 17 to 22 %, 11 to 13 % with strings read from their slices,
+and the others 2 to 6 %. Diagnosing on failure with a generic walker
+(route 2) cost nothing on success but, knowing no types, could not see
+inside any length-delimited field (86 of 251 failures unlocated); given
+`Proto.Descriptors` it located all but five, at 19 KB minified and 5 KB
+gzipped on the conformance testee, and the five were where it and the
+real decoder read a string differently: a second decoder that must stay
+in step and already did not. Two readers in the library keep route 1's
+report and route 2's happy path: `Plain` 0 to 5 % (median 2 %) over the
+`Maybe` decoder with slices, the others within 2 %, for 3.3 to 3.8 KB
+minified and 0.9 to 1.0 KB gzipped over route 1 (6 to 8 KB and 2 KB over
+the `Maybe` decoder), all of it the library's second set of readers;
+generated code is the same. A failing input pays both passes, about
+twice a successful decode when the fast reader reads to the end first.
+The locating reader agreed with route 1 on all 263 inputs of the
+spikes' corpus, which the package's tests keep with 96 UTF-8 cases.
+
+The fast reader does not check a length against the bytes left before
+reading that many. Tried: a cut input then fails at once (4.6 µs
+against 52 µs for the envelope cut in half), but every field read pays
+a closure for the bound, and `Plain` decoded 4 to 5 % slower in four
+runs of both orders (8.2 to 8.6 µs), the others within 2 %. A failure is
+rare and its cost bounded by one decode; the happy path is every
+message's, so the check was left out. Weighed too: per-operation error
+types for the binary report (it is the one way a binary read fails, so
+`Binary` is the type `decode` gives, and `Proto.Error.Error` lifts it);
+field names in the path (a per-message table in every bundle;
+`Proto.Descriptors` has them). Where: design §5.4, §5.5.
+
+### Strings are checked as the schema says
+
+*2026-11-10.*
+
+`Proto.Binary.string` fails a `string` field whose bytes are not UTF-8,
+reason `InvalidUtf8`, as proto3 requires, on top of reading each string
+from its own slice (above) and as C++, Java and Go read
+proto3; a map's string keys, `StringValue` and an `Any`'s type URL
+follow, the well-known types being proto3. Each string is read from its
+own slice first: elm/bytes takes a byte that does not begin a character
+as the lead of four, so a string ending on one was read past its end,
+and with the bytes past a message there to read (behind an `Any`'s
+value, in a gRPC-Web frame) the decode could succeed with the wrong
+fields. elm/bytes checks nothing else, so the bytes are checked after
+decoding, only when they hold a byte past ASCII: it gives one UTF-16
+code unit per ASCII byte and fewer units than bytes for any other, so a
+string as long as its bytes is ASCII and needs no check. On ASCII the
+check costs nothing measurable; a string holding a multi-byte character
+costs 8.3 to 8.7 ns a byte, its check stopping at the first bad byte.
+The checker agrees with Python's strict decoder on 96 cases (overlong
+forms, surrogates, code points past U+10FFFF, stray, bad and cut
+continuations), where reading from slices alone accepted 59 of the 69
+invalid.
+
+proto2, and editions with `utf8_validation = NONE`, read strings
+unchecked. The generator accepts neither (`input::not_proto3`,
+`input::editions`), so there is no unchecked codec: it arrives with
+proto2 or editions support, emitted per field from the file's syntax or
+features, which costs a program nothing where it is unused. A runtime
+switch was measured and refused: 4 to 6 % on `Plain` even when off, and
+1.9 KB minified in every program, since the checker could not be
+eliminated, while it reached neither `Any` nor `Registry` decoding
+without being threaded through them. An option to read every string of
+a generation unchecked is deferred until someone asks (operator,
+2026-11-10). Where: design §5.5.
+
 ## Input and versioning
 
 

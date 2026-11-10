@@ -30,6 +30,7 @@
         "Proto.WellKnown",
         "Proto.ErrorDetails",
         "Proto.Any",
+        "Proto.Error",
         "Proto.Json",
         "Proto.Binary",
         "Proto.Int64",

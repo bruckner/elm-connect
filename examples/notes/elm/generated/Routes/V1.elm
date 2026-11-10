@@ -973,6 +973,7 @@ decodeKindBytes number =
 mergeGetMessageRequestBytes : GetMessageRequest -> Proto.Binary.Decoder GetMessageRequest
 mergeGetMessageRequestBytes =
     Proto.Binary.merge
+        "routes.v1.GetMessageRequest"
         (\number wire value ->
             case number of
                 1 ->
@@ -1008,6 +1009,7 @@ decodeGetMessageRequestBytes =
 mergeGetMessageRequestSubMessageBytes : GetMessageRequestSubMessage -> Proto.Binary.Decoder GetMessageRequestSubMessage
 mergeGetMessageRequestSubMessageBytes =
     Proto.Binary.merge
+        "routes.v1.GetMessageRequest.SubMessage"
         (\number wire value ->
             case number of
                 1 ->
@@ -1031,6 +1033,7 @@ decodeGetMessageRequestSubMessageBytes =
 mergeMessageBytes : Message -> Proto.Binary.Decoder Message
 mergeMessageBytes =
     Proto.Binary.merge
+        "routes.v1.Message"
         (\number wire value ->
             case number of
                 1 ->
@@ -1057,6 +1060,7 @@ decodeMessageBytes =
 mergeUpdateMessageRequestBytes : UpdateMessageRequest -> Proto.Binary.Decoder UpdateMessageRequest
 mergeUpdateMessageRequestBytes =
     Proto.Binary.merge
+        "routes.v1.UpdateMessageRequest"
         (\number wire value ->
             case number of
                 1 ->
@@ -1083,6 +1087,7 @@ decodeUpdateMessageRequestBytes =
 mergeEverythingBytes : Everything -> Proto.Binary.Decoder Everything
 mergeEverythingBytes =
     Proto.Binary.merge
+        "routes.v1.Everything"
         (\number wire value ->
             case number of
                 1 ->
@@ -1175,6 +1180,7 @@ decodeEverythingBytes =
 mergeInnerBytes : Inner -> Proto.Binary.Decoder Inner
 mergeInnerBytes =
     Proto.Binary.merge
+        "routes.v1.Inner"
         (\number wire value ->
             case number of
                 1 ->
@@ -1201,6 +1207,7 @@ decodeInnerBytes =
 mergeDeepBytes : Deep -> Proto.Binary.Decoder Deep
 mergeDeepBytes =
     Proto.Binary.merge
+        "routes.v1.Deep"
         (\number wire value ->
             case number of
                 1 ->
@@ -1227,6 +1234,7 @@ decodeDeepBytes =
 mergeFileRequestBytes : FileRequest -> Proto.Binary.Decoder FileRequest
 mergeFileRequestBytes =
     Proto.Binary.merge
+        "routes.v1.FileRequest"
         (\number wire value ->
             case number of
                 1 ->
@@ -1250,6 +1258,7 @@ decodeFileRequestBytes =
 mergeResourceBytes : Resource -> Proto.Binary.Decoder Resource
 mergeResourceBytes =
     Proto.Binary.merge
+        "routes.v1.Resource"
         (\number wire value ->
             case number of
                 1 ->
@@ -1285,6 +1294,7 @@ decodeResourceBytes =
 mergeUpdateResourceRequestBytes : UpdateResourceRequest -> Proto.Binary.Decoder UpdateResourceRequest
 mergeUpdateResourceRequestBytes =
     Proto.Binary.merge
+        "routes.v1.UpdateResourceRequest"
         (\number wire value ->
             case number of
                 1 ->

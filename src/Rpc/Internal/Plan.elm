@@ -267,10 +267,10 @@ make forSend (Client cl) (Call c) =
                             |> Result.andThen
                                 (\message ->
                                     case m.binary.decode message.bytes of
-                                        Just value ->
+                                        Ok value ->
                                             Ok value
 
-                                        Nothing ->
+                                        Err _ ->
                                             Err (message.bad ())
                                 )
                         )

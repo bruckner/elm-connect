@@ -46,7 +46,7 @@ encodeHolderBytes value =
 
 decodeHolderBytes : Proto.Binary.Decoder Holder
 decodeHolderBytes =
-    Proto.Binary.merge
+    Proto.Binary.merge "test.Holder"
         (\number wire value ->
             case number of
                 1 ->
@@ -86,7 +86,7 @@ leaf name =
 
 leafBytes : Proto.Binary.Decoder String
 leafBytes =
-    Proto.Binary.merge
+    Proto.Binary.merge "test.Leaf"
         (\number wire value ->
             if number == 1 then
                 Proto.Binary.field Proto.Binary.string identity wire value

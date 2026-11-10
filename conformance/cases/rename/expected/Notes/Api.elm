@@ -393,6 +393,7 @@ decodeAudienceBytes number =
 mergeMemoBytes : Memo -> Proto.Binary.Decoder Memo
 mergeMemoBytes =
     Proto.Binary.merge
+        "notes.v1.Note"
         (\number wire value ->
             case number of
                 1 ->
@@ -428,6 +429,7 @@ decodeMemoBytes =
 mergeEditBytes : Edit -> Proto.Binary.Decoder Edit
 mergeEditBytes =
     Proto.Binary.merge
+        "notes.v1.Note.Revision"
         (\number wire value ->
             case number of
                 1 ->
@@ -451,6 +453,7 @@ decodeEditBytes =
 mergeGetNoteRequestBytes : GetNoteRequest -> Proto.Binary.Decoder GetNoteRequest
 mergeGetNoteRequestBytes =
     Proto.Binary.merge
+        "notes.v1.GetNoteRequest"
         (\number wire value ->
             case number of
                 1 ->

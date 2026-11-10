@@ -406,6 +406,7 @@ decodeStatusBytes number =
 mergeItemBytes : Item -> Proto.Binary.Decoder Item
 mergeItemBytes =
     Proto.Binary.merge
+        "vault.v1.Item"
         (\number wire value ->
             case number of
                 1 ->
@@ -441,6 +442,7 @@ decodeItemBytes =
 mergeGetItemRequestBytes : GetItemRequest -> Proto.Binary.Decoder GetItemRequest
 mergeGetItemRequestBytes =
     Proto.Binary.merge
+        "vault.v1.GetItemRequest"
         (\number wire value ->
             case number of
                 1 ->
@@ -464,6 +466,7 @@ decodeGetItemRequestBytes =
 mergeListItemsRequestBytes : ListItemsRequest -> Proto.Binary.Decoder ListItemsRequest
 mergeListItemsRequestBytes =
     Proto.Binary.merge
+        "vault.v1.ListItemsRequest"
         (\number wire value ->
             case number of
                 1 ->
@@ -487,6 +490,7 @@ decodeListItemsRequestBytes =
 mergeListItemsResponseBytes : ListItemsResponse -> Proto.Binary.Decoder ListItemsResponse
 mergeListItemsResponseBytes =
     Proto.Binary.merge
+        "vault.v1.ListItemsResponse"
         (\number wire value ->
             case number of
                 1 ->

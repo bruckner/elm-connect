@@ -327,6 +327,7 @@ encodeGetEntryRequestBytes value =
 mergeEntryBytes : Entry -> Proto.Binary.Decoder Entry
 mergeEntryBytes =
     Proto.Binary.merge
+        "catalog.v1.Entry"
         (\number wire value ->
             case number of
                 1 ->
@@ -356,6 +357,7 @@ decodeEntryBytes =
 mergePartBytes : Part -> Proto.Binary.Decoder Part
 mergePartBytes =
     Proto.Binary.merge
+        "catalog.v1.Part"
         (\number wire value ->
             case number of
                 1 ->
@@ -382,6 +384,7 @@ decodePartBytes =
 mergeGetEntryRequestBytes : GetEntryRequest -> Proto.Binary.Decoder GetEntryRequest
 mergeGetEntryRequestBytes =
     Proto.Binary.merge
+        "catalog.v1.GetEntryRequest"
         (\number wire value ->
             case number of
                 1 ->
