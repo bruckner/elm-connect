@@ -258,6 +258,44 @@ A sample that fails is a finding. prost-reflect cannot write a
 `DoubleValue` or `FloatValue` holding NaN or an infinity (it writes
 `null`) or an `Any` without a type URL, so those are not sampled.
 
+## Error details
+
+`Proto.ErrorDetails` is written by hand in the form generated code gives:
+`google/rpc/error_details.proto`'s messages as records, codecs and typed
+values, nested names flattened (`docs/design.md` §5.4). `just
+error-details-check`, part of the gate, holds it to the generator. It
+generates the vendored `examples/notes/third_party/googleapis/google/rpc/error_details.proto`
+under `codec=both`, with the plugin built from the checkout, into the
+build directory's `error-details/`, copies the modules into
+`error-details/generated/` (gitignored, as the harness's `generated/` is),
+and runs the tests of `error-details/`, an Elm application whose source
+directories are the runtime package's `../../src` and that copy. Only
+`error-details/elm.json` and `tests/ErrorDetailsSyncTest.elm` are
+committed; the generated `Google.Rpc` never is.
+
+The test compiles the two modules together:
+
+- **shape**, at compile time: each message's hand and generated typed
+  values are taken at one record type, so a field added, removed, renamed
+  or retyped on either side is a compile error naming the message and the
+  field;
+- **coverage**: the hand and generated registries hold the same full
+  names, the fourteen the test compares, so a message the proto gains
+  fails until both sides have it;
+- **codecs**, at run time: for a fixture of each message that sets every
+  field, and for its default, both sides write the same proto3 JSON and
+  the same binary, each side's decoders read either side's output back to
+  the value, and both read `{}` and empty bytes as the default.
+
+When it fails after a generator change or a refreshed proto
+(`just protos-refresh`), the generated module is the reference: read it
+in the build directory's `error-details/generated/Google/Rpc.elm`, port
+the difference into `src/Proto/ErrorDetails.elm` by hand, keeping the
+module's names and docs (`errorInfo`, not `messageErrorInfo`), and run
+the check again. A compile error names the record and field that
+differ; a failing test names the message and whether its JSON, its
+binary or its decoders disagree.
+
 ## Live verification
 
 The corpus and the fixtures pin what is generated and what request a

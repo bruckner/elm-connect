@@ -35,7 +35,7 @@ jobs:
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
         with:
           path: ~/.elm
-          key: check-elm-${{ runner.os }}-${{ hashFiles('mise.toml', 'elm.json', 'conformance/harness/elm.json', 'examples/notes/elm/elm.json') }}
+          key: check-elm-${{ runner.os }}-${{ hashFiles('mise.toml', 'elm.json', 'conformance/harness/elm.json', 'conformance/error-details/elm.json', 'examples/notes/elm/elm.json') }}
       # Design section 8.7: only an `Open` or `Reopen as` commit changes the
       # version lines, and a `Cut` commit changes the changelog alone.
       - name: Release discipline

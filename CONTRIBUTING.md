@@ -62,7 +62,11 @@ rewrite the corpus with output that is not its own.
 --validate`), `cargo clippy` with warnings as errors, the Rust tests
 (the conformance corpus among them, see
 [`conformance/README.md`](conformance/README.md)), the runtime
-package's build and Elm tests, a [zizmor](https://docs.zizmor.sh)
+package's build and Elm tests, a comparison of the hand-written
+`Proto.ErrorDetails` with what the generator gives for
+`google/rpc/error_details.proto` (`just error-details-check`; when it
+fails, port the difference from the generated module by hand, as
+`conformance/README.md`, "Error details", says), a [zizmor](https://docs.zizmor.sh)
 audit of the GitHub Actions workflows and the Dependabot configuration, a
 [gitleaks](https://gitleaks.io) scan of the commit history for secrets,
 [cargo-deny](https://embarkstudios.github.io/cargo-deny/) (`just deny`:
