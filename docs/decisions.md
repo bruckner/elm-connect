@@ -1250,9 +1250,10 @@ typed value's. The well-known types' registry and descriptors are
 `Proto.WellKnown.registry` and `Proto.WellKnown.descriptors`, beside
 their typed values, as each package's `registry` and `descriptors` sit
 beside its own (and `Proto.ErrorDetails.registry` beside its): every
-table lives with its types, and `Proto.Registry` and `Proto.Descriptors`
-hold no table of their own. There is no `registerAll`: a list of `Message a` cannot
-hold different `a`s, so it would be `unionAll` by another name.
+table lives with its types, and the only table `Proto.Registry` or
+`Proto.Descriptors` gives is `empty`. There is no `registerAll`: a list
+of `Message a` cannot hold different `a`s, so it would be `unionAll` by
+another name.
 
 The alternative was the first draft's transitive table, each package's holding
 its imports' and the well-known types it holds: convenient, but it
