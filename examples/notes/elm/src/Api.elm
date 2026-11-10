@@ -8,6 +8,7 @@ the sending once" and this example's walkthrough quote it.
 import Notes.V1
 import Proto.ErrorDetails
 import Proto.Registry
+import Proto.WellKnown
 import Rpc
 import Rpc.Client
 import Rpc.Protocol
@@ -53,7 +54,7 @@ registry : Proto.Registry.Registry
 registry =
     Proto.Registry.unionAll
         [ Notes.V1.registry
-        , Proto.Registry.wellKnown
+        , Proto.WellKnown.registry
         , Proto.ErrorDetails.registry
         ]
 

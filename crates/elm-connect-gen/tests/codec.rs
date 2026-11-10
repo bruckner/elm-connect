@@ -972,6 +972,7 @@ fn codecs_module(pool: &DescriptorPool) -> Module {
         import("Codec.BinaryRoundTrip"),
         import("Json.Encode"),
         import("Proto.Registry"),
+        import("Proto.WellKnown"),
     ];
     let mut decls = Vec::new();
     for set in &SETS {
@@ -990,7 +991,7 @@ fn codecs_module(pool: &DescriptorPool) -> Module {
                 [list([
                     value("registry".to_owned()),
                     qualified(other.as_str(), "registry"),
-                    qualified("Proto.Registry", "wellKnown"),
+                    qualified("Proto.WellKnown", "registry"),
                 ])],
             )
         };

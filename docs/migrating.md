@@ -339,7 +339,7 @@ JSON.
   `encodeNoteWith`, which take the registry (the encoder gives a
   `Result`), in place of `decodeNote` and `encodeNote`.
 - `Proto.Registry` is the table: each generated package's `registry`
-  holds its own messages, `Proto.Registry.wellKnown` the well-known
+  holds its own messages, `Proto.WellKnown.registry` the well-known
   types and `Proto.ErrorDetails.registry` `google.rpc`'s error details;
   `register`, `union` and `unionAll` compose them. Give the client the
   one its `Any`s need with `Rpc.withRegistry`; a JSON client whose

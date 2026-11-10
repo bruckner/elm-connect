@@ -663,7 +663,7 @@ responses =
                     noType =
                         Rpc.Error.InvalidDetail Nothing "a detail with no \"@type\""
                 in
-                ( read (Rpc.withRegistry (Proto.Registry.union noteRegistry Proto.Registry.wellKnown) base)
+                ( read (Rpc.withRegistry (Proto.Registry.union noteRegistry Proto.WellKnown.registry) base)
                 , read base
                 , read (Rpc.withRegistry noteRegistry base)
                     |> Result.mapError (\( _, _, found ) -> found)

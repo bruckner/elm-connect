@@ -112,7 +112,7 @@ write gives `UnregisteredType` with it. Over protobuf binary no
 registry is needed.
 
 Each generated package has a `registry` holding its own messages and
-nothing else; the runtime has `Proto.Registry.wellKnown` and
+nothing else; the runtime has `Proto.WellKnown.registry` and
 `Proto.ErrorDetails.registry`. A program composes the one its `Any`s
 need and gives it to its client, which converts its calls' `Any`s and
 its errors' details through it:
@@ -126,7 +126,7 @@ registry : Proto.Registry.Registry
 registry =
     Proto.Registry.unionAll
         [ Notes.V1.registry
-        , Proto.Registry.wellKnown
+        , Proto.WellKnown.registry
         , Proto.ErrorDetails.registry
         ]
 ```

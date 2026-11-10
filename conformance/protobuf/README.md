@@ -33,7 +33,7 @@ or proto3 JSON with the generated decoder and writes it back in the
 format asked for with the generated encoder, or answers that the input
 failed to parse. An `Any` holds its message's binary; its proto3 JSON
 is converted through the testee's registry, the generated package's
-`registry` and `Proto.Registry.wellKnown` joined explicitly (a generated
+`registry` and `Proto.WellKnown.registry` joined explicitly (a generated
 registry holds its own package's messages alone), and one of a type it
 lacks fails to parse and to serialize.
 

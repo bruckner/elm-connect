@@ -7,6 +7,7 @@ module Proto.WellKnown exposing
     , uint64Value, uint64ValueAsInt
     , int32Value, uint32Value
     , boolValue, stringValue, bytesValue
+    , registry
     )
 
 {-| The `google.protobuf` types elm-connect maps, as
@@ -34,6 +35,14 @@ A wrapper's Elm form is its scalar; a field of one is a `Maybe` of it. The
 @docs int32Value, uint32Value
 @docs boolValue, stringValue, bytesValue
 
+
+# Registry
+
+An `Any` holding one of these converts between proto3 JSON and protobuf
+binary through a [`Proto.Registry`](Proto-Registry) with them in it.
+
+@docs registry
+
 -}
 
 import Dict exposing (Dict)
@@ -46,6 +55,7 @@ import Proto.Enum exposing (Enum, enum)
 import Proto.Internal.WellKnown as Descriptors
 import Proto.Json
 import Proto.Message exposing (Message, init, initWith)
+import Proto.Registry
 import Time
 
 
@@ -191,3 +201,30 @@ name its descriptor through this value.
 nullValue : Enum ()
 nullValue =
     enum Proto.Json.encodeNullValue Proto.Json.nullValue () Descriptors.nullValue
+
+
+{-| The well-known message types: `google.protobuf.Any`, `Timestamp`,
+`Duration`, `FieldMask`, `Empty`, `Struct`, `Value`, `ListValue` and the
+wrappers. Generated registries leave them out; add this one beside them
+when an `Any` may hold one.
+-}
+registry : Proto.Registry.Registry
+registry =
+    Proto.Registry.empty
+        |> Proto.Registry.register timestamp
+        |> Proto.Registry.register duration
+        |> Proto.Registry.register fieldMask
+        |> Proto.Registry.register empty
+        |> Proto.Registry.register struct
+        |> Proto.Registry.register value
+        |> Proto.Registry.register listValue
+        |> Proto.Registry.register doubleValue
+        |> Proto.Registry.register floatValue
+        |> Proto.Registry.register int64Value
+        |> Proto.Registry.register uint64Value
+        |> Proto.Registry.register int32Value
+        |> Proto.Registry.register uint32Value
+        |> Proto.Registry.register boolValue
+        |> Proto.Registry.register stringValue
+        |> Proto.Registry.register bytesValue
+        |> Proto.Registry.register any

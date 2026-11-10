@@ -11,7 +11,6 @@ import Proto.Enum as Enum
 import Proto.Field as Field exposing (Cardinality(..), Kind(..), Scalar(..))
 import Proto.Json
 import Proto.Message as Message exposing (Message)
-import Proto.Registry as Registry
 import Proto.WellKnown as WellKnown
 import Test exposing (Test, describe, test)
 import Time
@@ -90,7 +89,7 @@ suite =
                 let
                     holding name =
                         Json.Decode.decodeString Json.Decode.value ("{\"@type\":\"type.googleapis.com/google.protobuf." ++ name ++ "\",\"value\":1e300}")
-                            |> Result.andThen (Json.Decode.decodeValue (Proto.Json.anyWith Registry.wellKnown))
+                            |> Result.andThen (Json.Decode.decodeValue (Proto.Json.anyWith WellKnown.registry))
                             |> Result.toMaybe
                 in
                 ( holding "FloatValue" |> Maybe.andThen (Any.unpack WellKnown.floatValue)
@@ -112,7 +111,7 @@ suite =
                 , Any.pack WellKnown.fieldMask [ "display_name", "author.email" ]
                 , Any.pack WellKnown.int64ValueAsInt 7
                 ]
-                    |> List.filterMap (Any.toJson Registry.wellKnown >> Result.toMaybe >> Maybe.map (Json.Encode.encode 0))
+                    |> List.filterMap (Any.toJson WellKnown.registry >> Result.toMaybe >> Maybe.map (Json.Encode.encode 0))
                     |> Expect.equal [ "{}", "\"1970-01-01T00:00:01.500Z\"", "\"1.500s\"", "\"displayName,author.email\"", "\"7\"" ]
         , test "the descriptors are protobuf's" <|
             \_ ->

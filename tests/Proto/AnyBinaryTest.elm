@@ -58,7 +58,7 @@ registry : Registry
 registry =
     Registry.empty
         |> Registry.register messageTitle
-        |> Registry.union Registry.wellKnown
+        |> Registry.union WellKnown.registry
 
 
 {-| An `Any` written as binary and read back.
@@ -122,8 +122,8 @@ suite =
                         ]
         , test "a type the registry lacks is UnregisteredType naming its URL; inside another Any, UnwritableAny naming that one's" <|
             \_ ->
-                [ writtenWith Registry.wellKnown (Any.pack messageTitle "hi")
-                , writtenWith Registry.wellKnown (Any.pack WellKnown.any (Any.pack messageTitle "hi"))
+                [ writtenWith WellKnown.registry (Any.pack messageTitle "hi")
+                , writtenWith WellKnown.registry (Any.pack WellKnown.any (Any.pack messageTitle "hi"))
                 ]
                     |> Expect.equal [ Err (UnregisteredType "type.googleapis.com/notes.v1.Title"), Err (UnwritableAny "type.googleapis.com/google.protobuf.Any") ]
         , test "read from proto3 JSON through the registry, as its binary" <|
@@ -142,7 +142,7 @@ suite =
                         ]
         , test "reading a type the registry lacks, or JSON not its message, fails; {} is the empty Any" <|
             \_ ->
-                ( ( readWith Registry.wellKnown """{"@type":"type.googleapis.com/notes.v1.Title","title":"hi"}""" |> Result.toMaybe
+                ( ( readWith WellKnown.registry """{"@type":"type.googleapis.com/notes.v1.Title","title":"hi"}""" |> Result.toMaybe
                   , readWith registry """{"@type":"type.googleapis.com/notes.v1.Title","title":7}""" |> Result.toMaybe
                   )
                 , readWith registry "{}" |> Result.map (\any -> ( Any.typeUrl any, writtenWith registry any ))
@@ -153,7 +153,7 @@ suite =
                 ( Any.toJson registry (Any.pack messageTitle "hi")
                     |> Result.toMaybe
                     |> Maybe.andThen (Json.Decode.decodeValue decodeTitle >> Result.toMaybe)
-                , Any.toJson Registry.wellKnown (Any.pack messageTitle "hi")
+                , Any.toJson WellKnown.registry (Any.pack messageTitle "hi")
                 )
                     |> Expect.equal ( Just "hi", Err (Any.UnregisteredType "type.googleapis.com/notes.v1.Title") )
         ]

@@ -152,7 +152,7 @@ tryUnpack ((InternalMessage.Message _ codecs) as message) ((Internal.Any _ base6
   - `UnregisteredType`: [`toJson`](#toJson) and
     [`Proto.Json.encodeAnyWith`](Proto-Json#encodeAnyWith) were given a
     registry with no entry for the type URL named here. Register the type:
-    its package's `registry`, [`Proto.Registry.wellKnown`](Proto-Registry#wellKnown),
+    its package's `registry`, [`Proto.WellKnown.registry`](Proto-WellKnown#registry),
     [`Proto.ErrorDetails.registry`](Proto-ErrorDetails#registry), or
     [`Proto.Registry.register`](Proto-Registry#register) of its typed value.
   - `UnwritableAny`: as `UnregisteredType` or `InvalidProto`, but for an

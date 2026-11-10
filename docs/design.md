@@ -1974,13 +1974,15 @@ registry =
 
   ```elm
   Proto.Registry.unionAll
-      [ Notes.V1.registry, Proto.Registry.wellKnown, Proto.ErrorDetails.registry ]
+      [ Notes.V1.registry, Proto.WellKnown.registry, Proto.ErrorDetails.registry ]
   ```
 
   A miss is loud (§3.5). `Proto.Registry`'s surface is `Registry`,
   `empty`, `register : Message a -> Registry -> Registry` (message first,
-  for a pipeline), `union`, `unionAll` and `wellKnown`; the entry builder
-  from raw codecs is internal (`Proto.Internal.Registry`). There is no
+  for a pipeline), `union` and `unionAll`; the entry builder
+  from raw codecs is internal (`Proto.Internal.Registry`). The
+  well-known types' registry is `Proto.WellKnown.registry`, beside their
+  typed values. There is no
   `registerAll`: a list of `Message a` holds one `a`, so a list of types
   is a list of registries, which is `unionAll`. The registry is apart
   from `descriptors` and holds no trees, so that a program converting an
@@ -3774,7 +3776,7 @@ any, in `expected/warnings.txt`, rendered as `diagnostics.txt` is.
   `codec=both` from the suite's `test_messages_proto3.proto`, with an
   oracle independent of prost-reflect: protobuf's own parsers. Its
   registry is `Proto.Registry.unionAll [ Proto3.registry,
-  Proto.Registry.wellKnown ]`, set explicitly, since a generated
+  Proto.WellKnown.registry ]`, set explicitly, since a generated
   registry holds its own package's messages alone (§3.10); an `Any` of
   a type it lacks fails to parse and to serialize, as the suite
   expects. Protobuf

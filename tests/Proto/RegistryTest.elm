@@ -220,7 +220,7 @@ suite =
                 , Any.pack WellKnown.struct (Dict.fromList [ ( "k", Json.Encode.int 1 ) ])
                 , Any.pack WellKnown.int64Value "5"
                 ]
-                    |> List.map (Proto.Json.encodeAnyWith Registry.wellKnown >> Result.map (Json.Encode.encode 0))
+                    |> List.map (Proto.Json.encodeAnyWith WellKnown.registry >> Result.map (Json.Encode.encode 0))
                     |> Expect.equal
                         [ Ok """{"@type":"type.googleapis.com/google.protobuf.Duration","value":"1.500s"}"""
                         , Ok """{"@type":"type.googleapis.com/google.protobuf.Timestamp","value":"1970-01-01T00:00:00Z"}"""

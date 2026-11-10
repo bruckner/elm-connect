@@ -22,6 +22,7 @@ import Proto.Any
 import Proto.Binary
 import Proto.Bytes
 import Proto.Registry exposing (Registry)
+import Proto.WellKnown
 import ProtobufTestMessages.Proto3 as Proto3
 
 
@@ -30,7 +31,7 @@ messages, and the well-known types, which a generated registry leaves out.
 -}
 registry : Registry
 registry =
-    Proto.Registry.unionAll [ Proto3.registry, Proto.Registry.wellKnown ]
+    Proto.Registry.unionAll [ Proto3.registry, Proto.WellKnown.registry ]
 
 
 port requests : (Request -> msg) -> Sub msg

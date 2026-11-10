@@ -1,4 +1,4 @@
-module Proto.Registry exposing (Registry, empty, register, union, unionAll, wellKnown)
+module Proto.Registry exposing (Registry, empty, register, union, unionAll)
 
 {-| The table a [`google.protobuf.Any`](Proto-Any#Any) is converted through
 when its message crosses between proto3 JSON and protobuf binary: each
@@ -16,7 +16,7 @@ package's own messages and nothing else), and gives it to its client
     types =
         Proto.Registry.unionAll
             [ Notes.V1.registry
-            , Proto.Registry.wellKnown
+            , Proto.WellKnown.registry
             , Proto.ErrorDetails.registry
             ]
 
@@ -41,7 +41,7 @@ A registry holds no descriptors; those are
 [`Proto.Descriptors`](Proto-Descriptors). The package site may show the type
 as `Proto.Internal.Registry.Registry`, its name inside the package.
 
-@docs Registry, empty, register, union, unionAll, wellKnown
+@docs Registry, empty, register, union, unionAll
 
 -}
 
@@ -52,7 +52,6 @@ import Proto.Bytes
 import Proto.Internal.Binary
 import Proto.Internal.Message as Message exposing (Message)
 import Proto.Internal.Registry as Internal exposing (Failure(..))
-import Proto.WellKnown
 
 
 {-| Messages' codecs by full name. A registry holds functions, so `==` on it
@@ -111,30 +110,3 @@ union (Internal.Registry left) (Internal.Registry right) =
 unionAll : List Registry -> Registry
 unionAll registries =
     List.foldr union empty registries
-
-
-{-| The well-known message types: `google.protobuf.Any`, `Timestamp`,
-`Duration`, `FieldMask`, `Empty`, `Struct`, `Value`, `ListValue` and the
-wrappers. Generated registries leave them out; add this one beside them
-when an `Any` may hold one.
--}
-wellKnown : Registry
-wellKnown =
-    empty
-        |> register Proto.WellKnown.timestamp
-        |> register Proto.WellKnown.duration
-        |> register Proto.WellKnown.fieldMask
-        |> register Proto.WellKnown.empty
-        |> register Proto.WellKnown.struct
-        |> register Proto.WellKnown.value
-        |> register Proto.WellKnown.listValue
-        |> register Proto.WellKnown.doubleValue
-        |> register Proto.WellKnown.floatValue
-        |> register Proto.WellKnown.int64Value
-        |> register Proto.WellKnown.uint64Value
-        |> register Proto.WellKnown.int32Value
-        |> register Proto.WellKnown.uint32Value
-        |> register Proto.WellKnown.boolValue
-        |> register Proto.WellKnown.stringValue
-        |> register Proto.WellKnown.bytesValue
-        |> register Proto.WellKnown.any

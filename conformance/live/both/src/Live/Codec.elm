@@ -62,7 +62,7 @@ registry =
         [ Notes.V1.registry
         , Routes.V1.registry
         , Connectrpc.Conformance.V1.registry
-        , Proto.Registry.wellKnown
+        , Proto.WellKnown.registry
         ]
 
 

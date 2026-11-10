@@ -1235,7 +1235,7 @@ nested ones included, built from their typed values (`Proto.Registry.empty
 |> Proto.Registry.register messageNote |> …`), and nothing else: no
 imported package's table, no well-known type, no error detail. An
 application composes what it needs:
-`Proto.Registry.unionAll [ Notes.V1.registry, Proto.Registry.wellKnown,
+`Proto.Registry.unionAll [ Notes.V1.registry, Proto.WellKnown.registry,
 Proto.ErrorDetails.registry ]`. A typed value's codecs are closed over
 its fields' types and take the reading registry at read time, so an
 entry needs nothing beside it and a nested `Any` converts through the
@@ -1244,9 +1244,13 @@ maintenance when its imports change, the grain an application composes
 and pays at (about 50 B gz a message registered), and a type the
 application did not compose in is a loud miss rather than a table that
 happens to hold it through some import. `Proto.Registry`'s surface is
-`empty`, `register`, `union`, `unionAll` and `wellKnown`; the builder
+`empty`, `register`, `union` and `unionAll`; the builder
 from raw codecs (`withCodecs`) is internal, so an entry is always a
-typed value's. There is no `registerAll`: a list of `Message a` cannot
+typed value's. The well-known types' registry is
+`Proto.WellKnown.registry`, beside the typed values it registers, as
+each package's and `Proto.ErrorDetails`' sit beside theirs: every
+registry lives with its types, and `Proto.Registry` holds no table of
+its own. There is no `registerAll`: a list of `Message a` cannot
 hold different `a`s, so it would be `unionAll` by another name.
 
 The alternative was the first draft's transitive table, each package's holding

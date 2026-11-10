@@ -26,12 +26,13 @@
   `Proto.Enum.fullName`, which were `typeName`. `Proto.WellKnown`'s
   values hold both codecs.
 - Breaking: `Proto.Registry` is `Registry`, `empty`, `register : Message
-  a -> Registry -> Registry`, `union`, `unionAll` and `wellKnown`
-  (`withBinary` and `toBinary` are removed). Each generated package's
+  a -> Registry -> Registry`, `union` and `unionAll` (`withBinary` and
+  `toBinary` are removed); the well-known types' registry is
+  `Proto.WellKnown.registry`. Each generated package's
   `registry`, which replaces `binaryRegistry`, holds the package's own
   messages and nothing else (no imports, no well-known types, no error
   details); an application composes `Proto.Registry.unionAll [
-  Notes.V1.registry, Proto.Registry.wellKnown,
+  Notes.V1.registry, Proto.WellKnown.registry,
   Proto.ErrorDetails.registry ]`.
 - Breaking: `codec=json|proto|both` now says only which codecs the
   service methods are wired with. Every package gets both codecs, its

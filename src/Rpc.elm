@@ -217,7 +217,7 @@ empty one until this sets it. A method holds none.
         |> Rpc.withRegistry
             (Proto.Registry.unionAll
                 [ Notes.V1.registry
-                , Proto.Registry.wellKnown
+                , Proto.WellKnown.registry
                 , Proto.ErrorDetails.registry
                 ]
             )

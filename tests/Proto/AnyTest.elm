@@ -91,7 +91,7 @@ registry : Registry
 registry =
     Registry.empty
         |> Registry.register (Message.init "notes.v1.Note" encodeNote decodeNote encodeNoteBytes decodeNoteBytes)
-        |> Registry.union Registry.wellKnown
+        |> Registry.union WellKnown.registry
 
 
 note : Note

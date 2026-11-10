@@ -1,8 +1,8 @@
 module Proto.Internal.Registry exposing (Entry, Failure(..), Registry(..), member, toBytes, toJson)
 
 {-| The `Registry` type, which `Proto.Registry` names by an alias. It is
-defined here so that `Proto.Any` and `Proto.Json`, which `Proto.Registry`
-builds its well-known entries from, can convert through one.
+defined here so that `Proto.Any` and `Proto.Json` can convert through one
+with the functions below, which `Proto.Registry` does not expose.
 
 Each entry takes the registry it is called through, so a message holding an
 `Any` converts that `Any` with the same table, however wide, at any depth,
