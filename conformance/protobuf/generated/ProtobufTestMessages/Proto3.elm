@@ -1710,1087 +1710,280 @@ mergeTestAllTypesProto3Bytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | optionalInt32 = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | optionalInt32 = v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.int64
-                        (\v ->
-                            { value
-                                | optionalInt64 = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int64 (\v -> { value | optionalInt64 = v }) wire value
 
                 3 ->
-                    Proto.Binary.field
-                        Proto.Binary.uint32
-                        (\v ->
-                            { value
-                                | optionalUint32 = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.uint32 (\v -> { value | optionalUint32 = v }) wire value
 
                 4 ->
-                    Proto.Binary.field
-                        Proto.Binary.uint64
-                        (\v ->
-                            { value
-                                | optionalUint64 = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.uint64 (\v -> { value | optionalUint64 = v }) wire value
 
                 5 ->
-                    Proto.Binary.field
-                        Proto.Binary.sint32
-                        (\v ->
-                            { value
-                                | optionalSint32 = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.sint32 (\v -> { value | optionalSint32 = v }) wire value
 
                 6 ->
-                    Proto.Binary.field
-                        Proto.Binary.sint64
-                        (\v ->
-                            { value
-                                | optionalSint64 = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.sint64 (\v -> { value | optionalSint64 = v }) wire value
 
                 7 ->
-                    Proto.Binary.field
-                        Proto.Binary.fixed32
-                        (\v ->
-                            { value
-                                | optionalFixed32 = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.fixed32 (\v -> { value | optionalFixed32 = v }) wire value
 
                 8 ->
-                    Proto.Binary.field
-                        Proto.Binary.fixed64
-                        (\v ->
-                            { value
-                                | optionalFixed64 = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.fixed64 (\v -> { value | optionalFixed64 = v }) wire value
 
                 9 ->
-                    Proto.Binary.field
-                        Proto.Binary.sfixed32
-                        (\v ->
-                            { value
-                                | optionalSfixed32 = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.sfixed32 (\v -> { value | optionalSfixed32 = v }) wire value
 
                 10 ->
-                    Proto.Binary.field
-                        Proto.Binary.sfixed64
-                        (\v ->
-                            { value
-                                | optionalSfixed64 = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.sfixed64 (\v -> { value | optionalSfixed64 = v }) wire value
 
                 11 ->
-                    Proto.Binary.field
-                        Proto.Binary.float
-                        (\v ->
-                            { value
-                                | optionalFloat = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.float (\v -> { value | optionalFloat = v }) wire value
 
                 12 ->
-                    Proto.Binary.field
-                        Proto.Binary.double
-                        (\v ->
-                            { value
-                                | optionalDouble = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.double (\v -> { value | optionalDouble = v }) wire value
 
                 13 ->
-                    Proto.Binary.field
-                        Proto.Binary.bool
-                        (\v ->
-                            { value
-                                | optionalBool = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bool (\v -> { value | optionalBool = v }) wire value
 
                 14 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | optionalString = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | optionalString = v }) wire value
 
                 15 ->
-                    Proto.Binary.field
-                        Proto.Binary.bytes
-                        (\v ->
-                            { value
-                                | optionalBytes = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bytes (\v -> { value | optionalBytes = v }) wire value
 
                 18 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeTestAllTypesProto3NestedMessage_Bytes mergeTestAllTypesProto3NestedMessage_Bytes (TestAllTypesProto3NestedMessage_ defaultTestAllTypesProto3NestedMessage))
-                        value.optionalNestedMessage
-                        (\v ->
-                            { value
-                                | optionalNestedMessage = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeTestAllTypesProto3NestedMessage_Bytes mergeTestAllTypesProto3NestedMessage_Bytes (TestAllTypesProto3NestedMessage_ defaultTestAllTypesProto3NestedMessage)) value.optionalNestedMessage (\v -> { value | optionalNestedMessage = Just v }) wire value
 
                 19 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeForeignMessageBytes mergeForeignMessageBytes defaultForeignMessage)
-                        value.optionalForeignMessage
-                        (\v ->
-                            { value
-                                | optionalForeignMessage = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeForeignMessageBytes mergeForeignMessageBytes defaultForeignMessage) value.optionalForeignMessage (\v -> { value | optionalForeignMessage = Just v }) wire value
 
                 21 ->
-                    Proto.Binary.field
-                        (Proto.Binary.enum encodeTestAllTypesProto3NestedEnumBytes decodeTestAllTypesProto3NestedEnumBytes)
-                        (\v ->
-                            { value
-                                | optionalNestedEnum = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field (Proto.Binary.enum encodeTestAllTypesProto3NestedEnumBytes decodeTestAllTypesProto3NestedEnumBytes) (\v -> { value | optionalNestedEnum = v }) wire value
 
                 22 ->
-                    Proto.Binary.field
-                        (Proto.Binary.enum encodeForeignEnumBytes decodeForeignEnumBytes)
-                        (\v ->
-                            { value
-                                | optionalForeignEnum = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field (Proto.Binary.enum encodeForeignEnumBytes decodeForeignEnumBytes) (\v -> { value | optionalForeignEnum = v }) wire value
 
                 23 ->
-                    Proto.Binary.field
-                        (Proto.Binary.enum encodeTestAllTypesProto3AliasedEnumBytes decodeTestAllTypesProto3AliasedEnumBytes)
-                        (\v ->
-                            { value
-                                | optionalAliasedEnum = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field (Proto.Binary.enum encodeTestAllTypesProto3AliasedEnumBytes decodeTestAllTypesProto3AliasedEnumBytes) (\v -> { value | optionalAliasedEnum = v }) wire value
 
                 24 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | optionalStringPiece = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | optionalStringPiece = v }) wire value
 
                 25 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | optionalCord = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | optionalCord = v }) wire value
 
                 27 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeTestAllTypesProto3_Bytes mergeTestAllTypesProto3_Bytes (TestAllTypesProto3_ defaultTestAllTypesProto3))
-                        value.recursiveMessage
-                        (\v ->
-                            { value
-                                | recursiveMessage = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeTestAllTypesProto3_Bytes mergeTestAllTypesProto3_Bytes (TestAllTypesProto3_ defaultTestAllTypesProto3)) value.recursiveMessage (\v -> { value | recursiveMessage = Just v }) wire value
 
                 31 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | repeatedInt32 = v
-                            }
-                        )
-                        value.repeatedInt32
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.int32 (\v -> { value | repeatedInt32 = v }) value.repeatedInt32 wire value
 
                 32 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.int64
-                        (\v ->
-                            { value
-                                | repeatedInt64 = v
-                            }
-                        )
-                        value.repeatedInt64
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.int64 (\v -> { value | repeatedInt64 = v }) value.repeatedInt64 wire value
 
                 33 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.uint32
-                        (\v ->
-                            { value
-                                | repeatedUint32 = v
-                            }
-                        )
-                        value.repeatedUint32
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.uint32 (\v -> { value | repeatedUint32 = v }) value.repeatedUint32 wire value
 
                 34 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.uint64
-                        (\v ->
-                            { value
-                                | repeatedUint64 = v
-                            }
-                        )
-                        value.repeatedUint64
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.uint64 (\v -> { value | repeatedUint64 = v }) value.repeatedUint64 wire value
 
                 35 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.sint32
-                        (\v ->
-                            { value
-                                | repeatedSint32 = v
-                            }
-                        )
-                        value.repeatedSint32
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.sint32 (\v -> { value | repeatedSint32 = v }) value.repeatedSint32 wire value
 
                 36 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.sint64
-                        (\v ->
-                            { value
-                                | repeatedSint64 = v
-                            }
-                        )
-                        value.repeatedSint64
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.sint64 (\v -> { value | repeatedSint64 = v }) value.repeatedSint64 wire value
 
                 37 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.fixed32
-                        (\v ->
-                            { value
-                                | repeatedFixed32 = v
-                            }
-                        )
-                        value.repeatedFixed32
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.fixed32 (\v -> { value | repeatedFixed32 = v }) value.repeatedFixed32 wire value
 
                 38 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.fixed64
-                        (\v ->
-                            { value
-                                | repeatedFixed64 = v
-                            }
-                        )
-                        value.repeatedFixed64
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.fixed64 (\v -> { value | repeatedFixed64 = v }) value.repeatedFixed64 wire value
 
                 39 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.sfixed32
-                        (\v ->
-                            { value
-                                | repeatedSfixed32 = v
-                            }
-                        )
-                        value.repeatedSfixed32
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.sfixed32 (\v -> { value | repeatedSfixed32 = v }) value.repeatedSfixed32 wire value
 
                 40 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.sfixed64
-                        (\v ->
-                            { value
-                                | repeatedSfixed64 = v
-                            }
-                        )
-                        value.repeatedSfixed64
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.sfixed64 (\v -> { value | repeatedSfixed64 = v }) value.repeatedSfixed64 wire value
 
                 41 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.float
-                        (\v ->
-                            { value
-                                | repeatedFloat = v
-                            }
-                        )
-                        value.repeatedFloat
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.float (\v -> { value | repeatedFloat = v }) value.repeatedFloat wire value
 
                 42 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.double
-                        (\v ->
-                            { value
-                                | repeatedDouble = v
-                            }
-                        )
-                        value.repeatedDouble
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.double (\v -> { value | repeatedDouble = v }) value.repeatedDouble wire value
 
                 43 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.bool
-                        (\v ->
-                            { value
-                                | repeatedBool = v
-                            }
-                        )
-                        value.repeatedBool
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.bool (\v -> { value | repeatedBool = v }) value.repeatedBool wire value
 
                 44 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | repeatedString = v
-                            }
-                        )
-                        value.repeatedString
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.string (\v -> { value | repeatedString = v }) value.repeatedString wire value
 
                 45 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.bytes
-                        (\v ->
-                            { value
-                                | repeatedBytes = v
-                            }
-                        )
-                        value.repeatedBytes
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.bytes (\v -> { value | repeatedBytes = v }) value.repeatedBytes wire value
 
                 48 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeTestAllTypesProto3NestedMessage_Bytes mergeTestAllTypesProto3NestedMessage_Bytes (TestAllTypesProto3NestedMessage_ defaultTestAllTypesProto3NestedMessage))
-                        (\v ->
-                            { value
-                                | repeatedNestedMessage = v
-                            }
-                        )
-                        value.repeatedNestedMessage
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.embedded encodeTestAllTypesProto3NestedMessage_Bytes mergeTestAllTypesProto3NestedMessage_Bytes (TestAllTypesProto3NestedMessage_ defaultTestAllTypesProto3NestedMessage)) (\v -> { value | repeatedNestedMessage = v }) value.repeatedNestedMessage wire value
 
                 49 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeForeignMessageBytes mergeForeignMessageBytes defaultForeignMessage)
-                        (\v ->
-                            { value
-                                | repeatedForeignMessage = v
-                            }
-                        )
-                        value.repeatedForeignMessage
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.embedded encodeForeignMessageBytes mergeForeignMessageBytes defaultForeignMessage) (\v -> { value | repeatedForeignMessage = v }) value.repeatedForeignMessage wire value
 
                 51 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.enum encodeTestAllTypesProto3NestedEnumBytes decodeTestAllTypesProto3NestedEnumBytes)
-                        (\v ->
-                            { value
-                                | repeatedNestedEnum = v
-                            }
-                        )
-                        value.repeatedNestedEnum
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.enum encodeTestAllTypesProto3NestedEnumBytes decodeTestAllTypesProto3NestedEnumBytes) (\v -> { value | repeatedNestedEnum = v }) value.repeatedNestedEnum wire value
 
                 52 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.enum encodeForeignEnumBytes decodeForeignEnumBytes)
-                        (\v ->
-                            { value
-                                | repeatedForeignEnum = v
-                            }
-                        )
-                        value.repeatedForeignEnum
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.enum encodeForeignEnumBytes decodeForeignEnumBytes) (\v -> { value | repeatedForeignEnum = v }) value.repeatedForeignEnum wire value
 
                 54 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | repeatedStringPiece = v
-                            }
-                        )
-                        value.repeatedStringPiece
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.string (\v -> { value | repeatedStringPiece = v }) value.repeatedStringPiece wire value
 
                 55 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | repeatedCord = v
-                            }
-                        )
-                        value.repeatedCord
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.string (\v -> { value | repeatedCord = v }) value.repeatedCord wire value
 
                 56 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.int32
-                        Proto.Binary.int32
-                        (\k v ->
-                            { value
-                                | mapInt32Int32 = Dict.insert k v value.mapInt32Int32
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.int32 Proto.Binary.int32 (\k v -> { value | mapInt32Int32 = Dict.insert k v value.mapInt32Int32 }) wire value
 
                 57 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.int64
-                        Proto.Binary.int64
-                        (\k v ->
-                            { value
-                                | mapInt64Int64 = Dict.insert k v value.mapInt64Int64
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.int64 Proto.Binary.int64 (\k v -> { value | mapInt64Int64 = Dict.insert k v value.mapInt64Int64 }) wire value
 
                 58 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.uint32
-                        Proto.Binary.uint32
-                        (\k v ->
-                            { value
-                                | mapUint32Uint32 = Dict.insert k v value.mapUint32Uint32
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.uint32 Proto.Binary.uint32 (\k v -> { value | mapUint32Uint32 = Dict.insert k v value.mapUint32Uint32 }) wire value
 
                 59 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.uint64
-                        Proto.Binary.uint64
-                        (\k v ->
-                            { value
-                                | mapUint64Uint64 = Dict.insert k v value.mapUint64Uint64
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.uint64 Proto.Binary.uint64 (\k v -> { value | mapUint64Uint64 = Dict.insert k v value.mapUint64Uint64 }) wire value
 
                 60 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.sint32
-                        Proto.Binary.sint32
-                        (\k v ->
-                            { value
-                                | mapSint32Sint32 = Dict.insert k v value.mapSint32Sint32
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.sint32 Proto.Binary.sint32 (\k v -> { value | mapSint32Sint32 = Dict.insert k v value.mapSint32Sint32 }) wire value
 
                 61 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.sint64
-                        Proto.Binary.sint64
-                        (\k v ->
-                            { value
-                                | mapSint64Sint64 = Dict.insert k v value.mapSint64Sint64
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.sint64 Proto.Binary.sint64 (\k v -> { value | mapSint64Sint64 = Dict.insert k v value.mapSint64Sint64 }) wire value
 
                 62 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.fixed32
-                        Proto.Binary.fixed32
-                        (\k v ->
-                            { value
-                                | mapFixed32Fixed32 = Dict.insert k v value.mapFixed32Fixed32
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.fixed32 Proto.Binary.fixed32 (\k v -> { value | mapFixed32Fixed32 = Dict.insert k v value.mapFixed32Fixed32 }) wire value
 
                 63 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.fixed64
-                        Proto.Binary.fixed64
-                        (\k v ->
-                            { value
-                                | mapFixed64Fixed64 = Dict.insert k v value.mapFixed64Fixed64
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.fixed64 Proto.Binary.fixed64 (\k v -> { value | mapFixed64Fixed64 = Dict.insert k v value.mapFixed64Fixed64 }) wire value
 
                 64 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.sfixed32
-                        Proto.Binary.sfixed32
-                        (\k v ->
-                            { value
-                                | mapSfixed32Sfixed32 = Dict.insert k v value.mapSfixed32Sfixed32
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.sfixed32 Proto.Binary.sfixed32 (\k v -> { value | mapSfixed32Sfixed32 = Dict.insert k v value.mapSfixed32Sfixed32 }) wire value
 
                 65 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.sfixed64
-                        Proto.Binary.sfixed64
-                        (\k v ->
-                            { value
-                                | mapSfixed64Sfixed64 = Dict.insert k v value.mapSfixed64Sfixed64
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.sfixed64 Proto.Binary.sfixed64 (\k v -> { value | mapSfixed64Sfixed64 = Dict.insert k v value.mapSfixed64Sfixed64 }) wire value
 
                 66 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.int32
-                        Proto.Binary.float
-                        (\k v ->
-                            { value
-                                | mapInt32Float = Dict.insert k v value.mapInt32Float
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.int32 Proto.Binary.float (\k v -> { value | mapInt32Float = Dict.insert k v value.mapInt32Float }) wire value
 
                 67 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.int32
-                        Proto.Binary.double
-                        (\k v ->
-                            { value
-                                | mapInt32Double = Dict.insert k v value.mapInt32Double
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.int32 Proto.Binary.double (\k v -> { value | mapInt32Double = Dict.insert k v value.mapInt32Double }) wire value
 
                 68 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.bool
-                        Proto.Binary.bool
-                        (\k v ->
-                            { value
-                                | mapBoolBool = Proto.Binary.insertBool k v value.mapBoolBool
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.bool Proto.Binary.bool (\k v -> { value | mapBoolBool = Proto.Binary.insertBool k v value.mapBoolBool }) wire value
 
                 69 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.string
-                        Proto.Binary.string
-                        (\k v ->
-                            { value
-                                | mapStringString = Dict.insert k v value.mapStringString
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.string Proto.Binary.string (\k v -> { value | mapStringString = Dict.insert k v value.mapStringString }) wire value
 
                 70 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.string
-                        Proto.Binary.bytes
-                        (\k v ->
-                            { value
-                                | mapStringBytes = Dict.insert k v value.mapStringBytes
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.string Proto.Binary.bytes (\k v -> { value | mapStringBytes = Dict.insert k v value.mapStringBytes }) wire value
 
                 71 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.string
-                        (Proto.Binary.embedded encodeTestAllTypesProto3NestedMessage_Bytes mergeTestAllTypesProto3NestedMessage_Bytes (TestAllTypesProto3NestedMessage_ defaultTestAllTypesProto3NestedMessage))
-                        (\k v ->
-                            { value
-                                | mapStringNestedMessage = Dict.insert k v value.mapStringNestedMessage
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.string (Proto.Binary.embedded encodeTestAllTypesProto3NestedMessage_Bytes mergeTestAllTypesProto3NestedMessage_Bytes (TestAllTypesProto3NestedMessage_ defaultTestAllTypesProto3NestedMessage)) (\k v -> { value | mapStringNestedMessage = Dict.insert k v value.mapStringNestedMessage }) wire value
 
                 72 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.string
-                        (Proto.Binary.embedded encodeForeignMessageBytes mergeForeignMessageBytes defaultForeignMessage)
-                        (\k v ->
-                            { value
-                                | mapStringForeignMessage = Dict.insert k v value.mapStringForeignMessage
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.string (Proto.Binary.embedded encodeForeignMessageBytes mergeForeignMessageBytes defaultForeignMessage) (\k v -> { value | mapStringForeignMessage = Dict.insert k v value.mapStringForeignMessage }) wire value
 
                 73 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.string
-                        (Proto.Binary.enum encodeTestAllTypesProto3NestedEnumBytes decodeTestAllTypesProto3NestedEnumBytes)
-                        (\k v ->
-                            { value
-                                | mapStringNestedEnum = Dict.insert k v value.mapStringNestedEnum
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.string (Proto.Binary.enum encodeTestAllTypesProto3NestedEnumBytes decodeTestAllTypesProto3NestedEnumBytes) (\k v -> { value | mapStringNestedEnum = Dict.insert k v value.mapStringNestedEnum }) wire value
 
                 74 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.string
-                        (Proto.Binary.enum encodeForeignEnumBytes decodeForeignEnumBytes)
-                        (\k v ->
-                            { value
-                                | mapStringForeignEnum = Dict.insert k v value.mapStringForeignEnum
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.string (Proto.Binary.enum encodeForeignEnumBytes decodeForeignEnumBytes) (\k v -> { value | mapStringForeignEnum = Dict.insert k v value.mapStringForeignEnum }) wire value
 
                 75 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | packedInt32 = v
-                            }
-                        )
-                        value.packedInt32
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.int32 (\v -> { value | packedInt32 = v }) value.packedInt32 wire value
 
                 76 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.int64
-                        (\v ->
-                            { value
-                                | packedInt64 = v
-                            }
-                        )
-                        value.packedInt64
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.int64 (\v -> { value | packedInt64 = v }) value.packedInt64 wire value
 
                 77 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.uint32
-                        (\v ->
-                            { value
-                                | packedUint32 = v
-                            }
-                        )
-                        value.packedUint32
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.uint32 (\v -> { value | packedUint32 = v }) value.packedUint32 wire value
 
                 78 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.uint64
-                        (\v ->
-                            { value
-                                | packedUint64 = v
-                            }
-                        )
-                        value.packedUint64
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.uint64 (\v -> { value | packedUint64 = v }) value.packedUint64 wire value
 
                 79 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.sint32
-                        (\v ->
-                            { value
-                                | packedSint32 = v
-                            }
-                        )
-                        value.packedSint32
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.sint32 (\v -> { value | packedSint32 = v }) value.packedSint32 wire value
 
                 80 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.sint64
-                        (\v ->
-                            { value
-                                | packedSint64 = v
-                            }
-                        )
-                        value.packedSint64
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.sint64 (\v -> { value | packedSint64 = v }) value.packedSint64 wire value
 
                 81 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.fixed32
-                        (\v ->
-                            { value
-                                | packedFixed32 = v
-                            }
-                        )
-                        value.packedFixed32
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.fixed32 (\v -> { value | packedFixed32 = v }) value.packedFixed32 wire value
 
                 82 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.fixed64
-                        (\v ->
-                            { value
-                                | packedFixed64 = v
-                            }
-                        )
-                        value.packedFixed64
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.fixed64 (\v -> { value | packedFixed64 = v }) value.packedFixed64 wire value
 
                 83 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.sfixed32
-                        (\v ->
-                            { value
-                                | packedSfixed32 = v
-                            }
-                        )
-                        value.packedSfixed32
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.sfixed32 (\v -> { value | packedSfixed32 = v }) value.packedSfixed32 wire value
 
                 84 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.sfixed64
-                        (\v ->
-                            { value
-                                | packedSfixed64 = v
-                            }
-                        )
-                        value.packedSfixed64
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.sfixed64 (\v -> { value | packedSfixed64 = v }) value.packedSfixed64 wire value
 
                 85 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.float
-                        (\v ->
-                            { value
-                                | packedFloat = v
-                            }
-                        )
-                        value.packedFloat
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.float (\v -> { value | packedFloat = v }) value.packedFloat wire value
 
                 86 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.double
-                        (\v ->
-                            { value
-                                | packedDouble = v
-                            }
-                        )
-                        value.packedDouble
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.double (\v -> { value | packedDouble = v }) value.packedDouble wire value
 
                 87 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.bool
-                        (\v ->
-                            { value
-                                | packedBool = v
-                            }
-                        )
-                        value.packedBool
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.bool (\v -> { value | packedBool = v }) value.packedBool wire value
 
                 88 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.enum encodeTestAllTypesProto3NestedEnumBytes decodeTestAllTypesProto3NestedEnumBytes)
-                        (\v ->
-                            { value
-                                | packedNestedEnum = v
-                            }
-                        )
-                        value.packedNestedEnum
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.enum encodeTestAllTypesProto3NestedEnumBytes decodeTestAllTypesProto3NestedEnumBytes) (\v -> { value | packedNestedEnum = v }) value.packedNestedEnum wire value
 
                 89 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | unpackedInt32 = v
-                            }
-                        )
-                        value.unpackedInt32
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.int32 (\v -> { value | unpackedInt32 = v }) value.unpackedInt32 wire value
 
                 90 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.int64
-                        (\v ->
-                            { value
-                                | unpackedInt64 = v
-                            }
-                        )
-                        value.unpackedInt64
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.int64 (\v -> { value | unpackedInt64 = v }) value.unpackedInt64 wire value
 
                 91 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.uint32
-                        (\v ->
-                            { value
-                                | unpackedUint32 = v
-                            }
-                        )
-                        value.unpackedUint32
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.uint32 (\v -> { value | unpackedUint32 = v }) value.unpackedUint32 wire value
 
                 92 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.uint64
-                        (\v ->
-                            { value
-                                | unpackedUint64 = v
-                            }
-                        )
-                        value.unpackedUint64
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.uint64 (\v -> { value | unpackedUint64 = v }) value.unpackedUint64 wire value
 
                 93 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.sint32
-                        (\v ->
-                            { value
-                                | unpackedSint32 = v
-                            }
-                        )
-                        value.unpackedSint32
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.sint32 (\v -> { value | unpackedSint32 = v }) value.unpackedSint32 wire value
 
                 94 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.sint64
-                        (\v ->
-                            { value
-                                | unpackedSint64 = v
-                            }
-                        )
-                        value.unpackedSint64
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.sint64 (\v -> { value | unpackedSint64 = v }) value.unpackedSint64 wire value
 
                 95 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.fixed32
-                        (\v ->
-                            { value
-                                | unpackedFixed32 = v
-                            }
-                        )
-                        value.unpackedFixed32
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.fixed32 (\v -> { value | unpackedFixed32 = v }) value.unpackedFixed32 wire value
 
                 96 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.fixed64
-                        (\v ->
-                            { value
-                                | unpackedFixed64 = v
-                            }
-                        )
-                        value.unpackedFixed64
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.fixed64 (\v -> { value | unpackedFixed64 = v }) value.unpackedFixed64 wire value
 
                 97 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.sfixed32
-                        (\v ->
-                            { value
-                                | unpackedSfixed32 = v
-                            }
-                        )
-                        value.unpackedSfixed32
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.sfixed32 (\v -> { value | unpackedSfixed32 = v }) value.unpackedSfixed32 wire value
 
                 98 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.sfixed64
-                        (\v ->
-                            { value
-                                | unpackedSfixed64 = v
-                            }
-                        )
-                        value.unpackedSfixed64
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.sfixed64 (\v -> { value | unpackedSfixed64 = v }) value.unpackedSfixed64 wire value
 
                 99 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.float
-                        (\v ->
-                            { value
-                                | unpackedFloat = v
-                            }
-                        )
-                        value.unpackedFloat
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.float (\v -> { value | unpackedFloat = v }) value.unpackedFloat wire value
 
                 100 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.double
-                        (\v ->
-                            { value
-                                | unpackedDouble = v
-                            }
-                        )
-                        value.unpackedDouble
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.double (\v -> { value | unpackedDouble = v }) value.unpackedDouble wire value
 
                 101 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.bool
-                        (\v ->
-                            { value
-                                | unpackedBool = v
-                            }
-                        )
-                        value.unpackedBool
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.bool (\v -> { value | unpackedBool = v }) value.unpackedBool wire value
 
                 102 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.enum encodeTestAllTypesProto3NestedEnumBytes decodeTestAllTypesProto3NestedEnumBytes)
-                        (\v ->
-                            { value
-                                | unpackedNestedEnum = v
-                            }
-                        )
-                        value.unpackedNestedEnum
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.enum encodeTestAllTypesProto3NestedEnumBytes decodeTestAllTypesProto3NestedEnumBytes) (\v -> { value | unpackedNestedEnum = v }) value.unpackedNestedEnum wire value
 
                 111 ->
-                    Proto.Binary.field
-                        Proto.Binary.uint32
-                        (\v ->
-                            { value
-                                | oneofField = TestAllTypesProto3OneofFieldOneofUint32 v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.uint32 (\v -> { value | oneofField = TestAllTypesProto3OneofFieldOneofUint32 v }) wire value
 
                 112 ->
                     Proto.Binary.fieldInto
@@ -2802,667 +1995,183 @@ mergeTestAllTypesProto3Bytes =
                             _ ->
                                 Nothing
                         )
-                        (\v ->
-                            { value
-                                | oneofField = TestAllTypesProto3OneofFieldOneofNestedMessage v
-                            }
-                        )
+                        (\v -> { value | oneofField = TestAllTypesProto3OneofFieldOneofNestedMessage v })
                         wire
                         value
 
                 113 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | oneofField = TestAllTypesProto3OneofFieldOneofString v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | oneofField = TestAllTypesProto3OneofFieldOneofString v }) wire value
 
                 114 ->
-                    Proto.Binary.field
-                        Proto.Binary.bytes
-                        (\v ->
-                            { value
-                                | oneofField = TestAllTypesProto3OneofFieldOneofBytes v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bytes (\v -> { value | oneofField = TestAllTypesProto3OneofFieldOneofBytes v }) wire value
 
                 115 ->
-                    Proto.Binary.field
-                        Proto.Binary.bool
-                        (\v ->
-                            { value
-                                | oneofField = TestAllTypesProto3OneofFieldOneofBool v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bool (\v -> { value | oneofField = TestAllTypesProto3OneofFieldOneofBool v }) wire value
 
                 116 ->
-                    Proto.Binary.field
-                        Proto.Binary.uint64
-                        (\v ->
-                            { value
-                                | oneofField = TestAllTypesProto3OneofFieldOneofUint64 v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.uint64 (\v -> { value | oneofField = TestAllTypesProto3OneofFieldOneofUint64 v }) wire value
 
                 117 ->
-                    Proto.Binary.field
-                        Proto.Binary.float
-                        (\v ->
-                            { value
-                                | oneofField = TestAllTypesProto3OneofFieldOneofFloat v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.float (\v -> { value | oneofField = TestAllTypesProto3OneofFieldOneofFloat v }) wire value
 
                 118 ->
-                    Proto.Binary.field
-                        Proto.Binary.double
-                        (\v ->
-                            { value
-                                | oneofField = TestAllTypesProto3OneofFieldOneofDouble v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.double (\v -> { value | oneofField = TestAllTypesProto3OneofFieldOneofDouble v }) wire value
 
                 119 ->
-                    Proto.Binary.field
-                        (Proto.Binary.enum encodeTestAllTypesProto3NestedEnumBytes decodeTestAllTypesProto3NestedEnumBytes)
-                        (\v ->
-                            { value
-                                | oneofField = TestAllTypesProto3OneofFieldOneofEnum v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field (Proto.Binary.enum encodeTestAllTypesProto3NestedEnumBytes decodeTestAllTypesProto3NestedEnumBytes) (\v -> { value | oneofField = TestAllTypesProto3OneofFieldOneofEnum v }) wire value
 
                 120 ->
-                    Proto.Binary.field
-                        (Proto.Binary.enum (\_ -> 0) (\_ -> ()))
-                        (\_ ->
-                            { value
-                                | oneofField = TestAllTypesProto3OneofFieldOneofNullValue
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field (Proto.Binary.enum (\_ -> 0) (\_ -> ())) (\_ -> { value | oneofField = TestAllTypesProto3OneofFieldOneofNullValue }) wire value
 
                 201 ->
-                    Proto.Binary.field
-                        Proto.Binary.boolValue
-                        (\v ->
-                            { value
-                                | optionalBoolWrapper = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.boolValue (\v -> { value | optionalBoolWrapper = Just v }) wire value
 
                 202 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32Value
-                        (\v ->
-                            { value
-                                | optionalInt32Wrapper = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32Value (\v -> { value | optionalInt32Wrapper = Just v }) wire value
 
                 203 ->
-                    Proto.Binary.field
-                        Proto.Binary.int64Value
-                        (\v ->
-                            { value
-                                | optionalInt64Wrapper = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int64Value (\v -> { value | optionalInt64Wrapper = Just v }) wire value
 
                 204 ->
-                    Proto.Binary.field
-                        Proto.Binary.uint32Value
-                        (\v ->
-                            { value
-                                | optionalUint32Wrapper = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.uint32Value (\v -> { value | optionalUint32Wrapper = Just v }) wire value
 
                 205 ->
-                    Proto.Binary.field
-                        Proto.Binary.uint64Value
-                        (\v ->
-                            { value
-                                | optionalUint64Wrapper = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.uint64Value (\v -> { value | optionalUint64Wrapper = Just v }) wire value
 
                 206 ->
-                    Proto.Binary.field
-                        Proto.Binary.floatValue
-                        (\v ->
-                            { value
-                                | optionalFloatWrapper = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.floatValue (\v -> { value | optionalFloatWrapper = Just v }) wire value
 
                 207 ->
-                    Proto.Binary.field
-                        Proto.Binary.doubleValue
-                        (\v ->
-                            { value
-                                | optionalDoubleWrapper = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.doubleValue (\v -> { value | optionalDoubleWrapper = Just v }) wire value
 
                 208 ->
-                    Proto.Binary.field
-                        Proto.Binary.stringValue
-                        (\v ->
-                            { value
-                                | optionalStringWrapper = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.stringValue (\v -> { value | optionalStringWrapper = Just v }) wire value
 
                 209 ->
-                    Proto.Binary.field
-                        Proto.Binary.bytesValue
-                        (\v ->
-                            { value
-                                | optionalBytesWrapper = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bytesValue (\v -> { value | optionalBytesWrapper = Just v }) wire value
 
                 211 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.boolValue
-                        (\v ->
-                            { value
-                                | repeatedBoolWrapper = v
-                            }
-                        )
-                        value.repeatedBoolWrapper
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.boolValue (\v -> { value | repeatedBoolWrapper = v }) value.repeatedBoolWrapper wire value
 
                 212 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.int32Value
-                        (\v ->
-                            { value
-                                | repeatedInt32Wrapper = v
-                            }
-                        )
-                        value.repeatedInt32Wrapper
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.int32Value (\v -> { value | repeatedInt32Wrapper = v }) value.repeatedInt32Wrapper wire value
 
                 213 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.int64Value
-                        (\v ->
-                            { value
-                                | repeatedInt64Wrapper = v
-                            }
-                        )
-                        value.repeatedInt64Wrapper
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.int64Value (\v -> { value | repeatedInt64Wrapper = v }) value.repeatedInt64Wrapper wire value
 
                 214 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.uint32Value
-                        (\v ->
-                            { value
-                                | repeatedUint32Wrapper = v
-                            }
-                        )
-                        value.repeatedUint32Wrapper
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.uint32Value (\v -> { value | repeatedUint32Wrapper = v }) value.repeatedUint32Wrapper wire value
 
                 215 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.uint64Value
-                        (\v ->
-                            { value
-                                | repeatedUint64Wrapper = v
-                            }
-                        )
-                        value.repeatedUint64Wrapper
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.uint64Value (\v -> { value | repeatedUint64Wrapper = v }) value.repeatedUint64Wrapper wire value
 
                 216 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.floatValue
-                        (\v ->
-                            { value
-                                | repeatedFloatWrapper = v
-                            }
-                        )
-                        value.repeatedFloatWrapper
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.floatValue (\v -> { value | repeatedFloatWrapper = v }) value.repeatedFloatWrapper wire value
 
                 217 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.doubleValue
-                        (\v ->
-                            { value
-                                | repeatedDoubleWrapper = v
-                            }
-                        )
-                        value.repeatedDoubleWrapper
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.doubleValue (\v -> { value | repeatedDoubleWrapper = v }) value.repeatedDoubleWrapper wire value
 
                 218 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.stringValue
-                        (\v ->
-                            { value
-                                | repeatedStringWrapper = v
-                            }
-                        )
-                        value.repeatedStringWrapper
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.stringValue (\v -> { value | repeatedStringWrapper = v }) value.repeatedStringWrapper wire value
 
                 219 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.bytesValue
-                        (\v ->
-                            { value
-                                | repeatedBytesWrapper = v
-                            }
-                        )
-                        value.repeatedBytesWrapper
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.bytesValue (\v -> { value | repeatedBytesWrapper = v }) value.repeatedBytesWrapper wire value
 
                 301 ->
-                    Proto.Binary.field
-                        Proto.Binary.duration
-                        (\v ->
-                            { value
-                                | optionalDuration = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.duration (\v -> { value | optionalDuration = Just v }) wire value
 
                 302 ->
-                    Proto.Binary.field
-                        Proto.Binary.timestamp
-                        (\v ->
-                            { value
-                                | optionalTimestamp = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.timestamp (\v -> { value | optionalTimestamp = Just v }) wire value
 
                 303 ->
-                    Proto.Binary.field
-                        Proto.Binary.fieldMask
-                        (\v ->
-                            { value
-                                | optionalFieldMask = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.fieldMask (\v -> { value | optionalFieldMask = Just v }) wire value
 
                 304 ->
-                    Proto.Binary.field
-                        Proto.Binary.struct
-                        (\v ->
-                            { value
-                                | optionalStruct = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.struct (\v -> { value | optionalStruct = Just v }) wire value
 
                 305 ->
-                    Proto.Binary.field
-                        Proto.Binary.any
-                        (\v ->
-                            { value
-                                | optionalAny = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.any (\v -> { value | optionalAny = Just v }) wire value
 
                 306 ->
-                    Proto.Binary.field
-                        Proto.Binary.value
-                        (\v ->
-                            { value
-                                | optionalValue = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.value (\v -> { value | optionalValue = Just v }) wire value
 
                 307 ->
-                    Proto.Binary.field
-                        (Proto.Binary.enum (\_ -> 0) (\_ -> ()))
-                        (\v ->
-                            { value
-                                | optionalNullValue = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field (Proto.Binary.enum (\_ -> 0) (\_ -> ())) (\v -> { value | optionalNullValue = v }) wire value
 
                 311 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.duration
-                        (\v ->
-                            { value
-                                | repeatedDuration = v
-                            }
-                        )
-                        value.repeatedDuration
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.duration (\v -> { value | repeatedDuration = v }) value.repeatedDuration wire value
 
                 312 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.timestamp
-                        (\v ->
-                            { value
-                                | repeatedTimestamp = v
-                            }
-                        )
-                        value.repeatedTimestamp
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.timestamp (\v -> { value | repeatedTimestamp = v }) value.repeatedTimestamp wire value
 
                 313 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.fieldMask
-                        (\v ->
-                            { value
-                                | repeatedFieldmask = v
-                            }
-                        )
-                        value.repeatedFieldmask
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.fieldMask (\v -> { value | repeatedFieldmask = v }) value.repeatedFieldmask wire value
 
                 315 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.any
-                        (\v ->
-                            { value
-                                | repeatedAny = v
-                            }
-                        )
-                        value.repeatedAny
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.any (\v -> { value | repeatedAny = v }) value.repeatedAny wire value
 
                 316 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.value
-                        (\v ->
-                            { value
-                                | repeatedValue = v
-                            }
-                        )
-                        value.repeatedValue
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.value (\v -> { value | repeatedValue = v }) value.repeatedValue wire value
 
                 317 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.listValue
-                        (\v ->
-                            { value
-                                | repeatedListValue = v
-                            }
-                        )
-                        value.repeatedListValue
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.listValue (\v -> { value | repeatedListValue = v }) value.repeatedListValue wire value
 
                 324 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.struct
-                        (\v ->
-                            { value
-                                | repeatedStruct = v
-                            }
-                        )
-                        value.repeatedStruct
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.struct (\v -> { value | repeatedStruct = v }) value.repeatedStruct wire value
 
                 401 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | fieldname1 = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldname1 = v }) wire value
 
                 402 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | fieldName2 = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName2 = v }) wire value
 
                 403 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | fieldName3 = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName3 = v }) wire value
 
                 404 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | fieldName4 = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName4 = v }) wire value
 
                 405 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | field0name5 = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | field0name5 = v }) wire value
 
                 406 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | field0Name6 = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | field0Name6 = v }) wire value
 
                 407 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | fieldName7 = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName7 = v }) wire value
 
                 408 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | fieldName8 = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName8 = v }) wire value
 
                 409 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | fieldName9 = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName9 = v }) wire value
 
                 410 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | fieldName10 = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName10 = v }) wire value
 
                 411 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | fieldname11 = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldname11 = v }) wire value
 
                 412 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | fieldName12 = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName12 = v }) wire value
 
                 413 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | fieldName13 = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName13 = v }) wire value
 
                 414 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | fieldName14 = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName14 = v }) wire value
 
                 415 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | fieldName15 = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName15 = v }) wire value
 
                 416 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | fieldName16 = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName16 = v }) wire value
 
                 417 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | fieldName17 = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName17 = v }) wire value
 
                 418 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | fieldName18 = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName18 = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -3561,27 +2270,10 @@ mergeTestAllTypesProto3NestedMessageBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | a = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | a = v }) wire value
 
                 2 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeTestAllTypesProto3_Bytes mergeTestAllTypesProto3_Bytes (TestAllTypesProto3_ defaultTestAllTypesProto3))
-                        value.corecursive
-                        (\v ->
-                            { value
-                                | corecursive = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeTestAllTypesProto3_Bytes mergeTestAllTypesProto3_Bytes (TestAllTypesProto3_ defaultTestAllTypesProto3)) value.corecursive (\v -> { value | corecursive = Just v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -3611,15 +2303,7 @@ mergeForeignMessageBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | c = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | c = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value

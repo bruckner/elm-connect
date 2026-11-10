@@ -573,6 +573,17 @@ fn expression(expr: &Expr) -> Block {
             });
             Block::stack(fields.chain([Block::text("}")]))
         }
+        // One field whose value fits on a line prints on one line, as a
+        // setter reads; elm-format keeps an update on one line when the
+        // source has it so. More fields stack, one per line.
+        Expr::RecordUpdate { record, fields }
+            if fields.len() == 1 && expression(&fields[0].1).is_single() =>
+        {
+            let (name, value) = &fields[0];
+            expression(value)
+                .prefix(&format!("{{ {record} | {name} = "))
+                .suffix(" }")
+        }
         Expr::RecordUpdate { record, fields } => {
             let fields = fields.iter().enumerate().map(|(i, (name, value))| {
                 field(name, value)
