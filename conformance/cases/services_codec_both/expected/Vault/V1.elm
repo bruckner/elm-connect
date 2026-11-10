@@ -413,69 +413,24 @@ mergeItemBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | name = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | name = v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.int64
-                        (\v ->
-                            { value
-                                | size = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int64 (\v -> { value | size = v }) wire value
 
                 3 ->
-                    Proto.Binary.field
-                        (Proto.Binary.enum encodeStatusBytes decodeStatusBytes)
-                        (\v ->
-                            { value
-                                | status = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field (Proto.Binary.enum encodeStatusBytes decodeStatusBytes) (\v -> { value | status = v }) wire value
 
                 4 ->
-                    Proto.Binary.field
-                        Proto.Binary.any
-                        (\v ->
-                            { value
-                                | payload = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.any (\v -> { value | payload = Just v }) wire value
 
                 5 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.any
-                        (\v ->
-                            { value
-                                | attachments = v
-                            }
-                        )
-                        value.attachments
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.any (\v -> { value | attachments = v }) value.attachments wire value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value ->
-            { value
-                | attachments = List.reverse value.attachments
-            }
-        )
+        (\value -> { value | attachments = List.reverse value.attachments })
 
 
 {-| Decodes an [`Item`](#Item) from protobuf binary.
@@ -493,15 +448,7 @@ mergeGetItemRequestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | name = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | name = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -524,15 +471,7 @@ mergeListItemsRequestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | pageSize = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | pageSize = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -555,25 +494,12 @@ mergeListItemsResponseBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeItemBytes mergeItemBytes defaultItem)
-                        (\v ->
-                            { value
-                                | items = v
-                            }
-                        )
-                        value.items
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.embedded encodeItemBytes mergeItemBytes defaultItem) (\v -> { value | items = v }) value.items wire value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value ->
-            { value
-                | items = List.reverse value.items
-            }
-        )
+        (\value -> { value | items = List.reverse value.items })
 
 
 {-| Decodes a [`ListItemsResponse`](#ListItemsResponse) from protobuf binary.

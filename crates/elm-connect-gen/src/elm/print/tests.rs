@@ -371,6 +371,20 @@ fn record_literals() {
         "{ r\n    | a = 1\n    , b = 2\n}"
     );
     assert_eq!(
+        print_expr(&Expr::RecordUpdate {
+            record: "r".into(),
+            fields: vec![("a".into(), int(1))],
+        }),
+        "{ r | a = 1 }"
+    );
+    assert_eq!(
+        print_expr(&Expr::RecordUpdate {
+            record: "r".into(),
+            fields: vec![("a".into(), case(var("m"), [(Pattern::Wildcard, int(0))]))],
+        }),
+        "{ r\n    | a =\n        case m of\n            _ ->\n                0\n}"
+    );
+    assert_eq!(
         print_expr(&record([(
             "a",
             case(var("m"), [(Pattern::Wildcard, int(0))])
