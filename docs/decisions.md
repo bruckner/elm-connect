@@ -1309,6 +1309,24 @@ record are gone. Weighed: dropping unreadable details (the spike's base;
 silent), two fields of details read and details not read (a second
 pathway to keep in step), and an opaque detail type with readers (hides
 the `Any` the wire holds). Where: design §5.4.
+### Strings are read from their own slice
+
+*2026-11-10.*
+
+`Proto.Binary.string` reads a field's bytes with `Bytes.Decode.bytes`
+and the string from that slice, failing the field when the slice does
+not hold one. elm/bytes reads a string without checking its
+characters and takes any byte that does not begin one as the first of
+a four-byte character, so a string whose last character is cut short,
+by a lead byte at its end or a stray continuation byte, was read past
+the field's end. The decoder counts each field by its declared length,
+so it went on out of place, and when the bytes past a message were
+there to read, as they are behind an `Any`'s value or a gRPC-Web
+frame, the decode could succeed with the wrong fields. Read from its
+own slice, such a string reads past the slice, which fails. It costs 7
+to 10 % on a small message of strings and 0 to 2 % elsewhere. It does
+not validate UTF-8: a string whose bytes are not UTF-8 but end on a
+whole character still reads, as before. Where: design §5.5.
 
 ## Input and versioning
 

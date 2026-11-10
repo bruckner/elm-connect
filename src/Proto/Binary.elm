@@ -1042,15 +1042,31 @@ varint64Any =
     D.map (\( width, U64 high low ) -> ( width, high + low )) varint64
 
 
-{-| `string`, UTF-8.
+{-| `string`, UTF-8. A string cut off in the middle of a character fails
+the decode.
 -}
 string : Codec String
 string =
     scalar 2
-        (varint32 |> D.andThen (\( width, length ) -> D.map (\s -> ( width + length, s )) (D.string length)))
+        (varint32 |> D.andThen (\( width, length ) -> D.andThen (sliceString width length) (D.bytes length)))
         (\s -> E.sequence [ writeVarint32 (E.getStringWidth s), E.string s ])
         String.isEmpty
         ""
+
+
+{-| The string a field's bytes hold, read from their own slice: elm/bytes
+reads a string without checking its characters, and takes a byte that does
+not begin one as the first of four, so a string cut off mid-character would
+otherwise read past the field and leave the decoder out of place.
+-}
+sliceString : Int -> Int -> Bytes -> D.Decoder ( Int, String )
+sliceString width length slice =
+    case D.decode (D.string length) slice of
+        Just s ->
+            D.succeed ( width + length, s )
+
+        Nothing ->
+            D.fail
 
 
 rawBytes : D.Decoder ( Int, Bytes )

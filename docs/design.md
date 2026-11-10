@@ -3540,8 +3540,10 @@ Connect's proto codec sends them (§5.3).
   of a wire type its declaration does not take, as protobuf-go files
   it under unknown fields rather than failing; they are not kept, so a
   message read and written again loses them (roadmap: unknown fields).
-  A group, field number 0, a length past the end of its message and a
-  varint longer than ten bytes fail the decode.
+  A group, field number 0, a length past the end of its message, a
+  varint longer than ten bytes and a string cut off in the middle of a
+  character fail the decode; a string is read from its own slice of the
+  input, since elm/bytes would read such a string past its end.
 - **`Any`**: `Proto.Binary.any : Codec Any` reads its type URL and
   binary and writes them back as they are, needing no registry; an `Any`
   always holds binary (§3.5), so a program that only speaks binary keeps
