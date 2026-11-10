@@ -90,6 +90,22 @@ fromHex text =
     Bytes.Encode.encode (Bytes.Encode.sequence (go (String.toList (String.replace " " "" text)) []))
 
 
+{-| The bytes of `hex` as a slice of a larger input that goes on with
+`after`, as an `Any`'s value or a gRPC-Web frame is one.
+-}
+slice : String -> String -> Bytes
+slice hex after =
+    let
+        whole =
+            fromHex (hex ++ after)
+
+        width =
+            Bytes.width (fromHex hex)
+    in
+    Bytes.Decode.decode (Bytes.Decode.bytes width) whole
+        |> Maybe.withDefault whole
+
+
 {-| A one-field message whose field 1 is of `codec`, as generated code
 writes it.
 -}
@@ -355,6 +371,23 @@ delimited =
                     ()
         , test "a string whose length runs past the input fails" <|
             \_ -> reads B.string "" identity "0a 08 74657374696e67" Nothing
+        , test "a string ending in a stray continuation byte (ab 80) fails, though the bytes after it would read as fields" <|
+            \_ ->
+                -- name "ab\x80", then fields that read cleanly from three
+                -- bytes further on, up to an unknown field whose last bytes
+                -- lie past the message, inside the larger input it is a
+                -- slice of. elm/bytes reads 80 as the start of a four-byte
+                -- character.
+                B.decode decodeSample (slice "12 03 616280 080720 0805 7a03" "414243")
+                    |> Maybe.map showSample
+                    |> Expect.equal Nothing
+        , test "a string ending in the first byte of a three-byte character (ab e2) fails" <|
+            \_ ->
+                B.decode decodeSample (slice "12 03 6162e2 0807 0805 7a02" "4142")
+                    |> Maybe.map showSample
+                    |> Expect.equal Nothing
+        , test "a string of multi-byte characters ending exactly at the end of the message reads" <|
+            \_ -> decodesAs "0805 1206 c3a9f09f9880" { sampleDefault | number = 5, name = "é😀" }
         , test "a nested message, length-prefixed" <|
             \_ ->
                 -- Message { 3: Leaf { 1: 150 } }, from the encoding guide.
