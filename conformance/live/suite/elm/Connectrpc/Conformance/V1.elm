@@ -4579,229 +4579,64 @@ mergeClientCompatRequestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | testName = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | testName = v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        (Proto.Binary.enum encodeHTTPVersionBytes decodeHTTPVersionBytes)
-                        (\v ->
-                            { value
-                                | httpVersion = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field (Proto.Binary.enum encodeHTTPVersionBytes decodeHTTPVersionBytes) (\v -> { value | httpVersion = v }) wire value
 
                 3 ->
-                    Proto.Binary.field
-                        (Proto.Binary.enum encodeProtocolBytes decodeProtocolBytes)
-                        (\v ->
-                            { value
-                                | protocol = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field (Proto.Binary.enum encodeProtocolBytes decodeProtocolBytes) (\v -> { value | protocol = v }) wire value
 
                 4 ->
-                    Proto.Binary.field
-                        (Proto.Binary.enum encodeCodecBytes decodeCodecBytes)
-                        (\v ->
-                            { value
-                                | codec = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field (Proto.Binary.enum encodeCodecBytes decodeCodecBytes) (\v -> { value | codec = v }) wire value
 
                 5 ->
-                    Proto.Binary.field
-                        (Proto.Binary.enum encodeCompressionBytes decodeCompressionBytes)
-                        (\v ->
-                            { value
-                                | compression = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field (Proto.Binary.enum encodeCompressionBytes decodeCompressionBytes) (\v -> { value | compression = v }) wire value
 
                 6 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | host = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | host = v }) wire value
 
                 7 ->
-                    Proto.Binary.field
-                        Proto.Binary.uint32
-                        (\v ->
-                            { value
-                                | port_ = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.uint32 (\v -> { value | port_ = v }) wire value
 
                 8 ->
-                    Proto.Binary.field
-                        Proto.Binary.bytes
-                        (\v ->
-                            { value
-                                | serverTlsCert = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bytes (\v -> { value | serverTlsCert = v }) wire value
 
                 9 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeTLSCredsBytes mergeTLSCredsBytes defaultTLSCreds)
-                        value.clientTlsCreds
-                        (\v ->
-                            { value
-                                | clientTlsCreds = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeTLSCredsBytes mergeTLSCredsBytes defaultTLSCreds) value.clientTlsCreds (\v -> { value | clientTlsCreds = Just v }) wire value
 
                 10 ->
-                    Proto.Binary.field
-                        Proto.Binary.uint32
-                        (\v ->
-                            { value
-                                | messageReceiveLimit = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.uint32 (\v -> { value | messageReceiveLimit = v }) wire value
 
                 11 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | service = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | service = Just v }) wire value
 
                 12 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | method = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | method = Just v }) wire value
 
                 13 ->
-                    Proto.Binary.field
-                        (Proto.Binary.enum encodeStreamTypeBytes decodeStreamTypeBytes)
-                        (\v ->
-                            { value
-                                | streamType = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field (Proto.Binary.enum encodeStreamTypeBytes decodeStreamTypeBytes) (\v -> { value | streamType = v }) wire value
 
                 14 ->
-                    Proto.Binary.field
-                        Proto.Binary.bool
-                        (\v ->
-                            { value
-                                | useGetHttpMethod = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bool (\v -> { value | useGetHttpMethod = v }) wire value
 
                 15 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
-                        (\v ->
-                            { value
-                                | requestHeaders = v
-                            }
-                        )
-                        value.requestHeaders
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) (\v -> { value | requestHeaders = v }) value.requestHeaders wire value
 
                 16 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.any
-                        (\v ->
-                            { value
-                                | requestMessages = v
-                            }
-                        )
-                        value.requestMessages
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.any (\v -> { value | requestMessages = v }) value.requestMessages wire value
 
                 17 ->
-                    Proto.Binary.field
-                        Proto.Binary.uint32
-                        (\v ->
-                            { value
-                                | timeoutMs = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.uint32 (\v -> { value | timeoutMs = Just v }) wire value
 
                 18 ->
-                    Proto.Binary.field
-                        Proto.Binary.uint32
-                        (\v ->
-                            { value
-                                | requestDelayMs = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.uint32 (\v -> { value | requestDelayMs = v }) wire value
 
                 19 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeClientCompatRequestCancelBytes mergeClientCompatRequestCancelBytes defaultClientCompatRequestCancel)
-                        value.cancel
-                        (\v ->
-                            { value
-                                | cancel = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeClientCompatRequestCancelBytes mergeClientCompatRequestCancelBytes defaultClientCompatRequestCancel) value.cancel (\v -> { value | cancel = Just v }) wire value
 
                 20 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeRawHTTPRequestBytes mergeRawHTTPRequestBytes defaultRawHTTPRequest)
-                        value.rawRequest
-                        (\v ->
-                            { value
-                                | rawRequest = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeRawHTTPRequestBytes mergeRawHTTPRequestBytes defaultRawHTTPRequest) value.rawRequest (\v -> { value | rawRequest = Just v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -4829,37 +4664,13 @@ mergeClientCompatRequestCancelBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.empty
-                        (\_ ->
-                            { value
-                                | cancelTiming = ClientCompatRequestCancelCancelTimingBeforeCloseSend
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.empty (\_ -> { value | cancelTiming = ClientCompatRequestCancelCancelTimingBeforeCloseSend }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.uint32
-                        (\v ->
-                            { value
-                                | cancelTiming = ClientCompatRequestCancelCancelTimingAfterCloseSendMs v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.uint32 (\v -> { value | cancelTiming = ClientCompatRequestCancelCancelTimingAfterCloseSendMs v }) wire value
 
                 3 ->
-                    Proto.Binary.field
-                        Proto.Binary.uint32
-                        (\v ->
-                            { value
-                                | cancelTiming = ClientCompatRequestCancelCancelTimingAfterNumResponses v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.uint32 (\v -> { value | cancelTiming = ClientCompatRequestCancelCancelTimingAfterNumResponses v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -4882,15 +4693,7 @@ mergeClientCompatResponseBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | testName = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | testName = v }) wire value
 
                 2 ->
                     Proto.Binary.fieldInto
@@ -4902,11 +4705,7 @@ mergeClientCompatResponseBytes =
                             _ ->
                                 Nothing
                         )
-                        (\v ->
-                            { value
-                                | result = ClientCompatResponseResultResponse v
-                            }
-                        )
+                        (\v -> { value | result = ClientCompatResponseResultResponse v })
                         wire
                         value
 
@@ -4920,11 +4719,7 @@ mergeClientCompatResponseBytes =
                             _ ->
                                 Nothing
                         )
-                        (\v ->
-                            { value
-                                | result = ClientCompatResponseResultError v
-                            }
-                        )
+                        (\v -> { value | result = ClientCompatResponseResultError v })
                         wire
                         value
 
@@ -4949,86 +4744,25 @@ mergeClientResponseResultBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
-                        (\v ->
-                            { value
-                                | responseHeaders = v
-                            }
-                        )
-                        value.responseHeaders
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) (\v -> { value | responseHeaders = v }) value.responseHeaders wire value
 
                 2 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeConformancePayloadBytes mergeConformancePayloadBytes defaultConformancePayload)
-                        (\v ->
-                            { value
-                                | payloads = v
-                            }
-                        )
-                        value.payloads
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.embedded encodeConformancePayloadBytes mergeConformancePayloadBytes defaultConformancePayload) (\v -> { value | payloads = v }) value.payloads wire value
 
                 3 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeErrorBytes mergeErrorBytes defaultError)
-                        value.error
-                        (\v ->
-                            { value
-                                | error = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeErrorBytes mergeErrorBytes defaultError) value.error (\v -> { value | error = Just v }) wire value
 
                 4 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
-                        (\v ->
-                            { value
-                                | responseTrailers = v
-                            }
-                        )
-                        value.responseTrailers
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) (\v -> { value | responseTrailers = v }) value.responseTrailers wire value
 
                 5 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | numUnsentRequests = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | numUnsentRequests = v }) wire value
 
                 6 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | httpStatusCode = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | httpStatusCode = Just v }) wire value
 
                 7 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | feedback = v
-                            }
-                        )
-                        value.feedback
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.string (\v -> { value | feedback = v }) value.feedback wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -5058,15 +4792,7 @@ mergeClientErrorResultBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | message = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | message = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -5089,58 +4815,21 @@ mergeWireDetailsBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | actualStatusCode = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | actualStatusCode = v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.struct
-                        (\v ->
-                            { value
-                                | connectErrorRaw = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.struct (\v -> { value | connectErrorRaw = Just v }) wire value
 
                 3 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
-                        (\v ->
-                            { value
-                                | actualHttpTrailers = v
-                            }
-                        )
-                        value.actualHttpTrailers
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) (\v -> { value | actualHttpTrailers = v }) value.actualHttpTrailers wire value
 
                 4 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | actualGrpcwebTrailers = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | actualGrpcwebTrailers = Just v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value ->
-            { value
-                | actualHttpTrailers = List.reverse value.actualHttpTrailers
-            }
-        )
+        (\value -> { value | actualHttpTrailers = List.reverse value.actualHttpTrailers })
 
 
 {-| Decodes a [`WireDetails`](#WireDetails) from protobuf binary.
@@ -5158,40 +4847,13 @@ mergeConfigBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeFeaturesBytes mergeFeaturesBytes defaultFeatures)
-                        value.features
-                        (\v ->
-                            { value
-                                | features = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeFeaturesBytes mergeFeaturesBytes defaultFeatures) value.features (\v -> { value | features = Just v }) wire value
 
                 2 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeConfigCaseBytes mergeConfigCaseBytes defaultConfigCase)
-                        (\v ->
-                            { value
-                                | includeCases = v
-                            }
-                        )
-                        value.includeCases
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.embedded encodeConfigCaseBytes mergeConfigCaseBytes defaultConfigCase) (\v -> { value | includeCases = v }) value.includeCases wire value
 
                 3 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeConfigCaseBytes mergeConfigCaseBytes defaultConfigCase)
-                        (\v ->
-                            { value
-                                | excludeCases = v
-                            }
-                        )
-                        value.excludeCases
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.embedded encodeConfigCaseBytes mergeConfigCaseBytes defaultConfigCase) (\v -> { value | excludeCases = v }) value.excludeCases wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -5219,141 +4881,40 @@ mergeFeaturesBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.enum encodeHTTPVersionBytes decodeHTTPVersionBytes)
-                        (\v ->
-                            { value
-                                | versions = v
-                            }
-                        )
-                        value.versions
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.enum encodeHTTPVersionBytes decodeHTTPVersionBytes) (\v -> { value | versions = v }) value.versions wire value
 
                 2 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.enum encodeProtocolBytes decodeProtocolBytes)
-                        (\v ->
-                            { value
-                                | protocols = v
-                            }
-                        )
-                        value.protocols
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.enum encodeProtocolBytes decodeProtocolBytes) (\v -> { value | protocols = v }) value.protocols wire value
 
                 3 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.enum encodeCodecBytes decodeCodecBytes)
-                        (\v ->
-                            { value
-                                | codecs = v
-                            }
-                        )
-                        value.codecs
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.enum encodeCodecBytes decodeCodecBytes) (\v -> { value | codecs = v }) value.codecs wire value
 
                 4 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.enum encodeCompressionBytes decodeCompressionBytes)
-                        (\v ->
-                            { value
-                                | compressions = v
-                            }
-                        )
-                        value.compressions
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.enum encodeCompressionBytes decodeCompressionBytes) (\v -> { value | compressions = v }) value.compressions wire value
 
                 5 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.enum encodeStreamTypeBytes decodeStreamTypeBytes)
-                        (\v ->
-                            { value
-                                | streamTypes = v
-                            }
-                        )
-                        value.streamTypes
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.enum encodeStreamTypeBytes decodeStreamTypeBytes) (\v -> { value | streamTypes = v }) value.streamTypes wire value
 
                 6 ->
-                    Proto.Binary.field
-                        Proto.Binary.bool
-                        (\v ->
-                            { value
-                                | supportsH2c = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bool (\v -> { value | supportsH2c = Just v }) wire value
 
                 7 ->
-                    Proto.Binary.field
-                        Proto.Binary.bool
-                        (\v ->
-                            { value
-                                | supportsTls = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bool (\v -> { value | supportsTls = Just v }) wire value
 
                 8 ->
-                    Proto.Binary.field
-                        Proto.Binary.bool
-                        (\v ->
-                            { value
-                                | supportsTlsClientCerts = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bool (\v -> { value | supportsTlsClientCerts = Just v }) wire value
 
                 9 ->
-                    Proto.Binary.field
-                        Proto.Binary.bool
-                        (\v ->
-                            { value
-                                | supportsTrailers = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bool (\v -> { value | supportsTrailers = Just v }) wire value
 
                 10 ->
-                    Proto.Binary.field
-                        Proto.Binary.bool
-                        (\v ->
-                            { value
-                                | supportsHalfDuplexBidiOverHttp1 = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bool (\v -> { value | supportsHalfDuplexBidiOverHttp1 = Just v }) wire value
 
                 11 ->
-                    Proto.Binary.field
-                        Proto.Binary.bool
-                        (\v ->
-                            { value
-                                | supportsConnectGet = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bool (\v -> { value | supportsConnectGet = Just v }) wire value
 
                 12 ->
-                    Proto.Binary.field
-                        Proto.Binary.bool
-                        (\v ->
-                            { value
-                                | supportsMessageReceiveLimit = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bool (\v -> { value | supportsMessageReceiveLimit = Just v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -5384,92 +4945,28 @@ mergeConfigCaseBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        (Proto.Binary.enum encodeHTTPVersionBytes decodeHTTPVersionBytes)
-                        (\v ->
-                            { value
-                                | version = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field (Proto.Binary.enum encodeHTTPVersionBytes decodeHTTPVersionBytes) (\v -> { value | version = v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        (Proto.Binary.enum encodeProtocolBytes decodeProtocolBytes)
-                        (\v ->
-                            { value
-                                | protocol = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field (Proto.Binary.enum encodeProtocolBytes decodeProtocolBytes) (\v -> { value | protocol = v }) wire value
 
                 3 ->
-                    Proto.Binary.field
-                        (Proto.Binary.enum encodeCodecBytes decodeCodecBytes)
-                        (\v ->
-                            { value
-                                | codec = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field (Proto.Binary.enum encodeCodecBytes decodeCodecBytes) (\v -> { value | codec = v }) wire value
 
                 4 ->
-                    Proto.Binary.field
-                        (Proto.Binary.enum encodeCompressionBytes decodeCompressionBytes)
-                        (\v ->
-                            { value
-                                | compression = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field (Proto.Binary.enum encodeCompressionBytes decodeCompressionBytes) (\v -> { value | compression = v }) wire value
 
                 5 ->
-                    Proto.Binary.field
-                        (Proto.Binary.enum encodeStreamTypeBytes decodeStreamTypeBytes)
-                        (\v ->
-                            { value
-                                | streamType = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field (Proto.Binary.enum encodeStreamTypeBytes decodeStreamTypeBytes) (\v -> { value | streamType = v }) wire value
 
                 6 ->
-                    Proto.Binary.field
-                        Proto.Binary.bool
-                        (\v ->
-                            { value
-                                | useTls = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bool (\v -> { value | useTls = Just v }) wire value
 
                 7 ->
-                    Proto.Binary.field
-                        Proto.Binary.bool
-                        (\v ->
-                            { value
-                                | useTlsClientCerts = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bool (\v -> { value | useTlsClientCerts = Just v }) wire value
 
                 8 ->
-                    Proto.Binary.field
-                        Proto.Binary.bool
-                        (\v ->
-                            { value
-                                | useMessageReceiveLimit = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bool (\v -> { value | useMessageReceiveLimit = Just v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -5492,26 +4989,10 @@ mergeTLSCredsBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.bytes
-                        (\v ->
-                            { value
-                                | cert = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bytes (\v -> { value | cert = v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.bytes
-                        (\v ->
-                            { value
-                                | key = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bytes (\v -> { value | key = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -5534,71 +5015,22 @@ mergeServerCompatRequestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        (Proto.Binary.enum encodeProtocolBytes decodeProtocolBytes)
-                        (\v ->
-                            { value
-                                | protocol = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field (Proto.Binary.enum encodeProtocolBytes decodeProtocolBytes) (\v -> { value | protocol = v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        (Proto.Binary.enum encodeHTTPVersionBytes decodeHTTPVersionBytes)
-                        (\v ->
-                            { value
-                                | httpVersion = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field (Proto.Binary.enum encodeHTTPVersionBytes decodeHTTPVersionBytes) (\v -> { value | httpVersion = v }) wire value
 
                 4 ->
-                    Proto.Binary.field
-                        Proto.Binary.bool
-                        (\v ->
-                            { value
-                                | useTls = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bool (\v -> { value | useTls = v }) wire value
 
                 5 ->
-                    Proto.Binary.field
-                        Proto.Binary.bytes
-                        (\v ->
-                            { value
-                                | clientTlsCert = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bytes (\v -> { value | clientTlsCert = v }) wire value
 
                 6 ->
-                    Proto.Binary.field
-                        Proto.Binary.uint32
-                        (\v ->
-                            { value
-                                | messageReceiveLimit = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.uint32 (\v -> { value | messageReceiveLimit = v }) wire value
 
                 7 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeTLSCredsBytes mergeTLSCredsBytes defaultTLSCreds)
-                        value.serverCreds
-                        (\v ->
-                            { value
-                                | serverCreds = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeTLSCredsBytes mergeTLSCredsBytes defaultTLSCreds) value.serverCreds (\v -> { value | serverCreds = Just v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -5621,37 +5053,13 @@ mergeServerCompatResponseBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | host = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | host = v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.uint32
-                        (\v ->
-                            { value
-                                | port_ = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.uint32 (\v -> { value | port_ = v }) wire value
 
                 3 ->
-                    Proto.Binary.field
-                        Proto.Binary.bytes
-                        (\v ->
-                            { value
-                                | pemCert = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bytes (\v -> { value | pemCert = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -5674,27 +5082,10 @@ mergeUnaryResponseDefinitionBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
-                        (\v ->
-                            { value
-                                | responseHeaders = v
-                            }
-                        )
-                        value.responseHeaders
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) (\v -> { value | responseHeaders = v }) value.responseHeaders wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.bytes
-                        (\v ->
-                            { value
-                                | response = UnaryResponseDefinitionResponseResponseData v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bytes (\v -> { value | response = UnaryResponseDefinitionResponseResponseData v }) wire value
 
                 3 ->
                     Proto.Binary.fieldInto
@@ -5706,48 +5097,18 @@ mergeUnaryResponseDefinitionBytes =
                             _ ->
                                 Nothing
                         )
-                        (\v ->
-                            { value
-                                | response = UnaryResponseDefinitionResponseError v
-                            }
-                        )
+                        (\v -> { value | response = UnaryResponseDefinitionResponseError v })
                         wire
                         value
 
                 4 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
-                        (\v ->
-                            { value
-                                | responseTrailers = v
-                            }
-                        )
-                        value.responseTrailers
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) (\v -> { value | responseTrailers = v }) value.responseTrailers wire value
 
                 5 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeRawHTTPResponseBytes mergeRawHTTPResponseBytes defaultRawHTTPResponse)
-                        value.rawResponse
-                        (\v ->
-                            { value
-                                | rawResponse = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeRawHTTPResponseBytes mergeRawHTTPResponseBytes defaultRawHTTPResponse) value.rawResponse (\v -> { value | rawResponse = Just v }) wire value
 
                 6 ->
-                    Proto.Binary.field
-                        Proto.Binary.uint32
-                        (\v ->
-                            { value
-                                | responseDelayMs = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.uint32 (\v -> { value | responseDelayMs = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -5775,75 +5136,22 @@ mergeStreamResponseDefinitionBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
-                        (\v ->
-                            { value
-                                | responseHeaders = v
-                            }
-                        )
-                        value.responseHeaders
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) (\v -> { value | responseHeaders = v }) value.responseHeaders wire value
 
                 2 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.bytes
-                        (\v ->
-                            { value
-                                | responseData = v
-                            }
-                        )
-                        value.responseData
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.bytes (\v -> { value | responseData = v }) value.responseData wire value
 
                 3 ->
-                    Proto.Binary.field
-                        Proto.Binary.uint32
-                        (\v ->
-                            { value
-                                | responseDelayMs = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.uint32 (\v -> { value | responseDelayMs = v }) wire value
 
                 4 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeErrorBytes mergeErrorBytes defaultError)
-                        value.error
-                        (\v ->
-                            { value
-                                | error = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeErrorBytes mergeErrorBytes defaultError) value.error (\v -> { value | error = Just v }) wire value
 
                 5 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
-                        (\v ->
-                            { value
-                                | responseTrailers = v
-                            }
-                        )
-                        value.responseTrailers
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) (\v -> { value | responseTrailers = v }) value.responseTrailers wire value
 
                 6 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeRawHTTPResponseBytes mergeRawHTTPResponseBytes defaultRawHTTPResponse)
-                        value.rawResponse
-                        (\v ->
-                            { value
-                                | rawResponse = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeRawHTTPResponseBytes mergeRawHTTPResponseBytes defaultRawHTTPResponse) value.rawResponse (\v -> { value | rawResponse = Just v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -5872,27 +5180,10 @@ mergeUnaryRequestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeUnaryResponseDefinitionBytes mergeUnaryResponseDefinitionBytes defaultUnaryResponseDefinition)
-                        value.responseDefinition
-                        (\v ->
-                            { value
-                                | responseDefinition = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeUnaryResponseDefinitionBytes mergeUnaryResponseDefinitionBytes defaultUnaryResponseDefinition) value.responseDefinition (\v -> { value | responseDefinition = Just v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.bytes
-                        (\v ->
-                            { value
-                                | requestData = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bytes (\v -> { value | requestData = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -5915,16 +5206,7 @@ mergeUnaryResponseBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeConformancePayloadBytes mergeConformancePayloadBytes defaultConformancePayload)
-                        value.payload
-                        (\v ->
-                            { value
-                                | payload = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeConformancePayloadBytes mergeConformancePayloadBytes defaultConformancePayload) value.payload (\v -> { value | payload = Just v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -5947,27 +5229,10 @@ mergeIdempotentUnaryRequestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeUnaryResponseDefinitionBytes mergeUnaryResponseDefinitionBytes defaultUnaryResponseDefinition)
-                        value.responseDefinition
-                        (\v ->
-                            { value
-                                | responseDefinition = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeUnaryResponseDefinitionBytes mergeUnaryResponseDefinitionBytes defaultUnaryResponseDefinition) value.responseDefinition (\v -> { value | responseDefinition = Just v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.bytes
-                        (\v ->
-                            { value
-                                | requestData = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bytes (\v -> { value | requestData = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -5990,16 +5255,7 @@ mergeIdempotentUnaryResponseBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeConformancePayloadBytes mergeConformancePayloadBytes defaultConformancePayload)
-                        value.payload
-                        (\v ->
-                            { value
-                                | payload = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeConformancePayloadBytes mergeConformancePayloadBytes defaultConformancePayload) value.payload (\v -> { value | payload = Just v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -6022,27 +5278,10 @@ mergeServerStreamRequestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeStreamResponseDefinitionBytes mergeStreamResponseDefinitionBytes defaultStreamResponseDefinition)
-                        value.responseDefinition
-                        (\v ->
-                            { value
-                                | responseDefinition = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeStreamResponseDefinitionBytes mergeStreamResponseDefinitionBytes defaultStreamResponseDefinition) value.responseDefinition (\v -> { value | responseDefinition = Just v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.bytes
-                        (\v ->
-                            { value
-                                | requestData = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bytes (\v -> { value | requestData = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -6065,16 +5304,7 @@ mergeServerStreamResponseBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeConformancePayloadBytes mergeConformancePayloadBytes defaultConformancePayload)
-                        value.payload
-                        (\v ->
-                            { value
-                                | payload = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeConformancePayloadBytes mergeConformancePayloadBytes defaultConformancePayload) value.payload (\v -> { value | payload = Just v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -6097,27 +5327,10 @@ mergeClientStreamRequestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeUnaryResponseDefinitionBytes mergeUnaryResponseDefinitionBytes defaultUnaryResponseDefinition)
-                        value.responseDefinition
-                        (\v ->
-                            { value
-                                | responseDefinition = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeUnaryResponseDefinitionBytes mergeUnaryResponseDefinitionBytes defaultUnaryResponseDefinition) value.responseDefinition (\v -> { value | responseDefinition = Just v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.bytes
-                        (\v ->
-                            { value
-                                | requestData = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bytes (\v -> { value | requestData = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -6140,16 +5353,7 @@ mergeClientStreamResponseBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeConformancePayloadBytes mergeConformancePayloadBytes defaultConformancePayload)
-                        value.payload
-                        (\v ->
-                            { value
-                                | payload = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeConformancePayloadBytes mergeConformancePayloadBytes defaultConformancePayload) value.payload (\v -> { value | payload = Just v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -6172,38 +5376,13 @@ mergeBidiStreamRequestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeStreamResponseDefinitionBytes mergeStreamResponseDefinitionBytes defaultStreamResponseDefinition)
-                        value.responseDefinition
-                        (\v ->
-                            { value
-                                | responseDefinition = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeStreamResponseDefinitionBytes mergeStreamResponseDefinitionBytes defaultStreamResponseDefinition) value.responseDefinition (\v -> { value | responseDefinition = Just v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.bool
-                        (\v ->
-                            { value
-                                | fullDuplex = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bool (\v -> { value | fullDuplex = v }) wire value
 
                 3 ->
-                    Proto.Binary.field
-                        Proto.Binary.bytes
-                        (\v ->
-                            { value
-                                | requestData = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bytes (\v -> { value | requestData = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -6226,16 +5405,7 @@ mergeBidiStreamResponseBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeConformancePayloadBytes mergeConformancePayloadBytes defaultConformancePayload)
-                        value.payload
-                        (\v ->
-                            { value
-                                | payload = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeConformancePayloadBytes mergeConformancePayloadBytes defaultConformancePayload) value.payload (\v -> { value | payload = Just v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -6286,27 +5456,10 @@ mergeConformancePayloadBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.bytes
-                        (\v ->
-                            { value
-                                | data = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bytes (\v -> { value | data = v }) wire value
 
                 2 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeConformancePayloadRequestInfoBytes mergeConformancePayloadRequestInfoBytes defaultConformancePayloadRequestInfo)
-                        value.requestInfo
-                        (\v ->
-                            { value
-                                | requestInfo = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeConformancePayloadRequestInfoBytes mergeConformancePayloadRequestInfoBytes defaultConformancePayloadRequestInfo) value.requestInfo (\v -> { value | requestInfo = Just v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -6329,51 +5482,16 @@ mergeConformancePayloadRequestInfoBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
-                        (\v ->
-                            { value
-                                | requestHeaders = v
-                            }
-                        )
-                        value.requestHeaders
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) (\v -> { value | requestHeaders = v }) value.requestHeaders wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.int64
-                        (\v ->
-                            { value
-                                | timeoutMs = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int64 (\v -> { value | timeoutMs = Just v }) wire value
 
                 3 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.any
-                        (\v ->
-                            { value
-                                | requests = v
-                            }
-                        )
-                        value.requests
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.any (\v -> { value | requests = v }) value.requests wire value
 
                 4 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeConformancePayloadConnectGetInfoBytes mergeConformancePayloadConnectGetInfoBytes defaultConformancePayloadConnectGetInfo)
-                        value.connectGetInfo
-                        (\v ->
-                            { value
-                                | connectGetInfo = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeConformancePayloadConnectGetInfoBytes mergeConformancePayloadConnectGetInfoBytes defaultConformancePayloadConnectGetInfo) value.connectGetInfo (\v -> { value | connectGetInfo = Just v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -6401,25 +5519,12 @@ mergeConformancePayloadConnectGetInfoBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
-                        (\v ->
-                            { value
-                                | queryParams = v
-                            }
-                        )
-                        value.queryParams
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) (\v -> { value | queryParams = v }) value.queryParams wire value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value ->
-            { value
-                | queryParams = List.reverse value.queryParams
-            }
-        )
+        (\value -> { value | queryParams = List.reverse value.queryParams })
 
 
 {-| Decodes a [`ConformancePayloadConnectGetInfo`](#ConformancePayloadConnectGetInfo) from protobuf binary.
@@ -6437,47 +5542,18 @@ mergeErrorBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        (Proto.Binary.enum encodeCodeBytes decodeCodeBytes)
-                        (\v ->
-                            { value
-                                | code = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field (Proto.Binary.enum encodeCodeBytes decodeCodeBytes) (\v -> { value | code = v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | message = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | message = Just v }) wire value
 
                 3 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.any
-                        (\v ->
-                            { value
-                                | details = v
-                            }
-                        )
-                        value.details
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.any (\v -> { value | details = v }) value.details wire value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value ->
-            { value
-                | details = List.reverse value.details
-            }
-        )
+        (\value -> { value | details = List.reverse value.details })
 
 
 {-| Decodes an [`Error`](#Error) from protobuf binary.
@@ -6495,36 +5571,15 @@ mergeHeaderBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | name = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | name = v }) wire value
 
                 2 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | value = v
-                            }
-                        )
-                        value.value
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.string (\v -> { value | value = v }) value.value wire value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value ->
-            { value
-                | value = List.reverse value.value
-            }
-        )
+        (\value -> { value | value = List.reverse value.value })
 
 
 {-| Decodes a [`Header`](#Header) from protobuf binary.
@@ -6542,62 +5597,19 @@ mergeRawHTTPRequestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | verb = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | verb = v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | uri = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | uri = v }) wire value
 
                 3 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
-                        (\v ->
-                            { value
-                                | headers = v
-                            }
-                        )
-                        value.headers
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) (\v -> { value | headers = v }) value.headers wire value
 
                 4 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
-                        (\v ->
-                            { value
-                                | rawQueryParams = v
-                            }
-                        )
-                        value.rawQueryParams
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) (\v -> { value | rawQueryParams = v }) value.rawQueryParams wire value
 
                 5 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeRawHTTPRequestEncodedQueryParamBytes mergeRawHTTPRequestEncodedQueryParamBytes defaultRawHTTPRequestEncodedQueryParam)
-                        (\v ->
-                            { value
-                                | encodedQueryParams = v
-                            }
-                        )
-                        value.encodedQueryParams
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.embedded encodeRawHTTPRequestEncodedQueryParamBytes mergeRawHTTPRequestEncodedQueryParamBytes defaultRawHTTPRequestEncodedQueryParam) (\v -> { value | encodedQueryParams = v }) value.encodedQueryParams wire value
 
                 6 ->
                     Proto.Binary.fieldInto
@@ -6609,11 +5621,7 @@ mergeRawHTTPRequestBytes =
                             _ ->
                                 Nothing
                         )
-                        (\v ->
-                            { value
-                                | body = RawHTTPRequestBodyUnary v
-                            }
-                        )
+                        (\v -> { value | body = RawHTTPRequestBodyUnary v })
                         wire
                         value
 
@@ -6627,11 +5635,7 @@ mergeRawHTTPRequestBytes =
                             _ ->
                                 Nothing
                         )
-                        (\v ->
-                            { value
-                                | body = RawHTTPRequestBodyStream v
-                            }
-                        )
+                        (\v -> { value | body = RawHTTPRequestBodyStream v })
                         wire
                         value
 
@@ -6662,38 +5666,13 @@ mergeRawHTTPRequestEncodedQueryParamBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | name = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | name = v }) wire value
 
                 2 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeMessageContentsBytes mergeMessageContentsBytes defaultMessageContents)
-                        value.value
-                        (\v ->
-                            { value
-                                | value = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeMessageContentsBytes mergeMessageContentsBytes defaultMessageContents) value.value (\v -> { value | value = Just v }) wire value
 
                 3 ->
-                    Proto.Binary.field
-                        Proto.Binary.bool
-                        (\v ->
-                            { value
-                                | base64Encode = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bool (\v -> { value | base64Encode = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -6716,48 +5695,16 @@ mergeMessageContentsBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.bytes
-                        (\v ->
-                            { value
-                                | data = MessageContentsDataBinary v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bytes (\v -> { value | data = MessageContentsDataBinary v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | data = MessageContentsDataText v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | data = MessageContentsDataText v }) wire value
 
                 3 ->
-                    Proto.Binary.field
-                        Proto.Binary.any
-                        (\v ->
-                            { value
-                                | data = MessageContentsDataBinaryMessage v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.any (\v -> { value | data = MessageContentsDataBinaryMessage v }) wire value
 
                 4 ->
-                    Proto.Binary.field
-                        (Proto.Binary.enum encodeCompressionBytes decodeCompressionBytes)
-                        (\v ->
-                            { value
-                                | compression = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field (Proto.Binary.enum encodeCompressionBytes decodeCompressionBytes) (\v -> { value | compression = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -6780,25 +5727,12 @@ mergeStreamContentsBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeStreamContentsStreamItemBytes mergeStreamContentsStreamItemBytes defaultStreamContentsStreamItem)
-                        (\v ->
-                            { value
-                                | items = v
-                            }
-                        )
-                        value.items
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.embedded encodeStreamContentsStreamItemBytes mergeStreamContentsStreamItemBytes defaultStreamContentsStreamItem) (\v -> { value | items = v }) value.items wire value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value ->
-            { value
-                | items = List.reverse value.items
-            }
-        )
+        (\value -> { value | items = List.reverse value.items })
 
 
 {-| Decodes a [`StreamContents`](#StreamContents) from protobuf binary.
@@ -6816,38 +5750,13 @@ mergeStreamContentsStreamItemBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.uint32
-                        (\v ->
-                            { value
-                                | flags = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.uint32 (\v -> { value | flags = v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.uint32
-                        (\v ->
-                            { value
-                                | length = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.uint32 (\v -> { value | length = Just v }) wire value
 
                 3 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeMessageContentsBytes mergeMessageContentsBytes defaultMessageContents)
-                        value.payload
-                        (\v ->
-                            { value
-                                | payload = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeMessageContentsBytes mergeMessageContentsBytes defaultMessageContents) value.payload (\v -> { value | payload = Just v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -6870,27 +5779,10 @@ mergeRawHTTPResponseBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.uint32
-                        (\v ->
-                            { value
-                                | statusCode = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.uint32 (\v -> { value | statusCode = v }) wire value
 
                 2 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
-                        (\v ->
-                            { value
-                                | headers = v
-                            }
-                        )
-                        value.headers
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) (\v -> { value | headers = v }) value.headers wire value
 
                 3 ->
                     Proto.Binary.fieldInto
@@ -6902,11 +5794,7 @@ mergeRawHTTPResponseBytes =
                             _ ->
                                 Nothing
                         )
-                        (\v ->
-                            { value
-                                | body = RawHTTPResponseBodyUnary v
-                            }
-                        )
+                        (\v -> { value | body = RawHTTPResponseBodyUnary v })
                         wire
                         value
 
@@ -6920,25 +5808,12 @@ mergeRawHTTPResponseBytes =
                             _ ->
                                 Nothing
                         )
-                        (\v ->
-                            { value
-                                | body = RawHTTPResponseBodyStream v
-                            }
-                        )
+                        (\v -> { value | body = RawHTTPResponseBodyStream v })
                         wire
                         value
 
                 5 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
-                        (\v ->
-                            { value
-                                | trailers = v
-                            }
-                        )
-                        value.trailers
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) (\v -> { value | trailers = v }) value.trailers wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -6966,141 +5841,40 @@ mergeTestSuiteBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | name = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | name = v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        (Proto.Binary.enum encodeTestSuiteTestModeBytes decodeTestSuiteTestModeBytes)
-                        (\v ->
-                            { value
-                                | mode = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field (Proto.Binary.enum encodeTestSuiteTestModeBytes decodeTestSuiteTestModeBytes) (\v -> { value | mode = v }) wire value
 
                 3 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeTestCaseBytes mergeTestCaseBytes defaultTestCase)
-                        (\v ->
-                            { value
-                                | testCases = v
-                            }
-                        )
-                        value.testCases
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.embedded encodeTestCaseBytes mergeTestCaseBytes defaultTestCase) (\v -> { value | testCases = v }) value.testCases wire value
 
                 4 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.enum encodeProtocolBytes decodeProtocolBytes)
-                        (\v ->
-                            { value
-                                | relevantProtocols = v
-                            }
-                        )
-                        value.relevantProtocols
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.enum encodeProtocolBytes decodeProtocolBytes) (\v -> { value | relevantProtocols = v }) value.relevantProtocols wire value
 
                 5 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.enum encodeHTTPVersionBytes decodeHTTPVersionBytes)
-                        (\v ->
-                            { value
-                                | relevantHttpVersions = v
-                            }
-                        )
-                        value.relevantHttpVersions
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.enum encodeHTTPVersionBytes decodeHTTPVersionBytes) (\v -> { value | relevantHttpVersions = v }) value.relevantHttpVersions wire value
 
                 6 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.enum encodeCodecBytes decodeCodecBytes)
-                        (\v ->
-                            { value
-                                | relevantCodecs = v
-                            }
-                        )
-                        value.relevantCodecs
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.enum encodeCodecBytes decodeCodecBytes) (\v -> { value | relevantCodecs = v }) value.relevantCodecs wire value
 
                 7 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.enum encodeCompressionBytes decodeCompressionBytes)
-                        (\v ->
-                            { value
-                                | relevantCompressions = v
-                            }
-                        )
-                        value.relevantCompressions
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.enum encodeCompressionBytes decodeCompressionBytes) (\v -> { value | relevantCompressions = v }) value.relevantCompressions wire value
 
                 8 ->
-                    Proto.Binary.field
-                        (Proto.Binary.enum encodeTestSuiteConnectVersionModeBytes decodeTestSuiteConnectVersionModeBytes)
-                        (\v ->
-                            { value
-                                | connectVersionMode = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field (Proto.Binary.enum encodeTestSuiteConnectVersionModeBytes decodeTestSuiteConnectVersionModeBytes) (\v -> { value | connectVersionMode = v }) wire value
 
                 9 ->
-                    Proto.Binary.field
-                        Proto.Binary.bool
-                        (\v ->
-                            { value
-                                | reliesOnTls = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bool (\v -> { value | reliesOnTls = v }) wire value
 
                 10 ->
-                    Proto.Binary.field
-                        Proto.Binary.bool
-                        (\v ->
-                            { value
-                                | reliesOnTlsClientCerts = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bool (\v -> { value | reliesOnTlsClientCerts = v }) wire value
 
                 11 ->
-                    Proto.Binary.field
-                        Proto.Binary.bool
-                        (\v ->
-                            { value
-                                | reliesOnConnectGet = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bool (\v -> { value | reliesOnConnectGet = v }) wire value
 
                 12 ->
-                    Proto.Binary.field
-                        Proto.Binary.bool
-                        (\v ->
-                            { value
-                                | reliesOnMessageReceiveLimit = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bool (\v -> { value | reliesOnMessageReceiveLimit = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -7131,52 +5905,16 @@ mergeTestCaseBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeClientCompatRequestBytes mergeClientCompatRequestBytes defaultClientCompatRequest)
-                        value.request
-                        (\v ->
-                            { value
-                                | request = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeClientCompatRequestBytes mergeClientCompatRequestBytes defaultClientCompatRequest) value.request (\v -> { value | request = Just v }) wire value
 
                 2 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeTestCaseExpandedSizeBytes mergeTestCaseExpandedSizeBytes defaultTestCaseExpandedSize)
-                        (\v ->
-                            { value
-                                | expandRequests = v
-                            }
-                        )
-                        value.expandRequests
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.embedded encodeTestCaseExpandedSizeBytes mergeTestCaseExpandedSizeBytes defaultTestCaseExpandedSize) (\v -> { value | expandRequests = v }) value.expandRequests wire value
 
                 3 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeClientResponseResultBytes mergeClientResponseResultBytes defaultClientResponseResult)
-                        value.expectedResponse
-                        (\v ->
-                            { value
-                                | expectedResponse = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeClientResponseResultBytes mergeClientResponseResultBytes defaultClientResponseResult) value.expectedResponse (\v -> { value | expectedResponse = Just v }) wire value
 
                 4 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.enum encodeCodeBytes decodeCodeBytes)
-                        (\v ->
-                            { value
-                                | otherAllowedErrorCodes = v
-                            }
-                        )
-                        value.otherAllowedErrorCodes
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.enum encodeCodeBytes decodeCodeBytes) (\v -> { value | otherAllowedErrorCodes = v }) value.otherAllowedErrorCodes wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -7204,15 +5942,7 @@ mergeTestCaseExpandedSizeBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | sizeRelativeToLimit = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | sizeRelativeToLimit = Just v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value

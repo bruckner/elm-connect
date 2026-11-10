@@ -976,60 +976,19 @@ mergeGetMessageRequestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | messageId = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | messageId = v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.int64
-                        (\v ->
-                            { value
-                                | revision = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int64 (\v -> { value | revision = v }) wire value
 
                 3 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeGetMessageRequestSubMessageBytes mergeGetMessageRequestSubMessageBytes defaultGetMessageRequestSubMessage)
-                        value.sub
-                        (\v ->
-                            { value
-                                | sub = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeGetMessageRequestSubMessageBytes mergeGetMessageRequestSubMessageBytes defaultGetMessageRequestSubMessage) value.sub (\v -> { value | sub = Just v }) wire value
 
                 4 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | userId = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | userId = v }) wire value
 
                 5 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | name = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | name = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -1052,15 +1011,7 @@ mergeGetMessageRequestSubMessageBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | subfield = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | subfield = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -1083,26 +1034,10 @@ mergeMessageBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | messageId = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | messageId = v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | text = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | text = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -1125,27 +1060,10 @@ mergeUpdateMessageRequestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | messageId = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | messageId = v }) wire value
 
                 2 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeMessageBytes mergeMessageBytes defaultMessage)
-                        value.message
-                        (\v ->
-                            { value
-                                | message = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeMessageBytes mergeMessageBytes defaultMessage) value.message (\v -> { value | message = Just v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -1168,250 +1086,70 @@ mergeEverythingBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | name = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | name = v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | count = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | count = v }) wire value
 
                 3 ->
-                    Proto.Binary.field
-                        Proto.Binary.int64
-                        (\v ->
-                            { value
-                                | big = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int64 (\v -> { value | big = v }) wire value
 
                 4 ->
-                    Proto.Binary.field
-                        Proto.Binary.uint64
-                        (\v ->
-                            { value
-                                | ubig = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.uint64 (\v -> { value | ubig = v }) wire value
 
                 5 ->
-                    Proto.Binary.field
-                        Proto.Binary.bool
-                        (\v ->
-                            { value
-                                | flag = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bool (\v -> { value | flag = v }) wire value
 
                 6 ->
-                    Proto.Binary.field
-                        Proto.Binary.double
-                        (\v ->
-                            { value
-                                | ratio = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.double (\v -> { value | ratio = v }) wire value
 
                 7 ->
-                    Proto.Binary.field
-                        Proto.Binary.float
-                        (\v ->
-                            { value
-                                | scale = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.float (\v -> { value | scale = v }) wire value
 
                 8 ->
-                    Proto.Binary.field
-                        Proto.Binary.bytes
-                        (\v ->
-                            { value
-                                | data = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bytes (\v -> { value | data = v }) wire value
 
                 9 ->
-                    Proto.Binary.field
-                        (Proto.Binary.enum encodeKindBytes decodeKindBytes)
-                        (\v ->
-                            { value
-                                | kind = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field (Proto.Binary.enum encodeKindBytes decodeKindBytes) (\v -> { value | kind = v }) wire value
 
                 10 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | tags = v
-                            }
-                        )
-                        value.tags
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.string (\v -> { value | tags = v }) value.tags wire value
 
                 11 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.enum encodeKindBytes decodeKindBytes)
-                        (\v ->
-                            { value
-                                | kinds = v
-                            }
-                        )
-                        value.kinds
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.enum encodeKindBytes decodeKindBytes) (\v -> { value | kinds = v }) value.kinds wire value
 
                 12 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | numbers = v
-                            }
-                        )
-                        value.numbers
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.int32 (\v -> { value | numbers = v }) value.numbers wire value
 
                 13 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | maybeCount = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | maybeCount = Just v }) wire value
 
                 14 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | maybeName = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | maybeName = Just v }) wire value
 
                 15 ->
-                    Proto.Binary.field
-                        Proto.Binary.timestamp
-                        (\v ->
-                            { value
-                                | at = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.timestamp (\v -> { value | at = Just v }) wire value
 
                 16 ->
-                    Proto.Binary.field
-                        Proto.Binary.duration
-                        (\v ->
-                            { value
-                                | wait = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.duration (\v -> { value | wait = Just v }) wire value
 
                 17 ->
-                    Proto.Binary.field
-                        Proto.Binary.fieldMask
-                        (\v ->
-                            { value
-                                | mask = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.fieldMask (\v -> { value | mask = Just v }) wire value
 
                 18 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32Value
-                        (\v ->
-                            { value
-                                | limit = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32Value (\v -> { value | limit = Just v }) wire value
 
                 19 ->
-                    Proto.Binary.field
-                        Proto.Binary.stringValue
-                        (\v ->
-                            { value
-                                | label = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.stringValue (\v -> { value | label = Just v }) wire value
 
                 20 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeInnerBytes mergeInnerBytes defaultInner)
-                        value.inner
-                        (\v ->
-                            { value
-                                | inner = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeInnerBytes mergeInnerBytes defaultInner) value.inner (\v -> { value | inner = Just v }) wire value
 
                 21 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | choice = EverythingChoiceText v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | choice = EverythingChoiceText v }) wire value
 
                 22 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | choice = EverythingChoiceNumber v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | choice = EverythingChoiceNumber v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -1440,27 +1178,10 @@ mergeInnerBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | a = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | a = v }) wire value
 
                 2 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeDeepBytes mergeDeepBytes defaultDeep)
-                        value.deep
-                        (\v ->
-                            { value
-                                | deep = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeDeepBytes mergeDeepBytes defaultDeep) value.deep (\v -> { value | deep = Just v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -1483,36 +1204,15 @@ mergeDeepBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | b = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | b = v }) wire value
 
                 2 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | c = v
-                            }
-                        )
-                        value.c
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.string (\v -> { value | c = v }) value.c wire value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value ->
-            { value
-                | c = List.reverse value.c
-            }
-        )
+        (\value -> { value | c = List.reverse value.c })
 
 
 {-| Decodes a [`Deep`](#Deep) from protobuf binary.
@@ -1530,15 +1230,7 @@ mergeFileRequestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | path = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | path = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -1561,71 +1253,24 @@ mergeResourceBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | name = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | name = v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | displayName = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | displayName = v }) wire value
 
                 3 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.string
-                        Proto.Binary.string
-                        (\k v ->
-                            { value
-                                | labels = Dict.insert k v value.labels
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.string Proto.Binary.string (\k v -> { value | labels = Dict.insert k v value.labels }) wire value
 
                 4 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.int64
-                        (Proto.Binary.enum encodeKindBytes decodeKindBytes)
-                        (\k v ->
-                            { value
-                                | kinds = Dict.insert k v value.kinds
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.int64 (Proto.Binary.enum encodeKindBytes decodeKindBytes) (\k v -> { value | kinds = Dict.insert k v value.kinds }) wire value
 
                 5 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.bool
-                        Proto.Binary.double
-                        (\k v ->
-                            { value
-                                | weights = Proto.Binary.insertBool k v value.weights
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.bool Proto.Binary.double (\k v -> { value | weights = Proto.Binary.insertBool k v value.weights }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value ->
-            { value
-                | weights = List.reverse value.weights
-            }
-        )
+        (\value -> { value | weights = List.reverse value.weights })
 
 
 {-| Decodes a [`Resource`](#Resource) from protobuf binary.
@@ -1643,27 +1288,10 @@ mergeUpdateResourceRequestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeResourceBytes mergeResourceBytes defaultResource)
-                        value.resource
-                        (\v ->
-                            { value
-                                | resource = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeResourceBytes mergeResourceBytes defaultResource) value.resource (\v -> { value | resource = Just v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.fieldMask
-                        (\v ->
-                            { value
-                                | updateMask = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.fieldMask (\v -> { value | updateMask = Just v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value

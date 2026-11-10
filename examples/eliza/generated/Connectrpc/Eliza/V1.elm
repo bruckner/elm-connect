@@ -420,15 +420,7 @@ mergeSayRequestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | sentence = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | sentence = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -451,15 +443,7 @@ mergeSayResponseBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | sentence = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | sentence = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -482,15 +466,7 @@ mergeConverseRequestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | sentence = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | sentence = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -513,15 +489,7 @@ mergeConverseResponseBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | sentence = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | sentence = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -544,15 +512,7 @@ mergeIntroduceRequestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | name = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | name = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -575,15 +535,7 @@ mergeIntroduceResponseBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | sentence = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | sentence = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value

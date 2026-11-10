@@ -153,37 +153,13 @@ mergeBoundsBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | max = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | max = v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | min = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | min = v }) wire value
 
                 3 ->
-                    Proto.Binary.field
-                        Proto.Binary.bool
-                        (\v ->
-                            { value
-                                | always = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bool (\v -> { value | always = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value

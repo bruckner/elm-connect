@@ -153,37 +153,13 @@ mergeDraftBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | name = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | name = v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | body = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | body = v }) wire value
 
                 3 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | owner = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | owner = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value

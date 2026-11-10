@@ -196,15 +196,7 @@ mergeZoneRequestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | name = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | name = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -227,26 +219,10 @@ mergeZoneBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | name = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | name = v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.int64AsInt
-                        (\v ->
-                            { value
-                                | offsetSeconds = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int64AsInt (\v -> { value | offsetSeconds = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value

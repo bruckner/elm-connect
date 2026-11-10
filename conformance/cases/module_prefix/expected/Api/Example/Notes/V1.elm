@@ -209,38 +209,13 @@ mergeNoteBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | name = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | name = v }) wire value
 
                 2 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded Api.Example.People.encodeUserBytes Api.Example.People.mergeUserBytes Api.Example.People.defaultUser)
-                        value.author
-                        (\v ->
-                            { value
-                                | author = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded Api.Example.People.encodeUserBytes Api.Example.People.mergeUserBytes Api.Example.People.defaultUser) value.author (\v -> { value | author = Just v }) wire value
 
                 3 ->
-                    Proto.Binary.field
-                        (Proto.Binary.enum Api.Example.People.encodeRoleBytes Api.Example.People.decodeRoleBytes)
-                        (\v ->
-                            { value
-                                | requiredRole = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field (Proto.Binary.enum Api.Example.People.encodeRoleBytes Api.Example.People.decodeRoleBytes) (\v -> { value | requiredRole = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -263,15 +238,7 @@ mergeGetNoteRequestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | name = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | name = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value

@@ -342,162 +342,46 @@ mergeURLPathBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | label = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | label = v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | id = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | id = v }) wire value
 
                 3 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | url = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | url = v }) wire value
 
                 4 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | urlPath = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | urlPath = v }) wire value
 
                 5 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | httpRequest = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | httpRequest = v }) wire value
 
                 6 ->
-                    Proto.Binary.field
-                        Proto.Binary.double
-                        (\v ->
-                            { value
-                                | xCoord = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.double (\v -> { value | xCoord = v }) wire value
 
                 7 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | abcDef = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | abcDef = v }) wire value
 
                 8 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | internal = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | internal = v }) wire value
 
                 10 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | displayName = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | displayName = v }) wire value
 
                 11 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | type_ = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | type_ = v }) wire value
 
                 12 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | ids = v
-                            }
-                        )
-                        value.ids
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.string (\v -> { value | ids = v }) value.ids wire value
 
                 13 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | urls = v
-                            }
-                        )
-                        value.urls
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.string (\v -> { value | urls = v }) value.urls wire value
 
                 14 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | apis = v
-                            }
-                        )
-                        value.apis
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.string (\v -> { value | apis = v }) value.apis wire value
 
                 15 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | uuids = v
-                            }
-                        )
-                        value.uuids
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.string (\v -> { value | uuids = v }) value.uuids wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -527,37 +411,13 @@ mergeLinkBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | target = LinkTargetURL v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | target = LinkTargetURL v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | target = LinkTargetCount v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | target = LinkTargetCount v }) wire value
 
                 9 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | label = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | label = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value

@@ -330,37 +330,13 @@ mergeEntryBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | name = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | name = v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | descriptor = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | descriptor = v }) wire value
 
                 3 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | descriptors = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | descriptors = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -383,26 +359,10 @@ mergePartBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | kind = PartKindDescriptor v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | kind = PartKindDescriptor v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | kind = PartKindCount v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | kind = PartKindCount v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -425,38 +385,13 @@ mergeGetEntryRequestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | name = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | name = v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | descriptor = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | descriptor = v }) wire value
 
                 3 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodePartBytes mergePartBytes defaultPart)
-                        value.part
-                        (\v ->
-                            { value
-                                | part = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodePartBytes mergePartBytes defaultPart) value.part (\v -> { value | part = Just v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value

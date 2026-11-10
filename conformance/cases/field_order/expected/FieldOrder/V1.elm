@@ -367,81 +367,27 @@ mergeDraftBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.bytes
-                        (\v ->
-                            { value
-                                | body = DraftBodyBlob v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bytes (\v -> { value | body = DraftBodyBlob v }) wire value
 
                 2 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | tags = v
-                            }
-                        )
-                        value.tags
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.string (\v -> { value | tags = v }) value.tags wire value
 
                 3 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeDraftMarginBytes mergeDraftMarginBytes defaultDraftMargin)
-                        value.margin
-                        (\v ->
-                            { value
-                                | margin = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeDraftMarginBytes mergeDraftMarginBytes defaultDraftMargin) value.margin (\v -> { value | margin = Just v }) wire value
 
                 4 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | title = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | title = v }) wire value
 
                 6 ->
-                    Proto.Binary.field
-                        (Proto.Binary.enum encodeMoodBytes decodeMoodBytes)
-                        (\v ->
-                            { value
-                                | mood = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field (Proto.Binary.enum encodeMoodBytes decodeMoodBytes) (\v -> { value | mood = v }) wire value
 
                 8 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | body = DraftBodyText v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | body = DraftBodyText v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value ->
-            { value
-                | tags = List.reverse value.tags
-            }
-        )
+        (\value -> { value | tags = List.reverse value.tags })
 
 
 {-| Decodes a [`Draft`](#Draft) from protobuf binary.
@@ -459,26 +405,10 @@ mergeDraftMarginBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | right = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | right = v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | left = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | left = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value

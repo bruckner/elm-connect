@@ -266,15 +266,7 @@ mergeAuthorBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | name = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | name = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -297,154 +289,43 @@ mergeNoteBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | subtitle = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | subtitle = Just v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | stars = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | stars = Just v }) wire value
 
                 3 ->
-                    Proto.Binary.field
-                        Proto.Binary.double
-                        (\v ->
-                            { value
-                                | score = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.double (\v -> { value | score = Just v }) wire value
 
                 4 ->
-                    Proto.Binary.field
-                        Proto.Binary.int64
-                        (\v ->
-                            { value
-                                | views = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int64 (\v -> { value | views = Just v }) wire value
 
                 5 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeAuthorBytes mergeAuthorBytes defaultAuthor)
-                        value.author
-                        (\v ->
-                            { value
-                                | author = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeAuthorBytes mergeAuthorBytes defaultAuthor) value.author (\v -> { value | author = Just v }) wire value
 
                 6 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeAuthorBytes mergeAuthorBytes defaultAuthor)
-                        value.editor
-                        (\v ->
-                            { value
-                                | editor = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeAuthorBytes mergeAuthorBytes defaultAuthor) value.editor (\v -> { value | editor = Just v }) wire value
 
                 7 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | tags = v
-                            }
-                        )
-                        value.tags
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.string (\v -> { value | tags = v }) value.tags wire value
 
                 8 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.int32
-                        (\v ->
-                            { value
-                                | counts = v
-                            }
-                        )
-                        value.counts
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.int32 (\v -> { value | counts = v }) value.counts wire value
 
                 9 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.float
-                        (\v ->
-                            { value
-                                | weights = v
-                            }
-                        )
-                        value.weights
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.float (\v -> { value | weights = v }) value.weights wire value
 
                 10 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeAuthorBytes mergeAuthorBytes defaultAuthor)
-                        (\v ->
-                            { value
-                                | reviewers = v
-                            }
-                        )
-                        value.reviewers
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.embedded encodeAuthorBytes mergeAuthorBytes defaultAuthor) (\v -> { value | reviewers = v }) value.reviewers wire value
 
                 11 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | title = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | title = v }) wire value
 
                 12 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | relatedLinks = v
-                            }
-                        )
-                        value.relatedLinks
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.string (\v -> { value | relatedLinks = v }) value.relatedLinks wire value
 
                 13 ->
-                    Proto.Binary.field
-                        Proto.Binary.bool
-                        (\v ->
-                            { value
-                                | isDraft = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bool (\v -> { value | isDraft = Just v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value

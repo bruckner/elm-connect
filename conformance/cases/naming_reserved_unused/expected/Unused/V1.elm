@@ -450,15 +450,7 @@ mergeDictBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | name = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | name = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -481,48 +473,18 @@ mergeResultBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.bool
-                        (\v ->
-                            { value
-                                | ok = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bool (\v -> { value | ok = v }) wire value
 
                 2 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeDictBytes mergeDictBytes defaultDict)
-                        value.dict
-                        (\v ->
-                            { value
-                                | dict = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeDictBytes mergeDictBytes defaultDict) value.dict (\v -> { value | dict = Just v }) wire value
 
                 3 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.enum encodeCharBytes decodeCharBytes)
-                        (\v ->
-                            { value
-                                | chars = v
-                            }
-                        )
-                        value.chars
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.enum encodeCharBytes decodeCharBytes) (\v -> { value | chars = v }) value.chars wire value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value ->
-            { value
-                | chars = List.reverse value.chars
-            }
-        )
+        (\value -> { value | chars = List.reverse value.chars })
 
 
 {-| Decodes a [`Result`](#Result) from protobuf binary.

@@ -573,15 +573,7 @@ mergeCreatedBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | title = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | title = v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -604,15 +596,7 @@ mergeNoteEventBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | id = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | id = v }) wire value
 
                 2 ->
                     Proto.Binary.fieldInto
@@ -624,111 +608,38 @@ mergeNoteEventBytes =
                             _ ->
                                 Nothing
                         )
-                        (\v ->
-                            { value
-                                | kind = NoteEventKindCreated v
-                            }
-                        )
+                        (\v -> { value | kind = NoteEventKindCreated v })
                         wire
                         value
 
                 3 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | kind = NoteEventKindTitleChanged v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | kind = NoteEventKindTitleChanged v }) wire value
 
                 4 ->
-                    Proto.Binary.field
-                        (Proto.Binary.enum encodeColorBytes decodeColorBytes)
-                        (\v ->
-                            { value
-                                | kind = NoteEventKindRecolored v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field (Proto.Binary.enum encodeColorBytes decodeColorBytes) (\v -> { value | kind = NoteEventKindRecolored v }) wire value
 
                 5 ->
-                    Proto.Binary.field
-                        Proto.Binary.int64
-                        (\v ->
-                            { value
-                                | kind = NoteEventKindDeletedAt v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int64 (\v -> { value | kind = NoteEventKindDeletedAt v }) wire value
 
                 6 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | source = NoteEventSourceUser v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | source = NoteEventSourceUser v }) wire value
 
                 7 ->
-                    Proto.Binary.field
-                        Proto.Binary.bool
-                        (\v ->
-                            { value
-                                | source = NoteEventSourceAutomated v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bool (\v -> { value | source = NoteEventSourceAutomated v }) wire value
 
                 8 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | tags = v
-                            }
-                        )
-                        value.tags
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.string (\v -> { value | tags = v }) value.tags wire value
 
                 9 ->
-                    Proto.Binary.field
-                        Proto.Binary.empty
-                        (\_ ->
-                            { value
-                                | kind = NoteEventKindArchived
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.empty (\_ -> { value | kind = NoteEventKindArchived }) wire value
 
                 10 ->
-                    Proto.Binary.field
-                        Proto.Binary.empty
-                        (\_ ->
-                            { value
-                                | kind = NoteEventKindClearedAll
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.empty (\_ -> { value | kind = NoteEventKindClearedAll }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value ->
-            { value
-                | tags = List.reverse value.tags
-            }
-        )
+        (\value -> { value | tags = List.reverse value.tags })
 
 
 {-| Decodes a [`NoteEvent`](#NoteEvent) from protobuf binary.
@@ -746,26 +657,10 @@ mergeChoiceBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.double
-                        (\v ->
-                            { value
-                                | value = ChoiceValueNumber v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.double (\v -> { value | value = ChoiceValueNumber v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { value
-                                | value = ChoiceValueText v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.string (\v -> { value | value = ChoiceValueText v }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value

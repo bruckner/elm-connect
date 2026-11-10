@@ -459,422 +459,115 @@ mergeEventBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field
-                        Proto.Binary.timestamp
-                        (\v ->
-                            { value
-                                | createdAt = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.timestamp (\v -> { value | createdAt = Just v }) wire value
 
                 2 ->
-                    Proto.Binary.field
-                        Proto.Binary.duration
-                        (\v ->
-                            { value
-                                | timeout = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.duration (\v -> { value | timeout = Just v }) wire value
 
                 3 ->
-                    Proto.Binary.field
-                        Proto.Binary.fieldMask
-                        (\v ->
-                            { value
-                                | updateMask = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.fieldMask (\v -> { value | updateMask = Just v }) wire value
 
                 4 ->
-                    Proto.Binary.field
-                        Proto.Binary.empty
-                        (\v ->
-                            { value
-                                | marker = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.empty (\v -> { value | marker = v }) wire value
 
                 5 ->
-                    Proto.Binary.field
-                        Proto.Binary.struct
-                        (\v ->
-                            { value
-                                | metadata = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.struct (\v -> { value | metadata = Just v }) wire value
 
                 6 ->
-                    Proto.Binary.field
-                        Proto.Binary.value
-                        (\v ->
-                            { value
-                                | payload = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.value (\v -> { value | payload = Just v }) wire value
 
                 7 ->
-                    Proto.Binary.field
-                        Proto.Binary.listValue
-                        (\v ->
-                            { value
-                                | items = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.listValue (\v -> { value | items = Just v }) wire value
 
                 8 ->
-                    Proto.Binary.field
-                        Proto.Binary.doubleValue
-                        (\v ->
-                            { value
-                                | ratio = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.doubleValue (\v -> { value | ratio = Just v }) wire value
 
                 9 ->
-                    Proto.Binary.field
-                        Proto.Binary.floatValue
-                        (\v ->
-                            { value
-                                | weight = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.floatValue (\v -> { value | weight = Just v }) wire value
 
                 10 ->
-                    Proto.Binary.field
-                        Proto.Binary.int64Value
-                        (\v ->
-                            { value
-                                | bigCount = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int64Value (\v -> { value | bigCount = Just v }) wire value
 
                 11 ->
-                    Proto.Binary.field
-                        Proto.Binary.uint64Value
-                        (\v ->
-                            { value
-                                | bigTotal = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.uint64Value (\v -> { value | bigTotal = Just v }) wire value
 
                 12 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32Value
-                        (\v ->
-                            { value
-                                | count = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.int32Value (\v -> { value | count = Just v }) wire value
 
                 13 ->
-                    Proto.Binary.field
-                        Proto.Binary.uint32Value
-                        (\v ->
-                            { value
-                                | total = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.uint32Value (\v -> { value | total = Just v }) wire value
 
                 14 ->
-                    Proto.Binary.field
-                        Proto.Binary.boolValue
-                        (\v ->
-                            { value
-                                | enabled = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.boolValue (\v -> { value | enabled = Just v }) wire value
 
                 15 ->
-                    Proto.Binary.field
-                        Proto.Binary.stringValue
-                        (\v ->
-                            { value
-                                | nickname = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.stringValue (\v -> { value | nickname = Just v }) wire value
 
                 16 ->
-                    Proto.Binary.field
-                        Proto.Binary.bytesValue
-                        (\v ->
-                            { value
-                                | avatar = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.bytesValue (\v -> { value | avatar = Just v }) wire value
 
                 17 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.timestamp
-                        (\v ->
-                            { value
-                                | history = v
-                            }
-                        )
-                        value.history
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.timestamp (\v -> { value | history = v }) value.history wire value
 
                 18 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.string
-                        Proto.Binary.duration
-                        (\k v ->
-                            { value
-                                | limits = Dict.insert k v value.limits
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.string Proto.Binary.duration (\k v -> { value | limits = Dict.insert k v value.limits }) wire value
 
                 19 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.value
-                        (\v ->
-                            { value
-                                | values = v
-                            }
-                        )
-                        value.values
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.value (\v -> { value | values = v }) value.values wire value
 
                 20 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.int32Value
-                        (\v ->
-                            { value
-                                | counts = v
-                            }
-                        )
-                        value.counts
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.int32Value (\v -> { value | counts = v }) value.counts wire value
 
                 21 ->
-                    Proto.Binary.field
-                        Proto.Binary.timestamp
-                        (\v ->
-                            { value
-                                | when = EventWhenAt v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.timestamp (\v -> { value | when = EventWhenAt v }) wire value
 
                 22 ->
-                    Proto.Binary.field
-                        Proto.Binary.duration
-                        (\v ->
-                            { value
-                                | when = EventWhenAfter v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.duration (\v -> { value | when = EventWhenAfter v }) wire value
 
                 23 ->
-                    Proto.Binary.field
-                        Proto.Binary.value
-                        (\v ->
-                            { value
-                                | when = EventWhenWhenever v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.value (\v -> { value | when = EventWhenWhenever v }) wire value
 
                 24 ->
-                    Proto.Binary.field
-                        Proto.Binary.empty
-                        (\v ->
-                            { value
-                                | acked = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.empty (\v -> { value | acked = v }) wire value
 
                 25 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.empty
-                        (\v ->
-                            { value
-                                | pings = v
-                            }
-                        )
-                        value.pings
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.empty (\v -> { value | pings = v }) value.pings wire value
 
                 26 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.string
-                        Proto.Binary.empty
-                        (\k v ->
-                            { value
-                                | seen = Dict.insert k v value.seen
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.string Proto.Binary.empty (\k v -> { value | seen = Dict.insert k v value.seen }) wire value
 
                 27 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.struct
-                        (\v ->
-                            { value
-                                | records = v
-                            }
-                        )
-                        value.records
-                        wire
-                        value
+                    Proto.Binary.repeated Proto.Binary.struct (\v -> { value | records = v }) value.records wire value
 
                 28 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.string
-                        Proto.Binary.listValue
-                        (\k v ->
-                            { value
-                                | columns = Dict.insert k v value.columns
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.string Proto.Binary.listValue (\k v -> { value | columns = Dict.insert k v value.columns }) wire value
 
                 29 ->
-                    Proto.Binary.field
-                        Proto.Binary.struct
-                        (\v ->
-                            { value
-                                | when = EventWhenSchedule v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.struct (\v -> { value | when = EventWhenSchedule v }) wire value
 
                 30 ->
-                    Proto.Binary.field
-                        Proto.Binary.listValue
-                        (\v ->
-                            { value
-                                | when = EventWhenDates v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.listValue (\v -> { value | when = EventWhenDates v }) wire value
 
                 31 ->
-                    Proto.Binary.field
-                        Proto.Binary.value
-                        (\v ->
-                            { value
-                                | lastValue = Just v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field Proto.Binary.value (\v -> { value | lastValue = Just v }) wire value
 
                 32 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.string
-                        Proto.Binary.value
-                        (\k v ->
-                            { value
-                                | settings = Dict.insert k v value.settings
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.string Proto.Binary.value (\k v -> { value | settings = Dict.insert k v value.settings }) wire value
 
                 33 ->
-                    Proto.Binary.field
-                        (Proto.Binary.enum (\_ -> 0) (\_ -> ()))
-                        (\v ->
-                            { value
-                                | nothing = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field (Proto.Binary.enum (\_ -> 0) (\_ -> ())) (\v -> { value | nothing = v }) wire value
 
                 34 ->
-                    Proto.Binary.field
-                        (Proto.Binary.enum (\_ -> 0) (\_ -> ()))
-                        (\v ->
-                            { value
-                                | maybeNothing = v
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field (Proto.Binary.enum (\_ -> 0) (\_ -> ())) (\v -> { value | maybeNothing = v }) wire value
 
                 35 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.enum (\_ -> 0) (\_ -> ()))
-                        (\v ->
-                            { value
-                                | nulls = v
-                            }
-                        )
-                        value.nulls
-                        wire
-                        value
+                    Proto.Binary.repeated (Proto.Binary.enum (\_ -> 0) (\_ -> ())) (\v -> { value | nulls = v }) value.nulls wire value
 
                 36 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.string
-                        (Proto.Binary.enum (\_ -> 0) (\_ -> ()))
-                        (\k v ->
-                            { value
-                                | nullMap = Dict.insert k v value.nullMap
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.mapEntry Proto.Binary.string (Proto.Binary.enum (\_ -> 0) (\_ -> ())) (\k v -> { value | nullMap = Dict.insert k v value.nullMap }) wire value
 
                 37 ->
-                    Proto.Binary.field
-                        (Proto.Binary.enum (\_ -> 0) (\_ -> ()))
-                        (\_ ->
-                            { value
-                                | when = EventWhenNever
-                            }
-                        )
-                        wire
-                        value
+                    Proto.Binary.field (Proto.Binary.enum (\_ -> 0) (\_ -> ())) (\_ -> { value | when = EventWhenNever }) wire value
 
                 _ ->
                     Proto.Binary.skip wire value
