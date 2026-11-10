@@ -4,7 +4,7 @@
 # runner, the browser example with its tests, and the Eliza example. The conformance corpus is checked by its own test (`cargo test
 # --test conformance`), which runs `elm-format --validate` over the expected
 # output.
-elm_dirs := "src tests conformance/live/src conformance/live/json conformance/live/both/src conformance/protobuf/src examples/notes/elm/src examples/notes/elm/tests examples/eliza/src"
+elm_dirs := "src tests conformance/error-details/tests conformance/live/src conformance/live/json conformance/live/both/src conformance/protobuf/src examples/notes/elm/src examples/notes/elm/tests examples/eliza/src"
 
 # Cargo's build directory, which the live suite's binaries share
 # (target/live). CARGO_TARGET_DIR moves it, as it does for cargo; never
@@ -16,7 +16,7 @@ default:
     @just --list
 
 # The gate: everything CI runs, in order.
-check: fmt-check clippy test elm-check snippets changelog-check release-check zizmor gitleaks deny license package
+check: fmt-check clippy test elm-check error-details-check snippets changelog-check release-check zizmor gitleaks deny license package
 
 # Format Rust and Elm sources in place.
 fmt:
@@ -143,6 +143,26 @@ elm-check: codec-gen
 # `test` does too; elm-check depends on this so it works on a fresh clone.
 codec-gen:
     cargo test -p elm-connect-gen --test codec
+
+# Hold Proto.ErrorDetails, written by hand in generated code's form, to
+# what the generator gives for google/rpc/error_details.proto
+# (conformance/README.md, "Error details"): generate the vendored proto
+# under codec=both, with the plugin built from this checkout, into the build
+# directory's error-details; copy the modules into the scratch
+# conformance/error-details/generated (gitignored); and run that
+# application's tests, which compile the hand and generated modules together
+# and compare their shapes and codecs.
+error-details-check:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cargo build -p protoc-gen-elm-connect
+    out="{{target}}/error-details"
+    rm -rf "$out" conformance/error-details/generated
+    mkdir -p "$out/bin"
+    cp "{{target}}/debug/protoc-gen-elm-connect" "$out/bin/"
+    (cd examples/notes && PATH="$out/bin:$PATH" buf generate -o "$out" --template '{"version":"v2","inputs":[{"directory":".","paths":["third_party/googleapis/google/rpc/error_details.proto"]}],"plugins":[{"local":"protoc-gen-elm-connect","out":"generated","opt":"codec=both"}]}')
+    cp -R "$out/generated" conformance/error-details/generated
+    cd conformance/error-details && elm-test-rs
 
 # Check that every tagged code block of the README, the guides in docs/ and
 # the notes example's walkthrough is an excerpt of the file it names
@@ -513,6 +533,7 @@ example-notes addr="127.0.0.1:8080": example-notes-build
 clean:
     cargo clean
     rm -rf conformance/harness/elm-stuff conformance/harness/generated elm-stuff tests/Generated
+    rm -rf conformance/error-details/elm-stuff conformance/error-details/generated
     rm -rf conformance/live/elm-stuff conformance/live/build conformance/live/node_modules
     rm -rf conformance/protobuf/elm-stuff conformance/protobuf/build
     rm -rf examples/notes/elm/elm-stuff examples/notes/elm/dist

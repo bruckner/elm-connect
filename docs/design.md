@@ -3474,7 +3474,12 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
   generator flattens them, and `registry` holding all of them. Not
   `google.rpc.Status`, which `Rpc.Error` reads. Its codecs are
   generated code adapted, so a program that never names it pays
-  nothing.
+  nothing. `just error-details-check`, in the gate, compiles it beside
+  the module the generator gives for the vendored proto under
+  `codec=both` and fails on a difference in any message's fields, in the
+  messages the two hold, or in what their codecs write and read
+  (`conformance/README.md`, "Error details"); a failure is ported from
+  the generated module by hand.
 
 ### 5.5 The binary wire format
 

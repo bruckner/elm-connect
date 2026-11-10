@@ -1,6 +1,7 @@
 /target/
 elm-stuff/
 /conformance/harness/generated/
+/conformance/error-details/generated/
 /conformance/live/build/
 /conformance/protobuf/build/
 node_modules/
