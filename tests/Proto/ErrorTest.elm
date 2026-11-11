@@ -40,7 +40,7 @@ suite =
                         Expect.fail "decoded"
         , test "a type mismatch and an unregistered type name both types" <|
             \_ ->
-                ( Error.toString (TypeMismatch { typeName = "a.B", typeUrl = "type.googleapis.com/c.D" })
+                ( Error.toString (TypeMismatch { unpackedAs = "a.B", typeUrl = "type.googleapis.com/c.D" })
                 , Error.toString (UnregisteredType "type.googleapis.com/c.D")
                 )
                     |> Expect.equal

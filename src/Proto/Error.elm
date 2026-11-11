@@ -36,8 +36,9 @@ import Json.Decode
   - `BadJson`: proto3 JSON that is not the message it was read as, with
     elm/json's error, whose path locates the failure.
   - `TypeMismatch`: a `google.protobuf.Any` unpacked as another type than
-    the one it holds: `typeName` is the full name of the type the program
-    asked for, `typeUrl` the URL the `Any` names its type by.
+    the one it holds: `unpackedAs` is the full name of the type the program
+    unpacked it as, `typeUrl` the URL the `Any` names its type by, as
+    [`Proto.Any.typeUrl`](Proto-Any#typeUrl) gives it.
   - `UnregisteredType`: a `google.protobuf.Any` of a type, its URL here,
     that the registry it was converted through has no entry for. Register
     the type.
@@ -46,14 +47,15 @@ import Json.Decode
 type Error
     = BadBinary Binary
     | BadJson Json.Decode.Error
-    | TypeMismatch { typeName : String, typeUrl : String }
+    | TypeMismatch { unpackedAs : String, typeUrl : String }
     | UnregisteredType String
 
 
 {-| Why protobuf binary is not the message it was read as:
 
-  - `typeName`: the full name of the message the program read, such as
-    `notes.v1.Note`.
+  - `typeName`: the full name of the message the program decoded, the
+    outermost one, such as `notes.v1.Note`; the message the failing field
+    belongs to is the last entry of `path`.
   - `reason`: what was wrong ([`Reason`](#Reason)).
   - `path`: the fields the failure is in, outermost first, each as the full
     name of the message it belongs to and its field number:
@@ -129,8 +131,8 @@ toString error =
         BadJson jsonError ->
             Json.Decode.errorToString jsonError
 
-        TypeMismatch { typeName, typeUrl } ->
-            "An Any holding " ++ typeUrl ++ " was unpacked as " ++ typeName ++ "."
+        TypeMismatch { unpackedAs, typeUrl } ->
+            "An Any holding " ++ typeUrl ++ " was unpacked as " ++ unpackedAs ++ "."
 
         UnregisteredType typeUrl ->
             "An Any holding " ++ typeUrl ++ " was converted through a registry that has no entry for its type."

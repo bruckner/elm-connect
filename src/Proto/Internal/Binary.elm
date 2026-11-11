@@ -41,6 +41,10 @@ region being read; whether that is the end of the input or of a region the
 input holds whole is known only once the failure leaves the region
 ([`crossed`](#crossed)) or reaches the top.
 
+It is a `Proto.Error.Binary` without the message's name, which belongs to
+the decoder that was run and which [`run`](#run) adds once the failure
+reaches the top.
+
 -}
 type alias Failure =
     { reason : Reason
