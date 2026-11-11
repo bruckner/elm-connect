@@ -215,7 +215,7 @@ settle source metadata raw status messages =
                             Just text ->
                                 case
                                     Proto.Bytes.fromBase64 (String.trim text)
-                                        |> Maybe.andThen (Proto.Binary.decode statusDetails)
+                                        |> Maybe.andThen (Proto.Binary.decode statusDetails >> Result.toMaybe)
                                 of
                                     Just found ->
                                         List.map Ok found
@@ -240,7 +240,7 @@ and message skipped: the status's own are in `grpc-status` and
 -}
 statusDetails : Proto.Binary.Decoder (List Any)
 statusDetails =
-    Proto.Binary.merge
+    Proto.Binary.merge "google.rpc.Status"
         (\number wire details ->
             if number == 3 then
                 Proto.Binary.repeated Proto.Binary.any identity details wire details

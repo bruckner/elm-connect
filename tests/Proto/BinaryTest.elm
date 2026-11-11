@@ -21,6 +21,7 @@ import Proto.Binary as B
 import Proto.Bytes
 import Proto.Codec exposing (Proto)
 import Proto.Duration
+import Proto.Error
 import Proto.Internal.Any
 import Test exposing (Test, describe, fuzz, test)
 import Time
@@ -113,7 +114,7 @@ single : B.Codec a -> a -> { encode : a -> Bytes.Encode.Encoder, decode : B.Deco
 single codec zero =
     { encode = B.present codec 1
     , decode =
-        B.merge
+        B.merge "test.Single"
             (\number wireType current ->
                 if number == 1 then
                     B.field codec identity wireType current
@@ -137,14 +138,14 @@ wire codec zero show value hex =
     in
     Expect.all
         [ \_ -> toHex (B.encode one.encode value) |> Expect.equal (String.replace " " "" hex)
-        , \_ -> B.decode one.decode (fromHex hex) |> Maybe.map show |> Expect.equal (Just (show value))
+        , \_ -> B.decode one.decode (fromHex hex) |> Result.map show |> Expect.equal (Ok (show value))
         ]
         ()
 
 
 reads : B.Codec a -> a -> (a -> String) -> String -> Maybe String -> Expectation
 reads codec zero show hex expected =
-    B.decode (single codec zero).decode (fromHex hex) |> Maybe.map show |> Expect.equal expected
+    B.decode (single codec zero).decode (fromHex hex) |> Result.toMaybe |> Maybe.map show |> Expect.equal expected
 
 
 
@@ -379,15 +380,28 @@ delimited =
                 -- slice of. elm/bytes reads 80 as the start of a four-byte
                 -- character.
                 B.decode decodeSample (slice "12 03 616280 080720 0805 7a03" "414243")
-                    |> Maybe.map showSample
-                    |> Expect.equal Nothing
+                    |> Expect.equal (Err { typeName = "test.Sample", reason = Proto.Error.InvalidUtf8, path = [ ( "test.Sample", 2 ) ], offset = 1 })
         , test "a string ending in the first byte of a three-byte character (ab e2) fails" <|
             \_ ->
                 B.decode decodeSample (slice "12 03 6162e2 0807 0805 7a02" "4142")
-                    |> Maybe.map showSample
-                    |> Expect.equal Nothing
+                    |> Expect.equal (Err { typeName = "test.Sample", reason = Proto.Error.InvalidUtf8, path = [ ( "test.Sample", 2 ) ], offset = 1 })
         , test "a string of multi-byte characters ending exactly at the end of the message reads" <|
             \_ -> decodesAs "0805 1206 c3a9f09f9880" { sampleDefault | number = 5, name = "é😀" }
+        , test "a string is checked to be UTF-8, past ASCII and at any length" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> reads B.string "" identity "0a 02 c0 80" Nothing
+                    , \_ -> reads B.string "" identity "0a 03 eda080" Nothing
+                    , \_ -> reads B.string "" identity "0a 04 f4908080" Nothing
+                    , \_ -> reads B.string "" identity "0a 13 6162636465666768696a6b6c6d6e6f70 c3 4171" Nothing
+                    , \_ -> reads B.string "" identity "0a 14 6162636465666768696a6b6c6d6e6f70 e282ac 71" (Just "abcdefghijklmnop€q")
+                    , \_ -> reads B.string "" identity "0a 04 f09f9880" (Just "😀")
+                    ]
+                    ()
+        , test "a cut input fails as truncated, though the buffer it is a slice of goes on" <|
+            \_ ->
+                B.decode decodeSample (slice "0801 1a05 0801" "1001 1202 6869")
+                    |> Expect.equal (Err { typeName = "test.Sample", reason = Proto.Error.Truncated, path = [ ( "test.Sample", 3 ) ], offset = 3 })
         , test "a nested message, length-prefixed" <|
             \_ ->
                 -- Message { 3: Leaf { 1: 150 } }, from the encoding guide.
@@ -444,7 +458,7 @@ encodeLeaf value =
 
 mergeLeaf : Leaf -> B.Decoder Leaf
 mergeLeaf =
-    B.merge
+    B.merge "test.Leaf"
         (\number wireType value ->
             case number of
                 1 ->
@@ -491,7 +505,7 @@ encodePick pick =
 
 decodeSample : B.Decoder Sample
 decodeSample =
-    B.merge
+    B.merge "test.Sample"
         (\number wireType value ->
             case number of
                 1 ->
@@ -558,7 +572,16 @@ showSample s =
 
 decodesAs : String -> Sample -> Expectation
 decodesAs hex expected =
-    B.decode decodeSample (fromHex hex) |> Maybe.map showSample |> Expect.equal (Just (showSample expected))
+    B.decode decodeSample (fromHex hex) |> Result.map showSample |> Expect.equal (Ok (showSample expected))
+
+
+{-| `hex` fails to read as a `Sample` for `reason`, in the fields of `path`,
+at byte `offset`.
+-}
+failsAs : String -> Proto.Error.Reason -> List ( String, Int ) -> Int -> Expectation
+failsAs hex reason path offset =
+    B.decode decodeSample (fromHex hex)
+        |> Expect.equal (Err { typeName = "test.Sample", reason = reason, path = path, offset = offset })
 
 
 repeatedFields : Test
@@ -584,7 +607,7 @@ repeatedFields =
         , test "an empty list is left out" <|
             \_ -> toHex (B.encode encodeSample sampleDefault) |> Expect.equal ""
         , test "a packed run whose elements overrun its length fails" <|
-            \_ -> B.decode decodeSample (fromHex "2201ac02") |> Expect.equal Nothing
+            \_ -> failsAs "2201ac02" Proto.Error.LengthOverrun [ ( "test.Sample", 4 ) ] 2
         ]
 
 
@@ -647,12 +670,12 @@ messages =
         , test "a group fails" <|
             \_ ->
                 Expect.all
-                    [ \_ -> B.decode decodeSample (fromHex "fb06 fc06") |> Expect.equal Nothing
-                    , \_ -> B.decode decodeSample (fromHex "fc06") |> Expect.equal Nothing
+                    [ \_ -> failsAs "fb06 fc06" (Proto.Error.InvalidWireType 3) [ ( "test.Sample", 111 ) ] 0
+                    , \_ -> failsAs "fc06" (Proto.Error.InvalidWireType 4) [ ( "test.Sample", 111 ) ] 0
                     ]
                     ()
         , test "field number zero fails" <|
-            \_ -> B.decode decodeSample (fromHex "0001") |> Expect.equal Nothing
+            \_ -> failsAs "0001" Proto.Error.InvalidTag [ ( "test.Sample", 0 ) ] 0
         , test "the empty message is no bytes, and no bytes read as the default" <|
             \_ ->
                 Expect.all
@@ -663,12 +686,36 @@ messages =
         , test "truncated input fails: in a key, a varint, a length, a fixed value" <|
             \_ ->
                 Expect.all
-                    (List.map (\hex -> \_ -> B.decode decodeSample (fromHex hex) |> Expect.equal Nothing)
-                        [ "f8", "0896", "12", "1205 7878", "1a03 0896", "f906 0102" ]
-                    )
+                    [ \_ -> failsAs "f8" Proto.Error.Truncated [] 0
+                    , \_ -> failsAs "0896" Proto.Error.Truncated [ ( "test.Sample", 1 ) ] 1
+                    , \_ -> failsAs "12" Proto.Error.Truncated [ ( "test.Sample", 2 ) ] 1
+                    , \_ -> failsAs "1205 7878" Proto.Error.Truncated [ ( "test.Sample", 2 ) ] 1
+                    , \_ -> failsAs "1a03 0896" Proto.Error.Truncated [ ( "test.Sample", 3 ) ] 1
+                    , \_ -> failsAs "f906 0102" Proto.Error.Truncated [ ( "test.Sample", 111 ) ] 2
+                    ]
                     ()
-        , test "a nested message whose length runs past its parent's fails" <|
-            \_ -> B.decode decodeSample (fromHex "1a05089601") |> Expect.equal Nothing
+        , test "a nested message whose length runs past the input fails" <|
+            \_ -> failsAs "1a05089601" Proto.Error.Truncated [ ( "test.Sample", 3 ) ] 1
+        , test "a field running past its message, inside the input, is a length overrun" <|
+            \_ -> failsAs "1a02 0896 0801" Proto.Error.LengthOverrun [ ( "test.Sample", 3 ), ( "test.Leaf", 1 ) ] 3
+        , test "a varint longer than ten bytes fails" <|
+            \_ -> failsAs "08 ffffffffffffffffffff01" Proto.Error.MalformedVarint [ ( "test.Sample", 1 ) ] 1
+        , test "a string that is not UTF-8 fails" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> failsAs "1202 c328" Proto.Error.InvalidUtf8 [ ( "test.Sample", 2 ) ] 1
+                    , \_ -> failsAs "0801 4203 6162ff" Proto.Error.InvalidUtf8 [ ( "test.Sample", 8 ) ] 3
+                    , \_ -> decodesAs "1202 c3a9" { sampleDefault | name = "é" }
+                    ]
+                    ()
+        , test "a 64-bit integer an Int cannot hold exactly fails" <|
+            \_ ->
+                B.decode (single B.int64AsInt 0).decode (fromHex "08 80808080808080 10")
+                    |> Expect.equal (Err { typeName = "test.Single", reason = Proto.Error.OutOfRange, path = [ ( "test.Single", 1 ) ], offset = 1 })
+        , test "a failure names the message it is in, at any depth" <|
+            \_ ->
+                B.decode (single (B.embedded encodeSample (\_ -> decodeSample) sampleDefault) sampleDefault).decode (fromHex "0a04 1a02 08ff 7f")
+                    |> Expect.equal (Err { typeName = "test.Single", reason = Proto.Error.LengthOverrun, path = [ ( "test.Single", 1 ), ( "test.Sample", 3 ), ( "test.Leaf", 1 ) ], offset = 5 })
         ]
 
 
@@ -722,7 +769,7 @@ wellKnown =
                         "0a0d0a07612f622e632e4412020801"
 
                     decoded =
-                        B.decode one.decode (fromHex hex)
+                        B.decode one.decode (fromHex hex) |> Result.toMaybe
                 in
                 Expect.all
                     [ \_ -> decoded |> Maybe.map anyText |> Expect.equal (Just "b.c.D CAE=")
@@ -818,7 +865,7 @@ read before it, as generated code reads a singular message field.
 mergesTo : B.Codec a -> (a -> String) -> String -> Maybe String -> Expectation
 mergesTo codec show hex expected =
     B.decode
-        (B.merge
+        (B.merge "test.Twice"
             (\number wireType current ->
                 if number == 1 then
                     B.fieldInto codec current Just wireType current
@@ -830,6 +877,7 @@ mergesTo codec show hex expected =
             Nothing
         )
         (fromHex hex)
+        |> Result.toMaybe
         |> Maybe.andThen identity
         |> Maybe.map show
         |> Expect.equal expected
@@ -878,7 +926,7 @@ properties =
                     , \_ -> roundTrip B.sfixed64 "0" identity (String.fromInt n)
                     , \_ ->
                         B.decode (single B.int64 "0").decode (B.encode (single B.int64AsInt 0).encode n)
-                            |> Expect.equal (Just (String.fromInt n))
+                            |> Expect.equal (Ok (String.fromInt n))
                     ]
                     ()
         , fuzz (Fuzz.map2 Tuple.pair (Fuzz.intRange 1 92233) (Fuzz.intRange 0 99999999999999)) "64-bit text past 2^53" <|
@@ -908,4 +956,4 @@ roundTrip codec zero show v =
         one =
             single codec zero
     in
-    B.decode one.decode (B.encode one.encode v) |> Maybe.map show |> Expect.equal (Just (show v))
+    B.decode one.decode (B.encode one.encode v) |> Result.map show |> Expect.equal (Ok (show v))

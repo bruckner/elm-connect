@@ -2051,6 +2051,7 @@ decodeOuterModeBytes number =
 mergeScalarsBytes : Scalars -> Proto.Binary.Decoder Scalars
 mergeScalarsBytes =
     Proto.Binary.merge
+        "codec.v1.Scalars"
         (\number wire value ->
             case number of
                 1 ->
@@ -2119,6 +2120,7 @@ decodeScalarsBytes =
 mergeOptionalsBytes : Optionals -> Proto.Binary.Decoder Optionals
 mergeOptionalsBytes =
     Proto.Binary.merge
+        "codec.v1.Optionals"
         (\number wire value ->
             case number of
                 1 ->
@@ -2169,6 +2171,7 @@ decodeOptionalsBytes =
 mergeRepeatedBytes : Repeated -> Proto.Binary.Decoder Repeated
 mergeRepeatedBytes =
     Proto.Binary.merge
+        "codec.v1.Repeated"
         (\number wire value ->
             case number of
                 1 ->
@@ -2236,6 +2239,7 @@ decodeRepeatedBytes =
 mergeMapsBytes : Maps -> Proto.Binary.Decoder Maps
 mergeMapsBytes =
     Proto.Binary.merge
+        "codec.v1.Maps"
         (\number wire value ->
             case number of
                 1 ->
@@ -2303,6 +2307,7 @@ decodeMapsBytes =
 mergeChoiceBytes : Choice -> Proto.Binary.Decoder Choice
 mergeChoiceBytes =
     Proto.Binary.merge
+        "codec.v1.Choice"
         (\number wire value ->
             case number of
                 1 ->
@@ -2379,6 +2384,7 @@ decodeChoiceBytes =
 mergeNamesBytes : Names -> Proto.Binary.Decoder Names
 mergeNamesBytes =
     Proto.Binary.merge
+        "codec.v1.Names"
         (\number wire value ->
             case number of
                 1 ->
@@ -2420,6 +2426,7 @@ decodeNamesBytes =
 mergeOuterBytes : Outer -> Proto.Binary.Decoder Outer
 mergeOuterBytes =
     Proto.Binary.merge
+        "codec.v1.Outer"
         (\number wire value ->
             case number of
                 1 ->
@@ -2460,6 +2467,7 @@ decodeOuterBytes =
 mergeOuterInnerBytes : OuterInner -> Proto.Binary.Decoder OuterInner
 mergeOuterInnerBytes =
     Proto.Binary.merge
+        "codec.v1.Outer.Inner"
         (\number wire value ->
             case number of
                 1 ->
@@ -2486,6 +2494,7 @@ decodeOuterInnerBytes =
 mergeTreeBytes : Tree -> Proto.Binary.Decoder Tree
 mergeTreeBytes =
     Proto.Binary.merge
+        "codec.v1.Tree"
         (\number wire value ->
             case number of
                 1 ->
@@ -2542,6 +2551,7 @@ mergeTree_Bytes (Tree_ value) =
 mergeWellKnownBytes : WellKnown -> Proto.Binary.Decoder WellKnown
 mergeWellKnownBytes =
     Proto.Binary.merge
+        "codec.v1.WellKnown"
         (\number wire value ->
             case number of
                 1 ->
@@ -2625,6 +2635,7 @@ decodeWellKnownBytes =
 mergeWrappersBytes : Wrappers -> Proto.Binary.Decoder Wrappers
 mergeWrappersBytes =
     Proto.Binary.merge
+        "codec.v1.Wrappers"
         (\number wire value ->
             case number of
                 1 ->
@@ -2678,6 +2689,7 @@ decodeWrappersBytes =
 mergeAcrossBytes : Across -> Proto.Binary.Decoder Across
 mergeAcrossBytes =
     Proto.Binary.merge
+        "codec.v1.Across"
         (\number wire value ->
             case number of
                 1 ->
@@ -2710,6 +2722,7 @@ decodeAcrossBytes =
 mergeLeafBytes : Leaf -> Proto.Binary.Decoder Leaf
 mergeLeafBytes =
     Proto.Binary.merge
+        "codec.v1.Leaf"
         (\number wire value ->
             case number of
                 1 ->
@@ -2736,6 +2749,7 @@ decodeLeafBytes =
 mergeEverythingBytes : Everything -> Proto.Binary.Decoder Everything
 mergeEverythingBytes =
     Proto.Binary.merge
+        "codec.v1.Everything"
         (\number wire value ->
             case number of
                 1 ->

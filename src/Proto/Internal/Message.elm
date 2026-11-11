@@ -23,7 +23,7 @@ type Message a
 
 type alias Codecs a =
     { encodeJson : Registry -> a -> Maybe Json.Encode.Value
-    , decoder : Registry -> Json.Decode.Decoder a
-    , encode : a -> Bytes.Encode.Encoder
-    , decode : Proto.Internal.Binary.Decoder a
+    , decodeJson : Registry -> Json.Decode.Decoder a
+    , encodeBinary : a -> Bytes.Encode.Encoder
+    , decodeBinary : Proto.Internal.Binary.Decoder a
     }

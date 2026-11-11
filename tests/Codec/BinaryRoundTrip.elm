@@ -47,6 +47,7 @@ both decodeBytes encodeBytes decodeJson encodeJson =
     { fromBinary =
         \input ->
             Proto.Binary.decode decodeBytes input
+                |> Result.toMaybe
                 |> Maybe.map (\v -> { reencoded = Proto.Binary.encode encodeBytes v, json = Just (encodeJson v) })
     , fromJson =
         Just
@@ -63,6 +64,7 @@ binaryOnly decodeBytes encodeBytes =
     { fromBinary =
         \input ->
             Proto.Binary.decode decodeBytes input
+                |> Result.toMaybe
                 |> Maybe.map (\v -> { reencoded = Proto.Binary.encode encodeBytes v, json = Nothing })
     , fromJson = Nothing
     }

@@ -154,6 +154,7 @@ encodeBlobBytes value =
 mergeBlobBytes : Blob -> Proto.Binary.Decoder Blob
 mergeBlobBytes =
     Proto.Binary.merge
+        "blobs.v1.Blob"
         (\number wire value ->
             case number of
                 1 ->

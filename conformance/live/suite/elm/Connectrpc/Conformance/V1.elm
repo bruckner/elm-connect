@@ -4576,6 +4576,7 @@ decodeTestSuiteConnectVersionModeBytes number =
 mergeClientCompatRequestBytes : ClientCompatRequest -> Proto.Binary.Decoder ClientCompatRequest
 mergeClientCompatRequestBytes =
     Proto.Binary.merge
+        "connectrpc.conformance.v1.ClientCompatRequest"
         (\number wire value ->
             case number of
                 1 ->
@@ -4661,6 +4662,7 @@ decodeClientCompatRequestBytes =
 mergeClientCompatRequestCancelBytes : ClientCompatRequestCancel -> Proto.Binary.Decoder ClientCompatRequestCancel
 mergeClientCompatRequestCancelBytes =
     Proto.Binary.merge
+        "connectrpc.conformance.v1.ClientCompatRequest.Cancel"
         (\number wire value ->
             case number of
                 1 ->
@@ -4690,6 +4692,7 @@ decodeClientCompatRequestCancelBytes =
 mergeClientCompatResponseBytes : ClientCompatResponse -> Proto.Binary.Decoder ClientCompatResponse
 mergeClientCompatResponseBytes =
     Proto.Binary.merge
+        "connectrpc.conformance.v1.ClientCompatResponse"
         (\number wire value ->
             case number of
                 1 ->
@@ -4741,6 +4744,7 @@ decodeClientCompatResponseBytes =
 mergeClientResponseResultBytes : ClientResponseResult -> Proto.Binary.Decoder ClientResponseResult
 mergeClientResponseResultBytes =
     Proto.Binary.merge
+        "connectrpc.conformance.v1.ClientResponseResult"
         (\number wire value ->
             case number of
                 1 ->
@@ -4789,6 +4793,7 @@ decodeClientResponseResultBytes =
 mergeClientErrorResultBytes : ClientErrorResult -> Proto.Binary.Decoder ClientErrorResult
 mergeClientErrorResultBytes =
     Proto.Binary.merge
+        "connectrpc.conformance.v1.ClientErrorResult"
         (\number wire value ->
             case number of
                 1 ->
@@ -4812,6 +4817,7 @@ decodeClientErrorResultBytes =
 mergeWireDetailsBytes : WireDetails -> Proto.Binary.Decoder WireDetails
 mergeWireDetailsBytes =
     Proto.Binary.merge
+        "connectrpc.conformance.v1.WireDetails"
         (\number wire value ->
             case number of
                 1 ->
@@ -4844,6 +4850,7 @@ decodeWireDetailsBytes =
 mergeConfigBytes : Config -> Proto.Binary.Decoder Config
 mergeConfigBytes =
     Proto.Binary.merge
+        "connectrpc.conformance.v1.Config"
         (\number wire value ->
             case number of
                 1 ->
@@ -4878,6 +4885,7 @@ decodeConfigBytes =
 mergeFeaturesBytes : Features -> Proto.Binary.Decoder Features
 mergeFeaturesBytes =
     Proto.Binary.merge
+        "connectrpc.conformance.v1.Features"
         (\number wire value ->
             case number of
                 1 ->
@@ -4942,6 +4950,7 @@ decodeFeaturesBytes =
 mergeConfigCaseBytes : ConfigCase -> Proto.Binary.Decoder ConfigCase
 mergeConfigCaseBytes =
     Proto.Binary.merge
+        "connectrpc.conformance.v1.ConfigCase"
         (\number wire value ->
             case number of
                 1 ->
@@ -4986,6 +4995,7 @@ decodeConfigCaseBytes =
 mergeTLSCredsBytes : TLSCreds -> Proto.Binary.Decoder TLSCreds
 mergeTLSCredsBytes =
     Proto.Binary.merge
+        "connectrpc.conformance.v1.TLSCreds"
         (\number wire value ->
             case number of
                 1 ->
@@ -5012,6 +5022,7 @@ decodeTLSCredsBytes =
 mergeServerCompatRequestBytes : ServerCompatRequest -> Proto.Binary.Decoder ServerCompatRequest
 mergeServerCompatRequestBytes =
     Proto.Binary.merge
+        "connectrpc.conformance.v1.ServerCompatRequest"
         (\number wire value ->
             case number of
                 1 ->
@@ -5050,6 +5061,7 @@ decodeServerCompatRequestBytes =
 mergeServerCompatResponseBytes : ServerCompatResponse -> Proto.Binary.Decoder ServerCompatResponse
 mergeServerCompatResponseBytes =
     Proto.Binary.merge
+        "connectrpc.conformance.v1.ServerCompatResponse"
         (\number wire value ->
             case number of
                 1 ->
@@ -5079,6 +5091,7 @@ decodeServerCompatResponseBytes =
 mergeUnaryResponseDefinitionBytes : UnaryResponseDefinition -> Proto.Binary.Decoder UnaryResponseDefinition
 mergeUnaryResponseDefinitionBytes =
     Proto.Binary.merge
+        "connectrpc.conformance.v1.UnaryResponseDefinition"
         (\number wire value ->
             case number of
                 1 ->
@@ -5133,6 +5146,7 @@ decodeUnaryResponseDefinitionBytes =
 mergeStreamResponseDefinitionBytes : StreamResponseDefinition -> Proto.Binary.Decoder StreamResponseDefinition
 mergeStreamResponseDefinitionBytes =
     Proto.Binary.merge
+        "connectrpc.conformance.v1.StreamResponseDefinition"
         (\number wire value ->
             case number of
                 1 ->
@@ -5177,6 +5191,7 @@ decodeStreamResponseDefinitionBytes =
 mergeUnaryRequestBytes : UnaryRequest -> Proto.Binary.Decoder UnaryRequest
 mergeUnaryRequestBytes =
     Proto.Binary.merge
+        "connectrpc.conformance.v1.UnaryRequest"
         (\number wire value ->
             case number of
                 1 ->
@@ -5203,6 +5218,7 @@ decodeUnaryRequestBytes =
 mergeUnaryResponseBytes : UnaryResponse -> Proto.Binary.Decoder UnaryResponse
 mergeUnaryResponseBytes =
     Proto.Binary.merge
+        "connectrpc.conformance.v1.UnaryResponse"
         (\number wire value ->
             case number of
                 1 ->
@@ -5226,6 +5242,7 @@ decodeUnaryResponseBytes =
 mergeIdempotentUnaryRequestBytes : IdempotentUnaryRequest -> Proto.Binary.Decoder IdempotentUnaryRequest
 mergeIdempotentUnaryRequestBytes =
     Proto.Binary.merge
+        "connectrpc.conformance.v1.IdempotentUnaryRequest"
         (\number wire value ->
             case number of
                 1 ->
@@ -5252,6 +5269,7 @@ decodeIdempotentUnaryRequestBytes =
 mergeIdempotentUnaryResponseBytes : IdempotentUnaryResponse -> Proto.Binary.Decoder IdempotentUnaryResponse
 mergeIdempotentUnaryResponseBytes =
     Proto.Binary.merge
+        "connectrpc.conformance.v1.IdempotentUnaryResponse"
         (\number wire value ->
             case number of
                 1 ->
@@ -5275,6 +5293,7 @@ decodeIdempotentUnaryResponseBytes =
 mergeServerStreamRequestBytes : ServerStreamRequest -> Proto.Binary.Decoder ServerStreamRequest
 mergeServerStreamRequestBytes =
     Proto.Binary.merge
+        "connectrpc.conformance.v1.ServerStreamRequest"
         (\number wire value ->
             case number of
                 1 ->
@@ -5301,6 +5320,7 @@ decodeServerStreamRequestBytes =
 mergeServerStreamResponseBytes : ServerStreamResponse -> Proto.Binary.Decoder ServerStreamResponse
 mergeServerStreamResponseBytes =
     Proto.Binary.merge
+        "connectrpc.conformance.v1.ServerStreamResponse"
         (\number wire value ->
             case number of
                 1 ->
@@ -5324,6 +5344,7 @@ decodeServerStreamResponseBytes =
 mergeClientStreamRequestBytes : ClientStreamRequest -> Proto.Binary.Decoder ClientStreamRequest
 mergeClientStreamRequestBytes =
     Proto.Binary.merge
+        "connectrpc.conformance.v1.ClientStreamRequest"
         (\number wire value ->
             case number of
                 1 ->
@@ -5350,6 +5371,7 @@ decodeClientStreamRequestBytes =
 mergeClientStreamResponseBytes : ClientStreamResponse -> Proto.Binary.Decoder ClientStreamResponse
 mergeClientStreamResponseBytes =
     Proto.Binary.merge
+        "connectrpc.conformance.v1.ClientStreamResponse"
         (\number wire value ->
             case number of
                 1 ->
@@ -5373,6 +5395,7 @@ decodeClientStreamResponseBytes =
 mergeBidiStreamRequestBytes : BidiStreamRequest -> Proto.Binary.Decoder BidiStreamRequest
 mergeBidiStreamRequestBytes =
     Proto.Binary.merge
+        "connectrpc.conformance.v1.BidiStreamRequest"
         (\number wire value ->
             case number of
                 1 ->
@@ -5402,6 +5425,7 @@ decodeBidiStreamRequestBytes =
 mergeBidiStreamResponseBytes : BidiStreamResponse -> Proto.Binary.Decoder BidiStreamResponse
 mergeBidiStreamResponseBytes =
     Proto.Binary.merge
+        "connectrpc.conformance.v1.BidiStreamResponse"
         (\number wire value ->
             case number of
                 1 ->
@@ -5424,7 +5448,7 @@ decodeBidiStreamResponseBytes =
 -}
 mergeUnimplementedRequestBytes : UnimplementedRequest -> Proto.Binary.Decoder UnimplementedRequest
 mergeUnimplementedRequestBytes =
-    Proto.Binary.merge (\_ wire value -> Proto.Binary.skip wire value) identity
+    Proto.Binary.merge "connectrpc.conformance.v1.UnimplementedRequest" (\_ wire value -> Proto.Binary.skip wire value) identity
 
 
 {-| Decodes a [`UnimplementedRequest`](#UnimplementedRequest) from protobuf binary.
@@ -5438,7 +5462,7 @@ decodeUnimplementedRequestBytes =
 -}
 mergeUnimplementedResponseBytes : UnimplementedResponse -> Proto.Binary.Decoder UnimplementedResponse
 mergeUnimplementedResponseBytes =
-    Proto.Binary.merge (\_ wire value -> Proto.Binary.skip wire value) identity
+    Proto.Binary.merge "connectrpc.conformance.v1.UnimplementedResponse" (\_ wire value -> Proto.Binary.skip wire value) identity
 
 
 {-| Decodes a [`UnimplementedResponse`](#UnimplementedResponse) from protobuf binary.
@@ -5453,6 +5477,7 @@ decodeUnimplementedResponseBytes =
 mergeConformancePayloadBytes : ConformancePayload -> Proto.Binary.Decoder ConformancePayload
 mergeConformancePayloadBytes =
     Proto.Binary.merge
+        "connectrpc.conformance.v1.ConformancePayload"
         (\number wire value ->
             case number of
                 1 ->
@@ -5479,6 +5504,7 @@ decodeConformancePayloadBytes =
 mergeConformancePayloadRequestInfoBytes : ConformancePayloadRequestInfo -> Proto.Binary.Decoder ConformancePayloadRequestInfo
 mergeConformancePayloadRequestInfoBytes =
     Proto.Binary.merge
+        "connectrpc.conformance.v1.ConformancePayload.RequestInfo"
         (\number wire value ->
             case number of
                 1 ->
@@ -5516,6 +5542,7 @@ decodeConformancePayloadRequestInfoBytes =
 mergeConformancePayloadConnectGetInfoBytes : ConformancePayloadConnectGetInfo -> Proto.Binary.Decoder ConformancePayloadConnectGetInfo
 mergeConformancePayloadConnectGetInfoBytes =
     Proto.Binary.merge
+        "connectrpc.conformance.v1.ConformancePayload.ConnectGetInfo"
         (\number wire value ->
             case number of
                 1 ->
@@ -5539,6 +5566,7 @@ decodeConformancePayloadConnectGetInfoBytes =
 mergeErrorBytes : Error -> Proto.Binary.Decoder Error
 mergeErrorBytes =
     Proto.Binary.merge
+        "connectrpc.conformance.v1.Error"
         (\number wire value ->
             case number of
                 1 ->
@@ -5568,6 +5596,7 @@ decodeErrorBytes =
 mergeHeaderBytes : Header -> Proto.Binary.Decoder Header
 mergeHeaderBytes =
     Proto.Binary.merge
+        "connectrpc.conformance.v1.Header"
         (\number wire value ->
             case number of
                 1 ->
@@ -5594,6 +5623,7 @@ decodeHeaderBytes =
 mergeRawHTTPRequestBytes : RawHTTPRequest -> Proto.Binary.Decoder RawHTTPRequest
 mergeRawHTTPRequestBytes =
     Proto.Binary.merge
+        "connectrpc.conformance.v1.RawHTTPRequest"
         (\number wire value ->
             case number of
                 1 ->
@@ -5663,6 +5693,7 @@ decodeRawHTTPRequestBytes =
 mergeRawHTTPRequestEncodedQueryParamBytes : RawHTTPRequestEncodedQueryParam -> Proto.Binary.Decoder RawHTTPRequestEncodedQueryParam
 mergeRawHTTPRequestEncodedQueryParamBytes =
     Proto.Binary.merge
+        "connectrpc.conformance.v1.RawHTTPRequest.EncodedQueryParam"
         (\number wire value ->
             case number of
                 1 ->
@@ -5692,6 +5723,7 @@ decodeRawHTTPRequestEncodedQueryParamBytes =
 mergeMessageContentsBytes : MessageContents -> Proto.Binary.Decoder MessageContents
 mergeMessageContentsBytes =
     Proto.Binary.merge
+        "connectrpc.conformance.v1.MessageContents"
         (\number wire value ->
             case number of
                 1 ->
@@ -5724,6 +5756,7 @@ decodeMessageContentsBytes =
 mergeStreamContentsBytes : StreamContents -> Proto.Binary.Decoder StreamContents
 mergeStreamContentsBytes =
     Proto.Binary.merge
+        "connectrpc.conformance.v1.StreamContents"
         (\number wire value ->
             case number of
                 1 ->
@@ -5747,6 +5780,7 @@ decodeStreamContentsBytes =
 mergeStreamContentsStreamItemBytes : StreamContentsStreamItem -> Proto.Binary.Decoder StreamContentsStreamItem
 mergeStreamContentsStreamItemBytes =
     Proto.Binary.merge
+        "connectrpc.conformance.v1.StreamContents.StreamItem"
         (\number wire value ->
             case number of
                 1 ->
@@ -5776,6 +5810,7 @@ decodeStreamContentsStreamItemBytes =
 mergeRawHTTPResponseBytes : RawHTTPResponse -> Proto.Binary.Decoder RawHTTPResponse
 mergeRawHTTPResponseBytes =
     Proto.Binary.merge
+        "connectrpc.conformance.v1.RawHTTPResponse"
         (\number wire value ->
             case number of
                 1 ->
@@ -5838,6 +5873,7 @@ decodeRawHTTPResponseBytes =
 mergeTestSuiteBytes : TestSuite -> Proto.Binary.Decoder TestSuite
 mergeTestSuiteBytes =
     Proto.Binary.merge
+        "connectrpc.conformance.v1.TestSuite"
         (\number wire value ->
             case number of
                 1 ->
@@ -5902,6 +5938,7 @@ decodeTestSuiteBytes =
 mergeTestCaseBytes : TestCase -> Proto.Binary.Decoder TestCase
 mergeTestCaseBytes =
     Proto.Binary.merge
+        "connectrpc.conformance.v1.TestCase"
         (\number wire value ->
             case number of
                 1 ->
@@ -5939,6 +5976,7 @@ decodeTestCaseBytes =
 mergeTestCaseExpandedSizeBytes : TestCaseExpandedSize -> Proto.Binary.Decoder TestCaseExpandedSize
 mergeTestCaseExpandedSizeBytes =
     Proto.Binary.merge
+        "connectrpc.conformance.v1.TestCase.ExpandedSize"
         (\number wire value ->
             case number of
                 1 ->

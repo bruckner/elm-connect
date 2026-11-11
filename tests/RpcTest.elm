@@ -69,7 +69,7 @@ encodeTitleBytes t =
 
 decodeTitleBytes : Proto.Binary.Decoder String
 decodeTitleBytes =
-    Proto.Binary.merge
+    Proto.Binary.merge "notes.v1.Title"
         (\number wire value ->
             if number == 1 then
                 Proto.Binary.field Proto.Binary.string identity wire value

@@ -456,6 +456,7 @@ encodeEventWhenBytes value =
 mergeEventBytes : Event -> Proto.Binary.Decoder Event
 mergeEventBytes =
     Proto.Binary.merge
+        "well_known.v1.Event"
         (\number wire value ->
             case number of
                 1 ->

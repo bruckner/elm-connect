@@ -158,17 +158,17 @@ encodeJson (Internal.Message _ c) value =
 
 decoder : Message a -> Json.Decode.Decoder a
 decoder (Internal.Message _ c) =
-    c.decoder Proto.Registry.empty
+    c.decodeJson Proto.Registry.empty
 
 
 encoder : Message a -> a -> Bytes.Encode.Encoder
 encoder (Internal.Message _ c) =
-    c.encode
+    c.encodeBinary
 
 
 decodeBytes : Message a -> Bytes -> Maybe a
 decodeBytes (Internal.Message _ c) =
-    Proto.Binary.decode c.decode
+    Proto.Binary.decode c.decodeBinary >> Result.toMaybe
 
 
 {-| The binary as base64, since Elm's `==` does not look inside `Bytes`.

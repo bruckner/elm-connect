@@ -361,6 +361,7 @@ encodeListEventsResponseBytes value =
 mergeEventBytes : Event -> Proto.Binary.Decoder Event
 mergeEventBytes =
     Proto.Binary.merge
+        "events.v1.Event"
         (\number wire value ->
             case number of
                 1 ->
@@ -390,6 +391,7 @@ decodeEventBytes =
 mergeListEventsRequestBytes : ListEventsRequest -> Proto.Binary.Decoder ListEventsRequest
 mergeListEventsRequestBytes =
     Proto.Binary.merge
+        "events.v1.ListEventsRequest"
         (\number wire value ->
             case number of
                 1 ->
@@ -416,6 +418,7 @@ decodeListEventsRequestBytes =
 mergeListEventsResponseBytes : ListEventsResponse -> Proto.Binary.Decoder ListEventsResponse
 mergeListEventsResponseBytes =
     Proto.Binary.merge
+        "events.v1.ListEventsResponse"
         (\number wire value ->
             case number of
                 1 ->

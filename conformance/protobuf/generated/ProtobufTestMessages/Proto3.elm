@@ -1707,6 +1707,7 @@ decodeEnumOnlyProto3BoolBytes number =
 mergeTestAllTypesProto3Bytes : TestAllTypesProto3 -> Proto.Binary.Decoder TestAllTypesProto3
 mergeTestAllTypesProto3Bytes =
     Proto.Binary.merge
+        "protobuf_test_messages.proto3.TestAllTypesProto3"
         (\number wire value ->
             case number of
                 1 ->
@@ -2267,6 +2268,7 @@ mergeTestAllTypesProto3_Bytes (TestAllTypesProto3_ value) =
 mergeTestAllTypesProto3NestedMessageBytes : TestAllTypesProto3NestedMessage -> Proto.Binary.Decoder TestAllTypesProto3NestedMessage
 mergeTestAllTypesProto3NestedMessageBytes =
     Proto.Binary.merge
+        "protobuf_test_messages.proto3.TestAllTypesProto3.NestedMessage"
         (\number wire value ->
             case number of
                 1 ->
@@ -2300,6 +2302,7 @@ mergeTestAllTypesProto3NestedMessage_Bytes (TestAllTypesProto3NestedMessage_ val
 mergeForeignMessageBytes : ForeignMessage -> Proto.Binary.Decoder ForeignMessage
 mergeForeignMessageBytes =
     Proto.Binary.merge
+        "protobuf_test_messages.proto3.ForeignMessage"
         (\number wire value ->
             case number of
                 1 ->
@@ -2322,7 +2325,7 @@ decodeForeignMessageBytes =
 -}
 mergeNullHypothesisProto3Bytes : NullHypothesisProto3 -> Proto.Binary.Decoder NullHypothesisProto3
 mergeNullHypothesisProto3Bytes =
-    Proto.Binary.merge (\_ wire value -> Proto.Binary.skip wire value) identity
+    Proto.Binary.merge "protobuf_test_messages.proto3.NullHypothesisProto3" (\_ wire value -> Proto.Binary.skip wire value) identity
 
 
 {-| Decodes a [`NullHypothesisProto3`](#NullHypothesisProto3) from protobuf binary.
@@ -2336,7 +2339,7 @@ decodeNullHypothesisProto3Bytes =
 -}
 mergeEnumOnlyProto3Bytes : EnumOnlyProto3 -> Proto.Binary.Decoder EnumOnlyProto3
 mergeEnumOnlyProto3Bytes =
-    Proto.Binary.merge (\_ wire value -> Proto.Binary.skip wire value) identity
+    Proto.Binary.merge "protobuf_test_messages.proto3.EnumOnlyProto3" (\_ wire value -> Proto.Binary.skip wire value) identity
 
 
 {-| Decodes an [`EnumOnlyProto3`](#EnumOnlyProto3) from protobuf binary.

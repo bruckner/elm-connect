@@ -221,6 +221,7 @@ encodeEnvelopeBodyBytes value =
 mergeEnvelopeBytes : Envelope -> Proto.Binary.Decoder Envelope
 mergeEnvelopeBytes =
     Proto.Binary.merge
+        "envelope.v1.Envelope"
         (\number wire value ->
             case number of
                 1 ->

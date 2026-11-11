@@ -3,8 +3,9 @@ module Proto.Internal.Method exposing (BinaryHalf, Codecs, JsonHalf, Method(..),
 {-| The `Method` type, which `Proto.Method` names by an alias. It is defined
 here so that `Rpc` can read what a method holds while users cannot. The
 idempotency is a parameter because its type stays in `Proto.Method`, which
-exposes its constructors. Its types are elm/core's, elm/json's, elm/bytes'
-and `Proto.Route`'s, so that no `Proto` module imports an `Rpc` one.
+exposes its constructors. Its types are elm/core's, elm/json's, elm/bytes',
+`Proto.Route`'s and `Proto.Error`'s, so that no `Proto` module imports an
+`Rpc` one.
 
 A method holds its identity (service, name, idempotency), its two codec
 halves and one route function per HTTP binding, not its descriptor: the
@@ -29,6 +30,7 @@ import Bytes.Encode
 import Json.Decode
 import Json.Encode
 import Proto.Any exposing (Problem)
+import Proto.Error
 import Proto.Internal.Registry exposing (Registry)
 import Proto.Route exposing (Route)
 
@@ -83,7 +85,7 @@ methods hold the filler, never calls elm/bytes.
 -}
 type alias BinaryHalf req res =
     { encode : req -> Bytes.Encode.Encoder
-    , decode : Bytes -> Maybe res
+    , decode : Bytes -> Result Proto.Error.Binary res
     }
 
 
@@ -112,5 +114,5 @@ program) from every JSON program.
 noBinary : BinaryHalf req res
 noBinary =
     { encode = \_ -> Bytes.Encode.unsignedInt8 0
-    , decode = \_ -> Nothing
+    , decode = \_ -> Err { typeName = "", reason = Proto.Error.Unlocated, path = [], offset = 0 }
     }

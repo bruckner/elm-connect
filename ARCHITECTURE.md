@@ -91,7 +91,8 @@ point of `elm-format`: the corpus's formatted check and
   `Proto.Method`, `Proto.Field`, `Proto.EnumValue`), the HTTP bindings
   as data (`Proto.Http`), the routes generated route functions build
   (`Proto.Route`, `Proto.Query`), `Proto.Descriptors`, `Proto.Registry`,
-  `Proto.Any`, `Proto.WellKnown`, and
+  `Proto.Any`, `Proto.WellKnown`, `Proto.Error`, the proto layer's one
+  error type, and
   `Proto.Version`, the compatibility sentinel every generated module
   names (§8.2), and `Proto.Codec`, the codec tags `Rpc.Json` and
   `Rpc.Proto` alias (§3.1, rule 5).

@@ -570,6 +570,7 @@ decodeColorBytes number =
 mergeCreatedBytes : Created -> Proto.Binary.Decoder Created
 mergeCreatedBytes =
     Proto.Binary.merge
+        "oneofs.v1.Created"
         (\number wire value ->
             case number of
                 1 ->
@@ -593,6 +594,7 @@ decodeCreatedBytes =
 mergeNoteEventBytes : NoteEvent -> Proto.Binary.Decoder NoteEvent
 mergeNoteEventBytes =
     Proto.Binary.merge
+        "oneofs.v1.NoteEvent"
         (\number wire value ->
             case number of
                 1 ->
@@ -654,6 +656,7 @@ decodeNoteEventBytes =
 mergeChoiceBytes : Choice -> Proto.Binary.Decoder Choice
 mergeChoiceBytes =
     Proto.Binary.merge
+        "oneofs.v1.Choice"
         (\number wire value ->
             case number of
                 1 ->

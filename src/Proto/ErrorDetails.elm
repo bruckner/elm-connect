@@ -779,6 +779,7 @@ encodeLocalizedMessageBytes value =
 mergeErrorInfoBytes : ErrorInfo -> Proto.Binary.Decoder ErrorInfo
 mergeErrorInfoBytes =
     Proto.Binary.merge
+        "google.rpc.ErrorInfo"
         (\number wire value ->
             case number of
                 1 ->
@@ -829,6 +830,7 @@ decodeErrorInfoBytes =
 mergeRetryInfoBytes : RetryInfo -> Proto.Binary.Decoder RetryInfo
 mergeRetryInfoBytes =
     Proto.Binary.merge
+        "google.rpc.RetryInfo"
         (\number wire value ->
             case number of
                 1 ->
@@ -856,6 +858,7 @@ decodeRetryInfoBytes =
 mergeDebugInfoBytes : DebugInfo -> Proto.Binary.Decoder DebugInfo
 mergeDebugInfoBytes =
     Proto.Binary.merge
+        "google.rpc.DebugInfo"
         (\number wire value ->
             case number of
                 1 ->
@@ -899,6 +902,7 @@ decodeDebugInfoBytes =
 mergeQuotaFailureBytes : QuotaFailure -> Proto.Binary.Decoder QuotaFailure
 mergeQuotaFailureBytes =
     Proto.Binary.merge
+        "google.rpc.QuotaFailure"
         (\number wire value ->
             case number of
                 1 ->
@@ -931,6 +935,7 @@ decodeQuotaFailureBytes =
 mergeQuotaFailureViolationBytes : QuotaFailureViolation -> Proto.Binary.Decoder QuotaFailureViolation
 mergeQuotaFailureViolationBytes =
     Proto.Binary.merge
+        "google.rpc.QuotaFailure.Violation"
         (\number wire value ->
             case number of
                 1 ->
@@ -1036,6 +1041,7 @@ decodeQuotaFailureViolationBytes =
 mergePreconditionFailureBytes : PreconditionFailure -> Proto.Binary.Decoder PreconditionFailure
 mergePreconditionFailureBytes =
     Proto.Binary.merge
+        "google.rpc.PreconditionFailure"
         (\number wire value ->
             case number of
                 1 ->
@@ -1068,6 +1074,7 @@ decodePreconditionFailureBytes =
 mergePreconditionFailureViolationBytes : PreconditionFailureViolation -> Proto.Binary.Decoder PreconditionFailureViolation
 mergePreconditionFailureViolationBytes =
     Proto.Binary.merge
+        "google.rpc.PreconditionFailure.Violation"
         (\number wire value ->
             case number of
                 1 ->
@@ -1117,6 +1124,7 @@ decodePreconditionFailureViolationBytes =
 mergeBadRequestBytes : BadRequest -> Proto.Binary.Decoder BadRequest
 mergeBadRequestBytes =
     Proto.Binary.merge
+        "google.rpc.BadRequest"
         (\number wire value ->
             case number of
                 1 ->
@@ -1149,6 +1157,7 @@ decodeBadRequestBytes =
 mergeBadRequestFieldViolationBytes : BadRequestFieldViolation -> Proto.Binary.Decoder BadRequestFieldViolation
 mergeBadRequestFieldViolationBytes =
     Proto.Binary.merge
+        "google.rpc.BadRequest.FieldViolation"
         (\number wire value ->
             case number of
                 1 ->
@@ -1210,6 +1219,7 @@ decodeBadRequestFieldViolationBytes =
 mergeRequestInfoBytes : RequestInfo -> Proto.Binary.Decoder RequestInfo
 mergeRequestInfoBytes =
     Proto.Binary.merge
+        "google.rpc.RequestInfo"
         (\number wire value ->
             case number of
                 1 ->
@@ -1248,6 +1258,7 @@ decodeRequestInfoBytes =
 mergeResourceInfoBytes : ResourceInfo -> Proto.Binary.Decoder ResourceInfo
 mergeResourceInfoBytes =
     Proto.Binary.merge
+        "google.rpc.ResourceInfo"
         (\number wire value ->
             case number of
                 1 ->
@@ -1308,6 +1319,7 @@ decodeResourceInfoBytes =
 mergeHelpBytes : Help -> Proto.Binary.Decoder Help
 mergeHelpBytes =
     Proto.Binary.merge
+        "google.rpc.Help"
         (\number wire value ->
             case number of
                 1 ->
@@ -1340,6 +1352,7 @@ decodeHelpBytes =
 mergeHelpLinkBytes : HelpLink -> Proto.Binary.Decoder HelpLink
 mergeHelpLinkBytes =
     Proto.Binary.merge
+        "google.rpc.Help.Link"
         (\number wire value ->
             case number of
                 1 ->
@@ -1378,6 +1391,7 @@ decodeHelpLinkBytes =
 mergeLocalizedMessageBytes : LocalizedMessage -> Proto.Binary.Decoder LocalizedMessage
 mergeLocalizedMessageBytes =
     Proto.Binary.merge
+        "google.rpc.LocalizedMessage"
         (\number wire value ->
             case number of
                 1 ->

@@ -173,6 +173,7 @@ encodeMomentBytes value =
 mergeMomentBytes : Moment -> Proto.Binary.Decoder Moment
 mergeMomentBytes =
     Proto.Binary.merge
+        "clock.v1.Moment"
         (\number wire value ->
             case number of
                 1 ->

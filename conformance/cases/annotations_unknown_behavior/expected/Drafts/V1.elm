@@ -150,6 +150,7 @@ encodeDraftBytes value =
 mergeDraftBytes : Draft -> Proto.Binary.Decoder Draft
 mergeDraftBytes =
     Proto.Binary.merge
+        "drafts.v1.Draft"
         (\number wire value ->
             case number of
                 1 ->

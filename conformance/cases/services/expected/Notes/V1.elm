@@ -847,6 +847,7 @@ decodeVisibilityBytes number =
 mergeNoteBytes : Note -> Proto.Binary.Decoder Note
 mergeNoteBytes =
     Proto.Binary.merge
+        "notes.v1.Note"
         (\number wire value ->
             case number of
                 1 ->
@@ -879,6 +880,7 @@ decodeNoteBytes =
 mergeGetNoteRequestBytes : GetNoteRequest -> Proto.Binary.Decoder GetNoteRequest
 mergeGetNoteRequestBytes =
     Proto.Binary.merge
+        "notes.v1.GetNoteRequest"
         (\number wire value ->
             case number of
                 1 ->
@@ -902,6 +904,7 @@ decodeGetNoteRequestBytes =
 mergeListNotesRequestBytes : ListNotesRequest -> Proto.Binary.Decoder ListNotesRequest
 mergeListNotesRequestBytes =
     Proto.Binary.merge
+        "notes.v1.ListNotesRequest"
         (\number wire value ->
             case number of
                 1 ->
@@ -943,6 +946,7 @@ decodeListNotesRequestBytes =
 mergeListNotesRequestFilterBytes : ListNotesRequestFilter -> Proto.Binary.Decoder ListNotesRequestFilter
 mergeListNotesRequestFilterBytes =
     Proto.Binary.merge
+        "notes.v1.ListNotesRequest.Filter"
         (\number wire value ->
             case number of
                 1 ->
@@ -969,6 +973,7 @@ decodeListNotesRequestFilterBytes =
 mergeListNotesResponseBytes : ListNotesResponse -> Proto.Binary.Decoder ListNotesResponse
 mergeListNotesResponseBytes =
     Proto.Binary.merge
+        "notes.v1.ListNotesResponse"
         (\number wire value ->
             case number of
                 1 ->
@@ -995,6 +1000,7 @@ decodeListNotesResponseBytes =
 mergeCreateNoteRequestBytes : CreateNoteRequest -> Proto.Binary.Decoder CreateNoteRequest
 mergeCreateNoteRequestBytes =
     Proto.Binary.merge
+        "notes.v1.CreateNoteRequest"
         (\number wire value ->
             case number of
                 1 ->
@@ -1021,6 +1027,7 @@ decodeCreateNoteRequestBytes =
 mergeUpdateNoteRequestBytes : UpdateNoteRequest -> Proto.Binary.Decoder UpdateNoteRequest
 mergeUpdateNoteRequestBytes =
     Proto.Binary.merge
+        "notes.v1.UpdateNoteRequest"
         (\number wire value ->
             case number of
                 1 ->
@@ -1047,6 +1054,7 @@ decodeUpdateNoteRequestBytes =
 mergeDeleteNoteRequestBytes : DeleteNoteRequest -> Proto.Binary.Decoder DeleteNoteRequest
 mergeDeleteNoteRequestBytes =
     Proto.Binary.merge
+        "notes.v1.DeleteNoteRequest"
         (\number wire value ->
             case number of
                 1 ->
@@ -1073,6 +1081,7 @@ decodeDeleteNoteRequestBytes =
 mergeArchiveNoteRequestBytes : ArchiveNoteRequest -> Proto.Binary.Decoder ArchiveNoteRequest
 mergeArchiveNoteRequestBytes =
     Proto.Binary.merge
+        "notes.v1.ArchiveNoteRequest"
         (\number wire value ->
             case number of
                 1 ->
@@ -1099,6 +1108,7 @@ decodeArchiveNoteRequestBytes =
 mergeReadFileRequestBytes : ReadFileRequest -> Proto.Binary.Decoder ReadFileRequest
 mergeReadFileRequestBytes =
     Proto.Binary.merge
+        "notes.v1.ReadFileRequest"
         (\number wire value ->
             case number of
                 1 ->
@@ -1122,6 +1132,7 @@ decodeReadFileRequestBytes =
 mergeSummaryBytes : Summary -> Proto.Binary.Decoder Summary
 mergeSummaryBytes =
     Proto.Binary.merge
+        "notes.v1.Summary"
         (\number wire value ->
             case number of
                 1 ->

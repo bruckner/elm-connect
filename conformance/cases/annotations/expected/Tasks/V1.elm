@@ -372,6 +372,7 @@ decodeStateBytes number =
 mergeTaskBytes : Task -> Proto.Binary.Decoder Task
 mergeTaskBytes =
     Proto.Binary.merge
+        "tasks.v1.Task"
         (\number wire value ->
             case number of
                 1 ->
@@ -419,6 +420,7 @@ decodeTaskBytes =
 mergeGetTaskRequestBytes : GetTaskRequest -> Proto.Binary.Decoder GetTaskRequest
 mergeGetTaskRequestBytes =
     Proto.Binary.merge
+        "tasks.v1.GetTaskRequest"
         (\number wire value ->
             case number of
                 1 ->

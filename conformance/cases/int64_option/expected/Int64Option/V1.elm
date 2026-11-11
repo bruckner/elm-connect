@@ -268,6 +268,7 @@ encodeCountersLimitBytes value =
 mergeCountersBytes : Counters -> Proto.Binary.Decoder Counters
 mergeCountersBytes =
     Proto.Binary.merge
+        "int64_option.v1.Counters"
         (\number wire value ->
             case number of
                 1 ->

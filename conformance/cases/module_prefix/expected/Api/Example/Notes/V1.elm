@@ -206,6 +206,7 @@ encodeGetNoteRequestBytes value =
 mergeNoteBytes : Note -> Proto.Binary.Decoder Note
 mergeNoteBytes =
     Proto.Binary.merge
+        "notes.v1.Note"
         (\number wire value ->
             case number of
                 1 ->
@@ -235,6 +236,7 @@ decodeNoteBytes =
 mergeGetNoteRequestBytes : GetNoteRequest -> Proto.Binary.Decoder GetNoteRequest
 mergeGetNoteRequestBytes =
     Proto.Binary.merge
+        "notes.v1.GetNoteRequest"
         (\number wire value ->
             case number of
                 1 ->

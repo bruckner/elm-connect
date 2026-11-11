@@ -150,6 +150,7 @@ encodeBoundsBytes value =
 mergeBoundsBytes : Bounds -> Proto.Binary.Decoder Bounds
 mergeBoundsBytes =
     Proto.Binary.merge
+        "range.v1.Bounds"
         (\number wire value ->
             case number of
                 1 ->

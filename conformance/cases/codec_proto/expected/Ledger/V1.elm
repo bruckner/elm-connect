@@ -362,6 +362,7 @@ decodeKindBytes number =
 mergeEntryBytes : Entry -> Proto.Binary.Decoder Entry
 mergeEntryBytes =
     Proto.Binary.merge
+        "ledger.v1.Entry"
         (\number wire value ->
             case number of
                 1 ->
@@ -414,6 +415,7 @@ decodeEntryBytes =
 mergeGetEntryRequestBytes : GetEntryRequest -> Proto.Binary.Decoder GetEntryRequest
 mergeGetEntryRequestBytes =
     Proto.Binary.merge
+        "ledger.v1.GetEntryRequest"
         (\number wire value ->
             case number of
                 1 ->

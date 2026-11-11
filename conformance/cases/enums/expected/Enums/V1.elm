@@ -337,6 +337,7 @@ decodePriorityBytes number =
 mergeTaskBytes : Task -> Proto.Binary.Decoder Task
 mergeTaskBytes =
     Proto.Binary.merge
+        "enums.v1.Task"
         (\number wire value ->
             case number of
                 1 ->

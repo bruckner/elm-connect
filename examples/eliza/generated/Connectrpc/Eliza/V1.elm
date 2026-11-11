@@ -417,6 +417,7 @@ encodeIntroduceResponseBytes value =
 mergeSayRequestBytes : SayRequest -> Proto.Binary.Decoder SayRequest
 mergeSayRequestBytes =
     Proto.Binary.merge
+        "connectrpc.eliza.v1.SayRequest"
         (\number wire value ->
             case number of
                 1 ->
@@ -440,6 +441,7 @@ decodeSayRequestBytes =
 mergeSayResponseBytes : SayResponse -> Proto.Binary.Decoder SayResponse
 mergeSayResponseBytes =
     Proto.Binary.merge
+        "connectrpc.eliza.v1.SayResponse"
         (\number wire value ->
             case number of
                 1 ->
@@ -463,6 +465,7 @@ decodeSayResponseBytes =
 mergeConverseRequestBytes : ConverseRequest -> Proto.Binary.Decoder ConverseRequest
 mergeConverseRequestBytes =
     Proto.Binary.merge
+        "connectrpc.eliza.v1.ConverseRequest"
         (\number wire value ->
             case number of
                 1 ->
@@ -486,6 +489,7 @@ decodeConverseRequestBytes =
 mergeConverseResponseBytes : ConverseResponse -> Proto.Binary.Decoder ConverseResponse
 mergeConverseResponseBytes =
     Proto.Binary.merge
+        "connectrpc.eliza.v1.ConverseResponse"
         (\number wire value ->
             case number of
                 1 ->
@@ -509,6 +513,7 @@ decodeConverseResponseBytes =
 mergeIntroduceRequestBytes : IntroduceRequest -> Proto.Binary.Decoder IntroduceRequest
 mergeIntroduceRequestBytes =
     Proto.Binary.merge
+        "connectrpc.eliza.v1.IntroduceRequest"
         (\number wire value ->
             case number of
                 1 ->
@@ -532,6 +537,7 @@ decodeIntroduceRequestBytes =
 mergeIntroduceResponseBytes : IntroduceResponse -> Proto.Binary.Decoder IntroduceResponse
 mergeIntroduceResponseBytes =
     Proto.Binary.merge
+        "connectrpc.eliza.v1.IntroduceResponse"
         (\number wire value ->
             case number of
                 1 ->

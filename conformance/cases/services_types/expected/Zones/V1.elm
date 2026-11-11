@@ -193,6 +193,7 @@ encodeZoneBytes value =
 mergeZoneRequestBytes : ZoneRequest -> Proto.Binary.Decoder ZoneRequest
 mergeZoneRequestBytes =
     Proto.Binary.merge
+        "zones.v1.ZoneRequest"
         (\number wire value ->
             case number of
                 1 ->
@@ -216,6 +217,7 @@ decodeZoneRequestBytes =
 mergeZoneBytes : Zone -> Proto.Binary.Decoder Zone
 mergeZoneBytes =
     Proto.Binary.merge
+        "zones.v1.Zone"
         (\number wire value ->
             case number of
                 1 ->

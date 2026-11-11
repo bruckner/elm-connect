@@ -263,6 +263,7 @@ encodeNoteBytes value =
 mergeAuthorBytes : Author -> Proto.Binary.Decoder Author
 mergeAuthorBytes =
     Proto.Binary.merge
+        "cardinality.v1.Author"
         (\number wire value ->
             case number of
                 1 ->
@@ -286,6 +287,7 @@ decodeAuthorBytes =
 mergeNoteBytes : Note -> Proto.Binary.Decoder Note
 mergeNoteBytes =
     Proto.Binary.merge
+        "cardinality.v1.Note"
         (\number wire value ->
             case number of
                 1 ->

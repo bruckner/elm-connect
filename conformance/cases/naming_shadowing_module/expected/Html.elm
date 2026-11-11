@@ -139,6 +139,7 @@ encodeAttributesBytes value =
 mergeAttributesBytes : Attributes -> Proto.Binary.Decoder Attributes
 mergeAttributesBytes =
     Proto.Binary.merge
+        "html.Attributes"
         (\number wire value ->
             case number of
                 1 ->

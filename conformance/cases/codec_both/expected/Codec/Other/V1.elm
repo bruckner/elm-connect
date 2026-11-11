@@ -229,6 +229,7 @@ decodeShadeBytes number =
 mergeRemoteBytes : Remote -> Proto.Binary.Decoder Remote
 mergeRemoteBytes =
     Proto.Binary.merge
+        "codec.other.v1.Remote"
         (\number wire value ->
             case number of
                 1 ->

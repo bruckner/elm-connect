@@ -426,6 +426,7 @@ decodeHttpMethodBytes number =
 mergeTagBytes : Tag -> Proto.Binary.Decoder Tag
 mergeTagBytes =
     Proto.Binary.merge
+        "naming.v1.Tag"
         (\number wire value ->
             case number of
                 1 ->

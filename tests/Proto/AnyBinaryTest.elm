@@ -16,7 +16,7 @@ import Test exposing (Test, describe, test)
 
 decodeTitleBytes : Proto.Binary.Decoder String
 decodeTitleBytes =
-    Proto.Binary.merge
+    Proto.Binary.merge "notes.v1.Title"
         (\number wire value ->
             case number of
                 1 ->
@@ -66,6 +66,7 @@ registry =
 throughBinary : Any -> Maybe Any
 throughBinary any =
     Proto.Binary.decode (Proto.Binary.messageDecoder Proto.Binary.any) (Proto.Binary.encode (Proto.Binary.messageEncoder Proto.Binary.any) any)
+        |> Result.toMaybe
 
 
 base64 : Any -> String
@@ -104,7 +105,7 @@ suite =
         , test "binary that is not the message is InvalidProto, another type a TypeMismatch" <|
             \_ ->
                 ( Proto.Bytes.fromBase64 "CiJ0eXBlLmdvb2dsZWFwaXMuY29tL25vdGVzLnYxLlRpdGxlEgIKBQ=="
-                    |> Maybe.andThen (Proto.Binary.decode (Proto.Binary.messageDecoder Proto.Binary.any))
+                    |> Maybe.andThen (Proto.Binary.decode (Proto.Binary.messageDecoder Proto.Binary.any) >> Result.toMaybe)
                     |> Maybe.map (Any.tryUnpack messageTitle)
                 , Any.tryUnpack WellKnown.int32Value (Any.pack messageTitle "hi")
                 )

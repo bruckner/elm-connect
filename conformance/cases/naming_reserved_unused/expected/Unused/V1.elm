@@ -447,6 +447,7 @@ decodeCharBytes number =
 mergeDictBytes : Dict -> Proto.Binary.Decoder Dict
 mergeDictBytes =
     Proto.Binary.merge
+        "unused.v1.Dict"
         (\number wire value ->
             case number of
                 1 ->
@@ -470,6 +471,7 @@ decodeDictBytes =
 mergeResultBytes : Result -> Proto.Binary.Decoder Result
 mergeResultBytes =
     Proto.Binary.merge
+        "unused.v1.Result"
         (\number wire value ->
             case number of
                 1 ->
@@ -498,7 +500,7 @@ decodeResultBytes =
 -}
 mergeOrderBytes : Order -> Proto.Binary.Decoder Order
 mergeOrderBytes =
-    Proto.Binary.merge (\_ wire value -> Proto.Binary.skip wire value) identity
+    Proto.Binary.merge "unused.v1.Order" (\_ wire value -> Proto.Binary.skip wire value) identity
 
 
 {-| Decodes an [`Order`](#Order) from protobuf binary.
@@ -512,7 +514,7 @@ decodeOrderBytes =
 -}
 mergeNeverBytes : Never -> Proto.Binary.Decoder Never
 mergeNeverBytes =
-    Proto.Binary.merge (\_ wire value -> Proto.Binary.skip wire value) identity
+    Proto.Binary.merge "unused.v1.Never" (\_ wire value -> Proto.Binary.skip wire value) identity
 
 
 {-| Decodes a [`Never`](#Never) from protobuf binary.
@@ -526,7 +528,7 @@ decodeNeverBytes =
 -}
 mergeCmdBytes : Cmd -> Proto.Binary.Decoder Cmd
 mergeCmdBytes =
-    Proto.Binary.merge (\_ wire value -> Proto.Binary.skip wire value) identity
+    Proto.Binary.merge "unused.v1.Cmd" (\_ wire value -> Proto.Binary.skip wire value) identity
 
 
 {-| Decodes a [`Cmd`](#Cmd) from protobuf binary.
@@ -540,7 +542,7 @@ decodeCmdBytes =
 -}
 mergeTrueBytes : True -> Proto.Binary.Decoder True
 mergeTrueBytes =
-    Proto.Binary.merge (\_ wire value -> Proto.Binary.skip wire value) identity
+    Proto.Binary.merge "unused.v1.True" (\_ wire value -> Proto.Binary.skip wire value) identity
 
 
 {-| Decodes a [`True`](#True) from protobuf binary.

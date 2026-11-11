@@ -834,6 +834,7 @@ decodeOuterInnerKindBytes number =
 mergeOuterBytes : Outer -> Proto.Binary.Decoder Outer
 mergeOuterBytes =
     Proto.Binary.merge
+        "nesting.v1.Outer"
         (\number wire value ->
             case number of
                 1 ->
@@ -863,6 +864,7 @@ decodeOuterBytes =
 mergeOuterInnerBytes : OuterInner -> Proto.Binary.Decoder OuterInner
 mergeOuterInnerBytes =
     Proto.Binary.merge
+        "nesting.v1.Outer.Inner"
         (\number wire value ->
             case number of
                 1 ->
@@ -886,6 +888,7 @@ decodeOuterInnerBytes =
 mergeOuterInnerDeepestBytes : OuterInnerDeepest -> Proto.Binary.Decoder OuterInnerDeepest
 mergeOuterInnerDeepestBytes =
     Proto.Binary.merge
+        "nesting.v1.Outer.Inner.Deepest"
         (\number wire value ->
             case number of
                 1 ->
@@ -909,6 +912,7 @@ decodeOuterInnerDeepestBytes =
 mergeNodeBytes : Node -> Proto.Binary.Decoder Node
 mergeNodeBytes =
     Proto.Binary.merge
+        "nesting.v1.Node"
         (\number wire value ->
             case number of
                 1 ->
@@ -945,6 +949,7 @@ mergeNode_Bytes (Node_ value) =
 mergePersonBytes : Person -> Proto.Binary.Decoder Person
 mergePersonBytes =
     Proto.Binary.merge
+        "nesting.v1.Person"
         (\number wire value ->
             case number of
                 1 ->
@@ -978,6 +983,7 @@ mergePerson_Bytes (Person_ value) =
 mergeCompanyBytes : Company -> Proto.Binary.Decoder Company
 mergeCompanyBytes =
     Proto.Binary.merge
+        "nesting.v1.Company"
         (\number wire value ->
             case number of
                 1 ->
@@ -1011,6 +1017,7 @@ mergeCompany_Bytes (Company_ value) =
 mergeForestBytes : Forest -> Proto.Binary.Decoder Forest
 mergeForestBytes =
     Proto.Binary.merge
+        "nesting.v1.Forest"
         (\number wire value ->
             case number of
                 1 ->
@@ -1034,6 +1041,7 @@ decodeForestBytes =
 mergeExprBytes : Expr -> Proto.Binary.Decoder Expr
 mergeExprBytes =
     Proto.Binary.merge
+        "nesting.v1.Expr"
         (\number wire value ->
             case number of
                 1 ->
@@ -1071,6 +1079,7 @@ decodeExprBytes =
 mergeSumBytes : Sum -> Proto.Binary.Decoder Sum
 mergeSumBytes =
     Proto.Binary.merge
+        "nesting.v1.Sum"
         (\number wire value ->
             case number of
                 1 ->

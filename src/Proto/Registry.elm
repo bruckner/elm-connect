@@ -90,17 +90,17 @@ register (Message.Message name codecs) (Internal.Registry leniency entries) =
         entry =
             { toJson =
                 \registry base64 ->
-                    case Proto.Bytes.fromBase64 base64 |> Maybe.andThen (Proto.Internal.Binary.run codecs.decode) of
-                        Just value ->
+                    case Proto.Internal.Binary.runBase64 codecs.decodeBinary base64 of
+                        Ok value ->
                             codecs.encodeJson registry value
                                 |> Result.fromMaybe HoldsUnwritable
 
-                        Nothing ->
+                        Err _ ->
                             Err NotTheMessage
             , toBytes =
                 \registry json ->
-                    Json.Decode.decodeValue (codecs.decoder registry) json
-                        |> Result.map (codecs.encode >> Bytes.Encode.encode >> Proto.Bytes.toBase64)
+                    Json.Decode.decodeValue (codecs.decodeJson registry) json
+                        |> Result.map (codecs.encodeBinary >> Bytes.Encode.encode >> Proto.Bytes.toBase64)
                         |> Result.mapError Json.Decode.errorToString
             }
     in

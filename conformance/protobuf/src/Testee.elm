@@ -21,6 +21,7 @@ import Json.Encode
 import Proto.Any
 import Proto.Binary
 import Proto.Bytes
+import Proto.Error
 import Proto.Registry exposing (Registry)
 import Proto.WellKnown
 import ProtobufTestMessages.Proto3 as Proto3
@@ -105,9 +106,13 @@ read : Request -> Result ( String, String ) Proto3.TestAllTypesProto3
 read request =
     case request.inputFormat of
         "protobuf" ->
-            Proto.Bytes.fromBase64 request.payload
-                |> Maybe.andThen (Proto.Binary.decode Proto3.decodeTestAllTypesProto3Bytes)
-                |> Result.fromMaybe ( "parseError", "not a TestAllTypesProto3 in protobuf binary" )
+            case Proto.Bytes.fromBase64 request.payload of
+                Just input ->
+                    Proto.Binary.decode Proto3.decodeTestAllTypesProto3Bytes input
+                        |> Result.mapError (\problem -> ( "parseError", Proto.Error.toString (Proto.Error.BadBinary problem) ))
+
+                Nothing ->
+                    Err ( "parseError", "the payload is not base64" )
 
         "json" ->
             Json.Decode.decodeString (Proto3.decodeTestAllTypesProto3With registry) request.payload
