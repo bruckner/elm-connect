@@ -36,9 +36,10 @@ import Json.Decode
   - `BadJson`: proto3 JSON that is not the message it was read as, with
     elm/json's error, whose path locates the failure.
   - `TypeMismatch`: a `google.protobuf.Any` unpacked as another type than
-    the one it holds: `unpackedAs` is the full name of the type the program
-    unpacked it as, `typeUrl` the URL the `Any` names its type by, as
-    [`Proto.Any.typeUrl`](Proto-Any#typeUrl) gives it.
+    the one it holds: `expected` is the full name of the type the program
+    unpacked it as, `actual` the full name of the type the `Any` holds, its
+    type URL without the prefix, as [`Proto.Any.typeName`](Proto-Any#typeName)
+    gives it.
   - `UnregisteredType`: a `google.protobuf.Any` of a type, its URL here,
     that the registry it was converted through has no entry for. Register
     the type.
@@ -47,7 +48,7 @@ import Json.Decode
 type Error
     = BadBinary Binary
     | BadJson Json.Decode.Error
-    | TypeMismatch { unpackedAs : String, typeUrl : String }
+    | TypeMismatch { expected : String, actual : String }
     | UnregisteredType String
 
 
@@ -131,8 +132,8 @@ toString error =
         BadJson jsonError ->
             Json.Decode.errorToString jsonError
 
-        TypeMismatch { unpackedAs, typeUrl } ->
-            "An Any holding " ++ typeUrl ++ " was unpacked as " ++ unpackedAs ++ "."
+        TypeMismatch { expected, actual } ->
+            "An Any holding " ++ actual ++ " was unpacked as " ++ expected ++ "."
 
         UnregisteredType typeUrl ->
             "An Any holding " ++ typeUrl ++ " was converted through a registry that has no entry for its type."

@@ -40,11 +40,11 @@ suite =
                         Expect.fail "decoded"
         , test "a type mismatch and an unregistered type name both types" <|
             \_ ->
-                ( Error.toString (TypeMismatch { unpackedAs = "a.B", typeUrl = "type.googleapis.com/c.D" })
+                ( Error.toString (TypeMismatch { expected = "a.B", actual = "c.D" })
                 , Error.toString (UnregisteredType "type.googleapis.com/c.D")
                 )
                     |> Expect.equal
-                        ( "An Any holding type.googleapis.com/c.D was unpacked as a.B."
+                        ( "An Any holding c.D was unpacked as a.B."
                         , "An Any holding type.googleapis.com/c.D was converted through a registry that has no entry for its type."
                         )
         , test "binary that cannot reach the readers is Unlocated" <|

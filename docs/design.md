@@ -3552,7 +3552,7 @@ carry it.
 type Error
     = BadBinary Binary                  -- protobuf binary that is not the message
     | BadJson Json.Decode.Error         -- proto3 JSON that is not the message; elm/json's path locates it
-    | TypeMismatch { unpackedAs : String, typeUrl : String }  -- an Any unpacked as another type
+    | TypeMismatch { expected : String, actual : String }    -- an Any unpacked as another type, both full names
     | UnregisteredType String           -- an Any's type URL the registry has no entry for
 
 type alias Binary =
