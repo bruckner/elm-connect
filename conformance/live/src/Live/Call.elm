@@ -603,6 +603,6 @@ reasonToString reason =
                         Proto.Error.BadJson _ ->
                             "BadJson"
 
-                        Proto.Error.TypeMismatch { typeName } ->
-                            "TypeMismatch " ++ typeName
+                        Proto.Error.TypeMismatch { expected } ->
+                            "TypeMismatch " ++ expected
                    )

@@ -1155,7 +1155,7 @@ In detail:
   two `Bytes` equal). `pack` (prefix `type.googleapis.com/`) and
   `packWith` (another prefix) take the message's typed value (§3.9) and
   a value; `tryUnpack` gives the value or a `Proto.Error.Error`
-  (§5.4), `TypeMismatch` naming the type asked for and the URL inside or
+  (§5.4), `TypeMismatch` naming both types, asked for and inside, or
   `BadBinary` for binary that is not the message (`BadJson` for an `Any`
   a lenient registry holds as JSON alone, read with the message's JSON
   decoder), and `unpack` is that as a `Maybe`. `is` tests the type,
@@ -3587,11 +3587,15 @@ toString : Error -> String              -- for a log, as Json.Decode.errorToStri
   its readers. `Proto.Descriptors.fieldName descriptors typeName number`
   gives a path entry's declared field name, for a program that keeps
   descriptors and wants names in a report; `Proto.Error` stays a leaf.
-- **The names.** `typeName` is always the full name of the type the
-  program asked for (the message it decoded, the typed value it
-  unpacked with); `typeUrl` is what came off the wire, an `Any`'s type
-  URL. `UnregisteredType` takes the URL alone, so it is bare;
-  `TypeMismatch` is a record, since its two strings need telling apart.
+- **The names.** A `Binary`'s `typeName` is the message the program
+  decoded, the outermost. `UnregisteredType` carries what came off the
+  wire, the `Any`'s type URL as `Proto.Any.typeUrl` gives it, and takes
+  it alone, so it is bare. `TypeMismatch` is a record of two full names,
+  `expected` (the type the program unpacked the `Any` as) and `actual`
+  (the `Any`'s, as `Proto.Any.typeName` gives it), as Go's report of the
+  same mismatch names them: two strings of one kind, told apart by the
+  assertion words, where a name beside a URL was told apart by nothing
+  but its field name. The `Any` in the caller's hand still has the URL.
   `BadJson` carries elm/json's error alone: its path locates the
   failure, and a type name would have to be plumbed from every caller.
 - **What each operation gives.**

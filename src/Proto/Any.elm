@@ -163,8 +163,8 @@ unpack message any =
 
 
 {-| The packed message, or why it cannot be read: `TypeMismatch` when the
-`Any` holds another type than the typed value's (the typed value's full name,
-and the `Any`'s type URL), or `BadBinary` when its binary is not that
+`Any` holds another type than the typed value's (both full names: the typed
+value's as `expected`, the `Any`'s as `actual`), or `BadBinary` when its binary is not that
 message, which the sender's message and yours disagreeing causes and nothing
 in the program fixes. Test the type with [`is`](#is) first to tell the two
 apart before unpacking.
@@ -188,7 +188,7 @@ tryUnpack ((InternalMessage.Message _ codecs) as message) ((Internal.Any url pay
                     |> Result.mapError BadBinary
 
     else
-        Err (TypeMismatch { typeName = Message.typeName message, typeUrl = url })
+        Err (TypeMismatch { expected = Message.typeName message, actual = typeName any })
 
 
 

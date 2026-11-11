@@ -135,7 +135,7 @@ suite =
                 )
                     |> Expect.equal
                         ( Just (Err (BadBinary truncatedTitle))
-                        , Err (TypeMismatch { typeName = "google.protobuf.Int32Value", typeUrl = "type.googleapis.com/notes.v1.Title" })
+                        , Err (TypeMismatch { expected = "google.protobuf.Int32Value", actual = "notes.v1.Title" })
                         )
         , test "written as proto3 JSON through the registry's entry for its type" <|
             \_ ->

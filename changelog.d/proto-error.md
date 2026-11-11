@@ -1,8 +1,9 @@
 - Breaking: the proto layer has one error type, `Proto.Error.Error`.
   `Proto.Any.Problem` and `Rpc.Error.DetailProblem` are gone.
   `Proto.Any.tryUnpack` gives `Result Proto.Error.Error a`
-  (`TypeMismatch { typeName, typeUrl }`, the type asked for and the URL
-  inside, or the `BadBinary` of binary that is not the message).
+  (`TypeMismatch { expected, actual }`, both full names, the type it was
+  unpacked as and the type inside, or the `BadBinary` of binary that is
+  not the message).
   `Proto.Any.toJson`, `Proto.Json.encodeAnyWith`, the generated
   `encodeNoteWith` and `Proto.Message.initWith`'s encoder give
   `Result Proto.Error.Error Value`: `UnregisteredType url`, or the

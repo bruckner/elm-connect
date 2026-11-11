@@ -127,8 +127,8 @@ word =
     Result.mapError
         (\problem ->
             case problem of
-                TypeMismatch { typeName, typeUrl } ->
-                    "type " ++ typeUrl ++ " as " ++ typeName
+                TypeMismatch { expected, actual } ->
+                    "type " ++ actual ++ " as " ++ expected
 
                 BadBinary binary ->
                     "binary " ++ binary.typeName
@@ -204,7 +204,7 @@ suite =
                 ( Any.tryUnpack WellKnown.duration (Any.pack messageNote note) |> word
                 , Any.unpack WellKnown.duration (Any.pack messageNote note)
                 )
-                    |> Expect.equal ( Err "type type.googleapis.com/notes.v1.Note as google.protobuf.Duration", Nothing )
+                    |> Expect.equal ( Err "type notes.v1.Note as google.protobuf.Duration", Nothing )
         , test "toJson gives the message's JSON through the registry" <|
             \_ ->
                 [ Any.pack messageNote note, Any.pack WellKnown.stringValue "hi" ]

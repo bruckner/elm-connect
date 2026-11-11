@@ -256,8 +256,8 @@ brief problem =
         Proto.Error.BadBinary binary ->
             "binary " ++ binary.typeName
 
-        Proto.Error.TypeMismatch { typeName } ->
-            "mismatch " ++ typeName
+        Proto.Error.TypeMismatch { expected } ->
+            "mismatch " ++ expected
 
 
 jsonFailure : List String -> Json.Decode.Error -> String
