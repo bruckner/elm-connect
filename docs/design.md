@@ -3280,7 +3280,10 @@ conformance suite's gRPC-Web client cases (§7).
   `grpc-message` percent-decoded (kept as sent when it is not
   well-formed) and `grpc-status-details-bin` (base64, padding optional)
   read as a `google.rpc.Status` whose `details` are the error's, binary
-  `Any`s that need no registry (§5.4). `source` is `GrpcTrailers` from a body and `GrpcHeaders` from
+  `Any`s that need no registry (§5.4), and whose code and message, when
+  it has a code, win over `grpc-status` and `grpc-message`, as connect-go
+  and connect-es read them (grpc-go takes the Status too, when the codes
+  agree); one without a code leaves the trailers' standing. `source` is `GrpcTrailers` from a body and `GrpcHeaders` from
   headers. Any other HTTP status goes through the shared error reader
   (§5.4). Status 0 with no message or two, a compressed frame, a frame
   running past the end, or no status anywhere is a `BadResponse`; the

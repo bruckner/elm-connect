@@ -180,6 +180,9 @@ type alias StatusError =
     `grpc-status-details-bin`.
   - `GrpcTrailers`: the `grpc-status`, `grpc-message` and
     `grpc-status-details-bin` trailers that end a gRPC-Web answer's body.
+    Either way, when `grpc-status-details-bin` holds a `google.rpc.Status`
+    with a code, its code and message are the error's, as connect-go and
+    connect-es read them, and its details are the error's details.
 
 A failure with none of these is an `HttpStatus` error, and so is a success
 that is not the protocol's answer and states none (see [`Error`](#Error)).

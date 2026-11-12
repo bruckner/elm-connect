@@ -6,7 +6,9 @@
   `X-Grpc-Web: 1` and the client's timeout as `grpc-timeout`. The
   answer's status is read from the trailers frame in its body, or from
   its headers when it has none, with `grpc-message` percent-decoded and
-  the details from `grpc-status-details-bin`. `withReadMaxBytes` and
+  the details from `grpc-status-details-bin`, whose `google.rpc.Status`,
+  when it has a code, gives the error's code and message in place of the
+  trailers', as connect-go reads it. `withReadMaxBytes` and
   `withWriteMaxBytes` count the messages, not their frames;
   `withConnectGet` and `withMaxGetUrl` leave it as it is.
   `Rpc.Protocol.name` gives `"grpc-web"`. A program that does not name

@@ -14,8 +14,9 @@
   `StatusError.details` is `List (Result Proto.Error.Error Any)`: a
   Connect detail with no `type` or a `value` not in base64, and a
   `google.rpc.Status` detail with no `"@type"` or not its message, are
-  the detail's `BadJson`; an undecodable `grpc-status-details-bin` is
-  the `BadBinary` of `google.rpc.Status`; a type the client's registry
+  the detail's `BadJson`; a `grpc-status-details-bin` that is base64 but
+  not a `google.rpc.Status` is its `BadBinary`, and one that is not base64
+  a `BadResponse` with code `Internal`; a type the client's registry
   lacks is `UnregisteredType`. A trace's `detailProblems` and
   `Rpc.Error.message` describe them with `Proto.Error.toString`.
 - A binary answer that is not the response is a `BadResponse` whose

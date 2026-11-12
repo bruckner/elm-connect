@@ -213,25 +213,44 @@ settle source metadata raw status messages =
                     Err (Error.BadResponse Code.Internal "a grpc-status-details-bin trailer that is not base64" answer)
 
                 encoded ->
+                    let
+                        fromTrailers =
+                            ( number
+                            , Dict.get "grpc-message" status
+                                |> Maybe.map (\text -> Percent.percentDecode text |> Maybe.withDefault text)
+                                |> Maybe.withDefault ""
+                            )
+
+                        -- The Status in the trailer is the richer form of the
+                        -- same status: its message is not percent-encoded and
+                        -- it holds the details. connect-go and connect-es take
+                        -- the code and message from it when it decodes, and so
+                        -- does this; one without a code (0, left out) is
+                        -- incomplete, and the trailers stand for both.
+                        ( ( codeNumber, message ), details ) =
+                            case encoded of
+                                Just (Just binary) ->
+                                    case Proto.Binary.decode statusProto binary of
+                                        Ok proto ->
+                                            ( if proto.code /= 0 then
+                                                ( proto.code, proto.message )
+
+                                              else
+                                                fromTrailers
+                                            , List.map Ok proto.details
+                                            )
+
+                                        Err problem ->
+                                            ( fromTrailers, [ Err (Proto.Error.BadBinary problem) ] )
+
+                                _ ->
+                                    ( fromTrailers, [] )
+                    in
                     Err
                         (Error.RpcStatus
-                            { code = Code.fromInt number |> Maybe.withDefault Code.Unknown
-                            , message =
-                                Dict.get "grpc-message" status
-                                    |> Maybe.map (\text -> Percent.percentDecode text |> Maybe.withDefault text)
-                                    |> Maybe.withDefault ""
-                            , details =
-                                case encoded of
-                                    Just (Just binary) ->
-                                        case Proto.Binary.decode statusDetails binary of
-                                            Ok found ->
-                                                List.map Ok found
-
-                                            Err problem ->
-                                                [ Err (Proto.Error.BadBinary problem) ]
-
-                                    _ ->
-                                        []
+                            { code = Code.fromInt codeNumber |> Maybe.withDefault Code.Unknown
+                            , message = message
+                            , details = details
                             , source = source
                             }
                             answer
@@ -241,22 +260,35 @@ settle source metadata raw status messages =
             Err (Error.BadResponse Code.Internal "a gRPC-Web answer without a numeric grpc-status" answer)
 
 
-{-| The `details` of a `google.rpc.Status` (field 3, repeated `Any`), its code
-and message skipped: the status's own are in `grpc-status` and
-`grpc-message`.
+{-| A `google.rpc.Status`: its code (field 1), message (2) and details (3,
+repeated `Any`), read from a `grpc-status-details-bin` trailer.
 -}
-statusDetails : Proto.Binary.Decoder (List Any)
-statusDetails =
-    Proto.Binary.merge "google.rpc.Status"
-        (\number wire details ->
-            if number == 3 then
-                Proto.Binary.repeated Proto.Binary.any identity details wire details
+type alias StatusProto =
+    { code : Int
+    , message : String
+    , details : List Any
+    }
 
-            else
-                Proto.Binary.skip wire details
+
+statusProto : Proto.Binary.Decoder StatusProto
+statusProto =
+    Proto.Binary.merge "google.rpc.Status"
+        (\number wire proto ->
+            case number of
+                1 ->
+                    Proto.Binary.field Proto.Binary.int32 (\code -> { proto | code = code }) wire proto
+
+                2 ->
+                    Proto.Binary.field Proto.Binary.string (\message -> { proto | message = message }) wire proto
+
+                3 ->
+                    Proto.Binary.repeated Proto.Binary.any (\details -> { proto | details = details }) proto.details wire proto
+
+                _ ->
+                    Proto.Binary.skip wire proto
         )
-        List.reverse
-        []
+        (\proto -> { proto | details = List.reverse proto.details })
+        { code = 0, message = "", details = [] }
 
 
 {-| The frames of a body `width` bytes long: its uncompressed messages in
