@@ -22,3 +22,6 @@
 - `Rpc.Code`'s conversions read one table of the sixteen codes: 14 to
   49 B smaller gzipped on a minimal client, about 140 to 190 B on a
   program that names codes, as the notes example does.
+- Percent-decoding, which reads a gRPC-Web or gRPC status message,
+  reads the text once instead of through a list of its bytes: 36 to
+  84 B smaller gzipped, with the same results on malformed escapes.
