@@ -56,13 +56,13 @@ other union.
 
 -}
 
-import Bytes.Encode
 import Json.Decode
 import Json.Encode
 import Proto.Binary
 import Proto.Codec
 import Proto.Error
 import Proto.Http exposing (Binding)
+import Proto.Internal.Binary
 import Proto.Internal.Binding
 import Proto.Internal.Interpret
 import Proto.Internal.Method as Internal
@@ -124,7 +124,7 @@ request's binary encoder and its response's binary decoder. Its calls go over a
 protocol speaking protobuf binary, which transcoding is not, so it takes no
 routes.
 -}
-initProto : String -> String -> (req -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder res -> Method Proto.Codec.Proto req res
+initProto : String -> String -> (req -> Proto.Binary.Encoder) -> Proto.Binary.Decoder res -> Method Proto.Codec.Proto req res
 initProto serviceName methodName encode decoder =
     Internal.Method
         { service = serviceName
@@ -155,7 +155,7 @@ sent over JSON: it fails with
 [`NoAnswer (BadAny error)`](Rpc-Error#Reason).
 
 -}
-init : String -> String -> (Registry -> req -> Result Proto.Error.Error Json.Encode.Value) -> (Registry -> Json.Decode.Decoder res) -> (req -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder res -> Method codec req res
+init : String -> String -> (Registry -> req -> Result Proto.Error.Error Json.Encode.Value) -> (Registry -> Json.Decode.Decoder res) -> (req -> Proto.Binary.Encoder) -> Proto.Binary.Decoder res -> Method codec req res
 init serviceName methodName encode decoder encodeBinary binaryDecoder =
     Internal.Method
         { service = serviceName
@@ -167,9 +167,9 @@ init serviceName methodName encode decoder encodeBinary binaryDecoder =
         }
 
 
-binaryHalf : (req -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder res -> Internal.BinaryHalf req res
+binaryHalf : (req -> Proto.Binary.Encoder) -> Proto.Binary.Decoder res -> Internal.BinaryHalf req res
 binaryHalf encode decoder =
-    { encode = encode
+    { encode = encode >> Proto.Internal.Binary.encoder
     , decode = Proto.Binary.decode decoder
     }
 

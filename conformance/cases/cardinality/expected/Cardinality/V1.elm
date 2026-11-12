@@ -8,7 +8,6 @@ module Cardinality.V1 exposing (..)
 singular message fields, and repeated scalars and messages.
 -}
 
-import Bytes.Encode
 import Cardinality.V1.Author
 import Cardinality.V1.Note
 import Json.Decode
@@ -226,18 +225,18 @@ decodeNote =
 
 {-| Encodes an [`Author`](#Author) as protobuf binary.
 -}
-encodeAuthorBytes : Author -> Bytes.Encode.Encoder
+encodeAuthorBytes : Author -> Proto.Binary.Encoder
 encodeAuthorBytes value =
-    Bytes.Encode.sequence
+    Proto.Binary.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         ]
 
 
 {-| Encodes a [`Note`](#Note) as protobuf binary.
 -}
-encodeNoteBytes : Note -> Bytes.Encode.Encoder
+encodeNoteBytes : Note -> Proto.Binary.Encoder
 encodeNoteBytes value =
-    Bytes.Encode.sequence
+    Proto.Binary.sequence
         [ Proto.Binary.optional Proto.Binary.string 1 value.subtitle
         , Proto.Binary.optional Proto.Binary.int32 2 value.stars
         , Proto.Binary.optional Proto.Binary.double 3 value.score

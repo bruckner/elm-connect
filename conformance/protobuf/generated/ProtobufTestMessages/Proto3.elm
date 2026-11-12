@@ -4,7 +4,6 @@
 
 module ProtobufTestMessages.Proto3 exposing (..)
 
-import Bytes.Encode
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
@@ -1404,9 +1403,9 @@ encodeEnumOnlyProto3BoolBytes value =
 
 {-| Encodes a [`TestAllTypesProto3`](#TestAllTypesProto3) as protobuf binary.
 -}
-encodeTestAllTypesProto3Bytes : TestAllTypesProto3 -> Bytes.Encode.Encoder
+encodeTestAllTypesProto3Bytes : TestAllTypesProto3 -> Proto.Binary.Encoder
 encodeTestAllTypesProto3Bytes value =
-    Bytes.Encode.sequence
+    Proto.Binary.sequence
         [ Proto.Binary.implicit Proto.Binary.int32 1 value.optionalInt32
         , Proto.Binary.implicit Proto.Binary.int64 2 value.optionalInt64
         , Proto.Binary.implicit Proto.Binary.uint32 3 value.optionalUint32
@@ -1554,18 +1553,18 @@ encodeTestAllTypesProto3Bytes value =
 
 {-| Encodes a [`TestAllTypesProto3_`](#TestAllTypesProto3_) as protobuf binary.
 -}
-encodeTestAllTypesProto3_Bytes : TestAllTypesProto3_ -> Bytes.Encode.Encoder
+encodeTestAllTypesProto3_Bytes : TestAllTypesProto3_ -> Proto.Binary.Encoder
 encodeTestAllTypesProto3_Bytes (TestAllTypesProto3_ value) =
     encodeTestAllTypesProto3Bytes value
 
 
 {-| Encodes a [`TestAllTypesProto3OneofField`](#TestAllTypesProto3OneofField) as protobuf binary: its set member's field.
 -}
-encodeTestAllTypesProto3OneofFieldBytes : TestAllTypesProto3OneofField -> Bytes.Encode.Encoder
+encodeTestAllTypesProto3OneofFieldBytes : TestAllTypesProto3OneofField -> Proto.Binary.Encoder
 encodeTestAllTypesProto3OneofFieldBytes value =
     case value of
         TestAllTypesProto3OneofFieldUnset ->
-            Bytes.Encode.sequence []
+            Proto.Binary.sequence []
 
         TestAllTypesProto3OneofFieldOneofUint32 member ->
             Proto.Binary.present Proto.Binary.uint32 111 member
@@ -1600,9 +1599,9 @@ encodeTestAllTypesProto3OneofFieldBytes value =
 
 {-| Encodes a [`TestAllTypesProto3NestedMessage`](#TestAllTypesProto3NestedMessage) as protobuf binary.
 -}
-encodeTestAllTypesProto3NestedMessageBytes : TestAllTypesProto3NestedMessage -> Bytes.Encode.Encoder
+encodeTestAllTypesProto3NestedMessageBytes : TestAllTypesProto3NestedMessage -> Proto.Binary.Encoder
 encodeTestAllTypesProto3NestedMessageBytes value =
-    Bytes.Encode.sequence
+    Proto.Binary.sequence
         [ Proto.Binary.implicit Proto.Binary.int32 1 value.a
         , Proto.Binary.optional (Proto.Binary.embedded encodeTestAllTypesProto3_Bytes mergeTestAllTypesProto3_Bytes (TestAllTypesProto3_ defaultTestAllTypesProto3)) 2 value.corecursive
         ]
@@ -1610,32 +1609,32 @@ encodeTestAllTypesProto3NestedMessageBytes value =
 
 {-| Encodes a [`TestAllTypesProto3NestedMessage_`](#TestAllTypesProto3NestedMessage_) as protobuf binary.
 -}
-encodeTestAllTypesProto3NestedMessage_Bytes : TestAllTypesProto3NestedMessage_ -> Bytes.Encode.Encoder
+encodeTestAllTypesProto3NestedMessage_Bytes : TestAllTypesProto3NestedMessage_ -> Proto.Binary.Encoder
 encodeTestAllTypesProto3NestedMessage_Bytes (TestAllTypesProto3NestedMessage_ value) =
     encodeTestAllTypesProto3NestedMessageBytes value
 
 
 {-| Encodes a [`ForeignMessage`](#ForeignMessage) as protobuf binary.
 -}
-encodeForeignMessageBytes : ForeignMessage -> Bytes.Encode.Encoder
+encodeForeignMessageBytes : ForeignMessage -> Proto.Binary.Encoder
 encodeForeignMessageBytes value =
-    Bytes.Encode.sequence
+    Proto.Binary.sequence
         [ Proto.Binary.implicit Proto.Binary.int32 1 value.c
         ]
 
 
 {-| Encodes a [`NullHypothesisProto3`](#NullHypothesisProto3) as protobuf binary.
 -}
-encodeNullHypothesisProto3Bytes : NullHypothesisProto3 -> Bytes.Encode.Encoder
+encodeNullHypothesisProto3Bytes : NullHypothesisProto3 -> Proto.Binary.Encoder
 encodeNullHypothesisProto3Bytes _ =
-    Bytes.Encode.sequence []
+    Proto.Binary.sequence []
 
 
 {-| Encodes an [`EnumOnlyProto3`](#EnumOnlyProto3) as protobuf binary.
 -}
-encodeEnumOnlyProto3Bytes : EnumOnlyProto3 -> Bytes.Encode.Encoder
+encodeEnumOnlyProto3Bytes : EnumOnlyProto3 -> Proto.Binary.Encoder
 encodeEnumOnlyProto3Bytes _ =
-    Bytes.Encode.sequence []
+    Proto.Binary.sequence []
 
 
 

@@ -8,7 +8,6 @@ module Notes.V1 exposing (..)
 other module's name, which the module imports.
 -}
 
-import Bytes.Encode
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
@@ -190,9 +189,9 @@ decodeNoteOwner =
 
 {-| Encodes a [`Note`](#Note) as protobuf binary.
 -}
-encodeNoteBytes : Note -> Bytes.Encode.Encoder
+encodeNoteBytes : Note -> Proto.Binary.Encoder
 encodeNoteBytes value =
-    Bytes.Encode.sequence
+    Proto.Binary.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.title
         , Proto.Binary.optional (Proto.Binary.embedded Users.V1.encodeUserBytes Users.V1.mergeUserBytes Users.V1.defaultUser) 2 value.author
         , Proto.Binary.implicit (Proto.Binary.enum Users.V1.encodeRoleBytes Users.V1.decodeRoleBytes) 3 value.requiredRole
@@ -204,11 +203,11 @@ encodeNoteBytes value =
 
 {-| Encodes a [`NoteOwner`](#NoteOwner) as protobuf binary: its set member's field.
 -}
-encodeNoteOwnerBytes : NoteOwner -> Bytes.Encode.Encoder
+encodeNoteOwnerBytes : NoteOwner -> Proto.Binary.Encoder
 encodeNoteOwnerBytes value =
     case value of
         NoteOwnerUnset ->
-            Bytes.Encode.sequence []
+            Proto.Binary.sequence []
 
         NoteOwnerUser member ->
             Proto.Binary.present (Proto.Binary.embedded Users.V1.encodeUserBytes Users.V1.mergeUserBytes Users.V1.defaultUser) 6 member

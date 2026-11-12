@@ -10,7 +10,6 @@ none ignores it.
 
 -}
 
-import Bytes.Encode
 import Json.Decode
 import Json.Encode
 import Proto.Error
@@ -25,6 +24,6 @@ type Message a
 type alias Codecs a =
     { encodeJson : Registry -> a -> Result Proto.Error.Error Json.Encode.Value
     , decodeJson : Registry -> Json.Decode.Decoder a
-    , encodeBinary : a -> Bytes.Encode.Encoder
+    , encodeBinary : a -> Proto.Internal.Binary.Encoder
     , decodeBinary : Proto.Internal.Binary.Decoder a
     }

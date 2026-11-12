@@ -12,7 +12,6 @@ Proto.Method.initJson, with JSON codecs alone. Item's codecs write and
 read its Any fields through the registry a client gives.
 -}
 
-import Bytes.Encode
 import Json.Decode
 import Json.Encode
 import Proto.Any
@@ -347,9 +346,9 @@ encodeStatusBytes value =
 
 {-| Encodes an [`Item`](#Item) as protobuf binary.
 -}
-encodeItemBytes : Item -> Bytes.Encode.Encoder
+encodeItemBytes : Item -> Proto.Binary.Encoder
 encodeItemBytes value =
-    Bytes.Encode.sequence
+    Proto.Binary.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         , Proto.Binary.implicit Proto.Binary.int64 2 value.size
         , Proto.Binary.implicit (Proto.Binary.enum encodeStatusBytes decodeStatusBytes) 3 value.status
@@ -360,27 +359,27 @@ encodeItemBytes value =
 
 {-| Encodes a [`GetItemRequest`](#GetItemRequest) as protobuf binary.
 -}
-encodeGetItemRequestBytes : GetItemRequest -> Bytes.Encode.Encoder
+encodeGetItemRequestBytes : GetItemRequest -> Proto.Binary.Encoder
 encodeGetItemRequestBytes value =
-    Bytes.Encode.sequence
+    Proto.Binary.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         ]
 
 
 {-| Encodes a [`ListItemsRequest`](#ListItemsRequest) as protobuf binary.
 -}
-encodeListItemsRequestBytes : ListItemsRequest -> Bytes.Encode.Encoder
+encodeListItemsRequestBytes : ListItemsRequest -> Proto.Binary.Encoder
 encodeListItemsRequestBytes value =
-    Bytes.Encode.sequence
+    Proto.Binary.sequence
         [ Proto.Binary.implicit Proto.Binary.int32 1 value.pageSize
         ]
 
 
 {-| Encodes a [`ListItemsResponse`](#ListItemsResponse) as protobuf binary.
 -}
-encodeListItemsResponseBytes : ListItemsResponse -> Bytes.Encode.Encoder
+encodeListItemsResponseBytes : ListItemsResponse -> Proto.Binary.Encoder
 encodeListItemsResponseBytes value =
-    Bytes.Encode.sequence
+    Proto.Binary.sequence
         [ Proto.Binary.list (Proto.Binary.embedded encodeItemBytes mergeItemBytes defaultItem) 1 value.items
         ]
 

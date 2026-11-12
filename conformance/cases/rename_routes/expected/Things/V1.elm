@@ -4,7 +4,6 @@
 
 module Things.V1 exposing (..)
 
-import Bytes.Encode
 import Json.Decode
 import Json.Encode
 import Proto.Binary
@@ -224,27 +223,27 @@ decodeGetThingRequest =
 
 {-| Encodes a [`Thing`](#Thing) as protobuf binary.
 -}
-encodeThingBytes : Thing -> Bytes.Encode.Encoder
+encodeThingBytes : Thing -> Proto.Binary.Encoder
 encodeThingBytes value =
-    Bytes.Encode.sequence
+    Proto.Binary.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         ]
 
 
 {-| Encodes a [`Criteria`](#Criteria) as protobuf binary.
 -}
-encodeCriteriaBytes : Criteria -> Bytes.Encode.Encoder
+encodeCriteriaBytes : Criteria -> Proto.Binary.Encoder
 encodeCriteriaBytes value =
-    Bytes.Encode.sequence
+    Proto.Binary.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.status
         ]
 
 
 {-| Encodes a [`GetThingRequest`](#GetThingRequest) as protobuf binary.
 -}
-encodeGetThingRequestBytes : GetThingRequest -> Bytes.Encode.Encoder
+encodeGetThingRequestBytes : GetThingRequest -> Proto.Binary.Encoder
 encodeGetThingRequestBytes value =
-    Bytes.Encode.sequence
+    Proto.Binary.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.resource
         , Proto.Binary.implicit Proto.Binary.int32 2 value.limit
         , Proto.Binary.optional (Proto.Binary.embedded encodeCriteriaBytes mergeCriteriaBytes defaultCriteria) 3 value.filter

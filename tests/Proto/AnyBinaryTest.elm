@@ -30,9 +30,9 @@ decodeTitleBytes =
         ""
 
 
-encodeTitleBytes : String -> Bytes.Encode.Encoder
+encodeTitleBytes : String -> Proto.Binary.Encoder
 encodeTitleBytes t =
-    Bytes.Encode.sequence [ Proto.Binary.implicit Proto.Binary.string 1 t ]
+    Proto.Binary.sequence [ Proto.Binary.implicit Proto.Binary.string 1 t ]
 
 
 encodeTitle : String -> Json.Encode.Value

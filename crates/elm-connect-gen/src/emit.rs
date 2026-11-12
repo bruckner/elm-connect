@@ -1042,7 +1042,6 @@ mod tests {
         assert_eq!(
             imports,
             [
-                "Bytes.Encode",
                 "Json.Decode",
                 "Json.Encode",
                 "Proto.Binary",
@@ -1071,7 +1070,6 @@ mod tests {
         assert_eq!(
             imports,
             [
-                "Bytes.Encode",
                 "Json.Decode",
                 "Json.Encode",
                 "Proto.Binary",
@@ -1233,7 +1231,6 @@ mod tests {
         assert_eq!(
             imports,
             [
-                "Bytes.Encode",
                 "Json.Decode",
                 "Json.Encode",
                 "Other.V1",

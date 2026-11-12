@@ -4,7 +4,6 @@
 
 module Catalog.V1 exposing (..)
 
-import Bytes.Encode
 import Catalog.V1.Entry
 import Catalog.V1.GetEntryRequest
 import Catalog.V1.Part
@@ -274,9 +273,9 @@ decodeGetEntryRequest =
 
 {-| Encodes an [`Entry`](#Entry) as protobuf binary.
 -}
-encodeEntryBytes : Entry -> Bytes.Encode.Encoder
+encodeEntryBytes : Entry -> Proto.Binary.Encoder
 encodeEntryBytes value =
-    Bytes.Encode.sequence
+    Proto.Binary.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         , Proto.Binary.implicit Proto.Binary.string 2 value.descriptor
         , Proto.Binary.implicit Proto.Binary.string 3 value.descriptors
@@ -285,20 +284,20 @@ encodeEntryBytes value =
 
 {-| Encodes a [`Part`](#Part) as protobuf binary.
 -}
-encodePartBytes : Part -> Bytes.Encode.Encoder
+encodePartBytes : Part -> Proto.Binary.Encoder
 encodePartBytes value =
-    Bytes.Encode.sequence
+    Proto.Binary.sequence
         [ encodePartKindBytes value.kind
         ]
 
 
 {-| Encodes a [`PartKind`](#PartKind) as protobuf binary: its set member's field.
 -}
-encodePartKindBytes : PartKind -> Bytes.Encode.Encoder
+encodePartKindBytes : PartKind -> Proto.Binary.Encoder
 encodePartKindBytes value =
     case value of
         PartKindUnset ->
-            Bytes.Encode.sequence []
+            Proto.Binary.sequence []
 
         PartKindDescriptor member ->
             Proto.Binary.present Proto.Binary.string 1 member
@@ -309,9 +308,9 @@ encodePartKindBytes value =
 
 {-| Encodes a [`GetEntryRequest`](#GetEntryRequest) as protobuf binary.
 -}
-encodeGetEntryRequestBytes : GetEntryRequest -> Bytes.Encode.Encoder
+encodeGetEntryRequestBytes : GetEntryRequest -> Proto.Binary.Encoder
 encodeGetEntryRequestBytes value =
-    Bytes.Encode.sequence
+    Proto.Binary.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         , Proto.Binary.implicit Proto.Binary.string 2 value.descriptor
         , Proto.Binary.optional (Proto.Binary.embedded encodePartBytes mergePartBytes defaultPart) 3 value.part

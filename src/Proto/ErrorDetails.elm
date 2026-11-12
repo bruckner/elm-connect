@@ -56,7 +56,6 @@ through its registry: give it [`registry`](#registry)
 
 -}
 
-import Bytes.Encode
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
@@ -657,40 +656,40 @@ decodeLocalizedMessage =
         |> Proto.Json.field "message" "" Proto.Json.string
 
 
-encodeErrorInfoBytes : ErrorInfo -> Bytes.Encode.Encoder
+encodeErrorInfoBytes : ErrorInfo -> Proto.Binary.Encoder
 encodeErrorInfoBytes value =
-    Bytes.Encode.sequence
+    Proto.Binary.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.reason
         , Proto.Binary.implicit Proto.Binary.string 2 value.domain
         , Proto.Binary.dict Proto.Binary.string Proto.Binary.string 3 value.metadata
         ]
 
 
-encodeRetryInfoBytes : RetryInfo -> Bytes.Encode.Encoder
+encodeRetryInfoBytes : RetryInfo -> Proto.Binary.Encoder
 encodeRetryInfoBytes value =
-    Bytes.Encode.sequence
+    Proto.Binary.sequence
         [ Proto.Binary.optional Proto.Binary.duration 1 value.retryDelay
         ]
 
 
-encodeDebugInfoBytes : DebugInfo -> Bytes.Encode.Encoder
+encodeDebugInfoBytes : DebugInfo -> Proto.Binary.Encoder
 encodeDebugInfoBytes value =
-    Bytes.Encode.sequence
+    Proto.Binary.sequence
         [ Proto.Binary.list Proto.Binary.string 1 value.stackEntries
         , Proto.Binary.implicit Proto.Binary.string 2 value.detail
         ]
 
 
-encodeQuotaFailureBytes : QuotaFailure -> Bytes.Encode.Encoder
+encodeQuotaFailureBytes : QuotaFailure -> Proto.Binary.Encoder
 encodeQuotaFailureBytes value =
-    Bytes.Encode.sequence
+    Proto.Binary.sequence
         [ Proto.Binary.list (Proto.Binary.embedded encodeQuotaFailureViolationBytes mergeQuotaFailureViolationBytes defaultQuotaFailureViolation) 1 value.violations
         ]
 
 
-encodeQuotaFailureViolationBytes : QuotaFailureViolation -> Bytes.Encode.Encoder
+encodeQuotaFailureViolationBytes : QuotaFailureViolation -> Proto.Binary.Encoder
 encodeQuotaFailureViolationBytes value =
-    Bytes.Encode.sequence
+    Proto.Binary.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.subject
         , Proto.Binary.implicit Proto.Binary.string 2 value.description
         , Proto.Binary.implicit Proto.Binary.string 3 value.apiService
@@ -702,32 +701,32 @@ encodeQuotaFailureViolationBytes value =
         ]
 
 
-encodePreconditionFailureBytes : PreconditionFailure -> Bytes.Encode.Encoder
+encodePreconditionFailureBytes : PreconditionFailure -> Proto.Binary.Encoder
 encodePreconditionFailureBytes value =
-    Bytes.Encode.sequence
+    Proto.Binary.sequence
         [ Proto.Binary.list (Proto.Binary.embedded encodePreconditionFailureViolationBytes mergePreconditionFailureViolationBytes defaultPreconditionFailureViolation) 1 value.violations
         ]
 
 
-encodePreconditionFailureViolationBytes : PreconditionFailureViolation -> Bytes.Encode.Encoder
+encodePreconditionFailureViolationBytes : PreconditionFailureViolation -> Proto.Binary.Encoder
 encodePreconditionFailureViolationBytes value =
-    Bytes.Encode.sequence
+    Proto.Binary.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.type_
         , Proto.Binary.implicit Proto.Binary.string 2 value.subject
         , Proto.Binary.implicit Proto.Binary.string 3 value.description
         ]
 
 
-encodeBadRequestBytes : BadRequest -> Bytes.Encode.Encoder
+encodeBadRequestBytes : BadRequest -> Proto.Binary.Encoder
 encodeBadRequestBytes value =
-    Bytes.Encode.sequence
+    Proto.Binary.sequence
         [ Proto.Binary.list (Proto.Binary.embedded encodeBadRequestFieldViolationBytes mergeBadRequestFieldViolationBytes defaultBadRequestFieldViolation) 1 value.fieldViolations
         ]
 
 
-encodeBadRequestFieldViolationBytes : BadRequestFieldViolation -> Bytes.Encode.Encoder
+encodeBadRequestFieldViolationBytes : BadRequestFieldViolation -> Proto.Binary.Encoder
 encodeBadRequestFieldViolationBytes value =
-    Bytes.Encode.sequence
+    Proto.Binary.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.field
         , Proto.Binary.implicit Proto.Binary.string 2 value.description
         , Proto.Binary.implicit Proto.Binary.string 3 value.reason
@@ -735,17 +734,17 @@ encodeBadRequestFieldViolationBytes value =
         ]
 
 
-encodeRequestInfoBytes : RequestInfo -> Bytes.Encode.Encoder
+encodeRequestInfoBytes : RequestInfo -> Proto.Binary.Encoder
 encodeRequestInfoBytes value =
-    Bytes.Encode.sequence
+    Proto.Binary.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.requestId
         , Proto.Binary.implicit Proto.Binary.string 2 value.servingData
         ]
 
 
-encodeResourceInfoBytes : ResourceInfo -> Bytes.Encode.Encoder
+encodeResourceInfoBytes : ResourceInfo -> Proto.Binary.Encoder
 encodeResourceInfoBytes value =
-    Bytes.Encode.sequence
+    Proto.Binary.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.resourceType
         , Proto.Binary.implicit Proto.Binary.string 2 value.resourceName
         , Proto.Binary.implicit Proto.Binary.string 3 value.owner
@@ -753,24 +752,24 @@ encodeResourceInfoBytes value =
         ]
 
 
-encodeHelpBytes : Help -> Bytes.Encode.Encoder
+encodeHelpBytes : Help -> Proto.Binary.Encoder
 encodeHelpBytes value =
-    Bytes.Encode.sequence
+    Proto.Binary.sequence
         [ Proto.Binary.list (Proto.Binary.embedded encodeHelpLinkBytes mergeHelpLinkBytes defaultHelpLink) 1 value.links
         ]
 
 
-encodeHelpLinkBytes : HelpLink -> Bytes.Encode.Encoder
+encodeHelpLinkBytes : HelpLink -> Proto.Binary.Encoder
 encodeHelpLinkBytes value =
-    Bytes.Encode.sequence
+    Proto.Binary.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.description
         , Proto.Binary.implicit Proto.Binary.string 2 value.url
         ]
 
 
-encodeLocalizedMessageBytes : LocalizedMessage -> Bytes.Encode.Encoder
+encodeLocalizedMessageBytes : LocalizedMessage -> Proto.Binary.Encoder
 encodeLocalizedMessageBytes value =
-    Bytes.Encode.sequence
+    Proto.Binary.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.locale
         , Proto.Binary.implicit Proto.Binary.string 2 value.message
         ]

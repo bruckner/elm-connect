@@ -142,7 +142,7 @@ message name step =
 
 embedded : (() -> B.Decoder ()) -> B.Codec ()
 embedded decoder =
-    B.embedded (\() -> Bytes.Encode.sequence []) (\_ -> decoder ()) ()
+    B.embedded (\() -> B.sequence []) (\_ -> decoder ()) ()
 
 
 payload : () -> B.Decoder ()

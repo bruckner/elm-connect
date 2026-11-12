@@ -8,7 +8,6 @@ module Clock.V1 exposing (..)
 another generated package, generated under `int64=int`.
 -}
 
-import Bytes.Encode
 import Clock.V1.Alarm
 import Json.Decode
 import Json.Encode
@@ -122,9 +121,9 @@ decodeAlarm =
 
 {-| Encodes an [`Alarm`](#Alarm) as protobuf binary.
 -}
-encodeAlarmBytes : Alarm -> Bytes.Encode.Encoder
+encodeAlarmBytes : Alarm -> Proto.Binary.Encoder
 encodeAlarmBytes value =
-    Bytes.Encode.sequence
+    Proto.Binary.sequence
         [ Proto.Binary.optional Proto.Binary.timestamp 1 value.at
         ]
 

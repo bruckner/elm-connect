@@ -9,7 +9,6 @@ case, held in one record field. Encoded as the set member alone;
 decoded from the one member present and not null, else unset.
 -}
 
-import Bytes.Encode
 import Json.Decode
 import Json.Encode
 import Oneofs.V1.Choice
@@ -441,18 +440,18 @@ encodeColorBytes value =
 
 {-| Encodes a [`Created`](#Created) as protobuf binary.
 -}
-encodeCreatedBytes : Created -> Bytes.Encode.Encoder
+encodeCreatedBytes : Created -> Proto.Binary.Encoder
 encodeCreatedBytes value =
-    Bytes.Encode.sequence
+    Proto.Binary.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.title
         ]
 
 
 {-| Encodes a [`NoteEvent`](#NoteEvent) as protobuf binary.
 -}
-encodeNoteEventBytes : NoteEvent -> Bytes.Encode.Encoder
+encodeNoteEventBytes : NoteEvent -> Proto.Binary.Encoder
 encodeNoteEventBytes value =
-    Bytes.Encode.sequence
+    Proto.Binary.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.id
         , case value.kind of
             NoteEventKindCreated member ->
@@ -468,7 +467,7 @@ encodeNoteEventBytes value =
                 Proto.Binary.present Proto.Binary.int64 5 member
 
             _ ->
-                Bytes.Encode.sequence []
+                Proto.Binary.sequence []
         , encodeNoteEventSourceBytes value.source
         , Proto.Binary.list Proto.Binary.string 8 value.tags
         , case value.kind of
@@ -479,17 +478,17 @@ encodeNoteEventBytes value =
                 Proto.Binary.present Proto.Binary.empty 10 ()
 
             _ ->
-                Bytes.Encode.sequence []
+                Proto.Binary.sequence []
         ]
 
 
 {-| Encodes a [`NoteEventKind`](#NoteEventKind) as protobuf binary: its set member's field.
 -}
-encodeNoteEventKindBytes : NoteEventKind -> Bytes.Encode.Encoder
+encodeNoteEventKindBytes : NoteEventKind -> Proto.Binary.Encoder
 encodeNoteEventKindBytes value =
     case value of
         NoteEventKindUnset ->
-            Bytes.Encode.sequence []
+            Proto.Binary.sequence []
 
         NoteEventKindCreated member ->
             Proto.Binary.present (Proto.Binary.embedded encodeCreatedBytes mergeCreatedBytes defaultCreated) 2 member
@@ -512,11 +511,11 @@ encodeNoteEventKindBytes value =
 
 {-| Encodes a [`NoteEventSource`](#NoteEventSource) as protobuf binary: its set member's field.
 -}
-encodeNoteEventSourceBytes : NoteEventSource -> Bytes.Encode.Encoder
+encodeNoteEventSourceBytes : NoteEventSource -> Proto.Binary.Encoder
 encodeNoteEventSourceBytes value =
     case value of
         NoteEventSourceUnset ->
-            Bytes.Encode.sequence []
+            Proto.Binary.sequence []
 
         NoteEventSourceUser member ->
             Proto.Binary.present Proto.Binary.string 6 member
@@ -527,20 +526,20 @@ encodeNoteEventSourceBytes value =
 
 {-| Encodes a [`Choice`](#Choice) as protobuf binary.
 -}
-encodeChoiceBytes : Choice -> Bytes.Encode.Encoder
+encodeChoiceBytes : Choice -> Proto.Binary.Encoder
 encodeChoiceBytes value =
-    Bytes.Encode.sequence
+    Proto.Binary.sequence
         [ encodeChoiceValueBytes value.value
         ]
 
 
 {-| Encodes a [`ChoiceValue`](#ChoiceValue) as protobuf binary: its set member's field.
 -}
-encodeChoiceValueBytes : ChoiceValue -> Bytes.Encode.Encoder
+encodeChoiceValueBytes : ChoiceValue -> Proto.Binary.Encoder
 encodeChoiceValueBytes value =
     case value of
         ChoiceValueUnset ->
-            Bytes.Encode.sequence []
+            Proto.Binary.sequence []
 
         ChoiceValueNumber member ->
             Proto.Binary.present Proto.Binary.double 1 member

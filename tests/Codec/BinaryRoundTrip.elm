@@ -42,7 +42,7 @@ type alias Codec =
     }
 
 
-both : Proto.Binary.Decoder a -> (a -> Bytes.Encode.Encoder) -> Json.Decode.Decoder a -> (a -> Json.Encode.Value) -> Codec
+both : Proto.Binary.Decoder a -> (a -> Proto.Binary.Encoder) -> Json.Decode.Decoder a -> (a -> Json.Encode.Value) -> Codec
 both decodeBytes encodeBytes decodeJson encodeJson =
     { fromBinary =
         \input ->
@@ -59,7 +59,7 @@ both decodeBytes encodeBytes decodeJson encodeJson =
     }
 
 
-binaryOnly : Proto.Binary.Decoder a -> (a -> Bytes.Encode.Encoder) -> Codec
+binaryOnly : Proto.Binary.Decoder a -> (a -> Proto.Binary.Encoder) -> Codec
 binaryOnly decodeBytes encodeBytes =
     { fromBinary =
         \input ->

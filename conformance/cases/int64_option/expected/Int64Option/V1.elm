@@ -9,7 +9,6 @@ Elm Ints, decoded only within ±(2^53 − 1) and encoded as decimal
 strings, wherever they appear, unless a field's jstype says otherwise.
 -}
 
-import Bytes.Encode
 import Dict exposing (Dict)
 import Int64Option.V1.Counters
 import Json.Decode
@@ -225,9 +224,9 @@ decodeCountersLimit =
 
 {-| Encodes a [`Counters`](#Counters) as protobuf binary.
 -}
-encodeCountersBytes : Counters -> Bytes.Encode.Encoder
+encodeCountersBytes : Counters -> Proto.Binary.Encoder
 encodeCountersBytes value =
-    Bytes.Encode.sequence
+    Proto.Binary.sequence
         [ Proto.Binary.implicit Proto.Binary.int64AsInt 1 value.int64Value
         , Proto.Binary.implicit Proto.Binary.uint64AsInt 2 value.uint64Value
         , Proto.Binary.implicit Proto.Binary.sint64AsInt 3 value.sint64Value
@@ -246,11 +245,11 @@ encodeCountersBytes value =
 
 {-| Encodes a [`CountersLimit`](#CountersLimit) as protobuf binary: its set member's field.
 -}
-encodeCountersLimitBytes : CountersLimit -> Bytes.Encode.Encoder
+encodeCountersLimitBytes : CountersLimit -> Proto.Binary.Encoder
 encodeCountersLimitBytes value =
     case value of
         CountersLimitUnset ->
-            Bytes.Encode.sequence []
+            Proto.Binary.sequence []
 
         CountersLimitAtMost member ->
             Proto.Binary.present Proto.Binary.int64AsInt 13 member

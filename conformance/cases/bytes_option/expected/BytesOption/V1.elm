@@ -10,7 +10,6 @@ padding, wherever they appear.
 -}
 
 import Bytes
-import Bytes.Encode
 import BytesOption.V1.Blob
 import Dict exposing (Dict)
 import Json.Decode
@@ -202,9 +201,9 @@ decodeBlobSource =
 
 {-| Encodes a [`Blob`](#Blob) as protobuf binary.
 -}
-encodeBlobBytes : Blob -> Bytes.Encode.Encoder
+encodeBlobBytes : Blob -> Proto.Binary.Encoder
 encodeBlobBytes value =
-    Bytes.Encode.sequence
+    Proto.Binary.sequence
         [ Proto.Binary.implicit Proto.Binary.bytesAsBytes 1 value.data
         , Proto.Binary.optional Proto.Binary.bytesAsBytes 2 value.maybeData
         , Proto.Binary.list Proto.Binary.bytesAsBytes 3 value.chunks
@@ -218,11 +217,11 @@ encodeBlobBytes value =
 
 {-| Encodes a [`BlobSource`](#BlobSource) as protobuf binary: its set member's field.
 -}
-encodeBlobSourceBytes : BlobSource -> Bytes.Encode.Encoder
+encodeBlobSourceBytes : BlobSource -> Proto.Binary.Encoder
 encodeBlobSourceBytes value =
     case value of
         BlobSourceUnset ->
-            Bytes.Encode.sequence []
+            Proto.Binary.sequence []
 
         BlobSourceInline member ->
             Proto.Binary.present Proto.Binary.bytesAsBytes 7 member

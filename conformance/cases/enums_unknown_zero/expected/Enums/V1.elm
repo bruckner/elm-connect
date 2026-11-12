@@ -9,7 +9,6 @@ output but for each decoder, which is Proto.Json.enumOrZero, reading an
 unknown name as the zero value as it does an unknown number.
 -}
 
-import Bytes.Encode
 import Enums.V1.Priority
 import Enums.V1.Status
 import Enums.V1.Task
@@ -284,9 +283,9 @@ encodePriorityBytes value =
 
 {-| Encodes a [`Task`](#Task) as protobuf binary.
 -}
-encodeTaskBytes : Task -> Bytes.Encode.Encoder
+encodeTaskBytes : Task -> Proto.Binary.Encoder
 encodeTaskBytes value =
-    Bytes.Encode.sequence
+    Proto.Binary.sequence
         [ Proto.Binary.implicit (Proto.Binary.enum encodeStatusBytes decodeStatusBytes) 1 value.status
         , Proto.Binary.optional (Proto.Binary.enum encodePriorityBytes decodePriorityBytes) 2 value.priority
         , Proto.Binary.list (Proto.Binary.enum encodeStatusBytes decodeStatusBytes) 3 value.history

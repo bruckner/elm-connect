@@ -11,7 +11,6 @@ Compiled but not requested; its package is, so it is generated.
 
 -}
 
-import Bytes.Encode
 import Json.Decode
 import Json.Encode
 import Notes.V1.Note
@@ -174,9 +173,9 @@ decodeTag =
 
 {-| Encodes a [`Note`](#Note) as protobuf binary.
 -}
-encodeNoteBytes : Note -> Bytes.Encode.Encoder
+encodeNoteBytes : Note -> Proto.Binary.Encoder
 encodeNoteBytes value =
-    Bytes.Encode.sequence
+    Proto.Binary.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.title
         , Proto.Binary.list (Proto.Binary.embedded encodeTagBytes mergeTagBytes defaultTag) 2 value.tags
         ]
@@ -184,9 +183,9 @@ encodeNoteBytes value =
 
 {-| Encodes a [`Tag`](#Tag) as protobuf binary.
 -}
-encodeTagBytes : Tag -> Bytes.Encode.Encoder
+encodeTagBytes : Tag -> Proto.Binary.Encoder
 encodeTagBytes value =
-    Bytes.Encode.sequence
+    Proto.Binary.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.label
         ]
 

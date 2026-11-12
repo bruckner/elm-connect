@@ -47,7 +47,6 @@ generated code gives each message:
 -}
 
 import Bytes exposing (Bytes)
-import Bytes.Encode
 import Dict
 import Json.Decode
 import Json.Encode
@@ -127,7 +126,7 @@ packWith : String -> Message a -> a -> Any
 packWith prefix ((InternalMessage.Message _ codecs) as message) value =
     let
         binary () =
-            Internal.Binary (Proto.Bytes.toBase64 (Bytes.Encode.encode (codecs.encodeBinary value)))
+            Internal.Binary (Proto.Bytes.toBase64 (Proto.Internal.Binary.encode (codecs.encodeBinary value)))
     in
     Internal.Any (prefixed prefix message)
         (case codecs.encodeJson (InternalRegistry.Registry InternalRegistry.Lossless Dict.empty) value of

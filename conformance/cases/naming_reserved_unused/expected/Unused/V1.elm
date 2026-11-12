@@ -4,7 +4,6 @@
 
 module Unused.V1 exposing (..)
 
-import Bytes.Encode
 import Json.Decode
 import Json.Encode
 import Proto.Binary
@@ -380,18 +379,18 @@ encodeCharBytes value =
 
 {-| Encodes a [`Dict`](#Dict) as protobuf binary.
 -}
-encodeDictBytes : Dict -> Bytes.Encode.Encoder
+encodeDictBytes : Dict -> Proto.Binary.Encoder
 encodeDictBytes value =
-    Bytes.Encode.sequence
+    Proto.Binary.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         ]
 
 
 {-| Encodes a [`Result`](#Result) as protobuf binary.
 -}
-encodeResultBytes : Result -> Bytes.Encode.Encoder
+encodeResultBytes : Result -> Proto.Binary.Encoder
 encodeResultBytes value =
-    Bytes.Encode.sequence
+    Proto.Binary.sequence
         [ Proto.Binary.implicit Proto.Binary.bool 1 value.ok
         , Proto.Binary.optional (Proto.Binary.embedded encodeDictBytes mergeDictBytes defaultDict) 2 value.dict
         , Proto.Binary.list (Proto.Binary.enum encodeCharBytes decodeCharBytes) 3 value.chars
@@ -400,30 +399,30 @@ encodeResultBytes value =
 
 {-| Encodes an [`Order`](#Order) as protobuf binary.
 -}
-encodeOrderBytes : Order -> Bytes.Encode.Encoder
+encodeOrderBytes : Order -> Proto.Binary.Encoder
 encodeOrderBytes _ =
-    Bytes.Encode.sequence []
+    Proto.Binary.sequence []
 
 
 {-| Encodes a [`Never`](#Never) as protobuf binary.
 -}
-encodeNeverBytes : Never -> Bytes.Encode.Encoder
+encodeNeverBytes : Never -> Proto.Binary.Encoder
 encodeNeverBytes _ =
-    Bytes.Encode.sequence []
+    Proto.Binary.sequence []
 
 
 {-| Encodes a [`Cmd`](#Cmd) as protobuf binary.
 -}
-encodeCmdBytes : Cmd -> Bytes.Encode.Encoder
+encodeCmdBytes : Cmd -> Proto.Binary.Encoder
 encodeCmdBytes _ =
-    Bytes.Encode.sequence []
+    Proto.Binary.sequence []
 
 
 {-| Encodes a [`True`](#True) as protobuf binary.
 -}
-encodeTrueBytes : True -> Bytes.Encode.Encoder
+encodeTrueBytes : True -> Proto.Binary.Encoder
 encodeTrueBytes _ =
-    Bytes.Encode.sequence []
+    Proto.Binary.sequence []
 
 
 

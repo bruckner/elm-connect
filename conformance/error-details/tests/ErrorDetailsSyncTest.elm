@@ -22,7 +22,6 @@ from the same `google/rpc/error_details.proto` under `wire=both`
 -}
 
 import Bytes exposing (Bytes)
-import Bytes.Encode
 import Dict
 import Expect
 import Google.Rpc as Generated
@@ -130,12 +129,12 @@ codecs hand generated value =
                 |> Expect.equal (List.repeat 4 (Just value))
     , test "each side reads either side's binary back" <|
         \_ ->
-            crossed (\from to -> decodeBytes to (Bytes.Encode.encode (encoder from value))) hand generated
+            crossed (\from to -> decodeBytes to (Proto.Binary.encode (encoder from) value)) hand generated
                 |> Expect.equal (List.repeat 4 (Just value))
     , test "what one side reads, the other writes as it was written" <|
         \_ ->
-            [ Maybe.map (base64 generated) (decodeBytes hand (Bytes.Encode.encode (encoder generated value)))
-            , Maybe.map (base64 hand) (decodeBytes generated (Bytes.Encode.encode (encoder hand value)))
+            [ Maybe.map (base64 generated) (decodeBytes hand (Proto.Binary.encode (encoder generated) value))
+            , Maybe.map (base64 hand) (decodeBytes generated (Proto.Binary.encode (encoder hand) value))
             ]
                 |> Expect.equal (List.repeat 2 (Just (base64 generated value)))
     ]
@@ -161,7 +160,7 @@ decoder (Internal.Message _ c) =
     c.decodeJson Proto.Registry.empty
 
 
-encoder : Message a -> a -> Bytes.Encode.Encoder
+encoder : Message a -> a -> Proto.Binary.Encoder
 encoder (Internal.Message _ c) =
     c.encodeBinary
 
@@ -175,7 +174,7 @@ decodeBytes (Internal.Message _ c) =
 -}
 base64 : Message a -> a -> String
 base64 message value =
-    Proto.Bytes.toBase64 (Bytes.Encode.encode (encoder message value))
+    Proto.Bytes.toBase64 (Proto.Binary.encode (encoder message) value)
 
 
 
