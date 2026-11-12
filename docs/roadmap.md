@@ -193,6 +193,24 @@ computed from its descriptor. The notes example has one
 (`examples/notes/elm/src/Snippets/UpdateMask.elm`); in the runtime it
 would be an addition: a minor.
 
+## `Any` translation from descriptors
+
+A registry built from descriptors alone, `Proto.Registry.fromDescriptors`,
+converting an `Any` between proto3 JSON and binary by walking its type's
+descriptor, so an application that reaches an `Any` over JSON and already
+holds descriptors can leave the codec table out. Spiked
+(`spike/any-interpreter`): it agrees byte for byte with the generated
+codecs on the protobuf conformance suite once a field descriptor marks
+`[packed = false]`; bundles are a wash, about 2 KB gzipped smaller for a
+package of rich messages and 3 to 5 KB larger for many small ones, with
+a fixed cost near 6 KB; translation is 20 to 27 % slower, about 2 us,
+behind the base64 it sits under. It needs the packed bit on field
+descriptors (`packed : Descriptor -> Bool`), a policy for unknown enum
+values, a decoder cache, and round trips through the new registry.
+Picked up when an application that keeps descriptors for forms or
+validation asks for its codec table back, or for the conformance cases
+only a reader over `(seconds, nanos)` passes. Additive: a minor.
+
 ## `Retry-After` and `RetryInfo`
 
 A retry policy waits by its own backoff. Honouring the server's

@@ -3287,7 +3287,10 @@ conformance suite's gRPC-Web client cases (§7).
   `grpc-message` percent-decoded (kept as sent when it is not
   well-formed) and `grpc-status-details-bin` (base64, padding optional)
   read as a `google.rpc.Status` whose `details` are the error's, binary
-  `Any`s that need no registry (§5.4). `source` is `GrpcTrailers` from a body and `GrpcHeaders` from
+  `Any`s that need no registry (§5.4), and whose code and message, when
+  it has a code, win over `grpc-status` and `grpc-message`, as connect-go
+  and connect-es read them (grpc-go takes the Status too, when the codes
+  agree); one without a code leaves the trailers' standing. `source` is `GrpcTrailers` from a body and `GrpcHeaders` from
   headers. Any other HTTP status goes through the shared error reader
   (§5.4). Status 0 with no message or two, a compressed frame, a frame
   running past the end, or no status anywhere is a `BadResponse`; the
@@ -3530,7 +3533,9 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
   - **gRPC-Web's `grpc-status-details-bin`**: a binary `google.rpc.Status`
     whose details are each `Ok`; a header that does not decode is one
     `Err (BadBinary …)` of `google.rpc.Status` standing for the whole
-    list (a header that is not base64 at all, `Truncated` at byte 0).
+    list; a header that is not base64 at all is a `BadResponse` with code
+    `Internal`, as a frame that does not parse is, since the text is part
+    of the answer's envelope and holds no bytes to blame.
   Details a proxy stripped (Envoy forwards none over transcoding, §7)
   are `[]`, not a problem. Unpack one with `Proto.Any.tryUnpack` and the
   type's typed value (`Proto.ErrorDetails.badRequest`, or a generated

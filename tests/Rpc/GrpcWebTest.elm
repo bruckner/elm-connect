@@ -345,12 +345,40 @@ answers =
 
                     other ->
                         Expect.fail (Debug.toString other)
-        , test "a grpc-status-details-bin that does not decode is one problem standing for all, the status kept" <|
+        , test "a Status in grpc-status-details-bin gives the error's code and message, over the trailers'" <|
+            \_ ->
+                case answer 200 [] [ trailers ("grpc-status: 5\u{000D}\ngrpc-message: gone\u{000D}\ngrpc-status-details-bin: " ++ Proto.Bytes.toBase64 (bytesOf [ 0x08, 0x07, 0x12, 0x04, 0x6E, 0x6F, 0x70, 0x65 ]) ++ "\u{000D}\n") ] of
+                    Err (RpcStatus status _) ->
+                        ( status.code, status.message, status.details ) |> Expect.equal ( PermissionDenied, "nope", [] )
+
+                    other ->
+                        Expect.fail (Debug.toString other)
+        , test "a Status without a code leaves the trailers' code and message standing" <|
+            \_ ->
+                case answer 200 [] [ trailers ("grpc-status: 5\u{000D}\ngrpc-message: gone\u{000D}\ngrpc-status-details-bin: " ++ Proto.Bytes.toBase64 (bytesOf [ 0x12, 0x04, 0x6E, 0x6F, 0x70, 0x65 ]) ++ "\u{000D}\n") ] of
+                    Err (RpcStatus status _) ->
+                        ( status.code, status.message ) |> Expect.equal ( NotFound, "gone" )
+
+                    other ->
+                        Expect.fail (Debug.toString other)
+        , test "a grpc-status-details-bin that is base64 but not a Status is one problem standing for all, the status kept" <|
+            \_ ->
+                case answer 200 [] [ trailers "grpc-status: 5\u{000D}\ngrpc-message: gone\u{000D}\ngrpc-status-details-bin: CA==\u{000D}\n" ] of
+                    Err (RpcStatus status _) ->
+                        case ( status.code, status.message, status.details ) of
+                            ( NotFound, "gone", [ Err (Proto.Error.BadBinary problem) ] ) ->
+                                problem.typeName |> Expect.equal "google.rpc.Status"
+
+                            other ->
+                                Expect.fail (Debug.toString other)
+
+                    other ->
+                        Expect.fail (Debug.toString other)
+        , test "a grpc-status-details-bin that is not base64 is a BadResponse whose code is Internal" <|
             \_ ->
                 case answer 200 [] [ trailers "grpc-status: 5\u{000D}\ngrpc-message: gone\u{000D}\ngrpc-status-details-bin: !!\u{000D}\n" ] of
-                    Err (RpcStatus status _) ->
-                        ( status.code, status.message, status.details )
-                            |> Expect.equal ( NotFound, "gone", [ Err (Proto.Error.BadBinary { typeName = "google.rpc.Status", reason = Proto.Error.Truncated, path = [], offset = 0 }) ] )
+                    Err (BadResponse code problem _) ->
+                        ( code, problem ) |> Expect.equal ( Internal, "a grpc-status-details-bin trailer that is not base64" )
 
                     other ->
                         Expect.fail (Debug.toString other)
