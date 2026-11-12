@@ -19,3 +19,6 @@
   URL and anything else as `BadJson`; and `Proto.Message.decodeBinary :
   Message a -> Bytes -> Result Proto.Error.Binary a` reads its protobuf
   binary, giving the binary report as `Proto.Binary.decode` does.
+- `Rpc.Code`'s conversions read one table of the sixteen codes: 14 to
+  49 B smaller gzipped on a minimal client, about 140 to 190 B on a
+  program that names codes, as the notes example does.
