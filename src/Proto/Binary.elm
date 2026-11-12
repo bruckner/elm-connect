@@ -487,13 +487,7 @@ repeated (Codec c) set existing wire current =
 
     else if c.packable && wire == 2 then
         Field
-            { fast =
-                fastVarint32
-                    |> D.andThen
-                        (\( lengthWidth, length ) ->
-                            D.loop ( length, existing ) (fastPackedStep c.fast)
-                                |> D.map (\vs -> ( lengthWidth + length, set vs ))
-                        )
+            { fast = packed c.read set existing unbounded |> D.andThen okOrFail
             , located = \bound -> packed c.read set existing bound
             }
 
@@ -526,18 +520,6 @@ packed read set existing bound =
             )
 
 
-fastPackedStep : D.Decoder ( Int, v ) -> ( Int, List v ) -> D.Decoder (Step ( Int, List v ) (List v))
-fastPackedStep read ( remaining, acc ) =
-    if remaining == 0 then
-        D.succeed (Done acc)
-
-    else if remaining < 0 then
-        D.fail
-
-    else
-        D.map (\( width, v ) -> Loop ( remaining - width, v :: acc )) read
-
-
 packedStep : (Int -> Read v) -> Int -> ( Int, List v ) -> D.Decoder (Step ( Int, List v ) (Result Failure (List v)))
 packedStep read length ( remaining, acc ) =
     if remaining == 0 then
@@ -568,13 +550,7 @@ mapEntry (Codec k) (Codec v) insert wire current =
 
     else
         Field
-            { fast =
-                fastVarint32
-                    |> D.andThen
-                        (\( lengthWidth, length ) ->
-                            D.loop ( length, ( k.zero, v.zero ) ) (fastEntryStep k.wire k.fast v.wire v.fast)
-                                |> D.map (\( key_, item ) -> ( lengthWidth + length, insert key_ item ))
-                        )
+            { fast = locatedEntry k.wire k.read k.zero v.wire v.read v.zero insert unbounded |> D.andThen okOrFail
             , located = \bound -> locatedEntry k.wire k.read k.zero v.wire v.read v.zero insert bound
             }
 
@@ -609,39 +585,6 @@ locatedEntry keyWire readKey keyZero valueWire readItem valueZero insert bound =
 insertBool : Bool -> v -> List ( Bool, v ) -> List ( Bool, v )
 insertBool key item entries =
     ( key, item ) :: List.filter (\( k, _ ) -> k /= key) entries
-
-
-fastEntryStep : Int -> D.Decoder ( Int, k ) -> Int -> D.Decoder ( Int, v ) -> ( Int, ( k, v ) ) -> D.Decoder (Step ( Int, ( k, v ) ) ( k, v ))
-fastEntryStep keyWire readKey valueWire readItem ( remaining, ( key_, item ) as current ) =
-    if remaining == 0 then
-        D.succeed (Done current)
-
-    else if remaining < 0 then
-        D.fail
-
-    else
-        fastVarint32
-            |> D.andThen
-                (\( tagWidth, tag ) ->
-                    let
-                        number =
-                            Bitwise.shiftRightZfBy 3 tag
-
-                        wire =
-                            Bitwise.and 7 tag
-                    in
-                    if number == 1 && wire == keyWire then
-                        D.map (\( width, next ) -> Loop ( remaining - tagWidth - width, ( next, item ) )) readKey
-
-                    else if number == 2 && wire == valueWire then
-                        D.map (\( width, next ) -> Loop ( remaining - tagWidth - width, ( key_, next ) )) readItem
-
-                    else if number == 0 then
-                        D.fail
-
-                    else
-                        D.map (\width -> Loop ( remaining - tagWidth - width, current )) (fastSkipValue wire)
-                )
 
 
 entryStep : Int -> Int -> (Int -> Read k) -> Int -> (Int -> Read v) -> ( Int, ( k, v ) ) -> D.Decoder (Step ( Int, ( k, v ) ) (Result Failure ( k, v )))
@@ -723,6 +666,18 @@ fastSkipValue wire =
                 else
                     D.succeed width
             )
+
+
+{-| A locating reader's result as the fast reader's: a failure fails.
+-}
+okOrFail : Result Failure ( Int, a ) -> D.Decoder ( Int, a )
+okOrFail result =
+    case result of
+        Ok read ->
+            D.succeed read
+
+        Err _ ->
+            D.fail
 
 
 {-| A bound no region reaches: the locating readers given it read as the
