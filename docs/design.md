@@ -1946,8 +1946,14 @@ registry =
   where its run falls, so the set member keeps field-number order too); a
   merge is `Proto.Binary.merge` of the message's full name, which a
   decoding failure's path names it by, a step that `case`s on the field
-  number into a record update and a finish that reverses the lists the
-  step built front first. A
+  number into the record with that field set and a finish that reverses
+  the lists the step built front first. The record is written out whole,
+  every other field copied, for a message of up to 64 fields, and as a
+  record update above that: Elm copies a record update's fields in a
+  `for…in` loop, so a message read field by field decodes five to seven
+  times faster from literals, but a literal names every field, and a
+  message's merge grows with the square of its fields (decisions:
+  "Binary codecs, faster within elm/bytes"). A
   repeated scalar declared `[packed = false]` is written with
   `listUnpacked`, the option read from the field's own options (the
   descriptor pool reports such a field packed). A well-known request or
