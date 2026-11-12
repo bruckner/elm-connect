@@ -178,7 +178,11 @@ type Codec a
         , writeBody : a -> Encoder
         , readBody : Int -> D.Decoder (Result Failure a)
         , readInto : a -> Int -> Read a
-        , name : String
+
+        -- A message's full name, for a decoder of the whole message; asked
+        -- for only then, since an embedded codec is built at every use and
+        -- finding the name builds the message's decoder.
+        , name : () -> String
         }
 
 
@@ -236,7 +240,7 @@ rawCodec wire fast read write isDefault zero =
         , writeBody = write
         , readBody = \width -> D.map (Result.map Tuple.second) (read width)
         , readInto = \_ -> read
-        , name = ""
+        , name = \_ -> ""
         }
 
 
@@ -2086,8 +2090,10 @@ embedded write into zero =
         fastInto existing =
             fastVarint32 |> D.andThen (\( width, length ) -> D.map (\v -> ( width + length, v )) (fastRun (into existing) length))
 
-        (Internal.Decoder { name }) =
-            into zero
+        name () =
+            case into zero of
+                Internal.Decoder d ->
+                    d.name
     in
     Codec
         { wire = 2
@@ -2119,7 +2125,7 @@ method answers.
 -}
 messageDecoder : Codec a -> Decoder a
 messageDecoder (Codec c) =
-    Internal.Decoder { name = c.name, fast = c.fastBody, located = c.readBody }
+    Internal.Decoder { name = c.name (), fast = c.fastBody, located = c.readBody }
 
 
 
