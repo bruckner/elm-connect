@@ -338,6 +338,15 @@ percentEncoding =
                 [ "\u{DC00}a", "a\u{DC00}b", "a\u{DC00}", "\u{DC00}", "\u{DC00}\u{DC01}", "\u{D800}a", String.right 1 "😀" ++ "x" ]
                     |> List.map encode
                     |> Expect.equal [ "%EF%BF%BDa", "a%EF%BF%BDb", "a%EF%BF%BD", "%EF%BF%BD", "%EF%BF%BD%EF%BF%BD", "%EF%BF%BDa", "%EF%BF%BDx" ]
+        , test "long text is written the same way, a lone surrogate included" <|
+            \_ ->
+                let
+                    pad =
+                        String.repeat 40 "a"
+                in
+                [ "{\"name\":\"notes/42\"}", "café 😀 ~-._", "\u{DC00}a", "a\u{D800}", "\\ud800" ]
+                    |> List.map (\text -> encode (pad ++ text) |> String.dropLeft 40)
+                    |> Expect.equal [ "%7B%22name%22%3A%22notes%2F42%22%7D", "caf%C3%A9%20%F0%9F%98%80%20~-._", "%EF%BF%BDa", "a%EF%BF%BD", "%5Cud800" ]
         , test "a route's literal text with a lone low surrogate is written with U+FFFD" <|
             \_ ->
                 List.map Proto.Internal.Percent.encodeRouteText [ "\u{DC00}x", "x\u{DC00}", "%41\u{DC00}" ]

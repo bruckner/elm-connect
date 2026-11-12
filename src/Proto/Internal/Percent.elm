@@ -17,16 +17,39 @@ character, as the WHATWG URL encoder writes it.
 -}
 percentEncode : (Char -> Bool) -> String -> String
 percentEncode keep text =
-    foldrScalars
-        (\char encoded ->
+    let
+        step char encoded =
             if keep char then
                 String.cons char encoded
 
             else
-                String.concat (List.map hexByte (utf8 (Char.toCode char))) ++ encoded
-        )
-        ""
-        text
+                let
+                    code =
+                        Char.toCode char
+                in
+                if code < 0x80 then
+                    escaped code ++ encoded
+
+                else
+                    String.concat (List.map escaped (utf8 code)) ++ encoded
+    in
+    if knownWellFormed text then
+        String.foldr step "" text
+
+    else
+        foldrScalars step "" text
+
+
+{-| A byte's `%XX` escape, cut from a table of all 256 built once.
+-}
+escaped : Int -> String
+escaped byte =
+    String.slice (3 * byte) (3 * byte + 3) escapes
+
+
+escapes : String
+escapes =
+    String.concat (List.map hexByte (List.range 0 255))
 
 
 {-| `String.foldr` over the characters of `text`, each surrogate without its
@@ -93,14 +116,16 @@ high surrogate, or one at the start taken with what lies before the string.
 -}
 wellFormed : String -> Bool
 wellFormed text =
-    if String.length text < 32 then
-        scalarsOnly text
+    knownWellFormed text || scalarsOnly text
 
-    else if escapesLoneSurrogates && not (String.contains "\\ud" (Json.Encode.encode 0 (Json.Encode.string text))) then
-        True
 
-    else
-        scalarsOnly text
+{-| `True` when one native pass shows that `text` holds no surrogate without
+its pair (see `escapesLoneSurrogates`): for text of 32 code units or more,
+whose JSON holds no `\ud`. `False` says nothing.
+-}
+knownWellFormed : String -> Bool
+knownWellFormed text =
+    String.length text >= 32 && escapesLoneSurrogates && not (String.contains "\\ud" (Json.Encode.encode 0 (Json.Encode.string text)))
 
 
 {-| Whether this engine's `JSON.stringify` writes a surrogate without its pair
@@ -271,7 +296,11 @@ ASCII letters and digits, `-`, `_`, `.` and `~`.
 -}
 unreserved : Char -> Bool
 unreserved char =
-    Char.isAlphaNum char && Char.toCode char < 128 || char == '-' || char == '_' || char == '.' || char == '~'
+    let
+        code =
+            Char.toCode char
+    in
+    (code >= 0x61 && code <= 0x7A) || (code >= 0x41 && code <= 0x5A) || (code >= 0x30 && code <= 0x39) || char == '-' || char == '_' || char == '.' || char == '~'
 
 
 {-| The UTF-8 bytes of a Unicode scalar value, which `foldrScalars` makes of
