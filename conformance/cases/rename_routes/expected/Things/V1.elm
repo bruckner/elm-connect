@@ -264,7 +264,14 @@ mergeThingBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | name = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { name = v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -288,7 +295,14 @@ mergeCriteriaBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | status = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { status = v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -312,13 +326,41 @@ mergeGetThingRequestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | resource = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { resource = v
+                            , limit = value.limit
+                            , filter = value.filter
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | limit = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int32
+                        (\v ->
+                            { resource = value.resource
+                            , limit = v
+                            , filter = value.filter
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeCriteriaBytes mergeCriteriaBytes defaultCriteria) value.filter (\v -> { value | filter = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeCriteriaBytes mergeCriteriaBytes defaultCriteria)
+                        value.filter
+                        (\v ->
+                            { resource = value.resource
+                            , limit = value.limit
+                            , filter = Just v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value

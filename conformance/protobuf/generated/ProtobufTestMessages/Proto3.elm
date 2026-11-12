@@ -2273,10 +2273,27 @@ mergeTestAllTypesProto3NestedMessageBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | a = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int32
+                        (\v ->
+                            { a = v
+                            , corecursive = value.corecursive
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeTestAllTypesProto3_Bytes mergeTestAllTypesProto3_Bytes (TestAllTypesProto3_ defaultTestAllTypesProto3)) value.corecursive (\v -> { value | corecursive = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeTestAllTypesProto3_Bytes mergeTestAllTypesProto3_Bytes (TestAllTypesProto3_ defaultTestAllTypesProto3))
+                        value.corecursive
+                        (\v ->
+                            { a = value.a
+                            , corecursive = Just v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -2307,7 +2324,14 @@ mergeForeignMessageBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | c = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int32
+                        (\v ->
+                            { c = v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value

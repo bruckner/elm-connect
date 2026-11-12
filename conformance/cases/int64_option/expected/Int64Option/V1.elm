@@ -272,54 +272,333 @@ mergeCountersBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.int64AsInt (\v -> { value | int64Value = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int64AsInt
+                        (\v ->
+                            { int64Value = v
+                            , uint64Value = value.uint64Value
+                            , sint64Value = value.sint64Value
+                            , fixed64Value = value.fixed64Value
+                            , sfixed64Value = value.sfixed64Value
+                            , exactId = value.exactId
+                            , normal = value.normal
+                            , maybeCount = value.maybeCount
+                            , samples = value.samples
+                            , exactSamples = value.exactSamples
+                            , byId = value.byId
+                            , wrapped = value.wrapped
+                            , limit = value.limit
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.uint64AsInt (\v -> { value | uint64Value = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.uint64AsInt
+                        (\v ->
+                            { int64Value = value.int64Value
+                            , uint64Value = v
+                            , sint64Value = value.sint64Value
+                            , fixed64Value = value.fixed64Value
+                            , sfixed64Value = value.sfixed64Value
+                            , exactId = value.exactId
+                            , normal = value.normal
+                            , maybeCount = value.maybeCount
+                            , samples = value.samples
+                            , exactSamples = value.exactSamples
+                            , byId = value.byId
+                            , wrapped = value.wrapped
+                            , limit = value.limit
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.field Proto.Binary.sint64AsInt (\v -> { value | sint64Value = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.sint64AsInt
+                        (\v ->
+                            { int64Value = value.int64Value
+                            , uint64Value = value.uint64Value
+                            , sint64Value = v
+                            , fixed64Value = value.fixed64Value
+                            , sfixed64Value = value.sfixed64Value
+                            , exactId = value.exactId
+                            , normal = value.normal
+                            , maybeCount = value.maybeCount
+                            , samples = value.samples
+                            , exactSamples = value.exactSamples
+                            , byId = value.byId
+                            , wrapped = value.wrapped
+                            , limit = value.limit
+                            }
+                        )
+                        wire
+                        value
 
                 4 ->
-                    Proto.Binary.field Proto.Binary.fixed64AsInt (\v -> { value | fixed64Value = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.fixed64AsInt
+                        (\v ->
+                            { int64Value = value.int64Value
+                            , uint64Value = value.uint64Value
+                            , sint64Value = value.sint64Value
+                            , fixed64Value = v
+                            , sfixed64Value = value.sfixed64Value
+                            , exactId = value.exactId
+                            , normal = value.normal
+                            , maybeCount = value.maybeCount
+                            , samples = value.samples
+                            , exactSamples = value.exactSamples
+                            , byId = value.byId
+                            , wrapped = value.wrapped
+                            , limit = value.limit
+                            }
+                        )
+                        wire
+                        value
 
                 5 ->
-                    Proto.Binary.field Proto.Binary.sfixed64AsInt (\v -> { value | sfixed64Value = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.sfixed64AsInt
+                        (\v ->
+                            { int64Value = value.int64Value
+                            , uint64Value = value.uint64Value
+                            , sint64Value = value.sint64Value
+                            , fixed64Value = value.fixed64Value
+                            , sfixed64Value = v
+                            , exactId = value.exactId
+                            , normal = value.normal
+                            , maybeCount = value.maybeCount
+                            , samples = value.samples
+                            , exactSamples = value.exactSamples
+                            , byId = value.byId
+                            , wrapped = value.wrapped
+                            , limit = value.limit
+                            }
+                        )
+                        wire
+                        value
 
                 6 ->
-                    Proto.Binary.field Proto.Binary.int64 (\v -> { value | exactId = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int64
+                        (\v ->
+                            { int64Value = value.int64Value
+                            , uint64Value = value.uint64Value
+                            , sint64Value = value.sint64Value
+                            , fixed64Value = value.fixed64Value
+                            , sfixed64Value = value.sfixed64Value
+                            , exactId = v
+                            , normal = value.normal
+                            , maybeCount = value.maybeCount
+                            , samples = value.samples
+                            , exactSamples = value.exactSamples
+                            , byId = value.byId
+                            , wrapped = value.wrapped
+                            , limit = value.limit
+                            }
+                        )
+                        wire
+                        value
 
                 7 ->
-                    Proto.Binary.field Proto.Binary.int64AsInt (\v -> { value | normal = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int64AsInt
+                        (\v ->
+                            { int64Value = value.int64Value
+                            , uint64Value = value.uint64Value
+                            , sint64Value = value.sint64Value
+                            , fixed64Value = value.fixed64Value
+                            , sfixed64Value = value.sfixed64Value
+                            , exactId = value.exactId
+                            , normal = v
+                            , maybeCount = value.maybeCount
+                            , samples = value.samples
+                            , exactSamples = value.exactSamples
+                            , byId = value.byId
+                            , wrapped = value.wrapped
+                            , limit = value.limit
+                            }
+                        )
+                        wire
+                        value
 
                 8 ->
-                    Proto.Binary.field Proto.Binary.int64AsInt (\v -> { value | maybeCount = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int64AsInt
+                        (\v ->
+                            { int64Value = value.int64Value
+                            , uint64Value = value.uint64Value
+                            , sint64Value = value.sint64Value
+                            , fixed64Value = value.fixed64Value
+                            , sfixed64Value = value.sfixed64Value
+                            , exactId = value.exactId
+                            , normal = value.normal
+                            , maybeCount = Just v
+                            , samples = value.samples
+                            , exactSamples = value.exactSamples
+                            , byId = value.byId
+                            , wrapped = value.wrapped
+                            , limit = value.limit
+                            }
+                        )
+                        wire
+                        value
 
                 9 ->
-                    Proto.Binary.repeated Proto.Binary.int64AsInt (\v -> { value | samples = v }) value.samples wire value
+                    Proto.Binary.repeated
+                        Proto.Binary.int64AsInt
+                        (\v ->
+                            { int64Value = value.int64Value
+                            , uint64Value = value.uint64Value
+                            , sint64Value = value.sint64Value
+                            , fixed64Value = value.fixed64Value
+                            , sfixed64Value = value.sfixed64Value
+                            , exactId = value.exactId
+                            , normal = value.normal
+                            , maybeCount = value.maybeCount
+                            , samples = v
+                            , exactSamples = value.exactSamples
+                            , byId = value.byId
+                            , wrapped = value.wrapped
+                            , limit = value.limit
+                            }
+                        )
+                        value.samples
+                        wire
+                        value
 
                 10 ->
-                    Proto.Binary.repeated Proto.Binary.uint64 (\v -> { value | exactSamples = v }) value.exactSamples wire value
+                    Proto.Binary.repeated
+                        Proto.Binary.uint64
+                        (\v ->
+                            { int64Value = value.int64Value
+                            , uint64Value = value.uint64Value
+                            , sint64Value = value.sint64Value
+                            , fixed64Value = value.fixed64Value
+                            , sfixed64Value = value.sfixed64Value
+                            , exactId = value.exactId
+                            , normal = value.normal
+                            , maybeCount = value.maybeCount
+                            , samples = value.samples
+                            , exactSamples = v
+                            , byId = value.byId
+                            , wrapped = value.wrapped
+                            , limit = value.limit
+                            }
+                        )
+                        value.exactSamples
+                        wire
+                        value
 
                 11 ->
-                    Proto.Binary.mapEntry Proto.Binary.int64 Proto.Binary.int64AsInt (\k v -> { value | byId = Dict.insert k v value.byId }) wire value
+                    Proto.Binary.mapEntry
+                        Proto.Binary.int64
+                        Proto.Binary.int64AsInt
+                        (\k v ->
+                            { int64Value = value.int64Value
+                            , uint64Value = value.uint64Value
+                            , sint64Value = value.sint64Value
+                            , fixed64Value = value.fixed64Value
+                            , sfixed64Value = value.sfixed64Value
+                            , exactId = value.exactId
+                            , normal = value.normal
+                            , maybeCount = value.maybeCount
+                            , samples = value.samples
+                            , exactSamples = value.exactSamples
+                            , byId = Dict.insert k v value.byId
+                            , wrapped = value.wrapped
+                            , limit = value.limit
+                            }
+                        )
+                        wire
+                        value
 
                 12 ->
-                    Proto.Binary.field Proto.Binary.int64ValueAsInt (\v -> { value | wrapped = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int64ValueAsInt
+                        (\v ->
+                            { int64Value = value.int64Value
+                            , uint64Value = value.uint64Value
+                            , sint64Value = value.sint64Value
+                            , fixed64Value = value.fixed64Value
+                            , sfixed64Value = value.sfixed64Value
+                            , exactId = value.exactId
+                            , normal = value.normal
+                            , maybeCount = value.maybeCount
+                            , samples = value.samples
+                            , exactSamples = value.exactSamples
+                            , byId = value.byId
+                            , wrapped = Just v
+                            , limit = value.limit
+                            }
+                        )
+                        wire
+                        value
 
                 13 ->
-                    Proto.Binary.field Proto.Binary.int64AsInt (\v -> { value | limit = CountersLimitAtMost v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int64AsInt
+                        (\v ->
+                            { int64Value = value.int64Value
+                            , uint64Value = value.uint64Value
+                            , sint64Value = value.sint64Value
+                            , fixed64Value = value.fixed64Value
+                            , sfixed64Value = value.sfixed64Value
+                            , exactId = value.exactId
+                            , normal = value.normal
+                            , maybeCount = value.maybeCount
+                            , samples = value.samples
+                            , exactSamples = value.exactSamples
+                            , byId = value.byId
+                            , wrapped = value.wrapped
+                            , limit = CountersLimitAtMost v
+                            }
+                        )
+                        wire
+                        value
 
                 14 ->
-                    Proto.Binary.field Proto.Binary.int64 (\v -> { value | limit = CountersLimitExactly v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int64
+                        (\v ->
+                            { int64Value = value.int64Value
+                            , uint64Value = value.uint64Value
+                            , sint64Value = value.sint64Value
+                            , fixed64Value = value.fixed64Value
+                            , sfixed64Value = value.sfixed64Value
+                            , exactId = value.exactId
+                            , normal = value.normal
+                            , maybeCount = value.maybeCount
+                            , samples = value.samples
+                            , exactSamples = value.exactSamples
+                            , byId = value.byId
+                            , wrapped = value.wrapped
+                            , limit = CountersLimitExactly v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
         (\value ->
-            { value
-                | samples = List.reverse value.samples
-                , exactSamples = List.reverse value.exactSamples
+            { int64Value = value.int64Value
+            , uint64Value = value.uint64Value
+            , sint64Value = value.sint64Value
+            , fixed64Value = value.fixed64Value
+            , sfixed64Value = value.sfixed64Value
+            , exactId = value.exactId
+            , normal = value.normal
+            , maybeCount = value.maybeCount
+            , samples = List.reverse value.samples
+            , exactSamples = List.reverse value.exactSamples
+            , byId = value.byId
+            , wrapped = value.wrapped
+            , limit = value.limit
             }
         )
 

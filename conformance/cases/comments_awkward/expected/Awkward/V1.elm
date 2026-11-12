@@ -394,25 +394,116 @@ mergeDelimitersBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | lists = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { lists = v
+                            , blocks = value.blocks
+                            , code = value.code
+                            , inline = value.inline
+                            , text = value.text
+                            , whitespaceOnly = value.whitespaceOnly
+                            , unclosed = value.unclosed
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | blocks = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { lists = value.lists
+                            , blocks = v
+                            , code = value.code
+                            , inline = value.inline
+                            , text = value.text
+                            , whitespaceOnly = value.whitespaceOnly
+                            , unclosed = value.unclosed
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | code = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { lists = value.lists
+                            , blocks = value.blocks
+                            , code = v
+                            , inline = value.inline
+                            , text = value.text
+                            , whitespaceOnly = value.whitespaceOnly
+                            , unclosed = value.unclosed
+                            }
+                        )
+                        wire
+                        value
 
                 4 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | inline = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { lists = value.lists
+                            , blocks = value.blocks
+                            , code = value.code
+                            , inline = v
+                            , text = value.text
+                            , whitespaceOnly = value.whitespaceOnly
+                            , unclosed = value.unclosed
+                            }
+                        )
+                        wire
+                        value
 
                 5 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | text = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { lists = value.lists
+                            , blocks = value.blocks
+                            , code = value.code
+                            , inline = value.inline
+                            , text = v
+                            , whitespaceOnly = value.whitespaceOnly
+                            , unclosed = value.unclosed
+                            }
+                        )
+                        wire
+                        value
 
                 6 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | whitespaceOnly = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { lists = value.lists
+                            , blocks = value.blocks
+                            , code = value.code
+                            , inline = value.inline
+                            , text = value.text
+                            , whitespaceOnly = v
+                            , unclosed = value.unclosed
+                            }
+                        )
+                        wire
+                        value
 
                 7 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | unclosed = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { lists = value.lists
+                            , blocks = value.blocks
+                            , code = value.code
+                            , inline = value.inline
+                            , text = value.text
+                            , whitespaceOnly = value.whitespaceOnly
+                            , unclosed = v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -436,7 +527,14 @@ mergeDocsBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | field = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { field = v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value

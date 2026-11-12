@@ -365,19 +365,80 @@ mergeEntryBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | memo = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { memo = v
+                            , amount = value.amount
+                            , kind = value.kind
+                            , tags = value.tags
+                            , source = value.source
+                            , marks = value.marks
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.sint64 (\v -> { value | amount = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.sint64
+                        (\v ->
+                            { memo = value.memo
+                            , amount = v
+                            , kind = value.kind
+                            , tags = value.tags
+                            , source = value.source
+                            , marks = value.marks
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.field (Proto.Binary.enum encodeKindBytes decodeKindBytes) (\v -> { value | kind = v }) wire value
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeKindBytes decodeKindBytes)
+                        (\v ->
+                            { memo = value.memo
+                            , amount = value.amount
+                            , kind = v
+                            , tags = value.tags
+                            , source = value.source
+                            , marks = value.marks
+                            }
+                        )
+                        wire
+                        value
 
                 4 ->
-                    Proto.Binary.mapEntry Proto.Binary.string Proto.Binary.int32 (\k v -> { value | tags = Dict.insert k v value.tags }) wire value
+                    Proto.Binary.mapEntry
+                        Proto.Binary.string
+                        Proto.Binary.int32
+                        (\k v ->
+                            { memo = value.memo
+                            , amount = value.amount
+                            , kind = value.kind
+                            , tags = Dict.insert k v value.tags
+                            , source = value.source
+                            , marks = value.marks
+                            }
+                        )
+                        wire
+                        value
 
                 5 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | source = EntrySourceAccount v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { memo = value.memo
+                            , amount = value.amount
+                            , kind = value.kind
+                            , tags = value.tags
+                            , source = EntrySourceAccount v
+                            , marks = value.marks
+                            }
+                        )
+                        wire
+                        value
 
                 6 ->
                     Proto.Binary.fieldInto
@@ -389,17 +450,46 @@ mergeEntryBytes =
                             _ ->
                                 Nothing
                         )
-                        (\v -> { value | source = EntrySourceReversal v })
+                        (\v ->
+                            { memo = value.memo
+                            , amount = value.amount
+                            , kind = value.kind
+                            , tags = value.tags
+                            , source = EntrySourceReversal v
+                            , marks = value.marks
+                            }
+                        )
                         wire
                         value
 
                 7 ->
-                    Proto.Binary.repeated Proto.Binary.int32 (\v -> { value | marks = v }) value.marks wire value
+                    Proto.Binary.repeated
+                        Proto.Binary.int32
+                        (\v ->
+                            { memo = value.memo
+                            , amount = value.amount
+                            , kind = value.kind
+                            , tags = value.tags
+                            , source = value.source
+                            , marks = v
+                            }
+                        )
+                        value.marks
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value -> { value | marks = List.reverse value.marks })
+        (\value ->
+            { memo = value.memo
+            , amount = value.amount
+            , kind = value.kind
+            , tags = value.tags
+            , source = value.source
+            , marks = List.reverse value.marks
+            }
+        )
 
 
 {-| Decodes an [`Entry`](#Entry) from protobuf binary.
@@ -418,7 +508,14 @@ mergeGetEntryRequestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | memo = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { memo = v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value

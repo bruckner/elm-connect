@@ -282,55 +282,446 @@ mergeScalarsBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.double (\v -> { value | doubleValue = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.double
+                        (\v ->
+                            { doubleValue = v
+                            , floatValue = value.floatValue
+                            , int32Value = value.int32Value
+                            , int64Value = value.int64Value
+                            , uint32Value = value.uint32Value
+                            , uint64Value = value.uint64Value
+                            , sint32Value = value.sint32Value
+                            , sint64Value = value.sint64Value
+                            , fixed32Value = value.fixed32Value
+                            , fixed64Value = value.fixed64Value
+                            , sfixed32Value = value.sfixed32Value
+                            , sfixed64Value = value.sfixed64Value
+                            , boolValue = value.boolValue
+                            , stringValue = value.stringValue
+                            , bytesValue = value.bytesValue
+                            , smallCount = value.smallCount
+                            , exactTotal = value.exactTotal
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.float (\v -> { value | floatValue = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.float
+                        (\v ->
+                            { doubleValue = value.doubleValue
+                            , floatValue = v
+                            , int32Value = value.int32Value
+                            , int64Value = value.int64Value
+                            , uint32Value = value.uint32Value
+                            , uint64Value = value.uint64Value
+                            , sint32Value = value.sint32Value
+                            , sint64Value = value.sint64Value
+                            , fixed32Value = value.fixed32Value
+                            , fixed64Value = value.fixed64Value
+                            , sfixed32Value = value.sfixed32Value
+                            , sfixed64Value = value.sfixed64Value
+                            , boolValue = value.boolValue
+                            , stringValue = value.stringValue
+                            , bytesValue = value.bytesValue
+                            , smallCount = value.smallCount
+                            , exactTotal = value.exactTotal
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | int32Value = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int32
+                        (\v ->
+                            { doubleValue = value.doubleValue
+                            , floatValue = value.floatValue
+                            , int32Value = v
+                            , int64Value = value.int64Value
+                            , uint32Value = value.uint32Value
+                            , uint64Value = value.uint64Value
+                            , sint32Value = value.sint32Value
+                            , sint64Value = value.sint64Value
+                            , fixed32Value = value.fixed32Value
+                            , fixed64Value = value.fixed64Value
+                            , sfixed32Value = value.sfixed32Value
+                            , sfixed64Value = value.sfixed64Value
+                            , boolValue = value.boolValue
+                            , stringValue = value.stringValue
+                            , bytesValue = value.bytesValue
+                            , smallCount = value.smallCount
+                            , exactTotal = value.exactTotal
+                            }
+                        )
+                        wire
+                        value
 
                 4 ->
-                    Proto.Binary.field Proto.Binary.int64 (\v -> { value | int64Value = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int64
+                        (\v ->
+                            { doubleValue = value.doubleValue
+                            , floatValue = value.floatValue
+                            , int32Value = value.int32Value
+                            , int64Value = v
+                            , uint32Value = value.uint32Value
+                            , uint64Value = value.uint64Value
+                            , sint32Value = value.sint32Value
+                            , sint64Value = value.sint64Value
+                            , fixed32Value = value.fixed32Value
+                            , fixed64Value = value.fixed64Value
+                            , sfixed32Value = value.sfixed32Value
+                            , sfixed64Value = value.sfixed64Value
+                            , boolValue = value.boolValue
+                            , stringValue = value.stringValue
+                            , bytesValue = value.bytesValue
+                            , smallCount = value.smallCount
+                            , exactTotal = value.exactTotal
+                            }
+                        )
+                        wire
+                        value
 
                 5 ->
-                    Proto.Binary.field Proto.Binary.uint32 (\v -> { value | uint32Value = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.uint32
+                        (\v ->
+                            { doubleValue = value.doubleValue
+                            , floatValue = value.floatValue
+                            , int32Value = value.int32Value
+                            , int64Value = value.int64Value
+                            , uint32Value = v
+                            , uint64Value = value.uint64Value
+                            , sint32Value = value.sint32Value
+                            , sint64Value = value.sint64Value
+                            , fixed32Value = value.fixed32Value
+                            , fixed64Value = value.fixed64Value
+                            , sfixed32Value = value.sfixed32Value
+                            , sfixed64Value = value.sfixed64Value
+                            , boolValue = value.boolValue
+                            , stringValue = value.stringValue
+                            , bytesValue = value.bytesValue
+                            , smallCount = value.smallCount
+                            , exactTotal = value.exactTotal
+                            }
+                        )
+                        wire
+                        value
 
                 6 ->
-                    Proto.Binary.field Proto.Binary.uint64 (\v -> { value | uint64Value = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.uint64
+                        (\v ->
+                            { doubleValue = value.doubleValue
+                            , floatValue = value.floatValue
+                            , int32Value = value.int32Value
+                            , int64Value = value.int64Value
+                            , uint32Value = value.uint32Value
+                            , uint64Value = v
+                            , sint32Value = value.sint32Value
+                            , sint64Value = value.sint64Value
+                            , fixed32Value = value.fixed32Value
+                            , fixed64Value = value.fixed64Value
+                            , sfixed32Value = value.sfixed32Value
+                            , sfixed64Value = value.sfixed64Value
+                            , boolValue = value.boolValue
+                            , stringValue = value.stringValue
+                            , bytesValue = value.bytesValue
+                            , smallCount = value.smallCount
+                            , exactTotal = value.exactTotal
+                            }
+                        )
+                        wire
+                        value
 
                 7 ->
-                    Proto.Binary.field Proto.Binary.sint32 (\v -> { value | sint32Value = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.sint32
+                        (\v ->
+                            { doubleValue = value.doubleValue
+                            , floatValue = value.floatValue
+                            , int32Value = value.int32Value
+                            , int64Value = value.int64Value
+                            , uint32Value = value.uint32Value
+                            , uint64Value = value.uint64Value
+                            , sint32Value = v
+                            , sint64Value = value.sint64Value
+                            , fixed32Value = value.fixed32Value
+                            , fixed64Value = value.fixed64Value
+                            , sfixed32Value = value.sfixed32Value
+                            , sfixed64Value = value.sfixed64Value
+                            , boolValue = value.boolValue
+                            , stringValue = value.stringValue
+                            , bytesValue = value.bytesValue
+                            , smallCount = value.smallCount
+                            , exactTotal = value.exactTotal
+                            }
+                        )
+                        wire
+                        value
 
                 8 ->
-                    Proto.Binary.field Proto.Binary.sint64 (\v -> { value | sint64Value = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.sint64
+                        (\v ->
+                            { doubleValue = value.doubleValue
+                            , floatValue = value.floatValue
+                            , int32Value = value.int32Value
+                            , int64Value = value.int64Value
+                            , uint32Value = value.uint32Value
+                            , uint64Value = value.uint64Value
+                            , sint32Value = value.sint32Value
+                            , sint64Value = v
+                            , fixed32Value = value.fixed32Value
+                            , fixed64Value = value.fixed64Value
+                            , sfixed32Value = value.sfixed32Value
+                            , sfixed64Value = value.sfixed64Value
+                            , boolValue = value.boolValue
+                            , stringValue = value.stringValue
+                            , bytesValue = value.bytesValue
+                            , smallCount = value.smallCount
+                            , exactTotal = value.exactTotal
+                            }
+                        )
+                        wire
+                        value
 
                 9 ->
-                    Proto.Binary.field Proto.Binary.fixed32 (\v -> { value | fixed32Value = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.fixed32
+                        (\v ->
+                            { doubleValue = value.doubleValue
+                            , floatValue = value.floatValue
+                            , int32Value = value.int32Value
+                            , int64Value = value.int64Value
+                            , uint32Value = value.uint32Value
+                            , uint64Value = value.uint64Value
+                            , sint32Value = value.sint32Value
+                            , sint64Value = value.sint64Value
+                            , fixed32Value = v
+                            , fixed64Value = value.fixed64Value
+                            , sfixed32Value = value.sfixed32Value
+                            , sfixed64Value = value.sfixed64Value
+                            , boolValue = value.boolValue
+                            , stringValue = value.stringValue
+                            , bytesValue = value.bytesValue
+                            , smallCount = value.smallCount
+                            , exactTotal = value.exactTotal
+                            }
+                        )
+                        wire
+                        value
 
                 10 ->
-                    Proto.Binary.field Proto.Binary.fixed64 (\v -> { value | fixed64Value = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.fixed64
+                        (\v ->
+                            { doubleValue = value.doubleValue
+                            , floatValue = value.floatValue
+                            , int32Value = value.int32Value
+                            , int64Value = value.int64Value
+                            , uint32Value = value.uint32Value
+                            , uint64Value = value.uint64Value
+                            , sint32Value = value.sint32Value
+                            , sint64Value = value.sint64Value
+                            , fixed32Value = value.fixed32Value
+                            , fixed64Value = v
+                            , sfixed32Value = value.sfixed32Value
+                            , sfixed64Value = value.sfixed64Value
+                            , boolValue = value.boolValue
+                            , stringValue = value.stringValue
+                            , bytesValue = value.bytesValue
+                            , smallCount = value.smallCount
+                            , exactTotal = value.exactTotal
+                            }
+                        )
+                        wire
+                        value
 
                 11 ->
-                    Proto.Binary.field Proto.Binary.sfixed32 (\v -> { value | sfixed32Value = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.sfixed32
+                        (\v ->
+                            { doubleValue = value.doubleValue
+                            , floatValue = value.floatValue
+                            , int32Value = value.int32Value
+                            , int64Value = value.int64Value
+                            , uint32Value = value.uint32Value
+                            , uint64Value = value.uint64Value
+                            , sint32Value = value.sint32Value
+                            , sint64Value = value.sint64Value
+                            , fixed32Value = value.fixed32Value
+                            , fixed64Value = value.fixed64Value
+                            , sfixed32Value = v
+                            , sfixed64Value = value.sfixed64Value
+                            , boolValue = value.boolValue
+                            , stringValue = value.stringValue
+                            , bytesValue = value.bytesValue
+                            , smallCount = value.smallCount
+                            , exactTotal = value.exactTotal
+                            }
+                        )
+                        wire
+                        value
 
                 12 ->
-                    Proto.Binary.field Proto.Binary.sfixed64 (\v -> { value | sfixed64Value = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.sfixed64
+                        (\v ->
+                            { doubleValue = value.doubleValue
+                            , floatValue = value.floatValue
+                            , int32Value = value.int32Value
+                            , int64Value = value.int64Value
+                            , uint32Value = value.uint32Value
+                            , uint64Value = value.uint64Value
+                            , sint32Value = value.sint32Value
+                            , sint64Value = value.sint64Value
+                            , fixed32Value = value.fixed32Value
+                            , fixed64Value = value.fixed64Value
+                            , sfixed32Value = value.sfixed32Value
+                            , sfixed64Value = v
+                            , boolValue = value.boolValue
+                            , stringValue = value.stringValue
+                            , bytesValue = value.bytesValue
+                            , smallCount = value.smallCount
+                            , exactTotal = value.exactTotal
+                            }
+                        )
+                        wire
+                        value
 
                 13 ->
-                    Proto.Binary.field Proto.Binary.bool (\v -> { value | boolValue = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { doubleValue = value.doubleValue
+                            , floatValue = value.floatValue
+                            , int32Value = value.int32Value
+                            , int64Value = value.int64Value
+                            , uint32Value = value.uint32Value
+                            , uint64Value = value.uint64Value
+                            , sint32Value = value.sint32Value
+                            , sint64Value = value.sint64Value
+                            , fixed32Value = value.fixed32Value
+                            , fixed64Value = value.fixed64Value
+                            , sfixed32Value = value.sfixed32Value
+                            , sfixed64Value = value.sfixed64Value
+                            , boolValue = v
+                            , stringValue = value.stringValue
+                            , bytesValue = value.bytesValue
+                            , smallCount = value.smallCount
+                            , exactTotal = value.exactTotal
+                            }
+                        )
+                        wire
+                        value
 
                 14 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | stringValue = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { doubleValue = value.doubleValue
+                            , floatValue = value.floatValue
+                            , int32Value = value.int32Value
+                            , int64Value = value.int64Value
+                            , uint32Value = value.uint32Value
+                            , uint64Value = value.uint64Value
+                            , sint32Value = value.sint32Value
+                            , sint64Value = value.sint64Value
+                            , fixed32Value = value.fixed32Value
+                            , fixed64Value = value.fixed64Value
+                            , sfixed32Value = value.sfixed32Value
+                            , sfixed64Value = value.sfixed64Value
+                            , boolValue = value.boolValue
+                            , stringValue = v
+                            , bytesValue = value.bytesValue
+                            , smallCount = value.smallCount
+                            , exactTotal = value.exactTotal
+                            }
+                        )
+                        wire
+                        value
 
                 15 ->
-                    Proto.Binary.field Proto.Binary.bytes (\v -> { value | bytesValue = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bytes
+                        (\v ->
+                            { doubleValue = value.doubleValue
+                            , floatValue = value.floatValue
+                            , int32Value = value.int32Value
+                            , int64Value = value.int64Value
+                            , uint32Value = value.uint32Value
+                            , uint64Value = value.uint64Value
+                            , sint32Value = value.sint32Value
+                            , sint64Value = value.sint64Value
+                            , fixed32Value = value.fixed32Value
+                            , fixed64Value = value.fixed64Value
+                            , sfixed32Value = value.sfixed32Value
+                            , sfixed64Value = value.sfixed64Value
+                            , boolValue = value.boolValue
+                            , stringValue = value.stringValue
+                            , bytesValue = v
+                            , smallCount = value.smallCount
+                            , exactTotal = value.exactTotal
+                            }
+                        )
+                        wire
+                        value
 
                 16 ->
-                    Proto.Binary.field Proto.Binary.int64AsInt (\v -> { value | smallCount = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int64AsInt
+                        (\v ->
+                            { doubleValue = value.doubleValue
+                            , floatValue = value.floatValue
+                            , int32Value = value.int32Value
+                            , int64Value = value.int64Value
+                            , uint32Value = value.uint32Value
+                            , uint64Value = value.uint64Value
+                            , sint32Value = value.sint32Value
+                            , sint64Value = value.sint64Value
+                            , fixed32Value = value.fixed32Value
+                            , fixed64Value = value.fixed64Value
+                            , sfixed32Value = value.sfixed32Value
+                            , sfixed64Value = value.sfixed64Value
+                            , boolValue = value.boolValue
+                            , stringValue = value.stringValue
+                            , bytesValue = value.bytesValue
+                            , smallCount = v
+                            , exactTotal = value.exactTotal
+                            }
+                        )
+                        wire
+                        value
 
                 17 ->
-                    Proto.Binary.field Proto.Binary.uint64 (\v -> { value | exactTotal = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.uint64
+                        (\v ->
+                            { doubleValue = value.doubleValue
+                            , floatValue = value.floatValue
+                            , int32Value = value.int32Value
+                            , int64Value = value.int64Value
+                            , uint32Value = value.uint32Value
+                            , uint64Value = value.uint64Value
+                            , sint32Value = value.sint32Value
+                            , sint64Value = value.sint64Value
+                            , fixed32Value = value.fixed32Value
+                            , fixed64Value = value.fixed64Value
+                            , sfixed32Value = value.sfixed32Value
+                            , sfixed64Value = value.sfixed64Value
+                            , boolValue = value.boolValue
+                            , stringValue = value.stringValue
+                            , bytesValue = value.bytesValue
+                            , smallCount = value.smallCount
+                            , exactTotal = v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value

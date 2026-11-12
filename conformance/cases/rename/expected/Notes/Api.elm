@@ -397,24 +397,81 @@ mergeMemoBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | heading = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { heading = v
+                            , visibility = value.visibility
+                            , revisions = value.revisions
+                            , body = value.body
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field (Proto.Binary.enum encodeAudienceBytes decodeAudienceBytes) (\v -> { value | visibility = v }) wire value
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeAudienceBytes decodeAudienceBytes)
+                        (\v ->
+                            { heading = value.heading
+                            , visibility = v
+                            , revisions = value.revisions
+                            , body = value.body
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded encodeEditBytes mergeEditBytes defaultEdit) (\v -> { value | revisions = v }) value.revisions wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeEditBytes mergeEditBytes defaultEdit)
+                        (\v ->
+                            { heading = value.heading
+                            , visibility = value.visibility
+                            , revisions = v
+                            , body = value.body
+                            }
+                        )
+                        value.revisions
+                        wire
+                        value
 
                 4 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | body = MemoBodyText v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { heading = value.heading
+                            , visibility = value.visibility
+                            , revisions = value.revisions
+                            , body = MemoBodyText v
+                            }
+                        )
+                        wire
+                        value
 
                 5 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | body = BodyUrl v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { heading = value.heading
+                            , visibility = value.visibility
+                            , revisions = value.revisions
+                            , body = BodyUrl v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value -> { value | revisions = List.reverse value.revisions })
+        (\value ->
+            { heading = value.heading
+            , visibility = value.visibility
+            , revisions = List.reverse value.revisions
+            , body = value.body
+            }
+        )
 
 
 {-| Decodes a [`Memo`](#Memo) from protobuf binary.
@@ -433,7 +490,14 @@ mergeEditBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | number = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int32
+                        (\v ->
+                            { number = v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -457,7 +521,14 @@ mergeGetNoteRequestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | name = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { name = v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
