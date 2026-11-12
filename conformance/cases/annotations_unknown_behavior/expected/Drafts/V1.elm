@@ -65,7 +65,7 @@ defaultDraft =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Draft`](#Draft): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Draft`](#Draft): its full name and codecs.
 -}
 messageDraft : Proto.Message.Message Draft
 messageDraft =

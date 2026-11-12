@@ -86,7 +86,7 @@ enumShade =
     Proto.Enum.enum encodeShade decodeShade ShadeUnspecified Codec.Other.V1.Shade.descriptor
 
 
-{-| The typed value of [`Remote`](#Remote): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Remote`](#Remote): its full name and codecs.
 -}
 messageRemote : Proto.Message.Message Remote
 messageRemote =

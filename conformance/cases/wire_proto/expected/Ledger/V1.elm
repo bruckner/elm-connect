@@ -129,14 +129,14 @@ enumKind =
     Proto.Enum.enum encodeKind decodeKind KindUnspecified Ledger.V1.Kind.descriptor
 
 
-{-| The typed value of [`Entry`](#Entry): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Entry`](#Entry): its full name and codecs.
 -}
 messageEntry : Proto.Message.Message Entry
 messageEntry =
     Proto.Message.init "ledger.v1.Entry" encodeEntry decodeEntry encodeEntryBytes decodeEntryBytes
 
 
-{-| The typed value of [`GetEntryRequest`](#GetEntryRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`GetEntryRequest`](#GetEntryRequest): its full name and codecs.
 -}
 messageGetEntryRequest : Proto.Message.Message GetEntryRequest
 messageGetEntryRequest =

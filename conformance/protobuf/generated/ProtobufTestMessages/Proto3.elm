@@ -687,35 +687,35 @@ enumEnumOnlyProto3Bool =
     Proto.Enum.enum encodeEnumOnlyProto3Bool decodeEnumOnlyProto3Bool EnumOnlyProto3BoolKFalse ProtobufTestMessages.Proto3.EnumOnlyProto3Bool.descriptor
 
 
-{-| The typed value of [`TestAllTypesProto3`](#TestAllTypesProto3): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`TestAllTypesProto3`](#TestAllTypesProto3): its full name and codecs.
 -}
 messageTestAllTypesProto3 : Proto.Message.Message TestAllTypesProto3
 messageTestAllTypesProto3 =
     Proto.Message.initWith "protobuf_test_messages.proto3.TestAllTypesProto3" encodeTestAllTypesProto3With decodeTestAllTypesProto3With encodeTestAllTypesProto3Bytes decodeTestAllTypesProto3Bytes
 
 
-{-| The typed value of [`TestAllTypesProto3NestedMessage`](#TestAllTypesProto3NestedMessage): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`TestAllTypesProto3NestedMessage`](#TestAllTypesProto3NestedMessage): its full name and codecs.
 -}
 messageTestAllTypesProto3NestedMessage : Proto.Message.Message TestAllTypesProto3NestedMessage
 messageTestAllTypesProto3NestedMessage =
     Proto.Message.initWith "protobuf_test_messages.proto3.TestAllTypesProto3.NestedMessage" encodeTestAllTypesProto3NestedMessageWith decodeTestAllTypesProto3NestedMessageWith encodeTestAllTypesProto3NestedMessageBytes decodeTestAllTypesProto3NestedMessageBytes
 
 
-{-| The typed value of [`ForeignMessage`](#ForeignMessage): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`ForeignMessage`](#ForeignMessage): its full name and codecs.
 -}
 messageForeignMessage : Proto.Message.Message ForeignMessage
 messageForeignMessage =
     Proto.Message.init "protobuf_test_messages.proto3.ForeignMessage" encodeForeignMessage decodeForeignMessage encodeForeignMessageBytes decodeForeignMessageBytes
 
 
-{-| The typed value of [`NullHypothesisProto3`](#NullHypothesisProto3): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`NullHypothesisProto3`](#NullHypothesisProto3): its full name and codecs.
 -}
 messageNullHypothesisProto3 : Proto.Message.Message NullHypothesisProto3
 messageNullHypothesisProto3 =
     Proto.Message.init "protobuf_test_messages.proto3.NullHypothesisProto3" encodeNullHypothesisProto3 decodeNullHypothesisProto3 encodeNullHypothesisProto3Bytes decodeNullHypothesisProto3Bytes
 
 
-{-| The typed value of [`EnumOnlyProto3`](#EnumOnlyProto3): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`EnumOnlyProto3`](#EnumOnlyProto3): its full name and codecs.
 -}
 messageEnumOnlyProto3 : Proto.Message.Message EnumOnlyProto3
 messageEnumOnlyProto3 =

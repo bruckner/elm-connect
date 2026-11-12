@@ -135,14 +135,14 @@ enumState =
     Proto.Enum.enum encodeState decodeState StateUnspecified Tasks.V1.State.descriptor
 
 
-{-| The typed value of [`Task`](#Task): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Task`](#Task): its full name and codecs.
 -}
 messageTask : Proto.Message.Message Task
 messageTask =
     Proto.Message.init "tasks.v1.Task" encodeTask decodeTask encodeTaskBytes decodeTaskBytes
 
 
-{-| The typed value of [`GetTaskRequest`](#GetTaskRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`GetTaskRequest`](#GetTaskRequest): its full name and codecs.
 -}
 messageGetTaskRequest : Proto.Message.Message GetTaskRequest
 messageGetTaskRequest =

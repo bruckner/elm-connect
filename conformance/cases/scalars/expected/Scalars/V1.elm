@@ -121,14 +121,14 @@ defaultEmpty =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Scalars`](#Scalars): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Scalars`](#Scalars): its full name and codecs.
 -}
 messageScalars : Proto.Message.Message Scalars
 messageScalars =
     Proto.Message.init "scalars.v1.Scalars" encodeScalars decodeScalars encodeScalarsBytes decodeScalarsBytes
 
 
-{-| The typed value of [`Empty`](#Empty): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Empty`](#Empty): its full name and codecs.
 -}
 messageEmpty : Proto.Message.Message Empty
 messageEmpty =

@@ -182,7 +182,7 @@ defaultEvent =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Event`](#Event): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Event`](#Event): its full name and codecs.
 -}
 messageEvent : Proto.Message.Message Event
 messageEvent =

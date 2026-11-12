@@ -119,7 +119,7 @@ enumPriority =
     Proto.Enum.enum encodePriority decodePriority PriorityNone Enums.V1.Priority.descriptor
 
 
-{-| The typed value of [`Task`](#Task): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Task`](#Task): its full name and codecs.
 -}
 messageTask : Proto.Message.Message Task
 messageTask =

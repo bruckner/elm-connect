@@ -139,14 +139,14 @@ enumRole =
     Proto.Enum.enum encodeRole decodeRole RoleUnspecified Maps.V1.Role.descriptor
 
 
-{-| The typed value of [`Member`](#Member): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Member`](#Member): its full name and codecs.
 -}
 messageMember : Proto.Message.Message Member
 messageMember =
     Proto.Message.init "maps.v1.Member" encodeMember decodeMember encodeMemberBytes decodeMemberBytes
 
 
-{-| The typed value of [`Team`](#Team): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Team`](#Team): its full name and codecs.
 -}
 messageTeam : Proto.Message.Message Team
 messageTeam =

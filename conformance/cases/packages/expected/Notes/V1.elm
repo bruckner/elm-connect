@@ -88,7 +88,7 @@ defaultNote =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Note`](#Note): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Note`](#Note): its full name and codecs.
 -}
 messageNote : Proto.Message.Message Note
 messageNote =

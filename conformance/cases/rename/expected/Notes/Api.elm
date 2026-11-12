@@ -143,21 +143,21 @@ enumAudience =
     Proto.Enum.enum encodeAudience decodeAudience AudienceUnspecified Notes.Api.Audience.descriptor
 
 
-{-| The typed value of [`Memo`](#Memo): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Memo`](#Memo): its full name and codecs.
 -}
 messageMemo : Proto.Message.Message Memo
 messageMemo =
     Proto.Message.init "notes.v1.Note" encodeMemo decodeMemo encodeMemoBytes decodeMemoBytes
 
 
-{-| The typed value of [`Edit`](#Edit): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Edit`](#Edit): its full name and codecs.
 -}
 messageEdit : Proto.Message.Message Edit
 messageEdit =
     Proto.Message.init "notes.v1.Note.Revision" encodeEdit decodeEdit encodeEditBytes decodeEditBytes
 
 
-{-| The typed value of [`GetNoteRequest`](#GetNoteRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`GetNoteRequest`](#GetNoteRequest): its full name and codecs.
 -}
 messageGetNoteRequest : Proto.Message.Message GetNoteRequest
 messageGetNoteRequest =

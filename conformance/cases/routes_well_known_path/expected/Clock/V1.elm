@@ -79,7 +79,7 @@ defaultMoment =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Moment`](#Moment): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Moment`](#Moment): its full name and codecs.
 -}
 messageMoment : Proto.Message.Message Moment
 messageMoment =

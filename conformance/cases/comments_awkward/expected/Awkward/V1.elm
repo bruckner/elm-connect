@@ -200,14 +200,14 @@ enumMarks =
     Proto.Enum.enum encodeMarks decodeMarks MarksUnspecified Awkward.V1.Marks.descriptor
 
 
-{-| The typed value of [`Delimiters`](#Delimiters): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Delimiters`](#Delimiters): its full name and codecs.
 -}
 messageDelimiters : Proto.Message.Message Delimiters
 messageDelimiters =
     Proto.Message.init "awkward.v1.Delimiters" encodeDelimiters decodeDelimiters encodeDelimitersBytes decodeDelimitersBytes
 
 
-{-| The typed value of [`Docs`](#Docs): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Docs`](#Docs): its full name and codecs.
 -}
 messageDocs : Proto.Message.Message Docs
 messageDocs =

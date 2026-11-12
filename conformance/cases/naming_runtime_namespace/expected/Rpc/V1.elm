@@ -59,7 +59,7 @@ defaultPing =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Ping`](#Ping): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Ping`](#Ping): its full name and codecs.
 -}
 messagePing : Proto.Message.Message Ping
 messagePing =

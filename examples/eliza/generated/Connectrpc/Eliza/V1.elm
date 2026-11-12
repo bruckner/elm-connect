@@ -163,42 +163,42 @@ defaultIntroduceResponse =
 -- TYPED VALUES
 
 
-{-| The typed value of [`SayRequest`](#SayRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`SayRequest`](#SayRequest): its full name and codecs.
 -}
 messageSayRequest : Proto.Message.Message SayRequest
 messageSayRequest =
     Proto.Message.init "connectrpc.eliza.v1.SayRequest" encodeSayRequest decodeSayRequest encodeSayRequestBytes decodeSayRequestBytes
 
 
-{-| The typed value of [`SayResponse`](#SayResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`SayResponse`](#SayResponse): its full name and codecs.
 -}
 messageSayResponse : Proto.Message.Message SayResponse
 messageSayResponse =
     Proto.Message.init "connectrpc.eliza.v1.SayResponse" encodeSayResponse decodeSayResponse encodeSayResponseBytes decodeSayResponseBytes
 
 
-{-| The typed value of [`ConverseRequest`](#ConverseRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`ConverseRequest`](#ConverseRequest): its full name and codecs.
 -}
 messageConverseRequest : Proto.Message.Message ConverseRequest
 messageConverseRequest =
     Proto.Message.init "connectrpc.eliza.v1.ConverseRequest" encodeConverseRequest decodeConverseRequest encodeConverseRequestBytes decodeConverseRequestBytes
 
 
-{-| The typed value of [`ConverseResponse`](#ConverseResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`ConverseResponse`](#ConverseResponse): its full name and codecs.
 -}
 messageConverseResponse : Proto.Message.Message ConverseResponse
 messageConverseResponse =
     Proto.Message.init "connectrpc.eliza.v1.ConverseResponse" encodeConverseResponse decodeConverseResponse encodeConverseResponseBytes decodeConverseResponseBytes
 
 
-{-| The typed value of [`IntroduceRequest`](#IntroduceRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`IntroduceRequest`](#IntroduceRequest): its full name and codecs.
 -}
 messageIntroduceRequest : Proto.Message.Message IntroduceRequest
 messageIntroduceRequest =
     Proto.Message.init "connectrpc.eliza.v1.IntroduceRequest" encodeIntroduceRequest decodeIntroduceRequest encodeIntroduceRequestBytes decodeIntroduceRequestBytes
 
 
-{-| The typed value of [`IntroduceResponse`](#IntroduceResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`IntroduceResponse`](#IntroduceResponse): its full name and codecs.
 -}
 messageIntroduceResponse : Proto.Message.Message IntroduceResponse
 messageIntroduceResponse =

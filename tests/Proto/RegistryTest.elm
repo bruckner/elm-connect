@@ -46,9 +46,12 @@ encodeHolderBytes value =
     Bytes.Encode.sequence [ Proto.Binary.optional Proto.Binary.any 1 value.held ]
 
 
-decodeHolderBytes : Proto.Binary.Decoder Holder
-decodeHolderBytes =
-    Proto.Binary.merge "test.Holder"
+{-| The holder's binary decoder under the full name given, the one a message
+built under that name must carry too.
+-}
+holderBytes : String -> Proto.Binary.Decoder Holder
+holderBytes name =
+    Proto.Binary.merge name
         (\number wire value ->
             case number of
                 1 ->
@@ -70,25 +73,21 @@ holder name =
 
 messageHolder : String -> Message Holder
 messageHolder name =
-    Message.initWith name encodeHolderWith decodeHolderWith encodeHolderBytes decodeHolderBytes
+    Message.initWith name encodeHolderWith decodeHolderWith encodeHolderBytes (holderBytes name)
 
 
 {-| A message holding no `Any`: a string at field 1, `{"text": …}` in JSON.
 -}
 leaf : String -> Registry -> Registry
 leaf name =
-    Registry.register
-        (Message.init name
-            (\t -> Json.Encode.object [ ( "text", Json.Encode.string t ) ])
-            (Json.Decode.field "text" Json.Decode.string)
-            (\t -> Bytes.Encode.sequence [ Proto.Binary.implicit Proto.Binary.string 1 t ])
-            leafBytes
-        )
+    Registry.register (messageLeaf name)
 
 
-leafBytes : Proto.Binary.Decoder String
-leafBytes =
-    Proto.Binary.merge "test.Leaf"
+{-| The leaf's binary decoder under the full name given, as for the holder.
+-}
+leafBytes : String -> Proto.Binary.Decoder String
+leafBytes name =
+    Proto.Binary.merge name
         (\number wire value ->
             if number == 1 then
                 Proto.Binary.field Proto.Binary.string identity wire value
@@ -106,7 +105,7 @@ messageLeaf name =
         (\t -> Json.Encode.object [ ( "text", Json.Encode.string t ) ])
         (Json.Decode.field "text" Json.Decode.string)
         (\t -> Bytes.Encode.sequence [ Proto.Binary.implicit Proto.Binary.string 1 t ])
-        leafBytes
+        (leafBytes name)
 
 
 {-| The proto3 JSON of a message's binary, by full name, through the
@@ -193,7 +192,7 @@ suite =
                 )
                     |> Expect.equal
                         ( Err (UnregisteredType "type.googleapis.com/t.Leaf")
-                        , Err (BadBinary { typeName = "test.Leaf", reason = Truncated, path = [], offset = 0 })
+                        , Err (BadBinary { typeName = "t.Leaf", reason = Truncated, path = [], offset = 0 })
                         , Err True
                         )
         , test "unregistered finds the Any whose type the registry lacks, and nothing in any other failure" <|
@@ -229,7 +228,7 @@ suite =
                                 (\_ -> Json.Encode.string "other")
                                 (Json.Decode.succeed "")
                                 (\_ -> Bytes.Encode.sequence [])
-                                leafBytes
+                                (leafBytes "t.Leaf")
                             )
                             Registry.empty
                 in
