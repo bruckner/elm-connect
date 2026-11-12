@@ -714,21 +714,23 @@ skip wire unchanged =
 
 fastSkipValue : Int -> D.Decoder Int
 fastSkipValue wire =
-    case wire of
-        0 ->
-            D.map Tuple.first fastVarint32
+    skipValue wire unbounded
+        |> D.andThen
+            (\width ->
+                if width < 0 then
+                    D.fail
 
-        1 ->
-            D.map (\_ -> 8) (D.bytes 8)
+                else
+                    D.succeed width
+            )
 
-        2 ->
-            fastVarint32 |> D.andThen (\( width, length ) -> D.map (\_ -> width + length) (D.bytes length))
 
-        5 ->
-            D.map (\_ -> 4) (D.bytes 4)
-
-        _ ->
-            D.fail
+{-| A bound no region reaches: the locating readers given it read as the
+fast ones do, failing only where the input ends.
+-}
+unbounded : Int
+unbounded =
+    0x7FFFFFFF
 
 
 skipValue : Int -> Int -> D.Decoder Int
@@ -1026,7 +1028,9 @@ varint64Step bound ( index, high, low ) =
 
 
 {-| A varint's width and its low 32 bits, unsigned, for the fast reader;
-up to ten bytes are read, the bits past the 32nd dropped.
+up to ten bytes are read, the bits past the 32nd dropped. A varint of more
+than one byte is read by the locating reader's loop, unbounded, its failure
+turned into the fast reader's.
 -}
 fastVarint32 : D.Decoder ( Int, Int )
 fastVarint32 =
@@ -1037,37 +1041,7 @@ fastVarint32 =
                     D.succeed ( 1, b )
 
                 else
-                    D.loop ( 1, b - 128 ) fastVarint32Step
-            )
-
-
-fastVarint32Step : ( Int, Int ) -> D.Decoder (Step ( Int, Int ) ( Int, Int ))
-fastVarint32Step ( index, low ) =
-    D.unsignedInt8
-        |> D.andThen
-            (\b ->
-                let
-                    bits =
-                        Bitwise.and 0x7F b
-
-                    next =
-                        if index < 4 then
-                            low + bits * shift7 index
-
-                        else if index == 4 then
-                            low + Bitwise.and 0x0F bits * 268435456
-
-                        else
-                            low
-                in
-                if b < 128 then
-                    D.succeed (Done ( index + 1, next ))
-
-                else if index >= 9 then
-                    D.fail
-
-                else
-                    D.succeed (Loop ( index + 1, next ))
+                    D.loop ( 1, b - 128 ) (varint32Step 10) |> D.andThen orFail
             )
 
 
@@ -1080,41 +1054,19 @@ fastVarint64 =
                     D.succeed ( 1, U64 0 b )
 
                 else
-                    D.loop ( 1, 0, b - 128 ) fastVarint64Step
+                    D.loop ( 1, 0, b - 128 ) (varint64Step 10) |> D.andThen orFail
             )
 
 
-fastVarint64Step : ( Int, Int, Int ) -> D.Decoder (Step ( Int, Int, Int ) ( Int, U64 ))
-fastVarint64Step ( index, high, low ) =
-    D.unsignedInt8
-        |> D.andThen
-            (\b ->
-                let
-                    bits =
-                        Bitwise.and 0x7F b
+{-| A raw reader's result as the fast reader's: a negative width fails.
+-}
+orFail : ( Int, a ) -> D.Decoder ( Int, a )
+orFail (( width, _ ) as read) =
+    if width < 0 then
+        D.fail
 
-                    ( nextHigh, nextLow ) =
-                        if index < 4 then
-                            ( high, low + bits * shift7 index )
-
-                        else if index == 4 then
-                            ( Bitwise.shiftRightZfBy 4 bits, low + Bitwise.and 0x0F bits * 268435456 )
-
-                        else if index < 9 then
-                            ( high + bits * (2 ^ (7 * index - 32)), low )
-
-                        else
-                            ( high + Bitwise.and 1 bits * 2147483648, low )
-                in
-                if b < 128 then
-                    D.succeed (Done ( index + 1, U64 nextHigh nextLow ))
-
-                else if index >= 9 then
-                    D.fail
-
-                else
-                    D.succeed (Loop ( index + 1, nextHigh, nextLow ))
-            )
+    else
+        D.succeed read
 
 
 {-| A varint of an unsigned value below 2^32.
