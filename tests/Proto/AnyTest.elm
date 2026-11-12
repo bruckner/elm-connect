@@ -41,7 +41,7 @@ descriptorNote =
 -}
 noteAs : String -> Message Note
 noteAs name =
-    Message.init name encodeNote decodeNote encodeNoteBytes decodeNoteBytes
+    Message.init name encodeNote decodeNote encodeNoteBytes (noteBytesAs name)
 
 
 encodeNote : Note -> Json.Encode.Value
@@ -69,7 +69,15 @@ encodeNoteBytes value =
 
 decodeNoteBytes : Proto.Binary.Decoder Note
 decodeNoteBytes =
-    Proto.Binary.merge "notes.v1.Note"
+    noteBytesAs "notes.v1.Note"
+
+
+{-| Note's binary decoder under the full name given, the one a message built
+under that name must carry too.
+-}
+noteBytesAs : String -> Proto.Binary.Decoder Note
+noteBytesAs name =
+    Proto.Binary.merge name
         (\number wire value ->
             case number of
                 1 ->
