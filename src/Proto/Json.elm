@@ -534,9 +534,35 @@ A field given `Nothing` is left out.
 -}
 objectOfFields : List ( String, Maybe Value ) -> Value
 objectOfFields fields =
-    fields
-        |> List.filterMap (\( key, value ) -> Maybe.map (Tuple.pair key) value)
-        |> objectOf
+    presentPairs fields [] False
+
+
+{-| The pairs of the fields that have a value, gathered in reverse in one
+pass, noting whether a key is `__proto__`, and made an object.
+-}
+presentPairs : List ( String, Maybe Value ) -> List ( String, Value ) -> Bool -> Value
+presentPairs fields done proto =
+    case fields of
+        [] ->
+            objectOfReversed proto done
+
+        ( key, Just value ) :: rest ->
+            presentPairs rest (( key, value ) :: done) (proto || key == "__proto__")
+
+        ( _, Nothing ) :: rest ->
+            presentPairs rest done proto
+
+
+{-| [`objectOf`](#objectOf) of pairs given in reverse, told whether a key is
+`__proto__`.
+-}
+objectOfReversed : Bool -> List ( String, Value ) -> Value
+objectOfReversed proto reversed =
+    if proto then
+        objectOf (List.reverse reversed)
+
+    else
+        Json.Encode.object (List.reverse reversed)
 
 
 {-| A JSON object from its pairs, keys kept in order. `Json.Encode.object`
@@ -656,8 +682,23 @@ the first `Err`, in order, or the object.
 -}
 tryObjectOfFields : List ( String, Result x (Maybe Value) ) -> Result x Value
 tryObjectOfFields fields =
-    collect (\( key, result ) -> Result.map (Tuple.pair key) result) fields
-        |> Result.map objectOfFields
+    tryPresentPairs fields [] False
+
+
+tryPresentPairs : List ( String, Result x (Maybe Value) ) -> List ( String, Value ) -> Bool -> Result x Value
+tryPresentPairs fields done proto =
+    case fields of
+        [] ->
+            Ok (objectOfReversed proto done)
+
+        ( key, Ok (Just value) ) :: rest ->
+            tryPresentPairs rest (( key, value ) :: done) (proto || key == "__proto__")
+
+        ( _, Ok Nothing ) :: rest ->
+            tryPresentPairs rest done proto
+
+        ( _, Err problem ) :: _ ->
+            Err problem
 
 
 {-| A field with presence: `Ok Nothing` when it is `Nothing`, else its value's
