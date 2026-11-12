@@ -105,21 +105,21 @@ defaultGetThingRequest =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Thing`](#Thing): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Thing`](#Thing): its full name and codecs.
 -}
 messageThing : Proto.Message.Message Thing
 messageThing =
     Proto.Message.init "things.v1.Thing" encodeThing decodeThing encodeThingBytes decodeThingBytes
 
 
-{-| The typed value of [`Criteria`](#Criteria): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Criteria`](#Criteria): its full name and codecs.
 -}
 messageCriteria : Proto.Message.Message Criteria
 messageCriteria =
     Proto.Message.init "things.v1.Filter" encodeCriteria decodeCriteria encodeCriteriaBytes decodeCriteriaBytes
 
 
-{-| The typed value of [`GetThingRequest`](#GetThingRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`GetThingRequest`](#GetThingRequest): its full name and codecs.
 -}
 messageGetThingRequest : Proto.Message.Message GetThingRequest
 messageGetThingRequest =

@@ -155,28 +155,28 @@ enumStatus =
     Proto.Enum.enum encodeStatus decodeStatus StatusUnspecified Vault.V1.Status.descriptor
 
 
-{-| The typed value of [`Item`](#Item): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Item`](#Item): its full name and codecs.
 -}
 messageItem : Proto.Message.Message Item
 messageItem =
     Proto.Message.initWith "vault.v1.Item" encodeItemWith decodeItemWith encodeItemBytes decodeItemBytes
 
 
-{-| The typed value of [`GetItemRequest`](#GetItemRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`GetItemRequest`](#GetItemRequest): its full name and codecs.
 -}
 messageGetItemRequest : Proto.Message.Message GetItemRequest
 messageGetItemRequest =
     Proto.Message.init "vault.v1.GetItemRequest" encodeGetItemRequest decodeGetItemRequest encodeGetItemRequestBytes decodeGetItemRequestBytes
 
 
-{-| The typed value of [`ListItemsRequest`](#ListItemsRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`ListItemsRequest`](#ListItemsRequest): its full name and codecs.
 -}
 messageListItemsRequest : Proto.Message.Message ListItemsRequest
 messageListItemsRequest =
     Proto.Message.init "vault.v1.ListItemsRequest" encodeListItemsRequest decodeListItemsRequest encodeListItemsRequestBytes decodeListItemsRequestBytes
 
 
-{-| The typed value of [`ListItemsResponse`](#ListItemsResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`ListItemsResponse`](#ListItemsResponse): its full name and codecs.
 -}
 messageListItemsResponse : Proto.Message.Message ListItemsResponse
 messageListItemsResponse =

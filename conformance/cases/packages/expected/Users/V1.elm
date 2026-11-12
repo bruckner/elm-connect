@@ -80,7 +80,7 @@ enumRole =
     Proto.Enum.enum encodeRole decodeRole RoleUnspecified Users.V1.Role.descriptor
 
 
-{-| The typed value of [`User`](#User): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`User`](#User): its full name and codecs.
 -}
 messageUser : Proto.Message.Message User
 messageUser =

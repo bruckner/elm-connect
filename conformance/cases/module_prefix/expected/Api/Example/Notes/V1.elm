@@ -86,14 +86,14 @@ defaultGetNoteRequest =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Note`](#Note): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Note`](#Note): its full name and codecs.
 -}
 messageNote : Proto.Message.Message Note
 messageNote =
     Proto.Message.init "notes.v1.Note" encodeNote decodeNote encodeNoteBytes decodeNoteBytes
 
 
-{-| The typed value of [`GetNoteRequest`](#GetNoteRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`GetNoteRequest`](#GetNoteRequest): its full name and codecs.
 -}
 messageGetNoteRequest : Proto.Message.Message GetNoteRequest
 messageGetNoteRequest =

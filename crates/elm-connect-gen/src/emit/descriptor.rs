@@ -120,8 +120,7 @@ impl Emitter {
         );
         Decl::Value {
             doc: Some(format!(
-                "The typed value of {}: its full name and codecs, which a \
-                 `google.protobuf.Any` packs and unpacks with.",
+                "The typed value of {}: its full name and codecs.",
                 docs::local(&message.elm_name)
             )),
             name: message.value_name(),

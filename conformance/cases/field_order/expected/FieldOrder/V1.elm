@@ -132,14 +132,14 @@ enumMood =
     Proto.Enum.enum encodeMood decodeMood MoodUnspecified FieldOrder.V1.Mood.descriptor
 
 
-{-| The typed value of [`Draft`](#Draft): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Draft`](#Draft): its full name and codecs.
 -}
 messageDraft : Proto.Message.Message Draft
 messageDraft =
     Proto.Message.init "field_order.v1.Draft" encodeDraft decodeDraft encodeDraftBytes decodeDraftBytes
 
 
-{-| The typed value of [`DraftMargin`](#DraftMargin): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`DraftMargin`](#DraftMargin): its full name and codecs.
 -}
 messageDraftMargin : Proto.Message.Message DraftMargin
 messageDraftMargin =

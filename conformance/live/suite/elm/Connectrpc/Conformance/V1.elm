@@ -1844,280 +1844,280 @@ enumTestSuiteConnectVersionMode =
     Proto.Enum.enum encodeTestSuiteConnectVersionMode decodeTestSuiteConnectVersionMode TestSuiteConnectVersionModeUnspecified Connectrpc.Conformance.V1.TestSuiteConnectVersionMode.descriptor
 
 
-{-| The typed value of [`ClientCompatRequest`](#ClientCompatRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`ClientCompatRequest`](#ClientCompatRequest): its full name and codecs.
 -}
 messageClientCompatRequest : Proto.Message.Message ClientCompatRequest
 messageClientCompatRequest =
     Proto.Message.initWith "connectrpc.conformance.v1.ClientCompatRequest" encodeClientCompatRequestWith decodeClientCompatRequestWith encodeClientCompatRequestBytes decodeClientCompatRequestBytes
 
 
-{-| The typed value of [`ClientCompatRequestCancel`](#ClientCompatRequestCancel): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`ClientCompatRequestCancel`](#ClientCompatRequestCancel): its full name and codecs.
 -}
 messageClientCompatRequestCancel : Proto.Message.Message ClientCompatRequestCancel
 messageClientCompatRequestCancel =
     Proto.Message.init "connectrpc.conformance.v1.ClientCompatRequest.Cancel" encodeClientCompatRequestCancel decodeClientCompatRequestCancel encodeClientCompatRequestCancelBytes decodeClientCompatRequestCancelBytes
 
 
-{-| The typed value of [`ClientCompatResponse`](#ClientCompatResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`ClientCompatResponse`](#ClientCompatResponse): its full name and codecs.
 -}
 messageClientCompatResponse : Proto.Message.Message ClientCompatResponse
 messageClientCompatResponse =
     Proto.Message.initWith "connectrpc.conformance.v1.ClientCompatResponse" encodeClientCompatResponseWith decodeClientCompatResponseWith encodeClientCompatResponseBytes decodeClientCompatResponseBytes
 
 
-{-| The typed value of [`ClientResponseResult`](#ClientResponseResult): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`ClientResponseResult`](#ClientResponseResult): its full name and codecs.
 -}
 messageClientResponseResult : Proto.Message.Message ClientResponseResult
 messageClientResponseResult =
     Proto.Message.initWith "connectrpc.conformance.v1.ClientResponseResult" encodeClientResponseResultWith decodeClientResponseResultWith encodeClientResponseResultBytes decodeClientResponseResultBytes
 
 
-{-| The typed value of [`ClientErrorResult`](#ClientErrorResult): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`ClientErrorResult`](#ClientErrorResult): its full name and codecs.
 -}
 messageClientErrorResult : Proto.Message.Message ClientErrorResult
 messageClientErrorResult =
     Proto.Message.init "connectrpc.conformance.v1.ClientErrorResult" encodeClientErrorResult decodeClientErrorResult encodeClientErrorResultBytes decodeClientErrorResultBytes
 
 
-{-| The typed value of [`WireDetails`](#WireDetails): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`WireDetails`](#WireDetails): its full name and codecs.
 -}
 messageWireDetails : Proto.Message.Message WireDetails
 messageWireDetails =
     Proto.Message.init "connectrpc.conformance.v1.WireDetails" encodeWireDetails decodeWireDetails encodeWireDetailsBytes decodeWireDetailsBytes
 
 
-{-| The typed value of [`Config`](#Config): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Config`](#Config): its full name and codecs.
 -}
 messageConfig : Proto.Message.Message Config
 messageConfig =
     Proto.Message.init "connectrpc.conformance.v1.Config" encodeConfig decodeConfig encodeConfigBytes decodeConfigBytes
 
 
-{-| The typed value of [`Features`](#Features): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Features`](#Features): its full name and codecs.
 -}
 messageFeatures : Proto.Message.Message Features
 messageFeatures =
     Proto.Message.init "connectrpc.conformance.v1.Features" encodeFeatures decodeFeatures encodeFeaturesBytes decodeFeaturesBytes
 
 
-{-| The typed value of [`ConfigCase`](#ConfigCase): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`ConfigCase`](#ConfigCase): its full name and codecs.
 -}
 messageConfigCase : Proto.Message.Message ConfigCase
 messageConfigCase =
     Proto.Message.init "connectrpc.conformance.v1.ConfigCase" encodeConfigCase decodeConfigCase encodeConfigCaseBytes decodeConfigCaseBytes
 
 
-{-| The typed value of [`TLSCreds`](#TLSCreds): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`TLSCreds`](#TLSCreds): its full name and codecs.
 -}
 messageTLSCreds : Proto.Message.Message TLSCreds
 messageTLSCreds =
     Proto.Message.init "connectrpc.conformance.v1.TLSCreds" encodeTLSCreds decodeTLSCreds encodeTLSCredsBytes decodeTLSCredsBytes
 
 
-{-| The typed value of [`ServerCompatRequest`](#ServerCompatRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`ServerCompatRequest`](#ServerCompatRequest): its full name and codecs.
 -}
 messageServerCompatRequest : Proto.Message.Message ServerCompatRequest
 messageServerCompatRequest =
     Proto.Message.init "connectrpc.conformance.v1.ServerCompatRequest" encodeServerCompatRequest decodeServerCompatRequest encodeServerCompatRequestBytes decodeServerCompatRequestBytes
 
 
-{-| The typed value of [`ServerCompatResponse`](#ServerCompatResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`ServerCompatResponse`](#ServerCompatResponse): its full name and codecs.
 -}
 messageServerCompatResponse : Proto.Message.Message ServerCompatResponse
 messageServerCompatResponse =
     Proto.Message.init "connectrpc.conformance.v1.ServerCompatResponse" encodeServerCompatResponse decodeServerCompatResponse encodeServerCompatResponseBytes decodeServerCompatResponseBytes
 
 
-{-| The typed value of [`UnaryResponseDefinition`](#UnaryResponseDefinition): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`UnaryResponseDefinition`](#UnaryResponseDefinition): its full name and codecs.
 -}
 messageUnaryResponseDefinition : Proto.Message.Message UnaryResponseDefinition
 messageUnaryResponseDefinition =
     Proto.Message.initWith "connectrpc.conformance.v1.UnaryResponseDefinition" encodeUnaryResponseDefinitionWith decodeUnaryResponseDefinitionWith encodeUnaryResponseDefinitionBytes decodeUnaryResponseDefinitionBytes
 
 
-{-| The typed value of [`StreamResponseDefinition`](#StreamResponseDefinition): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`StreamResponseDefinition`](#StreamResponseDefinition): its full name and codecs.
 -}
 messageStreamResponseDefinition : Proto.Message.Message StreamResponseDefinition
 messageStreamResponseDefinition =
     Proto.Message.initWith "connectrpc.conformance.v1.StreamResponseDefinition" encodeStreamResponseDefinitionWith decodeStreamResponseDefinitionWith encodeStreamResponseDefinitionBytes decodeStreamResponseDefinitionBytes
 
 
-{-| The typed value of [`UnaryRequest`](#UnaryRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`UnaryRequest`](#UnaryRequest): its full name and codecs.
 -}
 messageUnaryRequest : Proto.Message.Message UnaryRequest
 messageUnaryRequest =
     Proto.Message.initWith "connectrpc.conformance.v1.UnaryRequest" encodeUnaryRequestWith decodeUnaryRequestWith encodeUnaryRequestBytes decodeUnaryRequestBytes
 
 
-{-| The typed value of [`UnaryResponse`](#UnaryResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`UnaryResponse`](#UnaryResponse): its full name and codecs.
 -}
 messageUnaryResponse : Proto.Message.Message UnaryResponse
 messageUnaryResponse =
     Proto.Message.initWith "connectrpc.conformance.v1.UnaryResponse" encodeUnaryResponseWith decodeUnaryResponseWith encodeUnaryResponseBytes decodeUnaryResponseBytes
 
 
-{-| The typed value of [`IdempotentUnaryRequest`](#IdempotentUnaryRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`IdempotentUnaryRequest`](#IdempotentUnaryRequest): its full name and codecs.
 -}
 messageIdempotentUnaryRequest : Proto.Message.Message IdempotentUnaryRequest
 messageIdempotentUnaryRequest =
     Proto.Message.initWith "connectrpc.conformance.v1.IdempotentUnaryRequest" encodeIdempotentUnaryRequestWith decodeIdempotentUnaryRequestWith encodeIdempotentUnaryRequestBytes decodeIdempotentUnaryRequestBytes
 
 
-{-| The typed value of [`IdempotentUnaryResponse`](#IdempotentUnaryResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`IdempotentUnaryResponse`](#IdempotentUnaryResponse): its full name and codecs.
 -}
 messageIdempotentUnaryResponse : Proto.Message.Message IdempotentUnaryResponse
 messageIdempotentUnaryResponse =
     Proto.Message.initWith "connectrpc.conformance.v1.IdempotentUnaryResponse" encodeIdempotentUnaryResponseWith decodeIdempotentUnaryResponseWith encodeIdempotentUnaryResponseBytes decodeIdempotentUnaryResponseBytes
 
 
-{-| The typed value of [`ServerStreamRequest`](#ServerStreamRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`ServerStreamRequest`](#ServerStreamRequest): its full name and codecs.
 -}
 messageServerStreamRequest : Proto.Message.Message ServerStreamRequest
 messageServerStreamRequest =
     Proto.Message.initWith "connectrpc.conformance.v1.ServerStreamRequest" encodeServerStreamRequestWith decodeServerStreamRequestWith encodeServerStreamRequestBytes decodeServerStreamRequestBytes
 
 
-{-| The typed value of [`ServerStreamResponse`](#ServerStreamResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`ServerStreamResponse`](#ServerStreamResponse): its full name and codecs.
 -}
 messageServerStreamResponse : Proto.Message.Message ServerStreamResponse
 messageServerStreamResponse =
     Proto.Message.initWith "connectrpc.conformance.v1.ServerStreamResponse" encodeServerStreamResponseWith decodeServerStreamResponseWith encodeServerStreamResponseBytes decodeServerStreamResponseBytes
 
 
-{-| The typed value of [`ClientStreamRequest`](#ClientStreamRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`ClientStreamRequest`](#ClientStreamRequest): its full name and codecs.
 -}
 messageClientStreamRequest : Proto.Message.Message ClientStreamRequest
 messageClientStreamRequest =
     Proto.Message.initWith "connectrpc.conformance.v1.ClientStreamRequest" encodeClientStreamRequestWith decodeClientStreamRequestWith encodeClientStreamRequestBytes decodeClientStreamRequestBytes
 
 
-{-| The typed value of [`ClientStreamResponse`](#ClientStreamResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`ClientStreamResponse`](#ClientStreamResponse): its full name and codecs.
 -}
 messageClientStreamResponse : Proto.Message.Message ClientStreamResponse
 messageClientStreamResponse =
     Proto.Message.initWith "connectrpc.conformance.v1.ClientStreamResponse" encodeClientStreamResponseWith decodeClientStreamResponseWith encodeClientStreamResponseBytes decodeClientStreamResponseBytes
 
 
-{-| The typed value of [`BidiStreamRequest`](#BidiStreamRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`BidiStreamRequest`](#BidiStreamRequest): its full name and codecs.
 -}
 messageBidiStreamRequest : Proto.Message.Message BidiStreamRequest
 messageBidiStreamRequest =
     Proto.Message.initWith "connectrpc.conformance.v1.BidiStreamRequest" encodeBidiStreamRequestWith decodeBidiStreamRequestWith encodeBidiStreamRequestBytes decodeBidiStreamRequestBytes
 
 
-{-| The typed value of [`BidiStreamResponse`](#BidiStreamResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`BidiStreamResponse`](#BidiStreamResponse): its full name and codecs.
 -}
 messageBidiStreamResponse : Proto.Message.Message BidiStreamResponse
 messageBidiStreamResponse =
     Proto.Message.initWith "connectrpc.conformance.v1.BidiStreamResponse" encodeBidiStreamResponseWith decodeBidiStreamResponseWith encodeBidiStreamResponseBytes decodeBidiStreamResponseBytes
 
 
-{-| The typed value of [`UnimplementedRequest`](#UnimplementedRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`UnimplementedRequest`](#UnimplementedRequest): its full name and codecs.
 -}
 messageUnimplementedRequest : Proto.Message.Message UnimplementedRequest
 messageUnimplementedRequest =
     Proto.Message.init "connectrpc.conformance.v1.UnimplementedRequest" encodeUnimplementedRequest decodeUnimplementedRequest encodeUnimplementedRequestBytes decodeUnimplementedRequestBytes
 
 
-{-| The typed value of [`UnimplementedResponse`](#UnimplementedResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`UnimplementedResponse`](#UnimplementedResponse): its full name and codecs.
 -}
 messageUnimplementedResponse : Proto.Message.Message UnimplementedResponse
 messageUnimplementedResponse =
     Proto.Message.init "connectrpc.conformance.v1.UnimplementedResponse" encodeUnimplementedResponse decodeUnimplementedResponse encodeUnimplementedResponseBytes decodeUnimplementedResponseBytes
 
 
-{-| The typed value of [`ConformancePayload`](#ConformancePayload): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`ConformancePayload`](#ConformancePayload): its full name and codecs.
 -}
 messageConformancePayload : Proto.Message.Message ConformancePayload
 messageConformancePayload =
     Proto.Message.initWith "connectrpc.conformance.v1.ConformancePayload" encodeConformancePayloadWith decodeConformancePayloadWith encodeConformancePayloadBytes decodeConformancePayloadBytes
 
 
-{-| The typed value of [`ConformancePayloadRequestInfo`](#ConformancePayloadRequestInfo): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`ConformancePayloadRequestInfo`](#ConformancePayloadRequestInfo): its full name and codecs.
 -}
 messageConformancePayloadRequestInfo : Proto.Message.Message ConformancePayloadRequestInfo
 messageConformancePayloadRequestInfo =
     Proto.Message.initWith "connectrpc.conformance.v1.ConformancePayload.RequestInfo" encodeConformancePayloadRequestInfoWith decodeConformancePayloadRequestInfoWith encodeConformancePayloadRequestInfoBytes decodeConformancePayloadRequestInfoBytes
 
 
-{-| The typed value of [`ConformancePayloadConnectGetInfo`](#ConformancePayloadConnectGetInfo): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`ConformancePayloadConnectGetInfo`](#ConformancePayloadConnectGetInfo): its full name and codecs.
 -}
 messageConformancePayloadConnectGetInfo : Proto.Message.Message ConformancePayloadConnectGetInfo
 messageConformancePayloadConnectGetInfo =
     Proto.Message.init "connectrpc.conformance.v1.ConformancePayload.ConnectGetInfo" encodeConformancePayloadConnectGetInfo decodeConformancePayloadConnectGetInfo encodeConformancePayloadConnectGetInfoBytes decodeConformancePayloadConnectGetInfoBytes
 
 
-{-| The typed value of [`Error`](#Error): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Error`](#Error): its full name and codecs.
 -}
 messageError : Proto.Message.Message Error
 messageError =
     Proto.Message.initWith "connectrpc.conformance.v1.Error" encodeErrorWith decodeErrorWith encodeErrorBytes decodeErrorBytes
 
 
-{-| The typed value of [`Header`](#Header): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Header`](#Header): its full name and codecs.
 -}
 messageHeader : Proto.Message.Message Header
 messageHeader =
     Proto.Message.init "connectrpc.conformance.v1.Header" encodeHeader decodeHeader encodeHeaderBytes decodeHeaderBytes
 
 
-{-| The typed value of [`RawHTTPRequest`](#RawHTTPRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`RawHTTPRequest`](#RawHTTPRequest): its full name and codecs.
 -}
 messageRawHTTPRequest : Proto.Message.Message RawHTTPRequest
 messageRawHTTPRequest =
     Proto.Message.initWith "connectrpc.conformance.v1.RawHTTPRequest" encodeRawHTTPRequestWith decodeRawHTTPRequestWith encodeRawHTTPRequestBytes decodeRawHTTPRequestBytes
 
 
-{-| The typed value of [`RawHTTPRequestEncodedQueryParam`](#RawHTTPRequestEncodedQueryParam): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`RawHTTPRequestEncodedQueryParam`](#RawHTTPRequestEncodedQueryParam): its full name and codecs.
 -}
 messageRawHTTPRequestEncodedQueryParam : Proto.Message.Message RawHTTPRequestEncodedQueryParam
 messageRawHTTPRequestEncodedQueryParam =
     Proto.Message.initWith "connectrpc.conformance.v1.RawHTTPRequest.EncodedQueryParam" encodeRawHTTPRequestEncodedQueryParamWith decodeRawHTTPRequestEncodedQueryParamWith encodeRawHTTPRequestEncodedQueryParamBytes decodeRawHTTPRequestEncodedQueryParamBytes
 
 
-{-| The typed value of [`MessageContents`](#MessageContents): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`MessageContents`](#MessageContents): its full name and codecs.
 -}
 messageMessageContents : Proto.Message.Message MessageContents
 messageMessageContents =
     Proto.Message.initWith "connectrpc.conformance.v1.MessageContents" encodeMessageContentsWith decodeMessageContentsWith encodeMessageContentsBytes decodeMessageContentsBytes
 
 
-{-| The typed value of [`StreamContents`](#StreamContents): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`StreamContents`](#StreamContents): its full name and codecs.
 -}
 messageStreamContents : Proto.Message.Message StreamContents
 messageStreamContents =
     Proto.Message.initWith "connectrpc.conformance.v1.StreamContents" encodeStreamContentsWith decodeStreamContentsWith encodeStreamContentsBytes decodeStreamContentsBytes
 
 
-{-| The typed value of [`StreamContentsStreamItem`](#StreamContentsStreamItem): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`StreamContentsStreamItem`](#StreamContentsStreamItem): its full name and codecs.
 -}
 messageStreamContentsStreamItem : Proto.Message.Message StreamContentsStreamItem
 messageStreamContentsStreamItem =
     Proto.Message.initWith "connectrpc.conformance.v1.StreamContents.StreamItem" encodeStreamContentsStreamItemWith decodeStreamContentsStreamItemWith encodeStreamContentsStreamItemBytes decodeStreamContentsStreamItemBytes
 
 
-{-| The typed value of [`RawHTTPResponse`](#RawHTTPResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`RawHTTPResponse`](#RawHTTPResponse): its full name and codecs.
 -}
 messageRawHTTPResponse : Proto.Message.Message RawHTTPResponse
 messageRawHTTPResponse =
     Proto.Message.initWith "connectrpc.conformance.v1.RawHTTPResponse" encodeRawHTTPResponseWith decodeRawHTTPResponseWith encodeRawHTTPResponseBytes decodeRawHTTPResponseBytes
 
 
-{-| The typed value of [`TestSuite`](#TestSuite): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`TestSuite`](#TestSuite): its full name and codecs.
 -}
 messageTestSuite : Proto.Message.Message TestSuite
 messageTestSuite =
     Proto.Message.initWith "connectrpc.conformance.v1.TestSuite" encodeTestSuiteWith decodeTestSuiteWith encodeTestSuiteBytes decodeTestSuiteBytes
 
 
-{-| The typed value of [`TestCase`](#TestCase): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`TestCase`](#TestCase): its full name and codecs.
 -}
 messageTestCase : Proto.Message.Message TestCase
 messageTestCase =
     Proto.Message.initWith "connectrpc.conformance.v1.TestCase" encodeTestCaseWith decodeTestCaseWith encodeTestCaseBytes decodeTestCaseBytes
 
 
-{-| The typed value of [`TestCaseExpandedSize`](#TestCaseExpandedSize): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`TestCaseExpandedSize`](#TestCaseExpandedSize): its full name and codecs.
 -}
 messageTestCaseExpandedSize : Proto.Message.Message TestCaseExpandedSize
 messageTestCaseExpandedSize =

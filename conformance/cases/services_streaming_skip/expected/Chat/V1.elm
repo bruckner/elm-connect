@@ -59,7 +59,7 @@ defaultLine =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Line`](#Line): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Line`](#Line): its full name and codecs.
 -}
 messageLine : Proto.Message.Message Line
 messageLine =

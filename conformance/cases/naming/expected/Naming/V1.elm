@@ -150,7 +150,7 @@ enumHttpMethod =
     Proto.Enum.enum encodeHttpMethod decodeHttpMethod HttpMethodUnspecified Naming.V1.HttpMethod.descriptor
 
 
-{-| The typed value of [`Tag`](#Tag): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Tag`](#Tag): its full name and codecs.
 -}
 messageTag : Proto.Message.Message Tag
 messageTag =

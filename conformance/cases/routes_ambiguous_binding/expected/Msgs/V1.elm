@@ -88,14 +88,14 @@ defaultMessage =
 -- TYPED VALUES
 
 
-{-| The typed value of [`MessageRequest`](#MessageRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`MessageRequest`](#MessageRequest): its full name and codecs.
 -}
 messageMessageRequest : Proto.Message.Message MessageRequest
 messageMessageRequest =
     Proto.Message.init "msgs.v1.MessageRequest" encodeMessageRequest decodeMessageRequest encodeMessageRequestBytes decodeMessageRequestBytes
 
 
-{-| The typed value of [`Message`](#Message): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Message`](#Message): its full name and codecs.
 -}
 messageMessage : Proto.Message.Message Message
 messageMessage =

@@ -191,42 +191,42 @@ defaultFree =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Blob`](#Blob): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Blob`](#Blob): its full name and codecs.
 -}
 messageBlob : Proto.Message.Message Blob
 messageBlob =
     Proto.Message.init "blobs.v1.Blob" encodeBlob decodeBlob encodeBlobBytes decodeBlobBytes
 
 
-{-| The typed value of [`Labeled`](#Labeled): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Labeled`](#Labeled): its full name and codecs.
 -}
 messageLabeled : Proto.Message.Message Labeled
 messageLabeled =
     Proto.Message.initWith "blobs.v1.Labeled" encodeLabeledWith decodeLabeledWith encodeLabeledBytes decodeLabeledBytes
 
 
-{-| The typed value of [`LabelBlobRequest`](#LabelBlobRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`LabelBlobRequest`](#LabelBlobRequest): its full name and codecs.
 -}
 messageLabelBlobRequest : Proto.Message.Message LabelBlobRequest
 messageLabelBlobRequest =
     Proto.Message.initWith "blobs.v1.LabelBlobRequest" encodeLabelBlobRequestWith decodeLabelBlobRequestWith encodeLabelBlobRequestBytes decodeLabelBlobRequestBytes
 
 
-{-| The typed value of [`Folder`](#Folder): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Folder`](#Folder): its full name and codecs.
 -}
 messageFolder : Proto.Message.Message Folder
 messageFolder =
     Proto.Message.init "blobs.v1.Folder" encodeFolder decodeFolder encodeFolderBytes decodeFolderBytes
 
 
-{-| The typed value of [`Slots`](#Slots): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Slots`](#Slots): its full name and codecs.
 -}
 messageSlots : Proto.Message.Message Slots
 messageSlots =
     Proto.Message.init "blobs.v1.Slots" encodeSlots decodeSlots encodeSlotsBytes decodeSlotsBytes
 
 
-{-| The typed value of [`Free`](#Free): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Free`](#Free): its full name and codecs.
 -}
 messageFree : Proto.Message.Message Free
 messageFree =

@@ -770,98 +770,98 @@ enumOuterMode =
     Proto.Enum.enum encodeOuterMode decodeOuterMode OuterModeUnspecified Codec.V1.OuterMode.descriptor
 
 
-{-| The typed value of [`Scalars`](#Scalars): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Scalars`](#Scalars): its full name and codecs.
 -}
 messageScalars : Proto.Message.Message Scalars
 messageScalars =
     Proto.Message.init "codec.v1.Scalars" encodeScalars decodeScalars encodeScalarsBytes decodeScalarsBytes
 
 
-{-| The typed value of [`Optionals`](#Optionals): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Optionals`](#Optionals): its full name and codecs.
 -}
 messageOptionals : Proto.Message.Message Optionals
 messageOptionals =
     Proto.Message.init "codec.v1.Optionals" encodeOptionals decodeOptionals encodeOptionalsBytes decodeOptionalsBytes
 
 
-{-| The typed value of [`Repeated`](#Repeated): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Repeated`](#Repeated): its full name and codecs.
 -}
 messageRepeated : Proto.Message.Message Repeated
 messageRepeated =
     Proto.Message.init "codec.v1.Repeated" encodeRepeated decodeRepeated encodeRepeatedBytes decodeRepeatedBytes
 
 
-{-| The typed value of [`Maps`](#Maps): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Maps`](#Maps): its full name and codecs.
 -}
 messageMaps : Proto.Message.Message Maps
 messageMaps =
     Proto.Message.init "codec.v1.Maps" encodeMaps decodeMaps encodeMapsBytes decodeMapsBytes
 
 
-{-| The typed value of [`Choice`](#Choice): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Choice`](#Choice): its full name and codecs.
 -}
 messageChoice : Proto.Message.Message Choice
 messageChoice =
     Proto.Message.init "codec.v1.Choice" encodeChoice decodeChoice encodeChoiceBytes decodeChoiceBytes
 
 
-{-| The typed value of [`Names`](#Names): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Names`](#Names): its full name and codecs.
 -}
 messageNames : Proto.Message.Message Names
 messageNames =
     Proto.Message.init "codec.v1.Names" encodeNames decodeNames encodeNamesBytes decodeNamesBytes
 
 
-{-| The typed value of [`Outer`](#Outer): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Outer`](#Outer): its full name and codecs.
 -}
 messageOuter : Proto.Message.Message Outer
 messageOuter =
     Proto.Message.init "codec.v1.Outer" encodeOuter decodeOuter encodeOuterBytes decodeOuterBytes
 
 
-{-| The typed value of [`OuterInner`](#OuterInner): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`OuterInner`](#OuterInner): its full name and codecs.
 -}
 messageOuterInner : Proto.Message.Message OuterInner
 messageOuterInner =
     Proto.Message.init "codec.v1.Outer.Inner" encodeOuterInner decodeOuterInner encodeOuterInnerBytes decodeOuterInnerBytes
 
 
-{-| The typed value of [`Tree`](#Tree): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Tree`](#Tree): its full name and codecs.
 -}
 messageTree : Proto.Message.Message Tree
 messageTree =
     Proto.Message.init "codec.v1.Tree" encodeTree decodeTree encodeTreeBytes decodeTreeBytes
 
 
-{-| The typed value of [`WellKnown`](#WellKnown): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`WellKnown`](#WellKnown): its full name and codecs.
 -}
 messageWellKnown : Proto.Message.Message WellKnown
 messageWellKnown =
     Proto.Message.initWith "codec.v1.WellKnown" encodeWellKnownWith decodeWellKnownWith encodeWellKnownBytes decodeWellKnownBytes
 
 
-{-| The typed value of [`Wrappers`](#Wrappers): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Wrappers`](#Wrappers): its full name and codecs.
 -}
 messageWrappers : Proto.Message.Message Wrappers
 messageWrappers =
     Proto.Message.init "codec.v1.Wrappers" encodeWrappers decodeWrappers encodeWrappersBytes decodeWrappersBytes
 
 
-{-| The typed value of [`Across`](#Across): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Across`](#Across): its full name and codecs.
 -}
 messageAcross : Proto.Message.Message Across
 messageAcross =
     Proto.Message.init "codec.v1.Across" encodeAcross decodeAcross encodeAcrossBytes decodeAcrossBytes
 
 
-{-| The typed value of [`Leaf`](#Leaf): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Leaf`](#Leaf): its full name and codecs.
 -}
 messageLeaf : Proto.Message.Message Leaf
 messageLeaf =
     Proto.Message.init "codec.v1.Leaf" encodeLeaf decodeLeaf encodeLeafBytes decodeLeafBytes
 
 
-{-| The typed value of [`Everything`](#Everything): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Everything`](#Everything): its full name and codecs.
 -}
 messageEverything : Proto.Message.Message Everything
 messageEverything =

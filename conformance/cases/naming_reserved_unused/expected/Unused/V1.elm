@@ -159,42 +159,42 @@ enumChar =
     Proto.Enum.enum encodeChar decodeChar CharUnspecified Unused.V1.Char.descriptor
 
 
-{-| The typed value of [`Dict`](#Dict): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Dict`](#Dict): its full name and codecs.
 -}
 messageDict : Proto.Message.Message Dict
 messageDict =
     Proto.Message.init "unused.v1.Dict" encodeDict decodeDict encodeDictBytes decodeDictBytes
 
 
-{-| The typed value of [`Result`](#Result): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Result`](#Result): its full name and codecs.
 -}
 messageResult : Proto.Message.Message Result
 messageResult =
     Proto.Message.init "unused.v1.Result" encodeResult decodeResult encodeResultBytes decodeResultBytes
 
 
-{-| The typed value of [`Order`](#Order): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Order`](#Order): its full name and codecs.
 -}
 messageOrder : Proto.Message.Message Order
 messageOrder =
     Proto.Message.init "unused.v1.Order" encodeOrder decodeOrder encodeOrderBytes decodeOrderBytes
 
 
-{-| The typed value of [`Never`](#Never): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Never`](#Never): its full name and codecs.
 -}
 messageNever : Proto.Message.Message Never
 messageNever =
     Proto.Message.init "unused.v1.Never" encodeNever decodeNever encodeNeverBytes decodeNeverBytes
 
 
-{-| The typed value of [`Cmd`](#Cmd): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Cmd`](#Cmd): its full name and codecs.
 -}
 messageCmd : Proto.Message.Message Cmd
 messageCmd =
     Proto.Message.init "unused.v1.Cmd" encodeCmd decodeCmd encodeCmdBytes decodeCmdBytes
 
 
-{-| The typed value of [`True`](#True): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`True`](#True): its full name and codecs.
 -}
 messageTrue : Proto.Message.Message True
 messageTrue =

@@ -113,14 +113,14 @@ defaultNote =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Author`](#Author): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Author`](#Author): its full name and codecs.
 -}
 messageAuthor : Proto.Message.Message Author
 messageAuthor =
     Proto.Message.init "cardinality.v1.Author" encodeAuthor decodeAuthor encodeAuthorBytes decodeAuthorBytes
 
 
-{-| The typed value of [`Note`](#Note): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Note`](#Note): its full name and codecs.
 -}
 messageNote : Proto.Message.Message Note
 messageNote =

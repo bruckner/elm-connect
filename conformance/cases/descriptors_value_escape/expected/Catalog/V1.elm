@@ -125,21 +125,21 @@ defaultGetEntryRequest =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Entry`](#Entry): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Entry`](#Entry): its full name and codecs.
 -}
 messageEntry : Proto.Message.Message Entry
 messageEntry =
     Proto.Message.init "catalog.v1.Entry" encodeEntry decodeEntry encodeEntryBytes decodeEntryBytes
 
 
-{-| The typed value of [`Part`](#Part): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Part`](#Part): its full name and codecs.
 -}
 messagePart : Proto.Message.Message Part
 messagePart =
     Proto.Message.init "catalog.v1.Part" encodePart decodePart encodePartBytes decodePartBytes
 
 
-{-| The typed value of [`GetEntryRequest`](#GetEntryRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`GetEntryRequest`](#GetEntryRequest): its full name and codecs.
 -}
 messageGetEntryRequest : Proto.Message.Message GetEntryRequest
 messageGetEntryRequest =

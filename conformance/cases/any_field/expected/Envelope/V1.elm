@@ -87,7 +87,7 @@ defaultEnvelope =
 -- TYPED VALUES
 
 
-{-| The typed value of [`Envelope`](#Envelope): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
+{-| The typed value of [`Envelope`](#Envelope): its full name and codecs.
 -}
 messageEnvelope : Proto.Message.Message Envelope
 messageEnvelope =
