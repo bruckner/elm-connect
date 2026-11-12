@@ -242,7 +242,7 @@ is written in Connect's error-detail form, `binaryJson` in the data), and
 that the value read from JSON encodes to the same bytes, but where it
 holds an `Any`, which the binary encoder writes with its type URL alone.
 Since the encoders write prost-reflect's bytes exactly, prost-reflect reads
-what they write. The corpus case `codec_protos` is these protos under
+what they write. The corpus case `codec_round_trips` is these protos under
 the default options, blessed like any other.
 
 For a deeper run, set the number of samples per message (8 by default)
@@ -499,9 +499,9 @@ detail's binary as an `Any`, in base64, `null` for one not read),
 `{"badResponse": {"problem", "response"}}` for a successful answer whose
 body did not decode (elm/json's problem, and the answer as above),
 `{"noAnswer": "Timeout"}` (or `NetworkError`, `BadUrl <url>`,
-`InvalidHeader <name>`, `RequestTooLarge <size> <limit>`,
-`ResponseTooLarge <size> <limit>`, `InvalidPathValue <field> <template>`,
-`UnwritableRequest <problem>`) for an
+`BadHeader <name>`, `RequestTooLarge <size> <limit>`,
+`ResponseTooLarge <size> <limit>`, `BadPathValue <field> <template>`,
+`BadAny <problem>`) for an
 `Rpc.Error.NoAnswer`, `{"canceled": true}` for a call
 the runner withdrew with `Rpc.cancel`, and `{"runner": <why>}` for an
 envelope the runner could not send: one that does not decode, an unknown

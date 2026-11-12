@@ -11,10 +11,6 @@
   `mergeNoteBytes`, per enum its number conversions, per oneof and
   recursion wrapper an encoder (and a merge), all written against
   `Proto.Binary`.
-- `Proto.Message.withBinary` and `Proto.Message.messageBinary` attach
-  the binary codecs to a typed value, and `Proto.Message.encodeBytes`
-  and `bytesDecoder` read them back. `Proto.Method.proto` builds a
-  method with binary codecs alone and `Proto.Method.both` one with both.
 - `naming::codec_collision`: whatever the `wire` option, a type named for another with `Bytes` at the end (`NoteBytes`
   beside `Note`) has JSON codecs that take the other's binary codecs'
   names. It points at both types; `rename` one of them.

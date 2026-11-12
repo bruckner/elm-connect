@@ -4,10 +4,9 @@
 
 module Ledger.V1 exposing (..)
 
-{-| Under wire=proto messages and oneofs get protobuf binary codecs alone,
-built by Proto.Message.messageBinary, and methods are built by
-Proto.Method.methodBinary. The enum keeps its JSON codecs beside its
-number conversions, since its typed value holds them.
+{-| Under wire=proto methods are built by Proto.Method.initProto, with
+protobuf binary codecs alone, and their calls are Rpc.Call Rpc.Proto.
+Messages and enums get both codecs whatever the option says.
 -}
 
 import Bytes.Encode

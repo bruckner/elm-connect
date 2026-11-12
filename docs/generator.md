@@ -154,10 +154,10 @@ speaks binary nor packs an `Any` drops them as dead code.
 | a recursive message's wrapper | `encodeNode_Bytes` and `mergeNode_Bytes` |
 | `repeated int32 marks = 7 [packed = false];` | written one element per field, as declared; every other repeated scalar is packed |
 
-A message's typed value is built from both its codecs (the `codec_protos`
+A message's typed value is built from both its codecs (the `codec_round_trips`
 corpus case):
 
-```elm conformance/cases/codec_protos/expected/Codec/V1.elm excerpt
+```elm conformance/cases/codec_round_trips/expected/Codec/V1.elm excerpt
 messageLeaf : Proto.Message.Message Leaf
 messageLeaf =
     Proto.Message.init "codec.v1.Leaf" encodeLeaf decodeLeaf encodeLeafBytes decodeLeafBytes
@@ -222,7 +222,7 @@ Proto.Error.Error Json.Encode.Value`, and no `decodeNote` or
 Each package module holds `registry`, its own messages' typed values,
 nested ones included, and nothing else:
 
-```elm conformance/cases/codec_protos/expected/Codec/V1.elm excerpt
+```elm conformance/cases/codec_round_trips/expected/Codec/V1.elm excerpt
 registry : Proto.Registry.Registry
 registry =
     Proto.Registry.empty

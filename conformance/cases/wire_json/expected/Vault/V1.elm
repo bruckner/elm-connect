@@ -8,9 +8,8 @@ module Vault.V1 exposing (..)
 wire=both, by services\_wire\_both and under wire=json by wire\_json. Under
 wire=both the methods are built by Proto.Method.init, with JSON and
 binary codecs and, for GetItem, its route; under wire=json by
-Proto.Method.initJson, with JSON codecs alone. The package's
-binaryRegistry sits beside the service, and Item's binary encoder writes
-its Any fields with Proto.Binary.anyWith binaryRegistry.
+Proto.Method.initJson, with JSON codecs alone. Item's codecs write and
+read its Any fields through the registry a client gives.
 -}
 
 import Bytes.Encode

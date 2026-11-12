@@ -2,9 +2,8 @@
 // wire=both, by services_wire_both and under wire=json by wire_json. Under
 // wire=both the methods are built by Proto.Method.init, with JSON and
 // binary codecs and, for GetItem, its route; under wire=json by
-// Proto.Method.initJson, with JSON codecs alone. The package's
-// binaryRegistry sits beside the service, and Item's binary encoder writes
-// its Any fields with Proto.Binary.anyWith binaryRegistry.
+// Proto.Method.initJson, with JSON codecs alone. Item's codecs write and
+// read its Any fields through the registry a client gives.
 syntax = "proto3";
 
 package vault.v1;
