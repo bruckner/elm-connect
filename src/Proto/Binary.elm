@@ -1262,26 +1262,43 @@ highShift index =
             16777216
 
 
-{-| A varint of an unsigned value below 2^32.
+{-| A varint of an unsigned value below 2^32, written as few integers as
+its width allows (one u16 for two bytes, one u32 for four) rather than a
+list of bytes.
 -}
 writeVarint32 : Int -> Encoder
 writeVarint32 n =
     if n < 128 then
         E.unsignedInt8 n
 
+    else if n < 16384 then
+        E.unsignedInt16 LE (Bitwise.or (Bitwise.and 0x7F n) 0x80 + Bitwise.shiftLeftBy 8 (Bitwise.shiftRightZfBy 7 n))
+
+    else if n < 2097152 then
+        E.sequence
+            [ E.unsignedInt16 LE (Bitwise.or (Bitwise.and 0x7F7F (spread n)) 0x8080)
+            , E.unsignedInt8 (Bitwise.shiftRightZfBy 14 n)
+            ]
+
+    else if n < 268435456 then
+        E.unsignedInt32 LE (Bitwise.or (spread n) 0x00808080)
+
     else
-        E.sequence (List.map E.unsignedInt8 (varintBytes n))
+        E.sequence
+            [ E.unsignedInt32 LE (Bitwise.or (spread n) 0x80808080)
+            , E.unsignedInt8 (Bitwise.shiftRightZfBy 28 n)
+            ]
 
 
-{-| The bytes of a varint of `n`, any non-negative `Int` below 2^53.
+{-| The low 28 bits of `n` as four 7-bit groups, one per byte, low first,
+without their continuation bits.
 -}
-varintBytes : Int -> List Int
-varintBytes n =
-    if n < 128 then
-        [ n ]
-
-    else
-        (modBy 128 n + 128) :: varintBytes (floor (toFloat n / 128))
+spread : Int -> Int
+spread n =
+    Bitwise.and 0x7F n
+        + Bitwise.shiftLeftBy 8 (Bitwise.and 0x7F (Bitwise.shiftRightZfBy 7 n))
+        + Bitwise.shiftLeftBy 16 (Bitwise.and 0x7F (Bitwise.shiftRightZfBy 14 n))
+        + Bitwise.shiftLeftBy 24 (Bitwise.and 0x7F (Bitwise.shiftRightZfBy 21 n))
 
 
 writeVarint64 : U64 -> Encoder
@@ -1290,16 +1307,21 @@ writeVarint64 (U64 high low) =
         writeVarint32 low
 
     else
-        -- The low 28 bits, then the rest, which an Int holds exactly.
-        E.sequence
-            (List.map E.unsignedInt8
-                ((Bitwise.and 0x7F low + 128)
-                    :: (Bitwise.and 0x7F (Bitwise.shiftRightZfBy 7 low) + 128)
-                    :: (Bitwise.and 0x7F (Bitwise.shiftRightZfBy 14 low) + 128)
-                    :: (Bitwise.and 0x7F (Bitwise.shiftRightZfBy 21 low) + 128)
-                    :: varintBytes (Bitwise.shiftRightZfBy 28 low + high * 16)
-                )
-            )
+        -- The low 28 bits, then the rest, below 2^36, which an Int holds
+        -- exactly: 28 more bits if it has them, then what is left.
+        let
+            rest =
+                Bitwise.shiftRightZfBy 28 low + high * 16
+        in
+        if rest < 268435456 then
+            E.sequence [ E.unsignedInt32 LE (Bitwise.or (spread low) 0x80808080), writeVarint32 rest ]
+
+        else
+            E.sequence
+                [ E.unsignedInt32 LE (Bitwise.or (spread low) 0x80808080)
+                , E.unsignedInt32 LE (Bitwise.or (spread rest) 0x80808080)
+                , writeVarint32 (rest // 268435456)
+                ]
 
 
 {-| A signed 32-bit value, sign-extended to ten bytes when negative.
