@@ -132,6 +132,14 @@ base =
     over Rpc.Protocol.connect
 
 
+{-| A client that reads every form of failure: a Connect client reads only
+Connect's error body.
+-}
+transcodeBase : Rpc.Client Rpc.Json
+transcodeBase =
+    over Rpc.Protocol.transcode
+
+
 {-| A client of the test server over a protocol, with nothing else set.
 -}
 over : Rpc.Protocol.Protocol Rpc.Json -> Rpc.Client Rpc.Json
@@ -599,7 +607,7 @@ responses =
                     long =
                         String.repeat 50000 "%C3%A9" ++ String.repeat 50000 "x"
                 in
-                Rpc.response base
+                Rpc.response (Rpc.client Rpc.Protocol.transcode "https://api.example.com")
                     (getNote { name = "x" })
                     (Http.BadStatus_ { url = "", statusCode = 503, statusText = "", headers = Dict.fromList [ ( "grpc-status", "14" ), ( "grpc-message", long ) ] } "")
                     |> Result.mapError Rpc.Error.message
@@ -702,9 +710,9 @@ responses =
                     noType =
                         "json : Expecting an OBJECT with a field named `@type`"
                 in
-                ( read (Rpc.withRegistry (Proto.Registry.union noteRegistry Proto.WellKnown.registry) base)
-                , read base
-                , read (Rpc.withRegistry noteRegistry base)
+                ( read (Rpc.withRegistry (Proto.Registry.union noteRegistry Proto.WellKnown.registry) transcodeBase)
+                , read transcodeBase
+                , read (Rpc.withRegistry noteRegistry transcodeBase)
                     |> Result.mapError (\( _, _, found ) -> found)
                 )
                     |> Expect.equal
@@ -726,7 +734,7 @@ responses =
                         """{"code":5,"message":"no note","details":[{"@type":"type.googleapis.com/notes.v1.Note","title":"hi"},{"@type":"type.googleapis.com/google.protobuf.Duration","value":"2s"},{"no":"type"},{"@type":"type.googleapis.com/notes.v1.Note","title":7}]}"""
 
                     read registry =
-                        Rpc.response (Rpc.withRegistry registry base) (getNote { name = "x" }) (Http.BadStatus_ (metadata 404 "Not Found") body)
+                        Rpc.response (Rpc.withRegistry registry transcodeBase) (getNote { name = "x" }) (Http.BadStatus_ (metadata 404 "Not Found") body)
                             |> Result.mapError
                                 (\error ->
                                     ( ( detailsOf title error
@@ -751,7 +759,7 @@ responses =
                         )
         , test "a Status body's detail of a registered type that is not its message is its BadJson, the Any's object its value" <|
             \_ ->
-                Rpc.response (Rpc.withRegistry noteRegistry base)
+                Rpc.response (Rpc.withRegistry noteRegistry transcodeBase)
                     (getNote { name = "x" })
                     (Http.BadStatus_ (metadata 404 "Not Found") """{"code":5,"details":[{"@type":"type.googleapis.com/notes.v1.Note","title":7}]}""")
                     |> Result.mapError
@@ -914,7 +922,7 @@ keptResponses : Test
 keptResponses =
     let
         answer code headers body =
-            Rpc.response base
+            Rpc.response transcodeBase
                 (getNote { name = "x" })
                 (Http.BadStatus_ { url = "https://api.example.com/notes.v1.Notes/GetNote", statusCode = code, statusText = "", headers = Dict.fromList headers } body)
                 |> Result.mapError

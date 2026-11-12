@@ -667,7 +667,7 @@ errors =
             \_ ->
                 failed 404 "Not Found" [ ( "grpc-status", "14" ) ] "<html>"
                     |> Expect.equal (stated Unavailable "Not Found" GrpcHeaders)
-        , test "Connect reads a status body and the headers too" <|
+        , test "Connect reads only its own error body: a status body and the headers are an HttpStatus error" <|
             \_ ->
                 [ """{"code":5}""", "" ]
                     |> List.map
@@ -675,7 +675,7 @@ errors =
                             Rpc.response (Rpc.client Rpc.Protocol.connect "https://api.example.com")
                                 (Rpc.call (raw []) Json.Encode.null)
                                 (Http.BadStatus_ (metadata 503 "" [ ( "grpc-status", "14" ) ]) answer)
-                                |> withoutResponse
+                                |> Result.mapError (\error -> ( Rpc.Error.code error, Rpc.Error.message error ))
                         )
-                    |> Expect.equal [ stated NotFound "" StatusBody, stated Unavailable "HTTP 503" GrpcHeaders ]
+                    |> Expect.equal [ Err ( Unavailable, "HTTP 503" ), Err ( Unavailable, "HTTP 503" ) ]
         ]

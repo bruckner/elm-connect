@@ -1,4 +1,4 @@
-module Rpc.Internal.Status exposing (answerOf, bytesFailure, completeDetails, failure, header, otherFailure)
+module Rpc.Internal.Status exposing (answerOf, bytesFailure, bytesFailureBy, completeDetails, connectFailure, failure, header, otherFailure, otherFailureBy)
 
 {-| A failure's status as an `Rpc.Error`, from a Connect error body, a
 `google.rpc.Status` body, or gRPC status headers and trailers, whatever the
@@ -30,13 +30,20 @@ import Rpc.Response exposing (Response)
 which a failure's JSON is.
 -}
 bytesFailure : Http.Response Bytes -> Error
-bytesFailure answer =
+bytesFailure =
+    bytesFailureBy failure
+
+
+{-| `bytesFailure`, its failed answer read by `read`.
+-}
+bytesFailureBy : (Http.Metadata -> String -> Error) -> Http.Response Bytes -> Error
+bytesFailureBy read answer =
     case answer of
         Http.GoodStatus_ metadata raw ->
-            failure metadata (Internal.bytesText raw)
+            read metadata (Internal.bytesText raw)
 
         Http.BadStatus_ metadata raw ->
-            failure metadata (Internal.bytesText raw)
+            read metadata (Internal.bytesText raw)
 
         Http.BadUrl_ url ->
             Error.NoAnswer (Error.BadUrl url)
@@ -51,13 +58,20 @@ bytesFailure answer =
 {-| The error of an answer that is not a protocol's success.
 -}
 otherFailure : Http.Response String -> Error
-otherFailure answer =
+otherFailure =
+    otherFailureBy failure
+
+
+{-| `otherFailure`, its failed answer read by `read`.
+-}
+otherFailureBy : (Http.Metadata -> String -> Error) -> Http.Response String -> Error
+otherFailureBy read answer =
     case answer of
         Http.GoodStatus_ metadata raw ->
-            failure metadata raw
+            read metadata raw
 
         Http.BadStatus_ metadata raw ->
-            failure metadata raw
+            read metadata raw
 
         Http.BadUrl_ url ->
             Error.NoAnswer (Error.BadUrl url)
@@ -112,6 +126,25 @@ failure metadata raw =
 
                 Nothing ->
                     Error.HttpStatus answer
+
+
+{-| The error a failed Connect answer stands for: its Connect error body, or
+failing that, an `HttpStatus` error. A Connect server writes no other form,
+so a program that speaks only Connect reads no `google.rpc.Status` body and
+no gRPC status headers.
+-}
+connectFailure : Http.Metadata -> String -> Error
+connectFailure metadata raw =
+    let
+        answer =
+            answerOf metadata raw
+    in
+    case Json.Decode.decodeString connectBody raw of
+        Ok read ->
+            Error.RpcStatus read answer
+
+        Err _ ->
+            Error.HttpStatus answer
 
 
 {-| A response header by name, whatever its case.

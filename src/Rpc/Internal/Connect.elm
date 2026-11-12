@@ -208,7 +208,7 @@ connectRead answer =
     case answer of
         Http.GoodStatus_ metadata raw ->
             if metadata.statusCode /= 200 then
-                Err (Status.failure metadata raw)
+                Err (Status.connectFailure metadata raw)
 
             else
                 case label connectType [ "application/json" ] metadata of
@@ -219,10 +219,10 @@ connectRead answer =
                         Err (Error.BadResponse Code.Internal problem (Status.answerOf metadata raw))
 
                     Foreign ->
-                        Err (Status.failure metadata raw)
+                        Err (Status.connectFailure metadata raw)
 
         _ ->
-            Err (Status.otherFailure answer)
+            Err (Status.otherFailureBy Status.connectFailure answer)
 
 
 {-| Connect's reading of a protobuf binary answer: a 200 as
@@ -235,7 +235,7 @@ connectProtoRead answer =
     , case answer of
         Http.GoodStatus_ metadata raw ->
             if metadata.statusCode /= 200 then
-                Err (Status.bytesFailure answer)
+                Err (Status.bytesFailureBy Status.connectFailure answer)
 
             else
                 case label connectType [ "application/proto" ] metadata of
@@ -246,10 +246,10 @@ connectProtoRead answer =
                         Err (Error.BadResponse Code.Internal problem (Internal.bytesAnswer metadata raw))
 
                     Foreign ->
-                        Err (Status.bytesFailure answer)
+                        Err (Status.bytesFailureBy Status.connectFailure answer)
 
         _ ->
-            Err (Status.bytesFailure answer)
+            Err (Status.bytesFailureBy Status.connectFailure answer)
     )
 
 
