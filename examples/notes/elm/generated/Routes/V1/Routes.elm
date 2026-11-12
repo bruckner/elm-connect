@@ -9,6 +9,7 @@ module Routes.V1.Routes exposing (..)
 
 import Json.Encode
 import Proto.Http
+import Proto.Json
 import Proto.Method
 import Proto.Query
 import Proto.Route
@@ -284,6 +285,29 @@ head =
             Routes.V1.encodeFileRequestBytes
             Routes.V1.decodeFileRequestBytes
             |> Proto.Method.withRoutes [ routeHead0 ]
+        )
+
+
+{-| A bytes field as a single-segment path variable: base64 text, whose `/`
+the path escapes.
+
+`rpc BytesPath(Everything) returns (Everything)`.
+Connect: `POST /routes.v1.Routes/BytesPath`.
+Transcode: `GET /v1/bytes/{data}`.
+
+Codecs: JSON and protobuf binary. Described by [`descriptorBytesPath`](#descriptorBytesPath).
+
+-}
+bytesPath : Routes.V1.Everything -> Rpc.Call codec Routes.V1.Everything Routes.V1.Everything
+bytesPath =
+    Rpc.call
+        (Proto.Method.init "routes.v1.Routes"
+            "BytesPath"
+            (\_ -> Ok << Routes.V1.encodeEverything)
+            (\_ -> Routes.V1.decodeEverything)
+            Routes.V1.encodeEverythingBytes
+            Routes.V1.decodeEverythingBytes
+            |> Proto.Method.withRoutes [ routeBytesPath0 ]
         )
 
 
@@ -595,6 +619,23 @@ routeHead0 request_ =
     , body = Nothing
     , responseBody = Nothing
     , invalid = Proto.Route.checkSegments "path" [ "files", "**" ] path_
+    }
+
+
+{-| The route of [`bytesPath`](#bytesPath) over binding 0: `GET /v1/bytes/{data}`.
+-}
+routeBytesPath0 : Routes.V1.Everything -> Proto.Route.Route
+routeBytesPath0 request_ =
+    let
+        data_ =
+            Proto.Route.viaJson Proto.Json.encodeBytes request_.data
+    in
+    { method = "GET"
+    , path = "v1/bytes/" ++ Proto.Route.segment data_
+    , query = Proto.Query.except [ "data" ] (Routes.V1.queryOfEverything request_)
+    , body = Nothing
+    , responseBody = Nothing
+    , invalid = Proto.Route.checkSegment "data" "*" data_
     }
 
 
@@ -1101,6 +1142,61 @@ descriptorHead =
             , body = Proto.Http.noBody
             , responseBody = Nothing
             , query = []
+            }
+        ]
+
+
+{-| A bytes field as a single-segment path variable: base64 text, whose `/`
+the path escapes.
+
+`rpc BytesPath(Everything) returns (Everything)`
+
+-}
+descriptorBytesPath : Proto.Method.Descriptor
+descriptorBytesPath =
+    Proto.Method.descriptor "routes.v1.Routes"
+        "BytesPath"
+        Proto.Method.IdempotencyUnknown
+        "routes.v1.Everything"
+        "routes.v1.Everything"
+        [ Proto.Http.binding
+            { method = "GET"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.literal "bytes"
+                , Proto.Http.variable
+                    { fieldPath = [ Routes.V1.Everything.data ]
+                    , template = []
+                    }
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query =
+                [ Proto.Http.param [ Routes.V1.Everything.name ]
+                , Proto.Http.param [ Routes.V1.Everything.count ]
+                , Proto.Http.param [ Routes.V1.Everything.big ]
+                , Proto.Http.param [ Routes.V1.Everything.ubig ]
+                , Proto.Http.param [ Routes.V1.Everything.flag ]
+                , Proto.Http.param [ Routes.V1.Everything.ratio ]
+                , Proto.Http.param [ Routes.V1.Everything.scale ]
+                , Proto.Http.param [ Routes.V1.Everything.kind ]
+                , Proto.Http.param [ Routes.V1.Everything.tags ]
+                , Proto.Http.param [ Routes.V1.Everything.kinds ]
+                , Proto.Http.param [ Routes.V1.Everything.numbers ]
+                , Proto.Http.param [ Routes.V1.Everything.maybeCount ]
+                , Proto.Http.param [ Routes.V1.Everything.maybeName ]
+                , Proto.Http.param [ Routes.V1.Everything.at ]
+                , Proto.Http.param [ Routes.V1.Everything.wait ]
+                , Proto.Http.param [ Routes.V1.Everything.mask ]
+                , Proto.Http.param [ Routes.V1.Everything.limit ]
+                , Proto.Http.param [ Routes.V1.Everything.label ]
+                , Proto.Http.param [ Routes.V1.Everything.inner, Routes.V1.Inner.a ]
+                , Proto.Http.param [ Routes.V1.Everything.inner, Routes.V1.Inner.deep, Routes.V1.Deep.b ]
+                , Proto.Http.param [ Routes.V1.Everything.inner, Routes.V1.Inner.deep, Routes.V1.Deep.c ]
+                , Proto.Http.param [ Routes.V1.Everything.text ]
+                , Proto.Http.param [ Routes.V1.Everything.number ]
+                ]
             }
         ]
 

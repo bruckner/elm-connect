@@ -1,7 +1,7 @@
 module Proto.Route exposing
     ( Route, PathError
     , segment, segments, checkSegment, checkSegments, firstInvalid
-    , boolText, viaJson, jsonText, without
+    , boolText, bytesText, viaJson, jsonText, without, jsonField
     )
 
 {-| Where a call goes over one binding of its `google.api.http` rule, as
@@ -21,12 +21,14 @@ reads a `Route` and does not build one.
 
 # Values and bodies
 
-@docs boolText, viaJson, jsonText, without
+@docs boolText, bytesText, viaJson, jsonText, without, jsonField
 
 -}
 
+import Bytes exposing (Bytes)
 import Json.Decode
 import Json.Encode exposing (Value)
+import Proto.Bytes
 import Proto.Internal.Percent as Internal
 
 
@@ -158,6 +160,28 @@ boolText b =
         "false"
 
 
+{-| A `bytes` field held as `Bytes`, as path or query text: its base64 in the
+URL-safe alphabet (`-` and `_` for `+` and `/`), padded, which transcoders
+read in a path and in a query alike.
+-}
+bytesText : Bytes -> String
+bytesText bytes =
+    String.map urlSafe (Proto.Bytes.toBase64 bytes)
+
+
+urlSafe : Char -> Char
+urlSafe char =
+    case char of
+        '+' ->
+            '-'
+
+        '/' ->
+            '_'
+
+        _ ->
+            char
+
+
 {-| A value's path or query text, by its proto3 JSON encoder: for the types
 whose text is their JSON's (enums, floating-point numbers, bytes, field
 masks).
@@ -224,3 +248,16 @@ remove fieldPath json =
 
                 Err _ ->
                     json
+
+
+{-| The body of `body: "field"` from the request's proto3 JSON: the field's
+value, or `{}` when the JSON leaves it out or holds `null`.
+-}
+jsonField : String -> Value -> Value
+jsonField key json =
+    case Json.Decode.decodeValue (Json.Decode.field key (Json.Decode.nullable Json.Decode.value)) json of
+        Ok (Just value) ->
+            value
+
+        _ ->
+            Json.Encode.object []

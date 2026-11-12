@@ -100,6 +100,16 @@ fixtures =
         , headers = []
         , body = Just "{\"displayName\":\"Op\"}"
         }
+    , Replay.fixture "encoding: a bytes path variable is the field's base64 text, escaped as a single segment"
+        Routes.V1.decodeEverything
+        Routes.V1.Routes.bytesPath
+        (Just 0)
+        "{\"data\":\"+/8=\"}"
+        { method = "GET"
+        , url = "/v1/bytes/%2B%2F8%3D"
+        , headers = []
+        , body = Nothing
+        }
     , Replay.fixture "encoding: query values are escaped like single-segment path values"
         Routes.V1.decodeEverything
         Routes.V1.Routes.query

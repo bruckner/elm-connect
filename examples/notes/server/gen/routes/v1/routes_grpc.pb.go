@@ -37,6 +37,7 @@ const (
 	Routes_Cancel_FullMethodName             = "/routes.v1.Routes/Cancel"
 	Routes_UpdateResource_FullMethodName     = "/routes.v1.Routes/UpdateResource"
 	Routes_Head_FullMethodName               = "/routes.v1.Routes/Head"
+	Routes_BytesPath_FullMethodName          = "/routes.v1.Routes/BytesPath"
 	Routes_Unbound_FullMethodName            = "/routes.v1.Routes/Unbound"
 )
 
@@ -58,6 +59,9 @@ type RoutesClient interface {
 	Cancel(ctx context.Context, in *Resource, opts ...grpc.CallOption) (*Resource, error)
 	UpdateResource(ctx context.Context, in *UpdateResourceRequest, opts ...grpc.CallOption) (*Resource, error)
 	Head(ctx context.Context, in *FileRequest, opts ...grpc.CallOption) (*FileRequest, error)
+	// A bytes field as a single-segment path variable: base64 text, whose `/`
+	// the path escapes.
+	BytesPath(ctx context.Context, in *Everything, opts ...grpc.CallOption) (*Everything, error)
 	// No rule: the implicit route, POST /routes.v1.Routes/Unbound with the
 	// request as its body, as grpc-gateway (generate_unbound_methods),
 	// Envoy's transcoder (auto_mapping) and a Connect handler serve it.
@@ -192,6 +196,16 @@ func (c *routesClient) Head(ctx context.Context, in *FileRequest, opts ...grpc.C
 	return out, nil
 }
 
+func (c *routesClient) BytesPath(ctx context.Context, in *Everything, opts ...grpc.CallOption) (*Everything, error) {
+	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
+	out := new(Everything)
+	err := c.cc.Invoke(ctx, Routes_BytesPath_FullMethodName, in, out, cOpts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 func (c *routesClient) Unbound(ctx context.Context, in *GetMessageRequest, opts ...grpc.CallOption) (*Message, error) {
 	cOpts := append([]grpc.CallOption{grpc.StaticMethod()}, opts...)
 	out := new(Message)
@@ -220,6 +234,9 @@ type RoutesServer interface {
 	Cancel(context.Context, *Resource) (*Resource, error)
 	UpdateResource(context.Context, *UpdateResourceRequest) (*Resource, error)
 	Head(context.Context, *FileRequest) (*FileRequest, error)
+	// A bytes field as a single-segment path variable: base64 text, whose `/`
+	// the path escapes.
+	BytesPath(context.Context, *Everything) (*Everything, error)
 	// No rule: the implicit route, POST /routes.v1.Routes/Unbound with the
 	// request as its body, as grpc-gateway (generate_unbound_methods),
 	// Envoy's transcoder (auto_mapping) and a Connect handler serve it.
@@ -269,6 +286,9 @@ func (UnimplementedRoutesServer) UpdateResource(context.Context, *UpdateResource
 }
 func (UnimplementedRoutesServer) Head(context.Context, *FileRequest) (*FileRequest, error) {
 	return nil, status.Error(codes.Unimplemented, "method Head not implemented")
+}
+func (UnimplementedRoutesServer) BytesPath(context.Context, *Everything) (*Everything, error) {
+	return nil, status.Error(codes.Unimplemented, "method BytesPath not implemented")
 }
 func (UnimplementedRoutesServer) Unbound(context.Context, *GetMessageRequest) (*Message, error) {
 	return nil, status.Error(codes.Unimplemented, "method Unbound not implemented")
@@ -510,6 +530,24 @@ func _Routes_Head_Handler(srv interface{}, ctx context.Context, dec func(interfa
 	return interceptor(ctx, in, info, handler)
 }
 
+func _Routes_BytesPath_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(Everything)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(RoutesServer).BytesPath(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: Routes_BytesPath_FullMethodName,
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(RoutesServer).BytesPath(ctx, req.(*Everything))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 func _Routes_Unbound_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
 	in := new(GetMessageRequest)
 	if err := dec(in); err != nil {
@@ -582,6 +620,10 @@ var Routes_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "Head",
 			Handler:    _Routes_Head_Handler,
+		},
+		{
+			MethodName: "BytesPath",
+			Handler:    _Routes_BytesPath_Handler,
 		},
 		{
 			MethodName: "Unbound",

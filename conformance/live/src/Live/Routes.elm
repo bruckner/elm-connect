@@ -27,5 +27,6 @@ table =
         , ( "Cancel", entry Service.cancel Service.cancel V1.decodeResource V1.messageResource )
         , ( "UpdateResource", entry Service.updateResource Service.updateResource V1.decodeUpdateResourceRequest V1.messageResource )
         , ( "Head", entry Service.head Service.head V1.decodeFileRequest V1.messageFileRequest )
+        , ( "BytesPath", entry Service.bytesPath Service.bytesPath V1.decodeEverything V1.messageEverything )
         , ( "Unbound", entry Service.unbound Service.unbound V1.decodeGetMessageRequest V1.messageMessage )
         ]

@@ -189,6 +189,14 @@ service Routes {
     };
   }
 
+  // A bytes field as a single-segment path variable: base64 text, whose `/`
+  // the path escapes.
+  rpc BytesPath(Everything) returns (Everything) {
+    option (google.api.http) = {
+      get: "/v1/bytes/{data}"
+    };
+  }
+
   // No rule: the implicit route, POST /routes.v1.Routes/Unbound with the
   // request as its body, as grpc-gateway (generate_unbound_methods),
   // Envoy's transcoder (auto_mapping) and a Connect handler serve it.

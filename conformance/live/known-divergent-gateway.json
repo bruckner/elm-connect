@@ -36,6 +36,19 @@
       }
     },
     {
+      "file": "encoding.json",
+      "fixture": "a bytes path variable is the field's base64 text, escaped as a single segment",
+      "url": "GET /v1/bytes/%2B%2F8%3D",
+      "answer": "404 {\"code\":5,\"message\":\"Not Found\",\"details\":[]}",
+      "reading": "The runtime, under bytes=string, which the fixtures are generated with: the field holds standard base64, whose / the single-segment variable escapes as %2F, which grpc-gateway's default unescaping splits on, as for the fixture above (found 2026-11-12, grpc-gateway v2.33). Vanguard and Envoy echo the bytes. Under bytes=bytes the runtime writes bytes in the URL-safe alphabet (Proto.Route.bytesText), which has no /, and grpc-gateway reads it in a path padded or not (tried by hand, 2026-11-12).",
+      "observed": {
+        "trace": { "httpStatus": 404 },
+        "result": {
+          "error": { "code": "not_found", "message": "Not Found", "source": "StatusBody" }
+        }
+      }
+    },
+    {
       "file": "query.json",
       "fixture": "well-known types in their JSON string forms",
       "url": "GET /v1/query?at=2024-01-02T03%3A04%3A05.678Z&wait=1.500s&mask=displayName%2Cinner.a",

@@ -99,14 +99,25 @@ binding that takes the message, less the fields the binding's path and
 body hold. A route is fixed in generated code: a fix to how one is built
 reaches an application when it regenerates.
 
+Every binding the generator accepts becomes a route function. A method
+whose bodies hold a `google.protobuf.Any`, which only the client's
+registry can write, gets route functions of the request and its proto3
+JSON, `routeCreateNote0 : Notes.V1.CreateNoteRequest -> Json.Encode.Value
+-> Proto.Route.Route`, given to `Proto.Method.withJsonRoutes`: the path
+and query come from the typed request, and the body from the JSON the
+send encodes once, with the client's registry.
+
+A `bytes` field held as `Bytes` (`bytes=bytes`) goes into a path or a
+query as base64 in the URL-safe alphabet, padded (`-_8=`), which
+Vanguard, grpc-gateway and Envoy all read. Standard base64's `/` would
+be escaped as `%2F` in a single-segment variable, which grpc-gateway's
+default mux splits on and answers 404. A `bytes` field held as a
+`String` is sent as it holds it.
+
 A method written by hand takes its bindings as data instead,
 [`Proto.Http`](../src/Proto/Http.elm) values given to
 `Proto.Method.withBindings`, and the runtime reads each from the
-request's proto3 JSON. The generator does the same for a method with a
-binding it cannot write as a function: a path or query field of a
-message it does not generate, a recursive message on the way, or a
-`bytes` field held as `Bytes` (`bytes=bytes`). The request is the same
-either way.
+request's proto3 JSON into the same route.
 
 ## Methods without an HTTP rule
 

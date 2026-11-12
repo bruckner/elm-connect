@@ -59,12 +59,14 @@ flag / the plugin's parameter, or an edit to the protos.
 | **`generate::`** | **The set of packages to generate, and the graph between them.** | |
 | `generate::not_generated` | A generated package refers to a type of a package that is not generated. | `--include-imports` on the CLI; with protoc, name the file on the command line; with buf, `buf generate --include-imports`. |
 | `generate::import_cycle` | Generated packages refer to each other in a cycle, which Elm modules cannot. | Move the types that refer to each other into one package. |
+| **`internal::`** | **A bug in elm-connect, reported rather than generated wrong.** | |
+| `internal::untyped_route` | A `google.api.http` binding passed the route resolver, but the generator cannot write its route function. Every binding the resolver accepts is meant to become one, so this is a bug; the message names the method, the binding's number (0 for the rule's own, then each additional binding's) and its HTTP method and template. | None in elm-connect: report it with the method's request message and rule. Leaving the binding out of the rule lets the rest generate. |
 
 ## Where each is tested
 
 For contributors: each code's rendered output is pinned by a case in
 [`conformance/cases`](../conformance/cases), which feeds the generator
-`input/` protos and an `options.txt` parameter, except five the corpus
+`input/` protos and an `options.txt` parameter, except six the corpus
 cannot reach. `input::unknown_file` (the corpus requests every file it
 compiles) is covered by `crates/elm-connect-gen/tests/ir/build.rs` and
 the plugin's tests; `input::editions` (the corpus's compiler cannot
@@ -75,4 +77,8 @@ corpus's compiler stops first) by `crates/elm-connect/tests/compile_errors.rs`; 
 corpus's compiler refuses the file itself) by
 `crates/elm-connect/tests/compile_errors.rs`, the plugin's tests and
 `crates/elm-connect-gen/src/diagnostics/field_names.rs`, which pins
-the library's wording.
+the library's wording; and `internal::untyped_route` (no binding the
+resolver accepts reaches it; the corpus case `routes_typed_shapes` holds
+every shape the generator once could not type) by
+`crates/elm-connect-gen/src/emit.rs`'s unit tests, which hand the
+emitter a binding the resolver refuses.

@@ -8,7 +8,7 @@
 //! builders are stacked, one argument per line, however short.
 
 use super::field::{ValueShape, Zeroed, value_shape};
-use super::route_fn::{Messages, PROTO_ROUTE, Queries, REQUEST};
+use super::route_fn::{JSON, Messages, PROTO_ROUTE, Queries, REQUEST};
 use super::scalar::Holding;
 use super::{Emitter, PROTO_HTTP, PROTO_JSON, PROTO_METHOD, RPC, docs};
 use crate::elm::ast::{BinOp, Decl, Expr, Pattern, Type};
@@ -80,9 +80,9 @@ impl Emitter {
     /// `wire` option says, the JSON codecs taking the client's registry
     /// (ignored by a type that reaches no `Any`), then
     /// `withIdempotency` when the proto declares one, and `withRoutes` with
-    /// its route functions ([`Self::method_routes`]) or, when one of its
-    /// bindings cannot be typed, `withBindings` with its descriptor's
-    /// bindings. Under `wire=proto` it has no routes: its calls cannot be
+    /// its route functions ([`Self::method_routes`]), or `withJsonRoutes`
+    /// when they take the request's JSON too. Under `wire=proto` it has no
+    /// routes: its calls cannot be
     /// transcoded, which takes JSON. The call's codec is `Rpc.Json` under
     /// `wire=json`, `Rpc.Proto` under `wire=proto`, and a type variable
     /// under `wire=both`, so that any client sends it.
@@ -130,14 +130,13 @@ impl Emitter {
                     [inline_list(functions)],
                 ));
             }
-            Routes::Bindings => {
-                let bindings = apply(
-                    self.reference((PROTO_METHOD, "bindings")),
-                    [var(method.descriptor_name())],
-                );
+            Routes::JsonFunctions(count) => {
+                let functions: Vec<Expr> = (0..*count)
+                    .map(|index| var(route_name(method, index)))
+                    .collect();
                 steps.push(apply(
-                    self.reference((PROTO_METHOD, "withBindings")),
-                    [bindings],
+                    self.reference((PROTO_METHOD, "withJsonRoutes")),
+                    [inline_list(functions)],
                 ));
             }
         }
@@ -157,46 +156,68 @@ impl Emitter {
     }
 
     /// A method's route functions, `routeGetNote0 : GetNoteRequest ->
-    /// Proto.Route.Route`, one per binding of its HTTP rule, and how its
-    /// call takes its routes: from them, from its bindings as data when one
-    /// of them cannot be typed ([`super::route_fn`]), or not at all, for a
-    /// method without a rule and under `wire=proto`.
+    /// Proto.Route.Route`, one per binding of its HTTP rule
+    /// ([`super::route_fn`]), and how its call takes its routes: as
+    /// functions of the request, of the request and its JSON, or not at
+    /// all, for a method without a rule and under `wire=proto`.
     ///
-    /// Each binding is typed on a copy of the emitter first, so that a
-    /// method that falls back imports nothing its typed routes would have.
+    /// Every binding the route resolver accepts is typed. One that is not
+    /// is a bug in the generator; the error holds the number of each such
+    /// binding, which the caller reports rather than generating the method
+    /// without it.
     pub(super) fn method_routes(
         &mut self,
         messages: &Messages,
         queries: &Queries,
         method: &Method,
-    ) -> (Vec<Decl>, Routes) {
+    ) -> Result<(Vec<Decl>, Routes), Vec<usize>> {
         if method.routes.is_empty() || self.wiring == Wire::Proto {
-            return (Vec::new(), Routes::None);
+            return Ok((Vec::new(), Routes::None));
         }
-        let mut scratch = self.clone();
-        if !method.routes.iter().all(|route| {
-            scratch
-                .typed_route(messages, queries, &method.input, route)
-                .is_some()
-        }) {
-            return (Vec::new(), Routes::Bindings);
-        }
+        // A body holding an `Any` is written by the client's registry, so
+        // such a method's routes read their bodies from the JSON the send
+        // encodes with it. Every binding of such a request holds the `Any`
+        // in its body, since no path or query holds one.
+        let json = method
+            .routes
+            .iter()
+            .any(|route| self.body_reaches(messages, &method.input, route));
         let mut decls = Vec::new();
+        let mut untyped = Vec::new();
         for (index, route) in method.routes.iter().enumerate() {
-            let body = self
-                .typed_route(messages, queries, &method.input, route)
-                .expect("typed on the copy");
+            let Some(body) = self.typed_route(messages, queries, &method.input, route, json) else {
+                untyped.push(index);
+                continue;
+            };
             let request = self.method_type(&method.input);
             let built = self.library_type(PROTO_ROUTE, "Route", []);
+            let (annotation, params) = if json {
+                let value = self.library_type(super::JSON_ENCODE, "Value", []);
+                (
+                    ty_fn([request, value], built),
+                    vec![pvar(REQUEST), pvar(JSON)],
+                )
+            } else {
+                (ty_fn([request], built), vec![pvar(REQUEST)])
+            };
             decls.push(Decl::Value {
                 doc: Some(docs::route(method, index)),
                 name: route_name(method, index),
-                annotation: ty_fn([request], built),
-                params: vec![pvar(REQUEST)],
+                annotation,
+                params,
                 body,
             });
         }
-        (decls, Routes::Functions(method.routes.len()))
+        if !untyped.is_empty() {
+            return Err(untyped);
+        }
+        let count = method.routes.len();
+        let routes = if json {
+            Routes::JsonFunctions(count)
+        } else {
+            Routes::Functions(count)
+        };
+        Ok((decls, routes))
     }
 
     /// The JSON encoder of a method's request type: the generated
@@ -369,8 +390,9 @@ pub(super) enum Routes {
     None,
     /// Its route functions, as many as its bindings.
     Functions(usize),
-    /// Its bindings as data, read by the runtime's interpreter.
-    Bindings,
+    /// Its route functions of the request and its JSON, for a method
+    /// whose bodies hold an `Any`.
+    JsonFunctions(usize),
 }
 
 /// `routeGetNote0`: the route function of a method's binding, by its

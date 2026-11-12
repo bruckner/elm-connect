@@ -44,8 +44,9 @@
 //!   `Proto.Method.withRoutes` with its route functions. Each route
 //!   function, `routeGetNote0 : GetNoteRequest -> Proto.Route.Route`,
 //!   builds one binding's path, query and body from the typed request
-//!   ([`route_fn`]); a method with a binding the emitter cannot type takes
-//!   its bindings as data instead (`Proto.Method.withBindings`). Each
+//!   ([`route_fn`]); a method whose bodies hold a `google.protobuf.Any`
+//!   takes route functions of the request and its JSON instead
+//!   (`Proto.Method.withJsonRoutes`). Each
 //!   method's descriptor, `descriptorGetNote : Proto.Method.Descriptor`,
 //!   is built by `Proto.Method.descriptor` from its service, name,
 //!   idempotency, type names and bindings, the bindings its HTTP rule's own
@@ -194,8 +195,8 @@ use crate::diagnostics::{Problem, Site};
 use crate::elm::ast::{Decl, Exposed, Exposing, Expr, Import, Module, ModuleName, Type};
 use crate::elm::build::{apply, qualified, ty, ty_qualified, var};
 use crate::ir::{
-    AnyReach, Element, Field, Message, ModuleName as IrModule, Oneof, OneofVariant, Package,
-    Service, TypeName,
+    AnyReach, Element, Field, Message, Method, ModuleName as IrModule, Oneof, OneofVariant,
+    Package, Service, TypeName,
 };
 use crate::naming::VERSION_VALUE;
 use crate::options::{EnumUnknown, Options, Wire};
@@ -425,16 +426,41 @@ fn messages_by_name(package: &Package) -> HashMap<&str, &Message> {
         .collect()
 }
 
+/// A binding the route resolver accepted but the emitter cannot write a
+/// route function for. Resolver and emitter are meant to agree on every
+/// binding, so this is a bug in the generator, reported as the
+/// `internal::untyped_route` problem rather than generated wrong.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct UntypedRoute {
+    /// The method's full name, `notes.v1.NotesService.GetNote`.
+    pub method: String,
+    /// The binding's number: 0 for the rule's own, then each additional
+    /// binding's.
+    pub binding: usize,
+    /// The binding's HTTP method, `GET`.
+    pub verb: String,
+    /// The binding's path template, as written.
+    pub template: String,
+}
+
+impl UntypedRoute {
+    /// The `internal::untyped_route` problem.
+    pub fn problem(&self) -> Problem {
+        Problem::untyped_route(&self.method, self.binding, &self.verb, &self.template)
+    }
+}
+
 /// The Elm module of `service`, one of `package`'s: a call and a
 /// descriptor per method, in two sections, the calls a program uses
-/// first.
+/// first; or, when a method has a binding the emitter cannot type, every
+/// such binding.
 pub fn emit_service(
     package: &Package,
     service: &Service,
     options: &Options,
     packages: &[Package],
     queries: &Queries,
-) -> Module {
+) -> Result<Module, Vec<UntypedRoute>> {
     let messages = all_messages(package, packages);
     let mut emitter = Emitter::new(&service.module, options);
     emitter.reach = AnyReach::of(packages.iter().chain(std::iter::once(package)));
@@ -442,10 +468,22 @@ pub fn emit_service(
     if !service.methods.is_empty() {
         let mut calls = Vec::new();
         let mut routes = Vec::new();
+        let mut untyped = Vec::new();
         for method in &service.methods {
-            let (functions, taken) = emitter.method_routes(&messages, queries, method);
-            calls.push(emitter.method(&service.proto_full_name, method, &taken));
-            routes.extend(functions);
+            match emitter.method_routes(&messages, queries, method) {
+                Ok((functions, taken)) => {
+                    calls.push(emitter.method(&service.proto_full_name, method, &taken));
+                    routes.extend(functions);
+                }
+                Err(bindings) => untyped.extend(
+                    bindings
+                        .into_iter()
+                        .map(|binding| untyped_route(service, method, binding)),
+                ),
+            }
+        }
+        if !untyped.is_empty() {
+            return Err(untyped);
         }
         decls.push(Decl::Comment("CALLS".into()));
         decls.extend(calls);
@@ -460,7 +498,23 @@ pub fn emit_service(
     }
     let mut module = emitter.module(package, decls);
     module.doc = Some(docs::service(service));
-    module
+    Ok(module)
+}
+
+/// The [`UntypedRoute`] of `method`'s binding number `binding`, named by
+/// its rule (the rule's own for 0, then each additional binding's).
+fn untyped_route(service: &Service, method: &Method, binding: usize) -> UntypedRoute {
+    let rule = method.http.as_ref().and_then(|rule| match binding {
+        0 => Some(rule),
+        n => rule.additional_bindings.get(n - 1),
+    });
+    let route = &method.routes[binding];
+    UntypedRoute {
+        method: format!("{}.{}", service.proto_full_name, method.proto_name),
+        binding,
+        verb: route.verb.as_str().to_owned(),
+        template: rule.map_or_else(|| route.shape(), |rule| rule.template.clone()),
+    }
 }
 
 /// Every message of `packages` and `package` by full proto name.
@@ -872,6 +926,7 @@ fn call(f: Expr, args: impl IntoIterator<Item = Expr>) -> Expr {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::diagnostics::Code;
     use crate::ir::{Cardinality, ScalarKind, TypeRef, WellKnown};
     use crate::options::Int64;
 
@@ -964,7 +1019,8 @@ mod tests {
             &Options::default(),
             &[],
             &Queries::new(),
-        );
+        )
+        .expect("emits");
         assert!(matches!(
             module.decls.as_slice(),
             [Decl::Value { name, .. }] if name == VERSION_VALUE
@@ -1293,7 +1349,8 @@ mod tests {
             &options,
             &[],
             &Queries::new(),
-        );
+        )
+        .expect("emits");
         let imports: Vec<&str> = module.imports.iter().map(|i| i.module.as_str()).collect();
         assert_eq!(
             imports,
@@ -1332,5 +1389,86 @@ mod tests {
         ] {
             assert!(printed.contains(expected), "{expected}\n{printed}");
         }
+    }
+
+    #[test]
+    fn a_binding_the_emitter_cannot_type_is_reported() {
+        // A path variable on a well-known request, which the route resolver
+        // refuses, stands for any binding resolver and emitter disagree on.
+        let variable = crate::route::PathSegment::Variable {
+            field: crate::route::FieldPath {
+                proto: vec!["x".into()],
+                json: vec!["x".into()],
+            },
+            template: Vec::new(),
+            fields: Vec::new(),
+        };
+        let route = |segments| crate::route::Route {
+            verb: crate::ir::HttpVerb::Get,
+            segments,
+            custom_verb: None,
+            body: crate::route::Body::None,
+            response_body: None,
+            query: Vec::new(),
+        };
+        let rule = |template: &str, additional_bindings| crate::ir::HttpRule {
+            verb: crate::ir::HttpVerb::Get,
+            template: template.into(),
+            body: String::new(),
+            response_body: String::new(),
+            additional_bindings,
+        };
+        let method = crate::ir::Method {
+            proto_name: "Get".into(),
+            elm_name: "get".into(),
+            input: TypeRef::WellKnown(WellKnown::Empty),
+            output: TypeRef::WellKnown(WellKnown::Empty),
+            idempotency: crate::ir::Idempotency::Unknown,
+            http: Some(rule("/v1/all", vec![rule("/v1/{x}", Vec::new())])),
+            routes: vec![
+                route(vec![
+                    crate::route::PathSegment::Literal("v1".into()),
+                    crate::route::PathSegment::Literal("all".into()),
+                ]),
+                route(vec![
+                    crate::route::PathSegment::Literal("v1".into()),
+                    variable,
+                ]),
+            ],
+            doc: crate::ir::Doc::default(),
+        };
+        let service = Service {
+            proto_full_name: "t.v1.S".into(),
+            module: IrModule::new(vec!["T".into(), "V1".into(), "S".into()]).expect("valid"),
+            methods: vec![method],
+            doc: crate::ir::Doc::default(),
+        };
+        let untyped = emit_service(
+            &package(Vec::new()),
+            &service,
+            &Options::default(),
+            &[],
+            &Queries::new(),
+        )
+        .expect_err("binding 1 cannot be typed");
+        assert_eq!(
+            untyped,
+            [UntypedRoute {
+                method: "t.v1.S.Get".into(),
+                binding: 1,
+                verb: "GET".into(),
+                template: "/v1/{x}".into(),
+            }]
+        );
+        let problem = untyped[0].problem();
+        assert_eq!(problem.code(), Code::UntypedRoute);
+        assert!(!problem.is_warning());
+        assert!(
+            problem
+                .message()
+                .contains("binding 1 of `t.v1.S.Get`, `GET /v1/{x}`"),
+            "{}",
+            problem.message()
+        );
     }
 }

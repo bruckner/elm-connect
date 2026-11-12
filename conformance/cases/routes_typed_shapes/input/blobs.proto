@@ -1,0 +1,98 @@
+// Generated with the `bytes=bytes` option (options.txt): every binding shape
+// the route resolver accepts is a route function. A bytes field held as
+// Bytes is base64 text in a path or query; a path through a message on a
+// cycle reads through its wrapper; a body field of `Empty` or `Value`, or on
+// a cycle, has its encoder; a body that holds an `Any`, which only the
+// client's registry can write, is read from the request's JSON, which the
+// route function takes beside the request (`Proto.Method.withJsonRoutes`).
+syntax = "proto3";
+
+package blobs.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/empty.proto";
+import "google/protobuf/struct.proto";
+
+message Blob {
+  bytes digest = 1;
+  string name = 2;
+  bytes salt = 3;
+}
+
+message Labeled {
+  string name = 1;
+  google.protobuf.Any label = 2;
+}
+
+message LabelBlobRequest {
+  Labeled labeled = 1;
+  string shelf = 2;
+}
+
+message Folder {
+  string name = 1;
+  Folder parent = 2;
+}
+
+message Slots {
+  string name = 1;
+  google.protobuf.Empty nothing = 2;
+}
+
+message Free {
+  string name = 1;
+  google.protobuf.Value value = 2;
+}
+
+service BlobService {
+  rpc GetBlob(Blob) returns (Blob) {
+    option (google.api.http) = {
+      get: "/v1/blobs/{digest}"
+      additional_bindings { get: "/v1/{name=shelves/*/blobs/*}" }
+    };
+  }
+  rpc FindBlob(Blob) returns (Blob) {
+    option (google.api.http) = {
+      post: "/v1/{name=blobs/*}:find"
+      body: "*"
+    };
+  }
+  rpc LabelBlob(LabelBlobRequest) returns (Blob) {
+    option (google.api.http) = {
+      post: "/v1/{shelf=shelves/*}/labels"
+      body: "labeled"
+      additional_bindings { put: "/v1/{labeled.name=labels/*}" body: "labeled" }
+    };
+  }
+  rpc PutLabel(Labeled) returns (Labeled) {
+    option (google.api.http) = {
+      put: "/v1/{name=tags/*}"
+      body: "*"
+    };
+  }
+  rpc AddFolder(Folder) returns (Folder) {
+    option (google.api.http) = {
+      post: "/v1/{parent.name=folders/*}/children"
+      body: "*"
+    };
+  }
+  rpc MoveFolder(Folder) returns (Folder) {
+    option (google.api.http) = {
+      post: "/v1/{name=folders/*}:move"
+      body: "parent"
+    };
+  }
+  rpc Touch(Slots) returns (Slots) {
+    option (google.api.http) = {
+      post: "/v1/{name=slots/*}:touch"
+      body: "nothing"
+    };
+  }
+  rpc SetValue(Free) returns (Free) {
+    option (google.api.http) = {
+      post: "/v1/{name=values/*}"
+      body: "value"
+    };
+  }
+}
