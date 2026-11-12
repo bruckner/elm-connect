@@ -4,6 +4,7 @@ import Bytes.Encode
 import Dict
 import Expect
 import Fuzz exposing (Fuzzer)
+import Fuzzers
 import Http
 import Json.Decode
 import Json.Encode
@@ -31,6 +32,7 @@ import Rpc.Internal.Call
 import Rpc.Internal.Http
 import Rpc.Internal.Plan
 import Rpc.Internal.Retry as Retry
+import Rpc.Internal.Status
 import Rpc.Internal.Trace
 import Rpc.Protocol
 import Rpc.Retry
@@ -685,6 +687,20 @@ responses =
                               ]
                             )
                         )
+        , test "a Connect detail whose value holds a surrogate without its pair is a problem" <|
+            \_ ->
+                failed 404 "Not Found" """{"code":"not_found","details":[{"type":"notes.v1.Note","value":"\\udc00CgJoaQ"},{"type":"notes.v1.Note","value":"CgJoaQ\\ud800="}]}"""
+                    |> Result.mapError problemsOf
+                    |> Expect.equal
+                        (Err
+                            [ "json value: Expecting base64 text, standard or URL-safe"
+                            , "json value: Expecting base64 text, standard or URL-safe"
+                            ]
+                        )
+        , fuzz Fuzzers.base64Like "a Connect detail's value is read as base64 by the same rules as a bytes field" <|
+            \text ->
+                Rpc.Internal.Status.canonicalBase64 text
+                    |> Expect.equal (Fuzzers.canonicalBase64 text)
         , test "a Connect detail's binary needs no registry, and unpadded base64 reads as padded" <|
             \_ ->
                 ( failed 404 "Not Found" """{"code":"not_found","details":[{"type":"notes.v1.Note","value":"CgJoaQ"}]}"""

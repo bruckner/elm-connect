@@ -1958,36 +1958,48 @@ bytes =
 
 isBase64 : String -> Bool
 isBase64 text =
-    -- Checked first: only text of these characters is safe to read from the
-    -- end, as `String.any` and `trailingCount` do (see `isBase64Char`).
-    String.all (\char -> isBase64Char char || char == '=') text && base64Shape text
-
-
-base64Shape : String -> Bool
-base64Shape text =
     let
-        body =
-            dropPadding text
-
-        length =
-            String.length body
-
         padding =
-            String.length text - length
+            trailingPadding text
+
+        body =
+            String.dropRight padding text
 
         partial =
-            modBy 4 length
-
-        standard =
-            String.any (\char -> char == '+' || char == '/') body
-
-        urlSafe =
-            String.any (\char -> char == '-' || char == '_') body
+            modBy 4 (String.length body)
     in
-    String.all isBase64Char body
-        && not (standard && urlSafe)
+    -- The padding is counted and dropped natively; `String.all` then reads
+    -- the body from its end, which `isBase64Char` makes safe (see there).
+    (padding == 0 || (partial /= 0 && padding == 4 - partial))
         && (partial /= 1)
-        && (padding == 0 || (partial /= 0 && padding == 4 - partial))
+        && String.all isBase64Char body
+        && not (bothAlphabets body)
+
+
+{-| How many `=` end `text`, up to 3: more than 2 is never base64.
+-}
+trailingPadding : String -> Int
+trailingPadding text =
+    if String.endsWith "==" text then
+        if String.endsWith "===" text then
+            3
+
+        else
+            2
+
+    else if String.endsWith "=" text then
+        1
+
+    else
+        0
+
+
+{-| Whether base64 text mixes the standard alphabet's `+` or `/` with the
+URL-safe one's `-` or `_`.
+-}
+bothAlphabets : String -> Bool
+bothAlphabets body =
+    (String.contains "+" body || String.contains "/" body) && (String.contains "-" body || String.contains "_" body)
 
 
 {-| A character of either base64 alphabet. elm/core's `String.all` reads a
@@ -1998,12 +2010,11 @@ reading on would never return. Its length refuses it.
 -}
 isBase64Char : Char -> Bool
 isBase64Char char =
-    String.length (String.fromChar char) == 1 && (Char.isAlphaNum char || char == '+' || char == '/' || char == '-' || char == '_')
-
-
-dropPadding : String -> String
-dropPadding text =
-    String.dropRight (trailingCount '=' text) text
+    let
+        code =
+            Char.toCode char
+    in
+    String.length (String.fromChar char) == 1 && ((code >= 0x61 && code <= 0x7A) || (code >= 0x41 && code <= 0x5A) || (code >= 0x30 && code <= 0x39) || char == '+' || char == '/' || char == '-' || char == '_')
 
 
 {-| Encode `bytes`, held as a base64 string, as that string, unchecked.

@@ -3,6 +3,7 @@ module Proto.JsonTest exposing (suite)
 import Dict
 import Expect
 import Fuzz
+import Fuzzers
 import Json.Decode exposing (Decoder)
 import Json.Encode
 import Proto.Duration
@@ -1330,6 +1331,14 @@ bytesTests =
         , rejects "aGk!"
         , rejects "+/-_"
         , rejects "aGkß"
+        , rejects "\\udc00aGk="
+        , rejects "aGk\\ud800="
+        , Test.fuzz Fuzzers.base64Like "accepts exactly the text a character-by-character check accepts" <|
+            \text ->
+                Json.Decode.decodeValue Proto.Json.bytes (Json.Encode.string text)
+                    |> Result.map (\_ -> True)
+                    |> Result.withDefault False
+                    |> Expect.equal (Fuzzers.canonicalBase64 text /= Nothing)
         , test "keeps the string as received" <|
             \_ -> decodes Proto.Json.bytes "\"-_8\"" "-_8"
         , test "a number fails" <|
