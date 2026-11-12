@@ -210,12 +210,13 @@ test-with elm:
     conformance/test-with.sh {{elm}}
 
 # Rewrite the conformance corpus's expected output (modules and warnings.txt, or
-# diagnostics.txt), and the Elm replay of the route fixtures and the route
+# diagnostics.txt), the Elm replay of the route fixtures and the route
 # properties (tests/Routes, tests/RouteFixtures.elm, tests/RouteProperties.elm),
-# to what the generator produces now. Review the diff before committing it.
+# and the typed route shapes (tests/Shapes) to what the generator produces now.
+# Review the diff before committing it.
 bless:
     ELM_CONNECT_BLESS=1 cargo test -p elm-connect-gen --test conformance -- --exact golden diagnostics
-    ELM_CONNECT_BLESS=1 cargo test -p elm-connect-gen --test routes -- --exact the_elm_replay_is_current the_route_properties_are_current
+    ELM_CONNECT_BLESS=1 cargo test -p elm-connect-gen --test routes -- --exact the_elm_replay_is_current the_route_properties_are_current the_typed_shapes_are_current
 
 # The live suite (design section 7, conformance/README.md): the runtime,
 # compiled into conformance/live's headless program and run from Node,

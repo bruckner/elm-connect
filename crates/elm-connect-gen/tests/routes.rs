@@ -891,3 +891,43 @@ fn the_route_properties_are_current() {
         panic!("the route properties are stale; run `just bless`:\n{diff}");
     }
 }
+
+// The typed shapes: the corpus case `routes_typed_shapes`, which holds every
+// binding shape whose route function was once left to the interpreter,
+// generated again with its options and `module_prefix=Shapes` into
+// `tests/Shapes/`, where `tests/RouteShapesTest.elm` holds each method's
+// route functions to the interpreter over the method's bindings as data.
+
+#[test]
+fn the_typed_shapes_are_current() {
+    let case = repo_root().join("conformance/cases/routes_typed_shapes");
+    let mut compiler =
+        protox::Compiler::with_file_resolver(elm_connect_gen::googleapis::resolver([
+            case.join("input")
+        ]));
+    compiler.include_imports(true).include_source_info(true);
+    compiler
+        .open_file("blobs.proto")
+        .unwrap_or_else(|e| panic!("blobs.proto does not compile: {e:?}"));
+    let options = fs::read_to_string(case.join("options.txt")).expect("the case's options");
+    let options = Options::from_parameter(&format!("{},module_prefix=Shapes", options.trim()))
+        .unwrap_or_else(|d| panic!("{}", elm_connect_gen::diagnostics::render_narrow(&d)));
+    let generated = generate(&compiler.descriptor_pool(), &["blobs.proto"], &options)
+        .unwrap_or_else(|d| panic!("{}", elm_connect_gen::diagnostics::render_narrow(&d)));
+    let failures: Vec<String> = generated
+        .files
+        .iter()
+        .filter_map(|module| {
+            pinned(
+                &format!("tests/{}", module.path),
+                &placeholder_header(&module.content),
+            )
+            .err()
+        })
+        .collect();
+    assert!(
+        failures.is_empty(),
+        "the typed shapes under tests/Shapes are stale; run `just bless`:\n{}",
+        failures.join("\n")
+    );
+}
