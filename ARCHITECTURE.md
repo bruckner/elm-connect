@@ -178,9 +178,9 @@ Each layer proves one thing and has a known gap. A path that starts with
   `conformance/live/src/Live/Conformance.elm`): connectconformance's
   unary JSON cases over HTTP/1.1, through the pure halves and through
   `Rpc.sendTraced`, and its unary proto-codec cases
-  (`conformance-proto.yaml`, `just live-proto`) against the runner built
-  on bindings generated with `wire=both`. Gap: what the runtime does not
-  support (streaming, HTTP/2) is declared out,
+  (`conformance-proto.yaml`, `just live-proto`) on the same runner, whose
+  bindings the default `wire=both` gives both codecs. Gap: what the
+  runtime does not support (streaming, HTTP/2) is declared out,
   `known-failing-send.txt` lists the one case `sendTraced` fails, and
   `known-failing-proto.txt` the four error-body cases the proto run adds,
   none about the codec.

@@ -4311,7 +4311,7 @@ which the runtime reads as `GrpcHeaders`, without details.
 
 gRPC-Web: `just live-grpcweb` (part of `just live`) runs
 `cases/grpcweb.json` against the example server, where connect-go
-serves gRPC-Web, on the runner built against `wire=both`, and
+serves gRPC-Web, and
 `just live-envoy` runs the same cases against a third Envoy listener
 whose gRPC-Web filter turns each call into gRPC to the server. Both pass
 every case, with the same code, message and detail bytes as the
