@@ -198,31 +198,47 @@ decoding it, so that reading an error reaches no bytes code.
 canonicalBase64 : String -> Maybe String
 canonicalBase64 text =
     let
+        padding =
+            if String.endsWith "==" text then
+                if String.endsWith "===" text then
+                    3
+
+                else
+                    2
+
+            else if String.endsWith "=" text then
+                1
+
+            else
+                0
+
         body =
-            dropPadding text
+            String.dropRight padding text
 
         partial =
             modBy 4 (String.length body)
 
-        padding =
-            String.length text - String.length body
-
-        standard =
-            String.any (\char -> char == '+' || char == '/') body
-
         urlSafe =
-            String.any (\char -> char == '-' || char == '_') body
+            String.contains "-" body || String.contains "_" body
     in
     if
-        not (String.all base64Char body)
-            || (partial == 1)
+        (partial == 1)
             || (padding /= 0 && (partial == 0 || padding /= 4 - partial))
-            || (standard && urlSafe)
+            -- The padding was dropped natively; `String.all` reads the body
+            -- from its end, which `base64Char` makes safe.
+            || not (String.all base64Char body)
+            || (urlSafe && (String.contains "+" body || String.contains "/" body))
     then
         Nothing
 
-    else
+    else if urlSafe then
         Just (String.map standardChar body ++ String.repeat (modBy 4 (4 - partial)) "=")
+
+    else if padding == 0 && partial /= 0 then
+        Just (body ++ String.repeat (4 - partial) "=")
+
+    else
+        Just text
 
 
 {-| A character of either base64 alphabet. `String.fromChar` keeps a lone
@@ -230,7 +246,11 @@ surrogate, which `String.all` would read with its neighbour, from passing.
 -}
 base64Char : Char -> Bool
 base64Char char =
-    String.length (String.fromChar char) == 1 && (Char.isAlphaNum char || String.contains (String.fromChar char) "+/-_")
+    let
+        code =
+            Char.toCode char
+    in
+    String.length (String.fromChar char) == 1 && ((code >= 0x61 && code <= 0x7A) || (code >= 0x41 && code <= 0x5A) || (code >= 0x30 && code <= 0x39) || char == '+' || char == '/' || char == '-' || char == '_')
 
 
 standardChar : Char -> Char
@@ -244,15 +264,6 @@ standardChar char =
 
         _ ->
             char
-
-
-dropPadding : String -> String
-dropPadding text =
-    if String.endsWith "=" text then
-        dropPadding (String.dropRight 1 text)
-
-    else
-        text
 
 
 {-| An error with the details of a `google.rpc.Status` body read, through the

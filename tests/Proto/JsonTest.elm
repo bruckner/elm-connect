@@ -1330,6 +1330,8 @@ bytesTests =
         , rejects "aGk!"
         , rejects "+/-_"
         , rejects "aGkß"
+        , rejects "\\udc00aGk="
+        , rejects "aGk\\ud800="
         , test "keeps the string as received" <|
             \_ -> decodes Proto.Json.bytes "\"-_8\"" "-_8"
         , test "a number fails" <|
