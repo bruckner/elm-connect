@@ -8,7 +8,7 @@
 //! builders are stacked, one argument per line, however short.
 
 use super::field::{ValueShape, Zeroed, value_shape};
-use super::route_fn::{Messages, PROTO_ROUTE, Queries, REQUEST};
+use super::route_fn::{JSON, Messages, PROTO_ROUTE, Queries, REQUEST};
 use super::scalar::Holding;
 use super::{Emitter, PROTO_HTTP, PROTO_JSON, PROTO_METHOD, RPC, docs};
 use crate::elm::ast::{BinOp, Decl, Expr, Pattern, Type};
@@ -130,14 +130,13 @@ impl Emitter {
                     [inline_list(functions)],
                 ));
             }
-            Routes::Bindings => {
-                let bindings = apply(
-                    self.reference((PROTO_METHOD, "bindings")),
-                    [var(method.descriptor_name())],
-                );
+            Routes::JsonFunctions(count) => {
+                let functions: Vec<Expr> = (0..*count)
+                    .map(|index| var(route_name(method, index)))
+                    .collect();
                 steps.push(apply(
-                    self.reference((PROTO_METHOD, "withBindings")),
-                    [bindings],
+                    self.reference((PROTO_METHOD, "withJsonRoutes")),
+                    [inline_list(functions)],
                 ));
             }
         }
@@ -173,30 +172,50 @@ impl Emitter {
         if method.routes.is_empty() || self.wiring == Wire::Proto {
             return (Vec::new(), Routes::None);
         }
-        let mut scratch = self.clone();
-        if !method.routes.iter().all(|route| {
-            scratch
-                .typed_route(messages, queries, &method.input, route)
-                .is_some()
-        }) {
-            return (Vec::new(), Routes::Bindings);
-        }
+        // A body holding an `Any` is written by the client's registry, so
+        // such a method's routes read their bodies from the JSON the send
+        // encodes with it. Every binding of such a request holds the `Any`
+        // in its body, since no path or query holds one.
+        let json = method
+            .routes
+            .iter()
+            .any(|route| self.body_reaches(messages, &method.input, route));
         let mut decls = Vec::new();
         for (index, route) in method.routes.iter().enumerate() {
             let body = self
-                .typed_route(messages, queries, &method.input, route)
-                .expect("typed on the copy");
+                .typed_route(messages, queries, &method.input, route, json)
+                .unwrap_or_else(|| {
+                    panic!(
+                        "binding {index} of `{}` passed the route resolver but cannot be typed",
+                        method.proto_name
+                    )
+                });
             let request = self.method_type(&method.input);
             let built = self.library_type(PROTO_ROUTE, "Route", []);
+            let (annotation, params) = if json {
+                let value = self.library_type(super::JSON_ENCODE, "Value", []);
+                (
+                    ty_fn([request, value], built),
+                    vec![pvar(REQUEST), pvar(JSON)],
+                )
+            } else {
+                (ty_fn([request], built), vec![pvar(REQUEST)])
+            };
             decls.push(Decl::Value {
                 doc: Some(docs::route(method, index)),
                 name: route_name(method, index),
-                annotation: ty_fn([request], built),
-                params: vec![pvar(REQUEST)],
+                annotation,
+                params,
                 body,
             });
         }
-        (decls, Routes::Functions(method.routes.len()))
+        let count = method.routes.len();
+        let routes = if json {
+            Routes::JsonFunctions(count)
+        } else {
+            Routes::Functions(count)
+        };
+        (decls, routes)
     }
 
     /// The JSON encoder of a method's request type: the generated
@@ -369,8 +388,9 @@ pub(super) enum Routes {
     None,
     /// Its route functions, as many as its bindings.
     Functions(usize),
-    /// Its bindings as data, read by the runtime's interpreter.
-    Bindings,
+    /// Its route functions of the request and its JSON, for a method
+    /// whose bodies hold an `Any`.
+    JsonFunctions(usize),
 }
 
 /// `routeGetNote0`: the route function of a method's binding, by its
