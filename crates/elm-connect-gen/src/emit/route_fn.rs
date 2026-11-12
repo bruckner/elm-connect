@@ -7,11 +7,13 @@
 //! that takes the message, less the fields the binding's path and body
 //! hold.
 //!
-//! A binding the emitter cannot type (a field of a message outside the
-//! generated packages, a recursive message on the way, `bytes` held as
-//! `Bytes`, a repeated path field) makes its method take its bindings as
-//! data instead (`Proto.Method.withBindings`), read by the runtime's
-//! interpreter over the request's JSON.
+//! Every binding the route resolver accepts is typed. A method whose
+//! bodies hold a `google.protobuf.Any`, which only the client's registry
+//! can write, takes its routes as functions of the request and its proto3
+//! JSON (`routeCreateNote0 : CreateNoteRequest -> Json.Encode.Value ->
+//! Proto.Route.Route`, given to `Proto.Method.withJsonRoutes`): the path
+//! and query come from the typed request, the body from the JSON the send
+//! encodes once with that registry.
 
 use std::collections::HashMap;
 
@@ -33,6 +35,9 @@ const PROTO_QUERY: &str = "Proto.Query";
 /// The name route functions call their request; the call's own names never
 /// end in `_` but for Elm's reserved words.
 pub(super) const REQUEST: &str = "request_";
+
+/// The name JSON route functions call the request's proto3 JSON.
+pub(super) const JSON: &str = "json_";
 
 /// Every generated message by full proto name, with its package's module.
 pub(crate) type Messages<'p> = HashMap<&'p str, (&'p Message, &'p IrModule)>;
@@ -144,14 +149,45 @@ impl Text {
 }
 
 impl Emitter {
+    /// Whether `route`'s body holds a `google.protobuf.Any`, so that its
+    /// method's routes read the body from the request's JSON.
+    pub(super) fn body_reaches(&self, messages: &Messages, input: &TypeRef, route: &Route) -> bool {
+        match &route.body {
+            Body::None => false,
+            Body::All => self.reaches(field::value_shape(input, self.holding)),
+            Body::Field(top) => {
+                let TypeRef::Message(name) = input else {
+                    return false;
+                };
+                let Some((request, _)) = messages.get(name.proto_full_name.as_str()) else {
+                    return false;
+                };
+                let Some(field) = request
+                    .fields
+                    .iter()
+                    .find(|f| f.proto_name == top.field.proto[0])
+                else {
+                    return false;
+                };
+                match body_shape(messages, field, self.holding) {
+                    Some(FieldShape::Maybe(value)) => self.reaches(value),
+                    _ => false,
+                }
+            }
+        }
+    }
+
     /// The body of a route function for `route`, of a method whose request
     /// type is `input`, or `None` when a field it reads cannot be typed.
+    /// With `json`, the function takes the request's proto3 JSON too
+    /// ([`JSON`]), which its body is read from.
     pub(super) fn typed_route(
         &mut self,
         messages: &Messages,
         queries: &Queries,
         input: &TypeRef,
         route: &Route,
+        json: bool,
     ) -> Option<Expr> {
         // A well-known request type has no record fields: its routes read
         // none, so only a route without variables and query is typed.
@@ -273,21 +309,29 @@ impl Emitter {
         // The body.
         let body = match &route.body {
             Body::None => var(self.core("Nothing")),
+            Body::All if json => {
+                let paths = body_paths(route);
+                let body = if paths.is_empty() {
+                    var(JSON)
+                } else {
+                    apply(
+                        self.reference((PROTO_ROUTE, "without")),
+                        [crate::elm::build::inline_list(paths), var(JSON)],
+                    )
+                };
+                apply(var(self.core("Just")), [body])
+            }
+            Body::Field(top) if json => apply(
+                var(self.core("Just")),
+                [apply(
+                    self.reference((PROTO_ROUTE, "jsonField")),
+                    [string(top.field.json[0].clone()), var(JSON)],
+                )],
+            ),
             Body::All => {
-                let paths: Vec<Expr> = route
-                    .segments
-                    .iter()
-                    .filter_map(|segment| match segment {
-                        PathSegment::Variable { field, .. } => {
-                            Some(crate::elm::build::inline_list(
-                                field.json.iter().map(|key| string(key.clone())),
-                            ))
-                        }
-                        PathSegment::Literal(_) => None,
-                    })
-                    .collect();
-                // A request that reaches an `Any` has no
-                // total encoder; its routes are read from its bindings.
+                let paths = body_paths(route);
+                // A request that reaches an `Any` has no total encoder:
+                // its routes take its JSON (`json`).
                 if self.reaches(field::value_shape(input, self.holding)) {
                     return None;
                 }
@@ -308,14 +352,51 @@ impl Emitter {
                     .fields
                     .iter()
                     .find(|f| f.proto_name == top.field.proto[0])?;
-                if field.cyclic {
-                    return None;
-                }
-                let shape = match field::field_shape(field, &HashMap::new(), self.holding) {
+                let just = var(self.core("Just"));
+                let shape = match body_shape(messages, field, self.holding)? {
                     FieldShape::Maybe(value) if !self.reaches(value) => value,
+                    // `Empty`'s JSON is `{}`, whatever the field holds.
+                    FieldShape::Plain(Zeroed::Empty) => {
+                        let empty = apply(self.reference((JSON_ENCODE, "object")), [list([])]);
+                        return Some(self.route_record(
+                            route,
+                            path,
+                            query,
+                            apply(just, [empty]),
+                            checks,
+                            values,
+                        ));
+                    }
+                    // A `Value` is JSON already, `{}` when unset as for a
+                    // message.
+                    FieldShape::Json => {
+                        let empty = apply(self.reference((JSON_ENCODE, "object")), [list([])]);
+                        let value = apply(
+                            qualified("Maybe", "withDefault"),
+                            [
+                                empty,
+                                crate::elm::build::access(var(REQUEST), field.elm_name.clone()),
+                            ],
+                        );
+                        return Some(self.route_record(
+                            route,
+                            path,
+                            query,
+                            apply(just, [value]),
+                            checks,
+                            values,
+                        ));
+                    }
                     _ => return None,
                 };
-                let encoder = self.value_encoder(shape);
+                let encoder = match shape {
+                    // A wrapper's encoder is its package module's.
+                    ValueShape::Present(Present::Wrapped(wrapper, full_name)) => {
+                        let module = messages.get(full_name)?.1;
+                        self.generated_value(module, wrapper.encoder_name())
+                    }
+                    shape => self.value_encoder(shape),
+                };
                 let empty = apply(self.reference((JSON_ENCODE, "object")), [list([])]);
                 apply(
                     var(self.core("Just")),
@@ -335,6 +416,20 @@ impl Emitter {
                 )
             }
         };
+        Some(self.route_record(route, path, query, body, checks, values))
+    }
+
+    /// The route record of `route` from its parts, under the path
+    /// variables' bindings.
+    fn route_record(
+        &mut self,
+        route: &Route,
+        path: Expr,
+        query: Expr,
+        body: Expr,
+        mut checks: Vec<Expr>,
+        values: Vec<LetBinding>,
+    ) -> Expr {
         let invalid = match checks.len() {
             0 => var(self.core("Nothing")),
             1 => checks.pop().unwrap(),
@@ -355,11 +450,11 @@ impl Emitter {
             ("responseBody", response_body),
             ("invalid", invalid),
         ]);
-        Some(if values.is_empty() {
+        if values.is_empty() {
             result
         } else {
             crate::elm::build::let_in(values, result)
-        })
+        }
     }
 
     /// `message`'s query encoder over `params`, `queryOfEverything :
@@ -442,9 +537,8 @@ impl Emitter {
             };
             if index + 1 < path.len() {
                 let ty = match &step {
-                    Step::Field(field) if !field.cyclic => &field.ty,
-                    Step::Member(_, variant, _) if !variant.cyclic => &variant.ty,
-                    _ => return None,
+                    Step::Field(field) => &field.ty,
+                    Step::Member(_, variant, _) => &variant.ty,
                 };
                 message = match ty {
                     TypeRef::Message(name) => messages.get(name.proto_full_name.as_str())?.0,
@@ -460,6 +554,25 @@ impl Emitter {
         let mut leaf = None;
         for step in steps {
             match step {
+                // A field on a cycle holds its message wrapped, and is a
+                // message on the way, never the leaf.
+                Step::Field(field) if field.cyclic => {
+                    read = if read.maybe {
+                        Read {
+                            expr: apply(
+                                qualified("Maybe", "andThen"),
+                                [Expr::Accessor(field.elm_name.clone()), read.expr],
+                            ),
+                            maybe: true,
+                        }
+                    } else {
+                        Read {
+                            expr: crate::elm::build::access(read.expr, field.elm_name.clone()),
+                            maybe: true,
+                        }
+                    };
+                    read.expr = self.unwrap(messages, &field.ty, read.expr)?;
+                }
                 Step::Field(field) => {
                     let shape = field::field_shape(field, &HashMap::new(), self.holding);
                     let (presence, value, repeated) = match shape {
@@ -533,6 +646,9 @@ impl Emitter {
                             maybe: true,
                         }
                     };
+                    if variant.cyclic {
+                        read.expr = self.unwrap(messages, &variant.ty, read.expr)?;
+                    }
                     leaf = Some((value, false, true));
                 }
             }
@@ -546,6 +662,29 @@ impl Emitter {
         })
     }
 
+    /// `read`, a `Maybe` of a wrapped message on a cycle, unwrapped:
+    /// `Maybe.map (\(Node_ message_) -> message_) read`.
+    fn unwrap(&mut self, messages: &Messages, ty: &TypeRef, read: Expr) -> Option<Expr> {
+        let TypeRef::Message(name) = ty else {
+            return None;
+        };
+        let (message, module) = messages.get(name.proto_full_name.as_str())?;
+        let wrapper = message.wrapper.as_ref()?;
+        let own = **module == self.module;
+        if !own {
+            self.imports.entry(module.to_string()).or_default();
+        }
+        let pattern = Pattern::Ctor {
+            module: (!own).then(|| ModuleName::new(module.to_string())),
+            name: wrapper.elm_name.clone(),
+            args: vec![Pattern::Var("message_".into())],
+        };
+        Some(apply(
+            qualified("Maybe", "map"),
+            [lambda([pattern], var("message_")), read],
+        ))
+    }
+
     /// How a leaf value becomes path or query text.
     fn text(&mut self, value: ValueShape) -> Option<Text> {
         let repr_text = |emitter: &mut Emitter, repr: Repr, value: ValueShape| -> Option<Text> {
@@ -553,7 +692,7 @@ impl Emitter {
                 Repr::String | Repr::Int64 | Repr::UInt64 => Text::Same,
                 Repr::Int32 | Repr::UInt32 => Text::Fn(qualified("String", "fromInt")),
                 Repr::Bool => Text::Fn(emitter.reference((PROTO_ROUTE, "boolText"))),
-                Repr::BytesAsBytes => return None,
+                Repr::BytesAsBytes => Text::Fn(emitter.reference((PROTO_ROUTE, "bytesText"))),
                 Repr::Float
                 | Repr::Float32
                 | Repr::Bytes
@@ -654,6 +793,18 @@ impl Emitter {
                 [string(name), values],
             ));
         }
+        if let (ValueShape::Zeroed(Zeroed::Scalar(Repr::BytesAsBytes)), false) = (value, presence) {
+            let value_expr = if read.maybe {
+                let empty = self.reference(("Proto.Bytes", "empty"));
+                apply(qualified("Maybe", "withDefault"), [empty, read.expr])
+            } else {
+                read.expr
+            };
+            return Some(apply(
+                self.reference((PROTO_QUERY, "bytes")),
+                [string(name), value_expr],
+            ));
+        }
         match self.zero(value) {
             Some(zero) if !presence => {
                 let value_expr = if read.maybe {
@@ -722,7 +873,7 @@ fn path_local(json: &[String], taken: &[String]) -> String {
         joined.push_str(chars.as_str());
     }
     let reserved = |name: &str| {
-        [REQUEST, "member_", "message_"].contains(&name) || taken.iter().any(|t| t == name)
+        [REQUEST, JSON, "member_", "message_"].contains(&name) || taken.iter().any(|t| t == name)
     };
     let plain = format!("{joined}_");
     if !reserved(&plain) {
@@ -732,4 +883,40 @@ fn path_local(json: &[String], taken: &[String]) -> String {
         .map(|n| format!("{joined}{n}_"))
         .find(|name| !reserved(name))
         .expect("an unused number")
+}
+
+/// The JSON field paths of `route`'s path variables, which `body: "*"`
+/// leaves out of the body.
+fn body_paths(route: &Route) -> Vec<Expr> {
+    route
+        .segments
+        .iter()
+        .filter_map(|segment| match segment {
+            PathSegment::Variable { field, .. } => Some(crate::elm::build::inline_list(
+                field.json.iter().map(|key| string(key.clone())),
+            )),
+            PathSegment::Literal(_) => None,
+        })
+        .collect()
+}
+
+/// The shape of a body field, a top-level message field of the request:
+/// its wrapper when it is on a cycle.
+fn body_shape<'p>(
+    messages: &Messages<'p>,
+    field: &'p Field,
+    holding: super::scalar::Holding,
+) -> Option<FieldShape<'p>> {
+    if !field.cyclic {
+        return Some(field::field_shape(field, &HashMap::new(), holding));
+    }
+    let TypeRef::Message(name) = &field.ty else {
+        return None;
+    };
+    let message = messages.get(name.proto_full_name.as_str())?.0;
+    let wrapper = message.wrapper.as_ref()?;
+    Some(FieldShape::Maybe(ValueShape::Present(Present::Wrapped(
+        wrapper,
+        &name.proto_full_name,
+    ))))
 }
