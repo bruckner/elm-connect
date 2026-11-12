@@ -16,6 +16,7 @@ import Rpc.Body as Body
 import Rpc.Call
 import Rpc.Error as Error
 import Rpc.Internal.Call exposing (Call(..))
+import Rpc.Internal.GrpcWeb as GrpcWeb
 import Rpc.Internal.Http as Internal
 import Rpc.Internal.Retry as Retry
 import Rpc.Internal.Route as Route exposing (Route(..), route)
@@ -50,6 +51,9 @@ request cfg c =
 
                 Implicit ->
                     connectRequest { get = False, maxGetUrl = Nothing } (jsonMessage c) cfg c
+
+        GrpcWeb _ ->
+            grpcWebRequest cfg c
 
 
 {-| A request message as Connect sends it: its body as a POST, and as a GET
@@ -162,6 +166,41 @@ connectRequest options message cfg ((Call fields) as c) =
             }
 
 
+{-| gRPC-Web's POST: the request's binary, which the method's own code
+writes, in one framed message, and the timeout as `grpc-timeout`. A method
+without binary codecs is refused before it is sent, so its body is empty.
+-}
+grpcWebRequest : Settings c -> Call req res -> Request
+grpcWebRequest cfg ((Call fields) as c) =
+    let
+        timeout =
+            callTimeout cfg c
+    in
+    { method = "POST"
+    , url = Route.connectUrl cfg.baseUrl c
+    , headers =
+        cfg.headers
+            ++ fields.headers
+            ++ ( "X-Grpc-Web", "1" )
+            :: (case timeout of
+                    Just ms ->
+                        [ ( "grpc-timeout", GrpcWeb.timeout ms ) ]
+
+                    Nothing ->
+                        []
+               )
+    , body =
+        case Proto.Internal.Method.binaryUnder True fields.method of
+            Just binary ->
+                Body.bytesAs "application/grpc-web+proto" (GrpcWeb.frame (binary.message fields.message).bytes)
+
+            Nothing ->
+                Body.none
+    , timeout = timeout
+    , withCredentials = cfg.withCredentials
+    }
+
+
 {-| The request over one binding of a method's rule.
 -}
 transcodeRequest : Rule -> Settings c -> Call req res -> Request
@@ -195,8 +234,8 @@ invalidPathValue cfg c =
 
 {-| The request an attempt sends with `left` milliseconds of a retry deadline
 to go (`Rpc.Internal.Retry.budget`): `sent` with
-its timeout bounded by them, and over Connect a `Connect-Timeout-Ms` that
-says so in place of any it had. A request whose timeout is already within
+its timeout bounded by them, and over Connect a `Connect-Timeout-Ms`, over
+gRPC-Web a `grpc-timeout`, that says so in place of any it had. A request whose timeout is already within
 the budget, or sent without a deadline, is `sent` as it is.
 -}
 withBudget : Settings c -> Call req res -> Maybe Float -> Request -> Request
@@ -214,35 +253,34 @@ withBudget cfg c left sent =
                 { sent
                     | timeout = Just ms
                     , headers =
-                        if speaksConnect cfg c then
-                            List.filter (\( name, _ ) -> String.toLower name /= "connect-timeout-ms") sent.headers
-                                ++ [ ( "Connect-Timeout-Ms", timeoutMs ms ) ]
+                        case timeoutField cfg c of
+                            Just ( name, format ) ->
+                                List.filter (\( key, _ ) -> String.toLower key /= String.toLower name) sent.headers
+                                    ++ [ ( name, format ms ) ]
 
-                        else
-                            sent.headers
+                            Nothing ->
+                                sent.headers
                 }
 
         Nothing ->
             sent
 
 
-{-| Whether the call goes over the Connect protocol, which carries its
-timeout in a header: over Connect, and over transcoding by the implicit
-route of a method without a rule.
+{-| The header the call's protocol carries its timeout in, and how it writes
+it: Connect's over Connect and over transcoding by the implicit route of a
+method without a rule, gRPC's over gRPC-Web, none over a binding.
 -}
-speaksConnect : Settings c -> Call req res -> Bool
-speaksConnect cfg c =
-    case cfg.transport of
-        Connect _ ->
-            True
+timeoutField : Settings c -> Call req res -> Maybe ( String, Float -> String )
+timeoutField cfg c =
+    case ( cfg.transport, route cfg.transport c ) of
+        ( GrpcWeb _, _ ) ->
+            Just ( "grpc-timeout", GrpcWeb.timeout )
 
-        Transcode _ ->
-            case route cfg.transport c of
-                Bound _ _ ->
-                    False
+        ( _, Bound _ _ ) ->
+            Nothing
 
-                Implicit ->
-                    True
+        _ ->
+            Just ( "Connect-Timeout-Ms", timeoutMs )
 
 
 callTimeout : Settings c -> Call req res -> Maybe Float

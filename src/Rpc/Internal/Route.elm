@@ -35,6 +35,9 @@ route transport (Call fields) =
         Connect _ ->
             Implicit
 
+        GrpcWeb _ ->
+            Implicit
+
         Transcode _ ->
             -- A call's binding number is one its descriptor has (`viaBinding`
             -- checks), or 0 for a method without bindings.

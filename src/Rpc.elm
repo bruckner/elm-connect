@@ -280,7 +280,7 @@ send cfg toMsg ((Rpc.Internal.Call.Call fields) as c) =
         Internal.send
             (case Rpc.Internal.Answer.binaryReader cfg.transport c of
                 Just read ->
-                    Http.expectBytesResponse toMsg read
+                    Http.expectBytesResponse toMsg (read >> Tuple.second)
 
                 Nothing ->
                     Http.expectStringResponse toMsg (response cfg c)
@@ -574,7 +574,7 @@ attempt cfg c sent =
                     Internal.task
                         (case Rpc.Internal.Answer.binaryReader cfg.transport c of
                             Just read ->
-                                Http.bytesResolver (\answer -> Ok ( Internal.metadataOf answer, read answer ))
+                                Http.bytesResolver (read >> Ok)
 
                             Nothing ->
                                 Http.stringResolver (\answer -> Ok ( Internal.metadataOf answer, response cfg c answer ))

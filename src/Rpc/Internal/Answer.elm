@@ -21,6 +21,7 @@ import Rpc.Body
 import Rpc.Code as Code exposing (Code)
 import Rpc.Error as Error exposing (Error)
 import Rpc.Internal.Call exposing (Call(..))
+import Rpc.Internal.GrpcWeb as GrpcWeb
 import Rpc.Internal.Http as Internal
 import Rpc.Internal.Route exposing (Route(..), route)
 import Rpc.Internal.Transport as Transport exposing (Transport(..))
@@ -35,7 +36,13 @@ toResult transport ((Call fields) as c) answer =
     case answer of
         Http.GoodStatus_ metadata raw ->
             case ( transport, route transport c ) of
-                ( Connect _, _ ) ->
+                ( Transcode _, Bound _ rule ) ->
+                    within transport raw (\_ -> decodeBody (responseDecoder rule.responseBody (Method.responseDecoder fields.method)) metadata raw (orEmptyObject raw))
+
+                ( Transcode _, Implicit ) ->
+                    within transport raw (\_ -> decodeBody (Method.responseDecoder fields.method) metadata raw (orEmptyObject raw))
+
+                _ ->
                     if metadata.statusCode /= 200 then
                         Err (failure metadata raw)
 
@@ -48,12 +55,6 @@ toResult transport ((Call fields) as c) answer =
 
                             Nothing ->
                                 within transport raw (\_ -> decodeBody (Method.responseDecoder fields.method) metadata raw raw)
-
-                ( Transcode _, Bound _ rule ) ->
-                    within transport raw (\_ -> decodeBody (responseDecoder rule.responseBody (Method.responseDecoder fields.method)) metadata raw (orEmptyObject raw))
-
-                ( Transcode _, Implicit ) ->
-                    within transport raw (\_ -> decodeBody (Method.responseDecoder fields.method) metadata raw (orEmptyObject raw))
 
         Http.BadStatus_ metadata raw ->
             Err (failure metadata raw)
@@ -77,34 +78,43 @@ toResultBytes : Transport -> Call req res -> Http.Response Bytes -> Result Error
 toResultBytes transport c answer =
     case binaryReader transport c of
         Just read ->
-            read answer
+            Tuple.second (read answer)
 
         Nothing ->
             toResult transport c (asText answer)
 
 
-{-| How a call's answer is read as bytes, when it is sent so: over Connect's
-proto codec, by a method with binary codecs. The reader is the method's own
-(`Proto.Method.withBinary` built it), so only a program with binary codecs
-carries it.
+{-| How a call's answer is read as bytes, when it is sent so (over Connect's
+proto codec or gRPC-Web, by a method with binary codecs): its metadata, with
+gRPC-Web's body trailers among them, and what it means. The message is read
+by the method's own code (`Proto.Method.withBinary` built it), so only a
+program with binary codecs carries it.
 -}
-binaryReader : Transport -> Call req res -> Maybe (Http.Response Bytes -> Result Error res)
+binaryReader : Transport -> Call req res -> Maybe (Http.Response Bytes -> ( Maybe Http.Metadata, Result Error res ))
 binaryReader transport ((Call fields) as c) =
     Proto.Internal.Method.binaryUnder (Transport.proto transport) fields.method
         |> Maybe.map
-            (\binary answer ->
-                case binary.read (Transport.readMaxBytes transport) answer of
-                    Read value ->
-                        Ok value
+            (\binary ->
+                case transport of
+                    GrpcWeb _ ->
+                        GrpcWeb.read (binary.read (Transport.readMaxBytes transport)) (toResult transport c)
 
-                    TooLong over ->
-                        Err (Error.NoAnswer (Error.ResponseTooLarge over))
+                    _ ->
+                        \answer ->
+                            ( Internal.metadataOf answer
+                            , case binary.read (Transport.readMaxBytes transport) answer of
+                                Read value ->
+                                    Ok value
 
-                    NotBinary problem metadata raw ->
-                        Err (Error.BadResponse problem (bytesAnswer metadata raw))
+                                TooLong over ->
+                                    Err (Error.NoAnswer (Error.ResponseTooLarge over))
 
-                    AsText text ->
-                        toResult transport c text
+                                NotBinary problem metadata raw ->
+                                    Err (Error.BadResponse problem (bytesAnswer metadata raw))
+
+                                AsText text ->
+                                    toResult transport c text
+                            )
             )
 
 

@@ -11,12 +11,15 @@ added without breaking code that builds one.
 the longest GET URL before it is POSTed instead, the largest response body
 read and request message sent, and whether messages travel as protobuf
 binary (`proto`) rather than JSON; or HTTP transcoding, with the largest
-response body read and request message sent, always JSON. The codec is a
-flag, not the codec's code, so that a transport stays data.
+response body read and request message sent, always JSON; or gRPC-Web, with the largest
+response message read and request message sent, always protobuf binary. The
+codec is a flag, and gRPC-Web a constructor, not their code, so that a
+transport stays data.
 -}
 type Transport
     = Connect { get : Bool, maxGetUrl : Maybe Int, readMaxBytes : Maybe Int, writeMaxBytes : Maybe Int, proto : Bool }
     | Transcode { readMaxBytes : Maybe Int, writeMaxBytes : Maybe Int }
+    | GrpcWeb { readMaxBytes : Maybe Int, writeMaxBytes : Maybe Int }
 
 
 {-| The largest successful response body, in bytes, a transport reads, or
@@ -29,6 +32,9 @@ readMaxBytes transport =
             options.readMaxBytes
 
         Transcode options ->
+            options.readMaxBytes
+
+        GrpcWeb options ->
             options.readMaxBytes
 
 
@@ -44,8 +50,12 @@ writeMaxBytes transport =
         Transcode options ->
             options.writeMaxBytes
 
+        GrpcWeb options ->
+            options.writeMaxBytes
 
-{-| Whether calls go as protobuf binary: over Connect with the proto codec.
+
+{-| Whether calls go as protobuf binary: over Connect with the proto codec,
+and over gRPC-Web.
 -}
 proto : Transport -> Bool
 proto transport =
@@ -55,3 +65,6 @@ proto transport =
 
         Transcode _ ->
             False
+
+        GrpcWeb _ ->
+            True
