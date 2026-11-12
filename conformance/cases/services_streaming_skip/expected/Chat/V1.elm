@@ -9,6 +9,7 @@ and the rest is generated. A service whose every method streams is left
 with no methods, and so gets no module.
 -}
 
+import Bytes.Encode
 import Chat.V1.Line
 import Json.Decode
 import Json.Encode
@@ -121,9 +122,9 @@ decodeLine =
 
 {-| Encodes a [`Line`](#Line) as protobuf binary.
 -}
-encodeLineBytes : Line -> Proto.Binary.Encoder
+encodeLineBytes : Line -> Bytes.Encode.Encoder
 encodeLineBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.text
         ]
 

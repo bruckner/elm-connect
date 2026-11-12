@@ -110,7 +110,7 @@ slice hex after =
 {-| A one-field message whose field 1 is of `codec`, as generated code
 writes it.
 -}
-single : B.Codec a -> a -> { encode : a -> B.Encoder, decode : B.Decoder a }
+single : B.Codec a -> a -> { encode : a -> Bytes.Encode.Encoder, decode : B.Decoder a }
 single codec zero =
     { encode = B.present codec 1
     , decode =
@@ -451,9 +451,9 @@ sampleDefault =
     { number = 0, name = "", leaf = Nothing, counts = [], names = [], table = Dict.empty, flags = [], pick = PickUnset }
 
 
-encodeLeaf : Leaf -> B.Encoder
+encodeLeaf : Leaf -> Bytes.Encode.Encoder
 encodeLeaf value =
-    B.sequence [ B.implicit B.int32 1 value.count, B.list B.int32 2 value.marks ]
+    Bytes.Encode.sequence [ B.implicit B.int32 1 value.count, B.list B.int32 2 value.marks ]
 
 
 mergeLeaf : Leaf -> B.Decoder Leaf
@@ -473,9 +473,9 @@ mergeLeaf =
         (\value -> { value | marks = List.reverse value.marks })
 
 
-encodeSample : Sample -> B.Encoder
+encodeSample : Sample -> Bytes.Encode.Encoder
 encodeSample value =
-    B.sequence
+    Bytes.Encode.sequence
         [ B.implicit B.int32 1 value.number
         , B.implicit B.string 2 value.name
         , B.optional (B.embedded encodeLeaf mergeLeaf leafDefault) 3 value.leaf
@@ -487,11 +487,11 @@ encodeSample value =
         ]
 
 
-encodePick : Pick -> B.Encoder
+encodePick : Pick -> Bytes.Encode.Encoder
 encodePick pick =
     case pick of
         PickUnset ->
-            B.sequence []
+            Bytes.Encode.sequence []
 
         PickText member ->
             B.present B.string 8 member

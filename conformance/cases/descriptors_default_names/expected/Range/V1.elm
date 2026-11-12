@@ -4,6 +4,7 @@
 
 module Range.V1 exposing (..)
 
+import Bytes.Encode
 import Json.Decode
 import Json.Encode
 import Proto.Binary
@@ -131,9 +132,9 @@ decodeBounds =
 
 {-| Encodes a [`Bounds`](#Bounds) as protobuf binary.
 -}
-encodeBoundsBytes : Bounds -> Proto.Binary.Encoder
+encodeBoundsBytes : Bounds -> Bytes.Encode.Encoder
 encodeBoundsBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.int32 1 value.max
         , Proto.Binary.implicit Proto.Binary.int32 2 value.min
         , Proto.Binary.implicit Proto.Binary.bool 3 value.always

@@ -4,6 +4,7 @@
 
 module Events.V1 exposing (..)
 
+import Bytes.Encode
 import Events.V1.Event
 import Events.V1.ListEventsRequest
 import Events.V1.ListEventsResponse
@@ -297,9 +298,9 @@ decodeListEventsResponse =
 
 {-| Encodes an [`Event`](#Event) as protobuf binary.
 -}
-encodeEventBytes : Event -> Proto.Binary.Encoder
+encodeEventBytes : Event -> Bytes.Encode.Encoder
 encodeEventBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         , encodeEventKindBytes value.kind
         ]
@@ -307,11 +308,11 @@ encodeEventBytes value =
 
 {-| Encodes an [`EventKind`](#EventKind) as protobuf binary: its set member's field.
 -}
-encodeEventKindBytes : EventKind -> Proto.Binary.Encoder
+encodeEventKindBytes : EventKind -> Bytes.Encode.Encoder
 encodeEventKindBytes value =
     case value of
         EventKindUnset ->
-            Proto.Binary.sequence []
+            Bytes.Encode.sequence []
 
         EventKindLegacy member ->
             Proto.Binary.present Proto.Binary.string 2 member
@@ -322,9 +323,9 @@ encodeEventKindBytes value =
 
 {-| Encodes a [`ListEventsRequest`](#ListEventsRequest) as protobuf binary.
 -}
-encodeListEventsRequestBytes : ListEventsRequest -> Proto.Binary.Encoder
+encodeListEventsRequestBytes : ListEventsRequest -> Bytes.Encode.Encoder
 encodeListEventsRequestBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.parent
         , encodeListEventsRequestFilterBytes value.filter
         ]
@@ -332,11 +333,11 @@ encodeListEventsRequestBytes value =
 
 {-| Encodes a [`ListEventsRequestFilter`](#ListEventsRequestFilter) as protobuf binary: its set member's field.
 -}
-encodeListEventsRequestFilterBytes : ListEventsRequestFilter -> Proto.Binary.Encoder
+encodeListEventsRequestFilterBytes : ListEventsRequestFilter -> Bytes.Encode.Encoder
 encodeListEventsRequestFilterBytes value =
     case value of
         ListEventsRequestFilterUnset ->
-            Proto.Binary.sequence []
+            Bytes.Encode.sequence []
 
         ListEventsRequestFilterLegacy member ->
             Proto.Binary.present Proto.Binary.string 2 member
@@ -344,9 +345,9 @@ encodeListEventsRequestFilterBytes value =
 
 {-| Encodes a [`ListEventsResponse`](#ListEventsResponse) as protobuf binary.
 -}
-encodeListEventsResponseBytes : ListEventsResponse -> Proto.Binary.Encoder
+encodeListEventsResponseBytes : ListEventsResponse -> Bytes.Encode.Encoder
 encodeListEventsResponseBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.list (Proto.Binary.embedded encodeEventBytes mergeEventBytes defaultEvent) 1 value.events
         ]
 

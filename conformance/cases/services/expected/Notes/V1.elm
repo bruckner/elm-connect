@@ -4,6 +4,7 @@
 
 module Notes.V1 exposing (..)
 
+import Bytes.Encode
 import Json.Decode
 import Json.Encode
 import Notes.V1.ArchiveNoteRequest
@@ -710,9 +711,9 @@ encodeVisibilityBytes value =
 
 {-| Encodes a [`Note`](#Note) as protobuf binary.
 -}
-encodeNoteBytes : Note -> Proto.Binary.Encoder
+encodeNoteBytes : Note -> Bytes.Encode.Encoder
 encodeNoteBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         , Proto.Binary.implicit Proto.Binary.string 2 value.title
         , Proto.Binary.implicit (Proto.Binary.enum encodeVisibilityBytes decodeVisibilityBytes) 3 value.visibility
@@ -722,18 +723,18 @@ encodeNoteBytes value =
 
 {-| Encodes a [`GetNoteRequest`](#GetNoteRequest) as protobuf binary.
 -}
-encodeGetNoteRequestBytes : GetNoteRequest -> Proto.Binary.Encoder
+encodeGetNoteRequestBytes : GetNoteRequest -> Bytes.Encode.Encoder
 encodeGetNoteRequestBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         ]
 
 
 {-| Encodes a [`ListNotesRequest`](#ListNotesRequest) as protobuf binary.
 -}
-encodeListNotesRequestBytes : ListNotesRequest -> Proto.Binary.Encoder
+encodeListNotesRequestBytes : ListNotesRequest -> Bytes.Encode.Encoder
 encodeListNotesRequestBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.parent
         , Proto.Binary.implicit Proto.Binary.int32 2 value.pageSize
         , Proto.Binary.implicit Proto.Binary.string 3 value.pageToken
@@ -746,9 +747,9 @@ encodeListNotesRequestBytes value =
 
 {-| Encodes a [`ListNotesRequestFilter`](#ListNotesRequestFilter) as protobuf binary.
 -}
-encodeListNotesRequestFilterBytes : ListNotesRequestFilter -> Proto.Binary.Encoder
+encodeListNotesRequestFilterBytes : ListNotesRequestFilter -> Bytes.Encode.Encoder
 encodeListNotesRequestFilterBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit (Proto.Binary.enum encodeVisibilityBytes decodeVisibilityBytes) 1 value.visibility
         , Proto.Binary.optional Proto.Binary.timestamp 2 value.since
         ]
@@ -756,9 +757,9 @@ encodeListNotesRequestFilterBytes value =
 
 {-| Encodes a [`ListNotesResponse`](#ListNotesResponse) as protobuf binary.
 -}
-encodeListNotesResponseBytes : ListNotesResponse -> Proto.Binary.Encoder
+encodeListNotesResponseBytes : ListNotesResponse -> Bytes.Encode.Encoder
 encodeListNotesResponseBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.list (Proto.Binary.embedded encodeNoteBytes mergeNoteBytes defaultNote) 1 value.notes
         , Proto.Binary.implicit Proto.Binary.string 2 value.nextPageToken
         ]
@@ -766,9 +767,9 @@ encodeListNotesResponseBytes value =
 
 {-| Encodes a [`CreateNoteRequest`](#CreateNoteRequest) as protobuf binary.
 -}
-encodeCreateNoteRequestBytes : CreateNoteRequest -> Proto.Binary.Encoder
+encodeCreateNoteRequestBytes : CreateNoteRequest -> Bytes.Encode.Encoder
 encodeCreateNoteRequestBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.parent
         , Proto.Binary.optional (Proto.Binary.embedded encodeNoteBytes mergeNoteBytes defaultNote) 2 value.note
         ]
@@ -776,9 +777,9 @@ encodeCreateNoteRequestBytes value =
 
 {-| Encodes an [`UpdateNoteRequest`](#UpdateNoteRequest) as protobuf binary.
 -}
-encodeUpdateNoteRequestBytes : UpdateNoteRequest -> Proto.Binary.Encoder
+encodeUpdateNoteRequestBytes : UpdateNoteRequest -> Bytes.Encode.Encoder
 encodeUpdateNoteRequestBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.optional (Proto.Binary.embedded encodeNoteBytes mergeNoteBytes defaultNote) 1 value.note
         , Proto.Binary.optional Proto.Binary.fieldMask 2 value.updateMask
         ]
@@ -786,9 +787,9 @@ encodeUpdateNoteRequestBytes value =
 
 {-| Encodes a [`DeleteNoteRequest`](#DeleteNoteRequest) as protobuf binary.
 -}
-encodeDeleteNoteRequestBytes : DeleteNoteRequest -> Proto.Binary.Encoder
+encodeDeleteNoteRequestBytes : DeleteNoteRequest -> Bytes.Encode.Encoder
 encodeDeleteNoteRequestBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         , Proto.Binary.implicit Proto.Binary.bool 2 value.force
         ]
@@ -796,9 +797,9 @@ encodeDeleteNoteRequestBytes value =
 
 {-| Encodes an [`ArchiveNoteRequest`](#ArchiveNoteRequest) as protobuf binary.
 -}
-encodeArchiveNoteRequestBytes : ArchiveNoteRequest -> Proto.Binary.Encoder
+encodeArchiveNoteRequestBytes : ArchiveNoteRequest -> Bytes.Encode.Encoder
 encodeArchiveNoteRequestBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         , Proto.Binary.implicit Proto.Binary.string 2 value.reason
         ]
@@ -806,18 +807,18 @@ encodeArchiveNoteRequestBytes value =
 
 {-| Encodes a [`ReadFileRequest`](#ReadFileRequest) as protobuf binary.
 -}
-encodeReadFileRequestBytes : ReadFileRequest -> Proto.Binary.Encoder
+encodeReadFileRequestBytes : ReadFileRequest -> Bytes.Encode.Encoder
 encodeReadFileRequestBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.path
         ]
 
 
 {-| Encodes a [`Summary`](#Summary) as protobuf binary.
 -}
-encodeSummaryBytes : Summary -> Proto.Binary.Encoder
+encodeSummaryBytes : Summary -> Bytes.Encode.Encoder
 encodeSummaryBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.text
         ]
 

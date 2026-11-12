@@ -63,9 +63,9 @@ title =
     Proto.Message.init "notes.v1.Note" encodeTitle decodeTitle encodeTitleBytes decodeTitleBytes
 
 
-encodeTitleBytes : String -> Proto.Binary.Encoder
+encodeTitleBytes : String -> Bytes.Encode.Encoder
 encodeTitleBytes t =
-    Proto.Binary.sequence [ Proto.Binary.implicit Proto.Binary.string 1 t ]
+    Bytes.Encode.sequence [ Proto.Binary.implicit Proto.Binary.string 1 t ]
 
 
 decodeTitleBytes : Proto.Binary.Decoder String
@@ -791,7 +791,7 @@ responses =
                                 "GetNote"
                                 (\_ _ -> Err (Proto.Error.UnregisteredType "type.googleapis.com/ext.v1.Thing"))
                                 (\_ -> decodeTitle)
-                                (\_ -> Proto.Binary.sequence [])
+                                (\_ -> Bytes.Encode.sequence [])
                                 decodeTitleBytes
                             )
                             { name = "x" }
@@ -1585,7 +1585,7 @@ encodings =
                     "GetNote"
                     (\_ _ -> Debug.todo "the message was encoded")
                     (\_ -> decodeTitle)
-                    (\_ -> Proto.Binary.sequence [])
+                    (\_ -> Bytes.Encode.sequence [])
                     decodeTitleBytes
                 )
             ]
@@ -1621,7 +1621,7 @@ encodings =
                     "UpdateNote"
                     tagged
                     (\_ -> decodeTitle)
-                    (\_ -> Proto.Binary.sequence [])
+                    (\_ -> Bytes.Encode.sequence [])
                     decodeTitleBytes
                     |> Proto.Method.withBindings
                         [ Proto.Http.binding

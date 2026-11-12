@@ -34,9 +34,9 @@ encodeGetNote r =
     Json.Encode.object [ ( "name", Json.Encode.string r.name ) ]
 
 
-encodeGetNoteBytes : GetNote -> Proto.Binary.Encoder
+encodeGetNoteBytes : GetNote -> Bytes.Encode.Encoder
 encodeGetNoteBytes r =
-    Proto.Binary.sequence [ Proto.Binary.implicit Proto.Binary.string 1 r.name ]
+    Bytes.Encode.sequence [ Proto.Binary.implicit Proto.Binary.string 1 r.name ]
 
 
 decodeTitle : Json.Decode.Decoder String
@@ -238,7 +238,7 @@ methods =
                 , Rpc.responseBytes proto (binaryOnly { name = "x" }) (Http.GoodStatus_ (metadata 200 [ ( "content-type", "application/proto" ) ]) titleHi)
                 )
                     |> Expect.equal
-                        ( ( "POST", Just "application/proto", Just (Proto.Bytes.toBase64 (Proto.Binary.encode encodeGetNoteBytes { name = "x" })) )
+                        ( ( "POST", Just "application/proto", Just (Proto.Bytes.toBase64 (Bytes.Encode.encode (encodeGetNoteBytes { name = "x" }))) )
                         , Ok "hi"
                         )
         , test "a binary-only method without side effects is a GET under withConnectGet" <|

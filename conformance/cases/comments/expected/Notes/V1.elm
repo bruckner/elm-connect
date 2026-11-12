@@ -19,6 +19,7 @@ in file order.
 
 -}
 
+import Bytes.Encode
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
@@ -630,9 +631,9 @@ encodeLegacyBytes value =
 
 {-| Encodes a [`Note`](#Note) as protobuf binary.
 -}
-encodeNoteBytes : Note -> Proto.Binary.Encoder
+encodeNoteBytes : Note -> Bytes.Encode.Encoder
 encodeNoteBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         , Proto.Binary.implicit Proto.Binary.string 2 value.title
         , Proto.Binary.implicit (Proto.Binary.enum encodeVisibilityBytes decodeVisibilityBytes) 3 value.visibility
@@ -647,11 +648,11 @@ encodeNoteBytes value =
 
 {-| Encodes a [`NoteLastEvent`](#NoteLastEvent) as protobuf binary: its set member's field.
 -}
-encodeNoteLastEventBytes : NoteLastEvent -> Proto.Binary.Encoder
+encodeNoteLastEventBytes : NoteLastEvent -> Bytes.Encode.Encoder
 encodeNoteLastEventBytes value =
     case value of
         NoteLastEventUnset ->
-            Proto.Binary.sequence []
+            Bytes.Encode.sequence []
 
         NoteLastEventArchived member ->
             Proto.Binary.present Proto.Binary.timestamp 9 member
@@ -662,54 +663,54 @@ encodeNoteLastEventBytes value =
 
 {-| Encodes a [`NoteEdit`](#NoteEdit) as protobuf binary.
 -}
-encodeNoteEditBytes : NoteEdit -> Proto.Binary.Encoder
+encodeNoteEditBytes : NoteEdit -> Bytes.Encode.Encoder
 encodeNoteEditBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.author
         ]
 
 
 {-| Encodes a [`Draft`](#Draft) as protobuf binary.
 -}
-encodeDraftBytes : Draft -> Proto.Binary.Encoder
+encodeDraftBytes : Draft -> Bytes.Encode.Encoder
 encodeDraftBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.text
         ]
 
 
 {-| Encodes a [`GetNoteRequest`](#GetNoteRequest) as protobuf binary.
 -}
-encodeGetNoteRequestBytes : GetNoteRequest -> Proto.Binary.Encoder
+encodeGetNoteRequestBytes : GetNoteRequest -> Bytes.Encode.Encoder
 encodeGetNoteRequestBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         ]
 
 
 {-| Encodes a [`ListNotesRequest`](#ListNotesRequest) as protobuf binary.
 -}
-encodeListNotesRequestBytes : ListNotesRequest -> Proto.Binary.Encoder
+encodeListNotesRequestBytes : ListNotesRequest -> Bytes.Encode.Encoder
 encodeListNotesRequestBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.parent
         ]
 
 
 {-| Encodes a [`ListNotesResponse`](#ListNotesResponse) as protobuf binary.
 -}
-encodeListNotesResponseBytes : ListNotesResponse -> Proto.Binary.Encoder
+encodeListNotesResponseBytes : ListNotesResponse -> Bytes.Encode.Encoder
 encodeListNotesResponseBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.list (Proto.Binary.embedded encodeNoteBytes mergeNoteBytes defaultNote) 1 value.notes
         ]
 
 
 {-| Encodes a [`CreateNoteRequest`](#CreateNoteRequest) as protobuf binary.
 -}
-encodeCreateNoteRequestBytes : CreateNoteRequest -> Proto.Binary.Encoder
+encodeCreateNoteRequestBytes : CreateNoteRequest -> Bytes.Encode.Encoder
 encodeCreateNoteRequestBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.optional (Proto.Binary.embedded encodeNoteBytes mergeNoteBytes defaultNote) 1 value.note
         ]
 

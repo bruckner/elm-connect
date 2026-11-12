@@ -9,6 +9,7 @@ protobuf binary codecs alone, and their calls are Rpc.Call Rpc.Proto.
 Messages and enums get both codecs whatever the option says.
 -}
 
+import Bytes.Encode
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
@@ -299,9 +300,9 @@ encodeKindBytes value =
 
 {-| Encodes an [`Entry`](#Entry) as protobuf binary.
 -}
-encodeEntryBytes : Entry -> Proto.Binary.Encoder
+encodeEntryBytes : Entry -> Bytes.Encode.Encoder
 encodeEntryBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.memo
         , Proto.Binary.implicit Proto.Binary.sint64 2 value.amount
         , Proto.Binary.implicit (Proto.Binary.enum encodeKindBytes decodeKindBytes) 3 value.kind
@@ -313,11 +314,11 @@ encodeEntryBytes value =
 
 {-| Encodes an [`EntrySource`](#EntrySource) as protobuf binary: its set member's field.
 -}
-encodeEntrySourceBytes : EntrySource -> Proto.Binary.Encoder
+encodeEntrySourceBytes : EntrySource -> Bytes.Encode.Encoder
 encodeEntrySourceBytes value =
     case value of
         EntrySourceUnset ->
-            Proto.Binary.sequence []
+            Bytes.Encode.sequence []
 
         EntrySourceAccount member ->
             Proto.Binary.present Proto.Binary.string 5 member
@@ -328,9 +329,9 @@ encodeEntrySourceBytes value =
 
 {-| Encodes a [`GetEntryRequest`](#GetEntryRequest) as protobuf binary.
 -}
-encodeGetEntryRequestBytes : GetEntryRequest -> Proto.Binary.Encoder
+encodeGetEntryRequestBytes : GetEntryRequest -> Bytes.Encode.Encoder
 encodeGetEntryRequestBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.memo
         ]
 

@@ -15,6 +15,7 @@ and a method's doc too.
 import Awkward.V1.Delimiters
 import Awkward.V1.Docs
 import Awkward.V1.Marks
+import Bytes.Encode
 import Json.Decode
 import Json.Encode
 import Proto.Binary
@@ -343,9 +344,9 @@ encodeMarksBytes value =
 
 {-| Encodes a [`Delimiters`](#Delimiters) as protobuf binary.
 -}
-encodeDelimitersBytes : Delimiters -> Proto.Binary.Encoder
+encodeDelimitersBytes : Delimiters -> Bytes.Encode.Encoder
 encodeDelimitersBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.lists
         , Proto.Binary.implicit Proto.Binary.string 2 value.blocks
         , Proto.Binary.implicit Proto.Binary.string 3 value.code
@@ -358,9 +359,9 @@ encodeDelimitersBytes value =
 
 {-| Encodes a [`Docs`](#Docs) as protobuf binary.
 -}
-encodeDocsBytes : Docs -> Proto.Binary.Encoder
+encodeDocsBytes : Docs -> Bytes.Encode.Encoder
 encodeDocsBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.field
         ]
 

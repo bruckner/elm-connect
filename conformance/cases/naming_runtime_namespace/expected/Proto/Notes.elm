@@ -7,6 +7,7 @@ module Proto.Notes exposing (..)
 {-| `proto.notes` is `Proto.Notes`, in the runtime's other namespace.
 -}
 
+import Bytes.Encode
 import Json.Decode
 import Json.Encode
 import Proto.Binary
@@ -119,9 +120,9 @@ decodeNote =
 
 {-| Encodes a [`Note`](#Note) as protobuf binary.
 -}
-encodeNoteBytes : Note -> Proto.Binary.Encoder
+encodeNoteBytes : Note -> Bytes.Encode.Encoder
 encodeNoteBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.title
         ]
 

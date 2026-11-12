@@ -13,6 +13,7 @@ value (its constructor). The names derived from a renamed one follow it:
 `AudienceUnspecified`, and the oneof `body` the type `MemoBody`.
 -}
 
+import Bytes.Encode
 import Json.Decode
 import Json.Encode
 import Notes.Api.Audience
@@ -328,9 +329,9 @@ encodeAudienceBytes value =
 
 {-| Encodes a [`Memo`](#Memo) as protobuf binary.
 -}
-encodeMemoBytes : Memo -> Proto.Binary.Encoder
+encodeMemoBytes : Memo -> Bytes.Encode.Encoder
 encodeMemoBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.heading
         , Proto.Binary.implicit (Proto.Binary.enum encodeAudienceBytes decodeAudienceBytes) 2 value.visibility
         , Proto.Binary.list (Proto.Binary.embedded encodeEditBytes mergeEditBytes defaultEdit) 3 value.revisions
@@ -340,11 +341,11 @@ encodeMemoBytes value =
 
 {-| Encodes a [`MemoBody`](#MemoBody) as protobuf binary: its set member's field.
 -}
-encodeMemoBodyBytes : MemoBody -> Proto.Binary.Encoder
+encodeMemoBodyBytes : MemoBody -> Bytes.Encode.Encoder
 encodeMemoBodyBytes value =
     case value of
         MemoBodyUnset ->
-            Proto.Binary.sequence []
+            Bytes.Encode.sequence []
 
         MemoBodyText member ->
             Proto.Binary.present Proto.Binary.string 4 member
@@ -355,18 +356,18 @@ encodeMemoBodyBytes value =
 
 {-| Encodes an [`Edit`](#Edit) as protobuf binary.
 -}
-encodeEditBytes : Edit -> Proto.Binary.Encoder
+encodeEditBytes : Edit -> Bytes.Encode.Encoder
 encodeEditBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.int32 1 value.number
         ]
 
 
 {-| Encodes a [`GetNoteRequest`](#GetNoteRequest) as protobuf binary.
 -}
-encodeGetNoteRequestBytes : GetNoteRequest -> Proto.Binary.Encoder
+encodeGetNoteRequestBytes : GetNoteRequest -> Bytes.Encode.Encoder
 encodeGetNoteRequestBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         ]
 

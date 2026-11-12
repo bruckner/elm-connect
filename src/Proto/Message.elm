@@ -26,6 +26,7 @@ gives one per well-known type.
 
 -}
 
+import Bytes.Encode
 import Json.Decode
 import Json.Encode
 import Proto.Error
@@ -56,7 +57,7 @@ The binary decoder is a [`Proto.Binary.Decoder`](Proto-Binary#Decoder), which
 the package site may show as `Proto.Internal.Binary.Decoder`.
 
 -}
-init : String -> (a -> Json.Encode.Value) -> Json.Decode.Decoder a -> (a -> Proto.Internal.Binary.Encoder) -> Proto.Internal.Binary.Decoder a -> Message a
+init : String -> (a -> Json.Encode.Value) -> Json.Decode.Decoder a -> (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> Message a
 init name encodeJson decodeJson encodeBinary decodeBinary =
     Internal.Message name
         { encodeJson = \_ value -> Ok (encodeJson value)
@@ -77,7 +78,7 @@ registry (`UnregisteredType`), or its binary is not that type's message
         Proto.Message.initWith "notes.v1.Envelope" encodeEnvelopeWith decodeEnvelopeWith encodeEnvelopeBytes decodeEnvelopeBytes
 
 -}
-initWith : String -> (Registry -> a -> Result Proto.Error.Error Json.Encode.Value) -> (Registry -> Json.Decode.Decoder a) -> (a -> Proto.Internal.Binary.Encoder) -> Proto.Internal.Binary.Decoder a -> Message a
+initWith : String -> (Registry -> a -> Result Proto.Error.Error Json.Encode.Value) -> (Registry -> Json.Decode.Decoder a) -> (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> Message a
 initWith name encodeJson decodeJson encodeBinary decodeBinary =
     Internal.Message name
         { encodeJson = encodeJson

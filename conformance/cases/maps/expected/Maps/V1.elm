@@ -10,6 +10,7 @@ for 32-bit integer keys, read from and written as decimal strings, and
 integer key kind has a decoder that checks its range.
 -}
 
+import Bytes.Encode
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
@@ -289,18 +290,18 @@ encodeRoleBytes value =
 
 {-| Encodes a [`Member`](#Member) as protobuf binary.
 -}
-encodeMemberBytes : Member -> Proto.Binary.Encoder
+encodeMemberBytes : Member -> Bytes.Encode.Encoder
 encodeMemberBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         ]
 
 
 {-| Encodes a [`Team`](#Team) as protobuf binary.
 -}
-encodeTeamBytes : Team -> Proto.Binary.Encoder
+encodeTeamBytes : Team -> Bytes.Encode.Encoder
 encodeTeamBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.dict Proto.Binary.string Proto.Binary.string 1 value.labels
         , Proto.Binary.dict Proto.Binary.int32 Proto.Binary.string 2 value.bySeat
         , Proto.Binary.dict Proto.Binary.uint32 Proto.Binary.double 3 value.scores

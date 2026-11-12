@@ -12,6 +12,7 @@ compared as the method it names, and a custom verb (`:check`) is kept.
 Paths of another shape, or of another method, do not warn.
 -}
 
+import Bytes.Encode
 import Json.Decode
 import Json.Encode
 import Msgs.V1.Message
@@ -180,9 +181,9 @@ decodeMessage =
 
 {-| Encodes a [`MessageRequest`](#MessageRequest) as protobuf binary.
 -}
-encodeMessageRequestBytes : MessageRequest -> Proto.Binary.Encoder
+encodeMessageRequestBytes : MessageRequest -> Bytes.Encode.Encoder
 encodeMessageRequestBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         , Proto.Binary.implicit Proto.Binary.string 2 value.id
         , Proto.Binary.implicit Proto.Binary.string 3 value.sub
@@ -191,9 +192,9 @@ encodeMessageRequestBytes value =
 
 {-| Encodes a [`Message`](#Message) as protobuf binary.
 -}
-encodeMessageBytes : Message -> Proto.Binary.Encoder
+encodeMessageBytes : Message -> Bytes.Encode.Encoder
 encodeMessageBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         ]
 

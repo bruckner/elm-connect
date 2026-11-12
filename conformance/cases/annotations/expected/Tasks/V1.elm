@@ -10,6 +10,7 @@ modifiers, written only where set; a method's idempotency level is
 carried whole.
 -}
 
+import Bytes.Encode
 import Json.Decode
 import Json.Encode
 import Proto.Binary
@@ -309,9 +310,9 @@ encodeStateBytes value =
 
 {-| Encodes a [`Task`](#Task) as protobuf binary.
 -}
-encodeTaskBytes : Task -> Proto.Binary.Encoder
+encodeTaskBytes : Task -> Bytes.Encode.Encoder
 encodeTaskBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         , Proto.Binary.implicit Proto.Binary.string 2 value.title
         , Proto.Binary.implicit (Proto.Binary.enum encodeStateBytes decodeStateBytes) 3 value.state
@@ -325,11 +326,11 @@ encodeTaskBytes value =
 
 {-| Encodes a [`TaskDue`](#TaskDue) as protobuf binary: its set member's field.
 -}
-encodeTaskDueBytes : TaskDue -> Proto.Binary.Encoder
+encodeTaskDueBytes : TaskDue -> Bytes.Encode.Encoder
 encodeTaskDueBytes value =
     case value of
         TaskDueUnset ->
-            Proto.Binary.sequence []
+            Bytes.Encode.sequence []
 
         TaskDueDate member ->
             Proto.Binary.present Proto.Binary.string 7 member
@@ -340,9 +341,9 @@ encodeTaskDueBytes value =
 
 {-| Encodes a [`GetTaskRequest`](#GetTaskRequest) as protobuf binary.
 -}
-encodeGetTaskRequestBytes : GetTaskRequest -> Proto.Binary.Encoder
+encodeGetTaskRequestBytes : GetTaskRequest -> Bytes.Encode.Encoder
 encodeGetTaskRequestBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         ]
 

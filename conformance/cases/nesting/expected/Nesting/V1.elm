@@ -9,6 +9,7 @@ module with the enclosing names as a prefix; a field that closes a
 cycle of record fields holds the target's wrapper type.
 -}
 
+import Bytes.Encode
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
@@ -688,9 +689,9 @@ encodeOuterInnerKindBytes value =
 
 {-| Encodes an [`Outer`](#Outer) as protobuf binary.
 -}
-encodeOuterBytes : Outer -> Proto.Binary.Encoder
+encodeOuterBytes : Outer -> Bytes.Encode.Encoder
 encodeOuterBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.optional (Proto.Binary.embedded encodeOuterInnerBytes mergeOuterInnerBytes defaultOuterInner) 1 value.inner
         , Proto.Binary.implicit (Proto.Binary.enum encodeOuterInnerKindBytes decodeOuterInnerKindBytes) 2 value.kind
         , Proto.Binary.list (Proto.Binary.embedded encodeOuterInnerDeepestBytes mergeOuterInnerDeepestBytes defaultOuterInnerDeepest) 3 value.all
@@ -699,27 +700,27 @@ encodeOuterBytes value =
 
 {-| Encodes an [`OuterInner`](#OuterInner) as protobuf binary.
 -}
-encodeOuterInnerBytes : OuterInner -> Proto.Binary.Encoder
+encodeOuterInnerBytes : OuterInner -> Bytes.Encode.Encoder
 encodeOuterInnerBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.optional (Proto.Binary.embedded encodeOuterInnerDeepestBytes mergeOuterInnerDeepestBytes defaultOuterInnerDeepest) 1 value.deepest
         ]
 
 
 {-| Encodes an [`OuterInnerDeepest`](#OuterInnerDeepest) as protobuf binary.
 -}
-encodeOuterInnerDeepestBytes : OuterInnerDeepest -> Proto.Binary.Encoder
+encodeOuterInnerDeepestBytes : OuterInnerDeepest -> Bytes.Encode.Encoder
 encodeOuterInnerDeepestBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit (Proto.Binary.enum encodeOuterInnerKindBytes decodeOuterInnerKindBytes) 1 value.kind
         ]
 
 
 {-| Encodes a [`Node`](#Node) as protobuf binary.
 -}
-encodeNodeBytes : Node -> Proto.Binary.Encoder
+encodeNodeBytes : Node -> Bytes.Encode.Encoder
 encodeNodeBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.label
         , Proto.Binary.list (Proto.Binary.embedded encodeNode_Bytes mergeNode_Bytes (Node_ defaultNode)) 2 value.children
         , Proto.Binary.dict Proto.Binary.string (Proto.Binary.embedded encodeNode_Bytes mergeNode_Bytes (Node_ defaultNode)) 3 value.byName
@@ -728,16 +729,16 @@ encodeNodeBytes value =
 
 {-| Encodes a [`Node_`](#Node_) as protobuf binary.
 -}
-encodeNode_Bytes : Node_ -> Proto.Binary.Encoder
+encodeNode_Bytes : Node_ -> Bytes.Encode.Encoder
 encodeNode_Bytes (Node_ value) =
     encodeNodeBytes value
 
 
 {-| Encodes a [`Person`](#Person) as protobuf binary.
 -}
-encodePersonBytes : Person -> Proto.Binary.Encoder
+encodePersonBytes : Person -> Bytes.Encode.Encoder
 encodePersonBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         , Proto.Binary.optional (Proto.Binary.embedded encodeCompany_Bytes mergeCompany_Bytes (Company_ defaultCompany)) 2 value.employer
         ]
@@ -745,16 +746,16 @@ encodePersonBytes value =
 
 {-| Encodes a [`Person_`](#Person_) as protobuf binary.
 -}
-encodePerson_Bytes : Person_ -> Proto.Binary.Encoder
+encodePerson_Bytes : Person_ -> Bytes.Encode.Encoder
 encodePerson_Bytes (Person_ value) =
     encodePersonBytes value
 
 
 {-| Encodes a [`Company`](#Company) as protobuf binary.
 -}
-encodeCompanyBytes : Company -> Proto.Binary.Encoder
+encodeCompanyBytes : Company -> Bytes.Encode.Encoder
 encodeCompanyBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         , Proto.Binary.list (Proto.Binary.embedded encodePerson_Bytes mergePerson_Bytes (Person_ defaultPerson)) 2 value.staff
         ]
@@ -762,36 +763,36 @@ encodeCompanyBytes value =
 
 {-| Encodes a [`Company_`](#Company_) as protobuf binary.
 -}
-encodeCompany_Bytes : Company_ -> Proto.Binary.Encoder
+encodeCompany_Bytes : Company_ -> Bytes.Encode.Encoder
 encodeCompany_Bytes (Company_ value) =
     encodeCompanyBytes value
 
 
 {-| Encodes a [`Forest`](#Forest) as protobuf binary.
 -}
-encodeForestBytes : Forest -> Proto.Binary.Encoder
+encodeForestBytes : Forest -> Bytes.Encode.Encoder
 encodeForestBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.list (Proto.Binary.embedded encodeNodeBytes mergeNodeBytes defaultNode) 1 value.trees
         ]
 
 
 {-| Encodes an [`Expr`](#Expr) as protobuf binary.
 -}
-encodeExprBytes : Expr -> Proto.Binary.Encoder
+encodeExprBytes : Expr -> Bytes.Encode.Encoder
 encodeExprBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ encodeExprValueBytes value.value
         ]
 
 
 {-| Encodes an [`ExprValue`](#ExprValue) as protobuf binary: its set member's field.
 -}
-encodeExprValueBytes : ExprValue -> Proto.Binary.Encoder
+encodeExprValueBytes : ExprValue -> Bytes.Encode.Encoder
 encodeExprValueBytes value =
     case value of
         ExprValueUnset ->
-            Proto.Binary.sequence []
+            Bytes.Encode.sequence []
 
         ExprValueNumber member ->
             Proto.Binary.present Proto.Binary.int64 1 member
@@ -802,9 +803,9 @@ encodeExprValueBytes value =
 
 {-| Encodes a [`Sum`](#Sum) as protobuf binary.
 -}
-encodeSumBytes : Sum -> Proto.Binary.Encoder
+encodeSumBytes : Sum -> Bytes.Encode.Encoder
 encodeSumBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.list (Proto.Binary.embedded encodeExprBytes mergeExprBytes defaultExpr) 1 value.terms
         ]
 

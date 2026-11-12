@@ -1,5 +1,5 @@
 //! Protobuf binary codecs, under every `wire` option: per
-//! message `encodeFooBytes : Foo -> Proto.Binary.Encoder`,
+//! message `encodeFooBytes : Foo -> Bytes.Encode.Encoder`,
 //! `mergeFooBytes : Foo -> Proto.Binary.Decoder Foo` (reading into a value
 //! read before, as protobuf merges a message arriving twice) and
 //! `decodeFooBytes : Proto.Binary.Decoder Foo` (`mergeFooBytes` of the
@@ -7,7 +7,7 @@
 //! and `decodeBarBytes : Int -> Bar`, per oneof an encoder of its set
 //! member, and per recursion wrapper a pair that unwraps and wraps.
 //!
-//! An encoder is `Proto.Binary.sequence` of one `Proto.Binary` field
+//! An encoder is `Bytes.Encode.sequence` of one `Proto.Binary` field
 //! helper per field in field-number order, each oneof's encoder where its
 //! first member's number falls; a oneof whose members' numbers have
 //! another field's between them is written instead as one `case` per run
@@ -39,6 +39,8 @@ use crate::ir::{
 use crate::naming::{ENCODER_ARGUMENT, ONEOF_MEMBER, default_name};
 use crate::options::Int64;
 
+/// elm/bytes' encoders.
+pub(super) const BYTES_ENCODE: &str = "Bytes.Encode";
 /// The runtime package's wire format.
 pub(super) const PROTO_BINARY: &str = "Proto.Binary";
 
@@ -265,7 +267,7 @@ impl Emitter {
     }
 
     fn bytes_encoder_type(&mut self) -> Type {
-        self.library_type(PROTO_BINARY, "Encoder", [])
+        self.library_type(BYTES_ENCODE, "Encoder", [])
     }
 
     fn bytes_decoder_type(&mut self, of: Type) -> Type {
@@ -278,7 +280,7 @@ impl Emitter {
         Type::Function(Box::new(of), Box::new(decoder))
     }
 
-    /// `encodeFooBytes : Foo -> Proto.Binary.Encoder`.
+    /// `encodeFooBytes : Foo -> Bytes.Encode.Encoder`.
     pub(super) fn message_encoder_bytes(&mut self, shape: &MessageShape) -> Decl {
         let mut items: Vec<(u32, Expr)> = Vec::new();
         for &(field, field_shape) in &shape.fields {
@@ -353,7 +355,7 @@ impl Emitter {
             }
             for run in runs {
                 let first = run[0].0.number;
-                let nothing = apply(self.binary("sequence"), [list([])]);
+                let nothing = apply(self.reference((BYTES_ENCODE, "sequence")), [list([])]);
                 let arms: Vec<(Pattern, Expr)> = run
                     .into_iter()
                     .map(|(variant, member)| self.oneof_member_bytes(variant, member))
@@ -368,7 +370,7 @@ impl Emitter {
         } else {
             pvar(ENCODER_ARGUMENT)
         };
-        let sequence = self.binary("sequence");
+        let sequence = self.reference((BYTES_ENCODE, "sequence"));
         let encoder = self.bytes_encoder_type();
         Decl::Value {
             doc: Some(format!(
@@ -571,10 +573,10 @@ impl Emitter {
         }
     }
 
-    /// `encodeFooKindBytes : FooKind -> Proto.Binary.Encoder`: the set
+    /// `encodeFooKindBytes : FooKind -> Bytes.Encode.Encoder`: the set
     /// member, written whatever its value, or nothing when unset.
     pub(super) fn oneof_encoder_bytes(&mut self, shape: &OneofShape) -> Decl {
-        let sequence = self.binary("sequence");
+        let sequence = self.reference((BYTES_ENCODE, "sequence"));
         let unset = (
             pctor(shape.oneof.unset_ctor.clone(), []),
             apply(sequence, [list([])]),

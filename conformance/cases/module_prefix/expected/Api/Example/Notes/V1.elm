@@ -13,6 +13,7 @@ the prefixed names; the runtime's modules are not prefixed.
 import Api.Example.Notes.V1.GetNoteRequest
 import Api.Example.Notes.V1.Note
 import Api.Example.People
+import Bytes.Encode
 import Json.Decode
 import Json.Encode
 import Proto.Binary
@@ -178,9 +179,9 @@ decodeGetNoteRequest =
 
 {-| Encodes a [`Note`](#Note) as protobuf binary.
 -}
-encodeNoteBytes : Note -> Proto.Binary.Encoder
+encodeNoteBytes : Note -> Bytes.Encode.Encoder
 encodeNoteBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         , Proto.Binary.optional (Proto.Binary.embedded Api.Example.People.encodeUserBytes Api.Example.People.mergeUserBytes Api.Example.People.defaultUser) 2 value.author
         , Proto.Binary.implicit (Proto.Binary.enum Api.Example.People.encodeRoleBytes Api.Example.People.decodeRoleBytes) 3 value.requiredRole
@@ -189,9 +190,9 @@ encodeNoteBytes value =
 
 {-| Encodes a [`GetNoteRequest`](#GetNoteRequest) as protobuf binary.
 -}
-encodeGetNoteRequestBytes : GetNoteRequest -> Proto.Binary.Encoder
+encodeGetNoteRequestBytes : GetNoteRequest -> Bytes.Encode.Encoder
 encodeGetNoteRequestBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         ]
 

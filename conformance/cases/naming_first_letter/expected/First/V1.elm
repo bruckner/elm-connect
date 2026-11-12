@@ -10,6 +10,7 @@ lowercase letter follows, and taking a lone `s` after it with it (a
 plural acronym). Types keep their names as written.
 -}
 
+import Bytes.Encode
 import First.V1.Link
 import First.V1.URLPath
 import Json.Decode
@@ -284,9 +285,9 @@ decodeLinkTarget =
 
 {-| Encodes a [`URLPath`](#URLPath) as protobuf binary.
 -}
-encodeURLPathBytes : URLPath -> Proto.Binary.Encoder
+encodeURLPathBytes : URLPath -> Bytes.Encode.Encoder
 encodeURLPathBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.label
         , Proto.Binary.implicit Proto.Binary.string 2 value.id
         , Proto.Binary.implicit Proto.Binary.string 3 value.url
@@ -306,9 +307,9 @@ encodeURLPathBytes value =
 
 {-| Encodes a [`Link`](#Link) as protobuf binary.
 -}
-encodeLinkBytes : Link -> Proto.Binary.Encoder
+encodeLinkBytes : Link -> Bytes.Encode.Encoder
 encodeLinkBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ encodeLinkTargetBytes value.target
         , Proto.Binary.implicit Proto.Binary.string 9 value.label
         ]
@@ -316,11 +317,11 @@ encodeLinkBytes value =
 
 {-| Encodes a [`LinkTarget`](#LinkTarget) as protobuf binary: its set member's field.
 -}
-encodeLinkTargetBytes : LinkTarget -> Proto.Binary.Encoder
+encodeLinkTargetBytes : LinkTarget -> Bytes.Encode.Encoder
 encodeLinkTargetBytes value =
     case value of
         LinkTargetUnset ->
-            Proto.Binary.sequence []
+            Bytes.Encode.sequence []
 
         LinkTargetURL member ->
             Proto.Binary.present Proto.Binary.string 1 member

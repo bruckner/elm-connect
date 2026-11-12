@@ -7,6 +7,7 @@ module Users.V1 exposing (..)
 {-| The package another package refers to: it generates on its own.
 -}
 
+import Bytes.Encode
 import Json.Decode
 import Json.Encode
 import Proto.Binary
@@ -180,9 +181,9 @@ encodeRoleBytes value =
 
 {-| Encodes a [`User`](#User) as protobuf binary.
 -}
-encodeUserBytes : User -> Proto.Binary.Encoder
+encodeUserBytes : User -> Bytes.Encode.Encoder
 encodeUserBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         , Proto.Binary.implicit (Proto.Binary.enum encodeRoleBytes decodeRoleBytes) 2 value.role
         ]

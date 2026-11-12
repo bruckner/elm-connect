@@ -9,6 +9,7 @@ module Rpc.V1 exposing (..)
 runtime may add a module of the same name in any release.
 -}
 
+import Bytes.Encode
 import Json.Decode
 import Json.Encode
 import Proto.Binary
@@ -121,9 +122,9 @@ decodePing =
 
 {-| Encodes a [`Ping`](#Ping) as protobuf binary.
 -}
-encodePingBytes : Ping -> Proto.Binary.Encoder
+encodePingBytes : Ping -> Bytes.Encode.Encoder
 encodePingBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.text
         ]
 

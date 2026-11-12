@@ -59,9 +59,9 @@ decodeNote =
         (Json.Decode.field "pinned" Json.Decode.bool)
 
 
-encodeNoteBytes : Note -> Proto.Binary.Encoder
+encodeNoteBytes : Note -> Bytes.Encode.Encoder
 encodeNoteBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.title
         , Proto.Binary.implicit Proto.Binary.bool 2 value.pinned
         ]

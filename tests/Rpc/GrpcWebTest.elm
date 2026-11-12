@@ -30,9 +30,9 @@ type alias GetNote =
     { name : String }
 
 
-encodeGetNoteBytes : GetNote -> Proto.Binary.Encoder
+encodeGetNoteBytes : GetNote -> E.Encoder
 encodeGetNoteBytes r =
-    Proto.Binary.sequence [ Proto.Binary.implicit Proto.Binary.string 1 r.name ]
+    E.sequence [ Proto.Binary.implicit Proto.Binary.string 1 r.name ]
 
 
 decodeTitleBytes : Proto.Binary.Decoder String

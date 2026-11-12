@@ -11,6 +11,7 @@ for any client or server that follows google/api/http.proto and proto3
 JSON, and for a method without a rule, serves the implicit route.
 -}
 
+import Bytes.Encode
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
@@ -812,9 +813,9 @@ encodeKindBytes value =
 
 {-| Encodes a [`GetMessageRequest`](#GetMessageRequest) as protobuf binary.
 -}
-encodeGetMessageRequestBytes : GetMessageRequest -> Proto.Binary.Encoder
+encodeGetMessageRequestBytes : GetMessageRequest -> Bytes.Encode.Encoder
 encodeGetMessageRequestBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.messageId
         , Proto.Binary.implicit Proto.Binary.int64 2 value.revision
         , Proto.Binary.optional (Proto.Binary.embedded encodeGetMessageRequestSubMessageBytes mergeGetMessageRequestSubMessageBytes defaultGetMessageRequestSubMessage) 3 value.sub
@@ -825,18 +826,18 @@ encodeGetMessageRequestBytes value =
 
 {-| Encodes a [`GetMessageRequestSubMessage`](#GetMessageRequestSubMessage) as protobuf binary.
 -}
-encodeGetMessageRequestSubMessageBytes : GetMessageRequestSubMessage -> Proto.Binary.Encoder
+encodeGetMessageRequestSubMessageBytes : GetMessageRequestSubMessage -> Bytes.Encode.Encoder
 encodeGetMessageRequestSubMessageBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.subfield
         ]
 
 
 {-| Encodes a [`Message`](#Message) as protobuf binary.
 -}
-encodeMessageBytes : Message -> Proto.Binary.Encoder
+encodeMessageBytes : Message -> Bytes.Encode.Encoder
 encodeMessageBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.messageId
         , Proto.Binary.implicit Proto.Binary.string 2 value.text
         ]
@@ -844,9 +845,9 @@ encodeMessageBytes value =
 
 {-| Encodes an [`UpdateMessageRequest`](#UpdateMessageRequest) as protobuf binary.
 -}
-encodeUpdateMessageRequestBytes : UpdateMessageRequest -> Proto.Binary.Encoder
+encodeUpdateMessageRequestBytes : UpdateMessageRequest -> Bytes.Encode.Encoder
 encodeUpdateMessageRequestBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.messageId
         , Proto.Binary.optional (Proto.Binary.embedded encodeMessageBytes mergeMessageBytes defaultMessage) 2 value.message
         ]
@@ -854,9 +855,9 @@ encodeUpdateMessageRequestBytes value =
 
 {-| Encodes an [`Everything`](#Everything) as protobuf binary.
 -}
-encodeEverythingBytes : Everything -> Proto.Binary.Encoder
+encodeEverythingBytes : Everything -> Bytes.Encode.Encoder
 encodeEverythingBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         , Proto.Binary.implicit Proto.Binary.int32 2 value.count
         , Proto.Binary.implicit Proto.Binary.int64 3 value.big
@@ -883,11 +884,11 @@ encodeEverythingBytes value =
 
 {-| Encodes an [`EverythingChoice`](#EverythingChoice) as protobuf binary: its set member's field.
 -}
-encodeEverythingChoiceBytes : EverythingChoice -> Proto.Binary.Encoder
+encodeEverythingChoiceBytes : EverythingChoice -> Bytes.Encode.Encoder
 encodeEverythingChoiceBytes value =
     case value of
         EverythingChoiceUnset ->
-            Proto.Binary.sequence []
+            Bytes.Encode.sequence []
 
         EverythingChoiceText member ->
             Proto.Binary.present Proto.Binary.string 21 member
@@ -898,9 +899,9 @@ encodeEverythingChoiceBytes value =
 
 {-| Encodes an [`Inner`](#Inner) as protobuf binary.
 -}
-encodeInnerBytes : Inner -> Proto.Binary.Encoder
+encodeInnerBytes : Inner -> Bytes.Encode.Encoder
 encodeInnerBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.a
         , Proto.Binary.optional (Proto.Binary.embedded encodeDeepBytes mergeDeepBytes defaultDeep) 2 value.deep
         ]
@@ -908,9 +909,9 @@ encodeInnerBytes value =
 
 {-| Encodes a [`Deep`](#Deep) as protobuf binary.
 -}
-encodeDeepBytes : Deep -> Proto.Binary.Encoder
+encodeDeepBytes : Deep -> Bytes.Encode.Encoder
 encodeDeepBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.int32 1 value.b
         , Proto.Binary.list Proto.Binary.string 2 value.c
         ]
@@ -918,18 +919,18 @@ encodeDeepBytes value =
 
 {-| Encodes a [`FileRequest`](#FileRequest) as protobuf binary.
 -}
-encodeFileRequestBytes : FileRequest -> Proto.Binary.Encoder
+encodeFileRequestBytes : FileRequest -> Bytes.Encode.Encoder
 encodeFileRequestBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.path
         ]
 
 
 {-| Encodes a [`Resource`](#Resource) as protobuf binary.
 -}
-encodeResourceBytes : Resource -> Proto.Binary.Encoder
+encodeResourceBytes : Resource -> Bytes.Encode.Encoder
 encodeResourceBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         , Proto.Binary.implicit Proto.Binary.string 2 value.displayName
         , Proto.Binary.dict Proto.Binary.string Proto.Binary.string 3 value.labels
@@ -940,9 +941,9 @@ encodeResourceBytes value =
 
 {-| Encodes an [`UpdateResourceRequest`](#UpdateResourceRequest) as protobuf binary.
 -}
-encodeUpdateResourceRequestBytes : UpdateResourceRequest -> Proto.Binary.Encoder
+encodeUpdateResourceRequestBytes : UpdateResourceRequest -> Bytes.Encode.Encoder
 encodeUpdateResourceRequestBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.optional (Proto.Binary.embedded encodeResourceBytes mergeResourceBytes defaultResource) 1 value.resource
         , Proto.Binary.optional Proto.Binary.fieldMask 2 value.updateMask
         ]

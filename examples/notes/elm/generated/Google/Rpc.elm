@@ -4,6 +4,7 @@
 
 module Google.Rpc exposing (..)
 
+import Bytes.Encode
 import Dict exposing (Dict)
 import Google.Rpc.BadRequest
 import Google.Rpc.BadRequestFieldViolation
@@ -1047,9 +1048,9 @@ decodeLocalizedMessage =
 
 {-| Encodes an [`ErrorInfo`](#ErrorInfo) as protobuf binary.
 -}
-encodeErrorInfoBytes : ErrorInfo -> Proto.Binary.Encoder
+encodeErrorInfoBytes : ErrorInfo -> Bytes.Encode.Encoder
 encodeErrorInfoBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.reason
         , Proto.Binary.implicit Proto.Binary.string 2 value.domain
         , Proto.Binary.dict Proto.Binary.string Proto.Binary.string 3 value.metadata
@@ -1058,18 +1059,18 @@ encodeErrorInfoBytes value =
 
 {-| Encodes a [`RetryInfo`](#RetryInfo) as protobuf binary.
 -}
-encodeRetryInfoBytes : RetryInfo -> Proto.Binary.Encoder
+encodeRetryInfoBytes : RetryInfo -> Bytes.Encode.Encoder
 encodeRetryInfoBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.optional Proto.Binary.duration 1 value.retryDelay
         ]
 
 
 {-| Encodes a [`DebugInfo`](#DebugInfo) as protobuf binary.
 -}
-encodeDebugInfoBytes : DebugInfo -> Proto.Binary.Encoder
+encodeDebugInfoBytes : DebugInfo -> Bytes.Encode.Encoder
 encodeDebugInfoBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.list Proto.Binary.string 1 value.stackEntries
         , Proto.Binary.implicit Proto.Binary.string 2 value.detail
         ]
@@ -1077,18 +1078,18 @@ encodeDebugInfoBytes value =
 
 {-| Encodes a [`QuotaFailure`](#QuotaFailure) as protobuf binary.
 -}
-encodeQuotaFailureBytes : QuotaFailure -> Proto.Binary.Encoder
+encodeQuotaFailureBytes : QuotaFailure -> Bytes.Encode.Encoder
 encodeQuotaFailureBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.list (Proto.Binary.embedded encodeQuotaFailureViolationBytes mergeQuotaFailureViolationBytes defaultQuotaFailureViolation) 1 value.violations
         ]
 
 
 {-| Encodes a [`QuotaFailureViolation`](#QuotaFailureViolation) as protobuf binary.
 -}
-encodeQuotaFailureViolationBytes : QuotaFailureViolation -> Proto.Binary.Encoder
+encodeQuotaFailureViolationBytes : QuotaFailureViolation -> Bytes.Encode.Encoder
 encodeQuotaFailureViolationBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.subject
         , Proto.Binary.implicit Proto.Binary.string 2 value.description
         , Proto.Binary.implicit Proto.Binary.string 3 value.apiService
@@ -1102,18 +1103,18 @@ encodeQuotaFailureViolationBytes value =
 
 {-| Encodes a [`PreconditionFailure`](#PreconditionFailure) as protobuf binary.
 -}
-encodePreconditionFailureBytes : PreconditionFailure -> Proto.Binary.Encoder
+encodePreconditionFailureBytes : PreconditionFailure -> Bytes.Encode.Encoder
 encodePreconditionFailureBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.list (Proto.Binary.embedded encodePreconditionFailureViolationBytes mergePreconditionFailureViolationBytes defaultPreconditionFailureViolation) 1 value.violations
         ]
 
 
 {-| Encodes a [`PreconditionFailureViolation`](#PreconditionFailureViolation) as protobuf binary.
 -}
-encodePreconditionFailureViolationBytes : PreconditionFailureViolation -> Proto.Binary.Encoder
+encodePreconditionFailureViolationBytes : PreconditionFailureViolation -> Bytes.Encode.Encoder
 encodePreconditionFailureViolationBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.type_
         , Proto.Binary.implicit Proto.Binary.string 2 value.subject
         , Proto.Binary.implicit Proto.Binary.string 3 value.description
@@ -1122,18 +1123,18 @@ encodePreconditionFailureViolationBytes value =
 
 {-| Encodes a [`BadRequest`](#BadRequest) as protobuf binary.
 -}
-encodeBadRequestBytes : BadRequest -> Proto.Binary.Encoder
+encodeBadRequestBytes : BadRequest -> Bytes.Encode.Encoder
 encodeBadRequestBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.list (Proto.Binary.embedded encodeBadRequestFieldViolationBytes mergeBadRequestFieldViolationBytes defaultBadRequestFieldViolation) 1 value.fieldViolations
         ]
 
 
 {-| Encodes a [`BadRequestFieldViolation`](#BadRequestFieldViolation) as protobuf binary.
 -}
-encodeBadRequestFieldViolationBytes : BadRequestFieldViolation -> Proto.Binary.Encoder
+encodeBadRequestFieldViolationBytes : BadRequestFieldViolation -> Bytes.Encode.Encoder
 encodeBadRequestFieldViolationBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.field
         , Proto.Binary.implicit Proto.Binary.string 2 value.description
         , Proto.Binary.implicit Proto.Binary.string 3 value.reason
@@ -1143,9 +1144,9 @@ encodeBadRequestFieldViolationBytes value =
 
 {-| Encodes a [`RequestInfo`](#RequestInfo) as protobuf binary.
 -}
-encodeRequestInfoBytes : RequestInfo -> Proto.Binary.Encoder
+encodeRequestInfoBytes : RequestInfo -> Bytes.Encode.Encoder
 encodeRequestInfoBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.requestId
         , Proto.Binary.implicit Proto.Binary.string 2 value.servingData
         ]
@@ -1153,9 +1154,9 @@ encodeRequestInfoBytes value =
 
 {-| Encodes a [`ResourceInfo`](#ResourceInfo) as protobuf binary.
 -}
-encodeResourceInfoBytes : ResourceInfo -> Proto.Binary.Encoder
+encodeResourceInfoBytes : ResourceInfo -> Bytes.Encode.Encoder
 encodeResourceInfoBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.resourceType
         , Proto.Binary.implicit Proto.Binary.string 2 value.resourceName
         , Proto.Binary.implicit Proto.Binary.string 3 value.owner
@@ -1165,18 +1166,18 @@ encodeResourceInfoBytes value =
 
 {-| Encodes a [`Help`](#Help) as protobuf binary.
 -}
-encodeHelpBytes : Help -> Proto.Binary.Encoder
+encodeHelpBytes : Help -> Bytes.Encode.Encoder
 encodeHelpBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.list (Proto.Binary.embedded encodeHelpLinkBytes mergeHelpLinkBytes defaultHelpLink) 1 value.links
         ]
 
 
 {-| Encodes a [`HelpLink`](#HelpLink) as protobuf binary.
 -}
-encodeHelpLinkBytes : HelpLink -> Proto.Binary.Encoder
+encodeHelpLinkBytes : HelpLink -> Bytes.Encode.Encoder
 encodeHelpLinkBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.description
         , Proto.Binary.implicit Proto.Binary.string 2 value.url
         ]
@@ -1184,9 +1185,9 @@ encodeHelpLinkBytes value =
 
 {-| Encodes a [`LocalizedMessage`](#LocalizedMessage) as protobuf binary.
 -}
-encodeLocalizedMessageBytes : LocalizedMessage -> Proto.Binary.Encoder
+encodeLocalizedMessageBytes : LocalizedMessage -> Bytes.Encode.Encoder
 encodeLocalizedMessageBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.locale
         , Proto.Binary.implicit Proto.Binary.string 2 value.message
         ]

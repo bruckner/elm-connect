@@ -8,6 +8,7 @@ module Scalars.V1 exposing (..)
 64-bit integers are Strings by default (design §3.4).
 -}
 
+import Bytes.Encode
 import Json.Decode
 import Json.Encode
 import Proto.Binary
@@ -238,9 +239,9 @@ decodeEmpty =
 
 {-| Encodes a [`Scalars`](#Scalars) as protobuf binary.
 -}
-encodeScalarsBytes : Scalars -> Proto.Binary.Encoder
+encodeScalarsBytes : Scalars -> Bytes.Encode.Encoder
 encodeScalarsBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.double 1 value.doubleValue
         , Proto.Binary.implicit Proto.Binary.float 2 value.floatValue
         , Proto.Binary.implicit Proto.Binary.int32 3 value.int32Value
@@ -263,9 +264,9 @@ encodeScalarsBytes value =
 
 {-| Encodes an [`Empty`](#Empty) as protobuf binary.
 -}
-encodeEmptyBytes : Empty -> Proto.Binary.Encoder
+encodeEmptyBytes : Empty -> Bytes.Encode.Encoder
 encodeEmptyBytes _ =
-    Proto.Binary.sequence []
+    Bytes.Encode.sequence []
 
 
 

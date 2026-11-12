@@ -11,6 +11,7 @@ Value as a Maybe of JSON, the wrappers as a Maybe of their scalar, and
 the enum NullValue as () without presence.
 -}
 
+import Bytes.Encode
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
@@ -355,9 +356,9 @@ decodeEventWhen =
 
 {-| Encodes an [`Event`](#Event) as protobuf binary.
 -}
-encodeEventBytes : Event -> Proto.Binary.Encoder
+encodeEventBytes : Event -> Bytes.Encode.Encoder
 encodeEventBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.optional Proto.Binary.timestamp 1 value.createdAt
         , Proto.Binary.optional Proto.Binary.duration 2 value.timeout
         , Proto.Binary.optional Proto.Binary.fieldMask 3 value.updateMask
@@ -389,7 +390,7 @@ encodeEventBytes value =
                 Proto.Binary.present Proto.Binary.value 23 member
 
             _ ->
-                Proto.Binary.sequence []
+                Bytes.Encode.sequence []
         , Proto.Binary.present Proto.Binary.empty 24 value.acked
         , Proto.Binary.list Proto.Binary.empty 25 value.pings
         , Proto.Binary.dict Proto.Binary.string Proto.Binary.empty 26 value.seen
@@ -403,7 +404,7 @@ encodeEventBytes value =
                 Proto.Binary.present Proto.Binary.listValue 30 member
 
             _ ->
-                Proto.Binary.sequence []
+                Bytes.Encode.sequence []
         , Proto.Binary.optional Proto.Binary.value 31 value.lastValue
         , Proto.Binary.dict Proto.Binary.string Proto.Binary.value 32 value.settings
         , Proto.Binary.implicit (Proto.Binary.enum (\_ -> 0) (\_ -> ())) 33 value.nothing
@@ -415,17 +416,17 @@ encodeEventBytes value =
                 Proto.Binary.present (Proto.Binary.enum (\_ -> 0) (\_ -> ())) 37 ()
 
             _ ->
-                Proto.Binary.sequence []
+                Bytes.Encode.sequence []
         ]
 
 
 {-| Encodes an [`EventWhen`](#EventWhen) as protobuf binary: its set member's field.
 -}
-encodeEventWhenBytes : EventWhen -> Proto.Binary.Encoder
+encodeEventWhenBytes : EventWhen -> Bytes.Encode.Encoder
 encodeEventWhenBytes value =
     case value of
         EventWhenUnset ->
-            Proto.Binary.sequence []
+            Bytes.Encode.sequence []
 
         EventWhenAt member ->
             Proto.Binary.present Proto.Binary.timestamp 21 member

@@ -9,6 +9,7 @@ as `Proto.Field.BehaviorUnknown` with the number, in its place among the
 named ones; the unspecified zero is dropped.
 -}
 
+import Bytes.Encode
 import Drafts.V1.Draft
 import Json.Decode
 import Json.Encode
@@ -131,9 +132,9 @@ decodeDraft =
 
 {-| Encodes a [`Draft`](#Draft) as protobuf binary.
 -}
-encodeDraftBytes : Draft -> Proto.Binary.Encoder
+encodeDraftBytes : Draft -> Bytes.Encode.Encoder
 encodeDraftBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         , Proto.Binary.implicit Proto.Binary.string 2 value.body
         , Proto.Binary.implicit Proto.Binary.string 3 value.owner

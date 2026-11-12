@@ -1,5 +1,5 @@
 module Proto.Binary exposing
-    ( decode, encode, Decoder, map, Encoder, sequence
+    ( decode, encode, Decoder, map
     , Codec
     , merge, Field, field, fieldInto, repeated, mapEntry, insertBool, skip
     , implicit, optional, present, list, listUnpacked, dict, boolMap
@@ -39,7 +39,7 @@ and a `string` that is not UTF-8 fail, with a
 `String`, exact, or an `Int` (the `AsInt` codecs) that fails to decode
 outside ±(2^53 − 1).
 
-@docs decode, encode, Decoder, map, Encoder, sequence
+@docs decode, encode, Decoder, map
 
 
 # Codecs
@@ -82,7 +82,7 @@ outside ±(2^53 − 1).
 import Bitwise
 import Bytes exposing (Bytes, Endianness(..))
 import Bytes.Decode as D exposing (Step(..))
-import Bytes.Encode as E
+import Bytes.Encode as E exposing (Encoder)
 import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
@@ -148,60 +148,7 @@ fastRun (Internal.Decoder d) =
 -}
 encode : (a -> Encoder) -> a -> Bytes
 encode encoder input =
-    Internal.encode (encoder input)
-
-
-{-| How a message, or one of its fields, is written: elm/bytes' encoder and
-the number of bytes it writes, so that a message nested in another is
-written after its length without being encoded on its own first. The
-package site and compiler errors may show it as
-`Proto.Internal.Binary.Encoder`.
--}
-type alias Encoder =
-    Internal.Encoder
-
-
-{-| The encoders given, one after another: a generated message encoder's
-fields.
--}
-sequence : List Encoder -> Encoder
-sequence encoders =
-    Internal.Encoder (widths 0 encoders) (E.sequence (List.map Internal.encoder encoders))
-
-
-widths : Int -> List Encoder -> Int
-widths total encoders =
-    case encoders of
-        [] ->
-            total
-
-        (Internal.Encoder width _) :: rest ->
-            widths (total + width) rest
-
-
-{-| A varint of an unsigned value below 2^32, with its width.
--}
-varint : Int -> Encoder
-varint n =
-    Internal.Encoder (varintWidth n) (writeVarint32 n)
-
-
-varintWidth : Int -> Int
-varintWidth n =
-    if n < 128 then
-        1
-
-    else if n < 16384 then
-        2
-
-    else if n < 2097152 then
-        3
-
-    else if n < 268435456 then
-        4
-
-    else
-        5
+    E.encode (encoder input)
 
 
 
@@ -851,18 +798,12 @@ skipValue wire bound =
 
 nothing : Encoder
 nothing =
-    Internal.Encoder 0 (E.sequence [])
+    E.sequence []
 
 
-{-| A field's key, then its value.
--}
-keyed : Int -> Int -> Encoder -> Encoder
-keyed number wire (Internal.Encoder width written) =
-    let
-        tag =
-            number * 8 + wire
-    in
-    Internal.Encoder (varintWidth tag + width) (E.sequence [ writeVarint32 tag, written ])
+fieldKey : Int -> Int -> Encoder
+fieldKey number wire =
+    writeVarint32 (number * 8 + wire)
 
 
 {-| A field without presence: left out at its default.
@@ -873,7 +814,7 @@ implicit (Codec c) number v =
         nothing
 
     else
-        keyed number c.wire (c.write v)
+        E.sequence [ fieldKey number c.wire, c.write v ]
 
 
 {-| A field with presence: left out when `Nothing`.
@@ -893,7 +834,7 @@ optional codec number maybe =
 -}
 present : Codec v -> Int -> v -> Encoder
 present (Codec c) number v =
-    keyed number c.wire (c.write v)
+    E.sequence [ fieldKey number c.wire, c.write v ]
 
 
 {-| A repeated field: packed when its elements are scalars, as proto3
@@ -907,10 +848,10 @@ list ((Codec c) as codec) number vs =
 
         _ ->
             if c.packable then
-                keyed number 2 (delimited (sequence (List.map c.write vs)))
+                E.sequence [ fieldKey number 2, delimited (E.sequence (List.map c.write vs)) ]
 
             else
-                sequence (List.map (present codec number) vs)
+                E.sequence (List.map (present codec number) vs)
 
 
 {-| A repeated scalar field declared `[packed = false]`: one field key per
@@ -918,7 +859,7 @@ element; left out when empty.
 -}
 listUnpacked : Codec v -> Int -> List v -> Encoder
 listUnpacked codec number vs =
-    sequence (List.map (present codec number) vs)
+    E.sequence (List.map (present codec number) vs)
 
 
 {-| A map field, its entries in the `Dict`'s order, each entry leaving out a
@@ -926,7 +867,7 @@ key or value at its default.
 -}
 dict : Codec k -> Codec v -> Int -> Dict k v -> Encoder
 dict k v number entries =
-    sequence (Dict.foldr (\key_ item acc -> entry k v number key_ item :: acc) [] entries)
+    E.sequence (Dict.foldr (\key_ item acc -> entry k v number key_ item :: acc) [] entries)
 
 
 {-| A map field with `bool` keys, its `False` entry first.
@@ -937,19 +878,24 @@ boolMap v number entries =
         ( trues, falses ) =
             List.partition Tuple.first entries
     in
-    sequence (List.map (\( key_, item ) -> entry bool v number key_ item) (falses ++ trues))
+    E.sequence (List.map (\( key_, item ) -> entry bool v number key_ item) (falses ++ trues))
 
 
 entry : Codec k -> Codec v -> Int -> k -> v -> Encoder
 entry k v number key_ item =
-    keyed number 2 (delimited (sequence [ implicit k 1 key_, implicit v 2 item ]))
+    E.sequence [ fieldKey number 2, delimited (E.sequence [ implicit k 1 key_, implicit v 2 item ]) ]
 
 
-{-| A value after its length, which its encoder carries.
+{-| `body` after its length. elm/bytes cannot tell an encoder's width
+without running it, so the body is encoded first and copied in.
 -}
 delimited : Encoder -> Encoder
-delimited (Internal.Encoder width written) =
-    Internal.Encoder (varintWidth width + width) (E.sequence [ writeVarint32 width, written ])
+delimited body =
+    let
+        encoded =
+            E.encode body
+    in
+    E.sequence [ writeVarint32 (Bytes.width encoded), E.bytes encoded ]
 
 
 
@@ -1324,7 +1270,7 @@ highShift index =
 its width allows (one u16 for two bytes, one u32 for four) rather than a
 list of bytes.
 -}
-writeVarint32 : Int -> E.Encoder
+writeVarint32 : Int -> Encoder
 writeVarint32 n =
     if n < 128 then
         E.unsignedInt8 n
@@ -1362,7 +1308,7 @@ spread n =
 writeVarint64 : U64 -> Encoder
 writeVarint64 (U64 high low) =
     if high == 0 then
-        varint low
+        writeVarint32 low
 
     else
         -- The low 28 bits, then the rest, below 2^36, which an Int holds
@@ -1372,17 +1318,14 @@ writeVarint64 (U64 high low) =
                 Bitwise.shiftRightZfBy 28 low + high * 16
         in
         if rest < 268435456 then
-            Internal.Encoder (4 + varintWidth rest)
-                (E.sequence [ E.unsignedInt32 LE (Bitwise.or (spread low) 0x80808080), writeVarint32 rest ])
+            E.sequence [ E.unsignedInt32 LE (Bitwise.or (spread low) 0x80808080), writeVarint32 rest ]
 
         else
-            Internal.Encoder (8 + varintWidth (rest // 268435456))
-                (E.sequence
-                    [ E.unsignedInt32 LE (Bitwise.or (spread low) 0x80808080)
-                    , E.unsignedInt32 LE (Bitwise.or (spread rest) 0x80808080)
-                    , writeVarint32 (rest // 268435456)
-                    ]
-                )
+            E.sequence
+                [ E.unsignedInt32 LE (Bitwise.or (spread low) 0x80808080)
+                , E.unsignedInt32 LE (Bitwise.or (spread rest) 0x80808080)
+                , writeVarint32 (rest // 268435456)
+                ]
 
 
 {-| A signed 32-bit value, sign-extended to ten bytes when negative.
@@ -1390,7 +1333,7 @@ writeVarint64 (U64 high low) =
 writeInt32 : Int -> Encoder
 writeInt32 n =
     if n >= 0 then
-        varint n
+        writeVarint32 n
 
     else
         writeVarint64 (U64 0xFFFFFFFF (Bitwise.shiftRightZfBy 0 n))
@@ -1609,7 +1552,7 @@ fixed width zero decoder bound =
 
 fixed64Write : U64 -> Encoder
 fixed64Write (U64 high low) =
-    Internal.Encoder 8 (E.sequence [ E.unsignedInt32 LE low, E.unsignedInt32 LE high ])
+    E.sequence [ E.unsignedInt32 LE low, E.unsignedInt32 LE high ]
 
 
 {-| A 64-bit codec from how the bits are read (fast, and given the bytes
@@ -1681,14 +1624,14 @@ as a default, as `0` is.
 -}
 double : Codec Float
 double =
-    scalar 1 8 (D.map (\x -> ( 8, x )) (D.float64 LE)) (fixed 8 0 (D.map (\x -> ( 8, x )) (D.float64 LE))) (\x -> Internal.Encoder 8 (E.float64 LE x)) isZero 0
+    scalar 1 8 (D.map (\x -> ( 8, x )) (D.float64 LE)) (fixed 8 0 (D.map (\x -> ( 8, x )) (D.float64 LE))) (E.float64 LE) isZero 0
 
 
 {-| `float`.
 -}
 float : Codec Float
 float =
-    scalar 5 4 (D.map (\x -> ( 4, x )) (D.float32 LE)) (fixed 4 0 (D.map (\x -> ( 4, x )) (D.float32 LE))) (\x -> Internal.Encoder 4 (E.float32 LE x)) isZero 0
+    scalar 5 4 (D.map (\x -> ( 4, x )) (D.float32 LE)) (fixed 4 0 (D.map (\x -> ( 4, x )) (D.float32 LE))) (E.float32 LE) isZero 0
 
 
 isZero : Float -> Bool
@@ -1712,7 +1655,7 @@ sint32 =
         10
         (fastVarint32Map (\z -> Bitwise.xor (Bitwise.shiftRightZfBy 1 z) (negate (Bitwise.and 1 z))))
         (fromVarint32 (\z -> Bitwise.xor (Bitwise.shiftRightZfBy 1 z) (negate (Bitwise.and 1 z))) 0)
-        (\n -> varint (Bitwise.shiftRightZfBy 0 (Bitwise.xor (Bitwise.shiftLeftBy 1 n) (Bitwise.shiftRightBy 31 n))))
+        (\n -> writeVarint32 (Bitwise.shiftRightZfBy 0 (Bitwise.xor (Bitwise.shiftLeftBy 1 n) (Bitwise.shiftRightBy 31 n))))
         ((==) 0)
         0
 
@@ -1721,21 +1664,21 @@ sint32 =
 -}
 sfixed32 : Codec Int
 sfixed32 =
-    scalar 5 4 (D.map (\n -> ( 4, n )) (D.signedInt32 LE)) (fixed 4 0 (D.map (\n -> ( 4, n )) (D.signedInt32 LE))) (\n -> Internal.Encoder 4 (E.signedInt32 LE n)) ((==) 0) 0
+    scalar 5 4 (D.map (\n -> ( 4, n )) (D.signedInt32 LE)) (fixed 4 0 (D.map (\n -> ( 4, n )) (D.signedInt32 LE))) (E.signedInt32 LE) ((==) 0) 0
 
 
 {-| `uint32`, a varint.
 -}
 uint32 : Codec Int
 uint32 =
-    scalar 0 10 fastVarint32 varint32 varint ((==) 0) 0
+    scalar 0 10 fastVarint32 varint32 writeVarint32 ((==) 0) 0
 
 
 {-| `fixed32`, four bytes.
 -}
 fixed32 : Codec Int
 fixed32 =
-    scalar 5 4 (D.map (\n -> ( 4, n )) (D.unsignedInt32 LE)) (fixed 4 0 (D.map (\n -> ( 4, n )) (D.unsignedInt32 LE))) (\n -> Internal.Encoder 4 (E.unsignedInt32 LE n)) ((==) 0) 0
+    scalar 5 4 (D.map (\n -> ( 4, n )) (D.unsignedInt32 LE)) (fixed 4 0 (D.map (\n -> ( 4, n )) (D.unsignedInt32 LE))) (E.unsignedInt32 LE) ((==) 0) 0
 
 
 {-| `int64` held as decimal text.
@@ -1827,10 +1770,10 @@ bool =
         (\bound -> D.map (\( width, U64 high low ) -> ( width, width >= 0 && high + low /= 0 )) (varint64 bound))
         (\b ->
             if b then
-                Internal.Encoder 1 (E.unsignedInt8 1)
+                E.unsignedInt8 1
 
             else
-                Internal.Encoder 1 (E.unsignedInt8 0)
+                E.unsignedInt8 0
         )
         not
         False
@@ -1862,13 +1805,7 @@ string : Codec String
 string =
     delimitedScalar fastString
         utf8String
-        (\s ->
-            let
-                width =
-                    E.getStringWidth s
-            in
-            Internal.Encoder (varintWidth width + width) (E.sequence [ writeVarint32 width, E.string s ])
-        )
+        (\s -> E.sequence [ writeVarint32 (E.getStringWidth s), E.string s ])
         String.isEmpty
         ""
 
@@ -2079,11 +2016,7 @@ rawBytes =
 
 writeBytes : Bytes -> Encoder
 writeBytes b =
-    let
-        width =
-            Bytes.width b
-    in
-    Internal.Encoder (varintWidth width + width) (E.sequence [ writeVarint32 width, E.bytes b ])
+    E.sequence [ writeVarint32 (Bytes.width b), E.bytes b ]
 
 
 {-| `bytes` held as base64 text, as the generated code holds it by default:
@@ -2260,7 +2193,7 @@ writeTimestamp posix =
         seconds =
             floor (toFloat millis / 1000)
     in
-    sequence [ implicit int64AsInt 1 seconds, implicit int32 2 ((millis - seconds * 1000) * 1000000) ]
+    E.sequence [ implicit int64AsInt 1 seconds, implicit int32 2 ((millis - seconds * 1000) * 1000000) ]
 
 
 {-| `google.protobuf.Duration`, exact. One that arrives twice is merged field
@@ -2291,7 +2224,7 @@ writeDuration d =
         parts =
             Proto.Duration.toParts d
     in
-    sequence [ implicit int64AsInt 1 parts.seconds, implicit int32 2 parts.nanos ]
+    E.sequence [ implicit int64AsInt 1 parts.seconds, implicit int32 2 parts.nanos ]
 
 
 {-| `google.protobuf.FieldMask` as its paths, proto field names as the
@@ -2517,7 +2450,7 @@ writeAny : Any -> Encoder
 writeAny (InternalAny.Any url payload) =
     -- An `Any` held as JSON alone has no binary to write: its type URL is
     -- written alone.
-    sequence [ implicit string 1 url, implicit bytes 2 (Maybe.withDefault "" (InternalAny.base64Of payload)) ]
+    E.sequence [ implicit string 1 url, implicit bytes 2 (Maybe.withDefault "" (InternalAny.base64Of payload)) ]
 
 
 wrapper : String -> Codec v -> Codec v

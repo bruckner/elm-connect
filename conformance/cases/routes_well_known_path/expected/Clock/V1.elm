@@ -9,6 +9,7 @@ the variable's text is that JSON value, and the field is not repeated
 in the query.
 -}
 
+import Bytes.Encode
 import Clock.V1.Moment
 import Json.Decode
 import Json.Encode
@@ -151,9 +152,9 @@ decodeMoment =
 
 {-| Encodes a [`Moment`](#Moment) as protobuf binary.
 -}
-encodeMomentBytes : Moment -> Proto.Binary.Encoder
+encodeMomentBytes : Moment -> Bytes.Encode.Encoder
 encodeMomentBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.optional Proto.Binary.timestamp 1 value.at
         , Proto.Binary.optional Proto.Binary.fieldMask 2 value.mask
         , Proto.Binary.optional Proto.Binary.int32Value 3 value.count

@@ -4,6 +4,7 @@
 
 module Zones.V1 exposing (..)
 
+import Bytes.Encode
 import Json.Decode
 import Json.Encode
 import Proto.Binary
@@ -166,18 +167,18 @@ decodeZone =
 
 {-| Encodes a [`ZoneRequest`](#ZoneRequest) as protobuf binary.
 -}
-encodeZoneRequestBytes : ZoneRequest -> Proto.Binary.Encoder
+encodeZoneRequestBytes : ZoneRequest -> Bytes.Encode.Encoder
 encodeZoneRequestBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         ]
 
 
 {-| Encodes a [`Zone`](#Zone) as protobuf binary.
 -}
-encodeZoneBytes : Zone -> Proto.Binary.Encoder
+encodeZoneBytes : Zone -> Bytes.Encode.Encoder
 encodeZoneBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         , Proto.Binary.implicit Proto.Binary.int64AsInt 2 value.offsetSeconds
         ]

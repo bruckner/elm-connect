@@ -14,6 +14,7 @@ route function takes beside the request (`Proto.Method.withJsonRoutes`).
 -}
 
 import Bytes
+import Bytes.Encode
 import Json.Decode
 import Json.Encode
 import Proto.Any
@@ -411,9 +412,9 @@ decodeFree =
 
 {-| Encodes a [`Blob`](#Blob) as protobuf binary.
 -}
-encodeBlobBytes : Blob -> Proto.Binary.Encoder
+encodeBlobBytes : Blob -> Bytes.Encode.Encoder
 encodeBlobBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.bytesAsBytes 1 value.digest
         , Proto.Binary.implicit Proto.Binary.string 2 value.name
         , Proto.Binary.implicit Proto.Binary.bytesAsBytes 3 value.salt
@@ -422,9 +423,9 @@ encodeBlobBytes value =
 
 {-| Encodes a [`Labeled`](#Labeled) as protobuf binary.
 -}
-encodeLabeledBytes : Labeled -> Proto.Binary.Encoder
+encodeLabeledBytes : Labeled -> Bytes.Encode.Encoder
 encodeLabeledBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         , Proto.Binary.optional Proto.Binary.any 2 value.label
         ]
@@ -432,9 +433,9 @@ encodeLabeledBytes value =
 
 {-| Encodes a [`LabelBlobRequest`](#LabelBlobRequest) as protobuf binary.
 -}
-encodeLabelBlobRequestBytes : LabelBlobRequest -> Proto.Binary.Encoder
+encodeLabelBlobRequestBytes : LabelBlobRequest -> Bytes.Encode.Encoder
 encodeLabelBlobRequestBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.optional (Proto.Binary.embedded encodeLabeledBytes mergeLabeledBytes defaultLabeled) 1 value.labeled
         , Proto.Binary.implicit Proto.Binary.string 2 value.shelf
         ]
@@ -442,9 +443,9 @@ encodeLabelBlobRequestBytes value =
 
 {-| Encodes a [`Folder`](#Folder) as protobuf binary.
 -}
-encodeFolderBytes : Folder -> Proto.Binary.Encoder
+encodeFolderBytes : Folder -> Bytes.Encode.Encoder
 encodeFolderBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         , Proto.Binary.optional (Proto.Binary.embedded encodeFolder_Bytes mergeFolder_Bytes (Folder_ defaultFolder)) 2 value.parent
         ]
@@ -452,16 +453,16 @@ encodeFolderBytes value =
 
 {-| Encodes a [`Folder_`](#Folder_) as protobuf binary.
 -}
-encodeFolder_Bytes : Folder_ -> Proto.Binary.Encoder
+encodeFolder_Bytes : Folder_ -> Bytes.Encode.Encoder
 encodeFolder_Bytes (Folder_ value) =
     encodeFolderBytes value
 
 
 {-| Encodes a [`Slots`](#Slots) as protobuf binary.
 -}
-encodeSlotsBytes : Slots -> Proto.Binary.Encoder
+encodeSlotsBytes : Slots -> Bytes.Encode.Encoder
 encodeSlotsBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         , Proto.Binary.present Proto.Binary.empty 2 value.nothing
         ]
@@ -469,9 +470,9 @@ encodeSlotsBytes value =
 
 {-| Encodes a [`Free`](#Free) as protobuf binary.
 -}
-encodeFreeBytes : Free -> Proto.Binary.Encoder
+encodeFreeBytes : Free -> Bytes.Encode.Encoder
 encodeFreeBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         , Proto.Binary.optional Proto.Binary.value 2 value.value
         ]

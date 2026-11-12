@@ -9,6 +9,7 @@ the file declares them in, not their numbers. The record constructor is
 positional, so this order is the generated API.
 -}
 
+import Bytes.Encode
 import FieldOrder.V1.Draft
 import FieldOrder.V1.DraftMargin
 import FieldOrder.V1.Mood
@@ -295,15 +296,15 @@ encodeMoodBytes value =
 
 {-| Encodes a [`Draft`](#Draft) as protobuf binary.
 -}
-encodeDraftBytes : Draft -> Proto.Binary.Encoder
+encodeDraftBytes : Draft -> Bytes.Encode.Encoder
 encodeDraftBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ case value.body of
             DraftBodyBlob member ->
                 Proto.Binary.present Proto.Binary.bytes 1 member
 
             _ ->
-                Proto.Binary.sequence []
+                Bytes.Encode.sequence []
         , Proto.Binary.list Proto.Binary.string 2 value.tags
         , Proto.Binary.optional (Proto.Binary.embedded encodeDraftMarginBytes mergeDraftMarginBytes defaultDraftMargin) 3 value.margin
         , Proto.Binary.implicit Proto.Binary.string 4 value.title
@@ -313,17 +314,17 @@ encodeDraftBytes value =
                 Proto.Binary.present Proto.Binary.string 8 member
 
             _ ->
-                Proto.Binary.sequence []
+                Bytes.Encode.sequence []
         ]
 
 
 {-| Encodes a [`DraftBody`](#DraftBody) as protobuf binary: its set member's field.
 -}
-encodeDraftBodyBytes : DraftBody -> Proto.Binary.Encoder
+encodeDraftBodyBytes : DraftBody -> Bytes.Encode.Encoder
 encodeDraftBodyBytes value =
     case value of
         DraftBodyUnset ->
-            Proto.Binary.sequence []
+            Bytes.Encode.sequence []
 
         DraftBodyText member ->
             Proto.Binary.present Proto.Binary.string 8 member
@@ -334,9 +335,9 @@ encodeDraftBodyBytes value =
 
 {-| Encodes a [`DraftMargin`](#DraftMargin) as protobuf binary.
 -}
-encodeDraftMarginBytes : DraftMargin -> Proto.Binary.Encoder
+encodeDraftMarginBytes : DraftMargin -> Bytes.Encode.Encoder
 encodeDraftMarginBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.int32 1 value.right
         , Proto.Binary.implicit Proto.Binary.int32 2 value.left
         ]

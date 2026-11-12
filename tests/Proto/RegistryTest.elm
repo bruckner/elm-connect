@@ -41,9 +41,9 @@ decodeHolderWith types =
         |> Proto.Json.field "held" Nothing (Json.Decode.map Just (Proto.Json.anyWith types))
 
 
-encodeHolderBytes : Holder -> Proto.Binary.Encoder
+encodeHolderBytes : Holder -> Bytes.Encode.Encoder
 encodeHolderBytes value =
-    Proto.Binary.sequence [ Proto.Binary.optional Proto.Binary.any 1 value.held ]
+    Bytes.Encode.sequence [ Proto.Binary.optional Proto.Binary.any 1 value.held ]
 
 
 decodeHolderBytes : Proto.Binary.Decoder Holder
@@ -81,7 +81,7 @@ leaf name =
         (Message.init name
             (\t -> Json.Encode.object [ ( "text", Json.Encode.string t ) ])
             (Json.Decode.field "text" Json.Decode.string)
-            (\t -> Proto.Binary.sequence [ Proto.Binary.implicit Proto.Binary.string 1 t ])
+            (\t -> Bytes.Encode.sequence [ Proto.Binary.implicit Proto.Binary.string 1 t ])
             leafBytes
         )
 
@@ -105,7 +105,7 @@ messageLeaf name =
     Message.init name
         (\t -> Json.Encode.object [ ( "text", Json.Encode.string t ) ])
         (Json.Decode.field "text" Json.Decode.string)
-        (\t -> Proto.Binary.sequence [ Proto.Binary.implicit Proto.Binary.string 1 t ])
+        (\t -> Bytes.Encode.sequence [ Proto.Binary.implicit Proto.Binary.string 1 t ])
         leafBytes
 
 
@@ -141,7 +141,7 @@ suite =
                         leaf "t.Leaf" Registry.empty
 
                     binary =
-                        Proto.Binary.encode (\t -> Proto.Binary.sequence [ Proto.Binary.implicit Proto.Binary.string 1 t ]) "hi"
+                        Proto.Binary.encode (\t -> Bytes.Encode.sequence [ Proto.Binary.implicit Proto.Binary.string 1 t ]) "hi"
                 in
                 ( json registry "t.Leaf" binary
                 , bytes registry "t.Leaf" [ ( "text", Json.Encode.string "hi" ) ]
@@ -149,7 +149,7 @@ suite =
                     |> Expect.equal ( Just """{"text":"hi"}""", Just (Proto.Bytes.toBase64 binary) )
         , test "a type the registry has no entry for converts in neither direction" <|
             \_ ->
-                ( json (leaf "t.Leaf" Registry.empty) "t.Other" (Proto.Binary.encode (\_ -> Proto.Binary.sequence []) ())
+                ( json (leaf "t.Leaf" Registry.empty) "t.Other" (Proto.Binary.encode (\_ -> Bytes.Encode.sequence []) ())
                 , bytes Registry.empty "t.Leaf" []
                 )
                     |> Expect.equal ( Nothing, Nothing )
@@ -221,14 +221,14 @@ suite =
             \_ ->
                 let
                     binary =
-                        Proto.Binary.encode (\t -> Proto.Binary.sequence [ Proto.Binary.implicit Proto.Binary.string 1 t ]) "hi"
+                        Proto.Binary.encode (\t -> Bytes.Encode.sequence [ Proto.Binary.implicit Proto.Binary.string 1 t ]) "hi"
 
                     other =
                         Registry.register
                             (Message.init "t.Leaf"
                                 (\_ -> Json.Encode.string "other")
                                 (Json.Decode.succeed "")
-                                (\_ -> Proto.Binary.sequence [])
+                                (\_ -> Bytes.Encode.sequence [])
                                 leafBytes
                             )
                             Registry.empty

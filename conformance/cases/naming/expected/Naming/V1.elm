@@ -7,6 +7,7 @@ module Naming.V1 exposing (..)
 {-| The naming rules of design section 3.7.
 -}
 
+import Bytes.Encode
 import Json.Decode
 import Json.Encode
 import Naming.V1.HttpMethod
@@ -352,9 +353,9 @@ encodeHttpMethodBytes value =
 
 {-| Encodes a [`Tag`](#Tag) as protobuf binary.
 -}
-encodeTagBytes : Tag -> Proto.Binary.Encoder
+encodeTagBytes : Tag -> Bytes.Encode.Encoder
 encodeTagBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.type_
         , Proto.Binary.implicit Proto.Binary.bool 2 value.if_
         , Proto.Binary.implicit Proto.Binary.int32 3 value.port_
@@ -370,11 +371,11 @@ encodeTagBytes value =
 
 {-| Encodes a [`TagCase`](#TagCase) as protobuf binary: its set member's field.
 -}
-encodeTagCaseBytes : TagCase -> Proto.Binary.Encoder
+encodeTagCaseBytes : TagCase -> Bytes.Encode.Encoder
 encodeTagCaseBytes value =
     case value of
         TagCaseUnset ->
-            Proto.Binary.sequence []
+            Bytes.Encode.sequence []
 
         TagCaseThen member ->
             Proto.Binary.present Proto.Binary.string 10 member

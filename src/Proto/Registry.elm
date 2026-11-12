@@ -54,6 +54,7 @@ as `Proto.Internal.Registry.Registry`, its name inside the package.
 
 -}
 
+import Bytes.Encode
 import Dict
 import Json.Decode
 import Proto.Bytes
@@ -99,7 +100,7 @@ register (Message.Message name codecs) (Internal.Registry leniency entries) =
             , toBytes =
                 \registry json ->
                     Json.Decode.decodeValue (codecs.decodeJson registry) json
-                        |> Result.map (codecs.encodeBinary >> Proto.Internal.Binary.encode >> Proto.Bytes.toBase64)
+                        |> Result.map (codecs.encodeBinary >> Bytes.Encode.encode >> Proto.Bytes.toBase64)
                         |> Result.mapError BadJson
             }
     in

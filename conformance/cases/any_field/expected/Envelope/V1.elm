@@ -9,6 +9,7 @@ field, so singular it is a `Maybe`; repeated, a map value and a oneof
 member hold it bare. A method may take or return one.
 -}
 
+import Bytes.Encode
 import Dict exposing (Dict)
 import Envelope.V1.Envelope
 import Json.Decode
@@ -186,9 +187,9 @@ decodeEnvelopeBodyWith types =
 
 {-| Encodes an [`Envelope`](#Envelope) as protobuf binary.
 -}
-encodeEnvelopeBytes : Envelope -> Proto.Binary.Encoder
+encodeEnvelopeBytes : Envelope -> Bytes.Encode.Encoder
 encodeEnvelopeBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.id
         , Proto.Binary.optional Proto.Binary.any 2 value.payload
         , Proto.Binary.list Proto.Binary.any 3 value.attachments
@@ -199,11 +200,11 @@ encodeEnvelopeBytes value =
 
 {-| Encodes an [`EnvelopeBody`](#EnvelopeBody) as protobuf binary: its set member's field.
 -}
-encodeEnvelopeBodyBytes : EnvelopeBody -> Proto.Binary.Encoder
+encodeEnvelopeBodyBytes : EnvelopeBody -> Bytes.Encode.Encoder
 encodeEnvelopeBodyBytes value =
     case value of
         EnvelopeBodyUnset ->
-            Proto.Binary.sequence []
+            Bytes.Encode.sequence []
 
         EnvelopeBodyPacked member ->
             Proto.Binary.present Proto.Binary.any 5 member

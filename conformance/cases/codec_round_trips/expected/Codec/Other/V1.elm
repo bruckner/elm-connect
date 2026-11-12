@@ -8,6 +8,7 @@ module Codec.Other.V1 exposing (..)
 boundary (docs/design.md §7, conformance/README.md "Codec round trips").
 -}
 
+import Bytes.Encode
 import Codec.Other.V1.Remote
 import Codec.Other.V1.Shade
 import Json.Decode
@@ -195,9 +196,9 @@ encodeShadeBytes value =
 
 {-| Encodes a [`Remote`](#Remote) as protobuf binary.
 -}
-encodeRemoteBytes : Remote -> Proto.Binary.Encoder
+encodeRemoteBytes : Remote -> Bytes.Encode.Encoder
 encodeRemoteBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.id
         , Proto.Binary.implicit (Proto.Binary.enum encodeShadeBytes decodeShadeBytes) 2 value.shade
         , Proto.Binary.implicit Proto.Binary.int64 3 value.version

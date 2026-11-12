@@ -4,6 +4,7 @@
 
 module Connectrpc.Eliza.V1 exposing (..)
 
+import Bytes.Encode
 import Connectrpc.Eliza.V1.ConverseRequest
 import Connectrpc.Eliza.V1.ConverseResponse
 import Connectrpc.Eliza.V1.IntroduceRequest
@@ -355,54 +356,54 @@ decodeIntroduceResponse =
 
 {-| Encodes a [`SayRequest`](#SayRequest) as protobuf binary.
 -}
-encodeSayRequestBytes : SayRequest -> Proto.Binary.Encoder
+encodeSayRequestBytes : SayRequest -> Bytes.Encode.Encoder
 encodeSayRequestBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.sentence
         ]
 
 
 {-| Encodes a [`SayResponse`](#SayResponse) as protobuf binary.
 -}
-encodeSayResponseBytes : SayResponse -> Proto.Binary.Encoder
+encodeSayResponseBytes : SayResponse -> Bytes.Encode.Encoder
 encodeSayResponseBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.sentence
         ]
 
 
 {-| Encodes a [`ConverseRequest`](#ConverseRequest) as protobuf binary.
 -}
-encodeConverseRequestBytes : ConverseRequest -> Proto.Binary.Encoder
+encodeConverseRequestBytes : ConverseRequest -> Bytes.Encode.Encoder
 encodeConverseRequestBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.sentence
         ]
 
 
 {-| Encodes a [`ConverseResponse`](#ConverseResponse) as protobuf binary.
 -}
-encodeConverseResponseBytes : ConverseResponse -> Proto.Binary.Encoder
+encodeConverseResponseBytes : ConverseResponse -> Bytes.Encode.Encoder
 encodeConverseResponseBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.sentence
         ]
 
 
 {-| Encodes an [`IntroduceRequest`](#IntroduceRequest) as protobuf binary.
 -}
-encodeIntroduceRequestBytes : IntroduceRequest -> Proto.Binary.Encoder
+encodeIntroduceRequestBytes : IntroduceRequest -> Bytes.Encode.Encoder
 encodeIntroduceRequestBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         ]
 
 
 {-| Encodes an [`IntroduceResponse`](#IntroduceResponse) as protobuf binary.
 -}
-encodeIntroduceResponseBytes : IntroduceResponse -> Proto.Binary.Encoder
+encodeIntroduceResponseBytes : IntroduceResponse -> Bytes.Encode.Encoder
 encodeIntroduceResponseBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.sentence
         ]
 

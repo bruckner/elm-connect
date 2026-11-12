@@ -1,4 +1,4 @@
-module Proto.Internal.Binary exposing (Decoder(..), Encoder(..), Failure, crossed, encode, encoder, run, runBase64)
+module Proto.Internal.Binary exposing (Decoder(..), Failure, crossed, run, runBase64)
 
 {-| The binary decoder type, defined here so that `Proto.Message` can run a
 decoder without importing `Proto.Binary`, which imports it through
@@ -17,7 +17,6 @@ reads twice").
 
 import Bytes exposing (Bytes)
 import Bytes.Decode
-import Bytes.Encode
 import Proto.Bytes
 import Proto.Error exposing (Reason(..))
 
@@ -31,24 +30,6 @@ type Decoder a
         , fast : Int -> Bytes.Decode.Decoder a
         , located : Int -> Bytes.Decode.Decoder (Result Failure a)
         }
-
-
-{-| A message encoder: elm/bytes' encoder and the number of bytes it writes.
--}
-type Encoder
-    = Encoder Int Bytes.Encode.Encoder
-
-
-encode : Encoder -> Bytes
-encode (Encoder _ e) =
-    Bytes.Encode.encode e
-
-
-{-| elm/bytes' encoder alone, for a request body.
--}
-encoder : Encoder -> Bytes.Encode.Encoder
-encoder (Encoder _ e) =
-    e
 
 
 {-| A failure while it unwinds: its reason, the fields it is in (message

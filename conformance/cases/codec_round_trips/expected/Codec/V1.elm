@@ -11,6 +11,7 @@ message, writes it with prost-reflect, and pins the samples for the Elm
 tests, which decode and re-encode them with the generated codecs.
 -}
 
+import Bytes.Encode
 import Codec.Other.V1
 import Codec.V1.Across
 import Codec.V1.Choice
@@ -1643,9 +1644,9 @@ encodeOuterModeBytes value =
 
 {-| Encodes a [`Scalars`](#Scalars) as protobuf binary.
 -}
-encodeScalarsBytes : Scalars -> Proto.Binary.Encoder
+encodeScalarsBytes : Scalars -> Bytes.Encode.Encoder
 encodeScalarsBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.double 1 value.double
         , Proto.Binary.implicit Proto.Binary.float 2 value.float
         , Proto.Binary.implicit Proto.Binary.int32 3 value.int32
@@ -1667,9 +1668,9 @@ encodeScalarsBytes value =
 
 {-| Encodes an [`Optionals`](#Optionals) as protobuf binary.
 -}
-encodeOptionalsBytes : Optionals -> Proto.Binary.Encoder
+encodeOptionalsBytes : Optionals -> Bytes.Encode.Encoder
 encodeOptionalsBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.optional Proto.Binary.double 1 value.double
         , Proto.Binary.optional Proto.Binary.float 2 value.float
         , Proto.Binary.optional Proto.Binary.int32 3 value.int32
@@ -1685,9 +1686,9 @@ encodeOptionalsBytes value =
 
 {-| Encodes a [`Repeated`](#Repeated) as protobuf binary.
 -}
-encodeRepeatedBytes : Repeated -> Proto.Binary.Encoder
+encodeRepeatedBytes : Repeated -> Bytes.Encode.Encoder
 encodeRepeatedBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.list Proto.Binary.double 1 value.doubles
         , Proto.Binary.list Proto.Binary.float 2 value.floats
         , Proto.Binary.list Proto.Binary.int32 3 value.int32s
@@ -1704,9 +1705,9 @@ encodeRepeatedBytes value =
 
 {-| Encodes a [`Maps`](#Maps) as protobuf binary.
 -}
-encodeMapsBytes : Maps -> Proto.Binary.Encoder
+encodeMapsBytes : Maps -> Bytes.Encode.Encoder
 encodeMapsBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.dict Proto.Binary.string Proto.Binary.string 1 value.stringString
         , Proto.Binary.dict Proto.Binary.int32 (Proto.Binary.enum encodeKindBytes decodeKindBytes) 2 value.int32Kind
         , Proto.Binary.dict Proto.Binary.int64 Proto.Binary.double 3 value.int64Double
@@ -1726,9 +1727,9 @@ encodeMapsBytes value =
 
 {-| Encodes a [`Choice`](#Choice) as protobuf binary.
 -}
-encodeChoiceBytes : Choice -> Proto.Binary.Encoder
+encodeChoiceBytes : Choice -> Bytes.Encode.Encoder
 encodeChoiceBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.before
         , case value.pick of
             ChoicePickText member ->
@@ -1768,24 +1769,24 @@ encodeChoiceBytes value =
                 Proto.Binary.present Proto.Binary.string 13 member
 
             _ ->
-                Proto.Binary.sequence []
+                Bytes.Encode.sequence []
         , Proto.Binary.implicit Proto.Binary.int32 14 value.after
         , case value.pick of
             ChoicePickNone ->
                 Proto.Binary.present (Proto.Binary.enum (\_ -> 0) (\_ -> ())) 15 ()
 
             _ ->
-                Proto.Binary.sequence []
+                Bytes.Encode.sequence []
         ]
 
 
 {-| Encodes a [`ChoicePick`](#ChoicePick) as protobuf binary: its set member's field.
 -}
-encodeChoicePickBytes : ChoicePick -> Proto.Binary.Encoder
+encodeChoicePickBytes : ChoicePick -> Bytes.Encode.Encoder
 encodeChoicePickBytes value =
     case value of
         ChoicePickUnset ->
-            Proto.Binary.sequence []
+            Bytes.Encode.sequence []
 
         ChoicePickText member ->
             Proto.Binary.present Proto.Binary.string 2 member
@@ -1829,9 +1830,9 @@ encodeChoicePickBytes value =
 
 {-| Encodes a [`Names`](#Names) as protobuf binary.
 -}
-encodeNamesBytes : Names -> Proto.Binary.Encoder
+encodeNamesBytes : Names -> Bytes.Encode.Encoder
 encodeNamesBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.plain
         , Proto.Binary.implicit Proto.Binary.string 2 value.twoWords
         , Proto.Binary.implicit Proto.Binary.string 3 value.withOverride
@@ -1843,11 +1844,11 @@ encodeNamesBytes value =
 
 {-| Encodes a [`NamesNamed`](#NamesNamed) as protobuf binary: its set member's field.
 -}
-encodeNamesNamedBytes : NamesNamed -> Proto.Binary.Encoder
+encodeNamesNamedBytes : NamesNamed -> Bytes.Encode.Encoder
 encodeNamesNamedBytes value =
     case value of
         NamesNamedUnset ->
-            Proto.Binary.sequence []
+            Bytes.Encode.sequence []
 
         NamesNamedMemberOverride member ->
             Proto.Binary.present Proto.Binary.string 6 member
@@ -1858,9 +1859,9 @@ encodeNamesNamedBytes value =
 
 {-| Encodes an [`Outer`](#Outer) as protobuf binary.
 -}
-encodeOuterBytes : Outer -> Proto.Binary.Encoder
+encodeOuterBytes : Outer -> Bytes.Encode.Encoder
 encodeOuterBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit (Proto.Binary.enum encodeOuterModeBytes decodeOuterModeBytes) 1 value.mode
         , Proto.Binary.optional (Proto.Binary.embedded encodeOuterInnerBytes mergeOuterInnerBytes defaultOuterInner) 2 value.inner
         , Proto.Binary.list (Proto.Binary.embedded encodeOuterInnerBytes mergeOuterInnerBytes defaultOuterInner) 3 value.inners
@@ -1871,9 +1872,9 @@ encodeOuterBytes value =
 
 {-| Encodes an [`OuterInner`](#OuterInner) as protobuf binary.
 -}
-encodeOuterInnerBytes : OuterInner -> Proto.Binary.Encoder
+encodeOuterInnerBytes : OuterInner -> Bytes.Encode.Encoder
 encodeOuterInnerBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit (Proto.Binary.enum encodeOuterModeBytes decodeOuterModeBytes) 1 value.mode
         , Proto.Binary.implicit Proto.Binary.string 2 value.note
         ]
@@ -1881,9 +1882,9 @@ encodeOuterInnerBytes value =
 
 {-| Encodes a [`Tree`](#Tree) as protobuf binary.
 -}
-encodeTreeBytes : Tree -> Proto.Binary.Encoder
+encodeTreeBytes : Tree -> Bytes.Encode.Encoder
 encodeTreeBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.label
         , Proto.Binary.optional (Proto.Binary.embedded encodeTree_Bytes mergeTree_Bytes (Tree_ defaultTree)) 2 value.left
         , Proto.Binary.list (Proto.Binary.embedded encodeTree_Bytes mergeTree_Bytes (Tree_ defaultTree)) 3 value.children
@@ -1894,18 +1895,18 @@ encodeTreeBytes value =
 
 {-| Encodes a [`Tree_`](#Tree_) as protobuf binary.
 -}
-encodeTree_Bytes : Tree_ -> Proto.Binary.Encoder
+encodeTree_Bytes : Tree_ -> Bytes.Encode.Encoder
 encodeTree_Bytes (Tree_ value) =
     encodeTreeBytes value
 
 
 {-| Encodes a [`TreeLink`](#TreeLink) as protobuf binary: its set member's field.
 -}
-encodeTreeLinkBytes : TreeLink -> Proto.Binary.Encoder
+encodeTreeLinkBytes : TreeLink -> Bytes.Encode.Encoder
 encodeTreeLinkBytes value =
     case value of
         TreeLinkUnset ->
-            Proto.Binary.sequence []
+            Bytes.Encode.sequence []
 
         TreeLinkNext member ->
             Proto.Binary.present (Proto.Binary.embedded encodeTreeBytes mergeTreeBytes defaultTree) 5 member
@@ -1916,9 +1917,9 @@ encodeTreeLinkBytes value =
 
 {-| Encodes a [`WellKnown`](#WellKnown) as protobuf binary.
 -}
-encodeWellKnownBytes : WellKnown -> Proto.Binary.Encoder
+encodeWellKnownBytes : WellKnown -> Bytes.Encode.Encoder
 encodeWellKnownBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.optional Proto.Binary.any 1 value.any
         , Proto.Binary.optional Proto.Binary.struct 2 value.struct
         , Proto.Binary.optional Proto.Binary.listValue 3 value.list
@@ -1942,9 +1943,9 @@ encodeWellKnownBytes value =
 
 {-| Encodes a [`Wrappers`](#Wrappers) as protobuf binary.
 -}
-encodeWrappersBytes : Wrappers -> Proto.Binary.Encoder
+encodeWrappersBytes : Wrappers -> Bytes.Encode.Encoder
 encodeWrappersBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.optional Proto.Binary.doubleValue 1 value.double
         , Proto.Binary.optional Proto.Binary.floatValue 2 value.float
         , Proto.Binary.optional Proto.Binary.int64Value 3 value.int64
@@ -1961,9 +1962,9 @@ encodeWrappersBytes value =
 
 {-| Encodes an [`Across`](#Across) as protobuf binary.
 -}
-encodeAcrossBytes : Across -> Proto.Binary.Encoder
+encodeAcrossBytes : Across -> Bytes.Encode.Encoder
 encodeAcrossBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.optional (Proto.Binary.embedded Codec.Other.V1.encodeRemoteBytes Codec.Other.V1.mergeRemoteBytes Codec.Other.V1.defaultRemote) 1 value.remote
         , Proto.Binary.implicit (Proto.Binary.enum Codec.Other.V1.encodeShadeBytes Codec.Other.V1.decodeShadeBytes) 2 value.shade
         , Proto.Binary.list (Proto.Binary.embedded Codec.Other.V1.encodeRemoteBytes Codec.Other.V1.mergeRemoteBytes Codec.Other.V1.defaultRemote) 3 value.remotes
@@ -1973,9 +1974,9 @@ encodeAcrossBytes value =
 
 {-| Encodes a [`Leaf`](#Leaf) as protobuf binary.
 -}
-encodeLeafBytes : Leaf -> Proto.Binary.Encoder
+encodeLeafBytes : Leaf -> Bytes.Encode.Encoder
 encodeLeafBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         , Proto.Binary.implicit Proto.Binary.int32 2 value.count
         ]
@@ -1983,9 +1984,9 @@ encodeLeafBytes value =
 
 {-| Encodes an [`Everything`](#Everything) as protobuf binary.
 -}
-encodeEverythingBytes : Everything -> Proto.Binary.Encoder
+encodeEverythingBytes : Everything -> Bytes.Encode.Encoder
 encodeEverythingBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.optional (Proto.Binary.embedded encodeScalarsBytes mergeScalarsBytes defaultScalars) 1 value.scalars
         , Proto.Binary.optional (Proto.Binary.embedded encodeOptionalsBytes mergeOptionalsBytes defaultOptionals) 2 value.optionals
         , Proto.Binary.optional (Proto.Binary.embedded encodeRepeatedBytes mergeRepeatedBytes defaultRepeated) 3 value.repeated
@@ -2003,7 +2004,7 @@ encodeEverythingBytes value =
 
 {-| Encodes an [`Everything_`](#Everything_) as protobuf binary.
 -}
-encodeEverything_Bytes : Everything_ -> Proto.Binary.Encoder
+encodeEverything_Bytes : Everything_ -> Bytes.Encode.Encoder
 encodeEverything_Bytes (Everything_ value) =
     encodeEverythingBytes value
 

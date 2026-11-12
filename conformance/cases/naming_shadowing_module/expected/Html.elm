@@ -10,6 +10,7 @@ depends on elm/html cannot import `Html`. Its descriptor module
 `Html.Attributes` is one of elm/html's too.
 -}
 
+import Bytes.Encode
 import Html.Attributes
 import Json.Decode
 import Json.Encode
@@ -122,9 +123,9 @@ decodeAttributes =
 
 {-| Encodes an [`Attributes`](#Attributes) as protobuf binary.
 -}
-encodeAttributesBytes : Attributes -> Proto.Binary.Encoder
+encodeAttributesBytes : Attributes -> Bytes.Encode.Encoder
 encodeAttributesBytes value =
-    Proto.Binary.sequence
+    Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.class
         ]
 
