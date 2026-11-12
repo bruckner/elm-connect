@@ -2194,8 +2194,8 @@ it must hold a `/` with a type name after the last one. As protobuf's own
 JSON readers do, it fails for a type the registry has no entry for, naming
 its type URL (register the type, see [`Proto.Registry`](Proto-Registry)),
 unless the registry is [lenient](Proto-Registry#lenient): then the `Any`
-holds the JSON alone. It
-fails for JSON that is not its message, lenient or not.
+holds the JSON alone. It fails for JSON that is not its message, lenient
+or not.
 -}
 anyWith : Registry -> Decoder Any
 anyWith registry =

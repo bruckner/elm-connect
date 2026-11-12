@@ -191,23 +191,7 @@ fields (Descriptor m) =
 
 
 {-| The field of this number, which a [`Proto.Error.Binary`](Proto-Error#Binary)
-path names fields by:
-
-
-    showPath : Proto.Descriptors.Descriptors -> Proto.Error.Binary -> String
-    showPath descriptors problem =
-        problem.path
-            |> List.map
-                (\( typeName, number ) ->
-                    Proto.Descriptors.message typeName descriptors
-                        |> Maybe.andThen (Proto.Message.fieldNumbered number)
-                        |> Maybe.map (\field -> typeName ++ "." ++ Proto.Field.name field)
-                        |> Maybe.withDefault (typeName ++ "." ++ String.fromInt number)
-                )
-            |> String.join " > "
-
-    -- "notes.v1.Note.revision > notes.v1.Revision.title"
-
+path names fields by.
 -}
 fieldNumbered : Int -> Descriptor -> Maybe Field.Descriptor
 fieldNumbered number (Descriptor m) =
