@@ -952,7 +952,7 @@ not the config's. Where: design §5.1.
 
 ### Routes are generated functions
 
-*2026-10-24; 2026-10-25; 2026-10-27; every binding typed 2026-11-13.*
+*2026-10-24; 2026-10-25; 2026-10-27; every binding typed 2026-11-12.*
 
 A method's HTTP bindings are generated as functions of the typed
 request, one per binding (`routeGetNote0 : GetNoteRequest ->
@@ -963,7 +963,7 @@ taking it. The binding data and its interpreter, which until then built
 every transcoded request by encoding the whole message to JSON and
 reading each field back by key, stay for methods written by hand
 (`Proto.Method.withBindings`), and a program that names neither carries
-neither. Until 2026-11-13 they also served a binding the generator
+neither. Until 2026-11-12 they also served a binding the generator
 could not type (below). With the
 routes on the method, the method no longer holds its descriptor: it
 holds its service's and method's names and its idempotency
@@ -1000,7 +1000,7 @@ never transcodes appears. The price accepted: a route bug is fixed by
 regenerating, not by upgrading the runtime, and the generated service
 modules carry a function per binding.
 
-2026-11-13: every binding the route resolver accepts is typed. Four
+2026-11-12: every binding the route resolver accepts is typed. Four
 legal shapes had fallen back to the interpreter: `bytes` held as
 `Bytes` in a path or query, a path through a message on a recursion
 cycle, a body field of `Empty` or `Value` or on a cycle, and a body
@@ -1019,7 +1019,8 @@ gzip -9): the notes example 39,505 to 38,207 B gzipped (−1,298 B,
 −3.3 %), the live runner −1,301 B before this change added a route
 fixture (−1,257 B with it), as the interpreter, `Proto.Http` and the
 field descriptors only bindings reached left every generated program;
-the formerly interpreted requests are built 11 to 17 % faster.
+the formerly interpreted requests are built 10 to 12 % faster for an
+`Any` body and 17 % for a bytes path.
 
 Bytes in route text are URL-safe base64, padded, in paths and queries
 alike, where the interpreter wrote proto3 JSON's standard alphabet.
