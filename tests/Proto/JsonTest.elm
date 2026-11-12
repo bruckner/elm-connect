@@ -19,6 +19,7 @@ suite =
         , fieldEitherTests
         , valueFieldTests
         , emptyMessageTests
+        , messageTests
         , lookupTests
         , presenceTests
         , encodingTests
@@ -237,6 +238,70 @@ emptyMessageTests =
                     |> List.map (\json -> ( json, Json.Decode.decodeString Proto.Json.emptyMessage json |> Result.mapError Json.Decode.errorToString ))
                     |> List.filter (\( _, result ) -> not (isObjectFailure result))
                     |> Expect.equal []
+        ]
+
+
+{-| A message read through `Proto.Json.message` and its trusting steps, and
+the same message read through `field` steps that each check the object.
+-}
+type alias Checked =
+    { title : String, displayName : String, constructor : String, length : String, value : Maybe String }
+
+
+checkedOnce : Decoder Checked
+checkedOnce =
+    Proto.Json.message
+        (Json.Decode.succeed (\title displayName constructor length value -> Checked title displayName constructor length (Maybe.map (Json.Encode.encode 0) value))
+            |> Proto.Json.messageField "title" "" Json.Decode.string
+            |> Proto.Json.messageFieldEither "displayName" "display_name" "" Json.Decode.string
+            |> Proto.Json.messageField "constructor" "" Json.Decode.string
+            |> Proto.Json.messageField "length" "" Json.Decode.string
+            |> Proto.Json.messageValueField "value"
+        )
+
+
+checkedEach : Decoder Checked
+checkedEach =
+    Json.Decode.succeed (\title displayName constructor length value -> Checked title displayName constructor length (Maybe.map (Json.Encode.encode 0) value))
+        |> Proto.Json.field "title" "" Json.Decode.string
+        |> Proto.Json.fieldEither "displayName" "display_name" "" Json.Decode.string
+        |> Proto.Json.field "constructor" "" Json.Decode.string
+        |> Proto.Json.field "length" "" Json.Decode.string
+        |> Proto.Json.valueField "value"
+
+
+messageTests : Test
+messageTests =
+    let
+        same json =
+            Json.Decode.decodeValue checkedOnce json
+                |> Result.mapError Json.Decode.errorToString
+                |> Expect.equal (Json.Decode.decodeValue checkedEach json |> Result.mapError Json.Decode.errorToString)
+
+        key =
+            Fuzz.oneOfValues [ "title", "displayName", "display_name", "constructor", "length", "value", "other" ]
+    in
+    describe "message"
+        [ test "reads its fields as field steps do" <|
+            \_ ->
+                decodes checkedOnce
+                    """{"title":"a","display_name":"b","constructor":"c","length":"d","value":null}"""
+                    (Checked "a" "b" "c" "d" (Just "null"))
+        , test "anything but an object fails as field steps do, an array whose properties a step names included" <|
+            \_ ->
+                [ "5", "\"x\"", "[]", "[{}]", "null", "true" ]
+                    |> List.map (\json -> ( json, Json.Decode.decodeString checkedOnce json |> Result.mapError Json.Decode.errorToString ))
+                    |> Expect.equal
+                        (List.map (\json -> ( json, Json.Decode.decodeString checkedEach json |> Result.mapError Json.Decode.errorToString )) [ "5", "\"x\"", "[]", "[{}]", "null", "true" ])
+        , test "gives what field steps give on objects that fail, and on absent, null and inherited names" <|
+            \_ ->
+                [ "{}", """{"title":5}""", """{"displayName":"a","display_name":null}""", """{"constructor":1}""", """{"length":[]}""", """{"__proto__":"x","title":null}""", """{"hasOwnProperty":"x"}""" ]
+                    |> List.map (Json.Decode.decodeString Json.Decode.value >> Result.withDefault Json.Encode.null)
+                    |> List.map (\json -> ( Json.Decode.decodeValue checkedOnce json, Json.Decode.decodeValue checkedEach json ))
+                    |> List.filter (\( once, each ) -> Result.mapError Json.Decode.errorToString once /= Result.mapError Json.Decode.errorToString each)
+                    |> Expect.equal []
+        , Test.fuzz (Fuzzers.json 2) "gives what field steps give on any JSON" same
+        , Test.fuzz (Fuzz.listOfLengthBetween 0 4 (Fuzz.pair key (Fuzzers.json 1)) |> Fuzz.map Json.Encode.object) "gives what field steps give on objects of its keys" same
         ]
 
 

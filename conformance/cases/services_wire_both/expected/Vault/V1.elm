@@ -294,36 +294,44 @@ decodeStatus =
 -}
 decodeItemWith : Proto.Registry.Registry -> Json.Decode.Decoder Item
 decodeItemWith types =
-    Json.Decode.succeed Item
-        |> Proto.Json.field "name" "" Proto.Json.string
-        |> Proto.Json.field "size" "0" Proto.Json.int64
-        |> Proto.Json.field "status" StatusUnspecified decodeStatus
-        |> Proto.Json.field "payload" Nothing (Json.Decode.map Just (Proto.Json.anyWith types))
-        |> Proto.Json.field "attachments" [] (Json.Decode.list (Proto.Json.anyWith types))
+    Proto.Json.message
+        (Json.Decode.succeed Item
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.messageField "size" "0" Proto.Json.int64
+            |> Proto.Json.messageField "status" StatusUnspecified decodeStatus
+            |> Proto.Json.messageField "payload" Nothing (Json.Decode.map Just (Proto.Json.anyWith types))
+            |> Proto.Json.messageField "attachments" [] (Json.Decode.list (Proto.Json.anyWith types))
+        )
 
 
 {-| Decodes a [`GetItemRequest`](#GetItemRequest) from proto3 JSON.
 -}
 decodeGetItemRequest : Json.Decode.Decoder GetItemRequest
 decodeGetItemRequest =
-    Json.Decode.succeed GetItemRequest
-        |> Proto.Json.field "name" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed GetItemRequest
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+        )
 
 
 {-| Decodes a [`ListItemsRequest`](#ListItemsRequest) from proto3 JSON.
 -}
 decodeListItemsRequest : Json.Decode.Decoder ListItemsRequest
 decodeListItemsRequest =
-    Json.Decode.succeed ListItemsRequest
-        |> Proto.Json.fieldEither "pageSize" "page_size" 0 Proto.Json.int32
+    Proto.Json.message
+        (Json.Decode.succeed ListItemsRequest
+            |> Proto.Json.messageFieldEither "pageSize" "page_size" 0 Proto.Json.int32
+        )
 
 
 {-| Decodes a [`ListItemsResponse`](#ListItemsResponse) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
 -}
 decodeListItemsResponseWith : Proto.Registry.Registry -> Json.Decode.Decoder ListItemsResponse
 decodeListItemsResponseWith types =
-    Json.Decode.succeed ListItemsResponse
-        |> Proto.Json.field "items" [] (Json.Decode.list (decodeItemWith types))
+    Proto.Json.message
+        (Json.Decode.succeed ListItemsResponse
+            |> Proto.Json.messageField "items" [] (Json.Decode.list (decodeItemWith types))
+        )
 
 
 

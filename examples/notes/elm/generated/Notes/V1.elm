@@ -536,20 +536,22 @@ decodeVisibility =
 -}
 decodeNoteWith : Proto.Registry.Registry -> Json.Decode.Decoder Note
 decodeNoteWith types =
-    Json.Decode.succeed Note
-        |> Proto.Json.field "name" "" Proto.Json.string
-        |> Proto.Json.field "title" "" Proto.Json.string
-        |> Proto.Json.field "body" "" Proto.Json.string
-        |> Proto.Json.field "tags" [] (Json.Decode.list Proto.Json.string)
-        |> Proto.Json.field "visibility" VisibilityUnspecified decodeVisibility
-        |> Proto.Json.fieldEither "createTime" "create_time" Nothing (Json.Decode.map Just Proto.Json.timestamp)
-        |> Proto.Json.fieldEither "updateTime" "update_time" Nothing (Json.Decode.map Just Proto.Json.timestamp)
-        |> Proto.Json.field "ttl" Nothing (Json.Decode.map Just Proto.Json.duration)
-        |> Proto.Json.field "metadata" Dict.empty (Proto.Json.stringDict Proto.Json.string)
-        |> Proto.Json.field "extra" Nothing (Json.Decode.map Just Proto.Json.struct)
-        |> Proto.Json.oneof decodeNoteKind
-        |> Proto.Json.field "attachment" Nothing (Json.Decode.map Just (Proto.Json.anyWith types))
-        |> Proto.Json.field "revision" Nothing (Json.Decode.map Just Proto.Json.int64)
+    Proto.Json.message
+        (Json.Decode.succeed Note
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.messageField "title" "" Proto.Json.string
+            |> Proto.Json.messageField "body" "" Proto.Json.string
+            |> Proto.Json.messageField "tags" [] (Json.Decode.list Proto.Json.string)
+            |> Proto.Json.messageField "visibility" VisibilityUnspecified decodeVisibility
+            |> Proto.Json.messageFieldEither "createTime" "create_time" Nothing (Json.Decode.map Just Proto.Json.timestamp)
+            |> Proto.Json.messageFieldEither "updateTime" "update_time" Nothing (Json.Decode.map Just Proto.Json.timestamp)
+            |> Proto.Json.messageField "ttl" Nothing (Json.Decode.map Just Proto.Json.duration)
+            |> Proto.Json.messageField "metadata" Dict.empty (Proto.Json.stringDict Proto.Json.string)
+            |> Proto.Json.messageField "extra" Nothing (Json.Decode.map Just Proto.Json.struct)
+            |> Proto.Json.oneof decodeNoteKind
+            |> Proto.Json.messageField "attachment" Nothing (Json.Decode.map Just (Proto.Json.anyWith types))
+            |> Proto.Json.messageField "revision" Nothing (Json.Decode.map Just Proto.Json.int64)
+        )
 
 
 {-| Decodes a [`NoteKind`](#NoteKind) from the members of its message's JSON object.
@@ -567,61 +569,75 @@ decodeNoteKind =
 -}
 decodeGetNoteRequest : Json.Decode.Decoder GetNoteRequest
 decodeGetNoteRequest =
-    Json.Decode.succeed GetNoteRequest
-        |> Proto.Json.field "name" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed GetNoteRequest
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+        )
 
 
 {-| Decodes a [`ListNotesRequest`](#ListNotesRequest) from proto3 JSON.
 -}
 decodeListNotesRequest : Json.Decode.Decoder ListNotesRequest
 decodeListNotesRequest =
-    Json.Decode.succeed ListNotesRequest
-        |> Proto.Json.fieldEither "pageSize" "page_size" 0 Proto.Json.int32
-        |> Proto.Json.fieldEither "pageToken" "page_token" "" Proto.Json.string
-        |> Proto.Json.field "filter" "" Proto.Json.string
-        |> Proto.Json.field "visibility" VisibilityUnspecified decodeVisibility
+    Proto.Json.message
+        (Json.Decode.succeed ListNotesRequest
+            |> Proto.Json.messageFieldEither "pageSize" "page_size" 0 Proto.Json.int32
+            |> Proto.Json.messageFieldEither "pageToken" "page_token" "" Proto.Json.string
+            |> Proto.Json.messageField "filter" "" Proto.Json.string
+            |> Proto.Json.messageField "visibility" VisibilityUnspecified decodeVisibility
+        )
 
 
 {-| Decodes a [`ListNotesResponse`](#ListNotesResponse) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
 -}
 decodeListNotesResponseWith : Proto.Registry.Registry -> Json.Decode.Decoder ListNotesResponse
 decodeListNotesResponseWith types =
-    Json.Decode.succeed ListNotesResponse
-        |> Proto.Json.field "notes" [] (Json.Decode.list (decodeNoteWith types))
-        |> Proto.Json.fieldEither "nextPageToken" "next_page_token" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed ListNotesResponse
+            |> Proto.Json.messageField "notes" [] (Json.Decode.list (decodeNoteWith types))
+            |> Proto.Json.messageFieldEither "nextPageToken" "next_page_token" "" Proto.Json.string
+        )
 
 
 {-| Decodes a [`CreateNoteRequest`](#CreateNoteRequest) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
 -}
 decodeCreateNoteRequestWith : Proto.Registry.Registry -> Json.Decode.Decoder CreateNoteRequest
 decodeCreateNoteRequestWith types =
-    Json.Decode.succeed CreateNoteRequest
-        |> Proto.Json.field "note" Nothing (Json.Decode.map Just (decodeNoteWith types))
+    Proto.Json.message
+        (Json.Decode.succeed CreateNoteRequest
+            |> Proto.Json.messageField "note" Nothing (Json.Decode.map Just (decodeNoteWith types))
+        )
 
 
 {-| Decodes an [`UpdateNoteRequest`](#UpdateNoteRequest) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
 -}
 decodeUpdateNoteRequestWith : Proto.Registry.Registry -> Json.Decode.Decoder UpdateNoteRequest
 decodeUpdateNoteRequestWith types =
-    Json.Decode.succeed UpdateNoteRequest
-        |> Proto.Json.field "note" Nothing (Json.Decode.map Just (decodeNoteWith types))
-        |> Proto.Json.fieldEither "updateMask" "update_mask" Nothing (Json.Decode.map Just Proto.Json.fieldMask)
+    Proto.Json.message
+        (Json.Decode.succeed UpdateNoteRequest
+            |> Proto.Json.messageField "note" Nothing (Json.Decode.map Just (decodeNoteWith types))
+            |> Proto.Json.messageFieldEither "updateMask" "update_mask" Nothing (Json.Decode.map Just Proto.Json.fieldMask)
+        )
 
 
 {-| Decodes a [`DeleteNoteRequest`](#DeleteNoteRequest) from proto3 JSON.
 -}
 decodeDeleteNoteRequest : Json.Decode.Decoder DeleteNoteRequest
 decodeDeleteNoteRequest =
-    Json.Decode.succeed DeleteNoteRequest
-        |> Proto.Json.field "name" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed DeleteNoteRequest
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+        )
 
 
 {-| Decodes an [`ArchiveNoteRequest`](#ArchiveNoteRequest) from proto3 JSON.
 -}
 decodeArchiveNoteRequest : Json.Decode.Decoder ArchiveNoteRequest
 decodeArchiveNoteRequest =
-    Json.Decode.succeed ArchiveNoteRequest
-        |> Proto.Json.field "name" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed ArchiveNoteRequest
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+        )
 
 
 

@@ -148,17 +148,21 @@ encodeZone value =
 -}
 decodeZoneRequest : Json.Decode.Decoder ZoneRequest
 decodeZoneRequest =
-    Json.Decode.succeed ZoneRequest
-        |> Proto.Json.field "name" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed ZoneRequest
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+        )
 
 
 {-| Decodes a [`Zone`](#Zone) from proto3 JSON.
 -}
 decodeZone : Json.Decode.Decoder Zone
 decodeZone =
-    Json.Decode.succeed Zone
-        |> Proto.Json.field "name" "" Proto.Json.string
-        |> Proto.Json.fieldEither "offsetSeconds" "offset_seconds" 0 Proto.Json.int64AsInt
+    Proto.Json.message
+        (Json.Decode.succeed Zone
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.messageFieldEither "offsetSeconds" "offset_seconds" 0 Proto.Json.int64AsInt
+        )
 
 
 

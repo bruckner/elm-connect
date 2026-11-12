@@ -3134,27 +3134,29 @@ decodeTestSuiteConnectVersionMode =
 -}
 decodeClientCompatRequestWith : Proto.Registry.Registry -> Json.Decode.Decoder ClientCompatRequest
 decodeClientCompatRequestWith types =
-    Json.Decode.succeed ClientCompatRequest
-        |> Proto.Json.fieldEither "testName" "test_name" "" Proto.Json.string
-        |> Proto.Json.fieldEither "httpVersion" "http_version" HTTPVersionUnspecified decodeHTTPVersion
-        |> Proto.Json.field "protocol" ProtocolUnspecified decodeProtocol
-        |> Proto.Json.field "codec" CodecUnspecified decodeCodec
-        |> Proto.Json.field "compression" CompressionUnspecified decodeCompression
-        |> Proto.Json.field "host" "" Proto.Json.string
-        |> Proto.Json.field "port" 0 Proto.Json.uint32
-        |> Proto.Json.fieldEither "serverTlsCert" "server_tls_cert" "" Proto.Json.bytes
-        |> Proto.Json.fieldEither "clientTlsCreds" "client_tls_creds" Nothing (Json.Decode.map Just decodeTLSCreds)
-        |> Proto.Json.fieldEither "messageReceiveLimit" "message_receive_limit" 0 Proto.Json.uint32
-        |> Proto.Json.field "service" Nothing (Json.Decode.map Just Proto.Json.string)
-        |> Proto.Json.field "method" Nothing (Json.Decode.map Just Proto.Json.string)
-        |> Proto.Json.fieldEither "streamType" "stream_type" StreamTypeUnspecified decodeStreamType
-        |> Proto.Json.fieldEither "useGetHttpMethod" "use_get_http_method" False Json.Decode.bool
-        |> Proto.Json.fieldEither "requestHeaders" "request_headers" [] (Json.Decode.list decodeHeader)
-        |> Proto.Json.fieldEither "requestMessages" "request_messages" [] (Json.Decode.list (Proto.Json.anyWith types))
-        |> Proto.Json.fieldEither "timeoutMs" "timeout_ms" Nothing (Json.Decode.map Just Proto.Json.uint32)
-        |> Proto.Json.fieldEither "requestDelayMs" "request_delay_ms" 0 Proto.Json.uint32
-        |> Proto.Json.field "cancel" Nothing (Json.Decode.map Just decodeClientCompatRequestCancel)
-        |> Proto.Json.fieldEither "rawRequest" "raw_request" Nothing (Json.Decode.map Just (decodeRawHTTPRequestWith types))
+    Proto.Json.message
+        (Json.Decode.succeed ClientCompatRequest
+            |> Proto.Json.messageFieldEither "testName" "test_name" "" Proto.Json.string
+            |> Proto.Json.messageFieldEither "httpVersion" "http_version" HTTPVersionUnspecified decodeHTTPVersion
+            |> Proto.Json.messageField "protocol" ProtocolUnspecified decodeProtocol
+            |> Proto.Json.messageField "codec" CodecUnspecified decodeCodec
+            |> Proto.Json.messageField "compression" CompressionUnspecified decodeCompression
+            |> Proto.Json.messageField "host" "" Proto.Json.string
+            |> Proto.Json.messageField "port" 0 Proto.Json.uint32
+            |> Proto.Json.messageFieldEither "serverTlsCert" "server_tls_cert" "" Proto.Json.bytes
+            |> Proto.Json.messageFieldEither "clientTlsCreds" "client_tls_creds" Nothing (Json.Decode.map Just decodeTLSCreds)
+            |> Proto.Json.messageFieldEither "messageReceiveLimit" "message_receive_limit" 0 Proto.Json.uint32
+            |> Proto.Json.messageField "service" Nothing (Json.Decode.map Just Proto.Json.string)
+            |> Proto.Json.messageField "method" Nothing (Json.Decode.map Just Proto.Json.string)
+            |> Proto.Json.messageFieldEither "streamType" "stream_type" StreamTypeUnspecified decodeStreamType
+            |> Proto.Json.messageFieldEither "useGetHttpMethod" "use_get_http_method" False Json.Decode.bool
+            |> Proto.Json.messageFieldEither "requestHeaders" "request_headers" [] (Json.Decode.list decodeHeader)
+            |> Proto.Json.messageFieldEither "requestMessages" "request_messages" [] (Json.Decode.list (Proto.Json.anyWith types))
+            |> Proto.Json.messageFieldEither "timeoutMs" "timeout_ms" Nothing (Json.Decode.map Just Proto.Json.uint32)
+            |> Proto.Json.messageFieldEither "requestDelayMs" "request_delay_ms" 0 Proto.Json.uint32
+            |> Proto.Json.messageField "cancel" Nothing (Json.Decode.map Just decodeClientCompatRequestCancel)
+            |> Proto.Json.messageFieldEither "rawRequest" "raw_request" Nothing (Json.Decode.map Just (decodeRawHTTPRequestWith types))
+        )
 
 
 {-| Decodes a [`ClientCompatRequestCancel`](#ClientCompatRequestCancel) from proto3 JSON.
@@ -3181,9 +3183,11 @@ decodeClientCompatRequestCancelCancelTiming =
 -}
 decodeClientCompatResponseWith : Proto.Registry.Registry -> Json.Decode.Decoder ClientCompatResponse
 decodeClientCompatResponseWith types =
-    Json.Decode.succeed ClientCompatResponse
-        |> Proto.Json.fieldEither "testName" "test_name" "" Proto.Json.string
-        |> Proto.Json.oneof (decodeClientCompatResponseResultWith types)
+    Proto.Json.message
+        (Json.Decode.succeed ClientCompatResponse
+            |> Proto.Json.messageFieldEither "testName" "test_name" "" Proto.Json.string
+            |> Proto.Json.oneof (decodeClientCompatResponseResultWith types)
+        )
 
 
 {-| Decodes a [`ClientCompatResponseResult`](#ClientCompatResponseResult) from the members of its message's JSON object.
@@ -3201,121 +3205,141 @@ decodeClientCompatResponseResultWith types =
 -}
 decodeClientResponseResultWith : Proto.Registry.Registry -> Json.Decode.Decoder ClientResponseResult
 decodeClientResponseResultWith types =
-    Json.Decode.succeed ClientResponseResult
-        |> Proto.Json.fieldEither "responseHeaders" "response_headers" [] (Json.Decode.list decodeHeader)
-        |> Proto.Json.field "payloads" [] (Json.Decode.list (decodeConformancePayloadWith types))
-        |> Proto.Json.field "error" Nothing (Json.Decode.map Just (decodeErrorWith types))
-        |> Proto.Json.fieldEither "responseTrailers" "response_trailers" [] (Json.Decode.list decodeHeader)
-        |> Proto.Json.fieldEither "numUnsentRequests" "num_unsent_requests" 0 Proto.Json.int32
-        |> Proto.Json.fieldEither "httpStatusCode" "http_status_code" Nothing (Json.Decode.map Just Proto.Json.int32)
-        |> Proto.Json.field "feedback" [] (Json.Decode.list Proto.Json.string)
+    Proto.Json.message
+        (Json.Decode.succeed ClientResponseResult
+            |> Proto.Json.messageFieldEither "responseHeaders" "response_headers" [] (Json.Decode.list decodeHeader)
+            |> Proto.Json.messageField "payloads" [] (Json.Decode.list (decodeConformancePayloadWith types))
+            |> Proto.Json.messageField "error" Nothing (Json.Decode.map Just (decodeErrorWith types))
+            |> Proto.Json.messageFieldEither "responseTrailers" "response_trailers" [] (Json.Decode.list decodeHeader)
+            |> Proto.Json.messageFieldEither "numUnsentRequests" "num_unsent_requests" 0 Proto.Json.int32
+            |> Proto.Json.messageFieldEither "httpStatusCode" "http_status_code" Nothing (Json.Decode.map Just Proto.Json.int32)
+            |> Proto.Json.messageField "feedback" [] (Json.Decode.list Proto.Json.string)
+        )
 
 
 {-| Decodes a [`ClientErrorResult`](#ClientErrorResult) from proto3 JSON.
 -}
 decodeClientErrorResult : Json.Decode.Decoder ClientErrorResult
 decodeClientErrorResult =
-    Json.Decode.succeed ClientErrorResult
-        |> Proto.Json.field "message" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed ClientErrorResult
+            |> Proto.Json.messageField "message" "" Proto.Json.string
+        )
 
 
 {-| Decodes a [`WireDetails`](#WireDetails) from proto3 JSON.
 -}
 decodeWireDetails : Json.Decode.Decoder WireDetails
 decodeWireDetails =
-    Json.Decode.succeed WireDetails
-        |> Proto.Json.fieldEither "actualStatusCode" "actual_status_code" 0 Proto.Json.int32
-        |> Proto.Json.fieldEither "connectErrorRaw" "connect_error_raw" Nothing (Json.Decode.map Just Proto.Json.struct)
-        |> Proto.Json.fieldEither "actualHttpTrailers" "actual_http_trailers" [] (Json.Decode.list decodeHeader)
-        |> Proto.Json.fieldEither "actualGrpcwebTrailers" "actual_grpcweb_trailers" Nothing (Json.Decode.map Just Proto.Json.string)
+    Proto.Json.message
+        (Json.Decode.succeed WireDetails
+            |> Proto.Json.messageFieldEither "actualStatusCode" "actual_status_code" 0 Proto.Json.int32
+            |> Proto.Json.messageFieldEither "connectErrorRaw" "connect_error_raw" Nothing (Json.Decode.map Just Proto.Json.struct)
+            |> Proto.Json.messageFieldEither "actualHttpTrailers" "actual_http_trailers" [] (Json.Decode.list decodeHeader)
+            |> Proto.Json.messageFieldEither "actualGrpcwebTrailers" "actual_grpcweb_trailers" Nothing (Json.Decode.map Just Proto.Json.string)
+        )
 
 
 {-| Decodes a [`Config`](#Config) from proto3 JSON.
 -}
 decodeConfig : Json.Decode.Decoder Config
 decodeConfig =
-    Json.Decode.succeed Config
-        |> Proto.Json.field "features" Nothing (Json.Decode.map Just decodeFeatures)
-        |> Proto.Json.fieldEither "includeCases" "include_cases" [] (Json.Decode.list decodeConfigCase)
-        |> Proto.Json.fieldEither "excludeCases" "exclude_cases" [] (Json.Decode.list decodeConfigCase)
+    Proto.Json.message
+        (Json.Decode.succeed Config
+            |> Proto.Json.messageField "features" Nothing (Json.Decode.map Just decodeFeatures)
+            |> Proto.Json.messageFieldEither "includeCases" "include_cases" [] (Json.Decode.list decodeConfigCase)
+            |> Proto.Json.messageFieldEither "excludeCases" "exclude_cases" [] (Json.Decode.list decodeConfigCase)
+        )
 
 
 {-| Decodes a [`Features`](#Features) from proto3 JSON.
 -}
 decodeFeatures : Json.Decode.Decoder Features
 decodeFeatures =
-    Json.Decode.succeed Features
-        |> Proto.Json.field "versions" [] (Json.Decode.list decodeHTTPVersion)
-        |> Proto.Json.field "protocols" [] (Json.Decode.list decodeProtocol)
-        |> Proto.Json.field "codecs" [] (Json.Decode.list decodeCodec)
-        |> Proto.Json.field "compressions" [] (Json.Decode.list decodeCompression)
-        |> Proto.Json.fieldEither "streamTypes" "stream_types" [] (Json.Decode.list decodeStreamType)
-        |> Proto.Json.fieldEither "supportsH2c" "supports_h2c" Nothing (Json.Decode.map Just Json.Decode.bool)
-        |> Proto.Json.fieldEither "supportsTls" "supports_tls" Nothing (Json.Decode.map Just Json.Decode.bool)
-        |> Proto.Json.fieldEither "supportsTlsClientCerts" "supports_tls_client_certs" Nothing (Json.Decode.map Just Json.Decode.bool)
-        |> Proto.Json.fieldEither "supportsTrailers" "supports_trailers" Nothing (Json.Decode.map Just Json.Decode.bool)
-        |> Proto.Json.fieldEither "supportsHalfDuplexBidiOverHttp1" "supports_half_duplex_bidi_over_http1" Nothing (Json.Decode.map Just Json.Decode.bool)
-        |> Proto.Json.fieldEither "supportsConnectGet" "supports_connect_get" Nothing (Json.Decode.map Just Json.Decode.bool)
-        |> Proto.Json.fieldEither "supportsMessageReceiveLimit" "supports_message_receive_limit" Nothing (Json.Decode.map Just Json.Decode.bool)
+    Proto.Json.message
+        (Json.Decode.succeed Features
+            |> Proto.Json.messageField "versions" [] (Json.Decode.list decodeHTTPVersion)
+            |> Proto.Json.messageField "protocols" [] (Json.Decode.list decodeProtocol)
+            |> Proto.Json.messageField "codecs" [] (Json.Decode.list decodeCodec)
+            |> Proto.Json.messageField "compressions" [] (Json.Decode.list decodeCompression)
+            |> Proto.Json.messageFieldEither "streamTypes" "stream_types" [] (Json.Decode.list decodeStreamType)
+            |> Proto.Json.messageFieldEither "supportsH2c" "supports_h2c" Nothing (Json.Decode.map Just Json.Decode.bool)
+            |> Proto.Json.messageFieldEither "supportsTls" "supports_tls" Nothing (Json.Decode.map Just Json.Decode.bool)
+            |> Proto.Json.messageFieldEither "supportsTlsClientCerts" "supports_tls_client_certs" Nothing (Json.Decode.map Just Json.Decode.bool)
+            |> Proto.Json.messageFieldEither "supportsTrailers" "supports_trailers" Nothing (Json.Decode.map Just Json.Decode.bool)
+            |> Proto.Json.messageFieldEither "supportsHalfDuplexBidiOverHttp1" "supports_half_duplex_bidi_over_http1" Nothing (Json.Decode.map Just Json.Decode.bool)
+            |> Proto.Json.messageFieldEither "supportsConnectGet" "supports_connect_get" Nothing (Json.Decode.map Just Json.Decode.bool)
+            |> Proto.Json.messageFieldEither "supportsMessageReceiveLimit" "supports_message_receive_limit" Nothing (Json.Decode.map Just Json.Decode.bool)
+        )
 
 
 {-| Decodes a [`ConfigCase`](#ConfigCase) from proto3 JSON.
 -}
 decodeConfigCase : Json.Decode.Decoder ConfigCase
 decodeConfigCase =
-    Json.Decode.succeed ConfigCase
-        |> Proto.Json.field "version" HTTPVersionUnspecified decodeHTTPVersion
-        |> Proto.Json.field "protocol" ProtocolUnspecified decodeProtocol
-        |> Proto.Json.field "codec" CodecUnspecified decodeCodec
-        |> Proto.Json.field "compression" CompressionUnspecified decodeCompression
-        |> Proto.Json.fieldEither "streamType" "stream_type" StreamTypeUnspecified decodeStreamType
-        |> Proto.Json.fieldEither "useTls" "use_tls" Nothing (Json.Decode.map Just Json.Decode.bool)
-        |> Proto.Json.fieldEither "useTlsClientCerts" "use_tls_client_certs" Nothing (Json.Decode.map Just Json.Decode.bool)
-        |> Proto.Json.fieldEither "useMessageReceiveLimit" "use_message_receive_limit" Nothing (Json.Decode.map Just Json.Decode.bool)
+    Proto.Json.message
+        (Json.Decode.succeed ConfigCase
+            |> Proto.Json.messageField "version" HTTPVersionUnspecified decodeHTTPVersion
+            |> Proto.Json.messageField "protocol" ProtocolUnspecified decodeProtocol
+            |> Proto.Json.messageField "codec" CodecUnspecified decodeCodec
+            |> Proto.Json.messageField "compression" CompressionUnspecified decodeCompression
+            |> Proto.Json.messageFieldEither "streamType" "stream_type" StreamTypeUnspecified decodeStreamType
+            |> Proto.Json.messageFieldEither "useTls" "use_tls" Nothing (Json.Decode.map Just Json.Decode.bool)
+            |> Proto.Json.messageFieldEither "useTlsClientCerts" "use_tls_client_certs" Nothing (Json.Decode.map Just Json.Decode.bool)
+            |> Proto.Json.messageFieldEither "useMessageReceiveLimit" "use_message_receive_limit" Nothing (Json.Decode.map Just Json.Decode.bool)
+        )
 
 
 {-| Decodes a [`TLSCreds`](#TLSCreds) from proto3 JSON.
 -}
 decodeTLSCreds : Json.Decode.Decoder TLSCreds
 decodeTLSCreds =
-    Json.Decode.succeed TLSCreds
-        |> Proto.Json.field "cert" "" Proto.Json.bytes
-        |> Proto.Json.field "key" "" Proto.Json.bytes
+    Proto.Json.message
+        (Json.Decode.succeed TLSCreds
+            |> Proto.Json.messageField "cert" "" Proto.Json.bytes
+            |> Proto.Json.messageField "key" "" Proto.Json.bytes
+        )
 
 
 {-| Decodes a [`ServerCompatRequest`](#ServerCompatRequest) from proto3 JSON.
 -}
 decodeServerCompatRequest : Json.Decode.Decoder ServerCompatRequest
 decodeServerCompatRequest =
-    Json.Decode.succeed ServerCompatRequest
-        |> Proto.Json.field "protocol" ProtocolUnspecified decodeProtocol
-        |> Proto.Json.fieldEither "httpVersion" "http_version" HTTPVersionUnspecified decodeHTTPVersion
-        |> Proto.Json.fieldEither "useTls" "use_tls" False Json.Decode.bool
-        |> Proto.Json.fieldEither "clientTlsCert" "client_tls_cert" "" Proto.Json.bytes
-        |> Proto.Json.fieldEither "messageReceiveLimit" "message_receive_limit" 0 Proto.Json.uint32
-        |> Proto.Json.fieldEither "serverCreds" "server_creds" Nothing (Json.Decode.map Just decodeTLSCreds)
+    Proto.Json.message
+        (Json.Decode.succeed ServerCompatRequest
+            |> Proto.Json.messageField "protocol" ProtocolUnspecified decodeProtocol
+            |> Proto.Json.messageFieldEither "httpVersion" "http_version" HTTPVersionUnspecified decodeHTTPVersion
+            |> Proto.Json.messageFieldEither "useTls" "use_tls" False Json.Decode.bool
+            |> Proto.Json.messageFieldEither "clientTlsCert" "client_tls_cert" "" Proto.Json.bytes
+            |> Proto.Json.messageFieldEither "messageReceiveLimit" "message_receive_limit" 0 Proto.Json.uint32
+            |> Proto.Json.messageFieldEither "serverCreds" "server_creds" Nothing (Json.Decode.map Just decodeTLSCreds)
+        )
 
 
 {-| Decodes a [`ServerCompatResponse`](#ServerCompatResponse) from proto3 JSON.
 -}
 decodeServerCompatResponse : Json.Decode.Decoder ServerCompatResponse
 decodeServerCompatResponse =
-    Json.Decode.succeed ServerCompatResponse
-        |> Proto.Json.field "host" "" Proto.Json.string
-        |> Proto.Json.field "port" 0 Proto.Json.uint32
-        |> Proto.Json.fieldEither "pemCert" "pem_cert" "" Proto.Json.bytes
+    Proto.Json.message
+        (Json.Decode.succeed ServerCompatResponse
+            |> Proto.Json.messageField "host" "" Proto.Json.string
+            |> Proto.Json.messageField "port" 0 Proto.Json.uint32
+            |> Proto.Json.messageFieldEither "pemCert" "pem_cert" "" Proto.Json.bytes
+        )
 
 
 {-| Decodes an [`UnaryResponseDefinition`](#UnaryResponseDefinition) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
 -}
 decodeUnaryResponseDefinitionWith : Proto.Registry.Registry -> Json.Decode.Decoder UnaryResponseDefinition
 decodeUnaryResponseDefinitionWith types =
-    Json.Decode.succeed UnaryResponseDefinition
-        |> Proto.Json.fieldEither "responseHeaders" "response_headers" [] (Json.Decode.list decodeHeader)
-        |> Proto.Json.oneof (decodeUnaryResponseDefinitionResponseWith types)
-        |> Proto.Json.fieldEither "responseTrailers" "response_trailers" [] (Json.Decode.list decodeHeader)
-        |> Proto.Json.fieldEither "responseDelayMs" "response_delay_ms" 0 Proto.Json.uint32
-        |> Proto.Json.fieldEither "rawResponse" "raw_response" Nothing (Json.Decode.map Just (decodeRawHTTPResponseWith types))
+    Proto.Json.message
+        (Json.Decode.succeed UnaryResponseDefinition
+            |> Proto.Json.messageFieldEither "responseHeaders" "response_headers" [] (Json.Decode.list decodeHeader)
+            |> Proto.Json.oneof (decodeUnaryResponseDefinitionResponseWith types)
+            |> Proto.Json.messageFieldEither "responseTrailers" "response_trailers" [] (Json.Decode.list decodeHeader)
+            |> Proto.Json.messageFieldEither "responseDelayMs" "response_delay_ms" 0 Proto.Json.uint32
+            |> Proto.Json.messageFieldEither "rawResponse" "raw_response" Nothing (Json.Decode.map Just (decodeRawHTTPResponseWith types))
+        )
 
 
 {-| Decodes an [`UnaryResponseDefinitionResponse`](#UnaryResponseDefinitionResponse) from the members of its message's JSON object.
@@ -3333,99 +3357,121 @@ decodeUnaryResponseDefinitionResponseWith types =
 -}
 decodeStreamResponseDefinitionWith : Proto.Registry.Registry -> Json.Decode.Decoder StreamResponseDefinition
 decodeStreamResponseDefinitionWith types =
-    Json.Decode.succeed StreamResponseDefinition
-        |> Proto.Json.fieldEither "responseHeaders" "response_headers" [] (Json.Decode.list decodeHeader)
-        |> Proto.Json.fieldEither "responseData" "response_data" [] (Json.Decode.list Proto.Json.bytes)
-        |> Proto.Json.fieldEither "responseDelayMs" "response_delay_ms" 0 Proto.Json.uint32
-        |> Proto.Json.field "error" Nothing (Json.Decode.map Just (decodeErrorWith types))
-        |> Proto.Json.fieldEither "responseTrailers" "response_trailers" [] (Json.Decode.list decodeHeader)
-        |> Proto.Json.fieldEither "rawResponse" "raw_response" Nothing (Json.Decode.map Just (decodeRawHTTPResponseWith types))
+    Proto.Json.message
+        (Json.Decode.succeed StreamResponseDefinition
+            |> Proto.Json.messageFieldEither "responseHeaders" "response_headers" [] (Json.Decode.list decodeHeader)
+            |> Proto.Json.messageFieldEither "responseData" "response_data" [] (Json.Decode.list Proto.Json.bytes)
+            |> Proto.Json.messageFieldEither "responseDelayMs" "response_delay_ms" 0 Proto.Json.uint32
+            |> Proto.Json.messageField "error" Nothing (Json.Decode.map Just (decodeErrorWith types))
+            |> Proto.Json.messageFieldEither "responseTrailers" "response_trailers" [] (Json.Decode.list decodeHeader)
+            |> Proto.Json.messageFieldEither "rawResponse" "raw_response" Nothing (Json.Decode.map Just (decodeRawHTTPResponseWith types))
+        )
 
 
 {-| Decodes an [`UnaryRequest`](#UnaryRequest) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
 -}
 decodeUnaryRequestWith : Proto.Registry.Registry -> Json.Decode.Decoder UnaryRequest
 decodeUnaryRequestWith types =
-    Json.Decode.succeed UnaryRequest
-        |> Proto.Json.fieldEither "responseDefinition" "response_definition" Nothing (Json.Decode.map Just (decodeUnaryResponseDefinitionWith types))
-        |> Proto.Json.fieldEither "requestData" "request_data" "" Proto.Json.bytes
+    Proto.Json.message
+        (Json.Decode.succeed UnaryRequest
+            |> Proto.Json.messageFieldEither "responseDefinition" "response_definition" Nothing (Json.Decode.map Just (decodeUnaryResponseDefinitionWith types))
+            |> Proto.Json.messageFieldEither "requestData" "request_data" "" Proto.Json.bytes
+        )
 
 
 {-| Decodes an [`UnaryResponse`](#UnaryResponse) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
 -}
 decodeUnaryResponseWith : Proto.Registry.Registry -> Json.Decode.Decoder UnaryResponse
 decodeUnaryResponseWith types =
-    Json.Decode.succeed UnaryResponse
-        |> Proto.Json.field "payload" Nothing (Json.Decode.map Just (decodeConformancePayloadWith types))
+    Proto.Json.message
+        (Json.Decode.succeed UnaryResponse
+            |> Proto.Json.messageField "payload" Nothing (Json.Decode.map Just (decodeConformancePayloadWith types))
+        )
 
 
 {-| Decodes an [`IdempotentUnaryRequest`](#IdempotentUnaryRequest) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
 -}
 decodeIdempotentUnaryRequestWith : Proto.Registry.Registry -> Json.Decode.Decoder IdempotentUnaryRequest
 decodeIdempotentUnaryRequestWith types =
-    Json.Decode.succeed IdempotentUnaryRequest
-        |> Proto.Json.fieldEither "responseDefinition" "response_definition" Nothing (Json.Decode.map Just (decodeUnaryResponseDefinitionWith types))
-        |> Proto.Json.fieldEither "requestData" "request_data" "" Proto.Json.bytes
+    Proto.Json.message
+        (Json.Decode.succeed IdempotentUnaryRequest
+            |> Proto.Json.messageFieldEither "responseDefinition" "response_definition" Nothing (Json.Decode.map Just (decodeUnaryResponseDefinitionWith types))
+            |> Proto.Json.messageFieldEither "requestData" "request_data" "" Proto.Json.bytes
+        )
 
 
 {-| Decodes an [`IdempotentUnaryResponse`](#IdempotentUnaryResponse) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
 -}
 decodeIdempotentUnaryResponseWith : Proto.Registry.Registry -> Json.Decode.Decoder IdempotentUnaryResponse
 decodeIdempotentUnaryResponseWith types =
-    Json.Decode.succeed IdempotentUnaryResponse
-        |> Proto.Json.field "payload" Nothing (Json.Decode.map Just (decodeConformancePayloadWith types))
+    Proto.Json.message
+        (Json.Decode.succeed IdempotentUnaryResponse
+            |> Proto.Json.messageField "payload" Nothing (Json.Decode.map Just (decodeConformancePayloadWith types))
+        )
 
 
 {-| Decodes a [`ServerStreamRequest`](#ServerStreamRequest) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
 -}
 decodeServerStreamRequestWith : Proto.Registry.Registry -> Json.Decode.Decoder ServerStreamRequest
 decodeServerStreamRequestWith types =
-    Json.Decode.succeed ServerStreamRequest
-        |> Proto.Json.fieldEither "responseDefinition" "response_definition" Nothing (Json.Decode.map Just (decodeStreamResponseDefinitionWith types))
-        |> Proto.Json.fieldEither "requestData" "request_data" "" Proto.Json.bytes
+    Proto.Json.message
+        (Json.Decode.succeed ServerStreamRequest
+            |> Proto.Json.messageFieldEither "responseDefinition" "response_definition" Nothing (Json.Decode.map Just (decodeStreamResponseDefinitionWith types))
+            |> Proto.Json.messageFieldEither "requestData" "request_data" "" Proto.Json.bytes
+        )
 
 
 {-| Decodes a [`ServerStreamResponse`](#ServerStreamResponse) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
 -}
 decodeServerStreamResponseWith : Proto.Registry.Registry -> Json.Decode.Decoder ServerStreamResponse
 decodeServerStreamResponseWith types =
-    Json.Decode.succeed ServerStreamResponse
-        |> Proto.Json.field "payload" Nothing (Json.Decode.map Just (decodeConformancePayloadWith types))
+    Proto.Json.message
+        (Json.Decode.succeed ServerStreamResponse
+            |> Proto.Json.messageField "payload" Nothing (Json.Decode.map Just (decodeConformancePayloadWith types))
+        )
 
 
 {-| Decodes a [`ClientStreamRequest`](#ClientStreamRequest) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
 -}
 decodeClientStreamRequestWith : Proto.Registry.Registry -> Json.Decode.Decoder ClientStreamRequest
 decodeClientStreamRequestWith types =
-    Json.Decode.succeed ClientStreamRequest
-        |> Proto.Json.fieldEither "responseDefinition" "response_definition" Nothing (Json.Decode.map Just (decodeUnaryResponseDefinitionWith types))
-        |> Proto.Json.fieldEither "requestData" "request_data" "" Proto.Json.bytes
+    Proto.Json.message
+        (Json.Decode.succeed ClientStreamRequest
+            |> Proto.Json.messageFieldEither "responseDefinition" "response_definition" Nothing (Json.Decode.map Just (decodeUnaryResponseDefinitionWith types))
+            |> Proto.Json.messageFieldEither "requestData" "request_data" "" Proto.Json.bytes
+        )
 
 
 {-| Decodes a [`ClientStreamResponse`](#ClientStreamResponse) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
 -}
 decodeClientStreamResponseWith : Proto.Registry.Registry -> Json.Decode.Decoder ClientStreamResponse
 decodeClientStreamResponseWith types =
-    Json.Decode.succeed ClientStreamResponse
-        |> Proto.Json.field "payload" Nothing (Json.Decode.map Just (decodeConformancePayloadWith types))
+    Proto.Json.message
+        (Json.Decode.succeed ClientStreamResponse
+            |> Proto.Json.messageField "payload" Nothing (Json.Decode.map Just (decodeConformancePayloadWith types))
+        )
 
 
 {-| Decodes a [`BidiStreamRequest`](#BidiStreamRequest) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
 -}
 decodeBidiStreamRequestWith : Proto.Registry.Registry -> Json.Decode.Decoder BidiStreamRequest
 decodeBidiStreamRequestWith types =
-    Json.Decode.succeed BidiStreamRequest
-        |> Proto.Json.fieldEither "responseDefinition" "response_definition" Nothing (Json.Decode.map Just (decodeStreamResponseDefinitionWith types))
-        |> Proto.Json.fieldEither "fullDuplex" "full_duplex" False Json.Decode.bool
-        |> Proto.Json.fieldEither "requestData" "request_data" "" Proto.Json.bytes
+    Proto.Json.message
+        (Json.Decode.succeed BidiStreamRequest
+            |> Proto.Json.messageFieldEither "responseDefinition" "response_definition" Nothing (Json.Decode.map Just (decodeStreamResponseDefinitionWith types))
+            |> Proto.Json.messageFieldEither "fullDuplex" "full_duplex" False Json.Decode.bool
+            |> Proto.Json.messageFieldEither "requestData" "request_data" "" Proto.Json.bytes
+        )
 
 
 {-| Decodes a [`BidiStreamResponse`](#BidiStreamResponse) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
 -}
 decodeBidiStreamResponseWith : Proto.Registry.Registry -> Json.Decode.Decoder BidiStreamResponse
 decodeBidiStreamResponseWith types =
-    Json.Decode.succeed BidiStreamResponse
-        |> Proto.Json.field "payload" Nothing (Json.Decode.map Just (decodeConformancePayloadWith types))
+    Proto.Json.message
+        (Json.Decode.succeed BidiStreamResponse
+            |> Proto.Json.messageField "payload" Nothing (Json.Decode.map Just (decodeConformancePayloadWith types))
+        )
 
 
 {-| Decodes a [`UnimplementedRequest`](#UnimplementedRequest) from proto3 JSON.
@@ -3446,60 +3492,72 @@ decodeUnimplementedResponse =
 -}
 decodeConformancePayloadWith : Proto.Registry.Registry -> Json.Decode.Decoder ConformancePayload
 decodeConformancePayloadWith types =
-    Json.Decode.succeed ConformancePayload
-        |> Proto.Json.field "data" "" Proto.Json.bytes
-        |> Proto.Json.fieldEither "requestInfo" "request_info" Nothing (Json.Decode.map Just (decodeConformancePayloadRequestInfoWith types))
+    Proto.Json.message
+        (Json.Decode.succeed ConformancePayload
+            |> Proto.Json.messageField "data" "" Proto.Json.bytes
+            |> Proto.Json.messageFieldEither "requestInfo" "request_info" Nothing (Json.Decode.map Just (decodeConformancePayloadRequestInfoWith types))
+        )
 
 
 {-| Decodes a [`ConformancePayloadRequestInfo`](#ConformancePayloadRequestInfo) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
 -}
 decodeConformancePayloadRequestInfoWith : Proto.Registry.Registry -> Json.Decode.Decoder ConformancePayloadRequestInfo
 decodeConformancePayloadRequestInfoWith types =
-    Json.Decode.succeed ConformancePayloadRequestInfo
-        |> Proto.Json.fieldEither "requestHeaders" "request_headers" [] (Json.Decode.list decodeHeader)
-        |> Proto.Json.fieldEither "timeoutMs" "timeout_ms" Nothing (Json.Decode.map Just Proto.Json.int64)
-        |> Proto.Json.field "requests" [] (Json.Decode.list (Proto.Json.anyWith types))
-        |> Proto.Json.fieldEither "connectGetInfo" "connect_get_info" Nothing (Json.Decode.map Just decodeConformancePayloadConnectGetInfo)
+    Proto.Json.message
+        (Json.Decode.succeed ConformancePayloadRequestInfo
+            |> Proto.Json.messageFieldEither "requestHeaders" "request_headers" [] (Json.Decode.list decodeHeader)
+            |> Proto.Json.messageFieldEither "timeoutMs" "timeout_ms" Nothing (Json.Decode.map Just Proto.Json.int64)
+            |> Proto.Json.messageField "requests" [] (Json.Decode.list (Proto.Json.anyWith types))
+            |> Proto.Json.messageFieldEither "connectGetInfo" "connect_get_info" Nothing (Json.Decode.map Just decodeConformancePayloadConnectGetInfo)
+        )
 
 
 {-| Decodes a [`ConformancePayloadConnectGetInfo`](#ConformancePayloadConnectGetInfo) from proto3 JSON.
 -}
 decodeConformancePayloadConnectGetInfo : Json.Decode.Decoder ConformancePayloadConnectGetInfo
 decodeConformancePayloadConnectGetInfo =
-    Json.Decode.succeed ConformancePayloadConnectGetInfo
-        |> Proto.Json.fieldEither "queryParams" "query_params" [] (Json.Decode.list decodeHeader)
+    Proto.Json.message
+        (Json.Decode.succeed ConformancePayloadConnectGetInfo
+            |> Proto.Json.messageFieldEither "queryParams" "query_params" [] (Json.Decode.list decodeHeader)
+        )
 
 
 {-| Decodes an [`Error`](#Error) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
 -}
 decodeErrorWith : Proto.Registry.Registry -> Json.Decode.Decoder Error
 decodeErrorWith types =
-    Json.Decode.succeed Error
-        |> Proto.Json.field "code" CodeUnspecified decodeCode
-        |> Proto.Json.field "message" Nothing (Json.Decode.map Just Proto.Json.string)
-        |> Proto.Json.field "details" [] (Json.Decode.list (Proto.Json.anyWith types))
+    Proto.Json.message
+        (Json.Decode.succeed Error
+            |> Proto.Json.messageField "code" CodeUnspecified decodeCode
+            |> Proto.Json.messageField "message" Nothing (Json.Decode.map Just Proto.Json.string)
+            |> Proto.Json.messageField "details" [] (Json.Decode.list (Proto.Json.anyWith types))
+        )
 
 
 {-| Decodes a [`Header`](#Header) from proto3 JSON.
 -}
 decodeHeader : Json.Decode.Decoder Header
 decodeHeader =
-    Json.Decode.succeed Header
-        |> Proto.Json.field "name" "" Proto.Json.string
-        |> Proto.Json.field "value" [] (Json.Decode.list Proto.Json.string)
+    Proto.Json.message
+        (Json.Decode.succeed Header
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.messageField "value" [] (Json.Decode.list Proto.Json.string)
+        )
 
 
 {-| Decodes a [`RawHTTPRequest`](#RawHTTPRequest) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
 -}
 decodeRawHTTPRequestWith : Proto.Registry.Registry -> Json.Decode.Decoder RawHTTPRequest
 decodeRawHTTPRequestWith types =
-    Json.Decode.succeed RawHTTPRequest
-        |> Proto.Json.field "verb" "" Proto.Json.string
-        |> Proto.Json.field "uri" "" Proto.Json.string
-        |> Proto.Json.field "headers" [] (Json.Decode.list decodeHeader)
-        |> Proto.Json.fieldEither "rawQueryParams" "raw_query_params" [] (Json.Decode.list decodeHeader)
-        |> Proto.Json.fieldEither "encodedQueryParams" "encoded_query_params" [] (Json.Decode.list (decodeRawHTTPRequestEncodedQueryParamWith types))
-        |> Proto.Json.oneof (decodeRawHTTPRequestBodyWith types)
+    Proto.Json.message
+        (Json.Decode.succeed RawHTTPRequest
+            |> Proto.Json.messageField "verb" "" Proto.Json.string
+            |> Proto.Json.messageField "uri" "" Proto.Json.string
+            |> Proto.Json.messageField "headers" [] (Json.Decode.list decodeHeader)
+            |> Proto.Json.messageFieldEither "rawQueryParams" "raw_query_params" [] (Json.Decode.list decodeHeader)
+            |> Proto.Json.messageFieldEither "encodedQueryParams" "encoded_query_params" [] (Json.Decode.list (decodeRawHTTPRequestEncodedQueryParamWith types))
+            |> Proto.Json.oneof (decodeRawHTTPRequestBodyWith types)
+        )
 
 
 {-| Decodes a [`RawHTTPRequestBody`](#RawHTTPRequestBody) from the members of its message's JSON object.
@@ -3517,19 +3575,23 @@ decodeRawHTTPRequestBodyWith types =
 -}
 decodeRawHTTPRequestEncodedQueryParamWith : Proto.Registry.Registry -> Json.Decode.Decoder RawHTTPRequestEncodedQueryParam
 decodeRawHTTPRequestEncodedQueryParamWith types =
-    Json.Decode.succeed RawHTTPRequestEncodedQueryParam
-        |> Proto.Json.field "name" "" Proto.Json.string
-        |> Proto.Json.field "value" Nothing (Json.Decode.map Just (decodeMessageContentsWith types))
-        |> Proto.Json.fieldEither "base64Encode" "base64_encode" False Json.Decode.bool
+    Proto.Json.message
+        (Json.Decode.succeed RawHTTPRequestEncodedQueryParam
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.messageField "value" Nothing (Json.Decode.map Just (decodeMessageContentsWith types))
+            |> Proto.Json.messageFieldEither "base64Encode" "base64_encode" False Json.Decode.bool
+        )
 
 
 {-| Decodes a [`MessageContents`](#MessageContents) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
 -}
 decodeMessageContentsWith : Proto.Registry.Registry -> Json.Decode.Decoder MessageContents
 decodeMessageContentsWith types =
-    Json.Decode.succeed MessageContents
-        |> Proto.Json.oneof (decodeMessageContentsDataWith types)
-        |> Proto.Json.field "compression" CompressionUnspecified decodeCompression
+    Proto.Json.message
+        (Json.Decode.succeed MessageContents
+            |> Proto.Json.oneof (decodeMessageContentsDataWith types)
+            |> Proto.Json.messageField "compression" CompressionUnspecified decodeCompression
+        )
 
 
 {-| Decodes a [`MessageContentsData`](#MessageContentsData) from the members of its message's JSON object.
@@ -3548,29 +3610,35 @@ decodeMessageContentsDataWith types =
 -}
 decodeStreamContentsWith : Proto.Registry.Registry -> Json.Decode.Decoder StreamContents
 decodeStreamContentsWith types =
-    Json.Decode.succeed StreamContents
-        |> Proto.Json.field "items" [] (Json.Decode.list (decodeStreamContentsStreamItemWith types))
+    Proto.Json.message
+        (Json.Decode.succeed StreamContents
+            |> Proto.Json.messageField "items" [] (Json.Decode.list (decodeStreamContentsStreamItemWith types))
+        )
 
 
 {-| Decodes a [`StreamContentsStreamItem`](#StreamContentsStreamItem) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
 -}
 decodeStreamContentsStreamItemWith : Proto.Registry.Registry -> Json.Decode.Decoder StreamContentsStreamItem
 decodeStreamContentsStreamItemWith types =
-    Json.Decode.succeed StreamContentsStreamItem
-        |> Proto.Json.field "flags" 0 Proto.Json.uint32
-        |> Proto.Json.field "length" Nothing (Json.Decode.map Just Proto.Json.uint32)
-        |> Proto.Json.field "payload" Nothing (Json.Decode.map Just (decodeMessageContentsWith types))
+    Proto.Json.message
+        (Json.Decode.succeed StreamContentsStreamItem
+            |> Proto.Json.messageField "flags" 0 Proto.Json.uint32
+            |> Proto.Json.messageField "length" Nothing (Json.Decode.map Just Proto.Json.uint32)
+            |> Proto.Json.messageField "payload" Nothing (Json.Decode.map Just (decodeMessageContentsWith types))
+        )
 
 
 {-| Decodes a [`RawHTTPResponse`](#RawHTTPResponse) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
 -}
 decodeRawHTTPResponseWith : Proto.Registry.Registry -> Json.Decode.Decoder RawHTTPResponse
 decodeRawHTTPResponseWith types =
-    Json.Decode.succeed RawHTTPResponse
-        |> Proto.Json.fieldEither "statusCode" "status_code" 0 Proto.Json.uint32
-        |> Proto.Json.field "headers" [] (Json.Decode.list decodeHeader)
-        |> Proto.Json.oneof (decodeRawHTTPResponseBodyWith types)
-        |> Proto.Json.field "trailers" [] (Json.Decode.list decodeHeader)
+    Proto.Json.message
+        (Json.Decode.succeed RawHTTPResponse
+            |> Proto.Json.messageFieldEither "statusCode" "status_code" 0 Proto.Json.uint32
+            |> Proto.Json.messageField "headers" [] (Json.Decode.list decodeHeader)
+            |> Proto.Json.oneof (decodeRawHTTPResponseBodyWith types)
+            |> Proto.Json.messageField "trailers" [] (Json.Decode.list decodeHeader)
+        )
 
 
 {-| Decodes a [`RawHTTPResponseBody`](#RawHTTPResponseBody) from the members of its message's JSON object.
@@ -3588,38 +3656,44 @@ decodeRawHTTPResponseBodyWith types =
 -}
 decodeTestSuiteWith : Proto.Registry.Registry -> Json.Decode.Decoder TestSuite
 decodeTestSuiteWith types =
-    Json.Decode.succeed TestSuite
-        |> Proto.Json.field "name" "" Proto.Json.string
-        |> Proto.Json.field "mode" TestSuiteTestModeUnspecified decodeTestSuiteTestMode
-        |> Proto.Json.fieldEither "testCases" "test_cases" [] (Json.Decode.list (decodeTestCaseWith types))
-        |> Proto.Json.fieldEither "relevantProtocols" "relevant_protocols" [] (Json.Decode.list decodeProtocol)
-        |> Proto.Json.fieldEither "relevantHttpVersions" "relevant_http_versions" [] (Json.Decode.list decodeHTTPVersion)
-        |> Proto.Json.fieldEither "relevantCodecs" "relevant_codecs" [] (Json.Decode.list decodeCodec)
-        |> Proto.Json.fieldEither "relevantCompressions" "relevant_compressions" [] (Json.Decode.list decodeCompression)
-        |> Proto.Json.fieldEither "connectVersionMode" "connect_version_mode" TestSuiteConnectVersionModeUnspecified decodeTestSuiteConnectVersionMode
-        |> Proto.Json.fieldEither "reliesOnTls" "relies_on_tls" False Json.Decode.bool
-        |> Proto.Json.fieldEither "reliesOnTlsClientCerts" "relies_on_tls_client_certs" False Json.Decode.bool
-        |> Proto.Json.fieldEither "reliesOnConnectGet" "relies_on_connect_get" False Json.Decode.bool
-        |> Proto.Json.fieldEither "reliesOnMessageReceiveLimit" "relies_on_message_receive_limit" False Json.Decode.bool
+    Proto.Json.message
+        (Json.Decode.succeed TestSuite
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.messageField "mode" TestSuiteTestModeUnspecified decodeTestSuiteTestMode
+            |> Proto.Json.messageFieldEither "testCases" "test_cases" [] (Json.Decode.list (decodeTestCaseWith types))
+            |> Proto.Json.messageFieldEither "relevantProtocols" "relevant_protocols" [] (Json.Decode.list decodeProtocol)
+            |> Proto.Json.messageFieldEither "relevantHttpVersions" "relevant_http_versions" [] (Json.Decode.list decodeHTTPVersion)
+            |> Proto.Json.messageFieldEither "relevantCodecs" "relevant_codecs" [] (Json.Decode.list decodeCodec)
+            |> Proto.Json.messageFieldEither "relevantCompressions" "relevant_compressions" [] (Json.Decode.list decodeCompression)
+            |> Proto.Json.messageFieldEither "connectVersionMode" "connect_version_mode" TestSuiteConnectVersionModeUnspecified decodeTestSuiteConnectVersionMode
+            |> Proto.Json.messageFieldEither "reliesOnTls" "relies_on_tls" False Json.Decode.bool
+            |> Proto.Json.messageFieldEither "reliesOnTlsClientCerts" "relies_on_tls_client_certs" False Json.Decode.bool
+            |> Proto.Json.messageFieldEither "reliesOnConnectGet" "relies_on_connect_get" False Json.Decode.bool
+            |> Proto.Json.messageFieldEither "reliesOnMessageReceiveLimit" "relies_on_message_receive_limit" False Json.Decode.bool
+        )
 
 
 {-| Decodes a [`TestCase`](#TestCase) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
 -}
 decodeTestCaseWith : Proto.Registry.Registry -> Json.Decode.Decoder TestCase
 decodeTestCaseWith types =
-    Json.Decode.succeed TestCase
-        |> Proto.Json.field "request" Nothing (Json.Decode.map Just (decodeClientCompatRequestWith types))
-        |> Proto.Json.fieldEither "expandRequests" "expand_requests" [] (Json.Decode.list decodeTestCaseExpandedSize)
-        |> Proto.Json.fieldEither "expectedResponse" "expected_response" Nothing (Json.Decode.map Just (decodeClientResponseResultWith types))
-        |> Proto.Json.fieldEither "otherAllowedErrorCodes" "other_allowed_error_codes" [] (Json.Decode.list decodeCode)
+    Proto.Json.message
+        (Json.Decode.succeed TestCase
+            |> Proto.Json.messageField "request" Nothing (Json.Decode.map Just (decodeClientCompatRequestWith types))
+            |> Proto.Json.messageFieldEither "expandRequests" "expand_requests" [] (Json.Decode.list decodeTestCaseExpandedSize)
+            |> Proto.Json.messageFieldEither "expectedResponse" "expected_response" Nothing (Json.Decode.map Just (decodeClientResponseResultWith types))
+            |> Proto.Json.messageFieldEither "otherAllowedErrorCodes" "other_allowed_error_codes" [] (Json.Decode.list decodeCode)
+        )
 
 
 {-| Decodes a [`TestCaseExpandedSize`](#TestCaseExpandedSize) from proto3 JSON.
 -}
 decodeTestCaseExpandedSize : Json.Decode.Decoder TestCaseExpandedSize
 decodeTestCaseExpandedSize =
-    Json.Decode.succeed TestCaseExpandedSize
-        |> Proto.Json.fieldEither "sizeRelativeToLimit" "size_relative_to_limit" Nothing (Json.Decode.map Just Proto.Json.int32)
+    Proto.Json.message
+        (Json.Decode.succeed TestCaseExpandedSize
+            |> Proto.Json.messageFieldEither "sizeRelativeToLimit" "size_relative_to_limit" Nothing (Json.Decode.map Just Proto.Json.int32)
+        )
 
 
 

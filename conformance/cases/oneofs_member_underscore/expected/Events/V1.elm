@@ -249,9 +249,11 @@ encodeListEventsResponse value =
 -}
 decodeEvent : Json.Decode.Decoder Event
 decodeEvent =
-    Json.Decode.succeed Event
-        |> Proto.Json.field "name" "" Proto.Json.string
-        |> Proto.Json.oneof decodeEventKind
+    Proto.Json.message
+        (Json.Decode.succeed Event
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.oneof decodeEventKind
+        )
 
 
 {-| Decodes an [`EventKind`](#EventKind) from the members of its message's JSON object.
@@ -269,9 +271,11 @@ decodeEventKind =
 -}
 decodeListEventsRequest : Json.Decode.Decoder ListEventsRequest
 decodeListEventsRequest =
-    Json.Decode.succeed ListEventsRequest
-        |> Proto.Json.field "parent" "" Proto.Json.string
-        |> Proto.Json.oneof decodeListEventsRequestFilter
+    Proto.Json.message
+        (Json.Decode.succeed ListEventsRequest
+            |> Proto.Json.messageField "parent" "" Proto.Json.string
+            |> Proto.Json.oneof decodeListEventsRequestFilter
+        )
 
 
 {-| Decodes a [`ListEventsRequestFilter`](#ListEventsRequestFilter) from the members of its message's JSON object.
@@ -288,8 +292,10 @@ decodeListEventsRequestFilter =
 -}
 decodeListEventsResponse : Json.Decode.Decoder ListEventsResponse
 decodeListEventsResponse =
-    Json.Decode.succeed ListEventsResponse
-        |> Proto.Json.field "events" [] (Json.Decode.list decodeEvent)
+    Proto.Json.message
+        (Json.Decode.succeed ListEventsResponse
+            |> Proto.Json.messageField "events" [] (Json.Decode.list decodeEvent)
+        )
 
 
 

@@ -363,19 +363,23 @@ decodeColor =
 -}
 decodeCreated : Json.Decode.Decoder Created
 decodeCreated =
-    Json.Decode.succeed Created
-        |> Proto.Json.field "title" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed Created
+            |> Proto.Json.messageField "title" "" Proto.Json.string
+        )
 
 
 {-| Decodes a [`NoteEvent`](#NoteEvent) from proto3 JSON.
 -}
 decodeNoteEvent : Json.Decode.Decoder NoteEvent
 decodeNoteEvent =
-    Json.Decode.succeed NoteEvent
-        |> Proto.Json.field "id" "" Proto.Json.string
-        |> Proto.Json.oneof decodeNoteEventKind
-        |> Proto.Json.oneof decodeNoteEventSource
-        |> Proto.Json.field "tags" [] (Json.Decode.list Proto.Json.string)
+    Proto.Json.message
+        (Json.Decode.succeed NoteEvent
+            |> Proto.Json.messageField "id" "" Proto.Json.string
+            |> Proto.Json.oneof decodeNoteEventKind
+            |> Proto.Json.oneof decodeNoteEventSource
+            |> Proto.Json.messageField "tags" [] (Json.Decode.list Proto.Json.string)
+        )
 
 
 {-| Decodes a [`NoteEventKind`](#NoteEventKind) from the members of its message's JSON object.

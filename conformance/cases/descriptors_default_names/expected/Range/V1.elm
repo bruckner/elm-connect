@@ -120,10 +120,12 @@ encodeBounds value =
 -}
 decodeBounds : Json.Decode.Decoder Bounds
 decodeBounds =
-    Json.Decode.succeed Bounds
-        |> Proto.Json.field "max" 0 Proto.Json.int32
-        |> Proto.Json.field "min" 0 Proto.Json.int32
-        |> Proto.Json.field "always" False Json.Decode.bool
+    Proto.Json.message
+        (Json.Decode.succeed Bounds
+            |> Proto.Json.messageField "max" 0 Proto.Json.int32
+            |> Proto.Json.messageField "min" 0 Proto.Json.int32
+            |> Proto.Json.messageField "always" False Json.Decode.bool
+        )
 
 
 

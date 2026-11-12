@@ -120,10 +120,12 @@ encodeDraft value =
 -}
 decodeDraft : Json.Decode.Decoder Draft
 decodeDraft =
-    Json.Decode.succeed Draft
-        |> Proto.Json.field "name" "" Proto.Json.string
-        |> Proto.Json.field "body" "" Proto.Json.string
-        |> Proto.Json.field "owner" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed Draft
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.messageField "body" "" Proto.Json.string
+            |> Proto.Json.messageField "owner" "" Proto.Json.string
+        )
 
 
 

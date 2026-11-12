@@ -915,18 +915,18 @@ just the form encoders write.
   when they differ, JSON name first:
 
   ```elm
-  |> Proto.Json.field "title" "" Proto.Json.string
-  |> Proto.Json.fieldEither "displayName" "display_name" "" Proto.Json.string
+  |> Proto.Json.messageField "title" "" Proto.Json.string
+  |> Proto.Json.messageFieldEither "displayName" "display_name" "" Proto.Json.string
   ```
 
   An object holding both keys fails, naming them (`Expecting
   "displayName" or "display_name", but got both`), even when one of them
   is `null`: protobuf's own parsers (protobuf-go's protojson) reject it
   as a duplicate field. The same holds for every two-name
-  helper (`memberEither`, `emptyMemberEither`, `valueMemberEither`,
-  `valueFieldEither`). The
+  helper (`fieldEither`, `memberEither`, `emptyMemberEither`,
+  `valueMemberEither`, `valueFieldEither`, `messageValueFieldEither`). The
   two names are equal only for one-word fields without an explicit
-  `json_name`, so in practice most multi-word fields use `fieldEither`. Two names are the most there can
+  `json_name`, so in practice most multi-word fields use `messageFieldEither`. Two names are the most there can
   be (decisions.md: Decoder steps).
 - A key written twice in one object (`{"title":"a","title":"b"}`) is
   not refused, as protobuf's parsers refuse it: it reads as its last
@@ -940,8 +940,8 @@ just the form encoders write.
   protobuf writer produces.
 - One step serves every cardinality. Its second argument is the value
   an absent or `null` field reads as, so a field with presence reads
-  `field "author" Nothing (Json.Decode.map Just decodeAuthor)` and a
-  repeated one `field "tags" [] (Json.Decode.list Proto.Json.string)`,
+  `messageField "author" Nothing (Json.Decode.map Just decodeAuthor)` and a
+  repeated one `messageField "tags" [] (Json.Decode.list Proto.Json.string)`,
   and the reader sees the zero value.
 - A step finds its field with `Json.Decode.field` (JavaScript's `in`),
   in constant time, so a message decodes in time linear in its fields
@@ -950,9 +950,16 @@ just the form encoders write.
   `Object.prototype`'s (`constructor`, `toString`, `__proto__`, …) is
   looked up among the object's own keys instead, in time linear in
   them. A message fails on any JSON that is not an object, arrays
-  included, whether or not it has fields; when no field is present the
-  check is constant-time too, and never lists the keys, and an empty
-  message (`Proto.Json.emptyMessage`) makes the same check. The package requires elm/json 1.1.4,
+  included, whether or not it has fields; the check is constant-time
+  too, and never lists the keys, and an empty message
+  (`Proto.Json.emptyMessage`) makes the same check. A generated decoder
+  makes it once: `Proto.Json.message` wraps the field steps
+  (`messageField` and its siblings), which then look a key up without
+  checking the object again, and fail as elm/json does
+  (`Expecting an OBJECT`) when it is not one. The `field` steps, for
+  pipelines written by hand, each make the check themselves. A oneof's
+  decoder reads the message object on its own and makes its own check,
+  so a message of oneofs alone is not wrapped. The package requires elm/json 1.1.4,
   which lists an object's keys without calling the object's own
   `hasOwnProperty`, so a key of that name decodes wherever keys are
   listed: a prototype-named field, a map, a `Struct` or an `Any`.

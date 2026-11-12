@@ -161,18 +161,22 @@ encodeMessage value =
 -}
 decodeMessageRequest : Json.Decode.Decoder MessageRequest
 decodeMessageRequest =
-    Json.Decode.succeed MessageRequest
-        |> Proto.Json.field "name" "" Proto.Json.string
-        |> Proto.Json.field "id" "" Proto.Json.string
-        |> Proto.Json.field "sub" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed MessageRequest
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.messageField "id" "" Proto.Json.string
+            |> Proto.Json.messageField "sub" "" Proto.Json.string
+        )
 
 
 {-| Decodes a [`Message`](#Message) from proto3 JSON.
 -}
 decodeMessage : Json.Decode.Decoder Message
 decodeMessage =
-    Json.Decode.succeed Message
-        |> Proto.Json.field "name" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed Message
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+        )
 
 
 

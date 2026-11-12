@@ -233,10 +233,12 @@ encodeGetEntryRequest value =
 -}
 decodeEntry : Json.Decode.Decoder Entry
 decodeEntry =
-    Json.Decode.succeed Entry
-        |> Proto.Json.field "name" "" Proto.Json.string
-        |> Proto.Json.field "descriptor" "" Proto.Json.string
-        |> Proto.Json.field "descriptors" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed Entry
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.messageField "descriptor" "" Proto.Json.string
+            |> Proto.Json.messageField "descriptors" "" Proto.Json.string
+        )
 
 
 {-| Decodes a [`Part`](#Part) from proto3 JSON.
@@ -262,10 +264,12 @@ decodePartKind =
 -}
 decodeGetEntryRequest : Json.Decode.Decoder GetEntryRequest
 decodeGetEntryRequest =
-    Json.Decode.succeed GetEntryRequest
-        |> Proto.Json.field "name" "" Proto.Json.string
-        |> Proto.Json.field "descriptor" "" Proto.Json.string
-        |> Proto.Json.field "part" Nothing (Json.Decode.map Just decodePart)
+    Proto.Json.message
+        (Json.Decode.succeed GetEntryRequest
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.messageField "descriptor" "" Proto.Json.string
+            |> Proto.Json.messageField "part" Nothing (Json.Decode.map Just decodePart)
+        )
 
 
 

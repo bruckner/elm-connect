@@ -348,37 +348,45 @@ encodeFree value =
 -}
 decodeBlob : Json.Decode.Decoder Blob
 decodeBlob =
-    Json.Decode.succeed Blob
-        |> Proto.Json.field "digest" Proto.Bytes.empty Proto.Json.bytesAsBytes
-        |> Proto.Json.field "name" "" Proto.Json.string
-        |> Proto.Json.field "salt" Proto.Bytes.empty Proto.Json.bytesAsBytes
+    Proto.Json.message
+        (Json.Decode.succeed Blob
+            |> Proto.Json.messageField "digest" Proto.Bytes.empty Proto.Json.bytesAsBytes
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.messageField "salt" Proto.Bytes.empty Proto.Json.bytesAsBytes
+        )
 
 
 {-| Decodes a [`Labeled`](#Labeled) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
 -}
 decodeLabeledWith : Proto.Registry.Registry -> Json.Decode.Decoder Labeled
 decodeLabeledWith types =
-    Json.Decode.succeed Labeled
-        |> Proto.Json.field "name" "" Proto.Json.string
-        |> Proto.Json.field "label" Nothing (Json.Decode.map Just (Proto.Json.anyWith types))
+    Proto.Json.message
+        (Json.Decode.succeed Labeled
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.messageField "label" Nothing (Json.Decode.map Just (Proto.Json.anyWith types))
+        )
 
 
 {-| Decodes a [`LabelBlobRequest`](#LabelBlobRequest) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
 -}
 decodeLabelBlobRequestWith : Proto.Registry.Registry -> Json.Decode.Decoder LabelBlobRequest
 decodeLabelBlobRequestWith types =
-    Json.Decode.succeed LabelBlobRequest
-        |> Proto.Json.field "labeled" Nothing (Json.Decode.map Just (decodeLabeledWith types))
-        |> Proto.Json.field "shelf" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed LabelBlobRequest
+            |> Proto.Json.messageField "labeled" Nothing (Json.Decode.map Just (decodeLabeledWith types))
+            |> Proto.Json.messageField "shelf" "" Proto.Json.string
+        )
 
 
 {-| Decodes a [`Folder`](#Folder) from proto3 JSON.
 -}
 decodeFolder : Json.Decode.Decoder Folder
 decodeFolder =
-    Json.Decode.succeed Folder
-        |> Proto.Json.field "name" "" Proto.Json.string
-        |> Proto.Json.field "parent" Nothing (Json.Decode.map Just decodeFolder_)
+    Proto.Json.message
+        (Json.Decode.succeed Folder
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.messageField "parent" Nothing (Json.Decode.map Just decodeFolder_)
+        )
 
 
 {-| Decodes a [`Folder_`](#Folder_) from proto3 JSON.
@@ -392,18 +400,22 @@ decodeFolder_ =
 -}
 decodeSlots : Json.Decode.Decoder Slots
 decodeSlots =
-    Json.Decode.succeed Slots
-        |> Proto.Json.field "name" "" Proto.Json.string
-        |> Proto.Json.field "nothing" () Proto.Json.empty
+    Proto.Json.message
+        (Json.Decode.succeed Slots
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.messageField "nothing" () Proto.Json.empty
+        )
 
 
 {-| Decodes a [`Free`](#Free) from proto3 JSON.
 -}
 decodeFree : Json.Decode.Decoder Free
 decodeFree =
-    Json.Decode.succeed Free
-        |> Proto.Json.field "name" "" Proto.Json.string
-        |> Proto.Json.valueField "value"
+    Proto.Json.message
+        (Json.Decode.succeed Free
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.messageValueField "value"
+        )
 
 
 

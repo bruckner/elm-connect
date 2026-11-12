@@ -112,8 +112,10 @@ encodePing value =
 -}
 decodePing : Json.Decode.Decoder Ping
 decodePing =
-    Json.Decode.succeed Ping
-        |> Proto.Json.field "text" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed Ping
+            |> Proto.Json.messageField "text" "" Proto.Json.string
+        )
 
 
 

@@ -155,17 +155,21 @@ encodeTag value =
 -}
 decodeNote : Json.Decode.Decoder Note
 decodeNote =
-    Json.Decode.succeed Note
-        |> Proto.Json.field "title" "" Proto.Json.string
-        |> Proto.Json.field "tags" [] (Json.Decode.list decodeTag)
+    Proto.Json.message
+        (Json.Decode.succeed Note
+            |> Proto.Json.messageField "title" "" Proto.Json.string
+            |> Proto.Json.messageField "tags" [] (Json.Decode.list decodeTag)
+        )
 
 
 {-| Decodes a [`Tag`](#Tag) from proto3 JSON.
 -}
 decodeTag : Json.Decode.Decoder Tag
 decodeTag =
-    Json.Decode.succeed Tag
-        |> Proto.Json.field "label" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed Tag
+            |> Proto.Json.messageField "label" "" Proto.Json.string
+        )
 
 
 

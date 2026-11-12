@@ -242,30 +242,34 @@ encodeLinkTarget value =
 -}
 decodeURLPath : Json.Decode.Decoder URLPath
 decodeURLPath =
-    Json.Decode.succeed URLPath
-        |> Proto.Json.field "Label" "" Proto.Json.string
-        |> Proto.Json.field "ID" "" Proto.Json.string
-        |> Proto.Json.field "URL" "" Proto.Json.string
-        |> Proto.Json.field "URLPath" "" Proto.Json.string
-        |> Proto.Json.field "HTTPRequest" "" Proto.Json.string
-        |> Proto.Json.field "XCoord" 0.0 Proto.Json.float
-        |> Proto.Json.field "ABCDef" "" Proto.Json.string
-        |> Proto.Json.fieldEither "Internal" "_internal" "" Proto.Json.string
-        |> Proto.Json.fieldEither "displayName" "display_name" "" Proto.Json.string
-        |> Proto.Json.field "Type" "" Proto.Json.string
-        |> Proto.Json.field "IDs" [] (Json.Decode.list Proto.Json.string)
-        |> Proto.Json.field "URLs" [] (Json.Decode.list Proto.Json.string)
-        |> Proto.Json.field "APIs" [] (Json.Decode.list Proto.Json.string)
-        |> Proto.Json.field "UUIDs" [] (Json.Decode.list Proto.Json.string)
+    Proto.Json.message
+        (Json.Decode.succeed URLPath
+            |> Proto.Json.messageField "Label" "" Proto.Json.string
+            |> Proto.Json.messageField "ID" "" Proto.Json.string
+            |> Proto.Json.messageField "URL" "" Proto.Json.string
+            |> Proto.Json.messageField "URLPath" "" Proto.Json.string
+            |> Proto.Json.messageField "HTTPRequest" "" Proto.Json.string
+            |> Proto.Json.messageField "XCoord" 0.0 Proto.Json.float
+            |> Proto.Json.messageField "ABCDef" "" Proto.Json.string
+            |> Proto.Json.messageFieldEither "Internal" "_internal" "" Proto.Json.string
+            |> Proto.Json.messageFieldEither "displayName" "display_name" "" Proto.Json.string
+            |> Proto.Json.messageField "Type" "" Proto.Json.string
+            |> Proto.Json.messageField "IDs" [] (Json.Decode.list Proto.Json.string)
+            |> Proto.Json.messageField "URLs" [] (Json.Decode.list Proto.Json.string)
+            |> Proto.Json.messageField "APIs" [] (Json.Decode.list Proto.Json.string)
+            |> Proto.Json.messageField "UUIDs" [] (Json.Decode.list Proto.Json.string)
+        )
 
 
 {-| Decodes a [`Link`](#Link) from proto3 JSON.
 -}
 decodeLink : Json.Decode.Decoder Link
 decodeLink =
-    Json.Decode.succeed Link
-        |> Proto.Json.fieldEither "Label" "__Label" "" Proto.Json.string
-        |> Proto.Json.oneof decodeLinkTarget
+    Proto.Json.message
+        (Json.Decode.succeed Link
+            |> Proto.Json.messageFieldEither "Label" "__Label" "" Proto.Json.string
+            |> Proto.Json.oneof decodeLinkTarget
+        )
 
 
 {-| Decodes a [`LinkTarget`](#LinkTarget) from the members of its message's JSON object.

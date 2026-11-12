@@ -1,5 +1,6 @@
 module Proto.Json exposing
     ( field, fieldEither, valueField, valueFieldEither, emptyMessage
+    , message, messageField, messageFieldEither, messageValueField, messageValueFieldEither
     , objectOfFields
     , implicitField, implicitFloatField, implicitBytesField, repeatedField, dictField, boolMapField
     , tryObjectOfFields, tryOptionalField, tryRepeatedField, tryDictField, tryBoolMapField
@@ -37,6 +38,15 @@ which gives `Nothing` to leave the field out, ends in `Field`
 # Fields
 
 @docs field, fieldEither, valueField, valueFieldEither, emptyMessage
+
+
+# Messages
+
+Generated decoders check once that the JSON is an object and then read each
+field without checking again, which makes a message decode faster than a
+pipeline of [`field`](#field) steps, each checking for itself.
+
+@docs message, messageField, messageFieldEither, messageValueField, messageValueFieldEither
 
 
 # Encoding fields
@@ -275,6 +285,103 @@ its keys. Anything else fails, as it does for a message with fields.
 emptyMessage : Decoder {}
 emptyMessage =
     Json.Decode.map (\() -> {}) empty
+
+
+{-| Decode a message: check that the JSON is an object, not an array, and
+then run `fields`, a pipeline from `Json.Decode.succeed` with a
+[`messageField`](#messageField) step per field. Anything that is not an
+object fails as a [`field`](#field) step does, with elm/json's
+`Expecting an OBJECT`.
+
+    decodeNote : Decoder Note
+    decodeNote =
+        message
+            (Json.Decode.succeed Note
+                |> messageField "title" "" string
+                |> messageField "stars" 0 int32
+            )
+
+A [`oneof`](#oneof) step reads the object as it does in any pipeline.
+
+-}
+message : Decoder a -> Decoder a
+message fields =
+    Json.Decode.value
+        |> Json.Decode.andThen
+            (\json ->
+                if isObject json then
+                    fields
+
+                else
+                    notAnObject
+            )
+
+
+{-| [`field`](#field) inside [`message`](#message), which has checked that the
+JSON is an object: the step does not check it again. Outside `message` it may
+read JSON that is not an object as a message, every field absent.
+-}
+messageField : String -> a -> Decoder a -> Decoder (a -> b) -> Decoder b
+messageField name default decoder =
+    Json.Decode.map2 (|>) (valueIn [ name ] default decoder)
+
+
+{-| [`fieldEither`](#fieldEither) inside [`message`](#message), as
+[`messageField`](#messageField) is `field`.
+-}
+messageFieldEither : String -> String -> a -> Decoder a -> Decoder (a -> b) -> Decoder b
+messageFieldEither jsonName protoName default decoder =
+    Json.Decode.map2 (|>) (valueIn (spellings jsonName protoName) default decoder)
+
+
+{-| [`valueField`](#valueField) inside [`message`](#message), as
+[`messageField`](#messageField) is `field`.
+-}
+messageValueField : String -> Decoder (Maybe Value -> b) -> Decoder b
+messageValueField name =
+    messageValueFieldEither name name
+
+
+{-| [`valueFieldEither`](#valueFieldEither) inside [`message`](#message), as
+[`messageField`](#messageField) is `field`.
+-}
+messageValueFieldEither : String -> String -> Decoder (Maybe Value -> b) -> Decoder b
+messageValueFieldEither jsonName protoName =
+    Json.Decode.map2 (|>)
+        (Json.Decode.value
+            |> Json.Decode.andThen
+                (\object_ ->
+                    case spelledInObject (spellings jsonName protoName) object_ of
+                        Err problem ->
+                            Json.Decode.fail problem
+
+                        Ok found ->
+                            Json.Decode.succeed (Maybe.map Tuple.second found)
+                )
+        )
+
+
+{-| [`valueAt`](#valueAt) for JSON already known to be an object, not an array.
+-}
+valueIn : List String -> a -> Decoder a -> Decoder a
+valueIn names default decoder =
+    Json.Decode.value
+        |> Json.Decode.andThen
+            (\object_ ->
+                case spelledInObject names object_ of
+                    Err problem ->
+                        Json.Decode.fail problem
+
+                    Ok Nothing ->
+                        Json.Decode.succeed default
+
+                    Ok (Just ( name, raw )) ->
+                        if isNull raw then
+                            Json.Decode.succeed default
+
+                        else
+                            Json.Decode.field name decoder
+            )
 
 
 {-| The value under whichever of `names`, the spellings of one field, the
@@ -882,16 +989,30 @@ array: its shape is not tested again.
 -}
 spelledInObject : List String -> Value -> Result String (Maybe ( String, Value ))
 spelledInObject names json =
-    if List.any isInherited names then
-        case spelledAmongKeys names json of
-            Spelled found ->
-                found
+    case names of
+        [ name ] ->
+            if isInherited name then
+                spelledAmongOwnKeys names json
 
-            NotAnObject ->
-                Ok Nothing
+            else
+                Ok (probe name json)
 
-    else
-        oneSpelling names (List.filterMap (\name -> probe name json) names)
+        _ ->
+            if List.any isInherited names then
+                spelledAmongOwnKeys names json
+
+            else
+                oneSpelling names (List.filterMap (\name -> probe name json) names)
+
+
+spelledAmongOwnKeys : List String -> Value -> Result String (Maybe ( String, Value ))
+spelledAmongOwnKeys names json =
+    case spelledAmongKeys names json of
+        Spelled found ->
+            found
+
+        NotAnObject ->
+            Ok Nothing
 
 
 {-| `"a" and "b"`, `"a", "b" and "c"`.
@@ -2282,8 +2403,8 @@ anyWith registry =
         |> Json.Decode.andThen
             (\parts ->
                 case parts of
-                    Just ( url, message ) ->
-                        case InternalRegistry.toBytes (InternalRegistry.strict registry) (InternalAny.nameOf url) message of
+                    Just ( url, messageJson ) ->
+                        case InternalRegistry.toBytes (InternalRegistry.strict registry) (InternalAny.nameOf url) messageJson of
                             Just (Ok base64) ->
                                 Json.Decode.succeed (InternalAny.Any url (InternalAny.Binary base64))
 
@@ -2291,9 +2412,9 @@ anyWith registry =
                                 if InternalRegistry.isLenient registry then
                                     -- Read leniently, it may hold an `Any` its binary
                                     -- would lose: it is held as JSON alone.
-                                    case InternalRegistry.toBytes registry (InternalAny.nameOf url) message of
+                                    case InternalRegistry.toBytes registry (InternalAny.nameOf url) messageJson of
                                         Just (Ok _) ->
-                                            Json.Decode.succeed (InternalAny.Any url (InternalAny.Json message))
+                                            Json.Decode.succeed (InternalAny.Any url (InternalAny.Json messageJson))
 
                                         _ ->
                                             Json.Decode.fail ("Expecting an Any of " ++ quote url ++ " to hold that message: " ++ Proto.Error.toString problem)
@@ -2303,7 +2424,7 @@ anyWith registry =
 
                             Nothing ->
                                 if InternalRegistry.isLenient registry then
-                                    Json.Decode.succeed (InternalAny.Any url (InternalAny.Json message))
+                                    Json.Decode.succeed (InternalAny.Any url (InternalAny.Json messageJson))
 
                                 else
                                     Json.Decode.fail ("Expecting an Any of a type the registry has, but got the unregistered type " ++ quote url)

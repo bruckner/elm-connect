@@ -113,8 +113,10 @@ encodeAttributes value =
 -}
 decodeAttributes : Json.Decode.Decoder Attributes
 decodeAttributes =
-    Json.Decode.succeed Attributes
-        |> Proto.Json.field "class" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed Attributes
+            |> Proto.Json.messageField "class" "" Proto.Json.string
+        )
 
 
 

@@ -591,103 +591,125 @@ decodeVisibility =
 -}
 decodeNote : Json.Decode.Decoder Note
 decodeNote =
-    Json.Decode.succeed Note
-        |> Proto.Json.field "name" "" Proto.Json.string
-        |> Proto.Json.field "title" "" Proto.Json.string
-        |> Proto.Json.field "visibility" VisibilityUnspecified decodeVisibility
-        |> Proto.Json.field "tags" [] (Json.Decode.list Proto.Json.string)
+    Proto.Json.message
+        (Json.Decode.succeed Note
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.messageField "title" "" Proto.Json.string
+            |> Proto.Json.messageField "visibility" VisibilityUnspecified decodeVisibility
+            |> Proto.Json.messageField "tags" [] (Json.Decode.list Proto.Json.string)
+        )
 
 
 {-| Decodes a [`GetNoteRequest`](#GetNoteRequest) from proto3 JSON.
 -}
 decodeGetNoteRequest : Json.Decode.Decoder GetNoteRequest
 decodeGetNoteRequest =
-    Json.Decode.succeed GetNoteRequest
-        |> Proto.Json.field "name" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed GetNoteRequest
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+        )
 
 
 {-| Decodes a [`ListNotesRequest`](#ListNotesRequest) from proto3 JSON.
 -}
 decodeListNotesRequest : Json.Decode.Decoder ListNotesRequest
 decodeListNotesRequest =
-    Json.Decode.succeed ListNotesRequest
-        |> Proto.Json.field "parent" "" Proto.Json.string
-        |> Proto.Json.fieldEither "pageSize" "page_size" 0 Proto.Json.int32
-        |> Proto.Json.fieldEither "pageToken" "page_token" "" Proto.Json.string
-        |> Proto.Json.field "filter" Nothing (Json.Decode.map Just decodeListNotesRequestFilter)
-        |> Proto.Json.field "tags" [] (Json.Decode.list Proto.Json.string)
-        |> Proto.Json.field "archived" Nothing (Json.Decode.map Just Json.Decode.bool)
-        |> Proto.Json.field "revision" "0" Proto.Json.int64
+    Proto.Json.message
+        (Json.Decode.succeed ListNotesRequest
+            |> Proto.Json.messageField "parent" "" Proto.Json.string
+            |> Proto.Json.messageFieldEither "pageSize" "page_size" 0 Proto.Json.int32
+            |> Proto.Json.messageFieldEither "pageToken" "page_token" "" Proto.Json.string
+            |> Proto.Json.messageField "filter" Nothing (Json.Decode.map Just decodeListNotesRequestFilter)
+            |> Proto.Json.messageField "tags" [] (Json.Decode.list Proto.Json.string)
+            |> Proto.Json.messageField "archived" Nothing (Json.Decode.map Just Json.Decode.bool)
+            |> Proto.Json.messageField "revision" "0" Proto.Json.int64
+        )
 
 
 {-| Decodes a [`ListNotesRequestFilter`](#ListNotesRequestFilter) from proto3 JSON.
 -}
 decodeListNotesRequestFilter : Json.Decode.Decoder ListNotesRequestFilter
 decodeListNotesRequestFilter =
-    Json.Decode.succeed ListNotesRequestFilter
-        |> Proto.Json.field "visibility" VisibilityUnspecified decodeVisibility
-        |> Proto.Json.field "since" Nothing (Json.Decode.map Just Proto.Json.timestamp)
+    Proto.Json.message
+        (Json.Decode.succeed ListNotesRequestFilter
+            |> Proto.Json.messageField "visibility" VisibilityUnspecified decodeVisibility
+            |> Proto.Json.messageField "since" Nothing (Json.Decode.map Just Proto.Json.timestamp)
+        )
 
 
 {-| Decodes a [`ListNotesResponse`](#ListNotesResponse) from proto3 JSON.
 -}
 decodeListNotesResponse : Json.Decode.Decoder ListNotesResponse
 decodeListNotesResponse =
-    Json.Decode.succeed ListNotesResponse
-        |> Proto.Json.field "notes" [] (Json.Decode.list decodeNote)
-        |> Proto.Json.fieldEither "nextPageToken" "next_page_token" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed ListNotesResponse
+            |> Proto.Json.messageField "notes" [] (Json.Decode.list decodeNote)
+            |> Proto.Json.messageFieldEither "nextPageToken" "next_page_token" "" Proto.Json.string
+        )
 
 
 {-| Decodes a [`CreateNoteRequest`](#CreateNoteRequest) from proto3 JSON.
 -}
 decodeCreateNoteRequest : Json.Decode.Decoder CreateNoteRequest
 decodeCreateNoteRequest =
-    Json.Decode.succeed CreateNoteRequest
-        |> Proto.Json.field "parent" "" Proto.Json.string
-        |> Proto.Json.field "note" Nothing (Json.Decode.map Just decodeNote)
+    Proto.Json.message
+        (Json.Decode.succeed CreateNoteRequest
+            |> Proto.Json.messageField "parent" "" Proto.Json.string
+            |> Proto.Json.messageField "note" Nothing (Json.Decode.map Just decodeNote)
+        )
 
 
 {-| Decodes an [`UpdateNoteRequest`](#UpdateNoteRequest) from proto3 JSON.
 -}
 decodeUpdateNoteRequest : Json.Decode.Decoder UpdateNoteRequest
 decodeUpdateNoteRequest =
-    Json.Decode.succeed UpdateNoteRequest
-        |> Proto.Json.field "note" Nothing (Json.Decode.map Just decodeNote)
-        |> Proto.Json.fieldEither "updateMask" "update_mask" Nothing (Json.Decode.map Just Proto.Json.fieldMask)
+    Proto.Json.message
+        (Json.Decode.succeed UpdateNoteRequest
+            |> Proto.Json.messageField "note" Nothing (Json.Decode.map Just decodeNote)
+            |> Proto.Json.messageFieldEither "updateMask" "update_mask" Nothing (Json.Decode.map Just Proto.Json.fieldMask)
+        )
 
 
 {-| Decodes a [`DeleteNoteRequest`](#DeleteNoteRequest) from proto3 JSON.
 -}
 decodeDeleteNoteRequest : Json.Decode.Decoder DeleteNoteRequest
 decodeDeleteNoteRequest =
-    Json.Decode.succeed DeleteNoteRequest
-        |> Proto.Json.field "name" "" Proto.Json.string
-        |> Proto.Json.field "force" False Json.Decode.bool
+    Proto.Json.message
+        (Json.Decode.succeed DeleteNoteRequest
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.messageField "force" False Json.Decode.bool
+        )
 
 
 {-| Decodes an [`ArchiveNoteRequest`](#ArchiveNoteRequest) from proto3 JSON.
 -}
 decodeArchiveNoteRequest : Json.Decode.Decoder ArchiveNoteRequest
 decodeArchiveNoteRequest =
-    Json.Decode.succeed ArchiveNoteRequest
-        |> Proto.Json.field "name" "" Proto.Json.string
-        |> Proto.Json.field "reason" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed ArchiveNoteRequest
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.messageField "reason" "" Proto.Json.string
+        )
 
 
 {-| Decodes a [`ReadFileRequest`](#ReadFileRequest) from proto3 JSON.
 -}
 decodeReadFileRequest : Json.Decode.Decoder ReadFileRequest
 decodeReadFileRequest =
-    Json.Decode.succeed ReadFileRequest
-        |> Proto.Json.field "path" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed ReadFileRequest
+            |> Proto.Json.messageField "path" "" Proto.Json.string
+        )
 
 
 {-| Decodes a [`Summary`](#Summary) from proto3 JSON.
 -}
 decodeSummary : Json.Decode.Decoder Summary
 decodeSummary =
-    Json.Decode.succeed Summary
-        |> Proto.Json.field "text" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed Summary
+            |> Proto.Json.messageField "text" "" Proto.Json.string
+        )
 
 
 

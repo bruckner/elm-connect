@@ -164,13 +164,15 @@ encodeNoteOwner value =
 -}
 decodeNote : Json.Decode.Decoder Note
 decodeNote =
-    Json.Decode.succeed Note
-        |> Proto.Json.field "title" "" Proto.Json.string
-        |> Proto.Json.field "author" Nothing (Json.Decode.map Just Users.V1.decodeUser)
-        |> Proto.Json.fieldEither "requiredRole" "required_role" Users.V1.RoleUnspecified Users.V1.decodeRole
-        |> Proto.Json.field "readers" [] (Json.Decode.list Users.V1.decodeUser)
-        |> Proto.Json.field "roles" Dict.empty (Proto.Json.stringDict Users.V1.decodeRole)
-        |> Proto.Json.oneof decodeNoteOwner
+    Proto.Json.message
+        (Json.Decode.succeed Note
+            |> Proto.Json.messageField "title" "" Proto.Json.string
+            |> Proto.Json.messageField "author" Nothing (Json.Decode.map Just Users.V1.decodeUser)
+            |> Proto.Json.messageFieldEither "requiredRole" "required_role" Users.V1.RoleUnspecified Users.V1.decodeRole
+            |> Proto.Json.messageField "readers" [] (Json.Decode.list Users.V1.decodeUser)
+            |> Proto.Json.messageField "roles" Dict.empty (Proto.Json.stringDict Users.V1.decodeRole)
+            |> Proto.Json.oneof decodeNoteOwner
+        )
 
 
 {-| Decodes a [`NoteOwner`](#NoteOwner) from the members of its message's JSON object.

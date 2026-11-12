@@ -306,48 +306,60 @@ encodeIntroduceResponse value =
 -}
 decodeSayRequest : Json.Decode.Decoder SayRequest
 decodeSayRequest =
-    Json.Decode.succeed SayRequest
-        |> Proto.Json.field "sentence" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed SayRequest
+            |> Proto.Json.messageField "sentence" "" Proto.Json.string
+        )
 
 
 {-| Decodes a [`SayResponse`](#SayResponse) from proto3 JSON.
 -}
 decodeSayResponse : Json.Decode.Decoder SayResponse
 decodeSayResponse =
-    Json.Decode.succeed SayResponse
-        |> Proto.Json.field "sentence" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed SayResponse
+            |> Proto.Json.messageField "sentence" "" Proto.Json.string
+        )
 
 
 {-| Decodes a [`ConverseRequest`](#ConverseRequest) from proto3 JSON.
 -}
 decodeConverseRequest : Json.Decode.Decoder ConverseRequest
 decodeConverseRequest =
-    Json.Decode.succeed ConverseRequest
-        |> Proto.Json.field "sentence" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed ConverseRequest
+            |> Proto.Json.messageField "sentence" "" Proto.Json.string
+        )
 
 
 {-| Decodes a [`ConverseResponse`](#ConverseResponse) from proto3 JSON.
 -}
 decodeConverseResponse : Json.Decode.Decoder ConverseResponse
 decodeConverseResponse =
-    Json.Decode.succeed ConverseResponse
-        |> Proto.Json.field "sentence" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed ConverseResponse
+            |> Proto.Json.messageField "sentence" "" Proto.Json.string
+        )
 
 
 {-| Decodes an [`IntroduceRequest`](#IntroduceRequest) from proto3 JSON.
 -}
 decodeIntroduceRequest : Json.Decode.Decoder IntroduceRequest
 decodeIntroduceRequest =
-    Json.Decode.succeed IntroduceRequest
-        |> Proto.Json.field "name" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed IntroduceRequest
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+        )
 
 
 {-| Decodes an [`IntroduceResponse`](#IntroduceResponse) from proto3 JSON.
 -}
 decodeIntroduceResponse : Json.Decode.Decoder IntroduceResponse
 decodeIntroduceResponse =
-    Json.Decode.succeed IntroduceResponse
-        |> Proto.Json.field "sentence" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed IntroduceResponse
+            |> Proto.Json.messageField "sentence" "" Proto.Json.string
+        )
 
 
 

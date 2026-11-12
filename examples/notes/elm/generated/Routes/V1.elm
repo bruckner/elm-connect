@@ -672,66 +672,76 @@ decodeKind =
 -}
 decodeGetMessageRequest : Json.Decode.Decoder GetMessageRequest
 decodeGetMessageRequest =
-    Json.Decode.succeed GetMessageRequest
-        |> Proto.Json.fieldEither "messageId" "message_id" "" Proto.Json.string
-        |> Proto.Json.field "revision" "0" Proto.Json.int64
-        |> Proto.Json.field "sub" Nothing (Json.Decode.map Just decodeGetMessageRequestSubMessage)
-        |> Proto.Json.fieldEither "userId" "user_id" "" Proto.Json.string
-        |> Proto.Json.field "name" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed GetMessageRequest
+            |> Proto.Json.messageFieldEither "messageId" "message_id" "" Proto.Json.string
+            |> Proto.Json.messageField "revision" "0" Proto.Json.int64
+            |> Proto.Json.messageField "sub" Nothing (Json.Decode.map Just decodeGetMessageRequestSubMessage)
+            |> Proto.Json.messageFieldEither "userId" "user_id" "" Proto.Json.string
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+        )
 
 
 {-| Decodes a [`GetMessageRequestSubMessage`](#GetMessageRequestSubMessage) from proto3 JSON.
 -}
 decodeGetMessageRequestSubMessage : Json.Decode.Decoder GetMessageRequestSubMessage
 decodeGetMessageRequestSubMessage =
-    Json.Decode.succeed GetMessageRequestSubMessage
-        |> Proto.Json.field "subfield" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed GetMessageRequestSubMessage
+            |> Proto.Json.messageField "subfield" "" Proto.Json.string
+        )
 
 
 {-| Decodes a [`Message`](#Message) from proto3 JSON.
 -}
 decodeMessage : Json.Decode.Decoder Message
 decodeMessage =
-    Json.Decode.succeed Message
-        |> Proto.Json.fieldEither "messageId" "message_id" "" Proto.Json.string
-        |> Proto.Json.field "text" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed Message
+            |> Proto.Json.messageFieldEither "messageId" "message_id" "" Proto.Json.string
+            |> Proto.Json.messageField "text" "" Proto.Json.string
+        )
 
 
 {-| Decodes an [`UpdateMessageRequest`](#UpdateMessageRequest) from proto3 JSON.
 -}
 decodeUpdateMessageRequest : Json.Decode.Decoder UpdateMessageRequest
 decodeUpdateMessageRequest =
-    Json.Decode.succeed UpdateMessageRequest
-        |> Proto.Json.fieldEither "messageId" "message_id" "" Proto.Json.string
-        |> Proto.Json.field "message" Nothing (Json.Decode.map Just decodeMessage)
+    Proto.Json.message
+        (Json.Decode.succeed UpdateMessageRequest
+            |> Proto.Json.messageFieldEither "messageId" "message_id" "" Proto.Json.string
+            |> Proto.Json.messageField "message" Nothing (Json.Decode.map Just decodeMessage)
+        )
 
 
 {-| Decodes an [`Everything`](#Everything) from proto3 JSON.
 -}
 decodeEverything : Json.Decode.Decoder Everything
 decodeEverything =
-    Json.Decode.succeed Everything
-        |> Proto.Json.field "name" "" Proto.Json.string
-        |> Proto.Json.field "count" 0 Proto.Json.int32
-        |> Proto.Json.field "big" "0" Proto.Json.int64
-        |> Proto.Json.field "ubig" "0" Proto.Json.uint64
-        |> Proto.Json.field "flag" False Json.Decode.bool
-        |> Proto.Json.field "ratio" 0.0 Proto.Json.float
-        |> Proto.Json.field "scale" 0.0 Proto.Json.float32
-        |> Proto.Json.field "data" "" Proto.Json.bytes
-        |> Proto.Json.field "kind" KindUnspecified decodeKind
-        |> Proto.Json.field "tags" [] (Json.Decode.list Proto.Json.string)
-        |> Proto.Json.field "kinds" [] (Json.Decode.list decodeKind)
-        |> Proto.Json.field "numbers" [] (Json.Decode.list Proto.Json.int32)
-        |> Proto.Json.fieldEither "maybeCount" "maybe_count" Nothing (Json.Decode.map Just Proto.Json.int32)
-        |> Proto.Json.fieldEither "maybeName" "maybe_name" Nothing (Json.Decode.map Just Proto.Json.string)
-        |> Proto.Json.field "at" Nothing (Json.Decode.map Just Proto.Json.timestamp)
-        |> Proto.Json.field "wait" Nothing (Json.Decode.map Just Proto.Json.duration)
-        |> Proto.Json.field "mask" Nothing (Json.Decode.map Just Proto.Json.fieldMask)
-        |> Proto.Json.field "limit" Nothing (Json.Decode.map Just Proto.Json.int32)
-        |> Proto.Json.field "label" Nothing (Json.Decode.map Just Proto.Json.string)
-        |> Proto.Json.field "inner" Nothing (Json.Decode.map Just decodeInner)
-        |> Proto.Json.oneof decodeEverythingChoice
+    Proto.Json.message
+        (Json.Decode.succeed Everything
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.messageField "count" 0 Proto.Json.int32
+            |> Proto.Json.messageField "big" "0" Proto.Json.int64
+            |> Proto.Json.messageField "ubig" "0" Proto.Json.uint64
+            |> Proto.Json.messageField "flag" False Json.Decode.bool
+            |> Proto.Json.messageField "ratio" 0.0 Proto.Json.float
+            |> Proto.Json.messageField "scale" 0.0 Proto.Json.float32
+            |> Proto.Json.messageField "data" "" Proto.Json.bytes
+            |> Proto.Json.messageField "kind" KindUnspecified decodeKind
+            |> Proto.Json.messageField "tags" [] (Json.Decode.list Proto.Json.string)
+            |> Proto.Json.messageField "kinds" [] (Json.Decode.list decodeKind)
+            |> Proto.Json.messageField "numbers" [] (Json.Decode.list Proto.Json.int32)
+            |> Proto.Json.messageFieldEither "maybeCount" "maybe_count" Nothing (Json.Decode.map Just Proto.Json.int32)
+            |> Proto.Json.messageFieldEither "maybeName" "maybe_name" Nothing (Json.Decode.map Just Proto.Json.string)
+            |> Proto.Json.messageField "at" Nothing (Json.Decode.map Just Proto.Json.timestamp)
+            |> Proto.Json.messageField "wait" Nothing (Json.Decode.map Just Proto.Json.duration)
+            |> Proto.Json.messageField "mask" Nothing (Json.Decode.map Just Proto.Json.fieldMask)
+            |> Proto.Json.messageField "limit" Nothing (Json.Decode.map Just Proto.Json.int32)
+            |> Proto.Json.messageField "label" Nothing (Json.Decode.map Just Proto.Json.string)
+            |> Proto.Json.messageField "inner" Nothing (Json.Decode.map Just decodeInner)
+            |> Proto.Json.oneof decodeEverythingChoice
+        )
 
 
 {-| Decodes an [`EverythingChoice`](#EverythingChoice) from the members of its message's JSON object.
@@ -749,47 +759,57 @@ decodeEverythingChoice =
 -}
 decodeInner : Json.Decode.Decoder Inner
 decodeInner =
-    Json.Decode.succeed Inner
-        |> Proto.Json.field "a" "" Proto.Json.string
-        |> Proto.Json.field "deep" Nothing (Json.Decode.map Just decodeDeep)
+    Proto.Json.message
+        (Json.Decode.succeed Inner
+            |> Proto.Json.messageField "a" "" Proto.Json.string
+            |> Proto.Json.messageField "deep" Nothing (Json.Decode.map Just decodeDeep)
+        )
 
 
 {-| Decodes a [`Deep`](#Deep) from proto3 JSON.
 -}
 decodeDeep : Json.Decode.Decoder Deep
 decodeDeep =
-    Json.Decode.succeed Deep
-        |> Proto.Json.field "b" 0 Proto.Json.int32
-        |> Proto.Json.field "c" [] (Json.Decode.list Proto.Json.string)
+    Proto.Json.message
+        (Json.Decode.succeed Deep
+            |> Proto.Json.messageField "b" 0 Proto.Json.int32
+            |> Proto.Json.messageField "c" [] (Json.Decode.list Proto.Json.string)
+        )
 
 
 {-| Decodes a [`FileRequest`](#FileRequest) from proto3 JSON.
 -}
 decodeFileRequest : Json.Decode.Decoder FileRequest
 decodeFileRequest =
-    Json.Decode.succeed FileRequest
-        |> Proto.Json.field "path" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed FileRequest
+            |> Proto.Json.messageField "path" "" Proto.Json.string
+        )
 
 
 {-| Decodes a [`Resource`](#Resource) from proto3 JSON.
 -}
 decodeResource : Json.Decode.Decoder Resource
 decodeResource =
-    Json.Decode.succeed Resource
-        |> Proto.Json.field "name" "" Proto.Json.string
-        |> Proto.Json.fieldEither "displayName" "display_name" "" Proto.Json.string
-        |> Proto.Json.field "labels" Dict.empty (Proto.Json.stringDict Proto.Json.string)
-        |> Proto.Json.field "kinds" Dict.empty (Proto.Json.int64Dict decodeKind)
-        |> Proto.Json.field "weights" [] (Proto.Json.boolMap Proto.Json.float)
+    Proto.Json.message
+        (Json.Decode.succeed Resource
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.messageFieldEither "displayName" "display_name" "" Proto.Json.string
+            |> Proto.Json.messageField "labels" Dict.empty (Proto.Json.stringDict Proto.Json.string)
+            |> Proto.Json.messageField "kinds" Dict.empty (Proto.Json.int64Dict decodeKind)
+            |> Proto.Json.messageField "weights" [] (Proto.Json.boolMap Proto.Json.float)
+        )
 
 
 {-| Decodes an [`UpdateResourceRequest`](#UpdateResourceRequest) from proto3 JSON.
 -}
 decodeUpdateResourceRequest : Json.Decode.Decoder UpdateResourceRequest
 decodeUpdateResourceRequest =
-    Json.Decode.succeed UpdateResourceRequest
-        |> Proto.Json.field "resource" Nothing (Json.Decode.map Just decodeResource)
-        |> Proto.Json.fieldEither "updateMask" "update_mask" Nothing (Json.Decode.map Just Proto.Json.fieldMask)
+    Proto.Json.message
+        (Json.Decode.succeed UpdateResourceRequest
+            |> Proto.Json.messageField "resource" Nothing (Json.Decode.map Just decodeResource)
+            |> Proto.Json.messageFieldEither "updateMask" "update_mask" Nothing (Json.Decode.map Just Proto.Json.fieldMask)
+        )
 
 
 
