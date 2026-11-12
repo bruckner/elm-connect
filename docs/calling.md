@@ -429,14 +429,20 @@ withTimeout : Float -> Call codec req res -> Call codec req res
 withRetry : Retry -> Call codec req res -> Call codec req res
 withoutRetry : Call codec req res -> Call codec req res
 withTracker : String -> Call codec req res -> Call codec req res
-viaBinding : Int -> Call codec req res -> Maybe (Call codec req res)
+viaBinding : Int -> Call Json req res -> Maybe (Call Json req res)
 ```
 
 `Rpc.Call` adjusts a call before it is sent: headers after the client's,
 a timeout in milliseconds in place of the client's, a retry policy in
 place of the client's (`withRetry`) or none (`withoutRetry`), a tracker
 for cancelling, and, for transcoding, another of the rule's bindings (`0` is
-the rule's own, `1` and up its `additional_bindings`).
+the rule's own, `1` and up its `additional_bindings`). Transcoding speaks
+JSON, so `viaBinding` takes a JSON call: one generated under `codec=both`
+becomes a `Call Rpc.Json` where it is applied. A call is one codec where it
+is used: a function that takes a call as its argument cannot both send it
+over `Rpc.Proto` and read its JSON. A generated call is free in the codec
+at each use, as is one bound in a `let`, so such a function takes the call
+twice, or the JSON beside it.
 
 ```elm examples/notes/elm/src/Snippets/Configuring.elm#per-call
 perCall : (Result Rpc.Error Notes.V1.Note -> msg) -> Cmd msg
@@ -455,8 +461,9 @@ withdraw =
 
 `Rpc.Call` also reads a call back: `serviceName`, `methodName`,
 `procedure` (the Connect path, `/notes.v1.NotesService/GetNote`),
-`idempotency`, `requestMessage`, `requestJson` and `toJson`. The
-method's descriptor, with its type names and HTTP rule as data, is not
+`idempotency`, `requestMessage`, `requestJson` and `toJson`, the last
+two of a JSON call, since a call generated under `codec=proto` has no
+JSON to write. The method's descriptor, with its type names and HTTP rule as data, is not
 on the call: name it, `Notes.V1.NotesService.descriptorGetNote`.
 
 ## Sending

@@ -45,7 +45,7 @@
   `withRoutes` and `withBindings` follow as before. A method's type
   gains its codec, `Proto.Method.Method codec req res`.
   `Proto.Method.encodeRequestBytes` and `responseBytesDecoder` are gone;
-  `encodeRequest`, `responseDecoder` and `hasJson` stay.
+  `encodeRequest` and `responseDecoder` stay.
 - The generator option value `codec=binary` (CLI `--codec binary`) is
   `codec=proto`; `binary` is refused with a diagnostic naming `proto`.
   A generated method's documentation names its codecs (`Codecs: JSON.`).

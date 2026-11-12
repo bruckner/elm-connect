@@ -1,4 +1,4 @@
-module Proto.Internal.Method exposing (BinaryHalf, Codecs, JsonHalf, Method(..), RouteOf(..), noBinary, noJson)
+module Proto.Internal.Method exposing (BinaryHalf, JsonHalf, Method(..), RouteOf(..), noBinary, noJson)
 
 {-| The `Method` type, which `Proto.Method` names by an alias. It is defined
 here so that `Rpc` can read what a method holds while users cannot. The
@@ -19,9 +19,11 @@ same codec, so the half it reads is always one the generated code gave.
 
 Both halves are always present, so sending has no branch for a missing one:
 the half a builder is not given is a filler ([`noJson`](#noJson),
-[`noBinary`](#noBinary)). Which halves are real is data (`codecs`), read by
-what reports on a method (`Proto.Method.hasJson`, `Rpc.Call.viaBinding`,
-`Rpc.Call.toJson`), never by the send path.
+[`noBinary`](#noBinary)). Which halves are real is the codec, not data: what
+reads a method's JSON half (`Proto.Method.encodeRequest`,
+`Rpc.Call.requestJson`, `Rpc.Call.toJson`) or takes one of its routes
+(`Rpc.Call.viaBinding`) is typed at `Json`, so no reader meets a filler
+either.
 
 -}
 
@@ -39,7 +41,6 @@ type Method idempotency codec req res
         { service : String
         , name : String
         , idempotency : idempotency
-        , codecs : Codecs
         , json : JsonHalf req res
         , binary : BinaryHalf req res
         , routes : List (RouteOf req)
@@ -56,14 +57,6 @@ nothing.
 type RouteOf req
     = Typed (req -> Route)
     | FromJson (Maybe String) (Json.Encode.Value -> Route)
-
-
-{-| Which halves the method was built with.
--}
-type alias Codecs =
-    { json : Bool
-    , binary : Bool
-    }
 
 
 {-| A request's proto3 JSON and the response's decoder, given the registry

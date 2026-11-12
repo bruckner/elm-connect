@@ -1955,8 +1955,10 @@ registry =
   Notes.V1.decodeNote`. A method wired with `proto` gets no route
   functions, nor its messages query encoders: transcoding takes JSON
   (§5.3). A method's codec is in its type, and so in its call's (§4):
-  `Rpc.Json` under `json`, `Rpc.Proto` under `proto`, free under `both`.
-  `Proto.Method.hasJson` tells a method built with `initProto`.
+  `Rpc.Json` under `json`, `Rpc.Proto` under `proto`, free under `both`;
+  what reads a method's JSON half or takes its routes is typed at
+  `Rpc.Json` (§5.1), so the type alone tells a method built with
+  `initProto`.
 - **Names** are §3.7's: the JSON names with `Bytes` at the end, and
   `naming::codec_collision` where a type's name meets them, under every
   option. The JSON codecs taking the registry end in `With`, and the same
@@ -2801,13 +2803,14 @@ withTimeout : Float -> …                     -- replaces the client's
 withRetry : Rpc.Retry.Retry -> …             -- replaces the client's
 withoutRetry : …                             -- no policy, whatever the client's
 withTracker : String -> …                    -- send without a policy in effect only
-viaBinding : Int -> Call codec req res -> Maybe (Call codec req res)   -- transcoding only
+viaBinding : Int -> Call Json req res -> Maybe (Call Json req res)   -- transcoding only
 
 -- reading
 method : Call codec req res -> Proto.Method.Method codec req res
-procedure, serviceName, methodName, requestMessage, requestJson
+procedure, serviceName, methodName, requestMessage
 idempotency : Call codec req res -> Proto.Method.Idempotency
-toJson : Call codec req res -> Json.Encode.Value   -- {"service","method","procedure","request"}
+requestJson : Registry -> Call Json req res -> Result Proto.Error.Error Json.Encode.Value
+toJson : Registry -> Call Json req res -> Result Proto.Error.Error Json.Encode.Value   -- {"service","method","procedure","request"}
 
 -- Rpc
 type alias Json = Rpc.Protocol.Json
@@ -2842,8 +2845,9 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
   present, the one the method was not built with a filler (§4, §3.10).
   `Proto.Method.encodeRequest registry` and `responseDecoder registry`
   read the JSON half, the former a `Result` (never `null` for a request
-  it cannot write), `hasJson` whether it is real; the typed values serve
-  `Any`, the registry and error details.
+  it cannot write), and take a `Method Json`: which halves are real is
+  the codec, so no reader meets a filler; the typed values serve `Any`,
+  the registry and error details.
 - **One table: the client's.** `Rpc.withRegistry` sets the registry a
   client's calls convert an `Any` through between proto3 JSON and
   binary; a client starts with `Proto.Registry.empty`, and a method holds
@@ -2857,7 +2861,8 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
   encodes for its body, not an encoding of its own; a response holding
   an `Any` of a type the registry lacks fails to decode, a `BadResponse`.
   `Rpc.Call.requestJson` and `toJson` take the registry too and give a
-  `Result` (decisions.md: One table, the client's).
+  `Result` (decisions.md: One table, the client's), and take a JSON
+  call: a binary-only call has no JSON to write.
 - **The codec is in the type.** `Method`, `Call`, `Protocol` and
   `Client` carry a phantom codec, `Rpc.Json` or `Rpc.Proto`, so a
   client only sends a call whose method has the half its protocol
@@ -2882,8 +2887,10 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
   `serviceName`, `methodName` and `idempotency` (the method's, §4).
 - `viaBinding n` is `Just` the call over binding `n` when the
   method has a route for it (`0` the rule's own, `1` and up its additional
-
-  bindings), `Nothing` otherwise; a method without a rule gives
+  bindings), `Nothing` otherwise. It takes and gives a `Call Json`, since
+  transcoding speaks JSON: a call free in the codec (`codec=both`) is
+  pinned to JSON by it, and a binary-only call is refused by the
+  compiler. A method without a rule gives
   `Nothing` for every number, and its unadjusted call takes the
   implicit route (§5.3). A call therefore always has a route, and
   sending never fails for want of a binding.

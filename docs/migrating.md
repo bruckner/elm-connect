@@ -137,7 +137,14 @@ fetch rpcClient toMsg call =
 
 A client sending a call generated without its codec is a compile error.
 A build of `main` before 0.2 failed that call at run time with
-`Rpc.Error.MissingCodec`, which is gone.
+`Rpc.Error.MissingCodec`, which is gone. What reads a call's JSON or
+picks its binding takes a JSON call: `Rpc.Call.viaBinding`,
+`requestJson` and `toJson`, and `Proto.Method.encodeRequest` and
+`responseDecoder` of a method. A call generated under `codec=both` is
+pinned to `Rpc.Json` where one of them is applied, as a call of 0.1's
+always was. A helper that took one call and both sent it over binary and
+read its JSON now takes two: a generated call is free in the codec at each
+use, a function's argument is not.
 
 ## The pure halves
 
