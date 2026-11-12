@@ -54,6 +54,8 @@ const (
 	RoutesUpdateResourceProcedure = "/routes.v1.Routes/UpdateResource"
 	// RoutesHeadProcedure is the procedure name of the Routes's Head RPC.
 	RoutesHeadProcedure = "/routes.v1.Routes/Head"
+	// RoutesBytesPathProcedure is the procedure name of the Routes's BytesPath RPC.
+	RoutesBytesPathProcedure = "/routes.v1.Routes/BytesPath"
 	// RoutesUnboundProcedure is the procedure name of the Routes's Unbound RPC.
 	RoutesUnboundProcedure = "/routes.v1.Routes/Unbound"
 )
@@ -143,6 +145,13 @@ var (
 			Procedure:  RoutesHeadProcedure,
 		}
 	})
+	routesBytesPathSpec = sync.OnceValue(func() connect.Spec {
+		return connect.Spec{
+			StreamType: connect.StreamTypeUnary,
+			Schema:     v1.File_routes_proto.Services().ByName("Routes").Methods().ByName("BytesPath"),
+			Procedure:  RoutesBytesPathProcedure,
+		}
+	})
 	routesUnboundSpec = sync.OnceValue(func() connect.Spec {
 		return connect.Spec{
 			StreamType: connect.StreamTypeUnary,
@@ -168,6 +177,9 @@ type RoutesClient interface {
 	Cancel(context.Context, *v1.Resource) (*v1.Resource, error)
 	UpdateResource(context.Context, *v1.UpdateResourceRequest) (*v1.Resource, error)
 	Head(context.Context, *v1.FileRequest) (*v1.FileRequest, error)
+	// A bytes field as a single-segment path variable: base64 text, whose `/`
+	// the path escapes.
+	BytesPath(context.Context, *v1.Everything) (*v1.Everything, error)
 	// No rule: the implicit route, POST /routes.v1.Routes/Unbound with the
 	// request as its body, as grpc-gateway (generate_unbound_methods),
 	// Envoy's transcoder (auto_mapping) and a Connect handler serve it.
@@ -196,6 +208,9 @@ type RoutesHandler interface {
 	Cancel(context.Context, *v1.Resource) (*v1.Resource, error)
 	UpdateResource(context.Context, *v1.UpdateResourceRequest) (*v1.Resource, error)
 	Head(context.Context, *v1.FileRequest) (*v1.FileRequest, error)
+	// A bytes field as a single-segment path variable: base64 text, whose `/`
+	// the path escapes.
+	BytesPath(context.Context, *v1.Everything) (*v1.Everything, error)
 	// No rule: the implicit route, POST /routes.v1.Routes/Unbound with the
 	// request as its body, as grpc-gateway (generate_unbound_methods),
 	// Envoy's transcoder (auto_mapping) and a Connect handler serve it.
@@ -218,6 +233,7 @@ func RegisterRoutesHandler(server *connect.Server, svc RoutesHandler) {
 		connect.Method{Spec: routesCancelSpec(), Handler: adapter.cancel},
 		connect.Method{Spec: routesUpdateResourceSpec(), Handler: adapter.updateResource},
 		connect.Method{Spec: routesHeadSpec(), Handler: adapter.head},
+		connect.Method{Spec: routesBytesPathSpec(), Handler: adapter.bytesPath},
 		connect.Method{Spec: routesUnboundSpec(), Handler: adapter.unbound},
 	)
 }
@@ -271,6 +287,10 @@ func (UnimplementedRoutesHandler) UpdateResource(context.Context, *v1.UpdateReso
 
 func (UnimplementedRoutesHandler) Head(context.Context, *v1.FileRequest) (*v1.FileRequest, error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, "routes.v1.Routes.Head is not implemented")
+}
+
+func (UnimplementedRoutesHandler) BytesPath(context.Context, *v1.Everything) (*v1.Everything, error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, "routes.v1.Routes.BytesPath is not implemented")
 }
 
 func (UnimplementedRoutesHandler) Unbound(context.Context, *v1.GetMessageRequest) (*v1.Message, error) {
@@ -372,6 +392,14 @@ func (c *routesClient) UpdateResource(ctx context.Context, req *v1.UpdateResourc
 func (c *routesClient) Head(ctx context.Context, req *v1.FileRequest) (*v1.FileRequest, error) {
 	var res v1.FileRequest
 	if err := c.client.CallUnary(ctx, routesHeadSpec(), req, &res); err != nil {
+		return nil, err
+	}
+	return &res, nil
+}
+
+func (c *routesClient) BytesPath(ctx context.Context, req *v1.Everything) (*v1.Everything, error) {
+	var res v1.Everything
+	if err := c.client.CallUnary(ctx, routesBytesPathSpec(), req, &res); err != nil {
 		return nil, err
 	}
 	return &res, nil
@@ -525,6 +553,18 @@ func (h routesHandler) head(ctx context.Context, _ connect.Spec, stream connect.
 		return err
 	}
 	res, err := h.svc.Head(ctx, &req)
+	if err != nil {
+		return err
+	}
+	return stream.Send(res)
+}
+
+func (h routesHandler) bytesPath(ctx context.Context, _ connect.Spec, stream connect.ServerStream) error {
+	var req v1.Everything
+	if err := stream.Receive(&req); err != nil {
+		return err
+	}
+	res, err := h.svc.BytesPath(ctx, &req)
 	if err != nil {
 		return err
 	}

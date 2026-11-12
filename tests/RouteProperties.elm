@@ -10,173 +10,333 @@ import Routes.V1.Routes
 
 fixtures : List Replay.Fixture
 fixtures =
-    [ Replay.fixture "Cancel 0 #0"
+    [ Replay.fixture "BytesPath 0 #0"
+        Routes.V1.decodeEverything
+        Routes.V1.Routes.bytesPath
+        (Just 0)
+        "{\"at\":\"1970-01-01T00:00:00Z\",\"big\":\"9223372036854775807\",\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_UNSPECIFIED\",\"KIND_IMAGE\",\"KIND_IMAGE\"],\"label\":\"\",\"limit\":0,\"mask\":\"\",\"maybe_count\":-522,\"maybe_name\":\".\",\"scale\":-35.375,\"tags\":[\"\"],\"text\":\"𐍈=#😀,\\n'\\\\\",\"ubig\":\"783\",\"wait\":\"0s\"}"
+        { method = "GET"
+        , url = "/v1/bytes/?big=9223372036854775807&ubig=783&scale=-35.375&kind=KIND_TEXT&tags=&kinds=KIND_UNSPECIFIED&kinds=KIND_IMAGE&kinds=KIND_IMAGE&maybe_count=-522&maybe_name=.&at=1970-01-01T00%3A00%3A00Z&wait=0s&mask=&limit=0&label=&text=%F0%90%8D%88%3D%23%F0%9F%98%80%2C%0A%27%5C"
+        , headers = []
+        , body = Nothing
+        }
+    , Replay.fixture "BytesPath 0 #1"
+        Routes.V1.decodeEverything
+        Routes.V1.Routes.bytesPath
+        (Just 0)
+        "{\"at\":\"3138-09-06T07:50:38.014Z\",\"big\":\"-9223372036854775808\",\"data\":\"tGr+\",\"flag\":true,\"inner\":{\"a\":\"\\\\Z!中a\"},\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_TEXT\",\"KIND_IMAGE\",\"KIND_UNSPECIFIED\"],\"maybe_count\":0,\"name\":\"Z9$Zz$%\\\"\",\"scale\":\"Infinity\",\"tags\":[\"$\",\"𐍈-*\",\"\"],\"text\":\"中ß\\u0001_\\\"']ß\",\"ubig\":\"8774788622839153176\"}"
+        { method = "GET"
+        , url = "/v1/bytes/tGr%2B?name=Z9%24Zz%24%25%22&big=-9223372036854775808&ubig=8774788622839153176&flag=true&scale=Infinity&kind=KIND_TEXT&tags=%24&tags=%F0%90%8D%88-%2A&tags=&kinds=KIND_TEXT&kinds=KIND_IMAGE&kinds=KIND_UNSPECIFIED&maybe_count=0&at=3138-09-06T07%3A50%3A38.014Z&inner.a=%5CZ%21%E4%B8%ADa&text=%E4%B8%AD%C3%9F%01_%22%27%5D%C3%9F"
+        , headers = []
+        , body = Nothing
+        }
+    , Replay.fixture "BytesPath 0 #2"
+        Routes.V1.decodeEverything
+        Routes.V1.Routes.bytesPath
+        (Just 0)
+        "{\"at\":\"6084-11-11T17:15:56.957Z\",\"big\":\"-691\",\"count\":-2147483648,\"data\":\"WLXLYl8=\",\"inner\":{\"a\":\"-**\\t-(%)\",\"deep\":{}},\"kinds\":[\"KIND_TEXT\",\"KIND_TEXT\"],\"label\":\"中中\\\"$Z😀)(\",\"mask\":\"a.dS.kx,neh2\",\"maybeCount\":-1,\"number\":0,\"numbers\":[-605,-2147483648,-557222974],\"ratio\":-12.875,\"scale\":-61.25,\"tags\":[\"?#)\"],\"ubig\":\"14433917900309911510\",\"wait\":\"0s\"}"
+        { method = "GET"
+        , url = "/v1/bytes/WLXLYl8%3D?count=-2147483648&big=-691&ubig=14433917900309911510&ratio=-12.875&scale=-61.25&tags=%3F%23%29&kinds=KIND_TEXT&kinds=KIND_TEXT&numbers=-605&numbers=-2147483648&numbers=-557222974&maybe_count=-1&at=6084-11-11T17%3A15%3A56.957Z&wait=0s&mask=a.dS.kx%2Cneh2&label=%E4%B8%AD%E4%B8%AD%22%24Z%F0%9F%98%80%29%28&inner.a=-%2A%2A%09-%28%25%29&number=0"
+        , headers = []
+        , body = Nothing
+        }
+    , Replay.fixture "BytesPath 0 #3"
+        Routes.V1.decodeEverything
+        Routes.V1.Routes.bytesPath
+        (Just 0)
+        "{\"at\":\"9999-12-31T23:59:59.431Z\",\"big\":\"0\",\"count\":1139749243,\"data\":\"SA==\",\"flag\":true,\"inner\":{\"a\":\"\"},\"kind\":\"KIND_IMAGE\",\"kinds\":[\"KIND_IMAGE\"],\"limit\":0,\"maybeCount\":0,\"name\":\"\",\"number\":1373024012,\"numbers\":[],\"ratio\":-88.25,\"scale\":-221312.53125,\"tags\":[],\"ubig\":\"0\",\"wait\":\"231936964399.085592788s\"}"
+        { method = "GET"
+        , url = "/v1/bytes/SA%3D%3D?count=1139749243&flag=true&ratio=-88.25&scale=-221312.53125&kind=KIND_IMAGE&kinds=KIND_IMAGE&maybe_count=0&at=9999-12-31T23%3A59%3A59.431Z&wait=231936964399.085592788s&limit=0&number=1373024012"
+        , headers = []
+        , body = Nothing
+        }
+    , Replay.fixture "BytesPath 0 #4"
+        Routes.V1.decodeEverything
+        Routes.V1.Routes.bytesPath
+        (Just 0)
+        "{\"at\":\"1970-01-01T00:00:00Z\",\"big\":\"9007199254740993\",\"count\":0,\"data\":\"\",\"flag\":true,\"kind\":\"KIND_UNSPECIFIED\",\"kinds\":[],\"maybeName\":\"\",\"name\":\"\\\\a\\n\",\"numbers\":[-1156127977],\"ratio\":100.125,\"scale\":41.875,\"tags\":[\"\"],\"ubig\":\"0\"}"
+        { method = "GET"
+        , url = "/v1/bytes/?name=%5Ca%0A&big=9007199254740993&flag=true&ratio=100.125&scale=41.875&tags=&numbers=-1156127977&maybe_name=&at=1970-01-01T00%3A00%3A00Z"
+        , headers = []
+        , body = Nothing
+        }
+    , Replay.fixture "BytesPath 0 #5"
+        Routes.V1.decodeEverything
+        Routes.V1.Routes.bytesPath
+        (Just 0)
+        "{\"big\":\"4299023465037866428\",\"count\":302078227,\"data\":\"TgdMQbXW\",\"inner\":{\"deep\":{}},\"kinds\":[\"KIND_TEXT\",\"KIND_TEXT\",\"KIND_TEXT\"],\"label\":\"\",\"limit\":0,\"mask\":\"pj83S7,tJ\",\"maybeCount\":0,\"name\":\"_[\\u0001\",\"number\":-398,\"numbers\":[1331708885,-1,-1],\"scale\":2.4182666733625815e-23,\"tags\":[\" 😀@\"]}"
+        { method = "GET"
+        , url = "/v1/bytes/TgdMQbXW?name=_%5B%01&count=302078227&big=4299023465037866428&scale=2.4182666733625815e-23&tags=%20%F0%9F%98%80%40&kinds=KIND_TEXT&kinds=KIND_TEXT&kinds=KIND_TEXT&numbers=1331708885&numbers=-1&numbers=-1&maybe_count=0&mask=pj83S7%2CtJ&limit=0&label=&number=-398"
+        , headers = []
+        , body = Nothing
+        }
+    , Replay.fixture "BytesPath 0 #6"
+        Routes.V1.decodeEverything
+        Routes.V1.Routes.bytesPath
+        (Just 0)
+        "{\"at\":\"1970-01-01T00:00:00Z\",\"big\":\"9007199254740993\",\"count\":0,\"data\":\"d/EiSA==\",\"flag\":false,\"inner\":{\"a\":\"\",\"deep\":{\"b\":0,\"c\":[\"_A;:中中-&\",\"=é\",\"\"]}},\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_IMAGE\",\"KIND_TEXT\",\"KIND_IMAGE\"],\"label\":\"\",\"limit\":904,\"name\":\" '\",\"numbers\":[2147483647,-1,1375641025],\"ratio\":0.0,\"scale\":2.4463939762853215e-9,\"tags\":[\"\\t_ \",\"),\",\"a\"],\"text\":\"\",\"ubig\":\"700286120658857532\"}"
+        { method = "GET"
+        , url = "/v1/bytes/d%2FEiSA%3D%3D?name=%20%27&big=9007199254740993&ubig=700286120658857532&scale=2.4463939762853215e-9&kind=KIND_TEXT&tags=%09_%20&tags=%29%2C&tags=a&kinds=KIND_IMAGE&kinds=KIND_TEXT&kinds=KIND_IMAGE&numbers=2147483647&numbers=-1&numbers=1375641025&at=1970-01-01T00%3A00%3A00Z&limit=904&label=&inner.deep.c=_A%3B%3A%E4%B8%AD%E4%B8%AD-%26&inner.deep.c=%3D%C3%A9&inner.deep.c=&text="
+        , headers = []
+        , body = Nothing
+        }
+    , Replay.fixture "BytesPath 0 #7"
+        Routes.V1.decodeEverything
+        Routes.V1.Routes.bytesPath
+        (Just 0)
+        "{\"at\":\"1970-01-01T00:00:00.949Z\",\"flag\":true,\"kind\":\"KIND_IMAGE\",\"limit\":-864,\"mask\":\"\",\"maybeCount\":-1,\"maybeName\":\"\",\"numbers\":[2147483647],\"scale\":83.75,\"tags\":[\"/9é_#\\n*é\"],\"wait\":\"315576000000.355043s\"}"
+        { method = "GET"
+        , url = "/v1/bytes/?flag=true&scale=83.75&kind=KIND_IMAGE&tags=%2F9%C3%A9_%23%0A%2A%C3%A9&numbers=2147483647&maybe_count=-1&maybe_name=&at=1970-01-01T00%3A00%3A00.949Z&wait=315576000000.355043s&mask=&limit=-864"
+        , headers = []
+        , body = Nothing
+        }
+    , Replay.fixture "BytesPath 0 #8"
+        Routes.V1.decodeEverything
+        Routes.V1.Routes.bytesPath
+        (Just 0)
+        "{\"at\":\"1970-01-01T00:00:00Z\",\"big\":\"1257802063928051636\",\"flag\":true,\"kinds\":[\"KIND_UNSPECIFIED\",\"KIND_IMAGE\",\"KIND_IMAGE\"],\"mask\":\"\",\"maybe_count\":0,\"maybe_name\":\"\",\"number\":232,\"scale\":\"Infinity\",\"ubig\":\"1\",\"wait\":\"0s\"}"
+        { method = "GET"
+        , url = "/v1/bytes/?big=1257802063928051636&ubig=1&flag=true&scale=Infinity&kinds=KIND_UNSPECIFIED&kinds=KIND_IMAGE&kinds=KIND_IMAGE&maybe_count=0&maybe_name=&at=1970-01-01T00%3A00%3A00Z&wait=0s&mask=&number=232"
+        , headers = []
+        , body = Nothing
+        }
+    , Replay.fixture "BytesPath 0 #9"
+        Routes.V1.decodeEverything
+        Routes.V1.Routes.bytesPath
+        (Just 0)
+        "{\"count\":-990853383,\"data\":\"+7GHTR/Y\",\"flag\":true,\"inner\":{},\"kinds\":[\"KIND_IMAGE\"],\"mask\":\"\",\"maybeCount\":-686,\"maybeName\":\"\",\"name\":\"\u{007F}9,é-$Ω'\",\"numbers\":[468596280],\"tags\":[\"é#(&\\\\\"],\"text\":\"\",\"wait\":\"-68568835109.049s\"}"
+        { method = "GET"
+        , url = "/v1/bytes/%2B7GHTR%2FY?name=%7F9%2C%C3%A9-%24%CE%A9%27&count=-990853383&flag=true&tags=%C3%A9%23%28%26%5C&kinds=KIND_IMAGE&numbers=468596280&maybe_count=-686&maybe_name=&wait=-68568835109.049s&mask=&text="
+        , headers = []
+        , body = Nothing
+        }
+    , Replay.fixture "BytesPath 0 #10"
+        Routes.V1.decodeEverything
+        Routes.V1.Routes.bytesPath
+        (Just 0)
+        "{\"at\":\"6662-04-11T21:46:00.937Z\",\"big\":\"-2757201091328298557\",\"count\":-2147483648,\"data\":\"IZes\",\"inner\":{\"deep\":{\"c\":[\"Ω\",\"@*\u{007F}#A:.\\n\",\"\"]}},\"kind\":\"KIND_TEXT\",\"label\":\"\",\"limit\":287,\"mask\":\"\",\"maybe_name\":\"\",\"numbers\":[1732885337,-1495174782,-1],\"ratio\":4.324588872392823e-168,\"scale\":5.678817800597279e-35,\"tags\":[\"\\n\",\";\"],\"text\":\"\",\"ubig\":\"5139142221678197115\"}"
+        { method = "GET"
+        , url = "/v1/bytes/IZes?count=-2147483648&big=-2757201091328298557&ubig=5139142221678197115&ratio=4.324588872392823e-168&scale=5.678817800597279e-35&kind=KIND_TEXT&tags=%0A&tags=%3B&numbers=1732885337&numbers=-1495174782&numbers=-1&maybe_name=&at=6662-04-11T21%3A46%3A00.937Z&mask=&limit=287&label=&inner.deep.c=%CE%A9&inner.deep.c=%40%2A%7F%23A%3A.%0A&inner.deep.c=&text="
+        , headers = []
+        , body = Nothing
+        }
+    , Replay.fixture "BytesPath 0 #11"
+        Routes.V1.decodeEverything
+        Routes.V1.Routes.bytesPath
+        (Just 0)
+        "{\"count\":-1,\"data\":\"KqObig==\",\"flag\":true,\"kind\":\"KIND_IMAGE\",\"kinds\":[\"KIND_UNSPECIFIED\",\"KIND_TEXT\",\"KIND_UNSPECIFIED\"],\"label\":\"\",\"mask\":\"\",\"number\":2147483647,\"numbers\":[-2147483648],\"scale\":-20.5,\"tags\":[\"-\",\"~-✓?0✓[z\",\":\\\"!\"],\"ubig\":\"9007199254740993\"}"
+        { method = "GET"
+        , url = "/v1/bytes/KqObig%3D%3D?count=-1&ubig=9007199254740993&flag=true&scale=-20.5&kind=KIND_IMAGE&tags=-&tags=~-%E2%9C%93%3F0%E2%9C%93%5Bz&tags=%3A%22%21&kinds=KIND_UNSPECIFIED&kinds=KIND_TEXT&kinds=KIND_UNSPECIFIED&numbers=-2147483648&mask=&label=&number=2147483647"
+        , headers = []
+        , body = Nothing
+        }
+    , Replay.fixture "BytesPath 0 #12"
+        Routes.V1.decodeEverything
+        Routes.V1.Routes.bytesPath
+        (Just 0)
+        "{\"at\":\"5484-03-20T08:29:22.464Z\",\"big\":\"5889775134339152852\",\"flag\":true,\"inner\":{\"a\":\"\u{007F}:+\",\"deep\":{\"b\":-255836435,\"c\":[\";*;\",\"\"]}},\"kinds\":[\"KIND_TEXT\"],\"maybeCount\":0,\"maybeName\":\"\",\"name\":\"A/&\",\"number\":0,\"numbers\":[-272,-555378668],\"ratio\":3.2834661721718206e+181,\"scale\":-70.5,\"ubig\":\"1\",\"wait\":\"-0.913950481s\"}"
+        { method = "GET"
+        , url = "/v1/bytes/?name=A%2F%26&big=5889775134339152852&ubig=1&flag=true&ratio=3.2834661721718206e%2B181&scale=-70.5&kinds=KIND_TEXT&numbers=-272&numbers=-555378668&maybe_count=0&maybe_name=&at=5484-03-20T08%3A29%3A22.464Z&wait=-0.913950481s&inner.a=%7F%3A%2B&inner.deep.b=-255836435&inner.deep.c=%3B%2A%3B&inner.deep.c=&number=0"
+        , headers = []
+        , body = Nothing
+        }
+    , Replay.fixture "BytesPath 0 #13"
+        Routes.V1.decodeEverything
+        Routes.V1.Routes.bytesPath
+        (Just 0)
+        "{\"at\":\"0001-01-01T00:00:00.566Z\",\"big\":\"-2283956501834845615\",\"count\":423085803,\"inner\":{},\"label\":\"\",\"limit\":-2147483648,\"maybeCount\":0,\"maybeName\":\"\",\"name\":\"A%é\",\"numbers\":[-156858985,700],\"tags\":[\"A\"],\"text\":\" 0\\\\\",\"wait\":\"0s\"}"
+        { method = "GET"
+        , url = "/v1/bytes/?name=A%25%C3%A9&count=423085803&big=-2283956501834845615&tags=A&numbers=-156858985&numbers=700&maybe_count=0&maybe_name=&at=0001-01-01T00%3A00%3A00.566Z&wait=0s&limit=-2147483648&label=&text=%200%5C"
+        , headers = []
+        , body = Nothing
+        }
+    , Replay.fixture "BytesPath 0 #14"
+        Routes.V1.decodeEverything
+        Routes.V1.Routes.bytesPath
+        (Just 0)
+        "{\"at\":\"1970-01-01T00:00:00Z\",\"big\":\"9007199254740993\",\"count\":978706852,\"inner\":{},\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_TEXT\",\"KIND_TEXT\",\"KIND_UNSPECIFIED\"],\"limit\":0,\"mask\":\"\",\"maybeCount\":0,\"number\":0,\"numbers\":[2111424258,1700114411,515],\"ratio\":11412968832901.588,\"scale\":-10.625,\"tags\":[\"A\",\"a😀中)a\"],\"ubig\":\"17029206632144463768\",\"wait\":\"0s\"}"
+        { method = "GET"
+        , url = "/v1/bytes/?count=978706852&big=9007199254740993&ubig=17029206632144463768&ratio=11412968832901.588&scale=-10.625&kind=KIND_TEXT&tags=A&tags=a%F0%9F%98%80%E4%B8%AD%29a&kinds=KIND_TEXT&kinds=KIND_TEXT&kinds=KIND_UNSPECIFIED&numbers=2111424258&numbers=1700114411&numbers=515&maybe_count=0&at=1970-01-01T00%3A00%3A00Z&wait=0s&mask=&limit=0&number=0"
+        , headers = []
+        , body = Nothing
+        }
+    , Replay.fixture "BytesPath 0 #15"
+        Routes.V1.decodeEverything
+        Routes.V1.Routes.bytesPath
+        (Just 0)
+        "{\"at\":\"1970-01-01T00:00:00.617Z\",\"big\":\"729\",\"count\":-58274369,\"kinds\":[\"KIND_UNSPECIFIED\",\"KIND_UNSPECIFIED\",\"KIND_IMAGE\"],\"mask\":\"gN6.n.v,b7q.gpt,jkw7\",\"maybe_count\":1,\"name\":\".*\",\"numbers\":[-1518457800,-521],\"text\":\"a0\u{007F}~\u{007F}\u{007F}._\",\"wait\":\"0s\"}"
+        { method = "GET"
+        , url = "/v1/bytes/?name=.%2A&count=-58274369&big=729&kinds=KIND_UNSPECIFIED&kinds=KIND_UNSPECIFIED&kinds=KIND_IMAGE&numbers=-1518457800&numbers=-521&maybe_count=1&at=1970-01-01T00%3A00%3A00.617Z&wait=0s&mask=gN6.n.v%2Cb7q.gpt%2Cjkw7&text=a0%7F~%7F%7F._"
+        , headers = []
+        , body = Nothing
+        }
+    , Replay.fixture "Cancel 0 #0"
         Routes.V1.decodeResource
         Routes.V1.Routes.cancel
         (Just 0)
-        "{\"displayName\":\"𐍈=#😀,\\n'\\\\\",\"kinds\":{\"-283\":\"KIND_UNSPECIFIED\",\"1468361642629552560\":\"KIND_IMAGE\",\"603\":\"KIND_UNSPECIFIED\"},\"labels\":{\"\u{007F}AA\":\"[\"},\"weights\":{\"false\":0.1}}"
+        "{\"displayName\":\",~\\t\\\\'\",\"labels\":{\"-\":\"9é-\\\"𐍈\"}}"
         { method = "POST"
         , url = "/v1/:cancel"
         , headers = []
-        , body = Just "{\"displayName\":\"𐍈=#😀,\\n'\\\\\",\"kinds\":{\"-283\":\"KIND_UNSPECIFIED\",\"1468361642629552560\":\"KIND_IMAGE\",\"603\":\"KIND_UNSPECIFIED\"},\"labels\":{\"\u{007F}AA\":\"[\"},\"weights\":{\"false\":0.1}}"
+        , body = Just "{\"displayName\":\",~\\t\\\\'\",\"labels\":{\"-\":\"9é-\\\"𐍈\"}}"
         }
     , Replay.fixture "Cancel 0 #1"
         Routes.V1.decodeResource
         Routes.V1.Routes.cancel
         (Just 0)
-        "{\"displayName\":\".\",\"labels\":{\"$Z9$Z\":\"$%\\\"\",\")\u{007F}(\":\"a\\u0001\",\"+aA ,\":\"中ß\\u0001_\\\"']ß\"},\"name\":\".\"}"
+        "{\"kinds\":{\"-9223372036854775808\":\"KIND_IMAGE\",\"6646167242530661789\":\"KIND_IMAGE\",\"778\":\"KIND_IMAGE\"},\"labels\":{\"\":\"\",\"\u{007F}\\t\\u00010$\\\\~=\":\"\"},\"name\":\"$]  ?\",\"weights\":{\"false\":-1.896883970759154e-22}}"
         { method = "POST"
-        , url = "/v1/.:cancel"
+        , url = "/v1/%24%5D%20%20%3F:cancel"
         , headers = []
-        , body = Just "{\"displayName\":\".\",\"labels\":{\"$Z9$Z\":\"$%\\\"\",\")\u{007F}(\":\"a\\u0001\",\"+aA ,\":\"中ß\\u0001_\\\"']ß\"}}"
+        , body = Just "{\"kinds\":{\"-9223372036854775808\":\"KIND_IMAGE\",\"6646167242530661789\":\"KIND_IMAGE\",\"778\":\"KIND_IMAGE\"},\"labels\":{\"\":\"\",\"\u{007F}\\t\\u00010$\\\\~=\":\"\"},\"weights\":{\"false\":-1.896883970759154e-22}}"
         }
     , Replay.fixture "Cancel 0 #2"
         Routes.V1.decodeResource
         Routes.V1.Routes.cancel
         (Just 0)
-        "{\"display_name\":\"ßzz\",\"kinds\":{\"-1269681750333210077\":\"KIND_UNSPECIFIED\",\"8398642343334479438\":\"KIND_IMAGE\",\"9007199254740993\":\"KIND_UNSPECIFIED\"},\"labels\":{\"\\t\":\"$\",\"𐍈-*\":\"\"},\"weights\":{\"true\":111.0}}"
+        "{\"kinds\":{\"-3847764267387484236\":\"KIND_IMAGE\",\"1380738060094671452\":\"KIND_IMAGE\"},\"labels\":{\":/\":\"(\"},\"name\":\"A;; #\",\"weights\":{\"true\":\"NaN\"}}"
         { method = "POST"
-        , url = "/v1/:cancel"
+        , url = "/v1/A%3B%3B%20%23:cancel"
         , headers = []
-        , body = Just "{\"displayName\":\"ßzz\",\"kinds\":{\"-1269681750333210077\":\"KIND_UNSPECIFIED\",\"8398642343334479438\":\"KIND_IMAGE\",\"9007199254740993\":\"KIND_UNSPECIFIED\"},\"labels\":{\"\\t\":\"$\",\"𐍈-*\":\"\"},\"weights\":{\"true\":111.0}}"
+        , body = Just "{\"kinds\":{\"-3847764267387484236\":\"KIND_IMAGE\",\"1380738060094671452\":\"KIND_IMAGE\"},\"labels\":{\":/\":\"(\"},\"weights\":{\"true\":\"NaN\"}}"
         }
     , Replay.fixture "Cancel 0 #3"
         Routes.V1.decodeResource
         Routes.V1.Routes.cancel
         (Just 0)
-        "{\"displayName\":\"\",\"kinds\":{\"-103\":\"KIND_IMAGE\",\"-490\":\"KIND_IMAGE\"},\"labels\":{\"\":\"\",\"!\\u0001\\\"中\u{007F}\":\"\"},\"name\":\"中a&]@0z*\",\"weights\":{}}"
+        "{\"displayName\":\")Z]\",\"kinds\":{\"-562\":\"KIND_TEXT\",\"4172176242543286081\":\"KIND_UNSPECIFIED\",\"9007199254740992\":\"KIND_UNSPECIFIED\"},\"labels\":{\"9Ω\\t\":\"_\"},\"weights\":{\"false\":2.2250738585072014e-308,\"true\":1.3634734289052641e+81}}"
         { method = "POST"
-        , url = "/v1/%E4%B8%ADa%26%5D%400z%2A:cancel"
+        , url = "/v1/:cancel"
         , headers = []
-        , body = Just "{\"kinds\":{\"-103\":\"KIND_IMAGE\",\"-490\":\"KIND_IMAGE\"},\"labels\":{\"\":\"\",\"!\\u0001\\\"中\u{007F}\":\"\"}}"
+        , body = Just "{\"displayName\":\")Z]\",\"kinds\":{\"-562\":\"KIND_TEXT\",\"4172176242543286081\":\"KIND_UNSPECIFIED\",\"9007199254740992\":\"KIND_UNSPECIFIED\"},\"labels\":{\"9Ω\\t\":\"_\"},\"weights\":{\"false\":2.2250738585072014e-308,\"true\":1.3634734289052641e+81}}"
         }
     , Replay.fixture "Cancel 0 #4"
         Routes.V1.decodeResource
         Routes.V1.Routes.cancel
         (Just 0)
-        "{\"displayName\":\"'$\\\\\",\"weights\":{\"true\":2.625}}"
+        "{\"kinds\":{\"716\":\"KIND_UNSPECIFIED\"},\"labels\":{\"\\n:\":\"]\\n0(&Z,,\",\"(]Ω-Z\":\"✓A_\",\"😀\\\\#a$])%\":\"Ω\"},\"weights\":{\"false\":6.314600764845223e+127}}"
         { method = "POST"
         , url = "/v1/:cancel"
         , headers = []
-        , body = Just "{\"displayName\":\"'$\\\\\",\"weights\":{\"true\":2.625}}"
+        , body = Just "{\"kinds\":{\"716\":\"KIND_UNSPECIFIED\"},\"labels\":{\"\\n:\":\"]\\n0(&Z,,\",\"(]Ω-Z\":\"✓A_\",\"😀\\\\#a$])%\":\"Ω\"},\"weights\":{\"false\":6.314600764845223e+127}}"
         }
     , Replay.fixture "Cancel 0 #5"
         Routes.V1.decodeResource
         Routes.V1.Routes.cancel
         (Just 0)
-        "{\"displayName\":\"\",\"kinds\":{},\"labels\":{\"0.\":\"]\\\\[\"},\"name\":\"*&[*$\",\"weights\":{}}"
+        "{\"kinds\":{\"-873\":\"KIND_UNSPECIFIED\",\"-9007199254740993\":\"KIND_UNSPECIFIED\"},\"labels\":{\")@ \":\"\",\"9ß:Z\\n\":\"\\\"\\\"\"},\"weights\":{\"true\":-1.7976931348623157e+308}}"
         { method = "POST"
-        , url = "/v1/%2A%26%5B%2A%24:cancel"
+        , url = "/v1/:cancel"
         , headers = []
-        , body = Just "{\"labels\":{\"0.\":\"]\\\\[\"}}"
+        , body = Just "{\"kinds\":{\"-873\":\"KIND_UNSPECIFIED\",\"-9007199254740993\":\"KIND_UNSPECIFIED\"},\"labels\":{\")@ \":\"\",\"9ß:Z\\n\":\"\\\"\\\"\"},\"weights\":{\"true\":-1.7976931348623157e+308}}"
         }
     , Replay.fixture "Cancel 0 #6"
         Routes.V1.decodeResource
         Routes.V1.Routes.cancel
         (Just 0)
-        "{\"kinds\":{\"9007199254740991\":\"KIND_IMAGE\"},\"name\":\"%𐍈+é:\",\"weights\":{\"true\":\"Infinity\"}}"
+        "{\"kinds\":{\"9007199254740992\":\"KIND_TEXT\"},\"labels\":{\"!9!.\\n\":\"$\",\"-\\\"\\\"\\n]\":\"A\"},\"weights\":{\"false\":2.414196288777256e-279,\"true\":\"NaN\"}}"
         { method = "POST"
-        , url = "/v1/%25%F0%90%8D%88%2B%C3%A9%3A:cancel"
+        , url = "/v1/:cancel"
         , headers = []
-        , body = Just "{\"kinds\":{\"9007199254740991\":\"KIND_IMAGE\"},\"weights\":{\"true\":\"Infinity\"}}"
+        , body = Just "{\"kinds\":{\"9007199254740992\":\"KIND_TEXT\"},\"labels\":{\"!9!.\\n\":\"$\",\"-\\\"\\\"\\n]\":\"A\"},\"weights\":{\"false\":2.414196288777256e-279,\"true\":\"NaN\"}}"
         }
     , Replay.fixture "Cancel 0 #7"
         Routes.V1.decodeResource
         Routes.V1.Routes.cancel
         (Just 0)
-        "{\"display_name\":\"&\",\"kinds\":{\"665026870281902009\":\"KIND_UNSPECIFIED\",\"8546819391313132744\":\"KIND_IMAGE\"},\"labels\":{\"\\\"$Z😀)(]z\":\"-**\\t-(%)\",\"=ß[@é\":\"\\u0001) ß\\u0001\"},\"weights\":{\"false\":5e-324,\"true\":2.2250738585072014e-308}}"
+        "{\"display_name\":\":zA,@\",\"kinds\":{\"-522423186233502050\":\"KIND_UNSPECIFIED\",\"-6590106338134572154\":\"KIND_UNSPECIFIED\",\"-9223372036854775808\":\"KIND_UNSPECIFIED\"},\"labels\":{\"0)\":\"~\\u0001a\"},\"name\":\"(\",\"weights\":{\"false\":-0.0}}"
         { method = "POST"
-        , url = "/v1/:cancel"
+        , url = "/v1/%28:cancel"
         , headers = []
-        , body = Just "{\"displayName\":\"&\",\"kinds\":{\"665026870281902009\":\"KIND_UNSPECIFIED\",\"8546819391313132744\":\"KIND_IMAGE\"},\"labels\":{\"\\\"$Z😀)(]z\":\"-**\\t-(%)\",\"=ß[@é\":\"\\u0001) ß\\u0001\"},\"weights\":{\"false\":5e-324,\"true\":2.2250738585072014e-308}}"
+        , body = Just "{\"displayName\":\":zA,@\",\"kinds\":{\"-522423186233502050\":\"KIND_UNSPECIFIED\",\"-6590106338134572154\":\"KIND_UNSPECIFIED\",\"-9223372036854775808\":\"KIND_UNSPECIFIED\"},\"labels\":{\"0)\":\"~\\u0001a\"},\"weights\":{\"false\":-0.0}}"
         }
     , Replay.fixture "Cancel 0 #8"
         Routes.V1.decodeResource
         Routes.V1.Routes.cancel
         (Just 0)
-        "{\"displayName\":\"=ß[\",\"kinds\":{\"539\":\"KIND_IMAGE\",\"5633806295648663163\":\"KIND_UNSPECIFIED\"},\"labels\":{\"\":\"( -;.\\u0001&,\"},\"weights\":{\"true\":\"-Infinity\"}}"
+        "{\"displayName\":\"\\\\?9]? ?A\",\"kinds\":{\"-2900101017056352414\":\"KIND_TEXT\",\"9007199254740993\":\"KIND_UNSPECIFIED\"},\"labels\":{\"Z-中😀\\\".#\\u0001\":\"\",\"ß\":\"#\"},\"name\":\"?@z\"}"
         { method = "POST"
-        , url = "/v1/:cancel"
+        , url = "/v1/%3F%40z:cancel"
         , headers = []
-        , body = Just "{\"displayName\":\"=ß[\",\"kinds\":{\"539\":\"KIND_IMAGE\",\"5633806295648663163\":\"KIND_UNSPECIFIED\"},\"labels\":{\"\":\"( -;.\\u0001&,\"},\"weights\":{\"true\":\"-Infinity\"}}"
+        , body = Just "{\"displayName\":\"\\\\?9]? ?A\",\"kinds\":{\"-2900101017056352414\":\"KIND_TEXT\",\"9007199254740993\":\"KIND_UNSPECIFIED\"},\"labels\":{\"Z-中😀\\\".#\\u0001\":\"\",\"ß\":\"#\"}}"
         }
     , Replay.fixture "Cancel 0 #9"
         Routes.V1.decodeResource
         Routes.V1.Routes.cancel
         (Just 0)
-        "{\"displayName\":\"\\t&\\u0001~é$@\u{007F}\",\"kinds\":{\"2055001093292393142\":\"KIND_IMAGE\"},\"labels\":{\"=\\n0\":\"\",\"?😀:\":\"=?+$\u{007F}\",\"_[\\u0001\":\"ß*)Aé\"},\"name\":\"\\\"\",\"weights\":{\"true\":-1.1184147189943073e-302}}"
+        "{\"displayName\":\"A$[)\\t\",\"kinds\":{\"6191001488229845980\":\"KIND_IMAGE\",\"7324752208691190334\":\"KIND_TEXT\",\"865\":\"KIND_IMAGE\"},\"labels\":{\"A\u{007F}中\\\\中\":\"\"},\"weights\":{\"true\":2.3044222360510803e+27}}"
         { method = "POST"
-        , url = "/v1/%22:cancel"
+        , url = "/v1/:cancel"
         , headers = []
-        , body = Just "{\"displayName\":\"\\t&\\u0001~é$@\u{007F}\",\"kinds\":{\"2055001093292393142\":\"KIND_IMAGE\"},\"labels\":{\"=\\n0\":\"\",\"?😀:\":\"=?+$\u{007F}\",\"_[\\u0001\":\"ß*)Aé\"},\"weights\":{\"true\":-1.1184147189943073e-302}}"
+        , body = Just "{\"displayName\":\"A$[)\\t\",\"kinds\":{\"6191001488229845980\":\"KIND_IMAGE\",\"7324752208691190334\":\"KIND_TEXT\",\"865\":\"KIND_IMAGE\"},\"labels\":{\"A\u{007F}中\\\\中\":\"\"},\"weights\":{\"true\":2.3044222360510803e+27}}"
         }
     , Replay.fixture "Cancel 0 #10"
         Routes.V1.decodeResource
         Routes.V1.Routes.cancel
         (Just 0)
-        "{\"displayName\":\"中\\\\#!a\",\"kinds\":{\"-823\":\"KIND_UNSPECIFIED\",\"-9007199254740993\":\"KIND_TEXT\"},\"name\":\".:\\t 😀@]\u{007F}\"}"
+        "{\"displayName\":\"$#\\u0001 中,#9\",\"kinds\":{\"-32\":\"KIND_TEXT\",\"9223372036854775807\":\"KIND_UNSPECIFIED\"},\"labels\":{\"[\\n-@\\u0001\":\" ~!\"},\"name\":\"!\",\"weights\":{\"false\":5e-324,\"true\":-8.709415072114603e+264}}"
         { method = "POST"
-        , url = "/v1/.%3A%09%20%F0%9F%98%80%40%5D%7F:cancel"
+        , url = "/v1/%21:cancel"
         , headers = []
-        , body = Just "{\"displayName\":\"中\\\\#!a\",\"kinds\":{\"-823\":\"KIND_UNSPECIFIED\",\"-9007199254740993\":\"KIND_TEXT\"}}"
+        , body = Just "{\"displayName\":\"$#\\u0001 中,#9\",\"kinds\":{\"-32\":\"KIND_TEXT\",\"9223372036854775807\":\"KIND_UNSPECIFIED\"},\"labels\":{\"[\\n-@\\u0001\":\" ~!\"},\"weights\":{\"false\":5e-324,\"true\":-8.709415072114603e+264}}"
         }
     , Replay.fixture "Cancel 0 #11"
         Routes.V1.decodeResource
         Routes.V1.Routes.cancel
         (Just 0)
-        "{\"display_name\":\"~.\\\\\",\"kinds\":{\"-4\":\"KIND_TEXT\",\"-8982517262395337581\":\"KIND_UNSPECIFIED\"},\"labels\":{\"\":\" \\u0001✓\",\"+A\u{007F}\":\"!\",\"Z&\\\"a✓[[z\":\"\\\"*=✓\\u0001%\u{007F}\\n\"},\"name\":\"\",\"weights\":{\"false\":-90.75}}"
+        "{\"display_name\":\"é:)\\t-\",\"kinds\":{\"9007199254740993\":\"KIND_TEXT\"},\"labels\":{},\"name\":\"\",\"weights\":{\"true\":-116.625}}"
         { method = "POST"
         , url = "/v1/:cancel"
         , headers = []
-        , body = Just "{\"displayName\":\"~.\\\\\",\"kinds\":{\"-4\":\"KIND_TEXT\",\"-8982517262395337581\":\"KIND_UNSPECIFIED\"},\"labels\":{\"\":\" \\u0001✓\",\"+A\u{007F}\":\"!\",\"Z&\\\"a✓[[z\":\"\\\"*=✓\\u0001%\u{007F}\\n\"},\"weights\":{\"false\":-90.75}}"
+        , body = Just "{\"displayName\":\"é:)\\t-\",\"kinds\":{\"9007199254740993\":\"KIND_TEXT\"},\"weights\":{\"true\":-116.625}}"
         }
     , Replay.fixture "Cancel 0 #12"
         Routes.V1.decodeResource
         Routes.V1.Routes.cancel
         (Just 0)
-        "{\"displayName\":\"),\",\"kinds\":{\"-1572916249048998463\":\"KIND_UNSPECIFIED\",\"3615633847564636636\":\"KIND_UNSPECIFIED\"},\"labels\":{\"😀A!]0\":\"𐍈;\"},\"name\":\"/\\t_\",\"weights\":{\"false\":-10.25}}"
+        "{\"displayName\":\"\\u0001/-]_??✓\",\"kinds\":{\"-9007199254740993\":\"KIND_TEXT\",\"9007199254740993\":\"KIND_UNSPECIFIED\"},\"labels\":{\"!😀 \":\"\"},\"name\":\"']\\\\_Z\",\"weights\":{\"false\":-28.25}}"
         { method = "POST"
-        , url = "/v1//%09_:cancel"
+        , url = "/v1/%27%5D%5C_Z:cancel"
         , headers = []
-        , body = Just "{\"displayName\":\"),\",\"kinds\":{\"-1572916249048998463\":\"KIND_UNSPECIFIED\",\"3615633847564636636\":\"KIND_UNSPECIFIED\"},\"labels\":{\"😀A!]0\":\"𐍈;\"},\"weights\":{\"false\":-10.25}}"
+        , body = Just "{\"displayName\":\"\\u0001/-]_??✓\",\"kinds\":{\"-9007199254740993\":\"KIND_TEXT\",\"9007199254740993\":\"KIND_UNSPECIFIED\"},\"labels\":{\"!😀 \":\"\"},\"weights\":{\"false\":-28.25}}"
         }
     , Replay.fixture "Cancel 0 #13"
         Routes.V1.decodeResource
         Routes.V1.Routes.cancel
         (Just 0)
-        "{\"kinds\":{\"1806308174931204929\":\"KIND_TEXT\",\"309\":\"KIND_IMAGE\"},\"labels\":{\"[z_\":\"\"},\"weights\":{\"false\":\"NaN\"}}"
+        "{\"displayName\":\"aa;\\n0($?\",\"kinds\":{\"552\":\"KIND_TEXT\",\"770\":\"KIND_TEXT\",\"9007199254740993\":\"KIND_UNSPECIFIED\"},\"weights\":{\"false\":-1.524230369520562e+35,\"true\":2.805893940049117e-114}}"
         { method = "POST"
         , url = "/v1/:cancel"
         , headers = []
-        , body = Just "{\"kinds\":{\"1806308174931204929\":\"KIND_TEXT\",\"309\":\"KIND_IMAGE\"},\"labels\":{\"[z_\":\"\"},\"weights\":{\"false\":\"NaN\"}}"
+        , body = Just "{\"displayName\":\"aa;\\n0($?\",\"kinds\":{\"552\":\"KIND_TEXT\",\"770\":\"KIND_TEXT\",\"9007199254740993\":\"KIND_UNSPECIFIED\"},\"weights\":{\"false\":-1.524230369520562e+35,\"true\":2.805893940049117e-114}}"
         }
     , Replay.fixture "Cancel 0 #14"
         Routes.V1.decodeResource
         Routes.V1.Routes.cancel
         (Just 0)
-        "{\"kinds\":{\"-242\":\"KIND_TEXT\",\"310\":\"KIND_IMAGE\",\"9007199254740992\":\"KIND_IMAGE\"},\"labels\":{\"\\\"\":\"é,\"},\"weights\":{\"false\":-6.47581401617438e-107,\"true\":121.875}}"
+        "{\"displayName\":\"z\",\"labels\":{\"\":\"=)( *\",\"\\u0001_\\u0001-𐍈\":\"_a \u{007F}中\",\".𐍈]?#\\\"\u{007F}é\":\"ΩA\\t\"}}"
         { method = "POST"
         , url = "/v1/:cancel"
         , headers = []
-        , body = Just "{\"kinds\":{\"-242\":\"KIND_TEXT\",\"310\":\"KIND_IMAGE\",\"9007199254740992\":\"KIND_IMAGE\"},\"labels\":{\"\\\"\":\"é,\"},\"weights\":{\"false\":-6.47581401617438e-107,\"true\":121.875}}"
+        , body = Just "{\"displayName\":\"z\",\"labels\":{\"\":\"=)( *\",\"\\u0001_\\u0001-𐍈\":\"_a \u{007F}中\",\".𐍈]?#\\\"\u{007F}é\":\"ΩA\\t\"}}"
         }
     , Replay.fixture "Cancel 0 #15"
         Routes.V1.decodeResource
         Routes.V1.Routes.cancel
         (Just 0)
-        "{\"display_name\":\"'~-\",\"kinds\":{\"-9007199254740993\":\"KIND_IMAGE\",\"232\":\"KIND_UNSPECIFIED\",\"9007199254740991\":\"KIND_UNSPECIFIED\"},\"labels\":{\":z,%&\":\"#/],@\"},\"weights\":{\"false\":\"Infinity\",\"true\":\"Infinity\"}}"
+        "{\"displayName\":\";\\n\",\"labels\":{\".;+\":\"-\",\"]𐍈中#\\t\":\"?\"},\"name\":\"é\\n\",\"weights\":{\"false\":\"NaN\",\"true\":-1.7164034178277243e-247}}"
         { method = "POST"
-        , url = "/v1/:cancel"
+        , url = "/v1/%C3%A9%0A:cancel"
         , headers = []
-        , body = Just "{\"displayName\":\"'~-\",\"kinds\":{\"-9007199254740993\":\"KIND_IMAGE\",\"232\":\"KIND_UNSPECIFIED\",\"9007199254740991\":\"KIND_UNSPECIFIED\"},\"labels\":{\":z,%&\":\"#/],@\"},\"weights\":{\"false\":\"Infinity\",\"true\":\"Infinity\"}}"
+        , body = Just "{\"displayName\":\";\\n\",\"labels\":{\".;+\":\"-\",\"]𐍈中#\\t\":\"?\"},\"weights\":{\"false\":\"NaN\",\"true\":-1.7164034178277243e-247}}"
         }
     , Replay.fixture "Files 0 #0"
         Routes.V1.decodeFileRequest
         Routes.V1.Routes.files
         (Just 0)
-        "{\"path\":\"(;中\"}"
+        "{}"
         { method = "GET"
-        , url = "/v1/%28%3B%E4%B8%AD"
+        , url = "/v1/"
         , headers = []
         , body = Nothing
         }
@@ -184,9 +344,9 @@ fixtures =
         Routes.V1.decodeFileRequest
         Routes.V1.Routes.files
         (Just 0)
-        "{\"path\":\".\"}"
+        "{}"
         { method = "GET"
-        , url = "/v1/."
+        , url = "/v1/"
         , headers = []
         , body = Nothing
         }
@@ -194,7 +354,7 @@ fixtures =
         Routes.V1.decodeFileRequest
         Routes.V1.Routes.files
         (Just 0)
-        "{}"
+        "{\"path\":\"\"}"
         { method = "GET"
         , url = "/v1/"
         , headers = []
@@ -204,9 +364,9 @@ fixtures =
         Routes.V1.decodeFileRequest
         Routes.V1.Routes.files
         (Just 0)
-        "{}"
+        "{\"path\":\"\\\"$ \"}"
         { method = "GET"
-        , url = "/v1/"
+        , url = "/v1/%22%24%20"
         , headers = []
         , body = Nothing
         }
@@ -214,9 +374,9 @@ fixtures =
         Routes.V1.decodeFileRequest
         Routes.V1.Routes.files
         (Just 0)
-        "{\"path\":\"9,é\"}"
+        "{}"
         { method = "GET"
-        , url = "/v1/9%2C%C3%A9"
+        , url = "/v1/"
         , headers = []
         , body = Nothing
         }
@@ -224,9 +384,9 @@ fixtures =
         Routes.V1.decodeFileRequest
         Routes.V1.Routes.files
         (Just 0)
-        "{}"
+        "{\"path\":\"a\"}"
         { method = "GET"
-        , url = "/v1/"
+        , url = "/v1/a"
         , headers = []
         , body = Nothing
         }
@@ -234,9 +394,9 @@ fixtures =
         Routes.V1.decodeFileRequest
         Routes.V1.Routes.files
         (Just 0)
-        "{}"
+        "{\"path\":\"*✓'A中?A\\\"\"}"
         { method = "GET"
-        , url = "/v1/"
+        , url = "/v1/%2A%E2%9C%93%27A%E4%B8%AD%3FA%22"
         , headers = []
         , body = Nothing
         }
@@ -254,7 +414,7 @@ fixtures =
         Routes.V1.decodeFileRequest
         Routes.V1.Routes.files
         (Just 0)
-        "{}"
+        "{\"path\":\"\"}"
         { method = "GET"
         , url = "/v1/"
         , headers = []
@@ -264,9 +424,9 @@ fixtures =
         Routes.V1.decodeFileRequest
         Routes.V1.Routes.files
         (Just 0)
-        "{\"path\":\"_$a\u{007F}@@&a\"}"
+        "{\"path\":\"\"}"
         { method = "GET"
-        , url = "/v1/_%24a%7F%40%40%26a"
+        , url = "/v1/"
         , headers = []
         , body = Nothing
         }
@@ -274,7 +434,7 @@ fixtures =
         Routes.V1.decodeFileRequest
         Routes.V1.Routes.files
         (Just 0)
-        "{\"path\":\"\"}"
+        "{}"
         { method = "GET"
         , url = "/v1/"
         , headers = []
@@ -284,9 +444,9 @@ fixtures =
         Routes.V1.decodeFileRequest
         Routes.V1.Routes.files
         (Just 0)
-        "{\"path\":\":\"}"
+        "{}"
         { method = "GET"
-        , url = "/v1/%3A"
+        , url = "/v1/"
         , headers = []
         , body = Nothing
         }
@@ -294,9 +454,9 @@ fixtures =
         Routes.V1.decodeFileRequest
         Routes.V1.Routes.files
         (Just 0)
-        "{}"
+        "{\"path\":\"$\"}"
         { method = "GET"
-        , url = "/v1/"
+        , url = "/v1/%24"
         , headers = []
         , body = Nothing
         }
@@ -304,9 +464,9 @@ fixtures =
         Routes.V1.decodeFileRequest
         Routes.V1.Routes.files
         (Just 0)
-        "{\"path\":\"'\"}"
+        "{\"path\":\"zZ\"}"
         { method = "GET"
-        , url = "/v1/%27"
+        , url = "/v1/zZ"
         , headers = []
         , body = Nothing
         }
@@ -314,9 +474,9 @@ fixtures =
         Routes.V1.decodeFileRequest
         Routes.V1.Routes.files
         (Just 0)
-        "{}"
+        "{\"path\":\"&\\\\😀𐍈/(\\\\.\"}"
         { method = "GET"
-        , url = "/v1/"
+        , url = "/v1/%26%5C%F0%9F%98%80%F0%90%8D%88/%28%5C."
         , headers = []
         , body = Nothing
         }
@@ -324,9 +484,9 @@ fixtures =
         Routes.V1.decodeFileRequest
         Routes.V1.Routes.files
         (Just 0)
-        "{}"
+        "{\"path\":\"Ω𐍈a\"}"
         { method = "GET"
-        , url = "/v1/"
+        , url = "/v1/%CE%A9%F0%90%8D%88a"
         , headers = []
         , body = Nothing
         }
@@ -334,9 +494,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 0)
-        "{\"revision\":\"3169939764605394302\"}"
+        "{\"name\":\"Z[ ~ \u{007F}_$\",\"revision\":\"988\",\"sub\":{},\"userId\":\"%\"}"
         { method = "GET"
-        , url = "/v1/?revision=3169939764605394302"
+        , url = "/v1/Z%5B%20~%20%7F_%24?revision=988&user_id=%25"
         , headers = []
         , body = Nothing
         }
@@ -344,9 +504,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 0)
-        "{\"messageId\":\"\",\"name\":\")ß\",\"revision\":\"-2757201091328298557\",\"sub\":{\"subfield\":\"\"},\"userId\":\"#中z\"}"
+        "{\"messageId\":\"😀\\\"A\\t(\\n??\",\"sub\":{},\"userId\":\")\\\":\"}"
         { method = "GET"
-        , url = "/v1/%29%C3%9F?revision=-2757201091328298557&user_id=%23%E4%B8%ADz"
+        , url = "/v1/?message_id=%F0%9F%98%80%22A%09%28%0A%3F%3F&user_id=%29%22%3A"
         , headers = []
         , body = Nothing
         }
@@ -354,9 +514,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 0)
-        "{\"message_id\":\"!]/@..\\n\\n\",\"sub\":{},\"user_id\":\"ß\"}"
+        "{\"messageId\":\"$-0 中\",\"name\":\")\",\"revision\":\"-9223372036854775808\",\"userId\":\"?=A\\t)Ω✓)\"}"
         { method = "GET"
-        , url = "/v1/?message_id=%21%5D%2F%40..%0A%0A&user_id=%C3%9F"
+        , url = "/v1/%29?message_id=%24-0%20%E4%B8%AD&revision=-9223372036854775808&user_id=%3F%3DA%09%29%CE%A9%E2%9C%93%29"
         , headers = []
         , body = Nothing
         }
@@ -364,9 +524,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 0)
-        "{\"messageId\":\"~Ω,\",\"sub\":{},\"userId\":\"[!#9\u{007F}@\\u0001✓\"}"
+        "{\"messageId\":\"%,#✓],? \",\"name\":\"zZ\",\"sub\":{\"subfield\":\"#\\\"\\t\\u0001Ω-](\"}}"
         { method = "GET"
-        , url = "/v1/?message_id=~%CE%A9%2C&user_id=%5B%21%239%7F%40%01%E2%9C%93"
+        , url = "/v1/zZ?message_id=%25%2C%23%E2%9C%93%5D%2C%3F%20&sub.subfield=%23%22%09%01%CE%A9-%5D%28"
         , headers = []
         , body = Nothing
         }
@@ -374,9 +534,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 0)
-        "{\"revision\":\"-287\",\"sub\":{},\"user_id\":\":.\\n\"}"
+        "{\"revision\":\"8429467003954051755\",\"userId\":\"0)@&A\"}"
         { method = "GET"
-        , url = "/v1/?revision=-287&user_id=%3A.%0A"
+        , url = "/v1/?revision=8429467003954051755&user_id=0%29%40%26A"
         , headers = []
         , body = Nothing
         }
@@ -384,9 +544,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 0)
-        "{\"message_id\":\"Zz-_&\",\"user_id\":\"a&=\u{007F}[\"}"
+        "{\"revision\":\"9007199254740993\",\"sub\":{},\"userId\":\"%✓/@Z%\\t#\"}"
         { method = "GET"
-        , url = "/v1/?message_id=Zz-_%26&user_id=a%26%3D%7F%5B"
+        , url = "/v1/?revision=9007199254740993&user_id=%25%E2%9C%93%2F%40Z%25%09%23"
         , headers = []
         , body = Nothing
         }
@@ -394,9 +554,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 0)
-        "{\"revision\":\"-3482030501471106405\",\"userId\":\",;-:~-✓?\"}"
+        "{\"messageId\":\"\",\"name\":\"&)+😀✓\",\"revision\":\"-9007199254740993\",\"sub\":{\"subfield\":\"\"},\"userId\":\"[#@)a,\\u0001)\"}"
         { method = "GET"
-        , url = "/v1/?revision=-3482030501471106405&user_id=%2C%3B-%3A~-%E2%9C%93%3F"
+        , url = "/v1/%26%29%2B%F0%9F%98%80%E2%9C%93?revision=-9007199254740993&user_id=%5B%23%40%29a%2C%01%29"
         , headers = []
         , body = Nothing
         }
@@ -404,9 +564,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 0)
-        "{\"message_id\":\":\\\"!\",\"revision\":\"2081413663898643427\"}"
+        "{\"messageId\":\" *中9#\",\"name\":\",@\",\"revision\":\"-4396060490088727750\",\"sub\":{},\"userId\":\",\"}"
         { method = "GET"
-        , url = "/v1/?message_id=%3A%22%21&revision=2081413663898643427"
+        , url = "/v1/%2C%40?message_id=%20%2A%E4%B8%AD9%23&revision=-4396060490088727750&user_id=%2C"
         , headers = []
         , body = Nothing
         }
@@ -414,9 +574,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 0)
-        "{\"sub\":{},\"userId\":\"@中[\"}"
+        "{\"message_id\":\"'\",\"name\":\"\\\\\",\"revision\":\"4651632180022702520\"}"
         { method = "GET"
-        , url = "/v1/?user_id=%40%E4%B8%AD%5B"
+        , url = "/v1/%5C?message_id=%27&revision=4651632180022702520"
         , headers = []
         , body = Nothing
         }
@@ -424,9 +584,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 0)
-        "{\"messageId\":\"&.A$-0,z\",\"name\":\"\\\"$.,\u{007F}\",\"revision\":\"869454502440615220\",\"sub\":{\"subfield\":\"\"},\"userId\":\"'@\\\"/A😀Ω\u{007F}\"}"
+        "{\"messageId\":\"😀)9;@中✓@\",\"name\":\"\\u0001😀Z(&ΩΩ@\",\"revision\":\"0\",\"userId\":\"✓./'?\\nA:\"}"
         { method = "GET"
-        , url = "/v1/%22%24.%2C%7F?message_id=%26.A%24-0%2Cz&revision=869454502440615220&user_id=%27%40%22%2FA%F0%9F%98%80%CE%A9%7F"
+        , url = "/v1/%01%F0%9F%98%80Z%28%26%CE%A9%CE%A9%40?message_id=%F0%9F%98%80%299%3B%40%E4%B8%AD%E2%9C%93%40&user_id=%E2%9C%93.%2F%27%3F%0AA%3A"
         , headers = []
         , body = Nothing
         }
@@ -434,9 +594,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 0)
-        "{\"messageId\":\"&\",\"revision\":\"9007199254740991\",\"userId\":\"\\t\"}"
+        "{\"messageId\":\"*ZA[!/~+\",\"name\":\"\",\"revision\":\"-2976419676317675355\",\"userId\":\"ß=中]:*?,\"}"
         { method = "GET"
-        , url = "/v1/?message_id=%26&revision=9007199254740991&user_id=%09"
+        , url = "/v1/?message_id=%2AZA%5B%21%2F~%2B&revision=-2976419676317675355&user_id=%C3%9F%3D%E4%B8%AD%5D%3A%2A%3F%2C"
         , headers = []
         , body = Nothing
         }
@@ -444,9 +604,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 0)
-        "{\"messageId\":\"\u{007F}:+\",\"name\":\"&\\n\",\"revision\":\"-8753471106455127574\",\"sub\":{\"subfield\":\";*;\"}}"
+        "{\"messageId\":\"_\",\"name\":\"$_)😀ZA?]\",\"revision\":\"25982356017072324\",\"userId\":\"\\u0001😀\\\"=\\\"\"}"
         { method = "GET"
-        , url = "/v1/%26%0A?message_id=%7F%3A%2B&revision=-8753471106455127574&sub.subfield=%3B%2A%3B"
+        , url = "/v1/%24_%29%F0%9F%98%80ZA%3F%5D?message_id=_&revision=25982356017072324&user_id=%01%F0%9F%98%80%22%3D%22"
         , headers = []
         , body = Nothing
         }
@@ -454,9 +614,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 0)
-        "{\"messageId\":\"\\n%\",\"name\":\"_*=a&\\\\A中\",\"sub\":{},\"userId\":\"𐍈\"}"
+        "{\"message_id\":\"/\\nZ\\n✓\\\\\u{007F}%\",\"name\":\"\\t%=Z(\",\"revision\":\"-6106915754357053055\",\"sub\":{\"subfield\":\"\"},\"user_id\":\"𐍈\\\\a\"}"
         { method = "GET"
-        , url = "/v1/_%2A%3Da%26%5CA%E4%B8%AD?message_id=%0A%25&user_id=%F0%90%8D%88"
+        , url = "/v1/%09%25%3DZ%28?message_id=%2F%0AZ%0A%E2%9C%93%5C%7F%25&revision=-6106915754357053055&user_id=%F0%90%8D%88%5Ca"
         , headers = []
         , body = Nothing
         }
@@ -464,9 +624,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 0)
-        "{\"message_id\":\"(\",\"name\":\"&\",\"revision\":\"-6124610281782475369\",\"sub\":{\"subfield\":\"✓#\\\"%#\"},\"user_id\":\"\"}"
+        "{\"messageId\":\"\\\\++z(,\\n\\\"\",\"name\":\"\",\"revision\":\"0\",\"sub\":{\"subfield\":\"\"},\"userId\":\"\"}"
         { method = "GET"
-        , url = "/v1/%26?message_id=%28&revision=-6124610281782475369&sub.subfield=%E2%9C%93%23%22%25%23"
+        , url = "/v1/?message_id=%5C%2B%2Bz%28%2C%0A%22"
         , headers = []
         , body = Nothing
         }
@@ -474,9 +634,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 0)
-        "{\"messageId\":\"'0ß\\\\$\",\"name\":\"'😀/ z! +\",\"sub\":{},\"userId\":\"~0\"}"
+        "{\"messageId\":\"+!\",\"revision\":\"8772545317733767473\",\"sub\":{\"subfield\":\"~Za/✓\"},\"userId\":\"\u{007F}\"}"
         { method = "GET"
-        , url = "/v1/%27%F0%9F%98%80/%20z%21%20%2B?message_id=%270%C3%9F%5C%24&user_id=~0"
+        , url = "/v1/?message_id=%2B%21&revision=8772545317733767473&sub.subfield=~Za%2F%E2%9C%93&user_id=%7F"
         , headers = []
         , body = Nothing
         }
@@ -484,9 +644,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 0)
-        "{\"message_id\":\"$a😀中)a(A\",\"revision\":\"-5561714994315507521\",\"user_id\":\"& \"}"
+        "{\"message_id\":\"*\",\"name\":\"\",\"revision\":\"6397223071813150632\",\"sub\":{\"subfield\":\"\"},\"user_id\":\"\"}"
         { method = "GET"
-        , url = "/v1/?message_id=%24a%F0%9F%98%80%E4%B8%AD%29a%28A&revision=-5561714994315507521&user_id=%26%20"
+        , url = "/v1/?message_id=%2A&revision=6397223071813150632"
         , headers = []
         , body = Nothing
         }
@@ -494,9 +654,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 1)
-        "{\"messageId\":\"@\u{007F}$$\\u0001\",\"name\":\" \",\"revision\":\"-9007199254740993\",\"sub\":{\"subfield\":\"\u{007F}~\u{007F}\u{007F}._+é\"},\"userId\":\"é\\n(\"}"
+        "{\"messageId\":\"\u{007F}中0=.\",\"revision\":\"117\",\"sub\":{\"subfield\":\"\\u0001:'😀(✓\\\\中\"}}"
         { method = "GET"
-        , url = "/v1/messages/%40%7F%24%24%01/%7F~%7F%7F._%2B%C3%A9?revision=-9007199254740993&user_id=%C3%A9%0A%28&name=%20"
+        , url = "/v1/messages/%7F%E4%B8%AD0%3D./%01%3A%27%F0%9F%98%80%28%E2%9C%93%5C%E4%B8%AD?revision=117"
         , headers = []
         , body = Nothing
         }
@@ -504,7 +664,7 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 1)
-        "{\"messageId\":\"\",\"name\":\"\",\"revision\":\"0\",\"userId\":\"\"}"
+        "{\"sub\":{}}"
         { method = "GET"
         , url = "/v1/messages//"
         , headers = []
@@ -514,9 +674,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 1)
-        "{\"name\":\"中 😀\",\"sub\":{\"subfield\":\"(,✓\\t%9):\"}}"
+        "{\"name\":\"\\na\",\"revision\":\"238\",\"sub\":{}}"
         { method = "GET"
-        , url = "/v1/messages//%28%2C%E2%9C%93%09%259%29%3A?name=%E4%B8%AD%20%F0%9F%98%80"
+        , url = "/v1/messages//?revision=238&name=%0Aa"
         , headers = []
         , body = Nothing
         }
@@ -524,9 +684,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 1)
-        "{\"messageId\":\",!9z\\n\",\"name\":\"\",\"revision\":\"685\",\"sub\":{\"subfield\":\"\"},\"userId\":\"!:;\\\"'\"}"
+        "{\"messageId\":\":#+\\t%\",\"name\":\"Zé$\\n\\u0001\",\"revision\":\"-9223372036854775808\",\"sub\":{\"subfield\":\"\"},\"userId\":\"\"}"
         { method = "GET"
-        , url = "/v1/messages/%2C%219z%0A/?revision=685&user_id=%21%3A%3B%22%27"
+        , url = "/v1/messages/%3A%23%2B%09%25/?revision=-9223372036854775808&name=Z%C3%A9%24%0A%01"
         , headers = []
         , body = Nothing
         }
@@ -534,9 +694,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 1)
-        "{\"messageId\":\"%\",\"name\":\";z.\",\"revision\":\"7114067656806944568\",\"sub\":{},\"userId\":\"$/\\\\\"}"
+        "{\"message_id\":\"a;(𐍈0\",\"name\":\"[é\u{007F}\\n )Zz\",\"revision\":\"3210640581752687046\"}"
         { method = "GET"
-        , url = "/v1/messages/%25/?revision=7114067656806944568&user_id=%24%2F%5C&name=%3Bz."
+        , url = "/v1/messages/a%3B%28%F0%90%8D%880/?revision=3210640581752687046&name=%5B%C3%A9%7F%0A%20%29Zz"
         , headers = []
         , body = Nothing
         }
@@ -544,9 +704,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 1)
-        "{\"messageId\":\"..✓,~\",\"name\":\"-\\\"𐍈=(\",\"revision\":\"909\",\"userId\":\"'\"}"
+        "{\"message_id\":\"✓\",\"name\":\"'\",\"revision\":\"2806059672241018583\"}"
         { method = "GET"
-        , url = "/v1/messages/..%E2%9C%93%2C~/?revision=909&user_id=%27&name=-%22%F0%90%8D%88%3D%28"
+        , url = "/v1/messages/%E2%9C%93/?revision=2806059672241018583&name=%27"
         , headers = []
         , body = Nothing
         }
@@ -554,9 +714,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 1)
-        "{\"messageId\":\"$]  ?\"}"
+        "{\"messageId\":\"\",\"name\":\"\",\"revision\":\"-904\",\"sub\":{\"subfield\":\",_;✓-\\\\$:\"},\"userId\":\"\"}"
         { method = "GET"
-        , url = "/v1/messages/%24%5D%20%20%3F/"
+        , url = "/v1/messages//%2C_%3B%E2%9C%93-%5C%24%3A?revision=-904"
         , headers = []
         , body = Nothing
         }
@@ -564,9 +724,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 1)
-        "{\"messageId\":\"0$\\\\~=\",\"name\":\"\\u0001\",\"sub\":{\"subfield\":\"9#😀a_*=a\"},\"userId\":\"=~\"}"
+        "{\"name\":\"zΩ\\na@\",\"sub\":{}}"
         { method = "GET"
-        , url = "/v1/messages/0%24%5C~%3D/9%23%F0%9F%98%80a_%2A%3Da?user_id=%3D~&name=%01"
+        , url = "/v1/messages//?name=z%CE%A9%0Aa%40"
         , headers = []
         , body = Nothing
         }
@@ -574,9 +734,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 1)
-        "{\"messageId\":\"#Z\",\"name\":\"\",\"revision\":\"2028279062145339073\",\"sub\":{\"subfield\":\"\"},\"userId\":\"-&'\"}"
+        "{\"sub\":{},\"userId\":\")_)✓a\"}"
         { method = "GET"
-        , url = "/v1/messages/%23Z/?revision=2028279062145339073&user_id=-%26%27"
+        , url = "/v1/messages//?user_id=%29_%29%E2%9C%93a"
         , headers = []
         , body = Nothing
         }
@@ -584,9 +744,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 1)
-        "{\"sub\":{},\"userId\":\" **\\tA\"}"
+        "{\"messageId\":\"\",\"name\":\"\u{007F}✓/\",\"revision\":\"6092121630120871256\",\"userId\":\"\"}"
         { method = "GET"
-        , url = "/v1/messages//?user_id=%20%2A%2A%09A"
+        , url = "/v1/messages//?revision=6092121630120871256&name=%7F%E2%9C%93%2F"
         , headers = []
         , body = Nothing
         }
@@ -594,9 +754,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 1)
-        "{\"message_id\":\"z9Ω\\t\\t_𐍈$\"}"
+        "{\"name\":\"Ω\",\"revision\":\"8950100558732641262\",\"user_id\":\"a9\"}"
         { method = "GET"
-        , url = "/v1/messages/z9%CE%A9%09%09_%F0%90%8D%88%24/"
+        , url = "/v1/messages//?revision=8950100558732641262&user_id=a9&name=%CE%A9"
         , headers = []
         , body = Nothing
         }
@@ -604,9 +764,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 1)
-        "{\"message_id\":\"%'𐍈\",\"name\":\"\",\"revision\":\"0\",\"sub\":{\"subfield\":\"\"},\"user_id\":\"a\\\"?Ω(\"}"
+        "{\"messageId\":\"+?\u{007F}\",\"name\":\"[;✓\",\"revision\":\"-921\",\"sub\":{\"subfield\":\"\"},\"userId\":\"\\u0001中\"}"
         { method = "GET"
-        , url = "/v1/messages/%25%27%F0%90%8D%88/?user_id=a%22%3F%CE%A9%28"
+        , url = "/v1/messages/%2B%3F%7F/?revision=-921&user_id=%01%E4%B8%AD&name=%5B%3B%E2%9C%93"
         , headers = []
         , body = Nothing
         }
@@ -614,9 +774,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 1)
-        "{\"messageId\":\"]\\n0(&Z,,\",\"revision\":\"9007199254740993\"}"
+        "{\"revision\":\"9007199254740993\",\"userId\":\"\\n\"}"
         { method = "GET"
-        , url = "/v1/messages/%5D%0A0%28%26Z%2C%2C/?revision=9007199254740993"
+        , url = "/v1/messages//?revision=9007199254740993&user_id=%0A"
         , headers = []
         , body = Nothing
         }
@@ -624,9 +784,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 1)
-        "{\"messageId\":\"\",\"name\":\"._ß\",\"revision\":\"-1393000095491235757\",\"sub\":{\"subfield\":\"\"},\"userId\":\"-✓A_0:z#\"}"
+        "{\"messageId\":\"\\\"/a-&\",\"revision\":\"-937\",\"userId\":\"\\n]@中' :!\"}"
         { method = "GET"
-        , url = "/v1/messages//?revision=-1393000095491235757&user_id=-%E2%9C%93A_0%3Az%23&name=._%C3%9F"
+        , url = "/v1/messages/%22%2Fa-%26/?revision=-937&user_id=%0A%5D%40%E4%B8%AD%27%20%3A%21"
         , headers = []
         , body = Nothing
         }
@@ -634,9 +794,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 1)
-        "{\"name\":\"Z\\n\u{007F}\",\"sub\":{}}"
+        "{\"message_id\":\"\\né\\\"*&✓0\\t\",\"revision\":\"-9223372036854775808\",\"user_id\":\"+*?\"}"
         { method = "GET"
-        , url = "/v1/messages//?name=Z%0A%7F"
+        , url = "/v1/messages/%0A%C3%A9%22%2A%26%E2%9C%930%09/?revision=-9223372036854775808&user_id=%2B%2A%3F"
         , headers = []
         , body = Nothing
         }
@@ -644,9 +804,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 1)
-        "{\"messageId\":\"\",\"name\":\"\",\"revision\":\"-6326122587870533557\",\"userId\":\"@\"}"
+        "{\"messageId\":\"%\",\"name\":\"z\",\"revision\":\"-327978025164629405\",\"sub\":{\"subfield\":\"\"},\"userId\":\"\"}"
         { method = "GET"
-        , url = "/v1/messages//?revision=-6326122587870533557&user_id=%40"
+        , url = "/v1/messages/%25/?revision=-327978025164629405&name=z"
         , headers = []
         , body = Nothing
         }
@@ -654,9 +814,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 2)
-        "{\"messageId\":\"\",\"name\":\"\",\"revision\":\"-8313972064171641675\",\"sub\":{\"subfield\":\"\"},\"userId\":\"\"}"
+        "{\"name\":\"]\",\"revision\":\"-9007199254740993\",\"sub\":{\"subfield\":\"\u{007F}\\u0001\u{007F}'\\\\\"},\"userId\":\"\\\"\"}"
         { method = "GET"
-        , url = "/v1/messages/?revision=-8313972064171641675"
+        , url = "/v1/messages/?revision=-9007199254740993&sub.subfield=%7F%01%7F%27%5C&user_id=%22&name=%5D"
         , headers = []
         , body = Nothing
         }
@@ -664,9 +824,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 2)
-        "{\"messageId\":\".😀 \",\"name\":\"[✓z\",\"revision\":\"-8219826530000765953\",\"userId\":\"]$A-\\\"\\\"\\n]\"}"
+        "{\"message_id\":\",(\",\"name\":\"\",\"revision\":\"9007199254740993\",\"sub\":{\"subfield\":\"\\\"#\"},\"user_id\":\";𐍈'\"}"
         { method = "GET"
-        , url = "/v1/messages/.%F0%9F%98%80%20?revision=-8219826530000765953&user_id=%5D%24A-%22%22%0A%5D&name=%5B%E2%9C%93z"
+        , url = "/v1/messages/%2C%28?revision=9007199254740993&sub.subfield=%22%23&user_id=%3B%F0%90%8D%88%27"
         , headers = []
         , body = Nothing
         }
@@ -674,9 +834,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 2)
-        "{\"messageId\":\"\\u0001=𐍈\",\"name\":\"\",\"revision\":\"0\",\"userId\":\";_'+(Ω.:\"}"
+        "{\"messageId\":\"中ß\",\"name\":\"\",\"revision\":\"-303954126744595389\",\"sub\":{\"subfield\":\"\"},\"userId\":\"\"}"
         { method = "GET"
-        , url = "/v1/messages/%01%3D%F0%90%8D%88?user_id=%3B_%27%2B%28%CE%A9.%3A"
+        , url = "/v1/messages/%E4%B8%AD%C3%9F?revision=-303954126744595389"
         , headers = []
         , body = Nothing
         }
@@ -684,9 +844,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 2)
-        "{\"message_id\":\"中\",\"name\":\"\",\"revision\":\"-769\",\"sub\":{\"subfield\":\"\"},\"user_id\":\"\"}"
+        "{\"messageId\":\"\\u0001[\",\"name\":\"Ω)\",\"revision\":\"5349370231536706098\",\"sub\":{},\"userId\":\"ß~%A-z𐍈0\"}"
         { method = "GET"
-        , url = "/v1/messages/%E4%B8%AD?revision=-769"
+        , url = "/v1/messages/%01%5B?revision=5349370231536706098&user_id=%C3%9F~%25A-z%F0%90%8D%880&name=%CE%A9%29"
         , headers = []
         , body = Nothing
         }
@@ -694,9 +854,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 2)
-        "{\"message_id\":\"\",\"name\":\"\",\"revision\":\"-1905371113219215703\",\"sub\":{\"subfield\":\"\"},\"user_id\":\"_\\u0001\\t.@.$/\"}"
+        "{\"name\":\"_a0\"}"
         { method = "GET"
-        , url = "/v1/messages/?revision=-1905371113219215703&user_id=_%01%09.%40.%24%2F"
+        , url = "/v1/messages/?name=_a0"
         , headers = []
         , body = Nothing
         }
@@ -704,9 +864,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 2)
-        "{\"revision\":\"9007199254740993\",\"sub\":{\"subfield\":\"?9]? \"}}"
+        "{\"revision\":\"8960190647327283582\",\"userId\":\"é#😀Z!\"}"
         { method = "GET"
-        , url = "/v1/messages/?revision=9007199254740993&sub.subfield=%3F9%5D%3F%20"
+        , url = "/v1/messages/?revision=8960190647327283582&user_id=%C3%A9%23%F0%9F%98%80Z%21"
         , headers = []
         , body = Nothing
         }
@@ -714,9 +874,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 2)
-        "{\"messageId\":\"#\",\"revision\":\"-707\",\"sub\":{},\"userId\":\".#\"}"
+        "{\"message_id\":\"\u{007F}\",\"revision\":\"-3913840984204205919\",\"sub\":{\"subfield\":\"Ω?\u{007F})?\"},\"user_id\":\"Ωz\"}"
         { method = "GET"
-        , url = "/v1/messages/%23?revision=-707&user_id=.%23"
+        , url = "/v1/messages/%7F?revision=-3913840984204205919&sub.subfield=%CE%A9%3F%7F%29%3F&user_id=%CE%A9z"
         , headers = []
         , body = Nothing
         }
@@ -724,9 +884,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 2)
-        "{\"messageId\":\"-#;/$\",\"name\":\"\",\"revision\":\"-9007199254740993\",\"sub\":{\"subfield\":\"\"},\"userId\":\"[)\\tßaA\u{007F}中\"}"
+        "{\"message_id\":\"𐍈\\t-中(\",\"name\":\"=!0##\\\\#\\n\",\"revision\":\"-9223372036854775808\",\"sub\":{},\"user_id\":\"a;\"}"
         { method = "GET"
-        , url = "/v1/messages/-%23%3B%2F%24?revision=-9007199254740993&user_id=%5B%29%09%C3%9FaA%7F%E4%B8%AD"
+        , url = "/v1/messages/%F0%90%8D%88%09-%E4%B8%AD%28?revision=-9223372036854775808&user_id=a%3B&name=%3D%210%23%23%5C%23%0A"
         , headers = []
         , body = Nothing
         }
@@ -734,9 +894,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 2)
-        "{\"messageId\":\"@_z,/$\\tZ\",\"name\":\"中\",\"sub\":{},\"userId\":\":~:\"}"
+        "{\"message_id\":\"\",\"name\":\"Z(\",\"revision\":\"9223372036854775807\",\"user_id\":\"\"}"
         { method = "GET"
-        , url = "/v1/messages/%40_z%2C%2F%24%09Z?user_id=%3A~%3A&name=%E4%B8%AD"
+        , url = "/v1/messages/?revision=9223372036854775807&name=Z%28"
         , headers = []
         , body = Nothing
         }
@@ -744,9 +904,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 2)
-        "{\"userId\":\"#9*\"}"
+        "{\"revision\":\"-2300068429761585064\",\"sub\":{},\"userId\":\"a😀[\"}"
         { method = "GET"
-        , url = "/v1/messages/?user_id=%239%2A"
+        , url = "/v1/messages/?revision=-2300068429761585064&user_id=a%F0%9F%98%80%5B"
         , headers = []
         , body = Nothing
         }
@@ -754,9 +914,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 2)
-        "{\"revision\":\"-914\",\"userId\":\"'.\"}"
+        "{\"name\":\"=9😀z;\",\"user_id\":\"@a0*-+:$\"}"
         { method = "GET"
-        , url = "/v1/messages/?revision=-914&user_id=%27."
+        , url = "/v1/messages/?user_id=%40a0%2A-%2B%3A%24&name=%3D9%F0%9F%98%80z%3B"
         , headers = []
         , body = Nothing
         }
@@ -764,9 +924,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 2)
-        "{\"messageId\":\"😀 😀\",\"name\":\"/\",\"userId\":\".\"}"
+        "{\"messageId\":\"\u{007F}@\",\"revision\":\"9223372036854775807\",\"sub\":{\"subfield\":\"\\\"0\\\"z#;\\\\a\"},\"userId\":\"?=\\u0001\u{007F}\u{007F}\"}"
         { method = "GET"
-        , url = "/v1/messages/%F0%9F%98%80%20%F0%9F%98%80?user_id=.&name=%2F"
+        , url = "/v1/messages/%7F%40?revision=9223372036854775807&sub.subfield=%220%22z%23%3B%5Ca&user_id=%3F%3D%01%7F%7F"
         , headers = []
         , body = Nothing
         }
@@ -774,9 +934,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 2)
-        "{\"message_id\":\":)\\t\",\"name\":\")\",\"revision\":\"-9007199254740993\",\"sub\":{\"subfield\":\"\"},\"user_id\":\"+\"}"
+        "{\"messageId\":\"'a])\\\\\",\"name\":\"𐍈\",\"revision\":\"9007199254740993\",\"sub\":{\"subfield\":\"\"},\"userId\":\"\"}"
         { method = "GET"
-        , url = "/v1/messages/%3A%29%09?revision=-9007199254740993&user_id=%2B&name=%29"
+        , url = "/v1/messages/%27a%5D%29%5C?revision=9007199254740993&name=%F0%90%8D%88"
         , headers = []
         , body = Nothing
         }
@@ -784,9 +944,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 2)
-        "{\"messageId\":\"']\\\\_Z\",\"name\":\"\",\"revision\":\"-655915060523341578\",\"userId\":\"\"}"
+        "{\"message_id\":\")?)\",\"name\":\";\",\"sub\":{},\"user_id\":\"?\"}"
         { method = "GET"
-        , url = "/v1/messages/%27%5D%5C_Z?revision=-655915060523341578"
+        , url = "/v1/messages/%29%3F%29?user_id=%3F&name=%3B"
         , headers = []
         , body = Nothing
         }
@@ -794,9 +954,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 2)
-        "{\"message_id\":\"?~!\",\"name\":\"=&\\n\",\"revision\":\"-5663515859206404196\",\"user_id\":\"\\u0001:Z𐍈: @✓\"}"
+        "{\"messageId\":\"@%'\",\"name\":\"Z\",\"revision\":\"-598\",\"sub\":{},\"userId\":\"✓#\"}"
         { method = "GET"
-        , url = "/v1/messages/%3F~%21?revision=-5663515859206404196&user_id=%01%3AZ%F0%90%8D%88%3A%20%40%E2%9C%93&name=%3D%26%0A"
+        , url = "/v1/messages/%40%25%27?revision=-598&user_id=%E2%9C%93%23&name=Z"
         , headers = []
         , body = Nothing
         }
@@ -804,9 +964,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 2)
-        "{\"messageId\":\"aa;\\n0($?\",\"name\":\"z✓\",\"sub\":{\"subfield\":\"+Z中/+\"}}"
+        "{\"messageId\":\"𐍈\\\\\\\"\",\"name\":\"\\n&,\",\"revision\":\"854\",\"sub\":{}}"
         { method = "GET"
-        , url = "/v1/messages/aa%3B%0A0%28%24%3F?sub.subfield=%2BZ%E4%B8%AD%2F%2B&name=z%E2%9C%93"
+        , url = "/v1/messages/%F0%90%8D%88%5C%22?revision=854&name=%0A%26%2C"
         , headers = []
         , body = Nothing
         }
@@ -814,9 +974,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 3)
-        "{\"name\":\"𐍈✓_\",\"sub\":{\"subfield\":\"')]z(\"},\"userId\":\"_\"}"
+        "{\"message_id\":\"ß/]\",\"name\":\"z;+0/+,:\",\"revision\":\"-7249438003377442443\",\"sub\":{\"subfield\":\"?0\"}}"
         { method = "GET"
-        , url = "/v1/users/_/messages/?sub.subfield=%27%29%5Dz%28&name=%F0%90%8D%88%E2%9C%93_"
+        , url = "/v1/users//messages/%C3%9F%2F%5D?revision=-7249438003377442443&sub.subfield=%3F0&name=z%3B%2B0%2F%2B%2C%3A"
         , headers = []
         , body = Nothing
         }
@@ -824,9 +984,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 3)
-        "{\"name\":\"éZΩA\\t*Ω=\",\"revision\":\"9007199254740993\",\"userId\":\" *'.𐍈]?#\"}"
+        "{\"name\":\"Ω\",\"revision\":\"-9007199254740993\"}"
         { method = "GET"
-        , url = "/v1/users/%20%2A%27.%F0%90%8D%88%5D%3F%23/messages/?revision=9007199254740993&name=%C3%A9Z%CE%A9A%09%2A%CE%A9%3D"
+        , url = "/v1/users//messages/?revision=-9007199254740993&name=%CE%A9"
         , headers = []
         , body = Nothing
         }
@@ -834,9 +994,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 3)
-        "{\"messageId\":\"\\na\",\"name\":\"中-~\",\"revision\":\"825\",\"sub\":{\"subfield\":\"\"},\"userId\":\"\"}"
+        "{\"name\":\"\\\"\",\"revision\":\"7481387698166927583\",\"sub\":{}}"
         { method = "GET"
-        , url = "/v1/users//messages/%0Aa?revision=825&name=%E4%B8%AD-~"
+        , url = "/v1/users//messages/?revision=7481387698166927583&name=%22"
         , headers = []
         , body = Nothing
         }
@@ -844,9 +1004,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 3)
-        "{\"revision\":\"7904315661018351761\",\"userId\":\"9ß\\u0001\"}"
+        "{\"messageId\":\"😀\",\"revision\":\"7475128250408135427\",\"sub\":{},\"userId\":\")𐍈é_A\"}"
         { method = "GET"
-        , url = "/v1/users/9%C3%9F%01/messages/?revision=7904315661018351761"
+        , url = "/v1/users/%29%F0%90%8D%88%C3%A9_A/messages/%F0%9F%98%80?revision=7475128250408135427"
         , headers = []
         , body = Nothing
         }
@@ -854,9 +1014,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 3)
-        "{\"name\":\"~aß\",\"revision\":\"-1472167303987536431\",\"sub\":{}}"
+        "{\"messageId\":\"𐍈\",\"revision\":\"-4257881932409079723\",\"sub\":{},\"userId\":\"0)_✓9\\t𐍈ß\"}"
         { method = "GET"
-        , url = "/v1/users//messages/?revision=-1472167303987536431&name=~a%C3%9F"
+        , url = "/v1/users/0%29_%E2%9C%939%09%F0%90%8D%88%C3%9F/messages/%F0%90%8D%88?revision=-4257881932409079723"
         , headers = []
         , body = Nothing
         }
@@ -864,9 +1024,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 3)
-        "{\"messageId\":\"_𐍈\\\"$ ✓ #\",\"name\":\"\",\"revision\":\"0\",\"sub\":{\"subfield\":\"\"},\"userId\":\"a\"}"
+        "{\"message_id\":\"\",\"name\":\"+$a\",\"revision\":\"0\",\"user_id\":\"\\t\\t\\t_9\"}"
         { method = "GET"
-        , url = "/v1/users/a/messages/_%F0%90%8D%88%22%24%20%E2%9C%93%20%23"
+        , url = "/v1/users/%09%09%09_9/messages/?name=%2B%24a"
         , headers = []
         , body = Nothing
         }
@@ -874,9 +1034,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 3)
-        "{\"messageId\":\"✓\",\"revision\":\"44\",\"userId\":\"]=9\"}"
+        "{\"messageId\":\"9*:.[0#,\",\"name\":\"-ß\",\"revision\":\"-9020099129582928892\",\"userId\":\"é~/\u{007F}ß/\\u0001 \"}"
         { method = "GET"
-        , url = "/v1/users/%5D%3D9/messages/%E2%9C%93?revision=44"
+        , url = "/v1/users/%C3%A9~%2F%7F%C3%9F%2F%01%20/messages/9%2A%3A.%5B0%23%2C?revision=-9020099129582928892&name=-%C3%9F"
         , headers = []
         , body = Nothing
         }
@@ -884,9 +1044,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 3)
-        "{\"revision\":\"9007199254740991\",\"sub\":{},\"userId\":\"#\"}"
+        "{\"messageId\":\"\\n_\",\"name\":\"%(;)-\",\"revision\":\"9223372036854775807\",\"sub\":{}}"
         { method = "GET"
-        , url = "/v1/users/%23/messages/?revision=9007199254740991"
+        , url = "/v1/users//messages/%0A_?revision=9223372036854775807&name=%25%28%3B%29-"
         , headers = []
         , body = Nothing
         }
@@ -894,9 +1054,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 3)
-        "{\"message_id\":\"'\\t\",\"name\":\"&\\\\😀𐍈/(\\\\.\",\"revision\":\"8529673452476444549\",\"sub\":{}}"
+        "{\"messageId\":\"%()- \",\"revision\":\"-9007199254740993\",\"sub\":{\"subfield\":\"*!\"}}"
         { method = "GET"
-        , url = "/v1/users//messages/%27%09?revision=8529673452476444549&name=%26%5C%F0%9F%98%80%F0%90%8D%88%2F%28%5C."
+        , url = "/v1/users//messages/%25%28%29-%20?revision=-9007199254740993&sub.subfield=%2A%21"
         , headers = []
         , body = Nothing
         }
@@ -904,9 +1064,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 3)
-        "{\"messageId\":\"Ω𐍈a\",\"name\":\";%\",\"revision\":\"282\",\"userId\":\"中\"}"
+        "{\"message_id\":\"\",\"name\":\"\",\"revision\":\"-8254834047997299454\",\"sub\":{\"subfield\":\"\"},\"user_id\":\"\"}"
         { method = "GET"
-        , url = "/v1/users/%E4%B8%AD/messages/%CE%A9%F0%90%8D%88a?revision=282&name=%3B%25"
+        , url = "/v1/users//messages/?revision=-8254834047997299454"
         , headers = []
         , body = Nothing
         }
@@ -914,9 +1074,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 3)
-        "{\"revision\":\"-4480079401607667651\",\"sub\":{\"subfield\":\"$$\\n\"},\"user_id\":\"😀\\\"A\\t(\\n??\"}"
+        "{\"name\":\"\\na\",\"revision\":\"3623271734374661900\",\"sub\":{\"subfield\":\"-\"},\"userId\":\"𐍈ßZ\\\"*\"}"
         { method = "GET"
-        , url = "/v1/users/%F0%9F%98%80%22A%09%28%0A%3F%3F/messages/?revision=-4480079401607667651&sub.subfield=%24%24%0A"
+        , url = "/v1/users/%F0%90%8D%88%C3%9FZ%22%2A/messages/?revision=3623271734374661900&sub.subfield=-&name=%0Aa"
         , headers = []
         , body = Nothing
         }
@@ -924,9 +1084,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 3)
-        "{\"name\":\"+\",\"revision\":\"-9213985715402769590\"}"
+        "{\"messageId\":\"#+éZ,✓é+\",\"name\":\"-\",\"revision\":\"0\",\"userId\":\"/[\"}"
         { method = "GET"
-        , url = "/v1/users//messages/?revision=-9213985715402769590&name=%2B"
+        , url = "/v1/users/%2F%5B/messages/%23%2B%C3%A9Z%2C%E2%9C%93%C3%A9%2B?name=-"
         , headers = []
         , body = Nothing
         }
@@ -934,9 +1094,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 3)
-        "{\"message_id\":\"中%&'@ΩZ?\",\"name\":\"+,'\",\"revision\":\"-8630025449974083029\",\"user_id\":\")Ωa\"}"
+        "{\"message_id\":\"𐍈 \",\"name\":\")\",\"revision\":\"9007199254740991\"}"
         { method = "GET"
-        , url = "/v1/users/%29%CE%A9a/messages/%E4%B8%AD%25%26%27%40%CE%A9Z%3F?revision=-8630025449974083029&name=%2B%2C%27"
+        , url = "/v1/users//messages/%F0%90%8D%88%20?revision=9007199254740991&name=%29"
         , headers = []
         , body = Nothing
         }
@@ -944,9 +1104,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 3)
-        "{\"messageId\":\"],?\",\"name\":\"\",\"revision\":\"-563208580812484034\",\"sub\":{\"subfield\":\"\"},\"userId\":\"\\\"\\t\\u0001Ω-\"}"
+        "{\"messageId\":\"#*中\",\"name\":\"\\\";Aé0%,_\",\"revision\":\"-5072746804118316251\",\"sub\":{}}"
         { method = "GET"
-        , url = "/v1/users/%22%09%01%CE%A9-/messages/%5D%2C%3F?revision=-563208580812484034"
+        , url = "/v1/users//messages/%23%2A%E4%B8%AD?revision=-5072746804118316251&name=%22%3BA%C3%A90%25%2C_"
         , headers = []
         , body = Nothing
         }
@@ -954,9 +1114,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 3)
-        "{\"messageId\":\"\",\"name\":\":+\\\"\",\"revision\":\"-9223372036854775808\",\"sub\":{\"subfield\":\"\"},\"userId\":\"\"}"
+        "{\"messageId\":\"\u{007F}~~&!*%✓\",\"name\":\"\\\"])9-\",\"sub\":{\"subfield\":\"=𐍈\"}}"
         { method = "GET"
-        , url = "/v1/users//messages/?revision=-9223372036854775808&name=%3A%2B%22"
+        , url = "/v1/users//messages/%7F~~%26%21%2A%25%E2%9C%93?sub.subfield=%3D%F0%90%8D%88&name=%22%5D%299-"
         , headers = []
         , body = Nothing
         }
@@ -964,9 +1124,9 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.getMessage
         (Just 3)
-        "{\"sub\":{\"subfield\":\"\\nA_\"}}"
+        "{\"messageId\":\"&9\\\\=*\",\"name\":\"Ω\",\"revision\":\"3567568842161054862\",\"sub\":{}}"
         { method = "GET"
-        , url = "/v1/users//messages/?sub.subfield=%0AA_"
+        , url = "/v1/users//messages/%269%5C%3D%2A?revision=3567568842161054862&name=%CE%A9"
         , headers = []
         , body = Nothing
         }
@@ -984,9 +1144,9 @@ fixtures =
         Routes.V1.decodeFileRequest
         Routes.V1.Routes.head
         (Just 0)
-        "{\"path\":\"/@\"}"
+        "{\"path\":\"z/中\"}"
         { method = "HEAD"
-        , url = "/v1//%40"
+        , url = "/v1/z/%E4%B8%AD"
         , headers = []
         , body = Nothing
         }
@@ -994,9 +1154,9 @@ fixtures =
         Routes.V1.decodeFileRequest
         Routes.V1.Routes.head
         (Just 0)
-        "{\"path\":\"(\"}"
+        "{}"
         { method = "HEAD"
-        , url = "/v1/%28"
+        , url = "/v1/"
         , headers = []
         , body = Nothing
         }
@@ -1004,7 +1164,7 @@ fixtures =
         Routes.V1.decodeFileRequest
         Routes.V1.Routes.head
         (Just 0)
-        "{}"
+        "{\"path\":\"\"}"
         { method = "HEAD"
         , url = "/v1/"
         , headers = []
@@ -1014,43 +1174,13 @@ fixtures =
         Routes.V1.decodeFileRequest
         Routes.V1.Routes.head
         (Just 0)
-        "{\"path\":\"#Ω[#@\"}"
+        "{\"path\":\"\u{007F}\"}"
         { method = "HEAD"
-        , url = "/v1/%23%CE%A9%5B%23%40"
+        , url = "/v1/%7F"
         , headers = []
         , body = Nothing
         }
     , Replay.fixture "Head 0 #5"
-        Routes.V1.decodeFileRequest
-        Routes.V1.Routes.head
-        (Just 0)
-        "{\"path\":\")\"}"
-        { method = "HEAD"
-        , url = "/v1/%29"
-        , headers = []
-        , body = Nothing
-        }
-    , Replay.fixture "Head 0 #6"
-        Routes.V1.decodeFileRequest
-        Routes.V1.Routes.head
-        (Just 0)
-        "{\"path\":\"+😀\"}"
-        { method = "HEAD"
-        , url = "/v1/%2B%F0%9F%98%80"
-        , headers = []
-        , body = Nothing
-        }
-    , Replay.fixture "Head 0 #7"
-        Routes.V1.decodeFileRequest
-        Routes.V1.Routes.head
-        (Just 0)
-        "{\"path\":\"' *中9\"}"
-        { method = "HEAD"
-        , url = "/v1/%27%20%2A%E4%B8%AD9"
-        , headers = []
-        , body = Nothing
-        }
-    , Replay.fixture "Head 0 #8"
         Routes.V1.decodeFileRequest
         Routes.V1.Routes.head
         (Just 0)
@@ -1060,13 +1190,43 @@ fixtures =
         , headers = []
         , body = Nothing
         }
+    , Replay.fixture "Head 0 #6"
+        Routes.V1.decodeFileRequest
+        Routes.V1.Routes.head
+        (Just 0)
+        "{\"path\":\"\"}"
+        { method = "HEAD"
+        , url = "/v1/"
+        , headers = []
+        , body = Nothing
+        }
+    , Replay.fixture "Head 0 #7"
+        Routes.V1.decodeFileRequest
+        Routes.V1.Routes.head
+        (Just 0)
+        "{\"path\":\"ß$,\\\\ß\\n_'\"}"
+        { method = "HEAD"
+        , url = "/v1/%C3%9F%24%2C%5C%C3%9F%0A_%27"
+        , headers = []
+        , body = Nothing
+        }
+    , Replay.fixture "Head 0 #8"
+        Routes.V1.decodeFileRequest
+        Routes.V1.Routes.head
+        (Just 0)
+        "{\"path\":\"\"}"
+        { method = "HEAD"
+        , url = "/v1/"
+        , headers = []
+        , body = Nothing
+        }
     , Replay.fixture "Head 0 #9"
         Routes.V1.decodeFileRequest
         Routes.V1.Routes.head
         (Just 0)
-        "{\"path\":\"&)\"}"
+        "{\"path\":\" ,\"}"
         { method = "HEAD"
-        , url = "/v1/%26%29"
+        , url = "/v1/%20%2C"
         , headers = []
         , body = Nothing
         }
@@ -1074,9 +1234,9 @@ fixtures =
         Routes.V1.decodeFileRequest
         Routes.V1.Routes.head
         (Just 0)
-        "{\"path\":\"A9'[]!,a\"}"
+        "{\"path\":\"\\\"Z\"}"
         { method = "HEAD"
-        , url = "/v1/A9%27%5B%5D%21%2Ca"
+        , url = "/v1/%22Z"
         , headers = []
         , body = Nothing
         }
@@ -1094,9 +1254,9 @@ fixtures =
         Routes.V1.decodeFileRequest
         Routes.V1.Routes.head
         (Just 0)
-        "{\"path\":\")\"}"
+        "{}"
         { method = "HEAD"
-        , url = "/v1/%29"
+        , url = "/v1/"
         , headers = []
         , body = Nothing
         }
@@ -1104,9 +1264,9 @@ fixtures =
         Routes.V1.decodeFileRequest
         Routes.V1.Routes.head
         (Just 0)
-        "{}"
+        "{\"path\":\"\\t\"}"
         { method = "HEAD"
-        , url = "/v1/"
+        , url = "/v1/%09"
         , headers = []
         , body = Nothing
         }
@@ -1114,9 +1274,9 @@ fixtures =
         Routes.V1.decodeFileRequest
         Routes.V1.Routes.head
         (Just 0)
-        "{}"
+        "{\"path\":\"'\"}"
         { method = "HEAD"
-        , url = "/v1/"
+        , url = "/v1/%27"
         , headers = []
         , body = Nothing
         }
@@ -1124,9 +1284,9 @@ fixtures =
         Routes.V1.decodeFileRequest
         Routes.V1.Routes.head
         (Just 0)
-        "{\"path\":\"./'\"}"
+        "{\"path\":\"\"}"
         { method = "HEAD"
-        , url = "/v1/./%27"
+        , url = "/v1/"
         , headers = []
         , body = Nothing
         }
@@ -1134,9 +1294,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.multi
         (Just 0)
-        "{\"at\":\"0001-01-01T00:00:00.659Z\",\"big\":\"0\",\"count\":0,\"data\":\"pdzbu0yZ\",\"flag\":false,\"inner\":{\"a\":\"\",\"deep\":{\"b\":334174040,\"c\":[\"/\"]}},\"kind\":\"KIND_UNSPECIFIED\",\"kinds\":[\"KIND_UNSPECIFIED\"],\"label\":\"\",\"mask\":\"xxza.mWzg6,ue9aJ.wjFf,q07E\",\"maybeCount\":0,\"name\":\"\\u0001😀Z(&ΩΩ@\",\"numbers\":[-1395439420,-2131446981],\"ratio\":\"Infinity\",\"scale\":\"NaN\",\"tags\":[\"*\",\",%(😀!\"],\"text\":\"\",\"ubig\":\"105\",\"wait\":\"165537480972.226s\"}"
+        "{\"flag\":true,\"inner\":{},\"kinds\":[\"KIND_TEXT\"],\"mask\":\"nqK.iX8,z6.x3qy.mzyOje,aPjq.dznx.kzb\",\"maybeCount\":0,\"name\":\"Ω_\",\"numbers\":[-1],\"ratio\":32.875,\"tags\":[\"#@\",\"𐍈𐍈\\t@]✓#𐍈\"],\"text\":\"\",\"ubig\":\"18446744073709551615\"}"
         { method = "GET"
-        , url = "/v1/%01%F0%9F%98%80Z%28%26%CE%A9%CE%A9%40?ubig=105&ratio=Infinity&scale=NaN&data=pdzbu0yZ&tags=%2A&tags=%2C%25%28%F0%9F%98%80%21&kinds=KIND_UNSPECIFIED&numbers=-1395439420&numbers=-2131446981&maybe_count=0&at=0001-01-01T00%3A00%3A00.659Z&wait=165537480972.226s&mask=xxza.mWzg6%2Cue9aJ.wjFf%2Cq07E&label=&inner.deep.b=334174040&inner.deep.c=%2F&text="
+        , url = "/v1/%CE%A9_?ubig=18446744073709551615&flag=true&ratio=32.875&tags=%23%40&tags=%F0%90%8D%88%F0%90%8D%88%09%40%5D%E2%9C%93%23%F0%90%8D%88&kinds=KIND_TEXT&numbers=-1&maybe_count=0&mask=nqK.iX8%2Cz6.x3qy.mzyOje%2CaPjq.dznx.kzb&text="
         , headers = []
         , body = Nothing
         }
@@ -1144,9 +1304,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.multi
         (Just 0)
-        "{\"at\":\"0001-01-01T00:00:00.780Z\",\"big\":\"3203975903859131380\",\"count\":1750804392,\"inner\":{\"deep\":{}},\"kinds\":[\"KIND_TEXT\"],\"limit\":5893276,\"maybeCount\":-1518835952,\"name\":\"\\\\**\",\"number\":-1824935992,\"numbers\":[-1344939029],\"ratio\":1.7976931348623157e+308,\"scale\":-2.3465438686335897e+21,\"wait\":\"-1.167139s\"}"
+        "{\"big\":\"489832994997228786\",\"count\":835697778,\"inner\":{\"a\":\"=ΩΩ\"},\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_UNSPECIFIED\"],\"limit\":0,\"mask\":\"\",\"maybeName\":\"\",\"number\":1907309770,\"numbers\":[1838328210,-1],\"scale\":5.050849235434861e+36,\"tags\":[\"a\\t[9é\"],\"ubig\":\"10361177066039130113\",\"wait\":\"0s\"}"
         { method = "GET"
-        , url = "/v1/%5C%2A%2A?count=1750804392&big=3203975903859131380&ratio=1.7976931348623157e%2B308&scale=-2.3465438686335897e%2B21&kinds=KIND_TEXT&numbers=-1344939029&maybe_count=-1518835952&at=0001-01-01T00%3A00%3A00.780Z&wait=-1.167139s&limit=5893276&number=-1824935992"
+        , url = "/v1/?count=835697778&big=489832994997228786&ubig=10361177066039130113&scale=5.050849235434861e%2B36&kind=KIND_TEXT&tags=a%09%5B9%C3%A9&kinds=KIND_UNSPECIFIED&numbers=1838328210&numbers=-1&maybe_name=&wait=0s&mask=&limit=0&inner.a=%3D%CE%A9%CE%A9&number=1907309770"
         , headers = []
         , body = Nothing
         }
@@ -1154,9 +1314,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.multi
         (Just 0)
-        "{\"big\":\"0\",\"count\":-1786481598,\"data\":\"kkQMn48=\",\"flag\":false,\"inner\":{\"a\":\":9𐍈?/中z-\",\"deep\":{\"b\":0,\"c\":[]}},\"kind\":\"KIND_UNSPECIFIED\",\"kinds\":[\"KIND_TEXT\",\"KIND_IMAGE\"],\"label\":\"\",\"limit\":-2127651869,\"mask\":\"fE9.x8n.hiA6wk\",\"name\":\"\",\"numbers\":[-1016133020,-1202546197],\"ratio\":-5.282968840738826e-68,\"scale\":-170022487982080.0,\"tags\":[\"Zé$\\n\\u0001\",\"*-\"],\"ubig\":\"1\",\"wait\":\"0s\"}"
+        "{\"at\":\"7743-03-24T15:39:44.617Z\",\"big\":\"-92\",\"count\":1977789998,\"inner\":{},\"kinds\":[\"KIND_TEXT\",\"KIND_UNSPECIFIED\",\"KIND_TEXT\"],\"mask\":\"qhUd7.mOil,owDf9,s.utrN.tcmqZr\",\"maybe_name\":\"\",\"name\":\"ΩZ~A#\\n~+\",\"numbers\":[-2139961931,2147483647],\"scale\":5.836068313041494e-24,\"tags\":[\".~\"],\"text\":\"&\",\"wait\":\"-0.915583572s\"}"
         { method = "GET"
-        , url = "/v1/?count=-1786481598&ubig=1&ratio=-5.282968840738826e-68&scale=-170022487982080&data=kkQMn48%3D&tags=Z%C3%A9%24%0A%01&tags=%2A-&kinds=KIND_TEXT&kinds=KIND_IMAGE&numbers=-1016133020&numbers=-1202546197&wait=0s&mask=fE9.x8n.hiA6wk&limit=-2127651869&label=&inner.a=%3A9%F0%90%8D%88%3F%2F%E4%B8%ADz-"
+        , url = "/v1/%CE%A9Z~A%23%0A~%2B?count=1977789998&big=-92&scale=5.836068313041494e-24&tags=.~&kinds=KIND_TEXT&kinds=KIND_UNSPECIFIED&kinds=KIND_TEXT&numbers=-2139961931&numbers=2147483647&maybe_name=&at=7743-03-24T15%3A39%3A44.617Z&wait=-0.915583572s&mask=qhUd7.mOil%2CowDf9%2Cs.utrN.tcmqZr&text=%26"
         , headers = []
         , body = Nothing
         }
@@ -1164,9 +1324,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.multi
         (Just 0)
-        "{\"at\":\"1970-01-01T00:00:00Z\",\"count\":254,\"data\":\"0SZY\",\"inner\":{},\"kinds\":[\"KIND_IMAGE\"],\"label\":\"\",\"mask\":\"\",\"maybeCount\":0,\"maybeName\":\"\",\"number\":1,\"numbers\":[36251797,-1832669870],\"ratio\":1e+21,\"scale\":15713530.0,\"tags\":[\"\\n\u{007F}✓/:/;Ω\",\"aa\"],\"ubig\":\"696\"}"
+        "{\"count\":-158934888,\"inner\":{},\"kind\":\"KIND_TEXT\",\"limit\":0,\"maybeCount\":0,\"maybeName\":\"*?!\",\"name\":\"~Za\",\"numbers\":[-2090007809],\"ratio\":2.2250738585072014e-308,\"scale\":-94179.5390625,\"tags\":[\"(\"],\"text\":\"\",\"ubig\":\"876\",\"wait\":\"285523584981s\"}"
         { method = "GET"
-        , url = "/v1/?count=254&ubig=696&ratio=1e%2B21&scale=15713530&data=0SZY&tags=%0A%7F%E2%9C%93%2F%3A%2F%3B%CE%A9&tags=aa&kinds=KIND_IMAGE&numbers=36251797&numbers=-1832669870&maybe_count=0&maybe_name=&at=1970-01-01T00%3A00%3A00Z&mask=&label=&number=1"
+        , url = "/v1/~Za?count=-158934888&ubig=876&ratio=2.2250738585072014e-308&scale=-94179.5390625&kind=KIND_TEXT&tags=%28&numbers=-2090007809&maybe_count=0&maybe_name=%2A%3F%21&wait=285523584981s&limit=0&text="
         , headers = []
         , body = Nothing
         }
@@ -1174,9 +1334,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.multi
         (Just 0)
-        "{\"at\":\"1970-01-01T00:00:00Z\",\"big\":\"-2695884449183654863\",\"count\":2147483647,\"data\":\"Jw==\",\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_TEXT\",\"KIND_TEXT\",\"KIND_IMAGE\"],\"mask\":\"eU2.o,h1c0.ju.hsj2Smog\",\"maybeCount\":-920,\"maybeName\":\"\",\"name\":\"a\",\"number\":-1,\"numbers\":[1761929309],\"ratio\":5.1613033831881294e-26,\"ubig\":\"18446744073709551615\",\"wait\":\"0.366s\"}"
+        "{\"at\":\"0001-01-01T00:00:00.532Z\",\"big\":\"9007199254740991\",\"count\":-555,\"data\":\"IT8=\",\"flag\":true,\"inner\":{\"deep\":{\"b\":-2147483648,\"c\":[\"ß\",\"*]\",\"✓90.&\"]}},\"kind\":\"KIND_TEXT\",\"mask\":\"bh0h.x6m7F\",\"maybeCount\":-285839675,\"name\":\",✓'\",\"ratio\":\"Infinity\",\"text\":\"𐍈\",\"ubig\":\"6955844611066503192\",\"wait\":\"315576000000.344938694s\"}"
         { method = "GET"
-        , url = "/v1/a?count=2147483647&big=-2695884449183654863&ubig=18446744073709551615&ratio=5.1613033831881294e-26&data=Jw%3D%3D&kind=KIND_TEXT&kinds=KIND_TEXT&kinds=KIND_TEXT&kinds=KIND_IMAGE&numbers=1761929309&maybe_count=-920&maybe_name=&at=1970-01-01T00%3A00%3A00Z&wait=0.366s&mask=eU2.o%2Ch1c0.ju.hsj2Smog&number=-1"
+        , url = "/v1/%2C%E2%9C%93%27?count=-555&big=9007199254740991&ubig=6955844611066503192&flag=true&ratio=Infinity&data=IT8%3D&kind=KIND_TEXT&maybe_count=-285839675&at=0001-01-01T00%3A00%3A00.532Z&wait=315576000000.344938694s&mask=bh0h.x6m7F&inner.deep.b=-2147483648&inner.deep.c=%C3%9F&inner.deep.c=%2A%5D&inner.deep.c=%E2%9C%9390.%26&text=%F0%90%8D%88"
         , headers = []
         , body = Nothing
         }
@@ -1184,9 +1344,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.multi
         (Just 0)
-        "{\"at\":\"1970-01-01T00:00:00.013Z\",\"big\":\"247\",\"count\":1,\"data\":\"pQ==\",\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_IMAGE\",\"KIND_TEXT\",\"KIND_TEXT\"],\"mask\":\"zzzD4.yffiVof\",\"maybeCount\":457643887,\"name\":\"@\",\"numbers\":[-675545396,-1497676340,643518634],\"ratio\":103.25,\"scale\":-4.3193823855044836e-20,\"tags\":[\"\u{007F}😀9中ß\"],\"ubig\":\"18446744073709551615\",\"wait\":\"218250531280.120971204s\"}"
+        "{\"count\":957,\"inner\":{},\"kinds\":[\"KIND_IMAGE\",\"KIND_IMAGE\",\"KIND_IMAGE\"],\"label\":\"*:\",\"limit\":0,\"maybe_count\":-2146474177,\"maybe_name\":\"=.!!!&%/\",\"name\":\"@A\",\"tags\":[\"=/\u{007F}\",\"Ω.\\n;é@:Z\"],\"text\":\"$\",\"ubig\":\"960238784295208207\",\"wait\":\"0s\"}"
         { method = "GET"
-        , url = "/v1/%40?count=1&big=247&ubig=18446744073709551615&ratio=103.25&scale=-4.3193823855044836e-20&data=pQ%3D%3D&kind=KIND_TEXT&tags=%7F%F0%9F%98%809%E4%B8%AD%C3%9F&kinds=KIND_IMAGE&kinds=KIND_TEXT&kinds=KIND_TEXT&numbers=-675545396&numbers=-1497676340&numbers=643518634&maybe_count=457643887&at=1970-01-01T00%3A00%3A00.013Z&wait=218250531280.120971204s&mask=zzzD4.yffiVof"
+        , url = "/v1/%40A?count=957&ubig=960238784295208207&tags=%3D%2F%7F&tags=%CE%A9.%0A%3B%C3%A9%40%3AZ&kinds=KIND_IMAGE&kinds=KIND_IMAGE&kinds=KIND_IMAGE&maybe_count=-2146474177&maybe_name=%3D.%21%21%21%26%25%2F&wait=0s&limit=0&label=%2A%3A&text=%24"
         , headers = []
         , body = Nothing
         }
@@ -1194,9 +1354,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.multi
         (Just 0)
-        "{\"at\":\"1970-01-01T00:00:00Z\",\"big\":\"129\",\"count\":2099552417,\"data\":\"m6SJBpU=\",\"flag\":true,\"inner\":{\"a\":\"\"},\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_UNSPECIFIED\",\"KIND_IMAGE\"],\"limit\":0,\"maybeCount\":-2083993523,\"name\":\"\u{007F}\",\"numbers\":[],\"ratio\":0.1,\"scale\":\"Infinity\",\"tags\":[\"0中\",\"\",\";\"],\"ubig\":\"0\",\"wait\":\"-315576000000.272s\"}"
+        "{\"big\":\"2697859821003957017\",\"count\":-430372064,\"inner\":{},\"kind\":\"KIND_IMAGE\",\"limit\":1964360707,\"maybe_count\":0,\"maybe_name\":\"A𐍈9\",\"ratio\":7.388227393782148e+187,\"text\":\"\"}"
         { method = "GET"
-        , url = "/v1/%7F?count=2099552417&big=129&flag=true&ratio=0.1&scale=Infinity&data=m6SJBpU%3D&kind=KIND_TEXT&tags=0%E4%B8%AD&tags=&tags=%3B&kinds=KIND_UNSPECIFIED&kinds=KIND_IMAGE&maybe_count=-2083993523&at=1970-01-01T00%3A00%3A00Z&wait=-315576000000.272s&limit=0"
+        , url = "/v1/?count=-430372064&big=2697859821003957017&ratio=7.388227393782148e%2B187&kind=KIND_IMAGE&maybe_count=0&maybe_name=A%F0%90%8D%889&limit=1964360707&text="
         , headers = []
         , body = Nothing
         }
@@ -1204,9 +1364,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.multi
         (Just 0)
-        "{\"at\":\"5846-01-30T19:59:52.803Z\",\"big\":\"-2300068429761585064\",\"count\":-485572234,\"data\":\"0QRBLyg=\",\"flag\":true,\"inner\":{\"a\":\"\"},\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_IMAGE\",\"KIND_TEXT\"],\"label\":\"\",\"maybeCount\":0,\"maybeName\":\"#\\\"\",\"name\":\"\",\"number\":686,\"numbers\":[449482840],\"ratio\":-1.7976931348623157e+308,\"scale\":0.0,\"tags\":[\"+:$\",\"[=9😀z;-)\"],\"ubig\":\"887\"}"
+        "{\"data\":\"tNOhQf6J\",\"flag\":true,\"inner\":{\"a\":\"😀*ßé\\n@\\t&\",\"deep\":{\"b\":2146816319,\"c\":[\"~Z😀\",\"(+\"]}},\"kinds\":[\"KIND_UNSPECIFIED\"],\"label\":\"\",\"limit\":0,\"maybe_count\":0,\"numbers\":[-422723188],\"scale\":101.75,\"ubig\":\"9560352039664595623\"}"
         { method = "GET"
-        , url = "/v1/?count=-485572234&big=-2300068429761585064&ubig=887&flag=true&ratio=-1.7976931348623157e%2B308&data=0QRBLyg%3D&kind=KIND_TEXT&tags=%2B%3A%24&tags=%5B%3D9%F0%9F%98%80z%3B-%29&kinds=KIND_IMAGE&kinds=KIND_TEXT&numbers=449482840&maybe_count=0&maybe_name=%23%22&at=5846-01-30T19%3A59%3A52.803Z&label=&number=686"
+        , url = "/v1/?ubig=9560352039664595623&flag=true&scale=101.75&data=tNOhQf6J&kinds=KIND_UNSPECIFIED&numbers=-422723188&maybe_count=0&limit=0&label=&inner.a=%F0%9F%98%80%2A%C3%9F%C3%A9%0A%40%09%26&inner.deep.b=2146816319&inner.deep.c=~Z%F0%9F%98%80&inner.deep.c=%28%2B"
         , headers = []
         , body = Nothing
         }
@@ -1214,9 +1374,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.multi
         (Just 0)
-        "{\"at\":\"1970-01-01T00:00:00Z\",\"big\":\"-5004963082756417856\",\"flag\":true,\"inner\":{\"deep\":{\"b\":-144,\"c\":[\"Z\",\"AΩ)𐍈\\\\\"]}},\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_TEXT\",\"KIND_UNSPECIFIED\"],\"label\":\"[)/\",\"limit\":-2112457825,\"maybeName\":\"?\",\"numbers\":[1683128754,-2147483648],\"ratio\":38.125,\"scale\":1.9495991268734158e+31,\"tags\":[\"\"],\"ubig\":\"13647584104688374215\",\"wait\":\"0s\"}"
+        "{\"at\":\"3554-07-14T13:04:44.541Z\",\"data\":\"ztDO+Cg=\",\"flag\":true,\"inner\":{},\"kind\":\"KIND_IMAGE\",\"kinds\":[\"KIND_TEXT\",\"KIND_IMAGE\"],\"label\":\"#é((Ω\\u0001?✓\",\"limit\":0,\"mask\":\"s,o2cm.yhS29u.s9df,flbO731.w\",\"maybeCount\":0,\"maybeName\":\"\",\"number\":-1,\"numbers\":[2147483647,-1],\"ratio\":1.7628176903537238e+175,\"ubig\":\"571\",\"wait\":\"0s\"}"
         { method = "GET"
-        , url = "/v1/?big=-5004963082756417856&ubig=13647584104688374215&flag=true&ratio=38.125&scale=1.9495991268734158e%2B31&kind=KIND_TEXT&tags=&kinds=KIND_TEXT&kinds=KIND_UNSPECIFIED&numbers=1683128754&numbers=-2147483648&maybe_name=%3F&at=1970-01-01T00%3A00%3A00Z&wait=0s&limit=-2112457825&label=%5B%29%2F&inner.deep.b=-144&inner.deep.c=Z&inner.deep.c=A%CE%A9%29%F0%90%8D%88%5C"
+        , url = "/v1/?ubig=571&flag=true&ratio=1.7628176903537238e%2B175&data=ztDO%2BCg%3D&kind=KIND_IMAGE&kinds=KIND_TEXT&kinds=KIND_IMAGE&numbers=2147483647&numbers=-1&maybe_count=0&maybe_name=&at=3554-07-14T13%3A04%3A44.541Z&wait=0s&mask=s%2Co2cm.yhS29u.s9df%2CflbO731.w&limit=0&label=%23%C3%A9%28%28%CE%A9%01%3F%E2%9C%93&number=-1"
         , headers = []
         , body = Nothing
         }
@@ -1224,9 +1384,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.multi
         (Just 0)
-        "{\"at\":\"0001-01-01T00:00:00.529Z\",\"count\":-838,\"data\":\"ygnU\",\"inner\":{\"a\":\"\u{007F}!𐍈\",\"deep\":{\"b\":-57844863}},\"kinds\":[\"KIND_UNSPECIFIED\",\"KIND_UNSPECIFIED\",\"KIND_IMAGE\"],\"limit\":0,\"mask\":\"\",\"maybeName\":\"$9\",\"name\":\",\",\"numbers\":[-2147483648,-2147483648,1481210312],\"ratio\":-88.625,\"scale\":-4.784841820435253e-32,\"text\":\"\",\"ubig\":\"715\"}"
+        "{\"big\":\"1290355086451593392\",\"count\":2147483647,\"flag\":true,\"inner\":{\"a\":\"0@$?&\",\"deep\":{\"b\":905}},\"kind\":\"KIND_TEXT\",\"label\":\"\",\"limit\":0,\"mask\":\"\",\"maybe_count\":-1,\"maybe_name\":\"\",\"number\":-1711457817,\"numbers\":[593197477],\"scale\":5.625,\"ubig\":\"5405173464796099079\",\"wait\":\"0s\"}"
         { method = "GET"
-        , url = "/v1/%2C?count=-838&ubig=715&ratio=-88.625&scale=-4.784841820435253e-32&data=ygnU&kinds=KIND_UNSPECIFIED&kinds=KIND_UNSPECIFIED&kinds=KIND_IMAGE&numbers=-2147483648&numbers=-2147483648&numbers=1481210312&maybe_name=%249&at=0001-01-01T00%3A00%3A00.529Z&mask=&limit=0&inner.a=%7F%21%F0%90%8D%88&inner.deep.b=-57844863&text="
+        , url = "/v1/?count=2147483647&big=1290355086451593392&ubig=5405173464796099079&flag=true&scale=5.625&kind=KIND_TEXT&numbers=593197477&maybe_count=-1&maybe_name=&wait=0s&mask=&limit=0&label=&inner.a=0%40%24%3F%26&inner.deep.b=905&number=-1711457817"
         , headers = []
         , body = Nothing
         }
@@ -1234,9 +1394,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.multi
         (Just 0)
-        "{\"at\":\"1970-01-01T00:00:00Z\",\"inner\":{\"a\":\"𐍈9\"},\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_UNSPECIFIED\"],\"label\":\"\",\"maybe_name\":\"\\t\\t\\t_9\",\"name\":\"ß)𐍈é_\",\"number\":-267359485,\"numbers\":[-546,-2147483648],\"ratio\":\"Infinity\",\"scale\":-69.75,\"tags\":[\"9\\t\",\"\"]}"
+        "{\"at\":\"0001-01-01T00:00:00.841Z\",\"big\":\"9223372036854775807\",\"count\":1485004003,\"data\":\"yDumRJ1b\",\"inner\":{},\"kinds\":[\"KIND_UNSPECIFIED\"],\"label\":\"\",\"mask\":\"\",\"maybe_count\":0,\"maybe_name\":\"😀𐍈\",\"number\":-2147483648,\"numbers\":[-248845142,-2147483648],\"scale\":-1.2418144734738235e-8,\"ubig\":\"1\"}"
         { method = "GET"
-        , url = "/v1/%C3%9F%29%F0%90%8D%88%C3%A9_?ratio=Infinity&scale=-69.75&kind=KIND_TEXT&tags=9%09&tags=&kinds=KIND_UNSPECIFIED&numbers=-546&numbers=-2147483648&maybe_name=%09%09%09_9&at=1970-01-01T00%3A00%3A00Z&label=&inner.a=%F0%90%8D%889&number=-267359485"
+        , url = "/v1/?count=1485004003&big=9223372036854775807&ubig=1&scale=-1.2418144734738235e-8&data=yDumRJ1b&kinds=KIND_UNSPECIFIED&numbers=-248845142&numbers=-2147483648&maybe_count=0&maybe_name=%F0%9F%98%80%F0%90%8D%88&at=0001-01-01T00%3A00%3A00.841Z&mask=&label=&number=-2147483648"
         , headers = []
         , body = Nothing
         }
@@ -1244,9 +1404,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.multi
         (Just 0)
-        "{\"at\":\"1970-01-01T00:00:00Z\",\"flag\":true,\"kind\":\"KIND_IMAGE\",\"kinds\":[\"KIND_TEXT\"],\"label\":\"\",\"mask\":\"\",\"maybe_count\":0,\"maybe_name\":\"99ß\",\"name\":\"a:\",\"numbers\":[-2147483648,-534363289],\"ratio\":3.77822473700892e+24,\"tags\":[\"!\\u0001('\\n_0✓\"],\"text\":\"\",\"ubig\":\"664\"}"
+        "{\"count\":1157070779,\"data\":\"ug==\",\"kinds\":[\"KIND_UNSPECIFIED\",\"KIND_TEXT\"],\"label\":\"\",\"limit\":358,\"mask\":\"\",\"number\":4648617,\"numbers\":[-1,-102],\"ratio\":1e-7,\"scale\":100.0,\"tags\":[\"\"],\"wait\":\"1.925s\"}"
         { method = "GET"
-        , url = "/v1/a%3A?ubig=664&flag=true&ratio=3.77822473700892e%2B24&kind=KIND_IMAGE&tags=%21%01%28%27%0A_0%E2%9C%93&kinds=KIND_TEXT&numbers=-2147483648&numbers=-534363289&maybe_count=0&maybe_name=99%C3%9F&at=1970-01-01T00%3A00%3A00Z&mask=&label=&text="
+        , url = "/v1/?count=1157070779&ratio=1e-7&scale=100&data=ug%3D%3D&tags=&kinds=KIND_UNSPECIFIED&kinds=KIND_TEXT&numbers=-1&numbers=-102&wait=1.925s&mask=&limit=358&label=&number=4648617"
         , headers = []
         , body = Nothing
         }
@@ -1254,9 +1414,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.multi
         (Just 0)
-        "{\"at\":\"8198-06-25T14:25:52.537Z\",\"count\":-883,\"data\":\"b13XDP8=\",\"inner\":{},\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_UNSPECIFIED\",\"KIND_TEXT\"],\"label\":\"\",\"limit\":0,\"mask\":\"\",\"maybe_name\":\"\",\"name\":\"\u{007F}\",\"numbers\":[-322861129,1211472066],\"scale\":59.5,\"tags\":[\"Z𐍈ßZ\\\"\",\"\\\"&\\n\",\"\\\"\\\\/&#\"],\"ubig\":\"9232569243950882856\",\"wait\":\"0s\"}"
+        "{\"at\":\"1970-01-01T00:00:00.910Z\",\"big\":\"9007199254740993\",\"count\":-561772445,\"data\":\"FYo=\",\"flag\":true,\"inner\":{\"a\":\"\\\\;\",\"deep\":{}},\"maybeCount\":844354786,\"maybeName\":\"\",\"numbers\":[363],\"ratio\":6.952660309849176e-28,\"text\":\"\",\"ubig\":\"9031594320036859890\",\"wait\":\"1.291049s\"}"
         { method = "GET"
-        , url = "/v1/%7F?count=-883&ubig=9232569243950882856&scale=59.5&data=b13XDP8%3D&kind=KIND_TEXT&tags=Z%F0%90%8D%88%C3%9FZ%22&tags=%22%26%0A&tags=%22%5C%2F%26%23&kinds=KIND_UNSPECIFIED&kinds=KIND_TEXT&numbers=-322861129&numbers=1211472066&maybe_name=&at=8198-06-25T14%3A25%3A52.537Z&wait=0s&mask=&limit=0&label="
+        , url = "/v1/?count=-561772445&big=9007199254740993&ubig=9031594320036859890&flag=true&ratio=6.952660309849176e-28&data=FYo%3D&numbers=363&maybe_count=844354786&maybe_name=&at=1970-01-01T00%3A00%3A00.910Z&wait=1.291049s&inner.a=%5C%3B&text="
         , headers = []
         , body = Nothing
         }
@@ -1264,9 +1424,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.multi
         (Just 0)
-        "{\"at\":\"1970-01-01T00:00:00Z\",\"big\":\"-3622872475147587477\",\"data\":\"JS8O5v8=\",\"inner\":{},\"kinds\":[\"KIND_UNSPECIFIED\"],\"label\":\"])9-:$𐍈a\",\"limit\":-28526453,\"mask\":\"\",\"maybeCount\":0,\"maybeName\":\"9\u{007F}~~&!*%\",\"scale\":115.625,\"tags\":[\"é0\"]}"
+        "{\"big\":\"9007199254740993\",\"count\":113,\"data\":\"3kE7gg==\",\"flag\":false,\"kind\":\"KIND_UNSPECIFIED\",\"kinds\":[\"KIND_IMAGE\",\"KIND_TEXT\"],\"label\":\"\",\"limit\":0,\"maybe_count\":1688930334,\"maybe_name\":\"\",\"name\":\"-A/\",\"numbers\":[1761426735],\"ratio\":5e-324,\"scale\":\"Infinity\",\"tags\":[\")@ Z@\",\"zz\\\\(\u{007F}.😀.\",\",,\"],\"ubig\":\"636\"}"
         { method = "GET"
-        , url = "/v1/?big=-3622872475147587477&scale=115.625&data=JS8O5v8%3D&tags=%C3%A90&kinds=KIND_UNSPECIFIED&maybe_count=0&maybe_name=9%7F~~%26%21%2A%25&at=1970-01-01T00%3A00%3A00Z&mask=&limit=-28526453&label=%5D%299-%3A%24%F0%90%8D%88a"
+        , url = "/v1/-A/?count=113&big=9007199254740993&ubig=636&ratio=5e-324&scale=Infinity&data=3kE7gg%3D%3D&tags=%29%40%20Z%40&tags=zz%5C%28%7F.%F0%9F%98%80.&tags=%2C%2C&kinds=KIND_IMAGE&kinds=KIND_TEXT&numbers=1761426735&maybe_count=1688930334&maybe_name=&limit=0&label="
         , headers = []
         , body = Nothing
         }
@@ -1274,9 +1434,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.multi
         (Just 0)
-        "{\"at\":\"1970-01-01T00:00:00Z\",\"big\":\"3667050524442151373\",\"count\":-652,\"inner\":{\"deep\":{}},\"kind\":\"KIND_TEXT\",\"label\":\"\",\"limit\":0,\"maybeCount\":-1129520583,\"name\":\"&+\",\"ratio\":-1.7976931348623157e+308,\"tags\":[\"ß~:!:😀\\n\\t\",\"中Aéß?\"],\"ubig\":\"934\"}"
+        "{\"big\":\"142\",\"count\":2147483647,\"data\":\"Is/l\",\"kinds\":[\"KIND_IMAGE\",\"KIND_TEXT\"],\"label\":\"\",\"limit\":0,\"maybeCount\":0,\"maybeName\":\"𐍈\",\"name\":\"#\",\"ratio\":-1.7976931348623157e+308,\"scale\":0.10000000149011612,\"tags\":[\"\",\"]_\"],\"ubig\":\"10261337662509643330\",\"wait\":\"0s\"}"
         { method = "GET"
-        , url = "/v1/%26%2B?count=-652&big=3667050524442151373&ubig=934&ratio=-1.7976931348623157e%2B308&kind=KIND_TEXT&tags=%C3%9F~%3A%21%3A%F0%9F%98%80%0A%09&tags=%E4%B8%ADA%C3%A9%C3%9F%3F&maybe_count=-1129520583&at=1970-01-01T00%3A00%3A00Z&limit=0&label="
+        , url = "/v1/%23?count=2147483647&big=142&ubig=10261337662509643330&ratio=-1.7976931348623157e%2B308&scale=0.10000000149011612&data=Is%2Fl&tags=&tags=%5D_&kinds=KIND_IMAGE&kinds=KIND_TEXT&maybe_count=0&maybe_name=%F0%90%8D%88&wait=0s&limit=0&label="
         , headers = []
         , body = Nothing
         }
@@ -1284,9 +1444,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.multi
         (Just 0)
-        "{\"big\":\"2639573502247670460\",\"data\":\"IAyZqAlu\",\"kind\":\"KIND_IMAGE\",\"kinds\":[\"KIND_TEXT\"],\"label\":\"\",\"mask\":\"\",\"maybeCount\":1,\"maybeName\":\"😀#[\",\"name\":\"é\\\"Z'Ω\",\"ratio\":3.719299763271474e-213,\"scale\":\"Infinity\",\"tags\":[\"\"],\"text\":\"Z; ,#\",\"ubig\":\"17565094500207163319\",\"wait\":\"211567072952.076037s\"}"
+        "{\"big\":\"0\",\"count\":230460287,\"data\":\"\",\"flag\":false,\"inner\":{\"a\":\"\"},\"kind\":\"KIND_UNSPECIFIED\",\"kinds\":[],\"label\":\"\",\"mask\":\"\",\"maybeName\":\"\",\"name\":\"\",\"number\":0,\"numbers\":[447,1320515623],\"ratio\":2.2250738585072014e-308,\"scale\":1.3672824485707793e-37,\"tags\":[],\"ubig\":\"14055918840688712008\",\"wait\":\"0s\"}"
         { method = "GET"
-        , url = "/v1/%C3%A9%22Z%27%CE%A9?big=2639573502247670460&ubig=17565094500207163319&ratio=3.719299763271474e-213&scale=Infinity&data=IAyZqAlu&kind=KIND_IMAGE&tags=&kinds=KIND_TEXT&maybe_count=1&maybe_name=%F0%9F%98%80%23%5B&wait=211567072952.076037s&mask=&label=&text=Z%3B%20%2C%23"
+        , url = "/v1/?count=230460287&ubig=14055918840688712008&ratio=2.2250738585072014e-308&scale=1.3672824485707793e-37&numbers=447&numbers=1320515623&maybe_name=&wait=0s&mask=&label=&number=0"
         , headers = []
         , body = Nothing
         }
@@ -1294,169 +1454,169 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.postSub
         (Just 0)
-        "{\"messageId\":\"\",\"name\":\"\",\"revision\":\"-857\",\"sub\":{\"subfield\":\"\"},\"userId\":\"\"}"
+        "{\"revision\":\"2226303929256679160\",\"sub\":{},\"userId\":\"=.ß\"}"
         { method = "POST"
         , url = "/v1/subs/"
         , headers = []
-        , body = Just "{\"revision\":\"-857\",\"sub\":{}}"
+        , body = Just "{\"revision\":\"2226303929256679160\",\"sub\":{},\"userId\":\"=.ß\"}"
         }
     , Replay.fixture "PostSub 0 #1"
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.postSub
         (Just 0)
-        "{\"message_id\":\"\",\"name\":\"\",\"revision\":\"-6208336515568067295\",\"sub\":{\"subfield\":\"\"},\"user_id\":\"✓😀\"}"
+        "{\"messageId\":\";\\t9\",\"name\":\"!\",\"revision\":\"-4054444696528485067\",\"userId\":\"*./~✓ß*&\"}"
         { method = "POST"
         , url = "/v1/subs/"
         , headers = []
-        , body = Just "{\"revision\":\"-6208336515568067295\",\"sub\":{},\"userId\":\"✓😀\"}"
+        , body = Just "{\"messageId\":\";\\t9\",\"name\":\"!\",\"revision\":\"-4054444696528485067\",\"userId\":\"*./~✓ß*&\"}"
         }
     , Replay.fixture "PostSub 0 #2"
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.postSub
         (Just 0)
-        "{\"messageId\":\"中\",\"revision\":\"-951\",\"userId\":\"😀0中\"}"
+        "{\"message_id\":\"]\\\"\",\"name\":\"[\",\"revision\":\"-1330965876453696060\",\"sub\":{\"subfield\":\"\"},\"user_id\":\"\"}"
         { method = "POST"
         , url = "/v1/subs/"
         , headers = []
-        , body = Just "{\"messageId\":\"中\",\"revision\":\"-951\",\"userId\":\"😀0中\"}"
+        , body = Just "{\"messageId\":\"]\\\"\",\"name\":\"[\",\"revision\":\"-1330965876453696060\",\"sub\":{}}"
         }
     , Replay.fixture "PostSub 0 #3"
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.postSub
         (Just 0)
-        "{\"messageId\":\"ß=*.@\",\"name\":\"\\t;\",\"revision\":\"-9029711485355144822\",\"userId\":\"\\\"\\u0001\\\\\\\"+\"}"
+        "{\"messageId\":\"('\\u0001~?\",\"sub\":{},\"userId\":\"%*&]:✓;[\"}"
         { method = "POST"
         , url = "/v1/subs/"
         , headers = []
-        , body = Just "{\"messageId\":\"ß=*.@\",\"name\":\"\\t;\",\"revision\":\"-9029711485355144822\",\"userId\":\"\\\"\\u0001\\\\\\\"+\"}"
+        , body = Just "{\"messageId\":\"('\\u0001~?\",\"sub\":{},\"userId\":\"%*&]:✓;[\"}"
         }
     , Replay.fixture "PostSub 0 #4"
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.postSub
         (Just 0)
-        "{\"messageId\":\"*0\",\"sub\":{},\"userId\":\"9~,\"}"
+        "{\"userId\":\"[\"}"
         { method = "POST"
         , url = "/v1/subs/"
         , headers = []
-        , body = Just "{\"messageId\":\"*0\",\"sub\":{},\"userId\":\"9~,\"}"
+        , body = Just "{\"userId\":\"[\"}"
         }
     , Replay.fixture "PostSub 0 #5"
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.postSub
         (Just 0)
-        "{\"messageId\":\"~&中中;\",\"revision\":\"707\",\"sub\":{},\"userId\":\"?Ω%*𐍈@$✓\"}"
+        "{\"messageId\":\"𐍈@\u{007F}\",\"name\":\"😀𐍈;✓[%\\u0001[\",\"revision\":\"9007199254740993\",\"sub\":{}}"
         { method = "POST"
         , url = "/v1/subs/"
         , headers = []
-        , body = Just "{\"messageId\":\"~&中中;\",\"revision\":\"707\",\"sub\":{},\"userId\":\"?Ω%*𐍈@$✓\"}"
+        , body = Just "{\"messageId\":\"𐍈@\u{007F}\",\"name\":\"😀𐍈;✓[%\\u0001[\",\"revision\":\"9007199254740993\",\"sub\":{}}"
         }
     , Replay.fixture "PostSub 0 #6"
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.postSub
         (Just 0)
-        "{\"message_id\":\"😀a\\t\u{007F}?9,?\",\"revision\":\"-9223372036854775808\",\"sub\":{\"subfield\":\"é\u{007F}z\"},\"user_id\":\"!-0:*(=a\"}"
+        "{\"messageId\":\"*\",\"name\":\"#\",\"revision\":\"0\",\"sub\":{\"subfield\":\"+#a\"},\"userId\":\"Ω😀\"}"
         { method = "POST"
-        , url = "/v1/subs/%C3%A9%7Fz"
+        , url = "/v1/subs/%2B%23a"
         , headers = []
-        , body = Just "{\"messageId\":\"😀a\\t\u{007F}?9,?\",\"revision\":\"-9223372036854775808\",\"sub\":{},\"userId\":\"!-0:*(=a\"}"
+        , body = Just "{\"messageId\":\"*\",\"name\":\"#\",\"sub\":{},\"userId\":\"Ω😀\"}"
         }
     , Replay.fixture "PostSub 0 #7"
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.postSub
         (Just 0)
-        "{\"revision\":\"-7257277155779566424\",\"userId\":\"𐍈[?\"}"
+        "{\"messageId\":\"_&%\",\"name\":\"a)+&,\",\"revision\":\"7305901908879347591\",\"sub\":{\"subfield\":\"]\\u0001\"},\"userId\":\"\"}"
         { method = "POST"
-        , url = "/v1/subs/"
+        , url = "/v1/subs/%5D%01"
         , headers = []
-        , body = Just "{\"revision\":\"-7257277155779566424\",\"userId\":\"𐍈[?\"}"
+        , body = Just "{\"messageId\":\"_&%\",\"name\":\"a)+&,\",\"revision\":\"7305901908879347591\",\"sub\":{}}"
         }
     , Replay.fixture "PostSub 0 #8"
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.postSub
         (Just 0)
-        "{\"message_id\":\"~A#\",\"name\":\"\\tA%😀.~0$\",\"revision\":\"3388886690771344756\",\"sub\":{\"subfield\":\"\u{007F}:\"},\"user_id\":\"a9(\"}"
+        "{\"messageId\":\".#;]?\",\"name\":\"$$\",\"revision\":\"-5863352905010332396\",\"userId\":\"a0\"}"
         { method = "POST"
-        , url = "/v1/subs/%7F%3A"
+        , url = "/v1/subs/"
         , headers = []
-        , body = Just "{\"messageId\":\"~A#\",\"name\":\"\\tA%😀.~0$\",\"revision\":\"3388886690771344756\",\"sub\":{},\"userId\":\"a9(\"}"
+        , body = Just "{\"messageId\":\".#;]?\",\"name\":\"$$\",\"revision\":\"-5863352905010332396\",\"userId\":\"a0\"}"
         }
     , Replay.fixture "PostSub 0 #9"
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.postSub
         (Just 0)
-        "{\"messageId\":\"'):z,\",\"name\":\"Ω~\\\\a-\",\"revision\":\"-9223372036854775808\",\"userId\":\"),#)@\"}"
+        "{\"message_id\":\"é\",\"name\":\"\",\"revision\":\"0\",\"sub\":{\"subfield\":\"()\\u0001\"},\"user_id\":\"\"}"
         { method = "POST"
-        , url = "/v1/subs/"
+        , url = "/v1/subs/%28%29%01"
         , headers = []
-        , body = Just "{\"messageId\":\"'):z,\",\"name\":\"Ω~\\\\a-\",\"revision\":\"-9223372036854775808\",\"userId\":\"),#)@\"}"
+        , body = Just "{\"messageId\":\"é\",\"sub\":{}}"
         }
     , Replay.fixture "PostSub 0 #10"
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.postSub
         (Just 0)
-        "{\"messageId\":\"中\",\"name\":\"é𐍈%(\\nß\\\"中\",\"revision\":\"-585\",\"sub\":{},\"userId\":\")$?@\\t\"}"
+        "{\"messageId\":\" \",\"name\":\"\",\"revision\":\"468394878571343107\",\"sub\":{\"subfield\":\"\"},\"userId\":\"\\u0001~A✓a)/ \"}"
         { method = "POST"
         , url = "/v1/subs/"
         , headers = []
-        , body = Just "{\"messageId\":\"中\",\"name\":\"é𐍈%(\\nß\\\"中\",\"revision\":\"-585\",\"sub\":{},\"userId\":\")$?@\\t\"}"
+        , body = Just "{\"messageId\":\" \",\"revision\":\"468394878571343107\",\"sub\":{},\"userId\":\"\\u0001~A✓a)/ \"}"
         }
     , Replay.fixture "PostSub 0 #11"
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.postSub
         (Just 0)
-        "{\"revision\":\"-834355110138601489\",\"user_id\":\"_~z\\\\0?;\\t\"}"
+        "{\"message_id\":\",@@ß\\t9\\u0001_\",\"name\":\"_\\tZ\",\"revision\":\"0\",\"sub\":{\"subfield\":\"\"},\"user_id\":\"!中Z!!\"}"
         { method = "POST"
         , url = "/v1/subs/"
         , headers = []
-        , body = Just "{\"revision\":\"-834355110138601489\",\"userId\":\"_~z\\\\0?;\\t\"}"
+        , body = Just "{\"messageId\":\",@@ß\\t9\\u0001_\",\"name\":\"_\\tZ\",\"sub\":{},\"userId\":\"!中Z!!\"}"
         }
     , Replay.fixture "PostSub 0 #12"
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.postSub
         (Just 0)
-        "{\"message_id\":\"(\u{007F}\",\"revision\":\"-2110993853302474027\"}"
+        "{\"messageId\":\"~😀#\",\"name\":\"+\\n*\",\"revision\":\"-3898060929115269506\",\"sub\":{\"subfield\":\"z$#\"},\"userId\":\"\"}"
         { method = "POST"
-        , url = "/v1/subs/"
+        , url = "/v1/subs/z%24%23"
         , headers = []
-        , body = Just "{\"messageId\":\"(\u{007F}\",\"revision\":\"-2110993853302474027\"}"
+        , body = Just "{\"messageId\":\"~😀#\",\"name\":\"+\\n*\",\"revision\":\"-3898060929115269506\",\"sub\":{}}"
         }
     , Replay.fixture "PostSub 0 #13"
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.postSub
         (Just 0)
-        "{\"messageId\":\"\",\"name\":\"\",\"revision\":\"0\",\"sub\":{\"subfield\":\"\"},\"userId\":\"\"}"
+        "{\"message_id\":\" \",\"revision\":\"9007199254740991\",\"user_id\":\"9\\\"./(𐍈[_\"}"
         { method = "POST"
         , url = "/v1/subs/"
         , headers = []
-        , body = Just "{\"sub\":{}}"
+        , body = Just "{\"messageId\":\" \",\"revision\":\"9007199254740991\",\"userId\":\"9\\\"./(𐍈[_\"}"
         }
     , Replay.fixture "PostSub 0 #14"
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.postSub
         (Just 0)
-        "{\"revision\":\"-226\",\"sub\":{},\"userId\":\"%0\"}"
+        "{\"messageId\":\"'.$\",\"name\":\"[ß\",\"revision\":\"809475894043586295\",\"sub\":{\"subfield\":\" \\u00010;#\"}}"
         { method = "POST"
-        , url = "/v1/subs/"
+        , url = "/v1/subs/%20%010%3B%23"
         , headers = []
-        , body = Just "{\"revision\":\"-226\",\"sub\":{},\"userId\":\"%0\"}"
+        , body = Just "{\"messageId\":\"'.$\",\"name\":\"[ß\",\"revision\":\"809475894043586295\",\"sub\":{}}"
         }
     , Replay.fixture "PostSub 0 #15"
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.postSub
         (Just 0)
-        "{\"messageId\":\"\u{007F}\",\"revision\":\"-548\",\"sub\":{},\"userId\":\",\"}"
+        "{\"revision\":\"4588838530693080653\"}"
         { method = "POST"
         , url = "/v1/subs/"
         , headers = []
-        , body = Just "{\"messageId\":\"\u{007F}\",\"revision\":\"-548\",\"sub\":{},\"userId\":\",\"}"
+        , body = Just "{\"revision\":\"4588838530693080653\"}"
         }
     , Replay.fixture "Query 0 #0"
         Routes.V1.decodeEverything
         Routes.V1.Routes.query
         (Just 0)
-        "{\"at\":\"1970-01-01T00:00:00Z\",\"big\":\"-924\",\"count\":-1,\"data\":\"0Hw=\",\"flag\":false,\"inner\":{\"a\":\"\"},\"kind\":\"KIND_UNSPECIFIED\",\"kinds\":[\"KIND_TEXT\",\"KIND_IMAGE\",\"KIND_UNSPECIFIED\"],\"label\":\"\",\"mask\":\"svmb.er7x\",\"maybeCount\":0,\"maybeName\":\"✓*\",\"name\":\" \",\"number\":0,\"numbers\":[2147483647,1989681598],\"ratio\":6.017648351784816e+192,\"scale\":-3.54174262150128e-21,\"tags\":[\"9(\",\"\\t\"],\"ubig\":\"14651437106564103444\",\"wait\":\"1.974424532s\"}"
+        "{\"big\":\"-410362951077725841\",\"count\":-2071995789,\"data\":\"KY0V\",\"flag\":true,\"inner\":{\"a\":\"%\"},\"kind\":\"KIND_IMAGE\",\"kinds\":[\"KIND_IMAGE\"],\"label\":\"\",\"mask\":\"\",\"maybeName\":\"\",\"numbers\":[-2147483648,1246420098],\"ratio\":1.0365905572929674e-130,\"wait\":\"-120129322756.685s\"}"
         { method = "GET"
-        , url = "/v1/query?name=%20&count=-1&big=-924&ubig=14651437106564103444&ratio=6.017648351784816e%2B192&scale=-3.54174262150128e-21&data=0Hw%3D&tags=9%28&tags=%09&kinds=KIND_TEXT&kinds=KIND_IMAGE&kinds=KIND_UNSPECIFIED&numbers=2147483647&numbers=1989681598&maybe_count=0&maybe_name=%E2%9C%93%2A&at=1970-01-01T00%3A00%3A00Z&wait=1.974424532s&mask=svmb.er7x&label=&number=0"
+        , url = "/v1/query?count=-2071995789&big=-410362951077725841&flag=true&ratio=1.0365905572929674e-130&data=KY0V&kind=KIND_IMAGE&kinds=KIND_IMAGE&numbers=-2147483648&numbers=1246420098&maybe_name=&wait=-120129322756.685s&mask=&label=&inner.a=%25"
         , headers = []
         , body = Nothing
         }
@@ -1464,9 +1624,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.query
         (Just 0)
-        "{\"big\":\"2159580824704092434\",\"count\":574459529,\"inner\":{\"deep\":{\"b\":992,\"c\":[\"\",\"@:Z\\\"-\",\"/.~ 😀%a=\"]}},\"kinds\":[\"KIND_TEXT\"],\"limit\":0,\"maybeCount\":-1887946097,\"maybeName\":\"=0✓😀9Z[-\",\"numbers\":[447],\"ratio\":-4.293780545546807e+39,\"tags\":[\".\",\"\",\"é\"],\"ubig\":\"18446744073709551615\",\"wait\":\"0s\"}"
+        "{\"big\":\"-9\",\"count\":-921540183,\"data\":\"\",\"flag\":false,\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_UNSPECIFIED\",\"KIND_TEXT\",\"KIND_IMAGE\"],\"label\":\"😀*\",\"limit\":0,\"maybeCount\":-2147483648,\"maybeName\":\".;['\\\\Ω\\u0001!\",\"name\":\"中[:\\t\\\\\",\"number\":-349,\"numbers\":[],\"ratio\":-25.5,\"scale\":12.375,\"tags\":[\"é\"],\"ubig\":\"0\"}"
         { method = "GET"
-        , url = "/v1/query?count=574459529&big=2159580824704092434&ubig=18446744073709551615&ratio=-4.293780545546807e%2B39&tags=.&tags=&tags=%C3%A9&kinds=KIND_TEXT&numbers=447&maybe_count=-1887946097&maybe_name=%3D0%E2%9C%93%F0%9F%98%809Z%5B-&wait=0s&limit=0&inner.deep.b=992&inner.deep.c=&inner.deep.c=%40%3AZ%22-&inner.deep.c=%2F.~%20%F0%9F%98%80%25a%3D"
+        , url = "/v1/query?name=%E4%B8%AD%5B%3A%09%5C&count=-921540183&big=-9&ratio=-25.5&scale=12.375&kind=KIND_TEXT&tags=%C3%A9&kinds=KIND_UNSPECIFIED&kinds=KIND_TEXT&kinds=KIND_IMAGE&maybe_count=-2147483648&maybe_name=.%3B%5B%27%5C%CE%A9%01%21&limit=0&label=%F0%9F%98%80%2A&number=-349"
         , headers = []
         , body = Nothing
         }
@@ -1474,9 +1634,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.query
         (Just 0)
-        "{\"at\":\"1970-01-01T00:00:00Z\",\"count\":2147483647,\"flag\":true,\"inner\":{},\"kinds\":[\"KIND_IMAGE\",\"KIND_UNSPECIFIED\",\"KIND_UNSPECIFIED\"],\"label\":\"+ \",\"maybe_name\":\"=;0$ΩaA𐍈\",\"name\":\"%\",\"numbers\":[-1083359086,-945],\"ratio\":5e-324,\"scale\":\"-Infinity\",\"tags\":[\"ß\u{007F}\"],\"ubig\":\"10354575596230037153\"}"
+        "{\"at\":\"1970-01-01T00:00:00Z\",\"count\":2147483647,\"data\":\"dveZxw==\",\"kind\":\"KIND_TEXT\",\"label\":\"\",\"limit\":-1,\"maybeName\":\"\",\"numbers\":[1,2071035195],\"ratio\":-1.7976931348623157e+308,\"scale\":7.547377666542797e+17,\"tags\":[\"]A中\",\"\",\"!\u{007F}\"],\"ubig\":\"9808826019666685257\",\"wait\":\"0s\"}"
         { method = "GET"
-        , url = "/v1/query?name=%25&count=2147483647&ubig=10354575596230037153&flag=true&ratio=5e-324&scale=-Infinity&tags=%C3%9F%7F&kinds=KIND_IMAGE&kinds=KIND_UNSPECIFIED&kinds=KIND_UNSPECIFIED&numbers=-1083359086&numbers=-945&maybe_name=%3D%3B0%24%CE%A9aA%F0%90%8D%88&at=1970-01-01T00%3A00%3A00Z&label=%2B%20"
+        , url = "/v1/query?count=2147483647&ubig=9808826019666685257&ratio=-1.7976931348623157e%2B308&scale=754737766654279700&data=dveZxw%3D%3D&kind=KIND_TEXT&tags=%5DA%E4%B8%AD&tags=&tags=%21%7F&numbers=1&numbers=2071035195&maybe_name=&at=1970-01-01T00%3A00%3A00Z&wait=0s&limit=-1&label="
         , headers = []
         , body = Nothing
         }
@@ -1484,9 +1644,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.query
         (Just 0)
-        "{\"data\":\"tNOhQf6J\",\"flag\":true,\"inner\":{\"a\":\"😀*ßé\\n@\\t&\",\"deep\":{\"b\":2146816319,\"c\":[\"~Z😀\",\"(+\"]}},\"kinds\":[\"KIND_UNSPECIFIED\"],\"label\":\"\",\"limit\":0,\"maybe_count\":0,\"numbers\":[-422723188],\"scale\":101.75,\"ubig\":\"9560352039664595623\"}"
+        "{\"at\":\"1970-01-01T00:00:00Z\",\"big\":\"-9007199254740993\",\"count\":-12,\"data\":\"\",\"flag\":false,\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_IMAGE\",\"KIND_TEXT\"],\"limit\":911,\"mask\":\"vslsH,wyJ,e95aE9i6\",\"maybeName\":\"\",\"name\":\"\",\"numbers\":[-278502445,522747331,107],\"ratio\":-2.454322601253408e+104,\"scale\":112.75,\"tags\":[\"-9;?=\",\"\u{007F}#*\"],\"text\":\"/𐍈#\",\"ubig\":\"0\",\"wait\":\"315576000000.732436498s\"}"
         { method = "GET"
-        , url = "/v1/query?ubig=9560352039664595623&flag=true&scale=101.75&data=tNOhQf6J&kinds=KIND_UNSPECIFIED&numbers=-422723188&maybe_count=0&limit=0&label=&inner.a=%F0%9F%98%80%2A%C3%9F%C3%A9%0A%40%09%26&inner.deep.b=2146816319&inner.deep.c=~Z%F0%9F%98%80&inner.deep.c=%28%2B"
+        , url = "/v1/query?count=-12&big=-9007199254740993&ratio=-2.454322601253408e%2B104&scale=112.75&kind=KIND_TEXT&tags=-9%3B%3F%3D&tags=%7F%23%2A&kinds=KIND_IMAGE&kinds=KIND_TEXT&numbers=-278502445&numbers=522747331&numbers=107&maybe_name=&at=1970-01-01T00%3A00%3A00Z&wait=315576000000.732436498s&mask=vslsH%2CwyJ%2Ce95aE9i6&limit=911&text=%2F%F0%90%8D%88%23"
         , headers = []
         , body = Nothing
         }
@@ -1494,9 +1654,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.query
         (Just 0)
-        "{\"at\":\"3554-07-14T13:04:44.541Z\",\"data\":\"ztDO+Cg=\",\"flag\":true,\"inner\":{},\"kind\":\"KIND_IMAGE\",\"kinds\":[\"KIND_TEXT\",\"KIND_IMAGE\"],\"label\":\"#é((Ω\\u0001?✓\",\"limit\":0,\"mask\":\"s,o2cm.yhS29u.s9df,flbO731.w\",\"maybeCount\":0,\"maybeName\":\"\",\"number\":-1,\"numbers\":[2147483647,-1],\"ratio\":1.7628176903537238e+175,\"ubig\":\"571\",\"wait\":\"0s\"}"
+        "{\"at\":\"0001-01-01T00:00:00.346Z\",\"flag\":true,\"inner\":{\"a\":\"/Z\"},\"kind\":\"KIND_IMAGE\",\"kinds\":[\"KIND_TEXT\"],\"label\":\"\",\"limit\":-1070702396,\"maybeName\":\"\",\"name\":\",;Ω:@\",\"number\":0,\"numbers\":[454743971,347927524],\"tags\":[\"é✓\\tΩ/ß'~\"],\"wait\":\"0s\"}"
         { method = "GET"
-        , url = "/v1/query?ubig=571&flag=true&ratio=1.7628176903537238e%2B175&data=ztDO%2BCg%3D&kind=KIND_IMAGE&kinds=KIND_TEXT&kinds=KIND_IMAGE&numbers=2147483647&numbers=-1&maybe_count=0&maybe_name=&at=3554-07-14T13%3A04%3A44.541Z&wait=0s&mask=s%2Co2cm.yhS29u.s9df%2CflbO731.w&limit=0&label=%23%C3%A9%28%28%CE%A9%01%3F%E2%9C%93&number=-1"
+        , url = "/v1/query?name=%2C%3B%CE%A9%3A%40&flag=true&kind=KIND_IMAGE&tags=%C3%A9%E2%9C%93%09%CE%A9%2F%C3%9F%27~&kinds=KIND_TEXT&numbers=454743971&numbers=347927524&maybe_name=&at=0001-01-01T00%3A00%3A00.346Z&wait=0s&limit=-1070702396&label=&inner.a=%2FZ&number=0"
         , headers = []
         , body = Nothing
         }
@@ -1504,9 +1664,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.query
         (Just 0)
-        "{\"big\":\"1290355086451593392\",\"count\":2147483647,\"flag\":true,\"inner\":{\"a\":\"0@$?&\",\"deep\":{\"b\":905}},\"kind\":\"KIND_TEXT\",\"label\":\"\",\"limit\":0,\"mask\":\"\",\"maybe_count\":-1,\"maybe_name\":\"\",\"number\":-1711457817,\"numbers\":[593197477],\"scale\":5.625,\"ubig\":\"5405173464796099079\",\"wait\":\"0s\"}"
+        "{\"at\":\"1970-01-01T00:00:00Z\",\"big\":\"-443\",\"count\":1,\"data\":\"mHANCFjn\",\"inner\":{\"a\":\"中# 9@;\\\\:\",\"deep\":{}},\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_IMAGE\",\"KIND_UNSPECIFIED\",\"KIND_TEXT\"],\"label\":\"\",\"limit\":0,\"mask\":\"\",\"maybeCount\":0,\"name\":\":0A0\\u0001\",\"number\":0,\"ratio\":108.375,\"tags\":[\"(\",\"\"],\"ubig\":\"902\",\"wait\":\"-219016854079.746025s\"}"
         { method = "GET"
-        , url = "/v1/query?count=2147483647&big=1290355086451593392&ubig=5405173464796099079&flag=true&scale=5.625&kind=KIND_TEXT&numbers=593197477&maybe_count=-1&maybe_name=&wait=0s&mask=&limit=0&label=&inner.a=0%40%24%3F%26&inner.deep.b=905&number=-1711457817"
+        , url = "/v1/query?name=%3A0A0%01&count=1&big=-443&ubig=902&ratio=108.375&data=mHANCFjn&kind=KIND_TEXT&tags=%28&tags=&kinds=KIND_IMAGE&kinds=KIND_UNSPECIFIED&kinds=KIND_TEXT&maybe_count=0&at=1970-01-01T00%3A00%3A00Z&wait=-219016854079.746025s&mask=&limit=0&label=&inner.a=%E4%B8%AD%23%209%40%3B%5C%3A&number=0"
         , headers = []
         , body = Nothing
         }
@@ -1514,9 +1674,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.query
         (Just 0)
-        "{\"at\":\"0001-01-01T00:00:00.841Z\",\"big\":\"9223372036854775807\",\"count\":1485004003,\"data\":\"yDumRJ1b\",\"inner\":{},\"kinds\":[\"KIND_UNSPECIFIED\"],\"label\":\"\",\"mask\":\"\",\"maybe_count\":0,\"maybe_name\":\"😀𐍈\",\"number\":-2147483648,\"numbers\":[-248845142,-2147483648],\"scale\":-1.2418144734738235e-8,\"ubig\":\"1\"}"
+        "{\"big\":\"9007199254740993\",\"count\":-854,\"data\":\"EvsZAgYY\",\"flag\":false,\"inner\":{\"a\":\"\"},\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_IMAGE\",\"KIND_IMAGE\",\"KIND_IMAGE\"],\"maybe_count\":-9,\"name\":\" 0\",\"numbers\":[-438133359,-1462318135],\"ratio\":29.625,\"scale\":\"-Infinity\",\"tags\":[\"/%\"],\"ubig\":\"540\"}"
         { method = "GET"
-        , url = "/v1/query?count=1485004003&big=9223372036854775807&ubig=1&scale=-1.2418144734738235e-8&data=yDumRJ1b&kinds=KIND_UNSPECIFIED&numbers=-248845142&numbers=-2147483648&maybe_count=0&maybe_name=%F0%9F%98%80%F0%90%8D%88&at=0001-01-01T00%3A00%3A00.841Z&mask=&label=&number=-2147483648"
+        , url = "/v1/query?name=%200&count=-854&big=9007199254740993&ubig=540&ratio=29.625&scale=-Infinity&data=EvsZAgYY&kind=KIND_TEXT&tags=%2F%25&kinds=KIND_IMAGE&kinds=KIND_IMAGE&kinds=KIND_IMAGE&numbers=-438133359&numbers=-1462318135&maybe_count=-9"
         , headers = []
         , body = Nothing
         }
@@ -1524,9 +1684,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.query
         (Just 0)
-        "{\"count\":1157070779,\"data\":\"ug==\",\"kinds\":[\"KIND_UNSPECIFIED\",\"KIND_TEXT\"],\"label\":\"\",\"limit\":358,\"mask\":\"\",\"number\":4648617,\"numbers\":[-1,-102],\"ratio\":1e-7,\"scale\":100.0,\"tags\":[\"\"],\"wait\":\"1.925s\"}"
+        "{\"at\":\"1970-01-01T00:00:00.254Z\",\"big\":\"499\",\"flag\":true,\"inner\":{},\"kind\":\"KIND_TEXT\",\"limit\":420,\"mask\":\"\",\"maybeCount\":-897433581,\"maybeName\":\"~'\",\"numbers\":[325,-2147483648],\"ratio\":1.4216671258314296e+273,\"tags\":[\"✓\",\"\"],\"text\":\"!&?\",\"ubig\":\"360\",\"wait\":\"315576000000.768870s\"}"
         { method = "GET"
-        , url = "/v1/query?count=1157070779&ratio=1e-7&scale=100&data=ug%3D%3D&tags=&kinds=KIND_UNSPECIFIED&kinds=KIND_TEXT&numbers=-1&numbers=-102&wait=1.925s&mask=&limit=358&label=&number=4648617"
+        , url = "/v1/query?big=499&ubig=360&flag=true&ratio=1.4216671258314296e%2B273&kind=KIND_TEXT&tags=%E2%9C%93&tags=&numbers=325&numbers=-2147483648&maybe_count=-897433581&maybe_name=~%27&at=1970-01-01T00%3A00%3A00.254Z&wait=315576000000.768870s&mask=&limit=420&text=%21%26%3F"
         , headers = []
         , body = Nothing
         }
@@ -1534,9 +1694,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.query
         (Just 0)
-        "{\"at\":\"1970-01-01T00:00:00.910Z\",\"big\":\"9007199254740993\",\"count\":-561772445,\"data\":\"FYo=\",\"flag\":true,\"inner\":{\"a\":\"\\\\;\",\"deep\":{}},\"maybeCount\":844354786,\"maybeName\":\"\",\"numbers\":[363],\"ratio\":6.952660309849176e-28,\"text\":\"\",\"ubig\":\"9031594320036859890\",\"wait\":\"1.291049s\"}"
+        "{\"at\":\"7615-12-11T08:02:09.008Z\",\"count\":2147483647,\"data\":\"Kznw\",\"inner\":{\"a\":\"[\u{007F}\",\"deep\":{\"c\":[\"\\\\,!..#0a\",\"(~\\u0001\\\"ß9Z~\",\"/😀\"]}},\"kinds\":[\"KIND_IMAGE\"],\"label\":\"\",\"limit\":1724166977,\"mask\":\"\",\"maybeCount\":0,\"maybeName\":\"\",\"name\":\"=$中\",\"ratio\":-2.4332258490553456e-32,\"scale\":-49.75,\"tags\":[\"&中\",\"\\\"]Z'\\\"%(=\",\"\"],\"text\":\"\",\"ubig\":\"5368326946889118811\"}"
         { method = "GET"
-        , url = "/v1/query?count=-561772445&big=9007199254740993&ubig=9031594320036859890&flag=true&ratio=6.952660309849176e-28&data=FYo%3D&numbers=363&maybe_count=844354786&maybe_name=&at=1970-01-01T00%3A00%3A00.910Z&wait=1.291049s&inner.a=%5C%3B&text="
+        , url = "/v1/query?name=%3D%24%E4%B8%AD&count=2147483647&ubig=5368326946889118811&ratio=-2.4332258490553456e-32&scale=-49.75&data=Kznw&tags=%26%E4%B8%AD&tags=%22%5DZ%27%22%25%28%3D&tags=&kinds=KIND_IMAGE&maybe_count=0&maybe_name=&at=7615-12-11T08%3A02%3A09.008Z&mask=&limit=1724166977&label=&inner.a=%5B%7F&inner.deep.c=%5C%2C%21..%230a&inner.deep.c=%28~%01%22%C3%9F9Z~&inner.deep.c=%2F%F0%9F%98%80&text="
         , headers = []
         , body = Nothing
         }
@@ -1544,9 +1704,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.query
         (Just 0)
-        "{\"big\":\"9007199254740993\",\"count\":113,\"data\":\"3kE7gg==\",\"flag\":false,\"kind\":\"KIND_UNSPECIFIED\",\"kinds\":[\"KIND_IMAGE\",\"KIND_TEXT\"],\"label\":\"\",\"limit\":0,\"maybe_count\":1688930334,\"maybe_name\":\"\",\"name\":\"-A/\",\"numbers\":[1761426735],\"ratio\":5e-324,\"scale\":\"Infinity\",\"tags\":[\")@ Z@\",\"zz\\\\(\u{007F}.😀.\",\",,\"],\"ubig\":\"636\"}"
+        "{\"big\":\"-133060520034638345\",\"count\":932,\"inner\":{},\"kinds\":[\"KIND_UNSPECIFIED\",\"KIND_IMAGE\"],\"label\":\"\",\"limit\":0,\"mask\":\"\",\"maybe_name\":\"\",\"numbers\":[-1,-1251258732],\"ratio\":4.243091986308529e+180,\"scale\":\"NaN\",\"tags\":[\"!\\n✓\"],\"text\":\"\",\"ubig\":\"8598054623522517371\",\"wait\":\"0s\"}"
         { method = "GET"
-        , url = "/v1/query?name=-A%2F&count=113&big=9007199254740993&ubig=636&ratio=5e-324&scale=Infinity&data=3kE7gg%3D%3D&tags=%29%40%20Z%40&tags=zz%5C%28%7F.%F0%9F%98%80.&tags=%2C%2C&kinds=KIND_IMAGE&kinds=KIND_TEXT&numbers=1761426735&maybe_count=1688930334&maybe_name=&limit=0&label="
+        , url = "/v1/query?count=932&big=-133060520034638345&ubig=8598054623522517371&ratio=4.243091986308529e%2B180&scale=NaN&tags=%21%0A%E2%9C%93&kinds=KIND_UNSPECIFIED&kinds=KIND_IMAGE&numbers=-1&numbers=-1251258732&maybe_name=&wait=0s&mask=&limit=0&label=&text="
         , headers = []
         , body = Nothing
         }
@@ -1554,9 +1714,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.query
         (Just 0)
-        "{\"big\":\"142\",\"count\":2147483647,\"data\":\"Is/l\",\"kinds\":[\"KIND_IMAGE\",\"KIND_TEXT\"],\"label\":\"\",\"limit\":0,\"maybeCount\":0,\"maybeName\":\"𐍈\",\"name\":\"#\",\"ratio\":-1.7976931348623157e+308,\"scale\":0.10000000149011612,\"tags\":[\"\",\"]_\"],\"ubig\":\"10261337662509643330\",\"wait\":\"0s\"}"
+        "{\"at\":\"5872-11-20T02:34:37.199Z\",\"count\":413,\"inner\":{},\"kinds\":[\"KIND_UNSPECIFIED\",\"KIND_UNSPECIFIED\",\"KIND_UNSPECIFIED\"],\"label\":\"\",\"mask\":\"\",\"numbers\":[295826711,-2147483648,-846575462],\"tags\":[\"=%\",\"中\"],\"ubig\":\"916\",\"wait\":\"-0.018711150s\"}"
         { method = "GET"
-        , url = "/v1/query?name=%23&count=2147483647&big=142&ubig=10261337662509643330&ratio=-1.7976931348623157e%2B308&scale=0.10000000149011612&data=Is%2Fl&tags=&tags=%5D_&kinds=KIND_IMAGE&kinds=KIND_TEXT&maybe_count=0&maybe_name=%F0%90%8D%88&wait=0s&limit=0&label="
+        , url = "/v1/query?count=413&ubig=916&tags=%3D%25&tags=%E4%B8%AD&kinds=KIND_UNSPECIFIED&kinds=KIND_UNSPECIFIED&kinds=KIND_UNSPECIFIED&numbers=295826711&numbers=-2147483648&numbers=-846575462&at=5872-11-20T02%3A34%3A37.199Z&wait=-0.018711150s&mask=&label="
         , headers = []
         , body = Nothing
         }
@@ -1564,9 +1724,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.query
         (Just 0)
-        "{\"big\":\"0\",\"count\":230460287,\"data\":\"\",\"flag\":false,\"inner\":{\"a\":\"\"},\"kind\":\"KIND_UNSPECIFIED\",\"kinds\":[],\"label\":\"\",\"mask\":\"\",\"maybeName\":\"\",\"name\":\"\",\"number\":0,\"numbers\":[447,1320515623],\"ratio\":2.2250738585072014e-308,\"scale\":1.3672824485707793e-37,\"tags\":[],\"ubig\":\"14055918840688712008\",\"wait\":\"0s\"}"
+        "{\"at\":\"1970-01-01T00:00:00Z\",\"big\":\"3501817451301772671\",\"inner\":{\"deep\":{\"b\":-385556194,\"c\":[\"✓a$中✓%_;\",\"\",\"中✓z\"]}},\"kinds\":[\"KIND_IMAGE\",\"KIND_TEXT\",\"KIND_UNSPECIFIED\"],\"limit\":1306932827,\"maybeCount\":0,\"maybeName\":\"\",\"name\":\"=:;✓ \",\"number\":1365510694,\"numbers\":[597],\"ratio\":-95.25,\"scale\":-7.244102294831104e+16,\"tags\":[\"%a09é#[\\t\"],\"ubig\":\"142\"}"
         { method = "GET"
-        , url = "/v1/query?count=230460287&ubig=14055918840688712008&ratio=2.2250738585072014e-308&scale=1.3672824485707793e-37&numbers=447&numbers=1320515623&maybe_name=&wait=0s&mask=&label=&number=0"
+        , url = "/v1/query?name=%3D%3A%3B%E2%9C%93%20&big=3501817451301772671&ubig=142&ratio=-95.25&scale=-72441022948311040&tags=%25a09%C3%A9%23%5B%09&kinds=KIND_IMAGE&kinds=KIND_TEXT&kinds=KIND_UNSPECIFIED&numbers=597&maybe_count=0&maybe_name=&at=1970-01-01T00%3A00%3A00Z&limit=1306932827&inner.deep.b=-385556194&inner.deep.c=%E2%9C%93a%24%E4%B8%AD%E2%9C%93%25_%3B&inner.deep.c=&inner.deep.c=%E4%B8%AD%E2%9C%93z&number=1365510694"
         , headers = []
         , body = Nothing
         }
@@ -1574,9 +1734,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.query
         (Just 0)
-        "{\"big\":\"9\",\"count\":0,\"data\":\"\",\"flag\":false,\"inner\":{\"a\":\"\"},\"kind\":\"KIND_UNSPECIFIED\",\"kinds\":[\"KIND_UNSPECIFIED\",\"KIND_TEXT\"],\"label\":\"\",\"limit\":0,\"mask\":\"\",\"maybe_count\":2147483647,\"maybe_name\":\"\",\"name\":\";@\u{007F}=.ßß0\",\"numbers\":[-2147483648,713,-2147483648],\"ratio\":0.0,\"scale\":0.0,\"tags\":[\"~✓\",\"*&\",\"/!$, \u{007F}]\\\"\"],\"text\":\"\",\"ubig\":\"157\",\"wait\":\"-1s\"}"
+        "{\"big\":\"-6227008015077420157\",\"count\":-1125244805,\"data\":\"7ZqX2FOB\",\"flag\":true,\"kind\":\"KIND_UNSPECIFIED\",\"kinds\":[\"KIND_TEXT\"],\"limit\":0,\"mask\":\"\",\"maybeCount\":0,\"name\":\"中9\",\"numbers\":[],\"ratio\":-0.0,\"scale\":0.0,\"tags\":[\"Ω+\\\"!-\"],\"text\":\"-\\\\*😀é\",\"ubig\":\"413\",\"wait\":\"1.417536s\"}"
         { method = "GET"
-        , url = "/v1/query?name=%3B%40%7F%3D.%C3%9F%C3%9F0&big=9&ubig=157&tags=~%E2%9C%93&tags=%2A%26&tags=%2F%21%24%2C%20%7F%5D%22&kinds=KIND_UNSPECIFIED&kinds=KIND_TEXT&numbers=-2147483648&numbers=713&numbers=-2147483648&maybe_count=2147483647&maybe_name=&wait=-1s&mask=&limit=0&label=&text="
+        , url = "/v1/query?name=%E4%B8%AD9&count=-1125244805&big=-6227008015077420157&ubig=413&flag=true&data=7ZqX2FOB&tags=%CE%A9%2B%22%21-&kinds=KIND_TEXT&maybe_count=0&wait=1.417536s&mask=&limit=0&text=-%5C%2A%F0%9F%98%80%C3%A9"
         , headers = []
         , body = Nothing
         }
@@ -1584,9 +1744,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.query
         (Just 0)
-        "{\"at\":\"1970-01-01T00:00:00Z\",\"inner\":{},\"kinds\":[\"KIND_IMAGE\",\"KIND_UNSPECIFIED\",\"KIND_TEXT\"],\"label\":\"\",\"limit\":-1857926690,\"maybe_count\":915806473,\"maybe_name\":\"😀Ω𐍈#A\",\"numbers\":[1569798670,-435169034,934],\"ratio\":-75.125,\"scale\":-0.0052990177646279335,\"tags\":[\"@'\",\"😀é)*😀\",\";✓[%\\u0001\"],\"text\":\"*ß\",\"wait\":\"1.101385448s\"}"
+        "{\"big\":\"-9223372036854775808\",\"data\":\"6D9o\",\"inner\":{\"a\":\"\\\\&-\",\"deep\":{}},\"kinds\":[\"KIND_IMAGE\",\"KIND_IMAGE\"],\"limit\":-672,\"maybeCount\":0,\"maybeName\":\"\",\"numbers\":[-1351914608,-1066921953,2147483647],\"scale\":0.10000000149011612,\"ubig\":\"105\",\"wait\":\"0s\"}"
         { method = "GET"
-        , url = "/v1/query?ratio=-75.125&scale=-0.0052990177646279335&tags=%40%27&tags=%F0%9F%98%80%C3%A9%29%2A%F0%9F%98%80&tags=%3B%E2%9C%93%5B%25%01&kinds=KIND_IMAGE&kinds=KIND_UNSPECIFIED&kinds=KIND_TEXT&numbers=1569798670&numbers=-435169034&numbers=934&maybe_count=915806473&maybe_name=%F0%9F%98%80%CE%A9%F0%90%8D%88%23A&at=1970-01-01T00%3A00%3A00Z&wait=1.101385448s&limit=-1857926690&label=&text=%2A%C3%9F"
+        , url = "/v1/query?big=-9223372036854775808&ubig=105&scale=0.10000000149011612&data=6D9o&kinds=KIND_IMAGE&kinds=KIND_IMAGE&numbers=-1351914608&numbers=-1066921953&numbers=2147483647&maybe_count=0&maybe_name=&wait=0s&limit=-672&inner.a=%5C%26-"
         , headers = []
         , body = Nothing
         }
@@ -1594,9 +1754,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.query
         (Just 0)
-        "{\"count\":1344008945,\"data\":\"9bdwLg==\",\"inner\":{},\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_IMAGE\",\"KIND_UNSPECIFIED\"],\"label\":\"\",\"limit\":0,\"mask\":\"\",\"maybeName\":\"é!\",\"name\":\",Ω0\",\"number\":474,\"tags\":[\"%Zé\",\"z,😀\"],\"ubig\":\"6045146161204584417\",\"wait\":\"0s\"}"
+        "{\"at\":\"0447-07-22T03:56:43.384Z\",\"data\":\"FEmE\",\"kind\":\"KIND_TEXT\",\"limit\":-2147483648,\"mask\":\"\",\"maybe_name\":\"~中\",\"numbers\":[-1903556881,-1273750108],\"ratio\":1.827723369251931e-216,\"scale\":-1.1230150810653156e+24,\"tags\":[\"A\",\"@\",\"!0\"],\"text\":\"\"}"
         { method = "GET"
-        , url = "/v1/query?name=%2C%CE%A90&count=1344008945&ubig=6045146161204584417&data=9bdwLg%3D%3D&kind=KIND_TEXT&tags=%25Z%C3%A9&tags=z%2C%F0%9F%98%80&kinds=KIND_IMAGE&kinds=KIND_UNSPECIFIED&maybe_name=%C3%A9%21&wait=0s&mask=&limit=0&label=&number=474"
+        , url = "/v1/query?ratio=1.827723369251931e-216&scale=-1.1230150810653156e%2B24&data=FEmE&kind=KIND_TEXT&tags=A&tags=%40&tags=%210&numbers=-1903556881&numbers=-1273750108&maybe_name=~%E4%B8%AD&at=0447-07-22T03%3A56%3A43.384Z&mask=&limit=-2147483648&text="
         , headers = []
         , body = Nothing
         }
@@ -1604,9 +1764,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.query
         (Just 0)
-        "{\"big\":\"-6008831496571678304\",\"data\":\"J/qu9Lc=\",\"flag\":true,\"inner\":{\"a\":\"az$#]\",\"deep\":{}},\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_UNSPECIFIED\",\"KIND_UNSPECIFIED\"],\"label\":\"\",\"limit\":666,\"maybeCount\":0,\"maybeName\":\"\",\"ratio\":-1.3298682067488851e+219,\"tags\":[\"Z!!\"],\"text\":\"\",\"ubig\":\"18446744073709551615\",\"wait\":\"0s\"}"
+        "{\"at\":\"1970-01-01T00:00:00Z\",\"big\":\"-9007199254740993\",\"count\":527,\"data\":\"\",\"flag\":false,\"kind\":\"KIND_UNSPECIFIED\",\"kinds\":[\"KIND_UNSPECIFIED\"],\"label\":\"\",\"limit\":0,\"mask\":\"\",\"maybeCount\":0,\"maybeName\":\"\",\"name\":\"\u{007F}\",\"number\":0,\"numbers\":[340],\"ratio\":0.0,\"scale\":\"-Infinity\",\"tags\":[\"0?AZ\\t\\u0001😀!\",\"0Ω\",\")é😀\"],\"ubig\":\"18446744073709551615\",\"wait\":\"0s\"}"
         { method = "GET"
-        , url = "/v1/query?big=-6008831496571678304&ubig=18446744073709551615&flag=true&ratio=-1.3298682067488851e%2B219&data=J%2Fqu9Lc%3D&kind=KIND_TEXT&tags=Z%21%21&kinds=KIND_UNSPECIFIED&kinds=KIND_UNSPECIFIED&maybe_count=0&maybe_name=&wait=0s&limit=666&label=&inner.a=az%24%23%5D&text="
+        , url = "/v1/query?name=%7F&count=527&big=-9007199254740993&ubig=18446744073709551615&scale=-Infinity&tags=0%3FAZ%09%01%F0%9F%98%80%21&tags=0%CE%A9&tags=%29%C3%A9%F0%9F%98%80&kinds=KIND_UNSPECIFIED&numbers=340&maybe_count=0&maybe_name=&at=1970-01-01T00%3A00%3A00Z&wait=0s&mask=&limit=0&label=&number=0"
         , headers = []
         , body = Nothing
         }
@@ -1614,9 +1774,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.single
         (Just 0)
-        "{\"at\":\"9999-12-31T23:59:59.975Z\",\"big\":\"613\",\"count\":-536820048,\"data\":\"\",\"flag\":true,\"inner\":{\"a\":\"\"},\"kind\":\"KIND_UNSPECIFIED\",\"kinds\":[\"KIND_TEXT\",\"KIND_IMAGE\"],\"label\":\"\",\"mask\":\"\",\"maybeCount\":-2147483648,\"maybeName\":\"0\",\"name\":\"_\",\"numbers\":[-714698129,-905,1857400567],\"ratio\":0.0,\"scale\":0.0,\"tags\":[],\"text\":\"中Z\",\"ubig\":\"0\",\"wait\":\"-0.750843s\"}"
+        "{\"big\":\"9007199254740991\",\"count\":-2007194383,\"flag\":true,\"inner\":{},\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_TEXT\",\"KIND_IMAGE\",\"KIND_TEXT\"],\"limit\":719,\"mask\":\"eRx.q,dd.vk7Mb5v,vou9.xpj\",\"maybeName\":\"\",\"name\":\"~\",\"ratio\":5.417634414430635e-127,\"scale\":-109.375,\"tags\":[\"A@#;@(0 \",\"@.\"],\"ubig\":\"1\",\"wait\":\"0s\"}"
         { method = "GET"
-        , url = "/v1/single/_?count=-536820048&big=613&flag=true&kinds=KIND_TEXT&kinds=KIND_IMAGE&numbers=-714698129&numbers=-905&numbers=1857400567&maybe_count=-2147483648&maybe_name=0&at=9999-12-31T23%3A59%3A59.975Z&wait=-0.750843s&mask=&label=&text=%E4%B8%ADZ"
+        , url = "/v1/single/~?count=-2007194383&big=9007199254740991&ubig=1&flag=true&ratio=5.417634414430635e-127&scale=-109.375&kind=KIND_TEXT&tags=A%40%23%3B%40%280%20&tags=%40.&kinds=KIND_TEXT&kinds=KIND_IMAGE&kinds=KIND_TEXT&maybe_name=&wait=0s&mask=eRx.q%2Cdd.vk7Mb5v%2Cvou9.xpj&limit=719"
         , headers = []
         , body = Nothing
         }
@@ -1624,9 +1784,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.single
         (Just 0)
-        "{\"at\":\"0062-03-04T23:14:09.374Z\",\"count\":-133695121,\"data\":\"FdUSMA==\",\"inner\":{},\"label\":\"\",\"limit\":0,\"mask\":\"\",\"maybeName\":\" - *!\",\"name\":\"\u{007F},中\",\"numbers\":[1136162062,-2147483648],\"ratio\":-2.1720327659964925e+203,\"tags\":[\"\",\"\"],\"text\":\"\",\"ubig\":\"16185905306214555950\",\"wait\":\"0s\"}"
+        "{\"big\":\"-4003266398864472889\",\"kind\":\"KIND_IMAGE\",\"kinds\":[\"KIND_IMAGE\"],\"limit\":0,\"mask\":\"z,l46\",\"maybeName\":\"\",\"numbers\":[1951287735,2042947309],\"ratio\":-3.378918486785976e+76,\"scale\":5.718679485729305e+33,\"tags\":[\"中\"],\"ubig\":\"2590428547117403287\"}"
         { method = "GET"
-        , url = "/v1/single/%7F%2C%E4%B8%AD?count=-133695121&ubig=16185905306214555950&ratio=-2.1720327659964925e%2B203&data=FdUSMA%3D%3D&tags=&tags=&numbers=1136162062&numbers=-2147483648&maybe_name=%20-%20%2A%21&at=0062-03-04T23%3A14%3A09.374Z&wait=0s&mask=&limit=0&label=&text="
+        , url = "/v1/single/?big=-4003266398864472889&ubig=2590428547117403287&ratio=-3.378918486785976e%2B76&scale=5.718679485729305e%2B33&kind=KIND_IMAGE&tags=%E4%B8%AD&kinds=KIND_IMAGE&numbers=1951287735&numbers=2042947309&maybe_name=&mask=z%2Cl46&limit=0"
         , headers = []
         , body = Nothing
         }
@@ -1634,9 +1794,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.single
         (Just 0)
-        "{\"at\":\"1970-01-01T00:00:00Z\",\"big\":\"5\",\"count\":2147483647,\"data\":\"\",\"flag\":false,\"inner\":{\"a\":\"😀*\"},\"kind\":\"KIND_UNSPECIFIED\",\"kinds\":[],\"label\":\"\",\"maybeCount\":-1,\"maybeName\":\"\",\"name\":\"\",\"numbers\":[1136245046,68545285],\"ratio\":2.2250738585072014e-308,\"scale\":-24.75,\"tags\":[\"]?\",\"\"],\"text\":\"中[:\\t\\\\\",\"ubig\":\"987\"}"
+        "{\"at\":\"1970-01-01T00:00:00Z\",\"count\":850,\"data\":\"EP4=\",\"flag\":true,\"inner\":{},\"kinds\":[\"KIND_UNSPECIFIED\"],\"label\":\"\",\"mask\":\"m.rT.onL\",\"number\":-706956838,\"ratio\":-1.7976931348623157e+308,\"scale\":-109.625,\"tags\":[\"Ω) \",\"),.%&a]é\",\"\"],\"wait\":\"0s\"}"
         { method = "GET"
-        , url = "/v1/single/?count=2147483647&big=5&ubig=987&ratio=2.2250738585072014e-308&scale=-24.75&tags=%5D%3F&tags=&numbers=1136245046&numbers=68545285&maybe_count=-1&maybe_name=&at=1970-01-01T00%3A00%3A00Z&label=&inner.a=%F0%9F%98%80%2A&text=%E4%B8%AD%5B%3A%09%5C"
+        , url = "/v1/single/?count=850&flag=true&ratio=-1.7976931348623157e%2B308&scale=-109.625&data=EP4%3D&tags=%CE%A9%29%20&tags=%29%2C.%25%26a%5D%C3%A9&tags=&kinds=KIND_UNSPECIFIED&at=1970-01-01T00%3A00%3A00Z&wait=0s&mask=m.rT.onL&label=&number=-706956838"
         , headers = []
         , body = Nothing
         }
@@ -1644,9 +1804,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.single
         (Just 0)
-        "{\"at\":\"1970-01-01T00:00:00Z\",\"count\":2147483647,\"data\":\"dveZxw==\",\"kind\":\"KIND_TEXT\",\"label\":\"\",\"limit\":-1,\"maybeName\":\"\",\"numbers\":[1,2071035195],\"ratio\":-1.7976931348623157e+308,\"scale\":7.547377666542797e+17,\"tags\":[\"]A中\",\"\",\"!\u{007F}\"],\"ubig\":\"9808826019666685257\",\"wait\":\"0s\"}"
+        "{\"at\":\"7542-08-23T07:42:47.602Z\",\"big\":\"9007199254740991\",\"inner\":{},\"kinds\":[\"KIND_IMAGE\"],\"label\":\".(\",\"limit\":1,\"mask\":\"az38.ds5r,i3,cm\",\"maybe_count\":0,\"maybe_name\":\"Ω(,~&\",\"ratio\":-1.1997460868520202e+226,\"scale\":2.5977001190185547,\"tags\":[\"[$\u{007F}zZ\",\"\"],\"wait\":\"0s\"}"
         { method = "GET"
-        , url = "/v1/single/?count=2147483647&ubig=9808826019666685257&ratio=-1.7976931348623157e%2B308&scale=754737766654279700&data=dveZxw%3D%3D&kind=KIND_TEXT&tags=%5DA%E4%B8%AD&tags=&tags=%21%7F&numbers=1&numbers=2071035195&maybe_name=&at=1970-01-01T00%3A00%3A00Z&wait=0s&limit=-1&label="
+        , url = "/v1/single/?big=9007199254740991&ratio=-1.1997460868520202e%2B226&scale=2.5977001190185547&tags=%5B%24%7FzZ&tags=&kinds=KIND_IMAGE&maybe_count=0&maybe_name=%CE%A9%28%2C~%26&at=7542-08-23T07%3A42%3A47.602Z&wait=0s&mask=az38.ds5r%2Ci3%2Ccm&limit=1&label=.%28"
         , headers = []
         , body = Nothing
         }
@@ -1654,9 +1814,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.single
         (Just 0)
-        "{\"at\":\"1970-01-01T00:00:00Z\",\"big\":\"-9007199254740993\",\"count\":-12,\"data\":\"\",\"flag\":false,\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_IMAGE\",\"KIND_TEXT\"],\"limit\":911,\"mask\":\"vslsH,wyJ,e95aE9i6\",\"maybeName\":\"\",\"name\":\"\",\"numbers\":[-278502445,522747331,107],\"ratio\":-2.454322601253408e+104,\"scale\":112.75,\"tags\":[\"-9;?=\",\"\u{007F}#*\"],\"text\":\"/𐍈#\",\"ubig\":\"0\",\"wait\":\"315576000000.732436498s\"}"
+        "{\"big\":\"6654468406208717861\",\"count\":307,\"inner\":{\"deep\":{}},\"kinds\":[\"KIND_UNSPECIFIED\",\"KIND_IMAGE\"],\"label\":\"\",\"limit\":0,\"maybe_count\":0,\"maybe_name\":\") \",\"name\":\"%\",\"number\":-640,\"numbers\":[-46,1379104283,256],\"ratio\":4.57675641020625e+108,\"ubig\":\"14790631967721779880\",\"wait\":\"0s\"}"
         { method = "GET"
-        , url = "/v1/single/?count=-12&big=-9007199254740993&ratio=-2.454322601253408e%2B104&scale=112.75&kind=KIND_TEXT&tags=-9%3B%3F%3D&tags=%7F%23%2A&kinds=KIND_IMAGE&kinds=KIND_TEXT&numbers=-278502445&numbers=522747331&numbers=107&maybe_name=&at=1970-01-01T00%3A00%3A00Z&wait=315576000000.732436498s&mask=vslsH%2CwyJ%2Ce95aE9i6&limit=911&text=%2F%F0%90%8D%88%23"
+        , url = "/v1/single/%25?count=307&big=6654468406208717861&ubig=14790631967721779880&ratio=4.57675641020625e%2B108&kinds=KIND_UNSPECIFIED&kinds=KIND_IMAGE&numbers=-46&numbers=1379104283&numbers=256&maybe_count=0&maybe_name=%29%20&wait=0s&limit=0&label=&number=-640"
         , headers = []
         , body = Nothing
         }
@@ -1664,9 +1824,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.single
         (Just 0)
-        "{\"at\":\"0001-01-01T00:00:00.346Z\",\"flag\":true,\"inner\":{\"a\":\"/Z\"},\"kind\":\"KIND_IMAGE\",\"kinds\":[\"KIND_TEXT\"],\"label\":\"\",\"limit\":-1070702396,\"maybeName\":\"\",\"name\":\",;Ω:@\",\"number\":0,\"numbers\":[454743971,347927524],\"tags\":[\"é✓\\tΩ/ß'~\"],\"wait\":\"0s\"}"
+        "{\"at\":\"8707-10-07T08:45:02.543Z\",\"big\":\"0\",\"count\":0,\"data\":\"\",\"flag\":false,\"inner\":{\"a\":\"\"},\"kind\":\"KIND_UNSPECIFIED\",\"kinds\":[],\"limit\":0,\"maybeCount\":-1,\"maybeName\":\"\",\"name\":\"~:\\n,9\",\"numbers\":[-827,-1,1178262612],\"ratio\":1.8222970640799816e-130,\"scale\":0.0,\"tags\":[\"\",\"\",\"@\\\"\"],\"ubig\":\"9007199254740993\",\"wait\":\"0s\"}"
         { method = "GET"
-        , url = "/v1/single/%2C%3B%CE%A9%3A%40?flag=true&kind=KIND_IMAGE&tags=%C3%A9%E2%9C%93%09%CE%A9%2F%C3%9F%27~&kinds=KIND_TEXT&numbers=454743971&numbers=347927524&maybe_name=&at=0001-01-01T00%3A00%3A00.346Z&wait=0s&limit=-1070702396&label=&inner.a=%2FZ&number=0"
+        , url = "/v1/single/~%3A%0A%2C9?ubig=9007199254740993&ratio=1.8222970640799816e-130&tags=&tags=&tags=%40%22&numbers=-827&numbers=-1&numbers=1178262612&maybe_count=-1&maybe_name=&at=8707-10-07T08%3A45%3A02.543Z&wait=0s&limit=0"
         , headers = []
         , body = Nothing
         }
@@ -1674,9 +1834,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.single
         (Just 0)
-        "{\"at\":\"1970-01-01T00:00:00Z\",\"big\":\"-443\",\"count\":1,\"data\":\"mHANCFjn\",\"inner\":{\"a\":\"中# 9@;\\\\:\",\"deep\":{}},\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_IMAGE\",\"KIND_UNSPECIFIED\",\"KIND_TEXT\"],\"label\":\"\",\"limit\":0,\"mask\":\"\",\"maybeCount\":0,\"name\":\":0A0\\u0001\",\"number\":0,\"ratio\":108.375,\"tags\":[\"(\",\"\"],\"ubig\":\"902\",\"wait\":\"-219016854079.746025s\"}"
+        "{\"big\":\"6006268771204053974\",\"count\":1,\"data\":\"/Olyrw==\",\"flag\":true,\"kinds\":[\"KIND_IMAGE\",\"KIND_TEXT\",\"KIND_TEXT\"],\"label\":\"✓\",\"limit\":0,\"maybeCount\":0,\"maybeName\":\"\",\"numbers\":[963912325,1,-339355546],\"ratio\":7.21935429326281e-80,\"scale\":-229564.375,\"text\":\"😀#ß\u{007F}\\t\",\"wait\":\"-315576000000.153711s\"}"
         { method = "GET"
-        , url = "/v1/single/%3A0A0%01?count=1&big=-443&ubig=902&ratio=108.375&data=mHANCFjn&kind=KIND_TEXT&tags=%28&tags=&kinds=KIND_IMAGE&kinds=KIND_UNSPECIFIED&kinds=KIND_TEXT&maybe_count=0&at=1970-01-01T00%3A00%3A00Z&wait=-219016854079.746025s&mask=&limit=0&label=&inner.a=%E4%B8%AD%23%209%40%3B%5C%3A&number=0"
+        , url = "/v1/single/?count=1&big=6006268771204053974&flag=true&ratio=7.21935429326281e-80&scale=-229564.375&data=%2FOlyrw%3D%3D&kinds=KIND_IMAGE&kinds=KIND_TEXT&kinds=KIND_TEXT&numbers=963912325&numbers=1&numbers=-339355546&maybe_count=0&maybe_name=&wait=-315576000000.153711s&limit=0&label=%E2%9C%93&text=%F0%9F%98%80%23%C3%9F%7F%09"
         , headers = []
         , body = Nothing
         }
@@ -1684,9 +1844,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.single
         (Just 0)
-        "{\"big\":\"9007199254740993\",\"count\":-854,\"data\":\"EvsZAgYY\",\"flag\":false,\"inner\":{\"a\":\"\"},\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_IMAGE\",\"KIND_IMAGE\",\"KIND_IMAGE\"],\"maybe_count\":-9,\"name\":\" 0\",\"numbers\":[-438133359,-1462318135],\"ratio\":29.625,\"scale\":\"-Infinity\",\"tags\":[\"/%\"],\"ubig\":\"540\"}"
+        "{\"at\":\"9999-12-31T23:59:59.642Z\",\"big\":\"9007199254740992\",\"data\":\"L3T7GEeg\",\"flag\":true,\"inner\":{\"a\":\"0;_ß\\\"+Ω\\u0001\",\"deep\":{}},\"label\":\"\",\"limit\":0,\"maybe_count\":0,\"maybe_name\":\"\",\"number\":43973270,\"numbers\":[-80507747,-1724498803,192],\"ratio\":-1.1923275954302756e+170,\"scale\":-115.875,\"tags\":[\"\\u0001:a%$\"],\"ubig\":\"18446744073709551615\",\"wait\":\"0s\"}"
         { method = "GET"
-        , url = "/v1/single/%200?count=-854&big=9007199254740993&ubig=540&ratio=29.625&scale=-Infinity&data=EvsZAgYY&kind=KIND_TEXT&tags=%2F%25&kinds=KIND_IMAGE&kinds=KIND_IMAGE&kinds=KIND_IMAGE&numbers=-438133359&numbers=-1462318135&maybe_count=-9"
+        , url = "/v1/single/?big=9007199254740992&ubig=18446744073709551615&flag=true&ratio=-1.1923275954302756e%2B170&scale=-115.875&data=L3T7GEeg&tags=%01%3Aa%25%24&numbers=-80507747&numbers=-1724498803&numbers=192&maybe_count=0&maybe_name=&at=9999-12-31T23%3A59%3A59.642Z&wait=0s&limit=0&label=&inner.a=0%3B_%C3%9F%22%2B%CE%A9%01&number=43973270"
         , headers = []
         , body = Nothing
         }
@@ -1694,9 +1854,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.single
         (Just 0)
-        "{\"at\":\"1970-01-01T00:00:00.254Z\",\"big\":\"499\",\"flag\":true,\"inner\":{},\"kind\":\"KIND_TEXT\",\"limit\":420,\"mask\":\"\",\"maybeCount\":-897433581,\"maybeName\":\"~'\",\"numbers\":[325,-2147483648],\"ratio\":1.4216671258314296e+273,\"tags\":[\"✓\",\"\"],\"text\":\"!&?\",\"ubig\":\"360\",\"wait\":\"315576000000.768870s\"}"
+        "{\"big\":\"4184467195036125388\",\"count\":1,\"data\":\"DvjWzw==\",\"inner\":{},\"kinds\":[\"KIND_TEXT\"],\"label\":\"ß\\\\*A0*+#\",\"limit\":396,\"mask\":\"\",\"maybeName\":\"\",\"name\":\"中++\\t\\tZ~𐍈\",\"numbers\":[383,-165729814,26880545],\"ratio\":87.5,\"tags\":[\"\\\\-\",\"\"],\"wait\":\"-128872044719s\"}"
         { method = "GET"
-        , url = "/v1/single/?big=499&ubig=360&flag=true&ratio=1.4216671258314296e%2B273&kind=KIND_TEXT&tags=%E2%9C%93&tags=&numbers=325&numbers=-2147483648&maybe_count=-897433581&maybe_name=~%27&at=1970-01-01T00%3A00%3A00.254Z&wait=315576000000.768870s&mask=&limit=420&text=%21%26%3F"
+        , url = "/v1/single/%E4%B8%AD%2B%2B%09%09Z~%F0%90%8D%88?count=1&big=4184467195036125388&ratio=87.5&data=DvjWzw%3D%3D&tags=%5C-&tags=&kinds=KIND_TEXT&numbers=383&numbers=-165729814&numbers=26880545&maybe_name=&wait=-128872044719s&mask=&limit=396&label=%C3%9F%5C%2AA0%2A%2B%23"
         , headers = []
         , body = Nothing
         }
@@ -1704,9 +1864,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.single
         (Just 0)
-        "{\"at\":\"7615-12-11T08:02:09.008Z\",\"count\":2147483647,\"data\":\"Kznw\",\"inner\":{\"a\":\"[\u{007F}\",\"deep\":{\"c\":[\"\\\\,!..#0a\",\"(~\\u0001\\\"ß9Z~\",\"/😀\"]}},\"kinds\":[\"KIND_IMAGE\"],\"label\":\"\",\"limit\":1724166977,\"mask\":\"\",\"maybeCount\":0,\"maybeName\":\"\",\"name\":\"=$中\",\"ratio\":-2.4332258490553456e-32,\"scale\":-49.75,\"tags\":[\"&中\",\"\\\"]Z'\\\"%(=\",\"\"],\"text\":\"\",\"ubig\":\"5368326946889118811\"}"
+        "{\"big\":\"665\",\"data\":\"XrGN\",\"flag\":true,\"inner\":{},\"label\":\"\",\"limit\":0,\"mask\":\"\",\"maybeCount\":2147483647,\"numbers\":[623,504217422],\"ratio\":0.1,\"scale\":54.5,\"tags\":[\"\"]}"
         { method = "GET"
-        , url = "/v1/single/%3D%24%E4%B8%AD?count=2147483647&ubig=5368326946889118811&ratio=-2.4332258490553456e-32&scale=-49.75&data=Kznw&tags=%26%E4%B8%AD&tags=%22%5DZ%27%22%25%28%3D&tags=&kinds=KIND_IMAGE&maybe_count=0&maybe_name=&at=7615-12-11T08%3A02%3A09.008Z&mask=&limit=1724166977&label=&inner.a=%5B%7F&inner.deep.c=%5C%2C%21..%230a&inner.deep.c=%28~%01%22%C3%9F9Z~&inner.deep.c=%2F%F0%9F%98%80&text="
+        , url = "/v1/single/?big=665&flag=true&ratio=0.1&scale=54.5&data=XrGN&tags=&numbers=623&numbers=504217422&maybe_count=2147483647&mask=&limit=0&label="
         , headers = []
         , body = Nothing
         }
@@ -1714,9 +1874,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.single
         (Just 0)
-        "{\"big\":\"-133060520034638345\",\"count\":932,\"inner\":{},\"kinds\":[\"KIND_UNSPECIFIED\",\"KIND_IMAGE\"],\"label\":\"\",\"limit\":0,\"mask\":\"\",\"maybe_name\":\"\",\"numbers\":[-1,-1251258732],\"ratio\":4.243091986308529e+180,\"scale\":\"NaN\",\"tags\":[\"!\\n✓\"],\"text\":\"\",\"ubig\":\"8598054623522517371\",\"wait\":\"0s\"}"
+        "{\"at\":\"0001-01-01T00:00:00.857Z\",\"big\":\"611\",\"count\":1,\"data\":\"UirCvy8=\",\"flag\":true,\"inner\":{\"deep\":{}},\"kind\":\"KIND_TEXT\",\"limit\":0,\"mask\":\"\",\"maybeCount\":0,\"numbers\":[-2119421391],\"scale\":0.10000000149011612,\"text\":\"\",\"ubig\":\"16554549578425825131\"}"
         { method = "GET"
-        , url = "/v1/single/?count=932&big=-133060520034638345&ubig=8598054623522517371&ratio=4.243091986308529e%2B180&scale=NaN&tags=%21%0A%E2%9C%93&kinds=KIND_UNSPECIFIED&kinds=KIND_IMAGE&numbers=-1&numbers=-1251258732&maybe_name=&wait=0s&mask=&limit=0&label=&text="
+        , url = "/v1/single/?count=1&big=611&ubig=16554549578425825131&flag=true&scale=0.10000000149011612&data=UirCvy8%3D&kind=KIND_TEXT&numbers=-2119421391&maybe_count=0&at=0001-01-01T00%3A00%3A00.857Z&mask=&limit=0&text="
         , headers = []
         , body = Nothing
         }
@@ -1724,9 +1884,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.single
         (Just 0)
-        "{\"at\":\"5872-11-20T02:34:37.199Z\",\"count\":413,\"inner\":{},\"kinds\":[\"KIND_UNSPECIFIED\",\"KIND_UNSPECIFIED\",\"KIND_UNSPECIFIED\"],\"label\":\"\",\"mask\":\"\",\"numbers\":[295826711,-2147483648,-846575462],\"tags\":[\"=%\",\"中\"],\"ubig\":\"916\",\"wait\":\"-0.018711150s\"}"
+        "{\"at\":\"1970-01-01T00:00:00Z\",\"big\":\"2585536901227699356\",\"flag\":true,\"inner\":{\"a\":\"\\\\\"},\"kind\":\"KIND_TEXT\",\"limit\":0,\"mask\":\"\",\"maybeCount\":0,\"maybeName\":\"\",\"numbers\":[-171,-722686364,1],\"ratio\":3.474838272322468e+59,\"text\":\"$@&@\u{007F}\",\"ubig\":\"18446744073709551615\"}"
         { method = "GET"
-        , url = "/v1/single/?count=413&ubig=916&tags=%3D%25&tags=%E4%B8%AD&kinds=KIND_UNSPECIFIED&kinds=KIND_UNSPECIFIED&kinds=KIND_UNSPECIFIED&numbers=295826711&numbers=-2147483648&numbers=-846575462&at=5872-11-20T02%3A34%3A37.199Z&wait=-0.018711150s&mask=&label="
+        , url = "/v1/single/?big=2585536901227699356&ubig=18446744073709551615&flag=true&ratio=3.474838272322468e%2B59&kind=KIND_TEXT&numbers=-171&numbers=-722686364&numbers=1&maybe_count=0&maybe_name=&at=1970-01-01T00%3A00%3A00Z&mask=&limit=0&inner.a=%5C&text=%24%40%26%40%7F"
         , headers = []
         , body = Nothing
         }
@@ -1734,9 +1894,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.single
         (Just 0)
-        "{\"at\":\"1970-01-01T00:00:00Z\",\"big\":\"3501817451301772671\",\"inner\":{\"deep\":{\"b\":-385556194,\"c\":[\"✓a$中✓%_;\",\"\",\"中✓z\"]}},\"kinds\":[\"KIND_IMAGE\",\"KIND_TEXT\",\"KIND_UNSPECIFIED\"],\"limit\":1306932827,\"maybeCount\":0,\"maybeName\":\"\",\"name\":\"=:;✓ \",\"number\":1365510694,\"numbers\":[597],\"ratio\":-95.25,\"scale\":-7.244102294831104e+16,\"tags\":[\"%a09é#[\\t\"],\"ubig\":\"142\"}"
+        "{\"big\":\"-9223372036854775808\",\"count\":-1,\"data\":\"vg==\",\"flag\":false,\"inner\":{\"a\":\"\"},\"kind\":\"KIND_UNSPECIFIED\",\"kinds\":[\"KIND_IMAGE\",\"KIND_IMAGE\",\"KIND_UNSPECIFIED\"],\"label\":\"\",\"limit\":-1200752975,\"mask\":\"\",\"maybe_count\":-1849024419,\"name\":\"\\t\",\"numbers\":[988,-1690335205],\"ratio\":-3.3884060930568713e-180,\"scale\":-6.720587577495263e+37,\"tags\":[\"/a\\\\'中\",\"A@;;a A(\"],\"ubig\":\"14948386337900077507\",\"wait\":\"0s\"}"
         { method = "GET"
-        , url = "/v1/single/%3D%3A%3B%E2%9C%93%20?big=3501817451301772671&ubig=142&ratio=-95.25&scale=-72441022948311040&tags=%25a09%C3%A9%23%5B%09&kinds=KIND_IMAGE&kinds=KIND_TEXT&kinds=KIND_UNSPECIFIED&numbers=597&maybe_count=0&maybe_name=&at=1970-01-01T00%3A00%3A00Z&limit=1306932827&inner.deep.b=-385556194&inner.deep.c=%E2%9C%93a%24%E4%B8%AD%E2%9C%93%25_%3B&inner.deep.c=&inner.deep.c=%E4%B8%AD%E2%9C%93z&number=1365510694"
+        , url = "/v1/single/%09?count=-1&big=-9223372036854775808&ubig=14948386337900077507&ratio=-3.3884060930568713e-180&scale=-6.720587577495263e%2B37&data=vg%3D%3D&tags=%2Fa%5C%27%E4%B8%AD&tags=A%40%3B%3Ba%20A%28&kinds=KIND_IMAGE&kinds=KIND_IMAGE&kinds=KIND_UNSPECIFIED&numbers=988&numbers=-1690335205&maybe_count=-1849024419&wait=0s&mask=&limit=-1200752975&label="
         , headers = []
         , body = Nothing
         }
@@ -1744,9 +1904,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.single
         (Just 0)
-        "{\"big\":\"-6227008015077420157\",\"count\":-1125244805,\"data\":\"7ZqX2FOB\",\"flag\":true,\"kind\":\"KIND_UNSPECIFIED\",\"kinds\":[\"KIND_TEXT\"],\"limit\":0,\"mask\":\"\",\"maybeCount\":0,\"name\":\"中9\",\"numbers\":[],\"ratio\":-0.0,\"scale\":0.0,\"tags\":[\"Ω+\\\"!-\"],\"text\":\"-\\\\*😀é\",\"ubig\":\"413\",\"wait\":\"1.417536s\"}"
+        "{\"big\":\"4789314191003182945\",\"count\":698905289,\"data\":\"Whb+MA2g\",\"flag\":false,\"inner\":{\"a\":\"\"},\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_IMAGE\"],\"mask\":\"\",\"maybeCount\":0,\"maybeName\":\"\",\"name\":\"ß0\",\"numbers\":[],\"ratio\":\"Infinity\",\"scale\":0.0,\"tags\":[],\"ubig\":\"926\",\"wait\":\"124060455436s\"}"
         { method = "GET"
-        , url = "/v1/single/%E4%B8%AD9?count=-1125244805&big=-6227008015077420157&ubig=413&flag=true&data=7ZqX2FOB&tags=%CE%A9%2B%22%21-&kinds=KIND_TEXT&maybe_count=0&wait=1.417536s&mask=&limit=0&text=-%5C%2A%F0%9F%98%80%C3%A9"
+        , url = "/v1/single/%C3%9F0?count=698905289&big=4789314191003182945&ubig=926&ratio=Infinity&data=Whb%2BMA2g&kind=KIND_TEXT&kinds=KIND_IMAGE&maybe_count=0&maybe_name=&wait=124060455436s&mask="
         , headers = []
         , body = Nothing
         }
@@ -1754,9 +1914,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.single
         (Just 0)
-        "{\"big\":\"-9223372036854775808\",\"data\":\"6D9o\",\"inner\":{\"a\":\"\\\\&-\",\"deep\":{}},\"kinds\":[\"KIND_IMAGE\",\"KIND_IMAGE\"],\"limit\":-672,\"maybeCount\":0,\"maybeName\":\"\",\"numbers\":[-1351914608,-1066921953,2147483647],\"scale\":0.10000000149011612,\"ubig\":\"105\",\"wait\":\"0s\"}"
+        "{\"big\":\"-111\",\"data\":\"o/Zu\",\"inner\":{},\"kinds\":[\"KIND_IMAGE\"],\"limit\":1,\"maybeName\":\"\",\"number\":-1440721975,\"scale\":3.4028234663852886e+38,\"ubig\":\"9223372036854775808\"}"
         { method = "GET"
-        , url = "/v1/single/?big=-9223372036854775808&ubig=105&scale=0.10000000149011612&data=6D9o&kinds=KIND_IMAGE&kinds=KIND_IMAGE&numbers=-1351914608&numbers=-1066921953&numbers=2147483647&maybe_count=0&maybe_name=&wait=0s&limit=-672&inner.a=%5C%26-"
+        , url = "/v1/single/?big=-111&ubig=9223372036854775808&scale=3.4028234663852886e%2B38&data=o%2FZu&kinds=KIND_IMAGE&maybe_name=&limit=1&number=-1440721975"
         , headers = []
         , body = Nothing
         }
@@ -1764,9 +1924,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.single
         (Just 0)
-        "{\"at\":\"0447-07-22T03:56:43.384Z\",\"data\":\"FEmE\",\"kind\":\"KIND_TEXT\",\"limit\":-2147483648,\"mask\":\"\",\"maybe_name\":\"~中\",\"numbers\":[-1903556881,-1273750108],\"ratio\":1.827723369251931e-216,\"scale\":-1.1230150810653156e+24,\"tags\":[\"A\",\"@\",\"!0\"],\"text\":\"\"}"
+        "{\"at\":\"1970-01-01T00:00:00Z\",\"big\":\"206\",\"kind\":\"KIND_TEXT\",\"label\":\"\\\"_Ω\",\"limit\":0,\"numbers\":[2147483647],\"ratio\":-108.625,\"scale\":-1.7407376272824192e-31,\"tags\":[\".\"],\"ubig\":\"1\",\"wait\":\"0s\"}"
         { method = "GET"
-        , url = "/v1/single/?ratio=1.827723369251931e-216&scale=-1.1230150810653156e%2B24&data=FEmE&kind=KIND_TEXT&tags=A&tags=%40&tags=%210&numbers=-1903556881&numbers=-1273750108&maybe_name=~%E4%B8%AD&at=0447-07-22T03%3A56%3A43.384Z&mask=&limit=-2147483648&text="
+        , url = "/v1/single/?big=206&ubig=1&ratio=-108.625&scale=-1.7407376272824192e-31&kind=KIND_TEXT&tags=.&numbers=2147483647&at=1970-01-01T00%3A00%3A00Z&wait=0s&limit=0&label=%22_%CE%A9"
         , headers = []
         , body = Nothing
         }
@@ -1774,9 +1934,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.typed
         (Just 0)
-        "{\"at\":\"1970-01-01T00:00:00Z\",\"big\":\"-9007199254740993\",\"count\":527,\"data\":\"\",\"flag\":false,\"kind\":\"KIND_UNSPECIFIED\",\"kinds\":[\"KIND_UNSPECIFIED\"],\"label\":\"\",\"limit\":0,\"mask\":\"\",\"maybeCount\":0,\"maybeName\":\"\",\"name\":\"\u{007F}\",\"number\":0,\"numbers\":[340],\"ratio\":0.0,\"scale\":\"-Infinity\",\"tags\":[\"0?AZ\\t\\u0001😀!\",\"0Ω\",\")é😀\"],\"ubig\":\"18446744073709551615\",\"wait\":\"0s\"}"
+        "{\"at\":\"0001-01-01T00:00:00.279Z\",\"big\":\"0\",\"count\":1723775749,\"data\":\"U8Ay\",\"flag\":false,\"inner\":{\"a\":\"'\",\"deep\":{\"b\":0,\"c\":[\"\",\"(&\\\"\",\",\"]}},\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_TEXT\",\"KIND_TEXT\",\"KIND_IMAGE\"],\"label\":\"\",\"mask\":\"\",\"maybe_count\":0,\"name\":\",)\\t!!\",\"numbers\":[-850,-286,-1024255094],\"ratio\":1.2503260019921215e-126,\"scale\":100.75,\"tags\":[\"\",\"é\\\"\",\"[✓+\"],\"ubig\":\"0\"}"
         { method = "DELETE"
-        , url = "/v1/typed/527/false/KIND_UNSPECIFIED/-9007199254740993/0?name=%7F&ubig=18446744073709551615&scale=-Infinity&tags=0%3FAZ%09%01%F0%9F%98%80%21&tags=0%CE%A9&tags=%29%C3%A9%F0%9F%98%80&kinds=KIND_UNSPECIFIED&numbers=340&maybe_count=0&maybe_name=&at=1970-01-01T00%3A00%3A00Z&wait=0s&mask=&limit=0&label=&number=0"
+        , url = "/v1/typed/1723775749/false/KIND_TEXT/0/0?name=%2C%29%09%21%21&ratio=1.2503260019921215e-126&scale=100.75&data=U8Ay&tags=&tags=%C3%A9%22&tags=%5B%E2%9C%93%2B&kinds=KIND_TEXT&kinds=KIND_TEXT&kinds=KIND_IMAGE&numbers=-850&numbers=-286&numbers=-1024255094&maybe_count=0&at=0001-01-01T00%3A00%3A00.279Z&mask=&label=&inner.a=%27&inner.deep.c=&inner.deep.c=%28%26%22&inner.deep.c=%2C"
         , headers = []
         , body = Nothing
         }
@@ -1784,9 +1944,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.typed
         (Just 0)
-        "{\"big\":\"9007199254740991\",\"count\":-2007194383,\"flag\":true,\"inner\":{},\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_TEXT\",\"KIND_IMAGE\",\"KIND_TEXT\"],\"limit\":719,\"mask\":\"eRx.q,dd.vk7Mb5v,vou9.xpj\",\"maybeName\":\"\",\"name\":\"~\",\"ratio\":5.417634414430635e-127,\"scale\":-109.375,\"tags\":[\"A@#;@(0 \",\"@.\"],\"ubig\":\"1\",\"wait\":\"0s\"}"
+        "{\"big\":\"-1028120863830470434\",\"count\":1,\"data\":\"qe5nfiA=\",\"flag\":true,\"inner\":{\"deep\":{\"b\":-315165978,\"c\":[\"\\u0001\",\"-_\"]}},\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_IMAGE\",\"KIND_UNSPECIFIED\",\"KIND_IMAGE\"],\"label\":\"\\n\u{007F}\",\"limit\":0,\"maybeCount\":859,\"maybeName\":\"\",\"name\":\"&𐍈 𐍈?\",\"numbers\":[235895096],\"ratio\":4.1822719852686965e+102,\"scale\":-52.25,\"tags\":[\"@\u{007F}Z\"]}"
         { method = "DELETE"
-        , url = "/v1/typed/-2007194383/true/KIND_TEXT/9007199254740991/0?name=~&ubig=1&ratio=5.417634414430635e-127&scale=-109.375&tags=A%40%23%3B%40%280%20&tags=%40.&kinds=KIND_TEXT&kinds=KIND_IMAGE&kinds=KIND_TEXT&maybe_name=&wait=0s&mask=eRx.q%2Cdd.vk7Mb5v%2Cvou9.xpj&limit=719"
+        , url = "/v1/typed/1/true/KIND_TEXT/-1028120863830470434/-315165978?name=%26%F0%90%8D%88%20%F0%90%8D%88%3F&ratio=4.1822719852686965e%2B102&scale=-52.25&data=qe5nfiA%3D&tags=%40%7FZ&kinds=KIND_IMAGE&kinds=KIND_UNSPECIFIED&kinds=KIND_IMAGE&numbers=235895096&maybe_count=859&maybe_name=&limit=0&label=%0A%7F&inner.deep.c=%01&inner.deep.c=-_"
         , headers = []
         , body = Nothing
         }
@@ -1794,9 +1954,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.typed
         (Just 0)
-        "{\"big\":\"-4003266398864472889\",\"kind\":\"KIND_IMAGE\",\"kinds\":[\"KIND_IMAGE\"],\"limit\":0,\"mask\":\"z,l46\",\"maybeName\":\"\",\"numbers\":[1951287735,2042947309],\"ratio\":-3.378918486785976e+76,\"scale\":5.718679485729305e+33,\"tags\":[\"中\"],\"ubig\":\"2590428547117403287\"}"
+        "{\"at\":\"0419-12-15T20:11:12.550Z\",\"big\":\"-9223372036854775808\",\"count\":612964628,\"kinds\":[\"KIND_UNSPECIFIED\",\"KIND_UNSPECIFIED\",\"KIND_TEXT\"],\"limit\":0,\"mask\":\"\",\"maybe_count\":2147483647,\"number\":196075955,\"numbers\":[-2012544624,-229201206,-649],\"ratio\":-1.309034266238744e-183,\"scale\":-2.2288936963318606e-21,\"tags\":[\"\\u0001$\",\"$&é#Ω\",\"\u{007F})\"],\"wait\":\"0s\"}"
         { method = "DELETE"
-        , url = "/v1/typed/0/false/KIND_IMAGE/-4003266398864472889/0?ubig=2590428547117403287&ratio=-3.378918486785976e%2B76&scale=5.718679485729305e%2B33&tags=%E4%B8%AD&kinds=KIND_IMAGE&numbers=1951287735&numbers=2042947309&maybe_name=&mask=z%2Cl46&limit=0"
+        , url = "/v1/typed/612964628/false/KIND_UNSPECIFIED/-9223372036854775808/0?ratio=-1.309034266238744e-183&scale=-2.2288936963318606e-21&tags=%01%24&tags=%24%26%C3%A9%23%CE%A9&tags=%7F%29&kinds=KIND_UNSPECIFIED&kinds=KIND_UNSPECIFIED&kinds=KIND_TEXT&numbers=-2012544624&numbers=-229201206&numbers=-649&maybe_count=2147483647&at=0419-12-15T20%3A11%3A12.550Z&wait=0s&mask=&limit=0&number=196075955"
         , headers = []
         , body = Nothing
         }
@@ -1804,9 +1964,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.typed
         (Just 0)
-        "{\"at\":\"1970-01-01T00:00:00Z\",\"count\":850,\"data\":\"EP4=\",\"flag\":true,\"inner\":{},\"kinds\":[\"KIND_UNSPECIFIED\"],\"label\":\"\",\"mask\":\"m.rT.onL\",\"number\":-706956838,\"ratio\":-1.7976931348623157e+308,\"scale\":-109.625,\"tags\":[\"Ω) \",\"),.%&a]é\",\"\"],\"wait\":\"0s\"}"
+        "{\"at\":\"0001-01-01T00:00:00.359Z\",\"big\":\"0\",\"count\":-147483746,\"data\":\"byTD/dY=\",\"flag\":true,\"inner\":{\"a\":\"\"},\"kind\":\"KIND_UNSPECIFIED\",\"kinds\":[\"KIND_TEXT\",\"KIND_UNSPECIFIED\"],\"label\":\"\",\"limit\":0,\"mask\":\"o.uhub,hV.fjl5Ku\",\"maybeCount\":-680,\"maybeName\":\"-&\\u0001..\",\"name\":\"\",\"numbers\":[-1996453084,-1],\"ratio\":-1.7791148816969468e+164,\"scale\":3.4028234663852886e+38,\"tags\":[],\"ubig\":\"1674595405333398626\",\"wait\":\"0s\"}"
         { method = "DELETE"
-        , url = "/v1/typed/850/true/KIND_UNSPECIFIED/0/0?ratio=-1.7976931348623157e%2B308&scale=-109.625&data=EP4%3D&tags=%CE%A9%29%20&tags=%29%2C.%25%26a%5D%C3%A9&tags=&kinds=KIND_UNSPECIFIED&at=1970-01-01T00%3A00%3A00Z&wait=0s&mask=m.rT.onL&label=&number=-706956838"
+        , url = "/v1/typed/-147483746/true/KIND_UNSPECIFIED/0/0?ubig=1674595405333398626&ratio=-1.7791148816969468e%2B164&scale=3.4028234663852886e%2B38&data=byTD%2FdY%3D&kinds=KIND_TEXT&kinds=KIND_UNSPECIFIED&numbers=-1996453084&numbers=-1&maybe_count=-680&maybe_name=-%26%01..&at=0001-01-01T00%3A00%3A00.359Z&wait=0s&mask=o.uhub%2ChV.fjl5Ku&limit=0&label="
         , headers = []
         , body = Nothing
         }
@@ -1814,9 +1974,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.typed
         (Just 0)
-        "{\"at\":\"7542-08-23T07:42:47.602Z\",\"big\":\"9007199254740991\",\"inner\":{},\"kinds\":[\"KIND_IMAGE\"],\"label\":\".(\",\"limit\":1,\"mask\":\"az38.ds5r,i3,cm\",\"maybe_count\":0,\"maybe_name\":\"Ω(,~&\",\"ratio\":-1.1997460868520202e+226,\"scale\":2.5977001190185547,\"tags\":[\"[$\u{007F}zZ\",\"\"],\"wait\":\"0s\"}"
+        "{\"at\":\"1970-01-01T00:00:00Z\",\"big\":\"-8419955713294594261\",\"count\":-199,\"kind\":\"KIND_IMAGE\",\"kinds\":[\"KIND_IMAGE\",\"KIND_UNSPECIFIED\"],\"label\":\"\",\"limit\":0,\"maybeCount\":0,\"maybeName\":\"\\n:\",\"name\":\"Ω+𐍈(%-\\té\",\"numbers\":[-2097875330,-1421129685,-1],\"scale\":-2.297012315466418e-6,\"ubig\":\"6655270775081060262\",\"wait\":\"0.367s\"}"
         { method = "DELETE"
-        , url = "/v1/typed/0/false/KIND_UNSPECIFIED/9007199254740991/0?ratio=-1.1997460868520202e%2B226&scale=2.5977001190185547&tags=%5B%24%7FzZ&tags=&kinds=KIND_IMAGE&maybe_count=0&maybe_name=%CE%A9%28%2C~%26&at=7542-08-23T07%3A42%3A47.602Z&wait=0s&mask=az38.ds5r%2Ci3%2Ccm&limit=1&label=.%28"
+        , url = "/v1/typed/-199/false/KIND_IMAGE/-8419955713294594261/0?name=%CE%A9%2B%F0%90%8D%88%28%25-%09%C3%A9&ubig=6655270775081060262&scale=-0.000002297012315466418&kinds=KIND_IMAGE&kinds=KIND_UNSPECIFIED&numbers=-2097875330&numbers=-1421129685&numbers=-1&maybe_count=0&maybe_name=%0A%3A&at=1970-01-01T00%3A00%3A00Z&wait=0.367s&limit=0&label="
         , headers = []
         , body = Nothing
         }
@@ -1824,9 +1984,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.typed
         (Just 0)
-        "{\"big\":\"6654468406208717861\",\"count\":307,\"inner\":{\"deep\":{}},\"kinds\":[\"KIND_UNSPECIFIED\",\"KIND_IMAGE\"],\"label\":\"\",\"limit\":0,\"maybe_count\":0,\"maybe_name\":\") \",\"name\":\"%\",\"number\":-640,\"numbers\":[-46,1379104283,256],\"ratio\":4.57675641020625e+108,\"ubig\":\"14790631967721779880\",\"wait\":\"0s\"}"
+        "{\"at\":\"1970-01-01T00:00:00Z\",\"big\":\"-3005499000113619791\",\"count\":944,\"data\":\"\",\"flag\":false,\"inner\":{\"a\":\"?a\",\"deep\":{\"b\":0,\"c\":[]}},\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_IMAGE\",\"KIND_TEXT\"],\"label\":\"\",\"limit\":0,\"maybeName\":\"\",\"name\":\".\",\"numbers\":[1],\"ratio\":-1.4506205225187305e-50,\"scale\":-3.3778077516872966e-37,\"tags\":[],\"ubig\":\"1\"}"
         { method = "DELETE"
-        , url = "/v1/typed/307/false/KIND_UNSPECIFIED/6654468406208717861/0?name=%25&ubig=14790631967721779880&ratio=4.57675641020625e%2B108&kinds=KIND_UNSPECIFIED&kinds=KIND_IMAGE&numbers=-46&numbers=1379104283&numbers=256&maybe_count=0&maybe_name=%29%20&wait=0s&limit=0&label=&number=-640"
+        , url = "/v1/typed/944/false/KIND_TEXT/-3005499000113619791/0?name=.&ubig=1&ratio=-1.4506205225187305e-50&scale=-3.3778077516872966e-37&kinds=KIND_IMAGE&kinds=KIND_TEXT&numbers=1&maybe_name=&at=1970-01-01T00%3A00%3A00Z&limit=0&label=&inner.a=%3Fa"
         , headers = []
         , body = Nothing
         }
@@ -1834,9 +1994,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.typed
         (Just 0)
-        "{\"at\":\"8707-10-07T08:45:02.543Z\",\"big\":\"0\",\"count\":0,\"data\":\"\",\"flag\":false,\"inner\":{\"a\":\"\"},\"kind\":\"KIND_UNSPECIFIED\",\"kinds\":[],\"limit\":0,\"maybeCount\":-1,\"maybeName\":\"\",\"name\":\"~:\\n,9\",\"numbers\":[-827,-1,1178262612],\"ratio\":1.8222970640799816e-130,\"scale\":0.0,\"tags\":[\"\",\"\",\"@\\\"\"],\"ubig\":\"9007199254740993\",\"wait\":\"0s\"}"
+        "{\"at\":\"9999-12-31T23:59:59.170Z\",\"big\":\"9007199254740993\",\"count\":1784850043,\"data\":\"kc8e1w==\",\"flag\":true,\"inner\":{\"a\":\"[#-\",\"deep\":{}},\"kinds\":[\"KIND_IMAGE\"],\"label\":\"\",\"limit\":426,\"mask\":\"\",\"maybeCount\":0,\"number\":2147483647,\"ratio\":3.6063918335251984e-158,\"tags\":[\"\",\"z\\t\",\"𐍈\"],\"ubig\":\"14475250852021141582\"}"
         { method = "DELETE"
-        , url = "/v1/typed/0/false/KIND_UNSPECIFIED/0/0?name=~%3A%0A%2C9&ubig=9007199254740993&ratio=1.8222970640799816e-130&tags=&tags=&tags=%40%22&numbers=-827&numbers=-1&numbers=1178262612&maybe_count=-1&maybe_name=&at=8707-10-07T08%3A45%3A02.543Z&wait=0s&limit=0"
+        , url = "/v1/typed/1784850043/true/KIND_UNSPECIFIED/9007199254740993/0?ubig=14475250852021141582&ratio=3.6063918335251984e-158&data=kc8e1w%3D%3D&tags=&tags=z%09&tags=%F0%90%8D%88&kinds=KIND_IMAGE&maybe_count=0&at=9999-12-31T23%3A59%3A59.170Z&mask=&limit=426&label=&inner.a=%5B%23-&number=2147483647"
         , headers = []
         , body = Nothing
         }
@@ -1844,9 +2004,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.typed
         (Just 0)
-        "{\"big\":\"6006268771204053974\",\"count\":1,\"data\":\"/Olyrw==\",\"flag\":true,\"kinds\":[\"KIND_IMAGE\",\"KIND_TEXT\",\"KIND_TEXT\"],\"label\":\"✓\",\"limit\":0,\"maybeCount\":0,\"maybeName\":\"\",\"numbers\":[963912325,1,-339355546],\"ratio\":7.21935429326281e-80,\"scale\":-229564.375,\"text\":\"😀#ß\u{007F}\\t\",\"wait\":\"-315576000000.153711s\"}"
+        "{\"big\":\"8609592514737217711\",\"inner\":{},\"kinds\":[\"KIND_TEXT\",\"KIND_IMAGE\"],\"label\":\"\",\"maybeName\":\"\",\"numbers\":[1451921280,-1],\"ratio\":-6.916477567390683e-233,\"scale\":-7.732915282259401e+31,\"tags\":[\"\"],\"text\":\"z/:\\\"✓9%9\",\"ubig\":\"12039141968405593667\",\"wait\":\"-68692503957s\"}"
         { method = "DELETE"
-        , url = "/v1/typed/1/true/KIND_UNSPECIFIED/6006268771204053974/0?ratio=7.21935429326281e-80&scale=-229564.375&data=%2FOlyrw%3D%3D&kinds=KIND_IMAGE&kinds=KIND_TEXT&kinds=KIND_TEXT&numbers=963912325&numbers=1&numbers=-339355546&maybe_count=0&maybe_name=&wait=-315576000000.153711s&limit=0&label=%E2%9C%93&text=%F0%9F%98%80%23%C3%9F%7F%09"
+        , url = "/v1/typed/0/false/KIND_UNSPECIFIED/8609592514737217711/0?ubig=12039141968405593667&ratio=-6.916477567390683e-233&scale=-7.732915282259401e%2B31&tags=&kinds=KIND_TEXT&kinds=KIND_IMAGE&numbers=1451921280&numbers=-1&maybe_name=&wait=-68692503957s&label=&text=z%2F%3A%22%E2%9C%939%259"
         , headers = []
         , body = Nothing
         }
@@ -1854,9 +2014,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.typed
         (Just 0)
-        "{\"at\":\"9999-12-31T23:59:59.642Z\",\"big\":\"9007199254740992\",\"data\":\"L3T7GEeg\",\"flag\":true,\"inner\":{\"a\":\"0;_ß\\\"+Ω\\u0001\",\"deep\":{}},\"label\":\"\",\"limit\":0,\"maybe_count\":0,\"maybe_name\":\"\",\"number\":43973270,\"numbers\":[-80507747,-1724498803,192],\"ratio\":-1.1923275954302756e+170,\"scale\":-115.875,\"tags\":[\"\\u0001:a%$\"],\"ubig\":\"18446744073709551615\",\"wait\":\"0s\"}"
+        "{\"big\":\"0\",\"count\":-828175262,\"data\":\"Jqk=\",\"flag\":false,\"inner\":{\"a\":\"\",\"deep\":{\"b\":0,\"c\":[]}},\"kind\":\"KIND_UNSPECIFIED\",\"kinds\":[],\"limit\":0,\"maybeCount\":0,\"maybeName\":\"-😀!-\\\"\",\"name\":\"\",\"numbers\":[],\"ratio\":2.0243139770689244e-227,\"scale\":-1.607965833554821e+17,\"tags\":[\"-\",\"]9.😀&😀Z)\"],\"ubig\":\"0\",\"wait\":\"-315576000000.655962683s\"}"
         { method = "DELETE"
-        , url = "/v1/typed/0/true/KIND_UNSPECIFIED/9007199254740992/0?ubig=18446744073709551615&ratio=-1.1923275954302756e%2B170&scale=-115.875&data=L3T7GEeg&tags=%01%3Aa%25%24&numbers=-80507747&numbers=-1724498803&numbers=192&maybe_count=0&maybe_name=&at=9999-12-31T23%3A59%3A59.642Z&wait=0s&limit=0&label=&inner.a=0%3B_%C3%9F%22%2B%CE%A9%01&number=43973270"
+        , url = "/v1/typed/-828175262/false/KIND_UNSPECIFIED/0/0?ratio=2.0243139770689244e-227&scale=-160796583355482100&data=Jqk%3D&tags=-&tags=%5D9.%F0%9F%98%80%26%F0%9F%98%80Z%29&maybe_count=0&maybe_name=-%F0%9F%98%80%21-%22&wait=-315576000000.655962683s&limit=0"
         , headers = []
         , body = Nothing
         }
@@ -1864,9 +2024,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.typed
         (Just 0)
-        "{\"big\":\"4184467195036125388\",\"count\":1,\"data\":\"DvjWzw==\",\"inner\":{},\"kinds\":[\"KIND_TEXT\"],\"label\":\"ß\\\\*A0*+#\",\"limit\":396,\"mask\":\"\",\"maybeName\":\"\",\"name\":\"中++\\t\\tZ~𐍈\",\"numbers\":[383,-165729814,26880545],\"ratio\":87.5,\"tags\":[\"\\\\-\",\"\"],\"wait\":\"-128872044719s\"}"
+        "{\"count\":-1767846444,\"data\":\"UdKfbDg=\",\"inner\":{\"a\":\"\\\"😀$\",\"deep\":{}},\"kinds\":[\"KIND_UNSPECIFIED\",\"KIND_IMAGE\"],\"label\":\"\",\"limit\":0,\"mask\":\"\",\"maybeCount\":1854989251,\"number\":2147483647,\"numbers\":[-2147483648,-2147483648,-301764308],\"scale\":9.183890828895323e-29,\"tags\":[\"ß\\\\!',_ \\u0001\"],\"ubig\":\"9007199254740993\"}"
         { method = "DELETE"
-        , url = "/v1/typed/1/false/KIND_UNSPECIFIED/4184467195036125388/0?name=%E4%B8%AD%2B%2B%09%09Z~%F0%90%8D%88&ratio=87.5&data=DvjWzw%3D%3D&tags=%5C-&tags=&kinds=KIND_TEXT&numbers=383&numbers=-165729814&numbers=26880545&maybe_name=&wait=-128872044719s&mask=&limit=396&label=%C3%9F%5C%2AA0%2A%2B%23"
+        , url = "/v1/typed/-1767846444/false/KIND_UNSPECIFIED/0/0?ubig=9007199254740993&scale=9.183890828895323e-29&data=UdKfbDg%3D&tags=%C3%9F%5C%21%27%2C_%20%01&kinds=KIND_UNSPECIFIED&kinds=KIND_IMAGE&numbers=-2147483648&numbers=-2147483648&numbers=-301764308&maybe_count=1854989251&mask=&limit=0&label=&inner.a=%22%F0%9F%98%80%24&number=2147483647"
         , headers = []
         , body = Nothing
         }
@@ -1874,9 +2034,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.typed
         (Just 0)
-        "{\"big\":\"665\",\"data\":\"XrGN\",\"flag\":true,\"inner\":{},\"label\":\"\",\"limit\":0,\"mask\":\"\",\"maybeCount\":2147483647,\"numbers\":[623,504217422],\"ratio\":0.1,\"scale\":54.5,\"tags\":[\"\"]}"
+        "{\"at\":\"1970-01-01T00:00:00Z\",\"big\":\"-9007199254740993\",\"count\":747,\"data\":\"IsbYWaJO\",\"inner\":{},\"kind\":\"KIND_IMAGE\",\"kinds\":[\"KIND_IMAGE\"],\"label\":\"\",\"limit\":0,\"maybe_count\":0,\"maybe_name\":\"\",\"numbers\":[-61,723629121,-1],\"scale\":-24.5,\"ubig\":\"15614636036030327111\"}"
         { method = "DELETE"
-        , url = "/v1/typed/0/true/KIND_UNSPECIFIED/665/0?ratio=0.1&scale=54.5&data=XrGN&tags=&numbers=623&numbers=504217422&maybe_count=2147483647&mask=&limit=0&label="
+        , url = "/v1/typed/747/false/KIND_IMAGE/-9007199254740993/0?ubig=15614636036030327111&scale=-24.5&data=IsbYWaJO&kinds=KIND_IMAGE&numbers=-61&numbers=723629121&numbers=-1&maybe_count=0&maybe_name=&at=1970-01-01T00%3A00%3A00Z&limit=0&label="
         , headers = []
         , body = Nothing
         }
@@ -1884,9 +2044,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.typed
         (Just 0)
-        "{\"at\":\"0001-01-01T00:00:00.857Z\",\"big\":\"611\",\"count\":1,\"data\":\"UirCvy8=\",\"flag\":true,\"inner\":{\"deep\":{}},\"kind\":\"KIND_TEXT\",\"limit\":0,\"mask\":\"\",\"maybeCount\":0,\"numbers\":[-2119421391],\"scale\":0.10000000149011612,\"text\":\"\",\"ubig\":\"16554549578425825131\"}"
+        "{\"at\":\"1970-01-01T00:00:00Z\",\"data\":\"yWnK\",\"inner\":{\"deep\":{}},\"kind\":\"KIND_TEXT\",\"label\":\"\",\"mask\":\"\",\"maybeCount\":0,\"maybeName\":\"\",\"name\":\"😀A(@\u{007F}z✓\\t\",\"number\":0,\"scale\":-7.75,\"ubig\":\"15095736816627739848\",\"wait\":\"-275430715323s\"}"
         { method = "DELETE"
-        , url = "/v1/typed/1/true/KIND_TEXT/611/0?ubig=16554549578425825131&scale=0.10000000149011612&data=UirCvy8%3D&numbers=-2119421391&maybe_count=0&at=0001-01-01T00%3A00%3A00.857Z&mask=&limit=0&text="
+        , url = "/v1/typed/0/false/KIND_TEXT/0/0?name=%F0%9F%98%80A%28%40%7Fz%E2%9C%93%09&ubig=15095736816627739848&scale=-7.75&data=yWnK&maybe_count=0&maybe_name=&at=1970-01-01T00%3A00%3A00Z&wait=-275430715323s&mask=&label=&number=0"
         , headers = []
         , body = Nothing
         }
@@ -1894,9 +2054,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.typed
         (Just 0)
-        "{\"at\":\"1970-01-01T00:00:00Z\",\"big\":\"2585536901227699356\",\"flag\":true,\"inner\":{\"a\":\"\\\\\"},\"kind\":\"KIND_TEXT\",\"limit\":0,\"mask\":\"\",\"maybeCount\":0,\"maybeName\":\"\",\"numbers\":[-171,-722686364,1],\"ratio\":3.474838272322468e+59,\"text\":\"$@&@\u{007F}\",\"ubig\":\"18446744073709551615\"}"
+        "{\"at\":\"1970-01-01T00:00:00Z\",\"big\":\"-662\",\"count\":-108,\"data\":\"FwsmCA==\",\"flag\":false,\"inner\":{\"a\":\"\"},\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_IMAGE\",\"KIND_UNSPECIFIED\"],\"maybe_name\":\"\",\"name\":\"[\",\"number\":0,\"numbers\":[-2147483648],\"ratio\":0.0,\"scale\":-46.625,\"tags\":[\"\\u00019\",\"Z\",\";?;(z \\\\+\"],\"ubig\":\"866\"}"
         { method = "DELETE"
-        , url = "/v1/typed/0/true/KIND_TEXT/2585536901227699356/0?ubig=18446744073709551615&ratio=3.474838272322468e%2B59&numbers=-171&numbers=-722686364&numbers=1&maybe_count=0&maybe_name=&at=1970-01-01T00%3A00%3A00Z&mask=&limit=0&inner.a=%5C&text=%24%40%26%40%7F"
+        , url = "/v1/typed/-108/false/KIND_TEXT/-662/0?name=%5B&ubig=866&scale=-46.625&data=FwsmCA%3D%3D&tags=%019&tags=Z&tags=%3B%3F%3B%28z%20%5C%2B&kinds=KIND_IMAGE&kinds=KIND_UNSPECIFIED&numbers=-2147483648&maybe_name=&at=1970-01-01T00%3A00%3A00Z&number=0"
         , headers = []
         , body = Nothing
         }
@@ -1904,9 +2064,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.typed
         (Just 0)
-        "{\"big\":\"-9223372036854775808\",\"count\":-1,\"data\":\"vg==\",\"flag\":false,\"inner\":{\"a\":\"\"},\"kind\":\"KIND_UNSPECIFIED\",\"kinds\":[\"KIND_IMAGE\",\"KIND_IMAGE\",\"KIND_UNSPECIFIED\"],\"label\":\"\",\"limit\":-1200752975,\"mask\":\"\",\"maybe_count\":-1849024419,\"name\":\"\\t\",\"numbers\":[988,-1690335205],\"ratio\":-3.3884060930568713e-180,\"scale\":-6.720587577495263e+37,\"tags\":[\"/a\\\\'中\",\"A@;;a A(\"],\"ubig\":\"14948386337900077507\",\"wait\":\"0s\"}"
+        "{\"at\":\"1970-01-01T00:00:00Z\",\"big\":\"-4749884719145717334\",\"count\":-1541593503,\"inner\":{},\"kind\":\"KIND_IMAGE\",\"kinds\":[\"KIND_UNSPECIFIED\"],\"mask\":\"w33Ts2s\",\"name\":\"zé@\\\"\\t\",\"numbers\":[1251802360,830,1319888662],\"scale\":8.317307167285319e+24,\"tags\":[\"a+\",\"\"],\"text\":\"\",\"wait\":\"0s\"}"
         { method = "DELETE"
-        , url = "/v1/typed/-1/false/KIND_UNSPECIFIED/-9223372036854775808/0?name=%09&ubig=14948386337900077507&ratio=-3.3884060930568713e-180&scale=-6.720587577495263e%2B37&data=vg%3D%3D&tags=%2Fa%5C%27%E4%B8%AD&tags=A%40%3B%3Ba%20A%28&kinds=KIND_IMAGE&kinds=KIND_IMAGE&kinds=KIND_UNSPECIFIED&numbers=988&numbers=-1690335205&maybe_count=-1849024419&wait=0s&mask=&limit=-1200752975&label="
+        , url = "/v1/typed/-1541593503/false/KIND_IMAGE/-4749884719145717334/0?name=z%C3%A9%40%22%09&scale=8.317307167285319e%2B24&tags=a%2B&tags=&kinds=KIND_UNSPECIFIED&numbers=1251802360&numbers=830&numbers=1319888662&at=1970-01-01T00%3A00%3A00Z&wait=0s&mask=w33Ts2s&text="
         , headers = []
         , body = Nothing
         }
@@ -1914,9 +2074,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.typed
         (Just 0)
-        "{\"big\":\"4789314191003182945\",\"count\":698905289,\"data\":\"Whb+MA2g\",\"flag\":false,\"inner\":{\"a\":\"\"},\"kind\":\"KIND_TEXT\",\"kinds\":[\"KIND_IMAGE\"],\"mask\":\"\",\"maybeCount\":0,\"maybeName\":\"\",\"name\":\"ß0\",\"numbers\":[],\"ratio\":\"Infinity\",\"scale\":0.0,\"tags\":[],\"ubig\":\"926\",\"wait\":\"124060455436s\"}"
+        "{\"at\":\"9974-08-29T06:24:11.888Z\",\"big\":\"3029685469226968795\",\"label\":\"\",\"limit\":0,\"mask\":\"\",\"name\":\" 😀]\",\"ratio\":8.337256606181583e+40,\"scale\":28924041216.0,\"tags\":[\"]@[\\n=\\n*𐍈\"],\"wait\":\"-29195702047s\"}"
         { method = "DELETE"
-        , url = "/v1/typed/698905289/false/KIND_TEXT/4789314191003182945/0?name=%C3%9F0&ubig=926&ratio=Infinity&data=Whb%2BMA2g&kinds=KIND_IMAGE&maybe_count=0&maybe_name=&wait=124060455436s&mask="
+        , url = "/v1/typed/0/false/KIND_UNSPECIFIED/3029685469226968795/0?name=%20%F0%9F%98%80%5D&ratio=8.337256606181583e%2B40&scale=28924041216&tags=%5D%40%5B%0A%3D%0A%2A%F0%90%8D%88&at=9974-08-29T06%3A24%3A11.888Z&wait=-29195702047s&mask=&limit=0&label="
         , headers = []
         , body = Nothing
         }
@@ -1924,9 +2084,9 @@ fixtures =
         Routes.V1.decodeEverything
         Routes.V1.Routes.typed
         (Just 0)
-        "{\"big\":\"-111\",\"data\":\"o/Zu\",\"inner\":{},\"kinds\":[\"KIND_IMAGE\"],\"limit\":1,\"maybeName\":\"\",\"number\":-1440721975,\"scale\":3.4028234663852886e+38,\"ubig\":\"9223372036854775808\"}"
+        "{\"at\":\"1970-01-01T00:00:00Z\",\"big\":\"-2795903640511900141\",\"count\":881345736,\"data\":\"PiyD/A==\",\"inner\":{\"deep\":{}},\"kind\":\"KIND_IMAGE\",\"kinds\":[\"KIND_TEXT\"],\"label\":\"\",\"limit\":0,\"mask\":\"\",\"maybeCount\":0,\"name\":\"&\\n;\",\"numbers\":[-2147483648,1,-1173583443],\"scale\":-2.1531730225393465e-33,\"wait\":\"0s\"}"
         { method = "DELETE"
-        , url = "/v1/typed/0/false/KIND_UNSPECIFIED/-111/0?ubig=9223372036854775808&scale=3.4028234663852886e%2B38&data=o%2FZu&kinds=KIND_IMAGE&maybe_name=&limit=1&number=-1440721975"
+        , url = "/v1/typed/881345736/false/KIND_IMAGE/-2795903640511900141/0?name=%26%0A%3B&scale=-2.1531730225393465e-33&data=PiyD%2FA%3D%3D&kinds=KIND_TEXT&numbers=-2147483648&numbers=1&numbers=-1173583443&maybe_count=0&at=1970-01-01T00%3A00%3A00Z&wait=0s&mask=&limit=0&label="
         , headers = []
         , body = Nothing
         }
@@ -1934,201 +2094,201 @@ fixtures =
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.unbound
         Nothing
-        "{\"messageId\":\"0=\",\"name\":\"[?*z$𐍈9.\",\"revision\":\"206\",\"sub\":{\"subfield\":\"0✓😀\"},\"userId\":\"\"}"
+        "{\"name\":\"&#\\\"(ßé,%\",\"sub\":{\"subfield\":\"#✓\"},\"userId\":\"\\t,\\u0001\"}"
         { method = "POST"
         , url = "/routes.v1.Routes/Unbound"
         , headers =
             [ ( "Connect-Protocol-Version", "1" )
             ]
-        , body = Just "{\"messageId\":\"0=\",\"name\":\"[?*z$𐍈9.\",\"revision\":\"206\",\"sub\":{\"subfield\":\"0✓😀\"}}"
+        , body = Just "{\"name\":\"&#\\\"(ßé,%\",\"sub\":{\"subfield\":\"#✓\"},\"userId\":\"\\t,\\u0001\"}"
         }
     , Replay.fixture "Unbound #1"
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.unbound
         Nothing
-        "{\"name\":\"?#;=😀\"}"
+        "{\"message_id\":\"😀&#;)]'-\",\"revision\":\"930\",\"sub\":{}}"
         { method = "POST"
         , url = "/routes.v1.Routes/Unbound"
         , headers =
             [ ( "Connect-Protocol-Version", "1" )
             ]
-        , body = Just "{\"name\":\"?#;=😀\"}"
+        , body = Just "{\"messageId\":\"😀&#;)]'-\",\"revision\":\"930\",\"sub\":{}}"
         }
     , Replay.fixture "Unbound #2"
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.unbound
         Nothing
-        "{\"message_id\":\"中a$\",\"name\":\"*-)𐍈~'\u{007F}=\",\"revision\":\"-992198351176069858\",\"sub\":{}}"
+        "{\"messageId\":\"\\u0001z_\",\"name\":\"\",\"revision\":\"9007199254740993\",\"userId\":\"\"}"
         { method = "POST"
         , url = "/routes.v1.Routes/Unbound"
         , headers =
             [ ( "Connect-Protocol-Version", "1" )
             ]
-        , body = Just "{\"messageId\":\"中a$\",\"name\":\"*-)𐍈~'\u{007F}=\",\"revision\":\"-992198351176069858\",\"sub\":{}}"
+        , body = Just "{\"messageId\":\"\\u0001z_\",\"revision\":\"9007199254740993\"}"
         }
     , Replay.fixture "Unbound #3"
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.unbound
         Nothing
-        "{\"messageId\":\"ß\",\"name\":\"\\\"\",\"revision\":\"-6608592607648792749\",\"sub\":{\"subfield\":\"\\u0001😀\"}}"
+        "{\"messageId\":\"$\\n\\\\]✓\",\"name\":\"za𐍈?(\",\"revision\":\"986176348702226230\",\"sub\":{}}"
         { method = "POST"
         , url = "/routes.v1.Routes/Unbound"
         , headers =
             [ ( "Connect-Protocol-Version", "1" )
             ]
-        , body = Just "{\"messageId\":\"ß\",\"name\":\"\\\"\",\"revision\":\"-6608592607648792749\",\"sub\":{\"subfield\":\"\\u0001😀\"}}"
+        , body = Just "{\"messageId\":\"$\\n\\\\]✓\",\"name\":\"za𐍈?(\",\"revision\":\"986176348702226230\",\"sub\":{}}"
         }
     , Replay.fixture "Unbound #4"
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.unbound
         Nothing
-        "{\"messageId\":\".\",\"name\":\"~\",\"revision\":\"-857\",\"sub\":{},\"userId\":\"0::\"}"
+        "{\"messageId\":\"0=\\n*$A)\\t\",\"name\":\"\\\\?*✓9\",\"revision\":\"-4493058592940657640\",\"sub\":{},\"userId\":\"$();#;'Z\"}"
         { method = "POST"
         , url = "/routes.v1.Routes/Unbound"
         , headers =
             [ ( "Connect-Protocol-Version", "1" )
             ]
-        , body = Just "{\"messageId\":\".\",\"name\":\"~\",\"revision\":\"-857\",\"sub\":{},\"userId\":\"0::\"}"
+        , body = Just "{\"messageId\":\"0=\\n*$A)\\t\",\"name\":\"\\\\?*✓9\",\"revision\":\"-4493058592940657640\",\"sub\":{},\"userId\":\"$();#;'Z\"}"
         }
     , Replay.fixture "Unbound #5"
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.unbound
         Nothing
-        "{\"name\":\"\\u0001\",\"user_id\":\"\u{007F}. \"}"
+        "{\"message_id\":\"[\\\\ß\\n'é#A\",\"name\":\")中\",\"revision\":\"-35\",\"sub\":{\"subfield\":\"%\\\\]!,\"},\"user_id\":\"'/\"}"
         { method = "POST"
         , url = "/routes.v1.Routes/Unbound"
         , headers =
             [ ( "Connect-Protocol-Version", "1" )
             ]
-        , body = Just "{\"name\":\"\\u0001\",\"userId\":\"\u{007F}. \"}"
+        , body = Just "{\"messageId\":\"[\\\\ß\\n'é#A\",\"name\":\")中\",\"revision\":\"-35\",\"sub\":{\"subfield\":\"%\\\\]!,\"},\"userId\":\"'/\"}"
         }
     , Replay.fixture "Unbound #6"
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.unbound
         Nothing
-        "{\"revision\":\"9007199254740992\",\"sub\":{},\"userId\":\"0=[😀.\"}"
+        "{\"messageId\":\"$(=\",\"name\":\"\\t \",\"revision\":\"6754397049887361068\",\"userId\":\"&éΩa)0😀,\"}"
         { method = "POST"
         , url = "/routes.v1.Routes/Unbound"
         , headers =
             [ ( "Connect-Protocol-Version", "1" )
             ]
-        , body = Just "{\"revision\":\"9007199254740992\",\"sub\":{},\"userId\":\"0=[😀.\"}"
+        , body = Just "{\"messageId\":\"$(=\",\"name\":\"\\t \",\"revision\":\"6754397049887361068\",\"userId\":\"&éΩa)0😀,\"}"
         }
     , Replay.fixture "Unbound #7"
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.unbound
         Nothing
-        "{\"messageId\":\"\\u0001\",\"name\":\";Ω#,\u{007F}\",\"revision\":\"-8955008781393032691\",\"sub\":{\"subfield\":\"\"},\"userId\":\"\"}"
+        "{\"messageId\":\"\\nß'𐍈\u{007F};é\\\\\",\"name\":\"\",\"revision\":\"8667756894389083597\",\"sub\":{\"subfield\":\"\"},\"userId\":\"z中Z\"}"
         { method = "POST"
         , url = "/routes.v1.Routes/Unbound"
         , headers =
             [ ( "Connect-Protocol-Version", "1" )
             ]
-        , body = Just "{\"messageId\":\"\\u0001\",\"name\":\";Ω#,\u{007F}\",\"revision\":\"-8955008781393032691\",\"sub\":{}}"
+        , body = Just "{\"messageId\":\"\\nß'𐍈\u{007F};é\\\\\",\"revision\":\"8667756894389083597\",\"sub\":{},\"userId\":\"z中Z\"}"
         }
     , Replay.fixture "Unbound #8"
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.unbound
         Nothing
-        "{\"name\":\";0\"}"
+        "{\"messageId\":\"!:\\t\",\"revision\":\"9007199254740993\",\"sub\":{\"subfield\":\"&\"},\"userId\":\"_\\\\ß\"}"
         { method = "POST"
         , url = "/routes.v1.Routes/Unbound"
         , headers =
             [ ( "Connect-Protocol-Version", "1" )
             ]
-        , body = Just "{\"name\":\";0\"}"
+        , body = Just "{\"messageId\":\"!:\\t\",\"revision\":\"9007199254740993\",\"sub\":{\"subfield\":\"&\"},\"userId\":\"_\\\\ß\"}"
         }
     , Replay.fixture "Unbound #9"
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.unbound
         Nothing
-        "{\"messageId\":\"ZA%/z-;Z\",\"revision\":\"859\",\"sub\":{}}"
+        "{\"messageId\":\"Z\",\"revision\":\"5970609696953965799\",\"sub\":{},\"userId\":\"9.).a\\u0001\\\"-\"}"
         { method = "POST"
         , url = "/routes.v1.Routes/Unbound"
         , headers =
             [ ( "Connect-Protocol-Version", "1" )
             ]
-        , body = Just "{\"messageId\":\"ZA%/z-;Z\",\"revision\":\"859\",\"sub\":{}}"
+        , body = Just "{\"messageId\":\"Z\",\"revision\":\"5970609696953965799\",\"sub\":{},\"userId\":\"9.).a\\u0001\\\"-\"}"
         }
     , Replay.fixture "Unbound #10"
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.unbound
         Nothing
-        "{\"message_id\":\"Z\\n\u{007F}$]&中)\",\"revision\":\"-9067597702402907331\",\"sub\":{},\"user_id\":\"_&ß\\u0001✓\"}"
+        "{\"revision\":\"-8430652921509575537\",\"sub\":{},\"userId\":\"(!]\"}"
         { method = "POST"
         , url = "/routes.v1.Routes/Unbound"
         , headers =
             [ ( "Connect-Protocol-Version", "1" )
             ]
-        , body = Just "{\"messageId\":\"Z\\n\u{007F}$]&中)\",\"revision\":\"-9067597702402907331\",\"sub\":{},\"userId\":\"_&ß\\u0001✓\"}"
+        , body = Just "{\"revision\":\"-8430652921509575537\",\"sub\":{},\"userId\":\"(!]\"}"
         }
     , Replay.fixture "Unbound #11"
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.unbound
         Nothing
-        "{\"revision\":\"-2529862257877640940\",\"sub\":{}}"
+        "{\"messageId\":\"\\n\",\"sub\":{\"subfield\":\"0\"},\"userId\":\"% *\"}"
         { method = "POST"
         , url = "/routes.v1.Routes/Unbound"
         , headers =
             [ ( "Connect-Protocol-Version", "1" )
             ]
-        , body = Just "{\"revision\":\"-2529862257877640940\",\"sub\":{}}"
+        , body = Just "{\"messageId\":\"\\n\",\"sub\":{\"subfield\":\"0\"},\"userId\":\"% *\"}"
         }
     , Replay.fixture "Unbound #12"
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.unbound
         Nothing
-        "{\"messageId\":\"\",\"name\":\"$\\t$\",\"revision\":\"-7352619285146871359\",\"sub\":{\"subfield\":\"\"},\"userId\":\"✓A$\"}"
+        "{\"messageId\":\"))'𐍈:\",\"name\":\"\",\"revision\":\"-2347271831320718778\",\"sub\":{\"subfield\":\"\"},\"userId\":\"\"}"
         { method = "POST"
         , url = "/routes.v1.Routes/Unbound"
         , headers =
             [ ( "Connect-Protocol-Version", "1" )
             ]
-        , body = Just "{\"name\":\"$\\t$\",\"revision\":\"-7352619285146871359\",\"sub\":{},\"userId\":\"✓A$\"}"
+        , body = Just "{\"messageId\":\"))'𐍈:\",\"revision\":\"-2347271831320718778\",\"sub\":{}}"
         }
     , Replay.fixture "Unbound #13"
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.unbound
         Nothing
-        "{\"revision\":\"5273694424788633440\"}"
+        "{\"messageId\":\"A*9ß~=)é\",\"name\":\"\",\"revision\":\"0\",\"userId\":\"?\\u0001\\\\$0\"}"
         { method = "POST"
         , url = "/routes.v1.Routes/Unbound"
         , headers =
             [ ( "Connect-Protocol-Version", "1" )
             ]
-        , body = Just "{\"revision\":\"5273694424788633440\"}"
+        , body = Just "{\"messageId\":\"A*9ß~=)é\",\"userId\":\"?\\u0001\\\\$0\"}"
         }
     , Replay.fixture "Unbound #14"
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.unbound
         Nothing
-        "{\"message_id\":\"!\\\\\",\"name\":\"9=\",\"revision\":\"238\",\"sub\":{\"subfield\":\"\"},\"user_id\":\"\"}"
+        "{\"name\":\"\\\\\",\"revision\":\"-8458897865217549433\",\"sub\":{}}"
         { method = "POST"
         , url = "/routes.v1.Routes/Unbound"
         , headers =
             [ ( "Connect-Protocol-Version", "1" )
             ]
-        , body = Just "{\"messageId\":\"!\\\\\",\"name\":\"9=\",\"revision\":\"238\",\"sub\":{}}"
+        , body = Just "{\"name\":\"\\\\\",\"revision\":\"-8458897865217549433\",\"sub\":{}}"
         }
     , Replay.fixture "Unbound #15"
         Routes.V1.decodeGetMessageRequest
         Routes.V1.Routes.unbound
         Nothing
-        "{\"messageId\":\"\",\"name\":\"!)\",\"revision\":\"0\",\"userId\":\"%*/)%+ΩA\"}"
+        "{\"messageId\":\"(z\",\"name\":\"; \",\"revision\":\"5665666406295879424\",\"sub\":{\"subfield\":\"_a@\"},\"userId\":\"+😀0a𐍈\"}"
         { method = "POST"
         , url = "/routes.v1.Routes/Unbound"
         , headers =
             [ ( "Connect-Protocol-Version", "1" )
             ]
-        , body = Just "{\"name\":\"!)\",\"userId\":\"%*/)%+ΩA\"}"
+        , body = Just "{\"messageId\":\"(z\",\"name\":\"; \",\"revision\":\"5665666406295879424\",\"sub\":{\"subfield\":\"_a@\"},\"userId\":\"+😀0a𐍈\"}"
         }
     , Replay.fixture "UpdateMessage 0 #0"
         Routes.V1.decodeUpdateMessageRequest
         Routes.V1.Routes.updateMessage
         (Just 0)
-        "{\"message\":{}}"
+        "{\"messageId\":\"&/$\"}"
         { method = "PATCH"
-        , url = "/v1/messages/"
+        , url = "/v1/messages/%26%2F%24"
         , headers = []
         , body = Just "{}"
         }
@@ -2136,123 +2296,13 @@ fixtures =
         Routes.V1.decodeUpdateMessageRequest
         Routes.V1.Routes.updateMessage
         (Just 0)
-        "{\"message\":{}}"
+        "{\"message\":{\"messageId\":\";*#𐍈:)]-\"},\"messageId\":\"[Z;,]\"}"
         { method = "PATCH"
-        , url = "/v1/messages/"
+        , url = "/v1/messages/%5BZ%3B%2C%5D"
         , headers = []
-        , body = Just "{}"
+        , body = Just "{\"messageId\":\";*#𐍈:)]-\"}"
         }
     , Replay.fixture "UpdateMessage 0 #2"
-        Routes.V1.decodeUpdateMessageRequest
-        Routes.V1.Routes.updateMessage
-        (Just 0)
-        "{\"message\":{\"messageId\":\"中Z)\"},\"messageId\":\"Ω\\\"\"}"
-        { method = "PATCH"
-        , url = "/v1/messages/%CE%A9%22"
-        , headers = []
-        , body = Just "{\"messageId\":\"中Z)\"}"
-        }
-    , Replay.fixture "UpdateMessage 0 #3"
-        Routes.V1.decodeUpdateMessageRequest
-        Routes.V1.Routes.updateMessage
-        (Just 0)
-        "{\"message\":{},\"messageId\":\".-\"}"
-        { method = "PATCH"
-        , url = "/v1/messages/.-"
-        , headers = []
-        , body = Just "{}"
-        }
-    , Replay.fixture "UpdateMessage 0 #4"
-        Routes.V1.decodeUpdateMessageRequest
-        Routes.V1.Routes.updateMessage
-        (Just 0)
-        "{\"message\":{\"message_id\":\"\",\"text\":\"\"},\"message_id\":\"/!.\"}"
-        { method = "PATCH"
-        , url = "/v1/messages/%2F%21."
-        , headers = []
-        , body = Just "{}"
-        }
-    , Replay.fixture "UpdateMessage 0 #5"
-        Routes.V1.decodeUpdateMessageRequest
-        Routes.V1.Routes.updateMessage
-        (Just 0)
-        "{\"message\":{\"messageId\":\"\",\"text\":\"\"},\"messageId\":\"&\\u0001/𐍈\\\"\"}"
-        { method = "PATCH"
-        , url = "/v1/messages/%26%01%2F%F0%90%8D%88%22"
-        , headers = []
-        , body = Just "{}"
-        }
-    , Replay.fixture "UpdateMessage 0 #6"
-        Routes.V1.decodeUpdateMessageRequest
-        Routes.V1.Routes.updateMessage
-        (Just 0)
-        "{\"message\":{\"message_id\":\"ß:a\u{007F}&ß_𐍈\"},\"message_id\":\"+\\\"Ω\"}"
-        { method = "PATCH"
-        , url = "/v1/messages/%2B%22%CE%A9"
-        , headers = []
-        , body = Just "{\"messageId\":\"ß:a\u{007F}&ß_𐍈\"}"
-        }
-    , Replay.fixture "UpdateMessage 0 #7"
-        Routes.V1.decodeUpdateMessageRequest
-        Routes.V1.Routes.updateMessage
-        (Just 0)
-        "{\"message\":{\"messageId\":\"𐍈(%\",\"text\":\"\"},\"messageId\":\"#~?#&\"}"
-        { method = "PATCH"
-        , url = "/v1/messages/%23~%3F%23%26"
-        , headers = []
-        , body = Just "{\"messageId\":\"𐍈(%\"}"
-        }
-    , Replay.fixture "UpdateMessage 0 #8"
-        Routes.V1.decodeUpdateMessageRequest
-        Routes.V1.Routes.updateMessage
-        (Just 0)
-        "{\"messageId\":\")é中\"}"
-        { method = "PATCH"
-        , url = "/v1/messages/%29%C3%A9%E4%B8%AD"
-        , headers = []
-        , body = Just "{}"
-        }
-    , Replay.fixture "UpdateMessage 0 #9"
-        Routes.V1.decodeUpdateMessageRequest
-        Routes.V1.Routes.updateMessage
-        (Just 0)
-        "{\"message\":{\"text\":\"\\\\,&))\"}}"
-        { method = "PATCH"
-        , url = "/v1/messages/"
-        , headers = []
-        , body = Just "{\"text\":\"\\\\,&))\"}"
-        }
-    , Replay.fixture "UpdateMessage 0 #10"
-        Routes.V1.decodeUpdateMessageRequest
-        Routes.V1.Routes.updateMessage
-        (Just 0)
-        "{\"message\":{}}"
-        { method = "PATCH"
-        , url = "/v1/messages/"
-        , headers = []
-        , body = Just "{}"
-        }
-    , Replay.fixture "UpdateMessage 0 #11"
-        Routes.V1.decodeUpdateMessageRequest
-        Routes.V1.Routes.updateMessage
-        (Just 0)
-        "{\"message\":{}}"
-        { method = "PATCH"
-        , url = "/v1/messages/"
-        , headers = []
-        , body = Just "{}"
-        }
-    , Replay.fixture "UpdateMessage 0 #12"
-        Routes.V1.decodeUpdateMessageRequest
-        Routes.V1.Routes.updateMessage
-        (Just 0)
-        "{\"message_id\":\",!\"}"
-        { method = "PATCH"
-        , url = "/v1/messages/%2C%21"
-        , headers = []
-        , body = Just "{}"
-        }
-    , Replay.fixture "UpdateMessage 0 #13"
         Routes.V1.decodeUpdateMessageRequest
         Routes.V1.Routes.updateMessage
         (Just 0)
@@ -2262,23 +2312,133 @@ fixtures =
         , headers = []
         , body = Just "{}"
         }
+    , Replay.fixture "UpdateMessage 0 #3"
+        Routes.V1.decodeUpdateMessageRequest
+        Routes.V1.Routes.updateMessage
+        (Just 0)
+        "{\"message_id\":\" \\n]9@\"}"
+        { method = "PATCH"
+        , url = "/v1/messages/%20%0A%5D9%40"
+        , headers = []
+        , body = Just "{}"
+        }
+    , Replay.fixture "UpdateMessage 0 #4"
+        Routes.V1.decodeUpdateMessageRequest
+        Routes.V1.Routes.updateMessage
+        (Just 0)
+        "{\"message\":{}}"
+        { method = "PATCH"
+        , url = "/v1/messages/"
+        , headers = []
+        , body = Just "{}"
+        }
+    , Replay.fixture "UpdateMessage 0 #5"
+        Routes.V1.decodeUpdateMessageRequest
+        Routes.V1.Routes.updateMessage
+        (Just 0)
+        "{\"message\":{\"text\":\"9\\u0001\"},\"messageId\":\";\"}"
+        { method = "PATCH"
+        , url = "/v1/messages/%3B"
+        , headers = []
+        , body = Just "{\"text\":\"9\\u0001\"}"
+        }
+    , Replay.fixture "UpdateMessage 0 #6"
+        Routes.V1.decodeUpdateMessageRequest
+        Routes.V1.Routes.updateMessage
+        (Just 0)
+        "{\"message\":{\"messageId\":\"?\\t\",\"text\":\"])😀_@\"}}"
+        { method = "PATCH"
+        , url = "/v1/messages/"
+        , headers = []
+        , body = Just "{\"messageId\":\"?\\t\",\"text\":\"])😀_@\"}"
+        }
+    , Replay.fixture "UpdateMessage 0 #7"
+        Routes.V1.decodeUpdateMessageRequest
+        Routes.V1.Routes.updateMessage
+        (Just 0)
+        "{}"
+        { method = "PATCH"
+        , url = "/v1/messages/"
+        , headers = []
+        , body = Just "{}"
+        }
+    , Replay.fixture "UpdateMessage 0 #8"
+        Routes.V1.decodeUpdateMessageRequest
+        Routes.V1.Routes.updateMessage
+        (Just 0)
+        "{\"message\":{},\"message_id\":\"Z%\"}"
+        { method = "PATCH"
+        , url = "/v1/messages/Z%25"
+        , headers = []
+        , body = Just "{}"
+        }
+    , Replay.fixture "UpdateMessage 0 #9"
+        Routes.V1.decodeUpdateMessageRequest
+        Routes.V1.Routes.updateMessage
+        (Just 0)
+        "{\"messageId\":\".+!+\u{007F}\"}"
+        { method = "PATCH"
+        , url = "/v1/messages/.%2B%21%2B%7F"
+        , headers = []
+        , body = Just "{}"
+        }
+    , Replay.fixture "UpdateMessage 0 #10"
+        Routes.V1.decodeUpdateMessageRequest
+        Routes.V1.Routes.updateMessage
+        (Just 0)
+        "{}"
+        { method = "PATCH"
+        , url = "/v1/messages/"
+        , headers = []
+        , body = Just "{}"
+        }
+    , Replay.fixture "UpdateMessage 0 #11"
+        Routes.V1.decodeUpdateMessageRequest
+        Routes.V1.Routes.updateMessage
+        (Just 0)
+        "{\"message\":{\"text\":\"ß0A\"},\"message_id\":\"0\"}"
+        { method = "PATCH"
+        , url = "/v1/messages/0"
+        , headers = []
+        , body = Just "{\"text\":\"ß0A\"}"
+        }
+    , Replay.fixture "UpdateMessage 0 #12"
+        Routes.V1.decodeUpdateMessageRequest
+        Routes.V1.Routes.updateMessage
+        (Just 0)
+        "{\"messageId\":\"\\t/\u{007F}9 \"}"
+        { method = "PATCH"
+        , url = "/v1/messages/%09%2F%7F9%20"
+        , headers = []
+        , body = Just "{}"
+        }
+    , Replay.fixture "UpdateMessage 0 #13"
+        Routes.V1.decodeUpdateMessageRequest
+        Routes.V1.Routes.updateMessage
+        (Just 0)
+        "{\"message\":{},\"messageId\":\"\\n:9ß\\\\\"}"
+        { method = "PATCH"
+        , url = "/v1/messages/%0A%3A9%C3%9F%5C"
+        , headers = []
+        , body = Just "{}"
+        }
     , Replay.fixture "UpdateMessage 0 #14"
         Routes.V1.decodeUpdateMessageRequest
         Routes.V1.Routes.updateMessage
         (Just 0)
-        "{\"message\":{\"messageId\":\"=\u{007F}.(✓ &'\",\"text\":\"\\u0001\"}}"
+        "{\"message\":{},\"messageId\":\"\\t~\\t.?\"}"
         { method = "PATCH"
-        , url = "/v1/messages/"
+        , url = "/v1/messages/%09~%09.%3F"
         , headers = []
-        , body = Just "{\"messageId\":\"=\u{007F}.(✓ &'\",\"text\":\"\\u0001\"}"
+        , body = Just "{}"
         }
     , Replay.fixture "UpdateMessage 0 #15"
         Routes.V1.decodeUpdateMessageRequest
         Routes.V1.Routes.updateMessage
         (Just 0)
-        "{\"message_id\":\"中😀[✓)\"}"
+        "{\"message\":{\"messageId\":\"\",\"text\":\"\"},\"messageId\":\"_\"}"
         { method = "PATCH"
-        , url = "/v1/messages/%E4%B8%AD%F0%9F%98%80%5B%E2%9C%93%29"
+        , url = "/v1/messages/_"
         , headers = []
         , body = Just "{}"
         }
@@ -2286,119 +2446,119 @@ fixtures =
         Routes.V1.decodeMessage
         Routes.V1.Routes.updateMessageWhole
         (Just 0)
-        "{\"messageId\":\"\",\"text\":\"-\"}"
+        "{\"text\":\"中/\"}"
         { method = "PATCH"
         , url = "/v1/messages/"
         , headers = []
-        , body = Just "{\"text\":\"-\"}"
+        , body = Just "{\"text\":\"中/\"}"
         }
     , Replay.fixture "UpdateMessageWhole 0 #1"
         Routes.V1.decodeMessage
         Routes.V1.Routes.updateMessageWhole
         (Just 0)
-        "{\"text\":\"z\"}"
+        "{\"text\":\"*&\"}"
         { method = "PATCH"
         , url = "/v1/messages/"
         , headers = []
-        , body = Just "{\"text\":\"z\"}"
+        , body = Just "{\"text\":\"*&\"}"
         }
     , Replay.fixture "UpdateMessageWhole 0 #2"
         Routes.V1.decodeMessage
         Routes.V1.Routes.updateMessageWhole
         (Just 0)
-        "{\"messageId\":\"\\n9?aΩ #Z\",\"text\":\"\\u0001😀\"}"
+        "{\"text\":\"\\\"𐍈\"}"
         { method = "PATCH"
-        , url = "/v1/messages/%0A9%3Fa%CE%A9%20%23Z"
+        , url = "/v1/messages/"
         , headers = []
-        , body = Just "{\"text\":\"\\u0001😀\"}"
+        , body = Just "{\"text\":\"\\\"𐍈\"}"
         }
     , Replay.fixture "UpdateMessageWhole 0 #3"
         Routes.V1.decodeMessage
         Routes.V1.Routes.updateMessageWhole
         (Just 0)
-        "{\"messageId\":\"/a0中~\",\"text\":\"!*\"}"
+        "{\"messageId\":\"\",\"text\":\"é@/\"}"
         { method = "PATCH"
-        , url = "/v1/messages/%2Fa0%E4%B8%AD~"
+        , url = "/v1/messages/"
         , headers = []
-        , body = Just "{\"text\":\"!*\"}"
+        , body = Just "{\"text\":\"é@/\"}"
         }
     , Replay.fixture "UpdateMessageWhole 0 #4"
         Routes.V1.decodeMessage
         Routes.V1.Routes.updateMessageWhole
         (Just 0)
-        "{}"
+        "{\"text\":\".ß(\"}"
         { method = "PATCH"
         , url = "/v1/messages/"
         , headers = []
-        , body = Just "{}"
+        , body = Just "{\"text\":\".ß(\"}"
         }
     , Replay.fixture "UpdateMessageWhole 0 #5"
         Routes.V1.decodeMessage
         Routes.V1.Routes.updateMessageWhole
         (Just 0)
-        "{}"
+        "{\"messageId\":\":@;*中:?𐍈\",\"text\":\"$:\\\"0Za)0\"}"
         { method = "PATCH"
-        , url = "/v1/messages/"
+        , url = "/v1/messages/%3A%40%3B%2A%E4%B8%AD%3A%3F%F0%90%8D%88"
         , headers = []
-        , body = Just "{}"
+        , body = Just "{\"text\":\"$:\\\"0Za)0\"}"
         }
     , Replay.fixture "UpdateMessageWhole 0 #6"
         Routes.V1.decodeMessage
         Routes.V1.Routes.updateMessageWhole
         (Just 0)
-        "{\"messageId\":\"\\t\"}"
+        "{\"text\":\"]+\"}"
         { method = "PATCH"
-        , url = "/v1/messages/%09"
+        , url = "/v1/messages/"
         , headers = []
-        , body = Just "{}"
+        , body = Just "{\"text\":\"]+\"}"
         }
     , Replay.fixture "UpdateMessageWhole 0 #7"
         Routes.V1.decodeMessage
         Routes.V1.Routes.updateMessageWhole
         (Just 0)
-        "{\"messageId\":\"%é9~-\"}"
+        "{\"text\":\"*(?\\\"*\"}"
         { method = "PATCH"
-        , url = "/v1/messages/%25%C3%A99~-"
+        , url = "/v1/messages/"
         , headers = []
-        , body = Just "{}"
+        , body = Just "{\"text\":\"*(?\\\"*\"}"
         }
     , Replay.fixture "UpdateMessageWhole 0 #8"
         Routes.V1.decodeMessage
         Routes.V1.Routes.updateMessageWhole
         (Just 0)
-        "{\"message_id\":\"-a)=\\\\[#-\",\"text\":\"+?!~z/:\\\"\"}"
+        "{\"message_id\":\"✓\"}"
         { method = "PATCH"
-        , url = "/v1/messages/-a%29%3D%5C%5B%23-"
+        , url = "/v1/messages/%E2%9C%93"
         , headers = []
-        , body = Just "{\"text\":\"+?!~z/:\\\"\"}"
+        , body = Just "{}"
         }
     , Replay.fixture "UpdateMessageWhole 0 #9"
         Routes.V1.decodeMessage
         Routes.V1.Routes.updateMessageWhole
         (Just 0)
-        "{}"
+        "{\"text\":\"\\ta\"}"
         { method = "PATCH"
         , url = "/v1/messages/"
         , headers = []
-        , body = Just "{}"
+        , body = Just "{\"text\":\"\\ta\"}"
         }
     , Replay.fixture "UpdateMessageWhole 0 #10"
         Routes.V1.decodeMessage
         Routes.V1.Routes.updateMessageWhole
         (Just 0)
-        "{\"text\":\"~=+😀/%'~\"}"
+        "{\"messageId\":\"?z😀A\\u0001\"}"
         { method = "PATCH"
-        , url = "/v1/messages/"
+        , url = "/v1/messages/%3Fz%F0%9F%98%80A%01"
         , headers = []
-        , body = Just "{\"text\":\"~=+😀/%'~\"}"
+        , body = Just "{}"
         }
     , Replay.fixture "UpdateMessageWhole 0 #11"
         Routes.V1.decodeMessage
         Routes.V1.Routes.updateMessageWhole
         (Just 0)
-        "{}"
+        "{\"messageId\":\"_.\"}"
         { method = "PATCH"
-        , url = "/v1/messages/"
+        , url = "/v1/messages/_."
         , headers = []
         , body = Just "{}"
         }
@@ -2406,29 +2566,29 @@ fixtures =
         Routes.V1.decodeMessage
         Routes.V1.Routes.updateMessageWhole
         (Just 0)
-        "{\"message_id\":\"\",\"text\":\"a%\"}"
+        "{}"
         { method = "PATCH"
         , url = "/v1/messages/"
         , headers = []
-        , body = Just "{\"text\":\"a%\"}"
+        , body = Just "{}"
         }
     , Replay.fixture "UpdateMessageWhole 0 #13"
         Routes.V1.decodeMessage
         Routes.V1.Routes.updateMessageWhole
         (Just 0)
-        "{\"messageId\":\"\\tΩ\u{007F}\"}"
+        "{\"messageId\":\"\u{007F}+\",\"text\":\"!é\"}"
         { method = "PATCH"
-        , url = "/v1/messages/%09%CE%A9%7F"
+        , url = "/v1/messages/%7F%2B"
         , headers = []
-        , body = Just "{}"
+        , body = Just "{\"text\":\"!é\"}"
         }
     , Replay.fixture "UpdateMessageWhole 0 #14"
         Routes.V1.decodeMessage
         Routes.V1.Routes.updateMessageWhole
         (Just 0)
-        "{\"messageId\":\"\\\\\\u0001@\"}"
+        "{\"messageId\":\"'?\\\"($Ω:-\",\"text\":\"\"}"
         { method = "PATCH"
-        , url = "/v1/messages/%5C%01%40"
+        , url = "/v1/messages/%27%3F%22%28%24%CE%A9%3A-"
         , headers = []
         , body = Just "{}"
         }
@@ -2436,83 +2596,13 @@ fixtures =
         Routes.V1.decodeMessage
         Routes.V1.Routes.updateMessageWhole
         (Just 0)
-        "{\"messageId\":\"é😀ßAΩ.-0\",\"text\":\"\"}"
+        "{\"messageId\":\"\",\"text\":\"az,\"}"
         { method = "PATCH"
-        , url = "/v1/messages/%C3%A9%F0%9F%98%80%C3%9FA%CE%A9.-0"
+        , url = "/v1/messages/"
         , headers = []
-        , body = Just "{}"
+        , body = Just "{\"text\":\"az,\"}"
         }
     , Replay.fixture "UpdateResource 0 #0"
-        Routes.V1.decodeUpdateResourceRequest
-        Routes.V1.Routes.updateResource
-        (Just 0)
-        "{\"resource\":{\"displayName\":\"@]9\",\"kinds\":{\"269\":\"KIND_TEXT\"},\"name\":\"%]9[9\",\"weights\":{\"true\":\"Infinity\"}},\"updateMask\":\"\"}"
-        { method = "PATCH"
-        , url = "/v1/%25%5D9%5B9?update_mask="
-        , headers = []
-        , body = Just "{\"displayName\":\"@]9\",\"kinds\":{\"269\":\"KIND_TEXT\"},\"name\":\"%]9[9\",\"weights\":{\"true\":\"Infinity\"}}"
-        }
-    , Replay.fixture "UpdateResource 0 #1"
-        Routes.V1.decodeUpdateResourceRequest
-        Routes.V1.Routes.updateResource
-        (Just 0)
-        "{}"
-        { method = "PATCH"
-        , url = "/v1/"
-        , headers = []
-        , body = Just "{}"
-        }
-    , Replay.fixture "UpdateResource 0 #2"
-        Routes.V1.decodeUpdateResourceRequest
-        Routes.V1.Routes.updateResource
-        (Just 0)
-        "{\"resource\":{\"displayName\":\"\\u0001+\\\"ß\u{007F}\",\"kinds\":{\"1586296619098746415\":\"KIND_UNSPECIFIED\",\"8737377337352903402\":\"KIND_UNSPECIFIED\"},\"labels\":{\"$=\\u0001a=\":\"\",\"*z@=,=z~\":\"$\",\".\\t_✓ß\":\"!\"},\"name\":\"_𐍈#_a* a\",\"weights\":{\"false\":-0.0,\"true\":0.1}},\"updateMask\":\"\"}"
-        { method = "PATCH"
-        , url = "/v1/_%F0%90%8D%88%23_a%2A%20a?update_mask="
-        , headers = []
-        , body = Just "{\"displayName\":\"\\u0001+\\\"ß\u{007F}\",\"kinds\":{\"1586296619098746415\":\"KIND_UNSPECIFIED\",\"8737377337352903402\":\"KIND_UNSPECIFIED\"},\"labels\":{\"$=\\u0001a=\":\"\",\"*z@=,=z~\":\"$\",\".\\t_✓ß\":\"!\"},\"name\":\"_𐍈#_a* a\",\"weights\":{\"false\":-0.0,\"true\":0.1}}"
-        }
-    , Replay.fixture "UpdateResource 0 #3"
-        Routes.V1.decodeUpdateResourceRequest
-        Routes.V1.Routes.updateResource
-        (Just 0)
-        "{}"
-        { method = "PATCH"
-        , url = "/v1/"
-        , headers = []
-        , body = Just "{}"
-        }
-    , Replay.fixture "UpdateResource 0 #4"
-        Routes.V1.decodeUpdateResourceRequest
-        Routes.V1.Routes.updateResource
-        (Just 0)
-        "{\"resource\":{},\"update_mask\":\"j8jcBd.iyx5T92,mn,kj.b8zQ2.x\"}"
-        { method = "PATCH"
-        , url = "/v1/?update_mask=j8jcBd.iyx5T92%2Cmn%2Ckj.b8zQ2.x"
-        , headers = []
-        , body = Just "{}"
-        }
-    , Replay.fixture "UpdateResource 0 #5"
-        Routes.V1.decodeUpdateResourceRequest
-        Routes.V1.Routes.updateResource
-        (Just 0)
-        "{\"resource\":{}}"
-        { method = "PATCH"
-        , url = "/v1/"
-        , headers = []
-        , body = Just "{}"
-        }
-    , Replay.fixture "UpdateResource 0 #6"
-        Routes.V1.decodeUpdateResourceRequest
-        Routes.V1.Routes.updateResource
-        (Just 0)
-        "{\"resource\":{\"displayName\":\"\",\"kinds\":{},\"labels\":{},\"name\":\"\",\"weights\":{}},\"updateMask\":\"gcI8ng,fxBh.u.o,gn91\"}"
-        { method = "PATCH"
-        , url = "/v1/?update_mask=gcI8ng%2CfxBh.u.o%2Cgn91"
-        , headers = []
-        , body = Just "{}"
-        }
-    , Replay.fixture "UpdateResource 0 #7"
         Routes.V1.decodeUpdateResourceRequest
         Routes.V1.Routes.updateResource
         (Just 0)
@@ -2522,57 +2612,17 @@ fixtures =
         , headers = []
         , body = Just "{}"
         }
-    , Replay.fixture "UpdateResource 0 #8"
+    , Replay.fixture "UpdateResource 0 #1"
         Routes.V1.decodeUpdateResourceRequest
         Routes.V1.Routes.updateResource
         (Just 0)
-        "{\"resource\":{}}"
+        "{\"updateMask\":\"w,j3v3Zmr.tw3lHd7f,k.fo.t\"}"
         { method = "PATCH"
-        , url = "/v1/"
+        , url = "/v1/?update_mask=w%2Cj3v3Zmr.tw3lHd7f%2Ck.fo.t"
         , headers = []
         , body = Just "{}"
         }
-    , Replay.fixture "UpdateResource 0 #9"
-        Routes.V1.decodeUpdateResourceRequest
-        Routes.V1.Routes.updateResource
-        (Just 0)
-        "{\"update_mask\":\"\"}"
-        { method = "PATCH"
-        , url = "/v1/?update_mask="
-        , headers = []
-        , body = Just "{}"
-        }
-    , Replay.fixture "UpdateResource 0 #10"
-        Routes.V1.decodeUpdateResourceRequest
-        Routes.V1.Routes.updateResource
-        (Just 0)
-        "{\"resource\":{\"display_name\":\"&\",\"kinds\":{\"-9007199254740993\":\"KIND_UNSPECIFIED\"},\"labels\":{\"$\":\"(\\u00019\",\"a@aß_\":\"9a=~/\"},\"name\":\"\",\"weights\":{}},\"update_mask\":\"\"}"
-        { method = "PATCH"
-        , url = "/v1/?update_mask="
-        , headers = []
-        , body = Just "{\"displayName\":\"&\",\"kinds\":{\"-9007199254740993\":\"KIND_UNSPECIFIED\"},\"labels\":{\"$\":\"(\\u00019\",\"a@aß_\":\"9a=~/\"}}"
-        }
-    , Replay.fixture "UpdateResource 0 #11"
-        Routes.V1.decodeUpdateResourceRequest
-        Routes.V1.Routes.updateResource
-        (Just 0)
-        "{\"resource\":{},\"updateMask\":\"\"}"
-        { method = "PATCH"
-        , url = "/v1/?update_mask="
-        , headers = []
-        , body = Just "{}"
-        }
-    , Replay.fixture "UpdateResource 0 #12"
-        Routes.V1.decodeUpdateResourceRequest
-        Routes.V1.Routes.updateResource
-        (Just 0)
-        "{\"resource\":{\"weights\":{\"true\":1e-7}}}"
-        { method = "PATCH"
-        , url = "/v1/"
-        , headers = []
-        , body = Just "{\"weights\":{\"true\":1e-7}}"
-        }
-    , Replay.fixture "UpdateResource 0 #13"
+    , Replay.fixture "UpdateResource 0 #2"
         Routes.V1.decodeUpdateResourceRequest
         Routes.V1.Routes.updateResource
         (Just 0)
@@ -2582,7 +2632,97 @@ fixtures =
         , headers = []
         , body = Just "{}"
         }
-    , Replay.fixture "UpdateResource 0 #14"
+    , Replay.fixture "UpdateResource 0 #3"
+        Routes.V1.decodeUpdateResourceRequest
+        Routes.V1.Routes.updateResource
+        (Just 0)
+        "{\"updateMask\":\"\"}"
+        { method = "PATCH"
+        , url = "/v1/?update_mask="
+        , headers = []
+        , body = Just "{}"
+        }
+    , Replay.fixture "UpdateResource 0 #4"
+        Routes.V1.decodeUpdateResourceRequest
+        Routes.V1.Routes.updateResource
+        (Just 0)
+        "{\"resource\":{\"kinds\":{\"-3620539305343806670\":\"KIND_IMAGE\"},\"labels\":{\"\":\"#*;✓𐍈#\\\\'\",\"~\":\"\",\"\u{007F}\":\" *\"},\"weights\":{\"true\":-79.25}}}"
+        { method = "PATCH"
+        , url = "/v1/"
+        , headers = []
+        , body = Just "{\"kinds\":{\"-3620539305343806670\":\"KIND_IMAGE\"},\"labels\":{\"\":\"#*;✓𐍈#\\\\'\",\"~\":\"\",\"\u{007F}\":\" *\"},\"weights\":{\"true\":-79.25}}"
+        }
+    , Replay.fixture "UpdateResource 0 #5"
+        Routes.V1.decodeUpdateResourceRequest
+        Routes.V1.Routes.updateResource
+        (Just 0)
+        "{\"resource\":{\"kinds\":{\"695\":\"KIND_TEXT\"},\"name\":\"ß9\",\"weights\":{\"false\":0.1,\"true\":2.0742552829342984e+303}},\"updateMask\":\"\"}"
+        { method = "PATCH"
+        , url = "/v1/%C3%9F9?update_mask="
+        , headers = []
+        , body = Just "{\"kinds\":{\"695\":\"KIND_TEXT\"},\"name\":\"ß9\",\"weights\":{\"false\":0.1,\"true\":2.0742552829342984e+303}}"
+        }
+    , Replay.fixture "UpdateResource 0 #6"
+        Routes.V1.decodeUpdateResourceRequest
+        Routes.V1.Routes.updateResource
+        (Just 0)
+        "{\"resource\":{},\"updateMask\":\"\"}"
+        { method = "PATCH"
+        , url = "/v1/?update_mask="
+        , headers = []
+        , body = Just "{}"
+        }
+    , Replay.fixture "UpdateResource 0 #7"
+        Routes.V1.decodeUpdateResourceRequest
+        Routes.V1.Routes.updateResource
+        (Just 0)
+        "{\"resource\":{}}"
+        { method = "PATCH"
+        , url = "/v1/"
+        , headers = []
+        , body = Just "{}"
+        }
+    , Replay.fixture "UpdateResource 0 #8"
+        Routes.V1.decodeUpdateResourceRequest
+        Routes.V1.Routes.updateResource
+        (Just 0)
+        "{\"resource\":{},\"updateMask\":\"r.tm.uv,wy,q15.hMo3\"}"
+        { method = "PATCH"
+        , url = "/v1/?update_mask=r.tm.uv%2Cwy%2Cq15.hMo3"
+        , headers = []
+        , body = Just "{}"
+        }
+    , Replay.fixture "UpdateResource 0 #9"
+        Routes.V1.decodeUpdateResourceRequest
+        Routes.V1.Routes.updateResource
+        (Just 0)
+        "{\"resource\":{\"kinds\":{\"623675200317864323\":\"KIND_IMAGE\",\"7405744490005533467\":\"KIND_IMAGE\",\"808\":\"KIND_UNSPECIFIED\"},\"labels\":{\"\":\"\",\"'\":\"z:.9ß+,Z\",\"😀&✓\":\"'*a[?:\\\\)\"},\"name\":\"@!Ω\u{007F}(\",\"weights\":{\"false\":1.3201985774797695e+175,\"true\":-7.176553626012822e-128}},\"updateMask\":\"\"}"
+        { method = "PATCH"
+        , url = "/v1/%40%21%CE%A9%7F%28?update_mask="
+        , headers = []
+        , body = Just "{\"kinds\":{\"623675200317864323\":\"KIND_IMAGE\",\"7405744490005533467\":\"KIND_IMAGE\",\"808\":\"KIND_UNSPECIFIED\"},\"labels\":{\"\":\"\",\"'\":\"z:.9ß+,Z\",\"😀&✓\":\"'*a[?:\\\\)\"},\"name\":\"@!Ω\u{007F}(\",\"weights\":{\"false\":1.3201985774797695e+175,\"true\":-7.176553626012822e-128}}"
+        }
+    , Replay.fixture "UpdateResource 0 #10"
+        Routes.V1.decodeUpdateResourceRequest
+        Routes.V1.Routes.updateResource
+        (Just 0)
+        "{\"resource\":{}}"
+        { method = "PATCH"
+        , url = "/v1/"
+        , headers = []
+        , body = Just "{}"
+        }
+    , Replay.fixture "UpdateResource 0 #11"
+        Routes.V1.decodeUpdateResourceRequest
+        Routes.V1.Routes.updateResource
+        (Just 0)
+        "{\"resource\":{\"display_name\":\"\",\"kinds\":{},\"labels\":{},\"name\":\"\",\"weights\":{}}}"
+        { method = "PATCH"
+        , url = "/v1/"
+        , headers = []
+        , body = Just "{}"
+        }
+    , Replay.fixture "UpdateResource 0 #12"
         Routes.V1.decodeUpdateResourceRequest
         Routes.V1.Routes.updateResource
         (Just 0)
@@ -2592,14 +2732,34 @@ fixtures =
         , headers = []
         , body = Just "{}"
         }
+    , Replay.fixture "UpdateResource 0 #13"
+        Routes.V1.decodeUpdateResourceRequest
+        Routes.V1.Routes.updateResource
+        (Just 0)
+        "{\"resource\":{\"labels\":{\"\":\"_𐍈\",\"-Ωßa-,- \":\"\\nΩ\"},\"name\":\"?[]?]\",\"weights\":{\"true\":5e-324}},\"updateMask\":\"\"}"
+        { method = "PATCH"
+        , url = "/v1/%3F%5B%5D%3F%5D?update_mask="
+        , headers = []
+        , body = Just "{\"labels\":{\"\":\"_𐍈\",\"-Ωßa-,- \":\"\\nΩ\"},\"name\":\"?[]?]\",\"weights\":{\"true\":5e-324}}"
+        }
+    , Replay.fixture "UpdateResource 0 #14"
+        Routes.V1.decodeUpdateResourceRequest
+        Routes.V1.Routes.updateResource
+        (Just 0)
+        "{\"resource\":{\"displayName\":\"\\\"\",\"kinds\":{\"-1852622517748861373\":\"KIND_TEXT\",\"-5645793606407921854\":\"KIND_UNSPECIFIED\",\"436\":\"KIND_UNSPECIFIED\"},\"labels\":{\"!A%\":\"~\",\"z%@\\u0001?\":\"'A$0\\\\\",\"é#0\":\"\\\"\"},\"weights\":{\"true\":\"NaN\"}},\"updateMask\":\"jvC\"}"
+        { method = "PATCH"
+        , url = "/v1/?update_mask=jvC"
+        , headers = []
+        , body = Just "{\"displayName\":\"\\\"\",\"kinds\":{\"-1852622517748861373\":\"KIND_TEXT\",\"-5645793606407921854\":\"KIND_UNSPECIFIED\",\"436\":\"KIND_UNSPECIFIED\"},\"labels\":{\"!A%\":\"~\",\"z%@\\u0001?\":\"'A$0\\\\\",\"é#0\":\"\\\"\"},\"weights\":{\"true\":\"NaN\"}}"
+        }
     , Replay.fixture "UpdateResource 0 #15"
         Routes.V1.decodeUpdateResourceRequest
         Routes.V1.Routes.updateResource
         (Just 0)
-        "{\"resource\":{\"displayName\":\"+'𐍈✓#'0#\",\"labels\":{\"+9#\":\"中@&é'\",\"é\\t\":\"+😀\"}},\"updateMask\":\"\"}"
+        "{\"resource\":{\"labels\":{\"\\\"=\":\"z*]\",\"'ß\":\"+~\\\\,z\"}}}"
         { method = "PATCH"
-        , url = "/v1/?update_mask="
+        , url = "/v1/"
         , headers = []
-        , body = Just "{\"displayName\":\"+'𐍈✓#'0#\",\"labels\":{\"+9#\":\"中@&é'\",\"é\\t\":\"+😀\"}}"
+        , body = Just "{\"labels\":{\"\\\"=\":\"z*]\",\"'ß\":\"+~\\\\,z\"}}"
         }
     ]

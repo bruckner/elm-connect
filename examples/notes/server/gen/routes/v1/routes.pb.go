@@ -911,8 +911,7 @@ const file_routes_proto_rawDesc = "" +
 	"\x10KIND_UNSPECIFIED\x10\x00\x12\r\n" +
 	"\tKIND_TEXT\x10\x01\x12\x0e\n" +
 	"\n" +
-	"KIND_IMAGE\x10\x022\xc8\n" +
-	"\n" +
+	"KIND_IMAGE\x10\x022\x9d\v\n" +
 	"\x06Routes\x12\xd5\x01\n" +
 	"\n" +
 	"GetMessage\x12\x1c.routes.v1.GetMessageRequest\x1a\x12.routes.v1.Message\"\x94\x01\x82\xd3\xe4\x93\x02\x8d\x01Z*\x12(/v1/messages/{message_id}/{sub.subfield}Z\x1b\x12\x19/v1/messages/{message_id}Z+\x12)/v1/users/{user_id}/messages/{message_id}\x12\x15/v1/{name=messages/*}\x12p\n" +
@@ -927,7 +926,8 @@ const file_routes_proto_rawDesc = "" +
 	"\x06Cancel\x12\x13.routes.v1.Resource\x1a\x13.routes.v1.Resource\")\x82\xd3\xe4\x93\x02#:\x01*\"\x1e/v1/{name=operations/*}:cancel\x12z\n" +
 	"\x0eUpdateResource\x12 .routes.v1.UpdateResourceRequest\x1a\x13.routes.v1.Resource\"1\x82\xd3\xe4\x93\x02+:\bresource2\x1f/v1/{resource.name=resources/*}\x12[\n" +
 	"\x04Head\x12\x16.routes.v1.FileRequest\x1a\x16.routes.v1.FileRequest\"#\x82\xd3\xe4\x93\x02\x1dB\x1b\n" +
-	"\x04HEAD\x12\x13/v1/{path=files/**}\x12;\n" +
+	"\x04HEAD\x12\x13/v1/{path=files/**}\x12S\n" +
+	"\tBytesPath\x12\x15.routes.v1.Everything\x1a\x15.routes.v1.Everything\"\x18\x82\xd3\xe4\x93\x02\x12\x12\x10/v1/bytes/{data}\x12;\n" +
 	"\aUnbound\x12\x1c.routes.v1.GetMessageRequest\x1a\x12.routes.v1.Messageb\x06proto3"
 
 var (
@@ -995,22 +995,24 @@ var file_routes_proto_depIdxs = []int32{
 	8,  // 26: routes.v1.Routes.Cancel:input_type -> routes.v1.Resource
 	9,  // 27: routes.v1.Routes.UpdateResource:input_type -> routes.v1.UpdateResourceRequest
 	7,  // 28: routes.v1.Routes.Head:input_type -> routes.v1.FileRequest
-	1,  // 29: routes.v1.Routes.Unbound:input_type -> routes.v1.GetMessageRequest
-	2,  // 30: routes.v1.Routes.GetMessage:output_type -> routes.v1.Message
-	2,  // 31: routes.v1.Routes.UpdateMessage:output_type -> routes.v1.Message
-	2,  // 32: routes.v1.Routes.UpdateMessageWhole:output_type -> routes.v1.Message
-	2,  // 33: routes.v1.Routes.PostSub:output_type -> routes.v1.Message
-	4,  // 34: routes.v1.Routes.Query:output_type -> routes.v1.Everything
-	4,  // 35: routes.v1.Routes.Single:output_type -> routes.v1.Everything
-	4,  // 36: routes.v1.Routes.Multi:output_type -> routes.v1.Everything
-	4,  // 37: routes.v1.Routes.Typed:output_type -> routes.v1.Everything
-	7,  // 38: routes.v1.Routes.Files:output_type -> routes.v1.FileRequest
-	8,  // 39: routes.v1.Routes.Cancel:output_type -> routes.v1.Resource
-	8,  // 40: routes.v1.Routes.UpdateResource:output_type -> routes.v1.Resource
-	7,  // 41: routes.v1.Routes.Head:output_type -> routes.v1.FileRequest
-	2,  // 42: routes.v1.Routes.Unbound:output_type -> routes.v1.Message
-	30, // [30:43] is the sub-list for method output_type
-	17, // [17:30] is the sub-list for method input_type
+	4,  // 29: routes.v1.Routes.BytesPath:input_type -> routes.v1.Everything
+	1,  // 30: routes.v1.Routes.Unbound:input_type -> routes.v1.GetMessageRequest
+	2,  // 31: routes.v1.Routes.GetMessage:output_type -> routes.v1.Message
+	2,  // 32: routes.v1.Routes.UpdateMessage:output_type -> routes.v1.Message
+	2,  // 33: routes.v1.Routes.UpdateMessageWhole:output_type -> routes.v1.Message
+	2,  // 34: routes.v1.Routes.PostSub:output_type -> routes.v1.Message
+	4,  // 35: routes.v1.Routes.Query:output_type -> routes.v1.Everything
+	4,  // 36: routes.v1.Routes.Single:output_type -> routes.v1.Everything
+	4,  // 37: routes.v1.Routes.Multi:output_type -> routes.v1.Everything
+	4,  // 38: routes.v1.Routes.Typed:output_type -> routes.v1.Everything
+	7,  // 39: routes.v1.Routes.Files:output_type -> routes.v1.FileRequest
+	8,  // 40: routes.v1.Routes.Cancel:output_type -> routes.v1.Resource
+	8,  // 41: routes.v1.Routes.UpdateResource:output_type -> routes.v1.Resource
+	7,  // 42: routes.v1.Routes.Head:output_type -> routes.v1.FileRequest
+	4,  // 43: routes.v1.Routes.BytesPath:output_type -> routes.v1.Everything
+	2,  // 44: routes.v1.Routes.Unbound:output_type -> routes.v1.Message
+	31, // [31:45] is the sub-list for method output_type
+	17, // [17:31] is the sub-list for method input_type
 	17, // [17:17] is the sub-list for extension type_name
 	17, // [17:17] is the sub-list for extension extendee
 	0,  // [0:17] is the sub-list for field type_name

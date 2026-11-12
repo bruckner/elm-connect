@@ -54,6 +54,14 @@
       "expect": { "path": "/v1/operations/op-1:cancel", "query": [], "body": { "displayName": "Op" } }
     },
     {
+      "name": "a bytes path variable is the field's base64 text, escaped as a single segment",
+      "method": "routes.v1.Routes.BytesPath",
+      "binding": 0,
+      "rule": { "verb": "GET", "template": "/v1/bytes/{data}", "body": "" },
+      "request": { "data": "+/8=" },
+      "expect": { "path": "/v1/bytes/%2B%2F8%3D", "query": [], "body": null }
+    },
+    {
       "name": "query values are escaped like single-segment path values",
       "method": "routes.v1.Routes.Query",
       "binding": 0,
