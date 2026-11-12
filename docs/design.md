@@ -3523,7 +3523,9 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
   - **gRPC-Web's `grpc-status-details-bin`**: a binary `google.rpc.Status`
     whose details are each `Ok`; a header that does not decode is one
     `Err (BadBinary …)` of `google.rpc.Status` standing for the whole
-    list (a header that is not base64 at all, `Truncated` at byte 0).
+    list; a header that is not base64 at all is a `BadResponse` with code
+    `Internal`, as a frame that does not parse is, since the text is part
+    of the answer's envelope and holds no bytes to blame.
   Details a proxy stripped (Envoy forwards none over transcoding, §7)
   are `[]`, not a problem. Unpack one with `Proto.Any.tryUnpack` and the
   type's typed value (`Proto.ErrorDetails.badRequest`, or a generated

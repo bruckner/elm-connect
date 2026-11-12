@@ -204,18 +204,25 @@ settle source metadata raw status messages =
             Err (Error.BadResponse Code.Unimplemented "a unary gRPC-Web answer with status 0 and more than one message" answer)
 
         ( Just (Just number), _ ) ->
-            Err
-                (Error.RpcStatus
-                    { code = Code.fromInt number |> Maybe.withDefault Code.Unknown
-                    , message =
-                        Dict.get "grpc-message" status
-                            |> Maybe.map (\text -> Percent.percentDecode text |> Maybe.withDefault text)
-                            |> Maybe.withDefault ""
-                    , details =
-                        case Dict.get "grpc-status-details-bin" status of
-                            Just text ->
-                                case Proto.Bytes.fromBase64 (String.trim text) of
-                                    Just binary ->
+            case Dict.get "grpc-status-details-bin" status |> Maybe.map (String.trim >> Proto.Bytes.fromBase64) of
+                Just Nothing ->
+                    -- The trailer is part of the answer's envelope, as a frame
+                    -- is: text that is not base64 is a malformed answer, not
+                    -- bad protobuf, and is reported as grpc-go and connect-go
+                    -- report it, with no bytes to blame.
+                    Err (Error.BadResponse Code.Internal "a grpc-status-details-bin trailer that is not base64" answer)
+
+                encoded ->
+                    Err
+                        (Error.RpcStatus
+                            { code = Code.fromInt number |> Maybe.withDefault Code.Unknown
+                            , message =
+                                Dict.get "grpc-message" status
+                                    |> Maybe.map (\text -> Percent.percentDecode text |> Maybe.withDefault text)
+                                    |> Maybe.withDefault ""
+                            , details =
+                                case encoded of
+                                    Just (Just binary) ->
                                         case Proto.Binary.decode statusDetails binary of
                                             Ok found ->
                                                 List.map Ok found
@@ -223,16 +230,12 @@ settle source metadata raw status messages =
                                             Err problem ->
                                                 [ Err (Proto.Error.BadBinary problem) ]
 
-                                    Nothing ->
-                                        -- Text that is not base64 holds no bytes to read.
-                                        [ Err (Proto.Error.BadBinary { typeName = "google.rpc.Status", reason = Proto.Error.Truncated, path = [], offset = 0 }) ]
-
-                            Nothing ->
-                                []
-                    , source = source
-                    }
-                    answer
-                )
+                                    _ ->
+                                        []
+                            , source = source
+                            }
+                            answer
+                        )
 
         _ ->
             Err (Error.BadResponse Code.Internal "a gRPC-Web answer without a numeric grpc-status" answer)
