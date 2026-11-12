@@ -1,13 +1,14 @@
-module Proto.Query exposing (string, int, int64, bool, float, enum, optional, repeated, unlessZero, except)
+module Proto.Query exposing (string, bytes, int, int64, bool, float, enum, optional, repeated, unlessZero, except)
 
 {-| The query parameters of a binding, as a generated `queryOf<Message>`
 function in a package module writes them from a typed message: one helper
 per field, each giving no parameter at the field's default.
 
-@docs string, int, int64, bool, float, enum, optional, repeated, unlessZero, except
+@docs string, bytes, int, int64, bool, float, enum, optional, repeated, unlessZero, except
 
 -}
 
+import Bytes exposing (Bytes)
 import Json.Encode exposing (Value)
 import Proto.Route
 
@@ -33,6 +34,20 @@ string name value =
 
     else
         [ ( name, value ) ]
+
+
+{-| A `bytes` field held as `Bytes`: none when it holds no bytes, else its
+text as [`Proto.Route.bytesText`](Proto-Route#bytesText) writes it. Not
+[`unlessZero`](#unlessZero), which compares with `==`, and `==` finds any two
+`Bytes` equal.
+-}
+bytes : String -> Bytes -> List ( String, String )
+bytes name value =
+    if Bytes.width value == 0 then
+        []
+
+    else
+        [ ( name, Proto.Route.bytesText value ) ]
 
 
 {-| A 32-bit integer field's parameter: none at 0.

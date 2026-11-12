@@ -47,16 +47,17 @@ type Method idempotency codec req res
         }
 
 
-{-| One binding's route of a request: built from the typed request
-(`Typed`, a generated route function), or from the request's proto3 JSON
-(`FromJson`, a binding written as data, with its `response_body`), which a
-send encodes once for the route and its body together. A route from JSON
-names its response field without the JSON, so reading an answer encodes
-nothing.
+{-| One binding's route of a request: built from the typed request alone
+(`Typed`, a generated route function), or from the typed request and its
+proto3 JSON (`FromJson`: a generated route function whose body holds an
+`Any`, which only the client's registry can write, or a binding written as
+data), which a send encodes once for the route and its body together. A
+route from JSON names its response field whatever the JSON holds, so reading
+an answer reads it over `null` and encodes nothing.
 -}
 type RouteOf req
     = Typed (req -> Route)
-    | FromJson (Maybe String) (Json.Encode.Value -> Route)
+    | FromJson (req -> Json.Encode.Value -> Route)
 
 
 {-| A request's proto3 JSON and the response's decoder, given the registry
