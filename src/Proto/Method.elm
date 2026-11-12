@@ -1,5 +1,5 @@
 module Proto.Method exposing
-    ( Method, init, initJson, initProto, withIdempotency, withRoutes, withBindings
+    ( Method, init, initJson, initProto, withIdempotency, withRoutes, withJsonRoutes, withBindings
     , encodeRequest, responseDecoder
     , Descriptor, descriptor
     , service, name, idempotency, input, output, bindings
@@ -32,7 +32,7 @@ The idempotency is a union whose constructors carry its name as a prefix
 (`IdempotencyNoSideEffects`), so it can be exposed with `(..)` beside any
 other union.
 
-@docs Method, init, initJson, initProto, withIdempotency, withRoutes, withBindings
+@docs Method, init, initJson, initProto, withIdempotency, withRoutes, withJsonRoutes, withBindings
 
 
 # Reading a typed value
@@ -194,6 +194,18 @@ withRoutes routes (Internal.Method m) =
     Internal.Method { m | routes = List.map Internal.Typed routes }
 
 
+{-| The method's routes for HTTP transcoding as functions of the typed
+request and its proto3 JSON, one per binding as for
+[`withRoutes`](#withRoutes): what generated code writes for a method whose
+bodies hold a `google.protobuf.Any`, which only the client's registry can
+write. The send encodes the JSON once, with the client's registry, for the
+route and the body alike; the path and query are read from the typed request.
+-}
+withJsonRoutes : List (req -> Json.Encode.Value -> Route) -> Method codec req res -> Method codec req res
+withJsonRoutes routes (Internal.Method m) =
+    Internal.Method { m | routes = List.map Internal.FromJson routes }
+
+
 {-| The method's routes from its `google.api.http` bindings written as
 [`Proto.Http`](Proto-Http) data, for a method written by hand: each route is
 read from the request's proto3 JSON, written with the registry in use and
@@ -214,7 +226,7 @@ withBindings methodBindings (Internal.Method m) =
         { m
             | routes =
                 List.map
-                    (\(Proto.Internal.Binding.Binding rule) -> Internal.FromJson rule.responseBody (Proto.Internal.Interpret.route rule))
+                    (\(Proto.Internal.Binding.Binding rule) -> Internal.FromJson (\_ json -> Proto.Internal.Interpret.route rule json))
                     methodBindings
         }
 

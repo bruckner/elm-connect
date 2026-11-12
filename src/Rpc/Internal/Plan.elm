@@ -146,8 +146,8 @@ make forSend (Client cl) (Call c) =
 
                 responseBody =
                     case routeOf of
-                        Just (FromJson field _) ->
-                            field
+                        Just (FromJson toRoute) ->
+                            (toRoute c.message Json.Encode.null).responseBody
 
                         _ ->
                             Maybe.andThen .responseBody typed
@@ -189,8 +189,8 @@ make forSend (Client cl) (Call c) =
 
                 routeFrom encoding =
                     case routeOf of
-                        Just (FromJson _ toRoute) ->
-                            Just (toRoute (Result.withDefault Json.Encode.null (encoding ())))
+                        Just (FromJson toRoute) ->
+                            Just (toRoute c.message (Result.withDefault Json.Encode.null (encoding ())))
 
                         _ ->
                             typed
