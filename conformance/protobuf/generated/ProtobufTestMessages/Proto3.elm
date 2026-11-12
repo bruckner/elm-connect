@@ -13,6 +13,7 @@ import Proto.Binary
 import Proto.Descriptors
 import Proto.Duration exposing (Duration)
 import Proto.Enum
+import Proto.Error
 import Proto.Json
 import Proto.Message
 import Proto.Registry
@@ -824,7 +825,7 @@ encodeEnumOnlyProto3Bool value =
 
 {-| Encodes a [`TestAllTypesProto3`](#TestAllTypesProto3) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeTestAllTypesProto3With : Proto.Registry.Registry -> TestAllTypesProto3 -> Result Proto.Any.Problem Json.Encode.Value
+encodeTestAllTypesProto3With : Proto.Registry.Registry -> TestAllTypesProto3 -> Result Proto.Error.Error Json.Encode.Value
 encodeTestAllTypesProto3With types value =
     Proto.Json.tryObjectOfFields
         ([ ( "optionalInt32", Ok (Proto.Json.implicitField 0 Json.Encode.int value.optionalInt32) )
@@ -975,14 +976,14 @@ encodeTestAllTypesProto3With types value =
 
 {-| Encodes a [`TestAllTypesProto3_`](#TestAllTypesProto3_) as proto3 JSON, writing each `Any` it holds with the registry.
 -}
-encodeTestAllTypesProto3_With : Proto.Registry.Registry -> TestAllTypesProto3_ -> Result Proto.Any.Problem Json.Encode.Value
+encodeTestAllTypesProto3_With : Proto.Registry.Registry -> TestAllTypesProto3_ -> Result Proto.Error.Error Json.Encode.Value
 encodeTestAllTypesProto3_With types (TestAllTypesProto3_ value) =
     encodeTestAllTypesProto3With types value
 
 
 {-| Encodes a [`TestAllTypesProto3OneofField`](#TestAllTypesProto3OneofField) as the members of its message's JSON object.
 -}
-encodeTestAllTypesProto3OneofFieldWith : Proto.Registry.Registry -> TestAllTypesProto3OneofField -> List ( String, Result Proto.Any.Problem (Maybe Json.Encode.Value) )
+encodeTestAllTypesProto3OneofFieldWith : Proto.Registry.Registry -> TestAllTypesProto3OneofField -> List ( String, Result Proto.Error.Error (Maybe Json.Encode.Value) )
 encodeTestAllTypesProto3OneofFieldWith types value =
     case value of
         TestAllTypesProto3OneofFieldUnset ->
@@ -1031,7 +1032,7 @@ encodeTestAllTypesProto3OneofFieldWith types value =
 
 {-| Encodes a [`TestAllTypesProto3NestedMessage`](#TestAllTypesProto3NestedMessage) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeTestAllTypesProto3NestedMessageWith : Proto.Registry.Registry -> TestAllTypesProto3NestedMessage -> Result Proto.Any.Problem Json.Encode.Value
+encodeTestAllTypesProto3NestedMessageWith : Proto.Registry.Registry -> TestAllTypesProto3NestedMessage -> Result Proto.Error.Error Json.Encode.Value
 encodeTestAllTypesProto3NestedMessageWith types value =
     Proto.Json.tryObjectOfFields
         [ ( "a", Ok (Proto.Json.implicitField 0 Json.Encode.int value.a) )
@@ -1041,7 +1042,7 @@ encodeTestAllTypesProto3NestedMessageWith types value =
 
 {-| Encodes a [`TestAllTypesProto3NestedMessage_`](#TestAllTypesProto3NestedMessage_) as proto3 JSON, writing each `Any` it holds with the registry.
 -}
-encodeTestAllTypesProto3NestedMessage_With : Proto.Registry.Registry -> TestAllTypesProto3NestedMessage_ -> Result Proto.Any.Problem Json.Encode.Value
+encodeTestAllTypesProto3NestedMessage_With : Proto.Registry.Registry -> TestAllTypesProto3NestedMessage_ -> Result Proto.Error.Error Json.Encode.Value
 encodeTestAllTypesProto3NestedMessage_With types (TestAllTypesProto3NestedMessage_ value) =
     encodeTestAllTypesProto3NestedMessageWith types value
 

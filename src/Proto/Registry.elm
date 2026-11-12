@@ -24,9 +24,9 @@ package's own messages and nothing else), and gives it to its client
             ]
 
 An `Any` of a type the registry lacks is a loud miss: reading it from JSON
-fails, and writing it gives [`UnregisteredType`](Proto-Any#Problem) naming
-its type URL. A program that passes such `Any`s along without knowing their
-types can make its registry [`lenient`](#lenient) instead.
+fails, and writing it gives [`UnregisteredType`](Proto-Error#Error)
+naming its type URL. A program that passes such `Any`s along without
+knowing their types can make its registry [`lenient`](#lenient) instead.
 
 A message's codecs are closed over its fields' types, and each entry takes
 the registry it is read through, so an `Any` nested in a registered message
@@ -58,9 +58,10 @@ import Bytes.Encode
 import Dict
 import Json.Decode
 import Proto.Bytes
+import Proto.Error exposing (Error(..))
 import Proto.Internal.Binary
 import Proto.Internal.Message as Message exposing (Message)
-import Proto.Internal.Registry as Internal exposing (Failure(..))
+import Proto.Internal.Registry as Internal
 
 
 {-| Messages' codecs by full name. A registry holds functions, so `==` on it
@@ -93,15 +94,14 @@ register (Message.Message name codecs) (Internal.Registry leniency entries) =
                     case Proto.Internal.Binary.runBase64 codecs.decodeBinary base64 of
                         Ok value ->
                             codecs.encodeJson registry value
-                                |> Result.fromMaybe HoldsUnwritable
 
-                        Err _ ->
-                            Err NotTheMessage
+                        Err problem ->
+                            Err (BadBinary problem)
             , toBytes =
                 \registry json ->
                     Json.Decode.decodeValue (codecs.decodeJson registry) json
                         |> Result.map (codecs.encodeBinary >> Bytes.Encode.encode >> Proto.Bytes.toBase64)
-                        |> Result.mapError Json.Decode.errorToString
+                        |> Result.mapError BadJson
             }
     in
     Internal.Registry leniency (Dict.insert name entry entries)
@@ -136,8 +136,8 @@ unionAll registries =
 
 {-| The registry, reading an `Any` of a type it has no entry for from proto3
 JSON as that `Any`'s JSON alone, where a registry fails the read: the
-failure that is [`UnregisteredType`](Proto-Any#Problem) on a write, and a
-detail's [`UnregisteredType`](Rpc-Error#DetailProblem) in an error. It
+failure that is [`UnregisteredType`](Proto-Error#Error) on a write and
+among an error's details. It
 reads a type it has an entry for as before, and JSON that is not its
 message still fails.
 

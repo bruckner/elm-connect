@@ -269,7 +269,7 @@ impl Emitter {
     }
 
     /// The JSON of a field of a message that reaches an `Any`, as a
-    /// `Result Proto.Any.Problem (Maybe Json.Encode.Value)` for
+    /// `Result Proto.Error.Error (Maybe Json.Encode.Value)` for
     /// `Proto.Json.tryObjectOfFields`: the `try` helper of its kind when its
     /// values reach one, else what [`Self::encode_field`] gives, in `Ok`.
     pub(super) fn try_encode_field(&mut self, shape: FieldShape, value: Expr) -> Expr {

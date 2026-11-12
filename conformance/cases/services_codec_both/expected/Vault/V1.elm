@@ -17,6 +17,7 @@ import Proto.Any
 import Proto.Binary
 import Proto.Descriptors
 import Proto.Enum
+import Proto.Error
 import Proto.Json
 import Proto.Message
 import Proto.Registry
@@ -233,7 +234,7 @@ encodeStatus value =
 
 {-| Encodes an [`Item`](#Item) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeItemWith : Proto.Registry.Registry -> Item -> Result Proto.Any.Problem Json.Encode.Value
+encodeItemWith : Proto.Registry.Registry -> Item -> Result Proto.Error.Error Json.Encode.Value
 encodeItemWith types value =
     Proto.Json.tryObjectOfFields
         [ ( "name", Ok (Proto.Json.implicitField "" Json.Encode.string value.name) )
@@ -264,7 +265,7 @@ encodeListItemsRequest value =
 
 {-| Encodes a [`ListItemsResponse`](#ListItemsResponse) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeListItemsResponseWith : Proto.Registry.Registry -> ListItemsResponse -> Result Proto.Any.Problem Json.Encode.Value
+encodeListItemsResponseWith : Proto.Registry.Registry -> ListItemsResponse -> Result Proto.Error.Error Json.Encode.Value
 encodeListItemsResponseWith types value =
     Proto.Json.tryObjectOfFields
         [ ( "items", Proto.Json.tryRepeatedField (encodeItemWith types) value.items )

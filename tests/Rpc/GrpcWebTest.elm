@@ -11,6 +11,7 @@ import Json.Encode
 import Proto.Any
 import Proto.Binary
 import Proto.Bytes
+import Proto.Error
 import Proto.Method exposing (Idempotency(..))
 import Proto.Registry
 import Rpc
@@ -349,7 +350,7 @@ answers =
                 case answer 200 [] [ trailers "grpc-status: 5\u{000D}\ngrpc-message: gone\u{000D}\ngrpc-status-details-bin: !!\u{000D}\n" ] of
                     Err (RpcStatus status _) ->
                         ( status.code, status.message, status.details )
-                            |> Expect.equal ( NotFound, "gone", [ Err (Rpc.Error.InvalidDetail Nothing "grpc-status-details-bin is not a google.rpc.Status in base64") ] )
+                            |> Expect.equal ( NotFound, "gone", [ Err (Proto.Error.BadBinary { typeName = "google.rpc.Status", reason = Proto.Error.Truncated, path = [], offset = 0 }) ] )
 
                     other ->
                         Expect.fail (Debug.toString other)
@@ -397,11 +398,11 @@ answers =
                 ]
                     |> List.map isBadResponse
                     |> Expect.equal [ True, True, True ]
-        , test "a message that is not the response is a BadResponse naming the method" <|
+        , test "a message that is not the response is a BadResponse saying why" <|
             \_ ->
                 case answer 200 [] [ frame 0 (bytesOf [ 0x0A, 0x05 ]), trailers ok ] of
                     Err (BadResponse _ problem _) ->
-                        problem |> Expect.equal "the body is not the response of notes.v1.Notes/GetNote in protobuf binary"
+                        problem |> Expect.equal "Not a notes.v1.Title in protobuf binary: the input ends in the middle of a field, at byte 1, in field 1 of notes.v1.Title."
 
                     other ->
                         Expect.fail (Debug.toString other)

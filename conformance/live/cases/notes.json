@@ -992,7 +992,7 @@
     },
     "expect": {
       "result": {
-        "noAnswer": "InvalidHeader X-User"
+        "noAnswer": "BadHeader X-User"
       },
       "trace": {
         "attempts": 0,
@@ -1021,7 +1021,7 @@
     },
     "expect": {
       "result": {
-        "noAnswer": "InvalidHeader Bad Name"
+        "noAnswer": "BadHeader Bad Name"
       },
       "wire": []
     }

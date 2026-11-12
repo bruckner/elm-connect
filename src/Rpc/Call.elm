@@ -27,7 +27,7 @@ reads it back.
 -}
 
 import Json.Encode exposing (Value)
-import Proto.Any exposing (Problem)
+import Proto.Error
 import Proto.Internal.Method
 import Proto.Method exposing (Idempotency, Method)
 import Proto.Registry exposing (Registry)
@@ -68,7 +68,7 @@ type alias Call codec req res =
 They are held to the rule for the client's headers
 ([`Rpc.Client.withHeaders`](Rpc-Client#withHeaders)): a call with a name that is not an HTTP token,
 or a value holding NUL, CR, LF or a character above U+00FF, is not sent, and
-fails with `NoAnswer (InvalidHeader name)`.
+fails with `NoAnswer (BadHeader name)`.
 
 -}
 withHeaders : List ( String, String ) -> Call codec req res -> Call codec req res
@@ -226,11 +226,11 @@ requestMessage (Internal.Call c) =
 
 {-| The request's proto3 JSON, writing an `Any` it holds through the
 registry, as a call over JSON sends it (see
-[`Proto.Any.Problem`](Proto-Any#Problem) for why that can fail); `Ok null`
+[`Proto.Any.toJson`](Proto-Any#toJson) for why that can fail); `Ok null`
 for a call of a method generated with protobuf binary codecs alone
 (`codec=proto`). A request that reaches no `Any` ignores the registry.
 -}
-requestJson : Registry -> Call codec req res -> Result Problem Value
+requestJson : Registry -> Call codec req res -> Result Proto.Error.Error Value
 requestJson registry (Internal.Call c) =
     let
         (Proto.Internal.Method.Method m) =
@@ -256,7 +256,7 @@ calls by this, as `==` on the calls themselves fails at run time:
         == Result.map (Json.Encode.encode 0) (Rpc.Call.toJson registry b)
 
 -}
-toJson : Registry -> Call codec req res -> Result Problem Value
+toJson : Registry -> Call codec req res -> Result Proto.Error.Error Value
 toJson registry c =
     requestJson registry c
         |> Result.map

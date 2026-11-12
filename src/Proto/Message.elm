@@ -1,7 +1,7 @@
 module Proto.Message exposing
     ( Message, init, initWith, typeName
     , Descriptor, descriptor
-    , fullName, typeUrl, fields, oneofs
+    , fullName, typeUrl, fields, fieldNumbered, fieldNamed, oneofs
     )
 
 {-| A message type: its typed value, which holds its full name and its codecs,
@@ -22,13 +22,14 @@ gives one per well-known type.
 
 # Reading a descriptor
 
-@docs fullName, typeUrl, fields, oneofs
+@docs fullName, typeUrl, fields, fieldNumbered, fieldNamed, oneofs
 
 -}
 
 import Bytes.Encode
 import Json.Decode
 import Json.Encode
+import Proto.Error
 import Proto.Field as Field
 import Proto.Internal.Binary
 import Proto.Internal.Message as Internal
@@ -59,7 +60,7 @@ the package site may show as `Proto.Internal.Binary.Decoder`.
 init : String -> (a -> Json.Encode.Value) -> Json.Decode.Decoder a -> (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> Message a
 init name encodeJson decodeJson encodeBinary decodeBinary =
     Internal.Message name
-        { encodeJson = \_ value -> Just (encodeJson value)
+        { encodeJson = \_ value -> Ok (encodeJson value)
         , decodeJson = \_ -> decodeJson
         , encodeBinary = encodeBinary
         , decodeBinary = decodeBinary
@@ -69,17 +70,18 @@ init name encodeJson decodeJson encodeBinary decodeBinary =
 {-| [`init`](#init) for a message that holds a `google.protobuf.Any`, directly
 or through its fields: its proto3 JSON codecs take the registry the `Any`
 converts through, and its encoder can fail, with a
-[`Proto.Any.Problem`](Proto-Any#Problem) as generated code writes it (the
-type is free here because `Proto.Any` is built on this module).
+[`Proto.Error.Error`](Proto-Error#Error): the `Any`'s type is not in the
+registry (`UnregisteredType`), or its binary is not that type's message
+(`BadBinary`), at any depth.
 
     messageEnvelope =
         Proto.Message.initWith "notes.v1.Envelope" encodeEnvelopeWith decodeEnvelopeWith encodeEnvelopeBytes decodeEnvelopeBytes
 
 -}
-initWith : String -> (Registry -> a -> Result problem Json.Encode.Value) -> (Registry -> Json.Decode.Decoder a) -> (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> Message a
+initWith : String -> (Registry -> a -> Result Proto.Error.Error Json.Encode.Value) -> (Registry -> Json.Decode.Decoder a) -> (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> Message a
 initWith name encodeJson decodeJson encodeBinary decodeBinary =
     Internal.Message name
-        { encodeJson = \registry value -> Result.toMaybe (encodeJson registry value)
+        { encodeJson = encodeJson
         , decodeJson = decodeJson
         , encodeBinary = encodeBinary
         , decodeBinary = decodeBinary
@@ -186,6 +188,37 @@ typeUrl messageDescriptor =
 fields : Descriptor -> List Field.Descriptor
 fields (Descriptor m) =
     m.fields
+
+
+{-| The field of this number, which a [`Proto.Error.Binary`](Proto-Error#Binary)
+path names fields by:
+
+
+    showPath : Proto.Descriptors.Descriptors -> Proto.Error.Binary -> String
+    showPath descriptors problem =
+        problem.path
+            |> List.map
+                (\( typeName, number ) ->
+                    Proto.Descriptors.message typeName descriptors
+                        |> Maybe.andThen (Proto.Message.fieldNumbered number)
+                        |> Maybe.map (\field -> typeName ++ "." ++ Proto.Field.name field)
+                        |> Maybe.withDefault (typeName ++ "." ++ String.fromInt number)
+                )
+            |> String.join " > "
+
+    -- "notes.v1.Note.revision > notes.v1.Revision.title"
+
+-}
+fieldNumbered : Int -> Descriptor -> Maybe Field.Descriptor
+fieldNumbered number (Descriptor m) =
+    List.filter (\field -> Field.number field == number) m.fields |> List.head
+
+
+{-| The field of this declared name, such as `user_id`.
+-}
+fieldNamed : String -> Descriptor -> Maybe Field.Descriptor
+fieldNamed name (Descriptor m) =
+    List.filter (\field -> Field.name field == name) m.fields |> List.head
 
 
 {-| The names of its oneofs, in the order their first members are declared. A

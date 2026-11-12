@@ -24,6 +24,7 @@ import Http
 import Proto.Any exposing (Any)
 import Proto.Binary
 import Proto.Bytes
+import Proto.Error
 import Proto.Internal.Percent as Percent
 import Rpc.Body
 import Rpc.Code as Code
@@ -74,8 +75,8 @@ grpcWebTimeout =
 {-| gRPC-Web's message: its framing and trailers (`read`).
 -}
 grpcWebMessage : (Options -> Bytes -> Maybe Reason) -> Options -> String -> Http.Response Bytes -> ( Maybe Http.Metadata, Result Error BytesMessage )
-grpcWebMessage overRead options procedure answer =
-    Internal.bytesMessage overRead options procedure (read Status.otherFailure answer)
+grpcWebMessage overRead options _ answer =
+    Internal.bytesMessage overRead options (read Status.otherFailure answer)
 
 
 
@@ -213,15 +214,18 @@ settle source metadata raw status messages =
                     , details =
                         case Dict.get "grpc-status-details-bin" status of
                             Just text ->
-                                case
-                                    Proto.Bytes.fromBase64 (String.trim text)
-                                        |> Maybe.andThen (Proto.Binary.decode statusDetails >> Result.toMaybe)
-                                of
-                                    Just found ->
-                                        List.map Ok found
+                                case Proto.Bytes.fromBase64 (String.trim text) of
+                                    Just binary ->
+                                        case Proto.Binary.decode statusDetails binary of
+                                            Ok found ->
+                                                List.map Ok found
+
+                                            Err problem ->
+                                                [ Err (Proto.Error.BadBinary problem) ]
 
                                     Nothing ->
-                                        [ Err (Error.InvalidDetail Nothing "grpc-status-details-bin is not a google.rpc.Status in base64") ]
+                                        -- Text that is not base64 holds no bytes to read.
+                                        [ Err (Proto.Error.BadBinary { typeName = "google.rpc.Status", reason = Proto.Error.Truncated, path = [], offset = 0 }) ]
 
                             Nothing ->
                                 []

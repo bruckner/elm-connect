@@ -20,7 +20,7 @@ import Bytes exposing (Bytes)
 import Http
 import Json.Decode exposing (Decoder)
 import Json.Encode
-import Proto.Any exposing (Problem)
+import Proto.Error
 import Proto.Internal.Method exposing (Method(..), RouteOf(..))
 import Proto.Route exposing (PathError)
 import Rpc.Code as Code
@@ -56,7 +56,7 @@ import Rpc.Request exposing (Request)
 type alias Plan res =
     { request : () -> Request
     , invalid : () -> Maybe PathError
-    , unencodable : () -> Maybe Problem
+    , unencodable : () -> Maybe Proto.Error.Error
     , tooLarge : () -> Maybe Reason
     , reader : Reader res
     , binding : Maybe Int
@@ -270,8 +270,8 @@ make forSend (Client cl) (Call c) =
                                         Ok value ->
                                             Ok value
 
-                                        Err _ ->
-                                            Err (message.bad ())
+                                        Err problem ->
+                                            Err (message.bad (Proto.Error.toString (Proto.Error.BadBinary problem)))
                                 )
                         )
                     )
@@ -329,13 +329,13 @@ refused baseUrl p sent =
     else
         case ( p.unencodable (), p.invalid (), Internal.invalidHeader sent.headers ) of
             ( Just problem, _, _ ) ->
-                Just (Error.NoAnswer (Error.UnwritableRequest problem))
+                Just (Error.NoAnswer (Error.BadAny problem))
 
             ( Nothing, Just path, _ ) ->
-                Just (Error.NoAnswer (Error.InvalidPathValue path))
+                Just (Error.NoAnswer (Error.BadPathValue path))
 
             ( Nothing, Nothing, Just name ) ->
-                Just (Error.NoAnswer (Error.InvalidHeader name))
+                Just (Error.NoAnswer (Error.BadHeader name))
 
             ( Nothing, Nothing, Nothing ) ->
                 p.tooLarge () |> Maybe.map Error.NoAnswer

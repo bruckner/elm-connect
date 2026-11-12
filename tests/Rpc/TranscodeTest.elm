@@ -8,6 +8,7 @@ import Json.Encode exposing (Value)
 import Proto.Any
 import Proto.Enum
 import Proto.EnumValue
+import Proto.Error
 import Proto.Field exposing (Cardinality(..), Kind(..), Scalar(..))
 import Proto.Http
 import Proto.Json
@@ -352,7 +353,7 @@ pathValues =
                     |> Expect.equal [ Nothing, Nothing ]
         , test "the error is InvalidArgument, naming the field and the template without the value" <|
             \_ ->
-                NoAnswer (InvalidPathValue { field = "note.name", template = "notes/*" })
+                NoAnswer (BadPathValue { field = "note.name", template = "notes/*" })
                     |> (\error -> ( Rpc.Error.code error, Rpc.Error.message error ))
                     |> Expect.equal ( InvalidArgument, "path field \"note.name\" does not match notes/*" )
         ]
@@ -628,7 +629,7 @@ errors =
                                     Nothing
                         )
                     |> Expect.equal
-                        (Err (Just ( ( NotFound, StatusBody ), "no such note", [ Err (Rpc.Error.UnregisteredType "type.googleapis.com/google.rpc.ErrorInfo") ] )))
+                        (Err (Just ( ( NotFound, StatusBody ), "no such note", [ Err (Proto.Error.UnregisteredType "type.googleapis.com/google.rpc.ErrorInfo") ] )))
         , test "a code outside 1 to 16 is Unknown" <|
             \_ ->
                 [ failed 500 "" [] """{"code":42}""", failed 500 "" [] """{"code":0,"message":"ok?"}""" ]

@@ -219,12 +219,12 @@ viewError error =
 
 {-| A status's details that were read and are of this type.
 -}
-unpacked : Proto.Message.Message a -> List (Result Rpc.Error.DetailProblem Proto.Any.Any) -> List a
+unpacked : Proto.Message.Message a -> List (Result Proto.Error.Error Proto.Any.Any) -> List a
 unpacked message details =
     List.filterMap (Result.toMaybe >> Maybe.andThen (Proto.Any.unpack message)) details
 
 
-viewDetail : Result Rpc.Error.DetailProblem Proto.Any.Any -> Html msg
+viewDetail : Result Proto.Error.Error Proto.Any.Any -> Html msg
 viewDetail detail =
     case detail of
         Ok any ->
@@ -235,11 +235,11 @@ viewDetail detail =
                 Err _ ->
                     p [] [ text (Proto.Any.typeName any ++ ", a type this page has no codecs for.") ]
 
-        Err (Rpc.Error.UnregisteredType url) ->
+        Err (Proto.Error.UnregisteredType url) ->
             p [] [ text (url ++ ", a type this page has no codecs for.") ]
 
-        Err (Rpc.Error.InvalidDetail _ reason) ->
-            p [] [ text ("A detail that could not be read: " ++ reason) ]
+        Err problem ->
+            p [] [ text ("A detail that could not be read: " ++ Proto.Error.toString problem) ]
 
 
 sourceToString : Rpc.Error.Source -> String

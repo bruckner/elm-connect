@@ -52,6 +52,24 @@ suite =
                 , ( Descriptors.message "notes.v1.Visibility" descriptors, Descriptors.enum "notes.v1.Note" descriptors )
                 )
                     |> Expect.equal ( Just "notes.v1.Note", Just "notes.v1.Visibility", ( Nothing, Nothing ) )
+        , test "a field's declared name by message and number, as a binary failure's path names it" <|
+            \_ ->
+                let
+                    descriptors =
+                        Descriptors.union (Descriptors.fromDescriptors [ note "title" ] []) WellKnown.descriptors
+
+                    path =
+                        [ ( "notes.v1.Note", 1 ), ( "google.protobuf.Timestamp", 2 ), ( "notes.v1.Note", 9 ), ( "notes.v1.Missing", 1 ) ]
+                in
+                List.map (\( typeName, number ) -> Descriptors.message typeName descriptors |> Maybe.andThen (Message.fieldNumbered number) |> Maybe.map Field.name) path
+                    |> Expect.equal [ Just "title", Just "nanos", Nothing, Nothing ]
+        , test "a field by declared name" <|
+            \_ ->
+                ( Message.fieldNamed "title" (note "title") |> Maybe.map Field.number
+                , Message.fieldNamed "nanos" (note "title")
+                , Descriptors.message "google.protobuf.Timestamp" WellKnown.descriptors |> Maybe.andThen (Message.fieldNamed "nanos") |> Maybe.map Field.number
+                )
+                    |> Expect.equal ( Just 1, Nothing, Just 2 )
         , test "empty has nothing" <|
             \_ ->
                 ( Descriptors.messages Descriptors.empty, Descriptors.enums Descriptors.empty )

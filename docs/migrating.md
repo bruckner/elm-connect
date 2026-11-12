@@ -319,12 +319,17 @@ JSON.
 
 - `Proto.Any.unpack : Message a -> Any -> Maybe a` gives the value, or
   `Nothing` for another type or binary that is not the message;
-  `tryUnpack` gives `Result Problem a` with why. 0.1's `unpack` gave
-  `Maybe (Result Problem a)`, and its `Problem` was `Json` or
-  `BinaryOnly`; it is now `TypeMismatch`, `InvalidProto`,
-  `UnregisteredType` and `UnwritableAny`, each documented with what to
-  do about it. `bytes` reads the binary and `toJson registry` its proto3
-  JSON.
+  `tryUnpack` gives `Result Proto.Error.Error a` with why. 0.1's
+  `unpack` gave `Maybe (Result Problem a)`, and its `Problem` was `Json`
+  or `BinaryOnly`; `Proto.Any.Problem` is gone, and the proto layer has
+  one error type, `Proto.Error.Error`: `TypeMismatch { typeName,
+  typeUrl }` for another type, `BadBinary` for binary that is not the
+  message (where, and why), `UnregisteredType url` for a type a registry
+  lacks, `BadJson` for JSON that is not the message.
+  `Proto.Error.toString` describes one for a log. `bytes` reads the
+  binary and `toJson registry` its proto3 JSON, failing with
+  `UnregisteredType` or `BadBinary`, of a nested `Any` named by its own
+  type.
 - Proto3 JSON of an `Any` goes through a registry: `Proto.Json.anyWith
   registry` and `encodeAnyWith registry` replace `any` and `encodeAny`.
   An `"@type"` the registry lacks fails the read, naming the URL, and
@@ -348,18 +353,20 @@ JSON.
   `register`, `union` and `unionAll` compose them. Give the client the
   one its `Any`s need with `Rpc.withRegistry`; a JSON client whose
   messages hold an `Any` needs one, and a request whose `Any` it cannot
-  write fails with `NoAnswer (UnwritableRequest problem)`.
+  write fails with `NoAnswer (BadAny error)`, the
+  `Proto.Error.Error` the write gave.
 - A method holds no registry: a hand-written method's JSON codecs take
   the client's (`Proto.Method.initJson "notes.v1.NotesService" "GetNote"
   (\_ -> Ok << encodeGetNoteRequest) (\_ -> decodeNote)`).
   `Proto.Method.encodeRequest`, `responseDecoder`, `Rpc.Call.requestJson`
   and `Rpc.Call.toJson` take a registry, and the first, third and fourth
   give a `Result`.
-- `StatusError.details` is `List (Result Rpc.Error.DetailProblem
+- `StatusError.details` is `List (Result Proto.Error.Error
   Proto.Any.Any)`: each detail, or why it could not be read
   (`UnregisteredType url` for a `google.rpc.Status` body's detail of a
-  type the client's registry lacks, `InvalidDetail`). `Rpc.Error.details`
-  is gone; unpack with `Proto.Any.unpack` and the type's typed value,
+  type the client's registry lacks; `BadJson` for a detail that is not
+  one, `BadBinary` for a `grpc-status-details-bin` that does not decode).
+  `Rpc.Error.details` is gone; unpack with `Proto.Any.unpack` and the type's typed value,
   `Proto.ErrorDetails.badRequest` for `google.rpc.BadRequest`
   ([descriptors.md](descriptors.md#error-details)).
 
@@ -410,9 +417,16 @@ with each one ([install.md](install.md#versions)).
 
 ## Also
 
-- `Rpc.Error.Reason` has a new constructor, `InvalidPathValue { field,
+- `Rpc.Error.Reason` has a new constructor, `BadPathValue { field,
   template }`: a transcoded call whose path value its template cannot
   match is not sent. A `case` on `Reason` needs the branch.
+- `Rpc.Error.InvalidHeader` is renamed `BadHeader`, in the `Bad*` form
+  of `BadUrl` and `BadResponse`: a pattern `NoAnswer (InvalidHeader
+  name)` becomes `NoAnswer (BadHeader name)`.
+- `Rpc.Error.UnwritableRequest` is renamed `BadAny`, in the same form,
+  naming the part of the request the runtime could not use: a pattern
+  `NoAnswer (UnwritableRequest problem)` becomes `NoAnswer (BadAny
+  problem)`, and the problem is a `Proto.Error.Error`.
 - `Rpc.Error.BadResponse` carries the code `Rpc.Error.code` gives it
   first: a pattern `BadResponse problem answer` becomes
   `BadResponse _ problem answer`.

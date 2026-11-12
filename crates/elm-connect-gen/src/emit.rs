@@ -243,9 +243,11 @@ const PROTO_DESCRIPTORS: &str = "Proto.Descriptors";
 /// The runtime package's registry of codecs, which an `Any` resolves
 /// through.
 const PROTO_REGISTRY: &str = "Proto.Registry";
-/// The runtime package's `google.protobuf.Any`, and the problems of
-/// writing one.
+/// The runtime package's `google.protobuf.Any`.
 const PROTO_ANY: &str = "Proto.Any";
+/// The runtime package's error type, which an encoder writing an `Any`
+/// can fail with.
+const PROTO_ERROR: &str = "Proto.Error";
 /// The runtime package's typed values of the well-known types, home of
 /// `Proto.WellKnown.nullValue`, which a descriptor of a `NullValue` field
 /// names.

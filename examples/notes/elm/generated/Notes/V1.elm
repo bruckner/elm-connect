@@ -28,6 +28,7 @@ import Proto.Binary
 import Proto.Descriptors
 import Proto.Duration exposing (Duration)
 import Proto.Enum
+import Proto.Error
 import Proto.Json
 import Proto.Message
 import Proto.Query
@@ -410,7 +411,7 @@ encodeVisibility value =
 
 {-| Encodes a [`Note`](#Note) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeNoteWith : Proto.Registry.Registry -> Note -> Result Proto.Any.Problem Json.Encode.Value
+encodeNoteWith : Proto.Registry.Registry -> Note -> Result Proto.Error.Error Json.Encode.Value
 encodeNoteWith types value =
     Proto.Json.tryObjectOfFields
         ([ ( "name", Ok (Proto.Json.implicitField "" Json.Encode.string value.name) )
@@ -470,7 +471,7 @@ encodeListNotesRequest value =
 
 {-| Encodes a [`ListNotesResponse`](#ListNotesResponse) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeListNotesResponseWith : Proto.Registry.Registry -> ListNotesResponse -> Result Proto.Any.Problem Json.Encode.Value
+encodeListNotesResponseWith : Proto.Registry.Registry -> ListNotesResponse -> Result Proto.Error.Error Json.Encode.Value
 encodeListNotesResponseWith types value =
     Proto.Json.tryObjectOfFields
         [ ( "notes", Proto.Json.tryRepeatedField (encodeNoteWith types) value.notes )
@@ -480,7 +481,7 @@ encodeListNotesResponseWith types value =
 
 {-| Encodes a [`CreateNoteRequest`](#CreateNoteRequest) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeCreateNoteRequestWith : Proto.Registry.Registry -> CreateNoteRequest -> Result Proto.Any.Problem Json.Encode.Value
+encodeCreateNoteRequestWith : Proto.Registry.Registry -> CreateNoteRequest -> Result Proto.Error.Error Json.Encode.Value
 encodeCreateNoteRequestWith types value =
     Proto.Json.tryObjectOfFields
         [ ( "note", Proto.Json.tryOptionalField (encodeNoteWith types) value.note )
@@ -489,7 +490,7 @@ encodeCreateNoteRequestWith types value =
 
 {-| Encodes an [`UpdateNoteRequest`](#UpdateNoteRequest) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
 -}
-encodeUpdateNoteRequestWith : Proto.Registry.Registry -> UpdateNoteRequest -> Result Proto.Any.Problem Json.Encode.Value
+encodeUpdateNoteRequestWith : Proto.Registry.Registry -> UpdateNoteRequest -> Result Proto.Error.Error Json.Encode.Value
 encodeUpdateNoteRequestWith types value =
     Proto.Json.tryObjectOfFields
         [ ( "note", Proto.Json.tryOptionalField (encodeNoteWith types) value.note )

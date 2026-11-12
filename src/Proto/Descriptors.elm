@@ -84,7 +84,10 @@ union (Descriptors left) (Descriptors right) =
         }
 
 
-{-| The message of this full name, such as `notes.v1.Note`.
+{-| The message of this full name, such as `notes.v1.Note`. Its fields are
+found by number or name with
+[`Proto.Message.fieldNumbered`](Proto-Message#fieldNumbered) and
+[`fieldNamed`](Proto-Message#fieldNamed).
 -}
 message : String -> Descriptors -> Maybe Message.Descriptor
 message typeName (Descriptors descriptors) =

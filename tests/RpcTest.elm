@@ -11,6 +11,7 @@ import Proto.Any
 import Proto.Binary
 import Proto.Bytes
 import Proto.Duration
+import Proto.Error
 import Proto.Field exposing (Cardinality(..), Kind(..), Scalar(..))
 import Proto.Http
 import Proto.Internal.Percent
@@ -223,7 +224,7 @@ fromBody code message =
 
 {-| A detail's type URL and its binary's base64.
 -}
-forms : Result Rpc.Error.DetailProblem Proto.Any.Any -> Result Rpc.Error.DetailProblem ( String, String )
+forms : Result Proto.Error.Error Proto.Any.Any -> Result Proto.Error.Error ( String, String )
 forms =
     Result.map (\detail -> ( Proto.Any.typeUrl detail, Maybe.withDefault "(JSON alone)" (Maybe.map Proto.Bytes.toBase64 (Proto.Any.bytes detail)) ))
 
@@ -240,9 +241,47 @@ detailsOf message error =
             []
 
 
-{-| An error's detail problems.
+{-| A detail problem in brief: an unregistered type's URL, a JSON failure's
+path and message, a binary failure's message.
 -}
-problemsOf : Error -> List Rpc.Error.DetailProblem
+brief : Proto.Error.Error -> String
+brief problem =
+    case problem of
+        Proto.Error.UnregisteredType url ->
+            "unregistered " ++ url
+
+        Proto.Error.BadJson error ->
+            "json " ++ jsonFailure [] error
+
+        Proto.Error.BadBinary binary ->
+            "binary " ++ binary.typeName
+
+        Proto.Error.TypeMismatch { expected } ->
+            "mismatch " ++ expected
+
+
+jsonFailure : List String -> Json.Decode.Error -> String
+jsonFailure path error =
+    case error of
+        Json.Decode.Field name inner ->
+            jsonFailure (path ++ [ name ]) inner
+
+        Json.Decode.Index index inner ->
+            jsonFailure (path ++ [ String.fromInt index ]) inner
+
+        Json.Decode.OneOf (first :: _) ->
+            jsonFailure path first
+
+        Json.Decode.OneOf [] ->
+            String.join "." path ++ ": no decoder"
+
+        Json.Decode.Failure text _ ->
+            String.join "." path ++ ": " ++ text
+
+
+{-| An error's detail problems, in brief.
+-}
+problemsOf : Error -> List String
 problemsOf error =
     case error of
         RpcStatus status _ ->
@@ -250,7 +289,7 @@ problemsOf error =
                 (\detail ->
                     case detail of
                         Err problem ->
-                            Just problem
+                            Just (brief problem)
 
                         Ok _ ->
                             Nothing
@@ -631,9 +670,9 @@ responses =
                         (Err
                             ( "gone"
                             , [ "hi" ]
-                            , [ Rpc.Error.InvalidDetail Nothing "a Connect detail with no type"
-                              , Rpc.Error.InvalidDetail (Just "type.googleapis.com/notes.v1.Note") "a Connect detail whose value is not base64"
-                              , Rpc.Error.InvalidDetail Nothing "a Connect detail with no type"
+                            , [ "json : Expecting an OBJECT with a field named `type`"
+                              , "json value: Expecting base64 text, standard or URL-safe"
+                              , "json : Expecting an OBJECT with a field named `type`"
                               ]
                             )
                         )
@@ -661,7 +700,7 @@ responses =
                                 )
 
                     noType =
-                        Rpc.Error.InvalidDetail Nothing "a detail with no \"@type\""
+                        "json : Expecting an OBJECT with a field named `@type`"
                 in
                 ( read (Rpc.withRegistry (Proto.Registry.union noteRegistry Proto.WellKnown.registry) base)
                 , read base
@@ -673,12 +712,12 @@ responses =
                         , Err
                             ( []
                             , []
-                            , [ Rpc.Error.UnregisteredType "type.googleapis.com/notes.v1.Note"
-                              , Rpc.Error.UnregisteredType "type.googleapis.com/google.protobuf.Duration"
+                            , [ "unregistered type.googleapis.com/notes.v1.Note"
+                              , "unregistered type.googleapis.com/google.protobuf.Duration"
                               , noType
                               ]
                             )
-                        , Err [ Rpc.Error.UnregisteredType "type.googleapis.com/google.protobuf.Duration", noType ]
+                        , Err [ "unregistered type.googleapis.com/google.protobuf.Duration", noType ]
                         )
         , test "a lenient client registry reads a Status body's detail of a type it lacks as JSON alone, which unpacks" <|
             \_ ->
@@ -710,24 +749,30 @@ responses =
                         ( Err ( ( [ "hi" ], [ 2000 ] ), [ Ok False, Ok False, Err (), Ok False ] )
                         , Err ( ( [ "hi" ], [ 2000 ] ), [ Ok True, Ok False, Err (), Err () ] )
                         )
-        , test "a Status body's detail of a registered type that is not its message is InvalidDetail with its URL" <|
+        , test "a Status body's detail of a registered type that is not its message is its BadJson, the Any's object its value" <|
             \_ ->
                 Rpc.response (Rpc.withRegistry noteRegistry base)
                     (getNote { name = "x" })
                     (Http.BadStatus_ (metadata 404 "Not Found") """{"code":5,"details":[{"@type":"type.googleapis.com/notes.v1.Note","title":7}]}""")
                     |> Result.mapError
-                        (problemsOf
-                            >> List.map
-                                (\problem ->
-                                    case problem of
-                                        Rpc.Error.InvalidDetail url _ ->
-                                            Just url
+                        (\error ->
+                            case error of
+                                RpcStatus status _ ->
+                                    List.map
+                                        (\detail ->
+                                            case detail of
+                                                Err (Proto.Error.BadJson (Json.Decode.Failure _ value)) ->
+                                                    Json.Decode.decodeValue (Json.Decode.field "@type" Json.Decode.string) value |> Result.toMaybe
 
-                                        Rpc.Error.UnregisteredType _ ->
-                                            Nothing
-                                )
+                                                _ ->
+                                                    Nothing
+                                        )
+                                        status.details
+
+                                _ ->
+                                    []
                         )
-                    |> Expect.equal (Err [ Just (Just "type.googleapis.com/notes.v1.Note") ])
+                    |> Expect.equal (Err [ Just "type.googleapis.com/notes.v1.Note" ])
         , test "details gives those of a type that decode, and an HttpStatus or NoAnswer error has none" <|
             \_ ->
                 ( failed 400
@@ -744,7 +789,7 @@ responses =
                         Rpc.call
                             (Proto.Method.init "notes.v1.Notes"
                                 "GetNote"
-                                (\_ _ -> Err (Proto.Any.UnregisteredType "type.googleapis.com/ext.v1.Thing"))
+                                (\_ _ -> Err (Proto.Error.UnregisteredType "type.googleapis.com/ext.v1.Thing"))
                                 (\_ -> decodeTitle)
                                 (\_ -> Bytes.Encode.sequence [])
                                 decodeTitleBytes
@@ -752,7 +797,7 @@ responses =
                             { name = "x" }
 
                     unwritable =
-                        UnwritableRequest (Proto.Any.UnregisteredType "type.googleapis.com/ext.v1.Thing")
+                        BadAny (Proto.Error.UnregisteredType "type.googleapis.com/ext.v1.Thing")
 
                     refusal client =
                         Rpc.Internal.Plan.refused "https://api.example.com" (Rpc.Internal.Plan.plan client unregistered) (Rpc.request client unregistered)
@@ -764,7 +809,7 @@ responses =
                     |> Expect.equal
                         ( Just (NoAnswer unwritable)
                         , Nothing
-                        , ( Internal, "unregistered type \"type.googleapis.com/ext.v1.Thing\"" )
+                        , ( Internal, "bad Any: An Any holding type.googleapis.com/ext.v1.Thing was converted through a registry that has no entry for its type." )
                         )
         , test "message and details are optional" <|
             \_ ->
@@ -1680,7 +1725,7 @@ headerRules =
                     |> Expect.equal True
         , test "an invalid header is Internal, named in the message without its value" <|
             \_ ->
-                NoAnswer (InvalidHeader "X-User")
+                NoAnswer (BadHeader "X-User")
                     |> (\error -> ( Rpc.Error.code error, Rpc.Error.message error ))
                     |> Expect.equal ( Internal, "invalid header \"X-User\"" )
         ]
@@ -1766,10 +1811,10 @@ traces =
                         { code = NotFound
                         , message = "gone"
                         , details =
-                            [ Err (Rpc.Error.UnregisteredType "type.googleapis.com/google.rpc.ErrorInfo")
+                            [ Err (Proto.Error.UnregisteredType "type.googleapis.com/google.rpc.ErrorInfo")
                             , Ok (Proto.Any.pack Proto.WellKnown.stringValue "kept")
-                            , Err (Rpc.Error.InvalidDetail Nothing "a Connect detail with no type")
-                            , Err (Rpc.Error.InvalidDetail (Just "type.googleapis.com/x.Y") "a Connect detail whose value is not base64")
+                            , Err (Proto.Error.BadBinary { typeName = "google.rpc.Status", reason = Proto.Error.InvalidWireType 7, path = [], offset = 0 })
+                            , Err (Proto.Error.BadJson (Json.Decode.Failure "no type" (Json.Encode.object [])))
                             ]
                         , source = ConnectBody
                         }
@@ -1782,9 +1827,9 @@ traces =
                 )
                     |> Expect.equal
                         ( Ok
-                            [ "unregistered type \"type.googleapis.com/google.rpc.ErrorInfo\""
-                            , "invalid detail: a Connect detail with no type"
-                            , "invalid detail of \"type.googleapis.com/x.Y\": a Connect detail whose value is not base64"
+                            [ "An Any holding type.googleapis.com/google.rpc.ErrorInfo was converted through a registry that has no entry for its type."
+                            , "Not a google.rpc.Status in protobuf binary: a field has wire type 7, which proto3 does not use, at byte 0."
+                            , "Problem with the given value:\n\n{}\n\nno type"
                             ]
                         , "notes.v1.Notes/GetNote over connect: not_found (3 details unread), no answer, 1 attempt, 9 ms"
                         )

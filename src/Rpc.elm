@@ -225,12 +225,12 @@ empty one until this sets it. A method holds none.
 A program whose calls speak JSON and whose messages hold an `Any` sets one,
 as protobuf's own JSON codecs require: over JSON, a call whose request holds
 an `Any` the registry cannot write is not sent (it fails with
-[`NoAnswer (UnwritableRequest problem)`](Rpc-Error#Reason)), and a response
+[`NoAnswer (BadAny error)`](Rpc-Error#Reason)), and a response
 holding one of a type it lacks fails to decode. Over protobuf binary an `Any`
 needs no registry. Whatever the protocol, a status's details that arrive as
 proto3 JSON (a `google.rpc.Status` body, over transcoding) are read through
 it; one of a type it lacks reads as
-[`UnregisteredType`](Rpc-Error#DetailProblem), the error kept. A
+[`UnregisteredType`](Proto-Error#Error), the error kept. A
 [lenient](Proto-Registry#lenient) registry reads such an `Any`, and such a
 detail, as its JSON alone instead, which unpacks with its typed value.
 

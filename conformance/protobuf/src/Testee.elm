@@ -18,7 +18,6 @@ and `read` on the input format.
 
 import Json.Decode
 import Json.Encode
-import Proto.Any
 import Proto.Binary
 import Proto.Bytes
 import Proto.Error
@@ -84,11 +83,8 @@ answer request =
                             Ok json ->
                                 reply "json" (Json.Encode.encode 0 json)
 
-                            Err (Proto.Any.UnregisteredType name) ->
-                                reply "serializeError" ("an Any of " ++ name ++ ", which the registry lacks")
-
-                            Err _ ->
-                                reply "serializeError" "an Any the registry cannot write"
+                            Err problem ->
+                                reply "serializeError" (Proto.Error.toString problem)
 
             "protobuf" ->
                 case read request of

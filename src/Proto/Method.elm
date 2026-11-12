@@ -59,9 +59,9 @@ other union.
 import Bytes.Encode
 import Json.Decode
 import Json.Encode
-import Proto.Any exposing (Problem)
 import Proto.Binary
 import Proto.Codec
+import Proto.Error
 import Proto.Http exposing (Binding)
 import Proto.Internal.Binding
 import Proto.Internal.Interpret
@@ -106,7 +106,7 @@ until [`withRoutes`](#withRoutes) or [`withBindings`](#withBindings) gives
 them, so that transcoding sends it over the implicit route.
 
 -}
-initJson : String -> String -> (Registry -> req -> Result Problem Json.Encode.Value) -> (Registry -> Json.Decode.Decoder res) -> Method Proto.Codec.Json req res
+initJson : String -> String -> (Registry -> req -> Result Proto.Error.Error Json.Encode.Value) -> (Registry -> Json.Decode.Decoder res) -> Method Proto.Codec.Json req res
 initJson serviceName methodName encode decoder =
     Internal.Method
         { service = serviceName
@@ -153,10 +153,10 @@ client's ([`Rpc.withRegistry`](Rpc#withRegistry)), as for
 
 A call whose request holds an `Any` the client's registry cannot write is not
 sent over JSON: it fails with
-[`NoAnswer (UnwritableRequest problem)`](Rpc-Error#Reason).
+[`NoAnswer (BadAny error)`](Rpc-Error#Reason).
 
 -}
-init : String -> String -> (Registry -> req -> Result Problem Json.Encode.Value) -> (Registry -> Json.Decode.Decoder res) -> (req -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder res -> Method codec req res
+init : String -> String -> (Registry -> req -> Result Proto.Error.Error Json.Encode.Value) -> (Registry -> Json.Decode.Decoder res) -> (req -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder res -> Method codec req res
 init serviceName methodName encode decoder encodeBinary binaryDecoder =
     Internal.Method
         { service = serviceName
@@ -222,11 +222,11 @@ withBindings methodBindings (Internal.Method m) =
 
 
 {-| A request as proto3 JSON, writing an `Any` it holds through the registry
-(see [`Proto.Any.Problem`](Proto-Any#Problem) for why that can fail);
+(see [`Proto.Any.toJson`](Proto-Any#toJson) for why that can fail);
 `Ok null` for a method built with [`initProto`](#initProto), which has no
 JSON codecs.
 -}
-encodeRequest : Registry -> Method codec req res -> req -> Result Problem Json.Encode.Value
+encodeRequest : Registry -> Method codec req res -> req -> Result Proto.Error.Error Json.Encode.Value
 encodeRequest registry (Internal.Method m) req =
     m.json.encode registry req
 

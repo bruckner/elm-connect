@@ -6,11 +6,13 @@ import Dict
 import Expect
 import Json.Decode
 import Json.Encode exposing (Value)
-import Proto.Any as Any exposing (Any, Problem)
+import Proto.Any as Any exposing (Any)
 import Proto.Binary
 import Proto.Bytes
 import Proto.Duration as Duration
+import Proto.Error exposing (Error(..), Reason(..))
 import Proto.Internal.Any
+import Proto.Internal.Registry
 import Proto.Json
 import Proto.Message as Message exposing (Message)
 import Proto.Registry as Registry exposing (Registry)
@@ -27,7 +29,7 @@ type alias Holder =
     { held : Maybe Any }
 
 
-encodeHolderWith : Registry -> Holder -> Result Problem Value
+encodeHolderWith : Registry -> Holder -> Result Error Value
 encodeHolderWith types value =
     Proto.Json.tryObjectOfFields
         [ ( "held", Proto.Json.tryOptionalField (Proto.Json.encodeAnyWith types) value.held ) ]
@@ -181,15 +183,40 @@ suite =
                     |> Maybe.andThen (Json.Decode.decodeString (Proto.Json.anyWith wide) >> Result.toMaybe)
                     |> Maybe.map ((==) packed)
                 )
-                    |> Expect.equal ( Ok expected, Err (Any.UnwritableAny "type.googleapis.com/core.Core"), Just True )
-        , test "a missing type is named by its URL, and binary that is not the message is InvalidProto" <|
+                    |> Expect.equal ( Ok expected, Err (UnregisteredType "type.googleapis.com/ext2.Leaf"), Just True )
+        , test "a missing type is named by its URL, and binary that is not the message is its BadBinary" <|
             \_ ->
                 ( Proto.Json.encodeAnyWith Registry.empty (Any.pack (messageLeaf "t.Leaf") "hi")
                 , Any.toJson (leaf "t.Leaf" Registry.empty) (Proto.Internal.Any.Any "type.googleapis.com/t.Leaf" (Proto.Internal.Any.Binary "/w=="))
                 , Json.Decode.decodeString (Proto.Json.anyWith Registry.empty) """{"@type":"example.com/t.Leaf","text":"hi"}"""
                     |> Result.mapError (Json.Decode.errorToString >> String.contains "\"example.com/t.Leaf\"")
                 )
-                    |> Expect.equal ( Err (Any.UnregisteredType "type.googleapis.com/t.Leaf"), Err Any.InvalidProto, Err True )
+                    |> Expect.equal
+                        ( Err (UnregisteredType "type.googleapis.com/t.Leaf")
+                        , Err (BadBinary { typeName = "test.Leaf", reason = Truncated, path = [], offset = 0 })
+                        , Err True
+                        )
+        , test "unregistered finds the Any whose type the registry lacks, and nothing in any other failure" <|
+            \_ ->
+                let
+                    failure registry text =
+                        case Json.Decode.decodeString (Json.Decode.field "x" (Json.Decode.list (Proto.Json.anyWith registry))) text of
+                            Err problem ->
+                                Proto.Internal.Registry.unregistered registry problem
+
+                            Ok _ ->
+                                Just "decoded"
+
+                    known =
+                        leaf "t.Leaf" Registry.empty
+                in
+                [ failure Registry.empty """{"x":[{"@type":"example.com/t.Leaf","text":"hi"}]}"""
+                , failure known """{"x":[{"@type":"example.com/t.Leaf","text":7}]}"""
+                , failure known """{"x":[{"text":"hi"}]}"""
+                , failure Registry.empty """{"x":[{"@type":"t.Leaf","text":"hi"}]}"""
+                , failure known """{"x":7}"""
+                ]
+                    |> Expect.equal [ Just "example.com/t.Leaf", Nothing, Nothing, Nothing, Nothing ]
         , test "of two entries for one name, union keeps the left one's and unionAll the earlier one's" <|
             \_ ->
                 let
