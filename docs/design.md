@@ -2853,7 +2853,7 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
   program whose messages hold an `Any` configures one, as protojson and
   connect-es require; over binary no table is needed. A request whose
   `Any` the registry cannot write is refused before anything is sent,
-  `NoAnswer (UnwritableRequest problem)`, reading the JSON the send
+  `NoAnswer (BadAny problem)`, reading the JSON the send
   encodes for its body, not an encoding of its own; a response holding
   an `Any` of a type the registry lacks fails to decode, a `BadResponse`.
   `Rpc.Call.requestJson` and `toJson` take the registry too and give a
@@ -3337,7 +3337,7 @@ type Reason                             -- frozen (§8.3)
     | BadPathValue { field : String, template : String }
     | RequestTooLarge { limit : Int, size : Int }
     | ResponseTooLarge { limit : Int, size : Int }
-    | UnwritableRequest Proto.Error.Error
+    | BadAny Proto.Error.Error
 
 type alias StatusError =                -- frozen (§8.3)
     { code : Rpc.Code.Code
@@ -3438,7 +3438,7 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
   `BadResponse` its own, which the runtime gives it, and a `NoAnswer`
   by its reason: `Timeout`
   `DeadlineExceeded`, `NetworkError` `Unavailable`, `BadUrl` and
-  `BadHeader` and `UnwritableRequest` `Internal`, `BadPathValue`
+  `BadHeader` and `BadAny` `Internal`, `BadPathValue`
   `InvalidArgument` (a server checking the value would say so),
   `RequestTooLarge` and `ResponseTooLarge` `ResourceExhausted`. So a client timeout reads as
   `DeadlineExceeded` through `code`, while the constructor
@@ -3447,7 +3447,7 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
   "<name>"`, `path field "<field>" does not match <template>`, the
   value left out, connect-es's `message size <size> is larger than
   configured writeMaxBytes <limit>` and `… readMaxBytes <limit>`,
-  `unwritable request: ` and `Proto.Error.toString`'s text,
+  `bad Any: ` and `Proto.Error.toString`'s text,
   `bad response body: <problem>`, a binary body's problem
   `Proto.Error.toString`'s text too), and `toString` is the code and the message for all of
   them. elm/json's problem quotes the JSON it rejected, which can be
@@ -3611,7 +3611,7 @@ toString : Error -> String              -- for a log, as Json.Decode.errorToStri
   | `Proto.Any.tryUnpack` | `Result Error a` | `TypeMismatch`, `BadBinary` |
   | `Proto.Any.toJson`, `Proto.Json.encodeAnyWith`, generated `encodeNoteWith` | `Result Error Value` | `UnregisteredType`, or the `BadBinary` of the `Any` that failed, at any depth, named by its own type |
   | `Proto.Json.anyWith`, generated `decodeNoteWith` | `Json.Decode.Decoder` | elm/json's error, a registry miss named in its message |
-  | `Rpc.Error.UnwritableRequest` | `Error` | as `encodeNoteWith` |
+  | `Rpc.Error.BadAny` | `Error` | as `encodeNoteWith` |
   | `StatusError.details` | `List (Result Error Any)` | `UnregisteredType`, `BadJson`, `BadBinary` (above) |
 
   A binary answer that is not the response stays a `BadResponse`, an

@@ -9,8 +9,9 @@
   `Result Proto.Error.Error Value`: `UnregisteredType url`, or the
   `BadBinary` of the `Any` that failed, at any depth, named by its own
   type, where the old `UnwritableAny` named the outermost `Any`.
-- Breaking: `Rpc.Error.UnwritableRequest` holds a `Proto.Error.Error`,
-  and `StatusError.details` is `List (Result Proto.Error.Error Any)`: a
+- Breaking: `Rpc.Error.UnwritableRequest` is `BadAny`, in the form of
+  `BadUrl` and `BadHeader`, and holds a `Proto.Error.Error`; and
+  `StatusError.details` is `List (Result Proto.Error.Error Any)`: a
   Connect detail with no `type` or a `value` not in base64, and a
   `google.rpc.Status` detail with no `"@type"` or not its message, are
   the detail's `BadJson`; an undecodable `grpc-status-details-bin` is

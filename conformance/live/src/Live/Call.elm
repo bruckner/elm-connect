@@ -591,8 +591,8 @@ reasonToString reason =
         Rpc.Error.ResponseTooLarge { limit, size } ->
             "ResponseTooLarge " ++ String.fromInt size ++ " " ++ String.fromInt limit
 
-        Rpc.Error.UnwritableRequest problem ->
-            "UnwritableRequest "
+        Rpc.Error.BadAny problem ->
+            "BadAny "
                 ++ (case problem of
                         Proto.Error.UnregisteredType url ->
                             "UnregisteredType " ++ url

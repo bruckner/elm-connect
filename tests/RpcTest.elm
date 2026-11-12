@@ -797,7 +797,7 @@ responses =
                             { name = "x" }
 
                     unwritable =
-                        UnwritableRequest (Proto.Error.UnregisteredType "type.googleapis.com/ext.v1.Thing")
+                        BadAny (Proto.Error.UnregisteredType "type.googleapis.com/ext.v1.Thing")
 
                     refusal client =
                         Rpc.Internal.Plan.refused "https://api.example.com" (Rpc.Internal.Plan.plan client unregistered) (Rpc.request client unregistered)
@@ -809,7 +809,7 @@ responses =
                     |> Expect.equal
                         ( Just (NoAnswer unwritable)
                         , Nothing
-                        , ( Internal, "unwritable request: An Any holding type.googleapis.com/ext.v1.Thing was converted through a registry that has no entry for its type." )
+                        , ( Internal, "bad Any: An Any holding type.googleapis.com/ext.v1.Thing was converted through a registry that has no entry for its type." )
                         )
         , test "message and details are optional" <|
             \_ ->

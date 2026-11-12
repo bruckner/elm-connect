@@ -99,7 +99,7 @@ type Error
     (`size`), than the protocol reads (`limit`,
     [`withReadMaxBytes`](Rpc-Protocol#withReadMaxBytes)). The body was
     dropped without decoding, so the error keeps no `Response`.
-  - `UnwritableRequest`: over JSON, the request holds a
+  - `BadAny`: over JSON, the request holds a
     [`google.protobuf.Any`](Proto-Any) the client's registry cannot write
     as JSON, for the [`Proto.Error`](Proto-Error#Error) given:
     `UnregisteredType`, which the client's registry fixes
@@ -118,7 +118,7 @@ type Reason
     | BadPathValue { field : String, template : String }
     | RequestTooLarge { limit : Int, size : Int }
     | ResponseTooLarge { limit : Int, size : Int }
-    | UnwritableRequest Proto.Error.Error
+    | BadAny Proto.Error.Error
 
 
 {-| A status the server stated: its code, its message (which may be empty), its
@@ -208,7 +208,7 @@ type Source
   - `BadResponse`: its own, `Internal` or `Unimplemented` (see
     [`Error`](#Error)).
   - `NoAnswer`: a timeout is `DeadlineExceeded`, a network failure
-    `Unavailable`, a bad URL, a bad header or an unwritable request
+    `Unavailable`, a bad URL, a bad header or a bad `Any`
     `Internal`, a bad path value `InvalidArgument`, a request or a
     response over its limit `ResourceExhausted`.
 
@@ -253,7 +253,7 @@ code error =
         NoAnswer (ResponseTooLarge _) ->
             Code.ResourceExhausted
 
-        NoAnswer (UnwritableRequest _) ->
+        NoAnswer (BadAny _) ->
             Code.Internal
 
 
@@ -267,7 +267,7 @@ code error =
     then `…`; the whole problem stays in the error.
   - `NoAnswer`: `timeout`, `network error`, `bad URL: <url>`,
     `invalid header "<name>"`, `path field "<field>" does not match
-    <template>`, for an unwritable request `unwritable request:` and
+    <template>`, for a bad `Any` `bad Any:` and
     [`Proto.Error.toString`](Proto-Error#toString)'s text, or,
     as connect-es words them,
     `message size <size> is larger than configured writeMaxBytes <limit>`
@@ -317,8 +317,8 @@ message error =
         NoAnswer (ResponseTooLarge { limit, size }) ->
             "message size " ++ String.fromInt size ++ " is larger than configured readMaxBytes " ++ String.fromInt limit
 
-        NoAnswer (UnwritableRequest problem) ->
-            "unwritable request: " ++ Proto.Error.toString problem
+        NoAnswer (BadAny problem) ->
+            "bad Any: " ++ Proto.Error.toString problem
 
 
 {-| The first 300 characters of a text, and `…` when there were more.

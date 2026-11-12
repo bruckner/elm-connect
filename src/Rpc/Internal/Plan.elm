@@ -329,7 +329,7 @@ refused baseUrl p sent =
     else
         case ( p.unencodable (), p.invalid (), Internal.invalidHeader sent.headers ) of
             ( Just problem, _, _ ) ->
-                Just (Error.NoAnswer (Error.UnwritableRequest problem))
+                Just (Error.NoAnswer (Error.BadAny problem))
 
             ( Nothing, Just path, _ ) ->
                 Just (Error.NoAnswer (Error.BadPathValue path))

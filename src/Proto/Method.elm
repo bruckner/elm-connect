@@ -153,7 +153,7 @@ client's ([`Rpc.withRegistry`](Rpc#withRegistry)), as for
 
 A call whose request holds an `Any` the client's registry cannot write is not
 sent over JSON: it fails with
-[`NoAnswer (UnwritableRequest error)`](Rpc-Error#Reason).
+[`NoAnswer (BadAny error)`](Rpc-Error#Reason).
 
 -}
 init : String -> String -> (Registry -> req -> Result Proto.Error.Error Json.Encode.Value) -> (Registry -> Json.Decode.Decoder res) -> (req -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder res -> Method codec req res

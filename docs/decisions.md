@@ -1526,7 +1526,10 @@ keeps its shape: a binary answer that is not the response is an answer
 read but not understood, and its problem is now the report's text.
 `Rpc.Error.Reason`'s `InvalidHeader` and `InvalidPathValue` became
 `BadHeader` and `BadPathValue` in the same pass, the module's `Bad*`
-form (operator, 2026-11-10). Where: design §5.4.
+form (operator, 2026-11-10), and `UnwritableRequest` became `BadAny`
+(operator, 2026-11-11): each names the part of the request the runtime
+could not use, and the `Proto.Error` inside says what was wrong with
+it, so "unwritable" said less in more letters. Where: design §5.4.
 
 Two readers stayed off the public surface when the type landed.
 `Proto.Registry.unregistered`, which reads a registry miss out of a

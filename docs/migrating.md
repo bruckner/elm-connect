@@ -353,7 +353,7 @@ JSON.
   `register`, `union` and `unionAll` compose them. Give the client the
   one its `Any`s need with `Rpc.withRegistry`; a JSON client whose
   messages hold an `Any` needs one, and a request whose `Any` it cannot
-  write fails with `NoAnswer (UnwritableRequest error)`, the
+  write fails with `NoAnswer (BadAny error)`, the
   `Proto.Error.Error` the write gave.
 - A method holds no registry: a hand-written method's JSON codecs take
   the client's (`Proto.Method.initJson "notes.v1.NotesService" "GetNote"
@@ -423,6 +423,10 @@ with each one ([install.md](install.md#versions)).
 - `Rpc.Error.InvalidHeader` is renamed `BadHeader`, in the `Bad*` form
   of `BadUrl` and `BadResponse`: a pattern `NoAnswer (InvalidHeader
   name)` becomes `NoAnswer (BadHeader name)`.
+- `Rpc.Error.UnwritableRequest` is renamed `BadAny`, in the same form,
+  naming the part of the request the runtime could not use: a pattern
+  `NoAnswer (UnwritableRequest problem)` becomes `NoAnswer (BadAny
+  problem)`, and the problem is a `Proto.Error.Error`.
 - `Rpc.Error.BadResponse` carries the code `Rpc.Error.code` gives it
   first: a pattern `BadResponse problem answer` becomes
   `BadResponse _ problem answer`.
