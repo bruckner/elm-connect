@@ -18,6 +18,7 @@ Behaviours the live suite relies on:
 
 -}
 
+import Json.Encode
 import Notes.V1
 import Notes.V1.ArchiveNoteRequest
 import Notes.V1.CreateNoteRequest
@@ -114,7 +115,7 @@ createNote =
             Notes.V1.decodeNoteWith
             Notes.V1.encodeCreateNoteRequestBytes
             Notes.V1.decodeNoteBytes
-            |> Proto.Method.withBindings (Proto.Method.bindings descriptorCreateNote)
+            |> Proto.Method.withJsonRoutes [ routeCreateNote0 ]
         )
 
 
@@ -136,7 +137,7 @@ updateNote =
             Notes.V1.decodeNoteWith
             Notes.V1.encodeUpdateNoteRequestBytes
             Notes.V1.decodeNoteBytes
-            |> Proto.Method.withBindings (Proto.Method.bindings descriptorUpdateNote)
+            |> Proto.Method.withJsonRoutes [ routeUpdateNote0 ]
         )
 
 
@@ -238,6 +239,36 @@ routeListNotes0 request_ =
     , body = Nothing
     , responseBody = Nothing
     , invalid = Nothing
+    }
+
+
+{-| The route of [`createNote`](#createNote) over binding 0: `POST /v1/notes` body `note`.
+-}
+routeCreateNote0 : Notes.V1.CreateNoteRequest -> Json.Encode.Value -> Proto.Route.Route
+routeCreateNote0 request_ json_ =
+    { method = "POST"
+    , path = "v1/notes"
+    , query = []
+    , body = Just (Proto.Route.jsonField "note" json_)
+    , responseBody = Nothing
+    , invalid = Nothing
+    }
+
+
+{-| The route of [`updateNote`](#updateNote) over binding 0: `PATCH /v1/{note.name=notes/*}` body `note`.
+-}
+routeUpdateNote0 : Notes.V1.UpdateNoteRequest -> Json.Encode.Value -> Proto.Route.Route
+routeUpdateNote0 request_ json_ =
+    let
+        noteName_ =
+            Maybe.withDefault "" (Maybe.map .name request_.note)
+    in
+    { method = "PATCH"
+    , path = "v1/" ++ Proto.Route.segments noteName_
+    , query = Notes.V1.queryOfUpdateNoteRequest request_
+    , body = Just (Proto.Route.jsonField "note" json_)
+    , responseBody = Nothing
+    , invalid = Proto.Route.checkSegments "note.name" [ "notes", "*" ] noteName_
     }
 
 
