@@ -162,6 +162,7 @@ import Proto.Duration exposing (Duration)
 import Proto.Error exposing (Error)
 import Proto.Int64
 import Proto.Internal.Any as InternalAny
+import Proto.Internal.Percent as Percent
 import Proto.Internal.Registry as InternalRegistry
 import Proto.Registry exposing (Registry)
 import Proto.Timestamp
@@ -1098,33 +1099,11 @@ string =
             )
 
 
-{-| Whether `text` holds no UTF-16 surrogate without its pair. `String.all`
-reads from the end and takes a low surrogate together with the code unit
-before it for one character, whose code is that unit's unless the unit is its
-high half; a pair's code is past U+FFFF, so a character of two units with a
-lower code is a lone low surrogate. A lone high surrogate's code is NaN, which
-every comparison fails. One low surrogate at the start is taken with what lies
-before the string, a character longer than two units: refusing it stops
-`String.all` there, where reading further would never return.
+{-| Whether `text` holds no UTF-16 surrogate without its pair.
 -}
 isScalarText : String -> Bool
 isScalarText =
-    String.all
-        (\char ->
-            let
-                code =
-                    Char.toCode char
-            in
-            case String.length (String.fromChar char) of
-                1 ->
-                    code < 0xD800 || code > 0xDFFF
-
-                2 ->
-                    code > 0xFFFF
-
-                _ ->
-                    False
-        )
+    Percent.wellFormed
 
 
 {-| Decode a map with signed 32-bit integer keys (`int32`, `sint32`,

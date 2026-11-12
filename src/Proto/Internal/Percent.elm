@@ -7,6 +7,7 @@ helpers generated code calls (`Proto.Route`) reach no `Rpc` module.
 -}
 
 import Bitwise
+import Json.Encode
 
 
 {-| Percent-encode `text` as UTF-8, keeping the characters `keep` accepts and
@@ -91,7 +92,32 @@ refuses: a low surrogate taken with a unit that is not its high half, a lone
 high surrogate, or one at the start taken with what lies before the string.
 -}
 wellFormed : String -> Bool
-wellFormed =
+wellFormed text =
+    if String.length text < 32 then
+        scalarsOnly text
+
+    else if escapesLoneSurrogates && not (String.contains "\\ud" (Json.Encode.encode 0 (Json.Encode.string text))) then
+        True
+
+    else
+        scalarsOnly text
+
+
+{-| Whether this engine's `JSON.stringify` writes a surrogate without its pair
+as a `\uXXXX` escape (ECMAScript 2019's well-formed `JSON.stringify`). It
+writes a pair as it is, and lowercases the escape's hex digits, so text whose
+JSON holds no `\ud` holds no lone surrogate: one native pass decides the
+common case for text long enough that the pass costs less than a scan.
+Text whose JSON holds one, which a backslash before `ud` in the
+text also gives, is read character by character.
+-}
+escapesLoneSurrogates : Bool
+escapesLoneSurrogates =
+    String.contains "\\ud800" (Json.Encode.encode 0 (Json.Encode.string (String.fromChar (Char.fromCode 0xD800))))
+
+
+scalarsOnly : String -> Bool
+scalarsOnly =
     String.all
         (\char ->
             let
