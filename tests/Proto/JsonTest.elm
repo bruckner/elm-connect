@@ -1192,6 +1192,20 @@ stringTests =
                     , "\"😀\\udc00\""
                     , "\"\\ud800😀\""
                     ]
+        , test "long text is held to the same rule, a backslash before \"ud\" included" <|
+            \_ ->
+                let
+                    long inner =
+                        "\"" ++ String.repeat 40 "x" ++ inner ++ String.repeat 40 "y" ++ "\""
+                in
+                Expect.all
+                    [ \_ -> failsOnEach Proto.Json.string (List.map long [ "\\udc00", "\\ud800", "\\ude01\\ud83d", "😀\\udc00" ])
+                    , \_ ->
+                        [ "\\ud83d\\ude00", "\\\\ud800", "\\\\\\ud83d\\ude00" ]
+                            |> List.map (long >> Json.Decode.decodeString Proto.Json.string >> Result.map (String.slice 40 -40))
+                            |> Expect.equal [ Ok "😀", Ok "\\ud800", Ok "\\😀" ]
+                    ]
+                    ()
         , Test.fuzz Fuzz.string "every string of Unicode text decodes as it is" <|
             \text ->
                 Json.Decode.decodeString Proto.Json.string (Json.Encode.encode 0 (Json.Encode.string text))

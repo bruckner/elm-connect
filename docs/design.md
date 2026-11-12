@@ -873,10 +873,16 @@ just the form encoders write.
   `Proto.Json.stringDict`, which fail on one holding a UTF-16
   surrogate without its pair (`"\udc00"`): JavaScript's JSON parser
   reads the escape into the string as it is, and such a string is not
-  Unicode text and has no UTF-8 form. The check reads each string once
-  (`String.all`); in the performance spike's benchmark, decoding a note
-  took about 5 % longer and a page of 1,000 notes about 1 %, and a map
-  of 1,000 string keys and values 17 %.
+  Unicode text and has no UTF-8 form. A string shorter than 32 code
+  units is read once, character by character (`String.all`); a longer
+  one is written with `JSON.stringify`, which since ECMAScript 2019
+  writes a lone surrogate as a `\uXXXX` escape with lowercase hex digits
+  and a pair as it is, so JSON holding no `\ud` proves the text well
+  formed in one native pass. Text whose JSON holds one (which a
+  backslash before `ud` in the text also gives) is read character by
+  character, and an engine that does not escape lone surrogates, tested
+  once at start, reads every string that way. Below 32 units the walk
+  costs less than the pass.
 - Floats as numbers, numeric strings, and `"NaN"`, `"Infinity"`,
   `"-Infinity"`, through `Proto.Json.float` (`double`) and
   `Proto.Json.float32` (`float`). A number past a double's range fails
