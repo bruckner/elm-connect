@@ -1,9 +1,9 @@
 module Live.Codec exposing (empty, entry, registry)
 
 {-| The dispatch tables' entries, for the build against bindings generated
-with `codec=json`: a generated call is `Rpc.Call Rpc.Json`, so an entry has
+with `wire=json`: a generated call is `Rpc.Call Rpc.Json`, so an entry has
 the JSON call function alone, and an envelope naming the proto codec is
-refused. The build against `codec=both` has its own module of this name
+refused. The build against `wire=both` has its own module of this name
 (`both/src/Live/Codec.elm`).
 -}
 

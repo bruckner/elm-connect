@@ -34,16 +34,18 @@ elmConnectVersion_ =
 Connect: `POST /events.v1.EventService/ListEvents`.
 Transcode: `GET /v1/{parent=feeds/*}/events`.
 
-Codecs: JSON. Described by [`descriptorListEvents`](#descriptorListEvents).
+Codecs: JSON and protobuf binary. Described by [`descriptorListEvents`](#descriptorListEvents).
 
 -}
-listEvents : Events.V1.ListEventsRequest -> Rpc.Call Rpc.Json Events.V1.ListEventsRequest Events.V1.ListEventsResponse
+listEvents : Events.V1.ListEventsRequest -> Rpc.Call codec Events.V1.ListEventsRequest Events.V1.ListEventsResponse
 listEvents =
     Rpc.call
-        (Proto.Method.initJson "events.v1.EventService"
+        (Proto.Method.init "events.v1.EventService"
             "ListEvents"
             (\_ -> Ok << Events.V1.encodeListEventsRequest)
             (\_ -> Events.V1.decodeListEventsResponse)
+            Events.V1.encodeListEventsRequestBytes
+            Events.V1.decodeListEventsResponseBytes
             |> Proto.Method.withRoutes [ routeListEvents0 ]
         )
 

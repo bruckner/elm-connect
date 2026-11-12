@@ -25,10 +25,11 @@ pub struct Options {
     /// What an enum value the generated decoder does not know reads as
     /// (`enum_unknown=`, design §3.3).
     pub enum_unknown: EnumUnknown,
-    /// Which codecs the service methods are wired with (`codec=`): proto3
-    /// JSON, protobuf binary, or both. Every message gets both codecs
+    /// What a method's generated `Call` values are wired with (`wire=`):
+    /// both codecs, the default, so that any client sends them, or proto3
+    /// JSON or protobuf binary alone. Every message gets both codecs
     /// whatever it says.
-    pub codec: Codec,
+    pub wire: Wire,
     /// The rename map (`rename=`, design §3.7): Elm names given by proto
     /// full name, each used in place of the name the naming rules would
     /// derive. [`Options::add_rename`] adds one; the IR builder checks
@@ -140,8 +141,7 @@ impl Options {
                 "enum_unknown" => {
                     value_of(key, value, EnumUnknown::VALUES).map(|v| options.enum_unknown = v)
                 }
-                "codec" if value == "binary" => Err(Problem::codec_binary()),
-                "codec" => value_of(key, value, Codec::VALUES).map(|v| options.codec = v),
+                "wire" => value_of(key, value, Wire::VALUES).map(|v| options.wire = v),
                 "rename" => options.add_rename(value),
                 _ => parse_module_prefix(value).map(|v| options.module_prefix = Some(v)),
             };
@@ -198,7 +198,7 @@ impl Options {
             self.enum_unknown.as_str(),
             EnumUnknown::VALUES,
         );
-        set("codec", self.codec.as_str(), Codec::VALUES);
+        set("wire", self.wire.as_str(), Wire::VALUES);
         for (proto, elm) in &self.rename {
             pairs.push(format!("rename={proto}:{elm}"));
         }
@@ -219,7 +219,7 @@ pub fn default_value(key: &str) -> Option<&'static str> {
         "unbound_methods" => UnboundMethods::VALUES,
         "streaming" => Streaming::VALUES,
         "enum_unknown" => EnumUnknown::VALUES,
-        "codec" => Codec::VALUES,
+        "wire" => Wire::VALUES,
         _ => return None,
     };
     values.first().copied()
@@ -232,7 +232,7 @@ pub const KEYS: [&str; 8] = [
     "unbound_methods",
     "streaming",
     "enum_unknown",
-    "codec",
+    "wire",
     "rename",
     "module_prefix",
 ];
@@ -455,60 +455,57 @@ impl std::str::FromStr for EnumUnknown {
     }
 }
 
-/// Which codecs the generated service methods are wired with. Messages
-/// get both codecs, their typed values and the package's `registry`
-/// whatever the option says.
+/// What a method's generated `Call` values are wired with. Messages get
+/// both codecs, their typed values and the package's `registry` whatever
+/// the option says.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub enum Codec {
-    /// proto3 JSON, which Connect's JSON codec and transcoding speak.
+pub enum Wire {
+    /// Both, so a method's calls go over any protocol: each is free in its
+    /// codec, `Rpc.Call codec`.
     #[default]
+    Both,
+    /// proto3 JSON alone, which Connect's JSON codec and transcoding
+    /// speak: `Rpc.Call Rpc.Json`.
     Json,
     /// Protobuf binary alone (`encodeNoteBytes`, `decodeNoteBytes`), for
-    /// Connect's proto codec and gRPC-Web.
+    /// Connect's proto codec and gRPC-Web: `Rpc.Call Rpc.Proto`.
     Proto,
-    /// Both, so a method's calls go over any protocol.
-    Both,
 }
 
-impl Codec {
+impl Wire {
     /// The values the option takes, as written, the default first.
-    pub const VALUES: &'static [&'static str] = &["json", "proto", "both"];
+    pub const VALUES: &'static [&'static str] = &["both", "json", "proto"];
 
     /// The value as written.
     pub fn as_str(self) -> &'static str {
         match self {
-            Codec::Json => "json",
-            Codec::Proto => "proto",
-            Codec::Both => "both",
+            Wire::Both => "both",
+            Wire::Json => "json",
+            Wire::Proto => "proto",
         }
     }
 
     /// Whether methods are wired with proto3 JSON codecs.
     pub fn json(self) -> bool {
-        matches!(self, Codec::Json | Codec::Both)
+        matches!(self, Wire::Json | Wire::Both)
     }
 
     /// Whether methods are wired with protobuf binary codecs.
     pub fn binary(self) -> bool {
-        matches!(self, Codec::Proto | Codec::Both)
+        matches!(self, Wire::Proto | Wire::Both)
     }
 }
 
-impl std::str::FromStr for Codec {
+impl std::str::FromStr for Wire {
     type Err = String;
 
     fn from_str(value: &str) -> Result<Self, String> {
         match value {
-            "json" => Ok(Codec::Json),
-            "proto" => Ok(Codec::Proto),
-            "both" => Ok(Codec::Both),
-            "binary" => Err(
-                "`codec` is `json`, `proto` or `both`, not `binary`: the binary codecs alone are \
-                 `proto`"
-                    .to_owned(),
-            ),
+            "both" => Ok(Wire::Both),
+            "json" => Ok(Wire::Json),
+            "proto" => Ok(Wire::Proto),
             _ => Err(format!(
-                "`codec` is `json`, `proto` or `both`, not `{value}`"
+                "`wire` is `both`, `json` or `proto`, not `{value}`"
             )),
         }
     }
@@ -587,15 +584,15 @@ mod tests {
         );
         assert!(error("enum_unknown=variant").contains("`fail` or `zero`"));
         assert!(error("enum_unknown=zero,enum_unknown=zero").contains("more than once"));
-        let codec = |parameter| parse(parameter).map(|o| o.codec);
-        assert_eq!(codec(""), Ok(Codec::Json));
-        assert_eq!(codec("codec=proto"), Ok(Codec::Proto));
-        assert_eq!(codec("codec=both,int64=int"), Ok(Codec::Both));
-        assert!(error("codec=bytes").contains("`json`, `proto` or `both`"));
-        assert!(error("codec=binary").contains("`codec=proto`"));
-        assert_eq!(codes("codec=binary"), vec![Code::UnknownOption]);
-        assert!("binary".parse::<Codec>().unwrap_err().contains("`proto`"));
-        assert!(error("codec=both,codec=json").contains("more than once"));
+        let wire = |parameter| parse(parameter).map(|o| o.wire);
+        assert_eq!(wire(""), Ok(Wire::Both));
+        assert_eq!(wire("wire=json"), Ok(Wire::Json));
+        assert_eq!(wire("wire=proto,int64=int"), Ok(Wire::Proto));
+        assert!(error("wire=bytes").contains("`both`, `json` or `proto`"));
+        assert!(error("wire=json,wire=both").contains("more than once"));
+        // `codec` is not an alias of `wire`.
+        assert!(error("codec=json").contains("There is no option `codec`."));
+        assert_eq!(codes("codec=json"), vec![Code::UnknownOption]);
     }
 
     #[test]
@@ -603,12 +600,12 @@ mod tests {
         let recorded = |parameter| parse(parameter).map(|o| o.recorded());
         assert_eq!(recorded(""), Ok(Vec::new()));
         assert_eq!(
-            recorded("int64=string,bytes=string,streaming=error,enum_unknown=fail,codec=json"),
+            recorded("int64=string,bytes=string,streaming=error,enum_unknown=fail,wire=both"),
             Ok(Vec::new())
         );
         assert_eq!(
             recorded(
-                "module_prefix=Api,rename=b.C:D,codec=both,enum_unknown=zero,rename=a.B:C,\
+                "module_prefix=Api,rename=b.C:D,wire=json,enum_unknown=zero,rename=a.B:C,\
                  unbound_methods=error,streaming=skip,bytes=bytes,int64=int"
             ),
             Ok([
@@ -617,7 +614,7 @@ mod tests {
                 "unbound_methods=error",
                 "streaming=skip",
                 "enum_unknown=zero",
-                "codec=both",
+                "wire=json",
                 "rename=a.B:C",
                 "rename=b.C:D",
                 "module_prefix=Api",
@@ -631,7 +628,7 @@ mod tests {
             "unbound_methods",
             "streaming",
             "enum_unknown",
-            "codec",
+            "wire",
         ] {
             assert!(default_value(key).is_some(), "{key}");
         }

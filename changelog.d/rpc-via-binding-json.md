@@ -1,7 +1,7 @@
 - `Rpc.Call.viaBinding` takes and gives a `Call Rpc.Json`, since
-  transcoding speaks JSON: a call generated under `codec=both` is pinned
-  to JSON by it, and one generated under `codec=proto` is a compile
-  error rather than a call whose binding Connect ignores.
+  transcoding speaks JSON: a call generated under `wire=both`, the
+  default, is pinned to JSON by it, and one generated under `wire=proto`
+  is a compile error rather than a call whose binding Connect ignores.
   `Rpc.Call.requestJson` and `toJson`, and `Proto.Method.encodeRequest`
   and `responseDecoder`, take a JSON call or method likewise, where they
   gave `null` (or a decoder that always fails) for a binary-only one.

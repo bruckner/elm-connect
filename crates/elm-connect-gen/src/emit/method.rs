@@ -18,7 +18,7 @@ use crate::elm::build::{
 };
 use crate::ir::{Idempotency, Method, TypeRef};
 use crate::naming::with_registry;
-use crate::options::Codec;
+use crate::options::Wire;
 use crate::route::{Body, FieldRef, PathSegment, QueryParam, Route, Segment};
 
 impl Emitter {
@@ -77,15 +77,15 @@ impl Emitter {
     /// `Proto.Method.initJson` (the request's JSON encoder, the response's
     /// JSON decoder), `Proto.Method.initProto` (their binary codecs) or
     /// `Proto.Method.init` (the JSON codecs and the binary codecs) as the
-    /// `codec` option says, the JSON codecs taking the client's registry
+    /// `wire` option says, the JSON codecs taking the client's registry
     /// (ignored by a type that reaches no `Any`), then
     /// `withIdempotency` when the proto declares one, and `withRoutes` with
     /// its route functions ([`Self::method_routes`]) or, when one of its
     /// bindings cannot be typed, `withBindings` with its descriptor's
-    /// bindings. Under `codec=proto` it has no routes: its calls cannot be
+    /// bindings. Under `wire=proto` it has no routes: its calls cannot be
     /// transcoded, which takes JSON. The call's codec is `Rpc.Json` under
-    /// `codec=json`, `Rpc.Proto` under `codec=proto`, and a type variable
-    /// under `codec=both`, so that any client sends it.
+    /// `wire=json`, `Rpc.Proto` under `wire=proto`, and a type variable
+    /// under `wire=both`, so that any client sends it.
     ///
     /// The value binds no locals and every library name in it is
     /// qualified, so it cannot clash with the package module's names or
@@ -106,9 +106,9 @@ impl Emitter {
             codecs.push(self.response_decoder_bytes(&method.output));
         }
         let (builder, tag) = match self.wiring {
-            Codec::Json => ("initJson", Some("Json")),
-            Codec::Proto => ("initProto", Some("Proto")),
-            Codec::Both => ("init", None),
+            Wire::Json => ("initJson", Some("Json")),
+            Wire::Proto => ("initProto", Some("Proto")),
+            Wire::Both => ("init", None),
         };
         let built = stacked_apply(self.reference((PROTO_METHOD, builder)), codecs);
         let mut steps = Vec::new();
@@ -160,7 +160,7 @@ impl Emitter {
     /// Proto.Route.Route`, one per binding of its HTTP rule, and how its
     /// call takes its routes: from them, from its bindings as data when one
     /// of them cannot be typed ([`super::route_fn`]), or not at all, for a
-    /// method without a rule and under `codec=proto`.
+    /// method without a rule and under `wire=proto`.
     ///
     /// Each binding is typed on a copy of the emitter first, so that a
     /// method that falls back imports nothing its typed routes would have.
@@ -170,7 +170,7 @@ impl Emitter {
         queries: &Queries,
         method: &Method,
     ) -> (Vec<Decl>, Routes) {
-        if method.routes.is_empty() || self.wiring == Codec::Proto {
+        if method.routes.is_empty() || self.wiring == Wire::Proto {
             return (Vec::new(), Routes::None);
         }
         let mut scratch = self.clone();
@@ -365,7 +365,7 @@ impl Emitter {
 
 /// How a method's call takes its routes for transcoding.
 pub(super) enum Routes {
-    /// None: a method without an HTTP rule, or under `codec=proto`.
+    /// None: a method without an HTTP rule, or under `wire=proto`.
     None,
     /// Its route functions, as many as its bindings.
     Functions(usize),

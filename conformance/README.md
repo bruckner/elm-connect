@@ -231,8 +231,8 @@ where prost-reflect's is not: fields in number order, a map's entries in
 the order of the Elm `Dict` holding them, every singular `Empty` set, every
 `Any`'s packed message re-encoded the same way and a kind-less `Value` given
 `null_value`; another test checks that prost-reflect reads each back as
-the sample. It generates the protos under `codec=both` (with `int64=int`
-and with `bytes=bytes`) and `codec=proto` too, and
+the sample. It generates the protos under `wire=both` (with `int64=int`
+and with `bytes=bytes`) and `wire=proto` too, and
 `tests/Codec/BinaryRoundTripTest.elm` decodes each sample's binary with the
 generated decoder and re-encodes it to the same bytes, with unknown fields
 of every wire type appended and without; where the set has JSON codecs, it
@@ -242,8 +242,8 @@ is written in Connect's error-detail form, `binaryJson` in the data), and
 that the value read from JSON encodes to the same bytes, but where it
 holds an `Any`, which the binary encoder writes with its type URL alone.
 Since the encoders write prost-reflect's bytes exactly, prost-reflect reads
-what they write. The corpus case `codec_both` is these protos under
-`codec=both`, blessed like any other.
+what they write. The corpus case `codec_protos` is these protos under
+the default options, blessed like any other.
 
 For a deeper run, set the number of samples per message (8 by default)
 when generating, then run the Elm tests; the next plain run writes the
@@ -265,7 +265,7 @@ A sample that fails is a finding. prost-reflect cannot write a
 values, nested names flattened (`docs/design.md` §5.4). `just
 error-details-check`, part of the gate, holds it to the generator. It
 generates the vendored `examples/notes/third_party/googleapis/google/rpc/error_details.proto`
-under `codec=both`, with the plugin built from the checkout, into the
+under `wire=both`, with the plugin built from the checkout, into the
 build directory's `error-details/`, copies the modules into
 `error-details/generated/` (gitignored, as the harness's `generated/` is),
 and runs the tests of `error-details/`, an Elm application whose source
@@ -348,7 +348,7 @@ live/
   envoy/envoy-version the Envoy release func-e runs
   cases/envoy.json    Envoy's errors in grpc-status headers, and its own answers
   json/Live/Codec.elm `entry` for this build: the JSON call function alone
-  both/               the runner against bindings generated with codec=both
+  both/               the runner against bindings generated with wire=both
                       (build/both/, gitignored): elm.json, and
                       src/Live/Codec.elm, `entry` with the call function at
                       each codec
@@ -430,7 +430,7 @@ default, `send`, `task`, `halves` or `taskFromRequest`), `rewrite`, `tracker` (`
 `Rpc.Protocol.connect`, `connectProto`, `transcode` or `grpcWeb`
 (`transcode` with `proto` is refused, since transcoding is JSON, and
 `grpcweb` with anything but `proto`, since gRPC-Web is binary; a
-`grpcweb` envelope needs the build against `codec=both`); `useGet` and
+`grpcweb` envelope needs the build against `wire=both`); `useGet` and
 `maxGetUrl` apply `Rpc.Protocol.withConnectGet` and `withMaxGetUrl` over
 Connect; `readMaxBytes` and `writeMaxBytes` apply
 `Rpc.Protocol.withReadMaxBytes` and `withWriteMaxBytes` to any
@@ -618,8 +618,8 @@ given, so the `sendTraced` run joins the two files in `build/`.
 ### The proto codec, live
 
 `just live-proto` (part of `just live`) runs the proto codec's legs. It
-generates the example's Elm and the suite's with `codec=both` into
-`build/both/` with buf (not committed: the `codec=json` bindings are, and
+generates the example's Elm and the suite's with `wire=both` into
+`build/both/` with buf (not committed: the `wire=json` bindings are, and
 the corpus pins the generator's output), builds the runner against them
 from `both/`, whose `Live.Codec` takes each generated call function at
 both codecs, so an envelope's `codec` picks a JSON or a proto client
@@ -741,7 +741,7 @@ cases of `notes.json` and `transcode.json` (with `--origin`) and the
 route fixtures against the first, and `cases/envoy.json`, the errors in
 headers and Envoy's own answers, against the second. A third listener,
 `grpc_web`, runs Envoy's gRPC-Web filter and no transcoder, and
-`cases/grpcweb.json` runs against it on the `codec=both` build. Envoy calls the
+`cases/grpcweb.json` runs against it on the `wire=both` build. Envoy calls the
 server over gRPC and answers itself what no method matches
 (`reject_unknown_method`, `reject_unknown_query_parameters`), so the
 server's own transcoders never answer in its place.
@@ -771,7 +771,7 @@ caches `~/.local/share/func-e`, keyed on `envoy-version`.
 its `conformance_test_runner` sends the testee messages of
 `test_messages_proto3.proto` in one format and checks what it writes back,
 against protobuf's own parsers. The testee reads and writes them with the
-runtime and the Elm generated from that proto under `codec=both`, so the
+runtime and the Elm generated from that proto under `wire=both`, so the
 suite tests the protobuf binary and proto3 JSON codecs with an oracle
 independent of prost-reflect, which the codec round trips use.
 

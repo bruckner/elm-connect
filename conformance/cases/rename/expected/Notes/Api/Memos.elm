@@ -28,16 +28,18 @@ elmConnectVersion_ =
 Connect: `POST /notes.v1.NotesService/GetNote`.
 Transcode: no HTTP rule, follows the Connect path.
 
-Codecs: JSON. Described by [`descriptorFetchMemo`](#descriptorFetchMemo).
+Codecs: JSON and protobuf binary. Described by [`descriptorFetchMemo`](#descriptorFetchMemo).
 
 -}
-fetchMemo : Notes.Api.GetNoteRequest -> Rpc.Call Rpc.Json Notes.Api.GetNoteRequest Notes.Api.Memo
+fetchMemo : Notes.Api.GetNoteRequest -> Rpc.Call codec Notes.Api.GetNoteRequest Notes.Api.Memo
 fetchMemo =
     Rpc.call
-        (Proto.Method.initJson "notes.v1.NotesService"
+        (Proto.Method.init "notes.v1.NotesService"
             "GetNote"
             (\_ -> Ok << Notes.Api.encodeGetNoteRequest)
             (\_ -> Notes.Api.decodeMemo)
+            Notes.Api.encodeGetNoteRequestBytes
+            Notes.Api.decodeMemoBytes
         )
 
 

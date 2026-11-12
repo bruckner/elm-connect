@@ -33,16 +33,18 @@ elmConnectVersion_ =
 Connect: `POST /msgs.v1.Archive/ListArchived`.
 Transcode: `GET /v1/messages`.
 
-Codecs: JSON. Described by [`descriptorListArchived`](#descriptorListArchived).
+Codecs: JSON and protobuf binary. Described by [`descriptorListArchived`](#descriptorListArchived).
 
 -}
-listArchived : Msgs.V1.MessageRequest -> Rpc.Call Rpc.Json Msgs.V1.MessageRequest Msgs.V1.Message
+listArchived : Msgs.V1.MessageRequest -> Rpc.Call codec Msgs.V1.MessageRequest Msgs.V1.Message
 listArchived =
     Rpc.call
-        (Proto.Method.initJson "msgs.v1.Archive"
+        (Proto.Method.init "msgs.v1.Archive"
             "ListArchived"
             (\_ -> Ok << Msgs.V1.encodeMessageRequest)
             (\_ -> Msgs.V1.decodeMessage)
+            Msgs.V1.encodeMessageRequestBytes
+            Msgs.V1.decodeMessageBytes
             |> Proto.Method.withRoutes [ routeListArchived0 ]
         )
 

@@ -179,7 +179,7 @@ Each layer proves one thing and has a known gap. A path that starts with
   unary JSON cases over HTTP/1.1, through the pure halves and through
   `Rpc.sendTraced`, and its unary proto-codec cases
   (`conformance-proto.yaml`, `just live-proto`) against the runner built
-  on bindings generated with `codec=both`. Gap: what the runtime does not
+  on bindings generated with `wire=both`. Gap: what the runtime does not
   support (streaming, HTTP/2) is declared out,
   `known-failing-send.txt` lists the one case `sendTraced` fails, and
   `known-failing-proto.txt` the four error-body cases the proto run adds,
@@ -187,7 +187,7 @@ Each layer proves one thing and has a known gap. A path that starts with
 - **The protobuf conformance suite** (`conformance/protobuf/`, `just
   protobuf-conformance`, opt-in): protobuf's `conformance_test_runner`
   against the protobuf binary and proto3 JSON codecs, through the Elm
-  generated for its test messages under `codec=both`, every way between
+  generated for its test messages under `wire=both`, every way between
   the two formats. Gap: proto3 only; the cases it fails are classified
   in `failure_list.txt`.
 - **Lockstep** (`crates/elm-connect-gen/tests/lockstep.rs`): the

@@ -5,8 +5,8 @@ use clap::{Args, Parser, Subcommand};
 use elm_connect_gen::diagnostics::Diagnostics;
 use elm_connect_gen::naming::REPOSITORY_FILES;
 use elm_connect_gen::{
-    Bytes, Codec, EnumUnknown, Generated, Int64, ModuleName, Options, Spelling, Streaming,
-    UnboundMethods,
+    Bytes, EnumUnknown, Generated, Int64, ModuleName, Options, Spelling, Streaming, UnboundMethods,
+    Wire,
 };
 use miette::Report;
 
@@ -126,14 +126,16 @@ struct GenArgs {
     /// its own `--out`.
     #[arg(long, value_name = "fail|zero", default_value = "fail")]
     enum_unknown: EnumUnknown,
-    /// Which codecs the service methods are wired with: `json`, `proto` or
-    /// `both`. Messages get both codecs whatever it says.
+    /// What a method's generated calls are wired with: `both`, `json` or
+    /// `proto`. Messages get both codecs whatever it says.
     ///
-    /// `json`: proto3 JSON, for Connect's JSON codec and transcoding.
-    /// `proto`: protobuf binary, for Connect's proto codec and gRPC-Web.
-    /// `both`: either, so a method's calls go over any protocol.
-    #[arg(long, value_name = "json|proto|both", default_value = "json")]
-    codec: Codec,
+    /// `both`: either codec, so a method's calls go over any protocol.
+    /// `json`: proto3 JSON alone, for Connect's JSON codec and transcoding.
+    /// `proto`: protobuf binary alone, for Connect's proto codec and
+    /// gRPC-Web. Wiring one alone narrows each call's type to its codec,
+    /// and leaves the other's codecs out of a program's bundle.
+    #[arg(long, value_name = "both|json|proto", default_value = "both")]
+    wire: Wire,
     /// An Elm name for a proto element, such as `notes.v1.Note:Memo`.
     ///
     /// The value is `<proto full name>:<Elm name>`, and the Elm name
@@ -170,7 +172,7 @@ impl GenArgs {
         options.unbound_methods = self.unbound_methods;
         options.streaming = self.streaming;
         options.enum_unknown = self.enum_unknown;
-        options.codec = self.codec;
+        options.wire = self.wire;
         options.module_prefix = self.module_prefix.clone();
         options.spelling = Spelling::Flags;
         let mut problems = Diagnostics::new();

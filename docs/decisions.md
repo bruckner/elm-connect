@@ -1004,7 +1004,9 @@ modules carry a function per binding. Where: design §4, §5.3.
 *2026-10-27; the codec tags moved to a public leaf, `Proto.Codec`, on
 2026-10-30, because the package site showed `Proto.Method`'s signatures
 naming `Proto.Internal.Codec.Json`, a module it does not document. The
-`Rpc` aliases stay, the names an application writes.*
+`Rpc` aliases stay, the names an application writes. The generator
+option written `codec=` below is `wire=` since 2026-11-12, default
+`both` (Wire chosen by the client, not by import).*
 
 The config record and `Rpc.Transport` are replaced by two opaque
 types: `Rpc.Protocol codec` (`connect`, `connectProto`, `transcode`,
@@ -1091,7 +1093,9 @@ Where: design §5.1.
 *2026-10-27; on 2026-11-07 the option came to say only how the methods
 are wired, every message having both codecs (Binary is the Any's
 canonical form), and the builders became `init`, `initJson` and
-`initProto`.*
+`initProto`. On 2026-11-12 the option became `wire=`, default `both`,
+and `codec=binary`'s diagnostic went with `codec=` (Wire chosen by the
+client, not by import).*
 
 The generator's option value for the binary codecs alone is `proto`,
 the name of the tag its calls carry (`Rpc.Call Rpc.Proto`) and of the
@@ -1105,6 +1109,49 @@ each path value to a local named for its field's JSON path (`name_`,
 `noteName_`), where it bound `value0_`. The
 registry's `binaryRegistry` and `Proto.Registry.withBinary` keep their
 names for now. Where: design §3.10, §6.
+
+### Wire chosen by the client, not by import
+
+*2026-11-12.*
+
+A method keeps one generated call value, free in its codec under
+`wire=both`, and the client it is given to fixes the wire: an
+application never picks among call values for one method, so there is
+one name to import, find and read. The generator option that says what
+a method's calls are wired with is `wire=` (CLI `--wire`), where it was
+`codec=`: since every message has both codecs (Binary is the Any's
+canonical form), the option no longer says which codecs exist, only what
+each method's `Call` is wired with. `codec=` never shipped in a release,
+so it is an unknown option like any other, with no alias and no
+migration, and the diagnostic for its old value `binary` went with it.
+The runtime keeps the word: `Rpc.Call codec req res`, `Proto.Codec.Json`
+and `Rpc.Json` name what they are, and codec is Connect's own word for
+the JSON and binary axis; only the generator option moved.
+
+`both` is the default, so that a new application never meets a call its
+client will not send until it goes looking for the option: `json` and
+`proto` are an opt-in for an application that speaks one codec, narrower
+call types in exchange for leaving the other codec's code behind each
+call out of its bundle. Measured on the notes example's `Main.elm`, a
+JSON client (`elm make --optimize`, Elm 0.19.2; terser 5.36.0
+`--compress --mangle`; gzip -9): 39,428 B gzipped under `wire=json`,
+39,504 B under the default, 76 B more (125,467 B and 125,516 B
+minified). The cost is small because a message's typed value is built
+from both its codecs, so a JSON program that names typed values carries
+most of the binary codecs already.
+
+The road not taken was a calls module per wire beside each service's
+module, `Notes.V1.NotesService.Json` and `.Proto`, chosen by import with
+no free-codec call. Its spike, kept under the tag
+`archive/gen-service-wire-modules`, measured a cold build within noise,
+the notes example's JSON bundle 3 B gzipped larger, a `both` build
+importing only `.Json` identical to `json`, and a consumer migration of
+21 hand-written files (+257/−214), with the live runner's dispatch
+tables duplicated per build. An earlier spike, with two call values per
+method in one module, had left the JSON bundle byte-identical too. Both
+cost the application a choice per method for no bytes, where one value
+costs nothing to choose. Where: design §3.10, §4; calling.md, "Choosing
+the codec".
 
 ### gRPC-Web as a protocol
 

@@ -10,7 +10,7 @@
   encoder in its package's module, `queryOfListNotesRequest`, which its
   route functions share. A method named for a route function
   (`RouteGetNote0` beside `GetNote`) is `naming::value_collision`. Under
-  `codec=proto` a method gets no routes, since transcoding takes JSON.
+  `wire=proto` a method gets no routes, since transcoding takes JSON.
 - New modules `Proto.Route` (the route record and the path and body
   helpers route functions call) and `Proto.Query` (the query helpers).
 - `Proto.Method.json`, `proto` and `both` take the service's full name

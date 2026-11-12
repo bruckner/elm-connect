@@ -41,7 +41,7 @@ leaves them out with a warning rather than an error (server streaming
 is on the [roadmap](roadmap.md)). `Say` becomes:
 
 ```elm examples/eliza/generated/Connectrpc/Eliza/V1/ElizaService.elm excerpt
-say : Connectrpc.Eliza.V1.SayRequest -> Rpc.Call Rpc.Json Connectrpc.Eliza.V1.SayRequest Connectrpc.Eliza.V1.SayResponse
+say : Connectrpc.Eliza.V1.SayRequest -> Rpc.Call codec Connectrpc.Eliza.V1.SayRequest Connectrpc.Eliza.V1.SayResponse
 ```
 
 ## 3. The page

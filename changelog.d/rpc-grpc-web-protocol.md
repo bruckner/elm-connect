@@ -1,7 +1,7 @@
 - New protocol: `Rpc.Protocol.grpcWeb` calls unary methods over
   gRPC-Web in protobuf binary, for a server or proxy that serves it
   (connect-go, Envoy's gRPC-Web filter, grpcwebproxy), with code
-  generated under `codec=proto` or `codec=both`. A call is one POST of
+  generated under the default `wire=both` or under `wire=proto`. A call is one POST of
   the request in a gRPC-Web frame as `application/grpc-web+proto`, with
   `X-Grpc-Web: 1` and the client's timeout as `grpc-timeout`. The
   answer's status is read from the trailers frame in its body, or from

@@ -33,8 +33,8 @@
 //! The binary oracle: each sample's protobuf binary too, written
 //! deterministically ([`encode_sorted`] of [`canonical_message`]), which
 //! prost-reflect must read back as the sample, under the binary sets
-//! (`codec=both`, also with `int64=int` and `bytes=bytes`, and
-//! `codec=proto`); `tests/Codec/BinaryRoundTripTest.elm` decodes it with
+//! (`wire=both`, also with `int64=int` and `bytes=bytes`, and
+//! `wire=proto`); `tests/Codec/BinaryRoundTripTest.elm` decodes it with
 //! the generated binary decoder and must re-encode the same bytes.
 
 use std::fs;
@@ -138,28 +138,28 @@ const SETS: [OptionSet; 8] = [
     },
     OptionSet {
         prefix: "Both",
-        parameter: "codec=both",
+        parameter: "wire=both",
         table: "both",
         json: true,
         binary: true,
     },
     OptionSet {
         prefix: "BothInt64Int",
-        parameter: "codec=both,int64=int",
+        parameter: "wire=both,int64=int",
         table: "bothInt64Int",
         json: true,
         binary: true,
     },
     OptionSet {
         prefix: "BothBytesBytes",
-        parameter: "codec=both,bytes=bytes",
+        parameter: "wire=both,bytes=bytes",
         table: "bothBytesBytes",
         json: true,
         binary: true,
     },
     OptionSet {
         prefix: "Binary",
-        parameter: "codec=proto",
+        parameter: "wire=proto",
         table: "binary",
         json: false,
         binary: true,

@@ -3,7 +3,7 @@
 # Features message of connectrpc/conformance/v1/config.proto): as
 # conformance.yaml, with protobuf binary (Rpc.Protocol.connectProto) in
 # place of JSON. `just live-proto` runs it against the runner built on
-# bindings generated with codec=both (conformance/live/both);
+# bindings generated with wire=both (conformance/live/both);
 # conformance.yaml stays the JSON run.
 features:
   versions: [HTTP_VERSION_1]

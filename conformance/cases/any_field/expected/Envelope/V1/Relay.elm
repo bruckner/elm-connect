@@ -9,6 +9,7 @@ module Envelope.V1.Relay exposing (..)
 
 import Envelope.V1
 import Proto.Any
+import Proto.Binary
 import Proto.Json
 import Proto.Method
 import Proto.Version
@@ -30,16 +31,18 @@ elmConnectVersion_ =
 Connect: `POST /envelope.v1.Relay/Forward`.
 Transcode: no HTTP rule, follows the Connect path.
 
-Codecs: JSON. Described by [`descriptorForward`](#descriptorForward).
+Codecs: JSON and protobuf binary. Described by [`descriptorForward`](#descriptorForward).
 
 -}
-forward : Proto.Any.Any -> Rpc.Call Rpc.Json Proto.Any.Any Proto.Any.Any
+forward : Proto.Any.Any -> Rpc.Call codec Proto.Any.Any Proto.Any.Any
 forward =
     Rpc.call
-        (Proto.Method.initJson "envelope.v1.Relay"
+        (Proto.Method.init "envelope.v1.Relay"
             "Forward"
             Proto.Json.encodeAnyWith
             Proto.Json.anyWith
+            (Proto.Binary.messageEncoder Proto.Binary.any)
+            (Proto.Binary.messageDecoder Proto.Binary.any)
         )
 
 
@@ -47,16 +50,18 @@ forward =
 Connect: `POST /envelope.v1.Relay/Send`.
 Transcode: no HTTP rule, follows the Connect path.
 
-Codecs: JSON. Described by [`descriptorSend`](#descriptorSend).
+Codecs: JSON and protobuf binary. Described by [`descriptorSend`](#descriptorSend).
 
 -}
-send : Envelope.V1.Envelope -> Rpc.Call Rpc.Json Envelope.V1.Envelope Envelope.V1.Envelope
+send : Envelope.V1.Envelope -> Rpc.Call codec Envelope.V1.Envelope Envelope.V1.Envelope
 send =
     Rpc.call
-        (Proto.Method.initJson "envelope.v1.Relay"
+        (Proto.Method.init "envelope.v1.Relay"
             "Send"
             Envelope.V1.encodeEnvelopeWith
             Envelope.V1.decodeEnvelopeWith
+            Envelope.V1.encodeEnvelopeBytes
+            Envelope.V1.decodeEnvelopeBytes
         )
 
 

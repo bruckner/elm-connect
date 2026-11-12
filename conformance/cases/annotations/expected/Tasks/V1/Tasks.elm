@@ -28,16 +28,18 @@ elmConnectVersion_ =
 Connect: `POST /tasks.v1.Tasks/GetTask`.
 Transcode: no HTTP rule, follows the Connect path.
 
-Codecs: JSON. Described by [`descriptorGetTask`](#descriptorGetTask).
+Codecs: JSON and protobuf binary. Described by [`descriptorGetTask`](#descriptorGetTask).
 
 -}
-getTask : Tasks.V1.GetTaskRequest -> Rpc.Call Rpc.Json Tasks.V1.GetTaskRequest Tasks.V1.Task
+getTask : Tasks.V1.GetTaskRequest -> Rpc.Call codec Tasks.V1.GetTaskRequest Tasks.V1.Task
 getTask =
     Rpc.call
-        (Proto.Method.initJson "tasks.v1.Tasks"
+        (Proto.Method.init "tasks.v1.Tasks"
             "GetTask"
             (\_ -> Ok << Tasks.V1.encodeGetTaskRequest)
             (\_ -> Tasks.V1.decodeTask)
+            Tasks.V1.encodeGetTaskRequestBytes
+            Tasks.V1.decodeTaskBytes
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
         )
 
@@ -46,16 +48,18 @@ getTask =
 Connect: `POST /tasks.v1.Tasks/PutTask`.
 Transcode: no HTTP rule, follows the Connect path.
 
-Codecs: JSON. Described by [`descriptorPutTask`](#descriptorPutTask).
+Codecs: JSON and protobuf binary. Described by [`descriptorPutTask`](#descriptorPutTask).
 
 -}
-putTask : Tasks.V1.Task -> Rpc.Call Rpc.Json Tasks.V1.Task Tasks.V1.Task
+putTask : Tasks.V1.Task -> Rpc.Call codec Tasks.V1.Task Tasks.V1.Task
 putTask =
     Rpc.call
-        (Proto.Method.initJson "tasks.v1.Tasks"
+        (Proto.Method.init "tasks.v1.Tasks"
             "PutTask"
             (\_ -> Ok << Tasks.V1.encodeTask)
             (\_ -> Tasks.V1.decodeTask)
+            Tasks.V1.encodeTaskBytes
+            Tasks.V1.decodeTaskBytes
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyIdempotent
         )
 
@@ -64,16 +68,18 @@ putTask =
 Connect: `POST /tasks.v1.Tasks/CloseTask`.
 Transcode: no HTTP rule, follows the Connect path.
 
-Codecs: JSON. Described by [`descriptorCloseTask`](#descriptorCloseTask).
+Codecs: JSON and protobuf binary. Described by [`descriptorCloseTask`](#descriptorCloseTask).
 
 -}
-closeTask : Tasks.V1.GetTaskRequest -> Rpc.Call Rpc.Json Tasks.V1.GetTaskRequest Tasks.V1.Task
+closeTask : Tasks.V1.GetTaskRequest -> Rpc.Call codec Tasks.V1.GetTaskRequest Tasks.V1.Task
 closeTask =
     Rpc.call
-        (Proto.Method.initJson "tasks.v1.Tasks"
+        (Proto.Method.init "tasks.v1.Tasks"
             "CloseTask"
             (\_ -> Ok << Tasks.V1.encodeGetTaskRequest)
             (\_ -> Tasks.V1.decodeTask)
+            Tasks.V1.encodeGetTaskRequestBytes
+            Tasks.V1.decodeTaskBytes
         )
 
 

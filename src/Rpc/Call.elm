@@ -142,8 +142,8 @@ of that number; a method without a rule has none, and its call goes over the
 implicit route. Connect has no use for bindings and ignores the choice.
 
 Transcoding speaks JSON, so a binding is chosen on a JSON call: one generated
-under `codec=both`, free in the codec, becomes a `Call Rpc.Json`, and one
-generated under `codec=proto` is refused by the compiler.
+under `wire=both`, free in the codec, becomes a `Call Rpc.Json`, and one
+generated under `wire=proto` is refused by the compiler.
 
     Notes.getNote { name = "users/7/notes/42" }
         |> Rpc.Call.viaBinding 1
@@ -233,7 +233,7 @@ requestMessage (Internal.Call c) =
 registry, as a call over JSON sends it (see
 [`Proto.Any.toJson`](Proto-Any#toJson) for why that can fail). A request
 that reaches no `Any` ignores the registry. It takes a JSON call: one
-generated under `codec=proto` has no JSON, and is refused by the compiler.
+generated under `wire=proto` has no JSON, and is refused by the compiler.
 -}
 requestJson : Registry -> Call Json req res -> Result Proto.Error.Error Value
 requestJson registry (Internal.Call c) =

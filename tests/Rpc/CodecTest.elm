@@ -219,7 +219,7 @@ methods =
         [ test "a call free in the codec reads as a JSON call" <|
             \_ ->
                 -- Which halves are real is the codec: `requestJson`, `toJson`
-                -- and `viaBinding` take a `Call Rpc.Json`, so a `codec=both`
+                -- and `viaBinding` take a `Call Rpc.Json`, so a `wire=both`
                 -- call is pinned to JSON by them, and a binary-only call
                 -- does not compile with them.
                 ( Rpc.Call.requestJson Proto.Registry.empty (both { name = "x" })

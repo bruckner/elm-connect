@@ -1,9 +1,9 @@
-//! What the `codec` option asks of the IR: the names the binary codecs
+//! What the `wire` option asks of the IR: the names the binary codecs
 //! claim, and which repeated fields protobuf binary writes unpacked.
 
 use elm_connect_gen::diagnostics::{Code, Diagnostics};
 use elm_connect_gen::ir::{self, Package};
-use elm_connect_gen::{Codec, Options};
+use elm_connect_gen::{Options, Wire};
 
 use crate::common::pool;
 
@@ -15,9 +15,9 @@ message Status { int32 code = 1; }
 enum StatusBytes { STATUS_BYTES_UNSPECIFIED = 0; }
 "#;
 
-fn build(source: &str, codec: Codec, renames: &[&str]) -> Result<Vec<Package>, Diagnostics> {
+fn build(source: &str, wire: Wire, renames: &[&str]) -> Result<Vec<Package>, Diagnostics> {
     let mut options = Options::default();
-    options.codec = codec;
+    options.wire = wire;
     for entry in renames {
         options.add_rename(entry).expect("a rename");
     }
@@ -35,7 +35,7 @@ fn collisions(diagnostics: &Diagnostics) -> Vec<String> {
 
 #[test]
 fn both_codecs_meet_a_type_named_with_bytes() {
-    let diagnostics = build(BESIDE, Codec::Both, &[]).expect_err("two collisions");
+    let diagnostics = build(BESIDE, Wire::Both, &[]).expect_err("two collisions");
     let messages = collisions(&diagnostics);
     assert_eq!(messages.len(), 2, "{messages:?}");
     assert!(
@@ -51,8 +51,8 @@ fn both_codecs_meet_a_type_named_with_bytes() {
 #[test]
 fn every_option_meets_a_type_named_with_bytes() {
     // Package modules carry both codecs whatever the option.
-    for codec in [Codec::Json, Codec::Proto] {
-        let diagnostics = build(BESIDE, codec, &[]).expect_err("two collisions");
+    for wire in [Wire::Json, Wire::Proto] {
+        let diagnostics = build(BESIDE, wire, &[]).expect_err("two collisions");
         assert_eq!(collisions(&diagnostics).len(), 2);
     }
 }
@@ -60,7 +60,7 @@ fn every_option_meets_a_type_named_with_bytes() {
 #[test]
 fn a_rename_parts_the_codecs() {
     let renames = ["t.NoteBytes:NoteContent", "t.StatusBytes:StatusKind"];
-    assert!(build(BESIDE, Codec::Both, &renames).is_ok());
+    assert!(build(BESIDE, Wire::Both, &renames).is_ok());
 }
 
 #[test]
@@ -70,7 +70,7 @@ package t;
 message Note { string title = 1; }
 message Memo { bytes content = 1; }
 "#;
-    let diagnostics = build(source, Codec::Both, &["t.Memo:NoteBytes"]).expect_err("a collision");
+    let diagnostics = build(source, Wire::Both, &["t.Memo:NoteBytes"]).expect_err("a collision");
     assert_eq!(collisions(&diagnostics).len(), 1);
     let help = diagnostics.iter().next().unwrap().help_text();
     assert!(help.contains("That name comes from"), "{help}");
@@ -86,7 +86,7 @@ message Lists {
   repeated string names = 3;
 }
 "#;
-    let packages = build(source, Codec::Both, &[]).expect("built");
+    let packages = build(source, Wire::Both, &[]).expect("built");
     let unpacked: Vec<(&str, bool)> = packages[0].messages[0]
         .fields
         .iter()

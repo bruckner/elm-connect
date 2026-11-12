@@ -12,7 +12,7 @@ what a [`Client`](Rpc-Client#Client) speaks.
 
 A protocol's type says its codec: `Protocol Json` for proto3 JSON,
 `Protocol Proto` for protobuf binary. A client of one only sends calls whose
-generated code has that codec (`codec=json`, `codec=proto` or `codec=both`),
+generated code has that codec (`wire=json`, `wire=proto` or `wire=both`),
 and the compiler says so where it does not.
 
 Protocols built alike are `==`.
@@ -159,7 +159,7 @@ message, a timeout as `grpc-timeout`. The answer's status comes from the
 no message; an error's details from `grpc-status-details-bin`.
 
 Messages travel as protobuf binary only, so it sends the calls of methods
-generated with `codec=proto` or `codec=both`. A browser reads `grpc-status`
+generated with `wire=proto` or `wire=both`. A browser reads `grpc-status`
 from the headers of a cross-origin answer only when the server exposes it
 (`Access-Control-Expose-Headers`); trailers in the body need nothing. A traced
 call ([`Rpc.sendTraced`](Rpc#sendTraced)) gives the body's trailers in

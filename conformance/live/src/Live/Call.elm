@@ -11,8 +11,8 @@ with (as JSON, and as protobuf binary too when the message has binary codecs).
 
 A call carries its codec in its type, so an entry holds the call function once
 per codec the build's bindings have ([`Calls`](#Calls)): the build against
-bindings generated with `codec=json` has the JSON one alone, the build against
-`codec=both` both, and `Live.Codec`, which differs between the two builds,
+bindings generated with `wire=json` has the JSON one alone, the build against
+`wire=both` both, and `Live.Codec`, which differs between the two builds,
 says which.
 
 -}

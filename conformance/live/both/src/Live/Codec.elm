@@ -1,9 +1,9 @@
 module Live.Codec exposing (empty, entry, registry)
 
 {-| The dispatch tables' entries, for the build against bindings generated
-with `codec=both`: a generated call is free in its codec, so an entry has it
+with `wire=both`: a generated call is free in its codec, so an entry has it
 as a JSON call and as a protobuf binary one, and sends an envelope in the
-codec it names. The build against `codec=json` has its own module of this
+codec it names. The build against `wire=json` has its own module of this
 name (`json/Live/Codec.elm`).
 -}
 

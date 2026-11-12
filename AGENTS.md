@@ -52,7 +52,7 @@ and macOS. In order:
   documented), its Elm tests, and the notes example's Elm tests.
 - `error-details-check`: the hand-written `Proto.ErrorDetails` compiled
   and tested beside the generator's `google/rpc/error_details.proto`
-  under `codec=both`; on a failure, port the difference from the
+  under the default `wire=both`; on a failure, port the difference from the
   generated module by hand (conformance/README.md, "Error details").
 - `snippets`: every tagged code block in the README, the guides and the
   example's walkthrough is an excerpt of the file it names.

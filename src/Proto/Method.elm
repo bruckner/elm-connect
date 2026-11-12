@@ -87,7 +87,7 @@ type alias Method codec req res =
     Internal.Method Idempotency codec req res
 
 
-{-| A method with proto3 JSON codecs, as generated code under `codec=json`
+{-| A method with proto3 JSON codecs, as generated code under `wire=json`
 writes it: from the full name of its service (`notes.v1.NotesService`), its
 name as declared (`GetNote`), its request's JSON encoder and its response's
 JSON decoder, each taking the registry an [`Any`](Proto-Any#Any) they hold
@@ -119,7 +119,7 @@ initJson serviceName methodName encode decoder =
 
 
 {-| A method with protobuf binary codecs, as generated code under
-`codec=proto` writes it: from its service's full name, its name, its
+`wire=proto` writes it: from its service's full name, its name, its
 request's binary encoder and its response's binary decoder. Its calls go over a
 protocol speaking protobuf binary, which transcoding is not, so it takes no
 routes.
@@ -136,10 +136,11 @@ initProto serviceName methodName encode decoder =
         }
 
 
-{-| A method with both codecs, as generated code under `codec=both` writes
-it: free in the codec, so its calls go over any protocol. Its JSON codecs
-take the registry an [`Any`](Proto-Any#Any) they hold converts through, the
-client's ([`Rpc.withRegistry`](Rpc#withRegistry)), as for
+{-| A method with both codecs, as generated code under `wire=both`, the
+default, writes it: free in the codec, so its calls go over any protocol.
+Its JSON codecs take the registry an [`Any`](Proto-Any#Any) they hold
+converts through, the client's ([`Rpc.withRegistry`](Rpc#withRegistry)), as
+for
 [`initJson`](#initJson):
 
     Proto.Method.init "notes.v1.NotesService"

@@ -1,9 +1,10 @@
-// Under codec=both the binary codecs of `Book` are `encodeBookBytes` and
-// `decodeBookBytes`, which are also the JSON codecs of the message
-// `BookBytes`. An enum keeps its JSON codecs, so the enum `ShelfBytes`
-// meets the binary codecs of the message `Shelf` the same way. The oneof
-// `pick` of `Choice` is the type `ChoicePick`, whose binary codec is an
-// encoder alone, so the message `ChoicePickBytes` meets only that.
+// Under wire=both, the default, the binary codecs of `Book` are
+// `encodeBookBytes` and `decodeBookBytes`, which are also the JSON codecs
+// of the message `BookBytes`. An enum keeps its JSON codecs, so the enum
+// `ShelfBytes` meets the binary codecs of the message `Shelf` the same
+// way. The oneof `pick` of `Choice` is the type `ChoicePick`, whose binary
+// codec is an encoder alone, so the message `ChoicePickBytes` meets only
+// that.
 syntax = "proto3";
 
 package shelf.v1;

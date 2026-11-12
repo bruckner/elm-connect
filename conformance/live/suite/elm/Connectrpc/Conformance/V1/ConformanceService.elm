@@ -50,16 +50,18 @@ The returned payload should only contain the request info.
 Connect: `POST /connectrpc.conformance.v1.ConformanceService/Unary`.
 Transcode: no HTTP rule, follows the Connect path.
 
-Codecs: JSON. Described by [`descriptorUnary`](#descriptorUnary).
+Codecs: JSON and protobuf binary. Described by [`descriptorUnary`](#descriptorUnary).
 
 -}
-unary : Connectrpc.Conformance.V1.UnaryRequest -> Rpc.Call Rpc.Json Connectrpc.Conformance.V1.UnaryRequest Connectrpc.Conformance.V1.UnaryResponse
+unary : Connectrpc.Conformance.V1.UnaryRequest -> Rpc.Call codec Connectrpc.Conformance.V1.UnaryRequest Connectrpc.Conformance.V1.UnaryResponse
 unary =
     Rpc.call
-        (Proto.Method.initJson "connectrpc.conformance.v1.ConformanceService"
+        (Proto.Method.init "connectrpc.conformance.v1.ConformanceService"
             "Unary"
             Connectrpc.Conformance.V1.encodeUnaryRequestWith
             Connectrpc.Conformance.V1.decodeUnaryResponseWith
+            Connectrpc.Conformance.V1.encodeUnaryRequestBytes
+            Connectrpc.Conformance.V1.decodeUnaryResponseBytes
         )
 
 
@@ -70,16 +72,18 @@ return an unimplemented error when invoked.
 Connect: `POST /connectrpc.conformance.v1.ConformanceService/Unimplemented`.
 Transcode: no HTTP rule, follows the Connect path.
 
-Codecs: JSON. Described by [`descriptorUnimplemented`](#descriptorUnimplemented).
+Codecs: JSON and protobuf binary. Described by [`descriptorUnimplemented`](#descriptorUnimplemented).
 
 -}
-unimplemented : Connectrpc.Conformance.V1.UnimplementedRequest -> Rpc.Call Rpc.Json Connectrpc.Conformance.V1.UnimplementedRequest Connectrpc.Conformance.V1.UnimplementedResponse
+unimplemented : Connectrpc.Conformance.V1.UnimplementedRequest -> Rpc.Call codec Connectrpc.Conformance.V1.UnimplementedRequest Connectrpc.Conformance.V1.UnimplementedResponse
 unimplemented =
     Rpc.call
-        (Proto.Method.initJson "connectrpc.conformance.v1.ConformanceService"
+        (Proto.Method.init "connectrpc.conformance.v1.ConformanceService"
             "Unimplemented"
             (\_ -> Ok << Connectrpc.Conformance.V1.encodeUnimplementedRequest)
             (\_ -> Connectrpc.Conformance.V1.decodeUnimplementedResponse)
+            Connectrpc.Conformance.V1.encodeUnimplementedRequestBytes
+            Connectrpc.Conformance.V1.decodeUnimplementedResponseBytes
         )
 
 
@@ -91,16 +95,18 @@ leverage query parameters to send data.
 Connect: `POST /connectrpc.conformance.v1.ConformanceService/IdempotentUnary`.
 Transcode: no HTTP rule, follows the Connect path.
 
-Codecs: JSON. Described by [`descriptorIdempotentUnary`](#descriptorIdempotentUnary).
+Codecs: JSON and protobuf binary. Described by [`descriptorIdempotentUnary`](#descriptorIdempotentUnary).
 
 -}
-idempotentUnary : Connectrpc.Conformance.V1.IdempotentUnaryRequest -> Rpc.Call Rpc.Json Connectrpc.Conformance.V1.IdempotentUnaryRequest Connectrpc.Conformance.V1.IdempotentUnaryResponse
+idempotentUnary : Connectrpc.Conformance.V1.IdempotentUnaryRequest -> Rpc.Call codec Connectrpc.Conformance.V1.IdempotentUnaryRequest Connectrpc.Conformance.V1.IdempotentUnaryResponse
 idempotentUnary =
     Rpc.call
-        (Proto.Method.initJson "connectrpc.conformance.v1.ConformanceService"
+        (Proto.Method.init "connectrpc.conformance.v1.ConformanceService"
             "IdempotentUnary"
             Connectrpc.Conformance.V1.encodeIdempotentUnaryRequestWith
             Connectrpc.Conformance.V1.decodeIdempotentUnaryResponseWith
+            Connectrpc.Conformance.V1.encodeIdempotentUnaryRequestBytes
+            Connectrpc.Conformance.V1.decodeIdempotentUnaryResponseBytes
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
         )
 

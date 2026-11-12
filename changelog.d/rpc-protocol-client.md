@@ -22,9 +22,9 @@
   `Proto` constructors are gone.
 - A call, a client and a protocol carry their codec in their type:
   `Rpc.Call Rpc.Json req res`, `Rpc.Client Rpc.Proto`. Code generated
-  with `codec=json` gives `Rpc.Call Rpc.Json` calls, `codec=proto`
-  gives `Rpc.Call Rpc.Proto`, and `codec=both` gives calls free in the
-  codec, which a client of either sends. Annotations that named
+  under the default `wire=both` gives calls free in the codec, which a
+  client of either sends; `wire=json` gives `Rpc.Call Rpc.Json` calls
+  and `wire=proto` `Rpc.Call Rpc.Proto`. Annotations that named
   `Rpc.Call req res` gain the parameter. A client sending a call
   generated without its codec is a compile error.
 - `Rpc.send`, `task`, `taskTraced`, `sendTraced`, `request` and
@@ -46,11 +46,10 @@
   gains its codec, `Proto.Method.Method codec req res`.
   `Proto.Method.encodeRequestBytes` and `responseBytesDecoder` are gone;
   `encodeRequest` and `responseDecoder` stay.
-- The generator option value `codec=binary` (CLI `--codec binary`) is
-  `codec=proto`; `binary` is refused with a diagnostic naming `proto`.
-  A generated method's documentation names its codecs (`Codecs: JSON.`).
+- A generated method's documentation names its codecs (`Codecs: JSON
+  and protobuf binary.`).
 - `Proto.Any.pack` of a message with protobuf binary codecs alone
-  (`codec=proto`) holds its binary alone; it held a `null` JSON beside
+  (`wire=proto`) holds its binary alone; it held a `null` JSON beside
   it before.
 - `Rpc.Retry.on` puts the policy's math on the policy, and the
   protocol modifiers install the code they need, so a program that

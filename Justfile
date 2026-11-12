@@ -147,7 +147,7 @@ codec-gen:
 # Hold Proto.ErrorDetails, written by hand in generated code's form, to
 # what the generator gives for google/rpc/error_details.proto
 # (conformance/README.md, "Error details"): generate the vendored proto
-# under codec=both, with the plugin built from this checkout, into the build
+# under wire=both, with the plugin built from this checkout, into the build
 # directory's error-details; copy the modules into the scratch
 # conformance/error-details/generated (gitignored); and run that
 # application's tests, which compile the hand and generated modules together
@@ -160,7 +160,7 @@ error-details-check:
     rm -rf "$out" conformance/error-details/generated
     mkdir -p "$out/bin"
     cp "{{target}}/debug/protoc-gen-elm-connect" "$out/bin/"
-    (cd examples/notes && PATH="$out/bin:$PATH" buf generate -o "$out" --template '{"version":"v2","inputs":[{"directory":".","paths":["third_party/googleapis/google/rpc/error_details.proto"]}],"plugins":[{"local":"protoc-gen-elm-connect","out":"generated","opt":"codec=both"}]}')
+    (cd examples/notes && PATH="$out/bin:$PATH" buf generate -o "$out" --template '{"version":"v2","inputs":[{"directory":".","paths":["third_party/googleapis/google/rpc/error_details.proto"]}],"plugins":[{"local":"protoc-gen-elm-connect","out":"generated","opt":"wire=both"}]}')
     cp -R "$out/generated" conformance/error-details/generated
     cd conformance/error-details && elm-test-rs
 
@@ -252,7 +252,7 @@ envoy_admin_port := "18090"
 # transcoding cases and the route fixtures against the listener that turns
 # errors into a google.rpc.Status body, cases/envoy.json against the one
 # that leaves them in grpc-status headers, and cases/grpcweb.json, on the
-# runner built against codec=both (live-both), against the one that serves
+# runner built against wire=both (live-both), against the one that serves
 # gRPC-Web with Envoy's gRPC-Web filter. Both stop however the runs end.
 live-envoy: live-build live-both envoy-install
     #!/usr/bin/env bash
@@ -376,7 +376,7 @@ live-conformance: live-conformance-gen live-build
 
 # The proto codec over Connect (conformance/README.md): the example server
 # called over application/proto (cases/proto.json), the JSON cases again on
-# the runner built against codec=both (live-both), and the Connect
+# the runner built against wire=both (live-both), and the Connect
 # conformance suite with the proto codec (conformance-proto.yaml), through
 # the pure halves and with Rpc.sendTraced. Transcoding speaks JSON alone, so
 # its legs above cover it.
@@ -396,7 +396,7 @@ live-proto: live-both
 
 # gRPC-Web (conformance/README.md): the example server, which connect-go
 # serves gRPC-Web from, called over Rpc.Protocol.grpcWeb (cases/grpcweb.json)
-# on the runner built against codec=both (live-both); then the Connect
+# on the runner built against wire=both (live-both); then the Connect
 # conformance suite's gRPC-Web client cases (conformance-grpcweb.yaml),
 # through the pure halves and with Rpc.sendTraced. live-envoy runs the same
 # cases under Envoy's gRPC-Web filter.
@@ -411,9 +411,9 @@ live-grpcweb: live-both
     cat known-failing-grpcweb.txt known-failing-send.txt > build/known-failing-grpcweb-send.txt
     "$runner" --mode client --conf conformance-grpcweb.yaml --known-failing @build/known-failing-grpcweb-send.txt -- node conformance.mjs --send sendTraced --elm build/elm-both.js
 
-# The runner built against codec=both: the example's Elm and the Connect
-# suite's, generated with codec=both into conformance/live/build/both (not
-# committed: the codec=json bindings are, and the corpus covers the
+# The runner built against wire=both: the example's Elm and the Connect
+# suite's, generated with wire=both into conformance/live/build/both (not
+# committed: the wire=json bindings are, and the corpus covers the
 # generator), and the runner built against them from conformance/live/both
 # into conformance/live/build/elm-both.js.
 [private]
@@ -424,9 +424,9 @@ live-both: live-gen live-conformance-gen live-build
     out="$PWD/conformance/live/build/both"
     rm -rf "$out"
     mkdir -p "$out"
-    (cd examples/notes && PATH="$bin:$PATH" buf generate -o "$out" --template '{"version":"v2","inputs":[{"directory":"proto"},{"directory":"routes"}],"plugins":[{"local":"protoc-gen-elm-connect","out":"notes","opt":"codec=both"}]}')
-    (cd examples/notes && PATH="$bin:$PATH" buf generate -o "$out" --template '{"version":"v2","inputs":[{"directory":".","paths":["third_party/googleapis/google/rpc/error_details.proto"]}],"plugins":[{"local":"protoc-gen-elm-connect","out":"notes","opt":"codec=both"}]}')
-    (cd conformance/live/suite && PATH="$bin:$PATH" buf generate -o "$out" --template '{"version":"v2","inputs":[{"directory":"."}],"plugins":[{"local":"protoc-gen-elm-connect","out":"suite","opt":"streaming=skip,codec=both"}]}')
+    (cd examples/notes && PATH="$bin:$PATH" buf generate -o "$out" --template '{"version":"v2","inputs":[{"directory":"proto"},{"directory":"routes"}],"plugins":[{"local":"protoc-gen-elm-connect","out":"notes","opt":"wire=both"}]}')
+    (cd examples/notes && PATH="$bin:$PATH" buf generate -o "$out" --template '{"version":"v2","inputs":[{"directory":".","paths":["third_party/googleapis/google/rpc/error_details.proto"]}],"plugins":[{"local":"protoc-gen-elm-connect","out":"notes","opt":"wire=both"}]}')
+    (cd conformance/live/suite && PATH="$bin:$PATH" buf generate -o "$out" --template '{"version":"v2","inputs":[{"directory":"."}],"plugins":[{"local":"protoc-gen-elm-connect","out":"suite","opt":"streaming=skip,wire=both"}]}')
     (cd conformance/live/both && (elm make > /dev/null 2>&1 || true) && elm make ../src/Live.elm --output=../build/elm-both.js)
 
 # Install the live runner's npm packages as package-lock.json pins them, and
@@ -446,7 +446,7 @@ live-conformance-gen:
 # The protobuf conformance suite (conformance/README.md): protobuf's
 # conformance_test_runner, fetched at its pinned release, drives the testee
 # in conformance/protobuf, the runtime and the Elm generated from
-# test_messages_proto3.proto under codec=both, over the suite's proto3 cases
+# test_messages_proto3.proto under wire=both, over the suite's proto3 cases
 # in protobuf binary and JSON; JSPB and text cases are answered skipped.
 # Before the run, the generated Elm
 # must be current (`elm-connect check`) and the committed proto must be the
@@ -459,7 +459,7 @@ protobuf-conformance:
     set -euo pipefail
     cargo build -p elm-connect
     cd conformance/protobuf
-    {{target}}/debug/elm-connect check --codec both -I proto google/protobuf/test_messages_proto3.proto --out generated
+    {{target}}/debug/elm-connect check --wire both -I proto google/protobuf/test_messages_proto3.proto --out generated
     runner="$(./fetch-runner.sh)"
     diff "$runner/include/google/protobuf/test_messages_proto3.proto" proto/google/protobuf/test_messages_proto3.proto
     elm make > /dev/null 2>&1 || true
@@ -469,12 +469,12 @@ protobuf-conformance:
         --failure_list failure_list.txt --output_dir build/run ./testee.sh
 
 # Regenerate the protobuf conformance testee's Elm from its proto with the
-# CLI built from this checkout, under codec=both (binary codecs beside the
+# CLI built from this checkout, under wire=both (binary codecs beside the
 # JSON ones). The generated modules are committed; run this after a
 # generator change and commit what changed.
 protobuf-conformance-gen:
     cargo build -p elm-connect
-    cd conformance/protobuf && {{target}}/debug/elm-connect gen --codec both -I proto google/protobuf/test_messages_proto3.proto --out generated
+    cd conformance/protobuf && {{target}}/debug/elm-connect gen --wire both -I proto google/protobuf/test_messages_proto3.proto --out generated
 
 # The Buf Schema Registry modules the vendored protos come from, at the
 # commits they were exported from; protos-refresh re-exports them.

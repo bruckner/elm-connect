@@ -5,7 +5,7 @@ port module Testee exposing (main)
 request on `requests` is a `protobuf_test_messages.proto3.TestAllTypesProto3`
 in protobuf binary (base64) or proto3 JSON, read with the generated decoders
 and written back in the format asked for with the generated encoders,
-answered on `responses`. The test messages are generated under `codec=both`,
+answered on `responses`. The test messages are generated under `wire=both`,
 so an `Any` holds its message's binary, and is read from and written to
 proto3 JSON through [`registry`](#registry), the test messages' and the
 well-known types': one of a type it lacks fails to parse, and to serialize.

@@ -20,7 +20,7 @@ use std::fmt::Display;
 use crate::elm::markdown;
 use crate::ir::{Doc, Enum, FieldBehavior, HttpRule, Message, Method, Oneof, Package, Service};
 use crate::naming::REPOSITORY_FILES;
-use crate::options::Codec;
+use crate::options::Wire;
 
 /// `text` as a Markdown code span.
 pub(super) fn code(text: &str) -> String {
@@ -442,7 +442,7 @@ pub(super) fn enum_descriptor(enumeration: &Enum, described: &str) -> String {
 /// on the Transcode line; several as a list, numbered as
 /// `Rpc.Call.viaBinding` counts them), and the codecs it was generated
 /// with and its descriptor, as a link, in a paragraph of their own.
-pub(super) fn method(service: &str, method: &Method, codec: Codec) -> String {
+pub(super) fn method(service: &str, method: &Method, wire: Wire) -> String {
     let (transcode, bindings) = match &method.http {
         Some(rule) if rule.additional_bindings.is_empty() => {
             (format!("Transcode: {}.", binding(rule)), String::new())
@@ -472,10 +472,10 @@ pub(super) fn method(service: &str, method: &Method, codec: Codec) -> String {
         code(&method.doc.declaration),
         code(&format!("POST /{service}/{}", method.proto_name)),
     );
-    let codecs = match codec {
-        Codec::Json => "JSON",
-        Codec::Proto => "protobuf binary",
-        Codec::Both => "JSON and protobuf binary",
+    let codecs = match wire {
+        Wire::Json => "JSON",
+        Wire::Proto => "protobuf binary",
+        Wire::Both => "JSON and protobuf binary",
     };
     let described = format!(
         "Codecs: {codecs}. Described by {}.",

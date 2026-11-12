@@ -32,16 +32,18 @@ elmConnectVersion_ =
 Connect: `POST /things.v1.ThingService/GetThing`.
 Transcode: `GET /v1/{name=things/*}`.
 
-Codecs: JSON. Described by [`descriptorGetThing`](#descriptorGetThing).
+Codecs: JSON and protobuf binary. Described by [`descriptorGetThing`](#descriptorGetThing).
 
 -}
-getThing : Things.V1.GetThingRequest -> Rpc.Call Rpc.Json Things.V1.GetThingRequest Things.V1.Thing
+getThing : Things.V1.GetThingRequest -> Rpc.Call codec Things.V1.GetThingRequest Things.V1.Thing
 getThing =
     Rpc.call
-        (Proto.Method.initJson "things.v1.ThingService"
+        (Proto.Method.init "things.v1.ThingService"
             "GetThing"
             (\_ -> Ok << Things.V1.encodeGetThingRequest)
             (\_ -> Things.V1.decodeThing)
+            Things.V1.encodeGetThingRequestBytes
+            Things.V1.decodeThingBytes
             |> Proto.Method.withRoutes [ routeGetThing0 ]
         )
 

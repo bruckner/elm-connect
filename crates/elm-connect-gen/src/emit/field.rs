@@ -146,7 +146,7 @@ pub(super) enum Present<'p> {
     /// `List Json.Encode.Value`.
     ListValue,
     /// `google.protobuf.Any`: the runtime's `Proto.Any.Any`, holding JSON
-    /// under `codec=json` and binary otherwise.
+    /// under `wire=json` and binary otherwise.
     Any,
 }
 

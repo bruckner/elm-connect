@@ -19,6 +19,7 @@ import Notes.V1.ListNotesResponse
 import Notes.V1.Note
 import Notes.V1.ReadFileRequest
 import Notes.V1.UpdateNoteRequest
+import Proto.Binary
 import Proto.Http
 import Proto.Json
 import Proto.Method
@@ -45,16 +46,18 @@ Transcode:
   - binding 0: `GET /v1/{name=notes/*}`;
   - binding 1: `GET /v1/{name=users/*/notes/*}`.
 
-Codecs: JSON. Described by [`descriptorGetNote`](#descriptorGetNote).
+Codecs: JSON and protobuf binary. Described by [`descriptorGetNote`](#descriptorGetNote).
 
 -}
-getNote : Notes.V1.GetNoteRequest -> Rpc.Call Rpc.Json Notes.V1.GetNoteRequest Notes.V1.Note
+getNote : Notes.V1.GetNoteRequest -> Rpc.Call codec Notes.V1.GetNoteRequest Notes.V1.Note
 getNote =
     Rpc.call
-        (Proto.Method.initJson "notes.v1.NotesService"
+        (Proto.Method.init "notes.v1.NotesService"
             "GetNote"
             (\_ -> Ok << Notes.V1.encodeGetNoteRequest)
             (\_ -> Notes.V1.decodeNote)
+            Notes.V1.encodeGetNoteRequestBytes
+            Notes.V1.decodeNoteBytes
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
             |> Proto.Method.withRoutes [ routeGetNote0, routeGetNote1 ]
         )
@@ -64,16 +67,18 @@ getNote =
 Connect: `POST /notes.v1.NotesService/ListNotes`.
 Transcode: `GET /v1/{parent=users/*}/notes` response body `notes`.
 
-Codecs: JSON. Described by [`descriptorListNotes`](#descriptorListNotes).
+Codecs: JSON and protobuf binary. Described by [`descriptorListNotes`](#descriptorListNotes).
 
 -}
-listNotes : Notes.V1.ListNotesRequest -> Rpc.Call Rpc.Json Notes.V1.ListNotesRequest Notes.V1.ListNotesResponse
+listNotes : Notes.V1.ListNotesRequest -> Rpc.Call codec Notes.V1.ListNotesRequest Notes.V1.ListNotesResponse
 listNotes =
     Rpc.call
-        (Proto.Method.initJson "notes.v1.NotesService"
+        (Proto.Method.init "notes.v1.NotesService"
             "ListNotes"
             (\_ -> Ok << Notes.V1.encodeListNotesRequest)
             (\_ -> Notes.V1.decodeListNotesResponse)
+            Notes.V1.encodeListNotesRequestBytes
+            Notes.V1.decodeListNotesResponseBytes
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
             |> Proto.Method.withRoutes [ routeListNotes0 ]
         )
@@ -83,16 +88,18 @@ listNotes =
 Connect: `POST /notes.v1.NotesService/CreateNote`.
 Transcode: `POST /v1/{parent=users/*}/notes` body `note`.
 
-Codecs: JSON. Described by [`descriptorCreateNote`](#descriptorCreateNote).
+Codecs: JSON and protobuf binary. Described by [`descriptorCreateNote`](#descriptorCreateNote).
 
 -}
-createNote : Notes.V1.CreateNoteRequest -> Rpc.Call Rpc.Json Notes.V1.CreateNoteRequest Notes.V1.Note
+createNote : Notes.V1.CreateNoteRequest -> Rpc.Call codec Notes.V1.CreateNoteRequest Notes.V1.Note
 createNote =
     Rpc.call
-        (Proto.Method.initJson "notes.v1.NotesService"
+        (Proto.Method.init "notes.v1.NotesService"
             "CreateNote"
             (\_ -> Ok << Notes.V1.encodeCreateNoteRequest)
             (\_ -> Notes.V1.decodeNote)
+            Notes.V1.encodeCreateNoteRequestBytes
+            Notes.V1.decodeNoteBytes
             |> Proto.Method.withRoutes [ routeCreateNote0 ]
         )
 
@@ -101,16 +108,18 @@ createNote =
 Connect: `POST /notes.v1.NotesService/UpdateNote`.
 Transcode: `PATCH /v1/{note.name=notes/*}` body `note`.
 
-Codecs: JSON. Described by [`descriptorUpdateNote`](#descriptorUpdateNote).
+Codecs: JSON and protobuf binary. Described by [`descriptorUpdateNote`](#descriptorUpdateNote).
 
 -}
-updateNote : Notes.V1.UpdateNoteRequest -> Rpc.Call Rpc.Json Notes.V1.UpdateNoteRequest Notes.V1.Note
+updateNote : Notes.V1.UpdateNoteRequest -> Rpc.Call codec Notes.V1.UpdateNoteRequest Notes.V1.Note
 updateNote =
     Rpc.call
-        (Proto.Method.initJson "notes.v1.NotesService"
+        (Proto.Method.init "notes.v1.NotesService"
             "UpdateNote"
             (\_ -> Ok << Notes.V1.encodeUpdateNoteRequest)
             (\_ -> Notes.V1.decodeNote)
+            Notes.V1.encodeUpdateNoteRequestBytes
+            Notes.V1.decodeNoteBytes
             |> Proto.Method.withRoutes [ routeUpdateNote0 ]
         )
 
@@ -119,16 +128,18 @@ updateNote =
 Connect: `POST /notes.v1.NotesService/ReplaceNote`.
 Transcode: `PUT /v1/{name=notes/*}` body `*`.
 
-Codecs: JSON. Described by [`descriptorReplaceNote`](#descriptorReplaceNote).
+Codecs: JSON and protobuf binary. Described by [`descriptorReplaceNote`](#descriptorReplaceNote).
 
 -}
-replaceNote : Notes.V1.Note -> Rpc.Call Rpc.Json Notes.V1.Note Notes.V1.Note
+replaceNote : Notes.V1.Note -> Rpc.Call codec Notes.V1.Note Notes.V1.Note
 replaceNote =
     Rpc.call
-        (Proto.Method.initJson "notes.v1.NotesService"
+        (Proto.Method.init "notes.v1.NotesService"
             "ReplaceNote"
             (\_ -> Ok << Notes.V1.encodeNote)
             (\_ -> Notes.V1.decodeNote)
+            Notes.V1.encodeNoteBytes
+            Notes.V1.decodeNoteBytes
             |> Proto.Method.withRoutes [ routeReplaceNote0 ]
         )
 
@@ -137,16 +148,18 @@ replaceNote =
 Connect: `POST /notes.v1.NotesService/DeleteNote`.
 Transcode: `DELETE /v1/{name=notes/*}`.
 
-Codecs: JSON. Described by [`descriptorDeleteNote`](#descriptorDeleteNote).
+Codecs: JSON and protobuf binary. Described by [`descriptorDeleteNote`](#descriptorDeleteNote).
 
 -}
-deleteNote : Notes.V1.DeleteNoteRequest -> Rpc.Call Rpc.Json Notes.V1.DeleteNoteRequest ()
+deleteNote : Notes.V1.DeleteNoteRequest -> Rpc.Call codec Notes.V1.DeleteNoteRequest ()
 deleteNote =
     Rpc.call
-        (Proto.Method.initJson "notes.v1.NotesService"
+        (Proto.Method.init "notes.v1.NotesService"
             "DeleteNote"
             (\_ -> Ok << Notes.V1.encodeDeleteNoteRequest)
             (\_ -> Proto.Json.empty)
+            Notes.V1.encodeDeleteNoteRequestBytes
+            (Proto.Binary.messageDecoder Proto.Binary.empty)
             |> Proto.Method.withRoutes [ routeDeleteNote0 ]
         )
 
@@ -155,16 +168,18 @@ deleteNote =
 Connect: `POST /notes.v1.NotesService/ArchiveNote`.
 Transcode: `POST /v1/{name=notes/*}:archive` body `*`.
 
-Codecs: JSON. Described by [`descriptorArchiveNote`](#descriptorArchiveNote).
+Codecs: JSON and protobuf binary. Described by [`descriptorArchiveNote`](#descriptorArchiveNote).
 
 -}
-archiveNote : Notes.V1.ArchiveNoteRequest -> Rpc.Call Rpc.Json Notes.V1.ArchiveNoteRequest Notes.V1.Note
+archiveNote : Notes.V1.ArchiveNoteRequest -> Rpc.Call codec Notes.V1.ArchiveNoteRequest Notes.V1.Note
 archiveNote =
     Rpc.call
-        (Proto.Method.initJson "notes.v1.NotesService"
+        (Proto.Method.init "notes.v1.NotesService"
             "ArchiveNote"
             (\_ -> Ok << Notes.V1.encodeArchiveNoteRequest)
             (\_ -> Notes.V1.decodeNote)
+            Notes.V1.encodeArchiveNoteRequestBytes
+            Notes.V1.decodeNoteBytes
             |> Proto.Method.withRoutes [ routeArchiveNote0 ]
         )
 
@@ -173,16 +188,18 @@ archiveNote =
 Connect: `POST /notes.v1.NotesService/ReadFile`.
 Transcode: `HEAD /v1/{path=files/**}`.
 
-Codecs: JSON. Described by [`descriptorReadFile`](#descriptorReadFile).
+Codecs: JSON and protobuf binary. Described by [`descriptorReadFile`](#descriptorReadFile).
 
 -}
-readFile : Notes.V1.ReadFileRequest -> Rpc.Call Rpc.Json Notes.V1.ReadFileRequest Notes.V1.Summary
+readFile : Notes.V1.ReadFileRequest -> Rpc.Call codec Notes.V1.ReadFileRequest Notes.V1.Summary
 readFile =
     Rpc.call
-        (Proto.Method.initJson "notes.v1.NotesService"
+        (Proto.Method.init "notes.v1.NotesService"
             "ReadFile"
             (\_ -> Ok << Notes.V1.encodeReadFileRequest)
             (\_ -> Notes.V1.decodeSummary)
+            Notes.V1.encodeReadFileRequestBytes
+            Notes.V1.decodeSummaryBytes
             |> Proto.Method.withRoutes [ routeReadFile0 ]
         )
 
@@ -191,16 +208,18 @@ readFile =
 Connect: `POST /notes.v1.NotesService/Ping`.
 Transcode: `GET /v1/ping`.
 
-Codecs: JSON. Described by [`descriptorPing`](#descriptorPing).
+Codecs: JSON and protobuf binary. Described by [`descriptorPing`](#descriptorPing).
 
 -}
-ping : () -> Rpc.Call Rpc.Json () ()
+ping : () -> Rpc.Call codec () ()
 ping =
     Rpc.call
-        (Proto.Method.initJson "notes.v1.NotesService"
+        (Proto.Method.init "notes.v1.NotesService"
             "Ping"
             (\_ -> Ok << Proto.Json.encodeEmpty)
             (\_ -> Proto.Json.empty)
+            (Proto.Binary.messageEncoder Proto.Binary.empty)
+            (Proto.Binary.messageDecoder Proto.Binary.empty)
             |> Proto.Method.withRoutes [ routePing0 ]
         )
 
@@ -211,16 +230,18 @@ ping =
 Connect: `POST /notes.v1.NotesService/Summarize`.
 Transcode: no HTTP rule, follows the Connect path.
 
-Codecs: JSON. Described by [`descriptorSummarize`](#descriptorSummarize).
+Codecs: JSON and protobuf binary. Described by [`descriptorSummarize`](#descriptorSummarize).
 
 -}
-summarize : Notes.V1.GetNoteRequest -> Rpc.Call Rpc.Json Notes.V1.GetNoteRequest Notes.V1.Summary
+summarize : Notes.V1.GetNoteRequest -> Rpc.Call codec Notes.V1.GetNoteRequest Notes.V1.Summary
 summarize =
     Rpc.call
-        (Proto.Method.initJson "notes.v1.NotesService"
+        (Proto.Method.init "notes.v1.NotesService"
             "Summarize"
             (\_ -> Ok << Notes.V1.encodeGetNoteRequest)
             (\_ -> Notes.V1.decodeSummary)
+            Notes.V1.encodeGetNoteRequestBytes
+            Notes.V1.decodeSummaryBytes
         )
 
 

@@ -49,16 +49,18 @@ Transcode:
   - binding 2: `GET /v1/messages/{message_id}`;
   - binding 3: `GET /v1/users/{user_id}/messages/{message_id}`.
 
-Codecs: JSON. Described by [`descriptorGetMessage`](#descriptorGetMessage).
+Codecs: JSON and protobuf binary. Described by [`descriptorGetMessage`](#descriptorGetMessage).
 
 -}
-getMessage : Routes.V1.GetMessageRequest -> Rpc.Call Rpc.Json Routes.V1.GetMessageRequest Routes.V1.Message
+getMessage : Routes.V1.GetMessageRequest -> Rpc.Call codec Routes.V1.GetMessageRequest Routes.V1.Message
 getMessage =
     Rpc.call
-        (Proto.Method.initJson "routes.v1.Routes"
+        (Proto.Method.init "routes.v1.Routes"
             "GetMessage"
             (\_ -> Ok << Routes.V1.encodeGetMessageRequest)
             (\_ -> Routes.V1.decodeMessage)
+            Routes.V1.encodeGetMessageRequestBytes
+            Routes.V1.decodeMessageBytes
             |> Proto.Method.withRoutes [ routeGetMessage0, routeGetMessage1, routeGetMessage2, routeGetMessage3 ]
         )
 
@@ -69,16 +71,18 @@ getMessage =
 Connect: `POST /routes.v1.Routes/UpdateMessage`.
 Transcode: `PATCH /v1/messages/{message_id}` body `message`.
 
-Codecs: JSON. Described by [`descriptorUpdateMessage`](#descriptorUpdateMessage).
+Codecs: JSON and protobuf binary. Described by [`descriptorUpdateMessage`](#descriptorUpdateMessage).
 
 -}
-updateMessage : Routes.V1.UpdateMessageRequest -> Rpc.Call Rpc.Json Routes.V1.UpdateMessageRequest Routes.V1.Message
+updateMessage : Routes.V1.UpdateMessageRequest -> Rpc.Call codec Routes.V1.UpdateMessageRequest Routes.V1.Message
 updateMessage =
     Rpc.call
-        (Proto.Method.initJson "routes.v1.Routes"
+        (Proto.Method.init "routes.v1.Routes"
             "UpdateMessage"
             (\_ -> Ok << Routes.V1.encodeUpdateMessageRequest)
             (\_ -> Routes.V1.decodeMessage)
+            Routes.V1.encodeUpdateMessageRequestBytes
+            Routes.V1.decodeMessageBytes
             |> Proto.Method.withRoutes [ routeUpdateMessage0 ]
         )
 
@@ -87,16 +91,18 @@ updateMessage =
 Connect: `POST /routes.v1.Routes/UpdateMessageWhole`.
 Transcode: `PATCH /v1/messages/{message_id}` body `*`.
 
-Codecs: JSON. Described by [`descriptorUpdateMessageWhole`](#descriptorUpdateMessageWhole).
+Codecs: JSON and protobuf binary. Described by [`descriptorUpdateMessageWhole`](#descriptorUpdateMessageWhole).
 
 -}
-updateMessageWhole : Routes.V1.Message -> Rpc.Call Rpc.Json Routes.V1.Message Routes.V1.Message
+updateMessageWhole : Routes.V1.Message -> Rpc.Call codec Routes.V1.Message Routes.V1.Message
 updateMessageWhole =
     Rpc.call
-        (Proto.Method.initJson "routes.v1.Routes"
+        (Proto.Method.init "routes.v1.Routes"
             "UpdateMessageWhole"
             (\_ -> Ok << Routes.V1.encodeMessage)
             (\_ -> Routes.V1.decodeMessage)
+            Routes.V1.encodeMessageBytes
+            Routes.V1.decodeMessageBytes
             |> Proto.Method.withRoutes [ routeUpdateMessageWhole0 ]
         )
 
@@ -105,16 +111,18 @@ updateMessageWhole =
 Connect: `POST /routes.v1.Routes/PostSub`.
 Transcode: `POST /v1/subs/{sub.subfield}` body `*`.
 
-Codecs: JSON. Described by [`descriptorPostSub`](#descriptorPostSub).
+Codecs: JSON and protobuf binary. Described by [`descriptorPostSub`](#descriptorPostSub).
 
 -}
-postSub : Routes.V1.GetMessageRequest -> Rpc.Call Rpc.Json Routes.V1.GetMessageRequest Routes.V1.Message
+postSub : Routes.V1.GetMessageRequest -> Rpc.Call codec Routes.V1.GetMessageRequest Routes.V1.Message
 postSub =
     Rpc.call
-        (Proto.Method.initJson "routes.v1.Routes"
+        (Proto.Method.init "routes.v1.Routes"
             "PostSub"
             (\_ -> Ok << Routes.V1.encodeGetMessageRequest)
             (\_ -> Routes.V1.decodeMessage)
+            Routes.V1.encodeGetMessageRequestBytes
+            Routes.V1.decodeMessageBytes
             |> Proto.Method.withRoutes [ routePostSub0 ]
         )
 
@@ -123,16 +131,18 @@ postSub =
 Connect: `POST /routes.v1.Routes/Query`.
 Transcode: `GET /v1/query`.
 
-Codecs: JSON. Described by [`descriptorQuery`](#descriptorQuery).
+Codecs: JSON and protobuf binary. Described by [`descriptorQuery`](#descriptorQuery).
 
 -}
-query : Routes.V1.Everything -> Rpc.Call Rpc.Json Routes.V1.Everything Routes.V1.Everything
+query : Routes.V1.Everything -> Rpc.Call codec Routes.V1.Everything Routes.V1.Everything
 query =
     Rpc.call
-        (Proto.Method.initJson "routes.v1.Routes"
+        (Proto.Method.init "routes.v1.Routes"
             "Query"
             (\_ -> Ok << Routes.V1.encodeEverything)
             (\_ -> Routes.V1.decodeEverything)
+            Routes.V1.encodeEverythingBytes
+            Routes.V1.decodeEverythingBytes
             |> Proto.Method.withRoutes [ routeQuery0 ]
         )
 
@@ -141,16 +151,18 @@ query =
 Connect: `POST /routes.v1.Routes/Single`.
 Transcode: `GET /v1/single/{name}`.
 
-Codecs: JSON. Described by [`descriptorSingle`](#descriptorSingle).
+Codecs: JSON and protobuf binary. Described by [`descriptorSingle`](#descriptorSingle).
 
 -}
-single : Routes.V1.Everything -> Rpc.Call Rpc.Json Routes.V1.Everything Routes.V1.Everything
+single : Routes.V1.Everything -> Rpc.Call codec Routes.V1.Everything Routes.V1.Everything
 single =
     Rpc.call
-        (Proto.Method.initJson "routes.v1.Routes"
+        (Proto.Method.init "routes.v1.Routes"
             "Single"
             (\_ -> Ok << Routes.V1.encodeEverything)
             (\_ -> Routes.V1.decodeEverything)
+            Routes.V1.encodeEverythingBytes
+            Routes.V1.decodeEverythingBytes
             |> Proto.Method.withRoutes [ routeSingle0 ]
         )
 
@@ -159,16 +171,18 @@ single =
 Connect: `POST /routes.v1.Routes/Multi`.
 Transcode: `GET /v1/{name=things/*}`.
 
-Codecs: JSON. Described by [`descriptorMulti`](#descriptorMulti).
+Codecs: JSON and protobuf binary. Described by [`descriptorMulti`](#descriptorMulti).
 
 -}
-multi : Routes.V1.Everything -> Rpc.Call Rpc.Json Routes.V1.Everything Routes.V1.Everything
+multi : Routes.V1.Everything -> Rpc.Call codec Routes.V1.Everything Routes.V1.Everything
 multi =
     Rpc.call
-        (Proto.Method.initJson "routes.v1.Routes"
+        (Proto.Method.init "routes.v1.Routes"
             "Multi"
             (\_ -> Ok << Routes.V1.encodeEverything)
             (\_ -> Routes.V1.decodeEverything)
+            Routes.V1.encodeEverythingBytes
+            Routes.V1.decodeEverythingBytes
             |> Proto.Method.withRoutes [ routeMulti0 ]
         )
 
@@ -177,16 +191,18 @@ multi =
 Connect: `POST /routes.v1.Routes/Typed`.
 Transcode: `DELETE /v1/typed/{count}/{flag}/{kind}/{big}/{inner.deep.b}`.
 
-Codecs: JSON. Described by [`descriptorTyped`](#descriptorTyped).
+Codecs: JSON and protobuf binary. Described by [`descriptorTyped`](#descriptorTyped).
 
 -}
-typed : Routes.V1.Everything -> Rpc.Call Rpc.Json Routes.V1.Everything Routes.V1.Everything
+typed : Routes.V1.Everything -> Rpc.Call codec Routes.V1.Everything Routes.V1.Everything
 typed =
     Rpc.call
-        (Proto.Method.initJson "routes.v1.Routes"
+        (Proto.Method.init "routes.v1.Routes"
             "Typed"
             (\_ -> Ok << Routes.V1.encodeEverything)
             (\_ -> Routes.V1.decodeEverything)
+            Routes.V1.encodeEverythingBytes
+            Routes.V1.decodeEverythingBytes
             |> Proto.Method.withRoutes [ routeTyped0 ]
         )
 
@@ -195,16 +211,18 @@ typed =
 Connect: `POST /routes.v1.Routes/Files`.
 Transcode: `GET /v1/{path=files/**}`.
 
-Codecs: JSON. Described by [`descriptorFiles`](#descriptorFiles).
+Codecs: JSON and protobuf binary. Described by [`descriptorFiles`](#descriptorFiles).
 
 -}
-files : Routes.V1.FileRequest -> Rpc.Call Rpc.Json Routes.V1.FileRequest Routes.V1.FileRequest
+files : Routes.V1.FileRequest -> Rpc.Call codec Routes.V1.FileRequest Routes.V1.FileRequest
 files =
     Rpc.call
-        (Proto.Method.initJson "routes.v1.Routes"
+        (Proto.Method.init "routes.v1.Routes"
             "Files"
             (\_ -> Ok << Routes.V1.encodeFileRequest)
             (\_ -> Routes.V1.decodeFileRequest)
+            Routes.V1.encodeFileRequestBytes
+            Routes.V1.decodeFileRequestBytes
             |> Proto.Method.withRoutes [ routeFiles0 ]
         )
 
@@ -213,16 +231,18 @@ files =
 Connect: `POST /routes.v1.Routes/Cancel`.
 Transcode: `POST /v1/{name=operations/*}:cancel` body `*`.
 
-Codecs: JSON. Described by [`descriptorCancel`](#descriptorCancel).
+Codecs: JSON and protobuf binary. Described by [`descriptorCancel`](#descriptorCancel).
 
 -}
-cancel : Routes.V1.Resource -> Rpc.Call Rpc.Json Routes.V1.Resource Routes.V1.Resource
+cancel : Routes.V1.Resource -> Rpc.Call codec Routes.V1.Resource Routes.V1.Resource
 cancel =
     Rpc.call
-        (Proto.Method.initJson "routes.v1.Routes"
+        (Proto.Method.init "routes.v1.Routes"
             "Cancel"
             (\_ -> Ok << Routes.V1.encodeResource)
             (\_ -> Routes.V1.decodeResource)
+            Routes.V1.encodeResourceBytes
+            Routes.V1.decodeResourceBytes
             |> Proto.Method.withRoutes [ routeCancel0 ]
         )
 
@@ -231,16 +251,18 @@ cancel =
 Connect: `POST /routes.v1.Routes/UpdateResource`.
 Transcode: `PATCH /v1/{resource.name=resources/*}` body `resource`.
 
-Codecs: JSON. Described by [`descriptorUpdateResource`](#descriptorUpdateResource).
+Codecs: JSON and protobuf binary. Described by [`descriptorUpdateResource`](#descriptorUpdateResource).
 
 -}
-updateResource : Routes.V1.UpdateResourceRequest -> Rpc.Call Rpc.Json Routes.V1.UpdateResourceRequest Routes.V1.Resource
+updateResource : Routes.V1.UpdateResourceRequest -> Rpc.Call codec Routes.V1.UpdateResourceRequest Routes.V1.Resource
 updateResource =
     Rpc.call
-        (Proto.Method.initJson "routes.v1.Routes"
+        (Proto.Method.init "routes.v1.Routes"
             "UpdateResource"
             (\_ -> Ok << Routes.V1.encodeUpdateResourceRequest)
             (\_ -> Routes.V1.decodeResource)
+            Routes.V1.encodeUpdateResourceRequestBytes
+            Routes.V1.decodeResourceBytes
             |> Proto.Method.withRoutes [ routeUpdateResource0 ]
         )
 
@@ -249,16 +271,18 @@ updateResource =
 Connect: `POST /routes.v1.Routes/Head`.
 Transcode: `HEAD /v1/{path=files/**}`.
 
-Codecs: JSON. Described by [`descriptorHead`](#descriptorHead).
+Codecs: JSON and protobuf binary. Described by [`descriptorHead`](#descriptorHead).
 
 -}
-head : Routes.V1.FileRequest -> Rpc.Call Rpc.Json Routes.V1.FileRequest Routes.V1.FileRequest
+head : Routes.V1.FileRequest -> Rpc.Call codec Routes.V1.FileRequest Routes.V1.FileRequest
 head =
     Rpc.call
-        (Proto.Method.initJson "routes.v1.Routes"
+        (Proto.Method.init "routes.v1.Routes"
             "Head"
             (\_ -> Ok << Routes.V1.encodeFileRequest)
             (\_ -> Routes.V1.decodeFileRequest)
+            Routes.V1.encodeFileRequestBytes
+            Routes.V1.decodeFileRequestBytes
             |> Proto.Method.withRoutes [ routeHead0 ]
         )
 
@@ -271,16 +295,18 @@ Envoy's transcoder (auto\_mapping) and a Connect handler serve it.
 Connect: `POST /routes.v1.Routes/Unbound`.
 Transcode: no HTTP rule, follows the Connect path.
 
-Codecs: JSON. Described by [`descriptorUnbound`](#descriptorUnbound).
+Codecs: JSON and protobuf binary. Described by [`descriptorUnbound`](#descriptorUnbound).
 
 -}
-unbound : Routes.V1.GetMessageRequest -> Rpc.Call Rpc.Json Routes.V1.GetMessageRequest Routes.V1.Message
+unbound : Routes.V1.GetMessageRequest -> Rpc.Call codec Routes.V1.GetMessageRequest Routes.V1.Message
 unbound =
     Rpc.call
-        (Proto.Method.initJson "routes.v1.Routes"
+        (Proto.Method.init "routes.v1.Routes"
             "Unbound"
             (\_ -> Ok << Routes.V1.encodeGetMessageRequest)
             (\_ -> Routes.V1.decodeMessage)
+            Routes.V1.encodeGetMessageRequestBytes
+            Routes.V1.decodeMessageBytes
         )
 
 

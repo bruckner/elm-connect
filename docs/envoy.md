@@ -453,7 +453,7 @@ runtime reads the same code, message and details from either, with
 runs: the transcode cases of `cases/notes.json` and `cases/transcode.json`
 and the route fixtures against `status_body`, `cases/envoy.json`
 against `grpc_headers`, and `cases/grpcweb.json` against `grpc_web`, on
-the runner built against `codec=both`. The ports are variables at the
+the runner built against `wire=both`. The ports are variables at the
 top of the Justfile's Envoy recipes (`envoy_origin_port`, `envoy_port`,
 `envoy_headers_port`, `envoy_grpcweb_port`, `envoy_admin_port`); the recipe writes a copy of
 the config with them into `target/live/envoy.yaml`. Against an Envoy
