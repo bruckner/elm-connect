@@ -185,21 +185,21 @@ enumColor =
 -}
 messageCreated : Proto.Message.Message Created
 messageCreated =
-    Proto.Message.init "oneofs.v1.Created" encodeCreated decodeCreated encodeCreatedBytes decodeCreatedBytes
+    Proto.Message.init encodeCreated decodeCreated encodeCreatedBytes decodeCreatedBytes
 
 
 {-| The typed value of [`NoteEvent`](#NoteEvent): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageNoteEvent : Proto.Message.Message NoteEvent
 messageNoteEvent =
-    Proto.Message.init "oneofs.v1.NoteEvent" encodeNoteEvent decodeNoteEvent encodeNoteEventBytes decodeNoteEventBytes
+    Proto.Message.init encodeNoteEvent decodeNoteEvent encodeNoteEventBytes decodeNoteEventBytes
 
 
 {-| The typed value of [`Choice`](#Choice): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageChoice : Proto.Message.Message Choice
 messageChoice =
-    Proto.Message.init "oneofs.v1.Choice" encodeChoice decodeChoice encodeChoiceBytes decodeChoiceBytes
+    Proto.Message.init encodeChoice decodeChoice encodeChoiceBytes decodeChoiceBytes
 
 
 

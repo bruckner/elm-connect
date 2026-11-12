@@ -61,7 +61,7 @@ defaultNote =
 -}
 messageNote : Proto.Message.Message Note
 messageNote =
-    Proto.Message.init "proto.notes.Note" encodeNote decodeNote encodeNoteBytes decodeNoteBytes
+    Proto.Message.init encodeNote decodeNote encodeNoteBytes decodeNoteBytes
 
 
 

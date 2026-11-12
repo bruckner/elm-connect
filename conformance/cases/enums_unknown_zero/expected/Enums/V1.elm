@@ -123,7 +123,7 @@ enumPriority =
 -}
 messageTask : Proto.Message.Message Task
 messageTask =
-    Proto.Message.init "enums.v1.Task" encodeTask decodeTask encodeTaskBytes decodeTaskBytes
+    Proto.Message.init encodeTask decodeTask encodeTaskBytes decodeTaskBytes
 
 
 

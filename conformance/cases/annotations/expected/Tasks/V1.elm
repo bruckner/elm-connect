@@ -139,14 +139,14 @@ enumState =
 -}
 messageTask : Proto.Message.Message Task
 messageTask =
-    Proto.Message.init "tasks.v1.Task" encodeTask decodeTask encodeTaskBytes decodeTaskBytes
+    Proto.Message.init encodeTask decodeTask encodeTaskBytes decodeTaskBytes
 
 
 {-| The typed value of [`GetTaskRequest`](#GetTaskRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageGetTaskRequest : Proto.Message.Message GetTaskRequest
 messageGetTaskRequest =
-    Proto.Message.init "tasks.v1.GetTaskRequest" encodeGetTaskRequest decodeGetTaskRequest encodeGetTaskRequestBytes decodeGetTaskRequestBytes
+    Proto.Message.init encodeGetTaskRequest decodeGetTaskRequest encodeGetTaskRequestBytes decodeGetTaskRequestBytes
 
 
 

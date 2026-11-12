@@ -136,14 +136,14 @@ enumMood =
 -}
 messageDraft : Proto.Message.Message Draft
 messageDraft =
-    Proto.Message.init "field_order.v1.Draft" encodeDraft decodeDraft encodeDraftBytes decodeDraftBytes
+    Proto.Message.init encodeDraft decodeDraft encodeDraftBytes decodeDraftBytes
 
 
 {-| The typed value of [`DraftMargin`](#DraftMargin): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageDraftMargin : Proto.Message.Message DraftMargin
 messageDraftMargin =
-    Proto.Message.init "field_order.v1.Draft.Margin" encodeDraftMargin decodeDraftMargin encodeDraftMarginBytes decodeDraftMarginBytes
+    Proto.Message.init encodeDraftMargin decodeDraftMargin encodeDraftMarginBytes decodeDraftMarginBytes
 
 
 

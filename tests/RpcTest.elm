@@ -60,7 +60,7 @@ encodeTitle t =
 
 title : Message String
 title =
-    Proto.Message.init "notes.v1.Note" encodeTitle decodeTitle encodeTitleBytes decodeTitleBytes
+    Proto.Message.init encodeTitle decodeTitle encodeTitleBytes decodeTitleBytes
 
 
 encodeTitleBytes : String -> Bytes.Encode.Encoder
@@ -70,7 +70,7 @@ encodeTitleBytes t =
 
 decodeTitleBytes : Proto.Binary.Decoder String
 decodeTitleBytes =
-    Proto.Binary.merge "notes.v1.Title"
+    Proto.Binary.merge "notes.v1.Note"
         (\number wire value ->
             if number == 1 then
                 Proto.Binary.field Proto.Binary.string identity wire value
@@ -87,7 +87,7 @@ decodeTitleBytes =
 -}
 noteRegistry : Proto.Registry.Registry
 noteRegistry =
-    Proto.Registry.register (Proto.Message.init "notes.v1.Note" encodeTitle decodeTitle encodeTitleBytes decodeTitleBytes) Proto.Registry.empty
+    Proto.Registry.register (Proto.Message.init encodeTitle decodeTitle encodeTitleBytes decodeTitleBytes) Proto.Registry.empty
 
 
 notes : String -> Idempotency -> List Proto.Http.Binding -> GetNote -> Rpc.Call Rpc.Json GetNote String

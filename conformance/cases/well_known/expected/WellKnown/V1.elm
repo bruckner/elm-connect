@@ -186,7 +186,7 @@ defaultEvent =
 -}
 messageEvent : Proto.Message.Message Event
 messageEvent =
-    Proto.Message.init "well_known.v1.Event" encodeEvent decodeEvent encodeEventBytes decodeEventBytes
+    Proto.Message.init encodeEvent decodeEvent encodeEventBytes decodeEventBytes
 
 
 

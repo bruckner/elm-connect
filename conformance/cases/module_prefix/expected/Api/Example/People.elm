@@ -84,7 +84,7 @@ enumRole =
 -}
 messageUser : Proto.Message.Message User
 messageUser =
-    Proto.Message.init "users.v1.User" encodeUser decodeUser encodeUserBytes decodeUserBytes
+    Proto.Message.init encodeUser decodeUser encodeUserBytes decodeUserBytes
 
 
 

@@ -113,7 +113,7 @@ defaultCounters =
 -}
 messageCounters : Proto.Message.Message Counters
 messageCounters =
-    Proto.Message.init "int64_option.v1.Counters" encodeCounters decodeCounters encodeCountersBytes decodeCountersBytes
+    Proto.Message.init encodeCounters decodeCounters encodeCountersBytes decodeCountersBytes
 
 
 

@@ -204,14 +204,14 @@ enumMarks =
 -}
 messageDelimiters : Proto.Message.Message Delimiters
 messageDelimiters =
-    Proto.Message.init "awkward.v1.Delimiters" encodeDelimiters decodeDelimiters encodeDelimitersBytes decodeDelimitersBytes
+    Proto.Message.init encodeDelimiters decodeDelimiters encodeDelimitersBytes decodeDelimitersBytes
 
 
 {-| The typed value of [`Docs`](#Docs): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageDocs : Proto.Message.Message Docs
 messageDocs =
-    Proto.Message.init "awkward.v1.Docs" encodeDocs decodeDocs encodeDocsBytes decodeDocsBytes
+    Proto.Message.init encodeDocs decodeDocs encodeDocsBytes decodeDocsBytes
 
 
 

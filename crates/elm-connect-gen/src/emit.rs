@@ -74,10 +74,10 @@
 //!   declared name with its number (`Proto.EnumValue.descriptor`), each
 //!   deprecated one marked (`withDeprecated`). Each type's typed value,
 //!   in the package's module, is `messageFoo : Proto.Message.Message Foo`,
-//!   built by `Proto.Message.init` from its full name and both its codecs
-//!   (`initWith`, with the JSON codecs taking the registry, for a message
-//!   that reaches an `Any`), and `enumBar :
-//!   Proto.Enum.Enum Bar`, built by `Proto.Enum.enum` from its codecs, zero
+//!   built by `Proto.Message.init` from both its codecs, the binary
+//!   decoder carrying its full name (`initWith`, with the JSON codecs
+//!   taking the registry, for a message that reaches an `Any`), and
+//!   `enumBar : Proto.Enum.Enum Bar`, built by `Proto.Enum.enum` from its codecs, zero
 //!   value and descriptor. The package's `descriptors` holds its own descriptors (the
 //!   descriptor modules' values, so a program using it keeps no codecs),
 //!   then those of the packages its module imports and the well-known
@@ -1076,7 +1076,7 @@ mod tests {
         );
         assert!(
             on.contains(
-                "messageA =\n    Proto.Message.init \"t.v1.A\" encodeA decodeA encodeABytes decodeABytes"
+                "messageA =\n    Proto.Message.init encodeA decodeA encodeABytes decodeABytes"
             ),
             "{on}"
         );

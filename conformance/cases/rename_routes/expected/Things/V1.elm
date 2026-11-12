@@ -109,21 +109,21 @@ defaultGetThingRequest =
 -}
 messageThing : Proto.Message.Message Thing
 messageThing =
-    Proto.Message.init "things.v1.Thing" encodeThing decodeThing encodeThingBytes decodeThingBytes
+    Proto.Message.init encodeThing decodeThing encodeThingBytes decodeThingBytes
 
 
 {-| The typed value of [`Criteria`](#Criteria): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageCriteria : Proto.Message.Message Criteria
 messageCriteria =
-    Proto.Message.init "things.v1.Filter" encodeCriteria decodeCriteria encodeCriteriaBytes decodeCriteriaBytes
+    Proto.Message.init encodeCriteria decodeCriteria encodeCriteriaBytes decodeCriteriaBytes
 
 
 {-| The typed value of [`GetThingRequest`](#GetThingRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageGetThingRequest : Proto.Message.Message GetThingRequest
 messageGetThingRequest =
-    Proto.Message.init "things.v1.GetThingRequest" encodeGetThingRequest decodeGetThingRequest encodeGetThingRequestBytes decodeGetThingRequestBytes
+    Proto.Message.init encodeGetThingRequest decodeGetThingRequest encodeGetThingRequestBytes decodeGetThingRequestBytes
 
 
 

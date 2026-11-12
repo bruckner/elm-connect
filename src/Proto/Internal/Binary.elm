@@ -1,4 +1,4 @@
-module Proto.Internal.Binary exposing (Decoder(..), Failure, crossed, run, runBase64)
+module Proto.Internal.Binary exposing (Decoder(..), Failure, crossed, run, runBase64, typeName)
 
 {-| The binary decoder type, defined here so that `Proto.Message` can run a
 decoder without importing `Proto.Binary`, which imports it through
@@ -30,6 +30,14 @@ type Decoder a
         , fast : Int -> Bytes.Decode.Decoder a
         , located : Int -> Bytes.Decode.Decoder (Result Failure a)
         }
+
+
+{-| The full name of the message a decoder reads, the one
+`Proto.Binary.merge` was given.
+-}
+typeName : Decoder a -> String
+typeName (Decoder d) =
+    d.name
 
 
 {-| A failure while it unwinds: its reason, the fields it is in (message

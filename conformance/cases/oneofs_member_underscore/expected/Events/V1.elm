@@ -130,21 +130,21 @@ defaultListEventsResponse =
 -}
 messageEvent : Proto.Message.Message Event
 messageEvent =
-    Proto.Message.init "events.v1.Event" encodeEvent decodeEvent encodeEventBytes decodeEventBytes
+    Proto.Message.init encodeEvent decodeEvent encodeEventBytes decodeEventBytes
 
 
 {-| The typed value of [`ListEventsRequest`](#ListEventsRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageListEventsRequest : Proto.Message.Message ListEventsRequest
 messageListEventsRequest =
-    Proto.Message.init "events.v1.ListEventsRequest" encodeListEventsRequest decodeListEventsRequest encodeListEventsRequestBytes decodeListEventsRequestBytes
+    Proto.Message.init encodeListEventsRequest decodeListEventsRequest encodeListEventsRequestBytes decodeListEventsRequestBytes
 
 
 {-| The typed value of [`ListEventsResponse`](#ListEventsResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageListEventsResponse : Proto.Message.Message ListEventsResponse
 messageListEventsResponse =
-    Proto.Message.init "events.v1.ListEventsResponse" encodeListEventsResponse decodeListEventsResponse encodeListEventsResponseBytes decodeListEventsResponseBytes
+    Proto.Message.init encodeListEventsResponse decodeListEventsResponse encodeListEventsResponseBytes decodeListEventsResponseBytes
 
 
 

@@ -143,14 +143,14 @@ defaultLink =
 -}
 messageURLPath : Proto.Message.Message URLPath
 messageURLPath =
-    Proto.Message.init "first.v1.URLPath" encodeURLPath decodeURLPath encodeURLPathBytes decodeURLPathBytes
+    Proto.Message.init encodeURLPath decodeURLPath encodeURLPathBytes decodeURLPathBytes
 
 
 {-| The typed value of [`Link`](#Link): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageLink : Proto.Message.Message Link
 messageLink =
-    Proto.Message.init "first.v1.Link" encodeLink decodeLink encodeLinkBytes decodeLinkBytes
+    Proto.Message.init encodeLink decodeLink encodeLinkBytes decodeLinkBytes
 
 
 

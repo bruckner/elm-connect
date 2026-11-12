@@ -382,70 +382,70 @@ enumKind =
 -}
 messageGetMessageRequest : Proto.Message.Message GetMessageRequest
 messageGetMessageRequest =
-    Proto.Message.init "routes.v1.GetMessageRequest" encodeGetMessageRequest decodeGetMessageRequest encodeGetMessageRequestBytes decodeGetMessageRequestBytes
+    Proto.Message.init encodeGetMessageRequest decodeGetMessageRequest encodeGetMessageRequestBytes decodeGetMessageRequestBytes
 
 
 {-| The typed value of [`GetMessageRequestSubMessage`](#GetMessageRequestSubMessage): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageGetMessageRequestSubMessage : Proto.Message.Message GetMessageRequestSubMessage
 messageGetMessageRequestSubMessage =
-    Proto.Message.init "routes.v1.GetMessageRequest.SubMessage" encodeGetMessageRequestSubMessage decodeGetMessageRequestSubMessage encodeGetMessageRequestSubMessageBytes decodeGetMessageRequestSubMessageBytes
+    Proto.Message.init encodeGetMessageRequestSubMessage decodeGetMessageRequestSubMessage encodeGetMessageRequestSubMessageBytes decodeGetMessageRequestSubMessageBytes
 
 
 {-| The typed value of [`Message`](#Message): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageMessage : Proto.Message.Message Message
 messageMessage =
-    Proto.Message.init "routes.v1.Message" encodeMessage decodeMessage encodeMessageBytes decodeMessageBytes
+    Proto.Message.init encodeMessage decodeMessage encodeMessageBytes decodeMessageBytes
 
 
 {-| The typed value of [`UpdateMessageRequest`](#UpdateMessageRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageUpdateMessageRequest : Proto.Message.Message UpdateMessageRequest
 messageUpdateMessageRequest =
-    Proto.Message.init "routes.v1.UpdateMessageRequest" encodeUpdateMessageRequest decodeUpdateMessageRequest encodeUpdateMessageRequestBytes decodeUpdateMessageRequestBytes
+    Proto.Message.init encodeUpdateMessageRequest decodeUpdateMessageRequest encodeUpdateMessageRequestBytes decodeUpdateMessageRequestBytes
 
 
 {-| The typed value of [`Everything`](#Everything): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageEverything : Proto.Message.Message Everything
 messageEverything =
-    Proto.Message.init "routes.v1.Everything" encodeEverything decodeEverything encodeEverythingBytes decodeEverythingBytes
+    Proto.Message.init encodeEverything decodeEverything encodeEverythingBytes decodeEverythingBytes
 
 
 {-| The typed value of [`Inner`](#Inner): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageInner : Proto.Message.Message Inner
 messageInner =
-    Proto.Message.init "routes.v1.Inner" encodeInner decodeInner encodeInnerBytes decodeInnerBytes
+    Proto.Message.init encodeInner decodeInner encodeInnerBytes decodeInnerBytes
 
 
 {-| The typed value of [`Deep`](#Deep): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageDeep : Proto.Message.Message Deep
 messageDeep =
-    Proto.Message.init "routes.v1.Deep" encodeDeep decodeDeep encodeDeepBytes decodeDeepBytes
+    Proto.Message.init encodeDeep decodeDeep encodeDeepBytes decodeDeepBytes
 
 
 {-| The typed value of [`FileRequest`](#FileRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageFileRequest : Proto.Message.Message FileRequest
 messageFileRequest =
-    Proto.Message.init "routes.v1.FileRequest" encodeFileRequest decodeFileRequest encodeFileRequestBytes decodeFileRequestBytes
+    Proto.Message.init encodeFileRequest decodeFileRequest encodeFileRequestBytes decodeFileRequestBytes
 
 
 {-| The typed value of [`Resource`](#Resource): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageResource : Proto.Message.Message Resource
 messageResource =
-    Proto.Message.init "routes.v1.Resource" encodeResource decodeResource encodeResourceBytes decodeResourceBytes
+    Proto.Message.init encodeResource decodeResource encodeResourceBytes decodeResourceBytes
 
 
 {-| The typed value of [`UpdateResourceRequest`](#UpdateResourceRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageUpdateResourceRequest : Proto.Message.Message UpdateResourceRequest
 messageUpdateResourceRequest =
-    Proto.Message.init "routes.v1.UpdateResourceRequest" encodeUpdateResourceRequest decodeUpdateResourceRequest encodeUpdateResourceRequestBytes decodeUpdateResourceRequestBytes
+    Proto.Message.init encodeUpdateResourceRequest decodeUpdateResourceRequest encodeUpdateResourceRequestBytes decodeUpdateResourceRequestBytes
 
 
 

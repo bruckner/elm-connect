@@ -49,7 +49,7 @@ decodeTitle =
 -}
 messageTitle : Message String
 messageTitle =
-    Message.init "notes.v1.Title" encodeTitle decodeTitle encodeTitleBytes decodeTitleBytes
+    Message.init encodeTitle decodeTitle encodeTitleBytes decodeTitleBytes
 
 
 {-| The registry generated code gives a package of

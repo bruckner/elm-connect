@@ -69,7 +69,7 @@ defaultDraft =
 -}
 messageDraft : Proto.Message.Message Draft
 messageDraft =
-    Proto.Message.init "drafts.v1.Draft" encodeDraft decodeDraft encodeDraftBytes decodeDraftBytes
+    Proto.Message.init encodeDraft decodeDraft encodeDraftBytes decodeDraftBytes
 
 
 

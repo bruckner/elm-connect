@@ -299,63 +299,63 @@ enumOuterInnerKind =
 -}
 messageOuter : Proto.Message.Message Outer
 messageOuter =
-    Proto.Message.init "nesting.v1.Outer" encodeOuter decodeOuter encodeOuterBytes decodeOuterBytes
+    Proto.Message.init encodeOuter decodeOuter encodeOuterBytes decodeOuterBytes
 
 
 {-| The typed value of [`OuterInner`](#OuterInner): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageOuterInner : Proto.Message.Message OuterInner
 messageOuterInner =
-    Proto.Message.init "nesting.v1.Outer.Inner" encodeOuterInner decodeOuterInner encodeOuterInnerBytes decodeOuterInnerBytes
+    Proto.Message.init encodeOuterInner decodeOuterInner encodeOuterInnerBytes decodeOuterInnerBytes
 
 
 {-| The typed value of [`OuterInnerDeepest`](#OuterInnerDeepest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageOuterInnerDeepest : Proto.Message.Message OuterInnerDeepest
 messageOuterInnerDeepest =
-    Proto.Message.init "nesting.v1.Outer.Inner.Deepest" encodeOuterInnerDeepest decodeOuterInnerDeepest encodeOuterInnerDeepestBytes decodeOuterInnerDeepestBytes
+    Proto.Message.init encodeOuterInnerDeepest decodeOuterInnerDeepest encodeOuterInnerDeepestBytes decodeOuterInnerDeepestBytes
 
 
 {-| The typed value of [`Node`](#Node): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageNode : Proto.Message.Message Node
 messageNode =
-    Proto.Message.init "nesting.v1.Node" encodeNode decodeNode encodeNodeBytes decodeNodeBytes
+    Proto.Message.init encodeNode decodeNode encodeNodeBytes decodeNodeBytes
 
 
 {-| The typed value of [`Person`](#Person): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messagePerson : Proto.Message.Message Person
 messagePerson =
-    Proto.Message.init "nesting.v1.Person" encodePerson decodePerson encodePersonBytes decodePersonBytes
+    Proto.Message.init encodePerson decodePerson encodePersonBytes decodePersonBytes
 
 
 {-| The typed value of [`Company`](#Company): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageCompany : Proto.Message.Message Company
 messageCompany =
-    Proto.Message.init "nesting.v1.Company" encodeCompany decodeCompany encodeCompanyBytes decodeCompanyBytes
+    Proto.Message.init encodeCompany decodeCompany encodeCompanyBytes decodeCompanyBytes
 
 
 {-| The typed value of [`Forest`](#Forest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageForest : Proto.Message.Message Forest
 messageForest =
-    Proto.Message.init "nesting.v1.Forest" encodeForest decodeForest encodeForestBytes decodeForestBytes
+    Proto.Message.init encodeForest decodeForest encodeForestBytes decodeForestBytes
 
 
 {-| The typed value of [`Expr`](#Expr): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageExpr : Proto.Message.Message Expr
 messageExpr =
-    Proto.Message.init "nesting.v1.Expr" encodeExpr decodeExpr encodeExprBytes decodeExprBytes
+    Proto.Message.init encodeExpr decodeExpr encodeExprBytes decodeExprBytes
 
 
 {-| The typed value of [`Sum`](#Sum): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageSum : Proto.Message.Message Sum
 messageSum =
-    Proto.Message.init "nesting.v1.Sum" encodeSum decodeSum encodeSumBytes decodeSumBytes
+    Proto.Message.init encodeSum decodeSum encodeSumBytes decodeSumBytes
 
 
 

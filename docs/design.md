@@ -1676,7 +1676,7 @@ enumVisibility =
 
 messageNote : Proto.Message.Message Note
 messageNote =
-    Proto.Message.init "notes.v1.Note" encodeNote decodeNote encodeNoteBytes decodeNoteBytes
+    Proto.Message.init encodeNote decodeNote encodeNoteBytes decodeNoteBytes
 
 
 descriptors : Proto.Descriptors.Descriptors
@@ -1722,12 +1722,13 @@ registry =
   written twice: an enum's names and numbers are its descriptor's, and
   `Proto.Enum` reads them through the codecs (below).
 - **The typed values are opaque**, built by positional functions and
-  read by functions of the same module: `Proto.Message.init name encode
+  read by functions of the same module: `Proto.Message.init encode
   decoder encodeBytes decodeBytes`, and `initWith` for a message that
   reaches an `Any`, whose JSON codecs take the registry and whose
-  encoder gives a `Result` (read by `typeName`; `Proto.Any` and
-  `Proto.Registry` reach the codecs), `Proto.Enum.enum encode decoder
-  zero descriptor` (read by `encode`, `decoder`, `default`,
+  encoder gives a `Result` (read by `typeName`, the full name the binary
+  decoder carries from `Proto.Binary.merge`, so it is written once;
+  `Proto.Any` and `Proto.Registry` reach the codecs), `Proto.Enum.enum
+  encode decoder zero descriptor` (read by `encode`, `decoder`, `default`,
   `toDescriptor`, `toName`, `fromName`, `toNumber`, `fromNumber`) and
   `Proto.Method.initJson service name encodeRequest responseDecoder`
   (§4, given its idempotency and routes by `withIdempotency` and

@@ -133,14 +133,14 @@ enumKind =
 -}
 messageEntry : Proto.Message.Message Entry
 messageEntry =
-    Proto.Message.init "ledger.v1.Entry" encodeEntry decodeEntry encodeEntryBytes decodeEntryBytes
+    Proto.Message.init encodeEntry decodeEntry encodeEntryBytes decodeEntryBytes
 
 
 {-| The typed value of [`GetEntryRequest`](#GetEntryRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageGetEntryRequest : Proto.Message.Message GetEntryRequest
 messageGetEntryRequest =
-    Proto.Message.init "ledger.v1.GetEntryRequest" encodeGetEntryRequest decodeGetEntryRequest encodeGetEntryRequestBytes decodeGetEntryRequestBytes
+    Proto.Message.init encodeGetEntryRequest decodeGetEntryRequest encodeGetEntryRequestBytes decodeGetEntryRequestBytes
 
 
 

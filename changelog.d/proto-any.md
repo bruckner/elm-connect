@@ -17,9 +17,9 @@
   `Proto.Binary.any` needs no registry; `Proto.Binary.anyWith` is
   removed.
 - Breaking: `Proto.Message.Message a` holds a message's full name and
-  both its codecs: `Proto.Message.init name encodeJson decodeJson
-  encodeBytes decodeBytes`, and `initWith` for a message whose JSON
-  codecs take a registry. `message`, `withBinary`, `messageBinary` and
+  both its codecs: `Proto.Message.init encodeJson decodeJson
+  encodeBytes decodeBytes`, the full name being the binary decoder's,
+  and `initWith` for a message whose JSON codecs take a registry. `message`, `withBinary`, `messageBinary` and
   the readers `encode`, `decoder`, `default`, `toDescriptor`,
   `encodeBytes` and `bytesDecoder` are removed; `typeName` reads a typed
   value. A descriptor's full name is `Proto.Message.fullName` and

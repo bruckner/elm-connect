@@ -91,9 +91,10 @@ impl Emitter {
     }
 
     /// `messageFoo : Proto.Message.Message Foo`, built by
-    /// `Proto.Message.init` from the message's full name, its JSON codecs
-    /// and its binary codecs; by `Proto.Message.initWith`, with the JSON
-    /// codecs taking the registry, for a message that reaches an `Any`.
+    /// `Proto.Message.init` from the message's JSON codecs and its binary
+    /// codecs, the binary decoder carrying the full name; by
+    /// `Proto.Message.initWith`, with the JSON codecs taking the registry,
+    /// for a message that reaches an `Any`.
     pub(super) fn message_record(&mut self, _package: &ModuleName, shape: &MessageShape) -> Decl {
         let message = shape.message;
         let (builder, encoder, decoder) = if self.message_reaches(shape) {
@@ -114,10 +115,7 @@ impl Emitter {
         let annotation =
             self.library_type(PROTO_MESSAGE, "Message", [ty(message.elm_name.clone(), [])]);
         let builder = self.reference((PROTO_MESSAGE, builder));
-        let body = apply(
-            builder,
-            std::iter::once(string(message.proto_full_name.clone())).chain(codecs),
-        );
+        let body = apply(builder, codecs);
         Decl::Value {
             doc: Some(format!(
                 "The typed value of {}: its full name and codecs, which a \

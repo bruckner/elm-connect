@@ -63,7 +63,7 @@ defaultLine =
 -}
 messageLine : Proto.Message.Message Line
 messageLine =
-    Proto.Message.init "chat.v1.Line" encodeLine decodeLine encodeLineBytes decodeLineBytes
+    Proto.Message.init encodeLine decodeLine encodeLineBytes decodeLineBytes
 
 
 

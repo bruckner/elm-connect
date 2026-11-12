@@ -154,7 +154,7 @@ enumHttpMethod =
 -}
 messageTag : Proto.Message.Message Tag
 messageTag =
-    Proto.Message.init "naming.v1.Tag" encodeTag decodeTag encodeTagBytes decodeTagBytes
+    Proto.Message.init encodeTag decodeTag encodeTagBytes decodeTagBytes
 
 
 

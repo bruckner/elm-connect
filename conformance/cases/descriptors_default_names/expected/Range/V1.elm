@@ -69,7 +69,7 @@ defaultBounds =
 -}
 messageBounds : Proto.Message.Message Bounds
 messageBounds =
-    Proto.Message.init "range.v1.Bounds" encodeBounds decodeBounds encodeBoundsBytes decodeBoundsBytes
+    Proto.Message.init encodeBounds decodeBounds encodeBoundsBytes decodeBoundsBytes
 
 
 

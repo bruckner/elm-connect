@@ -319,77 +319,77 @@ enumVisibility =
 -}
 messageNote : Proto.Message.Message Note
 messageNote =
-    Proto.Message.init "notes.v1.Note" encodeNote decodeNote encodeNoteBytes decodeNoteBytes
+    Proto.Message.init encodeNote decodeNote encodeNoteBytes decodeNoteBytes
 
 
 {-| The typed value of [`GetNoteRequest`](#GetNoteRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageGetNoteRequest : Proto.Message.Message GetNoteRequest
 messageGetNoteRequest =
-    Proto.Message.init "notes.v1.GetNoteRequest" encodeGetNoteRequest decodeGetNoteRequest encodeGetNoteRequestBytes decodeGetNoteRequestBytes
+    Proto.Message.init encodeGetNoteRequest decodeGetNoteRequest encodeGetNoteRequestBytes decodeGetNoteRequestBytes
 
 
 {-| The typed value of [`ListNotesRequest`](#ListNotesRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageListNotesRequest : Proto.Message.Message ListNotesRequest
 messageListNotesRequest =
-    Proto.Message.init "notes.v1.ListNotesRequest" encodeListNotesRequest decodeListNotesRequest encodeListNotesRequestBytes decodeListNotesRequestBytes
+    Proto.Message.init encodeListNotesRequest decodeListNotesRequest encodeListNotesRequestBytes decodeListNotesRequestBytes
 
 
 {-| The typed value of [`ListNotesRequestFilter`](#ListNotesRequestFilter): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageListNotesRequestFilter : Proto.Message.Message ListNotesRequestFilter
 messageListNotesRequestFilter =
-    Proto.Message.init "notes.v1.ListNotesRequest.Filter" encodeListNotesRequestFilter decodeListNotesRequestFilter encodeListNotesRequestFilterBytes decodeListNotesRequestFilterBytes
+    Proto.Message.init encodeListNotesRequestFilter decodeListNotesRequestFilter encodeListNotesRequestFilterBytes decodeListNotesRequestFilterBytes
 
 
 {-| The typed value of [`ListNotesResponse`](#ListNotesResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageListNotesResponse : Proto.Message.Message ListNotesResponse
 messageListNotesResponse =
-    Proto.Message.init "notes.v1.ListNotesResponse" encodeListNotesResponse decodeListNotesResponse encodeListNotesResponseBytes decodeListNotesResponseBytes
+    Proto.Message.init encodeListNotesResponse decodeListNotesResponse encodeListNotesResponseBytes decodeListNotesResponseBytes
 
 
 {-| The typed value of [`CreateNoteRequest`](#CreateNoteRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageCreateNoteRequest : Proto.Message.Message CreateNoteRequest
 messageCreateNoteRequest =
-    Proto.Message.init "notes.v1.CreateNoteRequest" encodeCreateNoteRequest decodeCreateNoteRequest encodeCreateNoteRequestBytes decodeCreateNoteRequestBytes
+    Proto.Message.init encodeCreateNoteRequest decodeCreateNoteRequest encodeCreateNoteRequestBytes decodeCreateNoteRequestBytes
 
 
 {-| The typed value of [`UpdateNoteRequest`](#UpdateNoteRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageUpdateNoteRequest : Proto.Message.Message UpdateNoteRequest
 messageUpdateNoteRequest =
-    Proto.Message.init "notes.v1.UpdateNoteRequest" encodeUpdateNoteRequest decodeUpdateNoteRequest encodeUpdateNoteRequestBytes decodeUpdateNoteRequestBytes
+    Proto.Message.init encodeUpdateNoteRequest decodeUpdateNoteRequest encodeUpdateNoteRequestBytes decodeUpdateNoteRequestBytes
 
 
 {-| The typed value of [`DeleteNoteRequest`](#DeleteNoteRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageDeleteNoteRequest : Proto.Message.Message DeleteNoteRequest
 messageDeleteNoteRequest =
-    Proto.Message.init "notes.v1.DeleteNoteRequest" encodeDeleteNoteRequest decodeDeleteNoteRequest encodeDeleteNoteRequestBytes decodeDeleteNoteRequestBytes
+    Proto.Message.init encodeDeleteNoteRequest decodeDeleteNoteRequest encodeDeleteNoteRequestBytes decodeDeleteNoteRequestBytes
 
 
 {-| The typed value of [`ArchiveNoteRequest`](#ArchiveNoteRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageArchiveNoteRequest : Proto.Message.Message ArchiveNoteRequest
 messageArchiveNoteRequest =
-    Proto.Message.init "notes.v1.ArchiveNoteRequest" encodeArchiveNoteRequest decodeArchiveNoteRequest encodeArchiveNoteRequestBytes decodeArchiveNoteRequestBytes
+    Proto.Message.init encodeArchiveNoteRequest decodeArchiveNoteRequest encodeArchiveNoteRequestBytes decodeArchiveNoteRequestBytes
 
 
 {-| The typed value of [`ReadFileRequest`](#ReadFileRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageReadFileRequest : Proto.Message.Message ReadFileRequest
 messageReadFileRequest =
-    Proto.Message.init "notes.v1.ReadFileRequest" encodeReadFileRequest decodeReadFileRequest encodeReadFileRequestBytes decodeReadFileRequestBytes
+    Proto.Message.init encodeReadFileRequest decodeReadFileRequest encodeReadFileRequestBytes decodeReadFileRequestBytes
 
 
 {-| The typed value of [`Summary`](#Summary): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageSummary : Proto.Message.Message Summary
 messageSummary =
-    Proto.Message.init "notes.v1.Summary" encodeSummary decodeSummary encodeSummaryBytes decodeSummaryBytes
+    Proto.Message.init encodeSummary decodeSummary encodeSummaryBytes decodeSummaryBytes
 
 
 

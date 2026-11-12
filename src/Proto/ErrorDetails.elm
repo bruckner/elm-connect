@@ -203,98 +203,98 @@ type alias LocalizedMessage =
 -}
 errorInfo : Proto.Message.Message ErrorInfo
 errorInfo =
-    Proto.Message.init "google.rpc.ErrorInfo" encodeErrorInfo decodeErrorInfo encodeErrorInfoBytes decodeErrorInfoBytes
+    Proto.Message.init encodeErrorInfo decodeErrorInfo encodeErrorInfoBytes decodeErrorInfoBytes
 
 
 {-| The typed value of [`RetryInfo`](#RetryInfo), to pack and unpack an `Any` with.
 -}
 retryInfo : Proto.Message.Message RetryInfo
 retryInfo =
-    Proto.Message.init "google.rpc.RetryInfo" encodeRetryInfo decodeRetryInfo encodeRetryInfoBytes decodeRetryInfoBytes
+    Proto.Message.init encodeRetryInfo decodeRetryInfo encodeRetryInfoBytes decodeRetryInfoBytes
 
 
 {-| The typed value of [`DebugInfo`](#DebugInfo), to pack and unpack an `Any` with.
 -}
 debugInfo : Proto.Message.Message DebugInfo
 debugInfo =
-    Proto.Message.init "google.rpc.DebugInfo" encodeDebugInfo decodeDebugInfo encodeDebugInfoBytes decodeDebugInfoBytes
+    Proto.Message.init encodeDebugInfo decodeDebugInfo encodeDebugInfoBytes decodeDebugInfoBytes
 
 
 {-| The typed value of [`QuotaFailure`](#QuotaFailure), to pack and unpack an `Any` with.
 -}
 quotaFailure : Proto.Message.Message QuotaFailure
 quotaFailure =
-    Proto.Message.init "google.rpc.QuotaFailure" encodeQuotaFailure decodeQuotaFailure encodeQuotaFailureBytes decodeQuotaFailureBytes
+    Proto.Message.init encodeQuotaFailure decodeQuotaFailure encodeQuotaFailureBytes decodeQuotaFailureBytes
 
 
 {-| The typed value of [`QuotaFailureViolation`](#QuotaFailureViolation), to pack and unpack an `Any` with.
 -}
 quotaFailureViolation : Proto.Message.Message QuotaFailureViolation
 quotaFailureViolation =
-    Proto.Message.init "google.rpc.QuotaFailure.Violation" encodeQuotaFailureViolation decodeQuotaFailureViolation encodeQuotaFailureViolationBytes decodeQuotaFailureViolationBytes
+    Proto.Message.init encodeQuotaFailureViolation decodeQuotaFailureViolation encodeQuotaFailureViolationBytes decodeQuotaFailureViolationBytes
 
 
 {-| The typed value of [`PreconditionFailure`](#PreconditionFailure), to pack and unpack an `Any` with.
 -}
 preconditionFailure : Proto.Message.Message PreconditionFailure
 preconditionFailure =
-    Proto.Message.init "google.rpc.PreconditionFailure" encodePreconditionFailure decodePreconditionFailure encodePreconditionFailureBytes decodePreconditionFailureBytes
+    Proto.Message.init encodePreconditionFailure decodePreconditionFailure encodePreconditionFailureBytes decodePreconditionFailureBytes
 
 
 {-| The typed value of [`PreconditionFailureViolation`](#PreconditionFailureViolation), to pack and unpack an `Any` with.
 -}
 preconditionFailureViolation : Proto.Message.Message PreconditionFailureViolation
 preconditionFailureViolation =
-    Proto.Message.init "google.rpc.PreconditionFailure.Violation" encodePreconditionFailureViolation decodePreconditionFailureViolation encodePreconditionFailureViolationBytes decodePreconditionFailureViolationBytes
+    Proto.Message.init encodePreconditionFailureViolation decodePreconditionFailureViolation encodePreconditionFailureViolationBytes decodePreconditionFailureViolationBytes
 
 
 {-| The typed value of [`BadRequest`](#BadRequest), to pack and unpack an `Any` with.
 -}
 badRequest : Proto.Message.Message BadRequest
 badRequest =
-    Proto.Message.init "google.rpc.BadRequest" encodeBadRequest decodeBadRequest encodeBadRequestBytes decodeBadRequestBytes
+    Proto.Message.init encodeBadRequest decodeBadRequest encodeBadRequestBytes decodeBadRequestBytes
 
 
 {-| The typed value of [`BadRequestFieldViolation`](#BadRequestFieldViolation), to pack and unpack an `Any` with.
 -}
 badRequestFieldViolation : Proto.Message.Message BadRequestFieldViolation
 badRequestFieldViolation =
-    Proto.Message.init "google.rpc.BadRequest.FieldViolation" encodeBadRequestFieldViolation decodeBadRequestFieldViolation encodeBadRequestFieldViolationBytes decodeBadRequestFieldViolationBytes
+    Proto.Message.init encodeBadRequestFieldViolation decodeBadRequestFieldViolation encodeBadRequestFieldViolationBytes decodeBadRequestFieldViolationBytes
 
 
 {-| The typed value of [`RequestInfo`](#RequestInfo), to pack and unpack an `Any` with.
 -}
 requestInfo : Proto.Message.Message RequestInfo
 requestInfo =
-    Proto.Message.init "google.rpc.RequestInfo" encodeRequestInfo decodeRequestInfo encodeRequestInfoBytes decodeRequestInfoBytes
+    Proto.Message.init encodeRequestInfo decodeRequestInfo encodeRequestInfoBytes decodeRequestInfoBytes
 
 
 {-| The typed value of [`ResourceInfo`](#ResourceInfo), to pack and unpack an `Any` with.
 -}
 resourceInfo : Proto.Message.Message ResourceInfo
 resourceInfo =
-    Proto.Message.init "google.rpc.ResourceInfo" encodeResourceInfo decodeResourceInfo encodeResourceInfoBytes decodeResourceInfoBytes
+    Proto.Message.init encodeResourceInfo decodeResourceInfo encodeResourceInfoBytes decodeResourceInfoBytes
 
 
 {-| The typed value of [`Help`](#Help), to pack and unpack an `Any` with.
 -}
 help : Proto.Message.Message Help
 help =
-    Proto.Message.init "google.rpc.Help" encodeHelp decodeHelp encodeHelpBytes decodeHelpBytes
+    Proto.Message.init encodeHelp decodeHelp encodeHelpBytes decodeHelpBytes
 
 
 {-| The typed value of [`HelpLink`](#HelpLink), to pack and unpack an `Any` with.
 -}
 helpLink : Proto.Message.Message HelpLink
 helpLink =
-    Proto.Message.init "google.rpc.Help.Link" encodeHelpLink decodeHelpLink encodeHelpLinkBytes decodeHelpLinkBytes
+    Proto.Message.init encodeHelpLink decodeHelpLink encodeHelpLinkBytes decodeHelpLinkBytes
 
 
 {-| The typed value of [`LocalizedMessage`](#LocalizedMessage), to pack and unpack an `Any` with.
 -}
 localizedMessage : Proto.Message.Message LocalizedMessage
 localizedMessage =
-    Proto.Message.init "google.rpc.LocalizedMessage" encodeLocalizedMessage decodeLocalizedMessage encodeLocalizedMessageBytes decodeLocalizedMessageBytes
+    Proto.Message.init encodeLocalizedMessage decodeLocalizedMessage encodeLocalizedMessageBytes decodeLocalizedMessageBytes
 
 
 

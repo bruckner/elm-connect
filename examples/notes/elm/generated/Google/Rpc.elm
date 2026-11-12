@@ -609,98 +609,98 @@ defaultLocalizedMessage =
 -}
 messageErrorInfo : Proto.Message.Message ErrorInfo
 messageErrorInfo =
-    Proto.Message.init "google.rpc.ErrorInfo" encodeErrorInfo decodeErrorInfo encodeErrorInfoBytes decodeErrorInfoBytes
+    Proto.Message.init encodeErrorInfo decodeErrorInfo encodeErrorInfoBytes decodeErrorInfoBytes
 
 
 {-| The typed value of [`RetryInfo`](#RetryInfo): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageRetryInfo : Proto.Message.Message RetryInfo
 messageRetryInfo =
-    Proto.Message.init "google.rpc.RetryInfo" encodeRetryInfo decodeRetryInfo encodeRetryInfoBytes decodeRetryInfoBytes
+    Proto.Message.init encodeRetryInfo decodeRetryInfo encodeRetryInfoBytes decodeRetryInfoBytes
 
 
 {-| The typed value of [`DebugInfo`](#DebugInfo): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageDebugInfo : Proto.Message.Message DebugInfo
 messageDebugInfo =
-    Proto.Message.init "google.rpc.DebugInfo" encodeDebugInfo decodeDebugInfo encodeDebugInfoBytes decodeDebugInfoBytes
+    Proto.Message.init encodeDebugInfo decodeDebugInfo encodeDebugInfoBytes decodeDebugInfoBytes
 
 
 {-| The typed value of [`QuotaFailure`](#QuotaFailure): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageQuotaFailure : Proto.Message.Message QuotaFailure
 messageQuotaFailure =
-    Proto.Message.init "google.rpc.QuotaFailure" encodeQuotaFailure decodeQuotaFailure encodeQuotaFailureBytes decodeQuotaFailureBytes
+    Proto.Message.init encodeQuotaFailure decodeQuotaFailure encodeQuotaFailureBytes decodeQuotaFailureBytes
 
 
 {-| The typed value of [`QuotaFailureViolation`](#QuotaFailureViolation): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageQuotaFailureViolation : Proto.Message.Message QuotaFailureViolation
 messageQuotaFailureViolation =
-    Proto.Message.init "google.rpc.QuotaFailure.Violation" encodeQuotaFailureViolation decodeQuotaFailureViolation encodeQuotaFailureViolationBytes decodeQuotaFailureViolationBytes
+    Proto.Message.init encodeQuotaFailureViolation decodeQuotaFailureViolation encodeQuotaFailureViolationBytes decodeQuotaFailureViolationBytes
 
 
 {-| The typed value of [`PreconditionFailure`](#PreconditionFailure): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messagePreconditionFailure : Proto.Message.Message PreconditionFailure
 messagePreconditionFailure =
-    Proto.Message.init "google.rpc.PreconditionFailure" encodePreconditionFailure decodePreconditionFailure encodePreconditionFailureBytes decodePreconditionFailureBytes
+    Proto.Message.init encodePreconditionFailure decodePreconditionFailure encodePreconditionFailureBytes decodePreconditionFailureBytes
 
 
 {-| The typed value of [`PreconditionFailureViolation`](#PreconditionFailureViolation): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messagePreconditionFailureViolation : Proto.Message.Message PreconditionFailureViolation
 messagePreconditionFailureViolation =
-    Proto.Message.init "google.rpc.PreconditionFailure.Violation" encodePreconditionFailureViolation decodePreconditionFailureViolation encodePreconditionFailureViolationBytes decodePreconditionFailureViolationBytes
+    Proto.Message.init encodePreconditionFailureViolation decodePreconditionFailureViolation encodePreconditionFailureViolationBytes decodePreconditionFailureViolationBytes
 
 
 {-| The typed value of [`BadRequest`](#BadRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageBadRequest : Proto.Message.Message BadRequest
 messageBadRequest =
-    Proto.Message.init "google.rpc.BadRequest" encodeBadRequest decodeBadRequest encodeBadRequestBytes decodeBadRequestBytes
+    Proto.Message.init encodeBadRequest decodeBadRequest encodeBadRequestBytes decodeBadRequestBytes
 
 
 {-| The typed value of [`BadRequestFieldViolation`](#BadRequestFieldViolation): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageBadRequestFieldViolation : Proto.Message.Message BadRequestFieldViolation
 messageBadRequestFieldViolation =
-    Proto.Message.init "google.rpc.BadRequest.FieldViolation" encodeBadRequestFieldViolation decodeBadRequestFieldViolation encodeBadRequestFieldViolationBytes decodeBadRequestFieldViolationBytes
+    Proto.Message.init encodeBadRequestFieldViolation decodeBadRequestFieldViolation encodeBadRequestFieldViolationBytes decodeBadRequestFieldViolationBytes
 
 
 {-| The typed value of [`RequestInfo`](#RequestInfo): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageRequestInfo : Proto.Message.Message RequestInfo
 messageRequestInfo =
-    Proto.Message.init "google.rpc.RequestInfo" encodeRequestInfo decodeRequestInfo encodeRequestInfoBytes decodeRequestInfoBytes
+    Proto.Message.init encodeRequestInfo decodeRequestInfo encodeRequestInfoBytes decodeRequestInfoBytes
 
 
 {-| The typed value of [`ResourceInfo`](#ResourceInfo): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageResourceInfo : Proto.Message.Message ResourceInfo
 messageResourceInfo =
-    Proto.Message.init "google.rpc.ResourceInfo" encodeResourceInfo decodeResourceInfo encodeResourceInfoBytes decodeResourceInfoBytes
+    Proto.Message.init encodeResourceInfo decodeResourceInfo encodeResourceInfoBytes decodeResourceInfoBytes
 
 
 {-| The typed value of [`Help`](#Help): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageHelp : Proto.Message.Message Help
 messageHelp =
-    Proto.Message.init "google.rpc.Help" encodeHelp decodeHelp encodeHelpBytes decodeHelpBytes
+    Proto.Message.init encodeHelp decodeHelp encodeHelpBytes decodeHelpBytes
 
 
 {-| The typed value of [`HelpLink`](#HelpLink): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageHelpLink : Proto.Message.Message HelpLink
 messageHelpLink =
-    Proto.Message.init "google.rpc.Help.Link" encodeHelpLink decodeHelpLink encodeHelpLinkBytes decodeHelpLinkBytes
+    Proto.Message.init encodeHelpLink decodeHelpLink encodeHelpLinkBytes decodeHelpLinkBytes
 
 
 {-| The typed value of [`LocalizedMessage`](#LocalizedMessage): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageLocalizedMessage : Proto.Message.Message LocalizedMessage
 messageLocalizedMessage =
-    Proto.Message.init "google.rpc.LocalizedMessage" encodeLocalizedMessage decodeLocalizedMessage encodeLocalizedMessageBytes decodeLocalizedMessageBytes
+    Proto.Message.init encodeLocalizedMessage decodeLocalizedMessage encodeLocalizedMessageBytes decodeLocalizedMessageBytes
 
 
 

@@ -163,42 +163,42 @@ enumChar =
 -}
 messageDict : Proto.Message.Message Dict
 messageDict =
-    Proto.Message.init "unused.v1.Dict" encodeDict decodeDict encodeDictBytes decodeDictBytes
+    Proto.Message.init encodeDict decodeDict encodeDictBytes decodeDictBytes
 
 
 {-| The typed value of [`Result`](#Result): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageResult : Proto.Message.Message Result
 messageResult =
-    Proto.Message.init "unused.v1.Result" encodeResult decodeResult encodeResultBytes decodeResultBytes
+    Proto.Message.init encodeResult decodeResult encodeResultBytes decodeResultBytes
 
 
 {-| The typed value of [`Order`](#Order): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageOrder : Proto.Message.Message Order
 messageOrder =
-    Proto.Message.init "unused.v1.Order" encodeOrder decodeOrder encodeOrderBytes decodeOrderBytes
+    Proto.Message.init encodeOrder decodeOrder encodeOrderBytes decodeOrderBytes
 
 
 {-| The typed value of [`Never`](#Never): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageNever : Proto.Message.Message Never
 messageNever =
-    Proto.Message.init "unused.v1.Never" encodeNever decodeNever encodeNeverBytes decodeNeverBytes
+    Proto.Message.init encodeNever decodeNever encodeNeverBytes decodeNeverBytes
 
 
 {-| The typed value of [`Cmd`](#Cmd): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageCmd : Proto.Message.Message Cmd
 messageCmd =
-    Proto.Message.init "unused.v1.Cmd" encodeCmd decodeCmd encodeCmdBytes decodeCmdBytes
+    Proto.Message.init encodeCmd decodeCmd encodeCmdBytes decodeCmdBytes
 
 
 {-| The typed value of [`True`](#True): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageTrue : Proto.Message.Message True
 messageTrue =
-    Proto.Message.init "unused.v1.True" encodeTrue decodeTrue encodeTrueBytes decodeTrueBytes
+    Proto.Message.init encodeTrue decodeTrue encodeTrueBytes decodeTrueBytes
 
 
 

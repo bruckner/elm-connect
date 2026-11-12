@@ -80,14 +80,14 @@ defaultZone =
 -}
 messageZoneRequest : Proto.Message.Message ZoneRequest
 messageZoneRequest =
-    Proto.Message.init "zones.v1.ZoneRequest" encodeZoneRequest decodeZoneRequest encodeZoneRequestBytes decodeZoneRequestBytes
+    Proto.Message.init encodeZoneRequest decodeZoneRequest encodeZoneRequestBytes decodeZoneRequestBytes
 
 
 {-| The typed value of [`Zone`](#Zone): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageZone : Proto.Message.Message Zone
 messageZone =
-    Proto.Message.init "zones.v1.Zone" encodeZone decodeZone encodeZoneBytes decodeZoneBytes
+    Proto.Message.init encodeZone decodeZone encodeZoneBytes decodeZoneBytes
 
 
 

@@ -298,49 +298,49 @@ enumLegacy =
 -}
 messageNote : Proto.Message.Message Note
 messageNote =
-    Proto.Message.init "notes.v1.Note" encodeNote decodeNote encodeNoteBytes decodeNoteBytes
+    Proto.Message.init encodeNote decodeNote encodeNoteBytes decodeNoteBytes
 
 
 {-| The typed value of [`NoteEdit`](#NoteEdit): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageNoteEdit : Proto.Message.Message NoteEdit
 messageNoteEdit =
-    Proto.Message.init "notes.v1.Note.Edit" encodeNoteEdit decodeNoteEdit encodeNoteEditBytes decodeNoteEditBytes
+    Proto.Message.init encodeNoteEdit decodeNoteEdit encodeNoteEditBytes decodeNoteEditBytes
 
 
 {-| The typed value of [`Draft`](#Draft): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageDraft : Proto.Message.Message Draft
 messageDraft =
-    Proto.Message.init "notes.v1.Draft" encodeDraft decodeDraft encodeDraftBytes decodeDraftBytes
+    Proto.Message.init encodeDraft decodeDraft encodeDraftBytes decodeDraftBytes
 
 
 {-| The typed value of [`GetNoteRequest`](#GetNoteRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageGetNoteRequest : Proto.Message.Message GetNoteRequest
 messageGetNoteRequest =
-    Proto.Message.init "notes.v1.GetNoteRequest" encodeGetNoteRequest decodeGetNoteRequest encodeGetNoteRequestBytes decodeGetNoteRequestBytes
+    Proto.Message.init encodeGetNoteRequest decodeGetNoteRequest encodeGetNoteRequestBytes decodeGetNoteRequestBytes
 
 
 {-| The typed value of [`ListNotesRequest`](#ListNotesRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageListNotesRequest : Proto.Message.Message ListNotesRequest
 messageListNotesRequest =
-    Proto.Message.init "notes.v1.ListNotesRequest" encodeListNotesRequest decodeListNotesRequest encodeListNotesRequestBytes decodeListNotesRequestBytes
+    Proto.Message.init encodeListNotesRequest decodeListNotesRequest encodeListNotesRequestBytes decodeListNotesRequestBytes
 
 
 {-| The typed value of [`ListNotesResponse`](#ListNotesResponse): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageListNotesResponse : Proto.Message.Message ListNotesResponse
 messageListNotesResponse =
-    Proto.Message.init "notes.v1.ListNotesResponse" encodeListNotesResponse decodeListNotesResponse encodeListNotesResponseBytes decodeListNotesResponseBytes
+    Proto.Message.init encodeListNotesResponse decodeListNotesResponse encodeListNotesResponseBytes decodeListNotesResponseBytes
 
 
 {-| The typed value of [`CreateNoteRequest`](#CreateNoteRequest): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageCreateNoteRequest : Proto.Message.Message CreateNoteRequest
 messageCreateNoteRequest =
-    Proto.Message.init "notes.v1.CreateNoteRequest" encodeCreateNoteRequest decodeCreateNoteRequest encodeCreateNoteRequestBytes decodeCreateNoteRequestBytes
+    Proto.Message.init encodeCreateNoteRequest decodeCreateNoteRequest encodeCreateNoteRequestBytes decodeCreateNoteRequestBytes
 
 
 

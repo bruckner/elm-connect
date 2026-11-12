@@ -691,35 +691,35 @@ enumEnumOnlyProto3Bool =
 -}
 messageTestAllTypesProto3 : Proto.Message.Message TestAllTypesProto3
 messageTestAllTypesProto3 =
-    Proto.Message.initWith "protobuf_test_messages.proto3.TestAllTypesProto3" encodeTestAllTypesProto3With decodeTestAllTypesProto3With encodeTestAllTypesProto3Bytes decodeTestAllTypesProto3Bytes
+    Proto.Message.initWith encodeTestAllTypesProto3With decodeTestAllTypesProto3With encodeTestAllTypesProto3Bytes decodeTestAllTypesProto3Bytes
 
 
 {-| The typed value of [`TestAllTypesProto3NestedMessage`](#TestAllTypesProto3NestedMessage): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageTestAllTypesProto3NestedMessage : Proto.Message.Message TestAllTypesProto3NestedMessage
 messageTestAllTypesProto3NestedMessage =
-    Proto.Message.initWith "protobuf_test_messages.proto3.TestAllTypesProto3.NestedMessage" encodeTestAllTypesProto3NestedMessageWith decodeTestAllTypesProto3NestedMessageWith encodeTestAllTypesProto3NestedMessageBytes decodeTestAllTypesProto3NestedMessageBytes
+    Proto.Message.initWith encodeTestAllTypesProto3NestedMessageWith decodeTestAllTypesProto3NestedMessageWith encodeTestAllTypesProto3NestedMessageBytes decodeTestAllTypesProto3NestedMessageBytes
 
 
 {-| The typed value of [`ForeignMessage`](#ForeignMessage): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageForeignMessage : Proto.Message.Message ForeignMessage
 messageForeignMessage =
-    Proto.Message.init "protobuf_test_messages.proto3.ForeignMessage" encodeForeignMessage decodeForeignMessage encodeForeignMessageBytes decodeForeignMessageBytes
+    Proto.Message.init encodeForeignMessage decodeForeignMessage encodeForeignMessageBytes decodeForeignMessageBytes
 
 
 {-| The typed value of [`NullHypothesisProto3`](#NullHypothesisProto3): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageNullHypothesisProto3 : Proto.Message.Message NullHypothesisProto3
 messageNullHypothesisProto3 =
-    Proto.Message.init "protobuf_test_messages.proto3.NullHypothesisProto3" encodeNullHypothesisProto3 decodeNullHypothesisProto3 encodeNullHypothesisProto3Bytes decodeNullHypothesisProto3Bytes
+    Proto.Message.init encodeNullHypothesisProto3 decodeNullHypothesisProto3 encodeNullHypothesisProto3Bytes decodeNullHypothesisProto3Bytes
 
 
 {-| The typed value of [`EnumOnlyProto3`](#EnumOnlyProto3): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageEnumOnlyProto3 : Proto.Message.Message EnumOnlyProto3
 messageEnumOnlyProto3 =
-    Proto.Message.init "protobuf_test_messages.proto3.EnumOnlyProto3" encodeEnumOnlyProto3 decodeEnumOnlyProto3 encodeEnumOnlyProto3Bytes decodeEnumOnlyProto3Bytes
+    Proto.Message.init encodeEnumOnlyProto3 decodeEnumOnlyProto3 encodeEnumOnlyProto3Bytes decodeEnumOnlyProto3Bytes
 
 
 

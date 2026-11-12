@@ -37,11 +37,11 @@ descriptorNote =
         ]
 
 
-{-| Note's codecs under another full name.
+{-| Note's codecs under another full name, which its binary decoder carries.
 -}
 noteAs : String -> Message Note
 noteAs name =
-    Message.init name encodeNote decodeNote encodeNoteBytes decodeNoteBytes
+    Message.init encodeNote decodeNote encodeNoteBytes (noteBytesAs name)
 
 
 encodeNote : Note -> Json.Encode.Value
@@ -69,7 +69,12 @@ encodeNoteBytes value =
 
 decodeNoteBytes : Proto.Binary.Decoder Note
 decodeNoteBytes =
-    Proto.Binary.merge "notes.v1.Note"
+    noteBytesAs "notes.v1.Note"
+
+
+noteBytesAs : String -> Proto.Binary.Decoder Note
+noteBytesAs name =
+    Proto.Binary.merge name
         (\number wire value ->
             case number of
                 1 ->
@@ -91,7 +96,7 @@ well-known types.
 registry : Registry
 registry =
     Registry.empty
-        |> Registry.register (Message.init "notes.v1.Note" encodeNote decodeNote encodeNoteBytes decodeNoteBytes)
+        |> Registry.register (Message.init encodeNote decodeNote encodeNoteBytes decodeNoteBytes)
         |> Registry.union WellKnown.registry
 
 

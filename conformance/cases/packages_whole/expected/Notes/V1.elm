@@ -87,14 +87,14 @@ defaultTag =
 -}
 messageNote : Proto.Message.Message Note
 messageNote =
-    Proto.Message.init "notes.v1.Note" encodeNote decodeNote encodeNoteBytes decodeNoteBytes
+    Proto.Message.init encodeNote decodeNote encodeNoteBytes decodeNoteBytes
 
 
 {-| The typed value of [`Tag`](#Tag): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageTag : Proto.Message.Message Tag
 messageTag =
-    Proto.Message.init "notes.v1.Tag" encodeTag decodeTag encodeTagBytes decodeTagBytes
+    Proto.Message.init encodeTag decodeTag encodeTagBytes decodeTagBytes
 
 
 

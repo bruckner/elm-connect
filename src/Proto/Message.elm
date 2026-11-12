@@ -45,21 +45,23 @@ type alias Message a =
     Internal.Message a
 
 
-{-| A message type from its full name, its proto3 JSON encoder and decoder,
-and its protobuf binary encoder and decoder, as generated code writes it for
-a message that holds no `google.protobuf.Any`:
+{-| A message type from its proto3 JSON encoder and decoder and its protobuf
+binary encoder and decoder, as generated code writes it for a message that
+holds no `google.protobuf.Any`:
 
     messageNote : Proto.Message.Message Note
     messageNote =
-        Proto.Message.init "notes.v1.Note" encodeNote decodeNote encodeNoteBytes decodeNoteBytes
+        Proto.Message.init encodeNote decodeNote encodeNoteBytes decodeNoteBytes
 
 The binary decoder is a [`Proto.Binary.Decoder`](Proto-Binary#Decoder), which
-the package site may show as `Proto.Internal.Binary.Decoder`.
+the package site may show as `Proto.Internal.Binary.Decoder`. The message's
+full name, which [`typeName`](#typeName) reads, is the decoder's, the one
+[`Proto.Binary.merge`](Proto-Binary#merge) was given.
 
 -}
-init : String -> (a -> Json.Encode.Value) -> Json.Decode.Decoder a -> (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> Message a
-init name encodeJson decodeJson encodeBinary decodeBinary =
-    Internal.Message name
+init : (a -> Json.Encode.Value) -> Json.Decode.Decoder a -> (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> Message a
+init encodeJson decodeJson encodeBinary decodeBinary =
+    Internal.Message (Proto.Internal.Binary.typeName decodeBinary)
         { encodeJson = \_ value -> Ok (encodeJson value)
         , decodeJson = \_ -> decodeJson
         , encodeBinary = encodeBinary
@@ -72,15 +74,16 @@ or through its fields: its proto3 JSON codecs take the registry the `Any`
 converts through, and its encoder can fail, with a
 [`Proto.Error.Error`](Proto-Error#Error): the `Any`'s type is not in the
 registry (`UnregisteredType`), or its binary is not that type's message
-(`BadBinary`), at any depth.
+(`BadBinary`), at any depth. Its full name is its binary decoder's, as for
+`init`.
 
     messageEnvelope =
-        Proto.Message.initWith "notes.v1.Envelope" encodeEnvelopeWith decodeEnvelopeWith encodeEnvelopeBytes decodeEnvelopeBytes
+        Proto.Message.initWith encodeEnvelopeWith decodeEnvelopeWith encodeEnvelopeBytes decodeEnvelopeBytes
 
 -}
-initWith : String -> (Registry -> a -> Result Proto.Error.Error Json.Encode.Value) -> (Registry -> Json.Decode.Decoder a) -> (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> Message a
-initWith name encodeJson decodeJson encodeBinary decodeBinary =
-    Internal.Message name
+initWith : (Registry -> a -> Result Proto.Error.Error Json.Encode.Value) -> (Registry -> Json.Decode.Decoder a) -> (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> Message a
+initWith encodeJson decodeJson encodeBinary decodeBinary =
+    Internal.Message (Proto.Internal.Binary.typeName decodeBinary)
         { encodeJson = encodeJson
         , decodeJson = decodeJson
         , encodeBinary = encodeBinary

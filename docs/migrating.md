@@ -345,9 +345,9 @@ JSON.
   JSON again, with no binary (`Proto.Any.bytes` is a `Maybe`), written as
   protobuf binary as its type URL alone.
 - A message's typed value holds its full name and both codecs:
-  `Proto.Message.init "notes.v1.Note" encodeNote decodeNote
-  encodeNoteBytes decodeNoteBytes` (`initWith` for one that reaches an
-  `Any`) replaces 0.1's `Proto.Message.message encode decoder default
+  `Proto.Message.init encodeNote decodeNote encodeNoteBytes
+  decodeNoteBytes`, the full name being the binary decoder's
+  (`initWith` for one that reaches an `Any`), replaces 0.1's `Proto.Message.message encode decoder default
   descriptor`, and the readers `encode`, `decoder`, `default` and
   `toDescriptor` are gone: use the generated codecs, `defaultNote` and
   `Notes.V1.Note.descriptor`.

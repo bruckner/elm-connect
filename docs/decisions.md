@@ -1275,8 +1275,10 @@ A lenient registry that holds an unknown type as JSON landed after it
 (Lenient registries hold JSON-only payloads); a cache of the JSON beside
 the binary was spiked and dropped (An Any has one shape, so `==` is
 exact). The default stays strict (design §1.2's rule: correctness first,
-the cheaper or laxer reading an opt-in). Where: design §3.5, §3.10,
-§5.5.
+the cheaper or laxer reading an opt-in). On 2026-11-12 `Proto.Message.init`
+and `initWith` stopped taking the full name and read it off the binary
+decoder, which carries it for the binary report, so it is written once.
+Where: design §3.5, §3.10, §5.5.
 
 ### An Any has one shape, so `==` is exact
 

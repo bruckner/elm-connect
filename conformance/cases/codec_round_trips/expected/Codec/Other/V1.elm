@@ -90,7 +90,7 @@ enumShade =
 -}
 messageRemote : Proto.Message.Message Remote
 messageRemote =
-    Proto.Message.init "codec.other.v1.Remote" encodeRemote decodeRemote encodeRemoteBytes decodeRemoteBytes
+    Proto.Message.init encodeRemote decodeRemote encodeRemoteBytes decodeRemoteBytes
 
 
 

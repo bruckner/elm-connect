@@ -64,7 +64,7 @@ defaultAttributes =
 -}
 messageAttributes : Proto.Message.Message Attributes
 messageAttributes =
-    Proto.Message.init "html.Attributes" encodeAttributes decodeAttributes encodeAttributesBytes decodeAttributesBytes
+    Proto.Message.init encodeAttributes decodeAttributes encodeAttributesBytes decodeAttributesBytes
 
 
 

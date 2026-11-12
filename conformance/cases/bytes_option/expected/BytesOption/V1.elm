@@ -100,7 +100,7 @@ defaultBlob =
 -}
 messageBlob : Proto.Message.Message Blob
 messageBlob =
-    Proto.Message.init "bytes_option.v1.Blob" encodeBlob decodeBlob encodeBlobBytes decodeBlobBytes
+    Proto.Message.init encodeBlob decodeBlob encodeBlobBytes decodeBlobBytes
 
 
 

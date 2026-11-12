@@ -117,14 +117,14 @@ defaultNote =
 -}
 messageAuthor : Proto.Message.Message Author
 messageAuthor =
-    Proto.Message.init "cardinality.v1.Author" encodeAuthor decodeAuthor encodeAuthorBytes decodeAuthorBytes
+    Proto.Message.init encodeAuthor decodeAuthor encodeAuthorBytes decodeAuthorBytes
 
 
 {-| The typed value of [`Note`](#Note): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageNote : Proto.Message.Message Note
 messageNote =
-    Proto.Message.init "cardinality.v1.Note" encodeNote decodeNote encodeNoteBytes decodeNoteBytes
+    Proto.Message.init encodeNote decodeNote encodeNoteBytes decodeNoteBytes
 
 
 

@@ -83,7 +83,7 @@ defaultMoment =
 -}
 messageMoment : Proto.Message.Message Moment
 messageMoment =
-    Proto.Message.init "clock.v1.Moment" encodeMoment decodeMoment encodeMomentBytes decodeMomentBytes
+    Proto.Message.init encodeMoment decodeMoment encodeMomentBytes decodeMomentBytes
 
 
 

@@ -63,7 +63,7 @@ defaultPing =
 -}
 messagePing : Proto.Message.Message Ping
 messagePing =
-    Proto.Message.init "rpc.v1.Ping" encodePing decodePing encodePingBytes decodePingBytes
+    Proto.Message.init encodePing decodePing encodePingBytes decodePingBytes
 
 
 

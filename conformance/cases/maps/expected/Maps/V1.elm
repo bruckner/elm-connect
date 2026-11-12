@@ -143,14 +143,14 @@ enumRole =
 -}
 messageMember : Proto.Message.Message Member
 messageMember =
-    Proto.Message.init "maps.v1.Member" encodeMember decodeMember encodeMemberBytes decodeMemberBytes
+    Proto.Message.init encodeMember decodeMember encodeMemberBytes decodeMemberBytes
 
 
 {-| The typed value of [`Team`](#Team): its full name and codecs, which a `google.protobuf.Any` packs and unpacks with.
 -}
 messageTeam : Proto.Message.Message Team
 messageTeam =
-    Proto.Message.init "maps.v1.Team" encodeTeam decodeTeam encodeTeamBytes decodeTeamBytes
+    Proto.Message.init encodeTeam decodeTeam encodeTeamBytes decodeTeamBytes
 
 
 

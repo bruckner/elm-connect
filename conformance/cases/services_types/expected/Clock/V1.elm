@@ -63,7 +63,7 @@ defaultAlarm =
 -}
 messageAlarm : Proto.Message.Message Alarm
 messageAlarm =
-    Proto.Message.init "clock.v1.Alarm" encodeAlarm decodeAlarm encodeAlarmBytes decodeAlarmBytes
+    Proto.Message.init encodeAlarm decodeAlarm encodeAlarmBytes decodeAlarmBytes
 
 
 
