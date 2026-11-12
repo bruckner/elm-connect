@@ -338,29 +338,63 @@ the JSON is not an array.
 -}
 spelledAs : List String -> Value -> Spelled
 spelledAs names json =
-    if List.any isInherited names then
-        case Json.Decode.decodeValue (Json.Decode.dict Json.Decode.value) json of
-            Ok keys ->
-                Spelled (oneSpelling names (List.filterMap (\name -> Dict.get name keys |> Maybe.map (Tuple.pair name)) names))
+    case names of
+        [ name ] ->
+            if isInherited name then
+                spelledAmongKeys names json
 
-            Err _ ->
+            else
+                case probe name json of
+                    Nothing ->
+                        if isObject json then
+                            Spelled (Ok Nothing)
+
+                        else
+                            NotAnObject
+
+                    Just found ->
+                        if isArray json then
+                            NotAnObject
+
+                        else
+                            Spelled (Ok (Just found))
+
+        _ ->
+            if List.any isInherited names then
+                spelledAmongKeys names json
+
+            else
+                spelledByProbes names json
+
+
+{-| Which of `names` an object holds, found among its own keys.
+-}
+spelledAmongKeys : List String -> Value -> Spelled
+spelledAmongKeys names json =
+    case Json.Decode.decodeValue (Json.Decode.dict Json.Decode.value) json of
+        Ok keys ->
+            Spelled (oneSpelling names (List.filterMap (\name -> Dict.get name keys |> Maybe.map (Tuple.pair name)) names))
+
+        Err _ ->
+            NotAnObject
+
+
+spelledByProbes : List String -> Value -> Spelled
+spelledByProbes names json =
+    case List.filterMap (\name -> probe name json) names of
+        [] ->
+            if isObject json then
+                Spelled (Ok Nothing)
+
+            else
                 NotAnObject
 
-    else
-        case List.filterMap (\name -> probe name json) names of
-            [] ->
-                if isObject json then
-                    Spelled (Ok Nothing)
+        found ->
+            if isArray json then
+                NotAnObject
 
-                else
-                    NotAnObject
-
-            found ->
-                if isArray json then
-                    NotAnObject
-
-                else
-                    Spelled (oneSpelling names found)
+            else
+                Spelled (oneSpelling names found)
 
 
 oneSpelling : List String -> List ( String, Value ) -> Result String (Maybe ( String, Value ))
@@ -786,22 +820,36 @@ presentIn json candidates found =
             Ok (List.reverse found)
 
         (Member candidate) :: rest ->
-            case spelledAs candidate.names json of
-                Spelled (Ok (Just ( name, raw ))) ->
+            case spelledInObject candidate.names json of
+                Ok (Just ( name, raw )) ->
                     if isNull raw && not candidate.nullIsSet then
                         presentIn json rest found
 
                     else
                         presentIn json rest (( name, candidate.decoder ) :: found)
 
-                Spelled (Ok Nothing) ->
+                Ok Nothing ->
                     presentIn json rest found
 
-                Spelled (Err problem) ->
+                Err problem ->
                     Err problem
 
-                NotAnObject ->
-                    Ok (List.reverse found)
+
+{-| [`spelledAs`](#spelledAs) for JSON already known to be an object, not an
+array: its shape is not tested again.
+-}
+spelledInObject : List String -> Value -> Result String (Maybe ( String, Value ))
+spelledInObject names json =
+    if List.any isInherited names then
+        case spelledAmongKeys names json of
+            Spelled found ->
+                found
+
+            NotAnObject ->
+                Ok Nothing
+
+    else
+        oneSpelling names (List.filterMap (\name -> probe name json) names)
 
 
 {-| `"a" and "b"`, `"a", "b" and "c"`.
