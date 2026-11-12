@@ -166,6 +166,9 @@ codes! {
     NotGenerated => "generate::not_generated",
     /// Generated packages refer to each other in a cycle.
     ImportCycle => "generate::import_cycle",
+    /// A binding the route resolver accepted has no route function: a bug
+    /// in elm-connect, reported in place of a generated module.
+    UntypedRoute => "internal::untyped_route",
 }
 
 impl fmt::Display for Code {
@@ -683,6 +686,25 @@ impl Problem {
                 )
             ),
             vec![first, second],
+        )
+    }
+
+    /// Binding `binding` (counted from 0, the rule's own first) of the
+    /// method `method` (its full name), `verb template`, passed the route
+    /// resolver, but the emitter cannot write its route function.
+    pub fn untyped_route(method: &str, binding: usize, verb: &str, template: &str) -> Self {
+        Problem::new(
+            Code::UntypedRoute,
+            format!(
+                "elm-connect cannot write the route function of binding {binding} of \
+                 `{method}`, `{verb} {template}`, although the binding resolved."
+            ),
+            "Every HTTP binding the generator accepts becomes a route function, so this is a \
+             bug in elm-connect, not in your protos. Please report it at \
+             https://github.com/bruckner/elm-connect/issues with the method's request message \
+             and its `google.api.http` rule. Meanwhile, the method can be generated without \
+             this binding.",
+            Vec::new(),
         )
     }
 

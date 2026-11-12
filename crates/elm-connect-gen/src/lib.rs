@@ -181,9 +181,14 @@ pub fn generate_with_imports(
                     files.push(file(&descriptors));
                 }
                 for service in package.services.iter().filter(|s| !s.methods.is_empty()) {
-                    files.push(file(&emit::emit_service(
-                        package, service, options, &packages, &queries,
-                    )));
+                    match emit::emit_service(package, service, options, &packages, &queries) {
+                        Ok(module) => files.push(file(&module)),
+                        Err(untyped) => {
+                            for route in &untyped {
+                                diagnostics.push(route.problem());
+                            }
+                        }
+                    }
                 }
             }
             Err(reserved) => {
