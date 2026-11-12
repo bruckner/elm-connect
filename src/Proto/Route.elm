@@ -160,12 +160,26 @@ boolText b =
         "false"
 
 
-{-| A `bytes` field held as `Bytes`, as path or query text: its base64, as
-proto3 JSON writes it.
+{-| A `bytes` field held as `Bytes`, as path or query text: its base64 in the
+URL-safe alphabet (`-` and `_` for `+` and `/`), padded, which transcoders
+read in a path and in a query alike.
 -}
 bytesText : Bytes -> String
-bytesText =
-    Proto.Bytes.toBase64
+bytesText bytes =
+    String.map urlSafe (Proto.Bytes.toBase64 bytes)
+
+
+urlSafe : Char -> Char
+urlSafe char =
+    case char of
+        '+' ->
+            '-'
+
+        '/' ->
+            '_'
+
+        _ ->
+            char
 
 
 {-| A value's path or query text, by its proto3 JSON encoder: for the types
