@@ -1020,7 +1020,9 @@ gzip -9): the notes example 39,505 to 38,207 B gzipped (−1,298 B,
 fixture (−1,257 B with it), as the interpreter, `Proto.Http` and the
 field descriptors only bindings reached left every generated program;
 the formerly interpreted requests are built 10 to 12 % faster for an
-`Any` body and 17 % for a bytes path.
+`Any` body and 17 % for a bytes path on the spike's fixture; the notes
+example's `updateNote` with an attachment measured the same before and
+after (21.8 us), its time being the `Any`'s own.
 
 Bytes in route text are URL-safe base64, padded, in paths and queries
 alike, where the interpreter wrote proto3 JSON's standard alphabet.
