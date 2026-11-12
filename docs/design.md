@@ -2159,8 +2159,9 @@ arguments, so a method without bindings (`[]`) reads like one with
 them; the emitter asks the printer for that layout, which elm-format
 keeps. The modifiers follow one per line, each only when it says
 something: `withIdempotency` when the proto declares a level other
-than `IDEMPOTENCY_UNKNOWN`, `withRoutes` when the method has a rule
-(never under `wire=proto`).
+than `IDEMPOTENCY_UNKNOWN`, `withRoutes` (`withJsonRoutes` when its
+bodies hold an `Any`) when the method has a rule (never under
+`wire=proto`).
 
 - **A method's documentation shows its routes.** A call's doc comment gives the method's comment
   (§3.1), then its declaration line, its Connect path on a line of its
@@ -2223,9 +2224,9 @@ than `IDEMPOTENCY_UNKNOWN`, `withRoutes` when the method has a rule
   from the names, those two codecs and the request type's `encode…Bytes` and the response type's
   `decode…Bytes`; under `wire=proto` by `Proto.Method.initProto` from the
   binary two alone (§3.10), with no routes. A method holds no registry:
-  the client's is the one table (§5.1). A route whose body would hold an
-  `Any` is read from the method's binding (`withBindings`), since its body
-  has no total encoder. A method holds both codec
+  the client's is the one table (§5.1). A method whose route bodies hold
+  an `Any`, which has no total encoder, takes route functions of the
+  request and its proto3 JSON (`withJsonRoutes`, below). A method holds both codec
   halves always: the one it was not built with is a filler, a leaf
   constructor no protocol of the method's codec calls (§5.1), so only a
   program whose methods have binary codecs carries their code. The
@@ -2277,9 +2278,15 @@ than `IDEMPOTENCY_UNKNOWN`, `withRoutes` when the method has a rule
   `checkSegments`; a value's text is its proto3 JSON text (a string as
   it is, `String.fromInt`, `Proto.Route.boolText`, an enum or float by
   its encoder through `Proto.Route.viaJson`, a timestamp or duration by
-  `Proto.Timestamp.toString` and `Proto.Duration.toString`). The body is
-  the request's encoder less the path's fields (`Proto.Route.without`)
-  for `*`, the field's encoder (`{}` when unset) for one field. The query
+  `Proto.Timestamp.toString` and `Proto.Duration.toString`, `bytes` held
+  as `Bytes` by `Proto.Route.bytesText`, base64 in the URL-safe alphabet,
+  padded, the one alphabet every transcoder reads in a path; §5.3). A path
+  through a message on a recursion cycle reads through its wrapper. The
+  body is the request's encoder less the path's fields
+  (`Proto.Route.without`) for `*`, the field's encoder (`{}` when unset)
+  for one field: a cyclic field's by its wrapper's encoder, an `Empty`
+  field's `{}`, a `Value` field's the value itself (`null` set to null).
+  The query
   is the request message's query encoder in its package's module,
   `queryOfListNotesRequest : ListNotesRequest -> List ( String, String
   )`, one per message a binding of a service generated in the same run
@@ -2287,8 +2294,8 @@ than `IDEMPOTENCY_UNKNOWN`, `withRoutes` when the method has a rule
   requests can name a `queryOf` that module lacks, which the compiler
   reports), writing every field any
   generated binding puts in its query, in declaration order, depth first,
-  each by its `Proto.Query` helper (`string`, `int`, `int64`, `bool`,
-  `float`, `enum`, `optional`, `repeated`, `unlessZero`), which leaves
+  each by its `Proto.Query` helper (`string`, `bytes`, `int`, `int64`,
+  `bool`, `float`, `enum`, `optional`, `repeated`, `unlessZero`), which leaves
   a field without presence out at its default, one with presence when
   unset; a binding takes it less the fields its path and body hold
   (`Proto.Query.except`). A call picks an additional binding with
@@ -2300,17 +2307,24 @@ than `IDEMPOTENCY_UNKNOWN`, `withRoutes` when the method has a rule
   (decisions.md: Routes are generated functions). The price: a route
   fix reaches an application when it regenerates, not when it upgrades
   the runtime.
-- **A binding that cannot be typed is data.** A binding the emitter
-  cannot write as a function (a path or query field of a message of a
-  package not generated with it, a recursive message on the way, `bytes`
-  held as `Bytes`) makes the method take its bindings as data instead,
-  `withBindings (Proto.Method.bindings descriptorGetNote)`, which the
-  runtime's interpreter (`Proto.Internal.Interpret`) reads over the
-  request's proto3 JSON into the same route (`routes_interpreted` case),
-  the JSON a send encodes once, with the client's registry, for the
-  path, the query and the body alike. A method written by hand does the same with its own `Proto.Http`
-  bindings. Only a program naming `withBindings` carries the
-  interpreter.
+- **A body holding an `Any` is read from the JSON.** Every binding the
+  route resolver accepts is typed (`routes_typed_shapes` case holds the
+  shapes once left to an interpreter). A body that reaches a
+  `google.protobuf.Any` can be written only by the client's registry, so
+  every route of such a method is a function of the request and its
+  proto3 JSON, `routeCreateNote0 : CreateNoteRequest -> Json.Encode.Value
+  -> Proto.Route.Route`, held by `withJsonRoutes`: the path and query
+  from the typed request, the body from the JSON (`Proto.Route.jsonField`
+  for one field, `without` for `*`), which a send encodes once, with the
+  client's registry, and checks for an `Any` it cannot write
+  (`unencodable`, §5.1). Every binding of such a method takes the JSON,
+  which is exact, since no path or query holds an `Any`. A binding the
+  resolver accepts that the emitter cannot type is a bug, reported as
+  `internal::untyped_route`. A method written by hand gives its own
+  `Proto.Http` bindings to `withBindings`, which the runtime's
+  interpreter (`Proto.Internal.Interpret`) reads over the same JSON into
+  the same route; only a program naming `withBindings` carries the
+  interpreter, and no generated method names it.
 - **The implicit route.** A method without a rule has no routes and
   `bindings = []` in its descriptor, and nothing else is generated for
   it: over the transcode protocol
@@ -2741,14 +2755,15 @@ route function, §4), the check that its request's `Any`s can be written,
 the write-limit check and the answer's reader, monomorphic from there
 on. Over JSON a send's plan (`toSend`) encodes the request at most once,
 as it is made and only when a part of the send reads the JSON (the
-body, a route read from the JSON by `withBindings`, the check, or a
-write limit), and hands that one value to each; a plan made only to read
+body, a route read from the JSON by `withJsonRoutes` or `withBindings`,
+the check, or a write limit), and hands that one value to each; a plan made only to read
 an answer (`Rpc.response`) encodes nothing, and one made to build the
 request (`Rpc.request`) encodes it when the body or the route reads it.
 The check runs whenever the JSON is what is sent, since a method's
 encoder does not say whether its type reaches an `Any`; a typed route
 holds its own body and is not checked. A route read from JSON names its
-`response_body` without the JSON.
+`response_body` whatever the JSON holds, so a plan made to read an
+answer builds it over `null`, which encodes nothing.
 The functions a protocol is built of are one module per protocol, each
 holding every function `Rpc.Protocol` installs for it:
 `Rpc.Internal.Connect` Connect's POST and GET builders, for either
@@ -3191,7 +3206,12 @@ What follows says how a binding reads its fields, for both.
   `response_body` the answer is that field of the response.
 - Path variables are percent-encoded (every byte but RFC 3986's
   unreserved characters); a variable matching one segment (`{name}`,
-  `{name=*}`) escapes `/` as `%2F`, any other keeps it. A value its
+  `{name=*}`) escapes `/` as `%2F`, any other keeps it. A `bytes` value
+  held as `Bytes` is written in the URL-safe base64 alphabet, padded, in a
+  path and a query alike, since grpc-gateway's default unescaping splits
+  a single segment on the `%2F` standard base64's `/` becomes, and every
+  transcoder reads either alphabet in a query; one held as a `String` is
+  sent as it holds it. A value its
   template cannot match, or holding a surrogate without its pair, is
   not sent (§5.1). A query value or a hand-built literal holding one
   is written with U+FFFD in its place, as the WHATWG URL encoder writes

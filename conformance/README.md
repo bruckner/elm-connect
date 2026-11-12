@@ -147,6 +147,17 @@ so a server-side implementation can check itself against the same file.
   fixture naming a binding the method lacks fails. `just bless` rewrites
   all three, and the route properties below.
 
+The same test writes the corpus case `routes_typed_shapes`, which holds
+every binding shape whose route function once fell back to the
+interpreter (`bytes` held as `Bytes`, a path through a message on a
+cycle, a body field of `Empty` or `Value` or on a cycle, a body holding
+an `Any`), generated again under `module_prefix=Shapes` into
+`tests/Shapes/` and pinned and blessed the same way.
+`tests/RouteShapesTest.elm` holds each of its methods' typed routes to
+the interpreter (`Proto.Method.withBindings` over the method's
+descriptor) through `Rpc.request`, every binding over a spread of
+requests, and pins the three places they differ on purpose.
+
 To add a fixture, add it to a `routes/*.json` file (and a method to
 `routes.proto` if no rule fits), check that the reference agrees, and
 bless. `just live` then runs it against Vanguard ("The route fixtures,

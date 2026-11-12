@@ -952,7 +952,7 @@ not the config's. Where: design §5.1.
 
 ### Routes are generated functions
 
-*2026-10-24; 2026-10-25; 2026-10-27.*
+*2026-10-24; 2026-10-25; 2026-10-27; every binding typed 2026-11-13.*
 
 A method's HTTP bindings are generated as functions of the typed
 request, one per binding (`routeGetNote0 : GetNoteRequest ->
@@ -962,8 +962,9 @@ package's module (`queryOfListNotesRequest`), shared by every binding
 taking it. The binding data and its interpreter, which until then built
 every transcoded request by encoding the whole message to JSON and
 reading each field back by key, stay for methods written by hand
-(`Proto.Method.withBindings`) and for a binding the generator cannot
-type, and a program that names neither carries neither. With the
+(`Proto.Method.withBindings`), and a program that names neither carries
+neither. Until 2026-11-13 they also served a binding the generator
+could not type (below). With the
 routes on the method, the method no longer holds its descriptor: it
 holds its service's and method's names and its idempotency
 (`withIdempotency`, written only when the proto declares one), and the
@@ -997,7 +998,52 @@ follow-up: a table of generated JSON-level functions, smaller and
 faster than the interpreter, if an application full of rules that
 never transcodes appears. The price accepted: a route bug is fixed by
 regenerating, not by upgrading the runtime, and the generated service
-modules carry a function per binding. Where: design §4, §5.3.
+modules carry a function per binding.
+
+2026-11-13: every binding the route resolver accepts is typed. Four
+legal shapes had fallen back to the interpreter: `bytes` held as
+`Bytes` in a path or query, a path through a message on a recursion
+cycle, a body field of `Empty` or `Value` or on a cycle, and a body
+holding a `google.protobuf.Any`. Only the last needed a design: an
+`Any` is written by the client's registry, which a route function did
+not have. Such a method's routes are functions of the request and its
+proto3 JSON (`Proto.Method.withJsonRoutes`, the internal route union
+`Typed (req -> Route) | FromJson (req -> Value -> Route)`): the path
+and query from the typed request, the body from the JSON the send
+already encodes once with the registry and checks for an `Any` it
+cannot write. A binding the resolver accepts that the emitter cannot
+type is `internal::untyped_route`, a reported bug, and the corpus case
+`routes_typed_shapes` holds every shape that once fell back. Measured
+on the landing branch (`elm make --optimize` on 0.19.2, terser 5.36.0,
+gzip -9): the notes example 39,505 to 38,207 B gzipped (−1,298 B,
+−3.3 %), the live runner −1,301 B before this change added a route
+fixture (−1,257 B with it), as the interpreter, `Proto.Http` and the
+field descriptors only bindings reached left every generated program;
+the formerly interpreted requests are built 11 to 17 % faster.
+
+Bytes in route text are URL-safe base64, padded, in paths and queries
+alike, where the interpreter wrote proto3 JSON's standard alphabet.
+Tried live against Vanguard, grpc-gateway v2.33 and Envoy 1.40: every
+one reads either alphabet, padded or not, in a query, and the URL-safe
+one in a path, but grpc-gateway's default mux answers 404 to standard
+base64 in a path, splitting on the `%2F` its `/` becomes (the route
+fixture with a bytes path variable records it, under `bytes=string`,
+which sends the text a field holds). A `Value` body field set to
+`null` is sent as `null`; the interpreter sent `{}`, an empty struct.
+
+Measured and left as a follow-up: one route type over the registry,
+`RouteOf (Registry -> req -> Result Error Route)`, where a generated
+`Any` route encodes only its body field. It saves 35 to 47 B gzipped
+more and builds an `Any`-body request 28 % faster (2.21 to 1.59 us),
+but two questions want a design first: reading an answer would then
+build the route, which encodes the body (encode on read), and an
+unencodable call's `Rpc.request` needs a route it cannot build.
+`withBindings` and the interpreter stay for methods written by hand:
+dropping them saves a generated program nothing, since dead-code
+elimination already drops them, and would cost a major and the
+hand-writer's only path for an `Any` body; whether `withBindings`
+stays at all is left to the review of the public interface. Where:
+design §4, §5.1, §5.3.
 
 ### Protocol and client, indexed by codec
 
