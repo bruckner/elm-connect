@@ -3221,10 +3221,12 @@ What follows says how a binding reads its fields, for both.
   template cannot match, or holding a surrogate without its pair, is
   not sent (§5.1). A query value or a hand-built literal holding one
   is written with U+FFFD in its place, as the WHATWG URL encoder writes
-  it. Text is read through a fold that takes such a surrogate apart
-  from its neighbours: elm/core's `String.foldr` and `String.all` read
-  from the end and take a low surrogate with the code unit before it,
-  and at the start of a string never return. A wildcard
+  it. Text that one `JSON.stringify` shows to hold no such surrogate
+  (as the string check of §3.4 reads it, at any length here) is folded
+  as it is; other text is read through a fold that takes such a
+  surrogate apart from its neighbours: elm/core's `String.foldr` and
+  `String.all` read from the end and take a low surrogate with the code
+  unit before it, and at the start of a string never return. A wildcard
   outside a variable never reaches the runtime (`route::template`).
 - A binding's literal segments and custom verb are written as RFC 3986
   `pchar`: unreserved characters, sub-delimiters, `:` and `@` as they
