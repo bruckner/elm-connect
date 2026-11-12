@@ -23,7 +23,6 @@
 - Breaking: `Rpc.Error.Reason`'s `InvalidHeader` is renamed `BadHeader`,
   and `InvalidPathValue` `BadPathValue`, in the form of `BadUrl` and
   `BadResponse`.
-- New: `Proto.Registry.unregistered` gives the type URL of the `Any` a
-  JSON read failed on because the registry lacks its type, and
-  `Proto.Descriptors.fieldName` a field's declared name from its
-  message's full name and number, for showing a binary report's path.
+- New: `Proto.Message.fieldNumbered` and `fieldNamed` find a field of a
+  descriptor by number or declared name, for showing a binary report's
+  path.

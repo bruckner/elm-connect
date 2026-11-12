@@ -1,7 +1,7 @@
 module Proto.Message exposing
     ( Message, init, initWith, typeName
     , Descriptor, descriptor
-    , fullName, typeUrl, fields, oneofs
+    , fullName, typeUrl, fields, fieldNumbered, fieldNamed, oneofs
     )
 
 {-| A message type: its typed value, which holds its full name and its codecs,
@@ -22,7 +22,7 @@ gives one per well-known type.
 
 # Reading a descriptor
 
-@docs fullName, typeUrl, fields, oneofs
+@docs fullName, typeUrl, fields, fieldNumbered, fieldNamed, oneofs
 
 -}
 
@@ -188,6 +188,37 @@ typeUrl messageDescriptor =
 fields : Descriptor -> List Field.Descriptor
 fields (Descriptor m) =
     m.fields
+
+
+{-| The field of this number, which a [`Proto.Error.Binary`](Proto-Error#Binary)
+path names fields by:
+
+
+    showPath : Proto.Descriptors.Descriptors -> Proto.Error.Binary -> String
+    showPath descriptors problem =
+        problem.path
+            |> List.map
+                (\( typeName, number ) ->
+                    Proto.Descriptors.message typeName descriptors
+                        |> Maybe.andThen (Proto.Message.fieldNumbered number)
+                        |> Maybe.map (\field -> typeName ++ "." ++ Proto.Field.name field)
+                        |> Maybe.withDefault (typeName ++ "." ++ String.fromInt number)
+                )
+            |> String.join " > "
+
+    -- "notes.v1.Note.revision > notes.v1.Revision.title"
+
+-}
+fieldNumbered : Int -> Descriptor -> Maybe Field.Descriptor
+fieldNumbered number (Descriptor m) =
+    List.filter (\field -> Field.number field == number) m.fields |> List.head
+
+
+{-| The field of this declared name, such as `user_id`.
+-}
+fieldNamed : String -> Descriptor -> Maybe Field.Descriptor
+fieldNamed name (Descriptor m) =
+    List.filter (\field -> Field.name field == name) m.fields |> List.head
 
 
 {-| The names of its oneofs, in the order their first members are declared. A

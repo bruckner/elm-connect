@@ -61,8 +61,15 @@ suite =
                     path =
                         [ ( "notes.v1.Note", 1 ), ( "google.protobuf.Timestamp", 2 ), ( "notes.v1.Note", 9 ), ( "notes.v1.Missing", 1 ) ]
                 in
-                List.map (\( typeName, number ) -> Descriptors.fieldName descriptors typeName number) path
+                List.map (\( typeName, number ) -> Descriptors.message typeName descriptors |> Maybe.andThen (Message.fieldNumbered number) |> Maybe.map Field.name) path
                     |> Expect.equal [ Just "title", Just "nanos", Nothing, Nothing ]
+        , test "a field by declared name" <|
+            \_ ->
+                ( Message.fieldNamed "title" (note "title") |> Maybe.map Field.number
+                , Message.fieldNamed "nanos" (note "title")
+                , Descriptors.message "google.protobuf.Timestamp" WellKnown.descriptors |> Maybe.andThen (Message.fieldNamed "nanos") |> Maybe.map Field.number
+                )
+                    |> Expect.equal ( Just 1, Nothing, Just 2 )
         , test "empty has nothing" <|
             \_ ->
                 ( Descriptors.messages Descriptors.empty, Descriptors.enums Descriptors.empty )

@@ -2192,10 +2192,9 @@ with a JSON form of its own, `"value"`. An object without `"@type"` fails, but
 for `{}`, the empty `Any`, and so does one whose `"@type"` is not a type URL:
 it must hold a `/` with a type name after the last one. As protobuf's own
 JSON readers do, it fails for a type the registry has no entry for, naming
-its type URL, the failure's value the `Any`'s object, which
-[`Proto.Registry.unregistered`](Proto-Registry#unregistered) reads (register
-the type, see [`Proto.Registry`](Proto-Registry)), unless the registry is
-[lenient](Proto-Registry#lenient): then the `Any` holds the JSON alone. It
+its type URL (register the type, see [`Proto.Registry`](Proto-Registry)),
+unless the registry is [lenient](Proto-Registry#lenient): then the `Any`
+holds the JSON alone. It
 fails for JSON that is not its message, lenient or not.
 -}
 anyWith : Registry -> Decoder Any

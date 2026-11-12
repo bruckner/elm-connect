@@ -12,6 +12,7 @@ import Proto.Bytes
 import Proto.Duration as Duration
 import Proto.Error exposing (Error(..), Reason(..))
 import Proto.Internal.Any
+import Proto.Internal.Registry
 import Proto.Json
 import Proto.Message as Message exposing (Message)
 import Proto.Registry as Registry exposing (Registry)
@@ -201,7 +202,7 @@ suite =
                     failure registry text =
                         case Json.Decode.decodeString (Json.Decode.field "x" (Json.Decode.list (Proto.Json.anyWith registry))) text of
                             Err problem ->
-                                Registry.unregistered registry problem
+                                Proto.Internal.Registry.unregistered registry problem
 
                             Ok _ ->
                                 Just "decoded"

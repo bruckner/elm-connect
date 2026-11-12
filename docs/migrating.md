@@ -366,9 +366,7 @@ JSON.
   (`UnregisteredType url` for a `google.rpc.Status` body's detail of a
   type the client's registry lacks; `BadJson` for a detail that is not
   one, `BadBinary` for a `grpc-status-details-bin` that does not decode).
-  `Proto.Registry.unregistered` finds a registry miss in a JSON
-  decoder's error. `Rpc.Error.details`
-  is gone; unpack with `Proto.Any.unpack` and the type's typed value,
+  `Rpc.Error.details` is gone; unpack with `Proto.Any.unpack` and the type's typed value,
   `Proto.ErrorDetails.badRequest` for `google.rpc.BadRequest`
   ([descriptors.md](descriptors.md#error-details)).
 

@@ -1,4 +1,4 @@
-module Proto.Internal.Registry exposing (Entry, Leniency(..), Registry(..), isLenient, member, strict, toBytes, toJson, writesJsonAlone)
+module Proto.Internal.Registry exposing (Entry, Leniency(..), Registry(..), isLenient, member, strict, toBytes, toJson, unregistered, writesJsonAlone)
 
 {-| The `Registry` type, which `Proto.Registry` names by an alias, and the
 conversions through one, which `Proto.Registry` does not expose: `Proto.Any`
@@ -13,8 +13,10 @@ and no entry refers to a table of its own.
 -}
 
 import Dict exposing (Dict)
+import Json.Decode
 import Json.Encode exposing (Value)
 import Proto.Error exposing (Error)
+import Proto.Internal.Any
 
 
 {-| How it reads an `Any` of a type it has no entry for, and its entries.
@@ -91,3 +93,43 @@ writesJsonAlone (Registry leniency _) =
 strict : Registry -> Registry
 strict (Registry _ entries) =
     Registry Strict entries
+
+
+{-| The type URL of the `Any` a JSON read failed on because the registry has
+no entry for its type, if that is why it failed: the `Any` decoder fails such
+a type with the `Any`'s object as the leaf failure's value, and this finds
+that failure, reads its `"@type"` and tests the registry. An `Any` of a
+registered type that holds one of an unregistered type fails at the outer
+`Any`, whose type the registry has, so it gives `Nothing`.
+
+The status-detail reader turns the result into `UnregisteredType`. It is not
+public: an application reading proto3 JSON itself has the miss named in the
+error's message, and a JSON read that gives a `Proto.Error` is the public
+answer when one is asked for (docs/decisions.md, "One error type for the
+proto layer").
+
+-}
+unregistered : Registry -> Json.Decode.Error -> Maybe String
+unregistered registry error =
+    case error of
+        Json.Decode.Field _ inner ->
+            unregistered registry inner
+
+        Json.Decode.Index _ inner ->
+            unregistered registry inner
+
+        Json.Decode.OneOf errors ->
+            List.filterMap (unregistered registry) errors |> List.head
+
+        Json.Decode.Failure _ value ->
+            case Json.Decode.decodeValue (Json.Decode.field "@type" Json.Decode.string) value of
+                Ok url ->
+                    -- A "@type" that is not a type URL fails for that.
+                    if not (String.contains "/" url) || String.endsWith "/" url || member (Proto.Internal.Any.nameOf url) registry then
+                        Nothing
+
+                    else
+                        Just url
+
+                Err _ ->
+                    Nothing

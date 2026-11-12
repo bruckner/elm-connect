@@ -3509,9 +3509,12 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
     The miss is found in the JSON decoder's failure after the fact: the
     only channel out of a `Json.Decode.Decoder` is `Json.Decode.Error`,
     and the `Any` decoder fails a type it lacks with the `Any`'s object
-    as the leaf failure's value, which `Proto.Registry.unregistered`
-    reads (its `"@type"`, not in the registry); messages are for people,
-    the value for programs. The status is read
+    as the leaf failure's value, which `Proto.Internal.Registry.unregistered`
+    reads (its `"@type"`, not in the registry) for the detail reader;
+    messages are for people, the value for programs. It is not public:
+    an application reading proto3 JSON itself has the miss named in the
+    message, and a JSON read giving a `Proto.Error` is the public answer
+    when one is asked for. The status is read
     without the registry where the protocol reads the answer, and its
     details again through the client's in the plan (`Status.completeDetails`).
     `Proto.ErrorDetails.registry` holds `google/rpc/error_details.proto`'s
@@ -3584,9 +3587,11 @@ toString : Error -> String              -- for a log, as Json.Decode.errorToStri
   failure unwinds. Field names are not in it: a decoder carries message
   names and field numbers, and `Proto.Descriptors` holds the names.
   `Unlocated` is the decoder's backstop, reachable only through a bug in
-  its readers. `Proto.Descriptors.fieldName descriptors typeName number`
-  gives a path entry's declared field name, for a program that keeps
-  descriptors and wants names in a report; `Proto.Error` stays a leaf.
+  its readers. `Proto.Message.fieldNumbered` and `fieldNamed` find a
+  field in a descriptor, so a program that keeps descriptors names a
+  path entry's field in four lines; there is no walker over a `Binary`
+  until a caller shows the output it wants, and `Proto.Error` stays a
+  leaf (it cannot import `Proto.Descriptors` without a cycle).
 - **The names.** A `Binary`'s `typeName` is the message the program
   decoded, the outermost. `UnregisteredType` carries what came off the
   wire, the `Any`'s type URL as `Proto.Any.typeUrl` gives it, and takes
@@ -3605,7 +3610,7 @@ toString : Error -> String              -- for a log, as Json.Decode.errorToStri
   | `Proto.Binary.decode` | `Result Binary a` | the report |
   | `Proto.Any.tryUnpack` | `Result Error a` | `TypeMismatch`, `BadBinary` |
   | `Proto.Any.toJson`, `Proto.Json.encodeAnyWith`, generated `encodeNoteWith` | `Result Error Value` | `UnregisteredType`, or the `BadBinary` of the `Any` that failed, at any depth, named by its own type |
-  | `Proto.Json.anyWith`, generated `decodeNoteWith` | `Json.Decode.Decoder` | elm/json's error; `Proto.Registry.unregistered` names a registry miss in it |
+  | `Proto.Json.anyWith`, generated `decodeNoteWith` | `Json.Decode.Decoder` | elm/json's error, a registry miss named in its message |
   | `Rpc.Error.UnwritableRequest` | `Error` | as `encodeNoteWith` |
   | `StatusError.details` | `List (Result Error Any)` | `UnregisteredType`, `BadJson`, `BadBinary` (above) |
 

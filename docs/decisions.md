@@ -1519,7 +1519,7 @@ types would keep a JSON program's binary codecs alive.
 
 A registry miss while reading JSON can leave a decoder only as
 `Json.Decode.Error`, so it is found after the fact:
-`Proto.Registry.unregistered` reads the leaf failure whose value is the
+`Proto.Internal.Registry.unregistered` reads the leaf failure whose value is the
 `Any`'s object and whose `"@type"` the registry lacks, rather than a
 message convention; messages are for people. `Rpc.Error.BadResponse`
 keeps its shape: a binary answer that is not the response is an answer
@@ -1527,6 +1527,20 @@ read but not understood, and its problem is now the report's text.
 `Rpc.Error.Reason`'s `InvalidHeader` and `InvalidPathValue` became
 `BadHeader` and `BadPathValue` in the same pass, the module's `Bad*`
 form (operator, 2026-11-10). Where: design §5.4.
+
+Two readers stayed off the public surface when the type landed.
+`Proto.Registry.unregistered`, which reads a registry miss out of a
+`Json.Decode.Error` by the leaf failure's `"@type"`, is internal: its
+one consumer is the status-detail reader, an application reading proto3
+JSON itself has the miss named in the error's message, and a JSON read
+that gives a `Proto.Error` is the public answer if one is asked for
+(exposing later is free; hiding later is a break). And a field is found
+in a descriptor by two primitives on `Proto.Message`, `fieldNumbered`
+and `fieldNamed`, rather than a `Descriptors.fieldName` that composed
+one lookup for one purpose; a walker over a `Binary`'s path waits for a
+caller to show the output it wants, and could not live in `Proto.Error`
+anyway, which `Proto.Descriptors` imports through the decoder.
+
 
 ## Input and versioning
 

@@ -62,7 +62,9 @@ type Error
     name of the message it belongs to and its field number:
     `[ ( "notes.v1.Note", 3 ), ( "notes.v1.Revision", 1 ) ]` is field 1 of
     the `Revision` in field 3 of the `Note`. Empty when the failure is in
-    no field, as a field key cut short at the top level is.
+    no field, as a field key cut short at the top level is. A program that
+    keeps descriptors names each field with
+    [`Proto.Message.fieldNumbered`](Proto-Message#fieldNumbered).
   - `offset`: the first byte, counted from the start of the input, that
     could not be read.
 

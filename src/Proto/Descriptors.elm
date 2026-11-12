@@ -1,6 +1,6 @@
 module Proto.Descriptors exposing
     ( Descriptors, empty, fromDescriptors, union
-    , message, enum, fieldName
+    , message, enum
     , messages, enums
     )
 
@@ -16,7 +16,7 @@ which are [`Proto.WellKnown.descriptors`](Proto-WellKnown#descriptors).
 
 # Looking up
 
-@docs message, enum, fieldName
+@docs message, enum
 
 
 # Listing
@@ -27,7 +27,6 @@ which are [`Proto.WellKnown.descriptors`](Proto-WellKnown#descriptors).
 
 import Dict exposing (Dict)
 import Proto.Enum as Enum
-import Proto.Field as Field
 import Proto.Message as Message
 
 
@@ -85,42 +84,14 @@ union (Descriptors left) (Descriptors right) =
         }
 
 
-{-| The message of this full name, such as `notes.v1.Note`.
+{-| The message of this full name, such as `notes.v1.Note`. Its fields are
+found by number or name with
+[`Proto.Message.fieldNumbered`](Proto-Message#fieldNumbered) and
+[`fieldNamed`](Proto-Message#fieldNamed).
 -}
 message : String -> Descriptors -> Maybe Message.Descriptor
 message typeName (Descriptors descriptors) =
     Dict.get typeName descriptors.messages
-
-
-{-| The declared name of a message's field, from the message's full name
-and the field's number: what a [`Proto.Error.Binary`](Proto-Error#Binary)
-path holds, as a person reads it.
-
-
-    showPath : Descriptors -> Proto.Error.Binary -> String
-    showPath descriptors problem =
-        problem.path
-            |> List.map
-                (\( typeName, number ) ->
-                    typeName
-                        ++ "."
-                        ++ (Proto.Descriptors.fieldName descriptors typeName number
-                                |> Maybe.withDefault (String.fromInt number)
-                           )
-                )
-            |> String.join " > "
-
-    -- "notes.v1.Note.revision > notes.v1.Revision.title"
-
-`Nothing` when the descriptors have no such message, or the message no
-field of that number.
-
--}
-fieldName : Descriptors -> String -> Int -> Maybe String
-fieldName descriptors typeName number =
-    message typeName descriptors
-        |> Maybe.andThen (Message.fields >> List.filter (\f -> Field.number f == number) >> List.head)
-        |> Maybe.map Field.name
 
 
 {-| The enum of this full name, such as `notes.v1.Visibility`.

@@ -16,6 +16,7 @@ import Proto.Any exposing (Any)
 import Proto.Error
 import Proto.Internal.Any
 import Proto.Internal.Percent as Percent
+import Proto.Internal.Registry
 import Proto.Json
 import Proto.Registry exposing (Registry)
 import Rpc.Body
@@ -286,7 +287,7 @@ bodyDetails registry answer =
 
 {-| A `google.rpc.Status` detail: a proto3 JSON `Any`, converted to its
 message's binary through the registry. A type the registry lacks is
-`UnregisteredType`, read from the failure (`Proto.Registry.unregistered`);
+`UnregisteredType`, read from the failure (`Proto.Internal.Registry.unregistered`);
 any other failure, a detail with no `"@type"` among them, is its `BadJson`.
 -}
 statusDetail : Registry -> Value -> Result Proto.Error.Error Any
@@ -296,7 +297,7 @@ statusDetail registry detail =
             Ok any
 
         Err problem ->
-            case Proto.Registry.unregistered registry problem of
+            case Proto.Internal.Registry.unregistered registry problem of
                 Just url ->
                     Err (Proto.Error.UnregisteredType url)
 
