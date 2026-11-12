@@ -34,16 +34,18 @@ Transcode:
   - binding 0: `GET /v1/blobs/{digest}`;
   - binding 1: `GET /v1/{name=shelves/*/blobs/*}`.
 
-Codecs: JSON. Described by [`descriptorGetBlob`](#descriptorGetBlob).
+Codecs: JSON and protobuf binary. Described by [`descriptorGetBlob`](#descriptorGetBlob).
 
 -}
-getBlob : Blobs.V1.Blob -> Rpc.Call Rpc.Json Blobs.V1.Blob Blobs.V1.Blob
+getBlob : Blobs.V1.Blob -> Rpc.Call codec Blobs.V1.Blob Blobs.V1.Blob
 getBlob =
     Rpc.call
-        (Proto.Method.initJson "blobs.v1.BlobService"
+        (Proto.Method.init "blobs.v1.BlobService"
             "GetBlob"
             (\_ -> Ok << Blobs.V1.encodeBlob)
             (\_ -> Blobs.V1.decodeBlob)
+            Blobs.V1.encodeBlobBytes
+            Blobs.V1.decodeBlobBytes
             |> Proto.Method.withBindings (Proto.Method.bindings descriptorGetBlob)
         )
 
@@ -52,16 +54,18 @@ getBlob =
 Connect: `POST /blobs.v1.BlobService/FindBlob`.
 Transcode: `POST /v1/{name=blobs/*}:find` body `*`.
 
-Codecs: JSON. Described by [`descriptorFindBlob`](#descriptorFindBlob).
+Codecs: JSON and protobuf binary. Described by [`descriptorFindBlob`](#descriptorFindBlob).
 
 -}
-findBlob : Blobs.V1.Blob -> Rpc.Call Rpc.Json Blobs.V1.Blob Blobs.V1.Blob
+findBlob : Blobs.V1.Blob -> Rpc.Call codec Blobs.V1.Blob Blobs.V1.Blob
 findBlob =
     Rpc.call
-        (Proto.Method.initJson "blobs.v1.BlobService"
+        (Proto.Method.init "blobs.v1.BlobService"
             "FindBlob"
             (\_ -> Ok << Blobs.V1.encodeBlob)
             (\_ -> Blobs.V1.decodeBlob)
+            Blobs.V1.encodeBlobBytes
+            Blobs.V1.decodeBlobBytes
             |> Proto.Method.withRoutes [ routeFindBlob0 ]
         )
 

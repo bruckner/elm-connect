@@ -10,9 +10,8 @@
 //     --known-failing @known-failing.txt -- node conformance.mjs [--send MODE] [--elm PATH]
 //
 // A request for the proto codec is sent with the envelope's `codec: "proto"`,
-// and one over gRPC-Web with `protocol: "grpcweb"` as well; both need a
-// program built against bindings with binary codecs (`--elm
-// build/elm-both.js`, which `just live-proto` builds).
+// and one over gRPC-Web with `protocol: "grpcweb"` as well; the runner's
+// bindings, generated with the default `wire=both`, carry binary codecs.
 // MODE is how the runner sends each call (an envelope's `send`): `halves`,
 // the default, through the runtime's pure halves (Rpc.request, elm/http,
 // Rpc.response), which give an application the answer's status and headers;

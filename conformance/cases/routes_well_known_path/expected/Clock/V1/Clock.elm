@@ -35,16 +35,18 @@ elmConnectVersion_ =
 Connect: `POST /clock.v1.Clock/GetMoment`.
 Transcode: `GET /v1/at/{at}`.
 
-Codecs: JSON. Described by [`descriptorGetMoment`](#descriptorGetMoment).
+Codecs: JSON and protobuf binary. Described by [`descriptorGetMoment`](#descriptorGetMoment).
 
 -}
-getMoment : Clock.V1.Moment -> Rpc.Call Rpc.Json Clock.V1.Moment Clock.V1.Moment
+getMoment : Clock.V1.Moment -> Rpc.Call codec Clock.V1.Moment Clock.V1.Moment
 getMoment =
     Rpc.call
-        (Proto.Method.initJson "clock.v1.Clock"
+        (Proto.Method.init "clock.v1.Clock"
             "GetMoment"
             (\_ -> Ok << Clock.V1.encodeMoment)
             (\_ -> Clock.V1.decodeMoment)
+            Clock.V1.encodeMomentBytes
+            Clock.V1.decodeMomentBytes
             |> Proto.Method.withRoutes [ routeGetMoment0 ]
         )
 
@@ -53,16 +55,18 @@ getMoment =
 Connect: `POST /clock.v1.Clock/MaskMoment`.
 Transcode: `GET /v1/at/{at}/mask/{mask}`.
 
-Codecs: JSON. Described by [`descriptorMaskMoment`](#descriptorMaskMoment).
+Codecs: JSON and protobuf binary. Described by [`descriptorMaskMoment`](#descriptorMaskMoment).
 
 -}
-maskMoment : Clock.V1.Moment -> Rpc.Call Rpc.Json Clock.V1.Moment Clock.V1.Moment
+maskMoment : Clock.V1.Moment -> Rpc.Call codec Clock.V1.Moment Clock.V1.Moment
 maskMoment =
     Rpc.call
-        (Proto.Method.initJson "clock.v1.Clock"
+        (Proto.Method.init "clock.v1.Clock"
             "MaskMoment"
             (\_ -> Ok << Clock.V1.encodeMoment)
             (\_ -> Clock.V1.decodeMoment)
+            Clock.V1.encodeMomentBytes
+            Clock.V1.decodeMomentBytes
             |> Proto.Method.withRoutes [ routeMaskMoment0 ]
         )
 
@@ -71,16 +75,18 @@ maskMoment =
 Connect: `POST /clock.v1.Clock/CountMoment`.
 Transcode: `GET /v1/count/{count}/seen/{seen}`.
 
-Codecs: JSON. Described by [`descriptorCountMoment`](#descriptorCountMoment).
+Codecs: JSON and protobuf binary. Described by [`descriptorCountMoment`](#descriptorCountMoment).
 
 -}
-countMoment : Clock.V1.Moment -> Rpc.Call Rpc.Json Clock.V1.Moment Clock.V1.Moment
+countMoment : Clock.V1.Moment -> Rpc.Call codec Clock.V1.Moment Clock.V1.Moment
 countMoment =
     Rpc.call
-        (Proto.Method.initJson "clock.v1.Clock"
+        (Proto.Method.init "clock.v1.Clock"
             "CountMoment"
             (\_ -> Ok << Clock.V1.encodeMoment)
             (\_ -> Clock.V1.decodeMoment)
+            Clock.V1.encodeMomentBytes
+            Clock.V1.decodeMomentBytes
             |> Proto.Method.withRoutes [ routeCountMoment0 ]
         )
 
@@ -89,16 +95,18 @@ countMoment =
 Connect: `POST /clock.v1.Clock/WaitMoment`.
 Transcode: `POST /v1/wait/{wait}` body `*`.
 
-Codecs: JSON. Described by [`descriptorWaitMoment`](#descriptorWaitMoment).
+Codecs: JSON and protobuf binary. Described by [`descriptorWaitMoment`](#descriptorWaitMoment).
 
 -}
-waitMoment : Clock.V1.Moment -> Rpc.Call Rpc.Json Clock.V1.Moment Clock.V1.Moment
+waitMoment : Clock.V1.Moment -> Rpc.Call codec Clock.V1.Moment Clock.V1.Moment
 waitMoment =
     Rpc.call
-        (Proto.Method.initJson "clock.v1.Clock"
+        (Proto.Method.init "clock.v1.Clock"
             "WaitMoment"
             (\_ -> Ok << Clock.V1.encodeMoment)
             (\_ -> Clock.V1.decodeMoment)
+            Clock.V1.encodeMomentBytes
+            Clock.V1.decodeMomentBytes
             |> Proto.Method.withRoutes [ routeWaitMoment0 ]
         )
 

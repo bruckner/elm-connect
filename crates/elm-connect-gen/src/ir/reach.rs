@@ -1,6 +1,6 @@
 //! Which messages reach a `google.protobuf.Any`: those holding one in a
 //! field, a map value or a oneof member, or holding a message that does,
-//! across packages. Under `codec=both` an `Any` holds its message's binary,
+//! across packages. Under `wire=both` an `Any` holds its message's binary,
 //! and writing it as proto3 JSON can fail, so the JSON codecs of these
 //! messages take a registry and their encoders give a `Result` (design
 //! §3.5).

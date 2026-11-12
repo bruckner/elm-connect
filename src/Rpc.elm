@@ -127,7 +127,7 @@ import Time
 {-| The codec tag of proto3 JSON: [`Rpc.Protocol.Json`](Rpc-Protocol#Json).
 A client of [`Rpc.Protocol.connect`](Rpc-Protocol#connect) or
 [`transcode`](Rpc-Protocol#transcode) is a `Client Json`, and sends calls of
-code generated with `codec=json` (the default) or `codec=both`.
+code generated with `wire=both` (the default) or `wire=json`.
 -}
 type alias Json =
     Rpc.Protocol.Json
@@ -135,8 +135,8 @@ type alias Json =
 
 {-| The codec tag of protobuf binary: [`Rpc.Protocol.Proto`](Rpc-Protocol#Proto).
 A client of [`Rpc.Protocol.connectProto`](Rpc-Protocol#connectProto) or
-[`Rpc.Protocol.grpcWeb`](Rpc-Protocol#grpcWeb) is a `Client Proto`, and sends calls of code generated with `codec=proto` or
-`codec=both`.
+[`Rpc.Protocol.grpcWeb`](Rpc-Protocol#grpcWeb) is a `Client Proto`, and sends calls of code generated with `wire=proto` or
+`wire=both`.
 -}
 type alias Proto =
     Rpc.Protocol.Proto
@@ -148,14 +148,15 @@ type alias Proto =
 
 {-| A method applied to its request, as generated code builds one per method:
 
-    Notes.V1.NotesService.getNote : GetNoteRequest -> Rpc.Call Rpc.Json GetNoteRequest Note
+    Notes.V1.NotesService.getNote : GetNoteRequest -> Rpc.Call codec GetNoteRequest Note
 
 It is [`Rpc.Call.Call`](Rpc-Call#Call), where a call is adjusted
 (`withHeaders`, `withTimeout`, `withRetry`, `withoutRetry`, `withTracker`,
 `viaBinding`) and read (`serviceName`, `methodName`, `procedure`, `toJson`,
 …).
-Code generated with `codec=both` gives calls free in the codec
-(`Rpc.Call codec GetNoteRequest Note`), which any client sends.
+Code generated with the default `wire=both` gives calls free in the codec,
+as here, which any client sends; `wire=json` gives `Rpc.Call Rpc.Json` calls
+and `wire=proto` `Rpc.Call Rpc.Proto` ones.
 
 -}
 type alias Call codec req res =

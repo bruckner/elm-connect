@@ -146,8 +146,10 @@ proto3 JSON; a JSON client whose messages hold an `Any` needs one.
 
 ## A first call
 
-A generated method applied to its request is an `Rpc.Call Rpc.Json`; `Api.rpc`
-sends it as a `Task`. Listing the notes, from `Main.elm`:
+A generated method applied to its request is an `Rpc.Call codec`, free in
+its codec, which becomes an `Rpc.Call Rpc.Json` where `Api.rpc` sends it
+with the example's JSON client, as a `Task`. Listing the notes, from
+`Main.elm`:
 
 ```elm examples/notes/elm/src/Main.elm#first-call
 list : Model -> ( Model, Cmd Msg )

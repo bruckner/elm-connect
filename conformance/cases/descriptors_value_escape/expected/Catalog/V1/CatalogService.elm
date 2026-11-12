@@ -36,16 +36,18 @@ elmConnectVersion_ =
 Connect: `POST /catalog.v1.CatalogService/GetEntry`.
 Transcode: `GET /v1/{name=entries/*}`.
 
-Codecs: JSON. Described by [`descriptorGetEntry`](#descriptorGetEntry).
+Codecs: JSON and protobuf binary. Described by [`descriptorGetEntry`](#descriptorGetEntry).
 
 -}
-getEntry : Catalog.V1.GetEntryRequest -> Rpc.Call Rpc.Json Catalog.V1.GetEntryRequest Catalog.V1.Entry
+getEntry : Catalog.V1.GetEntryRequest -> Rpc.Call codec Catalog.V1.GetEntryRequest Catalog.V1.Entry
 getEntry =
     Rpc.call
-        (Proto.Method.initJson "catalog.v1.CatalogService"
+        (Proto.Method.init "catalog.v1.CatalogService"
             "GetEntry"
             (\_ -> Ok << Catalog.V1.encodeGetEntryRequest)
             (\_ -> Catalog.V1.decodeEntry)
+            Catalog.V1.encodeGetEntryRequestBytes
+            Catalog.V1.decodeEntryBytes
             |> Proto.Method.withRoutes [ routeGetEntry0 ]
         )
 

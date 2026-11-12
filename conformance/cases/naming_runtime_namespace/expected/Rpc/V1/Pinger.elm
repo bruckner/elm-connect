@@ -28,16 +28,18 @@ elmConnectVersion_ =
 Connect: `POST /rpc.v1.Pinger/Send`.
 Transcode: no HTTP rule, follows the Connect path.
 
-Codecs: JSON. Described by [`descriptorSend`](#descriptorSend).
+Codecs: JSON and protobuf binary. Described by [`descriptorSend`](#descriptorSend).
 
 -}
-send : Rpc.V1.Ping -> Rpc.Call Rpc.Json Rpc.V1.Ping Rpc.V1.Ping
+send : Rpc.V1.Ping -> Rpc.Call codec Rpc.V1.Ping Rpc.V1.Ping
 send =
     Rpc.call
-        (Proto.Method.initJson "rpc.v1.Pinger"
+        (Proto.Method.init "rpc.v1.Pinger"
             "Send"
             (\_ -> Ok << Rpc.V1.encodePing)
             (\_ -> Rpc.V1.decodePing)
+            Rpc.V1.encodePingBytes
+            Rpc.V1.decodePingBytes
         )
 
 

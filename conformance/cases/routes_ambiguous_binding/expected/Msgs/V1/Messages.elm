@@ -37,16 +37,18 @@ Transcode:
   - binding 0: `GET /v1/{name=messages/*}`;
   - binding 1: `GET /v1/messages/{id}`.
 
-Codecs: JSON. Described by [`descriptorGetMessage`](#descriptorGetMessage).
+Codecs: JSON and protobuf binary. Described by [`descriptorGetMessage`](#descriptorGetMessage).
 
 -}
-getMessage : Msgs.V1.MessageRequest -> Rpc.Call Rpc.Json Msgs.V1.MessageRequest Msgs.V1.Message
+getMessage : Msgs.V1.MessageRequest -> Rpc.Call codec Msgs.V1.MessageRequest Msgs.V1.Message
 getMessage =
     Rpc.call
-        (Proto.Method.initJson "msgs.v1.Messages"
+        (Proto.Method.init "msgs.v1.Messages"
             "GetMessage"
             (\_ -> Ok << Msgs.V1.encodeMessageRequest)
             (\_ -> Msgs.V1.decodeMessage)
+            Msgs.V1.encodeMessageRequestBytes
+            Msgs.V1.decodeMessageBytes
             |> Proto.Method.withRoutes [ routeGetMessage0, routeGetMessage1 ]
         )
 
@@ -57,16 +59,18 @@ getMessage =
 Connect: `POST /msgs.v1.Messages/GetSub`.
 Transcode: `GET /v1/messages/{id}/{sub}`.
 
-Codecs: JSON. Described by [`descriptorGetSub`](#descriptorGetSub).
+Codecs: JSON and protobuf binary. Described by [`descriptorGetSub`](#descriptorGetSub).
 
 -}
-getSub : Msgs.V1.MessageRequest -> Rpc.Call Rpc.Json Msgs.V1.MessageRequest Msgs.V1.Message
+getSub : Msgs.V1.MessageRequest -> Rpc.Call codec Msgs.V1.MessageRequest Msgs.V1.Message
 getSub =
     Rpc.call
-        (Proto.Method.initJson "msgs.v1.Messages"
+        (Proto.Method.init "msgs.v1.Messages"
             "GetSub"
             (\_ -> Ok << Msgs.V1.encodeMessageRequest)
             (\_ -> Msgs.V1.decodeMessage)
+            Msgs.V1.encodeMessageRequestBytes
+            Msgs.V1.decodeMessageBytes
             |> Proto.Method.withRoutes [ routeGetSub0 ]
         )
 
@@ -77,16 +81,18 @@ getSub =
 Connect: `POST /msgs.v1.Messages/UpdateMessage`.
 Transcode: `PATCH /v1/{name=messages/*}` body `*`.
 
-Codecs: JSON. Described by [`descriptorUpdateMessage`](#descriptorUpdateMessage).
+Codecs: JSON and protobuf binary. Described by [`descriptorUpdateMessage`](#descriptorUpdateMessage).
 
 -}
-updateMessage : Msgs.V1.MessageRequest -> Rpc.Call Rpc.Json Msgs.V1.MessageRequest Msgs.V1.Message
+updateMessage : Msgs.V1.MessageRequest -> Rpc.Call codec Msgs.V1.MessageRequest Msgs.V1.Message
 updateMessage =
     Rpc.call
-        (Proto.Method.initJson "msgs.v1.Messages"
+        (Proto.Method.init "msgs.v1.Messages"
             "UpdateMessage"
             (\_ -> Ok << Msgs.V1.encodeMessageRequest)
             (\_ -> Msgs.V1.decodeMessage)
+            Msgs.V1.encodeMessageRequestBytes
+            Msgs.V1.decodeMessageBytes
             |> Proto.Method.withRoutes [ routeUpdateMessage0 ]
         )
 
@@ -95,16 +101,18 @@ updateMessage =
 Connect: `POST /msgs.v1.Messages/ListMessages`.
 Transcode: `GET /v1/messages`.
 
-Codecs: JSON. Described by [`descriptorListMessages`](#descriptorListMessages).
+Codecs: JSON and protobuf binary. Described by [`descriptorListMessages`](#descriptorListMessages).
 
 -}
-listMessages : Msgs.V1.MessageRequest -> Rpc.Call Rpc.Json Msgs.V1.MessageRequest Msgs.V1.Message
+listMessages : Msgs.V1.MessageRequest -> Rpc.Call codec Msgs.V1.MessageRequest Msgs.V1.Message
 listMessages =
     Rpc.call
-        (Proto.Method.initJson "msgs.v1.Messages"
+        (Proto.Method.init "msgs.v1.Messages"
             "ListMessages"
             (\_ -> Ok << Msgs.V1.encodeMessageRequest)
             (\_ -> Msgs.V1.decodeMessage)
+            Msgs.V1.encodeMessageRequestBytes
+            Msgs.V1.decodeMessageBytes
             |> Proto.Method.withRoutes [ routeListMessages0 ]
         )
 
@@ -115,16 +123,18 @@ listMessages =
 Connect: `POST /msgs.v1.Messages/CheckMessage`.
 Transcode: `HEAD /v1/{name=messages/*}:check`.
 
-Codecs: JSON. Described by [`descriptorCheckMessage`](#descriptorCheckMessage).
+Codecs: JSON and protobuf binary. Described by [`descriptorCheckMessage`](#descriptorCheckMessage).
 
 -}
-checkMessage : Msgs.V1.MessageRequest -> Rpc.Call Rpc.Json Msgs.V1.MessageRequest Msgs.V1.Message
+checkMessage : Msgs.V1.MessageRequest -> Rpc.Call codec Msgs.V1.MessageRequest Msgs.V1.Message
 checkMessage =
     Rpc.call
-        (Proto.Method.initJson "msgs.v1.Messages"
+        (Proto.Method.init "msgs.v1.Messages"
             "CheckMessage"
             (\_ -> Ok << Msgs.V1.encodeMessageRequest)
             (\_ -> Msgs.V1.decodeMessage)
+            Msgs.V1.encodeMessageRequestBytes
+            Msgs.V1.decodeMessageBytes
             |> Proto.Method.withRoutes [ routeCheckMessage0 ]
         )
 
@@ -133,16 +143,18 @@ checkMessage =
 Connect: `POST /msgs.v1.Messages/CheckById`.
 Transcode: `HEAD /v1/messages/{id}:check`.
 
-Codecs: JSON. Described by [`descriptorCheckById`](#descriptorCheckById).
+Codecs: JSON and protobuf binary. Described by [`descriptorCheckById`](#descriptorCheckById).
 
 -}
-checkById : Msgs.V1.MessageRequest -> Rpc.Call Rpc.Json Msgs.V1.MessageRequest Msgs.V1.Message
+checkById : Msgs.V1.MessageRequest -> Rpc.Call codec Msgs.V1.MessageRequest Msgs.V1.Message
 checkById =
     Rpc.call
-        (Proto.Method.initJson "msgs.v1.Messages"
+        (Proto.Method.init "msgs.v1.Messages"
             "CheckById"
             (\_ -> Ok << Msgs.V1.encodeMessageRequest)
             (\_ -> Msgs.V1.decodeMessage)
+            Msgs.V1.encodeMessageRequestBytes
+            Msgs.V1.decodeMessageBytes
             |> Proto.Method.withRoutes [ routeCheckById0 ]
         )
 
@@ -153,16 +165,18 @@ checkById =
 Connect: `POST /msgs.v1.Messages/Touch`.
 Transcode: `POST /msgs.v1.Messages/ListMessages` body `*`.
 
-Codecs: JSON. Described by [`descriptorTouch`](#descriptorTouch).
+Codecs: JSON and protobuf binary. Described by [`descriptorTouch`](#descriptorTouch).
 
 -}
-touch : Msgs.V1.MessageRequest -> Rpc.Call Rpc.Json Msgs.V1.MessageRequest Msgs.V1.Message
+touch : Msgs.V1.MessageRequest -> Rpc.Call codec Msgs.V1.MessageRequest Msgs.V1.Message
 touch =
     Rpc.call
-        (Proto.Method.initJson "msgs.v1.Messages"
+        (Proto.Method.init "msgs.v1.Messages"
             "Touch"
             (\_ -> Ok << Msgs.V1.encodeMessageRequest)
             (\_ -> Msgs.V1.decodeMessage)
+            Msgs.V1.encodeMessageRequestBytes
+            Msgs.V1.decodeMessageBytes
             |> Proto.Method.withRoutes [ routeTouch0 ]
         )
 

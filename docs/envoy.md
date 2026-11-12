@@ -452,8 +452,8 @@ runtime reads the same code, message and details from either, with
 `just live` runs `just live-envoy` after the Vanguard and grpc-gateway
 runs: the transcode cases of `cases/notes.json` and `cases/transcode.json`
 and the route fixtures against `status_body`, `cases/envoy.json`
-against `grpc_headers`, and `cases/grpcweb.json` against `grpc_web`, on
-the runner built against `codec=both`. The ports are variables at the
+against `grpc_headers`, and `cases/grpcweb.json` against `grpc_web`. The
+ports are variables at the
 top of the Justfile's Envoy recipes (`envoy_origin_port`, `envoy_port`,
 `envoy_headers_port`, `envoy_grpcweb_port`, `envoy_admin_port`); the recipe writes a copy of
 the config with them into `target/live/envoy.yaml`. Against an Envoy
@@ -463,7 +463,7 @@ you started yourself:
 node conformance/live/run.mjs --server http://127.0.0.1:18081 --origin http://127.0.0.1:18080 --protocol transcode conformance/live/cases/notes.json conformance/live/cases/transcode.json
 node conformance/live/routes.mjs --server http://127.0.0.1:18081 --known conformance/live/known-divergent-envoy.json
 node conformance/live/run.mjs --server http://127.0.0.1:18082 conformance/live/cases/envoy.json
-node conformance/live/run.mjs --server http://127.0.0.1:18083 --origin http://127.0.0.1:18080 --elm conformance/live/build/elm-both.js conformance/live/cases/grpcweb.json
+node conformance/live/run.mjs --server http://127.0.0.1:18083 --origin http://127.0.0.1:18080 conformance/live/cases/grpcweb.json
 ```
 
 `--origin` names the example server behind the proxy, for the cases'

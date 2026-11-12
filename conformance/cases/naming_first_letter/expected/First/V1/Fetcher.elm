@@ -28,16 +28,18 @@ elmConnectVersion_ =
 Connect: `POST /first.v1.Fetcher/GetNote`.
 Transcode: no HTTP rule, follows the Connect path.
 
-Codecs: JSON. Described by [`descriptorGetNote`](#descriptorGetNote).
+Codecs: JSON and protobuf binary. Described by [`descriptorGetNote`](#descriptorGetNote).
 
 -}
-getNote : First.V1.URLPath -> Rpc.Call Rpc.Json First.V1.URLPath First.V1.URLPath
+getNote : First.V1.URLPath -> Rpc.Call codec First.V1.URLPath First.V1.URLPath
 getNote =
     Rpc.call
-        (Proto.Method.initJson "first.v1.Fetcher"
+        (Proto.Method.init "first.v1.Fetcher"
             "GetNote"
             (\_ -> Ok << First.V1.encodeURLPath)
             (\_ -> First.V1.decodeURLPath)
+            First.V1.encodeURLPathBytes
+            First.V1.decodeURLPathBytes
         )
 
 
@@ -45,16 +47,18 @@ getNote =
 Connect: `POST /first.v1.Fetcher/HTTPGet`.
 Transcode: no HTTP rule, follows the Connect path.
 
-Codecs: JSON. Described by [`descriptorHttpGet`](#descriptorHttpGet).
+Codecs: JSON and protobuf binary. Described by [`descriptorHttpGet`](#descriptorHttpGet).
 
 -}
-httpGet : First.V1.URLPath -> Rpc.Call Rpc.Json First.V1.URLPath First.V1.URLPath
+httpGet : First.V1.URLPath -> Rpc.Call codec First.V1.URLPath First.V1.URLPath
 httpGet =
     Rpc.call
-        (Proto.Method.initJson "first.v1.Fetcher"
+        (Proto.Method.init "first.v1.Fetcher"
             "HTTPGet"
             (\_ -> Ok << First.V1.encodeURLPath)
             (\_ -> First.V1.decodeURLPath)
+            First.V1.encodeURLPathBytes
+            First.V1.decodeURLPathBytes
         )
 
 
@@ -62,16 +66,18 @@ httpGet =
 Connect: `POST /first.v1.Fetcher/_Ping`.
 Transcode: no HTTP rule, follows the Connect path.
 
-Codecs: JSON. Described by [`descriptorPing`](#descriptorPing).
+Codecs: JSON and protobuf binary. Described by [`descriptorPing`](#descriptorPing).
 
 -}
-ping : First.V1.URLPath -> Rpc.Call Rpc.Json First.V1.URLPath First.V1.URLPath
+ping : First.V1.URLPath -> Rpc.Call codec First.V1.URLPath First.V1.URLPath
 ping =
     Rpc.call
-        (Proto.Method.initJson "first.v1.Fetcher"
+        (Proto.Method.init "first.v1.Fetcher"
             "_Ping"
             (\_ -> Ok << First.V1.encodeURLPath)
             (\_ -> First.V1.decodeURLPath)
+            First.V1.encodeURLPathBytes
+            First.V1.decodeURLPathBytes
         )
 
 
@@ -79,16 +85,18 @@ ping =
 Connect: `POST /first.v1.Fetcher/Type`.
 Transcode: no HTTP rule, follows the Connect path.
 
-Codecs: JSON. Described by [`descriptorType_`](#descriptorType_).
+Codecs: JSON and protobuf binary. Described by [`descriptorType_`](#descriptorType_).
 
 -}
-type_ : First.V1.URLPath -> Rpc.Call Rpc.Json First.V1.URLPath First.V1.URLPath
+type_ : First.V1.URLPath -> Rpc.Call codec First.V1.URLPath First.V1.URLPath
 type_ =
     Rpc.call
-        (Proto.Method.initJson "first.v1.Fetcher"
+        (Proto.Method.init "first.v1.Fetcher"
             "Type"
             (\_ -> Ok << First.V1.encodeURLPath)
             (\_ -> First.V1.decodeURLPath)
+            First.V1.encodeURLPathBytes
+            First.V1.decodeURLPathBytes
         )
 
 

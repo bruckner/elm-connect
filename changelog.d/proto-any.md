@@ -34,10 +34,9 @@
   details); an application composes `Proto.Registry.unionAll [
   Notes.V1.registry, Proto.WellKnown.registry,
   Proto.ErrorDetails.registry ]`.
-- Breaking: `codec=json|proto|both` now says only which codecs the
-  service methods are wired with. Every package gets both codecs, its
-  typed values and `registry` whatever the option says, and
-  `naming::codec_collision` applies under every option. A message that
+- Every package gets both codecs, its typed values and `registry`
+  whatever the `wire` option says, and `naming::codec_collision`
+  applies under every option. A message that
   reaches an `Any` has `encodeNoteWith` and `decodeNoteWith`, taking the
   registry, in place of `encodeNote` and `decodeNote`; a type named for
   one with `With` at the end is `naming::codec_collision`.

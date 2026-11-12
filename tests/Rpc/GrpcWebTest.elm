@@ -61,7 +61,7 @@ getNote =
         )
 
 
-{-| The same method with both codecs, as `codec=both` generates it.
+{-| The same method with both codecs, as `wire=both` generates it.
 -}
 both : GetNote -> Rpc.Call codec GetNote String
 both =

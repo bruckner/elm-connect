@@ -31,16 +31,18 @@ elmConnectVersion_ =
 Connect: `POST /notes.v1.NotesService/GetNote`.
 Transcode: `GET /v1/{name=notes/*}`.
 
-Codecs: JSON. Described by [`descriptorGetNote`](#descriptorGetNote).
+Codecs: JSON and protobuf binary. Described by [`descriptorGetNote`](#descriptorGetNote).
 
 -}
-getNote : Api.Example.Notes.V1.GetNoteRequest -> Rpc.Call Rpc.Json Api.Example.Notes.V1.GetNoteRequest Api.Example.Notes.V1.Note
+getNote : Api.Example.Notes.V1.GetNoteRequest -> Rpc.Call codec Api.Example.Notes.V1.GetNoteRequest Api.Example.Notes.V1.Note
 getNote =
     Rpc.call
-        (Proto.Method.initJson "notes.v1.NotesService"
+        (Proto.Method.init "notes.v1.NotesService"
             "GetNote"
             (\_ -> Ok << Api.Example.Notes.V1.encodeGetNoteRequest)
             (\_ -> Api.Example.Notes.V1.decodeNote)
+            Api.Example.Notes.V1.encodeGetNoteRequestBytes
+            Api.Example.Notes.V1.decodeNoteBytes
             |> Proto.Method.withRoutes [ routeGetNote0 ]
         )
 

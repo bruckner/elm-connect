@@ -12,6 +12,7 @@ A service kept for older clients.
 
 -}
 
+import Proto.Binary
 import Proto.Http
 import Proto.Json
 import Proto.Method
@@ -35,16 +36,18 @@ elmConnectVersion_ =
 Connect: `POST /notes.v1.LegacyService/Clear`.
 Transcode: `PURGE /v1/notes`.
 
-Codecs: JSON. Described by [`descriptorClear`](#descriptorClear).
+Codecs: JSON and protobuf binary. Described by [`descriptorClear`](#descriptorClear).
 
 -}
-clear : () -> Rpc.Call Rpc.Json () ()
+clear : () -> Rpc.Call codec () ()
 clear =
     Rpc.call
-        (Proto.Method.initJson "notes.v1.LegacyService"
+        (Proto.Method.init "notes.v1.LegacyService"
             "Clear"
             (\_ -> Ok << Proto.Json.encodeEmpty)
             (\_ -> Proto.Json.empty)
+            (Proto.Binary.messageEncoder Proto.Binary.empty)
+            (Proto.Binary.messageDecoder Proto.Binary.empty)
             |> Proto.Method.withRoutes [ routeClear0 ]
         )
 

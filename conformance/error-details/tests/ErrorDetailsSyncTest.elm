@@ -2,7 +2,7 @@ module ErrorDetailsSyncTest exposing (suite)
 
 {-| `Proto.ErrorDetails` against the generator: the module is written by hand
 in generated code's form, and this compares it with `Google.Rpc`, generated
-from the same `google/rpc/error_details.proto` under `codec=both`
+from the same `google/rpc/error_details.proto` under `wire=both`
 (`just error-details-check`, conformance/README.md).
 
   - **Shape**, at compile time: `agree` takes both sides' typed values at one

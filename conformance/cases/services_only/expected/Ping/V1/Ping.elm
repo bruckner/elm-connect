@@ -7,6 +7,7 @@ module Ping.V1.Ping exposing (..)
 {-| `service ping.v1.Ping`
 -}
 
+import Proto.Binary
 import Proto.Json
 import Proto.Method
 import Proto.Version
@@ -29,16 +30,18 @@ elmConnectVersion_ =
 Connect: `POST /ping.v1.Ping/Ping`.
 Transcode: no HTTP rule, follows the Connect path.
 
-Codecs: JSON. Described by [`descriptorPing`](#descriptorPing).
+Codecs: JSON and protobuf binary. Described by [`descriptorPing`](#descriptorPing).
 
 -}
-ping : () -> Rpc.Call Rpc.Json () Time.Posix
+ping : () -> Rpc.Call codec () Time.Posix
 ping =
     Rpc.call
-        (Proto.Method.initJson "ping.v1.Ping"
+        (Proto.Method.init "ping.v1.Ping"
             "Ping"
             (\_ -> Ok << Proto.Json.encodeEmpty)
             (\_ -> Proto.Json.timestamp)
+            (Proto.Binary.messageEncoder Proto.Binary.empty)
+            (Proto.Binary.messageDecoder Proto.Binary.timestamp)
         )
 
 

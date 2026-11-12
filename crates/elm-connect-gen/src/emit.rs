@@ -153,11 +153,11 @@
 //!   through `Json.Decode.lazy` too (design §3.2).
 //! - Each message, enum, oneof and recursion wrapper also gets protobuf
 //!   binary codecs, in two sections after the decoders ([`binary`]),
-//!   whatever the `codec` option, which decides only which halves the
+//!   whatever the `wire` option, which decides only which halves the
 //!   methods carry: `Proto.Method.initJson` (JSON), `initProto` (binary;
 //!   no routes, which take JSON) or `init` (both). A call's type carries
 //!   its codec: `Rpc.Call Rpc.Json`, `Rpc.Call Rpc.Proto`, or free in it
-//!   under `codec=both`.
+//!   under `wire=both`.
 //! - An `Any` holds its message's binary, and its proto3
 //!   JSON goes through a registry ([`crate::ir::AnyReach`]): each message,
 //!   oneof and wrapper that reaches one has JSON codecs taking it,
@@ -198,7 +198,7 @@ use crate::ir::{
     Service, TypeName,
 };
 use crate::naming::VERSION_VALUE;
-use crate::options::{Codec, EnumUnknown, Options};
+use crate::options::{EnumUnknown, Options, Wire};
 use crate::{DEFAULT_OPTIONS, HEADER_PREFIX, OPTIONS_PREFIX, SENTINEL, VERSION};
 
 use self::field::{FieldShape, ValueShape};
@@ -314,12 +314,12 @@ pub fn emit_with_queries(
     emitter.reach = AnyReach::of(packages.iter().chain(std::iter::once(package)));
     let mut decls = emitter.package(package);
     let mut encoders = Vec::new();
-    // Route functions take JSON, which `codec=proto` does not generate,
+    // Route functions take JSON, which `wire=proto` does not generate,
     // so it generates no routes, and no query encoders for them.
     for message in package
         .messages
         .iter()
-        .filter(|_| options.codec != Codec::Proto)
+        .filter(|_| options.wire != Wire::Proto)
     {
         if let Some(params) = queries.get(&message.proto_full_name)
             && let Some(decl) = emitter.query_encoder(&messages, message, params)
@@ -564,7 +564,7 @@ struct Emitter {
     enum_unknown: EnumUnknown,
     /// Which codecs the option wires into methods; package modules emit
     /// both whatever it says.
-    wiring: Codec,
+    wiring: Wire,
     /// The messages of the build that reach a `google.protobuf.Any`.
     reach: AnyReach,
     /// The options as the header's second line records them.
@@ -579,7 +579,7 @@ impl Emitter {
             unqualified: BTreeMap::new(),
             holding: Holding::of(options),
             enum_unknown: options.enum_unknown,
-            wiring: options.codec,
+            wiring: options.wire,
             reach: AnyReach::default(),
             recorded: match options.recorded() {
                 pairs if pairs.is_empty() => DEFAULT_OPTIONS.to_owned(),
@@ -1284,6 +1284,7 @@ mod tests {
         };
         let options = Options {
             int64: Int64::Int,
+            wire: Wire::Json,
             ..Options::default()
         };
         let module = emit_service(

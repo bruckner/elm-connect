@@ -32,7 +32,7 @@ beside each link says what the runtime or the generator does about it.
   protobuf's test runner for parsers and serializers. `just
   protobuf-conformance` runs it, opt-in and outside the gate, against the
   runtime's protobuf binary and proto3 JSON codecs through the Elm
-  generated for its `test_messages_proto3.proto` under `codec=both`:
+  generated for its `test_messages_proto3.proto` under `wire=both`:
   binary and JSON in, binary and JSON out, with JSPB, text, proto2 and
   editions answered skipped. The cases
   that fail are listed and classified in

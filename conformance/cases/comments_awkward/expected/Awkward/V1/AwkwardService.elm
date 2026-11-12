@@ -14,6 +14,7 @@ module Awkward.V1.AwkwardService exposing (..)
 
 -}
 
+import Proto.Binary
 import Proto.Http
 import Proto.Json
 import Proto.Method
@@ -45,16 +46,18 @@ An unclosed fence in a method's comment.
 Connect: `POST /awkward.v1.AwkwardService/Ping`.
 Transcode: `HEAD /v1/ping`.
 
-Codecs: JSON. Described by [`descriptorPing`](#descriptorPing).
+Codecs: JSON and protobuf binary. Described by [`descriptorPing`](#descriptorPing).
 
 -}
-ping : () -> Rpc.Call Rpc.Json () ()
+ping : () -> Rpc.Call codec () ()
 ping =
     Rpc.call
-        (Proto.Method.initJson "awkward.v1.AwkwardService"
+        (Proto.Method.init "awkward.v1.AwkwardService"
             "Ping"
             (\_ -> Ok << Proto.Json.encodeEmpty)
             (\_ -> Proto.Json.empty)
+            (Proto.Binary.messageEncoder Proto.Binary.empty)
+            (Proto.Binary.messageDecoder Proto.Binary.empty)
             |> Proto.Method.withRoutes [ routePing0 ]
         )
 

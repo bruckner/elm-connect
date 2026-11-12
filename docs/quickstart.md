@@ -68,12 +68,14 @@ descriptors per message and enum, such as `Notes.V1.Note`. Each method's
 function gives a call:
 
 ```elm examples/notes/elm/generated/Notes/V1/NotesService.elm excerpt
-getNote : Notes.V1.GetNoteRequest -> Rpc.Call Rpc.Json Notes.V1.GetNoteRequest Notes.V1.Note
-ping : () -> Rpc.Call Rpc.Json () ()
+getNote : Notes.V1.GetNoteRequest -> Rpc.Call codec Notes.V1.GetNoteRequest Notes.V1.Note
+ping : () -> Rpc.Call codec () ()
 ```
 
-`Rpc.Json` is the call's codec: its messages travel as proto3 JSON, the
-generator's default ([calling.md](calling.md#choosing-the-codec)).
+`codec` is the call's codec, left free: the generator wires each call
+with both codecs by default, so it travels as proto3 JSON or as protobuf
+binary, whichever the client speaks
+([calling.md](calling.md#choosing-the-codec)).
 [generator.md](generator.md) lists what each proto construct becomes.
 
 ## 3. Add the runtime

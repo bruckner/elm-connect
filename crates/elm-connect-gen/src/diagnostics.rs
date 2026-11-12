@@ -708,7 +708,7 @@ impl Problem {
                  the end (`encodeNoteBytes` beside `encodeNote`), so the JSON codecs of a type \
                  named for another with `Bytes` at the end (`NoteBytes` beside `Note`) take the \
                  same names, and a module cannot define two values with one name. Every type \
-                 has both codecs, whatever the `codec` option says. {}",
+                 has both codecs, whatever the `wire` option says. {}",
                 rename_escape(
                     renamed,
                     format!("Rename one of them in the proto, or rename one with {rename}.")
@@ -1324,19 +1324,6 @@ impl Problem {
         )
     }
 
-    /// `codec=binary`, the name the binary codecs alone had before they
-    /// were named for the `Rpc.Proto` tag their calls carry.
-    pub fn codec_binary() -> Self {
-        Problem::new(
-            Code::UnknownOption,
-            "The option `codec` is `binary`, which is now spelled `proto`.".to_owned(),
-            "`codec=proto` wires the service methods with the protobuf binary codecs \
-             alone, as `codec=binary` did, and its calls are `Rpc.Call Rpc.Proto`. `codec` \
-             is `json`, `proto` or `both`; left out, it is `json`.",
-            Vec::new(),
-        )
-    }
-
     /// The option `key`, which takes one value, is given more than once.
     pub fn duplicate_option(key: &str) -> Self {
         Problem::new(
@@ -1597,7 +1584,7 @@ fn rename_escape(renamed: Option<&str>, default: String) -> String {
 /// The options of the plugin parameter, as an option problem's help
 /// lists them.
 const OPTION_KEYS_HELP: &str = "The plugin parameter is comma-separated `key=value` pairs, and \
-     its options are `int64`, `bytes`, `unbound_methods`, `streaming`, `enum_unknown`, `codec`, \
+     its options are `int64`, `bytes`, `unbound_methods`, `streaming`, `enum_unknown`, `wire`, \
      `rename` and `module_prefix`.";
 
 /// How a rename writes the element it names, as a rename problem's help

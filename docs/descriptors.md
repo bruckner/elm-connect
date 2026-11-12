@@ -12,7 +12,7 @@ are listed with the other specifications in [specs.md](specs.md).
 
 Each message and enum has a typed value: `Notes.V1.messageNote :
 Proto.Message.Message Note` holds the message's full name and both its
-codecs, proto3 JSON and protobuf binary, whatever the `codec` option
+codecs, proto3 JSON and protobuf binary, whatever the `wire` option
 says; `Notes.V1.enumVisibility : Proto.Enum.Enum Visibility` holds an
 enum's codecs, zero value and descriptor. `Proto.Message.typeName`
 reads a message's; `Proto.Enum` reads an enum's with `encode`,

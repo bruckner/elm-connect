@@ -71,7 +71,8 @@ connect-go and Envoy's gRPC-Web filter.
 Releases before 1.0 carry prebuilt binaries and put the crates on
 crates.io; the Elm package reaches the package index at 1.0.
 Messages travel as proto3 JSON, or over Connect and gRPC-Web as
-protobuf binary with the generator's `codec=both` or `codec=proto`
+protobuf binary: a generated call goes over either, unless the
+generator's `wire=json` or `wire=proto` narrows it to one
 ([docs/calling.md](docs/calling.md#choosing-the-codec)). Streaming is
 out of scope for 1.x; [docs/roadmap.md](docs/roadmap.md)
 says what may come, and whether it would be a minor or a major
@@ -122,8 +123,8 @@ service NotesService {
 one function per method:
 
 ```elm examples/notes/elm/generated/Notes/V1/NotesService.elm excerpt
-getNote : Notes.V1.GetNoteRequest -> Rpc.Call Rpc.Json Notes.V1.GetNoteRequest Notes.V1.Note
-ping : () -> Rpc.Call Rpc.Json () ()
+getNote : Notes.V1.GetNoteRequest -> Rpc.Call codec Notes.V1.GetNoteRequest Notes.V1.Note
+ping : () -> Rpc.Call codec () ()
 ```
 
 Each type, call and descriptor carries the proto's comment and its
@@ -170,9 +171,10 @@ result, trying calls in `elm repl`, and testing without a server.
 - Unary methods only. A streaming method is a diagnostic, or is left
   out under `streaming=skip`.
 - Calls in proto3 JSON, or over Connect and gRPC-Web in protobuf
-  binary, with the codecs the generator writes under `codec=both` or
-  `codec=proto` ([docs/generator.md](docs/generator.md#binary-codecs)).
-  Transcoding is JSON.
+  binary: the generator wires each call with both codecs, or with one
+  alone under `wire=json` or `wire=proto`
+  ([docs/generator.md](docs/generator.md#binary-codecs)). Transcoding
+  is JSON.
 - proto3 only. A proto2 file is the diagnostic `input::not_proto3`, and
   a file that declares an edition is `input::editions`.
 - No interceptors: an application sends every call through one

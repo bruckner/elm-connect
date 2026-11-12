@@ -10,10 +10,9 @@ proto3 JSON, and the response's message, whose encoder the result reports it
 with (as JSON, and as protobuf binary too when the message has binary codecs).
 
 A call carries its codec in its type, so an entry holds the call function once
-per codec the build's bindings have ([`Calls`](#Calls)): the build against
-bindings generated with `codec=json` has the JSON one alone, the build against
-`codec=both` both, and `Live.Codec`, which differs between the two builds,
-says which.
+per codec the bindings have it in ([`Calls`](#Calls)): bindings generated with
+`wire=both`, as the runner's are, have both, and `Live.Codec` takes each
+generated call function at each codec.
 
 -}
 
@@ -90,7 +89,7 @@ type Client
     | ProtoClient (Rpc.Client Rpc.Proto)
 
 
-{-| A method's generated call function, once per codec the build has it in.
+{-| A method's generated call function, once per codec the bindings have it in.
 -}
 type alias Calls req res =
     { json : Maybe (req -> Rpc.Call Rpc.Json req res)
@@ -126,8 +125,8 @@ type alias Outcome =
 
 {-| How a result is written: a response as the result's fields, its proto3
 JSON under `ok`, and its protobuf binary as base64 under `okBinary` when the
-build calls over binary; and an error's detail as proto3 JSON. Each build's
-`Live.Codec` writes them through the build's registry.
+call can go over binary; and an error's detail as proto3 JSON. `Live.Codec`
+writes them through the runner's registry.
 -}
 type alias Respond res =
     { response : res -> List ( String, Value )
@@ -136,7 +135,7 @@ type alias Respond res =
 
 
 {-| The entry for a method, from its generated call functions, its request's
-decoder and how its response is written. An envelope whose codec the build
+decoder and how its response is written. An envelope whose codec the entry
 has no call function in is refused.
 -}
 entryWith : Calls req res -> Decoder req -> Respond res -> Entry msg
@@ -148,7 +147,7 @@ entryWith calls requestDecoder respond envelope toMsg =
         Ok request ->
             let
                 missing codec =
-                    Err ("this build has no " ++ codec ++ " codecs for " ++ envelope.service ++ "/" ++ envelope.method)
+                    Err ("this entry has no " ++ codec ++ " codecs for " ++ envelope.service ++ "/" ++ envelope.method)
             in
             case envelope.client of
                 JsonClient client ->

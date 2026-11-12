@@ -67,7 +67,7 @@ decoded from the field `response_body` names when the rule names one.
 Transcoding is JSON: `transcode` is a `Protocol Rpc.Json`, the
 implicit route included, and protobuf binary goes over Connect alone
 (`Rpc.Protocol.connectProto`). A method generated with binary codecs
-alone (`codec=proto`) has no JSON to send and no routes, and its call,
+alone (`wire=proto`) has no JSON to send and no routes, and its call,
 an `Rpc.Call Rpc.Proto`, does not compile with a `transcode` client
 ([calling.md](calling.md#choosing-the-codec)).
 
