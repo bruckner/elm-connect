@@ -13,3 +13,9 @@
 - `Rpc.Protocol.Json` and `Rpc.Protocol.Proto` are gone: the codec tags
   are `Rpc.Json` and `Rpc.Proto`, which are `Proto.Codec.Json` and
   `Proto.Codec.Proto`, as generated code writes them.
+- New `Proto.Message.decodeJson : Registry -> Message a -> Value ->
+  Result Proto.Error.Error a` reads a message's proto3 JSON, an `Any`
+  of a type the registry lacks failing as `UnregisteredType` with its
+  URL and anything else as `BadJson`; and `Proto.Message.decodeBinary :
+  Message a -> Bytes -> Result Proto.Error.Binary a` reads its protobuf
+  binary, giving the binary report as `Proto.Binary.decode` does.

@@ -3566,10 +3566,14 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
     and the `Any` decoder fails a type it lacks with the `Any`'s object
     as the leaf failure's value, which `Proto.Internal.Registry.unregistered`
     reads (its `"@type"`, not in the registry) for the detail reader;
-    messages are for people, the value for programs. It is not public:
-    an application reading proto3 JSON itself has the miss named in the
-    message, and a JSON read giving a `Proto.Error` is the public answer
-    when one is asked for. The status is read
+    messages are for people, the value for programs. The public read is
+    `Proto.Message.decodeJson`, which names the miss the same way. The
+    detail reader calls the internal function rather than `decodeJson`
+    over `Proto.WellKnown.any`, whose binary codecs would put the binary
+    reader into every program that reads a failed answer (measured
+    +4.3 KB gzipped on a minimal Connect JSON client, `wire=json`), so
+    `Rpc.Internal.Status` still reads `Proto.Internal.Registry`, the one
+    import past the list in §3.1's rule 7. The status is read
     without the registry where the protocol reads the answer, and its
     details again through the client's in the plan (`Status.completeDetails`).
     `Proto.ErrorDetails.registry` holds `google/rpc/error_details.proto`'s
@@ -3664,7 +3668,8 @@ toString : Error -> String              -- for a log, as Json.Decode.errorToStri
 
   | Operation | Gives | Fails with |
   |---|---|---|
-  | `Proto.Binary.decode` | `Result Binary a` | the report |
+  | `Proto.Binary.decode`, `Proto.Message.decodeBinary` | `Result Binary a` | the report |
+  | `Proto.Message.decodeJson` | `Result Error a` | `UnregisteredType` for an `Any` the registry lacks, else `BadJson` |
   | `Proto.Any.tryUnpack` | `Result Error a` | `TypeMismatch`, `BadBinary` |
   | `Proto.Any.toJson`, `Proto.Json.encodeAnyWith`, generated `encodeNoteWith` | `Result Error Value` | `UnregisteredType`, or the `BadBinary` of the `Any` that failed, at any depth, named by its own type |
   | `Proto.Json.anyWith`, generated `decodeNoteWith` | `Json.Decode.Decoder` | elm/json's error, a registry miss named in its message |

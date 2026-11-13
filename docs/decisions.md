@@ -1655,6 +1655,19 @@ one lookup for one purpose; a walker over a `Binary`'s path waits for a
 caller to show the output it wants, and could not live in `Proto.Error`
 anyway, which `Proto.Descriptors` imports through the decoder.
 
+2026-11-12: the public JSON read exists, `Proto.Message.decodeJson :
+Registry -> Message a -> Value -> Result Proto.Error.Error a`, a
+registry miss named as `UnregisteredType`, with its binary twin
+`decodeBinary : Message a -> Bytes -> Result Proto.Error.Binary a`,
+which fails one way and so gives the report, by the rule above
+(operator). The status-detail reader was to go through `decodeJson`
+and drop its import of `Proto.Internal.Registry`, but its message would
+be `Proto.WellKnown.any`, whose binary codecs put the binary reader into
+every program that reads a failed answer: +4.3 KB gzipped on a minimal
+Connect JSON client under `wire=json`, +278 B under the default. It
+keeps the internal reader until a JSON-only way to name `Any`'s message
+exists.
+
 
 ### JSON fast paths
 

@@ -102,11 +102,12 @@ that failure, reads its `"@type"` and tests the registry. An `Any` of a
 registered type that holds one of an unregistered type fails at the outer
 `Any`, whose type the registry has, so it gives `Nothing`.
 
-The status-detail reader turns the result into `UnregisteredType`. It is not
-public: an application reading proto3 JSON itself has the miss named in the
-error's message, and a JSON read that gives a `Proto.Error` is the public
-answer when one is asked for (docs/decisions.md, "One error type for the
-proto layer").
+`Proto.Message.decodeJson`, the public JSON read, and the status-detail
+reader turn the result into `UnregisteredType`. The status-detail reader
+calls this rather than `decodeJson`: its one message is `Any`, and
+`Proto.WellKnown.any` holds `Any`'s binary codecs, which would put the
+binary reader into every program that reads a failed answer, several
+kilobytes gzipped on a JSON-only client.
 
 -}
 unregistered : Registry -> Json.Decode.Error -> Maybe String
