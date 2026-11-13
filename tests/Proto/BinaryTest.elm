@@ -711,7 +711,7 @@ messages =
         , test "a 64-bit integer an Int cannot hold exactly fails" <|
             \_ ->
                 B.decode (single B.int64AsInt 0).decode (fromHex "08 80808080808080 10")
-                    |> Expect.equal (Err { typeName = "test.Single", reason = Proto.Error.OutOfRange, path = [ ( "test.Single", 1 ) ], offset = 1 })
+                    |> Expect.equal (Err { typeName = "test.Single", reason = Proto.Error.IntOutOfRange, path = [ ( "test.Single", 1 ) ], offset = 1 })
         , test "a failure names the message it is in, at any depth" <|
             \_ ->
                 B.decode (single (B.embedded encodeSample (\_ -> decodeSample) sampleDefault) sampleDefault).decode (fromHex "0a04 1a02 08ff 7f")

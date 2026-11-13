@@ -86,7 +86,7 @@ type alias Binary =
   - `InvalidWireType`: a wire type, given here, that proto3 does not use: a
     group (3 or 4), or 6 or 7, which are none.
   - `MalformedVarint`: a varint longer than ten bytes.
-  - `OutOfRange`: a 64-bit integer, held as an `Int`, outside ±(2^53 − 1),
+  - `IntOutOfRange`: a 64-bit integer, held as an `Int`, outside ±(2^53 − 1),
     which an `Int` holds exactly.
   - `InvalidUtf8`: a `string` field whose bytes are not UTF-8.
   - `Unlocated`: the decoder failed, but could not say where or why. This
@@ -99,7 +99,7 @@ type Reason
     | InvalidTag
     | InvalidWireType Int
     | MalformedVarint
-    | OutOfRange
+    | IntOutOfRange
     | InvalidUtf8
     | Unlocated
 
@@ -159,7 +159,7 @@ reasonText reason =
         MalformedVarint ->
             "a varint is longer than ten bytes"
 
-        OutOfRange ->
+        IntOutOfRange ->
             "a 64-bit integer is outside what an Int holds exactly"
 
         InvalidUtf8 ->

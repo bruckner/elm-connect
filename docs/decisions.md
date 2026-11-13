@@ -1543,6 +1543,11 @@ types for the binary report (it is the one way a binary read fails, so
 field names in the path (a per-message table in every bundle;
 `Proto.Descriptors` has them). Where: design §5.4, §5.5.
 
+2026-11-12: the reason for a 64-bit integer an `Int` cannot hold is
+`IntOutOfRange`, not `OutOfRange`, which clashed with
+`Rpc.Code.OutOfRange` in a module exposing both unions with `(..)`,
+the case design §3.1 rule 3 exists to prevent (operator).
+
 ### Strings are checked as the schema says
 
 *2026-11-10.*

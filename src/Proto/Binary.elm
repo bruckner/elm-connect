@@ -260,7 +260,7 @@ leaf code =
             MalformedVarint
 
         else if code == -3 then
-            OutOfRange
+            IntOutOfRange
 
         else if code == -4 then
             InvalidUtf8

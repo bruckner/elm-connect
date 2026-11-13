@@ -3629,7 +3629,7 @@ type alias Binary =
 
 type Reason
     = Truncated | LengthOverrun | InvalidTag | InvalidWireType Int
-    | MalformedVarint | OutOfRange | InvalidUtf8 | Unlocated
+    | MalformedVarint | IntOutOfRange | InvalidUtf8 | Unlocated
 
 toString : Error -> String              -- for a log, as Json.Decode.errorToString
 ```
