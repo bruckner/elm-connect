@@ -17,7 +17,7 @@ import Rpc.Body
 import Rpc.Call
 import Rpc.Client
 import Rpc.Code exposing (Code(..))
-import Rpc.Error exposing (Error(..), Reason(..), Source(..))
+import Rpc.Error exposing (Error(..), Problem(..), Reason(..), Source(..))
 import Rpc.Internal.Plan
 import Rpc.Internal.Trace
 import Rpc.Protocol
@@ -273,12 +273,12 @@ answers =
                         (\error ->
                             case error of
                                 BadResponse _ problem answer ->
-                                    ( problem, Maybe.map Bytes.width (Rpc.Body.toBytes answer.body) )
+                                    Just ( problem, Maybe.map Bytes.width (Rpc.Body.toBytes answer.body) )
 
                                 _ ->
-                                    ( "other", Nothing )
+                                    Nothing
                         )
-                    |> Expect.equal (Err ( "content-type application/json, not application/proto", Just 14 ))
+                    |> Expect.equal (Err (Just ( Envelope "content-type application/json, not application/proto", Just 14 )))
         , test "a 200 of another Connect content type is a BadResponse naming both, under either codec" <|
             \_ ->
                 [ readText (Http.GoodStatus_ (metadata 200 [ ( "content-type", "application/proto" ) ]) "{\"title\":\"hi\"}")
@@ -287,9 +287,9 @@ answers =
                 ]
                     |> List.map codeAndMessage
                     |> Expect.equal
-                        [ Err ( Internal, "bad response body: content-type application/proto, not application/json" )
-                        , Err ( Internal, "bad response body: content-type application/connect+json, not application/json" )
-                        , Err ( Internal, "bad response body: content-type application/connect+proto, not application/proto" )
+                        [ Err ( Internal, "bad response: content-type application/proto, not application/json" )
+                        , Err ( Internal, "bad response: content-type application/connect+json, not application/json" )
+                        , Err ( Internal, "bad response: content-type application/connect+proto, not application/proto" )
                         ]
         , test "a 200 under the JSON codec as application/json, or of no content type, is the answer" <|
             \_ ->

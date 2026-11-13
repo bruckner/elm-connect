@@ -928,6 +928,36 @@ the runtime speaks Connect's gRPC-Web. The suite allows `internal` for
 the other refusals (no status, no trailers), which keep it. Where:
 design §5.4, §7.
 
+### A refused answer carries its problem
+
+*2026-11-12.*
+
+`BadResponse` is `BadResponse Code Problem Response`, with `Problem =
+Body Proto.Error.Error | Envelope String`: `Body` when the answer's body
+is not the response message, holding the proto layer's error as it
+was, and `Envelope` when what carries the body is malformed (a content
+type of the protocol's that the call does not read, gRPC-Web framing,
+trailers or status), as text. Three occasions led here. A JSON response
+holding an `Any` of a type the client's registry lacks reached the
+caller as a sentence inside elm/json's error, where every other read
+names it `UnregisteredType`. A `grpc-status-details-bin` trailer that is
+not base64 is a fault of the answer's envelope, not of any body, yet it
+read as the same kind of text as a body that did not decode. And the
+interface audit (2026-11-12) found design §5.4's "the whole problem
+stays in the error" true only as text. Two reads were flattening a
+structured error to text: the JSON response read (`Json.Decode.Error`
+through `errorToString`, a `response_body` field's error flattened a
+second time inside the decoder) and the binary one (`Proto.Error.Binary`
+through `Proto.Error.toString`); they now give `Body` with the error,
+the JSON one naming a registry miss as the status-detail reader does.
+Connect's two content-type refusals, under either codec, and every
+gRPC-Web refusal are `Envelope`. The codes stay as they were (A refused
+answer carries its code). `Problem` is frozen: a new kind of framing
+fault is an `Envelope`'s text and a new kind of body failure is the
+`Proto.Error.Error` a `Body` holds. Doing it now costs 0.1 users nothing
+more: 0.2 already changes the constructor's arity, so their patterns
+change once (operator). Where: design §5.3, §5.4, §8.3.
+
 ### A path value that cannot match is not sent
 
 *2026-10-24.*

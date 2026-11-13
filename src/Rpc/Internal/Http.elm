@@ -466,7 +466,7 @@ bytesMessage overRead options ( metadata, read ) =
                     Nothing ->
                         Ok
                             { bytes = good.message
-                            , bad = \problem -> Error.BadResponse Code.Internal problem (bytesAnswer good.metadata good.raw)
+                            , bad = \problem -> Error.BadResponse Code.Internal (Error.Body problem) (bytesAnswer good.metadata good.raw)
                             }
             )
     )

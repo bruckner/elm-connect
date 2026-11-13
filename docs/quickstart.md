@@ -189,9 +189,9 @@ describe error =
             -- A failure with no status in it, such as a proxy's 502 page.
             "HTTP " ++ String.fromInt response.statusCode
 
-        Rpc.Error.BadResponse _ problem _ ->
-            -- A success whose body is not the response.
-            "unexpected answer: " ++ problem
+        Rpc.Error.BadResponse _ _ _ ->
+            -- A success that could not be read as the response.
+            "unexpected answer: " ++ Rpc.Error.message error
 
         Rpc.Error.NoAnswer _ ->
             -- A timeout, a network failure, or a call that was never sent.

@@ -526,7 +526,7 @@ encodeResult respond result =
                 [ ( "badResponse"
                   , Encode.object
                         [ ( "code", Encode.string (Rpc.Code.toString code) )
-                        , ( "problem", Encode.string problem )
+                        , ( "problem", Encode.string (problemText problem) )
                         , ( "response", encodeResponse_ answer )
                         ]
                   )
@@ -534,6 +534,19 @@ encodeResult respond result =
 
         Err (Rpc.Error.NoAnswer reason) ->
             Encode.object [ ( "noAnswer", Encode.string (reasonToString reason) ) ]
+
+
+{-| A `BadResponse`'s problem as text: the description of a body that is not
+the response, or what was malformed about the answer.
+-}
+problemText : Rpc.Error.Problem -> String
+problemText problem =
+    case problem of
+        Rpc.Error.Body error ->
+            Proto.Error.toString error
+
+        Rpc.Error.Envelope text ->
+            text
 
 
 {-| The answer an error was read from: its status and body. The headers are

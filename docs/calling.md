@@ -528,7 +528,7 @@ in `Rpc.Error` with its readers:
 type Error
     = RpcStatus StatusError Response
     | HttpStatus Response
-    | BadResponse Code String Response
+    | BadResponse Code Problem Response
     | NoAnswer Reason
 ```
 
@@ -546,15 +546,19 @@ type Error
   a failure is: a status it carries is an `RpcStatus`. Transcoding
   reads any success as its answer, whatever its content type, since a
   REST server may label JSON `text/plain`.
-- `BadResponse`: the server answered with success, but the body did not
-  decode as the response, as when the schema drifted between client and
-  server, or came as another of the protocol's content types than the
-  call reads (`application/json` under the proto codec,
-  `application/grpc-web+json` over `grpcWeb`): the code, then the
-  problem, then the answer. The code is the runtime's, as the Connect
+- `BadResponse`: the server answered with success, but the answer could
+  not be read as the response: the code, then the problem, then the
+  answer. The problem is a `Body` holding the `Proto.Error.Error` of a
+  body that is not the response message, as when the schema drifted
+  between client and server (`BadJson`, `BadBinary`, or
+  `UnregisteredType` for an `Any` of a type the client's registry
+  lacks), or an `Envelope` naming what was malformed around it: another
+  of the protocol's content types than the call reads
+  (`application/json` under the proto codec,
+  `application/grpc-web+json` over `grpcWeb`), or a gRPC-Web answer's
+  framing or trailers. The code is the runtime's, as the Connect
   clients give it: `Internal`, or `Unimplemented` for a unary gRPC-Web
-  answer with status 0 and no message or more than one. The message
-  quotes elm/json's problem or names the content type. A success with
+  answer with status 0 and no message or more than one. A success with
   no content type is read as the answer.
 - `NoAnswer`: nothing came back, or nothing was sent: a `Timeout`
   (`DeadlineExceeded`), a `NetworkError` (`Unavailable`, which is also

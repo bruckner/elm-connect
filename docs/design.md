@@ -2897,7 +2897,8 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
   `Any` the registry cannot write is refused before anything is sent,
   `NoAnswer (BadAny problem)`, reading the JSON the send
   encodes for its body, not an encoding of its own; a response holding
-  an `Any` of a type the registry lacks fails to decode, a `BadResponse`.
+  an `Any` of a type the registry lacks fails to decode, a `BadResponse`
+  whose problem is `Body (UnregisteredType url)`.
   `Rpc.Call.requestJson` and `toJson` take the registry too and give a
   `Result` (decisions.md: One table, the client's), and take a JSON
   call: a binary-only call has no JSON to write.
@@ -3068,11 +3069,11 @@ all 40 passing.
   is not a positive number sends none (§5.1).
 - Success is status 200, as `application/json` or with no content type
   (parameters such as `charset` ignored), with a body the response
-  decoder accepts; a 200 whose body it rejects is `BadResponse problem
-  answer`. Any other answer is read as an error (§5.4).
+  decoder accepts; a 200 whose body it rejects is `BadResponse Internal
+  (Body problem) answer`. Any other answer is read as an error (§5.4).
 - A 200 of another of Connect's content types (`application/proto`,
   `application/connect+json`, `application/connect+proto`) is a
-  `BadResponse` naming both types: the server answered, in a codec the
+  `BadResponse` whose `Envelope` names both types: the server answered, in a codec the
   call does not read. A 200 of a type that is not Connect's at all
   (`image/jpeg`, a proxy's `text/html`) is not the server's answer, and
   is read as an error is (§5.4): a status it carries is the error, and
@@ -3116,9 +3117,9 @@ codec (§7).
   that is not Connect's is read as an error, as under `connect`. Any
   other answer is the protocol's
   JSON error, decoded as UTF-8 and read as over `connect` (§5.4), so
-  errors are JSON whatever the codec. A body that does not decode is
-  `BadResponse "the body is not the response of svc/Method in protobuf
-  binary"`. `withReadMaxBytes` measures the answer's bytes,
+  errors are JSON whatever the codec. A body that does not decode is a
+  `BadResponse` whose problem is `Body (BadBinary report)`, the report
+  naming the message, the reason, the fields and the offset. `withReadMaxBytes` measures the answer's bytes,
   `withWriteMaxBytes` the request's binary, encoded only when a limit is
   set. A trace gives a bytes request body as `body: null` and
   `bodyBase64`.
@@ -3320,7 +3321,7 @@ conformance suite's gRPC-Web client cases (§7).
 - **Answers.** A 200 must come as `application/grpc-web` or
   `application/grpc-web+proto`, or with no content type. Another
   gRPC-Web type (`application/grpc-web+json`, `application/grpc-web-text`)
-  is a `BadResponse` naming the types the call reads, whose framing would
+  is a `BadResponse` whose `Envelope` names the types the call reads, whose framing would
   fail or decode garbage; a type that is not gRPC-Web's goes through the
   shared error reader (§5.4), as over Connect, so a
   proxy's page with no status is an `HttpStatus` error, code `Unknown`.
@@ -3338,8 +3339,8 @@ conformance suite's gRPC-Web client cases (§7).
   agree); one without a code leaves the trailers' standing. `source` is `GrpcTrailers` from a body and `GrpcHeaders` from
   headers. Any other HTTP status goes through the shared error reader
   (§5.4). Status 0 with no message or two, a compressed frame, a frame
-  running past the end, or no status anywhere is a `BadResponse`; the
-  first two are `Unimplemented`, as connect-es and connect-go give them,
+  running past the end, or no status anywhere is a `BadResponse` whose
+  problem is an `Envelope` saying which; the first two are `Unimplemented`, as connect-es and connect-go give them,
   and the rest `Internal` (decisions.md: A refused answer carries its
   code).
 - **Limits.** `withReadMaxBytes` measures the response message, not its
@@ -3384,8 +3385,12 @@ on answers with no error body.
 type Error
     = RpcStatus StatusError Response    -- the server stated an RPC status
     | HttpStatus Response               -- a failure, or a success not the protocol's, stating none
-    | BadResponse Code String Response  -- it answered 2xx and the runtime refused the body (its code, the problem)
+    | BadResponse Code Problem Response -- it answered 2xx and the runtime could not read it (its code, the problem)
     | NoAnswer Reason                   -- nothing came back, nothing was sent, or the answer was refused unread
+
+type Problem                            -- frozen (§8.3)
+    = Body Proto.Error.Error            -- the answer's body is not the response message
+    | Envelope String                   -- the answer's framing, content type or status is malformed
 
 type Reason                             -- frozen (§8.3)
     = Timeout | NetworkError | BadUrl String | BadHeader String
@@ -3503,11 +3508,14 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
   value left out, connect-es's `message size <size> is larger than
   configured writeMaxBytes <limit>` and `… readMaxBytes <limit>`,
   `bad Any: ` and `Proto.Error.toString`'s text,
-  `bad response body: <problem>`, a binary body's problem
-  `Proto.Error.toString`'s text too), and `toString` is the code and the message for all of
-  them. elm/json's problem quotes the JSON it rejected, which can be
-  the whole response, so the message keeps the first 300 characters of
-  it and `…`; the whole problem stays in the error. A bad URL is
+  `bad response body: ` and `Proto.Error.toString`'s text for a `Body`
+  problem, `bad response: <problem>` for an `Envelope`), and `toString`
+  is the code and the message for all of them. elm/json's problem
+  quotes the JSON it rejected, which can be the whole response, so the
+  message keeps the first 300 characters of it and `…`; the whole
+  problem stays in the error, as the `Proto.Error.Error` it is: a
+  program matches `BadJson`, `BadBinary`'s report or `UnregisteredType`
+  without parsing text. A bad URL is
   printed without the `user:password@` a URL can carry and without its
   query and fragment, which over Connect's GET hold the request
   (`bad URL: https://api.example.com/base (query omitted)`); the whole
@@ -3516,7 +3524,16 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
   request can have before an answer is read is one of the reasons, and
   a later kind of failure found in an answer that was read (a malformed
   stream envelope, a failed decompression) is a `BadResponse`, whose
-  problem says what. A bad URL, an invalid header, an invalid path
+  `Envelope` problem says what. `Problem` is frozen too: a body that is
+  not the response is a `Body` holding the proto layer's error, which
+  grows by its own rules, and everything around the body is an
+  `Envelope`'s text, so neither side needs a new constructor.
+- A response's body is read through the client's registry, so a JSON
+  response holding an `Any` of a type the registry lacks is `Body
+  (UnregisteredType url)`, found as the status-detail reader finds it
+  (below); a `response_body` field is decoded apart from the answer's
+  text so that its decoder's error, and the miss in it, reaches the
+  caller unflattened. A bad URL, an invalid header, an invalid path
   value and a request over the write limit are never retried,
   whatever the policy's codes: nothing was sent, and nothing would
   change. `BadHeader` has its home here rather than in a
@@ -3583,7 +3600,7 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
     whose details are each `Ok`; a header that does not decode is one
     `Err (BadBinary …)` of `google.rpc.Status` standing for the whole
     list; a header that is not base64 at all is a `BadResponse` with code
-    `Internal`, as a frame that does not parse is, since the text is part
+    `Internal` and an `Envelope` problem, as a frame that does not parse is, since the text is part
     of the answer's envelope and holds no bytes to blame.
   Details a proxy stripped (Envoy forwards none over transcoding, §7)
   are `[]`, not a problem. Unpack one with `Proto.Any.tryUnpack` and the
@@ -3676,9 +3693,10 @@ toString : Error -> String              -- for a log, as Json.Decode.errorToStri
   | `Rpc.Error.BadAny` | `Error` | as `encodeNoteWith` |
   | `StatusError.details` | `List (Result Error Any)` | `UnregisteredType`, `BadJson`, `BadBinary` (above) |
 
-  A binary answer that is not the response stays a `BadResponse`, an
-  answer read but not understood, its problem `toString` of its
-  `BadBinary`.
+  An answer whose body is not the response stays a `BadResponse`, an
+  answer read but not understood, its problem `Body` and the error
+  itself: `BadBinary` for binary, `BadJson` or `UnregisteredType` for
+  JSON.
 - `toString` holds every reason's text, one clause each, with the path
   innermost first and the offset: `Not a notes.v1.Note in protobuf
   binary: a string is not UTF-8, at byte 36, in field 1 of
@@ -4537,7 +4555,10 @@ Within a major version:
   that naming it later is a minor), `Proto.Method.Idempotency`,
   `Rpc.Code`, and `Rpc.Error`'s `Error`, `Reason` (`Timeout`,
   `NetworkError`, `BadUrl`, `BadHeader`, `BadPathValue`,
-  `RequestTooLarge`, `ResponseTooLarge`, `BadAny`) and `Source` (with `ConnectEndStream` reserved
+  `RequestTooLarge`, `ResponseTooLarge`, `BadAny`), `Problem` (`Body`,
+  `Envelope`; it does not grow: a new way an answer's framing is wrong is
+  an `Envelope`'s text, and a new way a body fails is the
+  `Proto.Error.Error` its `Body` holds) and `Source` (with `ConnectEndStream` reserved
   for server streaming, which reads a status from there, so that it can
   ship as a minor; `GrpcTrailers`, reserved as well until gRPC-Web read
   a unary answer's trailers frame, is given now; a

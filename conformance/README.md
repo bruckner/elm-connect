@@ -507,8 +507,11 @@ for a code inferred from the status, and `response` the answer the
 error was read from: `statusCode`, `statusText` and `body`, and
 `bodyBase64` for an answer read as bytes; `detailsBinary` holds each
 detail's binary as an `Any`, in base64, `null` for one not read),
-`{"badResponse": {"problem", "response"}}` for a successful answer whose
-body did not decode (elm/json's problem, and the answer as above),
+`{"badResponse": {"code", "problem", "response"}}` for a successful
+answer that could not be read as the response (the error's code; the
+problem as text, `Proto.Error.toString` of a body that is not the
+response or what was malformed about the answer; and the answer as
+above),
 `{"noAnswer": "Timeout"}` (or `NetworkError`, `BadUrl <url>`,
 `BadHeader <name>`, `RequestTooLarge <size> <limit>`,
 `ResponseTooLarge <size> <limit>`, `BadPathValue <field> <template>`,

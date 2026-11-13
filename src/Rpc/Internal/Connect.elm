@@ -216,7 +216,7 @@ connectRead answer =
                         Ok { metadata = metadata, raw = raw, text = raw, field = Nothing }
 
                     Unaccepted problem ->
-                        Err (Error.BadResponse Code.Internal problem (Status.answerOf metadata raw))
+                        Err (Error.BadResponse Code.Internal (Error.Envelope problem) (Status.answerOf metadata raw))
 
                     Foreign ->
                         Err (Status.failure metadata raw)
@@ -243,7 +243,7 @@ connectProtoRead answer =
                         Ok { metadata = metadata, raw = raw, message = raw }
 
                     Unaccepted problem ->
-                        Err (Error.BadResponse Code.Internal problem (Internal.bytesAnswer metadata raw))
+                        Err (Error.BadResponse Code.Internal (Error.Envelope problem) (Internal.bytesAnswer metadata raw))
 
                     Foreign ->
                         Err (Status.bytesFailure answer)

@@ -1,4 +1,4 @@
-module Rpc.Internal.Status exposing (answerOf, bytesFailure, canonicalBase64, completeDetails, failure, header, otherFailure)
+module Rpc.Internal.Status exposing (answerOf, bodyProblem, bytesFailure, canonicalBase64, completeDetails, failure, header, otherFailure)
 
 {-| A failure's status as an `Rpc.Error`, from a Connect error body, a
 `google.rpc.Status` body, or gRPC status headers and trailers, whatever the
@@ -296,6 +296,20 @@ bodyDetails registry answer =
         |> Maybe.withDefault []
 
 
+{-| A JSON read's failure as the proto layer's error: `UnregisteredType` when
+an `Any` in it is of a type the registry lacks, else its `BadJson`. The
+response reader and the status-detail reader share it.
+-}
+bodyProblem : Registry -> Json.Decode.Error -> Proto.Error.Error
+bodyProblem registry problem =
+    case Proto.Internal.Registry.unregistered registry problem of
+        Just url ->
+            Proto.Error.UnregisteredType url
+
+        Nothing ->
+            Proto.Error.BadJson problem
+
+
 {-| A `google.rpc.Status` detail: a proto3 JSON `Any`, converted to its
 message's binary through the registry. A type the registry lacks is
 `UnregisteredType`, read from the failure (`Proto.Internal.Registry.unregistered`);
@@ -308,12 +322,7 @@ statusDetail registry detail =
             Ok any
 
         Err problem ->
-            case Proto.Internal.Registry.unregistered registry problem of
-                Just url ->
-                    Err (Proto.Error.UnregisteredType url)
-
-                Nothing ->
-                    Err (Proto.Error.BadJson problem)
+            Err (bodyProblem registry problem)
 
 
 optional : String -> Decoder a -> a -> Decoder a
