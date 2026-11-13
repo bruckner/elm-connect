@@ -306,9 +306,10 @@ to [`merge`](#merge): built by [`field`](#field), [`fieldInto`](#fieldInto),
 -}
 type Field a
     = Field
-        -- The fast reader, and the locating one given the bytes left in the
-        -- region it reads in.
-        { fast : D.Decoder ( Int, a )
+        -- The fast reader, given the bytes left in the message after the
+        -- field's key and giving the message loop's next step; and the
+        -- locating one, given the bytes left in the region it reads in.
+        { fast : Int -> D.Decoder (Step ( Int, a ) a)
         , located : Int -> Read a
         }
 
@@ -389,8 +390,7 @@ fastField step remaining keyWidth tag acc =
     else
         case step number (Bitwise.and 7 tag) acc of
             Field f ->
-                f.fast
-                    |> D.map (\( width, next ) -> Loop ( remaining - keyWidth - width, next ))
+                f.fast (remaining - keyWidth)
 
 
 message : String -> a -> (Int -> Int -> a -> Field a) -> (a -> a) -> Int -> D.Decoder (Result Failure a)
@@ -459,7 +459,7 @@ field : Codec v -> (v -> a) -> Int -> a -> Field a
 field (Codec c) set wire current =
     if wire == c.wire then
         Field
-            { fast = D.map (\( width, v ) -> ( width, set v )) c.fast
+            { fast = \left -> D.map (\( width, v ) -> Loop ( left - width, set v )) c.fast
             , located = \bound -> D.map (setWith set) (c.read bound)
             }
 
@@ -487,13 +487,13 @@ fieldInto (Codec c) existing set wire current =
         case existing of
             Just before ->
                 Field
-                    { fast = D.map (\( width, v ) -> ( width, set v )) (c.fastInto before)
+                    { fast = \left -> D.map (\( width, v ) -> Loop ( left - width, set v )) (c.fastInto before)
                     , located = \bound -> D.map (setWith set) (c.readInto before bound)
                     }
 
             Nothing ->
                 Field
-                    { fast = D.map (\( width, v ) -> ( width, set v )) c.fast
+                    { fast = \left -> D.map (\( width, v ) -> Loop ( left - width, set v )) c.fast
                     , located = \bound -> D.map (setWith set) (c.read bound)
                     }
 
@@ -510,25 +510,26 @@ repeated : Codec v -> (List v -> a) -> List v -> Int -> a -> Field a
 repeated (Codec c) set existing wire current =
     if wire == c.wire then
         Field
-            { fast = D.map (\( width, v ) -> ( width, set (v :: existing) )) c.fast
+            { fast = \left -> D.map (\( width, v ) -> Loop ( left - width, set (v :: existing) )) c.fast
             , located = \bound -> D.map (setWith (\v -> set (v :: existing))) (c.read bound)
             }
 
     else if c.packable && wire == 2 then
         Field
             { fast =
-                fastVarint32
-                    |> D.andThen
-                        (\( lengthWidth, length ) ->
-                            (case c.run of
-                                Just readRun ->
-                                    readRun length existing
+                \left ->
+                    fastVarint32
+                        |> D.andThen
+                            (\( lengthWidth, length ) ->
+                                (case c.run of
+                                    Just readRun ->
+                                        readRun length existing
 
-                                Nothing ->
-                                    D.loop ( length, existing ) (fastPackedStep c.fast)
+                                    Nothing ->
+                                        D.loop ( length, existing ) (fastPackedStep c.fast)
+                                )
+                                    |> D.map (\vs -> Loop ( left - lengthWidth - length, set vs ))
                             )
-                                |> D.map (\vs -> ( lengthWidth + length, set vs ))
-                        )
             , located = \bound -> packed c.read set existing bound
             }
 
@@ -731,12 +732,13 @@ mapEntry (Codec k) (Codec v) insert wire current =
     else
         Field
             { fast =
-                fastVarint32
-                    |> D.andThen
-                        (\( lengthWidth, length ) ->
-                            D.loop ( length, ( k.zero, v.zero ) ) (fastEntryStep k.wire k.fast v.wire v.fast)
-                                |> D.map (\( key_, item ) -> ( lengthWidth + length, insert key_ item ))
-                        )
+                \left ->
+                    fastVarint32
+                        |> D.andThen
+                            (\( lengthWidth, length ) ->
+                                D.loop ( length, ( k.zero, v.zero ) ) (fastEntryStep k.wire k.fast v.wire v.fast)
+                                    |> D.map (\( key_, item ) -> Loop ( left - lengthWidth - length, insert key_ item ))
+                            )
             , located = \bound -> locatedEntry k.wire k.read k.zero v.wire v.read v.zero insert bound
             }
 
@@ -878,7 +880,7 @@ the located one at the field's key.
 skip : Int -> a -> Field a
 skip wire unchanged =
     Field
-        { fast = D.map (\width -> ( width, unchanged )) (fastSkipValue wire)
+        { fast = \left -> D.map (\width -> Loop ( left - width, unchanged )) (fastSkipValue wire)
         , located = \bound -> D.map (\width -> skipped width unchanged) (skipValue wire bound)
         }
 
