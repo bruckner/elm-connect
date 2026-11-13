@@ -1172,7 +1172,26 @@ schedules policy =
     , fuzz moments "next is the wait the loop takes" <|
         \( retry, at ) ->
             Retry.step (Just retry) at.idempotency Just { tried = at.tried, now = at.now, elapsed = at.elapsed } (Err at.code)
-                |> Expect.equal (Rpc.Retry.next retry at)
+                |> Expect.equal
+                    (Rpc.Retry.next retry
+                        { tried = at.tried
+                        , error = RpcStatus { code = at.code, message = "", details = [], source = ConnectBody } blank
+                        , idempotency = at.idempotency
+                        , now = at.now
+                        , elapsed = at.elapsed
+                        }
+                    )
+    , test "next reads the error's code and stops where nothing was sent" <|
+        \_ ->
+            let
+                internal =
+                    Rpc.Retry.on [ Unavailable, Internal ] |> Rpc.Retry.withBackoff 100 |> Rpc.Retry.withoutJitter
+
+                at error =
+                    Rpc.Retry.next internal { tried = 1, error = error, idempotency = IdempotencyNoSideEffects, now = moment.now, elapsed = 0 }
+            in
+            [ at (NoAnswer NetworkError), at (NoAnswer Timeout), at (httpError 503 ""), at (httpError 400 ""), at (NoAnswer (BadUrl "nowhere")) ]
+                |> Expect.equal [ Just 100, Nothing, Just 100, Just 100, Nothing ]
     , test "the loop does not wait after a success, without a policy, or for a failure trying again cannot help" <|
         \_ ->
             ( Retry.step (Just policy) IdempotencyNoSideEffects Just { tried = 1, now = moment.now, elapsed = 0 } (Ok ())

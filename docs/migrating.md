@@ -441,7 +441,8 @@ with each one ([install.md](install.md#versions)).
   `BadResponse _ problem answer`.
 - `Rpc.Call.withRetry` and `Rpc.Call.withoutRetry` set one call's retry
   policy, and `Rpc.Retry.withDeadline` and `Rpc.Retry.next` are new
-  ([calling.md](calling.md#retries)).
+  ([calling.md](calling.md#retries)). `next` is given the failed call's
+  `Rpc.Error.Error` and reads its code itself.
 - Decoding is stricter where proto3 JSON says so: an out-of-range
   `double` or `float`, a lowercase `t` or `z` in a timestamp, an `Any`
   without a type URL, a field mask path with `_` and a string holding

@@ -103,7 +103,6 @@ import Proto.Method exposing (Method)
 import Proto.Registry exposing (Registry)
 import Rpc.Call
 import Rpc.Client
-import Rpc.Code exposing (Code)
 import Rpc.Error
 import Rpc.Internal.Call
 import Rpc.Internal.Client as Client
@@ -528,7 +527,7 @@ attempt (Client.Client cl) c plan sent =
         Nothing ->
             Rpc.Internal.Retry.run (Rpc.Internal.Call.retryIn cl.retry c)
                 (Rpc.Call.idempotency c)
-                retryCode
+                Rpc.Internal.Retry.retryable
                 (\left ->
                     Internal.task
                         (case plan.reader of
@@ -550,17 +549,3 @@ firstAttempt (Client.Client cl) c plan sent =
     Plan.withBudget plan
         (Rpc.Internal.Call.retryIn cl.retry c |> Maybe.andThen (\policy -> Rpc.Internal.Retry.startBudget policy 0))
         sent
-
-
-{-| The code a failed attempt is retried by, or `Nothing` when trying again
-cannot help.
--}
-retryCode : Error -> Maybe Code
-retryCode error =
-    case error of
-        Rpc.Error.NoAnswer (Rpc.Error.BadUrl _) ->
-            -- Nothing was sent, and nothing would change.
-            Nothing
-
-        _ ->
-            Just (Rpc.Error.code error)

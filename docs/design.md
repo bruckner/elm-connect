@@ -2517,7 +2517,7 @@ withAttempts : Int -> Retry -> Retry
 withBackoff, withMaxBackoff : Float -> Retry -> Retry
 withDeadline : Float -> Retry -> Retry    -- all attempts and waits; none by default
 withoutJitter, allowNonIdempotent : Retry -> Retry
-next : Retry -> { tried : Int, code : Rpc.Code.Code, idempotency : Proto.Method.Idempotency, now : Time.Posix, elapsed : Float } -> Maybe Float
+next : Retry -> { tried : Int, error : Rpc.Error.Error, idempotency : Proto.Method.Idempotency, now : Time.Posix, elapsed : Float } -> Maybe Float
 ```
 
 A client says where and how a call is sent: a protocol, the server's
@@ -2729,13 +2729,16 @@ appears, each a field of the opaque record and a minor (roadmap).
   last attempt short is what makes it a deadline rather than only a
   stop between attempts. A traced send's request is the first
   attempt's.
-- `Rpc.Retry.next policy { tried, code, idempotency, now, elapsed }` is
+- `Rpc.Retry.next policy { tried, error, idempotency, now, elapsed }` is
   the loop's decision as a pure function, the wait before the next
   attempt or `Nothing` to stop, so an application that runs its own
   loop (to show a wait, to cancel, to refresh between attempts) sends
   each attempt `withoutRetry` and takes the policy's schedule from it.
-  The loop and `next` call the same function in
-  `Rpc.Internal.Retry`, so the two cannot drift: `Rpc.Retry.on` puts it
+  It takes the failed call's whole `Rpc.Error.Error`, not its code, so
+  a later setting that reads more of the answer (a `Retry-After`
+  header, a `RetryInfo` detail) reaches `next` as it reaches the loop,
+  without a new field in its argument. The loop and `next` call the
+  same function in `Rpc.Internal.Retry`, so the two cannot drift: `Rpc.Retry.on` puts it
   on the policy, beside the budget a deadline leaves, and the loop
   reaches both only through a policy, so a program that never builds
   one carries the loop alone (decisions.md: Modifiers install
