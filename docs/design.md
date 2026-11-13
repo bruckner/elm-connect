@@ -388,10 +388,14 @@ rpc shared call =
   noun, and no helper shares a name with an elm/json function of
   another type (`Json.Encode.object`, `Json.Encode.dict`). Every well-known type's codecs are
   there, `Any`'s included. (7) The imports point one way: no `Proto`
-  module imports an `Rpc` one, and `Rpc` reads three internal modules of
+  module imports an `Rpc` one, and `Rpc` reads four internal modules of
   the `Proto` side, `Proto.Internal.Any`, `Proto.Internal.Method` (a
-  method's codec halves, whose types are therefore elm/core's, elm/json's and elm/bytes', §5.1) and
-  `Proto.Internal.Percent`, and no others, so that the codecs could
+  method's codec halves, whose types are therefore elm/core's, elm/json's and elm/bytes', §5.1),
+  `Proto.Internal.Percent` and `Proto.Internal.Registry` (one reader,
+  `unregistered`, which names the registry miss in a status detail's
+  JSON failure; reading the detail through `Proto.Message.decodeJson`
+  instead would carry `Any`'s binary codecs into every JSON-only
+  program), and no others, so that the codecs could
   become a package of their own without changing
   ([decisions.md](decisions.md#no-package-split)).
 
@@ -2557,8 +2561,12 @@ them carries none of their code. Two rules keep this safe
   policy's knobs before its math), so `==` on two clients or protocols
   answers at the data before it could reach a function, on which Elm's
   `==` throws; built alike, they hold the same top-level functions,
-  which `==` compares by reference first. Clients built alike are `==`,
-  and two differing in one modifier compare unequal without throwing;
+  which `==` compares by reference first. Clients built alike are `==`
+  when their registry is a top-level value, and two differing in one
+  modifier compare unequal without throwing; a registry built where the
+  client is holds fresh functions per `register`, and `==` on two such
+  clients throws on reaching it (decisions.md: Modifiers install
+  behaviour, 2026-11-13);
 - every installed binary check takes its measure from the wire
   (`width`), never `Bytes.width` directly: a modifier names both wires'
   checks, so a JSON program naming `withReadMaxBytes` carries the binary
@@ -3601,8 +3609,8 @@ saying `ok` takes the HTTP status's code, as an unknown name does
     over `Proto.WellKnown.any`, whose binary codecs would put the binary
     reader into every program that reads a failed answer (measured
     +4.3 KB gzipped on a minimal Connect JSON client, `wire=json`), so
-    `Rpc.Internal.Status` still reads `Proto.Internal.Registry`, the one
-    import past the list in §3.1's rule 7. The status is read
+    `Rpc.Internal.Status` reads `Proto.Internal.Registry`, the fourth
+    internal module §3.1's rule 7 allows. The status is read
     without the registry where the protocol reads the answer, and its
     details again through the client's in the plan (`Status.completeDetails`).
     `Proto.ErrorDetails.registry` holds `google/rpc/error_details.proto`'s
