@@ -36,7 +36,9 @@ import Rpc.Response exposing (Response)
 
   - `RpcStatus`: the server stated an RPC status, in a Connect error body, a
     `google.rpc.Status` body or the `grpc-status` headers
-    ([`StatusError`](#StatusError)), with the answer itself.
+    ([`StatusError`](#StatusError)), with the answer itself. A Connect
+    error body without a code the protocol names counts: its code is the
+    HTTP status's ([`Source`](#Source)).
   - `HttpStatus`: the server answered with a failure, or with a success that
     is not the protocol's answer, and stated no status; [`code`](#code)
     infers one from the HTTP status. Over Connect and gRPC-Web, a 200 whose
@@ -151,7 +153,9 @@ type Problem
 
 {-| A status the server stated: its code, its message (which may be empty), its
 details and where it was found. The code is a [`Code`](Rpc-Code#Code), which
-has no `ok`: an answer claiming `ok` while failing reads as `Unknown`.
+has no `ok`: a Connect body claiming `ok` while failing takes the HTTP
+status's code, and a `google.rpc.Status` body claiming `0` reads as
+`Unknown`.
 
 Each detail is a message packed in an [`Any`](Proto-Any#Any), in the order
 the server sent them, or the [`Proto.Error`](Proto-Error#Error) that kept one
@@ -197,7 +201,13 @@ type alias StatusError =
 
 {-| Where a status was read from, tried in this order:
 
-  - `ConnectBody`: a Connect error body, `{"code": "not_found", …}`.
+  - `ConnectBody`: a Connect error body, `{"code": "not_found", …}`. A code
+    the protocol does not name, `"ok"` included, and a missing or `null`
+    code beside a string `message` (`{"message": "…"}`) take the code
+    [`Rpc.Code.fromHttpStatus`](Rpc-Code#fromHttpStatus) gives the answer's
+    status, as the protocol tells a client to infer one, the message and
+    details kept. Without a string `message`, a body with no code (`{}`) is
+    not a Connect body.
   - `StatusBody`: a `google.rpc.Status` body, `{"code": 5, …}`, as grpc-gateway
     and Envoy send; a number outside `1` to `16` is the code `Unknown`, and the
     number as sent is in the response's body.
@@ -232,7 +242,8 @@ type Source
 
 {-| An error's code, as the Connect clients give it:
 
-  - `RpcStatus`: the server's.
+  - `RpcStatus`: the server's, or for a Connect error body without a code
+    the protocol names, inferred from the HTTP status as for `HttpStatus`.
   - `HttpStatus`: inferred from the HTTP status by
     [`Rpc.Code.fromHttpStatus`](Rpc-Code#fromHttpStatus), so a 200 that is
     not the protocol's answer is `Unknown`.

@@ -866,14 +866,33 @@ responses =
             \_ ->
                 failed 503 "Service Unavailable" """{"code":"unavailable"}"""
                     |> Expect.equal (fromBody Unavailable "")
-        , test "an unknown code name reads as unknown" <|
+        , test "an unknown code name takes the HTTP status's code, the message kept" <|
             \_ ->
-                failed 400 "Bad Request" """{"code":"teapot","message":"short and stout"}"""
-                    |> Expect.equal (fromBody Unknown "short and stout")
-        , test "a failed answer claiming ok reads as unknown" <|
+                [ failed 400 "Bad Request" """{"code":"teapot","message":"short and stout"}"""
+                , failed 503 "Service Unavailable" """{"code":"teapot","message":"short and stout"}"""
+                ]
+                    |> Expect.equal [ fromBody Internal "short and stout", fromBody Unavailable "short and stout" ]
+        , test "a failed answer claiming ok takes the HTTP status's code" <|
             \_ ->
-                failed 500 "Internal Server Error" """{"code":"ok","message":"fine"}"""
-                    |> Expect.equal (fromBody Unknown "fine")
+                failed 503 "Service Unavailable" """{"code":"ok","message":"fine"}"""
+                    |> Expect.equal (fromBody Unavailable "fine")
+        , test "a Connect body with a message and a missing or null code takes the HTTP status's code, its message and details kept" <|
+            \_ ->
+                [ failed 401 "Unauthorized" """{"message":"oops"}"""
+                , failed 404 "Not Found" """{"code":null,"message":"gone"}"""
+                , failed 429 "Too Many Requests" """{"message":"slow down","details":[]}"""
+                ]
+                    |> Expect.equal [ fromBody Unauthenticated "oops", fromBody Unimplemented "gone", fromBody Unavailable "slow down" ]
+        , test "a body with no code and no string message, or a code that is no name, is not a Connect body" <|
+            \_ ->
+                [ ( 400, """{"error":"bad"}""" ), ( 400, """{"message":3}""" ), ( 400, """{"code":true,"message":"x"}""" ), ( 401, """["oops"]""" ) ]
+                    |> List.map (\( status, body ) -> failed status "" body |> withCode)
+                    |> Expect.equal
+                        [ Err ( httpError 400 "", Internal, "HTTP 400" )
+                        , Err ( httpError 400 "", Internal, "HTTP 400" )
+                        , Err ( httpError 400 "", Internal, "HTTP 400" )
+                        , Err ( httpError 401 "", Unauthenticated, "HTTP 401" )
+                        ]
         , test "a body without a code is an HttpStatus error, its code inferred from the HTTP status" <|
             \_ ->
                 [ ( 400, "{}" ), ( 401, "" ), ( 403, "<html>" ), ( 404, "{\"code\":null}" ), ( 429, "" ), ( 502, "" ), ( 503, "" ), ( 504, "" ), ( 500, "" ), ( 409, "" ) ]
