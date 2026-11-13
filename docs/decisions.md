@@ -1249,6 +1249,21 @@ minified). The cost is small because a message's typed value is built
 from both its codecs, so a JSON program that names typed values carries
 most of the binary codecs already.
 
+2026-11-13: that figure is the notes example's, the case where the
+default costs least. A minimal JSON-only client, one generated call
+over Connect JSON, is 7.2 KB gzipped (40 %) larger under the default
+than under `wire=json`, and starts 1.3 ms later (parse and init to its
+first `Cmd`), all of it the binary half on the call, as the 0.2
+performance review measured. The default stays `both` for the reason
+above, a call that goes to every client without an option to find
+first, and `wire=json` is the documented opt-out (generator.md,
+calling.md). Considered and declined: "primitives as an argument",
+generated codecs taking the runtime's binary (or JSON) primitives as a
+parameter, so that a JSON client would carry no binary runtime and the
+reverse. It costs an extra argument on every codec call and churns
+names that only generated code uses, for bytes `wire=json` already
+gives back.
+
 The road not taken was a calls module per wire beside each service's
 module, `Notes.V1.NotesService.Json` and `.Proto`, chosen by import with
 no free-codec call. Its spike, kept under the tag
@@ -1779,6 +1794,111 @@ path it does not touch; the third change's encoder removes it.
 
 Where: design §3.4, §5.3 (Transcode).
 
+### Binary codecs, faster within elm/bytes
+
+*2026-11-13.*
+
+Six changes to `Proto.Binary`, `Proto.Any` and the generated merge
+steps, none of which changes what is written, read or refused, and
+none a generated or public name. Binary had stayed 4 to 5 times behind
+connect-es on encode, 9 to 10 times on decode and 10 to 13 times on
+`Any`; a profile found most of the decode in record updates
+(`_Utils_update`: a fifth of a 300-note list, two thirds of a wide
+message) and part of the encode in building decoders.
+
+| change | gain (rows it touches) | gzipped bundle, notes / minimal `connectProto` client / same `wire=proto` / minimal JSON client |
+|---|---|---|
+| An embedded codec finds its message's name only when asked, not by building the decoder at every use | wide message encode −49 %, 32-deep tree encode −35 % and decode −9 %, 300-note list decode −8 %, binary POST −6 % | +4 / +8 / +1 / +11 B |
+| `pack` of a message built by `Proto.Message.init` goes straight to binary, without the JSON probe for an `Any` held as JSON alone | pack of a 16-field message −8 % | +1 / +0 / −6 / +1 B |
+| Varints written as u16 and u32 words | 1,000 packed `int32`s encode −56 %, 16-field message −30 %, note −17 %, list −13 %, binary POST −15 %, pack −17 %; 1,000 packed doubles +19 % | +79 / +87 / +73 / +83 B |
+| Record literals in generated merge steps, records of up to 64 fields | list decode −34 %, 16-field message −31 %, note −27 %, deep tree −27 %, maps −19 %, 1 KB proto answer −20 %, unpack −18 to −24 %, `Any` to JSON −16 % | +320 / +106 / +128 / +111 B |
+| A field's fast reader builds the message loop's next step | decodes −2 to −5 % | +19 / +19 / +22 / +15 B |
+| Varints read by a fixed chain; one-byte paths for keys, `int32`, enums and `bool` | 16-field message decode −18 %, packed `int32`s decode −18 %, note −13 %, list −12 %, 1 KB proto answer −10 %, deep tree −9 %, maps −8 % | +198 / +169 / +185 / +160 B |
+| together | note decode −39 %, list decode −49 %, 16-field message decode −46 % and encode −30 %, deep tree decode −43 % and encode −39 %, maps decode −28 %, packed `int32`s encode −57 % and decode −17 %, note encode −17 %, list encode −12 %, wide encode −56 %; 1 KB proto answer −30 %, its round trip −30 % (−27 % over gRPC-Web), binary POST −22 %; unpack −28 %, `Any` to JSON −24 %; 1,000 packed doubles encode +17 % | +621 / +389 / +403 / +381 B |
+
+Measured with the perf-0.2 harness, unchanged but for the spike's
+binary rows (a 120-field `TestAllTypesProto3` with 22 fields set, a
+16-field message, a 32-deep tree, 600 map entries, 1,000 packed
+`int32`s and doubles): node 24, medians of 21, the seven builds
+alternated in one run, each window between two idle checks. Moves
+under about 5 % on rows a change does not touch are noise. The JSON
+rows, timed at the first and last builds, did not move, but for the two
+paths that pack or unpack an `Any` (a transcoded request with an `Any`
+body −20 %, an error with two details −7 %). The minimal JSON client
+grows with the rest because under `wire=both` its call carries the
+binary half (Wire chosen by the client, not by import). The bench's
+dump of every binary fixture hashed the same at every build, and the
+protobuf conformance run gave 1430 successes and 38 expected failures
+before and after. The packed doubles' encode writes one varint; it is
+slower because elm/bytes' encoder now meets more kinds of write.
+
+- **The record-literal cap.** Literals win on any record, but a
+  literal names every field, so a message's merge source grows with
+  the square of its fields. Swept at 16, 32, 64 and no cap:
+
+  | cap | 16-field decode | 32-field | 64-field | 120-field (22 set) | testee bundle, gz / min | bench bundle, gz | generated source lines, testee / codec corpus / 32+64-field module |
+  |---|---:|---:|---:|---:|---:|---:|---:|
+  | 16 | 5.9 µs | 43.1 µs | 154.7 µs | 122.9 µs | 30,155 / 106,126 B | 44,529 B | 2,380 / 4,725 / 1,086 |
+  | 32 | 5.8 µs | 8.6 µs | 158.1 µs | 120.7 µs | 30,155 / 106,126 B | 44,952 B | 2,380 / 5,177 / 2,302 |
+  | 64 | 5.8 µs | 8.9 µs | 21.1 µs | 122.0 µs | 30,155 / 106,126 B | 45,751 B | 2,380 / 5,177 / 6,782 |
+  | none | 5.8 µs | 8.8 µs | 21.4 µs | 18.9 µs | 32,946 / 260,305 B | 48,629 B | 24,886 / 5,177 / 6,782 |
+
+  The notes package has no message over 16 fields and is the same at
+  every cap. The cap is 64: a 64-field message decodes 7 times faster
+  for about 0.8 KB gzipped and 27 KB minified, where lifting the cap
+  makes the 120-field message 6.4 times faster for 2.8 KB gzipped and
+  154 KB minified, the time won per byte four to seven times worse, and
+  every program holding such a message parses the code. A cold compile
+  of the testee took 0.05 to 0.15 s longer uncapped, within the spread.
+  The cap is the generator's `RECORD_LITERAL_MAX`.
+- **`pack` and `init`.** Generated code builds every message that
+  reaches an `Any`, through any field, map value or oneof member, with
+  `Proto.Message.initWith`, and every other with `init`, whose JSON
+  encoder cannot fail, so for an `init`-built message the probe always
+  answered binary; the runtime records the constructor and skips it.
+  A message built by hand with `init` is taken at its word that it
+  holds no `Any` (`init`'s documentation says so), as its JSON encoder,
+  which takes no registry, already implied.
+- **Held: whole packed runs.** Reading a packed run of a fixed-width
+  kind four values a step and a 32-bit varint kind as words parsed by a
+  plain function made 1,000 packed `int32`s decode 64 % faster and
+  1,000 doubles 47 %, and nothing else, for 468 B gzipped on the
+  minimal `connectProto` client (431 B on its `wire=proto` form); the
+  bytes buy only packed-heavy schemas, so it waits for 1.0.
+- **Refuted: a width-carrying encoder.** Encoding to a (width,
+  encoder) pair so a nested message's length is known without encoding
+  it first made maps 12 % and deep nesting 6 % faster, and every other
+  encode slower: the 300-note list 10 %, the wide message 32 %, a
+  16-field message 13 %, packed runs 25 to 29 %, for 143 B gzipped. It
+  also changed public names: generated `encodeXBytes` to return
+  `Proto.Binary.Encoder`, and the signatures of `Proto.Binary`'s write
+  helpers, `Proto.Message.init` and `initWith`, and `Proto.Method.init`
+  and `initProto`. A cheaper form, writing a field or packed run as one
+  encoder when its codec's width is known, was worse still.
+- **The locating reader.** `Proto.Internal.Binary.run` runs the fast
+  reader and the locating reader over the same input only when the
+  fast one fails, and every binary entry point goes through it
+  (`Proto.Binary.decode`, an `Any`'s unpack and `toJson`, a method's
+  binary half); fast readers reach only fast readers. So no locating
+  code runs on success. Two costs remain on that path, unmeasured: the
+  locating closures are still allocated (each field's `located`, each
+  nested merge's partial application), and the locating readers ship
+  in every binary program, about 2 KB gzipped.
+- **Where the time goes now.** Decode is elm/bytes' combinators
+  (`andThen`, `A2`, `map`, its loop) and the string slices; encode is
+  `_Bytes_encode`, an `ArrayBuffer` per nested message, and its
+  sequence writer. elm/bytes exposes no position and no width, so a
+  nested message is encoded before it is copied in after its length.
+- **Against connect-es**, approximately: a comparison of 0.2's binary codecs with
+  connect-es's (node 24, the same fixtures, at another head and in
+  another run), its ratios scaled by this change's gains put note decode at about 6 times
+  connect-es's time (from 9.5), list decode about 5 (from 8.7), note
+  encode about 3.7 (from 4.4) and unpack about 10 (from 13). These are
+  estimates, not a rerun of the comparison.
+
+Where: design §3.10 (Lenient registries), §5.5; decisions: No
+table-driven binary merge.
+
 ## Input and versioning
 
 
@@ -1812,6 +1932,11 @@ and the entry leaves the roadmap. A scale test states its type depth
 from now on, with one deep chain as the worst case; a schema that nests
 very deeply would be looked at in how generated code expresses nested
 record types, not in the codecs. Where: design §3.10, §5.5.
+
+2026-11-13: a merge step no longer ends in a record-update lambda for
+a message of up to 64 fields: it writes the record out whole, every
+other field copied, which decodes five to seven times faster on a
+32- or 64-field message (Binary codecs, faster within elm/bytes).
 
 ### Editions and proto2 refused in 1.0
 
