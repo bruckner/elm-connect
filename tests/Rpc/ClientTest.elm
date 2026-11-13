@@ -10,6 +10,7 @@ import Expect
 import Json.Encode
 import Proto.Any
 import Proto.Error
+import Proto.Registry
 import Proto.WellKnown
 import Rpc
 import Rpc.Client
@@ -118,6 +119,19 @@ base =
     Rpc.client Rpc.Protocol.connect url
 
 
+topLevel : Proto.Registry.Registry
+topLevel =
+    Proto.Registry.empty |> Proto.Registry.register Proto.WellKnown.duration
+
+
+{-| A client whose registry is a union of top-level registries, built where
+the client is: each call builds its own union of the same entries.
+-}
+unionInline : () -> Rpc.Client Rpc.Json
+unionInline () =
+    base |> Rpc.Client.withRegistry (Proto.Registry.unionAll [ topLevel, Proto.WellKnown.registry ])
+
+
 {-| Clients differing from `base` in one modifier each.
 -}
 variants : List ( String, Rpc.Client Rpc.Json )
@@ -208,6 +222,20 @@ equality =
                 , equalTo (every Rpc.Protocol.grpcWeb) (otherwise Rpc.Protocol.grpcWeb)
                 ]
                     |> Expect.equal [ [], [ "withMaxGetUrl" ], [], [ "withMaxGetUrl" ] ]
+        , test "two clients given one top-level registry are ==" <|
+            \_ ->
+                (base |> Rpc.Client.withRegistry topLevel)
+                    == (base |> Rpc.Client.withRegistry topLevel)
+                    |> Expect.equal True
+        , test "two clients given a union of top-level registries built inline are ==" <|
+            \_ ->
+                unionInline () == unionInline () |> Expect.equal True
+
+        -- Not covered: two clients whose registries are built alike inline
+        -- with `Proto.Registry.register`. Each `register` builds its entry's
+        -- conversions as new closures, and `==` on two clients built alike
+        -- compares every field, the registry's entries included, so it
+        -- reaches those closures and throws.
         , test "two retry policies built alike are ==, two that differ are not" <|
             \_ ->
                 ( Rpc.Retry.on [ Rpc.Code.Unavailable ] == Rpc.Retry.on [ Rpc.Code.Unavailable ]
