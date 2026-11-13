@@ -3446,8 +3446,10 @@ type Code = Canceled | Unknown | … | Unauthenticated   -- gRPC's 1 to 16
 `fromInt` (gRPC's numbers), `toHttpStatus` and `fromHttpStatus`.
 Success has no code: the `Result` a call ends with says whether it
 succeeded, as in connect-go, connect-es and connect-kotlin, whose
-`Code` is the sixteen error codes alone. A failed answer whose body
-says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
+`Code` is the sixteen error codes alone. A failed answer whose
+`google.rpc.Status` body says `0` reads as `Unknown`; a Connect body
+saying `ok` takes the HTTP status's code, as an unknown name does
+(below). A trace's `code : Maybe Code` is
 `Nothing` on success (decisions.md: `Rpc.Code` without `Ok`).
 
 - `toHttpStatus` is the status a Connect server sends with a code, the
@@ -3472,14 +3474,23 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
   a server behind a transcoder can answer in either form.
 - A failed answer is read by one reader whatever the protocol, in
   order, and states a status when one of three readers finds one: a
-  Connect error body (`code` a string the protocol names, an unknown
-  name reading as `Unknown`; `message` `""` and `details` `[]` when
-  absent); a `google.rpc.Status` body as
+  Connect error body (`code` a string the protocol names; `message`
+  `""` and `details` `[]` when absent); a `google.rpc.Status` body as
   grpc-gateway and Envoy send it (`code` an integer; one outside 1 to
   16, `0` included, is `Unknown`, the number as sent left in the body);
   the `grpc-status` and `grpc-message` headers, when the browser
   exposes them (the message percent-decoded, the status text when
-  absent). The shape of `code` tells the two bodies apart.
+  absent). The shape of `code` tells the two bodies apart. A Connect
+  body without a code the protocol names still states the error: the
+  protocol tells a client to infer the code from the HTTP status when
+  the body has no explicit one, and connect-go, connect-es and the
+  conformance suite do, so a name the protocol does not define (`"ok"`
+  among them, a failure never being ok) and a missing or `null` code
+  take `fromHttpStatus`'s code, the body's `message` and `details`
+  kept. A missing or `null` code counts only beside a string `message`,
+  so `{}` and a REST server's own JSON state no status. A `source` of
+  `ConnectBody` therefore means the server answered in the protocol's
+  error shape, its code stated or inferred, not that it named a code.
   Such an error is `Rpc.Error.fromStatus status answer`, a `BadStatus`.
   An answer none of them reads is `Rpc.Error.fromResponse answer`:
   `code` infers its code from the HTTP status by the protocol's table,
@@ -4078,8 +4089,9 @@ any, in `expected/warnings.txt`, rendered as `diagnostics.txt` is.
   encoders that cannot refuse a value with no JSON form; millisecond
   timestamps, §3.5; unquoted 64-bit numbers past 2^53; unknown enum
   numbers read as the zero value and unknown names failing; a key
-  written twice read as its last value, §3.4) or a fix candidate (inputs
-  the JSON decoders accept and the specification refuses).
+  written twice read as its last value, §3.4); no fix candidate (an
+  input the JSON decoders accept and the specification refuses) has
+  remained since 2026-10-25.
   `just protobuf-conformance` is
   opt-in, outside `check` and `live`, and CI runs it only when
   dispatched.
@@ -4227,6 +4239,19 @@ suites (unexpected and empty answers, error end-streams) do not apply.
   send limit; the `writeMaxBytes` cases there show a refused
   call sends nothing, and a GET's limit counts the JSON before
   it is percent-encoded.
+- The proto codec has a run of its own (`conformance-proto.yaml`, `just
+  live-proto`): the same suite under `CODEC_PROTO`, through the halves
+  and with `sendTraced`, each envelope's `codec: "proto"` set from the
+  suite's request and the result read back from `okBinary` and
+  `detailsBinary` (§5.3, the proto codec). The suite runs its error-body
+  cases (unexpected and empty answers, error end-streams) only when the
+  proto codec is listed, so it selects 56 test cases to the JSON run's
+  40. 56 of 56 pass through the halves and 55 through `sendTraced`,
+  which fails `known-failing-send.txt`'s cancellation case;
+  `known-failing-proto.txt` lists none. Its three error-body cases
+  without an explicit code (`missing-code`, `null-code`,
+  `unrecognized-code`) pass since a Connect body without a code the
+  protocol names takes the HTTP status's code (§5.4).
 Transcoding live tests: the example server also serves the
 route fixtures' `routes.v1.Routes` under Vanguard, each method echoing
 the request Vanguard decoded, and `conformance/live/routes.mjs` sends
@@ -4252,7 +4277,8 @@ Vanguard's answer so that a change either way is noticed:
 - A `google.protobuf.StringValue` set to `""` is sent as `label=`, which
   Vanguard rejects (it quotes a wrapper's value for protojson only when
   non-empty). Vanguard's bug; it accepts `maybe_name=` for a plain
-  string.
+  string. The fix (connectrpc/vanguard-go#208) was merged upstream on
+  2026-10-16 and is in no release yet; v0.5.0 is pinned.
 - A path variable under an unset message is sent as the field's
   default (§5.3), and Vanguard accepts
   `/v1/typed/0/false/KIND_UNSPECIFIED/0/0`; it reads
@@ -4300,7 +4326,7 @@ Envoy's release, keyed on `conformance/live/envoy/envoy-version`, and
 runs `just live`, which builds the example.
 
 grpc-gateway: the example server mounts grpc-gateway
-v2.32.0 under `/gateway` beside Vanguard, in front of the same service,
+v2.33.0 under `/gateway` beside Vanguard, in front of the same service,
 and `just live` runs the transcode cases of `cases/notes.json` (`run.mjs
 --protocol transcode`; they make the notes they delete, so they run
 alone), `cases/transcode.json` and the route fixtures against it

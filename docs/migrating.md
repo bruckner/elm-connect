@@ -501,6 +501,12 @@ with each one ([install.md](install.md#versions)).
 
 ## Also
 
+- A Connect error body whose code is missing, `null` or a name the
+  protocol does not define takes the HTTP status's code, as connect-go
+  and connect-es read it: one with a string `message` and no code, which
+  0.1 read as an `HttpStatus` error, now states a status, `source`
+  `Just ConnectBody`, with the body's message, and an unknown name reads
+  as the status's code, not `Unknown`.
 - `Rpc.Call.withRetry` and `Rpc.Call.withoutRetry` set one call's retry
   policy, and `Rpc.Retry.withDeadline` and `Rpc.Retry.next` are new
   ([calling.md](calling.md#retries)). `next` is given the failed call's

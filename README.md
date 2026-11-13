@@ -59,12 +59,12 @@ runtime passes the unary JSON test cases of the official
 HTTP/1.1, the Connect protocol, the JSON codec, no compression, unary
 calls and Connect GET; with the proto codec
 ([`conformance-proto.yaml`](conformance/live/conformance-proto.yaml))
-it passes all but three error-body cases that do not depend on the
-codec; over gRPC-Web
+it passes all 56 cases (55 with `Rpc.sendTraced`, which cannot cancel a
+call); over gRPC-Web
 ([`conformance-grpcweb.yaml`](conformance/live/conformance-grpcweb.yaml))
 it passes 83 of 85 cases, the rest listed with their reasons. A live
-suite runs every method over Connect against connect-go v2.0.1, over
-transcoding against Vanguard v0.5.0 and grpc-gateway v2.32.0, with the
+suite runs every method over Connect against connect-go v2.0.2, over
+transcoding against Vanguard v0.5.0 and grpc-gateway v2.33.0, with the
 route fixtures under both transcoders, and over gRPC-Web against
 connect-go and Envoy's gRPC-Web filter.
 
