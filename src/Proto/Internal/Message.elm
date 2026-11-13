@@ -27,4 +27,8 @@ type alias Codecs a =
     , decodeJson : Registry -> Json.Decode.Decoder a
     , encodeBinary : a -> Bytes.Encode.Encoder
     , decodeBinary : Proto.Internal.Binary.Decoder a
+
+    -- False for a message built by `Proto.Message.init`, which holds no
+    -- `Any` and whose JSON encoder cannot fail.
+    , holdsAny : Bool
     }
