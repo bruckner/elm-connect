@@ -64,6 +64,7 @@ init name encodeJson decodeJson encodeBinary decodeBinary =
         , decodeJson = \_ -> decodeJson
         , encodeBinary = encodeBinary
         , decodeBinary = decodeBinary
+        , holdsAny = False
         }
 
 
@@ -85,6 +86,7 @@ initWith name encodeJson decodeJson encodeBinary decodeBinary =
         , decodeJson = decodeJson
         , encodeBinary = encodeBinary
         , decodeBinary = decodeBinary
+        , holdsAny = True
         }
 
 
