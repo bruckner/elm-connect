@@ -130,19 +130,25 @@ packWith prefix ((InternalMessage.Message _ codecs) as message) value =
             Internal.Binary (Proto.Bytes.toBase64 (Bytes.Encode.encode (codecs.encodeBinary value)))
     in
     Internal.Any (prefixed prefix message)
-        (case codecs.encodeJson (InternalRegistry.Registry InternalRegistry.Lossless Dict.empty) value of
-            Ok _ ->
-                binary ()
+        (if not codecs.holdsAny then
+            -- A message that holds no `Any` has no `Any` held as JSON alone
+            -- to lose, so its JSON is not written to look for one.
+            binary ()
 
-            Err _ ->
-                case codecs.encodeJson (InternalRegistry.Registry InternalRegistry.Strict Dict.empty) value of
-                    Ok json ->
-                        -- Only the refusal of an `Any` held as JSON alone
-                        -- failed: the binary would lose that `Any`.
-                        Internal.Json json
+         else
+            case codecs.encodeJson (InternalRegistry.Registry InternalRegistry.Lossless Dict.empty) value of
+                Ok _ ->
+                    binary ()
 
-                    Err _ ->
-                        binary ()
+                Err _ ->
+                    case codecs.encodeJson (InternalRegistry.Registry InternalRegistry.Strict Dict.empty) value of
+                        Ok json ->
+                            -- Only the refusal of an `Any` held as JSON alone
+                            -- failed: the binary would lose that `Any`.
+                            Internal.Json json
+
+                        Err _ ->
+                            binary ()
         )
 
 
