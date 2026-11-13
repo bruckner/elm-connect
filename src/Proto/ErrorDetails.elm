@@ -26,7 +26,7 @@ A Connect or gRPC-Web error carries its details as protobuf binary, which
 unpacks with these values and no registry. Over transcoding, a
 `google.rpc.Status` body carries them as proto3 JSON, which the client reads
 through its registry: give it [`registry`](#registry)
-([`Rpc.withRegistry`](Rpc#withRegistry)), or the details read as
+([`Rpc.Client.withRegistry`](Rpc-Client#withRegistry)), or the details read as
 [`UnregisteredType`](Proto-Error#Error).
 
 `google.rpc.Status` itself is not here: [`Rpc.Error`](Rpc-Error) reads it.
@@ -302,7 +302,7 @@ localizedMessage =
 
 
 {-| Every message here, to give a client whose calls read error details
-that arrive as proto3 JSON ([`Rpc.withRegistry`](Rpc#withRegistry)),
+that arrive as proto3 JSON ([`Rpc.Client.withRegistry`](Rpc-Client#withRegistry)),
 beside the registries its own `Any`s need.
 -}
 registry : Proto.Registry.Registry

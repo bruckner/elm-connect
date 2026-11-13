@@ -91,7 +91,7 @@ type alias Method codec req res =
 writes it: from the full name of its service (`notes.v1.NotesService`), its
 name as declared (`GetNote`), its request's JSON encoder and its response's
 JSON decoder, each taking the registry an [`Any`](Proto-Any#Any) they hold
-converts through: the client's ([`Rpc.withRegistry`](Rpc#withRegistry)). A
+converts through: the client's ([`Rpc.Client.withRegistry`](Rpc-Client#withRegistry)). A
 type that reaches no `Any` ignores it, as generated code writes. Its calls go
 over a protocol speaking JSON.
 
@@ -139,7 +139,7 @@ initProto serviceName methodName encode decoder =
 {-| A method with both codecs, as generated code under `wire=both`, the
 default, writes it: free in the codec, so its calls go over any protocol.
 Its JSON codecs take the registry an [`Any`](Proto-Any#Any) they hold
-converts through, the client's ([`Rpc.withRegistry`](Rpc#withRegistry)), as
+converts through, the client's ([`Rpc.Client.withRegistry`](Rpc-Client#withRegistry)), as
 for
 [`initJson`](#initJson):
 

@@ -8,6 +8,9 @@ alike are `==`, and two that differ compare unequal on their data before
 
 import Expect
 import Json.Encode
+import Proto.Any
+import Proto.Error
+import Proto.WellKnown
 import Rpc
 import Rpc.Client
 import Rpc.Code
@@ -244,6 +247,18 @@ readers =
                 , ( Rpc.Client.credentials client, Rpc.Client.retry client == Just policy )
                 )
                     |> Expect.equal ( ( True, url ), ( [ ( "Authorization", "Bearer t" ) ], Just 5000 ), ( True, True ) )
+        , test "a client converts an Any through no type until a registry is set, then through the one set" <|
+            \_ ->
+                let
+                    written client =
+                        Proto.Any.toJson (Rpc.Client.registry client) (Proto.Any.pack Proto.WellKnown.stringValue "kept")
+                            |> Result.map (Json.Encode.encode 0)
+                in
+                ( written base, written (base |> Rpc.Client.withRegistry Proto.WellKnown.registry) )
+                    |> Expect.equal
+                        ( Err (Proto.Error.UnregisteredType "type.googleapis.com/google.protobuf.StringValue")
+                        , Ok "\"kept\""
+                        )
         , test "headers added twice are kept in order" <|
             \_ ->
                 base

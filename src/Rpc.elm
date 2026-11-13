@@ -1,7 +1,7 @@
 module Rpc exposing
     ( Json, Proto
     , Call, call
-    , Client, client, withRegistry
+    , Client, client
     , task, send, cancel
     , taskTraced, sendTraced
     , Error, Response
@@ -61,10 +61,10 @@ instead.
 
 # Clients
 
-@docs Client, client, withRegistry
+@docs Client, client
 
-[`Rpc.Client`](Rpc-Client) sets a client's headers, timeout, credentials and
-retry policy, and [`Rpc.Protocol`](Rpc-Protocol) its protocol.
+[`Rpc.Client`](Rpc-Client) sets a client's headers, timeout, credentials,
+retry policy and registry, and [`Rpc.Protocol`](Rpc-Protocol) its protocol.
 
 
 # Sending
@@ -100,7 +100,6 @@ import Bytes exposing (Bytes)
 import Dict exposing (Dict)
 import Http
 import Proto.Method exposing (Method)
-import Proto.Registry exposing (Registry)
 import Rpc.Call
 import Rpc.Client
 import Rpc.Error
@@ -207,37 +206,6 @@ type alias Client codec =
 client : Protocol codec -> String -> Client codec
 client =
     Rpc.Client.client
-
-
-{-| The registry the client's calls convert a `google.protobuf.Any` through
-between proto3 JSON and protobuf binary: the one table a program has, the
-empty one until this sets it. A method holds none.
-
-    Rpc.client Rpc.Protocol.connect "https://api.example.com"
-        |> Rpc.withRegistry
-            (Proto.Registry.unionAll
-                [ Notes.V1.registry
-                , Proto.WellKnown.registry
-                , Proto.ErrorDetails.registry
-                ]
-            )
-
-A program whose calls speak JSON and whose messages hold an `Any` sets one,
-as protobuf's own JSON codecs require: over JSON, a call whose request holds
-an `Any` the registry cannot write is not sent (it fails with
-[`NoAnswer (BadAny error)`](Rpc-Error#Reason)), and a response
-holding one of a type it lacks fails to decode. Over protobuf binary an `Any`
-needs no registry. Whatever the protocol, a status's details that arrive as
-proto3 JSON (a `google.rpc.Status` body, over transcoding) are read through
-it; one of a type it lacks reads as
-[`UnregisteredType`](Proto-Error#Error), the error kept. A
-[lenient](Proto-Registry#lenient) registry reads such an `Any`, and such a
-detail, as its JSON alone instead, which unpacks with its typed value.
-
--}
-withRegistry : Registry -> Client codec -> Client codec
-withRegistry registry (Client.Client c) =
-    Client.Client { c | registry = registry }
 
 
 

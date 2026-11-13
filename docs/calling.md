@@ -736,7 +736,7 @@ client : Shared -> Rpc.Client Rpc.Json
 client shared =
     Rpc.client shared.protocol shared.apiUrl
         |> Rpc.Client.withHeaders [ ( "Authorization", "Bearer " ++ shared.token ) ]
-        |> Rpc.withRegistry registry
+        |> Rpc.Client.withRegistry registry
 ```
 
 Since a call is a value, a wrapper can send it again. Refreshing an

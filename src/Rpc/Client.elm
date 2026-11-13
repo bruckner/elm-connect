@@ -1,13 +1,13 @@
 module Rpc.Client exposing
     ( Client, client
-    , withHeaders, withTimeout, withCredentials, withRetry
-    , protocol, baseUrl, headers, timeout, credentials, retry
+    , withHeaders, withTimeout, withCredentials, withRetry, withRegistry
+    , protocol, baseUrl, headers, timeout, credentials, retry, registry
     , problems, toJson
     )
 
 {-| Where and how to send calls: a [protocol](Rpc-Protocol), the server's
-base URL, and the headers, timeout, credentials and retry policy every call
-takes.
+base URL, the headers, timeout, credentials and retry policy every call
+takes, and the registry its calls convert a `google.protobuf.Any` through.
 
     client : Rpc.Client Rpc.Json
     client =
@@ -24,18 +24,18 @@ a message. [`toJson`](#toJson) gives it as data, for logs and tests.
 
 # Options
 
-@docs withHeaders, withTimeout, withCredentials, withRetry
+@docs withHeaders, withTimeout, withCredentials, withRetry, withRegistry
 
 
 # Reading
 
-@docs protocol, baseUrl, headers, timeout, credentials, retry
+@docs protocol, baseUrl, headers, timeout, credentials, retry, registry
 @docs problems, toJson
 
 -}
 
 import Json.Encode exposing (Value)
-import Proto.Registry
+import Proto.Registry exposing (Registry)
 import Rpc.Internal.Client as Internal
 import Rpc.Internal.Http
 import Rpc.Internal.Protocol as Protocol
@@ -111,6 +111,37 @@ withRetry policy (Internal.Client c) =
     Internal.Client { c | retry = Just policy }
 
 
+{-| The registry the client's calls convert a `google.protobuf.Any` through
+between proto3 JSON and protobuf binary: the one table a program has, the
+empty one until this sets it. A method holds none.
+
+    Rpc.client Rpc.Protocol.connect "https://api.example.com"
+        |> Rpc.Client.withRegistry
+            (Proto.Registry.unionAll
+                [ Notes.V1.registry
+                , Proto.WellKnown.registry
+                , Proto.ErrorDetails.registry
+                ]
+            )
+
+A program whose calls speak JSON and whose messages hold an `Any` sets one,
+as protobuf's own JSON codecs require: over JSON, a call whose request holds
+an `Any` the registry cannot write is not sent (it fails with
+[`NoAnswer (BadAny error)`](Rpc-Error#Reason)), and a response
+holding one of a type it lacks fails to decode. Over protobuf binary an `Any`
+needs no registry. Whatever the protocol, a status's details that arrive as
+proto3 JSON (a `google.rpc.Status` body, over transcoding) are read through
+it; one of a type it lacks reads as
+[`UnregisteredType`](Proto-Error#Error), the error kept. A
+[lenient](Proto-Registry#lenient) registry reads such an `Any`, and such a
+detail, as its JSON alone instead, which unpacks with its typed value.
+
+-}
+withRegistry : Registry -> Client codec -> Client codec
+withRegistry table (Internal.Client c) =
+    Internal.Client { c | registry = table }
+
+
 {-| The client's protocol.
 -}
 protocol : Client codec -> Protocol codec
@@ -151,6 +182,14 @@ credentials (Internal.Client c) =
 retry : Client codec -> Maybe Retry
 retry (Internal.Client c) =
     c.retry
+
+
+{-| The registry the client's calls convert a `google.protobuf.Any` through,
+`Proto.Registry.empty` until [`withRegistry`](#withRegistry) sets one.
+-}
+registry : Client codec -> Registry
+registry (Internal.Client c) =
+    c.registry
 
 
 {-| What is wrong with a client, one sentence each, or `[]` when nothing is:

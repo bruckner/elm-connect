@@ -1457,6 +1457,12 @@ encodes the request once (`Rpc.Internal.Plan.toSend`) and checks that
 its `Any`s can be written whenever the JSON is what is sent. Where:
 design §4, §5.2.
 
+2026-11-12: the modifier is `Rpc.Client.withRegistry`, with a reader
+`Rpc.Client.registry`, no longer `Rpc.withRegistry` on the facade. It
+was the one client modifier outside `Rpc.Client` and the one client
+field without a reader, placed by prominence rather than meaning; it is
+new in 0.2, so no alias stays on `Rpc` (operator).
+
 ### Error details as results
 
 *2026-11-07.*

@@ -285,7 +285,7 @@ config t =
                                 identity
                            )
                         |> maybeApply Rpc.Client.withRetry retry
-                        |> Rpc.withRegistry registry
+                        |> Rpc.Client.withRegistry registry
             in
             case ( t, codec ) of
                 ( Connect, "proto" ) ->

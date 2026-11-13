@@ -103,7 +103,7 @@ type Error
     [`google.protobuf.Any`](Proto-Any) the client's registry cannot write
     as JSON, for the [`Proto.Error`](Proto-Error#Error) given:
     `UnregisteredType`, which the client's registry fixes
-    ([`Rpc.withRegistry`](Rpc#withRegistry)), or the `BadBinary` of an
+    ([`Rpc.Client.withRegistry`](Rpc-Client#withRegistry)), or the `BadBinary` of an
     `Any` whose binary is not its type's message. Nothing was sent.
 
 These are every way a request can fail before an answer is read, and the type
@@ -132,7 +132,7 @@ message and source:
 
   - `UnregisteredType`: it arrived as proto3 JSON (a `google.rpc.Status`
     body) whose type, its URL here, the client's registry has no entry for.
-    Register the type ([`Rpc.withRegistry`](Rpc#withRegistry)); for
+    Register the type ([`Rpc.Client.withRegistry`](Rpc-Client#withRegistry)); for
     `google.rpc` details such as `ErrorInfo` or `BadRequest`, that is
     [`Proto.ErrorDetails.registry`](Proto-ErrorDetails#registry). A
     [lenient](Proto-Registry#lenient) registry reads it instead, as its
@@ -155,7 +155,7 @@ the server's. Unpack one with
 A Connect error body and gRPC-Web carry a detail's protobuf binary, which
 needs no registry. A `google.rpc.Status` body (transcoding) carries proto3
 JSON, which is read through the client's registry
-([`Rpc.withRegistry`](Rpc#withRegistry)). Details a proxy stripped are
+([`Rpc.Client.withRegistry`](Rpc-Client#withRegistry)). Details a proxy stripped are
 simply absent, `[]`.
 
 -}

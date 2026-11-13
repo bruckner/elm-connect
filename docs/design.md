@@ -2507,7 +2507,8 @@ withHeaders : List ( String, String ) -> Client codec -> Client codec
 withTimeout : Float -> Client codec -> Client codec     -- ms, > 0; Connect sends Connect-Timeout-Ms, gRPC-Web grpc-timeout
 withCredentials : Client codec -> Client codec          -- Http.riskyRequest
 withRetry : Rpc.Retry.Retry -> Client codec -> Client codec
-protocol, baseUrl, headers, timeout, credentials, retry -- readers
+withRegistry : Proto.Registry.Registry -> Client codec -> Client codec   -- Proto.Registry.empty until set
+protocol, baseUrl, headers, timeout, credentials, retry, registry -- readers
 problems : Client codec -> List String    -- the client's problems, [] when none
 toJson : Client codec -> Json.Encode.Value
 
@@ -2521,8 +2522,8 @@ next : Retry -> { tried : Int, error : Rpc.Error.Error, idempotency : Proto.Meth
 ```
 
 A client says where and how a call is sent: a protocol, the server's
-base URL, and the headers, timeout, credentials and retry policy every
-call takes. A protocol says how: Connect over proto3 JSON or protobuf
+base URL, the headers, timeout, credentials and retry policy every
+call takes, and the registry its calls convert an `Any` through. A protocol says how: Connect over proto3 JSON or protobuf
 binary, HTTP transcoding, or gRPC-Web over protobuf binary, with its
 options. Both carry a codec in
 their type, `Rpc.Json` or `Rpc.Proto` (`Rpc` re-exports the tags, so
@@ -2887,7 +2888,7 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
   it cannot write), and take a `Method Json`: which halves are real is
   the codec, so no reader meets a filler; the typed values serve `Any`,
   the registry and error details.
-- **One table: the client's.** `Rpc.withRegistry` sets the registry a
+- **One table: the client's.** `Rpc.Client.withRegistry` sets the registry a
   client's calls convert an `Any` through between proto3 JSON and
   binary; a client starts with `Proto.Registry.empty`, and a method holds
   none. A method's JSON codecs take the registry at use time (a type

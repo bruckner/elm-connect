@@ -231,7 +231,7 @@ registry =
 
 No imported package's messages, no well-known type, no error detail: an
 application gives its client the union of the registries its `Any`s
-need (`Proto.Registry.unionAll`, `Rpc.withRegistry`,
+need (`Proto.Registry.unionAll`, `Rpc.Client.withRegistry`,
 [descriptors.md](descriptors.md#registries)). `descriptors`, a
 `Proto.Descriptors.Descriptors`, holds no codecs and `registry` no
 descriptors, so a program using one keeps nothing of the other.

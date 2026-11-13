@@ -440,7 +440,7 @@ default, `send`, `task`, `halves` or `taskFromRequest`), `rewrite`, `tracker` (`
 `maxGetUrl` apply `Rpc.Protocol.withConnectGet` and `withMaxGetUrl` over
 Connect; `readMaxBytes` and `writeMaxBytes` apply
 `Rpc.Protocol.withReadMaxBytes` and `withWriteMaxBytes` to any
-protocol; `registry` sets the client's registry (`Rpc.withRegistry`):
+protocol; `registry` sets the client's registry (`Rpc.Client.withRegistry`):
 `empty` (the default, as a client starts), `errorDetails`
 (`Proto.ErrorDetails.registry` alone), `build` (every package of the
 build and the well-known types, `Live.Codec.registry`, which a call over

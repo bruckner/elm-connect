@@ -359,7 +359,7 @@ JSON.
   holds its own messages, `Proto.WellKnown.registry` the well-known
   types and `Proto.ErrorDetails.registry` `google.rpc`'s error details;
   `register`, `union` and `unionAll` compose them. Give the client the
-  one its `Any`s need with `Rpc.withRegistry`; a JSON client whose
+  one its `Any`s need with `Rpc.Client.withRegistry`; a JSON client whose
   messages hold an `Any` needs one, and a request whose `Any` it cannot
   write fails with `NoAnswer (BadAny error)`, the
   `Proto.Error.Error` the write gave.

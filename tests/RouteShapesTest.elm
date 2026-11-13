@@ -18,6 +18,7 @@ import Proto.Method
 import Rpc
 import Rpc.Body
 import Rpc.Call
+import Rpc.Client
 import Rpc.Protocol
 import Shapes.Blobs.V1 as B
 import Shapes.Blobs.V1.BlobService as Service
@@ -31,7 +32,7 @@ base =
 
 withTypes : Rpc.Client Rpc.Json
 withTypes =
-    Rpc.withRegistry B.registry base
+    Rpc.Client.withRegistry B.registry base
 
 
 show : Rpc.Client Rpc.Json -> Rpc.Call Rpc.Json req res -> String

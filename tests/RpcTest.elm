@@ -727,9 +727,9 @@ responses =
                     noType =
                         "json : Expecting an OBJECT with a field named `@type`"
                 in
-                ( read (Rpc.withRegistry (Proto.Registry.union noteRegistry Proto.WellKnown.registry) base)
+                ( read (Rpc.Client.withRegistry (Proto.Registry.union noteRegistry Proto.WellKnown.registry) base)
                 , read base
-                , read (Rpc.withRegistry noteRegistry base)
+                , read (Rpc.Client.withRegistry noteRegistry base)
                     |> Result.mapError (\( _, _, found ) -> found)
                 )
                     |> Expect.equal
@@ -751,7 +751,7 @@ responses =
                         """{"code":5,"message":"no note","details":[{"@type":"type.googleapis.com/notes.v1.Note","title":"hi"},{"@type":"type.googleapis.com/google.protobuf.Duration","value":"2s"},{"no":"type"},{"@type":"type.googleapis.com/notes.v1.Note","title":7}]}"""
 
                     read registry =
-                        Rpc.response (Rpc.withRegistry registry base) (getNote { name = "x" }) (Http.BadStatus_ (metadata 404 "Not Found") body)
+                        Rpc.response (Rpc.Client.withRegistry registry base) (getNote { name = "x" }) (Http.BadStatus_ (metadata 404 "Not Found") body)
                             |> Result.mapError
                                 (\error ->
                                     ( ( detailsOf title error
@@ -776,7 +776,7 @@ responses =
                         )
         , test "a Status body's detail of a registered type that is not its message is its BadJson, the Any's object its value" <|
             \_ ->
-                Rpc.response (Rpc.withRegistry noteRegistry base)
+                Rpc.response (Rpc.Client.withRegistry noteRegistry base)
                     (getNote { name = "x" })
                     (Http.BadStatus_ (metadata 404 "Not Found") """{"code":5,"details":[{"@type":"type.googleapis.com/notes.v1.Note","title":7}]}""")
                     |> Result.mapError
@@ -1701,7 +1701,7 @@ encodings =
         , test "an interpreted route binds its path and its body from one encoding, the client's registry's" <|
             \_ ->
                 ( built (over Rpc.Protocol.transcode)
-                , built (Rpc.withRegistry noteRegistry (over Rpc.Protocol.transcode))
+                , built (Rpc.Client.withRegistry noteRegistry (over Rpc.Protocol.transcode))
                 )
                     |> Expect.equal
                         ( ( ( "PATCH", "https://api.example.com/v1/notes/42-plain", Just "{\"text\":\"plain\"}" ), True )
