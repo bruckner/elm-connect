@@ -1234,13 +1234,41 @@ mergeErrorInfoBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | reason = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { reason = v
+                            , domain = value.domain
+                            , metadata = value.metadata
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | domain = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { reason = value.reason
+                            , domain = v
+                            , metadata = value.metadata
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.mapEntry Proto.Binary.string Proto.Binary.string (\k v -> { value | metadata = Dict.insert k v value.metadata }) wire value
+                    Proto.Binary.mapEntry
+                        Proto.Binary.string
+                        Proto.Binary.string
+                        (\k v ->
+                            { reason = value.reason
+                            , domain = value.domain
+                            , metadata = Dict.insert k v value.metadata
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -1264,7 +1292,14 @@ mergeRetryInfoBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.duration (\v -> { value | retryDelay = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.duration
+                        (\v ->
+                            { retryDelay = Just v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -1288,15 +1323,36 @@ mergeDebugInfoBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.repeated Proto.Binary.string (\v -> { value | stackEntries = v }) value.stackEntries wire value
+                    Proto.Binary.repeated
+                        Proto.Binary.string
+                        (\v ->
+                            { stackEntries = v
+                            , detail = value.detail
+                            }
+                        )
+                        value.stackEntries
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | detail = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { stackEntries = value.stackEntries
+                            , detail = v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value -> { value | stackEntries = List.reverse value.stackEntries })
+        (\value ->
+            { stackEntries = List.reverse value.stackEntries
+            , detail = value.detail
+            }
+        )
 
 
 {-| Decodes a [`DebugInfo`](#DebugInfo) from protobuf binary.
@@ -1315,12 +1371,23 @@ mergeQuotaFailureBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded encodeQuotaFailureViolationBytes mergeQuotaFailureViolationBytes defaultQuotaFailureViolation) (\v -> { value | violations = v }) value.violations wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeQuotaFailureViolationBytes mergeQuotaFailureViolationBytes defaultQuotaFailureViolation)
+                        (\v ->
+                            { violations = v
+                            }
+                        )
+                        value.violations
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value -> { value | violations = List.reverse value.violations })
+        (\value ->
+            { violations = List.reverse value.violations
+            }
+        )
 
 
 {-| Decodes a [`QuotaFailure`](#QuotaFailure) from protobuf binary.
@@ -1339,28 +1406,141 @@ mergeQuotaFailureViolationBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | subject = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { subject = v
+                            , description = value.description
+                            , apiService = value.apiService
+                            , quotaMetric = value.quotaMetric
+                            , quotaId = value.quotaId
+                            , quotaDimensions = value.quotaDimensions
+                            , quotaValue = value.quotaValue
+                            , futureQuotaValue = value.futureQuotaValue
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | description = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { subject = value.subject
+                            , description = v
+                            , apiService = value.apiService
+                            , quotaMetric = value.quotaMetric
+                            , quotaId = value.quotaId
+                            , quotaDimensions = value.quotaDimensions
+                            , quotaValue = value.quotaValue
+                            , futureQuotaValue = value.futureQuotaValue
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | apiService = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { subject = value.subject
+                            , description = value.description
+                            , apiService = v
+                            , quotaMetric = value.quotaMetric
+                            , quotaId = value.quotaId
+                            , quotaDimensions = value.quotaDimensions
+                            , quotaValue = value.quotaValue
+                            , futureQuotaValue = value.futureQuotaValue
+                            }
+                        )
+                        wire
+                        value
 
                 4 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | quotaMetric = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { subject = value.subject
+                            , description = value.description
+                            , apiService = value.apiService
+                            , quotaMetric = v
+                            , quotaId = value.quotaId
+                            , quotaDimensions = value.quotaDimensions
+                            , quotaValue = value.quotaValue
+                            , futureQuotaValue = value.futureQuotaValue
+                            }
+                        )
+                        wire
+                        value
 
                 5 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | quotaId = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { subject = value.subject
+                            , description = value.description
+                            , apiService = value.apiService
+                            , quotaMetric = value.quotaMetric
+                            , quotaId = v
+                            , quotaDimensions = value.quotaDimensions
+                            , quotaValue = value.quotaValue
+                            , futureQuotaValue = value.futureQuotaValue
+                            }
+                        )
+                        wire
+                        value
 
                 6 ->
-                    Proto.Binary.mapEntry Proto.Binary.string Proto.Binary.string (\k v -> { value | quotaDimensions = Dict.insert k v value.quotaDimensions }) wire value
+                    Proto.Binary.mapEntry
+                        Proto.Binary.string
+                        Proto.Binary.string
+                        (\k v ->
+                            { subject = value.subject
+                            , description = value.description
+                            , apiService = value.apiService
+                            , quotaMetric = value.quotaMetric
+                            , quotaId = value.quotaId
+                            , quotaDimensions = Dict.insert k v value.quotaDimensions
+                            , quotaValue = value.quotaValue
+                            , futureQuotaValue = value.futureQuotaValue
+                            }
+                        )
+                        wire
+                        value
 
                 7 ->
-                    Proto.Binary.field Proto.Binary.int64 (\v -> { value | quotaValue = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int64
+                        (\v ->
+                            { subject = value.subject
+                            , description = value.description
+                            , apiService = value.apiService
+                            , quotaMetric = value.quotaMetric
+                            , quotaId = value.quotaId
+                            , quotaDimensions = value.quotaDimensions
+                            , quotaValue = v
+                            , futureQuotaValue = value.futureQuotaValue
+                            }
+                        )
+                        wire
+                        value
 
                 8 ->
-                    Proto.Binary.field Proto.Binary.int64 (\v -> { value | futureQuotaValue = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int64
+                        (\v ->
+                            { subject = value.subject
+                            , description = value.description
+                            , apiService = value.apiService
+                            , quotaMetric = value.quotaMetric
+                            , quotaId = value.quotaId
+                            , quotaDimensions = value.quotaDimensions
+                            , quotaValue = value.quotaValue
+                            , futureQuotaValue = Just v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -1384,12 +1564,23 @@ mergePreconditionFailureBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded encodePreconditionFailureViolationBytes mergePreconditionFailureViolationBytes defaultPreconditionFailureViolation) (\v -> { value | violations = v }) value.violations wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodePreconditionFailureViolationBytes mergePreconditionFailureViolationBytes defaultPreconditionFailureViolation)
+                        (\v ->
+                            { violations = v
+                            }
+                        )
+                        value.violations
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value -> { value | violations = List.reverse value.violations })
+        (\value ->
+            { violations = List.reverse value.violations
+            }
+        )
 
 
 {-| Decodes a [`PreconditionFailure`](#PreconditionFailure) from protobuf binary.
@@ -1408,13 +1599,40 @@ mergePreconditionFailureViolationBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | type_ = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { type_ = v
+                            , subject = value.subject
+                            , description = value.description
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | subject = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { type_ = value.type_
+                            , subject = v
+                            , description = value.description
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | description = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { type_ = value.type_
+                            , subject = value.subject
+                            , description = v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -1438,12 +1656,23 @@ mergeBadRequestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded encodeBadRequestFieldViolationBytes mergeBadRequestFieldViolationBytes defaultBadRequestFieldViolation) (\v -> { value | fieldViolations = v }) value.fieldViolations wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeBadRequestFieldViolationBytes mergeBadRequestFieldViolationBytes defaultBadRequestFieldViolation)
+                        (\v ->
+                            { fieldViolations = v
+                            }
+                        )
+                        value.fieldViolations
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value -> { value | fieldViolations = List.reverse value.fieldViolations })
+        (\value ->
+            { fieldViolations = List.reverse value.fieldViolations
+            }
+        )
 
 
 {-| Decodes a [`BadRequest`](#BadRequest) from protobuf binary.
@@ -1462,16 +1691,57 @@ mergeBadRequestFieldViolationBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | field = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { field = v
+                            , description = value.description
+                            , reason = value.reason
+                            , localizedMessage = value.localizedMessage
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | description = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { field = value.field
+                            , description = v
+                            , reason = value.reason
+                            , localizedMessage = value.localizedMessage
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | reason = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { field = value.field
+                            , description = value.description
+                            , reason = v
+                            , localizedMessage = value.localizedMessage
+                            }
+                        )
+                        wire
+                        value
 
                 4 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeLocalizedMessageBytes mergeLocalizedMessageBytes defaultLocalizedMessage) value.localizedMessage (\v -> { value | localizedMessage = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeLocalizedMessageBytes mergeLocalizedMessageBytes defaultLocalizedMessage)
+                        value.localizedMessage
+                        (\v ->
+                            { field = value.field
+                            , description = value.description
+                            , reason = value.reason
+                            , localizedMessage = Just v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -1495,10 +1765,26 @@ mergeRequestInfoBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | requestId = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { requestId = v
+                            , servingData = value.servingData
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | servingData = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { requestId = value.requestId
+                            , servingData = v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -1522,16 +1808,56 @@ mergeResourceInfoBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | resourceType = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { resourceType = v
+                            , resourceName = value.resourceName
+                            , owner = value.owner
+                            , description = value.description
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | resourceName = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { resourceType = value.resourceType
+                            , resourceName = v
+                            , owner = value.owner
+                            , description = value.description
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | owner = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { resourceType = value.resourceType
+                            , resourceName = value.resourceName
+                            , owner = v
+                            , description = value.description
+                            }
+                        )
+                        wire
+                        value
 
                 4 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | description = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { resourceType = value.resourceType
+                            , resourceName = value.resourceName
+                            , owner = value.owner
+                            , description = v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -1555,12 +1881,23 @@ mergeHelpBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded encodeHelpLinkBytes mergeHelpLinkBytes defaultHelpLink) (\v -> { value | links = v }) value.links wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeHelpLinkBytes mergeHelpLinkBytes defaultHelpLink)
+                        (\v ->
+                            { links = v
+                            }
+                        )
+                        value.links
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value -> { value | links = List.reverse value.links })
+        (\value ->
+            { links = List.reverse value.links
+            }
+        )
 
 
 {-| Decodes a [`Help`](#Help) from protobuf binary.
@@ -1579,10 +1916,26 @@ mergeHelpLinkBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | description = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { description = v
+                            , url = value.url
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | url = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { description = value.description
+                            , url = v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -1606,10 +1959,26 @@ mergeLocalizedMessageBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | locale = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { locale = v
+                            , message = value.message
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | message = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { locale = value.locale
+                            , message = v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value

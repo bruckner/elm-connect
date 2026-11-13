@@ -343,21 +343,68 @@ mergeTaskBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field (Proto.Binary.enum encodeStatusBytes decodeStatusBytes) (\v -> { value | status = v }) wire value
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeStatusBytes decodeStatusBytes)
+                        (\v ->
+                            { status = v
+                            , priority = value.priority
+                            , history = value.history
+                            , previousStatus = value.previousStatus
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field (Proto.Binary.enum encodePriorityBytes decodePriorityBytes) (\v -> { value | priority = Just v }) wire value
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodePriorityBytes decodePriorityBytes)
+                        (\v ->
+                            { status = value.status
+                            , priority = Just v
+                            , history = value.history
+                            , previousStatus = value.previousStatus
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.repeated (Proto.Binary.enum encodeStatusBytes decodeStatusBytes) (\v -> { value | history = v }) value.history wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.enum encodeStatusBytes decodeStatusBytes)
+                        (\v ->
+                            { status = value.status
+                            , priority = value.priority
+                            , history = v
+                            , previousStatus = value.previousStatus
+                            }
+                        )
+                        value.history
+                        wire
+                        value
 
                 4 ->
-                    Proto.Binary.field (Proto.Binary.enum encodeStatusBytes decodeStatusBytes) (\v -> { value | previousStatus = v }) wire value
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeStatusBytes decodeStatusBytes)
+                        (\v ->
+                            { status = value.status
+                            , priority = value.priority
+                            , history = value.history
+                            , previousStatus = v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value -> { value | history = List.reverse value.history })
+        (\value ->
+            { status = value.status
+            , priority = value.priority
+            , history = List.reverse value.history
+            , previousStatus = value.previousStatus
+            }
+        )
 
 
 {-| Decodes a [`Task`](#Task) from protobuf binary.

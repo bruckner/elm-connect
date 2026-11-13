@@ -235,13 +235,40 @@ mergeRemoteBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | id = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { id = v
+                            , shade = value.shade
+                            , version = value.version
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field (Proto.Binary.enum encodeShadeBytes decodeShadeBytes) (\v -> { value | shade = v }) wire value
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeShadeBytes decodeShadeBytes)
+                        (\v ->
+                            { id = value.id
+                            , shade = v
+                            , version = value.version
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.field Proto.Binary.int64 (\v -> { value | version = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int64
+                        (\v ->
+                            { id = value.id
+                            , shade = value.shade
+                            , version = v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value

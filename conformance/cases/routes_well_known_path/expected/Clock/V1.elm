@@ -179,22 +179,94 @@ mergeMomentBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.timestamp (\v -> { value | at = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.timestamp
+                        (\v ->
+                            { at = Just v
+                            , mask = value.mask
+                            , count = value.count
+                            , seen = value.seen
+                            , wait = value.wait
+                            , note = value.note
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.fieldMask (\v -> { value | mask = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.fieldMask
+                        (\v ->
+                            { at = value.at
+                            , mask = Just v
+                            , count = value.count
+                            , seen = value.seen
+                            , wait = value.wait
+                            , note = value.note
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.field Proto.Binary.int32Value (\v -> { value | count = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int32Value
+                        (\v ->
+                            { at = value.at
+                            , mask = value.mask
+                            , count = Just v
+                            , seen = value.seen
+                            , wait = value.wait
+                            , note = value.note
+                            }
+                        )
+                        wire
+                        value
 
                 4 ->
-                    Proto.Binary.field Proto.Binary.boolValue (\v -> { value | seen = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.boolValue
+                        (\v ->
+                            { at = value.at
+                            , mask = value.mask
+                            , count = value.count
+                            , seen = Just v
+                            , wait = value.wait
+                            , note = value.note
+                            }
+                        )
+                        wire
+                        value
 
                 5 ->
-                    Proto.Binary.field Proto.Binary.duration (\v -> { value | wait = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.duration
+                        (\v ->
+                            { at = value.at
+                            , mask = value.mask
+                            , count = value.count
+                            , seen = value.seen
+                            , wait = Just v
+                            , note = value.note
+                            }
+                        )
+                        wire
+                        value
 
                 6 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | note = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { at = value.at
+                            , mask = value.mask
+                            , count = value.count
+                            , seen = value.seen
+                            , wait = value.wait
+                            , note = v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
