@@ -245,9 +245,9 @@ getNoteBinding =
         }
 ```
 
-- `Proto.Method.json` builds a method with JSON codecs,
-  `Proto.Method.proto` one with binary codecs, and
-  `Proto.Method.both` one with both. A method's type gains its codec,
+- `Proto.Method.initJson` builds a method with JSON codecs,
+  `Proto.Method.initProto` one with binary codecs, and
+  `Proto.Method.init` one with both. A method's type gains its codec,
   `Proto.Method.Method codec req res`.
 - A method's idempotency is `IdempotencyUnknown` unless
   `Proto.Method.withIdempotency` sets it.
@@ -330,8 +330,8 @@ JSON.
   `tryUnpack` gives `Result Proto.Error.Error a` with why. 0.1's
   `unpack` gave `Maybe (Result Problem a)`, and its `Problem` was `Json`
   or `BinaryOnly`; `Proto.Any.Problem` is gone, and the proto layer has
-  one error type, `Proto.Error.Error`: `TypeMismatch { typeName,
-  typeUrl }` for another type, `BadBinary` for binary that is not the
+  one error type, `Proto.Error.Error`: `TypeMismatch { expected,
+  actual }` for another type, `BadBinary` for binary that is not the
   message (where, and why), `UnregisteredType url` for a type a registry
   lacks, `BadJson` for JSON that is not the message.
   `Proto.Error.toString` describes one for a log. `bytes` reads the
@@ -432,10 +432,9 @@ with each one ([install.md](install.md#versions)).
 - `Rpc.Error.InvalidHeader` is renamed `BadHeader`, in the `Bad*` form
   of `BadUrl` and `BadResponse`: a pattern `NoAnswer (InvalidHeader
   name)` becomes `NoAnswer (BadHeader name)`.
-- `Rpc.Error.UnwritableRequest` is renamed `BadAny`, in the same form,
-  naming the part of the request the runtime could not use: a pattern
-  `NoAnswer (UnwritableRequest problem)` becomes `NoAnswer (BadAny
-  problem)`, and the problem is a `Proto.Error.Error`.
+- `Rpc.Error.Reason` has a new constructor, `BadAny Proto.Error.Error`:
+  over JSON, a request holding an `Any` the client's registry cannot
+  write is not sent. A `case` on `Reason` needs the branch.
 - `Rpc.Error.BadResponse` carries the code `Rpc.Error.code` gives it
   first: a pattern `BadResponse problem answer` becomes
   `BadResponse _ problem answer`.

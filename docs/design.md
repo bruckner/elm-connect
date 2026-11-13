@@ -4537,8 +4537,7 @@ Within a major version:
   that naming it later is a minor), `Proto.Method.Idempotency`,
   `Rpc.Code`, and `Rpc.Error`'s `Error`, `Reason` (`Timeout`,
   `NetworkError`, `BadUrl`, `BadHeader`, `BadPathValue`,
-  `RequestTooLarge`,
-  `ResponseTooLarge`) and `Source` (with `ConnectEndStream` reserved
+  `RequestTooLarge`, `ResponseTooLarge`, `BadAny`) and `Source` (with `ConnectEndStream` reserved
   for server streaming, which reads a status from there, so that it can
   ship as a minor; `GrpcTrailers`, reserved as well until gRPC-Web read
   a unary answer's trailers frame, is given now; a

@@ -1595,7 +1595,7 @@ a generation unchecked is deferred until someone asks (operator,
 *2026-11-10.*
 
 `Proto.Error.Error = BadBinary Binary | BadJson Json.Decode.Error |
-TypeMismatch { typeName, typeUrl } | UnregisteredType String`, in a
+TypeMismatch { expected, actual } | UnregisteredType String`, in a
 leaf module that imports only elm/json. The proto layer had grown four
 shapes one at a time: `Proto.Any.Problem` (four constructors serving
 three operations, each with a branch it could not reach),
@@ -1622,8 +1622,9 @@ wants one `toString`); one union for everything, `Binary` folded in
 Java's single exception class (no structure to match on). The names
 follow elm/http and `Rpc.Error`: `Bad*` for what came in wrong,
 `UnregisteredType` rather than protobuf's "unknown", which means fields
-a reader does not model. `typeName` is always the type the program
-asked for and `typeUrl` what came off the wire. `BadJson` carries
+a reader does not model. In `TypeMismatch`, `expected` is the type the
+program asked for and `actual` the one the `Any` holds, both full names
+(design §5.4). `BadJson` carries
 elm/json's error alone, whose path locates a failure; a type name would
 have to be plumbed from every caller, and a method holding its message
 types would keep a JSON program's binary codecs alive.
@@ -1643,7 +1644,7 @@ could not use, and the `Proto.Error` inside says what was wrong with
 it, so "unwritable" said less in more letters. Where: design §5.4.
 
 Two readers stayed off the public surface when the type landed.
-`Proto.Registry.unregistered`, which reads a registry miss out of a
+`Proto.Internal.Registry.unregistered`, which reads a registry miss out of a
 `Json.Decode.Error` by the leaf failure's `"@type"`, is internal: its
 one consumer is the status-detail reader, an application reading proto3
 JSON itself has the miss named in the error's message, and a JSON read
