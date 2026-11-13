@@ -175,6 +175,11 @@ type Codec a
         , isDefault : a -> Bool
         , zero : a
         , packable : Bool
+
+        -- The fast reader of a whole packed run of these values given its
+        -- length, onto the values read before, when the codec has one
+        -- quicker than a read per value.
+        , run : Maybe (Int -> List a -> D.Decoder (List a))
         , writeBody : a -> Encoder
         , readBody : Int -> D.Decoder (Result Failure a)
         , readInto : a -> Int -> Read a
@@ -198,12 +203,21 @@ bytes left, which gives a negative width for a failure (see
 it reads from one decoder built once.
 -}
 scalar : Int -> Int -> D.Decoder ( Int, a ) -> (Int -> D.Decoder ( Int, a )) -> (a -> Encoder) -> (a -> Bool) -> a -> Codec a
-scalar wire widest fast raw write isDefault zero =
+scalar =
+    scalarRun Nothing
+
+
+{-| [`scalar`](#scalar) with a fast reader of a whole packed run (see
+[`fixedRun`](#fixedRun), [`varintRun`](#varintRun)).
+-}
+scalarRun : Maybe (Int -> List a -> D.Decoder (List a)) -> Int -> Int -> D.Decoder ( Int, a ) -> (Int -> D.Decoder ( Int, a )) -> (a -> Encoder) -> (a -> Bool) -> a -> Codec a
+scalarRun run_ wire widest fast raw write isDefault zero =
     let
         free =
             D.map checked (raw widest)
     in
-    rawCodec wire
+    rawCodec run_
+        wire
         fast
         (\bound ->
             if bound >= widest then
@@ -222,11 +236,11 @@ against the bytes left.
 -}
 delimitedScalar : D.Decoder ( Int, a ) -> (Int -> D.Decoder ( Int, a )) -> (a -> Encoder) -> (a -> Bool) -> a -> Codec a
 delimitedScalar fast raw write isDefault zero =
-    rawCodec 2 fast (\bound -> D.map checked (raw bound)) write isDefault zero
+    rawCodec Nothing 2 fast (\bound -> D.map checked (raw bound)) write isDefault zero
 
 
-rawCodec : Int -> D.Decoder ( Int, a ) -> (Int -> Read a) -> (a -> Encoder) -> (a -> Bool) -> a -> Codec a
-rawCodec wire fast read write isDefault zero =
+rawCodec : Maybe (Int -> List a -> D.Decoder (List a)) -> Int -> D.Decoder ( Int, a ) -> (Int -> Read a) -> (a -> Encoder) -> (a -> Bool) -> a -> Codec a
+rawCodec run_ wire fast read write isDefault zero =
     Codec
         { wire = wire
         , fast = fast
@@ -237,6 +251,7 @@ rawCodec wire fast read write isDefault zero =
         , isDefault = isDefault
         , zero = zero
         , packable = wire /= 2
+        , run = run_
         , writeBody = write
         , readBody = \width -> D.map (Result.map Tuple.second) (read width)
         , readInto = \_ -> read
@@ -505,7 +520,13 @@ repeated (Codec c) set existing wire current =
                 fastVarint32
                     |> D.andThen
                         (\( lengthWidth, length ) ->
-                            D.loop ( length, existing ) (fastPackedStep c.fast)
+                            (case c.run of
+                                Just readRun ->
+                                    readRun length existing
+
+                                Nothing ->
+                                    D.loop ( length, existing ) (fastPackedStep c.fast)
+                            )
                                 |> D.map (\vs -> ( lengthWidth + length, set vs ))
                         )
             , located = \bound -> packed c.read set existing bound
@@ -550,6 +571,133 @@ fastPackedStep read ( remaining, acc ) =
 
     else
         D.map (\( width, v ) -> Loop ( remaining - width, v :: acc )) read
+
+
+{-| A codec whose packed runs are read `width` bytes a value by `plain`, four
+values a step: a run whose length is not a multiple of `width` fails, as
+reading it value by value would past its end.
+-}
+fixedRun : Int -> D.Decoder a -> Maybe (Int -> List a -> D.Decoder (List a))
+fixedRun width plain =
+    Just
+        (\length existing ->
+            if modBy width length /= 0 then
+                D.fail
+
+            else
+                D.loop ( length // width, existing ) (fixedRunStep plain)
+        )
+
+
+fixedRunStep : D.Decoder a -> ( Int, List a ) -> D.Decoder (Step ( Int, List a ) (List a))
+fixedRunStep plain ( count, acc ) =
+    if count >= 4 then
+        D.map4 (\a b c d -> Loop ( count - 4, d :: c :: b :: a :: acc )) plain plain plain plain
+
+    else if count > 0 then
+        D.map (\a -> Loop ( count - 1, a :: acc )) plain
+
+    else
+        D.succeed (Done acc)
+
+
+{-| A codec of a 32-bit varint kind whose packed runs are read as words and
+parsed by a plain function, each varint's low 32 bits given to `f`: up to
+ten bytes a varint, and a run that ends inside one fails, as reading it
+value by value would.
+-}
+varintRun : (Int -> a) -> Maybe (Int -> List a -> D.Decoder (List a))
+varintRun f =
+    Just
+        (\length existing ->
+            D.loop ( length, [] ) wordStep
+                |> D.andThen
+                    (\words ->
+                        case parseVarints f (List.reverse words) length 0 0 0 existing of
+                            Just vs ->
+                                D.succeed vs
+
+                            Nothing ->
+                                D.fail
+                    )
+        )
+
+
+{-| A run's bytes as big-endian words, the last holding what is left in its
+high bytes; newest first.
+-}
+wordStep : ( Int, List Int ) -> D.Decoder (Step ( Int, List Int ) (List Int))
+wordStep ( remaining, acc ) =
+    if remaining >= 4 then
+        D.map (\w -> Loop ( remaining - 4, w :: acc )) (D.unsignedInt32 BE)
+
+    else if remaining == 3 then
+        D.map2 (\h l -> Done ((h * 65536 + l * 256) :: acc)) (D.unsignedInt16 BE) D.unsignedInt8
+
+    else if remaining == 2 then
+        D.map (\h -> Done ((h * 65536) :: acc)) (D.unsignedInt16 BE)
+
+    else if remaining == 1 then
+        D.map (\b -> Done ((b * 16777216) :: acc)) D.unsignedInt8
+
+    else
+        D.succeed (Done acc)
+
+
+{-| The varints in `left` bytes of `words`, `index` bytes into one whose low
+bits so far are `low`, `at` bytes into the current word.
+-}
+parseVarints : (Int -> a) -> List Int -> Int -> Int -> Int -> Int -> List a -> Maybe (List a)
+parseVarints f words left at index low acc =
+    if left == 0 then
+        if index == 0 then
+            Just acc
+
+        else
+            Nothing
+
+    else
+        case words of
+            w :: rest ->
+                let
+                    b =
+                        Bitwise.and 0xFF (Bitwise.shiftRightZfBy (24 - 8 * at) w)
+
+                    next =
+                        if index < 4 then
+                            low + Bitwise.and 0x7F b * shift7 index
+
+                        else if index == 4 then
+                            low + Bitwise.and 0x0F b * 268435456
+
+                        else
+                            low
+
+                    words_ =
+                        if at == 3 then
+                            rest
+
+                        else
+                            words
+
+                    at_ =
+                        if at == 3 then
+                            0
+
+                        else
+                            at + 1
+                in
+                if b < 128 then
+                    parseVarints f words_ (left - 1) at_ 0 0 (f next :: acc)
+
+                else if index >= 9 then
+                    Nothing
+
+                else
+                    parseVarints f words_ (left - 1) at_ (index + 1) next acc
+
+            [] ->
+                Nothing
 
 
 packedStep : (Int -> Read v) -> Int -> ( Int, List v ) -> D.Decoder (Step ( Int, List v ) (Result Failure (List v)))
@@ -1561,7 +1709,25 @@ fails the fast reader and reads as -3.
 -}
 wide : Int -> D.Decoder ( Int, U64 ) -> (Int -> D.Decoder ( Int, U64 )) -> (U64 -> Encoder) -> (U64 -> Maybe a) -> (a -> U64) -> a -> Codec a
 wide wire fast read write hold unhold zero =
-    scalar wire
+    scalarRun
+        (if wire == 1 then
+            fixedRun 8
+                (D.map2 (\low high -> U64 high low) (D.unsignedInt32 LE) (D.unsignedInt32 LE)
+                    |> D.andThen
+                        (\u ->
+                            case hold u of
+                                Just v ->
+                                    D.succeed v
+
+                                Nothing ->
+                                    D.fail
+                        )
+                )
+
+         else
+            Nothing
+        )
+        wire
         (if wire == 0 then
             10
 
@@ -1624,14 +1790,14 @@ as a default, as `0` is.
 -}
 double : Codec Float
 double =
-    scalar 1 8 (D.map (\x -> ( 8, x )) (D.float64 LE)) (fixed 8 0 (D.map (\x -> ( 8, x )) (D.float64 LE))) (E.float64 LE) isZero 0
+    scalarRun (fixedRun 8 (D.float64 LE)) 1 8 (D.map (\x -> ( 8, x )) (D.float64 LE)) (fixed 8 0 (D.map (\x -> ( 8, x )) (D.float64 LE))) (E.float64 LE) isZero 0
 
 
 {-| `float`.
 -}
 float : Codec Float
 float =
-    scalar 5 4 (D.map (\x -> ( 4, x )) (D.float32 LE)) (fixed 4 0 (D.map (\x -> ( 4, x )) (D.float32 LE))) (E.float32 LE) isZero 0
+    scalarRun (fixedRun 4 (D.float32 LE)) 5 4 (D.map (\x -> ( 4, x )) (D.float32 LE)) (fixed 4 0 (D.map (\x -> ( 4, x )) (D.float32 LE))) (E.float32 LE) isZero 0
 
 
 isZero : Float -> Bool
@@ -1644,14 +1810,15 @@ isZero x =
 -}
 int32 : Codec Int
 int32 =
-    scalar 0 10 (fastVarint32Map signed32) (fromVarint32 signed32 0) writeInt32 ((==) 0) 0
+    scalarRun (varintRun signed32) 0 10 (fastVarint32Map signed32) (fromVarint32 signed32 0) writeInt32 ((==) 0) 0
 
 
 {-| `sint32`, zigzag-encoded.
 -}
 sint32 : Codec Int
 sint32 =
-    scalar 0
+    scalarRun (varintRun (\z -> Bitwise.xor (Bitwise.shiftRightZfBy 1 z) (negate (Bitwise.and 1 z))))
+        0
         10
         (fastVarint32Map (\z -> Bitwise.xor (Bitwise.shiftRightZfBy 1 z) (negate (Bitwise.and 1 z))))
         (fromVarint32 (\z -> Bitwise.xor (Bitwise.shiftRightZfBy 1 z) (negate (Bitwise.and 1 z))) 0)
@@ -1664,21 +1831,21 @@ sint32 =
 -}
 sfixed32 : Codec Int
 sfixed32 =
-    scalar 5 4 (D.map (\n -> ( 4, n )) (D.signedInt32 LE)) (fixed 4 0 (D.map (\n -> ( 4, n )) (D.signedInt32 LE))) (E.signedInt32 LE) ((==) 0) 0
+    scalarRun (fixedRun 4 (D.signedInt32 LE)) 5 4 (D.map (\n -> ( 4, n )) (D.signedInt32 LE)) (fixed 4 0 (D.map (\n -> ( 4, n )) (D.signedInt32 LE))) (E.signedInt32 LE) ((==) 0) 0
 
 
 {-| `uint32`, a varint.
 -}
 uint32 : Codec Int
 uint32 =
-    scalar 0 10 fastVarint32 varint32 writeVarint32 ((==) 0) 0
+    scalarRun (varintRun identity) 0 10 fastVarint32 varint32 writeVarint32 ((==) 0) 0
 
 
 {-| `fixed32`, four bytes.
 -}
 fixed32 : Codec Int
 fixed32 =
-    scalar 5 4 (D.map (\n -> ( 4, n )) (D.unsignedInt32 LE)) (fixed 4 0 (D.map (\n -> ( 4, n )) (D.unsignedInt32 LE))) (E.unsignedInt32 LE) ((==) 0) 0
+    scalarRun (fixedRun 4 (D.unsignedInt32 LE)) 5 4 (D.map (\n -> ( 4, n )) (D.unsignedInt32 LE)) (fixed 4 0 (D.map (\n -> ( 4, n )) (D.unsignedInt32 LE))) (E.unsignedInt32 LE) ((==) 0) 0
 
 
 {-| `int64` held as decimal text.
@@ -2044,7 +2211,8 @@ know reads as its zero value.
 -}
 enum : (a -> Int) -> (Int -> a) -> Codec a
 enum toNumber fromNumber =
-    scalar 0
+    scalarRun (varintRun (\n -> fromNumber (signed32 n)))
+        0
         10
         (fastVarint32Map (\n -> fromNumber (signed32 n)))
         (fromVarint32 (\n -> fromNumber (signed32 n)) (fromNumber 0))
@@ -2105,6 +2273,7 @@ embedded write into zero =
         , isDefault = \_ -> False
         , zero = zero
         , packable = False
+        , run = Nothing
         , writeBody = write
         , readBody = \length -> run (into zero) length
         , readInto = readInto
