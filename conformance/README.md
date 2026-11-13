@@ -638,10 +638,8 @@ envelope's `codec: "proto"` set from the suite's request and the result
 read back from `okBinary` and `detailsBinary`. The suite runs its
 error-body cases only when the proto codec is listed, so the proto run
 has 56 test cases to the JSON run's 40; `known-failing-proto.txt` lists
-the three it fails, none about the codec (a Connect error body without a
-code, or with an unknown one), and the `sendTraced` run adds
-`known-failing-send.txt`: 53 of 56 pass through the halves and 52 with
-`sendTraced`. Transcoding is JSON
+none, and the `sendTraced` run adds `known-failing-send.txt`: 56 of 56
+pass through the halves and 55 with `sendTraced`. Transcoding is JSON
 alone, so the transcoding legs above cover it.
 
 ### gRPC-Web, live

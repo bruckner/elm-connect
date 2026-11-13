@@ -1,5 +1,5 @@
 {
-  "description": "Where Vanguard and the route fixtures part, found by routes.mjs on 2026-10-15 against connect-go v2.0.1 and Vanguard v0.5.0 (conformance/README.md, design section 7). servedApart: bindings Vanguard will not serve beside the others; the example server serves each under its prefix, and the fixture runs there. fixtures: fixtures whose live call does not agree with the fixture; `observed` is matched against the runner's result and must keep matching, `url` is the request the runtime makes, `answer` Vanguard's, `reading` who is right by google/api/http.proto and proto3 JSON. probes: requests the runtime does not make, sent as written, where Vanguard and grpc-gateway (known-divergent-gateway.json) answer differently; `observed` is matched against {status, body}, the body parsed as JSON.",
+  "description": "Where Vanguard and the route fixtures part, found by routes.mjs on 2026-10-15 against connect-go v2.0.1 and Vanguard v0.5.0, rechecked 2026-11-12 against connect-go v2.0.2 and Vanguard v0.5.0 (conformance/README.md, design section 7). servedApart: bindings Vanguard will not serve beside the others; the example server serves each under its prefix, and the fixture runs there. fixtures: fixtures whose live call does not agree with the fixture; `observed` is matched against the runner's result and must keep matching, `url` is the request the runtime makes, `answer` Vanguard's, `reading` who is right by google/api/http.proto and proto3 JSON. probes: requests the runtime does not make, sent as written, where Vanguard and grpc-gateway (known-divergent-gateway.json) answer differently; `observed` is matched against {status, body}, the body parsed as JSON.",
   "servedApart": [
     {
       "method": "routes.v1.Routes.GetMessage",
@@ -20,7 +20,7 @@
       "fixture": "fields with presence are sent at their defaults when set",
       "url": "GET /v1/query?maybe_count=0&maybe_name=&limit=0&label=&number=0",
       "answer": "400 {\"code\":3,\"message\":\"invalid parameter \\\"label\\\" value for type \\\"message\\\": \"}",
-      "reading": "Vanguard. label is a google.protobuf.StringValue set to \"\"; its query form is the value's, an empty string, which Vanguard accepts for a plain string (maybe_name=) but not for StringValue: params.go quotes the value for protojson only when it is non-empty, so protojson parses an empty document. label=%22%22 and label.value= are accepted. The runtime is right; the other presence fields agree. Fix proposed in https://github.com/connectrpc/vanguard-go/pull/208.",
+      "reading": "Vanguard. label is a google.protobuf.StringValue set to \"\"; its query form is the value's, an empty string, which Vanguard accepts for a plain string (maybe_name=) but not for StringValue: params.go quotes the value for protojson only when it is non-empty, so protojson parses an empty document. label=%22%22 and label.value= are accepted. The runtime is right; the other presence fields agree. Fixed upstream in https://github.com/connectrpc/vanguard-go/pull/208, merged 2026-10-16, in no release as of v0.5.0.",
       "observed": {
         "trace": { "httpStatus": 400 },
         "result": {

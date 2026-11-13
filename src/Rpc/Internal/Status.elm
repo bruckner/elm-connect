@@ -92,7 +92,7 @@ failure metadata raw =
         answer =
             answerOf metadata raw
     in
-    case Json.Decode.decodeString (Json.Decode.oneOf [ connectBody, statusBody ]) raw of
+    case Json.Decode.decodeString (Json.Decode.oneOf [ connectBody metadata.statusCode, statusBody ]) raw of
         Ok read ->
             Error.RpcStatus read answer
 
@@ -142,17 +142,50 @@ statusBody =
         (optional "message" Json.Decode.string "")
 
 
-{-| A Connect error body: a `code` the protocol names (an unknown name reads as
-`unknown`), an optional `message` and optional `details`.
+{-| A Connect error body on an answer of HTTP status `status`: its `code`, an
+optional `message` and optional `details`. A code the protocol names is the
+error's. Without one the code is the status's, as the protocol tells a client
+to infer it and connect-go and connect-es do: for a name the protocol does not
+define, `"ok"` among them (a failure is never ok), and for a missing or null
+code, the message and details kept.
 -}
-connectBody : Decoder Error.StatusError
-connectBody =
-    Json.Decode.map3 (\name text found -> { code = name, message = text, details = found, source = Error.ConnectBody })
-        (Json.Decode.field "code" Json.Decode.string
-            |> Json.Decode.map (Code.fromString >> Maybe.withDefault Code.Unknown)
+connectBody : Int -> Decoder Error.StatusError
+connectBody status =
+    Json.Decode.map3
+        (\name text found ->
+            { code = name |> Maybe.andThen Code.fromString |> Maybe.withDefault (Code.fromHttpStatus status)
+            , message = text
+            , details = found
+            , source = Error.ConnectBody
+            }
         )
+        statedCode
         (optional "message" Json.Decode.string "")
         (optional "details" (Json.Decode.list (Json.Decode.map connectDetail Json.Decode.value)) [])
+
+
+{-| A Connect error body's code name, or `Nothing` when it states none. A
+missing or null code counts only beside a string `message`, so `{}` and a
+REST server's own JSON stay an `HttpStatus` error; a code that is not a
+string, a `google.rpc.Status` body's number among them, is not a Connect
+body's.
+-}
+statedCode : Decoder (Maybe String)
+statedCode =
+    Json.Decode.maybe (Json.Decode.field "code" Json.Decode.value)
+        |> Json.Decode.andThen
+            (\found ->
+                case Maybe.map (Json.Decode.decodeValue (Json.Decode.nullable Json.Decode.string)) found of
+                    Just (Ok (Just name)) ->
+                        Json.Decode.succeed (Just name)
+
+                    Just (Err _) ->
+                        Json.Decode.fail "a code that is not a name"
+
+                    _ ->
+                        Json.Decode.field "message" Json.Decode.string
+                            |> Json.Decode.map (\_ -> Nothing)
+            )
 
 
 {-| A Connect error detail: the message's full name as `type` (a type URL

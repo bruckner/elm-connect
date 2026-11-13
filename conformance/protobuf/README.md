@@ -103,8 +103,8 @@ groups. A group's comment says why its cases fail and classifies them:
   suite disagrees with, and the documentation says so (a `Timestamp` is
   a millisecond `Time.Posix`, for one; unknown fields are not kept).
 - **Fix candidate**: the runtime or the generator could do what the
-  suite asks (most are inputs the JSON decoders accept and the
-  specification refuses).
+  suite asks (most were inputs the JSON decoders accept and the
+  specification refuses). None remain since 2026-10-25.
 
 The groups of cases whose input is binary come first, then those whose
 input is JSON; a group of the second kind lists the cases written back

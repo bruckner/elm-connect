@@ -6,7 +6,8 @@
 # TLS), no compression, and GET for idempotent methods. Streaming, gRPC and
 # gRPC-Web are declared unsupported here rather than listed as known to fail;
 # the proto codec has a run of its own, conformance-proto.yaml (`just
-# live-proto`).
+# live-proto`), and so does gRPC-Web, conformance-grpcweb.yaml (`just
+# live-grpcweb`).
 features:
   versions: [HTTP_VERSION_1]
   protocols: [PROTOCOL_CONNECT]

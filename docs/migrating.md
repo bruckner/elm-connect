@@ -444,6 +444,13 @@ with each one ([install.md](install.md#versions)).
   `BadResponse problem answer` becomes `BadResponse _ problem answer`,
   and code that showed `problem` as text shows `Rpc.Error.message error`
   instead.
+- A Connect error body whose code is missing, `null` or a name the
+  protocol does not define takes the HTTP status's code, as connect-go
+  and connect-es read it: one with a string `message` and no code, which
+  0.1 read as an `HttpStatus` error, is now an `RpcStatus` with source
+  `ConnectBody` and the body's message, and an unknown name reads as the
+  status's code, not `Unknown`. An application that matched
+  `HttpStatus` to mean "no Connect body" sees these answers move.
 - `Rpc.Call.withRetry` and `Rpc.Call.withoutRetry` set one call's retry
   policy, and `Rpc.Retry.withDeadline` and `Rpc.Retry.next` are new
   ([calling.md](calling.md#retries)). `next` is given the failed call's

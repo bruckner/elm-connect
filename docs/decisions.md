@@ -958,6 +958,36 @@ fault is an `Envelope`'s text and a new kind of body failure is the
 more: 0.2 already changes the constructor's arity, so their patterns
 change once (operator). Where: design §5.3, §5.4, §8.3.
 
+### A Connect body without a known code takes the status's code
+
+*2026-11-12.*
+
+A Connect error body whose `code` is a name the protocol does not
+define, `"ok"` included, or is missing or `null` beside a string
+`message`, is an `RpcStatus` with source `ConnectBody`, its code
+`Rpc.Code.fromHttpStatus` of the answer's status and its message and
+details the body's. Before, an unknown name read as `Unknown` and a
+missing or null code made the answer an `HttpStatus` error whose
+message was the status text, so the server's message was lost; no
+decision recorded why, and the three Connect conformance cases
+(`missing-code`, `null-code`, `unrecognized-code`) were listed as known
+failing. The protocol says a client receiving a non-200 answer with no
+explicit Connect error code should infer one from the HTTP status.
+connect-go's `connectWireError` is lenient with an unrecognized or
+invalid code: it leaves the code unset, keeps `message` and `details`,
+and the unset code becomes the status's. connect-es starts from an error
+whose code comes from the status and replaces it only with a string
+code it knows, so a missing, null, unknown or `"ok"` code keeps the
+status's, the message and details read. The suite holds a client to
+the same. As on 2026-11-01 (A refused answer carries its code), the
+runtime follows the suite where it speaks the suite's protocol
+(operator). The missing or null case counts only beside a string
+`message`, so `{}` and a REST server's arbitrary JSON stay `HttpStatus`;
+an integer code is still a `google.rpc.Status` body's. Such answers move
+from `HttpStatus` to `RpcStatus`, which now means the server answered in
+the protocol's error shape, its code stated or inferred. Where: design
+§5.4, §7.
+
 ### A path value that cannot match is not sent
 
 *2026-10-24.*
