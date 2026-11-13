@@ -16,8 +16,10 @@ takes, and the registry its calls convert a `google.protobuf.Any` through.
 
 A client holds its protocol's functions, so it belongs in code: a top-level
 value, one built in `init`, or one a wrapper builds per call from the
-application's state. Clients built alike are `==`; a client never belongs in
-a message. [`toJson`](#toJson) gives it as data, for logs and tests.
+application's state. Clients built alike are `==` when their registry is a
+top-level value: a registry built where the client is holds fresh functions,
+and `==` throws on reaching it. A client never belongs in a message.
+[`toJson`](#toJson) gives it as data, for logs and tests.
 
 @docs Client, client
 

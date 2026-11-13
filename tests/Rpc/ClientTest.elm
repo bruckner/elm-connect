@@ -2,8 +2,11 @@ module Rpc.ClientTest exposing (suite)
 
 {-| Clients and protocols hold functions, every one a top-level function a
 constructor or modifier put there, with their settings as data: two built
-alike are `==`, and two that differ compare unequal on their data before
-`==` would reach a function, which would throw.
+alike from top-level registries are `==`, and two that differ compare unequal
+on their data before `==` would reach a function, which would throw. A
+registry built where the client is holds fresh functions per `register`, so
+two such clients throw on `==` (the compiled record compares its fields by
+name, and `registry` comes before `retry` and `timeout`).
 -}
 
 import Expect
