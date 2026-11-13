@@ -63,6 +63,10 @@ a message that holds no `google.protobuf.Any`:
 The binary decoder is a [`Proto.Binary.Decoder`](Proto-Binary#Decoder), which
 the package site may show as `Proto.Internal.Binary.Decoder`.
 
+A message built by `init` is taken at its word that it holds no `Any`:
+[`Proto.Any.pack`](Proto-Any#pack) writes its binary straight away, without
+looking for an `Any` that only JSON could carry (see [`initWith`](#initWith)).
+
 -}
 init : String -> (a -> Json.Encode.Value) -> Json.Decode.Decoder a -> (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> Message a
 init name jsonEncoder jsonDecoder binaryEncoder binaryDecoder =
@@ -71,6 +75,7 @@ init name jsonEncoder jsonDecoder binaryEncoder binaryDecoder =
         , decodeJson = \_ -> jsonDecoder
         , encodeBinary = binaryEncoder
         , decodeBinary = binaryDecoder
+        , holdsAny = False
         }
 
 
@@ -92,6 +97,7 @@ initWith name jsonEncoder jsonDecoder binaryEncoder binaryDecoder =
         , decodeJson = jsonDecoder
         , encodeBinary = binaryEncoder
         , decodeBinary = binaryDecoder
+        , holdsAny = True
         }
 
 
