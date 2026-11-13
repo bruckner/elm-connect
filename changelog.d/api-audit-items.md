@@ -10,3 +10,6 @@
   other modifiers, and `Rpc.Client.registry` reads it back. Generated
   registries' doc comments name the new place; regenerating changes
   only those comments.
+- `Rpc.Protocol.Json` and `Rpc.Protocol.Proto` are gone: the codec tags
+  are `Rpc.Json` and `Rpc.Proto`, which are `Proto.Codec.Json` and
+  `Proto.Codec.Proto`, as generated code writes them.

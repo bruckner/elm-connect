@@ -2488,9 +2488,7 @@ the protocols belong in it too.
 ### 5.1 Protocol and client
 
 ```elm
--- Rpc.Protocol: opaque, indexed by codec
-type alias Json = Proto.Codec.Json      -- the codec tags; no values
-type alias Proto = Proto.Codec.Proto
+-- Rpc.Protocol: opaque, indexed by codec (Proto.Codec's tags, Rpc.Json and Rpc.Proto)
 connect : Protocol Json                   -- Connect, proto3 JSON, every call POSTed
 connectProto : Protocol Proto             -- Connect, protobuf binary (application/proto)
 transcode : Protocol Json                 -- google.api.http REST; the implicit route without a rule
@@ -2853,8 +2851,8 @@ requestJson : Registry -> Call Json req res -> Result Proto.Error.Error Json.Enc
 toJson : Registry -> Call Json req res -> Result Proto.Error.Error Json.Encode.Value   -- {"service","method","procedure","request"}
 
 -- Rpc
-type alias Json = Rpc.Protocol.Json
-type alias Proto = Rpc.Protocol.Proto
+type alias Json = Proto.Codec.Json   -- the codec tags; no values
+type alias Proto = Proto.Codec.Proto
 type alias Call codec req res = Rpc.Call.Call codec req res
 type alias Client codec = Rpc.Client.Client codec
 call : Proto.Method.Method codec req res -> req -> Call codec req res

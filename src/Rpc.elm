@@ -99,6 +99,7 @@ application can rewrite a request before sending it with
 import Bytes exposing (Bytes)
 import Dict exposing (Dict)
 import Http
+import Proto.Codec
 import Proto.Method exposing (Method)
 import Rpc.Call
 import Rpc.Client
@@ -122,22 +123,22 @@ import Time
 -- CODECS
 
 
-{-| The codec tag of proto3 JSON: [`Rpc.Protocol.Json`](Rpc-Protocol#Json).
+{-| The codec tag of proto3 JSON: [`Proto.Codec.Json`](Proto-Codec#Json).
 A client of [`Rpc.Protocol.connect`](Rpc-Protocol#connect) or
 [`transcode`](Rpc-Protocol#transcode) is a `Client Json`, and sends calls of
 code generated with `wire=both` (the default) or `wire=json`.
 -}
 type alias Json =
-    Rpc.Protocol.Json
+    Proto.Codec.Json
 
 
-{-| The codec tag of protobuf binary: [`Rpc.Protocol.Proto`](Rpc-Protocol#Proto).
+{-| The codec tag of protobuf binary: [`Proto.Codec.Proto`](Proto-Codec#Proto).
 A client of [`Rpc.Protocol.connectProto`](Rpc-Protocol#connectProto) or
 [`Rpc.Protocol.grpcWeb`](Rpc-Protocol#grpcWeb) is a `Client Proto`, and sends calls of code generated with `wire=proto` or
 `wire=both`.
 -}
 type alias Proto =
-    Rpc.Protocol.Proto
+    Proto.Codec.Proto
 
 
 
