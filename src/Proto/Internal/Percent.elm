@@ -1,4 +1,4 @@
-module Proto.Internal.Percent exposing (encodeRouteText, percentDecode, percentEncode, unreserved, wellFormed)
+module Proto.Internal.Percent exposing (encodeRouteText, escaped, percentDecode, percentEncode, unreserved, wellFormed)
 
 {-| Percent-encoding and decoding as URLs need them: the protocols' query
 strings, a route's path values and literals, and the reading of an error
@@ -40,16 +40,21 @@ percentEncode keep text =
         foldrScalars step "" text
 
 
-{-| A byte's `%XX` escape, cut from a table of all 256 built once.
+{-| A byte's `%XX` escape, in uppercase hex. It is made when it is asked
+for: a table of all 256 built when the module loads was most of what the
+percent-encoding fast path added to a program's start-up (0.2 to 0.4 ms in
+every browser engine, 1 ms and more on a throttled CPU), and the same table
+as a literal added 670 B gzipped to every program, its 512 hex digits being
+text gzip cannot shorten.
 -}
 escaped : Int -> String
 escaped byte =
-    String.slice (3 * byte) (3 * byte + 3) escapes
+    "%" ++ hexDigit (byte // 16) ++ hexDigit (modBy 16 byte)
 
 
-escapes : String
-escapes =
-    String.concat (List.map hexByte (List.range 0 255))
+hexDigit : Int -> String
+hexDigit digit =
+    String.slice digit (digit + 1) "0123456789ABCDEF"
 
 
 {-| `String.foldr` over the characters of `text`, each surrogate without its
@@ -335,16 +340,6 @@ utf8 code =
 continuation : Int -> Int
 continuation code =
     0x80 + Bitwise.and 0x3F code
-
-
-hexByte : Int -> String
-hexByte byte =
-    "%" ++ hexDigit (byte // 16) ++ hexDigit (modBy 16 byte)
-
-
-hexDigit : Int -> String
-hexDigit digit =
-    String.slice digit (digit + 1) "0123456789ABCDEF"
 
 
 {-| A route's literal text (a path segment or a custom verb) as a URL can hold
