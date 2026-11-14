@@ -137,13 +137,15 @@ encodeMoment value =
 -}
 decodeMoment : Json.Decode.Decoder Moment
 decodeMoment =
-    Json.Decode.succeed Moment
-        |> Proto.Json.field "at" Nothing (Json.Decode.map Just Proto.Json.timestamp)
-        |> Proto.Json.field "mask" Nothing (Json.Decode.map Just Proto.Json.fieldMask)
-        |> Proto.Json.field "count" Nothing (Json.Decode.map Just Proto.Json.int32)
-        |> Proto.Json.field "seen" Nothing (Json.Decode.map Just Json.Decode.bool)
-        |> Proto.Json.field "wait" Nothing (Json.Decode.map Just Proto.Json.duration)
-        |> Proto.Json.field "note" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed Moment
+            |> Proto.Json.messageField "at" Nothing (Json.Decode.map Just Proto.Json.timestamp)
+            |> Proto.Json.messageField "mask" Nothing (Json.Decode.map Just Proto.Json.fieldMask)
+            |> Proto.Json.messageField "count" Nothing (Json.Decode.map Just Proto.Json.int32)
+            |> Proto.Json.messageField "seen" Nothing (Json.Decode.map Just Json.Decode.bool)
+            |> Proto.Json.messageField "wait" Nothing (Json.Decode.map Just Proto.Json.duration)
+            |> Proto.Json.messageField "note" "" Proto.Json.string
+        )
 
 
 

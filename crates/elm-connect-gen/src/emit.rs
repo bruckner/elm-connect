@@ -97,16 +97,18 @@
 //!   protobuf-go's `protojson` does: a field without presence at its zero
 //!   value, a `Maybe` when `Nothing`, a list or map when empty (design
 //!   §3.4). A parser reads a missing field as its default.
-//! - Decoders are a pipeline of `Proto.Json.field` steps from
-//!   `Json.Decode.succeed`, so they read the same at any field count
-//!   (design §8). A missing or `null` field reads as its proto3 zero value.
-//!   A field whose JSON name differs from its proto name uses
-//!   `Proto.Json.fieldEither`, which accepts both keys (design §3.4).
+//! - Decoders are `Proto.Json.message` of a pipeline of
+//!   `Proto.Json.messageField` steps from `Json.Decode.succeed`, so they
+//!   read the same at any field count (design §8); `message` checks once
+//!   that the JSON is an object, and the steps trust it. A missing or `null`
+//!   field reads as its proto3 zero value. A field whose JSON name differs
+//!   from its proto name uses `Proto.Json.messageFieldEither`, which accepts
+//!   both keys (design §3.4).
 //! - A field with presence (proto3 `optional`, or message-typed) is a
 //!   `Maybe`: `Nothing` is left out, and an absent or `null` field
 //!   decodes as `Nothing`. A repeated field is a `List`, encoded as an
 //!   array unless empty; absent or `null` decodes as `[]`. Both reuse the one
-//!   `Proto.Json.field` step with `Nothing` or `[]` as its zero value.
+//!   `Proto.Json.messageField` step with `Nothing` or `[]` as its zero value.
 //! - Scalars follow design §3.4: 32-bit integers are range-checked `Int`s;
 //!   64-bit integers are decimal `String`s, or range-checked `Int`s encoded
 //!   as strings under [`Int64::Int`](crate::options::Int64::Int), a
@@ -1287,7 +1289,9 @@ mod tests {
         let printed = crate::elm::print::print_module(&module);
         assert!(printed.contains("level : Other.V1.Level"), "{printed}");
         assert!(
-            printed.contains(r#"Proto.Json.field "level" Other.V1.LevelNone Other.V1.decodeLevel"#),
+            printed.contains(
+                r#"Proto.Json.messageField "level" Other.V1.LevelNone Other.V1.decodeLevel"#
+            ),
             "{printed}"
         );
         let descriptors = emit_descriptor_modules(&one, &Options::default());

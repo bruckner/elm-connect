@@ -320,18 +320,22 @@ decodeChar =
 -}
 decodeDict : Json.Decode.Decoder Dict
 decodeDict =
-    Json.Decode.succeed Dict
-        |> Proto.Json.field "name" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed Dict
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+        )
 
 
 {-| Decodes a [`Result`](#Result) from proto3 JSON.
 -}
 decodeResult : Json.Decode.Decoder Result
 decodeResult =
-    Json.Decode.succeed Result
-        |> Proto.Json.field "ok" False Json.Decode.bool
-        |> Proto.Json.field "dict" Nothing (Json.Decode.map Just decodeDict)
-        |> Proto.Json.field "chars" [] (Json.Decode.list decodeChar)
+    Proto.Json.message
+        (Json.Decode.succeed Result
+            |> Proto.Json.messageField "ok" False Json.Decode.bool
+            |> Proto.Json.messageField "dict" Nothing (Json.Decode.map Just decodeDict)
+            |> Proto.Json.messageField "chars" [] (Json.Decode.list decodeChar)
+        )
 
 
 {-| Decodes an [`Order`](#Order) from proto3 JSON.

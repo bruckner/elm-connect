@@ -873,10 +873,16 @@ just the form encoders write.
   `Proto.Json.stringDict`, which fail on one holding a UTF-16
   surrogate without its pair (`"\udc00"`): JavaScript's JSON parser
   reads the escape into the string as it is, and such a string is not
-  Unicode text and has no UTF-8 form. The check reads each string once
-  (`String.all`); in the performance spike's benchmark, decoding a note
-  took about 5 % longer and a page of 1,000 notes about 1 %, and a map
-  of 1,000 string keys and values 17 %.
+  Unicode text and has no UTF-8 form. A string shorter than 32 code
+  units is read once, character by character (`String.all`); a longer
+  one is written with `JSON.stringify`, which since ECMAScript 2019
+  writes a lone surrogate as a `\uXXXX` escape with lowercase hex digits
+  and a pair as it is, so JSON holding no `\ud` proves the text well
+  formed in one native pass. Text whose JSON holds one (which a
+  backslash before `ud` in the text also gives) is read character by
+  character, and an engine that does not escape lone surrogates, tested
+  once at start, reads every string that way. Below 32 units the walk
+  costs less than the pass.
 - Floats as numbers, numeric strings, and `"NaN"`, `"Infinity"`,
   `"-Infinity"`, through `Proto.Json.float` (`double`) and
   `Proto.Json.float32` (`float`). A number past a double's range fails
@@ -909,18 +915,18 @@ just the form encoders write.
   when they differ, JSON name first:
 
   ```elm
-  |> Proto.Json.field "title" "" Proto.Json.string
-  |> Proto.Json.fieldEither "displayName" "display_name" "" Proto.Json.string
+  |> Proto.Json.messageField "title" "" Proto.Json.string
+  |> Proto.Json.messageFieldEither "displayName" "display_name" "" Proto.Json.string
   ```
 
   An object holding both keys fails, naming them (`Expecting
   "displayName" or "display_name", but got both`), even when one of them
   is `null`: protobuf's own parsers (protobuf-go's protojson) reject it
   as a duplicate field. The same holds for every two-name
-  helper (`memberEither`, `emptyMemberEither`, `valueMemberEither`,
-  `valueFieldEither`). The
+  helper (`fieldEither`, `memberEither`, `emptyMemberEither`,
+  `valueMemberEither`, `valueFieldEither`, `messageValueFieldEither`). The
   two names are equal only for one-word fields without an explicit
-  `json_name`, so in practice most multi-word fields use `fieldEither`. Two names are the most there can
+  `json_name`, so in practice most multi-word fields use `messageFieldEither`. Two names are the most there can
   be (decisions.md: Decoder steps).
 - A key written twice in one object (`{"title":"a","title":"b"}`) is
   not refused, as protobuf's parsers refuse it: it reads as its last
@@ -934,8 +940,8 @@ just the form encoders write.
   protobuf writer produces.
 - One step serves every cardinality. Its second argument is the value
   an absent or `null` field reads as, so a field with presence reads
-  `field "author" Nothing (Json.Decode.map Just decodeAuthor)` and a
-  repeated one `field "tags" [] (Json.Decode.list Proto.Json.string)`,
+  `messageField "author" Nothing (Json.Decode.map Just decodeAuthor)` and a
+  repeated one `messageField "tags" [] (Json.Decode.list Proto.Json.string)`,
   and the reader sees the zero value.
 - A step finds its field with `Json.Decode.field` (JavaScript's `in`),
   in constant time, so a message decodes in time linear in its fields
@@ -944,9 +950,16 @@ just the form encoders write.
   `Object.prototype`'s (`constructor`, `toString`, `__proto__`, …) is
   looked up among the object's own keys instead, in time linear in
   them. A message fails on any JSON that is not an object, arrays
-  included, whether or not it has fields; when no field is present the
-  check is constant-time too, and never lists the keys, and an empty
-  message (`Proto.Json.emptyMessage`) makes the same check. The package requires elm/json 1.1.4,
+  included, whether or not it has fields; the check is constant-time
+  too, and never lists the keys, and an empty message
+  (`Proto.Json.emptyMessage`) makes the same check. A generated decoder
+  makes it once: `Proto.Json.message` wraps the field steps
+  (`messageField` and its siblings), which then look a key up without
+  checking the object again, and fail as elm/json does
+  (`Expecting an OBJECT`) when it is not one. The `field` steps, for
+  pipelines written by hand, each make the check themselves. A oneof's
+  decoder reads the message object on its own and makes its own check,
+  so a message of oneofs alone is not wrapped. The package requires elm/json 1.1.4,
   which lists an object's keys without calling the object's own
   `hasOwnProperty`, so a key of that name decodes wherever keys are
   listed: a prototype-named field, a map, a `Struct` or an `Any`.
@@ -3215,10 +3228,12 @@ What follows says how a binding reads its fields, for both.
   template cannot match, or holding a surrogate without its pair, is
   not sent (§5.1). A query value or a hand-built literal holding one
   is written with U+FFFD in its place, as the WHATWG URL encoder writes
-  it. Text is read through a fold that takes such a surrogate apart
-  from its neighbours: elm/core's `String.foldr` and `String.all` read
-  from the end and take a low surrogate with the code unit before it,
-  and at the start of a string never return. A wildcard
+  it. Text that one `JSON.stringify` shows to hold no such surrogate
+  (as the string check of §3.4 reads it, at any length here) is folded
+  as it is; other text is read through a fold that takes such a
+  surrogate apart from its neighbours: elm/core's `String.foldr` and
+  `String.all` read from the end and take a low surrogate with the code
+  unit before it, and at the start of a string never return. A wildcard
   outside a variable never reaches the runtime (`route::template`).
 - A binding's literal segments and custom verb are written as RFC 3986
   `pchar`: unreserved characters, sub-delimiters, `:` and `@` as they

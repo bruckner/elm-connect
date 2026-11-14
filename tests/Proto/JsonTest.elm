@@ -3,6 +3,7 @@ module Proto.JsonTest exposing (suite)
 import Dict
 import Expect
 import Fuzz
+import Fuzzers
 import Json.Decode exposing (Decoder)
 import Json.Encode
 import Proto.Duration
@@ -18,6 +19,7 @@ suite =
         , fieldEitherTests
         , valueFieldTests
         , emptyMessageTests
+        , messageTests
         , lookupTests
         , presenceTests
         , encodingTests
@@ -236,6 +238,70 @@ emptyMessageTests =
                     |> List.map (\json -> ( json, Json.Decode.decodeString Proto.Json.emptyMessage json |> Result.mapError Json.Decode.errorToString ))
                     |> List.filter (\( _, result ) -> not (isObjectFailure result))
                     |> Expect.equal []
+        ]
+
+
+{-| A message read through `Proto.Json.message` and its trusting steps, and
+the same message read through `field` steps that each check the object.
+-}
+type alias Checked =
+    { title : String, displayName : String, constructor : String, length : String, value : Maybe String }
+
+
+checkedOnce : Decoder Checked
+checkedOnce =
+    Proto.Json.message
+        (Json.Decode.succeed (\title displayName constructor length value -> Checked title displayName constructor length (Maybe.map (Json.Encode.encode 0) value))
+            |> Proto.Json.messageField "title" "" Json.Decode.string
+            |> Proto.Json.messageFieldEither "displayName" "display_name" "" Json.Decode.string
+            |> Proto.Json.messageField "constructor" "" Json.Decode.string
+            |> Proto.Json.messageField "length" "" Json.Decode.string
+            |> Proto.Json.messageValueField "value"
+        )
+
+
+checkedEach : Decoder Checked
+checkedEach =
+    Json.Decode.succeed (\title displayName constructor length value -> Checked title displayName constructor length (Maybe.map (Json.Encode.encode 0) value))
+        |> Proto.Json.field "title" "" Json.Decode.string
+        |> Proto.Json.fieldEither "displayName" "display_name" "" Json.Decode.string
+        |> Proto.Json.field "constructor" "" Json.Decode.string
+        |> Proto.Json.field "length" "" Json.Decode.string
+        |> Proto.Json.valueField "value"
+
+
+messageTests : Test
+messageTests =
+    let
+        same json =
+            Json.Decode.decodeValue checkedOnce json
+                |> Result.mapError Json.Decode.errorToString
+                |> Expect.equal (Json.Decode.decodeValue checkedEach json |> Result.mapError Json.Decode.errorToString)
+
+        key =
+            Fuzz.oneOfValues [ "title", "displayName", "display_name", "constructor", "length", "value", "other" ]
+    in
+    describe "message"
+        [ test "reads its fields as field steps do" <|
+            \_ ->
+                decodes checkedOnce
+                    """{"title":"a","display_name":"b","constructor":"c","length":"d","value":null}"""
+                    (Checked "a" "b" "c" "d" (Just "null"))
+        , test "anything but an object fails as field steps do, an array whose properties a step names included" <|
+            \_ ->
+                [ "5", "\"x\"", "[]", "[{}]", "null", "true" ]
+                    |> List.map (\json -> ( json, Json.Decode.decodeString checkedOnce json |> Result.mapError Json.Decode.errorToString ))
+                    |> Expect.equal
+                        (List.map (\json -> ( json, Json.Decode.decodeString checkedEach json |> Result.mapError Json.Decode.errorToString )) [ "5", "\"x\"", "[]", "[{}]", "null", "true" ])
+        , test "gives what field steps give on objects that fail, and on absent, null and inherited names" <|
+            \_ ->
+                [ "{}", """{"title":5}""", """{"displayName":"a","display_name":null}""", """{"constructor":1}""", """{"length":[]}""", """{"__proto__":"x","title":null}""", """{"hasOwnProperty":"x"}""" ]
+                    |> List.map (Json.Decode.decodeString Json.Decode.value >> Result.withDefault Json.Encode.null)
+                    |> List.map (\json -> ( Json.Decode.decodeValue checkedOnce json, Json.Decode.decodeValue checkedEach json ))
+                    |> List.filter (\( once, each ) -> Result.mapError Json.Decode.errorToString once /= Result.mapError Json.Decode.errorToString each)
+                    |> Expect.equal []
+        , Test.fuzz (Fuzzers.json 2) "gives what field steps give on any JSON" same
+        , Test.fuzz (Fuzz.listOfLengthBetween 0 4 (Fuzz.pair key (Fuzzers.json 1)) |> Fuzz.map Json.Encode.object) "gives what field steps give on objects of its keys" same
         ]
 
 
@@ -1192,6 +1258,20 @@ stringTests =
                     , "\"😀\\udc00\""
                     , "\"\\ud800😀\""
                     ]
+        , test "long text is held to the same rule, a backslash before \"ud\" included" <|
+            \_ ->
+                let
+                    long inner =
+                        "\"" ++ String.repeat 40 "x" ++ inner ++ String.repeat 40 "y" ++ "\""
+                in
+                Expect.all
+                    [ \_ -> failsOnEach Proto.Json.string (List.map long [ "\\udc00", "\\ud800", "\\ude01\\ud83d", "😀\\udc00" ])
+                    , \_ ->
+                        [ "\\ud83d\\ude00", "\\\\ud800", "\\\\\\ud83d\\ude00" ]
+                            |> List.map (long >> Json.Decode.decodeString Proto.Json.string >> Result.map (String.slice 40 -40))
+                            |> Expect.equal [ Ok "😀", Ok "\\ud800", Ok "\\😀" ]
+                    ]
+                    ()
         , Test.fuzz Fuzz.string "every string of Unicode text decodes as it is" <|
             \text ->
                 Json.Decode.decodeString Proto.Json.string (Json.Encode.encode 0 (Json.Encode.string text))
@@ -1316,6 +1396,14 @@ bytesTests =
         , rejects "aGk!"
         , rejects "+/-_"
         , rejects "aGkß"
+        , rejects "\\udc00aGk="
+        , rejects "aGk\\ud800="
+        , Test.fuzz Fuzzers.base64Like "accepts exactly the text a character-by-character check accepts" <|
+            \text ->
+                Json.Decode.decodeValue Proto.Json.bytes (Json.Encode.string text)
+                    |> Result.map (\_ -> True)
+                    |> Result.withDefault False
+                    |> Expect.equal (Fuzzers.canonicalBase64 text /= Nothing)
         , test "keeps the string as received" <|
             \_ -> decodes Proto.Json.bytes "\"-_8\"" "-_8"
         , test "a number fails" <|

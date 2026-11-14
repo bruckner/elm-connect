@@ -277,11 +277,13 @@ decodeAudience =
 -}
 decodeMemo : Json.Decode.Decoder Memo
 decodeMemo =
-    Json.Decode.succeed Memo
-        |> Proto.Json.field "title" "" Proto.Json.string
-        |> Proto.Json.field "visibility" AudienceUnspecified decodeAudience
-        |> Proto.Json.field "revisions" [] (Json.Decode.list decodeEdit)
-        |> Proto.Json.oneof decodeMemoBody
+    Proto.Json.message
+        (Json.Decode.succeed Memo
+            |> Proto.Json.messageField "title" "" Proto.Json.string
+            |> Proto.Json.messageField "visibility" AudienceUnspecified decodeAudience
+            |> Proto.Json.messageField "revisions" [] (Json.Decode.list decodeEdit)
+            |> Proto.Json.oneof decodeMemoBody
+        )
 
 
 {-| Decodes a [`MemoBody`](#MemoBody) from the members of its message's JSON object.
@@ -299,16 +301,20 @@ decodeMemoBody =
 -}
 decodeEdit : Json.Decode.Decoder Edit
 decodeEdit =
-    Json.Decode.succeed Edit
-        |> Proto.Json.field "number" 0 Proto.Json.int32
+    Proto.Json.message
+        (Json.Decode.succeed Edit
+            |> Proto.Json.messageField "number" 0 Proto.Json.int32
+        )
 
 
 {-| Decodes a [`GetNoteRequest`](#GetNoteRequest) from proto3 JSON.
 -}
 decodeGetNoteRequest : Json.Decode.Decoder GetNoteRequest
 decodeGetNoteRequest =
-    Json.Decode.succeed GetNoteRequest
-        |> Proto.Json.field "name" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed GetNoteRequest
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+        )
 
 
 

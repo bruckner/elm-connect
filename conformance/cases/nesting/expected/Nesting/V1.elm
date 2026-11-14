@@ -562,36 +562,44 @@ decodeOuterInnerKind =
 -}
 decodeOuter : Json.Decode.Decoder Outer
 decodeOuter =
-    Json.Decode.succeed Outer
-        |> Proto.Json.field "inner" Nothing (Json.Decode.map Just decodeOuterInner)
-        |> Proto.Json.field "kind" OuterInnerKindUnspecified decodeOuterInnerKind
-        |> Proto.Json.field "all" [] (Json.Decode.list decodeOuterInnerDeepest)
+    Proto.Json.message
+        (Json.Decode.succeed Outer
+            |> Proto.Json.messageField "inner" Nothing (Json.Decode.map Just decodeOuterInner)
+            |> Proto.Json.messageField "kind" OuterInnerKindUnspecified decodeOuterInnerKind
+            |> Proto.Json.messageField "all" [] (Json.Decode.list decodeOuterInnerDeepest)
+        )
 
 
 {-| Decodes an [`OuterInner`](#OuterInner) from proto3 JSON.
 -}
 decodeOuterInner : Json.Decode.Decoder OuterInner
 decodeOuterInner =
-    Json.Decode.succeed OuterInner
-        |> Proto.Json.field "deepest" Nothing (Json.Decode.map Just decodeOuterInnerDeepest)
+    Proto.Json.message
+        (Json.Decode.succeed OuterInner
+            |> Proto.Json.messageField "deepest" Nothing (Json.Decode.map Just decodeOuterInnerDeepest)
+        )
 
 
 {-| Decodes an [`OuterInnerDeepest`](#OuterInnerDeepest) from proto3 JSON.
 -}
 decodeOuterInnerDeepest : Json.Decode.Decoder OuterInnerDeepest
 decodeOuterInnerDeepest =
-    Json.Decode.succeed OuterInnerDeepest
-        |> Proto.Json.field "kind" OuterInnerKindUnspecified decodeOuterInnerKind
+    Proto.Json.message
+        (Json.Decode.succeed OuterInnerDeepest
+            |> Proto.Json.messageField "kind" OuterInnerKindUnspecified decodeOuterInnerKind
+        )
 
 
 {-| Decodes a [`Node`](#Node) from proto3 JSON.
 -}
 decodeNode : Json.Decode.Decoder Node
 decodeNode =
-    Json.Decode.succeed Node
-        |> Proto.Json.field "label" "" Proto.Json.string
-        |> Proto.Json.field "children" [] (Json.Decode.list decodeNode_)
-        |> Proto.Json.fieldEither "byName" "by_name" Dict.empty (Proto.Json.stringDict decodeNode_)
+    Proto.Json.message
+        (Json.Decode.succeed Node
+            |> Proto.Json.messageField "label" "" Proto.Json.string
+            |> Proto.Json.messageField "children" [] (Json.Decode.list decodeNode_)
+            |> Proto.Json.messageFieldEither "byName" "by_name" Dict.empty (Proto.Json.stringDict decodeNode_)
+        )
 
 
 {-| Decodes a [`Node_`](#Node_) from proto3 JSON.
@@ -605,9 +613,11 @@ decodeNode_ =
 -}
 decodePerson : Json.Decode.Decoder Person
 decodePerson =
-    Json.Decode.succeed Person
-        |> Proto.Json.field "name" "" Proto.Json.string
-        |> Proto.Json.field "employer" Nothing (Json.Decode.map Just decodeCompany_)
+    Proto.Json.message
+        (Json.Decode.succeed Person
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.messageField "employer" Nothing (Json.Decode.map Just decodeCompany_)
+        )
 
 
 {-| Decodes a [`Person_`](#Person_) from proto3 JSON.
@@ -621,9 +631,11 @@ decodePerson_ =
 -}
 decodeCompany : Json.Decode.Decoder Company
 decodeCompany =
-    Json.Decode.succeed Company
-        |> Proto.Json.field "name" "" Proto.Json.string
-        |> Proto.Json.field "staff" [] (Json.Decode.list decodePerson_)
+    Proto.Json.message
+        (Json.Decode.succeed Company
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.messageField "staff" [] (Json.Decode.list decodePerson_)
+        )
 
 
 {-| Decodes a [`Company_`](#Company_) from proto3 JSON.
@@ -637,8 +649,10 @@ decodeCompany_ =
 -}
 decodeForest : Json.Decode.Decoder Forest
 decodeForest =
-    Json.Decode.succeed Forest
-        |> Proto.Json.field "trees" [] (Json.Decode.list decodeNode)
+    Proto.Json.message
+        (Json.Decode.succeed Forest
+            |> Proto.Json.messageField "trees" [] (Json.Decode.list decodeNode)
+        )
 
 
 {-| Decodes an [`Expr`](#Expr) from proto3 JSON.
@@ -664,8 +678,10 @@ decodeExprValue =
 -}
 decodeSum : Json.Decode.Decoder Sum
 decodeSum =
-    Json.Decode.succeed Sum
-        |> Proto.Json.field "terms" [] (Json.Decode.list decodeExpr)
+    Proto.Json.message
+        (Json.Decode.succeed Sum
+            |> Proto.Json.messageField "terms" [] (Json.Decode.list decodeExpr)
+        )
 
 
 

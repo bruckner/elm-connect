@@ -259,15 +259,17 @@ decodeState =
 -}
 decodeTask : Json.Decode.Decoder Task
 decodeTask =
-    Json.Decode.succeed Task
-        |> Proto.Json.field "name" "" Proto.Json.string
-        |> Proto.Json.field "title" "" Proto.Json.string
-        |> Proto.Json.field "state" StateUnspecified decodeState
-        |> Proto.Json.field "labels" [] (Json.Decode.list Proto.Json.string)
-        |> Proto.Json.field "owner" "" Proto.Json.string
-        |> Proto.Json.field "notes" "" Proto.Json.string
-        |> Proto.Json.field "made" "" Proto.Json.string
-        |> Proto.Json.oneof decodeTaskDue
+    Proto.Json.message
+        (Json.Decode.succeed Task
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.messageField "title" "" Proto.Json.string
+            |> Proto.Json.messageField "state" StateUnspecified decodeState
+            |> Proto.Json.messageField "labels" [] (Json.Decode.list Proto.Json.string)
+            |> Proto.Json.messageField "owner" "" Proto.Json.string
+            |> Proto.Json.messageField "notes" "" Proto.Json.string
+            |> Proto.Json.messageField "made" "" Proto.Json.string
+            |> Proto.Json.oneof decodeTaskDue
+        )
 
 
 {-| Decodes a [`TaskDue`](#TaskDue) from the members of its message's JSON object.
@@ -285,8 +287,10 @@ decodeTaskDue =
 -}
 decodeGetTaskRequest : Json.Decode.Decoder GetTaskRequest
 decodeGetTaskRequest =
-    Json.Decode.succeed GetTaskRequest
-        |> Proto.Json.field "name" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed GetTaskRequest
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+        )
 
 
 

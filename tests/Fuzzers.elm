@@ -1,6 +1,8 @@
 module Fuzzers exposing
     ( awkwardString
     , base64
+    , base64Like
+    , canonicalBase64
     , deep
     , duration
     , everything
@@ -22,7 +24,8 @@ module Fuzzers exposing
 
 {-| Fuzzers for the property tests: values across the whole range a proto type
 allows, strings with the characters a URL must escape, and the generated
-messages of `Routes.V1`, plus an independent percent-decoder.
+messages of `Routes.V1`, plus an independent percent-decoder and base64
+checker.
 -}
 
 import Bitwise
@@ -59,6 +62,29 @@ awkwardString =
                 |> Fuzz.map String.fromList
           )
         , ( 1, Fuzz.constant "__proto__" )
+        ]
+
+
+{-| A short string of the characters that decide whether text is base64:
+mostly one alphabet's characters followed by up to three `=`, so that both
+answers are common; otherwise any mix of both alphabets, `=`, a character of
+neither, and surrogates with and without their pair.
+-}
+base64Like : Fuzzer String
+base64Like =
+    let
+        textOf tokens =
+            Fuzz.oneOfValues tokens
+                |> Fuzz.listOfLengthBetween 0 10
+                |> Fuzz.map String.concat
+
+        padded tokens =
+            Fuzz.map2 (++) (textOf tokens) (Fuzz.oneOfValues [ "", "", "=", "==", "===" ])
+    in
+    Fuzz.frequency
+        [ ( 3, padded [ "A", "z", "0", "+", "/" ] )
+        , ( 3, padded [ "A", "z", "0", "-", "_" ] )
+        , ( 4, textOf [ "A", "z", "0", "+", "/", "-", "_", "=", "!", "é", "😀", "\u{D800}", "\u{DC00}" ] )
         ]
 
 
@@ -570,3 +596,56 @@ fromUtf8 bytes acc =
                         Nothing
             in
             decoded |> Maybe.andThen (\( code, after ) -> fromUtf8 after (Char.fromCode code :: acc))
+
+
+{-| Base64 text in the standard alphabet, padded, from text in either
+alphabet with or without padding, checked one rule at a time; `Nothing` when
+it is not base64: a character outside both alphabets and `=`, padding before
+the end, both alphabets in one text, a length no base64 has, or padding that
+does not complete the last group. Every character is checked first, so the
+rest never reads a surrogate from the end.
+-}
+canonicalBase64 : String -> Maybe String
+canonicalBase64 text =
+    let
+        inAlphabet char =
+            String.length (String.fromChar char) == 1 && (Char.isAlphaNum char || String.contains (String.fromChar char) "+/-_")
+
+        dropTrailing t =
+            if String.endsWith "=" t then
+                dropTrailing (String.dropRight 1 t)
+
+            else
+                t
+
+        body =
+            dropTrailing text
+
+        partial =
+            modBy 4 (String.length body)
+
+        padding =
+            String.length text - String.length body
+
+        standard char =
+            case char of
+                '-' ->
+                    '+'
+
+                '_' ->
+                    '/'
+
+                _ ->
+                    char
+    in
+    if
+        String.all (\char -> inAlphabet char || char == '=') text
+            && String.all inAlphabet body
+            && not (String.any (\char -> char == '+' || char == '/') body && String.any (\char -> char == '-' || char == '_') body)
+            && (partial /= 1)
+            && (padding == 0 || (partial /= 0 && padding == 4 - partial))
+    then
+        Just (String.map standard body ++ String.repeat (modBy 4 (4 - partial)) "=")
+
+    else
+        Nothing

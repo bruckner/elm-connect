@@ -251,13 +251,15 @@ decodeKind =
 -}
 decodeEntry : Json.Decode.Decoder Entry
 decodeEntry =
-    Json.Decode.succeed Entry
-        |> Proto.Json.field "memo" "" Proto.Json.string
-        |> Proto.Json.field "amount" "0" Proto.Json.int64
-        |> Proto.Json.field "kind" KindUnspecified decodeKind
-        |> Proto.Json.field "tags" Dict.empty (Proto.Json.stringDict Proto.Json.int32)
-        |> Proto.Json.oneof decodeEntrySource
-        |> Proto.Json.field "marks" [] (Json.Decode.list Proto.Json.int32)
+    Proto.Json.message
+        (Json.Decode.succeed Entry
+            |> Proto.Json.messageField "memo" "" Proto.Json.string
+            |> Proto.Json.messageField "amount" "0" Proto.Json.int64
+            |> Proto.Json.messageField "kind" KindUnspecified decodeKind
+            |> Proto.Json.messageField "tags" Dict.empty (Proto.Json.stringDict Proto.Json.int32)
+            |> Proto.Json.oneof decodeEntrySource
+            |> Proto.Json.messageField "marks" [] (Json.Decode.list Proto.Json.int32)
+        )
 
 
 {-| Decodes an [`EntrySource`](#EntrySource) from the members of its message's JSON object.
@@ -275,8 +277,10 @@ decodeEntrySource =
 -}
 decodeGetEntryRequest : Json.Decode.Decoder GetEntryRequest
 decodeGetEntryRequest =
-    Json.Decode.succeed GetEntryRequest
-        |> Proto.Json.field "memo" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed GetEntryRequest
+            |> Proto.Json.messageField "memo" "" Proto.Json.string
+        )
 
 
 

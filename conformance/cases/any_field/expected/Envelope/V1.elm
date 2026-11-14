@@ -162,12 +162,14 @@ encodeEnvelopeBodyWith types value =
 -}
 decodeEnvelopeWith : Proto.Registry.Registry -> Json.Decode.Decoder Envelope
 decodeEnvelopeWith types =
-    Json.Decode.succeed Envelope
-        |> Proto.Json.field "id" "" Proto.Json.string
-        |> Proto.Json.field "payload" Nothing (Json.Decode.map Just (Proto.Json.anyWith types))
-        |> Proto.Json.field "attachments" [] (Json.Decode.list (Proto.Json.anyWith types))
-        |> Proto.Json.field "headers" Dict.empty (Proto.Json.stringDict (Proto.Json.anyWith types))
-        |> Proto.Json.oneof (decodeEnvelopeBodyWith types)
+    Proto.Json.message
+        (Json.Decode.succeed Envelope
+            |> Proto.Json.messageField "id" "" Proto.Json.string
+            |> Proto.Json.messageField "payload" Nothing (Json.Decode.map Just (Proto.Json.anyWith types))
+            |> Proto.Json.messageField "attachments" [] (Json.Decode.list (Proto.Json.anyWith types))
+            |> Proto.Json.messageField "headers" Dict.empty (Proto.Json.stringDict (Proto.Json.anyWith types))
+            |> Proto.Json.oneof (decodeEnvelopeBodyWith types)
+        )
 
 
 {-| Decodes an [`EnvelopeBody`](#EnvelopeBody) from the members of its message's JSON object.

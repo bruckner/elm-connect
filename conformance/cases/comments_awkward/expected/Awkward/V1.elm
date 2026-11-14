@@ -305,22 +305,26 @@ decodeMarks =
 -}
 decodeDelimiters : Json.Decode.Decoder Delimiters
 decodeDelimiters =
-    Json.Decode.succeed Delimiters
-        |> Proto.Json.field "lists" "" Proto.Json.string
-        |> Proto.Json.field "blocks" "" Proto.Json.string
-        |> Proto.Json.field "code" "" Proto.Json.string
-        |> Proto.Json.field "inline" "" Proto.Json.string
-        |> Proto.Json.field "text" "" Proto.Json.string
-        |> Proto.Json.fieldEither "whitespaceOnly" "whitespace_only" "" Proto.Json.string
-        |> Proto.Json.field "unclosed" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed Delimiters
+            |> Proto.Json.messageField "lists" "" Proto.Json.string
+            |> Proto.Json.messageField "blocks" "" Proto.Json.string
+            |> Proto.Json.messageField "code" "" Proto.Json.string
+            |> Proto.Json.messageField "inline" "" Proto.Json.string
+            |> Proto.Json.messageField "text" "" Proto.Json.string
+            |> Proto.Json.messageFieldEither "whitespaceOnly" "whitespace_only" "" Proto.Json.string
+            |> Proto.Json.messageField "unclosed" "" Proto.Json.string
+        )
 
 
 {-| Decodes a [`Docs`](#Docs) from proto3 JSON.
 -}
 decodeDocs : Json.Decode.Decoder Docs
 decodeDocs =
-    Json.Decode.succeed Docs
-        |> Proto.Json.field "field" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed Docs
+            |> Proto.Json.messageField "field" "" Proto.Json.string
+        )
 
 
 

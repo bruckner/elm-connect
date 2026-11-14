@@ -7,6 +7,7 @@ helpers generated code calls (`Proto.Route`) reach no `Rpc` module.
 -}
 
 import Bitwise
+import Json.Encode
 
 
 {-| Percent-encode `text` as UTF-8, keeping the characters `keep` accepts and
@@ -16,16 +17,39 @@ character, as the WHATWG URL encoder writes it.
 -}
 percentEncode : (Char -> Bool) -> String -> String
 percentEncode keep text =
-    foldrScalars
-        (\char encoded ->
+    let
+        step char encoded =
             if keep char then
                 String.cons char encoded
 
             else
-                String.concat (List.map hexByte (utf8 (Char.toCode char))) ++ encoded
-        )
-        ""
-        text
+                let
+                    code =
+                        Char.toCode char
+                in
+                if code < 0x80 then
+                    escaped code ++ encoded
+
+                else
+                    String.concat (List.map escaped (utf8 code)) ++ encoded
+    in
+    if knownWellFormed text then
+        String.foldr step "" text
+
+    else
+        foldrScalars step "" text
+
+
+{-| A byte's `%XX` escape, cut from a table of all 256 built once.
+-}
+escaped : Int -> String
+escaped byte =
+    String.slice (3 * byte) (3 * byte + 3) escapes
+
+
+escapes : String
+escapes =
+    String.concat (List.map hexByte (List.range 0 255))
 
 
 {-| `String.foldr` over the characters of `text`, each surrogate without its
@@ -85,13 +109,50 @@ leadingLows count text =
 
 
 {-| Whether every character of `text` is a Unicode scalar value: it holds no
-surrogate without its pair, so it has a UTF-8 form. `String.all` reads from
-the end as `String.foldr` does, and stops at the first character this
-refuses: a low surrogate taken with a unit that is not its high half, a lone
-high surrogate, or one at the start taken with what lies before the string.
+surrogate without its pair, so it has a UTF-8 form.
 -}
 wellFormed : String -> Bool
-wellFormed =
+wellFormed text =
+    -- Below 32 code units the character walk costs less than the native
+    -- pass (measured at 0, 8, 16, 32 and 64 units).
+    (String.length text >= 32 && knownWellFormed text) || scalarsOnly text
+
+
+{-| `True` when one native pass shows that `text` holds no surrogate without
+its pair (see `escapesLoneSurrogates`): its JSON holds no `\ud`. `False`
+says nothing. Percent-encoding takes it at any length, since its walk of
+text not known well-formed costs more than the pass even for short text.
+-}
+knownWellFormed : String -> Bool
+knownWellFormed text =
+    escapesLoneSurrogates && not (String.contains "\\ud" (Json.Encode.encode 0 (Json.Encode.string text)))
+
+
+{-| Whether this engine's `JSON.stringify` writes a surrogate without its pair
+as a `\uXXXX` escape (ECMAScript 2019's well-formed `JSON.stringify`). It
+writes a pair as it is, and lowercases the escape's hex digits, so text whose
+JSON holds no `\ud` holds no lone surrogate: one native pass decides the
+common case for text long enough that the pass costs less than a scan.
+Text whose JSON holds one, which a backslash before `ud` in the
+text also gives, is read character by character.
+-}
+escapesLoneSurrogates : Bool
+escapesLoneSurrogates =
+    String.contains "\\ud800" (Json.Encode.encode 0 (Json.Encode.string (String.fromChar (Char.fromCode 0xD800))))
+
+
+{-| [`wellFormed`](#wellFormed), read character by character. `String.all`
+reads from the end as `String.foldr` does, and takes a low surrogate together
+with the code unit before it for one character, whose code is that unit's
+unless the unit is its high half; a pair's code is past U+FFFF, so a
+character of two units with a lower code is a lone low surrogate. A lone high
+surrogate's code is NaN, which every comparison fails. One low surrogate at
+the start is taken with what lies before the string, a character longer than
+two units: refusing it stops `String.all` there, where reading further would
+never return.
+-}
+scalarsOnly : String -> Bool
+scalarsOnly =
     String.all
         (\char ->
             let
@@ -245,7 +306,11 @@ ASCII letters and digits, `-`, `_`, `.` and `~`.
 -}
 unreserved : Char -> Bool
 unreserved char =
-    Char.isAlphaNum char && Char.toCode char < 128 || char == '-' || char == '_' || char == '.' || char == '~'
+    let
+        code =
+            Char.toCode char
+    in
+    (code >= 0x61 && code <= 0x7A) || (code >= 0x41 && code <= 0x5A) || (code >= 0x30 && code <= 0x39) || char == '-' || char == '_' || char == '.' || char == '~'
 
 
 {-| The UTF-8 bytes of a Unicode scalar value, which `foldrScalars` makes of

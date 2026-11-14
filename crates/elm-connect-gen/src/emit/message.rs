@@ -268,12 +268,15 @@ impl Emitter {
         call(step, args)
     }
 
-    /// `decodeFoo : Json.Decode.Decoder Foo`: `Json.Decode.succeed Foo`
-    /// with one step per record field, in record order: an
-    /// [`Emitter::field_step`] per proto field (`Proto.Json.field`, or
-    /// `Proto.Json.valueField` for a singular `google.protobuf.Value`), a
-    /// `Proto.Json.oneof` per oneof; `Proto.Json.emptyMessage` for a message
-    /// without fields.
+    /// `decodeFoo : Json.Decode.Decoder Foo`: `Proto.Json.message` of
+    /// `Json.Decode.succeed Foo` with one step per record field, in record
+    /// order: an [`Emitter::field_step`] per proto field
+    /// (`Proto.Json.messageField`, or `Proto.Json.messageValueField` for a
+    /// singular `google.protobuf.Value`), a `Proto.Json.oneof` per oneof;
+    /// `Proto.Json.emptyMessage` for a message without fields.
+    /// `Proto.Json.message` checks once that the JSON is an object, and the
+    /// field steps trust it rather than each checking again; a message of
+    /// oneofs alone is not wrapped, since a oneof step checks for itself.
     ///
     /// A message that reaches an `Any` gets `decodeFooWith :
     /// Proto.Registry.Registry -> Json.Decode.Decoder Foo`, whose steps
@@ -293,13 +296,13 @@ impl Emitter {
                 .map(|field| match field {
                     RecordField::Field(field, value) => match self.field_decoder(value) {
                         Some((decoder, zero)) => self.field_step(
-                            ("field", "fieldEither"),
+                            ("messageField", "messageFieldEither"),
                             &field.json_name,
                             &field.proto_name,
                             [zero, decoder],
                         ),
                         None => self.field_step(
-                            ("valueField", "valueFieldEither"),
+                            ("messageValueField", "messageValueFieldEither"),
                             &field.json_name,
                             &field.proto_name,
                             [],
@@ -319,7 +322,15 @@ impl Emitter {
                     }
                 })
                 .collect();
-            pipeline(apply(succeed, [var(name.clone())]), steps)
+            let decoder = pipeline(apply(succeed, [var(name.clone())]), steps);
+            if shape.fields.is_empty() {
+                // Each oneof step checks the object itself, so a message of
+                // oneofs alone needs no check of its own.
+                decoder
+            } else {
+                let message = self.reference((PROTO_JSON, "message"));
+                apply(message, [decoder])
+            }
         };
         let doc = format!(
             "Decodes {} from proto3 JSON.",

@@ -1,5 +1,6 @@
 module Proto.Json exposing
     ( field, fieldEither, valueField, valueFieldEither, emptyMessage
+    , message, messageField, messageFieldEither, messageValueField, messageValueFieldEither
     , objectOfFields
     , implicitField, implicitFloatField, implicitBytesField, repeatedField, dictField, boolMapField
     , tryObjectOfFields, tryOptionalField, tryRepeatedField, tryDictField, tryBoolMapField
@@ -37,6 +38,15 @@ which gives `Nothing` to leave the field out, ends in `Field`
 # Fields
 
 @docs field, fieldEither, valueField, valueFieldEither, emptyMessage
+
+
+# Messages
+
+Generated decoders check once that the JSON is an object and then read each
+field without checking again, which makes a message decode faster than a
+pipeline of [`field`](#field) steps, each checking for itself.
+
+@docs message, messageField, messageFieldEither, messageValueField, messageValueFieldEither
 
 
 # Encoding fields
@@ -162,6 +172,7 @@ import Proto.Duration exposing (Duration)
 import Proto.Error exposing (Error)
 import Proto.Int64
 import Proto.Internal.Any as InternalAny
+import Proto.Internal.Percent as Percent
 import Proto.Internal.Registry as InternalRegistry
 import Proto.Registry exposing (Registry)
 import Proto.Timestamp
@@ -276,6 +287,103 @@ emptyMessage =
     Json.Decode.map (\() -> {}) empty
 
 
+{-| Decode a message: check that the JSON is an object, not an array, and
+then run `fields`, a pipeline from `Json.Decode.succeed` with a
+[`messageField`](#messageField) step per field. Anything that is not an
+object fails as a [`field`](#field) step does, with elm/json's
+`Expecting an OBJECT`.
+
+    decodeNote : Decoder Note
+    decodeNote =
+        message
+            (Json.Decode.succeed Note
+                |> messageField "title" "" string
+                |> messageField "stars" 0 int32
+            )
+
+A [`oneof`](#oneof) step reads the object as it does in any pipeline.
+
+-}
+message : Decoder a -> Decoder a
+message fields =
+    Json.Decode.value
+        |> Json.Decode.andThen
+            (\json ->
+                if isObject json then
+                    fields
+
+                else
+                    notAnObject
+            )
+
+
+{-| [`field`](#field) inside [`message`](#message), which has checked that the
+JSON is an object: the step does not check it again. Outside `message` it may
+read JSON that is not an object as a message, every field absent.
+-}
+messageField : String -> a -> Decoder a -> Decoder (a -> b) -> Decoder b
+messageField name default decoder =
+    Json.Decode.map2 (|>) (valueIn [ name ] default decoder)
+
+
+{-| [`fieldEither`](#fieldEither) inside [`message`](#message), as
+[`messageField`](#messageField) is `field`.
+-}
+messageFieldEither : String -> String -> a -> Decoder a -> Decoder (a -> b) -> Decoder b
+messageFieldEither jsonName protoName default decoder =
+    Json.Decode.map2 (|>) (valueIn (spellings jsonName protoName) default decoder)
+
+
+{-| [`valueField`](#valueField) inside [`message`](#message), as
+[`messageField`](#messageField) is `field`.
+-}
+messageValueField : String -> Decoder (Maybe Value -> b) -> Decoder b
+messageValueField name =
+    messageValueFieldEither name name
+
+
+{-| [`valueFieldEither`](#valueFieldEither) inside [`message`](#message), as
+[`messageField`](#messageField) is `field`.
+-}
+messageValueFieldEither : String -> String -> Decoder (Maybe Value -> b) -> Decoder b
+messageValueFieldEither jsonName protoName =
+    Json.Decode.map2 (|>)
+        (Json.Decode.value
+            |> Json.Decode.andThen
+                (\object_ ->
+                    case spelledInObject (spellings jsonName protoName) object_ of
+                        Err problem ->
+                            Json.Decode.fail problem
+
+                        Ok found ->
+                            Json.Decode.succeed (Maybe.map Tuple.second found)
+                )
+        )
+
+
+{-| [`valueAt`](#valueAt) for JSON already known to be an object, not an array.
+-}
+valueIn : List String -> a -> Decoder a -> Decoder a
+valueIn names default decoder =
+    Json.Decode.value
+        |> Json.Decode.andThen
+            (\object_ ->
+                case spelledInObject names object_ of
+                    Err problem ->
+                        Json.Decode.fail problem
+
+                    Ok Nothing ->
+                        Json.Decode.succeed default
+
+                    Ok (Just ( name, raw )) ->
+                        if isNull raw then
+                            Json.Decode.succeed default
+
+                        else
+                            Json.Decode.field name decoder
+            )
+
+
 {-| The value under whichever of `names`, the spellings of one field, the
 object holds, decoded; `default` when it holds none of them or holds `null`.
 -}
@@ -338,29 +446,63 @@ the JSON is not an array.
 -}
 spelledAs : List String -> Value -> Spelled
 spelledAs names json =
-    if List.any isInherited names then
-        case Json.Decode.decodeValue (Json.Decode.dict Json.Decode.value) json of
-            Ok keys ->
-                Spelled (oneSpelling names (List.filterMap (\name -> Dict.get name keys |> Maybe.map (Tuple.pair name)) names))
+    case names of
+        [ name ] ->
+            if isInherited name then
+                spelledAmongKeys names json
 
-            Err _ ->
+            else
+                case probe name json of
+                    Nothing ->
+                        if isObject json then
+                            Spelled (Ok Nothing)
+
+                        else
+                            NotAnObject
+
+                    Just found ->
+                        if isArray json then
+                            NotAnObject
+
+                        else
+                            Spelled (Ok (Just found))
+
+        _ ->
+            if List.any isInherited names then
+                spelledAmongKeys names json
+
+            else
+                spelledByProbes names json
+
+
+{-| Which of `names` an object holds, found among its own keys.
+-}
+spelledAmongKeys : List String -> Value -> Spelled
+spelledAmongKeys names json =
+    case Json.Decode.decodeValue (Json.Decode.dict Json.Decode.value) json of
+        Ok keys ->
+            Spelled (oneSpelling names (List.filterMap (\name -> Dict.get name keys |> Maybe.map (Tuple.pair name)) names))
+
+        Err _ ->
+            NotAnObject
+
+
+spelledByProbes : List String -> Value -> Spelled
+spelledByProbes names json =
+    case List.filterMap (\name -> probe name json) names of
+        [] ->
+            if isObject json then
+                Spelled (Ok Nothing)
+
+            else
                 NotAnObject
 
-    else
-        case List.filterMap (\name -> probe name json) names of
-            [] ->
-                if isObject json then
-                    Spelled (Ok Nothing)
+        found ->
+            if isArray json then
+                NotAnObject
 
-                else
-                    NotAnObject
-
-            found ->
-                if isArray json then
-                    NotAnObject
-
-                else
-                    Spelled (oneSpelling names found)
+            else
+                Spelled (oneSpelling names found)
 
 
 oneSpelling : List String -> List ( String, Value ) -> Result String (Maybe ( String, Value ))
@@ -499,9 +641,35 @@ A field given `Nothing` is left out.
 -}
 objectOfFields : List ( String, Maybe Value ) -> Value
 objectOfFields fields =
-    fields
-        |> List.filterMap (\( key, value ) -> Maybe.map (Tuple.pair key) value)
-        |> objectOf
+    presentPairs fields [] False
+
+
+{-| The pairs of the fields that have a value, gathered in reverse in one
+pass, noting whether a key is `__proto__`, and made an object.
+-}
+presentPairs : List ( String, Maybe Value ) -> List ( String, Value ) -> Bool -> Value
+presentPairs fields done proto =
+    case fields of
+        [] ->
+            objectOfReversed proto done
+
+        ( key, Just value ) :: rest ->
+            presentPairs rest (( key, value ) :: done) (proto || key == "__proto__")
+
+        ( _, Nothing ) :: rest ->
+            presentPairs rest done proto
+
+
+{-| [`objectOf`](#objectOf) of pairs given in reverse, told whether a key is
+`__proto__`.
+-}
+objectOfReversed : Bool -> List ( String, Value ) -> Value
+objectOfReversed proto reversed =
+    if proto then
+        objectOf (List.reverse reversed)
+
+    else
+        Json.Encode.object (List.reverse reversed)
 
 
 {-| A JSON object from its pairs, keys kept in order. `Json.Encode.object`
@@ -621,8 +789,23 @@ the first `Err`, in order, or the object.
 -}
 tryObjectOfFields : List ( String, Result x (Maybe Value) ) -> Result x Value
 tryObjectOfFields fields =
-    collect (\( key, result ) -> Result.map (Tuple.pair key) result) fields
-        |> Result.map objectOfFields
+    tryPresentPairs fields [] False
+
+
+tryPresentPairs : List ( String, Result x (Maybe Value) ) -> List ( String, Value ) -> Bool -> Result x Value
+tryPresentPairs fields done proto =
+    case fields of
+        [] ->
+            Ok (objectOfReversed proto done)
+
+        ( key, Ok (Just value) ) :: rest ->
+            tryPresentPairs rest (( key, value ) :: done) (proto || key == "__proto__")
+
+        ( _, Ok Nothing ) :: rest ->
+            tryPresentPairs rest done proto
+
+        ( _, Err problem ) :: _ ->
+            Err problem
 
 
 {-| A field with presence: `Ok Nothing` when it is `Nothing`, else its value's
@@ -786,22 +969,50 @@ presentIn json candidates found =
             Ok (List.reverse found)
 
         (Member candidate) :: rest ->
-            case spelledAs candidate.names json of
-                Spelled (Ok (Just ( name, raw ))) ->
+            case spelledInObject candidate.names json of
+                Ok (Just ( name, raw )) ->
                     if isNull raw && not candidate.nullIsSet then
                         presentIn json rest found
 
                     else
                         presentIn json rest (( name, candidate.decoder ) :: found)
 
-                Spelled (Ok Nothing) ->
+                Ok Nothing ->
                     presentIn json rest found
 
-                Spelled (Err problem) ->
+                Err problem ->
                     Err problem
 
-                NotAnObject ->
-                    Ok (List.reverse found)
+
+{-| [`spelledAs`](#spelledAs) for JSON already known to be an object, not an
+array: its shape is not tested again.
+-}
+spelledInObject : List String -> Value -> Result String (Maybe ( String, Value ))
+spelledInObject names json =
+    case names of
+        [ name ] ->
+            if isInherited name then
+                spelledAmongOwnKeys names json
+
+            else
+                Ok (probe name json)
+
+        _ ->
+            if List.any isInherited names then
+                spelledAmongOwnKeys names json
+
+            else
+                oneSpelling names (List.filterMap (\name -> probe name json) names)
+
+
+spelledAmongOwnKeys : List String -> Value -> Result String (Maybe ( String, Value ))
+spelledAmongOwnKeys names json =
+    case spelledAmongKeys names json of
+        Spelled found ->
+            found
+
+        NotAnObject ->
+            Ok Nothing
 
 
 {-| `"a" and "b"`, `"a", "b" and "c"`.
@@ -1050,33 +1261,11 @@ string =
             )
 
 
-{-| Whether `text` holds no UTF-16 surrogate without its pair. `String.all`
-reads from the end and takes a low surrogate together with the code unit
-before it for one character, whose code is that unit's unless the unit is its
-high half; a pair's code is past U+FFFF, so a character of two units with a
-lower code is a lone low surrogate. A lone high surrogate's code is NaN, which
-every comparison fails. One low surrogate at the start is taken with what lies
-before the string, a character longer than two units: refusing it stops
-`String.all` there, where reading further would never return.
+{-| Whether `text` holds no UTF-16 surrogate without its pair.
 -}
 isScalarText : String -> Bool
 isScalarText =
-    String.all
-        (\char ->
-            let
-                code =
-                    Char.toCode char
-            in
-            case String.length (String.fromChar char) of
-                1 ->
-                    code < 0xD800 || code > 0xDFFF
-
-                2 ->
-                    code > 0xFFFF
-
-                _ ->
-                    False
-        )
+    Percent.wellFormed
 
 
 {-| Decode a map with signed 32-bit integer keys (`int32`, `sint32`,
@@ -1890,36 +2079,48 @@ bytes =
 
 isBase64 : String -> Bool
 isBase64 text =
-    -- Checked first: only text of these characters is safe to read from the
-    -- end, as `String.any` and `trailingCount` do (see `isBase64Char`).
-    String.all (\char -> isBase64Char char || char == '=') text && base64Shape text
-
-
-base64Shape : String -> Bool
-base64Shape text =
     let
-        body =
-            dropPadding text
-
-        length =
-            String.length body
-
         padding =
-            String.length text - length
+            trailingPadding text
+
+        body =
+            String.dropRight padding text
 
         partial =
-            modBy 4 length
-
-        standard =
-            String.any (\char -> char == '+' || char == '/') body
-
-        urlSafe =
-            String.any (\char -> char == '-' || char == '_') body
+            modBy 4 (String.length body)
     in
-    String.all isBase64Char body
-        && not (standard && urlSafe)
+    -- The padding is counted and dropped natively; `String.all` then reads
+    -- the body from its end, which `isBase64Char` makes safe (see there).
+    (padding == 0 || (partial /= 0 && padding == 4 - partial))
         && (partial /= 1)
-        && (padding == 0 || (partial /= 0 && padding == 4 - partial))
+        && String.all isBase64Char body
+        && not (bothAlphabets body)
+
+
+{-| How many `=` end `text`, up to 3: more than 2 is never base64.
+-}
+trailingPadding : String -> Int
+trailingPadding text =
+    if String.endsWith "==" text then
+        if String.endsWith "===" text then
+            3
+
+        else
+            2
+
+    else if String.endsWith "=" text then
+        1
+
+    else
+        0
+
+
+{-| Whether base64 text mixes the standard alphabet's `+` or `/` with the
+URL-safe one's `-` or `_`.
+-}
+bothAlphabets : String -> Bool
+bothAlphabets body =
+    (String.contains "+" body || String.contains "/" body) && (String.contains "-" body || String.contains "_" body)
 
 
 {-| A character of either base64 alphabet. elm/core's `String.all` reads a
@@ -1930,12 +2131,11 @@ reading on would never return. Its length refuses it.
 -}
 isBase64Char : Char -> Bool
 isBase64Char char =
-    String.length (String.fromChar char) == 1 && (Char.isAlphaNum char || char == '+' || char == '/' || char == '-' || char == '_')
-
-
-dropPadding : String -> String
-dropPadding text =
-    String.dropRight (trailingCount '=' text) text
+    let
+        code =
+            Char.toCode char
+    in
+    String.length (String.fromChar char) == 1 && ((code >= 0x61 && code <= 0x7A) || (code >= 0x41 && code <= 0x5A) || (code >= 0x30 && code <= 0x39) || char == '+' || char == '/' || char == '-' || char == '_')
 
 
 {-| Encode `bytes`, held as a base64 string, as that string, unchecked.
@@ -2203,8 +2403,8 @@ anyWith registry =
         |> Json.Decode.andThen
             (\parts ->
                 case parts of
-                    Just ( url, message ) ->
-                        case InternalRegistry.toBytes (InternalRegistry.strict registry) (InternalAny.nameOf url) message of
+                    Just ( url, messageJson ) ->
+                        case InternalRegistry.toBytes (InternalRegistry.strict registry) (InternalAny.nameOf url) messageJson of
                             Just (Ok base64) ->
                                 Json.Decode.succeed (InternalAny.Any url (InternalAny.Binary base64))
 
@@ -2212,9 +2412,9 @@ anyWith registry =
                                 if InternalRegistry.isLenient registry then
                                     -- Read leniently, it may hold an `Any` its binary
                                     -- would lose: it is held as JSON alone.
-                                    case InternalRegistry.toBytes registry (InternalAny.nameOf url) message of
+                                    case InternalRegistry.toBytes registry (InternalAny.nameOf url) messageJson of
                                         Just (Ok _) ->
-                                            Json.Decode.succeed (InternalAny.Any url (InternalAny.Json message))
+                                            Json.Decode.succeed (InternalAny.Any url (InternalAny.Json messageJson))
 
                                         _ ->
                                             Json.Decode.fail ("Expecting an Any of " ++ quote url ++ " to hold that message: " ++ Proto.Error.toString problem)
@@ -2224,7 +2424,7 @@ anyWith registry =
 
                             Nothing ->
                                 if InternalRegistry.isLenient registry then
-                                    Json.Decode.succeed (InternalAny.Any url (InternalAny.Json message))
+                                    Json.Decode.succeed (InternalAny.Any url (InternalAny.Json messageJson))
 
                                 else
                                     Json.Decode.fail ("Expecting an Any of a type the registry has, but got the unregistered type " ++ quote url)

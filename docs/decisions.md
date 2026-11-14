@@ -1645,6 +1645,55 @@ caller to show the output it wants, and could not live in `Proto.Error`
 anyway, which `Proto.Descriptors` imports through the decoder.
 
 
+### JSON fast paths
+
+*2026-11-12.*
+
+Six changes to the JSON codecs and the request path, none of which
+changes what is accepted, refused or written, each measured before it
+was taken. A performance review of 0.2 against 0.1 had found the cost
+in a handful of passes the code made more often than it needed to;
+each change below removes one, and each that leans on an engine
+property detects it and falls back.
+
+| change | gain (rows it touches) | gzipped bundle, notes / minimal JSON client / same `wire=json` | assumes, and falls back |
+|---|---|---|---|
+| A field with one spelling probed directly; a oneof's members read without retesting the shape | small answer −11 %, 1 KB answer −7 %, note decode −10 %, 300-note list −11 % | +88 / +81 / +95 B | nothing |
+| Lone surrogates found with `JSON.stringify` in text of 32 code units or more | 1 KB answer −14 % | +20 / +55 / +49 B | ES2019's well-formed `JSON.stringify`, tested once at start; JSON holding `\ud`, short text and an older engine take the character walk |
+| A message's JSON object built in one pass | note encode −30 %, 300-note list −51 %, Connect POST −30 %, transcoded `updateNote` −16 %, `Any` pack −7 % | +106 / +58 / +57 B | nothing |
+| Percent-encoding from a table of escapes, well-formed text folded plainly | Connect GET −48 %, transcoded requests −6 to −12 % | +80 / +81 / +81 B | as the surrogate check, at any length; text it cannot prove takes the U+FFFD fold |
+| base64 text checked in one walk | error with two typed details −15 %, a 1 KB `bytes` field −68 % | −12 / −1 / −1 B | nothing |
+| One object check per message in generated decoders (`Proto.Json.message`) | small answer −17 %, 1 KB answer −7 %, note decode −7 %, 300-note list −20 %, `Any` in a message −11 %, a 1 KB `bytes` field −9 % | −49 / −65 / −65 B | nothing; the trusting steps are for use inside `message` only |
+| together | small answer −26 to −28 %, 1 KB −19 to −21 %, note decode −8 to −12 %, list decode −27 to −29 %, note encode −31 %, list encode −52 %, POST −22 %, GET −48 %, details −15 %, `bytes` field −63 to −68 % | +233 / +209 / +216 B | |
+
+Measured with the perf-0.2 harness: node 24, 21 rounds, the seven
+builds alternated in one run, each window between two idle checks.
+Moves under about 6 % on rows a change does not touch are noise in
+this harness; a second run of the decode rows settled two of them. The
+first change alone shows a Connect POST 9 % slower in every run, on a
+path it does not touch; the third change's encoder removes it.
+
+- The surrogate threshold was measured at 0, 8, 16, 32 and 64 units:
+  below 32 the walk is cheaper than the native pass (with no threshold
+  the decode rows were 2 to 6 % slower); 16 was within 2 %. The
+  percent-encoder's fallback walk costs more than the pass, so it takes
+  the pass at any length (32 units left a GET 9 % slower).
+- The generated decoders wrap their steps in `Proto.Json.message` and
+  read fields with `messageField`, `messageFieldEither`,
+  `messageValueField` and `messageValueFieldEither`, additive names
+  that generated code alone needs; a step makes no check of its own, so
+  outside `message` it can read something other than an object as a
+  message. The alternative, dropping the array check from every found
+  field without a regenerate, loosens what a decoder accepts (an array
+  with extra properties handed through a port). A message of oneofs
+  alone is not wrapped, since a oneof step checks for itself.
+  `Proto.ErrorDetails` takes the generated form.
+- The performance review's "+42 % JSON encode in the larger program"
+  was a JIT warm-up artifact of the old `collect` path, not program
+  size; the one-pass encoder does not depend on warm-up.
+
+Where: design §3.4, §5.3 (Transcode).
+
 ## Input and versioning
 
 

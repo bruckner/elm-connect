@@ -530,16 +530,18 @@ decodeLegacy =
 -}
 decodeNote : Json.Decode.Decoder Note
 decodeNote =
-    Json.Decode.succeed Note
-        |> Proto.Json.field "name" "" Proto.Json.string
-        |> Proto.Json.fieldEither "heading" "title" "" Proto.Json.string
-        |> Proto.Json.field "visibility" VisibilityUnspecified decodeVisibility
-        |> Proto.Json.field "tags" [] (Json.Decode.list Proto.Json.string)
-        |> Proto.Json.field "labels" Dict.empty (Proto.Json.stringDict Proto.Json.string)
-        |> Proto.Json.field "pinned" Nothing (Json.Decode.map Just Json.Decode.bool)
-        |> Proto.Json.field "subject" "" Proto.Json.string
-        |> Proto.Json.field "created" Nothing (Json.Decode.map Just Proto.Json.timestamp)
-        |> Proto.Json.oneof decodeNoteLastEvent
+    Proto.Json.message
+        (Json.Decode.succeed Note
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.messageFieldEither "heading" "title" "" Proto.Json.string
+            |> Proto.Json.messageField "visibility" VisibilityUnspecified decodeVisibility
+            |> Proto.Json.messageField "tags" [] (Json.Decode.list Proto.Json.string)
+            |> Proto.Json.messageField "labels" Dict.empty (Proto.Json.stringDict Proto.Json.string)
+            |> Proto.Json.messageField "pinned" Nothing (Json.Decode.map Just Json.Decode.bool)
+            |> Proto.Json.messageField "subject" "" Proto.Json.string
+            |> Proto.Json.messageField "created" Nothing (Json.Decode.map Just Proto.Json.timestamp)
+            |> Proto.Json.oneof decodeNoteLastEvent
+        )
 
 
 {-| Decodes a [`NoteLastEvent`](#NoteLastEvent) from the members of its message's JSON object.
@@ -557,48 +559,60 @@ decodeNoteLastEvent =
 -}
 decodeNoteEdit : Json.Decode.Decoder NoteEdit
 decodeNoteEdit =
-    Json.Decode.succeed NoteEdit
-        |> Proto.Json.field "author" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed NoteEdit
+            |> Proto.Json.messageField "author" "" Proto.Json.string
+        )
 
 
 {-| Decodes a [`Draft`](#Draft) from proto3 JSON.
 -}
 decodeDraft : Json.Decode.Decoder Draft
 decodeDraft =
-    Json.Decode.succeed Draft
-        |> Proto.Json.field "text" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed Draft
+            |> Proto.Json.messageField "text" "" Proto.Json.string
+        )
 
 
 {-| Decodes a [`GetNoteRequest`](#GetNoteRequest) from proto3 JSON.
 -}
 decodeGetNoteRequest : Json.Decode.Decoder GetNoteRequest
 decodeGetNoteRequest =
-    Json.Decode.succeed GetNoteRequest
-        |> Proto.Json.field "name" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed GetNoteRequest
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+        )
 
 
 {-| Decodes a [`ListNotesRequest`](#ListNotesRequest) from proto3 JSON.
 -}
 decodeListNotesRequest : Json.Decode.Decoder ListNotesRequest
 decodeListNotesRequest =
-    Json.Decode.succeed ListNotesRequest
-        |> Proto.Json.field "parent" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed ListNotesRequest
+            |> Proto.Json.messageField "parent" "" Proto.Json.string
+        )
 
 
 {-| Decodes a [`ListNotesResponse`](#ListNotesResponse) from proto3 JSON.
 -}
 decodeListNotesResponse : Json.Decode.Decoder ListNotesResponse
 decodeListNotesResponse =
-    Json.Decode.succeed ListNotesResponse
-        |> Proto.Json.field "notes" [] (Json.Decode.list decodeNote)
+    Proto.Json.message
+        (Json.Decode.succeed ListNotesResponse
+            |> Proto.Json.messageField "notes" [] (Json.Decode.list decodeNote)
+        )
 
 
 {-| Decodes a [`CreateNoteRequest`](#CreateNoteRequest) from proto3 JSON.
 -}
 decodeCreateNoteRequest : Json.Decode.Decoder CreateNoteRequest
 decodeCreateNoteRequest =
-    Json.Decode.succeed CreateNoteRequest
-        |> Proto.Json.field "note" Nothing (Json.Decode.map Just decodeNote)
+    Proto.Json.message
+        (Json.Decode.succeed CreateNoteRequest
+            |> Proto.Json.messageField "note" Nothing (Json.Decode.map Just decodeNote)
+        )
 
 
 

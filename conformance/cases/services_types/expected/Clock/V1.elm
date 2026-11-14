@@ -112,8 +112,10 @@ encodeAlarm value =
 -}
 decodeAlarm : Json.Decode.Decoder Alarm
 decodeAlarm =
-    Json.Decode.succeed Alarm
-        |> Proto.Json.field "at" Nothing (Json.Decode.map Just Proto.Json.timestamp)
+    Proto.Json.message
+        (Json.Decode.succeed Alarm
+            |> Proto.Json.messageField "at" Nothing (Json.Decode.map Just Proto.Json.timestamp)
+        )
 
 
 

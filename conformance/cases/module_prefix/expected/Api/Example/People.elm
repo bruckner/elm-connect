@@ -158,9 +158,11 @@ decodeRole =
 -}
 decodeUser : Json.Decode.Decoder User
 decodeUser =
-    Json.Decode.succeed User
-        |> Proto.Json.field "name" "" Proto.Json.string
-        |> Proto.Json.field "role" RoleUnspecified decodeRole
+    Proto.Json.message
+        (Json.Decode.succeed User
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.messageField "role" RoleUnspecified decodeRole
+        )
 
 
 

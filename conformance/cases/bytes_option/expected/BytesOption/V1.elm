@@ -174,15 +174,17 @@ encodeBlobSource value =
 -}
 decodeBlob : Json.Decode.Decoder Blob
 decodeBlob =
-    Json.Decode.succeed Blob
-        |> Proto.Json.field "data" Proto.Bytes.empty Proto.Json.bytesAsBytes
-        |> Proto.Json.fieldEither "maybeData" "maybe_data" Nothing (Json.Decode.map Just Proto.Json.bytesAsBytes)
-        |> Proto.Json.field "chunks" [] (Json.Decode.list Proto.Json.bytesAsBytes)
-        |> Proto.Json.fieldEither "byName" "by_name" Dict.empty (Proto.Json.stringDict Proto.Json.bytesAsBytes)
-        |> Proto.Json.field "wrapped" Nothing (Json.Decode.map Just Proto.Json.bytesAsBytes)
-        |> Proto.Json.fieldEither "wrappedChunks" "wrapped_chunks" [] (Json.Decode.list Proto.Json.bytesAsBytes)
-        |> Proto.Json.oneof decodeBlobSource
-        |> Proto.Json.field "name" "" Proto.Json.string
+    Proto.Json.message
+        (Json.Decode.succeed Blob
+            |> Proto.Json.messageField "data" Proto.Bytes.empty Proto.Json.bytesAsBytes
+            |> Proto.Json.messageFieldEither "maybeData" "maybe_data" Nothing (Json.Decode.map Just Proto.Json.bytesAsBytes)
+            |> Proto.Json.messageField "chunks" [] (Json.Decode.list Proto.Json.bytesAsBytes)
+            |> Proto.Json.messageFieldEither "byName" "by_name" Dict.empty (Proto.Json.stringDict Proto.Json.bytesAsBytes)
+            |> Proto.Json.messageField "wrapped" Nothing (Json.Decode.map Just Proto.Json.bytesAsBytes)
+            |> Proto.Json.messageFieldEither "wrappedChunks" "wrapped_chunks" [] (Json.Decode.list Proto.Json.bytesAsBytes)
+            |> Proto.Json.oneof decodeBlobSource
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+        )
 
 
 {-| Decodes a [`BlobSource`](#BlobSource) from the members of its message's JSON object.
