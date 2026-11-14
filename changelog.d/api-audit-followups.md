@@ -18,3 +18,10 @@
   `route::get_body`: a browser sends those methods without a body, so
   the fields mapped to it never reached the server, and the call went
   out regardless. A `delete` with a body is still accepted.
+- Breaking: `Rpc.Client.problems` is gone, with nothing in its place.
+  What it found each fails the call already: a base URL holding `?` or
+  `#`, a URL the browser refuses and a header a request cannot carry
+  each fail the call unsent, its `Rpc.Error.cause` `BadCall`.
+- Changed: `Rpc.Protocol.withReadMaxBytes` and `withWriteMaxBytes`
+  given a value below 1 mean no limit, and remove a limit set earlier;
+  before, such a limit refused every body.

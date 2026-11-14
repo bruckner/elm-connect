@@ -173,7 +173,6 @@ suite =
     describe "Rpc.Client"
         [ equality
         , readers
-        , problems
         , json
         ]
 
@@ -225,6 +224,32 @@ equality =
                 , equalTo (every Rpc.Protocol.grpcWeb) (otherwise Rpc.Protocol.grpcWeb)
                 ]
                     |> Expect.equal [ [], [ "withMaxGetUrl" ], [], [ "withMaxGetUrl" ] ]
+        , test "a limit below 1 is no limit: a protocol given one, or given a limit then one, is == to one never given any" <|
+            \_ ->
+                let
+                    unlimited protocol =
+                        [ Rpc.Protocol.withReadMaxBytes 0 protocol
+                        , Rpc.Protocol.withWriteMaxBytes -1 protocol
+                        , protocol |> Rpc.Protocol.withReadMaxBytes 1000 |> Rpc.Protocol.withReadMaxBytes 0
+                        , protocol |> Rpc.Protocol.withWriteMaxBytes 1000 |> Rpc.Protocol.withWriteMaxBytes -5
+                        ]
+                            |> List.map (\other -> other == protocol && protocol == other)
+                in
+                [ unlimited Rpc.Protocol.connect
+                , unlimited Rpc.Protocol.transcode
+                , unlimited Rpc.Protocol.connectProto
+                , unlimited Rpc.Protocol.grpcWeb
+                ]
+                    |> Expect.equal (List.repeat 4 [ True, True, True, True ])
+        , test "a limit below 1 removes only its own limit" <|
+            \_ ->
+                (Rpc.Protocol.connectProto
+                    |> Rpc.Protocol.withReadMaxBytes 10
+                    |> Rpc.Protocol.withWriteMaxBytes 20
+                    |> Rpc.Protocol.withReadMaxBytes 0
+                )
+                    == Rpc.Protocol.withWriteMaxBytes 20 Rpc.Protocol.connectProto
+                    |> Expect.equal True
         , test "two clients given one top-level registry are ==" <|
             \_ ->
                 (base |> Rpc.Client.withRegistry topLevel)
@@ -305,33 +330,6 @@ readers =
                 , ( Rpc.Protocol.name Rpc.Protocol.grpcWeb, Rpc.Protocol.codec Rpc.Protocol.grpcWeb )
                 ]
                     |> Expect.equal [ ( "connect", "json" ), ( "connect", "proto" ), ( "transcode", "json" ), ( "grpc-web", "proto" ) ]
-        ]
-
-
-problems : Test
-problems =
-    describe "problems"
-        [ test "a client with every modifier, over each protocol, has none" <|
-            \_ ->
-                [ Rpc.Client.problems (every Rpc.Protocol.connect)
-                , Rpc.Client.problems (every Rpc.Protocol.transcode)
-                , Rpc.Client.problems (every Rpc.Protocol.connectProto)
-                , Rpc.Client.problems (every Rpc.Protocol.grpcWeb)
-                ]
-                    |> Expect.equal [ [], [], [], [] ]
-        , test "a binary client's limits below 1 are reported, one sentence each" <|
-            \_ ->
-                Rpc.client (Rpc.Protocol.connectProto |> Rpc.Protocol.withReadMaxBytes 0 |> Rpc.Protocol.withWriteMaxBytes -1) url
-                    |> Rpc.Client.problems
-                    |> List.map (\problem -> ( String.startsWith "readMaxBytes 0" problem, String.startsWith "writeMaxBytes -1" problem ))
-                    |> Expect.equal [ ( True, False ), ( False, True ) ]
-        , test "a bad base URL and header are reported together, in that order" <|
-            \_ ->
-                Rpc.client Rpc.Protocol.connectProto "https://api.example.com/?x=1"
-                    |> Rpc.Client.withHeaders [ ( "Bad Name", "v" ) ]
-                    |> Rpc.Client.problems
-                    |> List.map (\problem -> ( String.startsWith "baseUrl" problem, String.startsWith "header" problem ))
-                    |> Expect.equal [ ( True, False ), ( False, True ) ]
         ]
 
 
