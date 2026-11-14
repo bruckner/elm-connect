@@ -1,7 +1,9 @@
-- `Proto.Error.Reason` has a constructor, `MissingRequired Int`,
-  reserved for a proto2 `required` field absent from binary; no
-  decoder gives it while the generator reads proto3 alone, but a
-  `case` on a `Reason` must cover it. `Proto.Error.Error`, `Reason`
+- `Proto.Error.Reason` has two reserved constructors: `MissingRequired
+  Int`, for a proto2 `required` field absent from binary, which no
+  decoder gives while the generator reads proto3 alone, and `TooDeep`,
+  for a message nested past a depth limit, which no decoder gives
+  while the decoders have no limit (protobuf implementations stop at
+  100 levels). A `case` on a `Reason` must cover both. `Proto.Error.Error`, `Reason`
   and the `Binary` record are frozen within a major.
 - `Proto.Any.toJson`, and so `Proto.Json.encodeAnyWith` and every
   request holding an `Any`, writes an `Any` held as JSON alone through

@@ -92,12 +92,15 @@ type alias Binary =
   - `Unlocated`: the decoder failed, but could not say where or why. This
     is a bug in elm-connect: please report it, with the input.
 
-One more is reserved for proto2, which the generator does not read, so this
-release never gives it; a `case` on a `Reason` covers it all the same:
+Two more are reserved, so this release never gives them; a `case` on a
+`Reason` covers them all the same:
 
   - `MissingRequired`: a proto2 `required` field, its number given here,
     absent from the message: the last entry of `path`, or `typeName` when
-    `path` is empty.
+    `path` is empty. For proto2, which the generator does not read.
+  - `TooDeep`: a message nested past the decoder's depth limit, for when
+    the decoders gain one. Protobuf implementations refuse input nested
+    past 100 levels; these decoders have no limit yet.
 
 -}
 type Reason
@@ -110,6 +113,7 @@ type Reason
     | InvalidUtf8
     | Unlocated
     | MissingRequired Int
+    | TooDeep
 
 
 {-| A description of an error, for a person reading a log, as
@@ -178,6 +182,9 @@ reasonText reason =
 
         MissingRequired number ->
             "required field " ++ String.fromInt number ++ " is missing"
+
+        TooDeep ->
+            "messages are nested too deeply"
 
 
 {-| The fields a failure is in, innermost first, as a reader follows them

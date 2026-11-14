@@ -31,7 +31,7 @@ suite =
                 List.filter (\c -> outcome c /= expected c) Corpus.cases
                     |> List.map (\c -> ( c.label, outcome c ))
                     |> Expect.equal []
-        , test "every reason but Unlocated and the reserved MissingRequired is reached" <|
+        , test "every reason but Unlocated and the reserved ones is reached" <|
             \_ ->
                 [ Truncated, LengthOverrun, InvalidTag, InvalidWireType 3, InvalidWireType 4, InvalidWireType 6, InvalidWireType 7, MalformedVarint, IntOutOfRange, InvalidUtf8 ]
                     |> List.filter (\reason -> not (List.any (\c -> reasonOf c == Just reason) Corpus.cases))
