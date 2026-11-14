@@ -58,7 +58,7 @@ credentials cross-origin and no retries.
 The base URL is the server with any routing prefix
 (`https://api.example.com`, `/api`); a trailing `/` is dropped. A call's path
 is appended to it, so it can hold no query or fragment: a call sent with one
-holding `?` or `#` is not sent, and fails with `NoAnswer (BadUrl url)`.
+holding `?` or `#` is not sent, and fails with `BadUrl url`.
 [`problems`](#problems) finds that where the client is built.
 
 -}
@@ -79,7 +79,7 @@ client over url =
 `( "Authorization", "Bearer …" )`. A name must be an HTTP token (letters,
 digits and `` !#$%&'*+-.^_`|~ ``), and a value can hold no NUL, CR or LF
 and no character above U+00FF, which a browser refuses. A call with such a
-header is not sent, and fails with `NoAnswer (BadHeader name)`.
+header is not sent, and fails with `BadHeader name`.
 -}
 withHeaders : List ( String, String ) -> Client codec -> Client codec
 withHeaders extra (Internal.Client c) =
@@ -127,7 +127,7 @@ empty one until this sets it. A method holds none.
 A program whose calls speak JSON and whose messages hold an `Any` sets one,
 as protobuf's own JSON codecs require: over JSON, a call whose request holds
 an `Any` the registry cannot write is not sent (it fails with
-[`NoAnswer (BadAny error)`](Rpc-Error#Reason)), and a response
+[`BadAny error`](Rpc-Error#Error)), and a response
 holding one of a type it lacks fails to decode. Over protobuf binary an `Any`
 needs no registry. Whatever the protocol, a status's details that arrive as
 proto3 JSON (a `google.rpc.Status` body, over transcoding) are read through

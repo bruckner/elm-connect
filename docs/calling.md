@@ -72,7 +72,7 @@ them:
 | Piece | Set by | Meaning |
 |---|---|---|
 | protocol | `Rpc.client` | the protocol, with its own options (below) |
-| base URL | `Rpc.client` | the server, with any routing prefix (`https://api.example.com`, `/api`); a trailing `/` is dropped. It can hold no query or fragment: a call is then not sent, and fails with `NoAnswer (BadUrl url)` |
+| base URL | `Rpc.client` | the server, with any routing prefix (`https://api.example.com`, `/api`); a trailing `/` is dropped. It can hold no query or fragment: a call is then not sent, and fails with `BadUrl url` |
 | headers | `Rpc.Client.withHeaders` | sent with every call, before the call's own; each list given goes after those given before |
 | timeout | `Rpc.Client.withTimeout` | milliseconds; over Connect also sent as `Connect-Timeout-Ms`, rounded up to a whole millisecond, and over gRPC-Web as `grpc-timeout`. A value that is not a positive number means no timeout |
 | credentials | `Rpc.Client.withCredentials` | send cookies and other credentials cross-origin (`Http.riskyRequest`) |
@@ -90,8 +90,8 @@ Clients built alike are `==`; a client never belongs in a message.
 
 A header name must be an HTTP token, and a value can hold no NUL, CR or
 LF and no character above U+00FF, which a browser refuses. A call with
-such a header is not sent: it fails with `NoAnswer (BadHeader
-name)`, and the header is never altered to fit.
+such a header is not sent: it fails with `BadHeader name`,
+and the header is never altered to fit.
 
 ### Checking a client
 
@@ -237,7 +237,7 @@ shows.
 gRPC-Web, of the response message, not its frame), on any protocol, as connect-go's
 `WithReadMaxBytes` and connect-node's `readMaxBytes` do. A body over it is
 dropped before decoding and the call fails with
-`NoAnswer (ResponseTooLarge { limit, size })`, code `ResourceExhausted`;
+`ResponseTooLarge { limit, size }`, code `ResourceExhausted`;
 an error answer is still read for its status. The browser has received
 the body by then, so the limit bounds what is decoded and held, not what
 is downloaded.
@@ -245,7 +245,7 @@ is downloaded.
 `Rpc.Protocol.withWriteMaxBytes n` caps the request message's JSON, or
 its binary under the proto codec, the same way, as connect-go's `WithSendMaxBytes` and connect-node's
 `writeMaxBytes` do: a call over it is never sent, and fails with
-`NoAnswer (RequestTooLarge { limit, size })`. Neither has a limit by
+`RequestTooLarge { limit, size }`. Neither has a limit by
 default, as in connect-node; connect-go reads at most 4 MiB unless told
 otherwise, and connect-web, the browser transport, has no such knob.
 `Rpc.Client.problems` reports a limit below 1.
@@ -482,8 +482,8 @@ cancel : String -> Cmd msg
 
 `Rpc.task` sends a call as a `Task`, for chaining; `Rpc.send` as a
 `Cmd`, giving the result to a message. A call whose URL or headers
-cannot be sent is not: it fails with `NoAnswer`, and nothing reaches
-elm/http.
+cannot be sent is not: it fails with the error that says why, and
+nothing reaches elm/http.
 
 ### Cancelling
 
@@ -526,11 +526,26 @@ in `Rpc.Error` with its readers:
 
 ```elm src/Rpc/Error.elm excerpt
 type Error
-    = RpcStatus StatusError Response
+    = -- The server answered.
+      RpcStatus StatusError Response
     | HttpStatus Response
-    | BadResponse Code Problem Response
-    | NoAnswer Reason
+      -- An answer arrived but could not be read.
+    | BadBody Proto.Error.Error Response
+    | BadEnvelope String Response
+    | BadMessageCount Int Response
+    | ResponseTooLarge { limit : Int, size : Int }
+      -- The request was sent and nothing usable came back.
+    | Timeout
+    | NetworkError
+      -- The request was never sent.
+    | BadUrl String
+    | BadHeader String
+    | BadPathValue { field : String, template : String }
+    | RequestTooLarge { limit : Int, size : Int }
+    | BadAny Proto.Error.Error
 ```
+
+The server answered:
 
 - `RpcStatus`: the server stated a status: its code (an
   `Rpc.Code.Code`), message, details and where it was read from.
@@ -546,32 +561,42 @@ type Error
   a failure is: a status it carries is an `RpcStatus`. Transcoding
   reads any success as its answer, whatever its content type, since a
   REST server may label JSON `text/plain`.
-- `BadResponse`: the server answered with success, but the answer could
-  not be read as the response: the code, then the problem, then the
-  answer. The problem is a `Body` holding the `Proto.Error.Error` of a
-  body that is not the response message, as when the schema drifted
-  between client and server (`BadJson`, `BadBinary`, or
-  `UnregisteredType` for an `Any` of a type the client's registry
-  lacks), or an `Envelope` naming what was malformed around it: another
+
+An answer arrived but could not be read as the response:
+
+- `BadBody`: its body is not the response message, as when the schema
+  drifted between client and server: the `Proto.Error.Error` says how
+  (`BadJson`, `BadBinary`, or `UnregisteredType` for an `Any` of a type
+  the client's registry lacks). Code `Internal`.
+- `BadEnvelope`: what carries the body is malformed, named here: another
   of the protocol's content types than the call reads
   (`application/json` under the proto codec,
   `application/grpc-web+json` over `grpcWeb`), or a gRPC-Web answer's
-  framing or trailers. The code is the runtime's, as the Connect
-  clients give it: `Internal`, or `Unimplemented` for a unary gRPC-Web
-  answer with status 0 and no message or more than one. A success with
-  no content type is read as the answer.
-- `NoAnswer`: nothing came back, or nothing was sent: a `Timeout`
-  (`DeadlineExceeded`), a `NetworkError` (`Unavailable`, which is also
-  how a browser's CORS refusal arrives), a `BadUrl` or a
-  `BadHeader` (both `Internal`, and never sent), a
-  `BadPathValue`, a transcoded call's path value its template
-  cannot match (`InvalidArgument`, never sent), a request or
-  answer over a size limit (`RequestTooLarge`, `ResponseTooLarge`,
-  both `ResourceExhausted`).
+  framing or trailers. Code `Internal`. A success with no content type
+  is read as the answer.
+- `BadMessageCount`: a unary gRPC-Web answer with status 0 and no
+  message or more than one, with the count. Code `Unimplemented`, as
+  the Connect clients give it.
+- `ResponseTooLarge`: the body was over the read limit and dropped
+  unread (`ResourceExhausted`; see [Size limits](#size-limits)).
 
-The first three keep the answer itself, an `Rpc.Response` with its URL,
+The request was sent and nothing usable came back:
+
+- `Timeout` (`DeadlineExceeded`) and `NetworkError` (`Unavailable`,
+  which is also how a browser's CORS refusal arrives).
+
+The request was never sent:
+
+- `BadUrl` and `BadHeader` (both `Internal`); `BadPathValue`, a
+  transcoded call's path value its template cannot match
+  (`InvalidArgument`); `RequestTooLarge`, a request over the write
+  limit (`ResourceExhausted`); `BadAny`, an `Any` the registry cannot
+  write as JSON (`Internal`).
+
+Those that had an answer keep it, an `Rpc.Response` with its URL,
 status, headers and body, for errors in a shape the runtime does not
-read and bodies that do not decode.
+read and bodies that do not decode; `Rpc.Error.response` gives it, or
+`Nothing`.
 
 An `HttpStatus` code is the [Connect protocol's
 mapping](https://connectrpc.com/docs/protocol/#http-to-error-code) of an
@@ -598,6 +623,7 @@ last four apart by the response's `statusCode`, not by the code.
 ```elm src/Rpc/Error.elm excerpt
 code : Error -> Code
 message : Error -> String
+response : Error -> Maybe Response
 toString : Error -> String
 ```
 
@@ -609,9 +635,8 @@ are `Any`s or the problems that kept them from being read, which
 
 An `Rpc.Error` is what the call's answer was, and none of its
 constructors fits a failure the application finds in a good answer,
-such as a list missing the item it asked for: `BadResponse` and the
-others carry the `Response` they read, and `NoAnswer` a reason nothing
-came back. Give such a failure the application's own error type, one
+such as a list missing the item it asked for: each says what came back,
+or why nothing did. Give such a failure the application's own error type, one
 constructor holding an `Rpc.Error` and others for its own failures, and
 map into it where the application sends its calls, with `Task.mapError`
 on the task (see [Wrapping the sending once](#wrapping-the-sending-once))

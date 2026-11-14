@@ -25,7 +25,7 @@ import Proto.Internal.Method exposing (Method(..), RouteOf(..))
 import Proto.Registry exposing (Registry)
 import Proto.Route exposing (PathError)
 import Rpc.Code as Code
-import Rpc.Error as Error exposing (Error, Reason)
+import Rpc.Error as Error exposing (Error)
 import Rpc.Internal.Call exposing (Call(..))
 import Rpc.Internal.Client exposing (Client(..))
 import Rpc.Internal.Http as Internal
@@ -58,7 +58,7 @@ type alias Plan res =
     { request : () -> Request
     , invalid : () -> Maybe PathError
     , unencodable : () -> Maybe Proto.Error.Error
-    , tooLarge : () -> Maybe Reason
+    , tooLarge : () -> Maybe Error
     , reader : Reader res
     , binding : Maybe Int
     , responseBody : Maybe String
@@ -305,7 +305,7 @@ a type the registry lacks named as `UnregisteredType`.
 -}
 badText : Registry -> GoodText -> Json.Decode.Error -> Error
 badText registry good problem =
-    Error.BadResponse Code.Internal (Error.Body (Status.bodyProblem registry problem)) (Status.answerOf good.metadata good.raw)
+    Error.BadBody (Status.bodyProblem registry problem) (Status.answerOf good.metadata good.raw)
 
 
 {-| Why `sent`, the plan's request or one an application rewrote, must not
@@ -320,21 +320,21 @@ whatever a rewritten request carries.
 refused : String -> Plan res -> Request -> Maybe Error
 refused baseUrl p sent =
     if Internal.badBaseUrl baseUrl then
-        Just (Error.NoAnswer (Error.BadUrl sent.url))
+        Just (Error.BadUrl sent.url)
 
     else
         case ( p.unencodable (), p.invalid (), Internal.invalidHeader sent.headers ) of
             ( Just problem, _, _ ) ->
-                Just (Error.NoAnswer (Error.BadAny problem))
+                Just (Error.BadAny problem)
 
             ( Nothing, Just path, _ ) ->
-                Just (Error.NoAnswer (Error.BadPathValue path))
+                Just (Error.BadPathValue path)
 
             ( Nothing, Nothing, Just name ) ->
-                Just (Error.NoAnswer (Error.BadHeader name))
+                Just (Error.BadHeader name)
 
             ( Nothing, Nothing, Nothing ) ->
-                p.tooLarge () |> Maybe.map Error.NoAnswer
+                p.tooLarge ()
 
 
 {-| The request an attempt sends with `left` milliseconds of a retry deadline

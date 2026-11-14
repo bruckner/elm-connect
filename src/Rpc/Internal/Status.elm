@@ -39,13 +39,13 @@ bytesFailure answer =
             failure metadata (Internal.bytesText raw)
 
         Http.BadUrl_ url ->
-            Error.NoAnswer (Error.BadUrl url)
+            Error.BadUrl url
 
         Http.Timeout_ ->
-            Error.NoAnswer Error.Timeout
+            Error.Timeout
 
         Http.NetworkError_ ->
-            Error.NoAnswer Error.NetworkError
+            Error.NetworkError
 
 
 {-| The error of an answer that is not a protocol's success.
@@ -60,13 +60,13 @@ otherFailure answer =
             failure metadata raw
 
         Http.BadUrl_ url ->
-            Error.NoAnswer (Error.BadUrl url)
+            Error.BadUrl url
 
         Http.Timeout_ ->
-            Error.NoAnswer Error.Timeout
+            Error.Timeout
 
         Http.NetworkError_ ->
-            Error.NoAnswer Error.NetworkError
+            Error.NetworkError
 
 
 {-| An answer as an error keeps it.

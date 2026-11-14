@@ -163,12 +163,15 @@ cannot help. The runtime's loop and `Rpc.Retry.next` both read it.
 -}
 retryable : Error -> Maybe Code
 retryable error =
-    case error of
-        Rpc.Error.NoAnswer (Rpc.Error.BadUrl _) ->
+    case Rpc.Error.delivery error of
+        Rpc.Error.NeverSent ->
             -- Nothing was sent, and nothing would change.
             Nothing
 
-        _ ->
+        Rpc.Error.Unanswered ->
+            Just (Rpc.Error.code error)
+
+        Rpc.Error.Answered ->
             Just (Rpc.Error.code error)
 
 

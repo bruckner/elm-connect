@@ -33,7 +33,7 @@ import Json.Encode exposing (Value)
 import Proto.Error
 import Proto.Method exposing (Idempotency)
 import Proto.Route exposing (Route)
-import Rpc.Error exposing (Error, Reason)
+import Rpc.Error exposing (Error)
 import Rpc.Request exposing (Request)
 
 
@@ -107,9 +107,9 @@ type Wire
 type alias TextWire =
     { build : Options -> Settings -> Maybe Route -> (() -> Value) -> Request
     , routed : Bool
-    , message : (Options -> String -> Maybe Reason) -> Options -> Maybe String -> Http.Response String -> Result Error GoodText
-    , tooLarge : Options -> (() -> Value) -> Maybe Reason
-    , overRead : Options -> String -> Maybe Reason
+    , message : (Options -> String -> Maybe Error) -> Options -> Maybe String -> Http.Response String -> Result Error GoodText
+    , tooLarge : Options -> (() -> Value) -> Maybe Error
+    , overRead : Options -> String -> Maybe Error
     , timeoutHeader : Bool -> Maybe ( String, Float -> String )
     }
 
@@ -138,9 +138,9 @@ whole.
 -}
 type alias BinaryWire =
     { build : (Bytes -> String) -> Options -> Settings -> Bytes.Encode.Encoder -> Request
-    , message : (Options -> Bytes -> Maybe Reason) -> Options -> String -> Http.Response Bytes -> ( Maybe Http.Metadata, Result Error BytesMessage )
-    , tooLarge : (Bytes -> Int) -> Options -> (() -> Bytes.Encode.Encoder) -> Maybe Reason
-    , overRead : (Bytes -> Int) -> Options -> Bytes -> Maybe Reason
+    , message : (Options -> Bytes -> Maybe Error) -> Options -> String -> Http.Response Bytes -> ( Maybe Http.Metadata, Result Error BytesMessage )
+    , tooLarge : (Bytes -> Int) -> Options -> (() -> Bytes.Encode.Encoder) -> Maybe Error
+    , overRead : (Bytes -> Int) -> Options -> Bytes -> Maybe Error
     , width : Bytes -> Int
     , timeoutHeader : Maybe ( String, Float -> String )
     , base64 : Bytes -> String

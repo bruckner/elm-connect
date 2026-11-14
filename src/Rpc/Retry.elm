@@ -69,9 +69,10 @@ than 30 seconds, and only calls of a method declared
 Every error is judged by its code, so a network failure reads as
 `Unavailable` and a timeout as `DeadlineExceeded`. A request that timed out
 may have reached the server, so `DeadlineExceeded` belongs in `codes` only for
-calls that are safe to replay, which the idempotent-only default keeps to. A
-bad URL or an invalid header is never retried, whatever its code: nothing was
-sent, and nothing would change.
+calls that are safe to replay, which the idempotent-only default keeps to. An
+error of a request that was never sent
+([`Rpc.Error.delivery`](Rpc-Error#delivery) is `NeverSent`) is never retried,
+whatever its code: nothing would change.
 
 Each wait is drawn uniformly from zero to its bound ("full jitter"), so
 clients that failed together do not retry together. The application gives no
@@ -164,8 +165,8 @@ failing with `error`, at `now` and `elapsed` milliseconds after the first
 attempt began. It is the decision the runtime makes between its own attempts,
 the policy's codes (read with [`Rpc.Error.code`](Rpc-Error#code)), attempt
 limit, doubling, cap, jitter and deadline included, and like the runtime it
-stops on an error trying again cannot help: a `BadUrl`, where nothing was
-sent.
+stops on an error trying again cannot help: one where nothing was sent
+([`Rpc.Error.delivery`](Rpc-Error#delivery) is `NeverSent`).
 
 It is for an application that runs the retry loop itself: to show that it is
 waiting, to let the user cancel, or to refresh a credential between attempts.

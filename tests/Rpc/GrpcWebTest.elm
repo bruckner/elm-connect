@@ -18,7 +18,7 @@ import Rpc
 import Rpc.Body
 import Rpc.Client
 import Rpc.Code exposing (Code(..))
-import Rpc.Error exposing (Error(..), Problem(..), Reason(..), Source(..))
+import Rpc.Error exposing (Error(..), Source(..))
 import Rpc.Internal.Plan exposing (Reader(..))
 import Rpc.Internal.Trace
 import Rpc.Protocol
@@ -160,17 +160,25 @@ statusOf result =
             Nothing
 
 
-{-| A `BadResponse`'s own code, its problem, and the code `Rpc.Error.code`
-reads from it.
+{-| An answer that could not be read: the error without the answer it kept,
+and its code.
 -}
-badResponseOf : Result Error String -> Maybe ( Code, Problem, Code )
+badResponseOf : Result Error String -> Maybe ( Error, Code )
 badResponseOf result =
     case result of
-        Err ((BadResponse badCode problem _) as error) ->
-            Just ( badCode, problem, Rpc.Error.code error )
+        Err ((BadEnvelope problem _) as error) ->
+            Just ( BadEnvelope problem blank, Rpc.Error.code error )
+
+        Err ((BadMessageCount count _) as error) ->
+            Just ( BadMessageCount count blank, Rpc.Error.code error )
 
         _ ->
             Nothing
+
+
+blank : Rpc.Response
+blank =
+    { url = "", statusCode = 200, statusText = "", headers = Dict.empty, body = Rpc.Body.text "" }
 
 
 ok : String
@@ -364,11 +372,11 @@ answers =
 
                     other ->
                         Expect.fail (Debug.toString other)
-        , test "a grpc-status-details-bin that is not base64 is a BadResponse whose code is Internal" <|
+        , test "a grpc-status-details-bin that is not base64 is a BadEnvelope whose code is Internal" <|
             \_ ->
                 case answer 200 [] [ trailers "grpc-status: 5\u{000D}\ngrpc-message: gone\u{000D}\ngrpc-status-details-bin: !!\u{000D}\n" ] of
-                    Err (BadResponse code problem _) ->
-                        ( code, problem ) |> Expect.equal ( Internal, Envelope "a grpc-status-details-bin trailer that is not base64" )
+                    Err ((BadEnvelope problem _) as error) ->
+                        ( Rpc.Error.code error, problem ) |> Expect.equal ( Internal, "a grpc-status-details-bin trailer that is not base64" )
 
                     other ->
                         Expect.fail (Debug.toString other)
@@ -386,7 +394,7 @@ answers =
                 answer 200 [] [ trailers "grpc-status: 99\u{000D}\n" ]
                     |> statusOf
                     |> Expect.equal (Just ( Unknown, "", GrpcTrailers ))
-        , test "status 0 without a message, or with two, is a BadResponse whose code is Unimplemented" <|
+        , test "status 0 without a message, or with two, is a BadMessageCount whose code is Unimplemented" <|
             \_ ->
                 [ answer 200 [] [ trailers ok ]
                 , answer 200 [ ( "grpc-status", "0" ) ] []
@@ -394,38 +402,36 @@ answers =
                 ]
                     |> List.map badResponseOf
                     |> Expect.equal
-                        [ Just ( Unimplemented, Envelope "a unary gRPC-Web answer with status 0 and no message", Unimplemented )
-                        , Just ( Unimplemented, Envelope "a unary gRPC-Web answer with status 0 and no message", Unimplemented )
-                        , Just ( Unimplemented, Envelope "a unary gRPC-Web answer with status 0 and more than one message", Unimplemented )
+                        [ Just ( BadMessageCount 0 blank, Unimplemented )
+                        , Just ( BadMessageCount 0 blank, Unimplemented )
+                        , Just ( BadMessageCount 2 blank, Unimplemented )
                         ]
-        , test "a body without trailers is a BadResponse whose code is Internal" <|
+        , test "a body without trailers is a BadEnvelope whose code is Internal" <|
             \_ ->
                 answer 200 [] [ frame 0 titleHi ]
                     |> badResponseOf
-                    |> Expect.equal (Just ( Internal, Envelope "a gRPC-Web answer without trailers", Internal ))
-        , test "no grpc-status anywhere is a BadResponse" <|
+                    |> Expect.equal (Just ( BadEnvelope "a gRPC-Web answer without trailers" blank, Internal ))
+        , test "no grpc-status anywhere is a BadEnvelope" <|
             \_ ->
                 [ answer 200 [] [ frame 0 titleHi ], answer 200 [] [ frame 0 titleHi, trailers "grpc-message: x\u{000D}\n" ], answer 200 [] [] ]
                     |> List.map badResponseOf
-                    |> Expect.equal [ Just ( Internal, Envelope "a gRPC-Web answer without trailers", Internal ), Just ( Internal, Envelope "a gRPC-Web answer without a numeric grpc-status", Internal ), Just ( Internal, Envelope "a gRPC-Web answer without a numeric grpc-status", Internal ) ]
-        , test "a compressed message, or a frame running past the end, is a BadResponse" <|
+                    |> Expect.equal [ Just ( BadEnvelope "a gRPC-Web answer without trailers" blank, Internal ), Just ( BadEnvelope "a gRPC-Web answer without a numeric grpc-status" blank, Internal ), Just ( BadEnvelope "a gRPC-Web answer without a numeric grpc-status" blank, Internal ) ]
+        , test "a compressed message, or a frame running past the end, is a BadEnvelope" <|
             \_ ->
                 [ answer 200 [] [ frame 1 titleHi, trailers ok ]
                 , answer 200 [] [ frame 0 titleHi, E.unsignedInt8 0x80, E.unsignedInt32 BE 100 ]
                 , answer 200 [] [ frame 0 titleHi, E.unsignedInt8 0 ]
                 ]
                     |> List.map badResponseOf
-                    |> Expect.equal [ Just ( Internal, Envelope "a gRPC-Web body that is not a sequence of uncompressed frames", Internal ), Just ( Internal, Envelope "a gRPC-Web body that is not a sequence of uncompressed frames", Internal ), Just ( Internal, Envelope "a gRPC-Web body that is not a sequence of uncompressed frames", Internal ) ]
-        , test "a message that is not the response is a BadResponse saying why" <|
+                    |> Expect.equal [ Just ( BadEnvelope "a gRPC-Web body that is not a sequence of uncompressed frames" blank, Internal ), Just ( BadEnvelope "a gRPC-Web body that is not a sequence of uncompressed frames" blank, Internal ), Just ( BadEnvelope "a gRPC-Web body that is not a sequence of uncompressed frames" blank, Internal ) ]
+        , test "a message that is not the response is a BadBody saying why" <|
             \_ ->
                 case answer 200 [] [ frame 0 (bytesOf [ 0x0A, 0x05 ]), trailers ok ] of
-                    Err (BadResponse _ problem _) ->
+                    Err (BadBody problem _) ->
                         problem
                             |> Expect.equal
-                                (Body
-                                    (Proto.Error.BadBinary
-                                        { typeName = "notes.v1.Title", reason = Proto.Error.Truncated, path = [ ( "notes.v1.Title", 1 ) ], offset = 1 }
-                                    )
+                                (Proto.Error.BadBinary
+                                    { typeName = "notes.v1.Title", reason = Proto.Error.Truncated, path = [ ( "notes.v1.Title", 1 ) ], offset = 1 }
                                 )
 
                     other ->
@@ -437,7 +443,7 @@ answers =
                 , answer 200 [] [ frame 0 titleHi, trailers ok ]
                 ]
                     |> Expect.equal [ Ok "hi", Ok "hi", Ok "hi" ]
-        , test "a 200 of another gRPC-Web content type is a BadResponse naming the ones read" <|
+        , test "a 200 of another gRPC-Web content type is a BadEnvelope naming the ones read" <|
             \_ ->
                 [ answer 200 [ ( "content-type", "application/grpc-web+json" ) ] [ frame 0 titleHi, trailers ok ]
                 , answer 200 [ ( "content-type", "application/grpc-web-text" ) ] []
@@ -481,7 +487,7 @@ answers =
             \_ ->
                 [ Http.Timeout_, Http.NetworkError_, Http.BadUrl_ "x" ]
                     |> List.map (Rpc.responseBytes grpcWeb (getNote { name = "" }))
-                    |> Expect.equal [ Err (NoAnswer Timeout), Err (NoAnswer NetworkError), Err (NoAnswer (BadUrl "x")) ]
+                    |> Expect.equal [ Err Timeout, Err NetworkError, Err (BadUrl "x") ]
         ]
 
 
@@ -492,7 +498,7 @@ limits =
             \_ ->
                 [ 4, 3 ]
                     |> List.map (\limit -> answerOver (over (Rpc.Protocol.withReadMaxBytes limit Rpc.Protocol.grpcWeb)) 200 [] [ frame 0 titleHi, trailers ok ])
-                    |> Expect.equal [ Ok "hi", Err (NoAnswer (ResponseTooLarge { limit = 3, size = 4 })) ]
+                    |> Expect.equal [ Ok "hi", Err (ResponseTooLarge { limit = 3, size = 4 }) ]
         , test "read: an error is read whatever the limit" <|
             \_ ->
                 answerOver (over (Rpc.Protocol.withReadMaxBytes 1 Rpc.Protocol.grpcWeb)) 200 [] [ trailers "grpc-status: 5\u{000D}\ngrpc-message: a long message\u{000D}\n" ]
@@ -524,7 +530,7 @@ traces =
                             reader response
 
                         TextReader _ ->
-                            ( Nothing, Err (BadResponse Internal (Envelope "read as text") { url = "", statusCode = 0, statusText = "", headers = Dict.empty, body = Rpc.Body.none }) )
+                            ( Nothing, Err (BadEnvelope "read as text" { url = "", statusCode = 0, statusText = "", headers = Dict.empty, body = Rpc.Body.none }) )
             in
             Rpc.Internal.Trace.init (Rpc.Client.protocol grpcWeb) c plan (plan.request ()) { attempts = 1, metadata = read, result = result } 1
     in

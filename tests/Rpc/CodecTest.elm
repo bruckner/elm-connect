@@ -17,7 +17,7 @@ import Rpc.Body
 import Rpc.Call
 import Rpc.Client
 import Rpc.Code exposing (Code(..))
-import Rpc.Error exposing (Error(..), Problem(..), Reason(..), Source(..))
+import Rpc.Error exposing (Error(..), Source(..))
 import Rpc.Internal.Plan
 import Rpc.Internal.Trace
 import Rpc.Protocol
@@ -266,20 +266,20 @@ answers =
                 , readBytes proto (Http.GoodStatus_ (metadata 200 []) titleHi)
                 ]
                     |> Expect.equal [ Ok "hi", Ok "hi", Ok "hi" ]
-        , test "a 200 of another Connect codec's content type is a BadResponse keeping the bytes" <|
+        , test "a 200 of another Connect codec's content type is a BadEnvelope keeping the bytes" <|
             \_ ->
                 readBytes proto (Http.GoodStatus_ (metadata 200 [ ( "content-type", "application/json" ) ]) (utf8 "{\"title\":\"hi\"}"))
                     |> Result.mapError
                         (\error ->
                             case error of
-                                BadResponse _ problem answer ->
+                                BadEnvelope problem answer ->
                                     Just ( problem, Maybe.map Bytes.width (Rpc.Body.toBytes answer.body) )
 
                                 _ ->
                                     Nothing
                         )
-                    |> Expect.equal (Err (Just ( Envelope "content-type application/json, not application/proto", Just 14 )))
-        , test "a 200 of another Connect content type is a BadResponse naming both, under either codec" <|
+                    |> Expect.equal (Err (Just ( "content-type application/json, not application/proto", Just 14 )))
+        , test "a 200 of another Connect content type is a BadEnvelope naming both, under either codec" <|
             \_ ->
                 [ readText (Http.GoodStatus_ (metadata 200 [ ( "content-type", "application/proto" ) ]) "{\"title\":\"hi\"}")
                 , readText (Http.GoodStatus_ (metadata 200 [ ( "content-type", "Application/Connect+JSON; charset=utf-8" ) ]) "{\"title\":\"hi\"}")
@@ -329,7 +329,7 @@ answers =
                         , Just ( Unknown, 200, Just "" )
                         , Just ( Unknown, 200, Just html )
                         ]
-        , test "bytes that are not the message are a BadResponse" <|
+        , test "bytes that are not the message are a BadBody" <|
             \_ ->
                 readBytes proto (Http.GoodStatus_ (metadata 200 []) (bytesOf [ 0x0A, 0x05, 0x68 ]))
                     |> codeAndMessage
@@ -360,7 +360,7 @@ limits =
                         (\limit ->
                             Rpc.responseBytes (over (Rpc.Protocol.withReadMaxBytes limit Rpc.Protocol.connectProto)) (both { name = "x" }) (Http.GoodStatus_ (metadata 200 []) titleHi)
                         )
-                    |> Expect.equal [ Ok "hi", Err (NoAnswer (ResponseTooLarge { limit = 3, size = 4 })) ]
+                    |> Expect.equal [ Ok "hi", Err (ResponseTooLarge { limit = 3, size = 4 }) ]
         , test "write: the binary is measured, not the JSON" <|
             \_ ->
                 [ 3, 2 ]

@@ -19,7 +19,7 @@ import Rpc.Body
 import Rpc.Call
 import Rpc.Client
 import Rpc.Code exposing (Code(..))
-import Rpc.Error exposing (Error(..), Problem(..), Reason(..), Source(..))
+import Rpc.Error exposing (Error(..), Source(..))
 import Rpc.Internal.Plan
 import Rpc.Protocol
 import Test exposing (Test, describe, test)
@@ -353,7 +353,7 @@ pathValues =
                     |> Expect.equal [ Nothing, Nothing ]
         , test "the error is InvalidArgument, naming the field and the template without the value" <|
             \_ ->
-                NoAnswer (BadPathValue { field = "note.name", template = "notes/*" })
+                BadPathValue { field = "note.name", template = "notes/*" }
                     |> (\error -> ( Rpc.Error.code error, Rpc.Error.message error ))
                     |> Expect.equal ( InvalidArgument, "path field \"note.name\" does not match notes/*" )
         ]
@@ -561,7 +561,7 @@ responses =
         , test "a response body field that does not decode keeps elm/json's error at the field" <|
             \_ ->
                 case respond { rule | responseBody = Just (string "title" "title") } (Http.GoodStatus_ (metadata 200 "OK" []) "3") of
-                    Err (BadResponse _ (Body (Proto.Error.BadJson problem)) _) ->
+                    Err (BadBody (Proto.Error.BadJson problem) _) ->
                         Json.Decode.errorToString problem
                             |> String.startsWith "Problem with the value at json.title:"
                             |> Expect.equal True
@@ -571,17 +571,17 @@ responses =
         , test "an undecodable body is a bad response, the answer kept" <|
             \_ ->
                 case respond rule (Http.GoodStatus_ (metadata 201 "Created" []) "[]") of
-                    Err (BadResponse _ (Body (Proto.Error.BadJson _)) answer) ->
+                    Err (BadBody (Proto.Error.BadJson _) answer) ->
                         ( answer.statusCode, Maybe.withDefault "" (Rpc.Body.toText answer.body) )
                             |> Expect.equal ( 201, "[]" )
 
                     other ->
                         Expect.fail (Debug.toString other)
-        , test "no answer is NoAnswer" <|
+        , test "no answer is a Timeout or a NetworkError" <|
             \_ ->
                 [ Http.Timeout_, Http.NetworkError_ ]
                     |> List.map (respond rule)
-                    |> Expect.equal [ Err (NoAnswer Timeout), Err (NoAnswer NetworkError) ]
+                    |> Expect.equal [ Err Timeout, Err NetworkError ]
         ]
 
 

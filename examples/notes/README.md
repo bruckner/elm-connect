@@ -207,16 +207,18 @@ viewError error =
                 , pre [] [ text (Maybe.withDefault "" (Rpc.Body.toText answer.body)) ]
                 ]
 
-        Rpc.Error.BadResponse _ _ answer ->
-            section [ class "error" ]
-                [ h2 [] [ text (Rpc.Code.toString (Rpc.Error.code error)) ]
-                , p [] [ text (Rpc.Error.message error) ]
-                , p [] [ text ("HTTP " ++ String.fromInt answer.statusCode ++ ", an answer that could not be read as the response:") ]
-                , pre [] [ text (Maybe.withDefault "" (Rpc.Body.toText answer.body)) ]
-                ]
+        _ ->
+            case Rpc.Error.response error of
+                Just answer ->
+                    section [ class "error" ]
+                        [ h2 [] [ text (Rpc.Code.toString (Rpc.Error.code error)) ]
+                        , p [] [ text (Rpc.Error.message error) ]
+                        , p [] [ text ("HTTP " ++ String.fromInt answer.statusCode ++ ", an answer that could not be read as the response:") ]
+                        , pre [] [ text (Maybe.withDefault "" (Rpc.Body.toText answer.body)) ]
+                        ]
 
-        Rpc.Error.NoAnswer _ ->
-            section [ class "error" ] [ p [] [ text (Rpc.Error.toString error) ] ]
+                Nothing ->
+                    section [ class "error" ] [ p [] [ text (Rpc.Error.toString error) ] ]
 
 
 {-| A status's details that were read and are of this type.
@@ -274,7 +276,8 @@ either way, and `source` says which body it was. Each detail is an
 of one type. The answer rides with the error as
 `Rpc.Response`, its status, headers and body, so a body in a shape the
 runtime does not read, or one that drifted from the schema, can still be
-shown, as the `HttpStatus` and `BadResponse` branches do.
+shown, as the `HttpStatus` branch and the one reading
+`Rpc.Error.response` do.
 
 ## The protocol toggle
 

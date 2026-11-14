@@ -96,7 +96,7 @@ noJson =
 
 {-| The binary half of a method built with JSON codecs alone. As with
 [`noJson`](#noJson), an impossible pairing (unreachable through the
-builders) would surface as an ordinary decode failure, a `BadResponse`
+builders) would surface as an ordinary decode failure, a `BadBody`
 whose report is `Unlocated`, as a bug's is.
 
 The encoder must be a constructor: `Bytes.Encode.sequence []` measures

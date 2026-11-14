@@ -372,16 +372,18 @@ viewError error =
                 , pre [] [ text (Maybe.withDefault "" (Rpc.Body.toText answer.body)) ]
                 ]
 
-        Rpc.Error.BadResponse _ _ answer ->
-            section [ class "error" ]
-                [ h2 [] [ text (Rpc.Code.toString (Rpc.Error.code error)) ]
-                , p [] [ text (Rpc.Error.message error) ]
-                , p [] [ text ("HTTP " ++ String.fromInt answer.statusCode ++ ", an answer that could not be read as the response:") ]
-                , pre [] [ text (Maybe.withDefault "" (Rpc.Body.toText answer.body)) ]
-                ]
+        _ ->
+            case Rpc.Error.response error of
+                Just answer ->
+                    section [ class "error" ]
+                        [ h2 [] [ text (Rpc.Code.toString (Rpc.Error.code error)) ]
+                        , p [] [ text (Rpc.Error.message error) ]
+                        , p [] [ text ("HTTP " ++ String.fromInt answer.statusCode ++ ", an answer that could not be read as the response:") ]
+                        , pre [] [ text (Maybe.withDefault "" (Rpc.Body.toText answer.body)) ]
+                        ]
 
-        Rpc.Error.NoAnswer _ ->
-            section [ class "error" ] [ p [] [ text (Rpc.Error.toString error) ] ]
+                Nothing ->
+                    section [ class "error" ] [ p [] [ text (Rpc.Error.toString error) ] ]
 
 
 {-| A status's details that were read and are of this type.
