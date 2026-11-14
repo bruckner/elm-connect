@@ -361,6 +361,17 @@ percentEncoding =
             \_ ->
                 Proto.Internal.Percent.percentDecode (String.repeat 100000 "x")
                     |> Expect.equal (Just (String.repeat 100000 "x"))
+        , test "every byte's escape is in the table, in uppercase hex" <|
+            \_ ->
+                let
+                    hexDigit digit =
+                        String.slice digit (digit + 1) "0123456789ABCDEF"
+
+                    expected byte =
+                        "%" ++ hexDigit (byte // 16) ++ hexDigit (modBy 16 byte)
+                in
+                List.filter (\byte -> Proto.Internal.Percent.escaped byte /= expected byte) (List.range 0 255)
+                    |> Expect.equal []
         , test "decodes 100,000 escapes without exhausting the stack" <|
             \_ ->
                 Proto.Internal.Percent.percentDecode (String.repeat 25000 "%F0%9F%98%80")
