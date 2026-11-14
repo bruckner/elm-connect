@@ -1,6 +1,6 @@
 module Rpc.Error exposing
     ( Error(..), StatusError, Source(..)
-    , code, message, toString, response, mayHaveBeenSent
+    , code, message, toString, response, delivery, Delivery(..)
     )
 
 {-| Why a call failed: what [`Rpc.task`](Rpc#task), [`Rpc.send`](Rpc#send) and
@@ -21,7 +21,7 @@ error has:
 
 # Reading an error
 
-@docs code, message, toString, response, mayHaveBeenSent
+@docs code, message, toString, response, delivery, Delivery
 
 -}
 
@@ -406,60 +406,78 @@ response error =
             Nothing
 
 
-{-| Whether the request may have reached the server, which may then have
-acted on it: `False` for an error of a request that was never sent
-(`BadUrl`, `BadHeader`, `BadPathValue`, `RequestTooLarge`, `BadAny`), and
-`True` for every other. A `Timeout` or a `NetworkError` may have been sent or
-not; it reads `True`, the safe reading for a call with side effects.
+{-| How far a failed call got, which says whether the server may have acted
+on it ([`Delivery`](#Delivery)).
 
-    if Rpc.Error.mayHaveBeenSent error then
-        "The note may have been saved; reload to check. (" ++ Rpc.Error.message error ++ ")"
+    case Rpc.Error.delivery error of
+        Rpc.Error.NeverSent ->
+            "The note was not saved: " ++ Rpc.Error.message error
 
-    else
-        "The note was not saved: " ++ Rpc.Error.message error
+        Rpc.Error.Unanswered ->
+            "The note may have been saved; reload to check."
+
+        Rpc.Error.Answered ->
+            "The server answered: " ++ Rpc.Error.message error
 
 -}
-mayHaveBeenSent : Error -> Bool
-mayHaveBeenSent error =
+delivery : Error -> Delivery
+delivery error =
     case error of
         RpcStatus _ _ ->
-            True
+            Answered
 
         HttpStatus _ ->
-            True
+            Answered
 
         BadBody _ _ ->
-            True
+            Answered
 
         BadEnvelope _ _ ->
-            True
+            Answered
 
         BadMessageCount _ _ ->
-            True
+            Answered
 
         ResponseTooLarge _ ->
-            True
+            Answered
 
         Timeout ->
-            True
+            Unanswered
 
         NetworkError ->
-            True
+            Unanswered
 
         BadUrl _ ->
-            False
+            NeverSent
 
         BadHeader _ ->
-            False
+            NeverSent
 
         BadPathValue _ ->
-            False
+            NeverSent
 
         RequestTooLarge _ ->
-            False
+            NeverSent
 
         BadAny _ ->
-            False
+            NeverSent
+
+
+{-| How far a failed call got:
+
+  - `NeverSent`: the request was refused before it was sent (`BadUrl`,
+    `BadHeader`, `BadPathValue`, `RequestTooLarge`, `BadAny`); the server
+    did nothing.
+  - `Unanswered`: the request may have been sent, and no answer came
+    (`Timeout`, `NetworkError`); the server may or may not have acted.
+  - `Answered`: an answer came, read or not; the server, or something in
+    front of it, saw the request.
+
+-}
+type Delivery
+    = NeverSent
+    | Unanswered
+    | Answered
 
 
 {-| The first 300 characters of a text, and `…` when there were more.

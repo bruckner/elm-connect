@@ -163,12 +163,16 @@ cannot help. The runtime's loop and `Rpc.Retry.next` both read it.
 -}
 retryable : Error -> Maybe Code
 retryable error =
-    if Rpc.Error.mayHaveBeenSent error then
-        Just (Rpc.Error.code error)
+    case Rpc.Error.delivery error of
+        Rpc.Error.NeverSent ->
+            -- Nothing was sent, and nothing would change.
+            Nothing
 
-    else
-        -- Nothing was sent, and nothing would change.
-        Nothing
+        Rpc.Error.Unanswered ->
+            Just (Rpc.Error.code error)
+
+        Rpc.Error.Answered ->
+            Just (Rpc.Error.code error)
 
 
 {-| The wait in milliseconds before the next attempt, or `Nothing` to stop:
