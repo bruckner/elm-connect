@@ -1879,6 +1879,17 @@ that took these two changes first of six, on an earlier base, where
 The bench's dump of every binary fixture hashed the same at every
 build.
 
+- **Who pays.** The "minimal JSON client" column is a client that
+  speaks JSON alone and is generated under the default `wire=both`, so
+  its calls hold the binary codecs it never runs: it pays for these
+  changes without gaining from them, as it pays for the whole binary
+  half until it sets `wire=json`. The same client generated under
+  `wire=json` holds no `Proto.Binary` function and is the same size to
+  the byte, minified, before and after every change in this entry
+  (55,968 B; 19,128 and 19,123 B gzipped, the difference being Elm's
+  shortened field names shifting by a letter). So the cost falls on
+  programs that hold binary codecs, by speaking binary or by reaching
+  an `Any`, which are the ones the changes speed up.
 - **`pack` and `init`.** Generated code builds every message that
   reaches an `Any`, through any field, map value or oneof member, with
   `Proto.Message.initWith`, and every other with `init`, whose JSON
