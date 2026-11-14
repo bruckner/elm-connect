@@ -149,7 +149,9 @@ or reads a few of them by type, without registering every type it may meet:
 an error detail of a type the registry lacks is then read, and unpacks
 with its typed value. An `Any` held as JSON alone:
 
-  - is written as proto3 JSON as it arrived, with no registry;
+  - is written as proto3 JSON as it arrived, through a lenient registry
+    or one with an entry for its type, which reads it as that message
+    first; a strict registry without one refuses it as `UnregisteredType`;
   - unpacks with its message's JSON decoder ([`Proto.Any.unpack`](Proto-Any#unpack)),
     an `Any` inside it read leniently too;
   - has no binary: [`Proto.Any.bytes`](Proto-Any#bytes) is `Nothing`, and
