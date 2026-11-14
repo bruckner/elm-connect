@@ -2487,6 +2487,13 @@ descriptor; the runtime never parses a template.
   shape) is allowed: the field is in both, the body is sent whole, and
   the server takes the path's value. That is the one way a field can be
   in both, so "a field in both path and body" is not a diagnostic.
+- A `get` rule, or a `custom` one of kind `GET` or `HEAD` in any case,
+  has no `body` (`route::get_body` otherwise, `routes_invalid` case):
+  `google/api/http.proto` maps a body for the methods that allow one,
+  and XHR and fetch drop a GET's or a HEAD's body unsent, so its fields
+  would silently never reach the server. A `delete` may have one:
+  http.proto does not forbid it, a browser sends it, and AIP-135's
+  advice against it is a design rule, not the mapping's.
 - `response_body` is any top-level field of the response
   (`route::response_body` otherwise).
 - A request of a well-known type other than `Empty` has no fields of

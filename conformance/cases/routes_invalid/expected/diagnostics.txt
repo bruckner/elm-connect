@@ -106,3 +106,37 @@ route::path_field
         through singular message fields (`{book.name}`), that holds a scalar,
         an enum, or a Timestamp, Duration, FieldMask or wrapper, whose JSON is
         one value.
+
+route::get_body
+
+  × The HTTP rule of `library.v1.Library.SearchBooks` is a `GET` with `body:
+  │ "*"`, but a browser sends a `GET` without its body.
+    ╭─[library.proto:74:13]
+ 73 │       get: "/v1/books:search"
+ 74 │       body: "*"
+    ·             ─┬─
+    ·              ╰── this body
+ 75 │       additional_bindings {
+    ╰────
+  help: `google/api/http.proto` maps `body` for the methods that allow a
+        request body, and a browser drops a GET's or a HEAD's, so the server
+        would read the request without those fields. Leave `body` out, to send
+        the fields outside the path as query parameters, or bind the method
+        with `post`, `put` or `patch`.
+
+route::get_body
+
+  × Additional binding 1 of `library.v1.Library.SearchBooks` is a `HEAD` with
+  │ `body: "*"`, but a browser sends a `HEAD` without its body.
+    ╭─[library.proto:77:15]
+ 76 │         custom: { kind: "HEAD" path: "/v1/books:search" }
+ 77 │         body: "*"
+    ·               ─┬─
+    ·                ╰── this body
+ 78 │       }
+    ╰────
+  help: `google/api/http.proto` maps `body` for the methods that allow a
+        request body, and a browser drops a GET's or a HEAD's, so the server
+        would read the request without those fields. Leave `body` out, to send
+        the fields outside the path as query parameters, or bind the method
+        with `post`, `put` or `patch`.
