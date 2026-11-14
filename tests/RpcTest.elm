@@ -1221,7 +1221,7 @@ schedules policy =
             in
             [ at NetworkError, at Timeout, at (httpError 503 ""), at (httpError 400 ""), at (BadUrl "nowhere") ]
                 |> Expect.equal [ Just 100, Nothing, Just 100, Just 100, Nothing ]
-    , test "next retries an error over a size limit, and every unsent one but a bad URL, when the policy lists its code" <|
+    , test "next retries an answer over the read limit when the policy lists its code, and no error of a request never sent" <|
         \_ ->
             let
                 listed =
@@ -1237,7 +1237,7 @@ schedules policy =
             , at (BadAny (Proto.Error.UnregisteredType "x/a.B"))
             , at (BadUrl "nowhere")
             ]
-                |> Expect.equal [ Just 100, Just 100, Just 100, Just 100, Just 100, Nothing ]
+                |> Expect.equal [ Nothing, Just 100, Nothing, Nothing, Nothing, Nothing ]
     , test "the loop does not wait after a success, without a policy, or for a failure trying again cannot help" <|
         \_ ->
             ( Retry.step (Just policy) IdempotencyNoSideEffects Just { tried = 1, now = moment.now, elapsed = 0 } (Ok ())

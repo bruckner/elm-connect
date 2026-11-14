@@ -1,6 +1,6 @@
 module Rpc.Error exposing
     ( Error(..), StatusError, Source(..)
-    , code, message, toString, response
+    , code, message, toString, response, mayHaveBeenSent
     )
 
 {-| Why a call failed: what [`Rpc.task`](Rpc#task), [`Rpc.send`](Rpc#send) and
@@ -21,7 +21,7 @@ error has:
 
 # Reading an error
 
-@docs code, message, toString, response
+@docs code, message, toString, response, mayHaveBeenSent
 
 -}
 
@@ -404,6 +404,62 @@ response error =
 
         BadAny _ ->
             Nothing
+
+
+{-| Whether the request may have reached the server, which may then have
+acted on it: `False` for an error of a request that was never sent
+(`BadUrl`, `BadHeader`, `BadPathValue`, `RequestTooLarge`, `BadAny`), and
+`True` for every other. A `Timeout` or a `NetworkError` may have been sent or
+not; it reads `True`, the safe reading for a call with side effects.
+
+    if Rpc.Error.mayHaveBeenSent error then
+        "The note may have been saved; reload to check. (" ++ Rpc.Error.message error ++ ")"
+
+    else
+        "The note was not saved: " ++ Rpc.Error.message error
+
+-}
+mayHaveBeenSent : Error -> Bool
+mayHaveBeenSent error =
+    case error of
+        RpcStatus _ _ ->
+            True
+
+        HttpStatus _ ->
+            True
+
+        BadBody _ _ ->
+            True
+
+        BadEnvelope _ _ ->
+            True
+
+        BadMessageCount _ _ ->
+            True
+
+        ResponseTooLarge _ ->
+            True
+
+        Timeout ->
+            True
+
+        NetworkError ->
+            True
+
+        BadUrl _ ->
+            False
+
+        BadHeader _ ->
+            False
+
+        BadPathValue _ ->
+            False
+
+        RequestTooLarge _ ->
+            False
+
+        BadAny _ ->
+            False
 
 
 {-| The first 300 characters of a text, and `…` when there were more.
