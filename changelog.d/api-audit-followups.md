@@ -11,3 +11,8 @@
   registry without one fails with `UnregisteredType`. Before, every
   registry wrote it unread. A lenient registry without an entry still
   writes it as it arrived.
+- The generator refuses a `google.api.http` rule that is a `get`, or a
+  `custom` one of kind `GET` or `HEAD`, with a `body`, as
+  `route::get_body`: a browser sends those methods without a body, so
+  the fields mapped to it never reached the server, and the call went
+  out regardless. A `delete` with a body is still accepted.
