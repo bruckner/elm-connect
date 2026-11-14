@@ -57,8 +57,11 @@ type alias Protocol codec =
 -- two functions that are not the same one, so two protocols, or two clients,
 -- that differ in a modifier compare unequal at `options` before reaching
 -- the function it installed; built alike, they hold the same top-level
--- functions, which `==` takes as equal by reference. `Rpc.Retry.on` keeps
--- the same rule: a policy holds its knobs before its math.
+-- functions, which `==` takes as equal by reference. A limit modifier given
+-- a value below 1 puts back `Nothing` and the constructor's own unlimited
+-- function, so the protocol is `==` to one never given a limit.
+-- `Rpc.Retry.on` keeps the same rule: a policy holds its knobs before its
+-- math.
 --
 -- A binary check a modifier installs measures bytes with the wire's own
 -- `width`, never `Bytes.width` directly. A modifier names both wires' checks,
@@ -228,23 +231,54 @@ withMaxGetUrl limit (Internal.Protocol p) =
 message) is longer than this many bytes, before decoding it: the call fails
 with [`NoAnswer (ResponseTooLarge { limit, size })`](Rpc-Error#Reason), whose code
 is `ResourceExhausted`. A protocol starts with no limit.
+
+A value below 1 means no limit: it removes one set earlier, and leaves the
+protocol as it would be had no limit ever been set.
+
 -}
 withReadMaxBytes : Int -> Protocol codec -> Protocol codec
 withReadMaxBytes limit (Internal.Protocol p) =
     let
         options =
             p.options
+
+        on =
+            limit >= 1
     in
     Internal.Protocol
         { p
-            | options = { options | readMaxBytes = Just limit }
+            | options =
+                { options
+                    | readMaxBytes =
+                        if on then
+                            Just limit
+
+                        else
+                            Nothing
+                }
             , wire =
                 case p.wire of
                     Text wire ->
-                        Text { wire | overRead = Http.textOverRead }
+                        Text
+                            { wire
+                                | overRead =
+                                    if on then
+                                        Http.textOverRead
+
+                                    else
+                                        Http.textUnlimited
+                            }
 
                     Binary wire ->
-                        Binary { wire | overRead = Http.bytesOverRead }
+                        Binary
+                            { wire
+                                | overRead =
+                                    if on then
+                                        Http.bytesOverRead
+
+                                    else
+                                        Http.bytesUnlimited
+                            }
         }
 
 
@@ -252,23 +286,54 @@ withReadMaxBytes limit (Internal.Protocol p) =
 bytes, as its JSON in UTF-8 or its protobuf binary: the call fails with
 [`NoAnswer (RequestTooLarge { limit, size })`](Rpc-Error#Reason), whose code
 is `ResourceExhausted`, and nothing is sent. A protocol starts with no limit.
+
+A value below 1 means no limit: it removes one set earlier, and leaves the
+protocol as it would be had no limit ever been set.
+
 -}
 withWriteMaxBytes : Int -> Protocol codec -> Protocol codec
 withWriteMaxBytes limit (Internal.Protocol p) =
     let
         options =
             p.options
+
+        on =
+            limit >= 1
     in
     Internal.Protocol
         { p
-            | options = { options | writeMaxBytes = Just limit }
+            | options =
+                { options
+                    | writeMaxBytes =
+                        if on then
+                            Just limit
+
+                        else
+                            Nothing
+                }
             , wire =
                 case p.wire of
                     Text wire ->
-                        Text { wire | tooLarge = Http.jsonTooLarge }
+                        Text
+                            { wire
+                                | tooLarge =
+                                    if on then
+                                        Http.jsonTooLarge
+
+                                    else
+                                        Http.textUnlimited
+                            }
 
                     Binary wire ->
-                        Binary { wire | tooLarge = Http.bytesTooLarge }
+                        Binary
+                            { wire
+                                | tooLarge =
+                                    if on then
+                                        Http.bytesTooLarge
+
+                                    else
+                                        Http.bytesUnlimited
+                            }
         }
 
 

@@ -262,8 +262,8 @@ insertJoined key value =
 
 
 {-| The size of a text (an answer's body, a request's JSON), in UTF-8 bytes,
-when it is over `limit`; `Nothing` when it is within it. A limit below 0 is
-read as 0, so an empty text is never refused.
+when it is over `limit`; `Nothing` when it is within it. The limit
+modifiers install no limit below 1.
 
 A text is at least one byte of UTF-8 per UTF-16 unit of its JavaScript string
 and at most three, so a text that fits whatever it holds is never counted.
@@ -272,13 +272,10 @@ and at most three, so a text that fits whatever it holds is never counted.
 overLimit : Int -> String -> Maybe Int
 overLimit limit text =
     let
-        bound =
-            max 0 limit
-
         units =
             String.length text
     in
-    if units * 3 <= bound then
+    if units * 3 <= limit then
         Nothing
 
     else
@@ -286,7 +283,7 @@ overLimit limit text =
             size =
                 utf8Length text
         in
-        if size > bound then
+        if size > limit then
             Just size
 
         else
@@ -411,7 +408,7 @@ bytesTooLarge width_ options binary =
                     size =
                         width_ (Bytes.Encode.encode (binary ()))
                 in
-                if size > max 0 limit then
+                if size > limit then
                     Just (Error.RequestTooLarge { limit = limit, size = size })
 
                 else
@@ -509,7 +506,7 @@ bytesOverRead width_ options message =
                     size =
                         width_ message
                 in
-                if size > max 0 limit then
+                if size > limit then
                     Just (Error.ResponseTooLarge { limit = limit, size = size })
 
                 else

@@ -311,7 +311,7 @@ suite =
         , keptResponses
         , retries
         , protocols
-        , problems
+        , refusals
         , receiveLimits
         , sendLimits
         , encodings
@@ -1506,33 +1506,39 @@ protocols =
         ]
 
 
-problems : Test
-problems =
+refusals : Test
+refusals =
     let
+        refusal client c =
+            Rpc.Internal.Plan.refused (Rpc.Client.baseUrl client) (Rpc.Internal.Plan.plan client c) (Rpc.request client c)
+
         at =
             Rpc.client Rpc.Protocol.connect
+
+        call =
+            getNote { name = "x" }
     in
-    describe "Rpc.Client.problems"
-        [ test "a base URL that is an origin or a path is fine" <|
+    describe "a call that cannot be sent"
+        [ test "a base URL that is an origin or a path is sent" <|
             \_ ->
                 [ "https://api.example.com", "https://api.example.com/v1/", "/api", "" ]
-                    |> List.map (at >> Rpc.Client.problems)
-                    |> Expect.equal [ [], [], [], [] ]
-        , test "a base URL holding a query or a fragment is reported" <|
+                    |> List.map (\u -> refusal (at u) call)
+                    |> Expect.equal [ Nothing, Nothing, Nothing, Nothing ]
+        , test "a base URL holding a query or a fragment fails unsent with BadUrl, naming the URL" <|
             \_ ->
                 [ "https://api.example.com/?key=1", "https://api.example.com/#top" ]
-                    |> List.map (at >> Rpc.Client.problems >> List.length)
-                    |> Expect.equal [ 1, 1 ]
-        , test "the report names the base URL" <|
+                    |> List.map (\u -> refusal (at u) call)
+                    |> Expect.equal
+                        [ Just (NoAnswer (BadUrl (Rpc.request (at "https://api.example.com/?key=1") call).url))
+                        , Just (NoAnswer (BadUrl (Rpc.request (at "https://api.example.com/#top") call).url))
+                        ]
+        , test "a header a request cannot carry fails unsent with BadHeader, naming the first" <|
             \_ ->
-                Rpc.Client.problems (at "https://api.example.com/?key=1")
-                    |> List.all (String.contains "https://api.example.com/?key=1")
-                    |> Expect.equal True
-        , test "a header a request cannot carry is reported by name, its value left out" <|
-            \_ ->
-                Rpc.Client.problems (Rpc.Client.withHeaders [ ( "Authorization", "Bearer s3cr3t\n" ), ( "X-Fine", "  ok  " ), ( "Bad Name", "v" ) ] base)
-                    |> List.map (\problem -> ( String.contains "\"Authorization\"" problem || String.contains "\"Bad Name\"" problem, String.contains "s3cr3t" problem ))
-                    |> Expect.equal [ ( True, False ), ( True, False ) ]
+                [ refusal (Rpc.Client.withHeaders [ ( "X-Fine", "  ok  " ), ( "Authorization", "Bearer s3cr3t\n" ), ( "Bad Name", "v" ) ] base) call
+                , refusal base (call |> Rpc.Call.withHeaders [ ( "Bad Name", "v" ) ])
+                , refusal (Rpc.Client.withHeaders [ ( "X-Fine", "  ok  " ) ] base) call
+                ]
+                    |> Expect.equal [ Just (NoAnswer (BadHeader "Authorization")), Just (NoAnswer (BadHeader "Bad Name")), Nothing ]
         ]
 
 
@@ -1589,16 +1595,15 @@ receiveLimits =
                 Rpc.response (limited Rpc.Protocol.connect 1) (getNote { name = "x" }) (Http.BadStatus_ (metadata 404 "Not Found") "{\"code\":\"not_found\",\"message\":\"no note\"}")
                     |> Result.mapError (\error -> ( Rpc.Error.code error, Rpc.Error.message error ))
                     |> Expect.equal (Err ( NotFound, "no note" ))
-        , test "a limit below 1 refuses any body but an empty one" <|
+        , test "a limit below 1 is no limit, and removes one set before" <|
             \_ ->
-                [ ( -5, "" ), ( 0, "" ), ( 0, "{}" ), ( -5, "{}" ) ]
-                    |> List.map (\( limit, body ) -> Rpc.Internal.Http.overLimit limit body)
-                    |> Expect.equal [ Nothing, Nothing, Just 2, Just 2 ]
-        , test "problems reports a limit below 1, not one of 1 or more" <|
-            \_ ->
-                [ 0, -1, 1, 1000000 ]
-                    |> List.map (limited Rpc.Protocol.connect >> Rpc.Client.problems >> List.length)
-                    |> Expect.equal [ 1, 1, 0, 0 ]
+                [ limited Rpc.Protocol.connect 0
+                , limited Rpc.Protocol.transcode -1
+                , over (Rpc.Protocol.connect |> Rpc.Protocol.withReadMaxBytes 1 |> Rpc.Protocol.withReadMaxBytes 0)
+                , limited Rpc.Protocol.connect 1
+                ]
+                    |> List.map (\client -> readAs client note)
+                    |> Expect.equal [ Ok "é", Ok "é", Ok "é", Err (NoAnswer (ResponseTooLarge { limit = 1, size = 14 })) ]
         , test "the knob keeps the protocol and its other options" <|
             \_ ->
                 ( List.map (Rpc.Protocol.withReadMaxBytes 10 >> Rpc.Protocol.name) [ Rpc.Protocol.connect, Rpc.Protocol.transcode ]
@@ -1659,11 +1664,17 @@ sendLimits =
                 [ Rpc.Protocol.connect, connectGet, Rpc.Protocol.transcode ]
                     |> List.map (\protocol -> tooLarge protocol unencodable)
                     |> Expect.equal [ Nothing, Nothing, Nothing ]
-        , test "problems reports a limit below 1, not one of 1 or more" <|
+        , test "a limit below 1 is no limit, removes one set before, and encodes nothing to measure" <|
             \_ ->
-                [ 0, -1, 1, 1000000 ]
-                    |> List.map (\limit -> Rpc.Client.problems (over (Rpc.Protocol.withWriteMaxBytes limit Rpc.Protocol.transcode)) |> List.length)
-                    |> Expect.equal [ 1, 1, 0, 0 ]
+                ( [ Rpc.Protocol.withWriteMaxBytes 0 Rpc.Protocol.transcode
+                  , Rpc.Protocol.withWriteMaxBytes -1 connectGet
+                  , Rpc.Protocol.connect |> Rpc.Protocol.withWriteMaxBytes 1 |> Rpc.Protocol.withWriteMaxBytes 0
+                  , Rpc.Protocol.withWriteMaxBytes 1 Rpc.Protocol.connect
+                  ]
+                    |> List.map (\protocol -> tooLarge protocol call)
+                , tooLarge (Rpc.Protocol.withWriteMaxBytes 0 Rpc.Protocol.connect) unencodable
+                )
+                    |> Expect.equal ( [ Nothing, Nothing, Nothing, Just (RequestTooLarge { limit = 1, size = 13 }) ], Nothing )
         , test "the knob keeps the protocol and its other options" <|
             \_ ->
                 ( List.map (Rpc.Protocol.withWriteMaxBytes 10 >> Rpc.Protocol.name) [ Rpc.Protocol.connect, Rpc.Protocol.transcode ]

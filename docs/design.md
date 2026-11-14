@@ -2522,7 +2522,7 @@ connectProto : Protocol Proto             -- Connect, protobuf binary (applicati
 transcode : Protocol Json                 -- google.api.http REST; the implicit route without a rule
 grpcWeb : Protocol Proto                  -- gRPC-Web, unary, protobuf binary (application/grpc-web+proto)
 withConnectGet : Protocol codec -> Protocol codec      -- Connect: NO_SIDE_EFFECTS as GET; others unchanged
-withMaxGetUrl, withReadMaxBytes, withWriteMaxBytes : Int -> Protocol codec -> Protocol codec
+withMaxGetUrl, withReadMaxBytes, withWriteMaxBytes : Int -> Protocol codec -> Protocol codec   -- a limit below 1 is none
 name : Protocol codec -> String           -- "connect" | "transcode" | "grpc-web"
 codec : Protocol codec -> String          -- "json" | "proto"
 toJson : Protocol codec -> Json.Encode.Value
@@ -2535,7 +2535,6 @@ withCredentials : Client codec -> Client codec          -- Http.riskyRequest
 withRetry : Rpc.Retry.Retry -> Client codec -> Client codec
 withRegistry : Proto.Registry.Registry -> Client codec -> Client codec   -- Proto.Registry.empty until set
 protocol, baseUrl, headers, timeout, credentials, retry, registry -- readers
-problems : Client codec -> List String    -- the client's problems, [] when none
 toJson : Client codec -> Json.Encode.Value
 
 -- Rpc.Retry: opaque
@@ -2657,8 +2656,10 @@ appears, each a field of the opaque record and a minor (roadmap).
   exhaust the stack; `String.length` would count UTF-16 units. The
   browser has received the body by then, so the limit bounds what is
   decoded and held, not what is downloaded. An error answer is read
-  whatever its size, for its status. A limit below 1 refuses every body
-  with anything in it, and `Rpc.Client.problems` reports it.
+  whatever its size, for its status. A limit below 1 is no limit, as
+  connect-go's 0 is: the modifier then installs nothing, and removes a
+  limit set earlier, so the protocol is `==` to one never given a limit
+  and a program that sets no real limit carries no check at run time.
 - `withWriteMaxBytes n` is its twin for the request: connect-go's
   `WithSendMaxBytes` and connect-node's `writeMaxBytes`, no limit by
   default. A call whose request message, as the JSON a POST sends (for
@@ -2669,8 +2670,8 @@ appears, each a field of the opaque record and a minor (roadmap).
   `NoAnswer (RequestTooLarge { limit, size })`, checked beside the bad
   URL and the invalid header, and never retried, since nothing was sent
   and nothing would change. The size is the call's message, not a
-  request rewritten for `taskFromRequest`. A limit below 1 refuses
-  every call, and `Rpc.Client.problems` reports it.
+  request rewritten for `taskFromRequest`. A limit below 1 is no
+  limit, as for reading.
 
 - A timeout is also the elm/http timeout, so the client gives up at the
   same moment it asked the server to. A timeout that is not a positive
@@ -2683,13 +2684,11 @@ appears, each a field of the opaque record and a minor (roadmap).
   or `#` would put it in the query or fragment. Such a call is not
   sent: every way of sending fails it with `NoAnswer (BadUrl url)`,
   the URL it would have used, and it is never retried. The pure `Rpc.request` still
-  builds that URL, since it has no error to give. `Rpc.Client.problems`
-  reports it where the application builds its client, at start-up or
-  when its settings change, rather than at the first call: a pure
-  `Client codec -> List String`, empty when nothing is wrong, read as a
-  list so later releases can report more. It reports invalid client
-  headers too (below), each by name, its value left out since it may
-  be a credential, and a read or write limit below 1.
+  builds that URL, since it has no error to give. A URL the browser
+  refuses comes back from elm/http as `BadUrl` too. Nothing checks a
+  client where it is built: the check is syntactic alone, and whether
+  a base URL reaches the right server only a request shows (decisions,
+  2026-11-13).
 - A header a browser refuses is never handed to elm/http: a name that is
   not an RFC 9110 token, or a value that, once the spaces and tabs at
   either end are trimmed, holds NUL, CR or LF or a character above

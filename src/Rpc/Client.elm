@@ -2,7 +2,7 @@ module Rpc.Client exposing
     ( Client, client
     , withHeaders, withTimeout, withCredentials, withRetry, withRegistry
     , protocol, baseUrl, headers, timeout, credentials, retry, registry
-    , problems, toJson
+    , toJson
     )
 
 {-| Where and how to send calls: a [protocol](Rpc-Protocol), the server's
@@ -32,15 +32,13 @@ and `==` throws on reaching it. A client never belongs in a message.
 # Reading
 
 @docs protocol, baseUrl, headers, timeout, credentials, retry, registry
-@docs problems, toJson
+@docs toJson
 
 -}
 
 import Json.Encode exposing (Value)
 import Proto.Registry exposing (Registry)
 import Rpc.Internal.Client as Internal
-import Rpc.Internal.Http
-import Rpc.Internal.Protocol as Protocol
 import Rpc.Protocol exposing (Protocol)
 import Rpc.Retry exposing (Retry)
 
@@ -60,8 +58,8 @@ credentials cross-origin and no retries.
 The base URL is the server with any routing prefix
 (`https://api.example.com`, `/api`); a trailing `/` is dropped. A call's path
 is appended to it, so it can hold no query or fragment: a call sent with one
-holding `?` or `#` is not sent, and fails with `NoAnswer (BadUrl url)`.
-[`problems`](#problems) finds that where the client is built.
+holding `?` or `#` is not sent, and fails with `NoAnswer (BadUrl url)`, as
+does one to a URL the browser refuses.
 
 -}
 client : Protocol codec -> String -> Client codec
@@ -192,60 +190,6 @@ retry (Internal.Client c) =
 registry : Client codec -> Registry
 registry (Internal.Client c) =
     c.registry
-
-
-{-| What is wrong with a client, one sentence each, or `[]` when nothing is:
-the problems sending would otherwise find one call at a time. It finds a base
-URL holding a query or a fragment, headers a request cannot carry, each by
-its name (a value is left out, since it may be a credential), and a read or
-write limit below 1. Later releases may find more, so the result is read as
-a list rather than matched.
--}
-problems : Client codec -> List String
-problems (Internal.Client c) =
-    let
-        (Protocol.Protocol p) =
-            c.protocol
-    in
-    (if Rpc.Internal.Http.badBaseUrl c.baseUrl then
-        [ "baseUrl " ++ c.baseUrl ++ " holds a query or a fragment (? or #), after which a call's path cannot go" ]
-
-     else
-        []
-    )
-        ++ List.filterMap
-            (\( name, value ) ->
-                if not (Rpc.Internal.Http.validHeaderName name) then
-                    Just ("header " ++ quote name ++ " has a name that is not an HTTP token")
-
-                else if not (Rpc.Internal.Http.validHeaderValue value) then
-                    Just ("header " ++ quote name ++ " has a value a request cannot carry (NUL, CR, LF or a character above U+00FF)")
-
-                else
-                    Nothing
-            )
-            c.headers
-        ++ belowOne "readMaxBytes" "every response with a body is refused" p.options.readMaxBytes
-        ++ belowOne "writeMaxBytes" "every call is refused unsent" p.options.writeMaxBytes
-
-
-belowOne : String -> String -> Maybe Int -> List String
-belowOne knob consequence setting =
-    case setting of
-        Just limit ->
-            if limit < 1 then
-                [ knob ++ " " ++ String.fromInt limit ++ " is below 1, so " ++ consequence ]
-
-            else
-                []
-
-        Nothing ->
-            []
-
-
-quote : String -> String
-quote text =
-    Json.Encode.encode 0 (Json.Encode.string text)
 
 
 {-| The client as JSON, for logs and tests: its protocol
