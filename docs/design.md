@@ -2065,6 +2065,8 @@ read leniently, as JSON alone (so a known type holding an unknown `Any`
 never gets binary that drops it); `pack` writes the message's JSON
 through a table that refuses a JSON-alone `Any` first, and holds the
 packed `Any` as JSON alone when only that refusal failed. A message
+that cannot hold an `Any`, built by `Proto.Message.init` (§3.9), is
+packed straight to binary, its JSON not written. A message
 holding both an `Any` read from binary and one held as JSON alone packs
 as binary, losing the latter (without a registry neither can be written
 in the other's form). Under a lenient client registry a
