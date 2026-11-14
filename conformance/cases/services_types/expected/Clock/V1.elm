@@ -144,7 +144,14 @@ mergeAlarmBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.timestamp (\v -> { value | at = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.timestamp
+                        (\v ->
+                            { at = Just v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value

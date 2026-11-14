@@ -347,56 +347,349 @@ mergeURLPathBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | label = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { label = v
+                            , id = value.id
+                            , url = value.url
+                            , urlPath = value.urlPath
+                            , httpRequest = value.httpRequest
+                            , xCoord = value.xCoord
+                            , abcDef = value.abcDef
+                            , internal = value.internal
+                            , displayName = value.displayName
+                            , type_ = value.type_
+                            , ids = value.ids
+                            , urls = value.urls
+                            , apis = value.apis
+                            , uuids = value.uuids
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | id = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { label = value.label
+                            , id = v
+                            , url = value.url
+                            , urlPath = value.urlPath
+                            , httpRequest = value.httpRequest
+                            , xCoord = value.xCoord
+                            , abcDef = value.abcDef
+                            , internal = value.internal
+                            , displayName = value.displayName
+                            , type_ = value.type_
+                            , ids = value.ids
+                            , urls = value.urls
+                            , apis = value.apis
+                            , uuids = value.uuids
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | url = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { label = value.label
+                            , id = value.id
+                            , url = v
+                            , urlPath = value.urlPath
+                            , httpRequest = value.httpRequest
+                            , xCoord = value.xCoord
+                            , abcDef = value.abcDef
+                            , internal = value.internal
+                            , displayName = value.displayName
+                            , type_ = value.type_
+                            , ids = value.ids
+                            , urls = value.urls
+                            , apis = value.apis
+                            , uuids = value.uuids
+                            }
+                        )
+                        wire
+                        value
 
                 4 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | urlPath = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { label = value.label
+                            , id = value.id
+                            , url = value.url
+                            , urlPath = v
+                            , httpRequest = value.httpRequest
+                            , xCoord = value.xCoord
+                            , abcDef = value.abcDef
+                            , internal = value.internal
+                            , displayName = value.displayName
+                            , type_ = value.type_
+                            , ids = value.ids
+                            , urls = value.urls
+                            , apis = value.apis
+                            , uuids = value.uuids
+                            }
+                        )
+                        wire
+                        value
 
                 5 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | httpRequest = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { label = value.label
+                            , id = value.id
+                            , url = value.url
+                            , urlPath = value.urlPath
+                            , httpRequest = v
+                            , xCoord = value.xCoord
+                            , abcDef = value.abcDef
+                            , internal = value.internal
+                            , displayName = value.displayName
+                            , type_ = value.type_
+                            , ids = value.ids
+                            , urls = value.urls
+                            , apis = value.apis
+                            , uuids = value.uuids
+                            }
+                        )
+                        wire
+                        value
 
                 6 ->
-                    Proto.Binary.field Proto.Binary.double (\v -> { value | xCoord = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.double
+                        (\v ->
+                            { label = value.label
+                            , id = value.id
+                            , url = value.url
+                            , urlPath = value.urlPath
+                            , httpRequest = value.httpRequest
+                            , xCoord = v
+                            , abcDef = value.abcDef
+                            , internal = value.internal
+                            , displayName = value.displayName
+                            , type_ = value.type_
+                            , ids = value.ids
+                            , urls = value.urls
+                            , apis = value.apis
+                            , uuids = value.uuids
+                            }
+                        )
+                        wire
+                        value
 
                 7 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | abcDef = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { label = value.label
+                            , id = value.id
+                            , url = value.url
+                            , urlPath = value.urlPath
+                            , httpRequest = value.httpRequest
+                            , xCoord = value.xCoord
+                            , abcDef = v
+                            , internal = value.internal
+                            , displayName = value.displayName
+                            , type_ = value.type_
+                            , ids = value.ids
+                            , urls = value.urls
+                            , apis = value.apis
+                            , uuids = value.uuids
+                            }
+                        )
+                        wire
+                        value
 
                 8 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | internal = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { label = value.label
+                            , id = value.id
+                            , url = value.url
+                            , urlPath = value.urlPath
+                            , httpRequest = value.httpRequest
+                            , xCoord = value.xCoord
+                            , abcDef = value.abcDef
+                            , internal = v
+                            , displayName = value.displayName
+                            , type_ = value.type_
+                            , ids = value.ids
+                            , urls = value.urls
+                            , apis = value.apis
+                            , uuids = value.uuids
+                            }
+                        )
+                        wire
+                        value
 
                 10 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | displayName = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { label = value.label
+                            , id = value.id
+                            , url = value.url
+                            , urlPath = value.urlPath
+                            , httpRequest = value.httpRequest
+                            , xCoord = value.xCoord
+                            , abcDef = value.abcDef
+                            , internal = value.internal
+                            , displayName = v
+                            , type_ = value.type_
+                            , ids = value.ids
+                            , urls = value.urls
+                            , apis = value.apis
+                            , uuids = value.uuids
+                            }
+                        )
+                        wire
+                        value
 
                 11 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | type_ = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { label = value.label
+                            , id = value.id
+                            , url = value.url
+                            , urlPath = value.urlPath
+                            , httpRequest = value.httpRequest
+                            , xCoord = value.xCoord
+                            , abcDef = value.abcDef
+                            , internal = value.internal
+                            , displayName = value.displayName
+                            , type_ = v
+                            , ids = value.ids
+                            , urls = value.urls
+                            , apis = value.apis
+                            , uuids = value.uuids
+                            }
+                        )
+                        wire
+                        value
 
                 12 ->
-                    Proto.Binary.repeated Proto.Binary.string (\v -> { value | ids = v }) value.ids wire value
+                    Proto.Binary.repeated
+                        Proto.Binary.string
+                        (\v ->
+                            { label = value.label
+                            , id = value.id
+                            , url = value.url
+                            , urlPath = value.urlPath
+                            , httpRequest = value.httpRequest
+                            , xCoord = value.xCoord
+                            , abcDef = value.abcDef
+                            , internal = value.internal
+                            , displayName = value.displayName
+                            , type_ = value.type_
+                            , ids = v
+                            , urls = value.urls
+                            , apis = value.apis
+                            , uuids = value.uuids
+                            }
+                        )
+                        value.ids
+                        wire
+                        value
 
                 13 ->
-                    Proto.Binary.repeated Proto.Binary.string (\v -> { value | urls = v }) value.urls wire value
+                    Proto.Binary.repeated
+                        Proto.Binary.string
+                        (\v ->
+                            { label = value.label
+                            , id = value.id
+                            , url = value.url
+                            , urlPath = value.urlPath
+                            , httpRequest = value.httpRequest
+                            , xCoord = value.xCoord
+                            , abcDef = value.abcDef
+                            , internal = value.internal
+                            , displayName = value.displayName
+                            , type_ = value.type_
+                            , ids = value.ids
+                            , urls = v
+                            , apis = value.apis
+                            , uuids = value.uuids
+                            }
+                        )
+                        value.urls
+                        wire
+                        value
 
                 14 ->
-                    Proto.Binary.repeated Proto.Binary.string (\v -> { value | apis = v }) value.apis wire value
+                    Proto.Binary.repeated
+                        Proto.Binary.string
+                        (\v ->
+                            { label = value.label
+                            , id = value.id
+                            , url = value.url
+                            , urlPath = value.urlPath
+                            , httpRequest = value.httpRequest
+                            , xCoord = value.xCoord
+                            , abcDef = value.abcDef
+                            , internal = value.internal
+                            , displayName = value.displayName
+                            , type_ = value.type_
+                            , ids = value.ids
+                            , urls = value.urls
+                            , apis = v
+                            , uuids = value.uuids
+                            }
+                        )
+                        value.apis
+                        wire
+                        value
 
                 15 ->
-                    Proto.Binary.repeated Proto.Binary.string (\v -> { value | uuids = v }) value.uuids wire value
+                    Proto.Binary.repeated
+                        Proto.Binary.string
+                        (\v ->
+                            { label = value.label
+                            , id = value.id
+                            , url = value.url
+                            , urlPath = value.urlPath
+                            , httpRequest = value.httpRequest
+                            , xCoord = value.xCoord
+                            , abcDef = value.abcDef
+                            , internal = value.internal
+                            , displayName = value.displayName
+                            , type_ = value.type_
+                            , ids = value.ids
+                            , urls = value.urls
+                            , apis = value.apis
+                            , uuids = v
+                            }
+                        )
+                        value.uuids
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
         (\value ->
-            { value
-                | ids = List.reverse value.ids
-                , urls = List.reverse value.urls
-                , apis = List.reverse value.apis
-                , uuids = List.reverse value.uuids
+            { label = value.label
+            , id = value.id
+            , url = value.url
+            , urlPath = value.urlPath
+            , httpRequest = value.httpRequest
+            , xCoord = value.xCoord
+            , abcDef = value.abcDef
+            , internal = value.internal
+            , displayName = value.displayName
+            , type_ = value.type_
+            , ids = List.reverse value.ids
+            , urls = List.reverse value.urls
+            , apis = List.reverse value.apis
+            , uuids = List.reverse value.uuids
             }
         )
 
@@ -417,13 +710,37 @@ mergeLinkBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | target = LinkTargetURL v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { label = value.label
+                            , target = LinkTargetURL v
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | target = LinkTargetCount v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int32
+                        (\v ->
+                            { label = value.label
+                            , target = LinkTargetCount v
+                            }
+                        )
+                        wire
+                        value
 
                 9 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | label = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { label = v
+                            , target = value.target
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value

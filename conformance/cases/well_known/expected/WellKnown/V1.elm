@@ -462,127 +462,1569 @@ mergeEventBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.timestamp (\v -> { value | createdAt = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.timestamp
+                        (\v ->
+                            { createdAt = Just v
+                            , timeout = value.timeout
+                            , updateMask = value.updateMask
+                            , marker = value.marker
+                            , metadata = value.metadata
+                            , payload = value.payload
+                            , items = value.items
+                            , ratio = value.ratio
+                            , weight = value.weight
+                            , bigCount = value.bigCount
+                            , bigTotal = value.bigTotal
+                            , count = value.count
+                            , total = value.total
+                            , enabled = value.enabled
+                            , nickname = value.nickname
+                            , avatar = value.avatar
+                            , history = value.history
+                            , limits = value.limits
+                            , values = value.values
+                            , counts = value.counts
+                            , acked = value.acked
+                            , pings = value.pings
+                            , seen = value.seen
+                            , records = value.records
+                            , columns = value.columns
+                            , lastValue = value.lastValue
+                            , settings = value.settings
+                            , nothing = value.nothing
+                            , maybeNothing = value.maybeNothing
+                            , nulls = value.nulls
+                            , nullMap = value.nullMap
+                            , when = value.when
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.duration (\v -> { value | timeout = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.duration
+                        (\v ->
+                            { createdAt = value.createdAt
+                            , timeout = Just v
+                            , updateMask = value.updateMask
+                            , marker = value.marker
+                            , metadata = value.metadata
+                            , payload = value.payload
+                            , items = value.items
+                            , ratio = value.ratio
+                            , weight = value.weight
+                            , bigCount = value.bigCount
+                            , bigTotal = value.bigTotal
+                            , count = value.count
+                            , total = value.total
+                            , enabled = value.enabled
+                            , nickname = value.nickname
+                            , avatar = value.avatar
+                            , history = value.history
+                            , limits = value.limits
+                            , values = value.values
+                            , counts = value.counts
+                            , acked = value.acked
+                            , pings = value.pings
+                            , seen = value.seen
+                            , records = value.records
+                            , columns = value.columns
+                            , lastValue = value.lastValue
+                            , settings = value.settings
+                            , nothing = value.nothing
+                            , maybeNothing = value.maybeNothing
+                            , nulls = value.nulls
+                            , nullMap = value.nullMap
+                            , when = value.when
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.field Proto.Binary.fieldMask (\v -> { value | updateMask = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.fieldMask
+                        (\v ->
+                            { createdAt = value.createdAt
+                            , timeout = value.timeout
+                            , updateMask = Just v
+                            , marker = value.marker
+                            , metadata = value.metadata
+                            , payload = value.payload
+                            , items = value.items
+                            , ratio = value.ratio
+                            , weight = value.weight
+                            , bigCount = value.bigCount
+                            , bigTotal = value.bigTotal
+                            , count = value.count
+                            , total = value.total
+                            , enabled = value.enabled
+                            , nickname = value.nickname
+                            , avatar = value.avatar
+                            , history = value.history
+                            , limits = value.limits
+                            , values = value.values
+                            , counts = value.counts
+                            , acked = value.acked
+                            , pings = value.pings
+                            , seen = value.seen
+                            , records = value.records
+                            , columns = value.columns
+                            , lastValue = value.lastValue
+                            , settings = value.settings
+                            , nothing = value.nothing
+                            , maybeNothing = value.maybeNothing
+                            , nulls = value.nulls
+                            , nullMap = value.nullMap
+                            , when = value.when
+                            }
+                        )
+                        wire
+                        value
 
                 4 ->
-                    Proto.Binary.field Proto.Binary.empty (\v -> { value | marker = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.empty
+                        (\v ->
+                            { createdAt = value.createdAt
+                            , timeout = value.timeout
+                            , updateMask = value.updateMask
+                            , marker = v
+                            , metadata = value.metadata
+                            , payload = value.payload
+                            , items = value.items
+                            , ratio = value.ratio
+                            , weight = value.weight
+                            , bigCount = value.bigCount
+                            , bigTotal = value.bigTotal
+                            , count = value.count
+                            , total = value.total
+                            , enabled = value.enabled
+                            , nickname = value.nickname
+                            , avatar = value.avatar
+                            , history = value.history
+                            , limits = value.limits
+                            , values = value.values
+                            , counts = value.counts
+                            , acked = value.acked
+                            , pings = value.pings
+                            , seen = value.seen
+                            , records = value.records
+                            , columns = value.columns
+                            , lastValue = value.lastValue
+                            , settings = value.settings
+                            , nothing = value.nothing
+                            , maybeNothing = value.maybeNothing
+                            , nulls = value.nulls
+                            , nullMap = value.nullMap
+                            , when = value.when
+                            }
+                        )
+                        wire
+                        value
 
                 5 ->
-                    Proto.Binary.field Proto.Binary.struct (\v -> { value | metadata = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.struct
+                        (\v ->
+                            { createdAt = value.createdAt
+                            , timeout = value.timeout
+                            , updateMask = value.updateMask
+                            , marker = value.marker
+                            , metadata = Just v
+                            , payload = value.payload
+                            , items = value.items
+                            , ratio = value.ratio
+                            , weight = value.weight
+                            , bigCount = value.bigCount
+                            , bigTotal = value.bigTotal
+                            , count = value.count
+                            , total = value.total
+                            , enabled = value.enabled
+                            , nickname = value.nickname
+                            , avatar = value.avatar
+                            , history = value.history
+                            , limits = value.limits
+                            , values = value.values
+                            , counts = value.counts
+                            , acked = value.acked
+                            , pings = value.pings
+                            , seen = value.seen
+                            , records = value.records
+                            , columns = value.columns
+                            , lastValue = value.lastValue
+                            , settings = value.settings
+                            , nothing = value.nothing
+                            , maybeNothing = value.maybeNothing
+                            , nulls = value.nulls
+                            , nullMap = value.nullMap
+                            , when = value.when
+                            }
+                        )
+                        wire
+                        value
 
                 6 ->
-                    Proto.Binary.field Proto.Binary.value (\v -> { value | payload = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.value
+                        (\v ->
+                            { createdAt = value.createdAt
+                            , timeout = value.timeout
+                            , updateMask = value.updateMask
+                            , marker = value.marker
+                            , metadata = value.metadata
+                            , payload = Just v
+                            , items = value.items
+                            , ratio = value.ratio
+                            , weight = value.weight
+                            , bigCount = value.bigCount
+                            , bigTotal = value.bigTotal
+                            , count = value.count
+                            , total = value.total
+                            , enabled = value.enabled
+                            , nickname = value.nickname
+                            , avatar = value.avatar
+                            , history = value.history
+                            , limits = value.limits
+                            , values = value.values
+                            , counts = value.counts
+                            , acked = value.acked
+                            , pings = value.pings
+                            , seen = value.seen
+                            , records = value.records
+                            , columns = value.columns
+                            , lastValue = value.lastValue
+                            , settings = value.settings
+                            , nothing = value.nothing
+                            , maybeNothing = value.maybeNothing
+                            , nulls = value.nulls
+                            , nullMap = value.nullMap
+                            , when = value.when
+                            }
+                        )
+                        wire
+                        value
 
                 7 ->
-                    Proto.Binary.field Proto.Binary.listValue (\v -> { value | items = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.listValue
+                        (\v ->
+                            { createdAt = value.createdAt
+                            , timeout = value.timeout
+                            , updateMask = value.updateMask
+                            , marker = value.marker
+                            , metadata = value.metadata
+                            , payload = value.payload
+                            , items = Just v
+                            , ratio = value.ratio
+                            , weight = value.weight
+                            , bigCount = value.bigCount
+                            , bigTotal = value.bigTotal
+                            , count = value.count
+                            , total = value.total
+                            , enabled = value.enabled
+                            , nickname = value.nickname
+                            , avatar = value.avatar
+                            , history = value.history
+                            , limits = value.limits
+                            , values = value.values
+                            , counts = value.counts
+                            , acked = value.acked
+                            , pings = value.pings
+                            , seen = value.seen
+                            , records = value.records
+                            , columns = value.columns
+                            , lastValue = value.lastValue
+                            , settings = value.settings
+                            , nothing = value.nothing
+                            , maybeNothing = value.maybeNothing
+                            , nulls = value.nulls
+                            , nullMap = value.nullMap
+                            , when = value.when
+                            }
+                        )
+                        wire
+                        value
 
                 8 ->
-                    Proto.Binary.field Proto.Binary.doubleValue (\v -> { value | ratio = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.doubleValue
+                        (\v ->
+                            { createdAt = value.createdAt
+                            , timeout = value.timeout
+                            , updateMask = value.updateMask
+                            , marker = value.marker
+                            , metadata = value.metadata
+                            , payload = value.payload
+                            , items = value.items
+                            , ratio = Just v
+                            , weight = value.weight
+                            , bigCount = value.bigCount
+                            , bigTotal = value.bigTotal
+                            , count = value.count
+                            , total = value.total
+                            , enabled = value.enabled
+                            , nickname = value.nickname
+                            , avatar = value.avatar
+                            , history = value.history
+                            , limits = value.limits
+                            , values = value.values
+                            , counts = value.counts
+                            , acked = value.acked
+                            , pings = value.pings
+                            , seen = value.seen
+                            , records = value.records
+                            , columns = value.columns
+                            , lastValue = value.lastValue
+                            , settings = value.settings
+                            , nothing = value.nothing
+                            , maybeNothing = value.maybeNothing
+                            , nulls = value.nulls
+                            , nullMap = value.nullMap
+                            , when = value.when
+                            }
+                        )
+                        wire
+                        value
 
                 9 ->
-                    Proto.Binary.field Proto.Binary.floatValue (\v -> { value | weight = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.floatValue
+                        (\v ->
+                            { createdAt = value.createdAt
+                            , timeout = value.timeout
+                            , updateMask = value.updateMask
+                            , marker = value.marker
+                            , metadata = value.metadata
+                            , payload = value.payload
+                            , items = value.items
+                            , ratio = value.ratio
+                            , weight = Just v
+                            , bigCount = value.bigCount
+                            , bigTotal = value.bigTotal
+                            , count = value.count
+                            , total = value.total
+                            , enabled = value.enabled
+                            , nickname = value.nickname
+                            , avatar = value.avatar
+                            , history = value.history
+                            , limits = value.limits
+                            , values = value.values
+                            , counts = value.counts
+                            , acked = value.acked
+                            , pings = value.pings
+                            , seen = value.seen
+                            , records = value.records
+                            , columns = value.columns
+                            , lastValue = value.lastValue
+                            , settings = value.settings
+                            , nothing = value.nothing
+                            , maybeNothing = value.maybeNothing
+                            , nulls = value.nulls
+                            , nullMap = value.nullMap
+                            , when = value.when
+                            }
+                        )
+                        wire
+                        value
 
                 10 ->
-                    Proto.Binary.field Proto.Binary.int64Value (\v -> { value | bigCount = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int64Value
+                        (\v ->
+                            { createdAt = value.createdAt
+                            , timeout = value.timeout
+                            , updateMask = value.updateMask
+                            , marker = value.marker
+                            , metadata = value.metadata
+                            , payload = value.payload
+                            , items = value.items
+                            , ratio = value.ratio
+                            , weight = value.weight
+                            , bigCount = Just v
+                            , bigTotal = value.bigTotal
+                            , count = value.count
+                            , total = value.total
+                            , enabled = value.enabled
+                            , nickname = value.nickname
+                            , avatar = value.avatar
+                            , history = value.history
+                            , limits = value.limits
+                            , values = value.values
+                            , counts = value.counts
+                            , acked = value.acked
+                            , pings = value.pings
+                            , seen = value.seen
+                            , records = value.records
+                            , columns = value.columns
+                            , lastValue = value.lastValue
+                            , settings = value.settings
+                            , nothing = value.nothing
+                            , maybeNothing = value.maybeNothing
+                            , nulls = value.nulls
+                            , nullMap = value.nullMap
+                            , when = value.when
+                            }
+                        )
+                        wire
+                        value
 
                 11 ->
-                    Proto.Binary.field Proto.Binary.uint64Value (\v -> { value | bigTotal = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.uint64Value
+                        (\v ->
+                            { createdAt = value.createdAt
+                            , timeout = value.timeout
+                            , updateMask = value.updateMask
+                            , marker = value.marker
+                            , metadata = value.metadata
+                            , payload = value.payload
+                            , items = value.items
+                            , ratio = value.ratio
+                            , weight = value.weight
+                            , bigCount = value.bigCount
+                            , bigTotal = Just v
+                            , count = value.count
+                            , total = value.total
+                            , enabled = value.enabled
+                            , nickname = value.nickname
+                            , avatar = value.avatar
+                            , history = value.history
+                            , limits = value.limits
+                            , values = value.values
+                            , counts = value.counts
+                            , acked = value.acked
+                            , pings = value.pings
+                            , seen = value.seen
+                            , records = value.records
+                            , columns = value.columns
+                            , lastValue = value.lastValue
+                            , settings = value.settings
+                            , nothing = value.nothing
+                            , maybeNothing = value.maybeNothing
+                            , nulls = value.nulls
+                            , nullMap = value.nullMap
+                            , when = value.when
+                            }
+                        )
+                        wire
+                        value
 
                 12 ->
-                    Proto.Binary.field Proto.Binary.int32Value (\v -> { value | count = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int32Value
+                        (\v ->
+                            { createdAt = value.createdAt
+                            , timeout = value.timeout
+                            , updateMask = value.updateMask
+                            , marker = value.marker
+                            , metadata = value.metadata
+                            , payload = value.payload
+                            , items = value.items
+                            , ratio = value.ratio
+                            , weight = value.weight
+                            , bigCount = value.bigCount
+                            , bigTotal = value.bigTotal
+                            , count = Just v
+                            , total = value.total
+                            , enabled = value.enabled
+                            , nickname = value.nickname
+                            , avatar = value.avatar
+                            , history = value.history
+                            , limits = value.limits
+                            , values = value.values
+                            , counts = value.counts
+                            , acked = value.acked
+                            , pings = value.pings
+                            , seen = value.seen
+                            , records = value.records
+                            , columns = value.columns
+                            , lastValue = value.lastValue
+                            , settings = value.settings
+                            , nothing = value.nothing
+                            , maybeNothing = value.maybeNothing
+                            , nulls = value.nulls
+                            , nullMap = value.nullMap
+                            , when = value.when
+                            }
+                        )
+                        wire
+                        value
 
                 13 ->
-                    Proto.Binary.field Proto.Binary.uint32Value (\v -> { value | total = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.uint32Value
+                        (\v ->
+                            { createdAt = value.createdAt
+                            , timeout = value.timeout
+                            , updateMask = value.updateMask
+                            , marker = value.marker
+                            , metadata = value.metadata
+                            , payload = value.payload
+                            , items = value.items
+                            , ratio = value.ratio
+                            , weight = value.weight
+                            , bigCount = value.bigCount
+                            , bigTotal = value.bigTotal
+                            , count = value.count
+                            , total = Just v
+                            , enabled = value.enabled
+                            , nickname = value.nickname
+                            , avatar = value.avatar
+                            , history = value.history
+                            , limits = value.limits
+                            , values = value.values
+                            , counts = value.counts
+                            , acked = value.acked
+                            , pings = value.pings
+                            , seen = value.seen
+                            , records = value.records
+                            , columns = value.columns
+                            , lastValue = value.lastValue
+                            , settings = value.settings
+                            , nothing = value.nothing
+                            , maybeNothing = value.maybeNothing
+                            , nulls = value.nulls
+                            , nullMap = value.nullMap
+                            , when = value.when
+                            }
+                        )
+                        wire
+                        value
 
                 14 ->
-                    Proto.Binary.field Proto.Binary.boolValue (\v -> { value | enabled = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.boolValue
+                        (\v ->
+                            { createdAt = value.createdAt
+                            , timeout = value.timeout
+                            , updateMask = value.updateMask
+                            , marker = value.marker
+                            , metadata = value.metadata
+                            , payload = value.payload
+                            , items = value.items
+                            , ratio = value.ratio
+                            , weight = value.weight
+                            , bigCount = value.bigCount
+                            , bigTotal = value.bigTotal
+                            , count = value.count
+                            , total = value.total
+                            , enabled = Just v
+                            , nickname = value.nickname
+                            , avatar = value.avatar
+                            , history = value.history
+                            , limits = value.limits
+                            , values = value.values
+                            , counts = value.counts
+                            , acked = value.acked
+                            , pings = value.pings
+                            , seen = value.seen
+                            , records = value.records
+                            , columns = value.columns
+                            , lastValue = value.lastValue
+                            , settings = value.settings
+                            , nothing = value.nothing
+                            , maybeNothing = value.maybeNothing
+                            , nulls = value.nulls
+                            , nullMap = value.nullMap
+                            , when = value.when
+                            }
+                        )
+                        wire
+                        value
 
                 15 ->
-                    Proto.Binary.field Proto.Binary.stringValue (\v -> { value | nickname = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.stringValue
+                        (\v ->
+                            { createdAt = value.createdAt
+                            , timeout = value.timeout
+                            , updateMask = value.updateMask
+                            , marker = value.marker
+                            , metadata = value.metadata
+                            , payload = value.payload
+                            , items = value.items
+                            , ratio = value.ratio
+                            , weight = value.weight
+                            , bigCount = value.bigCount
+                            , bigTotal = value.bigTotal
+                            , count = value.count
+                            , total = value.total
+                            , enabled = value.enabled
+                            , nickname = Just v
+                            , avatar = value.avatar
+                            , history = value.history
+                            , limits = value.limits
+                            , values = value.values
+                            , counts = value.counts
+                            , acked = value.acked
+                            , pings = value.pings
+                            , seen = value.seen
+                            , records = value.records
+                            , columns = value.columns
+                            , lastValue = value.lastValue
+                            , settings = value.settings
+                            , nothing = value.nothing
+                            , maybeNothing = value.maybeNothing
+                            , nulls = value.nulls
+                            , nullMap = value.nullMap
+                            , when = value.when
+                            }
+                        )
+                        wire
+                        value
 
                 16 ->
-                    Proto.Binary.field Proto.Binary.bytesValue (\v -> { value | avatar = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bytesValue
+                        (\v ->
+                            { createdAt = value.createdAt
+                            , timeout = value.timeout
+                            , updateMask = value.updateMask
+                            , marker = value.marker
+                            , metadata = value.metadata
+                            , payload = value.payload
+                            , items = value.items
+                            , ratio = value.ratio
+                            , weight = value.weight
+                            , bigCount = value.bigCount
+                            , bigTotal = value.bigTotal
+                            , count = value.count
+                            , total = value.total
+                            , enabled = value.enabled
+                            , nickname = value.nickname
+                            , avatar = Just v
+                            , history = value.history
+                            , limits = value.limits
+                            , values = value.values
+                            , counts = value.counts
+                            , acked = value.acked
+                            , pings = value.pings
+                            , seen = value.seen
+                            , records = value.records
+                            , columns = value.columns
+                            , lastValue = value.lastValue
+                            , settings = value.settings
+                            , nothing = value.nothing
+                            , maybeNothing = value.maybeNothing
+                            , nulls = value.nulls
+                            , nullMap = value.nullMap
+                            , when = value.when
+                            }
+                        )
+                        wire
+                        value
 
                 17 ->
-                    Proto.Binary.repeated Proto.Binary.timestamp (\v -> { value | history = v }) value.history wire value
+                    Proto.Binary.repeated
+                        Proto.Binary.timestamp
+                        (\v ->
+                            { createdAt = value.createdAt
+                            , timeout = value.timeout
+                            , updateMask = value.updateMask
+                            , marker = value.marker
+                            , metadata = value.metadata
+                            , payload = value.payload
+                            , items = value.items
+                            , ratio = value.ratio
+                            , weight = value.weight
+                            , bigCount = value.bigCount
+                            , bigTotal = value.bigTotal
+                            , count = value.count
+                            , total = value.total
+                            , enabled = value.enabled
+                            , nickname = value.nickname
+                            , avatar = value.avatar
+                            , history = v
+                            , limits = value.limits
+                            , values = value.values
+                            , counts = value.counts
+                            , acked = value.acked
+                            , pings = value.pings
+                            , seen = value.seen
+                            , records = value.records
+                            , columns = value.columns
+                            , lastValue = value.lastValue
+                            , settings = value.settings
+                            , nothing = value.nothing
+                            , maybeNothing = value.maybeNothing
+                            , nulls = value.nulls
+                            , nullMap = value.nullMap
+                            , when = value.when
+                            }
+                        )
+                        value.history
+                        wire
+                        value
 
                 18 ->
-                    Proto.Binary.mapEntry Proto.Binary.string Proto.Binary.duration (\k v -> { value | limits = Dict.insert k v value.limits }) wire value
+                    Proto.Binary.mapEntry
+                        Proto.Binary.string
+                        Proto.Binary.duration
+                        (\k v ->
+                            { createdAt = value.createdAt
+                            , timeout = value.timeout
+                            , updateMask = value.updateMask
+                            , marker = value.marker
+                            , metadata = value.metadata
+                            , payload = value.payload
+                            , items = value.items
+                            , ratio = value.ratio
+                            , weight = value.weight
+                            , bigCount = value.bigCount
+                            , bigTotal = value.bigTotal
+                            , count = value.count
+                            , total = value.total
+                            , enabled = value.enabled
+                            , nickname = value.nickname
+                            , avatar = value.avatar
+                            , history = value.history
+                            , limits = Dict.insert k v value.limits
+                            , values = value.values
+                            , counts = value.counts
+                            , acked = value.acked
+                            , pings = value.pings
+                            , seen = value.seen
+                            , records = value.records
+                            , columns = value.columns
+                            , lastValue = value.lastValue
+                            , settings = value.settings
+                            , nothing = value.nothing
+                            , maybeNothing = value.maybeNothing
+                            , nulls = value.nulls
+                            , nullMap = value.nullMap
+                            , when = value.when
+                            }
+                        )
+                        wire
+                        value
 
                 19 ->
-                    Proto.Binary.repeated Proto.Binary.value (\v -> { value | values = v }) value.values wire value
+                    Proto.Binary.repeated
+                        Proto.Binary.value
+                        (\v ->
+                            { createdAt = value.createdAt
+                            , timeout = value.timeout
+                            , updateMask = value.updateMask
+                            , marker = value.marker
+                            , metadata = value.metadata
+                            , payload = value.payload
+                            , items = value.items
+                            , ratio = value.ratio
+                            , weight = value.weight
+                            , bigCount = value.bigCount
+                            , bigTotal = value.bigTotal
+                            , count = value.count
+                            , total = value.total
+                            , enabled = value.enabled
+                            , nickname = value.nickname
+                            , avatar = value.avatar
+                            , history = value.history
+                            , limits = value.limits
+                            , values = v
+                            , counts = value.counts
+                            , acked = value.acked
+                            , pings = value.pings
+                            , seen = value.seen
+                            , records = value.records
+                            , columns = value.columns
+                            , lastValue = value.lastValue
+                            , settings = value.settings
+                            , nothing = value.nothing
+                            , maybeNothing = value.maybeNothing
+                            , nulls = value.nulls
+                            , nullMap = value.nullMap
+                            , when = value.when
+                            }
+                        )
+                        value.values
+                        wire
+                        value
 
                 20 ->
-                    Proto.Binary.repeated Proto.Binary.int32Value (\v -> { value | counts = v }) value.counts wire value
+                    Proto.Binary.repeated
+                        Proto.Binary.int32Value
+                        (\v ->
+                            { createdAt = value.createdAt
+                            , timeout = value.timeout
+                            , updateMask = value.updateMask
+                            , marker = value.marker
+                            , metadata = value.metadata
+                            , payload = value.payload
+                            , items = value.items
+                            , ratio = value.ratio
+                            , weight = value.weight
+                            , bigCount = value.bigCount
+                            , bigTotal = value.bigTotal
+                            , count = value.count
+                            , total = value.total
+                            , enabled = value.enabled
+                            , nickname = value.nickname
+                            , avatar = value.avatar
+                            , history = value.history
+                            , limits = value.limits
+                            , values = value.values
+                            , counts = v
+                            , acked = value.acked
+                            , pings = value.pings
+                            , seen = value.seen
+                            , records = value.records
+                            , columns = value.columns
+                            , lastValue = value.lastValue
+                            , settings = value.settings
+                            , nothing = value.nothing
+                            , maybeNothing = value.maybeNothing
+                            , nulls = value.nulls
+                            , nullMap = value.nullMap
+                            , when = value.when
+                            }
+                        )
+                        value.counts
+                        wire
+                        value
 
                 21 ->
-                    Proto.Binary.field Proto.Binary.timestamp (\v -> { value | when = EventWhenAt v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.timestamp
+                        (\v ->
+                            { createdAt = value.createdAt
+                            , timeout = value.timeout
+                            , updateMask = value.updateMask
+                            , marker = value.marker
+                            , metadata = value.metadata
+                            , payload = value.payload
+                            , items = value.items
+                            , ratio = value.ratio
+                            , weight = value.weight
+                            , bigCount = value.bigCount
+                            , bigTotal = value.bigTotal
+                            , count = value.count
+                            , total = value.total
+                            , enabled = value.enabled
+                            , nickname = value.nickname
+                            , avatar = value.avatar
+                            , history = value.history
+                            , limits = value.limits
+                            , values = value.values
+                            , counts = value.counts
+                            , acked = value.acked
+                            , pings = value.pings
+                            , seen = value.seen
+                            , records = value.records
+                            , columns = value.columns
+                            , lastValue = value.lastValue
+                            , settings = value.settings
+                            , nothing = value.nothing
+                            , maybeNothing = value.maybeNothing
+                            , nulls = value.nulls
+                            , nullMap = value.nullMap
+                            , when = EventWhenAt v
+                            }
+                        )
+                        wire
+                        value
 
                 22 ->
-                    Proto.Binary.field Proto.Binary.duration (\v -> { value | when = EventWhenAfter v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.duration
+                        (\v ->
+                            { createdAt = value.createdAt
+                            , timeout = value.timeout
+                            , updateMask = value.updateMask
+                            , marker = value.marker
+                            , metadata = value.metadata
+                            , payload = value.payload
+                            , items = value.items
+                            , ratio = value.ratio
+                            , weight = value.weight
+                            , bigCount = value.bigCount
+                            , bigTotal = value.bigTotal
+                            , count = value.count
+                            , total = value.total
+                            , enabled = value.enabled
+                            , nickname = value.nickname
+                            , avatar = value.avatar
+                            , history = value.history
+                            , limits = value.limits
+                            , values = value.values
+                            , counts = value.counts
+                            , acked = value.acked
+                            , pings = value.pings
+                            , seen = value.seen
+                            , records = value.records
+                            , columns = value.columns
+                            , lastValue = value.lastValue
+                            , settings = value.settings
+                            , nothing = value.nothing
+                            , maybeNothing = value.maybeNothing
+                            , nulls = value.nulls
+                            , nullMap = value.nullMap
+                            , when = EventWhenAfter v
+                            }
+                        )
+                        wire
+                        value
 
                 23 ->
-                    Proto.Binary.field Proto.Binary.value (\v -> { value | when = EventWhenWhenever v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.value
+                        (\v ->
+                            { createdAt = value.createdAt
+                            , timeout = value.timeout
+                            , updateMask = value.updateMask
+                            , marker = value.marker
+                            , metadata = value.metadata
+                            , payload = value.payload
+                            , items = value.items
+                            , ratio = value.ratio
+                            , weight = value.weight
+                            , bigCount = value.bigCount
+                            , bigTotal = value.bigTotal
+                            , count = value.count
+                            , total = value.total
+                            , enabled = value.enabled
+                            , nickname = value.nickname
+                            , avatar = value.avatar
+                            , history = value.history
+                            , limits = value.limits
+                            , values = value.values
+                            , counts = value.counts
+                            , acked = value.acked
+                            , pings = value.pings
+                            , seen = value.seen
+                            , records = value.records
+                            , columns = value.columns
+                            , lastValue = value.lastValue
+                            , settings = value.settings
+                            , nothing = value.nothing
+                            , maybeNothing = value.maybeNothing
+                            , nulls = value.nulls
+                            , nullMap = value.nullMap
+                            , when = EventWhenWhenever v
+                            }
+                        )
+                        wire
+                        value
 
                 24 ->
-                    Proto.Binary.field Proto.Binary.empty (\v -> { value | acked = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.empty
+                        (\v ->
+                            { createdAt = value.createdAt
+                            , timeout = value.timeout
+                            , updateMask = value.updateMask
+                            , marker = value.marker
+                            , metadata = value.metadata
+                            , payload = value.payload
+                            , items = value.items
+                            , ratio = value.ratio
+                            , weight = value.weight
+                            , bigCount = value.bigCount
+                            , bigTotal = value.bigTotal
+                            , count = value.count
+                            , total = value.total
+                            , enabled = value.enabled
+                            , nickname = value.nickname
+                            , avatar = value.avatar
+                            , history = value.history
+                            , limits = value.limits
+                            , values = value.values
+                            , counts = value.counts
+                            , acked = v
+                            , pings = value.pings
+                            , seen = value.seen
+                            , records = value.records
+                            , columns = value.columns
+                            , lastValue = value.lastValue
+                            , settings = value.settings
+                            , nothing = value.nothing
+                            , maybeNothing = value.maybeNothing
+                            , nulls = value.nulls
+                            , nullMap = value.nullMap
+                            , when = value.when
+                            }
+                        )
+                        wire
+                        value
 
                 25 ->
-                    Proto.Binary.repeated Proto.Binary.empty (\v -> { value | pings = v }) value.pings wire value
+                    Proto.Binary.repeated
+                        Proto.Binary.empty
+                        (\v ->
+                            { createdAt = value.createdAt
+                            , timeout = value.timeout
+                            , updateMask = value.updateMask
+                            , marker = value.marker
+                            , metadata = value.metadata
+                            , payload = value.payload
+                            , items = value.items
+                            , ratio = value.ratio
+                            , weight = value.weight
+                            , bigCount = value.bigCount
+                            , bigTotal = value.bigTotal
+                            , count = value.count
+                            , total = value.total
+                            , enabled = value.enabled
+                            , nickname = value.nickname
+                            , avatar = value.avatar
+                            , history = value.history
+                            , limits = value.limits
+                            , values = value.values
+                            , counts = value.counts
+                            , acked = value.acked
+                            , pings = v
+                            , seen = value.seen
+                            , records = value.records
+                            , columns = value.columns
+                            , lastValue = value.lastValue
+                            , settings = value.settings
+                            , nothing = value.nothing
+                            , maybeNothing = value.maybeNothing
+                            , nulls = value.nulls
+                            , nullMap = value.nullMap
+                            , when = value.when
+                            }
+                        )
+                        value.pings
+                        wire
+                        value
 
                 26 ->
-                    Proto.Binary.mapEntry Proto.Binary.string Proto.Binary.empty (\k v -> { value | seen = Dict.insert k v value.seen }) wire value
+                    Proto.Binary.mapEntry
+                        Proto.Binary.string
+                        Proto.Binary.empty
+                        (\k v ->
+                            { createdAt = value.createdAt
+                            , timeout = value.timeout
+                            , updateMask = value.updateMask
+                            , marker = value.marker
+                            , metadata = value.metadata
+                            , payload = value.payload
+                            , items = value.items
+                            , ratio = value.ratio
+                            , weight = value.weight
+                            , bigCount = value.bigCount
+                            , bigTotal = value.bigTotal
+                            , count = value.count
+                            , total = value.total
+                            , enabled = value.enabled
+                            , nickname = value.nickname
+                            , avatar = value.avatar
+                            , history = value.history
+                            , limits = value.limits
+                            , values = value.values
+                            , counts = value.counts
+                            , acked = value.acked
+                            , pings = value.pings
+                            , seen = Dict.insert k v value.seen
+                            , records = value.records
+                            , columns = value.columns
+                            , lastValue = value.lastValue
+                            , settings = value.settings
+                            , nothing = value.nothing
+                            , maybeNothing = value.maybeNothing
+                            , nulls = value.nulls
+                            , nullMap = value.nullMap
+                            , when = value.when
+                            }
+                        )
+                        wire
+                        value
 
                 27 ->
-                    Proto.Binary.repeated Proto.Binary.struct (\v -> { value | records = v }) value.records wire value
+                    Proto.Binary.repeated
+                        Proto.Binary.struct
+                        (\v ->
+                            { createdAt = value.createdAt
+                            , timeout = value.timeout
+                            , updateMask = value.updateMask
+                            , marker = value.marker
+                            , metadata = value.metadata
+                            , payload = value.payload
+                            , items = value.items
+                            , ratio = value.ratio
+                            , weight = value.weight
+                            , bigCount = value.bigCount
+                            , bigTotal = value.bigTotal
+                            , count = value.count
+                            , total = value.total
+                            , enabled = value.enabled
+                            , nickname = value.nickname
+                            , avatar = value.avatar
+                            , history = value.history
+                            , limits = value.limits
+                            , values = value.values
+                            , counts = value.counts
+                            , acked = value.acked
+                            , pings = value.pings
+                            , seen = value.seen
+                            , records = v
+                            , columns = value.columns
+                            , lastValue = value.lastValue
+                            , settings = value.settings
+                            , nothing = value.nothing
+                            , maybeNothing = value.maybeNothing
+                            , nulls = value.nulls
+                            , nullMap = value.nullMap
+                            , when = value.when
+                            }
+                        )
+                        value.records
+                        wire
+                        value
 
                 28 ->
-                    Proto.Binary.mapEntry Proto.Binary.string Proto.Binary.listValue (\k v -> { value | columns = Dict.insert k v value.columns }) wire value
+                    Proto.Binary.mapEntry
+                        Proto.Binary.string
+                        Proto.Binary.listValue
+                        (\k v ->
+                            { createdAt = value.createdAt
+                            , timeout = value.timeout
+                            , updateMask = value.updateMask
+                            , marker = value.marker
+                            , metadata = value.metadata
+                            , payload = value.payload
+                            , items = value.items
+                            , ratio = value.ratio
+                            , weight = value.weight
+                            , bigCount = value.bigCount
+                            , bigTotal = value.bigTotal
+                            , count = value.count
+                            , total = value.total
+                            , enabled = value.enabled
+                            , nickname = value.nickname
+                            , avatar = value.avatar
+                            , history = value.history
+                            , limits = value.limits
+                            , values = value.values
+                            , counts = value.counts
+                            , acked = value.acked
+                            , pings = value.pings
+                            , seen = value.seen
+                            , records = value.records
+                            , columns = Dict.insert k v value.columns
+                            , lastValue = value.lastValue
+                            , settings = value.settings
+                            , nothing = value.nothing
+                            , maybeNothing = value.maybeNothing
+                            , nulls = value.nulls
+                            , nullMap = value.nullMap
+                            , when = value.when
+                            }
+                        )
+                        wire
+                        value
 
                 29 ->
-                    Proto.Binary.field Proto.Binary.struct (\v -> { value | when = EventWhenSchedule v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.struct
+                        (\v ->
+                            { createdAt = value.createdAt
+                            , timeout = value.timeout
+                            , updateMask = value.updateMask
+                            , marker = value.marker
+                            , metadata = value.metadata
+                            , payload = value.payload
+                            , items = value.items
+                            , ratio = value.ratio
+                            , weight = value.weight
+                            , bigCount = value.bigCount
+                            , bigTotal = value.bigTotal
+                            , count = value.count
+                            , total = value.total
+                            , enabled = value.enabled
+                            , nickname = value.nickname
+                            , avatar = value.avatar
+                            , history = value.history
+                            , limits = value.limits
+                            , values = value.values
+                            , counts = value.counts
+                            , acked = value.acked
+                            , pings = value.pings
+                            , seen = value.seen
+                            , records = value.records
+                            , columns = value.columns
+                            , lastValue = value.lastValue
+                            , settings = value.settings
+                            , nothing = value.nothing
+                            , maybeNothing = value.maybeNothing
+                            , nulls = value.nulls
+                            , nullMap = value.nullMap
+                            , when = EventWhenSchedule v
+                            }
+                        )
+                        wire
+                        value
 
                 30 ->
-                    Proto.Binary.field Proto.Binary.listValue (\v -> { value | when = EventWhenDates v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.listValue
+                        (\v ->
+                            { createdAt = value.createdAt
+                            , timeout = value.timeout
+                            , updateMask = value.updateMask
+                            , marker = value.marker
+                            , metadata = value.metadata
+                            , payload = value.payload
+                            , items = value.items
+                            , ratio = value.ratio
+                            , weight = value.weight
+                            , bigCount = value.bigCount
+                            , bigTotal = value.bigTotal
+                            , count = value.count
+                            , total = value.total
+                            , enabled = value.enabled
+                            , nickname = value.nickname
+                            , avatar = value.avatar
+                            , history = value.history
+                            , limits = value.limits
+                            , values = value.values
+                            , counts = value.counts
+                            , acked = value.acked
+                            , pings = value.pings
+                            , seen = value.seen
+                            , records = value.records
+                            , columns = value.columns
+                            , lastValue = value.lastValue
+                            , settings = value.settings
+                            , nothing = value.nothing
+                            , maybeNothing = value.maybeNothing
+                            , nulls = value.nulls
+                            , nullMap = value.nullMap
+                            , when = EventWhenDates v
+                            }
+                        )
+                        wire
+                        value
 
                 31 ->
-                    Proto.Binary.field Proto.Binary.value (\v -> { value | lastValue = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.value
+                        (\v ->
+                            { createdAt = value.createdAt
+                            , timeout = value.timeout
+                            , updateMask = value.updateMask
+                            , marker = value.marker
+                            , metadata = value.metadata
+                            , payload = value.payload
+                            , items = value.items
+                            , ratio = value.ratio
+                            , weight = value.weight
+                            , bigCount = value.bigCount
+                            , bigTotal = value.bigTotal
+                            , count = value.count
+                            , total = value.total
+                            , enabled = value.enabled
+                            , nickname = value.nickname
+                            , avatar = value.avatar
+                            , history = value.history
+                            , limits = value.limits
+                            , values = value.values
+                            , counts = value.counts
+                            , acked = value.acked
+                            , pings = value.pings
+                            , seen = value.seen
+                            , records = value.records
+                            , columns = value.columns
+                            , lastValue = Just v
+                            , settings = value.settings
+                            , nothing = value.nothing
+                            , maybeNothing = value.maybeNothing
+                            , nulls = value.nulls
+                            , nullMap = value.nullMap
+                            , when = value.when
+                            }
+                        )
+                        wire
+                        value
 
                 32 ->
-                    Proto.Binary.mapEntry Proto.Binary.string Proto.Binary.value (\k v -> { value | settings = Dict.insert k v value.settings }) wire value
+                    Proto.Binary.mapEntry
+                        Proto.Binary.string
+                        Proto.Binary.value
+                        (\k v ->
+                            { createdAt = value.createdAt
+                            , timeout = value.timeout
+                            , updateMask = value.updateMask
+                            , marker = value.marker
+                            , metadata = value.metadata
+                            , payload = value.payload
+                            , items = value.items
+                            , ratio = value.ratio
+                            , weight = value.weight
+                            , bigCount = value.bigCount
+                            , bigTotal = value.bigTotal
+                            , count = value.count
+                            , total = value.total
+                            , enabled = value.enabled
+                            , nickname = value.nickname
+                            , avatar = value.avatar
+                            , history = value.history
+                            , limits = value.limits
+                            , values = value.values
+                            , counts = value.counts
+                            , acked = value.acked
+                            , pings = value.pings
+                            , seen = value.seen
+                            , records = value.records
+                            , columns = value.columns
+                            , lastValue = value.lastValue
+                            , settings = Dict.insert k v value.settings
+                            , nothing = value.nothing
+                            , maybeNothing = value.maybeNothing
+                            , nulls = value.nulls
+                            , nullMap = value.nullMap
+                            , when = value.when
+                            }
+                        )
+                        wire
+                        value
 
                 33 ->
-                    Proto.Binary.field (Proto.Binary.enum (\_ -> 0) (\_ -> ())) (\v -> { value | nothing = v }) wire value
+                    Proto.Binary.field
+                        (Proto.Binary.enum (\_ -> 0) (\_ -> ()))
+                        (\v ->
+                            { createdAt = value.createdAt
+                            , timeout = value.timeout
+                            , updateMask = value.updateMask
+                            , marker = value.marker
+                            , metadata = value.metadata
+                            , payload = value.payload
+                            , items = value.items
+                            , ratio = value.ratio
+                            , weight = value.weight
+                            , bigCount = value.bigCount
+                            , bigTotal = value.bigTotal
+                            , count = value.count
+                            , total = value.total
+                            , enabled = value.enabled
+                            , nickname = value.nickname
+                            , avatar = value.avatar
+                            , history = value.history
+                            , limits = value.limits
+                            , values = value.values
+                            , counts = value.counts
+                            , acked = value.acked
+                            , pings = value.pings
+                            , seen = value.seen
+                            , records = value.records
+                            , columns = value.columns
+                            , lastValue = value.lastValue
+                            , settings = value.settings
+                            , nothing = v
+                            , maybeNothing = value.maybeNothing
+                            , nulls = value.nulls
+                            , nullMap = value.nullMap
+                            , when = value.when
+                            }
+                        )
+                        wire
+                        value
 
                 34 ->
-                    Proto.Binary.field (Proto.Binary.enum (\_ -> 0) (\_ -> ())) (\v -> { value | maybeNothing = v }) wire value
+                    Proto.Binary.field
+                        (Proto.Binary.enum (\_ -> 0) (\_ -> ()))
+                        (\v ->
+                            { createdAt = value.createdAt
+                            , timeout = value.timeout
+                            , updateMask = value.updateMask
+                            , marker = value.marker
+                            , metadata = value.metadata
+                            , payload = value.payload
+                            , items = value.items
+                            , ratio = value.ratio
+                            , weight = value.weight
+                            , bigCount = value.bigCount
+                            , bigTotal = value.bigTotal
+                            , count = value.count
+                            , total = value.total
+                            , enabled = value.enabled
+                            , nickname = value.nickname
+                            , avatar = value.avatar
+                            , history = value.history
+                            , limits = value.limits
+                            , values = value.values
+                            , counts = value.counts
+                            , acked = value.acked
+                            , pings = value.pings
+                            , seen = value.seen
+                            , records = value.records
+                            , columns = value.columns
+                            , lastValue = value.lastValue
+                            , settings = value.settings
+                            , nothing = value.nothing
+                            , maybeNothing = v
+                            , nulls = value.nulls
+                            , nullMap = value.nullMap
+                            , when = value.when
+                            }
+                        )
+                        wire
+                        value
 
                 35 ->
-                    Proto.Binary.repeated (Proto.Binary.enum (\_ -> 0) (\_ -> ())) (\v -> { value | nulls = v }) value.nulls wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.enum (\_ -> 0) (\_ -> ()))
+                        (\v ->
+                            { createdAt = value.createdAt
+                            , timeout = value.timeout
+                            , updateMask = value.updateMask
+                            , marker = value.marker
+                            , metadata = value.metadata
+                            , payload = value.payload
+                            , items = value.items
+                            , ratio = value.ratio
+                            , weight = value.weight
+                            , bigCount = value.bigCount
+                            , bigTotal = value.bigTotal
+                            , count = value.count
+                            , total = value.total
+                            , enabled = value.enabled
+                            , nickname = value.nickname
+                            , avatar = value.avatar
+                            , history = value.history
+                            , limits = value.limits
+                            , values = value.values
+                            , counts = value.counts
+                            , acked = value.acked
+                            , pings = value.pings
+                            , seen = value.seen
+                            , records = value.records
+                            , columns = value.columns
+                            , lastValue = value.lastValue
+                            , settings = value.settings
+                            , nothing = value.nothing
+                            , maybeNothing = value.maybeNothing
+                            , nulls = v
+                            , nullMap = value.nullMap
+                            , when = value.when
+                            }
+                        )
+                        value.nulls
+                        wire
+                        value
 
                 36 ->
-                    Proto.Binary.mapEntry Proto.Binary.string (Proto.Binary.enum (\_ -> 0) (\_ -> ())) (\k v -> { value | nullMap = Dict.insert k v value.nullMap }) wire value
+                    Proto.Binary.mapEntry
+                        Proto.Binary.string
+                        (Proto.Binary.enum (\_ -> 0) (\_ -> ()))
+                        (\k v ->
+                            { createdAt = value.createdAt
+                            , timeout = value.timeout
+                            , updateMask = value.updateMask
+                            , marker = value.marker
+                            , metadata = value.metadata
+                            , payload = value.payload
+                            , items = value.items
+                            , ratio = value.ratio
+                            , weight = value.weight
+                            , bigCount = value.bigCount
+                            , bigTotal = value.bigTotal
+                            , count = value.count
+                            , total = value.total
+                            , enabled = value.enabled
+                            , nickname = value.nickname
+                            , avatar = value.avatar
+                            , history = value.history
+                            , limits = value.limits
+                            , values = value.values
+                            , counts = value.counts
+                            , acked = value.acked
+                            , pings = value.pings
+                            , seen = value.seen
+                            , records = value.records
+                            , columns = value.columns
+                            , lastValue = value.lastValue
+                            , settings = value.settings
+                            , nothing = value.nothing
+                            , maybeNothing = value.maybeNothing
+                            , nulls = value.nulls
+                            , nullMap = Dict.insert k v value.nullMap
+                            , when = value.when
+                            }
+                        )
+                        wire
+                        value
 
                 37 ->
-                    Proto.Binary.field (Proto.Binary.enum (\_ -> 0) (\_ -> ())) (\_ -> { value | when = EventWhenNever }) wire value
+                    Proto.Binary.field
+                        (Proto.Binary.enum (\_ -> 0) (\_ -> ()))
+                        (\_ ->
+                            { createdAt = value.createdAt
+                            , timeout = value.timeout
+                            , updateMask = value.updateMask
+                            , marker = value.marker
+                            , metadata = value.metadata
+                            , payload = value.payload
+                            , items = value.items
+                            , ratio = value.ratio
+                            , weight = value.weight
+                            , bigCount = value.bigCount
+                            , bigTotal = value.bigTotal
+                            , count = value.count
+                            , total = value.total
+                            , enabled = value.enabled
+                            , nickname = value.nickname
+                            , avatar = value.avatar
+                            , history = value.history
+                            , limits = value.limits
+                            , values = value.values
+                            , counts = value.counts
+                            , acked = value.acked
+                            , pings = value.pings
+                            , seen = value.seen
+                            , records = value.records
+                            , columns = value.columns
+                            , lastValue = value.lastValue
+                            , settings = value.settings
+                            , nothing = value.nothing
+                            , maybeNothing = value.maybeNothing
+                            , nulls = value.nulls
+                            , nullMap = value.nullMap
+                            , when = EventWhenNever
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
         (\value ->
-            { value
-                | history = List.reverse value.history
-                , values = List.reverse value.values
-                , counts = List.reverse value.counts
-                , pings = List.reverse value.pings
-                , records = List.reverse value.records
-                , nulls = List.reverse value.nulls
+            { createdAt = value.createdAt
+            , timeout = value.timeout
+            , updateMask = value.updateMask
+            , marker = value.marker
+            , metadata = value.metadata
+            , payload = value.payload
+            , items = value.items
+            , ratio = value.ratio
+            , weight = value.weight
+            , bigCount = value.bigCount
+            , bigTotal = value.bigTotal
+            , count = value.count
+            , total = value.total
+            , enabled = value.enabled
+            , nickname = value.nickname
+            , avatar = value.avatar
+            , history = List.reverse value.history
+            , limits = value.limits
+            , values = List.reverse value.values
+            , counts = List.reverse value.counts
+            , acked = value.acked
+            , pings = List.reverse value.pings
+            , seen = value.seen
+            , records = List.reverse value.records
+            , columns = value.columns
+            , lastValue = value.lastValue
+            , settings = value.settings
+            , nothing = value.nothing
+            , maybeNothing = value.maybeNothing
+            , nulls = List.reverse value.nulls
+            , nullMap = value.nullMap
+            , when = value.when
             }
         )
 

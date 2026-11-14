@@ -503,13 +503,40 @@ mergeBlobBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.bytesAsBytes (\v -> { value | digest = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bytesAsBytes
+                        (\v ->
+                            { digest = v
+                            , name = value.name
+                            , salt = value.salt
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | name = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { digest = value.digest
+                            , name = v
+                            , salt = value.salt
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.field Proto.Binary.bytesAsBytes (\v -> { value | salt = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bytesAsBytes
+                        (\v ->
+                            { digest = value.digest
+                            , name = value.name
+                            , salt = v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -533,10 +560,26 @@ mergeLabeledBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | name = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { name = v
+                            , label = value.label
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.any (\v -> { value | label = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.any
+                        (\v ->
+                            { name = value.name
+                            , label = Just v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -560,10 +603,27 @@ mergeLabelBlobRequestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeLabeledBytes mergeLabeledBytes defaultLabeled) value.labeled (\v -> { value | labeled = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeLabeledBytes mergeLabeledBytes defaultLabeled)
+                        value.labeled
+                        (\v ->
+                            { labeled = Just v
+                            , shelf = value.shelf
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | shelf = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { labeled = value.labeled
+                            , shelf = v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -587,10 +647,27 @@ mergeFolderBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | name = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { name = v
+                            , parent = value.parent
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeFolder_Bytes mergeFolder_Bytes (Folder_ defaultFolder)) value.parent (\v -> { value | parent = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeFolder_Bytes mergeFolder_Bytes (Folder_ defaultFolder))
+                        value.parent
+                        (\v ->
+                            { name = value.name
+                            , parent = Just v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -621,10 +698,26 @@ mergeSlotsBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | name = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { name = v
+                            , nothing = value.nothing
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.empty (\v -> { value | nothing = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.empty
+                        (\v ->
+                            { name = value.name
+                            , nothing = v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -648,10 +741,26 @@ mergeFreeBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | name = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { name = v
+                            , value = value.value
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.value (\v -> { value | value = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.value
+                        (\v ->
+                            { name = value.name
+                            , value = Just v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value

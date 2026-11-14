@@ -2084,52 +2084,404 @@ mergeScalarsBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.double (\v -> { value | double = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.double
+                        (\v ->
+                            { double = v
+                            , float = value.float
+                            , int32 = value.int32
+                            , int64 = value.int64
+                            , uint32 = value.uint32
+                            , uint64 = value.uint64
+                            , sint32 = value.sint32
+                            , sint64 = value.sint64
+                            , fixed32 = value.fixed32
+                            , fixed64 = value.fixed64
+                            , sfixed32 = value.sfixed32
+                            , sfixed64 = value.sfixed64
+                            , bool = value.bool
+                            , string = value.string
+                            , bytes = value.bytes
+                            , kind = value.kind
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.float (\v -> { value | float = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.float
+                        (\v ->
+                            { double = value.double
+                            , float = v
+                            , int32 = value.int32
+                            , int64 = value.int64
+                            , uint32 = value.uint32
+                            , uint64 = value.uint64
+                            , sint32 = value.sint32
+                            , sint64 = value.sint64
+                            , fixed32 = value.fixed32
+                            , fixed64 = value.fixed64
+                            , sfixed32 = value.sfixed32
+                            , sfixed64 = value.sfixed64
+                            , bool = value.bool
+                            , string = value.string
+                            , bytes = value.bytes
+                            , kind = value.kind
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | int32 = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int32
+                        (\v ->
+                            { double = value.double
+                            , float = value.float
+                            , int32 = v
+                            , int64 = value.int64
+                            , uint32 = value.uint32
+                            , uint64 = value.uint64
+                            , sint32 = value.sint32
+                            , sint64 = value.sint64
+                            , fixed32 = value.fixed32
+                            , fixed64 = value.fixed64
+                            , sfixed32 = value.sfixed32
+                            , sfixed64 = value.sfixed64
+                            , bool = value.bool
+                            , string = value.string
+                            , bytes = value.bytes
+                            , kind = value.kind
+                            }
+                        )
+                        wire
+                        value
 
                 4 ->
-                    Proto.Binary.field Proto.Binary.int64 (\v -> { value | int64 = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int64
+                        (\v ->
+                            { double = value.double
+                            , float = value.float
+                            , int32 = value.int32
+                            , int64 = v
+                            , uint32 = value.uint32
+                            , uint64 = value.uint64
+                            , sint32 = value.sint32
+                            , sint64 = value.sint64
+                            , fixed32 = value.fixed32
+                            , fixed64 = value.fixed64
+                            , sfixed32 = value.sfixed32
+                            , sfixed64 = value.sfixed64
+                            , bool = value.bool
+                            , string = value.string
+                            , bytes = value.bytes
+                            , kind = value.kind
+                            }
+                        )
+                        wire
+                        value
 
                 5 ->
-                    Proto.Binary.field Proto.Binary.uint32 (\v -> { value | uint32 = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.uint32
+                        (\v ->
+                            { double = value.double
+                            , float = value.float
+                            , int32 = value.int32
+                            , int64 = value.int64
+                            , uint32 = v
+                            , uint64 = value.uint64
+                            , sint32 = value.sint32
+                            , sint64 = value.sint64
+                            , fixed32 = value.fixed32
+                            , fixed64 = value.fixed64
+                            , sfixed32 = value.sfixed32
+                            , sfixed64 = value.sfixed64
+                            , bool = value.bool
+                            , string = value.string
+                            , bytes = value.bytes
+                            , kind = value.kind
+                            }
+                        )
+                        wire
+                        value
 
                 6 ->
-                    Proto.Binary.field Proto.Binary.uint64 (\v -> { value | uint64 = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.uint64
+                        (\v ->
+                            { double = value.double
+                            , float = value.float
+                            , int32 = value.int32
+                            , int64 = value.int64
+                            , uint32 = value.uint32
+                            , uint64 = v
+                            , sint32 = value.sint32
+                            , sint64 = value.sint64
+                            , fixed32 = value.fixed32
+                            , fixed64 = value.fixed64
+                            , sfixed32 = value.sfixed32
+                            , sfixed64 = value.sfixed64
+                            , bool = value.bool
+                            , string = value.string
+                            , bytes = value.bytes
+                            , kind = value.kind
+                            }
+                        )
+                        wire
+                        value
 
                 7 ->
-                    Proto.Binary.field Proto.Binary.sint32 (\v -> { value | sint32 = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.sint32
+                        (\v ->
+                            { double = value.double
+                            , float = value.float
+                            , int32 = value.int32
+                            , int64 = value.int64
+                            , uint32 = value.uint32
+                            , uint64 = value.uint64
+                            , sint32 = v
+                            , sint64 = value.sint64
+                            , fixed32 = value.fixed32
+                            , fixed64 = value.fixed64
+                            , sfixed32 = value.sfixed32
+                            , sfixed64 = value.sfixed64
+                            , bool = value.bool
+                            , string = value.string
+                            , bytes = value.bytes
+                            , kind = value.kind
+                            }
+                        )
+                        wire
+                        value
 
                 8 ->
-                    Proto.Binary.field Proto.Binary.sint64 (\v -> { value | sint64 = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.sint64
+                        (\v ->
+                            { double = value.double
+                            , float = value.float
+                            , int32 = value.int32
+                            , int64 = value.int64
+                            , uint32 = value.uint32
+                            , uint64 = value.uint64
+                            , sint32 = value.sint32
+                            , sint64 = v
+                            , fixed32 = value.fixed32
+                            , fixed64 = value.fixed64
+                            , sfixed32 = value.sfixed32
+                            , sfixed64 = value.sfixed64
+                            , bool = value.bool
+                            , string = value.string
+                            , bytes = value.bytes
+                            , kind = value.kind
+                            }
+                        )
+                        wire
+                        value
 
                 9 ->
-                    Proto.Binary.field Proto.Binary.fixed32 (\v -> { value | fixed32 = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.fixed32
+                        (\v ->
+                            { double = value.double
+                            , float = value.float
+                            , int32 = value.int32
+                            , int64 = value.int64
+                            , uint32 = value.uint32
+                            , uint64 = value.uint64
+                            , sint32 = value.sint32
+                            , sint64 = value.sint64
+                            , fixed32 = v
+                            , fixed64 = value.fixed64
+                            , sfixed32 = value.sfixed32
+                            , sfixed64 = value.sfixed64
+                            , bool = value.bool
+                            , string = value.string
+                            , bytes = value.bytes
+                            , kind = value.kind
+                            }
+                        )
+                        wire
+                        value
 
                 10 ->
-                    Proto.Binary.field Proto.Binary.fixed64 (\v -> { value | fixed64 = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.fixed64
+                        (\v ->
+                            { double = value.double
+                            , float = value.float
+                            , int32 = value.int32
+                            , int64 = value.int64
+                            , uint32 = value.uint32
+                            , uint64 = value.uint64
+                            , sint32 = value.sint32
+                            , sint64 = value.sint64
+                            , fixed32 = value.fixed32
+                            , fixed64 = v
+                            , sfixed32 = value.sfixed32
+                            , sfixed64 = value.sfixed64
+                            , bool = value.bool
+                            , string = value.string
+                            , bytes = value.bytes
+                            , kind = value.kind
+                            }
+                        )
+                        wire
+                        value
 
                 11 ->
-                    Proto.Binary.field Proto.Binary.sfixed32 (\v -> { value | sfixed32 = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.sfixed32
+                        (\v ->
+                            { double = value.double
+                            , float = value.float
+                            , int32 = value.int32
+                            , int64 = value.int64
+                            , uint32 = value.uint32
+                            , uint64 = value.uint64
+                            , sint32 = value.sint32
+                            , sint64 = value.sint64
+                            , fixed32 = value.fixed32
+                            , fixed64 = value.fixed64
+                            , sfixed32 = v
+                            , sfixed64 = value.sfixed64
+                            , bool = value.bool
+                            , string = value.string
+                            , bytes = value.bytes
+                            , kind = value.kind
+                            }
+                        )
+                        wire
+                        value
 
                 12 ->
-                    Proto.Binary.field Proto.Binary.sfixed64 (\v -> { value | sfixed64 = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.sfixed64
+                        (\v ->
+                            { double = value.double
+                            , float = value.float
+                            , int32 = value.int32
+                            , int64 = value.int64
+                            , uint32 = value.uint32
+                            , uint64 = value.uint64
+                            , sint32 = value.sint32
+                            , sint64 = value.sint64
+                            , fixed32 = value.fixed32
+                            , fixed64 = value.fixed64
+                            , sfixed32 = value.sfixed32
+                            , sfixed64 = v
+                            , bool = value.bool
+                            , string = value.string
+                            , bytes = value.bytes
+                            , kind = value.kind
+                            }
+                        )
+                        wire
+                        value
 
                 13 ->
-                    Proto.Binary.field Proto.Binary.bool (\v -> { value | bool = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { double = value.double
+                            , float = value.float
+                            , int32 = value.int32
+                            , int64 = value.int64
+                            , uint32 = value.uint32
+                            , uint64 = value.uint64
+                            , sint32 = value.sint32
+                            , sint64 = value.sint64
+                            , fixed32 = value.fixed32
+                            , fixed64 = value.fixed64
+                            , sfixed32 = value.sfixed32
+                            , sfixed64 = value.sfixed64
+                            , bool = v
+                            , string = value.string
+                            , bytes = value.bytes
+                            , kind = value.kind
+                            }
+                        )
+                        wire
+                        value
 
                 14 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | string = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { double = value.double
+                            , float = value.float
+                            , int32 = value.int32
+                            , int64 = value.int64
+                            , uint32 = value.uint32
+                            , uint64 = value.uint64
+                            , sint32 = value.sint32
+                            , sint64 = value.sint64
+                            , fixed32 = value.fixed32
+                            , fixed64 = value.fixed64
+                            , sfixed32 = value.sfixed32
+                            , sfixed64 = value.sfixed64
+                            , bool = value.bool
+                            , string = v
+                            , bytes = value.bytes
+                            , kind = value.kind
+                            }
+                        )
+                        wire
+                        value
 
                 15 ->
-                    Proto.Binary.field Proto.Binary.bytes (\v -> { value | bytes = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bytes
+                        (\v ->
+                            { double = value.double
+                            , float = value.float
+                            , int32 = value.int32
+                            , int64 = value.int64
+                            , uint32 = value.uint32
+                            , uint64 = value.uint64
+                            , sint32 = value.sint32
+                            , sint64 = value.sint64
+                            , fixed32 = value.fixed32
+                            , fixed64 = value.fixed64
+                            , sfixed32 = value.sfixed32
+                            , sfixed64 = value.sfixed64
+                            , bool = value.bool
+                            , string = value.string
+                            , bytes = v
+                            , kind = value.kind
+                            }
+                        )
+                        wire
+                        value
 
                 16 ->
-                    Proto.Binary.field (Proto.Binary.enum encodeKindBytes decodeKindBytes) (\v -> { value | kind = v }) wire value
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeKindBytes decodeKindBytes)
+                        (\v ->
+                            { double = value.double
+                            , float = value.float
+                            , int32 = value.int32
+                            , int64 = value.int64
+                            , uint32 = value.uint32
+                            , uint64 = value.uint64
+                            , sint32 = value.sint32
+                            , sint64 = value.sint64
+                            , fixed32 = value.fixed32
+                            , fixed64 = value.fixed64
+                            , sfixed32 = value.sfixed32
+                            , sfixed64 = value.sfixed64
+                            , bool = value.bool
+                            , string = value.string
+                            , bytes = value.bytes
+                            , kind = v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -2153,34 +2505,194 @@ mergeOptionalsBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.double (\v -> { value | double = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.double
+                        (\v ->
+                            { double = Just v
+                            , float = value.float
+                            , int32 = value.int32
+                            , int64 = value.int64
+                            , uint64 = value.uint64
+                            , sint32 = value.sint32
+                            , bool = value.bool
+                            , string = value.string
+                            , bytes = value.bytes
+                            , kind = value.kind
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.float (\v -> { value | float = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.float
+                        (\v ->
+                            { double = value.double
+                            , float = Just v
+                            , int32 = value.int32
+                            , int64 = value.int64
+                            , uint64 = value.uint64
+                            , sint32 = value.sint32
+                            , bool = value.bool
+                            , string = value.string
+                            , bytes = value.bytes
+                            , kind = value.kind
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | int32 = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int32
+                        (\v ->
+                            { double = value.double
+                            , float = value.float
+                            , int32 = Just v
+                            , int64 = value.int64
+                            , uint64 = value.uint64
+                            , sint32 = value.sint32
+                            , bool = value.bool
+                            , string = value.string
+                            , bytes = value.bytes
+                            , kind = value.kind
+                            }
+                        )
+                        wire
+                        value
 
                 4 ->
-                    Proto.Binary.field Proto.Binary.int64 (\v -> { value | int64 = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int64
+                        (\v ->
+                            { double = value.double
+                            , float = value.float
+                            , int32 = value.int32
+                            , int64 = Just v
+                            , uint64 = value.uint64
+                            , sint32 = value.sint32
+                            , bool = value.bool
+                            , string = value.string
+                            , bytes = value.bytes
+                            , kind = value.kind
+                            }
+                        )
+                        wire
+                        value
 
                 5 ->
-                    Proto.Binary.field Proto.Binary.uint64 (\v -> { value | uint64 = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.uint64
+                        (\v ->
+                            { double = value.double
+                            , float = value.float
+                            , int32 = value.int32
+                            , int64 = value.int64
+                            , uint64 = Just v
+                            , sint32 = value.sint32
+                            , bool = value.bool
+                            , string = value.string
+                            , bytes = value.bytes
+                            , kind = value.kind
+                            }
+                        )
+                        wire
+                        value
 
                 6 ->
-                    Proto.Binary.field Proto.Binary.sint32 (\v -> { value | sint32 = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.sint32
+                        (\v ->
+                            { double = value.double
+                            , float = value.float
+                            , int32 = value.int32
+                            , int64 = value.int64
+                            , uint64 = value.uint64
+                            , sint32 = Just v
+                            , bool = value.bool
+                            , string = value.string
+                            , bytes = value.bytes
+                            , kind = value.kind
+                            }
+                        )
+                        wire
+                        value
 
                 7 ->
-                    Proto.Binary.field Proto.Binary.bool (\v -> { value | bool = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { double = value.double
+                            , float = value.float
+                            , int32 = value.int32
+                            , int64 = value.int64
+                            , uint64 = value.uint64
+                            , sint32 = value.sint32
+                            , bool = Just v
+                            , string = value.string
+                            , bytes = value.bytes
+                            , kind = value.kind
+                            }
+                        )
+                        wire
+                        value
 
                 8 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | string = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { double = value.double
+                            , float = value.float
+                            , int32 = value.int32
+                            , int64 = value.int64
+                            , uint64 = value.uint64
+                            , sint32 = value.sint32
+                            , bool = value.bool
+                            , string = Just v
+                            , bytes = value.bytes
+                            , kind = value.kind
+                            }
+                        )
+                        wire
+                        value
 
                 9 ->
-                    Proto.Binary.field Proto.Binary.bytes (\v -> { value | bytes = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bytes
+                        (\v ->
+                            { double = value.double
+                            , float = value.float
+                            , int32 = value.int32
+                            , int64 = value.int64
+                            , uint64 = value.uint64
+                            , sint32 = value.sint32
+                            , bool = value.bool
+                            , string = value.string
+                            , bytes = Just v
+                            , kind = value.kind
+                            }
+                        )
+                        wire
+                        value
 
                 10 ->
-                    Proto.Binary.field (Proto.Binary.enum encodeKindBytes decodeKindBytes) (\v -> { value | kind = Just v }) wire value
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeKindBytes decodeKindBytes)
+                        (\v ->
+                            { double = value.double
+                            , float = value.float
+                            , int32 = value.int32
+                            , int64 = value.int64
+                            , uint64 = value.uint64
+                            , sint32 = value.sint32
+                            , bool = value.bool
+                            , string = value.string
+                            , bytes = value.bytes
+                            , kind = Just v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -2204,54 +2716,251 @@ mergeRepeatedBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.repeated Proto.Binary.double (\v -> { value | doubles = v }) value.doubles wire value
+                    Proto.Binary.repeated
+                        Proto.Binary.double
+                        (\v ->
+                            { doubles = v
+                            , floats = value.floats
+                            , int32s = value.int32s
+                            , int64s = value.int64s
+                            , uint64s = value.uint64s
+                            , fixed32s = value.fixed32s
+                            , bools = value.bools
+                            , strings = value.strings
+                            , bytes = value.bytes
+                            , kinds = value.kinds
+                            , leaves = value.leaves
+                            }
+                        )
+                        value.doubles
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.repeated Proto.Binary.float (\v -> { value | floats = v }) value.floats wire value
+                    Proto.Binary.repeated
+                        Proto.Binary.float
+                        (\v ->
+                            { doubles = value.doubles
+                            , floats = v
+                            , int32s = value.int32s
+                            , int64s = value.int64s
+                            , uint64s = value.uint64s
+                            , fixed32s = value.fixed32s
+                            , bools = value.bools
+                            , strings = value.strings
+                            , bytes = value.bytes
+                            , kinds = value.kinds
+                            , leaves = value.leaves
+                            }
+                        )
+                        value.floats
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.repeated Proto.Binary.int32 (\v -> { value | int32s = v }) value.int32s wire value
+                    Proto.Binary.repeated
+                        Proto.Binary.int32
+                        (\v ->
+                            { doubles = value.doubles
+                            , floats = value.floats
+                            , int32s = v
+                            , int64s = value.int64s
+                            , uint64s = value.uint64s
+                            , fixed32s = value.fixed32s
+                            , bools = value.bools
+                            , strings = value.strings
+                            , bytes = value.bytes
+                            , kinds = value.kinds
+                            , leaves = value.leaves
+                            }
+                        )
+                        value.int32s
+                        wire
+                        value
 
                 4 ->
-                    Proto.Binary.repeated Proto.Binary.int64 (\v -> { value | int64s = v }) value.int64s wire value
+                    Proto.Binary.repeated
+                        Proto.Binary.int64
+                        (\v ->
+                            { doubles = value.doubles
+                            , floats = value.floats
+                            , int32s = value.int32s
+                            , int64s = v
+                            , uint64s = value.uint64s
+                            , fixed32s = value.fixed32s
+                            , bools = value.bools
+                            , strings = value.strings
+                            , bytes = value.bytes
+                            , kinds = value.kinds
+                            , leaves = value.leaves
+                            }
+                        )
+                        value.int64s
+                        wire
+                        value
 
                 5 ->
-                    Proto.Binary.repeated Proto.Binary.uint64 (\v -> { value | uint64s = v }) value.uint64s wire value
+                    Proto.Binary.repeated
+                        Proto.Binary.uint64
+                        (\v ->
+                            { doubles = value.doubles
+                            , floats = value.floats
+                            , int32s = value.int32s
+                            , int64s = value.int64s
+                            , uint64s = v
+                            , fixed32s = value.fixed32s
+                            , bools = value.bools
+                            , strings = value.strings
+                            , bytes = value.bytes
+                            , kinds = value.kinds
+                            , leaves = value.leaves
+                            }
+                        )
+                        value.uint64s
+                        wire
+                        value
 
                 6 ->
-                    Proto.Binary.repeated Proto.Binary.fixed32 (\v -> { value | fixed32s = v }) value.fixed32s wire value
+                    Proto.Binary.repeated
+                        Proto.Binary.fixed32
+                        (\v ->
+                            { doubles = value.doubles
+                            , floats = value.floats
+                            , int32s = value.int32s
+                            , int64s = value.int64s
+                            , uint64s = value.uint64s
+                            , fixed32s = v
+                            , bools = value.bools
+                            , strings = value.strings
+                            , bytes = value.bytes
+                            , kinds = value.kinds
+                            , leaves = value.leaves
+                            }
+                        )
+                        value.fixed32s
+                        wire
+                        value
 
                 7 ->
-                    Proto.Binary.repeated Proto.Binary.bool (\v -> { value | bools = v }) value.bools wire value
+                    Proto.Binary.repeated
+                        Proto.Binary.bool
+                        (\v ->
+                            { doubles = value.doubles
+                            , floats = value.floats
+                            , int32s = value.int32s
+                            , int64s = value.int64s
+                            , uint64s = value.uint64s
+                            , fixed32s = value.fixed32s
+                            , bools = v
+                            , strings = value.strings
+                            , bytes = value.bytes
+                            , kinds = value.kinds
+                            , leaves = value.leaves
+                            }
+                        )
+                        value.bools
+                        wire
+                        value
 
                 8 ->
-                    Proto.Binary.repeated Proto.Binary.string (\v -> { value | strings = v }) value.strings wire value
+                    Proto.Binary.repeated
+                        Proto.Binary.string
+                        (\v ->
+                            { doubles = value.doubles
+                            , floats = value.floats
+                            , int32s = value.int32s
+                            , int64s = value.int64s
+                            , uint64s = value.uint64s
+                            , fixed32s = value.fixed32s
+                            , bools = value.bools
+                            , strings = v
+                            , bytes = value.bytes
+                            , kinds = value.kinds
+                            , leaves = value.leaves
+                            }
+                        )
+                        value.strings
+                        wire
+                        value
 
                 9 ->
-                    Proto.Binary.repeated Proto.Binary.bytes (\v -> { value | bytes = v }) value.bytes wire value
+                    Proto.Binary.repeated
+                        Proto.Binary.bytes
+                        (\v ->
+                            { doubles = value.doubles
+                            , floats = value.floats
+                            , int32s = value.int32s
+                            , int64s = value.int64s
+                            , uint64s = value.uint64s
+                            , fixed32s = value.fixed32s
+                            , bools = value.bools
+                            , strings = value.strings
+                            , bytes = v
+                            , kinds = value.kinds
+                            , leaves = value.leaves
+                            }
+                        )
+                        value.bytes
+                        wire
+                        value
 
                 10 ->
-                    Proto.Binary.repeated (Proto.Binary.enum encodeKindBytes decodeKindBytes) (\v -> { value | kinds = v }) value.kinds wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.enum encodeKindBytes decodeKindBytes)
+                        (\v ->
+                            { doubles = value.doubles
+                            , floats = value.floats
+                            , int32s = value.int32s
+                            , int64s = value.int64s
+                            , uint64s = value.uint64s
+                            , fixed32s = value.fixed32s
+                            , bools = value.bools
+                            , strings = value.strings
+                            , bytes = value.bytes
+                            , kinds = v
+                            , leaves = value.leaves
+                            }
+                        )
+                        value.kinds
+                        wire
+                        value
 
                 11 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded encodeLeafBytes mergeLeafBytes defaultLeaf) (\v -> { value | leaves = v }) value.leaves wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeLeafBytes mergeLeafBytes defaultLeaf)
+                        (\v ->
+                            { doubles = value.doubles
+                            , floats = value.floats
+                            , int32s = value.int32s
+                            , int64s = value.int64s
+                            , uint64s = value.uint64s
+                            , fixed32s = value.fixed32s
+                            , bools = value.bools
+                            , strings = value.strings
+                            , bytes = value.bytes
+                            , kinds = value.kinds
+                            , leaves = v
+                            }
+                        )
+                        value.leaves
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
         (\value ->
-            { value
-                | doubles = List.reverse value.doubles
-                , floats = List.reverse value.floats
-                , int32s = List.reverse value.int32s
-                , int64s = List.reverse value.int64s
-                , uint64s = List.reverse value.uint64s
-                , fixed32s = List.reverse value.fixed32s
-                , bools = List.reverse value.bools
-                , strings = List.reverse value.strings
-                , bytes = List.reverse value.bytes
-                , kinds = List.reverse value.kinds
-                , leaves = List.reverse value.leaves
+            { doubles = List.reverse value.doubles
+            , floats = List.reverse value.floats
+            , int32s = List.reverse value.int32s
+            , int64s = List.reverse value.int64s
+            , uint64s = List.reverse value.uint64s
+            , fixed32s = List.reverse value.fixed32s
+            , bools = List.reverse value.bools
+            , strings = List.reverse value.strings
+            , bytes = List.reverse value.bytes
+            , kinds = List.reverse value.kinds
+            , leaves = List.reverse value.leaves
             }
         )
 
@@ -2272,54 +2981,359 @@ mergeMapsBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.mapEntry Proto.Binary.string Proto.Binary.string (\k v -> { value | stringString = Dict.insert k v value.stringString }) wire value
+                    Proto.Binary.mapEntry
+                        Proto.Binary.string
+                        Proto.Binary.string
+                        (\k v ->
+                            { stringString = Dict.insert k v value.stringString
+                            , int32Kind = value.int32Kind
+                            , int64Double = value.int64Double
+                            , uint32Int64 = value.uint32Int64
+                            , uint64String = value.uint64String
+                            , sint32Bool = value.sint32Bool
+                            , sint64Float = value.sint64Float
+                            , fixed32Uint64 = value.fixed32Uint64
+                            , fixed64Leaf = value.fixed64Leaf
+                            , sfixed32Bytes = value.sfixed32Bytes
+                            , sfixed64Int32 = value.sfixed64Int32
+                            , boolString = value.boolString
+                            , boolLeaf = value.boolLeaf
+                            , stringLeaf = value.stringLeaf
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.mapEntry Proto.Binary.int32 (Proto.Binary.enum encodeKindBytes decodeKindBytes) (\k v -> { value | int32Kind = Dict.insert k v value.int32Kind }) wire value
+                    Proto.Binary.mapEntry
+                        Proto.Binary.int32
+                        (Proto.Binary.enum encodeKindBytes decodeKindBytes)
+                        (\k v ->
+                            { stringString = value.stringString
+                            , int32Kind = Dict.insert k v value.int32Kind
+                            , int64Double = value.int64Double
+                            , uint32Int64 = value.uint32Int64
+                            , uint64String = value.uint64String
+                            , sint32Bool = value.sint32Bool
+                            , sint64Float = value.sint64Float
+                            , fixed32Uint64 = value.fixed32Uint64
+                            , fixed64Leaf = value.fixed64Leaf
+                            , sfixed32Bytes = value.sfixed32Bytes
+                            , sfixed64Int32 = value.sfixed64Int32
+                            , boolString = value.boolString
+                            , boolLeaf = value.boolLeaf
+                            , stringLeaf = value.stringLeaf
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.mapEntry Proto.Binary.int64 Proto.Binary.double (\k v -> { value | int64Double = Dict.insert k v value.int64Double }) wire value
+                    Proto.Binary.mapEntry
+                        Proto.Binary.int64
+                        Proto.Binary.double
+                        (\k v ->
+                            { stringString = value.stringString
+                            , int32Kind = value.int32Kind
+                            , int64Double = Dict.insert k v value.int64Double
+                            , uint32Int64 = value.uint32Int64
+                            , uint64String = value.uint64String
+                            , sint32Bool = value.sint32Bool
+                            , sint64Float = value.sint64Float
+                            , fixed32Uint64 = value.fixed32Uint64
+                            , fixed64Leaf = value.fixed64Leaf
+                            , sfixed32Bytes = value.sfixed32Bytes
+                            , sfixed64Int32 = value.sfixed64Int32
+                            , boolString = value.boolString
+                            , boolLeaf = value.boolLeaf
+                            , stringLeaf = value.stringLeaf
+                            }
+                        )
+                        wire
+                        value
 
                 4 ->
-                    Proto.Binary.mapEntry Proto.Binary.uint32 Proto.Binary.int64 (\k v -> { value | uint32Int64 = Dict.insert k v value.uint32Int64 }) wire value
+                    Proto.Binary.mapEntry
+                        Proto.Binary.uint32
+                        Proto.Binary.int64
+                        (\k v ->
+                            { stringString = value.stringString
+                            , int32Kind = value.int32Kind
+                            , int64Double = value.int64Double
+                            , uint32Int64 = Dict.insert k v value.uint32Int64
+                            , uint64String = value.uint64String
+                            , sint32Bool = value.sint32Bool
+                            , sint64Float = value.sint64Float
+                            , fixed32Uint64 = value.fixed32Uint64
+                            , fixed64Leaf = value.fixed64Leaf
+                            , sfixed32Bytes = value.sfixed32Bytes
+                            , sfixed64Int32 = value.sfixed64Int32
+                            , boolString = value.boolString
+                            , boolLeaf = value.boolLeaf
+                            , stringLeaf = value.stringLeaf
+                            }
+                        )
+                        wire
+                        value
 
                 5 ->
-                    Proto.Binary.mapEntry Proto.Binary.uint64 Proto.Binary.string (\k v -> { value | uint64String = Dict.insert k v value.uint64String }) wire value
+                    Proto.Binary.mapEntry
+                        Proto.Binary.uint64
+                        Proto.Binary.string
+                        (\k v ->
+                            { stringString = value.stringString
+                            , int32Kind = value.int32Kind
+                            , int64Double = value.int64Double
+                            , uint32Int64 = value.uint32Int64
+                            , uint64String = Dict.insert k v value.uint64String
+                            , sint32Bool = value.sint32Bool
+                            , sint64Float = value.sint64Float
+                            , fixed32Uint64 = value.fixed32Uint64
+                            , fixed64Leaf = value.fixed64Leaf
+                            , sfixed32Bytes = value.sfixed32Bytes
+                            , sfixed64Int32 = value.sfixed64Int32
+                            , boolString = value.boolString
+                            , boolLeaf = value.boolLeaf
+                            , stringLeaf = value.stringLeaf
+                            }
+                        )
+                        wire
+                        value
 
                 6 ->
-                    Proto.Binary.mapEntry Proto.Binary.sint32 Proto.Binary.bool (\k v -> { value | sint32Bool = Dict.insert k v value.sint32Bool }) wire value
+                    Proto.Binary.mapEntry
+                        Proto.Binary.sint32
+                        Proto.Binary.bool
+                        (\k v ->
+                            { stringString = value.stringString
+                            , int32Kind = value.int32Kind
+                            , int64Double = value.int64Double
+                            , uint32Int64 = value.uint32Int64
+                            , uint64String = value.uint64String
+                            , sint32Bool = Dict.insert k v value.sint32Bool
+                            , sint64Float = value.sint64Float
+                            , fixed32Uint64 = value.fixed32Uint64
+                            , fixed64Leaf = value.fixed64Leaf
+                            , sfixed32Bytes = value.sfixed32Bytes
+                            , sfixed64Int32 = value.sfixed64Int32
+                            , boolString = value.boolString
+                            , boolLeaf = value.boolLeaf
+                            , stringLeaf = value.stringLeaf
+                            }
+                        )
+                        wire
+                        value
 
                 7 ->
-                    Proto.Binary.mapEntry Proto.Binary.sint64 Proto.Binary.float (\k v -> { value | sint64Float = Dict.insert k v value.sint64Float }) wire value
+                    Proto.Binary.mapEntry
+                        Proto.Binary.sint64
+                        Proto.Binary.float
+                        (\k v ->
+                            { stringString = value.stringString
+                            , int32Kind = value.int32Kind
+                            , int64Double = value.int64Double
+                            , uint32Int64 = value.uint32Int64
+                            , uint64String = value.uint64String
+                            , sint32Bool = value.sint32Bool
+                            , sint64Float = Dict.insert k v value.sint64Float
+                            , fixed32Uint64 = value.fixed32Uint64
+                            , fixed64Leaf = value.fixed64Leaf
+                            , sfixed32Bytes = value.sfixed32Bytes
+                            , sfixed64Int32 = value.sfixed64Int32
+                            , boolString = value.boolString
+                            , boolLeaf = value.boolLeaf
+                            , stringLeaf = value.stringLeaf
+                            }
+                        )
+                        wire
+                        value
 
                 8 ->
-                    Proto.Binary.mapEntry Proto.Binary.fixed32 Proto.Binary.uint64 (\k v -> { value | fixed32Uint64 = Dict.insert k v value.fixed32Uint64 }) wire value
+                    Proto.Binary.mapEntry
+                        Proto.Binary.fixed32
+                        Proto.Binary.uint64
+                        (\k v ->
+                            { stringString = value.stringString
+                            , int32Kind = value.int32Kind
+                            , int64Double = value.int64Double
+                            , uint32Int64 = value.uint32Int64
+                            , uint64String = value.uint64String
+                            , sint32Bool = value.sint32Bool
+                            , sint64Float = value.sint64Float
+                            , fixed32Uint64 = Dict.insert k v value.fixed32Uint64
+                            , fixed64Leaf = value.fixed64Leaf
+                            , sfixed32Bytes = value.sfixed32Bytes
+                            , sfixed64Int32 = value.sfixed64Int32
+                            , boolString = value.boolString
+                            , boolLeaf = value.boolLeaf
+                            , stringLeaf = value.stringLeaf
+                            }
+                        )
+                        wire
+                        value
 
                 9 ->
-                    Proto.Binary.mapEntry Proto.Binary.fixed64 (Proto.Binary.embedded encodeLeafBytes mergeLeafBytes defaultLeaf) (\k v -> { value | fixed64Leaf = Dict.insert k v value.fixed64Leaf }) wire value
+                    Proto.Binary.mapEntry
+                        Proto.Binary.fixed64
+                        (Proto.Binary.embedded encodeLeafBytes mergeLeafBytes defaultLeaf)
+                        (\k v ->
+                            { stringString = value.stringString
+                            , int32Kind = value.int32Kind
+                            , int64Double = value.int64Double
+                            , uint32Int64 = value.uint32Int64
+                            , uint64String = value.uint64String
+                            , sint32Bool = value.sint32Bool
+                            , sint64Float = value.sint64Float
+                            , fixed32Uint64 = value.fixed32Uint64
+                            , fixed64Leaf = Dict.insert k v value.fixed64Leaf
+                            , sfixed32Bytes = value.sfixed32Bytes
+                            , sfixed64Int32 = value.sfixed64Int32
+                            , boolString = value.boolString
+                            , boolLeaf = value.boolLeaf
+                            , stringLeaf = value.stringLeaf
+                            }
+                        )
+                        wire
+                        value
 
                 10 ->
-                    Proto.Binary.mapEntry Proto.Binary.sfixed32 Proto.Binary.bytes (\k v -> { value | sfixed32Bytes = Dict.insert k v value.sfixed32Bytes }) wire value
+                    Proto.Binary.mapEntry
+                        Proto.Binary.sfixed32
+                        Proto.Binary.bytes
+                        (\k v ->
+                            { stringString = value.stringString
+                            , int32Kind = value.int32Kind
+                            , int64Double = value.int64Double
+                            , uint32Int64 = value.uint32Int64
+                            , uint64String = value.uint64String
+                            , sint32Bool = value.sint32Bool
+                            , sint64Float = value.sint64Float
+                            , fixed32Uint64 = value.fixed32Uint64
+                            , fixed64Leaf = value.fixed64Leaf
+                            , sfixed32Bytes = Dict.insert k v value.sfixed32Bytes
+                            , sfixed64Int32 = value.sfixed64Int32
+                            , boolString = value.boolString
+                            , boolLeaf = value.boolLeaf
+                            , stringLeaf = value.stringLeaf
+                            }
+                        )
+                        wire
+                        value
 
                 11 ->
-                    Proto.Binary.mapEntry Proto.Binary.sfixed64 Proto.Binary.int32 (\k v -> { value | sfixed64Int32 = Dict.insert k v value.sfixed64Int32 }) wire value
+                    Proto.Binary.mapEntry
+                        Proto.Binary.sfixed64
+                        Proto.Binary.int32
+                        (\k v ->
+                            { stringString = value.stringString
+                            , int32Kind = value.int32Kind
+                            , int64Double = value.int64Double
+                            , uint32Int64 = value.uint32Int64
+                            , uint64String = value.uint64String
+                            , sint32Bool = value.sint32Bool
+                            , sint64Float = value.sint64Float
+                            , fixed32Uint64 = value.fixed32Uint64
+                            , fixed64Leaf = value.fixed64Leaf
+                            , sfixed32Bytes = value.sfixed32Bytes
+                            , sfixed64Int32 = Dict.insert k v value.sfixed64Int32
+                            , boolString = value.boolString
+                            , boolLeaf = value.boolLeaf
+                            , stringLeaf = value.stringLeaf
+                            }
+                        )
+                        wire
+                        value
 
                 12 ->
-                    Proto.Binary.mapEntry Proto.Binary.bool Proto.Binary.string (\k v -> { value | boolString = Proto.Binary.insertBool k v value.boolString }) wire value
+                    Proto.Binary.mapEntry
+                        Proto.Binary.bool
+                        Proto.Binary.string
+                        (\k v ->
+                            { stringString = value.stringString
+                            , int32Kind = value.int32Kind
+                            , int64Double = value.int64Double
+                            , uint32Int64 = value.uint32Int64
+                            , uint64String = value.uint64String
+                            , sint32Bool = value.sint32Bool
+                            , sint64Float = value.sint64Float
+                            , fixed32Uint64 = value.fixed32Uint64
+                            , fixed64Leaf = value.fixed64Leaf
+                            , sfixed32Bytes = value.sfixed32Bytes
+                            , sfixed64Int32 = value.sfixed64Int32
+                            , boolString = Proto.Binary.insertBool k v value.boolString
+                            , boolLeaf = value.boolLeaf
+                            , stringLeaf = value.stringLeaf
+                            }
+                        )
+                        wire
+                        value
 
                 13 ->
-                    Proto.Binary.mapEntry Proto.Binary.bool (Proto.Binary.embedded encodeLeafBytes mergeLeafBytes defaultLeaf) (\k v -> { value | boolLeaf = Proto.Binary.insertBool k v value.boolLeaf }) wire value
+                    Proto.Binary.mapEntry
+                        Proto.Binary.bool
+                        (Proto.Binary.embedded encodeLeafBytes mergeLeafBytes defaultLeaf)
+                        (\k v ->
+                            { stringString = value.stringString
+                            , int32Kind = value.int32Kind
+                            , int64Double = value.int64Double
+                            , uint32Int64 = value.uint32Int64
+                            , uint64String = value.uint64String
+                            , sint32Bool = value.sint32Bool
+                            , sint64Float = value.sint64Float
+                            , fixed32Uint64 = value.fixed32Uint64
+                            , fixed64Leaf = value.fixed64Leaf
+                            , sfixed32Bytes = value.sfixed32Bytes
+                            , sfixed64Int32 = value.sfixed64Int32
+                            , boolString = value.boolString
+                            , boolLeaf = Proto.Binary.insertBool k v value.boolLeaf
+                            , stringLeaf = value.stringLeaf
+                            }
+                        )
+                        wire
+                        value
 
                 14 ->
-                    Proto.Binary.mapEntry Proto.Binary.string (Proto.Binary.embedded encodeLeafBytes mergeLeafBytes defaultLeaf) (\k v -> { value | stringLeaf = Dict.insert k v value.stringLeaf }) wire value
+                    Proto.Binary.mapEntry
+                        Proto.Binary.string
+                        (Proto.Binary.embedded encodeLeafBytes mergeLeafBytes defaultLeaf)
+                        (\k v ->
+                            { stringString = value.stringString
+                            , int32Kind = value.int32Kind
+                            , int64Double = value.int64Double
+                            , uint32Int64 = value.uint32Int64
+                            , uint64String = value.uint64String
+                            , sint32Bool = value.sint32Bool
+                            , sint64Float = value.sint64Float
+                            , fixed32Uint64 = value.fixed32Uint64
+                            , fixed64Leaf = value.fixed64Leaf
+                            , sfixed32Bytes = value.sfixed32Bytes
+                            , sfixed64Int32 = value.sfixed64Int32
+                            , boolString = value.boolString
+                            , boolLeaf = value.boolLeaf
+                            , stringLeaf = Dict.insert k v value.stringLeaf
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
         (\value ->
-            { value
-                | boolString = List.reverse value.boolString
-                , boolLeaf = List.reverse value.boolLeaf
+            { stringString = value.stringString
+            , int32Kind = value.int32Kind
+            , int64Double = value.int64Double
+            , uint32Int64 = value.uint32Int64
+            , uint64String = value.uint64String
+            , sint32Bool = value.sint32Bool
+            , sint64Float = value.sint64Float
+            , fixed32Uint64 = value.fixed32Uint64
+            , fixed64Leaf = value.fixed64Leaf
+            , sfixed32Bytes = value.sfixed32Bytes
+            , sfixed64Int32 = value.sfixed64Int32
+            , boolString = List.reverse value.boolString
+            , boolLeaf = List.reverse value.boolLeaf
+            , stringLeaf = value.stringLeaf
             }
         )
 
@@ -2340,25 +3354,88 @@ mergeChoiceBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | before = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { before = v
+                            , pick = value.pick
+                            , after = value.after
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | pick = ChoicePickText v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { before = value.before
+                            , pick = ChoicePickText v
+                            , after = value.after
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.field Proto.Binary.int64 (\v -> { value | pick = ChoicePickBig v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int64
+                        (\v ->
+                            { before = value.before
+                            , pick = ChoicePickBig v
+                            , after = value.after
+                            }
+                        )
+                        wire
+                        value
 
                 4 ->
-                    Proto.Binary.field Proto.Binary.double (\v -> { value | pick = ChoicePickRatio v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.double
+                        (\v ->
+                            { before = value.before
+                            , pick = ChoicePickRatio v
+                            , after = value.after
+                            }
+                        )
+                        wire
+                        value
 
                 5 ->
-                    Proto.Binary.field Proto.Binary.bool (\v -> { value | pick = ChoicePickFlag v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { before = value.before
+                            , pick = ChoicePickFlag v
+                            , after = value.after
+                            }
+                        )
+                        wire
+                        value
 
                 6 ->
-                    Proto.Binary.field Proto.Binary.bytes (\v -> { value | pick = ChoicePickData v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bytes
+                        (\v ->
+                            { before = value.before
+                            , pick = ChoicePickData v
+                            , after = value.after
+                            }
+                        )
+                        wire
+                        value
 
                 7 ->
-                    Proto.Binary.field (Proto.Binary.enum encodeKindBytes decodeKindBytes) (\v -> { value | pick = ChoicePickKind v }) wire value
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeKindBytes decodeKindBytes)
+                        (\v ->
+                            { before = value.before
+                            , pick = ChoicePickKind v
+                            , after = value.after
+                            }
+                        )
+                        wire
+                        value
 
                 8 ->
                     Proto.Binary.fieldInto
@@ -2370,30 +3447,98 @@ mergeChoiceBytes =
                             _ ->
                                 Nothing
                         )
-                        (\v -> { value | pick = ChoicePickLeaf v })
+                        (\v ->
+                            { before = value.before
+                            , pick = ChoicePickLeaf v
+                            , after = value.after
+                            }
+                        )
                         wire
                         value
 
                 9 ->
-                    Proto.Binary.field Proto.Binary.empty (\_ -> { value | pick = ChoicePickNothing }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.empty
+                        (\_ ->
+                            { before = value.before
+                            , pick = ChoicePickNothing
+                            , after = value.after
+                            }
+                        )
+                        wire
+                        value
 
                 10 ->
-                    Proto.Binary.field Proto.Binary.value (\v -> { value | pick = ChoicePickJson v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.value
+                        (\v ->
+                            { before = value.before
+                            , pick = ChoicePickJson v
+                            , after = value.after
+                            }
+                        )
+                        wire
+                        value
 
                 11 ->
-                    Proto.Binary.field Proto.Binary.timestamp (\v -> { value | pick = ChoicePickAt v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.timestamp
+                        (\v ->
+                            { before = value.before
+                            , pick = ChoicePickAt v
+                            , after = value.after
+                            }
+                        )
+                        wire
+                        value
 
                 12 ->
-                    Proto.Binary.field Proto.Binary.int32Value (\v -> { value | pick = ChoicePickWrapped v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int32Value
+                        (\v ->
+                            { before = value.before
+                            , pick = ChoicePickWrapped v
+                            , after = value.after
+                            }
+                        )
+                        wire
+                        value
 
                 13 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | pick = ChoicePickTwoWords v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { before = value.before
+                            , pick = ChoicePickTwoWords v
+                            , after = value.after
+                            }
+                        )
+                        wire
+                        value
 
                 14 ->
-                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | after = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int32
+                        (\v ->
+                            { before = value.before
+                            , pick = value.pick
+                            , after = v
+                            }
+                        )
+                        wire
+                        value
 
                 15 ->
-                    Proto.Binary.field (Proto.Binary.enum (\_ -> 0) (\_ -> ())) (\_ -> { value | pick = ChoicePickNone }) wire value
+                    Proto.Binary.field
+                        (Proto.Binary.enum (\_ -> 0) (\_ -> ()))
+                        (\_ ->
+                            { before = value.before
+                            , pick = ChoicePickNone
+                            , after = value.after
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -2417,25 +3562,110 @@ mergeNamesBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | plain = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { plain = v
+                            , twoWords = value.twoWords
+                            , withOverride = value.withOverride
+                            , bigOverride = value.bigOverride
+                            , leafOverride = value.leafOverride
+                            , named = value.named
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | twoWords = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { plain = value.plain
+                            , twoWords = v
+                            , withOverride = value.withOverride
+                            , bigOverride = value.bigOverride
+                            , leafOverride = value.leafOverride
+                            , named = value.named
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | withOverride = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { plain = value.plain
+                            , twoWords = value.twoWords
+                            , withOverride = v
+                            , bigOverride = value.bigOverride
+                            , leafOverride = value.leafOverride
+                            , named = value.named
+                            }
+                        )
+                        wire
+                        value
 
                 4 ->
-                    Proto.Binary.field Proto.Binary.int64 (\v -> { value | bigOverride = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int64
+                        (\v ->
+                            { plain = value.plain
+                            , twoWords = value.twoWords
+                            , withOverride = value.withOverride
+                            , bigOverride = v
+                            , leafOverride = value.leafOverride
+                            , named = value.named
+                            }
+                        )
+                        wire
+                        value
 
                 5 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeLeafBytes mergeLeafBytes defaultLeaf) value.leafOverride (\v -> { value | leafOverride = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeLeafBytes mergeLeafBytes defaultLeaf)
+                        value.leafOverride
+                        (\v ->
+                            { plain = value.plain
+                            , twoWords = value.twoWords
+                            , withOverride = value.withOverride
+                            , bigOverride = value.bigOverride
+                            , leafOverride = Just v
+                            , named = value.named
+                            }
+                        )
+                        wire
+                        value
 
                 6 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | named = NamesNamedMemberOverride v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { plain = value.plain
+                            , twoWords = value.twoWords
+                            , withOverride = value.withOverride
+                            , bigOverride = value.bigOverride
+                            , leafOverride = value.leafOverride
+                            , named = NamesNamedMemberOverride v
+                            }
+                        )
+                        wire
+                        value
 
                 7 ->
-                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | named = NamesNamedMemberPlain v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int32
+                        (\v ->
+                            { plain = value.plain
+                            , twoWords = value.twoWords
+                            , withOverride = value.withOverride
+                            , bigOverride = value.bigOverride
+                            , leafOverride = value.leafOverride
+                            , named = NamesNamedMemberPlain v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -2459,27 +3689,88 @@ mergeOuterBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field (Proto.Binary.enum encodeOuterModeBytes decodeOuterModeBytes) (\v -> { value | mode = v }) wire value
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeOuterModeBytes decodeOuterModeBytes)
+                        (\v ->
+                            { mode = v
+                            , inner = value.inner
+                            , inners = value.inners
+                            , modes = value.modes
+                            , namedModes = value.namedModes
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeOuterInnerBytes mergeOuterInnerBytes defaultOuterInner) value.inner (\v -> { value | inner = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeOuterInnerBytes mergeOuterInnerBytes defaultOuterInner)
+                        value.inner
+                        (\v ->
+                            { mode = value.mode
+                            , inner = Just v
+                            , inners = value.inners
+                            , modes = value.modes
+                            , namedModes = value.namedModes
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded encodeOuterInnerBytes mergeOuterInnerBytes defaultOuterInner) (\v -> { value | inners = v }) value.inners wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeOuterInnerBytes mergeOuterInnerBytes defaultOuterInner)
+                        (\v ->
+                            { mode = value.mode
+                            , inner = value.inner
+                            , inners = v
+                            , modes = value.modes
+                            , namedModes = value.namedModes
+                            }
+                        )
+                        value.inners
+                        wire
+                        value
 
                 4 ->
-                    Proto.Binary.repeated (Proto.Binary.enum encodeOuterModeBytes decodeOuterModeBytes) (\v -> { value | modes = v }) value.modes wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.enum encodeOuterModeBytes decodeOuterModeBytes)
+                        (\v ->
+                            { mode = value.mode
+                            , inner = value.inner
+                            , inners = value.inners
+                            , modes = v
+                            , namedModes = value.namedModes
+                            }
+                        )
+                        value.modes
+                        wire
+                        value
 
                 5 ->
-                    Proto.Binary.mapEntry Proto.Binary.string (Proto.Binary.enum encodeOuterModeBytes decodeOuterModeBytes) (\k v -> { value | namedModes = Dict.insert k v value.namedModes }) wire value
+                    Proto.Binary.mapEntry
+                        Proto.Binary.string
+                        (Proto.Binary.enum encodeOuterModeBytes decodeOuterModeBytes)
+                        (\k v ->
+                            { mode = value.mode
+                            , inner = value.inner
+                            , inners = value.inners
+                            , modes = value.modes
+                            , namedModes = Dict.insert k v value.namedModes
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
         (\value ->
-            { value
-                | inners = List.reverse value.inners
-                , modes = List.reverse value.modes
+            { mode = value.mode
+            , inner = value.inner
+            , inners = List.reverse value.inners
+            , modes = List.reverse value.modes
+            , namedModes = value.namedModes
             }
         )
 
@@ -2500,10 +3791,26 @@ mergeOuterInnerBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field (Proto.Binary.enum encodeOuterModeBytes decodeOuterModeBytes) (\v -> { value | mode = v }) wire value
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeOuterModeBytes decodeOuterModeBytes)
+                        (\v ->
+                            { mode = v
+                            , note = value.note
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | note = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { mode = value.mode
+                            , note = v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -2527,16 +3834,63 @@ mergeTreeBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | label = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { label = v
+                            , left = value.left
+                            , children = value.children
+                            , named = value.named
+                            , link = value.link
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeTree_Bytes mergeTree_Bytes (Tree_ defaultTree)) value.left (\v -> { value | left = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeTree_Bytes mergeTree_Bytes (Tree_ defaultTree))
+                        value.left
+                        (\v ->
+                            { label = value.label
+                            , left = Just v
+                            , children = value.children
+                            , named = value.named
+                            , link = value.link
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded encodeTree_Bytes mergeTree_Bytes (Tree_ defaultTree)) (\v -> { value | children = v }) value.children wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeTree_Bytes mergeTree_Bytes (Tree_ defaultTree))
+                        (\v ->
+                            { label = value.label
+                            , left = value.left
+                            , children = v
+                            , named = value.named
+                            , link = value.link
+                            }
+                        )
+                        value.children
+                        wire
+                        value
 
                 4 ->
-                    Proto.Binary.mapEntry Proto.Binary.string (Proto.Binary.embedded encodeTree_Bytes mergeTree_Bytes (Tree_ defaultTree)) (\k v -> { value | named = Dict.insert k v value.named }) wire value
+                    Proto.Binary.mapEntry
+                        Proto.Binary.string
+                        (Proto.Binary.embedded encodeTree_Bytes mergeTree_Bytes (Tree_ defaultTree))
+                        (\k v ->
+                            { label = value.label
+                            , left = value.left
+                            , children = value.children
+                            , named = Dict.insert k v value.named
+                            , link = value.link
+                            }
+                        )
+                        wire
+                        value
 
                 5 ->
                     Proto.Binary.fieldInto
@@ -2548,17 +3902,42 @@ mergeTreeBytes =
                             _ ->
                                 Nothing
                         )
-                        (\v -> { value | link = TreeLinkNext v })
+                        (\v ->
+                            { label = value.label
+                            , left = value.left
+                            , children = value.children
+                            , named = value.named
+                            , link = TreeLinkNext v
+                            }
+                        )
                         wire
                         value
 
                 6 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | link = TreeLinkEnd v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { label = value.label
+                            , left = value.left
+                            , children = value.children
+                            , named = value.named
+                            , link = TreeLinkEnd v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value -> { value | children = List.reverse value.children })
+        (\value ->
+            { label = value.label
+            , left = value.left
+            , children = List.reverse value.children
+            , named = value.named
+            , link = value.link
+            }
+        )
 
 
 {-| Decodes a [`Tree`](#Tree) from protobuf binary.
@@ -2584,70 +3963,522 @@ mergeWellKnownBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.any (\v -> { value | any = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.any
+                        (\v ->
+                            { any = Just v
+                            , struct = value.struct
+                            , list = value.list
+                            , value = value.value
+                            , timestamp = value.timestamp
+                            , duration = value.duration
+                            , mask = value.mask
+                            , empty = value.empty
+                            , anys = value.anys
+                            , values = value.values
+                            , valueMap = value.valueMap
+                            , timestamps = value.timestamps
+                            , durations = value.durations
+                            , empties = value.empties
+                            , structs = value.structs
+                            , nullValue = value.nullValue
+                            , nullValues = value.nullValues
+                            , nullMap = value.nullMap
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.struct (\v -> { value | struct = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.struct
+                        (\v ->
+                            { any = value.any
+                            , struct = Just v
+                            , list = value.list
+                            , value = value.value
+                            , timestamp = value.timestamp
+                            , duration = value.duration
+                            , mask = value.mask
+                            , empty = value.empty
+                            , anys = value.anys
+                            , values = value.values
+                            , valueMap = value.valueMap
+                            , timestamps = value.timestamps
+                            , durations = value.durations
+                            , empties = value.empties
+                            , structs = value.structs
+                            , nullValue = value.nullValue
+                            , nullValues = value.nullValues
+                            , nullMap = value.nullMap
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.field Proto.Binary.listValue (\v -> { value | list = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.listValue
+                        (\v ->
+                            { any = value.any
+                            , struct = value.struct
+                            , list = Just v
+                            , value = value.value
+                            , timestamp = value.timestamp
+                            , duration = value.duration
+                            , mask = value.mask
+                            , empty = value.empty
+                            , anys = value.anys
+                            , values = value.values
+                            , valueMap = value.valueMap
+                            , timestamps = value.timestamps
+                            , durations = value.durations
+                            , empties = value.empties
+                            , structs = value.structs
+                            , nullValue = value.nullValue
+                            , nullValues = value.nullValues
+                            , nullMap = value.nullMap
+                            }
+                        )
+                        wire
+                        value
 
                 4 ->
-                    Proto.Binary.field Proto.Binary.value (\v -> { value | value = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.value
+                        (\v ->
+                            { any = value.any
+                            , struct = value.struct
+                            , list = value.list
+                            , value = Just v
+                            , timestamp = value.timestamp
+                            , duration = value.duration
+                            , mask = value.mask
+                            , empty = value.empty
+                            , anys = value.anys
+                            , values = value.values
+                            , valueMap = value.valueMap
+                            , timestamps = value.timestamps
+                            , durations = value.durations
+                            , empties = value.empties
+                            , structs = value.structs
+                            , nullValue = value.nullValue
+                            , nullValues = value.nullValues
+                            , nullMap = value.nullMap
+                            }
+                        )
+                        wire
+                        value
 
                 5 ->
-                    Proto.Binary.field Proto.Binary.timestamp (\v -> { value | timestamp = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.timestamp
+                        (\v ->
+                            { any = value.any
+                            , struct = value.struct
+                            , list = value.list
+                            , value = value.value
+                            , timestamp = Just v
+                            , duration = value.duration
+                            , mask = value.mask
+                            , empty = value.empty
+                            , anys = value.anys
+                            , values = value.values
+                            , valueMap = value.valueMap
+                            , timestamps = value.timestamps
+                            , durations = value.durations
+                            , empties = value.empties
+                            , structs = value.structs
+                            , nullValue = value.nullValue
+                            , nullValues = value.nullValues
+                            , nullMap = value.nullMap
+                            }
+                        )
+                        wire
+                        value
 
                 6 ->
-                    Proto.Binary.field Proto.Binary.duration (\v -> { value | duration = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.duration
+                        (\v ->
+                            { any = value.any
+                            , struct = value.struct
+                            , list = value.list
+                            , value = value.value
+                            , timestamp = value.timestamp
+                            , duration = Just v
+                            , mask = value.mask
+                            , empty = value.empty
+                            , anys = value.anys
+                            , values = value.values
+                            , valueMap = value.valueMap
+                            , timestamps = value.timestamps
+                            , durations = value.durations
+                            , empties = value.empties
+                            , structs = value.structs
+                            , nullValue = value.nullValue
+                            , nullValues = value.nullValues
+                            , nullMap = value.nullMap
+                            }
+                        )
+                        wire
+                        value
 
                 7 ->
-                    Proto.Binary.field Proto.Binary.fieldMask (\v -> { value | mask = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.fieldMask
+                        (\v ->
+                            { any = value.any
+                            , struct = value.struct
+                            , list = value.list
+                            , value = value.value
+                            , timestamp = value.timestamp
+                            , duration = value.duration
+                            , mask = Just v
+                            , empty = value.empty
+                            , anys = value.anys
+                            , values = value.values
+                            , valueMap = value.valueMap
+                            , timestamps = value.timestamps
+                            , durations = value.durations
+                            , empties = value.empties
+                            , structs = value.structs
+                            , nullValue = value.nullValue
+                            , nullValues = value.nullValues
+                            , nullMap = value.nullMap
+                            }
+                        )
+                        wire
+                        value
 
                 8 ->
-                    Proto.Binary.field Proto.Binary.empty (\v -> { value | empty = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.empty
+                        (\v ->
+                            { any = value.any
+                            , struct = value.struct
+                            , list = value.list
+                            , value = value.value
+                            , timestamp = value.timestamp
+                            , duration = value.duration
+                            , mask = value.mask
+                            , empty = v
+                            , anys = value.anys
+                            , values = value.values
+                            , valueMap = value.valueMap
+                            , timestamps = value.timestamps
+                            , durations = value.durations
+                            , empties = value.empties
+                            , structs = value.structs
+                            , nullValue = value.nullValue
+                            , nullValues = value.nullValues
+                            , nullMap = value.nullMap
+                            }
+                        )
+                        wire
+                        value
 
                 9 ->
-                    Proto.Binary.repeated Proto.Binary.any (\v -> { value | anys = v }) value.anys wire value
+                    Proto.Binary.repeated
+                        Proto.Binary.any
+                        (\v ->
+                            { any = value.any
+                            , struct = value.struct
+                            , list = value.list
+                            , value = value.value
+                            , timestamp = value.timestamp
+                            , duration = value.duration
+                            , mask = value.mask
+                            , empty = value.empty
+                            , anys = v
+                            , values = value.values
+                            , valueMap = value.valueMap
+                            , timestamps = value.timestamps
+                            , durations = value.durations
+                            , empties = value.empties
+                            , structs = value.structs
+                            , nullValue = value.nullValue
+                            , nullValues = value.nullValues
+                            , nullMap = value.nullMap
+                            }
+                        )
+                        value.anys
+                        wire
+                        value
 
                 10 ->
-                    Proto.Binary.repeated Proto.Binary.value (\v -> { value | values = v }) value.values wire value
+                    Proto.Binary.repeated
+                        Proto.Binary.value
+                        (\v ->
+                            { any = value.any
+                            , struct = value.struct
+                            , list = value.list
+                            , value = value.value
+                            , timestamp = value.timestamp
+                            , duration = value.duration
+                            , mask = value.mask
+                            , empty = value.empty
+                            , anys = value.anys
+                            , values = v
+                            , valueMap = value.valueMap
+                            , timestamps = value.timestamps
+                            , durations = value.durations
+                            , empties = value.empties
+                            , structs = value.structs
+                            , nullValue = value.nullValue
+                            , nullValues = value.nullValues
+                            , nullMap = value.nullMap
+                            }
+                        )
+                        value.values
+                        wire
+                        value
 
                 11 ->
-                    Proto.Binary.mapEntry Proto.Binary.string Proto.Binary.value (\k v -> { value | valueMap = Dict.insert k v value.valueMap }) wire value
+                    Proto.Binary.mapEntry
+                        Proto.Binary.string
+                        Proto.Binary.value
+                        (\k v ->
+                            { any = value.any
+                            , struct = value.struct
+                            , list = value.list
+                            , value = value.value
+                            , timestamp = value.timestamp
+                            , duration = value.duration
+                            , mask = value.mask
+                            , empty = value.empty
+                            , anys = value.anys
+                            , values = value.values
+                            , valueMap = Dict.insert k v value.valueMap
+                            , timestamps = value.timestamps
+                            , durations = value.durations
+                            , empties = value.empties
+                            , structs = value.structs
+                            , nullValue = value.nullValue
+                            , nullValues = value.nullValues
+                            , nullMap = value.nullMap
+                            }
+                        )
+                        wire
+                        value
 
                 12 ->
-                    Proto.Binary.repeated Proto.Binary.timestamp (\v -> { value | timestamps = v }) value.timestamps wire value
+                    Proto.Binary.repeated
+                        Proto.Binary.timestamp
+                        (\v ->
+                            { any = value.any
+                            , struct = value.struct
+                            , list = value.list
+                            , value = value.value
+                            , timestamp = value.timestamp
+                            , duration = value.duration
+                            , mask = value.mask
+                            , empty = value.empty
+                            , anys = value.anys
+                            , values = value.values
+                            , valueMap = value.valueMap
+                            , timestamps = v
+                            , durations = value.durations
+                            , empties = value.empties
+                            , structs = value.structs
+                            , nullValue = value.nullValue
+                            , nullValues = value.nullValues
+                            , nullMap = value.nullMap
+                            }
+                        )
+                        value.timestamps
+                        wire
+                        value
 
                 13 ->
-                    Proto.Binary.repeated Proto.Binary.duration (\v -> { value | durations = v }) value.durations wire value
+                    Proto.Binary.repeated
+                        Proto.Binary.duration
+                        (\v ->
+                            { any = value.any
+                            , struct = value.struct
+                            , list = value.list
+                            , value = value.value
+                            , timestamp = value.timestamp
+                            , duration = value.duration
+                            , mask = value.mask
+                            , empty = value.empty
+                            , anys = value.anys
+                            , values = value.values
+                            , valueMap = value.valueMap
+                            , timestamps = value.timestamps
+                            , durations = v
+                            , empties = value.empties
+                            , structs = value.structs
+                            , nullValue = value.nullValue
+                            , nullValues = value.nullValues
+                            , nullMap = value.nullMap
+                            }
+                        )
+                        value.durations
+                        wire
+                        value
 
                 14 ->
-                    Proto.Binary.repeated Proto.Binary.empty (\v -> { value | empties = v }) value.empties wire value
+                    Proto.Binary.repeated
+                        Proto.Binary.empty
+                        (\v ->
+                            { any = value.any
+                            , struct = value.struct
+                            , list = value.list
+                            , value = value.value
+                            , timestamp = value.timestamp
+                            , duration = value.duration
+                            , mask = value.mask
+                            , empty = value.empty
+                            , anys = value.anys
+                            , values = value.values
+                            , valueMap = value.valueMap
+                            , timestamps = value.timestamps
+                            , durations = value.durations
+                            , empties = v
+                            , structs = value.structs
+                            , nullValue = value.nullValue
+                            , nullValues = value.nullValues
+                            , nullMap = value.nullMap
+                            }
+                        )
+                        value.empties
+                        wire
+                        value
 
                 15 ->
-                    Proto.Binary.mapEntry Proto.Binary.int32 Proto.Binary.struct (\k v -> { value | structs = Dict.insert k v value.structs }) wire value
+                    Proto.Binary.mapEntry
+                        Proto.Binary.int32
+                        Proto.Binary.struct
+                        (\k v ->
+                            { any = value.any
+                            , struct = value.struct
+                            , list = value.list
+                            , value = value.value
+                            , timestamp = value.timestamp
+                            , duration = value.duration
+                            , mask = value.mask
+                            , empty = value.empty
+                            , anys = value.anys
+                            , values = value.values
+                            , valueMap = value.valueMap
+                            , timestamps = value.timestamps
+                            , durations = value.durations
+                            , empties = value.empties
+                            , structs = Dict.insert k v value.structs
+                            , nullValue = value.nullValue
+                            , nullValues = value.nullValues
+                            , nullMap = value.nullMap
+                            }
+                        )
+                        wire
+                        value
 
                 16 ->
-                    Proto.Binary.field (Proto.Binary.enum (\_ -> 0) (\_ -> ())) (\v -> { value | nullValue = v }) wire value
+                    Proto.Binary.field
+                        (Proto.Binary.enum (\_ -> 0) (\_ -> ()))
+                        (\v ->
+                            { any = value.any
+                            , struct = value.struct
+                            , list = value.list
+                            , value = value.value
+                            , timestamp = value.timestamp
+                            , duration = value.duration
+                            , mask = value.mask
+                            , empty = value.empty
+                            , anys = value.anys
+                            , values = value.values
+                            , valueMap = value.valueMap
+                            , timestamps = value.timestamps
+                            , durations = value.durations
+                            , empties = value.empties
+                            , structs = value.structs
+                            , nullValue = v
+                            , nullValues = value.nullValues
+                            , nullMap = value.nullMap
+                            }
+                        )
+                        wire
+                        value
 
                 17 ->
-                    Proto.Binary.repeated (Proto.Binary.enum (\_ -> 0) (\_ -> ())) (\v -> { value | nullValues = v }) value.nullValues wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.enum (\_ -> 0) (\_ -> ()))
+                        (\v ->
+                            { any = value.any
+                            , struct = value.struct
+                            , list = value.list
+                            , value = value.value
+                            , timestamp = value.timestamp
+                            , duration = value.duration
+                            , mask = value.mask
+                            , empty = value.empty
+                            , anys = value.anys
+                            , values = value.values
+                            , valueMap = value.valueMap
+                            , timestamps = value.timestamps
+                            , durations = value.durations
+                            , empties = value.empties
+                            , structs = value.structs
+                            , nullValue = value.nullValue
+                            , nullValues = v
+                            , nullMap = value.nullMap
+                            }
+                        )
+                        value.nullValues
+                        wire
+                        value
 
                 18 ->
-                    Proto.Binary.mapEntry Proto.Binary.string (Proto.Binary.enum (\_ -> 0) (\_ -> ())) (\k v -> { value | nullMap = Dict.insert k v value.nullMap }) wire value
+                    Proto.Binary.mapEntry
+                        Proto.Binary.string
+                        (Proto.Binary.enum (\_ -> 0) (\_ -> ()))
+                        (\k v ->
+                            { any = value.any
+                            , struct = value.struct
+                            , list = value.list
+                            , value = value.value
+                            , timestamp = value.timestamp
+                            , duration = value.duration
+                            , mask = value.mask
+                            , empty = value.empty
+                            , anys = value.anys
+                            , values = value.values
+                            , valueMap = value.valueMap
+                            , timestamps = value.timestamps
+                            , durations = value.durations
+                            , empties = value.empties
+                            , structs = value.structs
+                            , nullValue = value.nullValue
+                            , nullValues = value.nullValues
+                            , nullMap = Dict.insert k v value.nullMap
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
         (\value ->
-            { value
-                | anys = List.reverse value.anys
-                , values = List.reverse value.values
-                , timestamps = List.reverse value.timestamps
-                , durations = List.reverse value.durations
-                , empties = List.reverse value.empties
-                , nullValues = List.reverse value.nullValues
+            { any = value.any
+            , struct = value.struct
+            , list = value.list
+            , value = value.value
+            , timestamp = value.timestamp
+            , duration = value.duration
+            , mask = value.mask
+            , empty = value.empty
+            , anys = List.reverse value.anys
+            , values = List.reverse value.values
+            , valueMap = value.valueMap
+            , timestamps = List.reverse value.timestamps
+            , durations = List.reverse value.durations
+            , empties = List.reverse value.empties
+            , structs = value.structs
+            , nullValue = value.nullValue
+            , nullValues = List.reverse value.nullValues
+            , nullMap = value.nullMap
             }
         )
 
@@ -2668,42 +4499,244 @@ mergeWrappersBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.doubleValue (\v -> { value | double = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.doubleValue
+                        (\v ->
+                            { double = Just v
+                            , float = value.float
+                            , int64 = value.int64
+                            , uint64 = value.uint64
+                            , int32 = value.int32
+                            , uint32 = value.uint32
+                            , bool = value.bool
+                            , string = value.string
+                            , bytes = value.bytes
+                            , int64s = value.int64s
+                            , bytesMap = value.bytesMap
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.floatValue (\v -> { value | float = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.floatValue
+                        (\v ->
+                            { double = value.double
+                            , float = Just v
+                            , int64 = value.int64
+                            , uint64 = value.uint64
+                            , int32 = value.int32
+                            , uint32 = value.uint32
+                            , bool = value.bool
+                            , string = value.string
+                            , bytes = value.bytes
+                            , int64s = value.int64s
+                            , bytesMap = value.bytesMap
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.field Proto.Binary.int64Value (\v -> { value | int64 = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int64Value
+                        (\v ->
+                            { double = value.double
+                            , float = value.float
+                            , int64 = Just v
+                            , uint64 = value.uint64
+                            , int32 = value.int32
+                            , uint32 = value.uint32
+                            , bool = value.bool
+                            , string = value.string
+                            , bytes = value.bytes
+                            , int64s = value.int64s
+                            , bytesMap = value.bytesMap
+                            }
+                        )
+                        wire
+                        value
 
                 4 ->
-                    Proto.Binary.field Proto.Binary.uint64Value (\v -> { value | uint64 = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.uint64Value
+                        (\v ->
+                            { double = value.double
+                            , float = value.float
+                            , int64 = value.int64
+                            , uint64 = Just v
+                            , int32 = value.int32
+                            , uint32 = value.uint32
+                            , bool = value.bool
+                            , string = value.string
+                            , bytes = value.bytes
+                            , int64s = value.int64s
+                            , bytesMap = value.bytesMap
+                            }
+                        )
+                        wire
+                        value
 
                 5 ->
-                    Proto.Binary.field Proto.Binary.int32Value (\v -> { value | int32 = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int32Value
+                        (\v ->
+                            { double = value.double
+                            , float = value.float
+                            , int64 = value.int64
+                            , uint64 = value.uint64
+                            , int32 = Just v
+                            , uint32 = value.uint32
+                            , bool = value.bool
+                            , string = value.string
+                            , bytes = value.bytes
+                            , int64s = value.int64s
+                            , bytesMap = value.bytesMap
+                            }
+                        )
+                        wire
+                        value
 
                 6 ->
-                    Proto.Binary.field Proto.Binary.uint32Value (\v -> { value | uint32 = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.uint32Value
+                        (\v ->
+                            { double = value.double
+                            , float = value.float
+                            , int64 = value.int64
+                            , uint64 = value.uint64
+                            , int32 = value.int32
+                            , uint32 = Just v
+                            , bool = value.bool
+                            , string = value.string
+                            , bytes = value.bytes
+                            , int64s = value.int64s
+                            , bytesMap = value.bytesMap
+                            }
+                        )
+                        wire
+                        value
 
                 7 ->
-                    Proto.Binary.field Proto.Binary.boolValue (\v -> { value | bool = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.boolValue
+                        (\v ->
+                            { double = value.double
+                            , float = value.float
+                            , int64 = value.int64
+                            , uint64 = value.uint64
+                            , int32 = value.int32
+                            , uint32 = value.uint32
+                            , bool = Just v
+                            , string = value.string
+                            , bytes = value.bytes
+                            , int64s = value.int64s
+                            , bytesMap = value.bytesMap
+                            }
+                        )
+                        wire
+                        value
 
                 8 ->
-                    Proto.Binary.field Proto.Binary.stringValue (\v -> { value | string = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.stringValue
+                        (\v ->
+                            { double = value.double
+                            , float = value.float
+                            , int64 = value.int64
+                            , uint64 = value.uint64
+                            , int32 = value.int32
+                            , uint32 = value.uint32
+                            , bool = value.bool
+                            , string = Just v
+                            , bytes = value.bytes
+                            , int64s = value.int64s
+                            , bytesMap = value.bytesMap
+                            }
+                        )
+                        wire
+                        value
 
                 9 ->
-                    Proto.Binary.field Proto.Binary.bytesValue (\v -> { value | bytes = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bytesValue
+                        (\v ->
+                            { double = value.double
+                            , float = value.float
+                            , int64 = value.int64
+                            , uint64 = value.uint64
+                            , int32 = value.int32
+                            , uint32 = value.uint32
+                            , bool = value.bool
+                            , string = value.string
+                            , bytes = Just v
+                            , int64s = value.int64s
+                            , bytesMap = value.bytesMap
+                            }
+                        )
+                        wire
+                        value
 
                 10 ->
-                    Proto.Binary.repeated Proto.Binary.int64Value (\v -> { value | int64s = v }) value.int64s wire value
+                    Proto.Binary.repeated
+                        Proto.Binary.int64Value
+                        (\v ->
+                            { double = value.double
+                            , float = value.float
+                            , int64 = value.int64
+                            , uint64 = value.uint64
+                            , int32 = value.int32
+                            , uint32 = value.uint32
+                            , bool = value.bool
+                            , string = value.string
+                            , bytes = value.bytes
+                            , int64s = v
+                            , bytesMap = value.bytesMap
+                            }
+                        )
+                        value.int64s
+                        wire
+                        value
 
                 11 ->
-                    Proto.Binary.mapEntry Proto.Binary.string Proto.Binary.bytesValue (\k v -> { value | bytesMap = Dict.insert k v value.bytesMap }) wire value
+                    Proto.Binary.mapEntry
+                        Proto.Binary.string
+                        Proto.Binary.bytesValue
+                        (\k v ->
+                            { double = value.double
+                            , float = value.float
+                            , int64 = value.int64
+                            , uint64 = value.uint64
+                            , int32 = value.int32
+                            , uint32 = value.uint32
+                            , bool = value.bool
+                            , string = value.string
+                            , bytes = value.bytes
+                            , int64s = value.int64s
+                            , bytesMap = Dict.insert k v value.bytesMap
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value -> { value | int64s = List.reverse value.int64s })
+        (\value ->
+            { double = value.double
+            , float = value.float
+            , int64 = value.int64
+            , uint64 = value.uint64
+            , int32 = value.int32
+            , uint32 = value.uint32
+            , bool = value.bool
+            , string = value.string
+            , bytes = value.bytes
+            , int64s = List.reverse value.int64s
+            , bytesMap = value.bytesMap
+            }
+        )
 
 
 {-| Decodes a [`Wrappers`](#Wrappers) from protobuf binary.
@@ -2722,21 +4755,70 @@ mergeAcrossBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded Codec.Other.V1.encodeRemoteBytes Codec.Other.V1.mergeRemoteBytes Codec.Other.V1.defaultRemote) value.remote (\v -> { value | remote = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded Codec.Other.V1.encodeRemoteBytes Codec.Other.V1.mergeRemoteBytes Codec.Other.V1.defaultRemote)
+                        value.remote
+                        (\v ->
+                            { remote = Just v
+                            , shade = value.shade
+                            , remotes = value.remotes
+                            , shades = value.shades
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field (Proto.Binary.enum Codec.Other.V1.encodeShadeBytes Codec.Other.V1.decodeShadeBytes) (\v -> { value | shade = v }) wire value
+                    Proto.Binary.field
+                        (Proto.Binary.enum Codec.Other.V1.encodeShadeBytes Codec.Other.V1.decodeShadeBytes)
+                        (\v ->
+                            { remote = value.remote
+                            , shade = v
+                            , remotes = value.remotes
+                            , shades = value.shades
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded Codec.Other.V1.encodeRemoteBytes Codec.Other.V1.mergeRemoteBytes Codec.Other.V1.defaultRemote) (\v -> { value | remotes = v }) value.remotes wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded Codec.Other.V1.encodeRemoteBytes Codec.Other.V1.mergeRemoteBytes Codec.Other.V1.defaultRemote)
+                        (\v ->
+                            { remote = value.remote
+                            , shade = value.shade
+                            , remotes = v
+                            , shades = value.shades
+                            }
+                        )
+                        value.remotes
+                        wire
+                        value
 
                 4 ->
-                    Proto.Binary.mapEntry Proto.Binary.string (Proto.Binary.enum Codec.Other.V1.encodeShadeBytes Codec.Other.V1.decodeShadeBytes) (\k v -> { value | shades = Dict.insert k v value.shades }) wire value
+                    Proto.Binary.mapEntry
+                        Proto.Binary.string
+                        (Proto.Binary.enum Codec.Other.V1.encodeShadeBytes Codec.Other.V1.decodeShadeBytes)
+                        (\k v ->
+                            { remote = value.remote
+                            , shade = value.shade
+                            , remotes = value.remotes
+                            , shades = Dict.insert k v value.shades
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value -> { value | remotes = List.reverse value.remotes })
+        (\value ->
+            { remote = value.remote
+            , shade = value.shade
+            , remotes = List.reverse value.remotes
+            , shades = value.shades
+            }
+        )
 
 
 {-| Decodes an [`Across`](#Across) from protobuf binary.
@@ -2755,10 +4837,26 @@ mergeLeafBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | name = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { name = v
+                            , count = value.count
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | count = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int32
+                        (\v ->
+                            { name = value.name
+                            , count = v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -2782,45 +4880,287 @@ mergeEverythingBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeScalarsBytes mergeScalarsBytes defaultScalars) value.scalars (\v -> { value | scalars = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeScalarsBytes mergeScalarsBytes defaultScalars)
+                        value.scalars
+                        (\v ->
+                            { scalars = Just v
+                            , optionals = value.optionals
+                            , repeated = value.repeated
+                            , maps = value.maps
+                            , choice = value.choice
+                            , names = value.names
+                            , outer = value.outer
+                            , tree = value.tree
+                            , wellKnown = value.wellKnown
+                            , wrappers = value.wrappers
+                            , across = value.across
+                            , more = value.more
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeOptionalsBytes mergeOptionalsBytes defaultOptionals) value.optionals (\v -> { value | optionals = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeOptionalsBytes mergeOptionalsBytes defaultOptionals)
+                        value.optionals
+                        (\v ->
+                            { scalars = value.scalars
+                            , optionals = Just v
+                            , repeated = value.repeated
+                            , maps = value.maps
+                            , choice = value.choice
+                            , names = value.names
+                            , outer = value.outer
+                            , tree = value.tree
+                            , wellKnown = value.wellKnown
+                            , wrappers = value.wrappers
+                            , across = value.across
+                            , more = value.more
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeRepeatedBytes mergeRepeatedBytes defaultRepeated) value.repeated (\v -> { value | repeated = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeRepeatedBytes mergeRepeatedBytes defaultRepeated)
+                        value.repeated
+                        (\v ->
+                            { scalars = value.scalars
+                            , optionals = value.optionals
+                            , repeated = Just v
+                            , maps = value.maps
+                            , choice = value.choice
+                            , names = value.names
+                            , outer = value.outer
+                            , tree = value.tree
+                            , wellKnown = value.wellKnown
+                            , wrappers = value.wrappers
+                            , across = value.across
+                            , more = value.more
+                            }
+                        )
+                        wire
+                        value
 
                 4 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeMapsBytes mergeMapsBytes defaultMaps) value.maps (\v -> { value | maps = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeMapsBytes mergeMapsBytes defaultMaps)
+                        value.maps
+                        (\v ->
+                            { scalars = value.scalars
+                            , optionals = value.optionals
+                            , repeated = value.repeated
+                            , maps = Just v
+                            , choice = value.choice
+                            , names = value.names
+                            , outer = value.outer
+                            , tree = value.tree
+                            , wellKnown = value.wellKnown
+                            , wrappers = value.wrappers
+                            , across = value.across
+                            , more = value.more
+                            }
+                        )
+                        wire
+                        value
 
                 5 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeChoiceBytes mergeChoiceBytes defaultChoice) value.choice (\v -> { value | choice = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeChoiceBytes mergeChoiceBytes defaultChoice)
+                        value.choice
+                        (\v ->
+                            { scalars = value.scalars
+                            , optionals = value.optionals
+                            , repeated = value.repeated
+                            , maps = value.maps
+                            , choice = Just v
+                            , names = value.names
+                            , outer = value.outer
+                            , tree = value.tree
+                            , wellKnown = value.wellKnown
+                            , wrappers = value.wrappers
+                            , across = value.across
+                            , more = value.more
+                            }
+                        )
+                        wire
+                        value
 
                 6 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeNamesBytes mergeNamesBytes defaultNames) value.names (\v -> { value | names = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeNamesBytes mergeNamesBytes defaultNames)
+                        value.names
+                        (\v ->
+                            { scalars = value.scalars
+                            , optionals = value.optionals
+                            , repeated = value.repeated
+                            , maps = value.maps
+                            , choice = value.choice
+                            , names = Just v
+                            , outer = value.outer
+                            , tree = value.tree
+                            , wellKnown = value.wellKnown
+                            , wrappers = value.wrappers
+                            , across = value.across
+                            , more = value.more
+                            }
+                        )
+                        wire
+                        value
 
                 7 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeOuterBytes mergeOuterBytes defaultOuter) value.outer (\v -> { value | outer = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeOuterBytes mergeOuterBytes defaultOuter)
+                        value.outer
+                        (\v ->
+                            { scalars = value.scalars
+                            , optionals = value.optionals
+                            , repeated = value.repeated
+                            , maps = value.maps
+                            , choice = value.choice
+                            , names = value.names
+                            , outer = Just v
+                            , tree = value.tree
+                            , wellKnown = value.wellKnown
+                            , wrappers = value.wrappers
+                            , across = value.across
+                            , more = value.more
+                            }
+                        )
+                        wire
+                        value
 
                 8 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeTreeBytes mergeTreeBytes defaultTree) value.tree (\v -> { value | tree = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeTreeBytes mergeTreeBytes defaultTree)
+                        value.tree
+                        (\v ->
+                            { scalars = value.scalars
+                            , optionals = value.optionals
+                            , repeated = value.repeated
+                            , maps = value.maps
+                            , choice = value.choice
+                            , names = value.names
+                            , outer = value.outer
+                            , tree = Just v
+                            , wellKnown = value.wellKnown
+                            , wrappers = value.wrappers
+                            , across = value.across
+                            , more = value.more
+                            }
+                        )
+                        wire
+                        value
 
                 9 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeWellKnownBytes mergeWellKnownBytes defaultWellKnown) value.wellKnown (\v -> { value | wellKnown = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeWellKnownBytes mergeWellKnownBytes defaultWellKnown)
+                        value.wellKnown
+                        (\v ->
+                            { scalars = value.scalars
+                            , optionals = value.optionals
+                            , repeated = value.repeated
+                            , maps = value.maps
+                            , choice = value.choice
+                            , names = value.names
+                            , outer = value.outer
+                            , tree = value.tree
+                            , wellKnown = Just v
+                            , wrappers = value.wrappers
+                            , across = value.across
+                            , more = value.more
+                            }
+                        )
+                        wire
+                        value
 
                 10 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeWrappersBytes mergeWrappersBytes defaultWrappers) value.wrappers (\v -> { value | wrappers = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeWrappersBytes mergeWrappersBytes defaultWrappers)
+                        value.wrappers
+                        (\v ->
+                            { scalars = value.scalars
+                            , optionals = value.optionals
+                            , repeated = value.repeated
+                            , maps = value.maps
+                            , choice = value.choice
+                            , names = value.names
+                            , outer = value.outer
+                            , tree = value.tree
+                            , wellKnown = value.wellKnown
+                            , wrappers = Just v
+                            , across = value.across
+                            , more = value.more
+                            }
+                        )
+                        wire
+                        value
 
                 11 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeAcrossBytes mergeAcrossBytes defaultAcross) value.across (\v -> { value | across = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeAcrossBytes mergeAcrossBytes defaultAcross)
+                        value.across
+                        (\v ->
+                            { scalars = value.scalars
+                            , optionals = value.optionals
+                            , repeated = value.repeated
+                            , maps = value.maps
+                            , choice = value.choice
+                            , names = value.names
+                            , outer = value.outer
+                            , tree = value.tree
+                            , wellKnown = value.wellKnown
+                            , wrappers = value.wrappers
+                            , across = Just v
+                            , more = value.more
+                            }
+                        )
+                        wire
+                        value
 
                 12 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded encodeEverything_Bytes mergeEverything_Bytes (Everything_ defaultEverything)) (\v -> { value | more = v }) value.more wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeEverything_Bytes mergeEverything_Bytes (Everything_ defaultEverything))
+                        (\v ->
+                            { scalars = value.scalars
+                            , optionals = value.optionals
+                            , repeated = value.repeated
+                            , maps = value.maps
+                            , choice = value.choice
+                            , names = value.names
+                            , outer = value.outer
+                            , tree = value.tree
+                            , wellKnown = value.wellKnown
+                            , wrappers = value.wrappers
+                            , across = value.across
+                            , more = v
+                            }
+                        )
+                        value.more
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value -> { value | more = List.reverse value.more })
+        (\value ->
+            { scalars = value.scalars
+            , optionals = value.optionals
+            , repeated = value.repeated
+            , maps = value.maps
+            , choice = value.choice
+            , names = value.names
+            , outer = value.outer
+            , tree = value.tree
+            , wellKnown = value.wellKnown
+            , wrappers = value.wrappers
+            , across = value.across
+            , more = List.reverse value.more
+            }
+        )
 
 
 {-| Decodes an [`Everything`](#Everything) from protobuf binary.
