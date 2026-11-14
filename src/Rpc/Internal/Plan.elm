@@ -22,6 +22,7 @@ import Json.Decode exposing (Decoder)
 import Json.Encode
 import Proto.Error
 import Proto.Internal.Method exposing (Method(..), RouteOf(..))
+import Proto.Registry exposing (Registry)
 import Proto.Route exposing (PathError)
 import Rpc.Code as Code
 import Rpc.Error as Error exposing (Error, Reason)
@@ -236,8 +237,8 @@ make forSend (Client cl) (Call c) =
                             |> Result.mapError (Status.completeDetails registry)
                             |> Result.andThen
                                 (\good ->
-                                    Json.Decode.decodeString (fieldDecoder good.field (m.json.decoder registry)) good.text
-                                        |> Result.mapError (badText good)
+                                    readText good.field (m.json.decoder registry) good.text
+                                        |> Result.mapError (badText registry good)
                                 )
                     )
             , binding = Maybe.map (\_ -> c.binding) routeOf
@@ -271,7 +272,7 @@ make forSend (Client cl) (Call c) =
                                             Ok value
 
                                         Err problem ->
-                                            Err (message.bad (Proto.Error.toString (Proto.Error.BadBinary problem)))
+                                            Err (message.bad (Proto.Error.BadBinary problem))
                                 )
                         )
                     )
@@ -282,34 +283,29 @@ make forSend (Client cl) (Call c) =
             }
 
 
-{-| The response decoder reading the answer as the field `responseBody` names,
-when it names one.
+{-| The response read from an answer's text, as the field `responseBody`
+names when it names one. The response decoder's error comes back as it is, not
+as text inside another decoder's failure, so a registry miss in it can still be
+found.
 -}
-fieldDecoder : Maybe String -> Decoder res -> Decoder res
-fieldDecoder responseBody decoder =
+readText : Maybe String -> Decoder res -> String -> Result Json.Decode.Error res
+readText responseBody decoder text =
     case responseBody of
         Nothing ->
-            decoder
+            Json.Decode.decodeString decoder text
 
         Just key ->
-            Json.Decode.value
-                |> Json.Decode.andThen
-                    (\value ->
-                        case Json.Decode.decodeValue decoder (Json.Encode.object [ ( key, value ) ]) of
-                            Ok decoded ->
-                                Json.Decode.succeed decoded
-
-                            Err error ->
-                                Json.Decode.fail (Json.Decode.errorToString error)
-                    )
+            Json.Decode.decodeString Json.Decode.value text
+                |> Result.andThen (\value -> Json.Decode.decodeValue decoder (Json.Encode.object [ ( key, value ) ]))
 
 
 {-| The error a successful text answer stands for when the response's
-decoder does not read it, keeping the answer.
+decoder does not read it, keeping the answer: its body's problem, an `Any` of
+a type the registry lacks named as `UnregisteredType`.
 -}
-badText : GoodText -> Json.Decode.Error -> Error
-badText good problem =
-    Error.BadResponse Code.Internal (Json.Decode.errorToString problem) (Status.answerOf good.metadata good.raw)
+badText : Registry -> GoodText -> Json.Decode.Error -> Error
+badText registry good problem =
+    Error.BadResponse Code.Internal (Error.Body (Status.bodyProblem registry problem)) (Status.answerOf good.metadata good.raw)
 
 
 {-| Why `sent`, the plan's request or one an application rewrote, must not

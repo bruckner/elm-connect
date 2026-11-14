@@ -1,5 +1,5 @@
 module Rpc.Error exposing
-    ( Error(..), Reason(..), StatusError, Source(..)
+    ( Error(..), Reason(..), Problem(..), StatusError, Source(..)
     , code, message, toString
     )
 
@@ -16,7 +16,7 @@ error has:
         _ ->
             showMessage (Rpc.Error.message error)
 
-@docs Error, Reason, StatusError, Source
+@docs Error, Reason, Problem, StatusError, Source
 
 
 # Reading an error
@@ -43,9 +43,10 @@ import Rpc.Response exposing (Response)
     content type is not the protocol's at all, such as a proxy's HTML page,
     is not the protocol's answer, and is read as a failure is; transcoding
     reads any success as its answer, whatever its content type.
-  - `BadResponse`: the server answered with success, but the body did not
-    decode as the response, or came as another of the protocol's content
-    types than the call reads; the code, then the problem, then the answer.
+  - `BadResponse`: the server answered with success, but the answer could
+    not be read as the response: its body is not the response message, or
+    its content type, framing or status is malformed
+    ([`Problem`](#Problem)); the code, then the problem, then the answer.
     The code is the runtime's: `Internal`, or `Unimplemented` for a unary
     gRPC-Web answer that carried no message or more than one.
   - `NoAnswer`: nothing came back, nothing was sent, or what came back was
@@ -72,7 +73,7 @@ found in an answer that was read is a `BadResponse`.
 type Error
     = RpcStatus StatusError Response
     | HttpStatus Response
-    | BadResponse Code String Response
+    | BadResponse Code Problem Response
     | NoAnswer Reason
 
 
@@ -119,6 +120,33 @@ type Reason
     | RequestTooLarge { limit : Int, size : Int }
     | ResponseTooLarge { limit : Int, size : Int }
     | BadAny Proto.Error.Error
+
+
+{-| Why a successful answer could not be read as the response:
+
+  - `Body`: its body is not the response message, as the method's codec
+    reads it: proto3 JSON that is not the message (`BadJson`, elm/json's
+    error, whose path locates the failure), an `Any` in it of a type the
+    client's registry has no entry for (`UnregisteredType`, with its type
+    URL; [`Rpc.Client.withRegistry`](Rpc-Client#withRegistry) fixes it), or
+    protobuf binary that is not the message (`BadBinary`, the report of
+    where and why). [`Proto.Error.toString`](Proto-Error#toString)
+    describes one.
+  - `Envelope`: what carries the body is malformed, described here: a
+    content type of the protocol's that the call does not read (a Connect
+    JSON call answered as `application/proto`), or a gRPC-Web answer with
+    no trailers, frames that do not parse, a status that is not a number,
+    status 0 with no message or more than one, or a
+    `grpc-status-details-bin` trailer that is not base64.
+
+The constructors are fixed: a new way an answer's framing can be wrong is
+an `Envelope`'s text, and a new way a body can fail is the `Proto.Error`
+a `Body` holds.
+
+-}
+type Problem
+    = Body Proto.Error.Error
+    | Envelope String
 
 
 {-| A status the server stated: its code, its message (which may be empty), its
@@ -264,7 +292,9 @@ code error =
 
   - `RpcStatus`: the server's, which may be empty.
   - `HttpStatus`: the status text, or `HTTP <status>` when there is none.
-  - `BadResponse`: `bad response body: <problem>`. elm/json's problem quotes
+  - `BadResponse`: `bad response body: <problem>` for a `Body` problem,
+    described by [`Proto.Error.toString`](Proto-Error#toString), and
+    `bad response: <problem>` for an `Envelope`. elm/json's problem quotes
     the JSON it rejected, which can be the whole response and hold data the
     application never shows, so the message keeps its first 300 characters,
     then `…`; the whole problem stays in the error.
@@ -296,8 +326,11 @@ message error =
             else
                 answer.statusText
 
-        BadResponse _ problem _ ->
-            "bad response body: " ++ excerpt problem
+        BadResponse _ (Body problem) _ ->
+            "bad response body: " ++ excerpt (Proto.Error.toString problem)
+
+        BadResponse _ (Envelope problem) _ ->
+            "bad response: " ++ excerpt problem
 
         NoAnswer Timeout ->
             "timeout"

@@ -376,7 +376,7 @@ viewError error =
             section [ class "error" ]
                 [ h2 [] [ text (Rpc.Code.toString (Rpc.Error.code error)) ]
                 , p [] [ text (Rpc.Error.message error) ]
-                , p [] [ text ("HTTP " ++ String.fromInt answer.statusCode ++ " with a body that is not the response:") ]
+                , p [] [ text ("HTTP " ++ String.fromInt answer.statusCode ++ ", an answer that could not be read as the response:") ]
                 , pre [] [ text (Maybe.withDefault "" (Rpc.Body.toText answer.body)) ]
                 ]
 

@@ -30,6 +30,7 @@ import Bytes exposing (Bytes)
 import Bytes.Encode
 import Http
 import Json.Encode exposing (Value)
+import Proto.Error
 import Proto.Method exposing (Idempotency)
 import Proto.Route exposing (Route)
 import Rpc.Error exposing (Error, Reason)
@@ -151,7 +152,7 @@ the method's decoder does not read it, given why.
 -}
 type alias BytesMessage =
     { bytes : Bytes
-    , bad : String -> Error
+    , bad : Proto.Error.Error -> Error
     }
 
 

@@ -435,9 +435,15 @@ with each one ([install.md](install.md#versions)).
 - `Rpc.Error.Reason` has a new constructor, `BadAny Proto.Error.Error`:
   over JSON, a request holding an `Any` the client's registry cannot
   write is not sent. A `case` on `Reason` needs the branch.
-- `Rpc.Error.BadResponse` carries the code `Rpc.Error.code` gives it
-  first: a pattern `BadResponse problem answer` becomes
-  `BadResponse _ problem answer`.
+- `Rpc.Error.BadResponse` is `BadResponse Code Problem Response`: the
+  code `Rpc.Error.code` gives it comes first, and the problem is an
+  `Rpc.Error.Problem` in place of a `String`, `Body` holding the
+  `Proto.Error.Error` of a body that is not the response (an `Any` of a
+  type the registry lacks is `Body (UnregisteredType url)`) or
+  `Envelope` naming what was malformed around it. A pattern
+  `BadResponse problem answer` becomes `BadResponse _ problem answer`,
+  and code that showed `problem` as text shows `Rpc.Error.message error`
+  instead.
 - `Rpc.Call.withRetry` and `Rpc.Call.withoutRetry` set one call's retry
   policy, and `Rpc.Retry.withDeadline` and `Rpc.Retry.next` are new
   ([calling.md](calling.md#retries)). `next` is given the failed call's

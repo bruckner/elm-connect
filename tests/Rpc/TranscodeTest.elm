@@ -19,7 +19,7 @@ import Rpc.Body
 import Rpc.Call
 import Rpc.Client
 import Rpc.Code exposing (Code(..))
-import Rpc.Error exposing (Error(..), Reason(..), Source(..))
+import Rpc.Error exposing (Error(..), Problem(..), Reason(..), Source(..))
 import Rpc.Internal.Plan
 import Rpc.Protocol
 import Test exposing (Test, describe, test)
@@ -558,10 +558,20 @@ responses =
             \_ ->
                 respond { rule | responseBody = Just (string "title" "title") } (Http.GoodStatus_ (metadata 200 "OK" []) "\"hi\"")
                     |> Expect.equal (Ok "hi")
+        , test "a response body field that does not decode keeps elm/json's error at the field" <|
+            \_ ->
+                case respond { rule | responseBody = Just (string "title" "title") } (Http.GoodStatus_ (metadata 200 "OK" []) "3") of
+                    Err (BadResponse _ (Body (Proto.Error.BadJson problem)) _) ->
+                        Json.Decode.errorToString problem
+                            |> String.startsWith "Problem with the value at json.title:"
+                            |> Expect.equal True
+
+                    other ->
+                        Expect.fail (Debug.toString other)
         , test "an undecodable body is a bad response, the answer kept" <|
             \_ ->
                 case respond rule (Http.GoodStatus_ (metadata 201 "Created" []) "[]") of
-                    Err (BadResponse _ _ answer) ->
+                    Err (BadResponse _ (Body (Proto.Error.BadJson _)) answer) ->
                         ( answer.statusCode, Maybe.withDefault "" (Rpc.Body.toText answer.body) )
                             |> Expect.equal ( 201, "[]" )
 
