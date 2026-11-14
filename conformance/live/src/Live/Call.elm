@@ -521,32 +521,74 @@ encodeResult respond result =
                   )
                 ]
 
-        Err (Rpc.Error.BadResponse code problem answer) ->
-            Encode.object
-                [ ( "badResponse"
-                  , Encode.object
-                        [ ( "code", Encode.string (Rpc.Code.toString code) )
-                        , ( "problem", Encode.string (problemText problem) )
-                        , ( "response", encodeResponse_ answer )
-                        ]
-                  )
-                ]
+        Err ((Rpc.Error.BadBody problem answer) as error) ->
+            badResponse error (Proto.Error.toString problem) answer
 
-        Err (Rpc.Error.NoAnswer reason) ->
-            Encode.object [ ( "noAnswer", Encode.string (reasonToString reason) ) ]
+        Err ((Rpc.Error.BadEnvelope problem answer) as error) ->
+            badResponse error problem answer
+
+        Err ((Rpc.Error.BadMessageCount count answer) as error) ->
+            badResponse error (messageCountText count) answer
+
+        Err (Rpc.Error.ResponseTooLarge { limit, size }) ->
+            noAnswer ("ResponseTooLarge " ++ String.fromInt size ++ " " ++ String.fromInt limit)
+
+        Err Rpc.Error.Timeout ->
+            noAnswer "Timeout"
+
+        Err Rpc.Error.NetworkError ->
+            noAnswer "NetworkError"
+
+        Err (Rpc.Error.BadUrl url) ->
+            noAnswer ("BadUrl " ++ url)
+
+        Err (Rpc.Error.BadHeader name) ->
+            noAnswer ("BadHeader " ++ name)
+
+        Err (Rpc.Error.BadPathValue { field, template }) ->
+            noAnswer ("BadPathValue " ++ field ++ " " ++ template)
+
+        Err (Rpc.Error.RequestTooLarge { limit, size }) ->
+            noAnswer ("RequestTooLarge " ++ String.fromInt size ++ " " ++ String.fromInt limit)
+
+        Err (Rpc.Error.BadAny problem) ->
+            noAnswer ("BadAny " ++ anyProblemText problem)
 
 
-{-| A `BadResponse`'s problem as text: the description of a body that is not
-the response, or what was malformed about the answer.
+{-| An answer that could not be read as the response: its code, what was
+wrong with it, and the answer.
 -}
-problemText : Rpc.Error.Problem -> String
-problemText problem =
-    case problem of
-        Rpc.Error.Body error ->
-            Proto.Error.toString error
+badResponse : Rpc.Error -> String -> Rpc.Response -> Value
+badResponse error problem answer =
+    Encode.object
+        [ ( "badResponse"
+          , Encode.object
+                [ ( "code", Encode.string (Rpc.Code.toString (Rpc.Error.code error)) )
+                , ( "problem", Encode.string problem )
+                , ( "response", encodeResponse_ answer )
+                ]
+          )
+        ]
 
-        Rpc.Error.Envelope text ->
-            text
+
+{-| A call that had no answer, or whose answer was refused unread, as the
+cases name it.
+-}
+noAnswer : String -> Value
+noAnswer reason =
+    Encode.object [ ( "noAnswer", Encode.string reason ) ]
+
+
+{-| A unary gRPC-Web answer's wrong message count, worded as the runtime's
+message words it.
+-}
+messageCountText : Int -> String
+messageCountText count =
+    if count == 0 then
+        "a unary gRPC-Web answer with status 0 and no message"
+
+    else
+        "a unary gRPC-Web answer with status 0 and more than one message"
 
 
 {-| The answer an error was read from: its status and body. The headers are
@@ -588,42 +630,19 @@ sourceToString source =
             "ConnectEndStream"
 
 
-reasonToString : Rpc.Error.Reason -> String
-reasonToString reason =
-    case reason of
-        Rpc.Error.Timeout ->
-            "Timeout"
+{-| A bad `Any`'s problem, by its kind.
+-}
+anyProblemText : Proto.Error.Error -> String
+anyProblemText problem =
+    case problem of
+        Proto.Error.UnregisteredType url ->
+            "UnregisteredType " ++ url
 
-        Rpc.Error.NetworkError ->
-            "NetworkError"
+        Proto.Error.BadBinary binary ->
+            "BadBinary " ++ binary.typeName
 
-        Rpc.Error.BadUrl url ->
-            "BadUrl " ++ url
+        Proto.Error.BadJson _ ->
+            "BadJson"
 
-        Rpc.Error.BadHeader name ->
-            "BadHeader " ++ name
-
-        Rpc.Error.BadPathValue { field, template } ->
-            "BadPathValue " ++ field ++ " " ++ template
-
-        Rpc.Error.RequestTooLarge { limit, size } ->
-            "RequestTooLarge " ++ String.fromInt size ++ " " ++ String.fromInt limit
-
-        Rpc.Error.ResponseTooLarge { limit, size } ->
-            "ResponseTooLarge " ++ String.fromInt size ++ " " ++ String.fromInt limit
-
-        Rpc.Error.BadAny problem ->
-            "BadAny "
-                ++ (case problem of
-                        Proto.Error.UnregisteredType url ->
-                            "UnregisteredType " ++ url
-
-                        Proto.Error.BadBinary binary ->
-                            "BadBinary " ++ binary.typeName
-
-                        Proto.Error.BadJson _ ->
-                            "BadJson"
-
-                        Proto.Error.TypeMismatch { expected } ->
-                            "TypeMismatch " ++ expected
-                   )
+        Proto.Error.TypeMismatch { expected } ->
+            "TypeMismatch " ++ expected

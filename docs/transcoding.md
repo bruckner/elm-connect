@@ -32,7 +32,7 @@ A path value must match its variable's template as `google/api/http.proto`
 defines it, and one that cannot, an empty one or `notes/a/b` for
 `{name=notes/*}`, is not sent; nor is one holding a surrogate without
 its pair, which no URL can carry: the call fails with
-`NoAnswer (BadPathValue { field, template })` naming the field, while
+`BadPathValue { field, template }` naming the field, while
 `Rpc.request` still builds the URL it would have used.
 
 The two kinds of body leave the path's fields in or out. `body: "*"`
@@ -157,7 +157,7 @@ defaults):
 A server that wraps responses in an envelope of its own (grpc-gateway's
 `runtime.WithForwardResponseRewriter`) sends something that is no
 longer the response message: the client cannot read it, and the call
-fails with `BadResponse`. Read such an answer through the pure halves
+fails with `BadBody`. Read such an answer through the pure halves
 ([calling.md](calling.md#the-pure-halves)), or unwrap it on the server.
 
 ## Errors

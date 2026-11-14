@@ -1,6 +1,6 @@
 module Rpc.Error exposing
-    ( Error(..), Reason(..), Problem(..), StatusError, Source(..)
-    , code, message, toString
+    ( Error(..), StatusError, Source(..)
+    , code, message, toString, response
     )
 
 {-| Why a call failed: what [`Rpc.task`](Rpc#task), [`Rpc.send`](Rpc#send) and
@@ -16,12 +16,12 @@ error has:
         _ ->
             showMessage (Rpc.Error.message error)
 
-@docs Error, Reason, Problem, StatusError, Source
+@docs Error, StatusError, Source
 
 
 # Reading an error
 
-@docs code, message, toString
+@docs code, message, toString, response
 
 -}
 
@@ -32,7 +32,10 @@ import Rpc.Code as Code exposing (Code)
 import Rpc.Response exposing (Response)
 
 
-{-| Why a call failed, by what came back:
+{-| Why a call failed. Each constructor is one way, in four groups.
+
+
+## The server answered
 
   - `RpcStatus`: the server stated an RPC status, in a Connect error body, a
     `google.rpc.Status` body or the `grpc-status` headers
@@ -43,110 +46,94 @@ import Rpc.Response exposing (Response)
     content type is not the protocol's at all, such as a proxy's HTML page,
     is not the protocol's answer, and is read as a failure is; transcoding
     reads any success as its answer, whatever its content type.
-  - `BadResponse`: the server answered with success, but the answer could
-    not be read as the response: its body is not the response message, or
-    its content type, framing or status is malformed
-    ([`Problem`](#Problem)); the code, then the problem, then the answer.
-    The code is the runtime's: `Internal`, or `Unimplemented` for a unary
-    gRPC-Web answer that carried no message or more than one.
-  - `NoAnswer`: nothing came back, nothing was sent, or what came back was
-    refused unread ([`Reason`](#Reason)).
 
-The [`Response`](Rpc-Response#Response) is kept whenever there was an answer,
-so an error in a shape the runtime does not read, or a body that drifted from
-the schema, can still be read:
+
+## An answer arrived but could not be read
+
+  - `BadBody`: a successful answer whose body is not the response message,
+    as the method's codec reads it: proto3 JSON that is not the message
+    (`BadJson`, elm/json's error, whose path locates the failure), an `Any`
+    in it of a type the client's registry has no entry for
+    (`UnregisteredType`, with its type URL;
+    [`Rpc.Client.withRegistry`](Rpc-Client#withRegistry) fixes it), or
+    protobuf binary that is not the message (`BadBinary`, the report of
+    where and why). [`Proto.Error.toString`](Proto-Error#toString)
+    describes one.
+  - `BadEnvelope`: what carries a successful answer's body is malformed,
+    described here: a content type of the protocol's that the call does not
+    read (a Connect JSON call answered as `application/proto`), or a
+    gRPC-Web answer with no trailers, frames that do not parse, a status
+    that is not a number, or a `grpc-status-details-bin` trailer that is
+    not base64.
+  - `BadMessageCount`: a unary gRPC-Web answer with status 0 and no message
+    or more than one; the number of messages it carried.
+  - `ResponseTooLarge`: a successful answer's body was longer, in bytes
+    (`size`), than the protocol reads (`limit`,
+    [`withReadMaxBytes`](Rpc-Protocol#withReadMaxBytes)). The body was
+    dropped without decoding, so the error keeps no `Response`.
+
+
+## The request was sent and nothing usable came back
+
+  - `Timeout`: the call's timeout passed first.
+  - `NetworkError`: the request failed on the way, as when the server is
+    unreachable or a browser's CORS check refused the answer.
+
+
+## The request was never sent
+
+  - `BadUrl`: the URL the call would be sent to cannot be: a `baseUrl` holding
+    `?` or `#`, or one the browser refuses.
+  - `BadHeader`: a header, named here, that a request cannot carry: its
+    name is not an HTTP token, or its value holds NUL, CR, LF or a character
+    above U+00FF.
+  - `BadPathValue`: over transcoding, a request field the path holds
+    (`field`, its JSON names joined with `.`) whose value the variable's
+    `template` cannot match, such as `""` or `notes/a/b` for
+    `{name=notes/*}`, or which holds a surrogate without its pair, as text
+    cut inside a character by `String.left` can.
+  - `RequestTooLarge`: the request message, as JSON in UTF-8 or as protobuf
+    binary, was longer in bytes (`size`) than the protocol sends (`limit`,
+    [`withWriteMaxBytes`](Rpc-Protocol#withWriteMaxBytes)).
+  - `BadAny`: over JSON, the request holds a
+    [`google.protobuf.Any`](Proto-Any) the client's registry cannot write
+    as JSON, for the [`Proto.Error`](Proto-Error#Error) given:
+    `UnregisteredType`, which the client's registry fixes
+    ([`Rpc.Client.withRegistry`](Rpc-Client#withRegistry)), or the `BadBinary` of an
+    `Any` whose binary is not its type's message.
+
+The [`Response`](Rpc-Response#Response) is kept whenever there was an answer
+([`response`](#response)), so an error in a shape the runtime does not read,
+or a body that drifted from the schema, can still be read:
 
     case error of
-        Rpc.Error.HttpStatus response ->
-            Rpc.Body.toText response.body
+        Rpc.Error.HttpStatus answer ->
+            Rpc.Body.toText answer.body
                 |> Maybe.withDefault ""
                 |> myDecoder
 
         _ ->
             Err (Rpc.Error.toString error)
 
-The constructors are fixed: a failure before an answer, or an answer refused
-before it was read, is one of the [`Reason`](#Reason) constructors, and one
-found in an answer that was read is a `BadResponse`.
-
 -}
 type Error
-    = RpcStatus StatusError Response
+    = -- The server answered.
+      RpcStatus StatusError Response
     | HttpStatus Response
-    | BadResponse Code Problem Response
-    | NoAnswer Reason
-
-
-{-| Why no answer came, or none was read:
-
-  - `Timeout`: the call's timeout passed first.
-  - `NetworkError`: the request failed on the way, as when the server is
-    unreachable or a browser's CORS check refused the answer.
-  - `BadUrl`: the URL the call would be sent to cannot be: a `baseUrl` holding
-    `?` or `#`, or one the browser refuses. Nothing was sent.
-  - `BadHeader`: a header, named here, that a request cannot carry: its
-    name is not an HTTP token, or its value holds NUL, CR, LF or a character
-    above U+00FF. Nothing was sent.
-  - `BadPathValue`: over transcoding, a request field the path holds
-    (`field`, its JSON names joined with `.`) whose value the variable's
-    `template` cannot match, such as `""` or `notes/a/b` for
-    `{name=notes/*}`, or which holds a surrogate without its pair, as text
-    cut inside a character by `String.left` can. Nothing was sent.
-  - `RequestTooLarge`: the request message, as JSON in UTF-8 or as protobuf
-    binary, was longer in bytes (`size`) than the protocol sends (`limit`,
-    [`withWriteMaxBytes`](Rpc-Protocol#withWriteMaxBytes)). Nothing was
-    sent.
-  - `ResponseTooLarge`: a successful answer's body was longer, in bytes
-    (`size`), than the protocol reads (`limit`,
-    [`withReadMaxBytes`](Rpc-Protocol#withReadMaxBytes)). The body was
-    dropped without decoding, so the error keeps no `Response`.
-  - `BadAny`: over JSON, the request holds a
-    [`google.protobuf.Any`](Proto-Any) the client's registry cannot write
-    as JSON, for the [`Proto.Error`](Proto-Error#Error) given:
-    `UnregisteredType`, which the client's registry fixes
-    ([`Rpc.Client.withRegistry`](Rpc-Client#withRegistry)), or the `BadBinary` of an
-    `Any` whose binary is not its type's message. Nothing was sent.
-
-These are every way a request can fail before an answer is read, and the type
-is fixed.
-
--}
-type Reason
-    = Timeout
+      -- An answer arrived but could not be read.
+    | BadBody Proto.Error.Error Response
+    | BadEnvelope String Response
+    | BadMessageCount Int Response
+    | ResponseTooLarge { limit : Int, size : Int }
+      -- The request was sent and nothing usable came back.
+    | Timeout
     | NetworkError
+      -- The request was never sent.
     | BadUrl String
     | BadHeader String
     | BadPathValue { field : String, template : String }
     | RequestTooLarge { limit : Int, size : Int }
-    | ResponseTooLarge { limit : Int, size : Int }
     | BadAny Proto.Error.Error
-
-
-{-| Why a successful answer could not be read as the response:
-
-  - `Body`: its body is not the response message, as the method's codec
-    reads it: proto3 JSON that is not the message (`BadJson`, elm/json's
-    error, whose path locates the failure), an `Any` in it of a type the
-    client's registry has no entry for (`UnregisteredType`, with its type
-    URL; [`Rpc.Client.withRegistry`](Rpc-Client#withRegistry) fixes it), or
-    protobuf binary that is not the message (`BadBinary`, the report of
-    where and why). [`Proto.Error.toString`](Proto-Error#toString)
-    describes one.
-  - `Envelope`: what carries the body is malformed, described here: a
-    content type of the protocol's that the call does not read (a Connect
-    JSON call answered as `application/proto`), or a gRPC-Web answer with
-    no trailers, frames that do not parse, a status that is not a number,
-    status 0 with no message or more than one, or a
-    `grpc-status-details-bin` trailer that is not base64.
-
-The constructors are fixed: a new way an answer's framing can be wrong is
-an `Envelope`'s text, and a new way a body can fail is the `Proto.Error`
-a `Body` holds.
-
--}
-type Problem
-    = Body Proto.Error.Error
-    | Envelope String
 
 
 {-| A status the server stated: its code, its message (which may be empty), its
@@ -236,12 +223,12 @@ type Source
   - `HttpStatus`: inferred from the HTTP status by
     [`Rpc.Code.fromHttpStatus`](Rpc-Code#fromHttpStatus), so a 200 that is
     not the protocol's answer is `Unknown`.
-  - `BadResponse`: its own, `Internal` or `Unimplemented` (see
-    [`Error`](#Error)).
-  - `NoAnswer`: a timeout is `DeadlineExceeded`, a network failure
-    `Unavailable`, a bad URL, a bad header or a bad `Any`
-    `Internal`, a bad path value `InvalidArgument`, a request or a
-    response over its limit `ResourceExhausted`.
+  - `BadBody` and `BadEnvelope` are `Internal`, and `BadMessageCount`
+    `Unimplemented`, as connect-es gives them.
+  - A timeout is `DeadlineExceeded`, a network failure `Unavailable`, a bad
+    URL, a bad header or a bad `Any` `Internal`, a bad path value
+    `InvalidArgument`, a request or a response over its limit
+    `ResourceExhausted`.
 
 An `HttpStatus` code follows gRPC's table, so a 404 that carries no status
 reads as `Unimplemented`, not `NotFound`. That is right for Connect, whose
@@ -260,31 +247,37 @@ code error =
         HttpStatus answer ->
             Code.fromHttpStatus answer.statusCode
 
-        BadResponse badCode _ _ ->
-            badCode
+        BadBody _ _ ->
+            Code.Internal
 
-        NoAnswer Timeout ->
+        BadEnvelope _ _ ->
+            Code.Internal
+
+        BadMessageCount _ _ ->
+            Code.Unimplemented
+
+        ResponseTooLarge _ ->
+            Code.ResourceExhausted
+
+        Timeout ->
             Code.DeadlineExceeded
 
-        NoAnswer NetworkError ->
+        NetworkError ->
             Code.Unavailable
 
-        NoAnswer (BadUrl _) ->
+        BadUrl _ ->
             Code.Internal
 
-        NoAnswer (BadHeader _) ->
+        BadHeader _ ->
             Code.Internal
 
-        NoAnswer (BadPathValue _) ->
+        BadPathValue _ ->
             Code.InvalidArgument
 
-        NoAnswer (RequestTooLarge _) ->
+        RequestTooLarge _ ->
             Code.ResourceExhausted
 
-        NoAnswer (ResponseTooLarge _) ->
-            Code.ResourceExhausted
-
-        NoAnswer (BadAny _) ->
+        BadAny _ ->
             Code.Internal
 
 
@@ -292,13 +285,14 @@ code error =
 
   - `RpcStatus`: the server's, which may be empty.
   - `HttpStatus`: the status text, or `HTTP <status>` when there is none.
-  - `BadResponse`: `bad response body: <problem>` for a `Body` problem,
-    described by [`Proto.Error.toString`](Proto-Error#toString), and
-    `bad response: <problem>` for an `Envelope`. elm/json's problem quotes
-    the JSON it rejected, which can be the whole response and hold data the
-    application never shows, so the message keeps its first 300 characters,
-    then `…`; the whole problem stays in the error.
-  - `NoAnswer`: `timeout`, `network error`, `bad URL: <url>`,
+  - `BadBody`: `bad response body: <problem>`, described by
+    [`Proto.Error.toString`](Proto-Error#toString); `BadEnvelope`:
+    `bad response: <problem>`; `BadMessageCount`: `bad response:` and which
+    count it was. elm/json's problem quotes the JSON it rejected, which can
+    be the whole response and hold data the application never shows, so the
+    message keeps its first 300 characters, then `…`; the whole problem
+    stays in the error.
+  - The rest: `timeout`, `network error`, `bad URL: <url>`,
     `invalid header "<name>"`, `path field "<field>" does not match
     <template>`, for a bad `Any` `bad Any:` and
     [`Proto.Error.toString`](Proto-Error#toString)'s text, or,
@@ -326,35 +320,90 @@ message error =
             else
                 answer.statusText
 
-        BadResponse _ (Body problem) _ ->
+        BadBody problem _ ->
             "bad response body: " ++ excerpt (Proto.Error.toString problem)
 
-        BadResponse _ (Envelope problem) _ ->
+        BadEnvelope problem _ ->
             "bad response: " ++ excerpt problem
 
-        NoAnswer Timeout ->
-            "timeout"
+        BadMessageCount count _ ->
+            if count == 0 then
+                "bad response: a unary gRPC-Web answer with status 0 and no message"
 
-        NoAnswer NetworkError ->
-            "network error"
+            else
+                "bad response: a unary gRPC-Web answer with status 0 and more than one message"
 
-        NoAnswer (BadUrl url) ->
-            "bad URL: " ++ printableUrl url
-
-        NoAnswer (BadHeader name) ->
-            "invalid header " ++ Json.Encode.encode 0 (Json.Encode.string name)
-
-        NoAnswer (BadPathValue { field, template }) ->
-            "path field " ++ Json.Encode.encode 0 (Json.Encode.string field) ++ " does not match " ++ template
-
-        NoAnswer (RequestTooLarge { limit, size }) ->
-            "message size " ++ String.fromInt size ++ " is larger than configured writeMaxBytes " ++ String.fromInt limit
-
-        NoAnswer (ResponseTooLarge { limit, size }) ->
+        ResponseTooLarge { limit, size } ->
             "message size " ++ String.fromInt size ++ " is larger than configured readMaxBytes " ++ String.fromInt limit
 
-        NoAnswer (BadAny problem) ->
+        Timeout ->
+            "timeout"
+
+        NetworkError ->
+            "network error"
+
+        BadUrl url ->
+            "bad URL: " ++ printableUrl url
+
+        BadHeader name ->
+            "invalid header " ++ Json.Encode.encode 0 (Json.Encode.string name)
+
+        BadPathValue { field, template } ->
+            "path field " ++ Json.Encode.encode 0 (Json.Encode.string field) ++ " does not match " ++ template
+
+        RequestTooLarge { limit, size } ->
+            "message size " ++ String.fromInt size ++ " is larger than configured writeMaxBytes " ++ String.fromInt limit
+
+        BadAny problem ->
             "bad Any: " ++ Proto.Error.toString problem
+
+
+{-| The answer an error was read from: the [`Response`](Rpc-Response#Response)
+an `RpcStatus`, `HttpStatus`, `BadBody`, `BadEnvelope` or `BadMessageCount`
+keeps, and `Nothing` for every other error, which had no answer or dropped it
+unread.
+-}
+response : Error -> Maybe Response
+response error =
+    case error of
+        RpcStatus _ answer ->
+            Just answer
+
+        HttpStatus answer ->
+            Just answer
+
+        BadBody _ answer ->
+            Just answer
+
+        BadEnvelope _ answer ->
+            Just answer
+
+        BadMessageCount _ answer ->
+            Just answer
+
+        ResponseTooLarge _ ->
+            Nothing
+
+        Timeout ->
+            Nothing
+
+        NetworkError ->
+            Nothing
+
+        BadUrl _ ->
+            Nothing
+
+        BadHeader _ ->
+            Nothing
+
+        BadPathValue _ ->
+            Nothing
+
+        RequestTooLarge _ ->
+            Nothing
+
+        BadAny _ ->
+            Nothing
 
 
 {-| The first 300 characters of a text, and `…` when there were more.

@@ -69,7 +69,7 @@ type alias Call codec req res =
 They are held to the rule for the client's headers
 ([`Rpc.Client.withHeaders`](Rpc-Client#withHeaders)): a call with a name that is not an HTTP token,
 or a value holding NUL, CR, LF or a character above U+00FF, is not sent, and
-fails with `NoAnswer (BadHeader name)`.
+fails with `BadHeader name`.
 
 -}
 withHeaders : List ( String, String ) -> Call codec req res -> Call codec req res

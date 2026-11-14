@@ -12,7 +12,7 @@ import Json.Encode exposing (Value)
 import Proto.Internal.Percent as Percent
 import Proto.Route exposing (Route)
 import Rpc.Body as Body
-import Rpc.Error exposing (Error, Reason)
+import Rpc.Error exposing (Error)
 import Rpc.Internal.Connect as Connect
 import Rpc.Internal.Http as Internal
 import Rpc.Internal.Protocol exposing (GoodText, Options, Settings)
@@ -85,7 +85,7 @@ transcodeTimeout routed =
 
 {-| Transcoding's message.
 -}
-transcodeMessage : (Options -> String -> Maybe Reason) -> Options -> Maybe String -> Http.Response String -> Result Error GoodText
+transcodeMessage : (Options -> String -> Maybe Error) -> Options -> Maybe String -> Http.Response String -> Result Error GoodText
 transcodeMessage overRead options responseBody answer =
     transcodeRead responseBody answer |> Result.andThen (Internal.withinText overRead options)
 

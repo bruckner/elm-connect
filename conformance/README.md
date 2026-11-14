@@ -516,7 +516,7 @@ above),
 `BadHeader <name>`, `RequestTooLarge <size> <limit>`,
 `ResponseTooLarge <size> <limit>`, `BadPathValue <field> <template>`,
 `BadAny <problem>`) for an
-`Rpc.Error.NoAnswer`, `{"canceled": true}` for a call
+`Rpc.Error` that kept no answer, `{"canceled": true}` for a call
 the runner withdrew with `Rpc.cancel`, and `{"runner": <why>}` for an
 envelope the runner could not send: one that does not decode, an unknown
 method, a binding the method lacks, or a codec the entry has no call
@@ -666,7 +666,7 @@ content type), a timeout, and the body's trailers in the trace.
 The suite selects 85 test cases. `known-failing-grpcweb.txt` lists those
 the runtime fails whichever way it sends, none today: a unary answer
 with status 0 and no message or two, which the suite wants
-`unimplemented`, is a `BadResponse` whose code is `Unimplemented`.
+`unimplemented`, is a `BadMessageCount`, whose code is `Unimplemented`.
 The halves run adds `known-failing-grpcweb-halves.txt`: twelve
 cases asserting trailers, which a gRPC-Web answer carries in its body,
 where an application reading the elm/http response itself cannot see

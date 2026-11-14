@@ -30,7 +30,7 @@ import Proto.Method exposing (Idempotency(..))
 import Proto.Route exposing (Route)
 import Rpc.Body as Body exposing (Body)
 import Rpc.Code as Code
-import Rpc.Error as Error exposing (Error, Reason)
+import Rpc.Error as Error exposing (Error)
 import Rpc.Internal.Http as Internal
 import Rpc.Internal.Protocol exposing (BytesMessage, GoodBytes, GoodText, Options, Settings)
 import Rpc.Internal.Status as Status
@@ -188,14 +188,14 @@ connectTimeout _ =
 
 {-| Connect's message of a JSON answer.
 -}
-connectMessage : (Options -> String -> Maybe Reason) -> Options -> Maybe String -> Http.Response String -> Result Error GoodText
+connectMessage : (Options -> String -> Maybe Error) -> Options -> Maybe String -> Http.Response String -> Result Error GoodText
 connectMessage overRead options _ answer =
     connectRead answer |> Result.andThen (Internal.withinText overRead options)
 
 
 {-| Connect's message of a protobuf binary answer.
 -}
-connectProtoMessage : (Options -> Bytes -> Maybe Reason) -> Options -> String -> Http.Response Bytes -> ( Maybe Http.Metadata, Result Error BytesMessage )
+connectProtoMessage : (Options -> Bytes -> Maybe Error) -> Options -> String -> Http.Response Bytes -> ( Maybe Http.Metadata, Result Error BytesMessage )
 connectProtoMessage overRead options _ answer =
     Internal.bytesMessage overRead options (connectProtoRead answer)
 
@@ -216,7 +216,7 @@ connectRead answer =
                         Ok { metadata = metadata, raw = raw, text = raw, field = Nothing }
 
                     Unaccepted problem ->
-                        Err (Error.BadResponse Code.Internal (Error.Envelope problem) (Status.answerOf metadata raw))
+                        Err (Error.BadEnvelope problem (Status.answerOf metadata raw))
 
                     Foreign ->
                         Err (Status.failure metadata raw)
@@ -243,7 +243,7 @@ connectProtoRead answer =
                         Ok { metadata = metadata, raw = raw, message = raw }
 
                     Unaccepted problem ->
-                        Err (Error.BadResponse Code.Internal (Error.Envelope problem) (Internal.bytesAnswer metadata raw))
+                        Err (Error.BadEnvelope problem (Internal.bytesAnswer metadata raw))
 
                     Foreign ->
                         Err (Status.bytesFailure answer)
@@ -275,7 +275,7 @@ the ones this call reads (`accepted`):
   - `Accepted`: one of `accepted`, or none at all, since a proxy may drop
     the header; the body is the answer.
   - `Unaccepted`: another of the protocol's types, a codec the call does not
-    read; the problem names both, and the answer is a `BadResponse`.
+    read; the problem names both, and the answer is a `BadEnvelope`.
   - `Foreign`: not the protocol's at all, as a proxy's HTML page is. The
     protocol's server did not send it, so it is read as a failure, as an
     answer of another status is: a status it carries is the error, and

@@ -164,7 +164,7 @@ cannot help. The runtime's loop and `Rpc.Retry.next` both read it.
 retryable : Error -> Maybe Code
 retryable error =
     case error of
-        Rpc.Error.NoAnswer (Rpc.Error.BadUrl _) ->
+        Rpc.Error.BadUrl _ ->
             -- Nothing was sent, and nothing would change.
             Nothing
 

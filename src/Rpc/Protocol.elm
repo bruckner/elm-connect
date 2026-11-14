@@ -226,7 +226,7 @@ withMaxGetUrl limit (Internal.Protocol p) =
 
 {-| Refuse a successful answer whose body (over gRPC-Web, its response
 message) is longer than this many bytes, before decoding it: the call fails
-with [`NoAnswer (ResponseTooLarge { limit, size })`](Rpc-Error#Reason), whose code
+with [`ResponseTooLarge { limit, size }`](Rpc-Error#Error), whose code
 is `ResourceExhausted`. A protocol starts with no limit.
 -}
 withReadMaxBytes : Int -> Protocol codec -> Protocol codec
@@ -250,7 +250,7 @@ withReadMaxBytes limit (Internal.Protocol p) =
 
 {-| Refuse to send a call whose request message is longer than this many
 bytes, as its JSON in UTF-8 or its protobuf binary: the call fails with
-[`NoAnswer (RequestTooLarge { limit, size })`](Rpc-Error#Reason), whose code
+[`RequestTooLarge { limit, size }`](Rpc-Error#Error), whose code
 is `ResourceExhausted`, and nothing is sent. A protocol starts with no limit.
 -}
 withWriteMaxBytes : Int -> Protocol codec -> Protocol codec

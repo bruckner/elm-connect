@@ -52,7 +52,7 @@ import Json.Encode exposing (Value)
 import Proto.Bytes
 import Rpc.Body
 import Rpc.Code as Code
-import Rpc.Error as Error exposing (Error, Reason)
+import Rpc.Error as Error exposing (Error)
 import Rpc.Internal.Protocol exposing (BytesMessage, GoodBytes, GoodText, Options)
 import Rpc.Request exposing (Request)
 import Rpc.Response exposing (Response)
@@ -390,7 +390,7 @@ width =
 {-| Whether a request's JSON, as UTF-8, is over the write limit. Installed by
 `withWriteMaxBytes`; the JSON is encoded again only then.
 -}
-jsonTooLarge : Options -> (() -> Value) -> Maybe Reason
+jsonTooLarge : Options -> (() -> Value) -> Maybe Error
 jsonTooLarge options json =
     options.writeMaxBytes
         |> Maybe.andThen
@@ -402,7 +402,7 @@ jsonTooLarge options json =
 
 {-| Whether a request's protobuf binary is over the write limit.
 -}
-bytesTooLarge : (Bytes -> Int) -> Options -> (() -> Bytes.Encode.Encoder) -> Maybe Reason
+bytesTooLarge : (Bytes -> Int) -> Options -> (() -> Bytes.Encode.Encoder) -> Maybe Error
 bytesTooLarge width_ options binary =
     options.writeMaxBytes
         |> Maybe.andThen
@@ -422,7 +422,7 @@ bytesTooLarge width_ options binary =
 {-| No limit: what a protocol's `tooLarge` and `overRead` are until a
 modifier installs a limit.
 -}
-textUnlimited : Options -> a -> Maybe Reason
+textUnlimited : Options -> a -> Maybe Error
 textUnlimited _ _ =
     Nothing
 
@@ -430,7 +430,7 @@ textUnlimited _ _ =
 {-| No limit, for a binary protocol. Apart from `textUnlimited` only so that
 each protocol's field has its own type.
 -}
-bytesUnlimited : a -> Options -> b -> Maybe Reason
+bytesUnlimited : a -> Options -> b -> Maybe Error
 bytesUnlimited _ _ _ =
     Nothing
 
@@ -441,11 +441,11 @@ bytesUnlimited _ _ _ =
 
 {-| A successful text answer, unless it is over the read limit.
 -}
-withinText : (Options -> String -> Maybe Reason) -> Options -> GoodText -> Result Error GoodText
+withinText : (Options -> String -> Maybe Error) -> Options -> GoodText -> Result Error GoodText
 withinText overRead options good =
     case overRead options good.raw of
         Just reason ->
-            Err (Error.NoAnswer reason)
+            Err reason
 
         Nothing ->
             Ok good
@@ -453,7 +453,7 @@ withinText overRead options good =
 
 {-| A successful binary answer's message, unless it is over the read limit.
 -}
-bytesMessage : (Options -> Bytes -> Maybe Reason) -> Options -> ( Maybe Http.Metadata, Result Error GoodBytes ) -> ( Maybe Http.Metadata, Result Error BytesMessage )
+bytesMessage : (Options -> Bytes -> Maybe Error) -> Options -> ( Maybe Http.Metadata, Result Error GoodBytes ) -> ( Maybe Http.Metadata, Result Error BytesMessage )
 bytesMessage overRead options ( metadata, read ) =
     ( metadata
     , read
@@ -461,12 +461,12 @@ bytesMessage overRead options ( metadata, read ) =
             (\good ->
                 case overRead options good.message of
                     Just reason ->
-                        Err (Error.NoAnswer reason)
+                        Err reason
 
                     Nothing ->
                         Ok
                             { bytes = good.message
-                            , bad = \problem -> Error.BadResponse Code.Internal (Error.Body problem) (bytesAnswer good.metadata good.raw)
+                            , bad = \problem -> Error.BadBody problem (bytesAnswer good.metadata good.raw)
                             }
             )
     )
@@ -488,7 +488,7 @@ bytesAnswer metadata raw =
 the browser decoded it, written back as UTF-8. Installed by
 `withReadMaxBytes`.
 -}
-textOverRead : Options -> String -> Maybe Reason
+textOverRead : Options -> String -> Maybe Error
 textOverRead options raw =
     options.readMaxBytes
         |> Maybe.andThen
@@ -500,7 +500,7 @@ textOverRead options raw =
 
 {-| Whether a successful binary answer's message is over the read limit.
 -}
-bytesOverRead : (Bytes -> Int) -> Options -> Bytes -> Maybe Reason
+bytesOverRead : (Bytes -> Int) -> Options -> Bytes -> Maybe Error
 bytesOverRead width_ options message =
     options.readMaxBytes
         |> Maybe.andThen

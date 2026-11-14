@@ -28,7 +28,7 @@ import Proto.Error
 import Proto.Internal.Percent as Percent
 import Rpc.Body
 import Rpc.Code as Code
-import Rpc.Error as Error exposing (Error, Reason)
+import Rpc.Error as Error exposing (Error)
 import Rpc.Internal.Connect as Connect
 import Rpc.Internal.Http as Internal
 import Rpc.Internal.Protocol exposing (BytesMessage, GoodBytes, Options, Settings)
@@ -74,7 +74,7 @@ grpcWebTimeout =
 
 {-| gRPC-Web's message: its framing and trailers (`read`).
 -}
-grpcWebMessage : (Options -> Bytes -> Maybe Reason) -> Options -> String -> Http.Response Bytes -> ( Maybe Http.Metadata, Result Error BytesMessage )
+grpcWebMessage : (Options -> Bytes -> Maybe Error) -> Options -> String -> Http.Response Bytes -> ( Maybe Http.Metadata, Result Error BytesMessage )
 grpcWebMessage overRead options _ answer =
     Internal.bytesMessage overRead options (read Status.otherFailure answer)
 
@@ -123,7 +123,7 @@ over its headers. Status 0 with one message is the response's bytes, which
 the method's binary codec decodes; any other status is the error it states,
 with its details. A 200 must come as `application/grpc-web` or
 `application/grpc-web+proto`, or with no content type; another gRPC-Web type
-(`+json`, `-text`) is a `BadResponse`, and a type that is not gRPC-Web's at
+(`+json`, `-text`) is a `BadEnvelope`, and a type that is not gRPC-Web's at
 all makes the answer one `failure` reads (`Connect.label`). Any other answer
 is the error `failure` reads from it as text, as every protocol's error is.
 -}
@@ -144,7 +144,7 @@ read failure answer =
                             fromFrames metadata raw
 
                     Connect.Unaccepted problem ->
-                        ( Just metadata, Err (Error.BadResponse Code.Internal (Error.Envelope problem) (answerOf metadata raw)) )
+                        ( Just metadata, Err (Error.BadEnvelope problem (answerOf metadata raw)) )
 
                     Connect.Foreign ->
                         ( Just metadata, Err (failure (Http.GoodStatus_ metadata (Internal.bytesText raw))) )
@@ -178,10 +178,10 @@ fromFrames metadata raw =
             )
 
         Just ( _, Nothing ) ->
-            ( Just metadata, Err (Error.BadResponse Code.Internal (Error.Envelope "a gRPC-Web answer without trailers") (answerOf metadata raw)) )
+            ( Just metadata, Err (Error.BadEnvelope "a gRPC-Web answer without trailers" (answerOf metadata raw)) )
 
         Nothing ->
-            ( Just metadata, Err (Error.BadResponse Code.Internal (Error.Envelope "a gRPC-Web body that is not a sequence of uncompressed frames") (answerOf metadata raw)) )
+            ( Just metadata, Err (Error.BadEnvelope "a gRPC-Web body that is not a sequence of uncompressed frames" (answerOf metadata raw)) )
 
 
 {-| The result a status (`status`, names lowercased) and the message frames
@@ -198,10 +198,10 @@ settle source metadata raw status messages =
             Ok { metadata = metadata, raw = raw, message = message }
 
         ( Just (Just 0), [] ) ->
-            Err (Error.BadResponse Code.Unimplemented (Error.Envelope "a unary gRPC-Web answer with status 0 and no message") answer)
+            Err (Error.BadMessageCount 0 answer)
 
         ( Just (Just 0), _ ) ->
-            Err (Error.BadResponse Code.Unimplemented (Error.Envelope "a unary gRPC-Web answer with status 0 and more than one message") answer)
+            Err (Error.BadMessageCount (List.length messages) answer)
 
         ( Just (Just number), _ ) ->
             case Dict.get "grpc-status-details-bin" status |> Maybe.map (String.trim >> Proto.Bytes.fromBase64) of
@@ -210,7 +210,7 @@ settle source metadata raw status messages =
                     -- is: text that is not base64 is a malformed answer, not
                     -- bad protobuf, and is reported as grpc-go and connect-go
                     -- report it, with no bytes to blame.
-                    Err (Error.BadResponse Code.Internal (Error.Envelope "a grpc-status-details-bin trailer that is not base64") answer)
+                    Err (Error.BadEnvelope "a grpc-status-details-bin trailer that is not base64" answer)
 
                 encoded ->
                     let
@@ -257,7 +257,7 @@ settle source metadata raw status messages =
                         )
 
         _ ->
-            Err (Error.BadResponse Code.Internal (Error.Envelope "a gRPC-Web answer without a numeric grpc-status") answer)
+            Err (Error.BadEnvelope "a gRPC-Web answer without a numeric grpc-status" answer)
 
 
 {-| A `google.rpc.Status`: its code (field 1), message (2) and details (3,
