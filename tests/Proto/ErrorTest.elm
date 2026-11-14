@@ -25,11 +25,11 @@ suite =
                     |> Expect.equal "Not a a.B in protobuf binary: a field has wire type 7, which proto3 does not use, at byte 0."
         , test "every reason has its own text" <|
             \_ ->
-                [ Truncated, LengthOverrun, InvalidTag, InvalidWireType 3, MalformedVarint, IntOutOfRange, InvalidUtf8, Unlocated ]
+                [ Truncated, LengthOverrun, InvalidTag, InvalidWireType 3, MalformedVarint, IntOutOfRange, InvalidUtf8, Unlocated, MissingRequired 1, TooDeep ]
                     |> List.map (\reason -> Error.toString (BadBinary { typeName = "a.B", reason = reason, path = [], offset = 0 }))
                     |> unique
                     |> List.length
-                    |> Expect.equal 8
+                    |> Expect.equal 10
         , test "JSON is elm/json's text" <|
             \_ ->
                 case Json.Decode.decodeString Json.Decode.int "true" of

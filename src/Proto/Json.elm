@@ -2512,7 +2512,9 @@ binary that is not that message, with its [`BadBinary`](Proto-Error#Error);
 an `Any` the message holds fails the same ways, at any depth, named by its
 own type. An `Any` held as JSON alone, which a
 [lenient](Proto-Registry#lenient) registry reads, is written as that JSON,
-with no registry.
+as [`Proto.Any.toJson`](Proto-Any#toJson) gives it: read through the
+registry's entry for its type first, and refused as `UnregisteredType` by a
+strict registry without one.
 -}
 encodeAnyWith : Registry -> Any -> Result Error Value
 encodeAnyWith registry ((InternalAny.Any url _) as value) =

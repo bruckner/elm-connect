@@ -256,7 +256,7 @@ fn route_literal(
             within = path_within(index, binding);
             "this path"
         }
-        E::BodyField { field, .. } => {
+        E::BodyField { field, .. } | E::GetBody { body: field, .. } => {
             within.extend(["body".to_owned(), quoted(field)]);
             "this body"
         }

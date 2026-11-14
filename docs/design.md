@@ -2054,7 +2054,7 @@ What each state does, whatever registry it is written through:
 | state | written as proto3 JSON | written as protobuf binary | `unpack` | `Proto.Any.bytes` |
 |---|---|---|---|---|
 | binary | converted through the registry; `UnregisteredType` for a type it lacks | the binary | from the binary | `Just` |
-| JSON alone | the JSON, as read, no registry | the type URL alone: the message is lost | the message's JSON decoder, an `Any` inside it read leniently | `Nothing` |
+| JSON alone | the JSON, as read, once the registry's entry for its type reads it as that message; with no entry, unread by a lenient registry and `UnregisteredType` from a strict one | the type URL alone: the message is lost | the message's JSON decoder, an `Any` inside it read leniently | `Nothing` |
 
 The binary write of a JSON-alone `Any` is lossy, which is the accepted
 cost: over JSON nothing is lost, and over binary a program tests
@@ -2072,6 +2072,23 @@ in the other's form). Under a lenient client registry a
 JSON-alone `Any`, and the trace names no problem for it. A program that
 reads every `Any` through `Proto.Registry.lenient Proto.Registry.empty`
 reaches no registry entry and none of their binary codecs.
+
+*2026-11-13:* a JSON-alone `Any` written as JSON answers to the
+registry it is written through, as one holding binary does. A strict
+registry with no entry for its type refuses it, as `UnregisteredType`;
+one with an entry reads the JSON through the entry first, so a JSON
+that is not its message fails as `BadJson`, and an `Any` inside it of a
+type a strict registry lacks as that `UnregisteredType`. The JSON is
+then written as held, not converted back from the read, which costs
+the entry's JSON read and a binary write it throws away rather than
+also a binary read and a JSON write, and gives JSON the type's codec
+has just accepted. A lenient registry with no entry writes it unread.
+Before, every registry wrote it unread, so a JSON-alone `Any` read
+from an unchecked source went out through a strict one unchecked.
+`Proto.Json.encodeAnyWith` and generated `encode…With` write an `Any`
+through `toJson`, so a request does the same. `Proto.Any.tryUnpack`
+takes no registry: it reads the JSON with the typed value's own
+decoder, which is the same check.
 
 The JSON-alone state is the one exception to an `Any` having one shape
 (decisions.md: An Any has one shape, so `==` is exact). `==` compares
@@ -2470,6 +2487,13 @@ descriptor; the runtime never parses a template.
   shape) is allowed: the field is in both, the body is sent whole, and
   the server takes the path's value. That is the one way a field can be
   in both, so "a field in both path and body" is not a diagnostic.
+- A `get` rule, or a `custom` one of kind `GET` or `HEAD` in any case,
+  has no `body` (`route::get_body` otherwise, `routes_invalid` case):
+  `google/api/http.proto` maps a body for the methods that allow one,
+  and XHR and fetch drop a GET's or a HEAD's body unsent, so its fields
+  would silently never reach the server. A `delete` may have one:
+  http.proto does not forbid it, a browser sends it, and AIP-135's
+  advice against it is a design rule, not the mapping's.
 - `response_body` is any top-level field of the response
   (`route::response_body` otherwise).
 - A request of a well-known type other than `Empty` has no fields of
@@ -2498,7 +2522,7 @@ connectProto : Protocol Proto             -- Connect, protobuf binary (applicati
 transcode : Protocol Json                 -- google.api.http REST; the implicit route without a rule
 grpcWeb : Protocol Proto                  -- gRPC-Web, unary, protobuf binary (application/grpc-web+proto)
 withConnectGet : Protocol codec -> Protocol codec      -- Connect: NO_SIDE_EFFECTS as GET; others unchanged
-withMaxGetUrl, withReadMaxBytes, withWriteMaxBytes : Int -> Protocol codec -> Protocol codec
+withMaxGetUrl, withReadMaxBytes, withWriteMaxBytes : Int -> Protocol codec -> Protocol codec   -- a limit below 1 is none
 name : Protocol codec -> String           -- "connect" | "transcode" | "grpc-web"
 codec : Protocol codec -> String          -- "json" | "proto"
 toJson : Protocol codec -> Json.Encode.Value
@@ -2511,7 +2535,6 @@ withCredentials : Client codec -> Client codec          -- Http.riskyRequest
 withRetry : Rpc.Retry.Retry -> Client codec -> Client codec
 withRegistry : Proto.Registry.Registry -> Client codec -> Client codec   -- Proto.Registry.empty until set
 protocol, baseUrl, headers, timeout, credentials, retry, registry -- readers
-problems : Client codec -> List String    -- the client's problems, [] when none
 toJson : Client codec -> Json.Encode.Value
 
 -- Rpc.Retry: opaque
@@ -2633,8 +2656,10 @@ appears, each a field of the opaque record and a minor (roadmap).
   exhaust the stack; `String.length` would count UTF-16 units. The
   browser has received the body by then, so the limit bounds what is
   decoded and held, not what is downloaded. An error answer is read
-  whatever its size, for its status. A limit below 1 refuses every body
-  with anything in it, and `Rpc.Client.problems` reports it.
+  whatever its size, for its status. A limit below 1 is no limit, as
+  connect-go's 0 is: the modifier then installs nothing, and removes a
+  limit set earlier, so the protocol is `==` to one never given a limit
+  and a program that sets no real limit carries no check at run time.
 - `withWriteMaxBytes n` is its twin for the request: connect-go's
   `WithSendMaxBytes` and connect-node's `writeMaxBytes`, no limit by
   default. A call whose request message, as the JSON a POST sends (for
@@ -2645,8 +2670,8 @@ appears, each a field of the opaque record and a minor (roadmap).
   `NoAnswer (RequestTooLarge { limit, size })`, checked beside the bad
   URL and the invalid header, and never retried, since nothing was sent
   and nothing would change. The size is the call's message, not a
-  request rewritten for `taskFromRequest`. A limit below 1 refuses
-  every call, and `Rpc.Client.problems` reports it.
+  request rewritten for `taskFromRequest`. A limit below 1 is no
+  limit, as for reading.
 
 - A timeout is also the elm/http timeout, so the client gives up at the
   same moment it asked the server to. A timeout that is not a positive
@@ -2659,13 +2684,11 @@ appears, each a field of the opaque record and a minor (roadmap).
   or `#` would put it in the query or fragment. Such a call is not
   sent: every way of sending fails it with `NoAnswer (BadUrl url)`,
   the URL it would have used, and it is never retried. The pure `Rpc.request` still
-  builds that URL, since it has no error to give. `Rpc.Client.problems`
-  reports it where the application builds its client, at start-up or
-  when its settings change, rather than at the first call: a pure
-  `Client codec -> List String`, empty when nothing is wrong, read as a
-  list so later releases can report more. It reports invalid client
-  headers too (below), each by name, its value left out since it may
-  be a credential, and a read or write limit below 1.
+  builds that URL, since it has no error to give. A URL the browser
+  refuses comes back from elm/http as `BadUrl` too. Nothing checks a
+  client where it is built: the check is syntactic alone, and whether
+  a base URL reaches the right server only a request shows (decisions,
+  2026-11-13).
 - A header a browser refuses is never handed to elm/http: a name that is
   not an RFC 9110 token, or a value that, once the spaces and tabs at
   either end are trimmed, holds NUL, CR or LF or a character above
@@ -3673,6 +3696,8 @@ type alias Binary =
 type Reason
     = Truncated | LengthOverrun | InvalidTag | InvalidWireType Int
     | MalformedVarint | IntOutOfRange | InvalidUtf8 | Unlocated
+    | MissingRequired Int               -- reserved for proto2's required; never given yet
+    | TooDeep                           -- reserved for a nesting limit; never given yet
 
 toString : Error -> String              -- for a log, as Json.Decode.errorToString
 ```
@@ -3685,7 +3710,14 @@ toString : Error -> String              -- for a log, as Json.Decode.errorToStri
   failure unwinds. Field names are not in it: a decoder carries message
   names and field numbers, and `Proto.Descriptors` holds the names.
   `Unlocated` is the decoder's backstop, reachable only through a bug in
-  its readers. `Proto.Message.fieldNumbered` and `fieldNamed` find a
+  its readers. `MissingRequired` is reserved: the generator reads proto3
+  alone, so no decoder gives it, but a proto2 `required` field absent
+  from binary is a failure protobuf-go reports, and naming it after the
+  union is frozen would be a major (§8.3); it carries the field's
+  number, and the path ends at the message that lacks it. `TooDeep` is
+  reserved too: protobuf implementations refuse a message nested past
+  100 levels, these decoders have no limit yet, and with the reason
+  named the limit can come as a minor. `Proto.Message.fieldNumbered` and `fieldNamed` find a
   field in a descriptor, so a program that keeps descriptors names a
   path entry's field in four lines; there is no walker over a `Binary`
   until a caller shows the output it wants, and `Proto.Error` stays a
@@ -3708,7 +3740,7 @@ toString : Error -> String              -- for a log, as Json.Decode.errorToStri
   | `Proto.Binary.decode`, `Proto.Message.decodeBinary` | `Result Binary a` | the report |
   | `Proto.Message.decodeJson` | `Result Error a` | `UnregisteredType` for an `Any` the registry lacks, else `BadJson` |
   | `Proto.Any.tryUnpack` | `Result Error a` | `TypeMismatch`, `BadBinary` |
-  | `Proto.Any.toJson`, `Proto.Json.encodeAnyWith`, generated `encodeNoteWith` | `Result Error Value` | `UnregisteredType`, or the `BadBinary` of the `Any` that failed, at any depth, named by its own type |
+  | `Proto.Any.toJson`, `Proto.Json.encodeAnyWith`, generated `encodeNoteWith` | `Result Error Value` | `UnregisteredType`, or the `BadBinary` of the `Any` that failed, at any depth, named by its own type; a JSON-alone `Any` that is not its message, `BadJson` (§3.10) |
   | `Proto.Json.anyWith`, generated `decodeNoteWith` | `Json.Decode.Decoder` | elm/json's error, a registry miss named in its message |
   | `Rpc.Error.BadAny` | `Error` | as `encodeNoteWith` |
   | `StatusError.details` | `List (Result Error Any)` | `UnregisteredType`, `BadJson`, `BadBinary` (above) |
@@ -4577,7 +4609,8 @@ Within a major version:
   the first publish. The records an application
   builds or reads with record syntax are frozen within a major:
   `Rpc.Request.Request`, `Rpc.Response.Response` (which `Rpc` also
-  names `Rpc.Request` and `Rpc.Response`) and `Rpc.Error.StatusError`.
+  names `Rpc.Request` and `Rpc.Response`), `Rpc.Error.StatusError` and
+  `Proto.Error.Binary`.
   A new knob goes where §5.1 routes it: a protocol's on `Protocol`, a
   client's on `Client`, a retry's on `Retry`, a call's on `Call`. The
   codec tags `Rpc.Json` and `Rpc.Proto` have no values and gain none.
@@ -4588,7 +4621,16 @@ Within a major version:
   `KindMessage` the message's full name, §3.9), `Scalar`, `Behavior` (with
   `BehaviorUnknown Int` holding a number this release does not name, so
   that naming it later is a minor), `Proto.Method.Idempotency`,
-  `Rpc.Code`, and `Rpc.Error`'s `Error`, `Reason` (`Timeout`,
+  `Rpc.Code`, `Proto.Error`'s `Error` (`BadBinary`, `BadJson`,
+  `TypeMismatch`, `UnregisteredType`; a new way a message cannot be
+  read is a `BadBinary` reason or elm/json's error, and a new way an
+  `Any` fails is one of the two it already has) and `Reason`
+  (`Truncated`, `LengthOverrun`, `InvalidTag`, `InvalidWireType`,
+  `MalformedVarint`, `IntOutOfRange`, `InvalidUtf8`, `Unlocated`, with
+  `MissingRequired` reserved for proto2's `required` fields, so that
+  reading proto2 can ship as a minor, and `TooDeep` reserved for a
+  message nested past a depth limit, which the decoders do not have
+  yet, so that adding the limit is not a major either), and `Rpc.Error`'s `Error`, `Reason` (`Timeout`,
   `NetworkError`, `BadUrl`, `BadHeader`, `BadPathValue`,
   `RequestTooLarge`, `ResponseTooLarge`, `BadAny`), `Problem` (`Body`,
   `Envelope`; it does not grow: a new way an answer's framing is wrong is

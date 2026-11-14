@@ -1,4 +1,4 @@
-module Proto.Internal.Registry exposing (Entry, Leniency(..), Registry(..), isLenient, member, strict, toBytes, toJson, unregistered, writesJsonAlone)
+module Proto.Internal.Registry exposing (Entry, Leniency(..), Registry(..), isLenient, member, strict, toBytes, toJson, unregistered)
 
 {-| The `Registry` type, which `Proto.Registry` names by an alias, and the
 conversions through one, which `Proto.Registry` does not expose: `Proto.Any`
@@ -26,15 +26,12 @@ type Registry
 
 
 {-| `Strict` fails to read an `Any` of a type the registry has no entry for,
-and `Lenient` reads it as that `Any`'s JSON alone. `Lossless` is strict and
-also refuses to write an `Any` held as JSON alone, as JSON: `Proto.Any.pack`
-writes a message through it to find whether the message's binary would lose
-such an `Any`. No public function builds one.
+and to write one held as JSON alone; `Lenient` reads it as that `Any`'s JSON
+alone, and writes it as that JSON.
 -}
 type Leniency
     = Strict
     | Lenient
-    | Lossless
 
 
 {-| A message's conversions: its binary, as the base64 text an `Any` holds,
@@ -79,13 +76,6 @@ JSON alone.
 isLenient : Registry -> Bool
 isLenient (Registry leniency _) =
     leniency == Lenient
-
-
-{-| Whether the registry writes an `Any` held as JSON alone as JSON.
--}
-writesJsonAlone : Registry -> Bool
-writesJsonAlone (Registry leniency _) =
-    leniency /= Lossless
 
 
 {-| The registry with its entries, strict.

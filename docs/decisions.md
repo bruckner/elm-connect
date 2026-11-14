@@ -1147,7 +1147,37 @@ table-driven binary merge", 2026-10-30); a `dynamic` protocol chosen at run time
 which would bring back the error the types remove (an application that
 switches codec at run time holds two clients). `Rpc.Client.problems`
 stays: whether a client's problems can be ruled out by construction is
-revisited before 1.0. Where: design §2, §5.1, §5.2, §5.3.
+revisited before 1.0. *2026-11-13:* revisited, and removed rather than
+built in (No client check: bad input fails the call). Where: design §2,
+§5.1, §5.2, §5.3.
+
+### No client check: bad input fails the call
+
+*2026-11-13.*
+
+`Rpc.Client.problems` is removed, and nothing takes its place:
+
+- A base URL holding `?` or `#` makes every call fail unsent with
+  `NoAnswer (BadUrl url)`, as it did, and a URL the browser refuses
+  comes back from elm/http as `BadUrl`. The syntactic check does not
+  grow.
+- A header a request cannot carry fails the call unsent with
+  `NoAnswer (BadHeader name)`, as it did.
+- `Rpc.Protocol.withReadMaxBytes` and `withWriteMaxBytes` given a value
+  below 1 mean no limit, as connect-go's 0 does, where before such a
+  limit refused every body. The modifier then installs nothing, and
+  removes a limit set earlier, so the protocol is `==` to one never
+  limited and carries no check at run time.
+
+The check covered three things, and each is already a value at send,
+reaching the code that handles every other failure. A URL cannot be
+validated without a request: the check could find a `?`, never a
+wrong host or prefix, so it promised more than it gave. A limit below
+1 was a trap the check existed to warn about; reading it as no limit
+removes the trap. Ruling the three out by construction, which the
+roadmap held for 1.0, was weighed and dropped for the same reasons: no
+bad input sends a wrong request, and only a request shows whether a
+base URL is right. Where: design §5.1, §5.2.
 
 ### Fillers, not optional halves
 
@@ -1461,6 +1491,17 @@ instead of its table is 30,409 B gz, against 33,897 with
 entry and none of their codecs are reached; and reading a 1 KB `Any`
 through that lenient empty table took 3.4 µs, unpacking it 3.7, against
 62–76 for the strict read. Where: design §3.10, §3.5, §5.4.
+
+*2026-11-13:* a JSON-alone `Any` written as JSON now answers to the
+registry it is written through: one with an entry for its type reads
+the JSON as that message and writes it as held, and a strict one
+without an entry refuses it as `UnregisteredType`; only a lenient
+registry without an entry writes it unread, as every registry did
+before. Writing it unread through a strict registry let JSON never
+checked against its type, read leniently elsewhere, leave a program
+that asked for strictness, and a type it had registered gained it no
+check. Passing `Any`s along through one lenient registry, the case
+above, is unchanged.
 
 ### Normalized per-package registries
 

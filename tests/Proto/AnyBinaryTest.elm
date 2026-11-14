@@ -203,14 +203,66 @@ suite =
                   , read |> Maybe.map Any.bytes
                   , read |> Maybe.andThen (Any.unpack messageTitle)
                   )
-                , ( read |> Maybe.map (writtenWith Registry.empty)
-                  , read |> Maybe.map (Any.toJson Registry.empty >> Result.map (Json.Encode.encode 0))
+                , ( read |> Maybe.map (writtenWith (Registry.lenient Registry.empty))
+                  , read |> Maybe.map (Any.toJson (Registry.lenient Registry.empty) >> Result.map (Json.Encode.encode 0))
                   , readWith (Registry.lenient registry) """{"@type":"type.googleapis.com/notes.v1.Title","title":7}""" |> Result.toMaybe
                   )
                 )
                     |> Expect.equal
                         ( ( Nothing, Just Nothing, Just "hi" )
                         , ( Just (Ok text), Just (Ok """{"title":"hi","extra":1}"""), Nothing )
+                        )
+        , test "an Any held as JSON alone is written as JSON through an entry for its type that reads it, strict or lenient" <|
+            \_ ->
+                let
+                    held text =
+                        readWith (Registry.lenient Registry.empty) text |> Result.toMaybe
+
+                    good =
+                        held """{"@type":"type.googleapis.com/notes.v1.Title","title":"hi","extra":1}"""
+
+                    notTitle =
+                        held """{"@type":"type.googleapis.com/notes.v1.Title","title":7}"""
+
+                    written reg =
+                        Maybe.map (Any.toJson reg >> Result.map (Json.Encode.encode 0))
+                in
+                ( ( written registry good, written (Registry.lenient registry) good )
+                , ( written registry notTitle |> Maybe.map isBadJson, written (Registry.lenient registry) notTitle |> Maybe.map isBadJson )
+                , good |> Maybe.map (writtenWith registry)
+                )
+                    |> Expect.equal
+                        ( ( Just (Ok """{"title":"hi","extra":1}"""), Just (Ok """{"title":"hi","extra":1}""") )
+                        , ( Just True, Just True )
+                        , Just (Ok """{"@type":"type.googleapis.com/notes.v1.Title","title":"hi","extra":1}""")
+                        )
+        , test "an Any held as JSON alone of a type the registry lacks is written unread when lenient, UnregisteredType when strict, at any depth" <|
+            \_ ->
+                let
+                    title =
+                        readWith (Registry.lenient Registry.empty) """{"@type":"type.googleapis.com/notes.v1.Title","title":7}""" |> Result.toMaybe
+
+                    nested =
+                        readWith (Registry.lenient WellKnown.registry) """{"@type":"type.googleapis.com/google.protobuf.Any","value":{"@type":"type.googleapis.com/notes.v1.Title","title":"hi"}}""" |> Result.toMaybe
+                in
+                ( ( title |> Maybe.map (Any.toJson WellKnown.registry)
+                  , title |> Maybe.map (writtenWith WellKnown.registry)
+                  , title |> Maybe.map (Any.toJson (Registry.lenient WellKnown.registry) >> Result.map (Json.Encode.encode 0))
+                  )
+                , ( nested |> Maybe.map (Any.toJson WellKnown.registry)
+                  , nested |> Maybe.map (Any.toJson Registry.empty)
+                  , nested |> Maybe.map (Any.toJson registry >> Result.map (Json.Encode.encode 0))
+                  )
+                )
+                    |> Expect.equal
+                        ( ( Just (Err (UnregisteredType "type.googleapis.com/notes.v1.Title"))
+                          , Just (Err (UnregisteredType "type.googleapis.com/notes.v1.Title"))
+                          , Just (Ok """{"title":7}""")
+                          )
+                        , ( Just (Err (UnregisteredType "type.googleapis.com/notes.v1.Title"))
+                          , Just (Err (UnregisteredType "type.googleapis.com/google.protobuf.Any"))
+                          , Just (Ok """{"@type":"type.googleapis.com/notes.v1.Title","title":"hi"}""")
+                          )
                         )
         , test "an Any held as JSON alone is written as binary as its type URL alone, and its JSON fails to unpack as its BadJson" <|
             \_ ->
@@ -239,7 +291,7 @@ suite =
                 ( readWith WellKnown.registry text |> Result.toMaybe
                 , readWith (Registry.lenient WellKnown.registry) text
                     |> Result.toMaybe
-                    |> (\read -> ( Maybe.map Any.bytes (inner read) |> Maybe.map ((==) Nothing), inner read |> Maybe.andThen (Any.unpack messageTitle), Maybe.map (writtenWith Registry.empty) read ))
+                    |> (\read -> ( Maybe.map Any.bytes (inner read) |> Maybe.map ((==) Nothing), inner read |> Maybe.andThen (Any.unpack messageTitle), Maybe.map (writtenWith (Registry.lenient Registry.empty)) read ))
                 )
                     |> Expect.equal ( Nothing, ( Just True, Just "hi", Just (Ok text) ) )
         , test "packing a message that holds an Any held as JSON alone holds the packed one as JSON alone too" <|
@@ -252,7 +304,7 @@ suite =
                 in
                 ( packed |> Maybe.map Any.bytes
                 , packed |> Maybe.andThen (Any.unpack WellKnown.any) |> Maybe.andThen (Any.unpack messageTitle)
-                , packed |> Maybe.map (writtenWith Registry.empty)
+                , packed |> Maybe.map (writtenWith (Registry.lenient Registry.empty))
                 )
                     |> Expect.equal
                         ( Just Nothing

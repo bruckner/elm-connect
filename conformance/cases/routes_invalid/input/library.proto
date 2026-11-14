@@ -66,4 +66,20 @@ service Library {
       body: "*"
     };
   }
+  // A browser sends a GET or a HEAD without its body. A DELETE's body it
+  // sends, and `google/api/http.proto` allows one.
+  rpc SearchBooks(Book) returns (Book) {
+    option (google.api.http) = {
+      get: "/v1/books:search"
+      body: "*"
+      additional_bindings {
+        custom: { kind: "HEAD" path: "/v1/books:search" }
+        body: "*"
+      }
+      additional_bindings {
+        delete: "/v1/books:search"
+        body: "*"
+      }
+    };
+  }
 }

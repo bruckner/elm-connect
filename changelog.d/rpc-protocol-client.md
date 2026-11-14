@@ -5,8 +5,11 @@
   and the record's fields are gone: `Rpc.Client.withHeaders`,
   `withTimeout`, `withCredentials` and `withRetry` set what the fields
   held, and `protocol`, `baseUrl`, `headers`, `timeout`, `credentials`
-  and `retry` read it back. `Rpc.checkConfig` is `Rpc.Client.problems`,
-  and `Rpc.Client.toJson` gives a client as data. A client holds
+  and `retry` read it back. `Rpc.checkConfig` is gone, with nothing in
+  its place: a bad base URL or header fails the call unsent, with
+  `NoAnswer (BadUrl url)` or `NoAnswer (BadHeader name)`, and a size
+  limit below 1 is no limit. `Rpc.Client.toJson` gives a client as
+  data. A client holds
   functions, so it belongs in code rather than in a message; clients
   built alike are `==`.
 - `Rpc.Transport` is gone; `Rpc.Protocol` takes its place.

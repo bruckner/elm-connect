@@ -69,7 +69,7 @@ client =
 | `withCredentials = True` | `Rpc.Client.withCredentials` |
 | `retry = Just policy` | `Rpc.Client.withRetry policy` |
 | `cfg.baseUrl`, `cfg.headers`, … | `Rpc.Client.baseUrl client`, `headers`, `timeout`, `credentials`, `retry`, `protocol` |
-| `Rpc.checkConfig cfg` | `Rpc.Client.problems client` |
+| `Rpc.checkConfig cfg` | none: a bad base URL or header fails the call with `NoAnswer (BadUrl url)` or `NoAnswer (BadHeader name)`, unsent, and a size limit below 1 is no limit ([When a client cannot send](calling.md#when-a-client-cannot-send)) |
 
 A client holds its protocol's functions, so it lives in code rather
 than in a message. Where 0.1 kept a config in the model and updated its
