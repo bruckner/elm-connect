@@ -354,7 +354,7 @@ decides which retry a failure should get.
 ### Driving the loop yourself
 
 ```elm src/Rpc/Retry.elm excerpt
-next : Retry -> { tried : Int, code : Code, idempotency : Idempotency, now : Time.Posix, elapsed : Float } -> Maybe Float
+next : Retry -> { tried : Int, error : Error, idempotency : Idempotency, now : Time.Posix, elapsed : Float } -> Maybe Float
 ```
 
 An application that runs the loop itself, to show that it is waiting,
@@ -412,7 +412,7 @@ updateNote msg model =
             case
                 Rpc.Retry.next notePolicy
                     { tried = tried
-                    , code = Rpc.Error.code err
+                    , error = err
                     , idempotency = Rpc.Call.idempotency (Notes.getNote { name = "notes/42" })
                     , now = now
                     , elapsed = toFloat (Time.posixToMillis now - Time.posixToMillis model.started)
@@ -736,7 +736,7 @@ client : Shared -> Rpc.Client Rpc.Json
 client shared =
     Rpc.client shared.protocol shared.apiUrl
         |> Rpc.Client.withHeaders [ ( "Authorization", "Bearer " ++ shared.token ) ]
-        |> Rpc.withRegistry registry
+        |> Rpc.Client.withRegistry registry
 ```
 
 Since a call is a value, a wrapper can send it again. Refreshing an

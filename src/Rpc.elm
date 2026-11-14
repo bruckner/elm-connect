@@ -1,7 +1,7 @@
 module Rpc exposing
     ( Json, Proto
     , Call, call
-    , Client, client, withRegistry
+    , Client, client
     , task, send, cancel
     , taskTraced, sendTraced
     , Error, Response
@@ -61,10 +61,10 @@ instead.
 
 # Clients
 
-@docs Client, client, withRegistry
+@docs Client, client
 
-[`Rpc.Client`](Rpc-Client) sets a client's headers, timeout, credentials and
-retry policy, and [`Rpc.Protocol`](Rpc-Protocol) its protocol.
+[`Rpc.Client`](Rpc-Client) sets a client's headers, timeout, credentials,
+retry policy and registry, and [`Rpc.Protocol`](Rpc-Protocol) its protocol.
 
 
 # Sending
@@ -99,11 +99,10 @@ application can rewrite a request before sending it with
 import Bytes exposing (Bytes)
 import Dict exposing (Dict)
 import Http
+import Proto.Codec
 import Proto.Method exposing (Method)
-import Proto.Registry exposing (Registry)
 import Rpc.Call
 import Rpc.Client
-import Rpc.Code exposing (Code)
 import Rpc.Error
 import Rpc.Internal.Call
 import Rpc.Internal.Client as Client
@@ -124,22 +123,22 @@ import Time
 -- CODECS
 
 
-{-| The codec tag of proto3 JSON: [`Rpc.Protocol.Json`](Rpc-Protocol#Json).
+{-| The codec tag of proto3 JSON: [`Proto.Codec.Json`](Proto-Codec#Json).
 A client of [`Rpc.Protocol.connect`](Rpc-Protocol#connect) or
 [`transcode`](Rpc-Protocol#transcode) is a `Client Json`, and sends calls of
 code generated with `wire=both` (the default) or `wire=json`.
 -}
 type alias Json =
-    Rpc.Protocol.Json
+    Proto.Codec.Json
 
 
-{-| The codec tag of protobuf binary: [`Rpc.Protocol.Proto`](Rpc-Protocol#Proto).
+{-| The codec tag of protobuf binary: [`Proto.Codec.Proto`](Proto-Codec#Proto).
 A client of [`Rpc.Protocol.connectProto`](Rpc-Protocol#connectProto) or
 [`Rpc.Protocol.grpcWeb`](Rpc-Protocol#grpcWeb) is a `Client Proto`, and sends calls of code generated with `wire=proto` or
 `wire=both`.
 -}
 type alias Proto =
-    Rpc.Protocol.Proto
+    Proto.Codec.Proto
 
 
 
@@ -208,37 +207,6 @@ type alias Client codec =
 client : Protocol codec -> String -> Client codec
 client =
     Rpc.Client.client
-
-
-{-| The registry the client's calls convert a `google.protobuf.Any` through
-between proto3 JSON and protobuf binary: the one table a program has, the
-empty one until this sets it. A method holds none.
-
-    Rpc.client Rpc.Protocol.connect "https://api.example.com"
-        |> Rpc.withRegistry
-            (Proto.Registry.unionAll
-                [ Notes.V1.registry
-                , Proto.WellKnown.registry
-                , Proto.ErrorDetails.registry
-                ]
-            )
-
-A program whose calls speak JSON and whose messages hold an `Any` sets one,
-as protobuf's own JSON codecs require: over JSON, a call whose request holds
-an `Any` the registry cannot write is not sent (it fails with
-[`NoAnswer (BadAny error)`](Rpc-Error#Reason)), and a response
-holding one of a type it lacks fails to decode. Over protobuf binary an `Any`
-needs no registry. Whatever the protocol, a status's details that arrive as
-proto3 JSON (a `google.rpc.Status` body, over transcoding) are read through
-it; one of a type it lacks reads as
-[`UnregisteredType`](Proto-Error#Error), the error kept. A
-[lenient](Proto-Registry#lenient) registry reads such an `Any`, and such a
-detail, as its JSON alone instead, which unpacks with its typed value.
-
--}
-withRegistry : Registry -> Client codec -> Client codec
-withRegistry registry (Client.Client c) =
-    Client.Client { c | registry = registry }
 
 
 
@@ -528,7 +496,7 @@ attempt (Client.Client cl) c plan sent =
         Nothing ->
             Rpc.Internal.Retry.run (Rpc.Internal.Call.retryIn cl.retry c)
                 (Rpc.Call.idempotency c)
-                retryCode
+                Rpc.Internal.Retry.retryable
                 (\left ->
                     Internal.task
                         (case plan.reader of
@@ -550,17 +518,3 @@ firstAttempt (Client.Client cl) c plan sent =
     Plan.withBudget plan
         (Rpc.Internal.Call.retryIn cl.retry c |> Maybe.andThen (\policy -> Rpc.Internal.Retry.startBudget policy 0))
         sent
-
-
-{-| The code a failed attempt is retried by, or `Nothing` when trying again
-cannot help.
--}
-retryCode : Error -> Maybe Code
-retryCode error =
-    case error of
-        Rpc.Error.NoAnswer (Rpc.Error.BadUrl _) ->
-            -- Nothing was sent, and nothing would change.
-            Nothing
-
-        _ ->
-            Just (Rpc.Error.code error)

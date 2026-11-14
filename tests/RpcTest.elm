@@ -727,9 +727,9 @@ responses =
                     noType =
                         "json : Expecting an OBJECT with a field named `@type`"
                 in
-                ( read (Rpc.withRegistry (Proto.Registry.union noteRegistry Proto.WellKnown.registry) base)
+                ( read (Rpc.Client.withRegistry (Proto.Registry.union noteRegistry Proto.WellKnown.registry) base)
                 , read base
-                , read (Rpc.withRegistry noteRegistry base)
+                , read (Rpc.Client.withRegistry noteRegistry base)
                     |> Result.mapError (\( _, _, found ) -> found)
                 )
                     |> Expect.equal
@@ -751,7 +751,7 @@ responses =
                         """{"code":5,"message":"no note","details":[{"@type":"type.googleapis.com/notes.v1.Note","title":"hi"},{"@type":"type.googleapis.com/google.protobuf.Duration","value":"2s"},{"no":"type"},{"@type":"type.googleapis.com/notes.v1.Note","title":7}]}"""
 
                     read registry =
-                        Rpc.response (Rpc.withRegistry registry base) (getNote { name = "x" }) (Http.BadStatus_ (metadata 404 "Not Found") body)
+                        Rpc.response (Rpc.Client.withRegistry registry base) (getNote { name = "x" }) (Http.BadStatus_ (metadata 404 "Not Found") body)
                             |> Result.mapError
                                 (\error ->
                                     ( ( detailsOf title error
@@ -776,7 +776,7 @@ responses =
                         )
         , test "a Status body's detail of a registered type that is not its message is its BadJson, the Any's object its value" <|
             \_ ->
-                Rpc.response (Rpc.withRegistry noteRegistry base)
+                Rpc.response (Rpc.Client.withRegistry noteRegistry base)
                     (getNote { name = "x" })
                     (Http.BadStatus_ (metadata 404 "Not Found") """{"code":5,"details":[{"@type":"type.googleapis.com/notes.v1.Note","title":7}]}""")
                     |> Result.mapError
@@ -1172,7 +1172,26 @@ schedules policy =
     , fuzz moments "next is the wait the loop takes" <|
         \( retry, at ) ->
             Retry.step (Just retry) at.idempotency Just { tried = at.tried, now = at.now, elapsed = at.elapsed } (Err at.code)
-                |> Expect.equal (Rpc.Retry.next retry at)
+                |> Expect.equal
+                    (Rpc.Retry.next retry
+                        { tried = at.tried
+                        , error = RpcStatus { code = at.code, message = "", details = [], source = ConnectBody } blank
+                        , idempotency = at.idempotency
+                        , now = at.now
+                        , elapsed = at.elapsed
+                        }
+                    )
+    , test "next reads the error's code and stops where nothing was sent" <|
+        \_ ->
+            let
+                internal =
+                    Rpc.Retry.on [ Unavailable, Internal ] |> Rpc.Retry.withBackoff 100 |> Rpc.Retry.withoutJitter
+
+                at error =
+                    Rpc.Retry.next internal { tried = 1, error = error, idempotency = IdempotencyNoSideEffects, now = moment.now, elapsed = 0 }
+            in
+            [ at (NoAnswer NetworkError), at (NoAnswer Timeout), at (httpError 503 ""), at (httpError 400 ""), at (NoAnswer (BadUrl "nowhere")) ]
+                |> Expect.equal [ Just 100, Nothing, Just 100, Just 100, Nothing ]
     , test "the loop does not wait after a success, without a policy, or for a failure trying again cannot help" <|
         \_ ->
             ( Retry.step (Just policy) IdempotencyNoSideEffects Just { tried = 1, now = moment.now, elapsed = 0 } (Ok ())
@@ -1682,7 +1701,7 @@ encodings =
         , test "an interpreted route binds its path and its body from one encoding, the client's registry's" <|
             \_ ->
                 ( built (over Rpc.Protocol.transcode)
-                , built (Rpc.withRegistry noteRegistry (over Rpc.Protocol.transcode))
+                , built (Rpc.Client.withRegistry noteRegistry (over Rpc.Protocol.transcode))
                 )
                     |> Expect.equal
                         ( ( ( "PATCH", "https://api.example.com/v1/notes/42-plain", Just "{\"text\":\"plain\"}" ), True )

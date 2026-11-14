@@ -13,7 +13,7 @@ Over protobuf binary no table is needed.
 A program builds the one it needs from typed values and from the registries
 generated code gives each package (`Notes.V1.registry`, which holds that
 package's own messages and nothing else), and gives it to its client
-([`Rpc.withRegistry`](Rpc#withRegistry)):
+([`Rpc.Client.withRegistry`](Rpc-Client#withRegistry)):
 
     types : Proto.Registry.Registry
     types =
@@ -141,7 +141,7 @@ among an error's details. It
 reads a type it has an entry for as before, and JSON that is not its
 message still fails.
 
-    Rpc.withRegistry (Proto.Registry.lenient Proto.Registry.empty) client
+    Rpc.Client.withRegistry (Proto.Registry.lenient Proto.Registry.empty) client
 
 Every registry is strict until made lenient, and a union is lenient when
 any of its registries is. Lenient suits a program that passes `Any`s along,

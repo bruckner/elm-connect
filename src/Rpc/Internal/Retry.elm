@@ -1,4 +1,4 @@
-module Rpc.Internal.Retry exposing (Math, Moment, Outcome, Policy, Retry(..), attemptTimeout, budget, delay, jitter, math, maxDelay, run, startBudget, step, wait)
+module Rpc.Internal.Retry exposing (Math, Moment, Outcome, Policy, Retry(..), attemptTimeout, budget, delay, jitter, math, maxDelay, retryable, run, startBudget, step, wait)
 
 {-| When to try a call again. Not exposed. Two public modules need the
 constructor: `Rpc.Retry` builds and modifies a policy and aliases the type,
@@ -20,6 +20,7 @@ import Http
 import Process
 import Proto.Method exposing (Idempotency(..))
 import Rpc.Code exposing (Code)
+import Rpc.Error exposing (Error)
 import Task exposing (Task)
 import Time
 
@@ -155,6 +156,20 @@ step retry idempotency retryCode at result =
 
         _ ->
             Nothing
+
+
+{-| The code a failed call is retried by, or `Nothing` when trying again
+cannot help. The runtime's loop and `Rpc.Retry.next` both read it.
+-}
+retryable : Error -> Maybe Code
+retryable error =
+    case error of
+        Rpc.Error.NoAnswer (Rpc.Error.BadUrl _) ->
+            -- Nothing was sent, and nothing would change.
+            Nothing
+
+        _ ->
+            Just (Rpc.Error.code error)
 
 
 {-| The wait in milliseconds before the next attempt, or `Nothing` to stop:

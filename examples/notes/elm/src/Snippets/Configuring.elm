@@ -103,7 +103,7 @@ updateNote msg model =
             case
                 Rpc.Retry.next notePolicy
                     { tried = tried
-                    , code = Rpc.Error.code err
+                    , error = err
                     , idempotency = Rpc.Call.idempotency (Notes.getNote { name = "notes/42" })
                     , now = now
                     , elapsed = toFloat (Time.posixToMillis now - Time.posixToMillis model.started)

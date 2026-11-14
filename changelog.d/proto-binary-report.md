@@ -1,7 +1,7 @@
 - `Proto.Binary.decode` gives `Result Proto.Error.Binary a` in place of
   `Maybe a`: the full name of the message read, the reason
   (`Proto.Error.Reason`: `Truncated`, `LengthOverrun`, `InvalidTag`,
-  `InvalidWireType`, `MalformedVarint`, `OutOfRange`, `InvalidUtf8`),
+  `InvalidWireType`, `MalformedVarint`, `IntOutOfRange`, `InvalidUtf8`),
   the fields the failure is in, as message names and field numbers,
   and the offset of the first byte that could not be read. A successful
   decode costs what it did: the report is built by a second pass over

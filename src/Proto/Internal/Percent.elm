@@ -195,20 +195,45 @@ the bytes are not UTF-8.
 -}
 percentDecode : String -> Maybe String
 percentDecode text =
-    bytesOf (foldrScalars (::) [] text) []
-        |> Maybe.andThen (\bytes -> decodeUtf8 (List.reverse bytes) [])
+    unescape (foldrScalars (::) [] text) 0 0 []
 
 
-bytesOf : List Char -> List Int -> Maybe (List Int)
-bytesOf chars acc =
+{-| The characters read so far (`acc`, reversed) and the rest of the text,
+in one pass: an escape's byte begins a character or continues the one whose
+value bits so far are `bits`, with `owed` continuation bytes still to come;
+any other character stands for itself, and may not come while a character's
+bytes are owed. A tail call, so a long header (a server's `grpc-message`)
+cannot overflow the stack.
+-}
+unescape : List Char -> Int -> Int -> List Char -> Maybe String
+unescape chars owed bits acc =
     case chars of
-        [] ->
-            Just acc
-
         '%' :: high :: low :: rest ->
             case ( hexValue high, hexValue low ) of
                 ( Just h, Just l ) ->
-                    bytesOf rest ((h * 16 + l) :: acc)
+                    let
+                        b =
+                            h * 16 + l
+
+                        ( width, value ) =
+                            if owed > 0 then
+                                if Bitwise.and 0xC0 b == 0x80 then
+                                    ( owed - 1, bits * 64 + b - 0x80 )
+
+                                else
+                                    ( -1, 0 )
+
+                            else
+                                leadByte b
+                    in
+                    if width == 0 then
+                        unescape rest 0 0 (Char.fromCode value :: acc)
+
+                    else if width > 0 then
+                        unescape rest width value acc
+
+                    else
+                        Nothing
 
                 _ ->
                     Nothing
@@ -217,7 +242,18 @@ bytesOf chars acc =
             Nothing
 
         char :: rest ->
-            bytesOf rest (List.reverse (utf8 (Char.toCode char)) ++ acc)
+            if owed > 0 then
+                Nothing
+
+            else
+                unescape rest 0 0 (char :: acc)
+
+        [] ->
+            if owed > 0 then
+                Nothing
+
+            else
+                Just (String.fromList (List.reverse acc))
 
 
 hexValue : Char -> Maybe Int
@@ -236,69 +272,25 @@ hexValue char =
         Nothing
 
 
-decodeUtf8 : List Int -> List Char -> Maybe String
-decodeUtf8 bytes acc =
-    case bytes of
-        [] ->
-            Just (String.fromList (List.reverse acc))
-
-        b :: rest ->
-            case leadByte b of
-                Just ( high, width ) ->
-                    case continuations width rest of
-                        Just ( low, remaining ) ->
-                            -- A tail call, so a long header (a server's
-                            -- `grpc-message`) cannot overflow the stack.
-                            decodeUtf8 remaining (Char.fromCode (Bitwise.shiftLeftBy (6 * width) high + low) :: acc)
-
-                        Nothing ->
-                            Nothing
-
-                Nothing ->
-                    Nothing
-
-
-{-| The value bits of a UTF-8 lead byte and how many continuation bytes follow
-it; `Nothing` for a byte that cannot begin a character.
+{-| How many continuation bytes follow a UTF-8 lead byte, and its value bits;
+a width of -1 for a byte that cannot begin a character.
 -}
-leadByte : Int -> Maybe ( Int, Int )
+leadByte : Int -> ( Int, Int )
 leadByte b =
     if b < 0x80 then
-        Just ( b, 0 )
+        ( 0, b )
 
     else if b >= 0xC2 && b < 0xE0 then
-        Just ( b - 0xC0, 1 )
+        ( 1, b - 0xC0 )
 
     else if b >= 0xE0 && b < 0xF0 then
-        Just ( b - 0xE0, 2 )
+        ( 2, b - 0xE0 )
 
     else if b >= 0xF0 && b < 0xF5 then
-        Just ( b - 0xF0, 3 )
+        ( 3, b - 0xF0 )
 
     else
-        Nothing
-
-
-{-| The value of `width` continuation bytes at the front of `bytes`, and the
-bytes after them.
--}
-continuations : Int -> List Int -> Maybe ( Int, List Int )
-continuations width bytes =
-    if width == 0 then
-        Just ( 0, bytes )
-
-    else
-        case bytes of
-            b :: rest ->
-                if Bitwise.and 0xC0 b == 0x80 then
-                    continuations (width - 1) rest
-                        |> Maybe.map (\( value, remaining ) -> ( Bitwise.shiftLeftBy (6 * (width - 1)) (b - 0x80) + value, remaining ))
-
-                else
-                    Nothing
-
-            [] ->
-                Nothing
+        ( -1, 0 )
 
 
 {-| RFC 3986's unreserved characters, which percent-encoding never touches:

@@ -1,5 +1,6 @@
 module Proto.Message exposing
     ( Message, init, initWith, typeName
+    , decodeJson, decodeBinary
     , Descriptor, descriptor
     , fullName, typeUrl, fields, fieldNumbered, fieldNamed, oneofs
     )
@@ -15,6 +16,11 @@ gives one per well-known type.
 @docs Message, init, initWith, typeName
 
 
+# Reading a message
+
+@docs decodeJson, decodeBinary
+
+
 # Descriptors
 
 @docs Descriptor, descriptor
@@ -26,6 +32,7 @@ gives one per well-known type.
 
 -}
 
+import Bytes exposing (Bytes)
 import Bytes.Encode
 import Json.Decode
 import Json.Encode
@@ -33,7 +40,7 @@ import Proto.Error
 import Proto.Field as Field
 import Proto.Internal.Binary
 import Proto.Internal.Message as Internal
-import Proto.Internal.Registry exposing (Registry)
+import Proto.Internal.Registry as Registry exposing (Registry)
 
 
 {-| A message type whose Elm values are `a`, with both its codecs: proto3 JSON
@@ -58,12 +65,12 @@ the package site may show as `Proto.Internal.Binary.Decoder`.
 
 -}
 init : String -> (a -> Json.Encode.Value) -> Json.Decode.Decoder a -> (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> Message a
-init name encodeJson decodeJson encodeBinary decodeBinary =
+init name jsonEncoder jsonDecoder binaryEncoder binaryDecoder =
     Internal.Message name
-        { encodeJson = \_ value -> Ok (encodeJson value)
-        , decodeJson = \_ -> decodeJson
-        , encodeBinary = encodeBinary
-        , decodeBinary = decodeBinary
+        { encodeJson = \_ value -> Ok (jsonEncoder value)
+        , decodeJson = \_ -> jsonDecoder
+        , encodeBinary = binaryEncoder
+        , decodeBinary = binaryDecoder
         }
 
 
@@ -79,12 +86,12 @@ registry (`UnregisteredType`), or its binary is not that type's message
 
 -}
 initWith : String -> (Registry -> a -> Result Proto.Error.Error Json.Encode.Value) -> (Registry -> Json.Decode.Decoder a) -> (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> Message a
-initWith name encodeJson decodeJson encodeBinary decodeBinary =
+initWith name jsonEncoder jsonDecoder binaryEncoder binaryDecoder =
     Internal.Message name
-        { encodeJson = encodeJson
-        , decodeJson = decodeJson
-        , encodeBinary = encodeBinary
-        , decodeBinary = decodeBinary
+        { encodeJson = jsonEncoder
+        , decodeJson = jsonDecoder
+        , encodeBinary = binaryEncoder
+        , decodeBinary = binaryDecoder
         }
 
 
@@ -93,6 +100,52 @@ initWith name encodeJson decodeJson encodeBinary decodeBinary =
 typeName : Message a -> String
 typeName (Internal.Message name _) =
     name
+
+
+{-| A message read from proto3 JSON, converting any
+`google.protobuf.Any` it holds through the registry:
+
+    Proto.Message.decodeJson Proto.WellKnown.registry Proto.WellKnown.any json
+
+It fails two ways, so it gives a [`Proto.Error.Error`](Proto-Error#Error):
+
+  - `UnregisteredType`, with its type URL, for an `Any` of a type the
+    registry has no entry for (a [lenient](Proto-Registry#lenient) registry
+    reads one as its JSON alone instead);
+  - `BadJson`, with elm/json's error, for anything else that is not the
+    message, an `Any` of a registered type whose JSON is not that type
+    included.
+
+-}
+decodeJson : Registry -> Message a -> Json.Encode.Value -> Result Proto.Error.Error a
+decodeJson registry (Internal.Message _ codecs) json =
+    case Json.Decode.decodeValue (codecs.decodeJson registry) json of
+        Ok value ->
+            Ok value
+
+        Err problem ->
+            case Registry.unregistered registry problem of
+                Just url ->
+                    Err (Proto.Error.UnregisteredType url)
+
+                Nothing ->
+                    Err (Proto.Error.BadJson problem)
+
+
+{-| A message read from protobuf binary. An `Any` it holds keeps its binary,
+so no registry is needed.
+
+It fails only one way, so it gives that way's own type, the binary report
+[`Proto.Error.Binary`](Proto-Error#Binary), as
+[`Proto.Binary.decode`](Proto-Binary#decode) does, where
+[`decodeJson`](#decodeJson), which fails two ways, gives a
+[`Proto.Error.Error`](Proto-Error#Error); `Result.mapError
+Proto.Error.BadBinary` lifts one into the other.
+
+-}
+decodeBinary : Message a -> Bytes -> Result Proto.Error.Binary a
+decodeBinary (Internal.Message _ codecs) bytes =
+    Proto.Internal.Binary.run codecs.decodeBinary bytes
 
 
 {-| A message type's descriptor: its full name, its fields, and the names of

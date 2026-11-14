@@ -33,7 +33,7 @@ suite =
                     |> Expect.equal []
         , test "every reason but Unlocated is reached" <|
             \_ ->
-                [ Truncated, LengthOverrun, InvalidTag, InvalidWireType 3, InvalidWireType 4, InvalidWireType 6, InvalidWireType 7, MalformedVarint, OutOfRange, InvalidUtf8 ]
+                [ Truncated, LengthOverrun, InvalidTag, InvalidWireType 3, InvalidWireType 4, InvalidWireType 6, InvalidWireType 7, MalformedVarint, IntOutOfRange, InvalidUtf8 ]
                     |> List.filter (\reason -> not (List.any (\c -> reasonOf c == Just reason) Corpus.cases))
                     |> Expect.equal []
         ]

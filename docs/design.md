@@ -2488,9 +2488,7 @@ the protocols belong in it too.
 ### 5.1 Protocol and client
 
 ```elm
--- Rpc.Protocol: opaque, indexed by codec
-type alias Json = Proto.Codec.Json      -- the codec tags; no values
-type alias Proto = Proto.Codec.Proto
+-- Rpc.Protocol: opaque, indexed by codec (Proto.Codec's tags, Rpc.Json and Rpc.Proto)
 connect : Protocol Json                   -- Connect, proto3 JSON, every call POSTed
 connectProto : Protocol Proto             -- Connect, protobuf binary (application/proto)
 transcode : Protocol Json                 -- google.api.http REST; the implicit route without a rule
@@ -2507,7 +2505,8 @@ withHeaders : List ( String, String ) -> Client codec -> Client codec
 withTimeout : Float -> Client codec -> Client codec     -- ms, > 0; Connect sends Connect-Timeout-Ms, gRPC-Web grpc-timeout
 withCredentials : Client codec -> Client codec          -- Http.riskyRequest
 withRetry : Rpc.Retry.Retry -> Client codec -> Client codec
-protocol, baseUrl, headers, timeout, credentials, retry -- readers
+withRegistry : Proto.Registry.Registry -> Client codec -> Client codec   -- Proto.Registry.empty until set
+protocol, baseUrl, headers, timeout, credentials, retry, registry -- readers
 problems : Client codec -> List String    -- the client's problems, [] when none
 toJson : Client codec -> Json.Encode.Value
 
@@ -2517,12 +2516,12 @@ withAttempts : Int -> Retry -> Retry
 withBackoff, withMaxBackoff : Float -> Retry -> Retry
 withDeadline : Float -> Retry -> Retry    -- all attempts and waits; none by default
 withoutJitter, allowNonIdempotent : Retry -> Retry
-next : Retry -> { tried : Int, code : Rpc.Code.Code, idempotency : Proto.Method.Idempotency, now : Time.Posix, elapsed : Float } -> Maybe Float
+next : Retry -> { tried : Int, error : Rpc.Error.Error, idempotency : Proto.Method.Idempotency, now : Time.Posix, elapsed : Float } -> Maybe Float
 ```
 
 A client says where and how a call is sent: a protocol, the server's
-base URL, and the headers, timeout, credentials and retry policy every
-call takes. A protocol says how: Connect over proto3 JSON or protobuf
+base URL, the headers, timeout, credentials and retry policy every
+call takes, and the registry its calls convert an `Any` through. A protocol says how: Connect over proto3 JSON or protobuf
 binary, HTTP transcoding, or gRPC-Web over protobuf binary, with its
 options. Both carry a codec in
 their type, `Rpc.Json` or `Rpc.Proto` (`Rpc` re-exports the tags, so
@@ -2729,13 +2728,16 @@ appears, each a field of the opaque record and a minor (roadmap).
   last attempt short is what makes it a deadline rather than only a
   stop between attempts. A traced send's request is the first
   attempt's.
-- `Rpc.Retry.next policy { tried, code, idempotency, now, elapsed }` is
+- `Rpc.Retry.next policy { tried, error, idempotency, now, elapsed }` is
   the loop's decision as a pure function, the wait before the next
   attempt or `Nothing` to stop, so an application that runs its own
   loop (to show a wait, to cancel, to refresh between attempts) sends
   each attempt `withoutRetry` and takes the policy's schedule from it.
-  The loop and `next` call the same function in
-  `Rpc.Internal.Retry`, so the two cannot drift: `Rpc.Retry.on` puts it
+  It takes the failed call's whole `Rpc.Error.Error`, not its code, so
+  a later setting that reads more of the answer (a `Retry-After`
+  header, a `RetryInfo` detail) reaches `next` as it reaches the loop,
+  without a new field in its argument. The loop and `next` call the
+  same function in `Rpc.Internal.Retry`, so the two cannot drift: `Rpc.Retry.on` puts it
   on the policy, beside the budget a deadline leaves, and the loop
   reaches both only through a policy, so a program that never builds
   one carries the loop alone (decisions.md: Modifiers install
@@ -2849,8 +2851,8 @@ requestJson : Registry -> Call Json req res -> Result Proto.Error.Error Json.Enc
 toJson : Registry -> Call Json req res -> Result Proto.Error.Error Json.Encode.Value   -- {"service","method","procedure","request"}
 
 -- Rpc
-type alias Json = Rpc.Protocol.Json
-type alias Proto = Rpc.Protocol.Proto
+type alias Json = Proto.Codec.Json   -- the codec tags; no values
+type alias Proto = Proto.Codec.Proto
 type alias Call codec req res = Rpc.Call.Call codec req res
 type alias Client codec = Rpc.Client.Client codec
 call : Proto.Method.Method codec req res -> req -> Call codec req res
@@ -2884,7 +2886,7 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
   it cannot write), and take a `Method Json`: which halves are real is
   the codec, so no reader meets a filler; the typed values serve `Any`,
   the registry and error details.
-- **One table: the client's.** `Rpc.withRegistry` sets the registry a
+- **One table: the client's.** `Rpc.Client.withRegistry` sets the registry a
   client's calls convert an `Any` through between proto3 JSON and
   binary; a client starts with `Proto.Registry.empty`, and a method holds
   none. A method's JSON codecs take the registry at use time (a type
@@ -3564,10 +3566,14 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
     and the `Any` decoder fails a type it lacks with the `Any`'s object
     as the leaf failure's value, which `Proto.Internal.Registry.unregistered`
     reads (its `"@type"`, not in the registry) for the detail reader;
-    messages are for people, the value for programs. It is not public:
-    an application reading proto3 JSON itself has the miss named in the
-    message, and a JSON read giving a `Proto.Error` is the public answer
-    when one is asked for. The status is read
+    messages are for people, the value for programs. The public read is
+    `Proto.Message.decodeJson`, which names the miss the same way. The
+    detail reader calls the internal function rather than `decodeJson`
+    over `Proto.WellKnown.any`, whose binary codecs would put the binary
+    reader into every program that reads a failed answer (measured
+    +4.3 KB gzipped on a minimal Connect JSON client, `wire=json`), so
+    `Rpc.Internal.Status` still reads `Proto.Internal.Registry`, the one
+    import past the list in §3.1's rule 7. The status is read
     without the registry where the protocol reads the answer, and its
     details again through the client's in the plan (`Status.completeDetails`).
     `Proto.ErrorDetails.registry` holds `google/rpc/error_details.proto`'s
@@ -3629,7 +3635,7 @@ type alias Binary =
 
 type Reason
     = Truncated | LengthOverrun | InvalidTag | InvalidWireType Int
-    | MalformedVarint | OutOfRange | InvalidUtf8 | Unlocated
+    | MalformedVarint | IntOutOfRange | InvalidUtf8 | Unlocated
 
 toString : Error -> String              -- for a log, as Json.Decode.errorToString
 ```
@@ -3662,7 +3668,8 @@ toString : Error -> String              -- for a log, as Json.Decode.errorToStri
 
   | Operation | Gives | Fails with |
   |---|---|---|
-  | `Proto.Binary.decode` | `Result Binary a` | the report |
+  | `Proto.Binary.decode`, `Proto.Message.decodeBinary` | `Result Binary a` | the report |
+  | `Proto.Message.decodeJson` | `Result Error a` | `UnregisteredType` for an `Any` the registry lacks, else `BadJson` |
   | `Proto.Any.tryUnpack` | `Result Error a` | `TypeMismatch`, `BadBinary` |
   | `Proto.Any.toJson`, `Proto.Json.encodeAnyWith`, generated `encodeNoteWith` | `Result Error Value` | `UnregisteredType`, or the `BadBinary` of the `Any` that failed, at any depth, named by its own type |
   | `Proto.Json.anyWith`, generated `decodeNoteWith` | `Json.Decode.Decoder` | elm/json's error, a registry miss named in its message |
@@ -4530,8 +4537,7 @@ Within a major version:
   that naming it later is a minor), `Proto.Method.Idempotency`,
   `Rpc.Code`, and `Rpc.Error`'s `Error`, `Reason` (`Timeout`,
   `NetworkError`, `BadUrl`, `BadHeader`, `BadPathValue`,
-  `RequestTooLarge`,
-  `ResponseTooLarge`) and `Source` (with `ConnectEndStream` reserved
+  `RequestTooLarge`, `ResponseTooLarge`, `BadAny`) and `Source` (with `ConnectEndStream` reserved
   for server streaming, which reads a status from there, so that it can
   ship as a minor; `GrpcTrailers`, reserved as well until gRPC-Web read
   a unary answer's trailers frame, is given now; a

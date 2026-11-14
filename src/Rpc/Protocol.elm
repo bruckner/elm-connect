@@ -1,5 +1,5 @@
 module Rpc.Protocol exposing
-    ( Protocol, Json, Proto
+    ( Protocol
     , connect, connectProto, transcode, grpcWeb
     , withConnectGet, withMaxGetUrl, withReadMaxBytes, withWriteMaxBytes
     , name, codec, toJson
@@ -10,14 +10,15 @@ what a [`Client`](Rpc-Client#Client) speaks.
 
     Rpc.client Rpc.Protocol.connect "https://api.example.com"
 
-A protocol's type says its codec: `Protocol Json` for proto3 JSON,
-`Protocol Proto` for protobuf binary. A client of one only sends calls whose
+A protocol's type says its codec: `Protocol Rpc.Json` for proto3 JSON,
+`Protocol Rpc.Proto` for protobuf binary (the [`Proto.Codec`](Proto-Codec)
+tags, which `Rpc` re-exports). A client of one only sends calls whose
 generated code has that codec (`wire=json`, `wire=proto` or `wire=both`),
 and the compiler says so where it does not.
 
 Protocols built alike are `==`.
 
-@docs Protocol, Json, Proto
+@docs Protocol
 @docs connect, connectProto, transcode, grpcWeb
 
 
@@ -33,7 +34,7 @@ Protocols built alike are `==`.
 -}
 
 import Json.Encode exposing (Value)
-import Proto.Codec
+import Proto.Codec exposing (Json, Proto)
 import Rpc.Internal.Connect as Connect
 import Rpc.Internal.GrpcWeb as GrpcWeb
 import Rpc.Internal.Http as Http
@@ -47,18 +48,6 @@ The package site and compiler errors may show it as
 -}
 type alias Protocol codec =
     Internal.Protocol codec
-
-
-{-| The codec tag of proto3 JSON. It has no values: it is only ever a type.
--}
-type alias Json =
-    Proto.Codec.Json
-
-
-{-| The codec tag of protobuf binary.
--}
-type alias Proto =
-    Proto.Codec.Proto
 
 
 

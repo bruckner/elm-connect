@@ -1457,6 +1457,12 @@ encodes the request once (`Rpc.Internal.Plan.toSend`) and checks that
 its `Any`s can be written whenever the JSON is what is sent. Where:
 design §4, §5.2.
 
+2026-11-12: the modifier is `Rpc.Client.withRegistry`, with a reader
+`Rpc.Client.registry`, no longer `Rpc.withRegistry` on the facade. It
+was the one client modifier outside `Rpc.Client` and the one client
+field without a reader, placed by prominence rather than meaning; it is
+new in 0.2, so no alias stays on `Rpc` (operator).
+
 ### Error details as results
 
 *2026-11-07.*
@@ -1543,6 +1549,11 @@ types for the binary report (it is the one way a binary read fails, so
 field names in the path (a per-message table in every bundle;
 `Proto.Descriptors` has them). Where: design §5.4, §5.5.
 
+2026-11-12: the reason for a 64-bit integer an `Int` cannot hold is
+`IntOutOfRange`, not `OutOfRange`, which clashed with
+`Rpc.Code.OutOfRange` in a module exposing both unions with `(..)`,
+the case design §3.1 rule 3 exists to prevent (operator).
+
 ### Strings are checked as the schema says
 
 *2026-11-10.*
@@ -1584,7 +1595,7 @@ a generation unchecked is deferred until someone asks (operator,
 *2026-11-10.*
 
 `Proto.Error.Error = BadBinary Binary | BadJson Json.Decode.Error |
-TypeMismatch { typeName, typeUrl } | UnregisteredType String`, in a
+TypeMismatch { expected, actual } | UnregisteredType String`, in a
 leaf module that imports only elm/json. The proto layer had grown four
 shapes one at a time: `Proto.Any.Problem` (four constructors serving
 three operations, each with a branch it could not reach),
@@ -1611,8 +1622,9 @@ wants one `toString`); one union for everything, `Binary` folded in
 Java's single exception class (no structure to match on). The names
 follow elm/http and `Rpc.Error`: `Bad*` for what came in wrong,
 `UnregisteredType` rather than protobuf's "unknown", which means fields
-a reader does not model. `typeName` is always the type the program
-asked for and `typeUrl` what came off the wire. `BadJson` carries
+a reader does not model. In `TypeMismatch`, `expected` is the type the
+program asked for and `actual` the one the `Any` holds, both full names
+(design §5.4). `BadJson` carries
 elm/json's error alone, whose path locates a failure; a type name would
 have to be plumbed from every caller, and a method holding its message
 types would keep a JSON program's binary codecs alive.
@@ -1632,7 +1644,7 @@ could not use, and the `Proto.Error` inside says what was wrong with
 it, so "unwritable" said less in more letters. Where: design §5.4.
 
 Two readers stayed off the public surface when the type landed.
-`Proto.Registry.unregistered`, which reads a registry miss out of a
+`Proto.Internal.Registry.unregistered`, which reads a registry miss out of a
 `Json.Decode.Error` by the leaf failure's `"@type"`, is internal: its
 one consumer is the status-detail reader, an application reading proto3
 JSON itself has the miss named in the error's message, and a JSON read
@@ -1643,6 +1655,19 @@ and `fieldNamed`, rather than a `Descriptors.fieldName` that composed
 one lookup for one purpose; a walker over a `Binary`'s path waits for a
 caller to show the output it wants, and could not live in `Proto.Error`
 anyway, which `Proto.Descriptors` imports through the decoder.
+
+2026-11-12: the public JSON read exists, `Proto.Message.decodeJson :
+Registry -> Message a -> Value -> Result Proto.Error.Error a`, a
+registry miss named as `UnregisteredType`, with its binary twin
+`decodeBinary : Message a -> Bytes -> Result Proto.Error.Binary a`,
+which fails one way and so gives the report, by the rule above
+(operator). The status-detail reader was to go through `decodeJson`
+and drop its import of `Proto.Internal.Registry`, but its message would
+be `Proto.WellKnown.any`, whose binary codecs put the binary reader into
+every program that reads a failed answer: +4.3 KB gzipped on a minimal
+Connect JSON client under `wire=json`, +278 B under the default. It
+keeps the internal reader until a JSON-only way to name `Any`'s message
+exists.
 
 
 ### JSON fast paths

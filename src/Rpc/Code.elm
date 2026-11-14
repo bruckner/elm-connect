@@ -51,58 +51,62 @@ type Code
     | Unauthenticated
 
 
+{-| Every code in gRPC's order, `1` to `16`, with its Connect name: the one
+table the conversions to and from names and numbers read.
+-}
+codes : List ( Code, String )
+codes =
+    [ ( Canceled, "canceled" )
+    , ( Unknown, "unknown" )
+    , ( InvalidArgument, "invalid_argument" )
+    , ( DeadlineExceeded, "deadline_exceeded" )
+    , ( NotFound, "not_found" )
+    , ( AlreadyExists, "already_exists" )
+    , ( PermissionDenied, "permission_denied" )
+    , ( ResourceExhausted, "resource_exhausted" )
+    , ( FailedPrecondition, "failed_precondition" )
+    , ( Aborted, "aborted" )
+    , ( OutOfRange, "out_of_range" )
+    , ( Unimplemented, "unimplemented" )
+    , ( Internal, "internal" )
+    , ( Unavailable, "unavailable" )
+    , ( DataLoss, "data_loss" )
+    , ( Unauthenticated, "unauthenticated" )
+    ]
+
+
+{-| The first entry of `codes` that `match` accepts, and its gRPC number.
+-}
+find : (( Code, String ) -> Bool) -> Maybe ( Int, ( Code, String ) )
+find match =
+    findFrom 1 match codes
+
+
+findFrom : Int -> (( Code, String ) -> Bool) -> List ( Code, String ) -> Maybe ( Int, ( Code, String ) )
+findFrom number match entries =
+    case entries of
+        entry :: rest ->
+            if match entry then
+                Just ( number, entry )
+
+            else
+                findFrom (number + 1) match rest
+
+        [] ->
+            Nothing
+
+
 {-| The code as the Connect protocol writes it: `"canceled"`, `"not_found"`.
 -}
 toString : Code -> String
 toString code =
-    case code of
-        Canceled ->
-            "canceled"
+    case find (\( c, _ ) -> c == code) of
+        Just ( _, ( _, name ) ) ->
+            name
 
-        Unknown ->
+        Nothing ->
+            -- Not reached: every code is in the table.
             "unknown"
-
-        InvalidArgument ->
-            "invalid_argument"
-
-        DeadlineExceeded ->
-            "deadline_exceeded"
-
-        NotFound ->
-            "not_found"
-
-        AlreadyExists ->
-            "already_exists"
-
-        PermissionDenied ->
-            "permission_denied"
-
-        ResourceExhausted ->
-            "resource_exhausted"
-
-        FailedPrecondition ->
-            "failed_precondition"
-
-        Aborted ->
-            "aborted"
-
-        OutOfRange ->
-            "out_of_range"
-
-        Unimplemented ->
-            "unimplemented"
-
-        Internal ->
-            "internal"
-
-        Unavailable ->
-            "unavailable"
-
-        DataLoss ->
-            "data_loss"
-
-        Unauthenticated ->
-            "unauthenticated"
 
 
 {-| The error code a Connect name stands for, or `Nothing` for any other
@@ -110,111 +114,20 @@ string, `"ok"` included.
 -}
 fromString : String -> Maybe Code
 fromString name =
-    case name of
-        "canceled" ->
-            Just Canceled
-
-        "unknown" ->
-            Just Unknown
-
-        "invalid_argument" ->
-            Just InvalidArgument
-
-        "deadline_exceeded" ->
-            Just DeadlineExceeded
-
-        "not_found" ->
-            Just NotFound
-
-        "already_exists" ->
-            Just AlreadyExists
-
-        "permission_denied" ->
-            Just PermissionDenied
-
-        "resource_exhausted" ->
-            Just ResourceExhausted
-
-        "failed_precondition" ->
-            Just FailedPrecondition
-
-        "aborted" ->
-            Just Aborted
-
-        "out_of_range" ->
-            Just OutOfRange
-
-        "unimplemented" ->
-            Just Unimplemented
-
-        "internal" ->
-            Just Internal
-
-        "unavailable" ->
-            Just Unavailable
-
-        "data_loss" ->
-            Just DataLoss
-
-        "unauthenticated" ->
-            Just Unauthenticated
-
-        _ ->
-            Nothing
+    find (\( _, n ) -> n == name) |> Maybe.map (\( _, ( code, _ ) ) -> code)
 
 
 {-| The code's gRPC number, `1` (`Canceled`) to `16` (`Unauthenticated`).
 -}
 toInt : Code -> Int
 toInt code =
-    case code of
-        Canceled ->
-            1
+    case find (\( c, _ ) -> c == code) of
+        Just ( number, _ ) ->
+            number
 
-        Unknown ->
+        Nothing ->
+            -- Not reached: every code is in the table.
             2
-
-        InvalidArgument ->
-            3
-
-        DeadlineExceeded ->
-            4
-
-        NotFound ->
-            5
-
-        AlreadyExists ->
-            6
-
-        PermissionDenied ->
-            7
-
-        ResourceExhausted ->
-            8
-
-        FailedPrecondition ->
-            9
-
-        Aborted ->
-            10
-
-        OutOfRange ->
-            11
-
-        Unimplemented ->
-            12
-
-        Internal ->
-            13
-
-        Unavailable ->
-            14
-
-        DataLoss ->
-            15
-
-        Unauthenticated ->
-            16
 
 
 {-| The error code a gRPC number stands for, or `Nothing` for `0` (`OK`) and
@@ -222,57 +135,11 @@ any number outside `1` to `16`.
 -}
 fromInt : Int -> Maybe Code
 fromInt number =
-    case number of
-        1 ->
-            Just Canceled
+    if number < 1 then
+        Nothing
 
-        2 ->
-            Just Unknown
-
-        3 ->
-            Just InvalidArgument
-
-        4 ->
-            Just DeadlineExceeded
-
-        5 ->
-            Just NotFound
-
-        6 ->
-            Just AlreadyExists
-
-        7 ->
-            Just PermissionDenied
-
-        8 ->
-            Just ResourceExhausted
-
-        9 ->
-            Just FailedPrecondition
-
-        10 ->
-            Just Aborted
-
-        11 ->
-            Just OutOfRange
-
-        12 ->
-            Just Unimplemented
-
-        13 ->
-            Just Internal
-
-        14 ->
-            Just Unavailable
-
-        15 ->
-            Just DataLoss
-
-        16 ->
-            Just Unauthenticated
-
-        _ ->
-            Nothing
+    else
+        List.head (List.drop (number - 1) codes) |> Maybe.map Tuple.first
 
 
 {-| The code a failed HTTP response stands for when it carries none of its own,

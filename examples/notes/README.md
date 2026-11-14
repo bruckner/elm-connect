@@ -133,7 +133,7 @@ client : Shared -> Rpc.Client Rpc.Json
 client shared =
     Rpc.client shared.protocol shared.apiUrl
         |> Rpc.Client.withHeaders [ ( "Authorization", "Bearer " ++ shared.token ) ]
-        |> Rpc.withRegistry registry
+        |> Rpc.Client.withRegistry registry
 ```
 
 `Shared` holds the page's origin, a token and the protocol the page's

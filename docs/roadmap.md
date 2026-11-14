@@ -216,7 +216,9 @@ only a reader over `(seconds, nanos)` passes. Additive: a minor.
 A retry policy waits by its own backoff. Honouring the server's
 `Retry-After` header on a 429 or 503, or a `google.rpc.RetryInfo`
 error detail, would be a new setting on the opaque `Rpc.Retry`: a
-minor.
+minor, for the runtime's loop and for `Rpc.Retry.next` alike, since
+`next` is given the failed call's whole error, headers and details
+included.
 
 ## A gRPC service config's `retryPolicy`
 

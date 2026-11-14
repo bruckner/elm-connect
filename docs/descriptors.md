@@ -112,6 +112,15 @@ protobuf's own runtimes: the read fails naming its type URL, and the
 write gives `UnregisteredType` with it. Over protobuf binary no
 registry is needed.
 
+To read a message's proto3 JSON yourself, `Proto.Message.decodeJson
+registry Notes.V1.messageNote json` gives a `Result Proto.Error.Error`,
+in which a type the registry lacks is `UnregisteredType url` rather than
+a sentence in elm/json's error, and anything else that is not the message
+is `BadJson`. `Proto.Message.decodeBinary Notes.V1.messageNote bytes` is
+its binary twin, which needs no registry; it can fail only one way, so it
+gives the binary report, `Proto.Error.Binary`, as `Proto.Binary.decode`
+does.
+
 A program that passes `Any`s along without registering every type it
 may meet makes its registry lenient, `Proto.Registry.lenient
 Proto.Registry.empty` or a composed one piped through it: an `Any` of a

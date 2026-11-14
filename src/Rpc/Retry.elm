@@ -35,6 +35,7 @@ Two policies built alike are `==`.
 
 import Proto.Method exposing (Idempotency)
 import Rpc.Code exposing (Code)
+import Rpc.Error exposing (Error)
 import Rpc.Internal.Retry as Internal
 import Time
 
@@ -159,10 +160,12 @@ allowNonIdempotent (Internal.Retry policy m) =
 
 {-| The wait in milliseconds before the next attempt, or `Nothing` to stop:
 after `tried` attempts of a call of a method of this `idempotency`, the last
-failing with `code`, at `now` and `elapsed` milliseconds after the first
+failing with `error`, at `now` and `elapsed` milliseconds after the first
 attempt began. It is the decision the runtime makes between its own attempts,
-the policy's codes, attempt limit, doubling, cap, jitter and deadline
-included.
+the policy's codes (read with [`Rpc.Error.code`](Rpc-Error#code)), attempt
+limit, doubling, cap, jitter and deadline included, and like the runtime it
+stops on an error trying again cannot help: a `BadUrl`, where nothing was
+sent.
 
 It is for an application that runs the retry loop itself: to show that it is
 waiting, to let the user cancel, or to refresh a credential between attempts.
@@ -173,7 +176,7 @@ of its attempts too, and the two stack.
     case
         Rpc.Retry.next policy
             { tried = tried
-            , code = Rpc.Error.code err
+            , error = err
             , idempotency = Rpc.Call.idempotency call
             , now = now
             , elapsed = toFloat (Time.posixToMillis now - Time.posixToMillis started)
@@ -188,6 +191,10 @@ of its attempts too, and the two stack.
 The jitter is drawn from `now`, so the same arguments give the same wait.
 
 -}
-next : Retry -> { tried : Int, code : Code, idempotency : Idempotency, now : Time.Posix, elapsed : Float } -> Maybe Float
-next =
-    Internal.wait
+next : Retry -> { tried : Int, error : Error, idempotency : Idempotency, now : Time.Posix, elapsed : Float } -> Maybe Float
+next retry at =
+    Internal.step (Just retry)
+        at.idempotency
+        Internal.retryable
+        { tried = at.tried, now = at.now, elapsed = at.elapsed }
+        (Err at.error)
