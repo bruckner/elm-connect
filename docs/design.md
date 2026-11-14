@@ -3724,6 +3724,7 @@ type Reason
     = Truncated | LengthOverrun | InvalidTag | InvalidWireType Int
     | MalformedVarint | IntOutOfRange | InvalidUtf8 | Unlocated
     | MissingRequired Int               -- reserved for proto2's required; never given yet
+    | TooDeep                           -- reserved for a nesting limit; never given yet
 
 toString : Error -> String              -- for a log, as Json.Decode.errorToString
 ```
@@ -3740,7 +3741,10 @@ toString : Error -> String              -- for a log, as Json.Decode.errorToStri
   alone, so no decoder gives it, but a proto2 `required` field absent
   from binary is a failure protobuf-go reports, and naming it after the
   union is frozen would be a major (§8.3); it carries the field's
-  number, and the path ends at the message that lacks it. `Proto.Message.fieldNumbered` and `fieldNamed` find a
+  number, and the path ends at the message that lacks it. `TooDeep` is
+  reserved too: protobuf implementations refuse a message nested past
+  100 levels, these decoders have no limit yet, and with the reason
+  named the limit can come as a minor. `Proto.Message.fieldNumbered` and `fieldNamed` find a
   field in a descriptor, so a program that keeps descriptors names a
   path entry's field in four lines; there is no walker over a `Binary`
   until a caller shows the output it wants, and `Proto.Error` stays a
@@ -4649,9 +4653,9 @@ Within a major version:
   (`Truncated`, `LengthOverrun`, `InvalidTag`, `InvalidWireType`,
   `MalformedVarint`, `IntOutOfRange`, `InvalidUtf8`, `Unlocated`, with
   `MissingRequired` reserved for proto2's `required` fields, so that
-  reading proto2 can ship as a minor; a fault the binary decoder learns
-  to find that none of these names, such as a nesting limit, waits for
-  a major), and `Rpc.Error`'s `Cause` (`BadCall`, `NetworkError`, `Timeout`,
+  reading proto2 can ship as a minor, and `TooDeep` reserved for a
+  message nested past a depth limit, which the decoders do not have
+  yet, so that adding the limit is not a major either), and `Rpc.Error`'s `Cause` (`BadCall`, `NetworkError`, `Timeout`,
   `BadStatus`, `BadResponse`: what happened in the HTTP exchange, which
   has no other outcome; a new way a call cannot be made is a `BadCall`'s
   message, and a new way an answer cannot be used is a `BadResponse`'s)
