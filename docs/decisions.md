@@ -1190,7 +1190,15 @@ field that sorts before the function fields, so `==` on two clients
 answers at the data before it could reach a function, on which Elm
 throws; clients built alike hold the same top-level functions and are
 `==` (checked over every protocol, in tests and in an `--optimize`
-build). Each installed binary check measures with the wire's `width`,
+build). 2026-11-13: with one exception the interface audit's test
+found. A registry built where the client is (`Proto.Registry.empty |>
+register m`) holds fresh functions per `register`, so two clients built
+alike that way throw on `==`, and so do two that differ only in retry
+or timeout, since the compiled record compares `registry` before them.
+A registry that is a top-level value, or a union of top-level values,
+compares fine. Elm can hold the codecs of different message types in
+one table only behind functions, so the promise is qualified in the
+docs rather than the registry changed. Each installed binary check measures with the wire's `width`,
 so a JSON program naming a limit reaches no `Bytes.width`, which would
 bring elm/bytes' kernel (989 B before this rule). `withConnectGet` is a
 no-op off Connect, so it is one modifier for either wire; a JSON GET
@@ -1704,6 +1712,13 @@ could not use, and the `Proto.Error` inside says what was wrong with
 it, so "unwritable" said less in more letters. Where: design §5.4.
 
 Two readers stayed off the public surface when the type landed.
+(2026-11-13: `Proto.Internal.Registry` is now the fourth internal module
+§3.1's rule 7 lets `Rpc` read, for this one reader. The alternative the
+audit asked for, reading a status detail through
+`Proto.Message.decodeJson` with the well-known `Any` message, was built
+and measured: it carries `Any`'s binary codecs into every JSON-only
+program, +4.3 KB gzipped on the minimal client under `wire=json`, so the
+rule grew by a name instead.)
 `Proto.Internal.Registry.unregistered`, which reads a registry miss out of a
 `Json.Decode.Error` by the leaf failure's `"@type"`, is internal: its
 one consumer is the status-detail reader, an application reading proto3

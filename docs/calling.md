@@ -86,7 +86,9 @@ protocol's codec, `Rpc.Client Rpc.Json` or `Rpc.Client Rpc.Proto`
 protocol's functions, so it belongs in code: a top-level value, one
 built in `init`, or one a wrapper builds per call from the
 application's state ([Wrapping the sending once](#wrapping-the-sending-once)).
-Clients built alike are `==`; a client never belongs in a message.
+Clients built alike are `==` when their registry is a top-level value (one
+built where the client is holds fresh functions, and `==` throws on reaching
+it); a client never belongs in a message.
 
 A header name must be an HTTP token, and a value can hold no NUL, CR or
 LF and no character above U+00FF, which a browser refuses. A call with
