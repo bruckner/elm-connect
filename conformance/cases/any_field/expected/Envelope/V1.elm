@@ -228,27 +228,102 @@ mergeEnvelopeBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | id = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { id = v
+                            , payload = value.payload
+                            , attachments = value.attachments
+                            , headers = value.headers
+                            , body = value.body
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.any (\v -> { value | payload = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.any
+                        (\v ->
+                            { id = value.id
+                            , payload = Just v
+                            , attachments = value.attachments
+                            , headers = value.headers
+                            , body = value.body
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.repeated Proto.Binary.any (\v -> { value | attachments = v }) value.attachments wire value
+                    Proto.Binary.repeated
+                        Proto.Binary.any
+                        (\v ->
+                            { id = value.id
+                            , payload = value.payload
+                            , attachments = v
+                            , headers = value.headers
+                            , body = value.body
+                            }
+                        )
+                        value.attachments
+                        wire
+                        value
 
                 4 ->
-                    Proto.Binary.mapEntry Proto.Binary.string Proto.Binary.any (\k v -> { value | headers = Dict.insert k v value.headers }) wire value
+                    Proto.Binary.mapEntry
+                        Proto.Binary.string
+                        Proto.Binary.any
+                        (\k v ->
+                            { id = value.id
+                            , payload = value.payload
+                            , attachments = value.attachments
+                            , headers = Dict.insert k v value.headers
+                            , body = value.body
+                            }
+                        )
+                        wire
+                        value
 
                 5 ->
-                    Proto.Binary.field Proto.Binary.any (\v -> { value | body = EnvelopeBodyPacked v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.any
+                        (\v ->
+                            { id = value.id
+                            , payload = value.payload
+                            , attachments = value.attachments
+                            , headers = value.headers
+                            , body = EnvelopeBodyPacked v
+                            }
+                        )
+                        wire
+                        value
 
                 6 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | body = EnvelopeBodyText v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { id = value.id
+                            , payload = value.payload
+                            , attachments = value.attachments
+                            , headers = value.headers
+                            , body = EnvelopeBodyText v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value -> { value | attachments = List.reverse value.attachments })
+        (\value ->
+            { id = value.id
+            , payload = value.payload
+            , attachments = List.reverse value.attachments
+            , headers = value.headers
+            , body = value.body
+            }
+        )
 
 
 {-| Decodes an [`Envelope`](#Envelope) from protobuf binary.

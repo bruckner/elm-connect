@@ -4655,72 +4655,614 @@ mergeClientCompatRequestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | testName = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { testName = v
+                            , httpVersion = value.httpVersion
+                            , protocol = value.protocol
+                            , codec = value.codec
+                            , compression = value.compression
+                            , host = value.host
+                            , port_ = value.port_
+                            , serverTlsCert = value.serverTlsCert
+                            , clientTlsCreds = value.clientTlsCreds
+                            , messageReceiveLimit = value.messageReceiveLimit
+                            , service = value.service
+                            , method = value.method
+                            , streamType = value.streamType
+                            , useGetHttpMethod = value.useGetHttpMethod
+                            , requestHeaders = value.requestHeaders
+                            , requestMessages = value.requestMessages
+                            , timeoutMs = value.timeoutMs
+                            , requestDelayMs = value.requestDelayMs
+                            , cancel = value.cancel
+                            , rawRequest = value.rawRequest
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field (Proto.Binary.enum encodeHTTPVersionBytes decodeHTTPVersionBytes) (\v -> { value | httpVersion = v }) wire value
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeHTTPVersionBytes decodeHTTPVersionBytes)
+                        (\v ->
+                            { testName = value.testName
+                            , httpVersion = v
+                            , protocol = value.protocol
+                            , codec = value.codec
+                            , compression = value.compression
+                            , host = value.host
+                            , port_ = value.port_
+                            , serverTlsCert = value.serverTlsCert
+                            , clientTlsCreds = value.clientTlsCreds
+                            , messageReceiveLimit = value.messageReceiveLimit
+                            , service = value.service
+                            , method = value.method
+                            , streamType = value.streamType
+                            , useGetHttpMethod = value.useGetHttpMethod
+                            , requestHeaders = value.requestHeaders
+                            , requestMessages = value.requestMessages
+                            , timeoutMs = value.timeoutMs
+                            , requestDelayMs = value.requestDelayMs
+                            , cancel = value.cancel
+                            , rawRequest = value.rawRequest
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.field (Proto.Binary.enum encodeProtocolBytes decodeProtocolBytes) (\v -> { value | protocol = v }) wire value
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeProtocolBytes decodeProtocolBytes)
+                        (\v ->
+                            { testName = value.testName
+                            , httpVersion = value.httpVersion
+                            , protocol = v
+                            , codec = value.codec
+                            , compression = value.compression
+                            , host = value.host
+                            , port_ = value.port_
+                            , serverTlsCert = value.serverTlsCert
+                            , clientTlsCreds = value.clientTlsCreds
+                            , messageReceiveLimit = value.messageReceiveLimit
+                            , service = value.service
+                            , method = value.method
+                            , streamType = value.streamType
+                            , useGetHttpMethod = value.useGetHttpMethod
+                            , requestHeaders = value.requestHeaders
+                            , requestMessages = value.requestMessages
+                            , timeoutMs = value.timeoutMs
+                            , requestDelayMs = value.requestDelayMs
+                            , cancel = value.cancel
+                            , rawRequest = value.rawRequest
+                            }
+                        )
+                        wire
+                        value
 
                 4 ->
-                    Proto.Binary.field (Proto.Binary.enum encodeCodecBytes decodeCodecBytes) (\v -> { value | codec = v }) wire value
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeCodecBytes decodeCodecBytes)
+                        (\v ->
+                            { testName = value.testName
+                            , httpVersion = value.httpVersion
+                            , protocol = value.protocol
+                            , codec = v
+                            , compression = value.compression
+                            , host = value.host
+                            , port_ = value.port_
+                            , serverTlsCert = value.serverTlsCert
+                            , clientTlsCreds = value.clientTlsCreds
+                            , messageReceiveLimit = value.messageReceiveLimit
+                            , service = value.service
+                            , method = value.method
+                            , streamType = value.streamType
+                            , useGetHttpMethod = value.useGetHttpMethod
+                            , requestHeaders = value.requestHeaders
+                            , requestMessages = value.requestMessages
+                            , timeoutMs = value.timeoutMs
+                            , requestDelayMs = value.requestDelayMs
+                            , cancel = value.cancel
+                            , rawRequest = value.rawRequest
+                            }
+                        )
+                        wire
+                        value
 
                 5 ->
-                    Proto.Binary.field (Proto.Binary.enum encodeCompressionBytes decodeCompressionBytes) (\v -> { value | compression = v }) wire value
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeCompressionBytes decodeCompressionBytes)
+                        (\v ->
+                            { testName = value.testName
+                            , httpVersion = value.httpVersion
+                            , protocol = value.protocol
+                            , codec = value.codec
+                            , compression = v
+                            , host = value.host
+                            , port_ = value.port_
+                            , serverTlsCert = value.serverTlsCert
+                            , clientTlsCreds = value.clientTlsCreds
+                            , messageReceiveLimit = value.messageReceiveLimit
+                            , service = value.service
+                            , method = value.method
+                            , streamType = value.streamType
+                            , useGetHttpMethod = value.useGetHttpMethod
+                            , requestHeaders = value.requestHeaders
+                            , requestMessages = value.requestMessages
+                            , timeoutMs = value.timeoutMs
+                            , requestDelayMs = value.requestDelayMs
+                            , cancel = value.cancel
+                            , rawRequest = value.rawRequest
+                            }
+                        )
+                        wire
+                        value
 
                 6 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | host = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { testName = value.testName
+                            , httpVersion = value.httpVersion
+                            , protocol = value.protocol
+                            , codec = value.codec
+                            , compression = value.compression
+                            , host = v
+                            , port_ = value.port_
+                            , serverTlsCert = value.serverTlsCert
+                            , clientTlsCreds = value.clientTlsCreds
+                            , messageReceiveLimit = value.messageReceiveLimit
+                            , service = value.service
+                            , method = value.method
+                            , streamType = value.streamType
+                            , useGetHttpMethod = value.useGetHttpMethod
+                            , requestHeaders = value.requestHeaders
+                            , requestMessages = value.requestMessages
+                            , timeoutMs = value.timeoutMs
+                            , requestDelayMs = value.requestDelayMs
+                            , cancel = value.cancel
+                            , rawRequest = value.rawRequest
+                            }
+                        )
+                        wire
+                        value
 
                 7 ->
-                    Proto.Binary.field Proto.Binary.uint32 (\v -> { value | port_ = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.uint32
+                        (\v ->
+                            { testName = value.testName
+                            , httpVersion = value.httpVersion
+                            , protocol = value.protocol
+                            , codec = value.codec
+                            , compression = value.compression
+                            , host = value.host
+                            , port_ = v
+                            , serverTlsCert = value.serverTlsCert
+                            , clientTlsCreds = value.clientTlsCreds
+                            , messageReceiveLimit = value.messageReceiveLimit
+                            , service = value.service
+                            , method = value.method
+                            , streamType = value.streamType
+                            , useGetHttpMethod = value.useGetHttpMethod
+                            , requestHeaders = value.requestHeaders
+                            , requestMessages = value.requestMessages
+                            , timeoutMs = value.timeoutMs
+                            , requestDelayMs = value.requestDelayMs
+                            , cancel = value.cancel
+                            , rawRequest = value.rawRequest
+                            }
+                        )
+                        wire
+                        value
 
                 8 ->
-                    Proto.Binary.field Proto.Binary.bytes (\v -> { value | serverTlsCert = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bytes
+                        (\v ->
+                            { testName = value.testName
+                            , httpVersion = value.httpVersion
+                            , protocol = value.protocol
+                            , codec = value.codec
+                            , compression = value.compression
+                            , host = value.host
+                            , port_ = value.port_
+                            , serverTlsCert = v
+                            , clientTlsCreds = value.clientTlsCreds
+                            , messageReceiveLimit = value.messageReceiveLimit
+                            , service = value.service
+                            , method = value.method
+                            , streamType = value.streamType
+                            , useGetHttpMethod = value.useGetHttpMethod
+                            , requestHeaders = value.requestHeaders
+                            , requestMessages = value.requestMessages
+                            , timeoutMs = value.timeoutMs
+                            , requestDelayMs = value.requestDelayMs
+                            , cancel = value.cancel
+                            , rawRequest = value.rawRequest
+                            }
+                        )
+                        wire
+                        value
 
                 9 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeTLSCredsBytes mergeTLSCredsBytes defaultTLSCreds) value.clientTlsCreds (\v -> { value | clientTlsCreds = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeTLSCredsBytes mergeTLSCredsBytes defaultTLSCreds)
+                        value.clientTlsCreds
+                        (\v ->
+                            { testName = value.testName
+                            , httpVersion = value.httpVersion
+                            , protocol = value.protocol
+                            , codec = value.codec
+                            , compression = value.compression
+                            , host = value.host
+                            , port_ = value.port_
+                            , serverTlsCert = value.serverTlsCert
+                            , clientTlsCreds = Just v
+                            , messageReceiveLimit = value.messageReceiveLimit
+                            , service = value.service
+                            , method = value.method
+                            , streamType = value.streamType
+                            , useGetHttpMethod = value.useGetHttpMethod
+                            , requestHeaders = value.requestHeaders
+                            , requestMessages = value.requestMessages
+                            , timeoutMs = value.timeoutMs
+                            , requestDelayMs = value.requestDelayMs
+                            , cancel = value.cancel
+                            , rawRequest = value.rawRequest
+                            }
+                        )
+                        wire
+                        value
 
                 10 ->
-                    Proto.Binary.field Proto.Binary.uint32 (\v -> { value | messageReceiveLimit = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.uint32
+                        (\v ->
+                            { testName = value.testName
+                            , httpVersion = value.httpVersion
+                            , protocol = value.protocol
+                            , codec = value.codec
+                            , compression = value.compression
+                            , host = value.host
+                            , port_ = value.port_
+                            , serverTlsCert = value.serverTlsCert
+                            , clientTlsCreds = value.clientTlsCreds
+                            , messageReceiveLimit = v
+                            , service = value.service
+                            , method = value.method
+                            , streamType = value.streamType
+                            , useGetHttpMethod = value.useGetHttpMethod
+                            , requestHeaders = value.requestHeaders
+                            , requestMessages = value.requestMessages
+                            , timeoutMs = value.timeoutMs
+                            , requestDelayMs = value.requestDelayMs
+                            , cancel = value.cancel
+                            , rawRequest = value.rawRequest
+                            }
+                        )
+                        wire
+                        value
 
                 11 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | service = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { testName = value.testName
+                            , httpVersion = value.httpVersion
+                            , protocol = value.protocol
+                            , codec = value.codec
+                            , compression = value.compression
+                            , host = value.host
+                            , port_ = value.port_
+                            , serverTlsCert = value.serverTlsCert
+                            , clientTlsCreds = value.clientTlsCreds
+                            , messageReceiveLimit = value.messageReceiveLimit
+                            , service = Just v
+                            , method = value.method
+                            , streamType = value.streamType
+                            , useGetHttpMethod = value.useGetHttpMethod
+                            , requestHeaders = value.requestHeaders
+                            , requestMessages = value.requestMessages
+                            , timeoutMs = value.timeoutMs
+                            , requestDelayMs = value.requestDelayMs
+                            , cancel = value.cancel
+                            , rawRequest = value.rawRequest
+                            }
+                        )
+                        wire
+                        value
 
                 12 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | method = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { testName = value.testName
+                            , httpVersion = value.httpVersion
+                            , protocol = value.protocol
+                            , codec = value.codec
+                            , compression = value.compression
+                            , host = value.host
+                            , port_ = value.port_
+                            , serverTlsCert = value.serverTlsCert
+                            , clientTlsCreds = value.clientTlsCreds
+                            , messageReceiveLimit = value.messageReceiveLimit
+                            , service = value.service
+                            , method = Just v
+                            , streamType = value.streamType
+                            , useGetHttpMethod = value.useGetHttpMethod
+                            , requestHeaders = value.requestHeaders
+                            , requestMessages = value.requestMessages
+                            , timeoutMs = value.timeoutMs
+                            , requestDelayMs = value.requestDelayMs
+                            , cancel = value.cancel
+                            , rawRequest = value.rawRequest
+                            }
+                        )
+                        wire
+                        value
 
                 13 ->
-                    Proto.Binary.field (Proto.Binary.enum encodeStreamTypeBytes decodeStreamTypeBytes) (\v -> { value | streamType = v }) wire value
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeStreamTypeBytes decodeStreamTypeBytes)
+                        (\v ->
+                            { testName = value.testName
+                            , httpVersion = value.httpVersion
+                            , protocol = value.protocol
+                            , codec = value.codec
+                            , compression = value.compression
+                            , host = value.host
+                            , port_ = value.port_
+                            , serverTlsCert = value.serverTlsCert
+                            , clientTlsCreds = value.clientTlsCreds
+                            , messageReceiveLimit = value.messageReceiveLimit
+                            , service = value.service
+                            , method = value.method
+                            , streamType = v
+                            , useGetHttpMethod = value.useGetHttpMethod
+                            , requestHeaders = value.requestHeaders
+                            , requestMessages = value.requestMessages
+                            , timeoutMs = value.timeoutMs
+                            , requestDelayMs = value.requestDelayMs
+                            , cancel = value.cancel
+                            , rawRequest = value.rawRequest
+                            }
+                        )
+                        wire
+                        value
 
                 14 ->
-                    Proto.Binary.field Proto.Binary.bool (\v -> { value | useGetHttpMethod = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { testName = value.testName
+                            , httpVersion = value.httpVersion
+                            , protocol = value.protocol
+                            , codec = value.codec
+                            , compression = value.compression
+                            , host = value.host
+                            , port_ = value.port_
+                            , serverTlsCert = value.serverTlsCert
+                            , clientTlsCreds = value.clientTlsCreds
+                            , messageReceiveLimit = value.messageReceiveLimit
+                            , service = value.service
+                            , method = value.method
+                            , streamType = value.streamType
+                            , useGetHttpMethod = v
+                            , requestHeaders = value.requestHeaders
+                            , requestMessages = value.requestMessages
+                            , timeoutMs = value.timeoutMs
+                            , requestDelayMs = value.requestDelayMs
+                            , cancel = value.cancel
+                            , rawRequest = value.rawRequest
+                            }
+                        )
+                        wire
+                        value
 
                 15 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) (\v -> { value | requestHeaders = v }) value.requestHeaders wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
+                        (\v ->
+                            { testName = value.testName
+                            , httpVersion = value.httpVersion
+                            , protocol = value.protocol
+                            , codec = value.codec
+                            , compression = value.compression
+                            , host = value.host
+                            , port_ = value.port_
+                            , serverTlsCert = value.serverTlsCert
+                            , clientTlsCreds = value.clientTlsCreds
+                            , messageReceiveLimit = value.messageReceiveLimit
+                            , service = value.service
+                            , method = value.method
+                            , streamType = value.streamType
+                            , useGetHttpMethod = value.useGetHttpMethod
+                            , requestHeaders = v
+                            , requestMessages = value.requestMessages
+                            , timeoutMs = value.timeoutMs
+                            , requestDelayMs = value.requestDelayMs
+                            , cancel = value.cancel
+                            , rawRequest = value.rawRequest
+                            }
+                        )
+                        value.requestHeaders
+                        wire
+                        value
 
                 16 ->
-                    Proto.Binary.repeated Proto.Binary.any (\v -> { value | requestMessages = v }) value.requestMessages wire value
+                    Proto.Binary.repeated
+                        Proto.Binary.any
+                        (\v ->
+                            { testName = value.testName
+                            , httpVersion = value.httpVersion
+                            , protocol = value.protocol
+                            , codec = value.codec
+                            , compression = value.compression
+                            , host = value.host
+                            , port_ = value.port_
+                            , serverTlsCert = value.serverTlsCert
+                            , clientTlsCreds = value.clientTlsCreds
+                            , messageReceiveLimit = value.messageReceiveLimit
+                            , service = value.service
+                            , method = value.method
+                            , streamType = value.streamType
+                            , useGetHttpMethod = value.useGetHttpMethod
+                            , requestHeaders = value.requestHeaders
+                            , requestMessages = v
+                            , timeoutMs = value.timeoutMs
+                            , requestDelayMs = value.requestDelayMs
+                            , cancel = value.cancel
+                            , rawRequest = value.rawRequest
+                            }
+                        )
+                        value.requestMessages
+                        wire
+                        value
 
                 17 ->
-                    Proto.Binary.field Proto.Binary.uint32 (\v -> { value | timeoutMs = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.uint32
+                        (\v ->
+                            { testName = value.testName
+                            , httpVersion = value.httpVersion
+                            , protocol = value.protocol
+                            , codec = value.codec
+                            , compression = value.compression
+                            , host = value.host
+                            , port_ = value.port_
+                            , serverTlsCert = value.serverTlsCert
+                            , clientTlsCreds = value.clientTlsCreds
+                            , messageReceiveLimit = value.messageReceiveLimit
+                            , service = value.service
+                            , method = value.method
+                            , streamType = value.streamType
+                            , useGetHttpMethod = value.useGetHttpMethod
+                            , requestHeaders = value.requestHeaders
+                            , requestMessages = value.requestMessages
+                            , timeoutMs = Just v
+                            , requestDelayMs = value.requestDelayMs
+                            , cancel = value.cancel
+                            , rawRequest = value.rawRequest
+                            }
+                        )
+                        wire
+                        value
 
                 18 ->
-                    Proto.Binary.field Proto.Binary.uint32 (\v -> { value | requestDelayMs = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.uint32
+                        (\v ->
+                            { testName = value.testName
+                            , httpVersion = value.httpVersion
+                            , protocol = value.protocol
+                            , codec = value.codec
+                            , compression = value.compression
+                            , host = value.host
+                            , port_ = value.port_
+                            , serverTlsCert = value.serverTlsCert
+                            , clientTlsCreds = value.clientTlsCreds
+                            , messageReceiveLimit = value.messageReceiveLimit
+                            , service = value.service
+                            , method = value.method
+                            , streamType = value.streamType
+                            , useGetHttpMethod = value.useGetHttpMethod
+                            , requestHeaders = value.requestHeaders
+                            , requestMessages = value.requestMessages
+                            , timeoutMs = value.timeoutMs
+                            , requestDelayMs = v
+                            , cancel = value.cancel
+                            , rawRequest = value.rawRequest
+                            }
+                        )
+                        wire
+                        value
 
                 19 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeClientCompatRequestCancelBytes mergeClientCompatRequestCancelBytes defaultClientCompatRequestCancel) value.cancel (\v -> { value | cancel = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeClientCompatRequestCancelBytes mergeClientCompatRequestCancelBytes defaultClientCompatRequestCancel)
+                        value.cancel
+                        (\v ->
+                            { testName = value.testName
+                            , httpVersion = value.httpVersion
+                            , protocol = value.protocol
+                            , codec = value.codec
+                            , compression = value.compression
+                            , host = value.host
+                            , port_ = value.port_
+                            , serverTlsCert = value.serverTlsCert
+                            , clientTlsCreds = value.clientTlsCreds
+                            , messageReceiveLimit = value.messageReceiveLimit
+                            , service = value.service
+                            , method = value.method
+                            , streamType = value.streamType
+                            , useGetHttpMethod = value.useGetHttpMethod
+                            , requestHeaders = value.requestHeaders
+                            , requestMessages = value.requestMessages
+                            , timeoutMs = value.timeoutMs
+                            , requestDelayMs = value.requestDelayMs
+                            , cancel = Just v
+                            , rawRequest = value.rawRequest
+                            }
+                        )
+                        wire
+                        value
 
                 20 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeRawHTTPRequestBytes mergeRawHTTPRequestBytes defaultRawHTTPRequest) value.rawRequest (\v -> { value | rawRequest = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeRawHTTPRequestBytes mergeRawHTTPRequestBytes defaultRawHTTPRequest)
+                        value.rawRequest
+                        (\v ->
+                            { testName = value.testName
+                            , httpVersion = value.httpVersion
+                            , protocol = value.protocol
+                            , codec = value.codec
+                            , compression = value.compression
+                            , host = value.host
+                            , port_ = value.port_
+                            , serverTlsCert = value.serverTlsCert
+                            , clientTlsCreds = value.clientTlsCreds
+                            , messageReceiveLimit = value.messageReceiveLimit
+                            , service = value.service
+                            , method = value.method
+                            , streamType = value.streamType
+                            , useGetHttpMethod = value.useGetHttpMethod
+                            , requestHeaders = value.requestHeaders
+                            , requestMessages = value.requestMessages
+                            , timeoutMs = value.timeoutMs
+                            , requestDelayMs = value.requestDelayMs
+                            , cancel = value.cancel
+                            , rawRequest = Just v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
         (\value ->
-            { value
-                | requestHeaders = List.reverse value.requestHeaders
-                , requestMessages = List.reverse value.requestMessages
+            { testName = value.testName
+            , httpVersion = value.httpVersion
+            , protocol = value.protocol
+            , codec = value.codec
+            , compression = value.compression
+            , host = value.host
+            , port_ = value.port_
+            , serverTlsCert = value.serverTlsCert
+            , clientTlsCreds = value.clientTlsCreds
+            , messageReceiveLimit = value.messageReceiveLimit
+            , service = value.service
+            , method = value.method
+            , streamType = value.streamType
+            , useGetHttpMethod = value.useGetHttpMethod
+            , requestHeaders = List.reverse value.requestHeaders
+            , requestMessages = List.reverse value.requestMessages
+            , timeoutMs = value.timeoutMs
+            , requestDelayMs = value.requestDelayMs
+            , cancel = value.cancel
+            , rawRequest = value.rawRequest
             }
         )
 
@@ -4741,13 +5283,34 @@ mergeClientCompatRequestCancelBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.empty (\_ -> { value | cancelTiming = ClientCompatRequestCancelCancelTimingBeforeCloseSend }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.empty
+                        (\_ ->
+                            { cancelTiming = ClientCompatRequestCancelCancelTimingBeforeCloseSend
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.uint32 (\v -> { value | cancelTiming = ClientCompatRequestCancelCancelTimingAfterCloseSendMs v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.uint32
+                        (\v ->
+                            { cancelTiming = ClientCompatRequestCancelCancelTimingAfterCloseSendMs v
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.field Proto.Binary.uint32 (\v -> { value | cancelTiming = ClientCompatRequestCancelCancelTimingAfterNumResponses v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.uint32
+                        (\v ->
+                            { cancelTiming = ClientCompatRequestCancelCancelTimingAfterNumResponses v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -4771,7 +5334,15 @@ mergeClientCompatResponseBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | testName = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { testName = v
+                            , result = value.result
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
                     Proto.Binary.fieldInto
@@ -4783,7 +5354,11 @@ mergeClientCompatResponseBytes =
                             _ ->
                                 Nothing
                         )
-                        (\v -> { value | result = ClientCompatResponseResultResponse v })
+                        (\v ->
+                            { testName = value.testName
+                            , result = ClientCompatResponseResultResponse v
+                            }
+                        )
                         wire
                         value
 
@@ -4797,7 +5372,11 @@ mergeClientCompatResponseBytes =
                             _ ->
                                 Nothing
                         )
-                        (\v -> { value | result = ClientCompatResponseResultError v })
+                        (\v ->
+                            { testName = value.testName
+                            , result = ClientCompatResponseResultError v
+                            }
+                        )
                         wire
                         value
 
@@ -4823,35 +5402,133 @@ mergeClientResponseResultBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) (\v -> { value | responseHeaders = v }) value.responseHeaders wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
+                        (\v ->
+                            { responseHeaders = v
+                            , payloads = value.payloads
+                            , error = value.error
+                            , responseTrailers = value.responseTrailers
+                            , numUnsentRequests = value.numUnsentRequests
+                            , httpStatusCode = value.httpStatusCode
+                            , feedback = value.feedback
+                            }
+                        )
+                        value.responseHeaders
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded encodeConformancePayloadBytes mergeConformancePayloadBytes defaultConformancePayload) (\v -> { value | payloads = v }) value.payloads wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeConformancePayloadBytes mergeConformancePayloadBytes defaultConformancePayload)
+                        (\v ->
+                            { responseHeaders = value.responseHeaders
+                            , payloads = v
+                            , error = value.error
+                            , responseTrailers = value.responseTrailers
+                            , numUnsentRequests = value.numUnsentRequests
+                            , httpStatusCode = value.httpStatusCode
+                            , feedback = value.feedback
+                            }
+                        )
+                        value.payloads
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeErrorBytes mergeErrorBytes defaultError) value.error (\v -> { value | error = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeErrorBytes mergeErrorBytes defaultError)
+                        value.error
+                        (\v ->
+                            { responseHeaders = value.responseHeaders
+                            , payloads = value.payloads
+                            , error = Just v
+                            , responseTrailers = value.responseTrailers
+                            , numUnsentRequests = value.numUnsentRequests
+                            , httpStatusCode = value.httpStatusCode
+                            , feedback = value.feedback
+                            }
+                        )
+                        wire
+                        value
 
                 4 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) (\v -> { value | responseTrailers = v }) value.responseTrailers wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
+                        (\v ->
+                            { responseHeaders = value.responseHeaders
+                            , payloads = value.payloads
+                            , error = value.error
+                            , responseTrailers = v
+                            , numUnsentRequests = value.numUnsentRequests
+                            , httpStatusCode = value.httpStatusCode
+                            , feedback = value.feedback
+                            }
+                        )
+                        value.responseTrailers
+                        wire
+                        value
 
                 5 ->
-                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | numUnsentRequests = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int32
+                        (\v ->
+                            { responseHeaders = value.responseHeaders
+                            , payloads = value.payloads
+                            , error = value.error
+                            , responseTrailers = value.responseTrailers
+                            , numUnsentRequests = v
+                            , httpStatusCode = value.httpStatusCode
+                            , feedback = value.feedback
+                            }
+                        )
+                        wire
+                        value
 
                 6 ->
-                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | httpStatusCode = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int32
+                        (\v ->
+                            { responseHeaders = value.responseHeaders
+                            , payloads = value.payloads
+                            , error = value.error
+                            , responseTrailers = value.responseTrailers
+                            , numUnsentRequests = value.numUnsentRequests
+                            , httpStatusCode = Just v
+                            , feedback = value.feedback
+                            }
+                        )
+                        wire
+                        value
 
                 7 ->
-                    Proto.Binary.repeated Proto.Binary.string (\v -> { value | feedback = v }) value.feedback wire value
+                    Proto.Binary.repeated
+                        Proto.Binary.string
+                        (\v ->
+                            { responseHeaders = value.responseHeaders
+                            , payloads = value.payloads
+                            , error = value.error
+                            , responseTrailers = value.responseTrailers
+                            , numUnsentRequests = value.numUnsentRequests
+                            , httpStatusCode = value.httpStatusCode
+                            , feedback = v
+                            }
+                        )
+                        value.feedback
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
         (\value ->
-            { value
-                | responseHeaders = List.reverse value.responseHeaders
-                , payloads = List.reverse value.payloads
-                , responseTrailers = List.reverse value.responseTrailers
-                , feedback = List.reverse value.feedback
+            { responseHeaders = List.reverse value.responseHeaders
+            , payloads = List.reverse value.payloads
+            , error = value.error
+            , responseTrailers = List.reverse value.responseTrailers
+            , numUnsentRequests = value.numUnsentRequests
+            , httpStatusCode = value.httpStatusCode
+            , feedback = List.reverse value.feedback
             }
         )
 
@@ -4872,7 +5549,14 @@ mergeClientErrorResultBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | message = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { message = v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -4896,21 +5580,68 @@ mergeWireDetailsBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | actualStatusCode = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int32
+                        (\v ->
+                            { actualStatusCode = v
+                            , connectErrorRaw = value.connectErrorRaw
+                            , actualHttpTrailers = value.actualHttpTrailers
+                            , actualGrpcwebTrailers = value.actualGrpcwebTrailers
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.struct (\v -> { value | connectErrorRaw = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.struct
+                        (\v ->
+                            { actualStatusCode = value.actualStatusCode
+                            , connectErrorRaw = Just v
+                            , actualHttpTrailers = value.actualHttpTrailers
+                            , actualGrpcwebTrailers = value.actualGrpcwebTrailers
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) (\v -> { value | actualHttpTrailers = v }) value.actualHttpTrailers wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
+                        (\v ->
+                            { actualStatusCode = value.actualStatusCode
+                            , connectErrorRaw = value.connectErrorRaw
+                            , actualHttpTrailers = v
+                            , actualGrpcwebTrailers = value.actualGrpcwebTrailers
+                            }
+                        )
+                        value.actualHttpTrailers
+                        wire
+                        value
 
                 4 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | actualGrpcwebTrailers = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { actualStatusCode = value.actualStatusCode
+                            , connectErrorRaw = value.connectErrorRaw
+                            , actualHttpTrailers = value.actualHttpTrailers
+                            , actualGrpcwebTrailers = Just v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value -> { value | actualHttpTrailers = List.reverse value.actualHttpTrailers })
+        (\value ->
+            { actualStatusCode = value.actualStatusCode
+            , connectErrorRaw = value.connectErrorRaw
+            , actualHttpTrailers = List.reverse value.actualHttpTrailers
+            , actualGrpcwebTrailers = value.actualGrpcwebTrailers
+            }
+        )
 
 
 {-| Decodes a [`WireDetails`](#WireDetails) from protobuf binary.
@@ -4929,21 +5660,51 @@ mergeConfigBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeFeaturesBytes mergeFeaturesBytes defaultFeatures) value.features (\v -> { value | features = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeFeaturesBytes mergeFeaturesBytes defaultFeatures)
+                        value.features
+                        (\v ->
+                            { features = Just v
+                            , includeCases = value.includeCases
+                            , excludeCases = value.excludeCases
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded encodeConfigCaseBytes mergeConfigCaseBytes defaultConfigCase) (\v -> { value | includeCases = v }) value.includeCases wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeConfigCaseBytes mergeConfigCaseBytes defaultConfigCase)
+                        (\v ->
+                            { features = value.features
+                            , includeCases = v
+                            , excludeCases = value.excludeCases
+                            }
+                        )
+                        value.includeCases
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded encodeConfigCaseBytes mergeConfigCaseBytes defaultConfigCase) (\v -> { value | excludeCases = v }) value.excludeCases wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeConfigCaseBytes mergeConfigCaseBytes defaultConfigCase)
+                        (\v ->
+                            { features = value.features
+                            , includeCases = value.includeCases
+                            , excludeCases = v
+                            }
+                        )
+                        value.excludeCases
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
         (\value ->
-            { value
-                | includeCases = List.reverse value.includeCases
-                , excludeCases = List.reverse value.excludeCases
+            { features = value.features
+            , includeCases = List.reverse value.includeCases
+            , excludeCases = List.reverse value.excludeCases
             }
         )
 
@@ -4964,51 +5725,278 @@ mergeFeaturesBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.repeated (Proto.Binary.enum encodeHTTPVersionBytes decodeHTTPVersionBytes) (\v -> { value | versions = v }) value.versions wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.enum encodeHTTPVersionBytes decodeHTTPVersionBytes)
+                        (\v ->
+                            { versions = v
+                            , protocols = value.protocols
+                            , codecs = value.codecs
+                            , compressions = value.compressions
+                            , streamTypes = value.streamTypes
+                            , supportsH2c = value.supportsH2c
+                            , supportsTls = value.supportsTls
+                            , supportsTlsClientCerts = value.supportsTlsClientCerts
+                            , supportsTrailers = value.supportsTrailers
+                            , supportsHalfDuplexBidiOverHttp1 = value.supportsHalfDuplexBidiOverHttp1
+                            , supportsConnectGet = value.supportsConnectGet
+                            , supportsMessageReceiveLimit = value.supportsMessageReceiveLimit
+                            }
+                        )
+                        value.versions
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.repeated (Proto.Binary.enum encodeProtocolBytes decodeProtocolBytes) (\v -> { value | protocols = v }) value.protocols wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.enum encodeProtocolBytes decodeProtocolBytes)
+                        (\v ->
+                            { versions = value.versions
+                            , protocols = v
+                            , codecs = value.codecs
+                            , compressions = value.compressions
+                            , streamTypes = value.streamTypes
+                            , supportsH2c = value.supportsH2c
+                            , supportsTls = value.supportsTls
+                            , supportsTlsClientCerts = value.supportsTlsClientCerts
+                            , supportsTrailers = value.supportsTrailers
+                            , supportsHalfDuplexBidiOverHttp1 = value.supportsHalfDuplexBidiOverHttp1
+                            , supportsConnectGet = value.supportsConnectGet
+                            , supportsMessageReceiveLimit = value.supportsMessageReceiveLimit
+                            }
+                        )
+                        value.protocols
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.repeated (Proto.Binary.enum encodeCodecBytes decodeCodecBytes) (\v -> { value | codecs = v }) value.codecs wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.enum encodeCodecBytes decodeCodecBytes)
+                        (\v ->
+                            { versions = value.versions
+                            , protocols = value.protocols
+                            , codecs = v
+                            , compressions = value.compressions
+                            , streamTypes = value.streamTypes
+                            , supportsH2c = value.supportsH2c
+                            , supportsTls = value.supportsTls
+                            , supportsTlsClientCerts = value.supportsTlsClientCerts
+                            , supportsTrailers = value.supportsTrailers
+                            , supportsHalfDuplexBidiOverHttp1 = value.supportsHalfDuplexBidiOverHttp1
+                            , supportsConnectGet = value.supportsConnectGet
+                            , supportsMessageReceiveLimit = value.supportsMessageReceiveLimit
+                            }
+                        )
+                        value.codecs
+                        wire
+                        value
 
                 4 ->
-                    Proto.Binary.repeated (Proto.Binary.enum encodeCompressionBytes decodeCompressionBytes) (\v -> { value | compressions = v }) value.compressions wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.enum encodeCompressionBytes decodeCompressionBytes)
+                        (\v ->
+                            { versions = value.versions
+                            , protocols = value.protocols
+                            , codecs = value.codecs
+                            , compressions = v
+                            , streamTypes = value.streamTypes
+                            , supportsH2c = value.supportsH2c
+                            , supportsTls = value.supportsTls
+                            , supportsTlsClientCerts = value.supportsTlsClientCerts
+                            , supportsTrailers = value.supportsTrailers
+                            , supportsHalfDuplexBidiOverHttp1 = value.supportsHalfDuplexBidiOverHttp1
+                            , supportsConnectGet = value.supportsConnectGet
+                            , supportsMessageReceiveLimit = value.supportsMessageReceiveLimit
+                            }
+                        )
+                        value.compressions
+                        wire
+                        value
 
                 5 ->
-                    Proto.Binary.repeated (Proto.Binary.enum encodeStreamTypeBytes decodeStreamTypeBytes) (\v -> { value | streamTypes = v }) value.streamTypes wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.enum encodeStreamTypeBytes decodeStreamTypeBytes)
+                        (\v ->
+                            { versions = value.versions
+                            , protocols = value.protocols
+                            , codecs = value.codecs
+                            , compressions = value.compressions
+                            , streamTypes = v
+                            , supportsH2c = value.supportsH2c
+                            , supportsTls = value.supportsTls
+                            , supportsTlsClientCerts = value.supportsTlsClientCerts
+                            , supportsTrailers = value.supportsTrailers
+                            , supportsHalfDuplexBidiOverHttp1 = value.supportsHalfDuplexBidiOverHttp1
+                            , supportsConnectGet = value.supportsConnectGet
+                            , supportsMessageReceiveLimit = value.supportsMessageReceiveLimit
+                            }
+                        )
+                        value.streamTypes
+                        wire
+                        value
 
                 6 ->
-                    Proto.Binary.field Proto.Binary.bool (\v -> { value | supportsH2c = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { versions = value.versions
+                            , protocols = value.protocols
+                            , codecs = value.codecs
+                            , compressions = value.compressions
+                            , streamTypes = value.streamTypes
+                            , supportsH2c = Just v
+                            , supportsTls = value.supportsTls
+                            , supportsTlsClientCerts = value.supportsTlsClientCerts
+                            , supportsTrailers = value.supportsTrailers
+                            , supportsHalfDuplexBidiOverHttp1 = value.supportsHalfDuplexBidiOverHttp1
+                            , supportsConnectGet = value.supportsConnectGet
+                            , supportsMessageReceiveLimit = value.supportsMessageReceiveLimit
+                            }
+                        )
+                        wire
+                        value
 
                 7 ->
-                    Proto.Binary.field Proto.Binary.bool (\v -> { value | supportsTls = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { versions = value.versions
+                            , protocols = value.protocols
+                            , codecs = value.codecs
+                            , compressions = value.compressions
+                            , streamTypes = value.streamTypes
+                            , supportsH2c = value.supportsH2c
+                            , supportsTls = Just v
+                            , supportsTlsClientCerts = value.supportsTlsClientCerts
+                            , supportsTrailers = value.supportsTrailers
+                            , supportsHalfDuplexBidiOverHttp1 = value.supportsHalfDuplexBidiOverHttp1
+                            , supportsConnectGet = value.supportsConnectGet
+                            , supportsMessageReceiveLimit = value.supportsMessageReceiveLimit
+                            }
+                        )
+                        wire
+                        value
 
                 8 ->
-                    Proto.Binary.field Proto.Binary.bool (\v -> { value | supportsTlsClientCerts = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { versions = value.versions
+                            , protocols = value.protocols
+                            , codecs = value.codecs
+                            , compressions = value.compressions
+                            , streamTypes = value.streamTypes
+                            , supportsH2c = value.supportsH2c
+                            , supportsTls = value.supportsTls
+                            , supportsTlsClientCerts = Just v
+                            , supportsTrailers = value.supportsTrailers
+                            , supportsHalfDuplexBidiOverHttp1 = value.supportsHalfDuplexBidiOverHttp1
+                            , supportsConnectGet = value.supportsConnectGet
+                            , supportsMessageReceiveLimit = value.supportsMessageReceiveLimit
+                            }
+                        )
+                        wire
+                        value
 
                 9 ->
-                    Proto.Binary.field Proto.Binary.bool (\v -> { value | supportsTrailers = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { versions = value.versions
+                            , protocols = value.protocols
+                            , codecs = value.codecs
+                            , compressions = value.compressions
+                            , streamTypes = value.streamTypes
+                            , supportsH2c = value.supportsH2c
+                            , supportsTls = value.supportsTls
+                            , supportsTlsClientCerts = value.supportsTlsClientCerts
+                            , supportsTrailers = Just v
+                            , supportsHalfDuplexBidiOverHttp1 = value.supportsHalfDuplexBidiOverHttp1
+                            , supportsConnectGet = value.supportsConnectGet
+                            , supportsMessageReceiveLimit = value.supportsMessageReceiveLimit
+                            }
+                        )
+                        wire
+                        value
 
                 10 ->
-                    Proto.Binary.field Proto.Binary.bool (\v -> { value | supportsHalfDuplexBidiOverHttp1 = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { versions = value.versions
+                            , protocols = value.protocols
+                            , codecs = value.codecs
+                            , compressions = value.compressions
+                            , streamTypes = value.streamTypes
+                            , supportsH2c = value.supportsH2c
+                            , supportsTls = value.supportsTls
+                            , supportsTlsClientCerts = value.supportsTlsClientCerts
+                            , supportsTrailers = value.supportsTrailers
+                            , supportsHalfDuplexBidiOverHttp1 = Just v
+                            , supportsConnectGet = value.supportsConnectGet
+                            , supportsMessageReceiveLimit = value.supportsMessageReceiveLimit
+                            }
+                        )
+                        wire
+                        value
 
                 11 ->
-                    Proto.Binary.field Proto.Binary.bool (\v -> { value | supportsConnectGet = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { versions = value.versions
+                            , protocols = value.protocols
+                            , codecs = value.codecs
+                            , compressions = value.compressions
+                            , streamTypes = value.streamTypes
+                            , supportsH2c = value.supportsH2c
+                            , supportsTls = value.supportsTls
+                            , supportsTlsClientCerts = value.supportsTlsClientCerts
+                            , supportsTrailers = value.supportsTrailers
+                            , supportsHalfDuplexBidiOverHttp1 = value.supportsHalfDuplexBidiOverHttp1
+                            , supportsConnectGet = Just v
+                            , supportsMessageReceiveLimit = value.supportsMessageReceiveLimit
+                            }
+                        )
+                        wire
+                        value
 
                 12 ->
-                    Proto.Binary.field Proto.Binary.bool (\v -> { value | supportsMessageReceiveLimit = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { versions = value.versions
+                            , protocols = value.protocols
+                            , codecs = value.codecs
+                            , compressions = value.compressions
+                            , streamTypes = value.streamTypes
+                            , supportsH2c = value.supportsH2c
+                            , supportsTls = value.supportsTls
+                            , supportsTlsClientCerts = value.supportsTlsClientCerts
+                            , supportsTrailers = value.supportsTrailers
+                            , supportsHalfDuplexBidiOverHttp1 = value.supportsHalfDuplexBidiOverHttp1
+                            , supportsConnectGet = value.supportsConnectGet
+                            , supportsMessageReceiveLimit = Just v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
         (\value ->
-            { value
-                | versions = List.reverse value.versions
-                , protocols = List.reverse value.protocols
-                , codecs = List.reverse value.codecs
-                , compressions = List.reverse value.compressions
-                , streamTypes = List.reverse value.streamTypes
+            { versions = List.reverse value.versions
+            , protocols = List.reverse value.protocols
+            , codecs = List.reverse value.codecs
+            , compressions = List.reverse value.compressions
+            , streamTypes = List.reverse value.streamTypes
+            , supportsH2c = value.supportsH2c
+            , supportsTls = value.supportsTls
+            , supportsTlsClientCerts = value.supportsTlsClientCerts
+            , supportsTrailers = value.supportsTrailers
+            , supportsHalfDuplexBidiOverHttp1 = value.supportsHalfDuplexBidiOverHttp1
+            , supportsConnectGet = value.supportsConnectGet
+            , supportsMessageReceiveLimit = value.supportsMessageReceiveLimit
             }
         )
 
@@ -5029,28 +6017,140 @@ mergeConfigCaseBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field (Proto.Binary.enum encodeHTTPVersionBytes decodeHTTPVersionBytes) (\v -> { value | version = v }) wire value
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeHTTPVersionBytes decodeHTTPVersionBytes)
+                        (\v ->
+                            { version = v
+                            , protocol = value.protocol
+                            , codec = value.codec
+                            , compression = value.compression
+                            , streamType = value.streamType
+                            , useTls = value.useTls
+                            , useTlsClientCerts = value.useTlsClientCerts
+                            , useMessageReceiveLimit = value.useMessageReceiveLimit
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field (Proto.Binary.enum encodeProtocolBytes decodeProtocolBytes) (\v -> { value | protocol = v }) wire value
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeProtocolBytes decodeProtocolBytes)
+                        (\v ->
+                            { version = value.version
+                            , protocol = v
+                            , codec = value.codec
+                            , compression = value.compression
+                            , streamType = value.streamType
+                            , useTls = value.useTls
+                            , useTlsClientCerts = value.useTlsClientCerts
+                            , useMessageReceiveLimit = value.useMessageReceiveLimit
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.field (Proto.Binary.enum encodeCodecBytes decodeCodecBytes) (\v -> { value | codec = v }) wire value
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeCodecBytes decodeCodecBytes)
+                        (\v ->
+                            { version = value.version
+                            , protocol = value.protocol
+                            , codec = v
+                            , compression = value.compression
+                            , streamType = value.streamType
+                            , useTls = value.useTls
+                            , useTlsClientCerts = value.useTlsClientCerts
+                            , useMessageReceiveLimit = value.useMessageReceiveLimit
+                            }
+                        )
+                        wire
+                        value
 
                 4 ->
-                    Proto.Binary.field (Proto.Binary.enum encodeCompressionBytes decodeCompressionBytes) (\v -> { value | compression = v }) wire value
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeCompressionBytes decodeCompressionBytes)
+                        (\v ->
+                            { version = value.version
+                            , protocol = value.protocol
+                            , codec = value.codec
+                            , compression = v
+                            , streamType = value.streamType
+                            , useTls = value.useTls
+                            , useTlsClientCerts = value.useTlsClientCerts
+                            , useMessageReceiveLimit = value.useMessageReceiveLimit
+                            }
+                        )
+                        wire
+                        value
 
                 5 ->
-                    Proto.Binary.field (Proto.Binary.enum encodeStreamTypeBytes decodeStreamTypeBytes) (\v -> { value | streamType = v }) wire value
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeStreamTypeBytes decodeStreamTypeBytes)
+                        (\v ->
+                            { version = value.version
+                            , protocol = value.protocol
+                            , codec = value.codec
+                            , compression = value.compression
+                            , streamType = v
+                            , useTls = value.useTls
+                            , useTlsClientCerts = value.useTlsClientCerts
+                            , useMessageReceiveLimit = value.useMessageReceiveLimit
+                            }
+                        )
+                        wire
+                        value
 
                 6 ->
-                    Proto.Binary.field Proto.Binary.bool (\v -> { value | useTls = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { version = value.version
+                            , protocol = value.protocol
+                            , codec = value.codec
+                            , compression = value.compression
+                            , streamType = value.streamType
+                            , useTls = Just v
+                            , useTlsClientCerts = value.useTlsClientCerts
+                            , useMessageReceiveLimit = value.useMessageReceiveLimit
+                            }
+                        )
+                        wire
+                        value
 
                 7 ->
-                    Proto.Binary.field Proto.Binary.bool (\v -> { value | useTlsClientCerts = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { version = value.version
+                            , protocol = value.protocol
+                            , codec = value.codec
+                            , compression = value.compression
+                            , streamType = value.streamType
+                            , useTls = value.useTls
+                            , useTlsClientCerts = Just v
+                            , useMessageReceiveLimit = value.useMessageReceiveLimit
+                            }
+                        )
+                        wire
+                        value
 
                 8 ->
-                    Proto.Binary.field Proto.Binary.bool (\v -> { value | useMessageReceiveLimit = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { version = value.version
+                            , protocol = value.protocol
+                            , codec = value.codec
+                            , compression = value.compression
+                            , streamType = value.streamType
+                            , useTls = value.useTls
+                            , useTlsClientCerts = value.useTlsClientCerts
+                            , useMessageReceiveLimit = Just v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -5074,10 +6174,26 @@ mergeTLSCredsBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.bytes (\v -> { value | cert = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bytes
+                        (\v ->
+                            { cert = v
+                            , key = value.key
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.bytes (\v -> { value | key = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bytes
+                        (\v ->
+                            { cert = value.cert
+                            , key = v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -5101,22 +6217,95 @@ mergeServerCompatRequestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field (Proto.Binary.enum encodeProtocolBytes decodeProtocolBytes) (\v -> { value | protocol = v }) wire value
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeProtocolBytes decodeProtocolBytes)
+                        (\v ->
+                            { protocol = v
+                            , httpVersion = value.httpVersion
+                            , useTls = value.useTls
+                            , clientTlsCert = value.clientTlsCert
+                            , messageReceiveLimit = value.messageReceiveLimit
+                            , serverCreds = value.serverCreds
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field (Proto.Binary.enum encodeHTTPVersionBytes decodeHTTPVersionBytes) (\v -> { value | httpVersion = v }) wire value
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeHTTPVersionBytes decodeHTTPVersionBytes)
+                        (\v ->
+                            { protocol = value.protocol
+                            , httpVersion = v
+                            , useTls = value.useTls
+                            , clientTlsCert = value.clientTlsCert
+                            , messageReceiveLimit = value.messageReceiveLimit
+                            , serverCreds = value.serverCreds
+                            }
+                        )
+                        wire
+                        value
 
                 4 ->
-                    Proto.Binary.field Proto.Binary.bool (\v -> { value | useTls = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { protocol = value.protocol
+                            , httpVersion = value.httpVersion
+                            , useTls = v
+                            , clientTlsCert = value.clientTlsCert
+                            , messageReceiveLimit = value.messageReceiveLimit
+                            , serverCreds = value.serverCreds
+                            }
+                        )
+                        wire
+                        value
 
                 5 ->
-                    Proto.Binary.field Proto.Binary.bytes (\v -> { value | clientTlsCert = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bytes
+                        (\v ->
+                            { protocol = value.protocol
+                            , httpVersion = value.httpVersion
+                            , useTls = value.useTls
+                            , clientTlsCert = v
+                            , messageReceiveLimit = value.messageReceiveLimit
+                            , serverCreds = value.serverCreds
+                            }
+                        )
+                        wire
+                        value
 
                 6 ->
-                    Proto.Binary.field Proto.Binary.uint32 (\v -> { value | messageReceiveLimit = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.uint32
+                        (\v ->
+                            { protocol = value.protocol
+                            , httpVersion = value.httpVersion
+                            , useTls = value.useTls
+                            , clientTlsCert = value.clientTlsCert
+                            , messageReceiveLimit = v
+                            , serverCreds = value.serverCreds
+                            }
+                        )
+                        wire
+                        value
 
                 7 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeTLSCredsBytes mergeTLSCredsBytes defaultTLSCreds) value.serverCreds (\v -> { value | serverCreds = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeTLSCredsBytes mergeTLSCredsBytes defaultTLSCreds)
+                        value.serverCreds
+                        (\v ->
+                            { protocol = value.protocol
+                            , httpVersion = value.httpVersion
+                            , useTls = value.useTls
+                            , clientTlsCert = value.clientTlsCert
+                            , messageReceiveLimit = value.messageReceiveLimit
+                            , serverCreds = Just v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -5140,13 +6329,40 @@ mergeServerCompatResponseBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | host = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { host = v
+                            , port_ = value.port_
+                            , pemCert = value.pemCert
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.uint32 (\v -> { value | port_ = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.uint32
+                        (\v ->
+                            { host = value.host
+                            , port_ = v
+                            , pemCert = value.pemCert
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.field Proto.Binary.bytes (\v -> { value | pemCert = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bytes
+                        (\v ->
+                            { host = value.host
+                            , port_ = value.port_
+                            , pemCert = v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -5170,10 +6386,33 @@ mergeUnaryResponseDefinitionBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) (\v -> { value | responseHeaders = v }) value.responseHeaders wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
+                        (\v ->
+                            { responseHeaders = v
+                            , response = value.response
+                            , responseTrailers = value.responseTrailers
+                            , responseDelayMs = value.responseDelayMs
+                            , rawResponse = value.rawResponse
+                            }
+                        )
+                        value.responseHeaders
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.bytes (\v -> { value | response = UnaryResponseDefinitionResponseResponseData v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bytes
+                        (\v ->
+                            { responseHeaders = value.responseHeaders
+                            , response = UnaryResponseDefinitionResponseResponseData v
+                            , responseTrailers = value.responseTrailers
+                            , responseDelayMs = value.responseDelayMs
+                            , rawResponse = value.rawResponse
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
                     Proto.Binary.fieldInto
@@ -5185,26 +6424,70 @@ mergeUnaryResponseDefinitionBytes =
                             _ ->
                                 Nothing
                         )
-                        (\v -> { value | response = UnaryResponseDefinitionResponseError v })
+                        (\v ->
+                            { responseHeaders = value.responseHeaders
+                            , response = UnaryResponseDefinitionResponseError v
+                            , responseTrailers = value.responseTrailers
+                            , responseDelayMs = value.responseDelayMs
+                            , rawResponse = value.rawResponse
+                            }
+                        )
                         wire
                         value
 
                 4 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) (\v -> { value | responseTrailers = v }) value.responseTrailers wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
+                        (\v ->
+                            { responseHeaders = value.responseHeaders
+                            , response = value.response
+                            , responseTrailers = v
+                            , responseDelayMs = value.responseDelayMs
+                            , rawResponse = value.rawResponse
+                            }
+                        )
+                        value.responseTrailers
+                        wire
+                        value
 
                 5 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeRawHTTPResponseBytes mergeRawHTTPResponseBytes defaultRawHTTPResponse) value.rawResponse (\v -> { value | rawResponse = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeRawHTTPResponseBytes mergeRawHTTPResponseBytes defaultRawHTTPResponse)
+                        value.rawResponse
+                        (\v ->
+                            { responseHeaders = value.responseHeaders
+                            , response = value.response
+                            , responseTrailers = value.responseTrailers
+                            , responseDelayMs = value.responseDelayMs
+                            , rawResponse = Just v
+                            }
+                        )
+                        wire
+                        value
 
                 6 ->
-                    Proto.Binary.field Proto.Binary.uint32 (\v -> { value | responseDelayMs = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.uint32
+                        (\v ->
+                            { responseHeaders = value.responseHeaders
+                            , response = value.response
+                            , responseTrailers = value.responseTrailers
+                            , responseDelayMs = v
+                            , rawResponse = value.rawResponse
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
         (\value ->
-            { value
-                | responseHeaders = List.reverse value.responseHeaders
-                , responseTrailers = List.reverse value.responseTrailers
+            { responseHeaders = List.reverse value.responseHeaders
+            , response = value.response
+            , responseTrailers = List.reverse value.responseTrailers
+            , responseDelayMs = value.responseDelayMs
+            , rawResponse = value.rawResponse
             }
         )
 
@@ -5225,31 +6508,110 @@ mergeStreamResponseDefinitionBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) (\v -> { value | responseHeaders = v }) value.responseHeaders wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
+                        (\v ->
+                            { responseHeaders = v
+                            , responseData = value.responseData
+                            , responseDelayMs = value.responseDelayMs
+                            , error = value.error
+                            , responseTrailers = value.responseTrailers
+                            , rawResponse = value.rawResponse
+                            }
+                        )
+                        value.responseHeaders
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.repeated Proto.Binary.bytes (\v -> { value | responseData = v }) value.responseData wire value
+                    Proto.Binary.repeated
+                        Proto.Binary.bytes
+                        (\v ->
+                            { responseHeaders = value.responseHeaders
+                            , responseData = v
+                            , responseDelayMs = value.responseDelayMs
+                            , error = value.error
+                            , responseTrailers = value.responseTrailers
+                            , rawResponse = value.rawResponse
+                            }
+                        )
+                        value.responseData
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.field Proto.Binary.uint32 (\v -> { value | responseDelayMs = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.uint32
+                        (\v ->
+                            { responseHeaders = value.responseHeaders
+                            , responseData = value.responseData
+                            , responseDelayMs = v
+                            , error = value.error
+                            , responseTrailers = value.responseTrailers
+                            , rawResponse = value.rawResponse
+                            }
+                        )
+                        wire
+                        value
 
                 4 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeErrorBytes mergeErrorBytes defaultError) value.error (\v -> { value | error = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeErrorBytes mergeErrorBytes defaultError)
+                        value.error
+                        (\v ->
+                            { responseHeaders = value.responseHeaders
+                            , responseData = value.responseData
+                            , responseDelayMs = value.responseDelayMs
+                            , error = Just v
+                            , responseTrailers = value.responseTrailers
+                            , rawResponse = value.rawResponse
+                            }
+                        )
+                        wire
+                        value
 
                 5 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) (\v -> { value | responseTrailers = v }) value.responseTrailers wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
+                        (\v ->
+                            { responseHeaders = value.responseHeaders
+                            , responseData = value.responseData
+                            , responseDelayMs = value.responseDelayMs
+                            , error = value.error
+                            , responseTrailers = v
+                            , rawResponse = value.rawResponse
+                            }
+                        )
+                        value.responseTrailers
+                        wire
+                        value
 
                 6 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeRawHTTPResponseBytes mergeRawHTTPResponseBytes defaultRawHTTPResponse) value.rawResponse (\v -> { value | rawResponse = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeRawHTTPResponseBytes mergeRawHTTPResponseBytes defaultRawHTTPResponse)
+                        value.rawResponse
+                        (\v ->
+                            { responseHeaders = value.responseHeaders
+                            , responseData = value.responseData
+                            , responseDelayMs = value.responseDelayMs
+                            , error = value.error
+                            , responseTrailers = value.responseTrailers
+                            , rawResponse = Just v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
         (\value ->
-            { value
-                | responseHeaders = List.reverse value.responseHeaders
-                , responseData = List.reverse value.responseData
-                , responseTrailers = List.reverse value.responseTrailers
+            { responseHeaders = List.reverse value.responseHeaders
+            , responseData = List.reverse value.responseData
+            , responseDelayMs = value.responseDelayMs
+            , error = value.error
+            , responseTrailers = List.reverse value.responseTrailers
+            , rawResponse = value.rawResponse
             }
         )
 
@@ -5270,10 +6632,27 @@ mergeUnaryRequestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeUnaryResponseDefinitionBytes mergeUnaryResponseDefinitionBytes defaultUnaryResponseDefinition) value.responseDefinition (\v -> { value | responseDefinition = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeUnaryResponseDefinitionBytes mergeUnaryResponseDefinitionBytes defaultUnaryResponseDefinition)
+                        value.responseDefinition
+                        (\v ->
+                            { responseDefinition = Just v
+                            , requestData = value.requestData
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.bytes (\v -> { value | requestData = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bytes
+                        (\v ->
+                            { responseDefinition = value.responseDefinition
+                            , requestData = v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -5297,7 +6676,15 @@ mergeUnaryResponseBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeConformancePayloadBytes mergeConformancePayloadBytes defaultConformancePayload) value.payload (\v -> { value | payload = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeConformancePayloadBytes mergeConformancePayloadBytes defaultConformancePayload)
+                        value.payload
+                        (\v ->
+                            { payload = Just v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -5321,10 +6708,27 @@ mergeIdempotentUnaryRequestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeUnaryResponseDefinitionBytes mergeUnaryResponseDefinitionBytes defaultUnaryResponseDefinition) value.responseDefinition (\v -> { value | responseDefinition = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeUnaryResponseDefinitionBytes mergeUnaryResponseDefinitionBytes defaultUnaryResponseDefinition)
+                        value.responseDefinition
+                        (\v ->
+                            { responseDefinition = Just v
+                            , requestData = value.requestData
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.bytes (\v -> { value | requestData = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bytes
+                        (\v ->
+                            { responseDefinition = value.responseDefinition
+                            , requestData = v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -5348,7 +6752,15 @@ mergeIdempotentUnaryResponseBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeConformancePayloadBytes mergeConformancePayloadBytes defaultConformancePayload) value.payload (\v -> { value | payload = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeConformancePayloadBytes mergeConformancePayloadBytes defaultConformancePayload)
+                        value.payload
+                        (\v ->
+                            { payload = Just v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -5372,10 +6784,27 @@ mergeServerStreamRequestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeStreamResponseDefinitionBytes mergeStreamResponseDefinitionBytes defaultStreamResponseDefinition) value.responseDefinition (\v -> { value | responseDefinition = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeStreamResponseDefinitionBytes mergeStreamResponseDefinitionBytes defaultStreamResponseDefinition)
+                        value.responseDefinition
+                        (\v ->
+                            { responseDefinition = Just v
+                            , requestData = value.requestData
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.bytes (\v -> { value | requestData = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bytes
+                        (\v ->
+                            { responseDefinition = value.responseDefinition
+                            , requestData = v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -5399,7 +6828,15 @@ mergeServerStreamResponseBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeConformancePayloadBytes mergeConformancePayloadBytes defaultConformancePayload) value.payload (\v -> { value | payload = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeConformancePayloadBytes mergeConformancePayloadBytes defaultConformancePayload)
+                        value.payload
+                        (\v ->
+                            { payload = Just v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -5423,10 +6860,27 @@ mergeClientStreamRequestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeUnaryResponseDefinitionBytes mergeUnaryResponseDefinitionBytes defaultUnaryResponseDefinition) value.responseDefinition (\v -> { value | responseDefinition = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeUnaryResponseDefinitionBytes mergeUnaryResponseDefinitionBytes defaultUnaryResponseDefinition)
+                        value.responseDefinition
+                        (\v ->
+                            { responseDefinition = Just v
+                            , requestData = value.requestData
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.bytes (\v -> { value | requestData = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bytes
+                        (\v ->
+                            { responseDefinition = value.responseDefinition
+                            , requestData = v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -5450,7 +6904,15 @@ mergeClientStreamResponseBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeConformancePayloadBytes mergeConformancePayloadBytes defaultConformancePayload) value.payload (\v -> { value | payload = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeConformancePayloadBytes mergeConformancePayloadBytes defaultConformancePayload)
+                        value.payload
+                        (\v ->
+                            { payload = Just v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -5474,13 +6936,41 @@ mergeBidiStreamRequestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeStreamResponseDefinitionBytes mergeStreamResponseDefinitionBytes defaultStreamResponseDefinition) value.responseDefinition (\v -> { value | responseDefinition = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeStreamResponseDefinitionBytes mergeStreamResponseDefinitionBytes defaultStreamResponseDefinition)
+                        value.responseDefinition
+                        (\v ->
+                            { responseDefinition = Just v
+                            , fullDuplex = value.fullDuplex
+                            , requestData = value.requestData
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.bool (\v -> { value | fullDuplex = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { responseDefinition = value.responseDefinition
+                            , fullDuplex = v
+                            , requestData = value.requestData
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.field Proto.Binary.bytes (\v -> { value | requestData = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bytes
+                        (\v ->
+                            { responseDefinition = value.responseDefinition
+                            , fullDuplex = value.fullDuplex
+                            , requestData = v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -5504,7 +6994,15 @@ mergeBidiStreamResponseBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeConformancePayloadBytes mergeConformancePayloadBytes defaultConformancePayload) value.payload (\v -> { value | payload = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeConformancePayloadBytes mergeConformancePayloadBytes defaultConformancePayload)
+                        value.payload
+                        (\v ->
+                            { payload = Just v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -5556,10 +7054,27 @@ mergeConformancePayloadBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.bytes (\v -> { value | data = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bytes
+                        (\v ->
+                            { data = v
+                            , requestInfo = value.requestInfo
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeConformancePayloadRequestInfoBytes mergeConformancePayloadRequestInfoBytes defaultConformancePayloadRequestInfo) value.requestInfo (\v -> { value | requestInfo = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeConformancePayloadRequestInfoBytes mergeConformancePayloadRequestInfoBytes defaultConformancePayloadRequestInfo)
+                        value.requestInfo
+                        (\v ->
+                            { data = value.data
+                            , requestInfo = Just v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -5583,24 +7098,68 @@ mergeConformancePayloadRequestInfoBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) (\v -> { value | requestHeaders = v }) value.requestHeaders wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
+                        (\v ->
+                            { requestHeaders = v
+                            , timeoutMs = value.timeoutMs
+                            , requests = value.requests
+                            , connectGetInfo = value.connectGetInfo
+                            }
+                        )
+                        value.requestHeaders
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.int64 (\v -> { value | timeoutMs = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int64
+                        (\v ->
+                            { requestHeaders = value.requestHeaders
+                            , timeoutMs = Just v
+                            , requests = value.requests
+                            , connectGetInfo = value.connectGetInfo
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.repeated Proto.Binary.any (\v -> { value | requests = v }) value.requests wire value
+                    Proto.Binary.repeated
+                        Proto.Binary.any
+                        (\v ->
+                            { requestHeaders = value.requestHeaders
+                            , timeoutMs = value.timeoutMs
+                            , requests = v
+                            , connectGetInfo = value.connectGetInfo
+                            }
+                        )
+                        value.requests
+                        wire
+                        value
 
                 4 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeConformancePayloadConnectGetInfoBytes mergeConformancePayloadConnectGetInfoBytes defaultConformancePayloadConnectGetInfo) value.connectGetInfo (\v -> { value | connectGetInfo = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeConformancePayloadConnectGetInfoBytes mergeConformancePayloadConnectGetInfoBytes defaultConformancePayloadConnectGetInfo)
+                        value.connectGetInfo
+                        (\v ->
+                            { requestHeaders = value.requestHeaders
+                            , timeoutMs = value.timeoutMs
+                            , requests = value.requests
+                            , connectGetInfo = Just v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
         (\value ->
-            { value
-                | requestHeaders = List.reverse value.requestHeaders
-                , requests = List.reverse value.requests
+            { requestHeaders = List.reverse value.requestHeaders
+            , timeoutMs = value.timeoutMs
+            , requests = List.reverse value.requests
+            , connectGetInfo = value.connectGetInfo
             }
         )
 
@@ -5621,12 +7180,23 @@ mergeConformancePayloadConnectGetInfoBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) (\v -> { value | queryParams = v }) value.queryParams wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
+                        (\v ->
+                            { queryParams = v
+                            }
+                        )
+                        value.queryParams
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value -> { value | queryParams = List.reverse value.queryParams })
+        (\value ->
+            { queryParams = List.reverse value.queryParams
+            }
+        )
 
 
 {-| Decodes a [`ConformancePayloadConnectGetInfo`](#ConformancePayloadConnectGetInfo) from protobuf binary.
@@ -5645,18 +7215,51 @@ mergeErrorBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field (Proto.Binary.enum encodeCodeBytes decodeCodeBytes) (\v -> { value | code = v }) wire value
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeCodeBytes decodeCodeBytes)
+                        (\v ->
+                            { code = v
+                            , message = value.message
+                            , details = value.details
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | message = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { code = value.code
+                            , message = Just v
+                            , details = value.details
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.repeated Proto.Binary.any (\v -> { value | details = v }) value.details wire value
+                    Proto.Binary.repeated
+                        Proto.Binary.any
+                        (\v ->
+                            { code = value.code
+                            , message = value.message
+                            , details = v
+                            }
+                        )
+                        value.details
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value -> { value | details = List.reverse value.details })
+        (\value ->
+            { code = value.code
+            , message = value.message
+            , details = List.reverse value.details
+            }
+        )
 
 
 {-| Decodes an [`Error`](#Error) from protobuf binary.
@@ -5675,15 +7278,36 @@ mergeHeaderBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | name = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { name = v
+                            , value = value.value
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.repeated Proto.Binary.string (\v -> { value | value = v }) value.value wire value
+                    Proto.Binary.repeated
+                        Proto.Binary.string
+                        (\v ->
+                            { name = value.name
+                            , value = v
+                            }
+                        )
+                        value.value
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value -> { value | value = List.reverse value.value })
+        (\value ->
+            { name = value.name
+            , value = List.reverse value.value
+            }
+        )
 
 
 {-| Decodes a [`Header`](#Header) from protobuf binary.
@@ -5702,19 +7326,82 @@ mergeRawHTTPRequestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | verb = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { verb = v
+                            , uri = value.uri
+                            , headers = value.headers
+                            , rawQueryParams = value.rawQueryParams
+                            , encodedQueryParams = value.encodedQueryParams
+                            , body = value.body
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | uri = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { verb = value.verb
+                            , uri = v
+                            , headers = value.headers
+                            , rawQueryParams = value.rawQueryParams
+                            , encodedQueryParams = value.encodedQueryParams
+                            , body = value.body
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) (\v -> { value | headers = v }) value.headers wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
+                        (\v ->
+                            { verb = value.verb
+                            , uri = value.uri
+                            , headers = v
+                            , rawQueryParams = value.rawQueryParams
+                            , encodedQueryParams = value.encodedQueryParams
+                            , body = value.body
+                            }
+                        )
+                        value.headers
+                        wire
+                        value
 
                 4 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) (\v -> { value | rawQueryParams = v }) value.rawQueryParams wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
+                        (\v ->
+                            { verb = value.verb
+                            , uri = value.uri
+                            , headers = value.headers
+                            , rawQueryParams = v
+                            , encodedQueryParams = value.encodedQueryParams
+                            , body = value.body
+                            }
+                        )
+                        value.rawQueryParams
+                        wire
+                        value
 
                 5 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded encodeRawHTTPRequestEncodedQueryParamBytes mergeRawHTTPRequestEncodedQueryParamBytes defaultRawHTTPRequestEncodedQueryParam) (\v -> { value | encodedQueryParams = v }) value.encodedQueryParams wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeRawHTTPRequestEncodedQueryParamBytes mergeRawHTTPRequestEncodedQueryParamBytes defaultRawHTTPRequestEncodedQueryParam)
+                        (\v ->
+                            { verb = value.verb
+                            , uri = value.uri
+                            , headers = value.headers
+                            , rawQueryParams = value.rawQueryParams
+                            , encodedQueryParams = v
+                            , body = value.body
+                            }
+                        )
+                        value.encodedQueryParams
+                        wire
+                        value
 
                 6 ->
                     Proto.Binary.fieldInto
@@ -5726,7 +7413,15 @@ mergeRawHTTPRequestBytes =
                             _ ->
                                 Nothing
                         )
-                        (\v -> { value | body = RawHTTPRequestBodyUnary v })
+                        (\v ->
+                            { verb = value.verb
+                            , uri = value.uri
+                            , headers = value.headers
+                            , rawQueryParams = value.rawQueryParams
+                            , encodedQueryParams = value.encodedQueryParams
+                            , body = RawHTTPRequestBodyUnary v
+                            }
+                        )
                         wire
                         value
 
@@ -5740,7 +7435,15 @@ mergeRawHTTPRequestBytes =
                             _ ->
                                 Nothing
                         )
-                        (\v -> { value | body = RawHTTPRequestBodyStream v })
+                        (\v ->
+                            { verb = value.verb
+                            , uri = value.uri
+                            , headers = value.headers
+                            , rawQueryParams = value.rawQueryParams
+                            , encodedQueryParams = value.encodedQueryParams
+                            , body = RawHTTPRequestBodyStream v
+                            }
+                        )
                         wire
                         value
 
@@ -5748,10 +7451,12 @@ mergeRawHTTPRequestBytes =
                     Proto.Binary.skip wire value
         )
         (\value ->
-            { value
-                | headers = List.reverse value.headers
-                , rawQueryParams = List.reverse value.rawQueryParams
-                , encodedQueryParams = List.reverse value.encodedQueryParams
+            { verb = value.verb
+            , uri = value.uri
+            , headers = List.reverse value.headers
+            , rawQueryParams = List.reverse value.rawQueryParams
+            , encodedQueryParams = List.reverse value.encodedQueryParams
+            , body = value.body
             }
         )
 
@@ -5772,13 +7477,41 @@ mergeRawHTTPRequestEncodedQueryParamBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | name = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { name = v
+                            , value = value.value
+                            , base64Encode = value.base64Encode
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeMessageContentsBytes mergeMessageContentsBytes defaultMessageContents) value.value (\v -> { value | value = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeMessageContentsBytes mergeMessageContentsBytes defaultMessageContents)
+                        value.value
+                        (\v ->
+                            { name = value.name
+                            , value = Just v
+                            , base64Encode = value.base64Encode
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.field Proto.Binary.bool (\v -> { value | base64Encode = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { name = value.name
+                            , value = value.value
+                            , base64Encode = v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -5802,16 +7535,48 @@ mergeMessageContentsBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.bytes (\v -> { value | data = MessageContentsDataBinary v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bytes
+                        (\v ->
+                            { data = MessageContentsDataBinary v
+                            , compression = value.compression
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | data = MessageContentsDataText v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { data = MessageContentsDataText v
+                            , compression = value.compression
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.field Proto.Binary.any (\v -> { value | data = MessageContentsDataBinaryMessage v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.any
+                        (\v ->
+                            { data = MessageContentsDataBinaryMessage v
+                            , compression = value.compression
+                            }
+                        )
+                        wire
+                        value
 
                 4 ->
-                    Proto.Binary.field (Proto.Binary.enum encodeCompressionBytes decodeCompressionBytes) (\v -> { value | compression = v }) wire value
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeCompressionBytes decodeCompressionBytes)
+                        (\v ->
+                            { data = value.data
+                            , compression = v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -5835,12 +7600,23 @@ mergeStreamContentsBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded encodeStreamContentsStreamItemBytes mergeStreamContentsStreamItemBytes defaultStreamContentsStreamItem) (\v -> { value | items = v }) value.items wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeStreamContentsStreamItemBytes mergeStreamContentsStreamItemBytes defaultStreamContentsStreamItem)
+                        (\v ->
+                            { items = v
+                            }
+                        )
+                        value.items
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value -> { value | items = List.reverse value.items })
+        (\value ->
+            { items = List.reverse value.items
+            }
+        )
 
 
 {-| Decodes a [`StreamContents`](#StreamContents) from protobuf binary.
@@ -5859,13 +7635,41 @@ mergeStreamContentsStreamItemBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.uint32 (\v -> { value | flags = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.uint32
+                        (\v ->
+                            { flags = v
+                            , length = value.length
+                            , payload = value.payload
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.uint32 (\v -> { value | length = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.uint32
+                        (\v ->
+                            { flags = value.flags
+                            , length = Just v
+                            , payload = value.payload
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeMessageContentsBytes mergeMessageContentsBytes defaultMessageContents) value.payload (\v -> { value | payload = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeMessageContentsBytes mergeMessageContentsBytes defaultMessageContents)
+                        value.payload
+                        (\v ->
+                            { flags = value.flags
+                            , length = value.length
+                            , payload = Just v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -5889,10 +7693,31 @@ mergeRawHTTPResponseBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.uint32 (\v -> { value | statusCode = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.uint32
+                        (\v ->
+                            { statusCode = v
+                            , headers = value.headers
+                            , body = value.body
+                            , trailers = value.trailers
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) (\v -> { value | headers = v }) value.headers wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
+                        (\v ->
+                            { statusCode = value.statusCode
+                            , headers = v
+                            , body = value.body
+                            , trailers = value.trailers
+                            }
+                        )
+                        value.headers
+                        wire
+                        value
 
                 3 ->
                     Proto.Binary.fieldInto
@@ -5904,7 +7729,13 @@ mergeRawHTTPResponseBytes =
                             _ ->
                                 Nothing
                         )
-                        (\v -> { value | body = RawHTTPResponseBodyUnary v })
+                        (\v ->
+                            { statusCode = value.statusCode
+                            , headers = value.headers
+                            , body = RawHTTPResponseBodyUnary v
+                            , trailers = value.trailers
+                            }
+                        )
                         wire
                         value
 
@@ -5918,20 +7749,38 @@ mergeRawHTTPResponseBytes =
                             _ ->
                                 Nothing
                         )
-                        (\v -> { value | body = RawHTTPResponseBodyStream v })
+                        (\v ->
+                            { statusCode = value.statusCode
+                            , headers = value.headers
+                            , body = RawHTTPResponseBodyStream v
+                            , trailers = value.trailers
+                            }
+                        )
                         wire
                         value
 
                 5 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader) (\v -> { value | trailers = v }) value.trailers wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeHeaderBytes mergeHeaderBytes defaultHeader)
+                        (\v ->
+                            { statusCode = value.statusCode
+                            , headers = value.headers
+                            , body = value.body
+                            , trailers = v
+                            }
+                        )
+                        value.trailers
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
         (\value ->
-            { value
-                | headers = List.reverse value.headers
-                , trailers = List.reverse value.trailers
+            { statusCode = value.statusCode
+            , headers = List.reverse value.headers
+            , body = value.body
+            , trailers = List.reverse value.trailers
             }
         )
 
@@ -5952,51 +7801,278 @@ mergeTestSuiteBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | name = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { name = v
+                            , mode = value.mode
+                            , testCases = value.testCases
+                            , relevantProtocols = value.relevantProtocols
+                            , relevantHttpVersions = value.relevantHttpVersions
+                            , relevantCodecs = value.relevantCodecs
+                            , relevantCompressions = value.relevantCompressions
+                            , connectVersionMode = value.connectVersionMode
+                            , reliesOnTls = value.reliesOnTls
+                            , reliesOnTlsClientCerts = value.reliesOnTlsClientCerts
+                            , reliesOnConnectGet = value.reliesOnConnectGet
+                            , reliesOnMessageReceiveLimit = value.reliesOnMessageReceiveLimit
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field (Proto.Binary.enum encodeTestSuiteTestModeBytes decodeTestSuiteTestModeBytes) (\v -> { value | mode = v }) wire value
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeTestSuiteTestModeBytes decodeTestSuiteTestModeBytes)
+                        (\v ->
+                            { name = value.name
+                            , mode = v
+                            , testCases = value.testCases
+                            , relevantProtocols = value.relevantProtocols
+                            , relevantHttpVersions = value.relevantHttpVersions
+                            , relevantCodecs = value.relevantCodecs
+                            , relevantCompressions = value.relevantCompressions
+                            , connectVersionMode = value.connectVersionMode
+                            , reliesOnTls = value.reliesOnTls
+                            , reliesOnTlsClientCerts = value.reliesOnTlsClientCerts
+                            , reliesOnConnectGet = value.reliesOnConnectGet
+                            , reliesOnMessageReceiveLimit = value.reliesOnMessageReceiveLimit
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded encodeTestCaseBytes mergeTestCaseBytes defaultTestCase) (\v -> { value | testCases = v }) value.testCases wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeTestCaseBytes mergeTestCaseBytes defaultTestCase)
+                        (\v ->
+                            { name = value.name
+                            , mode = value.mode
+                            , testCases = v
+                            , relevantProtocols = value.relevantProtocols
+                            , relevantHttpVersions = value.relevantHttpVersions
+                            , relevantCodecs = value.relevantCodecs
+                            , relevantCompressions = value.relevantCompressions
+                            , connectVersionMode = value.connectVersionMode
+                            , reliesOnTls = value.reliesOnTls
+                            , reliesOnTlsClientCerts = value.reliesOnTlsClientCerts
+                            , reliesOnConnectGet = value.reliesOnConnectGet
+                            , reliesOnMessageReceiveLimit = value.reliesOnMessageReceiveLimit
+                            }
+                        )
+                        value.testCases
+                        wire
+                        value
 
                 4 ->
-                    Proto.Binary.repeated (Proto.Binary.enum encodeProtocolBytes decodeProtocolBytes) (\v -> { value | relevantProtocols = v }) value.relevantProtocols wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.enum encodeProtocolBytes decodeProtocolBytes)
+                        (\v ->
+                            { name = value.name
+                            , mode = value.mode
+                            , testCases = value.testCases
+                            , relevantProtocols = v
+                            , relevantHttpVersions = value.relevantHttpVersions
+                            , relevantCodecs = value.relevantCodecs
+                            , relevantCompressions = value.relevantCompressions
+                            , connectVersionMode = value.connectVersionMode
+                            , reliesOnTls = value.reliesOnTls
+                            , reliesOnTlsClientCerts = value.reliesOnTlsClientCerts
+                            , reliesOnConnectGet = value.reliesOnConnectGet
+                            , reliesOnMessageReceiveLimit = value.reliesOnMessageReceiveLimit
+                            }
+                        )
+                        value.relevantProtocols
+                        wire
+                        value
 
                 5 ->
-                    Proto.Binary.repeated (Proto.Binary.enum encodeHTTPVersionBytes decodeHTTPVersionBytes) (\v -> { value | relevantHttpVersions = v }) value.relevantHttpVersions wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.enum encodeHTTPVersionBytes decodeHTTPVersionBytes)
+                        (\v ->
+                            { name = value.name
+                            , mode = value.mode
+                            , testCases = value.testCases
+                            , relevantProtocols = value.relevantProtocols
+                            , relevantHttpVersions = v
+                            , relevantCodecs = value.relevantCodecs
+                            , relevantCompressions = value.relevantCompressions
+                            , connectVersionMode = value.connectVersionMode
+                            , reliesOnTls = value.reliesOnTls
+                            , reliesOnTlsClientCerts = value.reliesOnTlsClientCerts
+                            , reliesOnConnectGet = value.reliesOnConnectGet
+                            , reliesOnMessageReceiveLimit = value.reliesOnMessageReceiveLimit
+                            }
+                        )
+                        value.relevantHttpVersions
+                        wire
+                        value
 
                 6 ->
-                    Proto.Binary.repeated (Proto.Binary.enum encodeCodecBytes decodeCodecBytes) (\v -> { value | relevantCodecs = v }) value.relevantCodecs wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.enum encodeCodecBytes decodeCodecBytes)
+                        (\v ->
+                            { name = value.name
+                            , mode = value.mode
+                            , testCases = value.testCases
+                            , relevantProtocols = value.relevantProtocols
+                            , relevantHttpVersions = value.relevantHttpVersions
+                            , relevantCodecs = v
+                            , relevantCompressions = value.relevantCompressions
+                            , connectVersionMode = value.connectVersionMode
+                            , reliesOnTls = value.reliesOnTls
+                            , reliesOnTlsClientCerts = value.reliesOnTlsClientCerts
+                            , reliesOnConnectGet = value.reliesOnConnectGet
+                            , reliesOnMessageReceiveLimit = value.reliesOnMessageReceiveLimit
+                            }
+                        )
+                        value.relevantCodecs
+                        wire
+                        value
 
                 7 ->
-                    Proto.Binary.repeated (Proto.Binary.enum encodeCompressionBytes decodeCompressionBytes) (\v -> { value | relevantCompressions = v }) value.relevantCompressions wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.enum encodeCompressionBytes decodeCompressionBytes)
+                        (\v ->
+                            { name = value.name
+                            , mode = value.mode
+                            , testCases = value.testCases
+                            , relevantProtocols = value.relevantProtocols
+                            , relevantHttpVersions = value.relevantHttpVersions
+                            , relevantCodecs = value.relevantCodecs
+                            , relevantCompressions = v
+                            , connectVersionMode = value.connectVersionMode
+                            , reliesOnTls = value.reliesOnTls
+                            , reliesOnTlsClientCerts = value.reliesOnTlsClientCerts
+                            , reliesOnConnectGet = value.reliesOnConnectGet
+                            , reliesOnMessageReceiveLimit = value.reliesOnMessageReceiveLimit
+                            }
+                        )
+                        value.relevantCompressions
+                        wire
+                        value
 
                 8 ->
-                    Proto.Binary.field (Proto.Binary.enum encodeTestSuiteConnectVersionModeBytes decodeTestSuiteConnectVersionModeBytes) (\v -> { value | connectVersionMode = v }) wire value
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeTestSuiteConnectVersionModeBytes decodeTestSuiteConnectVersionModeBytes)
+                        (\v ->
+                            { name = value.name
+                            , mode = value.mode
+                            , testCases = value.testCases
+                            , relevantProtocols = value.relevantProtocols
+                            , relevantHttpVersions = value.relevantHttpVersions
+                            , relevantCodecs = value.relevantCodecs
+                            , relevantCompressions = value.relevantCompressions
+                            , connectVersionMode = v
+                            , reliesOnTls = value.reliesOnTls
+                            , reliesOnTlsClientCerts = value.reliesOnTlsClientCerts
+                            , reliesOnConnectGet = value.reliesOnConnectGet
+                            , reliesOnMessageReceiveLimit = value.reliesOnMessageReceiveLimit
+                            }
+                        )
+                        wire
+                        value
 
                 9 ->
-                    Proto.Binary.field Proto.Binary.bool (\v -> { value | reliesOnTls = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { name = value.name
+                            , mode = value.mode
+                            , testCases = value.testCases
+                            , relevantProtocols = value.relevantProtocols
+                            , relevantHttpVersions = value.relevantHttpVersions
+                            , relevantCodecs = value.relevantCodecs
+                            , relevantCompressions = value.relevantCompressions
+                            , connectVersionMode = value.connectVersionMode
+                            , reliesOnTls = v
+                            , reliesOnTlsClientCerts = value.reliesOnTlsClientCerts
+                            , reliesOnConnectGet = value.reliesOnConnectGet
+                            , reliesOnMessageReceiveLimit = value.reliesOnMessageReceiveLimit
+                            }
+                        )
+                        wire
+                        value
 
                 10 ->
-                    Proto.Binary.field Proto.Binary.bool (\v -> { value | reliesOnTlsClientCerts = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { name = value.name
+                            , mode = value.mode
+                            , testCases = value.testCases
+                            , relevantProtocols = value.relevantProtocols
+                            , relevantHttpVersions = value.relevantHttpVersions
+                            , relevantCodecs = value.relevantCodecs
+                            , relevantCompressions = value.relevantCompressions
+                            , connectVersionMode = value.connectVersionMode
+                            , reliesOnTls = value.reliesOnTls
+                            , reliesOnTlsClientCerts = v
+                            , reliesOnConnectGet = value.reliesOnConnectGet
+                            , reliesOnMessageReceiveLimit = value.reliesOnMessageReceiveLimit
+                            }
+                        )
+                        wire
+                        value
 
                 11 ->
-                    Proto.Binary.field Proto.Binary.bool (\v -> { value | reliesOnConnectGet = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { name = value.name
+                            , mode = value.mode
+                            , testCases = value.testCases
+                            , relevantProtocols = value.relevantProtocols
+                            , relevantHttpVersions = value.relevantHttpVersions
+                            , relevantCodecs = value.relevantCodecs
+                            , relevantCompressions = value.relevantCompressions
+                            , connectVersionMode = value.connectVersionMode
+                            , reliesOnTls = value.reliesOnTls
+                            , reliesOnTlsClientCerts = value.reliesOnTlsClientCerts
+                            , reliesOnConnectGet = v
+                            , reliesOnMessageReceiveLimit = value.reliesOnMessageReceiveLimit
+                            }
+                        )
+                        wire
+                        value
 
                 12 ->
-                    Proto.Binary.field Proto.Binary.bool (\v -> { value | reliesOnMessageReceiveLimit = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { name = value.name
+                            , mode = value.mode
+                            , testCases = value.testCases
+                            , relevantProtocols = value.relevantProtocols
+                            , relevantHttpVersions = value.relevantHttpVersions
+                            , relevantCodecs = value.relevantCodecs
+                            , relevantCompressions = value.relevantCompressions
+                            , connectVersionMode = value.connectVersionMode
+                            , reliesOnTls = value.reliesOnTls
+                            , reliesOnTlsClientCerts = value.reliesOnTlsClientCerts
+                            , reliesOnConnectGet = value.reliesOnConnectGet
+                            , reliesOnMessageReceiveLimit = v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
         (\value ->
-            { value
-                | testCases = List.reverse value.testCases
-                , relevantProtocols = List.reverse value.relevantProtocols
-                , relevantHttpVersions = List.reverse value.relevantHttpVersions
-                , relevantCodecs = List.reverse value.relevantCodecs
-                , relevantCompressions = List.reverse value.relevantCompressions
+            { name = value.name
+            , mode = value.mode
+            , testCases = List.reverse value.testCases
+            , relevantProtocols = List.reverse value.relevantProtocols
+            , relevantHttpVersions = List.reverse value.relevantHttpVersions
+            , relevantCodecs = List.reverse value.relevantCodecs
+            , relevantCompressions = List.reverse value.relevantCompressions
+            , connectVersionMode = value.connectVersionMode
+            , reliesOnTls = value.reliesOnTls
+            , reliesOnTlsClientCerts = value.reliesOnTlsClientCerts
+            , reliesOnConnectGet = value.reliesOnConnectGet
+            , reliesOnMessageReceiveLimit = value.reliesOnMessageReceiveLimit
             }
         )
 
@@ -6017,24 +8093,69 @@ mergeTestCaseBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeClientCompatRequestBytes mergeClientCompatRequestBytes defaultClientCompatRequest) value.request (\v -> { value | request = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeClientCompatRequestBytes mergeClientCompatRequestBytes defaultClientCompatRequest)
+                        value.request
+                        (\v ->
+                            { request = Just v
+                            , expandRequests = value.expandRequests
+                            , expectedResponse = value.expectedResponse
+                            , otherAllowedErrorCodes = value.otherAllowedErrorCodes
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded encodeTestCaseExpandedSizeBytes mergeTestCaseExpandedSizeBytes defaultTestCaseExpandedSize) (\v -> { value | expandRequests = v }) value.expandRequests wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeTestCaseExpandedSizeBytes mergeTestCaseExpandedSizeBytes defaultTestCaseExpandedSize)
+                        (\v ->
+                            { request = value.request
+                            , expandRequests = v
+                            , expectedResponse = value.expectedResponse
+                            , otherAllowedErrorCodes = value.otherAllowedErrorCodes
+                            }
+                        )
+                        value.expandRequests
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeClientResponseResultBytes mergeClientResponseResultBytes defaultClientResponseResult) value.expectedResponse (\v -> { value | expectedResponse = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeClientResponseResultBytes mergeClientResponseResultBytes defaultClientResponseResult)
+                        value.expectedResponse
+                        (\v ->
+                            { request = value.request
+                            , expandRequests = value.expandRequests
+                            , expectedResponse = Just v
+                            , otherAllowedErrorCodes = value.otherAllowedErrorCodes
+                            }
+                        )
+                        wire
+                        value
 
                 4 ->
-                    Proto.Binary.repeated (Proto.Binary.enum encodeCodeBytes decodeCodeBytes) (\v -> { value | otherAllowedErrorCodes = v }) value.otherAllowedErrorCodes wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.enum encodeCodeBytes decodeCodeBytes)
+                        (\v ->
+                            { request = value.request
+                            , expandRequests = value.expandRequests
+                            , expectedResponse = value.expectedResponse
+                            , otherAllowedErrorCodes = v
+                            }
+                        )
+                        value.otherAllowedErrorCodes
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
         (\value ->
-            { value
-                | expandRequests = List.reverse value.expandRequests
-                , otherAllowedErrorCodes = List.reverse value.otherAllowedErrorCodes
+            { request = value.request
+            , expandRequests = List.reverse value.expandRequests
+            , expectedResponse = value.expectedResponse
+            , otherAllowedErrorCodes = List.reverse value.otherAllowedErrorCodes
             }
         )
 
@@ -6055,7 +8176,14 @@ mergeTestCaseExpandedSizeBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | sizeRelativeToLimit = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int32
+                        (\v ->
+                            { sizeRelativeToLimit = Just v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
