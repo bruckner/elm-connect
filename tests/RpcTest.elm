@@ -1219,6 +1219,23 @@ schedules policy =
             in
             [ at (NoAnswer NetworkError), at (NoAnswer Timeout), at (httpError 503 ""), at (httpError 400 ""), at (NoAnswer (BadUrl "nowhere")) ]
                 |> Expect.equal [ Just 100, Nothing, Just 100, Just 100, Nothing ]
+    , test "next retries an error over a size limit, and every unsent one but a bad URL, when the policy lists its code" <|
+        \_ ->
+            let
+                listed =
+                    Rpc.Retry.on [ ResourceExhausted, Internal, InvalidArgument ] |> Rpc.Retry.withBackoff 100 |> Rpc.Retry.withoutJitter
+
+                at error =
+                    Rpc.Retry.next listed { tried = 1, error = error, idempotency = IdempotencyNoSideEffects, now = moment.now, elapsed = 0 }
+            in
+            [ at (NoAnswer (RequestTooLarge { limit = 10, size = 11 }))
+            , at (NoAnswer (ResponseTooLarge { limit = 10, size = 11 }))
+            , at (NoAnswer (BadHeader "a b"))
+            , at (NoAnswer (BadPathValue { field = "name", template = "notes/*" }))
+            , at (NoAnswer (BadAny (Proto.Error.UnregisteredType "x/a.B")))
+            , at (NoAnswer (BadUrl "nowhere"))
+            ]
+                |> Expect.equal [ Just 100, Just 100, Just 100, Just 100, Just 100, Nothing ]
     , test "the loop does not wait after a success, without a policy, or for a failure trying again cannot help" <|
         \_ ->
             ( Retry.step (Just policy) IdempotencyNoSideEffects Just { tried = 1, now = moment.now, elapsed = 0 } (Ok ())
