@@ -1462,6 +1462,17 @@ entry and none of their codecs are reached; and reading a 1 KB `Any`
 through that lenient empty table took 3.4 µs, unpacking it 3.7, against
 62–76 for the strict read. Where: design §3.10, §3.5, §5.4.
 
+*2026-11-13:* a JSON-alone `Any` written as JSON now answers to the
+registry it is written through: one with an entry for its type reads
+the JSON as that message and writes it as held, and a strict one
+without an entry refuses it as `UnregisteredType`; only a lenient
+registry without an entry writes it unread, as every registry did
+before. Writing it unread through a strict registry let JSON never
+checked against its type, read leniently elsewhere, leave a program
+that asked for strictness, and a type it had registered gained it no
+check. Passing `Any`s along through one lenient registry, the case
+above, is unchanged.
+
 ### Normalized per-package registries
 
 *2026-11-07.*

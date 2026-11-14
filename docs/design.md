@@ -2054,7 +2054,7 @@ What each state does, whatever registry it is written through:
 | state | written as proto3 JSON | written as protobuf binary | `unpack` | `Proto.Any.bytes` |
 |---|---|---|---|---|
 | binary | converted through the registry; `UnregisteredType` for a type it lacks | the binary | from the binary | `Just` |
-| JSON alone | the JSON, as read, no registry | the type URL alone: the message is lost | the message's JSON decoder, an `Any` inside it read leniently | `Nothing` |
+| JSON alone | the JSON, as read, once the registry's entry for its type reads it as that message; with no entry, unread by a lenient registry and `UnregisteredType` from a strict one | the type URL alone: the message is lost | the message's JSON decoder, an `Any` inside it read leniently | `Nothing` |
 
 The binary write of a JSON-alone `Any` is lossy, which is the accepted
 cost: over JSON nothing is lost, and over binary a program tests
@@ -2072,6 +2072,23 @@ in the other's form). Under a lenient client registry a
 JSON-alone `Any`, and the trace names no problem for it. A program that
 reads every `Any` through `Proto.Registry.lenient Proto.Registry.empty`
 reaches no registry entry and none of their binary codecs.
+
+*2026-11-13:* a JSON-alone `Any` written as JSON answers to the
+registry it is written through, as one holding binary does. A strict
+registry with no entry for its type refuses it, as `UnregisteredType`;
+one with an entry reads the JSON through the entry first, so a JSON
+that is not its message fails as `BadJson`, and an `Any` inside it of a
+type a strict registry lacks as that `UnregisteredType`. The JSON is
+then written as held, not converted back from the read, which costs
+the entry's JSON read and a binary write it throws away rather than
+also a binary read and a JSON write, and gives JSON the type's codec
+has just accepted. A lenient registry with no entry writes it unread.
+Before, every registry wrote it unread, so a JSON-alone `Any` read
+from an unchecked source went out through a strict one unchecked.
+`Proto.Json.encodeAnyWith` and generated `encode…With` write an `Any`
+through `toJson`, so a request does the same. `Proto.Any.tryUnpack`
+takes no registry: it reads the JSON with the typed value's own
+decoder, which is the same check.
 
 The JSON-alone state is the one exception to an `Any` having one shape
 (decisions.md: An Any has one shape, so `==` is exact). `==` compares
@@ -3713,7 +3730,7 @@ toString : Error -> String              -- for a log, as Json.Decode.errorToStri
   | `Proto.Binary.decode`, `Proto.Message.decodeBinary` | `Result Binary a` | the report |
   | `Proto.Message.decodeJson` | `Result Error a` | `UnregisteredType` for an `Any` the registry lacks, else `BadJson` |
   | `Proto.Any.tryUnpack` | `Result Error a` | `TypeMismatch`, `BadBinary` |
-  | `Proto.Any.toJson`, `Proto.Json.encodeAnyWith`, generated `encodeNoteWith` | `Result Error Value` | `UnregisteredType`, or the `BadBinary` of the `Any` that failed, at any depth, named by its own type |
+  | `Proto.Any.toJson`, `Proto.Json.encodeAnyWith`, generated `encodeNoteWith` | `Result Error Value` | `UnregisteredType`, or the `BadBinary` of the `Any` that failed, at any depth, named by its own type; a JSON-alone `Any` that is not its message, `BadJson` (§3.10) |
   | `Proto.Json.anyWith`, generated `decodeNoteWith` | `Json.Decode.Decoder` | elm/json's error, a registry miss named in its message |
   | `Rpc.Error.BadAny` | `Error` | as `encodeNoteWith` |
   | `StatusError.details` | `List (Result Error Any)` | `UnregisteredType`, `BadJson`, `BadBinary` (above) |
