@@ -92,6 +92,13 @@ type alias Binary =
   - `Unlocated`: the decoder failed, but could not say where or why. This
     is a bug in elm-connect: please report it, with the input.
 
+One more is reserved for proto2, which the generator does not read, so this
+release never gives it; a `case` on a `Reason` covers it all the same:
+
+  - `MissingRequired`: a proto2 `required` field, its number given here,
+    absent from the message: the last entry of `path`, or `typeName` when
+    `path` is empty.
+
 -}
 type Reason
     = Truncated
@@ -102,6 +109,7 @@ type Reason
     | IntOutOfRange
     | InvalidUtf8
     | Unlocated
+    | MissingRequired Int
 
 
 {-| A description of an error, for a person reading a log, as
@@ -167,6 +175,9 @@ reasonText reason =
 
         Unlocated ->
             "the decoder failed where it could not say why, a bug in elm-connect"
+
+        MissingRequired number ->
+            "required field " ++ String.fromInt number ++ " is missing"
 
 
 {-| The fields a failure is in, innermost first, as a reader follows them

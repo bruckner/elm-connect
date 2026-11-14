@@ -53,7 +53,9 @@ edition is `input::editions`. Accepting them turns an error into
 output, so it is a minor: the descriptors already reserve
 `CardinalityRequired` for `required` fields, and closed enums,
 non-zero defaults and explicit presence become descriptor modifiers
-and generated decoders. Groups and extensions would stay refused.
+and generated decoders. `Proto.Error.Reason` already reserves
+`MissingRequired` for a binary read that finds a `required` field
+absent, so checking them adds no constructor. Groups and extensions would stay refused.
 Two fields of one message whose names are the same once lowercased
 without underscores (`aB` and `ab`), which protoc accepts and the
 descriptor library refuses in any file but a proto2 one, are

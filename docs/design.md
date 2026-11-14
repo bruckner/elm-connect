@@ -3699,6 +3699,7 @@ type alias Binary =
 type Reason
     = Truncated | LengthOverrun | InvalidTag | InvalidWireType Int
     | MalformedVarint | IntOutOfRange | InvalidUtf8 | Unlocated
+    | MissingRequired Int               -- reserved for proto2's required; never given yet
 
 toString : Error -> String              -- for a log, as Json.Decode.errorToString
 ```
@@ -3711,7 +3712,11 @@ toString : Error -> String              -- for a log, as Json.Decode.errorToStri
   failure unwinds. Field names are not in it: a decoder carries message
   names and field numbers, and `Proto.Descriptors` holds the names.
   `Unlocated` is the decoder's backstop, reachable only through a bug in
-  its readers. `Proto.Message.fieldNumbered` and `fieldNamed` find a
+  its readers. `MissingRequired` is reserved: the generator reads proto3
+  alone, so no decoder gives it, but a proto2 `required` field absent
+  from binary is a failure protobuf-go reports, and naming it after the
+  union is frozen would be a major (§8.3); it carries the field's
+  number, and the path ends at the message that lacks it. `Proto.Message.fieldNumbered` and `fieldNamed` find a
   field in a descriptor, so a program that keeps descriptors names a
   path entry's field in four lines; there is no walker over a `Binary`
   until a caller shows the output it wants, and `Proto.Error` stays a
@@ -4602,7 +4607,7 @@ Within a major version:
   the first publish. The records an application
   builds or reads with record syntax are frozen within a major:
   `Rpc.Request.Request`, `Rpc.Response.Response` (which `Rpc` also
-  names `Rpc.Request` and `Rpc.Response`).
+  names `Rpc.Request` and `Rpc.Response`) and `Proto.Error.Binary`.
   A new knob goes where §5.1 routes it: a protocol's on `Protocol`, a
   client's on `Client`, a retry's on `Retry`, a call's on `Call`. The
   codec tags `Rpc.Json` and `Rpc.Proto` have no values and gain none.
@@ -4613,7 +4618,16 @@ Within a major version:
   `KindMessage` the message's full name, §3.9), `Scalar`, `Behavior` (with
   `BehaviorUnknown Int` holding a number this release does not name, so
   that naming it later is a minor), `Proto.Method.Idempotency`,
-  `Rpc.Code`, and `Rpc.Error`'s `Cause` (`BadCall`, `NetworkError`, `Timeout`,
+  `Rpc.Code`, `Proto.Error`'s `Error` (`BadBinary`, `BadJson`,
+  `TypeMismatch`, `UnregisteredType`; a new way a message cannot be
+  read is a `BadBinary` reason or elm/json's error, and a new way an
+  `Any` fails is one of the two it already has) and `Reason`
+  (`Truncated`, `LengthOverrun`, `InvalidTag`, `InvalidWireType`,
+  `MalformedVarint`, `IntOutOfRange`, `InvalidUtf8`, `Unlocated`, with
+  `MissingRequired` reserved for proto2's `required` fields, so that
+  reading proto2 can ship as a minor; a fault the binary decoder learns
+  to find that none of these names, such as a nesting limit, waits for
+  a major), and `Rpc.Error`'s `Cause` (`BadCall`, `NetworkError`, `Timeout`,
   `BadStatus`, `BadResponse`: what happened in the HTTP exchange, which
   has no other outcome; a new way a call cannot be made is a `BadCall`'s
   message, and a new way an answer cannot be used is a `BadResponse`'s)
