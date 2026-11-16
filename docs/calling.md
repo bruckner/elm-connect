@@ -525,11 +525,8 @@ A failed call gives `Rpc.Error`, one type for every protocol, defined
 in `Rpc.Error` with its readers:
 
 ```elm src/Rpc/Error.elm excerpt
-type Error
-    = RpcStatus StatusError Response
-    | HttpStatus Response
-    | BadResponse Code Problem Response
-    | NoAnswer Reason
+type alias Error =
+    Internal.Error
 ```
 
 - `RpcStatus`: the server stated a status: its code (an

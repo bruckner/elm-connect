@@ -51,8 +51,7 @@ import Http
 import Json.Encode exposing (Value)
 import Proto.Bytes
 import Rpc.Body
-import Rpc.Code as Code
-import Rpc.Error as Error exposing (Error, Reason)
+import Rpc.Internal.Error as Error exposing (Error, Size)
 import Rpc.Internal.Protocol exposing (BytesMessage, GoodBytes, GoodText, Options)
 import Rpc.Request exposing (Request)
 import Rpc.Response exposing (Response)
@@ -390,19 +389,19 @@ width =
 {-| Whether a request's JSON, as UTF-8, is over the write limit. Installed by
 `withWriteMaxBytes`; the JSON is encoded again only then.
 -}
-jsonTooLarge : Options -> (() -> Value) -> Maybe Reason
+jsonTooLarge : Options -> (() -> Value) -> Maybe Size
 jsonTooLarge options json =
     options.writeMaxBytes
         |> Maybe.andThen
             (\limit ->
                 overLimit limit (Json.Encode.encode 0 (json ()))
-                    |> Maybe.map (\size -> Error.RequestTooLarge { limit = limit, size = size })
+                    |> Maybe.map (\size -> { limit = limit, size = size })
             )
 
 
 {-| Whether a request's protobuf binary is over the write limit.
 -}
-bytesTooLarge : (Bytes -> Int) -> Options -> (() -> Bytes.Encode.Encoder) -> Maybe Reason
+bytesTooLarge : (Bytes -> Int) -> Options -> (() -> Bytes.Encode.Encoder) -> Maybe Size
 bytesTooLarge width_ options binary =
     options.writeMaxBytes
         |> Maybe.andThen
@@ -412,7 +411,7 @@ bytesTooLarge width_ options binary =
                         width_ (Bytes.Encode.encode (binary ()))
                 in
                 if size > max 0 limit then
-                    Just (Error.RequestTooLarge { limit = limit, size = size })
+                    Just { limit = limit, size = size }
 
                 else
                     Nothing
@@ -422,7 +421,7 @@ bytesTooLarge width_ options binary =
 {-| No limit: what a protocol's `tooLarge` and `overRead` are until a
 modifier installs a limit.
 -}
-textUnlimited : Options -> a -> Maybe Reason
+textUnlimited : Options -> a -> Maybe Size
 textUnlimited _ _ =
     Nothing
 
@@ -430,7 +429,7 @@ textUnlimited _ _ =
 {-| No limit, for a binary protocol. Apart from `textUnlimited` only so that
 each protocol's field has its own type.
 -}
-bytesUnlimited : a -> Options -> b -> Maybe Reason
+bytesUnlimited : a -> Options -> b -> Maybe Size
 bytesUnlimited _ _ _ =
     Nothing
 
@@ -441,11 +440,11 @@ bytesUnlimited _ _ _ =
 
 {-| A successful text answer, unless it is over the read limit.
 -}
-withinText : (Options -> String -> Maybe Reason) -> Options -> GoodText -> Result Error GoodText
+withinText : (Options -> String -> Maybe Size) -> Options -> GoodText -> Result Error GoodText
 withinText overRead options good =
     case overRead options good.raw of
-        Just reason ->
-            Err (Error.NoAnswer reason)
+        Just size ->
+            Err (Error.responseTooLarge size good.metadata)
 
         Nothing ->
             Ok good
@@ -453,20 +452,20 @@ withinText overRead options good =
 
 {-| A successful binary answer's message, unless it is over the read limit.
 -}
-bytesMessage : (Options -> Bytes -> Maybe Reason) -> Options -> ( Maybe Http.Metadata, Result Error GoodBytes ) -> ( Maybe Http.Metadata, Result Error BytesMessage )
+bytesMessage : (Options -> Bytes -> Maybe Size) -> Options -> ( Maybe Http.Metadata, Result Error GoodBytes ) -> ( Maybe Http.Metadata, Result Error BytesMessage )
 bytesMessage overRead options ( metadata, read ) =
     ( metadata
     , read
         |> Result.andThen
             (\good ->
                 case overRead options good.message of
-                    Just reason ->
-                        Err (Error.NoAnswer reason)
+                    Just size ->
+                        Err (Error.responseTooLarge size good.metadata)
 
                     Nothing ->
                         Ok
                             { bytes = good.message
-                            , bad = \problem -> Error.BadResponse Code.Internal (Error.Body problem) (bytesAnswer good.metadata good.raw)
+                            , bad = \problem -> Error.badBody problem (bytesAnswer good.metadata good.raw)
                             }
             )
     )
@@ -488,19 +487,19 @@ bytesAnswer metadata raw =
 the browser decoded it, written back as UTF-8. Installed by
 `withReadMaxBytes`.
 -}
-textOverRead : Options -> String -> Maybe Reason
+textOverRead : Options -> String -> Maybe Size
 textOverRead options raw =
     options.readMaxBytes
         |> Maybe.andThen
             (\limit ->
                 overLimit limit raw
-                    |> Maybe.map (\size -> Error.ResponseTooLarge { limit = limit, size = size })
+                    |> Maybe.map (\size -> { limit = limit, size = size })
             )
 
 
 {-| Whether a successful binary answer's message is over the read limit.
 -}
-bytesOverRead : (Bytes -> Int) -> Options -> Bytes -> Maybe Reason
+bytesOverRead : (Bytes -> Int) -> Options -> Bytes -> Maybe Size
 bytesOverRead width_ options message =
     options.readMaxBytes
         |> Maybe.andThen
@@ -510,7 +509,7 @@ bytesOverRead width_ options message =
                         width_ message
                 in
                 if size > max 0 limit then
-                    Just (Error.ResponseTooLarge { limit = limit, size = size })
+                    Just { limit = limit, size = size }
 
                 else
                     Nothing

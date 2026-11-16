@@ -345,43 +345,46 @@ viewRequest request =
 
 viewError : Rpc.Error -> Html msg
 viewError error =
-    case error of
-        Rpc.Error.RpcStatus status answer ->
-            section [ class "error" ]
-                [ h2 [] [ text (Rpc.Code.toString status.code) ]
-                , p [] [ text status.message ]
-                , p [] [ text ("Read from " ++ sourceToString status.source ++ " (HTTP " ++ String.fromInt answer.statusCode ++ ")") ]
-                , ul []
-                    (List.map
-                        (\violation -> li [] [ code [] [ text violation.field ], text (": " ++ violation.description) ])
-                        (unpacked Proto.ErrorDetails.badRequest status.details |> List.concatMap .fieldViolations)
-                    )
-                , ul []
-                    (List.map
-                        (\info -> li [] [ text (info.reason ++ " from " ++ info.domain) ])
-                        (unpacked Proto.ErrorDetails.errorInfo status.details)
-                    )
-                , div [] (List.map viewDetail status.details)
-                ]
-
-        Rpc.Error.HttpStatus answer ->
-            section [ class "error" ]
-                [ h2 [] [ text (Rpc.Code.toString (Rpc.Error.code error)) ]
-                , p [] [ text (Rpc.Error.message error) ]
-                , p [] [ text ("Inferred from the HTTP status " ++ String.fromInt answer.statusCode ++ "; the body was:") ]
-                , pre [] [ text (Maybe.withDefault "" (Rpc.Body.toText answer.body)) ]
-                ]
-
-        Rpc.Error.BadResponse _ _ answer ->
-            section [ class "error" ]
-                [ h2 [] [ text (Rpc.Code.toString (Rpc.Error.code error)) ]
-                , p [] [ text (Rpc.Error.message error) ]
-                , p [] [ text ("HTTP " ++ String.fromInt answer.statusCode ++ ", an answer that could not be read as the response:") ]
-                , pre [] [ text (Maybe.withDefault "" (Rpc.Body.toText answer.body)) ]
-                ]
-
-        Rpc.Error.NoAnswer _ ->
+    case Rpc.Error.response error of
+        Nothing ->
+            -- A timeout, a network failure, or a call that could not be made.
             section [ class "error" ] [ p [] [ text (Rpc.Error.toString error) ] ]
+
+        Just answer ->
+            section [ class "error" ]
+                (h2 [] [ text (Rpc.Code.toString (Rpc.Error.code error)) ]
+                    :: p [] [ text (Rpc.Error.message error) ]
+                    :: (case ( Rpc.Error.source error, Rpc.Error.cause error ) of
+                            ( Just source, _ ) ->
+                                let
+                                    details =
+                                        Rpc.Error.details error
+                                in
+                                [ p [] [ text ("Read from " ++ sourceToString source ++ " (HTTP " ++ String.fromInt answer.statusCode ++ ")") ]
+                                , ul []
+                                    (List.map
+                                        (\violation -> li [] [ code [] [ text violation.field ], text (": " ++ violation.description) ])
+                                        (unpacked Proto.ErrorDetails.badRequest details |> List.concatMap .fieldViolations)
+                                    )
+                                , ul []
+                                    (List.map
+                                        (\info -> li [] [ text (info.reason ++ " from " ++ info.domain) ])
+                                        (unpacked Proto.ErrorDetails.errorInfo details)
+                                    )
+                                , div [] (List.map viewDetail details)
+                                ]
+
+                            ( Nothing, Nothing ) ->
+                                [ p [] [ text ("Inferred from the HTTP status " ++ String.fromInt answer.statusCode ++ "; the body was:") ]
+                                , pre [] [ text (Maybe.withDefault "" (Rpc.Body.toText answer.body)) ]
+                                ]
+
+                            ( Nothing, Just _ ) ->
+                                [ p [] [ text ("HTTP " ++ String.fromInt answer.statusCode ++ ", an answer that could not be read as the response:") ]
+                                , pre [] [ text (Maybe.withDefault "" (Rpc.Body.toText answer.body)) ]
+                                ]
+                       )
+                )
 
 
 {-| A status's details that were read and are of this type.

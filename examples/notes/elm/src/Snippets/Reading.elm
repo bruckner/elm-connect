@@ -1,7 +1,7 @@
 module Snippets.Reading exposing (Model, Msg(..), describe, update)
 
 {-| docs/quickstart.md's "Read the result": a call's result, and one `case` on
-the kinds of `Rpc.Error`.
+who produced the `Rpc.Error`.
 -}
 
 -- region reading
@@ -34,21 +34,17 @@ update msg model =
 
 describe : Rpc.Error -> String
 describe error =
-    case error of
-        Rpc.Error.RpcStatus status _ ->
-            -- The server stated a status: a Connect error body, a
-            -- google.rpc.Status body or the grpc-status headers.
-            Rpc.Code.toString status.code ++ ": " ++ status.message
+    case Rpc.Error.cause error of
+        Nothing ->
+            -- The server answered with a failure: the status it stated, or
+            -- one inferred from the HTTP status, as of a proxy's 502 page.
+            Rpc.Code.toString (Rpc.Error.code error) ++ ": " ++ Rpc.Error.message error
 
-        Rpc.Error.HttpStatus response ->
-            -- A failure with no status in it, such as a proxy's 502 page.
-            "HTTP " ++ String.fromInt response.statusCode
-
-        Rpc.Error.BadResponse _ _ _ ->
+        Just Rpc.Error.BadResponse ->
             -- A success that could not be read as the response.
             "unexpected answer: " ++ Rpc.Error.message error
 
-        Rpc.Error.NoAnswer _ ->
+        Just _ ->
             -- A timeout, a network failure, or a call that was never sent.
             Rpc.Error.toString error
 

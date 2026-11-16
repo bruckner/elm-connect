@@ -454,7 +454,11 @@
     },
     "expect": {
       "result": {
-        "noAnswer": "ResponseTooLarge 257 100"
+        "badResponse": {
+          "code": "resource_exhausted",
+          "problem": "message size 257 is larger than configured readMaxBytes 100",
+          "response": { "statusCode": 200, "body": "" }
+        }
       },
       "trace": {
         "httpStatus": 200,
@@ -479,7 +483,7 @@
     },
     "expect": {
       "result": {
-        "noAnswer": "RequestTooLarge 15 14"
+        "noAnswer": "BadCall resource_exhausted: message size 15 is larger than configured writeMaxBytes 14"
       },
       "trace": {
         "attempts": 0

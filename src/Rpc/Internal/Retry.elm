@@ -159,16 +159,26 @@ step retry idempotency retryCode at result =
 
 
 {-| The code a failed call is retried by, or `Nothing` when trying again
-cannot help. The runtime's loop and `Rpc.Retry.next` both read it.
+cannot help: a call that could not be made would fail the same way, and an
+answer that could not be used (malformed, or over the read limit) would come
+the same way. The runtime's loop and `Rpc.Retry.next` both read it.
 -}
 retryable : Error -> Maybe Code
 retryable error =
-    case error of
-        Rpc.Error.NoAnswer (Rpc.Error.BadUrl _) ->
-            -- Nothing was sent, and nothing would change.
+    case Rpc.Error.cause error of
+        Just Rpc.Error.BadCall ->
             Nothing
 
-        _ ->
+        Just Rpc.Error.BadResponse ->
+            Nothing
+
+        Just Rpc.Error.Timeout ->
+            Just (Rpc.Error.code error)
+
+        Just Rpc.Error.NetworkError ->
+            Just (Rpc.Error.code error)
+
+        Nothing ->
             Just (Rpc.Error.code error)
 
 

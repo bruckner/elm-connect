@@ -19,7 +19,8 @@ import Rpc.Body
 import Rpc.Call
 import Rpc.Client
 import Rpc.Code exposing (Code(..))
-import Rpc.Error exposing (Error(..), Problem(..), Reason(..), Source(..))
+import Rpc.Error exposing (Cause(..), Error, Source(..))
+import Rpc.ErrorFacts exposing (Facts, facts)
 import Rpc.Internal.Plan
 import Rpc.Protocol
 import Test exposing (Test, describe, test)
@@ -353,9 +354,13 @@ pathValues =
                     |> Expect.equal [ Nothing, Nothing ]
         , test "the error is InvalidArgument, naming the field and the template without the value" <|
             \_ ->
-                NoAnswer (BadPathValue { field = "note.name", template = "notes/*" })
-                    |> (\error -> ( Rpc.Error.code error, Rpc.Error.message error ))
-                    |> Expect.equal ( InvalidArgument, "path field \"note.name\" does not match notes/*" )
+                let
+                    c =
+                        bound (named notes) """{"name":"secret/a"}"""
+                in
+                Rpc.Internal.Plan.refused "https://api.example.com" (Rpc.Internal.Plan.plan transcoding c) (Rpc.request transcoding c)
+                    |> Maybe.map (\error -> ( Rpc.Error.code error, Rpc.Error.cause error, Rpc.Error.message error ))
+                    |> Expect.equal (Just ( InvalidArgument, Just BadCall, "path field \"name\" does not match notes/*" ))
         ]
 
 
@@ -561,64 +566,44 @@ responses =
         , test "a response body field that does not decode keeps elm/json's error at the field" <|
             \_ ->
                 case respond { rule | responseBody = Just (string "title" "title") } (Http.GoodStatus_ (metadata 200 "OK" []) "3") of
-                    Err (BadResponse _ (Body (Proto.Error.BadJson problem)) _) ->
-                        Json.Decode.errorToString problem
-                            |> String.startsWith "Problem with the value at json.title:"
+                    Err error ->
+                        Rpc.Error.message error
+                            |> String.startsWith "bad response body: Problem with the value at json.title:"
                             |> Expect.equal True
 
                     other ->
                         Expect.fail (Debug.toString other)
         , test "an undecodable body is a bad response, the answer kept" <|
             \_ ->
-                case respond rule (Http.GoodStatus_ (metadata 201 "Created" []) "[]") of
-                    Err (BadResponse _ (Body (Proto.Error.BadJson _)) answer) ->
-                        ( answer.statusCode, Maybe.withDefault "" (Rpc.Body.toText answer.body) )
-                            |> Expect.equal ( 201, "[]" )
-
-                    other ->
-                        Expect.fail (Debug.toString other)
-        , test "no answer is NoAnswer" <|
+                respond rule (Http.GoodStatus_ (metadata 201 "Created" []) "[]")
+                    |> Result.mapError
+                        (\error ->
+                            ( Rpc.Error.cause error
+                            , Rpc.Error.httpStatus error
+                            , Rpc.Error.response error |> Maybe.andThen (.body >> Rpc.Body.toText)
+                            )
+                        )
+                    |> Expect.equal (Err ( Just BadResponse, Just 201, Just "[]" ))
+        , test "no answer is a timeout or a network error" <|
             \_ ->
                 [ Http.Timeout_, Http.NetworkError_ ]
                     |> List.map (respond rule)
-                    |> Expect.equal [ Err (NoAnswer Timeout), Err (NoAnswer NetworkError) ]
+                    |> Expect.equal [ Err Rpc.Error.timeout, Err Rpc.Error.networkError ]
         ]
 
 
-failed : Int -> String -> List ( String, String ) -> String -> Result Error String
+failed : Int -> String -> List ( String, String ) -> String -> Result Facts String
 failed status text headers raw_ =
     respond rule (Http.BadStatus_ (metadata status text headers) raw_)
-        |> withoutResponse
+        |> Result.mapError facts
 
 
-{-| An error with its answer blanked, for tests about what was read from it;
-an `HttpStatus` error keeps its status and status text, which are what it says.
-`RpcTest` checks the answer itself.
+{-| What a test reads of a failure whose status the server stated, answered
+with this HTTP status.
 -}
-withoutResponse : Result Error a -> Result Error a
-withoutResponse =
-    Result.mapError
-        (\error ->
-            case error of
-                RpcStatus r _ ->
-                    RpcStatus r blank
-
-                HttpStatus answer ->
-                    HttpStatus { blank | statusCode = answer.statusCode, statusText = answer.statusText }
-
-                _ ->
-                    error
-        )
-
-
-blank : Rpc.Response
-blank =
-    { url = "", statusCode = 0, statusText = "", headers = Dict.empty, body = Rpc.Body.text "" }
-
-
-stated : Code -> String -> Source -> Result Error a
-stated code message source =
-    Err (RpcStatus { code = code, message = message, details = [], source = source } blank)
+stated : Int -> Code -> String -> Source -> Result Facts a
+stated status code message source =
+    Err { code = code, message = message, cause = Nothing, source = Just source, httpStatus = Just status }
 
 
 {-| The shared reader of failed answers, which both protocols use.
@@ -628,55 +613,52 @@ errors =
     describe "failed answers"
         [ test "a google.rpc.Status body" <|
             \_ ->
-                failed 404 "Not Found" [] """{"code":5,"message":"no such note","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"GONE"}]}"""
+                respond rule (Http.BadStatus_ (metadata 404 "Not Found" []) """{"code":5,"message":"no such note","details":[{"@type":"type.googleapis.com/google.rpc.ErrorInfo","reason":"GONE"}]}""")
                     |> Result.mapError
                         (\error ->
-                            case error of
-                                RpcStatus r _ ->
-                                    Just ( ( r.code, r.source ), r.message, List.map (Result.map Proto.Any.typeUrl) r.details )
-
-                                _ ->
-                                    Nothing
+                            ( ( Rpc.Error.code error, Rpc.Error.source error )
+                            , Rpc.Error.message error
+                            , List.map (Result.map Proto.Any.typeUrl) (Rpc.Error.details error)
+                            )
                         )
                     |> Expect.equal
-                        (Err (Just ( ( NotFound, StatusBody ), "no such note", [ Err (Proto.Error.UnregisteredType "type.googleapis.com/google.rpc.ErrorInfo") ] )))
+                        (Err ( ( NotFound, Just StatusBody ), "no such note", [ Err (Proto.Error.UnregisteredType "type.googleapis.com/google.rpc.ErrorInfo") ] ))
         , test "a code outside 1 to 16 is Unknown" <|
             \_ ->
                 [ failed 500 "" [] """{"code":42}""", failed 500 "" [] """{"code":0,"message":"ok?"}""" ]
-                    |> Expect.equal [ stated Unknown "" StatusBody, stated Unknown "ok?" StatusBody ]
+                    |> Expect.equal [ stated 500 Unknown "" StatusBody, stated 500 Unknown "ok?" StatusBody ]
         , test "grpc-status 0 on a failed answer is Unknown" <|
             \_ ->
                 failed 500 "" [ ( "grpc-status", "0" ) ] ""
-                    |> Expect.equal (stated Unknown "HTTP 500" GrpcHeaders)
+                    |> Expect.equal (stated 500 Unknown "HTTP 500" GrpcHeaders)
         , test "grpc-status and grpc-message headers, when the body has no status" <|
             \_ ->
                 failed 503 "Service Unavailable" [ ( "Grpc-Status", "14" ), ( "grpc-message", "back%20off %C3%A9" ) ] ""
-                    |> Expect.equal (stated Unavailable "back off é" GrpcHeaders)
+                    |> Expect.equal (stated 503 Unavailable "back off é" GrpcHeaders)
         , test "grpc-status without grpc-message takes the status text" <|
             \_ ->
                 failed 503 "Service Unavailable" [ ( "grpc-status", "8" ) ] ""
-                    |> Expect.equal (stated ResourceExhausted "Service Unavailable" GrpcHeaders)
-        , test "otherwise an HttpStatus error, its code inferred by Connect's table" <|
+                    |> Expect.equal (stated 503 ResourceExhausted "Service Unavailable" GrpcHeaders)
+        , test "otherwise a failure that states no status, its code inferred by Connect's table" <|
             \_ ->
                 [ failed 404 "Not Found" [] "<html>", failed 400 "" [] "{\"error\":\"x\"}", failed 500 "" [ ( "grpc-status", "x" ) ] "" ]
-                    |> List.map (Result.mapError (\error -> ( Rpc.Error.code error, Rpc.Error.message error, error )))
                     |> Expect.equal
-                        [ Err ( Unimplemented, "Not Found", HttpStatus { blank | statusCode = 404, statusText = "Not Found" } )
-                        , Err ( Internal, "HTTP 400", HttpStatus { blank | statusCode = 400 } )
-                        , Err ( Unknown, "HTTP 500", HttpStatus { blank | statusCode = 500 } )
+                        [ Err { code = Unimplemented, message = "Not Found", cause = Nothing, source = Nothing, httpStatus = Just 404 }
+                        , Err { code = Internal, message = "HTTP 400", cause = Nothing, source = Nothing, httpStatus = Just 400 }
+                        , Err { code = Unknown, message = "HTTP 500", cause = Nothing, source = Nothing, httpStatus = Just 500 }
                         ]
         , test "a Connect body comes before a status body and the headers" <|
             \_ ->
                 failed 404 "" [ ( "grpc-status", "14" ) ] """{"code":"not_found","message":"connect"}"""
-                    |> Expect.equal (stated NotFound "connect" ConnectBody)
+                    |> Expect.equal (stated 404 NotFound "connect" ConnectBody)
         , test "a status body comes before the headers" <|
             \_ ->
                 failed 404 "" [ ( "grpc-status", "14" ) ] """{"code":5,"message":"status"}"""
-                    |> Expect.equal (stated NotFound "status" StatusBody)
-        , test "the headers come before an HttpStatus error" <|
+                    |> Expect.equal (stated 404 NotFound "status" StatusBody)
+        , test "the headers come before a failure that states no status" <|
             \_ ->
                 failed 404 "Not Found" [ ( "grpc-status", "14" ) ] "<html>"
-                    |> Expect.equal (stated Unavailable "Not Found" GrpcHeaders)
+                    |> Expect.equal (stated 404 Unavailable "Not Found" GrpcHeaders)
         , test "Connect reads a status body and the headers too" <|
             \_ ->
                 [ """{"code":5}""", "" ]
@@ -685,7 +667,7 @@ errors =
                             Rpc.response (Rpc.client Rpc.Protocol.connect "https://api.example.com")
                                 (Rpc.call (raw []) Json.Encode.null)
                                 (Http.BadStatus_ (metadata 503 "" [ ( "grpc-status", "14" ) ]) answer)
-                                |> withoutResponse
+                                |> Result.mapError facts
                         )
-                    |> Expect.equal [ stated NotFound "" StatusBody, stated Unavailable "HTTP 503" GrpcHeaders ]
+                    |> Expect.equal [ stated 503 NotFound "" StatusBody, stated 503 Unavailable "HTTP 503" GrpcHeaders ]
         ]

@@ -17,7 +17,8 @@ import Rpc.Body
 import Rpc.Call
 import Rpc.Client
 import Rpc.Code exposing (Code(..))
-import Rpc.Error exposing (Error(..), Problem(..), Reason(..), Source(..))
+import Rpc.Error exposing (Cause(..), Error, Source(..))
+import Rpc.ErrorFacts exposing (facts)
 import Rpc.Internal.Plan
 import Rpc.Internal.Trace
 import Rpc.Protocol
@@ -132,25 +133,31 @@ codeAndMessage =
     Result.mapError (\error -> ( Rpc.Error.code error, Rpc.Error.message error ))
 
 
-statusOf : Result Error a -> Maybe ( Code, String, Source )
+statusOf : Result Error a -> Maybe ( Code, String, Maybe Source )
 statusOf result =
     case result of
-        Err (RpcStatus status _) ->
-            Just ( status.code, status.message, status.source )
+        Err error ->
+            Just ( Rpc.Error.code error, Rpc.Error.message error, Rpc.Error.source error )
 
-        _ ->
+        Ok _ ->
             Nothing
 
 
-{-| An `HttpStatus` error's code, HTTP status and body text.
+{-| A server failure's code, HTTP status and body text, when it states no
+status.
 -}
-httpStatusOf : Result Error a -> Maybe ( Code, Int, Maybe String )
+httpStatusOf : Result Error a -> Maybe ( Code, Maybe Int, Maybe String )
 httpStatusOf result =
     case result of
-        Err ((HttpStatus response) as error) ->
-            Just ( Rpc.Error.code error, response.statusCode, Rpc.Body.toText response.body )
+        Err error ->
+            case ( Rpc.Error.cause error, Rpc.Error.source error ) of
+                ( Nothing, Nothing ) ->
+                    Just ( Rpc.Error.code error, Rpc.Error.httpStatus error, Rpc.Error.response error |> Maybe.andThen (.body >> Rpc.Body.toText) )
 
-        _ ->
+                _ ->
+                    Nothing
+
+        Ok _ ->
             Nothing
 
 
@@ -271,14 +278,11 @@ answers =
                 readBytes proto (Http.GoodStatus_ (metadata 200 [ ( "content-type", "application/json" ) ]) (utf8 "{\"title\":\"hi\"}"))
                     |> Result.mapError
                         (\error ->
-                            case error of
-                                BadResponse _ problem answer ->
-                                    Just ( problem, Maybe.map Bytes.width (Rpc.Body.toBytes answer.body) )
-
-                                _ ->
-                                    Nothing
+                            ( ( Rpc.Error.cause error, Rpc.Error.message error )
+                            , Rpc.Error.response error |> Maybe.andThen (.body >> Rpc.Body.toBytes) |> Maybe.map Bytes.width
+                            )
                         )
-                    |> Expect.equal (Err (Just ( Envelope "content-type application/json, not application/proto", Just 14 )))
+                    |> Expect.equal (Err ( ( Just BadResponse, "bad response: content-type application/json, not application/proto" ), Just 14 ))
         , test "a 200 of another Connect content type is a BadResponse naming both, under either codec" <|
             \_ ->
                 [ readText (Http.GoodStatus_ (metadata 200 [ ( "content-type", "application/proto" ) ]) "{\"title\":\"hi\"}")
@@ -310,8 +314,8 @@ answers =
                 , readBytes proto (Http.GoodStatus_ jpeg (utf8 errorBody))
                 ]
                     |> List.map statusOf
-                    |> Expect.equal [ Just ( Unavailable, "down", ConnectBody ), Just ( Unavailable, "down", ConnectBody ) ]
-        , test "a 200 that is not Connect's holding no status is an HttpStatus error, code Unknown" <|
+                    |> Expect.equal [ Just ( Unavailable, "down", Just ConnectBody ), Just ( Unavailable, "down", Just ConnectBody ) ]
+        , test "a 200 that is not Connect's holding no status states none, code Unknown" <|
             \_ ->
                 let
                     html =
@@ -324,10 +328,10 @@ answers =
                 ]
                     |> List.map httpStatusOf
                     |> Expect.equal
-                        [ Just ( Unknown, 200, Just "" )
-                        , Just ( Unknown, 200, Just html )
-                        , Just ( Unknown, 200, Just "" )
-                        , Just ( Unknown, 200, Just html )
+                        [ Just ( Unknown, Just 200, Just "" )
+                        , Just ( Unknown, Just 200, Just html )
+                        , Just ( Unknown, Just 200, Just "" )
+                        , Just ( Unknown, Just 200, Just html )
                         ]
         , test "bytes that are not the message are a BadResponse" <|
             \_ ->
@@ -339,14 +343,9 @@ answers =
                 readBytes proto (Http.BadStatus_ (metadata 404 [ ( "content-type", "application/json" ) ]) (utf8 "{\"code\":\"not_found\",\"message\":\"no note\"}"))
                     |> Result.mapError
                         (\error ->
-                            case error of
-                                RpcStatus status answer ->
-                                    ( ( status.code, status.message, status.source ), Rpc.Body.toText answer.body )
-
-                                _ ->
-                                    ( ( Unknown, "other", ConnectBody ), Nothing )
+                            ( statusOf (Err error), Rpc.Error.response error |> Maybe.andThen (.body >> Rpc.Body.toText) )
                         )
-                    |> Expect.equal (Err ( ( NotFound, "no note", ConnectBody ), Just "{\"code\":\"not_found\",\"message\":\"no note\"}" ))
+                    |> Expect.equal (Err ( Just ( NotFound, "no note", Just ConnectBody ), Just "{\"code\":\"not_found\",\"message\":\"no note\"}" ))
         ]
 
 
@@ -360,17 +359,29 @@ limits =
                         (\limit ->
                             Rpc.responseBytes (over (Rpc.Protocol.withReadMaxBytes limit Rpc.Protocol.connectProto)) (both { name = "x" }) (Http.GoodStatus_ (metadata 200 []) titleHi)
                         )
-                    |> Expect.equal [ Ok "hi", Err (NoAnswer (ResponseTooLarge { limit = 3, size = 4 })) ]
+                    |> List.map (Result.mapError (\error -> ( facts error, Rpc.Error.response error |> Maybe.map .body )))
+                    |> Expect.equal
+                        [ Ok "hi"
+                        , Err
+                            ( { code = ResourceExhausted
+                              , message = "message size 4 is larger than configured readMaxBytes 3"
+                              , cause = Just BadResponse
+                              , source = Nothing
+                              , httpStatus = Just 200
+                              }
+                            , Just Rpc.Body.none
+                            )
+                        ]
         , test "write: the binary is measured, not the JSON" <|
             \_ ->
                 [ 3, 2 ]
                     |> List.map (\limit -> (Rpc.Internal.Plan.plan (over (Rpc.Protocol.withWriteMaxBytes limit Rpc.Protocol.connectProto)) (both { name = "x" })).tooLarge ())
-                    |> Expect.equal [ Nothing, Just (RequestTooLarge { limit = 2, size = 3 }) ]
+                    |> Expect.equal [ Nothing, Just { limit = 2, size = 3 } ]
         , test "write: a JSON protocol measures the JSON of the same call" <|
             \_ ->
                 [ 12, 11 ]
                     |> List.map (\limit -> (Rpc.Internal.Plan.plan (over (Rpc.Protocol.withWriteMaxBytes limit Rpc.Protocol.connect)) (both { name = "x" })).tooLarge ())
-                    |> Expect.equal [ Nothing, Just (RequestTooLarge { limit = 11, size = 12 }) ]
+                    |> Expect.equal [ Nothing, Just { limit = 11, size = 12 } ]
         ]
 
 

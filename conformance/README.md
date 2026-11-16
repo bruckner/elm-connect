@@ -507,16 +507,14 @@ for a code inferred from the status, and `response` the answer the
 error was read from: `statusCode`, `statusText` and `body`, and
 `bodyBase64` for an answer read as bytes; `detailsBinary` holds each
 detail's binary as an `Any`, in base64, `null` for one not read),
-`{"badResponse": {"code", "problem", "response"}}` for a successful
-answer that could not be read as the response (the error's code; the
-problem as text, `Proto.Error.toString` of a body that is not the
-response or what was malformed about the answer; and the answer as
-above),
-`{"noAnswer": "Timeout"}` (or `NetworkError`, `BadUrl <url>`,
-`BadHeader <name>`, `RequestTooLarge <size> <limit>`,
-`ResponseTooLarge <size> <limit>`, `BadPathValue <field> <template>`,
-`BadAny <problem>`) for an
-`Rpc.Error.NoAnswer`, `{"canceled": true}` for a call
+`{"badResponse": {"code", "problem", "response"}}` for an answer that
+could not be used, an error whose `Rpc.Error.cause` is `BadResponse`
+(the error's code; its `Rpc.Error.message` as the problem; and the
+answer as above, without its body for one over the read limit),
+`{"noAnswer": "Timeout"}` (or `NetworkError`, or `BadCall` and
+`Rpc.Error.toString` of a call that could not be made, `BadCall
+internal: invalid header "X-User"`) for an error that kept no answer,
+`{"canceled": true}` for a call
 the runner withdrew with `Rpc.cancel`, and `{"runner": <why>}` for an
 envelope the runner could not send: one that does not decode, an unknown
 method, a binding the method lacks, or a codec the entry has no call
@@ -603,7 +601,7 @@ answer's headers itself; with `sendTraced` it reports the `Trace`'s
 way a repeated header is one value, joined with `", "` as elm/http gives
 it, which the suite accepts. A call with no answer is reported as an
 error: `Timeout` as `deadline_exceeded`, `NetworkError` as `unavailable`,
-`RequestTooLarge` and `ResponseTooLarge` as `resource_exhausted`, a bad response as `internal`, as `Rpc.Error.code` reads it, anything else as `unknown`; `{"canceled": true}`, the runner's record of a cancel, as `canceled`. What is reported is only what the runtime gives
+a request over the send limit (`BadCall resource_exhausted: …`) as `resource_exhausted`, a bad response by its code, as `Rpc.Error.code` reads it, anything else as `unknown`; `{"canceled": true}`, the runner's record of a cancel, as `canceled`. What is reported is only what the runtime gives
 an application; the runner's `wire` log is never read.
 
 `--send` picks how calls are sent: `halves` (the default) through the pure

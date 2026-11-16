@@ -21,7 +21,7 @@ import Proto.Json
 import Proto.Registry exposing (Registry)
 import Rpc.Body
 import Rpc.Code as Code exposing (Code)
-import Rpc.Error as Error exposing (Error)
+import Rpc.Internal.Error as Error exposing (Error)
 import Rpc.Internal.Http as Internal
 import Rpc.Response exposing (Response)
 
@@ -39,13 +39,13 @@ bytesFailure answer =
             failure metadata (Internal.bytesText raw)
 
         Http.BadUrl_ url ->
-            Error.NoAnswer (Error.BadUrl url)
+            Error.badUrl url
 
         Http.Timeout_ ->
-            Error.NoAnswer Error.Timeout
+            Error.timeout
 
         Http.NetworkError_ ->
-            Error.NoAnswer Error.NetworkError
+            Error.networkError
 
 
 {-| The error of an answer that is not a protocol's success.
@@ -60,13 +60,13 @@ otherFailure answer =
             failure metadata raw
 
         Http.BadUrl_ url ->
-            Error.NoAnswer (Error.BadUrl url)
+            Error.badUrl url
 
         Http.Timeout_ ->
-            Error.NoAnswer Error.Timeout
+            Error.timeout
 
         Http.NetworkError_ ->
-            Error.NoAnswer Error.NetworkError
+            Error.networkError
 
 
 {-| An answer as an error keeps it.
@@ -83,7 +83,7 @@ answerOf metadata raw =
 
 {-| The error a failed answer stands for, whatever the protocol: its Connect
 error body, or its `google.rpc.Status` body, or its `grpc-status` and
-`grpc-message` headers, or failing all of those, an `HttpStatus` error. The
+`grpc-message` headers, or failing all of those, an error that states no status. The
 answer is kept whichever it is.
 -}
 failure : Http.Metadata -> String -> Error
@@ -94,24 +94,24 @@ failure metadata raw =
     in
     case Json.Decode.decodeString (Json.Decode.oneOf [ connectBody, statusBody ]) raw of
         Ok read ->
-            Error.RpcStatus read answer
+            Error.stated read answer
 
         Err _ ->
             case header "grpc-status" metadata |> Maybe.andThen (String.trim >> String.toInt) of
                 Just number ->
-                    Error.RpcStatus
+                    Error.stated
                         { code = fromGrpc number
                         , message =
                             header "grpc-message" metadata
                                 |> Maybe.map (\text -> Percent.percentDecode text |> Maybe.withDefault text)
-                                |> Maybe.withDefault (Error.message (Error.HttpStatus answer))
+                                |> Maybe.withDefault (Error.statusText answer)
                         , details = []
                         , source = Error.GrpcHeaders
                         }
                         answer
 
                 Nothing ->
-                    Error.HttpStatus answer
+                    Error.unstated answer
 
 
 {-| A response header by name, whatever its case.
@@ -135,7 +135,7 @@ optional `details`. Its details are proto3 JSON, which only the client's
 registry reads ([`completeDetails`](#completeDetails)), so they are read
 there.
 -}
-statusBody : Decoder Error.StatusError
+statusBody : Decoder Error.Status
 statusBody =
     Json.Decode.map2 (\number text -> { code = fromGrpc number, message = text, details = [], source = Error.StatusBody })
         (Json.Decode.field "code" Json.Decode.int)
@@ -145,7 +145,7 @@ statusBody =
 {-| A Connect error body: a `code` the protocol names (an unknown name reads as
 `unknown`), an optional `message` and optional `details`.
 -}
-connectBody : Decoder Error.StatusError
+connectBody : Decoder Error.Status
 connectBody =
     Json.Decode.map3 (\name text found -> { code = name, message = text, details = found, source = Error.ConnectBody })
         (Json.Decode.field "code" Json.Decode.string
@@ -271,15 +271,10 @@ registry: they are proto3 JSON, so [`failure`](#failure), which has no
 registry, leaves them out. Any other error is kept as it is.
 -}
 completeDetails : Registry -> Error -> Error
-completeDetails registry error =
-    case error of
-        Error.RpcStatus status answer ->
-            case status.source of
-                Error.StatusBody ->
-                    Error.RpcStatus { status | details = bodyDetails registry answer } answer
-
-                _ ->
-                    error
+completeDetails registry ((Error.Error e) as error) =
+    case ( e.source, e.response ) of
+        ( Just Error.StatusBody, Just answer ) ->
+            Error.Error { e | details = bodyDetails registry answer }
 
         _ ->
             error

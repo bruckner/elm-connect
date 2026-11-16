@@ -14,16 +14,11 @@ import Rpc.Error
 
 violations : Rpc.Error -> List String
 violations error =
-    case error of
-        Rpc.Error.RpcStatus status _ ->
-            status.details
-                |> List.filterMap Result.toMaybe
-                |> List.filterMap (Proto.Any.unpack Proto.ErrorDetails.badRequest)
-                |> List.concatMap .fieldViolations
-                |> List.map .description
-
-        _ ->
-            []
+    Rpc.Error.details error
+        |> List.filterMap Result.toMaybe
+        |> List.filterMap (Proto.Any.unpack Proto.ErrorDetails.badRequest)
+        |> List.concatMap .fieldViolations
+        |> List.map .description
 
 
 

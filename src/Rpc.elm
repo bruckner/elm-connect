@@ -224,7 +224,7 @@ cannot stop it.
 A call whose URL or headers cannot be sent, whose path value cannot match its
 variable's template, or whose request is over the protocol's
 [`withWriteMaxBytes`](Rpc-Protocol#withWriteMaxBytes), is not: it fails with
-`NoAnswer`, and nothing reaches elm/http.
+a [`BadCall`](Rpc-Error#Cause), and nothing reaches elm/http.
 
 -}
 task : Client codec -> Call codec req res -> Task Error res
@@ -357,8 +357,8 @@ sendTraced cl toMsg c =
 -- ERRORS
 
 
-{-| Why a call failed: [`Rpc.Error.Error`](Rpc-Error#Error), where its kinds
-are matched and its code, message and details read.
+{-| Why a call failed: [`Rpc.Error.Error`](Rpc-Error#Error), where its code,
+message, details, HTTP status and answer are read.
 -}
 type alias Error =
     Rpc.Error.Error
