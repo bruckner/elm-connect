@@ -32,7 +32,7 @@ A path value must match its variable's template as `google/api/http.proto`
 defines it, and one that cannot, an empty one or `notes/a/b` for
 `{name=notes/*}`, is not sent; nor is one holding a surrogate without
 its pair, which no URL can carry: the call fails with
-`NoAnswer (BadPathValue { field, template })` naming the field, while
+a `BadCall` whose message names the field and the template, while
 `Rpc.request` still builds the URL it would have used.
 
 The two kinds of body leave the path's fields in or out. `body: "*"`
@@ -157,7 +157,7 @@ defaults):
 A server that wraps responses in an envelope of its own (grpc-gateway's
 `runtime.WithForwardResponseRewriter`) sends something that is no
 longer the response message: the client cannot read it, and the call
-fails with `BadResponse`. Read such an answer through the pure halves
+fails with a `BadResponse` cause. Read such an answer through the pure halves
 ([calling.md](calling.md#the-pure-halves)), or unwrap it on the server.
 
 ## Errors
@@ -165,13 +165,13 @@ fails with `BadResponse`. Read such an answer through the pure halves
 grpc-gateway and Vanguard, and Envoy with `convert_grpc_status: true`,
 answer an error with a `google.rpc.Status` body, `{"code": 5, "message":
 …, "details": […]}`, and the HTTP status of its code. The runtime reads
-it as `RpcStatus` with source `StatusBody` (live, under all three).
+it as a stated status with source `StatusBody` (live, under all three).
 
 ### Errors in headers
 
 Envoy's transcoder, unless `convert_grpc_status: true`, answers an error
 with an HTTP status and the `grpc-status` and `grpc-message` headers,
-and no body. The runtime reads those headers as `RpcStatus` with source
+and no body. The runtime reads those headers as a stated status with source
 `GrpcHeaders`, the message percent-decoded (live, against Envoy and
 against the example server's `/grpc-status/<code>/…` route). Envoy
 forwards no error details this way. With `convert_grpc_status: true`,
@@ -180,8 +180,8 @@ reads as above ([envoy.md](envoy.md#errors) compares the two).
 
 A browser shows a cross-origin answer's headers to the page only when
 the server lists them in `Access-Control-Expose-Headers`. Without
-`grpc-status` there, the error has no status to read, and is an
-`HttpStatus` error with the code inferred from the HTTP status.
+`grpc-status` there, the error has no status to read: it has no source,
+and its code is inferred from the HTTP status.
 [envoy.md](envoy.md#a-page-on-another-origin) configures Envoy's CORS
 filter so.
 

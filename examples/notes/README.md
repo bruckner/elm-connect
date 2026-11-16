@@ -277,7 +277,7 @@ either way, and `source` says which body it was. Each detail is an
 of one type. The answer rides with the error as
 `Rpc.Response`, its status, headers and body, so a body in a shape the
 runtime does not read, or one that drifted from the schema, can still be
-shown, as the `HttpStatus` and `BadResponse` branches do.
+shown, as the page does for an answer with no source.
 
 ## The protocol toggle
 
@@ -287,27 +287,27 @@ the server's own origin for Connect and for Vanguard's transcoding, the
 same generated code, goes over the other wire form:
 
 ```elm examples/notes/elm/src/Main.elm#toggle
-        SetWire wire ->
-            let
-                shared =
-                    model.shared
+SetWire wire ->
+    let
+        shared =
+            model.shared
 
-                ( protocol, path ) =
-                    case wire of
-                        ViaConnect ->
-                            ( Rpc.Protocol.connect, "" )
+        ( protocol, path ) =
+            case wire of
+                ViaConnect ->
+                    ( Rpc.Protocol.connect, "" )
 
-                        ViaVanguard ->
-                            ( Rpc.Protocol.transcode, "" )
+                ViaVanguard ->
+                    ( Rpc.Protocol.transcode, "" )
 
-                        ViaGateway ->
-                            ( Rpc.Protocol.transcode, "/gateway" )
-            in
-            list
-                { model
-                    | wire = wire
-                    , shared = { shared | protocol = protocol, apiUrl = model.origin ++ path }
-                }
+                ViaGateway ->
+                    ( Rpc.Protocol.transcode, "/gateway" )
+    in
+    list
+        { model
+            | wire = wire
+            , shared = { shared | protocol = protocol, apiUrl = model.origin ++ path }
+        }
 ```
 
 ## The update mask

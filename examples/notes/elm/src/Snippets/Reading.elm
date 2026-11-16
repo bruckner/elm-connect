@@ -1,7 +1,8 @@
-module Snippets.Reading exposing (Model, Msg(..), describe, update)
+module Snippets.Reading exposing (Model, Msg(..), describe, slowDown, update)
 
 {-| docs/quickstart.md's "Read the result": a call's result, and one `case` on
-who produced the `Rpc.Error`.
+who produced the `Rpc.Error`; and docs/calling.md's check that the server
+said what the code says.
 -}
 
 -- region reading
@@ -51,3 +52,16 @@ describe error =
 
 
 -- endregion reading
+-- region server-said
+
+
+{-| Whether the server asked the caller to slow down: its own
+`ResourceExhausted`, not the client's for a request over its limit.
+-}
+slowDown : Rpc.Error -> Bool
+slowDown error =
+    Rpc.Error.cause error == Nothing && Rpc.Error.code error == Rpc.Code.ResourceExhausted
+
+
+
+-- endregion server-said
