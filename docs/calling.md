@@ -302,7 +302,7 @@ to. `allowNonIdempotent` retries calls of every method: for codes that
 say the server did nothing, such as `Unavailable` from a proxy that
 never reached it; a call with side effects that failed after the server
 acted is then made again. A call that could not be made, or an answer
-that could not be used ([`BadCall`, `BadResponse`](#who-produced-it)),
+that could not be used ([`BadCall`, `BadResponse`](#the-http-view)),
 is never retried, whatever its code: trying again would fail the same
 way. So the policy above does not retry a request over the write
 limit, though its code is `ResourceExhausted`.
@@ -527,10 +527,8 @@ the bytes could stop sooner, and this one does not.
 A failed call gives `Rpc.Error`, one type for every protocol. Read it in
 the terms your application already thinks in: an application calling an
 RPC API, over Connect or gRPC-Web, reads its code, message and details;
-one calling a REST API, over transcoding, reads its HTTP status and the
-answer. Each of the two views is complete on its own. Who produced the
-error, the server or this client, is a separate question, which
-`Rpc.Error.cause` answers when it matters.
+one calling a REST API, over transcoding, reads it as elm/http's
+`Http.Error`, an answer's HTTP status or why there is none.
 
 ### The RPC view
 
@@ -552,8 +550,8 @@ Every error has a code, an `Rpc.Code.Code`, and a message.
   ([descriptors.md](descriptors.md#error-details)). `source` says where
   the status was stated ([below](#where-a-status-comes-from)).
 - When the server failed without stating one, as a proxy's 502 page
-  does, the code is inferred by the table Connect and gRPC share (see
-  [A failure that states no status](#a-failure-that-states-no-status)),
+  does, `source` is `Nothing`, the code is inferred from the HTTP status
+  (see [A failure that states no status](#a-failure-that-states-no-status)),
   the message is the status text, and there are no details.
 - When the client produced the error itself, the code is its own, as
   the Connect clients give it: a timeout is `DeadlineExceeded`; a
@@ -564,73 +562,15 @@ Every error has a code, an `Rpc.Code.Code`, and a message.
   limit; an answer that could not be used `Internal`, or
   `ResourceExhausted` for one over its size limit, or `Unimplemented`
   for a unary gRPC-Web answer with status 0 and no message or more than
-  one. The message says what went wrong.
+  one. The message says what went wrong. For a body that is not the
+  response message, it says where and why and never quotes the value it
+  rejected: `bad response body: at json.tokens.accessToken: Expecting a
+  STRING`.
 
-### The HTTP view
-
-```elm src/Rpc/Error.elm excerpt
-response : Error -> Result Cause Response
-httpStatus : Error -> Maybe Int
-```
-
-Every error that came with an answer has its HTTP status, always the
-one the server sent, and the answer itself, an `Rpc.Response` with its
-URL, status text, headers and body, for errors in a shape the runtime
-does not read and bodies that do not decode. `Nothing` means no answer
-came: a timeout, a network failure, or a call that was never sent;
-`Rpc.Error.message` says which.
-
-A 2xx can be an error too. Over Connect and gRPC-Web, a 200 whose
-content type is none of the protocol's (Connect's `application/json`,
-`application/proto`, `application/connect+json` and
-`application/connect+proto`; any `application/grpc-web…`), such as a
-proxy's HTML page, is not the protocol's answer, and is read as a
-failure is. Another of the protocol's content types than the call reads
-(`application/json` under the proto codec), or a body that is not the
-response message, as when the schema drifted between client and
-server, is an answer that could not be used. Transcoding reads any
-success as its answer, whatever its content type, since a REST server
-may label JSON `text/plain`; a success with no content type is read as
-the answer. An answer over the read limit is kept without its body
-([Size limits](#size-limits)).
-
-### Who produced it
-
-```elm src/Rpc/Error.elm excerpt
-cause : Error -> Maybe Cause
-type Cause
-    = BadCall
-    | NetworkError
-    | Timeout
-    | BadResponse Response
-```
-
-- `Nothing`: the server answered with a failure, stating a status or
-  not.
-- `BadCall`: the call could not be made, and nothing was sent: a base
-  URL holding `?` or `#`, or one the browser refuses; a header a
-  request cannot carry; a transcoded call's path value its template
-  cannot match; a request over the write limit; or an `Any` the
-  client's registry cannot write as JSON.
-- `NetworkError`, `Timeout`: the request was sent and nothing came
-  back.
-- `BadResponse`: an answer came and could not be used: its body is not
-  the response message (a `Proto.Error.Error` the message describes:
-  `BadJson`, `BadBinary`, or `UnregisteredType` for an `Any` of a type
-  the client's registry lacks), its content type is another of the
-  protocol's, a gRPC-Web answer's framing or trailers are malformed, or
-  it is over the read limit.
-
-Every error has a cause or a response, or both: a server's failure has
-the answer and no cause, a `BadResponse` has both, and the other three
-have a cause alone.
-
-Check the cause where it matters who spoke. The client's codes are the
-server's codes too, with the server's meanings: a request over the
-client's write limit is `ResourceExhausted`, as a server's quota is,
-and a network failure is `Unavailable`, as a server shedding load is.
-Code that acts on what the server said checks that the cause is
-`Nothing`:
+The client's codes and the inferred ones have server meanings too: a
+request over the client's write limit is `ResourceExhausted`, as a
+server's quota is, and an edge's bare 429 reads as `Unavailable`. Code
+that acts on a code the server stated checks that it stated one:
 
 ```elm examples/notes/elm/src/Snippets/Reading.elm#server-said
 {-| Whether the server asked the caller to slow down: a `ResourceExhausted`
@@ -642,7 +582,59 @@ slowDown error =
     Rpc.Error.source error /= Nothing && Rpc.Error.code error == Rpc.Code.ResourceExhausted
 ```
 
+### The HTTP view
+
+```elm src/Rpc/Error.elm excerpt
+response : Error -> Result Cause Response
+httpStatus : Error -> Maybe Int
+cause : Error -> Maybe Cause
+type Cause
+    = BadCall
+    | NetworkError
+    | Timeout
+    | BadResponse Response
+```
+
+`response` is elm/http's model of a failure:
+
+| elm/http | `Rpc.Error.response` |
+|---|---|
+| `BadStatus n` | `Ok answer`, with `answer.statusCode == n` |
+| `BadBody _` | `Err (BadResponse answer)` |
+| `Timeout` | `Err Timeout` |
+| `NetworkError` | `Err NetworkError` |
+| `BadUrl _` | `Err BadCall` |
+
+- `Ok answer`: the server answered with a failure. The answer is an
+  `Rpc.Response` with its URL, status, status text, headers and body,
+  for errors in a shape the runtime does not read.
+- `Err (BadResponse answer)`: an answer came and could not be used: its
+  body is not the response message, as when the schema drifted between
+  client and server; its content type is another of the protocol's than
+  the call reads (`application/json` under the proto codec); a gRPC-Web
+  answer's framing or trailers are malformed; or it is over the read
+  limit, kept without its body ([Size limits](#size-limits)).
+- `Err Timeout`, `Err NetworkError`: the request was sent and nothing
+  came back.
+- `Err BadCall`: the call could not be made, and nothing was sent: a
+  base URL holding `?` or `#`, or one the browser refuses; a header a
+  request cannot carry; a transcoded call's path value its template
+  cannot match; a request over the write limit; or an `Any` the
+  client's registry cannot write as JSON. `Rpc.Error.message` says
+  which.
+
+`httpStatus` is the status of any answer the error holds, a
+`BadResponse`'s included; `cause` is `response`'s `Err`, as a `Maybe`.
 A `BadCall` or a `BadResponse` is never retried ([Retries](#retries)).
+
+A 2xx can be an `Ok` failure. Over Connect and gRPC-Web, a 200 whose
+content type is none of the protocol's (Connect's `application/json`,
+`application/proto`, `application/connect+json` and
+`application/connect+proto`; any `application/grpc-web…`), such as a
+proxy's HTML page, is not the protocol's answer, and is read as a
+failure is. Transcoding reads any success as its answer, whatever its
+content type, since a REST server may label JSON `text/plain`; a success
+with no content type is read as the answer.
 
 An `Rpc.Error` is what the call's answer was, and nothing in it fits a
 failure the application finds in a good answer, such as a list missing
@@ -652,9 +644,10 @@ failures, and map into it where the application sends its calls, with
 `Task.mapError` on the task (see [Wrapping the sending
 once](#wrapping-the-sending-once)) and `Task.andThen` failing with its
 own constructor when the answer does not serve. `Rpc.Error`'s builders
-(`fromCode`, `fromResponse`, `timeout`, `networkError`, `badCall`,
-`badResponse`, `withMessage`, `withDetails`) make errors for tests and
-previews.
+(`fromStatus`, `fromCode`, `fromResponse`, `timeout`, `networkError`,
+`badCall`, `badResponse`, `withMessage`, `withDetails`) make errors for
+tests and previews; the runtime builds its own with the same functions,
+so the two compare with `==`.
 
 ### A failure that states no status
 
@@ -679,7 +672,7 @@ gives each code's HTTP status):
 | any other | `Unknown` | |
 
 An application whose server does not yet send status bodies tells the
-last four apart by `Rpc.Error.httpStatus`, not by the code.
+last four apart by the HTTP status, not by the code.
 
 ### Where a status comes from
 

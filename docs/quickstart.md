@@ -149,8 +149,8 @@ ConnectRPC's public demo server.
 ## 5. Read the result
 
 An error is one type for every protocol, `Rpc.Error`. Every error has a
-code and a message, the server's or the client's own; `Rpc.Error.cause`
-tells them apart:
+code and a message; `Rpc.Error.response` gives the server's failure
+answer, or why there is none, as elm/http's `Http.Error` does:
 
 ```elm examples/notes/elm/src/Snippets/Reading.elm#reading
 import Notes.V1
@@ -203,7 +203,7 @@ describe error =
 ```
 
 Most code needs less: `Rpc.Error.code error` and `Rpc.Error.message
-error`, or, against a REST API, `Rpc.Error.httpStatus error`.
+error`, or, against a REST API, `Rpc.Error.response error`.
 [calling.md](calling.md#errors) has both views in full.
 
 ## 6. Try it in `elm repl`

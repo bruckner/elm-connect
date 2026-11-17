@@ -171,11 +171,12 @@ last few under "Sent".
 
 Creating a note without a title fails with `INVALID_ARGUMENT` and a
 `google.rpc.BadRequest` detail; "Get notes/missing" fails with
-`NOT_FOUND` and a `google.rpc.ErrorInfo`. The page shows the code, the
-message, where the error was read from, the details it knows by type,
-and every detail as JSON, or why it could not be read; an answer that stated no status, or a
-successful one whose body is not the response, shows its code and the
-body as it came:
+`NOT_FOUND` and a `google.rpc.ErrorInfo`. The page shows the code and
+the message, then one `case` on `Rpc.Error.response`: for the server's
+failure, where its status was stated, the details it knows by type and
+every detail as JSON, or, when it stated none, the body as it came; for
+an answer it could not read, that body; and a line for a timeout, a
+network failure or a call that was never sent:
 
 ```elm examples/notes/elm/src/Main.elm#error
 viewError : Rpc.Error -> Html msg
