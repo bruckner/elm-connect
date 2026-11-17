@@ -569,8 +569,8 @@ Every error has a code, an `Rpc.Code.Code`, and a message.
 ### The HTTP view
 
 ```elm src/Rpc/Error.elm excerpt
+response : Error -> Result Cause Response
 httpStatus : Error -> Maybe Int
-response : Error -> Maybe Response
 ```
 
 Every error that came with an answer has its HTTP status, always the
@@ -602,7 +602,7 @@ type Cause
     = BadCall
     | NetworkError
     | Timeout
-    | BadResponse
+    | BadResponse Response
 ```
 
 - `Nothing`: the server answered with a failure, stating a status or
@@ -633,12 +633,13 @@ Code that acts on what the server said checks that the cause is
 `Nothing`:
 
 ```elm examples/notes/elm/src/Snippets/Reading.elm#server-said
-{-| Whether the server asked the caller to slow down: its own
-`ResourceExhausted`, not the client's for a request over its limit.
+{-| Whether the server asked the caller to slow down: a `ResourceExhausted`
+it stated, not the client's for a request over its limit, nor one inferred
+from an edge's bare status.
 -}
 slowDown : Rpc.Error -> Bool
 slowDown error =
-    Rpc.Error.cause error == Nothing && Rpc.Error.code error == Rpc.Code.ResourceExhausted
+    Rpc.Error.source error /= Nothing && Rpc.Error.code error == Rpc.Code.ResourceExhausted
 ```
 
 A `BadCall` or a `BadResponse` is never retried ([Retries](#retries)).

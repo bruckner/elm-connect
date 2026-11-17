@@ -19,7 +19,6 @@ import Rpc.Body
 import Rpc.Client
 import Rpc.Code exposing (Code(..))
 import Rpc.Error exposing (Cause(..), Error, Source(..))
-import Rpc.ErrorFacts exposing (facts)
 import Rpc.Internal.Plan exposing (Reader(..))
 import Rpc.Internal.Trace
 import Rpc.Protocol
@@ -171,11 +170,12 @@ badResponseOf : Result Error String -> Maybe ( Code, String )
 badResponseOf result =
     case result of
         Err error ->
-            if Rpc.Error.cause error == Just BadResponse then
-                Just ( Rpc.Error.code error, Rpc.Error.message error )
+            case Rpc.Error.response error of
+                Err (BadResponse _) ->
+                    Just ( Rpc.Error.code error, Rpc.Error.message error )
 
-            else
-                Nothing
+                _ ->
+                    Nothing
 
         Ok _ ->
             Nothing
@@ -376,8 +376,8 @@ answers =
             \_ ->
                 case answer 200 [] [ trailers "grpc-status: 5\u{000D}\ngrpc-message: gone\u{000D}\ngrpc-status-details-bin: !!\u{000D}\n" ] of
                     Err error ->
-                        ( Rpc.Error.code error, Rpc.Error.cause error, Rpc.Error.message error )
-                            |> Expect.equal ( Internal, Just BadResponse, "bad response: a grpc-status-details-bin trailer that is not base64" )
+                        badResponseOf (Err error)
+                            |> Expect.equal (Just ( Internal, "bad response: a grpc-status-details-bin trailer that is not base64" ))
 
                     other ->
                         Expect.fail (Debug.toString other)
@@ -429,10 +429,12 @@ answers =
             \_ ->
                 case answer 200 [] [ frame 0 (bytesOf [ 0x0A, 0x05 ]), trailers ok ] of
                     Err error ->
-                        ( Rpc.Error.cause error, Rpc.Error.message error )
+                        badResponseOf (Err error)
                             |> Expect.equal
-                                ( Just BadResponse
-                                , "bad response body: Not a notes.v1.Title in protobuf binary: the input ends in the middle of a field, at byte 1, in field 1 of notes.v1.Title."
+                                (Just
+                                    ( Internal
+                                    , "bad response body: Not a notes.v1.Title in protobuf binary: the input ends in the middle of a field, at byte 1, in field 1 of notes.v1.Title."
+                                    )
                                 )
 
                     other ->
@@ -457,8 +459,17 @@ answers =
         , test "a 200 that is not gRPC-Web's is read as a failure: code Unknown, when it states no status" <|
             \_ ->
                 Rpc.responseBytes grpcWeb (getNote { name = "" }) (Http.GoodStatus_ (metadata 200 [ ( "content-type", "text/html" ) ]) (E.encode (E.string "<html></html>")))
-                    |> Result.mapError (\error -> ( facts error, Rpc.Error.response error |> Maybe.andThen (.body >> Rpc.Body.toText) ))
-                    |> Expect.equal (Err ( { code = Unknown, message = "HTTP 200", cause = Nothing, source = Nothing, httpStatus = Just 200 }, Just "<html></html>" ))
+                    |> Expect.equal
+                        (Err
+                            (Rpc.Error.fromResponse
+                                { url = "https://api.example.com/notes.v1.Notes/GetNote"
+                                , statusCode = 200
+                                , statusText = ""
+                                , headers = Dict.fromList [ ( "content-type", "text/html" ) ]
+                                , body = Rpc.Body.text "<html></html>"
+                                }
+                            )
+                        )
         , test "a 200 that is not gRPC-Web's is read as a failure: its grpc-status headers or Connect body are the error" <|
             \_ ->
                 [ answer 200 [ ( "content-type", "text/plain" ), ( "grpc-status", "14" ), ( "grpc-message", "down" ) ] []
@@ -481,11 +492,10 @@ answers =
             \_ ->
                 [ Http.Timeout_, Http.NetworkError_, Http.BadUrl_ "x" ]
                     |> List.map (Rpc.responseBytes grpcWeb (getNote { name = "" }))
-                    |> List.map (Result.mapError facts)
                     |> Expect.equal
-                        [ Err (facts Rpc.Error.timeout)
-                        , Err (facts Rpc.Error.networkError)
-                        , Err { code = Internal, message = "bad URL: x", cause = Just BadCall, source = Nothing, httpStatus = Nothing }
+                        [ Err Rpc.Error.timeout
+                        , Err Rpc.Error.networkError
+                        , Err (Rpc.Error.badCall Internal "bad URL: x")
                         ]
         ]
 
@@ -497,10 +507,18 @@ limits =
             \_ ->
                 [ 4, 3 ]
                     |> List.map (\limit -> answerOver (over (Rpc.Protocol.withReadMaxBytes limit Rpc.Protocol.grpcWeb)) 200 [] [ frame 0 titleHi, trailers ok ])
-                    |> List.map (Result.mapError facts)
                     |> Expect.equal
                         [ Ok "hi"
-                        , Err { code = ResourceExhausted, message = "message size 4 is larger than configured readMaxBytes 3", cause = Just BadResponse, source = Nothing, httpStatus = Just 200 }
+                        , Err
+                            (Rpc.Error.badResponse ResourceExhausted
+                                "message size 4 is larger than configured readMaxBytes 3"
+                                { url = "https://api.example.com/notes.v1.Notes/GetNote"
+                                , statusCode = 200
+                                , statusText = ""
+                                , headers = Dict.fromList [ ( "trailer-grpc-status", "0" ), ( "trailer-grpc-message", "" ) ]
+                                , body = Rpc.Body.none
+                                }
+                            )
                         ]
         , test "read: an error is read whatever the limit" <|
             \_ ->

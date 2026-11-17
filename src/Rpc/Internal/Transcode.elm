@@ -12,10 +12,10 @@ import Json.Encode exposing (Value)
 import Proto.Internal.Percent as Percent
 import Proto.Route exposing (Route)
 import Rpc.Body as Body
+import Rpc.Error exposing (Error)
 import Rpc.Internal.Connect as Connect
-import Rpc.Internal.Error exposing (Error, Size)
 import Rpc.Internal.Http as Internal
-import Rpc.Internal.Protocol exposing (GoodText, Options, Settings)
+import Rpc.Internal.Protocol exposing (GoodText, Options, Settings, Size)
 import Rpc.Internal.Status as Status
 import Rpc.Request exposing (Request)
 

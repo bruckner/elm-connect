@@ -1,7 +1,7 @@
 module Proto.Error exposing
     ( Error(..)
     , Binary, Reason(..)
-    , toString
+    , toString, toStringWithoutValues
     )
 
 {-| Why a message could not be read, written or unpacked: one type for the
@@ -22,7 +22,7 @@ one as `BadBinary`.
 
 # Describing
 
-@docs toString
+@docs toString, toStringWithoutValues
 
 -}
 
@@ -139,6 +139,89 @@ toString error =
 
         UnregisteredType typeUrl ->
             "An Any holding " ++ typeUrl ++ " was converted through a registry that has no entry for its type."
+
+
+{-| A description of an error that never quotes the value that failed: for
+JSON, where the failure is and what was expected, as elm/json's path names
+it; the rest as [`toString`](#toString) gives them, which quote no value.
+For a log or a report that must not carry the data it was decoding:
+
+    -- {"tokens": {"accessToken": 7}}, read as a message with a string there
+    "at json.tokens.accessToken: Expecting a STRING"
+
+A failure of the runtime's own decoders that names what it got (`Expecting
+an integer, but got "x"`) is cut before what it got. A `oneOf` that failed
+every way lists each way, joined with `; or`.
+
+-}
+toStringWithoutValues : Error -> String
+toStringWithoutValues error =
+    case error of
+        BadJson jsonError ->
+            jsonWithoutValues "json" jsonError
+
+        _ ->
+            toString error
+
+
+jsonWithoutValues : String -> Json.Decode.Error -> String
+jsonWithoutValues path error =
+    case error of
+        Json.Decode.Field name inner ->
+            jsonWithoutValues (path ++ fieldAccess name) inner
+
+        Json.Decode.Index index inner ->
+            jsonWithoutValues (path ++ "[" ++ String.fromInt index ++ "]") inner
+
+        Json.Decode.OneOf [] ->
+            "at " ++ path ++ ": no way to decode it"
+
+        Json.Decode.OneOf [ only ] ->
+            jsonWithoutValues path only
+
+        Json.Decode.OneOf ways ->
+            ways
+                |> List.map (jsonWithoutValues path)
+                |> String.join "; or "
+
+        Json.Decode.Failure text _ ->
+            "at " ++ path ++ ": " ++ withoutGot text
+
+
+{-| elm/json's way of writing a field in a path: `.name` for a name that is
+a letter then letters, digits and underscores, `['name']` otherwise.
+-}
+fieldAccess : String -> String
+fieldAccess name =
+    case String.uncons name of
+        Just ( first, rest ) ->
+            if Char.isAlpha first && String.all (\c -> Char.isAlphaNum c || c == '_') rest then
+                "." ++ name
+
+            else
+                "['" ++ name ++ "']"
+
+        Nothing ->
+            "['']"
+
+
+{-| A failure's text without the value it says it got.
+-}
+withoutGot : String -> String
+withoutGot text =
+    case String.indexes " but got" text of
+        at :: _ ->
+            String.left at text
+                |> (\kept ->
+                        if String.endsWith "," kept then
+                            String.dropRight 1 kept
+
+                        else
+                            kept
+                   )
+
+        [] ->
+            text
 
 
 reasonText : Reason -> String

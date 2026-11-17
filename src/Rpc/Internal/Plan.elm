@@ -25,11 +25,11 @@ import Proto.Internal.Method exposing (Method(..), RouteOf(..))
 import Proto.Registry exposing (Registry)
 import Proto.Route exposing (PathError)
 import Rpc.Code as Code
+import Rpc.Error as Error exposing (Error)
 import Rpc.Internal.Call exposing (Call(..))
 import Rpc.Internal.Client exposing (Client(..))
-import Rpc.Internal.Error as Error exposing (Error, Size)
 import Rpc.Internal.Http as Internal
-import Rpc.Internal.Protocol exposing (GoodText, Protocol(..), Wire(..))
+import Rpc.Internal.Protocol exposing (GoodText, Protocol(..), Size, Wire(..))
 import Rpc.Internal.Retry as Retry
 import Rpc.Internal.Status as Status
 import Rpc.Request exposing (Request)
@@ -305,7 +305,7 @@ a type the registry lacks named as `UnregisteredType`.
 -}
 badText : Registry -> GoodText -> Json.Decode.Error -> Error
 badText registry good problem =
-    Error.badBody (Status.bodyProblem registry problem) (Status.answerOf good.metadata good.raw)
+    Error.badResponse Code.Internal (Internal.badBodyText (Status.bodyProblem registry problem)) (Status.answerOf good.metadata good.raw)
 
 
 {-| Why `sent`, the plan's request or one an application rewrote, must not
@@ -320,21 +320,21 @@ whatever a rewritten request carries.
 refused : String -> Plan res -> Request -> Maybe Error
 refused baseUrl p sent =
     if Internal.badBaseUrl baseUrl then
-        Just (Error.badUrl sent.url)
+        Just (Error.badCall Code.Internal (Internal.badUrlText sent.url))
 
     else
         case ( p.unencodable (), p.invalid (), Internal.invalidHeader sent.headers ) of
             ( Just problem, _, _ ) ->
-                Just (Error.badAny problem)
+                Just (Error.badCall Code.Internal ("bad Any: " ++ Proto.Error.toString problem))
 
             ( Nothing, Just path, _ ) ->
-                Just (Error.badPathValue path)
+                Just (Error.badCall Code.InvalidArgument ("path field " ++ Json.Encode.encode 0 (Json.Encode.string path.field) ++ " does not match " ++ path.template))
 
             ( Nothing, Nothing, Just name ) ->
-                Just (Error.badHeader name)
+                Just (Error.badCall Code.Internal ("invalid header " ++ Json.Encode.encode 0 (Json.Encode.string name)))
 
             ( Nothing, Nothing, Nothing ) ->
-                p.tooLarge () |> Maybe.map Error.requestTooLarge
+                p.tooLarge () |> Maybe.map (Internal.writeTooLargeText >> Error.badCall Code.ResourceExhausted)
 
 
 {-| The request an attempt sends with `left` milliseconds of a retry deadline

@@ -30,9 +30,9 @@ import Proto.Method exposing (Idempotency(..))
 import Proto.Route exposing (Route)
 import Rpc.Body as Body exposing (Body)
 import Rpc.Code as Code
-import Rpc.Internal.Error as Error exposing (Error, Size)
+import Rpc.Error as Error exposing (Error)
 import Rpc.Internal.Http as Internal
-import Rpc.Internal.Protocol exposing (BytesMessage, GoodBytes, GoodText, Options, Settings)
+import Rpc.Internal.Protocol exposing (BytesMessage, GoodBytes, GoodText, Options, Settings, Size)
 import Rpc.Internal.Status as Status
 import Rpc.Request exposing (Request)
 
@@ -216,7 +216,7 @@ connectRead answer =
                         Ok { metadata = metadata, raw = raw, text = raw, field = Nothing }
 
                     Unaccepted problem ->
-                        Err (Error.badEnvelope Code.Internal problem (Status.answerOf metadata raw))
+                        Err (Error.badResponse Code.Internal (Internal.envelopeText problem) (Status.answerOf metadata raw))
 
                     Foreign ->
                         Err (Status.failure metadata raw)
@@ -243,7 +243,7 @@ connectProtoRead answer =
                         Ok { metadata = metadata, raw = raw, message = raw }
 
                     Unaccepted problem ->
-                        Err (Error.badEnvelope Code.Internal problem (Internal.bytesAnswer metadata raw))
+                        Err (Error.badResponse Code.Internal (Internal.envelopeText problem) (Internal.bytesAnswer metadata raw))
 
                     Foreign ->
                         Err (Status.bytesFailure answer)

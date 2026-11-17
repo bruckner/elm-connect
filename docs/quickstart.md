@@ -181,18 +181,24 @@ update msg model =
 
 describe : Rpc.Error -> String
 describe error =
-    case Rpc.Error.cause error of
-        Nothing ->
+    case Rpc.Error.response error of
+        Ok _ ->
             -- The server answered with a failure: the status it stated, or
             -- one inferred from the HTTP status, as of a proxy's 502 page.
-            Rpc.Code.toString (Rpc.Error.code error) ++ ": " ++ Rpc.Error.message error
+            Rpc.Error.toString error
 
-        Just Rpc.Error.BadResponse ->
+        Err (Rpc.Error.BadResponse _) ->
             -- A success that could not be read as the response.
             "unexpected answer: " ++ Rpc.Error.message error
 
-        Just _ ->
-            -- A timeout, a network failure, or a call that was never sent.
+        Err Rpc.Error.Timeout ->
+            "no answer in time"
+
+        Err Rpc.Error.NetworkError ->
+            "the server could not be reached"
+
+        Err Rpc.Error.BadCall ->
+            -- Nothing was sent: a bad URL or header, say.
             Rpc.Error.toString error
 ```
 

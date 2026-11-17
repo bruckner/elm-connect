@@ -169,7 +169,7 @@ retryable error =
         Just Rpc.Error.BadCall ->
             Nothing
 
-        Just Rpc.Error.BadResponse ->
+        Just (Rpc.Error.BadResponse _) ->
             Nothing
 
         Just Rpc.Error.Timeout ->

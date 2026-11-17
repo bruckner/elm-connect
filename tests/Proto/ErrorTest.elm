@@ -15,7 +15,28 @@ import Test exposing (Test, describe, test)
 suite : Test
 suite =
     describe "Proto.Error"
-        [ test "a binary failure names the message, the reason, the byte and the fields, innermost first" <|
+        [ test "without values, a JSON failure is its path and expectation, never the value" <|
+            \_ ->
+                [ Json.Decode.decodeString (Json.Decode.at [ "tokens", "accessToken" ] Json.Decode.string) """{"tokens":{"accessToken":7}}"""
+                , Json.Decode.decodeString (Json.Decode.index 3 (Json.Decode.field "id" Json.Decode.string)) """[1,2,3,{"name":"secret"}]"""
+                , Json.Decode.decodeString (Json.Decode.field "two words" Json.Decode.string) """{"two words":7}"""
+                , Json.Decode.decodeString (Json.Decode.oneOf [ Json.Decode.map String.fromInt Json.Decode.int, Json.Decode.field "n" Json.Decode.string ]) "\"secret\""
+                , Json.Decode.decodeString (Json.Decode.string |> Json.Decode.andThen (\t -> Json.Decode.fail ("Expecting an integer, but got \"" ++ t ++ "\""))) "\"secret\""
+                ]
+                    |> List.map (Result.mapError (BadJson >> Error.toStringWithoutValues))
+                    |> Expect.equal
+                        [ Err "at json.tokens.accessToken: Expecting a STRING"
+                        , Err "at json[3]: Expecting an OBJECT with a field named `id`"
+                        , Err "at json['two words']: Expecting a STRING"
+                        , Err "at json: Expecting an INT; or at json: Expecting an OBJECT with a field named `n`"
+                        , Err "at json: Expecting an integer"
+                        ]
+        , test "without values, the other failures read as toString gives them" <|
+            \_ ->
+                [ BadBinary { typeName = "a.B", reason = Truncated, path = [], offset = 0 }, UnregisteredType "x/a.B", TypeMismatch { expected = "a.B", actual = "c.D" } ]
+                    |> List.map (\error -> Error.toStringWithoutValues error == Error.toString error)
+                    |> Expect.equal [ True, True, True ]
+        , test "a binary failure names the message, the reason, the byte and the fields, innermost first" <|
             \_ ->
                 Error.toString (BadBinary { typeName = "notes.v1.Note", reason = InvalidUtf8, path = [ ( "notes.v1.Note", 3 ), ( "notes.v1.Revision", 1 ) ], offset = 36 })
                     |> Expect.equal "Not a notes.v1.Note in protobuf binary: a string is not UTF-8, at byte 36, in field 1 of notes.v1.Revision in field 3 of notes.v1.Note."

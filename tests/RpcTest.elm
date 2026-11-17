@@ -28,9 +28,7 @@ import Rpc.Call
 import Rpc.Client
 import Rpc.Code exposing (Code(..))
 import Rpc.Error exposing (Cause(..), Error, Source(..))
-import Rpc.ErrorFacts exposing (Facts, facts)
 import Rpc.Internal.Call
-import Rpc.Internal.Error
 import Rpc.Internal.Http
 import Rpc.Internal.Plan
 import Rpc.Internal.Retry as Retry
@@ -194,18 +192,19 @@ httpError status text =
     Rpc.Error.fromResponse { blank | statusCode = status, statusText = text }
 
 
-{-| What a test reads of a failure that states no status.
+{-| An answer to `getNote` as an error keeps it.
 -}
-unstated : Int -> Code -> String -> Facts
-unstated status code message =
-    { code = code, message = message, cause = Nothing, source = Nothing, httpStatus = Just status }
+answerOf : Int -> String -> String -> Rpc.Response
+answerOf status text body =
+    { url = "https://api.example.com/notes.v1.Notes/GetNote", statusCode = status, statusText = text, headers = Dict.empty, body = Rpc.Body.text body }
 
 
-{-| What a test reads of a failure stated in a Connect body.
+{-| The failure `failed` reads from this answer: one stated in a Connect body
+without details.
 -}
-fromBody : Int -> Code -> String -> Result Facts String
-fromBody status code message =
-    Err { code = code, message = message, cause = Nothing, source = Just ConnectBody, httpStatus = Just status }
+fromBody : Int -> String -> String -> Code -> String -> Result Error String
+fromBody status text body code message =
+    Err (Rpc.Error.fromStatus { code = code, message = message, details = [], source = ConnectBody } (answerOf status text body))
 
 
 {-| The error of a failed result. A success stands for an error no test
@@ -602,30 +601,18 @@ responses =
                     (Http.BadStatus_ { url = "", statusCode = 503, statusText = "", headers = Dict.fromList [ ( "grpc-status", "14" ), ( "grpc-message", long ) ] } "")
                     |> Result.mapError Rpc.Error.message
                     |> Expect.equal (Err (String.repeat 50000 "é" ++ String.repeat 50000 "x"))
-        , test "a bad body's message quotes 300 characters of the problem" <|
+        , test "a bad body's message says where and why, never the value" <|
             \_ ->
                 let
                     body =
                         "[\"" ++ String.repeat 10000 "x" ++ "\"]"
                 in
                 Rpc.response base (getNote { name = "x" }) (Http.GoodStatus_ (metadata 200 "OK") body)
-                    |> Result.mapError
-                        (\error ->
-                            ( ( String.length (Rpc.Error.message error), String.endsWith "…" (Rpc.Error.message error) )
-                            , ( String.startsWith "bad response body: " (Rpc.Error.message error), Rpc.Error.cause error )
-                            )
-                        )
-                    |> Expect.equal (Err ( ( 320, True ), ( True, Just BadResponse ) ))
+                    |> Expect.equal (Err (Rpc.Error.badResponse Internal "bad response body: at json: Expecting an OBJECT with a field named `title`" (answerOf 200 "OK" body)))
         , test "200 with a body that does not decode is a bad response, the answer kept" <|
             \_ ->
                 Rpc.response base (getNote { name = "x" }) (Http.GoodStatus_ (metadata 200 "OK") "{}")
-                    |> Result.mapError
-                        (\error ->
-                            ( ( Rpc.Error.code error, Rpc.Error.cause error )
-                            , Rpc.Error.response error |> Maybe.map (\answer -> ( answer.statusCode, Maybe.withDefault "" (Rpc.Body.toText answer.body), answer.url ))
-                            )
-                        )
-                    |> Expect.equal (Err ( ( Internal, Just BadResponse ), Just ( 200, "{}", "https://api.example.com/notes.v1.Notes/GetNote" ) ))
+                    |> Expect.equal (Err (Rpc.Error.badResponse Internal "bad response body: at json: Expecting an OBJECT with a field named `title`" (answerOf 200 "OK" "{}")))
         , test "a JSON response holding an Any of a type the registry lacks is a bad body naming it" <|
             \_ ->
                 let
@@ -637,18 +624,21 @@ responses =
                 in
                 ( Rpc.response base getAny answer
                     |> Result.map Proto.Any.typeName
-                    |> Result.mapError (\error -> ( Rpc.Error.code error, Rpc.Error.cause error, Rpc.Error.message error ))
                 , Rpc.response (Rpc.Client.withRegistry noteRegistry base) getAny answer |> Result.map Proto.Any.typeName
                 )
                     |> Expect.equal
-                        ( Err ( Internal, Just BadResponse, "bad response body: An Any holding type.googleapis.com/notes.v1.Note was converted through a registry that has no entry for its type." )
+                        ( Err
+                            (Rpc.Error.badResponse Internal
+                                "bad response body: An Any holding type.googleapis.com/notes.v1.Note was converted through a registry that has no entry for its type."
+                                (answerOf 200 "OK" """{"@type":"type.googleapis.com/notes.v1.Note","title":"hi"}""")
+                            )
                         , Ok "notes.v1.Note"
                         )
         , test "another 2xx is an error inferred from its status" <|
             \_ ->
                 Rpc.response base (getNote { name = "x" }) (Http.GoodStatus_ (metadata 204 "No Content") "")
-                    |> Result.mapError facts
-                    |> Expect.equal (Err (unstated 204 Unknown "No Content"))
+                    |> Result.mapError (\error -> ( error, Rpc.Error.code error, Rpc.Error.message error ))
+                    |> Expect.equal (Err ( Rpc.Error.fromResponse (answerOf 204 "No Content" ""), Unknown, "No Content" ))
         , test "a Connect error body gives code, message and details, as their binary" <|
             \_ ->
                 failed 404
@@ -810,63 +800,54 @@ responses =
                     refusal client =
                         Rpc.Internal.Plan.refused "https://api.example.com" (Rpc.Internal.Plan.plan client unregistered) (Rpc.request client unregistered)
                 in
-                ( refusal base |> Maybe.map facts
+                ( refusal base
                 , refusal (Rpc.client Rpc.Protocol.connectProto "https://api.example.com")
                 )
                     |> Expect.equal
-                        ( Just
-                            { code = Internal
-                            , message = "bad Any: An Any holding type.googleapis.com/ext.v1.Thing was converted through a registry that has no entry for its type."
-                            , cause = Just BadCall
-                            , source = Nothing
-                            , httpStatus = Nothing
-                            }
+                        ( Just (Rpc.Error.badCall Internal "bad Any: An Any holding type.googleapis.com/ext.v1.Thing was converted through a registry that has no entry for its type.")
                         , Nothing
                         )
         , test "message and details are optional" <|
             \_ ->
                 failed 503 "Service Unavailable" """{"code":"unavailable"}"""
-                    |> Result.mapError facts
-                    |> Expect.equal (fromBody 503 Unavailable "")
+                    |> Expect.equal (fromBody 503 "Service Unavailable" """{"code":"unavailable"}""" Unavailable "")
         , test "an unknown code name reads as unknown" <|
             \_ ->
                 failed 400 "Bad Request" """{"code":"teapot","message":"short and stout"}"""
-                    |> Result.mapError facts
-                    |> Expect.equal (fromBody 400 Unknown "short and stout")
+                    |> Expect.equal (fromBody 400 "Bad Request" """{"code":"teapot","message":"short and stout"}""" Unknown "short and stout")
         , test "a failed answer claiming ok reads as unknown" <|
             \_ ->
                 failed 500 "Internal Server Error" """{"code":"ok","message":"fine"}"""
-                    |> Result.mapError facts
-                    |> Expect.equal (fromBody 500 Unknown "fine")
+                    |> Expect.equal (fromBody 500 "Internal Server Error" """{"code":"ok","message":"fine"}""" Unknown "fine")
         , test "a body without a code states no status, its code inferred from the HTTP status" <|
             \_ ->
                 [ ( 400, "{}" ), ( 401, "" ), ( 403, "<html>" ), ( 404, "{\"code\":null}" ), ( 429, "" ), ( 502, "" ), ( 503, "" ), ( 504, "" ), ( 500, "" ), ( 409, "" ) ]
-                    |> List.map (\( status, body ) -> failed status "" body |> Result.mapError facts)
+                    |> List.map (\( status, body ) -> failed status "" body |> Result.mapError (\error -> ( error == Rpc.Error.fromResponse (answerOf status "" body), Rpc.Error.code error, Rpc.Error.message error )))
                     |> Expect.equal
-                        [ Err (unstated 400 Internal "HTTP 400")
-                        , Err (unstated 401 Unauthenticated "HTTP 401")
-                        , Err (unstated 403 PermissionDenied "HTTP 403")
-                        , Err (unstated 404 Unimplemented "HTTP 404")
-                        , Err (unstated 429 Unavailable "HTTP 429")
-                        , Err (unstated 502 Unavailable "HTTP 502")
-                        , Err (unstated 503 Unavailable "HTTP 503")
-                        , Err (unstated 504 Unavailable "HTTP 504")
-                        , Err (unstated 500 Unknown "HTTP 500")
-                        , Err (unstated 409 Unknown "HTTP 409")
+                        [ Err ( True, Internal, "HTTP 400" )
+                        , Err ( True, Unauthenticated, "HTTP 401" )
+                        , Err ( True, PermissionDenied, "HTTP 403" )
+                        , Err ( True, Unimplemented, "HTTP 404" )
+                        , Err ( True, Unavailable, "HTTP 429" )
+                        , Err ( True, Unavailable, "HTTP 502" )
+                        , Err ( True, Unavailable, "HTTP 503" )
+                        , Err ( True, Unavailable, "HTTP 504" )
+                        , Err ( True, Unknown, "HTTP 500" )
+                        , Err ( True, Unknown, "HTTP 409" )
                         ]
         , test "a failure that states no status has its status text as its message when there is one" <|
             \_ ->
                 failed 502 "Bad Gateway" "upstream reset"
-                    |> Result.mapError facts
-                    |> Expect.equal (Err (unstated 502 Unavailable "Bad Gateway"))
+                    |> Result.mapError (\error -> ( error, Rpc.Error.code error, Rpc.Error.message error ))
+                    |> Expect.equal (Err ( Rpc.Error.fromResponse (answerOf 502 "Bad Gateway" "upstream reset"), Unavailable, "Bad Gateway" ))
         , test "no answer is a timeout, a network failure, or a call that could not be made" <|
             \_ ->
                 [ Http.Timeout_, Http.NetworkError_, Http.BadUrl_ "::" ]
-                    |> List.map (Rpc.response base (getNote { name = "x" }) >> Result.mapError facts)
+                    |> List.map (Rpc.response base (getNote { name = "x" }))
                     |> Expect.equal
-                        [ Err (facts Rpc.Error.timeout)
-                        , Err (facts Rpc.Error.networkError)
-                        , Err { code = Internal, message = "bad URL: ::", cause = Just BadCall, source = Nothing, httpStatus = Nothing }
+                        [ Err Rpc.Error.timeout
+                        , Err Rpc.Error.networkError
+                        , Err (Rpc.Error.badCall Internal "bad URL: ::")
                         ]
         , test "an error the client produced has the code the Connect clients give it" <|
             \_ ->
@@ -885,14 +866,13 @@ responses =
                 , readAs (limited Rpc.Protocol.connect 10) "{\"title\":\"é\"}" |> errorOf
                 , Rpc.response base call (Http.GoodStatus_ { url = "", statusCode = 200, statusText = "", headers = Dict.fromList [ ( "content-type", "application/proto" ) ] } "") |> errorOf
                 ]
-                    |> List.map (\error -> ( Rpc.Error.code error, Rpc.Error.cause error, Rpc.Error.message error ))
                     |> Expect.equal
-                        [ ( DeadlineExceeded, Just Timeout, "timeout" )
-                        , ( Unavailable, Just NetworkError, "network error" )
-                        , ( Internal, Just BadCall, "bad URL: ::" )
-                        , ( ResourceExhausted, Just BadCall, "message size 12 is larger than configured writeMaxBytes 10" )
-                        , ( ResourceExhausted, Just BadResponse, "message size 14 is larger than configured readMaxBytes 10" )
-                        , ( Internal, Just BadResponse, "bad response: content-type application/proto, not application/json" )
+                        [ Rpc.Error.timeout
+                        , Rpc.Error.networkError
+                        , Rpc.Error.badCall Internal "bad URL: ::"
+                        , Rpc.Error.badCall ResourceExhausted "message size 12 is larger than configured writeMaxBytes 10"
+                        , Rpc.Error.badResponse ResourceExhausted "message size 14 is larger than configured readMaxBytes 10" { url = "https://api.example.com/notes.v1.Notes/GetNote", statusCode = 200, statusText = "OK", headers = Dict.empty, body = Rpc.Body.none }
+                        , Rpc.Error.badResponse Internal "bad response: content-type application/proto, not application/json" { url = "", statusCode = 200, statusText = "", headers = Dict.fromList [ ( "content-type", "application/proto" ) ], body = Rpc.Body.text "" }
                         ]
         , test "a bad URL's message leaves out its user, password, query and fragment" <|
             \_ ->
@@ -952,7 +932,7 @@ keptResponses =
                             kept got =
                                 ( got.statusCode, Dict.get "x-request-id" got.headers, Maybe.withDefault "" (Rpc.Body.toText got.body) )
                         in
-                        Rpc.Error.response error |> Maybe.map (\got -> ( Rpc.Error.source error, kept got ))
+                        Rpc.Error.response error |> Result.toMaybe |> Maybe.map (\got -> ( Rpc.Error.source error, kept got ))
                     )
 
         connect =
@@ -987,6 +967,7 @@ keptResponses =
                     |> Result.mapError
                         (\error ->
                             Rpc.Error.response error
+                                |> Result.toMaybe
                                 |> Maybe.map (\got -> ( got.statusCode, got.statusText, Maybe.withDefault "" (Rpc.Body.toText got.body) ))
                         )
                     |> Expect.equal (Err (Just ( 204, "No Content", "" )))
@@ -995,7 +976,7 @@ keptResponses =
                 Rpc.response base
                     (getNote { name = "x" })
                     (Http.BadStatus_ { url = "https://api.example.com/moved", statusCode = 404, statusText = "", headers = Dict.empty } "")
-                    |> Result.mapError (\error -> Rpc.Error.response error |> Maybe.map .url)
+                    |> Result.mapError (\error -> Rpc.Error.response error |> Result.toMaybe |> Maybe.map .url)
                     |> Expect.equal (Err (Just "https://api.example.com/moved"))
         ]
 
@@ -1514,19 +1495,17 @@ receiveLimits =
         , test "a body at the limit is read, one byte over is refused with both sizes" <|
             \_ ->
                 [ Rpc.Protocol.connect, connectGet, Rpc.Protocol.transcode ]
-                    |> List.map (\protocol -> List.map (\limit -> readAs (limited protocol limit) note |> Result.mapError facts) [ 14, 13 ])
+                    |> List.map (\protocol -> List.map (\limit -> readAs (limited protocol limit) note) [ 14, 13 ])
                     |> List.concat
                     |> Expect.equal
                         (List.concat
                             (List.repeat 3
                                 [ Ok "é"
                                 , Err
-                                    { code = ResourceExhausted
-                                    , message = "message size 14 is larger than configured readMaxBytes 13"
-                                    , cause = Just BadResponse
-                                    , source = Nothing
-                                    , httpStatus = Just 200
-                                    }
+                                    (Rpc.Error.badResponse ResourceExhausted
+                                        "message size 14 is larger than configured readMaxBytes 13"
+                                        { url = "https://api.example.com/notes.v1.Notes/GetNote", statusCode = 200, statusText = "OK", headers = Dict.empty, body = Rpc.Body.none }
+                                    )
                                 ]
                             )
                         )
@@ -1574,8 +1553,16 @@ sendLimits =
             (Rpc.Internal.Plan.plan (over protocol) c).tooLarge ()
 
         refused protocol limit =
-            tooLarge (Rpc.Protocol.withWriteMaxBytes limit protocol) call
-                |> Maybe.map (\size -> ( size, Rpc.Error.code (Rpc.Internal.Error.requestTooLarge size), Rpc.Error.message (Rpc.Internal.Error.requestTooLarge size) ))
+            let
+                client =
+                    over (Rpc.Protocol.withWriteMaxBytes limit protocol)
+
+                plan =
+                    Rpc.Internal.Plan.plan client call
+            in
+            Maybe.map2 (\size error -> ( size, Rpc.Error.code error, Rpc.Error.message error ))
+                (plan.tooLarge ())
+                (Rpc.Internal.Plan.refused "https://api.example.com" plan (Rpc.request client call))
 
         -- A call whose request stops the test if it is ever encoded.
         unencodable =
@@ -1782,8 +1769,7 @@ headerRules =
                         getNote { name = "x" } |> Rpc.Call.withHeaders [ ( "X-User", "名" ) ]
                 in
                 Rpc.Internal.Plan.refused "https://api.example.com" (Rpc.Internal.Plan.plan base c) (Rpc.request base c)
-                    |> Maybe.map (\error -> ( Rpc.Error.code error, Rpc.Error.cause error, Rpc.Error.message error ))
-                    |> Expect.equal (Just ( Internal, Just BadCall, "invalid header \"X-User\"" ))
+                    |> Expect.equal (Just (Rpc.Error.badCall Internal "invalid header \"X-User\""))
         ]
 
 
@@ -1872,11 +1858,11 @@ traces =
                             , Err (Proto.Error.BadBinary { typeName = "google.rpc.Status", reason = Proto.Error.InvalidWireType 7, path = [], offset = 0 })
                             , Err (Proto.Error.BadJson (Json.Decode.Failure "no type" (Json.Encode.object [])))
                             ]
-                        , source = Rpc.Internal.Error.ConnectBody
+                        , source = ConnectBody
                         }
 
                     traced =
-                        Rpc.Internal.Trace.init (Rpc.Client.protocol base) c plan sent { attempts = 1, metadata = Nothing, result = Err (Rpc.Internal.Error.stated status blank) } 9
+                        Rpc.Internal.Trace.init (Rpc.Client.protocol base) c plan sent { attempts = 1, metadata = Nothing, result = Err (Rpc.Error.fromStatus status blank) } 9
                 in
                 ( Rpc.Trace.toJson traced |> Json.Decode.decodeValue (Json.Decode.field "detailProblems" (Json.Decode.list Json.Decode.string))
                 , Rpc.Trace.toString traced

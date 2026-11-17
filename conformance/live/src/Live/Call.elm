@@ -490,65 +490,45 @@ encodeResult respond result =
 
         Err error ->
             case Rpc.Error.response error of
-                Just answer ->
-                    if Rpc.Error.cause error == Nothing then
-                        Encode.object
-                            [ ( "error"
-                              , Encode.object
-                                    [ ( "code", Encode.string (Rpc.Code.toString (Rpc.Error.code error)) )
-                                    , ( "message", Encode.string (Rpc.Error.message error) )
-                                    , ( "details", Encode.list respond.detail (Rpc.Error.details error) )
-                                    , ( "detailsBinary"
-                                      , Encode.list
-                                            (Result.map (Proto.Binary.encode (Proto.Binary.messageEncoder Proto.Binary.any) >> Proto.Bytes.toBase64 >> Encode.string)
-                                                >> Result.withDefault Encode.null
-                                            )
-                                            (Rpc.Error.details error)
-                                      )
-                                    , ( "source", Encode.string (Rpc.Error.source error |> Maybe.map sourceToString |> Maybe.withDefault "HttpStatus") )
-                                    , ( "response", encodeResponse_ answer )
-                                    ]
-                              )
-                            ]
+                Ok answer ->
+                    Encode.object
+                        [ ( "error"
+                          , Encode.object
+                                [ ( "code", Encode.string (Rpc.Code.toString (Rpc.Error.code error)) )
+                                , ( "message", Encode.string (Rpc.Error.message error) )
+                                , ( "details", Encode.list respond.detail (Rpc.Error.details error) )
+                                , ( "detailsBinary"
+                                  , Encode.list
+                                        (Result.map (Proto.Binary.encode (Proto.Binary.messageEncoder Proto.Binary.any) >> Proto.Bytes.toBase64 >> Encode.string)
+                                            >> Result.withDefault Encode.null
+                                        )
+                                        (Rpc.Error.details error)
+                                  )
+                                , ( "source", Encode.string (Rpc.Error.source error |> Maybe.map sourceToString |> Maybe.withDefault "HttpStatus") )
+                                , ( "response", encodeResponse_ answer )
+                                ]
+                          )
+                        ]
 
-                    else
-                        Encode.object
-                            [ ( "badResponse"
-                              , Encode.object
-                                    [ ( "code", Encode.string (Rpc.Code.toString (Rpc.Error.code error)) )
-                                    , ( "problem", Encode.string (Rpc.Error.message error) )
-                                    , ( "response", encodeResponse_ answer )
-                                    ]
-                              )
-                            ]
+                Err (Rpc.Error.BadResponse answer) ->
+                    Encode.object
+                        [ ( "badResponse"
+                          , Encode.object
+                                [ ( "code", Encode.string (Rpc.Code.toString (Rpc.Error.code error)) )
+                                , ( "problem", Encode.string (Rpc.Error.message error) )
+                                , ( "response", encodeResponse_ answer )
+                                ]
+                          )
+                        ]
 
-                Nothing ->
-                    Encode.object [ ( "noAnswer", Encode.string (noAnswerText error) ) ]
+                Err Rpc.Error.BadCall ->
+                    Encode.object [ ( "noAnswer", Encode.string ("BadCall " ++ Rpc.Error.toString error) ) ]
 
+                Err Rpc.Error.Timeout ->
+                    Encode.object [ ( "noAnswer", Encode.string "Timeout" ) ]
 
-{-| An error that kept no answer as text: `Timeout`, `NetworkError`, or
-`BadCall` and the error's code and message, `BadCall internal: invalid header
-"X-User"`.
--}
-noAnswerText : Rpc.Error -> String
-noAnswerText error =
-    case Rpc.Error.cause error of
-        Just Rpc.Error.Timeout ->
-            "Timeout"
-
-        Just Rpc.Error.NetworkError ->
-            "NetworkError"
-
-        Just Rpc.Error.BadCall ->
-            "BadCall " ++ Rpc.Error.toString error
-
-        Just Rpc.Error.BadResponse ->
-            -- An answer that could not be used keeps the answer.
-            "BadResponse " ++ Rpc.Error.toString error
-
-        Nothing ->
-            -- A server's failure keeps the answer.
-            "Failure " ++ Rpc.Error.toString error
+                Err Rpc.Error.NetworkError ->
+                    Encode.object [ ( "noAnswer", Encode.string "NetworkError" ) ]
 
 
 {-| The answer an error was read from: its status and body. The headers are

@@ -1,4 +1,4 @@
-module Rpc.Internal.Protocol exposing (BinaryWire, BytesMessage, GoodBytes, GoodText, Options, Protocol(..), Settings, TextWire, Wire(..))
+module Rpc.Internal.Protocol exposing (BinaryWire, BytesMessage, GoodBytes, GoodText, Options, Protocol(..), Settings, Size, TextWire, Wire(..))
 
 {-| The protocol calls are sent over. Not exposed: `Rpc.Protocol` builds one
 and aliases the type, and `Rpc` sends a call through what it holds.
@@ -33,7 +33,7 @@ import Json.Encode exposing (Value)
 import Proto.Error
 import Proto.Method exposing (Idempotency)
 import Proto.Route exposing (Route)
-import Rpc.Internal.Error exposing (Error, Size)
+import Rpc.Error exposing (Error)
 import Rpc.Request exposing (Request)
 
 
@@ -44,6 +44,12 @@ type Protocol codec
         , options : Options
         , wire : Wire
         }
+
+
+{-| A message's size in bytes, over its limit.
+-}
+type alias Size =
+    { limit : Int, size : Int }
 
 
 {-| The options, as data: whether Connect sends a method without side effects

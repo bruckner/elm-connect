@@ -1,5 +1,7 @@
 module Rpc.Internal.Http exposing
     ( badBaseUrl
+    , badBodyText
+    , badUrlText
     , base64
     , bytesAnswer
     , bytesMessage
@@ -7,6 +9,7 @@ module Rpc.Internal.Http exposing
     , bytesText
     , bytesTooLarge
     , bytesUnlimited
+    , envelopeText
     , invalidHeader
     , jsonTooLarge
     , metadataOf
@@ -24,6 +27,7 @@ module Rpc.Internal.Http exposing
     , validHeaderValue
     , width
     , withinText
+    , writeTooLargeText
     )
 
 {-| The elm/http adapter: sending a built `Rpc.Request` and reading an
@@ -50,9 +54,11 @@ import Dict exposing (Dict)
 import Http
 import Json.Encode exposing (Value)
 import Proto.Bytes
+import Proto.Error
 import Rpc.Body
-import Rpc.Internal.Error as Error exposing (Error, Size)
-import Rpc.Internal.Protocol exposing (BytesMessage, GoodBytes, GoodText, Options)
+import Rpc.Code as Code
+import Rpc.Error exposing (Error)
+import Rpc.Internal.Protocol exposing (BytesMessage, GoodBytes, GoodText, Options, Size)
 import Rpc.Request exposing (Request)
 import Rpc.Response exposing (Response)
 import Task exposing (Task)
@@ -444,7 +450,7 @@ withinText : (Options -> String -> Maybe Size) -> Options -> GoodText -> Result 
 withinText overRead options good =
     case overRead options good.raw of
         Just size ->
-            Err (Error.responseTooLarge size good.metadata)
+            Err (responseTooLarge size good.metadata)
 
         Nothing ->
             Ok good
@@ -460,12 +466,12 @@ bytesMessage overRead options ( metadata, read ) =
             (\good ->
                 case overRead options good.message of
                     Just size ->
-                        Err (Error.responseTooLarge size good.metadata)
+                        Err (responseTooLarge size good.metadata)
 
                     Nothing ->
                         Ok
                             { bytes = good.message
-                            , bad = \problem -> Error.badBody problem (bytesAnswer good.metadata good.raw)
+                            , bad = \problem -> Rpc.Error.badResponse Code.Internal (badBodyText problem) (bytesAnswer good.metadata good.raw)
                             }
             )
     )
@@ -514,3 +520,101 @@ bytesOverRead width_ options message =
                 else
                     Nothing
             )
+
+
+
+-- MESSAGES
+
+
+{-| A successful answer over the read limit: its status and headers are kept,
+without its body, which was dropped unread.
+-}
+responseTooLarge : Size -> Http.Metadata -> Error
+responseTooLarge { limit, size } metadata =
+    Rpc.Error.badResponse Code.ResourceExhausted
+        ("message size " ++ String.fromInt size ++ " is larger than configured readMaxBytes " ++ String.fromInt limit)
+        { url = metadata.url
+        , statusCode = metadata.statusCode
+        , statusText = metadata.statusText
+        , headers = metadata.headers
+        , body = Rpc.Body.none
+        }
+
+
+{-| The message of a request over the write limit, as connect-es words it.
+-}
+writeTooLargeText : Size -> String
+writeTooLargeText { limit, size } =
+    "message size " ++ String.fromInt size ++ " is larger than configured writeMaxBytes " ++ String.fromInt limit
+
+
+{-| The message of a body that is not the response message: where and why,
+never the value.
+-}
+badBodyText : Proto.Error.Error -> String
+badBodyText problem =
+    "bad response body: " ++ Proto.Error.toStringWithoutValues problem
+
+
+{-| The message of an answer whose framing, content type or status is
+malformed.
+-}
+envelopeText : String -> String
+envelopeText problem =
+    "bad response: " ++ problem
+
+
+{-| The message of a URL that cannot be sent to: its scheme, host and path,
+without the user information, query and fragment it may hold, saying so when
+a query or fragment was left out.
+-}
+badUrlText : String -> String
+badUrlText url =
+    let
+        beforeQuery =
+            case String.indexes "?" url ++ String.indexes "#" url |> List.minimum of
+                Just at ->
+                    String.left at url
+
+                Nothing ->
+                    url
+
+        omitted =
+            if String.length beforeQuery < String.length url then
+                " (query omitted)"
+
+            else
+                ""
+    in
+    "bad URL: " ++ withoutUserInfo beforeQuery ++ omitted
+
+
+{-| A URL (without query or fragment) without the `user:password@` its
+authority can begin with.
+-}
+withoutUserInfo : String -> String
+withoutUserInfo url =
+    case String.indexes "://" url of
+        start :: _ ->
+            let
+                scheme =
+                    String.left (start + 3) url
+
+                rest =
+                    String.dropLeft (start + 3) url
+
+                authorityEnd =
+                    String.indexes "/" rest |> List.head |> Maybe.withDefault (String.length rest)
+
+                authority =
+                    String.left authorityEnd rest
+            in
+            case List.reverse (String.indexes "@" authority) of
+                at :: _ ->
+                    scheme ++ String.dropLeft (at + 1) rest
+
+                [] ->
+                    url
+
+        [] ->
+            url
