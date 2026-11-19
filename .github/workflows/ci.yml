@@ -107,13 +107,14 @@ jobs:
       - run: just live
 
   elm-compat:
-    # Design section 8: Elm 0.19.2 is the development target; every
+    # Design section 8: Elm 0.19.3 is the development target; every
     # earlier 0.19 release is checked here. The runtime package and every
     # case's expected output must compile with each of them too, and the
     # runtime's and the notes example's Elm tests must pass under each that
     # can run them. 0.19.0 cannot: elm-test-rs's runner package
     # (mpizenberg/elm-test-runner 6) requires Elm 0.19.1, so its tests are
-    # left out (`tests: false`).
+    # left out (`tests: false`). Upstream renamed the release assets in
+    # 0.19.2, so each release names its Linux binary.
     name: Elm ${{ matrix.elm.version }} (ubuntu-latest)
     runs-on: ubuntu-latest
     strategy:
@@ -121,10 +122,16 @@ jobs:
       matrix:
         elm:
           - version: 0.19.0
+            asset: binary-for-linux-64-bit.gz
             sha256: d359adbee89823c641cda326938708d7227dc79aa1f162e0d8fe275f182f528a
             tests: false
           - version: 0.19.1
+            asset: binary-for-linux-64-bit.gz
             sha256: e44af52bb27f725a973478e589d990a6428e115fe1bb14f03833134d6c0f155c
+            tests: true
+          - version: 0.19.2
+            asset: elm-0.19.2-linux-x64.gz
+            sha256: 66320d27701654fa11bd0e8d84bdf9829694d5770c8dcee2dede6160fad58737
             tests: true
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
@@ -133,10 +140,11 @@ jobs:
       - name: Install Elm ${{ matrix.elm.version }}
         env:
           ELM_VERSION: ${{ matrix.elm.version }}
+          ELM_ASSET: ${{ matrix.elm.asset }}
           ELM_SHA256: ${{ matrix.elm.sha256 }}
         run: |
           curl -fsSL -o "$RUNNER_TEMP/elm.gz" \
-            "https://github.com/elm/compiler/releases/download/$ELM_VERSION/binary-for-linux-64-bit.gz"
+            "https://github.com/elm/compiler/releases/download/$ELM_VERSION/$ELM_ASSET"
           echo "$ELM_SHA256  $RUNNER_TEMP/elm.gz" | sha256sum --check
           gunzip "$RUNNER_TEMP/elm.gz"
           chmod +x "$RUNNER_TEMP/elm"

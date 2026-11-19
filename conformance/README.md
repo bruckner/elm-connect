@@ -50,14 +50,14 @@ case; `just check` runs them with the other Rust tests.
   define the same module.
 - **formatted**: `elm-format --validate` accepts every expected module.
 
-The tests use the pinned compiler, Elm 0.19.2. `compile-with.sh` runs the
+The tests use the pinned compiler, Elm 0.19.3. `compile-with.sh` runs the
 compiles check, and builds the runtime package, with another one:
 
 ```sh
 conformance/compile-with.sh path/to/elm   # or: just compile-with path/to/elm
 ```
 
-CI runs it with Elm 0.19.0 and 0.19.1 (design §8).
+CI runs it with Elm 0.19.0, 0.19.1 and 0.19.2 (design §8).
 
 ## Blessing
 

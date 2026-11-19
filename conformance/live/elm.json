@@ -6,7 +6,7 @@
         "suite/elm",
         "src"
     ],
-    "elm-version": "0.19.2",
+    "elm-version": "0.19.3",
     "dependencies": {
         "direct": {
             "elm/bytes": "1.0.8",

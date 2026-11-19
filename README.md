@@ -51,7 +51,7 @@ users of protoc-gen-elm.
 
 Pre-release, version 0.1.0. The generator and the runtime work: unary
 methods over Connect, over `google.api.http` transcoding and over
-gRPC-Web, proto3 JSON and, over Connect and gRPC-Web, protobuf binary, Elm 0.19.0 to 0.19.2. The
+gRPC-Web, proto3 JSON and, over Connect and gRPC-Web, protobuf binary, Elm 0.19.0 to 0.19.3. The
 runtime passes the unary JSON test cases of the official
 [Connect conformance suite](https://github.com/connectrpc/conformance)
 (v1.0.7), with the features declared in

@@ -11,10 +11,10 @@ use crate::ir::ModuleName;
 
 /// The words Elm reserves, which cannot name a record field or a variable.
 ///
-/// The list is `reservedWords` in `compiler/src/Parse/Variable.hs` of
-/// elm/compiler at tag 0.19.2 (unchanged since 0.19.0). `alias` and `infix`
-/// are not in it: both are legal record field names in Elm 0.19.2, so they
-/// are left alone.
+/// The list is `keywords` in `compiler/src/Parse/Variable.hs` of
+/// elm/compiler at tag 0.19.3 (`reservedWords` before it; the same fourteen
+/// since 0.19.0). `alias` and `infix` are not in it: both are legal
+/// record field names in Elm 0.19.3, so they are left alone.
 pub const ELM_RESERVED_WORDS: [&str; 14] = [
     "if", "then", "else", "case", "of", "let", "in", "type", "module", "where", "import",
     "exposing", "as", "port",
