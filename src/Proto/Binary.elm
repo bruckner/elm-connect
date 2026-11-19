@@ -820,7 +820,7 @@ mergeKeep name wires get set step finish start =
         }
 
 
-fastKeepStep : (Int -> Int) -> (a -> Unknown.Fields) -> (Unknown.Fields -> a -> a) -> (Int -> Int -> a -> Field a) -> (a -> a) -> ( Int, a, List ( Int, Encoder ) ) -> D.Decoder (Step ( Int, a, List ( Int, Encoder ) ) a)
+fastKeepStep : (Int -> Int) -> (a -> Unknown.Fields) -> (Unknown.Fields -> a -> a) -> (Int -> Int -> a -> Field a) -> (a -> a) -> ( Int, a, List ( Int, Unknown.Value ) ) -> D.Decoder (Step ( Int, a, List ( Int, Unknown.Value ) ) a)
 fastKeepStep wires get set step finish ( remaining, acc, kept ) =
     if remaining == 0 then
         let
@@ -832,7 +832,7 @@ fastKeepStep wires get set step finish ( remaining, acc, kept ) =
                 D.succeed (Done done)
 
             _ ->
-                D.succeed (Done (set (appendUnknown (get done) kept) done))
+                D.succeed (Done (set (Unknown.append (get done) kept) done))
 
     else if remaining < 0 then
         D.fail
@@ -853,7 +853,7 @@ fastKeepStep wires get set step finish ( remaining, acc, kept ) =
 
                     else if Bitwise.and (wires number) (Bitwise.shiftLeftBy wire 1) == 0 then
                         fastUnknown wire
-                            |> D.map (\( width, raw ) -> Loop ( remaining - keyWidth - width, acc, ( number, E.sequence [ writeVarint32 tag, raw ] ) :: kept ))
+                            |> D.map (\( width, v ) -> Loop ( remaining - keyWidth - width, acc, ( number, v ) :: kept ))
 
                     else
                         case step number wire acc of
@@ -863,99 +863,68 @@ fastKeepStep wires get set step finish ( remaining, acc, kept ) =
                 )
 
 
-{-| The fields held, then those read after them (given newest first, each
-its key and value), in canonical order. `List.sortBy` is stable, so arrival
-order within a number is kept.
+{-| An unknown field's value and its width, by its wire type; a group fails,
+as [`skip`](#skip) fails one.
 -}
-appendUnknown : Unknown.Fields -> List ( Int, Encoder ) -> Unknown.Fields
-appendUnknown (Unknown.Fields held) newestFirst =
-    let
-        existing =
-            if String.isEmpty held then
-                []
-
-            else
-                Proto.Bytes.fromBase64 held
-                    |> Maybe.andThen (\input -> D.decode (D.loop ( Bytes.width input, [] ) heldStep) input)
-                    |> Maybe.withDefault []
-    in
-    (existing ++ List.reverse newestFirst)
-        |> List.sortBy Tuple.first
-        |> List.map Tuple.second
-        |> E.sequence
-        |> E.encode
-        |> Proto.Bytes.toBase64
-        |> Unknown.Fields
-
-
-heldStep : ( Int, List ( Int, Encoder ) ) -> D.Decoder (Step ( Int, List ( Int, Encoder ) ) (List ( Int, Encoder )))
-heldStep ( remaining, acc ) =
-    if remaining <= 0 then
-        D.succeed (Done (List.reverse acc))
-
-    else
-        fastVarint32
-            |> D.andThen
-                (\( keyWidth, tag ) ->
-                    fastUnknown (Bitwise.and 7 tag)
-                        |> D.map (\( width, raw ) -> Loop ( remaining - keyWidth - width, ( Bitwise.shiftRightZfBy 3 tag, E.sequence [ writeVarint32 tag, raw ] ) :: acc ))
-                )
-
-
-{-| An unknown field's value as read, and its width, by its wire type; a
-group fails, as [`skip`](#skip) fails one. A varint's bytes are kept as they
-arrived, an overlong one included.
--}
-fastUnknown : Int -> D.Decoder ( Int, Encoder )
+fastUnknown : Int -> D.Decoder ( Int, Unknown.Value )
 fastUnknown wire =
     case wire of
         0 ->
-            D.loop ( 0, [] ) rawVarintStep
+            D.map (\( width, U64 high low ) -> ( width, Unknown.Varint high low )) fastVarint64
 
         1 ->
-            D.map (\body -> ( 8, E.bytes body )) (D.bytes 8)
+            D.map (\( _, U64 high low ) -> ( 8, Unknown.Fixed64 high low )) fastFixed64
 
         2 ->
             fastVarint32
                 |> D.andThen
                     (\( width, length ) ->
-                        D.map (\body -> ( width + length, E.sequence [ writeVarint32 length, E.bytes body ] )) (D.bytes length)
+                        D.map (\body -> ( width + length, Unknown.Delimited (Proto.Bytes.toBase64 body) )) (D.bytes length)
                     )
 
         5 ->
-            D.map (\body -> ( 4, E.bytes body )) (D.bytes 4)
+            D.map (\bits -> ( 4, Unknown.Fixed32 bits )) (D.unsignedInt32 LE)
 
         _ ->
             D.fail
 
 
-rawVarintStep : ( Int, List Int ) -> D.Decoder (Step ( Int, List Int ) ( Int, Encoder ))
-rawVarintStep ( count, acc ) =
-    if count >= 10 then
-        D.fail
-
-    else
-        D.unsignedInt8
-            |> D.map
-                (\b ->
-                    if b < 128 then
-                        Done ( count + 1, E.sequence (List.map E.unsignedInt8 (List.reverse (b :: acc))) )
-
-                    else
-                        Loop ( count + 1, b :: acc )
-                )
-
-
-{-| A message's unknown fields, written after its known ones, as they are
-held: by field number, in arrival order within one number.
+{-| A message's unknown fields, written after its known ones, in the order
+they are held: by field number, in arrival order within one number.
 -}
 unknown : Unknown.Fields -> Encoder
-unknown (Unknown.Fields held) =
-    if String.isEmpty held then
-        nothing
+unknown (Unknown.Fields fields) =
+    case fields of
+        [] ->
+            nothing
 
-    else
-        E.bytes (Proto.Bytes.fromBase64 held |> Maybe.withDefault Proto.Bytes.empty)
+        _ ->
+            E.sequence (List.map writeUnknown fields)
+
+
+fixed32Write : Int -> Encoder
+fixed32Write =
+    E.unsignedInt32 LE
+
+
+writeUnknown : ( Int, Unknown.Value ) -> Encoder
+writeUnknown ( number, value_ ) =
+    case value_ of
+        Unknown.Varint high low ->
+            E.sequence [ fieldKey number 0, writeVarint64 (U64 high low) ]
+
+        Unknown.Fixed64 high low ->
+            E.sequence [ fieldKey number 1, fixed64Write (U64 high low) ]
+
+        Unknown.Fixed32 bits ->
+            E.sequence [ fieldKey number 5, fixed32Write bits ]
+
+        Unknown.Delimited text ->
+            let
+                body =
+                    Proto.Bytes.fromBase64 text |> Maybe.withDefault Proto.Bytes.empty
+            in
+            E.sequence [ fieldKey number 2, writeVarint32 (Bytes.width body), E.bytes body ]
 
 
 

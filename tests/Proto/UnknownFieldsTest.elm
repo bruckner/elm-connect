@@ -12,7 +12,7 @@ import Generated.Codec.Keep.Codec.V1 as Keep
 import Json.Decode
 import Json.Encode
 import Proto.Binary
-import Proto.Unknown
+import Proto.Unknown exposing (Value(..))
 import Test exposing (Test, describe, test)
 
 
@@ -44,10 +44,26 @@ suite =
             \_ ->
                 rewritten Keep.decodeLeafBytes Keep.encodeLeafBytes ("2d01020304" ++ "1802" ++ "2201ff" ++ "1801")
                     |> Expect.equal (Ok ("1802" ++ "1801" ++ "2201ff" ++ "2d01020304"))
+        , test "they are held as data" <|
+            \_ ->
+                leaf ("1805" ++ "2203616263" ++ "2d01000000" ++ "310100000002000000" ++ "18ffffffffffffffffff01")
+                    |> Result.map (.unknownFields_ >> Proto.Unknown.toList)
+                    |> Expect.equal
+                        (Ok
+                            [ ( 3, Varint 0 5 )
+                            , ( 3, Varint 4294967295 4294967295 )
+                            , ( 4, Delimited "YWJj" )
+                            , ( 5, Fixed32 1 )
+                            , ( 6, Fixed64 2 1 )
+                            ]
+                        )
         , test "a message built in Elm holds none" <|
             \_ -> Proto.Unknown.isEmpty Keep.defaultLeaf.unknownFields_ |> Expect.equal True
         , test "a known field of a wire type it does not take is kept as unknown" <|
-            \_ -> rewritten Keep.decodeLeafBytes Keep.encodeLeafBytes "1201ff" |> Expect.equal (Ok "1201ff")
+            \_ ->
+                leaf "1201ff"
+                    |> Result.map (\l -> ( l.count, Proto.Unknown.toList l.unknownFields_ ))
+                    |> Expect.equal (Ok ( 0, [ ( 2, Delimited "/w==" ) ] ))
         , test "a message field read twice keeps both occurrences' unknown fields" <|
             \_ ->
                 rewritten Keep.decodeOuterBytes Keep.encodeOuterBytes ("12021805" ++ "12021806")
@@ -61,8 +77,8 @@ suite =
                 \_ -> same ("1805" ++ "2201ff") ("2201ff" ++ "1805") |> Expect.equal (Ok True)
             , test "fields of one number in another order: not equal" <|
                 \_ -> same ("1801" ++ "1802") ("1802" ++ "1801") |> Expect.equal (Ok False)
-            , test "an overlong varint: not equal to the shortest, as protobuf-go compares bytes" <|
-                \_ -> same "1801" "188100" |> Expect.equal (Ok False)
+            , test "an overlong varint: equal to the shortest" <|
+                \_ -> same "1801" "188100" |> Expect.equal (Ok True)
             , test "a nested unknown message whose fields are reordered: not equal" <|
                 \_ -> same ("2204" ++ "0801" ++ "1002") ("2204" ++ "1002" ++ "0801") |> Expect.equal (Ok False)
             , test "packed against unpacked: not equal" <|
@@ -78,4 +94,9 @@ suite =
                 Json.Decode.decodeString Keep.decodeLeaf "{\"name\":\"a\",\"zzz\":1}"
                     |> Result.map (.unknownFields_ >> Proto.Unknown.isEmpty)
                     |> Expect.equal (Ok True)
+        , test "fromList puts them in canonical order" <|
+            \_ ->
+                Proto.Unknown.fromList [ ( 9, Fixed32 1 ), ( 3, Varint 0 2 ), ( 9, Fixed32 0 ) ]
+                    |> Proto.Unknown.toList
+                    |> Expect.equal [ ( 3, Varint 0 2 ), ( 9, Fixed32 1 ), ( 9, Fixed32 0 ) ]
         ]
