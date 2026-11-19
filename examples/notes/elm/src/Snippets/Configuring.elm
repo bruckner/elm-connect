@@ -1,4 +1,4 @@
-module Snippets.Configuring exposing (NoteMsg(..), NoteState(..), Retrying, attemptNote, checked, getClient, perCall, retrying, updateNote, withdraw)
+module Snippets.Configuring exposing (NoteMsg(..), NoteState(..), Retrying, attemptNote, getClient, perCall, retrying, updateNote, withdraw)
 
 {-| docs/calling.md's clients: a protocol with its options, a retry policy,
 a retry loop the application drives, checking a client, and the adjustments
@@ -120,21 +120,6 @@ updateNote msg model =
 
 
 -- endregion driving
--- region check-client
-
-
-checked : Rpc.Client codec -> Result String (Rpc.Client codec)
-checked client =
-    case Rpc.Client.problems client of
-        [] ->
-            Ok client
-
-        problems ->
-            Err (String.join "; " problems)
-
-
-
--- endregion check-client
 -- region per-call
 
 

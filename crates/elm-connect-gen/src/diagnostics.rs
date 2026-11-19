@@ -154,6 +154,9 @@ codes! {
     RoutePathField => "route::path_field",
     /// `body` names no message field of the request.
     RouteBodyField => "route::body_field",
+    /// A `get` rule, or a `custom` one of kind `GET` or `HEAD`, has a
+    /// `body`, which a browser does not send.
+    RouteGetBody => "route::get_body",
     /// `response_body` names no field of the response.
     RouteResponseBody => "route::response_body",
     /// A request field that would be a query parameter has no query form.
@@ -1085,6 +1088,22 @@ impl Problem {
                      top-level singular message field of the request, or left out for no body.",
                     did_you_mean(suggestion.as_deref())
                 ),
+            ),
+            E::GetBody { method, body } => (
+                Code::RouteGetBody,
+                format!(
+                    "{binding} is a `{}` with `body: \"{}\"`, but a browser sends a `{}` \
+                     without its body.",
+                    method.escape_debug(),
+                    body.escape_debug(),
+                    method.escape_debug()
+                ),
+                "`google/api/http.proto` maps `body` for the methods that allow a request \
+                 body, and a browser drops a GET's or a HEAD's, so the server would read the \
+                 request without those fields. Leave `body` out, to send the fields outside \
+                 the path as query parameters, or bind the method with `post`, `put` or \
+                 `patch`."
+                    .into(),
             ),
             E::ResponseBodyField {
                 field,

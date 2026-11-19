@@ -597,6 +597,14 @@ pub enum RouteError {
         /// Why, as a phrase.
         reason: String,
     },
+    /// A rule whose method a browser sends without a body, `GET` or
+    /// `HEAD`, has a `body`.
+    GetBody {
+        /// The method, as the rule writes it: `GET`, or a custom kind.
+        method: String,
+        /// The `body` value.
+        body: String,
+    },
 }
 
 /// Checks `rule` (one binding; its own additional bindings are reported,
@@ -626,6 +634,22 @@ pub fn resolve(
         errors.push(RouteError::CustomKind {
             kind: kind.clone(),
             reason: reason.to_owned(),
+        });
+    }
+    // `google/api/http.proto` maps `body` only for methods that allow a
+    // request body. A browser drops a GET's or a HEAD's body (XHR and
+    // fetch alike), so the body's fields would never reach the server.
+    let bodiless = match &rule.verb {
+        HttpVerb::Get => true,
+        HttpVerb::Custom(kind) => {
+            kind.eq_ignore_ascii_case("GET") || kind.eq_ignore_ascii_case("HEAD")
+        }
+        _ => false,
+    };
+    if bodiless && !rule.body.is_empty() {
+        errors.push(RouteError::GetBody {
+            method: rule.verb.as_str().to_owned(),
+            body: rule.body.clone(),
         });
     }
     let template = match parse_template(&rule.template) {

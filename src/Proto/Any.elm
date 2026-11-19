@@ -130,12 +130,15 @@ packWith prefix ((InternalMessage.Message _ codecs) as message) value =
             Internal.Binary (Proto.Bytes.toBase64 (Bytes.Encode.encode (codecs.encodeBinary value)))
     in
     Internal.Any (prefixed prefix message)
-        (case codecs.encodeJson (InternalRegistry.Registry InternalRegistry.Lossless Dict.empty) value of
+        -- An empty table writes an `Any` held as JSON alone when it is
+        -- lenient and refuses it when strict; every other `Any` fails both
+        -- ways, so only the lenient write succeeding finds one.
+        (case codecs.encodeJson (InternalRegistry.Registry InternalRegistry.Strict Dict.empty) value of
             Ok _ ->
                 binary ()
 
             Err _ ->
-                case codecs.encodeJson (InternalRegistry.Registry InternalRegistry.Strict Dict.empty) value of
+                case codecs.encodeJson (InternalRegistry.Registry InternalRegistry.Lenient Dict.empty) value of
                     Ok json ->
                         -- Only the refusal of an `Any` held as JSON alone
                         -- failed: the binary would lose that `Any`.
@@ -222,8 +225,15 @@ named by its own type. Register the type: its package's `registry`,
 [`Proto.WellKnown.registry`](Proto-WellKnown#registry),
 [`Proto.ErrorDetails.registry`](Proto-ErrorDetails#registry), or
 [`Proto.Registry.register`](Proto-Registry#register) of its typed value.
+
 An `Any` held as JSON alone, which a [lenient](Proto-Registry#lenient)
-registry reads, gives that JSON, with no registry.
+registry reads, gives that JSON as it is held, once the registry's entry
+for its type has read it as that message: it fails with
+[`BadJson`](Proto-Error#Error) when it is not, and with `UnregisteredType`
+for an `Any` inside it of a type a strict registry lacks. A registry with
+no entry for its type gives the JSON unread when lenient, and fails with
+`UnregisteredType` when strict, as for an `Any` holding binary.
+
 -}
 toJson : Registry -> Any -> Result Error Json.Encode.Value
 toJson registry ((Internal.Any url payload) as any) =
@@ -232,11 +242,29 @@ toJson registry ((Internal.Any url payload) as any) =
             Ok (Json.Encode.object [])
 
         ( False, Internal.Json json ) ->
-            if InternalRegistry.writesJsonAlone registry then
-                Ok json
+            -- Read through the entry so that what is written is JSON the
+            -- type's codec accepts; the read's binary is not kept, and the
+            -- JSON is written as held.
+            case InternalRegistry.toBytes registry (typeName any) json of
+                Just (Ok _) ->
+                    Ok json
 
-            else
-                Err (UnregisteredType url)
+                Just (Err (BadJson problem)) ->
+                    Err
+                        (InternalRegistry.unregistered registry problem
+                            |> Maybe.map UnregisteredType
+                            |> Maybe.withDefault (BadJson problem)
+                        )
+
+                Just (Err problem) ->
+                    Err problem
+
+                Nothing ->
+                    if InternalRegistry.isLenient registry then
+                        Ok json
+
+                    else
+                        Err (UnregisteredType url)
 
         ( False, Internal.Binary base64 ) ->
             InternalRegistry.toJson registry (typeName any) base64

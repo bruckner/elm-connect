@@ -53,7 +53,9 @@ edition is `input::editions`. Accepting them turns an error into
 output, so it is a minor: the descriptors already reserve
 `CardinalityRequired` for `required` fields, and closed enums,
 non-zero defaults and explicit presence become descriptor modifiers
-and generated decoders. Groups and extensions would stay refused.
+and generated decoders. `Proto.Error.Reason` already reserves
+`MissingRequired` for a binary read that finds a `required` field
+absent, so checking them adds no constructor. Groups and extensions would stay refused.
 Two fields of one message whose names are the same once lowercased
 without underscores (`aB` and `ab`), which protoc accepts and the
 descriptor library refuses in any file but a proto2 one, are
@@ -138,18 +140,6 @@ build a call's request and read its answer, so a fake one answers the
 request it builds from the test's data in place of elm/http, and the
 client and the calls stay as they are. A minor: `Rpc.Protocol` is
 opaque, so a protocol is added without changing the others.
-
-## `Rpc.Client.problems` by construction
-
-`Rpc.Client.problems` reports a bad base URL, header or size limit at
-run time. Ruling them out by construction would put a `Result` where
-the client is built: either typed inputs checked once
-(`Rpc.baseUrl : String -> Result Problem BaseUrl`, after which
-`Rpc.client` cannot fail) or one builder that reports every problem at
-once. The `Result` form is the one favoured. A call's own headers, its
-path values and the answers stay run-time failures whichever is
-chosen. Revisited before 1.0, since either shape changes how every
-application builds its client.
 
 ## A route table for Connect-only applications
 

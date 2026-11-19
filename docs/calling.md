@@ -95,30 +95,14 @@ LF and no character above U+00FF, which a browser refuses. A call with
 such a header is not sent: it fails as a `BadCall` naming the
 header, and the header is never altered to fit.
 
-### Checking a client
+### When a client cannot send
 
-```elm src/Rpc/Client.elm excerpt
-problems : Client codec -> List String
-```
-
-`Rpc.Client.problems` reports a client's problems, one sentence each,
-where the application builds it rather than at the first call: today a
-base URL with a query or a fragment, headers a request cannot carry
-(named, without their values), and a size limit below 1.
-
-```elm examples/notes/elm/src/Snippets/Configuring.elm#check-client
-checked : Rpc.Client codec -> Result String (Rpc.Client codec)
-checked client =
-    case Rpc.Client.problems client of
-        [] ->
-            Ok client
-
-        problems ->
-            Err (String.join "; " problems)
-```
-
-Later releases may find more, so read the result as a list rather than
-matching it.
+Nothing checks a client before its calls: whatever is wrong with one
+fails the call, where the error reaches the code that handles every
+other. A base URL holding `?` or `#` makes every call fail unsent, its
+`Rpc.Error.cause` `BadCall`, and a URL the browser refuses comes back as
+a `BadCall` too; so does a call with a header a request cannot carry. Whether a base URL reaches the right server only a
+request can show.
 
 ## Protocols
 
@@ -250,7 +234,8 @@ its binary under the proto codec, the same way, as connect-go's `WithSendMaxByte
 `BadCall`, code `ResourceExhausted`. Neither has a limit by
 default, as in connect-node; connect-go reads at most 4 MiB unless told
 otherwise, and connect-web, the browser transport, has no such knob.
-`Rpc.Client.problems` reports a limit below 1.
+A limit below 1 is no limit: it removes one set earlier, as if none had
+been set.
 
 ## Retries
 

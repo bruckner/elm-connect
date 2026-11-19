@@ -268,32 +268,32 @@ service S {{
 fn each_route_problem_is_reported() {
     let cases = [
         (
-            r#"get: "v1/{name}" body: "*""#,
+            r#"post: "v1/{name}" body: "*""#,
             "route::template",
             "starts with `/`",
         ),
         (
-            r#"get: "/v1/*" body: "*""#,
+            r#"post: "/v1/*" body: "*""#,
             "route::template",
             "wildcard outside a variable",
         ),
         (
-            r#"get: "/v1/{missing}" body: "*""#,
+            r#"post: "/v1/{missing}" body: "*""#,
             "route::path_field",
             "`t.v1.Thing` has no field `missing`",
         ),
         (
-            r#"get: "/v1/{tags}" body: "*""#,
+            r#"post: "/v1/{tags}" body: "*""#,
             "route::path_field",
             "`tags` is repeated",
         ),
         (
-            r#"get: "/v1/{inner}" body: "*""#,
+            r#"post: "/v1/{inner}" body: "*""#,
             "route::path_field",
             "is the message `t.v1.Inner`",
         ),
         (
-            r#"get: "/v1/{name}/{name}" body: "*""#,
+            r#"post: "/v1/{name}/{name}" body: "*""#,
             "route::path_field",
             "twice",
         ),
@@ -314,11 +314,21 @@ fn each_route_problem_is_reported() {
         ),
         (r#"get: "/v1""#, "route::query_field", "`labels`"),
         (
-            r#"post: "/v1" body: "*" additional_bindings { get: "/v2" body: "*" additional_bindings { get: "/v3" } }"#,
+            r#"post: "/v1" body: "*" additional_bindings { post: "/v2" body: "*" additional_bindings { get: "/v3" } }"#,
             "route::rule",
             "additional bindings of its own",
         ),
         (r#"body: "*""#, "route::rule", "has no path"),
+        (
+            r#"get: "/v1/{name}" body: "*""#,
+            "route::get_body",
+            "is a `GET` with `body: \"*\"`",
+        ),
+        (
+            r#"custom: { kind: "head" path: "/v1/{name}" } body: "inner""#,
+            "route::get_body",
+            "is a `head` with `body: \"inner\"`",
+        ),
     ];
     for (index, (rule, code, text)) in cases.into_iter().enumerate() {
         let rules = format!(
@@ -687,9 +697,9 @@ message Thing { string name = 1; }
 #[test]
 fn a_route_problem_points_at_its_literal_in_the_rule() {
     let rendered = route_problems(
-        r#"  rpc Get(Thing) returns (Thing) { option (google.api.http) = { get: "/v1/{missing}" body: "*" }; }"#,
+        r#"  rpc Get(Thing) returns (Thing) { option (google.api.http) = { post: "/v1/{missing}" body: "*" }; }"#,
     );
-    assert!(rendered.contains("╭─[t.proto:19:70]"), "{rendered}");
+    assert!(rendered.contains("╭─[t.proto:19:71]"), "{rendered}");
     assert!(rendered.contains("this path"), "{rendered}");
     assert!(
         rendered.contains("The HTTP rule of `t.v1.S.Get` binds `{missing}`"),
