@@ -181,6 +181,17 @@ enum MergeForm {
     /// The same stages, run again from the record built so far at each
     /// field that arrives out of order, until the message ends.
     Reentrant,
+    /// The literal form for a record of at most `ELM_CONNECT_HYBRID_MAX`
+    /// fields (default 32), the re-entrant stages for a wider one.
+    Hybrid,
+}
+
+/// The widest record the hybrid form writes literals for.
+fn hybrid_max() -> usize {
+    std::env::var("ELM_CONNECT_HYBRID_MAX")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(32)
 }
 
 fn merge_form() -> MergeForm {
@@ -188,6 +199,7 @@ fn merge_form() -> MergeForm {
         Ok("m1") => MergeForm::Literal,
         Ok("m2") => MergeForm::Staged,
         Ok("m3") => MergeForm::Reentrant,
+        Ok("m4") => MergeForm::Hybrid,
         _ => MergeForm::Update,
     }
 }
@@ -508,7 +520,11 @@ impl Emitter {
     /// `mergeFooBytes : Foo -> Proto.Binary.Decoder Foo`: a `Foo` read
     /// into the one given, as protobuf merges a message arriving twice.
     pub(super) fn message_merge_bytes(&mut self, shape: &MessageShape) -> Decl {
-        let form = merge_form();
+        let form = match merge_form() {
+            MergeForm::Hybrid if record_names(shape).len() <= hybrid_max() => MergeForm::Literal,
+            MergeForm::Hybrid => MergeForm::Reentrant,
+            form => form,
+        };
         let mut branches: Vec<(u32, Expr)> = Vec::new();
         let mut reversed: Vec<String> = Vec::new();
         let setter = Setter::new(shape, form);
