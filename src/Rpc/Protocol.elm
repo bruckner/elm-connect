@@ -51,17 +51,20 @@ type alias Protocol codec =
 
 
 
--- A modifier that installs a function (`withConnectGet`, `withReadMaxBytes`,
--- `withWriteMaxBytes`) also writes a field of `options`, which sorts before
--- `wire`. Elm's `==` compares a record's fields in that order and throws on
--- two functions that are not the same one, so two protocols, or two clients,
--- that differ in a modifier compare unequal at `options` before reaching
--- the function it installed; built alike, they hold the same top-level
--- functions, which `==` takes as equal by reference. A limit modifier given
--- a value below 1 puts back `Nothing` and the constructor's own unlimited
--- function, so the protocol is `==` to one never given a limit.
--- `Rpc.Retry.on` keeps the same rule: a policy holds its knobs before its
--- math.
+-- A protocol is `Internal.Protocol data wire`: its data first, its functions
+-- second. elm/core's `==` compares a constructor's arguments in order, stops at
+-- the first that differ, and throws on two functions that are not the same one
+-- (how its code works, not a guarantee of the language: `Rpc.Internal.Protocol`
+-- says more). A modifier that installs a function
+-- (`withConnectGet`, `withReadMaxBytes`, `withWriteMaxBytes`) also writes a
+-- field of the options, so two protocols, or two clients, that differ in a
+-- modifier compare unequal at the data before reaching the function it
+-- installed; built alike, they hold the same top-level functions, which `==`
+-- takes as equal by reference. A limit modifier given a value below 1 puts
+-- back `Nothing` and the constructor's own unlimited function, so the protocol
+-- is `==` to one never given a limit. The order of a record's fields does not
+-- serve: the compiler chooses it, and releases have chosen differently.
+-- `Rpc.Retry.on` keeps the same rule: a policy is its knobs, then its math.
 --
 -- A binary check a modifier installs measures bytes with the wire's own
 -- `width`, never `Bytes.width` directly. A modifier names both wires' checks,
@@ -81,19 +84,15 @@ JSON, every call POSTed, as connect-es does by default.
 connect : Protocol Json
 connect =
     Internal.Protocol
-        { name = "connect"
-        , codec = "json"
-        , options = noOptions
-        , wire =
-            Text
-                { build = Connect.connectPost
-                , routed = False
-                , message = Connect.connectMessage
-                , tooLarge = Http.textUnlimited
-                , overRead = Http.textUnlimited
-                , timeoutHeader = Connect.connectTimeout
-                }
-        }
+        { name = "connect", codec = "json", routed = False, options = noOptions }
+        (Text
+            { build = Connect.connectPost
+            , message = Connect.connectMessage
+            , tooLarge = Http.textUnlimited
+            , overRead = Http.textUnlimited
+            , timeoutHeader = Connect.connectTimeout
+            }
+        )
 
 
 {-| Connect over protobuf binary (`application/proto`). A successful answer is
@@ -103,20 +102,17 @@ content type; an error answer is JSON, as the protocol sends it.
 connectProto : Protocol Proto
 connectProto =
     Internal.Protocol
-        { name = "connect"
-        , codec = "proto"
-        , options = noOptions
-        , wire =
-            Binary
-                { build = Connect.connectPostBinary
-                , message = Connect.connectProtoMessage
-                , tooLarge = Http.bytesUnlimited
-                , overRead = Http.bytesUnlimited
-                , timeoutHeader = Connect.connectTimeout False
-                , base64 = Http.base64
-                , width = Http.width
-                }
-        }
+        { name = "connect", codec = "proto", routed = False, options = noOptions }
+        (Binary
+            { build = Connect.connectPostBinary
+            , message = Connect.connectProtoMessage
+            , tooLarge = Http.bytesUnlimited
+            , overRead = Http.bytesUnlimited
+            , timeoutHeader = Connect.connectTimeout False
+            , base64 = Http.base64
+            , width = Http.width
+            }
+        )
 
 
 {-| HTTP transcoding, by the method's `google.api.http` rule. A method without
@@ -127,19 +123,15 @@ serve: the request Connect would POST.
 transcode : Protocol Json
 transcode =
     Internal.Protocol
-        { name = "transcode"
-        , codec = "json"
-        , options = noOptions
-        , wire =
-            Text
-                { build = Transcode.transcode
-                , routed = True
-                , message = Transcode.transcodeMessage
-                , tooLarge = Http.textUnlimited
-                , overRead = Http.textUnlimited
-                , timeoutHeader = Transcode.transcodeTimeout
-                }
-        }
+        { name = "transcode", codec = "json", routed = True, options = noOptions }
+        (Text
+            { build = Transcode.transcode
+            , message = Transcode.transcodeMessage
+            , tooLarge = Http.textUnlimited
+            , overRead = Http.textUnlimited
+            , timeoutHeader = Transcode.transcodeTimeout
+            }
+        )
 
 
 {-| [gRPC-Web](https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-WEB.md),
@@ -161,20 +153,17 @@ call ([`Rpc.sendTraced`](Rpc#sendTraced)) gives the body's trailers in
 grpcWeb : Protocol Proto
 grpcWeb =
     Internal.Protocol
-        { name = "grpc-web"
-        , codec = "proto"
-        , options = noOptions
-        , wire =
-            Binary
-                { build = GrpcWeb.grpcWeb
-                , message = GrpcWeb.grpcWebMessage
-                , tooLarge = Http.bytesUnlimited
-                , overRead = Http.bytesUnlimited
-                , timeoutHeader = GrpcWeb.grpcWebTimeout
-                , base64 = Http.base64
-                , width = Http.width
-                }
-        }
+        { name = "grpc-web", codec = "proto", routed = False, options = noOptions }
+        (Binary
+            { build = GrpcWeb.grpcWeb
+            , message = GrpcWeb.grpcWebMessage
+            , tooLarge = Http.bytesUnlimited
+            , overRead = Http.bytesUnlimited
+            , timeoutHeader = GrpcWeb.grpcWebTimeout
+            , base64 = Http.base64
+            , width = Http.width
+            }
+        )
 
 
 {-| Over Connect, send a call of a method without side effects
@@ -187,26 +176,23 @@ proxy logs. Servers and proxies cap URL length too;
 
 -}
 withConnectGet : Protocol codec -> Protocol codec
-withConnectGet (Internal.Protocol p) =
+withConnectGet (Internal.Protocol p wire) =
     if p.name == "connect" then
         let
             options =
                 p.options
         in
-        Internal.Protocol
-            { p
-                | options = { options | get = True }
-                , wire =
-                    case p.wire of
-                        Text wire ->
-                            Text { wire | build = Connect.connectGet }
+        Internal.Protocol { p | options = { options | get = True } }
+            (case wire of
+                Text text ->
+                    Text { text | build = Connect.connectGet }
 
-                        Binary wire ->
-                            Binary { wire | build = Connect.connectGetBinary }
-            }
+                Binary binary ->
+                    Binary { binary | build = Connect.connectGetBinary }
+            )
 
     else
-        Internal.Protocol p
+        Internal.Protocol p wire
 
 
 {-| POST a call whose GET URL, the whole of it with its query, would be longer
@@ -215,16 +201,16 @@ is a common safe value). Only Connect with
 [`withConnectGet`](#withConnectGet) sends a GET, so others are unchanged.
 -}
 withMaxGetUrl : Int -> Protocol codec -> Protocol codec
-withMaxGetUrl limit (Internal.Protocol p) =
+withMaxGetUrl limit (Internal.Protocol p wire) =
     if p.name == "connect" then
         let
             options =
                 p.options
         in
-        Internal.Protocol { p | options = { options | maxGetUrl = Just limit } }
+        Internal.Protocol { p | options = { options | maxGetUrl = Just limit } } wire
 
     else
-        Internal.Protocol p
+        Internal.Protocol p wire
 
 
 {-| Refuse a successful answer whose body (over gRPC-Web, its response
@@ -238,7 +224,7 @@ protocol as it would be had no limit ever been set.
 
 -}
 withReadMaxBytes : Int -> Protocol codec -> Protocol codec
-withReadMaxBytes limit (Internal.Protocol p) =
+withReadMaxBytes limit (Internal.Protocol p wire) =
     let
         options =
             p.options
@@ -257,30 +243,30 @@ withReadMaxBytes limit (Internal.Protocol p) =
                         else
                             Nothing
                 }
-            , wire =
-                case p.wire of
-                    Text wire ->
-                        Text
-                            { wire
-                                | overRead =
-                                    if on then
-                                        Http.textOverRead
-
-                                    else
-                                        Http.textUnlimited
-                            }
-
-                    Binary wire ->
-                        Binary
-                            { wire
-                                | overRead =
-                                    if on then
-                                        Http.bytesOverRead
-
-                                    else
-                                        Http.bytesUnlimited
-                            }
         }
+        (case wire of
+            Text text ->
+                Text
+                    { text
+                        | overRead =
+                            if on then
+                                Http.textOverRead
+
+                            else
+                                Http.textUnlimited
+                    }
+
+            Binary binary ->
+                Binary
+                    { binary
+                        | overRead =
+                            if on then
+                                Http.bytesOverRead
+
+                            else
+                                Http.bytesUnlimited
+                    }
+        )
 
 
 {-| Refuse to send a call whose request message is longer than this many
@@ -293,7 +279,7 @@ protocol as it would be had no limit ever been set.
 
 -}
 withWriteMaxBytes : Int -> Protocol codec -> Protocol codec
-withWriteMaxBytes limit (Internal.Protocol p) =
+withWriteMaxBytes limit (Internal.Protocol p wire) =
     let
         options =
             p.options
@@ -312,51 +298,51 @@ withWriteMaxBytes limit (Internal.Protocol p) =
                         else
                             Nothing
                 }
-            , wire =
-                case p.wire of
-                    Text wire ->
-                        Text
-                            { wire
-                                | tooLarge =
-                                    if on then
-                                        Http.jsonTooLarge
-
-                                    else
-                                        Http.textUnlimited
-                            }
-
-                    Binary wire ->
-                        Binary
-                            { wire
-                                | tooLarge =
-                                    if on then
-                                        Http.bytesTooLarge
-
-                                    else
-                                        Http.bytesUnlimited
-                            }
         }
+        (case wire of
+            Text text ->
+                Text
+                    { text
+                        | tooLarge =
+                            if on then
+                                Http.jsonTooLarge
+
+                            else
+                                Http.textUnlimited
+                    }
+
+            Binary binary ->
+                Binary
+                    { binary
+                        | tooLarge =
+                            if on then
+                                Http.bytesTooLarge
+
+                            else
+                                Http.bytesUnlimited
+                    }
+        )
 
 
 {-| The protocol's name, for traces and logs: `"connect"`, `"transcode"` or
 `"grpc-web"`.
 -}
 name : Protocol codec -> String
-name (Internal.Protocol p) =
+name (Internal.Protocol p _) =
     p.name
 
 
 {-| The codec's name: `"json"` or `"proto"`.
 -}
 codec : Protocol codec -> String
-codec (Internal.Protocol p) =
+codec (Internal.Protocol p _) =
     p.codec
 
 
 {-| The protocol as JSON, for logs and tests: its name, codec and options.
 -}
 toJson : Protocol codec -> Value
-toJson (Internal.Protocol p) =
+toJson (Internal.Protocol p _) =
     let
         maybeInt =
             Maybe.map Json.Encode.int >> Maybe.withDefault Json.Encode.null

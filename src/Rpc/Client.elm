@@ -17,8 +17,10 @@ takes, and the registry its calls convert a `google.protobuf.Any` through.
 A client holds its protocol's functions, so it belongs in code: a top-level
 value, one built in `init`, or one a wrapper builds per call from the
 application's state. Clients built alike are `==` when their registry is a
-top-level value: a registry built where the client is holds fresh functions,
-and `==` throws on reaching it. A client never belongs in a message.
+top-level value, and clients that differ in anything else compare unequal.
+Two otherwise alike, each with a registry built where the client is, hold
+different functions, and `==` throws on them. A client never belongs in a
+message.
 [`toJson`](#toJson) gives it as data, for logs and tests.
 
 @docs Client, client
@@ -65,14 +67,10 @@ does one to a URL the browser refuses.
 client : Protocol codec -> String -> Client codec
 client over url =
     Internal.Client
-        { protocol = over
-        , baseUrl = url
-        , headers = []
-        , timeout = Nothing
-        , withCredentials = False
-        , retry = Nothing
-        , registry = Proto.Registry.empty
-        }
+        { baseUrl = url, headers = [], timeout = Nothing, withCredentials = False }
+        over
+        Nothing
+        Proto.Registry.empty
 
 
 {-| Headers sent with every call, after any given before, such as
@@ -82,8 +80,8 @@ and no character above U+00FF, which a browser refuses. A call with such a
 header is not sent, and fails as a [`BadCall`](Rpc-Error#Cause) naming it.
 -}
 withHeaders : List ( String, String ) -> Client codec -> Client codec
-withHeaders extra (Internal.Client c) =
-    Internal.Client { c | headers = c.headers ++ extra }
+withHeaders extra (Internal.Client c over policy table) =
+    Internal.Client { c | headers = c.headers ++ extra } over policy table
 
 
 {-| A timeout for every call, in milliseconds; a call's own
@@ -91,15 +89,15 @@ withHeaders extra (Internal.Client c) =
 gRPC-Web also tell the server. One that is not a positive number means none.
 -}
 withTimeout : Float -> Client codec -> Client codec
-withTimeout ms (Internal.Client c) =
-    Internal.Client { c | timeout = Just ms }
+withTimeout ms (Internal.Client c over policy table) =
+    Internal.Client { c | timeout = Just ms } over policy table
 
 
 {-| Send cookies and other credentials cross-origin (`Http.riskyRequest`).
 -}
 withCredentials : Client codec -> Client codec
-withCredentials (Internal.Client c) =
-    Internal.Client { c | withCredentials = True }
+withCredentials (Internal.Client c over policy table) =
+    Internal.Client { c | withCredentials = True } over policy table
 
 
 {-| Try a failed call again as the policy says ([`Rpc.Retry`](Rpc-Retry)). A
@@ -107,8 +105,8 @@ call can take another policy ([`Rpc.Call.withRetry`](Rpc-Call#withRetry)) or
 none ([`Rpc.Call.withoutRetry`](Rpc-Call#withoutRetry)) in its place.
 -}
 withRetry : Retry -> Client codec -> Client codec
-withRetry policy (Internal.Client c) =
-    Internal.Client { c | retry = Just policy }
+withRetry policy (Internal.Client c over _ table) =
+    Internal.Client c over (Just policy) table
 
 
 {-| The registry the client's calls convert a `google.protobuf.Any` through
@@ -138,58 +136,58 @@ detail, as its JSON alone instead, which unpacks with its typed value.
 
 -}
 withRegistry : Registry -> Client codec -> Client codec
-withRegistry table (Internal.Client c) =
-    Internal.Client { c | registry = table }
+withRegistry table (Internal.Client c over policy _) =
+    Internal.Client c over policy table
 
 
 {-| The client's protocol.
 -}
 protocol : Client codec -> Protocol codec
-protocol (Internal.Client c) =
-    c.protocol
+protocol (Internal.Client _ over _ _) =
+    over
 
 
 {-| The client's base URL, as given.
 -}
 baseUrl : Client codec -> String
-baseUrl (Internal.Client c) =
+baseUrl (Internal.Client c _ _ _) =
     c.baseUrl
 
 
 {-| The client's headers, in order.
 -}
 headers : Client codec -> List ( String, String )
-headers (Internal.Client c) =
+headers (Internal.Client c _ _ _) =
     c.headers
 
 
 {-| The client's timeout, as given.
 -}
 timeout : Client codec -> Maybe Float
-timeout (Internal.Client c) =
+timeout (Internal.Client c _ _ _) =
     c.timeout
 
 
 {-| Whether credentials go cross-origin.
 -}
 credentials : Client codec -> Bool
-credentials (Internal.Client c) =
+credentials (Internal.Client c _ _ _) =
     c.withCredentials
 
 
 {-| The client's retry policy.
 -}
 retry : Client codec -> Maybe Retry
-retry (Internal.Client c) =
-    c.retry
+retry (Internal.Client _ _ policy _) =
+    policy
 
 
 {-| The registry the client's calls convert a `google.protobuf.Any` through,
 `Proto.Registry.empty` until [`withRegistry`](#withRegistry) sets one.
 -}
 registry : Client codec -> Registry
-registry (Internal.Client c) =
-    c.registry
+registry (Internal.Client _ _ _ table) =
+    table
 
 
 {-| The client as JSON, for logs and tests: its protocol
@@ -198,16 +196,16 @@ included, as [`Rpc.Trace.toJson`](Rpc-Trace#toJson) gives them), timeout,
 credentials and whether it has a retry policy.
 -}
 toJson : Client codec -> Value
-toJson (Internal.Client c) =
+toJson (Internal.Client c over policy _) =
     Json.Encode.object
-        [ ( "protocol", Rpc.Protocol.toJson c.protocol )
+        [ ( "protocol", Rpc.Protocol.toJson over )
         , ( "baseUrl", Json.Encode.string c.baseUrl )
         , ( "headers", Json.Encode.list (\( k, v ) -> Json.Encode.list Json.Encode.string [ k, v ]) c.headers )
         , ( "timeout", Maybe.map Json.Encode.float c.timeout |> Maybe.withDefault Json.Encode.null )
         , ( "withCredentials", Json.Encode.bool c.withCredentials )
         , ( "retry"
           , Json.Encode.bool
-                (case c.retry of
+                (case policy of
                     Just _ ->
                         True
 

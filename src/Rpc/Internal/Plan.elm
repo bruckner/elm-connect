@@ -100,16 +100,13 @@ toSend =
 
 
 make : Bool -> Client codec -> Call codec req res -> Plan res
-make forSend (Client cl) (Call c) =
+make forSend (Client cl over _ registry) (Call c) =
     let
-        (Protocol p) =
-            cl.protocol
+        (Protocol p functions) =
+            over
 
         (Method m) =
             c.method
-
-        registry =
-            cl.registry
 
         -- Built only for a request: reading an answer needs none of it.
         settings () =
@@ -127,11 +124,11 @@ make forSend (Client cl) (Call c) =
             , withCredentials = cl.withCredentials
             }
     in
-    case p.wire of
+    case functions of
         Text wire ->
             let
                 routeOf =
-                    if wire.routed then
+                    if p.routed then
                         List.head (List.drop c.binding m.routes)
 
                     else

@@ -1,16 +1,28 @@
-module Rpc.Internal.Protocol exposing (BinaryWire, BytesMessage, GoodBytes, GoodText, Options, Protocol(..), Settings, Size, TextWire, Wire(..))
+module Rpc.Internal.Protocol exposing (BinaryWire, BytesMessage, Data, GoodBytes, GoodText, Options, Protocol(..), Settings, Size, TextWire, Wire(..))
 
 {-| The protocol calls are sent over. Not exposed: `Rpc.Protocol` builds one
 and aliases the type, and `Rpc` sends a call through what it holds.
 
 A protocol is one value holding its data half (its name, the codec it
-speaks, its options) and its function half (how it builds a request and
-reads an answer). Every function in it is a top-level function, chosen by
-the constructor or installed by a modifier, which takes the options as an
-argument rather than closing over them: two protocols built alike hold the
-same functions and equal data, so `==` holds between them (elm/core
-compares by reference first), and a program that never names a constructor
-or a modifier carries none of its code.
+speaks, whether it reads routes, its options) and its function half (how it
+builds a request and reads an answer). Every function in it is a top-level
+function, chosen by the constructor or installed by a modifier, which takes
+the options as an argument rather than closing over them: two protocols
+built alike hold the same functions and equal data, so `==` holds between
+them (elm/core compares by reference first), and a program that never names
+a constructor or a modifier carries none of its code.
+
+The data half is the constructor's first argument and the function half its
+second, because elm/core's `==` compares a constructor's arguments in order,
+stops at the first that differ, and throws on two functions that are not the
+same one. Every modifier that installs a function also writes the options,
+so two protocols that differ in a modifier are unequal at the data before
+`==` could reach a function. The order of a record's fields is not used for
+this: the compiler chooses it, and releases have chosen differently. The
+order of a constructor's arguments is part of the language. How `==` walks
+them is elm/core's code: far steadier than a field order, but not something
+the language guarantees, so the tests CI runs under the supported compilers
+are what would catch a change.
 
 The functions are monomorphic in the request and response types (Elm has no
 rank-2 types, so a record field cannot hold a function polymorphic in
@@ -38,12 +50,19 @@ import Rpc.Request exposing (Request)
 
 
 type Protocol codec
-    = Protocol
-        { name : String
-        , codec : String
-        , options : Options
-        , wire : Wire
-        }
+    = Protocol Data Wire
+
+
+{-| The data half: the protocol's name, the codec it speaks, whether it
+reads a method's routes (`routed`, so that a call builds its route only
+where it is read), and its options. It holds no function.
+-}
+type alias Data =
+    { name : String
+    , codec : String
+    , routed : Bool
+    , options : Options
+    }
 
 
 {-| A message's size in bytes, over its limit.
@@ -90,11 +109,9 @@ type Wire
 {-| A protocol speaking JSON:
 
   - `build`: the request, from the options, the settings, the call's
-    route (when `routed`) and the request's JSON,
+    route (when the protocol is `routed`) and the request's JSON,
     encoded only by a builder that sends it whole (over a route, the
     route holds the body).
-  - `routed`: whether the protocol reads a method's routes, so that a call
-    builds its route only where it is read.
   - `message`: what a successful answer holds to decode, or the error the
     answer stands for; given `overRead`, so that the read limit is checked
     by whatever function a modifier installed, and the field of the
@@ -112,7 +129,6 @@ type Wire
 -}
 type alias TextWire =
     { build : Options -> Settings -> Maybe Route -> (() -> Value) -> Request
-    , routed : Bool
     , message : (Options -> String -> Maybe Size) -> Options -> Maybe String -> Http.Response String -> Result Error GoodText
     , tooLarge : Options -> (() -> Value) -> Maybe Size
     , overRead : Options -> String -> Maybe Size

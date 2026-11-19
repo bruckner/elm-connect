@@ -5,8 +5,8 @@ constructor or modifier put there, with their settings as data: two built
 alike from top-level registries are `==`, and two that differ compare unequal
 on their data before `==` would reach a function, which would throw. A
 registry built where the client is holds fresh functions per `register`, so
-two such clients throw on `==` (the compiled record compares its fields by
-name, and `registry` comes before `retry` and `timeout`).
+two such clients built alike throw on `==`; the registry is the client's last
+part, so two that differ in anything else compare unequal before reaching it.
 -}
 
 import Expect
@@ -135,6 +135,14 @@ unionInline () =
     base |> Rpc.Client.withRegistry (Proto.Registry.unionAll [ topLevel, Proto.WellKnown.registry ])
 
 
+{-| A registry built where it is used: each call registers its entry
+afresh, so two such registries hold different functions.
+-}
+inPlace : () -> Proto.Registry.Registry
+inPlace () =
+    Proto.Registry.empty |> Proto.Registry.register Proto.WellKnown.duration
+
+
 {-| Clients differing from `base` in one modifier each.
 -}
 variants : List ( String, Rpc.Client Rpc.Json )
@@ -258,12 +266,17 @@ equality =
         , test "two clients given a union of top-level registries built inline are ==" <|
             \_ ->
                 unionInline () == unionInline () |> Expect.equal True
+        , test "clients with a registry built in place, differing in anything else, compare unequal without throwing" <|
+            \_ ->
+                equalTo (base |> Rpc.Client.withRegistry (inPlace ()))
+                    (List.map (Tuple.mapSecond (Rpc.Client.withRegistry (inPlace ()))) variants)
+                    |> Expect.equal []
 
-        -- Not covered: two clients whose registries are built alike inline
-        -- with `Proto.Registry.register`. Each `register` builds its entry's
-        -- conversions as new closures, and `==` on two clients built alike
-        -- compares every field, the registry's entries included, so it
-        -- reaches those closures and throws.
+        -- Not covered: two clients built alike whose registries are built
+        -- alike in place with `Proto.Registry.register`. Each `register`
+        -- builds its entry's conversions as new closures, and `==` on two
+        -- clients built alike reaches the registry, their last part, and
+        -- throws on those closures.
         , test "two retry policies built alike are ==, two that differ are not" <|
             \_ ->
                 ( Rpc.Retry.on [ Rpc.Code.Unavailable ] == Rpc.Retry.on [ Rpc.Code.Unavailable ]

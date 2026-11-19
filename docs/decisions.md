@@ -1319,7 +1319,26 @@ or timeout, since the compiled record compares `registry` before them.
 A registry that is a top-level value, or a union of top-level values,
 compares fine. Elm can hold the codecs of different message types in
 one table only behind functions, so the promise is qualified in the
-docs rather than the registry changed. Each installed binary check measures with the wire's `width`,
+docs rather than the registry changed.
+
+2026-11-19: the rule above relied on the compiler writing a record's
+fields in alphabetical order, which Elm 0.19.0 to 0.19.2 do and 0.19.3
+does not (it orders them by length first, so `wire` came before
+`options` and `==` on two protocols differing in a modifier threw). The
+order now comes from positions: a protocol is `Protocol data wire`, a
+client `Client data protocol retry registry`, a policy was already
+`Retry Policy Math`. The order of a constructor's arguments is part of
+the language; that `==` compares them in that order and stops at the
+first that differ is how elm/core's code works, far steadier than a
+field order but not guaranteed, so the tests CI runs under the supported
+compilers are the backstop. The registry is last, so the exception
+narrows to two clients alike but for a registry built in place each;
+differing in retry or timeout, they now compare unequal. Every program
+grows about 115 B minified and changes by at most a few tens of bytes
+gzipped, and each modifier's code still stays out of a program that
+names none.
+
+Each installed binary check measures with the wire's `width`,
 so a JSON program naming a limit reaches no `Bytes.width`, which would
 bring elm/bytes' kernel (989 B before this rule). `withConnectGet` is a
 no-op off Connect, so it is one modifier for either wire; a JSON GET
