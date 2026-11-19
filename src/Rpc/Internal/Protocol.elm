@@ -1,4 +1,4 @@
-module Rpc.Internal.Protocol exposing (BinaryWire, BytesMessage, GoodBytes, GoodText, Options, Protocol(..), Settings, TextWire, Wire(..))
+module Rpc.Internal.Protocol exposing (BinaryWire, BytesMessage, GoodBytes, GoodText, Options, Protocol(..), Settings, Size, TextWire, Wire(..))
 
 {-| The protocol calls are sent over. Not exposed: `Rpc.Protocol` builds one
 and aliases the type, and `Rpc` sends a call through what it holds.
@@ -30,9 +30,10 @@ import Bytes exposing (Bytes)
 import Bytes.Encode
 import Http
 import Json.Encode exposing (Value)
+import Proto.Error
 import Proto.Method exposing (Idempotency)
 import Proto.Route exposing (Route)
-import Rpc.Error exposing (Error, Reason)
+import Rpc.Error exposing (Error)
 import Rpc.Request exposing (Request)
 
 
@@ -43,6 +44,12 @@ type Protocol codec
         , options : Options
         , wire : Wire
         }
+
+
+{-| A message's size in bytes, over its limit.
+-}
+type alias Size =
+    { limit : Int, size : Int }
 
 
 {-| The options, as data: whether Connect sends a method without side effects
@@ -106,9 +113,9 @@ type Wire
 type alias TextWire =
     { build : Options -> Settings -> Maybe Route -> (() -> Value) -> Request
     , routed : Bool
-    , message : (Options -> String -> Maybe Reason) -> Options -> Maybe String -> Http.Response String -> Result Error GoodText
-    , tooLarge : Options -> (() -> Value) -> Maybe Reason
-    , overRead : Options -> String -> Maybe Reason
+    , message : (Options -> String -> Maybe Size) -> Options -> Maybe String -> Http.Response String -> Result Error GoodText
+    , tooLarge : Options -> (() -> Value) -> Maybe Size
+    , overRead : Options -> String -> Maybe Size
     , timeoutHeader : Bool -> Maybe ( String, Float -> String )
     }
 
@@ -137,9 +144,9 @@ whole.
 -}
 type alias BinaryWire =
     { build : (Bytes -> String) -> Options -> Settings -> Bytes.Encode.Encoder -> Request
-    , message : (Options -> Bytes -> Maybe Reason) -> Options -> String -> Http.Response Bytes -> ( Maybe Http.Metadata, Result Error BytesMessage )
-    , tooLarge : (Bytes -> Int) -> Options -> (() -> Bytes.Encode.Encoder) -> Maybe Reason
-    , overRead : (Bytes -> Int) -> Options -> Bytes -> Maybe Reason
+    , message : (Options -> Bytes -> Maybe Size) -> Options -> String -> Http.Response Bytes -> ( Maybe Http.Metadata, Result Error BytesMessage )
+    , tooLarge : (Bytes -> Int) -> Options -> (() -> Bytes.Encode.Encoder) -> Maybe Size
+    , overRead : (Bytes -> Int) -> Options -> Bytes -> Maybe Size
     , width : Bytes -> Int
     , timeoutHeader : Maybe ( String, Float -> String )
     , base64 : Bytes -> String
@@ -151,7 +158,7 @@ the method's decoder does not read it, given why.
 -}
 type alias BytesMessage =
     { bytes : Bytes
-    , bad : String -> Error
+    , bad : Proto.Error.Error -> Error
     }
 
 

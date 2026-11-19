@@ -18,7 +18,7 @@ import Rpc
 import Rpc.Body
 import Rpc.Client
 import Rpc.Code exposing (Code(..))
-import Rpc.Error exposing (Error(..), Reason(..), Source(..))
+import Rpc.Error exposing (Cause(..), Error, Source(..))
 import Rpc.Internal.Plan exposing (Reader(..))
 import Rpc.Internal.Trace
 import Rpc.Protocol
@@ -150,36 +150,34 @@ answer =
     answerOver grpcWeb
 
 
+{-| A failure's code, message and where its status was stated, when the
+server stated one.
+-}
 statusOf : Result Error String -> Maybe ( Code, String, Source )
 statusOf result =
     case result of
-        Err (RpcStatus status _) ->
-            Just ( status.code, status.message, status.source )
+        Err error ->
+            Rpc.Error.source error
+                |> Maybe.map (\source -> ( Rpc.Error.code error, Rpc.Error.message error, source ))
 
-        _ ->
+        Ok _ ->
             Nothing
 
 
-isBadResponse : Result Error String -> Bool
-isBadResponse result =
-    case result of
-        Err (BadResponse _ _ _) ->
-            True
-
-        _ ->
-            False
-
-
-{-| A `BadResponse`'s own code, its problem, and the code `Rpc.Error.code`
-reads from it.
+{-| An answer that could not be used: its code and message.
 -}
-badResponseOf : Result Error String -> Maybe ( Code, String, Code )
+badResponseOf : Result Error String -> Maybe ( Code, String )
 badResponseOf result =
     case result of
-        Err ((BadResponse badCode problem _) as error) ->
-            Just ( badCode, problem, Rpc.Error.code error )
+        Err error ->
+            case Rpc.Error.cause error of
+                BadResponse _ ->
+                    Just ( Rpc.Error.code error, Rpc.Error.message error )
 
-        _ ->
+                _ ->
+                    Nothing
+
+        Ok _ ->
             Nothing
 
 
@@ -339,8 +337,8 @@ answers =
         , test "grpc-status-details-bin gives the error's details, in order" <|
             \_ ->
                 case answer 200 [] [ trailers ("grpc-status: 5\u{000D}\ngrpc-message: gone\u{000D}\ngrpc-status-details-bin: " ++ Proto.Bytes.toBase64 statusWithDetails ++ "\u{000D}\n") ] of
-                    Err (RpcStatus status _) ->
-                        List.map (Result.map Proto.Any.typeUrl) status.details
+                    Err error ->
+                        List.map (Result.map Proto.Any.typeUrl) (Rpc.Error.details error)
                             |> Expect.equal [ Ok "type.googleapis.com/google.rpc.ErrorInfo", Ok "type.googleapis.com/google.rpc.BadRequest" ]
 
                     other ->
@@ -348,24 +346,24 @@ answers =
         , test "a Status in grpc-status-details-bin gives the error's code and message, over the trailers'" <|
             \_ ->
                 case answer 200 [] [ trailers ("grpc-status: 5\u{000D}\ngrpc-message: gone\u{000D}\ngrpc-status-details-bin: " ++ Proto.Bytes.toBase64 (bytesOf [ 0x08, 0x07, 0x12, 0x04, 0x6E, 0x6F, 0x70, 0x65 ]) ++ "\u{000D}\n") ] of
-                    Err (RpcStatus status _) ->
-                        ( status.code, status.message, status.details ) |> Expect.equal ( PermissionDenied, "nope", [] )
+                    Err error ->
+                        ( Rpc.Error.code error, Rpc.Error.message error, Rpc.Error.details error ) |> Expect.equal ( PermissionDenied, "nope", [] )
 
                     other ->
                         Expect.fail (Debug.toString other)
         , test "a Status without a code leaves the trailers' code and message standing" <|
             \_ ->
                 case answer 200 [] [ trailers ("grpc-status: 5\u{000D}\ngrpc-message: gone\u{000D}\ngrpc-status-details-bin: " ++ Proto.Bytes.toBase64 (bytesOf [ 0x12, 0x04, 0x6E, 0x6F, 0x70, 0x65 ]) ++ "\u{000D}\n") ] of
-                    Err (RpcStatus status _) ->
-                        ( status.code, status.message ) |> Expect.equal ( NotFound, "gone" )
+                    Err error ->
+                        ( Rpc.Error.code error, Rpc.Error.message error ) |> Expect.equal ( NotFound, "gone" )
 
                     other ->
                         Expect.fail (Debug.toString other)
         , test "a grpc-status-details-bin that is base64 but not a Status is one problem standing for all, the status kept" <|
             \_ ->
                 case answer 200 [] [ trailers "grpc-status: 5\u{000D}\ngrpc-message: gone\u{000D}\ngrpc-status-details-bin: CA==\u{000D}\n" ] of
-                    Err (RpcStatus status _) ->
-                        case ( status.code, status.message, status.details ) of
+                    Err error ->
+                        case ( Rpc.Error.code error, Rpc.Error.message error, Rpc.Error.details error ) of
                             ( NotFound, "gone", [ Err (Proto.Error.BadBinary problem) ] ) ->
                                 problem.typeName |> Expect.equal "google.rpc.Status"
 
@@ -377,17 +375,18 @@ answers =
         , test "a grpc-status-details-bin that is not base64 is a BadResponse whose code is Internal" <|
             \_ ->
                 case answer 200 [] [ trailers "grpc-status: 5\u{000D}\ngrpc-message: gone\u{000D}\ngrpc-status-details-bin: !!\u{000D}\n" ] of
-                    Err (BadResponse code problem _) ->
-                        ( code, problem ) |> Expect.equal ( Internal, "a grpc-status-details-bin trailer that is not base64" )
+                    Err error ->
+                        badResponseOf (Err error)
+                            |> Expect.equal (Just ( Internal, "bad response: a grpc-status-details-bin trailer that is not base64" ))
 
                     other ->
                         Expect.fail (Debug.toString other)
         , test "details in a trailers-only answer's headers, their base64 unpadded" <|
             \_ ->
                 case answer 200 [ ( "grpc-status", "5" ), ( "grpc-status-details-bin", String.replace "=" "" (Proto.Bytes.toBase64 statusWithDetails) ) ] [] of
-                    Err (RpcStatus status _) ->
-                        ( status.source, List.length status.details )
-                            |> Expect.equal ( GrpcHeaders, 2 )
+                    Err error ->
+                        ( Rpc.Error.source error, List.length (Rpc.Error.details error) )
+                            |> Expect.equal ( Just GrpcHeaders, 2 )
 
                     other ->
                         Expect.fail (Debug.toString other)
@@ -404,33 +403,37 @@ answers =
                 ]
                     |> List.map badResponseOf
                     |> Expect.equal
-                        [ Just ( Unimplemented, "a unary gRPC-Web answer with status 0 and no message", Unimplemented )
-                        , Just ( Unimplemented, "a unary gRPC-Web answer with status 0 and no message", Unimplemented )
-                        , Just ( Unimplemented, "a unary gRPC-Web answer with status 0 and more than one message", Unimplemented )
+                        [ Just ( Unimplemented, "bad response: a unary gRPC-Web answer with status 0 and no message" )
+                        , Just ( Unimplemented, "bad response: a unary gRPC-Web answer with status 0 and no message" )
+                        , Just ( Unimplemented, "bad response: a unary gRPC-Web answer with status 0 and more than one message" )
                         ]
         , test "a body without trailers is a BadResponse whose code is Internal" <|
             \_ ->
                 answer 200 [] [ frame 0 titleHi ]
                     |> badResponseOf
-                    |> Expect.equal (Just ( Internal, "a gRPC-Web answer without trailers", Internal ))
+                    |> Expect.equal (Just ( Internal, "bad response: a gRPC-Web answer without trailers" ))
         , test "no grpc-status anywhere is a BadResponse" <|
             \_ ->
                 [ answer 200 [] [ frame 0 titleHi ], answer 200 [] [ frame 0 titleHi, trailers "grpc-message: x\u{000D}\n" ], answer 200 [] [] ]
-                    |> List.map isBadResponse
-                    |> Expect.equal [ True, True, True ]
+                    |> List.map badResponseOf
+                    |> Expect.equal [ Just ( Internal, "bad response: a gRPC-Web answer without trailers" ), Just ( Internal, "bad response: a gRPC-Web answer without a numeric grpc-status" ), Just ( Internal, "bad response: a gRPC-Web answer without a numeric grpc-status" ) ]
         , test "a compressed message, or a frame running past the end, is a BadResponse" <|
             \_ ->
                 [ answer 200 [] [ frame 1 titleHi, trailers ok ]
                 , answer 200 [] [ frame 0 titleHi, E.unsignedInt8 0x80, E.unsignedInt32 BE 100 ]
                 , answer 200 [] [ frame 0 titleHi, E.unsignedInt8 0 ]
                 ]
-                    |> List.map isBadResponse
-                    |> Expect.equal [ True, True, True ]
+                    |> List.map badResponseOf
+                    |> Expect.equal [ Just ( Internal, "bad response: a gRPC-Web body that is not a sequence of uncompressed frames" ), Just ( Internal, "bad response: a gRPC-Web body that is not a sequence of uncompressed frames" ), Just ( Internal, "bad response: a gRPC-Web body that is not a sequence of uncompressed frames" ) ]
         , test "a message that is not the response is a BadResponse saying why" <|
             \_ ->
                 case answer 200 [] [ frame 0 (bytesOf [ 0x0A, 0x05 ]), trailers ok ] of
-                    Err (BadResponse _ problem _) ->
-                        problem |> Expect.equal "Not a notes.v1.Title in protobuf binary: the input ends in the middle of a field, at byte 1, in field 1 of notes.v1.Title."
+                    Err error ->
+                        ( badResponseOf (Err error), Rpc.Error.protoError error )
+                            |> Expect.equal
+                                ( Just ( Internal, "bad response body" )
+                                , Just (Proto.Error.BadBinary { typeName = "notes.v1.Title", reason = Proto.Error.Truncated, path = [ ( "notes.v1.Title", 1 ) ], offset = 1 })
+                                )
 
                     other ->
                         Expect.fail (Debug.toString other)
@@ -448,18 +451,23 @@ answers =
                 ]
                     |> List.map (Result.mapError Rpc.Error.message)
                     |> Expect.equal
-                        [ Err "bad response body: content-type application/grpc-web+json, not application/grpc-web or application/grpc-web+proto"
-                        , Err "bad response body: content-type application/grpc-web-text, not application/grpc-web or application/grpc-web+proto"
+                        [ Err "bad response: content-type application/grpc-web+json, not application/grpc-web or application/grpc-web+proto"
+                        , Err "bad response: content-type application/grpc-web-text, not application/grpc-web or application/grpc-web+proto"
                         ]
-        , test "a 200 that is not gRPC-Web's is read as a failure: an HttpStatus error, code Unknown, when it states no status" <|
+        , test "a 200 that is not gRPC-Web's is read as a failure: code Unknown, when it states no status" <|
             \_ ->
-                case Rpc.responseBytes grpcWeb (getNote { name = "" }) (Http.GoodStatus_ (metadata 200 [ ( "content-type", "text/html" ) ]) (E.encode (E.string "<html></html>"))) of
-                    Err ((HttpStatus response) as error) ->
-                        ( Rpc.Error.code error, response.statusCode, Rpc.Body.toText response.body )
-                            |> Expect.equal ( Unknown, 200, Just "<html></html>" )
-
-                    other ->
-                        Expect.fail (Debug.toString other)
+                Rpc.responseBytes grpcWeb (getNote { name = "" }) (Http.GoodStatus_ (metadata 200 [ ( "content-type", "text/html" ) ]) (E.encode (E.string "<html></html>")))
+                    |> Expect.equal
+                        (Err
+                            (Rpc.Error.fromResponse
+                                { url = "https://api.example.com/notes.v1.Notes/GetNote"
+                                , statusCode = 200
+                                , statusText = ""
+                                , headers = Dict.fromList [ ( "content-type", "text/html" ) ]
+                                , body = Rpc.Body.text "<html></html>"
+                                }
+                            )
+                        )
         , test "a 200 that is not gRPC-Web's is read as a failure: its grpc-status headers or Connect body are the error" <|
             \_ ->
                 [ answer 200 [ ( "content-type", "text/plain" ), ( "grpc-status", "14" ), ( "grpc-message", "down" ) ] []
@@ -473,19 +481,20 @@ answers =
                     |> statusOf
                     |> Maybe.map (\( code, _, source ) -> ( code, source ))
                     |> Expect.equal (Just ( Unavailable, GrpcHeaders ))
-        , test "another HTTP status without them is an HttpStatus error" <|
+        , test "another HTTP status without them states no status" <|
             \_ ->
-                case Rpc.responseBytes grpcWeb (getNote { name = "" }) (Http.BadStatus_ (metadata 404 []) (body [])) of
-                    Err (HttpStatus response) ->
-                        response.statusCode |> Expect.equal 404
-
-                    other ->
-                        Expect.fail (Debug.toString other)
+                Rpc.responseBytes grpcWeb (getNote { name = "" }) (Http.BadStatus_ (metadata 404 []) (body []))
+                    |> Result.mapError (\error -> ( Rpc.Error.source error, Rpc.Error.httpStatus error ))
+                    |> Expect.equal (Err ( Nothing, Just 404 ))
         , test "no answer is the error it is" <|
             \_ ->
                 [ Http.Timeout_, Http.NetworkError_, Http.BadUrl_ "x" ]
                     |> List.map (Rpc.responseBytes grpcWeb (getNote { name = "" }))
-                    |> Expect.equal [ Err (NoAnswer Timeout), Err (NoAnswer NetworkError), Err (NoAnswer (BadUrl "x")) ]
+                    |> Expect.equal
+                        [ Err Rpc.Error.timeout
+                        , Err Rpc.Error.networkError
+                        , Err (Rpc.Error.badCall Internal "bad URL: the browser could not read it")
+                        ]
         ]
 
 
@@ -496,7 +505,19 @@ limits =
             \_ ->
                 [ 4, 3 ]
                     |> List.map (\limit -> answerOver (over (Rpc.Protocol.withReadMaxBytes limit Rpc.Protocol.grpcWeb)) 200 [] [ frame 0 titleHi, trailers ok ])
-                    |> Expect.equal [ Ok "hi", Err (NoAnswer (ResponseTooLarge { limit = 3, size = 4 })) ]
+                    |> Expect.equal
+                        [ Ok "hi"
+                        , Err
+                            (Rpc.Error.badResponse ResourceExhausted
+                                "message size 4 is larger than configured readMaxBytes 3"
+                                { url = "https://api.example.com/notes.v1.Notes/GetNote"
+                                , statusCode = 200
+                                , statusText = ""
+                                , headers = Dict.fromList [ ( "trailer-grpc-status", "0" ), ( "trailer-grpc-message", "" ) ]
+                                , body = Rpc.Body.none
+                                }
+                            )
+                        ]
         , test "read: an error is read whatever the limit" <|
             \_ ->
                 answerOver (over (Rpc.Protocol.withReadMaxBytes 1 Rpc.Protocol.grpcWeb)) 200 [] [ trailers "grpc-status: 5\u{000D}\ngrpc-message: a long message\u{000D}\n" ]
@@ -506,7 +527,7 @@ limits =
             \_ ->
                 [ 4, 3 ]
                     |> List.map (\limit -> (Rpc.Internal.Plan.plan (over (Rpc.Protocol.withWriteMaxBytes limit Rpc.Protocol.grpcWeb)) (getNote { name = "hi" })).tooLarge ())
-                    |> Expect.equal [ Nothing, Just (RequestTooLarge { limit = 3, size = 4 }) ]
+                    |> Expect.equal [ Nothing, Just { limit = 3, size = 4 } ]
         ]
 
 
@@ -528,7 +549,7 @@ traces =
                             reader response
 
                         TextReader _ ->
-                            ( Nothing, Err (BadResponse Internal "read as text" { url = "", statusCode = 0, statusText = "", headers = Dict.empty, body = Rpc.Body.none }) )
+                            ( Nothing, Err (Rpc.Error.badResponse Internal "read as text" { url = "", statusCode = 0, statusText = "", headers = Dict.empty, body = Rpc.Body.none }) )
             in
             Rpc.Internal.Trace.init (Rpc.Client.protocol grpcWeb) c plan (plan.request ()) { attempts = 1, metadata = read, result = result } 1
     in

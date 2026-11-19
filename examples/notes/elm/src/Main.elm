@@ -345,43 +345,54 @@ viewRequest request =
 
 viewError : Rpc.Error -> Html msg
 viewError error =
-    case error of
-        Rpc.Error.RpcStatus status answer ->
-            section [ class "error" ]
-                [ h2 [] [ text (Rpc.Code.toString status.code) ]
-                , p [] [ text status.message ]
-                , p [] [ text ("Read from " ++ sourceToString status.source ++ " (HTTP " ++ String.fromInt answer.statusCode ++ ")") ]
-                , ul []
-                    (List.map
-                        (\violation -> li [] [ code [] [ text violation.field ], text (": " ++ violation.description) ])
-                        (unpacked Proto.ErrorDetails.badRequest status.details |> List.concatMap .fieldViolations)
-                    )
-                , ul []
-                    (List.map
-                        (\info -> li [] [ text (info.reason ++ " from " ++ info.domain) ])
-                        (unpacked Proto.ErrorDetails.errorInfo status.details)
-                    )
-                , div [] (List.map viewDetail status.details)
-                ]
+    section [ class "error" ]
+        (h2 [] [ text (Rpc.Code.toString (Rpc.Error.code error)) ]
+            :: p [] [ text (Rpc.Error.message error) ]
+            :: (case Rpc.Error.cause error of
+                    Rpc.Error.BadStatus answer ->
+                        case Rpc.Error.source error of
+                            Just source ->
+                                p [] [ text ("Stated in " ++ sourceToString source ++ ", HTTP " ++ String.fromInt answer.statusCode ++ ".") ]
+                                    :: viewDetails (Rpc.Error.details error)
 
-        Rpc.Error.HttpStatus answer ->
-            section [ class "error" ]
-                [ h2 [] [ text (Rpc.Code.toString (Rpc.Error.code error)) ]
-                , p [] [ text (Rpc.Error.message error) ]
-                , p [] [ text ("Inferred from the HTTP status " ++ String.fromInt answer.statusCode ++ "; the body was:") ]
-                , pre [] [ text (Maybe.withDefault "" (Rpc.Body.toText answer.body)) ]
-                ]
+                            Nothing ->
+                                [ p [] [ text ("HTTP " ++ String.fromInt answer.statusCode ++ " with no status in it; the code is inferred from the HTTP status. The body was:") ]
+                                , pre [] [ text (Maybe.withDefault "" (Rpc.Body.toText answer.body)) ]
+                                ]
 
-        Rpc.Error.BadResponse _ _ answer ->
-            section [ class "error" ]
-                [ h2 [] [ text (Rpc.Code.toString (Rpc.Error.code error)) ]
-                , p [] [ text (Rpc.Error.message error) ]
-                , p [] [ text ("HTTP " ++ String.fromInt answer.statusCode ++ " with a body that is not the response:") ]
-                , pre [] [ text (Maybe.withDefault "" (Rpc.Body.toText answer.body)) ]
-                ]
+                    Rpc.Error.BadResponse answer ->
+                        [ p [] [ text ("HTTP " ++ String.fromInt answer.statusCode ++ ", an answer this page could not read:") ]
+                        , pre [] [ text (Maybe.withDefault "" (Rpc.Body.toText answer.body)) ]
+                        ]
 
-        Rpc.Error.NoAnswer _ ->
-            section [ class "error" ] [ p [] [ text (Rpc.Error.toString error) ] ]
+                    Rpc.Error.Timeout ->
+                        [ p [] [ text "No answer came in time; the note may still have been saved." ] ]
+
+                    Rpc.Error.NetworkError ->
+                        [ p [] [ text "The server could not be reached." ] ]
+
+                    Rpc.Error.BadCall ->
+                        [ p [] [ text "Nothing was sent." ] ]
+               )
+        )
+
+
+{-| The details the page knows by type, then every detail as JSON.
+-}
+viewDetails : List (Result Proto.Error.Error Proto.Any.Any) -> List (Html msg)
+viewDetails details =
+    [ ul []
+        (List.map
+            (\violation -> li [] [ code [] [ text violation.field ], text (": " ++ violation.description) ])
+            (unpacked Proto.ErrorDetails.badRequest details |> List.concatMap .fieldViolations)
+        )
+    , ul []
+        (List.map
+            (\info -> li [] [ text (info.reason ++ " from " ++ info.domain) ])
+            (unpacked Proto.ErrorDetails.errorInfo details)
+        )
+    , div [] (List.map viewDetail details)
+    ]
 
 
 {-| A status's details that were read and are of this type.

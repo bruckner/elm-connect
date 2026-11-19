@@ -319,6 +319,81 @@ is `Proto.Message.fullName` and `Proto.Enum.fullName`, where 0.1 had
 `typeName`, which is now a message's typed value's
 (`Proto.Message.typeName : Message a -> String`).
 
+## Errors
+
+`Rpc.Error.Error` is no longer a union to match. It is read through
+functions, in three layers: the RPC (`code`, `message`, `details`,
+`source`); the HTTP exchange underneath, `cause`, which is elm/http's
+error with the answer kept, and `httpStatus`; and the codec under that,
+`protoError` ([calling.md](calling.md#errors)). `Reason` and
+`StatusError` are gone. Code that read `Rpc.Error.code` and
+`Rpc.Error.message` is unchanged.
+
+| 0.1 | 0.2 |
+|---|---|
+| `RpcStatus status answer` | `cause` is `BadStatus answer`, `source` is `Just status.source`; `status.code`, `status.message` are `code error`, `message error`; `status.details` is `details error` |
+| `HttpStatus answer` | `cause` is `BadStatus answer` and `source` is `Nothing`; for a 2xx that is not the protocol's answer, `BadResponse answer`, code `Unknown` |
+| `BadResponse problem answer` | `cause` is `BadResponse answer`; a body that did not decode has `message` `bad response body` and its problem in `protoError` |
+| `NoAnswer Timeout` | `cause` is `Timeout` |
+| `NoAnswer NetworkError` | `cause` is `NetworkError` |
+| `NoAnswer (BadUrl url)`, `NoAnswer (InvalidHeader name)`, `NoAnswer (RequestTooLarge _)` | `cause` is `BadCall`; `message` says which, without the URL or the header's value |
+| `NoAnswer (ResponseTooLarge _)` | `cause` is `BadResponse answer`, the answer's status and headers kept, its body dropped |
+| `Rpc.Error.details error : List Any` | `Rpc.Error.details error : List (Result Proto.Error.Error Any)` (below) |
+
+An application coming from elm/http reads `cause` as the `Http.Error` it
+had:
+
+| elm/http | `Rpc.Error.cause` |
+|---|---|
+| `Http.BadUrl _` | `BadCall` |
+| `Http.Timeout` | `Timeout` |
+| `Http.NetworkError` | `NetworkError` |
+| `Http.BadStatus n` | `BadStatus answer`, with `answer.statusCode == n`, which can be 200 (below) |
+| `Http.BadBody _` | `BadResponse answer` |
+
+Over gRPC-Web a failure is stated in the trailers of a 200, so a reader that branches on `answer.statusCode` should not assume a failing status there; `code` is the reading for it.
+
+A `case` on `cause` matches a status where 0.1 matched a constructor:
+
+```elm examples/notes/elm/src/Snippets/Migrating.elm#errors
+retryable : Rpc.Error -> Bool
+retryable error =
+    case Rpc.Error.cause error of
+        Rpc.Error.BadStatus answer ->
+            List.member answer.statusCode [ 502, 503, 504 ]
+
+        Rpc.Error.NetworkError ->
+            True
+
+        Rpc.Error.Timeout ->
+            True
+
+        Rpc.Error.BadCall ->
+            False
+
+        Rpc.Error.BadResponse _ ->
+            False
+```
+
+- Codes are as before, the client's own included: a timeout is
+  `DeadlineExceeded`, a network failure `Unavailable`, a request over
+  its limit `ResourceExhausted`. Those codes, and the ones inferred from
+  a bare HTTP status, have server meanings too: code that acts on a code
+  the server stated checks `Rpc.Error.source error /= Nothing`.
+- Messages hold no value from the request or the answer: a bad URL is
+  `bad URL: the base URL holds a query or a fragment` or `bad URL: the
+  browser could not read it`, and a body that did not decode `bad
+  response body`. `Rpc.Error.protoError error |> Maybe.map
+  Proto.Error.toString` is the decoder's full text, which can quote the
+  answer's data.
+- A `BadCall` or a `BadResponse` is never retried, whatever a policy's
+  codes: a request over its write limit, retried in 0.1 under
+  `ResourceExhausted`, is not.
+- Tests and previews build errors with `Rpc.Error.fromCode`,
+  `fromStatus`, `fromResponse`, `timeout`, `networkError`, `badCall`,
+  `badAny`, `badResponse` and `badBody`, and they are `==` to the
+  runtime's when they state the same things.
+
 ## Any, the registry and error details
 
 An `Any` holds its message's protobuf binary, as in protobuf's own
@@ -361,7 +436,7 @@ JSON.
   `register`, `union` and `unionAll` compose them. Give the client the
   one its `Any`s need with `Rpc.Client.withRegistry`; a JSON client whose
   messages hold an `Any` needs one, and a request whose `Any` it cannot
-  write fails with `NoAnswer (BadAny error)`, the
+  write fails unsent, a `BadCall` whose `Rpc.Error.protoError` is the
   `Proto.Error.Error` the write gave.
 - A method holds no registry: a hand-written method's JSON codecs take
   the client's (`Proto.Method.initJson "notes.v1.NotesService" "GetNote"
@@ -369,12 +444,12 @@ JSON.
   `Proto.Method.encodeRequest`, `responseDecoder`, `Rpc.Call.requestJson`
   and `Rpc.Call.toJson` take a registry, and the first, third and fourth
   give a `Result`.
-- `StatusError.details` is `List (Result Proto.Error.Error
+- `Rpc.Error.details` is `List (Result Proto.Error.Error
   Proto.Any.Any)`: each detail, or why it could not be read
   (`UnregisteredType url` for a `google.rpc.Status` body's detail of a
   type the client's registry lacks; `BadJson` for a detail that is not
   one, `BadBinary` for a `grpc-status-details-bin` that does not decode).
-  `Rpc.Error.details` is gone; unpack with `Proto.Any.unpack` and the type's typed value,
+  Unpack one with `Proto.Any.unpack` and the type's typed value,
   `Proto.ErrorDetails.badRequest` for `google.rpc.BadRequest`
   ([descriptors.md](descriptors.md#error-details)).
 
@@ -426,18 +501,6 @@ with each one ([install.md](install.md#versions)).
 
 ## Also
 
-- `Rpc.Error.Reason` has a new constructor, `BadPathValue { field,
-  template }`: a transcoded call whose path value its template cannot
-  match is not sent. A `case` on `Reason` needs the branch.
-- `Rpc.Error.InvalidHeader` is renamed `BadHeader`, in the `Bad*` form
-  of `BadUrl` and `BadResponse`: a pattern `NoAnswer (InvalidHeader
-  name)` becomes `NoAnswer (BadHeader name)`.
-- `Rpc.Error.Reason` has a new constructor, `BadAny Proto.Error.Error`:
-  over JSON, a request holding an `Any` the client's registry cannot
-  write is not sent. A `case` on `Reason` needs the branch.
-- `Rpc.Error.BadResponse` carries the code `Rpc.Error.code` gives it
-  first: a pattern `BadResponse problem answer` becomes
-  `BadResponse _ problem answer`.
 - `Rpc.Call.withRetry` and `Rpc.Call.withoutRetry` set one call's retry
   policy, and `Rpc.Retry.withDeadline` and `Rpc.Retry.next` are new
   ([calling.md](calling.md#retries)). `next` is given the failed call's

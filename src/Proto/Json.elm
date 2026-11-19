@@ -1146,7 +1146,8 @@ its value's name, and a parser must also accept the number.
 A number the rows do not hold, such as one added to the server's proto after
 this client was generated, decodes as the zero value. A name the rows do not
 hold fails, as protobuf's own parsers do:
-`Expecting a value of enum "Status", but got "STATUS_PAUSED"`; for a decoder
+`Expecting a value of enum "Status"`, the name it got beside the text in
+elm/json's failure; for a decoder
 that reads it as the zero value instead, see [`enumOrZero`](#enumOrZero).
 
     type Status
@@ -1169,7 +1170,7 @@ names decode to it. When two rows share a name or a number, the first wins.
 enum : String -> a -> List ( String, Int, a ) -> Decoder a
 enum enumName zero values =
     enumWith
-        (\text -> Json.Decode.fail ("Expecting a value of enum " ++ quote enumName ++ ", but got " ++ quote text))
+        (\text -> Json.Decode.fail ("Expecting a value of enum " ++ quote enumName))
         zero
         values
 
@@ -1346,7 +1347,7 @@ insertKeys readKey seen entries pairs =
                 Ok key ->
                     case Dict.get key seen of
                         Just earlier ->
-                            Err ("Expecting distinct map keys, but " ++ quote earlier ++ " and " ++ quote text ++ " are the same key")
+                            Err "Expecting distinct map keys"
 
                         Nothing ->
                             insertKeys readKey (Dict.insert key text seen) (Dict.insert key value entries) rest
@@ -1358,7 +1359,7 @@ is.
 boundedKey : String -> Int -> Int -> String -> Result String Int
 boundedKey what low high text =
     narrowInteger low high text
-        |> Result.mapError (\_ -> "Expecting " ++ what ++ ", but got " ++ quote text)
+        |> Result.mapError (\_ -> "Expecting " ++ what)
 
 
 {-| A 64-bit integer map key in its canonical decimal form, within the range
@@ -1367,7 +1368,7 @@ of `width`.
 wideKey : String -> Width -> String -> Result String String
 wideKey what width text =
     wideInteger width text
-        |> Result.mapError (\_ -> "Expecting " ++ what ++ " " ++ widthRange width ++ ", but got " ++ quote text)
+        |> Result.mapError (\_ -> "Expecting " ++ what ++ " " ++ widthRange width)
 
 
 {-| Decode a map with `bool` keys as an association list, since Elm's `Bool`
@@ -1406,7 +1407,7 @@ boolKey key =
             Ok False
 
         _ ->
-            Err ("Expecting a bool map key (\"true\" or \"false\"), but got \"" ++ key ++ "\"")
+            Err "Expecting a bool map key (\"true\" or \"false\")"
 
 
 fromResult : Result String a -> Decoder a
@@ -1479,16 +1480,6 @@ numeric =
         ]
 
 
-showNumeric : Numeric -> String
-showNumeric form =
-    case form of
-        NumberForm number ->
-            String.fromFloat number
-
-        StringForm text ->
-            "\"" ++ text ++ "\""
-
-
 {-| An integer in any form proto3 JSON allows for one, within `low` to
 `high`: a number compared as a `Float`, which holds the bounds exactly, and a
 string read as [`int64`](#int64) reads one.
@@ -1497,7 +1488,7 @@ boundedInt : String -> Int -> Int -> Decoder Int
 boundedInt what low high =
     let
         outOfRange form =
-            Json.Decode.fail ("Expecting " ++ what ++ ", but got " ++ showNumeric form)
+            Json.Decode.fail ("Expecting " ++ what)
     in
     numeric
         |> Json.Decode.andThen
@@ -1524,7 +1515,7 @@ boundedInt what low high =
                                 outOfRange form
 
                             Err _ ->
-                                Json.Decode.fail ("Expecting an integer, but got " ++ showNumeric form)
+                                Json.Decode.fail "Expecting an integer"
             )
 
 
@@ -1564,7 +1555,7 @@ integral form =
                     String.toFloat text
 
         notInteger =
-            Err ("Expecting an integer, but got " ++ showNumeric form)
+            Err "Expecting an integer"
     in
     case number of
         Just value ->
@@ -1611,23 +1602,23 @@ int64 =
 wide : Width -> Decoder String
 wide width =
     Json.Decode.oneOf
-        [ Json.Decode.map (\text -> ( text, quote text )) Json.Decode.string
-        , Json.Decode.map (\int -> ( String.fromInt int, String.fromInt int )) Json.Decode.int
+        [ Json.Decode.string
+        , Json.Decode.map String.fromInt Json.Decode.int
         ]
         |> Json.Decode.andThen
-            (\( text, shown ) ->
+            (\text ->
                 case wideInteger width text of
                     Ok decimal ->
                         Json.Decode.succeed decimal
 
                     Err NotDecimal ->
-                        Json.Decode.fail ("Expecting a decimal integer, but got " ++ shown)
+                        Json.Decode.fail "Expecting a decimal integer"
 
                     Err NotInteger ->
-                        Json.Decode.fail ("Expecting an integer, but got " ++ shown)
+                        Json.Decode.fail "Expecting an integer"
 
                     Err OutOfRange ->
-                        Json.Decode.fail ("Expecting " ++ widthName width ++ " " ++ widthRange width ++ ", but got " ++ shown)
+                        Json.Decode.fail ("Expecting " ++ widthName width ++ " " ++ widthRange width)
             )
 
 
@@ -1892,7 +1883,7 @@ uint64AsInt =
         |> Json.Decode.andThen
             (\number ->
                 if number < 0 then
-                    Json.Decode.fail ("Expecting a uint64 (0 or more) but got " ++ String.fromInt number)
+                    Json.Decode.fail "Expecting a uint64 (0 or more)"
 
                 else
                     Json.Decode.succeed number
@@ -1904,10 +1895,7 @@ int64Form form =
     let
         outOfRange =
             Json.Decode.fail
-                ("Expecting an integer from -9007199254740991 to 9007199254740991, "
-                    ++ "the 64-bit integers an Elm Int holds exactly, but got "
-                    ++ showNumeric form
-                )
+                "Expecting an integer from -9007199254740991 to 9007199254740991, the 64-bit integers an Elm Int holds exactly"
     in
     case form of
         NumberForm number ->
@@ -1925,10 +1913,10 @@ int64Form form =
         StringForm text ->
             case canonicalInteger text of
                 Err NotDecimal ->
-                    Json.Decode.fail ("Expecting a decimal integer, but got " ++ quote text)
+                    Json.Decode.fail "Expecting a decimal integer"
 
                 Err NotInteger ->
-                    Json.Decode.fail ("Expecting an integer, but got " ++ quote text)
+                    Json.Decode.fail "Expecting an integer"
 
                 Err OutOfRange ->
                     outOfRange
@@ -2019,13 +2007,13 @@ floatIn kind fits written =
             case String.toFloat text of
                 Just number ->
                     if isNaN number then
-                        Json.Decode.fail ("Expecting a number, but got \"" ++ text ++ "\"")
+                        Json.Decode.fail "Expecting a number"
 
                     else
                         checked number
 
                 Nothing ->
-                    Json.Decode.fail ("Expecting a number, but got \"" ++ text ++ "\"")
+                    Json.Decode.fail "Expecting a number"
 
 
 {-| Encode a `double` or `float`: a finite value as a JSON number, NaN and the
@@ -2073,7 +2061,7 @@ bytes =
                     Json.Decode.succeed text
 
                 else
-                    Json.Decode.fail ("Expecting base64 (standard or URL-safe, padding optional), but got \"" ++ text ++ "\"")
+                    Json.Decode.fail "Expecting base64 (standard or URL-safe, padding optional)"
             )
 
 
@@ -2163,7 +2151,7 @@ bytesAsBytes =
                         Json.Decode.succeed value
 
                     Nothing ->
-                        Json.Decode.fail ("Expecting base64 (standard or URL-safe, padding optional), but got \"" ++ text ++ "\"")
+                        Json.Decode.fail "Expecting base64 (standard or URL-safe, padding optional)"
             )
 
 
@@ -2188,7 +2176,7 @@ timestamp =
                         Json.Decode.succeed posix
 
                     Nothing ->
-                        Json.Decode.fail ("Expecting an RFC 3339 timestamp, but got \"" ++ text ++ "\"")
+                        Json.Decode.fail "Expecting an RFC 3339 timestamp"
             )
 
 
@@ -2213,7 +2201,7 @@ duration =
                         Json.Decode.succeed value
 
                     Nothing ->
-                        Json.Decode.fail ("Expecting a duration such as \"1.5s\", but got \"" ++ text ++ "\"")
+                        Json.Decode.fail "Expecting a duration such as \"1.5s\""
             )
 
 
@@ -2247,7 +2235,7 @@ fieldMask =
                     Json.Decode.succeed []
 
                 else if String.contains "_" text then
-                    Json.Decode.fail ("Expecting a FieldMask of lowerCamelCase paths, but got " ++ quote text)
+                    Json.Decode.fail "Expecting a FieldMask of lowerCamelCase paths"
 
                 else
                     String.split "," text
@@ -2417,21 +2405,58 @@ anyWith registry =
                                             Json.Decode.succeed (InternalAny.Any url (InternalAny.Json messageJson))
 
                                         _ ->
-                                            Json.Decode.fail ("Expecting an Any of " ++ quote url ++ " to hold that message: " ++ Proto.Error.toString problem)
+                                            notItsMessage url problem
 
                                 else
-                                    Json.Decode.fail ("Expecting an Any of " ++ quote url ++ " to hold that message: " ++ Proto.Error.toString problem)
+                                    notItsMessage url problem
 
                             Nothing ->
                                 if InternalRegistry.isLenient registry then
                                     Json.Decode.succeed (InternalAny.Any url (InternalAny.Json messageJson))
 
                                 else
-                                    Json.Decode.fail ("Expecting an Any of a type the registry has, but got the unregistered type " ++ quote url)
+                                    Json.Decode.fail "Expecting an Any of a type the registry has"
 
                     Nothing ->
                         Json.Decode.succeed InternalAny.empty
             )
+
+
+{-| The failure of an `Any` whose JSON is not the message its type URL names.
+A JSON failure is failed again where it happened, under the `Any`, so that its
+path and its own text stand as any other failure's do; anything else says
+which type it was.
+-}
+notItsMessage : String -> Error -> Decoder a
+notItsMessage url problem =
+    case problem of
+        Proto.Error.BadJson inner ->
+            if hasJsonForm url then
+                Json.Decode.field "value" (failAgain inner)
+
+            else
+                failAgain inner
+
+        _ ->
+            Json.Decode.fail ("Expecting an Any of " ++ quote url ++ " to hold that message")
+
+
+{-| A decoder that fails as `error` did, on the same JSON.
+-}
+failAgain : Json.Decode.Error -> Decoder a
+failAgain error =
+    case error of
+        Json.Decode.Field name inner ->
+            Json.Decode.field name (failAgain inner)
+
+        Json.Decode.Index index inner ->
+            Json.Decode.index index (failAgain inner)
+
+        Json.Decode.OneOf ways ->
+            Json.Decode.oneOf (List.map failAgain ways)
+
+        Json.Decode.Failure text _ ->
+            Json.Decode.fail text
 
 
 {-| An `Any` object's type URL and its message's JSON, or `Nothing` for `{}`.
@@ -2458,7 +2483,7 @@ anyFromPairs pairs =
 
                 Ok url ->
                     if not (isTypeUrl url) then
-                        Json.Decode.fail ("Expecting an Any whose \"@type\" is a type URL, such as \"type.googleapis.com/notes.v1.Note\", but got " ++ quote url)
+                        Json.Decode.fail "Expecting an Any whose \"@type\" is a type URL, such as \"type.googleapis.com/notes.v1.Note\""
 
                     else if hasJsonForm url then
                         case pairValue "value" pairs of

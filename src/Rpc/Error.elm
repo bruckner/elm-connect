@@ -1,13 +1,19 @@
 module Rpc.Error exposing
-    ( Error(..), Reason(..), StatusError, Source(..)
-    , code, message, toString
+    ( Error
+    , code, message, details, source, Source(..)
+    , cause, Cause(..), httpStatus
+    , protoError
+    , toString
+    , fromStatus, fromCode, fromResponse, timeout, networkError, badCall, badAny, badResponse, badBody, withMessage
     )
 
 {-| Why a call failed: what [`Rpc.task`](Rpc#task), [`Rpc.send`](Rpc#send) and
 the other ways of sending give in place of the response.
 
-Most code asks for the [`code`](#code) and [`message`](#message), which every
-error has:
+An error reads in three layers, and an application reads the one it thinks
+in. On top is the RPC: every error has a [`code`](#code) and a
+[`message`](#message), the server's when it stated a status, and its
+[`details`](#details):
 
     case Rpc.Error.code error of
         Rpc.Code.Unauthenticated ->
@@ -16,114 +22,148 @@ error has:
         _ ->
             showMessage (Rpc.Error.message error)
 
-@docs Error, Reason, StatusError, Source
+Underneath is the HTTP exchange the RPC went over: its [`cause`](#cause),
+elm/http's error with the answer kept, for an application that thinks in
+HTTP statuses, as one calling a REST API over transcoding may:
+
+    case Rpc.Error.cause error of
+        Rpc.Error.BadStatus answer ->
+            if answer.statusCode == 401 then
+                signInAgain
+
+            else
+                showMessage (Rpc.Error.message error)
+
+        _ ->
+            showMessage (Rpc.Error.message error)
+
+Underneath that is the codec: for a body that did not decode, or a request
+`Any` that could not be written, [`protoError`](#protoError) holds the
+problem itself.
+
+@docs Error
 
 
-# Reading an error
+# The RPC
 
-@docs code, message, toString
+@docs code, message, details, source, Source
+
+
+# The HTTP exchange
+
+@docs cause, Cause, httpStatus
+
+
+# The codec
+
+@docs protoError
+
+
+# For logs
+
+@docs toString
+
+
+# Building errors
+
+The runtime builds its errors with these same functions, so an error built
+here and one the runtime gives are `==` when they state the same things.
+They serve tests and previews, and application code too: an application
+that fails a call itself before sending, such as an auth layer that will not
+send without a session, builds a [`badCall`](#badCall) with the code it means.
+
+    Rpc.Error.badCall Rpc.Code.Unauthenticated "not signed in"
+
+Nothing was sent, and such an error is never retried.
+
+@docs fromStatus, fromCode, fromResponse, timeout, networkError, badCall, badAny, badResponse, badBody, withMessage
 
 -}
 
-import Json.Encode
+import Dict
 import Proto.Any exposing (Any)
 import Proto.Error
+import Rpc.Body
 import Rpc.Code as Code exposing (Code)
 import Rpc.Response exposing (Response)
 
 
-{-| Why a call failed, by what came back:
-
-  - `RpcStatus`: the server stated an RPC status, in a Connect error body, a
-    `google.rpc.Status` body or the `grpc-status` headers
-    ([`StatusError`](#StatusError)), with the answer itself.
-  - `HttpStatus`: the server answered with a failure, or with a success that
-    is not the protocol's answer, and stated no status; [`code`](#code)
-    infers one from the HTTP status. Over Connect and gRPC-Web, a 200 whose
-    content type is not the protocol's at all, such as a proxy's HTML page,
-    is not the protocol's answer, and is read as a failure is; transcoding
-    reads any success as its answer, whatever its content type.
-  - `BadResponse`: the server answered with success, but the body did not
-    decode as the response, or came as another of the protocol's content
-    types than the call reads; the code, then the problem, then the answer.
-    The code is the runtime's: `Internal`, or `Unimplemented` for a unary
-    gRPC-Web answer that carried no message or more than one.
-  - `NoAnswer`: nothing came back, nothing was sent, or what came back was
-    refused unread ([`Reason`](#Reason)).
-
-The [`Response`](Rpc-Response#Response) is kept whenever there was an answer,
-so an error in a shape the runtime does not read, or a body that drifted from
-the schema, can still be read:
-
-    case error of
-        Rpc.Error.HttpStatus response ->
-            Rpc.Body.toText response.body
-                |> Maybe.withDefault ""
-                |> myDecoder
-
-        _ ->
-            Err (Rpc.Error.toString error)
-
-The constructors are fixed: a failure before an answer, or an answer refused
-before it was read, is one of the [`Reason`](#Reason) constructors, and one
-found in an answer that was read is a `BadResponse`.
-
+{-| A failed call. Read it through the functions below; it has no
+constructors to match on.
 -}
 type Error
-    = RpcStatus StatusError Response
-    | HttpStatus Response
-    | BadResponse Code String Response
-    | NoAnswer Reason
+    = Error
+        { code : Code
+        , message : String
+        , details : List (Result Proto.Error.Error Any)
+        , source : Maybe Source
+        , cause : Cause
+        , problem : Maybe Proto.Error.Error
+        }
 
 
-{-| Why no answer came, or none was read:
 
-  - `Timeout`: the call's timeout passed first.
-  - `NetworkError`: the request failed on the way, as when the server is
-    unreachable or a browser's CORS check refused the answer.
-  - `BadUrl`: the URL the call would be sent to cannot be: a `baseUrl` holding
-    `?` or `#`, or one the browser refuses. Nothing was sent.
-  - `BadHeader`: a header, named here, that a request cannot carry: its
-    name is not an HTTP token, or its value holds NUL, CR, LF or a character
-    above U+00FF. Nothing was sent.
-  - `BadPathValue`: over transcoding, a request field the path holds
-    (`field`, its JSON names joined with `.`) whose value the variable's
-    `template` cannot match, such as `""` or `notes/a/b` for
-    `{name=notes/*}`, or which holds a surrogate without its pair, as text
-    cut inside a character by `String.left` can. Nothing was sent.
-  - `RequestTooLarge`: the request message, as JSON in UTF-8 or as protobuf
-    binary, was longer in bytes (`size`) than the protocol sends (`limit`,
-    [`withWriteMaxBytes`](Rpc-Protocol#withWriteMaxBytes)). Nothing was
-    sent.
-  - `ResponseTooLarge`: a successful answer's body was longer, in bytes
-    (`size`), than the protocol reads (`limit`,
-    [`withReadMaxBytes`](Rpc-Protocol#withReadMaxBytes)). The body was
-    dropped without decoding, so the error keeps no `Response`.
-  - `BadAny`: over JSON, the request holds a
-    [`google.protobuf.Any`](Proto-Any) the client's registry cannot write
-    as JSON, for the [`Proto.Error`](Proto-Error#Error) given:
-    `UnregisteredType`, which the client's registry fixes
-    ([`Rpc.Client.withRegistry`](Rpc-Client#withRegistry)), or the `BadBinary` of an
-    `Any` whose binary is not its type's message. Nothing was sent.
+-- THE RPC
 
-These are every way a request can fail before an answer is read, and the type
-is fixed.
+
+{-| An error's code, as the Connect clients give it.
+
+When the server stated a status ([`source`](#source) is not `Nothing`), the
+code is the server's. When it answered with a failure and stated none, the
+code is inferred from the HTTP status by
+[`Rpc.Code.fromHttpStatus`](Rpc-Code#fromHttpStatus): a 404 is
+`Unimplemented`, not `NotFound`.
+
+Otherwise the client produced the code itself: a timeout is
+`DeadlineExceeded`; a network failure `Unavailable`; a call that could not be
+made `Internal`, `InvalidArgument` for a path value its template cannot match,
+or `ResourceExhausted` for a request over its limit; an answer that could not
+be used `Internal`, `ResourceExhausted` for one over its limit,
+`Unimplemented` for a unary gRPC-Web answer that carried no message or more
+than one, and `Unknown` for a success that is not the protocol's answer at
+all.
+
+Those codes have server meanings too, and so do the inferred ones (an edge's
+bare 429 reads as `Unavailable`). Code that acts on a code the server stated
+checks that it stated one:
+
+    Rpc.Error.source error
+        /= Nothing
+        && Rpc.Error.code error
+        == Rpc.Code.ResourceExhausted
 
 -}
-type Reason
-    = Timeout
-    | NetworkError
-    | BadUrl String
-    | BadHeader String
-    | BadPathValue { field : String, template : String }
-    | RequestTooLarge { limit : Int, size : Int }
-    | ResponseTooLarge { limit : Int, size : Int }
-    | BadAny Proto.Error.Error
+code : Error -> Code
+code (Error e) =
+    e.code
 
 
-{-| A status the server stated: its code, its message (which may be empty), its
-details and where it was found. The code is a [`Code`](Rpc-Code#Code), which
-has no `ok`: an answer claiming `ok` while failing reads as `Unknown`.
+{-| An error's message. Every message is safe to log or show: none holds a
+value from the request or the answer beyond what the server stated as its
+message.
+
+  - When the server stated a status, the server's, which may be empty.
+  - When the server answered with a failure and stated none, the status
+    text, or `HTTP <status>` when there is none.
+  - Otherwise what went wrong: `timeout`, `network error`,
+    `bad URL: the base URL holds a query or a fragment`,
+    `bad URL: the browser could not read it`, `invalid header "<name>"` (its
+    value left out, since it may be a credential), `path field "<field>"
+    does not match <template>`, `bad Any`, `bad response body`,
+    `bad response: <what was malformed>`, or, as connect-es words them,
+    `message size <size> is larger than configured writeMaxBytes <limit>`
+    and `… readMaxBytes <limit>`, in bytes.
+
+For a body that did not decode or an `Any` that could not be written,
+[`protoError`](#protoError) holds the problem.
+
+-}
+message : Error -> String
+message (Error e) =
+    e.message
+
+
+{-| The details of a status the server stated, `[]` for any other error.
 
 Each detail is a message packed in an [`Any`](Proto-Any#Any), in the order
 the server sent them, or the [`Proto.Error`](Proto-Error#Error) that kept one
@@ -139,40 +179,42 @@ message and source:
     JSON alone.
   - `BadJson`: it is not a detail of its form: a Connect detail with no
     `type`, or whose `value` is not base64; proto3 JSON with no `"@type"`,
-    or that is not the message its `"@type"` names. elm/json's error holds
-    the detail and what was wrong, for a log.
+    or that is not the message its `"@type"` names.
   - `BadBinary`: over gRPC-Web, a `grpc-status-details-bin` that does not
     decode as a `google.rpc.Status`, which then stands for all of them.
 
-Nothing in the program fixes a `BadJson` or a `BadBinary`; report it as
-the server's. Unpack one with
-[`Proto.Any.tryUnpack`](Proto-Any#tryUnpack):
+Unpack one with [`Proto.Any.unpack`](Proto-Any#unpack):
 
-    status.details
+    Rpc.Error.details error
         |> List.filterMap Result.toMaybe
         |> List.filterMap (Proto.Any.unpack Proto.ErrorDetails.badRequest)
 
 A Connect error body and gRPC-Web carry a detail's protobuf binary, which
 needs no registry. A `google.rpc.Status` body (transcoding) carries proto3
-JSON, which is read through the client's registry
-([`Rpc.Client.withRegistry`](Rpc-Client#withRegistry)). Details a proxy stripped are
-simply absent, `[]`.
+JSON, which is read through the client's registry. Details a proxy stripped
+are simply absent, `[]`.
 
 -}
-type alias StatusError =
-    { code : Code
-    , message : String
-    , details : List (Result Proto.Error.Error Any)
-    , source : Source
-    }
+details : Error -> List (Result Proto.Error.Error Any)
+details (Error e) =
+    e.details
+
+
+{-| Where the server stated the error's status, or `Nothing` when no status
+was stated: a failure answer without one, or an error the client produced.
+-}
+source : Error -> Maybe Source
+source (Error e) =
+    e.source
 
 
 {-| Where a status was read from, tried in this order:
 
-  - `ConnectBody`: a Connect error body, `{"code": "not_found", …}`.
+  - `ConnectBody`: a Connect error body, `{"code": "not_found", …}`; a code
+    name the protocol does not define, `"ok"` included, is `Unknown`.
   - `StatusBody`: a `google.rpc.Status` body, `{"code": 5, …}`, as grpc-gateway
     and Envoy send; a number outside `1` to `16` is the code `Unknown`, and the
-    number as sent is in the response's body.
+    number as sent is in the answer's body.
   - `GrpcHeaders`: the `grpc-status` and `grpc-message` headers, when the
     browser exposes them; the message is percent-decoded, and the status text
     stands in when there is none. A gRPC-Web answer without a body
@@ -184,14 +226,13 @@ type alias StatusError =
     with a code, its code and message are the error's, as connect-go and
     connect-es read them, and its details are the error's details.
 
-A failure with none of these is an `HttpStatus` error, and so is a success
-that is not the protocol's answer and states none (see [`Error`](#Error)).
-
 One more is reserved for streaming calls, which this release does not make,
 so it never gives it; a `case` on a `Source` covers it all the same:
 
   - `ConnectEndStream`: the error in the end-of-stream message of a Connect
     stream.
+
+The constructors are fixed.
 
 -}
 type Source
@@ -202,192 +243,129 @@ type Source
     | ConnectEndStream
 
 
-{-| An error's code, as the Connect clients give it:
 
-  - `RpcStatus`: the server's.
-  - `HttpStatus`: inferred from the HTTP status by
-    [`Rpc.Code.fromHttpStatus`](Rpc-Code#fromHttpStatus), so a 200 that is
-    not the protocol's answer is `Unknown`.
-  - `BadResponse`: its own, `Internal` or `Unimplemented` (see
-    [`Error`](#Error)).
-  - `NoAnswer`: a timeout is `DeadlineExceeded`, a network failure
-    `Unavailable`, a bad URL, a bad header or a bad `Any`
-    `Internal`, a bad path value `InvalidArgument`, a request or a
-    response over its limit `ResourceExhausted`.
+-- THE HTTP EXCHANGE
 
-An `HttpStatus` code follows gRPC's table, so a 404 that carries no status
-reads as `Unimplemented`, not `NotFound`. That is right for Connect, whose
-servers send a status with every error, but over transcoding a hand-written
-REST server's bare 404 usually means "not found": such a server should send a
-`google.rpc.Status` body (`{"code": 5, "message": …}`) so the code reads as
-`NotFound`.
+
+{-| What happened underneath, in the HTTP exchange.
+-}
+cause : Error -> Cause
+cause (Error e) =
+    e.cause
+
+
+{-| What happened underneath, in the HTTP exchange: elm/http's error, with the
+answer kept.
+
+| elm/http | `Cause` |
+|---|---|
+| `BadUrl _` | `BadCall` |
+| `Timeout` | `Timeout` |
+| `NetworkError` | `NetworkError` |
+| `BadStatus n` | `BadStatus answer`, `answer.statusCode == n`, which can be 200 (below) |
+| `BadBody _` | `BadResponse answer` |
+
+  - `BadCall`: the call could not be made, and nothing was sent. The runtime
+    gives one for a base URL holding `?` or `#`, or a URL the browser
+    refuses; a header a request cannot carry; a path value its template
+    cannot match; a request over the protocol's write limit
+    ([`withWriteMaxBytes`](Rpc-Protocol#withWriteMaxBytes)); or an
+    [`Any`](Proto-Any) the client's registry cannot write as JSON
+    ([`Rpc.Client.withRegistry`](Rpc-Client#withRegistry)). An application
+    that refuses to send a call builds one too ([`badCall`](#badCall)). The
+    [`message`](#message) says which.
+  - `NetworkError`: the request failed on the way, as when the server is
+    unreachable or a browser's CORS check refused the answer.
+  - `Timeout`: the call's timeout passed first.
+  - `BadStatus`: the server answered with a failure, the answer here: a
+    failure status, or a success whose answer states a failing RPC status
+    (as gRPC-Web's trailers do). Over gRPC-Web a failure is stated in the
+    trailers of a 200, so a reader that branches on `answer.statusCode`
+    should not assume a failing status there; [`code`](#code) is the
+    reading for it.
+  - `BadResponse`: the server answered with success, always a 2xx, and the
+    answer could not be used, the answer here: its body is not the response
+    message, its content type, framing or status is malformed, it is not
+    the protocol's answer at all (over Connect or gRPC-Web, a 200 of another
+    content type, such as a proxy's HTML page), or it is over the protocol's
+    read limit ([`withReadMaxBytes`](Rpc-Protocol#withReadMaxBytes)), which
+    keeps its status and headers without the body. Over transcoding, any
+    success is read as the answer.
+
+Whether the request reached the server, and whether the error came from it:
+
+| `Cause` | Did the request reach the server? | Did the error come from the server? |
+|---|---|---|
+| `BadCall` | no | no |
+| `NetworkError` | probably not; a CORS refusal arrives so after the server acted | no |
+| `Timeout` | unknown | no |
+| `BadResponse` | yes | no: the client could not use the answer |
+| `BadStatus` | something answered | when [`source`](#source) is not `Nothing`; otherwise possibly an edge or a proxy |
+
+A `BadCall` or a `BadResponse` is never retried ([`Rpc.Retry`](Rpc-Retry)):
+trying again cannot change it. The constructors are fixed.
 
 -}
-code : Error -> Code
-code error =
-    case error of
-        RpcStatus status _ ->
-            status.code
-
-        HttpStatus answer ->
-            Code.fromHttpStatus answer.statusCode
-
-        BadResponse badCode _ _ ->
-            badCode
-
-        NoAnswer Timeout ->
-            Code.DeadlineExceeded
-
-        NoAnswer NetworkError ->
-            Code.Unavailable
-
-        NoAnswer (BadUrl _) ->
-            Code.Internal
-
-        NoAnswer (BadHeader _) ->
-            Code.Internal
-
-        NoAnswer (BadPathValue _) ->
-            Code.InvalidArgument
-
-        NoAnswer (RequestTooLarge _) ->
-            Code.ResourceExhausted
-
-        NoAnswer (ResponseTooLarge _) ->
-            Code.ResourceExhausted
-
-        NoAnswer (BadAny _) ->
-            Code.Internal
+type Cause
+    = BadCall
+    | NetworkError
+    | Timeout
+    | BadStatus Response
+    | BadResponse Response
 
 
-{-| An error's message:
+{-| The HTTP status of the answer, if one came: a `BadStatus`'s or a
+`BadResponse`'s. It is always the status the server sent, so it can be 200
+for a `BadStatus`: over gRPC-Web a failure is stated in the trailers of a
+200, and [`code`](#code) is the reading for it.
+-}
+httpStatus : Error -> Maybe Int
+httpStatus (Error e) =
+    case e.cause of
+        BadStatus answer ->
+            Just answer.statusCode
 
-  - `RpcStatus`: the server's, which may be empty.
-  - `HttpStatus`: the status text, or `HTTP <status>` when there is none.
-  - `BadResponse`: `bad response body: <problem>`. elm/json's problem quotes
-    the JSON it rejected, which can be the whole response and hold data the
-    application never shows, so the message keeps its first 300 characters,
-    then `…`; the whole problem stays in the error.
-  - `NoAnswer`: `timeout`, `network error`, `bad URL: <url>`,
-    `invalid header "<name>"`, `path field "<field>" does not match
-    <template>`, for a bad `Any` `bad Any:` and
-    [`Proto.Error.toString`](Proto-Error#toString)'s text, or,
-    as connect-es words them,
-    `message size <size> is larger than configured writeMaxBytes <limit>`
-    for a request and `… readMaxBytes <limit>` for a response, both in
-    bytes. A bad URL is printed as its scheme, host and path, without the
-    user and password a URL can hold, and without its query and fragment,
-    which over Connect's GET hold the request:
-    `bad URL: https://api.example.com/base (query omitted)`. The whole URL
-    stays in the error. A bad header is named, its value left out, since
-    it may be a credential; a bad path value is left out too.
+        BadResponse answer ->
+            Just answer.statusCode
+
+        BadCall ->
+            Nothing
+
+        NetworkError ->
+            Nothing
+
+        Timeout ->
+            Nothing
+
+
+
+-- THE CODEC
+
+
+{-| The problem with a body that did not decode as the response message, or
+with an `Any` in the request that could not be written as JSON; `Nothing` for
+every other error.
+
+[`Proto.Error.toString`](Proto-Error#toString) describes it in full:
+
+    Rpc.Error.protoError error
+        |> Maybe.map Proto.Error.toString
+
+That text can quote the value that failed, and so hold the answer's or the
+request's data: keep it out of logs and reports that must not carry it.
+Every failure text this package's decoders write says what was expected
+and never what was found, so a walk over a `BadJson`'s `Json.Decode.Error`
+that prints its path and texts and leaves out its values is safe to report;
+calling.md's "The codec" gives one.
 
 -}
-message : Error -> String
-message error =
-    case error of
-        RpcStatus status _ ->
-            status.message
-
-        HttpStatus answer ->
-            if String.isEmpty answer.statusText then
-                "HTTP " ++ String.fromInt answer.statusCode
-
-            else
-                answer.statusText
-
-        BadResponse _ problem _ ->
-            "bad response body: " ++ excerpt problem
-
-        NoAnswer Timeout ->
-            "timeout"
-
-        NoAnswer NetworkError ->
-            "network error"
-
-        NoAnswer (BadUrl url) ->
-            "bad URL: " ++ printableUrl url
-
-        NoAnswer (BadHeader name) ->
-            "invalid header " ++ Json.Encode.encode 0 (Json.Encode.string name)
-
-        NoAnswer (BadPathValue { field, template }) ->
-            "path field " ++ Json.Encode.encode 0 (Json.Encode.string field) ++ " does not match " ++ template
-
-        NoAnswer (RequestTooLarge { limit, size }) ->
-            "message size " ++ String.fromInt size ++ " is larger than configured writeMaxBytes " ++ String.fromInt limit
-
-        NoAnswer (ResponseTooLarge { limit, size }) ->
-            "message size " ++ String.fromInt size ++ " is larger than configured readMaxBytes " ++ String.fromInt limit
-
-        NoAnswer (BadAny problem) ->
-            "bad Any: " ++ Proto.Error.toString problem
+protoError : Error -> Maybe Proto.Error.Error
+protoError (Error e) =
+    e.problem
 
 
-{-| The first 300 characters of a text, and `…` when there were more.
--}
-excerpt : String -> String
-excerpt text =
-    if String.length text > 300 then
-        String.left 300 text ++ "…"
 
-    else
-        text
-
-
-{-| A URL without its user information, query and fragment, saying so when a
-query or fragment was left out.
--}
-printableUrl : String -> String
-printableUrl url =
-    let
-        beforeQuery =
-            case String.indexes "?" url ++ String.indexes "#" url |> List.minimum of
-                Just at ->
-                    String.left at url
-
-                Nothing ->
-                    url
-
-        omitted =
-            if String.length beforeQuery < String.length url then
-                " (query omitted)"
-
-            else
-                ""
-    in
-    withoutUserInfo beforeQuery ++ omitted
-
-
-{-| A URL (without query or fragment) without the `user:password@` its
-authority can begin with.
--}
-withoutUserInfo : String -> String
-withoutUserInfo url =
-    case String.indexes "://" url of
-        start :: _ ->
-            let
-                scheme =
-                    String.left (start + 3) url
-
-                rest =
-                    String.dropLeft (start + 3) url
-
-                authorityEnd =
-                    String.indexes "/" rest |> List.head |> Maybe.withDefault (String.length rest)
-
-                authority =
-                    String.left authorityEnd rest
-            in
-            case List.reverse (String.indexes "@" authority) of
-                at :: _ ->
-                    scheme ++ String.dropLeft (at + 1) rest
-
-                [] ->
-                    url
-
-        [] ->
-            url
+-- FOR LOGS
 
 
 {-| A one-line description of an error, for logs: its [`code`](#code) and
@@ -395,15 +373,161 @@ withoutUserInfo url =
 message is empty.
 -}
 toString : Error -> String
-toString error =
-    let
-        text =
-            message error
-    in
-    Code.toString (code error)
-        ++ (if String.isEmpty text then
+toString (Error e) =
+    Code.toString e.code
+        ++ (if String.isEmpty e.message then
                 ""
 
             else
-                ": " ++ text
+                ": " ++ e.message
            )
+
+
+
+-- BUILDING ERRORS
+
+
+{-| A failure whose status the server stated, with the answer it came in.
+-}
+fromStatus :
+    { code : Code, message : String, details : List (Result Proto.Error.Error Any), source : Source }
+    -> Response
+    -> Error
+fromStatus status answer =
+    Error
+        { code = status.code
+        , message = status.message
+        , details = status.details
+        , source = Just status.source
+        , cause = BadStatus answer
+        , problem = Nothing
+        }
+
+
+{-| A failure whose status the server stated, with this code and an empty
+message. Its answer is a stand-in: the HTTP status a Connect server sends with
+the code ([`Rpc.Code.toHttpStatus`](Rpc-Code#toHttpStatus)), no headers and no
+body, and its source is `ConnectBody`.
+
+    Rpc.Error.fromCode Rpc.Code.NotFound
+        |> Rpc.Error.withMessage "no such note"
+
+-}
+fromCode : Code -> Error
+fromCode c =
+    fromStatus
+        { code = c, message = "", details = [], source = ConnectBody }
+        { url = ""
+        , statusCode = Code.toHttpStatus c
+        , statusText = ""
+        , headers = Dict.empty
+        , body = Rpc.Body.none
+        }
+
+
+{-| An answer that states no status, as the runtime reads one: a failure
+status is a `BadStatus` whose code is inferred from it, and a success (2xx)
+is not the protocol's answer, a `BadResponse` whose code is `Unknown`. The
+message is the status text, or `HTTP <status>`.
+-}
+fromResponse : Response -> Error
+fromResponse answer =
+    Error
+        { code = Code.fromHttpStatus answer.statusCode
+        , message =
+            if String.isEmpty answer.statusText then
+                "HTTP " ++ String.fromInt answer.statusCode
+
+            else
+                answer.statusText
+        , details = []
+        , source = Nothing
+        , cause =
+            if isSuccess answer then
+                BadResponse answer
+
+            else
+                BadStatus answer
+        , problem = Nothing
+        }
+
+
+{-| The call's timeout passed first: `DeadlineExceeded`, `timeout`.
+-}
+timeout : Error
+timeout =
+    clientError Timeout Code.DeadlineExceeded "timeout" Nothing
+
+
+{-| The request failed on the way: `Unavailable`, `network error`.
+-}
+networkError : Error
+networkError =
+    clientError NetworkError Code.Unavailable "network error" Nothing
+
+
+{-| A call that could not be made, with its code and message: nothing was
+sent, and it is never retried. The runtime builds one for each check a call
+fails before sending; an application that refuses to send a call builds one
+the same way, with the code it means.
+-}
+badCall : Code -> String -> Error
+badCall c text =
+    clientError BadCall c text Nothing
+
+
+{-| A call that could not be made because an [`Any`](Proto-Any) in its request
+could not be written as JSON, for this reason: a `BadCall`, `Internal`,
+`bad Any`, the reason in [`protoError`](#protoError).
+-}
+badAny : Proto.Error.Error -> Error
+badAny problem =
+    clientError BadCall Code.Internal "bad Any" (Just problem)
+
+
+{-| A success that could not be used, with its code, its message and the
+answer. Like every builder that takes an answer, it gives the error the
+runtime would give for that answer: one that is not a success (2xx) is a
+failure that states no status, as [`fromResponse`](#fromResponse) builds it.
+-}
+badResponse : Code -> String -> Response -> Error
+badResponse c text answer =
+    answered c text Nothing answer
+
+
+{-| A success whose body did not decode as the response message, for this
+reason: a `BadResponse`, `Internal`, `bad response body`, the reason in
+[`protoError`](#protoError). Like every builder that takes an answer, it gives
+the error the runtime would give for that answer: one that is not a success
+(2xx) is a failure that states no status, as
+[`fromResponse`](#fromResponse) builds it.
+-}
+badBody : Proto.Error.Error -> Response -> Error
+badBody problem answer =
+    answered Code.Internal "bad response body" (Just problem) answer
+
+
+answered : Code -> String -> Maybe Proto.Error.Error -> Response -> Error
+answered c text problem answer =
+    if isSuccess answer then
+        clientError (BadResponse answer) c text problem
+
+    else
+        fromResponse answer
+
+
+isSuccess : Response -> Bool
+isSuccess answer =
+    answer.statusCode >= 200 && answer.statusCode < 300
+
+
+clientError : Cause -> Code -> String -> Maybe Proto.Error.Error -> Error
+clientError why c text problem =
+    Error { code = c, message = text, details = [], source = Nothing, cause = why, problem = problem }
+
+
+{-| An error with this message in place of its own, whatever the error.
+-}
+withMessage : String -> Error -> Error
+withMessage text (Error e) =
+    Error { e | message = text }

@@ -296,7 +296,7 @@ jsonTests =
         , test "bytesAsBytes says why it fails" <|
             \_ ->
                 Json.Decode.decodeString Proto.Json.bytesAsBytes "\"a\""
-                    |> Result.mapError (Json.Decode.errorToString >> String.contains "Expecting base64 (standard or URL-safe, padding optional), but got \"a\"")
+                    |> Result.mapError (Json.Decode.errorToString >> String.contains "Expecting base64 (standard or URL-safe, padding optional)")
                     |> Result.map toList
                     |> Expect.equal (Err True)
         , test "bytesAsBytes fails on a number" <|

@@ -148,7 +148,9 @@ ConnectRPC's public demo server.
 
 ## 5. Read the result
 
-An error is one type for every protocol, `Rpc.Error`, of four kinds:
+An error is one type for every protocol, `Rpc.Error`. Every error has a
+code and a message; underneath, `Rpc.Error.cause` says what happened in
+the HTTP exchange, as elm/http's `Http.Error` does:
 
 ```elm examples/notes/elm/src/Snippets/Reading.elm#reading
 import Notes.V1
@@ -179,28 +181,30 @@ update msg model =
 
 describe : Rpc.Error -> String
 describe error =
-    case error of
-        Rpc.Error.RpcStatus status _ ->
-            -- The server stated a status: a Connect error body, a
-            -- google.rpc.Status body or the grpc-status headers.
-            Rpc.Code.toString status.code ++ ": " ++ status.message
+    case Rpc.Error.cause error of
+        Rpc.Error.BadStatus _ ->
+            -- The server answered with a failure: the status it stated, or
+            -- one inferred from the HTTP status, as of a proxy's 502 page.
+            Rpc.Error.toString error
 
-        Rpc.Error.HttpStatus response ->
-            -- A failure with no status in it, such as a proxy's 502 page.
-            "HTTP " ++ String.fromInt response.statusCode
+        Rpc.Error.BadResponse _ ->
+            -- A success that could not be read as the response.
+            "unexpected answer: " ++ Rpc.Error.message error
 
-        Rpc.Error.BadResponse _ problem _ ->
-            -- A success whose body is not the response.
-            "unexpected answer: " ++ problem
+        Rpc.Error.Timeout ->
+            "no answer in time"
 
-        Rpc.Error.NoAnswer _ ->
-            -- A timeout, a network failure, or a call that was never sent.
+        Rpc.Error.NetworkError ->
+            "the server could not be reached"
+
+        Rpc.Error.BadCall ->
+            -- Nothing was sent: a bad URL or header, say.
             Rpc.Error.toString error
 ```
 
-Most code needs less: every error has a code and a message,
-`Rpc.Error.code error` and `Rpc.Error.message error`.
-[calling.md](calling.md#errors) has the kinds in full.
+Most code needs less: `Rpc.Error.code error` and `Rpc.Error.message
+error`, or, against a REST API, the HTTP status in `Rpc.Error.cause
+error`. [calling.md](calling.md#errors) has the layers in full.
 
 ## 6. Try it in `elm repl`
 

@@ -682,7 +682,8 @@ rpc shared call =
   `"1e2"` are keys and `"+5"`, `"1.5"` and `"abc"` are not. A 64-bit key is held
   in the canonical decimal form `int64` gives (`"007"` is the key
   `"7"`). Two keys that canonicalise to one (`"7"` and `"07"`) fail the
-  decode, naming both, rather than one silently replacing the other.
+  decode (`Expecting distinct map keys`, the map beside the text in
+  elm/json's failure), rather than one silently replacing the other.
   protobuf's own parsers (protobuf-go's protojson) reject the same keys:
   out of range, not an integer, or a duplicate.
   An absent or `null` map decodes as `Dict.empty`.
@@ -776,7 +777,7 @@ rpc shared call =
   client survives a server that added a value, and lossy, since
   re-encoding sends the zero value's name back (§3.8). An unknown
   **name** fails the decode, as protobuf-go's protojson does:
-  `Expecting a value of enum "Priority", but got "WHATEVER"`, the enum
+  `Expecting a value of enum "Priority"`, the enum
   named as declared within its package (`Outer.Inner.Kind` when
   nested). A name is matched exactly.
 - **`enum_unknown=fail|zero`.** The
@@ -2282,7 +2283,7 @@ bodies hold an `Any`) when the method has a rule (never under
   JSON, the response field the answer is read from, and `invalid`, the
   first path value its variable's template cannot match: the route is
   built whatever the request holds, so `Rpc.request` can show any
-  request, and sending refuses an invalid one (`BadPathValue`,
+  request, and sending refuses an invalid one (a `BadCall`,
   §5.1). Encoders are total: they cannot refuse a value, so what a
   request cannot carry is found by sending, never by encoding. The
   path reads each variable's field (through `Maybe.map` for a
@@ -2458,8 +2459,8 @@ descriptor; the runtime never parses a template.
   repeated one (`routes_well_known_path` case).
 - The client checks a value against its variable's template
   (`notes/42` against `notes/*`) before sending: one that cannot match
-  is refused unsent with `NoAnswer (BadPathValue { field, template
-  })` (§5.1), since no server could route it to the method.
+  is refused unsent as a `BadCall` naming the field and the template
+  (§5.1), since no server could route it to the method.
 - `body` is empty, `*`, or a top-level singular message field
   (`route::body_field` otherwise). A path variable inside the body field
   (`patch: "/v1/{book.name=books/*}" body: "book"`, AIP-134's update
@@ -2619,7 +2620,8 @@ appears, each a field of the opaque record and a minor (roadmap).
   connect-node: the browser has downloaded the body before the limit
   applies, so a default would surprise without saving bandwidth. It is
   a protocol-level knob, so it is on `Protocol`. The call fails with
-  `NoAnswer (ResponseTooLarge { limit, size })` (§5.4). The size is the body as
+  a `BadResponse`, code `ResourceExhausted`, that keeps the answer's
+  status and headers without the body (§5.4). The size is the body as
   the browser decoded it, counted back into UTF-8 by a kernel loop
   (`String.foldl`) rather than a recursion, so a long body cannot
   exhaust the stack; `String.length` would count UTF-16 units. The
@@ -2634,7 +2636,7 @@ appears, each a field of the opaque record and a minor (roadmap).
   transcoding, the whole message whichever fields the binding puts in
   the path, query or body), is longer than `n` bytes of UTF-8 is not
   sent: every way of sending fails it with
-  `NoAnswer (RequestTooLarge { limit, size })`, checked beside the bad
+  a `BadCall`, code `ResourceExhausted`, checked beside the bad
   URL and the invalid header, and never retried, since nothing was sent
   and nothing would change. The size is the call's message, not a
   request rewritten for `taskFromRequest`. A limit below 1 refuses
@@ -2649,9 +2651,13 @@ appears, each a field of the opaque record and a minor (roadmap).
   1 ms or the maximum.
 - A call's path is appended to `baseUrl`, so a `baseUrl` holding `?`
   or `#` would put it in the query or fragment. Such a call is not
-  sent: every way of sending fails it with `NoAnswer (BadUrl url)`,
-  the URL it would have used, and it is never retried. The pure `Rpc.request` still
-  builds that URL, since it has no error to give. `Rpc.Client.problems`
+  sent: every way of sending fails it as a `BadCall` whose message,
+  `bad URL: the base URL holds a query or a fragment`, prints no URL
+  (one can hold credentials, and over Connect's GET the request), and it
+  is never retried. The pure `Rpc.request` still builds that URL, since
+  it has no error to give. A URL the browser refuses comes back from
+  elm/http as `BadUrl_`, a `BadCall` too, `bad URL: the browser could
+  not read it`. `Rpc.Client.problems`
   reports it where the application builds its client, at start-up or
   when its settings change, rather than at the first call: a pure
   `Client codec -> List String`, empty when nothing is wrong, read as a
@@ -2669,7 +2675,7 @@ appears, each a field of the opaque record and a minor (roadmap).
   `sendTraced`, `task`, `taskTraced`, `taskFromRequest`) checks the
   client's and the call's headers first, and a call with one fails
 
-  with `NoAnswer (BadHeader name)`, nothing sent and never retried
+  as a `BadCall` naming the header, nothing sent and never retried
   (the trace's `attempts` is `0`, as for a bad `baseUrl`). A header is
   never altered to fit: a changed credential would fail later and less
   clearly. The pure `Rpc.request` still builds the request, which has
@@ -2677,8 +2683,8 @@ appears, each a field of the opaque record and a minor (roadmap).
 - A transcoded call whose path value its variable's template cannot
   match is never handed to elm/http either: every way of sending checks
   the call's path values, and one that cannot match fails with
-  `NoAnswer (BadPathValue { field, template })`, the field by its
-  JSON names joined with `.`, nothing sent and never retried. A value
+  a `BadCall` whose message names the field, by its JSON names joined
+  with `.`, and the template, nothing sent and never retried. A value
   matches as `google.api.http` defines it: it is non-empty; a variable
   of one segment (`{name}`, `{name=*}`, or a literal alone, which only
   that literal matches) takes any value, its `/` escaped as `%2F`; any
@@ -2895,9 +2901,10 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
   program whose messages hold an `Any` configures one, as protojson and
   connect-es require; over binary no table is needed. A request whose
   `Any` the registry cannot write is refused before anything is sent,
-  `NoAnswer (BadAny problem)`, reading the JSON the send
-  encodes for its body, not an encoding of its own; a response holding
-  an `Any` of a type the registry lacks fails to decode, a `BadResponse`.
+  a `BadCall` built by `Rpc.Error.badAny problem`, reading the JSON the
+  send encodes for its body, not an encoding of its own; a response
+  holding an `Any` of a type the registry lacks fails to decode, a
+  `BadResponse` whose `protoError` is `UnregisteredType url`.
   `Rpc.Call.requestJson` and `toJson` take the registry too and give a
   `Result` (decisions.md: One table, the client's), and take a JSON
   call: a binary-only call has no JSON to write.
@@ -3068,15 +3075,15 @@ all 40 passing.
   is not a positive number sends none (§5.1).
 - Success is status 200, as `application/json` or with no content type
   (parameters such as `charset` ignored), with a body the response
-  decoder accepts; a 200 whose body it rejects is `BadResponse problem
-  answer`. Any other answer is read as an error (§5.4).
+  decoder accepts; a 200 whose body it rejects is `Rpc.Error.badBody
+  problem answer`, a `BadResponse`. Any other answer is read as an error (§5.4).
 - A 200 of another of Connect's content types (`application/proto`,
   `application/connect+json`, `application/connect+proto`) is a
-  `BadResponse` naming both types: the server answered, in a codec the
+  `BadResponse` whose message names both types: the server answered, in a codec the
   call does not read. A 200 of a type that is not Connect's at all
   (`image/jpeg`, a proxy's `text/html`) is not the server's answer, and
-  is read as an error is (§5.4): a status it carries is the error, and
-  one without is an `HttpStatus` error, code `Unknown`. connect-go draws
+  is read as an error is (§5.4): a status it carries is the error, a
+  `BadStatus`, and one without is a `BadResponse`, code `Unknown`. connect-go draws
   the same line, and the conformance suite holds a client to it
   (`unexpected-content-type` wants `unknown`, `unexpected-codec`
   `internal`). No content type is the answer, since a proxy may drop the
@@ -3116,9 +3123,9 @@ codec (§7).
   that is not Connect's is read as an error, as under `connect`. Any
   other answer is the protocol's
   JSON error, decoded as UTF-8 and read as over `connect` (§5.4), so
-  errors are JSON whatever the codec. A body that does not decode is
-  `BadResponse "the body is not the response of svc/Method in protobuf
-  binary"`. `withReadMaxBytes` measures the answer's bytes,
+  errors are JSON whatever the codec. A body that does not decode is a
+  `BadResponse` whose `protoError` is `BadBinary report`, the report
+  naming the message, the reason, the fields and the offset. `withReadMaxBytes` measures the answer's bytes,
   `withWriteMaxBytes` the request's binary, encoded only when a limit is
   set. A trace gives a bytes request body as `body: null` and
   `bodyBase64`.
@@ -3320,15 +3327,15 @@ conformance suite's gRPC-Web client cases (§7).
 - **Answers.** A 200 must come as `application/grpc-web` or
   `application/grpc-web+proto`, or with no content type. Another
   gRPC-Web type (`application/grpc-web+json`, `application/grpc-web-text`)
-  is a `BadResponse` naming the types the call reads, whose framing would
+  is a `BadResponse` whose message names the types the call reads, whose framing would
   fail or decode garbage; a type that is not gRPC-Web's goes through the
   shared error reader (§5.4), as over Connect, so a
-  proxy's page with no status is an `HttpStatus` error, code `Unknown`.
+  proxy's page with no status is a `BadResponse`, code `Unknown`.
   A 200 with a body is read as frames: the trailers frame
   (flag `0x80`, `name: value` lines, names lowercased) holds the status,
   which wins over any `grpc-status` header. A 200 without a body is
   trailers-only, its status in the headers. Status 0 with exactly one
-  message is the response; any other status is `RpcStatus`, with
+  message is the response; any other status is a `BadStatus` stating it, with
   `grpc-message` percent-decoded (kept as sent when it is not
   well-formed) and `grpc-status-details-bin` (base64, padding optional)
   read as a `google.rpc.Status` whose `details` are the error's, binary
@@ -3338,8 +3345,8 @@ conformance suite's gRPC-Web client cases (§7).
   agree); one without a code leaves the trailers' standing. `source` is `GrpcTrailers` from a body and `GrpcHeaders` from
   headers. Any other HTTP status goes through the shared error reader
   (§5.4). Status 0 with no message or two, a compressed frame, a frame
-  running past the end, or no status anywhere is a `BadResponse`; the
-  first two are `Unimplemented`, as connect-es and connect-go give them,
+  running past the end, or no status anywhere is a `BadResponse` whose
+  message says which; the first two are `Unimplemented`, as connect-es and connect-go give them,
   and the rest `Internal` (decisions.md: A refused answer carries its
   code).
 - **Limits.** `withReadMaxBytes` measures the response message, not its
@@ -3381,25 +3388,29 @@ on answers with no error body.
 
 ```elm
 -- Rpc.Error; Rpc aliases the type (type alias Error = Rpc.Error.Error)
-type Error
-    = RpcStatus StatusError Response    -- the server stated an RPC status
-    | HttpStatus Response               -- a failure, or a success not the protocol's, stating none
-    | BadResponse Code String Response  -- it answered 2xx and the runtime refused the body (its code, the problem)
-    | NoAnswer Reason                   -- nothing came back, nothing was sent, or the answer was refused unread
+type Error                              -- opaque
 
-type Reason                             -- frozen (§8.3)
-    = Timeout | NetworkError | BadUrl String | BadHeader String
-    | BadPathValue { field : String, template : String }
-    | RequestTooLarge { limit : Int, size : Int }
-    | ResponseTooLarge { limit : Int, size : Int }
-    | BadAny Proto.Error.Error
+-- the RPC
+code : Error -> Rpc.Code.Code           -- see below
+message : Error -> String               -- holds no value from the request or the answer
+details : Error -> List (Result Proto.Error.Error Proto.Any.Any)   -- in wire order
+source : Error -> Maybe Source          -- Nothing: no status was stated
 
-type alias StatusError =                -- frozen (§8.3)
-    { code : Rpc.Code.Code
-    , message : String
-    , details : List (Result Proto.Error.Error Proto.Any.Any)   -- in wire order
-    , source : Source
-    }
+-- the HTTP exchange underneath
+type Cause                              -- frozen (§8.3); elm/http's error, the answer kept
+    = BadCall                           -- the call could not be made; nothing was sent
+    | NetworkError
+    | Timeout
+    | BadStatus Response                -- the server answered with a failure
+    | BadResponse Response              -- the server answered 2xx, and the answer could not be used
+
+cause : Error -> Cause
+httpStatus : Error -> Maybe Int         -- the status of the answer, if one came
+
+-- the codec underneath that
+protoError : Error -> Maybe Proto.Error.Error   -- a body that did not decode, a request Any not written
+
+toString : Error -> String              -- "<code>: <message>", or "<code>" when the message is empty
 
 type Source
     = ConnectBody                       -- {"code": "not_found", …}
@@ -3408,9 +3419,17 @@ type Source
     | GrpcTrailers                      -- the trailers frame of a gRPC-Web body
     | ConnectEndStream                  -- reserved: Connect end-of-stream message
 
-code : Error -> Rpc.Code.Code           -- see below
-message : Error -> String
-toString : Error -> String              -- "<code>: <message>", or "<code>" when the message is empty
+-- builders; the runtime builds every error with these
+fromStatus : { code : Code, message : String, details : List (Result Proto.Error.Error Any), source : Source } -> Response -> Error
+fromCode : Code -> Error                -- stated in a stand-in answer: the code's HTTP status, no headers, no body
+fromResponse : Response -> Error        -- states no status: BadStatus, or BadResponse (Unknown) for a 2xx
+timeout : Error
+networkError : Error
+badCall : Code -> String -> Error
+badAny : Proto.Error.Error -> Error
+badResponse : Code -> String -> Response -> Error
+badBody : Proto.Error.Error -> Response -> Error
+withMessage : String -> Error -> Error
 
 -- Rpc.Response.Response, which Rpc aliases
 type alias Response =                   -- elm/http's Http.Metadata, and the body; frozen (§8.3)
@@ -3439,109 +3458,119 @@ says `ok` or `0` reads as `Unknown`. A trace's `code : Maybe Code` is
   where a 400 means a proxy or the transport refused the request, so it
   reads as `Internal`, not `InvalidArgument`.
 
-- One error type for every protocol. The wire forms differ (`"code":
-  "not_found"` against `"code": 5`), and knowing which one arrived
-  tells a developer which side misbehaved: `source` keeps that
-  information without making every caller handle two types, and a
-  server behind a transcoder can answer in either form.
+- One error type for every protocol, read in three layers, and an
+  application reads the one it thinks in: the RPC (`code`, `message`,
+  `details`, `source`); underneath, the HTTP exchange it went over
+  (`cause`, which is elm/http's `Http.Error` with the answer kept, and
+  `httpStatus`); and under that, the codec (`protoError`). The type is
+  opaque and the views are readers, so a new fact about an error is a
+  new reader, never a new constructor every `case` must cover
+  (decisions.md: Rpc.Error read through views).
+- The wire forms differ (`"code": "not_found"` against `"code": 5`), and
+  knowing which one arrived tells a developer which side misbehaved:
+  `source` keeps that without making every caller handle two types, and
+  a server behind a transcoder can answer in either form.
 - A failed answer is read by one reader whatever the protocol, in
-  order, and is an `RpcStatus` error when one of three readers finds a
-  status: a Connect error body (`code` a string the protocol names; an
-  unknown name reads as `Unknown`; `message` `""` and `details` `[]`
-  when absent); a `google.rpc.Status` body as grpc-gateway and Envoy
-  send it (`code` an integer; one outside 1 to 16, `0` included, is
-  `Unknown`, the number as sent left in the body); the `grpc-status`
-  and `grpc-message` headers, when the browser exposes them (the
-  message percent-decoded, the status text when absent). The shape of
-  `code` tells the two bodies apart, so a server behind either
-  transport may answer in either form. An answer none of them reads is
-  an `HttpStatus` error: `code` infers its code from the HTTP status by the
-  protocol's table, `message` is the status text (`HTTP <status>` when
-  empty), and it has no details. gRPC-Web's 200 carries its status in a
-  trailers frame or its headers, which gRPC-Web's own reader reads
-  first (§5.3); any other status of it comes to this reader. So does a
-  200 over Connect or gRPC-Web whose content type is not the
-  protocol's (§5.3): not the protocol's answer, read as a failure, so
-  with no status it is an `HttpStatus` error whose code
-  `fromHttpStatus 200` gives as `Unknown`.
-- Every error that had an answer keeps it, a
-  `Response`: the URL it came from (after any redirect), the status and
-  status text and the headers as elm/http's `Http.Metadata` gives
-  them, and the body, whichever reader
-  recognised it, so an application can parse what the readers do not
-  (`HttpStatus response -> Rpc.Body.toText response.body`). Some servers cannot be
-  changed to answer in a standard shape, and when the readers fall
-  through to the status table the body that said more would otherwise
-  be lost. Reading the answer with the pure halves (§5.2) would work too,
-  but gives up the retry loop.
-- A constructor per kind of error, and `code` and `message` for the
-  common path (`case Rpc.Error.code error of Unauthenticated -> …`).
-  A code the server stated and one inferred
-  from the HTTP status are different kinds of error, which a
-  constructor says honestly while `code` still gives one code for
-  both. The record is `StatusError` and its constructor `RpcStatus`,
-  not `Status`: `google.rpc.Status` generated from googleapis is
-  already a `Google.Rpc.Status` record with `code : Int`, and two
-  `Status` records with different code types would confuse
-  (decisions.md: Errors by what came back).
-- The errors and their readers are a module of their own, `Rpc.Error`,
-  as each type has its module (§5.2); `Rpc` keeps the alias `Error`
-  so annotations naming `Rpc.Error` compile, and the readers are
-  `Rpc.Error.code`, `message` and `toString`.
+  order, and states a status when one of three readers finds one: a
+  Connect error body (`code` a string the protocol names, an unknown
+  name reading as `Unknown`; `message` `""` and `details` `[]` when
+  absent); a `google.rpc.Status` body as
+  grpc-gateway and Envoy send it (`code` an integer; one outside 1 to
+  16, `0` included, is `Unknown`, the number as sent left in the body);
+  the `grpc-status` and `grpc-message` headers, when the browser
+  exposes them (the message percent-decoded, the status text when
+  absent). The shape of `code` tells the two bodies apart.
+  Such an error is `Rpc.Error.fromStatus status answer`, a `BadStatus`.
+  An answer none of them reads is `Rpc.Error.fromResponse answer`:
+  `code` infers its code from the HTTP status by the protocol's table,
+  `message` is the status text (`HTTP <status>` when empty), and it has
+  no details. gRPC-Web's 200 carries its status in a trailers frame or
+  its headers, which gRPC-Web's own reader reads first (§5.3), a
+  `BadStatus` on a 200; any other status of it comes to this reader.
+- **A `BadResponse` is always a 2xx; a `BadStatus` is a failure status,
+  or a success whose answer states a failing status.** A 200 over
+  Connect or gRPC-Web whose content type is not the protocol's (§5.3)
+  is not the protocol's answer: a status it carries is the error, and
+  with none it is a `BadResponse` whose code `fromHttpStatus 200` gives
+  as `Unknown`, as connect-go and the conformance suite want. Every
+  builder that takes an answer gives the error the runtime would give
+  for it: `fromResponse` of a 2xx is that `BadResponse`, and
+  `badResponse` and `badBody` of a failure status are what
+  `fromResponse` gives, so no builder breaks the invariant.
+- Every error that had an answer keeps it, in its `BadStatus` or
+  `BadResponse`: the URL it came from (after any redirect), the status,
+  status text and headers as elm/http's `Http.Metadata` gives them, and
+  the body, whichever reader recognised it, so an application can parse
+  what the readers do not. Some servers cannot be changed to answer in
+  a standard shape, and when the readers fall through to the status
+  table the body that said more would otherwise be lost. An answer
+  over the read limit keeps its status and headers with an empty body:
+  keeping the body would keep what the limit is there to drop.
+- **`cause` answers "did the request reach the server?" and "did the
+  error come from it?"**: `BadCall` no and no; `NetworkError` probably
+  not (a CORS refusal arrives so after the server acted) and no;
+  `Timeout` unknown and no; `BadResponse` yes, and the client could not
+  use it; `BadStatus` something answered, the server when `source` is
+  not `Nothing`, otherwise possibly an edge or a proxy. These are a
+  table in the documentation, not readers of their own: the constructors
+  already say them.
 - Every error has a code, the one the Connect clients give it when the
-  server stated none: an `HttpStatus` error's by the status table, a
-  `BadResponse` its own, which the runtime gives it, and a `NoAnswer`
-  by its reason: `Timeout`
-  `DeadlineExceeded`, `NetworkError` `Unavailable`, `BadUrl` and
-  `BadHeader` and `BadAny` `Internal`, `BadPathValue`
-  `InvalidArgument` (a server checking the value would say so),
-  `RequestTooLarge` and `ResponseTooLarge` `ResourceExhausted`. So a client timeout reads as
-  `DeadlineExceeded` through `code`, while the constructor
-  still says no answer came. `message` gives a description for those
-  (`timeout`, `network error`, `bad URL: <url>`, `invalid header
-  "<name>"`, `path field "<field>" does not match <template>`, the
-  value left out, connect-es's `message size <size> is larger than
-  configured writeMaxBytes <limit>` and `… readMaxBytes <limit>`,
-  `bad Any: ` and `Proto.Error.toString`'s text,
-  `bad response body: <problem>`, a binary body's problem
-  `Proto.Error.toString`'s text too), and `toString` is the code and the message for all of
-  them. elm/json's problem quotes the JSON it rejected, which can be
-  the whole response, so the message keeps the first 300 characters of
-  it and `…`; the whole problem stays in the error. A bad URL is
-  printed without the `user:password@` a URL can carry and without its
-  query and fragment, which over Connect's GET hold the request
-  (`bad URL: https://api.example.com/base (query omitted)`); the whole
-  URL stays in the error.
-- `Reason` and `StatusError` are frozen (§8.3): every failure a browser
-  request can have before an answer is read is one of the reasons, and
-  a later kind of failure found in an answer that was read (a malformed
-  stream envelope, a failed decompression) is a `BadResponse`, whose
-  problem says what. A bad URL, an invalid header, an invalid path
-  value and a request over the write limit are never retried,
-  whatever the policy's codes: nothing was sent, and nothing would
-  change. `BadHeader` has its home here rather than in a
-  constructor of its own beside `NoAnswer`, since it is one more reason
-  nothing was sent (§5.1).
-- `ResponseTooLarge { limit, size }` is the answer over the receive limit
-  (§5.1): it arrived, but was dropped before it was decoded, so it is a
-  reason no answer was read and carries no `Response`; keeping one would
-  keep the body the limit is there to drop. connect-go and connect-node have the
-  knob and connect-web does not, and the conformance suite tests it
-  only for servers (§7); it is kept because an Elm program is not only
-  a browser one (§1), and because server streaming will check each
-  message of a stream against the same limit, as connect-go's does.
-  Its code is `ResourceExhausted` and its message connect-es's.
-  It is retried only when a policy lists `ResourceExhausted`.
-  `RequestTooLarge { limit, size }` is the request over the send limit,
-  never sent. The two are distinct constructors, as connect-es's
-  messages are distinct, so a caller can tell a request it must shrink
-  from an answer it asked not to read.
-- The constructors say what came back (`RpcStatus`, `HttpStatus`,
-  `BadResponse`, `NoAnswer`), and the runtime maps elm/http's errors to
-  its own `Reason`, so no elm/http type is in the API and an elm/http
-  major forces none here; `BadResponse` keeps the answer, the status
-  and body a developer most needs when a schema drifts (decisions.md:
-  Errors by what came back).
+  server stated none: an unstated failure's by the status table, and
+  the client's own by what went wrong: a timeout `DeadlineExceeded`, a
+  network failure `Unavailable`, a bad URL, header or `Any` `Internal`,
+  a path value its template cannot match `InvalidArgument` (a server
+  checking the value would say so), a request or an answer over its
+  limit `ResourceExhausted`, an answer that is not the protocol's
+  `Unknown`, a unary gRPC-Web answer with status 0 and no message or
+  two `Unimplemented`, and any other answer that could not be used
+  `Internal`. So a client timeout reads as `DeadlineExceeded` through
+  `code`, while `cause` says no answer came. Code that acts on what the
+  server said checks `source /= Nothing`: the client's codes and the
+  inferred ones have server meanings too (an edge's bare 429 reads as
+  `Unavailable`, a request over the write limit as `ResourceExhausted`).
+- **Messages hold no value from the request or the answer**, beyond the
+  message a server stated, so every one is safe to log: `timeout`,
+  `network error`, `bad URL: the base URL holds a query or a fragment`,
+  `bad URL: the browser could not read it`, `invalid header "<name>"`
+  (its value left out), `path field "<field>" does not match
+  <template>` (the value left out), connect-es's `message size <size>
+  is larger than configured writeMaxBytes <limit>` and `… readMaxBytes
+  <limit>`, `bad Any`, `bad response body`, and `bad response:
+  <problem>` for an answer whose framing, content type or status is
+  malformed, which names content types and trailers, never the body.
+  The problem with a body that did not decode, or with a request `Any`
+  that could not be written, is `protoError`, a `Proto.Error.Error` a
+  program matches without parsing text; `Proto.Error.toString` of it
+  can quote the rejected value, and so the answer's or the request's
+  data. A message is written where the failure is found, so the wording
+  is linked into every program that can meet the failure, whether or
+  not it reads a message.
+- The errors and their readers are a module of their own, `Rpc.Error`,
+  as each type has its module (§5.2); `Rpc` keeps the alias `Error`, so
+  annotations naming `Rpc.Error` compile. The runtime builds every
+  error with `Rpc.Error`'s public builders, and no internal module holds
+  a constructor, so an error a test builds and one the runtime gives are
+  `==` when they state the same things.
+- A response's body is read through the client's registry, so a JSON
+  response holding an `Any` of a type the registry lacks is a
+  `BadResponse` whose `protoError` is `UnregisteredType url`, found as
+  the status-detail reader finds it (below); a `response_body` field is
+  decoded apart from the answer's text so that its decoder's error, and
+  the miss in it, reaches `protoError` unflattened.
+- A `BadCall` or a `BadResponse` is never retried, whatever the
+  policy's codes: a call that could not be made fails the same way
+  again, and an answer that could not be used comes the same way. So a
+  request over the write limit is not retried though its code is
+  `ResourceExhausted`, nor an answer over the read limit, nor a 200
+  that is not the protocol's answer.
+- The answer over the receive limit (§5.1) arrived, but was dropped
+  before it was decoded. connect-go and connect-node have the knob and
+  connect-web does not, and the conformance suite tests it only for
+  servers (§7); it is kept because an Elm program is not only a browser
+  one (§1), and because server streaming will check each message of a
+  stream against the same limit, as connect-go's does. Its code is
+  `ResourceExhausted` and its message connect-es's, as for the request
+  over the send limit, a `BadCall`; `cause` tells the two apart.
 - **Error details are `List (Result Proto.Error.Error Any)`**, in wire
   order: `Any` is the type `google.rpc.Status` holds (§3.5), and a detail
   that cannot be read says why rather than vanishing, with the proto
@@ -3618,6 +3647,21 @@ carry it: a message's codecs (`Proto.Message`) and the registry's
 entries hold it, so a nested `Any`'s failure reaches the caller as it
 was, never erased to a failure of the outer one.
 
+A failure text the `Proto` JSON decoders write says what was expected and
+never what was found (`Expecting an integer`, `Expecting distinct map
+keys`): elm/json's `Failure` holds the rejected value beside its text,
+and `Proto.Error.toString` prints it there, so the text repeating it
+would show it twice and keep it out of reach of a reader that leaves
+the value out. Every text is value-free so; an application that reports
+a `BadJson` walks its path and texts (calling.md, "The codec"), and the
+package ships no renderer of its own (decisions.md: Rpc.Error read
+through views). A schema name (an enum's, a field's, a type URL the
+registry knows) is not a value and may appear. A JSON `Any` whose
+message does not decode fails again where its message did, under the
+`Any` (under its `"value"` for a well-known type with a JSON form), so
+the inner failure's path and text stand as any other failure's do,
+rather than as one text quoting it.
+
 ```elm
 -- Proto.Error
 type Error
@@ -3673,12 +3717,12 @@ toString : Error -> String              -- for a log, as Json.Decode.errorToStri
   | `Proto.Any.tryUnpack` | `Result Error a` | `TypeMismatch`, `BadBinary` |
   | `Proto.Any.toJson`, `Proto.Json.encodeAnyWith`, generated `encodeNoteWith` | `Result Error Value` | `UnregisteredType`, or the `BadBinary` of the `Any` that failed, at any depth, named by its own type |
   | `Proto.Json.anyWith`, generated `decodeNoteWith` | `Json.Decode.Decoder` | elm/json's error, a registry miss named in its message |
-  | `Rpc.Error.BadAny` | `Error` | as `encodeNoteWith` |
-  | `StatusError.details` | `List (Result Error Any)` | `UnregisteredType`, `BadJson`, `BadBinary` (above) |
+  | `Rpc.Error.protoError` of a bad `Any` (`badAny`) | `Maybe Error` | as `encodeNoteWith` |
+  | `Rpc.Error.details` | `List (Result Error Any)` | `UnregisteredType`, `BadJson`, `BadBinary` (above) |
 
-  A binary answer that is not the response stays a `BadResponse`, an
-  answer read but not understood, its problem `toString` of its
-  `BadBinary`.
+  An answer whose body is not the response stays a `BadResponse`, an
+  answer read but not understood, its `protoError` the error itself:
+  `BadBinary` for binary, `BadJson` or `UnregisteredType` for JSON.
 - `toString` holds every reason's text, one clause each, with the path
   innermost first and the offset: `Not a notes.v1.Note in protobuf
   binary: a string is not UTF-8, at byte 36, in field 1 of
@@ -4124,7 +4168,7 @@ a dispatch table per service, `run.mjs`) and the smoke suite
 error reader's four sources (a Connect body, a `google.rpc.Status`
 body, `grpc-status` headers, a bare status) with `ErrorInfo` and
 `BadRequest` details decoded from each body, timeouts (a
-`NoAnswer Timeout`, the server never answering first), retries,
+`Timeout`, the server never answering first), retries,
 Connect GET (with the client's and the call's headers) and `maxGetUrl`,
 percent-encoded path values, `viaBinding`
 in and out of range, and `sendTraced`, `send`, `task` and
@@ -4171,11 +4215,11 @@ suites (unexpected and empty answers, error end-streams) do not apply.
   give them (§5.2).
 - A transport failure is reported to the suite as an error, `Timeout`
   as `deadline_exceeded`: the wrapper's reading of the runtime's
-  `NoAnswer Timeout`, as a Connect client gives its own deadline.
+  `Timeout` cause, as a Connect client gives its own deadline.
 - The receive limit is declared (`supportsMessageReceiveLimit: true`):
   the wrapper applies a request's `message_receive_limit`
-  with `withReadMaxBytes` (0 is no limit) and reports `ResponseTooLarge` as
-  `resource_exhausted`. v1.0.6 has no client-mode case that relies on
+  with `withReadMaxBytes` (0 is no limit) and reports the answer over
+  it, a `BadResponse`, by its code, `resource_exhausted`. v1.0.6 has no client-mode case that relies on
   it (its one such suite, Server Message Size, tests servers over the
   proto codec), so the count stays 40; the live suite's `readMaxBytes`
   cases in `cases/notes.json` run the knob against the example server
@@ -4353,8 +4397,8 @@ which the runtime reads as `GrpcHeaders`, without details.
 - Where Envoy agrees and another does not: an empty `StringValue` as
   `label=`, and a `FieldMask` in the query in its JSON form.
 - Also seen: Envoy writes its own HTTP/1.1 reason phrase, `Unknown` for
-  a status it has no name for, which becomes an `HttpStatus` error's
-  message; and the header-only form carries no details.
+  a status it has no name for, which becomes the message of an error
+  that states no status; and the header-only form carries no details.
 
 gRPC-Web: `just live-grpcweb` (part of `just live`) runs
 `cases/grpcweb.json` against the example server, where connect-go
@@ -4524,7 +4568,7 @@ Within a major version:
   the first publish. The records an application
   builds or reads with record syntax are frozen within a major:
   `Rpc.Request.Request`, `Rpc.Response.Response` (which `Rpc` also
-  names `Rpc.Request` and `Rpc.Response`) and `Rpc.Error.StatusError`.
+  names `Rpc.Request` and `Rpc.Response`).
   A new knob goes where §5.1 routes it: a protocol's on `Protocol`, a
   client's on `Client`, a retry's on `Retry`, a call's on `Call`. The
   codec tags `Rpc.Json` and `Rpc.Proto` have no values and gain none.
@@ -4535,14 +4579,15 @@ Within a major version:
   `KindMessage` the message's full name, §3.9), `Scalar`, `Behavior` (with
   `BehaviorUnknown Int` holding a number this release does not name, so
   that naming it later is a minor), `Proto.Method.Idempotency`,
-  `Rpc.Code`, and `Rpc.Error`'s `Error`, `Reason` (`Timeout`,
-  `NetworkError`, `BadUrl`, `BadHeader`, `BadPathValue`,
-  `RequestTooLarge`, `ResponseTooLarge`, `BadAny`) and `Source` (with `ConnectEndStream` reserved
-  for server streaming, which reads a status from there, so that it can
-  ship as a minor; `GrpcTrailers`, reserved as well until gRPC-Web read
-  a unary answer's trailers frame, is given now; a
-  failure before an answer is read is one of the reasons, and a new kind
-  found in an answer that was read is a `BadResponse`, §5.4).
+  `Rpc.Code`, and `Rpc.Error`'s `Cause` (`BadCall`, `NetworkError`, `Timeout`,
+  `BadStatus`, `BadResponse`: what happened in the HTTP exchange, which
+  has no other outcome; a new way a call cannot be made is a `BadCall`'s
+  message, and a new way an answer cannot be used is a `BadResponse`'s)
+  and `Source` (with `ConnectEndStream` reserved for server streaming,
+  which reads a status from there, so that it can ship as a minor;
+  `GrpcTrailers`, reserved as well until gRPC-Web read a unary answer's
+  trailers frame, is given now). `Rpc.Error.Error` is opaque, so a new
+  fact about an error is a new reader, a minor (§5.4).
 - **The `elm-connect-gen` crate.** Published so that `cargo install`
   builds the binaries; its API is not covered by this contract and may
   change in any release, as its crate documentation says.
