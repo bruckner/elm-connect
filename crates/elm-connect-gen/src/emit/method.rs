@@ -8,9 +8,11 @@
 //! builders are stacked, one argument per line, however short.
 
 use super::field::{ValueShape, Zeroed, value_shape};
-use super::route_fn::{JSON, Messages, PROTO_ROUTE, Queries, REQUEST};
+use super::route_fn::{Messages, PROTO_ROUTE, Queries, REGISTRY, REQUEST};
 use super::scalar::Holding;
-use super::{Emitter, PROTO_HTTP, PROTO_JSON, PROTO_METHOD, RPC, docs};
+use super::{
+    Emitter, PROTO_ERROR, PROTO_HTTP, PROTO_JSON, PROTO_METHOD, PROTO_REGISTRY, RPC, docs,
+};
 use crate::elm::ast::{BinOp, Decl, Expr, Pattern, Type};
 use crate::elm::build::{
     apply, binop, inline_list, lambda, list, pipeline, pvar, qualified, record, stacked_apply,
@@ -79,9 +81,9 @@ impl Emitter {
     /// `Proto.Method.init` (the JSON codecs and the binary codecs) as the
     /// `wire` option says, the JSON codecs taking the client's registry
     /// (ignored by a type that reaches no `Any`), then
-    /// `withIdempotency` when the proto declares one, and `withRoutes` with
-    /// its route functions ([`Self::method_routes`]), or `withJsonRoutes`
-    /// when they take the request's JSON too. Under `wire=proto` it has no
+    /// `withIdempotency` when the proto declares one, `withRoutes` with
+    /// its route functions ([`Self::method_routes`]), and `withResponseBody`
+    /// for each binding whose rule names one. Under `wire=proto` it has no
     /// routes: its calls cannot be
     /// transcoded, which takes JSON. The call's codec is `Rpc.Json` under
     /// `wire=json`, `Rpc.Proto` under `wire=proto`, and a type variable
@@ -129,15 +131,17 @@ impl Emitter {
                     self.reference((PROTO_METHOD, "withRoutes")),
                     [inline_list(functions)],
                 ));
-            }
-            Routes::JsonFunctions(count) => {
-                let functions: Vec<Expr> = (0..*count)
-                    .map(|index| var(route_name(method, index)))
-                    .collect();
-                steps.push(apply(
-                    self.reference((PROTO_METHOD, "withJsonRoutes")),
-                    [inline_list(functions)],
-                ));
+                for (index, route) in method.routes.iter().enumerate() {
+                    if let Some(top) = &route.response_body {
+                        steps.push(apply(
+                            self.reference((PROTO_METHOD, "withResponseBody")),
+                            [
+                                crate::elm::build::int(index as i64),
+                                string(top.field.json[0].clone()),
+                            ],
+                        ));
+                    }
+                }
             }
         }
         let body = apply(self.reference((RPC, "call")), [pipeline(built, steps)]);
@@ -155,11 +159,12 @@ impl Emitter {
         }
     }
 
-    /// A method's route functions, `routeGetNote0 : GetNoteRequest ->
-    /// Proto.Route.Route`, one per binding of its HTTP rule
-    /// ([`super::route_fn`]), and how its call takes its routes: as
-    /// functions of the request, of the request and its JSON, or not at
-    /// all, for a method without a rule and under `wire=proto`.
+    /// A method's route functions, `routeGetNote0 : Proto.Registry.Registry
+    /// -> GetNoteRequest -> Result Proto.Error.Error Proto.Route.Route`, one
+    /// per binding of its HTTP rule ([`super::route_fn`]), and how its call
+    /// takes its routes: as those functions, or not at all, for a method
+    /// without a rule and under `wire=proto`. A route function binds the
+    /// registry only when its body holds an `Any`, and ignores it otherwise.
     ///
     /// Every binding the route resolver accepts is typed. One that is not
     /// is a bug in the generator; the error holds the number of each such
@@ -174,50 +179,37 @@ impl Emitter {
         if method.routes.is_empty() || self.wiring == Wire::Proto {
             return Ok((Vec::new(), Routes::None));
         }
-        // A body holding an `Any` is written by the client's registry, so
-        // such a method's routes read their bodies from the JSON the send
-        // encodes with it. Every binding of such a request holds the `Any`
-        // in its body, since no path or query holds one.
-        let json = method
-            .routes
-            .iter()
-            .any(|route| self.body_reaches(messages, &method.input, route));
         let mut decls = Vec::new();
         let mut untyped = Vec::new();
         for (index, route) in method.routes.iter().enumerate() {
-            let Some(body) = self.typed_route(messages, queries, &method.input, route, json) else {
+            let reaches = self.body_reaches(messages, &method.input, route);
+            let Some(body) = self.typed_route(messages, queries, &method.input, route, reaches)
+            else {
                 untyped.push(index);
                 continue;
             };
+            let registry = self.library_type(PROTO_REGISTRY, "Registry", []);
             let request = self.method_type(&method.input);
+            let problem = self.library_type(PROTO_ERROR, "Error", []);
             let built = self.library_type(PROTO_ROUTE, "Route", []);
-            let (annotation, params) = if json {
-                let value = self.library_type(super::JSON_ENCODE, "Value", []);
-                (
-                    ty_fn([request, value], built),
-                    vec![pvar(REQUEST), pvar(JSON)],
-                )
+            let result = crate::elm::build::ty(self.core("Result"), [problem, built]);
+            let registry_param = if reaches {
+                pvar(REGISTRY)
             } else {
-                (ty_fn([request], built), vec![pvar(REQUEST)])
+                Pattern::Wildcard
             };
             decls.push(Decl::Value {
                 doc: Some(docs::route(method, index)),
                 name: route_name(method, index),
-                annotation,
-                params,
+                annotation: ty_fn([registry, request], result),
+                params: vec![registry_param, pvar(REQUEST)],
                 body,
             });
         }
         if !untyped.is_empty() {
             return Err(untyped);
         }
-        let count = method.routes.len();
-        let routes = if json {
-            Routes::JsonFunctions(count)
-        } else {
-            Routes::Functions(count)
-        };
-        Ok((decls, routes))
+        Ok((decls, Routes::Functions(method.routes.len())))
     }
 
     /// The JSON encoder of a method's request type: the generated
@@ -242,7 +234,7 @@ impl Emitter {
     /// which is the client's: the generated `encodeFooWith` of a message that
     /// reaches an `Any`, `Proto.Json.encodeAnyWith` for an `Any`, and
     /// otherwise [`Self::request_encoder`]'s under `\_ -> Ok <<`.
-    fn request_encoder_with(&mut self, ty: &TypeRef) -> Expr {
+    pub(super) fn request_encoder_with(&mut self, ty: &TypeRef) -> Expr {
         let shape = method_shape(ty, self.holding);
         if self.reaches(shape) {
             return match ty {
@@ -390,9 +382,6 @@ pub(super) enum Routes {
     None,
     /// Its route functions, as many as its bindings.
     Functions(usize),
-    /// Its route functions of the request and its JSON, for a method
-    /// whose bodies hold an `Any`.
-    JsonFunctions(usize),
 }
 
 /// `routeGetNote0`: the route function of a method's binding, by its

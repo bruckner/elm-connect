@@ -13,9 +13,11 @@ A service kept for older clients.
 -}
 
 import Proto.Binary
+import Proto.Error
 import Proto.Http
 import Proto.Json
 import Proto.Method
+import Proto.Registry
 import Proto.Route
 import Proto.Version
 import Rpc
@@ -58,15 +60,15 @@ clear =
 
 {-| The route of [`clear`](#clear) over binding 0: `PURGE /v1/notes`.
 -}
-routeClear0 : () -> Proto.Route.Route
-routeClear0 request_ =
-    { method = "PURGE"
-    , path = "v1/notes"
-    , query = []
-    , body = Nothing
-    , responseBody = Nothing
-    , invalid = Nothing
-    }
+routeClear0 : Proto.Registry.Registry -> () -> Result Proto.Error.Error Proto.Route.Route
+routeClear0 _ request_ =
+    Ok
+        { method = "PURGE"
+        , path = "v1/notes"
+        , query = []
+        , body = Nothing
+        , invalid = Nothing
+        }
 
 
 

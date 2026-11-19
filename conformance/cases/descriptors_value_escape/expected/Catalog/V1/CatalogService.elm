@@ -10,8 +10,10 @@ module Catalog.V1.CatalogService exposing (..)
 import Catalog.V1
 import Catalog.V1.GetEntryRequest
 import Catalog.V1.Part
+import Proto.Error
 import Proto.Http
 import Proto.Method
+import Proto.Registry
 import Proto.Route
 import Proto.Version
 import Rpc
@@ -58,19 +60,19 @@ getEntry =
 
 {-| The route of [`getEntry`](#getEntry) over binding 0: `GET /v1/{name=entries/*}`.
 -}
-routeGetEntry0 : Catalog.V1.GetEntryRequest -> Proto.Route.Route
-routeGetEntry0 request_ =
+routeGetEntry0 : Proto.Registry.Registry -> Catalog.V1.GetEntryRequest -> Result Proto.Error.Error Proto.Route.Route
+routeGetEntry0 _ request_ =
     let
         name_ =
             request_.name
     in
-    { method = "GET"
-    , path = "v1/" ++ Proto.Route.segments name_
-    , query = Catalog.V1.queryOfGetEntryRequest request_
-    , body = Nothing
-    , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "name" [ "entries", "*" ] name_
-    }
+    Ok
+        { method = "GET"
+        , path = "v1/" ++ Proto.Route.segments name_
+        , query = Catalog.V1.queryOfGetEntryRequest request_
+        , body = Nothing
+        , invalid = Proto.Route.checkSegments "name" [ "entries", "*" ] name_
+        }
 
 
 

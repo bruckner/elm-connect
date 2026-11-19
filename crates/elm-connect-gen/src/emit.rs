@@ -42,11 +42,10 @@
 //!   runtime's for a well-known type), then piped through
 //!   `Proto.Method.withIdempotency` when the proto declares one and
 //!   `Proto.Method.withRoutes` with its route functions. Each route
-//!   function, `routeGetNote0 : GetNoteRequest -> Proto.Route.Route`,
-//!   builds one binding's path, query and body from the typed request
-//!   ([`route_fn`]); a method whose bodies hold a `google.protobuf.Any`
-//!   takes route functions of the request and its JSON instead
-//!   (`Proto.Method.withJsonRoutes`). Each
+//!   function, `routeGetNote0 : Proto.Registry.Registry -> GetNoteRequest
+//!   -> Result Proto.Error.Error Proto.Route.Route`, builds one binding's
+//!   path, query and body from the typed request ([`route_fn`]), using
+//!   the registry only for a body that holds a `google.protobuf.Any`. Each
 //!   method's descriptor, `descriptorGetNote : Proto.Method.Descriptor`,
 //!   is built by `Proto.Method.descriptor` from its service, name,
 //!   idempotency, type names and bindings, the bindings its HTTP rule's own

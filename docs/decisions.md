@@ -1185,13 +1185,15 @@ fixture with a bytes path variable records it, under `bytes=string`,
 which sends the text a field holds). A `Value` body field set to
 `null` is sent as `null`; the interpreter sent `{}`, an empty struct.
 
-Measured and left as a follow-up: one route type over the registry,
-`RouteOf (Registry -> req -> Result Error Route)`, where a generated
-`Any` route encodes only its body field. It saves 35 to 47 B gzipped
-more and builds an `Any`-body request 28 % faster (2.21 to 1.59 us),
-but two questions want a design first: reading an answer would then
-build the route, which encodes the body (encode on read), and an
-unencodable call's `Rpc.request` needs a route it cannot build.
+*2026-11-18 (spike branch `spike/routes-option-b`, not landed):* one
+route type over the registry, `Registry -> req -> Result Error Route`,
+built whole. Its two open questions were settled so: the response field
+moves out of `Route` into data on the method (`withResponseBody`), so
+reading an answer builds no route; and a call whose route fails shows,
+in `Rpc.request` and a trace, the route built again through an internal
+registry mode that writes each `Any` it cannot as `{"@type": url}`,
+keeping `Rpc.request`'s type. See the spike's report for the measured
+verdict.
 `withBindings` and the interpreter stay for methods written by hand:
 dropping them saves a generated program nothing, since dead-code
 elimination already drops them, and would cost a major and the

@@ -15,9 +15,11 @@ module Awkward.V1.AwkwardService exposing (..)
 -}
 
 import Proto.Binary
+import Proto.Error
 import Proto.Http
 import Proto.Json
 import Proto.Method
+import Proto.Registry
 import Proto.Route
 import Proto.Version
 import Rpc
@@ -68,15 +70,15 @@ ping =
 
 {-| The route of [`ping`](#ping) over binding 0: `HEAD /v1/ping`.
 -}
-routePing0 : () -> Proto.Route.Route
-routePing0 request_ =
-    { method = "HEAD"
-    , path = "v1/ping"
-    , query = []
-    , body = Nothing
-    , responseBody = Nothing
-    , invalid = Nothing
-    }
+routePing0 : Proto.Registry.Registry -> () -> Result Proto.Error.Error Proto.Route.Route
+routePing0 _ request_ =
+    Ok
+        { method = "HEAD"
+        , path = "v1/ping"
+        , query = []
+        , body = Nothing
+        , invalid = Nothing
+        }
 
 
 

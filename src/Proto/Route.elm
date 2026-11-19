@@ -1,15 +1,16 @@
 module Proto.Route exposing
     ( Route, PathError
     , segment, segments, checkSegment, checkSegments, firstInvalid
-    , boolText, bytesText, viaJson, jsonText, without, jsonField
+    , boolText, bytesText, viaJson, jsonText, without
     )
 
 {-| Where a call goes over one binding of its `google.api.http` rule, as
-generated route functions build it from a typed request:
-`routeGetNote0 : GetNoteRequest -> Route`: the route, built whatever the
-request holds, with the first path value its variable's template cannot
-match. The helpers below are what such functions call; application code
-reads a `Route` and does not build one.
+generated route functions build it from the client's registry and a typed
+request: `routeGetNote0 : Registry -> GetNoteRequest -> Result Error Route`:
+the route, built whatever the request holds, with the first path value its
+variable's template cannot match, or why its body cannot be written. The
+helpers below are what such functions call; application code reads a
+`Route` and does not build one.
 
 @docs Route, PathError
 
@@ -21,7 +22,7 @@ reads a `Route` and does not build one.
 
 # Values and bodies
 
-@docs boolText, bytesText, viaJson, jsonText, without, jsonField
+@docs boolText, bytesText, viaJson, jsonText, without
 
 -}
 
@@ -35,16 +36,17 @@ import Proto.Internal.Percent as Internal
 {-| A binding's request: its HTTP method, its path percent-encoded and
 without a leading slash (`v1/notes/42:archive`), its query as name and
 value pairs not yet encoded, in order, its body as JSON (`Nothing` for
-none), the JSON name of the response field its answer is read from
-(`Nothing` for the whole response), and the first path value its
-variable's template cannot match, which sending refuses.
+none), and the first path value its variable's template cannot match,
+which sending refuses. The response field a binding's answer is read from
+is not part of it: it is the method's
+([`Proto.Method.withResponseBody`](Proto-Method#withResponseBody)), so that
+reading an answer builds no route.
 -}
 type alias Route =
     { method : String
     , path : String
     , query : List ( String, String )
     , body : Maybe Value
-    , responseBody : Maybe String
     , invalid : Maybe PathError
     }
 
@@ -248,16 +250,3 @@ remove fieldPath json =
 
                 Err _ ->
                     json
-
-
-{-| The body of `body: "field"` from the request's proto3 JSON: the field's
-value, or `{}` when the JSON leaves it out or holds `null`.
--}
-jsonField : String -> Value -> Value
-jsonField key json =
-    case Json.Decode.decodeValue (Json.Decode.field key (Json.Decode.nullable Json.Decode.value)) json of
-        Ok (Just value) ->
-            value
-
-        _ ->
-            Json.Encode.object []

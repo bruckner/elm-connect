@@ -1,5 +1,5 @@
 module Proto.Method exposing
-    ( Method, init, initJson, initProto, withIdempotency, withRoutes, withJsonRoutes, withBindings
+    ( Method, init, initJson, initProto, withIdempotency, withRoutes, withResponseBody, withBindings
     , encodeRequest, responseDecoder
     , Descriptor, descriptor
     , service, name, idempotency, input, output, bindings
@@ -32,7 +32,7 @@ The idempotency is a union whose constructors carry its name as a prefix
 (`IdempotencyNoSideEffects`), so it can be exposed with `(..)` beside any
 other union.
 
-@docs Method, init, initJson, initProto, withIdempotency, withRoutes, withJsonRoutes, withBindings
+@docs Method, init, initJson, initProto, withIdempotency, withRoutes, withResponseBody, withBindings
 
 
 # Reading a typed value
@@ -182,35 +182,63 @@ withIdempotency level (Internal.Method m) =
     Internal.Method { m | idempotency = level }
 
 
-{-| The method's routes for HTTP transcoding: one function of the typed
-request per binding of its `google.api.http` rule, the rule's own first and
-then its `additional_bindings` in order, as generated code writes them
-(`routeGetNote0`). A route function gives its binding's route whatever the
-request holds, with the first path value its variable's template cannot
-match, which sending refuses.
+{-| The method's routes for HTTP transcoding: one function per binding of
+its `google.api.http` rule, the rule's own first and then its
+`additional_bindings` in order, as generated code writes them
+(`routeGetNote0`). A route function takes the client's registry and the
+typed request, and gives its binding's route whatever the request holds,
+with the first path value its variable's template cannot match, which
+sending refuses. Its `Err` is a body it cannot write: one holding an
+[`Any`](Proto-Any#Any) the registry cannot write, which the call then fails
+with, unsent. A route that holds no `Any` ignores the registry and is always
+`Ok`:
+
+    routeGetNote0 : Registry -> GetNoteRequest -> Result Proto.Error.Error Route
+    routeGetNote0 _ request =
+        Ok
+            { method = "GET"
+            , path = "v1/" ++ Proto.Route.segments request.name
+            , query = []
+            , body = Nothing
+            , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] request.name
+            }
+
+The routes replace any the method had, and their answers are read whole
+until [`withResponseBody`](#withResponseBody) names a field.
+
 -}
-withRoutes : List (req -> Route) -> Method codec req res -> Method codec req res
+withRoutes : List (Registry -> req -> Result Proto.Error.Error Route) -> Method codec req res -> Method codec req res
 withRoutes routes (Internal.Method m) =
-    Internal.Method { m | routes = List.map Internal.Typed routes }
+    Internal.Method { m | routes = List.map (\build -> { build = build, responseBody = Nothing }) routes }
 
 
-{-| The method's routes for HTTP transcoding as functions of the typed
-request and its proto3 JSON, one per binding as for
-[`withRoutes`](#withRoutes): what generated code writes for a method whose
-bodies hold a `google.protobuf.Any`, which only the client's registry can
-write. The send encodes the JSON once, with the client's registry, for the
-route and the body alike; the path and query are read from the typed request.
+{-| The field of the response binding `n`'s answer is read from, by its JSON
+name, as its rule's `response_body` names it: generated code writes it after
+[`withRoutes`](#withRoutes) for each binding that has one. A number the
+method has no route of changes nothing.
 -}
-withJsonRoutes : List (req -> Json.Encode.Value -> Route) -> Method codec req res -> Method codec req res
-withJsonRoutes routes (Internal.Method m) =
-    Internal.Method { m | routes = List.map Internal.FromJson routes }
+withResponseBody : Int -> String -> Method codec req res -> Method codec req res
+withResponseBody n field (Internal.Method m) =
+    Internal.Method
+        { m
+            | routes =
+                List.indexedMap
+                    (\index route ->
+                        if index == n then
+                            { route | responseBody = Just field }
+
+                        else
+                            route
+                    )
+                    m.routes
+        }
 
 
 {-| The method's routes from its `google.api.http` bindings written as
 [`Proto.Http`](Proto-Http) data, for a method written by hand: each route is
-read from the request's proto3 JSON, written with the registry in use and
-encoded once per send for the route and the body alike. Only a program
-naming this function carries the code that reads a binding.
+read from the request's proto3 JSON, written with the client's registry, and
+each binding's `responseBody` is read from its data. Only a program naming
+this function carries the code that reads a binding.
 
     Proto.Method.initJson "notes.v1.NotesService"
         "GetNote"
@@ -226,7 +254,11 @@ withBindings methodBindings (Internal.Method m) =
         { m
             | routes =
                 List.map
-                    (\(Proto.Internal.Binding.Binding rule) -> Internal.FromJson (\_ json -> Proto.Internal.Interpret.route rule json))
+                    (\(Proto.Internal.Binding.Binding rule) ->
+                        { build = \registry req -> Result.map (Proto.Internal.Interpret.route rule) (m.json.encode registry req)
+                        , responseBody = rule.responseBody
+                        }
+                    )
                     methodBindings
         }
 

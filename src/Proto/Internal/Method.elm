@@ -1,4 +1,4 @@
-module Proto.Internal.Method exposing (BinaryHalf, JsonHalf, Method(..), RouteOf(..), noBinary, noJson)
+module Proto.Internal.Method exposing (BinaryHalf, JsonHalf, Method(..), RouteOf, noBinary, noJson)
 
 {-| The `Method` type, which `Proto.Method` names by an alias. It is defined
 here so that `Rpc` can read what a method holds while users cannot. The
@@ -47,17 +47,17 @@ type Method idempotency codec req res
         }
 
 
-{-| One binding's route of a request: built from the typed request alone
-(`Typed`, a generated route function), or from the typed request and its
-proto3 JSON (`FromJson`: a generated route function whose body holds an
-`Any`, which only the client's registry can write, or a binding written as
-data), which a send encodes once for the route and its body together. A
-route from JSON names its response field whatever the JSON holds, so reading
-an answer reads it over `null` and encodes nothing.
+{-| One binding of a method: its route, built from the client's registry and
+the typed request (an `Err` only when the body holds an `Any` the registry
+cannot write, the one part of a request only the registry can write), and
+the response field its answer is read from. The response field is data
+beside the function, so that reading an answer builds no route and encodes
+nothing of the request.
 -}
-type RouteOf req
-    = Typed (req -> Route)
-    | FromJson (req -> Json.Encode.Value -> Route)
+type alias RouteOf req =
+    { build : Registry -> req -> Result Proto.Error.Error Route
+    , responseBody : Maybe String
+    }
 
 
 {-| A request's proto3 JSON and the response's decoder, given the registry

@@ -74,38 +74,36 @@ an `Rpc.Call Rpc.Proto`, does not compile with a `transcode` client
 ## How the request is built
 
 The generator writes each binding of a method's rule as a function of
-the typed request, which the method holds
+the client's registry and the typed request, which the method holds
 (`Proto.Method.withRoutes`), so building a request reads the request's
 fields directly; nothing is encoded to JSON and looked up again:
 
 ```elm examples/notes/elm/generated/Notes/V1/NotesService.elm excerpt
-routeListNotes0 : Notes.V1.ListNotesRequest -> Proto.Route.Route
-routeListNotes0 request_ =
-    { method = "GET"
-    , path = "v1/notes"
-    , query = Notes.V1.queryOfListNotesRequest request_
-    , body = Nothing
-    , responseBody = Nothing
-    , invalid = Nothing
-    }
+routeListNotes0 : Proto.Registry.Registry -> Notes.V1.ListNotesRequest -> Result Proto.Error.Error Proto.Route.Route
+routeListNotes0 _ request_ =
+    Ok
+        { method = "GET"
+        , path = "v1/notes"
+        , query = Notes.V1.queryOfListNotesRequest request_
+        , body = Nothing
+        , invalid = Nothing
+        }
 ```
 
 A `Proto.Route.Route` is the binding's verb, its path percent-encoded
-without a leading slash, its query pairs, its body, the response field
-the answer is read from, and the first path value its template cannot
-match (`invalid`), which sending refuses. The query comes from the
-request message's query encoder in its package's module, shared by every
-binding that takes the message, less the fields the binding's path and
-body hold. A route is fixed in generated code: a fix to how one is built
-reaches an application when it regenerates.
-
-Every binding the generator accepts becomes a route function. A method
-whose bodies hold a `google.protobuf.Any`, which only the client's
-registry can write, gets route functions of the request and its proto3
-JSON, `routeCreateNote0 : Notes.V1.CreateNoteRequest -> Json.Encode.Value
--> Proto.Route.Route`, given to `Proto.Method.withJsonRoutes`: the path
-and query come from the typed request, and the body from the JSON the
-send encodes once, with the client's registry.
+without a leading slash, its query pairs, its body, and the first path
+value its template cannot match (`invalid`), which sending refuses. The
+query comes from the request message's query encoder in its package's
+module, shared by every binding that takes the message, less the fields
+the binding's path and body hold. A route ignores the registry and is
+`Ok`, unless its body holds a `google.protobuf.Any`, which only the
+client's registry can write: then the route writes the body with it,
+and an `Any` the registry cannot write is the route's `Err`, and the
+call fails with it unsent (`Rpc.request` still shows the route, the
+`Any` written as `{"@type": …}`). A binding's `response_body` is not
+in the route; generated code gives it to the method
+(`Proto.Method.withResponseBody`). A route is fixed in generated code:
+a fix to how one is built reaches an application when it regenerates.
 
 A `bytes` field held as `Bytes` (`bytes=bytes`) goes into a path or a
 query as base64 in the URL-safe alphabet, padded (`-_8=`), which
@@ -117,7 +115,8 @@ default mux splits on and answers 404. A `bytes` field held as a
 A method written by hand takes its bindings as data instead,
 [`Proto.Http`](../src/Proto/Http.elm) values given to
 `Proto.Method.withBindings`, and the runtime reads each from the
-request's proto3 JSON into the same route.
+request's proto3 JSON, written with the client's registry, into the
+same route.
 
 ## Methods without an HTTP rule
 

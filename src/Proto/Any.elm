@@ -242,7 +242,21 @@ no entry for its type gives the JSON unread when lenient, and fails with
 
 -}
 toJson : Registry -> Any -> Result Error Json.Encode.Value
-toJson registry ((Internal.Any url payload) as any) =
+toJson registry any =
+    case written registry any of
+        Err problem ->
+            if InternalRegistry.isStandIn registry then
+                Ok (Json.Encode.object [])
+
+            else
+                Err problem
+
+        ok ->
+            ok
+
+
+written : Registry -> Any -> Result Error Json.Encode.Value
+written registry ((Internal.Any url payload) as any) =
     case ( String.isEmpty url, payload ) of
         ( True, _ ) ->
             Ok (Json.Encode.object [])

@@ -8,10 +8,12 @@ module Routes.V1.Routes exposing (..)
 -}
 
 import Json.Encode
+import Proto.Error
 import Proto.Http
 import Proto.Json
 import Proto.Method
 import Proto.Query
+import Proto.Registry
 import Proto.Route
 import Proto.Version
 import Routes.V1
@@ -340,25 +342,25 @@ unbound =
 
 {-| The route of [`getMessage`](#getMessage) over binding 0: `GET /v1/{name=messages/*}`.
 -}
-routeGetMessage0 : Routes.V1.GetMessageRequest -> Proto.Route.Route
-routeGetMessage0 request_ =
+routeGetMessage0 : Proto.Registry.Registry -> Routes.V1.GetMessageRequest -> Result Proto.Error.Error Proto.Route.Route
+routeGetMessage0 _ request_ =
     let
         name_ =
             request_.name
     in
-    { method = "GET"
-    , path = "v1/" ++ Proto.Route.segments name_
-    , query = Proto.Query.except [ "name" ] (Routes.V1.queryOfGetMessageRequest request_)
-    , body = Nothing
-    , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "name" [ "messages", "*" ] name_
-    }
+    Ok
+        { method = "GET"
+        , path = "v1/" ++ Proto.Route.segments name_
+        , query = Proto.Query.except [ "name" ] (Routes.V1.queryOfGetMessageRequest request_)
+        , body = Nothing
+        , invalid = Proto.Route.checkSegments "name" [ "messages", "*" ] name_
+        }
 
 
 {-| The route of [`getMessage`](#getMessage) over binding 1: `GET /v1/messages/{message_id}/{sub.subfield}`.
 -}
-routeGetMessage1 : Routes.V1.GetMessageRequest -> Proto.Route.Route
-routeGetMessage1 request_ =
+routeGetMessage1 : Proto.Registry.Registry -> Routes.V1.GetMessageRequest -> Result Proto.Error.Error Proto.Route.Route
+routeGetMessage1 _ request_ =
     let
         messageId_ =
             request_.messageId
@@ -366,40 +368,40 @@ routeGetMessage1 request_ =
         subSubfield_ =
             Maybe.withDefault "" (Maybe.map .subfield request_.sub)
     in
-    { method = "GET"
-    , path = "v1/messages/" ++ Proto.Route.segment messageId_ ++ "/" ++ Proto.Route.segment subSubfield_
-    , query = Proto.Query.except [ "message_id", "sub.subfield" ] (Routes.V1.queryOfGetMessageRequest request_)
-    , body = Nothing
-    , responseBody = Nothing
-    , invalid =
-        Proto.Route.firstInvalid
-            [ Proto.Route.checkSegment "messageId" "*" messageId_
-            , Proto.Route.checkSegment "sub.subfield" "*" subSubfield_
-            ]
-    }
+    Ok
+        { method = "GET"
+        , path = "v1/messages/" ++ Proto.Route.segment messageId_ ++ "/" ++ Proto.Route.segment subSubfield_
+        , query = Proto.Query.except [ "message_id", "sub.subfield" ] (Routes.V1.queryOfGetMessageRequest request_)
+        , body = Nothing
+        , invalid =
+            Proto.Route.firstInvalid
+                [ Proto.Route.checkSegment "messageId" "*" messageId_
+                , Proto.Route.checkSegment "sub.subfield" "*" subSubfield_
+                ]
+        }
 
 
 {-| The route of [`getMessage`](#getMessage) over binding 2: `GET /v1/messages/{message_id}`.
 -}
-routeGetMessage2 : Routes.V1.GetMessageRequest -> Proto.Route.Route
-routeGetMessage2 request_ =
+routeGetMessage2 : Proto.Registry.Registry -> Routes.V1.GetMessageRequest -> Result Proto.Error.Error Proto.Route.Route
+routeGetMessage2 _ request_ =
     let
         messageId_ =
             request_.messageId
     in
-    { method = "GET"
-    , path = "v1/messages/" ++ Proto.Route.segment messageId_
-    , query = Proto.Query.except [ "message_id" ] (Routes.V1.queryOfGetMessageRequest request_)
-    , body = Nothing
-    , responseBody = Nothing
-    , invalid = Proto.Route.checkSegment "messageId" "*" messageId_
-    }
+    Ok
+        { method = "GET"
+        , path = "v1/messages/" ++ Proto.Route.segment messageId_
+        , query = Proto.Query.except [ "message_id" ] (Routes.V1.queryOfGetMessageRequest request_)
+        , body = Nothing
+        , invalid = Proto.Route.checkSegment "messageId" "*" messageId_
+        }
 
 
 {-| The route of [`getMessage`](#getMessage) over binding 3: `GET /v1/users/{user_id}/messages/{message_id}`.
 -}
-routeGetMessage3 : Routes.V1.GetMessageRequest -> Proto.Route.Route
-routeGetMessage3 request_ =
+routeGetMessage3 : Proto.Registry.Registry -> Routes.V1.GetMessageRequest -> Result Proto.Error.Error Proto.Route.Route
+routeGetMessage3 _ request_ =
     let
         userId_ =
             request_.userId
@@ -407,121 +409,121 @@ routeGetMessage3 request_ =
         messageId_ =
             request_.messageId
     in
-    { method = "GET"
-    , path = "v1/users/" ++ Proto.Route.segment userId_ ++ "/messages/" ++ Proto.Route.segment messageId_
-    , query = Proto.Query.except [ "message_id", "user_id" ] (Routes.V1.queryOfGetMessageRequest request_)
-    , body = Nothing
-    , responseBody = Nothing
-    , invalid =
-        Proto.Route.firstInvalid
-            [ Proto.Route.checkSegment "userId" "*" userId_
-            , Proto.Route.checkSegment "messageId" "*" messageId_
-            ]
-    }
+    Ok
+        { method = "GET"
+        , path = "v1/users/" ++ Proto.Route.segment userId_ ++ "/messages/" ++ Proto.Route.segment messageId_
+        , query = Proto.Query.except [ "message_id", "user_id" ] (Routes.V1.queryOfGetMessageRequest request_)
+        , body = Nothing
+        , invalid =
+            Proto.Route.firstInvalid
+                [ Proto.Route.checkSegment "userId" "*" userId_
+                , Proto.Route.checkSegment "messageId" "*" messageId_
+                ]
+        }
 
 
 {-| The route of [`updateMessage`](#updateMessage) over binding 0: `PATCH /v1/messages/{message_id}` body `message`.
 -}
-routeUpdateMessage0 : Routes.V1.UpdateMessageRequest -> Proto.Route.Route
-routeUpdateMessage0 request_ =
+routeUpdateMessage0 : Proto.Registry.Registry -> Routes.V1.UpdateMessageRequest -> Result Proto.Error.Error Proto.Route.Route
+routeUpdateMessage0 _ request_ =
     let
         messageId_ =
             request_.messageId
     in
-    { method = "PATCH"
-    , path = "v1/messages/" ++ Proto.Route.segment messageId_
-    , query = []
-    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Routes.V1.encodeMessage request_.message))
-    , responseBody = Nothing
-    , invalid = Proto.Route.checkSegment "messageId" "*" messageId_
-    }
+    Ok
+        { method = "PATCH"
+        , path = "v1/messages/" ++ Proto.Route.segment messageId_
+        , query = []
+        , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Routes.V1.encodeMessage request_.message))
+        , invalid = Proto.Route.checkSegment "messageId" "*" messageId_
+        }
 
 
 {-| The route of [`updateMessageWhole`](#updateMessageWhole) over binding 0: `PATCH /v1/messages/{message_id}` body `*`.
 -}
-routeUpdateMessageWhole0 : Routes.V1.Message -> Proto.Route.Route
-routeUpdateMessageWhole0 request_ =
+routeUpdateMessageWhole0 : Proto.Registry.Registry -> Routes.V1.Message -> Result Proto.Error.Error Proto.Route.Route
+routeUpdateMessageWhole0 _ request_ =
     let
         messageId_ =
             request_.messageId
     in
-    { method = "PATCH"
-    , path = "v1/messages/" ++ Proto.Route.segment messageId_
-    , query = []
-    , body = Just (Proto.Route.without [ [ "messageId" ] ] (Routes.V1.encodeMessage request_))
-    , responseBody = Nothing
-    , invalid = Proto.Route.checkSegment "messageId" "*" messageId_
-    }
+    Ok
+        { method = "PATCH"
+        , path = "v1/messages/" ++ Proto.Route.segment messageId_
+        , query = []
+        , body = Just (Proto.Route.without [ [ "messageId" ] ] (Routes.V1.encodeMessage request_))
+        , invalid = Proto.Route.checkSegment "messageId" "*" messageId_
+        }
 
 
 {-| The route of [`postSub`](#postSub) over binding 0: `POST /v1/subs/{sub.subfield}` body `*`.
 -}
-routePostSub0 : Routes.V1.GetMessageRequest -> Proto.Route.Route
-routePostSub0 request_ =
+routePostSub0 : Proto.Registry.Registry -> Routes.V1.GetMessageRequest -> Result Proto.Error.Error Proto.Route.Route
+routePostSub0 _ request_ =
     let
         subSubfield_ =
             Maybe.withDefault "" (Maybe.map .subfield request_.sub)
     in
-    { method = "POST"
-    , path = "v1/subs/" ++ Proto.Route.segment subSubfield_
-    , query = []
-    , body = Just (Proto.Route.without [ [ "sub", "subfield" ] ] (Routes.V1.encodeGetMessageRequest request_))
-    , responseBody = Nothing
-    , invalid = Proto.Route.checkSegment "sub.subfield" "*" subSubfield_
-    }
+    Ok
+        { method = "POST"
+        , path = "v1/subs/" ++ Proto.Route.segment subSubfield_
+        , query = []
+        , body = Just (Proto.Route.without [ [ "sub", "subfield" ] ] (Routes.V1.encodeGetMessageRequest request_))
+        , invalid = Proto.Route.checkSegment "sub.subfield" "*" subSubfield_
+        }
 
 
 {-| The route of [`query`](#query) over binding 0: `GET /v1/query`.
 -}
-routeQuery0 : Routes.V1.Everything -> Proto.Route.Route
-routeQuery0 request_ =
-    { method = "GET"
-    , path = "v1/query"
-    , query = Routes.V1.queryOfEverything request_
-    , body = Nothing
-    , responseBody = Nothing
-    , invalid = Nothing
-    }
+routeQuery0 : Proto.Registry.Registry -> Routes.V1.Everything -> Result Proto.Error.Error Proto.Route.Route
+routeQuery0 _ request_ =
+    Ok
+        { method = "GET"
+        , path = "v1/query"
+        , query = Routes.V1.queryOfEverything request_
+        , body = Nothing
+        , invalid = Nothing
+        }
 
 
 {-| The route of [`single`](#single) over binding 0: `GET /v1/single/{name}`.
 -}
-routeSingle0 : Routes.V1.Everything -> Proto.Route.Route
-routeSingle0 request_ =
+routeSingle0 : Proto.Registry.Registry -> Routes.V1.Everything -> Result Proto.Error.Error Proto.Route.Route
+routeSingle0 _ request_ =
     let
         name_ =
             request_.name
     in
-    { method = "GET"
-    , path = "v1/single/" ++ Proto.Route.segment name_
-    , query = Proto.Query.except [ "name" ] (Routes.V1.queryOfEverything request_)
-    , body = Nothing
-    , responseBody = Nothing
-    , invalid = Proto.Route.checkSegment "name" "*" name_
-    }
+    Ok
+        { method = "GET"
+        , path = "v1/single/" ++ Proto.Route.segment name_
+        , query = Proto.Query.except [ "name" ] (Routes.V1.queryOfEverything request_)
+        , body = Nothing
+        , invalid = Proto.Route.checkSegment "name" "*" name_
+        }
 
 
 {-| The route of [`multi`](#multi) over binding 0: `GET /v1/{name=things/*}`.
 -}
-routeMulti0 : Routes.V1.Everything -> Proto.Route.Route
-routeMulti0 request_ =
+routeMulti0 : Proto.Registry.Registry -> Routes.V1.Everything -> Result Proto.Error.Error Proto.Route.Route
+routeMulti0 _ request_ =
     let
         name_ =
             request_.name
     in
-    { method = "GET"
-    , path = "v1/" ++ Proto.Route.segments name_
-    , query = Proto.Query.except [ "name" ] (Routes.V1.queryOfEverything request_)
-    , body = Nothing
-    , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "name" [ "things", "*" ] name_
-    }
+    Ok
+        { method = "GET"
+        , path = "v1/" ++ Proto.Route.segments name_
+        , query = Proto.Query.except [ "name" ] (Routes.V1.queryOfEverything request_)
+        , body = Nothing
+        , invalid = Proto.Route.checkSegments "name" [ "things", "*" ] name_
+        }
 
 
 {-| The route of [`typed`](#typed) over binding 0: `DELETE /v1/typed/{count}/{flag}/{kind}/{big}/{inner.deep.b}`.
 -}
-routeTyped0 : Routes.V1.Everything -> Proto.Route.Route
-routeTyped0 request_ =
+routeTyped0 : Proto.Registry.Registry -> Routes.V1.Everything -> Result Proto.Error.Error Proto.Route.Route
+routeTyped0 _ request_ =
     let
         count_ =
             String.fromInt request_.count
@@ -538,105 +540,105 @@ routeTyped0 request_ =
         innerDeepB_ =
             String.fromInt (Maybe.withDefault 0 (Maybe.map .b (Maybe.andThen .deep request_.inner)))
     in
-    { method = "DELETE"
-    , path = "v1/typed/" ++ Proto.Route.segment count_ ++ "/" ++ Proto.Route.segment flag_ ++ "/" ++ Proto.Route.segment kind_ ++ "/" ++ Proto.Route.segment big_ ++ "/" ++ Proto.Route.segment innerDeepB_
-    , query = Proto.Query.except [ "count", "big", "flag", "kind", "inner.deep.b" ] (Routes.V1.queryOfEverything request_)
-    , body = Nothing
-    , responseBody = Nothing
-    , invalid =
-        Proto.Route.firstInvalid
-            [ Proto.Route.checkSegment "count" "*" count_
-            , Proto.Route.checkSegment "flag" "*" flag_
-            , Proto.Route.checkSegment "kind" "*" kind_
-            , Proto.Route.checkSegment "big" "*" big_
-            , Proto.Route.checkSegment "inner.deep.b" "*" innerDeepB_
-            ]
-    }
+    Ok
+        { method = "DELETE"
+        , path = "v1/typed/" ++ Proto.Route.segment count_ ++ "/" ++ Proto.Route.segment flag_ ++ "/" ++ Proto.Route.segment kind_ ++ "/" ++ Proto.Route.segment big_ ++ "/" ++ Proto.Route.segment innerDeepB_
+        , query = Proto.Query.except [ "count", "big", "flag", "kind", "inner.deep.b" ] (Routes.V1.queryOfEverything request_)
+        , body = Nothing
+        , invalid =
+            Proto.Route.firstInvalid
+                [ Proto.Route.checkSegment "count" "*" count_
+                , Proto.Route.checkSegment "flag" "*" flag_
+                , Proto.Route.checkSegment "kind" "*" kind_
+                , Proto.Route.checkSegment "big" "*" big_
+                , Proto.Route.checkSegment "inner.deep.b" "*" innerDeepB_
+                ]
+        }
 
 
 {-| The route of [`files`](#files) over binding 0: `GET /v1/{path=files/**}`.
 -}
-routeFiles0 : Routes.V1.FileRequest -> Proto.Route.Route
-routeFiles0 request_ =
+routeFiles0 : Proto.Registry.Registry -> Routes.V1.FileRequest -> Result Proto.Error.Error Proto.Route.Route
+routeFiles0 _ request_ =
     let
         path_ =
             request_.path
     in
-    { method = "GET"
-    , path = "v1/" ++ Proto.Route.segments path_
-    , query = []
-    , body = Nothing
-    , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "path" [ "files", "**" ] path_
-    }
+    Ok
+        { method = "GET"
+        , path = "v1/" ++ Proto.Route.segments path_
+        , query = []
+        , body = Nothing
+        , invalid = Proto.Route.checkSegments "path" [ "files", "**" ] path_
+        }
 
 
 {-| The route of [`cancel`](#cancel) over binding 0: `POST /v1/{name=operations/*}:cancel` body `*`.
 -}
-routeCancel0 : Routes.V1.Resource -> Proto.Route.Route
-routeCancel0 request_ =
+routeCancel0 : Proto.Registry.Registry -> Routes.V1.Resource -> Result Proto.Error.Error Proto.Route.Route
+routeCancel0 _ request_ =
     let
         name_ =
             request_.name
     in
-    { method = "POST"
-    , path = "v1/" ++ Proto.Route.segments name_ ++ ":cancel"
-    , query = []
-    , body = Just (Proto.Route.without [ [ "name" ] ] (Routes.V1.encodeResource request_))
-    , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "name" [ "operations", "*" ] name_
-    }
+    Ok
+        { method = "POST"
+        , path = "v1/" ++ Proto.Route.segments name_ ++ ":cancel"
+        , query = []
+        , body = Just (Proto.Route.without [ [ "name" ] ] (Routes.V1.encodeResource request_))
+        , invalid = Proto.Route.checkSegments "name" [ "operations", "*" ] name_
+        }
 
 
 {-| The route of [`updateResource`](#updateResource) over binding 0: `PATCH /v1/{resource.name=resources/*}` body `resource`.
 -}
-routeUpdateResource0 : Routes.V1.UpdateResourceRequest -> Proto.Route.Route
-routeUpdateResource0 request_ =
+routeUpdateResource0 : Proto.Registry.Registry -> Routes.V1.UpdateResourceRequest -> Result Proto.Error.Error Proto.Route.Route
+routeUpdateResource0 _ request_ =
     let
         resourceName_ =
             Maybe.withDefault "" (Maybe.map .name request_.resource)
     in
-    { method = "PATCH"
-    , path = "v1/" ++ Proto.Route.segments resourceName_
-    , query = Routes.V1.queryOfUpdateResourceRequest request_
-    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Routes.V1.encodeResource request_.resource))
-    , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "resource.name" [ "resources", "*" ] resourceName_
-    }
+    Ok
+        { method = "PATCH"
+        , path = "v1/" ++ Proto.Route.segments resourceName_
+        , query = Routes.V1.queryOfUpdateResourceRequest request_
+        , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Routes.V1.encodeResource request_.resource))
+        , invalid = Proto.Route.checkSegments "resource.name" [ "resources", "*" ] resourceName_
+        }
 
 
 {-| The route of [`head`](#head) over binding 0: `HEAD /v1/{path=files/**}`.
 -}
-routeHead0 : Routes.V1.FileRequest -> Proto.Route.Route
-routeHead0 request_ =
+routeHead0 : Proto.Registry.Registry -> Routes.V1.FileRequest -> Result Proto.Error.Error Proto.Route.Route
+routeHead0 _ request_ =
     let
         path_ =
             request_.path
     in
-    { method = "HEAD"
-    , path = "v1/" ++ Proto.Route.segments path_
-    , query = []
-    , body = Nothing
-    , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "path" [ "files", "**" ] path_
-    }
+    Ok
+        { method = "HEAD"
+        , path = "v1/" ++ Proto.Route.segments path_
+        , query = []
+        , body = Nothing
+        , invalid = Proto.Route.checkSegments "path" [ "files", "**" ] path_
+        }
 
 
 {-| The route of [`bytesPath`](#bytesPath) over binding 0: `GET /v1/bytes/{data}`.
 -}
-routeBytesPath0 : Routes.V1.Everything -> Proto.Route.Route
-routeBytesPath0 request_ =
+routeBytesPath0 : Proto.Registry.Registry -> Routes.V1.Everything -> Result Proto.Error.Error Proto.Route.Route
+routeBytesPath0 _ request_ =
     let
         data_ =
             Proto.Route.viaJson Proto.Json.encodeBytes request_.data
     in
-    { method = "GET"
-    , path = "v1/bytes/" ++ Proto.Route.segment data_
-    , query = Proto.Query.except [ "data" ] (Routes.V1.queryOfEverything request_)
-    , body = Nothing
-    , responseBody = Nothing
-    , invalid = Proto.Route.checkSegment "data" "*" data_
-    }
+    Ok
+        { method = "GET"
+        , path = "v1/bytes/" ++ Proto.Route.segment data_
+        , query = Proto.Query.except [ "data" ] (Routes.V1.queryOfEverything request_)
+        , body = Nothing
+        , invalid = Proto.Route.checkSegment "data" "*" data_
+        }
 
 
 

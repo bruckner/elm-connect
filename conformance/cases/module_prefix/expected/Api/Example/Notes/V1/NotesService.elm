@@ -9,8 +9,10 @@ module Api.Example.Notes.V1.NotesService exposing (..)
 
 import Api.Example.Notes.V1
 import Api.Example.Notes.V1.GetNoteRequest
+import Proto.Error
 import Proto.Http
 import Proto.Method
+import Proto.Registry
 import Proto.Route
 import Proto.Version
 import Rpc
@@ -53,19 +55,19 @@ getNote =
 
 {-| The route of [`getNote`](#getNote) over binding 0: `GET /v1/{name=notes/*}`.
 -}
-routeGetNote0 : Api.Example.Notes.V1.GetNoteRequest -> Proto.Route.Route
-routeGetNote0 request_ =
+routeGetNote0 : Proto.Registry.Registry -> Api.Example.Notes.V1.GetNoteRequest -> Result Proto.Error.Error Proto.Route.Route
+routeGetNote0 _ request_ =
     let
         name_ =
             request_.name
     in
-    { method = "GET"
-    , path = "v1/" ++ Proto.Route.segments name_
-    , query = []
-    , body = Nothing
-    , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] name_
-    }
+    Ok
+        { method = "GET"
+        , path = "v1/" ++ Proto.Route.segments name_
+        , query = []
+        , body = Nothing
+        , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] name_
+        }
 
 
 

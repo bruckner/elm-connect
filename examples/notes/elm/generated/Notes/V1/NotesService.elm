@@ -28,9 +28,11 @@ import Notes.V1.ListNotesRequest
 import Notes.V1.Note
 import Notes.V1.UpdateNoteRequest
 import Proto.Binary
+import Proto.Error
 import Proto.Http
 import Proto.Json
 import Proto.Method
+import Proto.Registry
 import Proto.Route
 import Proto.Version
 import Rpc
@@ -115,7 +117,7 @@ createNote =
             Notes.V1.decodeNoteWith
             Notes.V1.encodeCreateNoteRequestBytes
             Notes.V1.decodeNoteBytes
-            |> Proto.Method.withJsonRoutes [ routeCreateNote0 ]
+            |> Proto.Method.withRoutes [ routeCreateNote0 ]
         )
 
 
@@ -137,7 +139,7 @@ updateNote =
             Notes.V1.decodeNoteWith
             Notes.V1.encodeUpdateNoteRequestBytes
             Notes.V1.decodeNoteBytes
-            |> Proto.Method.withJsonRoutes [ routeUpdateNote0 ]
+            |> Proto.Method.withRoutes [ routeUpdateNote0 ]
         )
 
 
@@ -214,96 +216,102 @@ ping =
 
 {-| The route of [`getNote`](#getNote) over binding 0: `GET /v1/{name=notes/*}`.
 -}
-routeGetNote0 : Notes.V1.GetNoteRequest -> Proto.Route.Route
-routeGetNote0 request_ =
+routeGetNote0 : Proto.Registry.Registry -> Notes.V1.GetNoteRequest -> Result Proto.Error.Error Proto.Route.Route
+routeGetNote0 _ request_ =
     let
         name_ =
             request_.name
     in
-    { method = "GET"
-    , path = "v1/" ++ Proto.Route.segments name_
-    , query = []
-    , body = Nothing
-    , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] name_
-    }
+    Ok
+        { method = "GET"
+        , path = "v1/" ++ Proto.Route.segments name_
+        , query = []
+        , body = Nothing
+        , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] name_
+        }
 
 
 {-| The route of [`listNotes`](#listNotes) over binding 0: `GET /v1/notes`.
 -}
-routeListNotes0 : Notes.V1.ListNotesRequest -> Proto.Route.Route
-routeListNotes0 request_ =
-    { method = "GET"
-    , path = "v1/notes"
-    , query = Notes.V1.queryOfListNotesRequest request_
-    , body = Nothing
-    , responseBody = Nothing
-    , invalid = Nothing
-    }
+routeListNotes0 : Proto.Registry.Registry -> Notes.V1.ListNotesRequest -> Result Proto.Error.Error Proto.Route.Route
+routeListNotes0 _ request_ =
+    Ok
+        { method = "GET"
+        , path = "v1/notes"
+        , query = Notes.V1.queryOfListNotesRequest request_
+        , body = Nothing
+        , invalid = Nothing
+        }
 
 
 {-| The route of [`createNote`](#createNote) over binding 0: `POST /v1/notes` body `note`.
 -}
-routeCreateNote0 : Notes.V1.CreateNoteRequest -> Json.Encode.Value -> Proto.Route.Route
-routeCreateNote0 request_ json_ =
-    { method = "POST"
-    , path = "v1/notes"
-    , query = []
-    , body = Just (Proto.Route.jsonField "note" json_)
-    , responseBody = Nothing
-    , invalid = Nothing
-    }
+routeCreateNote0 : Proto.Registry.Registry -> Notes.V1.CreateNoteRequest -> Result Proto.Error.Error Proto.Route.Route
+routeCreateNote0 registry_ request_ =
+    Result.map
+        (\body_ ->
+            { method = "POST"
+            , path = "v1/notes"
+            , query = []
+            , body = Just body_
+            , invalid = Nothing
+            }
+        )
+        (Maybe.withDefault (Ok (Json.Encode.object [])) (Maybe.map (Notes.V1.encodeNoteWith registry_) request_.note))
 
 
 {-| The route of [`updateNote`](#updateNote) over binding 0: `PATCH /v1/{note.name=notes/*}` body `note`.
 -}
-routeUpdateNote0 : Notes.V1.UpdateNoteRequest -> Json.Encode.Value -> Proto.Route.Route
-routeUpdateNote0 request_ json_ =
+routeUpdateNote0 : Proto.Registry.Registry -> Notes.V1.UpdateNoteRequest -> Result Proto.Error.Error Proto.Route.Route
+routeUpdateNote0 registry_ request_ =
     let
         noteName_ =
             Maybe.withDefault "" (Maybe.map .name request_.note)
     in
-    { method = "PATCH"
-    , path = "v1/" ++ Proto.Route.segments noteName_
-    , query = Notes.V1.queryOfUpdateNoteRequest request_
-    , body = Just (Proto.Route.jsonField "note" json_)
-    , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "note.name" [ "notes", "*" ] noteName_
-    }
+    Result.map
+        (\body_ ->
+            { method = "PATCH"
+            , path = "v1/" ++ Proto.Route.segments noteName_
+            , query = Notes.V1.queryOfUpdateNoteRequest request_
+            , body = Just body_
+            , invalid = Proto.Route.checkSegments "note.name" [ "notes", "*" ] noteName_
+            }
+        )
+        (Maybe.withDefault (Ok (Json.Encode.object [])) (Maybe.map (Notes.V1.encodeNoteWith registry_) request_.note))
 
 
 {-| The route of [`deleteNote`](#deleteNote) over binding 0: `DELETE /v1/{name=notes/*}`.
 -}
-routeDeleteNote0 : Notes.V1.DeleteNoteRequest -> Proto.Route.Route
-routeDeleteNote0 request_ =
+routeDeleteNote0 : Proto.Registry.Registry -> Notes.V1.DeleteNoteRequest -> Result Proto.Error.Error Proto.Route.Route
+routeDeleteNote0 _ request_ =
     let
         name_ =
             request_.name
     in
-    { method = "DELETE"
-    , path = "v1/" ++ Proto.Route.segments name_
-    , query = []
-    , body = Nothing
-    , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] name_
-    }
+    Ok
+        { method = "DELETE"
+        , path = "v1/" ++ Proto.Route.segments name_
+        , query = []
+        , body = Nothing
+        , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] name_
+        }
 
 
 {-| The route of [`archiveNote`](#archiveNote) over binding 0: `POST /v1/{name=notes/*}:archive` body `*`.
 -}
-routeArchiveNote0 : Notes.V1.ArchiveNoteRequest -> Proto.Route.Route
-routeArchiveNote0 request_ =
+routeArchiveNote0 : Proto.Registry.Registry -> Notes.V1.ArchiveNoteRequest -> Result Proto.Error.Error Proto.Route.Route
+routeArchiveNote0 _ request_ =
     let
         name_ =
             request_.name
     in
-    { method = "POST"
-    , path = "v1/" ++ Proto.Route.segments name_ ++ ":archive"
-    , query = []
-    , body = Just (Proto.Route.without [ [ "name" ] ] (Notes.V1.encodeArchiveNoteRequest request_))
-    , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] name_
-    }
+    Ok
+        { method = "POST"
+        , path = "v1/" ++ Proto.Route.segments name_ ++ ":archive"
+        , query = []
+        , body = Just (Proto.Route.without [ [ "name" ] ] (Notes.V1.encodeArchiveNoteRequest request_))
+        , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] name_
+        }
 
 
 

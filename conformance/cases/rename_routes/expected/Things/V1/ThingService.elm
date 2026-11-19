@@ -7,8 +7,10 @@ module Things.V1.ThingService exposing (..)
 {-| `service things.v1.ThingService`
 -}
 
+import Proto.Error
 import Proto.Http
 import Proto.Method
+import Proto.Registry
 import Proto.Route
 import Proto.Version
 import Rpc
@@ -54,19 +56,19 @@ getThing =
 
 {-| The route of [`getThing`](#getThing) over binding 0: `GET /v1/{name=things/*}`.
 -}
-routeGetThing0 : Things.V1.GetThingRequest -> Proto.Route.Route
-routeGetThing0 request_ =
+routeGetThing0 : Proto.Registry.Registry -> Things.V1.GetThingRequest -> Result Proto.Error.Error Proto.Route.Route
+routeGetThing0 _ request_ =
     let
         name_ =
             request_.resource
     in
-    { method = "GET"
-    , path = "v1/" ++ Proto.Route.segments name_
-    , query = Things.V1.queryOfGetThingRequest request_
-    , body = Nothing
-    , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "name" [ "things", "*" ] name_
-    }
+    Ok
+        { method = "GET"
+        , path = "v1/" ++ Proto.Route.segments name_
+        , query = Things.V1.queryOfGetThingRequest request_
+        , body = Nothing
+        , invalid = Proto.Route.checkSegments "name" [ "things", "*" ] name_
+        }
 
 
 

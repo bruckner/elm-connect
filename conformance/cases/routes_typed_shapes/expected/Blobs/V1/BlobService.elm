@@ -15,9 +15,11 @@ import Blobs.V1.LabelBlobRequest
 import Blobs.V1.Labeled
 import Blobs.V1.Slots
 import Json.Encode
+import Proto.Error
 import Proto.Http
 import Proto.Method
 import Proto.Query
+import Proto.Registry
 import Proto.Route
 import Proto.Version
 import Rpc
@@ -96,7 +98,7 @@ labelBlob =
             (\_ -> Blobs.V1.decodeBlob)
             Blobs.V1.encodeLabelBlobRequestBytes
             Blobs.V1.decodeBlobBytes
-            |> Proto.Method.withJsonRoutes [ routeLabelBlob0, routeLabelBlob1 ]
+            |> Proto.Method.withRoutes [ routeLabelBlob0, routeLabelBlob1 ]
         )
 
 
@@ -116,7 +118,7 @@ putLabel =
             Blobs.V1.decodeLabeledWith
             Blobs.V1.encodeLabeledBytes
             Blobs.V1.decodeLabeledBytes
-            |> Proto.Method.withJsonRoutes [ routePutLabel0 ]
+            |> Proto.Method.withRoutes [ routePutLabel0 ]
         )
 
 
@@ -206,172 +208,181 @@ setValue =
 
 {-| The route of [`getBlob`](#getBlob) over binding 0: `GET /v1/blobs/{digest}`.
 -}
-routeGetBlob0 : Blobs.V1.Blob -> Proto.Route.Route
-routeGetBlob0 request_ =
+routeGetBlob0 : Proto.Registry.Registry -> Blobs.V1.Blob -> Result Proto.Error.Error Proto.Route.Route
+routeGetBlob0 _ request_ =
     let
         digest_ =
             Proto.Route.bytesText request_.digest
     in
-    { method = "GET"
-    , path = "v1/blobs/" ++ Proto.Route.segment digest_
-    , query = Proto.Query.except [ "digest" ] (Blobs.V1.queryOfBlob request_)
-    , body = Nothing
-    , responseBody = Nothing
-    , invalid = Proto.Route.checkSegment "digest" "*" digest_
-    }
+    Ok
+        { method = "GET"
+        , path = "v1/blobs/" ++ Proto.Route.segment digest_
+        , query = Proto.Query.except [ "digest" ] (Blobs.V1.queryOfBlob request_)
+        , body = Nothing
+        , invalid = Proto.Route.checkSegment "digest" "*" digest_
+        }
 
 
 {-| The route of [`getBlob`](#getBlob) over binding 1: `GET /v1/{name=shelves/*/blobs/*}`.
 -}
-routeGetBlob1 : Blobs.V1.Blob -> Proto.Route.Route
-routeGetBlob1 request_ =
+routeGetBlob1 : Proto.Registry.Registry -> Blobs.V1.Blob -> Result Proto.Error.Error Proto.Route.Route
+routeGetBlob1 _ request_ =
     let
         name_ =
             request_.name
     in
-    { method = "GET"
-    , path = "v1/" ++ Proto.Route.segments name_
-    , query = Proto.Query.except [ "name" ] (Blobs.V1.queryOfBlob request_)
-    , body = Nothing
-    , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "name" [ "shelves", "*", "blobs", "*" ] name_
-    }
+    Ok
+        { method = "GET"
+        , path = "v1/" ++ Proto.Route.segments name_
+        , query = Proto.Query.except [ "name" ] (Blobs.V1.queryOfBlob request_)
+        , body = Nothing
+        , invalid = Proto.Route.checkSegments "name" [ "shelves", "*", "blobs", "*" ] name_
+        }
 
 
 {-| The route of [`findBlob`](#findBlob) over binding 0: `POST /v1/{name=blobs/*}:find` body `*`.
 -}
-routeFindBlob0 : Blobs.V1.Blob -> Proto.Route.Route
-routeFindBlob0 request_ =
+routeFindBlob0 : Proto.Registry.Registry -> Blobs.V1.Blob -> Result Proto.Error.Error Proto.Route.Route
+routeFindBlob0 _ request_ =
     let
         name_ =
             request_.name
     in
-    { method = "POST"
-    , path = "v1/" ++ Proto.Route.segments name_ ++ ":find"
-    , query = []
-    , body = Just (Proto.Route.without [ [ "name" ] ] (Blobs.V1.encodeBlob request_))
-    , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "name" [ "blobs", "*" ] name_
-    }
+    Ok
+        { method = "POST"
+        , path = "v1/" ++ Proto.Route.segments name_ ++ ":find"
+        , query = []
+        , body = Just (Proto.Route.without [ [ "name" ] ] (Blobs.V1.encodeBlob request_))
+        , invalid = Proto.Route.checkSegments "name" [ "blobs", "*" ] name_
+        }
 
 
 {-| The route of [`labelBlob`](#labelBlob) over binding 0: `POST /v1/{shelf=shelves/*}/labels` body `labeled`.
 -}
-routeLabelBlob0 : Blobs.V1.LabelBlobRequest -> Json.Encode.Value -> Proto.Route.Route
-routeLabelBlob0 request_ json_ =
+routeLabelBlob0 : Proto.Registry.Registry -> Blobs.V1.LabelBlobRequest -> Result Proto.Error.Error Proto.Route.Route
+routeLabelBlob0 registry_ request_ =
     let
         shelf_ =
             request_.shelf
     in
-    { method = "POST"
-    , path = "v1/" ++ Proto.Route.segments shelf_ ++ "/labels"
-    , query = []
-    , body = Just (Proto.Route.jsonField "labeled" json_)
-    , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "shelf" [ "shelves", "*" ] shelf_
-    }
+    Result.map
+        (\body_ ->
+            { method = "POST"
+            , path = "v1/" ++ Proto.Route.segments shelf_ ++ "/labels"
+            , query = []
+            , body = Just body_
+            , invalid = Proto.Route.checkSegments "shelf" [ "shelves", "*" ] shelf_
+            }
+        )
+        (Maybe.withDefault (Ok (Json.Encode.object [])) (Maybe.map (Blobs.V1.encodeLabeledWith registry_) request_.labeled))
 
 
 {-| The route of [`labelBlob`](#labelBlob) over binding 1: `PUT /v1/{labeled.name=labels/*}` body `labeled`.
 -}
-routeLabelBlob1 : Blobs.V1.LabelBlobRequest -> Json.Encode.Value -> Proto.Route.Route
-routeLabelBlob1 request_ json_ =
+routeLabelBlob1 : Proto.Registry.Registry -> Blobs.V1.LabelBlobRequest -> Result Proto.Error.Error Proto.Route.Route
+routeLabelBlob1 registry_ request_ =
     let
         labeledName_ =
             Maybe.withDefault "" (Maybe.map .name request_.labeled)
     in
-    { method = "PUT"
-    , path = "v1/" ++ Proto.Route.segments labeledName_
-    , query = Blobs.V1.queryOfLabelBlobRequest request_
-    , body = Just (Proto.Route.jsonField "labeled" json_)
-    , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "labeled.name" [ "labels", "*" ] labeledName_
-    }
+    Result.map
+        (\body_ ->
+            { method = "PUT"
+            , path = "v1/" ++ Proto.Route.segments labeledName_
+            , query = Blobs.V1.queryOfLabelBlobRequest request_
+            , body = Just body_
+            , invalid = Proto.Route.checkSegments "labeled.name" [ "labels", "*" ] labeledName_
+            }
+        )
+        (Maybe.withDefault (Ok (Json.Encode.object [])) (Maybe.map (Blobs.V1.encodeLabeledWith registry_) request_.labeled))
 
 
 {-| The route of [`putLabel`](#putLabel) over binding 0: `PUT /v1/{name=tags/*}` body `*`.
 -}
-routePutLabel0 : Blobs.V1.Labeled -> Json.Encode.Value -> Proto.Route.Route
-routePutLabel0 request_ json_ =
+routePutLabel0 : Proto.Registry.Registry -> Blobs.V1.Labeled -> Result Proto.Error.Error Proto.Route.Route
+routePutLabel0 registry_ request_ =
     let
         name_ =
             request_.name
     in
-    { method = "PUT"
-    , path = "v1/" ++ Proto.Route.segments name_
-    , query = []
-    , body = Just (Proto.Route.without [ [ "name" ] ] json_)
-    , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "name" [ "tags", "*" ] name_
-    }
+    Result.map
+        (\body_ ->
+            { method = "PUT"
+            , path = "v1/" ++ Proto.Route.segments name_
+            , query = []
+            , body = Just body_
+            , invalid = Proto.Route.checkSegments "name" [ "tags", "*" ] name_
+            }
+        )
+        (Result.map (Proto.Route.without [ [ "name" ] ]) (Blobs.V1.encodeLabeledWith registry_ request_))
 
 
 {-| The route of [`addFolder`](#addFolder) over binding 0: `POST /v1/{parent.name=folders/*}/children` body `*`.
 -}
-routeAddFolder0 : Blobs.V1.Folder -> Proto.Route.Route
-routeAddFolder0 request_ =
+routeAddFolder0 : Proto.Registry.Registry -> Blobs.V1.Folder -> Result Proto.Error.Error Proto.Route.Route
+routeAddFolder0 _ request_ =
     let
         parentName_ =
             Maybe.withDefault "" (Maybe.map .name (Maybe.map (\(Blobs.V1.Folder_ message_) -> message_) request_.parent))
     in
-    { method = "POST"
-    , path = "v1/" ++ Proto.Route.segments parentName_ ++ "/children"
-    , query = []
-    , body = Just (Proto.Route.without [ [ "parent", "name" ] ] (Blobs.V1.encodeFolder request_))
-    , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "parent.name" [ "folders", "*" ] parentName_
-    }
+    Ok
+        { method = "POST"
+        , path = "v1/" ++ Proto.Route.segments parentName_ ++ "/children"
+        , query = []
+        , body = Just (Proto.Route.without [ [ "parent", "name" ] ] (Blobs.V1.encodeFolder request_))
+        , invalid = Proto.Route.checkSegments "parent.name" [ "folders", "*" ] parentName_
+        }
 
 
 {-| The route of [`moveFolder`](#moveFolder) over binding 0: `POST /v1/{name=folders/*}:move` body `parent`.
 -}
-routeMoveFolder0 : Blobs.V1.Folder -> Proto.Route.Route
-routeMoveFolder0 request_ =
+routeMoveFolder0 : Proto.Registry.Registry -> Blobs.V1.Folder -> Result Proto.Error.Error Proto.Route.Route
+routeMoveFolder0 _ request_ =
     let
         name_ =
             request_.name
     in
-    { method = "POST"
-    , path = "v1/" ++ Proto.Route.segments name_ ++ ":move"
-    , query = []
-    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Blobs.V1.encodeFolder_ request_.parent))
-    , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "name" [ "folders", "*" ] name_
-    }
+    Ok
+        { method = "POST"
+        , path = "v1/" ++ Proto.Route.segments name_ ++ ":move"
+        , query = []
+        , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Blobs.V1.encodeFolder_ request_.parent))
+        , invalid = Proto.Route.checkSegments "name" [ "folders", "*" ] name_
+        }
 
 
 {-| The route of [`touch`](#touch) over binding 0: `POST /v1/{name=slots/*}:touch` body `nothing`.
 -}
-routeTouch0 : Blobs.V1.Slots -> Proto.Route.Route
-routeTouch0 request_ =
+routeTouch0 : Proto.Registry.Registry -> Blobs.V1.Slots -> Result Proto.Error.Error Proto.Route.Route
+routeTouch0 _ request_ =
     let
         name_ =
             request_.name
     in
-    { method = "POST"
-    , path = "v1/" ++ Proto.Route.segments name_ ++ ":touch"
-    , query = []
-    , body = Just (Json.Encode.object [])
-    , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "name" [ "slots", "*" ] name_
-    }
+    Ok
+        { method = "POST"
+        , path = "v1/" ++ Proto.Route.segments name_ ++ ":touch"
+        , query = []
+        , body = Just (Json.Encode.object [])
+        , invalid = Proto.Route.checkSegments "name" [ "slots", "*" ] name_
+        }
 
 
 {-| The route of [`setValue`](#setValue) over binding 0: `POST /v1/{name=values/*}` body `value`.
 -}
-routeSetValue0 : Blobs.V1.Free -> Proto.Route.Route
-routeSetValue0 request_ =
+routeSetValue0 : Proto.Registry.Registry -> Blobs.V1.Free -> Result Proto.Error.Error Proto.Route.Route
+routeSetValue0 _ request_ =
     let
         name_ =
             request_.name
     in
-    { method = "POST"
-    , path = "v1/" ++ Proto.Route.segments name_
-    , query = []
-    , body = Just (Maybe.withDefault (Json.Encode.object []) request_.value)
-    , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "name" [ "values", "*" ] name_
-    }
+    Ok
+        { method = "POST"
+        , path = "v1/" ++ Proto.Route.segments name_
+        , query = []
+        , body = Just (Maybe.withDefault (Json.Encode.object []) request_.value)
+        , invalid = Proto.Route.checkSegments "name" [ "values", "*" ] name_
+        }
 
 
 

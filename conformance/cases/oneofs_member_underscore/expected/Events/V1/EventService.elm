@@ -9,8 +9,10 @@ module Events.V1.EventService exposing (..)
 
 import Events.V1
 import Events.V1.ListEventsRequest
+import Proto.Error
 import Proto.Http
 import Proto.Method
+import Proto.Registry
 import Proto.Route
 import Proto.Version
 import Rpc
@@ -56,19 +58,19 @@ listEvents =
 
 {-| The route of [`listEvents`](#listEvents) over binding 0: `GET /v1/{parent=feeds/*}/events`.
 -}
-routeListEvents0 : Events.V1.ListEventsRequest -> Proto.Route.Route
-routeListEvents0 request_ =
+routeListEvents0 : Proto.Registry.Registry -> Events.V1.ListEventsRequest -> Result Proto.Error.Error Proto.Route.Route
+routeListEvents0 _ request_ =
     let
         parent_ =
             request_.parent
     in
-    { method = "GET"
-    , path = "v1/" ++ Proto.Route.segments parent_ ++ "/events"
-    , query = Events.V1.queryOfListEventsRequest request_
-    , body = Nothing
-    , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "parent" [ "feeds", "*" ] parent_
-    }
+    Ok
+        { method = "GET"
+        , path = "v1/" ++ Proto.Route.segments parent_ ++ "/events"
+        , query = Events.V1.queryOfListEventsRequest request_
+        , body = Nothing
+        , invalid = Proto.Route.checkSegments "parent" [ "feeds", "*" ] parent_
+        }
 
 
 

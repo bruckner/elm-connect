@@ -3,7 +3,6 @@ module Proto.RouteTest exposing (suite)
 import Bytes exposing (Bytes)
 import Bytes.Encode
 import Expect
-import Json.Encode
 import Proto.Query
 import Proto.Route
 import Test exposing (Test, describe, test)
@@ -49,30 +48,5 @@ suite =
                     , Proto.Query.bytes "data" (bytesOf [ 0xFB, 0xFF ])
                     ]
                         |> Expect.equal [ [ ( "data", "AA==" ) ], [ ( "data", "-_8=" ) ] ]
-            ]
-        , describe "Proto.Route.jsonField"
-            [ test "is the field's value" <|
-                \_ ->
-                    Json.Encode.object
-                        [ ( "name", Json.Encode.string "n" )
-                        , ( "note", Json.Encode.object [ ( "title", Json.Encode.string "T" ) ] )
-                        ]
-                        |> Proto.Route.jsonField "note"
-                        |> Json.Encode.encode 0
-                        |> Expect.equal """{"title":"T"}"""
-            , test "is the value whatever its JSON type" <|
-                \_ ->
-                    Json.Encode.object [ ( "v", Json.Encode.list Json.Encode.int [ 1, 2 ] ) ]
-                        |> Proto.Route.jsonField "v"
-                        |> Json.Encode.encode 0
-                        |> Expect.equal "[1,2]"
-            , test "is an empty object when the JSON leaves the field out or holds null" <|
-                \_ ->
-                    [ Json.Encode.object [ ( "name", Json.Encode.string "n" ) ]
-                    , Json.Encode.object [ ( "note", Json.Encode.null ) ]
-                    , Json.Encode.null
-                    ]
-                        |> List.map (Json.Encode.encode 0 << Proto.Route.jsonField "note")
-                        |> Expect.equal [ "{}", "{}", "{}" ]
             ]
         ]

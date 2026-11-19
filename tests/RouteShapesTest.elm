@@ -14,11 +14,14 @@ import Bytes.Encode
 import Expect
 import Json.Encode
 import Proto.Any
+import Proto.Error
 import Proto.Method
 import Rpc
 import Rpc.Body
 import Rpc.Call
 import Rpc.Client
+import Rpc.Error
+import Rpc.Internal.Plan
 import Rpc.Protocol
 import Shapes.Blobs.V1 as B
 import Shapes.Blobs.V1.BlobService as Service
@@ -83,13 +86,6 @@ agree label descriptor toCall requests =
             in
             List.map Tuple.first pairs
                 |> Expect.equalLists (List.map Tuple.second pairs)
-
-
-{-| A shown request's method and URL.
--}
-withoutBody : String -> String
-withoutBody shown =
-    String.join " " (List.take 2 (String.words shown))
 
 
 bytesOf : List Int -> Bytes
@@ -188,13 +184,21 @@ suite =
                 \_ ->
                     both withTypes Service.descriptorSetValue Service.setValue { name = "values/5", value = Just Json.Encode.null }
                         |> Expect.equal [ ( "POST https://api.example.com/x/v1/values/5 null", "POST https://api.example.com/x/v1/values/5 {}" ) ]
-            , test "a request whose Any the client cannot write keeps its path and query, where the interpreter's has none" <|
+            , test "a request whose Any the client cannot write keeps its path and query, the Any written as its type alone" <|
                 \_ ->
                     both base Service.descriptorLabelBlob Service.labelBlob { labeled = Just { name = "labels/a", label = Just packed }, shelf = "shelves/s" }
-                        |> List.map (Tuple.mapBoth withoutBody withoutBody)
                         |> Expect.equal
-                            [ ( "POST https://api.example.com/x/v1/shelves/s/labels", "POST https://api.example.com/x/v1//labels" )
-                            , ( "PUT https://api.example.com/x/v1/labels/a?shelf=shelves%2Fs", "PUT https://api.example.com/x/v1/" )
+                            [ ( "POST https://api.example.com/x/v1/shelves/s/labels {\"name\":\"labels/a\",\"label\":{\"@type\":\"type.googleapis.com/blobs.v1.Blob\"}}"
+                              , "POST https://api.example.com/x/v1/shelves/s/labels {\"name\":\"labels/a\",\"label\":{\"@type\":\"type.googleapis.com/blobs.v1.Blob\"}}"
+                              )
+                            , ( "PUT https://api.example.com/x/v1/labels/a?shelf=shelves%2Fs {\"name\":\"labels/a\",\"label\":{\"@type\":\"type.googleapis.com/blobs.v1.Blob\"}}"
+                              , "PUT https://api.example.com/x/v1/labels/a?shelf=shelves%2Fs {\"name\":\"labels/a\",\"label\":{\"@type\":\"type.googleapis.com/blobs.v1.Blob\"}}"
+                              )
                             ]
+            , test "a call whose Any the client cannot write is not sent, the route's failure its error" <|
+                \_ ->
+                    Rpc.Call.viaBinding 1 (Service.labelBlob { labeled = Just { name = "labels/a", label = Just packed }, shelf = "shelves/s" })
+                        |> Maybe.map (\call -> Rpc.Internal.Plan.refused "https://api.example.com/x" (Rpc.Internal.Plan.plan base call) (Rpc.request base call))
+                        |> Expect.equal (Just (Just (Rpc.Error.badAny (Proto.Error.UnregisteredType "type.googleapis.com/blobs.v1.Blob"))))
             ]
         ]

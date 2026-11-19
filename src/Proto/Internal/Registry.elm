@@ -1,4 +1,4 @@
-module Proto.Internal.Registry exposing (Entry, Leniency(..), Registry(..), isLenient, member, strict, toBytes, toJson, unregistered)
+module Proto.Internal.Registry exposing (Entry, Leniency(..), Registry(..), isLenient, isStandIn, member, standIn, strict, toBytes, toJson, unregistered)
 
 {-| The `Registry` type, which `Proto.Registry` names by an alias, and the
 conversions through one, which `Proto.Registry` does not expose: `Proto.Any`
@@ -27,11 +27,15 @@ type Registry
 
 {-| `Strict` fails to read an `Any` of a type the registry has no entry for,
 and to write one held as JSON alone; `Lenient` reads it as that `Any`'s JSON
-alone, and writes it as that JSON.
+alone, and writes it as that JSON. `StandIn` writes as `Strict` does, but an
+`Any` it cannot write is written as a message of no fields, `{"@type": url}`
+once the `Any`'s writer adds its type, in place of failing: only the request
+a call that is not sent shows is written so ([`standIn`](#standIn)).
 -}
 type Leniency
     = Strict
     | Lenient
+    | StandIn
 
 
 {-| A message's conversions: its binary, as the base64 text an `Any` holds,
@@ -76,6 +80,24 @@ JSON alone.
 isLenient : Registry -> Bool
 isLenient (Registry leniency _) =
     leniency == Lenient
+
+
+{-| The registry with its entries, writing each `Any` it cannot write as its
+type URL alone: what a call whose route fails on an `Any` shows as its
+request, so that the request keeps its path and query. Never used to read,
+nor for a request that is sent.
+-}
+standIn : Registry -> Registry
+standIn (Registry _ entries) =
+    Registry StandIn entries
+
+
+{-| Whether the registry writes an `Any` it cannot write as its type URL
+alone.
+-}
+isStandIn : Registry -> Bool
+isStandIn (Registry leniency _) =
+    leniency == StandIn
 
 
 {-| The registry with its entries, strict.

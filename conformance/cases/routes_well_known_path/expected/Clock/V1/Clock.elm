@@ -10,10 +10,12 @@ module Clock.V1.Clock exposing (..)
 import Clock.V1
 import Clock.V1.Moment
 import Proto.Duration
+import Proto.Error
 import Proto.Http
 import Proto.Json
 import Proto.Method
 import Proto.Query
+import Proto.Registry
 import Proto.Route
 import Proto.Timestamp
 import Proto.Version
@@ -117,25 +119,25 @@ waitMoment =
 
 {-| The route of [`getMoment`](#getMoment) over binding 0: `GET /v1/at/{at}`.
 -}
-routeGetMoment0 : Clock.V1.Moment -> Proto.Route.Route
-routeGetMoment0 request_ =
+routeGetMoment0 : Proto.Registry.Registry -> Clock.V1.Moment -> Result Proto.Error.Error Proto.Route.Route
+routeGetMoment0 _ request_ =
     let
         at_ =
             Maybe.withDefault "" (Maybe.map Proto.Timestamp.toString request_.at)
     in
-    { method = "GET"
-    , path = "v1/at/" ++ Proto.Route.segment at_
-    , query = Proto.Query.except [ "at" ] (Clock.V1.queryOfMoment request_)
-    , body = Nothing
-    , responseBody = Nothing
-    , invalid = Proto.Route.checkSegment "at" "*" at_
-    }
+    Ok
+        { method = "GET"
+        , path = "v1/at/" ++ Proto.Route.segment at_
+        , query = Proto.Query.except [ "at" ] (Clock.V1.queryOfMoment request_)
+        , body = Nothing
+        , invalid = Proto.Route.checkSegment "at" "*" at_
+        }
 
 
 {-| The route of [`maskMoment`](#maskMoment) over binding 0: `GET /v1/at/{at}/mask/{mask}`.
 -}
-routeMaskMoment0 : Clock.V1.Moment -> Proto.Route.Route
-routeMaskMoment0 request_ =
+routeMaskMoment0 : Proto.Registry.Registry -> Clock.V1.Moment -> Result Proto.Error.Error Proto.Route.Route
+routeMaskMoment0 _ request_ =
     let
         at_ =
             Maybe.withDefault "" (Maybe.map Proto.Timestamp.toString request_.at)
@@ -143,23 +145,23 @@ routeMaskMoment0 request_ =
         mask_ =
             Maybe.withDefault "" (Maybe.map (Proto.Route.viaJson Proto.Json.encodeFieldMask) request_.mask)
     in
-    { method = "GET"
-    , path = "v1/at/" ++ Proto.Route.segment at_ ++ "/mask/" ++ Proto.Route.segment mask_
-    , query = Proto.Query.except [ "at", "mask" ] (Clock.V1.queryOfMoment request_)
-    , body = Nothing
-    , responseBody = Nothing
-    , invalid =
-        Proto.Route.firstInvalid
-            [ Proto.Route.checkSegment "at" "*" at_
-            , Proto.Route.checkSegment "mask" "*" mask_
-            ]
-    }
+    Ok
+        { method = "GET"
+        , path = "v1/at/" ++ Proto.Route.segment at_ ++ "/mask/" ++ Proto.Route.segment mask_
+        , query = Proto.Query.except [ "at", "mask" ] (Clock.V1.queryOfMoment request_)
+        , body = Nothing
+        , invalid =
+            Proto.Route.firstInvalid
+                [ Proto.Route.checkSegment "at" "*" at_
+                , Proto.Route.checkSegment "mask" "*" mask_
+                ]
+        }
 
 
 {-| The route of [`countMoment`](#countMoment) over binding 0: `GET /v1/count/{count}/seen/{seen}`.
 -}
-routeCountMoment0 : Clock.V1.Moment -> Proto.Route.Route
-routeCountMoment0 request_ =
+routeCountMoment0 : Proto.Registry.Registry -> Clock.V1.Moment -> Result Proto.Error.Error Proto.Route.Route
+routeCountMoment0 _ request_ =
     let
         count_ =
             Maybe.withDefault "" (Maybe.map String.fromInt request_.count)
@@ -167,34 +169,34 @@ routeCountMoment0 request_ =
         seen_ =
             Maybe.withDefault "" (Maybe.map Proto.Route.boolText request_.seen)
     in
-    { method = "GET"
-    , path = "v1/count/" ++ Proto.Route.segment count_ ++ "/seen/" ++ Proto.Route.segment seen_
-    , query = Proto.Query.except [ "count", "seen" ] (Clock.V1.queryOfMoment request_)
-    , body = Nothing
-    , responseBody = Nothing
-    , invalid =
-        Proto.Route.firstInvalid
-            [ Proto.Route.checkSegment "count" "*" count_
-            , Proto.Route.checkSegment "seen" "*" seen_
-            ]
-    }
+    Ok
+        { method = "GET"
+        , path = "v1/count/" ++ Proto.Route.segment count_ ++ "/seen/" ++ Proto.Route.segment seen_
+        , query = Proto.Query.except [ "count", "seen" ] (Clock.V1.queryOfMoment request_)
+        , body = Nothing
+        , invalid =
+            Proto.Route.firstInvalid
+                [ Proto.Route.checkSegment "count" "*" count_
+                , Proto.Route.checkSegment "seen" "*" seen_
+                ]
+        }
 
 
 {-| The route of [`waitMoment`](#waitMoment) over binding 0: `POST /v1/wait/{wait}` body `*`.
 -}
-routeWaitMoment0 : Clock.V1.Moment -> Proto.Route.Route
-routeWaitMoment0 request_ =
+routeWaitMoment0 : Proto.Registry.Registry -> Clock.V1.Moment -> Result Proto.Error.Error Proto.Route.Route
+routeWaitMoment0 _ request_ =
     let
         wait_ =
             Maybe.withDefault "" (Maybe.map Proto.Duration.toString request_.wait)
     in
-    { method = "POST"
-    , path = "v1/wait/" ++ Proto.Route.segment wait_
-    , query = []
-    , body = Just (Proto.Route.without [ [ "wait" ] ] (Clock.V1.encodeMoment request_))
-    , responseBody = Nothing
-    , invalid = Proto.Route.checkSegment "wait" "*" wait_
-    }
+    Ok
+        { method = "POST"
+        , path = "v1/wait/" ++ Proto.Route.segment wait_
+        , query = []
+        , body = Just (Proto.Route.without [ [ "wait" ] ] (Clock.V1.encodeMoment request_))
+        , invalid = Proto.Route.checkSegment "wait" "*" wait_
+        }
 
 
 

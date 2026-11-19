@@ -7,8 +7,10 @@ module Vault.V1.VaultService exposing (..)
 {-| `service vault.v1.VaultService`
 -}
 
+import Proto.Error
 import Proto.Http
 import Proto.Method
+import Proto.Registry
 import Proto.Route
 import Proto.Version
 import Rpc
@@ -85,19 +87,19 @@ putItem =
 
 {-| The route of [`getItem`](#getItem) over binding 0: `GET /v1/{name=items/*}`.
 -}
-routeGetItem0 : Vault.V1.GetItemRequest -> Proto.Route.Route
-routeGetItem0 request_ =
+routeGetItem0 : Proto.Registry.Registry -> Vault.V1.GetItemRequest -> Result Proto.Error.Error Proto.Route.Route
+routeGetItem0 _ request_ =
     let
         name_ =
             request_.name
     in
-    { method = "GET"
-    , path = "v1/" ++ Proto.Route.segments name_
-    , query = []
-    , body = Nothing
-    , responseBody = Nothing
-    , invalid = Proto.Route.checkSegments "name" [ "items", "*" ] name_
-    }
+    Ok
+        { method = "GET"
+        , path = "v1/" ++ Proto.Route.segments name_
+        , query = []
+        , body = Nothing
+        , invalid = Proto.Route.checkSegments "name" [ "items", "*" ] name_
+        }
 
 
 

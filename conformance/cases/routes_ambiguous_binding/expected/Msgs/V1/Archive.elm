@@ -9,8 +9,10 @@ module Msgs.V1.Archive exposing (..)
 
 import Msgs.V1
 import Msgs.V1.MessageRequest
+import Proto.Error
 import Proto.Http
 import Proto.Method
+import Proto.Registry
 import Proto.Route
 import Proto.Version
 import Rpc
@@ -55,15 +57,15 @@ listArchived =
 
 {-| The route of [`listArchived`](#listArchived) over binding 0: `GET /v1/messages`.
 -}
-routeListArchived0 : Msgs.V1.MessageRequest -> Proto.Route.Route
-routeListArchived0 request_ =
-    { method = "GET"
-    , path = "v1/messages"
-    , query = Msgs.V1.queryOfMessageRequest request_
-    , body = Nothing
-    , responseBody = Nothing
-    , invalid = Nothing
-    }
+routeListArchived0 : Proto.Registry.Registry -> Msgs.V1.MessageRequest -> Result Proto.Error.Error Proto.Route.Route
+routeListArchived0 _ request_ =
+    Ok
+        { method = "GET"
+        , path = "v1/messages"
+        , query = Msgs.V1.queryOfMessageRequest request_
+        , body = Nothing
+        , invalid = Nothing
+        }
 
 
 

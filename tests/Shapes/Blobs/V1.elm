@@ -9,8 +9,8 @@ the route resolver accepts is a route function. A bytes field held as
 Bytes is base64 text in a path or query; a path through a message on a
 cycle reads through its wrapper; a body field of `Empty` or `Value`, or on
 a cycle, has its encoder; a body that holds an `Any`, which only the
-client's registry can write, is read from the request's JSON, which the
-route function takes beside the request (`Proto.Method.withJsonRoutes`).
+client's registry can write, is encoded with the registry the route
+function takes, and an `Any` it cannot write is the route's `Err`.
 -}
 
 import Bytes

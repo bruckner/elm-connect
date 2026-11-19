@@ -1,28 +1,27 @@
 //! A method's route functions in its service's module: one per binding of
-//! its HTTP rule, `routeGetNote0 : GetNoteRequest -> Proto.Route.Route`,
-//! which builds the binding's path, query and body from the typed request,
-//! and checks each path value against its variable's template (design §5).
+//! its HTTP rule, `routeGetNote0 : Proto.Registry.Registry ->
+//! GetNoteRequest -> Result Proto.Error.Error Proto.Route.Route`, which
+//! builds the binding's path, query and body from the typed request, and
+//! checks each path value against its variable's template (design §5).
 //! The query comes from the request message's query encoder in its
 //! package's module, `queryOfListNotesRequest`, shared by every binding
 //! that takes the message, less the fields the binding's path and body
 //! hold.
 //!
-//! Every binding the route resolver accepts is typed. A method whose
-//! bodies hold a `google.protobuf.Any`, which only the client's registry
-//! can write, takes its routes as functions of the request and its proto3
-//! JSON (`routeCreateNote0 : CreateNoteRequest -> Json.Encode.Value ->
-//! Proto.Route.Route`, given to `Proto.Method.withJsonRoutes`): the path
-//! and query come from the typed request, the body from the JSON the send
-//! encodes once with that registry.
+//! Every binding the route resolver accepts is typed. A route ignores the
+//! registry and is `Ok` but when its body holds a `google.protobuf.Any`,
+//! which only the client's registry can write: it then encodes its body
+//! with the registry, and an `Any` the registry cannot write is its `Err`.
 
 use std::collections::HashMap;
 
 use super::field::{self, FieldShape, Present, ValueShape, Zeroed};
 use super::scalar::Repr;
-use super::{Emitter, JSON_ENCODE};
+use super::{Emitter, JSON_ENCODE, PROTO_JSON};
 use crate::elm::ast::{BinOp, Expr, LetBinding, ModuleName, Pattern};
 use crate::elm::build::{apply, binop, lambda, list, qualified, record, string, var};
 use crate::ir::{Field, Message, ModuleName as IrModule, Oneof, OneofVariant, TypeRef};
+use crate::naming::with_registry;
 use crate::route::{Body, FieldPath, PathSegment, Route, Segment};
 
 /// The runtime's routes: the record route functions give, and the path and
@@ -36,8 +35,9 @@ const PROTO_QUERY: &str = "Proto.Query";
 /// end in `_` but for Elm's reserved words.
 pub(super) const REQUEST: &str = "request_";
 
-/// The name JSON route functions call the request's proto3 JSON.
-pub(super) const JSON: &str = "json_";
+/// The name a route function whose body holds an `Any` calls the client's
+/// registry; like [`REQUEST`], no name of the call's can take it.
+pub(super) const REGISTRY: &str = "registry_";
 
 /// Every generated message by full proto name, with its package's module.
 pub(crate) type Messages<'p> = HashMap<&'p str, (&'p Message, &'p IrModule)>;
@@ -150,7 +150,7 @@ impl Text {
 
 impl Emitter {
     /// Whether `route`'s body holds a `google.protobuf.Any`, so that its
-    /// method's routes read the body from the request's JSON.
+    /// route function writes the body with the client's registry.
     pub(super) fn body_reaches(&self, messages: &Messages, input: &TypeRef, route: &Route) -> bool {
         match &route.body {
             Body::None => false,
@@ -178,16 +178,16 @@ impl Emitter {
     }
 
     /// The body of a route function for `route`, of a method whose request
-    /// type is `input`, or `None` when a field it reads cannot be typed.
-    /// With `json`, the function takes the request's proto3 JSON too
-    /// ([`JSON`]), which its body is read from.
+    /// type is `input`, or `None` when a field it reads cannot be typed:
+    /// `Ok` of the route, or with `reaches` (its body holds an `Any`) the
+    /// route over its body as the registry ([`REGISTRY`]) writes it.
     pub(super) fn typed_route(
         &mut self,
         messages: &Messages,
         queries: &Queries,
         input: &TypeRef,
         route: &Route,
-        json: bool,
+        reaches: bool,
     ) -> Option<Expr> {
         // A well-known request type has no record fields: its routes read
         // none, so only a route without variables and query is typed.
@@ -306,121 +306,136 @@ impl Emitter {
                 )
             }
         };
-        // The body.
+        // The body: an expression of its JSON, or with `reaches` of a
+        // `Result` of it, which the record then waits on.
+        let empty = || apply(qualified(JSON_ENCODE, "object"), [list([])]);
         let body = match &route.body {
             Body::None => var(self.core("Nothing")),
-            Body::All if json => {
-                let paths = body_paths(route);
-                let body = if paths.is_empty() {
-                    var(JSON)
-                } else {
-                    apply(
-                        self.reference((PROTO_ROUTE, "without")),
-                        [crate::elm::build::inline_list(paths), var(JSON)],
-                    )
-                };
-                apply(var(self.core("Just")), [body])
-            }
-            Body::Field(top) if json => apply(
-                var(self.core("Just")),
-                [apply(
-                    self.reference((PROTO_ROUTE, "jsonField")),
-                    [string(top.field.json[0].clone()), var(JSON)],
-                )],
-            ),
             Body::All => {
                 let paths = body_paths(route);
-                // A request that reaches an `Any` has no total encoder:
-                // its routes take its JSON (`json`).
-                if self.reaches(field::value_shape(input, self.holding)) {
-                    return None;
-                }
-                let encode_request = self.request_encoder(input);
-                let json = apply(encode_request, [var(REQUEST)]);
-                let json = if paths.is_empty() {
-                    json
+                let encoded = if reaches {
+                    let encoder = self.request_encoder_with(input);
+                    apply(encoder, [var(REGISTRY), var(REQUEST)])
                 } else {
-                    apply(
-                        self.reference((PROTO_ROUTE, "without")),
-                        [crate::elm::build::inline_list(paths), json],
-                    )
+                    // A request that reaches an `Any` has no total encoder.
+                    if self.reaches(field::value_shape(input, self.holding)) {
+                        return None;
+                    }
+                    let encode_request = self.request_encoder(input);
+                    apply(encode_request, [var(REQUEST)])
                 };
-                apply(var(self.core("Just")), [json])
+                if paths.is_empty() {
+                    encoded
+                } else {
+                    let without = apply(
+                        self.reference((PROTO_ROUTE, "without")),
+                        [crate::elm::build::inline_list(paths)],
+                    );
+                    if reaches {
+                        apply(qualified("Result", "map"), [without, encoded])
+                    } else {
+                        super::call(without, [encoded])
+                    }
+                }
             }
             Body::Field(top) => {
                 let field = request?
                     .fields
                     .iter()
                     .find(|f| f.proto_name == top.field.proto[0])?;
-                let just = var(self.core("Just"));
-                let shape = match body_shape(messages, field, self.holding)? {
-                    FieldShape::Maybe(value) if !self.reaches(value) => value,
-                    // `Empty`'s JSON is `{}`, whatever the field holds.
-                    FieldShape::Plain(Zeroed::Empty) => {
-                        let empty = apply(self.reference((JSON_ENCODE, "object")), [list([])]);
-                        return Some(self.route_record(
-                            route,
-                            path,
-                            query,
-                            apply(just, [empty]),
-                            checks,
-                            values,
-                        ));
-                    }
-                    // A `Value` is JSON already, `{}` when unset as for a
-                    // message.
-                    FieldShape::Json => {
-                        let empty = apply(self.reference((JSON_ENCODE, "object")), [list([])]);
-                        let value = apply(
+                let read = crate::elm::build::access(var(REQUEST), field.elm_name.clone());
+                self.imports.entry(JSON_ENCODE.to_owned()).or_default();
+                match body_shape(messages, field, self.holding)? {
+                    FieldShape::Maybe(value) if reaches => {
+                        let encoder = self.value_encoder_over(value, REGISTRY, messages)?;
+                        let ok = var(self.core("Ok"));
+                        apply(
                             qualified("Maybe", "withDefault"),
                             [
-                                empty,
-                                crate::elm::build::access(var(REQUEST), field.elm_name.clone()),
+                                apply(ok, [empty()]),
+                                apply(qualified("Maybe", "map"), [encoder, read]),
                             ],
-                        );
-                        return Some(self.route_record(
-                            route,
-                            path,
-                            query,
-                            apply(just, [value]),
-                            checks,
-                            values,
-                        ));
+                        )
                     }
+                    FieldShape::Maybe(value) if !self.reaches(value) => {
+                        let encoder = self.value_encoder_over(value, REGISTRY, messages)?;
+                        apply(
+                            qualified("Maybe", "withDefault"),
+                            [empty(), apply(qualified("Maybe", "map"), [encoder, read])],
+                        )
+                    }
+                    // `Empty`'s JSON is `{}`, whatever the field holds.
+                    FieldShape::Plain(Zeroed::Empty) => empty(),
+                    // A `Value` is JSON already, `{}` when unset as for a
+                    // message.
+                    FieldShape::Json => apply(qualified("Maybe", "withDefault"), [empty(), read]),
                     _ => return None,
-                };
-                let encoder = match shape {
-                    // A wrapper's encoder is its package module's.
-                    ValueShape::Present(Present::Wrapped(wrapper, full_name)) => {
-                        let module = messages.get(full_name)?.1;
-                        self.generated_value(module, wrapper.encoder_name())
-                    }
-                    shape => self.value_encoder(shape),
-                };
-                let empty = apply(self.reference((JSON_ENCODE, "object")), [list([])]);
-                apply(
-                    var(self.core("Just")),
-                    [apply(
-                        qualified("Maybe", "withDefault"),
-                        [
-                            empty,
-                            apply(
-                                qualified("Maybe", "map"),
-                                [
-                                    encoder,
-                                    crate::elm::build::access(var(REQUEST), field.elm_name.clone()),
-                                ],
-                            ),
-                        ],
-                    )],
-                )
+                }
             }
         };
-        Some(self.route_record(route, path, query, body, checks, values))
+        let ok = var(self.core("Ok"));
+        Some(match route.body {
+            Body::None => self.route_record(route, path, query, body, checks, values, |record| {
+                apply(ok, [record])
+            }),
+            _ if reaches => {
+                let just = var(self.core("Just"));
+                let body_var = var("body_");
+                let record_body = apply(just, [body_var]);
+                self.route_record(route, path, query, record_body, checks, values, |record| {
+                    apply(
+                        qualified("Result", "map"),
+                        [lambda([Pattern::Var("body_".into())], record), body],
+                    )
+                })
+            }
+            _ => {
+                let just = var(self.core("Just"));
+                let record_body = apply(just, [body]);
+                self.route_record(route, path, query, record_body, checks, values, |record| {
+                    apply(ok, [record])
+                })
+            }
+        })
     }
 
-    /// The route record of `route` from its parts, under the path
-    /// variables' bindings.
+    /// The encoder of a body field's value as the service's module names
+    /// it: a wrapper's (a message on a recursion cycle) from its package's
+    /// module, and one reaching an `Any` applied to the registry, bound to
+    /// `registry`.
+    fn value_encoder_over(
+        &mut self,
+        value: ValueShape,
+        registry: &str,
+        messages: &Messages,
+    ) -> Option<Expr> {
+        let reaches = self.reaches(value);
+        let encoder = match value {
+            ValueShape::Present(Present::Wrapped(wrapper, full_name)) => {
+                let module = messages.get(full_name)?.1;
+                let name = if reaches {
+                    with_registry(wrapper.encoder_name())
+                } else {
+                    wrapper.encoder_name()
+                };
+                self.generated_value(module, name)
+            }
+            _ if !reaches => return Some(self.value_encoder(value)),
+            ValueShape::Present(Present::Message(name)) => {
+                self.generated_value(&name.module, with_registry(name.encoder_name()))
+            }
+            _ => self.reference((PROTO_JSON, "encodeAnyWith")),
+        };
+        Some(if reaches {
+            apply(encoder, [var(registry)])
+        } else {
+            encoder
+        })
+    }
+
+    /// The route record of `route` from its parts, given to `wrap`, under
+    /// the path variables' bindings.
+    #[allow(clippy::too_many_arguments)]
     fn route_record(
         &mut self,
         route: &Route,
@@ -429,6 +444,7 @@ impl Emitter {
         body: Expr,
         mut checks: Vec<Expr>,
         values: Vec<LetBinding>,
+        wrap: impl FnOnce(Expr) -> Expr,
     ) -> Expr {
         let invalid = match checks.len() {
             0 => var(self.core("Nothing")),
@@ -438,18 +454,13 @@ impl Emitter {
                 [list(checks)],
             ),
         };
-        let response_body = match &route.response_body {
-            Some(top) => apply(var(self.core("Just")), [string(top.field.json[0].clone())]),
-            None => var(self.core("Nothing")),
-        };
-        let result = record([
+        let result = wrap(record([
             ("method", string(route.verb.as_str())),
             ("path", path),
             ("query", query),
             ("body", body),
-            ("responseBody", response_body),
             ("invalid", invalid),
-        ]);
+        ]));
         if values.is_empty() {
             result
         } else {
@@ -873,7 +884,8 @@ fn path_local(json: &[String], taken: &[String]) -> String {
         joined.push_str(chars.as_str());
     }
     let reserved = |name: &str| {
-        [REQUEST, JSON, "member_", "message_"].contains(&name) || taken.iter().any(|t| t == name)
+        [REQUEST, REGISTRY, "body_", "member_", "message_"].contains(&name)
+            || taken.iter().any(|t| t == name)
     };
     let plain = format!("{joined}_");
     if !reserved(&plain) {
