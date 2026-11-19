@@ -1,6 +1,6 @@
 module Proto.Json exposing
     ( field, fieldEither, valueField, valueFieldEither, emptyMessage
-    , message, messageField, messageFieldEither, messageValueField, messageValueFieldEither
+    , message, messageField, messageFieldEither, messageValueField, messageValueFieldEither, messageOnly
     , objectOfFields
     , implicitField, implicitFloatField, implicitBytesField, repeatedField, dictField, boolMapField
     , tryObjectOfFields, tryOptionalField, tryRepeatedField, tryDictField, tryBoolMapField
@@ -46,7 +46,7 @@ Generated decoders check once that the JSON is an object and then read each
 field without checking again, which makes a message decode faster than a
 pipeline of [`field`](#field) steps, each checking for itself.
 
-@docs message, messageField, messageFieldEither, messageValueField, messageValueFieldEither
+@docs message, messageField, messageFieldEither, messageValueField, messageValueFieldEither, messageOnly
 
 
 # Encoding fields
@@ -176,6 +176,7 @@ import Proto.Internal.Percent as Percent
 import Proto.Internal.Registry as InternalRegistry
 import Proto.Registry exposing (Registry)
 import Proto.Timestamp
+import Set exposing (Set)
 import Time
 
 
@@ -315,6 +316,54 @@ message fields =
                 else
                     notAnObject
             )
+
+
+{-| [`message`](#message) for a decoder generated under `json_unknown=reject`:
+the message's full name and every key its fields may be written under
+(each field's JSON name and, where it differs, its proto name), and a key
+that is none of them fails the decode, at that key, with a text naming the
+message: `Expecting only the fields of notes.v1.Note`. The key is in the
+failure's path, never in its text.
+-}
+messageOnly : String -> List String -> Decoder a -> Decoder a
+messageOnly typeName names fields =
+    let
+        known =
+            Set.fromList names
+    in
+    Json.Decode.value
+        |> Json.Decode.andThen
+            (\json ->
+                if isObject json then
+                    case Json.Decode.decodeValue (Json.Decode.keyValuePairs (Json.Decode.succeed ())) json of
+                        Ok pairs ->
+                            case firstUnknown known pairs of
+                                Nothing ->
+                                    fields
+
+                                Just key ->
+                                    Json.Decode.field key (Json.Decode.fail ("Expecting only the fields of " ++ typeName))
+
+                        Err _ ->
+                            fields
+
+                else
+                    notAnObject
+            )
+
+
+firstUnknown : Set String -> List ( String, () ) -> Maybe String
+firstUnknown known pairs =
+    case pairs of
+        [] ->
+            Nothing
+
+        ( key, () ) :: rest ->
+            if Set.member key known then
+                firstUnknown known rest
+
+            else
+                Just key
 
 
 {-| [`field`](#field) inside [`message`](#message), which has checked that the

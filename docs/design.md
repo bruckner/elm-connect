@@ -3873,6 +3873,13 @@ Connect's proto codec sends them (§5.3).
   of a wire type its declaration does not take, as protobuf-go files
   it under unknown fields rather than failing; they are not kept, so a
   message read and written again loses them (roadmap: unknown fields).
+  Under `unknown_fields=keep` a generated message keeps both kinds in
+  its record's last field, `unknownFields_ : Proto.Unknown.Fields`
+  (`Proto.Binary.mergeKeep`, given which wire types each field number
+  takes), sorted by field number with arrival order kept within one
+  number, so `==` sees them; they are written after the known fields
+  (`Proto.Binary.unknown`). Only the fast reader keeps them: the
+  locating reader skips them, as it runs only to explain a failure.
   A group, field number 0, a length past the end of its message, a
   varint longer than ten bytes and a `string` that is not UTF-8 fail the
   decode, each with its `Proto.Error.Reason`.

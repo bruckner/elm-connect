@@ -33,6 +33,7 @@
         "Proto.Error",
         "Proto.Json",
         "Proto.Binary",
+        "Proto.Unknown",
         "Proto.Int64",
         "Proto.Bytes",
         "Proto.Duration",

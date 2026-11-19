@@ -36,7 +36,7 @@ use crate::ir::{
     Cardinality, Enum, Field, MapKey, Message, OneofVariant, ScalarKind, TypeRef, WellKnown,
     Wrapper,
 };
-use crate::naming::{ENCODER_ARGUMENT, ONEOF_MEMBER, default_name};
+use crate::naming::{ENCODER_ARGUMENT, ONEOF_MEMBER, UNKNOWN_FIELDS, default_name};
 use crate::options::Int64;
 
 /// elm/bytes' encoders.
@@ -161,6 +161,34 @@ fn wrapper_of<'m>(shape: FieldShape<'m>) -> Option<&'m Wrapper> {
     match value {
         ValueShape::Present(Present::Wrapped(wrapper, _)) => Some(wrapper),
         _ => None,
+    }
+}
+
+/// The wire type a value of type `ty` is written with.
+fn type_wire(ty: &TypeRef) -> u32 {
+    match ty {
+        TypeRef::Scalar(kind) => match kind {
+            ScalarKind::Double | ScalarKind::Fixed64 | ScalarKind::SFixed64 => 1,
+            ScalarKind::Float | ScalarKind::Fixed32 | ScalarKind::SFixed32 => 5,
+            ScalarKind::String | ScalarKind::Bytes => 2,
+            _ => 0,
+        },
+        TypeRef::Enum { .. } | TypeRef::WellKnown(WellKnown::NullValue) => 0,
+        TypeRef::Message(_) | TypeRef::WellKnown(_) => 2,
+    }
+}
+
+/// The wire types a field's decoder reads, as bits: its values' wire type,
+/// and for a repeated scalar a packed run too; a map's entries are
+/// length-delimited.
+fn field_wires(field: &Field, shape: FieldShape) -> u32 {
+    match shape {
+        FieldShape::Dict(..) | FieldShape::BoolMap(_) => 1 << 2,
+        FieldShape::List(_) => {
+            let wire = type_wire(&field.ty);
+            (1 << wire) | (1 << 2)
+        }
+        _ => 1 << type_wire(&field.ty),
     }
 }
 
@@ -322,6 +350,14 @@ impl Emitter {
             }
         }
         items.sort_by_key(|(number, _)| *number);
+        if self.keeps_unknown() {
+            // After the known fields, as protobuf's runtimes write them.
+            let unknown = apply(
+                self.binary("unknown"),
+                [access(var(ENCODER_ARGUMENT), UNKNOWN_FIELDS)],
+            );
+            items.push((u32::MAX, unknown));
+        }
         let param = if items.is_empty() {
             Pattern::Wildcard
         } else {
@@ -372,6 +408,7 @@ impl Emitter {
     /// into the one given, as protobuf merges a message arriving twice.
     pub(super) fn message_merge_bytes(&mut self, shape: &MessageShape) -> Decl {
         let mut branches: Vec<(u32, Expr)> = Vec::new();
+        let mut wires: Vec<(u32, u32)> = Vec::new();
         let mut reversed: Vec<String> = Vec::new();
         let wire = || var(WIRE);
         let record = || var(ENCODER_ARGUMENT);
@@ -425,6 +462,7 @@ impl Emitter {
                 }
             };
             branches.push((field.number, step));
+            wires.push((field.number, field_wires(field, field_shape)));
         }
         for oneof in &shape.oneofs {
             let name = oneof.oneof.elm_field_name.as_str();
@@ -459,6 +497,7 @@ impl Emitter {
                     apply(self.binary("field"), [codec, set, wire(), record()])
                 };
                 branches.push((variant.number, step));
+                wires.push((variant.number, 1 << type_wire(&variant.ty)));
             }
         }
         branches.sort_by_key(|(number, _)| *number);
@@ -497,8 +536,30 @@ impl Emitter {
                 },
             )
         };
-        let merge = self.binary("merge");
         let annotation = self.bytes_merge_type(ty(shape.message.elm_name.clone(), []));
+        let full_name = string(shape.message.proto_full_name.clone());
+        let body = if self.keeps_unknown() {
+            wires.sort_by_key(|(number, _)| *number);
+            let arms = wires
+                .into_iter()
+                .map(|(number, mask)| (Pattern::Int(number.into()), int(mask.into())))
+                .chain([(Pattern::Wildcard, int(0))]);
+            let wires = lambda([pvar(NUMBER)], case(var(NUMBER), arms));
+            let get = lambda(
+                [pvar(ENCODER_ARGUMENT)],
+                access(var(ENCODER_ARGUMENT), UNKNOWN_FIELDS),
+            );
+            let set = lambda(
+                [pvar(ITEM), pvar(ENCODER_ARGUMENT)],
+                update(UNKNOWN_FIELDS, var(ITEM)),
+            );
+            apply(
+                self.binary("mergeKeep"),
+                [full_name, wires, get, set, step, finish],
+            )
+        } else {
+            apply(self.binary("merge"), [full_name, step, finish])
+        };
         Decl::Value {
             doc: Some(format!(
                 "Decodes {} from protobuf binary into the one given, as protobuf merges a message that arrives twice.",
@@ -507,10 +568,7 @@ impl Emitter {
             name: merge_name(shape.message.decoder_name()),
             annotation,
             params: Vec::new(),
-            body: apply(
-                merge,
-                [string(shape.message.proto_full_name.clone()), step, finish],
-            ),
+            body,
         }
     }
 

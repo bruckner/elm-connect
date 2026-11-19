@@ -201,7 +201,7 @@ use crate::ir::{
     Package, Service, TypeName,
 };
 use crate::naming::VERSION_VALUE;
-use crate::options::{EnumUnknown, Options, Wire};
+use crate::options::{EnumUnknown, JsonUnknown, Options, UnknownFields, Wire};
 use crate::{DEFAULT_OPTIONS, HEADER_PREFIX, OPTIONS_PREFIX, SENTINEL, VERSION};
 
 use self::field::{FieldShape, ValueShape};
@@ -224,6 +224,8 @@ const TIME: &str = "Time";
 const ELM_BYTES: &str = "Bytes";
 /// The runtime package's bytes conversions, home of `Proto.Bytes.empty`.
 const PROTO_BYTES: &str = "Proto.Bytes";
+/// The runtime's unknown fields, held under `unknown_fields=keep`.
+const PROTO_UNKNOWN: &str = "Proto.Unknown";
 /// The runtime package's `Duration`, imported as
 /// `import Proto.Duration exposing (Duration)`.
 const PROTO_DURATION: &str = "Proto.Duration";
@@ -618,6 +620,10 @@ struct Emitter {
     holding: Holding,
     /// What an unknown enum value name reads as.
     enum_unknown: EnumUnknown,
+    /// Whether messages keep the unknown fields binary carries.
+    unknown_fields: UnknownFields,
+    /// Whether a JSON key naming no field fails a message's decoder.
+    json_unknown: JsonUnknown,
     /// Which codecs the option wires into methods; package modules emit
     /// both whatever it says.
     wiring: Wire,
@@ -635,6 +641,8 @@ impl Emitter {
             unqualified: BTreeMap::new(),
             holding: Holding::of(options),
             enum_unknown: options.enum_unknown,
+            unknown_fields: options.unknown_fields,
+            json_unknown: options.json_unknown,
             wiring: options.wire,
             reach: AnyReach::default(),
             recorded: match options.recorded() {

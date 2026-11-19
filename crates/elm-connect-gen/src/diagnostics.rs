@@ -1626,7 +1626,7 @@ fn rename_escape(renamed: Option<&str>, default: String) -> String {
 /// lists them.
 const OPTION_KEYS_HELP: &str = "The plugin parameter is comma-separated `key=value` pairs, and \
      its options are `int64`, `bytes`, `unbound_methods`, `streaming`, `enum_unknown`, `wire`, \
-     `rename` and `module_prefix`.";
+     `unknown_fields`, `json_unknown`, `rename` and `module_prefix`.";
 
 /// How a rename writes the element it names, as a rename problem's help
 /// ends.

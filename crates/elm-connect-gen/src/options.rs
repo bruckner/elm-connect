@@ -30,6 +30,13 @@ pub struct Options {
     /// JSON or protobuf binary alone. Every message gets both codecs
     /// whatever it says.
     pub wire: Wire,
+    /// Whether a message read from protobuf binary keeps the fields its
+    /// schema does not know, in a record field `unknownFields_`
+    /// (`unknown_fields=`).
+    pub unknown_fields: UnknownFields,
+    /// Whether a generated proto3 JSON decoder fails on a key that names
+    /// no field of its message (`json_unknown=`).
+    pub json_unknown: JsonUnknown,
     /// The rename map (`rename=`, design §3.7): Elm names given by proto
     /// full name, each used in place of the name the naming rules would
     /// derive. [`Options::add_rename`] adds one; the IR builder checks
@@ -142,6 +149,12 @@ impl Options {
                     value_of(key, value, EnumUnknown::VALUES).map(|v| options.enum_unknown = v)
                 }
                 "wire" => value_of(key, value, Wire::VALUES).map(|v| options.wire = v),
+                "unknown_fields" => {
+                    value_of(key, value, UnknownFields::VALUES).map(|v| options.unknown_fields = v)
+                }
+                "json_unknown" => {
+                    value_of(key, value, JsonUnknown::VALUES).map(|v| options.json_unknown = v)
+                }
                 "rename" => options.add_rename(value),
                 _ => parse_module_prefix(value).map(|v| options.module_prefix = Some(v)),
             };
@@ -199,6 +212,16 @@ impl Options {
             EnumUnknown::VALUES,
         );
         set("wire", self.wire.as_str(), Wire::VALUES);
+        set(
+            "unknown_fields",
+            self.unknown_fields.as_str(),
+            UnknownFields::VALUES,
+        );
+        set(
+            "json_unknown",
+            self.json_unknown.as_str(),
+            JsonUnknown::VALUES,
+        );
         for (proto, elm) in &self.rename {
             pairs.push(format!("rename={proto}:{elm}"));
         }
@@ -220,19 +243,23 @@ pub fn default_value(key: &str) -> Option<&'static str> {
         "streaming" => Streaming::VALUES,
         "enum_unknown" => EnumUnknown::VALUES,
         "wire" => Wire::VALUES,
+        "unknown_fields" => UnknownFields::VALUES,
+        "json_unknown" => JsonUnknown::VALUES,
         _ => return None,
     };
     values.first().copied()
 }
 
 /// The plugin parameter's keys.
-pub const KEYS: [&str; 8] = [
+pub const KEYS: [&str; 10] = [
     "int64",
     "bytes",
     "unbound_methods",
     "streaming",
     "enum_unknown",
     "wire",
+    "unknown_fields",
+    "json_unknown",
     "rename",
     "module_prefix",
 ];
@@ -506,6 +533,83 @@ impl std::str::FromStr for Wire {
             "proto" => Ok(Wire::Proto),
             _ => Err(format!(
                 "`wire` is `both`, `json` or `proto`, not `{value}`"
+            )),
+        }
+    }
+}
+
+/// What a message read from protobuf binary does with a field its schema
+/// does not know.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum UnknownFields {
+    /// Skipped, so a message read and written back loses it.
+    #[default]
+    Drop,
+    /// Kept in the record field `unknownFields_ : Proto.Unknown.Fields`,
+    /// written back after the known fields, and seen by `==`.
+    Keep,
+}
+
+impl UnknownFields {
+    /// The values the option takes, as written, the default first.
+    pub const VALUES: &'static [&'static str] = &["drop", "keep"];
+
+    /// The value as written.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            UnknownFields::Drop => "drop",
+            UnknownFields::Keep => "keep",
+        }
+    }
+}
+
+impl std::str::FromStr for UnknownFields {
+    type Err = String;
+
+    fn from_str(value: &str) -> Result<Self, String> {
+        match value {
+            "drop" => Ok(UnknownFields::Drop),
+            "keep" => Ok(UnknownFields::Keep),
+            _ => Err(format!(
+                "`unknown_fields` is `drop` or `keep`, not `{value}`"
+            )),
+        }
+    }
+}
+
+/// What a generated proto3 JSON decoder does with a key that is neither a
+/// field's JSON name nor its proto name.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum JsonUnknown {
+    /// Ignored, as proto3 JSON's readers are asked to by default in RPC.
+    #[default]
+    Ignore,
+    /// The decode fails, as protojson and protobuf-es do standalone.
+    Reject,
+}
+
+impl JsonUnknown {
+    /// The values the option takes, as written, the default first.
+    pub const VALUES: &'static [&'static str] = &["ignore", "reject"];
+
+    /// The value as written.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            JsonUnknown::Ignore => "ignore",
+            JsonUnknown::Reject => "reject",
+        }
+    }
+}
+
+impl std::str::FromStr for JsonUnknown {
+    type Err = String;
+
+    fn from_str(value: &str) -> Result<Self, String> {
+        match value {
+            "ignore" => Ok(JsonUnknown::Ignore),
+            "reject" => Ok(JsonUnknown::Reject),
+            _ => Err(format!(
+                "`json_unknown` is `ignore` or `reject`, not `{value}`"
             )),
         }
     }

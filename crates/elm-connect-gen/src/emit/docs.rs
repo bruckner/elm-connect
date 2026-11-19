@@ -233,6 +233,19 @@ pub(super) fn oneof_item(oneof: &Oneof) -> String {
     )
 }
 
+/// The item of the record field a message generated under
+/// `unknown_fields=keep` holds its unknown fields in.
+pub(super) fn unknown_fields_item() -> String {
+    named_item(
+        &code(crate::naming::UNKNOWN_FIELDS),
+        vec![
+            "The fields protobuf binary carried that the schema does not know, written back \
+             after the known ones; `Proto.Unknown.empty` in a message built in Elm."
+                .to_owned(),
+        ],
+    )
+}
+
 /// An item of `head` followed by a colon and `rest`, or `head` alone
 /// when `rest` is empty.
 fn named_item(head: &str, rest: Vec<String>) -> String {
