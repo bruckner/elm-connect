@@ -98,7 +98,7 @@ type Error
         , details : List (Result Proto.Error.Error Any)
         , source : Maybe Source
         , cause : Cause
-        , problem : Maybe Proto.Error.Error
+        , protoProblem : Maybe Proto.Error.Error
         }
 
 
@@ -366,7 +366,7 @@ calling.md's "The codec" gives one.
 -}
 protoError : Error -> Maybe Proto.Error.Error
 protoError (Error e) =
-    e.problem
+    e.protoProblem
 
 
 
@@ -405,7 +405,7 @@ fromStatus status answer =
         , details = status.details
         , source = Just status.source
         , cause = BadStatus answer
-        , problem = Nothing
+        , protoProblem = Nothing
         }
 
 
@@ -453,7 +453,7 @@ fromResponse answer =
 
             else
                 BadStatus answer
-        , problem = Nothing
+        , protoProblem = Nothing
         }
 
 
@@ -528,7 +528,7 @@ isSuccess answer =
 
 clientError : Cause -> Code -> String -> Maybe Proto.Error.Error -> Error
 clientError why c text problem =
-    Error { code = c, message = text, details = [], source = Nothing, cause = why, problem = problem }
+    Error { code = c, message = text, details = [], source = Nothing, cause = why, protoProblem = problem }
 
 
 {-| An error with this message in place of its own, whatever the error.
