@@ -1,7 +1,8 @@
-module Snippets.Reading exposing (Model, Msg(..), describe, update)
+module Snippets.Reading exposing (Model, Msg(..), describe, slowDown, update)
 
 {-| docs/quickstart.md's "Read the result": a call's result, and one `case` on
-the kinds of `Rpc.Error`.
+the `Rpc.Error`'s cause; and docs/calling.md's check that the server
+stated the code.
 -}
 
 -- region reading
@@ -34,24 +35,40 @@ update msg model =
 
 describe : Rpc.Error -> String
 describe error =
-    case error of
-        Rpc.Error.RpcStatus status _ ->
-            -- The server stated a status: a Connect error body, a
-            -- google.rpc.Status body or the grpc-status headers.
-            Rpc.Code.toString status.code ++ ": " ++ status.message
+    case Rpc.Error.cause error of
+        Rpc.Error.BadStatus _ ->
+            -- The server answered with a failure: the status it stated, or
+            -- one inferred from the HTTP status, as of a proxy's 502 page.
+            Rpc.Error.toString error
 
-        Rpc.Error.HttpStatus response ->
-            -- A failure with no status in it, such as a proxy's 502 page.
-            "HTTP " ++ String.fromInt response.statusCode
+        Rpc.Error.BadResponse _ ->
+            -- A success that could not be read as the response.
+            "unexpected answer: " ++ Rpc.Error.message error
 
-        Rpc.Error.BadResponse _ problem _ ->
-            -- A success whose body is not the response.
-            "unexpected answer: " ++ problem
+        Rpc.Error.Timeout ->
+            "no answer in time"
 
-        Rpc.Error.NoAnswer _ ->
-            -- A timeout, a network failure, or a call that was never sent.
+        Rpc.Error.NetworkError ->
+            "the server could not be reached"
+
+        Rpc.Error.BadCall ->
+            -- Nothing was sent: a bad URL or header, say.
             Rpc.Error.toString error
 
 
 
 -- endregion reading
+-- region server-said
+
+
+{-| Whether the server asked the caller to slow down: a `ResourceExhausted`
+it stated, not the client's for a request over its limit, nor one inferred
+from an edge's bare status.
+-}
+slowDown : Rpc.Error -> Bool
+slowDown error =
+    Rpc.Error.source error /= Nothing && Rpc.Error.code error == Rpc.Code.ResourceExhausted
+
+
+
+-- endregion server-said

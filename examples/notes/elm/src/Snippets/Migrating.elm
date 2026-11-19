@@ -1,4 +1,4 @@
-module Snippets.Migrating exposing (client, clientFor, describe, fetch, getNote, getNoteBinding, noteFields, procedure)
+module Snippets.Migrating exposing (client, clientFor, describe, fetch, getNote, getNoteBinding, noteFields, procedure, retryable)
 
 {-| docs/migrating.md's code: what a 0.1 application writes in 0.2.
 
@@ -20,6 +20,7 @@ import Rpc
 import Rpc.Call
 import Rpc.Client
 import Rpc.Code
+import Rpc.Error
 import Rpc.Protocol
 import Rpc.Retry
 import Rpc.Trace
@@ -230,3 +231,27 @@ noteFields =
 
 
 -- endregion note-fields
+-- region errors
+
+
+retryable : Rpc.Error -> Bool
+retryable error =
+    case Rpc.Error.cause error of
+        Rpc.Error.BadStatus answer ->
+            List.member answer.statusCode [ 502, 503, 504 ]
+
+        Rpc.Error.NetworkError ->
+            True
+
+        Rpc.Error.Timeout ->
+            True
+
+        Rpc.Error.BadCall ->
+            False
+
+        Rpc.Error.BadResponse _ ->
+            False
+
+
+
+-- endregion errors

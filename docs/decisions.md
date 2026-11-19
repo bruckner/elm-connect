@@ -871,6 +871,8 @@ the same, and the sixteen codes took the name `Code`. Where: design
 
 *2026-10-13; 2026-10-15; 2026-10-16.*
 
+Superseded in form by Rpc.Error read through views (2026-11-18).
+
 `Rpc.Error` is `RpcStatus`, `HttpStatus`, `BadResponse` or `NoAnswer`.
 Two error types were built first, one per transport, since the wire
 forms differ; `source` keeps which one arrived without every caller
@@ -907,6 +909,8 @@ synthetic cancel outcome, and the module became `Rpc.Error`, whose
 
 *2026-11-01.*
 
+Superseded in form by Rpc.Error read through views (2026-11-18).
+
 `BadResponse` is `BadResponse Code String Response`, and
 `Rpc.Error.code` of one is its code. The constructor still means that
 the server answered with success and the runtime refused the body; the
@@ -927,6 +931,110 @@ specification names a code; the suite's choice is followed because
 the runtime speaks Connect's gRPC-Web. The suite allows `internal` for
 the other refusals (no status, no trailers), which keep it. Where:
 design §5.4, §7.
+
+### A refused answer carries its problem
+
+*2026-11-12.*
+
+Superseded in form by Rpc.Error read through views (2026-11-18).
+
+`BadResponse` is `BadResponse Code Problem Response`, with `Problem =
+Body Proto.Error.Error | Envelope String`: `Body` when the answer's body
+is not the response message, holding the proto layer's error as it
+was, and `Envelope` when what carries the body is malformed (a content
+type of the protocol's that the call does not read, gRPC-Web framing,
+trailers or status), as text. Three occasions led here. A JSON response
+holding an `Any` of a type the client's registry lacks reached the
+caller as a sentence inside elm/json's error, where every other read
+names it `UnregisteredType`. A `grpc-status-details-bin` trailer that is
+not base64 is a fault of the answer's envelope, not of any body, yet it
+read as the same kind of text as a body that did not decode. And the
+interface audit (2026-11-12) found design §5.4's "the whole problem
+stays in the error" true only as text. Two reads were flattening a
+structured error to text: the JSON response read (`Json.Decode.Error`
+through `errorToString`, a `response_body` field's error flattened a
+second time inside the decoder) and the binary one (`Proto.Error.Binary`
+through `Proto.Error.toString`); they now give `Body` with the error,
+the JSON one naming a registry miss as the status-detail reader does.
+Connect's two content-type refusals, under either codec, and every
+gRPC-Web refusal are `Envelope`. The codes stay as they were (A refused
+answer carries its code). `Problem` is frozen: a new kind of framing
+fault is an `Envelope`'s text and a new kind of body failure is the
+`Proto.Error.Error` a `Body` holds. Doing it now costs 0.1 users nothing
+more: 0.2 already changes the constructor's arity, so their patterns
+change once (operator). Where: design §5.3, §5.4, §8.3.
+
+### Rpc.Error read through views
+
+*2026-11-18.*
+
+`Rpc.Error.Error` is an opaque type read in three layers: the RPC
+(`code`, `message`, `details`, `source`); the HTTP exchange underneath,
+`cause : Error -> Cause`, total, with `Cause = BadCall | NetworkError |
+Timeout | BadStatus Response | BadResponse Response`, elm/http's own
+error with the answer kept, and `httpStatus`; and the codec under that,
+`protoError : Error -> Maybe Proto.Error.Error`, the problem with a body
+that did not decode or a request `Any` that could not be written. The
+union an application matched (`RpcStatus`, `HttpStatus`, `BadResponse`,
+`NoAnswer`, with `Reason`, `Problem` and `StatusError` under it) is gone.
+The runtime builds every error with public builders (`fromStatus`,
+`fromCode`, `fromResponse`, `timeout`, `networkError`, `badCall`,
+`badAny`, `badResponse`, `badBody`, `withMessage`), so an
+error a test builds and one the runtime gives are `==`.
+
+The point is a re-orientation: an application reads the error in the
+model it already has, an RPC API's codes or a REST API's HTTP statuses,
+and the union stops being a taxonomy every user must learn first. An
+application's port from elm/http, carried through each shape in turn,
+was the evidence: under the union its status reads had become code
+reads, misrouting an edge's bare 404, 429 and 400, and its catch-all on
+`NoAnswer _` read a bad header, a path value and a request over its
+limit as "the server is unreachable", silently and on each new reason.
+With `cause`, the elm/http body of each function came back nearly
+verbatim, `BadUrl` as `BadCall` and `BadBody` as `BadResponse`, and no
+branch was unreachable.
+
+A `BadResponse` is always a 2xx. A 200 that is not the protocol's
+answer, which was an `HttpStatus` error, is a `BadResponse` whose code
+stays `Unknown`, as the Connect protocol and its conformance suite want,
+and is no longer retried; every builder that takes an answer gives the
+error the runtime would give for it, so none breaks the rule. Messages
+hold no value from the request or the answer: a body that did not
+decode is `bad response body` and a request `Any` `bad Any`, the
+problem itself in `protoError`, and a bad URL prints no URL, so the
+code that scrubbed credentials and queries from one went. A `BadCall`
+or a `BadResponse` is never retried, whatever the policy's codes: the
+union's retry rule excluded only a bad URL, so a request over its write
+limit (`ResourceExhausted`) was retried, though it never succeeds.
+
+Tried and lost, each as a branch an application's port compiled
+against:
+
+- **A flat union** of thirteen constructors. The examples read worse:
+  Elm has no or-patterns, so every reader either named all thirteen or
+  wrote `_`, which put a future status-bearing kind under "could not be
+  read". It also lost the stored code a future envelope fault would need.
+- **An opaque error keeping the fine facts** (the URL, the header's name,
+  the sizes, the `Proto.Error`) in an internal union nobody could read.
+  Built and runtime errors were then unequal, the public `Cause` and
+  `Source` had to be mirrored internally, and tests needed a helper to
+  compare what they could read. The facts reached users only through
+  `message`, so they cost all of that and bought nothing.
+- **`response : Error -> Result Cause Response`**, with the server's
+  failure as `Ok`. It held the invariant in its type and removed every
+  unreachable branch, but `Ok` in an error reader read as success out of
+  context, and `Err (BadResponse answer)` held an answer too, so "Ok is
+  the one with an answer" was not the rule. `BadStatus` beside
+  `BadResponse` in a total `cause` says the same with elm/http's names.
+- **`cause : Error -> Maybe Cause`**, `Nothing` for the server's failure.
+  Knowing the cause was `Nothing` did not give the answer, so every
+  reader of the status wrote an unreachable `( Nothing, Nothing )` arm,
+  twice in that application.
+
+The name `Cause` stays, documented as what happened underneath: HTTP is
+what is under an RPC. "Did the request reach the server?" and "did the
+error come from it?" are a table on `Cause` in its documentation, not
+readers. `Cause` and `Source` are frozen. Where: design §5.4, §8.3.
 
 ### A path value that cannot match is not sent
 

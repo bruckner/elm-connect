@@ -51,17 +51,16 @@
   a request they cannot write.
 - `Rpc.withRegistry` sets the registry a client's calls convert an `Any`
   through, `Proto.Registry.empty` until set. Over JSON a request holding
-  an `Any` it cannot write is not sent: `NoAnswer (UnwritableRequest
-  problem)`, a new `Rpc.Error.Reason`, code `Internal`.
-- Breaking: `StatusError.details` is `List (Result DetailProblem Any)`,
-  in wire order, with the new `Rpc.Error.DetailProblem =
-  UnregisteredType String | InvalidDetail (Maybe String) String`. A
+  an `Any` it cannot write is not sent: a `BadCall`, code `Internal`,
+  the problem in `Rpc.Error.protoError`.
+- Breaking: a status's details are `List (Result Proto.Error.Error Any)`,
+  in wire order. A
   Connect body's details and gRPC-Web's `grpc-status-details-bin` are
   read from their binary with no registry (`debug` is not read); a
   `google.rpc.Status` body's, from transcoding, through the client's
   registry, so one of a type it lacks is `UnregisteredType` with its URL
   where it was dropped. A detail problem never fails the status read.
-  `Rpc.Error.details` is removed; use `Proto.Any.unpack`.
+  Unpack one with `Proto.Any.unpack`.
   `Rpc.Trace.toJson` lists a status's detail problems under
   `detailProblems`, and `toString` counts them.
 - `Proto.ErrorDetails`: Elm records and typed values of

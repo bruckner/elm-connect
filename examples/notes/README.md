@@ -171,52 +171,64 @@ last few under "Sent".
 
 Creating a note without a title fails with `INVALID_ARGUMENT` and a
 `google.rpc.BadRequest` detail; "Get notes/missing" fails with
-`NOT_FOUND` and a `google.rpc.ErrorInfo`. The page shows the code, the
-message, where the error was read from, the details it knows by type,
-and every detail as JSON, or why it could not be read; an answer that stated no status, or a
-successful one whose body is not the response, shows its code and the
-body as it came:
+`NOT_FOUND` and a `google.rpc.ErrorInfo`. The page shows the code and
+the message, then one `case` on `Rpc.Error.cause`: for the server's
+failure, where its status was stated, the details it knows by type and
+every detail as JSON, or, when it stated none, the body as it came; for
+an answer it could not read, that body; and a line for a timeout, a
+network failure or a call that was never sent:
 
 ```elm examples/notes/elm/src/Main.elm#error
 viewError : Rpc.Error -> Html msg
 viewError error =
-    case error of
-        Rpc.Error.RpcStatus status answer ->
-            section [ class "error" ]
-                [ h2 [] [ text (Rpc.Code.toString status.code) ]
-                , p [] [ text status.message ]
-                , p [] [ text ("Read from " ++ sourceToString status.source ++ " (HTTP " ++ String.fromInt answer.statusCode ++ ")") ]
-                , ul []
-                    (List.map
-                        (\violation -> li [] [ code [] [ text violation.field ], text (": " ++ violation.description) ])
-                        (unpacked Proto.ErrorDetails.badRequest status.details |> List.concatMap .fieldViolations)
-                    )
-                , ul []
-                    (List.map
-                        (\info -> li [] [ text (info.reason ++ " from " ++ info.domain) ])
-                        (unpacked Proto.ErrorDetails.errorInfo status.details)
-                    )
-                , div [] (List.map viewDetail status.details)
-                ]
+    section [ class "error" ]
+        (h2 [] [ text (Rpc.Code.toString (Rpc.Error.code error)) ]
+            :: p [] [ text (Rpc.Error.message error) ]
+            :: (case Rpc.Error.cause error of
+                    Rpc.Error.BadStatus answer ->
+                        case Rpc.Error.source error of
+                            Just source ->
+                                p [] [ text ("Stated in " ++ sourceToString source ++ ", HTTP " ++ String.fromInt answer.statusCode ++ ".") ]
+                                    :: viewDetails (Rpc.Error.details error)
 
-        Rpc.Error.HttpStatus answer ->
-            section [ class "error" ]
-                [ h2 [] [ text (Rpc.Code.toString (Rpc.Error.code error)) ]
-                , p [] [ text (Rpc.Error.message error) ]
-                , p [] [ text ("Inferred from the HTTP status " ++ String.fromInt answer.statusCode ++ "; the body was:") ]
-                , pre [] [ text (Maybe.withDefault "" (Rpc.Body.toText answer.body)) ]
-                ]
+                            Nothing ->
+                                [ p [] [ text ("HTTP " ++ String.fromInt answer.statusCode ++ " with no status in it; the code is inferred from the HTTP status. The body was:") ]
+                                , pre [] [ text (Maybe.withDefault "" (Rpc.Body.toText answer.body)) ]
+                                ]
 
-        Rpc.Error.BadResponse _ _ answer ->
-            section [ class "error" ]
-                [ h2 [] [ text (Rpc.Code.toString (Rpc.Error.code error)) ]
-                , p [] [ text (Rpc.Error.message error) ]
-                , p [] [ text ("HTTP " ++ String.fromInt answer.statusCode ++ " with a body that is not the response:") ]
-                , pre [] [ text (Maybe.withDefault "" (Rpc.Body.toText answer.body)) ]
-                ]
+                    Rpc.Error.BadResponse answer ->
+                        [ p [] [ text ("HTTP " ++ String.fromInt answer.statusCode ++ ", an answer this page could not read:") ]
+                        , pre [] [ text (Maybe.withDefault "" (Rpc.Body.toText answer.body)) ]
+                        ]
 
-        Rpc.Error.NoAnswer _ ->
-            section [ class "error" ] [ p [] [ text (Rpc.Error.toString error) ] ]
+                    Rpc.Error.Timeout ->
+                        [ p [] [ text "No answer came in time; the note may still have been saved." ] ]
+
+                    Rpc.Error.NetworkError ->
+                        [ p [] [ text "The server could not be reached." ] ]
+
+                    Rpc.Error.BadCall ->
+                        [ p [] [ text "Nothing was sent." ] ]
+               )
+        )
+
+
+{-| The details the page knows by type, then every detail as JSON.
+-}
+viewDetails : List (Result Proto.Error.Error Proto.Any.Any) -> List (Html msg)
+viewDetails details =
+    [ ul []
+        (List.map
+            (\violation -> li [] [ code [] [ text violation.field ], text (": " ++ violation.description) ])
+            (unpacked Proto.ErrorDetails.badRequest details |> List.concatMap .fieldViolations)
+        )
+    , ul []
+        (List.map
+            (\info -> li [] [ text (info.reason ++ " from " ++ info.domain) ])
+            (unpacked Proto.ErrorDetails.errorInfo details)
+        )
+    , div [] (List.map viewDetail details)
+    ]
 
 
 {-| A status's details that were read and are of this type.
@@ -274,7 +286,7 @@ either way, and `source` says which body it was. Each detail is an
 of one type. The answer rides with the error as
 `Rpc.Response`, its status, headers and body, so a body in a shape the
 runtime does not read, or one that drifted from the schema, can still be
-shown, as the `HttpStatus` and `BadResponse` branches do.
+shown, as the page does for an answer with no source.
 
 ## The protocol toggle
 

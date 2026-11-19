@@ -1,5 +1,5 @@
 - Breaking: the proto layer has one error type, `Proto.Error.Error`.
-  `Proto.Any.Problem` and `Rpc.Error.DetailProblem` are gone.
+  `Proto.Any.Problem` is gone.
   `Proto.Any.tryUnpack` gives `Result Proto.Error.Error a`
   (`TypeMismatch { expected, actual }`, both full names, the type it was
   unpacked as and the type inside, or the `BadBinary` of binary that is
@@ -9,22 +9,18 @@
   `Result Proto.Error.Error Value`: `UnregisteredType url`, or the
   `BadBinary` of the `Any` that failed, at any depth, named by its own
   type, where the old `UnwritableAny` named the outermost `Any`.
-- Breaking: `Rpc.Error.UnwritableRequest` is `BadAny`, in the form of
-  `BadUrl` and `BadHeader`, and holds a `Proto.Error.Error`; and
-  `StatusError.details` is `List (Result Proto.Error.Error Any)`: a
+- Breaking: a request `Any` that cannot be written fails with its
+  `Proto.Error.Error` in `Rpc.Error.protoError`; and `Rpc.Error.details`
+  is `List (Result Proto.Error.Error Any)`: a
   Connect detail with no `type` or a `value` not in base64, and a
   `google.rpc.Status` detail with no `"@type"` or not its message, are
   the detail's `BadJson`; a `grpc-status-details-bin` that is base64 but
   not a `google.rpc.Status` is its `BadBinary`, and one that is not base64
   a `BadResponse` with code `Internal`; a type the client's registry
-  lacks is `UnregisteredType`. A trace's `detailProblems` and
-  `Rpc.Error.message` describe them with `Proto.Error.toString`.
+  lacks is `UnregisteredType`. A trace's `detailProblems` describes them
+  with `Proto.Error.toString`.
 - A binary answer that is not the response is a `BadResponse` whose
-  problem says why and where (`Proto.Error.toString` of its report), in
-  place of "the body is not the response of … in protobuf binary".
-- Breaking: `Rpc.Error.Reason`'s `InvalidHeader` is renamed `BadHeader`,
-  and `InvalidPathValue` `BadPathValue`, in the form of `BadUrl` and
-  `BadResponse`.
+  `Rpc.Error.protoError` is its report, saying why and where.
 - New: `Proto.Message.fieldNumbered` and `fieldNamed` find a field of a
   descriptor by number or declared name, for showing a binary report's
   path.

@@ -1,4 +1,4 @@
-module Rpc.Internal.Status exposing (answerOf, bytesFailure, canonicalBase64, completeDetails, failure, header, otherFailure)
+module Rpc.Internal.Status exposing (answerOf, bodyProblem, bytesFailure, canonicalBase64, completeDetails, failure, header, otherFailure)
 
 {-| A failure's status as an `Rpc.Error`, from a Connect error body, a
 `google.rpc.Status` body, or gRPC status headers and trailers, whatever the
@@ -38,14 +38,14 @@ bytesFailure answer =
         Http.BadStatus_ metadata raw ->
             failure metadata (Internal.bytesText raw)
 
-        Http.BadUrl_ url ->
-            Error.NoAnswer (Error.BadUrl url)
+        Http.BadUrl_ _ ->
+            unreadableUrl
 
         Http.Timeout_ ->
-            Error.NoAnswer Error.Timeout
+            Error.timeout
 
         Http.NetworkError_ ->
-            Error.NoAnswer Error.NetworkError
+            Error.networkError
 
 
 {-| The error of an answer that is not a protocol's success.
@@ -59,14 +59,22 @@ otherFailure answer =
         Http.BadStatus_ metadata raw ->
             failure metadata raw
 
-        Http.BadUrl_ url ->
-            Error.NoAnswer (Error.BadUrl url)
+        Http.BadUrl_ _ ->
+            unreadableUrl
 
         Http.Timeout_ ->
-            Error.NoAnswer Error.Timeout
+            Error.timeout
 
         Http.NetworkError_ ->
-            Error.NoAnswer Error.NetworkError
+            Error.networkError
+
+
+{-| A URL elm/http could not send to. The message prints no URL, which may
+hold credentials or, over Connect's GET, the request.
+-}
+unreadableUrl : Error
+unreadableUrl =
+    Error.badCall Code.Internal "bad URL: the browser could not read it"
 
 
 {-| An answer as an error keeps it.
@@ -83,7 +91,7 @@ answerOf metadata raw =
 
 {-| The error a failed answer stands for, whatever the protocol: its Connect
 error body, or its `google.rpc.Status` body, or its `grpc-status` and
-`grpc-message` headers, or failing all of those, an `HttpStatus` error. The
+`grpc-message` headers, or failing all of those, an error that states no status. The
 answer is kept whichever it is.
 -}
 failure : Http.Metadata -> String -> Error
@@ -94,24 +102,24 @@ failure metadata raw =
     in
     case Json.Decode.decodeString (Json.Decode.oneOf [ connectBody, statusBody ]) raw of
         Ok read ->
-            Error.RpcStatus read answer
+            Error.fromStatus read answer
 
         Err _ ->
             case header "grpc-status" metadata |> Maybe.andThen (String.trim >> String.toInt) of
                 Just number ->
-                    Error.RpcStatus
+                    Error.fromStatus
                         { code = fromGrpc number
                         , message =
                             header "grpc-message" metadata
                                 |> Maybe.map (\text -> Percent.percentDecode text |> Maybe.withDefault text)
-                                |> Maybe.withDefault (Error.message (Error.HttpStatus answer))
+                                |> Maybe.withDefault (Error.message (Error.fromResponse answer))
                         , details = []
                         , source = Error.GrpcHeaders
                         }
                         answer
 
                 Nothing ->
-                    Error.HttpStatus answer
+                    Error.fromResponse answer
 
 
 {-| A response header by name, whatever its case.
@@ -125,6 +133,16 @@ header key metadata =
         |> Maybe.map Tuple.second
 
 
+{-| A status as a body or the headers state it.
+-}
+type alias Status =
+    { code : Code
+    , message : String
+    , details : List (Result Proto.Error.Error Any)
+    , source : Error.Source
+    }
+
+
 fromGrpc : Int -> Code
 fromGrpc number =
     Code.fromInt number |> Maybe.withDefault Code.Unknown
@@ -135,7 +153,7 @@ optional `details`. Its details are proto3 JSON, which only the client's
 registry reads ([`completeDetails`](#completeDetails)), so they are read
 there.
 -}
-statusBody : Decoder Error.StatusError
+statusBody : Decoder Status
 statusBody =
     Json.Decode.map2 (\number text -> { code = fromGrpc number, message = text, details = [], source = Error.StatusBody })
         (Json.Decode.field "code" Json.Decode.int)
@@ -145,7 +163,7 @@ statusBody =
 {-| A Connect error body: a `code` the protocol names (an unknown name reads as
 `unknown`), an optional `message` and optional `details`.
 -}
-connectBody : Decoder Error.StatusError
+connectBody : Decoder Status
 connectBody =
     Json.Decode.map3 (\name text found -> { code = name, message = text, details = found, source = Error.ConnectBody })
         (Json.Decode.field "code" Json.Decode.string
@@ -272,14 +290,15 @@ registry, leaves them out. Any other error is kept as it is.
 -}
 completeDetails : Registry -> Error -> Error
 completeDetails registry error =
-    case error of
-        Error.RpcStatus status answer ->
-            case status.source of
-                Error.StatusBody ->
-                    Error.RpcStatus { status | details = bodyDetails registry answer } answer
-
-                _ ->
-                    error
+    case ( Error.source error, Error.cause error ) of
+        ( Just Error.StatusBody, Error.BadStatus answer ) ->
+            Error.fromStatus
+                { code = Error.code error
+                , message = Error.message error
+                , details = bodyDetails registry answer
+                , source = Error.StatusBody
+                }
+                answer
 
         _ ->
             error
@@ -296,6 +315,20 @@ bodyDetails registry answer =
         |> Maybe.withDefault []
 
 
+{-| A JSON read's failure as the proto layer's error: `UnregisteredType` when
+an `Any` in it is of a type the registry lacks, else its `BadJson`. The
+response reader and the status-detail reader share it.
+-}
+bodyProblem : Registry -> Json.Decode.Error -> Proto.Error.Error
+bodyProblem registry problem =
+    case Proto.Internal.Registry.unregistered registry problem of
+        Just url ->
+            Proto.Error.UnregisteredType url
+
+        Nothing ->
+            Proto.Error.BadJson problem
+
+
 {-| A `google.rpc.Status` detail: a proto3 JSON `Any`, converted to its
 message's binary through the registry. A type the registry lacks is
 `UnregisteredType`, read from the failure (`Proto.Internal.Registry.unregistered`);
@@ -308,12 +341,7 @@ statusDetail registry detail =
             Ok any
 
         Err problem ->
-            case Proto.Internal.Registry.unregistered registry problem of
-                Just url ->
-                    Err (Proto.Error.UnregisteredType url)
-
-                Nothing ->
-                    Err (Proto.Error.BadJson problem)
+            Err (bodyProblem registry problem)
 
 
 optional : String -> Decoder a -> a -> Decoder a

@@ -72,11 +72,11 @@ init (Protocol p) c plan sent outcome duration =
                     Just (Error.code error)
         , detailProblems =
             case outcome.result of
-                Err (Error.RpcStatus status _) ->
-                    List.filterMap detailProblem status.details
-
-                _ ->
+                Ok _ ->
                     []
+
+                Err error ->
+                    List.filterMap detailProblem (Error.details error)
         , duration = duration
         , attempts = outcome.attempts
         }

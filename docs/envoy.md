@@ -160,7 +160,7 @@ typed_per_filter_config:
   (`withCredentials`, which also needs `allow_credentials: true`).
 - `expose_headers`: without them the browser hides `grpc-status` and
   `grpc-message`, and an error from the `grpc_headers` listener, which
-  has no body, is an `HttpStatus` one
+  has no body, states no status
   ([transcoding.md](transcoding.md#errors-in-headers)).
 
 The live suite calls from Node, where CORS does not apply, so it does
@@ -282,8 +282,8 @@ status.
 
 Envoy's own answers are plain text, and the runtime infers their code
 from the HTTP status: a path no method matches is 404
-`Could not resolve <path> to a method.`, an `HttpStatus` error with
-`Rpc.Code.Unimplemented`. Envoy's HTTP/1.1 codec also writes its own reason
+`Could not resolve <path> to a method.`, a `BadStatus` that states no
+status, its code `Rpc.Code.Unimplemented`. Envoy's HTTP/1.1 codec also writes its own reason
 phrase, `Unknown` for a status it has no name for, so a 418 from the
 service arrives with the message `Unknown` (`cases/envoy.json`).
 
@@ -294,8 +294,8 @@ matches, 400 for an unknown query parameter, 503 when the service is
 unreachable) the Connect error shape, `{"code": "not_found", "message":
 "…"}`, with a Lua filter. The runtime reads either shape, a Connect
 error body or a `google.rpc.Status` one, over every protocol
-(`src/Rpc/Internal/Status.elm`), so such an answer arrives as an `RpcStatus`
-error with source `ConnectBody` and the text as its message. The cost:
+(`src/Rpc/Internal/Status.elm`), so such an answer arrives as a stated status
+with source `ConnectBody` and the text as its message. The cost:
 the filter replaces every error body that is neither gRPC's nor JSON,
 so a plain-text answer a deployment wants kept has to be excluded in the
 script. It is not in the example config; it was run against Envoy

@@ -4,7 +4,7 @@
   new name.
 - `Rpc.Retry.next` takes the failed call's `error : Rpc.Error.Error` in
   place of `code : Rpc.Code.Code`, and reads the code itself; like the
-  runtime's own loop it stops on a `BadUrl`, where nothing was sent.
+  runtime's own loop it stops where trying again cannot help.
   Replace `code = Rpc.Error.code err` with `error = err`.
 - `Rpc.withRegistry` is `Rpc.Client.withRegistry`, beside the client's
   other modifiers, and `Rpc.Client.registry` reads it back. Generated
