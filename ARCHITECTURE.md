@@ -197,5 +197,5 @@ Each layer proves one thing and has a known gap. A path that starts with
   every diagnostic code has a row in `docs/diagnostics.md`, and no row
   names a code that is gone.
 - **Older compilers** (CI's `elm-compat` job, `just compile-with`, `just
-  test-with`): the runtime and the corpus compile with Elm 0.19.0 and
-  0.19.1, and the tests pass under 0.19.1 (§8.6).
+  test-with`): the runtime and the corpus compile with Elm 0.19.0,
+  0.19.1 and 0.19.2, and the tests pass under 0.19.1 and 0.19.2 (§8.6).

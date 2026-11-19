@@ -1377,7 +1377,7 @@ In detail:
 
 As the `naming` and `naming_collision` cases show:
 
-- The reserved words are the fourteen of Elm 0.19.2's parser (`if`,
+- The reserved words are the fourteen of Elm 0.19.3's parser (`if`,
   `then`, `else`, `case`, `of`, `let`, `in`, `type`, `module`, `where`,
   `import`, `exposing`, `as`, `port`). `alias` and `infix` are legal
   field names and stay as they are. Oneof names follow the field rule
@@ -4760,20 +4760,21 @@ Within a major version:
 
 ### 8.6 Elm compilers
 
-- Elm 0.19.2 is the development target; 0.19.0 and 0.19.1 are checked
-  in CI. A CI job per earlier release installs the
+- Elm 0.19.3 is the development target; 0.19.0, 0.19.1 and 0.19.2 are
+  checked in CI. A CI job per earlier release installs the
   official Linux binary (checksum pinned) and runs
   `conformance/compile-with.sh`, which compiles the runtime package (with
   `--docs`) and every case's expected output against a copy of the
-  harness set to that release. Nothing the 0.19.2 output needs is refused
-  by 0.19.0 or 0.19.1 so far. Decoders for messages with more than eight
+  harness set to that release. Nothing the 0.19.3 output needs is refused
+  by an earlier release so far. Decoders for messages with more than eight
   fields use the runtime's pipeline helpers rather than `map8` chunking.
 - The same job runs the runtime's and the notes example's Elm tests,
   fuzz tests included, with elm-test-rs under that release
   (`conformance/test-with.sh`, `just test-with`), the example from a
-  copy of its `elm.json` set to the release. Under 0.19.1 only:
-  elm-test-rs's runner package (`mpizenberg/elm-test-runner` 6) requires
-  Elm 0.19.1, so 0.19.0 cannot run the tests, and is held to the compile.
+  copy of its `elm.json` set to the release. Under 0.19.1 and 0.19.2
+  only: elm-test-rs's runner package (`mpizenberg/elm-test-runner` 6)
+  requires Elm 0.19.1 or later, so 0.19.0 cannot run the tests, and is
+  held to the compile.
 - What CI checks, all told: `just check` on Linux and macOS (formatting,
   clippy, the Rust tests with the corpus, the plugin's replay and the
   lockstep test, the runtime's build and Elm tests, the README's

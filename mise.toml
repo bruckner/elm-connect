@@ -9,7 +9,7 @@ rust = { version = "1.99.0", components = "rustfmt,clippy" }
 # mise's github backend does not recognise `arm` as arm64 and fails on
 # linux/arm64 with "No matching asset found", so each platform names its
 # asset explicitly and `bin` names the gunzipped executable.
-"github:elm/compiler" = { version = "0.19.2", bin = "elm", platforms = { linux-arm64 = { asset_pattern = "elm-*-linux-arm.gz" }, linux-x64 = { asset_pattern = "elm-*-linux-x64.gz" }, macos-arm64 = { asset_pattern = "elm-*-mac-arm.gz" }, macos-x64 = { asset_pattern = "elm-*-mac-x64.gz" }, windows-x64 = { asset_pattern = "elm-*-windows-x64.gz" } } }
+"github:elm/compiler" = { version = "0.19.3", bin = "elm", platforms = { linux-arm64 = { asset_pattern = "elm-*-linux-arm.gz" }, linux-x64 = { asset_pattern = "elm-*-linux-x64.gz" }, macos-arm64 = { asset_pattern = "elm-*-mac-arm.gz" }, macos-x64 = { asset_pattern = "elm-*-mac-x64.gz" }, windows-x64 = { asset_pattern = "elm-*-windows-x64.gz" } } }
 "github:avh4/elm-format" = "0.8.8"
 "github:zizmorcore/zizmor" = "1.30.1"
 gitleaks = "8.30.1"

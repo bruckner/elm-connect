@@ -152,7 +152,7 @@ repository, with the generated modules in `generated/`:
         "generated",
         "<path to your clone>/src"
     ],
-    "elm-version": "0.19.2",
+    "elm-version": "0.19.3",
     "dependencies": {
         "direct": {
             "elm/browser": "1.0.2",
@@ -202,7 +202,7 @@ Leave one of the four out and the build stops at the first runtime
 module that imports it, with `MODULE NOT FOUND` and the import, such as
 `import Bytes exposing (Bytes)` in `src/Proto/Bytes.elm`.
 
-The runtime compiles with Elm 0.19.0, 0.19.1 and 0.19.2; set
+The runtime compiles with Elm 0.19.0, 0.19.1, 0.19.2 and 0.19.3; set
 `elm-version` to the compiler the application uses.
 
 ### Building in CI
@@ -338,7 +338,7 @@ close though:
     Proto.Json.enum
     Proto.Json.int32
 
-Hint: Read <https://elm-lang.org/0.19.2/imports> to see how `import`
+Hint: Read <https://elm-lang.org/0.19.3/imports> to see how `import`
 declarations work in Elm.
 ```
 

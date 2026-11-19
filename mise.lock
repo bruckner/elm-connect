@@ -82,53 +82,56 @@ url = "https://github.com/avh4/elm-format/releases/download/0.8.8/elm-format-0.8
 url_api = "https://api.github.com/repos/avh4/elm-format/releases/assets/265282244"
 
 [[tools."github:elm/compiler"]]
-version = "0.19.2"
+version = "0.19.3"
 backend = "github:elm/compiler"
-specifiers = ["0.19.2"]
-
-[tools."github:elm/compiler".options]
-asset_pattern = "elm-*-mac-arm.gz"
-
-[tools."github:elm/compiler"."platforms.macos-arm64"]
-checksum = "sha256:8b02a7fac1643b39acb87ae2a8e10f0f1534fe61940ca08ab17dfc2ac98115c8"
-url = "https://github.com/elm/compiler/releases/download/0.19.2/elm-0.19.2-mac-arm.gz"
-url_api = "https://api.github.com/repos/elm/compiler/releases/assets/467828963"
-
-[[tools."github:elm/compiler"]]
-version = "0.19.2"
-backend = "github:elm/compiler"
+specifiers = ["0.19.3"]
 
 [tools."github:elm/compiler".options]
 asset_pattern = "elm-*-linux-x64.gz"
 
 [tools."github:elm/compiler"."platforms.linux-x64"]
-checksum = "sha256:66320d27701654fa11bd0e8d84bdf9829694d5770c8dcee2dede6160fad58737"
-url = "https://github.com/elm/compiler/releases/download/0.19.2/elm-0.19.2-linux-x64.gz"
-url_api = "https://api.github.com/repos/elm/compiler/releases/assets/467828938"
+checksum = "sha256:d11702b31577ed8b720b9d81c52c8a19a52b72b1fcfadef0fcad92f21798c58a"
+url = "https://github.com/elm/compiler/releases/download/0.19.3/elm-0.19.3-linux-x64.gz"
+url_api = "https://api.github.com/repos/elm/compiler/releases/assets/605724389"
 
 [[tools."github:elm/compiler"]]
-version = "0.19.2"
+version = "0.19.3"
 backend = "github:elm/compiler"
+specifiers = ["0.19.3"]
+
+[tools."github:elm/compiler".options]
+asset_pattern = "elm-*-mac-arm.gz"
+
+[tools."github:elm/compiler"."platforms.macos-arm64"]
+checksum = "sha256:a426e47d14cba0588aa81475adc32ba24bbf045209d0c560d0a89a5c4f3c34d0"
+url = "https://github.com/elm/compiler/releases/download/0.19.3/elm-0.19.3-mac-arm.gz"
+url_api = "https://api.github.com/repos/elm/compiler/releases/assets/605724474"
+
+[[tools."github:elm/compiler"]]
+version = "0.19.3"
+backend = "github:elm/compiler"
+specifiers = ["0.19.3"]
 
 [tools."github:elm/compiler".options]
 asset_pattern = "elm-*-mac-x64.gz"
 
 [tools."github:elm/compiler"."platforms.macos-x64"]
-checksum = "sha256:bcfbec1ee85bf87e29da23ea6cb597caa4613b74df77b4a3a40d881df1fa0410"
-url = "https://github.com/elm/compiler/releases/download/0.19.2/elm-0.19.2-mac-x64.gz"
-url_api = "https://api.github.com/repos/elm/compiler/releases/assets/467828982"
+checksum = "sha256:4a9c5578e53c4feb55b91c8ee9a0f46da9913414c6303d1c55add0d3abcd9921"
+url = "https://github.com/elm/compiler/releases/download/0.19.3/elm-0.19.3-mac-x64.gz"
+url_api = "https://api.github.com/repos/elm/compiler/releases/assets/605724578"
 
 [[tools."github:elm/compiler"]]
-version = "0.19.2"
+version = "0.19.3"
 backend = "github:elm/compiler"
+specifiers = ["0.19.3"]
 
 [tools."github:elm/compiler".options]
 asset_pattern = "elm-*-linux-arm.gz"
 
 [tools."github:elm/compiler"."platforms.linux-arm64"]
-checksum = "sha256:a2bb23e8af8c9874ed1f700fdba4d25636699313dff04695598c41055028c8f5"
-url = "https://github.com/elm/compiler/releases/download/0.19.2/elm-0.19.2-linux-arm.gz"
-url_api = "https://api.github.com/repos/elm/compiler/releases/assets/467828928"
+checksum = "sha256:4d22c4d10f89e482d3554b7af4f6527f8a05e4d82648a07b23f1f211495b5d24"
+url = "https://github.com/elm/compiler/releases/download/0.19.3/elm-0.19.3-linux-arm.gz"
+url_api = "https://api.github.com/repos/elm/compiler/releases/assets/605721854"
 
 [[tools."github:tetratelabs/func-e"]]
 version = "1.6.0"

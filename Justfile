@@ -200,12 +200,12 @@ package:
     cargo package --workspace --locked
 
 # Compile the runtime package and the conformance corpus with another Elm
-# compiler, such as 0.19.0 or 0.19.1, which CI checks (design section 8).
+# compiler, such as 0.19.0, 0.19.1 or 0.19.2, which CI checks (design section 8).
 compile-with elm:
     conformance/compile-with.sh {{elm}}
 
 # Run the runtime package's and the notes example's Elm tests with another
-# Elm compiler, as CI does with 0.19.1 (design section 8).
+# Elm compiler, as CI does with 0.19.1 and 0.19.2 (design section 8).
 test-with elm:
     conformance/test-with.sh {{elm}}
 
