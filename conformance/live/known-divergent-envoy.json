@@ -10,7 +10,7 @@
       "reading": "Envoy's, in part; the rule cannot be served whole. GetMessage's binding 0, GET /v1/{name=messages/*}, and binding 2, GET /v1/messages/{message_id}, match the same paths. Envoy's path matcher (grpc-httpjson-transcoding) marks a verb and path registered twice as ambiguous and then matches neither, without a word at startup, where Vanguard refuses the second and grpc-gateway lets one win. The runtime builds binding 0's request as the fixture says.",
       "observed": {
         "trace": { "httpStatus": 404 },
-        "result": { "error": { "code": "unimplemented", "source": "HttpStatus" } }
+        "result": { "badStatus": { "code": "unimplemented", "source": null } }
       }
     },
     {
@@ -21,7 +21,7 @@
       "reading": "As above: binding 2 is the other half of the pair Envoy serves neither of.",
       "observed": {
         "trace": { "httpStatus": 404 },
-        "result": { "error": { "code": "unimplemented", "source": "HttpStatus" } }
+        "result": { "badStatus": { "code": "unimplemented", "source": null } }
       }
     },
     {
@@ -32,7 +32,7 @@
       "reading": "Envoy's, in part, as above: UpdateMessage and UpdateMessageWhole both have PATCH /v1/messages/{message_id}, and Envoy serves neither.",
       "observed": {
         "trace": { "httpStatus": 404 },
-        "result": { "error": { "code": "unimplemented", "source": "HttpStatus" } }
+        "result": { "badStatus": { "code": "unimplemented", "source": null } }
       }
     },
     {
@@ -43,7 +43,7 @@
       "reading": "As above: UpdateMessageWhole is the other method of the pair.",
       "observed": {
         "trace": { "httpStatus": 404 },
-        "result": { "error": { "code": "unimplemented", "source": "HttpStatus" } }
+        "result": { "badStatus": { "code": "unimplemented", "source": null } }
       }
     },
     {
@@ -54,7 +54,7 @@
       "reading": "As above: UpdateMessage's route is the pair Envoy serves neither of, so the fixture's own question (a body of {} reads as the field set and empty, known-divergent-vanguard.json) is not reached.",
       "observed": {
         "trace": { "httpStatus": 404 },
-        "result": { "error": { "code": "unimplemented", "source": "HttpStatus" } }
+        "result": { "badStatus": { "code": "unimplemented", "source": null } }
       }
     },
     {
@@ -64,7 +64,7 @@
       "answer": "200 with Content-Length: 18 and the body {\"path\":\"files/a\"} after the headers",
       "reading": "Envoy's. An answer to HEAD has no body (RFC 9110 section 9.3.2), but the transcoder writes the method's JSON after the headers. Node's HTTP parser, under the runner's XMLHttpRequest, reads those bytes as the start of the next answer and fails the exchange, so the runtime reports a network error; a browser may drop the bytes instead (not verified). The route and the request are right: the server receives files/a.",
       "observed": {
-        "result": { "noAnswer": "NetworkError" }
+        "result": { "networkError": true }
       }
     },
     {

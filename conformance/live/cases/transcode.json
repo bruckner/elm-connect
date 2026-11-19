@@ -11,7 +11,7 @@
     },
     "expect": {
       "result": {
-        "error": {
+        "badStatus": {
           "code": "not_found",
           "message": "notes/missing does not exist",
           "source": "StatusBody",
@@ -50,7 +50,7 @@
     },
     "expect": {
       "result": {
-        "error": {
+        "badStatus": {
           "code": "not_found",
           "message": "notes/missing does not exist",
           "source": "StatusBody",
@@ -85,7 +85,7 @@
     },
     "expect": {
       "result": {
-        "error": {
+        "badStatus": {
           "code": "not_found",
           "message": "notes/missing does not exist",
           "source": "StatusBody",
@@ -126,7 +126,7 @@
     },
     "expect": {
       "result": {
-        "error": {
+        "badStatus": {
           "code": "invalid_argument",
           "message": "a note needs a title",
           "source": "StatusBody",
@@ -163,7 +163,7 @@
     },
     "expect": {
       "result": {
-        "error": {
+        "badStatus": {
           "code": "invalid_argument",
           "message": "a note needs a title",
           "source": "StatusBody",
@@ -198,7 +198,7 @@
     },
     "expect": {
       "result": {
-        "error": {
+        "badStatus": {
           "code": "invalid_argument",
           "message": "a note needs a title",
           "source": "StatusBody",
@@ -237,11 +237,11 @@
     },
     "expect": {
       "result": {
-        "error": {
+        "badStatus": {
           "code": "unimplemented",
           "message": "Not Found",
           "details": [],
-          "source": "HttpStatus",
+          "source": null,
           "response": { "statusCode": 404, "body": { "$match": "^Not Found" } }
         }
       },
@@ -260,7 +260,7 @@
     },
     "expect": {
       "result": {
-        "error": { "code": "unknown", "message": "I'm a teapot", "details": [], "source": "HttpStatus" }
+        "badStatus": { "code": "unknown", "message": "I'm a teapot", "details": [], "source": null }
       },
       "trace": { "httpStatus": 418 }
     }
@@ -276,7 +276,7 @@
     },
     "expect": {
       "result": {
-        "error": { "code": "not_found", "message": "no backend; code 5", "details": [], "source": "GrpcHeaders" }
+        "badStatus": { "code": "not_found", "message": "no backend; code 5", "details": [], "source": "GrpcHeaders" }
       },
       "trace": { "httpStatus": 503, "code": "not_found" },
       "wire": [{ "status": 503, "responseBody": "" }]
@@ -293,7 +293,7 @@
     },
     "expect": {
       "result": {
-        "error": { "code": "unauthenticated", "message": "no backend; code 16", "details": [], "source": "GrpcHeaders" }
+        "badStatus": { "code": "unauthenticated", "message": "no backend; code 16", "details": [], "source": "GrpcHeaders" }
       }
     }
   },
@@ -323,7 +323,7 @@
       "config": { "baseUrl": "{server}/status/201" }
     },
     "expect": {
-      "result": { "badResponse": { "problem": { "$match": "." }, "response": { "statusCode": 201 } } },
+      "result": { "badResponse": { "message": { "$match": "." }, "response": { "statusCode": 201 } } },
       "trace": { "httpStatus": 201 }
     }
   }

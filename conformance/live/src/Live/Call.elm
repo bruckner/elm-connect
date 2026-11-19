@@ -492,7 +492,7 @@ encodeResult respond result =
             case Rpc.Error.cause error of
                 Rpc.Error.BadStatus answer ->
                     Encode.object
-                        [ ( "error"
+                        [ ( "badStatus"
                           , Encode.object
                                 [ ( "code", Encode.string (Rpc.Code.toString (Rpc.Error.code error)) )
                                 , ( "message", Encode.string (Rpc.Error.message error) )
@@ -504,7 +504,7 @@ encodeResult respond result =
                                         )
                                         (Rpc.Error.details error)
                                   )
-                                , ( "source", Encode.string (Rpc.Error.source error |> Maybe.map sourceToString |> Maybe.withDefault "HttpStatus") )
+                                , ( "source", Rpc.Error.source error |> Maybe.map (sourceToString >> Encode.string) |> Maybe.withDefault Encode.null )
                                 , ( "response", encodeResponse_ answer )
                                 ]
                           )
@@ -515,20 +515,20 @@ encodeResult respond result =
                         [ ( "badResponse"
                           , Encode.object
                                 [ ( "code", Encode.string (Rpc.Code.toString (Rpc.Error.code error)) )
-                                , ( "problem", Encode.string (Rpc.Error.message error) )
+                                , ( "message", Encode.string (Rpc.Error.message error) )
                                 , ( "response", encodeResponse_ answer )
                                 ]
                           )
                         ]
 
                 Rpc.Error.BadCall ->
-                    Encode.object [ ( "noAnswer", Encode.string ("BadCall " ++ Rpc.Error.toString error) ) ]
+                    Encode.object [ ( "badCall", Encode.string (Rpc.Error.toString error) ) ]
 
                 Rpc.Error.Timeout ->
-                    Encode.object [ ( "noAnswer", Encode.string "Timeout" ) ]
+                    Encode.object [ ( "timeout", Encode.bool True ) ]
 
                 Rpc.Error.NetworkError ->
-                    Encode.object [ ( "noAnswer", Encode.string "NetworkError" ) ]
+                    Encode.object [ ( "networkError", Encode.bool True ) ]
 
 
 {-| The answer an error was read from: its status and body. The headers are

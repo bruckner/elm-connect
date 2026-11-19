@@ -31,7 +31,7 @@
       "observed": {
         "trace": { "httpStatus": 404 },
         "result": {
-          "error": { "code": "not_found", "message": "Not Found", "source": "StatusBody" }
+          "badStatus": { "code": "not_found", "message": "Not Found", "source": "StatusBody" }
         }
       }
     },
@@ -44,7 +44,7 @@
       "observed": {
         "trace": { "httpStatus": 404 },
         "result": {
-          "error": { "code": "not_found", "message": "Not Found", "source": "StatusBody" }
+          "badStatus": { "code": "not_found", "message": "Not Found", "source": "StatusBody" }
         }
       }
     },
@@ -57,7 +57,7 @@
       "observed": {
         "trace": { "httpStatus": 500 },
         "result": {
-          "error": {
+          "badStatus": {
             "code": "unknown",
             "message": { "$match": "FieldMask.paths contains irreversible value \"displayName\"" },
             "source": "StatusBody"
@@ -73,7 +73,7 @@
       "reading": "The runtime, as above: the gateway keeps the update mask's path displayName as written, so the service receives a mask naming no field. Here the service's echo cannot write that request as JSON and fails, which connect-go reports as UNKNOWN without a message; a service applying the mask would refuse it or ignore it. The path and body agree.",
       "observed": {
         "trace": { "httpStatus": 500 },
-        "result": { "error": { "code": "unknown", "message": "", "source": "StatusBody" } }
+        "result": { "badStatus": { "code": "unknown", "message": "", "source": "StatusBody" } }
       }
     },
     {
