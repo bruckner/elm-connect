@@ -3092,7 +3092,7 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
 
 Run against connect-go by the live suite (§7): POST and GET, the
 timeout header, every method of the example API; and by the Connect
-conformance suite's unary JSON test cases over HTTP/1.1 (v1.0.6, §7),
+conformance suite's unary JSON test cases over HTTP/1.1 (v1.0.7, §7),
 all 40 passing.
 
 - Unary only. POST to `baseUrl/<service>/<Method>` with the request's
@@ -4229,14 +4229,14 @@ in and out of range, and `sendTraced`, `send`, `task` and
 seen on the wire on every retry).
 
 The Connect conformance suite: `connectconformance`
-v1.0.6, fetched from its GitHub release with its SHA-256 pinned per
+v1.0.7, fetched from its GitHub release with its SHA-256 pinned per
 platform (a Go `tool` dependency would have put the suite's modules in
 the example server's `go.mod`), runs its reference server and
 `conformance/live/conformance.mjs`, which reads the suite's
 `ClientCompatRequest`s with the JavaScript protoc-gen-es generates, makes
 each call through the runner with the Elm protoc-gen-elm-connect
 generates from the same protos (`streaming=skip`; the three streaming
-methods are its only warnings; the protos are v1.0.6's, vendored in
+methods are its only warnings; the protos are v1.0.7's, vendored in
 `conformance/live/suite/proto/`), and reports what the runtime gave. The
 config (`conformance.yaml`) selects 40 test cases: basic success,
 `Unimplemented`, every error code, Connect's mapping of a bare HTTP
@@ -4272,7 +4272,7 @@ suites (unexpected and empty answers, error end-streams) do not apply.
 - The receive limit is declared (`supportsMessageReceiveLimit: true`):
   the wrapper applies a request's `message_receive_limit`
   with `withReadMaxBytes` (0 is no limit) and reports the answer over
-  it, a `BadResponse`, by its code, `resource_exhausted`. v1.0.6 has no client-mode case that relies on
+  it, a `BadResponse`, by its code, `resource_exhausted`. v1.0.7 has no client-mode case that relies on
   it (its one such suite, Server Message Size, tests servers over the
   proto codec), so the count stays 40; the live suite's `readMaxBytes`
   cases in `cases/notes.json` run the knob against the example server

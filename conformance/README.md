@@ -561,7 +561,7 @@ method, and the table to `tables` in `Live.elm`.
 
 `just live-conformance` (part of `just live`) runs the official
 [Connect conformance suite](https://github.com/connectrpc/conformance)
-against the runtime (design §7, live verification), at v1.0.6:
+against the runtime (design §7, live verification), at v1.0.7:
 
 ```sh
 just live-conformance
@@ -614,7 +614,7 @@ runs both `halves` and `sendTraced`.
 `conformance.yaml` declares what is tested (the suite's `Features`):
 HTTP/1.1, the Connect protocol, the JSON codec, no compression, unary
 calls, Connect GET and the receive limit, and no TLS, HTTP/2 or trailers;
-that is 40 test cases (v1.0.6's one receive-limit suite is for servers). `known-failing.txt` lists the test cases the runtime fails
+that is 40 test cases (v1.0.7's one receive-limit suite is for servers). `known-failing.txt` lists the test cases the runtime fails
 however a call is sent (none: all 40 pass through the halves), and
 `known-failing-send.txt` those it fails too through `sendTraced` (39
 pass: the cancellation case, since the tasks ignore the tracker), each
@@ -674,7 +674,7 @@ them and `sendTraced` gives them. The `sendTraced` run adds
 
 `suite/buf.gen.yaml` generates both from `suite/proto/`, the suite's
 protos exported from `buf.build/connectrpc/conformance` at the commit its
-v1.0.6 label names (`just protos-refresh` re-exports them), so generation
+v1.0.7 label names (`just protos-refresh` re-exports them), so generation
 needs no network;
 `just live-conformance-gen` installs the npm packages with `npm ci`,
 regenerates, and fails if the output differs from what is committed.

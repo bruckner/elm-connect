@@ -33,14 +33,14 @@ beside them in `examples/notes/third_party/googleapis/LICENSE`.
 generated (by protoc-gen-elm-connect and protoc-gen-es) from the
 `connectrpc.conformance.v1` protos of the
 [Connect conformance suite](https://github.com/connectrpc/conformance),
-v1.0.6, which are Copyright The Connect Authors and licensed under the
+v1.0.7, which are Copyright The Connect Authors and licensed under the
 Apache License, Version 2.0; a copy of the license is in
 [LICENSE-APACHE](LICENSE-APACHE). The generated JavaScript keeps the
 protos' license header.
 
 The protos themselves are vendored, unmodified, in
 `conformance/live/suite/proto/`, exported from the Buf Schema Registry's
-`buf.build/connectrpc/conformance` module at the commit labelled v1.0.6
+`buf.build/connectrpc/conformance` module at the commit labelled v1.0.7
 (its README.md names it), with the module's license in
 `conformance/live/suite/proto/LICENSE`.
 

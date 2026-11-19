@@ -456,7 +456,7 @@ protobuf-conformance-gen:
 # The Buf Schema Registry modules the vendored protos come from, at the
 # commits they were exported from; protos-refresh re-exports them.
 googleapis_module := "buf.build/googleapis/googleapis:c17df5b2beca46928cc87d5656bd5343" # gitleaks:allow (a BSR commit)
-conformance_module := "buf.build/connectrpc/conformance:d37ba00b58084ea7a4480086db6e4be0" # gitleaks:allow (a BSR commit)
+conformance_module := "buf.build/connectrpc/conformance:e6d2b1a1ebb247d28a8be5e1a763b0f0" # gitleaks:allow (a BSR commit)
 
 # Re-export the vendored protos from the Buf Schema Registry at the commits
 # above, with their license files: the googleapis files the notes example
