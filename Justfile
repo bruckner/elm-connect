@@ -16,7 +16,7 @@ default:
     @just --list
 
 # The gate: everything CI runs, in order.
-check: fmt-check clippy test elm-check error-details-check snippets changelog-check release-check zizmor gitleaks deny license package
+check: fmt-check clippy test elm-check json-only-check error-details-check snippets changelog-check release-check zizmor gitleaks deny license package
 
 # Format Rust and Elm sources in place.
 fmt:
@@ -168,6 +168,24 @@ error-details-check:
 # the notes example's walkthrough is an excerpt of the file it names
 # (examples/check-snippets.sh). The excerpts compile with the example, which
 # `example-notes-build` builds; those in its tests run in `elm-check`.
+# Compile a JSON-only client naming every protocol modifier
+# (conformance/json-only) with --optimize, and fail if the output holds any of
+# elm/bytes' kernel: a client that never speaks protobuf binary carries none
+# of its code. The bare `elm make` resolves dependencies first, as in
+# elm-check.
+json-only-check:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    cd conformance/json-only
+    elm make >/dev/null 2>&1 || true
+    elm make src/Main.elm --optimize --output=elm-stuff/main.js >/dev/null
+    if grep -q '_Bytes_' elm-stuff/main.js; then
+        echo "json-only-check: a JSON-only client links elm/bytes' kernel:" >&2
+        grep -o '_Bytes_[A-Za-z0-9_]*' elm-stuff/main.js | sort -u >&2
+        exit 1
+    fi
+    echo "json-only-check: no elm/bytes kernel in a JSON-only client"
+
 snippets:
     examples/check-snippets.sh README.md docs/install.md docs/migrating.md docs/quickstart.md docs/generator.md docs/calling.md docs/descriptors.md docs/transcoding.md docs/envoy.md docs/compared.md docs/trying.md examples/notes/README.md examples/eliza/README.md
 
@@ -510,7 +528,7 @@ example-notes addr="127.0.0.1:8080": example-notes-build
 clean:
     cargo clean
     rm -rf conformance/harness/elm-stuff conformance/harness/generated elm-stuff tests/Generated
-    rm -rf conformance/error-details/elm-stuff conformance/error-details/generated
+    rm -rf conformance/error-details/elm-stuff conformance/error-details/generated conformance/json-only/elm-stuff
     rm -rf conformance/live/elm-stuff conformance/live/build conformance/live/node_modules
     rm -rf conformance/protobuf/elm-stuff conformance/protobuf/build
     rm -rf examples/notes/elm/elm-stuff examples/notes/elm/dist

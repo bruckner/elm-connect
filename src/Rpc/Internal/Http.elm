@@ -7,6 +7,8 @@ module Rpc.Internal.Http exposing
     , bytesText
     , bytesTooLarge
     , bytesUnlimited
+    , encode
+    , encodedWidth
     , envelopeText
     , invalidHeader
     , jsonTooLarge
@@ -383,6 +385,21 @@ width =
     Bytes.width
 
 
+{-| An encoder run, the binary protocols' way to get a request's bytes.
+-}
+encode : Bytes.Encode.Encoder -> Bytes
+encode =
+    Bytes.Encode.encode
+
+
+{-| The size of the bytes an encoder writes: the binary protocols' measure
+for their write limit.
+-}
+encodedWidth : Bytes.Encode.Encoder -> Int
+encodedWidth encoder =
+    Bytes.width (Bytes.Encode.encode encoder)
+
+
 
 -- LIMITS
 
@@ -402,14 +419,14 @@ jsonTooLarge options json =
 
 {-| Whether a request's protobuf binary is over the write limit.
 -}
-bytesTooLarge : (Bytes -> Int) -> Options -> (() -> Bytes.Encode.Encoder) -> Maybe Size
-bytesTooLarge width_ options binary =
+bytesTooLarge : (Bytes.Encode.Encoder -> Int) -> Options -> (() -> Bytes.Encode.Encoder) -> Maybe Size
+bytesTooLarge measure options binary =
     options.writeMaxBytes
         |> Maybe.andThen
             (\limit ->
                 let
                     size =
-                        width_ (Bytes.Encode.encode (binary ()))
+                        measure (binary ())
                 in
                 if size > limit then
                     Just { limit = limit, size = size }

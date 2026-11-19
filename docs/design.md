@@ -2604,11 +2604,15 @@ them carries none of their code. Two rules keep this safe
   `==` on two clients otherwise alike throws on reaching it
   (decisions.md: Modifiers install behaviour, 2026-11-13 and
   2026-11-19);
-- every installed binary check takes its measure from the wire
-  (`width`), never `Bytes.width` directly: a modifier names both wires'
-  checks, so a JSON program naming `withReadMaxBytes` carries the binary
-  one, but only a binary constructor names `width`, so it still reaches
-  no elm/bytes.
+- every binary function a modifier installs (the GET builder, the
+  limit checks) reaches elm/bytes only through the wire: it runs an
+  encoder with the wire's `encode` and measures with its `encodedWidth`
+  and `width`, never naming elm/bytes itself. A modifier names both
+  wires' functions, so a JSON program naming `withConnectGet` or a limit
+  carries the binary one, but only a binary constructor names those
+  three, so it still reaches no elm/bytes. `just json-only-check`
+  compiles a JSON-only client naming every modifier and fails if its
+  output holds any of elm/bytes' kernel.
 
 `withConnectGet` and `withMaxGetUrl` are no-ops off Connect, as
 documented: transcoding takes its verb from the rule, and gRPC-Web

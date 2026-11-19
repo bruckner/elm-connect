@@ -45,8 +45,8 @@ import Rpc.Response exposing (Response)
 framed message, sent as `application/grpc-web+proto` with `X-Grpc-Web`, and
 the timeout as `grpc-timeout`.
 -}
-grpcWeb : (Bytes -> String) -> Options -> Settings -> E.Encoder -> Request
-grpcWeb _ _ settings encoder =
+grpcWeb : (E.Encoder -> Bytes) -> (Bytes -> String) -> Options -> Settings -> E.Encoder -> Request
+grpcWeb _ _ _ settings encoder =
     { method = "POST"
     , url = Connect.connectUrl settings
     , headers =
