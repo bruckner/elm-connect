@@ -45,7 +45,7 @@ type Trace
 sending came to and how long it took, in milliseconds.
 -}
 init : Protocol codec -> Call codec req res -> Plan res -> Request -> Outcome Error res -> Float -> Trace
-init (Protocol p) c plan sent outcome duration =
+init (Protocol p _) c plan sent outcome duration =
     let
         metadata =
             outcome.metadata

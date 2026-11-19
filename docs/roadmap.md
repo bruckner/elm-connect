@@ -111,7 +111,8 @@ the copy when it installs the package. A minor.
 
 Hooks are the client. `Rpc.Client` holds functions already, its
 protocol's and those its modifiers install, and stays `==` because each
-modifier also sets a data field compared before any function. A hook,
+modifier also sets data, which a client holds in a position compared
+before any function. A hook,
 a function every call goes through, would be one more modifier that
 installs it. Every use of an interceptor met so far maps onto data,
 the trace or the pure halves ([calling.md](calling.md)), so none is

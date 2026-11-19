@@ -247,7 +247,7 @@ no policy is in effect.
 
 -}
 send : Client codec -> (Result Error res -> msg) -> Call codec req res -> Cmd msg
-send ((Client.Client cl) as client_) toMsg ((Rpc.Internal.Call.Call fields) as c) =
+send ((Client.Client cl _ policy _) as client_) toMsg ((Rpc.Internal.Call.Call fields) as c) =
     let
         plan =
             Plan.toSend client_ c
@@ -255,7 +255,7 @@ send ((Client.Client cl) as client_) toMsg ((Rpc.Internal.Call.Call fields) as c
         sent =
             plan.request ()
     in
-    if Rpc.Internal.Call.retryIn cl.retry c == Nothing && Plan.refused cl.baseUrl plan sent == Nothing then
+    if Rpc.Internal.Call.retryIn policy c == Nothing && Plan.refused cl.baseUrl plan sent == Nothing then
         Internal.send
             (case plan.reader of
                 TextReader read ->
@@ -320,7 +320,7 @@ policy in effect applies, and the trace counts every attempt and the
 milliseconds from before the first to after the last, waits included.
 -}
 taskTraced : Client codec -> Call codec req res -> Task Never ( Trace, Result Error res )
-taskTraced ((Client.Client cl) as client_) c =
+taskTraced ((Client.Client _ over _ _) as client_) c =
     let
         plan =
             Plan.toSend client_ c
@@ -337,7 +337,7 @@ taskTraced ((Client.Client cl) as client_) c =
                             Time.now
                                 |> Task.map
                                     (\end ->
-                                        ( Rpc.Internal.Trace.init cl.protocol c plan (firstAttempt client_ c plan sent) outcome (toFloat (Time.posixToMillis end - Time.posixToMillis start))
+                                        ( Rpc.Internal.Trace.init over c plan (firstAttempt client_ c plan sent) outcome (toFloat (Time.posixToMillis end - Time.posixToMillis start))
                                         , outcome.result
                                         )
                                     )
@@ -488,13 +488,13 @@ fromPlan cl c plan sent =
 {-| Send `sent` until it succeeds or the retry policy says to stop.
 -}
 attempt : Client codec -> Call codec req res -> Plan res -> Request -> Task Never (Rpc.Internal.Retry.Outcome Error res)
-attempt (Client.Client cl) c plan sent =
+attempt (Client.Client cl _ policy _) c plan sent =
     case Plan.refused cl.baseUrl plan sent of
         Just error ->
             Task.succeed { attempts = 0, metadata = Nothing, result = Err error }
 
         Nothing ->
-            Rpc.Internal.Retry.run (Rpc.Internal.Call.retryIn cl.retry c)
+            Rpc.Internal.Retry.run (Rpc.Internal.Call.retryIn policy c)
                 (Rpc.Call.idempotency c)
                 Rpc.Internal.Retry.retryable
                 (\left ->
@@ -514,7 +514,7 @@ attempt (Client.Client cl) c plan sent =
 retry policy's deadline when there is one.
 -}
 firstAttempt : Client codec -> Call codec req res -> Plan res -> Request -> Request
-firstAttempt (Client.Client cl) c plan sent =
+firstAttempt (Client.Client _ _ policy _) c plan sent =
     Plan.withBudget plan
-        (Rpc.Internal.Call.retryIn cl.retry c |> Maybe.andThen (\policy -> Rpc.Internal.Retry.startBudget policy 0))
+        (Rpc.Internal.Call.retryIn policy c |> Maybe.andThen (\inEffect -> Rpc.Internal.Retry.startBudget inEffect 0))
         sent

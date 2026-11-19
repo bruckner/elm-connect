@@ -2563,8 +2563,9 @@ type error where the call is sent, not a failure at run time
 (decisions.md: Protocol and client, indexed by codec).
 
 **A protocol holds its code.** `Protocol codec` is one value with a data
-half (its name, its codec, and its options: `get`, `maxGetUrl`,
-`readMaxBytes`, `writeMaxBytes`) and a function half, its wire: `Text`
+half (its name, its codec, whether it reads routes, and its options:
+`get`, `maxGetUrl`, `readMaxBytes`, `writeMaxBytes`) and, after it, a
+function half, its wire: `Text`
 (proto3 JSON) or `Binary` (protobuf binary), each a record of top-level
 functions that build a request and read an answer (`build`, `message`,
 the limit checks `tooLarge` and `overRead`, `timeoutHeader`, and for
@@ -2582,17 +2583,27 @@ policy (`Retry Policy Math`); a protocol or a policy that names none of
 them carries none of their code. Two rules keep this safe
 (decisions.md: Modifiers install behaviour):
 
-- every modifier that installs a function also writes a data field
-  that sorts before the function fields (`options` before `wire`, a
-  policy's knobs before its math), so `==` on two clients or protocols
-  answers at the data before it could reach a function, on which Elm's
-  `==` throws; built alike, they hold the same top-level functions,
-  which `==` compares by reference first. Clients built alike are `==`
-  when their registry is a top-level value, and two differing in one
-  modifier compare unequal without throwing; a registry built where the
-  client is holds fresh functions per `register`, and `==` on two such
-  clients throws on reaching it (decisions.md: Modifiers install
-  behaviour, 2026-11-13);
+- every modifier that installs a function also writes the data, and the
+  data comes first by position: a protocol is its data, then its
+  functions (`Protocol data wire`); a policy its knobs, then its math
+  (`Retry Policy Math`); a client its settings, then its protocol, its
+  policy, and its registry last (`Client data protocol retry registry`).
+  elm/core's `==` compares a constructor's arguments in order and stops
+  at the first that differ, so `==` on two clients or protocols answers
+  at the data before it could reach a function, on which it throws;
+  built alike, they hold the same top-level functions, which `==`
+  compares by reference first. A record's field order is not used: the
+  compiler chooses it (0.19.0 to 0.19.2 alphabetically, 0.19.3 by length
+  first). The order of a constructor's arguments is part of the
+  language; how `==` walks them is elm/core's code, far steadier than a
+  field order but not guaranteed, so the tests CI runs under the
+  supported compilers are the backstop. Clients built alike are `==`
+  when their registry is a top-level value, and two differing in
+  anything but the registry compare unequal without throwing; a registry
+  built where the client is holds fresh functions per `register`, and
+  `==` on two clients otherwise alike throws on reaching it
+  (decisions.md: Modifiers install behaviour, 2026-11-13 and
+  2026-11-19);
 - every installed binary check takes its measure from the wire
   (`width`), never `Bytes.width` directly: a modifier names both wires'
   checks, so a JSON program naming `withReadMaxBytes` carries the binary
