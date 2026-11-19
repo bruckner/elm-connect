@@ -210,8 +210,13 @@ source (Error e) =
 
 {-| Where a status was read from, tried in this order:
 
-  - `ConnectBody`: a Connect error body, `{"code": "not_found", …}`; a code
-    name the protocol does not define, `"ok"` included, is `Unknown`.
+  - `ConnectBody`: a Connect error body, `{"code": "not_found", …}`. A code
+    the protocol does not name, `"ok"` included, and a missing or `null`
+    code beside a string `message` (`{"message": "…"}`) take the code
+    [`Rpc.Code.fromHttpStatus`](Rpc-Code#fromHttpStatus) gives the answer's
+    status, as the protocol tells a client to infer one, the message and
+    details kept. Without a string `message`, a body with no code (`{}`) is
+    not a Connect body.
   - `StatusBody`: a `google.rpc.Status` body, `{"code": 5, …}`, as grpc-gateway
     and Envoy send; a number outside `1` to `16` is the code `Unknown`, and the
     number as sent is in the answer's body.

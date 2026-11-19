@@ -765,9 +765,10 @@ last four apart by the HTTP status, not by the code.
 each in this order, whatever the protocol:
 
 - `ConnectBody`: a Connect error body, `{"code": "not_found", …}`. A
-  string `code` that is not one of Connect's names still makes the body
-  a Connect body: the code is `Unknown`, and the message and details are
-  as the body gives them.
+  code the protocol does not name, `"ok"` included, and a missing or
+  `null` code beside a string `message` take the code
+  `Rpc.Code.fromHttpStatus` gives the answer's status, as the protocol
+  tells a client to infer one, the message and details kept.
 - `StatusBody`: a `google.rpc.Status` body, `{"code": 5, …}`, as
   grpc-gateway and Vanguard send.
 - `GrpcHeaders`: the `grpc-status` and `grpc-message` headers, as Envoy's
