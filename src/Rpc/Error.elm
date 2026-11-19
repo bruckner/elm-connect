@@ -353,6 +353,10 @@ every other error.
 
 That text can quote the value that failed, and so hold the answer's or the
 request's data: keep it out of logs and reports that must not carry it.
+Every failure text this package's decoders write says what was expected
+and never what was found, so a walk over a `BadJson`'s `Json.Decode.Error`
+that prints its path and texts and leaves out its values is safe to report;
+calling.md's "The codec" gives one.
 
 -}
 protoError : Error -> Maybe Proto.Error.Error

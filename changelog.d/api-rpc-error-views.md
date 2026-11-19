@@ -34,3 +34,12 @@
   limit, both `ResourceExhausted`, were retried by a policy listing that
   code. An answer over the read limit is a `BadResponse` that keeps its
   status and headers, its body dropped.
+- Changed: a failure text of the `Proto` JSON decoders says what was
+  expected and no longer what was found: `Expecting an integer`, where
+  it was `Expecting an integer, but got "x"`; `Expecting distinct map
+  keys`, where it named both keys; and so on for enum names, map keys,
+  numbers, base64, timestamps, durations, field masks and an `Any`'s
+  `"@type"`. The rejected value is still in elm/json's failure, and
+  `Proto.Error.toString` still prints it. An `Any` whose JSON is not its
+  message reads `Expecting an Any of "<type URL>" to hold that message`,
+  without the inner failure's text. Code matching these texts changes.

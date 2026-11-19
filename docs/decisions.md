@@ -1031,6 +1031,19 @@ against:
   reader of the status wrote an unreachable `( Nothing, Nothing )` arm,
   twice in that application.
 
+`protoError` keeps the problem whole, and elm/json's `Failure` already
+holds the rejected value beside its text. The package's decoders used to
+repeat the value in the text (`Expecting an integer, but got "x"`), so the
+full text showed it twice and no reader could leave it out. Their texts
+now say what was expected and never what was found, map keys included
+(the map is in the failure's value), which makes every text value-free by
+construction. An application that reports a body that did not decode
+walks the `Json.Decode.Error` for path and text, a dozen lines that
+calling.md gives; the package ships no value-free renderer, whose path
+syntax, joining of `oneOf` and wording would be choices an application
+may not share. A renderer that cut each text at a separator its decoders
+agreed on was built and set aside for that reason.
+
 The name `Cause` stays, documented as what happened underneath: HTTP is
 what is under an RPC. "Did the request reach the server?" and "did the
 error come from it?" are a table on `Cause` in its documentation, not

@@ -672,6 +672,50 @@ client's registry lacks. It is `Nothing` for every other error.
 `Proto.Error.toString` describes it in full; that text can quote the
 value that failed, and so hold the answer's or the request's data.
 
+For a report that must not carry that data, walk the `Json.Decode.Error`
+for its path and its text and leave out the value beside them. This
+package's decoders write a failure's text as what was expected and never
+what was found, so the walk is safe for every failure they give; it does
+not cover a text from a decoder of the application's own that puts a
+value in it.
+
+```elm examples/notes/elm/src/Snippets/Report.elm#report
+import Json.Decode
+import Proto.Error
+import Rpc
+import Rpc.Error
+
+
+decodeReport : Rpc.Error -> Maybe String
+decodeReport error =
+    case Rpc.Error.protoError error of
+        Just (Proto.Error.BadJson problem) ->
+            Just (located "json" problem)
+
+        Just other ->
+            -- A binary report, a type URL or a type mismatch: no value.
+            Just (Proto.Error.toString other)
+
+        Nothing ->
+            Nothing
+
+
+located : String -> Json.Decode.Error -> String
+located path problem =
+    case problem of
+        Json.Decode.Field name inner ->
+            located (path ++ "." ++ name) inner
+
+        Json.Decode.Index index inner ->
+            located (path ++ "[" ++ String.fromInt index ++ "]") inner
+
+        Json.Decode.OneOf ways ->
+            String.join "; or " (List.map (located path) ways)
+
+        Json.Decode.Failure text _ ->
+            path ++ ": " ++ text
+```
+
 ### Errors of the application's own
 
 An `Rpc.Error` is what the call's answer was, and nothing in it fits a

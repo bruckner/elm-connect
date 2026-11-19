@@ -682,7 +682,8 @@ rpc shared call =
   `"1e2"` are keys and `"+5"`, `"1.5"` and `"abc"` are not. A 64-bit key is held
   in the canonical decimal form `int64` gives (`"007"` is the key
   `"7"`). Two keys that canonicalise to one (`"7"` and `"07"`) fail the
-  decode, naming both, rather than one silently replacing the other.
+  decode (`Expecting distinct map keys`, the map beside the text in
+  elm/json's failure), rather than one silently replacing the other.
   protobuf's own parsers (protobuf-go's protojson) reject the same keys:
   out of range, not an integer, or a duplicate.
   An absent or `null` map decodes as `Dict.empty`.
@@ -776,7 +777,7 @@ rpc shared call =
   client survives a server that added a value, and lossy, since
   re-encoding sends the zero value's name back (§3.8). An unknown
   **name** fails the decode, as protobuf-go's protojson does:
-  `Expecting a value of enum "Priority", but got "WHATEVER"`, the enum
+  `Expecting a value of enum "Priority"`, the enum
   named as declared within its package (`Outer.Inner.Kind` when
   nested). A name is matched exactly.
 - **`enum_unknown=fail|zero`.** The
@@ -3645,6 +3646,17 @@ that imports only elm/json, so every module below `Proto.Any` can
 carry it: a message's codecs (`Proto.Message`) and the registry's
 entries hold it, so a nested `Any`'s failure reaches the caller as it
 was, never erased to a failure of the outer one.
+
+A failure text the `Proto` JSON decoders write says what was expected and
+never what was found (`Expecting an integer`, `Expecting distinct map
+keys`): elm/json's `Failure` holds the rejected value beside its text,
+and `Proto.Error.toString` prints it there, so the text repeating it
+would show it twice and keep it out of reach of a reader that leaves
+the value out. Every text is value-free so; an application that reports
+a `BadJson` walks its path and texts (calling.md, "The codec"), and the
+package ships no renderer of its own (decisions.md: Rpc.Error read
+through views). A schema name (an enum's, a field's, a type URL the
+registry knows) is not a value and may appear.
 
 ```elm
 -- Proto.Error
