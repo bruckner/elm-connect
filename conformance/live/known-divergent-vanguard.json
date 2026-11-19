@@ -24,7 +24,7 @@
       "observed": {
         "trace": { "httpStatus": 400 },
         "result": {
-          "error": {
+          "badStatus": {
             "code": "invalid_argument",
             "message": "invalid parameter \"label\" value for type \"message\": ",
             "source": "StatusBody"

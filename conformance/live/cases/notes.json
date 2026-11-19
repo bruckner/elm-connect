@@ -283,7 +283,7 @@
     },
     "expect": {
       "result": {
-        "error": {
+        "badStatus": {
           "code": "not_found",
           "message": "notes/from-connect does not exist",
           "source": "ConnectBody",
@@ -319,7 +319,7 @@
     },
     "expect": {
       "result": {
-        "error": {
+        "badStatus": {
           "code": "invalid_argument",
           "message": "a note needs a title",
           "source": "ConnectBody",
@@ -446,7 +446,7 @@
     },
     "expect": {
       "result": {
-        "error": {
+        "badStatus": {
           "code": "invalid_argument"
         }
       },
@@ -633,7 +633,7 @@
     },
     "expect": {
       "result": {
-        "noAnswer": "Timeout"
+        "timeout": true
       },
       "trace": {
         "httpStatus": null,
@@ -768,11 +768,11 @@
     },
     "expect": {
       "result": {
-        "error": {
+        "badStatus": {
           "code": "unimplemented",
           "message": "Not Found",
           "details": [],
-          "source": "HttpStatus"
+          "source": null
         }
       },
       "trace": {
@@ -794,7 +794,7 @@
     },
     "expect": {
       "result": {
-        "error": {
+        "badStatus": {
           "code": "resource_exhausted",
           "message": "no backend; code 8",
           "details": [],
@@ -825,7 +825,7 @@
       "result": {
         "badResponse": {
           "code": "resource_exhausted",
-          "problem": { "$match": "^message size \\d+ is larger than configured readMaxBytes 100$" },
+          "message": { "$match": "^message size \\d+ is larger than configured readMaxBytes 100$" },
           "response": { "statusCode": 200, "body": "" }
         }
       },
@@ -852,7 +852,7 @@
     },
     "expect": {
       "result": {
-        "error": {
+        "badStatus": {
           "code": "not_found",
           "source": "ConnectBody"
         }
@@ -886,7 +886,7 @@
     },
     "expect": {
       "result": {
-        "noAnswer": "BadCall resource_exhausted: message size 24 is larger than configured writeMaxBytes 10"
+        "badCall": "resource_exhausted: message size 24 is larger than configured writeMaxBytes 10"
       },
       "trace": {
         "httpStatus": null,
@@ -941,7 +941,7 @@
     },
     "expect": {
       "result": {
-        "noAnswer": "NetworkError"
+        "networkError": true
       },
       "trace": {
         "httpStatus": null,
@@ -962,8 +962,8 @@
     },
     "expect": {
       "result": {
-        "noAnswer": {
-          "$match": "^BadCall internal: bad URL: the browser could not read it$"
+        "badCall": {
+          "$match": "^internal: bad URL: the browser could not read it$"
         }
       },
       "wire": []
@@ -994,7 +994,7 @@
     },
     "expect": {
       "result": {
-        "noAnswer": "BadCall internal: invalid header \"X-User\""
+        "badCall": "internal: invalid header \"X-User\""
       },
       "trace": {
         "attempts": 0,
@@ -1023,7 +1023,7 @@
     },
     "expect": {
       "result": {
-        "noAnswer": "BadCall internal: invalid header \"Bad Name\""
+        "badCall": "internal: invalid header \"Bad Name\""
       },
       "wire": []
     }
@@ -1131,7 +1131,7 @@
     },
     "expect": {
       "result": {
-        "error": {
+        "badStatus": {
           "code": "not_found",
           "message": "notes/missing does not exist",
           "source": "ConnectBody",
@@ -1355,7 +1355,7 @@
       "result": {
         "badResponse": {
           "code": "resource_exhausted",
-          "problem": { "$match": "^message size \\d+ is larger than configured readMaxBytes 100$" },
+          "message": { "$match": "^message size \\d+ is larger than configured readMaxBytes 100$" },
           "response": { "statusCode": 200, "body": "" }
         }
       },
@@ -1389,7 +1389,7 @@
     },
     "expect": {
       "result": {
-        "noAnswer": "BadCall resource_exhausted: message size 24 is larger than configured writeMaxBytes 10"
+        "badCall": "resource_exhausted: message size 24 is larger than configured writeMaxBytes 10"
       },
       "trace": {
         "httpStatus": null,
@@ -1687,7 +1687,7 @@
     },
     "expect": {
       "result": {
-        "error": {
+        "badStatus": {
           "code": "not_found",
           "message": "notes/from-transcode does not exist",
           "source": "StatusBody",
@@ -1722,7 +1722,7 @@
     },
     "expect": {
       "result": {
-        "error": {
+        "badStatus": {
           "code": "not_found",
           "message": "notes/from-transcode does not exist",
           "source": "StatusBody",
@@ -1751,7 +1751,7 @@
     },
     "expect": {
       "result": {
-        "error": {
+        "badStatus": {
           "code": "not_found",
           "message": "notes/from-transcode does not exist",
           "source": "StatusBody",
@@ -1790,7 +1790,7 @@
     },
     "expect": {
       "result": {
-        "error": {
+        "badStatus": {
           "code": "invalid_argument",
           "message": "a note needs a title",
           "source": "StatusBody",
@@ -1828,7 +1828,7 @@
     },
     "expect": {
       "result": {
-        "error": {
+        "badStatus": {
           "code": "invalid_argument",
           "message": "a note needs a title",
           "source": "StatusBody",
@@ -1859,7 +1859,7 @@
     },
     "expect": {
       "result": {
-        "error": {
+        "badStatus": {
           "code": "invalid_argument",
           "message": "a note needs a title",
           "source": "StatusBody",
@@ -1897,7 +1897,7 @@
     },
     "expect": {
       "result": {
-        "error": {
+        "badStatus": {
           "code": "not_found",
           "message": "notes/a b+c does not exist",
           "source": "StatusBody",
@@ -1935,7 +1935,7 @@
     },
     "expect": {
       "result": {
-        "error": {
+        "badStatus": {
           "code": "not_found",
           "message": "notes/a b+c does not exist",
           "source": "StatusBody",
@@ -1967,7 +1967,7 @@
     },
     "expect": {
       "result": {
-        "error": {
+        "badStatus": {
           "code": "not_found",
           "message": "notes/a b+c does not exist",
           "source": "StatusBody",
@@ -2008,11 +2008,11 @@
     },
     "expect": {
       "result": {
-        "error": {
+        "badStatus": {
           "code": "unavailable",
           "message": "Service Unavailable",
           "details": [],
-          "source": "HttpStatus"
+          "source": null
         }
       },
       "trace": {
@@ -2040,7 +2040,7 @@
     },
     "expect": {
       "result": {
-        "error": {
+        "badStatus": {
           "code": "permission_denied",
           "message": "no backend; code 7",
           "source": "GrpcHeaders"
@@ -2138,7 +2138,7 @@
     },
     "expect": {
       "result": {
-        "noAnswer": "Timeout"
+        "timeout": true
       },
       "trace": {
         "httpStatus": null,
@@ -2219,7 +2219,7 @@
     },
     "expect": {
       "result": {
-        "error": {
+        "badStatus": {
           "code": "unavailable",
           "source": "StatusBody"
         }
@@ -2316,7 +2316,7 @@
     },
     "expect": {
       "result": {
-        "error": {
+        "badStatus": {
           "code": "not_found",
           "message": "notes/sent does not exist",
           "source": "StatusBody",
@@ -2348,7 +2348,7 @@
     },
     "expect": {
       "result": {
-        "error": {
+        "badStatus": {
           "code": "not_found",
           "message": "notes/sent does not exist",
           "source": "StatusBody",
@@ -2374,7 +2374,7 @@
     },
     "expect": {
       "result": {
-        "error": {
+        "badStatus": {
           "code": "not_found",
           "message": "notes/sent does not exist",
           "source": "StatusBody",

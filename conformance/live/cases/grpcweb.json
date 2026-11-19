@@ -348,7 +348,7 @@
     },
     "expect": {
       "result": {
-        "error": {
+        "badStatus": {
           "code": "not_found",
           "message": "notes/from-proto does not exist",
           "source": {
@@ -392,7 +392,7 @@
     },
     "expect": {
       "result": {
-        "error": {
+        "badStatus": {
           "code": "invalid_argument",
           "message": "a note needs a title",
           "source": {
@@ -456,7 +456,7 @@
       "result": {
         "badResponse": {
           "code": "resource_exhausted",
-          "problem": "message size 257 is larger than configured readMaxBytes 100",
+          "message": "message size 257 is larger than configured readMaxBytes 100",
           "response": { "statusCode": 200, "body": "" }
         }
       },
@@ -483,7 +483,7 @@
     },
     "expect": {
       "result": {
-        "noAnswer": "BadCall resource_exhausted: message size 15 is larger than configured writeMaxBytes 14"
+        "badCall": "resource_exhausted: message size 15 is larger than configured writeMaxBytes 14"
       },
       "trace": {
         "attempts": 0
@@ -578,7 +578,7 @@
     },
     "expect": {
       "result": {
-        "error": {
+        "badStatus": {
           "code": "not_found",
           "source": {
             "$match": "^Grpc(Headers|Trailers)$"
@@ -647,7 +647,7 @@
     },
     "expect": {
       "result": {
-        "error": {
+        "badStatus": {
           "code": "not_found",
           "message": "notes/missing does not exist",
           "source": {
@@ -764,9 +764,9 @@
     },
     "expect": {
       "result": {
-        "error": {
+        "badStatus": {
           "code": "unimplemented",
-          "source": "HttpStatus"
+          "source": null
         }
       },
       "trace": {
@@ -788,7 +788,7 @@
     },
     "expect": {
       "result": {
-        "error": {
+        "badStatus": {
           "code": "resource_exhausted",
           "message": "no backend; code 8",
           "source": "GrpcHeaders"
@@ -912,7 +912,7 @@
     },
     "expect": {
       "result": {
-        "noAnswer": "Timeout"
+        "timeout": true
       },
       "trace": {
         "code": "deadline_exceeded",

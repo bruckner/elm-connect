@@ -25,7 +25,7 @@
     },
     "expect": {
       "result": {
-        "error": {
+        "badStatus": {
           "code": "not_found",
           "message": "notes/missing does not exist",
           "details": [],
@@ -47,7 +47,7 @@
     },
     "expect": {
       "result": {
-        "error": {
+        "badStatus": {
           "code": "invalid_argument",
           "message": "a note needs a title",
           "details": [],
@@ -70,7 +70,7 @@
     },
     "expect": {
       "result": {
-        "error": { "code": "unimplemented", "message": "Not Found", "details": [], "source": "HttpStatus" }
+        "badStatus": { "code": "unimplemented", "message": "Not Found", "details": [], "source": null }
       },
       "trace": { "httpStatus": 404 },
       "wire": [{ "status": 404, "responseBody": "Could not resolve /nowhere/v1/notes/welcome to a method." }]
@@ -88,7 +88,7 @@
     },
     "expect": {
       "result": {
-        "error": { "code": "unknown", "message": "Unknown", "details": [], "source": "HttpStatus" }
+        "badStatus": { "code": "unknown", "message": "Unknown", "details": [], "source": null }
       },
       "trace": { "httpStatus": 418 }
     }

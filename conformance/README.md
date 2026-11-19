@@ -494,26 +494,27 @@ A **result**, what comes back:
 ```
 
 `result` is one of `{"ok": <response as proto3 JSON>}` (with `okBinary`, the response's
-protobuf binary in base64, when its message has binary codecs), `{"error":
-{"code", "message", "details", "source", "response"}}` (the code as
+protobuf binary in base64, when its message has binary codecs),
+`{"badStatus": {"code", "message", "details", "source", "response"}}`
+for a failure answer, an error whose `Rpc.Error.cause` is `BadStatus` (the code as
 Connect names it, each detail read as its proto3 JSON through the
 runner's own table (every package of the build, the well-known types and
 `Proto.ErrorDetails.registry`, whatever the client's), or as `{"type",
 "value"}` for a type that table lacks, and each detail that could not be
 read as `{"unregisteredType": <type URL>}` or `{"invalidDetail":
 {"type": <type URL or null>, "reason"}}`, the
-source as `ConnectBody`, `StatusBody`, `GrpcHeaders` or `HttpStatus`
-for a code inferred from the status, and `response` the answer the
+source as `ConnectBody`, `StatusBody` or `GrpcHeaders`, or `null` when
+no status was stated and the code is inferred from the HTTP status, and
+`response` the answer the
 error was read from: `statusCode`, `statusText` and `body`, and
 `bodyBase64` for an answer read as bytes; `detailsBinary` holds each
 detail's binary as an `Any`, in base64, `null` for one not read),
-`{"badResponse": {"code", "problem", "response"}}` for an answer that
+`{"badResponse": {"code", "message", "response"}}` for an answer that
 could not be used, an error whose `Rpc.Error.cause` is `BadResponse`
-(the error's code; its `Rpc.Error.message` as the problem; and the
-answer as above, without its body for one over the read limit),
-`{"noAnswer": "Timeout"}` (or `NetworkError`, or `BadCall` and
-`Rpc.Error.toString` of a call that could not be made, `BadCall
-internal: invalid header "X-User"`) for an error that kept no answer,
+(the error's code and message, and the answer as above, without its body
+for one over the read limit), `{"badCall": <Rpc.Error.toString>}` for a
+call that could not be made (`"internal: invalid header \"X-User\""`),
+`{"timeout": true}` and `{"networkError": true}`,
 `{"canceled": true}` for a call
 the runner withdrew with `Rpc.cancel`, and `{"runner": <why>}` for an
 envelope the runner could not send: one that does not decode, an unknown
@@ -600,8 +601,9 @@ answer's headers itself; with `sendTraced` it reports the `Trace`'s
 `headers` and `trailers`, which `Rpc.splitTrailers` has split. Either
 way a repeated header is one value, joined with `", "` as elm/http gives
 it, which the suite accepts. A call with no answer is reported as an
-error: `Timeout` as `deadline_exceeded`, `NetworkError` as `unavailable`,
-a request over the send limit (`BadCall resource_exhausted: …`) as `resource_exhausted`, a bad response by its code, as `Rpc.Error.code` reads it, anything else as `unknown`; `{"canceled": true}`, the runner's record of a cancel, as `canceled`. What is reported is only what the runtime gives
+error: `{"timeout": true}` as `deadline_exceeded`, `{"networkError": true}`
+as `unavailable`, a `badCall` whose text starts with `resource_exhausted`
+(a request over the send limit) as `resource_exhausted`, a bad response by its code, as `Rpc.Error.code` reads it, anything else as `unknown`; `{"canceled": true}`, the runner's record of a cancel, as `canceled`. What is reported is only what the runtime gives
 an application; the runner's `wire` log is never read.
 
 `--send` picks how calls are sent: `halves` (the default) through the pure

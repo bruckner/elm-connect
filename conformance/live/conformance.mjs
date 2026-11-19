@@ -130,21 +130,21 @@ async function answer(runner, send, request) {
       return failed(request, `the runtime's response does not read back as ${types.response.typeName}: ${e.message}`);
     }
     response.payloads = [decoded.payload ?? create(ConformancePayloadSchema)];
-  } else if (result.error !== undefined) {
+  } else if (result.badStatus !== undefined) {
     response.error = {
-      code: codeOf(result.error.code),
-      message: result.error.message,
+      code: codeOf(result.badStatus.code),
+      message: result.badStatus.message,
       details:
         config.codec === "proto"
-          ? (result.error.detailsBinary ?? []).map((b64) => fromBinary(AnySchema, Buffer.from(b64, "base64")))
-          : result.error.details.map(detail),
+          ? (result.badStatus.detailsBinary ?? []).map((b64) => fromBinary(AnySchema, Buffer.from(b64, "base64")))
+          : result.badStatus.details.map(detail),
     };
   } else if (result.canceled !== undefined) {
     response.error = { code: Code.CANCELED, message: "" };
   } else if (result.badResponse !== undefined) {
-    response.error = { code: codeOf(result.badResponse.code), message: `BadResponse ${result.badResponse.problem}` };
+    response.error = { code: codeOf(result.badResponse.code), message: `BadResponse ${result.badResponse.message}` };
   } else {
-    response.error = noAnswerError(result.noAnswer);
+    response.error = clientFailure(result);
   }
   return create(ClientCompatResponseSchema, {
     testName: request.testName,
@@ -215,15 +215,17 @@ function detail(json) {
   return fromJson(AnySchema, json, { registry });
 }
 
-// The error a call that got no answer stands for. A timeout is the client's
-// own deadline passing, and `BadCall resource_exhausted: …` a request over
-// the send limit, never sent; any other call that could not be made did not
-// get an answer the runtime could read as one.
-function noAnswerError(problem) {
-  if (problem === "Timeout") return { code: Code.DEADLINE_EXCEEDED, message: "Timeout" };
-  if (problem === "NetworkError") return { code: Code.UNAVAILABLE, message: "NetworkError" };
-  if (problem.startsWith("BadCall resource_exhausted:")) return { code: Code.RESOURCE_EXHAUSTED, message: problem };
-  return { code: Code.UNKNOWN, message: problem };
+// The error of a call that got no answer: the client's own deadline passing
+// is deadline_exceeded, a network failure unavailable, and a call that could
+// not be made carries its own code, as `Rpc.Error.toString` writes it
+// (`resource_exhausted: message size … writeMaxBytes …` for a request over
+// the send limit); a code the suite does not name is unknown.
+function clientFailure(result) {
+  if (result.timeout) return { code: Code.DEADLINE_EXCEEDED, message: "Timeout" };
+  if (result.networkError) return { code: Code.UNAVAILABLE, message: "NetworkError" };
+  const text = result.badCall ?? "";
+  if (text.startsWith("resource_exhausted:")) return { code: Code.RESOURCE_EXHAUSTED, message: text };
+  return { code: Code.UNKNOWN, message: text };
 }
 
 function failed(request, message) {
