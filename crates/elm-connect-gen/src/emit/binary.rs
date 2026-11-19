@@ -29,8 +29,8 @@ use super::scalar::Holding;
 use super::{Emitter, MessageShape, OneofShape, RecordField, docs};
 use crate::elm::ast::{BinOp, Decl, Expr, LetBinding, Pattern, Type};
 use crate::elm::build::{
-    access, apply, binop, case, if_then_else, int, lambda, let_in, list, pctor, pipe, pvar,
-    qualified, record, string, ty, var,
+    access, apply, binop, case, if_then_else, int, lambda, let_in, list, pctor, pvar, qualified,
+    record, string, ty, var,
 };
 use crate::ir::{
     Cardinality, Enum, Field, MapKey, Message, OneofVariant, ScalarKind, TypeRef, WellKnown,
@@ -255,9 +255,11 @@ fn record_names(shape: &MessageShape) -> Vec<String> {
         .collect()
 }
 
-/// `\number -> ...`: whether a field number is one of `numbers`, as runs of
-/// consecutive numbers.
-fn known_numbers(mut numbers: Vec<u32>) -> Expr {
+/// `\number -> ...`: a number's kind, as `Proto.Binary.mergeStaged` takes
+/// it: 2 plus the oneof's index when a member of one of `oneofs` (each
+/// named by its member test), 1 when one of `numbers`, the other fields'
+/// numbers, tested as runs of consecutive numbers, and 0 otherwise.
+fn number_kinds(mut numbers: Vec<u32>, oneofs: &[String]) -> Expr {
     numbers.sort_unstable();
     numbers.dedup();
     let mut runs: Vec<(u32, u32)> = Vec::new();
@@ -280,12 +282,31 @@ fn known_numbers(mut numbers: Vec<u32>) -> Expr {
                 )
             }
         })
-        .reduce(|a, b| binop(BinOp::Or, a, b))
-        .unwrap_or(Expr::Var {
-            module: None,
-            name: "False".to_owned(),
-        });
-    lambda([pvar(NUMBER)], test)
+        .rev()
+        .reduce(|later, earlier| binop(BinOp::Or, earlier, later));
+    let mut kind = match test {
+        Some(test) => if_then_else(test, int(1), int(0)),
+        None => int(0),
+    };
+    for (index, accepts) in oneofs.iter().enumerate().rev() {
+        kind = if_then_else(
+            apply(var(accepts.clone()), [var(NUMBER)]),
+            int(2 + index as i64),
+            kind,
+        );
+    }
+    lambda([pvar(NUMBER)], kind)
+}
+
+/// The builder's parameters in lambdas of at most nine, which Elm compiles
+/// to functions of as many arguments, nested a ninth as deep as one
+/// parameter per lambda would.
+fn chunked_lambda(params: Vec<Pattern>, body: Expr) -> Expr {
+    let chunks: Vec<Vec<Pattern>> = params.chunks(9).map(<[Pattern]>::to_vec).collect();
+    chunks
+        .into_iter()
+        .rev()
+        .fold(body, |inner, chunk| lambda(chunk, inner))
 }
 
 impl Emitter {
@@ -658,6 +679,8 @@ impl Emitter {
         // (number, stage, the builder's parameter for a field stage)
         let mut entries: Vec<(u32, Expr, Option<String>)> = Vec::new();
         let mut bindings: Vec<LetBinding> = Vec::new();
+        let mut trailing: Vec<Expr> = Vec::new();
+        let mut member_tests: Vec<String> = Vec::new();
         for &(field, field_shape) in &shape.fields {
             numbers.push(field.number);
             let name = field.elm_name.as_str();
@@ -758,7 +781,6 @@ impl Emitter {
                 Pattern::Wildcard,
                 apply(self.binary("skip"), [wire(), slot()]),
             ));
-            numbers.extend(member_numbers.iter().copied());
             bindings.push(LetBinding {
                 name: reader.clone(),
                 annotation: None,
@@ -785,6 +807,17 @@ impl Emitter {
                     fields: vec![(name.to_owned(), var(ITEM))],
                 },
             );
+            trailing.push(apply(
+                self.binary("stageOneofLast"),
+                [
+                    int(member_tests.len() as i64),
+                    var(member_test.clone()),
+                    var(reader.clone()),
+                    Expr::Accessor(name.to_owned()),
+                    set.clone(),
+                ],
+            ));
+            member_tests.push(member_test.clone());
             for &n in &member_numbers {
                 let stage = apply(
                     self.binary("stageOneof"),
@@ -832,12 +865,69 @@ impl Emitter {
                 ),
             })
             .collect();
-        let build = lambda(params, record(fields));
-        let pipeline = entries
+        // Spike-only switches, to measure each change apart.
+        let spike_off = |name: &str| std::env::var(name).as_deref() == Ok("0");
+        let build = if spike_off("ELM_CONNECT_CHUNK") {
+            lambda(params, record(fields))
+        } else {
+            chunked_lambda(params, record(fields))
+        };
+        // Each stage bound in turn, `stage_2 = Proto.Binary.stage 2 … stage_1`,
+        // so that neither the source nor Elm's output nests one call per
+        // field.
+        let mut previous = self.binary("stages");
+        let all_stages: Vec<Expr> = entries
             .into_iter()
-            .fold(self.binary("stages"), |acc, (_, stage, _)| pipe(acc, stage));
+            .map(|(_, stage, _)| stage)
+            .chain(trailing.into_iter().filter(|_| {
+                // Spike-only: leave the oneofs' last stages out, to measure them.
+                std::env::var("ELM_CONNECT_TRAILING").as_deref() != Ok("0")
+            }))
+            .collect();
+        // The stages nested in one expression, `stages |> stage 1 … |> …`, by
+        // default; bound one by one in the `let` under ELM_CONNECT_LET=1, which
+        // keeps Elm's output from indenting one level per field but costs gzip.
+        if std::env::var("ELM_CONNECT_LET").as_deref() != Ok("1") {
+            let pipeline = all_stages
+                .into_iter()
+                .fold(self.binary("stages"), |acc, stage| {
+                    crate::elm::build::pipe(acc, stage)
+                });
+            let name = string(shape.message.proto_full_name.clone());
+            let known = number_kinds(numbers, &member_tests);
+            let body = match form {
+                MergeForm::Staged => apply(
+                    self.binary("mergeStaged"),
+                    [name, known, step, finish, build, pipeline],
+                ),
+                _ => apply(
+                    self.binary("mergeReentrant"),
+                    [name, known, finish, build, pipeline],
+                ),
+            };
+            return if bindings.is_empty() {
+                body
+            } else {
+                let_in(bindings, body)
+            };
+        }
+        for (index, stage) in all_stages.into_iter().enumerate() {
+            let name = format!("stage_{}", index + 1);
+            let Expr::Apply(f, mut args) = stage else {
+                unreachable!("a stage is an application")
+            };
+            args.push(previous);
+            bindings.push(LetBinding {
+                name: name.clone(),
+                annotation: None,
+                params: Vec::new(),
+                body: Expr::Apply(f, args),
+            });
+            previous = var(name);
+        }
+        let pipeline = previous;
         let name = string(shape.message.proto_full_name.clone());
-        let known = known_numbers(numbers);
+        let known = number_kinds(numbers, &member_tests);
         let body = match form {
             MergeForm::Staged => apply(
                 self.binary("mergeStaged"),
@@ -848,11 +938,7 @@ impl Emitter {
                 [name, known, finish, build, pipeline],
             ),
         };
-        if bindings.is_empty() {
-            body
-        } else {
-            let_in(bindings, body)
-        }
+        let_in(bindings, body)
     }
 
     /// The `case` arm that writes a oneof's member: its field, written
