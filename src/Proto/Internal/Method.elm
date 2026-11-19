@@ -1,4 +1,4 @@
-module Proto.Internal.Method exposing (BinaryHalf, JsonHalf, Method(..), RouteOf(..), noBinary, noJson)
+module Proto.Internal.Method exposing (BinaryHalf, JsonHalf, Method(..), RouteOf, RouteShape(..), noBinary, noJson)
 
 {-| The `Method` type, which `Proto.Method` names by an alias. It is defined
 here so that `Rpc` can read what a method holds while users cannot. The
@@ -8,9 +8,9 @@ exposes its constructors. Its types are elm/core's, elm/json's, elm/bytes',
 `Rpc` one.
 
 A method holds its identity (service, name, idempotency), its two codec
-halves and one route function per HTTP binding, not its descriptor: the
-descriptor's type names and bindings as data are a separate value a program
-keeps only if it names it.
+halves and, per HTTP binding, a route function and the response field its
+answer is read from, not its descriptor: the descriptor's type names and
+bindings as data are a separate value a program keeps only if it names it.
 
 The `codec` parameter is a phantom: `Proto.Method.initJson` gives a method
 in `Json`, `Proto.Method.initProto` one in `Proto`, and `Proto.Method.init`,
@@ -47,15 +47,24 @@ type Method idempotency codec req res
         }
 
 
-{-| One binding's route of a request: built from the typed request alone
-(`Typed`, a generated route function), or from the typed request and its
-proto3 JSON (`FromJson`: a generated route function whose body holds an
-`Any`, which only the client's registry can write, or a binding written as
-data), which a send encodes once for the route and its body together. A
-route from JSON names its response field whatever the JSON holds, so reading
-an answer reads it over `null` and encodes nothing.
+{-| One binding of a method: how its route is built, and the JSON name of the
+response field its answer is read from (`Nothing` for the whole response).
+The response field is data beside the route, so that reading an answer
+builds no route and encodes nothing of the request.
 -}
-type RouteOf req
+type alias RouteOf req =
+    { shape : RouteShape req
+    , responseBody : Maybe String
+    }
+
+
+{-| How a binding's route is built: from the typed request alone (`Typed`, a
+generated route function), or from the typed request and its proto3 JSON
+(`FromJson`: a generated route function whose body holds an `Any`, which
+only the client's registry can write, or a binding written as data), which a
+send encodes once for the route and its body together.
+-}
+type RouteShape req
     = Typed (req -> Route)
     | FromJson (req -> Json.Encode.Value -> Route)
 

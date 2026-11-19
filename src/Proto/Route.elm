@@ -35,16 +35,17 @@ import Proto.Internal.Percent as Internal
 {-| A binding's request: its HTTP method, its path percent-encoded and
 without a leading slash (`v1/notes/42:archive`), its query as name and
 value pairs not yet encoded, in order, its body as JSON (`Nothing` for
-none), the JSON name of the response field its answer is read from
-(`Nothing` for the whole response), and the first path value its
-variable's template cannot match, which sending refuses.
+none), and the first path value its variable's template cannot match,
+which sending refuses. The response field a binding's answer is read from
+is not part of it but the method's
+([`Proto.Method.withResponseBody`](Proto-Method#withResponseBody)), so that
+reading an answer builds no route.
 -}
 type alias Route =
     { method : String
     , path : String
     , query : List ( String, String )
     , body : Maybe Value
-    , responseBody : Maybe String
     , invalid : Maybe PathError
     }
 

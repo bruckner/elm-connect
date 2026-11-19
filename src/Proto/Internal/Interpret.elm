@@ -26,7 +26,6 @@ route rule json =
     , path = String.join "/" (List.map (pathSegment json) rule.path) ++ verb
     , query = List.concatMap (queryPairs json) rule.query
     , body = body rule json
-    , responseBody = rule.responseBody
     , invalid = invalidPathValue rule json
     }
 

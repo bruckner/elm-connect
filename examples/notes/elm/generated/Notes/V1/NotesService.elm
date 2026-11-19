@@ -224,7 +224,6 @@ routeGetNote0 request_ =
     , path = "v1/" ++ Proto.Route.segments name_
     , query = []
     , body = Nothing
-    , responseBody = Nothing
     , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] name_
     }
 
@@ -237,7 +236,6 @@ routeListNotes0 request_ =
     , path = "v1/notes"
     , query = Notes.V1.queryOfListNotesRequest request_
     , body = Nothing
-    , responseBody = Nothing
     , invalid = Nothing
     }
 
@@ -250,7 +248,6 @@ routeCreateNote0 request_ json_ =
     , path = "v1/notes"
     , query = []
     , body = Just (Proto.Route.jsonField "note" json_)
-    , responseBody = Nothing
     , invalid = Nothing
     }
 
@@ -267,7 +264,6 @@ routeUpdateNote0 request_ json_ =
     , path = "v1/" ++ Proto.Route.segments noteName_
     , query = Notes.V1.queryOfUpdateNoteRequest request_
     , body = Just (Proto.Route.jsonField "note" json_)
-    , responseBody = Nothing
     , invalid = Proto.Route.checkSegments "note.name" [ "notes", "*" ] noteName_
     }
 
@@ -284,7 +280,6 @@ routeDeleteNote0 request_ =
     , path = "v1/" ++ Proto.Route.segments name_
     , query = []
     , body = Nothing
-    , responseBody = Nothing
     , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] name_
     }
 
@@ -301,7 +296,6 @@ routeArchiveNote0 request_ =
     , path = "v1/" ++ Proto.Route.segments name_ ++ ":archive"
     , query = []
     , body = Just (Proto.Route.without [ [ "name" ] ] (Notes.V1.encodeArchiveNoteRequest request_))
-    , responseBody = Nothing
     , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] name_
     }
 

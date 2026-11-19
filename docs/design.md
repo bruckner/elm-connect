@@ -235,7 +235,6 @@ routeGetNote0 request_ =
     , path = "v1/" ++ Proto.Route.segments name_
     , query = []
     , body = Nothing
-    , responseBody = Nothing
     , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] name_
     }
 
@@ -2152,7 +2151,6 @@ routeGetNote0 request_ =
     , path = "v1/" ++ Proto.Route.segments name_
     , query = []
     , body = Nothing
-    , responseBody = Nothing
     , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] name_
     }
 
@@ -2198,7 +2196,13 @@ keeps. The modifiers follow one per line, each only when it says
 something: `withIdempotency` when the proto declares a level other
 than `IDEMPOTENCY_UNKNOWN`, `withRoutes` (`withJsonRoutes` when its
 bodies hold an `Any`) when the method has a rule (never under
-`wire=proto`).
+`wire=proto`), and after it `withResponseBody n "field"` for each
+binding whose rule names a `response_body`:
+
+```elm
+    |> Proto.Method.withRoutes [ routeListNotes0 ]
+    |> Proto.Method.withResponseBody 0 "notes"
+```
 
 - **A method's documentation shows its routes.** A call's doc comment gives the method's comment
   (§3.1), then its declaration line, its Connect path on a line of its
@@ -2303,11 +2307,14 @@ bodies hold an `Any`) when the method has a rule (never under
   typed request, `routeGetNote0 : GetNoteRequest -> Proto.Route.Route`,
   and the call holds them (`withRoutes`). A route is the verb, the path
   percent-encoded without a leading slash, the query pairs, the body as
-  JSON, the response field the answer is read from, and `invalid`, the
-  first path value its variable's template cannot match: the route is
-  built whatever the request holds, so `Rpc.request` can show any
-  request, and sending refuses an invalid one (a `BadCall`,
-  §5.1). Encoders are total: they cannot refuse a value, so what a
+  JSON, and `invalid`, the first path value its variable's template
+  cannot match: the route is built whatever the request holds, so
+  `Rpc.request` can show any request, and sending refuses an invalid one
+  (a `BadCall`, §5.1). The response field a binding's answer is read
+  from is not in its route: it is fixed per binding, so the method holds
+  it as data (`withResponseBody n "field"`, `n` counting bindings as
+  `withRoutes` lists them), and reading an answer builds no route
+  (decisions.md: A binding's response field is the method's). Encoders are total: they cannot refuse a value, so what a
   request cannot carry is found by sending, never by encoding. The
   path reads each variable's field (through `Maybe.map` for a
   message on the way, a `case` for a oneof member, the field's default
@@ -2814,8 +2821,9 @@ trace); the work it runs is internal, a module per responsibility:
 `Rpc.Internal.Plan` is the one place a call's method meets its
 client's protocol, a `plan` made by one `case` on the wire kind (text
 or bytes) that holds the request to build, the route's invalid path
-value and `response_body` (a typed route built once, by the method's
-route function, §4), the check that its request's `Any`s can be written,
+value (a route built once for a send, by the method's route function,
+§4), the binding's `response_body`, which the method holds as data, the
+check that its request's `Any`s can be written,
 the write-limit check and the answer's reader, monomorphic from there
 on. Over JSON a send's plan (`toSend`) encodes the request at most once,
 as it is made and only when a part of the send reads the JSON (the
@@ -2825,9 +2833,9 @@ an answer (`Rpc.response`) encodes nothing, and one made to build the
 request (`Rpc.request`) encodes it when the body or the route reads it.
 The check runs whenever the JSON is what is sent, since a method's
 encoder does not say whether its type reaches an `Any`; a typed route
-holds its own body and is not checked. A route read from JSON names its
-`response_body` whatever the JSON holds, so a plan made to read an
-answer builds it over `null`, which encodes nothing.
+holds its own body and is not checked. A plan made to read an answer
+builds no route: the response field is the method's data, not the
+route's.
 The functions a protocol is built of are one module per protocol, each
 holding every function `Rpc.Protocol` installs for it:
 `Rpc.Internal.Connect` Connect's POST and GET builders, for either

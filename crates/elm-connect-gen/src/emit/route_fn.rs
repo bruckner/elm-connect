@@ -438,16 +438,11 @@ impl Emitter {
                 [list(checks)],
             ),
         };
-        let response_body = match &route.response_body {
-            Some(top) => apply(var(self.core("Just")), [string(top.field.json[0].clone())]),
-            None => var(self.core("Nothing")),
-        };
         let result = record([
             ("method", string(route.verb.as_str())),
             ("path", path),
             ("query", query),
             ("body", body),
-            ("responseBody", response_body),
             ("invalid", invalid),
         ]);
         if values.is_empty() {

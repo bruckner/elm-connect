@@ -21,7 +21,7 @@ import Http
 import Json.Decode exposing (Decoder)
 import Json.Encode
 import Proto.Error
-import Proto.Internal.Method exposing (Method(..), RouteOf(..))
+import Proto.Internal.Method exposing (Method(..), RouteShape(..))
 import Proto.Registry exposing (Registry)
 import Proto.Route exposing (PathError)
 import Rpc.Code as Code
@@ -48,7 +48,7 @@ import Rpc.Request exposing (Request)
   - `reader`: how its answer is read, as text or as bytes.
   - `binding`: the binding it takes, when the protocol took one of its
     method's routes, for a trace.
-  - `responseBody`: the field of the response its route's `response_body`
+  - `responseBody`: the field of the response its binding's `response_body`
     names, when it names one, which the reader reads the answer as.
   - `timeoutHeader`: the header the protocol carries its timeout in.
   - `base64`: the protocol's base64 writer, for a binary body in a trace.
@@ -75,11 +75,11 @@ type Reader res
 
 
 {-| A call's plan over a client, each part computed only when asked for and
-encoding the request's JSON on its own when it reads it: for reading an
-answer, which encodes nothing, or building the request alone. The route is
-built only over a protocol that reads routes; a route of the typed request is
-built once and shared by the request and the answer, and one read from JSON
-only when the request is. The method's JSON codecs, and the reading of a
+building the route and encoding the request's JSON on its own when it reads
+them: for reading an answer, which builds no route and encodes nothing, or
+building the request alone. The route is built only over a protocol that
+reads routes, and the response field an answer is read from is the method's
+data, not the route's. The method's JSON codecs, and the reading of a
 status's details, use the client's registry.
 -}
 plan : Client codec -> Call codec req res -> Plan res
@@ -88,11 +88,11 @@ plan =
 
 
 {-| A call's plan for a send, of the request it builds or of one given in
-its place (`Rpc.taskFromRequest`). Its request's JSON (`m.json.encode`, the
-costly step of a JSON send) is encoded once, as the plan is made, when the
-body, a route read from JSON, the check that its `Any`s can be written or
-the write limit reads it, and every part that reads it is handed that one
-value.
+its place (`Rpc.taskFromRequest`). Its route is built once, as the plan is
+made, and its request's JSON (`m.json.encode`, the costly step of a JSON
+send) is encoded once when the body, a route read from JSON, the check that
+its `Any`s can be written or the write limit reads it, and every part that
+reads either is handed that one value.
 -}
 toSend : Client codec -> Call codec req res -> Plan res
 toSend =
@@ -134,28 +134,21 @@ make forSend (Client cl over _ registry) (Call c) =
                     else
                         Nothing
 
-                typed =
-                    case routeOf of
-                        Just (Typed toRoute) ->
-                            Just (toRoute c.message)
-
-                        _ ->
-                            Nothing
-
+                -- The method's data: reading an answer builds no route.
                 responseBody =
-                    case routeOf of
-                        Just (FromJson toRoute) ->
-                            (toRoute c.message Json.Encode.null).responseBody
-
-                        _ ->
-                            Maybe.andThen .responseBody typed
+                    Maybe.andThen .responseBody routeOf
 
                 -- A protocol builds the body from the JSON unless a typed
                 -- route holds it.
                 bodyReadsJson =
-                    case typed of
-                        Just _ ->
-                            False
+                    case routeOf of
+                        Just { shape } ->
+                            case shape of
+                                Typed _ ->
+                                    False
+
+                                FromJson _ ->
+                                    True
 
                         Nothing ->
                             True
@@ -186,15 +179,20 @@ make forSend (Client cl over _ registry) (Call c) =
                     m.json.encode registry c.message
 
                 routeFrom encoding =
-                    case routeOf of
-                        Just (FromJson toRoute) ->
-                            Just (toRoute c.message (Result.withDefault Json.Encode.null (encoding ())))
+                    Maybe.map
+                        (\{ shape } ->
+                            case shape of
+                                Typed toRoute ->
+                                    toRoute c.message
 
-                        _ ->
-                            typed
+                                FromJson toRoute ->
+                                    toRoute c.message (Result.withDefault Json.Encode.null (encoding ()))
+                        )
+                        routeOf
 
-                -- Encoded here, in the branch taken, only when the send
-                -- reads it; else each part encodes when it is asked.
+                -- Built here, in the branch taken, for a send, the JSON
+                -- only when the send reads it; else each part builds and
+                -- encodes when it is asked.
                 ( encoded, route ) =
                     if readsJson then
                         let
@@ -205,6 +203,13 @@ make forSend (Client cl over _ registry) (Call c) =
                                 routeFrom (\() -> once)
                         in
                         ( \() -> once, \() -> onceRouted )
+
+                    else if forSend then
+                        let
+                            onceRouted =
+                                routeFrom encode
+                        in
+                        ( encode, \() -> onceRouted )
 
                     else
                         ( encode, \() -> routeFrom encode )

@@ -74,7 +74,6 @@ routePing0 request_ =
     , path = "v1/ping"
     , query = []
     , body = Nothing
-    , responseBody = Nothing
     , invalid = Nothing
     }
 

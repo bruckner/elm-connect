@@ -66,7 +66,6 @@ routeListEvents0 request_ =
     , path = "v1/" ++ Proto.Route.segments parent_ ++ "/events"
     , query = Events.V1.queryOfListEventsRequest request_
     , body = Nothing
-    , responseBody = Nothing
     , invalid = Proto.Route.checkSegments "parent" [ "feeds", "*" ] parent_
     }
 

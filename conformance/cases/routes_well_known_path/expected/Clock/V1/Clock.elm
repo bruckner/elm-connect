@@ -127,7 +127,6 @@ routeGetMoment0 request_ =
     , path = "v1/at/" ++ Proto.Route.segment at_
     , query = Proto.Query.except [ "at" ] (Clock.V1.queryOfMoment request_)
     , body = Nothing
-    , responseBody = Nothing
     , invalid = Proto.Route.checkSegment "at" "*" at_
     }
 
@@ -147,7 +146,6 @@ routeMaskMoment0 request_ =
     , path = "v1/at/" ++ Proto.Route.segment at_ ++ "/mask/" ++ Proto.Route.segment mask_
     , query = Proto.Query.except [ "at", "mask" ] (Clock.V1.queryOfMoment request_)
     , body = Nothing
-    , responseBody = Nothing
     , invalid =
         Proto.Route.firstInvalid
             [ Proto.Route.checkSegment "at" "*" at_
@@ -171,7 +169,6 @@ routeCountMoment0 request_ =
     , path = "v1/count/" ++ Proto.Route.segment count_ ++ "/seen/" ++ Proto.Route.segment seen_
     , query = Proto.Query.except [ "count", "seen" ] (Clock.V1.queryOfMoment request_)
     , body = Nothing
-    , responseBody = Nothing
     , invalid =
         Proto.Route.firstInvalid
             [ Proto.Route.checkSegment "count" "*" count_
@@ -192,7 +189,6 @@ routeWaitMoment0 request_ =
     , path = "v1/wait/" ++ Proto.Route.segment wait_
     , query = []
     , body = Just (Proto.Route.without [ [ "wait" ] ] (Clock.V1.encodeMoment request_))
-    , responseBody = Nothing
     , invalid = Proto.Route.checkSegment "wait" "*" wait_
     }
 

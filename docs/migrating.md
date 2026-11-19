@@ -255,7 +255,9 @@ getNoteBinding =
   `Proto.Http` bindings, read from the request's JSON. Generated code
   uses `Proto.Method.withRoutes` instead, with a generated route
   function per binding (`Proto.Method.withJsonRoutes` for a method whose
-  bodies hold an `Any`). A method that is never transcoded needs
+  bodies hold an `Any`), and `Proto.Method.withResponseBody n "field"`
+  for each binding whose rule names a `response_body`, which a route
+  record does not hold. A method that is never transcoded needs
   neither.
 - `Proto.Method.toDescriptor` is gone: a method no longer holds a
   descriptor. Build one with `Proto.Method.descriptor` where the data is

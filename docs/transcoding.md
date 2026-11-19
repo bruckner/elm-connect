@@ -85,19 +85,26 @@ routeListNotes0 request_ =
     , path = "v1/notes"
     , query = Notes.V1.queryOfListNotesRequest request_
     , body = Nothing
-    , responseBody = Nothing
     , invalid = Nothing
     }
 ```
 
 A `Proto.Route.Route` is the binding's verb, its path percent-encoded
-without a leading slash, its query pairs, its body, the response field
-the answer is read from, and the first path value its template cannot
-match (`invalid`), which sending refuses. The query comes from the
-request message's query encoder in its package's module, shared by every
-binding that takes the message, less the fields the binding's path and
-body hold. A route is fixed in generated code: a fix to how one is built
-reaches an application when it regenerates.
+without a leading slash, its query pairs, its body, and the first path
+value its template cannot match (`invalid`), which sending refuses. The
+query comes from the request message's query encoder in its package's
+module, shared by every binding that takes the message, less the fields
+the binding's path and body hold. A route is fixed in generated code: a
+fix to how one is built reaches an application when it regenerates.
+
+A binding's `response_body` is not in its route. The method holds it,
+given after the routes by binding number, so reading an answer builds
+no route:
+
+```elm conformance/cases/services/expected/Notes/V1/NotesService.elm excerpt
+            |> Proto.Method.withRoutes [ routeListNotes0 ]
+            |> Proto.Method.withResponseBody 0 "notes"
+```
 
 Every binding the generator accepts becomes a route function. A method
 whose bodies hold a `google.protobuf.Any`, which only the client's
