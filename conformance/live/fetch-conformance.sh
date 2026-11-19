@@ -6,7 +6,7 @@
 # Does nothing but print it when it is already there.
 set -euo pipefail
 
-version=v1.0.6
+version=v1.0.7
 
 here="$(cd "$(dirname "$0")" && pwd)"
 dir="$here/build/connectconformance-$version"
@@ -19,10 +19,10 @@ fi
 os="$(uname -s)"
 arch="$(uname -m)"
 case "$os-$arch" in
-  Darwin-arm64) sha256=b736e0ea69447ed663ba9298894faa75b0ff6dbd5e0c9acb63bedde46b1f7d8a ;;
-  Darwin-x86_64) sha256=0920c4612593301fd7cfdee6256bfaf3232dc5e21aeda1a9b2e6bcc6be806458 ;;
-  Linux-aarch64 | Linux-arm64) arch=aarch64; sha256=718b6b255b185f76bbb149978be4a6067d7379e5195486f35b6d41dc8301ca4d ;;
-  Linux-x86_64) sha256=803a9ed1778583f9b98f44b4b77ab06897d1027183ef2064de32a0fb7d688ab0 ;;
+  Darwin-arm64) sha256=6e3534f8a39ad91843913af80fa7f68fdc266a71560b00ad078a0637d380100b ;;
+  Darwin-x86_64) sha256=969de3f343c67bebe37db2a1641c2ced15d44ddd358400de24cbb53e28d3a561 ;;
+  Linux-aarch64 | Linux-arm64) arch=aarch64; sha256=c43e11cdca4cf7936a502fa25e1d7f27a6475b806d0ab5647668a5777b9d2121 ;;
+  Linux-x86_64) sha256=cf2d7c671c8cfbdfba5e48dc58cbe0b2db01fa7b1c160ecf060f20d27479d63c ;;
   *) echo "fetch-conformance.sh: no pinned connectconformance for $os-$arch" >&2; exit 1 ;;
 esac
 
