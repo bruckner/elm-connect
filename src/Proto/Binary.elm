@@ -2,6 +2,7 @@ module Proto.Binary exposing
     ( decode, encode, Decoder, map
     , Codec
     , merge, Field, field, fieldInto, repeated, mapEntry, insertBool, skip
+    , Stages, Run, stages, stage, stageOneof, mergeStaged, mergeReentrant
     , implicit, optional, present, list, listUnpacked, dict, boolMap
     , double, float
     , int32, sint32, sfixed32, uint32, fixed32
@@ -50,6 +51,11 @@ outside ±(2^53 − 1).
 # Decoding a message
 
 @docs merge, Field, field, fieldInto, repeated, mapEntry, insertBool, skip
+
+
+# Decoding a message in field order
+
+@docs Stages, Run, stages, stage, stageOneof, mergeStaged, mergeReentrant
 
 
 # Encoding a message
@@ -771,6 +777,537 @@ skipValue wire bound =
 
         _ ->
             D.succeed -2
+
+
+
+-- DECODING A MESSAGE IN FIELD ORDER
+
+
+{-| A message's fields read in field-number order, one stage per field, and
+the record built once at the end: [`stages`](#stages), then a
+[`stage`](#stage) per field and a [`stageOneof`](#stageOneof) per oneof
+member, in field-number order. `d` is the record a stage takes its default
+from, `whole` the function the stages are given (the generated record
+builder), `rest` what is left of it once these stages have each applied
+their value, and `a` the message.
+
+Each stage reads its field while the next key is its own, skipping a field
+the message does not know in place, and leaves the next key to the stages
+after it. A key of a field whose stage has passed ends the in-order pass:
+every later stage takes its default and the message's driver goes on from
+the record built so far.
+
+-}
+type alias Stages d whole rest a =
+    Run d rest a -> Run d whole a
+
+
+{-| The stages from one to the last, given what is left of the builder:
+each stage given the bytes left in the message after the key it holds,
+that key (0 when the message ends, negative once the pass has ended on
+it), the record its default is in and the builder so far.
+-}
+type Run d f a
+    = Run
+        { fast : (Int -> Bool) -> Int -> Int -> d -> f -> D.Decoder ( Int, Int, a )
+        , located : Context -> Int -> Int -> d -> f -> D.Decoder (Result Failure ( Int, Int, a ))
+        }
+
+
+{-| What a locating stage needs besides its cursor: which numbers the
+message knows, its full name and its width.
+-}
+type alias Context =
+    { known : Int -> Bool
+    , name : String
+    , width : Int
+    }
+
+
+{-| No stages yet.
+-}
+stages : Stages d f f a
+stages =
+    identity
+
+
+{-| The record built from the builder given every value, and the record the
+stages took their defaults from.
+-}
+lastStage : Run d (d -> a) a
+lastStage =
+    Run
+        { fast = \_ remaining tag d f -> D.succeed ( remaining, tag, f d )
+        , located = \_ remaining tag d f -> D.succeed (Ok ( remaining, tag, f d ))
+        }
+
+
+{-| A field's stage: its number, how a value is read into the field's value
+so far (`read wire slot`, as [`field`](#field) and the other helpers read
+into a record) and where its default is, applying its value to the
+builder.
+-}
+stage : Int -> (Int -> v -> Field v) -> (d -> v) -> Stages d whole (v -> rest) a -> Stages d whole rest a
+stage number read get previous =
+    let
+        accepts n =
+            n == number
+
+        readAny _ wire slot =
+            read wire slot
+    in
+    \(Run tail) ->
+        previous
+            (Run
+                { fast =
+                    \known remaining tag d f ->
+                        if tag <= 0 then
+                            tail.fast known remaining tag d (f (get d))
+
+                        else
+                            let
+                                n =
+                                    Bitwise.shiftRightZfBy 3 tag
+                            in
+                            if n == number || not (known n) then
+                                fastSlot known number accepts readAny remaining tag (get d)
+                                    |> D.andThen
+                                        (\( r, t, v ) ->
+                                            if t > 0 && t < 8 then
+                                                D.fail
+
+                                            else
+                                                tail.fast known r t d (f v)
+                                        )
+
+                            else if n < number then
+                                tail.fast known remaining (negate tag) d (f (get d))
+
+                            else
+                                tail.fast known remaining tag d (f (get d))
+                , located =
+                    \context remaining tag d f ->
+                        if tag <= 0 then
+                            tail.located context remaining tag d (f (get d))
+
+                        else
+                            let
+                                n =
+                                    Bitwise.shiftRightZfBy 3 tag
+                            in
+                            if n == number || not (context.known n) then
+                                D.loop ( remaining, tag, get d ) (locatedSlotStep context number accepts readAny)
+                                    |> D.andThen
+                                        (\result ->
+                                            case result of
+                                                Ok ( r, t, v ) ->
+                                                    tail.located context r t d (f v)
+
+                                                Err failure ->
+                                                    D.succeed (Err failure)
+                                        )
+
+                            else if n < number then
+                                tail.located context remaining (negate tag) d (f (get d))
+
+                            else
+                                tail.located context remaining tag d (f (get d))
+                }
+            )
+
+
+{-| A oneof member's stage: its number, whether a number is one of the
+oneof's members, how a member is read into the oneof's value so far
+(`read number wire slot`), where the oneof's value is and how it is set
+there, so that a later stage of the same oneof reads into it. Every member
+of a oneof has a stage at its own number and each accepts any member's
+key, the last read winning, so a oneof written where its first member's
+number falls, or where its set member's does, is read in one pass.
+-}
+stageOneof : Int -> (Int -> Bool) -> (Int -> Int -> v -> Field v) -> (d -> v) -> (v -> d -> d) -> Stages d whole rest a -> Stages d whole rest a
+stageOneof number accepts read get set previous =
+    \(Run tail) ->
+        previous
+            (Run
+                { fast =
+                    \known remaining tag d f ->
+                        if tag <= 0 then
+                            tail.fast known remaining tag d f
+
+                        else
+                            let
+                                n =
+                                    Bitwise.shiftRightZfBy 3 tag
+                            in
+                            if accepts n || not (known n) then
+                                fastSlot known number accepts read remaining tag (get d)
+                                    |> D.andThen
+                                        (\( r, t, v ) ->
+                                            if t > 0 && t < 8 then
+                                                D.fail
+
+                                            else
+                                                tail.fast known r t (set v d) f
+                                        )
+
+                            else if n < number then
+                                tail.fast known remaining (negate tag) d f
+
+                            else
+                                tail.fast known remaining tag d f
+                , located =
+                    \context remaining tag d f ->
+                        if tag <= 0 then
+                            tail.located context remaining tag d f
+
+                        else
+                            let
+                                n =
+                                    Bitwise.shiftRightZfBy 3 tag
+                            in
+                            if accepts n || not (context.known n) then
+                                D.loop ( remaining, tag, get d ) (locatedSlotStep context number accepts read)
+                                    |> D.andThen
+                                        (\result ->
+                                            case result of
+                                                Ok ( r, t, v ) ->
+                                                    tail.located context r t (set v d) f
+
+                                                Err failure ->
+                                                    D.succeed (Err failure)
+                                        )
+
+                            else if n < number then
+                                tail.located context remaining (negate tag) d f
+
+                            else
+                                tail.located context remaining tag d f
+                }
+            )
+
+
+{-| A stage's fast reader from its first key: the field read, then the next
+key; a singular field ends there unless the key is its own again or a field
+the message does not know, which the loop goes on with.
+-}
+fastSlot : (Int -> Bool) -> Int -> (Int -> Bool) -> (Int -> Int -> v -> Field v) -> Int -> Int -> v -> D.Decoder ( Int, Int, v )
+fastSlot known number accepts read remaining tag slot =
+    case fastSlotField accepts read tag slot of
+        Field f ->
+            f.fast
+                |> D.andThen
+                    (\( width, next ) ->
+                        let
+                            r =
+                                remaining - width
+                        in
+                        if r == 0 then
+                            D.succeed ( 0, 0, next )
+
+                        else if r < 0 then
+                            D.fail
+
+                        else
+                            fastVarint32
+                                |> D.andThen
+                                    (\( keyWidth, t ) ->
+                                        case slotNext known number accepts (r - keyWidth) t next of
+                                            Loop state ->
+                                                D.loop state (fastSlotStep known number accepts read)
+
+                                            Done state ->
+                                                D.succeed state
+                                    )
+                    )
+
+
+fastSlotField : (Int -> Bool) -> (Int -> Int -> v -> Field v) -> Int -> v -> Field v
+fastSlotField accepts read tag slot =
+    let
+        n =
+            Bitwise.shiftRightZfBy 3 tag
+    in
+    if accepts n then
+        read n (Bitwise.and 7 tag) slot
+
+    else
+        skip (Bitwise.and 7 tag) slot
+
+
+fastSlotStep : (Int -> Bool) -> Int -> (Int -> Bool) -> (Int -> Int -> v -> Field v) -> ( Int, Int, v ) -> D.Decoder (Step ( Int, Int, v ) ( Int, Int, v ))
+fastSlotStep known number accepts read ( remaining, tag, slot ) =
+    case fastSlotField accepts read tag slot of
+        Field f ->
+            f.fast
+                |> D.andThen
+                    (\( width, next ) ->
+                        let
+                            r =
+                                remaining - width
+                        in
+                        if r == 0 then
+                            D.succeed (Done ( 0, 0, next ))
+
+                        else if r < 0 then
+                            D.fail
+
+                        else
+                            D.map (\( keyWidth, t ) -> slotNext known number accepts (r - keyWidth) t next) fastVarint32
+                    )
+
+
+{-| Where a stage goes after reading a field and the next key: on with the
+key when it is the stage's own or a field the message does not know, else
+done, the key negated when its field's stage has passed (the pass ends on
+it) and left for a later stage otherwise. A key of field number 0 is done
+as the key 1 (0 stands for the message's end), and the stage fails on it.
+-}
+slotNext : (Int -> Bool) -> Int -> (Int -> Bool) -> Int -> Int -> v -> Step ( Int, Int, v ) ( Int, Int, v )
+slotNext known number accepts remaining tag slot =
+    let
+        n =
+            Bitwise.shiftRightZfBy 3 tag
+    in
+    if accepts n then
+        Loop ( remaining, tag, slot )
+
+    else if n == 0 then
+        Done ( remaining, 1, slot )
+
+    else if known n then
+        if n < number then
+            Done ( remaining, negate tag, slot )
+
+        else
+            Done ( remaining, tag, slot )
+
+    else
+        Loop ( remaining, tag, slot )
+
+
+locatedSlotStep : Context -> Int -> (Int -> Bool) -> (Int -> Int -> v -> Field v) -> ( Int, Int, v ) -> D.Decoder (Step ( Int, Int, v ) (Result Failure ( Int, Int, v )))
+locatedSlotStep context number accepts read ( remaining, tag, slot ) =
+    let
+        n =
+            Bitwise.shiftRightZfBy 3 tag
+
+        start =
+            context.width - remaining
+    in
+    case fastSlotField accepts read tag slot of
+        Field f ->
+            f.located remaining
+                |> D.andThen
+                    (\result ->
+                        case result of
+                            Err failure ->
+                                D.succeed (Done (Err { reason = failure.reason, path = ( context.name, n ) :: failure.path, offset = failure.offset + start }))
+
+                            Ok ( width, next ) ->
+                                let
+                                    r =
+                                        remaining - width
+                                in
+                                if r == 0 then
+                                    D.succeed (Done (Ok ( 0, 0, next )))
+
+                                else
+                                    locatedKey context r
+                                        |> D.map
+                                            (\key ->
+                                                case key of
+                                                    Ok ( r2, t ) ->
+                                                        case slotNext context.known number accepts r2 t next of
+                                                            Loop state ->
+                                                                Loop state
+
+                                                            Done state ->
+                                                                Done (Ok state)
+
+                                                    Err failure ->
+                                                        Done (Err failure)
+                                            )
+                    )
+
+
+{-| The key at `remaining` bytes before the end of the message, read by the
+fast reader, and the bytes left after it; field number 0 fails.
+-}
+fastKey : Int -> D.Decoder ( Int, Int )
+fastKey remaining =
+    if remaining == 0 then
+        D.succeed ( 0, 0 )
+
+    else if remaining < 0 then
+        D.fail
+
+    else
+        fastVarint32
+            |> D.andThen
+                (\( keyWidth, tag ) ->
+                    if tag < 8 then
+                        D.fail
+
+                    else
+                        D.succeed ( remaining - keyWidth, tag )
+                )
+
+
+{-| The key at `remaining` bytes before the end of the message, read by the
+locating reader, failing as the message loop fails on a key: a malformed
+varint, field number 0 or a wire type no field has.
+-}
+locatedKey : Context -> Int -> D.Decoder (Result Failure ( Int, Int ))
+locatedKey context remaining =
+    if remaining == 0 then
+        D.succeed (Ok ( 0, 0 ))
+
+    else
+        varint32 remaining
+            |> D.map
+                (\( keyWidth, tag ) ->
+                    let
+                        start =
+                            context.width - remaining
+
+                        number =
+                            Bitwise.shiftRightZfBy 3 tag
+
+                        wire =
+                            Bitwise.and 7 tag
+                    in
+                    if keyWidth < 0 then
+                        Err { reason = (leaf keyWidth).reason, path = [], offset = start }
+
+                    else if number == 0 then
+                        Err { reason = InvalidTag, path = [ ( context.name, 0 ) ], offset = start }
+
+                    else if invalidWire wire then
+                        Err { reason = InvalidWireType wire, path = [ ( context.name, number ) ], offset = start }
+
+                    else
+                        Ok ( remaining - keyWidth, tag )
+                )
+
+
+{-| A message decoder that reads its fields in field-number order through
+its stages, building the record once, and goes on through the message loop
+of [`merge`](#merge), from the record built so far, at the first field that
+arrives after its stage has passed: from the message's full name, which
+numbers it knows, the loop's step and finishing function, the record
+builder and the stages. A failure is located by the message loop.
+-}
+mergeStaged : String -> (Int -> Bool) -> (Int -> Int -> a -> Field a) -> (a -> a) -> f -> Stages a f (a -> a) a -> a -> Decoder a
+mergeStaged name known step finish build pipeline =
+    let
+        (Run passes) =
+            pipeline lastStage
+    in
+    \start ->
+        let
+            first =
+                finish start
+        in
+        Internal.Decoder
+            { name = name
+            , fast =
+                \width ->
+                    fastKey width
+                        |> D.andThen (\( remaining, tag ) -> passes.fast known remaining tag first build)
+                        |> D.andThen
+                            (\( remaining, tag, built ) ->
+                                if tag == 0 then
+                                    D.succeed (finish built)
+
+                                else
+                                    fastResume step finish remaining (abs tag) built
+                            )
+            , located = message name first step finish
+            }
+
+
+{-| The message loop from a key already read.
+-}
+fastResume : (Int -> Int -> a -> Field a) -> (a -> a) -> Int -> Int -> a -> D.Decoder a
+fastResume step finish remaining tag acc =
+    case step (Bitwise.shiftRightZfBy 3 tag) (Bitwise.and 7 tag) acc of
+        Field f ->
+            f.fast
+                |> D.andThen (\( width, next ) -> D.loop ( remaining - width, next ) (fastMessageStep step finish))
+
+
+{-| A message decoder that reads its fields in field-number order through
+its stages, building the record once, and at the first field that arrives
+after its stage has passed finishes the pass and runs the stages again
+over the rest, from the record built so far, until the message ends: from
+the message's full name, which numbers it knows, the finishing function,
+the record builder and the stages. A failure is located by the stages'
+locating readers.
+-}
+mergeReentrant : String -> (Int -> Bool) -> (a -> a) -> f -> Stages a f (a -> a) a -> a -> Decoder a
+mergeReentrant name known finish build pipeline =
+    let
+        (Run passes) =
+            pipeline lastStage
+    in
+    \start ->
+        let
+            first =
+                finish start
+        in
+        Internal.Decoder
+            { name = name
+            , fast =
+                \width ->
+                    fastKey width
+                        |> D.andThen
+                            (\( remaining, tag ) ->
+                                D.loop ( remaining, tag, first )
+                                    (\( r, t, acc ) ->
+                                        passes.fast known r t acc build
+                                            |> D.map
+                                                (\( r2, t2, built ) ->
+                                                    if t2 == 0 then
+                                                        Done (finish built)
+
+                                                    else
+                                                        Loop ( r2, abs t2, built )
+                                                )
+                                    )
+                            )
+            , located =
+                \width ->
+                    let
+                        context =
+                            { known = known, name = name, width = width }
+                    in
+                    locatedKey context width
+                        |> D.andThen
+                            (\key ->
+                                case key of
+                                    Err failure ->
+                                        D.succeed (Err failure)
+
+                                    Ok ( remaining, tag ) ->
+                                        D.loop ( remaining, tag, first )
+                                            (\( r, t, acc ) ->
+                                                passes.located context r t acc build
+                                                    |> D.map
+                                                        (\result ->
+                                                            case result of
+                                                                Err failure ->
+                                                                    Done (Err failure)
+
+                                                                Ok ( r2, t2, built ) ->
+                                                                    if t2 == 0 then
+                                                                        Done (Ok (finish built))
+
+                                                                    else
+                                                                        Loop ( r2, abs t2, built )
+                                                        )
+                                            )
+                            )
+            }
 
 
 

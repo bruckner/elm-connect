@@ -26,11 +26,11 @@
 
 use super::field::{FieldShape, Present, ValueShape, Zeroed, field_holding};
 use super::scalar::Holding;
-use super::{Emitter, MessageShape, OneofShape, docs};
-use crate::elm::ast::{BinOp, Decl, Expr, Pattern, Type};
+use super::{Emitter, MessageShape, OneofShape, RecordField, docs};
+use crate::elm::ast::{BinOp, Decl, Expr, LetBinding, Pattern, Type};
 use crate::elm::build::{
-    access, apply, binop, case, if_then_else, int, lambda, list, pctor, pvar, qualified, string,
-    ty, var,
+    access, apply, binop, case, if_then_else, int, lambda, let_in, list, pctor, pipe, pvar,
+    qualified, record, string, ty, var,
 };
 use crate::ir::{
     Cardinality, Enum, Field, MapKey, Message, OneofVariant, ScalarKind, TypeRef, WellKnown,
@@ -164,12 +164,128 @@ fn wrapper_of<'m>(shape: FieldShape<'m>) -> Option<&'m Wrapper> {
     }
 }
 
-/// `{ value | name = update }`.
-fn update(name: &str, value: Expr) -> Expr {
-    Expr::RecordUpdate {
-        record: ENCODER_ARGUMENT.to_owned(),
-        fields: vec![(name.to_owned(), value)],
+/// Which form a generated binary merge takes. A spike-only switch, read
+/// from `ELM_CONNECT_MERGE` (`m0`, the default, to `m3`), so that one
+/// build generates every form for comparison.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+enum MergeForm {
+    /// A `case` arm per field setting it with a record update.
+    Update,
+    /// The arms set their field by writing the whole record, for records
+    /// of at most [`RECORD_LITERAL_MAX`] fields.
+    Literal,
+    /// Stages in field-number order building the record once, then the
+    /// update form's loop from the record built so far at the first field
+    /// that arrives out of order.
+    Staged,
+    /// The same stages, run again from the record built so far at each
+    /// field that arrives out of order, until the message ends.
+    Reentrant,
+}
+
+fn merge_form() -> MergeForm {
+    match std::env::var("ELM_CONNECT_MERGE").as_deref() {
+        Ok("m1") => MergeForm::Literal,
+        Ok("m2") => MergeForm::Staged,
+        Ok("m3") => MergeForm::Reentrant,
+        _ => MergeForm::Update,
     }
+}
+
+/// The most fields a record may have for a merge step to set one of them by
+/// writing the whole record out.
+const RECORD_LITERAL_MAX: usize = 64;
+
+/// How a merge step sets fields of the record it is given: `{ value | name
+/// = update }`, or, for a record of at most [`RECORD_LITERAL_MAX`] fields
+/// under the literal form, the whole record with `name` replaced and every
+/// other field copied.
+struct Setter {
+    names: Option<Vec<String>>,
+}
+
+impl Setter {
+    fn new(shape: &MessageShape, form: MergeForm) -> Self {
+        let names: Vec<String> = record_names(shape);
+        Setter {
+            names: (form == MergeForm::Literal && names.len() <= RECORD_LITERAL_MAX)
+                .then_some(names),
+        }
+    }
+
+    fn update(&self, name: &str, value: Expr) -> Expr {
+        self.update_all(vec![(name.to_owned(), value)])
+    }
+
+    fn update_all(&self, mut fields: Vec<(String, Expr)>) -> Expr {
+        match &self.names {
+            Some(names) => {
+                let whole: Vec<(String, Expr)> = names
+                    .iter()
+                    .map(
+                        |other| match fields.iter().position(|(name, _)| name == other) {
+                            Some(at) => (other.clone(), fields.swap_remove(at).1),
+                            None => (other.clone(), access(var(ENCODER_ARGUMENT), other.clone())),
+                        },
+                    )
+                    .collect();
+                debug_assert!(
+                    fields.is_empty(),
+                    "a merge step sets a field the record lacks"
+                );
+                record(whole)
+            }
+            None => Expr::RecordUpdate {
+                record: ENCODER_ARGUMENT.to_owned(),
+                fields,
+            },
+        }
+    }
+}
+
+/// The record's field names, in its declaration order.
+fn record_names(shape: &MessageShape) -> Vec<String> {
+    shape
+        .record()
+        .into_iter()
+        .map(|field| match field {
+            RecordField::Field(field, _) => field.elm_name.clone(),
+            RecordField::Oneof(oneof) => oneof.oneof.elm_field_name.clone(),
+        })
+        .collect()
+}
+
+/// `\number -> ...`: whether a field number is one of `numbers`, as runs of
+/// consecutive numbers.
+fn known_numbers(mut numbers: Vec<u32>) -> Expr {
+    numbers.sort_unstable();
+    numbers.dedup();
+    let mut runs: Vec<(u32, u32)> = Vec::new();
+    for n in numbers {
+        match runs.last_mut() {
+            Some((_, hi)) if *hi + 1 == n => *hi = n,
+            _ => runs.push((n, n)),
+        }
+    }
+    let test = runs
+        .into_iter()
+        .map(|(lo, hi)| {
+            if lo == hi {
+                binop(BinOp::Eq, var(NUMBER), int(lo.into()))
+            } else {
+                binop(
+                    BinOp::And,
+                    binop(BinOp::Ge, var(NUMBER), int(lo.into())),
+                    binop(BinOp::Le, var(NUMBER), int(hi.into())),
+                )
+            }
+        })
+        .reduce(|a, b| binop(BinOp::Or, a, b))
+        .unwrap_or(Expr::Var {
+            module: None,
+            name: "False".to_owned(),
+        });
+    lambda([pvar(NUMBER)], test)
 }
 
 impl Emitter {
@@ -371,8 +487,11 @@ impl Emitter {
     /// `mergeFooBytes : Foo -> Proto.Binary.Decoder Foo`: a `Foo` read
     /// into the one given, as protobuf merges a message arriving twice.
     pub(super) fn message_merge_bytes(&mut self, shape: &MessageShape) -> Decl {
+        let form = merge_form();
         let mut branches: Vec<(u32, Expr)> = Vec::new();
         let mut reversed: Vec<String> = Vec::new();
+        let setter = Setter::new(shape, form);
+        let update = |name: &str, value: Expr| setter.update(name, value);
         let wire = || var(WIRE);
         let record = || var(ENCODER_ARGUMENT);
         for &(field, field_shape) in &shape.fields {
@@ -489,16 +608,22 @@ impl Emitter {
                     (name, apply(reverse.clone(), [current]))
                 })
                 .collect();
-            lambda(
-                [pvar(ENCODER_ARGUMENT)],
-                Expr::RecordUpdate {
-                    record: ENCODER_ARGUMENT.to_owned(),
-                    fields,
-                },
-            )
+            lambda([pvar(ENCODER_ARGUMENT)], setter.update_all(fields))
         };
-        let merge = self.binary("merge");
         let annotation = self.bytes_merge_type(ty(shape.message.elm_name.clone(), []));
+        let has_fields = !shape.fields.is_empty() || !shape.oneofs.is_empty();
+        let body = match form {
+            MergeForm::Staged | MergeForm::Reentrant if has_fields => {
+                self.staged_merge(shape, form, step, finish)
+            }
+            _ => {
+                let merge = self.binary("merge");
+                apply(
+                    merge,
+                    [string(shape.message.proto_full_name.clone()), step, finish],
+                )
+            }
+        };
         Decl::Value {
             doc: Some(format!(
                 "Decodes {} from protobuf binary into the one given, as protobuf merges a message that arrives twice.",
@@ -507,10 +632,226 @@ impl Emitter {
             name: merge_name(shape.message.decoder_name()),
             annotation,
             params: Vec::new(),
-            body: apply(
-                merge,
-                [string(shape.message.proto_full_name.clone()), step, finish],
+            body,
+        }
+    }
+
+    /// The body of a merge read in field-number order:
+    /// `Proto.Binary.mergeStaged` (with the update form's step) or
+    /// `Proto.Binary.mergeReentrant` of the message's name, the numbers it
+    /// knows, its finishing function, a builder of the record from every
+    /// field's value and the record the oneofs are in, and a stage per field
+    /// and oneof member in field-number order. Each oneof's reader and
+    /// member test are bound once, in a `let`, since every member's stage
+    /// takes them.
+    fn staged_merge(
+        &mut self,
+        shape: &MessageShape,
+        form: MergeForm,
+        step: Expr,
+        finish: Expr,
+    ) -> Expr {
+        let wire = || var(WIRE);
+        let slot = || var(ENCODER_ARGUMENT);
+        let identity = || var("identity");
+        let mut numbers: Vec<u32> = Vec::new();
+        // (number, stage, the builder's parameter for a field stage)
+        let mut entries: Vec<(u32, Expr, Option<String>)> = Vec::new();
+        let mut bindings: Vec<LetBinding> = Vec::new();
+        for &(field, field_shape) in &shape.fields {
+            numbers.push(field.number);
+            let name = field.elm_name.as_str();
+            let codec = self.field_codec(field, field_shape);
+            let just = || var("Just");
+            let read = match field_shape {
+                FieldShape::Plain(_) => apply(self.binary("field"), [codec, identity()]),
+                FieldShape::Maybe(_) if matches!(field.ty, TypeRef::Message(_)) => {
+                    let _ = self.core("Just");
+                    lambda(
+                        [pvar(WIRE), pvar(ENCODER_ARGUMENT)],
+                        apply(
+                            self.binary("fieldInto"),
+                            [codec, slot(), just(), wire(), slot()],
+                        ),
+                    )
+                }
+                FieldShape::Maybe(_) | FieldShape::Json => {
+                    let _ = self.core("Just");
+                    apply(self.binary("field"), [codec, just()])
+                }
+                FieldShape::List(_) => lambda(
+                    [pvar(WIRE), pvar(ENCODER_ARGUMENT)],
+                    apply(
+                        self.binary("repeated"),
+                        [codec, identity(), slot(), wire(), slot()],
+                    ),
+                ),
+                FieldShape::Dict(..) => {
+                    let Cardinality::Map(key) = field.cardinality else {
+                        unreachable!("a Dict field is a map")
+                    };
+                    let key = self.binary(key_codec(key));
+                    let insert = self.reference((super::CORE_DICT, "insert"));
+                    let inserted = apply(insert, [var(KEY), var(ITEM), slot()]);
+                    let set = lambda([pvar(KEY), pvar(ITEM)], inserted);
+                    lambda(
+                        [pvar(WIRE), pvar(ENCODER_ARGUMENT)],
+                        apply(self.binary("mapEntry"), [key, codec, set, wire(), slot()]),
+                    )
+                }
+                FieldShape::BoolMap(_) => {
+                    let key = self.binary("bool");
+                    let insert = self.binary("insertBool");
+                    let inserted = apply(insert, [var(KEY), var(ITEM), slot()]);
+                    let set = lambda([pvar(KEY), pvar(ITEM)], inserted);
+                    lambda(
+                        [pvar(WIRE), pvar(ENCODER_ARGUMENT)],
+                        apply(self.binary("mapEntry"), [key, codec, set, wire(), slot()]),
+                    )
+                }
+            };
+            let stage = apply(
+                self.binary("stage"),
+                [
+                    int(field.number.into()),
+                    read,
+                    Expr::Accessor(name.to_owned()),
+                ],
+            );
+            entries.push((field.number, stage, Some(name.to_owned())));
+        }
+        for oneof in &shape.oneofs {
+            let name = oneof.oneof.elm_field_name.as_str();
+            let reader = format!("read_{name}");
+            let member_test = format!("accepts_{name}");
+            let mut arms: Vec<(Pattern, Expr)> = Vec::new();
+            let mut member_numbers: Vec<u32> = Vec::new();
+            for &(variant, value) in &oneof.variants {
+                member_numbers.push(variant.number);
+                let holding = field_holding(variant.jstype, self.holding);
+                let codec = self.binary_codec(&variant.ty, holding, None);
+                let set = if matches!(value, ValueShape::Zeroed(Zeroed::Empty | Zeroed::Null)) {
+                    lambda([Pattern::Wildcard], var(variant.elm_ctor.clone()))
+                } else {
+                    var(variant.elm_ctor.clone())
+                };
+                let read = if matches!(variant.ty, TypeRef::Message(_)) {
+                    let just = apply(var(self.core("Just")), [var(ONEOF_MEMBER)]);
+                    let nothing = var(self.core("Nothing"));
+                    let existing = case(
+                        slot(),
+                        [
+                            (pctor(variant.elm_ctor.clone(), [pvar(ONEOF_MEMBER)]), just),
+                            (Pattern::Wildcard, nothing),
+                        ],
+                    );
+                    apply(
+                        self.binary("fieldInto"),
+                        [codec, existing, set, wire(), slot()],
+                    )
+                } else {
+                    apply(self.binary("field"), [codec, set, wire(), slot()])
+                };
+                arms.push((Pattern::Int(variant.number.into()), read));
+            }
+            arms.push((
+                Pattern::Wildcard,
+                apply(self.binary("skip"), [wire(), slot()]),
+            ));
+            numbers.extend(member_numbers.iter().copied());
+            bindings.push(LetBinding {
+                name: reader.clone(),
+                annotation: None,
+                params: vec![pvar(NUMBER), pvar(WIRE), pvar(ENCODER_ARGUMENT)],
+                body: case(var(NUMBER), arms),
+            });
+            let mut test_numbers = member_numbers.clone();
+            test_numbers.sort_unstable();
+            let test = test_numbers
+                .iter()
+                .map(|&n| binop(BinOp::Eq, var(NUMBER), int(n.into())))
+                .reduce(|a, b| binop(BinOp::Or, a, b))
+                .expect("a oneof has members");
+            bindings.push(LetBinding {
+                name: member_test.clone(),
+                annotation: None,
+                params: vec![pvar(NUMBER)],
+                body: test,
+            });
+            let set = lambda(
+                [pvar(ITEM), pvar(ENCODER_ARGUMENT)],
+                Expr::RecordUpdate {
+                    record: ENCODER_ARGUMENT.to_owned(),
+                    fields: vec![(name.to_owned(), var(ITEM))],
+                },
+            );
+            for &n in &member_numbers {
+                let stage = apply(
+                    self.binary("stageOneof"),
+                    [
+                        int(n.into()),
+                        var(member_test.clone()),
+                        var(reader.clone()),
+                        Expr::Accessor(name.to_owned()),
+                        set.clone(),
+                    ],
+                );
+                entries.push((n, stage, None));
+            }
+        }
+        entries.sort_by_key(|(number, ..)| *number);
+        // The builder: a parameter per field stage, in stage order, then the
+        // record the oneofs are read from.
+        let mut params: Vec<Pattern> = Vec::new();
+        let mut field_param: std::collections::HashMap<String, String> =
+            std::collections::HashMap::new();
+        for (index, (_, _, field)) in entries.iter().enumerate() {
+            if let Some(name) = field {
+                let param = format!("v_{}", index + 1);
+                params.push(pvar(param.clone()));
+                field_param.insert(name.clone(), param);
+            }
+        }
+        let has_oneofs = !shape.oneofs.is_empty();
+        params.push(if has_oneofs {
+            pvar(ENCODER_ARGUMENT)
+        } else {
+            Pattern::Wildcard
+        });
+        let fields: Vec<(String, Expr)> = shape
+            .record()
+            .into_iter()
+            .map(|field| match field {
+                RecordField::Field(field, _) => (
+                    field.elm_name.clone(),
+                    var(field_param[&field.elm_name].clone()),
+                ),
+                RecordField::Oneof(oneof) => (
+                    oneof.oneof.elm_field_name.clone(),
+                    access(var(ENCODER_ARGUMENT), oneof.oneof.elm_field_name.clone()),
+                ),
+            })
+            .collect();
+        let build = lambda(params, record(fields));
+        let pipeline = entries
+            .into_iter()
+            .fold(self.binary("stages"), |acc, (_, stage, _)| pipe(acc, stage));
+        let name = string(shape.message.proto_full_name.clone());
+        let known = known_numbers(numbers);
+        let body = match form {
+            MergeForm::Staged => apply(
+                self.binary("mergeStaged"),
+                [name, known, step, finish, build, pipeline],
             ),
+            _ => apply(
+                self.binary("mergeReentrant"),
+                [name, known, finish, build, pipeline],
+            ),
+        };
+        if bindings.is_empty() {
+            body
+        } else {
+            let_in(bindings, body)
         }
     }
 
