@@ -55,7 +55,7 @@ rows =
     , row Proto.Json.fieldMask "\"a_b\"" "Expecting a FieldMask of lowerCamelCase paths" "a_b"
     , row (Proto.Json.anyWith Proto.Registry.empty) "{\"@type\":\"secret\"}" "Expecting an Any whose \"@type\" is a type URL, such as \"type.googleapis.com/notes.v1.Note\"" "secret"
     , row (Proto.Json.anyWith Proto.Registry.empty) "{\"@type\":\"type.googleapis.com/secret.Thing\"}" "Expecting an Any of a type the registry has" "secret.Thing"
-    , row (Proto.Json.anyWith Proto.WellKnown.registry) "{\"@type\":\"type.googleapis.com/google.protobuf.Duration\",\"value\":\"secret\"}" "Expecting an Any of \"type.googleapis.com/google.protobuf.Duration\" to hold that message" "secret"
+    , row (Proto.Json.anyWith Proto.WellKnown.registry) "{\"@type\":\"type.googleapis.com/google.protobuf.Duration\",\"value\":\"secret\"}" "Expecting a duration such as \"1.5s\"" "secret"
     ]
 
 

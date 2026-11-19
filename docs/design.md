@@ -3656,7 +3656,11 @@ the value out. Every text is value-free so; an application that reports
 a `BadJson` walks its path and texts (calling.md, "The codec"), and the
 package ships no renderer of its own (decisions.md: Rpc.Error read
 through views). A schema name (an enum's, a field's, a type URL the
-registry knows) is not a value and may appear.
+registry knows) is not a value and may appear. A JSON `Any` whose
+message does not decode fails again where its message did, under the
+`Any` (under its `"value"` for a well-known type with a JSON form), so
+the inner failure's path and text stand as any other failure's do,
+rather than as one text quoting it.
 
 ```elm
 -- Proto.Error

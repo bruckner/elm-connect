@@ -796,7 +796,7 @@ responses =
                         ( Err ( ( [ "hi" ], [ 2000 ] ), [ Ok False, Ok False, Err (), Ok False ] )
                         , Err ( ( [ "hi" ], [ 2000 ] ), [ Ok True, Ok False, Err (), Err () ] )
                         )
-        , test "a Status body's detail of a registered type that is not its message is its BadJson, the Any's object its value" <|
+        , test "a Status body's detail of a registered type that is not its message is its BadJson, failing where its message does" <|
             \_ ->
                 Rpc.response (Rpc.Client.withRegistry noteRegistry base)
                     (getNote { name = "x" })
@@ -806,15 +806,15 @@ responses =
                             List.map
                                 (\detail ->
                                     case detail of
-                                        Err (Proto.Error.BadJson (Json.Decode.Failure _ value)) ->
-                                            Json.Decode.decodeValue (Json.Decode.field "@type" Json.Decode.string) value |> Result.toMaybe
+                                        Err (Proto.Error.BadJson (Json.Decode.Field field (Json.Decode.Failure text _))) ->
+                                            Just ( field, text )
 
                                         _ ->
                                             Nothing
                                 )
                                 (Rpc.Error.details error)
                         )
-                    |> Expect.equal (Err [ Just "type.googleapis.com/notes.v1.Note" ])
+                    |> Expect.equal (Err [ Just ( "title", "Expecting a STRING" ) ])
         , test "details gives those of a type that decode, and an error whose status was not stated has none" <|
             \_ ->
                 ( failed 400

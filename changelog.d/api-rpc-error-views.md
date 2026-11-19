@@ -40,6 +40,7 @@
   keys`, where it named both keys; and so on for enum names, map keys,
   numbers, base64, timestamps, durations, field masks and an `Any`'s
   `"@type"`. The rejected value is still in elm/json's failure, and
-  `Proto.Error.toString` still prints it. An `Any` whose JSON is not its
-  message reads `Expecting an Any of "<type URL>" to hold that message`,
-  without the inner failure's text. Code matching these texts changes.
+  `Proto.Error.toString` still prints it. A JSON `Any` whose message
+  does not decode fails where its message does, with that failure's own
+  path and text, where it was one text quoting the inner failure whole.
+  Code matching these texts changes.

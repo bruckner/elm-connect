@@ -2396,7 +2396,7 @@ anyWith registry =
                             Just (Ok base64) ->
                                 Json.Decode.succeed (InternalAny.Any url (InternalAny.Binary base64))
 
-                            Just (Err _) ->
+                            Just (Err problem) ->
                                 if InternalRegistry.isLenient registry then
                                     -- Read leniently, it may hold an `Any` its binary
                                     -- would lose: it is held as JSON alone.
@@ -2405,10 +2405,10 @@ anyWith registry =
                                             Json.Decode.succeed (InternalAny.Any url (InternalAny.Json messageJson))
 
                                         _ ->
-                                            Json.Decode.fail ("Expecting an Any of " ++ quote url ++ " to hold that message")
+                                            notItsMessage url problem
 
                                 else
-                                    Json.Decode.fail ("Expecting an Any of " ++ quote url ++ " to hold that message")
+                                    notItsMessage url problem
 
                             Nothing ->
                                 if InternalRegistry.isLenient registry then
@@ -2420,6 +2420,43 @@ anyWith registry =
                     Nothing ->
                         Json.Decode.succeed InternalAny.empty
             )
+
+
+{-| The failure of an `Any` whose JSON is not the message its type URL names.
+A JSON failure is failed again where it happened, under the `Any`, so that its
+path and its own text stand as any other failure's do; anything else says
+which type it was.
+-}
+notItsMessage : String -> Error -> Decoder a
+notItsMessage url problem =
+    case problem of
+        Proto.Error.BadJson inner ->
+            if hasJsonForm url then
+                Json.Decode.field "value" (failAgain inner)
+
+            else
+                failAgain inner
+
+        _ ->
+            Json.Decode.fail ("Expecting an Any of " ++ quote url ++ " to hold that message")
+
+
+{-| A decoder that fails as `error` did, on the same JSON.
+-}
+failAgain : Json.Decode.Error -> Decoder a
+failAgain error =
+    case error of
+        Json.Decode.Field name inner ->
+            Json.Decode.field name (failAgain inner)
+
+        Json.Decode.Index index inner ->
+            Json.Decode.index index (failAgain inner)
+
+        Json.Decode.OneOf ways ->
+            Json.Decode.oneOf (List.map failAgain ways)
+
+        Json.Decode.Failure text _ ->
+            Json.Decode.fail text
 
 
 {-| An `Any` object's type URL and its message's JSON, or `Nothing` for `{}`.
