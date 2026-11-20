@@ -22,7 +22,7 @@ import Proto.Internal.Any
 {-| How it reads an `Any` of a type it has no entry for, and its entries.
 -}
 type Registry
-    = Registry Leniency (Dict String Entry)
+    = Registry Leniency Int (Dict String Entry)
 
 
 {-| `Strict` fails to read an `Any` of a type the registry has no entry for,
@@ -51,22 +51,46 @@ type alias Entry =
 `Nothing` when the registry has no entry for it.
 -}
 toJson : Registry -> String -> String -> Maybe (Result Error Value)
-toJson ((Registry _ entries) as registry) name base64 =
-    Dict.get name entries |> Maybe.map (\entry -> entry.toJson registry base64)
+toJson (Registry leniency depth entries) name base64 =
+    Dict.get name entries
+        |> Maybe.map
+            (\entry ->
+                if depth >= anyLimit then
+                    Err (Proto.Error.BadBinary { typeName = name, reason = Proto.Error.TooDeep, path = [], offset = 0 })
+
+                else
+                    entry.toJson (Registry leniency (depth + 1) entries) base64
+            )
 
 
 {-| A message's binary as base64 from its proto3 JSON, by full name;
 `Nothing` when the registry has no entry for it.
 -}
 toBytes : Registry -> String -> Value -> Maybe (Result Error String)
-toBytes ((Registry _ entries) as registry) name json =
-    Dict.get name entries |> Maybe.map (\entry -> entry.toBytes registry json)
+toBytes (Registry leniency depth entries) name json =
+    Dict.get name entries
+        |> Maybe.map
+            (\entry ->
+                if depth >= anyLimit then
+                    Err (Proto.Error.BadJson (Json.Decode.Failure "Expecting Any values nested at most 100 deep" Json.Encode.null))
+
+                else
+                    entry.toBytes (Registry leniency (depth + 1) entries) json
+            )
+
+
+{-| The most `Any` values a conversion goes through, one inside another, the
+outermost included.
+-}
+anyLimit : Int
+anyLimit =
+    100
 
 
 {-| Whether the registry has an entry for a message, by full name.
 -}
 member : String -> Registry -> Bool
-member name (Registry _ entries) =
+member name (Registry _ _ entries) =
     Dict.member name entries
 
 
@@ -74,15 +98,15 @@ member name (Registry _ entries) =
 JSON alone.
 -}
 isLenient : Registry -> Bool
-isLenient (Registry leniency _) =
+isLenient (Registry leniency _ _) =
     leniency == Lenient
 
 
 {-| The registry with its entries, strict.
 -}
 strict : Registry -> Registry
-strict (Registry _ entries) =
-    Registry Strict entries
+strict (Registry _ depth entries) =
+    Registry Strict depth entries
 
 
 {-| The type URL of the `Any` a JSON read failed on because the registry has
