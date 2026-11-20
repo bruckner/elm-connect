@@ -177,29 +177,131 @@ fn wrapper_of<'m>(shape: FieldShape<'m>) -> Option<&'m Wrapper> {
 /// faster within elm/bytes").
 const RECORD_LITERAL_MAX: usize = 64;
 
-/// How a merge step sets fields of the record it is given: `{ value | name
-/// = update }`, or, for a record of at most [`RECORD_LITERAL_MAX`] fields,
-/// the whole record with `name` replaced and every other field copied.
+/// Which form a generated binary merge takes. A spike-only switch, read
+/// from `ELM_CONNECT_MERGE`: `literal` (the default, main's form), `update`
+/// (record updates everywhere) or `grouped` (main's form for a record of
+/// at most `ELM_CONNECT_GROUPED_MAX` fields, default 32, and grouped state
+/// above it, in groups of `ELM_CONNECT_GROUP` fields: a number, or `sqrt`,
+/// the default, for the square root of the field count rounded up).
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+enum MergeForm {
+    Literal,
+    Update,
+    Grouped,
+}
+
+fn merge_form() -> MergeForm {
+    match std::env::var("ELM_CONNECT_MERGE").as_deref() {
+        Ok("update") => MergeForm::Update,
+        Ok("grouped") => MergeForm::Grouped,
+        _ => MergeForm::Literal,
+    }
+}
+
+fn grouped_max() -> usize {
+    std::env::var("ELM_CONNECT_GROUPED_MAX")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(32)
+}
+
+fn group_size(fields: usize) -> usize {
+    match std::env::var("ELM_CONNECT_GROUP")
+        .ok()
+        .and_then(|v| v.parse::<usize>().ok())
+    {
+        Some(g) if g > 0 => g,
+        _ => (1..=fields).find(|g| g * g >= fields).unwrap_or(1),
+    }
+}
+
+/// How a merge step sets fields of the value it is given: `{ value | name
+/// = update }`; for a record of at most [`RECORD_LITERAL_MAX`] fields, the
+/// whole record with `name` replaced and every other field copied; or, in
+/// the grouped form, the decoder's state, a record of group records
+/// (`{ g1 = { a = …, b = … }, g2 = … }`), with the field's group written
+/// out with the field replaced, and the record of groups written out with
+/// that group replaced.
 struct Setter {
     names: Option<Vec<String>>,
+    /// The groups' field names, in field-number order, for the grouped form.
+    groups: Option<Vec<Vec<String>>>,
+}
+
+/// A grouped merge's parameter, the value read into. Not `value`, which
+/// the step and the build bind inside it and Elm forbids shadowing; no
+/// generated top-level value ends in an underscore but the version
+/// sentinel.
+const GIVEN: &str = "given_";
+
+/// The name of the `index`-th group in a grouped state, counted from 1.
+fn group_name(index: usize) -> String {
+    format!("g{}", index + 1)
 }
 
 impl Setter {
     fn new(shape: &MessageShape) -> Self {
-        let names: Vec<String> = shape
-            .record()
-            .into_iter()
-            .map(|field| match field {
-                RecordField::Field(field, _) => field.elm_name.clone(),
-                RecordField::Oneof(oneof) => oneof.oneof.elm_field_name.clone(),
-            })
-            .collect();
+        let names = record_names(shape);
+        let form = merge_form();
+        if form == MergeForm::Grouped && names.len() > grouped_max() {
+            let ordered = number_ordered_names(shape);
+            let size = group_size(ordered.len());
+            return Setter {
+                names: None,
+                groups: Some(ordered.chunks(size).map(<[String]>::to_vec).collect()),
+            };
+        }
         Setter {
-            names: (names.len() <= RECORD_LITERAL_MAX).then_some(names),
+            names: (form != MergeForm::Update && names.len() <= RECORD_LITERAL_MAX)
+                .then_some(names),
+            groups: None,
+        }
+    }
+
+    fn group_of(&self, name: &str) -> Option<usize> {
+        self.groups
+            .as_ref()
+            .and_then(|groups| groups.iter().position(|g| g.iter().any(|n| n == name)))
+    }
+
+    /// A field of the value a step is given: `value.name`, or in the
+    /// grouped form `value.g2.name`.
+    fn get(&self, name: &str) -> Expr {
+        match self.group_of(name) {
+            Some(group) => access(access(var(ENCODER_ARGUMENT), group_name(group)), name),
+            None => access(var(ENCODER_ARGUMENT), name),
         }
     }
 
     fn update(&self, name: &str, value: Expr) -> Expr {
+        if let Some(groups) = &self.groups {
+            let at = self.group_of(name).expect("a grouped field is in a group");
+            let outer = groups
+                .iter()
+                .enumerate()
+                .map(|(index, group)| {
+                    let group_value = if index == at {
+                        let mut value = Some(value.clone());
+                        record(
+                            group
+                                .iter()
+                                .map(|other| {
+                                    if other == name {
+                                        (other.clone(), value.take().expect("one field set"))
+                                    } else {
+                                        (other.clone(), self.get(other))
+                                    }
+                                })
+                                .collect::<Vec<_>>(),
+                        )
+                    } else {
+                        access(var(ENCODER_ARGUMENT), group_name(index))
+                    };
+                    (group_name(index), group_value)
+                })
+                .collect::<Vec<_>>();
+            return record(outer);
+        }
         self.update_all(vec![(name.to_owned(), value)])
     }
 
@@ -227,6 +329,39 @@ impl Setter {
             },
         }
     }
+}
+
+/// The record's field names, in its declaration order.
+fn record_names(shape: &MessageShape) -> Vec<String> {
+    shape
+        .record()
+        .into_iter()
+        .map(|field| match field {
+            RecordField::Field(field, _) => field.elm_name.clone(),
+            RecordField::Oneof(oneof) => oneof.oneof.elm_field_name.clone(),
+        })
+        .collect()
+}
+
+/// The record's field names in field-number order, a oneof at its lowest
+/// member's number.
+fn number_ordered_names(shape: &MessageShape) -> Vec<String> {
+    let mut numbered: Vec<(u32, String)> = shape
+        .fields
+        .iter()
+        .map(|(field, _)| (field.number, field.elm_name.clone()))
+        .chain(shape.oneofs.iter().map(|oneof| {
+            let lowest = oneof
+                .variants
+                .iter()
+                .map(|(variant, _)| variant.number)
+                .min()
+                .unwrap_or(0);
+            (lowest, oneof.oneof.elm_field_name.clone())
+        }))
+        .collect();
+    numbered.sort();
+    numbered.into_iter().map(|(_, name)| name).collect()
 }
 
 impl Emitter {
@@ -436,7 +571,7 @@ impl Emitter {
         let record = || var(ENCODER_ARGUMENT);
         for &(field, field_shape) in &shape.fields {
             let name = field.elm_name.as_str();
-            let current = access(var(ENCODER_ARGUMENT), name);
+            let current = setter.get(name);
             let codec = self.field_codec(field, field_shape);
             let step = match field_shape {
                 FieldShape::Plain(_) => {
@@ -504,7 +639,7 @@ impl Emitter {
                     let just = apply(var(self.core("Just")), [var(ONEOF_MEMBER)]);
                     let nothing = var(self.core("Nothing"));
                     let existing = case(
-                        access(var(ENCODER_ARGUMENT), name),
+                        setter.get(name),
                         [
                             (pctor(variant.elm_ctor.clone(), [pvar(ONEOF_MEMBER)]), just),
                             (Pattern::Wildcard, nothing),
@@ -542,7 +677,8 @@ impl Emitter {
         } else {
             let reverse = qualified("List", "reverse");
             let fields = reversed
-                .into_iter()
+                .iter()
+                .cloned()
                 .map(|name| {
                     let current = access(var(ENCODER_ARGUMENT), name.clone());
                     (name, apply(reverse.clone(), [current]))
@@ -552,6 +688,9 @@ impl Emitter {
         };
         let merge = self.binary("merge");
         let annotation = self.bytes_merge_type(ty(shape.message.elm_name.clone(), []));
+        if let Some(groups) = &setter.groups {
+            return self.grouped_merge(shape, groups, &reversed, merge, step, annotation);
+        }
         Decl::Value {
             doc: Some(format!(
                 "Decodes {} from protobuf binary into the one given, as protobuf merges a message that arrives twice.",
@@ -564,6 +703,91 @@ impl Emitter {
                 merge,
                 [string(shape.message.proto_full_name.clone()), step, finish],
             ),
+        }
+    }
+
+    /// A merge whose decoder state is grouped: `mergeFooBytes given_ =
+    /// Proto.Binary.map build (Proto.Binary.merge name step identity (split
+    /// given_))`, where `split` writes the value given as groups (the lists
+    /// the step builds front-first reversed, as a finishing function would)
+    /// and `build` writes the record from the groups once every field is read.
+    fn grouped_merge(
+        &mut self,
+        shape: &MessageShape,
+        groups: &[Vec<String>],
+        reversed: &[String],
+        merge: Expr,
+        step: Expr,
+        annotation: Type,
+    ) -> Decl {
+        let reverse = qualified("List", "reverse");
+        let flip = |name: &str, value: Expr| {
+            if reversed.iter().any(|r| r == name) {
+                apply(reverse.clone(), [value])
+            } else {
+                value
+            }
+        };
+        let split = record(
+            groups
+                .iter()
+                .enumerate()
+                .map(|(index, group)| {
+                    let inner = group
+                        .iter()
+                        .map(|name| (name.clone(), flip(name, access(var(GIVEN), name.clone()))))
+                        .collect::<Vec<_>>();
+                    (group_name(index), record(inner))
+                })
+                .collect::<Vec<_>>(),
+        );
+        let group_of = |name: &str| {
+            groups
+                .iter()
+                .position(|g| g.iter().any(|n| n == name))
+                .expect("grouped")
+        };
+        let build = lambda(
+            [pvar(ENCODER_ARGUMENT)],
+            record(
+                record_names(shape)
+                    .into_iter()
+                    .map(|name| {
+                        let value = access(
+                            access(var(ENCODER_ARGUMENT), group_name(group_of(&name))),
+                            name.clone(),
+                        );
+                        let value = flip(&name, value);
+                        (name, value)
+                    })
+                    .collect::<Vec<_>>(),
+            ),
+        );
+        let map = self.binary("map");
+        let body = apply(
+            map,
+            [
+                build,
+                apply(
+                    merge,
+                    [
+                        string(shape.message.proto_full_name.clone()),
+                        step,
+                        var("identity"),
+                        split,
+                    ],
+                ),
+            ],
+        );
+        Decl::Value {
+            doc: Some(format!(
+                "Decodes {} from protobuf binary into the one given, as protobuf merges a message that arrives twice.",
+                docs::a_local(&shape.message.elm_name)
+            )),
+            name: merge_name(shape.message.decoder_name()),
+            annotation,
+            params: vec![pvar(GIVEN)],
+            body,
         }
     }
 
