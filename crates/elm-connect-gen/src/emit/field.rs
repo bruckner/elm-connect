@@ -469,6 +469,30 @@ impl Emitter {
     /// The decoder of one value, taking the registry when it reaches an
     /// `Any`.
     pub(super) fn value_decoder(&mut self, value: ValueShape) -> Expr {
+        if let (Some(deep), true) = (self.deep, self.deep_value) {
+            let target = match value {
+                ValueShape::Present(Present::Wrapped(wrapper, _)) => Some((
+                    wrapper
+                        .elm_name
+                        .strip_suffix('_')
+                        .expect("a wrapper is its message's name and `_`")
+                        .to_owned(),
+                    Some(wrapper.elm_name.clone()),
+                )),
+                ValueShape::Present(Present::Message(name)) => Some((name.name.clone(), None)),
+                _ => None,
+            };
+            if let Some((message, wrapper)) = target {
+                let decoder = self.deeper(deep, &message);
+                return match wrapper {
+                    Some(wrapper) => {
+                        let map = self.reference((JSON_DECODE, "map"));
+                        apply(map, [var(wrapper), decoder])
+                    }
+                    None => decoder,
+                };
+            }
+        }
         if self.reaches(value) {
             let decoder = match value {
                 ValueShape::Present(Present::Message(name)) => {

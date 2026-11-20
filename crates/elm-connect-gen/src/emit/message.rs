@@ -1,6 +1,8 @@
 //! A message's four declarations: its record type alias, its default
 //! value, its encoder and its decoder.
 
+use super::Deep;
+use super::recursion::{DEPTH, level_name};
 use super::{
     Emitter, JSON_DECODE, JSON_ENCODE, MessageShape, PROTO_ERROR, PROTO_JSON, PROTO_REGISTRY,
     PROTO_UNKNOWN, RecordField, call, docs,
@@ -301,6 +303,14 @@ impl Emitter {
     /// the package's `registry` would read only that package's `Any`s.
     pub(super) fn message_decoder(&mut self, shape: &MessageShape) -> Vec<Decl> {
         let name = &shape.message.elm_name;
+        let deep = shape.message.recursive.then(|| {
+            if self.message_reaches(shape) {
+                Deep::Built
+            } else {
+                Deep::Table
+            }
+        });
+        self.deep = deep;
         let body = if shape.fields.is_empty() && shape.oneofs.is_empty() {
             // An empty message decodes to the empty record, from a JSON
             // object only, as a message with fields does.
@@ -320,7 +330,8 @@ impl Emitter {
                 .record()
                 .into_iter()
                 .map(|field| match field {
-                    RecordField::Field(field, value) => match self.field_decoder(value) {
+                    RecordField::Field(field, value) => match self.deep_field_decoder(field, value)
+                    {
                         Some((decoder, zero)) => self.field_step(
                             ("messageField", "messageFieldEither"),
                             &field.json_name,
@@ -336,7 +347,19 @@ impl Emitter {
                     },
                     RecordField::Oneof(oneof) => {
                         let step = self.reference((PROTO_JSON, "oneof"));
-                        let decoder = if self.oneof_reaches(oneof) {
+                        let leveled = deep.is_some()
+                            && oneof.variants.iter().any(|(variant, _)| variant.cyclic);
+                        let decoder = if leveled {
+                            let level = level_name(&oneof.oneof.elm_type_name);
+                            if self.oneof_reaches(oneof) {
+                                apply(
+                                    var(with_registry(level)),
+                                    [var(REGISTRY_ARGUMENT), var(DEPTH)],
+                                )
+                            } else {
+                                apply(var(level), [var(DEPTH)])
+                            }
+                        } else if self.oneof_reaches(oneof) {
                             apply(
                                 var(with_registry(oneof.oneof.decoder_name())),
                                 [var(REGISTRY_ARGUMENT)],
@@ -371,10 +394,23 @@ impl Emitter {
                 apply(message, [decoder])
             }
         };
+        self.deep = None;
         let doc = format!(
             "Decodes {} from proto3 JSON.",
             docs::a_local(&shape.message.elm_name)
         );
+        if let Some(deep) = deep {
+            let doc = if deep == Deep::Built {
+                format!(
+                    "Decodes {} from proto3 JSON, reading each `Any` it holds with the \
+                     registry: one of a type the registry lacks fails.",
+                    docs::a_local(&shape.message.elm_name)
+                )
+            } else {
+                doc
+            };
+            return self.leveled_decoders(deep, name, shape.message.decoder_name(), doc, body);
+        }
         if !self.message_reaches(shape) {
             let annotation = self.library_type(JSON_DECODE, "Decoder", [ty(name.clone(), [])]);
             return vec![Decl::Value {
@@ -398,6 +434,19 @@ impl Emitter {
             params: vec![pvar(REGISTRY_ARGUMENT)],
             body,
         }]
+    }
+
+    /// A field's decoder ([`Self::field_decoder`]), its values read one
+    /// level deeper when the field is on its message's cycle.
+    fn deep_field_decoder(
+        &mut self,
+        field: &crate::ir::Field,
+        value: super::field::FieldShape,
+    ) -> Option<(Expr, Expr)> {
+        self.deep_value = field.recursive;
+        let decoder = self.field_decoder(value);
+        self.deep_value = false;
+        decoder
     }
 
     /// Whether messages hold their unknown fields (`unknown_fields=keep`).

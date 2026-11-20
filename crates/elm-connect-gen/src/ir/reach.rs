@@ -99,6 +99,7 @@ mod tests {
             fields,
             oneofs,
             wrapper: None,
+            recursive: false,
             doc: Doc::default(),
         }
     }
@@ -112,6 +113,7 @@ mod tests {
             cardinality,
             ty,
             cyclic: false,
+            recursive: false,
             jstype: JsType::Normal,
             unpacked: false,
             annotations: Annotations::default(),
