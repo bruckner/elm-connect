@@ -775,6 +775,22 @@ rpc shared call =
     type already breaks the alias cycle), but its decoders still refer
     to each other, so the member that closes the cycle decodes through
     `Json.Decode.lazy`.
+  - Every message on a cycle of references, through fields or oneof
+    members, is read at most 100 levels deep (§5.5 counts a level the
+    same way). Its JSON decoder is built for each depth once, at start:
+    `decodeNode = Proto.Json.atLevel 1 levelsNode`, `levelsNode =
+    Proto.Json.levels levelNode`, and `levelNode depth` is the decoder
+    whose fields on the cycle read through `Proto.Json.deeper depth (\_
+    -> levelsNode)`, the next level's decoder found in the table as each
+    value is read (lazily, since the table is being built when the
+    decoder is). A oneof with a member on the cycle is built per depth
+    the same way (`levelNodeKind depth`), without a table of its own. A
+    message that reaches an `Any` takes the registry, so its decoders
+    cannot be built before it is given: `levelNodeWith types depth`
+    builds the next level's as the value is read
+    (`Proto.Json.deeperWith`). Past 100 the read fails with "Expecting
+    messages nested at most 100 deep". The `levels` prefix is no other
+    generated value's, so these names cannot collide.
   - No diagnostic: the wrapper is in the generated output, where the
     Elm compiler points at it the first time a record is built without
     it. A note at generation time would repeat what the types already
@@ -3775,7 +3791,7 @@ type Reason
     = Truncated | LengthOverrun | InvalidTag | InvalidWireType Int
     | MalformedVarint | IntOutOfRange | InvalidUtf8 | Unlocated
     | MissingRequired Int               -- reserved for proto2's required; never given yet
-    | TooDeep                           -- reserved for a nesting limit; never given yet
+    | TooDeep                           -- a recursive message nested past 100 levels
 
 toString : Error -> String              -- for a log, as Json.Decode.errorToString
 ```
@@ -3793,9 +3809,8 @@ toString : Error -> String              -- for a log, as Json.Decode.errorToStri
   from binary is a failure protobuf-go reports, and naming it after the
   union is frozen would be a major (§8.3); it carries the field's
   number, and the path ends at the message that lacks it. `TooDeep` is
-  reserved too: protobuf implementations refuse a message nested past
-  100 levels, these decoders have no limit yet, and with the reason
-  named the limit can come as a minor. `Proto.Message.fieldNumbered` and `fieldNamed` find a
+  a message nested past 100 levels of a cycle, as protobuf
+  implementations refuse (§5.5). `Proto.Message.fieldNumbered` and `fieldNamed` find a
   field in a descriptor, so a program that keeps descriptors names a
   path entry's field in four lines; there is no walker over a `Binary`
   until a caller shows the output it wants, and `Proto.Error` stays a
@@ -3979,6 +3994,25 @@ Connect's proto codec sends them (§5.3).
   `Proto.Error`). One that arrives twice is merged field by field.
 - A `Timestamp` drops nanoseconds past the millisecond when read, as the
   JSON codec does.
+- **Depth.** A message on a cycle of references (through fields or
+  oneof members) can nest without bound, and each level is a few frames
+  of JavaScript stack, so deep enough input would overflow it (elm/bytes
+  catches the overflow, and the report would say `Unlocated`). Its reads
+  are limited to 100 levels instead, a level being each message entered
+  along a field or oneof member of the cycle, the outermost at 1, as
+  protobuf-es and prost count messages (protobuf-go counts a map entry
+  as a level too, and allows 10,000). The merge carries the depth:
+  `mergeNodeBytes = mergeNodeBytesAt 1`, `mergeNodeBytesAt =
+  Proto.Binary.level mergeNodeBytesLevels`, the merges for depths 1 to
+  100 built once by `Proto.Binary.levels mergeNodeBytesLevel`, and a
+  field on the cycle is read by `Proto.Binary.recursive depth …`, which
+  reads it one level deeper and fails with `TooDeep` past 100, in the
+  fast and the locating read alike. Only fields on a cycle count, so a
+  message that cannot recurse generates the code it did; the runtime's
+  `Struct`, `Value` and `ListValue` count one level each, so 100 is 50
+  levels of JSON nesting in binary. Writing is not limited, and `Any`
+  is not counted: it holds its message's bytes, read only when unpacked,
+  one level at a time (decisions: "A nesting depth limit on reads").
 
 ## 6. Generator
 
@@ -4756,9 +4790,8 @@ Within a major version:
   (`Truncated`, `LengthOverrun`, `InvalidTag`, `InvalidWireType`,
   `MalformedVarint`, `IntOutOfRange`, `InvalidUtf8`, `Unlocated`, with
   `MissingRequired` reserved for proto2's `required` fields, so that
-  reading proto2 can ship as a minor, and `TooDeep` reserved for a
-  message nested past a depth limit, which the decoders do not have
-  yet, so that adding the limit is not a major either), and `Rpc.Error`'s `Cause` (`BadCall`, `NetworkError`, `Timeout`,
+  reading proto2 can ship as a minor, and `TooDeep`, a message nested
+  past the binary decoder's depth limit), and `Rpc.Error`'s `Cause` (`BadCall`, `NetworkError`, `Timeout`,
   `BadStatus`, `BadResponse`: what happened in the HTTP exchange, which
   has no other outcome; a new way a call cannot be made is a `BadCall`'s
   message, and a new way an answer cannot be used is a `BadResponse`'s)

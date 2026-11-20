@@ -243,6 +243,47 @@ otherwise, and connect-web, the browser transport, has no such knob.
 A limit below 1 is no limit: it removes one set earlier, as if none had
 been set.
 
+### Nesting depth
+
+A message on a cycle of references (one that holds itself, directly or
+through other messages), and a binary `Struct`, `Value` or `ListValue`,
+is read at most 100 levels deep. A level is each message entered along a
+field or oneof member of the cycle, the outermost at 1; a `Value` holding
+a list or an object is two. Past that a binary read fails with
+`Proto.Error.TooDeep` and a JSON read with "Expecting messages nested at
+most 100 deep", so over a call the error is a `BadResponse`. Without a
+limit, about 500 levels in Chromium and node, 800 to 1,200 in Firefox and
+3,000 to 5,000 in Safari overflow the JavaScript stack, and an overflow
+inside `update` stops the program from running any further command.
+
+Three things are not limited, and can still overflow the stack:
+
+- **Writing a value the application built.** Encoding is not limited, as
+  in protobuf's own runtimes. A value read through the limit encodes, but
+  one the program builds itself can be deeper: binary encoding overflows
+  past about 380 to 440 levels in Chromium and node (about 470 to 540 in
+  Firefox), `Json.Encode.encode` of a generated message past about 700.
+  Bound the depth where the program builds such values.
+- **A `Struct`, `Value` or `ListValue` read from JSON.** Their JSON is read
+  as a `Json.Encode.Value`, which no depth bounds; reading never
+  overflows, but writing such a value again with `Json.Encode.encode`
+  overflows past about 5,000 levels in Chromium and node and 3,700 in
+  Firefox, and through `Proto.Binary` past about 380. Do not re-encode
+  one read from a source you do not trust without checking it.
+- **An `Any` nested in an `Any`, through the registry.** Converting
+  between JSON and binary recurses once per level and costs time in the
+  square of the depth: about a second at 1,000 levels, an overflow
+  between 300 and 1,000 levels when read with `Json.Decode.decodeValue`
+  or `Proto.Message.decodeJson`.
+
+elm/json keeps the JSON where a read failed in its error, and
+`Json.Decode.errorToString` (and `Proto.Error.toString` of a `BadJson`)
+prints it, indented: for the depth limit's failure on input 1,000 levels
+deep that is about 13 MB of text, and on input 100,000 levels deep
+printing it overflows the stack and throws. Read a failure's message by
+following the error to its `Json.Decode.Failure` rather than printing the
+whole error; `Rpc.Error.toString` does not print the JSON.
+
 ## Retries
 
 ```elm src/Rpc/Retry.elm excerpt
