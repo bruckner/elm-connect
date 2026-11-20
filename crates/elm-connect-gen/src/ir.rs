@@ -335,6 +335,10 @@ pub struct Message {
     /// References through a oneof do not count: a oneof is a custom type,
     /// which already breaks an Elm alias cycle.
     pub wrapper: Option<Wrapper>,
+    /// Whether the message is on a cycle of references, through fields or
+    /// oneof members: it can nest without bound, so its binary merge
+    /// carries the nesting depth (design §5.5).
+    pub recursive: bool,
     /// What the proto says about the message.
     pub doc: Doc,
 }
@@ -412,6 +416,10 @@ pub struct Field {
     /// field holds that type's [`Message::wrapper`] rather than its record,
     /// and its values decode lazily.
     pub cyclic: bool,
+    /// Whether the field's message type is on the same cycle of references
+    /// as the message holding it, through fields or oneof members: a read
+    /// of it counts one level of nesting.
+    pub recursive: bool,
     /// The field's `jstype` option; [`JsType::Normal`] unless the field is
     /// a 64-bit integer that sets it.
     pub jstype: JsType,
