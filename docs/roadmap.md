@@ -117,6 +117,11 @@ A model-held state machine (`Rpc.Pending`, stepped by an `update`) that
 owns the retry loop would make a retried call cancellable and have
 every call report exactly one outcome; a
 streaming protocol would need the same machine, and would share it.
+The machine would report a cancelled call itself, as one of its own
+outcomes and not as an `Rpc.Error`: it knows whether the call is in
+flight and drops an answer that arrives late, and a cancel has no
+answer, status or decoding problem for an error to describe. So
+`Rpc.Error.Cause` needs no constructor for it.
 An addition beside `Rpc.send` and `Rpc.task`: a minor.
 
 ## A fake protocol for tests
