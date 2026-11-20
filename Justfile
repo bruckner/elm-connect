@@ -127,9 +127,9 @@ test:
 # tests. Then run the browser example's tests, which test the README
 # excerpts that are more than a call (src/Snippets) against the example's
 # generated modules, and compile the Eliza example (docs/trying.md). The
-# conformance harness is compiled by `cargo test`. The codec round trips'
-# modules are generated first (codec-gen).
-elm-check: codec-gen
+# conformance harness is compiled by `cargo test`. The modules the tests
+# import from tests/Generated are generated first (tests-gen).
+elm-check: tests-gen
     -@elm make --output=/dev/null >/dev/null 2>&1
     elm make --docs=elm-stuff/docs.json
     elm-test-rs
@@ -137,12 +137,14 @@ elm-check: codec-gen
     -@cd examples/eliza && elm make >/dev/null 2>&1
     cd examples/eliza && elm make src/Main.elm --output=/dev/null
 
-# Write the codec round trips' Elm under tests/Generated (gitignored): the
-# modules generated from conformance/codec under each option set, the
-# samples and the codec table. The codec test writes them on every run, so
-# `test` does too; elm-check depends on this so it works on a fresh clone.
-codec-gen:
-    cargo test -p elm-connect-gen --test codec
+# Write the Elm the tests import under tests/Generated (gitignored): the
+# codec round trips' (the modules generated from conformance/codec under
+# each option set, the samples and the codec table) and the depth cycles'
+# (the depth_cycles cases under a module prefix). Their tests write them on
+# every run, so `test` does too; elm-check depends on this so it works on a
+# fresh clone.
+tests-gen:
+    cargo test -p elm-connect-gen --test codec --test depth
 
 # Hold Proto.ErrorDetails, written by hand in generated code's form, to
 # what the generator gives for google/rpc/error_details.proto

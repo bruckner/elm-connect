@@ -219,9 +219,14 @@ the generated proto3 JSON codecs handle and one that nests them all.
   codecs (`Generated.Codec.Codecs`), all under `tests/Generated/Codec/`.
 
 That tree is gitignored and generated at test time, as the harness's
-`generated/` is: the test writes it on every run, `just codec-gen` runs
-just that test, and `just elm-check` depends on it. There is nothing to
-bless. The generator's output already shows in review through the
+`generated/` is: the test writes it on every run, `just tests-gen` runs
+it, and `just elm-check` depends on it. There is nothing to bless.
+`just tests-gen` also runs the depth test
+(`crates/elm-connect-gen/tests/depth.rs`), which writes the cases
+`depth_cycles` and `depth_cycles_keep` again under the module prefixes
+`Generated.Deep` and `Generated.DeepKeep`, under `tests/Generated/`, for
+`tests/Proto/DepthTest.elm` to read at the depth limit; their text is
+reviewed in the corpus. The generator's output already shows in review through the
 corpus, and the fixed seed makes the samples the same each run; the
 hand-written Elm (`tests/Codec/RoundTrip.elm` and `RoundTripTest.elm`)
 is all that is committed under `tests/Codec/`.

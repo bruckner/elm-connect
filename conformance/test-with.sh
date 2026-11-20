@@ -5,8 +5,8 @@
 # tests run from a copy of its elm.json set to that compiler's version,
 # with the same sources. `just check` runs them with the pinned compiler;
 # this script checks another, such as 0.19.1 or 0.19.2 in CI (design section 8).
-# The codec round trips' modules under tests/Generated must exist first:
-# `just codec-gen` (cargo test -p elm-connect-gen --test codec) writes them.
+# The modules under tests/Generated must exist first: `just tests-gen`
+# (cargo test -p elm-connect-gen --test codec --test depth) writes them.
 #
 #   conformance/test-with.sh path/to/elm
 set -euo pipefail

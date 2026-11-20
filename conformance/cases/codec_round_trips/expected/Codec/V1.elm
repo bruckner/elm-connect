@@ -1506,13 +1506,27 @@ decodeOuterInner =
 -}
 decodeTree : Json.Decode.Decoder Tree
 decodeTree =
+    Proto.Json.atLevel 1 levelsTree
+
+
+{-| [`decodeTree`](#decodeTree) at each depth up to the runtime's limit, built once.
+-}
+levelsTree : Proto.Json.Levels Tree
+levelsTree =
+    Proto.Json.levels levelTree
+
+
+{-| [`decodeTree`](#decodeTree) built for one nesting depth, the outermost message of its cycle at 1.
+-}
+levelTree : Int -> Json.Decode.Decoder Tree
+levelTree depth =
     Proto.Json.message
         (Json.Decode.succeed Tree
             |> Proto.Json.messageField "label" "" Proto.Json.string
-            |> Proto.Json.messageField "left" Nothing (Json.Decode.map Just decodeTree_)
-            |> Proto.Json.messageField "children" [] (Json.Decode.list decodeTree_)
-            |> Proto.Json.messageField "named" Dict.empty (Proto.Json.stringDict decodeTree_)
-            |> Proto.Json.oneof decodeTreeLink
+            |> Proto.Json.messageField "left" Nothing (Json.Decode.map Just (Json.Decode.map Tree_ (Proto.Json.deeper depth (\_ -> levelsTree))))
+            |> Proto.Json.messageField "children" [] (Json.Decode.list (Json.Decode.map Tree_ (Proto.Json.deeper depth (\_ -> levelsTree))))
+            |> Proto.Json.messageField "named" Dict.empty (Proto.Json.stringDict (Json.Decode.map Tree_ (Proto.Json.deeper depth (\_ -> levelsTree))))
+            |> Proto.Json.oneof (levelTreeLink depth)
         )
 
 
@@ -1527,9 +1541,16 @@ decodeTree_ =
 -}
 decodeTreeLink : Json.Decode.Decoder TreeLink
 decodeTreeLink =
+    levelTreeLink 1
+
+
+{-| [`decodeTreeLink`](#decodeTreeLink) built for one nesting depth of its message.
+-}
+levelTreeLink : Int -> Json.Decode.Decoder TreeLink
+levelTreeLink depth =
     Proto.Json.members "link"
         TreeLinkUnset
-        [ Proto.Json.member "next" (Json.Decode.map TreeLinkNext (Json.Decode.lazy (\_ -> decodeTree)))
+        [ Proto.Json.member "next" (Json.Decode.map TreeLinkNext (Proto.Json.deeper depth (\_ -> levelsTree)))
         , Proto.Json.member "end" (Json.Decode.map TreeLinkEnd Proto.Json.string)
         ]
 
@@ -1609,6 +1630,13 @@ decodeLeaf =
 -}
 decodeEverythingWith : Proto.Registry.Registry -> Json.Decode.Decoder Everything
 decodeEverythingWith types =
+    levelEverythingWith types 1
+
+
+{-| [`decodeEverythingWith`](#decodeEverythingWith) built for one nesting depth, the outermost message of its cycle at 1.
+-}
+levelEverythingWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder Everything
+levelEverythingWith types depth =
     Proto.Json.message
         (Json.Decode.succeed Everything
             |> Proto.Json.messageField "scalars" Nothing (Json.Decode.map Just decodeScalars)
@@ -1622,7 +1650,7 @@ decodeEverythingWith types =
             |> Proto.Json.messageFieldEither "wellKnown" "well_known" Nothing (Json.Decode.map Just (decodeWellKnownWith types))
             |> Proto.Json.messageField "wrappers" Nothing (Json.Decode.map Just decodeWrappers)
             |> Proto.Json.messageField "across" Nothing (Json.Decode.map Just decodeAcross)
-            |> Proto.Json.messageField "more" [] (Json.Decode.list (decodeEverything_With types))
+            |> Proto.Json.messageField "more" [] (Json.Decode.list (Json.Decode.map Everything_ (Proto.Json.deeperWith depth (levelEverythingWith types))))
         )
 
 
@@ -3829,6 +3857,27 @@ decodeOuterInnerBytes =
 -}
 mergeTreeBytes : Tree -> Proto.Binary.Decoder Tree
 mergeTreeBytes =
+    mergeTreeBytesAt 1
+
+
+{-| [`mergeTreeBytes`](#mergeTreeBytes) at a nesting depth, the outermost message of its cycle at 1: its fields on the cycle are read one deeper, and fail past the runtime's limit.
+-}
+mergeTreeBytesAt : Int -> Tree -> Proto.Binary.Decoder Tree
+mergeTreeBytesAt =
+    Proto.Binary.level mergeTreeBytesLevels
+
+
+{-| [`mergeTreeBytes`](#mergeTreeBytes) at each depth up to the runtime's limit, built once.
+-}
+mergeTreeBytesLevels : Proto.Binary.Levels Tree
+mergeTreeBytesLevels =
+    Proto.Binary.levels mergeTreeBytesLevel
+
+
+{-| [`mergeTreeBytes`](#mergeTreeBytes) built for one nesting depth.
+-}
+mergeTreeBytesLevel : Int -> Tree -> Proto.Binary.Decoder Tree
+mergeTreeBytesLevel depth =
     Proto.Binary.merge
         "codec.v1.Tree"
         (\number wire value ->
@@ -3849,7 +3898,7 @@ mergeTreeBytes =
 
                 2 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeTree_Bytes mergeTree_Bytes (Tree_ defaultTree))
+                        (Proto.Binary.recursive depth encodeTree_Bytes mergeTree_BytesAt (Tree_ defaultTree))
                         value.left
                         (\v ->
                             { label = value.label
@@ -3864,7 +3913,7 @@ mergeTreeBytes =
 
                 3 ->
                     Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeTree_Bytes mergeTree_Bytes (Tree_ defaultTree))
+                        (Proto.Binary.recursive depth encodeTree_Bytes mergeTree_BytesAt (Tree_ defaultTree))
                         (\v ->
                             { label = value.label
                             , left = value.left
@@ -3880,7 +3929,7 @@ mergeTreeBytes =
                 4 ->
                     Proto.Binary.mapEntry
                         Proto.Binary.string
-                        (Proto.Binary.embedded encodeTree_Bytes mergeTree_Bytes (Tree_ defaultTree))
+                        (Proto.Binary.recursive depth encodeTree_Bytes mergeTree_BytesAt (Tree_ defaultTree))
                         (\k v ->
                             { label = value.label
                             , left = value.left
@@ -3894,7 +3943,7 @@ mergeTreeBytes =
 
                 5 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeTreeBytes mergeTreeBytes defaultTree)
+                        (Proto.Binary.recursive depth encodeTreeBytes mergeTreeBytesAt defaultTree)
                         (case value.link of
                             TreeLinkNext member ->
                                 Just member
@@ -3952,6 +4001,13 @@ decodeTreeBytes =
 mergeTree_Bytes : Tree_ -> Proto.Binary.Decoder Tree_
 mergeTree_Bytes (Tree_ value) =
     Proto.Binary.map Tree_ (mergeTreeBytes value)
+
+
+{-| Decodes a [`Tree_`](#Tree_) from protobuf binary into the one given, at a nesting depth.
+-}
+mergeTree_BytesAt : Int -> Tree_ -> Proto.Binary.Decoder Tree_
+mergeTree_BytesAt depth (Tree_ value) =
+    Proto.Binary.map Tree_ (mergeTreeBytesAt depth value)
 
 
 {-| Decodes a [`WellKnown`](#WellKnown) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
@@ -4875,6 +4931,27 @@ decodeLeafBytes =
 -}
 mergeEverythingBytes : Everything -> Proto.Binary.Decoder Everything
 mergeEverythingBytes =
+    mergeEverythingBytesAt 1
+
+
+{-| [`mergeEverythingBytes`](#mergeEverythingBytes) at a nesting depth, the outermost message of its cycle at 1: its fields on the cycle are read one deeper, and fail past the runtime's limit.
+-}
+mergeEverythingBytesAt : Int -> Everything -> Proto.Binary.Decoder Everything
+mergeEverythingBytesAt =
+    Proto.Binary.level mergeEverythingBytesLevels
+
+
+{-| [`mergeEverythingBytes`](#mergeEverythingBytes) at each depth up to the runtime's limit, built once.
+-}
+mergeEverythingBytesLevels : Proto.Binary.Levels Everything
+mergeEverythingBytesLevels =
+    Proto.Binary.levels mergeEverythingBytesLevel
+
+
+{-| [`mergeEverythingBytes`](#mergeEverythingBytes) built for one nesting depth.
+-}
+mergeEverythingBytesLevel : Int -> Everything -> Proto.Binary.Decoder Everything
+mergeEverythingBytesLevel depth =
     Proto.Binary.merge
         "codec.v1.Everything"
         (\number wire value ->
@@ -5123,7 +5200,7 @@ mergeEverythingBytes =
 
                 12 ->
                     Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeEverything_Bytes mergeEverything_Bytes (Everything_ defaultEverything))
+                        (Proto.Binary.recursive depth encodeEverything_Bytes mergeEverything_BytesAt (Everything_ defaultEverything))
                         (\v ->
                             { scalars = value.scalars
                             , optionals = value.optionals
@@ -5175,3 +5252,10 @@ decodeEverythingBytes =
 mergeEverything_Bytes : Everything_ -> Proto.Binary.Decoder Everything_
 mergeEverything_Bytes (Everything_ value) =
     Proto.Binary.map Everything_ (mergeEverythingBytes value)
+
+
+{-| Decodes an [`Everything_`](#Everything_) from protobuf binary into the one given, at a nesting depth.
+-}
+mergeEverything_BytesAt : Int -> Everything_ -> Proto.Binary.Decoder Everything_
+mergeEverything_BytesAt depth (Everything_ value) =
+    Proto.Binary.map Everything_ (mergeEverythingBytesAt depth value)
