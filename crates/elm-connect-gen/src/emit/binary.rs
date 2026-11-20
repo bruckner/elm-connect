@@ -23,6 +23,11 @@
 //! `Proto.Binary.enum` of an enum's conversions (for
 //! `google.protobuf.NullValue`, conversions to and from `()`),
 //! `Proto.Binary.embedded` of a message's encoder, merge and default.
+//!
+//! Under `unknown_fields=keep` the merge is `Proto.Binary.mergeKeep`, also
+//! given which wire types each field number takes and how to get and set
+//! the record's `unknownFields_`, and the encoder's sequence ends in
+//! `Proto.Binary.unknown` of that field.
 
 use super::field::{FieldShape, Present, ValueShape, Zeroed, field_holding};
 use super::scalar::Holding;
@@ -36,7 +41,7 @@ use crate::ir::{
     Cardinality, Enum, Field, MapKey, Message, OneofVariant, ScalarKind, TypeRef, WellKnown,
     Wrapper,
 };
-use crate::naming::{ENCODER_ARGUMENT, ONEOF_MEMBER, default_name};
+use crate::naming::{ENCODER_ARGUMENT, ONEOF_MEMBER, UNKNOWN_FIELDS, default_name};
 use crate::options::Int64;
 
 /// elm/bytes' encoders.
@@ -164,6 +169,34 @@ fn wrapper_of<'m>(shape: FieldShape<'m>) -> Option<&'m Wrapper> {
     }
 }
 
+/// The wire type a value of type `ty` is written with.
+fn type_wire(ty: &TypeRef) -> u32 {
+    match ty {
+        TypeRef::Scalar(kind) => match kind {
+            ScalarKind::Double | ScalarKind::Fixed64 | ScalarKind::SFixed64 => 1,
+            ScalarKind::Float | ScalarKind::Fixed32 | ScalarKind::SFixed32 => 5,
+            ScalarKind::String | ScalarKind::Bytes => 2,
+            _ => 0,
+        },
+        TypeRef::Enum { .. } | TypeRef::WellKnown(WellKnown::NullValue) => 0,
+        TypeRef::Message(_) | TypeRef::WellKnown(_) => 2,
+    }
+}
+
+/// The wire types a field's decoder reads, as bits: its values' wire type,
+/// and for a repeated scalar a packed run too; a map's entries are
+/// length-delimited.
+fn field_wires(field: &Field, shape: FieldShape) -> u32 {
+    match shape {
+        FieldShape::Dict(..) | FieldShape::BoolMap(_) => 1 << 2,
+        FieldShape::List(_) => {
+            let wire = type_wire(&field.ty);
+            (1 << wire) | (1 << 2)
+        }
+        _ => 1 << type_wire(&field.ty),
+    }
+}
+
 /// The most fields a record may have for a merge step to set one of them by
 /// writing the whole record out. Elm compiles a record update to a copy of
 /// every field through a `for…in` loop, so a message of n fields read field
@@ -180,13 +213,15 @@ const RECORD_LITERAL_MAX: usize = 64;
 /// How a merge step sets fields of the record it is given: `{ value | name
 /// = update }`, or, for a record of at most [`RECORD_LITERAL_MAX`] fields,
 /// the whole record with `name` replaced and every other field copied.
+/// The record's fields include `unknownFields_` when it keeps unknown
+/// fields, and so count towards the cap.
 struct Setter {
     names: Option<Vec<String>>,
 }
 
 impl Setter {
-    fn new(shape: &MessageShape) -> Self {
-        let names: Vec<String> = shape
+    fn new(shape: &MessageShape, keeps_unknown: bool) -> Self {
+        let mut names: Vec<String> = shape
             .record()
             .into_iter()
             .map(|field| match field {
@@ -194,6 +229,9 @@ impl Setter {
                 RecordField::Oneof(oneof) => oneof.oneof.elm_field_name.clone(),
             })
             .collect();
+        if keeps_unknown {
+            names.push(UNKNOWN_FIELDS.to_owned());
+        }
         Setter {
             names: (names.len() <= RECORD_LITERAL_MAX).then_some(names),
         }
@@ -379,6 +417,14 @@ impl Emitter {
             }
         }
         items.sort_by_key(|(number, _)| *number);
+        if self.keeps_unknown() {
+            // After the known fields, as protobuf's runtimes write them.
+            let unknown = apply(
+                self.binary("unknown"),
+                [access(var(ENCODER_ARGUMENT), UNKNOWN_FIELDS)],
+            );
+            items.push((u32::MAX, unknown));
+        }
         let param = if items.is_empty() {
             Pattern::Wildcard
         } else {
@@ -429,8 +475,9 @@ impl Emitter {
     /// into the one given, as protobuf merges a message arriving twice.
     pub(super) fn message_merge_bytes(&mut self, shape: &MessageShape) -> Decl {
         let mut branches: Vec<(u32, Expr)> = Vec::new();
+        let mut wires: Vec<(u32, u32)> = Vec::new();
         let mut reversed: Vec<String> = Vec::new();
-        let setter = Setter::new(shape);
+        let setter = Setter::new(shape, self.keeps_unknown());
         let update = |name: &str, value: Expr| setter.update(name, value);
         let wire = || var(WIRE);
         let record = || var(ENCODER_ARGUMENT);
@@ -484,6 +531,7 @@ impl Emitter {
                 }
             };
             branches.push((field.number, step));
+            wires.push((field.number, field_wires(field, field_shape)));
         }
         for oneof in &shape.oneofs {
             let name = oneof.oneof.elm_field_name.as_str();
@@ -518,6 +566,7 @@ impl Emitter {
                     apply(self.binary("field"), [codec, set, wire(), record()])
                 };
                 branches.push((variant.number, step));
+                wires.push((variant.number, 1 << type_wire(&variant.ty)));
             }
         }
         branches.sort_by_key(|(number, _)| *number);
@@ -550,8 +599,36 @@ impl Emitter {
                 .collect();
             lambda([pvar(ENCODER_ARGUMENT)], setter.update_all(fields))
         };
-        let merge = self.binary("merge");
         let annotation = self.bytes_merge_type(ty(shape.message.elm_name.clone(), []));
+        let full_name = string(shape.message.proto_full_name.clone());
+        let body = if self.keeps_unknown() {
+            // The wire types each field number takes, as bits; 0 for a
+            // number the message does not declare.
+            wires.sort_by_key(|(number, _)| *number);
+            let wires = if wires.is_empty() {
+                lambda([Pattern::Wildcard], int(0))
+            } else {
+                let arms = wires
+                    .into_iter()
+                    .map(|(number, mask)| (Pattern::Int(number.into()), int(mask.into())))
+                    .chain([(Pattern::Wildcard, int(0))]);
+                lambda([pvar(NUMBER)], case(var(NUMBER), arms))
+            };
+            let get = lambda(
+                [pvar(ENCODER_ARGUMENT)],
+                access(var(ENCODER_ARGUMENT), UNKNOWN_FIELDS),
+            );
+            let set = lambda(
+                [pvar(ITEM), pvar(ENCODER_ARGUMENT)],
+                update(UNKNOWN_FIELDS, var(ITEM)),
+            );
+            apply(
+                self.binary("mergeKeep"),
+                [full_name, wires, get, set, step, finish],
+            )
+        } else {
+            apply(self.binary("merge"), [full_name, step, finish])
+        };
         Decl::Value {
             doc: Some(format!(
                 "Decodes {} from protobuf binary into the one given, as protobuf merges a message that arrives twice.",
@@ -560,10 +637,7 @@ impl Emitter {
             name: merge_name(shape.message.decoder_name()),
             annotation,
             params: Vec::new(),
-            body: apply(
-                merge,
-                [string(shape.message.proto_full_name.clone()), step, finish],
-            ),
+            body,
         }
     }
 
