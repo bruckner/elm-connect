@@ -1199,6 +1199,52 @@ hand-writer's only path for an `Any` body; whether `withBindings`
 stays at all is left to the review of the public interface. Where:
 design §4, §5.1, §5.3.
 
+2026-11-19: the follow-up above was built as a spike and not adopted;
+both route shapes stay (A binding's response field is the method's,
+below).
+
+### A binding's response field is the method's
+
+*2026-11-19.*
+
+A binding's `response_body` field is data on the method, set per
+binding by `Proto.Method.withResponseBody n "field"`, which generated
+code writes after `withRoutes` or `withJsonRoutes` for each binding that
+has one and `withBindings` reads from each binding's data;
+`Proto.Route.Route` no longer holds it. Why: reading a transcoded
+answer needs only the response field, but with the field in the route,
+the plan built the request's route to find it. A typed route was built
+eagerly for every plan, `Rpc.response` included, encoding a `body: "*"`
+request whole; a route from JSON was built over `null`, on read and on
+every send. Measured against main (`elm make --optimize` on 0.19.3,
+terser 5.36.0, gzip -9; Node 24, medians of 21 alternated rounds, three
+repetitions): reading a transcoded answer 12 to 14 % faster for a GET,
+17 to 19 % for a `body: "*"` POST and 24 to 25 % for a method whose
+bodies hold an `Any`; building that method's request 18 to 20 % faster
+(4 to 5 % when it holds an `Any`, whose conversion dominates); every
+other request and Connect unchanged within noise; bundles 5 to 29 B
+smaller gzipped. The cost is a major: `Route` loses a field and
+`withResponseBody` arrives, and a method written by hand with route
+functions and a response field needs the new call.
+
+Considered and rejected: one route shape, `Registry -> req -> Result
+Proto.Error.Error Route`, in place of the two (`withRoutes` of `req ->
+Route`, `withJsonRoutes` of `req -> Json.Encode.Value -> Route`), which
+the previous entry left as a follow-up. A spike built it whole
+(generator, runtime, corpus, docs; `just check` and `just live`
+passed). It needed this response-field modifier anyway, since reading
+an answer would otherwise build the route and encode its body; an
+internal stand-in registry mode, so that `Rpc.request` could still show
+a call whose route fails on an `Any` the registry cannot write; and a
+`Result` and an `Ok` in every route function, `Any` or not. It built a
+request whose method reaches an `Any` 25 to 28 % faster, but every
+ordinary transcoded request 4 to 10 % slower, and bundles moved by −20
+to +85 B gzipped. The paragraph that explains routes to a user came out
+the same length, trading one special case (the second shape) for two
+(the `Err` only an `Any` body gives, and the response field elsewhere).
+So the two shapes are frozen, and only the response field moved.
+Where: design §4, §5.2, §5.3.
+
 ### Protocol and client, indexed by codec
 
 *2026-10-27; the codec tags moved to a public leaf, `Proto.Codec`, on

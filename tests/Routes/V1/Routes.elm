@@ -350,7 +350,6 @@ routeGetMessage0 request_ =
     , path = "v1/" ++ Proto.Route.segments name_
     , query = Proto.Query.except [ "name" ] (Routes.V1.queryOfGetMessageRequest request_)
     , body = Nothing
-    , responseBody = Nothing
     , invalid = Proto.Route.checkSegments "name" [ "messages", "*" ] name_
     }
 
@@ -370,7 +369,6 @@ routeGetMessage1 request_ =
     , path = "v1/messages/" ++ Proto.Route.segment messageId_ ++ "/" ++ Proto.Route.segment subSubfield_
     , query = Proto.Query.except [ "message_id", "sub.subfield" ] (Routes.V1.queryOfGetMessageRequest request_)
     , body = Nothing
-    , responseBody = Nothing
     , invalid =
         Proto.Route.firstInvalid
             [ Proto.Route.checkSegment "messageId" "*" messageId_
@@ -391,7 +389,6 @@ routeGetMessage2 request_ =
     , path = "v1/messages/" ++ Proto.Route.segment messageId_
     , query = Proto.Query.except [ "message_id" ] (Routes.V1.queryOfGetMessageRequest request_)
     , body = Nothing
-    , responseBody = Nothing
     , invalid = Proto.Route.checkSegment "messageId" "*" messageId_
     }
 
@@ -411,7 +408,6 @@ routeGetMessage3 request_ =
     , path = "v1/users/" ++ Proto.Route.segment userId_ ++ "/messages/" ++ Proto.Route.segment messageId_
     , query = Proto.Query.except [ "message_id", "user_id" ] (Routes.V1.queryOfGetMessageRequest request_)
     , body = Nothing
-    , responseBody = Nothing
     , invalid =
         Proto.Route.firstInvalid
             [ Proto.Route.checkSegment "userId" "*" userId_
@@ -432,7 +428,6 @@ routeUpdateMessage0 request_ =
     , path = "v1/messages/" ++ Proto.Route.segment messageId_
     , query = []
     , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Routes.V1.encodeMessage request_.message))
-    , responseBody = Nothing
     , invalid = Proto.Route.checkSegment "messageId" "*" messageId_
     }
 
@@ -449,7 +444,6 @@ routeUpdateMessageWhole0 request_ =
     , path = "v1/messages/" ++ Proto.Route.segment messageId_
     , query = []
     , body = Just (Proto.Route.without [ [ "messageId" ] ] (Routes.V1.encodeMessage request_))
-    , responseBody = Nothing
     , invalid = Proto.Route.checkSegment "messageId" "*" messageId_
     }
 
@@ -466,7 +460,6 @@ routePostSub0 request_ =
     , path = "v1/subs/" ++ Proto.Route.segment subSubfield_
     , query = []
     , body = Just (Proto.Route.without [ [ "sub", "subfield" ] ] (Routes.V1.encodeGetMessageRequest request_))
-    , responseBody = Nothing
     , invalid = Proto.Route.checkSegment "sub.subfield" "*" subSubfield_
     }
 
@@ -479,7 +472,6 @@ routeQuery0 request_ =
     , path = "v1/query"
     , query = Routes.V1.queryOfEverything request_
     , body = Nothing
-    , responseBody = Nothing
     , invalid = Nothing
     }
 
@@ -496,7 +488,6 @@ routeSingle0 request_ =
     , path = "v1/single/" ++ Proto.Route.segment name_
     , query = Proto.Query.except [ "name" ] (Routes.V1.queryOfEverything request_)
     , body = Nothing
-    , responseBody = Nothing
     , invalid = Proto.Route.checkSegment "name" "*" name_
     }
 
@@ -513,7 +504,6 @@ routeMulti0 request_ =
     , path = "v1/" ++ Proto.Route.segments name_
     , query = Proto.Query.except [ "name" ] (Routes.V1.queryOfEverything request_)
     , body = Nothing
-    , responseBody = Nothing
     , invalid = Proto.Route.checkSegments "name" [ "things", "*" ] name_
     }
 
@@ -542,7 +532,6 @@ routeTyped0 request_ =
     , path = "v1/typed/" ++ Proto.Route.segment count_ ++ "/" ++ Proto.Route.segment flag_ ++ "/" ++ Proto.Route.segment kind_ ++ "/" ++ Proto.Route.segment big_ ++ "/" ++ Proto.Route.segment innerDeepB_
     , query = Proto.Query.except [ "count", "big", "flag", "kind", "inner.deep.b" ] (Routes.V1.queryOfEverything request_)
     , body = Nothing
-    , responseBody = Nothing
     , invalid =
         Proto.Route.firstInvalid
             [ Proto.Route.checkSegment "count" "*" count_
@@ -566,7 +555,6 @@ routeFiles0 request_ =
     , path = "v1/" ++ Proto.Route.segments path_
     , query = []
     , body = Nothing
-    , responseBody = Nothing
     , invalid = Proto.Route.checkSegments "path" [ "files", "**" ] path_
     }
 
@@ -583,7 +571,6 @@ routeCancel0 request_ =
     , path = "v1/" ++ Proto.Route.segments name_ ++ ":cancel"
     , query = []
     , body = Just (Proto.Route.without [ [ "name" ] ] (Routes.V1.encodeResource request_))
-    , responseBody = Nothing
     , invalid = Proto.Route.checkSegments "name" [ "operations", "*" ] name_
     }
 
@@ -600,7 +587,6 @@ routeUpdateResource0 request_ =
     , path = "v1/" ++ Proto.Route.segments resourceName_
     , query = Routes.V1.queryOfUpdateResourceRequest request_
     , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Routes.V1.encodeResource request_.resource))
-    , responseBody = Nothing
     , invalid = Proto.Route.checkSegments "resource.name" [ "resources", "*" ] resourceName_
     }
 
@@ -617,7 +603,6 @@ routeHead0 request_ =
     , path = "v1/" ++ Proto.Route.segments path_
     , query = []
     , body = Nothing
-    , responseBody = Nothing
     , invalid = Proto.Route.checkSegments "path" [ "files", "**" ] path_
     }
 
@@ -634,7 +619,6 @@ routeBytesPath0 request_ =
     , path = "v1/bytes/" ++ Proto.Route.segment data_
     , query = Proto.Query.except [ "data" ] (Routes.V1.queryOfEverything request_)
     , body = Nothing
-    , responseBody = Nothing
     , invalid = Proto.Route.checkSegment "data" "*" data_
     }
 

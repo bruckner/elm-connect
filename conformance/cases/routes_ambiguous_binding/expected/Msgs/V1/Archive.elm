@@ -61,7 +61,6 @@ routeListArchived0 request_ =
     , path = "v1/messages"
     , query = Msgs.V1.queryOfMessageRequest request_
     , body = Nothing
-    , responseBody = Nothing
     , invalid = Nothing
     }
 

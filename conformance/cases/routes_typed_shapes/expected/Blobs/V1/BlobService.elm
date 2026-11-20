@@ -216,7 +216,6 @@ routeGetBlob0 request_ =
     , path = "v1/blobs/" ++ Proto.Route.segment digest_
     , query = Proto.Query.except [ "digest" ] (Blobs.V1.queryOfBlob request_)
     , body = Nothing
-    , responseBody = Nothing
     , invalid = Proto.Route.checkSegment "digest" "*" digest_
     }
 
@@ -233,7 +232,6 @@ routeGetBlob1 request_ =
     , path = "v1/" ++ Proto.Route.segments name_
     , query = Proto.Query.except [ "name" ] (Blobs.V1.queryOfBlob request_)
     , body = Nothing
-    , responseBody = Nothing
     , invalid = Proto.Route.checkSegments "name" [ "shelves", "*", "blobs", "*" ] name_
     }
 
@@ -250,7 +248,6 @@ routeFindBlob0 request_ =
     , path = "v1/" ++ Proto.Route.segments name_ ++ ":find"
     , query = []
     , body = Just (Proto.Route.without [ [ "name" ] ] (Blobs.V1.encodeBlob request_))
-    , responseBody = Nothing
     , invalid = Proto.Route.checkSegments "name" [ "blobs", "*" ] name_
     }
 
@@ -267,7 +264,6 @@ routeLabelBlob0 request_ json_ =
     , path = "v1/" ++ Proto.Route.segments shelf_ ++ "/labels"
     , query = []
     , body = Just (Proto.Route.jsonField "labeled" json_)
-    , responseBody = Nothing
     , invalid = Proto.Route.checkSegments "shelf" [ "shelves", "*" ] shelf_
     }
 
@@ -284,7 +280,6 @@ routeLabelBlob1 request_ json_ =
     , path = "v1/" ++ Proto.Route.segments labeledName_
     , query = Blobs.V1.queryOfLabelBlobRequest request_
     , body = Just (Proto.Route.jsonField "labeled" json_)
-    , responseBody = Nothing
     , invalid = Proto.Route.checkSegments "labeled.name" [ "labels", "*" ] labeledName_
     }
 
@@ -301,7 +296,6 @@ routePutLabel0 request_ json_ =
     , path = "v1/" ++ Proto.Route.segments name_
     , query = []
     , body = Just (Proto.Route.without [ [ "name" ] ] json_)
-    , responseBody = Nothing
     , invalid = Proto.Route.checkSegments "name" [ "tags", "*" ] name_
     }
 
@@ -318,7 +312,6 @@ routeAddFolder0 request_ =
     , path = "v1/" ++ Proto.Route.segments parentName_ ++ "/children"
     , query = []
     , body = Just (Proto.Route.without [ [ "parent", "name" ] ] (Blobs.V1.encodeFolder request_))
-    , responseBody = Nothing
     , invalid = Proto.Route.checkSegments "parent.name" [ "folders", "*" ] parentName_
     }
 
@@ -335,7 +328,6 @@ routeMoveFolder0 request_ =
     , path = "v1/" ++ Proto.Route.segments name_ ++ ":move"
     , query = []
     , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Blobs.V1.encodeFolder_ request_.parent))
-    , responseBody = Nothing
     , invalid = Proto.Route.checkSegments "name" [ "folders", "*" ] name_
     }
 
@@ -352,7 +344,6 @@ routeTouch0 request_ =
     , path = "v1/" ++ Proto.Route.segments name_ ++ ":touch"
     , query = []
     , body = Just (Json.Encode.object [])
-    , responseBody = Nothing
     , invalid = Proto.Route.checkSegments "name" [ "slots", "*" ] name_
     }
 
@@ -369,7 +360,6 @@ routeSetValue0 request_ =
     , path = "v1/" ++ Proto.Route.segments name_
     , query = []
     , body = Just (Maybe.withDefault (Json.Encode.object []) request_.value)
-    , responseBody = Nothing
     , invalid = Proto.Route.checkSegments "name" [ "values", "*" ] name_
     }
 

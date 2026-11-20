@@ -64,7 +64,6 @@ routeClear0 request_ =
     , path = "v1/notes"
     , query = []
     , body = Nothing
-    , responseBody = Nothing
     , invalid = Nothing
     }
 

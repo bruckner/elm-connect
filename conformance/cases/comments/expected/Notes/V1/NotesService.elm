@@ -83,6 +83,7 @@ listNotes =
             Notes.V1.encodeListNotesRequestBytes
             Notes.V1.decodeListNotesResponseBytes
             |> Proto.Method.withRoutes [ routeListNotes0 ]
+            |> Proto.Method.withResponseBody 0 "notes"
         )
 
 
@@ -169,7 +170,6 @@ routeGetNote0 request_ =
     , path = "v1/" ++ Proto.Route.segments name_
     , query = []
     , body = Nothing
-    , responseBody = Nothing
     , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] name_
     }
 
@@ -186,7 +186,6 @@ routeGetNote1 request_ =
     , path = "v1/" ++ Proto.Route.segments name_
     , query = []
     , body = Nothing
-    , responseBody = Nothing
     , invalid = Proto.Route.checkSegments "name" [ "users", "*", "notes", "*" ] name_
     }
 
@@ -203,7 +202,6 @@ routeListNotes0 request_ =
     , path = "v1/" ++ Proto.Route.segments parent_ ++ "/notes"
     , query = []
     , body = Nothing
-    , responseBody = Just "notes"
     , invalid = Proto.Route.checkSegments "parent" [ "users", "*" ] parent_
     }
 
@@ -216,7 +214,6 @@ routeCreateNote0 request_ =
     , path = "v1/notes"
     , query = []
     , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Notes.V1.encodeNote request_.note))
-    , responseBody = Nothing
     , invalid = Nothing
     }
 
@@ -233,7 +230,6 @@ routeReplaceNote0 request_ =
     , path = "v1/" ++ Proto.Route.segments name_
     , query = []
     , body = Just (Proto.Route.without [ [ "name" ] ] (Notes.V1.encodeNote request_))
-    , responseBody = Nothing
     , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] name_
     }
 

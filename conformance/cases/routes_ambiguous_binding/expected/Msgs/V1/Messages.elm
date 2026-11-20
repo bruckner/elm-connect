@@ -197,7 +197,6 @@ routeGetMessage0 request_ =
     , path = "v1/" ++ Proto.Route.segments name_
     , query = Proto.Query.except [ "name" ] (Msgs.V1.queryOfMessageRequest request_)
     , body = Nothing
-    , responseBody = Nothing
     , invalid = Proto.Route.checkSegments "name" [ "messages", "*" ] name_
     }
 
@@ -214,7 +213,6 @@ routeGetMessage1 request_ =
     , path = "v1/messages/" ++ Proto.Route.segment id_
     , query = Proto.Query.except [ "id" ] (Msgs.V1.queryOfMessageRequest request_)
     , body = Nothing
-    , responseBody = Nothing
     , invalid = Proto.Route.checkSegment "id" "*" id_
     }
 
@@ -234,7 +232,6 @@ routeGetSub0 request_ =
     , path = "v1/messages/" ++ Proto.Route.segment id_ ++ "/" ++ Proto.Route.segment sub_
     , query = Proto.Query.except [ "id", "sub" ] (Msgs.V1.queryOfMessageRequest request_)
     , body = Nothing
-    , responseBody = Nothing
     , invalid =
         Proto.Route.firstInvalid
             [ Proto.Route.checkSegment "id" "*" id_
@@ -255,7 +252,6 @@ routeUpdateMessage0 request_ =
     , path = "v1/" ++ Proto.Route.segments name_
     , query = []
     , body = Just (Proto.Route.without [ [ "name" ] ] (Msgs.V1.encodeMessageRequest request_))
-    , responseBody = Nothing
     , invalid = Proto.Route.checkSegments "name" [ "messages", "*" ] name_
     }
 
@@ -268,7 +264,6 @@ routeListMessages0 request_ =
     , path = "v1/messages"
     , query = Msgs.V1.queryOfMessageRequest request_
     , body = Nothing
-    , responseBody = Nothing
     , invalid = Nothing
     }
 
@@ -285,7 +280,6 @@ routeCheckMessage0 request_ =
     , path = "v1/" ++ Proto.Route.segments name_ ++ ":check"
     , query = Proto.Query.except [ "name" ] (Msgs.V1.queryOfMessageRequest request_)
     , body = Nothing
-    , responseBody = Nothing
     , invalid = Proto.Route.checkSegments "name" [ "messages", "*" ] name_
     }
 
@@ -302,7 +296,6 @@ routeCheckById0 request_ =
     , path = "v1/messages/" ++ Proto.Route.segment id_ ++ ":check"
     , query = Proto.Query.except [ "id" ] (Msgs.V1.queryOfMessageRequest request_)
     , body = Nothing
-    , responseBody = Nothing
     , invalid = Proto.Route.checkSegment "id" "*" id_
     }
 
@@ -315,7 +308,6 @@ routeTouch0 request_ =
     , path = "msgs.v1.Messages/ListMessages"
     , query = []
     , body = Just (Msgs.V1.encodeMessageRequest request_)
-    , responseBody = Nothing
     , invalid = Nothing
     }
 

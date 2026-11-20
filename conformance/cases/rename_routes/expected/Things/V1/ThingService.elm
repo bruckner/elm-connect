@@ -64,7 +64,6 @@ routeGetThing0 request_ =
     , path = "v1/" ++ Proto.Route.segments name_
     , query = Things.V1.queryOfGetThingRequest request_
     , body = Nothing
-    , responseBody = Nothing
     , invalid = Proto.Route.checkSegments "name" [ "things", "*" ] name_
     }
 

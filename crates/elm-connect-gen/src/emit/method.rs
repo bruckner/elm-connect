@@ -79,9 +79,10 @@ impl Emitter {
     /// `Proto.Method.init` (the JSON codecs and the binary codecs) as the
     /// `wire` option says, the JSON codecs taking the client's registry
     /// (ignored by a type that reaches no `Any`), then
-    /// `withIdempotency` when the proto declares one, and `withRoutes` with
-    /// its route functions ([`Self::method_routes`]), or `withJsonRoutes`
-    /// when they take the request's JSON too. Under `wire=proto` it has no
+    /// `withIdempotency` when the proto declares one, `withRoutes` with its
+    /// route functions ([`Self::method_routes`]), or `withJsonRoutes` when
+    /// they take the request's JSON too, and `withResponseBody` for each
+    /// binding whose rule names a response field. Under `wire=proto` it has no
     /// routes: its calls cannot be
     /// transcoded, which takes JSON. The call's codec is `Rpc.Json` under
     /// `wire=json`, `Rpc.Proto` under `wire=proto`, and a type variable
@@ -138,6 +139,19 @@ impl Emitter {
                     self.reference((PROTO_METHOD, "withJsonRoutes")),
                     [inline_list(functions)],
                 ));
+            }
+        }
+        if !matches!(routes, Routes::None) {
+            for (index, route) in method.routes.iter().enumerate() {
+                if let Some(top) = &route.response_body {
+                    steps.push(apply(
+                        self.reference((PROTO_METHOD, "withResponseBody")),
+                        [
+                            crate::elm::build::int(index as i64),
+                            string(top.field.json[0].clone()),
+                        ],
+                    ));
+                }
             }
         }
         let body = apply(self.reference((RPC, "call")), [pipeline(built, steps)]);

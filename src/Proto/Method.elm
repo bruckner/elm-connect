@@ -1,5 +1,5 @@
 module Proto.Method exposing
-    ( Method, init, initJson, initProto, withIdempotency, withRoutes, withJsonRoutes, withBindings
+    ( Method, init, initJson, initProto, withIdempotency, withRoutes, withJsonRoutes, withResponseBody, withBindings
     , encodeRequest, responseDecoder
     , Descriptor, descriptor
     , service, name, idempotency, input, output, bindings
@@ -32,7 +32,7 @@ The idempotency is a union whose constructors carry its name as a prefix
 (`IdempotencyNoSideEffects`), so it can be exposed with `(..)` beside any
 other union.
 
-@docs Method, init, initJson, initProto, withIdempotency, withRoutes, withJsonRoutes, withBindings
+@docs Method, init, initJson, initProto, withIdempotency, withRoutes, withJsonRoutes, withResponseBody, withBindings
 
 
 # Reading a typed value
@@ -187,11 +187,13 @@ request per binding of its `google.api.http` rule, the rule's own first and
 then its `additional_bindings` in order, as generated code writes them
 (`routeGetNote0`). A route function gives its binding's route whatever the
 request holds, with the first path value its variable's template cannot
-match, which sending refuses.
+match, which sending refuses. The routes replace any the method had, and
+their answers are read whole until [`withResponseBody`](#withResponseBody)
+names a field.
 -}
 withRoutes : List (req -> Route) -> Method codec req res -> Method codec req res
 withRoutes routes (Internal.Method m) =
-    Internal.Method { m | routes = List.map Internal.Typed routes }
+    Internal.Method { m | routes = List.map (\route -> { shape = Internal.Typed route, responseBody = Nothing }) routes }
 
 
 {-| The method's routes for HTTP transcoding as functions of the typed
@@ -200,16 +202,54 @@ request and its proto3 JSON, one per binding as for
 bodies hold a `google.protobuf.Any`, which only the client's registry can
 write. The send encodes the JSON once, with the client's registry, for the
 route and the body alike; the path and query are read from the typed request.
+As with `withRoutes`, the routes replace any the method had.
 -}
 withJsonRoutes : List (req -> Json.Encode.Value -> Route) -> Method codec req res -> Method codec req res
 withJsonRoutes routes (Internal.Method m) =
-    Internal.Method { m | routes = List.map Internal.FromJson routes }
+    Internal.Method { m | routes = List.map (\route -> { shape = Internal.FromJson route, responseBody = Nothing }) routes }
+
+
+{-| Read binding `n`'s answers as one field of the response rather than the
+whole of it: the field's JSON name, as the binding's `response_body` names
+it. The server answers with that field's value alone, and the response's
+decoder reads it as a response holding only that field. Bindings count
+from 0 in the order the routes were given. A method you
+write by hand with [`withRoutes`](#withRoutes) or
+[`withJsonRoutes`](#withJsonRoutes) needs it for each binding whose server
+answers with only that field; [`withBindings`](#withBindings) reads it from
+each binding already. Give it after the routes, which replace it; a binding
+the method has no route for changes nothing.
+
+    Proto.Method.initJson "notes.v1.NotesService"
+        "GetNoteTitle"
+        (\_ -> Ok << encodeGetNoteRequest)
+        (\_ -> decodeNote)
+        |> Proto.Method.withRoutes [ routeGetNoteTitle0 ]
+        |> Proto.Method.withResponseBody 0 "title"
+
+-}
+withResponseBody : Int -> String -> Method codec req res -> Method codec req res
+withResponseBody n field (Internal.Method m) =
+    Internal.Method
+        { m
+            | routes =
+                List.indexedMap
+                    (\index route ->
+                        if index == n then
+                            { route | responseBody = Just field }
+
+                        else
+                            route
+                    )
+                    m.routes
+        }
 
 
 {-| The method's routes from its `google.api.http` bindings written as
 [`Proto.Http`](Proto-Http) data, for a method written by hand: each route is
 read from the request's proto3 JSON, written with the registry in use and
-encoded once per send for the route and the body alike. Only a program
+encoded once per send for the route and the body alike, and each binding's
+answer is read from the response field its data names. Only a program
 naming this function carries the code that reads a binding.
 
     Proto.Method.initJson "notes.v1.NotesService"
@@ -226,7 +266,11 @@ withBindings methodBindings (Internal.Method m) =
         { m
             | routes =
                 List.map
-                    (\(Proto.Internal.Binding.Binding rule) -> Internal.FromJson (\_ json -> Proto.Internal.Interpret.route rule json))
+                    (\(Proto.Internal.Binding.Binding rule) ->
+                        { shape = Internal.FromJson (\_ json -> Proto.Internal.Interpret.route rule json)
+                        , responseBody = rule.responseBody
+                        }
+                    )
                     methodBindings
         }
 

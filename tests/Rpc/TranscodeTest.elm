@@ -561,6 +561,42 @@ responses =
             \_ ->
                 respond { rule | responseBody = Just (string "title" "title") } (Http.GoodStatus_ (metadata 200 "OK" []) "\"hi\"")
                     |> Expect.equal (Ok "hi")
+        , test "reading an answer builds no route: the response field is the method's" <|
+            \_ ->
+                Rpc.response transcoding
+                    (Rpc.call
+                        (Proto.Method.initJson "t" "m" (\_ -> Ok << identity) (\_ -> Json.Decode.field "title" Json.Decode.string)
+                            |> Proto.Method.withRoutes [ \_ -> Debug.todo "reading an answer built the route" ]
+                            |> Proto.Method.withResponseBody 0 "title"
+                        )
+                        Json.Encode.null
+                    )
+                    (Http.GoodStatus_ (metadata 200 "OK" []) "\"hi\"")
+                    |> Expect.equal (Ok "hi")
+        , test "reading an answer builds no route of the request and its JSON either" <|
+            \_ ->
+                Rpc.response transcoding
+                    (Rpc.call
+                        (Proto.Method.initJson "t" "m" (\_ -> Ok << identity) (\_ -> Json.Decode.field "title" Json.Decode.string)
+                            |> Proto.Method.withJsonRoutes [ \_ _ -> Debug.todo "reading an answer built the route" ]
+                            |> Proto.Method.withResponseBody 0 "title"
+                        )
+                        Json.Encode.null
+                    )
+                    (Http.GoodStatus_ (metadata 200 "OK" []) "\"hi\"")
+                    |> Expect.equal (Ok "hi")
+        , test "a response field for a binding the method has no route of changes nothing" <|
+            \_ ->
+                Rpc.response transcoding
+                    (Rpc.call
+                        (Proto.Method.initJson "t" "m" (\_ -> Ok << identity) (\_ -> Json.Decode.field "title" Json.Decode.string)
+                            |> Proto.Method.withBindings [ Proto.Http.binding rule ]
+                            |> Proto.Method.withResponseBody 1 "title"
+                        )
+                        Json.Encode.null
+                    )
+                    (Http.GoodStatus_ (metadata 200 "OK" []) "{\"title\":\"hi\"}")
+                    |> Expect.equal (Ok "hi")
         , test "a response body field that does not decode is located at the field, without its value" <|
             \_ ->
                 respond { rule | responseBody = Just (string "title" "title") } (Http.GoodStatus_ (metadata 200 "OK" []) "3")

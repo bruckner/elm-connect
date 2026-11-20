@@ -46,10 +46,12 @@
 //!   builds one binding's path, query and body from the typed request
 //!   ([`route_fn`]); a method whose bodies hold a `google.protobuf.Any`
 //!   takes route functions of the request and its JSON instead
-//!   (`Proto.Method.withJsonRoutes`). Each
-//!   method's descriptor, `descriptorGetNote : Proto.Method.Descriptor`,
-//!   is built by `Proto.Method.descriptor` from its service, name,
-//!   idempotency, type names and bindings, the bindings its HTTP rule's own
+//!   (`Proto.Method.withJsonRoutes`). A binding's `response_body` is not
+//!   in its route but piped after the routes as
+//!   `Proto.Method.withResponseBody n "field"`. Each method's descriptor,
+//!   `descriptorGetNote : Proto.Method.Descriptor`, is built by
+//!   `Proto.Method.descriptor` from its service, name, idempotency, type
+//!   names and bindings, the bindings its HTTP rule's own
 //!   and then its additional ones, as data (`Proto.Http.binding`), each
 //!   path variable and query parameter the path of field descriptors from
 //!   the request down to its field (`[ Notes.V1.GetNoteRequest.name ]`),
