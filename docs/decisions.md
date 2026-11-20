@@ -2114,7 +2114,7 @@ Where: design §3.4, §5.3 (Transcode).
 
 ### Binary codecs, faster within elm/bytes
 
-*2026-11-13; 2026-11-19.*
+*2026-11-13; 2026-11-19; 2026-11-20.*
 
 Three changes to `Proto.Binary`, `Proto.Any` and the generated merge
 steps, none of which changes what is written, read or refused, and
@@ -2259,6 +2259,39 @@ cap. Measured on an Apple M4, node 24.21.0 and Elm 0.19.3, each build
 in its own node process (in one process, every build loaded after the
 first decoded 16 to 17 % slower), six rounds of three timings, with a
 noise bound of 3 %.
+
+2026-11-20: a third form was built and measured, grouped state. Above
+a threshold of fields, the decoder holds its state as a record of
+group records of about √N fields each; a step writes its field's group
+and the record of groups, about 2√N slots where a whole-record literal
+writes N; and the message's record is built once at the end. It is
+generated code alone, with no change to `Proto.Binary`, so a program
+with no message over the threshold compiles to the same bundle.
+Thresholds of 16, 32 and 64 fields were measured against the literals
+to 64 fields with record updates above. Lowering the threshold does
+not pay: from 17 to 64 fields a grouped decoder is smaller minified
+than the literal's but larger gzipped (at 64 fields, 3,339 against
+2,820 B). Above 64 fields it decodes in 0.06 to 0.25 of the record
+updates' time, in any field order: the 142-field `TestAllTypesProto3`
+in 0.25 with every field set and 0.13 with 3 set, where a whole-record
+literal with no cap takes 0.77 and 0.19 and is no faster than the
+updates on reversed input, and the in-order stages take 0.21 to 0.23
+with every field set in number order but 0.51 with 3 set, and 0.66 to
+0.84 when those 3 arrive out of order. A 142-field grouped decoder is
+40.7 KB minified and 5.5 KB gzipped, against 14.4 and 2.9 KB for the
+record updates, 158.7 and 5.0 KB for the uncapped literal, and about
+16 and 4.3 KB plus their runtime for the in-order stages. Its cost is
+code that grows as N^1.5, and compile time: a package of 300 messages,
+45 of them over 64 fields, builds in 3.4 to 3.5 s against 2.3 s (7.3 s
+with the uncapped literal), about 25 ms for each wide message, while a
+program with one 142-field message builds in the same time. It was not
+taken: messages over 64 fields are rare, and nothing yet forces the
+choice. It replaces the hybrid as the known answer if they come to
+matter, since it needs no runtime, adds no name to `Proto.Binary` and
+does not depend on field order. The 64-field cap on the literal
+stands: by 142 fields a whole-record literal for each field read costs
+about what a record update does. Measured as above, with a noise bound
+of 5 to 6 %.
 
 Where: design §3.10 (Lenient registries), §5.5; decisions: No
 table-driven binary merge.
