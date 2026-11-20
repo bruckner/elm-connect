@@ -85,11 +85,17 @@ as v32.0-rc2's, which the runner's archive carries in `include/`.
 `just protobuf-conformance` fails if it differs from the runner's copy,
 and if `generated/` is not what `elm-connect check` expects.
 `just protobuf-conformance-gen` regenerates `generated/` with the CLI built
-from the checkout, with every option at its default:
+from the checkout, with every option at its default but `unknown_fields`,
+which is `keep`:
 
 ```sh
-elm-connect gen -I proto google/protobuf/test_messages_proto3.proto --out generated
+elm-connect gen -I proto google/protobuf/test_messages_proto3.proto --unknown-fields keep --out generated
 ```
+
+Under `keep` a message read from binary and written back keeps the fields
+its schema does not know, as the suite's `UnknownOrdering` and
+`UnknownVarint` cases ask; under the default they would fail. `Testee.elm`
+builds no record literal, so it compiles under either.
 
 The proto is Copyright Google Inc. and licensed under the BSD 3-Clause
 License; protobuf's `LICENSE` is beside it (`THIRD_PARTY.md`).
@@ -101,7 +107,7 @@ groups. A group's comment says why its cases fail and classifies them:
 
 - **Design choice**: elm-connect does something on purpose that the
   suite disagrees with, and the documentation says so (a `Timestamp` is
-  a millisecond `Time.Posix`, for one; unknown fields are not kept).
+  a millisecond `Time.Posix`, for one).
 - **Fix candidate**: the runtime or the generator could do what the
   suite asks (most were inputs the JSON decoders accept and the
   specification refuses). None remain since 2026-10-25.
