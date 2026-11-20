@@ -2731,12 +2731,18 @@ type JsonKind
     | JsonLeaf
 
 
+{-| Scalars first, the commonest, each tried with a decoder that fails at
+once on anything else.
+-}
 jsonKind : Decoder JsonKind
 jsonKind =
     Json.Decode.oneOf
-        [ Json.Decode.map (\_ -> JsonArray) (Json.Decode.list (Json.Decode.succeed ()))
+        [ Json.Decode.map (\_ -> JsonLeaf) Json.Decode.float
+        , Json.Decode.map (\_ -> JsonLeaf) Json.Decode.string
+        , Json.Decode.map (\_ -> JsonLeaf) Json.Decode.bool
+        , Json.Decode.null JsonLeaf
+        , Json.Decode.map (\_ -> JsonArray) (Json.Decode.list (Json.Decode.succeed ()))
         , Json.Decode.map (\_ -> JsonObject) (Json.Decode.keyValuePairs (Json.Decode.succeed ()))
-        , Json.Decode.succeed JsonLeaf
         ]
 
 
