@@ -43,6 +43,11 @@ import Json.Decode
   - `UnregisteredType`: a `google.protobuf.Any` of a type, its URL here,
     that the registry it was converted through has no entry for. Register
     the type.
+  - `NoJsonForm`: a value that proto3 JSON has no form for, held by a
+    well-known type, its full name here: a `Timestamp` or `Duration` past
+    its range, a `FieldMask` path that does not survive the lowerCamelCase
+    round trip, a number in a `Value`, `Struct` or `ListValue` that is NaN
+    or infinite. Only code generated with `json_write=checked` refuses one.
 
 -}
 type Error
@@ -50,6 +55,7 @@ type Error
     | BadJson Json.Decode.Error
     | TypeMismatch { expected : String, actual : String }
     | UnregisteredType String
+    | NoJsonForm String
 
 
 {-| Why protobuf binary is not the message it was read as:
@@ -151,6 +157,9 @@ toString error =
 
         UnregisteredType typeUrl ->
             "An Any holding " ++ typeUrl ++ " was converted through a registry that has no entry for its type."
+
+        NoJsonForm typeName ->
+            "A " ++ typeName ++ " holds a value proto3 JSON has no form for."
 
 
 reasonText : Reason -> String

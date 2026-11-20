@@ -1,0 +1,66 @@
+// Under `json_write=checked` a message that holds a Timestamp, Duration,
+// FieldMask, Value, Struct or ListValue, directly or through its fields, is
+// encoded by `encode…With`, giving a `Result`, as one reaching an Any is;
+// its decoder keeps its plain shape. A message reaching none keeps both
+// plain codecs. A Duration is read from binary unclamped.
+syntax = "proto3";
+
+package events.v1;
+
+import "google/api/annotations.proto";
+import "google/protobuf/any.proto";
+import "google/protobuf/duration.proto";
+import "google/protobuf/field_mask.proto";
+import "google/protobuf/struct.proto";
+import "google/protobuf/timestamp.proto";
+
+message Event {
+  string id = 1;
+  google.protobuf.Timestamp at = 2;
+  repeated google.protobuf.Duration waits = 3;
+  map<string, google.protobuf.ListValue> tables = 4;
+  google.protobuf.Value payload = 5;
+  oneof detail {
+    google.protobuf.Struct fields = 6;
+    string note = 7;
+  }
+}
+
+// Holds an Event, so its encoder refuses too.
+message Batch {
+  repeated Event events = 1;
+  Thread thread = 2;
+}
+
+// Recursive: the wrapper's encoder follows the message's.
+message Thread {
+  google.protobuf.FieldMask mask = 1;
+  Thread parent = 2;
+}
+
+// Reaches an Any as well: one encoder for both, taking the registry.
+message Envelope {
+  google.protobuf.Any packed = 1;
+  google.protobuf.Timestamp sent = 2;
+}
+
+// Reaches none: plain codecs.
+message Plain {
+  string name = 1;
+}
+
+message UpdateEventRequest {
+  Event event = 1;
+  google.protobuf.FieldMask update_mask = 2;
+}
+
+service Events {
+  rpc UpdateEvent(UpdateEventRequest) returns (Event) {
+    option (google.api.http) = {
+      patch: "/v1/events/{event.id}"
+      body: "event"
+    };
+  }
+  rpc Rename(Plain) returns (Plain);
+  rpc Stamp(google.protobuf.Timestamp) returns (google.protobuf.Timestamp);
+}

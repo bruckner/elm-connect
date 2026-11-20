@@ -271,6 +271,12 @@ impl Emitter {
                 let from_number = lambda([Pattern::Wildcard], Expr::Unit);
                 apply(codec, [to_number, from_number])
             }
+            // Under `json_write=checked` a `Duration` past protobuf's range
+            // is read as it is, not clamped, so that its JSON write can
+            // refuse it.
+            (TypeRef::WellKnown(WellKnown::Duration), _) if self.write_reach.is_checked() => {
+                self.reference((super::PROTO_JSON_CHECKED, "binaryDuration"))
+            }
             (TypeRef::WellKnown(known), _) => self.binary(well_known_codec(*known, holding)),
         }
     }

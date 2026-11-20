@@ -90,7 +90,7 @@ impl Emitter {
     /// nothing in JSON, so the fields come first, whatever the declaration
     /// order.
     pub(super) fn message_encoder(&mut self, shape: &MessageShape) -> Decl {
-        if self.message_reaches(shape) {
+        if self.message_write_reaches(shape) {
             return self.message_encoder_with(shape);
         }
         let pairs: Vec<Expr> = shape
@@ -162,6 +162,19 @@ impl Emitter {
             || shape.oneofs.iter().any(|oneof| self.oneof_reaches(oneof))
     }
 
+    /// Whether a message's encoder gives a `Result`: one of its fields' or
+    /// oneofs' encoders does.
+    pub(super) fn message_write_reaches(&self, shape: &MessageShape) -> bool {
+        shape
+            .fields
+            .iter()
+            .any(|&(_, value)| self.field_write_reaches(value))
+            || shape
+                .oneofs
+                .iter()
+                .any(|oneof| self.oneof_write_reaches(oneof))
+    }
+
     /// `encodeFooWith : Proto.Registry.Registry -> Foo -> Result
     /// Proto.Error.Error Json.Encode.Value`, for a message that reaches an
     /// `Any`: `Proto.Json.tryObjectOfFields` of every
@@ -185,7 +198,7 @@ impl Emitter {
             .iter()
             .map(|oneof| {
                 let field_value = access(var(ENCODER_ARGUMENT), oneof.oneof.elm_field_name.clone());
-                if self.oneof_reaches(oneof) {
+                if self.oneof_write_reaches(oneof) {
                     apply(
                         var(with_registry(oneof.oneof.encoder_name())),
                         [var(REGISTRY_ARGUMENT), field_value],
@@ -214,12 +227,21 @@ impl Emitter {
             .expect("at least the fields' list");
         let object = self.reference((PROTO_JSON, "tryObjectOfFields"));
         let annotation = self.encoder_with_type(ty(shape.message.elm_name.clone(), []));
-        Decl::Value {
-            doc: Some(format!(
+        let doc = if self.message_reaches(shape) {
+            format!(
                 "Encodes {} as proto3 JSON, writing each `Any` it holds with the registry: \
                  an `Err` names the first type the registry cannot write.",
                 docs::a_local(&shape.message.elm_name)
-            )),
+            )
+        } else {
+            format!(
+                "Encodes {} as proto3 JSON: an `Err` names the first value it holds that \
+                 has no proto3 JSON form. The registry is not used.",
+                docs::a_local(&shape.message.elm_name)
+            )
+        };
+        Decl::Value {
+            doc: Some(doc),
             name: with_registry(shape.message.encoder_name()),
             annotation,
             params: vec![pvar(REGISTRY_ARGUMENT), pvar(ENCODER_ARGUMENT)],

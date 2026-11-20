@@ -21,8 +21,8 @@ use super::{
     Emitter, MessageShape, PROTO_DESCRIPTORS, PROTO_ENUM, PROTO_ENUM_VALUE, PROTO_FIELD,
     PROTO_MESSAGE, PROTO_REGISTRY, PROTO_WELL_KNOWN, RecordField, docs,
 };
-use crate::elm::ast::{Decl, Expr};
-use crate::elm::build::{apply, inline_list, int, list, pipe, string, ty, var};
+use crate::elm::ast::{Decl, Expr, Pattern};
+use crate::elm::build::{apply, inline_list, int, lambda, list, pipe, string, ty, var};
 use crate::ir::{
     Annotations, Cardinality, Doc, Enum, FieldBehavior, MapKey, ModuleName, Package, ScalarKind,
     TypeRef, WellKnown,
@@ -99,15 +99,25 @@ impl Emitter {
         let (builder, encoder, decoder) = if self.message_reaches(shape) {
             (
                 "initWith",
-                with_registry(message.encoder_name()),
-                with_registry(message.decoder_name()),
+                var(with_registry(message.encoder_name())),
+                var(with_registry(message.decoder_name())),
+            )
+        } else if self.message_write_reaches(shape) {
+            (
+                "initWith",
+                var(with_registry(message.encoder_name())),
+                lambda([Pattern::Wildcard], var(message.decoder_name())),
             )
         } else {
-            ("init", message.encoder_name(), message.decoder_name())
+            (
+                "init",
+                var(message.encoder_name()),
+                var(message.decoder_name()),
+            )
         };
         let codecs = [
-            var(encoder),
-            var(decoder),
+            encoder,
+            decoder,
             var(bytes_name(message.encoder_name())),
             var(bytes_name(message.decoder_name())),
         ];

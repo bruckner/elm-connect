@@ -4,6 +4,7 @@ module Proto.Duration exposing
     , fromMilliseconds, toMilliseconds
     , fromString, toString
     , fromParts, toParts
+    , fromPartsUnclamped, isInRange
     )
 
 {-| `google.protobuf.Duration`: a signed span of time, exact to the
@@ -30,6 +31,11 @@ nanosecond, between about -10,000 and 10,000 years.
 # Seconds and nanoseconds
 
 @docs fromParts, toParts
+
+
+# Out of range
+
+@docs fromPartsUnclamped, isInRange
 
 -}
 
@@ -213,6 +219,25 @@ fromParts wholeSeconds nanos =
 
     else
         Duration parts
+
+
+{-| [`fromParts`](#fromParts) without its clamp: a duration past protobuf's
+range is held as given, and [`toString`](#toString) prints text that
+[`fromString`](#fromString) refuses. Code generated with `json_write=checked`
+reads binary with it, so that the JSON write refuses such a duration rather
+than send the limit in its place.
+-}
+fromPartsUnclamped : Int -> Int -> Duration
+fromPartsUnclamped wholeSeconds nanos =
+    normalize wholeSeconds nanos
+
+
+{-| Whether the duration is within protobuf's range, about ±10,000 years:
+always, but for one built by [`fromPartsUnclamped`](#fromPartsUnclamped).
+-}
+isInRange : Duration -> Bool
+isInRange (Duration parts) =
+    abs parts.seconds <= maxSeconds
 
 
 {-| The duration's whole seconds and nanoseconds, both with its sign, as

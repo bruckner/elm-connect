@@ -5,8 +5,8 @@ use clap::{Args, Parser, Subcommand};
 use elm_connect_gen::diagnostics::Diagnostics;
 use elm_connect_gen::naming::REPOSITORY_FILES;
 use elm_connect_gen::{
-    Bytes, EnumUnknown, Generated, Int64, ModuleName, Options, Spelling, Streaming, UnboundMethods,
-    Wire,
+    Bytes, EnumUnknown, Generated, Int64, JsonWrite, ModuleName, Options, Spelling, Streaming,
+    UnboundMethods, Wire,
 };
 use miette::Report;
 
@@ -136,6 +136,14 @@ struct GenArgs {
     /// and leaves the other's codecs out of a program's bundle.
     #[arg(long, value_name = "both|json|proto", default_value = "both")]
     wire: Wire,
+    /// Whether a JSON encoder may refuse a value: `total` or `checked`.
+    ///
+    /// `total`: every encoder writes what it is given. `checked`: a message
+    /// that can hold a Timestamp, Duration, FieldMask, Value, Struct or
+    /// ListValue is encoded by `encode…With`, giving a `Result` that
+    /// refuses a value proto3 JSON cannot write.
+    #[arg(long, value_name = "total|checked", default_value = "total")]
+    json_write: JsonWrite,
     /// An Elm name for a proto element, such as `notes.v1.Note:Memo`.
     ///
     /// The value is `<proto full name>:<Elm name>`, and the Elm name
@@ -173,6 +181,7 @@ impl GenArgs {
         options.streaming = self.streaming;
         options.enum_unknown = self.enum_unknown;
         options.wire = self.wire;
+        options.json_write = self.json_write;
         options.module_prefix = self.module_prefix.clone();
         options.spelling = Spelling::Flags;
         let mut problems = Diagnostics::new();

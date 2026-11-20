@@ -1224,6 +1224,17 @@ In detail:
   "google.protobuf.Any"`. A method taking or returning one uses the same
   codecs (`any_field` case). Unpacking is left to the application, which
   knows the types it expects.
+- Under `json_write=checked` the well-known types whose Elm values can
+  hold what proto3 JSON has no form for (a `Timestamp` or `Duration`
+  past its range, a `FieldMask` path that does not survive the
+  lowerCamelCase round trip, a NaN or infinite number in a `Value`,
+  `Struct` or `ListValue`) seed the same reach as an `Any`
+  (`ir::reach`, seeded): every message that reaches one is encoded by
+  `encodeNoteWith`, which refuses such a value with
+  `Proto.Error.NoJsonForm` and its type's full name
+  (`Proto.Json.Checked`). Decoders keep their shape; a `Duration` field
+  is read from binary unclamped (`Proto.Duration.fromPartsUnclamped`) so
+  that its write can refuse it. Route paths and queries are not checked.
 - An `Any` field has no query form: its JSON is the packed message's,
   whose fields the route cannot know (`route::query_field`, §5.3).
 
@@ -3934,7 +3945,7 @@ Connect's proto codec sends them (§5.3).
   holds the output to `elm-format --validate` and `elm make`.
 - Options (`--elm-connect_opt=` or CLI flags): `int64=string|int`,
   `bytes=string|bytes`, `unbound_methods=implicit|error`, `streaming=error|skip`,
-  `enum_unknown=fail|zero`,
+  `enum_unknown=fail|zero`, `json_write=total|checked` (§3.5),
   `rename=<proto full name>:<Elm name>` (repeatable) and
   `module_prefix=`; an option for unrecognised enum values (§3.3) is on
   the roadmap.

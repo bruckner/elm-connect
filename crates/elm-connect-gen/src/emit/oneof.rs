@@ -59,7 +59,7 @@ impl Emitter {
     /// is a `Result`: a member that reaches one gives its encoder's, the
     /// others `Ok`.
     pub(super) fn oneof_encoder(&mut self, shape: &OneofShape) -> Decl {
-        let with = self.oneof_reaches(shape);
+        let with = self.oneof_write_reaches(shape);
         let unset = (pctor(shape.oneof.unset_ctor.clone(), []), list([]));
         let members: Vec<_> = shape
             .variants
@@ -83,7 +83,7 @@ impl Emitter {
                 let just = var(self.core("Just"));
                 let json = if !with {
                     apply(just, [encoded])
-                } else if self.reaches(value) {
+                } else if self.write_reaches(value) {
                     apply(qualified("Result", "map"), [just, encoded])
                 } else {
                     let ok = var(self.core("Ok"));
@@ -130,6 +130,14 @@ impl Emitter {
             params,
             body: case(var(ENCODER_ARGUMENT), std::iter::once(unset).chain(members)),
         }
+    }
+
+    /// Whether a member of a oneof has an encoder giving a `Result`.
+    pub(super) fn oneof_write_reaches(&self, shape: &OneofShape) -> bool {
+        shape
+            .variants
+            .iter()
+            .any(|&(_, value)| self.write_reaches(value))
     }
 
     /// Whether a member of a oneof reaches an `Any`.

@@ -203,7 +203,7 @@ use crate::ir::{
     Package, Service, TypeName,
 };
 use crate::naming::VERSION_VALUE;
-use crate::options::{EnumUnknown, Options, Wire};
+use crate::options::{EnumUnknown, JsonWrite, Options, Wire};
 use crate::{DEFAULT_OPTIONS, HEADER_PREFIX, OPTIONS_PREFIX, SENTINEL, VERSION};
 
 use self::field::{FieldShape, ValueShape};
@@ -253,6 +253,9 @@ const PROTO_ANY: &str = "Proto.Any";
 /// The runtime package's error type, which an encoder writing an `Any`
 /// can fail with.
 const PROTO_ERROR: &str = "Proto.Error";
+/// The runtime package's encoders that refuse a well-known value with no
+/// proto3 JSON form, which `json_write=checked` code calls.
+const PROTO_JSON_CHECKED: &str = "Proto.Json.Checked";
 /// The runtime package's typed values of the well-known types, home of
 /// `Proto.WellKnown.nullValue`, which a descriptor of a `NullValue` field
 /// names.
@@ -317,6 +320,10 @@ pub fn emit_with_queries(
     let messages = all_messages(package, packages);
     let mut emitter = Emitter::new(&package.module, options);
     emitter.reach = AnyReach::of(packages.iter().chain(std::iter::once(package)));
+    emitter.write_reach = AnyReach::seeded(
+        packages.iter().chain(std::iter::once(package)),
+        options.json_write == JsonWrite::Checked,
+    );
     let mut decls = emitter.package(package);
     let mut encoders = Vec::new();
     // Route functions take JSON, which `wire=proto` does not generate,
@@ -468,6 +475,10 @@ pub fn emit_service(
     let messages = all_messages(package, packages);
     let mut emitter = Emitter::new(&service.module, options);
     emitter.reach = AnyReach::of(packages.iter().chain(std::iter::once(package)));
+    emitter.write_reach = AnyReach::seeded(
+        packages.iter().chain(std::iter::once(package)),
+        options.json_write == JsonWrite::Checked,
+    );
     let mut decls = Vec::new();
     if !service.methods.is_empty() {
         let mut calls = Vec::new();
@@ -623,8 +634,13 @@ struct Emitter {
     /// Which codecs the option wires into methods; package modules emit
     /// both whatever it says.
     wiring: Wire,
-    /// The messages of the build that reach a `google.protobuf.Any`.
+    /// The messages of the build that reach a `google.protobuf.Any`, whose
+    /// decoders take the registry.
     reach: AnyReach,
+    /// The messages whose encoders give a `Result`: those that reach an
+    /// `Any`, and under `json_write=checked` those that reach a
+    /// well-known type whose values can have no proto3 JSON form.
+    write_reach: AnyReach,
     /// The options as the header's second line records them.
     recorded: String,
 }
@@ -639,6 +655,7 @@ impl Emitter {
             enum_unknown: options.enum_unknown,
             wiring: options.wire,
             reach: AnyReach::default(),
+            write_reach: AnyReach::default(),
             recorded: match options.recorded() {
                 pairs if pairs.is_empty() => DEFAULT_OPTIONS.to_owned(),
                 pairs => pairs.join(", "),

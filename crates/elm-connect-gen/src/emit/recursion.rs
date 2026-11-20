@@ -34,7 +34,7 @@ impl Emitter {
     /// `encodeNode_ (Node_ value) = encodeNode value`; for a message that reaches an `Any`, `encodeNode_With types (Node_
     /// value) = encodeNodeWith types value`.
     pub(super) fn wrapper_encoder(&mut self, message: &Message, wrapper: &Wrapper) -> Decl {
-        if self.wrapper_reaches(message) {
+        if self.write_reach.message(&message.proto_full_name) {
             let annotation = self.encoder_with_type(ty(wrapper.elm_name.clone(), []));
             return Decl::Value {
                 doc: Some(format!(

@@ -4,7 +4,7 @@
 use super::scalar::{Holding, Repr};
 use super::{
     CORE_DICT, CORE_STRING, Emitter, JSON_DECODE, JSON_ENCODE, PROTO_ANY, PROTO_DURATION,
-    PROTO_JSON, TIME, call, scalar,
+    PROTO_JSON, PROTO_JSON_CHECKED, TIME, call, scalar,
 };
 use crate::elm::ast::{Expr, Type};
 use crate::elm::build::{apply, list, qualified, ty, var};
@@ -274,15 +274,19 @@ impl Emitter {
     /// values reach one, else what [`Self::encode_field`] gives, in `Ok`.
     pub(super) fn try_encode_field(&mut self, shape: FieldShape, value: Expr) -> Expr {
         let (helper, args) = match shape {
-            FieldShape::Maybe(inner) if self.reaches(inner) => {
+            FieldShape::Json if self.write_reach.is_checked() => {
+                let encoder = self.value_encoder(ValueShape::Zeroed(Zeroed::Json));
+                ("tryOptionalField", vec![encoder])
+            }
+            FieldShape::Maybe(inner) if self.write_reaches(inner) => {
                 let encoder = self.value_encoder(inner);
                 ("tryOptionalField", vec![encoder])
             }
-            FieldShape::List(inner) if self.reaches(inner) => {
+            FieldShape::List(inner) if self.write_reaches(inner) => {
                 let encoder = self.value_encoder(inner);
                 ("tryRepeatedField", vec![encoder])
             }
-            FieldShape::Dict(key, inner) if self.reaches(inner) => {
+            FieldShape::Dict(key, inner) if self.write_reaches(inner) => {
                 let encoder = self.value_encoder(inner);
                 let key = if key.is_int() {
                     qualified(CORE_STRING, "fromInt")
@@ -291,7 +295,7 @@ impl Emitter {
                 };
                 ("tryDictField", vec![key, encoder])
             }
-            FieldShape::BoolMap(inner) if self.reaches(inner) => {
+            FieldShape::BoolMap(inner) if self.write_reaches(inner) => {
                 let encoder = self.value_encoder(inner);
                 ("tryBoolMapField", vec![encoder])
             }
@@ -313,6 +317,42 @@ impl Emitter {
             | FieldShape::Dict(_, value)
             | FieldShape::BoolMap(value) => self.reaches(value),
             FieldShape::Plain(_) | FieldShape::Json => false,
+        }
+    }
+
+    /// Whether a field's encoder gives a `Result` ([`Self::write_reaches`]).
+    pub(super) fn field_write_reaches(&self, shape: FieldShape) -> bool {
+        match shape {
+            FieldShape::Maybe(value)
+            | FieldShape::List(value)
+            | FieldShape::Dict(_, value)
+            | FieldShape::BoolMap(value) => self.write_reaches(value),
+            FieldShape::Json => self.write_reach.is_checked(),
+            FieldShape::Plain(_) => false,
+        }
+    }
+
+    /// Whether a value's encoder gives a `Result`: it is or reaches an
+    /// `Any`, or, under `json_write=checked`, it is or reaches a well-known
+    /// type whose values can have no proto3 JSON form.
+    pub(super) fn write_reaches(&self, value: ValueShape) -> bool {
+        match value {
+            ValueShape::Present(Present::Any) => true,
+            ValueShape::Present(Present::Message(name)) => {
+                self.write_reach.message(&name.proto_full_name)
+            }
+            ValueShape::Present(Present::Wrapped(_, full_name)) => {
+                self.write_reach.message(full_name)
+            }
+            ValueShape::Present(
+                Present::Timestamp
+                | Present::Duration
+                | Present::FieldMask
+                | Present::Struct
+                | Present::ListValue,
+            )
+            | ValueShape::Zeroed(Zeroed::Json) => self.write_reach.is_checked(),
+            ValueShape::Present(Present::Wrapper(_)) | ValueShape::Zeroed(_) => false,
         }
     }
 
@@ -417,7 +457,7 @@ impl Emitter {
     /// value itself when it is JSON already.
     pub(super) fn encode_value(&mut self, shape: ValueShape, value: Expr) -> Expr {
         match shape {
-            ValueShape::Zeroed(Zeroed::Json) => value,
+            ValueShape::Zeroed(Zeroed::Json) if !self.write_reaches(shape) => value,
             shape => call(self.value_encoder(shape), [value]),
         }
     }
@@ -426,7 +466,7 @@ impl Emitter {
     /// registry and gives a `Result`
     /// ([`Self::reaches`]).
     pub(super) fn value_encoder(&mut self, value: ValueShape) -> Expr {
-        if self.reaches(value) {
+        if self.write_reaches(value) {
             let encoder = match value {
                 ValueShape::Present(Present::Message(name)) => {
                     self.generated_value(&name.module, with_registry(name.encoder_name()))
@@ -434,10 +474,38 @@ impl Emitter {
                 ValueShape::Present(Present::Wrapped(wrapper, _)) => {
                     var(with_registry(wrapper.encoder_name()))
                 }
-                _ => self.reference((PROTO_JSON, "encodeAnyWith")),
+                ValueShape::Present(Present::Any) => self.reference((PROTO_JSON, "encodeAnyWith")),
+                ValueShape::Present(Present::Timestamp) => {
+                    return self.reference((PROTO_JSON_CHECKED, "encodeTimestamp"));
+                }
+                ValueShape::Present(Present::Duration) => {
+                    return self.reference((PROTO_JSON_CHECKED, "encodeDuration"));
+                }
+                ValueShape::Present(Present::FieldMask) => {
+                    return self.reference((PROTO_JSON_CHECKED, "encodeFieldMask"));
+                }
+                ValueShape::Present(Present::Struct) => {
+                    return self.reference((PROTO_JSON_CHECKED, "encodeStruct"));
+                }
+                ValueShape::Present(Present::ListValue) => {
+                    return self.reference((PROTO_JSON_CHECKED, "encodeListValue"));
+                }
+                ValueShape::Zeroed(Zeroed::Json) => {
+                    return self.reference((PROTO_JSON_CHECKED, "encodeValue"));
+                }
+                ValueShape::Present(Present::Wrapper(_)) | ValueShape::Zeroed(_) => {
+                    unreachable!("write_reaches holds for none of these")
+                }
             };
             return apply(encoder, [var(REGISTRY_ARGUMENT)]);
         }
+        self.total_value_encoder(value)
+    }
+
+    /// The total encoder of one value, `Value -> Json.Encode.Value`, which
+    /// writes what it is given: what a route's path and query text use,
+    /// and every encoder outside `json_write=checked` but an `Any`'s.
+    pub(super) fn total_value_encoder(&mut self, value: ValueShape) -> Expr {
         match value {
             ValueShape::Zeroed(Zeroed::Scalar(repr))
             | ValueShape::Present(Present::Wrapper(repr)) => self.reference(scalar::encoder(repr)),

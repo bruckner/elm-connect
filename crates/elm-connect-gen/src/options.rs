@@ -30,6 +30,11 @@ pub struct Options {
     /// JSON or protobuf binary alone. Every message gets both codecs
     /// whatever it says.
     pub wire: Wire,
+    /// Whether a JSON encoder may refuse a value that has no proto3 JSON
+    /// form (`json_write=`): `total`, the default, writes every value;
+    /// `checked` gives the encoders of the messages that can hold one a
+    /// `Result`.
+    pub json_write: JsonWrite,
     /// The rename map (`rename=`, design §3.7): Elm names given by proto
     /// full name, each used in place of the name the naming rules would
     /// derive. [`Options::add_rename`] adds one; the IR builder checks
@@ -142,6 +147,9 @@ impl Options {
                     value_of(key, value, EnumUnknown::VALUES).map(|v| options.enum_unknown = v)
                 }
                 "wire" => value_of(key, value, Wire::VALUES).map(|v| options.wire = v),
+                "json_write" => {
+                    value_of(key, value, JsonWrite::VALUES).map(|v| options.json_write = v)
+                }
                 "rename" => options.add_rename(value),
                 _ => parse_module_prefix(value).map(|v| options.module_prefix = Some(v)),
             };
@@ -199,6 +207,7 @@ impl Options {
             EnumUnknown::VALUES,
         );
         set("wire", self.wire.as_str(), Wire::VALUES);
+        set("json_write", self.json_write.as_str(), JsonWrite::VALUES);
         for (proto, elm) in &self.rename {
             pairs.push(format!("rename={proto}:{elm}"));
         }
@@ -220,19 +229,21 @@ pub fn default_value(key: &str) -> Option<&'static str> {
         "streaming" => Streaming::VALUES,
         "enum_unknown" => EnumUnknown::VALUES,
         "wire" => Wire::VALUES,
+        "json_write" => JsonWrite::VALUES,
         _ => return None,
     };
     values.first().copied()
 }
 
 /// The plugin parameter's keys.
-pub const KEYS: [&str; 8] = [
+pub const KEYS: [&str; 9] = [
     "int64",
     "bytes",
     "unbound_methods",
     "streaming",
     "enum_unknown",
     "wire",
+    "json_write",
     "rename",
     "module_prefix",
 ];
@@ -506,6 +517,49 @@ impl std::str::FromStr for Wire {
             "proto" => Ok(Wire::Proto),
             _ => Err(format!(
                 "`wire` is `both`, `json` or `proto`, not `{value}`"
+            )),
+        }
+    }
+}
+
+/// Whether a JSON encoder may refuse a value that has no proto3 JSON form.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum JsonWrite {
+    /// Every encoder is total, `encodeNote : Note -> Json.Encode.Value`,
+    /// and writes what it is given; only a message that reaches an `Any`
+    /// has an encoder giving a `Result`.
+    #[default]
+    Total,
+    /// A message that can hold a `Timestamp`, `Duration`, `FieldMask`,
+    /// `Value`, `Struct` or `ListValue` is encoded as one reaching an
+    /// `Any` is, `encodeNoteWith : Registry -> Note -> Result
+    /// Proto.Error.Error Json.Encode.Value`, which refuses a value proto3
+    /// JSON cannot write (`Proto.Error.NoJsonForm`).
+    Checked,
+}
+
+impl JsonWrite {
+    /// The values the option takes, as written, the default first.
+    pub const VALUES: &'static [&'static str] = &["total", "checked"];
+
+    /// The value as written.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            JsonWrite::Total => "total",
+            JsonWrite::Checked => "checked",
+        }
+    }
+}
+
+impl std::str::FromStr for JsonWrite {
+    type Err = String;
+
+    fn from_str(value: &str) -> Result<Self, String> {
+        match value {
+            "total" => Ok(JsonWrite::Total),
+            "checked" => Ok(JsonWrite::Checked),
+            _ => Err(format!(
+                "`json_write` is `total` or `checked`, not `{value}`"
             )),
         }
     }

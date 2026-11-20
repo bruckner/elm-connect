@@ -271,6 +271,9 @@ brief problem =
         Proto.Error.TypeMismatch { expected } ->
             "mismatch " ++ expected
 
+        Proto.Error.NoJsonForm typeName ->
+            "no JSON form " ++ typeName
+
 
 jsonFailure : List String -> Json.Decode.Error -> String
 jsonFailure path error =

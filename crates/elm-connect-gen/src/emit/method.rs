@@ -266,6 +266,16 @@ impl Emitter {
                 _ => self.reference((PROTO_JSON, "encodeAnyWith")),
             };
         }
+        if self.write_reaches(shape) {
+            return match ty {
+                TypeRef::Message(name) => {
+                    self.generated_value(&name.module, with_registry(name.encoder_name()))
+                }
+                // A well-known request whose encoder refuses: it takes no
+                // registry.
+                _ => lambda([Pattern::Wildcard], self.value_encoder(shape)),
+            };
+        }
         let encoder = self.request_encoder(ty);
         let ok = var(self.core("Ok"));
         lambda([Pattern::Wildcard], binop(BinOp::ComposeL, ok, encoder))

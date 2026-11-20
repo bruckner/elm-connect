@@ -146,6 +146,9 @@ word =
 
                 UnregisteredType url ->
                     "unregistered " ++ url
+
+                NoJsonForm typeName ->
+                    "no JSON form " ++ typeName
         )
 
 
