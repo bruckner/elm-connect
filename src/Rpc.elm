@@ -100,9 +100,11 @@ import Bytes exposing (Bytes)
 import Dict exposing (Dict)
 import Http
 import Proto.Codec
+import Proto.Internal.Guard as Guard
 import Proto.Method exposing (Method)
 import Rpc.Call
 import Rpc.Client
+import Rpc.Code
 import Rpc.Error
 import Rpc.Internal.Call
 import Rpc.Internal.Client as Client
@@ -228,12 +230,17 @@ a [`BadCall`](Rpc-Error#Cause), and nothing reaches elm/http.
 
 -}
 task : Client codec -> Call codec req res -> Task Error res
-task cl c =
+task ((Client.Client conf _ _ _) as cl) c =
     let
         plan =
             Plan.toSend cl c
     in
-    fromPlan cl c plan (plan.request ())
+    case built conf.baseUrl plan of
+        Just ( sent, _ ) ->
+            fromPlan cl c plan sent
+
+        Nothing ->
+            Task.fail tooDeepToSend
 
 
 {-| Send a call, giving the result to `toMsg`.
@@ -251,24 +258,49 @@ send ((Client.Client cl _ policy _) as client_) toMsg ((Rpc.Internal.Call.Call f
     let
         plan =
             Plan.toSend client_ c
-
-        sent =
-            plan.request ()
     in
-    if Rpc.Internal.Call.retryIn policy c == Nothing && Plan.refused cl.baseUrl plan sent == Nothing then
-        Internal.send
-            (case plan.reader of
-                TextReader read ->
-                    Http.expectStringResponse toMsg read
+    case built cl.baseUrl plan of
+        Nothing ->
+            Task.attempt toMsg (Task.fail tooDeepToSend)
 
-                BytesReader read ->
-                    Http.expectBytesResponse toMsg (read >> Tuple.second)
-            )
-            fields.tracker
-            sent
+        Just ( sent, refusal ) ->
+            if Rpc.Internal.Call.retryIn policy c == Nothing && refusal == Nothing then
+                Internal.send
+                    (case plan.reader of
+                        TextReader read ->
+                            Http.expectStringResponse toMsg read
 
-    else
-        Task.attempt toMsg (fromPlan client_ c plan sent)
+                        BytesReader read ->
+                            Http.expectBytesResponse toMsg (read >> Tuple.second)
+                    )
+                    fields.tracker
+                    sent
+
+            else
+                Task.attempt toMsg (fromPlan client_ c plan sent)
+
+
+{-| The request a plan sends and why it must not be sent, if it must not, or
+`Nothing` when building it ran out of stack: a request message nested too
+deeply to encode. Building it runs every encoder the send runs.
+-}
+built : String -> Plan res -> Maybe ( Request, Maybe Error )
+built baseUrl plan =
+    Guard.run
+        (\() ->
+            let
+                sent =
+                    plan.request ()
+            in
+            ( sent, Plan.refused baseUrl plan sent )
+        )
+
+
+{-| The error of a call whose request is nested too deeply to encode.
+-}
+tooDeepToSend : Error
+tooDeepToSend =
+    Rpc.Error.badCall Rpc.Code.InvalidArgument "the request message is nested too deeply to encode"
 
 
 {-| Cancel a call sent with [`send`](#send) through a tracker

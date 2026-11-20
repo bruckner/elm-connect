@@ -21,6 +21,8 @@ import Http
 import Json.Decode exposing (Decoder)
 import Json.Encode
 import Proto.Error
+import Proto.Internal.Guard as Guard
+import Proto.Internal.JsonError as JsonError
 import Proto.Internal.Method exposing (Method(..), RouteShape(..))
 import Proto.Registry exposing (Registry)
 import Proto.Route exposing (PathError)
@@ -298,7 +300,11 @@ readText responseBody decoder text =
 
         Just key ->
             Json.Decode.decodeString Json.Decode.value text
-                |> Result.andThen (\value -> Json.Decode.decodeValue decoder (Json.Encode.object [ ( key, value ) ]))
+                |> Result.andThen
+                    (\value ->
+                        Guard.run (\() -> Json.Decode.decodeValue decoder (Json.Encode.object [ ( key, value ) ]))
+                            |> Maybe.withDefault (Err Proto.Error.tooDeepJson)
+                    )
 
 
 {-| The error a successful text answer stands for when the response's
@@ -307,7 +313,15 @@ a type the registry lacks named as `UnregisteredType`.
 -}
 badText : Registry -> GoodText -> Json.Decode.Error -> Error
 badText registry good problem =
-    Error.badBody (Status.bodyProblem registry problem) (Status.answerOf good.metadata good.raw)
+    Error.badBody
+        (case Status.bodyProblem registry problem of
+            Proto.Error.BadJson kept ->
+                Proto.Error.BadJson (JsonError.scrub kept)
+
+            other ->
+                other
+        )
+        (Status.answerOf good.metadata good.raw)
 
 
 {-| Why `sent`, the plan's request or one an application rewrote, must not

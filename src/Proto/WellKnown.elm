@@ -109,7 +109,7 @@ struct =
 -}
 value : Message Json.Encode.Value
 value =
-    init "google.protobuf.Value" identity Json.Decode.value (Proto.Binary.messageEncoder Proto.Binary.value) (Proto.Binary.messageDecoder Proto.Binary.value)
+    init "google.protobuf.Value" identity Proto.Json.jsonValue (Proto.Binary.messageEncoder Proto.Binary.value) (Proto.Binary.messageDecoder Proto.Binary.value)
 
 
 {-| `google.protobuf.ListValue`: a JSON array.

@@ -22,7 +22,7 @@ module Proto.Json exposing
     , fieldMask, encodeFieldMask
     , empty, encodeEmpty
     , nullValue, encodeNullValue
-    , struct, encodeStruct
+    , struct, encodeStruct, jsonValue
     , listValue, encodeListValue
     , anyWith, encodeAnyWith
     )
@@ -183,7 +183,7 @@ their scalar's helpers.
 @docs fieldMask, encodeFieldMask
 @docs empty, encodeEmpty
 @docs nullValue, encodeNullValue
-@docs struct, encodeStruct
+@docs struct, encodeStruct, jsonValue
 @docs listValue, encodeListValue
 @docs anyWith, encodeAnyWith
 
@@ -298,7 +298,7 @@ jsonAt names =
                         Json.Decode.fail problem
 
                     Spelled (Ok found) ->
-                        Json.Decode.succeed (Maybe.map Tuple.second found)
+                        checkedJson found
             )
 
 
@@ -384,7 +384,7 @@ messageValueFieldEither jsonName protoName =
                             Json.Decode.fail problem
 
                         Ok found ->
-                            Json.Decode.succeed (Maybe.map Tuple.second found)
+                            checkedJson found
                 )
         )
 
@@ -1132,7 +1132,7 @@ valueMemberEither jsonName protoName constructor =
     Member
         { names = spellings jsonName protoName
         , nullIsSet = True
-        , decoder = Json.Decode.map constructor Json.Decode.value
+        , decoder = Json.Decode.map constructor jsonValue
         }
 
 
@@ -2376,7 +2376,7 @@ other JSON, such as an array, fails.
 -}
 struct : Decoder (Dict.Dict String Value)
 struct =
-    Json.Decode.dict Json.Decode.value
+    Json.Decode.map2 (\() fields -> fields) (jsonWithin 1) (Json.Decode.dict Json.Decode.value)
 
 
 {-| Encode a `google.protobuf.Struct` from its members, as a JSON object.
@@ -2391,7 +2391,7 @@ other JSON, such as an object, fails.
 -}
 listValue : Decoder (List Value)
 listValue =
-    Json.Decode.list Json.Decode.value
+    Json.Decode.map2 (\() items -> items) (jsonWithin 1) (Json.Decode.list Json.Decode.value)
 
 
 {-| Encode a `google.protobuf.ListValue` from its elements, as a JSON array.
@@ -2696,3 +2696,90 @@ depthLimit =
 tooDeep : Decoder a
 tooDeep =
     Json.Decode.fail "Expecting messages nested at most 100 deep"
+
+
+
+-- JSON OF ANY SHAPE
+
+
+{-| Decode a `google.protobuf.Value`: any JSON nested at most 50 levels deep,
+a scalar or an empty array or object being one, the depth at which it can be
+written as protobuf binary and read back. Deeper JSON fails with "Expecting
+JSON nested at most 50 deep". `Struct` and `ListValue` are held to the same.
+-}
+jsonValue : Decoder Value
+jsonValue =
+    Json.Decode.map2 (\() json -> json) (jsonWithin 1) Json.Decode.value
+
+
+{-| A field of type `Value` found by its key, checked as [`jsonValue`](#jsonValue)
+checks one.
+-}
+checkedJson : Maybe ( String, Value ) -> Decoder (Maybe Value)
+checkedJson found =
+    case found of
+        Just ( name, json ) ->
+            Json.Decode.field name (Json.Decode.map Just jsonValue)
+
+        Nothing ->
+            Json.Decode.succeed Nothing
+
+
+type JsonKind
+    = JsonArray
+    | JsonObject
+    | JsonLeaf
+
+
+jsonKind : Decoder JsonKind
+jsonKind =
+    Json.Decode.oneOf
+        [ Json.Decode.map (\_ -> JsonArray) (Json.Decode.list (Json.Decode.succeed ()))
+        , Json.Decode.map (\_ -> JsonObject) (Json.Decode.keyValuePairs (Json.Decode.succeed ()))
+        , Json.Decode.succeed JsonLeaf
+        ]
+
+
+{-| Succeeds on JSON whose values nest no deeper than `jsonDepthLimit`, read
+at `depth`: the checks for depths 1 to 50, built once, each finding the next
+in a table, so a check is never deeper than the limit.
+-}
+jsonWithin : Int -> Decoder ()
+jsonWithin depth =
+    case Array.get (depth - 1) jsonChecks of
+        Just check ->
+            check
+
+        Nothing ->
+            Json.Decode.fail "Expecting JSON nested at most 50 deep"
+
+
+jsonChecks : Array (Decoder ())
+jsonChecks =
+    Array.initialize jsonDepthLimit (\index -> jsonCheck (index + 1))
+
+
+jsonCheck : Int -> Decoder ()
+jsonCheck depth =
+    let
+        next =
+            Json.Decode.lazy (\_ -> jsonWithin (depth + 1))
+    in
+    jsonKind
+        |> Json.Decode.andThen
+            (\kind ->
+                case kind of
+                    JsonArray ->
+                        Json.Decode.map (\_ -> ()) (Json.Decode.list next)
+
+                    JsonObject ->
+                        Json.Decode.map (\_ -> ()) (Json.Decode.keyValuePairs next)
+
+                    JsonLeaf ->
+                        Json.Decode.succeed ()
+            )
+
+
+jsonDepthLimit : Int
+jsonDepthLimit =
+    50
