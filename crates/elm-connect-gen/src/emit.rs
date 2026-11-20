@@ -93,7 +93,9 @@
 //! - A message is a record type alias, a default value (`defaultFoo :
 //!   Foo`, every field at its proto3 default and every oneof unset), an
 //!   encoder (`Foo -> Json.Encode.Value`) and a decoder
-//!   (`Json.Decode.Decoder Foo`).
+//!   (`Json.Decode.Decoder Foo`). Under `unknown_fields=keep` the record
+//!   ends in `unknownFields_ : Proto.Unknown.Fields`, empty in the default
+//!   and in whatever JSON decodes, and left out of the JSON encoding.
 //! - Encoders are `Proto.Json.objectOfFields` over one `( jsonName, Maybe Value )`
 //!   pair per field, and leave out every field at its default, as
 //!   protobuf-go's `protojson` does: a field without presence at its zero
@@ -203,7 +205,7 @@ use crate::ir::{
     Package, Service, TypeName,
 };
 use crate::naming::VERSION_VALUE;
-use crate::options::{EnumUnknown, Options, Wire};
+use crate::options::{EnumUnknown, Options, UnknownFields, Wire};
 use crate::{DEFAULT_OPTIONS, HEADER_PREFIX, OPTIONS_PREFIX, SENTINEL, VERSION};
 
 use self::field::{FieldShape, ValueShape};
@@ -226,6 +228,8 @@ const TIME: &str = "Time";
 const ELM_BYTES: &str = "Bytes";
 /// The runtime package's bytes conversions, home of `Proto.Bytes.empty`.
 const PROTO_BYTES: &str = "Proto.Bytes";
+/// The runtime's unknown fields, held under `unknown_fields=keep`.
+const PROTO_UNKNOWN: &str = "Proto.Unknown";
 /// The runtime package's `Duration`, imported as
 /// `import Proto.Duration exposing (Duration)`.
 const PROTO_DURATION: &str = "Proto.Duration";
@@ -620,6 +624,8 @@ struct Emitter {
     holding: Holding,
     /// What an unknown enum value name reads as.
     enum_unknown: EnumUnknown,
+    /// Whether messages keep the unknown fields binary carries.
+    unknown_fields: UnknownFields,
     /// Which codecs the option wires into methods; package modules emit
     /// both whatever it says.
     wiring: Wire,
@@ -637,6 +643,7 @@ impl Emitter {
             unqualified: BTreeMap::new(),
             holding: Holding::of(options),
             enum_unknown: options.enum_unknown,
+            unknown_fields: options.unknown_fields,
             wiring: options.wire,
             reach: AnyReach::default(),
             recorded: match options.recorded() {

@@ -1,4 +1,4 @@
-module Codec.BinaryRoundTrip exposing (Codec, binaryOnly, both, suite)
+module Codec.BinaryRoundTrip exposing (Codec, binaryOnly, both, fromHex, suite, suiteKeeping, toHex)
 
 {-| Running the generated binary codecs of `conformance/codec/codec.proto` on
 the protobuf binary of each sample, written by
@@ -79,8 +79,30 @@ unknownFields =
     "f8ffffff0f01" ++ "c23e03616263" ++ "c93e0102030405060708" ++ "d53e01020304"
 
 
+{-| [`unknownFields`](#unknownFields) as a message keeping them writes them:
+by field number.
+-}
+unknownFieldsByNumber : String
+unknownFieldsByNumber =
+    "c23e03616263" ++ "c93e0102030405060708" ++ "d53e01020304" ++ "f8ffffff0f01"
+
+
 suite : String -> List ( String, Codec ) -> List Sample -> Test
-suite name codecs samples =
+suite =
+    suiteWith False
+
+
+{-| [`suite`](#suite) for codecs generated under `unknown_fields=keep`: the
+unknown fields appended are written back, after the known ones and by field
+number.
+-}
+suiteKeeping : String -> List ( String, Codec ) -> List Sample -> Test
+suiteKeeping =
+    suiteWith True
+
+
+suiteWith : Bool -> String -> List ( String, Codec ) -> List Sample -> Test
+suiteWith keeps name codecs samples =
     let
         table =
             Dict.fromList codecs
@@ -93,18 +115,23 @@ suite name codecs samples =
                         test sample.name (\_ -> Expect.fail ("no codec for " ++ sample.message))
 
                     Just codec ->
-                        describe sample.name (sampleTests codec sample)
+                        describe sample.name (sampleTests keeps codec sample)
             )
             samples
         )
 
 
-sampleTests : Codec -> Sample -> List Test
-sampleTests codec sample =
+sampleTests : Bool -> Codec -> Sample -> List Test
+sampleTests keeps codec sample =
     [ test "binary re-encodes as itself" <|
         \_ -> reencodes codec sample.binary sample.binary
-    , test "binary with unknown fields re-encodes without them" <|
-        \_ -> reencodes codec (sample.binary ++ unknownFields) sample.binary
+    , if keeps then
+        test "binary with unknown fields re-encodes with them, by number" <|
+            \_ -> reencodes codec (sample.binary ++ unknownFields) (sample.binary ++ unknownFieldsByNumber)
+
+      else
+        test "binary with unknown fields re-encodes without them" <|
+            \_ -> reencodes codec (sample.binary ++ unknownFields) sample.binary
     ]
         ++ (case codec.fromJson of
                 Nothing ->

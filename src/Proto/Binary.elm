@@ -3,6 +3,7 @@ module Proto.Binary exposing
     , Codec
     , merge, Field, field, fieldInto, repeated, mapEntry, insertBool, skip
     , implicit, optional, present, list, listUnpacked, dict, boolMap
+    , mergeKeep, unknown
     , double, float
     , int32, sint32, sfixed32, uint32, fixed32
     , int64, sint64, sfixed64, uint64, fixed64
@@ -31,7 +32,8 @@ gives the same bytes. Decoders read fields in any order, the last of a
 repeated singular field winning and a message field merged into the one
 read before it, read a repeated scalar packed or not, and skip a field they
 do not know, or one of a wire type its declaration does not take, by its
-wire type; a group, a length past the end, a varint longer than ten bytes
+wire type (code generated under `unknown_fields=keep` keeps it instead, in
+the message's [unknown fields](Proto-Unknown)); a group, a length past the end, a varint longer than ten bytes
 and a `string` that is not UTF-8 fail, with a
 [`Proto.Error.Binary`](Proto-Error#Binary) saying why and where.
 
@@ -55,6 +57,14 @@ outside ±(2^53 − 1).
 # Encoding a message
 
 @docs implicit, optional, present, list, listUnpacked, dict, boolMap
+
+
+# Keeping unknown fields
+
+Code generated with `unknown_fields=keep` reads and writes a message's
+[unknown fields](Proto-Unknown) with these.
+
+@docs mergeKeep, unknown
 
 
 # Scalars
@@ -91,6 +101,8 @@ import Proto.Duration exposing (Duration)
 import Proto.Error exposing (Reason(..))
 import Proto.Internal.Any as InternalAny exposing (Any)
 import Proto.Internal.Binary as Internal exposing (Failure)
+import Proto.Internal.Unknown as InternalUnknown
+import Proto.Unknown
 import Time
 
 
@@ -771,6 +783,139 @@ skipValue wire bound =
 
         _ ->
             D.succeed -2
+
+
+
+-- KEEPING UNKNOWN FIELDS
+--
+-- This section builds on `merge`, `field`, `skip`, `present` and `scalar`
+-- and writes no record of its own. Elm's optimized output names record
+-- fields by how often every module a program loads uses them, so a new use
+-- here would rename fields in every program's bundle, whether or not it
+-- keeps unknown fields.
+
+
+{-| [`merge`](#merge) for a message generated under `unknown_fields=keep`: a
+field whose number the message does not declare, or whose wire type its
+declaration does not take, is kept in the message's
+[unknown fields](Proto-Unknown) rather than skipped, after any it held
+already. `wires` gives the wire types a field number takes, as bits (`4` for
+a length-delimited field, wire type 2), `0` for a number the message does
+not declare; `get` and `set` reach the message's unknown fields.
+
+    mergeLeafBytes : Leaf -> Proto.Binary.Decoder Leaf
+    mergeLeafBytes =
+        Proto.Binary.mergeKeep "pkg.Leaf"
+            (\number ->
+                case number of
+                    1 ->
+                        4
+
+                    _ ->
+                        0
+            )
+            (\value -> value.unknownFields_)
+            (\v value -> { name = value.name, unknownFields_ = v })
+            (\number wire value ->
+                case number of
+                    1 ->
+                        Proto.Binary.field Proto.Binary.string (\v -> { name = v, unknownFields_ = value.unknownFields_ }) wire value
+
+                    _ ->
+                        Proto.Binary.skip wire value
+            )
+            identity
+
+-}
+mergeKeep : String -> (Int -> Int) -> (a -> Proto.Unknown.Fields) -> (Proto.Unknown.Fields -> a -> a) -> (Int -> Int -> a -> Field a) -> (a -> a) -> a -> Decoder a
+mergeKeep name wires get set step finish =
+    merge name
+        (\number wire acc ->
+            if Bitwise.and (wires number) (Bitwise.shiftLeftBy wire 1) == 0 then
+                keepUnknown get set number wire acc
+
+            else
+                step number wire acc
+        )
+        (\acc -> settleUnknown get set (finish acc))
+
+
+{-| An unknown field read into the value's unknown fields, newest first; a
+group fails, as [`skip`](#skip) fails one.
+-}
+keepUnknown : (a -> Proto.Unknown.Fields) -> (Proto.Unknown.Fields -> a -> a) -> Int -> Int -> a -> Field a
+keepUnknown get set number wire acc =
+    let
+        add v =
+            case get acc of
+                InternalUnknown.Fields held ->
+                    set (InternalUnknown.Fields (( number, v ) :: held)) acc
+    in
+    case wire of
+        0 ->
+            field unknownVarint (\(U64 high low) -> add (Proto.Unknown.Varint high low)) wire acc
+
+        1 ->
+            field unknownFixed64 (\(U64 high low) -> add (Proto.Unknown.Fixed64 high low)) wire acc
+
+        2 ->
+            field bytes (\text -> add (Proto.Unknown.Delimited text)) wire acc
+
+        5 ->
+            field fixed32 (\bits -> add (Proto.Unknown.Fixed32 bits)) wire acc
+
+        _ ->
+            skip wire acc
+
+
+settleUnknown : (a -> Proto.Unknown.Fields) -> (Proto.Unknown.Fields -> a -> a) -> a -> a
+settleUnknown get set value_ =
+    case get value_ of
+        InternalUnknown.Fields [] ->
+            value_
+
+        held ->
+            set (InternalUnknown.settle held) value_
+
+
+unknownVarint : Codec U64
+unknownVarint =
+    scalar 0 10 fastVarint64 varint64 writeVarint64 (\_ -> False) (U64 0 0)
+
+
+unknownFixed64 : Codec U64
+unknownFixed64 =
+    scalar 1 8 fastFixed64 fixed64Read fixed64Write (\_ -> False) (U64 0 0)
+
+
+{-| A message's [unknown fields](Proto-Unknown), written after its known ones
+in the order they are held: by field number, and in arrival order within one
+number.
+-}
+unknown : Proto.Unknown.Fields -> Encoder
+unknown fields =
+    case Proto.Unknown.toList fields of
+        [] ->
+            nothing
+
+        held ->
+            E.sequence (List.map writeUnknown held)
+
+
+writeUnknown : ( Int, Proto.Unknown.Value ) -> Encoder
+writeUnknown ( number, v ) =
+    case v of
+        Proto.Unknown.Varint high low ->
+            present unknownVarint number (U64 high low)
+
+        Proto.Unknown.Fixed64 high low ->
+            present unknownFixed64 number (U64 high low)
+
+        Proto.Unknown.Fixed32 bits ->
+            present fixed32 number bits
+
+        Proto.Unknown.Delimited text ->
+            present bytes number text
 
 
 

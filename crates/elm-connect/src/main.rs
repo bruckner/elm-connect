@@ -6,7 +6,7 @@ use elm_connect_gen::diagnostics::Diagnostics;
 use elm_connect_gen::naming::REPOSITORY_FILES;
 use elm_connect_gen::{
     Bytes, EnumUnknown, Generated, Int64, ModuleName, Options, Spelling, Streaming, UnboundMethods,
-    Wire,
+    UnknownFields, Wire,
 };
 use miette::Report;
 
@@ -136,6 +136,13 @@ struct GenArgs {
     /// and leaves the other's codecs out of a program's bundle.
     #[arg(long, value_name = "both|json|proto", default_value = "both")]
     wire: Wire,
+    /// What a field protobuf binary carries and the schema does not know
+    /// becomes: `drop` or `keep`.
+    ///
+    /// `drop`: skipped. `keep`: kept in each message's `unknownFields_`
+    /// record field, written back after the known fields, seen by `==`.
+    #[arg(long, value_name = "drop|keep", default_value = "drop")]
+    unknown_fields: UnknownFields,
     /// An Elm name for a proto element, such as `notes.v1.Note:Memo`.
     ///
     /// The value is `<proto full name>:<Elm name>`, and the Elm name
@@ -173,6 +180,7 @@ impl GenArgs {
         options.streaming = self.streaming;
         options.enum_unknown = self.enum_unknown;
         options.wire = self.wire;
+        options.unknown_fields = self.unknown_fields;
         options.module_prefix = self.module_prefix.clone();
         options.spelling = Spelling::Flags;
         let mut problems = Diagnostics::new();

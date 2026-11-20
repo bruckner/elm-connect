@@ -1,0 +1,9 @@
+syntax = "proto3";
+
+// The runtime's unknown fields live in `Proto.Unknown`, whatever the
+// `unknown_fields` option says.
+package proto.unknown;
+
+message Field {
+  string text = 1;
+}

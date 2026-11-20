@@ -702,6 +702,28 @@ rpc shared call =
   The decoder (`Proto.Json.emptyMessage`) accepts any JSON object,
   ignoring its keys, and fails on anything else, as every other message
   does.
+- **Unknown fields, under `unknown_fields=keep`.** The option
+  (`drop|keep`, default `drop`, recorded in the header) gives every
+  record a last field, `unknownFields_ : Proto.Unknown.Fields`, after
+  the proto's fields and so last in the positional constructor too: the
+  fields read from a protobuf binary whose field numbers or types are
+  unrecognized (§5.5). The default holds `Proto.Unknown.empty`, the JSON
+  decoder gives it (`Json.Decode.map` of the constructor applied to
+  `Proto.Unknown.empty`, after the steps), and the JSON encoder leaves
+  it out; the binary encoder writes it last, after every known field.
+  An empty message's record is `{ unknownFields_ : Proto.Unknown.Fields }`.
+  The trailing underscore marks the name as the generator's own, as in
+  `elmConnectVersion_`: the naming rules never end a field's name in
+  `_` but to escape a reserved word, and a `rename` cannot, so no
+  proto field takes it (a proto field `unknown_fields` is
+  `unknownFields` beside it). Every record literal of a generated
+  message names the field, which is why it is an option and not the
+  default (decisions: "Unknown fields kept in the record, by option").
+  `Proto.Unknown` is a runtime module whatever the option says, so a
+  package `proto.unknown` is `naming::reserved_module`. The
+  `unknown_fields_keep` case pins the output: a message under the merge
+  steps' record-literal cap and one over it, a oneof, a nested message,
+  a map and an empty message.
 - Every message gets `defaultFoo`, so callers write
   `{ defaultFoo | title = "x" }` and
   `Maybe.withDefault defaultFoo.stars msg.stars` without knowing the
@@ -3817,7 +3839,8 @@ directions, its default and whether a repeated field of it packs, and
 a handful of field helpers that binary codecs are written with
 (`merge`, `field`, `fieldInto`, `repeated`, `mapEntry`, `skip` to
 read; `implicit`, `optional`, `present`, `list`, `listUnpacked`,
-`dict`, `boolMap` to write). Generated code calls it; an application
+`dict`, `boolMap` to write; `mergeKeep` and `unknown` under
+`unknown_fields=keep`). Generated code calls it; an application
 meets `decode`, `encode` and `Decoder`. The generator writes binary
 codecs against it under `wire=proto` or `wire=both` (§3.10), and
 Connect's proto codec sends them (§5.3).
@@ -3887,13 +3910,52 @@ Connect's proto codec sends them (§5.3).
   paths appended; a `Value` replaced unless both hold an object or both
   a list, which are merged as a `Struct` or a `ListValue`; an `Any`'s
   type URL and value each replaced when present.
-- **Unknown fields are skipped**, by their wire type, and so is a field
-  of a wire type its declaration does not take, as protobuf-go files
-  it under unknown fields rather than failing; they are not kept, so a
-  message read and written again loses them (roadmap: unknown fields).
-  A group, field number 0, a length past the end of its message, a
-  varint longer than ten bytes and a `string` that is not UTF-8 fail the
-  decode, each with its `Proto.Error.Reason`.
+- **Unknown fields are skipped** by default, by their wire type, and so
+  is a field of a wire type its declaration does not take, as
+  protobuf-go files it under unknown fields rather than failing; a
+  message read and written again loses them. A group, field number 0, a
+  length past the end of its message, a varint longer than ten bytes
+  and a `string` that is not UTF-8 fail the decode, each with its
+  `Proto.Error.Reason`, whatever the option.
+- **Unknown fields are kept under `unknown_fields=keep`**, in the
+  record's `unknownFields_` (§3.2), as `Proto.Unknown.Fields`: a list
+  of (field number, value) pairs, each value by its wire type (a varint
+  or a fixed64 as two unsigned 32-bit halves, a fixed32 unsigned, a
+  length-delimited value as base64), sorted by field number with
+  arrival order kept within one number. That order is protobuf-go's
+  `proto.Equal` order, and makes `==` the comparison: fields of
+  different numbers in another order are equal, fields of one number in
+  another order are not (to a schema that knows the field, that order
+  is a repeated field's), an overlong varint equals its shortest form,
+  and a length-delimited value compares as its bytes, so a nested
+  unknown message with its fields reordered, or a packed run against
+  the same numbers unpacked, is not equal. The merge is
+  `Proto.Binary.mergeKeep`, given beside the step and the finish a
+  table of the wire types each field number takes (a scalar's own; a
+  repeated packable scalar's and 2; a message, map or length-delimited
+  scalar 2) and the record's getter and setter (the setter a record
+  literal under the merge steps' 64-field cap, `unknownFields_`
+  counted). A field whose number the table does not take, or whose
+  wire type it does not, is read as an unknown value and consed onto
+  the record's fields, newest first; the finish turns them into
+  canonical order, and is applied to the value read into first, as the
+  generated finish is, so that a message merged into one already
+  holding unknown fields puts the held ones first within each number.
+  Both readers keep them, so the fast and the locating reader still
+  fail on the same inputs. A message with none pays the table's lookup
+  per field and one test of the field after the finish. They are
+  written after the known fields (`Proto.Binary.unknown`, the
+  encoder's last item), so a nested message's length includes them.
+  The code lives in `Proto.Binary` but builds on its existing helpers
+  and writes no record: Elm's optimized output names record fields by
+  their use across every module a program loads, and a new use there
+  would rename fields in every bundle, the option on or off. They
+  reach generated messages alone: the messages the runtime holds as its
+  own types (`Timestamp`, `Duration`, `FieldMask`, `Struct`,
+  `ListValue`, `Value`, `Empty`, the wrappers and `Any`'s own two
+  fields), map entries, `Proto.ErrorDetails` and the error bodies the
+  protocols read skip them. An `Any`'s payload is kept as it arrived,
+  unknown fields and all, until it is unpacked.
 - **Strings are UTF-8, as the schema says.** proto3 requires a `string`
   field to hold UTF-8, and `Proto.Binary.string` checks it, failing the
   field with `InvalidUtf8`; so do a map's string keys, `StringValue` and
@@ -3934,7 +3996,8 @@ Connect's proto codec sends them (§5.3).
   holds the output to `elm-format --validate` and `elm make`.
 - Options (`--elm-connect_opt=` or CLI flags): `int64=string|int`,
   `bytes=string|bytes`, `unbound_methods=implicit|error`, `streaming=error|skip`,
-  `enum_unknown=fail|zero`,
+  `enum_unknown=fail|zero`, `wire=both|json|proto`,
+  `unknown_fields=drop|keep`,
   `rename=<proto full name>:<Elm name>` (repeatable) and
   `module_prefix=`; an option for unrecognised enum values (§3.3) is on
   the roadmap.
@@ -3946,7 +4009,11 @@ Connect's proto codec sends them (§5.3).
   --unbound-methods error`), `streaming` (§3.8;
   `--elm-connect_opt=streaming=skip`, or `elm-connect gen --streaming
   skip`), `enum_unknown` (§3.3; `--elm-connect_opt=enum_unknown=zero`,
-  or `elm-connect gen --enum-unknown zero`), `rename` (§3.7; `--elm-connect_opt=rename=notes.v1.Note:Memo`,
+  or `elm-connect gen --enum-unknown zero`), `wire` (§3.10;
+  `--elm-connect_opt=wire=json`, or `elm-connect gen --wire json`),
+  `unknown_fields` (§3.2, §5.5;
+  `--elm-connect_opt=unknown_fields=keep`, or `elm-connect gen
+  --unknown-fields keep`), `rename` (§3.7; `--elm-connect_opt=rename=notes.v1.Note:Memo`,
   repeated, or `elm-connect gen --rename notes.v1.Note:Memo`, repeated),
   `module_prefix` (§3.1; `--elm-connect_opt=module_prefix=Api.Notes`, or
   `elm-connect gen --module-prefix Api.Notes`).
@@ -4131,21 +4198,29 @@ any, in `expected/warnings.txt`, rendered as `diagnostics.txt` is.
   `Any`'s packed message re-encoded the same way and a kind-less `Value`
   given `null_value`), and checks that prost-reflect reads each back as
   the sample. The protos are generated under `wire=both` (also with
-  `int64=int` and with `bytes=bytes`) and `wire=proto`, and
+  `int64=int`, with `bytes=bytes` and with `unknown_fields=keep`) and
+  `wire=proto`, and
   `tests/Codec/BinaryRoundTripTest.elm` decodes every sample's binary
   with the generated decoder and re-encodes it to the same bytes, with
-  unknown fields of every wire type appended and without; where the set
+  unknown fields of every wire type appended and without (under
+  `unknown_fields=keep`, re-encoded with them, by field number); where the set
   has JSON codecs, the value read from binary writes the JSON the value
   read from JSON writes, and the value read from JSON encodes to the
   same bytes; an `Any` read from JSON and written back from binary is
   converted through the registry the table builds (the packages' and
   the well-known types', `binaryJson` in the samples). Byte identity with
   bytes prost-reflect reads is the oracle that prost-reflect reads what
-  the encoders write.
+  the encoders write. An older schema, `codec.proto` with every
+  odd-numbered field left out but each oneof's last, is generated under
+  `unknown_fields=keep`, and `tests/Codec/UnknownRoundTripTest.elm`
+  reads every sample's binary with it, writes it, and reads that with
+  the full schema: the value read is the sample, and its bytes the
+  sample's.
 - The protobuf conformance suite: protobuf's `conformance_test_runner`
   (v32.0-rc2, as bufbuild/protobuf-conformance builds it) drives
   `conformance/protobuf/`, an Elm worker over the Elm generated under
-  `wire=both` from the suite's `test_messages_proto3.proto`, with an
+  `wire=both` and `unknown_fields=keep` from the suite's
+  `test_messages_proto3.proto`, with an
   oracle independent of prost-reflect: protobuf's own parsers. Its
   registry is `Proto.Registry.unionAll [ Proto3.registry,
   Proto.WellKnown.registry ]`, set explicitly, since a generated
@@ -4155,8 +4230,7 @@ any, in `expected/warnings.txt`, rendered as `diagnostics.txt` is.
   binary and proto3 JSON run in and out, every way between them, 1,468
   cases; JSPB, text, proto2 and editions are answered skipped. The cases
   it fails are `conformance/protobuf/failure_list.txt`, each group a
-  design choice the suite disagrees with (unknown fields not kept, §5.5;
-  encoders that cannot refuse a value with no JSON form; millisecond
+  design choice the suite disagrees with (encoders that cannot refuse a value with no JSON form; millisecond
   timestamps, §3.5; unquoted 64-bit numbers past 2^53; unknown enum
   numbers read as the zero value and unknown names failing; a key
   written twice read as its last value, §3.4); no fix candidate (an

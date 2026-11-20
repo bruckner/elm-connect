@@ -51,7 +51,7 @@ pub const REPOSITORY_BLOBS: &str = repository_blobs!();
 pub const REPOSITORY_FILES: &str = concat!(repository_blobs!(), env!("CARGO_PKG_VERSION"), "/");
 
 /// The runtime package's exposed modules, as its `elm.json` lists them.
-pub const RUNTIME_MODULES: [&str; 33] = [
+pub const RUNTIME_MODULES: [&str; 34] = [
     "Rpc",
     "Rpc.Call",
     "Rpc.Code",
@@ -80,6 +80,7 @@ pub const RUNTIME_MODULES: [&str; 33] = [
     "Proto.Error",
     "Proto.Json",
     "Proto.Binary",
+    "Proto.Unknown",
     "Proto.Int64",
     "Proto.Bytes",
     "Proto.Duration",
@@ -575,6 +576,12 @@ pub const REGISTRY_ARGUMENT: &str = "types";
 /// and only the reserved-word escape adds one, so no proto name derives to
 /// it, and a `rename` to a value cannot end in `_`.
 pub const VERSION_VALUE: &str = "elmConnectVersion_";
+
+/// The record field a message generated under `unknown_fields=keep` holds
+/// its unknown fields in. Its trailing underscore marks it as the
+/// generator's own, as [`VERSION_VALUE`]'s does: no proto field name or
+/// `rename` derives to it, so no message's own field can take it.
+pub const UNKNOWN_FIELDS: &str = "unknownFields_";
 
 /// The parameter an encoder binds the value it encodes to. Elm rejects a
 /// local name that shadows a top-level one, so no top-level value of a

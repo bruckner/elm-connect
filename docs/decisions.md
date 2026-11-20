@@ -337,6 +337,95 @@ number already reads; `fail` stays the default. It came before the
 `<Enum>Unrecognized Int` option because it needs no change to the
 generated types. Where: design §3.3.
 
+### Unknown fields kept in the record, by option
+
+*2026-11-19.*
+
+Under the generator option `unknown_fields=keep` (default `drop`) every
+generated message record ends in `unknownFields_ :
+Proto.Unknown.Fields`, the fields read from a protobuf binary whose
+field numbers or types are unrecognized, so a message read and written
+back keeps them, and `==` sees them. Proto3 JSON carries none: a JSON read
+gives none and a JSON write leaves them out.
+
+- **A field in the record, not a value beside the message.** A decode
+  could have returned the fields beside the record, or the message could
+  have been an opaque type holding both. A value beside the record
+  stops matching it once the application edits a list of messages
+  (which fields go with which element after a filter or a sort?), and
+  a nested message would need a tree of them shaped like the record.
+  An opaque message changes every generated type and every field
+  access. A record field goes wherever the message goes.
+- **An option, not the default.** Elm has no private or defaulted
+  record field, so every record literal of a generated message must
+  name the new one (`unknownFields_ = Proto.Unknown.empty`); a record
+  built from the default by update needs nothing. The notes example
+  changes five lines. As the default that would break every
+  application's literals; as an option it is a minor, and with it off
+  the generated modules and every program's bundle are what they were,
+  byte for byte. That needs the keeping code in `Proto.Binary` to write
+  no record: Elm's optimized output names record fields by their use
+  across every module a program loads, and a version that added such
+  uses renamed fields in three of six bundles. It is built on `merge`,
+  `field`, `skip`, `present` and `scalar` instead.
+- **`unknownFields_`, with its underscore.** The trailing underscore
+  marks the field as the generator's own beside the message's fields,
+  as in `elmConnectVersion_`. No proto field name or `rename` derives
+  to a name ending in `_` except a reserved word's escape (`type_`),
+  so nothing has to be reserved, and no schema's output changes when
+  the option is off.
+- **Structured data, not one base64 text.** The fields are a list of
+  (number, value) pairs, a value by its wire type (`Varint` and
+  `Fixed64` as two unsigned 32-bit halves, `Fixed32`, `Delimited` as
+  base64), rather than the raw bytes as one base64 text. Both were
+  built: the same size within 50 B gzipped and the same cost with no
+  unknown fields, but the structured form decoded busy input far more
+  cheaply (a note half of whose bytes were unknown: +23 % against
+  +57 % over dropping them; the 300-note list +30 % against +71 %),
+  while the text encoded such a note more cheaply (7.8 against
+  10.4 µs). Reads are commoner than writes, and the structured form
+  gives the fields as data (`toList`, `fromList`) with no parser of
+  its own.
+- **Sorted by field number, arrival order kept within one.** That is
+  protobuf-go's `proto.Equal` order, and it makes `==` say what a user
+  would expect: fields of different numbers that arrived in another
+  order are equal; fields of one number in another order are not, as
+  to a schema that knows the field that order is a repeated field's;
+  an overlong varint equals its shortest form (protobuf-go compares
+  the raw bytes, so there it does not); a length-delimited value
+  compares as its bytes, since the wire does not say what it holds, so
+  a nested unknown message with its fields reordered, or a packed run
+  against the same numbers unpacked, is not equal. protobuf-es compares
+  in arrival order across numbers too. A known field in a wire type its
+  declaration does not take is kept as unknown, as protobuf-go keeps
+  it.
+- **Where it does not reach.** The messages the runtime holds as its
+  own types (`Timestamp`, `Duration`, `FieldMask`, `Struct`,
+  `ListValue`, `Value`, `Empty`, the wrappers, `Any`'s own fields), map
+  entries (protobuf-go drops theirs too), `Proto.ErrorDetails` and the
+  error bodies the protocols read skip them. An `Any` keeps its
+  payload's bytes, so its message's unknown fields survive until it is
+  unpacked, and the unpack keeps them when that message was generated
+  with the option.
+- **The least surface.** `Proto.Unknown` exposes `Fields`, `empty` for
+  record literals, and `Value(..)`, `toList` and `fromList` for tests
+  and for reading what a newer peer sent. An `isEmpty` was left out,
+  since `== Proto.Unknown.empty` says the same; so were a lookup by
+  number, adding or removing one field, and the raw bytes, which a user
+  can build from `toList` if one is ever needed.
+
+With it on (landing measurements, node, one build per process): a
+binary decode with no unknown fields costs 1 to 2 % more than with it
+off; with a tenth of the bytes unknown 5 % (a note, a 300-note list) to
+13 % (protobuf's 120-field test message), with half 27 to 33 %, and
+86 % on the 120-field message, past the record-literal cap, where each
+field kept copies the whole record; the notes example
+grows 722 B gzipped, a minimal Connect proto client 500 B and a
+minimal `wire=json` client 20 B. Proto3 JSON decoding pays one
+`Json.Decode.map` per message. The protobuf conformance testee is
+generated with the option, and its two unknown-field cases pass. Where:
+design §3.2 and §5.5; generator.md, Options; `Proto.Unknown`.
+
 ### `Timestamp` as `Time.Posix`
 
 *2026-10-10.*

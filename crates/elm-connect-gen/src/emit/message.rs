@@ -3,14 +3,16 @@
 
 use super::{
     Emitter, JSON_DECODE, JSON_ENCODE, MessageShape, PROTO_ERROR, PROTO_JSON, PROTO_REGISTRY,
-    RecordField, call, docs,
+    PROTO_UNKNOWN, RecordField, call, docs,
 };
 use crate::elm::ast::{BinOp, Decl, Expr, Pattern, Type};
 use crate::elm::build::{
-    access, apply, binop, list, pipeline, pvar, qualified, record, string, tuple2, ty, ty_fn, var,
+    access, apply, binop, lambda, list, pipeline, pvar, qualified, record, string, tuple2, ty,
+    ty_fn, var,
 };
 use crate::ir::ModuleName;
-use crate::naming::{ENCODER_ARGUMENT, REGISTRY_ARGUMENT, with_registry};
+use crate::naming::{ENCODER_ARGUMENT, REGISTRY_ARGUMENT, UNKNOWN_FIELDS, with_registry};
+use crate::options::UnknownFields;
 
 impl Emitter {
     /// `type alias Foo = { ... }`, one record field per proto field and per
@@ -18,7 +20,7 @@ impl Emitter {
     pub(super) fn message_alias(&mut self, package: &ModuleName, shape: &MessageShape) -> Decl {
         let record = shape.record();
         let descriptors = docs::page(&shape.message.descriptor_module(package));
-        let items = record
+        let mut items: Vec<String> = record
             .iter()
             .map(|field| match field {
                 RecordField::Field(field, _) => docs::field_item(
@@ -30,8 +32,11 @@ impl Emitter {
                 RecordField::Oneof(oneof) => docs::oneof_item(oneof.oneof),
             })
             .collect();
+        if self.keeps_unknown() {
+            items.push(docs::unknown_fields_item());
+        }
         let doc = docs::message(shape.message, &descriptors, items);
-        let body = record
+        let mut body: Vec<(String, Type)> = record
             .iter()
             .map(|field| match field {
                 RecordField::Field(field, value) => {
@@ -43,6 +48,12 @@ impl Emitter {
                 ),
             })
             .collect();
+        if self.keeps_unknown() {
+            body.push((
+                UNKNOWN_FIELDS.to_owned(),
+                self.library_type(PROTO_UNKNOWN, "Fields", []),
+            ));
+        }
         Decl::TypeAlias {
             doc: Some(doc),
             name: shape.message.elm_name.clone(),
@@ -57,7 +68,7 @@ impl Emitter {
     /// whose default is empty, so a recursive message's default needs no
     /// laziness and its wrapper no default of its own.
     pub(super) fn message_default(&mut self, shape: &MessageShape) -> Decl {
-        let fields: Vec<(String, Expr)> = shape
+        let mut fields: Vec<(String, Expr)> = shape
             .record()
             .into_iter()
             .map(|field| match field {
@@ -70,6 +81,12 @@ impl Emitter {
                 ),
             })
             .collect();
+        if self.keeps_unknown() {
+            fields.push((
+                UNKNOWN_FIELDS.to_owned(),
+                self.reference((PROTO_UNKNOWN, "empty")),
+            ));
+        }
         Decl::Value {
             doc: Some(format!(
                 "{} with every field at its default and every oneof unset.",
@@ -287,10 +304,19 @@ impl Emitter {
         let body = if shape.fields.is_empty() && shape.oneofs.is_empty() {
             // An empty message decodes to the empty record, from a JSON
             // object only, as a message with fields does.
-            self.reference((PROTO_JSON, "emptyMessage"))
+            let empty = self.reference((PROTO_JSON, "emptyMessage"));
+            if self.keeps_unknown() {
+                // The record is not empty: its one field holds no unknown
+                // fields, as JSON carries none.
+                let map = self.reference((JSON_DECODE, "map"));
+                let default = lambda([Pattern::Wildcard], var(shape.message.default_name()));
+                apply(map, [default, empty])
+            } else {
+                empty
+            }
         } else {
             let succeed = self.reference((JSON_DECODE, "succeed"));
-            let steps: Vec<Expr> = shape
+            let mut steps: Vec<Expr> = shape
                 .record()
                 .into_iter()
                 .map(|field| match field {
@@ -322,6 +348,19 @@ impl Emitter {
                     }
                 })
                 .collect();
+            if self.keeps_unknown() {
+                // JSON carries no unknown fields: the record's last field
+                // is always empty.
+                let map = self.reference((JSON_DECODE, "map"));
+                let empty = self.reference((PROTO_UNKNOWN, "empty"));
+                steps.push(apply(
+                    map,
+                    [lambda(
+                        [pvar(ENCODER_ARGUMENT)],
+                        apply(var(ENCODER_ARGUMENT), [empty]),
+                    )],
+                ));
+            }
             let decoder = pipeline(apply(succeed, [var(name.clone())]), steps);
             if shape.fields.is_empty() {
                 // Each oneof step checks the object itself, so a message of
@@ -359,5 +398,10 @@ impl Emitter {
             params: vec![pvar(REGISTRY_ARGUMENT)],
             body,
         }]
+    }
+
+    /// Whether messages hold their unknown fields (`unknown_fields=keep`).
+    pub(super) fn keeps_unknown(&self) -> bool {
+        self.unknown_fields == UnknownFields::Keep
     }
 }

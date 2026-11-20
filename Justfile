@@ -455,7 +455,7 @@ protobuf-conformance:
     set -euo pipefail
     cargo build -p elm-connect
     cd conformance/protobuf
-    {{target}}/debug/elm-connect check -I proto google/protobuf/test_messages_proto3.proto --out generated
+    {{target}}/debug/elm-connect check -I proto google/protobuf/test_messages_proto3.proto --unknown-fields keep --out generated
     runner="$(./fetch-runner.sh)"
     diff "$runner/include/google/protobuf/test_messages_proto3.proto" proto/google/protobuf/test_messages_proto3.proto
     elm make > /dev/null 2>&1 || true
@@ -469,7 +469,7 @@ protobuf-conformance:
 # this after a generator change and commit what changed.
 protobuf-conformance-gen:
     cargo build -p elm-connect
-    cd conformance/protobuf && {{target}}/debug/elm-connect gen -I proto google/protobuf/test_messages_proto3.proto --out generated
+    cd conformance/protobuf && {{target}}/debug/elm-connect gen -I proto google/protobuf/test_messages_proto3.proto --unknown-fields keep --out generated
 
 # The Buf Schema Registry modules the vendored protos come from, at the
 # commits they were exported from; protos-refresh re-exports them.
