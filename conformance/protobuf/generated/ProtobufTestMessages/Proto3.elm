@@ -1713,6 +1713,13 @@ decodeEnumOnlyProto3BoolBytes number =
 -}
 mergeTestAllTypesProto3Bytes : TestAllTypesProto3 -> Proto.Binary.Decoder TestAllTypesProto3
 mergeTestAllTypesProto3Bytes =
+    mergeTestAllTypesProto3BytesAt 1
+
+
+{-| [`mergeTestAllTypesProto3Bytes`](#mergeTestAllTypesProto3Bytes) at a nesting depth: the fields on its cycle are read at one more, and fail past the runtime's limit.
+-}
+mergeTestAllTypesProto3BytesAt : Int -> TestAllTypesProto3 -> Proto.Binary.Decoder TestAllTypesProto3
+mergeTestAllTypesProto3BytesAt depth =
     Proto.Binary.merge
         "protobuf_test_messages.proto3.TestAllTypesProto3"
         (\number wire value ->
@@ -1763,7 +1770,7 @@ mergeTestAllTypesProto3Bytes =
                     Proto.Binary.field Proto.Binary.bytes (\v -> { value | optionalBytes = v }) wire value
 
                 18 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeTestAllTypesProto3NestedMessage_Bytes mergeTestAllTypesProto3NestedMessage_Bytes (TestAllTypesProto3NestedMessage_ defaultTestAllTypesProto3NestedMessage)) value.optionalNestedMessage (\v -> { value | optionalNestedMessage = Just v }) wire value
+                    Proto.Binary.fieldInto (Proto.Binary.recursive depth encodeTestAllTypesProto3NestedMessage_Bytes mergeTestAllTypesProto3NestedMessage_BytesAt (TestAllTypesProto3NestedMessage_ defaultTestAllTypesProto3NestedMessage)) value.optionalNestedMessage (\v -> { value | optionalNestedMessage = Just v }) wire value
 
                 19 ->
                     Proto.Binary.fieldInto (Proto.Binary.embedded encodeForeignMessageBytes mergeForeignMessageBytes defaultForeignMessage) value.optionalForeignMessage (\v -> { value | optionalForeignMessage = Just v }) wire value
@@ -1784,7 +1791,7 @@ mergeTestAllTypesProto3Bytes =
                     Proto.Binary.field Proto.Binary.string (\v -> { value | optionalCord = v }) wire value
 
                 27 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeTestAllTypesProto3_Bytes mergeTestAllTypesProto3_Bytes (TestAllTypesProto3_ defaultTestAllTypesProto3)) value.recursiveMessage (\v -> { value | recursiveMessage = Just v }) wire value
+                    Proto.Binary.fieldInto (Proto.Binary.recursive depth encodeTestAllTypesProto3_Bytes mergeTestAllTypesProto3_BytesAt (TestAllTypesProto3_ defaultTestAllTypesProto3)) value.recursiveMessage (\v -> { value | recursiveMessage = Just v }) wire value
 
                 31 ->
                     Proto.Binary.repeated Proto.Binary.int32 (\v -> { value | repeatedInt32 = v }) value.repeatedInt32 wire value
@@ -1832,7 +1839,7 @@ mergeTestAllTypesProto3Bytes =
                     Proto.Binary.repeated Proto.Binary.bytes (\v -> { value | repeatedBytes = v }) value.repeatedBytes wire value
 
                 48 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded encodeTestAllTypesProto3NestedMessage_Bytes mergeTestAllTypesProto3NestedMessage_Bytes (TestAllTypesProto3NestedMessage_ defaultTestAllTypesProto3NestedMessage)) (\v -> { value | repeatedNestedMessage = v }) value.repeatedNestedMessage wire value
+                    Proto.Binary.repeated (Proto.Binary.recursive depth encodeTestAllTypesProto3NestedMessage_Bytes mergeTestAllTypesProto3NestedMessage_BytesAt (TestAllTypesProto3NestedMessage_ defaultTestAllTypesProto3NestedMessage)) (\v -> { value | repeatedNestedMessage = v }) value.repeatedNestedMessage wire value
 
                 49 ->
                     Proto.Binary.repeated (Proto.Binary.embedded encodeForeignMessageBytes mergeForeignMessageBytes defaultForeignMessage) (\v -> { value | repeatedForeignMessage = v }) value.repeatedForeignMessage wire value
@@ -1895,7 +1902,7 @@ mergeTestAllTypesProto3Bytes =
                     Proto.Binary.mapEntry Proto.Binary.string Proto.Binary.bytes (\k v -> { value | mapStringBytes = Dict.insert k v value.mapStringBytes }) wire value
 
                 71 ->
-                    Proto.Binary.mapEntry Proto.Binary.string (Proto.Binary.embedded encodeTestAllTypesProto3NestedMessage_Bytes mergeTestAllTypesProto3NestedMessage_Bytes (TestAllTypesProto3NestedMessage_ defaultTestAllTypesProto3NestedMessage)) (\k v -> { value | mapStringNestedMessage = Dict.insert k v value.mapStringNestedMessage }) wire value
+                    Proto.Binary.mapEntry Proto.Binary.string (Proto.Binary.recursive depth encodeTestAllTypesProto3NestedMessage_Bytes mergeTestAllTypesProto3NestedMessage_BytesAt (TestAllTypesProto3NestedMessage_ defaultTestAllTypesProto3NestedMessage)) (\k v -> { value | mapStringNestedMessage = Dict.insert k v value.mapStringNestedMessage }) wire value
 
                 72 ->
                     Proto.Binary.mapEntry Proto.Binary.string (Proto.Binary.embedded encodeForeignMessageBytes mergeForeignMessageBytes defaultForeignMessage) (\k v -> { value | mapStringForeignMessage = Dict.insert k v value.mapStringForeignMessage }) wire value
@@ -1995,7 +2002,7 @@ mergeTestAllTypesProto3Bytes =
 
                 112 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeTestAllTypesProto3NestedMessageBytes mergeTestAllTypesProto3NestedMessageBytes defaultTestAllTypesProto3NestedMessage)
+                        (Proto.Binary.recursive depth encodeTestAllTypesProto3NestedMessageBytes mergeTestAllTypesProto3NestedMessageBytesAt defaultTestAllTypesProto3NestedMessage)
                         (case value.oneofField of
                             TestAllTypesProto3OneofFieldOneofNestedMessage member ->
                                 Just member
@@ -2270,10 +2277,24 @@ mergeTestAllTypesProto3_Bytes (TestAllTypesProto3_ value) =
     Proto.Binary.map TestAllTypesProto3_ (mergeTestAllTypesProto3Bytes value)
 
 
+{-| Decodes a [`TestAllTypesProto3_`](#TestAllTypesProto3_) from protobuf binary into the one given, at a nesting depth.
+-}
+mergeTestAllTypesProto3_BytesAt : Int -> TestAllTypesProto3_ -> Proto.Binary.Decoder TestAllTypesProto3_
+mergeTestAllTypesProto3_BytesAt depth (TestAllTypesProto3_ value) =
+    Proto.Binary.map TestAllTypesProto3_ (mergeTestAllTypesProto3BytesAt depth value)
+
+
 {-| Decodes a [`TestAllTypesProto3NestedMessage`](#TestAllTypesProto3NestedMessage) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
 mergeTestAllTypesProto3NestedMessageBytes : TestAllTypesProto3NestedMessage -> Proto.Binary.Decoder TestAllTypesProto3NestedMessage
 mergeTestAllTypesProto3NestedMessageBytes =
+    mergeTestAllTypesProto3NestedMessageBytesAt 1
+
+
+{-| [`mergeTestAllTypesProto3NestedMessageBytes`](#mergeTestAllTypesProto3NestedMessageBytes) at a nesting depth: the fields on its cycle are read at one more, and fail past the runtime's limit.
+-}
+mergeTestAllTypesProto3NestedMessageBytesAt : Int -> TestAllTypesProto3NestedMessage -> Proto.Binary.Decoder TestAllTypesProto3NestedMessage
+mergeTestAllTypesProto3NestedMessageBytesAt depth =
     Proto.Binary.merge
         "protobuf_test_messages.proto3.TestAllTypesProto3.NestedMessage"
         (\number wire value ->
@@ -2291,7 +2312,7 @@ mergeTestAllTypesProto3NestedMessageBytes =
 
                 2 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeTestAllTypesProto3_Bytes mergeTestAllTypesProto3_Bytes (TestAllTypesProto3_ defaultTestAllTypesProto3))
+                        (Proto.Binary.recursive depth encodeTestAllTypesProto3_Bytes mergeTestAllTypesProto3_BytesAt (TestAllTypesProto3_ defaultTestAllTypesProto3))
                         value.corecursive
                         (\v ->
                             { a = value.a
@@ -2319,6 +2340,13 @@ decodeTestAllTypesProto3NestedMessageBytes =
 mergeTestAllTypesProto3NestedMessage_Bytes : TestAllTypesProto3NestedMessage_ -> Proto.Binary.Decoder TestAllTypesProto3NestedMessage_
 mergeTestAllTypesProto3NestedMessage_Bytes (TestAllTypesProto3NestedMessage_ value) =
     Proto.Binary.map TestAllTypesProto3NestedMessage_ (mergeTestAllTypesProto3NestedMessageBytes value)
+
+
+{-| Decodes a [`TestAllTypesProto3NestedMessage_`](#TestAllTypesProto3NestedMessage_) from protobuf binary into the one given, at a nesting depth.
+-}
+mergeTestAllTypesProto3NestedMessage_BytesAt : Int -> TestAllTypesProto3NestedMessage_ -> Proto.Binary.Decoder TestAllTypesProto3NestedMessage_
+mergeTestAllTypesProto3NestedMessage_BytesAt depth (TestAllTypesProto3NestedMessage_ value) =
+    Proto.Binary.map TestAllTypesProto3NestedMessage_ (mergeTestAllTypesProto3NestedMessageBytesAt depth value)
 
 
 {-| Decodes a [`ForeignMessage`](#ForeignMessage) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
