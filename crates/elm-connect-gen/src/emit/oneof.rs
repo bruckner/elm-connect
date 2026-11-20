@@ -1,6 +1,7 @@
 //! A oneof's three declarations: its custom type, its encoder and its
 //! decoder (design §3.6).
 
+use super::Deep;
 use super::field::{ValueShape, Zeroed};
 use super::{Emitter, JSON_DECODE, JSON_ENCODE, OneofShape, PROTO_ERROR, PROTO_JSON, docs};
 use crate::elm::ast::{Decl, Expr, Type, Variant};
@@ -154,7 +155,19 @@ impl Emitter {
     /// `google.protobuf.NullValue` a `nullValueMember` step likewise. A oneof
     /// with a member that reaches an `Any` gets
     /// `decodeFooKindWith`, taking the registry.
-    pub(super) fn oneof_decoder(&mut self, shape: &OneofShape) -> Decl {
+    /// For a oneof of a recursive message with a member on its cycle
+    /// (`recursive`), the decoders take the depth as the message's do, and
+    /// the member is read one level deeper.
+    pub(super) fn oneof_decoder(&mut self, shape: &OneofShape, recursive: bool) -> Vec<Decl> {
+        let on_cycle = recursive && shape.variants.iter().any(|(variant, _)| variant.cyclic);
+        let deep = on_cycle.then(|| {
+            if self.oneof_reaches(shape) {
+                Deep::Built
+            } else {
+                Deep::Memo
+            }
+        });
+        self.deep = deep;
         let steps: Vec<Expr> = shape
             .variants
             .iter()
@@ -165,8 +178,10 @@ impl Emitter {
                     ValueShape::Zeroed(Zeroed::Json) => ("valueMember", ctor),
                     ValueShape::Zeroed(Zeroed::Null) => ("nullValueMember", ctor),
                     _ => {
+                        self.deep_value = variant.cyclic;
                         let mut decode = self.value_decoder(value);
-                        if variant.cyclic {
+                        self.deep_value = false;
+                        if variant.cyclic && deep.is_none() {
                             decode = self.lazy(decode);
                         }
                         let map = self.reference((JSON_DECODE, "map"));
@@ -190,7 +205,30 @@ impl Emitter {
                 apply(step, names.into_iter().chain([arg]))
             })
             .collect();
+        self.deep = None;
         let members = self.reference((PROTO_JSON, "members"));
+        let body = apply(
+            members,
+            [
+                string(shape.oneof.proto_name.clone()),
+                var(shape.oneof.unset_ctor.clone()),
+                list(steps),
+            ],
+        );
+        let doc = format!(
+            "Decodes {} from the members of its message's JSON object.",
+            docs::a_local(&shape.oneof.elm_type_name)
+        );
+        if let Some(deep) = deep {
+            let elm_name = shape.oneof.elm_type_name.clone();
+            return self.nested_oneof_decoders(
+                deep,
+                &elm_name,
+                shape.oneof.decoder_name(),
+                doc,
+                body,
+            );
+        }
         let oneof = ty(shape.oneof.elm_type_name.clone(), []);
         let (name, annotation, params) = if self.oneof_reaches(shape) {
             (
@@ -205,23 +243,13 @@ impl Emitter {
                 Vec::new(),
             )
         };
-        Decl::Value {
-            doc: Some(format!(
-                "Decodes {} from the members of its message's JSON object.",
-                docs::a_local(&shape.oneof.elm_type_name)
-            )),
+        vec![Decl::Value {
+            doc: Some(doc),
             name,
             annotation,
             params,
-            body: apply(
-                members,
-                [
-                    string(shape.oneof.proto_name.clone()),
-                    var(shape.oneof.unset_ctor.clone()),
-                    list(steps),
-                ],
-            ),
-        }
+            body,
+        }]
     }
 }
 

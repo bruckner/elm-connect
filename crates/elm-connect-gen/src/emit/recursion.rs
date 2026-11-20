@@ -1,11 +1,11 @@
 //! A recursive message's wrapper: its custom type, encoder and decoder
 //! (design §3.2).
 
-use super::{Emitter, JSON_DECODE, JSON_ENCODE, docs};
-use crate::elm::ast::{Decl, Pattern, Type, Variant};
-use crate::elm::build::{apply, lambda, pctor, pvar, ty, var};
+use super::{Deep, Emitter, JSON_DECODE, JSON_ENCODE, PROTO_JSON, PROTO_REGISTRY, docs};
+use crate::elm::ast::{BinOp, Decl, Expr, Pattern, Type, Variant};
+use crate::elm::build::{apply, binop, int, lambda, pctor, pvar, ty, var};
 use crate::ir::{Message, Wrapper};
-use crate::naming::{ENCODER_ARGUMENT, REGISTRY_ARGUMENT, with_registry};
+use crate::naming::{ENCODER_ARGUMENT, REGISTRY_ARGUMENT, decoder_name, nested, with_registry};
 
 impl Emitter {
     /// `type Node_ = Node_ Node`.
@@ -114,5 +114,146 @@ impl Emitter {
     pub(super) fn lazy(&mut self, decoder: crate::elm::ast::Expr) -> crate::elm::ast::Expr {
         let lazy = self.reference((JSON_DECODE, "lazy"));
         apply(lazy, [lambda([Pattern::Wildcard], decoder)])
+    }
+}
+
+/// The depth a recursive message's JSON decoder is built for.
+pub(super) const DEPTH: &str = "depth";
+
+impl Emitter {
+    /// A value on the cycle of the message being decoded, of the message
+    /// `elm_name`, read one level deeper: `Json.Decode.lazy (\_ ->
+    /// decodeNestedNode (depth + 1))`, the lazy step keeping the memoised
+    /// decoders from being needed while they are made; or
+    /// `Proto.Json.deeperWith depth (decodeNestedNodeWith types)` for a
+    /// message that takes the registry.
+    pub(super) fn deeper(&mut self, deep: Deep, elm_name: &str) -> Expr {
+        let decoder = decoder_name(elm_name);
+        match deep {
+            Deep::Memo => {
+                let next = binop(BinOp::Add, var(DEPTH), int(1));
+                self.lazy(apply(var(nested(decoder)), [next]))
+            }
+            Deep::Built => {
+                let deeper = self.reference((PROTO_JSON, "deeperWith"));
+                let build = apply(
+                    var(nested(with_registry(decoder))),
+                    [var(REGISTRY_ARGUMENT)],
+                );
+                apply(deeper, [var(DEPTH), build])
+            }
+        }
+    }
+
+    /// The decoders of a recursive message, from the decoder `body` built
+    /// for the depth `depth`: under `Deep::Memo`, `decodeNode =
+    /// decodeNestedNode 1` and `decodeNestedNode = Proto.Json.memo
+    /// (\depth -> body)`; under `Deep::Built`, `decodeNodeWith types =
+    /// decodeNestedNodeWith types 1` and `decodeNestedNodeWith types depth
+    /// = body`.
+    pub(super) fn nested_decoders(
+        &mut self,
+        deep: Deep,
+        elm_name: &str,
+        decoder_name: String,
+        doc: String,
+        body: Expr,
+    ) -> Vec<Decl> {
+        let of = ty(elm_name.to_owned(), []);
+        let decoder = self.library_type(JSON_DECODE, "Decoder", [of]);
+        let int_type = ty(self.core("Int"), []);
+        match deep {
+            Deep::Memo => {
+                let nested_decoder = nested(decoder_name.clone());
+                let memo = self.reference((PROTO_JSON, "memo"));
+                vec![
+                    Decl::Value {
+                        doc: Some(doc),
+                        name: decoder_name.clone(),
+                        annotation: decoder.clone(),
+                        params: Vec::new(),
+                        body: apply(var(nested_decoder.clone()), [int(1)]),
+                    },
+                    Decl::Value {
+                        doc: Some(docs::nested(&decoder_name, elm_name)),
+                        name: nested_decoder,
+                        annotation: Type::Function(Box::new(int_type), Box::new(decoder)),
+                        params: Vec::new(),
+                        body: apply(memo, [lambda([pvar(DEPTH)], body)]),
+                    },
+                ]
+            }
+            Deep::Built => {
+                let registry = self.library_type(PROTO_REGISTRY, "Registry", []);
+                let with = with_registry(decoder_name);
+                let nested_decoder = nested(with.clone());
+                vec![
+                    Decl::Value {
+                        doc: Some(doc),
+                        name: with.clone(),
+                        annotation: Type::Function(
+                            Box::new(registry.clone()),
+                            Box::new(decoder.clone()),
+                        ),
+                        params: vec![pvar(REGISTRY_ARGUMENT)],
+                        body: apply(
+                            var(nested_decoder.clone()),
+                            [var(REGISTRY_ARGUMENT), int(1)],
+                        ),
+                    },
+                    Decl::Value {
+                        doc: Some(docs::nested(&with, elm_name)),
+                        name: nested_decoder,
+                        annotation: Type::Function(
+                            Box::new(registry),
+                            Box::new(Type::Function(Box::new(int_type), Box::new(decoder))),
+                        ),
+                        params: vec![pvar(REGISTRY_ARGUMENT), pvar(DEPTH)],
+                        body,
+                    },
+                ]
+            }
+        }
+    }
+
+    /// The decoders of a oneof of a recursive message with a member on its
+    /// cycle: `decodeExprValue = decodeNestedExprValue 1` and
+    /// `decodeNestedExprValue depth = body`, built at each depth by its message's decoder (it is
+    /// not memoised itself); under `Deep::Built`, as
+    /// [`Self::nested_decoders`] writes them.
+    pub(super) fn nested_oneof_decoders(
+        &mut self,
+        deep: Deep,
+        elm_name: &str,
+        decoder_name: String,
+        doc: String,
+        body: Expr,
+    ) -> Vec<Decl> {
+        if deep == Deep::Built {
+            return self.nested_decoders(deep, elm_name, decoder_name, doc, body);
+        }
+        let of = ty(elm_name.to_owned(), []);
+        let decoder = self.library_type(JSON_DECODE, "Decoder", [of]);
+        let int_type = ty(self.core("Int"), []);
+        let nested_decoder = nested(decoder_name.clone());
+        vec![
+            Decl::Value {
+                doc: Some(doc),
+                name: decoder_name.clone(),
+                annotation: decoder.clone(),
+                params: Vec::new(),
+                body: apply(var(nested_decoder.clone()), [int(1)]),
+            },
+            Decl::Value {
+                doc: Some(format!(
+                    "[`{decoder_name}`](#{decoder_name}) for {} held by a message `depth` levels deep inside its cycle. That message's decoder calls it at each depth.",
+                    docs::a_local(elm_name)
+                )),
+                name: nested_decoder,
+                annotation: Type::Function(Box::new(int_type), Box::new(decoder)),
+                params: vec![pvar(DEPTH)],
+                body,
+            },
+        ]
     }
 }
