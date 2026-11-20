@@ -307,6 +307,17 @@ the check again. A compile error names the record and field that
 differ; a failing test names the message and whether its JSON, its
 binary or its decoders disagree.
 
+## A JSON-only client
+
+`just json-only-check`, part of the gate, compiles `json-only/`, an Elm
+application whose one method speaks JSON alone (`Proto.Method.initJson`)
+over a Connect protocol given every modifier, with `--optimize`, and fails
+if the output holds any definition of elm/bytes' kernel (`_Bytes_…`),
+listing them. A modifier installs both wires' functions, and the binary
+ones must reach elm/bytes only through the wire a binary constructor built
+(design §5.1), so a client that never speaks protobuf binary carries none
+of it.
+
 ## Live verification
 
 The corpus and the fixtures pin what is generated and what request a

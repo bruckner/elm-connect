@@ -63,19 +63,19 @@ connectGet options settings _ json =
 
 {-| Connect's POST of a request's protobuf binary, as `application/proto`.
 -}
-connectPostBinary : (Bytes -> String) -> Options -> Settings -> Bytes.Encode.Encoder -> Request
-connectPostBinary _ _ settings encoder =
-    connectRequest settings (Body.bytes (Bytes.Encode.encode encoder))
+connectPostBinary : (Bytes.Encode.Encoder -> Bytes) -> (Bytes -> String) -> Options -> Settings -> Bytes.Encode.Encoder -> Request
+connectPostBinary encode _ _ settings encoder =
+    connectRequest settings (Body.bytes (encode encoder))
 
 
 {-| Connect's GET under the proto codec: the binary as unpadded URL-safe
 base64 in the query.
 -}
-connectGetBinary : (Bytes -> String) -> Options -> Settings -> Bytes.Encode.Encoder -> Request
-connectGetBinary toBase64 options settings encoder =
+connectGetBinary : (Bytes.Encode.Encoder -> Bytes) -> (Bytes -> String) -> Options -> Settings -> Bytes.Encode.Encoder -> Request
+connectGetBinary encode toBase64 options settings encoder =
     let
         binary =
-            Bytes.Encode.encode encoder
+            encode encoder
     in
     getOr options settings (Body.bytes binary) (\() -> "base64=1&encoding=proto&message=" ++ base64Url (toBase64 binary))
 

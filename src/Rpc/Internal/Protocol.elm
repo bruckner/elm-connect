@@ -149,20 +149,28 @@ type alias GoodText =
 
 
 {-| A protocol speaking protobuf binary, as `TextWire` but over bytes; `build`
-takes the protocol's own base64 writer, for a GET's query, and the
-request's encoder, which only these functions run; `message` takes the
-call's `service/method`, for the error of a body that is not its response,
-and gives the answer's metadata beside its result; `base64` writes a
-request's binary for a trace. The limits take the protocol's `width` to
-measure bytes with, so that a JSON program naming a limit modifier, which
-installs the binary check too, reaches no elm/bytes code: its kernel comes
-whole.
+takes the protocol's own encoder runner and base64 writer, for a GET's
+query, and the request's encoder, which only these functions run; `message`
+takes the call's `service/method`, for the error of a body that is not its
+response, and gives the answer's metadata beside its result; `base64`
+writes a request's binary for a trace.
+
+What a modifier installs reaches elm/bytes only through this record:
+`build` runs an encoder with the protocol's `encode`, the write limit
+measures one with its `encodedWidth`, and the read limit measures bytes
+with its `width`. A modifier names both wires' functions, so a JSON program
+naming one carries the binary function too, but only a binary protocol's
+constructor names these three, so that program still carries none of
+elm/bytes, whose kernel comes whole.
+
 -}
 type alias BinaryWire =
-    { build : (Bytes -> String) -> Options -> Settings -> Bytes.Encode.Encoder -> Request
+    { build : (Bytes.Encode.Encoder -> Bytes) -> (Bytes -> String) -> Options -> Settings -> Bytes.Encode.Encoder -> Request
     , message : (Options -> Bytes -> Maybe Size) -> Options -> String -> Http.Response Bytes -> ( Maybe Http.Metadata, Result Error BytesMessage )
-    , tooLarge : (Bytes -> Int) -> Options -> (() -> Bytes.Encode.Encoder) -> Maybe Size
+    , tooLarge : (Bytes.Encode.Encoder -> Int) -> Options -> (() -> Bytes.Encode.Encoder) -> Maybe Size
     , overRead : (Bytes -> Int) -> Options -> Bytes -> Maybe Size
+    , encode : Bytes.Encode.Encoder -> Bytes
+    , encodedWidth : Bytes.Encode.Encoder -> Int
     , width : Bytes -> Int
     , timeoutHeader : Maybe ( String, Float -> String )
     , base64 : Bytes -> String

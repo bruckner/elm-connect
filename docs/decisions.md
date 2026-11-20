@@ -1343,6 +1343,23 @@ so a JSON program naming a limit reaches no `Bytes.width`, which would
 bring elm/bytes' kernel (989 B before this rule). `withConnectGet` is a
 no-op off Connect, so it is one modifier for either wire; a JSON GET
 program carries the binary builder it installs too, about 110 B.
+
+2026-11-19, corrected: the width rule covered `Bytes.width` but not
+`Bytes.Encode.encode`, which the binary write check and the binary GET
+builder called themselves, so a JSON-only client naming
+`withWriteMaxBytes` or `withConnectGet` carried elm/bytes' kernel from
+the first commit of this design on (5c4439af); the figures above match
+no JSON-only program at that commit, and were likely measured on one
+that already held elm/bytes. Now everything binary a modifier installs
+reaches elm/bytes through the wire (`encode`, `encodedWidth`, `width`,
+which only a binary constructor names), and `just json-only-check`
+fails when a JSON-only client naming every modifier links the kernel.
+Measured on a minimal `wire=json` client (Elm 0.19.2, terser, gzip):
+`withConnectGet` +277 B (was +1,054), `withWriteMaxBytes` +215 B (was
++987), both limits +267 B (was +1,044), `withReadMaxBytes` +211 B; a
+binary program pays about 20 B gzipped for the two wire fields, and a
+proto client's modifiers cost what they did.
+
 Where: design §5.1.
 
 ### `codec=proto`

@@ -249,10 +249,10 @@ make forSend (Client cl over _ registry) (Call c) =
                 encoder () =
                     m.binary.encode c.message
             in
-            { request = \() -> wire.build wire.base64 p.options (settings ()) (encoder ())
+            { request = \() -> wire.build wire.encode wire.base64 p.options (settings ()) (encoder ())
             , invalid = \() -> Nothing
             , unencodable = \() -> Nothing
-            , tooLarge = \() -> wire.tooLarge wire.width p.options encoder
+            , tooLarge = \() -> wire.tooLarge wire.encodedWidth p.options encoder
             , reader =
                 BytesReader
                     (\answer ->

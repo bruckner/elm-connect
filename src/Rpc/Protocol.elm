@@ -66,11 +66,15 @@ type alias Protocol codec =
 -- serve: the compiler chooses it, and releases have chosen differently.
 -- `Rpc.Retry.on` keeps the same rule: a policy is its knobs, then its math.
 --
--- A binary check a modifier installs measures bytes with the wire's own
--- `width`, never `Bytes.width` directly. A modifier names both wires' checks,
--- so a JSON program naming it carries the binary check; only a binary
--- protocol's constructor names `width`, so that program still carries no
--- `Bytes.width`, which would bring elm/bytes' kernel whole.
+-- A binary function a modifier installs (the GET builder, the limit checks)
+-- reaches elm/bytes only through the wire it is installed on: it runs an
+-- encoder with the wire's `encode` and measures with its `encodedWidth` and
+-- `width`, never naming elm/bytes itself. A modifier names both wires'
+-- functions, so a JSON program naming it carries the binary one; only a
+-- binary protocol's constructor names `encode`, `encodedWidth` and `width`,
+-- so that program still carries nothing of elm/bytes, whose kernel comes
+-- whole.
+-- `just json-only-check` holds them to it.
 
 
 noOptions : Options
@@ -110,6 +114,8 @@ connectProto =
             , overRead = Http.bytesUnlimited
             , timeoutHeader = Connect.connectTimeout False
             , base64 = Http.base64
+            , encode = Http.encode
+            , encodedWidth = Http.encodedWidth
             , width = Http.width
             }
         )
@@ -161,6 +167,8 @@ grpcWeb =
             , overRead = Http.bytesUnlimited
             , timeoutHeader = GrpcWeb.grpcWebTimeout
             , base64 = Http.base64
+            , encode = Http.encode
+            , encodedWidth = Http.encodedWidth
             , width = Http.width
             }
         )
