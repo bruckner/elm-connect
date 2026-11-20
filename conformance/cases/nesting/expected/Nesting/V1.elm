@@ -976,6 +976,13 @@ decodeOuterInnerDeepestBytes =
 -}
 mergeNodeBytes : Node -> Proto.Binary.Decoder Node
 mergeNodeBytes =
+    mergeNodeBytesAt 1
+
+
+{-| [`mergeNodeBytes`](#mergeNodeBytes) at a nesting depth: the fields on its cycle are read at one more, and fail past the runtime's limit.
+-}
+mergeNodeBytesAt : Int -> Node -> Proto.Binary.Decoder Node
+mergeNodeBytesAt depth =
     Proto.Binary.merge
         "nesting.v1.Node"
         (\number wire value ->
@@ -994,7 +1001,7 @@ mergeNodeBytes =
 
                 2 ->
                     Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeNode_Bytes mergeNode_Bytes (Node_ defaultNode))
+                        (Proto.Binary.recursive depth encodeNode_Bytes mergeNode_BytesAt (Node_ defaultNode))
                         (\v ->
                             { label = value.label
                             , children = v
@@ -1008,7 +1015,7 @@ mergeNodeBytes =
                 3 ->
                     Proto.Binary.mapEntry
                         Proto.Binary.string
-                        (Proto.Binary.embedded encodeNode_Bytes mergeNode_Bytes (Node_ defaultNode))
+                        (Proto.Binary.recursive depth encodeNode_Bytes mergeNode_BytesAt (Node_ defaultNode))
                         (\k v ->
                             { label = value.label
                             , children = value.children
@@ -1043,10 +1050,24 @@ mergeNode_Bytes (Node_ value) =
     Proto.Binary.map Node_ (mergeNodeBytes value)
 
 
+{-| Decodes a [`Node_`](#Node_) from protobuf binary into the one given, at a nesting depth.
+-}
+mergeNode_BytesAt : Int -> Node_ -> Proto.Binary.Decoder Node_
+mergeNode_BytesAt depth (Node_ value) =
+    Proto.Binary.map Node_ (mergeNodeBytesAt depth value)
+
+
 {-| Decodes a [`Person`](#Person) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
 mergePersonBytes : Person -> Proto.Binary.Decoder Person
 mergePersonBytes =
+    mergePersonBytesAt 1
+
+
+{-| [`mergePersonBytes`](#mergePersonBytes) at a nesting depth: the fields on its cycle are read at one more, and fail past the runtime's limit.
+-}
+mergePersonBytesAt : Int -> Person -> Proto.Binary.Decoder Person
+mergePersonBytesAt depth =
     Proto.Binary.merge
         "nesting.v1.Person"
         (\number wire value ->
@@ -1064,7 +1085,7 @@ mergePersonBytes =
 
                 2 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeCompany_Bytes mergeCompany_Bytes (Company_ defaultCompany))
+                        (Proto.Binary.recursive depth encodeCompany_Bytes mergeCompany_BytesAt (Company_ defaultCompany))
                         value.employer
                         (\v ->
                             { name = value.name
@@ -1094,10 +1115,24 @@ mergePerson_Bytes (Person_ value) =
     Proto.Binary.map Person_ (mergePersonBytes value)
 
 
+{-| Decodes a [`Person_`](#Person_) from protobuf binary into the one given, at a nesting depth.
+-}
+mergePerson_BytesAt : Int -> Person_ -> Proto.Binary.Decoder Person_
+mergePerson_BytesAt depth (Person_ value) =
+    Proto.Binary.map Person_ (mergePersonBytesAt depth value)
+
+
 {-| Decodes a [`Company`](#Company) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
 mergeCompanyBytes : Company -> Proto.Binary.Decoder Company
 mergeCompanyBytes =
+    mergeCompanyBytesAt 1
+
+
+{-| [`mergeCompanyBytes`](#mergeCompanyBytes) at a nesting depth: the fields on its cycle are read at one more, and fail past the runtime's limit.
+-}
+mergeCompanyBytesAt : Int -> Company -> Proto.Binary.Decoder Company
+mergeCompanyBytesAt depth =
     Proto.Binary.merge
         "nesting.v1.Company"
         (\number wire value ->
@@ -1115,7 +1150,7 @@ mergeCompanyBytes =
 
                 2 ->
                     Proto.Binary.repeated
-                        (Proto.Binary.embedded encodePerson_Bytes mergePerson_Bytes (Person_ defaultPerson))
+                        (Proto.Binary.recursive depth encodePerson_Bytes mergePerson_BytesAt (Person_ defaultPerson))
                         (\v ->
                             { name = value.name
                             , staff = v
@@ -1147,6 +1182,13 @@ decodeCompanyBytes =
 mergeCompany_Bytes : Company_ -> Proto.Binary.Decoder Company_
 mergeCompany_Bytes (Company_ value) =
     Proto.Binary.map Company_ (mergeCompanyBytes value)
+
+
+{-| Decodes a [`Company_`](#Company_) from protobuf binary into the one given, at a nesting depth.
+-}
+mergeCompany_BytesAt : Int -> Company_ -> Proto.Binary.Decoder Company_
+mergeCompany_BytesAt depth (Company_ value) =
+    Proto.Binary.map Company_ (mergeCompanyBytesAt depth value)
 
 
 {-| Decodes a [`Forest`](#Forest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
@@ -1188,6 +1230,13 @@ decodeForestBytes =
 -}
 mergeExprBytes : Expr -> Proto.Binary.Decoder Expr
 mergeExprBytes =
+    mergeExprBytesAt 1
+
+
+{-| [`mergeExprBytes`](#mergeExprBytes) at a nesting depth: the fields on its cycle are read at one more, and fail past the runtime's limit.
+-}
+mergeExprBytesAt : Int -> Expr -> Proto.Binary.Decoder Expr
+mergeExprBytesAt depth =
     Proto.Binary.merge
         "nesting.v1.Expr"
         (\number wire value ->
@@ -1204,7 +1253,7 @@ mergeExprBytes =
 
                 2 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeSumBytes mergeSumBytes defaultSum)
+                        (Proto.Binary.recursive depth encodeSumBytes mergeSumBytesAt defaultSum)
                         (case value.value of
                             ExprValueSum member ->
                                 Just member
@@ -1236,13 +1285,20 @@ decodeExprBytes =
 -}
 mergeSumBytes : Sum -> Proto.Binary.Decoder Sum
 mergeSumBytes =
+    mergeSumBytesAt 1
+
+
+{-| [`mergeSumBytes`](#mergeSumBytes) at a nesting depth: the fields on its cycle are read at one more, and fail past the runtime's limit.
+-}
+mergeSumBytesAt : Int -> Sum -> Proto.Binary.Decoder Sum
+mergeSumBytesAt depth =
     Proto.Binary.merge
         "nesting.v1.Sum"
         (\number wire value ->
             case number of
                 1 ->
                     Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeExprBytes mergeExprBytes defaultExpr)
+                        (Proto.Binary.recursive depth encodeExprBytes mergeExprBytesAt defaultExpr)
                         (\v ->
                             { terms = v
                             }

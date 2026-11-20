@@ -8,7 +8,7 @@ module Proto.Binary exposing
     , int64, sint64, sfixed64, uint64, fixed64
     , int64AsInt, sint64AsInt, sfixed64AsInt, uint64AsInt, fixed64AsInt
     , bool, string, bytes, bytesAsBytes, enum
-    , embedded, messageEncoder, messageDecoder
+    , embedded, recursive, messageEncoder, messageDecoder
     , timestamp, duration, fieldMask, empty, struct, listValue, value, any
     , doubleValue, floatValue, int64Value, int64ValueAsInt, uint64Value, uint64ValueAsInt
     , int32Value, uint32Value, boolValue, stringValue, bytesValue, bytesValueAsBytes
@@ -68,7 +68,7 @@ outside ±(2^53 − 1).
 
 # Messages
 
-@docs embedded, messageEncoder, messageDecoder
+@docs embedded, recursive, messageEncoder, messageDecoder
 
 
 # Well-known types
@@ -1936,6 +1936,59 @@ embedded write into zero =
         }
 
 
+{-| A message field on a cycle of the message holding it, which can nest
+without bound: [`embedded`](#embedded), from the nesting depth of the
+message holding it (the outermost message of the cycle is at 1) and the
+message's merge given the depth its own fields are read at. A field read
+past 100 levels fails with [`TooDeep`](Proto-Error#Reason), as protobuf
+implementations refuse a message nested past 100 levels; writing is not
+limited.
+
+    Proto.Binary.recursive depth encodeNode_Bytes mergeNode_BytesAt (Node_ defaultNode)
+
+-}
+recursive : Int -> (a -> Encoder) -> (Int -> a -> Decoder a) -> a -> Codec a
+recursive depth write into zero =
+    if depth < depthLimit then
+        embedded write (into (depth + 1)) zero
+
+    else
+        tooDeep write zero
+
+
+{-| The most messages a cycle of messages nests, the outermost included.
+-}
+depthLimit : Int
+depthLimit =
+    100
+
+
+{-| A message field read one level past the depth limit: it fails without
+reading, and writes as [`embedded`](#embedded) does.
+-}
+tooDeep : (a -> Encoder) -> a -> Codec a
+tooDeep write zero =
+    let
+        deep =
+            D.succeed (Err { reason = TooDeep, path = [], offset = 0 })
+    in
+    Codec
+        { wire = 2
+        , fast = D.fail
+        , fastBody = \_ -> D.fail
+        , fastInto = \_ -> D.fail
+        , read = \_ -> deep
+        , write = \v -> delimited (write v)
+        , isDefault = \_ -> False
+        , zero = zero
+        , packable = False
+        , writeBody = write
+        , readBody = \_ -> deep
+        , readInto = \_ _ -> deep
+        , name = \_ -> ""
+        }
+
+
 {-| The encoder of a whole message from its codec, for a well-known type
 a method takes: `messageEncoder Proto.Binary.empty`.
 -}
@@ -2111,25 +2164,44 @@ Elm's values cannot refer to themselves.
 -}
 structCodec : () -> Codec (Dict String Json.Encode.Value)
 structCodec () =
-    embedded writeStruct structInto Dict.empty
+    embedded writeStruct (structInto 1) Dict.empty
 
 
 listCodec : () -> Codec (List Json.Encode.Value)
 listCodec () =
-    embedded writeList listInto []
+    embedded writeList (listInto 1) []
 
 
 valueCodec : () -> Codec Json.Encode.Value
 valueCodec () =
-    embedded writeValue valueInto Json.Encode.null
+    embedded writeValue (valueInto 1) Json.Encode.null
 
 
-structInto : Dict String Json.Encode.Value -> Decoder (Dict String Json.Encode.Value)
-structInto =
+{-| The three codecs read as a field of one of them, at the depth of the
+message holding the field: each of the three is a level, so a `Struct` in a
+`Value` is two.
+-}
+structAt : Int -> Codec (Dict String Json.Encode.Value)
+structAt depth =
+    recursive depth writeStruct structInto Dict.empty
+
+
+listAt : Int -> Codec (List Json.Encode.Value)
+listAt depth =
+    recursive depth writeList listInto []
+
+
+valueAt : Int -> Codec Json.Encode.Value
+valueAt depth =
+    recursive depth writeValue valueInto Json.Encode.null
+
+
+structInto : Int -> Dict String Json.Encode.Value -> Decoder (Dict String Json.Encode.Value)
+structInto depth =
     merge "google.protobuf.Struct"
         (\number wire members ->
             if number == 1 then
-                mapEntry string (valueCodec ()) (\k v -> Dict.insert k v members) wire members
+                mapEntry string (valueAt depth) (\k v -> Dict.insert k v members) wire members
 
             else
                 skip wire members
@@ -2142,12 +2214,12 @@ writeStruct members =
     dict string (valueCodec ()) 1 members
 
 
-listInto : List Json.Encode.Value -> Decoder (List Json.Encode.Value)
-listInto =
+listInto : Int -> List Json.Encode.Value -> Decoder (List Json.Encode.Value)
+listInto depth =
     merge "google.protobuf.ListValue"
         (\number wire items ->
             if number == 1 then
-                repeated (valueCodec ()) identity items wire items
+                repeated (valueAt depth) identity items wire items
 
             else
                 skip wire items
@@ -2160,8 +2232,8 @@ writeList items =
     list (valueCodec ()) 1 items
 
 
-valueInto : Json.Encode.Value -> Decoder Json.Encode.Value
-valueInto =
+valueInto : Int -> Json.Encode.Value -> Decoder Json.Encode.Value
+valueInto depth =
     merge "google.protobuf.Value"
         (\number wire current ->
             case number of
@@ -2178,14 +2250,14 @@ valueInto =
                     field bool Json.Encode.bool wire current
 
                 5 ->
-                    fieldInto (structCodec ())
+                    fieldInto (structAt depth)
                         (Json.Decode.decodeValue (Json.Decode.dict Json.Decode.value) current |> Result.toMaybe)
                         (Json.Encode.dict identity identity)
                         wire
                         current
 
                 6 ->
-                    fieldInto (listCodec ())
+                    fieldInto (listAt depth)
                         (Json.Decode.decodeValue (Json.Decode.list Json.Decode.value) current |> Result.toMaybe)
                         (Json.Encode.list identity)
                         wire

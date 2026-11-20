@@ -726,7 +726,26 @@ messages =
 wellKnown : Test
 wellKnown =
     describe "well-known types"
-        [ test "Timestamp, to the millisecond, nanoseconds past it dropped" <|
+        [ test "Value nests at most 100 messages deep, a list in a Value being two" <|
+            \_ ->
+                let
+                    lists depth =
+                        List.foldl (\_ inner -> Json.Encode.list identity [ inner ]) (Json.Encode.list identity []) (List.range 2 depth)
+
+                    decoded depth =
+                        B.decode (B.messageDecoder B.value) (B.encode (B.messageEncoder B.value) (lists depth))
+                in
+                Expect.all
+                    [ \_ -> decoded 50 |> Result.map (Json.Encode.encode 0 >> String.length) |> Expect.equal (Ok 100)
+                    , \_ ->
+                        decoded 51
+                            |> Result.mapError (\e -> ( e.reason, List.length e.path, e.offset ))
+                            |> Result.map (\_ -> ())
+                            |> Expect.equal (Err ( Proto.Error.TooDeep, 100, 236 ))
+                    , \_ -> decoded 300 |> Result.mapError .reason |> Result.map (\_ -> ()) |> Expect.equal (Err Proto.Error.TooDeep)
+                    ]
+                    ()
+        , test "Timestamp, to the millisecond, nanoseconds past it dropped" <|
             \_ ->
                 Expect.all
                     [ \_ -> wire B.timestamp (Time.millisToPosix 0) posixText (Time.millisToPosix 1500) "0a08 0801 1080cab5ee01"

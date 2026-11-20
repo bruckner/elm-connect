@@ -724,14 +724,14 @@ impl Emitter {
             encoders.push(self.message_encoder(shape));
             decoders.extend(self.message_decoder(shape));
             binary_encoders.push(self.message_encoder_bytes(shape));
-            binary_decoders.push(self.message_merge_bytes(shape));
+            binary_decoders.extend(self.message_merge_bytes(shape));
             binary_decoders.push(self.message_decoder_bytes(shape));
             if let Some(wrapper) = &shape.message.wrapper {
                 types.push(self.wrapper_type(shape.message, wrapper));
                 encoders.push(self.wrapper_encoder(shape.message, wrapper));
                 decoders.push(self.wrapper_decoder(shape.message, wrapper));
                 binary_encoders.push(self.wrapper_encoder_bytes(shape.message, wrapper));
-                binary_decoders.push(self.wrapper_decoder_bytes(shape.message, wrapper));
+                binary_decoders.extend(self.wrapper_decoder_bytes(shape.message, wrapper));
             }
             for oneof in &shape.oneofs {
                 types.push(self.oneof_type(&package.module, shape.message, oneof));
@@ -953,6 +953,7 @@ mod tests {
             fields,
             oneofs: Vec::new(),
             wrapper: None,
+            recursive: false,
             doc: crate::ir::Doc::default(),
         }
     }
@@ -966,6 +967,7 @@ mod tests {
             cardinality,
             ty,
             cyclic: false,
+            recursive: false,
             jstype: crate::ir::JsType::Normal,
             unpacked: false,
             annotations: crate::ir::Annotations::default(),

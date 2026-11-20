@@ -364,6 +364,13 @@ decodeKindBytes number =
 -}
 mergeEntryBytes : Entry -> Proto.Binary.Decoder Entry
 mergeEntryBytes =
+    mergeEntryBytesAt 1
+
+
+{-| [`mergeEntryBytes`](#mergeEntryBytes) at a nesting depth: the fields on its cycle are read at one more, and fail past the runtime's limit.
+-}
+mergeEntryBytesAt : Int -> Entry -> Proto.Binary.Decoder Entry
+mergeEntryBytesAt depth =
     Proto.Binary.merge
         "ledger.v1.Entry"
         (\number wire value ->
@@ -446,7 +453,7 @@ mergeEntryBytes =
 
                 6 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeEntryBytes mergeEntryBytes defaultEntry)
+                        (Proto.Binary.recursive depth encodeEntryBytes mergeEntryBytesAt defaultEntry)
                         (case value.source of
                             EntrySourceReversal member ->
                                 Just member

@@ -3829,6 +3829,13 @@ decodeOuterInnerBytes =
 -}
 mergeTreeBytes : Tree -> Proto.Binary.Decoder Tree
 mergeTreeBytes =
+    mergeTreeBytesAt 1
+
+
+{-| [`mergeTreeBytes`](#mergeTreeBytes) at a nesting depth: the fields on its cycle are read at one more, and fail past the runtime's limit.
+-}
+mergeTreeBytesAt : Int -> Tree -> Proto.Binary.Decoder Tree
+mergeTreeBytesAt depth =
     Proto.Binary.merge
         "codec.v1.Tree"
         (\number wire value ->
@@ -3849,7 +3856,7 @@ mergeTreeBytes =
 
                 2 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeTree_Bytes mergeTree_Bytes (Tree_ defaultTree))
+                        (Proto.Binary.recursive depth encodeTree_Bytes mergeTree_BytesAt (Tree_ defaultTree))
                         value.left
                         (\v ->
                             { label = value.label
@@ -3864,7 +3871,7 @@ mergeTreeBytes =
 
                 3 ->
                     Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeTree_Bytes mergeTree_Bytes (Tree_ defaultTree))
+                        (Proto.Binary.recursive depth encodeTree_Bytes mergeTree_BytesAt (Tree_ defaultTree))
                         (\v ->
                             { label = value.label
                             , left = value.left
@@ -3880,7 +3887,7 @@ mergeTreeBytes =
                 4 ->
                     Proto.Binary.mapEntry
                         Proto.Binary.string
-                        (Proto.Binary.embedded encodeTree_Bytes mergeTree_Bytes (Tree_ defaultTree))
+                        (Proto.Binary.recursive depth encodeTree_Bytes mergeTree_BytesAt (Tree_ defaultTree))
                         (\k v ->
                             { label = value.label
                             , left = value.left
@@ -3894,7 +3901,7 @@ mergeTreeBytes =
 
                 5 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeTreeBytes mergeTreeBytes defaultTree)
+                        (Proto.Binary.recursive depth encodeTreeBytes mergeTreeBytesAt defaultTree)
                         (case value.link of
                             TreeLinkNext member ->
                                 Just member
@@ -3952,6 +3959,13 @@ decodeTreeBytes =
 mergeTree_Bytes : Tree_ -> Proto.Binary.Decoder Tree_
 mergeTree_Bytes (Tree_ value) =
     Proto.Binary.map Tree_ (mergeTreeBytes value)
+
+
+{-| Decodes a [`Tree_`](#Tree_) from protobuf binary into the one given, at a nesting depth.
+-}
+mergeTree_BytesAt : Int -> Tree_ -> Proto.Binary.Decoder Tree_
+mergeTree_BytesAt depth (Tree_ value) =
+    Proto.Binary.map Tree_ (mergeTreeBytesAt depth value)
 
 
 {-| Decodes a [`WellKnown`](#WellKnown) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
@@ -4875,6 +4889,13 @@ decodeLeafBytes =
 -}
 mergeEverythingBytes : Everything -> Proto.Binary.Decoder Everything
 mergeEverythingBytes =
+    mergeEverythingBytesAt 1
+
+
+{-| [`mergeEverythingBytes`](#mergeEverythingBytes) at a nesting depth: the fields on its cycle are read at one more, and fail past the runtime's limit.
+-}
+mergeEverythingBytesAt : Int -> Everything -> Proto.Binary.Decoder Everything
+mergeEverythingBytesAt depth =
     Proto.Binary.merge
         "codec.v1.Everything"
         (\number wire value ->
@@ -5123,7 +5144,7 @@ mergeEverythingBytes =
 
                 12 ->
                     Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeEverything_Bytes mergeEverything_Bytes (Everything_ defaultEverything))
+                        (Proto.Binary.recursive depth encodeEverything_Bytes mergeEverything_BytesAt (Everything_ defaultEverything))
                         (\v ->
                             { scalars = value.scalars
                             , optionals = value.optionals
@@ -5175,3 +5196,10 @@ decodeEverythingBytes =
 mergeEverything_Bytes : Everything_ -> Proto.Binary.Decoder Everything_
 mergeEverything_Bytes (Everything_ value) =
     Proto.Binary.map Everything_ (mergeEverythingBytes value)
+
+
+{-| Decodes an [`Everything_`](#Everything_) from protobuf binary into the one given, at a nesting depth.
+-}
+mergeEverything_BytesAt : Int -> Everything_ -> Proto.Binary.Decoder Everything_
+mergeEverything_BytesAt depth (Everything_ value) =
+    Proto.Binary.map Everything_ (mergeEverythingBytesAt depth value)

@@ -642,6 +642,13 @@ decodeLabelBlobRequestBytes =
 -}
 mergeFolderBytes : Folder -> Proto.Binary.Decoder Folder
 mergeFolderBytes =
+    mergeFolderBytesAt 1
+
+
+{-| [`mergeFolderBytes`](#mergeFolderBytes) at a nesting depth: the fields on its cycle are read at one more, and fail past the runtime's limit.
+-}
+mergeFolderBytesAt : Int -> Folder -> Proto.Binary.Decoder Folder
+mergeFolderBytesAt depth =
     Proto.Binary.merge
         "blobs.v1.Folder"
         (\number wire value ->
@@ -659,7 +666,7 @@ mergeFolderBytes =
 
                 2 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeFolder_Bytes mergeFolder_Bytes (Folder_ defaultFolder))
+                        (Proto.Binary.recursive depth encodeFolder_Bytes mergeFolder_BytesAt (Folder_ defaultFolder))
                         value.parent
                         (\v ->
                             { name = value.name
@@ -687,6 +694,13 @@ decodeFolderBytes =
 mergeFolder_Bytes : Folder_ -> Proto.Binary.Decoder Folder_
 mergeFolder_Bytes (Folder_ value) =
     Proto.Binary.map Folder_ (mergeFolderBytes value)
+
+
+{-| Decodes a [`Folder_`](#Folder_) from protobuf binary into the one given, at a nesting depth.
+-}
+mergeFolder_BytesAt : Int -> Folder_ -> Proto.Binary.Decoder Folder_
+mergeFolder_BytesAt depth (Folder_ value) =
+    Proto.Binary.map Folder_ (mergeFolderBytesAt depth value)
 
 
 {-| Decodes a [`Slots`](#Slots) from protobuf binary into the one given, as protobuf merges a message that arrives twice.

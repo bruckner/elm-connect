@@ -3753,7 +3753,7 @@ type Reason
     = Truncated | LengthOverrun | InvalidTag | InvalidWireType Int
     | MalformedVarint | IntOutOfRange | InvalidUtf8 | Unlocated
     | MissingRequired Int               -- reserved for proto2's required; never given yet
-    | TooDeep                           -- reserved for a nesting limit; never given yet
+    | TooDeep                           -- a recursive message nested past 100 levels
 
 toString : Error -> String              -- for a log, as Json.Decode.errorToString
 ```
@@ -3771,9 +3771,8 @@ toString : Error -> String              -- for a log, as Json.Decode.errorToStri
   from binary is a failure protobuf-go reports, and naming it after the
   union is frozen would be a major (§8.3); it carries the field's
   number, and the path ends at the message that lacks it. `TooDeep` is
-  reserved too: protobuf implementations refuse a message nested past
-  100 levels, these decoders have no limit yet, and with the reason
-  named the limit can come as a minor. `Proto.Message.fieldNumbered` and `fieldNamed` find a
+  a message nested past 100 levels of a cycle, as protobuf
+  implementations refuse (§5.5). `Proto.Message.fieldNumbered` and `fieldNamed` find a
   field in a descriptor, so a program that keeps descriptors names a
   path entry's field in four lines; there is no walker over a `Binary`
   until a caller shows the output it wants, and `Proto.Error` stays a
@@ -3917,6 +3916,19 @@ Connect's proto codec sends them (§5.3).
   `Proto.Error`). One that arrives twice is merged field by field.
 - A `Timestamp` drops nanoseconds past the millisecond when read, as the
   JSON codec does.
+- **Depth.** A message on a cycle of references (through fields or
+  oneof members) can nest without bound, and each level is a few frames
+  of JavaScript stack, so deep enough input overflows it; elm/bytes
+  catches that and the report would say `Unlocated`. Its merge carries
+  the nesting depth instead: `mergeNodeBytes = mergeNodeBytesAt 1`, and
+  a field on the cycle is read by `Proto.Binary.recursive depth …`, which
+  reads it at one more and fails with `TooDeep` past 100, as protobuf-es,
+  prost and protobuf's C++ runtime do (protobuf-go allows 10,000). Only
+  the edges of a cycle count, so a message that cannot recurse generates
+  the code it did and pays nothing; `Struct`, `Value` and `ListValue`
+  count one level each, so 100 is 50 levels of JSON nesting in binary.
+  Writing is not limited, and `Any` is not counted: an `Any` holds its
+  message's bytes, read only when unpacked, one level at a time.
 
 ## 6. Generator
 
@@ -4682,9 +4694,8 @@ Within a major version:
   (`Truncated`, `LengthOverrun`, `InvalidTag`, `InvalidWireType`,
   `MalformedVarint`, `IntOutOfRange`, `InvalidUtf8`, `Unlocated`, with
   `MissingRequired` reserved for proto2's `required` fields, so that
-  reading proto2 can ship as a minor, and `TooDeep` reserved for a
-  message nested past a depth limit, which the decoders do not have
-  yet, so that adding the limit is not a major either), and `Rpc.Error`'s `Cause` (`BadCall`, `NetworkError`, `Timeout`,
+  reading proto2 can ship as a minor, and `TooDeep`, a message nested
+  past the binary decoder's depth limit), and `Rpc.Error`'s `Cause` (`BadCall`, `NetworkError`, `Timeout`,
   `BadStatus`, `BadResponse`: what happened in the HTTP exchange, which
   has no other outcome; a new way a call cannot be made is a `BadCall`'s
   message, and a new way an answer cannot be used is a `BadResponse`'s)
