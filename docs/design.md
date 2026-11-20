@@ -928,11 +928,19 @@ just the form encoders write.
   the bound's as text, by length and then digit by digit, so no `Int`
   arithmetic rounds them. More than
   20 digits fails before the digits are written out, which bounds the
-  text an exponent can ask for. A JSON number past 2^53 has been
-  rounded by the JSON parser before the decoder sees it, and is checked
-  as JavaScript writes it, so the bounds themselves fail as numbers
-  (`9223372036854775807` reads as `9223372036854776000`); proto3 JSON
-  writes 64-bit integers as strings, where every digit is kept.
+  text an exponent can ask for. A JSON number reaches the decoder as
+  the double JavaScript's JSON parser made of it, and is read as that
+  double's exact value, as a runtime with big integers reads it: past
+  2^53 the value is split into exact parts by float arithmetic and
+  printed from them, not with `String.fromInt`, which writes
+  JavaScript's shortest form (`9223372036854774784` as
+  `9223372036854775000`). So `-9223372036854775808`, the largest
+  doubles below 2^63 and 2^64, and every other integral double in
+  range keep every digit. A number no double holds was rounded by
+  the parser before any decoder ran, and the decoder cannot tell: it
+  reads the rounded value (`9223372036854775807` as 2^63, out of
+  range; `9007199254740993` as `9007199254740992`). proto3 JSON writes
+  64-bit integers as strings, where every digit is kept.
   `Proto.Json.int64AsInt` reads the same forms within its range. A
   64-bit map key is validated, range-checked and canonicalised the same
   way (§3.2).
@@ -4230,8 +4238,8 @@ any, in `expected/warnings.txt`, rendered as `diagnostics.txt` is.
   binary and proto3 JSON run in and out, every way between them, 1,468
   cases; JSPB, text, proto2 and editions are answered skipped. The cases
   it fails are `conformance/protobuf/failure_list.txt`, each group a
-  design choice the suite disagrees with (encoders that cannot refuse a value with no JSON form; millisecond
-  timestamps, §3.5; unquoted 64-bit numbers past 2^53; unknown enum
+  design choice the suite disagrees with (encoders that cannot refuse a
+  value with no JSON form; millisecond timestamps, §3.5; unknown enum
   numbers read as the zero value and unknown names failing; a key
   written twice read as its last value, §3.4); no fix candidate (an
   input the JSON decoders accept and the specification refuses) has

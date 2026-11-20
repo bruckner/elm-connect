@@ -43,17 +43,6 @@ Required.Proto3.JsonInput.TimestampRepeatedValue.ProtobufOutput
 Recommended.Proto3.JsonInput.TimestampHas6FractionalDigits.Validator
 Recommended.Proto3.JsonInput.TimestampHas9FractionalDigits.Validator
 
-# Design choice: a 64-bit integer written as a JSON number past 2^53 is
-# rounded by JavaScript's JSON parser before the decoder sees it, so it is
-# read with the wrong digits or out of range (Proto.Json.int64), in either
-# output.
-Required.Proto3.JsonInput.Int64FieldMaxValueNotQuoted.JsonOutput
-Required.Proto3.JsonInput.Int64FieldMaxValueNotQuoted.ProtobufOutput
-Required.Proto3.JsonInput.Int64FieldMinValueNotQuoted.JsonOutput
-Required.Proto3.JsonInput.Int64FieldMinValueNotQuoted.ProtobufOutput
-Required.Proto3.JsonInput.Uint64FieldMaxValueNotQuoted.JsonOutput
-Required.Proto3.JsonInput.Uint64FieldMaxValueNotQuoted.ProtobufOutput
-
 # Design choice: an enum number the client does not know reads as the zero
 # value, which is not written back (the enum_unknown option).
 Required.Proto3.JsonInput.EnumFieldUnknownValue.Validator

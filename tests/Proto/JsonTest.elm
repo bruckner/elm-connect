@@ -1106,17 +1106,62 @@ int64Tests =
                     , \_ -> fails Proto.Json.int64 "\"-1e19\""
                     ]
                     ()
-        , test "a number is checked as JavaScript writes it" <|
+        , test "a number reads as the exact value of its double" <|
             \_ ->
                 Expect.all
                     [ \_ -> decodes Proto.Json.int64 "1e18" "1000000000000000000"
                     , \_ -> decodes Proto.Json.int64 "-1e18" "-1000000000000000000"
                     , \_ -> failsWith Proto.Json.int64 "1e19" "Expecting an int64 (-9223372036854775808 to 9223372036854775807)"
 
-                    -- Both bounds round to ±2^63 as JSON numbers, and
-                    -- JavaScript writes those as ±9223372036854776000.
-                    , \_ -> fails Proto.Json.int64 "9223372036854775807"
-                    , \_ -> fails Proto.Json.int64 "-9223372036854775808"
+                    -- JavaScript writes these as 9223372036854775000 and
+                    -- -9223372036854776000.
+                    , \_ -> decodes Proto.Json.int64 "9223372036854774784" "9223372036854774784"
+                    , \_ -> decodes Proto.Json.int64 "-9223372036854775808" "-9223372036854775808"
+                    , \_ -> decodes Proto.Json.int64 "-9223372036854774784" "-9223372036854774784"
+                    ]
+                    ()
+        , test "a number on either side of 2^53" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> decodes Proto.Json.int64 "9007199254740991" "9007199254740991"
+                    , \_ -> decodes Proto.Json.int64 "9007199254740992" "9007199254740992"
+                    , \_ -> decodes Proto.Json.int64 "9007199254740994" "9007199254740994"
+                    , \_ -> decodes Proto.Json.int64 "-9007199254740994" "-9007199254740994"
+
+                    -- 2^60 + 2^8, which JavaScript writes as 1152921504606847000.
+                    , \_ -> decodes Proto.Json.int64 "1152921504606847232" "1152921504606847232"
+                    ]
+                    ()
+        , test "a number no double holds reads as the double the parser made" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> decodes Proto.Json.int64 "9007199254740993" "9007199254740992"
+
+                    -- Both round to 2^63, one past the bound.
+                    , \_ -> failsWith Proto.Json.int64 "9223372036854775807" "Expecting an int64 (-9223372036854775808 to 9223372036854775807)"
+                    , \_ -> fails Proto.Json.int64 "9223372036854775808"
+
+                    -- Rounds to -2^63, the bound itself.
+                    , \_ -> decodes Proto.Json.int64 "-9223372036854775809" "-9223372036854775808"
+                    ]
+                    ()
+        , test "zero and small numbers read as before" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> decodes Proto.Json.int64 "0" "0"
+                    , \_ -> decodes Proto.Json.int64 "-0" "0"
+                    , \_ -> decodes Proto.Json.int64 "1" "1"
+                    , \_ -> decodes Proto.Json.int64 "-1" "-1"
+                    , \_ -> decodes Proto.Json.int64 "4294967296" "4294967296"
+                    , \_ -> decodes Proto.Json.int64 "1.0" "1"
+                    ]
+                    ()
+        , test "a number with a fraction fails" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> fails Proto.Json.int64 "4503599627370495.5"
+                    , \_ -> fails Proto.Json.int64 "-0.5"
+                    , \_ -> fails Proto.Json.int64 "1.5e0"
                     ]
                     ()
         , test "malformed exponent notation fails" <|
@@ -1513,14 +1558,29 @@ uint64Tests =
                     , \_ -> fails Proto.Json.uint64 "\"1e20\""
                     ]
                     ()
-        , test "a number is checked as JavaScript writes it" <|
+        , test "a number reads as the exact value of its double" <|
             \_ ->
                 Expect.all
                     [ \_ -> decodes Proto.Json.uint64 "1e19" "10000000000000000000"
                     , \_ -> fails Proto.Json.uint64 "2e19"
 
-                    -- Rounds to 2^64 as a JSON number.
-                    , \_ -> fails Proto.Json.uint64 "18446744073709551615"
+                    -- The largest double below 2^64, which JavaScript writes
+                    -- as 18446744073709550000.
+                    , \_ -> decodes Proto.Json.uint64 "18446744073709549568" "18446744073709549568"
+                    , \_ -> decodes Proto.Json.uint64 "9223372036854775808" "9223372036854775808"
+                    , \_ -> decodes Proto.Json.uint64 "9007199254740994" "9007199254740994"
+
+                    -- Rounds to 2^64, one past the bound.
+                    , \_ -> failsWith Proto.Json.uint64 "18446744073709551615" "Expecting a uint64 (0 to 18446744073709551615)"
+                    , \_ -> fails Proto.Json.uint64 "18446744073709551616"
+                    ]
+                    ()
+        , test "quoted values keep every digit, as before" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> decodes Proto.Json.uint64 "\"18446744073709549568\"" "18446744073709549568"
+                    , \_ -> decodes Proto.Json.uint64 "\"9007199254740993\"" "9007199254740993"
+                    , \_ -> decodes Proto.Json.uint64 "\"0\"" "0"
                     ]
                     ()
         , test "a negative number fails" <|
