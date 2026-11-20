@@ -231,12 +231,8 @@ a [`BadCall`](Rpc-Error#Cause), and nothing reaches elm/http.
 -}
 task : Client codec -> Call codec req res -> Task Error res
 task ((Client.Client conf _ _ _) as cl) c =
-    let
-        plan =
-            Plan.toSend cl c
-    in
-    case built conf.baseUrl plan of
-        Just ( sent, _ ) ->
+    case built conf.baseUrl (\() -> Plan.toSend cl c) of
+        Just ( plan, sent, _ ) ->
             fromPlan cl c plan sent
 
         Nothing ->
@@ -255,15 +251,11 @@ no policy is in effect.
 -}
 send : Client codec -> (Result Error res -> msg) -> Call codec req res -> Cmd msg
 send ((Client.Client cl _ policy _) as client_) toMsg ((Rpc.Internal.Call.Call fields) as c) =
-    let
-        plan =
-            Plan.toSend client_ c
-    in
-    case built cl.baseUrl plan of
+    case built cl.baseUrl (\() -> Plan.toSend client_ c) of
         Nothing ->
             Task.attempt toMsg (Task.fail tooDeepToSend)
 
-        Just ( sent, refusal ) ->
+        Just ( plan, sent, refusal ) ->
             if Rpc.Internal.Call.retryIn policy c == Nothing && refusal == Nothing then
                 Internal.send
                     (case plan.reader of
@@ -284,15 +276,18 @@ send ((Client.Client cl _ policy _) as client_) toMsg ((Rpc.Internal.Call.Call f
 `Nothing` when building it ran out of stack: a request message nested too
 deeply to encode. Building it runs every encoder the send runs.
 -}
-built : String -> Plan res -> Maybe ( Request, Maybe Error )
-built baseUrl plan =
+built : String -> (() -> Plan res) -> Maybe ( Plan res, Request, Maybe Error )
+built baseUrl toPlan =
     Guard.run
         (\() ->
             let
+                plan =
+                    toPlan ()
+
                 sent =
                     plan.request ()
             in
-            ( sent, Plan.refused baseUrl plan sent )
+            ( plan, sent, Plan.refused baseUrl plan sent )
         )
 
 
