@@ -179,7 +179,8 @@ const RECORD_LITERAL_MAX: usize = 64;
 
 /// Which form a generated binary merge takes. A spike-only switch, read
 /// from `ELM_CONNECT_MERGE`: `literal` (the default, main's form), `update`
-/// (record updates everywhere) or `grouped` (main's form for a record of
+/// (record updates everywhere), `flat` (literals for every record, with no
+/// cap) or `grouped` (main's form for a record of
 /// at most `ELM_CONNECT_GROUPED_MAX` fields, default 32, and grouped state
 /// above it, in groups of `ELM_CONNECT_GROUP` fields: a number, or `sqrt`,
 /// the default, for the square root of the field count rounded up).
@@ -188,12 +189,15 @@ enum MergeForm {
     Literal,
     Update,
     Grouped,
+    /// Literals for every record, however wide: the literal form uncapped.
+    Flat,
 }
 
 fn merge_form() -> MergeForm {
     match std::env::var("ELM_CONNECT_MERGE").as_deref() {
         Ok("update") => MergeForm::Update,
         Ok("grouped") => MergeForm::Grouped,
+        Ok("flat") => MergeForm::Flat,
         _ => MergeForm::Literal,
     }
 }
@@ -252,7 +256,8 @@ impl Setter {
             };
         }
         Setter {
-            names: (form != MergeForm::Update && names.len() <= RECORD_LITERAL_MAX)
+            names: (form == MergeForm::Flat
+                || (form != MergeForm::Update && names.len() <= RECORD_LITERAL_MAX))
                 .then_some(names),
             groups: None,
         }
