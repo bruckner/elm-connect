@@ -251,14 +251,24 @@ decodeKind =
 -}
 decodeEntry : Json.Decode.Decoder Entry
 decodeEntry =
-    Proto.Json.message
-        (Json.Decode.succeed Entry
-            |> Proto.Json.messageField "memo" "" Proto.Json.string
-            |> Proto.Json.messageField "amount" "0" Proto.Json.int64
-            |> Proto.Json.messageField "kind" KindUnspecified decodeKind
-            |> Proto.Json.messageField "tags" Dict.empty (Proto.Json.stringDict Proto.Json.int32)
-            |> Proto.Json.oneof decodeEntrySource
-            |> Proto.Json.messageField "marks" [] (Json.Decode.list Proto.Json.int32)
+    decodeNestedEntry 1
+
+
+{-| [`decodeEntry`](#decodeEntry) for an [`Entry`](#Entry) held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.
+-}
+decodeNestedEntry : Int -> Json.Decode.Decoder Entry
+decodeNestedEntry =
+    Proto.Json.memo
+        (\depth ->
+            Proto.Json.message
+                (Json.Decode.succeed Entry
+                    |> Proto.Json.messageField "memo" "" Proto.Json.string
+                    |> Proto.Json.messageField "amount" "0" Proto.Json.int64
+                    |> Proto.Json.messageField "kind" KindUnspecified decodeKind
+                    |> Proto.Json.messageField "tags" Dict.empty (Proto.Json.stringDict Proto.Json.int32)
+                    |> Proto.Json.oneof (decodeNestedEntrySource depth)
+                    |> Proto.Json.messageField "marks" [] (Json.Decode.list Proto.Json.int32)
+                )
         )
 
 
@@ -266,10 +276,17 @@ decodeEntry =
 -}
 decodeEntrySource : Json.Decode.Decoder EntrySource
 decodeEntrySource =
+    decodeNestedEntrySource 1
+
+
+{-| [`decodeEntrySource`](#decodeEntrySource) for an [`EntrySource`](#EntrySource) held by a message `depth` levels deep inside its cycle. That message's decoder calls it at each depth.
+-}
+decodeNestedEntrySource : Int -> Json.Decode.Decoder EntrySource
+decodeNestedEntrySource depth =
     Proto.Json.members "source"
         EntrySourceUnset
         [ Proto.Json.member "account" (Json.Decode.map EntrySourceAccount Proto.Json.string)
-        , Proto.Json.member "reversal" (Json.Decode.map EntrySourceReversal (Json.Decode.lazy (\_ -> decodeEntry)))
+        , Proto.Json.member "reversal" (Json.Decode.map EntrySourceReversal (Json.Decode.lazy (\_ -> decodeNestedEntry (depth + 1))))
         ]
 
 
@@ -364,135 +381,145 @@ decodeKindBytes number =
 -}
 mergeEntryBytes : Entry -> Proto.Binary.Decoder Entry
 mergeEntryBytes =
-    Proto.Binary.merge
-        "ledger.v1.Entry"
-        (\number wire value ->
-            case number of
-                1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { memo = v
-                            , amount = value.amount
-                            , kind = value.kind
-                            , tags = value.tags
-                            , source = value.source
-                            , marks = value.marks
-                            }
-                        )
-                        wire
-                        value
+    mergeNestedEntryBytes 1
 
-                2 ->
-                    Proto.Binary.field
-                        Proto.Binary.sint64
-                        (\v ->
-                            { memo = value.memo
-                            , amount = v
-                            , kind = value.kind
-                            , tags = value.tags
-                            , source = value.source
-                            , marks = value.marks
-                            }
-                        )
-                        wire
-                        value
 
-                3 ->
-                    Proto.Binary.field
-                        (Proto.Binary.enum encodeKindBytes decodeKindBytes)
-                        (\v ->
-                            { memo = value.memo
-                            , amount = value.amount
-                            , kind = v
-                            , tags = value.tags
-                            , source = value.source
-                            , marks = value.marks
-                            }
-                        )
-                        wire
-                        value
+{-| [`mergeEntryBytes`](#mergeEntryBytes) for an [`Entry`](#Entry) held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.
+-}
+mergeNestedEntryBytes : Int -> Entry -> Proto.Binary.Decoder Entry
+mergeNestedEntryBytes =
+    Proto.Binary.memo
+        (\depth ->
+            Proto.Binary.merge
+                "ledger.v1.Entry"
+                (\number wire value ->
+                    case number of
+                        1 ->
+                            Proto.Binary.field
+                                Proto.Binary.string
+                                (\v ->
+                                    { memo = v
+                                    , amount = value.amount
+                                    , kind = value.kind
+                                    , tags = value.tags
+                                    , source = value.source
+                                    , marks = value.marks
+                                    }
+                                )
+                                wire
+                                value
 
-                4 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.string
-                        Proto.Binary.int32
-                        (\k v ->
-                            { memo = value.memo
-                            , amount = value.amount
-                            , kind = value.kind
-                            , tags = Dict.insert k v value.tags
-                            , source = value.source
-                            , marks = value.marks
-                            }
-                        )
-                        wire
-                        value
+                        2 ->
+                            Proto.Binary.field
+                                Proto.Binary.sint64
+                                (\v ->
+                                    { memo = value.memo
+                                    , amount = v
+                                    , kind = value.kind
+                                    , tags = value.tags
+                                    , source = value.source
+                                    , marks = value.marks
+                                    }
+                                )
+                                wire
+                                value
 
-                5 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { memo = value.memo
-                            , amount = value.amount
-                            , kind = value.kind
-                            , tags = value.tags
-                            , source = EntrySourceAccount v
-                            , marks = value.marks
-                            }
-                        )
-                        wire
-                        value
+                        3 ->
+                            Proto.Binary.field
+                                (Proto.Binary.enum encodeKindBytes decodeKindBytes)
+                                (\v ->
+                                    { memo = value.memo
+                                    , amount = value.amount
+                                    , kind = v
+                                    , tags = value.tags
+                                    , source = value.source
+                                    , marks = value.marks
+                                    }
+                                )
+                                wire
+                                value
 
-                6 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeEntryBytes mergeEntryBytes defaultEntry)
-                        (case value.source of
-                            EntrySourceReversal member ->
-                                Just member
+                        4 ->
+                            Proto.Binary.mapEntry
+                                Proto.Binary.string
+                                Proto.Binary.int32
+                                (\k v ->
+                                    { memo = value.memo
+                                    , amount = value.amount
+                                    , kind = value.kind
+                                    , tags = Dict.insert k v value.tags
+                                    , source = value.source
+                                    , marks = value.marks
+                                    }
+                                )
+                                wire
+                                value
 
-                            _ ->
-                                Nothing
-                        )
-                        (\v ->
-                            { memo = value.memo
-                            , amount = value.amount
-                            , kind = value.kind
-                            , tags = value.tags
-                            , source = EntrySourceReversal v
-                            , marks = value.marks
-                            }
-                        )
-                        wire
-                        value
+                        5 ->
+                            Proto.Binary.field
+                                Proto.Binary.string
+                                (\v ->
+                                    { memo = value.memo
+                                    , amount = value.amount
+                                    , kind = value.kind
+                                    , tags = value.tags
+                                    , source = EntrySourceAccount v
+                                    , marks = value.marks
+                                    }
+                                )
+                                wire
+                                value
 
-                7 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.int32
-                        (\v ->
-                            { memo = value.memo
-                            , amount = value.amount
-                            , kind = value.kind
-                            , tags = value.tags
-                            , source = value.source
-                            , marks = v
-                            }
-                        )
-                        value.marks
-                        wire
-                        value
+                        6 ->
+                            Proto.Binary.fieldInto
+                                (Proto.Binary.recursive depth encodeEntryBytes mergeNestedEntryBytes defaultEntry)
+                                (case value.source of
+                                    EntrySourceReversal member ->
+                                        Just member
 
-                _ ->
-                    Proto.Binary.skip wire value
-        )
-        (\value ->
-            { memo = value.memo
-            , amount = value.amount
-            , kind = value.kind
-            , tags = value.tags
-            , source = value.source
-            , marks = List.reverse value.marks
-            }
+                                    _ ->
+                                        Nothing
+                                )
+                                (\v ->
+                                    { memo = value.memo
+                                    , amount = value.amount
+                                    , kind = value.kind
+                                    , tags = value.tags
+                                    , source = EntrySourceReversal v
+                                    , marks = value.marks
+                                    }
+                                )
+                                wire
+                                value
+
+                        7 ->
+                            Proto.Binary.repeated
+                                Proto.Binary.int32
+                                (\v ->
+                                    { memo = value.memo
+                                    , amount = value.amount
+                                    , kind = value.kind
+                                    , tags = value.tags
+                                    , source = value.source
+                                    , marks = v
+                                    }
+                                )
+                                value.marks
+                                wire
+                                value
+
+                        _ ->
+                            Proto.Binary.skip wire value
+                )
+                (\value ->
+                    { memo = value.memo
+                    , amount = value.amount
+                    , kind = value.kind
+                    , tags = value.tags
+                    , source = value.source
+                    , marks = List.reverse value.marks
+                    }
+                )
         )
 
 

@@ -1,0 +1,141 @@
+// Every shape of a cycle of references, whose decoders read at most 100
+// levels deep: a merge and a JSON decoder given the depth
+// (`mergeNestedChainBytes`, `decodeNestedChain`), each made once per
+// depth by `memo`, each field on the cycle read one level deeper. A
+// message off every cycle generates as it always has.
+syntax = "proto3";
+
+package cycles.v1;
+
+import "google/protobuf/any.proto";
+
+// A message that holds itself.
+message Chain {
+  string label = 1;
+  Chain next = 2;
+}
+
+// Through a list.
+message Tree {
+  string label = 1;
+  repeated Tree children = 2;
+}
+
+// Through a map's values.
+message Dir {
+  map<string, Dir> entries = 1;
+}
+
+// Through a oneof member, which needs no wrapper type.
+message Expr {
+  oneof kind {
+    int32 number = 1;
+    Expr negated = 2;
+  }
+}
+
+// Two messages that hold each other.
+message Person {
+  string name = 1;
+  Team team = 2;
+}
+
+message Team {
+  repeated Person members = 1;
+}
+
+// Three, the last through a list.
+message First {
+  Second second = 1;
+}
+
+message Second {
+  Third third = 1;
+}
+
+message Third {
+  repeated First firsts = 1;
+}
+
+// Off every cycle, holding messages on two of them.
+message Forest {
+  repeated Tree trees = 1;
+  Chain chain = 2;
+}
+
+// On a cycle and wider than a record literal's cap: its merge steps update
+// the record.
+message Wide {
+  int32 f1 = 1;
+  int32 f2 = 2;
+  int32 f3 = 3;
+  int32 f4 = 4;
+  int32 f5 = 5;
+  int32 f6 = 6;
+  int32 f7 = 7;
+  int32 f8 = 8;
+  int32 f9 = 9;
+  int32 f10 = 10;
+  int32 f11 = 11;
+  int32 f12 = 12;
+  int32 f13 = 13;
+  int32 f14 = 14;
+  int32 f15 = 15;
+  int32 f16 = 16;
+  int32 f17 = 17;
+  int32 f18 = 18;
+  int32 f19 = 19;
+  int32 f20 = 20;
+  int32 f21 = 21;
+  int32 f22 = 22;
+  int32 f23 = 23;
+  int32 f24 = 24;
+  int32 f25 = 25;
+  int32 f26 = 26;
+  int32 f27 = 27;
+  int32 f28 = 28;
+  int32 f29 = 29;
+  int32 f30 = 30;
+  int32 f31 = 31;
+  int32 f32 = 32;
+  int32 f33 = 33;
+  int32 f34 = 34;
+  int32 f35 = 35;
+  int32 f36 = 36;
+  int32 f37 = 37;
+  int32 f38 = 38;
+  int32 f39 = 39;
+  int32 f40 = 40;
+  int32 f41 = 41;
+  int32 f42 = 42;
+  int32 f43 = 43;
+  int32 f44 = 44;
+  int32 f45 = 45;
+  int32 f46 = 46;
+  int32 f47 = 47;
+  int32 f48 = 48;
+  int32 f49 = 49;
+  int32 f50 = 50;
+  int32 f51 = 51;
+  int32 f52 = 52;
+  int32 f53 = 53;
+  int32 f54 = 54;
+  int32 f55 = 55;
+  int32 f56 = 56;
+  int32 f57 = 57;
+  int32 f58 = 58;
+  int32 f59 = 59;
+  int32 f60 = 60;
+  int32 f61 = 61;
+  int32 f62 = 62;
+  int32 f63 = 63;
+  int32 f64 = 64;
+  repeated Wide children = 65;
+}
+
+// On a cycle and holding an `Any`: its JSON decoders take the registry, so
+// they are built as they are entered rather than once.
+message Envelope {
+  google.protobuf.Any payload = 1;
+  repeated Envelope replies = 2;
+}

@@ -4188,7 +4188,7 @@ any, in `expected/warnings.txt`, rendered as `diagnostics.txt` is.
   an `Any`'s packed message comes back as it arrived. The test writes
   them, with the modules generated from the protos under the default
   options, `int64=int`, `enum_unknown=zero` and `bytes=bytes`, into
-  `tests/Generated/` on every run (`just codec-gen`); none of it is
+  `tests/Generated/` on every run (`just tests-gen`); none of it is
   committed, since the corpus already shows a change to the generator's
   output in review and the fixed seed makes the samples the same each
   run. `tests/Codec/RoundTripTest.elm` decodes every form with each set's
