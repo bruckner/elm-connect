@@ -52,6 +52,23 @@ naming::reserved_module
 
 naming::reserved_module
 
+  × The package `proto.unknown` becomes the Elm module `Proto.Unknown`, which
+  │ is a module of the runtime package bruckner/elm-connect.
+   ╭─[proto/unknown.proto:5:1]
+ 4 │ // `unknown_fields` option says.
+ 5 │ package proto.unknown;
+   · ───────────┬──────────
+   ·            ╰── package `proto.unknown` becomes `Proto.Unknown`
+ 6 │
+   ╰────
+  help: An application that depends on the runtime package bruckner/elm-
+        connect cannot define a module of the same name: every `import
+        Proto.Unknown`, in the generated code or the application's, becomes
+        ambiguous. Move the module with `rename=proto.unknown:<Elm name>` or
+        `module_prefix=<Elm module>`.
+
+naming::reserved_module
+
   × The package `rpc` becomes the Elm module `Rpc`, which is a module of the
   │ runtime package bruckner/elm-connect.
    ╭─[rpc.proto:4:1]

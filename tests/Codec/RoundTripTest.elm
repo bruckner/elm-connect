@@ -29,6 +29,7 @@ suite =
         , Codec.RoundTrip.suite "int64=int" Generated.Codec.Codecs.int64Int Generated.Codec.DataInt64Int.samples
         , Codec.RoundTrip.suite "enum_unknown=zero" Generated.Codec.Codecs.enumZero Generated.Codec.Data.samples
         , Codec.RoundTrip.suite "bytes=bytes" Generated.Codec.Codecs.bytesBytes Generated.Codec.Data.samples
+        , Codec.RoundTrip.suite "unknown_fields=keep" Generated.Codec.Codecs.keep Generated.Codec.Data.samples
         , options
         ]
 

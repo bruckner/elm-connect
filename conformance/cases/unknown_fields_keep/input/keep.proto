@@ -1,0 +1,97 @@
+// Under unknown_fields=keep every message record ends in
+// `unknownFields_ : Proto.Unknown.Fields`, its binary merge is
+// Proto.Binary.mergeKeep (given the wire types each field number takes) and
+// its binary encoder writes the field last. A merge step sets its field
+// with a record literal up to 64 record fields, `unknownFields_` counted:
+// Wide has 64 proto fields, so 65 record fields, and its steps keep the
+// record update.
+syntax = "proto3";
+
+package keep.v1;
+
+message Note {
+  string title = 1;
+  repeated string tags = 2;
+  map<string, int64> counts = 3;
+  Detail detail = 4;
+  oneof origin {
+    string author = 5;
+    Detail copied_from = 6;
+  }
+  repeated sint32 marks = 7;
+  double weight = 8;
+}
+
+message Detail {
+  bytes body = 1;
+  fixed32 crc = 2;
+}
+
+message Empty {}
+
+message Wide {
+  int32 f1 = 1;
+  int32 f2 = 2;
+  int32 f3 = 3;
+  int32 f4 = 4;
+  int32 f5 = 5;
+  int32 f6 = 6;
+  int32 f7 = 7;
+  int32 f8 = 8;
+  int32 f9 = 9;
+  int32 f10 = 10;
+  int32 f11 = 11;
+  int32 f12 = 12;
+  int32 f13 = 13;
+  int32 f14 = 14;
+  int32 f15 = 15;
+  int32 f16 = 16;
+  int32 f17 = 17;
+  int32 f18 = 18;
+  int32 f19 = 19;
+  int32 f20 = 20;
+  int32 f21 = 21;
+  int32 f22 = 22;
+  int32 f23 = 23;
+  int32 f24 = 24;
+  int32 f25 = 25;
+  int32 f26 = 26;
+  int32 f27 = 27;
+  int32 f28 = 28;
+  int32 f29 = 29;
+  int32 f30 = 30;
+  int32 f31 = 31;
+  int32 f32 = 32;
+  int32 f33 = 33;
+  int32 f34 = 34;
+  int32 f35 = 35;
+  int32 f36 = 36;
+  int32 f37 = 37;
+  int32 f38 = 38;
+  int32 f39 = 39;
+  int32 f40 = 40;
+  int32 f41 = 41;
+  int32 f42 = 42;
+  int32 f43 = 43;
+  int32 f44 = 44;
+  int32 f45 = 45;
+  int32 f46 = 46;
+  int32 f47 = 47;
+  int32 f48 = 48;
+  int32 f49 = 49;
+  int32 f50 = 50;
+  int32 f51 = 51;
+  int32 f52 = 52;
+  int32 f53 = 53;
+  int32 f54 = 54;
+  int32 f55 = 55;
+  int32 f56 = 56;
+  int32 f57 = 57;
+  int32 f58 = 58;
+  int32 f59 = 59;
+  int32 f60 = 60;
+  int32 f61 = 61;
+  int32 f62 = 62;
+  int32 f63 = 63;
+  int32 f64 = 64;
+}
