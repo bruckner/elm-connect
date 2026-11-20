@@ -1149,6 +1149,13 @@ decodeEnumOnlyProto3Bool =
 -}
 decodeTestAllTypesProto3With : Proto.Registry.Registry -> Json.Decode.Decoder TestAllTypesProto3
 decodeTestAllTypesProto3With types =
+    levelTestAllTypesProto3With types 1
+
+
+{-| [`decodeTestAllTypesProto3With`](#decodeTestAllTypesProto3With) built for one nesting depth, the outermost message of its cycle at 1.
+-}
+levelTestAllTypesProto3With : Proto.Registry.Registry -> Int -> Json.Decode.Decoder TestAllTypesProto3
+levelTestAllTypesProto3With types depth =
     Proto.Json.message
         (Json.Decode.succeed TestAllTypesProto3
             |> Proto.Json.messageFieldEither "optionalInt32" "optional_int32" 0 Proto.Json.int32
@@ -1166,14 +1173,14 @@ decodeTestAllTypesProto3With types =
             |> Proto.Json.messageFieldEither "optionalBool" "optional_bool" False Json.Decode.bool
             |> Proto.Json.messageFieldEither "optionalString" "optional_string" "" Proto.Json.string
             |> Proto.Json.messageFieldEither "optionalBytes" "optional_bytes" "" Proto.Json.bytes
-            |> Proto.Json.messageFieldEither "optionalNestedMessage" "optional_nested_message" Nothing (Json.Decode.map Just (decodeTestAllTypesProto3NestedMessage_With types))
+            |> Proto.Json.messageFieldEither "optionalNestedMessage" "optional_nested_message" Nothing (Json.Decode.map Just (Json.Decode.map TestAllTypesProto3NestedMessage_ (Proto.Json.deeperWith depth (levelTestAllTypesProto3NestedMessageWith types))))
             |> Proto.Json.messageFieldEither "optionalForeignMessage" "optional_foreign_message" Nothing (Json.Decode.map Just decodeForeignMessage)
             |> Proto.Json.messageFieldEither "optionalNestedEnum" "optional_nested_enum" TestAllTypesProto3NestedEnumFoo decodeTestAllTypesProto3NestedEnum
             |> Proto.Json.messageFieldEither "optionalForeignEnum" "optional_foreign_enum" ForeignEnumForeignFoo decodeForeignEnum
             |> Proto.Json.messageFieldEither "optionalAliasedEnum" "optional_aliased_enum" TestAllTypesProto3AliasedEnumAliasFoo decodeTestAllTypesProto3AliasedEnum
             |> Proto.Json.messageFieldEither "optionalStringPiece" "optional_string_piece" "" Proto.Json.string
             |> Proto.Json.messageFieldEither "optionalCord" "optional_cord" "" Proto.Json.string
-            |> Proto.Json.messageFieldEither "recursiveMessage" "recursive_message" Nothing (Json.Decode.map Just (decodeTestAllTypesProto3_With types))
+            |> Proto.Json.messageFieldEither "recursiveMessage" "recursive_message" Nothing (Json.Decode.map Just (Json.Decode.map TestAllTypesProto3_ (Proto.Json.deeperWith depth (levelTestAllTypesProto3With types))))
             |> Proto.Json.messageFieldEither "repeatedInt32" "repeated_int32" [] (Json.Decode.list Proto.Json.int32)
             |> Proto.Json.messageFieldEither "repeatedInt64" "repeated_int64" [] (Json.Decode.list Proto.Json.int64)
             |> Proto.Json.messageFieldEither "repeatedUint32" "repeated_uint32" [] (Json.Decode.list Proto.Json.uint32)
@@ -1189,7 +1196,7 @@ decodeTestAllTypesProto3With types =
             |> Proto.Json.messageFieldEither "repeatedBool" "repeated_bool" [] (Json.Decode.list Json.Decode.bool)
             |> Proto.Json.messageFieldEither "repeatedString" "repeated_string" [] (Json.Decode.list Proto.Json.string)
             |> Proto.Json.messageFieldEither "repeatedBytes" "repeated_bytes" [] (Json.Decode.list Proto.Json.bytes)
-            |> Proto.Json.messageFieldEither "repeatedNestedMessage" "repeated_nested_message" [] (Json.Decode.list (decodeTestAllTypesProto3NestedMessage_With types))
+            |> Proto.Json.messageFieldEither "repeatedNestedMessage" "repeated_nested_message" [] (Json.Decode.list (Json.Decode.map TestAllTypesProto3NestedMessage_ (Proto.Json.deeperWith depth (levelTestAllTypesProto3NestedMessageWith types))))
             |> Proto.Json.messageFieldEither "repeatedForeignMessage" "repeated_foreign_message" [] (Json.Decode.list decodeForeignMessage)
             |> Proto.Json.messageFieldEither "repeatedNestedEnum" "repeated_nested_enum" [] (Json.Decode.list decodeTestAllTypesProto3NestedEnum)
             |> Proto.Json.messageFieldEither "repeatedForeignEnum" "repeated_foreign_enum" [] (Json.Decode.list decodeForeignEnum)
@@ -1238,11 +1245,11 @@ decodeTestAllTypesProto3With types =
             |> Proto.Json.messageFieldEither "mapBoolBool" "map_bool_bool" [] (Proto.Json.boolMap Json.Decode.bool)
             |> Proto.Json.messageFieldEither "mapStringString" "map_string_string" Dict.empty (Proto.Json.stringDict Proto.Json.string)
             |> Proto.Json.messageFieldEither "mapStringBytes" "map_string_bytes" Dict.empty (Proto.Json.stringDict Proto.Json.bytes)
-            |> Proto.Json.messageFieldEither "mapStringNestedMessage" "map_string_nested_message" Dict.empty (Proto.Json.stringDict (decodeTestAllTypesProto3NestedMessage_With types))
+            |> Proto.Json.messageFieldEither "mapStringNestedMessage" "map_string_nested_message" Dict.empty (Proto.Json.stringDict (Json.Decode.map TestAllTypesProto3NestedMessage_ (Proto.Json.deeperWith depth (levelTestAllTypesProto3NestedMessageWith types))))
             |> Proto.Json.messageFieldEither "mapStringForeignMessage" "map_string_foreign_message" Dict.empty (Proto.Json.stringDict decodeForeignMessage)
             |> Proto.Json.messageFieldEither "mapStringNestedEnum" "map_string_nested_enum" Dict.empty (Proto.Json.stringDict decodeTestAllTypesProto3NestedEnum)
             |> Proto.Json.messageFieldEither "mapStringForeignEnum" "map_string_foreign_enum" Dict.empty (Proto.Json.stringDict decodeForeignEnum)
-            |> Proto.Json.oneof (decodeTestAllTypesProto3OneofFieldWith types)
+            |> Proto.Json.oneof (levelTestAllTypesProto3OneofFieldWith types depth)
             |> Proto.Json.messageFieldEither "optionalBoolWrapper" "optional_bool_wrapper" Nothing (Json.Decode.map Just Json.Decode.bool)
             |> Proto.Json.messageFieldEither "optionalInt32Wrapper" "optional_int32_wrapper" Nothing (Json.Decode.map Just Proto.Json.int32)
             |> Proto.Json.messageFieldEither "optionalInt64Wrapper" "optional_int64_wrapper" Nothing (Json.Decode.map Just Proto.Json.int64)
@@ -1308,10 +1315,17 @@ decodeTestAllTypesProto3_With types =
 -}
 decodeTestAllTypesProto3OneofFieldWith : Proto.Registry.Registry -> Json.Decode.Decoder TestAllTypesProto3OneofField
 decodeTestAllTypesProto3OneofFieldWith types =
+    levelTestAllTypesProto3OneofFieldWith types 1
+
+
+{-| [`decodeTestAllTypesProto3OneofFieldWith`](#decodeTestAllTypesProto3OneofFieldWith) built for one nesting depth, the outermost message of its cycle at 1.
+-}
+levelTestAllTypesProto3OneofFieldWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder TestAllTypesProto3OneofField
+levelTestAllTypesProto3OneofFieldWith types depth =
     Proto.Json.members "oneof_field"
         TestAllTypesProto3OneofFieldUnset
         [ Proto.Json.memberEither "oneofUint32" "oneof_uint32" (Json.Decode.map TestAllTypesProto3OneofFieldOneofUint32 Proto.Json.uint32)
-        , Proto.Json.memberEither "oneofNestedMessage" "oneof_nested_message" (Json.Decode.map TestAllTypesProto3OneofFieldOneofNestedMessage (Json.Decode.lazy (\_ -> decodeTestAllTypesProto3NestedMessageWith types)))
+        , Proto.Json.memberEither "oneofNestedMessage" "oneof_nested_message" (Json.Decode.map TestAllTypesProto3OneofFieldOneofNestedMessage (Proto.Json.deeperWith depth (levelTestAllTypesProto3NestedMessageWith types)))
         , Proto.Json.memberEither "oneofString" "oneof_string" (Json.Decode.map TestAllTypesProto3OneofFieldOneofString Proto.Json.string)
         , Proto.Json.memberEither "oneofBytes" "oneof_bytes" (Json.Decode.map TestAllTypesProto3OneofFieldOneofBytes Proto.Json.bytes)
         , Proto.Json.memberEither "oneofBool" "oneof_bool" (Json.Decode.map TestAllTypesProto3OneofFieldOneofBool Json.Decode.bool)
@@ -1327,10 +1341,17 @@ decodeTestAllTypesProto3OneofFieldWith types =
 -}
 decodeTestAllTypesProto3NestedMessageWith : Proto.Registry.Registry -> Json.Decode.Decoder TestAllTypesProto3NestedMessage
 decodeTestAllTypesProto3NestedMessageWith types =
+    levelTestAllTypesProto3NestedMessageWith types 1
+
+
+{-| [`decodeTestAllTypesProto3NestedMessageWith`](#decodeTestAllTypesProto3NestedMessageWith) built for one nesting depth, the outermost message of its cycle at 1.
+-}
+levelTestAllTypesProto3NestedMessageWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder TestAllTypesProto3NestedMessage
+levelTestAllTypesProto3NestedMessageWith types depth =
     Proto.Json.message
         (Json.Decode.succeed TestAllTypesProto3NestedMessage
             |> Proto.Json.messageField "a" 0 Proto.Json.int32
-            |> Proto.Json.messageField "corecursive" Nothing (Json.Decode.map Just (decodeTestAllTypesProto3_With types))
+            |> Proto.Json.messageField "corecursive" Nothing (Json.Decode.map Just (Json.Decode.map TestAllTypesProto3_ (Proto.Json.deeperWith depth (levelTestAllTypesProto3With types))))
             |> Json.Decode.map (\value -> value Proto.Unknown.empty)
         )
 
@@ -1743,6 +1764,27 @@ decodeEnumOnlyProto3BoolBytes number =
 -}
 mergeTestAllTypesProto3Bytes : TestAllTypesProto3 -> Proto.Binary.Decoder TestAllTypesProto3
 mergeTestAllTypesProto3Bytes =
+    mergeTestAllTypesProto3BytesAt 1
+
+
+{-| [`mergeTestAllTypesProto3Bytes`](#mergeTestAllTypesProto3Bytes) at a nesting depth, the outermost message of its cycle at 1: its fields on the cycle are read one deeper, and fail past the runtime's limit.
+-}
+mergeTestAllTypesProto3BytesAt : Int -> TestAllTypesProto3 -> Proto.Binary.Decoder TestAllTypesProto3
+mergeTestAllTypesProto3BytesAt =
+    Proto.Binary.level mergeTestAllTypesProto3BytesLevels
+
+
+{-| [`mergeTestAllTypesProto3Bytes`](#mergeTestAllTypesProto3Bytes) at each depth up to the runtime's limit, built once.
+-}
+mergeTestAllTypesProto3BytesLevels : Proto.Binary.Levels TestAllTypesProto3
+mergeTestAllTypesProto3BytesLevels =
+    Proto.Binary.levels mergeTestAllTypesProto3BytesLevel
+
+
+{-| [`mergeTestAllTypesProto3Bytes`](#mergeTestAllTypesProto3Bytes) built for one nesting depth.
+-}
+mergeTestAllTypesProto3BytesLevel : Int -> TestAllTypesProto3 -> Proto.Binary.Decoder TestAllTypesProto3
+mergeTestAllTypesProto3BytesLevel depth =
     Proto.Binary.mergeKeep
         "protobuf_test_messages.proto3.TestAllTypesProto3"
         (\number ->
@@ -2253,7 +2295,7 @@ mergeTestAllTypesProto3Bytes =
                     Proto.Binary.field Proto.Binary.bytes (\v -> { value | optionalBytes = v }) wire value
 
                 18 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeTestAllTypesProto3NestedMessage_Bytes mergeTestAllTypesProto3NestedMessage_Bytes (TestAllTypesProto3NestedMessage_ defaultTestAllTypesProto3NestedMessage)) value.optionalNestedMessage (\v -> { value | optionalNestedMessage = Just v }) wire value
+                    Proto.Binary.fieldInto (Proto.Binary.recursive depth encodeTestAllTypesProto3NestedMessage_Bytes mergeTestAllTypesProto3NestedMessage_BytesAt (TestAllTypesProto3NestedMessage_ defaultTestAllTypesProto3NestedMessage)) value.optionalNestedMessage (\v -> { value | optionalNestedMessage = Just v }) wire value
 
                 19 ->
                     Proto.Binary.fieldInto (Proto.Binary.embedded encodeForeignMessageBytes mergeForeignMessageBytes defaultForeignMessage) value.optionalForeignMessage (\v -> { value | optionalForeignMessage = Just v }) wire value
@@ -2274,7 +2316,7 @@ mergeTestAllTypesProto3Bytes =
                     Proto.Binary.field Proto.Binary.string (\v -> { value | optionalCord = v }) wire value
 
                 27 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeTestAllTypesProto3_Bytes mergeTestAllTypesProto3_Bytes (TestAllTypesProto3_ defaultTestAllTypesProto3)) value.recursiveMessage (\v -> { value | recursiveMessage = Just v }) wire value
+                    Proto.Binary.fieldInto (Proto.Binary.recursive depth encodeTestAllTypesProto3_Bytes mergeTestAllTypesProto3_BytesAt (TestAllTypesProto3_ defaultTestAllTypesProto3)) value.recursiveMessage (\v -> { value | recursiveMessage = Just v }) wire value
 
                 31 ->
                     Proto.Binary.repeated Proto.Binary.int32 (\v -> { value | repeatedInt32 = v }) value.repeatedInt32 wire value
@@ -2322,7 +2364,7 @@ mergeTestAllTypesProto3Bytes =
                     Proto.Binary.repeated Proto.Binary.bytes (\v -> { value | repeatedBytes = v }) value.repeatedBytes wire value
 
                 48 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded encodeTestAllTypesProto3NestedMessage_Bytes mergeTestAllTypesProto3NestedMessage_Bytes (TestAllTypesProto3NestedMessage_ defaultTestAllTypesProto3NestedMessage)) (\v -> { value | repeatedNestedMessage = v }) value.repeatedNestedMessage wire value
+                    Proto.Binary.repeated (Proto.Binary.recursive depth encodeTestAllTypesProto3NestedMessage_Bytes mergeTestAllTypesProto3NestedMessage_BytesAt (TestAllTypesProto3NestedMessage_ defaultTestAllTypesProto3NestedMessage)) (\v -> { value | repeatedNestedMessage = v }) value.repeatedNestedMessage wire value
 
                 49 ->
                     Proto.Binary.repeated (Proto.Binary.embedded encodeForeignMessageBytes mergeForeignMessageBytes defaultForeignMessage) (\v -> { value | repeatedForeignMessage = v }) value.repeatedForeignMessage wire value
@@ -2385,7 +2427,7 @@ mergeTestAllTypesProto3Bytes =
                     Proto.Binary.mapEntry Proto.Binary.string Proto.Binary.bytes (\k v -> { value | mapStringBytes = Dict.insert k v value.mapStringBytes }) wire value
 
                 71 ->
-                    Proto.Binary.mapEntry Proto.Binary.string (Proto.Binary.embedded encodeTestAllTypesProto3NestedMessage_Bytes mergeTestAllTypesProto3NestedMessage_Bytes (TestAllTypesProto3NestedMessage_ defaultTestAllTypesProto3NestedMessage)) (\k v -> { value | mapStringNestedMessage = Dict.insert k v value.mapStringNestedMessage }) wire value
+                    Proto.Binary.mapEntry Proto.Binary.string (Proto.Binary.recursive depth encodeTestAllTypesProto3NestedMessage_Bytes mergeTestAllTypesProto3NestedMessage_BytesAt (TestAllTypesProto3NestedMessage_ defaultTestAllTypesProto3NestedMessage)) (\k v -> { value | mapStringNestedMessage = Dict.insert k v value.mapStringNestedMessage }) wire value
 
                 72 ->
                     Proto.Binary.mapEntry Proto.Binary.string (Proto.Binary.embedded encodeForeignMessageBytes mergeForeignMessageBytes defaultForeignMessage) (\k v -> { value | mapStringForeignMessage = Dict.insert k v value.mapStringForeignMessage }) wire value
@@ -2485,7 +2527,7 @@ mergeTestAllTypesProto3Bytes =
 
                 112 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeTestAllTypesProto3NestedMessageBytes mergeTestAllTypesProto3NestedMessageBytes defaultTestAllTypesProto3NestedMessage)
+                        (Proto.Binary.recursive depth encodeTestAllTypesProto3NestedMessageBytes mergeTestAllTypesProto3NestedMessageBytesAt defaultTestAllTypesProto3NestedMessage)
                         (case value.oneofField of
                             TestAllTypesProto3OneofFieldOneofNestedMessage member ->
                                 Just member
@@ -2760,10 +2802,38 @@ mergeTestAllTypesProto3_Bytes (TestAllTypesProto3_ value) =
     Proto.Binary.map TestAllTypesProto3_ (mergeTestAllTypesProto3Bytes value)
 
 
+{-| Decodes a [`TestAllTypesProto3_`](#TestAllTypesProto3_) from protobuf binary into the one given, at a nesting depth.
+-}
+mergeTestAllTypesProto3_BytesAt : Int -> TestAllTypesProto3_ -> Proto.Binary.Decoder TestAllTypesProto3_
+mergeTestAllTypesProto3_BytesAt depth (TestAllTypesProto3_ value) =
+    Proto.Binary.map TestAllTypesProto3_ (mergeTestAllTypesProto3BytesAt depth value)
+
+
 {-| Decodes a [`TestAllTypesProto3NestedMessage`](#TestAllTypesProto3NestedMessage) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
 mergeTestAllTypesProto3NestedMessageBytes : TestAllTypesProto3NestedMessage -> Proto.Binary.Decoder TestAllTypesProto3NestedMessage
 mergeTestAllTypesProto3NestedMessageBytes =
+    mergeTestAllTypesProto3NestedMessageBytesAt 1
+
+
+{-| [`mergeTestAllTypesProto3NestedMessageBytes`](#mergeTestAllTypesProto3NestedMessageBytes) at a nesting depth, the outermost message of its cycle at 1: its fields on the cycle are read one deeper, and fail past the runtime's limit.
+-}
+mergeTestAllTypesProto3NestedMessageBytesAt : Int -> TestAllTypesProto3NestedMessage -> Proto.Binary.Decoder TestAllTypesProto3NestedMessage
+mergeTestAllTypesProto3NestedMessageBytesAt =
+    Proto.Binary.level mergeTestAllTypesProto3NestedMessageBytesLevels
+
+
+{-| [`mergeTestAllTypesProto3NestedMessageBytes`](#mergeTestAllTypesProto3NestedMessageBytes) at each depth up to the runtime's limit, built once.
+-}
+mergeTestAllTypesProto3NestedMessageBytesLevels : Proto.Binary.Levels TestAllTypesProto3NestedMessage
+mergeTestAllTypesProto3NestedMessageBytesLevels =
+    Proto.Binary.levels mergeTestAllTypesProto3NestedMessageBytesLevel
+
+
+{-| [`mergeTestAllTypesProto3NestedMessageBytes`](#mergeTestAllTypesProto3NestedMessageBytes) built for one nesting depth.
+-}
+mergeTestAllTypesProto3NestedMessageBytesLevel : Int -> TestAllTypesProto3NestedMessage -> Proto.Binary.Decoder TestAllTypesProto3NestedMessage
+mergeTestAllTypesProto3NestedMessageBytesLevel depth =
     Proto.Binary.mergeKeep
         "protobuf_test_messages.proto3.TestAllTypesProto3.NestedMessage"
         (\number ->
@@ -2800,7 +2870,7 @@ mergeTestAllTypesProto3NestedMessageBytes =
 
                 2 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeTestAllTypesProto3_Bytes mergeTestAllTypesProto3_Bytes (TestAllTypesProto3_ defaultTestAllTypesProto3))
+                        (Proto.Binary.recursive depth encodeTestAllTypesProto3_Bytes mergeTestAllTypesProto3_BytesAt (TestAllTypesProto3_ defaultTestAllTypesProto3))
                         value.corecursive
                         (\v ->
                             { a = value.a
@@ -2829,6 +2899,13 @@ decodeTestAllTypesProto3NestedMessageBytes =
 mergeTestAllTypesProto3NestedMessage_Bytes : TestAllTypesProto3NestedMessage_ -> Proto.Binary.Decoder TestAllTypesProto3NestedMessage_
 mergeTestAllTypesProto3NestedMessage_Bytes (TestAllTypesProto3NestedMessage_ value) =
     Proto.Binary.map TestAllTypesProto3NestedMessage_ (mergeTestAllTypesProto3NestedMessageBytes value)
+
+
+{-| Decodes a [`TestAllTypesProto3NestedMessage_`](#TestAllTypesProto3NestedMessage_) from protobuf binary into the one given, at a nesting depth.
+-}
+mergeTestAllTypesProto3NestedMessage_BytesAt : Int -> TestAllTypesProto3NestedMessage_ -> Proto.Binary.Decoder TestAllTypesProto3NestedMessage_
+mergeTestAllTypesProto3NestedMessage_BytesAt depth (TestAllTypesProto3NestedMessage_ value) =
+    Proto.Binary.map TestAllTypesProto3NestedMessage_ (mergeTestAllTypesProto3NestedMessageBytesAt depth value)
 
 
 {-| Decodes a [`ForeignMessage`](#ForeignMessage) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
