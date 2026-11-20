@@ -246,39 +246,173 @@ mergeBlobBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.bytesAsBytes (\v -> { value | data = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bytesAsBytes
+                        (\v ->
+                            { data = v
+                            , maybeData = value.maybeData
+                            , chunks = value.chunks
+                            , byName = value.byName
+                            , wrapped = value.wrapped
+                            , wrappedChunks = value.wrappedChunks
+                            , source = value.source
+                            , name = value.name
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.bytesAsBytes (\v -> { value | maybeData = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bytesAsBytes
+                        (\v ->
+                            { data = value.data
+                            , maybeData = Just v
+                            , chunks = value.chunks
+                            , byName = value.byName
+                            , wrapped = value.wrapped
+                            , wrappedChunks = value.wrappedChunks
+                            , source = value.source
+                            , name = value.name
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.repeated Proto.Binary.bytesAsBytes (\v -> { value | chunks = v }) value.chunks wire value
+                    Proto.Binary.repeated
+                        Proto.Binary.bytesAsBytes
+                        (\v ->
+                            { data = value.data
+                            , maybeData = value.maybeData
+                            , chunks = v
+                            , byName = value.byName
+                            , wrapped = value.wrapped
+                            , wrappedChunks = value.wrappedChunks
+                            , source = value.source
+                            , name = value.name
+                            }
+                        )
+                        value.chunks
+                        wire
+                        value
 
                 4 ->
-                    Proto.Binary.mapEntry Proto.Binary.string Proto.Binary.bytesAsBytes (\k v -> { value | byName = Dict.insert k v value.byName }) wire value
+                    Proto.Binary.mapEntry
+                        Proto.Binary.string
+                        Proto.Binary.bytesAsBytes
+                        (\k v ->
+                            { data = value.data
+                            , maybeData = value.maybeData
+                            , chunks = value.chunks
+                            , byName = Dict.insert k v value.byName
+                            , wrapped = value.wrapped
+                            , wrappedChunks = value.wrappedChunks
+                            , source = value.source
+                            , name = value.name
+                            }
+                        )
+                        wire
+                        value
 
                 5 ->
-                    Proto.Binary.field Proto.Binary.bytesValueAsBytes (\v -> { value | wrapped = Just v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bytesValueAsBytes
+                        (\v ->
+                            { data = value.data
+                            , maybeData = value.maybeData
+                            , chunks = value.chunks
+                            , byName = value.byName
+                            , wrapped = Just v
+                            , wrappedChunks = value.wrappedChunks
+                            , source = value.source
+                            , name = value.name
+                            }
+                        )
+                        wire
+                        value
 
                 6 ->
-                    Proto.Binary.repeated Proto.Binary.bytesValueAsBytes (\v -> { value | wrappedChunks = v }) value.wrappedChunks wire value
+                    Proto.Binary.repeated
+                        Proto.Binary.bytesValueAsBytes
+                        (\v ->
+                            { data = value.data
+                            , maybeData = value.maybeData
+                            , chunks = value.chunks
+                            , byName = value.byName
+                            , wrapped = value.wrapped
+                            , wrappedChunks = v
+                            , source = value.source
+                            , name = value.name
+                            }
+                        )
+                        value.wrappedChunks
+                        wire
+                        value
 
                 7 ->
-                    Proto.Binary.field Proto.Binary.bytesAsBytes (\v -> { value | source = BlobSourceInline v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bytesAsBytes
+                        (\v ->
+                            { data = value.data
+                            , maybeData = value.maybeData
+                            , chunks = value.chunks
+                            , byName = value.byName
+                            , wrapped = value.wrapped
+                            , wrappedChunks = value.wrappedChunks
+                            , source = BlobSourceInline v
+                            , name = value.name
+                            }
+                        )
+                        wire
+                        value
 
                 8 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | source = BlobSourceUrl v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { data = value.data
+                            , maybeData = value.maybeData
+                            , chunks = value.chunks
+                            , byName = value.byName
+                            , wrapped = value.wrapped
+                            , wrappedChunks = value.wrappedChunks
+                            , source = BlobSourceUrl v
+                            , name = value.name
+                            }
+                        )
+                        wire
+                        value
 
                 9 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | name = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { data = value.data
+                            , maybeData = value.maybeData
+                            , chunks = value.chunks
+                            , byName = value.byName
+                            , wrapped = value.wrapped
+                            , wrappedChunks = value.wrappedChunks
+                            , source = value.source
+                            , name = v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
         (\value ->
-            { value
-                | chunks = List.reverse value.chunks
-                , wrappedChunks = List.reverse value.wrappedChunks
+            { data = value.data
+            , maybeData = value.maybeData
+            , chunks = List.reverse value.chunks
+            , byName = value.byName
+            , wrapped = value.wrapped
+            , wrappedChunks = List.reverse value.wrappedChunks
+            , source = value.source
+            , name = value.name
             }
         )
 

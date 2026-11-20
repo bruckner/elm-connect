@@ -232,19 +232,82 @@ mergeNoteBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | title = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { title = v
+                            , author = value.author
+                            , requiredRole = value.requiredRole
+                            , readers = value.readers
+                            , roles = value.roles
+                            , owner = value.owner
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded Users.V1.encodeUserBytes Users.V1.mergeUserBytes Users.V1.defaultUser) value.author (\v -> { value | author = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded Users.V1.encodeUserBytes Users.V1.mergeUserBytes Users.V1.defaultUser)
+                        value.author
+                        (\v ->
+                            { title = value.title
+                            , author = Just v
+                            , requiredRole = value.requiredRole
+                            , readers = value.readers
+                            , roles = value.roles
+                            , owner = value.owner
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.field (Proto.Binary.enum Users.V1.encodeRoleBytes Users.V1.decodeRoleBytes) (\v -> { value | requiredRole = v }) wire value
+                    Proto.Binary.field
+                        (Proto.Binary.enum Users.V1.encodeRoleBytes Users.V1.decodeRoleBytes)
+                        (\v ->
+                            { title = value.title
+                            , author = value.author
+                            , requiredRole = v
+                            , readers = value.readers
+                            , roles = value.roles
+                            , owner = value.owner
+                            }
+                        )
+                        wire
+                        value
 
                 4 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded Users.V1.encodeUserBytes Users.V1.mergeUserBytes Users.V1.defaultUser) (\v -> { value | readers = v }) value.readers wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded Users.V1.encodeUserBytes Users.V1.mergeUserBytes Users.V1.defaultUser)
+                        (\v ->
+                            { title = value.title
+                            , author = value.author
+                            , requiredRole = value.requiredRole
+                            , readers = v
+                            , roles = value.roles
+                            , owner = value.owner
+                            }
+                        )
+                        value.readers
+                        wire
+                        value
 
                 5 ->
-                    Proto.Binary.mapEntry Proto.Binary.string (Proto.Binary.enum Users.V1.encodeRoleBytes Users.V1.decodeRoleBytes) (\k v -> { value | roles = Dict.insert k v value.roles }) wire value
+                    Proto.Binary.mapEntry
+                        Proto.Binary.string
+                        (Proto.Binary.enum Users.V1.encodeRoleBytes Users.V1.decodeRoleBytes)
+                        (\k v ->
+                            { title = value.title
+                            , author = value.author
+                            , requiredRole = value.requiredRole
+                            , readers = value.readers
+                            , roles = Dict.insert k v value.roles
+                            , owner = value.owner
+                            }
+                        )
+                        wire
+                        value
 
                 6 ->
                     Proto.Binary.fieldInto
@@ -256,17 +319,45 @@ mergeNoteBytes =
                             _ ->
                                 Nothing
                         )
-                        (\v -> { value | owner = NoteOwnerUser v })
+                        (\v ->
+                            { title = value.title
+                            , author = value.author
+                            , requiredRole = value.requiredRole
+                            , readers = value.readers
+                            , roles = value.roles
+                            , owner = NoteOwnerUser v
+                            }
+                        )
                         wire
                         value
 
                 7 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | owner = NoteOwnerTeam v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { title = value.title
+                            , author = value.author
+                            , requiredRole = value.requiredRole
+                            , readers = value.readers
+                            , roles = value.roles
+                            , owner = NoteOwnerTeam v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value -> { value | readers = List.reverse value.readers })
+        (\value ->
+            { title = value.title
+            , author = value.author
+            , requiredRole = value.requiredRole
+            , readers = List.reverse value.readers
+            , roles = value.roles
+            , owner = value.owner
+            }
+        )
 
 
 {-| Decodes a [`Note`](#Note) from protobuf binary.

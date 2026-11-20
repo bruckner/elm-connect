@@ -26,11 +26,11 @@
 
 use super::field::{FieldShape, Present, ValueShape, Zeroed, field_holding};
 use super::scalar::Holding;
-use super::{Emitter, MessageShape, OneofShape, docs};
+use super::{Emitter, MessageShape, OneofShape, RecordField, docs};
 use crate::elm::ast::{BinOp, Decl, Expr, Pattern, Type};
 use crate::elm::build::{
-    access, apply, binop, case, if_then_else, int, lambda, list, pctor, pvar, qualified, string,
-    ty, var,
+    access, apply, binop, case, if_then_else, int, lambda, list, pctor, pvar, qualified, record,
+    string, ty, var,
 };
 use crate::ir::{
     Cardinality, Enum, Field, MapKey, Message, OneofVariant, ScalarKind, TypeRef, WellKnown,
@@ -164,11 +164,68 @@ fn wrapper_of<'m>(shape: FieldShape<'m>) -> Option<&'m Wrapper> {
     }
 }
 
-/// `{ value | name = update }`.
-fn update(name: &str, value: Expr) -> Expr {
-    Expr::RecordUpdate {
-        record: ENCODER_ARGUMENT.to_owned(),
-        fields: vec![(name.to_owned(), value)],
+/// The most fields a record may have for a merge step to set one of them by
+/// writing the whole record out. Elm compiles a record update to a copy of
+/// every field through a `for…in` loop, so a message of n fields read field
+/// by field costs n such copies; a record literal reads each field straight
+/// into a new object, five to seven times faster on a 32- or 64-field
+/// message. Its cost is source: each step names every field, so a message's
+/// merge grows with n², about 0.8 KB gzipped and 27 KB minified for 64
+/// fields but 2.8 KB and 154 KB for the 120 of protobuf's
+/// `TestAllTypesProto3`, which every program holding the message parses.
+/// Wider records keep the update (docs/decisions.md, "Binary codecs,
+/// faster within elm/bytes").
+const RECORD_LITERAL_MAX: usize = 64;
+
+/// How a merge step sets fields of the record it is given: `{ value | name
+/// = update }`, or, for a record of at most [`RECORD_LITERAL_MAX`] fields,
+/// the whole record with `name` replaced and every other field copied.
+struct Setter {
+    names: Option<Vec<String>>,
+}
+
+impl Setter {
+    fn new(shape: &MessageShape) -> Self {
+        let names: Vec<String> = shape
+            .record()
+            .into_iter()
+            .map(|field| match field {
+                RecordField::Field(field, _) => field.elm_name.clone(),
+                RecordField::Oneof(oneof) => oneof.oneof.elm_field_name.clone(),
+            })
+            .collect();
+        Setter {
+            names: (names.len() <= RECORD_LITERAL_MAX).then_some(names),
+        }
+    }
+
+    fn update(&self, name: &str, value: Expr) -> Expr {
+        self.update_all(vec![(name.to_owned(), value)])
+    }
+
+    fn update_all(&self, mut fields: Vec<(String, Expr)>) -> Expr {
+        match &self.names {
+            Some(names) => {
+                let whole: Vec<(String, Expr)> = names
+                    .iter()
+                    .map(
+                        |other| match fields.iter().position(|(name, _)| name == other) {
+                            Some(at) => (other.clone(), fields.swap_remove(at).1),
+                            None => (other.clone(), access(var(ENCODER_ARGUMENT), other.clone())),
+                        },
+                    )
+                    .collect();
+                debug_assert!(
+                    fields.is_empty(),
+                    "a merge step sets a field the record lacks"
+                );
+                record(whole)
+            }
+            None => Expr::RecordUpdate {
+                record: ENCODER_ARGUMENT.to_owned(),
+                fields,
+            },
+        }
     }
 }
 
@@ -373,6 +430,8 @@ impl Emitter {
     pub(super) fn message_merge_bytes(&mut self, shape: &MessageShape) -> Decl {
         let mut branches: Vec<(u32, Expr)> = Vec::new();
         let mut reversed: Vec<String> = Vec::new();
+        let setter = Setter::new(shape);
+        let update = |name: &str, value: Expr| setter.update(name, value);
         let wire = || var(WIRE);
         let record = || var(ENCODER_ARGUMENT);
         for &(field, field_shape) in &shape.fields {
@@ -489,13 +548,7 @@ impl Emitter {
                     (name, apply(reverse.clone(), [current]))
                 })
                 .collect();
-            lambda(
-                [pvar(ENCODER_ARGUMENT)],
-                Expr::RecordUpdate {
-                    record: ENCODER_ARGUMENT.to_owned(),
-                    fields,
-                },
-            )
+            lambda([pvar(ENCODER_ARGUMENT)], setter.update_all(fields))
         };
         let merge = self.binary("merge");
         let annotation = self.bytes_merge_type(ty(shape.message.elm_name.clone(), []));

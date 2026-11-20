@@ -432,37 +432,213 @@ mergeTagBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | type_ = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { type_ = v
+                            , if_ = value.if_
+                            , port_ = value.port_
+                            , alias = value.alias
+                            , displayName = value.displayName
+                            , httpUrl = value.httpUrl
+                            , v2Count = value.v2Count
+                            , shape = value.shape
+                            , method = value.method
+                            , case_ = value.case_
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field Proto.Binary.bool (\v -> { value | if_ = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.bool
+                        (\v ->
+                            { type_ = value.type_
+                            , if_ = v
+                            , port_ = value.port_
+                            , alias = value.alias
+                            , displayName = value.displayName
+                            , httpUrl = value.httpUrl
+                            , v2Count = value.v2Count
+                            , shape = value.shape
+                            , method = value.method
+                            , case_ = value.case_
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | port_ = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int32
+                        (\v ->
+                            { type_ = value.type_
+                            , if_ = value.if_
+                            , port_ = v
+                            , alias = value.alias
+                            , displayName = value.displayName
+                            , httpUrl = value.httpUrl
+                            , v2Count = value.v2Count
+                            , shape = value.shape
+                            , method = value.method
+                            , case_ = value.case_
+                            }
+                        )
+                        wire
+                        value
 
                 4 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | alias = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { type_ = value.type_
+                            , if_ = value.if_
+                            , port_ = value.port_
+                            , alias = v
+                            , displayName = value.displayName
+                            , httpUrl = value.httpUrl
+                            , v2Count = value.v2Count
+                            , shape = value.shape
+                            , method = value.method
+                            , case_ = value.case_
+                            }
+                        )
+                        wire
+                        value
 
                 5 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | displayName = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { type_ = value.type_
+                            , if_ = value.if_
+                            , port_ = value.port_
+                            , alias = value.alias
+                            , displayName = v
+                            , httpUrl = value.httpUrl
+                            , v2Count = value.v2Count
+                            , shape = value.shape
+                            , method = value.method
+                            , case_ = value.case_
+                            }
+                        )
+                        wire
+                        value
 
                 6 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | httpUrl = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { type_ = value.type_
+                            , if_ = value.if_
+                            , port_ = value.port_
+                            , alias = value.alias
+                            , displayName = value.displayName
+                            , httpUrl = v
+                            , v2Count = value.v2Count
+                            , shape = value.shape
+                            , method = value.method
+                            , case_ = value.case_
+                            }
+                        )
+                        wire
+                        value
 
                 7 ->
-                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | v2Count = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int32
+                        (\v ->
+                            { type_ = value.type_
+                            , if_ = value.if_
+                            , port_ = value.port_
+                            , alias = value.alias
+                            , displayName = value.displayName
+                            , httpUrl = value.httpUrl
+                            , v2Count = v
+                            , shape = value.shape
+                            , method = value.method
+                            , case_ = value.case_
+                            }
+                        )
+                        wire
+                        value
 
                 8 ->
-                    Proto.Binary.field (Proto.Binary.enum encodeShapeBytes decodeShapeBytes) (\v -> { value | shape = v }) wire value
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeShapeBytes decodeShapeBytes)
+                        (\v ->
+                            { type_ = value.type_
+                            , if_ = value.if_
+                            , port_ = value.port_
+                            , alias = value.alias
+                            , displayName = value.displayName
+                            , httpUrl = value.httpUrl
+                            , v2Count = value.v2Count
+                            , shape = v
+                            , method = value.method
+                            , case_ = value.case_
+                            }
+                        )
+                        wire
+                        value
 
                 9 ->
-                    Proto.Binary.field (Proto.Binary.enum encodeHttpMethodBytes decodeHttpMethodBytes) (\v -> { value | method = v }) wire value
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeHttpMethodBytes decodeHttpMethodBytes)
+                        (\v ->
+                            { type_ = value.type_
+                            , if_ = value.if_
+                            , port_ = value.port_
+                            , alias = value.alias
+                            , displayName = value.displayName
+                            , httpUrl = value.httpUrl
+                            , v2Count = value.v2Count
+                            , shape = value.shape
+                            , method = v
+                            , case_ = value.case_
+                            }
+                        )
+                        wire
+                        value
 
                 10 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | case_ = TagCaseThen v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { type_ = value.type_
+                            , if_ = value.if_
+                            , port_ = value.port_
+                            , alias = value.alias
+                            , displayName = value.displayName
+                            , httpUrl = value.httpUrl
+                            , v2Count = value.v2Count
+                            , shape = value.shape
+                            , method = value.method
+                            , case_ = TagCaseThen v
+                            }
+                        )
+                        wire
+                        value
 
                 11 ->
-                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | case_ = TagCaseOf v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int32
+                        (\v ->
+                            { type_ = value.type_
+                            , if_ = value.if_
+                            , port_ = value.port_
+                            , alias = value.alias
+                            , displayName = value.displayName
+                            , httpUrl = value.httpUrl
+                            , v2Count = value.v2Count
+                            , shape = value.shape
+                            , method = value.method
+                            , case_ = TagCaseOf v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value

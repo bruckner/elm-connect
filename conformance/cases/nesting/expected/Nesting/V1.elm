@@ -854,18 +854,52 @@ mergeOuterBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeOuterInnerBytes mergeOuterInnerBytes defaultOuterInner) value.inner (\v -> { value | inner = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeOuterInnerBytes mergeOuterInnerBytes defaultOuterInner)
+                        value.inner
+                        (\v ->
+                            { inner = Just v
+                            , kind = value.kind
+                            , all = value.all
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.field (Proto.Binary.enum encodeOuterInnerKindBytes decodeOuterInnerKindBytes) (\v -> { value | kind = v }) wire value
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeOuterInnerKindBytes decodeOuterInnerKindBytes)
+                        (\v ->
+                            { inner = value.inner
+                            , kind = v
+                            , all = value.all
+                            }
+                        )
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded encodeOuterInnerDeepestBytes mergeOuterInnerDeepestBytes defaultOuterInnerDeepest) (\v -> { value | all = v }) value.all wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeOuterInnerDeepestBytes mergeOuterInnerDeepestBytes defaultOuterInnerDeepest)
+                        (\v ->
+                            { inner = value.inner
+                            , kind = value.kind
+                            , all = v
+                            }
+                        )
+                        value.all
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value -> { value | all = List.reverse value.all })
+        (\value ->
+            { inner = value.inner
+            , kind = value.kind
+            , all = List.reverse value.all
+            }
+        )
 
 
 {-| Decodes an [`Outer`](#Outer) from protobuf binary.
@@ -884,7 +918,15 @@ mergeOuterInnerBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeOuterInnerDeepestBytes mergeOuterInnerDeepestBytes defaultOuterInnerDeepest) value.deepest (\v -> { value | deepest = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeOuterInnerDeepestBytes mergeOuterInnerDeepestBytes defaultOuterInnerDeepest)
+                        value.deepest
+                        (\v ->
+                            { deepest = Just v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -908,7 +950,14 @@ mergeOuterInnerDeepestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field (Proto.Binary.enum encodeOuterInnerKindBytes decodeOuterInnerKindBytes) (\v -> { value | kind = v }) wire value
+                    Proto.Binary.field
+                        (Proto.Binary.enum encodeOuterInnerKindBytes decodeOuterInnerKindBytes)
+                        (\v ->
+                            { kind = v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -932,18 +981,52 @@ mergeNodeBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | label = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { label = v
+                            , children = value.children
+                            , byName = value.byName
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded encodeNode_Bytes mergeNode_Bytes (Node_ defaultNode)) (\v -> { value | children = v }) value.children wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeNode_Bytes mergeNode_Bytes (Node_ defaultNode))
+                        (\v ->
+                            { label = value.label
+                            , children = v
+                            , byName = value.byName
+                            }
+                        )
+                        value.children
+                        wire
+                        value
 
                 3 ->
-                    Proto.Binary.mapEntry Proto.Binary.string (Proto.Binary.embedded encodeNode_Bytes mergeNode_Bytes (Node_ defaultNode)) (\k v -> { value | byName = Dict.insert k v value.byName }) wire value
+                    Proto.Binary.mapEntry
+                        Proto.Binary.string
+                        (Proto.Binary.embedded encodeNode_Bytes mergeNode_Bytes (Node_ defaultNode))
+                        (\k v ->
+                            { label = value.label
+                            , children = value.children
+                            , byName = Dict.insert k v value.byName
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value -> { value | children = List.reverse value.children })
+        (\value ->
+            { label = value.label
+            , children = List.reverse value.children
+            , byName = value.byName
+            }
+        )
 
 
 {-| Decodes a [`Node`](#Node) from protobuf binary.
@@ -969,10 +1052,27 @@ mergePersonBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | name = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { name = v
+                            , employer = value.employer
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeCompany_Bytes mergeCompany_Bytes (Company_ defaultCompany)) value.employer (\v -> { value | employer = Just v }) wire value
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeCompany_Bytes mergeCompany_Bytes (Company_ defaultCompany))
+                        value.employer
+                        (\v ->
+                            { name = value.name
+                            , employer = Just v
+                            }
+                        )
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
@@ -1003,15 +1103,36 @@ mergeCompanyBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | name = v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { name = v
+                            , staff = value.staff
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded encodePerson_Bytes mergePerson_Bytes (Person_ defaultPerson)) (\v -> { value | staff = v }) value.staff wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodePerson_Bytes mergePerson_Bytes (Person_ defaultPerson))
+                        (\v ->
+                            { name = value.name
+                            , staff = v
+                            }
+                        )
+                        value.staff
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value -> { value | staff = List.reverse value.staff })
+        (\value ->
+            { name = value.name
+            , staff = List.reverse value.staff
+            }
+        )
 
 
 {-| Decodes a [`Company`](#Company) from protobuf binary.
@@ -1037,12 +1158,23 @@ mergeForestBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded encodeNodeBytes mergeNodeBytes defaultNode) (\v -> { value | trees = v }) value.trees wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeNodeBytes mergeNodeBytes defaultNode)
+                        (\v ->
+                            { trees = v
+                            }
+                        )
+                        value.trees
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value -> { value | trees = List.reverse value.trees })
+        (\value ->
+            { trees = List.reverse value.trees
+            }
+        )
 
 
 {-| Decodes a [`Forest`](#Forest) from protobuf binary.
@@ -1061,7 +1193,14 @@ mergeExprBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.field Proto.Binary.int64 (\v -> { value | value = ExprValueNumber v }) wire value
+                    Proto.Binary.field
+                        Proto.Binary.int64
+                        (\v ->
+                            { value = ExprValueNumber v
+                            }
+                        )
+                        wire
+                        value
 
                 2 ->
                     Proto.Binary.fieldInto
@@ -1073,7 +1212,10 @@ mergeExprBytes =
                             _ ->
                                 Nothing
                         )
-                        (\v -> { value | value = ExprValueSum v })
+                        (\v ->
+                            { value = ExprValueSum v
+                            }
+                        )
                         wire
                         value
 
@@ -1099,12 +1241,23 @@ mergeSumBytes =
         (\number wire value ->
             case number of
                 1 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded encodeExprBytes mergeExprBytes defaultExpr) (\v -> { value | terms = v }) value.terms wire value
+                    Proto.Binary.repeated
+                        (Proto.Binary.embedded encodeExprBytes mergeExprBytes defaultExpr)
+                        (\v ->
+                            { terms = v
+                            }
+                        )
+                        value.terms
+                        wire
+                        value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value -> { value | terms = List.reverse value.terms })
+        (\value ->
+            { terms = List.reverse value.terms
+            }
+        )
 
 
 {-| Decodes a [`Sum`](#Sum) from protobuf binary.
