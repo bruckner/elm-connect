@@ -1585,10 +1585,12 @@ decimal string, with no leading zeros:
 A value that is not an integer fails (`"4.2"`, `"1.5e0"`), and so does one
 outside the type's range, -9223372036854775808 to 9223372036854775807
 (`"9223372036854775808"`). Exponent notation is read as text, by moving the
-decimal point, so a string keeps every digit. A number past 2^53 was already
-rounded when the JSON was parsed, before this decoder saw it, and is read as
-JavaScript writes it (`9223372036854775807` as `"9223372036854776000"`, which
-is out of range).
+decimal point, so a string keeps every digit. A number is read as the exact
+value of the double JavaScript's JSON parser made of it, as a runtime with
+big integers reads it: `-9223372036854775808` and `9223372036854774784` keep
+every digit. A number no double holds was rounded by that parser before this
+decoder saw it, and reads as the rounded value: `9223372036854775807` as
+2^63, which is out of range. Write such a value as a string.
 
 -}
 int64 : Decoder String
@@ -1603,7 +1605,7 @@ wide : Width -> Decoder String
 wide width =
     Json.Decode.oneOf
         [ Json.Decode.string
-        , Json.Decode.map String.fromInt Json.Decode.int
+        , Json.Decode.map exactDecimal Json.Decode.int
         ]
         |> Json.Decode.andThen
             (\text ->
@@ -1620,6 +1622,51 @@ wide width =
                     Err OutOfRange ->
                         Json.Decode.fail ("Expecting " ++ widthName width ++ " " ++ widthRange width)
             )
+
+
+{-| The exact decimal value of an integral JSON number. `String.fromInt`
+writes JavaScript's shortest form, which past 2^53 can end in zeros the
+value does not have (9223372036854774784 as `"9223372036854775000"`). From
+2^53 to 2^64 the magnitude is split into 32-bit halves and then into a count
+of millions and a remainder, every step exact in a double since each value
+stays below 2^53; 2^64 and past, out of every 64-bit type's range, keep the
+shortest form, which the range check refuses.
+-}
+exactDecimal : Int -> String
+exactDecimal number =
+    let
+        magnitude =
+            abs number
+    in
+    if magnitude <= 9007199254740992 || toFloat magnitude >= 1.8446744073709552e19 then
+        String.fromInt number
+
+    else
+        let
+            high =
+                floor (toFloat magnitude / 4294967296)
+
+            low =
+                magnitude - high * 4294967296
+
+            -- 4294967296 is 4294 millions and 967296.
+            belowMillions =
+                high * 967296 + low
+
+            ones =
+                modBy 1000000 belowMillions
+
+            millions =
+                high * 4294 + round (toFloat (belowMillions - ones) / 1000000)
+
+            sign =
+                if number < 0 then
+                    "-"
+
+                else
+                    ""
+        in
+        sign ++ String.fromInt millions ++ String.padLeft 6 '0' (String.fromInt ones)
 
 
 {-| The 64-bit integer types' two ranges.
@@ -1855,8 +1902,9 @@ encodeInt64 =
 It accepts a JSON number or a string, in decimal or exponent notation, as
 proto3 JSON requires (`42`, `"42"`, `"4.2e1"`), and fails on a value that is not an integer or lies outside ±9007199254740991,
 where Elm's `Int` stops being exact; see
-[`Proto.Int64.toInt`](Proto-Int64#toInt). A number past that range was
-already rounded when the JSON was parsed, and fails too.
+[`Proto.Int64.toInt`](Proto-Int64#toInt). A number outside that range
+fails too, whether a double holds it exactly or JavaScript's JSON parser
+rounded it.
 
 -}
 int64AsInt : Decoder Int
