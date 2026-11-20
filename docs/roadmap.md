@@ -10,7 +10,9 @@ no dates and no order. An entry is a direction, not a commitment; the
 reasons behind the settled questions are in
 [decisions.md](decisions.md). A few entries are follow-ups of the 0.2
 interface, to be settled before 1.0, and say so. gRPC-Web, once an
-entry here, is a protocol now ([calling.md](calling.md#protocols)).
+entry here, is a protocol now ([calling.md](calling.md#protocols)),
+and keeping unknown fields is the generator option
+`unknown_fields=keep` ([generator.md](generator.md#options)).
 
 ## Server streaming
 
@@ -32,19 +34,6 @@ JSON array by default, newline-delimited JSON with
 `stream_sse_style_delimited`. Which one a server uses would be a
 modifier of `Rpc.Protocol.transcode`, so it is a minor too, and it
 comes with server streaming over Connect, not before.
-
-## Unknown fields
-
-A field a decoder does not know is skipped, in proto3 JSON and in
-binary alike, so a message read and written back loses it, where
-protobuf's own runtimes keep such fields and write them again. Keeping
-them needs somewhere to hold them, and a generated message is a plain
-Elm record that an application builds with record syntax and compares
-with `==`: a hidden field would show up in every record literal, and
-Elm has no private record field. It would need an extra field the
-generator adds to every message (or an opaque message type), which
-changes every generated record, so a major, or an option that adds the
-field, a minor. Two protobuf conformance cases need it.
 
 ## Editions and proto2
 

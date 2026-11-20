@@ -242,19 +242,25 @@ where prost-reflect's is not: fields in number order, a map's entries in
 the order of the Elm `Dict` holding them, every singular `Empty` set, every
 `Any`'s packed message re-encoded the same way and a kind-less `Value` given
 `null_value`; another test checks that prost-reflect reads each back as
-the sample. It generates the protos under `wire=both` (with `int64=int`
-and with `bytes=bytes`) and `wire=proto` too, and
+the sample. It generates the protos under `wire=both` (with `int64=int`,
+with `bytes=bytes` and with `unknown_fields=keep`) and `wire=proto` too, and
 `tests/Codec/BinaryRoundTripTest.elm` decodes each sample's binary with the
 generated decoder and re-encodes it to the same bytes, with unknown fields
-of every wire type appended and without; where the set has JSON codecs, it
+of every wire type appended and without (under `unknown_fields=keep`,
+re-encoded with them, by field number); where the set has JSON codecs, it
 checks that the value read from binary writes the JSON the value read from
 JSON writes (an `Any` read from binary holds its message's binary, so it
 is written in Connect's error-detail form, `binaryJson` in the data), and
 that the value read from JSON encodes to the same bytes, but where it
 holds an `Any`, which the binary encoder writes with its type URL alone.
 Since the encoders write prost-reflect's bytes exactly, prost-reflect reads
-what they write. The corpus case `codec_round_trips` is these protos under
-the default options, blessed like any other.
+what they write. The test also generates an older schema under
+`unknown_fields=keep`: `codec.proto` with every odd-numbered field left
+out but each oneof's last. `tests/Codec/UnknownRoundTripTest.elm` reads
+each sample's binary with it, writes it, and reads that with the full
+schema, which must give the sample, and its bytes. The corpus case
+`codec_round_trips` is these protos under the default options, blessed
+like any other.
 
 For a deeper run, set the number of samples per message (8 by default)
 when generating, then run the Elm tests; the next plain run writes the
