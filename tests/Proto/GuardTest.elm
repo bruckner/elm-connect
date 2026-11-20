@@ -6,6 +6,7 @@ depth through the registry, and scrubbed errors.
 The guard rests on elm/json's `decodeString` catching what its decoder
 throws (`_Json_runOnString`); the first test fails if a release stops doing
 so.
+
 -}
 
 import Expect
