@@ -769,6 +769,41 @@ client has one: an Elm program also runs headless under Node, between
 connect-web and connect-node, and server streaming will check each
 message against the same limit. Where: design §1, §5.1, §5.4.
 
+### A nesting depth limit on reads
+
+*2026-11-20.*
+
+A message on a cycle of references, and a binary `Struct`, `Value` or
+`ListValue`, is read at most 100 levels deep, a level being each message
+entered along a field or oneof member of the cycle; past it a binary read
+fails with `TooDeep` and a JSON read with "Expecting messages nested at
+most 100 deep". Without a limit, each level cost a few frames of
+JavaScript stack, and deep input overflowed it: a binary read at about
+560 levels in V8 (node, Chromium), 780 in SpiderMonkey and 5,100 in
+JavaScriptCore, reported as `Unlocated`, the reason that stands for a
+bug; `Json.Decode.decodeString` at about 515 in V8, as "This is not
+valid JSON!"; and `Json.Decode.decodeValue`, which `Proto.Message.decodeJson`
+and a binding's response field use, threw. A throw inside `update`
+escapes elm/core's scheduler with its working flag left set, after which
+the program runs no further command or subscription, in every engine.
+
+The limit is 100, as protobuf-es, prost, buffa and protobuf's C++
+runtime have it (protobuf-go allows 10,000, deeper than an Elm program's
+stack); protobuf-es, protobuf-go and buffa let a caller change it, prost
+does not. It is fixed: a setting carried at run time would be one more
+argument on every message's reads, those that cannot recurse included,
+and no program has asked for another number. Only messages on a cycle
+count and pay: their binary merges and JSON decoders are built once per
+depth into a table (`mergeNodeBytesLevels`, `levelsNode`) at start, a
+field on the cycle reading one level deeper, and every other message
+generates the code it did before. A message that holds an `Any` builds
+its JSON decoders as they are entered, since they take the registry.
+Writing is not limited: no peer limits it, a limit there would cost
+every encoder, and only the application can build a value deeper than
+what it read. A `Struct` or `Value` read from JSON and an `Any` nested in
+an `Any` are not counted yet. Where: design §3.2, §5.4, §5.5; the
+calling guide, "Nesting depth".
+
 ### The codec is a transport setting
 
 *2026-10-25; superseded 2026-10-27 by Protocol and client, indexed by
