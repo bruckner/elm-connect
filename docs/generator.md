@@ -46,7 +46,7 @@ otherwise.
 | the wrappers (`StringValue`, `Int32Value`, …) | `Maybe` of the wrapped type's form: `Maybe String`, `Maybe Int`; `Int64Value` and `UInt64Value` follow `int64`, `BytesValue` follows `bytes` |
 | `google.protobuf.Any` | `Maybe Proto.Any.Any` ([descriptors.md](descriptors.md#any)) |
 | `google.protobuf.NullValue` | `()`, written `null`: a singular field, `optional` too, is never written, since its one value is the default; a list or map holds `null`s; a oneof member has no argument and `null` sets it |
-| a recursive message (`repeated Node children`) | the field that closes the cycle holds a wrapper, `List Node_`, with `type Node_ = Node_ Node`; fields that close no cycle hold the record itself |
+| a recursive message (`repeated Node children`) | the field that closes the cycle holds a wrapper, `List Node_`, with `type Node_ = Node_ Node`; fields that close no cycle hold the record itself. Every message on the cycle also gets `decodeNestedNode : Int -> Json.Decode.Decoder Node` (`decodeNestedNodeWith` when it takes the registry), its decoder at a nesting depth, which reads at most 100 levels ([calling.md](calling.md#nesting-depth)); `decodeNode` is `decodeNestedNode 1`. A oneof with a member on the cycle gets `decodeNestedNodeKind` likewise |
 | a nested message or enum (`Outer.Inner`) | a type named by its path, `OuterInner`, in the package's module |
 | a type of another generated package | the type from that package's module, `Users.V1.User` |
 | `service NotesService` | a module `Notes.V1.NotesService`: per unary method a call, `getNote : Notes.V1.GetNoteRequest -> Rpc.Call Rpc.Json Notes.V1.GetNoteRequest Notes.V1.Note`; per binding of its `google.api.http` rule a route function, `routeGetNote0 : Notes.V1.GetNoteRequest -> Proto.Route.Route` (for a method whose bodies hold an `Any`, a function of the request and its JSON, `Notes.V1.CreateNoteRequest -> Json.Encode.Value -> Proto.Route.Route`), which the call holds ([transcoding.md](transcoding.md)); and its method descriptor, `descriptorGetNote`, the proto's facts about it as data, which the call does not hold |
@@ -152,7 +152,8 @@ speaks binary nor packs an `Any` drops them as dead code.
 | `message Note` | `encodeNoteBytes : Note -> Bytes.Encode.Encoder`; `decodeNoteBytes : Proto.Binary.Decoder Note`; `mergeNoteBytes : Note -> Proto.Binary.Decoder Note`, which reads a `Note` into the one given, as protobuf merges a message that arrives twice (`decodeNoteBytes` is `mergeNoteBytes defaultNote`) |
 | `enum Visibility` | `encodeVisibilityBytes : Visibility -> Int` and `decodeVisibilityBytes : Int -> Visibility`, the number conversions; an unknown number reads as the zero value |
 | a oneof | an encoder of its set member, `encodeNoteKindBytes` |
-| a recursive message's wrapper | `encodeNode_Bytes` and `mergeNode_Bytes` |
+| a recursive message's wrapper | `encodeNode_Bytes` and `mergeNode_Bytes`, and `mergeNestedNode_Bytes` |
+| a message on a cycle | `mergeNestedNodeBytes : Int -> Node -> Proto.Binary.Decoder Node`, its merge at a nesting depth, which reads at most 100 levels; `mergeNodeBytes` is `mergeNestedNodeBytes 1` |
 | `repeated int32 marks = 7 [packed = false];` | written one element per field, as declared; every other repeated scalar is packed |
 
 A message's typed value is built from both its codecs (the `codec_round_trips`
