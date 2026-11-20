@@ -1149,6 +1149,13 @@ decodeEnumOnlyProto3Bool =
 -}
 decodeTestAllTypesProto3With : Proto.Registry.Registry -> Json.Decode.Decoder TestAllTypesProto3
 decodeTestAllTypesProto3With types =
+    decodeNestedTestAllTypesProto3With types 1
+
+
+{-| [`decodeTestAllTypesProto3With`](#decodeTestAllTypesProto3With) for a [`TestAllTypesProto3`](#TestAllTypesProto3) held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.
+-}
+decodeNestedTestAllTypesProto3With : Proto.Registry.Registry -> Int -> Json.Decode.Decoder TestAllTypesProto3
+decodeNestedTestAllTypesProto3With types depth =
     Proto.Json.message
         (Json.Decode.succeed TestAllTypesProto3
             |> Proto.Json.messageFieldEither "optionalInt32" "optional_int32" 0 Proto.Json.int32
@@ -1166,14 +1173,14 @@ decodeTestAllTypesProto3With types =
             |> Proto.Json.messageFieldEither "optionalBool" "optional_bool" False Json.Decode.bool
             |> Proto.Json.messageFieldEither "optionalString" "optional_string" "" Proto.Json.string
             |> Proto.Json.messageFieldEither "optionalBytes" "optional_bytes" "" Proto.Json.bytes
-            |> Proto.Json.messageFieldEither "optionalNestedMessage" "optional_nested_message" Nothing (Json.Decode.map Just (decodeTestAllTypesProto3NestedMessage_With types))
+            |> Proto.Json.messageFieldEither "optionalNestedMessage" "optional_nested_message" Nothing (Json.Decode.map Just (Json.Decode.map TestAllTypesProto3NestedMessage_ (Proto.Json.deeperWith depth (decodeNestedTestAllTypesProto3NestedMessageWith types))))
             |> Proto.Json.messageFieldEither "optionalForeignMessage" "optional_foreign_message" Nothing (Json.Decode.map Just decodeForeignMessage)
             |> Proto.Json.messageFieldEither "optionalNestedEnum" "optional_nested_enum" TestAllTypesProto3NestedEnumFoo decodeTestAllTypesProto3NestedEnum
             |> Proto.Json.messageFieldEither "optionalForeignEnum" "optional_foreign_enum" ForeignEnumForeignFoo decodeForeignEnum
             |> Proto.Json.messageFieldEither "optionalAliasedEnum" "optional_aliased_enum" TestAllTypesProto3AliasedEnumAliasFoo decodeTestAllTypesProto3AliasedEnum
             |> Proto.Json.messageFieldEither "optionalStringPiece" "optional_string_piece" "" Proto.Json.string
             |> Proto.Json.messageFieldEither "optionalCord" "optional_cord" "" Proto.Json.string
-            |> Proto.Json.messageFieldEither "recursiveMessage" "recursive_message" Nothing (Json.Decode.map Just (decodeTestAllTypesProto3_With types))
+            |> Proto.Json.messageFieldEither "recursiveMessage" "recursive_message" Nothing (Json.Decode.map Just (Json.Decode.map TestAllTypesProto3_ (Proto.Json.deeperWith depth (decodeNestedTestAllTypesProto3With types))))
             |> Proto.Json.messageFieldEither "repeatedInt32" "repeated_int32" [] (Json.Decode.list Proto.Json.int32)
             |> Proto.Json.messageFieldEither "repeatedInt64" "repeated_int64" [] (Json.Decode.list Proto.Json.int64)
             |> Proto.Json.messageFieldEither "repeatedUint32" "repeated_uint32" [] (Json.Decode.list Proto.Json.uint32)
@@ -1189,7 +1196,7 @@ decodeTestAllTypesProto3With types =
             |> Proto.Json.messageFieldEither "repeatedBool" "repeated_bool" [] (Json.Decode.list Json.Decode.bool)
             |> Proto.Json.messageFieldEither "repeatedString" "repeated_string" [] (Json.Decode.list Proto.Json.string)
             |> Proto.Json.messageFieldEither "repeatedBytes" "repeated_bytes" [] (Json.Decode.list Proto.Json.bytes)
-            |> Proto.Json.messageFieldEither "repeatedNestedMessage" "repeated_nested_message" [] (Json.Decode.list (decodeTestAllTypesProto3NestedMessage_With types))
+            |> Proto.Json.messageFieldEither "repeatedNestedMessage" "repeated_nested_message" [] (Json.Decode.list (Json.Decode.map TestAllTypesProto3NestedMessage_ (Proto.Json.deeperWith depth (decodeNestedTestAllTypesProto3NestedMessageWith types))))
             |> Proto.Json.messageFieldEither "repeatedForeignMessage" "repeated_foreign_message" [] (Json.Decode.list decodeForeignMessage)
             |> Proto.Json.messageFieldEither "repeatedNestedEnum" "repeated_nested_enum" [] (Json.Decode.list decodeTestAllTypesProto3NestedEnum)
             |> Proto.Json.messageFieldEither "repeatedForeignEnum" "repeated_foreign_enum" [] (Json.Decode.list decodeForeignEnum)
@@ -1238,11 +1245,11 @@ decodeTestAllTypesProto3With types =
             |> Proto.Json.messageFieldEither "mapBoolBool" "map_bool_bool" [] (Proto.Json.boolMap Json.Decode.bool)
             |> Proto.Json.messageFieldEither "mapStringString" "map_string_string" Dict.empty (Proto.Json.stringDict Proto.Json.string)
             |> Proto.Json.messageFieldEither "mapStringBytes" "map_string_bytes" Dict.empty (Proto.Json.stringDict Proto.Json.bytes)
-            |> Proto.Json.messageFieldEither "mapStringNestedMessage" "map_string_nested_message" Dict.empty (Proto.Json.stringDict (decodeTestAllTypesProto3NestedMessage_With types))
+            |> Proto.Json.messageFieldEither "mapStringNestedMessage" "map_string_nested_message" Dict.empty (Proto.Json.stringDict (Json.Decode.map TestAllTypesProto3NestedMessage_ (Proto.Json.deeperWith depth (decodeNestedTestAllTypesProto3NestedMessageWith types))))
             |> Proto.Json.messageFieldEither "mapStringForeignMessage" "map_string_foreign_message" Dict.empty (Proto.Json.stringDict decodeForeignMessage)
             |> Proto.Json.messageFieldEither "mapStringNestedEnum" "map_string_nested_enum" Dict.empty (Proto.Json.stringDict decodeTestAllTypesProto3NestedEnum)
             |> Proto.Json.messageFieldEither "mapStringForeignEnum" "map_string_foreign_enum" Dict.empty (Proto.Json.stringDict decodeForeignEnum)
-            |> Proto.Json.oneof (decodeTestAllTypesProto3OneofFieldWith types)
+            |> Proto.Json.oneof (decodeNestedTestAllTypesProto3OneofFieldWith types depth)
             |> Proto.Json.messageFieldEither "optionalBoolWrapper" "optional_bool_wrapper" Nothing (Json.Decode.map Just Json.Decode.bool)
             |> Proto.Json.messageFieldEither "optionalInt32Wrapper" "optional_int32_wrapper" Nothing (Json.Decode.map Just Proto.Json.int32)
             |> Proto.Json.messageFieldEither "optionalInt64Wrapper" "optional_int64_wrapper" Nothing (Json.Decode.map Just Proto.Json.int64)
@@ -1308,10 +1315,17 @@ decodeTestAllTypesProto3_With types =
 -}
 decodeTestAllTypesProto3OneofFieldWith : Proto.Registry.Registry -> Json.Decode.Decoder TestAllTypesProto3OneofField
 decodeTestAllTypesProto3OneofFieldWith types =
+    decodeNestedTestAllTypesProto3OneofFieldWith types 1
+
+
+{-| [`decodeTestAllTypesProto3OneofFieldWith`](#decodeTestAllTypesProto3OneofFieldWith) for a [`TestAllTypesProto3OneofField`](#TestAllTypesProto3OneofField) held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.
+-}
+decodeNestedTestAllTypesProto3OneofFieldWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder TestAllTypesProto3OneofField
+decodeNestedTestAllTypesProto3OneofFieldWith types depth =
     Proto.Json.members "oneof_field"
         TestAllTypesProto3OneofFieldUnset
         [ Proto.Json.memberEither "oneofUint32" "oneof_uint32" (Json.Decode.map TestAllTypesProto3OneofFieldOneofUint32 Proto.Json.uint32)
-        , Proto.Json.memberEither "oneofNestedMessage" "oneof_nested_message" (Json.Decode.map TestAllTypesProto3OneofFieldOneofNestedMessage (Json.Decode.lazy (\_ -> decodeTestAllTypesProto3NestedMessageWith types)))
+        , Proto.Json.memberEither "oneofNestedMessage" "oneof_nested_message" (Json.Decode.map TestAllTypesProto3OneofFieldOneofNestedMessage (Proto.Json.deeperWith depth (decodeNestedTestAllTypesProto3NestedMessageWith types)))
         , Proto.Json.memberEither "oneofString" "oneof_string" (Json.Decode.map TestAllTypesProto3OneofFieldOneofString Proto.Json.string)
         , Proto.Json.memberEither "oneofBytes" "oneof_bytes" (Json.Decode.map TestAllTypesProto3OneofFieldOneofBytes Proto.Json.bytes)
         , Proto.Json.memberEither "oneofBool" "oneof_bool" (Json.Decode.map TestAllTypesProto3OneofFieldOneofBool Json.Decode.bool)
@@ -1327,10 +1341,17 @@ decodeTestAllTypesProto3OneofFieldWith types =
 -}
 decodeTestAllTypesProto3NestedMessageWith : Proto.Registry.Registry -> Json.Decode.Decoder TestAllTypesProto3NestedMessage
 decodeTestAllTypesProto3NestedMessageWith types =
+    decodeNestedTestAllTypesProto3NestedMessageWith types 1
+
+
+{-| [`decodeTestAllTypesProto3NestedMessageWith`](#decodeTestAllTypesProto3NestedMessageWith) for a [`TestAllTypesProto3NestedMessage`](#TestAllTypesProto3NestedMessage) held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.
+-}
+decodeNestedTestAllTypesProto3NestedMessageWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder TestAllTypesProto3NestedMessage
+decodeNestedTestAllTypesProto3NestedMessageWith types depth =
     Proto.Json.message
         (Json.Decode.succeed TestAllTypesProto3NestedMessage
             |> Proto.Json.messageField "a" 0 Proto.Json.int32
-            |> Proto.Json.messageField "corecursive" Nothing (Json.Decode.map Just (decodeTestAllTypesProto3_With types))
+            |> Proto.Json.messageField "corecursive" Nothing (Json.Decode.map Just (Json.Decode.map TestAllTypesProto3_ (Proto.Json.deeperWith depth (decodeNestedTestAllTypesProto3With types))))
             |> Json.Decode.map (\value -> value Proto.Unknown.empty)
         )
 
@@ -1743,1006 +1764,1016 @@ decodeEnumOnlyProto3BoolBytes number =
 -}
 mergeTestAllTypesProto3Bytes : TestAllTypesProto3 -> Proto.Binary.Decoder TestAllTypesProto3
 mergeTestAllTypesProto3Bytes =
-    Proto.Binary.mergeKeep
-        "protobuf_test_messages.proto3.TestAllTypesProto3"
-        (\number ->
-            case number of
-                1 ->
-                    1
+    mergeNestedTestAllTypesProto3Bytes 1
 
-                2 ->
-                    1
 
-                3 ->
-                    1
+{-| [`mergeTestAllTypesProto3Bytes`](#mergeTestAllTypesProto3Bytes) for a [`TestAllTypesProto3`](#TestAllTypesProto3) held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.
+-}
+mergeNestedTestAllTypesProto3Bytes : Int -> TestAllTypesProto3 -> Proto.Binary.Decoder TestAllTypesProto3
+mergeNestedTestAllTypesProto3Bytes =
+    Proto.Binary.memo
+        (\depth ->
+            Proto.Binary.mergeKeep
+                "protobuf_test_messages.proto3.TestAllTypesProto3"
+                (\number ->
+                    case number of
+                        1 ->
+                            1
 
-                4 ->
-                    1
+                        2 ->
+                            1
 
-                5 ->
-                    1
+                        3 ->
+                            1
 
-                6 ->
-                    1
+                        4 ->
+                            1
 
-                7 ->
-                    32
+                        5 ->
+                            1
 
-                8 ->
-                    2
+                        6 ->
+                            1
 
-                9 ->
-                    32
+                        7 ->
+                            32
 
-                10 ->
-                    2
+                        8 ->
+                            2
 
-                11 ->
-                    32
+                        9 ->
+                            32
 
-                12 ->
-                    2
+                        10 ->
+                            2
 
-                13 ->
-                    1
+                        11 ->
+                            32
 
-                14 ->
-                    4
+                        12 ->
+                            2
 
-                15 ->
-                    4
+                        13 ->
+                            1
 
-                18 ->
-                    4
+                        14 ->
+                            4
 
-                19 ->
-                    4
+                        15 ->
+                            4
 
-                21 ->
-                    1
+                        18 ->
+                            4
 
-                22 ->
-                    1
+                        19 ->
+                            4
 
-                23 ->
-                    1
+                        21 ->
+                            1
 
-                24 ->
-                    4
+                        22 ->
+                            1
 
-                25 ->
-                    4
+                        23 ->
+                            1
 
-                27 ->
-                    4
+                        24 ->
+                            4
 
-                31 ->
-                    5
+                        25 ->
+                            4
 
-                32 ->
-                    5
+                        27 ->
+                            4
 
-                33 ->
-                    5
+                        31 ->
+                            5
 
-                34 ->
-                    5
+                        32 ->
+                            5
 
-                35 ->
-                    5
+                        33 ->
+                            5
 
-                36 ->
-                    5
+                        34 ->
+                            5
 
-                37 ->
-                    36
+                        35 ->
+                            5
 
-                38 ->
-                    6
+                        36 ->
+                            5
 
-                39 ->
-                    36
+                        37 ->
+                            36
 
-                40 ->
-                    6
+                        38 ->
+                            6
 
-                41 ->
-                    36
+                        39 ->
+                            36
 
-                42 ->
-                    6
+                        40 ->
+                            6
 
-                43 ->
-                    5
+                        41 ->
+                            36
 
-                44 ->
-                    4
+                        42 ->
+                            6
 
-                45 ->
-                    4
+                        43 ->
+                            5
 
-                48 ->
-                    4
+                        44 ->
+                            4
 
-                49 ->
-                    4
+                        45 ->
+                            4
 
-                51 ->
-                    5
+                        48 ->
+                            4
 
-                52 ->
-                    5
+                        49 ->
+                            4
 
-                54 ->
-                    4
+                        51 ->
+                            5
 
-                55 ->
-                    4
+                        52 ->
+                            5
 
-                56 ->
-                    4
+                        54 ->
+                            4
 
-                57 ->
-                    4
+                        55 ->
+                            4
 
-                58 ->
-                    4
+                        56 ->
+                            4
 
-                59 ->
-                    4
+                        57 ->
+                            4
 
-                60 ->
-                    4
+                        58 ->
+                            4
 
-                61 ->
-                    4
+                        59 ->
+                            4
 
-                62 ->
-                    4
+                        60 ->
+                            4
 
-                63 ->
-                    4
+                        61 ->
+                            4
 
-                64 ->
-                    4
+                        62 ->
+                            4
 
-                65 ->
-                    4
+                        63 ->
+                            4
 
-                66 ->
-                    4
+                        64 ->
+                            4
 
-                67 ->
-                    4
+                        65 ->
+                            4
 
-                68 ->
-                    4
+                        66 ->
+                            4
 
-                69 ->
-                    4
+                        67 ->
+                            4
 
-                70 ->
-                    4
+                        68 ->
+                            4
 
-                71 ->
-                    4
+                        69 ->
+                            4
 
-                72 ->
-                    4
+                        70 ->
+                            4
 
-                73 ->
-                    4
+                        71 ->
+                            4
 
-                74 ->
-                    4
+                        72 ->
+                            4
 
-                75 ->
-                    5
+                        73 ->
+                            4
 
-                76 ->
-                    5
+                        74 ->
+                            4
 
-                77 ->
-                    5
+                        75 ->
+                            5
 
-                78 ->
-                    5
+                        76 ->
+                            5
 
-                79 ->
-                    5
+                        77 ->
+                            5
 
-                80 ->
-                    5
+                        78 ->
+                            5
 
-                81 ->
-                    36
+                        79 ->
+                            5
 
-                82 ->
-                    6
+                        80 ->
+                            5
 
-                83 ->
-                    36
+                        81 ->
+                            36
 
-                84 ->
-                    6
+                        82 ->
+                            6
 
-                85 ->
-                    36
+                        83 ->
+                            36
 
-                86 ->
-                    6
+                        84 ->
+                            6
 
-                87 ->
-                    5
+                        85 ->
+                            36
 
-                88 ->
-                    5
+                        86 ->
+                            6
 
-                89 ->
-                    5
+                        87 ->
+                            5
 
-                90 ->
-                    5
+                        88 ->
+                            5
 
-                91 ->
-                    5
+                        89 ->
+                            5
 
-                92 ->
-                    5
+                        90 ->
+                            5
 
-                93 ->
-                    5
+                        91 ->
+                            5
 
-                94 ->
-                    5
+                        92 ->
+                            5
 
-                95 ->
-                    36
+                        93 ->
+                            5
 
-                96 ->
-                    6
+                        94 ->
+                            5
 
-                97 ->
-                    36
+                        95 ->
+                            36
 
-                98 ->
-                    6
+                        96 ->
+                            6
 
-                99 ->
-                    36
+                        97 ->
+                            36
 
-                100 ->
-                    6
+                        98 ->
+                            6
 
-                101 ->
-                    5
+                        99 ->
+                            36
 
-                102 ->
-                    5
+                        100 ->
+                            6
 
-                111 ->
-                    1
+                        101 ->
+                            5
 
-                112 ->
-                    4
+                        102 ->
+                            5
 
-                113 ->
-                    4
+                        111 ->
+                            1
 
-                114 ->
-                    4
+                        112 ->
+                            4
 
-                115 ->
-                    1
+                        113 ->
+                            4
 
-                116 ->
-                    1
+                        114 ->
+                            4
 
-                117 ->
-                    32
+                        115 ->
+                            1
 
-                118 ->
-                    2
+                        116 ->
+                            1
 
-                119 ->
-                    1
+                        117 ->
+                            32
 
-                120 ->
-                    1
+                        118 ->
+                            2
 
-                201 ->
-                    4
+                        119 ->
+                            1
 
-                202 ->
-                    4
+                        120 ->
+                            1
 
-                203 ->
-                    4
+                        201 ->
+                            4
 
-                204 ->
-                    4
+                        202 ->
+                            4
 
-                205 ->
-                    4
+                        203 ->
+                            4
 
-                206 ->
-                    4
+                        204 ->
+                            4
 
-                207 ->
-                    4
+                        205 ->
+                            4
 
-                208 ->
-                    4
+                        206 ->
+                            4
 
-                209 ->
-                    4
+                        207 ->
+                            4
 
-                211 ->
-                    4
+                        208 ->
+                            4
 
-                212 ->
-                    4
+                        209 ->
+                            4
 
-                213 ->
-                    4
+                        211 ->
+                            4
 
-                214 ->
-                    4
+                        212 ->
+                            4
 
-                215 ->
-                    4
+                        213 ->
+                            4
 
-                216 ->
-                    4
+                        214 ->
+                            4
 
-                217 ->
-                    4
+                        215 ->
+                            4
 
-                218 ->
-                    4
+                        216 ->
+                            4
 
-                219 ->
-                    4
+                        217 ->
+                            4
 
-                301 ->
-                    4
+                        218 ->
+                            4
 
-                302 ->
-                    4
+                        219 ->
+                            4
 
-                303 ->
-                    4
+                        301 ->
+                            4
 
-                304 ->
-                    4
+                        302 ->
+                            4
 
-                305 ->
-                    4
+                        303 ->
+                            4
 
-                306 ->
-                    4
+                        304 ->
+                            4
 
-                307 ->
-                    1
+                        305 ->
+                            4
 
-                311 ->
-                    4
+                        306 ->
+                            4
 
-                312 ->
-                    4
+                        307 ->
+                            1
 
-                313 ->
-                    4
+                        311 ->
+                            4
 
-                315 ->
-                    4
+                        312 ->
+                            4
 
-                316 ->
-                    4
+                        313 ->
+                            4
 
-                317 ->
-                    4
+                        315 ->
+                            4
 
-                324 ->
-                    4
+                        316 ->
+                            4
 
-                401 ->
-                    1
+                        317 ->
+                            4
 
-                402 ->
-                    1
+                        324 ->
+                            4
 
-                403 ->
-                    1
+                        401 ->
+                            1
 
-                404 ->
-                    1
+                        402 ->
+                            1
 
-                405 ->
-                    1
+                        403 ->
+                            1
 
-                406 ->
-                    1
+                        404 ->
+                            1
 
-                407 ->
-                    1
+                        405 ->
+                            1
 
-                408 ->
-                    1
+                        406 ->
+                            1
 
-                409 ->
-                    1
+                        407 ->
+                            1
 
-                410 ->
-                    1
+                        408 ->
+                            1
 
-                411 ->
-                    1
+                        409 ->
+                            1
 
-                412 ->
-                    1
+                        410 ->
+                            1
 
-                413 ->
-                    1
+                        411 ->
+                            1
 
-                414 ->
-                    1
+                        412 ->
+                            1
 
-                415 ->
-                    1
+                        413 ->
+                            1
 
-                416 ->
-                    1
+                        414 ->
+                            1
 
-                417 ->
-                    1
+                        415 ->
+                            1
 
-                418 ->
-                    1
+                        416 ->
+                            1
 
-                _ ->
-                    0
-        )
-        (\value -> value.unknownFields_)
-        (\v value -> { value | unknownFields_ = v })
-        (\number wire value ->
-            case number of
-                1 ->
-                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | optionalInt32 = v }) wire value
+                        417 ->
+                            1
 
-                2 ->
-                    Proto.Binary.field Proto.Binary.int64 (\v -> { value | optionalInt64 = v }) wire value
+                        418 ->
+                            1
 
-                3 ->
-                    Proto.Binary.field Proto.Binary.uint32 (\v -> { value | optionalUint32 = v }) wire value
+                        _ ->
+                            0
+                )
+                (\value -> value.unknownFields_)
+                (\v value -> { value | unknownFields_ = v })
+                (\number wire value ->
+                    case number of
+                        1 ->
+                            Proto.Binary.field Proto.Binary.int32 (\v -> { value | optionalInt32 = v }) wire value
 
-                4 ->
-                    Proto.Binary.field Proto.Binary.uint64 (\v -> { value | optionalUint64 = v }) wire value
+                        2 ->
+                            Proto.Binary.field Proto.Binary.int64 (\v -> { value | optionalInt64 = v }) wire value
 
-                5 ->
-                    Proto.Binary.field Proto.Binary.sint32 (\v -> { value | optionalSint32 = v }) wire value
+                        3 ->
+                            Proto.Binary.field Proto.Binary.uint32 (\v -> { value | optionalUint32 = v }) wire value
 
-                6 ->
-                    Proto.Binary.field Proto.Binary.sint64 (\v -> { value | optionalSint64 = v }) wire value
+                        4 ->
+                            Proto.Binary.field Proto.Binary.uint64 (\v -> { value | optionalUint64 = v }) wire value
 
-                7 ->
-                    Proto.Binary.field Proto.Binary.fixed32 (\v -> { value | optionalFixed32 = v }) wire value
+                        5 ->
+                            Proto.Binary.field Proto.Binary.sint32 (\v -> { value | optionalSint32 = v }) wire value
 
-                8 ->
-                    Proto.Binary.field Proto.Binary.fixed64 (\v -> { value | optionalFixed64 = v }) wire value
+                        6 ->
+                            Proto.Binary.field Proto.Binary.sint64 (\v -> { value | optionalSint64 = v }) wire value
 
-                9 ->
-                    Proto.Binary.field Proto.Binary.sfixed32 (\v -> { value | optionalSfixed32 = v }) wire value
+                        7 ->
+                            Proto.Binary.field Proto.Binary.fixed32 (\v -> { value | optionalFixed32 = v }) wire value
 
-                10 ->
-                    Proto.Binary.field Proto.Binary.sfixed64 (\v -> { value | optionalSfixed64 = v }) wire value
+                        8 ->
+                            Proto.Binary.field Proto.Binary.fixed64 (\v -> { value | optionalFixed64 = v }) wire value
 
-                11 ->
-                    Proto.Binary.field Proto.Binary.float (\v -> { value | optionalFloat = v }) wire value
+                        9 ->
+                            Proto.Binary.field Proto.Binary.sfixed32 (\v -> { value | optionalSfixed32 = v }) wire value
 
-                12 ->
-                    Proto.Binary.field Proto.Binary.double (\v -> { value | optionalDouble = v }) wire value
+                        10 ->
+                            Proto.Binary.field Proto.Binary.sfixed64 (\v -> { value | optionalSfixed64 = v }) wire value
 
-                13 ->
-                    Proto.Binary.field Proto.Binary.bool (\v -> { value | optionalBool = v }) wire value
+                        11 ->
+                            Proto.Binary.field Proto.Binary.float (\v -> { value | optionalFloat = v }) wire value
 
-                14 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | optionalString = v }) wire value
+                        12 ->
+                            Proto.Binary.field Proto.Binary.double (\v -> { value | optionalDouble = v }) wire value
 
-                15 ->
-                    Proto.Binary.field Proto.Binary.bytes (\v -> { value | optionalBytes = v }) wire value
+                        13 ->
+                            Proto.Binary.field Proto.Binary.bool (\v -> { value | optionalBool = v }) wire value
 
-                18 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeTestAllTypesProto3NestedMessage_Bytes mergeTestAllTypesProto3NestedMessage_Bytes (TestAllTypesProto3NestedMessage_ defaultTestAllTypesProto3NestedMessage)) value.optionalNestedMessage (\v -> { value | optionalNestedMessage = Just v }) wire value
+                        14 ->
+                            Proto.Binary.field Proto.Binary.string (\v -> { value | optionalString = v }) wire value
 
-                19 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeForeignMessageBytes mergeForeignMessageBytes defaultForeignMessage) value.optionalForeignMessage (\v -> { value | optionalForeignMessage = Just v }) wire value
+                        15 ->
+                            Proto.Binary.field Proto.Binary.bytes (\v -> { value | optionalBytes = v }) wire value
 
-                21 ->
-                    Proto.Binary.field (Proto.Binary.enum encodeTestAllTypesProto3NestedEnumBytes decodeTestAllTypesProto3NestedEnumBytes) (\v -> { value | optionalNestedEnum = v }) wire value
+                        18 ->
+                            Proto.Binary.fieldInto (Proto.Binary.recursive depth encodeTestAllTypesProto3NestedMessage_Bytes mergeNestedTestAllTypesProto3NestedMessage_Bytes (TestAllTypesProto3NestedMessage_ defaultTestAllTypesProto3NestedMessage)) value.optionalNestedMessage (\v -> { value | optionalNestedMessage = Just v }) wire value
 
-                22 ->
-                    Proto.Binary.field (Proto.Binary.enum encodeForeignEnumBytes decodeForeignEnumBytes) (\v -> { value | optionalForeignEnum = v }) wire value
+                        19 ->
+                            Proto.Binary.fieldInto (Proto.Binary.embedded encodeForeignMessageBytes mergeForeignMessageBytes defaultForeignMessage) value.optionalForeignMessage (\v -> { value | optionalForeignMessage = Just v }) wire value
 
-                23 ->
-                    Proto.Binary.field (Proto.Binary.enum encodeTestAllTypesProto3AliasedEnumBytes decodeTestAllTypesProto3AliasedEnumBytes) (\v -> { value | optionalAliasedEnum = v }) wire value
+                        21 ->
+                            Proto.Binary.field (Proto.Binary.enum encodeTestAllTypesProto3NestedEnumBytes decodeTestAllTypesProto3NestedEnumBytes) (\v -> { value | optionalNestedEnum = v }) wire value
 
-                24 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | optionalStringPiece = v }) wire value
+                        22 ->
+                            Proto.Binary.field (Proto.Binary.enum encodeForeignEnumBytes decodeForeignEnumBytes) (\v -> { value | optionalForeignEnum = v }) wire value
 
-                25 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | optionalCord = v }) wire value
+                        23 ->
+                            Proto.Binary.field (Proto.Binary.enum encodeTestAllTypesProto3AliasedEnumBytes decodeTestAllTypesProto3AliasedEnumBytes) (\v -> { value | optionalAliasedEnum = v }) wire value
 
-                27 ->
-                    Proto.Binary.fieldInto (Proto.Binary.embedded encodeTestAllTypesProto3_Bytes mergeTestAllTypesProto3_Bytes (TestAllTypesProto3_ defaultTestAllTypesProto3)) value.recursiveMessage (\v -> { value | recursiveMessage = Just v }) wire value
+                        24 ->
+                            Proto.Binary.field Proto.Binary.string (\v -> { value | optionalStringPiece = v }) wire value
 
-                31 ->
-                    Proto.Binary.repeated Proto.Binary.int32 (\v -> { value | repeatedInt32 = v }) value.repeatedInt32 wire value
+                        25 ->
+                            Proto.Binary.field Proto.Binary.string (\v -> { value | optionalCord = v }) wire value
 
-                32 ->
-                    Proto.Binary.repeated Proto.Binary.int64 (\v -> { value | repeatedInt64 = v }) value.repeatedInt64 wire value
+                        27 ->
+                            Proto.Binary.fieldInto (Proto.Binary.recursive depth encodeTestAllTypesProto3_Bytes mergeNestedTestAllTypesProto3_Bytes (TestAllTypesProto3_ defaultTestAllTypesProto3)) value.recursiveMessage (\v -> { value | recursiveMessage = Just v }) wire value
 
-                33 ->
-                    Proto.Binary.repeated Proto.Binary.uint32 (\v -> { value | repeatedUint32 = v }) value.repeatedUint32 wire value
+                        31 ->
+                            Proto.Binary.repeated Proto.Binary.int32 (\v -> { value | repeatedInt32 = v }) value.repeatedInt32 wire value
 
-                34 ->
-                    Proto.Binary.repeated Proto.Binary.uint64 (\v -> { value | repeatedUint64 = v }) value.repeatedUint64 wire value
+                        32 ->
+                            Proto.Binary.repeated Proto.Binary.int64 (\v -> { value | repeatedInt64 = v }) value.repeatedInt64 wire value
 
-                35 ->
-                    Proto.Binary.repeated Proto.Binary.sint32 (\v -> { value | repeatedSint32 = v }) value.repeatedSint32 wire value
+                        33 ->
+                            Proto.Binary.repeated Proto.Binary.uint32 (\v -> { value | repeatedUint32 = v }) value.repeatedUint32 wire value
 
-                36 ->
-                    Proto.Binary.repeated Proto.Binary.sint64 (\v -> { value | repeatedSint64 = v }) value.repeatedSint64 wire value
+                        34 ->
+                            Proto.Binary.repeated Proto.Binary.uint64 (\v -> { value | repeatedUint64 = v }) value.repeatedUint64 wire value
 
-                37 ->
-                    Proto.Binary.repeated Proto.Binary.fixed32 (\v -> { value | repeatedFixed32 = v }) value.repeatedFixed32 wire value
+                        35 ->
+                            Proto.Binary.repeated Proto.Binary.sint32 (\v -> { value | repeatedSint32 = v }) value.repeatedSint32 wire value
 
-                38 ->
-                    Proto.Binary.repeated Proto.Binary.fixed64 (\v -> { value | repeatedFixed64 = v }) value.repeatedFixed64 wire value
+                        36 ->
+                            Proto.Binary.repeated Proto.Binary.sint64 (\v -> { value | repeatedSint64 = v }) value.repeatedSint64 wire value
 
-                39 ->
-                    Proto.Binary.repeated Proto.Binary.sfixed32 (\v -> { value | repeatedSfixed32 = v }) value.repeatedSfixed32 wire value
+                        37 ->
+                            Proto.Binary.repeated Proto.Binary.fixed32 (\v -> { value | repeatedFixed32 = v }) value.repeatedFixed32 wire value
 
-                40 ->
-                    Proto.Binary.repeated Proto.Binary.sfixed64 (\v -> { value | repeatedSfixed64 = v }) value.repeatedSfixed64 wire value
+                        38 ->
+                            Proto.Binary.repeated Proto.Binary.fixed64 (\v -> { value | repeatedFixed64 = v }) value.repeatedFixed64 wire value
 
-                41 ->
-                    Proto.Binary.repeated Proto.Binary.float (\v -> { value | repeatedFloat = v }) value.repeatedFloat wire value
+                        39 ->
+                            Proto.Binary.repeated Proto.Binary.sfixed32 (\v -> { value | repeatedSfixed32 = v }) value.repeatedSfixed32 wire value
 
-                42 ->
-                    Proto.Binary.repeated Proto.Binary.double (\v -> { value | repeatedDouble = v }) value.repeatedDouble wire value
+                        40 ->
+                            Proto.Binary.repeated Proto.Binary.sfixed64 (\v -> { value | repeatedSfixed64 = v }) value.repeatedSfixed64 wire value
 
-                43 ->
-                    Proto.Binary.repeated Proto.Binary.bool (\v -> { value | repeatedBool = v }) value.repeatedBool wire value
+                        41 ->
+                            Proto.Binary.repeated Proto.Binary.float (\v -> { value | repeatedFloat = v }) value.repeatedFloat wire value
 
-                44 ->
-                    Proto.Binary.repeated Proto.Binary.string (\v -> { value | repeatedString = v }) value.repeatedString wire value
+                        42 ->
+                            Proto.Binary.repeated Proto.Binary.double (\v -> { value | repeatedDouble = v }) value.repeatedDouble wire value
 
-                45 ->
-                    Proto.Binary.repeated Proto.Binary.bytes (\v -> { value | repeatedBytes = v }) value.repeatedBytes wire value
+                        43 ->
+                            Proto.Binary.repeated Proto.Binary.bool (\v -> { value | repeatedBool = v }) value.repeatedBool wire value
 
-                48 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded encodeTestAllTypesProto3NestedMessage_Bytes mergeTestAllTypesProto3NestedMessage_Bytes (TestAllTypesProto3NestedMessage_ defaultTestAllTypesProto3NestedMessage)) (\v -> { value | repeatedNestedMessage = v }) value.repeatedNestedMessage wire value
+                        44 ->
+                            Proto.Binary.repeated Proto.Binary.string (\v -> { value | repeatedString = v }) value.repeatedString wire value
 
-                49 ->
-                    Proto.Binary.repeated (Proto.Binary.embedded encodeForeignMessageBytes mergeForeignMessageBytes defaultForeignMessage) (\v -> { value | repeatedForeignMessage = v }) value.repeatedForeignMessage wire value
+                        45 ->
+                            Proto.Binary.repeated Proto.Binary.bytes (\v -> { value | repeatedBytes = v }) value.repeatedBytes wire value
 
-                51 ->
-                    Proto.Binary.repeated (Proto.Binary.enum encodeTestAllTypesProto3NestedEnumBytes decodeTestAllTypesProto3NestedEnumBytes) (\v -> { value | repeatedNestedEnum = v }) value.repeatedNestedEnum wire value
+                        48 ->
+                            Proto.Binary.repeated (Proto.Binary.recursive depth encodeTestAllTypesProto3NestedMessage_Bytes mergeNestedTestAllTypesProto3NestedMessage_Bytes (TestAllTypesProto3NestedMessage_ defaultTestAllTypesProto3NestedMessage)) (\v -> { value | repeatedNestedMessage = v }) value.repeatedNestedMessage wire value
 
-                52 ->
-                    Proto.Binary.repeated (Proto.Binary.enum encodeForeignEnumBytes decodeForeignEnumBytes) (\v -> { value | repeatedForeignEnum = v }) value.repeatedForeignEnum wire value
+                        49 ->
+                            Proto.Binary.repeated (Proto.Binary.embedded encodeForeignMessageBytes mergeForeignMessageBytes defaultForeignMessage) (\v -> { value | repeatedForeignMessage = v }) value.repeatedForeignMessage wire value
 
-                54 ->
-                    Proto.Binary.repeated Proto.Binary.string (\v -> { value | repeatedStringPiece = v }) value.repeatedStringPiece wire value
+                        51 ->
+                            Proto.Binary.repeated (Proto.Binary.enum encodeTestAllTypesProto3NestedEnumBytes decodeTestAllTypesProto3NestedEnumBytes) (\v -> { value | repeatedNestedEnum = v }) value.repeatedNestedEnum wire value
 
-                55 ->
-                    Proto.Binary.repeated Proto.Binary.string (\v -> { value | repeatedCord = v }) value.repeatedCord wire value
+                        52 ->
+                            Proto.Binary.repeated (Proto.Binary.enum encodeForeignEnumBytes decodeForeignEnumBytes) (\v -> { value | repeatedForeignEnum = v }) value.repeatedForeignEnum wire value
 
-                56 ->
-                    Proto.Binary.mapEntry Proto.Binary.int32 Proto.Binary.int32 (\k v -> { value | mapInt32Int32 = Dict.insert k v value.mapInt32Int32 }) wire value
+                        54 ->
+                            Proto.Binary.repeated Proto.Binary.string (\v -> { value | repeatedStringPiece = v }) value.repeatedStringPiece wire value
 
-                57 ->
-                    Proto.Binary.mapEntry Proto.Binary.int64 Proto.Binary.int64 (\k v -> { value | mapInt64Int64 = Dict.insert k v value.mapInt64Int64 }) wire value
+                        55 ->
+                            Proto.Binary.repeated Proto.Binary.string (\v -> { value | repeatedCord = v }) value.repeatedCord wire value
 
-                58 ->
-                    Proto.Binary.mapEntry Proto.Binary.uint32 Proto.Binary.uint32 (\k v -> { value | mapUint32Uint32 = Dict.insert k v value.mapUint32Uint32 }) wire value
+                        56 ->
+                            Proto.Binary.mapEntry Proto.Binary.int32 Proto.Binary.int32 (\k v -> { value | mapInt32Int32 = Dict.insert k v value.mapInt32Int32 }) wire value
 
-                59 ->
-                    Proto.Binary.mapEntry Proto.Binary.uint64 Proto.Binary.uint64 (\k v -> { value | mapUint64Uint64 = Dict.insert k v value.mapUint64Uint64 }) wire value
+                        57 ->
+                            Proto.Binary.mapEntry Proto.Binary.int64 Proto.Binary.int64 (\k v -> { value | mapInt64Int64 = Dict.insert k v value.mapInt64Int64 }) wire value
 
-                60 ->
-                    Proto.Binary.mapEntry Proto.Binary.sint32 Proto.Binary.sint32 (\k v -> { value | mapSint32Sint32 = Dict.insert k v value.mapSint32Sint32 }) wire value
+                        58 ->
+                            Proto.Binary.mapEntry Proto.Binary.uint32 Proto.Binary.uint32 (\k v -> { value | mapUint32Uint32 = Dict.insert k v value.mapUint32Uint32 }) wire value
 
-                61 ->
-                    Proto.Binary.mapEntry Proto.Binary.sint64 Proto.Binary.sint64 (\k v -> { value | mapSint64Sint64 = Dict.insert k v value.mapSint64Sint64 }) wire value
+                        59 ->
+                            Proto.Binary.mapEntry Proto.Binary.uint64 Proto.Binary.uint64 (\k v -> { value | mapUint64Uint64 = Dict.insert k v value.mapUint64Uint64 }) wire value
 
-                62 ->
-                    Proto.Binary.mapEntry Proto.Binary.fixed32 Proto.Binary.fixed32 (\k v -> { value | mapFixed32Fixed32 = Dict.insert k v value.mapFixed32Fixed32 }) wire value
+                        60 ->
+                            Proto.Binary.mapEntry Proto.Binary.sint32 Proto.Binary.sint32 (\k v -> { value | mapSint32Sint32 = Dict.insert k v value.mapSint32Sint32 }) wire value
 
-                63 ->
-                    Proto.Binary.mapEntry Proto.Binary.fixed64 Proto.Binary.fixed64 (\k v -> { value | mapFixed64Fixed64 = Dict.insert k v value.mapFixed64Fixed64 }) wire value
+                        61 ->
+                            Proto.Binary.mapEntry Proto.Binary.sint64 Proto.Binary.sint64 (\k v -> { value | mapSint64Sint64 = Dict.insert k v value.mapSint64Sint64 }) wire value
 
-                64 ->
-                    Proto.Binary.mapEntry Proto.Binary.sfixed32 Proto.Binary.sfixed32 (\k v -> { value | mapSfixed32Sfixed32 = Dict.insert k v value.mapSfixed32Sfixed32 }) wire value
+                        62 ->
+                            Proto.Binary.mapEntry Proto.Binary.fixed32 Proto.Binary.fixed32 (\k v -> { value | mapFixed32Fixed32 = Dict.insert k v value.mapFixed32Fixed32 }) wire value
 
-                65 ->
-                    Proto.Binary.mapEntry Proto.Binary.sfixed64 Proto.Binary.sfixed64 (\k v -> { value | mapSfixed64Sfixed64 = Dict.insert k v value.mapSfixed64Sfixed64 }) wire value
+                        63 ->
+                            Proto.Binary.mapEntry Proto.Binary.fixed64 Proto.Binary.fixed64 (\k v -> { value | mapFixed64Fixed64 = Dict.insert k v value.mapFixed64Fixed64 }) wire value
 
-                66 ->
-                    Proto.Binary.mapEntry Proto.Binary.int32 Proto.Binary.float (\k v -> { value | mapInt32Float = Dict.insert k v value.mapInt32Float }) wire value
+                        64 ->
+                            Proto.Binary.mapEntry Proto.Binary.sfixed32 Proto.Binary.sfixed32 (\k v -> { value | mapSfixed32Sfixed32 = Dict.insert k v value.mapSfixed32Sfixed32 }) wire value
 
-                67 ->
-                    Proto.Binary.mapEntry Proto.Binary.int32 Proto.Binary.double (\k v -> { value | mapInt32Double = Dict.insert k v value.mapInt32Double }) wire value
+                        65 ->
+                            Proto.Binary.mapEntry Proto.Binary.sfixed64 Proto.Binary.sfixed64 (\k v -> { value | mapSfixed64Sfixed64 = Dict.insert k v value.mapSfixed64Sfixed64 }) wire value
 
-                68 ->
-                    Proto.Binary.mapEntry Proto.Binary.bool Proto.Binary.bool (\k v -> { value | mapBoolBool = Proto.Binary.insertBool k v value.mapBoolBool }) wire value
+                        66 ->
+                            Proto.Binary.mapEntry Proto.Binary.int32 Proto.Binary.float (\k v -> { value | mapInt32Float = Dict.insert k v value.mapInt32Float }) wire value
 
-                69 ->
-                    Proto.Binary.mapEntry Proto.Binary.string Proto.Binary.string (\k v -> { value | mapStringString = Dict.insert k v value.mapStringString }) wire value
+                        67 ->
+                            Proto.Binary.mapEntry Proto.Binary.int32 Proto.Binary.double (\k v -> { value | mapInt32Double = Dict.insert k v value.mapInt32Double }) wire value
 
-                70 ->
-                    Proto.Binary.mapEntry Proto.Binary.string Proto.Binary.bytes (\k v -> { value | mapStringBytes = Dict.insert k v value.mapStringBytes }) wire value
+                        68 ->
+                            Proto.Binary.mapEntry Proto.Binary.bool Proto.Binary.bool (\k v -> { value | mapBoolBool = Proto.Binary.insertBool k v value.mapBoolBool }) wire value
 
-                71 ->
-                    Proto.Binary.mapEntry Proto.Binary.string (Proto.Binary.embedded encodeTestAllTypesProto3NestedMessage_Bytes mergeTestAllTypesProto3NestedMessage_Bytes (TestAllTypesProto3NestedMessage_ defaultTestAllTypesProto3NestedMessage)) (\k v -> { value | mapStringNestedMessage = Dict.insert k v value.mapStringNestedMessage }) wire value
+                        69 ->
+                            Proto.Binary.mapEntry Proto.Binary.string Proto.Binary.string (\k v -> { value | mapStringString = Dict.insert k v value.mapStringString }) wire value
 
-                72 ->
-                    Proto.Binary.mapEntry Proto.Binary.string (Proto.Binary.embedded encodeForeignMessageBytes mergeForeignMessageBytes defaultForeignMessage) (\k v -> { value | mapStringForeignMessage = Dict.insert k v value.mapStringForeignMessage }) wire value
+                        70 ->
+                            Proto.Binary.mapEntry Proto.Binary.string Proto.Binary.bytes (\k v -> { value | mapStringBytes = Dict.insert k v value.mapStringBytes }) wire value
 
-                73 ->
-                    Proto.Binary.mapEntry Proto.Binary.string (Proto.Binary.enum encodeTestAllTypesProto3NestedEnumBytes decodeTestAllTypesProto3NestedEnumBytes) (\k v -> { value | mapStringNestedEnum = Dict.insert k v value.mapStringNestedEnum }) wire value
+                        71 ->
+                            Proto.Binary.mapEntry Proto.Binary.string (Proto.Binary.recursive depth encodeTestAllTypesProto3NestedMessage_Bytes mergeNestedTestAllTypesProto3NestedMessage_Bytes (TestAllTypesProto3NestedMessage_ defaultTestAllTypesProto3NestedMessage)) (\k v -> { value | mapStringNestedMessage = Dict.insert k v value.mapStringNestedMessage }) wire value
 
-                74 ->
-                    Proto.Binary.mapEntry Proto.Binary.string (Proto.Binary.enum encodeForeignEnumBytes decodeForeignEnumBytes) (\k v -> { value | mapStringForeignEnum = Dict.insert k v value.mapStringForeignEnum }) wire value
+                        72 ->
+                            Proto.Binary.mapEntry Proto.Binary.string (Proto.Binary.embedded encodeForeignMessageBytes mergeForeignMessageBytes defaultForeignMessage) (\k v -> { value | mapStringForeignMessage = Dict.insert k v value.mapStringForeignMessage }) wire value
 
-                75 ->
-                    Proto.Binary.repeated Proto.Binary.int32 (\v -> { value | packedInt32 = v }) value.packedInt32 wire value
+                        73 ->
+                            Proto.Binary.mapEntry Proto.Binary.string (Proto.Binary.enum encodeTestAllTypesProto3NestedEnumBytes decodeTestAllTypesProto3NestedEnumBytes) (\k v -> { value | mapStringNestedEnum = Dict.insert k v value.mapStringNestedEnum }) wire value
 
-                76 ->
-                    Proto.Binary.repeated Proto.Binary.int64 (\v -> { value | packedInt64 = v }) value.packedInt64 wire value
+                        74 ->
+                            Proto.Binary.mapEntry Proto.Binary.string (Proto.Binary.enum encodeForeignEnumBytes decodeForeignEnumBytes) (\k v -> { value | mapStringForeignEnum = Dict.insert k v value.mapStringForeignEnum }) wire value
 
-                77 ->
-                    Proto.Binary.repeated Proto.Binary.uint32 (\v -> { value | packedUint32 = v }) value.packedUint32 wire value
+                        75 ->
+                            Proto.Binary.repeated Proto.Binary.int32 (\v -> { value | packedInt32 = v }) value.packedInt32 wire value
 
-                78 ->
-                    Proto.Binary.repeated Proto.Binary.uint64 (\v -> { value | packedUint64 = v }) value.packedUint64 wire value
+                        76 ->
+                            Proto.Binary.repeated Proto.Binary.int64 (\v -> { value | packedInt64 = v }) value.packedInt64 wire value
 
-                79 ->
-                    Proto.Binary.repeated Proto.Binary.sint32 (\v -> { value | packedSint32 = v }) value.packedSint32 wire value
+                        77 ->
+                            Proto.Binary.repeated Proto.Binary.uint32 (\v -> { value | packedUint32 = v }) value.packedUint32 wire value
 
-                80 ->
-                    Proto.Binary.repeated Proto.Binary.sint64 (\v -> { value | packedSint64 = v }) value.packedSint64 wire value
+                        78 ->
+                            Proto.Binary.repeated Proto.Binary.uint64 (\v -> { value | packedUint64 = v }) value.packedUint64 wire value
 
-                81 ->
-                    Proto.Binary.repeated Proto.Binary.fixed32 (\v -> { value | packedFixed32 = v }) value.packedFixed32 wire value
+                        79 ->
+                            Proto.Binary.repeated Proto.Binary.sint32 (\v -> { value | packedSint32 = v }) value.packedSint32 wire value
 
-                82 ->
-                    Proto.Binary.repeated Proto.Binary.fixed64 (\v -> { value | packedFixed64 = v }) value.packedFixed64 wire value
+                        80 ->
+                            Proto.Binary.repeated Proto.Binary.sint64 (\v -> { value | packedSint64 = v }) value.packedSint64 wire value
 
-                83 ->
-                    Proto.Binary.repeated Proto.Binary.sfixed32 (\v -> { value | packedSfixed32 = v }) value.packedSfixed32 wire value
+                        81 ->
+                            Proto.Binary.repeated Proto.Binary.fixed32 (\v -> { value | packedFixed32 = v }) value.packedFixed32 wire value
 
-                84 ->
-                    Proto.Binary.repeated Proto.Binary.sfixed64 (\v -> { value | packedSfixed64 = v }) value.packedSfixed64 wire value
+                        82 ->
+                            Proto.Binary.repeated Proto.Binary.fixed64 (\v -> { value | packedFixed64 = v }) value.packedFixed64 wire value
 
-                85 ->
-                    Proto.Binary.repeated Proto.Binary.float (\v -> { value | packedFloat = v }) value.packedFloat wire value
+                        83 ->
+                            Proto.Binary.repeated Proto.Binary.sfixed32 (\v -> { value | packedSfixed32 = v }) value.packedSfixed32 wire value
 
-                86 ->
-                    Proto.Binary.repeated Proto.Binary.double (\v -> { value | packedDouble = v }) value.packedDouble wire value
+                        84 ->
+                            Proto.Binary.repeated Proto.Binary.sfixed64 (\v -> { value | packedSfixed64 = v }) value.packedSfixed64 wire value
 
-                87 ->
-                    Proto.Binary.repeated Proto.Binary.bool (\v -> { value | packedBool = v }) value.packedBool wire value
+                        85 ->
+                            Proto.Binary.repeated Proto.Binary.float (\v -> { value | packedFloat = v }) value.packedFloat wire value
 
-                88 ->
-                    Proto.Binary.repeated (Proto.Binary.enum encodeTestAllTypesProto3NestedEnumBytes decodeTestAllTypesProto3NestedEnumBytes) (\v -> { value | packedNestedEnum = v }) value.packedNestedEnum wire value
+                        86 ->
+                            Proto.Binary.repeated Proto.Binary.double (\v -> { value | packedDouble = v }) value.packedDouble wire value
 
-                89 ->
-                    Proto.Binary.repeated Proto.Binary.int32 (\v -> { value | unpackedInt32 = v }) value.unpackedInt32 wire value
+                        87 ->
+                            Proto.Binary.repeated Proto.Binary.bool (\v -> { value | packedBool = v }) value.packedBool wire value
 
-                90 ->
-                    Proto.Binary.repeated Proto.Binary.int64 (\v -> { value | unpackedInt64 = v }) value.unpackedInt64 wire value
+                        88 ->
+                            Proto.Binary.repeated (Proto.Binary.enum encodeTestAllTypesProto3NestedEnumBytes decodeTestAllTypesProto3NestedEnumBytes) (\v -> { value | packedNestedEnum = v }) value.packedNestedEnum wire value
 
-                91 ->
-                    Proto.Binary.repeated Proto.Binary.uint32 (\v -> { value | unpackedUint32 = v }) value.unpackedUint32 wire value
+                        89 ->
+                            Proto.Binary.repeated Proto.Binary.int32 (\v -> { value | unpackedInt32 = v }) value.unpackedInt32 wire value
 
-                92 ->
-                    Proto.Binary.repeated Proto.Binary.uint64 (\v -> { value | unpackedUint64 = v }) value.unpackedUint64 wire value
+                        90 ->
+                            Proto.Binary.repeated Proto.Binary.int64 (\v -> { value | unpackedInt64 = v }) value.unpackedInt64 wire value
 
-                93 ->
-                    Proto.Binary.repeated Proto.Binary.sint32 (\v -> { value | unpackedSint32 = v }) value.unpackedSint32 wire value
+                        91 ->
+                            Proto.Binary.repeated Proto.Binary.uint32 (\v -> { value | unpackedUint32 = v }) value.unpackedUint32 wire value
 
-                94 ->
-                    Proto.Binary.repeated Proto.Binary.sint64 (\v -> { value | unpackedSint64 = v }) value.unpackedSint64 wire value
+                        92 ->
+                            Proto.Binary.repeated Proto.Binary.uint64 (\v -> { value | unpackedUint64 = v }) value.unpackedUint64 wire value
 
-                95 ->
-                    Proto.Binary.repeated Proto.Binary.fixed32 (\v -> { value | unpackedFixed32 = v }) value.unpackedFixed32 wire value
+                        93 ->
+                            Proto.Binary.repeated Proto.Binary.sint32 (\v -> { value | unpackedSint32 = v }) value.unpackedSint32 wire value
 
-                96 ->
-                    Proto.Binary.repeated Proto.Binary.fixed64 (\v -> { value | unpackedFixed64 = v }) value.unpackedFixed64 wire value
+                        94 ->
+                            Proto.Binary.repeated Proto.Binary.sint64 (\v -> { value | unpackedSint64 = v }) value.unpackedSint64 wire value
 
-                97 ->
-                    Proto.Binary.repeated Proto.Binary.sfixed32 (\v -> { value | unpackedSfixed32 = v }) value.unpackedSfixed32 wire value
+                        95 ->
+                            Proto.Binary.repeated Proto.Binary.fixed32 (\v -> { value | unpackedFixed32 = v }) value.unpackedFixed32 wire value
 
-                98 ->
-                    Proto.Binary.repeated Proto.Binary.sfixed64 (\v -> { value | unpackedSfixed64 = v }) value.unpackedSfixed64 wire value
+                        96 ->
+                            Proto.Binary.repeated Proto.Binary.fixed64 (\v -> { value | unpackedFixed64 = v }) value.unpackedFixed64 wire value
 
-                99 ->
-                    Proto.Binary.repeated Proto.Binary.float (\v -> { value | unpackedFloat = v }) value.unpackedFloat wire value
+                        97 ->
+                            Proto.Binary.repeated Proto.Binary.sfixed32 (\v -> { value | unpackedSfixed32 = v }) value.unpackedSfixed32 wire value
 
-                100 ->
-                    Proto.Binary.repeated Proto.Binary.double (\v -> { value | unpackedDouble = v }) value.unpackedDouble wire value
+                        98 ->
+                            Proto.Binary.repeated Proto.Binary.sfixed64 (\v -> { value | unpackedSfixed64 = v }) value.unpackedSfixed64 wire value
 
-                101 ->
-                    Proto.Binary.repeated Proto.Binary.bool (\v -> { value | unpackedBool = v }) value.unpackedBool wire value
+                        99 ->
+                            Proto.Binary.repeated Proto.Binary.float (\v -> { value | unpackedFloat = v }) value.unpackedFloat wire value
 
-                102 ->
-                    Proto.Binary.repeated (Proto.Binary.enum encodeTestAllTypesProto3NestedEnumBytes decodeTestAllTypesProto3NestedEnumBytes) (\v -> { value | unpackedNestedEnum = v }) value.unpackedNestedEnum wire value
+                        100 ->
+                            Proto.Binary.repeated Proto.Binary.double (\v -> { value | unpackedDouble = v }) value.unpackedDouble wire value
 
-                111 ->
-                    Proto.Binary.field Proto.Binary.uint32 (\v -> { value | oneofField = TestAllTypesProto3OneofFieldOneofUint32 v }) wire value
+                        101 ->
+                            Proto.Binary.repeated Proto.Binary.bool (\v -> { value | unpackedBool = v }) value.unpackedBool wire value
 
-                112 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeTestAllTypesProto3NestedMessageBytes mergeTestAllTypesProto3NestedMessageBytes defaultTestAllTypesProto3NestedMessage)
-                        (case value.oneofField of
-                            TestAllTypesProto3OneofFieldOneofNestedMessage member ->
-                                Just member
+                        102 ->
+                            Proto.Binary.repeated (Proto.Binary.enum encodeTestAllTypesProto3NestedEnumBytes decodeTestAllTypesProto3NestedEnumBytes) (\v -> { value | unpackedNestedEnum = v }) value.unpackedNestedEnum wire value
 
-                            _ ->
-                                Nothing
-                        )
-                        (\v -> { value | oneofField = TestAllTypesProto3OneofFieldOneofNestedMessage v })
-                        wire
-                        value
+                        111 ->
+                            Proto.Binary.field Proto.Binary.uint32 (\v -> { value | oneofField = TestAllTypesProto3OneofFieldOneofUint32 v }) wire value
 
-                113 ->
-                    Proto.Binary.field Proto.Binary.string (\v -> { value | oneofField = TestAllTypesProto3OneofFieldOneofString v }) wire value
+                        112 ->
+                            Proto.Binary.fieldInto
+                                (Proto.Binary.recursive depth encodeTestAllTypesProto3NestedMessageBytes mergeNestedTestAllTypesProto3NestedMessageBytes defaultTestAllTypesProto3NestedMessage)
+                                (case value.oneofField of
+                                    TestAllTypesProto3OneofFieldOneofNestedMessage member ->
+                                        Just member
 
-                114 ->
-                    Proto.Binary.field Proto.Binary.bytes (\v -> { value | oneofField = TestAllTypesProto3OneofFieldOneofBytes v }) wire value
+                                    _ ->
+                                        Nothing
+                                )
+                                (\v -> { value | oneofField = TestAllTypesProto3OneofFieldOneofNestedMessage v })
+                                wire
+                                value
 
-                115 ->
-                    Proto.Binary.field Proto.Binary.bool (\v -> { value | oneofField = TestAllTypesProto3OneofFieldOneofBool v }) wire value
+                        113 ->
+                            Proto.Binary.field Proto.Binary.string (\v -> { value | oneofField = TestAllTypesProto3OneofFieldOneofString v }) wire value
 
-                116 ->
-                    Proto.Binary.field Proto.Binary.uint64 (\v -> { value | oneofField = TestAllTypesProto3OneofFieldOneofUint64 v }) wire value
+                        114 ->
+                            Proto.Binary.field Proto.Binary.bytes (\v -> { value | oneofField = TestAllTypesProto3OneofFieldOneofBytes v }) wire value
 
-                117 ->
-                    Proto.Binary.field Proto.Binary.float (\v -> { value | oneofField = TestAllTypesProto3OneofFieldOneofFloat v }) wire value
+                        115 ->
+                            Proto.Binary.field Proto.Binary.bool (\v -> { value | oneofField = TestAllTypesProto3OneofFieldOneofBool v }) wire value
 
-                118 ->
-                    Proto.Binary.field Proto.Binary.double (\v -> { value | oneofField = TestAllTypesProto3OneofFieldOneofDouble v }) wire value
+                        116 ->
+                            Proto.Binary.field Proto.Binary.uint64 (\v -> { value | oneofField = TestAllTypesProto3OneofFieldOneofUint64 v }) wire value
 
-                119 ->
-                    Proto.Binary.field (Proto.Binary.enum encodeTestAllTypesProto3NestedEnumBytes decodeTestAllTypesProto3NestedEnumBytes) (\v -> { value | oneofField = TestAllTypesProto3OneofFieldOneofEnum v }) wire value
+                        117 ->
+                            Proto.Binary.field Proto.Binary.float (\v -> { value | oneofField = TestAllTypesProto3OneofFieldOneofFloat v }) wire value
 
-                120 ->
-                    Proto.Binary.field (Proto.Binary.enum (\_ -> 0) (\_ -> ())) (\_ -> { value | oneofField = TestAllTypesProto3OneofFieldOneofNullValue }) wire value
+                        118 ->
+                            Proto.Binary.field Proto.Binary.double (\v -> { value | oneofField = TestAllTypesProto3OneofFieldOneofDouble v }) wire value
 
-                201 ->
-                    Proto.Binary.field Proto.Binary.boolValue (\v -> { value | optionalBoolWrapper = Just v }) wire value
+                        119 ->
+                            Proto.Binary.field (Proto.Binary.enum encodeTestAllTypesProto3NestedEnumBytes decodeTestAllTypesProto3NestedEnumBytes) (\v -> { value | oneofField = TestAllTypesProto3OneofFieldOneofEnum v }) wire value
 
-                202 ->
-                    Proto.Binary.field Proto.Binary.int32Value (\v -> { value | optionalInt32Wrapper = Just v }) wire value
+                        120 ->
+                            Proto.Binary.field (Proto.Binary.enum (\_ -> 0) (\_ -> ())) (\_ -> { value | oneofField = TestAllTypesProto3OneofFieldOneofNullValue }) wire value
 
-                203 ->
-                    Proto.Binary.field Proto.Binary.int64Value (\v -> { value | optionalInt64Wrapper = Just v }) wire value
+                        201 ->
+                            Proto.Binary.field Proto.Binary.boolValue (\v -> { value | optionalBoolWrapper = Just v }) wire value
 
-                204 ->
-                    Proto.Binary.field Proto.Binary.uint32Value (\v -> { value | optionalUint32Wrapper = Just v }) wire value
+                        202 ->
+                            Proto.Binary.field Proto.Binary.int32Value (\v -> { value | optionalInt32Wrapper = Just v }) wire value
 
-                205 ->
-                    Proto.Binary.field Proto.Binary.uint64Value (\v -> { value | optionalUint64Wrapper = Just v }) wire value
+                        203 ->
+                            Proto.Binary.field Proto.Binary.int64Value (\v -> { value | optionalInt64Wrapper = Just v }) wire value
 
-                206 ->
-                    Proto.Binary.field Proto.Binary.floatValue (\v -> { value | optionalFloatWrapper = Just v }) wire value
+                        204 ->
+                            Proto.Binary.field Proto.Binary.uint32Value (\v -> { value | optionalUint32Wrapper = Just v }) wire value
 
-                207 ->
-                    Proto.Binary.field Proto.Binary.doubleValue (\v -> { value | optionalDoubleWrapper = Just v }) wire value
+                        205 ->
+                            Proto.Binary.field Proto.Binary.uint64Value (\v -> { value | optionalUint64Wrapper = Just v }) wire value
 
-                208 ->
-                    Proto.Binary.field Proto.Binary.stringValue (\v -> { value | optionalStringWrapper = Just v }) wire value
+                        206 ->
+                            Proto.Binary.field Proto.Binary.floatValue (\v -> { value | optionalFloatWrapper = Just v }) wire value
 
-                209 ->
-                    Proto.Binary.field Proto.Binary.bytesValue (\v -> { value | optionalBytesWrapper = Just v }) wire value
+                        207 ->
+                            Proto.Binary.field Proto.Binary.doubleValue (\v -> { value | optionalDoubleWrapper = Just v }) wire value
 
-                211 ->
-                    Proto.Binary.repeated Proto.Binary.boolValue (\v -> { value | repeatedBoolWrapper = v }) value.repeatedBoolWrapper wire value
+                        208 ->
+                            Proto.Binary.field Proto.Binary.stringValue (\v -> { value | optionalStringWrapper = Just v }) wire value
 
-                212 ->
-                    Proto.Binary.repeated Proto.Binary.int32Value (\v -> { value | repeatedInt32Wrapper = v }) value.repeatedInt32Wrapper wire value
+                        209 ->
+                            Proto.Binary.field Proto.Binary.bytesValue (\v -> { value | optionalBytesWrapper = Just v }) wire value
 
-                213 ->
-                    Proto.Binary.repeated Proto.Binary.int64Value (\v -> { value | repeatedInt64Wrapper = v }) value.repeatedInt64Wrapper wire value
+                        211 ->
+                            Proto.Binary.repeated Proto.Binary.boolValue (\v -> { value | repeatedBoolWrapper = v }) value.repeatedBoolWrapper wire value
 
-                214 ->
-                    Proto.Binary.repeated Proto.Binary.uint32Value (\v -> { value | repeatedUint32Wrapper = v }) value.repeatedUint32Wrapper wire value
+                        212 ->
+                            Proto.Binary.repeated Proto.Binary.int32Value (\v -> { value | repeatedInt32Wrapper = v }) value.repeatedInt32Wrapper wire value
 
-                215 ->
-                    Proto.Binary.repeated Proto.Binary.uint64Value (\v -> { value | repeatedUint64Wrapper = v }) value.repeatedUint64Wrapper wire value
+                        213 ->
+                            Proto.Binary.repeated Proto.Binary.int64Value (\v -> { value | repeatedInt64Wrapper = v }) value.repeatedInt64Wrapper wire value
 
-                216 ->
-                    Proto.Binary.repeated Proto.Binary.floatValue (\v -> { value | repeatedFloatWrapper = v }) value.repeatedFloatWrapper wire value
+                        214 ->
+                            Proto.Binary.repeated Proto.Binary.uint32Value (\v -> { value | repeatedUint32Wrapper = v }) value.repeatedUint32Wrapper wire value
 
-                217 ->
-                    Proto.Binary.repeated Proto.Binary.doubleValue (\v -> { value | repeatedDoubleWrapper = v }) value.repeatedDoubleWrapper wire value
+                        215 ->
+                            Proto.Binary.repeated Proto.Binary.uint64Value (\v -> { value | repeatedUint64Wrapper = v }) value.repeatedUint64Wrapper wire value
 
-                218 ->
-                    Proto.Binary.repeated Proto.Binary.stringValue (\v -> { value | repeatedStringWrapper = v }) value.repeatedStringWrapper wire value
+                        216 ->
+                            Proto.Binary.repeated Proto.Binary.floatValue (\v -> { value | repeatedFloatWrapper = v }) value.repeatedFloatWrapper wire value
 
-                219 ->
-                    Proto.Binary.repeated Proto.Binary.bytesValue (\v -> { value | repeatedBytesWrapper = v }) value.repeatedBytesWrapper wire value
+                        217 ->
+                            Proto.Binary.repeated Proto.Binary.doubleValue (\v -> { value | repeatedDoubleWrapper = v }) value.repeatedDoubleWrapper wire value
 
-                301 ->
-                    Proto.Binary.field Proto.Binary.duration (\v -> { value | optionalDuration = Just v }) wire value
+                        218 ->
+                            Proto.Binary.repeated Proto.Binary.stringValue (\v -> { value | repeatedStringWrapper = v }) value.repeatedStringWrapper wire value
 
-                302 ->
-                    Proto.Binary.field Proto.Binary.timestamp (\v -> { value | optionalTimestamp = Just v }) wire value
+                        219 ->
+                            Proto.Binary.repeated Proto.Binary.bytesValue (\v -> { value | repeatedBytesWrapper = v }) value.repeatedBytesWrapper wire value
 
-                303 ->
-                    Proto.Binary.field Proto.Binary.fieldMask (\v -> { value | optionalFieldMask = Just v }) wire value
+                        301 ->
+                            Proto.Binary.field Proto.Binary.duration (\v -> { value | optionalDuration = Just v }) wire value
 
-                304 ->
-                    Proto.Binary.field Proto.Binary.struct (\v -> { value | optionalStruct = Just v }) wire value
+                        302 ->
+                            Proto.Binary.field Proto.Binary.timestamp (\v -> { value | optionalTimestamp = Just v }) wire value
 
-                305 ->
-                    Proto.Binary.field Proto.Binary.any (\v -> { value | optionalAny = Just v }) wire value
+                        303 ->
+                            Proto.Binary.field Proto.Binary.fieldMask (\v -> { value | optionalFieldMask = Just v }) wire value
 
-                306 ->
-                    Proto.Binary.field Proto.Binary.value (\v -> { value | optionalValue = Just v }) wire value
+                        304 ->
+                            Proto.Binary.field Proto.Binary.struct (\v -> { value | optionalStruct = Just v }) wire value
 
-                307 ->
-                    Proto.Binary.field (Proto.Binary.enum (\_ -> 0) (\_ -> ())) (\v -> { value | optionalNullValue = v }) wire value
+                        305 ->
+                            Proto.Binary.field Proto.Binary.any (\v -> { value | optionalAny = Just v }) wire value
 
-                311 ->
-                    Proto.Binary.repeated Proto.Binary.duration (\v -> { value | repeatedDuration = v }) value.repeatedDuration wire value
+                        306 ->
+                            Proto.Binary.field Proto.Binary.value (\v -> { value | optionalValue = Just v }) wire value
 
-                312 ->
-                    Proto.Binary.repeated Proto.Binary.timestamp (\v -> { value | repeatedTimestamp = v }) value.repeatedTimestamp wire value
+                        307 ->
+                            Proto.Binary.field (Proto.Binary.enum (\_ -> 0) (\_ -> ())) (\v -> { value | optionalNullValue = v }) wire value
 
-                313 ->
-                    Proto.Binary.repeated Proto.Binary.fieldMask (\v -> { value | repeatedFieldmask = v }) value.repeatedFieldmask wire value
+                        311 ->
+                            Proto.Binary.repeated Proto.Binary.duration (\v -> { value | repeatedDuration = v }) value.repeatedDuration wire value
 
-                315 ->
-                    Proto.Binary.repeated Proto.Binary.any (\v -> { value | repeatedAny = v }) value.repeatedAny wire value
+                        312 ->
+                            Proto.Binary.repeated Proto.Binary.timestamp (\v -> { value | repeatedTimestamp = v }) value.repeatedTimestamp wire value
 
-                316 ->
-                    Proto.Binary.repeated Proto.Binary.value (\v -> { value | repeatedValue = v }) value.repeatedValue wire value
+                        313 ->
+                            Proto.Binary.repeated Proto.Binary.fieldMask (\v -> { value | repeatedFieldmask = v }) value.repeatedFieldmask wire value
 
-                317 ->
-                    Proto.Binary.repeated Proto.Binary.listValue (\v -> { value | repeatedListValue = v }) value.repeatedListValue wire value
+                        315 ->
+                            Proto.Binary.repeated Proto.Binary.any (\v -> { value | repeatedAny = v }) value.repeatedAny wire value
 
-                324 ->
-                    Proto.Binary.repeated Proto.Binary.struct (\v -> { value | repeatedStruct = v }) value.repeatedStruct wire value
+                        316 ->
+                            Proto.Binary.repeated Proto.Binary.value (\v -> { value | repeatedValue = v }) value.repeatedValue wire value
 
-                401 ->
-                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldname1 = v }) wire value
+                        317 ->
+                            Proto.Binary.repeated Proto.Binary.listValue (\v -> { value | repeatedListValue = v }) value.repeatedListValue wire value
 
-                402 ->
-                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName2 = v }) wire value
+                        324 ->
+                            Proto.Binary.repeated Proto.Binary.struct (\v -> { value | repeatedStruct = v }) value.repeatedStruct wire value
 
-                403 ->
-                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName3 = v }) wire value
+                        401 ->
+                            Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldname1 = v }) wire value
 
-                404 ->
-                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName4 = v }) wire value
+                        402 ->
+                            Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName2 = v }) wire value
 
-                405 ->
-                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | field0name5 = v }) wire value
+                        403 ->
+                            Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName3 = v }) wire value
 
-                406 ->
-                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | field0Name6 = v }) wire value
+                        404 ->
+                            Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName4 = v }) wire value
 
-                407 ->
-                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName7 = v }) wire value
+                        405 ->
+                            Proto.Binary.field Proto.Binary.int32 (\v -> { value | field0name5 = v }) wire value
 
-                408 ->
-                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName8 = v }) wire value
+                        406 ->
+                            Proto.Binary.field Proto.Binary.int32 (\v -> { value | field0Name6 = v }) wire value
 
-                409 ->
-                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName9 = v }) wire value
+                        407 ->
+                            Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName7 = v }) wire value
 
-                410 ->
-                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName10 = v }) wire value
+                        408 ->
+                            Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName8 = v }) wire value
 
-                411 ->
-                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldname11 = v }) wire value
+                        409 ->
+                            Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName9 = v }) wire value
 
-                412 ->
-                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName12 = v }) wire value
+                        410 ->
+                            Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName10 = v }) wire value
 
-                413 ->
-                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName13 = v }) wire value
+                        411 ->
+                            Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldname11 = v }) wire value
 
-                414 ->
-                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName14 = v }) wire value
+                        412 ->
+                            Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName12 = v }) wire value
 
-                415 ->
-                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName15 = v }) wire value
+                        413 ->
+                            Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName13 = v }) wire value
 
-                416 ->
-                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName16 = v }) wire value
+                        414 ->
+                            Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName14 = v }) wire value
 
-                417 ->
-                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName17 = v }) wire value
+                        415 ->
+                            Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName15 = v }) wire value
 
-                418 ->
-                    Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName18 = v }) wire value
+                        416 ->
+                            Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName16 = v }) wire value
 
-                _ ->
-                    Proto.Binary.skip wire value
-        )
-        (\value ->
-            { value
-                | repeatedInt32 = List.reverse value.repeatedInt32
-                , repeatedInt64 = List.reverse value.repeatedInt64
-                , repeatedUint32 = List.reverse value.repeatedUint32
-                , repeatedUint64 = List.reverse value.repeatedUint64
-                , repeatedSint32 = List.reverse value.repeatedSint32
-                , repeatedSint64 = List.reverse value.repeatedSint64
-                , repeatedFixed32 = List.reverse value.repeatedFixed32
-                , repeatedFixed64 = List.reverse value.repeatedFixed64
-                , repeatedSfixed32 = List.reverse value.repeatedSfixed32
-                , repeatedSfixed64 = List.reverse value.repeatedSfixed64
-                , repeatedFloat = List.reverse value.repeatedFloat
-                , repeatedDouble = List.reverse value.repeatedDouble
-                , repeatedBool = List.reverse value.repeatedBool
-                , repeatedString = List.reverse value.repeatedString
-                , repeatedBytes = List.reverse value.repeatedBytes
-                , repeatedNestedMessage = List.reverse value.repeatedNestedMessage
-                , repeatedForeignMessage = List.reverse value.repeatedForeignMessage
-                , repeatedNestedEnum = List.reverse value.repeatedNestedEnum
-                , repeatedForeignEnum = List.reverse value.repeatedForeignEnum
-                , repeatedStringPiece = List.reverse value.repeatedStringPiece
-                , repeatedCord = List.reverse value.repeatedCord
-                , packedInt32 = List.reverse value.packedInt32
-                , packedInt64 = List.reverse value.packedInt64
-                , packedUint32 = List.reverse value.packedUint32
-                , packedUint64 = List.reverse value.packedUint64
-                , packedSint32 = List.reverse value.packedSint32
-                , packedSint64 = List.reverse value.packedSint64
-                , packedFixed32 = List.reverse value.packedFixed32
-                , packedFixed64 = List.reverse value.packedFixed64
-                , packedSfixed32 = List.reverse value.packedSfixed32
-                , packedSfixed64 = List.reverse value.packedSfixed64
-                , packedFloat = List.reverse value.packedFloat
-                , packedDouble = List.reverse value.packedDouble
-                , packedBool = List.reverse value.packedBool
-                , packedNestedEnum = List.reverse value.packedNestedEnum
-                , unpackedInt32 = List.reverse value.unpackedInt32
-                , unpackedInt64 = List.reverse value.unpackedInt64
-                , unpackedUint32 = List.reverse value.unpackedUint32
-                , unpackedUint64 = List.reverse value.unpackedUint64
-                , unpackedSint32 = List.reverse value.unpackedSint32
-                , unpackedSint64 = List.reverse value.unpackedSint64
-                , unpackedFixed32 = List.reverse value.unpackedFixed32
-                , unpackedFixed64 = List.reverse value.unpackedFixed64
-                , unpackedSfixed32 = List.reverse value.unpackedSfixed32
-                , unpackedSfixed64 = List.reverse value.unpackedSfixed64
-                , unpackedFloat = List.reverse value.unpackedFloat
-                , unpackedDouble = List.reverse value.unpackedDouble
-                , unpackedBool = List.reverse value.unpackedBool
-                , unpackedNestedEnum = List.reverse value.unpackedNestedEnum
-                , mapBoolBool = List.reverse value.mapBoolBool
-                , repeatedBoolWrapper = List.reverse value.repeatedBoolWrapper
-                , repeatedInt32Wrapper = List.reverse value.repeatedInt32Wrapper
-                , repeatedInt64Wrapper = List.reverse value.repeatedInt64Wrapper
-                , repeatedUint32Wrapper = List.reverse value.repeatedUint32Wrapper
-                , repeatedUint64Wrapper = List.reverse value.repeatedUint64Wrapper
-                , repeatedFloatWrapper = List.reverse value.repeatedFloatWrapper
-                , repeatedDoubleWrapper = List.reverse value.repeatedDoubleWrapper
-                , repeatedStringWrapper = List.reverse value.repeatedStringWrapper
-                , repeatedBytesWrapper = List.reverse value.repeatedBytesWrapper
-                , repeatedDuration = List.reverse value.repeatedDuration
-                , repeatedTimestamp = List.reverse value.repeatedTimestamp
-                , repeatedFieldmask = List.reverse value.repeatedFieldmask
-                , repeatedStruct = List.reverse value.repeatedStruct
-                , repeatedAny = List.reverse value.repeatedAny
-                , repeatedValue = List.reverse value.repeatedValue
-                , repeatedListValue = List.reverse value.repeatedListValue
-            }
+                        417 ->
+                            Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName17 = v }) wire value
+
+                        418 ->
+                            Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldName18 = v }) wire value
+
+                        _ ->
+                            Proto.Binary.skip wire value
+                )
+                (\value ->
+                    { value
+                        | repeatedInt32 = List.reverse value.repeatedInt32
+                        , repeatedInt64 = List.reverse value.repeatedInt64
+                        , repeatedUint32 = List.reverse value.repeatedUint32
+                        , repeatedUint64 = List.reverse value.repeatedUint64
+                        , repeatedSint32 = List.reverse value.repeatedSint32
+                        , repeatedSint64 = List.reverse value.repeatedSint64
+                        , repeatedFixed32 = List.reverse value.repeatedFixed32
+                        , repeatedFixed64 = List.reverse value.repeatedFixed64
+                        , repeatedSfixed32 = List.reverse value.repeatedSfixed32
+                        , repeatedSfixed64 = List.reverse value.repeatedSfixed64
+                        , repeatedFloat = List.reverse value.repeatedFloat
+                        , repeatedDouble = List.reverse value.repeatedDouble
+                        , repeatedBool = List.reverse value.repeatedBool
+                        , repeatedString = List.reverse value.repeatedString
+                        , repeatedBytes = List.reverse value.repeatedBytes
+                        , repeatedNestedMessage = List.reverse value.repeatedNestedMessage
+                        , repeatedForeignMessage = List.reverse value.repeatedForeignMessage
+                        , repeatedNestedEnum = List.reverse value.repeatedNestedEnum
+                        , repeatedForeignEnum = List.reverse value.repeatedForeignEnum
+                        , repeatedStringPiece = List.reverse value.repeatedStringPiece
+                        , repeatedCord = List.reverse value.repeatedCord
+                        , packedInt32 = List.reverse value.packedInt32
+                        , packedInt64 = List.reverse value.packedInt64
+                        , packedUint32 = List.reverse value.packedUint32
+                        , packedUint64 = List.reverse value.packedUint64
+                        , packedSint32 = List.reverse value.packedSint32
+                        , packedSint64 = List.reverse value.packedSint64
+                        , packedFixed32 = List.reverse value.packedFixed32
+                        , packedFixed64 = List.reverse value.packedFixed64
+                        , packedSfixed32 = List.reverse value.packedSfixed32
+                        , packedSfixed64 = List.reverse value.packedSfixed64
+                        , packedFloat = List.reverse value.packedFloat
+                        , packedDouble = List.reverse value.packedDouble
+                        , packedBool = List.reverse value.packedBool
+                        , packedNestedEnum = List.reverse value.packedNestedEnum
+                        , unpackedInt32 = List.reverse value.unpackedInt32
+                        , unpackedInt64 = List.reverse value.unpackedInt64
+                        , unpackedUint32 = List.reverse value.unpackedUint32
+                        , unpackedUint64 = List.reverse value.unpackedUint64
+                        , unpackedSint32 = List.reverse value.unpackedSint32
+                        , unpackedSint64 = List.reverse value.unpackedSint64
+                        , unpackedFixed32 = List.reverse value.unpackedFixed32
+                        , unpackedFixed64 = List.reverse value.unpackedFixed64
+                        , unpackedSfixed32 = List.reverse value.unpackedSfixed32
+                        , unpackedSfixed64 = List.reverse value.unpackedSfixed64
+                        , unpackedFloat = List.reverse value.unpackedFloat
+                        , unpackedDouble = List.reverse value.unpackedDouble
+                        , unpackedBool = List.reverse value.unpackedBool
+                        , unpackedNestedEnum = List.reverse value.unpackedNestedEnum
+                        , mapBoolBool = List.reverse value.mapBoolBool
+                        , repeatedBoolWrapper = List.reverse value.repeatedBoolWrapper
+                        , repeatedInt32Wrapper = List.reverse value.repeatedInt32Wrapper
+                        , repeatedInt64Wrapper = List.reverse value.repeatedInt64Wrapper
+                        , repeatedUint32Wrapper = List.reverse value.repeatedUint32Wrapper
+                        , repeatedUint64Wrapper = List.reverse value.repeatedUint64Wrapper
+                        , repeatedFloatWrapper = List.reverse value.repeatedFloatWrapper
+                        , repeatedDoubleWrapper = List.reverse value.repeatedDoubleWrapper
+                        , repeatedStringWrapper = List.reverse value.repeatedStringWrapper
+                        , repeatedBytesWrapper = List.reverse value.repeatedBytesWrapper
+                        , repeatedDuration = List.reverse value.repeatedDuration
+                        , repeatedTimestamp = List.reverse value.repeatedTimestamp
+                        , repeatedFieldmask = List.reverse value.repeatedFieldmask
+                        , repeatedStruct = List.reverse value.repeatedStruct
+                        , repeatedAny = List.reverse value.repeatedAny
+                        , repeatedValue = List.reverse value.repeatedValue
+                        , repeatedListValue = List.reverse value.repeatedListValue
+                    }
+                )
         )
 
 
@@ -2760,61 +2791,78 @@ mergeTestAllTypesProto3_Bytes (TestAllTypesProto3_ value) =
     Proto.Binary.map TestAllTypesProto3_ (mergeTestAllTypesProto3Bytes value)
 
 
+{-| [`mergeTestAllTypesProto3_Bytes`](#mergeTestAllTypesProto3_Bytes) for a [`TestAllTypesProto3_`](#TestAllTypesProto3_) held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.
+-}
+mergeNestedTestAllTypesProto3_Bytes : Int -> TestAllTypesProto3_ -> Proto.Binary.Decoder TestAllTypesProto3_
+mergeNestedTestAllTypesProto3_Bytes depth (TestAllTypesProto3_ value) =
+    Proto.Binary.map TestAllTypesProto3_ (mergeNestedTestAllTypesProto3Bytes depth value)
+
+
 {-| Decodes a [`TestAllTypesProto3NestedMessage`](#TestAllTypesProto3NestedMessage) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
 mergeTestAllTypesProto3NestedMessageBytes : TestAllTypesProto3NestedMessage -> Proto.Binary.Decoder TestAllTypesProto3NestedMessage
 mergeTestAllTypesProto3NestedMessageBytes =
-    Proto.Binary.mergeKeep
-        "protobuf_test_messages.proto3.TestAllTypesProto3.NestedMessage"
-        (\number ->
-            case number of
-                1 ->
-                    1
+    mergeNestedTestAllTypesProto3NestedMessageBytes 1
 
-                2 ->
-                    4
 
-                _ ->
-                    0
+{-| [`mergeTestAllTypesProto3NestedMessageBytes`](#mergeTestAllTypesProto3NestedMessageBytes) for a [`TestAllTypesProto3NestedMessage`](#TestAllTypesProto3NestedMessage) held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.
+-}
+mergeNestedTestAllTypesProto3NestedMessageBytes : Int -> TestAllTypesProto3NestedMessage -> Proto.Binary.Decoder TestAllTypesProto3NestedMessage
+mergeNestedTestAllTypesProto3NestedMessageBytes =
+    Proto.Binary.memo
+        (\depth ->
+            Proto.Binary.mergeKeep
+                "protobuf_test_messages.proto3.TestAllTypesProto3.NestedMessage"
+                (\number ->
+                    case number of
+                        1 ->
+                            1
+
+                        2 ->
+                            4
+
+                        _ ->
+                            0
+                )
+                (\value -> value.unknownFields_)
+                (\v value ->
+                    { a = value.a
+                    , corecursive = value.corecursive
+                    , unknownFields_ = v
+                    }
+                )
+                (\number wire value ->
+                    case number of
+                        1 ->
+                            Proto.Binary.field
+                                Proto.Binary.int32
+                                (\v ->
+                                    { a = v
+                                    , corecursive = value.corecursive
+                                    , unknownFields_ = value.unknownFields_
+                                    }
+                                )
+                                wire
+                                value
+
+                        2 ->
+                            Proto.Binary.fieldInto
+                                (Proto.Binary.recursive depth encodeTestAllTypesProto3_Bytes mergeNestedTestAllTypesProto3_Bytes (TestAllTypesProto3_ defaultTestAllTypesProto3))
+                                value.corecursive
+                                (\v ->
+                                    { a = value.a
+                                    , corecursive = Just v
+                                    , unknownFields_ = value.unknownFields_
+                                    }
+                                )
+                                wire
+                                value
+
+                        _ ->
+                            Proto.Binary.skip wire value
+                )
+                identity
         )
-        (\value -> value.unknownFields_)
-        (\v value ->
-            { a = value.a
-            , corecursive = value.corecursive
-            , unknownFields_ = v
-            }
-        )
-        (\number wire value ->
-            case number of
-                1 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { a = v
-                            , corecursive = value.corecursive
-                            , unknownFields_ = value.unknownFields_
-                            }
-                        )
-                        wire
-                        value
-
-                2 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeTestAllTypesProto3_Bytes mergeTestAllTypesProto3_Bytes (TestAllTypesProto3_ defaultTestAllTypesProto3))
-                        value.corecursive
-                        (\v ->
-                            { a = value.a
-                            , corecursive = Just v
-                            , unknownFields_ = value.unknownFields_
-                            }
-                        )
-                        wire
-                        value
-
-                _ ->
-                    Proto.Binary.skip wire value
-        )
-        identity
 
 
 {-| Decodes a [`TestAllTypesProto3NestedMessage`](#TestAllTypesProto3NestedMessage) from protobuf binary.
@@ -2829,6 +2877,13 @@ decodeTestAllTypesProto3NestedMessageBytes =
 mergeTestAllTypesProto3NestedMessage_Bytes : TestAllTypesProto3NestedMessage_ -> Proto.Binary.Decoder TestAllTypesProto3NestedMessage_
 mergeTestAllTypesProto3NestedMessage_Bytes (TestAllTypesProto3NestedMessage_ value) =
     Proto.Binary.map TestAllTypesProto3NestedMessage_ (mergeTestAllTypesProto3NestedMessageBytes value)
+
+
+{-| [`mergeTestAllTypesProto3NestedMessage_Bytes`](#mergeTestAllTypesProto3NestedMessage_Bytes) for a [`TestAllTypesProto3NestedMessage_`](#TestAllTypesProto3NestedMessage_) held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.
+-}
+mergeNestedTestAllTypesProto3NestedMessage_Bytes : Int -> TestAllTypesProto3NestedMessage_ -> Proto.Binary.Decoder TestAllTypesProto3NestedMessage_
+mergeNestedTestAllTypesProto3NestedMessage_Bytes depth (TestAllTypesProto3NestedMessage_ value) =
+    Proto.Binary.map TestAllTypesProto3NestedMessage_ (mergeNestedTestAllTypesProto3NestedMessageBytes depth value)
 
 
 {-| Decodes a [`ForeignMessage`](#ForeignMessage) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
