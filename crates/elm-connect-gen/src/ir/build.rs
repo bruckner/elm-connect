@@ -2134,6 +2134,7 @@ impl Builder {
                     cardinality,
                     ty,
                     cyclic: false,
+                    recursive: false,
                     jstype: jstype(&field),
                     unpacked: unpacked(&field),
                     annotations,
@@ -2159,6 +2160,7 @@ impl Builder {
             fields,
             oneofs,
             wrapper: None,
+            recursive: false,
             doc,
         })
     }
@@ -2407,7 +2409,8 @@ impl Builder {
 
 /// Marks every cycle of message references (see the [`super`] invariants):
 /// [`Field::cyclic`] and [`Message::wrapper`] from the cycles of record
-/// fields, [`OneofVariant::cyclic`] from the cycles of all references.
+/// fields, [`OneofVariant::cyclic`], [`Message::recursive`] and
+/// [`Field::recursive`] from the cycles of all references.
 fn mark_cycles(packages: &mut [Package]) {
     let mut index = HashMap::new();
     for package in packages.iter() {
@@ -2450,8 +2453,10 @@ fn mark_cycles(packages: &mut [Package]) {
                     elm_name: naming::recursive_wrapper(&message.elm_name),
                 });
             }
+            message.recursive = any_cycle[from].is_some();
             for field in &mut message.fields {
                 field.cyclic = closes(&field_cycle, from, target(&field.ty));
+                field.recursive = closes(&any_cycle, from, target(&field.ty));
             }
             for variant in message
                 .oneofs

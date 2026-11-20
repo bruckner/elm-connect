@@ -633,6 +633,22 @@ struct Emitter {
     reach: AnyReach,
     /// The options as the header's second line records them.
     recorded: String,
+    /// While a recursive message's JSON decoder is written: how its values
+    /// on the cycle are read one level deeper.
+    deep: Option<Deep>,
+    /// Whether the value whose decoder is being written is on that cycle.
+    deep_value: bool,
+}
+
+/// How a recursive message's JSON decoder reads a value on its cycle one
+/// level deeper.
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum Deep {
+    /// From the decoders built once for every depth (`levelsNode`).
+    Table,
+    /// From the decoder built as the value is read (`levelNodeWith`), for a
+    /// message that takes the registry.
+    Built,
 }
 
 impl Emitter {
@@ -650,6 +666,8 @@ impl Emitter {
                 pairs if pairs.is_empty() => DEFAULT_OPTIONS.to_owned(),
                 pairs => pairs.join(", "),
             },
+            deep: None,
+            deep_value: false,
         }
     }
 
@@ -731,19 +749,19 @@ impl Emitter {
             encoders.push(self.message_encoder(shape));
             decoders.extend(self.message_decoder(shape));
             binary_encoders.push(self.message_encoder_bytes(shape));
-            binary_decoders.push(self.message_merge_bytes(shape));
+            binary_decoders.extend(self.message_merge_bytes(shape));
             binary_decoders.push(self.message_decoder_bytes(shape));
             if let Some(wrapper) = &shape.message.wrapper {
                 types.push(self.wrapper_type(shape.message, wrapper));
                 encoders.push(self.wrapper_encoder(shape.message, wrapper));
                 decoders.push(self.wrapper_decoder(shape.message, wrapper));
                 binary_encoders.push(self.wrapper_encoder_bytes(shape.message, wrapper));
-                binary_decoders.push(self.wrapper_decoder_bytes(shape.message, wrapper));
+                binary_decoders.extend(self.wrapper_decoder_bytes(shape.message, wrapper));
             }
             for oneof in &shape.oneofs {
                 types.push(self.oneof_type(&package.module, shape.message, oneof));
                 encoders.push(self.oneof_encoder(oneof));
-                decoders.push(self.oneof_decoder(oneof));
+                decoders.extend(self.oneof_decoder(oneof, shape.message.recursive));
                 binary_encoders.push(self.oneof_encoder_bytes(oneof));
             }
         }
@@ -960,6 +978,7 @@ mod tests {
             fields,
             oneofs: Vec::new(),
             wrapper: None,
+            recursive: false,
             doc: crate::ir::Doc::default(),
         }
     }
@@ -973,6 +992,7 @@ mod tests {
             cardinality,
             ty,
             cyclic: false,
+            recursive: false,
             jstype: crate::ir::JsType::Normal,
             unpacked: false,
             annotations: crate::ir::Annotations::default(),

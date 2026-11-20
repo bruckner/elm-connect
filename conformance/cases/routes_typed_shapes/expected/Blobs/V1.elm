@@ -382,10 +382,24 @@ decodeLabelBlobRequestWith types =
 -}
 decodeFolder : Json.Decode.Decoder Folder
 decodeFolder =
+    Proto.Json.atLevel 1 levelsFolder
+
+
+{-| [`decodeFolder`](#decodeFolder) at each depth up to the runtime's limit, built once.
+-}
+levelsFolder : Proto.Json.Levels Folder
+levelsFolder =
+    Proto.Json.levels levelFolder
+
+
+{-| [`decodeFolder`](#decodeFolder) built for one nesting depth, the outermost message of its cycle at 1.
+-}
+levelFolder : Int -> Json.Decode.Decoder Folder
+levelFolder depth =
     Proto.Json.message
         (Json.Decode.succeed Folder
             |> Proto.Json.messageField "name" "" Proto.Json.string
-            |> Proto.Json.messageField "parent" Nothing (Json.Decode.map Just decodeFolder_)
+            |> Proto.Json.messageField "parent" Nothing (Json.Decode.map Just (Json.Decode.map Folder_ (Proto.Json.deeper depth (\_ -> levelsFolder))))
         )
 
 
@@ -642,6 +656,27 @@ decodeLabelBlobRequestBytes =
 -}
 mergeFolderBytes : Folder -> Proto.Binary.Decoder Folder
 mergeFolderBytes =
+    mergeFolderBytesAt 1
+
+
+{-| [`mergeFolderBytes`](#mergeFolderBytes) at a nesting depth, the outermost message of its cycle at 1: its fields on the cycle are read one deeper, and fail past the runtime's limit.
+-}
+mergeFolderBytesAt : Int -> Folder -> Proto.Binary.Decoder Folder
+mergeFolderBytesAt =
+    Proto.Binary.level mergeFolderBytesLevels
+
+
+{-| [`mergeFolderBytes`](#mergeFolderBytes) at each depth up to the runtime's limit, built once.
+-}
+mergeFolderBytesLevels : Proto.Binary.Levels Folder
+mergeFolderBytesLevels =
+    Proto.Binary.levels mergeFolderBytesLevel
+
+
+{-| [`mergeFolderBytes`](#mergeFolderBytes) built for one nesting depth.
+-}
+mergeFolderBytesLevel : Int -> Folder -> Proto.Binary.Decoder Folder
+mergeFolderBytesLevel depth =
     Proto.Binary.merge
         "blobs.v1.Folder"
         (\number wire value ->
@@ -659,7 +694,7 @@ mergeFolderBytes =
 
                 2 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeFolder_Bytes mergeFolder_Bytes (Folder_ defaultFolder))
+                        (Proto.Binary.recursive depth encodeFolder_Bytes mergeFolder_BytesAt (Folder_ defaultFolder))
                         value.parent
                         (\v ->
                             { name = value.name
@@ -687,6 +722,13 @@ decodeFolderBytes =
 mergeFolder_Bytes : Folder_ -> Proto.Binary.Decoder Folder_
 mergeFolder_Bytes (Folder_ value) =
     Proto.Binary.map Folder_ (mergeFolderBytes value)
+
+
+{-| Decodes a [`Folder_`](#Folder_) from protobuf binary into the one given, at a nesting depth.
+-}
+mergeFolder_BytesAt : Int -> Folder_ -> Proto.Binary.Decoder Folder_
+mergeFolder_BytesAt depth (Folder_ value) =
+    Proto.Binary.map Folder_ (mergeFolderBytesAt depth value)
 
 
 {-| Decodes a [`Slots`](#Slots) from protobuf binary into the one given, as protobuf merges a message that arrives twice.

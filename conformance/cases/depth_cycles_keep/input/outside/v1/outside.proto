@@ -1,0 +1,11 @@
+// A cycle reached from another package: its decoders start at depth 1.
+syntax = "proto3";
+
+package outside.v1;
+
+import "cycles/v1/cycles.proto";
+
+message Holder {
+  cycles.v1.Tree tree = 1;
+  cycles.v1.Person person = 2;
+}

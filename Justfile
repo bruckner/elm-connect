@@ -235,6 +235,7 @@ test-with elm:
 bless:
     ELM_CONNECT_BLESS=1 cargo test -p elm-connect-gen --test conformance -- --exact golden diagnostics
     ELM_CONNECT_BLESS=1 cargo test -p elm-connect-gen --test routes -- --exact the_elm_replay_is_current the_route_properties_are_current the_typed_shapes_are_current
+    ELM_CONNECT_BLESS=1 cargo test -p elm-connect-gen --test depth
 
 # The live suite (design section 7, conformance/README.md): the runtime,
 # compiled into conformance/live's headless program and run from Node,

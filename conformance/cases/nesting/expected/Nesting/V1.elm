@@ -594,11 +594,25 @@ decodeOuterInnerDeepest =
 -}
 decodeNode : Json.Decode.Decoder Node
 decodeNode =
+    Proto.Json.atLevel 1 levelsNode
+
+
+{-| [`decodeNode`](#decodeNode) at each depth up to the runtime's limit, built once.
+-}
+levelsNode : Proto.Json.Levels Node
+levelsNode =
+    Proto.Json.levels levelNode
+
+
+{-| [`decodeNode`](#decodeNode) built for one nesting depth, the outermost message of its cycle at 1.
+-}
+levelNode : Int -> Json.Decode.Decoder Node
+levelNode depth =
     Proto.Json.message
         (Json.Decode.succeed Node
             |> Proto.Json.messageField "label" "" Proto.Json.string
-            |> Proto.Json.messageField "children" [] (Json.Decode.list decodeNode_)
-            |> Proto.Json.messageFieldEither "byName" "by_name" Dict.empty (Proto.Json.stringDict decodeNode_)
+            |> Proto.Json.messageField "children" [] (Json.Decode.list (Json.Decode.map Node_ (Proto.Json.deeper depth (\_ -> levelsNode))))
+            |> Proto.Json.messageFieldEither "byName" "by_name" Dict.empty (Proto.Json.stringDict (Json.Decode.map Node_ (Proto.Json.deeper depth (\_ -> levelsNode))))
         )
 
 
@@ -613,10 +627,24 @@ decodeNode_ =
 -}
 decodePerson : Json.Decode.Decoder Person
 decodePerson =
+    Proto.Json.atLevel 1 levelsPerson
+
+
+{-| [`decodePerson`](#decodePerson) at each depth up to the runtime's limit, built once.
+-}
+levelsPerson : Proto.Json.Levels Person
+levelsPerson =
+    Proto.Json.levels levelPerson
+
+
+{-| [`decodePerson`](#decodePerson) built for one nesting depth, the outermost message of its cycle at 1.
+-}
+levelPerson : Int -> Json.Decode.Decoder Person
+levelPerson depth =
     Proto.Json.message
         (Json.Decode.succeed Person
             |> Proto.Json.messageField "name" "" Proto.Json.string
-            |> Proto.Json.messageField "employer" Nothing (Json.Decode.map Just decodeCompany_)
+            |> Proto.Json.messageField "employer" Nothing (Json.Decode.map Just (Json.Decode.map Company_ (Proto.Json.deeper depth (\_ -> levelsCompany))))
         )
 
 
@@ -631,10 +659,24 @@ decodePerson_ =
 -}
 decodeCompany : Json.Decode.Decoder Company
 decodeCompany =
+    Proto.Json.atLevel 1 levelsCompany
+
+
+{-| [`decodeCompany`](#decodeCompany) at each depth up to the runtime's limit, built once.
+-}
+levelsCompany : Proto.Json.Levels Company
+levelsCompany =
+    Proto.Json.levels levelCompany
+
+
+{-| [`decodeCompany`](#decodeCompany) built for one nesting depth, the outermost message of its cycle at 1.
+-}
+levelCompany : Int -> Json.Decode.Decoder Company
+levelCompany depth =
     Proto.Json.message
         (Json.Decode.succeed Company
             |> Proto.Json.messageField "name" "" Proto.Json.string
-            |> Proto.Json.messageField "staff" [] (Json.Decode.list decodePerson_)
+            |> Proto.Json.messageField "staff" [] (Json.Decode.list (Json.Decode.map Person_ (Proto.Json.deeper depth (\_ -> levelsPerson))))
         )
 
 
@@ -659,18 +701,39 @@ decodeForest =
 -}
 decodeExpr : Json.Decode.Decoder Expr
 decodeExpr =
+    Proto.Json.atLevel 1 levelsExpr
+
+
+{-| [`decodeExpr`](#decodeExpr) at each depth up to the runtime's limit, built once.
+-}
+levelsExpr : Proto.Json.Levels Expr
+levelsExpr =
+    Proto.Json.levels levelExpr
+
+
+{-| [`decodeExpr`](#decodeExpr) built for one nesting depth, the outermost message of its cycle at 1.
+-}
+levelExpr : Int -> Json.Decode.Decoder Expr
+levelExpr depth =
     Json.Decode.succeed Expr
-        |> Proto.Json.oneof decodeExprValue
+        |> Proto.Json.oneof (levelExprValue depth)
 
 
 {-| Decodes an [`ExprValue`](#ExprValue) from the members of its message's JSON object.
 -}
 decodeExprValue : Json.Decode.Decoder ExprValue
 decodeExprValue =
+    levelExprValue 1
+
+
+{-| [`decodeExprValue`](#decodeExprValue) built for one nesting depth of its message.
+-}
+levelExprValue : Int -> Json.Decode.Decoder ExprValue
+levelExprValue depth =
     Proto.Json.members "value"
         ExprValueUnset
         [ Proto.Json.member "number" (Json.Decode.map ExprValueNumber Proto.Json.int64)
-        , Proto.Json.member "sum" (Json.Decode.map ExprValueSum (Json.Decode.lazy (\_ -> decodeSum)))
+        , Proto.Json.member "sum" (Json.Decode.map ExprValueSum (Proto.Json.deeper depth (\_ -> levelsSum)))
         ]
 
 
@@ -678,9 +741,23 @@ decodeExprValue =
 -}
 decodeSum : Json.Decode.Decoder Sum
 decodeSum =
+    Proto.Json.atLevel 1 levelsSum
+
+
+{-| [`decodeSum`](#decodeSum) at each depth up to the runtime's limit, built once.
+-}
+levelsSum : Proto.Json.Levels Sum
+levelsSum =
+    Proto.Json.levels levelSum
+
+
+{-| [`decodeSum`](#decodeSum) built for one nesting depth, the outermost message of its cycle at 1.
+-}
+levelSum : Int -> Json.Decode.Decoder Sum
+levelSum depth =
     Proto.Json.message
         (Json.Decode.succeed Sum
-            |> Proto.Json.messageField "terms" [] (Json.Decode.list decodeExpr)
+            |> Proto.Json.messageField "terms" [] (Json.Decode.list (Proto.Json.deeper depth (\_ -> levelsExpr)))
         )
 
 
@@ -976,6 +1053,27 @@ decodeOuterInnerDeepestBytes =
 -}
 mergeNodeBytes : Node -> Proto.Binary.Decoder Node
 mergeNodeBytes =
+    mergeNodeBytesAt 1
+
+
+{-| [`mergeNodeBytes`](#mergeNodeBytes) at a nesting depth, the outermost message of its cycle at 1: its fields on the cycle are read one deeper, and fail past the runtime's limit.
+-}
+mergeNodeBytesAt : Int -> Node -> Proto.Binary.Decoder Node
+mergeNodeBytesAt =
+    Proto.Binary.level mergeNodeBytesLevels
+
+
+{-| [`mergeNodeBytes`](#mergeNodeBytes) at each depth up to the runtime's limit, built once.
+-}
+mergeNodeBytesLevels : Proto.Binary.Levels Node
+mergeNodeBytesLevels =
+    Proto.Binary.levels mergeNodeBytesLevel
+
+
+{-| [`mergeNodeBytes`](#mergeNodeBytes) built for one nesting depth.
+-}
+mergeNodeBytesLevel : Int -> Node -> Proto.Binary.Decoder Node
+mergeNodeBytesLevel depth =
     Proto.Binary.merge
         "nesting.v1.Node"
         (\number wire value ->
@@ -994,7 +1092,7 @@ mergeNodeBytes =
 
                 2 ->
                     Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeNode_Bytes mergeNode_Bytes (Node_ defaultNode))
+                        (Proto.Binary.recursive depth encodeNode_Bytes mergeNode_BytesAt (Node_ defaultNode))
                         (\v ->
                             { label = value.label
                             , children = v
@@ -1008,7 +1106,7 @@ mergeNodeBytes =
                 3 ->
                     Proto.Binary.mapEntry
                         Proto.Binary.string
-                        (Proto.Binary.embedded encodeNode_Bytes mergeNode_Bytes (Node_ defaultNode))
+                        (Proto.Binary.recursive depth encodeNode_Bytes mergeNode_BytesAt (Node_ defaultNode))
                         (\k v ->
                             { label = value.label
                             , children = value.children
@@ -1043,10 +1141,38 @@ mergeNode_Bytes (Node_ value) =
     Proto.Binary.map Node_ (mergeNodeBytes value)
 
 
+{-| Decodes a [`Node_`](#Node_) from protobuf binary into the one given, at a nesting depth.
+-}
+mergeNode_BytesAt : Int -> Node_ -> Proto.Binary.Decoder Node_
+mergeNode_BytesAt depth (Node_ value) =
+    Proto.Binary.map Node_ (mergeNodeBytesAt depth value)
+
+
 {-| Decodes a [`Person`](#Person) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
 mergePersonBytes : Person -> Proto.Binary.Decoder Person
 mergePersonBytes =
+    mergePersonBytesAt 1
+
+
+{-| [`mergePersonBytes`](#mergePersonBytes) at a nesting depth, the outermost message of its cycle at 1: its fields on the cycle are read one deeper, and fail past the runtime's limit.
+-}
+mergePersonBytesAt : Int -> Person -> Proto.Binary.Decoder Person
+mergePersonBytesAt =
+    Proto.Binary.level mergePersonBytesLevels
+
+
+{-| [`mergePersonBytes`](#mergePersonBytes) at each depth up to the runtime's limit, built once.
+-}
+mergePersonBytesLevels : Proto.Binary.Levels Person
+mergePersonBytesLevels =
+    Proto.Binary.levels mergePersonBytesLevel
+
+
+{-| [`mergePersonBytes`](#mergePersonBytes) built for one nesting depth.
+-}
+mergePersonBytesLevel : Int -> Person -> Proto.Binary.Decoder Person
+mergePersonBytesLevel depth =
     Proto.Binary.merge
         "nesting.v1.Person"
         (\number wire value ->
@@ -1064,7 +1190,7 @@ mergePersonBytes =
 
                 2 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeCompany_Bytes mergeCompany_Bytes (Company_ defaultCompany))
+                        (Proto.Binary.recursive depth encodeCompany_Bytes mergeCompany_BytesAt (Company_ defaultCompany))
                         value.employer
                         (\v ->
                             { name = value.name
@@ -1094,10 +1220,38 @@ mergePerson_Bytes (Person_ value) =
     Proto.Binary.map Person_ (mergePersonBytes value)
 
 
+{-| Decodes a [`Person_`](#Person_) from protobuf binary into the one given, at a nesting depth.
+-}
+mergePerson_BytesAt : Int -> Person_ -> Proto.Binary.Decoder Person_
+mergePerson_BytesAt depth (Person_ value) =
+    Proto.Binary.map Person_ (mergePersonBytesAt depth value)
+
+
 {-| Decodes a [`Company`](#Company) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
 mergeCompanyBytes : Company -> Proto.Binary.Decoder Company
 mergeCompanyBytes =
+    mergeCompanyBytesAt 1
+
+
+{-| [`mergeCompanyBytes`](#mergeCompanyBytes) at a nesting depth, the outermost message of its cycle at 1: its fields on the cycle are read one deeper, and fail past the runtime's limit.
+-}
+mergeCompanyBytesAt : Int -> Company -> Proto.Binary.Decoder Company
+mergeCompanyBytesAt =
+    Proto.Binary.level mergeCompanyBytesLevels
+
+
+{-| [`mergeCompanyBytes`](#mergeCompanyBytes) at each depth up to the runtime's limit, built once.
+-}
+mergeCompanyBytesLevels : Proto.Binary.Levels Company
+mergeCompanyBytesLevels =
+    Proto.Binary.levels mergeCompanyBytesLevel
+
+
+{-| [`mergeCompanyBytes`](#mergeCompanyBytes) built for one nesting depth.
+-}
+mergeCompanyBytesLevel : Int -> Company -> Proto.Binary.Decoder Company
+mergeCompanyBytesLevel depth =
     Proto.Binary.merge
         "nesting.v1.Company"
         (\number wire value ->
@@ -1115,7 +1269,7 @@ mergeCompanyBytes =
 
                 2 ->
                     Proto.Binary.repeated
-                        (Proto.Binary.embedded encodePerson_Bytes mergePerson_Bytes (Person_ defaultPerson))
+                        (Proto.Binary.recursive depth encodePerson_Bytes mergePerson_BytesAt (Person_ defaultPerson))
                         (\v ->
                             { name = value.name
                             , staff = v
@@ -1147,6 +1301,13 @@ decodeCompanyBytes =
 mergeCompany_Bytes : Company_ -> Proto.Binary.Decoder Company_
 mergeCompany_Bytes (Company_ value) =
     Proto.Binary.map Company_ (mergeCompanyBytes value)
+
+
+{-| Decodes a [`Company_`](#Company_) from protobuf binary into the one given, at a nesting depth.
+-}
+mergeCompany_BytesAt : Int -> Company_ -> Proto.Binary.Decoder Company_
+mergeCompany_BytesAt depth (Company_ value) =
+    Proto.Binary.map Company_ (mergeCompanyBytesAt depth value)
 
 
 {-| Decodes a [`Forest`](#Forest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
@@ -1188,6 +1349,27 @@ decodeForestBytes =
 -}
 mergeExprBytes : Expr -> Proto.Binary.Decoder Expr
 mergeExprBytes =
+    mergeExprBytesAt 1
+
+
+{-| [`mergeExprBytes`](#mergeExprBytes) at a nesting depth, the outermost message of its cycle at 1: its fields on the cycle are read one deeper, and fail past the runtime's limit.
+-}
+mergeExprBytesAt : Int -> Expr -> Proto.Binary.Decoder Expr
+mergeExprBytesAt =
+    Proto.Binary.level mergeExprBytesLevels
+
+
+{-| [`mergeExprBytes`](#mergeExprBytes) at each depth up to the runtime's limit, built once.
+-}
+mergeExprBytesLevels : Proto.Binary.Levels Expr
+mergeExprBytesLevels =
+    Proto.Binary.levels mergeExprBytesLevel
+
+
+{-| [`mergeExprBytes`](#mergeExprBytes) built for one nesting depth.
+-}
+mergeExprBytesLevel : Int -> Expr -> Proto.Binary.Decoder Expr
+mergeExprBytesLevel depth =
     Proto.Binary.merge
         "nesting.v1.Expr"
         (\number wire value ->
@@ -1204,7 +1386,7 @@ mergeExprBytes =
 
                 2 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeSumBytes mergeSumBytes defaultSum)
+                        (Proto.Binary.recursive depth encodeSumBytes mergeSumBytesAt defaultSum)
                         (case value.value of
                             ExprValueSum member ->
                                 Just member
@@ -1236,13 +1418,34 @@ decodeExprBytes =
 -}
 mergeSumBytes : Sum -> Proto.Binary.Decoder Sum
 mergeSumBytes =
+    mergeSumBytesAt 1
+
+
+{-| [`mergeSumBytes`](#mergeSumBytes) at a nesting depth, the outermost message of its cycle at 1: its fields on the cycle are read one deeper, and fail past the runtime's limit.
+-}
+mergeSumBytesAt : Int -> Sum -> Proto.Binary.Decoder Sum
+mergeSumBytesAt =
+    Proto.Binary.level mergeSumBytesLevels
+
+
+{-| [`mergeSumBytes`](#mergeSumBytes) at each depth up to the runtime's limit, built once.
+-}
+mergeSumBytesLevels : Proto.Binary.Levels Sum
+mergeSumBytesLevels =
+    Proto.Binary.levels mergeSumBytesLevel
+
+
+{-| [`mergeSumBytes`](#mergeSumBytes) built for one nesting depth.
+-}
+mergeSumBytesLevel : Int -> Sum -> Proto.Binary.Decoder Sum
+mergeSumBytesLevel depth =
     Proto.Binary.merge
         "nesting.v1.Sum"
         (\number wire value ->
             case number of
                 1 ->
                     Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeExprBytes mergeExprBytes defaultExpr)
+                        (Proto.Binary.recursive depth encodeExprBytes mergeExprBytesAt defaultExpr)
                         (\v ->
                             { terms = v
                             }

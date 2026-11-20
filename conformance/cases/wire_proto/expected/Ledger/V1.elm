@@ -251,13 +251,27 @@ decodeKind =
 -}
 decodeEntry : Json.Decode.Decoder Entry
 decodeEntry =
+    Proto.Json.atLevel 1 levelsEntry
+
+
+{-| [`decodeEntry`](#decodeEntry) at each depth up to the runtime's limit, built once.
+-}
+levelsEntry : Proto.Json.Levels Entry
+levelsEntry =
+    Proto.Json.levels levelEntry
+
+
+{-| [`decodeEntry`](#decodeEntry) built for one nesting depth, the outermost message of its cycle at 1.
+-}
+levelEntry : Int -> Json.Decode.Decoder Entry
+levelEntry depth =
     Proto.Json.message
         (Json.Decode.succeed Entry
             |> Proto.Json.messageField "memo" "" Proto.Json.string
             |> Proto.Json.messageField "amount" "0" Proto.Json.int64
             |> Proto.Json.messageField "kind" KindUnspecified decodeKind
             |> Proto.Json.messageField "tags" Dict.empty (Proto.Json.stringDict Proto.Json.int32)
-            |> Proto.Json.oneof decodeEntrySource
+            |> Proto.Json.oneof (levelEntrySource depth)
             |> Proto.Json.messageField "marks" [] (Json.Decode.list Proto.Json.int32)
         )
 
@@ -266,10 +280,17 @@ decodeEntry =
 -}
 decodeEntrySource : Json.Decode.Decoder EntrySource
 decodeEntrySource =
+    levelEntrySource 1
+
+
+{-| [`decodeEntrySource`](#decodeEntrySource) built for one nesting depth of its message.
+-}
+levelEntrySource : Int -> Json.Decode.Decoder EntrySource
+levelEntrySource depth =
     Proto.Json.members "source"
         EntrySourceUnset
         [ Proto.Json.member "account" (Json.Decode.map EntrySourceAccount Proto.Json.string)
-        , Proto.Json.member "reversal" (Json.Decode.map EntrySourceReversal (Json.Decode.lazy (\_ -> decodeEntry)))
+        , Proto.Json.member "reversal" (Json.Decode.map EntrySourceReversal (Proto.Json.deeper depth (\_ -> levelsEntry)))
         ]
 
 
@@ -364,6 +385,27 @@ decodeKindBytes number =
 -}
 mergeEntryBytes : Entry -> Proto.Binary.Decoder Entry
 mergeEntryBytes =
+    mergeEntryBytesAt 1
+
+
+{-| [`mergeEntryBytes`](#mergeEntryBytes) at a nesting depth, the outermost message of its cycle at 1: its fields on the cycle are read one deeper, and fail past the runtime's limit.
+-}
+mergeEntryBytesAt : Int -> Entry -> Proto.Binary.Decoder Entry
+mergeEntryBytesAt =
+    Proto.Binary.level mergeEntryBytesLevels
+
+
+{-| [`mergeEntryBytes`](#mergeEntryBytes) at each depth up to the runtime's limit, built once.
+-}
+mergeEntryBytesLevels : Proto.Binary.Levels Entry
+mergeEntryBytesLevels =
+    Proto.Binary.levels mergeEntryBytesLevel
+
+
+{-| [`mergeEntryBytes`](#mergeEntryBytes) built for one nesting depth.
+-}
+mergeEntryBytesLevel : Int -> Entry -> Proto.Binary.Decoder Entry
+mergeEntryBytesLevel depth =
     Proto.Binary.merge
         "ledger.v1.Entry"
         (\number wire value ->
@@ -446,7 +488,7 @@ mergeEntryBytes =
 
                 6 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeEntryBytes mergeEntryBytes defaultEntry)
+                        (Proto.Binary.recursive depth encodeEntryBytes mergeEntryBytesAt defaultEntry)
                         (case value.source of
                             EntrySourceReversal member ->
                                 Just member

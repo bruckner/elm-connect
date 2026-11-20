@@ -90,17 +90,20 @@ type alias Binary =
     which an `Int` holds exactly.
   - `InvalidUtf8`: a `string` field whose bytes are not UTF-8.
   - `Unlocated`: the decoder failed, but could not say where or why. This
-    is a bug in elm-connect: please report it, with the input.
+    is a bug in elm-connect: please report it, with the input. Input nested
+    too deeply for the JavaScript stack is `TooDeep` instead, long before
+    the stack runs out.
+  - `TooDeep`: a recursive message, or a `Struct`, `Value` or `ListValue`,
+    nested more than 100 levels deep, as protobuf implementations refuse:
+    `path` leads to the field one level too deep, and `offset` is its
+    length, the byte after its key.
 
-Two more are reserved, so this release never gives them; a `case` on a
-`Reason` covers them all the same:
+One more is reserved, so this release never gives it; a `case` on a
+`Reason` covers it all the same:
 
   - `MissingRequired`: a proto2 `required` field, its number given here,
     absent from the message: the last entry of `path`, or `typeName` when
     `path` is empty. For proto2, which the generator does not read.
-  - `TooDeep`: a message nested past the decoder's depth limit, for when
-    the decoders gain one. Protobuf implementations refuse input nested
-    past 100 levels; these decoders have no limit yet.
 
 -}
 type Reason
