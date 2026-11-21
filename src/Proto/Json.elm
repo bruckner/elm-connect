@@ -1,6 +1,6 @@
 module Proto.Json exposing
     ( field, fieldEither, valueField, valueFieldEither, emptyMessage
-    , message, messageField, messageFieldEither, messageValueField, messageValueFieldEither
+    , message, messageField, messageFieldEither, messageValueField, messageValueFieldEither, messageValueFieldAt, messageValueFieldEitherAt
     , objectOfFields
     , implicitField, implicitFloatField, implicitBytesField, repeatedField, dictField, boolMapField
     , tryObjectOfFields, tryOptionalField, tryRepeatedField, tryDictField, tryBoolMapField
@@ -47,7 +47,7 @@ Generated decoders check once that the JSON is an object and then read each
 field without checking again, which makes a message decode faster than a
 pipeline of [`field`](#field) steps, each checking for itself.
 
-@docs message, messageField, messageFieldEither, messageValueField, messageValueFieldEither
+@docs message, messageField, messageFieldEither, messageValueField, messageValueFieldEither, messageValueFieldAt, messageValueFieldEitherAt
 
 
 # Encoding fields
@@ -376,6 +376,22 @@ messageValueField name =
 -}
 messageValueFieldEither : String -> String -> Decoder (Maybe Proto.Value.Value -> b) -> Decoder b
 messageValueFieldEither jsonName protoName =
+    messageValueFieldEitherAt jsonName protoName 0
+
+
+{-| [`messageValueField`](#messageValueField) for a message on a cycle at
+`depth`, which the `Value` counts on from.
+-}
+messageValueFieldAt : String -> Int -> Decoder (Maybe Proto.Value.Value -> b) -> Decoder b
+messageValueFieldAt name =
+    messageValueFieldEitherAt name name
+
+
+{-| [`messageValueFieldEither`](#messageValueFieldEither) at a depth, as
+[`messageValueFieldAt`](#messageValueFieldAt).
+-}
+messageValueFieldEitherAt : String -> String -> Int -> Decoder (Maybe Proto.Value.Value -> b) -> Decoder b
+messageValueFieldEitherAt jsonName protoName depth =
     Json.Decode.map2 (|>)
         (Json.Decode.value
             |> Json.Decode.andThen
@@ -385,7 +401,7 @@ messageValueFieldEither jsonName protoName =
                             Json.Decode.fail problem
 
                         Ok found ->
-                            checkedJson found
+                            checkedJsonAt depth found
                 )
         )
 
@@ -2444,10 +2460,15 @@ encodeValue =
 reads one.
 -}
 checkedJson : Maybe ( String, Value ) -> Decoder (Maybe Proto.Value.Value)
-checkedJson found =
+checkedJson =
+    checkedJsonAt 0
+
+
+checkedJsonAt : Int -> Maybe ( String, Value ) -> Decoder (Maybe Proto.Value.Value)
+checkedJsonAt depth found =
     case found of
         Just ( name, _ ) ->
-            Json.Decode.field name (Json.Decode.map Just jsonValue)
+            Json.Decode.field name (Json.Decode.map Just (Proto.Value.decoderAt depth))
 
         Nothing ->
             Json.Decode.succeed Nothing

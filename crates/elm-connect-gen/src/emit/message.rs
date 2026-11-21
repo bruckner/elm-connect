@@ -338,6 +338,12 @@ impl Emitter {
                             &field.proto_name,
                             [zero, decoder],
                         ),
+                        None if self.deep.is_some() => self.field_step(
+                            ("messageValueFieldAt", "messageValueFieldEitherAt"),
+                            &field.json_name,
+                            &field.proto_name,
+                            [var(DEPTH)],
+                        ),
                         None => self.field_step(
                             ("messageValueField", "messageValueFieldEither"),
                             &field.json_name,
