@@ -2,6 +2,7 @@ module Proto.Error exposing
     ( Error(..)
     , Binary, Reason(..)
     , toString
+    , tooDeepJson
     )
 
 {-| Why a message could not be read, written or unpacked: one type for the
@@ -24,11 +25,16 @@ one as `BadBinary`.
 
 @docs toString
 
+
+# Overflow
+
+@docs tooDeepJson
+
 -}
 
 import Json.Decode
 import Json.Encode
-import Proto.Internal.JsonError as JsonError
+import Proto.Internal.Guard as Guard
 
 
 {-| Why a message could not be read, written or unpacked:
@@ -149,7 +155,8 @@ toString error =
                 ++ "."
 
         BadJson jsonError ->
-            Json.Decode.errorToString (JsonError.scrub jsonError)
+            Guard.run (\() -> Json.Decode.errorToString jsonError)
+                |> Maybe.withDefault (jsonPaths jsonError)
 
         TypeMismatch { expected, actual } ->
             "An Any holding " ++ actual ++ " was unpacked as " ++ expected ++ "."
@@ -207,3 +214,41 @@ pathText path =
                         |> List.map (\( name, number ) -> "field " ++ String.fromInt number ++ " of " ++ name)
                         |> String.join " in "
                    )
+
+
+{-| The failure a JSON read gives when its input is nested too deeply to read
+at all, deeper than the stack it runs on: "Expecting JSON shallow enough to
+read". It carries no JSON.
+-}
+tooDeepJson : Json.Decode.Error
+tooDeepJson =
+    Json.Decode.Failure "Expecting JSON shallow enough to read" Json.Encode.null
+
+
+{-| A JSON failure described without the JSON it failed on, for one whose
+JSON is too deep to print: each failure's path and text.
+-}
+jsonPaths : Json.Decode.Error -> String
+jsonPaths error =
+    jsonPathsHelp [ ( "json", error ) ] []
+        |> List.reverse
+        |> String.join "\n"
+
+
+jsonPathsHelp : List ( String, Json.Decode.Error ) -> List String -> List String
+jsonPathsHelp work found =
+    case work of
+        [] ->
+            found
+
+        ( path, Json.Decode.Field name inner ) :: rest ->
+            jsonPathsHelp (( path ++ "." ++ name, inner ) :: rest) found
+
+        ( path, Json.Decode.Index index inner ) :: rest ->
+            jsonPathsHelp (( path ++ "[" ++ String.fromInt index ++ "]", inner ) :: rest) found
+
+        ( path, Json.Decode.OneOf ways ) :: rest ->
+            jsonPathsHelp (List.map (Tuple.pair path) ways ++ rest) found
+
+        ( path, Json.Decode.Failure text _ ) :: rest ->
+            jsonPathsHelp rest (("Problem with the value at " ++ path ++ ": " ++ text) :: found)

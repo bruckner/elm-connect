@@ -39,6 +39,7 @@ import Json.Encode
 import Proto.Error
 import Proto.Field as Field
 import Proto.Internal.Binary
+import Proto.Internal.Guard as Guard
 import Proto.Internal.JsonError as JsonError
 import Proto.Internal.Message as Internal
 import Proto.Internal.Registry as Registry exposing (Registry)
@@ -126,7 +127,7 @@ It fails two ways, so it gives a [`Proto.Error.Error`](Proto-Error#Error):
 -}
 decodeJson : Registry -> Message a -> Json.Encode.Value -> Result Proto.Error.Error a
 decodeJson registry (Internal.Message _ codecs) json =
-    case Json.Decode.decodeValue (codecs.decodeJson registry) json of
+    case Guard.run (\() -> Json.Decode.decodeValue (codecs.decodeJson registry) json) |> Maybe.withDefault (Err Proto.Error.tooDeepJson) of
         Ok value ->
             Ok value
 
