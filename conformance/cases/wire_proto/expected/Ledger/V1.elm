@@ -542,7 +542,7 @@ mergeEntryBytesLevel depth =
 -}
 decodeEntryBytes : Proto.Binary.Decoder Entry
 decodeEntryBytes =
-    mergeEntryBytes defaultEntry
+    Proto.Binary.leveled mergeEntryBytesAt defaultEntry
 
 
 {-| Decodes a [`GetEntryRequest`](#GetEntryRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.

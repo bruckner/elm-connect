@@ -1131,7 +1131,7 @@ mergeNodeBytesLevel depth =
 -}
 decodeNodeBytes : Proto.Binary.Decoder Node
 decodeNodeBytes =
-    mergeNodeBytes defaultNode
+    Proto.Binary.leveled mergeNodeBytesAt defaultNode
 
 
 {-| Decodes a [`Node_`](#Node_) from protobuf binary into the one given.
@@ -1210,7 +1210,7 @@ mergePersonBytesLevel depth =
 -}
 decodePersonBytes : Proto.Binary.Decoder Person
 decodePersonBytes =
-    mergePersonBytes defaultPerson
+    Proto.Binary.leveled mergePersonBytesAt defaultPerson
 
 
 {-| Decodes a [`Person_`](#Person_) from protobuf binary into the one given.
@@ -1293,7 +1293,7 @@ mergeCompanyBytesLevel depth =
 -}
 decodeCompanyBytes : Proto.Binary.Decoder Company
 decodeCompanyBytes =
-    mergeCompanyBytes defaultCompany
+    Proto.Binary.leveled mergeCompanyBytesAt defaultCompany
 
 
 {-| Decodes a [`Company_`](#Company_) from protobuf binary into the one given.
@@ -1411,7 +1411,7 @@ mergeExprBytesLevel depth =
 -}
 decodeExprBytes : Proto.Binary.Decoder Expr
 decodeExprBytes =
-    mergeExprBytes defaultExpr
+    Proto.Binary.leveled mergeExprBytesAt defaultExpr
 
 
 {-| Decodes a [`Sum`](#Sum) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
@@ -1467,4 +1467,4 @@ mergeSumBytesLevel depth =
 -}
 decodeSumBytes : Proto.Binary.Decoder Sum
 decodeSumBytes =
-    mergeSumBytes defaultSum
+    Proto.Binary.leveled mergeSumBytesAt defaultSum

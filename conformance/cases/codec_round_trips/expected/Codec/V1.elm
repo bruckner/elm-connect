@@ -41,6 +41,7 @@ import Proto.Error
 import Proto.Json
 import Proto.Message
 import Proto.Registry
+import Proto.Value
 import Proto.Version
 import Proto.WellKnown
 import Time
@@ -269,7 +270,7 @@ type ChoicePick
     | ChoicePickKind Kind
     | ChoicePickLeaf Leaf
     | ChoicePickNothing
-    | ChoicePickJson Json.Encode.Value
+    | ChoicePickJson Proto.Value.Value
     | ChoicePickAt Time.Posix
     | ChoicePickWrapped Int
     | ChoicePickTwoWords String
@@ -409,20 +410,20 @@ type TreeLink
 -}
 type alias WellKnown =
     { any : Maybe Proto.Any.Any
-    , struct : Maybe (Dict String Json.Encode.Value)
-    , list : Maybe (List Json.Encode.Value)
-    , value : Maybe Json.Encode.Value
+    , struct : Maybe (Dict String Proto.Value.Value)
+    , list : Maybe (List Proto.Value.Value)
+    , value : Maybe Proto.Value.Value
     , timestamp : Maybe Time.Posix
     , duration : Maybe Duration
     , mask : Maybe (List String)
     , empty : ()
     , anys : List Proto.Any.Any
-    , values : List Json.Encode.Value
-    , valueMap : Dict String Json.Encode.Value
+    , values : List Proto.Value.Value
+    , valueMap : Dict String Proto.Value.Value
     , timestamps : List Time.Posix
     , durations : List Duration
     , empties : List ()
-    , structs : Dict Int (Dict String Json.Encode.Value)
+    , structs : Dict Int (Dict String Proto.Value.Value)
     , nullValue : ()
     , nullValues : List ()
     , nullMap : Dict String ()
@@ -1094,7 +1095,7 @@ encodeChoicePick value =
             ]
 
         ChoicePickJson member ->
-            [ ( "json", Just member )
+            [ ( "json", Just (Proto.Json.encodeValue member) )
             ]
 
         ChoicePickAt member ->
@@ -1215,14 +1216,14 @@ encodeWellKnownWith types value =
         [ ( "any", Proto.Json.tryOptionalField (Proto.Json.encodeAnyWith types) value.any )
         , ( "struct", Ok (Maybe.map Proto.Json.encodeStruct value.struct) )
         , ( "list", Ok (Maybe.map Proto.Json.encodeListValue value.list) )
-        , ( "value", Ok value.value )
+        , ( "value", Ok (Maybe.map Proto.Json.encodeValue value.value) )
         , ( "timestamp", Ok (Maybe.map Proto.Json.encodeTimestamp value.timestamp) )
         , ( "duration", Ok (Maybe.map Proto.Json.encodeDuration value.duration) )
         , ( "mask", Ok (Maybe.map Proto.Json.encodeFieldMask value.mask) )
         , ( "empty", Ok (Just (Proto.Json.encodeEmpty value.empty)) )
         , ( "anys", Proto.Json.tryRepeatedField (Proto.Json.encodeAnyWith types) value.anys )
-        , ( "values", Ok (Proto.Json.repeatedField identity value.values) )
-        , ( "valueMap", Ok (Proto.Json.dictField identity identity value.valueMap) )
+        , ( "values", Ok (Proto.Json.repeatedField Proto.Json.encodeValue value.values) )
+        , ( "valueMap", Ok (Proto.Json.dictField identity Proto.Json.encodeValue value.valueMap) )
         , ( "timestamps", Ok (Proto.Json.repeatedField Proto.Json.encodeTimestamp value.timestamps) )
         , ( "durations", Ok (Proto.Json.repeatedField Proto.Json.encodeDuration value.durations) )
         , ( "empties", Ok (Proto.Json.repeatedField Proto.Json.encodeEmpty value.empties) )
@@ -1570,8 +1571,8 @@ decodeWellKnownWith types =
             |> Proto.Json.messageField "mask" Nothing (Json.Decode.map Just Proto.Json.fieldMask)
             |> Proto.Json.messageField "empty" () Proto.Json.empty
             |> Proto.Json.messageField "anys" [] (Json.Decode.list (Proto.Json.anyWith types))
-            |> Proto.Json.messageField "values" [] (Json.Decode.list Json.Decode.value)
-            |> Proto.Json.messageFieldEither "valueMap" "value_map" Dict.empty (Proto.Json.stringDict Json.Decode.value)
+            |> Proto.Json.messageField "values" [] (Json.Decode.list Proto.Json.jsonValue)
+            |> Proto.Json.messageFieldEither "valueMap" "value_map" Dict.empty (Proto.Json.stringDict Proto.Json.jsonValue)
             |> Proto.Json.messageField "timestamps" [] (Json.Decode.list Proto.Json.timestamp)
             |> Proto.Json.messageField "durations" [] (Json.Decode.list Proto.Json.duration)
             |> Proto.Json.messageField "empties" [] (Json.Decode.list Proto.Json.empty)
@@ -1630,7 +1631,7 @@ decodeLeaf =
 -}
 decodeEverythingWith : Proto.Registry.Registry -> Json.Decode.Decoder Everything
 decodeEverythingWith types =
-    levelEverythingWith types 1
+    levelEverythingWith types (max 1 (Proto.Json.registryDepth types))
 
 
 {-| [`decodeEverythingWith`](#decodeEverythingWith) built for one nesting depth, the outermost message of its cycle at 1.
@@ -3993,7 +3994,7 @@ mergeTreeBytesLevel depth =
 -}
 decodeTreeBytes : Proto.Binary.Decoder Tree
 decodeTreeBytes =
-    mergeTreeBytes defaultTree
+    Proto.Binary.leveled mergeTreeBytesAt defaultTree
 
 
 {-| Decodes a [`Tree_`](#Tree_) from protobuf binary into the one given.
@@ -5244,7 +5245,7 @@ mergeEverythingBytesLevel depth =
 -}
 decodeEverythingBytes : Proto.Binary.Decoder Everything
 decodeEverythingBytes =
-    mergeEverythingBytes defaultEverything
+    Proto.Binary.leveled mergeEverythingBytesAt defaultEverything
 
 
 {-| Decodes an [`Everything_`](#Everything_) from protobuf binary into the one given.

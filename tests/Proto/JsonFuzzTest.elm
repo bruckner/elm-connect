@@ -18,6 +18,7 @@ import Proto.Duration
 import Proto.Int64
 import Proto.Json
 import Proto.Timestamp
+import Proto.Value
 import Routes.V1
 import Test exposing (Test, describe, fuzz, fuzz2, test)
 import Time
@@ -643,14 +644,18 @@ jsonValueProperties =
             \members ->
                 let
                     struct =
-                        Dict.fromList members
+                        Dict.fromList (List.map (Tuple.mapSecond toValue) members)
                 in
                 Json.Decode.decodeValue Proto.Json.struct (Proto.Json.encodeStruct struct)
                     |> Result.map Proto.Json.encodeStruct
                     |> encoded
                     |> Expect.equal (Ok (Json.Encode.encode 0 (Proto.Json.encodeStruct struct)))
         , fuzz (Fuzz.list (Fuzzers.json 2)) "a ListValue round-trips" <|
-            \items ->
+            \jsonItems ->
+                let
+                    items =
+                        List.map toValue jsonItems
+                in
                 Json.Decode.decodeValue Proto.Json.listValue (Proto.Json.encodeListValue items)
                     |> Result.map Proto.Json.encodeListValue
                     |> encoded
@@ -821,3 +826,8 @@ omitDefaultsProperties =
                     ]
                     ()
         ]
+
+
+toValue : Json.Encode.Value -> Proto.Value.Value
+toValue json =
+    Proto.Value.fromJson json |> Result.withDefault Proto.Value.NullValue

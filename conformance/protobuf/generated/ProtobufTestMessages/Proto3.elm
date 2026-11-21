@@ -18,6 +18,7 @@ import Proto.Json
 import Proto.Message
 import Proto.Registry
 import Proto.Unknown
+import Proto.Value
 import Proto.Version
 import Proto.WellKnown
 import ProtobufTestMessages.Proto3.EnumOnlyProto3
@@ -366,17 +367,17 @@ type alias TestAllTypesProto3 =
     , optionalDuration : Maybe Duration
     , optionalTimestamp : Maybe Time.Posix
     , optionalFieldMask : Maybe (List String)
-    , optionalStruct : Maybe (Dict String Json.Encode.Value)
+    , optionalStruct : Maybe (Dict String Proto.Value.Value)
     , optionalAny : Maybe Proto.Any.Any
-    , optionalValue : Maybe Json.Encode.Value
+    , optionalValue : Maybe Proto.Value.Value
     , optionalNullValue : ()
     , repeatedDuration : List Duration
     , repeatedTimestamp : List Time.Posix
     , repeatedFieldmask : List (List String)
-    , repeatedStruct : List (Dict String Json.Encode.Value)
+    , repeatedStruct : List (Dict String Proto.Value.Value)
     , repeatedAny : List Proto.Any.Any
-    , repeatedValue : List Json.Encode.Value
-    , repeatedListValue : List (List Json.Encode.Value)
+    , repeatedValue : List Proto.Value.Value
+    , repeatedListValue : List (List Proto.Value.Value)
     , fieldname1 : Int
     , fieldName2 : Int
     , fieldName3 : Int
@@ -962,14 +963,14 @@ encodeTestAllTypesProto3With types value =
          , ( "optionalFieldMask", Ok (Maybe.map Proto.Json.encodeFieldMask value.optionalFieldMask) )
          , ( "optionalStruct", Ok (Maybe.map Proto.Json.encodeStruct value.optionalStruct) )
          , ( "optionalAny", Proto.Json.tryOptionalField (Proto.Json.encodeAnyWith types) value.optionalAny )
-         , ( "optionalValue", Ok value.optionalValue )
+         , ( "optionalValue", Ok (Maybe.map Proto.Json.encodeValue value.optionalValue) )
          , ( "optionalNullValue", Ok (Proto.Json.implicitField () Proto.Json.encodeNullValue value.optionalNullValue) )
          , ( "repeatedDuration", Ok (Proto.Json.repeatedField Proto.Json.encodeDuration value.repeatedDuration) )
          , ( "repeatedTimestamp", Ok (Proto.Json.repeatedField Proto.Json.encodeTimestamp value.repeatedTimestamp) )
          , ( "repeatedFieldmask", Ok (Proto.Json.repeatedField Proto.Json.encodeFieldMask value.repeatedFieldmask) )
          , ( "repeatedStruct", Ok (Proto.Json.repeatedField Proto.Json.encodeStruct value.repeatedStruct) )
          , ( "repeatedAny", Proto.Json.tryRepeatedField (Proto.Json.encodeAnyWith types) value.repeatedAny )
-         , ( "repeatedValue", Ok (Proto.Json.repeatedField identity value.repeatedValue) )
+         , ( "repeatedValue", Ok (Proto.Json.repeatedField Proto.Json.encodeValue value.repeatedValue) )
          , ( "repeatedListValue", Ok (Proto.Json.repeatedField Proto.Json.encodeListValue value.repeatedListValue) )
          , ( "fieldname1", Ok (Proto.Json.implicitField 0 Json.Encode.int value.fieldname1) )
          , ( "fieldName2", Ok (Proto.Json.implicitField 0 Json.Encode.int value.fieldName2) )
@@ -1149,7 +1150,7 @@ decodeEnumOnlyProto3Bool =
 -}
 decodeTestAllTypesProto3With : Proto.Registry.Registry -> Json.Decode.Decoder TestAllTypesProto3
 decodeTestAllTypesProto3With types =
-    levelTestAllTypesProto3With types 1
+    levelTestAllTypesProto3With types (max 1 (Proto.Json.registryDepth types))
 
 
 {-| [`decodeTestAllTypesProto3With`](#decodeTestAllTypesProto3With) built for one nesting depth, the outermost message of its cycle at 1.
@@ -1271,17 +1272,17 @@ levelTestAllTypesProto3With types depth =
             |> Proto.Json.messageFieldEither "optionalDuration" "optional_duration" Nothing (Json.Decode.map Just Proto.Json.duration)
             |> Proto.Json.messageFieldEither "optionalTimestamp" "optional_timestamp" Nothing (Json.Decode.map Just Proto.Json.timestamp)
             |> Proto.Json.messageFieldEither "optionalFieldMask" "optional_field_mask" Nothing (Json.Decode.map Just Proto.Json.fieldMask)
-            |> Proto.Json.messageFieldEither "optionalStruct" "optional_struct" Nothing (Json.Decode.map Just Proto.Json.struct)
-            |> Proto.Json.messageFieldEither "optionalAny" "optional_any" Nothing (Json.Decode.map Just (Proto.Json.anyWith types))
+            |> Proto.Json.messageFieldEither "optionalStruct" "optional_struct" Nothing (Json.Decode.map Just (Proto.Json.structAt depth))
+            |> Proto.Json.messageFieldEither "optionalAny" "optional_any" Nothing (Json.Decode.map Just (Proto.Json.anyWithAt depth types))
             |> Proto.Json.messageValueFieldEither "optionalValue" "optional_value"
             |> Proto.Json.messageFieldEither "optionalNullValue" "optional_null_value" () Proto.Json.nullValue
             |> Proto.Json.messageFieldEither "repeatedDuration" "repeated_duration" [] (Json.Decode.list Proto.Json.duration)
             |> Proto.Json.messageFieldEither "repeatedTimestamp" "repeated_timestamp" [] (Json.Decode.list Proto.Json.timestamp)
             |> Proto.Json.messageFieldEither "repeatedFieldmask" "repeated_fieldmask" [] (Json.Decode.list Proto.Json.fieldMask)
-            |> Proto.Json.messageFieldEither "repeatedStruct" "repeated_struct" [] (Json.Decode.list Proto.Json.struct)
-            |> Proto.Json.messageFieldEither "repeatedAny" "repeated_any" [] (Json.Decode.list (Proto.Json.anyWith types))
-            |> Proto.Json.messageFieldEither "repeatedValue" "repeated_value" [] (Json.Decode.list Json.Decode.value)
-            |> Proto.Json.messageFieldEither "repeatedListValue" "repeated_list_value" [] (Json.Decode.list Proto.Json.listValue)
+            |> Proto.Json.messageFieldEither "repeatedStruct" "repeated_struct" [] (Json.Decode.list (Proto.Json.structAt depth))
+            |> Proto.Json.messageFieldEither "repeatedAny" "repeated_any" [] (Json.Decode.list (Proto.Json.anyWithAt depth types))
+            |> Proto.Json.messageFieldEither "repeatedValue" "repeated_value" [] (Json.Decode.list (Proto.Value.decoderAt depth))
+            |> Proto.Json.messageFieldEither "repeatedListValue" "repeated_list_value" [] (Json.Decode.list (Proto.Json.listValueAt depth))
             |> Proto.Json.messageField "fieldname1" 0 Proto.Json.int32
             |> Proto.Json.messageFieldEither "fieldName2" "field_name2" 0 Proto.Json.int32
             |> Proto.Json.messageFieldEither "FieldName3" "_field_name3" 0 Proto.Json.int32
@@ -1315,7 +1316,7 @@ decodeTestAllTypesProto3_With types =
 -}
 decodeTestAllTypesProto3OneofFieldWith : Proto.Registry.Registry -> Json.Decode.Decoder TestAllTypesProto3OneofField
 decodeTestAllTypesProto3OneofFieldWith types =
-    levelTestAllTypesProto3OneofFieldWith types 1
+    levelTestAllTypesProto3OneofFieldWith types (max 1 (Proto.Json.registryDepth types))
 
 
 {-| [`decodeTestAllTypesProto3OneofFieldWith`](#decodeTestAllTypesProto3OneofFieldWith) built for one nesting depth, the outermost message of its cycle at 1.
@@ -1341,7 +1342,7 @@ levelTestAllTypesProto3OneofFieldWith types depth =
 -}
 decodeTestAllTypesProto3NestedMessageWith : Proto.Registry.Registry -> Json.Decode.Decoder TestAllTypesProto3NestedMessage
 decodeTestAllTypesProto3NestedMessageWith types =
-    levelTestAllTypesProto3NestedMessageWith types 1
+    levelTestAllTypesProto3NestedMessageWith types (max 1 (Proto.Json.registryDepth types))
 
 
 {-| [`decodeTestAllTypesProto3NestedMessageWith`](#decodeTestAllTypesProto3NestedMessageWith) built for one nesting depth, the outermost message of its cycle at 1.
@@ -2627,13 +2628,13 @@ mergeTestAllTypesProto3BytesLevel depth =
                     Proto.Binary.field Proto.Binary.fieldMask (\v -> { value | optionalFieldMask = Just v }) wire value
 
                 304 ->
-                    Proto.Binary.field Proto.Binary.struct (\v -> { value | optionalStruct = Just v }) wire value
+                    Proto.Binary.field (Proto.Binary.structAt depth) (\v -> { value | optionalStruct = Just v }) wire value
 
                 305 ->
                     Proto.Binary.field Proto.Binary.any (\v -> { value | optionalAny = Just v }) wire value
 
                 306 ->
-                    Proto.Binary.field Proto.Binary.value (\v -> { value | optionalValue = Just v }) wire value
+                    Proto.Binary.field (Proto.Binary.valueAt depth) (\v -> { value | optionalValue = Just v }) wire value
 
                 307 ->
                     Proto.Binary.field (Proto.Binary.enum (\_ -> 0) (\_ -> ())) (\v -> { value | optionalNullValue = v }) wire value
@@ -2651,13 +2652,13 @@ mergeTestAllTypesProto3BytesLevel depth =
                     Proto.Binary.repeated Proto.Binary.any (\v -> { value | repeatedAny = v }) value.repeatedAny wire value
 
                 316 ->
-                    Proto.Binary.repeated Proto.Binary.value (\v -> { value | repeatedValue = v }) value.repeatedValue wire value
+                    Proto.Binary.repeated (Proto.Binary.valueAt depth) (\v -> { value | repeatedValue = v }) value.repeatedValue wire value
 
                 317 ->
-                    Proto.Binary.repeated Proto.Binary.listValue (\v -> { value | repeatedListValue = v }) value.repeatedListValue wire value
+                    Proto.Binary.repeated (Proto.Binary.listAt depth) (\v -> { value | repeatedListValue = v }) value.repeatedListValue wire value
 
                 324 ->
-                    Proto.Binary.repeated Proto.Binary.struct (\v -> { value | repeatedStruct = v }) value.repeatedStruct wire value
+                    Proto.Binary.repeated (Proto.Binary.structAt depth) (\v -> { value | repeatedStruct = v }) value.repeatedStruct wire value
 
                 401 ->
                     Proto.Binary.field Proto.Binary.int32 (\v -> { value | fieldname1 = v }) wire value
@@ -2792,7 +2793,7 @@ mergeTestAllTypesProto3BytesLevel depth =
 -}
 decodeTestAllTypesProto3Bytes : Proto.Binary.Decoder TestAllTypesProto3
 decodeTestAllTypesProto3Bytes =
-    mergeTestAllTypesProto3Bytes defaultTestAllTypesProto3
+    Proto.Binary.leveled mergeTestAllTypesProto3BytesAt defaultTestAllTypesProto3
 
 
 {-| Decodes a [`TestAllTypesProto3_`](#TestAllTypesProto3_) from protobuf binary into the one given.
@@ -2891,7 +2892,7 @@ mergeTestAllTypesProto3NestedMessageBytesLevel depth =
 -}
 decodeTestAllTypesProto3NestedMessageBytes : Proto.Binary.Decoder TestAllTypesProto3NestedMessage
 decodeTestAllTypesProto3NestedMessageBytes =
-    mergeTestAllTypesProto3NestedMessageBytes defaultTestAllTypesProto3NestedMessage
+    Proto.Binary.leveled mergeTestAllTypesProto3NestedMessageBytesAt defaultTestAllTypesProto3NestedMessage
 
 
 {-| Decodes a [`TestAllTypesProto3NestedMessage_`](#TestAllTypesProto3NestedMessage_) from protobuf binary into the one given.

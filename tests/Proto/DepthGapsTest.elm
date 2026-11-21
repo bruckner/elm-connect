@@ -26,25 +26,24 @@ import Test exposing (Test, describe, test)
 suite : Test
 suite =
     describe "guards on depth"
-        [ test "a Value read from JSON nests at most 50 levels" <|
+        [ test "a Value read from JSON nests at most 100 arrays and objects" <|
             \_ ->
                 Expect.all
-                    [ \_ -> Json.Decode.decodeString Proto.Json.jsonValue (lists 50) |> Result.map (\_ -> ()) |> Expect.equal (Ok ())
-                    , \_ -> Json.Decode.decodeString Proto.Json.jsonValue (lists 51) |> Result.map (\_ -> ()) |> Result.mapError leafText |> Expect.equal (Err [ "Expecting JSON nested at most 50 deep" ])
-                    , \_ -> Json.Decode.decodeString Proto.Json.struct ("{\"a\":" ++ lists 49 ++ "}") |> Result.map (\_ -> ()) |> Expect.equal (Ok ())
-                    , \_ -> Json.Decode.decodeString Proto.Json.struct ("{\"a\":" ++ lists 50 ++ "}") |> Result.map (\_ -> ()) |> Expect.notEqual (Ok ())
+                    [ \_ -> Json.Decode.decodeString Proto.Json.jsonValue (lists 100) |> Result.map (\_ -> ()) |> Expect.equal (Ok ())
+                    , \_ -> Json.Decode.decodeString Proto.Json.jsonValue (lists 101) |> Result.map (\_ -> ()) |> Expect.notEqual (Ok ())
+                    , \_ -> Json.Decode.decodeString Proto.Json.struct ("{\"a\":" ++ lists 99 ++ "}") |> Result.map (\_ -> ()) |> Expect.equal (Ok ())
+                    , \_ -> Json.Decode.decodeString Proto.Json.struct ("{\"a\":" ++ lists 100 ++ "}") |> Result.map (\_ -> ()) |> Expect.notEqual (Ok ())
                     ]
                     ()
-        , test "a Value read at the bound writes as JSON and as binary and reads back" <|
+        , test "a Value read at the limit writes as JSON and as binary and reads back" <|
             \_ ->
-                case Proto.Message.decodeJson Proto.WellKnown.registry Proto.WellKnown.value (Json.Decode.decodeString Json.Decode.value (lists 50) |> Result.withDefault Json.Encode.null) of
-                    Ok json ->
-                        Proto.Binary.decode (Proto.Binary.messageDecoder Proto.Binary.value) (Proto.Binary.encode (Proto.Binary.messageEncoder Proto.Binary.value) json)
-                            |> Result.map (Json.Encode.encode 0)
-                            |> Expect.equal (Ok (Json.Encode.encode 0 json))
+                case Proto.Message.decodeJson Proto.WellKnown.registry Proto.WellKnown.value (Json.Decode.decodeString Json.Decode.value (lists 100) |> Result.withDefault Json.Encode.null) of
+                    Ok value ->
+                        Proto.Binary.decode (Proto.Binary.messageDecoder Proto.Binary.value) (Proto.Binary.encode (Proto.Binary.messageEncoder Proto.Binary.value) value)
+                            |> Expect.equal (Ok value)
 
                     Err _ ->
-                        Expect.fail "50 levels did not read"
+                        Expect.fail "100 levels did not read"
         , test "an Any holding an Any 101 deep fails, from JSON and to JSON" <|
             \_ ->
                 Expect.all

@@ -27,6 +27,7 @@ import Proto.Message
 import Proto.Query
 import Proto.Registry
 import Proto.Route
+import Proto.Value
 import Proto.Version
 import Proto.WellKnown
 import Shapes.Blobs.V1.Blob
@@ -124,7 +125,7 @@ type alias Slots =
 -}
 type alias Free =
     { name : String
-    , value : Maybe Json.Encode.Value
+    , value : Maybe Proto.Value.Value
     }
 
 
@@ -336,7 +337,7 @@ encodeFree : Free -> Json.Encode.Value
 encodeFree value =
     Proto.Json.objectOfFields
         [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        , ( "value", value.value )
+        , ( "value", Maybe.map Proto.Json.encodeValue value.value )
         ]
 
 
@@ -714,7 +715,7 @@ mergeFolderBytesLevel depth =
 -}
 decodeFolderBytes : Proto.Binary.Decoder Folder
 decodeFolderBytes =
-    mergeFolderBytes defaultFolder
+    Proto.Binary.leveled mergeFolderBytesAt defaultFolder
 
 
 {-| Decodes a [`Folder_`](#Folder_) from protobuf binary into the one given.

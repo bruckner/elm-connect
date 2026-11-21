@@ -8,6 +8,7 @@ import Json.Decode exposing (Decoder)
 import Json.Encode
 import Proto.Duration
 import Proto.Json
+import Proto.Value
 import Test exposing (Test, describe, test)
 import Time
 
@@ -130,7 +131,7 @@ fieldEitherTests =
 
 
 type alias Setting =
-    { name : String, value : Maybe Json.Encode.Value }
+    { name : String, value : Maybe Proto.Value.Value }
 
 
 decodeSetting : Decoder Setting
@@ -153,13 +154,13 @@ valueFieldTests =
         [ test "a missing key gives Nothing" <|
             \_ -> decodes decodeSetting """{"name":"a"}""" (Setting "a" Nothing)
         , test "null is set, holding null" <|
-            \_ -> decodes decodeSetting """{"value":null}""" (Setting "" (Just Json.Encode.null))
+            \_ -> decodes decodeSetting """{"value":null}""" (Setting "" (Just Proto.Value.NullValue))
         , test "any other JSON is held as it is" <|
             \_ ->
                 Expect.all
-                    [ \_ -> decodes decodeSetting """{"value":5}""" (Setting "" (Just (Json.Encode.int 5)))
-                    , \_ -> decodes decodeSetting """{"value":"x"}""" (Setting "" (Just (Json.Encode.string "x")))
-                    , \_ -> decodes decodeSetting """{"value":[true]}""" (Setting "" (Just (Json.Encode.list Json.Encode.bool [ True ])))
+                    [ \_ -> decodes decodeSetting """{"value":5}""" (Setting "" (Just (Proto.Value.NumberValue 5)))
+                    , \_ -> decodes decodeSetting """{"value":"x"}""" (Setting "" (Just (Proto.Value.StringValue "x")))
+                    , \_ -> decodes decodeSetting """{"value":[true]}""" (Setting "" (Just (Proto.Value.ListValue [ Proto.Value.BoolValue True ])))
                     ]
                     ()
         , test "a value that is not an object fails" <|
@@ -167,8 +168,8 @@ valueFieldTests =
         , test "either name, null included" <|
             \_ ->
                 Expect.all
-                    [ \_ -> decodes decodeSettingEither """{"defaultValue":1}""" (Setting "" (Just (Json.Encode.int 1)))
-                    , \_ -> decodes decodeSettingEither """{"default_value":null}""" (Setting "" (Just Json.Encode.null))
+                    [ \_ -> decodes decodeSettingEither """{"defaultValue":1}""" (Setting "" (Just (Proto.Value.NumberValue 1)))
+                    , \_ -> decodes decodeSettingEither """{"default_value":null}""" (Setting "" (Just Proto.Value.NullValue))
                     , \_ -> decodes decodeSettingEither "{}" (Setting "" Nothing)
                     ]
                     ()
@@ -251,7 +252,7 @@ type alias Checked =
 checkedOnce : Decoder Checked
 checkedOnce =
     Proto.Json.message
-        (Json.Decode.succeed (\title displayName constructor length value -> Checked title displayName constructor length (Maybe.map (Json.Encode.encode 0) value))
+        (Json.Decode.succeed (\title displayName constructor length value -> Checked title displayName constructor length (Maybe.map (Proto.Value.toJson >> Json.Encode.encode 0) value))
             |> Proto.Json.messageField "title" "" Json.Decode.string
             |> Proto.Json.messageFieldEither "displayName" "display_name" "" Json.Decode.string
             |> Proto.Json.messageField "constructor" "" Json.Decode.string
@@ -262,7 +263,7 @@ checkedOnce =
 
 checkedEach : Decoder Checked
 checkedEach =
-    Json.Decode.succeed (\title displayName constructor length value -> Checked title displayName constructor length (Maybe.map (Json.Encode.encode 0) value))
+    Json.Decode.succeed (\title displayName constructor length value -> Checked title displayName constructor length (Maybe.map (Proto.Value.toJson >> Json.Encode.encode 0) value))
         |> Proto.Json.field "title" "" Json.Decode.string
         |> Proto.Json.fieldEither "displayName" "display_name" "" Json.Decode.string
         |> Proto.Json.field "constructor" "" Json.Decode.string
@@ -473,7 +474,7 @@ type EventKind
     | EventKindText String
     | EventKindTitleChanged String
     | EventKindCleared
-    | EventKindPayload Json.Encode.Value
+    | EventKindPayload Proto.Value.Value
     | EventKindNothing
 
 
@@ -550,9 +551,9 @@ oneofTests =
         , test "emptyMember fails on a value that is not an object" <|
             \_ -> fails decodeEvent """{"clearedAll":1}"""
         , test "valueMember holds any JSON" <|
-            \_ -> decodes decodeEvent """{"payload":[1]}""" (Event "" (EventKindPayload (Json.Encode.list Json.Encode.int [ 1 ])))
+            \_ -> decodes decodeEvent """{"payload":[1]}""" (Event "" (EventKindPayload (Proto.Value.ListValue [ Proto.Value.NumberValue 1 ])))
         , test "valueMember reads null as set, holding null" <|
-            \_ -> decodes decodeEvent """{"payload":null}""" (Event "" (EventKindPayload Json.Encode.null))
+            \_ -> decodes decodeEvent """{"payload":null}""" (Event "" (EventKindPayload Proto.Value.NullValue))
         , test "a null valueMember counts against another member" <|
             \_ ->
                 failsWith decodeEvent
@@ -1430,7 +1431,7 @@ wellKnownTests =
         [ test "struct reads an object" <|
             \_ ->
                 Json.Decode.decodeString Proto.Json.struct """{"a":1,"b":null}"""
-                    |> Result.map (Dict.map (\_ value -> Json.Encode.encode 0 value) >> Dict.toList)
+                    |> Result.map (Dict.map (\_ value -> Json.Encode.encode 0 (Proto.Value.toJson value)) >> Dict.toList)
                     |> Expect.equal (Ok [ ( "a", "1" ), ( "b", "null" ) ])
         , test "struct fails on an array" <|
             \_ -> fails Proto.Json.struct "[1]"
@@ -1439,19 +1440,19 @@ wellKnownTests =
         , test "encodeStruct writes an object" <|
             \_ ->
                 encodesTo
-                    (Proto.Json.encodeStruct (Dict.fromList [ ( "a", Json.Encode.int 1 ) ]))
+                    (Proto.Json.encodeStruct (Dict.fromList [ ( "a", Proto.Value.NumberValue 1 ) ]))
                     """{"a":1}"""
         , test "listValue reads an array" <|
             \_ ->
                 Json.Decode.decodeString Proto.Json.listValue """[1,"x",null]"""
-                    |> Result.map (List.map (Json.Encode.encode 0))
+                    |> Result.map (List.map (Proto.Value.toJson >> Json.Encode.encode 0))
                     |> Expect.equal (Ok [ "1", "\"x\"", "null" ])
         , test "listValue fails on an object" <|
             \_ -> fails Proto.Json.listValue """{"a":1}"""
         , test "encodeListValue writes an array" <|
             \_ ->
                 encodesTo
-                    (Proto.Json.encodeListValue [ Json.Encode.int 1, Json.Encode.null ])
+                    (Proto.Json.encodeListValue [ Proto.Value.NumberValue 1, Proto.Value.NullValue ])
                     "[1,null]"
         , test "a timestamp" <|
             \_ -> decodes Proto.Json.timestamp "\"1970-01-01T00:00:01.5Z\"" (Time.millisToPosix 1500)
@@ -1567,7 +1568,7 @@ protoKeyTests =
                     |> Expect.equal (Just "{\"__proto__\":\"x\",\"a\":\"b\"}")
         , test "is written by encodeStruct" <|
             \_ ->
-                Dict.map (\_ -> Json.Encode.string) pairs
+                Dict.map (\_ -> Proto.Value.StringValue) pairs
                     |> Proto.Json.encodeStruct
                     |> Json.Encode.encode 0
                     |> Expect.equal "{\"__proto__\":\"x\",\"a\":\"b\"}"

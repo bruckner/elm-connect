@@ -1420,7 +1420,7 @@ decodeWide_ =
 -}
 decodeEnvelopeWith : Proto.Registry.Registry -> Json.Decode.Decoder Envelope
 decodeEnvelopeWith types =
-    levelEnvelopeWith types 1
+    levelEnvelopeWith types (max 1 (Proto.Json.registryDepth types))
 
 
 {-| [`decodeEnvelopeWith`](#decodeEnvelopeWith) built for one nesting depth, the outermost message of its cycle at 1.
@@ -1429,7 +1429,7 @@ levelEnvelopeWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder Envelo
 levelEnvelopeWith types depth =
     Proto.Json.message
         (Json.Decode.succeed Envelope
-            |> Proto.Json.messageField "payload" Nothing (Json.Decode.map Just (Proto.Json.anyWith types))
+            |> Proto.Json.messageField "payload" Nothing (Json.Decode.map Just (Proto.Json.anyWithAt depth types))
             |> Proto.Json.messageField "replies" [] (Json.Decode.list (Json.Decode.map Envelope_ (Proto.Json.deeperWith depth (levelEnvelopeWith types))))
             |> Json.Decode.map (\value -> value Proto.Unknown.empty)
         )
@@ -1806,7 +1806,7 @@ mergeChainBytesLevel depth =
 -}
 decodeChainBytes : Proto.Binary.Decoder Chain
 decodeChainBytes =
-    mergeChainBytes defaultChain
+    Proto.Binary.leveled mergeChainBytesAt defaultChain
 
 
 {-| Decodes a [`Chain_`](#Chain_) from protobuf binary into the one given.
@@ -1910,7 +1910,7 @@ mergeTreeBytesLevel depth =
 -}
 decodeTreeBytes : Proto.Binary.Decoder Tree
 decodeTreeBytes =
-    mergeTreeBytes defaultTree
+    Proto.Binary.leveled mergeTreeBytesAt defaultTree
 
 
 {-| Decodes a [`Tree_`](#Tree_) from protobuf binary into the one given.
@@ -1992,7 +1992,7 @@ mergeDirBytesLevel depth =
 -}
 decodeDirBytes : Proto.Binary.Decoder Dir
 decodeDirBytes =
-    mergeDirBytes defaultDir
+    Proto.Binary.leveled mergeDirBytesAt defaultDir
 
 
 {-| Decodes a [`Dir_`](#Dir_) from protobuf binary into the one given.
@@ -2094,7 +2094,7 @@ mergeExprBytesLevel depth =
 -}
 decodeExprBytes : Proto.Binary.Decoder Expr
 decodeExprBytes =
-    mergeExprBytes defaultExpr
+    Proto.Binary.leveled mergeExprBytesAt defaultExpr
 
 
 {-| Decodes a [`Person`](#Person) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
@@ -2179,7 +2179,7 @@ mergePersonBytesLevel depth =
 -}
 decodePersonBytes : Proto.Binary.Decoder Person
 decodePersonBytes =
-    mergePersonBytes defaultPerson
+    Proto.Binary.leveled mergePersonBytesAt defaultPerson
 
 
 {-| Decodes a [`Person_`](#Person_) from protobuf binary into the one given.
@@ -2265,7 +2265,7 @@ mergeTeamBytesLevel depth =
 -}
 decodeTeamBytes : Proto.Binary.Decoder Team
 decodeTeamBytes =
-    mergeTeamBytes defaultTeam
+    Proto.Binary.leveled mergeTeamBytesAt defaultTeam
 
 
 {-| Decodes a [`Team_`](#Team_) from protobuf binary into the one given.
@@ -2347,7 +2347,7 @@ mergeFirstBytesLevel depth =
 -}
 decodeFirstBytes : Proto.Binary.Decoder First
 decodeFirstBytes =
-    mergeFirstBytes defaultFirst
+    Proto.Binary.leveled mergeFirstBytesAt defaultFirst
 
 
 {-| Decodes a [`First_`](#First_) from protobuf binary into the one given.
@@ -2429,7 +2429,7 @@ mergeSecondBytesLevel depth =
 -}
 decodeSecondBytes : Proto.Binary.Decoder Second
 decodeSecondBytes =
-    mergeSecondBytes defaultSecond
+    Proto.Binary.leveled mergeSecondBytesAt defaultSecond
 
 
 {-| Decodes a [`Second_`](#Second_) from protobuf binary into the one given.
@@ -2515,7 +2515,7 @@ mergeThirdBytesLevel depth =
 -}
 decodeThirdBytes : Proto.Binary.Decoder Third
 decodeThirdBytes =
-    mergeThirdBytes defaultThird
+    Proto.Binary.leveled mergeThirdBytesAt defaultThird
 
 
 {-| Decodes a [`Third_`](#Third_) from protobuf binary into the one given.
@@ -3038,7 +3038,7 @@ mergeWideBytesLevel depth =
 -}
 decodeWideBytes : Proto.Binary.Decoder Wide
 decodeWideBytes =
-    mergeWideBytes defaultWide
+    Proto.Binary.leveled mergeWideBytesAt defaultWide
 
 
 {-| Decodes a [`Wide_`](#Wide_) from protobuf binary into the one given.
@@ -3142,7 +3142,7 @@ mergeEnvelopeBytesLevel depth =
 -}
 decodeEnvelopeBytes : Proto.Binary.Decoder Envelope
 decodeEnvelopeBytes =
-    mergeEnvelopeBytes defaultEnvelope
+    Proto.Binary.leveled mergeEnvelopeBytesAt defaultEnvelope
 
 
 {-| Decodes an [`Envelope_`](#Envelope_) from protobuf binary into the one given.

@@ -15,6 +15,7 @@ import Proto.Binary
 import Proto.Duration exposing (Duration)
 import Proto.Json
 import Proto.Method
+import Proto.Value
 import Proto.Version
 import Rpc
 import Time
@@ -77,7 +78,7 @@ Transcode: no HTTP rule, follows the Connect path.
 Codecs: JSON and protobuf binary. Described by [`descriptorMask`](#descriptorMask).
 
 -}
-mask : List String -> Rpc.Call codec (List String) (Dict String Json.Encode.Value)
+mask : List String -> Rpc.Call codec (List String) (Dict String Proto.Value.Value)
 mask =
     Rpc.call
         (Proto.Method.init "clock.v1.Clock"
@@ -96,12 +97,12 @@ Transcode: no HTTP rule, follows the Connect path.
 Codecs: JSON and protobuf binary. Described by [`descriptorEcho`](#descriptorEcho).
 
 -}
-echo : Json.Encode.Value -> Rpc.Call codec Json.Encode.Value (List Json.Encode.Value)
+echo : Proto.Value.Value -> Rpc.Call codec Proto.Value.Value (List Proto.Value.Value)
 echo =
     Rpc.call
         (Proto.Method.init "clock.v1.Clock"
             "Echo"
-            (\_ -> Ok << Basics.identity)
+            (\_ -> Ok << Proto.Json.encodeValue)
             (\_ -> Proto.Json.listValue)
             (Proto.Binary.messageEncoder Proto.Binary.value)
             (Proto.Binary.messageDecoder Proto.Binary.listValue)

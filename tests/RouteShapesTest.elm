@@ -11,10 +11,12 @@ route is deliberately different, which the last tests pin.
 
 import Bytes exposing (Bytes)
 import Bytes.Encode
+import Dict
 import Expect
 import Json.Encode
 import Proto.Any
 import Proto.Method
+import Proto.Value
 import Rpc
 import Rpc.Body
 import Rpc.Call
@@ -155,9 +157,9 @@ folders =
 frees : List B.Free
 frees =
     [ { name = "values/1", value = Nothing }
-    , { name = "values/2", value = Just (Json.Encode.object [ ( "a", Json.Encode.int 1 ) ]) }
-    , { name = "values/3", value = Just (Json.Encode.string "s") }
-    , { name = "values/4", value = Just (Json.Encode.list Json.Encode.int [ 1, 2 ]) }
+    , { name = "values/2", value = Just (Proto.Value.StructValue (Dict.fromList [ ( "a", Proto.Value.NumberValue 1 ) ])) }
+    , { name = "values/3", value = Just (Proto.Value.StringValue "s") }
+    , { name = "values/4", value = Just (Proto.Value.ListValue [ Proto.Value.NumberValue 1, Proto.Value.NumberValue 2 ]) }
     ]
 
 
@@ -186,7 +188,7 @@ suite =
                             ]
             , test "a Value body field set to null is sent as null, where the interpreter sent {}" <|
                 \_ ->
-                    both withTypes Service.descriptorSetValue Service.setValue { name = "values/5", value = Just Json.Encode.null }
+                    both withTypes Service.descriptorSetValue Service.setValue { name = "values/5", value = Just Proto.Value.NullValue }
                         |> Expect.equal [ ( "POST https://api.example.com/x/v1/values/5 null", "POST https://api.example.com/x/v1/values/5 {}" ) ]
             , test "a request whose Any the client cannot write keeps its path and query, where the interpreter's has none" <|
                 \_ ->

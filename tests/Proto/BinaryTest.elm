@@ -23,6 +23,7 @@ import Proto.Codec exposing (Proto)
 import Proto.Duration
 import Proto.Error
 import Proto.Internal.Any
+import Proto.Value
 import Test exposing (Test, describe, fuzz, test)
 import Time
 
@@ -726,22 +727,18 @@ messages =
 wellKnown : Test
 wellKnown =
     describe "well-known types"
-        [ test "Value nests at most 100 messages deep, a list in a Value being two" <|
+        [ test "Value nests at most 100 lists and objects deep, a Value being no level of its own" <|
             \_ ->
                 let
                     lists depth =
-                        List.foldl (\_ inner -> Json.Encode.list identity [ inner ]) (Json.Encode.list identity []) (List.range 2 depth)
+                        List.foldl (\_ inner -> Proto.Value.ListValue [ inner ]) (Proto.Value.ListValue []) (List.range 2 depth)
 
                     decoded depth =
                         B.decode (B.messageDecoder B.value) (B.encode (B.messageEncoder B.value) (lists depth))
                 in
                 Expect.all
-                    [ \_ -> decoded 50 |> Result.map (Json.Encode.encode 0 >> String.length) |> Expect.equal (Ok 100)
-                    , \_ ->
-                        decoded 51
-                            |> Result.mapError (\e -> ( e.reason, List.length e.path, e.offset ))
-                            |> Result.map (\_ -> ())
-                            |> Expect.equal (Err ( Proto.Error.TooDeep, 100, 236 ))
+                    [ \_ -> decoded 100 |> Result.map (Proto.Value.toJson >> Json.Encode.encode 0 >> String.length) |> Expect.equal (Ok 200)
+                    , \_ -> decoded 101 |> Result.mapError .reason |> Result.map (\_ -> ()) |> Expect.equal (Err Proto.Error.TooDeep)
                     , \_ -> decoded 300 |> Result.mapError .reason |> Result.map (\_ -> ()) |> Expect.equal (Err Proto.Error.TooDeep)
                     ]
                     ()
@@ -766,16 +763,18 @@ wellKnown =
             \_ ->
                 let
                     json =
-                        Json.Encode.object
-                            [ ( "b", Json.Encode.list identity [ Json.Encode.null, Json.Encode.bool True ] )
-                            , ( "a", Json.Encode.float 1.5 )
-                            , ( "c", Json.Encode.string "x" )
-                            ]
+                        Proto.Value.StructValue
+                            (Dict.fromList
+                                [ ( "b", Proto.Value.ListValue [ Proto.Value.NullValue, Proto.Value.BoolValue True ] )
+                                , ( "a", Proto.Value.NumberValue 1.5 )
+                                , ( "c", Proto.Value.StringValue "x" )
+                                ]
+                            )
                 in
                 Expect.all
                     [ \_ -> toHex (B.encode (B.present B.value 1) json) |> Expect.equal "0a2d2a2b0a0e0a0161120911000000000000f83f0a0f0a0162120a32080a0208000a0220010a080a016312031a0178"
-                    , \_ -> reads B.value Json.Encode.null (Json.Encode.encode 0) "0a2d2a2b0a0e0a0161120911000000000000f83f0a0f0a0162120a32080a0208000a0220010a080a016312031a0178" (Just """{"a":1.5,"b":[null,true],"c":"x"}""")
-                    , \_ -> reads B.value Json.Encode.null (Json.Encode.encode 0) "0a00" (Just "null")
+                    , \_ -> reads B.value Proto.Value.NullValue (Proto.Value.toJson >> Json.Encode.encode 0) "0a2d2a2b0a0e0a0161120911000000000000f83f0a0f0a0162120a32080a0208000a0220010a080a016312031a0178" (Just """{"a":1.5,"b":[null,true],"c":"x"}""")
+                    , \_ -> reads B.value Proto.Value.NullValue (Proto.Value.toJson >> Json.Encode.encode 0) "0a00" (Just "null")
                     ]
                     ()
         , test "Any holds the packed message's binary, and writes it back" <|
@@ -843,27 +842,27 @@ wellKnownMerges =
         , test "Struct joins the members, a later member of the same name winning" <|
             \_ ->
                 mergesTo B.struct
-                    (Json.Encode.encode 0 << Json.Encode.dict identity identity)
+                    (Json.Encode.encode 0 << Json.Encode.dict identity Proto.Value.toJson)
                     "0a1a0a0e0a0161120911000000000000f03f0a080a016212031a0178 0a120a070a0162120220010a070a016312020800"
                     (Just """{"a":1,"b":true,"c":null}""")
         , test "Value takes the later kind, merging two objects or two lists" <|
             \_ ->
                 Expect.all
-                    [ \_ -> mergesTo B.value (Json.Encode.encode 0) "0a0911000000000000f03f 0a031a0173" (Just "\"s\"")
+                    [ \_ -> mergesTo B.value (Proto.Value.toJson >> Json.Encode.encode 0) "0a0911000000000000f03f 0a031a0173" (Just "\"s\"")
                     , \_ ->
                         mergesTo B.value
-                            (Json.Encode.encode 0)
+                            (Proto.Value.toJson >> Json.Encode.encode 0)
                             "0a2b2a290a0e0a0161120911000000000000f03f0a170a016e12122a100a0e0a0178120911000000000000f03f 0a2b2a290a0e0a016212091100000000000000400a170a016e12122a100a0e0a01791209110000000000000040"
                             (Just """{"a":1,"b":2,"n":{"y":2}}""")
-                    , \_ -> mergesTo B.value (Json.Encode.encode 0) "0a0d320b0a0911000000000000f03f 0a0d320b0a09110000000000000040" (Just "[1,2]")
-                    , \_ -> mergesTo B.value (Json.Encode.encode 0) "0a122a100a0e0a0161120911000000000000f03f 0a0d320b0a09110000000000000040" (Just "[2]")
-                    , \_ -> mergesTo B.value (Json.Encode.encode 0) "0a0d320b0a0911000000000000f03f 0a020800" (Just "null")
+                    , \_ -> mergesTo B.value (Proto.Value.toJson >> Json.Encode.encode 0) "0a0d320b0a0911000000000000f03f 0a0d320b0a09110000000000000040" (Just "[1,2]")
+                    , \_ -> mergesTo B.value (Proto.Value.toJson >> Json.Encode.encode 0) "0a122a100a0e0a0161120911000000000000f03f 0a0d320b0a09110000000000000040" (Just "[2]")
+                    , \_ -> mergesTo B.value (Proto.Value.toJson >> Json.Encode.encode 0) "0a0d320b0a0911000000000000f03f 0a020800" (Just "null")
                     ]
                     ()
         , test "ListValue adds the later elements after the earlier" <|
             \_ ->
                 mergesTo B.listValue
-                    (Json.Encode.encode 0 << Json.Encode.list identity)
+                    (Json.Encode.encode 0 << Json.Encode.list Proto.Value.toJson)
                     "0a0b0a0911000000000000f03f 0a050a031a0178"
                     (Just """[1,"x"]""")
         , test "FieldMask adds the later paths after the earlier" <|
