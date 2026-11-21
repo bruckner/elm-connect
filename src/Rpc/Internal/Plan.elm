@@ -21,7 +21,6 @@ import Http
 import Json.Decode exposing (Decoder)
 import Json.Encode
 import Proto.Error
-import Proto.Internal.Guard as Guard
 import Proto.Internal.JsonError as JsonError
 import Proto.Internal.Method exposing (Method(..), RouteShape(..))
 import Proto.Registry exposing (Registry)
@@ -300,11 +299,7 @@ readText responseBody decoder text =
 
         Just key ->
             Json.Decode.decodeString Json.Decode.value text
-                |> Result.andThen
-                    (\value ->
-                        Guard.run (\() -> Json.Decode.decodeValue decoder (Json.Encode.object [ ( key, value ) ]))
-                            |> Maybe.withDefault (Err Proto.Error.tooDeepJson)
-                    )
+                |> Result.andThen (\value -> Json.Decode.decodeValue decoder (Json.Encode.object [ ( key, value ) ]))
 
 
 {-| The error a successful text answer stands for when the response's

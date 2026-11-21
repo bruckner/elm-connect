@@ -1,4 +1,4 @@
-module Proto.GuardTest exposing (suite)
+module Proto.DepthGapsTest exposing (suite)
 
 {-| The guard, the JSON bound on `Struct`/`Value`/`ListValue`, the `Any`
 depth through the registry, and scrubbed errors.
@@ -16,7 +16,6 @@ import Proto.Any
 import Proto.Binary
 import Proto.Duration
 import Proto.Error
-import Proto.Internal.Guard as Guard
 import Proto.Internal.JsonError as JsonError
 import Proto.Json
 import Proto.Message
@@ -27,11 +26,7 @@ import Test exposing (Test, describe, test)
 suite : Test
 suite =
     describe "guards on depth"
-        [ test "the guard turns a stack overflow into Nothing, and passes a value through" <|
-            \_ ->
-                ( Guard.run (\() -> countDown 1000000), Guard.run (\() -> countDown 10) )
-                    |> Expect.equal ( Nothing, Just 10 )
-        , test "a Value read from JSON nests at most 50 levels" <|
+        [ test "a Value read from JSON nests at most 50 levels" <|
             \_ ->
                 Expect.all
                     [ \_ -> Json.Decode.decodeString Proto.Json.jsonValue (lists 50) |> Result.map (\_ -> ()) |> Expect.equal (Ok ())
@@ -70,15 +65,6 @@ suite =
                     Ok _ ->
                         Expect.fail "decoded"
         ]
-
-
-countDown : Int -> Int
-countDown n =
-    if n <= 0 then
-        0
-
-    else
-        1 + countDown (n - 1)
 
 
 lists : Int -> String

@@ -56,7 +56,6 @@ import Proto.Descriptors as Descriptors exposing (Descriptors)
 import Proto.Error exposing (Error(..))
 import Proto.Internal.Any as Internal
 import Proto.Internal.Binary
-import Proto.Internal.Guard as Guard
 import Proto.Internal.JsonError as JsonError
 import Proto.Internal.Message as InternalMessage
 import Proto.Internal.Registry as InternalRegistry
@@ -191,8 +190,7 @@ tryUnpack ((InternalMessage.Message _ codecs) as message) ((Internal.Any url pay
     if is message any then
         case payload of
             Internal.Json json ->
-                Guard.run (\() -> Json.Decode.decodeValue (codecs.decodeJson (InternalRegistry.Registry InternalRegistry.Lenient 0 Dict.empty)) json)
-                    |> Maybe.withDefault (Err Proto.Error.tooDeepJson)
+                Json.Decode.decodeValue (codecs.decodeJson (InternalRegistry.Registry InternalRegistry.Lenient 0 Dict.empty)) json
                     |> Result.mapError (JsonError.scrub >> BadJson)
 
             Internal.Binary base64 ->
@@ -246,8 +244,7 @@ no entry for its type gives the JSON unread when lenient, and fails with
 -}
 toJson : Registry -> Any -> Result Error Json.Encode.Value
 toJson registry any =
-    Guard.run (\() -> toJsonUnguarded registry any)
-        |> Maybe.withDefault (Err (BadBinary { typeName = typeName any, reason = Proto.Error.TooDeep, path = [], offset = 0 }))
+    toJsonUnguarded registry any
 
 
 toJsonUnguarded : Registry -> Any -> Result Error Json.Encode.Value
