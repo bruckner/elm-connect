@@ -419,9 +419,7 @@ impl Emitter {
     /// The JSON of one value, `value`: its encoder applied to it, or the
     /// value itself when it is JSON already.
     pub(super) fn encode_value(&mut self, shape: ValueShape, value: Expr) -> Expr {
-        match shape {
-            shape => call(self.value_encoder(shape), [value]),
-        }
+        call(self.value_encoder(shape), [value])
     }
 
     /// The encoder of one value. One that reaches an `Any` takes the

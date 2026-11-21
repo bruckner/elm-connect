@@ -244,9 +244,8 @@ impl Emitter {
     /// would bring the type's default and descriptor tree into every
     /// program that calls the method.
     pub(super) fn request_encoder(&mut self, ty: &TypeRef) -> Expr {
-        match method_shape(ty, self.holding) {
-            shape => self.value_encoder(shape),
-        }
+        let shape = method_shape(ty, self.holding);
+        self.value_encoder(shape)
     }
 
     /// The JSON encoder of a method's request type taking the registry,
