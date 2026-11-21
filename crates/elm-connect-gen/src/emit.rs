@@ -1394,10 +1394,10 @@ mod tests {
         assert_eq!(
             imports,
             [
-                "Json.Encode",
                 "Proto.Any",
                 "Proto.Json",
                 "Proto.Method",
+                "Proto.Value",
                 "Proto.Version",
                 "Rpc",
                 "T.V1"
@@ -1418,8 +1418,7 @@ mod tests {
             "(Proto.Method.initJson \"t.v1.S\"\n            \"Get\"\n            \
              (\\_ -> Ok << T.V1.encodeA)\n            \
              (\\_ -> T.V1.decodeA)\n        )\n",
-            // Qualified, or `identity` would be the method itself.
-            "\n            (\\_ -> Ok << Basics.identity)\n            (\\_ -> Proto.Json.empty)\n",
+            "\n            (\\_ -> Ok << Proto.Json.encodeValue)\n            (\\_ -> Proto.Json.empty)\n",
             "\n            \"Ticks\"\n            \
              (\\_ -> Ok << Proto.Json.encodeInt64AsInt)\n            Proto.Json.anyWith\n",
             "descriptorGet : Proto.Method.Descriptor\ndescriptorGet =\n    \
