@@ -217,7 +217,22 @@ impl Emitter {
                             Box::new(decoder.clone()),
                         ),
                         params: vec![pvar(REGISTRY_ARGUMENT)],
-                        body: apply(var(level.clone()), [var(REGISTRY_ARGUMENT), int(1)]),
+                        body: apply(
+                            var(level.clone()),
+                            [
+                                var(REGISTRY_ARGUMENT),
+                                apply(
+                                    var("max"),
+                                    [
+                                        int(1),
+                                        apply(
+                                            self.reference((PROTO_JSON, "registryDepth")),
+                                            [var(REGISTRY_ARGUMENT)],
+                                        ),
+                                    ],
+                                ),
+                            ],
+                        ),
                     },
                     Decl::Value {
                         doc: Some(format!(

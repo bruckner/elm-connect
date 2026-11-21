@@ -1,4 +1,4 @@
-module Proto.Internal.Registry exposing (Entry, Leniency(..), Registry(..), isLenient, member, strict, toBytes, toJson, unregistered)
+module Proto.Internal.Registry exposing (Entry, Leniency(..), Registry(..), atLeast, depthOf, isLenient, member, strict, toBytes, toJson, unregistered)
 
 {-| The `Registry` type, which `Proto.Registry` names by an alias, and the
 conversions through one, which `Proto.Registry` does not expose: `Proto.Any`
@@ -79,12 +79,28 @@ toBytes (Registry leniency depth entries) name json =
             )
 
 
-{-| The most `Any` values a conversion goes through, one inside another, the
-outermost included.
+{-| The nesting depth a read has reached, counted in messages entered along
+a cycle, `Any` values and the arrays and objects of a `Value`: one budget of
+100 for all three.
 -}
 anyLimit : Int
 anyLimit =
     100
+
+
+{-| How deep the conversion this registry is passed to has nested.
+-}
+depthOf : Registry -> Int
+depthOf (Registry _ d _) =
+    d
+
+
+{-| The registry for a read at `d`, as a message on a cycle passes it to an
+`Any` it holds, so the `Any` counts from there.
+-}
+atLeast : Int -> Registry -> Registry
+atLeast d (Registry leniency current entries) =
+    Registry leniency (max d current) entries
 
 
 {-| Whether the registry has an entry for a message, by full name.

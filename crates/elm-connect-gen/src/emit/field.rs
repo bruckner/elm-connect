@@ -3,8 +3,8 @@
 
 use super::scalar::{Holding, Repr};
 use super::{
-    CORE_DICT, CORE_STRING, Emitter, JSON_DECODE, JSON_ENCODE, PROTO_ANY, PROTO_DURATION,
-    PROTO_JSON, TIME, call, scalar,
+    CORE_DICT, CORE_STRING, Emitter, JSON_DECODE, PROTO_ANY, PROTO_DURATION, PROTO_JSON,
+    PROTO_VALUE, TIME, call, scalar,
 };
 use crate::elm::ast::{Expr, Type};
 use crate::elm::build::{apply, list, qualified, ty, var};
@@ -219,7 +219,10 @@ impl Emitter {
     /// it set (design §3.5).
     pub(super) fn encode_field(&mut self, shape: FieldShape, value: Expr) -> Expr {
         let (helper, args) = match shape {
-            FieldShape::Json => return value,
+            FieldShape::Json => {
+                let encode = self.reference((PROTO_JSON, "encodeValue"));
+                return apply(qualified("Maybe", "map"), [encode, value]);
+            }
             FieldShape::Plain(Zeroed::Empty) => {
                 let encoded = self.encode_value(ValueShape::Zeroed(Zeroed::Empty), value);
                 return apply(var(self.core("Just")), [encoded]);
@@ -390,7 +393,7 @@ impl Emitter {
             | ValueShape::Present(Present::Wrapper(repr)) => self.scalar_type(repr),
             ValueShape::Zeroed(Zeroed::Enum(name, _))
             | ValueShape::Present(Present::Message(name)) => self.generated_type(name),
-            ValueShape::Zeroed(Zeroed::Json) => self.library_type(JSON_ENCODE, "Value", []),
+            ValueShape::Zeroed(Zeroed::Json) => self.library_type(PROTO_VALUE, "Value", []),
             ValueShape::Present(Present::Timestamp) => self.library_type(TIME, "Posix", []),
             ValueShape::Present(Present::Duration) => {
                 self.exposed_type(PROTO_DURATION, "Duration", [])
@@ -399,12 +402,12 @@ impl Emitter {
                 ty(self.core("List"), [ty(self.core("String"), [])])
             }
             ValueShape::Present(Present::Struct) => {
-                let value = self.library_type(JSON_ENCODE, "Value", []);
+                let value = self.library_type(PROTO_VALUE, "Value", []);
                 let key = ty(self.core("String"), []);
                 self.exposed_type(CORE_DICT, "Dict", [key, value])
             }
             ValueShape::Present(Present::ListValue) => {
-                let value = self.library_type(JSON_ENCODE, "Value", []);
+                let value = self.library_type(PROTO_VALUE, "Value", []);
                 ty(self.core("List"), [value])
             }
             ValueShape::Present(Present::Any) => self.library_type(PROTO_ANY, "Any", []),
@@ -417,7 +420,6 @@ impl Emitter {
     /// value itself when it is JSON already.
     pub(super) fn encode_value(&mut self, shape: ValueShape, value: Expr) -> Expr {
         match shape {
-            ValueShape::Zeroed(Zeroed::Json) => value,
             shape => call(self.value_encoder(shape), [value]),
         }
     }
@@ -445,7 +447,7 @@ impl Emitter {
             | ValueShape::Present(Present::Message(name)) => {
                 self.generated_value(&name.module, name.encoder_name())
             }
-            ValueShape::Zeroed(Zeroed::Json) => var("identity"),
+            ValueShape::Zeroed(Zeroed::Json) => self.reference((PROTO_JSON, "encodeValue")),
             ValueShape::Present(Present::Timestamp) => {
                 self.reference((PROTO_JSON, "encodeTimestamp"))
             }
@@ -501,6 +503,10 @@ impl Emitter {
                 ValueShape::Present(Present::Wrapped(wrapper, _)) => {
                     var(with_registry(wrapper.decoder_name()))
                 }
+                _ if self.deep.is_some() => {
+                    let at = self.reference((PROTO_JSON, "anyWithAt"));
+                    return apply(at, [var(super::recursion::DEPTH), var(REGISTRY_ARGUMENT)]);
+                }
                 _ => self.reference((PROTO_JSON, "anyWith")),
             };
             return apply(decoder, [var(REGISTRY_ARGUMENT)]);
@@ -512,10 +518,22 @@ impl Emitter {
             | ValueShape::Present(Present::Message(name)) => {
                 self.generated_value(&name.module, name.decoder_name())
             }
-            ValueShape::Zeroed(Zeroed::Json) => self.reference((JSON_DECODE, "value")),
+            ValueShape::Zeroed(Zeroed::Json) if self.deep.is_some() => {
+                let at = self.reference((PROTO_VALUE, "decoderAt"));
+                apply(at, [var(super::recursion::DEPTH)])
+            }
+            ValueShape::Zeroed(Zeroed::Json) => self.reference((PROTO_JSON, "jsonValue")),
             ValueShape::Present(Present::Timestamp) => self.reference((PROTO_JSON, "timestamp")),
             ValueShape::Present(Present::Duration) => self.reference((PROTO_JSON, "duration")),
             ValueShape::Present(Present::FieldMask) => self.reference((PROTO_JSON, "fieldMask")),
+            ValueShape::Present(Present::Struct) if self.deep.is_some() => {
+                let at = self.reference((PROTO_JSON, "structAt"));
+                apply(at, [var(super::recursion::DEPTH)])
+            }
+            ValueShape::Present(Present::ListValue) if self.deep.is_some() => {
+                let at = self.reference((PROTO_JSON, "listValueAt"));
+                apply(at, [var(super::recursion::DEPTH)])
+            }
             ValueShape::Present(Present::Struct) => self.reference((PROTO_JSON, "struct")),
             ValueShape::Present(Present::ListValue) => self.reference((PROTO_JSON, "listValue")),
             ValueShape::Present(Present::Any) => self.reference((PROTO_JSON, "any")),

@@ -371,11 +371,21 @@ impl Emitter {
                     // message.
                     FieldShape::Json => {
                         let empty = apply(self.reference((JSON_ENCODE, "object")), [list([])]);
+                        let encode = self.reference((super::PROTO_JSON, "encodeValue"));
                         let value = apply(
                             qualified("Maybe", "withDefault"),
                             [
                                 empty,
-                                crate::elm::build::access(var(REQUEST), field.elm_name.clone()),
+                                apply(
+                                    qualified("Maybe", "map"),
+                                    [
+                                        encode,
+                                        crate::elm::build::access(
+                                            var(REQUEST),
+                                            field.elm_name.clone(),
+                                        ),
+                                    ],
+                                ),
                             ],
                         );
                         return Some(self.route_record(

@@ -233,6 +233,8 @@ const PROTO_UNKNOWN: &str = "Proto.Unknown";
 /// The runtime package's `Duration`, imported as
 /// `import Proto.Duration exposing (Duration)`.
 const PROTO_DURATION: &str = "Proto.Duration";
+/// The runtime's `google.protobuf.Value`, `Struct` and `ListValue` as Elm data.
+const PROTO_VALUE: &str = "Proto.Value";
 /// The runtime package's calls, home of `Rpc.Call`.
 const RPC: &str = "Rpc";
 /// The runtime package's HTTP bindings, which a method's descriptor holds.
@@ -638,6 +640,9 @@ struct Emitter {
     deep: Option<Deep>,
     /// Whether the value whose decoder is being written is on that cycle.
     deep_value: bool,
+    /// While a recursive message's binary merge is written: its `Struct`,
+    /// `Value` and `ListValue` fields read at the merge's depth.
+    binary_depth: bool,
 }
 
 /// How a recursive message's JSON decoder reads a value on its cycle one
@@ -668,6 +673,7 @@ impl Emitter {
             },
             deep: None,
             deep_value: false,
+            binary_depth: false,
         }
     }
 

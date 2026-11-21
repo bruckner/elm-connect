@@ -9,8 +9,9 @@ module Proto.Binary exposing
     , int64, sint64, sfixed64, uint64, fixed64
     , int64AsInt, sint64AsInt, sfixed64AsInt, uint64AsInt, fixed64AsInt
     , bool, string, bytes, bytesAsBytes, enum
-    , embedded, recursive, Levels, levels, level, messageEncoder, messageDecoder
+    , embedded, recursive, Levels, levels, level, leveled, messageEncoder, messageDecoder
     , timestamp, duration, fieldMask, empty, struct, listValue, value, any
+    , structAt, listAt, valueAt
     , doubleValue, floatValue, int64Value, int64ValueAsInt, uint64Value, uint64ValueAsInt
     , int32Value, uint32Value, boolValue, stringValue, bytesValue, bytesValueAsBytes
     )
@@ -78,12 +79,13 @@ Code generated with `unknown_fields=keep` reads and writes a message's
 
 # Messages
 
-@docs embedded, recursive, Levels, levels, level, messageEncoder, messageDecoder
+@docs embedded, recursive, Levels, levels, level, leveled, messageEncoder, messageDecoder
 
 
 # Well-known types
 
 @docs timestamp, duration, fieldMask, empty, struct, listValue, value, any
+@docs structAt, listAt, valueAt
 @docs doubleValue, floatValue, int64Value, int64ValueAsInt, uint64Value, uint64ValueAsInt
 @docs int32Value, uint32Value, boolValue, stringValue, bytesValue, bytesValueAsBytes
 
@@ -104,6 +106,7 @@ import Proto.Internal.Any as InternalAny exposing (Any)
 import Proto.Internal.Binary as Internal exposing (Failure)
 import Proto.Internal.Unknown as InternalUnknown
 import Proto.Unknown
+import Proto.Value exposing (Value(..))
 import Time
 
 
@@ -144,6 +147,7 @@ map f (Internal.Decoder d) =
         { name = d.name
         , fast = \width -> D.map f (d.fast width)
         , located = \width -> D.map (Result.map f) (d.located width)
+        , atDepth = Maybe.map (\at depth -> map f (at depth)) d.atDepth
         }
 
 
@@ -346,6 +350,7 @@ merge name step finish start =
         { name = name
         , fast = fastMessage first step finish
         , located = message name first step finish
+        , atDepth = Nothing
         }
 
 
@@ -2131,6 +2136,17 @@ level (Levels build table) depth =
             build depth
 
 
+{-| A recursive message's decoder from its merge at a depth and the value it
+reads into, starting at depth 1, which an `Any` holding the message can start
+deeper: `decodeNodeBytes = Proto.Binary.leveled mergeNodeBytesAt defaultNode`.
+-}
+leveled : (Int -> a -> Decoder a) -> a -> Decoder a
+leveled into start =
+    case into 1 start of
+        Internal.Decoder d ->
+            Internal.Decoder { d | atDepth = Just (\depth -> into (max 1 depth) start) }
+
+
 {-| The most messages a cycle of messages nests, the outermost included.
 -}
 depthLimit : Int
@@ -2177,7 +2193,7 @@ method answers.
 -}
 messageDecoder : Codec a -> Decoder a
 messageDecoder (Codec c) =
-    Internal.Decoder { name = c.name (), fast = c.fastBody, located = c.readBody }
+    Internal.Decoder { name = c.name (), fast = c.fastBody, located = c.readBody, atDepth = Nothing }
 
 
 
@@ -2218,6 +2234,7 @@ wellKnown name start step finish =
         { name = name
         , fast = fastMessage start step identity >> D.map finish
         , located = message name start step identity >> D.map (Result.map finish)
+        , atDepth = Nothing
         }
 
 
@@ -2310,7 +2327,7 @@ empty =
 members to the earlier one's, a member of the same name replacing the
 earlier.
 -}
-struct : Codec (Dict String Json.Encode.Value)
+struct : Codec (Dict String Value)
 struct =
     structCodec ()
 
@@ -2318,60 +2335,65 @@ struct =
 {-| `google.protobuf.ListValue` as its elements. One that arrives twice adds
 its elements after the earlier one's.
 -}
-listValue : Codec (List Json.Encode.Value)
+listValue : Codec (List Value)
 listValue =
     listCodec ()
 
 
-{-| `google.protobuf.Value` as JSON: an object's members are written in key
-order. One that arrives twice replaces the earlier, unless both hold an
-object, whose members are then merged as `struct`'s, or both a list, whose
-elements are then added after the earlier ones, as protobuf merges a oneof's
-message member.
+{-| `google.protobuf.Value`: an object's members are written in key order.
+One that arrives twice replaces the earlier, unless both hold an object,
+whose members are then merged as `struct`'s, or both a list, whose elements
+are then added after the earlier ones, as protobuf merges a oneof's message
+member.
 -}
-value : Codec Json.Encode.Value
+value : Codec Value
 value =
     valueCodec ()
 
 
 {-| The codecs of the three types that hold each other, built on use, since
-Elm's values cannot refer to themselves.
+Elm's values cannot refer to themselves. A `Struct` or a `ListValue` is one
+level of nesting, as an object or an array is in JSON; a `Value` is none.
 -}
-structCodec : () -> Codec (Dict String Json.Encode.Value)
+structCodec : () -> Codec (Dict String Value)
 structCodec () =
     embedded writeStruct (structInto 1) Dict.empty
 
 
-listCodec : () -> Codec (List Json.Encode.Value)
+listCodec : () -> Codec (List Value)
 listCodec () =
     embedded writeList (listInto 1) []
 
 
-valueCodec : () -> Codec Json.Encode.Value
+valueCodec : () -> Codec Value
 valueCodec () =
-    embedded writeValue (valueInto 1) Json.Encode.null
+    embedded writeValue (valueInto 0) NullValue
 
 
-{-| The three codecs read as a field of one of them, at the depth of the
-message holding the field: each of the three is a level, so a `Struct` in a
-`Value` is two.
+{-| A `Struct`, a `ListValue` or a `Value` read as a field of a message at
+`depth`, as a message on a cycle reads one: the object or array is one level
+deeper.
 -}
-structAt : Int -> Codec (Dict String Json.Encode.Value)
+structAt : Int -> Codec (Dict String Value)
 structAt depth =
     recursive depth writeStruct structInto Dict.empty
 
 
-listAt : Int -> Codec (List Json.Encode.Value)
+{-| [`structAt`](#structAt) for a `ListValue`.
+-}
+listAt : Int -> Codec (List Value)
 listAt depth =
     recursive depth writeList listInto []
 
 
-valueAt : Int -> Codec Json.Encode.Value
+{-| [`structAt`](#structAt) for a `Value`, which is no level of its own.
+-}
+valueAt : Int -> Codec Value
 valueAt depth =
-    recursive depth writeValue valueInto Json.Encode.null
+    embedded writeValue (valueInto depth) NullValue
 
 
-structInto : Int -> Dict String Json.Encode.Value -> Decoder (Dict String Json.Encode.Value)
+structInto : Int -> Dict String Value -> Decoder (Dict String Value)
 structInto depth =
     merge "google.protobuf.Struct"
         (\number wire members ->
@@ -2384,12 +2406,12 @@ structInto depth =
         identity
 
 
-writeStruct : Dict String Json.Encode.Value -> Encoder
+writeStruct : Dict String Value -> Encoder
 writeStruct members =
     dict string (valueCodec ()) 1 members
 
 
-listInto : Int -> List Json.Encode.Value -> Decoder (List Json.Encode.Value)
+listInto : Int -> List Value -> Decoder (List Value)
 listInto depth =
     merge "google.protobuf.ListValue"
         (\number wire items ->
@@ -2402,39 +2424,51 @@ listInto depth =
         List.reverse
 
 
-writeList : List Json.Encode.Value -> Encoder
+writeList : List Value -> Encoder
 writeList items =
     list (valueCodec ()) 1 items
 
 
-valueInto : Int -> Json.Encode.Value -> Decoder Json.Encode.Value
+valueInto : Int -> Value -> Decoder Value
 valueInto depth =
     merge "google.protobuf.Value"
         (\number wire current ->
             case number of
                 1 ->
-                    field int32 (\_ -> Json.Encode.null) wire current
+                    field int32 (\_ -> NullValue) wire current
 
                 2 ->
-                    field double Json.Encode.float wire current
+                    field double NumberValue wire current
 
                 3 ->
-                    field string Json.Encode.string wire current
+                    field string StringValue wire current
 
                 4 ->
-                    field bool Json.Encode.bool wire current
+                    field bool BoolValue wire current
 
                 5 ->
                     fieldInto (structAt depth)
-                        (Json.Decode.decodeValue (Json.Decode.dict Json.Decode.value) current |> Result.toMaybe)
-                        (Json.Encode.dict identity identity)
+                        (case current of
+                            StructValue members ->
+                                Just members
+
+                            _ ->
+                                Nothing
+                        )
+                        StructValue
                         wire
                         current
 
                 6 ->
                     fieldInto (listAt depth)
-                        (Json.Decode.decodeValue (Json.Decode.list Json.Decode.value) current |> Result.toMaybe)
-                        (Json.Encode.list identity)
+                        (case current of
+                            ListValue items ->
+                                Just items
+
+                            _ ->
+                                Nothing
+                        )
+                        ListValue
                         wire
                         current
 
@@ -2444,47 +2478,26 @@ valueInto depth =
         identity
 
 
-type Json
-    = JNull
-    | JBool Bool
-    | JNumber Float
-    | JString String
-    | JArray (List Json.Encode.Value)
-    | JObject (Dict String Json.Encode.Value)
+writeValue : Value -> Encoder
+writeValue v =
+    case v of
+        NullValue ->
+            present int32 1 0
 
-
-classify : Json.Decode.Decoder Json
-classify =
-    Json.Decode.oneOf
-        [ Json.Decode.null JNull
-        , Json.Decode.map JBool Json.Decode.bool
-        , Json.Decode.map JNumber Json.Decode.float
-        , Json.Decode.map JString Json.Decode.string
-        , Json.Decode.map JArray (Json.Decode.list Json.Decode.value)
-        , Json.Decode.map JObject (Json.Decode.dict Json.Decode.value)
-        ]
-
-
-writeValue : Json.Encode.Value -> Encoder
-writeValue json =
-    case Json.Decode.decodeValue classify json of
-        Ok (JBool b) ->
-            present bool 4 b
-
-        Ok (JNumber x) ->
+        NumberValue x ->
             present double 2 x
 
-        Ok (JString s) ->
+        StringValue s ->
             present string 3 s
 
-        Ok (JArray items) ->
-            present (listCodec ()) 6 items
+        BoolValue b ->
+            present bool 4 b
 
-        Ok (JObject members) ->
+        StructValue members ->
             present (structCodec ()) 5 members
 
-        _ ->
-            present int32 1 0
+        ListValue items ->
+            present (listCodec ()) 6 items
 
 
 {-| `google.protobuf.Any`, holding the packed message's binary, which
