@@ -31,9 +31,9 @@ checker.
 import Bitwise
 import Dict
 import Fuzz exposing (Fuzzer)
+import Generated.Routes.Routes.V1 as V1
 import Json.Encode
 import Proto.Duration
-import Routes.V1
 import Time
 
 
@@ -420,9 +420,9 @@ json depth =
 -- ROUTES.V1
 
 
-kind : Fuzzer Routes.V1.Kind
+kind : Fuzzer V1.Kind
 kind =
-    Fuzz.oneOfValues [ Routes.V1.KindUnspecified, Routes.V1.KindText, Routes.V1.KindImage ]
+    Fuzz.oneOfValues [ V1.KindUnspecified, V1.KindText, V1.KindImage ]
 
 
 short : Fuzzer a -> Fuzzer (List a)
@@ -434,9 +434,9 @@ short =
 its floats from `floats`; the `float` field's divided down into a `float`'s
 range when finite and past it.
 -}
-everything : Fuzzer Float -> Fuzzer Routes.V1.Everything
+everything : Fuzzer Float -> Fuzzer V1.Everything
 everything floats =
-    Fuzz.constant Routes.V1.Everything
+    Fuzz.constant V1.Everything
         |> Fuzz.andMap (orDefault "" awkwardString)
         |> Fuzz.andMap (orDefault 0 (Fuzz.intRange -2147483648 2147483647))
         |> Fuzz.andMap (orDefault "0" int64Text)
@@ -459,9 +459,9 @@ everything floats =
         |> Fuzz.andMap (Fuzz.maybe inner)
         |> Fuzz.andMap
             (Fuzz.oneOf
-                [ Fuzz.constant Routes.V1.EverythingChoiceUnset
-                , Fuzz.map Routes.V1.EverythingChoiceText (Fuzz.oneOf [ Fuzz.constant "", awkwardString ])
-                , Fuzz.map Routes.V1.EverythingChoiceNumber (Fuzz.oneOf [ Fuzz.constant 0, Fuzz.int ])
+                [ Fuzz.constant V1.EverythingChoiceUnset
+                , Fuzz.map V1.EverythingChoiceText (Fuzz.oneOf [ Fuzz.constant "", awkwardString ])
+                , Fuzz.map V1.EverythingChoiceNumber (Fuzz.oneOf [ Fuzz.constant 0, Fuzz.int ])
                 ]
             )
 
@@ -471,22 +471,22 @@ orDefault zero fuzzer =
     Fuzz.frequency [ ( 1, Fuzz.constant zero ), ( 2, fuzzer ) ]
 
 
-inner : Fuzzer Routes.V1.Inner
+inner : Fuzzer V1.Inner
 inner =
-    Fuzz.map2 Routes.V1.Inner (orDefault "" awkwardString) (Fuzz.maybe deep)
+    Fuzz.map2 V1.Inner (orDefault "" awkwardString) (Fuzz.maybe deep)
 
 
-deep : Fuzzer Routes.V1.Deep
+deep : Fuzzer V1.Deep
 deep =
-    Fuzz.map2 Routes.V1.Deep (orDefault 0 (Fuzz.intRange -2147483648 2147483647)) (short awkwardString)
+    Fuzz.map2 V1.Deep (orDefault 0 (Fuzz.intRange -2147483648 2147483647)) (short awkwardString)
 
 
-getMessageRequest : Fuzzer Routes.V1.GetMessageRequest
+getMessageRequest : Fuzzer V1.GetMessageRequest
 getMessageRequest =
-    Fuzz.map5 Routes.V1.GetMessageRequest
+    Fuzz.map5 V1.GetMessageRequest
         (orDefault "" awkwardString)
         (orDefault "0" int64Text)
-        (Fuzz.maybe (Fuzz.map Routes.V1.GetMessageRequestSubMessage (orDefault "" awkwardString)))
+        (Fuzz.maybe (Fuzz.map V1.GetMessageRequestSubMessage (orDefault "" awkwardString)))
         (orDefault "" awkwardString)
         (orDefault "" awkwardString)
 
@@ -494,9 +494,9 @@ getMessageRequest =
 {-| A `Resource`, its map fields holding none to three entries, its weights
 from `floats`.
 -}
-resource : Fuzzer Float -> Fuzzer Routes.V1.Resource
+resource : Fuzzer Float -> Fuzzer V1.Resource
 resource floats =
-    Fuzz.map5 Routes.V1.Resource
+    Fuzz.map5 V1.Resource
         (orDefault "" awkwardString)
         (orDefault "" awkwardString)
         (short (Fuzz.pair awkwardString awkwardString) |> Fuzz.map Dict.fromList)

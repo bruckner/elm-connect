@@ -139,12 +139,13 @@ elm-check: tests-gen
 
 # Write the Elm the tests import under tests/Generated (gitignored): the
 # codec round trips' (the modules generated from conformance/codec under
-# each option set, the samples and the codec table) and the depth cycles'
-# (the depth_cycles cases under a module prefix). Their tests write them on
-# every run, so `test` does too; elm-check depends on this so it works on a
-# fresh clone.
+# each option set, the samples and the codec table), the depth cycles' (the
+# depth_cycles cases under a module prefix), and the routes' (routes.proto's
+# modules and the routes_typed_shapes case under a module prefix). Their
+# tests write them on every run, so `test` does too; elm-check depends on
+# this so it works on a fresh clone.
 tests-gen:
-    cargo test -p elm-connect-gen --test codec --test depth
+    cargo test -p elm-connect-gen --test codec --test depth --test routes
 
 # Hold Proto.ErrorDetails, written by hand in generated code's form, to
 # what the generator gives for google/rpc/error_details.proto
@@ -230,13 +231,12 @@ test-with elm:
     conformance/test-with.sh {{elm}}
 
 # Rewrite the conformance corpus's expected output (modules and warnings.txt, or
-# diagnostics.txt), the Elm replay of the route fixtures and the route
-# properties (tests/Routes, tests/RouteFixtures.elm, tests/RouteProperties.elm),
-# and the typed route shapes (tests/Shapes) to what the generator produces now.
-# Review the diff before committing it.
+# diagnostics.txt) and the Elm replay of the route fixtures and the route
+# properties (tests/RouteFixtures.elm, tests/RouteProperties.elm) to what the
+# generator produces now. Review the diff before committing it.
 bless:
     ELM_CONNECT_BLESS=1 cargo test -p elm-connect-gen --test conformance -- --exact golden diagnostics
-    ELM_CONNECT_BLESS=1 cargo test -p elm-connect-gen --test routes -- --exact the_elm_replay_is_current the_route_properties_are_current the_typed_shapes_are_current
+    ELM_CONNECT_BLESS=1 cargo test -p elm-connect-gen --test routes -- --exact the_elm_replay_is_current the_route_properties_are_current
 
 # The live suite (design section 7, conformance/README.md): the runtime,
 # compiled into conformance/live's headless program and run from Node,

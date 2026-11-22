@@ -155,8 +155,8 @@ jobs:
           key: compat-elm-${{ matrix.elm.version }}-${{ runner.os }}-${{ hashFiles('mise.toml', 'elm.json', 'conformance/harness/elm.json', 'examples/notes/elm/elm.json') }}
       - run: conformance/compile-with.sh "$RUNNER_TEMP/elm"
       # elm-test-rs, and node to run its compiled tests, as mise pins them;
-      # Rust for the codec and depth tests, which write the modules under
-      # tests/Generated that the Elm tests import (just tests-gen).
+      # Rust for the codec, depth and route tests, which write the modules
+      # under tests/Generated that the Elm tests import (just tests-gen).
       - uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
         if: matrix.elm.tests
         with:
@@ -166,6 +166,6 @@ jobs:
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
         if: matrix.elm.tests
       - if: matrix.elm.tests
-        run: cargo test -p elm-connect-gen --test codec --test depth
+        run: cargo test -p elm-connect-gen --test codec --test depth --test routes
       - if: matrix.elm.tests
         run: conformance/test-with.sh "$RUNNER_TEMP/elm"

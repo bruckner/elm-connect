@@ -14,14 +14,19 @@
 //!   implicit route: `POST /<package>.<Service>/<Method>`, the request as
 //!   its body, with `Connect-Protocol-Version: 1`.
 //! - **The runtime's request builder**, in Elm: this test writes the
-//!   modules generated from `routes.proto` under `tests/Routes/` and the
-//!   fixtures as Elm data to `tests/RouteFixtures.elm`, all pinned like
-//!   the conformance corpus, the modules' header version as its
-//!   placeholder (`ELM_CONNECT_BLESS=1` rewrites them), and
-//!   `tests/RouteFixturesTest.elm` replays them through `Rpc.request`
+//!   modules generated from `routes.proto` under the module prefix
+//!   `Generated.Routes` into `tests/Generated/Routes/`, which is gitignored
+//!   and rewritten by every run, as the codec test's modules are (`just
+//!   tests-gen`), and the fixtures as Elm data to `tests/RouteFixtures.elm`,
+//!   pinned like the conformance corpus (`ELM_CONNECT_BLESS=1` rewrites
+//!   it); `tests/RouteFixturesTest.elm` replays them through `Rpc.request`
 //!   over the transcoding protocol, choosing the binding with
 //!   `Rpc.Call.viaBinding`; a fixture naming a binding the generated method
 //!   lacks fails there.
+//!
+//! The text generated from `routes.proto` is reviewed once, in the notes
+//! example (`examples/notes/elm/generated/Routes/`), which this test holds
+//! to the generator, the version on its header line aside.
 //!
 //! Bodies compare as JSON after dropping `null`s and default values
 //! (`""`, `0`, `false`, `"0"`, `[]`, `{}`), which a writer may omit or
@@ -45,7 +50,7 @@ use prost_reflect::{
 use serde_json::Value as Json;
 
 mod common;
-use common::placeholder_header;
+use common::{files_under, placeholder_header};
 #[path = "common/sample.rs"]
 mod sample;
 use sample::{Profile, Rng, sample_message};
@@ -54,6 +59,12 @@ use similar::TextDiff;
 fn repo_root() -> PathBuf {
     Path::new(env!("CARGO_MANIFEST_DIR")).join("../..")
 }
+
+/// The module prefix of the modules this test writes for the Elm tests.
+const PREFIX: &str = "Generated.Routes";
+
+/// Where they are written, under the repository: gitignored.
+const GENERATED: &str = "tests/Generated/Routes";
 
 fn routes_dir() -> PathBuf {
     repo_root().join("conformance/routes")
@@ -622,7 +633,7 @@ fn replay_module(
     cases: &[Case],
     methods: &HashMap<String, Known>,
 ) -> Module {
-    let module = ModuleName::new("Routes.V1");
+    let module = ModuleName::new(format!("{PREFIX}.Routes.V1"));
     let mut services = std::collections::BTreeSet::new();
     let items: Vec<Expr> = cases
         .iter()
@@ -633,11 +644,9 @@ fn replay_module(
                 .full_name()
                 .trim_start_matches("routes.v1.")
                 .replace('.', "");
-            services.insert(known.module.clone());
-            let call = qualified(
-                ModuleName::new(known.module.clone()),
-                known.method.elm_name.clone(),
-            );
+            let service = format!("{PREFIX}.{}", known.module);
+            services.insert(service.clone());
+            let call = qualified(ModuleName::new(service), known.method.elm_name.clone());
             let want = &case.expect;
             let query: Vec<String> = want
                 .query
@@ -713,10 +722,75 @@ fn replay_module(
     }
 }
 
+/// Writes `content` to the file at `path` under the repository unless it
+/// holds it already, so a run that changes nothing leaves the Elm
+/// compiler's cache valid.
+fn write(path: &str, content: &str) {
+    let file = repo_root().join(path);
+    if fs::read_to_string(&file).is_ok_and(|have| have == content) {
+        return;
+    }
+    fs::create_dir_all(file.parent().expect("a parent")).expect("create");
+    fs::write(&file, content).unwrap_or_else(|e| panic!("write {}: {e}", file.display()));
+}
+
+/// Writes each of `files` (a path under the repository and its content),
+/// all under `dir`, and removes any other file under `dir`, left from an
+/// earlier generator or proto, which would still compile into the Elm
+/// tests.
+fn write_tree(dir: &str, files: &[(String, String)]) {
+    for (path, content) in files {
+        assert!(
+            path.starts_with(&format!("{dir}/")),
+            "{path} is outside {dir}"
+        );
+        write(path, content);
+    }
+    let root = repo_root().join(dir);
+    for stale in files_under(&root).into_iter().filter(|name| {
+        !files
+            .iter()
+            .any(|(path, _)| *path == format!("{dir}/{name}"))
+    }) {
+        fs::remove_file(root.join(&stale)).expect("remove a stale module");
+    }
+}
+
+/// `content`, a module the plugin wrote at some release, with that
+/// release's version replaced by [`HEADER_VERSION_PLACEHOLDER`] where
+/// [`placeholder_header`] replaces this one's: a committed module that
+/// carries a real version compares with this generator's output whatever
+/// the patch.
+///
+/// [`HEADER_VERSION_PLACEHOLDER`]: elm_connect_gen::HEADER_VERSION_PLACEHOLDER
+fn placeholder_any_version(content: &str) -> String {
+    let header = format!("-- {}", elm_connect_gen::HEADER_PREFIX);
+    let Some(version) = content
+        .strip_prefix(&header)
+        .and_then(|rest| rest.split(' ').next())
+    else {
+        return content.to_owned();
+    };
+    let placeholder = elm_connect_gen::HEADER_VERSION_PLACEHOLDER;
+    let blob = |version: &str| format!("{}{version}/", elm_connect_gen::naming::REPOSITORY_BLOBS);
+    content
+        .replacen(
+            &format!("{header}{version} "),
+            &format!("{header}{placeholder} "),
+            1,
+        )
+        .replace(&blob(version), &blob(placeholder))
+}
+
+/// The notes example's modules generated from `routes.proto`
+/// (`examples/notes/elm/generated/Routes/`, which `just live-gen` writes
+/// with the plugin) are what the generator gives under the default
+/// options, file for file, the version on the header line aside. The text
+/// is reviewed there; the modules the Elm tests import are written under a
+/// prefix at test time.
 #[test]
-fn the_elm_replay_is_current() {
+fn the_example_holds_the_routes_modules() {
     let pool = pool();
-    let methods = methods(&pool);
     let generated = generate(&pool, &["routes.proto"], &Options::default())
         .unwrap_or_else(|d| panic!("{}", elm_connect_gen::diagnostics::render_narrow(&d)));
     // The fixtures hold two pairs of bindings no router serves together,
@@ -742,6 +816,59 @@ fn the_elm_replay_is_current() {
         "routes.proto warns of other than its two ambiguous pairs:\n{}",
         elm_connect_gen::diagnostics::render_narrow(&generated.warnings)
     );
+    let example = repo_root().join("examples/notes/elm/generated");
+    let mut failures = Vec::new();
+    for module in &generated.files {
+        let path = format!("examples/notes/elm/generated/{}", module.path);
+        let have = fs::read_to_string(example.join(&module.path)).unwrap_or_default();
+        let want = placeholder_header(&module.content);
+        let have = placeholder_any_version(&have);
+        if have != want {
+            failures.push(
+                TextDiff::from_lines(have.as_str(), want.as_str())
+                    .unified_diff()
+                    .header(&format!("committed/{path}"), &format!("generated/{path}"))
+                    .to_string(),
+            );
+        }
+    }
+    let names: Vec<&str> = generated.files.iter().map(|m| m.path.as_str()).collect();
+    for name in files_under(&example.join("Routes")) {
+        let path = format!("Routes/{name}");
+        if !names.contains(&path.as_str()) {
+            failures.push(format!(
+                "examples/notes/elm/generated/{path}: not generated from routes.proto"
+            ));
+        }
+    }
+    assert!(
+        failures.is_empty(),
+        "the notes example's routes.proto modules are stale; run `just live-gen`:\n{}",
+        failures.join("\n")
+    );
+}
+
+/// Writes the modules generated from `routes.proto` under the module
+/// prefix [`PREFIX`] into [`GENERATED`], for the Elm tests to import.
+#[test]
+fn the_routes_modules_are_written() {
+    let parameter = format!("module_prefix={PREFIX}");
+    let options = Options::from_parameter(&parameter)
+        .unwrap_or_else(|d| panic!("{}", elm_connect_gen::diagnostics::render_narrow(&d)));
+    let generated = generate(&pool(), &["routes.proto"], &options)
+        .unwrap_or_else(|d| panic!("{}", elm_connect_gen::diagnostics::render_narrow(&d)));
+    let files: Vec<(String, String)> = generated
+        .files
+        .iter()
+        .map(|module| (format!("tests/{}", module.path), module.content.clone()))
+        .collect();
+    write_tree(GENERATED, &files);
+}
+
+#[test]
+fn the_elm_replay_is_current() {
+    let pool = pool();
+    let methods = methods(&pool);
     let cases: Vec<Case> = fixtures().iter().map(Case::of_fixture).collect();
     let fixtures = elm_connect_gen::elm::print::print_module(&replay_module(
         "RouteFixtures",
@@ -750,23 +877,9 @@ fn the_elm_replay_is_current() {
         &cases,
         &methods,
     ));
-    let failures: Vec<String> = generated
-        .files
-        .iter()
-        .map(|module| {
-            pinned(
-                &format!("tests/{}", module.path),
-                &placeholder_header(&module.content),
-            )
-        })
-        .chain([pinned("tests/RouteFixtures.elm", &fixtures)])
-        .filter_map(Result::err)
-        .collect();
-    assert!(
-        failures.is_empty(),
-        "the Elm replay of the route fixtures is stale; run `just bless`:\n{}",
-        failures.join("\n")
-    );
+    if let Err(diff) = pinned("tests/RouteFixtures.elm", &fixtures) {
+        panic!("the Elm replay of the route fixtures is stale; run `just bless`:\n{diff}");
+    }
 }
 
 // The route properties: requests sampled at random for every route of
@@ -894,12 +1007,13 @@ fn the_route_properties_are_current() {
 
 // The typed shapes: the corpus case `routes_typed_shapes`, which holds every
 // binding shape whose route function was once left to the interpreter,
-// generated again with its options and `module_prefix=Shapes` into
-// `tests/Shapes/`, where `tests/RouteShapesTest.elm` holds each method's
-// route functions to the interpreter over the method's bindings as data.
+// generated again with its options and `module_prefix=Generated.Shapes` into
+// `tests/Generated/Shapes/`, where `tests/RouteShapesTest.elm` holds each
+// method's route functions to the interpreter over the method's bindings as
+// data. Its text is reviewed once, in the corpus.
 
 #[test]
-fn the_typed_shapes_are_current() {
+fn the_typed_shapes_are_written() {
     let case = repo_root().join("conformance/cases/routes_typed_shapes");
     let mut compiler =
         protox::Compiler::with_file_resolver(elm_connect_gen::googleapis::resolver([
@@ -910,24 +1024,17 @@ fn the_typed_shapes_are_current() {
         .open_file("blobs.proto")
         .unwrap_or_else(|e| panic!("blobs.proto does not compile: {e:?}"));
     let options = fs::read_to_string(case.join("options.txt")).expect("the case's options");
-    let options = Options::from_parameter(&format!("{},module_prefix=Shapes", options.trim()))
-        .unwrap_or_else(|d| panic!("{}", elm_connect_gen::diagnostics::render_narrow(&d)));
+    let options = Options::from_parameter(&format!(
+        "{},module_prefix=Generated.Shapes",
+        options.trim()
+    ))
+    .unwrap_or_else(|d| panic!("{}", elm_connect_gen::diagnostics::render_narrow(&d)));
     let generated = generate(&compiler.descriptor_pool(), &["blobs.proto"], &options)
         .unwrap_or_else(|d| panic!("{}", elm_connect_gen::diagnostics::render_narrow(&d)));
-    let failures: Vec<String> = generated
+    let files: Vec<(String, String)> = generated
         .files
         .iter()
-        .filter_map(|module| {
-            pinned(
-                &format!("tests/{}", module.path),
-                &placeholder_header(&module.content),
-            )
-            .err()
-        })
+        .map(|module| (format!("tests/{}", module.path), module.content.clone()))
         .collect();
-    assert!(
-        failures.is_empty(),
-        "the typed shapes under tests/Shapes are stale; run `just bless`:\n{}",
-        failures.join("\n")
-    );
+    write_tree("tests/Generated/Shapes", &files);
 }

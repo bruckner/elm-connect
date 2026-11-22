@@ -53,11 +53,10 @@ pub const SENTINEL: &str = concat!(
     env!("CARGO_PKG_VERSION_MINOR")
 );
 
-/// What the committed expected output of the conformance corpus and the
-/// route replay holds in place of [`VERSION`] on its header line: the
-/// major and minor version with `X` for the patch, `0.1.X` for 0.1.x, so a
-/// patch release leaves those files alone, and a minor release changes it
-/// with [`SENTINEL`].
+/// What the committed expected output of the conformance corpus holds in
+/// place of [`VERSION`] on its header line: the major and minor version
+/// with `X` for the patch, `0.1.X` for 0.1.x, so a patch release leaves
+/// those files alone, and a minor release changes it with [`SENTINEL`].
 pub const HEADER_VERSION_PLACEHOLDER: &str = concat!(
     env!("CARGO_PKG_VERSION_MAJOR"),
     ".",
@@ -69,7 +68,7 @@ pub const HEADER_VERSION_PLACEHOLDER: &str = concat!(
 /// [`HEADER_VERSION_PLACEHOLDER`] where the module names it: on its header
 /// line and in its doc comments' links into the repository at this
 /// release. What the committed expected output of the conformance corpus
-/// and the route replay holds.
+/// holds.
 pub fn placeholder_version(content: &str) -> String {
     swap_version(content, VERSION, HEADER_VERSION_PLACEHOLDER)
 }

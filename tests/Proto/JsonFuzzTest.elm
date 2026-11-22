@@ -12,13 +12,13 @@ import Dict
 import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer)
 import Fuzzers
+import Generated.Routes.Routes.V1 as V1
 import Json.Decode exposing (Decoder)
 import Json.Encode exposing (Value)
 import Proto.Duration
 import Proto.Int64
 import Proto.Json
 import Proto.Timestamp
-import Routes.V1
 import Test exposing (Test, describe, fuzz, fuzz2, test)
 import Time
 
@@ -522,7 +522,7 @@ enumProperties =
                     ]
                     ()
         , fuzz Fuzzers.kind "a generated enum round-trips by name" <|
-            roundTrips Routes.V1.encodeKind Routes.V1.decodeKind
+            roundTrips V1.encodeKind V1.decodeKind
         , fuzz (Fuzz.intRange 3 2147483647) "an unknown number reads as the zero value, under both" <|
             \number ->
                 Expect.all
@@ -712,21 +712,21 @@ omitDefaultsProperties : Test
 omitDefaultsProperties =
     let
         encode =
-            Routes.V1.encodeEverything >> Json.Encode.encode 0
+            V1.encodeEverything >> Json.Encode.encode 0
     in
     describe "the generated codecs omit defaults"
-        [ defaultsTest "Everything" Routes.V1.encodeEverything Routes.V1.decodeEverything Routes.V1.defaultEverything
-        , defaultsTest "Inner" Routes.V1.encodeInner Routes.V1.decodeInner Routes.V1.defaultInner
-        , defaultsTest "Deep" Routes.V1.encodeDeep Routes.V1.decodeDeep Routes.V1.defaultDeep
-        , defaultsTest "GetMessageRequest" Routes.V1.encodeGetMessageRequest Routes.V1.decodeGetMessageRequest Routes.V1.defaultGetMessageRequest
-        , defaultsTest "Message" Routes.V1.encodeMessage Routes.V1.decodeMessage Routes.V1.defaultMessage
-        , defaultsTest "UpdateMessageRequest" Routes.V1.encodeUpdateMessageRequest Routes.V1.decodeUpdateMessageRequest Routes.V1.defaultUpdateMessageRequest
-        , defaultsTest "FileRequest" Routes.V1.encodeFileRequest Routes.V1.decodeFileRequest Routes.V1.defaultFileRequest
-        , defaultsTest "Resource" Routes.V1.encodeResource Routes.V1.decodeResource Routes.V1.defaultResource
-        , defaultsTest "UpdateResourceRequest" Routes.V1.encodeUpdateResourceRequest Routes.V1.decodeUpdateResourceRequest Routes.V1.defaultUpdateResourceRequest
+        [ defaultsTest "Everything" V1.encodeEverything V1.decodeEverything V1.defaultEverything
+        , defaultsTest "Inner" V1.encodeInner V1.decodeInner V1.defaultInner
+        , defaultsTest "Deep" V1.encodeDeep V1.decodeDeep V1.defaultDeep
+        , defaultsTest "GetMessageRequest" V1.encodeGetMessageRequest V1.decodeGetMessageRequest V1.defaultGetMessageRequest
+        , defaultsTest "Message" V1.encodeMessage V1.decodeMessage V1.defaultMessage
+        , defaultsTest "UpdateMessageRequest" V1.encodeUpdateMessageRequest V1.decodeUpdateMessageRequest V1.defaultUpdateMessageRequest
+        , defaultsTest "FileRequest" V1.encodeFileRequest V1.decodeFileRequest V1.defaultFileRequest
+        , defaultsTest "Resource" V1.encodeResource V1.decodeResource V1.defaultResource
+        , defaultsTest "UpdateResourceRequest" V1.encodeUpdateResourceRequest V1.decodeUpdateResourceRequest V1.defaultUpdateResourceRequest
         , fuzz (Fuzzers.everything Fuzzers.nonNegativeZeroFloat) "encode (decode (encode x)) == encode x" <|
             \x ->
-                Json.Decode.decodeString Routes.V1.decodeEverything (encode x)
+                Json.Decode.decodeString V1.decodeEverything (encode x)
                     |> Result.map encode
                     |> Expect.equal (Ok (encode x))
         , fuzz
@@ -744,7 +744,7 @@ omitDefaultsProperties =
             )
             "decode (encode x) == x"
           <|
-            \x -> Json.Decode.decodeString Routes.V1.decodeEverything (encode x) |> Expect.equal (Ok x)
+            \x -> Json.Decode.decodeString V1.decodeEverything (encode x) |> Expect.equal (Ok x)
         , fuzz
             (Fuzzers.resource
                 (Fuzz.map
@@ -762,9 +762,9 @@ omitDefaultsProperties =
           <|
             \x ->
                 Expect.all
-                    [ roundTrips Routes.V1.encodeResource Routes.V1.decodeResource
+                    [ roundTrips V1.encodeResource V1.decodeResource
                     , \_ ->
-                        Json.Decode.decodeValue (Json.Decode.keyValuePairs Json.Decode.value) (Routes.V1.encodeResource x)
+                        Json.Decode.decodeValue (Json.Decode.keyValuePairs Json.Decode.value) (V1.encodeResource x)
                             |> Result.map (List.map Tuple.first >> List.filter (\key -> List.member key [ "labels", "kinds", "weights" ]))
                             |> Expect.equal
                                 (Ok
