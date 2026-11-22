@@ -269,6 +269,12 @@ and 3,000 to 5,000 in Safari overflow the JavaScript stack, and an
 overflow inside `update` stops the program from running any further
 command.
 
+An error the runtime returns holds no JSON nested more than 50 levels
+deep: in its place is the string `"(JSON nested more than 50 levels
+deep, left out)"`, so `Json.Decode.errorToString` and
+`Proto.Error.toString` print a few hundred characters for input
+100,000 levels deep.
+
 What is not limited, and can still overflow the stack or print without
 end, is the application's own:
 

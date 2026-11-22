@@ -20,6 +20,7 @@ import Generated.Deep.Outside.V1 as Outside
 import Generated.DeepKeep.Cycles.V1 as Keep
 import Http
 import Json.Decode
+import Json.Encode
 import Proto.Any
 import Proto.Binary
 import Proto.Bytes
@@ -47,7 +48,9 @@ suite =
         , farPast
         , oneBudget
         , mixedFarPast
+        , scrubbed
         , valueRefusals
+        , valueErrorsShort
         ]
 
 
@@ -879,6 +882,70 @@ readEnvelopeBytesValue =
     Proto.Binary.decode Deep.decodeEnvelopeBytes
 
 
+{-| An error we return holds no JSON nested past 50 levels, so it prints
+short however deep the input: `Json.Decode.errorToString` of the `BadJson`
+itself, not only `Proto.Error.toString`, which scrubs before printing.
+-}
+scrubbed : Test
+scrubbed =
+    let
+        deep =
+            String.repeat 100000 "[" ++ String.repeat 100000 "]"
+
+        printsShort limit result =
+            case result of
+                Err (Proto.Error.BadJson error) ->
+                    Expect.all
+                        [ \_ -> Json.Decode.errorToString error |> String.length |> Expect.lessThan limit
+                        , \_ -> Proto.Error.toString (Proto.Error.BadJson error) |> String.length |> Expect.lessThan limit
+                        ]
+                        ()
+
+                _ ->
+                    Expect.fail "not BadJson"
+
+        parsed text =
+            Json.Decode.decodeString Json.Decode.value text |> Result.withDefault Json.Encode.null
+    in
+    describe "the error a read returns"
+        [ test "when it failed past the limit" <|
+            \_ ->
+                Proto.Message.decodeJson Deep.registry Deep.messageEnvelope (parsed (valueArraysJson 1 100000))
+                    |> printsShort 1200
+        , test "when a field was given a deep value of the wrong type" <|
+            \_ ->
+                Proto.Message.decodeJson Deep.registry Deep.messageChain (parsed ("{\"label\":" ++ deep ++ "}"))
+                    |> printsShort 300
+        , test "when an Any's message was given one" <|
+            \_ ->
+                Proto.Message.decodeJson Deep.registry Deep.messageEnvelope (parsed ("{\"payload\":{\"@type\":\"type.googleapis.com/cycles.v1.Chain\",\"label\":" ++ deep ++ "}}"))
+                    |> printsShort 400
+        , test "an error detail's" <|
+            \_ ->
+                let
+                    body =
+                        "{\"code\":\"internal\",\"message\":\"x\",\"details\":[{\"type\":" ++ deep ++ "}]}"
+
+                    method =
+                        Proto.Method.init "cycles.v1.Trees" "Get" (\_ -> Ok << Deep.encodeTree) (\_ -> Deep.decodeTree) Deep.encodeTreeBytes Deep.decodeTreeBytes
+
+                    answer =
+                        Http.BadStatus_ { url = "https://api.example.com/cycles.v1.Trees/Get", statusCode = 500, statusText = "Internal Server Error", headers = Dict.fromList [ ( "content-type", "application/json" ) ] } body
+                in
+                case Rpc.response (Rpc.client Rpc.Protocol.connect "https://api.example.com") (Rpc.call method Deep.defaultTree) answer of
+                    Err error ->
+                        case Rpc.Error.details error of
+                            [ detail ] ->
+                                printsShort 300 detail
+
+                            _ ->
+                                Expect.fail "not one detail"
+
+                    Ok _ ->
+                        Expect.fail "an error read as an answer"
+        ]
+
+
 
 -- VALUE REFUSALS
 
@@ -1025,3 +1092,64 @@ nestedArrays levels =
 nestedObjects : Int -> String
 nestedObjects levels =
     String.repeat (levels - 1) "{\"a\":" ++ "{}" ++ String.repeat (levels - 1) "}"
+
+
+{-| A `Value`, `Struct` or `ListValue` refused for its depth gives an error of
+a few hundred characters through the library, however wide or deep the
+value: the levels' own failure, which holds every way each level failed, is
+never returned.
+-}
+valueErrorsShort : Test
+valueErrorsShort =
+    let
+        wide levels =
+            String.repeat levels "{\"k1\":[1,\"s\",true],\"k2\":[2,\"s\",true],\"k3\":[3,\"s\",true],\"z\":" ++ "1" ++ String.repeat levels "}"
+
+        printsWithin limit result =
+            case result of
+                Err (Proto.Error.BadJson error) ->
+                    Expect.all
+                        [ \_ -> Json.Decode.errorToString error |> String.length |> Expect.atMost limit
+                        , \_ -> Proto.Error.toString (Proto.Error.BadJson error) |> String.length |> Expect.atMost limit
+                        ]
+                        ()
+
+                _ ->
+                    Expect.fail "not BadJson"
+
+        parsed text =
+            Json.Decode.decodeString Json.Decode.value text |> Result.withDefault Json.Encode.null
+
+        method =
+            Proto.Method.init "cycles.v1.Envelopes" "Get" Deep.encodeEnvelopeWith Deep.decodeEnvelopeWith Deep.encodeEnvelopeBytes Deep.decodeEnvelopeBytes
+
+        answered text =
+            Http.GoodStatus_ { url = "https://api.example.com/cycles.v1.Envelopes/Get", statusCode = 200, statusText = "OK", headers = Dict.fromList [ ( "content-type", "application/json" ) ] } text
+                |> Rpc.response (Rpc.client Rpc.Protocol.connect "https://api.example.com" |> Rpc.Client.withRegistry Deep.registry) (Rpc.call method Deep.defaultEnvelope)
+                |> Result.mapError (Rpc.Error.protoError >> Maybe.withDefault (Proto.Error.BadJson (Json.Decode.Failure "not a protobuf error" Json.Encode.null)))
+
+        decodeValueMessage =
+            Proto.Message.decodeJson Proto.WellKnown.registry Proto.WellKnown.value
+    in
+    describe "a Value, Struct or ListValue refused prints short through the library"
+        [ test "refused at 101 levels" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> Proto.Message.decodeJson Deep.registry Deep.messageEnvelope (parsed (valueArraysJson 1 100)) |> printsWithin 300
+                    , \_ -> answered (valueArraysJson 1 100) |> printsWithin 300
+                    , \_ -> answered (structJson 1 101) |> printsWithin 300
+                    , \_ -> decodeValueMessage (parsed (nestedArrays 101)) |> printsWithin 300
+                    ]
+                    ()
+        , test "wide and too deep" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> Proto.Message.decodeJson Deep.registry Deep.messageEnvelope (parsed ("{\"value\":" ++ wide 101 ++ "}")) |> printsWithin 300
+                    , \_ -> answered ("{\"value\":" ++ wide 101 ++ "}") |> printsWithin 300
+                    , \_ -> answered ("{\"data\":" ++ wide 101 ++ "}") |> printsWithin 300
+                    , \_ -> decodeValueMessage (parsed (wide 101)) |> printsWithin 300
+                    ]
+                    ()
+        , test "100,000 levels" <|
+            \_ -> decodeValueMessage (parsed (nestedArrays 100000)) |> printsWithin 300
+        ]
