@@ -34,6 +34,7 @@ import Proto.Error
 import Proto.Json
 import Proto.Message
 import Proto.Registry
+import Proto.Value
 import Proto.Version
 import Proto.WellKnown
 
@@ -380,17 +381,25 @@ type Wide_
 
 
 {-| On a cycle and holding an `Any`: its JSON decoders take the registry, so
-they are built as they are entered rather than once.
+they are built as they are entered rather than once. The `Any`, and the
+arrays and objects of its `Struct`, `Value` and `ListValue`, count from the
+depth of the message holding them.
 
 [`message cycles.v1.Envelope`](Cycles-V1-Envelope#descriptor)
 
   - [`payload`](Cycles-V1-Envelope#payload)
   - [`replies`](Cycles-V1-Envelope#replies)
+  - [`data`](Cycles-V1-Envelope#data)
+  - [`value`](Cycles-V1-Envelope#value)
+  - [`list`](Cycles-V1-Envelope#list)
 
 -}
 type alias Envelope =
     { payload : Maybe Proto.Any.Any
     , replies : List Envelope_
+    , data : Maybe (Dict String Proto.Value.Value)
+    , value : Maybe Proto.Value.Value
+    , list : Maybe (List Proto.Value.Value)
     }
 
 
@@ -566,6 +575,9 @@ defaultEnvelope : Envelope
 defaultEnvelope =
     { payload = Nothing
     , replies = []
+    , data = Nothing
+    , value = Nothing
+    , list = Nothing
     }
 
 
@@ -959,7 +971,10 @@ encodeEnvelopeWith : Proto.Registry.Registry -> Envelope -> Result Proto.Error.E
 encodeEnvelopeWith types value =
     Proto.Json.tryObjectOfFields
         [ ( "payload", Proto.Json.tryOptionalField (Proto.Json.encodeAnyWith types) value.payload )
-        , ( "replies", Proto.Json.tryRepeatedField (encodeEnvelope_With types) value.replies )
+        , ( "replies", Proto.Json.tryRepeatedField (encodeEnvelope_With (Proto.Json.registryDeeper types)) value.replies )
+        , ( "data", Ok (Maybe.map Proto.Json.encodeStruct value.data) )
+        , ( "value", Ok (Maybe.map Proto.Json.encodeValue value.value) )
+        , ( "list", Ok (Maybe.map Proto.Json.encodeListValue value.list) )
         ]
 
 
@@ -1335,7 +1350,7 @@ decodeWide_ =
 -}
 decodeEnvelopeWith : Proto.Registry.Registry -> Json.Decode.Decoder Envelope
 decodeEnvelopeWith types =
-    decodeNestedEnvelopeWith types 1
+    decodeNestedEnvelopeWith types (max 1 (Proto.Json.registryDepth types))
 
 
 {-| [`decodeEnvelopeWith`](#decodeEnvelopeWith) for an [`Envelope`](#Envelope) held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.
@@ -1344,8 +1359,11 @@ decodeNestedEnvelopeWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder
 decodeNestedEnvelopeWith types depth =
     Proto.Json.message
         (Json.Decode.succeed Envelope
-            |> Proto.Json.messageField "payload" Nothing (Json.Decode.map Just (Proto.Json.anyWith types))
+            |> Proto.Json.messageField "payload" Nothing (Json.Decode.map Just (Proto.Json.nestedAnyWith depth types))
             |> Proto.Json.messageField "replies" [] (Json.Decode.list (Json.Decode.map Envelope_ (Proto.Json.deeperWith depth (decodeNestedEnvelopeWith types))))
+            |> Proto.Json.messageField "data" Nothing (Json.Decode.map Just (Proto.Json.nestedStruct depth))
+            |> Proto.Json.nestedMessageValueField "value" depth
+            |> Proto.Json.messageField "list" Nothing (Json.Decode.map Just (Proto.Json.nestedListValue depth))
         )
 
 
@@ -1612,6 +1630,9 @@ encodeEnvelopeBytes value =
     Bytes.Encode.sequence
         [ Proto.Binary.optional Proto.Binary.any 1 value.payload
         , Proto.Binary.list (Proto.Binary.embedded encodeEnvelope_Bytes mergeEnvelope_Bytes (Envelope_ defaultEnvelope)) 2 value.replies
+        , Proto.Binary.optional Proto.Binary.struct 3 value.data
+        , Proto.Binary.optional Proto.Binary.value 4 value.value
+        , Proto.Binary.optional Proto.Binary.listValue 5 value.list
         ]
 
 
@@ -2490,6 +2511,9 @@ mergeNestedEnvelopeBytes =
                                 (\v ->
                                     { payload = Just v
                                     , replies = value.replies
+                                    , data = value.data
+                                    , value = value.value
+                                    , list = value.list
                                     }
                                 )
                                 wire
@@ -2501,9 +2525,54 @@ mergeNestedEnvelopeBytes =
                                 (\v ->
                                     { payload = value.payload
                                     , replies = v
+                                    , data = value.data
+                                    , value = value.value
+                                    , list = value.list
                                     }
                                 )
                                 value.replies
+                                wire
+                                value
+
+                        3 ->
+                            Proto.Binary.field
+                                (Proto.Binary.nestedStruct depth)
+                                (\v ->
+                                    { payload = value.payload
+                                    , replies = value.replies
+                                    , data = Just v
+                                    , value = value.value
+                                    , list = value.list
+                                    }
+                                )
+                                wire
+                                value
+
+                        4 ->
+                            Proto.Binary.field
+                                (Proto.Binary.nestedValue depth)
+                                (\v ->
+                                    { payload = value.payload
+                                    , replies = value.replies
+                                    , data = value.data
+                                    , value = Just v
+                                    , list = value.list
+                                    }
+                                )
+                                wire
+                                value
+
+                        5 ->
+                            Proto.Binary.field
+                                (Proto.Binary.nestedListValue depth)
+                                (\v ->
+                                    { payload = value.payload
+                                    , replies = value.replies
+                                    , data = value.data
+                                    , value = value.value
+                                    , list = Just v
+                                    }
+                                )
                                 wire
                                 value
 
@@ -2513,6 +2582,9 @@ mergeNestedEnvelopeBytes =
                 (\value ->
                     { payload = value.payload
                     , replies = List.reverse value.replies
+                    , data = value.data
+                    , value = value.value
+                    , list = value.list
                     }
                 )
         )

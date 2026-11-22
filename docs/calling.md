@@ -38,7 +38,7 @@ calling:
 | `Proto.Json` | the proto3 JSON helpers generated codecs call |
 | `Proto.Binary` | the protobuf binary wire format over elm/bytes, for binary codecs |
 | `Proto.Unknown` | the fields read from a protobuf binary whose field numbers or types are unrecognized, kept under `unknown_fields=keep` ([generator.md](generator.md#options)) |
-| `Proto.Timestamp`, `Proto.Duration`, `Proto.Int64`, `Proto.Bytes` | the well-known types' Elm forms, and conversions for 64-bit integers and bytes |
+| `Proto.Timestamp`, `Proto.Duration`, `Proto.Value`, `Proto.Int64`, `Proto.Bytes` | the well-known types' Elm forms (`Proto.Value` for `Value`, `Struct` and `ListValue`), and conversions for 64-bit integers and bytes |
 | `Proto.Message`, `Proto.Enum` | a type's typed value (its codecs with its default and descriptor) and its descriptor as data |
 | `Proto.Field`, `Proto.EnumValue` | the parts of a descriptor: a field with its unions and its `google.api.field_behavior`, an enum value |
 | `Proto.Method` | a method's typed value (request encoder, response decoder, service and method name, idempotency and routes) and its descriptor as data |
@@ -245,44 +245,56 @@ been set.
 
 ### Nesting depth
 
-A message on a cycle of references (one that holds itself, directly or
-through other messages), and a binary `Struct`, `Value` or `ListValue`,
-is read at most 100 levels deep. A level is each message entered along a
-field or oneof member of the cycle, the outermost at 1; a `Value` holding
-a list or an object is two. Past that a binary read fails with
-`Proto.Error.TooDeep` and a JSON read with "Expecting messages nested at
-most 100 deep", so over a call the error is a `BadResponse`. Without a
-limit, about 500 levels in Chromium and node, 800 to 1,200 in Firefox and
-3,000 to 5,000 in Safari overflow the JavaScript stack, and an overflow
-inside `update` stops the program from running any further command.
+Reads are limited to 100 levels of nesting, as protobuf's own runtimes
+limit them, against one budget for three kinds of level:
 
-Three things are not limited, and can still overflow the stack:
+- each message entered along a field or oneof member of a cycle of
+  references (a message that holds itself, directly or through other
+  messages), the outermost at 1;
+- each `google.protobuf.Any`, the message it holds counting on from it
+  (in a JSON read, which converts it through the registry);
+- each array and object of a `Value`, `Struct` or `ListValue`, counting
+  on from the message that holds it.
 
-- **Writing a value the application built.** Encoding is not limited, as
-  in protobuf's own runtimes. A value read through the limit encodes, but
-  one the program builds itself can be deeper: binary encoding overflows
-  past about 380 to 440 levels in Chromium and node (about 470 to 540 in
-  Firefox), `Json.Encode.encode` of a generated message past about 700.
-  Bound the depth where the program builds such values.
-- **A `Struct`, `Value` or `ListValue` read from JSON.** Their JSON is read
-  as a `Json.Encode.Value`, which no depth bounds; reading never
-  overflows, but writing such a value again with `Json.Encode.encode`
-  overflows past about 5,000 levels in Chromium and node and 3,700 in
-  Firefox, and through `Proto.Binary` past about 380. Do not re-encode
-  one read from a source you do not trust without checking it.
-- **An `Any` nested in an `Any`, through the registry.** Converting
-  between JSON and binary recurses once per level and costs time in the
-  square of the depth: about a second at 1,000 levels, an overflow
-  between 300 and 1,000 levels when read with `Json.Decode.decodeValue`
-  or `Proto.Message.decodeJson`.
+The unit is the same in JSON and binary, so 100 levels read in one read
+in the other. Past them a binary read fails with `Proto.Error.TooDeep`
+and a JSON read with "Expecting messages nested at most 100 deep"; over
+a call the error is a `BadResponse`. For a `Value`, `Struct` or
+`ListValue` the error is at the field holding it and does not say where
+inside the value the limit was passed. Every read path returns the error
+and throws nothing, however deep the input: checked at 100,000 levels of
+the three kinds mixed in node, Chromium, Firefox and WebKit. Without a
+limit, about 500 levels in Chromium and node, 800 to 1,200 in Firefox
+and 3,000 to 5,000 in Safari overflow the JavaScript stack, and an
+overflow inside `update` stops the program from running any further
+command.
 
-elm/json keeps the JSON where a read failed in its error, and
-`Json.Decode.errorToString` (and `Proto.Error.toString` of a `BadJson`)
-prints it, indented: for the depth limit's failure on input 1,000 levels
-deep that is about 13 MB of text, and on input 100,000 levels deep
-printing it overflows the stack and throws. Read a failure's message by
-following the error to its `Json.Decode.Failure` rather than printing the
-whole error; `Rpc.Error.toString` does not print the JSON.
+What is not limited, and can still overflow the stack or print without
+end, is the application's own:
+
+| What the application does | Overflows past about (node, Chromium / Firefox / WebKit) |
+|---|---|
+| `Json.Encode.encode` of a message it built (generated encoder) | 780 / 910 / 5,700 levels |
+| binary encoding of a value it built (`Proto.Binary.encode`, `Proto.Any.pack`, `Rpc.request` of a binary call) | 480 / 610 / 5,500 levels |
+| `Json.Encode.encode` of a `Json.Encode.Value` it built | 5,000 to 6,000 / 3,700 / 40,000 levels |
+| `Json.Decode.errorToString` of an error from its own `Json.Decode.decodeString` or `decodeValue` with a generated decoder, which the runtime never sees to scrub | 2,600 to 3,100 / 2,050 / 11,700 input levels |
+| `Debug.toString` of a deep value (development builds) | 1,250 / 3,000 / 7,000 levels |
+
+The depths are measured from the runtime's own encoders and elm/json;
+a `Proto.Value.Value` the program builds deeper than any it reads, written
+through `Proto.Value.toJson` or either codec, overflows too, at depths not
+measured. Writing is not limited, as in protobuf's own runtimes: a value
+read through the limit writes in both codecs, but one the program builds
+can be deeper. Bound the depth where the program builds such values, and
+read a failure from its own decoders by following the error to its
+`Json.Decode.Failure` rather than printing the whole error. Its own
+recursive decoders and functions over deep values are its own to bound
+too. An `Any` read from binary holds its message's bytes, unread; when
+it is converted to JSON (`Proto.Any.toJson`, or writing a message holding
+it as JSON), the conversion counts the `Any`s and the messages around them
+as a read does, and an `Any` past the limit fails the write with
+`TooDeep`, so what was read from binary writes as JSON or fails, and does
+not overflow.
 
 ## Retries
 

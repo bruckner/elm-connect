@@ -51,7 +51,7 @@ pub const REPOSITORY_BLOBS: &str = repository_blobs!();
 pub const REPOSITORY_FILES: &str = concat!(repository_blobs!(), env!("CARGO_PKG_VERSION"), "/");
 
 /// The runtime package's exposed modules, as its `elm.json` lists them.
-pub const RUNTIME_MODULES: [&str; 34] = [
+pub const RUNTIME_MODULES: [&str; 35] = [
     "Rpc",
     "Rpc.Call",
     "Rpc.Code",
@@ -84,6 +84,7 @@ pub const RUNTIME_MODULES: [&str; 34] = [
     "Proto.Int64",
     "Proto.Bytes",
     "Proto.Duration",
+    "Proto.Value",
     "Proto.Timestamp",
     "Proto.Version",
 ];

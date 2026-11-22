@@ -21,6 +21,7 @@ import Proto.Duration exposing (Duration)
 import Proto.Json
 import Proto.Message
 import Proto.Registry
+import Proto.Value
 import Proto.Version
 import Proto.WellKnown
 import Time
@@ -83,9 +84,9 @@ type alias Event =
     , timeout : Maybe Duration
     , updateMask : Maybe (List String)
     , marker : ()
-    , metadata : Maybe (Dict String Json.Encode.Value)
-    , payload : Maybe Json.Encode.Value
-    , items : Maybe (List Json.Encode.Value)
+    , metadata : Maybe (Dict String Proto.Value.Value)
+    , payload : Maybe Proto.Value.Value
+    , items : Maybe (List Proto.Value.Value)
     , ratio : Maybe Float
     , weight : Maybe Float
     , bigCount : Maybe String
@@ -97,15 +98,15 @@ type alias Event =
     , avatar : Maybe String
     , history : List Time.Posix
     , limits : Dict String Duration
-    , values : List Json.Encode.Value
+    , values : List Proto.Value.Value
     , counts : List Int
     , acked : ()
     , pings : List ()
     , seen : Dict String ()
-    , records : List (Dict String Json.Encode.Value)
-    , columns : Dict String (List Json.Encode.Value)
-    , lastValue : Maybe Json.Encode.Value
-    , settings : Dict String Json.Encode.Value
+    , records : List (Dict String Proto.Value.Value)
+    , columns : Dict String (List Proto.Value.Value)
+    , lastValue : Maybe Proto.Value.Value
+    , settings : Dict String Proto.Value.Value
     , nothing : ()
     , maybeNothing : ()
     , nulls : List ()
@@ -129,9 +130,9 @@ type EventWhen
     = EventWhenUnset
     | EventWhenAt Time.Posix
     | EventWhenAfter Duration
-    | EventWhenWhenever Json.Encode.Value
-    | EventWhenSchedule (Dict String Json.Encode.Value)
-    | EventWhenDates (List Json.Encode.Value)
+    | EventWhenWhenever Proto.Value.Value
+    | EventWhenSchedule (Dict String Proto.Value.Value)
+    | EventWhenDates (List Proto.Value.Value)
     | EventWhenNever
 
 
@@ -228,7 +229,7 @@ encodeEvent value =
          , ( "updateMask", Maybe.map Proto.Json.encodeFieldMask value.updateMask )
          , ( "marker", Just (Proto.Json.encodeEmpty value.marker) )
          , ( "metadata", Maybe.map Proto.Json.encodeStruct value.metadata )
-         , ( "payload", value.payload )
+         , ( "payload", Maybe.map Proto.Json.encodeValue value.payload )
          , ( "items", Maybe.map Proto.Json.encodeListValue value.items )
          , ( "ratio", Maybe.map Proto.Json.encodeFloat value.ratio )
          , ( "weight", Maybe.map Proto.Json.encodeFloat value.weight )
@@ -241,15 +242,15 @@ encodeEvent value =
          , ( "avatar", Maybe.map Proto.Json.encodeBytes value.avatar )
          , ( "history", Proto.Json.repeatedField Proto.Json.encodeTimestamp value.history )
          , ( "limits", Proto.Json.dictField identity Proto.Json.encodeDuration value.limits )
-         , ( "values", Proto.Json.repeatedField identity value.values )
+         , ( "values", Proto.Json.repeatedField Proto.Json.encodeValue value.values )
          , ( "counts", Proto.Json.repeatedField Json.Encode.int value.counts )
          , ( "acked", Just (Proto.Json.encodeEmpty value.acked) )
          , ( "pings", Proto.Json.repeatedField Proto.Json.encodeEmpty value.pings )
          , ( "seen", Proto.Json.dictField identity Proto.Json.encodeEmpty value.seen )
          , ( "records", Proto.Json.repeatedField Proto.Json.encodeStruct value.records )
          , ( "columns", Proto.Json.dictField identity Proto.Json.encodeListValue value.columns )
-         , ( "lastValue", value.lastValue )
-         , ( "settings", Proto.Json.dictField identity identity value.settings )
+         , ( "lastValue", Maybe.map Proto.Json.encodeValue value.lastValue )
+         , ( "settings", Proto.Json.dictField identity Proto.Json.encodeValue value.settings )
          , ( "nothing", Proto.Json.implicitField () Proto.Json.encodeNullValue value.nothing )
          , ( "maybeNothing", Proto.Json.implicitField () Proto.Json.encodeNullValue value.maybeNothing )
          , ( "nulls", Proto.Json.repeatedField Proto.Json.encodeNullValue value.nulls )
@@ -276,7 +277,7 @@ encodeEventWhen value =
             ]
 
         EventWhenWhenever member ->
-            [ ( "whenever", Just member )
+            [ ( "whenever", Just (Proto.Json.encodeValue member) )
             ]
 
         EventWhenSchedule member ->
@@ -320,7 +321,7 @@ decodeEvent =
             |> Proto.Json.messageField "avatar" Nothing (Json.Decode.map Just Proto.Json.bytes)
             |> Proto.Json.messageField "history" [] (Json.Decode.list Proto.Json.timestamp)
             |> Proto.Json.messageField "limits" Dict.empty (Proto.Json.stringDict Proto.Json.duration)
-            |> Proto.Json.messageField "values" [] (Json.Decode.list Json.Decode.value)
+            |> Proto.Json.messageField "values" [] (Json.Decode.list Proto.Json.value)
             |> Proto.Json.messageField "counts" [] (Json.Decode.list Proto.Json.int32)
             |> Proto.Json.messageField "acked" () Proto.Json.empty
             |> Proto.Json.messageField "pings" [] (Json.Decode.list Proto.Json.empty)
@@ -328,7 +329,7 @@ decodeEvent =
             |> Proto.Json.messageField "records" [] (Json.Decode.list Proto.Json.struct)
             |> Proto.Json.messageField "columns" Dict.empty (Proto.Json.stringDict Proto.Json.listValue)
             |> Proto.Json.messageValueFieldEither "lastValue" "last_value"
-            |> Proto.Json.messageField "settings" Dict.empty (Proto.Json.stringDict Json.Decode.value)
+            |> Proto.Json.messageField "settings" Dict.empty (Proto.Json.stringDict Proto.Json.value)
             |> Proto.Json.messageField "nothing" () Proto.Json.nullValue
             |> Proto.Json.messageFieldEither "maybeNothing" "maybe_nothing" () Proto.Json.nullValue
             |> Proto.Json.messageField "nulls" [] (Json.Decode.list Proto.Json.nullValue)

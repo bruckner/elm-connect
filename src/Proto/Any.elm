@@ -139,12 +139,12 @@ packWith prefix ((InternalMessage.Message _ codecs) as message) value =
             -- An empty table writes an `Any` held as JSON alone when it is
             -- lenient and refuses it when strict; every other `Any` fails
             -- both ways, so only the lenient write succeeding finds one.
-            case codecs.encodeJson (InternalRegistry.Registry InternalRegistry.Strict Dict.empty) value of
+            case codecs.encodeJson (InternalRegistry.Registry InternalRegistry.Strict 0 Dict.empty) value of
                 Ok _ ->
                     binary ()
 
                 Err _ ->
-                    case codecs.encodeJson (InternalRegistry.Registry InternalRegistry.Lenient Dict.empty) value of
+                    case codecs.encodeJson (InternalRegistry.Registry InternalRegistry.Lenient 0 Dict.empty) value of
                         Ok json ->
                             -- Only the refusal of an `Any` held as JSON alone
                             -- failed: the binary would lose that `Any`.
@@ -189,7 +189,7 @@ tryUnpack ((InternalMessage.Message _ codecs) as message) ((Internal.Any url pay
     if is message any then
         case payload of
             Internal.Json json ->
-                Json.Decode.decodeValue (codecs.decodeJson (InternalRegistry.Registry InternalRegistry.Lenient Dict.empty)) json
+                Json.Decode.decodeValue (codecs.decodeJson (InternalRegistry.Registry InternalRegistry.Lenient 0 Dict.empty)) json
                     |> Result.mapError BadJson
 
             Internal.Binary base64 ->

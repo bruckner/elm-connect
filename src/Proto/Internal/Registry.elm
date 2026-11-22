@@ -1,4 +1,4 @@
-module Proto.Internal.Registry exposing (Entry, Leniency(..), Registry(..), isLenient, member, strict, toBytes, toJson, unregistered)
+module Proto.Internal.Registry exposing (Entry, Leniency(..), Registry(..), atLeast, depthOf, isLenient, member, strict, toBytes, toJson, unregistered)
 
 {-| The `Registry` type, which `Proto.Registry` names by an alias, and the
 conversions through one, which `Proto.Registry` does not expose: `Proto.Any`
@@ -19,10 +19,12 @@ import Proto.Error exposing (Error)
 import Proto.Internal.Any
 
 
-{-| How it reads an `Any` of a type it has no entry for, and its entries.
+{-| How it reads an `Any` of a type it has no entry for, how deeply the
+conversion it was passed to has nested (0 for a registry the application
+built), and its entries.
 -}
 type Registry
-    = Registry Leniency (Dict String Entry)
+    = Registry Leniency Int (Dict String Entry)
 
 
 {-| `Strict` fails to read an `Any` of a type the registry has no entry for,
@@ -51,22 +53,63 @@ type alias Entry =
 `Nothing` when the registry has no entry for it.
 -}
 toJson : Registry -> String -> String -> Maybe (Result Error Value)
-toJson ((Registry _ entries) as registry) name base64 =
-    Dict.get name entries |> Maybe.map (\entry -> entry.toJson registry base64)
+toJson (Registry leniency depth entries) name base64 =
+    Dict.get name entries
+        |> Maybe.map
+            (\entry ->
+                if depth >= anyLimit then
+                    Err (Proto.Error.BadBinary { typeName = "google.protobuf.Any", reason = Proto.Error.TooDeep, path = [], offset = 0 })
+
+                else
+                    entry.toJson (Registry leniency (depth + 1) entries) base64
+            )
 
 
 {-| A message's binary as base64 from its proto3 JSON, by full name;
 `Nothing` when the registry has no entry for it.
 -}
 toBytes : Registry -> String -> Value -> Maybe (Result Error String)
-toBytes ((Registry _ entries) as registry) name json =
-    Dict.get name entries |> Maybe.map (\entry -> entry.toBytes registry json)
+toBytes (Registry leniency depth entries) name json =
+    Dict.get name entries
+        |> Maybe.map
+            (\entry ->
+                if depth >= anyLimit then
+                    Err (Proto.Error.BadJson (Json.Decode.Failure "Expecting messages nested at most 100 deep" Json.Encode.null))
+
+                else
+                    entry.toBytes (Registry leniency (depth + 1) entries) json
+            )
+
+
+{-| The most levels a read nests, counted in messages entered along a cycle,
+`Any` values and the arrays and objects of a `Value`: one budget of 100 for
+all three, which the registry's depth carries from an `Any` to the message it
+holds.
+-}
+anyLimit : Int
+anyLimit =
+    100
+
+
+{-| How deep the conversion this registry is passed to has nested.
+-}
+depthOf : Registry -> Int
+depthOf (Registry _ d _) =
+    d
+
+
+{-| The registry for a read at `d`, as a message on a cycle passes it to an
+`Any` it holds, so the `Any` counts from there.
+-}
+atLeast : Int -> Registry -> Registry
+atLeast d (Registry leniency current entries) =
+    Registry leniency (max d current) entries
 
 
 {-| Whether the registry has an entry for a message, by full name.
 -}
 member : String -> Registry -> Bool
-member name (Registry _ entries) =
+member name (Registry _ _ entries) =
     Dict.member name entries
 
 
@@ -74,15 +117,15 @@ member name (Registry _ entries) =
 JSON alone.
 -}
 isLenient : Registry -> Bool
-isLenient (Registry leniency _) =
+isLenient (Registry leniency _ _) =
     leniency == Lenient
 
 
 {-| The registry with its entries, strict.
 -}
 strict : Registry -> Registry
-strict (Registry _ entries) =
-    Registry Strict entries
+strict (Registry _ depth entries) =
+    Registry Strict depth entries
 
 
 {-| The type URL of the `Any` a JSON read failed on because the registry has

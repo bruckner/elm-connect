@@ -60,6 +60,7 @@ import Proto.Internal.WellKnown as Descriptors
 import Proto.Json
 import Proto.Message exposing (Message, init, initWith)
 import Proto.Registry
+import Proto.Value
 import Time
 
 
@@ -100,21 +101,21 @@ any =
 
 {-| `google.protobuf.Struct`: a JSON object.
 -}
-struct : Message (Dict String Json.Encode.Value)
+struct : Message (Dict String Proto.Value.Value)
 struct =
     init "google.protobuf.Struct" Proto.Json.encodeStruct Proto.Json.struct (Proto.Binary.messageEncoder Proto.Binary.struct) (Proto.Binary.messageDecoder Proto.Binary.struct)
 
 
 {-| `google.protobuf.Value`: any JSON.
 -}
-value : Message Json.Encode.Value
+value : Message Proto.Value.Value
 value =
-    init "google.protobuf.Value" identity Json.Decode.value (Proto.Binary.messageEncoder Proto.Binary.value) (Proto.Binary.messageDecoder Proto.Binary.value)
+    init "google.protobuf.Value" Proto.Json.encodeValue Proto.Json.value (Proto.Binary.messageEncoder Proto.Binary.value) (Proto.Binary.messageDecoder Proto.Binary.value)
 
 
 {-| `google.protobuf.ListValue`: a JSON array.
 -}
-listValue : Message (List Json.Encode.Value)
+listValue : Message (List Proto.Value.Value)
 listValue =
     init "google.protobuf.ListValue" Proto.Json.encodeListValue Proto.Json.listValue (Proto.Binary.messageEncoder Proto.Binary.listValue) (Proto.Binary.messageDecoder Proto.Binary.listValue)
 
