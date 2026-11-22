@@ -64,6 +64,7 @@ import Proto.Error
 import Proto.Json
 import Proto.Message
 import Proto.Registry
+import Proto.Value
 import Proto.Version
 import Proto.WellKnown
 
@@ -543,7 +544,7 @@ by clients under test.
 -}
 type alias WireDetails =
     { actualStatusCode : Int
-    , connectErrorRaw : Maybe (Dict String Json.Encode.Value)
+    , connectErrorRaw : Maybe (Dict String Proto.Value.Value)
     , actualHttpTrailers : List Header
     , actualGrpcwebTrailers : Maybe String
     }

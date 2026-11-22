@@ -193,10 +193,10 @@ impl Emitter {
             .iter()
             .map(|&(field, value)| {
                 let field_value = access(var(ENCODER_ARGUMENT), field.elm_name.clone());
-                tuple2(
-                    string(field.json_name.clone()),
-                    self.try_encode_field(value, field_value),
-                )
+                self.deeper_registry = shape.message.recursive && field.recursive;
+                let encoded = self.try_encode_field(value, field_value);
+                self.deeper_registry = false;
+                tuple2(string(field.json_name.clone()), encoded)
             })
             .collect();
         let oneofs: Vec<Expr> = shape
@@ -337,6 +337,12 @@ impl Emitter {
                             &field.json_name,
                             &field.proto_name,
                             [zero, decoder],
+                        ),
+                        None if self.deep.is_some() => self.field_step(
+                            ("messageValueFieldAt", "messageValueFieldEitherAt"),
+                            &field.json_name,
+                            &field.proto_name,
+                            [var(DEPTH)],
                         ),
                         None => self.field_step(
                             ("messageValueField", "messageValueFieldEither"),

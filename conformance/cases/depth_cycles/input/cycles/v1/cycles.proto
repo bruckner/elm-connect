@@ -8,6 +8,7 @@ syntax = "proto3";
 package cycles.v1;
 
 import "google/protobuf/any.proto";
+import "google/protobuf/struct.proto";
 
 // A message that holds itself.
 message Chain {
@@ -134,8 +135,13 @@ message Wide {
 }
 
 // On a cycle and holding an `Any`: its JSON decoders take the registry, so
-// they are built as they are entered rather than once.
+// they are built as they are entered rather than once. The `Any`, and the
+// arrays and objects of its `Struct`, `Value` and `ListValue`, count from the
+// depth of the message holding them.
 message Envelope {
   google.protobuf.Any payload = 1;
   repeated Envelope replies = 2;
+  google.protobuf.Struct data = 3;
+  google.protobuf.Value value = 4;
+  google.protobuf.ListValue list = 5;
 }

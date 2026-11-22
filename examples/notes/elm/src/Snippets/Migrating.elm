@@ -1,4 +1,4 @@
-module Snippets.Migrating exposing (client, clientFor, describe, fetch, getNote, getNoteBinding, noteFields, procedure, retryable)
+module Snippets.Migrating exposing (client, clientFor, color, describe, extraJson, fetch, getNote, getNoteBinding, noteFields, procedure, retryable, withColor)
 
 {-| docs/migrating.md's code: what a 0.1 application writes in 0.2.
 
@@ -8,6 +8,8 @@ example's 0.1.0 generated code.
 
 -}
 
+import Dict
+import Json.Encode
 import Notes.V1
 import Notes.V1.GetNoteRequest
 import Proto.Descriptors
@@ -16,6 +18,7 @@ import Proto.Http
 import Proto.Message
 import Proto.Method
 import Proto.Registry
+import Proto.Value exposing (Value(..))
 import Rpc
 import Rpc.Call
 import Rpc.Client
@@ -255,3 +258,47 @@ retryable error =
 
 
 -- endregion errors
+{-
+   -- region before-extra
+   color : Notes.V1.Note -> Maybe String
+   color note =
+       note.extra
+           |> Maybe.andThen (Dict.get "color")
+           |> Maybe.andThen (Json.Decode.decodeValue Json.Decode.string >> Result.toMaybe)
+
+
+   withColor : String -> Notes.V1.Note -> Notes.V1.Note
+   withColor c note =
+       { note | extra = Just (Dict.insert "color" (Json.Encode.string c) (Maybe.withDefault Dict.empty note.extra)) }
+
+
+   extraJson : Notes.V1.Note -> Json.Encode.Value
+   extraJson note =
+       Json.Encode.dict identity identity (Maybe.withDefault Dict.empty note.extra)
+   -- endregion before-extra
+-}
+-- region extra
+
+
+color : Notes.V1.Note -> Maybe String
+color note =
+    case note.extra |> Maybe.andThen (Dict.get "color") of
+        Just (ValueString c) ->
+            Just c
+
+        _ ->
+            Nothing
+
+
+withColor : String -> Notes.V1.Note -> Notes.V1.Note
+withColor c note =
+    { note | extra = Just (Dict.insert "color" (ValueString c) (Maybe.withDefault Dict.empty note.extra)) }
+
+
+extraJson : Notes.V1.Note -> Json.Encode.Value
+extraJson note =
+    Proto.Value.toJson (ValueStruct (Maybe.withDefault Dict.empty note.extra))
+
+
+
+-- endregion extra

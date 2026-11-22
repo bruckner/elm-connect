@@ -155,7 +155,8 @@ changes the positional constructor under either order. Where: design
 
 ### `google.protobuf.Value` fields as `Maybe`
 
-*2026-10-19.*
+*2026-10-19; the type became `Proto.Value.Value` on 2026-11-22 (A union
+for `google.protobuf.Value`, one depth budget).*
 
 A singular `Value` field is `Maybe Json.Encode.Value`: a missing key is
 `Nothing`, and any JSON under the key, `null` included, is `Just` it.
@@ -164,6 +165,70 @@ alternative, a bare `Json.Encode.Value` that read a missing key as
 `null` and always wrote the field, made a client that never touched it
 send `null` and the server see it set. Repeated, as a map value and as
 a oneof member it stays a bare value. Where: design §3.5.
+
+### A union for `google.protobuf.Value`, one depth budget
+
+*2026-11-22. Supersedes, for its type, `google.protobuf.Value` fields as
+`Maybe` (the `Maybe` stays) and completes A nesting depth limit on
+reads.*
+
+`Value`, `Struct` and `ListValue` are held as `Proto.Value.Value`, a
+union of JSON's six kinds (`ValueNull`, `ValueBool`, `ValueNumber`,
+`ValueString`, `ValueStruct`, `ValueList`), a `Struct` as `Dict String
+Value` and a `ListValue` as `List Value`, converted at the read and the
+write in both codecs. They were elm/json's `Json.Encode.Value`, whose
+`==` walks only the left value's keys: `{"a":1}` equalled
+`{"a":1,"b":2}`, and so did every generated message holding one, and
+Elm's `==` cannot be overridden, so the representation is the equality.
+The union is the peers' model too: protobuf-go, protobuf-es (for a
+`Value`), Python, Java, C#, prost and Swift hold a `Value` as a oneof of
+kinds; only the TypeScript generators put native JSON in a field. And
+the conversion the union needs is where depth is counted, at no second
+walk: the alternative that kept the JSON (a bounded walk over it, priced
+at 110–150 ns per value) kept the broken `==` and paid for a walk the
+union does while building. An opaque wrapper over canonical JSON text
+would have given exact `==` at a parse per use. A number that is not
+finite is kept, written `null` in JSON as `JSON.stringify` does; whether
+a read refuses it is left open.
+
+One budget of 100 counts every level a read nests: a message entered
+along a cycle, an `Any` read from JSON through the registry, and each
+array and object of a `Value`, the same unit in JSON and binary (a
+binary `Struct` or `ListValue` is one level, the `Value` holding it
+none), as protobuf-es, protobuf-go and Python count them in one depth.
+Separate limits would add along a path and multiply through `Any`: an
+`Any` holding a 100-deep message holding an `Any` reached 10,000 levels.
+A message on a cycle hands its depth to the `Struct`, `Value`,
+`ListValue` and `Any` it holds, and the registry carries it into the
+`Any`'s message. An `Any` read from binary holds bytes and nests
+nothing; writing it as JSON counts the `Any`s and the messages around
+them through the registry, as a read does, so what a binary read
+accepts writes or fails. Telling a binary read its starting depth
+instead would have taken a field in every binary decoder, which every
+program pays for (31 bytes before minification in the priced spike).
+
+No guard on entry points. Catching a throw inside elm/json's
+`decodeString` would have covered more, but it rests on how two kernel
+functions are written, not on the language, and with the union and the
+budget it caught nothing more from the wire in four engines. What still
+throws is the application's own: values it builds deeper than it reads,
+its own decoders' errors, its own recursion (the calling guide's
+"Nesting depth" lists them with their depths). The write side is
+documented, not limited, as no peer limits it.
+
+Costs, measured against the read limit alone (node 24.21.0, one build
+per process; the A/A control agreed within 1.7 %): a program with no
+cycle and none of these types compiles to the same bytes, and so does
+one with a recursive message; one holding a `Struct` grows by about
+0.67 KB gzipped, the notes example by 0.65 KB, and a JSON-only client
+holding none by 0.27 KB, the scrub. The note's JSON read is unchanged
+and its write 6 % dearer; binary reads are unchanged and binary writes
+7 to 21 % cheaper. The JSON read of a `Struct` is dearer, since it now
+builds Elm values: 0.27 to 0.94 µs for five members, 1.40× for 1,000,
+0.68 to 176 µs for a 1,111-value tree that was passed through
+unvisited. So is the JSON write of large values, converted back: 1.22×
+for 1,000 members, 12.7 to 66 µs for the tree. Where: design §3.2, §3.5, §5.4, §5.5; the calling guide,
+"Nesting depth"; docs/migrating.md.
 
 ### Unrecognised enum values: an option, never the default
 
@@ -771,7 +836,9 @@ message against the same limit. Where: design §1, §5.1, §5.4.
 
 ### A nesting depth limit on reads
 
-*2026-11-20.*
+*2026-11-20; completed 2026-11-22 by A union for
+`google.protobuf.Value`, one depth budget, which counts a `Struct` or
+`Value` read from JSON and an `Any` nested in an `Any`.*
 
 A message on a cycle of references, and a binary `Struct`, `Value` or
 `ListValue`, is read at most 100 levels deep, a level being each message

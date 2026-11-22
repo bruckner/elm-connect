@@ -76,9 +76,12 @@ impl Emitter {
                     let null = self.reference((JSON_ENCODE, "null"));
                     (pctor(variant.elm_ctor.clone(), []), null)
                 } else {
+                    self.deeper_registry = variant.cyclic;
+                    let encoded = self.encode_value(value, var(ONEOF_MEMBER));
+                    self.deeper_registry = false;
                     (
                         pctor(variant.elm_ctor.clone(), [pvar(ONEOF_MEMBER)]),
-                        self.encode_value(value, var(ONEOF_MEMBER)),
+                        encoded,
                     )
                 };
                 let just = var(self.core("Just"));

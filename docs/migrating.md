@@ -455,6 +455,64 @@ JSON.
   `Proto.ErrorDetails.badRequest` for `google.rpc.BadRequest`
   ([descriptors.md](descriptors.md#error-details)).
 
+## Value, Struct and ListValue
+
+A `google.protobuf.Value` is a `Proto.Value.Value`, a union of JSON's six
+kinds, where 0.1 held elm/json's `Json.Encode.Value`. A `Struct` field is
+`Maybe (Dict String Proto.Value.Value)` and a `ListValue` field `Maybe
+(List Proto.Value.Value)`. elm/json's `==` walked only the left value's
+keys, so `{"a":1}` was equal to `{"a":1,"b":2}`, and so was any message
+holding them; the union's `==` compares content. Its reads are bounded
+by the depth limit ([calling.md](calling.md#nesting-depth)).
+
+Code that read a member with elm/json and built one with `Json.Encode`:
+
+```elm examples/notes/elm/src/Snippets/Migrating.elm#before-extra
+color : Notes.V1.Note -> Maybe String
+color note =
+    note.extra
+        |> Maybe.andThen (Dict.get "color")
+        |> Maybe.andThen (Json.Decode.decodeValue Json.Decode.string >> Result.toMaybe)
+
+
+withColor : String -> Notes.V1.Note -> Notes.V1.Note
+withColor c note =
+    { note | extra = Just (Dict.insert "color" (Json.Encode.string c) (Maybe.withDefault Dict.empty note.extra)) }
+
+
+extraJson : Notes.V1.Note -> Json.Encode.Value
+extraJson note =
+    Json.Encode.dict identity identity (Maybe.withDefault Dict.empty note.extra)
+```
+
+matches on the kinds and builds them with the constructors, and goes
+through `Proto.Value.toJson` (and `fromJson`, the other way) to hand one
+to a port or to its own decoders:
+
+```elm examples/notes/elm/src/Snippets/Migrating.elm#extra
+color : Notes.V1.Note -> Maybe String
+color note =
+    case note.extra |> Maybe.andThen (Dict.get "color") of
+        Just (ValueString c) ->
+            Just c
+
+        _ ->
+            Nothing
+
+
+withColor : String -> Notes.V1.Note -> Notes.V1.Note
+withColor c note =
+    { note | extra = Just (Dict.insert "color" (ValueString c) (Maybe.withDefault Dict.empty note.extra)) }
+
+
+extraJson : Notes.V1.Note -> Json.Encode.Value
+extraJson note =
+    Proto.Value.toJson (ValueStruct (Maybe.withDefault Dict.empty note.extra))
+```
+
+A singular `Value` field stays a `Maybe`: `Nothing` is absent, and the
+JSON `null` is `Just ValueNull` where it was `Just Json.Encode.null`.
+
 ## The generator
 
 - Every message gets both codecs, proto3 JSON and protobuf binary, its

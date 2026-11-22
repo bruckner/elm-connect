@@ -147,10 +147,11 @@
 //! - The well-known types map to `Time.Posix`, the runtime's `Duration`,
 //!   `List String` (field masks), `()` (`Empty`), `Proto.Any.Any`, holding
 //!   its message's binary,
-//!   `Dict String Json.Encode.Value` (`Struct`), `List Json.Encode.Value`
-//!   (`ListValue`), `Json.Encode.Value` (`Value`) and the wrappers'
-//!   scalars (design §3.5). All but `Empty` and `Value` are messages, held
-//!   with presence; `Value` is held directly, `null` when absent; `Empty`
+//!   `Dict String Proto.Value.Value` (`Struct`), `List Proto.Value.Value`
+//!   (`ListValue`), `Proto.Value.Value` (`Value`), written qualified so
+//!   that they reserve no name, and the wrappers' scalars (design §3.5).
+//!   All but `Empty` are held with presence, a `Value`'s `Nothing` being
+//!   absent and `Just ValueNull` a JSON `null`; `Empty`
 //!   has no presence, and a oneof member of it is a constructor without
 //!   an argument.
 //! - A recursive message also gets a wrapper, `type Node_ = Node_ Node`,
@@ -233,6 +234,8 @@ const PROTO_UNKNOWN: &str = "Proto.Unknown";
 /// The runtime package's `Duration`, imported as
 /// `import Proto.Duration exposing (Duration)`.
 const PROTO_DURATION: &str = "Proto.Duration";
+/// The runtime's `google.protobuf.Value`, `Struct` and `ListValue` as Elm data.
+const PROTO_VALUE: &str = "Proto.Value";
 /// The runtime package's calls, home of `Rpc.Call`.
 const RPC: &str = "Rpc";
 /// The runtime package's HTTP bindings, which a method's descriptor holds.
@@ -638,6 +641,14 @@ struct Emitter {
     deep: Option<Deep>,
     /// Whether the value whose decoder is being written is on that cycle.
     deep_value: bool,
+    /// While a recursive message's binary merge is written: its `Struct`,
+    /// `Value` and `ListValue` fields read at the merge's depth.
+    binary_depth: bool,
+    /// While a field or oneof member on its message's cycle is written by
+    /// an encoder taking the registry: the value is written with the
+    /// registry one level deeper, so converting an `Any` to JSON counts
+    /// the messages around it as a read does.
+    deeper_registry: bool,
 }
 
 /// How a recursive message's JSON decoder reads a value on its cycle one
@@ -668,6 +679,8 @@ impl Emitter {
             },
             deep: None,
             deep_value: false,
+            binary_depth: false,
+            deeper_registry: false,
         }
     }
 
@@ -1388,10 +1401,10 @@ mod tests {
         assert_eq!(
             imports,
             [
-                "Json.Encode",
                 "Proto.Any",
                 "Proto.Json",
                 "Proto.Method",
+                "Proto.Value",
                 "Proto.Version",
                 "Rpc",
                 "T.V1"
@@ -1412,8 +1425,7 @@ mod tests {
             "(Proto.Method.initJson \"t.v1.S\"\n            \"Get\"\n            \
              (\\_ -> Ok << T.V1.encodeA)\n            \
              (\\_ -> T.V1.decodeA)\n        )\n",
-            // Qualified, or `identity` would be the method itself.
-            "\n            (\\_ -> Ok << Basics.identity)\n            (\\_ -> Proto.Json.empty)\n",
+            "\n            (\\_ -> Ok << Proto.Json.encodeValue)\n            (\\_ -> Proto.Json.empty)\n",
             "\n            \"Ticks\"\n            \
              (\\_ -> Ok << Proto.Json.encodeInt64AsInt)\n            Proto.Json.anyWith\n",
             "descriptorGet : Proto.Method.Descriptor\ndescriptorGet =\n    \
