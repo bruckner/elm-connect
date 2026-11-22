@@ -76,10 +76,8 @@ runner against the conformance suite's Elm generated afresh.
 ## The corpus is the review surface
 
 A generator change shows up as a diff in
-`conformance/cases/*/expected`. `just bless` rewrites the corpus and the
-Elm replay of the route fixtures and properties
-(`tests/RouteFixtures.elm`, `tests/RouteProperties.elm`) from the
-current generator. Read the whole diff before committing it: it is what
+`conformance/cases/*/expected`. `just bless` rewrites the corpus from
+the current generator. Read the whole diff before committing it: it is what
 users will get, and a reviewer reads it line by line. A new behaviour
 gets a new case (`conformance/README.md` says how to add one).
 

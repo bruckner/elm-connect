@@ -1,9 +1,10 @@
 module Replay exposing (Expected, Fixture, fixture, normalize, replay)
 
 {-| Replaying the route fixtures (`conformance/routes`) and the route
-properties through `Rpc.request` over the Transcode protocol: `RouteFixtures`
-and `RouteProperties` are generated from them, and `RouteFixturesTest` and
-`RoutePropertiesTest` check each.
+properties through `Rpc.request` over the Transcode protocol:
+`Generated.Routes.Fixtures` and `Generated.Routes.Properties` are written
+from them at test time, and `RouteFixturesTest` and `RoutePropertiesTest`
+check each.
 -}
 
 import Expect

@@ -154,10 +154,10 @@ Each layer proves one thing and has a known gap. A path that starts with
   checked in Rust against a reference built on prost-reflect and in Elm
   by replaying each fixture through `Rpc.request`
   (`tests/RouteFixturesTest.elm`). Gap: the fixtures are chosen by hand.
-- **The route properties** (same test file,
-  `tests/RouteProperties.elm`): requests sampled from a fixed seed for
-  every binding, replayed the same way. Gap: they are not run against a
-  server.
+- **The route properties** (same test file): requests sampled from a
+  fixed seed for every binding, replayed the same way; the Elm data is
+  written at test time under `tests/Generated/`. Gap: they are not run
+  against a server.
 - **The codec round trips** (`conformance/codec/`,
   `crates/elm-connect-gen/tests/codec.rs`, `tests/Codec/`): the
   generated codecs decode prost-reflect's JSON in three forms and write

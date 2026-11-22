@@ -4190,8 +4190,9 @@ any, in `expected/warnings.txt`, rendered as `diagnostics.txt` is.
   for every binding of `routes.proto` from a fixed seed (strings needing
   escapes, integer bounds, floats' special values, unset and empty
   messages, repeated and map fields, wrappers at their defaults,
-  well-known types): the reference gives each one's HTTP request, pinned
-  as `tests/RouteProperties.elm` and replayed through `Rpc.request` as
+  well-known types): the reference gives each one's HTTP request,
+  written as Elm data at test time (`tests/Generated/Routes/`, as the
+  codec round trips' samples are) and replayed through `Rpc.request` as
   the fixtures are, which also runs the generated decoders and encoders
   on prost-reflect's proto3 JSON (written with and without defaults,
   under JSON and proto names). Neither layer proves a server agrees: the
