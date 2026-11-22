@@ -147,8 +147,15 @@ registry =
 
 {-| Encodes a [`Counters`](#Counters) as proto3 JSON.
 -}
-encodeCounters : Counters -> Json.Encode.Value
+encodeCounters : Counters -> Proto.Json.Encoder
 encodeCounters value =
+    Proto.Json.ready (jsonCounters value)
+
+
+{-| Writes a [`Counters`](#Counters) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonCounters : Counters -> Json.Encode.Value
+jsonCounters value =
     Proto.Json.objectOfFields
         ([ ( "int64Value", Proto.Json.implicitField 0 Proto.Json.encodeInt64AsInt value.int64Value )
          , ( "uint64Value", Proto.Json.implicitField 0 Proto.Json.encodeInt64AsInt value.uint64Value )

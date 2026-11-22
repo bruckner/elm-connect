@@ -36,7 +36,7 @@ send =
     Rpc.call
         (Proto.Method.init "rpc.v1.Pinger"
             "Send"
-            (\_ -> Ok << Rpc.V1.encodePing)
+            Rpc.V1.encodePing
             (\_ -> Rpc.V1.decodePing)
             Rpc.V1.encodePingBytes
             Rpc.V1.decodePingBytes

@@ -410,19 +410,20 @@ encodeLegacy value =
             Json.Encode.string "LEGACY_UNSPECIFIED"
 
 
-{-| Encodes a [`Note`](#Note) as proto3 JSON.
+{-| Encodes a [`Note`](#Note) as proto3 JSON, refusing a value it holds that has no proto3 JSON form, and writing each `Any` with the registry it is run with.
 -}
-encodeNote : Note -> Json.Encode.Value
+encodeNote : Note -> Proto.Json.Encoder
 encodeNote value =
-    Proto.Json.objectOfFields
-        ([ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-         , ( "heading", Proto.Json.implicitField "" Json.Encode.string value.title )
-         , ( "visibility", Proto.Json.implicitField VisibilityUnspecified encodeVisibility value.visibility )
-         , ( "tags", Proto.Json.repeatedField Json.Encode.string value.tags )
-         , ( "labels", Proto.Json.dictField identity Json.Encode.string value.labels )
-         , ( "pinned", Maybe.map Json.Encode.bool value.pinned )
-         , ( "subject", Proto.Json.implicitField "" Json.Encode.string value.subject )
-         , ( "created", Maybe.map Proto.Json.encodeTimestamp value.created )
+    Proto.Json.writeObject
+        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+        , ( "heading", Proto.Json.implicitField "" Json.Encode.string value.title )
+        , ( "visibility", Proto.Json.implicitField VisibilityUnspecified encodeVisibility value.visibility )
+        , ( "tags", Proto.Json.repeatedField Json.Encode.string value.tags )
+        , ( "labels", Proto.Json.dictField identity Json.Encode.string value.labels )
+        , ( "pinned", Maybe.map Json.Encode.bool value.pinned )
+        , ( "subject", Proto.Json.implicitField "" Json.Encode.string value.subject )
+        ]
+        ([ ( "created", Proto.Json.writeOptional Proto.Json.writeTimestamp value.created )
          ]
             ++ encodeNoteLastEvent value.lastEvent
         )
@@ -430,25 +431,32 @@ encodeNote value =
 
 {-| Encodes a [`NoteLastEvent`](#NoteLastEvent) as the members of its message's JSON object.
 -}
-encodeNoteLastEvent : NoteLastEvent -> List ( String, Maybe Json.Encode.Value )
+encodeNoteLastEvent : NoteLastEvent -> List ( String, Proto.Json.Encoder )
 encodeNoteLastEvent value =
     case value of
         NoteLastEventUnset ->
             []
 
         NoteLastEventArchived member ->
-            [ ( "archived", Just (Proto.Json.encodeTimestamp member) )
+            [ ( "archived", Proto.Json.writeTimestamp member )
             ]
 
         NoteLastEventEdited member ->
-            [ ( "edited", Just (encodeNoteEdit member) )
+            [ ( "edited", Proto.Json.ready (jsonNoteEdit member) )
             ]
 
 
 {-| Encodes a [`NoteEdit`](#NoteEdit) as proto3 JSON.
 -}
-encodeNoteEdit : NoteEdit -> Json.Encode.Value
+encodeNoteEdit : NoteEdit -> Proto.Json.Encoder
 encodeNoteEdit value =
+    Proto.Json.ready (jsonNoteEdit value)
+
+
+{-| Writes a [`NoteEdit`](#NoteEdit) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonNoteEdit : NoteEdit -> Json.Encode.Value
+jsonNoteEdit value =
     Proto.Json.objectOfFields
         [ ( "author", Proto.Json.implicitField "" Json.Encode.string value.author )
         ]
@@ -456,8 +464,15 @@ encodeNoteEdit value =
 
 {-| Encodes a [`Draft`](#Draft) as proto3 JSON.
 -}
-encodeDraft : Draft -> Json.Encode.Value
+encodeDraft : Draft -> Proto.Json.Encoder
 encodeDraft value =
+    Proto.Json.ready (jsonDraft value)
+
+
+{-| Writes a [`Draft`](#Draft) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonDraft : Draft -> Json.Encode.Value
+jsonDraft value =
     Proto.Json.objectOfFields
         [ ( "text", Proto.Json.implicitField "" Json.Encode.string value.text )
         ]
@@ -465,8 +480,15 @@ encodeDraft value =
 
 {-| Encodes a [`GetNoteRequest`](#GetNoteRequest) as proto3 JSON.
 -}
-encodeGetNoteRequest : GetNoteRequest -> Json.Encode.Value
+encodeGetNoteRequest : GetNoteRequest -> Proto.Json.Encoder
 encodeGetNoteRequest value =
+    Proto.Json.ready (jsonGetNoteRequest value)
+
+
+{-| Writes a [`GetNoteRequest`](#GetNoteRequest) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonGetNoteRequest : GetNoteRequest -> Json.Encode.Value
+jsonGetNoteRequest value =
     Proto.Json.objectOfFields
         [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
         ]
@@ -474,28 +496,35 @@ encodeGetNoteRequest value =
 
 {-| Encodes a [`ListNotesRequest`](#ListNotesRequest) as proto3 JSON.
 -}
-encodeListNotesRequest : ListNotesRequest -> Json.Encode.Value
+encodeListNotesRequest : ListNotesRequest -> Proto.Json.Encoder
 encodeListNotesRequest value =
+    Proto.Json.ready (jsonListNotesRequest value)
+
+
+{-| Writes a [`ListNotesRequest`](#ListNotesRequest) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonListNotesRequest : ListNotesRequest -> Json.Encode.Value
+jsonListNotesRequest value =
     Proto.Json.objectOfFields
         [ ( "parent", Proto.Json.implicitField "" Json.Encode.string value.parent )
         ]
 
 
-{-| Encodes a [`ListNotesResponse`](#ListNotesResponse) as proto3 JSON.
+{-| Encodes a [`ListNotesResponse`](#ListNotesResponse) as proto3 JSON, refusing a value it holds that has no proto3 JSON form, and writing each `Any` with the registry it is run with.
 -}
-encodeListNotesResponse : ListNotesResponse -> Json.Encode.Value
+encodeListNotesResponse : ListNotesResponse -> Proto.Json.Encoder
 encodeListNotesResponse value =
-    Proto.Json.objectOfFields
-        [ ( "notes", Proto.Json.repeatedField encodeNote value.notes )
+    Proto.Json.writeObject []
+        [ ( "notes", Proto.Json.writeRepeated encodeNote value.notes )
         ]
 
 
-{-| Encodes a [`CreateNoteRequest`](#CreateNoteRequest) as proto3 JSON.
+{-| Encodes a [`CreateNoteRequest`](#CreateNoteRequest) as proto3 JSON, refusing a value it holds that has no proto3 JSON form, and writing each `Any` with the registry it is run with.
 -}
-encodeCreateNoteRequest : CreateNoteRequest -> Json.Encode.Value
+encodeCreateNoteRequest : CreateNoteRequest -> Proto.Json.Encoder
 encodeCreateNoteRequest value =
-    Proto.Json.objectOfFields
-        [ ( "note", Maybe.map encodeNote value.note )
+    Proto.Json.writeObject []
+        [ ( "note", Proto.Json.writeOptional encodeNote value.note )
         ]
 
 

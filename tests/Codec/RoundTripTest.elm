@@ -36,10 +36,10 @@ suite =
 
 scalars : { default : Codec, int64Int : Codec, enumZero : Codec, bytesBytes : Codec }
 scalars =
-    { default = codec Default.decodeScalars Default.encodeScalars
-    , int64Int = codec Int64Int.decodeScalars Int64Int.encodeScalars
-    , enumZero = codec EnumZero.decodeScalars EnumZero.encodeScalars
-    , bytesBytes = codec BytesBytes.decodeScalars BytesBytes.encodeScalars
+    { default = codec Default.decodeScalars Default.jsonScalars
+    , int64Int = codec Int64Int.decodeScalars Int64Int.jsonScalars
+    , enumZero = codec EnumZero.decodeScalars EnumZero.jsonScalars
+    , bytesBytes = codec BytesBytes.decodeScalars BytesBytes.jsonScalars
     }
 
 
@@ -63,7 +63,7 @@ options =
                 \_ -> roundTrip scalars.enumZero """{"kind":"KIND_LATER"}""" "{}"
             , test "zero reads an unknown name in a list as the zero value" <|
                 \_ ->
-                    roundTrip (codec EnumZero.decodeRepeated EnumZero.encodeRepeated)
+                    roundTrip (codec EnumZero.decodeRepeated EnumZero.jsonRepeated)
                         """{"kinds":["KIND_TEXT","KIND_LATER"]}"""
                         """{"kinds":["KIND_TEXT","KIND_UNSPECIFIED"]}"""
             , test "an unknown number reads as the zero value under either" <|

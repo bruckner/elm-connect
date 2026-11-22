@@ -3,7 +3,7 @@ module Proto.Duration exposing
     , fromSeconds, toSeconds
     , fromMilliseconds, toMilliseconds
     , fromString, toString
-    , fromParts, toParts
+    , fromParts, toParts, isValid
     )
 
 {-| `google.protobuf.Duration`: a signed span of time, exact to the
@@ -29,7 +29,7 @@ nanosecond, between about -10,000 and 10,000 years.
 
 # Seconds and nanoseconds
 
-@docs fromParts, toParts
+@docs fromParts, toParts, isValid
 
 -}
 
@@ -190,9 +190,9 @@ toString (Duration parts) =
 
 {-| The duration of so many whole seconds and nanoseconds, as protobuf's
 binary form carries them: the nanoseconds carried into the seconds and both
-given the duration's sign. A duration whose whole seconds are past
-±315,576,000,000, protobuf's limit, gives that limit; at the limit the
-nanoseconds are kept, as protobuf and [`fromString`](#fromString) keep them.
+given the duration's sign. It never clamps: a duration past ±315,576,000,000
+seconds, protobuf's limit, is kept as given, so that a proto3 JSON write can
+refuse it ([`isValid`](#isValid)).
 
     fromParts 1 500000000 == fromSeconds 1.5
 
@@ -201,18 +201,16 @@ nanoseconds are kept, as protobuf and [`fromString`](#fromString) keep them.
 -}
 fromParts : Int -> Int -> Duration
 fromParts wholeSeconds nanos =
-    let
-        (Duration parts) =
-            normalize wholeSeconds nanos
-    in
-    if parts.seconds > maxSeconds then
-        Duration { seconds = maxSeconds, nanos = 0 }
+    normalize wholeSeconds nanos
 
-    else if parts.seconds < -maxSeconds then
-        Duration { seconds = -maxSeconds, nanos = 0 }
 
-    else
-        Duration parts
+{-| Whether the duration is within protobuf's range of ±315,576,000,000
+seconds, the only durations proto3 JSON writes. Only
+[`fromParts`](#fromParts) builds one outside it.
+-}
+isValid : Duration -> Bool
+isValid (Duration parts) =
+    abs parts.seconds <= maxSeconds
 
 
 {-| The duration's whole seconds and nanoseconds, both with its sign, as

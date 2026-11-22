@@ -717,18 +717,18 @@ omitDefaultsProperties : Test
 omitDefaultsProperties =
     let
         encode =
-            Routes.V1.encodeEverything >> Json.Encode.encode 0
+            (Routes.V1.encodeEverything >> writtenOrNull) >> Json.Encode.encode 0
     in
     describe "the generated codecs omit defaults"
-        [ defaultsTest "Everything" Routes.V1.encodeEverything Routes.V1.decodeEverything Routes.V1.defaultEverything
-        , defaultsTest "Inner" Routes.V1.encodeInner Routes.V1.decodeInner Routes.V1.defaultInner
-        , defaultsTest "Deep" Routes.V1.encodeDeep Routes.V1.decodeDeep Routes.V1.defaultDeep
-        , defaultsTest "GetMessageRequest" Routes.V1.encodeGetMessageRequest Routes.V1.decodeGetMessageRequest Routes.V1.defaultGetMessageRequest
-        , defaultsTest "Message" Routes.V1.encodeMessage Routes.V1.decodeMessage Routes.V1.defaultMessage
-        , defaultsTest "UpdateMessageRequest" Routes.V1.encodeUpdateMessageRequest Routes.V1.decodeUpdateMessageRequest Routes.V1.defaultUpdateMessageRequest
-        , defaultsTest "FileRequest" Routes.V1.encodeFileRequest Routes.V1.decodeFileRequest Routes.V1.defaultFileRequest
-        , defaultsTest "Resource" Routes.V1.encodeResource Routes.V1.decodeResource Routes.V1.defaultResource
-        , defaultsTest "UpdateResourceRequest" Routes.V1.encodeUpdateResourceRequest Routes.V1.decodeUpdateResourceRequest Routes.V1.defaultUpdateResourceRequest
+        [ defaultsTest "Everything" (Routes.V1.encodeEverything >> writtenOrNull) Routes.V1.decodeEverything Routes.V1.defaultEverything
+        , defaultsTest "Inner" (Routes.V1.encodeInner >> writtenOrNull) Routes.V1.decodeInner Routes.V1.defaultInner
+        , defaultsTest "Deep" (Routes.V1.encodeDeep >> writtenOrNull) Routes.V1.decodeDeep Routes.V1.defaultDeep
+        , defaultsTest "GetMessageRequest" (Routes.V1.encodeGetMessageRequest >> writtenOrNull) Routes.V1.decodeGetMessageRequest Routes.V1.defaultGetMessageRequest
+        , defaultsTest "Message" (Routes.V1.encodeMessage >> writtenOrNull) Routes.V1.decodeMessage Routes.V1.defaultMessage
+        , defaultsTest "UpdateMessageRequest" (Routes.V1.encodeUpdateMessageRequest >> writtenOrNull) Routes.V1.decodeUpdateMessageRequest Routes.V1.defaultUpdateMessageRequest
+        , defaultsTest "FileRequest" (Routes.V1.encodeFileRequest >> writtenOrNull) Routes.V1.decodeFileRequest Routes.V1.defaultFileRequest
+        , defaultsTest "Resource" (Routes.V1.encodeResource >> writtenOrNull) Routes.V1.decodeResource Routes.V1.defaultResource
+        , defaultsTest "UpdateResourceRequest" (Routes.V1.encodeUpdateResourceRequest >> writtenOrNull) Routes.V1.decodeUpdateResourceRequest Routes.V1.defaultUpdateResourceRequest
         , fuzz (Fuzzers.everything Fuzzers.nonNegativeZeroFloat) "encode (decode (encode x)) == encode x" <|
             \x ->
                 Json.Decode.decodeString Routes.V1.decodeEverything (encode x)
@@ -767,9 +767,9 @@ omitDefaultsProperties =
           <|
             \x ->
                 Expect.all
-                    [ roundTrips Routes.V1.encodeResource Routes.V1.decodeResource
+                    [ roundTrips (Routes.V1.encodeResource >> writtenOrNull) Routes.V1.decodeResource
                     , \_ ->
-                        Json.Decode.decodeValue (Json.Decode.keyValuePairs Json.Decode.value) (Routes.V1.encodeResource x)
+                        Json.Decode.decodeValue (Json.Decode.keyValuePairs Json.Decode.value) ((Routes.V1.encodeResource >> writtenOrNull) x)
                             |> Result.map (List.map Tuple.first >> List.filter (\key -> List.member key [ "labels", "kinds", "weights" ]))
                             |> Expect.equal
                                 (Ok
@@ -831,3 +831,8 @@ omitDefaultsProperties =
 toValue : Json.Encode.Value -> Proto.Value.Value
 toValue json =
     Proto.Value.fromJson json |> Maybe.withDefault Proto.Value.ValueNull
+
+
+writtenOrNull : Proto.Json.Encoder -> Json.Encode.Value
+writtenOrNull encoder =
+    Proto.Json.encode encoder |> Result.withDefault Json.Encode.null

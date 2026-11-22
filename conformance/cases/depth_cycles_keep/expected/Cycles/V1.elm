@@ -153,38 +153,62 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`Chain`](#Chain) as proto3 JSON.
+{-| Encodes a [`Chain`](#Chain) as proto3 JSON, refusing a value it holds that has no proto3 JSON form, and writing each `Any` with the registry it is run with.
 -}
-encodeChain : Chain -> Json.Encode.Value
+encodeChain : Chain -> Proto.Json.Encoder
 encodeChain value =
-    Proto.Json.objectOfFields
-        [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
-        , ( "next", Maybe.map encodeChain_ value.next )
-        ]
+    Proto.Json.writeFrom encodeChainAt value
 
 
-{-| Encodes a [`Chain_`](#Chain_) as proto3 JSON.
+{-| Encodes a [`Chain`](#Chain) at a level of its cycle, refused past the limit.
 -}
-encodeChain_ : Chain_ -> Json.Encode.Value
-encodeChain_ (Chain_ value) =
-    encodeChain value
+encodeChainAt : Int -> Chain -> Proto.Json.Encoder
+encodeChainAt depth value =
+    if depth > Proto.Json.writeLimit then
+        Proto.Json.writeTooDeep "cycles.v1.Chain"
+
+    else
+        Proto.Json.writeObject
+            [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
+            ]
+            [ ( "next", Proto.Json.writeOptional (encodeChain_At (depth + 1)) value.next )
+            ]
 
 
-{-| Encodes a [`Tree`](#Tree) as proto3 JSON.
+{-| Encodes a [`Chain_`](#Chain_) at a level of its cycle.
 -}
-encodeTree : Tree -> Json.Encode.Value
+encodeChain_At : Int -> Chain_ -> Proto.Json.Encoder
+encodeChain_At depth (Chain_ value) =
+    encodeChainAt depth value
+
+
+{-| Encodes a [`Tree`](#Tree) as proto3 JSON, refusing a value it holds that has no proto3 JSON form, and writing each `Any` with the registry it is run with.
+-}
+encodeTree : Tree -> Proto.Json.Encoder
 encodeTree value =
-    Proto.Json.objectOfFields
-        [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
-        , ( "children", Proto.Json.repeatedField encodeTree_ value.children )
-        ]
+    Proto.Json.writeFrom encodeTreeAt value
 
 
-{-| Encodes a [`Tree_`](#Tree_) as proto3 JSON.
+{-| Encodes a [`Tree`](#Tree) at a level of its cycle, refused past the limit.
 -}
-encodeTree_ : Tree_ -> Json.Encode.Value
-encodeTree_ (Tree_ value) =
-    encodeTree value
+encodeTreeAt : Int -> Tree -> Proto.Json.Encoder
+encodeTreeAt depth value =
+    if depth > Proto.Json.writeLimit then
+        Proto.Json.writeTooDeep "cycles.v1.Tree"
+
+    else
+        Proto.Json.writeObject
+            [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
+            ]
+            [ ( "children", Proto.Json.writeRepeated (encodeTree_At (depth + 1)) value.children )
+            ]
+
+
+{-| Encodes a [`Tree_`](#Tree_) at a level of its cycle.
+-}
+encodeTree_At : Int -> Tree_ -> Proto.Json.Encoder
+encodeTree_At depth (Tree_ value) =
+    encodeTreeAt depth value
 
 
 

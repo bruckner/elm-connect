@@ -30,10 +30,10 @@ type alias Holder =
     { held : Maybe Any }
 
 
-encodeHolderWith : Registry -> Holder -> Result Error Value
-encodeHolderWith types value =
-    Proto.Json.tryObjectOfFields
-        [ ( "held", Proto.Json.tryOptionalField (Proto.Json.encodeAnyWith types) value.held ) ]
+encodeHolder : Holder -> Proto.Json.Encoder
+encodeHolder value =
+    Proto.Json.writeObject []
+        [ ( "held", Proto.Json.writeOptional Proto.Json.writeAny value.held ) ]
 
 
 decodeHolderWith : Registry -> Json.Decode.Decoder Holder
@@ -74,7 +74,7 @@ holder name =
 
 messageHolder : String -> Message Holder
 messageHolder name =
-    Message.initWith name encodeHolderWith decodeHolderWith encodeHolderBytes (holderBytes name)
+    Message.initWith name encodeHolder decodeHolderWith encodeHolderBytes (holderBytes name)
 
 
 {-| A message holding no `Any`: a string at field 1, `{"text": …}` in JSON.
@@ -103,7 +103,7 @@ leafBytes name =
 messageLeaf : String -> Message String
 messageLeaf name =
     Message.init name
-        (\t -> Json.Encode.object [ ( "text", Json.Encode.string t ) ])
+        (\t -> Proto.Json.ready (Json.Encode.object [ ( "text", Json.Encode.string t ) ]))
         (Json.Decode.field "text" Json.Decode.string)
         (\t -> Bytes.Encode.sequence [ Proto.Binary.implicit Proto.Binary.string 1 t ])
         (leafBytes name)
@@ -226,7 +226,7 @@ suite =
                     other =
                         Registry.register
                             (Message.init "t.Leaf"
-                                (\_ -> Json.Encode.string "other")
+                                (\_ -> Proto.Json.ready (Json.Encode.string "other"))
                                 (Json.Decode.succeed "")
                                 (\_ -> Bytes.Encode.sequence [])
                                 (leafBytes "t.Leaf")

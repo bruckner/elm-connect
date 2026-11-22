@@ -97,8 +97,15 @@ registry =
 
 {-| Encodes a [`Line`](#Line) as proto3 JSON.
 -}
-encodeLine : Line -> Json.Encode.Value
+encodeLine : Line -> Proto.Json.Encoder
 encodeLine value =
+    Proto.Json.ready (jsonLine value)
+
+
+{-| Writes a [`Line`](#Line) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonLine : Line -> Json.Encode.Value
+jsonLine value =
     Proto.Json.objectOfFields
         [ ( "text", Proto.Json.implicitField "" Json.Encode.string value.text )
         ]

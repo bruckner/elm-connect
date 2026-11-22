@@ -203,7 +203,7 @@ use crate::elm::ast::{Decl, Exposed, Exposing, Expr, Import, Module, ModuleName,
 use crate::elm::build::{apply, qualified, ty, ty_qualified, var};
 use crate::ir::{
     AnyReach, Element, Field, Message, Method, ModuleName as IrModule, Oneof, OneofVariant,
-    Package, Service, TypeName,
+    Package, Service, TypeName, WriteSeeds,
 };
 use crate::naming::VERSION_VALUE;
 use crate::options::{EnumUnknown, Options, UnknownFields, Wire};
@@ -257,9 +257,6 @@ const PROTO_DESCRIPTORS: &str = "Proto.Descriptors";
 const PROTO_REGISTRY: &str = "Proto.Registry";
 /// The runtime package's `google.protobuf.Any`.
 const PROTO_ANY: &str = "Proto.Any";
-/// The runtime package's error type, which an encoder writing an `Any`
-/// can fail with.
-const PROTO_ERROR: &str = "Proto.Error";
 /// The runtime package's typed values of the well-known types, home of
 /// `Proto.WellKnown.nullValue`, which a descriptor of a `NullValue` field
 /// names.
@@ -324,6 +321,10 @@ pub fn emit_with_queries(
     let messages = all_messages(package, packages);
     let mut emitter = Emitter::new(&package.module, options);
     emitter.reach = AnyReach::of(packages.iter().chain(std::iter::once(package)));
+    emitter.write_reach = AnyReach::write(
+        packages.iter().chain(std::iter::once(package)),
+        write_seeds(),
+    );
     let mut decls = emitter.package(package);
     let mut encoders = Vec::new();
     // Route functions take JSON, which `wire=proto` does not generate,
@@ -350,6 +351,30 @@ pub fn emit_with_queries(
     let mut module = emitter.module(package, decls);
     module.doc = docs::package(package);
     Ok(module)
+}
+
+/// What a JSON write refuses, chosen by `ELM_CONNECT_FALLIBLE`: `any` (an
+/// `Any` only), `checked` (and the well-known types with values proto3 JSON
+/// has no form for), `full` (and messages on a cycle; the default), or
+/// `every` (every message goes through the encoder combinators).
+pub fn write_seeds() -> WriteSeeds {
+    match std::env::var("ELM_CONNECT_FALLIBLE").as_deref() {
+        Ok("any") => WriteSeeds::default(),
+        Ok("checked") => WriteSeeds {
+            checked: true,
+            ..WriteSeeds::default()
+        },
+        Ok("every") => WriteSeeds {
+            checked: true,
+            cycles: true,
+            every: true,
+        },
+        _ => WriteSeeds {
+            checked: true,
+            cycles: true,
+            every: false,
+        },
+    }
 }
 
 /// A type or constructor a package declares under a name its module's
@@ -475,6 +500,10 @@ pub fn emit_service(
     let messages = all_messages(package, packages);
     let mut emitter = Emitter::new(&service.module, options);
     emitter.reach = AnyReach::of(packages.iter().chain(std::iter::once(package)));
+    emitter.write_reach = AnyReach::write(
+        packages.iter().chain(std::iter::once(package)),
+        write_seeds(),
+    );
     let mut decls = Vec::new();
     if !service.methods.is_empty() {
         let mut calls = Vec::new();
@@ -632,8 +661,22 @@ struct Emitter {
     /// Which codecs the option wires into methods; package modules emit
     /// both whatever it says.
     wiring: Wire,
-    /// The messages of the build that reach a `google.protobuf.Any`.
+    /// The messages of the build that reach a `google.protobuf.Any`, whose
+    /// JSON decoders take the registry.
     reach: AnyReach,
+    /// The messages whose JSON write can be refused, whose encoders are
+    /// built with `Proto.Json.writeObject`; the others are written by plain
+    /// code (`jsonFoo`) and wrapped once.
+    write_reach: AnyReach,
+    /// Whether every field of a message whose write can be refused goes
+    /// through an `Encoder`, also those that cannot be refused.
+    write_all_fields: bool,
+    /// While the encoder of a message on a cycle, or of its oneof, is
+    /// written with the level as its `depth` argument.
+    write_depth: bool,
+    /// While a value is written for a route's path or query, which print
+    /// it unchecked: the plain encoder, whatever the write reach says.
+    plain_only: bool,
     /// The options as the header's second line records them.
     recorded: String,
     /// While a recursive message's JSON decoder is written: how its values
@@ -673,6 +716,10 @@ impl Emitter {
             unknown_fields: options.unknown_fields,
             wiring: options.wire,
             reach: AnyReach::default(),
+            write_reach: AnyReach::default(),
+            write_all_fields: std::env::var("ELM_CONNECT_ENC_FIELDS").is_ok_and(|v| v == "all"),
+            plain_only: false,
+            write_depth: false,
             recorded: match options.recorded() {
                 pairs if pairs.is_empty() => DEFAULT_OPTIONS.to_owned(),
                 pairs => pairs.join(", "),
@@ -759,7 +806,7 @@ impl Emitter {
             types.push(self.message_alias(&package.module, shape));
             defaults.push(self.message_default(shape));
             values.push(self.message_record(&package.module, shape));
-            encoders.push(self.message_encoder(shape));
+            encoders.extend(self.message_encoder(shape));
             decoders.extend(self.message_decoder(shape));
             binary_encoders.push(self.message_encoder_bytes(shape));
             binary_decoders.extend(self.message_merge_bytes(shape));
@@ -773,7 +820,7 @@ impl Emitter {
             }
             for oneof in &shape.oneofs {
                 types.push(self.oneof_type(&package.module, shape.message, oneof));
-                encoders.push(self.oneof_encoder(oneof));
+                encoders.push(self.oneof_encoder(oneof, shape.message.recursive));
                 decoders.extend(self.oneof_decoder(oneof, shape.message.recursive));
                 binary_encoders.push(self.oneof_encoder_bytes(oneof));
             }
@@ -1300,7 +1347,7 @@ mod tests {
             "{printed}"
         );
         assert!(
-            printed.contains("Maybe.map Other.V1.encodeB value.b"),
+            printed.contains("Maybe.map Other.V1.jsonB value.b"),
             "{printed}"
         );
         assert!(
@@ -1423,11 +1470,11 @@ mod tests {
         let printed = crate::elm::print::print_module(&module);
         for expected in [
             "(Proto.Method.initJson \"t.v1.S\"\n            \"Get\"\n            \
-             (\\_ -> Ok << T.V1.encodeA)\n            \
+             T.V1.encodeA\n            \
              (\\_ -> T.V1.decodeA)\n        )\n",
-            "\n            (\\_ -> Ok << Proto.Json.encodeValue)\n            (\\_ -> Proto.Json.empty)\n",
+            "\n            Proto.Json.writeValue\n            (\\_ -> Proto.Json.empty)\n",
             "\n            \"Ticks\"\n            \
-             (\\_ -> Ok << Proto.Json.encodeInt64AsInt)\n            Proto.Json.anyWith\n",
+             (Proto.Json.ready << Proto.Json.encodeInt64AsInt)\n            Proto.Json.anyWith\n",
             "descriptorGet : Proto.Method.Descriptor\ndescriptorGet =\n    \
              Proto.Method.descriptor \"t.v1.S\"\n        \"Get\"\n        \
              Proto.Method.IdempotencyUnknown\n        \"t.v1.A\"\n        \"t.v1.A\"\n        []\n",

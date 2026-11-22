@@ -263,8 +263,15 @@ encodeMarks value =
 
 {-| Encodes a [`Delimiters`](#Delimiters) as proto3 JSON.
 -}
-encodeDelimiters : Delimiters -> Json.Encode.Value
+encodeDelimiters : Delimiters -> Proto.Json.Encoder
 encodeDelimiters value =
+    Proto.Json.ready (jsonDelimiters value)
+
+
+{-| Writes a [`Delimiters`](#Delimiters) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonDelimiters : Delimiters -> Json.Encode.Value
+jsonDelimiters value =
     Proto.Json.objectOfFields
         [ ( "lists", Proto.Json.implicitField "" Json.Encode.string value.lists )
         , ( "blocks", Proto.Json.implicitField "" Json.Encode.string value.blocks )
@@ -278,8 +285,15 @@ encodeDelimiters value =
 
 {-| Encodes a [`Docs`](#Docs) as proto3 JSON.
 -}
-encodeDocs : Docs -> Json.Encode.Value
+encodeDocs : Docs -> Proto.Json.Encoder
 encodeDocs value =
+    Proto.Json.ready (jsonDocs value)
+
+
+{-| Writes a [`Docs`](#Docs) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonDocs : Docs -> Json.Encode.Value
+jsonDocs value =
     Proto.Json.objectOfFields
         [ ( "field", Proto.Json.implicitField "" Json.Encode.string value.field )
         ]

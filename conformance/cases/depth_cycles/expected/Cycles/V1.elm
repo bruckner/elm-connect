@@ -30,7 +30,6 @@ import Json.Encode
 import Proto.Any
 import Proto.Binary
 import Proto.Descriptors
-import Proto.Error
 import Proto.Json
 import Proto.Message
 import Proto.Registry
@@ -666,7 +665,7 @@ messageWide =
 -}
 messageEnvelope : Proto.Message.Message Envelope
 messageEnvelope =
-    Proto.Message.initWith "cycles.v1.Envelope" encodeEnvelopeWith decodeEnvelopeWith encodeEnvelopeBytes decodeEnvelopeBytes
+    Proto.Message.initWith "cycles.v1.Envelope" encodeEnvelope decodeEnvelopeWith encodeEnvelopeBytes decodeEnvelopeBytes
 
 
 
@@ -720,269 +719,394 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`Chain`](#Chain) as proto3 JSON.
+{-| Encodes a [`Chain`](#Chain) as proto3 JSON, refusing a value it holds that has no proto3 JSON form, and writing each `Any` with the registry it is run with.
 -}
-encodeChain : Chain -> Json.Encode.Value
+encodeChain : Chain -> Proto.Json.Encoder
 encodeChain value =
-    Proto.Json.objectOfFields
-        [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
-        , ( "next", Maybe.map encodeChain_ value.next )
-        ]
+    Proto.Json.writeFrom encodeChainAt value
 
 
-{-| Encodes a [`Chain_`](#Chain_) as proto3 JSON.
+{-| Encodes a [`Chain`](#Chain) at a level of its cycle, refused past the limit.
 -}
-encodeChain_ : Chain_ -> Json.Encode.Value
-encodeChain_ (Chain_ value) =
-    encodeChain value
+encodeChainAt : Int -> Chain -> Proto.Json.Encoder
+encodeChainAt depth value =
+    if depth > Proto.Json.writeLimit then
+        Proto.Json.writeTooDeep "cycles.v1.Chain"
+
+    else
+        Proto.Json.writeObject
+            [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
+            ]
+            [ ( "next", Proto.Json.writeOptional (encodeChain_At (depth + 1)) value.next )
+            ]
 
 
-{-| Encodes a [`Tree`](#Tree) as proto3 JSON.
+{-| Encodes a [`Chain_`](#Chain_) at a level of its cycle.
 -}
-encodeTree : Tree -> Json.Encode.Value
+encodeChain_At : Int -> Chain_ -> Proto.Json.Encoder
+encodeChain_At depth (Chain_ value) =
+    encodeChainAt depth value
+
+
+{-| Encodes a [`Tree`](#Tree) as proto3 JSON, refusing a value it holds that has no proto3 JSON form, and writing each `Any` with the registry it is run with.
+-}
+encodeTree : Tree -> Proto.Json.Encoder
 encodeTree value =
-    Proto.Json.objectOfFields
-        [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
-        , ( "children", Proto.Json.repeatedField encodeTree_ value.children )
-        ]
+    Proto.Json.writeFrom encodeTreeAt value
 
 
-{-| Encodes a [`Tree_`](#Tree_) as proto3 JSON.
+{-| Encodes a [`Tree`](#Tree) at a level of its cycle, refused past the limit.
 -}
-encodeTree_ : Tree_ -> Json.Encode.Value
-encodeTree_ (Tree_ value) =
-    encodeTree value
+encodeTreeAt : Int -> Tree -> Proto.Json.Encoder
+encodeTreeAt depth value =
+    if depth > Proto.Json.writeLimit then
+        Proto.Json.writeTooDeep "cycles.v1.Tree"
+
+    else
+        Proto.Json.writeObject
+            [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
+            ]
+            [ ( "children", Proto.Json.writeRepeated (encodeTree_At (depth + 1)) value.children )
+            ]
 
 
-{-| Encodes a [`Dir`](#Dir) as proto3 JSON.
+{-| Encodes a [`Tree_`](#Tree_) at a level of its cycle.
 -}
-encodeDir : Dir -> Json.Encode.Value
+encodeTree_At : Int -> Tree_ -> Proto.Json.Encoder
+encodeTree_At depth (Tree_ value) =
+    encodeTreeAt depth value
+
+
+{-| Encodes a [`Dir`](#Dir) as proto3 JSON, refusing a value it holds that has no proto3 JSON form, and writing each `Any` with the registry it is run with.
+-}
+encodeDir : Dir -> Proto.Json.Encoder
 encodeDir value =
-    Proto.Json.objectOfFields
-        [ ( "entries", Proto.Json.dictField identity encodeDir_ value.entries )
-        ]
+    Proto.Json.writeFrom encodeDirAt value
 
 
-{-| Encodes a [`Dir_`](#Dir_) as proto3 JSON.
+{-| Encodes a [`Dir`](#Dir) at a level of its cycle, refused past the limit.
 -}
-encodeDir_ : Dir_ -> Json.Encode.Value
-encodeDir_ (Dir_ value) =
-    encodeDir value
+encodeDirAt : Int -> Dir -> Proto.Json.Encoder
+encodeDirAt depth value =
+    if depth > Proto.Json.writeLimit then
+        Proto.Json.writeTooDeep "cycles.v1.Dir"
+
+    else
+        Proto.Json.writeObject []
+            [ ( "entries", Proto.Json.writeDict identity (encodeDir_At (depth + 1)) value.entries )
+            ]
 
 
-{-| Encodes an [`Expr`](#Expr) as proto3 JSON.
+{-| Encodes a [`Dir_`](#Dir_) at a level of its cycle.
 -}
-encodeExpr : Expr -> Json.Encode.Value
+encodeDir_At : Int -> Dir_ -> Proto.Json.Encoder
+encodeDir_At depth (Dir_ value) =
+    encodeDirAt depth value
+
+
+{-| Encodes an [`Expr`](#Expr) as proto3 JSON, refusing a value it holds that has no proto3 JSON form, and writing each `Any` with the registry it is run with.
+-}
+encodeExpr : Expr -> Proto.Json.Encoder
 encodeExpr value =
-    Proto.Json.objectOfFields (encodeExprKind value.kind)
+    Proto.Json.writeFrom encodeExprAt value
 
 
-{-| Encodes an [`ExprKind`](#ExprKind) as the members of its message's JSON object.
+{-| Encodes an [`Expr`](#Expr) at a level of its cycle, refused past the limit.
 -}
-encodeExprKind : ExprKind -> List ( String, Maybe Json.Encode.Value )
-encodeExprKind value =
+encodeExprAt : Int -> Expr -> Proto.Json.Encoder
+encodeExprAt depth value =
+    if depth > Proto.Json.writeLimit then
+        Proto.Json.writeTooDeep "cycles.v1.Expr"
+
+    else
+        Proto.Json.writeObject [] (encodeExprKindAt depth value.kind)
+
+
+{-| Encodes an [`ExprKind`](#ExprKind) at a level of its message's cycle as the members of its message's JSON object.
+-}
+encodeExprKindAt : Int -> ExprKind -> List ( String, Proto.Json.Encoder )
+encodeExprKindAt depth value =
     case value of
         ExprKindUnset ->
             []
 
         ExprKindNumber member ->
-            [ ( "number", Just (Json.Encode.int member) )
+            [ ( "number", Proto.Json.ready (Json.Encode.int member) )
             ]
 
         ExprKindNegated member ->
-            [ ( "negated", Just (encodeExpr member) )
+            [ ( "negated", encodeExprAt (depth + 1) member )
             ]
 
 
-{-| Encodes a [`Person`](#Person) as proto3 JSON.
+{-| Encodes a [`Person`](#Person) as proto3 JSON, refusing a value it holds that has no proto3 JSON form, and writing each `Any` with the registry it is run with.
 -}
-encodePerson : Person -> Json.Encode.Value
+encodePerson : Person -> Proto.Json.Encoder
 encodePerson value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        , ( "team", Maybe.map encodeTeam_ value.team )
-        ]
+    Proto.Json.writeFrom encodePersonAt value
 
 
-{-| Encodes a [`Person_`](#Person_) as proto3 JSON.
+{-| Encodes a [`Person`](#Person) at a level of its cycle, refused past the limit.
 -}
-encodePerson_ : Person_ -> Json.Encode.Value
-encodePerson_ (Person_ value) =
-    encodePerson value
+encodePersonAt : Int -> Person -> Proto.Json.Encoder
+encodePersonAt depth value =
+    if depth > Proto.Json.writeLimit then
+        Proto.Json.writeTooDeep "cycles.v1.Person"
+
+    else
+        Proto.Json.writeObject
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            ]
+            [ ( "team", Proto.Json.writeOptional (encodeTeam_At (depth + 1)) value.team )
+            ]
 
 
-{-| Encodes a [`Team`](#Team) as proto3 JSON.
+{-| Encodes a [`Person_`](#Person_) at a level of its cycle.
 -}
-encodeTeam : Team -> Json.Encode.Value
+encodePerson_At : Int -> Person_ -> Proto.Json.Encoder
+encodePerson_At depth (Person_ value) =
+    encodePersonAt depth value
+
+
+{-| Encodes a [`Team`](#Team) as proto3 JSON, refusing a value it holds that has no proto3 JSON form, and writing each `Any` with the registry it is run with.
+-}
+encodeTeam : Team -> Proto.Json.Encoder
 encodeTeam value =
-    Proto.Json.objectOfFields
-        [ ( "members", Proto.Json.repeatedField encodePerson_ value.members )
-        ]
+    Proto.Json.writeFrom encodeTeamAt value
 
 
-{-| Encodes a [`Team_`](#Team_) as proto3 JSON.
+{-| Encodes a [`Team`](#Team) at a level of its cycle, refused past the limit.
 -}
-encodeTeam_ : Team_ -> Json.Encode.Value
-encodeTeam_ (Team_ value) =
-    encodeTeam value
+encodeTeamAt : Int -> Team -> Proto.Json.Encoder
+encodeTeamAt depth value =
+    if depth > Proto.Json.writeLimit then
+        Proto.Json.writeTooDeep "cycles.v1.Team"
+
+    else
+        Proto.Json.writeObject []
+            [ ( "members", Proto.Json.writeRepeated (encodePerson_At (depth + 1)) value.members )
+            ]
 
 
-{-| Encodes a [`First`](#First) as proto3 JSON.
+{-| Encodes a [`Team_`](#Team_) at a level of its cycle.
 -}
-encodeFirst : First -> Json.Encode.Value
+encodeTeam_At : Int -> Team_ -> Proto.Json.Encoder
+encodeTeam_At depth (Team_ value) =
+    encodeTeamAt depth value
+
+
+{-| Encodes a [`First`](#First) as proto3 JSON, refusing a value it holds that has no proto3 JSON form, and writing each `Any` with the registry it is run with.
+-}
+encodeFirst : First -> Proto.Json.Encoder
 encodeFirst value =
-    Proto.Json.objectOfFields
-        [ ( "second", Maybe.map encodeSecond_ value.second )
-        ]
+    Proto.Json.writeFrom encodeFirstAt value
 
 
-{-| Encodes a [`First_`](#First_) as proto3 JSON.
+{-| Encodes a [`First`](#First) at a level of its cycle, refused past the limit.
 -}
-encodeFirst_ : First_ -> Json.Encode.Value
-encodeFirst_ (First_ value) =
-    encodeFirst value
+encodeFirstAt : Int -> First -> Proto.Json.Encoder
+encodeFirstAt depth value =
+    if depth > Proto.Json.writeLimit then
+        Proto.Json.writeTooDeep "cycles.v1.First"
+
+    else
+        Proto.Json.writeObject []
+            [ ( "second", Proto.Json.writeOptional (encodeSecond_At (depth + 1)) value.second )
+            ]
 
 
-{-| Encodes a [`Second`](#Second) as proto3 JSON.
+{-| Encodes a [`First_`](#First_) at a level of its cycle.
 -}
-encodeSecond : Second -> Json.Encode.Value
+encodeFirst_At : Int -> First_ -> Proto.Json.Encoder
+encodeFirst_At depth (First_ value) =
+    encodeFirstAt depth value
+
+
+{-| Encodes a [`Second`](#Second) as proto3 JSON, refusing a value it holds that has no proto3 JSON form, and writing each `Any` with the registry it is run with.
+-}
+encodeSecond : Second -> Proto.Json.Encoder
 encodeSecond value =
-    Proto.Json.objectOfFields
-        [ ( "third", Maybe.map encodeThird_ value.third )
-        ]
+    Proto.Json.writeFrom encodeSecondAt value
 
 
-{-| Encodes a [`Second_`](#Second_) as proto3 JSON.
+{-| Encodes a [`Second`](#Second) at a level of its cycle, refused past the limit.
 -}
-encodeSecond_ : Second_ -> Json.Encode.Value
-encodeSecond_ (Second_ value) =
-    encodeSecond value
+encodeSecondAt : Int -> Second -> Proto.Json.Encoder
+encodeSecondAt depth value =
+    if depth > Proto.Json.writeLimit then
+        Proto.Json.writeTooDeep "cycles.v1.Second"
+
+    else
+        Proto.Json.writeObject []
+            [ ( "third", Proto.Json.writeOptional (encodeThird_At (depth + 1)) value.third )
+            ]
 
 
-{-| Encodes a [`Third`](#Third) as proto3 JSON.
+{-| Encodes a [`Second_`](#Second_) at a level of its cycle.
 -}
-encodeThird : Third -> Json.Encode.Value
+encodeSecond_At : Int -> Second_ -> Proto.Json.Encoder
+encodeSecond_At depth (Second_ value) =
+    encodeSecondAt depth value
+
+
+{-| Encodes a [`Third`](#Third) as proto3 JSON, refusing a value it holds that has no proto3 JSON form, and writing each `Any` with the registry it is run with.
+-}
+encodeThird : Third -> Proto.Json.Encoder
 encodeThird value =
-    Proto.Json.objectOfFields
-        [ ( "firsts", Proto.Json.repeatedField encodeFirst_ value.firsts )
-        ]
+    Proto.Json.writeFrom encodeThirdAt value
 
 
-{-| Encodes a [`Third_`](#Third_) as proto3 JSON.
+{-| Encodes a [`Third`](#Third) at a level of its cycle, refused past the limit.
 -}
-encodeThird_ : Third_ -> Json.Encode.Value
-encodeThird_ (Third_ value) =
-    encodeThird value
+encodeThirdAt : Int -> Third -> Proto.Json.Encoder
+encodeThirdAt depth value =
+    if depth > Proto.Json.writeLimit then
+        Proto.Json.writeTooDeep "cycles.v1.Third"
+
+    else
+        Proto.Json.writeObject []
+            [ ( "firsts", Proto.Json.writeRepeated (encodeFirst_At (depth + 1)) value.firsts )
+            ]
 
 
-{-| Encodes a [`Forest`](#Forest) as proto3 JSON.
+{-| Encodes a [`Third_`](#Third_) at a level of its cycle.
 -}
-encodeForest : Forest -> Json.Encode.Value
+encodeThird_At : Int -> Third_ -> Proto.Json.Encoder
+encodeThird_At depth (Third_ value) =
+    encodeThirdAt depth value
+
+
+{-| Encodes a [`Forest`](#Forest) as proto3 JSON, refusing a value it holds that has no proto3 JSON form, and writing each `Any` with the registry it is run with.
+-}
+encodeForest : Forest -> Proto.Json.Encoder
 encodeForest value =
-    Proto.Json.objectOfFields
-        [ ( "trees", Proto.Json.repeatedField encodeTree value.trees )
-        , ( "chain", Maybe.map encodeChain value.chain )
+    Proto.Json.writeObject []
+        [ ( "trees", Proto.Json.writeRepeated encodeTree value.trees )
+        , ( "chain", Proto.Json.writeOptional encodeChain value.chain )
         ]
 
 
-{-| Encodes a [`Wide`](#Wide) as proto3 JSON.
+{-| Encodes a [`Wide`](#Wide) as proto3 JSON, refusing a value it holds that has no proto3 JSON form, and writing each `Any` with the registry it is run with.
 -}
-encodeWide : Wide -> Json.Encode.Value
+encodeWide : Wide -> Proto.Json.Encoder
 encodeWide value =
-    Proto.Json.objectOfFields
-        [ ( "f1", Proto.Json.implicitField 0 Json.Encode.int value.f1 )
-        , ( "f2", Proto.Json.implicitField 0 Json.Encode.int value.f2 )
-        , ( "f3", Proto.Json.implicitField 0 Json.Encode.int value.f3 )
-        , ( "f4", Proto.Json.implicitField 0 Json.Encode.int value.f4 )
-        , ( "f5", Proto.Json.implicitField 0 Json.Encode.int value.f5 )
-        , ( "f6", Proto.Json.implicitField 0 Json.Encode.int value.f6 )
-        , ( "f7", Proto.Json.implicitField 0 Json.Encode.int value.f7 )
-        , ( "f8", Proto.Json.implicitField 0 Json.Encode.int value.f8 )
-        , ( "f9", Proto.Json.implicitField 0 Json.Encode.int value.f9 )
-        , ( "f10", Proto.Json.implicitField 0 Json.Encode.int value.f10 )
-        , ( "f11", Proto.Json.implicitField 0 Json.Encode.int value.f11 )
-        , ( "f12", Proto.Json.implicitField 0 Json.Encode.int value.f12 )
-        , ( "f13", Proto.Json.implicitField 0 Json.Encode.int value.f13 )
-        , ( "f14", Proto.Json.implicitField 0 Json.Encode.int value.f14 )
-        , ( "f15", Proto.Json.implicitField 0 Json.Encode.int value.f15 )
-        , ( "f16", Proto.Json.implicitField 0 Json.Encode.int value.f16 )
-        , ( "f17", Proto.Json.implicitField 0 Json.Encode.int value.f17 )
-        , ( "f18", Proto.Json.implicitField 0 Json.Encode.int value.f18 )
-        , ( "f19", Proto.Json.implicitField 0 Json.Encode.int value.f19 )
-        , ( "f20", Proto.Json.implicitField 0 Json.Encode.int value.f20 )
-        , ( "f21", Proto.Json.implicitField 0 Json.Encode.int value.f21 )
-        , ( "f22", Proto.Json.implicitField 0 Json.Encode.int value.f22 )
-        , ( "f23", Proto.Json.implicitField 0 Json.Encode.int value.f23 )
-        , ( "f24", Proto.Json.implicitField 0 Json.Encode.int value.f24 )
-        , ( "f25", Proto.Json.implicitField 0 Json.Encode.int value.f25 )
-        , ( "f26", Proto.Json.implicitField 0 Json.Encode.int value.f26 )
-        , ( "f27", Proto.Json.implicitField 0 Json.Encode.int value.f27 )
-        , ( "f28", Proto.Json.implicitField 0 Json.Encode.int value.f28 )
-        , ( "f29", Proto.Json.implicitField 0 Json.Encode.int value.f29 )
-        , ( "f30", Proto.Json.implicitField 0 Json.Encode.int value.f30 )
-        , ( "f31", Proto.Json.implicitField 0 Json.Encode.int value.f31 )
-        , ( "f32", Proto.Json.implicitField 0 Json.Encode.int value.f32 )
-        , ( "f33", Proto.Json.implicitField 0 Json.Encode.int value.f33 )
-        , ( "f34", Proto.Json.implicitField 0 Json.Encode.int value.f34 )
-        , ( "f35", Proto.Json.implicitField 0 Json.Encode.int value.f35 )
-        , ( "f36", Proto.Json.implicitField 0 Json.Encode.int value.f36 )
-        , ( "f37", Proto.Json.implicitField 0 Json.Encode.int value.f37 )
-        , ( "f38", Proto.Json.implicitField 0 Json.Encode.int value.f38 )
-        , ( "f39", Proto.Json.implicitField 0 Json.Encode.int value.f39 )
-        , ( "f40", Proto.Json.implicitField 0 Json.Encode.int value.f40 )
-        , ( "f41", Proto.Json.implicitField 0 Json.Encode.int value.f41 )
-        , ( "f42", Proto.Json.implicitField 0 Json.Encode.int value.f42 )
-        , ( "f43", Proto.Json.implicitField 0 Json.Encode.int value.f43 )
-        , ( "f44", Proto.Json.implicitField 0 Json.Encode.int value.f44 )
-        , ( "f45", Proto.Json.implicitField 0 Json.Encode.int value.f45 )
-        , ( "f46", Proto.Json.implicitField 0 Json.Encode.int value.f46 )
-        , ( "f47", Proto.Json.implicitField 0 Json.Encode.int value.f47 )
-        , ( "f48", Proto.Json.implicitField 0 Json.Encode.int value.f48 )
-        , ( "f49", Proto.Json.implicitField 0 Json.Encode.int value.f49 )
-        , ( "f50", Proto.Json.implicitField 0 Json.Encode.int value.f50 )
-        , ( "f51", Proto.Json.implicitField 0 Json.Encode.int value.f51 )
-        , ( "f52", Proto.Json.implicitField 0 Json.Encode.int value.f52 )
-        , ( "f53", Proto.Json.implicitField 0 Json.Encode.int value.f53 )
-        , ( "f54", Proto.Json.implicitField 0 Json.Encode.int value.f54 )
-        , ( "f55", Proto.Json.implicitField 0 Json.Encode.int value.f55 )
-        , ( "f56", Proto.Json.implicitField 0 Json.Encode.int value.f56 )
-        , ( "f57", Proto.Json.implicitField 0 Json.Encode.int value.f57 )
-        , ( "f58", Proto.Json.implicitField 0 Json.Encode.int value.f58 )
-        , ( "f59", Proto.Json.implicitField 0 Json.Encode.int value.f59 )
-        , ( "f60", Proto.Json.implicitField 0 Json.Encode.int value.f60 )
-        , ( "f61", Proto.Json.implicitField 0 Json.Encode.int value.f61 )
-        , ( "f62", Proto.Json.implicitField 0 Json.Encode.int value.f62 )
-        , ( "f63", Proto.Json.implicitField 0 Json.Encode.int value.f63 )
-        , ( "f64", Proto.Json.implicitField 0 Json.Encode.int value.f64 )
-        , ( "children", Proto.Json.repeatedField encodeWide_ value.children )
-        ]
+    Proto.Json.writeFrom encodeWideAt value
 
 
-{-| Encodes a [`Wide_`](#Wide_) as proto3 JSON.
+{-| Encodes a [`Wide`](#Wide) at a level of its cycle, refused past the limit.
 -}
-encodeWide_ : Wide_ -> Json.Encode.Value
-encodeWide_ (Wide_ value) =
-    encodeWide value
+encodeWideAt : Int -> Wide -> Proto.Json.Encoder
+encodeWideAt depth value =
+    if depth > Proto.Json.writeLimit then
+        Proto.Json.writeTooDeep "cycles.v1.Wide"
+
+    else
+        Proto.Json.writeObject
+            [ ( "f1", Proto.Json.implicitField 0 Json.Encode.int value.f1 )
+            , ( "f2", Proto.Json.implicitField 0 Json.Encode.int value.f2 )
+            , ( "f3", Proto.Json.implicitField 0 Json.Encode.int value.f3 )
+            , ( "f4", Proto.Json.implicitField 0 Json.Encode.int value.f4 )
+            , ( "f5", Proto.Json.implicitField 0 Json.Encode.int value.f5 )
+            , ( "f6", Proto.Json.implicitField 0 Json.Encode.int value.f6 )
+            , ( "f7", Proto.Json.implicitField 0 Json.Encode.int value.f7 )
+            , ( "f8", Proto.Json.implicitField 0 Json.Encode.int value.f8 )
+            , ( "f9", Proto.Json.implicitField 0 Json.Encode.int value.f9 )
+            , ( "f10", Proto.Json.implicitField 0 Json.Encode.int value.f10 )
+            , ( "f11", Proto.Json.implicitField 0 Json.Encode.int value.f11 )
+            , ( "f12", Proto.Json.implicitField 0 Json.Encode.int value.f12 )
+            , ( "f13", Proto.Json.implicitField 0 Json.Encode.int value.f13 )
+            , ( "f14", Proto.Json.implicitField 0 Json.Encode.int value.f14 )
+            , ( "f15", Proto.Json.implicitField 0 Json.Encode.int value.f15 )
+            , ( "f16", Proto.Json.implicitField 0 Json.Encode.int value.f16 )
+            , ( "f17", Proto.Json.implicitField 0 Json.Encode.int value.f17 )
+            , ( "f18", Proto.Json.implicitField 0 Json.Encode.int value.f18 )
+            , ( "f19", Proto.Json.implicitField 0 Json.Encode.int value.f19 )
+            , ( "f20", Proto.Json.implicitField 0 Json.Encode.int value.f20 )
+            , ( "f21", Proto.Json.implicitField 0 Json.Encode.int value.f21 )
+            , ( "f22", Proto.Json.implicitField 0 Json.Encode.int value.f22 )
+            , ( "f23", Proto.Json.implicitField 0 Json.Encode.int value.f23 )
+            , ( "f24", Proto.Json.implicitField 0 Json.Encode.int value.f24 )
+            , ( "f25", Proto.Json.implicitField 0 Json.Encode.int value.f25 )
+            , ( "f26", Proto.Json.implicitField 0 Json.Encode.int value.f26 )
+            , ( "f27", Proto.Json.implicitField 0 Json.Encode.int value.f27 )
+            , ( "f28", Proto.Json.implicitField 0 Json.Encode.int value.f28 )
+            , ( "f29", Proto.Json.implicitField 0 Json.Encode.int value.f29 )
+            , ( "f30", Proto.Json.implicitField 0 Json.Encode.int value.f30 )
+            , ( "f31", Proto.Json.implicitField 0 Json.Encode.int value.f31 )
+            , ( "f32", Proto.Json.implicitField 0 Json.Encode.int value.f32 )
+            , ( "f33", Proto.Json.implicitField 0 Json.Encode.int value.f33 )
+            , ( "f34", Proto.Json.implicitField 0 Json.Encode.int value.f34 )
+            , ( "f35", Proto.Json.implicitField 0 Json.Encode.int value.f35 )
+            , ( "f36", Proto.Json.implicitField 0 Json.Encode.int value.f36 )
+            , ( "f37", Proto.Json.implicitField 0 Json.Encode.int value.f37 )
+            , ( "f38", Proto.Json.implicitField 0 Json.Encode.int value.f38 )
+            , ( "f39", Proto.Json.implicitField 0 Json.Encode.int value.f39 )
+            , ( "f40", Proto.Json.implicitField 0 Json.Encode.int value.f40 )
+            , ( "f41", Proto.Json.implicitField 0 Json.Encode.int value.f41 )
+            , ( "f42", Proto.Json.implicitField 0 Json.Encode.int value.f42 )
+            , ( "f43", Proto.Json.implicitField 0 Json.Encode.int value.f43 )
+            , ( "f44", Proto.Json.implicitField 0 Json.Encode.int value.f44 )
+            , ( "f45", Proto.Json.implicitField 0 Json.Encode.int value.f45 )
+            , ( "f46", Proto.Json.implicitField 0 Json.Encode.int value.f46 )
+            , ( "f47", Proto.Json.implicitField 0 Json.Encode.int value.f47 )
+            , ( "f48", Proto.Json.implicitField 0 Json.Encode.int value.f48 )
+            , ( "f49", Proto.Json.implicitField 0 Json.Encode.int value.f49 )
+            , ( "f50", Proto.Json.implicitField 0 Json.Encode.int value.f50 )
+            , ( "f51", Proto.Json.implicitField 0 Json.Encode.int value.f51 )
+            , ( "f52", Proto.Json.implicitField 0 Json.Encode.int value.f52 )
+            , ( "f53", Proto.Json.implicitField 0 Json.Encode.int value.f53 )
+            , ( "f54", Proto.Json.implicitField 0 Json.Encode.int value.f54 )
+            , ( "f55", Proto.Json.implicitField 0 Json.Encode.int value.f55 )
+            , ( "f56", Proto.Json.implicitField 0 Json.Encode.int value.f56 )
+            , ( "f57", Proto.Json.implicitField 0 Json.Encode.int value.f57 )
+            , ( "f58", Proto.Json.implicitField 0 Json.Encode.int value.f58 )
+            , ( "f59", Proto.Json.implicitField 0 Json.Encode.int value.f59 )
+            , ( "f60", Proto.Json.implicitField 0 Json.Encode.int value.f60 )
+            , ( "f61", Proto.Json.implicitField 0 Json.Encode.int value.f61 )
+            , ( "f62", Proto.Json.implicitField 0 Json.Encode.int value.f62 )
+            , ( "f63", Proto.Json.implicitField 0 Json.Encode.int value.f63 )
+            , ( "f64", Proto.Json.implicitField 0 Json.Encode.int value.f64 )
+            ]
+            [ ( "children", Proto.Json.writeRepeated (encodeWide_At (depth + 1)) value.children )
+            ]
 
 
-{-| Encodes an [`Envelope`](#Envelope) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
+{-| Encodes a [`Wide_`](#Wide_) at a level of its cycle.
 -}
-encodeEnvelopeWith : Proto.Registry.Registry -> Envelope -> Result Proto.Error.Error Json.Encode.Value
-encodeEnvelopeWith types value =
-    Proto.Json.tryObjectOfFields
-        [ ( "payload", Proto.Json.tryOptionalField (Proto.Json.encodeAnyWith types) value.payload )
-        , ( "replies", Proto.Json.tryRepeatedField (encodeEnvelope_With (Proto.Json.registryDeeper types)) value.replies )
-        , ( "data", Ok (Maybe.map Proto.Json.encodeStruct value.data) )
-        , ( "value", Ok (Maybe.map Proto.Json.encodeValue value.value) )
-        , ( "list", Ok (Maybe.map Proto.Json.encodeListValue value.list) )
-        ]
+encodeWide_At : Int -> Wide_ -> Proto.Json.Encoder
+encodeWide_At depth (Wide_ value) =
+    encodeWideAt depth value
 
 
-{-| Encodes an [`Envelope_`](#Envelope_) as proto3 JSON, writing each `Any` it holds with the registry.
+{-| Encodes an [`Envelope`](#Envelope) as proto3 JSON, refusing a value it holds that has no proto3 JSON form, and writing each `Any` with the registry it is run with.
 -}
-encodeEnvelope_With : Proto.Registry.Registry -> Envelope_ -> Result Proto.Error.Error Json.Encode.Value
-encodeEnvelope_With types (Envelope_ value) =
-    encodeEnvelopeWith types value
+encodeEnvelope : Envelope -> Proto.Json.Encoder
+encodeEnvelope value =
+    Proto.Json.writeFrom encodeEnvelopeAt value
+
+
+{-| Encodes an [`Envelope`](#Envelope) at a level of its cycle, refused past the limit.
+-}
+encodeEnvelopeAt : Int -> Envelope -> Proto.Json.Encoder
+encodeEnvelopeAt depth value =
+    if depth > Proto.Json.writeLimit then
+        Proto.Json.writeTooDeep "cycles.v1.Envelope"
+
+    else
+        Proto.Json.writeObject []
+            [ ( "payload", Proto.Json.writeOptional (Proto.Json.writeAnyAt depth) value.payload )
+            , ( "replies", Proto.Json.writeRepeated (encodeEnvelope_At (depth + 1)) value.replies )
+            , ( "data", Proto.Json.writeOptional Proto.Json.writeStruct value.data )
+            , ( "value", Proto.Json.writeOptional Proto.Json.writeValue value.value )
+            , ( "list", Proto.Json.writeOptional Proto.Json.writeListValue value.list )
+            ]
+
+
+{-| Encodes an [`Envelope_`](#Envelope_) at a level of its cycle.
+-}
+encodeEnvelope_At : Int -> Envelope_ -> Proto.Json.Encoder
+encodeEnvelope_At depth (Envelope_ value) =
+    encodeEnvelopeAt depth value
 
 
 

@@ -39,7 +39,7 @@ getItem =
     Rpc.call
         (Proto.Method.initJson "vault.v1.VaultService"
             "GetItem"
-            (\_ -> Ok << Vault.V1.encodeGetItemRequest)
+            Vault.V1.encodeGetItemRequest
             Vault.V1.decodeItemWith
             |> Proto.Method.withRoutes [ routeGetItem0 ]
         )
@@ -57,7 +57,7 @@ listItems =
     Rpc.call
         (Proto.Method.initJson "vault.v1.VaultService"
             "ListItems"
-            (\_ -> Ok << Vault.V1.encodeListItemsRequest)
+            Vault.V1.encodeListItemsRequest
             Vault.V1.decodeListItemsResponseWith
         )
 
@@ -74,7 +74,7 @@ putItem =
     Rpc.call
         (Proto.Method.initJson "vault.v1.VaultService"
             "PutItem"
-            Vault.V1.encodeItemWith
+            Vault.V1.encodeItem
             Vault.V1.decodeItemWith
         )
 

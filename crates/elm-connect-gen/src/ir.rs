@@ -48,7 +48,7 @@ use std::fmt;
 
 pub(crate) use build::declared_fields;
 pub use build::{Built, build, build_with, build_with_imports, name_site, unbound_methods};
-pub use reach::AnyReach;
+pub use reach::{AnyReach, WriteSeeds};
 
 /// Everything generated from one proto package, across all of its files:
 /// the content of one Elm module.

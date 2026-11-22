@@ -115,11 +115,11 @@ conversions =
                         , { seconds = -1, nanos = -500000000 }
                         , { seconds = 1, nanos = 0 }
                         ]
-        , test "fromParts past protobuf's limit gives the limit" <|
+        , test "fromParts past protobuf's limit keeps the duration, which is not valid" <|
             \_ ->
                 [ Duration.fromParts 315576000001 0, Duration.fromParts 315576000000 1500000000, Duration.fromParts -400000000000 -1 ]
-                    |> List.map Duration.toString
-                    |> Expect.equal [ "315576000000s", "315576000000s", "-315576000000s" ]
+                    |> List.map (\d -> ( Duration.toString d, Duration.isValid d ))
+                    |> Expect.equal [ ( "315576000001s", False ), ( "315576000001.500s", False ), ( "-400000000000.000000001s", False ) ]
         , test "fromParts at protobuf's limit keeps the nanoseconds, as fromString does" <|
             \_ ->
                 [ Duration.fromParts 315576000000 5, Duration.fromParts -315576000000 -578239000 ]

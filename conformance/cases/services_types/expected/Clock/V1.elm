@@ -11,7 +11,6 @@ another generated package, generated under `int64=int`.
 import Bytes.Encode
 import Clock.V1.Alarm
 import Json.Decode
-import Json.Encode
 import Proto.Binary
 import Proto.Descriptors
 import Proto.Json
@@ -95,12 +94,12 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes an [`Alarm`](#Alarm) as proto3 JSON.
+{-| Encodes an [`Alarm`](#Alarm) as proto3 JSON, refusing a value it holds that has no proto3 JSON form, and writing each `Any` with the registry it is run with.
 -}
-encodeAlarm : Alarm -> Json.Encode.Value
+encodeAlarm : Alarm -> Proto.Json.Encoder
 encodeAlarm value =
-    Proto.Json.objectOfFields
-        [ ( "at", Maybe.map Proto.Json.encodeTimestamp value.at )
+    Proto.Json.writeObject []
+        [ ( "at", Proto.Json.writeOptional Proto.Json.writeTimestamp value.at )
         ]
 
 

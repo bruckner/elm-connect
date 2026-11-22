@@ -419,13 +419,20 @@ registry =
 
 {-| Encodes a [`Note`](#Note) as proto3 JSON.
 -}
-encodeNote : Note -> Json.Encode.Value
+encodeNote : Note -> Proto.Json.Encoder
 encodeNote value =
+    Proto.Json.ready (jsonNote value)
+
+
+{-| Writes a [`Note`](#Note) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonNote : Note -> Json.Encode.Value
+jsonNote value =
     Proto.Json.objectOfFields
         ([ ( "title", Proto.Json.implicitField "" Json.Encode.string value.title )
          , ( "tags", Proto.Json.repeatedField Json.Encode.string value.tags )
          , ( "counts", Proto.Json.dictField identity Proto.Json.encodeInt64 value.counts )
-         , ( "detail", Maybe.map encodeDetail value.detail )
+         , ( "detail", Maybe.map jsonDetail value.detail )
          , ( "marks", Proto.Json.repeatedField Json.Encode.int value.marks )
          , ( "weight", Proto.Json.implicitFloatField value.weight )
          ]
@@ -446,14 +453,21 @@ encodeNoteOrigin value =
             ]
 
         NoteOriginCopiedFrom member ->
-            [ ( "copiedFrom", Just (encodeDetail member) )
+            [ ( "copiedFrom", Just (jsonDetail member) )
             ]
 
 
 {-| Encodes a [`Detail`](#Detail) as proto3 JSON.
 -}
-encodeDetail : Detail -> Json.Encode.Value
+encodeDetail : Detail -> Proto.Json.Encoder
 encodeDetail value =
+    Proto.Json.ready (jsonDetail value)
+
+
+{-| Writes a [`Detail`](#Detail) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonDetail : Detail -> Json.Encode.Value
+jsonDetail value =
     Proto.Json.objectOfFields
         [ ( "body", Proto.Json.implicitField "" Proto.Json.encodeBytes value.body )
         , ( "crc", Proto.Json.implicitField 0 Json.Encode.int value.crc )
@@ -462,15 +476,29 @@ encodeDetail value =
 
 {-| Encodes an [`Empty`](#Empty) as proto3 JSON.
 -}
-encodeEmpty : Empty -> Json.Encode.Value
-encodeEmpty _ =
+encodeEmpty : Empty -> Proto.Json.Encoder
+encodeEmpty value =
+    Proto.Json.ready (jsonEmpty value)
+
+
+{-| Writes an [`Empty`](#Empty) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonEmpty : Empty -> Json.Encode.Value
+jsonEmpty _ =
     Json.Encode.object []
 
 
 {-| Encodes a [`Wide`](#Wide) as proto3 JSON.
 -}
-encodeWide : Wide -> Json.Encode.Value
+encodeWide : Wide -> Proto.Json.Encoder
 encodeWide value =
+    Proto.Json.ready (jsonWide value)
+
+
+{-| Writes a [`Wide`](#Wide) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonWide : Wide -> Json.Encode.Value
+jsonWide value =
     Proto.Json.objectOfFields
         [ ( "f1", Proto.Json.implicitField 0 Json.Encode.int value.f1 )
         , ( "f2", Proto.Json.implicitField 0 Json.Encode.int value.f2 )

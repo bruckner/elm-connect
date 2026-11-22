@@ -45,7 +45,7 @@ getMessage =
     Rpc.call
         (Proto.Method.init "msgs.v1.Messages"
             "GetMessage"
-            (\_ -> Ok << Msgs.V1.encodeMessageRequest)
+            Msgs.V1.encodeMessageRequest
             (\_ -> Msgs.V1.decodeMessage)
             Msgs.V1.encodeMessageRequestBytes
             Msgs.V1.decodeMessageBytes
@@ -67,7 +67,7 @@ getSub =
     Rpc.call
         (Proto.Method.init "msgs.v1.Messages"
             "GetSub"
-            (\_ -> Ok << Msgs.V1.encodeMessageRequest)
+            Msgs.V1.encodeMessageRequest
             (\_ -> Msgs.V1.decodeMessage)
             Msgs.V1.encodeMessageRequestBytes
             Msgs.V1.decodeMessageBytes
@@ -89,7 +89,7 @@ updateMessage =
     Rpc.call
         (Proto.Method.init "msgs.v1.Messages"
             "UpdateMessage"
-            (\_ -> Ok << Msgs.V1.encodeMessageRequest)
+            Msgs.V1.encodeMessageRequest
             (\_ -> Msgs.V1.decodeMessage)
             Msgs.V1.encodeMessageRequestBytes
             Msgs.V1.decodeMessageBytes
@@ -109,7 +109,7 @@ listMessages =
     Rpc.call
         (Proto.Method.init "msgs.v1.Messages"
             "ListMessages"
-            (\_ -> Ok << Msgs.V1.encodeMessageRequest)
+            Msgs.V1.encodeMessageRequest
             (\_ -> Msgs.V1.decodeMessage)
             Msgs.V1.encodeMessageRequestBytes
             Msgs.V1.decodeMessageBytes
@@ -131,7 +131,7 @@ checkMessage =
     Rpc.call
         (Proto.Method.init "msgs.v1.Messages"
             "CheckMessage"
-            (\_ -> Ok << Msgs.V1.encodeMessageRequest)
+            Msgs.V1.encodeMessageRequest
             (\_ -> Msgs.V1.decodeMessage)
             Msgs.V1.encodeMessageRequestBytes
             Msgs.V1.decodeMessageBytes
@@ -151,7 +151,7 @@ checkById =
     Rpc.call
         (Proto.Method.init "msgs.v1.Messages"
             "CheckById"
-            (\_ -> Ok << Msgs.V1.encodeMessageRequest)
+            Msgs.V1.encodeMessageRequest
             (\_ -> Msgs.V1.decodeMessage)
             Msgs.V1.encodeMessageRequestBytes
             Msgs.V1.decodeMessageBytes
@@ -173,7 +173,7 @@ touch =
     Rpc.call
         (Proto.Method.init "msgs.v1.Messages"
             "Touch"
-            (\_ -> Ok << Msgs.V1.encodeMessageRequest)
+            Msgs.V1.encodeMessageRequest
             (\_ -> Msgs.V1.decodeMessage)
             Msgs.V1.encodeMessageRequestBytes
             Msgs.V1.decodeMessageBytes
@@ -251,7 +251,7 @@ routeUpdateMessage0 request_ =
     { method = "PATCH"
     , path = "v1/" ++ Proto.Route.segments name_
     , query = []
-    , body = Just (Proto.Route.without [ [ "name" ] ] (Msgs.V1.encodeMessageRequest request_))
+    , body = Just (Proto.Route.without [ [ "name" ] ] (Msgs.V1.jsonMessageRequest request_))
     , invalid = Proto.Route.checkSegments "name" [ "messages", "*" ] name_
     }
 
@@ -307,7 +307,7 @@ routeTouch0 request_ =
     { method = "POST"
     , path = "msgs.v1.Messages/ListMessages"
     , query = []
-    , body = Just (Msgs.V1.encodeMessageRequest request_)
+    , body = Just (Msgs.V1.jsonMessageRequest request_)
     , invalid = Nothing
     }
 

@@ -1,5 +1,9 @@
 module Proto.Json exposing
-    ( field, fieldEither, valueField, valueFieldEither, emptyMessage
+    ( Encoder, encode, encodeWith, ready
+    , writeObject, writeField, writeOptional, writeRepeated, writeDict, writeBoolMap, writeDeeper
+    , writeFrom, writeTooDeep, writeLimit, writeAnyAt
+    , writeTimestamp, writeDuration, writeFieldMask, writeStruct, writeListValue, writeValue, writeAny
+    , field, fieldEither, valueField, valueFieldEither, emptyMessage
     , message, messageField, messageFieldEither, messageValueField, messageValueFieldEither, messageValueFieldAt, messageValueFieldEitherAt
     , objectOfFields
     , implicitField, implicitFloatField, implicitBytesField, repeatedField, dictField, boolMapField
@@ -34,6 +38,31 @@ A decoder is named for what it reads (`int64`, `timestamp`), a value's
 encoder is `encode` and that name (`encodeInt64`), and a field's encoder,
 which gives `Nothing` to leave the field out, ends in `Field`
 (`repeatedField`).
+
+
+# Encoders
+
+A message's encoder, `encodeNote : Note -> Encoder`, describes its JSON;
+[`encode`](#encode) writes it, or refuses a value proto3 JSON has no form for.
+A message holding an `Any` is written with [`encodeWith`](#encodeWith) and the
+registry the `Any` converts through.
+
+    encode (Notes.V1.encodeNote note)
+    -- Ok {...}, or Err (NotWritable { typeName = "google.protobuf.Timestamp", path = [ "createTime" ], ... })
+
+@docs Encoder, encode, encodeWith, ready
+
+
+# Writing fields that can be refused
+
+A message holding a value that can be refused (an `Any`, a `Timestamp`,
+`Duration`, `FieldMask`, `Struct`, `ListValue` or `Value`, or a message on a
+cycle) is encoded with [`writeObject`](#writeObject): the fields that cannot be
+refused as the plain helpers give them, then those that can.
+
+@docs writeObject, writeField, writeOptional, writeRepeated, writeDict, writeBoolMap, writeDeeper
+@docs writeFrom, writeTooDeep, writeLimit, writeAnyAt
+@docs writeTimestamp, writeDuration, writeFieldMask, writeStruct, writeListValue, writeValue, writeAny
 
 
 # Fields
@@ -203,6 +232,7 @@ import Proto.Internal.Any as InternalAny
 import Proto.Internal.Percent as Percent
 import Proto.Internal.Registry as InternalRegistry
 import Proto.Internal.ValueJson as ValueJson
+import Proto.Internal.Writer as Writer
 import Proto.Registry exposing (Registry)
 import Proto.Timestamp
 import Proto.Value
@@ -755,12 +785,12 @@ enum; a `Float` uses [`implicitFloatField`](#implicitFloatField), and bytes held
 
 -}
 implicitField : a -> (a -> Value) -> a -> Maybe Value
-implicitField zero encode value =
+implicitField zero write value =
     if value == zero then
         Nothing
 
     else
-        Just (encode value)
+        Just (write value)
 
 
 {-| A `bytes` field held as `Bytes`, without presence: `Nothing` when it holds
@@ -794,26 +824,26 @@ implicitFloatField number =
 {-| A repeated field: `Nothing` when empty, else a JSON array of its elements.
 -}
 repeatedField : (a -> Value) -> List a -> Maybe Value
-repeatedField encode values =
+repeatedField write values =
     if List.isEmpty values then
         Nothing
 
     else
-        Just (Json.Encode.list encode values)
+        Just (Json.Encode.list write values)
 
 
 {-| A map field: `Nothing` when empty, else a JSON object, keyed as
 `Json.Encode.dict` keys it. A key of `__proto__` is kept as an ordinary key.
 -}
 dictField : (k -> String) -> (v -> Value) -> Dict.Dict k v -> Maybe Value
-dictField key encode entries =
+dictField key write entries =
     if Dict.isEmpty entries then
         Nothing
 
     else
         entries
             |> Dict.toList
-            |> List.map (\( k, v ) -> ( key k, encode v ))
+            |> List.map (\( k, v ) -> ( key k, write v ))
             |> objectOf
             |> Just
 
@@ -822,12 +852,12 @@ dictField key encode entries =
 [`encodeBoolMap`](#encodeBoolMap) writes.
 -}
 boolMapField : (a -> Value) -> List ( Bool, a ) -> Maybe Value
-boolMapField encode pairs =
+boolMapField write pairs =
     if List.isEmpty pairs then
         Nothing
 
     else
-        Just (encodeBoolMap encode pairs)
+        Just (encodeBoolMap write pairs)
 
 
 {-| [`objectOfFields`](#objectOfFields) of fields whose JSON may have failed:
@@ -858,10 +888,10 @@ tryPresentPairs fields done proto =
 JSON, or that value's `Err`.
 -}
 tryOptionalField : (a -> Result x Value) -> Maybe a -> Result x (Maybe Value)
-tryOptionalField encode value =
+tryOptionalField write value =
     case value of
         Just present ->
-            Result.map Just (encode present)
+            Result.map Just (write present)
 
         Nothing ->
             Ok Nothing
@@ -871,8 +901,8 @@ tryOptionalField encode value =
 field.
 -}
 tryRepeatedField : (a -> Result x Value) -> List a -> Result x (Maybe Value)
-tryRepeatedField encode values =
-    collect encode values
+tryRepeatedField write values =
+    collect write values
         |> Result.map (repeatedField identity)
 
 
@@ -880,8 +910,8 @@ tryRepeatedField encode values =
 field.
 -}
 tryDictField : (k -> String) -> (v -> Result x Value) -> Dict.Dict k v -> Result x (Maybe Value)
-tryDictField key encode entries =
-    collect (\( k, v ) -> Result.map (Tuple.pair (key k)) (encode v)) (Dict.toList entries)
+tryDictField key write entries =
+    collect (\( k, v ) -> Result.map (Tuple.pair (key k)) (write v)) (Dict.toList entries)
         |> Result.map
             (\pairs ->
                 if List.isEmpty pairs then
@@ -896,8 +926,8 @@ tryDictField key encode entries =
 the field.
 -}
 tryBoolMapField : (a -> Result x Value) -> List ( Bool, a ) -> Result x (Maybe Value)
-tryBoolMapField encode pairs =
-    collect (\( k, v ) -> Result.map (Tuple.pair k) (encode v)) pairs
+tryBoolMapField write pairs =
+    collect (\( k, v ) -> Result.map (Tuple.pair k) (write v)) pairs
         |> Result.map (boolMapField identity)
 
 
@@ -1474,7 +1504,7 @@ is the one a parser keeps.
 
 -}
 encodeBoolMap : (a -> Value) -> List ( Bool, a ) -> Value
-encodeBoolMap encode pairs =
+encodeBoolMap write pairs =
     pairs
         |> List.map
             (\( key, value ) ->
@@ -1483,7 +1513,7 @@ encodeBoolMap encode pairs =
 
                   else
                     "false"
-                , encode value
+                , write value
                 )
             )
         |> Json.Encode.object
@@ -2866,3 +2896,289 @@ messages around it as a read does.
 registryDeeper : Registry -> Registry
 registryDeeper registry =
     InternalRegistry.atLeast (InternalRegistry.depthOf registry + 1) registry
+
+
+
+-- ENCODERS
+
+
+{-| A proto3 JSON encoder: what a generated `encodeNote : Note -> Encoder`
+gives, written by [`encode`](#encode). It is opaque; the package site may show
+it as `Proto.Internal.Writer.Encoder`.
+-}
+type alias Encoder =
+    Writer.Encoder
+
+
+{-| Write an encoder's JSON, or the first value it refuses: one proto3 JSON
+has no form for, or nested more than 100 levels deep
+([`NotWritable`](Proto-Error#Error)). An `Any` is converted through an empty
+registry, so one that holds a message fails with
+[`UnregisteredType`](Proto-Error#Error): write a message holding one with
+[`encodeWith`](#encodeWith).
+-}
+encode : Encoder -> Result Error Value
+encode =
+    Writer.run (InternalRegistry.Registry InternalRegistry.Strict 0 Dict.empty)
+
+
+{-| [`encode`](#encode), converting each `Any` through the registry.
+-}
+encodeWith : Registry -> Encoder -> Result Error Value
+encodeWith =
+    Writer.run
+
+
+{-| An encoder of JSON already written, which it gives as it is.
+-}
+ready : Value -> Encoder
+ready =
+    Writer.ready
+
+
+{-| A message's JSON object: its fields that cannot be refused, as the plain
+helpers give them (`Nothing` leaving one out), then those that can.
+-}
+writeObject : List ( String, Maybe Value ) -> List ( String, Encoder ) -> Encoder
+writeObject =
+    Writer.object
+
+
+{-| A field from what a plain helper gives: left out when `Nothing`.
+-}
+writeField : Maybe Value -> Encoder
+writeField =
+    Writer.field
+
+
+{-| A field with presence: left out when `Nothing`.
+-}
+writeOptional : (a -> Encoder) -> Maybe a -> Encoder
+writeOptional =
+    Writer.optional
+
+
+{-| A repeated field: left out when empty.
+-}
+writeRepeated : (a -> Encoder) -> List a -> Encoder
+writeRepeated =
+    Writer.repeated
+
+
+{-| A map field: left out when empty.
+-}
+writeDict : (k -> String) -> (v -> Encoder) -> Dict.Dict k v -> Encoder
+writeDict =
+    Writer.dict
+
+
+{-| A map field with `bool` keys: left out when empty.
+-}
+writeBoolMap : (a -> Encoder) -> List ( Bool, a ) -> Encoder
+writeBoolMap =
+    Writer.boolMap
+
+
+{-| A value of the message named one level deeper along a cycle of messages,
+refused past 100 levels.
+-}
+writeDeeper : String -> (a -> Encoder) -> a -> Encoder
+writeDeeper =
+    Writer.deeper
+
+
+{-| A `google.protobuf.Timestamp`, refused outside years 1 to 9999.
+-}
+writeTimestamp : Time.Posix -> Encoder
+writeTimestamp posix =
+    let
+        millis =
+            Time.posixToMillis posix
+    in
+    -- 0001-01-01T00:00:00Z and 9999-12-31T23:59:59.999Z.
+    if millis < -62135596800000 || millis > 253402300799999 then
+        Writer.refuse "google.protobuf.Timestamp"
+
+    else
+        Writer.ready (encodeTimestamp posix)
+
+
+{-| A `google.protobuf.Duration`, refused past protobuf's range.
+-}
+writeDuration : Duration -> Encoder
+writeDuration value =
+    if Proto.Duration.isValid value then
+        Writer.ready (encodeDuration value)
+
+    else
+        Writer.refuse "google.protobuf.Duration"
+
+
+{-| A `google.protobuf.FieldMask`, refused when a path's lowerCamelCase form
+reads back as another path.
+-}
+writeFieldMask : List String -> Encoder
+writeFieldMask paths =
+    if List.all maskPathRoundTrips paths then
+        Writer.ready (encodeFieldMask paths)
+
+    else
+        Writer.refuse "google.protobuf.FieldMask"
+
+
+maskPathRoundTrips : String -> Bool
+maskPathRoundTrips path =
+    List.all (\segment -> snakeCase (camelCase segment) == segment) (String.split "." path)
+
+
+{-| A `google.protobuf.Struct`, refused when it holds a number that is NaN or
+infinite, or nests more than 100 levels.
+-}
+writeStruct : Dict.Dict String Proto.Value.Value -> Encoder
+writeStruct fields =
+    checkedValue "google.protobuf.Struct" (Proto.Value.ValueStruct fields) (\() -> encodeStruct fields)
+
+
+{-| A `google.protobuf.ListValue`, refused as [`writeStruct`](#writeStruct) is.
+-}
+writeListValue : List Proto.Value.Value -> Encoder
+writeListValue items =
+    checkedValue "google.protobuf.ListValue" (Proto.Value.ValueList items) (\() -> encodeListValue items)
+
+
+{-| A `google.protobuf.Value`, refused as [`writeStruct`](#writeStruct) is.
+-}
+writeValue : Proto.Value.Value -> Encoder
+writeValue value =
+    checkedValue "google.protobuf.Value" value (\() -> encodeValue value)
+
+
+checkedValue : String -> Proto.Value.Value -> (() -> Value) -> Encoder
+checkedValue typeName value write =
+    case valueProblem 0 value of
+        0 ->
+            Writer.ready (write ())
+
+        1 ->
+            Writer.refuse typeName
+
+        _ ->
+            Writer.deferred (\_ -> Err (Proto.Error.NotWritable { typeName = typeName, path = [], reason = Proto.Error.NestedTooDeep }))
+
+
+{-| 0 when the value can be written, 1 when it holds a number that is not
+finite, 2 when its arrays and objects nest past the limit; it never walks
+deeper than the limit.
+-}
+valueProblem : Int -> Proto.Value.Value -> Int
+valueProblem depth value =
+    case value of
+        Proto.Value.ValueNumber number ->
+            if isNaN number || isInfinite number then
+                1
+
+            else
+                0
+
+        Proto.Value.ValueStruct structMembers ->
+            if depth >= Writer.limit then
+                2
+
+            else
+                Dict.foldl
+                    (\_ item found ->
+                        if found == 0 then
+                            valueProblem (depth + 1) item
+
+                        else
+                            found
+                    )
+                    0
+                    structMembers
+
+        Proto.Value.ValueList items ->
+            if depth >= Writer.limit then
+                2
+
+            else
+                listProblem (depth + 1) items
+
+        _ ->
+            0
+
+
+listProblem : Int -> List Proto.Value.Value -> Int
+listProblem depth items =
+    case items of
+        [] ->
+            0
+
+        item :: rest ->
+            case valueProblem depth item of
+                0 ->
+                    listProblem depth rest
+
+                found ->
+                    found
+
+
+{-| A `google.protobuf.Any`, converted through the registry the encoder is
+run with ([`encodeAnyWith`](#encodeAnyWith)).
+-}
+writeAny : Any -> Encoder
+writeAny ((InternalAny.Any url _) as value) =
+    if String.isEmpty url then
+        Writer.ready (Json.Encode.object [])
+
+    else
+        Writer.deferred (\registry -> encodeAnyWith registry value)
+
+
+{-| A message on a cycle of messages, from its encoder at a level, as
+generated code writes it:
+
+    encodeNode : Node -> Encoder
+    encodeNode =
+        writeFrom encodeNodeAt
+
+    encodeNodeAt : Int -> Node -> Encoder
+    encodeNodeAt depth value =
+        if depth > writeLimit then
+            writeTooDeep "nesting.v1.Node"
+
+        else
+            writeObject [ ... ] [ ( "children", writeRepeated (encodeNode_At (depth + 1)) value.children ) ]
+
+The outermost level is one deeper than the registry the encoder is run with,
+so a message an `Any` holds counts on from the `Any`.
+
+-}
+writeFrom : (Int -> a -> Encoder) -> a -> Encoder
+writeFrom =
+    Writer.from
+
+
+{-| A message of the type named nested past [`writeLimit`](#writeLimit).
+-}
+writeTooDeep : String -> Encoder
+writeTooDeep =
+    Writer.tooDeep
+
+
+{-| The most levels a write nests, 100, as the reads count them.
+-}
+writeLimit : Int
+writeLimit =
+    Writer.limit
+
+
+{-| [`writeAny`](#writeAny) held by a message on a cycle at a level: the
+`Any` counts on from it.
+-}
+writeAnyAt : Int -> Any -> Encoder
+writeAnyAt depth ((InternalAny.Any url _) as value) =
+    if String.isEmpty url then
+        Writer.ready (Json.Encode.object [])
+
+    else
+        Writer.deferred (\registry -> encodeAnyWith (InternalRegistry.atLeast depth registry) value)

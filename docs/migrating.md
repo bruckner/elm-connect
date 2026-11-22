@@ -216,7 +216,7 @@ getNote =
     Rpc.call
         (Proto.Method.initJson "notes.v1.NotesService"
             "GetNote"
-            (\_ -> Ok << Notes.V1.encodeGetNoteRequest)
+            Notes.V1.encodeGetNoteRequest
             Notes.V1.decodeNoteWith
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
             |> Proto.Method.withBindings [ getNoteBinding ]

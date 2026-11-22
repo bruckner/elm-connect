@@ -34,38 +34,61 @@ impl Emitter {
     /// `encodeNode_ (Node_ value) = encodeNode value`; for a message that reaches an `Any`, `encodeNode_With types (Node_
     /// value) = encodeNodeWith types value`.
     pub(super) fn wrapper_encoder(&mut self, message: &Message, wrapper: &Wrapper) -> Decl {
-        if self.wrapper_reaches(message) {
-            let annotation = self.encoder_with_type(ty(wrapper.elm_name.clone(), []));
+        if self.write_reach.message(&message.proto_full_name) && self.static_depth() {
+            let annotation = self.library_type(super::PROTO_JSON, "Encoder", []);
+            let int_type = ty(self.core("Int"), []);
             return Decl::Value {
                 doc: Some(format!(
-                    "Encodes {} as proto3 JSON, writing each `Any` it holds with the registry.",
+                    "Encodes {} at a level of its cycle.",
                     docs::a_local(&wrapper.elm_name)
                 )),
-                name: with_registry(wrapper.encoder_name()),
-                annotation,
+                name: super::field::at_name(&wrapper.encoder_name()),
+                annotation: crate::elm::build::ty_fn(
+                    [int_type, ty(wrapper.elm_name.clone(), [])],
+                    annotation,
+                ),
                 params: vec![
-                    pvar(REGISTRY_ARGUMENT),
+                    pvar(DEPTH),
                     pctor(wrapper.elm_name.clone(), [pvar(ENCODER_ARGUMENT)]),
                 ],
                 body: apply(
-                    var(with_registry(message.encoder_name())),
-                    [var(REGISTRY_ARGUMENT), var(ENCODER_ARGUMENT)],
+                    var(super::field::at_name(&message.encoder_name())),
+                    [var(DEPTH), var(ENCODER_ARGUMENT)],
                 ),
+            };
+        }
+        if self.write_reach.message(&message.proto_full_name) {
+            let annotation = self.library_type(super::PROTO_JSON, "Encoder", []);
+            return Decl::Value {
+                doc: Some(format!(
+                    "Encodes {} as proto3 JSON.",
+                    docs::a_local(&wrapper.elm_name)
+                )),
+                name: wrapper.encoder_name(),
+                annotation: Type::Function(
+                    Box::new(ty(wrapper.elm_name.clone(), [])),
+                    Box::new(annotation),
+                ),
+                params: vec![pctor(wrapper.elm_name.clone(), [pvar(ENCODER_ARGUMENT)])],
+                body: apply(var(message.encoder_name()), [var(ENCODER_ARGUMENT)]),
             };
         }
         let value_type = self.library_type(JSON_ENCODE, "Value", []);
         Decl::Value {
             doc: Some(format!(
-                "Encodes {} as proto3 JSON.",
+                "Writes {} as proto3 JSON.",
                 docs::a_local(&wrapper.elm_name)
             )),
-            name: wrapper.encoder_name(),
+            name: super::field::plain_name(&wrapper.encoder_name()),
             annotation: Type::Function(
                 Box::new(ty(wrapper.elm_name.clone(), [])),
                 Box::new(value_type),
             ),
             params: vec![pctor(wrapper.elm_name.clone(), [pvar(ENCODER_ARGUMENT)])],
-            body: apply(var(message.encoder_name()), [var(ENCODER_ARGUMENT)]),
+            body: apply(
+                var(super::field::plain_name(&message.encoder_name())),
+                [var(ENCODER_ARGUMENT)],
+            ),
         }
     }
 

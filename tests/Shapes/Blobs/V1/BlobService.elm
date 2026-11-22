@@ -50,7 +50,7 @@ getBlob =
     Rpc.call
         (Proto.Method.init "blobs.v1.BlobService"
             "GetBlob"
-            (\_ -> Ok << Shapes.Blobs.V1.encodeBlob)
+            Shapes.Blobs.V1.encodeBlob
             (\_ -> Shapes.Blobs.V1.decodeBlob)
             Shapes.Blobs.V1.encodeBlobBytes
             Shapes.Blobs.V1.decodeBlobBytes
@@ -70,7 +70,7 @@ findBlob =
     Rpc.call
         (Proto.Method.init "blobs.v1.BlobService"
             "FindBlob"
-            (\_ -> Ok << Shapes.Blobs.V1.encodeBlob)
+            Shapes.Blobs.V1.encodeBlob
             (\_ -> Shapes.Blobs.V1.decodeBlob)
             Shapes.Blobs.V1.encodeBlobBytes
             Shapes.Blobs.V1.decodeBlobBytes
@@ -93,7 +93,7 @@ labelBlob =
     Rpc.call
         (Proto.Method.init "blobs.v1.BlobService"
             "LabelBlob"
-            Shapes.Blobs.V1.encodeLabelBlobRequestWith
+            Shapes.Blobs.V1.encodeLabelBlobRequest
             (\_ -> Shapes.Blobs.V1.decodeBlob)
             Shapes.Blobs.V1.encodeLabelBlobRequestBytes
             Shapes.Blobs.V1.decodeBlobBytes
@@ -113,7 +113,7 @@ putLabel =
     Rpc.call
         (Proto.Method.init "blobs.v1.BlobService"
             "PutLabel"
-            Shapes.Blobs.V1.encodeLabeledWith
+            Shapes.Blobs.V1.encodeLabeled
             Shapes.Blobs.V1.decodeLabeledWith
             Shapes.Blobs.V1.encodeLabeledBytes
             Shapes.Blobs.V1.decodeLabeledBytes
@@ -133,11 +133,11 @@ addFolder =
     Rpc.call
         (Proto.Method.init "blobs.v1.BlobService"
             "AddFolder"
-            (\_ -> Ok << Shapes.Blobs.V1.encodeFolder)
+            Shapes.Blobs.V1.encodeFolder
             (\_ -> Shapes.Blobs.V1.decodeFolder)
             Shapes.Blobs.V1.encodeFolderBytes
             Shapes.Blobs.V1.decodeFolderBytes
-            |> Proto.Method.withRoutes [ routeAddFolder0 ]
+            |> Proto.Method.withJsonRoutes [ routeAddFolder0 ]
         )
 
 
@@ -153,11 +153,11 @@ moveFolder =
     Rpc.call
         (Proto.Method.init "blobs.v1.BlobService"
             "MoveFolder"
-            (\_ -> Ok << Shapes.Blobs.V1.encodeFolder)
+            Shapes.Blobs.V1.encodeFolder
             (\_ -> Shapes.Blobs.V1.decodeFolder)
             Shapes.Blobs.V1.encodeFolderBytes
             Shapes.Blobs.V1.decodeFolderBytes
-            |> Proto.Method.withRoutes [ routeMoveFolder0 ]
+            |> Proto.Method.withJsonRoutes [ routeMoveFolder0 ]
         )
 
 
@@ -173,7 +173,7 @@ touch =
     Rpc.call
         (Proto.Method.init "blobs.v1.BlobService"
             "Touch"
-            (\_ -> Ok << Shapes.Blobs.V1.encodeSlots)
+            Shapes.Blobs.V1.encodeSlots
             (\_ -> Shapes.Blobs.V1.decodeSlots)
             Shapes.Blobs.V1.encodeSlotsBytes
             Shapes.Blobs.V1.decodeSlotsBytes
@@ -193,7 +193,7 @@ setValue =
     Rpc.call
         (Proto.Method.init "blobs.v1.BlobService"
             "SetValue"
-            (\_ -> Ok << Shapes.Blobs.V1.encodeFree)
+            Shapes.Blobs.V1.encodeFree
             (\_ -> Shapes.Blobs.V1.decodeFree)
             Shapes.Blobs.V1.encodeFreeBytes
             Shapes.Blobs.V1.decodeFreeBytes
@@ -248,7 +248,7 @@ routeFindBlob0 request_ =
     { method = "POST"
     , path = "v1/" ++ Proto.Route.segments name_ ++ ":find"
     , query = []
-    , body = Just (Proto.Route.without [ [ "name" ] ] (Shapes.Blobs.V1.encodeBlob request_))
+    , body = Just (Proto.Route.without [ [ "name" ] ] (Shapes.Blobs.V1.jsonBlob request_))
     , invalid = Proto.Route.checkSegments "name" [ "blobs", "*" ] name_
     }
 
@@ -303,8 +303,8 @@ routePutLabel0 request_ json_ =
 
 {-| The route of [`addFolder`](#addFolder) over binding 0: `POST /v1/{parent.name=folders/*}/children` body `*`.
 -}
-routeAddFolder0 : Shapes.Blobs.V1.Folder -> Proto.Route.Route
-routeAddFolder0 request_ =
+routeAddFolder0 : Shapes.Blobs.V1.Folder -> Json.Encode.Value -> Proto.Route.Route
+routeAddFolder0 request_ json_ =
     let
         parentName_ =
             Maybe.withDefault "" (Maybe.map .name (Maybe.map (\(Shapes.Blobs.V1.Folder_ message_) -> message_) request_.parent))
@@ -312,15 +312,15 @@ routeAddFolder0 request_ =
     { method = "POST"
     , path = "v1/" ++ Proto.Route.segments parentName_ ++ "/children"
     , query = []
-    , body = Just (Proto.Route.without [ [ "parent", "name" ] ] (Shapes.Blobs.V1.encodeFolder request_))
+    , body = Just (Proto.Route.without [ [ "parent", "name" ] ] json_)
     , invalid = Proto.Route.checkSegments "parent.name" [ "folders", "*" ] parentName_
     }
 
 
 {-| The route of [`moveFolder`](#moveFolder) over binding 0: `POST /v1/{name=folders/*}:move` body `parent`.
 -}
-routeMoveFolder0 : Shapes.Blobs.V1.Folder -> Proto.Route.Route
-routeMoveFolder0 request_ =
+routeMoveFolder0 : Shapes.Blobs.V1.Folder -> Json.Encode.Value -> Proto.Route.Route
+routeMoveFolder0 request_ json_ =
     let
         name_ =
             request_.name
@@ -328,7 +328,7 @@ routeMoveFolder0 request_ =
     { method = "POST"
     , path = "v1/" ++ Proto.Route.segments name_ ++ ":move"
     , query = []
-    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Shapes.Blobs.V1.encodeFolder_ request_.parent))
+    , body = Just (Proto.Route.jsonField "parent" json_)
     , invalid = Proto.Route.checkSegments "name" [ "folders", "*" ] name_
     }
 

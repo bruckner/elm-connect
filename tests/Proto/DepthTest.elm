@@ -24,6 +24,7 @@ import Proto.Any
 import Proto.Binary
 import Proto.Bytes
 import Proto.Error
+import Proto.Json
 import Proto.Message
 import Proto.Method
 import Proto.WellKnown
@@ -433,7 +434,7 @@ farPast =
             Json.Decode.decodeString Json.Decode.value text
 
         method =
-            Proto.Method.init "cycles.v1.Trees" "Get" (\_ -> Ok << Deep.encodeTree) (\_ -> Deep.decodeTree) Deep.encodeTreeBytes Deep.decodeTreeBytes
+            Proto.Method.init "cycles.v1.Trees" "Get" Deep.encodeTree (\_ -> Deep.decodeTree) Deep.encodeTreeBytes Deep.decodeTreeBytes
 
         answer =
             Http.GoodStatus_ { url = "https://api.example.com/cycles.v1.Trees/Get", statusCode = 200, statusText = "OK", headers = Dict.fromList [ ( "content-type", "application/json" ) ] } text
@@ -717,7 +718,7 @@ oneBudget =
                     Ok envelope ->
                         Expect.all
                             [ \_ ->
-                                Deep.encodeEnvelopeWith Deep.registry envelope
+                                Proto.Json.encodeWith Deep.registry (Deep.encodeEnvelope envelope)
                                     |> Result.toMaybe
                                     |> Maybe.andThen (Json.Decode.decodeValue (Deep.decodeEnvelopeWith Deep.registry) >> Result.toMaybe)
                                     |> Expect.equal (Just envelope)
@@ -767,7 +768,7 @@ mixedFarPast =
             ]
 
         method =
-            Proto.Method.init "cycles.v1.Envelopes" "Get" Deep.encodeEnvelopeWith Deep.decodeEnvelopeWith Deep.encodeEnvelopeBytes Deep.decodeEnvelopeBytes
+            Proto.Method.init "cycles.v1.Envelopes" "Get" Deep.encodeEnvelope Deep.decodeEnvelopeWith Deep.encodeEnvelopeBytes Deep.decodeEnvelopeBytes
 
         answer contentType body =
             { url = "https://api.example.com/cycles.v1.Envelopes/Get", statusCode = 200, statusText = "OK", headers = Dict.fromList [ ( "content-type", contentType ) ] }
@@ -847,9 +848,12 @@ mixedFarPast =
             \_ ->
                 case readEnvelopeBytesValue (wrapped (List.concat (List.repeat 60 (payload :: List.repeat 90 reply))) []) of
                     Ok envelope ->
-                        case Deep.encodeEnvelopeWith Deep.registry envelope of
+                        case Proto.Json.encodeWith Deep.registry (Deep.encodeEnvelope envelope) of
                             Err (Proto.Error.BadBinary problem) ->
                                 problem.reason |> Expect.equal Proto.Error.TooDeep
+
+                            Err (Proto.Error.NotWritable problem) ->
+                                problem.reason |> Expect.equal Proto.Error.NestedTooDeep
 
                             _ ->
                                 Expect.fail "converted past the limit"
@@ -860,9 +864,12 @@ mixedFarPast =
             \_ ->
                 case readEnvelopeBytesValue (wrapped (List.repeat 10000 payload) []) of
                     Ok envelope ->
-                        case Deep.encodeEnvelopeWith Deep.registry envelope of
+                        case Proto.Json.encodeWith Deep.registry (Deep.encodeEnvelope envelope) of
                             Err (Proto.Error.BadBinary problem) ->
                                 problem.reason |> Expect.equal Proto.Error.TooDeep
+
+                            Err (Proto.Error.NotWritable problem) ->
+                                problem.reason |> Expect.equal Proto.Error.NestedTooDeep
 
                             _ ->
                                 Expect.fail "converted past the limit"
@@ -922,7 +929,7 @@ scrubbed =
                         "{\"code\":\"internal\",\"message\":\"x\",\"details\":[{\"type\":" ++ deep ++ "}]}"
 
                     method =
-                        Proto.Method.init "cycles.v1.Trees" "Get" (\_ -> Ok << Deep.encodeTree) (\_ -> Deep.decodeTree) Deep.encodeTreeBytes Deep.decodeTreeBytes
+                        Proto.Method.init "cycles.v1.Trees" "Get" Deep.encodeTree (\_ -> Deep.decodeTree) Deep.encodeTreeBytes Deep.decodeTreeBytes
 
                     answer =
                         Http.BadStatus_ { url = "https://api.example.com/cycles.v1.Trees/Get", statusCode = 500, statusText = "Internal Server Error", headers = Dict.fromList [ ( "content-type", "application/json" ) ] } body

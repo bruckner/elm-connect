@@ -17,6 +17,7 @@ import Proto.Field exposing (Cardinality(..), Kind(..), Scalar(..))
 import Proto.Http
 import Proto.Internal.Percent
 import Proto.Internal.Registry
+import Proto.Internal.Writer
 import Proto.Json
 import Proto.Message exposing (Message)
 import Proto.Method exposing (Idempotency(..))
@@ -62,7 +63,7 @@ encodeTitle t =
 
 title : Message String
 title =
-    Proto.Message.init "notes.v1.Note" encodeTitle decodeTitle encodeTitleBytes decodeTitleBytes
+    Proto.Message.init "notes.v1.Note" (Proto.Json.ready << encodeTitle) decodeTitle encodeTitleBytes decodeTitleBytes
 
 
 encodeTitleBytes : String -> Bytes.Encode.Encoder
@@ -89,13 +90,13 @@ decodeTitleBytes =
 -}
 noteRegistry : Proto.Registry.Registry
 noteRegistry =
-    Proto.Registry.register (Proto.Message.init "notes.v1.Note" encodeTitle decodeTitle encodeTitleBytes decodeTitleBytes) Proto.Registry.empty
+    Proto.Registry.register (Proto.Message.init "notes.v1.Note" (Proto.Json.ready << encodeTitle) decodeTitle encodeTitleBytes decodeTitleBytes) Proto.Registry.empty
 
 
 notes : String -> Idempotency -> List Proto.Http.Binding -> GetNote -> Rpc.Call Rpc.Json GetNote String
 notes name idempotency bindings =
     Rpc.call
-        (Proto.Method.initJson "notes.v1.Notes" name (\_ -> encodeGetNote >> Ok) (\_ -> decodeTitle)
+        (Proto.Method.initJson "notes.v1.Notes" name (encodeGetNote >> Proto.Json.ready) (\_ -> decodeTitle)
             |> Proto.Method.withIdempotency idempotency
             |> Proto.Method.withBindings bindings
         )
@@ -261,6 +262,9 @@ brief problem =
     case problem of
         Proto.Error.UnregisteredType url ->
             "unregistered " ++ url
+
+        Proto.Error.NotWritable unwritable ->
+            "unwritable " ++ unwritable.typeName
 
         Proto.Error.BadJson error ->
             "json " ++ jsonFailure [] error
@@ -441,7 +445,7 @@ calls =
             \_ ->
                 let
                     bare =
-                        Rpc.call (Proto.Method.initJson "notes.v1.Notes" "GetNote" (\_ -> encodeGetNote >> Ok) (\_ -> decodeTitle)) { name = "x" }
+                        Rpc.call (Proto.Method.initJson "notes.v1.Notes" "GetNote" (encodeGetNote >> Proto.Json.ready) (\_ -> decodeTitle)) { name = "x" }
                 in
                 ( Rpc.Call.idempotency bare, Rpc.Call.viaBinding 0 bare |> Maybe.map Rpc.Call.procedure )
                     |> Expect.equal ( IdempotencyUnknown, Nothing )
@@ -669,7 +673,7 @@ responses =
             \_ ->
                 let
                     getAny =
-                        Rpc.call (Proto.Method.initJson "t.v1.S" "Get" (\_ _ -> Ok (Json.Encode.object [])) Proto.Json.anyWith) ()
+                        Rpc.call (Proto.Method.initJson "t.v1.S" "Get" (\_ -> Proto.Json.ready (Json.Encode.object [])) Proto.Json.anyWith) ()
 
                     answer =
                         Http.GoodStatus_ (metadata 200 "OK") """{"@type":"type.googleapis.com/notes.v1.Note","title":"hi"}"""
@@ -835,14 +839,14 @@ responses =
                 , ( detailsOf title (httpError 404 "Not Found"), detailsOf title Rpc.Error.timeout )
                 )
                     |> Expect.equal ( Err [ "one", "two" ], ( [], [] ) )
-        , test "a request holding an Any its registry cannot write is not sent, over JSON" <|
+        , test "a request holding a value JSON cannot write is not sent, over JSON" <|
             \_ ->
                 let
                     unregistered =
                         Rpc.call
                             (Proto.Method.init "notes.v1.Notes"
                                 "GetNote"
-                                (\_ _ -> Err (Proto.Error.UnregisteredType "type.googleapis.com/ext.v1.Thing"))
+                                (\_ -> Proto.Json.writeTimestamp (Time.millisToPosix 300000000000000))
                                 (\_ -> decodeTitle)
                                 (\_ -> Bytes.Encode.sequence [])
                                 decodeTitleBytes
@@ -856,7 +860,7 @@ responses =
                 , refusal (Rpc.client Rpc.Protocol.connectProto "https://api.example.com")
                 )
                     |> Expect.equal
-                        ( Just (Rpc.Error.badAny (Proto.Error.UnregisteredType "type.googleapis.com/ext.v1.Thing"))
+                        ( Just (Rpc.Error.badAny (Proto.Error.NotWritable { typeName = "google.protobuf.Timestamp", path = [], reason = Proto.Error.NoJsonForm }))
                         , Nothing
                         )
         , test "message and details are optional" <|
@@ -1643,7 +1647,7 @@ sendLimits =
         -- A call whose request stops the test if it is ever encoded.
         unencodable =
             Rpc.call
-                (Proto.Method.initJson "notes.v1.Notes" "GetNote" (\_ _ -> Debug.todo "the message was encoded") (\_ -> decodeTitle))
+                (Proto.Method.initJson "notes.v1.Notes" "GetNote" (\_ -> Debug.todo "the message was encoded") (\_ -> decodeTitle))
                 { name = "x" }
     in
     describe "withWriteMaxBytes"
@@ -1700,11 +1704,11 @@ encodings =
         -- A method whose request stops the test if it is ever encoded, with
         -- JSON codecs alone and with both.
         neverEncoded =
-            [ Rpc.call (Proto.Method.initJson "notes.v1.Notes" "GetNote" (\_ _ -> Debug.todo "the message was encoded") (\_ -> decodeTitle))
+            [ Rpc.call (Proto.Method.initJson "notes.v1.Notes" "GetNote" (\_ -> Debug.todo "the message was encoded") (\_ -> decodeTitle))
             , Rpc.call
                 (Proto.Method.init "notes.v1.Notes"
                     "GetNote"
-                    (\_ _ -> Debug.todo "the message was encoded")
+                    (\_ -> Debug.todo "the message was encoded")
                     (\_ -> decodeTitle)
                     (\_ -> Bytes.Encode.sequence [])
                     decodeTitleBytes
@@ -1715,7 +1719,7 @@ encodings =
         -- response's `title` field.
         routedNeverEncoded =
             Rpc.call
-                (Proto.Method.initJson "notes.v1.Notes" "GetNote" (\_ _ -> Debug.todo "the message was encoded") (\_ -> decodeTitle)
+                (Proto.Method.initJson "notes.v1.Notes" "GetNote" (\_ -> Debug.todo "the message was encoded") (\_ -> decodeTitle)
                     |> Proto.Method.withBindings
                         [ Proto.Http.binding { method = "GET", path = [ Proto.Http.literal "v1", Proto.Http.literal "notes" ], customVerb = Nothing, body = Proto.Http.noBody, responseBody = Just (Proto.Field.descriptor "title" "title" 1 CardinalitySingular (KindScalar ScalarString)), query = [] } ]
                 )
@@ -1725,7 +1729,10 @@ encodings =
 
         -- A request whose JSON says which registry wrote it, in the field
         -- its path binds and the field its body holds alike.
-        tagged registry r =
+        tagged r =
+            Proto.Internal.Writer.deferred (\registry -> taggedWith registry r)
+
+        taggedWith registry r =
             let
                 tag =
                     if Proto.Internal.Registry.member "notes.v1.Note" registry then

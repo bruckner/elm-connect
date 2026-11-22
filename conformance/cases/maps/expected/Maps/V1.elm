@@ -199,8 +199,15 @@ encodeRole value =
 
 {-| Encodes a [`Member`](#Member) as proto3 JSON.
 -}
-encodeMember : Member -> Json.Encode.Value
+encodeMember : Member -> Proto.Json.Encoder
 encodeMember value =
+    Proto.Json.ready (jsonMember value)
+
+
+{-| Writes a [`Member`](#Member) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonMember : Member -> Json.Encode.Value
+jsonMember value =
     Proto.Json.objectOfFields
         [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
         ]
@@ -208,8 +215,15 @@ encodeMember value =
 
 {-| Encodes a [`Team`](#Team) as proto3 JSON.
 -}
-encodeTeam : Team -> Json.Encode.Value
+encodeTeam : Team -> Proto.Json.Encoder
 encodeTeam value =
+    Proto.Json.ready (jsonTeam value)
+
+
+{-| Writes a [`Team`](#Team) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonTeam : Team -> Json.Encode.Value
+jsonTeam value =
     Proto.Json.objectOfFields
         [ ( "labels", Proto.Json.dictField identity Json.Encode.string value.labels )
         , ( "bySeat", Proto.Json.dictField String.fromInt Json.Encode.string value.bySeat )
@@ -218,7 +232,7 @@ encodeTeam value =
         , ( "totals", Proto.Json.dictField String.fromInt Proto.Json.encodeInt64 value.totals )
         , ( "byId", Proto.Json.dictField identity Json.Encode.string value.byId )
         , ( "counts", Proto.Json.dictField identity Json.Encode.int value.counts )
-        , ( "members", Proto.Json.dictField identity encodeMember value.members )
+        , ( "members", Proto.Json.dictField identity jsonMember value.members )
         , ( "roles", Proto.Json.dictField String.fromInt encodeRole value.roles )
         , ( "byFlag", Proto.Json.boolMapField Json.Encode.string value.byFlag )
         , ( "byOffset", Proto.Json.dictField String.fromInt Json.Encode.string value.byOffset )

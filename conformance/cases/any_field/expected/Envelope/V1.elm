@@ -17,7 +17,6 @@ import Json.Encode
 import Proto.Any
 import Proto.Binary
 import Proto.Descriptors
-import Proto.Error
 import Proto.Json
 import Proto.Message
 import Proto.Registry
@@ -91,7 +90,7 @@ defaultEnvelope =
 -}
 messageEnvelope : Proto.Message.Message Envelope
 messageEnvelope =
-    Proto.Message.initWith "envelope.v1.Envelope" encodeEnvelopeWith decodeEnvelopeWith encodeEnvelopeBytes decodeEnvelopeBytes
+    Proto.Message.initWith "envelope.v1.Envelope" encodeEnvelope decodeEnvelopeWith encodeEnvelopeBytes decodeEnvelopeBytes
 
 
 
@@ -123,34 +122,35 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes an [`Envelope`](#Envelope) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
+{-| Encodes an [`Envelope`](#Envelope) as proto3 JSON, refusing a value it holds that has no proto3 JSON form, and writing each `Any` with the registry it is run with.
 -}
-encodeEnvelopeWith : Proto.Registry.Registry -> Envelope -> Result Proto.Error.Error Json.Encode.Value
-encodeEnvelopeWith types value =
-    Proto.Json.tryObjectOfFields
-        ([ ( "id", Ok (Proto.Json.implicitField "" Json.Encode.string value.id) )
-         , ( "payload", Proto.Json.tryOptionalField (Proto.Json.encodeAnyWith types) value.payload )
-         , ( "attachments", Proto.Json.tryRepeatedField (Proto.Json.encodeAnyWith types) value.attachments )
-         , ( "headers", Proto.Json.tryDictField identity (Proto.Json.encodeAnyWith types) value.headers )
+encodeEnvelope : Envelope -> Proto.Json.Encoder
+encodeEnvelope value =
+    Proto.Json.writeObject
+        [ ( "id", Proto.Json.implicitField "" Json.Encode.string value.id )
+        ]
+        ([ ( "payload", Proto.Json.writeOptional Proto.Json.writeAny value.payload )
+         , ( "attachments", Proto.Json.writeRepeated Proto.Json.writeAny value.attachments )
+         , ( "headers", Proto.Json.writeDict identity Proto.Json.writeAny value.headers )
          ]
-            ++ encodeEnvelopeBodyWith types value.body
+            ++ encodeEnvelopeBody value.body
         )
 
 
 {-| Encodes an [`EnvelopeBody`](#EnvelopeBody) as the members of its message's JSON object.
 -}
-encodeEnvelopeBodyWith : Proto.Registry.Registry -> EnvelopeBody -> List ( String, Result Proto.Error.Error (Maybe Json.Encode.Value) )
-encodeEnvelopeBodyWith types value =
+encodeEnvelopeBody : EnvelopeBody -> List ( String, Proto.Json.Encoder )
+encodeEnvelopeBody value =
     case value of
         EnvelopeBodyUnset ->
             []
 
         EnvelopeBodyPacked member ->
-            [ ( "packed", Result.map Just (Proto.Json.encodeAnyWith types member) )
+            [ ( "packed", Proto.Json.writeAny member )
             ]
 
         EnvelopeBodyText member ->
-            [ ( "text", Ok (Just (Json.Encode.string member)) )
+            [ ( "text", Proto.Json.ready (Json.Encode.string member) )
             ]
 
 

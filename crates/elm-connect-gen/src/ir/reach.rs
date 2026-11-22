@@ -13,6 +13,20 @@ use super::{Message, Oneof, Package, TypeRef, WellKnown};
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct AnyReach {
     messages: BTreeSet<String>,
+    /// Whether the well-known types whose Elm values can hold what proto3
+    /// JSON cannot write seed the walk beside `Any`.
+    checked: bool,
+}
+
+/// What a JSON write can refuse, and so which messages' encoders can fail:
+/// an `Any` always; with `checked`, the well-known types whose Elm values
+/// can have no proto3 JSON form; with `cycles`, every message on a cycle,
+/// whose depth the write counts; with `every`, every message.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct WriteSeeds {
+    pub checked: bool,
+    pub cycles: bool,
+    pub every: bool,
 }
 
 impl AnyReach {
@@ -20,11 +34,25 @@ impl AnyReach {
     /// holds one directly does; then, until nothing changes, so does one
     /// holding a message that does, so a cycle of messages ends.
     pub fn of<'p>(packages: impl IntoIterator<Item = &'p Package>) -> Self {
+        Self::write(packages, WriteSeeds::default())
+    }
+
+    /// The messages whose JSON write can be refused, from `seeds`.
+    pub fn write<'p>(packages: impl IntoIterator<Item = &'p Package>, seeds: WriteSeeds) -> Self {
         let messages: Vec<&Message> = packages
             .into_iter()
             .flat_map(|package| &package.messages)
             .collect();
-        let mut reach = AnyReach::default();
+        let mut reach = AnyReach {
+            checked: seeds.checked,
+            ..AnyReach::default()
+        };
+        reach.messages.extend(
+            messages
+                .iter()
+                .filter(|message| seeds.every || (seeds.cycles && message.recursive))
+                .map(|message| message.proto_full_name.clone()),
+        );
         loop {
             let found: Vec<&str> = messages
                 .iter()
@@ -48,6 +76,7 @@ impl AnyReach {
     pub fn type_ref(&self, ty: &TypeRef) -> bool {
         match ty {
             TypeRef::WellKnown(WellKnown::Any) => true,
+            TypeRef::WellKnown(known) if self.checked => checked(*known),
             TypeRef::Message(name) => self.message(&name.proto_full_name),
             TypeRef::Scalar(_) | TypeRef::Enum { .. } | TypeRef::WellKnown(_) => false,
         }
@@ -59,6 +88,37 @@ impl AnyReach {
             .variants
             .iter()
             .any(|variant| self.type_ref(&variant.ty))
+    }
+}
+
+/// Whether a well-known type's Elm values can hold what proto3 JSON cannot
+/// write.
+pub fn checked(known: WellKnown) -> bool {
+    matches!(
+        known,
+        WellKnown::Timestamp
+            | WellKnown::Duration
+            | WellKnown::FieldMask
+            | WellKnown::Value
+            | WellKnown::Struct
+            | WellKnown::ListValue
+    )
+}
+
+impl AnyReach {
+    /// Whether the walk was seeded with the well-known types.
+    pub fn is_checked(&self) -> bool {
+        self.checked
+    }
+
+    /// How many of `packages`' messages it holds.
+    pub fn count<'p>(&self, packages: impl IntoIterator<Item = &'p Package>) -> (usize, usize) {
+        let all: Vec<&Message> = packages.into_iter().flat_map(|p| &p.messages).collect();
+        let held = all
+            .iter()
+            .filter(|m| self.message(&m.proto_full_name))
+            .count();
+        (held, all.len())
     }
 }
 

@@ -760,8 +760,15 @@ registry =
 
 {-| Encodes an [`ErrorInfo`](#ErrorInfo) as proto3 JSON.
 -}
-encodeErrorInfo : ErrorInfo -> Json.Encode.Value
+encodeErrorInfo : ErrorInfo -> Proto.Json.Encoder
 encodeErrorInfo value =
+    Proto.Json.ready (jsonErrorInfo value)
+
+
+{-| Writes an [`ErrorInfo`](#ErrorInfo) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonErrorInfo : ErrorInfo -> Json.Encode.Value
+jsonErrorInfo value =
     Proto.Json.objectOfFields
         [ ( "reason", Proto.Json.implicitField "" Json.Encode.string value.reason )
         , ( "domain", Proto.Json.implicitField "" Json.Encode.string value.domain )
@@ -769,19 +776,26 @@ encodeErrorInfo value =
         ]
 
 
-{-| Encodes a [`RetryInfo`](#RetryInfo) as proto3 JSON.
+{-| Encodes a [`RetryInfo`](#RetryInfo) as proto3 JSON, refusing a value it holds that has no proto3 JSON form, and writing each `Any` with the registry it is run with.
 -}
-encodeRetryInfo : RetryInfo -> Json.Encode.Value
+encodeRetryInfo : RetryInfo -> Proto.Json.Encoder
 encodeRetryInfo value =
-    Proto.Json.objectOfFields
-        [ ( "retryDelay", Maybe.map Proto.Json.encodeDuration value.retryDelay )
+    Proto.Json.writeObject []
+        [ ( "retryDelay", Proto.Json.writeOptional Proto.Json.writeDuration value.retryDelay )
         ]
 
 
 {-| Encodes a [`DebugInfo`](#DebugInfo) as proto3 JSON.
 -}
-encodeDebugInfo : DebugInfo -> Json.Encode.Value
+encodeDebugInfo : DebugInfo -> Proto.Json.Encoder
 encodeDebugInfo value =
+    Proto.Json.ready (jsonDebugInfo value)
+
+
+{-| Writes a [`DebugInfo`](#DebugInfo) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonDebugInfo : DebugInfo -> Json.Encode.Value
+jsonDebugInfo value =
     Proto.Json.objectOfFields
         [ ( "stackEntries", Proto.Json.repeatedField Json.Encode.string value.stackEntries )
         , ( "detail", Proto.Json.implicitField "" Json.Encode.string value.detail )
@@ -790,17 +804,31 @@ encodeDebugInfo value =
 
 {-| Encodes a [`QuotaFailure`](#QuotaFailure) as proto3 JSON.
 -}
-encodeQuotaFailure : QuotaFailure -> Json.Encode.Value
+encodeQuotaFailure : QuotaFailure -> Proto.Json.Encoder
 encodeQuotaFailure value =
+    Proto.Json.ready (jsonQuotaFailure value)
+
+
+{-| Writes a [`QuotaFailure`](#QuotaFailure) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonQuotaFailure : QuotaFailure -> Json.Encode.Value
+jsonQuotaFailure value =
     Proto.Json.objectOfFields
-        [ ( "violations", Proto.Json.repeatedField encodeQuotaFailureViolation value.violations )
+        [ ( "violations", Proto.Json.repeatedField jsonQuotaFailureViolation value.violations )
         ]
 
 
 {-| Encodes a [`QuotaFailureViolation`](#QuotaFailureViolation) as proto3 JSON.
 -}
-encodeQuotaFailureViolation : QuotaFailureViolation -> Json.Encode.Value
+encodeQuotaFailureViolation : QuotaFailureViolation -> Proto.Json.Encoder
 encodeQuotaFailureViolation value =
+    Proto.Json.ready (jsonQuotaFailureViolation value)
+
+
+{-| Writes a [`QuotaFailureViolation`](#QuotaFailureViolation) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonQuotaFailureViolation : QuotaFailureViolation -> Json.Encode.Value
+jsonQuotaFailureViolation value =
     Proto.Json.objectOfFields
         [ ( "subject", Proto.Json.implicitField "" Json.Encode.string value.subject )
         , ( "description", Proto.Json.implicitField "" Json.Encode.string value.description )
@@ -815,17 +843,31 @@ encodeQuotaFailureViolation value =
 
 {-| Encodes a [`PreconditionFailure`](#PreconditionFailure) as proto3 JSON.
 -}
-encodePreconditionFailure : PreconditionFailure -> Json.Encode.Value
+encodePreconditionFailure : PreconditionFailure -> Proto.Json.Encoder
 encodePreconditionFailure value =
+    Proto.Json.ready (jsonPreconditionFailure value)
+
+
+{-| Writes a [`PreconditionFailure`](#PreconditionFailure) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonPreconditionFailure : PreconditionFailure -> Json.Encode.Value
+jsonPreconditionFailure value =
     Proto.Json.objectOfFields
-        [ ( "violations", Proto.Json.repeatedField encodePreconditionFailureViolation value.violations )
+        [ ( "violations", Proto.Json.repeatedField jsonPreconditionFailureViolation value.violations )
         ]
 
 
 {-| Encodes a [`PreconditionFailureViolation`](#PreconditionFailureViolation) as proto3 JSON.
 -}
-encodePreconditionFailureViolation : PreconditionFailureViolation -> Json.Encode.Value
+encodePreconditionFailureViolation : PreconditionFailureViolation -> Proto.Json.Encoder
 encodePreconditionFailureViolation value =
+    Proto.Json.ready (jsonPreconditionFailureViolation value)
+
+
+{-| Writes a [`PreconditionFailureViolation`](#PreconditionFailureViolation) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonPreconditionFailureViolation : PreconditionFailureViolation -> Json.Encode.Value
+jsonPreconditionFailureViolation value =
     Proto.Json.objectOfFields
         [ ( "type", Proto.Json.implicitField "" Json.Encode.string value.type_ )
         , ( "subject", Proto.Json.implicitField "" Json.Encode.string value.subject )
@@ -835,29 +877,50 @@ encodePreconditionFailureViolation value =
 
 {-| Encodes a [`BadRequest`](#BadRequest) as proto3 JSON.
 -}
-encodeBadRequest : BadRequest -> Json.Encode.Value
+encodeBadRequest : BadRequest -> Proto.Json.Encoder
 encodeBadRequest value =
+    Proto.Json.ready (jsonBadRequest value)
+
+
+{-| Writes a [`BadRequest`](#BadRequest) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonBadRequest : BadRequest -> Json.Encode.Value
+jsonBadRequest value =
     Proto.Json.objectOfFields
-        [ ( "fieldViolations", Proto.Json.repeatedField encodeBadRequestFieldViolation value.fieldViolations )
+        [ ( "fieldViolations", Proto.Json.repeatedField jsonBadRequestFieldViolation value.fieldViolations )
         ]
 
 
 {-| Encodes a [`BadRequestFieldViolation`](#BadRequestFieldViolation) as proto3 JSON.
 -}
-encodeBadRequestFieldViolation : BadRequestFieldViolation -> Json.Encode.Value
+encodeBadRequestFieldViolation : BadRequestFieldViolation -> Proto.Json.Encoder
 encodeBadRequestFieldViolation value =
+    Proto.Json.ready (jsonBadRequestFieldViolation value)
+
+
+{-| Writes a [`BadRequestFieldViolation`](#BadRequestFieldViolation) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonBadRequestFieldViolation : BadRequestFieldViolation -> Json.Encode.Value
+jsonBadRequestFieldViolation value =
     Proto.Json.objectOfFields
         [ ( "field", Proto.Json.implicitField "" Json.Encode.string value.field )
         , ( "description", Proto.Json.implicitField "" Json.Encode.string value.description )
         , ( "reason", Proto.Json.implicitField "" Json.Encode.string value.reason )
-        , ( "localizedMessage", Maybe.map encodeLocalizedMessage value.localizedMessage )
+        , ( "localizedMessage", Maybe.map jsonLocalizedMessage value.localizedMessage )
         ]
 
 
 {-| Encodes a [`RequestInfo`](#RequestInfo) as proto3 JSON.
 -}
-encodeRequestInfo : RequestInfo -> Json.Encode.Value
+encodeRequestInfo : RequestInfo -> Proto.Json.Encoder
 encodeRequestInfo value =
+    Proto.Json.ready (jsonRequestInfo value)
+
+
+{-| Writes a [`RequestInfo`](#RequestInfo) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonRequestInfo : RequestInfo -> Json.Encode.Value
+jsonRequestInfo value =
     Proto.Json.objectOfFields
         [ ( "requestId", Proto.Json.implicitField "" Json.Encode.string value.requestId )
         , ( "servingData", Proto.Json.implicitField "" Json.Encode.string value.servingData )
@@ -866,8 +929,15 @@ encodeRequestInfo value =
 
 {-| Encodes a [`ResourceInfo`](#ResourceInfo) as proto3 JSON.
 -}
-encodeResourceInfo : ResourceInfo -> Json.Encode.Value
+encodeResourceInfo : ResourceInfo -> Proto.Json.Encoder
 encodeResourceInfo value =
+    Proto.Json.ready (jsonResourceInfo value)
+
+
+{-| Writes a [`ResourceInfo`](#ResourceInfo) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonResourceInfo : ResourceInfo -> Json.Encode.Value
+jsonResourceInfo value =
     Proto.Json.objectOfFields
         [ ( "resourceType", Proto.Json.implicitField "" Json.Encode.string value.resourceType )
         , ( "resourceName", Proto.Json.implicitField "" Json.Encode.string value.resourceName )
@@ -878,17 +948,31 @@ encodeResourceInfo value =
 
 {-| Encodes a [`Help`](#Help) as proto3 JSON.
 -}
-encodeHelp : Help -> Json.Encode.Value
+encodeHelp : Help -> Proto.Json.Encoder
 encodeHelp value =
+    Proto.Json.ready (jsonHelp value)
+
+
+{-| Writes a [`Help`](#Help) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonHelp : Help -> Json.Encode.Value
+jsonHelp value =
     Proto.Json.objectOfFields
-        [ ( "links", Proto.Json.repeatedField encodeHelpLink value.links )
+        [ ( "links", Proto.Json.repeatedField jsonHelpLink value.links )
         ]
 
 
 {-| Encodes a [`HelpLink`](#HelpLink) as proto3 JSON.
 -}
-encodeHelpLink : HelpLink -> Json.Encode.Value
+encodeHelpLink : HelpLink -> Proto.Json.Encoder
 encodeHelpLink value =
+    Proto.Json.ready (jsonHelpLink value)
+
+
+{-| Writes a [`HelpLink`](#HelpLink) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonHelpLink : HelpLink -> Json.Encode.Value
+jsonHelpLink value =
     Proto.Json.objectOfFields
         [ ( "description", Proto.Json.implicitField "" Json.Encode.string value.description )
         , ( "url", Proto.Json.implicitField "" Json.Encode.string value.url )
@@ -897,8 +981,15 @@ encodeHelpLink value =
 
 {-| Encodes a [`LocalizedMessage`](#LocalizedMessage) as proto3 JSON.
 -}
-encodeLocalizedMessage : LocalizedMessage -> Json.Encode.Value
+encodeLocalizedMessage : LocalizedMessage -> Proto.Json.Encoder
 encodeLocalizedMessage value =
+    Proto.Json.ready (jsonLocalizedMessage value)
+
+
+{-| Writes a [`LocalizedMessage`](#LocalizedMessage) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonLocalizedMessage : LocalizedMessage -> Json.Encode.Value
+jsonLocalizedMessage value =
     Proto.Json.objectOfFields
         [ ( "locale", Proto.Json.implicitField "" Json.Encode.string value.locale )
         , ( "message", Proto.Json.implicitField "" Json.Encode.string value.message )

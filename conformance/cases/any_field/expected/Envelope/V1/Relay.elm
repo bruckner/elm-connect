@@ -39,7 +39,7 @@ forward =
     Rpc.call
         (Proto.Method.init "envelope.v1.Relay"
             "Forward"
-            Proto.Json.encodeAnyWith
+            Proto.Json.writeAny
             Proto.Json.anyWith
             (Proto.Binary.messageEncoder Proto.Binary.any)
             (Proto.Binary.messageDecoder Proto.Binary.any)
@@ -58,7 +58,7 @@ send =
     Rpc.call
         (Proto.Method.init "envelope.v1.Relay"
             "Send"
-            Envelope.V1.encodeEnvelopeWith
+            Envelope.V1.encodeEnvelope
             Envelope.V1.decodeEnvelopeWith
             Envelope.V1.encodeEnvelopeBytes
             Envelope.V1.decodeEnvelopeBytes

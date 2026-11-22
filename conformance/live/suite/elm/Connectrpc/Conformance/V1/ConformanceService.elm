@@ -58,7 +58,7 @@ unary =
     Rpc.call
         (Proto.Method.init "connectrpc.conformance.v1.ConformanceService"
             "Unary"
-            Connectrpc.Conformance.V1.encodeUnaryRequestWith
+            Connectrpc.Conformance.V1.encodeUnaryRequest
             Connectrpc.Conformance.V1.decodeUnaryResponseWith
             Connectrpc.Conformance.V1.encodeUnaryRequestBytes
             Connectrpc.Conformance.V1.decodeUnaryResponseBytes
@@ -80,7 +80,7 @@ unimplemented =
     Rpc.call
         (Proto.Method.init "connectrpc.conformance.v1.ConformanceService"
             "Unimplemented"
-            (\_ -> Ok << Connectrpc.Conformance.V1.encodeUnimplementedRequest)
+            Connectrpc.Conformance.V1.encodeUnimplementedRequest
             (\_ -> Connectrpc.Conformance.V1.decodeUnimplementedResponse)
             Connectrpc.Conformance.V1.encodeUnimplementedRequestBytes
             Connectrpc.Conformance.V1.decodeUnimplementedResponseBytes
@@ -103,7 +103,7 @@ idempotentUnary =
     Rpc.call
         (Proto.Method.init "connectrpc.conformance.v1.ConformanceService"
             "IdempotentUnary"
-            Connectrpc.Conformance.V1.encodeIdempotentUnaryRequestWith
+            Connectrpc.Conformance.V1.encodeIdempotentUnaryRequest
             Connectrpc.Conformance.V1.decodeIdempotentUnaryResponseWith
             Connectrpc.Conformance.V1.encodeIdempotentUnaryRequestBytes
             Connectrpc.Conformance.V1.decodeIdempotentUnaryResponseBytes

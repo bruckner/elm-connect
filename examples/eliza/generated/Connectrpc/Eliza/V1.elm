@@ -246,8 +246,15 @@ registry =
 
 {-| Encodes a [`SayRequest`](#SayRequest) as proto3 JSON.
 -}
-encodeSayRequest : SayRequest -> Json.Encode.Value
+encodeSayRequest : SayRequest -> Proto.Json.Encoder
 encodeSayRequest value =
+    Proto.Json.ready (jsonSayRequest value)
+
+
+{-| Writes a [`SayRequest`](#SayRequest) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonSayRequest : SayRequest -> Json.Encode.Value
+jsonSayRequest value =
     Proto.Json.objectOfFields
         [ ( "sentence", Proto.Json.implicitField "" Json.Encode.string value.sentence )
         ]
@@ -255,8 +262,15 @@ encodeSayRequest value =
 
 {-| Encodes a [`SayResponse`](#SayResponse) as proto3 JSON.
 -}
-encodeSayResponse : SayResponse -> Json.Encode.Value
+encodeSayResponse : SayResponse -> Proto.Json.Encoder
 encodeSayResponse value =
+    Proto.Json.ready (jsonSayResponse value)
+
+
+{-| Writes a [`SayResponse`](#SayResponse) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonSayResponse : SayResponse -> Json.Encode.Value
+jsonSayResponse value =
     Proto.Json.objectOfFields
         [ ( "sentence", Proto.Json.implicitField "" Json.Encode.string value.sentence )
         ]
@@ -264,8 +278,15 @@ encodeSayResponse value =
 
 {-| Encodes a [`ConverseRequest`](#ConverseRequest) as proto3 JSON.
 -}
-encodeConverseRequest : ConverseRequest -> Json.Encode.Value
+encodeConverseRequest : ConverseRequest -> Proto.Json.Encoder
 encodeConverseRequest value =
+    Proto.Json.ready (jsonConverseRequest value)
+
+
+{-| Writes a [`ConverseRequest`](#ConverseRequest) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonConverseRequest : ConverseRequest -> Json.Encode.Value
+jsonConverseRequest value =
     Proto.Json.objectOfFields
         [ ( "sentence", Proto.Json.implicitField "" Json.Encode.string value.sentence )
         ]
@@ -273,8 +294,15 @@ encodeConverseRequest value =
 
 {-| Encodes a [`ConverseResponse`](#ConverseResponse) as proto3 JSON.
 -}
-encodeConverseResponse : ConverseResponse -> Json.Encode.Value
+encodeConverseResponse : ConverseResponse -> Proto.Json.Encoder
 encodeConverseResponse value =
+    Proto.Json.ready (jsonConverseResponse value)
+
+
+{-| Writes a [`ConverseResponse`](#ConverseResponse) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonConverseResponse : ConverseResponse -> Json.Encode.Value
+jsonConverseResponse value =
     Proto.Json.objectOfFields
         [ ( "sentence", Proto.Json.implicitField "" Json.Encode.string value.sentence )
         ]
@@ -282,8 +310,15 @@ encodeConverseResponse value =
 
 {-| Encodes an [`IntroduceRequest`](#IntroduceRequest) as proto3 JSON.
 -}
-encodeIntroduceRequest : IntroduceRequest -> Json.Encode.Value
+encodeIntroduceRequest : IntroduceRequest -> Proto.Json.Encoder
 encodeIntroduceRequest value =
+    Proto.Json.ready (jsonIntroduceRequest value)
+
+
+{-| Writes an [`IntroduceRequest`](#IntroduceRequest) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonIntroduceRequest : IntroduceRequest -> Json.Encode.Value
+jsonIntroduceRequest value =
     Proto.Json.objectOfFields
         [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
         ]
@@ -291,8 +326,15 @@ encodeIntroduceRequest value =
 
 {-| Encodes an [`IntroduceResponse`](#IntroduceResponse) as proto3 JSON.
 -}
-encodeIntroduceResponse : IntroduceResponse -> Json.Encode.Value
+encodeIntroduceResponse : IntroduceResponse -> Proto.Json.Encoder
 encodeIntroduceResponse value =
+    Proto.Json.ready (jsonIntroduceResponse value)
+
+
+{-| Writes an [`IntroduceResponse`](#IntroduceResponse) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonIntroduceResponse : IntroduceResponse -> Json.Encode.Value
+jsonIntroduceResponse value =
     Proto.Json.objectOfFields
         [ ( "sentence", Proto.Json.implicitField "" Json.Encode.string value.sentence )
         ]

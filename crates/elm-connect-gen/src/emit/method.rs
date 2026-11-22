@@ -254,17 +254,15 @@ impl Emitter {
     /// otherwise [`Self::request_encoder`]'s under `\_ -> Ok <<`.
     fn request_encoder_with(&mut self, ty: &TypeRef) -> Expr {
         let shape = method_shape(ty, self.holding);
-        if self.reaches(shape) {
-            return match ty {
-                TypeRef::Message(name) => {
-                    self.generated_value(&name.module, with_registry(name.encoder_name()))
-                }
-                _ => self.reference((PROTO_JSON, "encodeAnyWith")),
-            };
+        if let TypeRef::Message(name) = ty {
+            return self.generated_value(&name.module, name.encoder_name());
+        }
+        if self.write_reaches(shape) {
+            return self.value_encoder(shape);
         }
         let encoder = self.request_encoder(ty);
-        let ok = var(self.core("Ok"));
-        lambda([Pattern::Wildcard], binop(BinOp::ComposeL, ok, encoder))
+        let ready = self.reference((PROTO_JSON, "ready"));
+        binop(BinOp::ComposeL, ready, encoder)
     }
 
     /// The JSON decoder of a method's response type taking the registry, as [`Self::request_encoder_with`] finds the

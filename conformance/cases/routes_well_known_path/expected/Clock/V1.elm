@@ -115,17 +115,18 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`Moment`](#Moment) as proto3 JSON.
+{-| Encodes a [`Moment`](#Moment) as proto3 JSON, refusing a value it holds that has no proto3 JSON form, and writing each `Any` with the registry it is run with.
 -}
-encodeMoment : Moment -> Json.Encode.Value
+encodeMoment : Moment -> Proto.Json.Encoder
 encodeMoment value =
-    Proto.Json.objectOfFields
-        [ ( "at", Maybe.map Proto.Json.encodeTimestamp value.at )
-        , ( "mask", Maybe.map Proto.Json.encodeFieldMask value.mask )
-        , ( "count", Maybe.map Json.Encode.int value.count )
+    Proto.Json.writeObject
+        [ ( "count", Maybe.map Json.Encode.int value.count )
         , ( "seen", Maybe.map Json.Encode.bool value.seen )
-        , ( "wait", Maybe.map Proto.Json.encodeDuration value.wait )
         , ( "note", Proto.Json.implicitField "" Json.Encode.string value.note )
+        ]
+        [ ( "at", Proto.Json.writeOptional Proto.Json.writeTimestamp value.at )
+        , ( "mask", Proto.Json.writeOptional Proto.Json.writeFieldMask value.mask )
+        , ( "wait", Proto.Json.writeOptional Proto.Json.writeDuration value.wait )
         ]
 
 

@@ -3,9 +3,9 @@
 
 use super::Deep;
 use super::field::{ValueShape, Zeroed};
-use super::{Emitter, JSON_DECODE, JSON_ENCODE, OneofShape, PROTO_ERROR, PROTO_JSON, docs};
+use super::{Emitter, JSON_DECODE, JSON_ENCODE, OneofShape, PROTO_JSON, docs};
 use crate::elm::ast::{Decl, Expr, Type, Variant};
-use crate::elm::build::{apply, case, list, pctor, pvar, qualified, string, ty, ty_fn, var};
+use crate::elm::build::{apply, case, list, pctor, pvar, string, ty, ty_fn, var};
 use crate::ir::{Message, ModuleName};
 use crate::naming::{ENCODER_ARGUMENT, ONEOF_MEMBER, REGISTRY_ARGUMENT, with_registry};
 
@@ -59,8 +59,10 @@ impl Emitter {
     /// `encodeFooKindWith`, taking the registry first, whose members' JSON
     /// is a `Result`: a member that reaches one gives its encoder's, the
     /// others `Ok`.
-    pub(super) fn oneof_encoder(&mut self, shape: &OneofShape) -> Decl {
-        let with = self.oneof_reaches(shape);
+    pub(super) fn oneof_encoder(&mut self, shape: &OneofShape, recursive: bool) -> Decl {
+        let with = self.oneof_write_reaches(shape);
+        let at = with && recursive && self.static_depth();
+        self.write_depth = at;
         let unset = (pctor(shape.oneof.unset_ctor.clone(), []), list([]));
         let members: Vec<_> = shape
             .variants
@@ -84,14 +86,14 @@ impl Emitter {
                         encoded,
                     )
                 };
-                let just = var(self.core("Just"));
                 let json = if !with {
+                    let just = var(self.core("Just"));
                     apply(just, [encoded])
-                } else if self.reaches(value) {
-                    apply(qualified("Result", "map"), [just, encoded])
+                } else if self.write_reaches(value) {
+                    encoded
                 } else {
-                    let ok = var(self.core("Ok"));
-                    apply(ok, [apply(just, [encoded])])
+                    let ready = self.reference((super::PROTO_JSON, "ready"));
+                    apply(ready, [encoded])
                 };
                 (
                     pattern,
@@ -99,41 +101,47 @@ impl Emitter {
                 )
             })
             .collect();
-        let value_type = self.library_type(JSON_ENCODE, "Value", []);
-        let maybe = ty(self.core("Maybe"), [value_type]);
         let member = if with {
-            let problem = self.library_type(PROTO_ERROR, "Error", []);
-            ty(self.core("Result"), [problem, maybe])
+            self.library_type(super::PROTO_JSON, "Encoder", [])
         } else {
-            maybe
+            let value_type = self.library_type(JSON_ENCODE, "Value", []);
+            ty(self.core("Maybe"), [value_type])
         };
+        self.write_depth = false;
         let pair = Type::Tuple(vec![ty(self.core("String"), []), member]);
         let oneof = ty(shape.oneof.elm_type_name.clone(), []);
         let members_type = ty(self.core("List"), [pair]);
-        let (name, annotation, params) = if with {
-            let registry = self.library_type(super::PROTO_REGISTRY, "Registry", []);
-            (
-                with_registry(shape.oneof.encoder_name()),
-                ty_fn([registry, oneof], members_type),
-                vec![pvar(REGISTRY_ARGUMENT), pvar(ENCODER_ARGUMENT)],
-            )
-        } else {
-            (
-                shape.oneof.encoder_name(),
-                ty_fn([oneof], members_type),
-                vec![pvar(ENCODER_ARGUMENT)],
-            )
-        };
+        if at {
+            let int_type = ty(self.core("Int"), []);
+            return Decl::Value {
+                doc: Some(format!(
+                    "Encodes {} at a level of its message's cycle as the members of its message's JSON object.",
+                    docs::a_local(&shape.oneof.elm_type_name)
+                )),
+                name: super::field::at_name(&shape.oneof.encoder_name()),
+                annotation: ty_fn([int_type, oneof], members_type),
+                params: vec![pvar(super::recursion::DEPTH), pvar(ENCODER_ARGUMENT)],
+                body: case(var(ENCODER_ARGUMENT), std::iter::once(unset).chain(members)),
+            };
+        }
         Decl::Value {
             doc: Some(format!(
                 "Encodes {} as the members of its message's JSON object.",
                 docs::a_local(&shape.oneof.elm_type_name)
             )),
-            name,
-            annotation,
-            params,
+            name: shape.oneof.encoder_name(),
+            annotation: ty_fn([oneof], members_type),
+            params: vec![pvar(ENCODER_ARGUMENT)],
             body: case(var(ENCODER_ARGUMENT), std::iter::once(unset).chain(members)),
         }
+    }
+
+    /// Whether a member of a oneof has a write that can be refused.
+    pub(super) fn oneof_write_reaches(&self, shape: &OneofShape) -> bool {
+        shape
+            .variants
+            .iter()
+            .any(|&(_, value)| self.write_reaches(value))
     }
 
     /// Whether a member of a oneof reaches an `Any`.

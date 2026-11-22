@@ -15,7 +15,7 @@ service's module and gives the typed value to [`Rpc.call`](Rpc#call):
         Rpc.call
             (Proto.Method.initJson "notes.v1.NotesService"
                 "GetNote"
-                (\_ -> Ok << Notes.V1.encodeGetNoteRequest)
+                Notes.V1.encodeGetNoteRequest
                 (\_ -> Notes.V1.decodeNote)
                 |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
                 |> Proto.Method.withRoutes [ routeGetNote0 ]
@@ -66,6 +66,7 @@ import Proto.Http exposing (Binding)
 import Proto.Internal.Binding
 import Proto.Internal.Interpret
 import Proto.Internal.Method as Internal
+import Proto.Internal.Writer as Writer
 import Proto.Registry exposing (Registry)
 import Proto.Route exposing (Route)
 
@@ -97,7 +98,7 @@ over a protocol speaking JSON.
 
     Proto.Method.initJson "notes.v1.NotesService"
         "GetNote"
-        (\_ -> Ok << Notes.V1.encodeGetNoteRequest)
+        Notes.V1.encodeGetNoteRequest
         (\_ -> Notes.V1.decodeNote)
 
 Its idempotency is `IdempotencyUnknown` until
@@ -106,13 +107,13 @@ until [`withRoutes`](#withRoutes) or [`withBindings`](#withBindings) gives
 them, so that transcoding sends it over the implicit route.
 
 -}
-initJson : String -> String -> (Registry -> req -> Result Proto.Error.Error Json.Encode.Value) -> (Registry -> Json.Decode.Decoder res) -> Method Proto.Codec.Json req res
+initJson : String -> String -> (req -> Writer.Encoder) -> (Registry -> Json.Decode.Decoder res) -> Method Proto.Codec.Json req res
 initJson serviceName methodName encode decoder =
     Internal.Method
         { service = serviceName
         , name = methodName
         , idempotency = IdempotencyUnknown
-        , json = { encode = encode, decoder = decoder }
+        , json = { encode = \registry request -> Writer.run registry (encode request), decoder = decoder }
         , binary = Internal.noBinary
         , routes = []
         }
@@ -145,7 +146,7 @@ for
 
     Proto.Method.init "notes.v1.NotesService"
         "GetNote"
-        (\_ -> Ok << Notes.V1.encodeGetNoteRequest)
+        Notes.V1.encodeGetNoteRequest
         (\_ -> Notes.V1.decodeNote)
         Notes.V1.encodeGetNoteRequestBytes
         Notes.V1.decodeNoteBytes
@@ -155,13 +156,13 @@ sent over JSON: it fails as a [`BadCall`](Rpc-Error#Cause) whose message
 describes the problem.
 
 -}
-init : String -> String -> (Registry -> req -> Result Proto.Error.Error Json.Encode.Value) -> (Registry -> Json.Decode.Decoder res) -> (req -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder res -> Method codec req res
+init : String -> String -> (req -> Writer.Encoder) -> (Registry -> Json.Decode.Decoder res) -> (req -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder res -> Method codec req res
 init serviceName methodName encode decoder encodeBinary binaryDecoder =
     Internal.Method
         { service = serviceName
         , name = methodName
         , idempotency = IdempotencyUnknown
-        , json = { encode = encode, decoder = decoder }
+        , json = { encode = \registry request -> Writer.run registry (encode request), decoder = decoder }
         , binary = binaryHalf encodeBinary binaryDecoder
         , routes = []
         }

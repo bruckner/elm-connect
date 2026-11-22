@@ -54,7 +54,7 @@ getNote =
     Rpc.call
         (Proto.Method.init "notes.v1.NotesService"
             "GetNote"
-            (\_ -> Ok << Notes.V1.encodeGetNoteRequest)
+            Notes.V1.encodeGetNoteRequest
             (\_ -> Notes.V1.decodeNote)
             Notes.V1.encodeGetNoteRequestBytes
             Notes.V1.decodeNoteBytes
@@ -75,7 +75,7 @@ listNotes =
     Rpc.call
         (Proto.Method.init "notes.v1.NotesService"
             "ListNotes"
-            (\_ -> Ok << Notes.V1.encodeListNotesRequest)
+            Notes.V1.encodeListNotesRequest
             (\_ -> Notes.V1.decodeListNotesResponse)
             Notes.V1.encodeListNotesRequestBytes
             Notes.V1.decodeListNotesResponseBytes
@@ -97,7 +97,7 @@ createNote =
     Rpc.call
         (Proto.Method.init "notes.v1.NotesService"
             "CreateNote"
-            (\_ -> Ok << Notes.V1.encodeCreateNoteRequest)
+            Notes.V1.encodeCreateNoteRequest
             (\_ -> Notes.V1.decodeNote)
             Notes.V1.encodeCreateNoteRequestBytes
             Notes.V1.decodeNoteBytes
@@ -117,7 +117,7 @@ updateNote =
     Rpc.call
         (Proto.Method.init "notes.v1.NotesService"
             "UpdateNote"
-            (\_ -> Ok << Notes.V1.encodeUpdateNoteRequest)
+            Notes.V1.encodeUpdateNoteRequest
             (\_ -> Notes.V1.decodeNote)
             Notes.V1.encodeUpdateNoteRequestBytes
             Notes.V1.decodeNoteBytes
@@ -137,7 +137,7 @@ replaceNote =
     Rpc.call
         (Proto.Method.init "notes.v1.NotesService"
             "ReplaceNote"
-            (\_ -> Ok << Notes.V1.encodeNote)
+            Notes.V1.encodeNote
             (\_ -> Notes.V1.decodeNote)
             Notes.V1.encodeNoteBytes
             Notes.V1.decodeNoteBytes
@@ -157,7 +157,7 @@ deleteNote =
     Rpc.call
         (Proto.Method.init "notes.v1.NotesService"
             "DeleteNote"
-            (\_ -> Ok << Notes.V1.encodeDeleteNoteRequest)
+            Notes.V1.encodeDeleteNoteRequest
             (\_ -> Proto.Json.empty)
             Notes.V1.encodeDeleteNoteRequestBytes
             (Proto.Binary.messageDecoder Proto.Binary.empty)
@@ -177,7 +177,7 @@ archiveNote =
     Rpc.call
         (Proto.Method.init "notes.v1.NotesService"
             "ArchiveNote"
-            (\_ -> Ok << Notes.V1.encodeArchiveNoteRequest)
+            Notes.V1.encodeArchiveNoteRequest
             (\_ -> Notes.V1.decodeNote)
             Notes.V1.encodeArchiveNoteRequestBytes
             Notes.V1.decodeNoteBytes
@@ -197,7 +197,7 @@ readFile =
     Rpc.call
         (Proto.Method.init "notes.v1.NotesService"
             "ReadFile"
-            (\_ -> Ok << Notes.V1.encodeReadFileRequest)
+            Notes.V1.encodeReadFileRequest
             (\_ -> Notes.V1.decodeSummary)
             Notes.V1.encodeReadFileRequestBytes
             Notes.V1.decodeSummaryBytes
@@ -217,7 +217,7 @@ ping =
     Rpc.call
         (Proto.Method.init "notes.v1.NotesService"
             "Ping"
-            (\_ -> Ok << Proto.Json.encodeEmpty)
+            (Proto.Json.ready << Proto.Json.encodeEmpty)
             (\_ -> Proto.Json.empty)
             (Proto.Binary.messageEncoder Proto.Binary.empty)
             (Proto.Binary.messageDecoder Proto.Binary.empty)
@@ -239,7 +239,7 @@ summarize =
     Rpc.call
         (Proto.Method.init "notes.v1.NotesService"
             "Summarize"
-            (\_ -> Ok << Notes.V1.encodeGetNoteRequest)
+            Notes.V1.encodeGetNoteRequest
             (\_ -> Notes.V1.decodeSummary)
             Notes.V1.encodeGetNoteRequestBytes
             Notes.V1.decodeSummaryBytes
@@ -309,7 +309,7 @@ routeCreateNote0 request_ =
     { method = "POST"
     , path = "v1/" ++ Proto.Route.segments parent_ ++ "/notes"
     , query = []
-    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Notes.V1.encodeNote request_.note))
+    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Notes.V1.jsonNote request_.note))
     , invalid = Proto.Route.checkSegments "parent" [ "users", "*" ] parent_
     }
 
@@ -325,7 +325,7 @@ routeUpdateNote0 request_ =
     { method = "PATCH"
     , path = "v1/" ++ Proto.Route.segments noteName_
     , query = Notes.V1.queryOfUpdateNoteRequest request_
-    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Notes.V1.encodeNote request_.note))
+    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Notes.V1.jsonNote request_.note))
     , invalid = Proto.Route.checkSegments "note.name" [ "notes", "*" ] noteName_
     }
 
@@ -341,7 +341,7 @@ routeReplaceNote0 request_ =
     { method = "PUT"
     , path = "v1/" ++ Proto.Route.segments name_
     , query = []
-    , body = Just (Proto.Route.without [ [ "name" ] ] (Notes.V1.encodeNote request_))
+    , body = Just (Proto.Route.without [ [ "name" ] ] (Notes.V1.jsonNote request_))
     , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] name_
     }
 
@@ -373,7 +373,7 @@ routeArchiveNote0 request_ =
     { method = "POST"
     , path = "v1/" ++ Proto.Route.segments name_ ++ ":archive"
     , query = []
-    , body = Just (Proto.Route.without [ [ "name" ] ] (Notes.V1.encodeArchiveNoteRequest request_))
+    , body = Just (Proto.Route.without [ [ "name" ] ] (Notes.V1.jsonArchiveNoteRequest request_))
     , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] name_
     }
 

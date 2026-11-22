@@ -13,7 +13,6 @@ import Proto.Binary
 import Proto.Descriptors
 import Proto.Duration exposing (Duration)
 import Proto.Enum
-import Proto.Error
 import Proto.Json
 import Proto.Message
 import Proto.Registry
@@ -712,14 +711,14 @@ enumEnumOnlyProto3Bool =
 -}
 messageTestAllTypesProto3 : Proto.Message.Message TestAllTypesProto3
 messageTestAllTypesProto3 =
-    Proto.Message.initWith "protobuf_test_messages.proto3.TestAllTypesProto3" encodeTestAllTypesProto3With decodeTestAllTypesProto3With encodeTestAllTypesProto3Bytes decodeTestAllTypesProto3Bytes
+    Proto.Message.initWith "protobuf_test_messages.proto3.TestAllTypesProto3" encodeTestAllTypesProto3 decodeTestAllTypesProto3With encodeTestAllTypesProto3Bytes decodeTestAllTypesProto3Bytes
 
 
 {-| The typed value of [`TestAllTypesProto3NestedMessage`](#TestAllTypesProto3NestedMessage): its full name and codecs.
 -}
 messageTestAllTypesProto3NestedMessage : Proto.Message.Message TestAllTypesProto3NestedMessage
 messageTestAllTypesProto3NestedMessage =
-    Proto.Message.initWith "protobuf_test_messages.proto3.TestAllTypesProto3.NestedMessage" encodeTestAllTypesProto3NestedMessageWith decodeTestAllTypesProto3NestedMessageWith encodeTestAllTypesProto3NestedMessageBytes decodeTestAllTypesProto3NestedMessageBytes
+    Proto.Message.initWith "protobuf_test_messages.proto3.TestAllTypesProto3.NestedMessage" encodeTestAllTypesProto3NestedMessage decodeTestAllTypesProto3NestedMessageWith encodeTestAllTypesProto3NestedMessageBytes decodeTestAllTypesProto3NestedMessageBytes
 
 
 {-| The typed value of [`ForeignMessage`](#ForeignMessage): its full name and codecs.
@@ -844,234 +843,265 @@ encodeEnumOnlyProto3Bool value =
             Json.Encode.string "kTrue"
 
 
-{-| Encodes a [`TestAllTypesProto3`](#TestAllTypesProto3) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
+{-| Encodes a [`TestAllTypesProto3`](#TestAllTypesProto3) as proto3 JSON, refusing a value it holds that has no proto3 JSON form, and writing each `Any` with the registry it is run with.
 -}
-encodeTestAllTypesProto3With : Proto.Registry.Registry -> TestAllTypesProto3 -> Result Proto.Error.Error Json.Encode.Value
-encodeTestAllTypesProto3With types value =
-    Proto.Json.tryObjectOfFields
-        ([ ( "optionalInt32", Ok (Proto.Json.implicitField 0 Json.Encode.int value.optionalInt32) )
-         , ( "optionalInt64", Ok (Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.optionalInt64) )
-         , ( "optionalUint32", Ok (Proto.Json.implicitField 0 Json.Encode.int value.optionalUint32) )
-         , ( "optionalUint64", Ok (Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.optionalUint64) )
-         , ( "optionalSint32", Ok (Proto.Json.implicitField 0 Json.Encode.int value.optionalSint32) )
-         , ( "optionalSint64", Ok (Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.optionalSint64) )
-         , ( "optionalFixed32", Ok (Proto.Json.implicitField 0 Json.Encode.int value.optionalFixed32) )
-         , ( "optionalFixed64", Ok (Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.optionalFixed64) )
-         , ( "optionalSfixed32", Ok (Proto.Json.implicitField 0 Json.Encode.int value.optionalSfixed32) )
-         , ( "optionalSfixed64", Ok (Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.optionalSfixed64) )
-         , ( "optionalFloat", Ok (Proto.Json.implicitFloatField value.optionalFloat) )
-         , ( "optionalDouble", Ok (Proto.Json.implicitFloatField value.optionalDouble) )
-         , ( "optionalBool", Ok (Proto.Json.implicitField False Json.Encode.bool value.optionalBool) )
-         , ( "optionalString", Ok (Proto.Json.implicitField "" Json.Encode.string value.optionalString) )
-         , ( "optionalBytes", Ok (Proto.Json.implicitField "" Proto.Json.encodeBytes value.optionalBytes) )
-         , ( "optionalNestedMessage", Proto.Json.tryOptionalField (encodeTestAllTypesProto3NestedMessage_With (Proto.Json.registryDeeper types)) value.optionalNestedMessage )
-         , ( "optionalForeignMessage", Ok (Maybe.map encodeForeignMessage value.optionalForeignMessage) )
-         , ( "optionalNestedEnum", Ok (Proto.Json.implicitField TestAllTypesProto3NestedEnumFoo encodeTestAllTypesProto3NestedEnum value.optionalNestedEnum) )
-         , ( "optionalForeignEnum", Ok (Proto.Json.implicitField ForeignEnumForeignFoo encodeForeignEnum value.optionalForeignEnum) )
-         , ( "optionalAliasedEnum", Ok (Proto.Json.implicitField TestAllTypesProto3AliasedEnumAliasFoo encodeTestAllTypesProto3AliasedEnum value.optionalAliasedEnum) )
-         , ( "optionalStringPiece", Ok (Proto.Json.implicitField "" Json.Encode.string value.optionalStringPiece) )
-         , ( "optionalCord", Ok (Proto.Json.implicitField "" Json.Encode.string value.optionalCord) )
-         , ( "recursiveMessage", Proto.Json.tryOptionalField (encodeTestAllTypesProto3_With (Proto.Json.registryDeeper types)) value.recursiveMessage )
-         , ( "repeatedInt32", Ok (Proto.Json.repeatedField Json.Encode.int value.repeatedInt32) )
-         , ( "repeatedInt64", Ok (Proto.Json.repeatedField Proto.Json.encodeInt64 value.repeatedInt64) )
-         , ( "repeatedUint32", Ok (Proto.Json.repeatedField Json.Encode.int value.repeatedUint32) )
-         , ( "repeatedUint64", Ok (Proto.Json.repeatedField Proto.Json.encodeInt64 value.repeatedUint64) )
-         , ( "repeatedSint32", Ok (Proto.Json.repeatedField Json.Encode.int value.repeatedSint32) )
-         , ( "repeatedSint64", Ok (Proto.Json.repeatedField Proto.Json.encodeInt64 value.repeatedSint64) )
-         , ( "repeatedFixed32", Ok (Proto.Json.repeatedField Json.Encode.int value.repeatedFixed32) )
-         , ( "repeatedFixed64", Ok (Proto.Json.repeatedField Proto.Json.encodeInt64 value.repeatedFixed64) )
-         , ( "repeatedSfixed32", Ok (Proto.Json.repeatedField Json.Encode.int value.repeatedSfixed32) )
-         , ( "repeatedSfixed64", Ok (Proto.Json.repeatedField Proto.Json.encodeInt64 value.repeatedSfixed64) )
-         , ( "repeatedFloat", Ok (Proto.Json.repeatedField Proto.Json.encodeFloat value.repeatedFloat) )
-         , ( "repeatedDouble", Ok (Proto.Json.repeatedField Proto.Json.encodeFloat value.repeatedDouble) )
-         , ( "repeatedBool", Ok (Proto.Json.repeatedField Json.Encode.bool value.repeatedBool) )
-         , ( "repeatedString", Ok (Proto.Json.repeatedField Json.Encode.string value.repeatedString) )
-         , ( "repeatedBytes", Ok (Proto.Json.repeatedField Proto.Json.encodeBytes value.repeatedBytes) )
-         , ( "repeatedNestedMessage", Proto.Json.tryRepeatedField (encodeTestAllTypesProto3NestedMessage_With (Proto.Json.registryDeeper types)) value.repeatedNestedMessage )
-         , ( "repeatedForeignMessage", Ok (Proto.Json.repeatedField encodeForeignMessage value.repeatedForeignMessage) )
-         , ( "repeatedNestedEnum", Ok (Proto.Json.repeatedField encodeTestAllTypesProto3NestedEnum value.repeatedNestedEnum) )
-         , ( "repeatedForeignEnum", Ok (Proto.Json.repeatedField encodeForeignEnum value.repeatedForeignEnum) )
-         , ( "repeatedStringPiece", Ok (Proto.Json.repeatedField Json.Encode.string value.repeatedStringPiece) )
-         , ( "repeatedCord", Ok (Proto.Json.repeatedField Json.Encode.string value.repeatedCord) )
-         , ( "packedInt32", Ok (Proto.Json.repeatedField Json.Encode.int value.packedInt32) )
-         , ( "packedInt64", Ok (Proto.Json.repeatedField Proto.Json.encodeInt64 value.packedInt64) )
-         , ( "packedUint32", Ok (Proto.Json.repeatedField Json.Encode.int value.packedUint32) )
-         , ( "packedUint64", Ok (Proto.Json.repeatedField Proto.Json.encodeInt64 value.packedUint64) )
-         , ( "packedSint32", Ok (Proto.Json.repeatedField Json.Encode.int value.packedSint32) )
-         , ( "packedSint64", Ok (Proto.Json.repeatedField Proto.Json.encodeInt64 value.packedSint64) )
-         , ( "packedFixed32", Ok (Proto.Json.repeatedField Json.Encode.int value.packedFixed32) )
-         , ( "packedFixed64", Ok (Proto.Json.repeatedField Proto.Json.encodeInt64 value.packedFixed64) )
-         , ( "packedSfixed32", Ok (Proto.Json.repeatedField Json.Encode.int value.packedSfixed32) )
-         , ( "packedSfixed64", Ok (Proto.Json.repeatedField Proto.Json.encodeInt64 value.packedSfixed64) )
-         , ( "packedFloat", Ok (Proto.Json.repeatedField Proto.Json.encodeFloat value.packedFloat) )
-         , ( "packedDouble", Ok (Proto.Json.repeatedField Proto.Json.encodeFloat value.packedDouble) )
-         , ( "packedBool", Ok (Proto.Json.repeatedField Json.Encode.bool value.packedBool) )
-         , ( "packedNestedEnum", Ok (Proto.Json.repeatedField encodeTestAllTypesProto3NestedEnum value.packedNestedEnum) )
-         , ( "unpackedInt32", Ok (Proto.Json.repeatedField Json.Encode.int value.unpackedInt32) )
-         , ( "unpackedInt64", Ok (Proto.Json.repeatedField Proto.Json.encodeInt64 value.unpackedInt64) )
-         , ( "unpackedUint32", Ok (Proto.Json.repeatedField Json.Encode.int value.unpackedUint32) )
-         , ( "unpackedUint64", Ok (Proto.Json.repeatedField Proto.Json.encodeInt64 value.unpackedUint64) )
-         , ( "unpackedSint32", Ok (Proto.Json.repeatedField Json.Encode.int value.unpackedSint32) )
-         , ( "unpackedSint64", Ok (Proto.Json.repeatedField Proto.Json.encodeInt64 value.unpackedSint64) )
-         , ( "unpackedFixed32", Ok (Proto.Json.repeatedField Json.Encode.int value.unpackedFixed32) )
-         , ( "unpackedFixed64", Ok (Proto.Json.repeatedField Proto.Json.encodeInt64 value.unpackedFixed64) )
-         , ( "unpackedSfixed32", Ok (Proto.Json.repeatedField Json.Encode.int value.unpackedSfixed32) )
-         , ( "unpackedSfixed64", Ok (Proto.Json.repeatedField Proto.Json.encodeInt64 value.unpackedSfixed64) )
-         , ( "unpackedFloat", Ok (Proto.Json.repeatedField Proto.Json.encodeFloat value.unpackedFloat) )
-         , ( "unpackedDouble", Ok (Proto.Json.repeatedField Proto.Json.encodeFloat value.unpackedDouble) )
-         , ( "unpackedBool", Ok (Proto.Json.repeatedField Json.Encode.bool value.unpackedBool) )
-         , ( "unpackedNestedEnum", Ok (Proto.Json.repeatedField encodeTestAllTypesProto3NestedEnum value.unpackedNestedEnum) )
-         , ( "mapInt32Int32", Ok (Proto.Json.dictField String.fromInt Json.Encode.int value.mapInt32Int32) )
-         , ( "mapInt64Int64", Ok (Proto.Json.dictField identity Proto.Json.encodeInt64 value.mapInt64Int64) )
-         , ( "mapUint32Uint32", Ok (Proto.Json.dictField String.fromInt Json.Encode.int value.mapUint32Uint32) )
-         , ( "mapUint64Uint64", Ok (Proto.Json.dictField identity Proto.Json.encodeInt64 value.mapUint64Uint64) )
-         , ( "mapSint32Sint32", Ok (Proto.Json.dictField String.fromInt Json.Encode.int value.mapSint32Sint32) )
-         , ( "mapSint64Sint64", Ok (Proto.Json.dictField identity Proto.Json.encodeInt64 value.mapSint64Sint64) )
-         , ( "mapFixed32Fixed32", Ok (Proto.Json.dictField String.fromInt Json.Encode.int value.mapFixed32Fixed32) )
-         , ( "mapFixed64Fixed64", Ok (Proto.Json.dictField identity Proto.Json.encodeInt64 value.mapFixed64Fixed64) )
-         , ( "mapSfixed32Sfixed32", Ok (Proto.Json.dictField String.fromInt Json.Encode.int value.mapSfixed32Sfixed32) )
-         , ( "mapSfixed64Sfixed64", Ok (Proto.Json.dictField identity Proto.Json.encodeInt64 value.mapSfixed64Sfixed64) )
-         , ( "mapInt32Float", Ok (Proto.Json.dictField String.fromInt Proto.Json.encodeFloat value.mapInt32Float) )
-         , ( "mapInt32Double", Ok (Proto.Json.dictField String.fromInt Proto.Json.encodeFloat value.mapInt32Double) )
-         , ( "mapBoolBool", Ok (Proto.Json.boolMapField Json.Encode.bool value.mapBoolBool) )
-         , ( "mapStringString", Ok (Proto.Json.dictField identity Json.Encode.string value.mapStringString) )
-         , ( "mapStringBytes", Ok (Proto.Json.dictField identity Proto.Json.encodeBytes value.mapStringBytes) )
-         , ( "mapStringNestedMessage", Proto.Json.tryDictField identity (encodeTestAllTypesProto3NestedMessage_With (Proto.Json.registryDeeper types)) value.mapStringNestedMessage )
-         , ( "mapStringForeignMessage", Ok (Proto.Json.dictField identity encodeForeignMessage value.mapStringForeignMessage) )
-         , ( "mapStringNestedEnum", Ok (Proto.Json.dictField identity encodeTestAllTypesProto3NestedEnum value.mapStringNestedEnum) )
-         , ( "mapStringForeignEnum", Ok (Proto.Json.dictField identity encodeForeignEnum value.mapStringForeignEnum) )
-         , ( "optionalBoolWrapper", Ok (Maybe.map Json.Encode.bool value.optionalBoolWrapper) )
-         , ( "optionalInt32Wrapper", Ok (Maybe.map Json.Encode.int value.optionalInt32Wrapper) )
-         , ( "optionalInt64Wrapper", Ok (Maybe.map Proto.Json.encodeInt64 value.optionalInt64Wrapper) )
-         , ( "optionalUint32Wrapper", Ok (Maybe.map Json.Encode.int value.optionalUint32Wrapper) )
-         , ( "optionalUint64Wrapper", Ok (Maybe.map Proto.Json.encodeInt64 value.optionalUint64Wrapper) )
-         , ( "optionalFloatWrapper", Ok (Maybe.map Proto.Json.encodeFloat value.optionalFloatWrapper) )
-         , ( "optionalDoubleWrapper", Ok (Maybe.map Proto.Json.encodeFloat value.optionalDoubleWrapper) )
-         , ( "optionalStringWrapper", Ok (Maybe.map Json.Encode.string value.optionalStringWrapper) )
-         , ( "optionalBytesWrapper", Ok (Maybe.map Proto.Json.encodeBytes value.optionalBytesWrapper) )
-         , ( "repeatedBoolWrapper", Ok (Proto.Json.repeatedField Json.Encode.bool value.repeatedBoolWrapper) )
-         , ( "repeatedInt32Wrapper", Ok (Proto.Json.repeatedField Json.Encode.int value.repeatedInt32Wrapper) )
-         , ( "repeatedInt64Wrapper", Ok (Proto.Json.repeatedField Proto.Json.encodeInt64 value.repeatedInt64Wrapper) )
-         , ( "repeatedUint32Wrapper", Ok (Proto.Json.repeatedField Json.Encode.int value.repeatedUint32Wrapper) )
-         , ( "repeatedUint64Wrapper", Ok (Proto.Json.repeatedField Proto.Json.encodeInt64 value.repeatedUint64Wrapper) )
-         , ( "repeatedFloatWrapper", Ok (Proto.Json.repeatedField Proto.Json.encodeFloat value.repeatedFloatWrapper) )
-         , ( "repeatedDoubleWrapper", Ok (Proto.Json.repeatedField Proto.Json.encodeFloat value.repeatedDoubleWrapper) )
-         , ( "repeatedStringWrapper", Ok (Proto.Json.repeatedField Json.Encode.string value.repeatedStringWrapper) )
-         , ( "repeatedBytesWrapper", Ok (Proto.Json.repeatedField Proto.Json.encodeBytes value.repeatedBytesWrapper) )
-         , ( "optionalDuration", Ok (Maybe.map Proto.Json.encodeDuration value.optionalDuration) )
-         , ( "optionalTimestamp", Ok (Maybe.map Proto.Json.encodeTimestamp value.optionalTimestamp) )
-         , ( "optionalFieldMask", Ok (Maybe.map Proto.Json.encodeFieldMask value.optionalFieldMask) )
-         , ( "optionalStruct", Ok (Maybe.map Proto.Json.encodeStruct value.optionalStruct) )
-         , ( "optionalAny", Proto.Json.tryOptionalField (Proto.Json.encodeAnyWith types) value.optionalAny )
-         , ( "optionalValue", Ok (Maybe.map Proto.Json.encodeValue value.optionalValue) )
-         , ( "optionalNullValue", Ok (Proto.Json.implicitField () Proto.Json.encodeNullValue value.optionalNullValue) )
-         , ( "repeatedDuration", Ok (Proto.Json.repeatedField Proto.Json.encodeDuration value.repeatedDuration) )
-         , ( "repeatedTimestamp", Ok (Proto.Json.repeatedField Proto.Json.encodeTimestamp value.repeatedTimestamp) )
-         , ( "repeatedFieldmask", Ok (Proto.Json.repeatedField Proto.Json.encodeFieldMask value.repeatedFieldmask) )
-         , ( "repeatedStruct", Ok (Proto.Json.repeatedField Proto.Json.encodeStruct value.repeatedStruct) )
-         , ( "repeatedAny", Proto.Json.tryRepeatedField (Proto.Json.encodeAnyWith types) value.repeatedAny )
-         , ( "repeatedValue", Ok (Proto.Json.repeatedField Proto.Json.encodeValue value.repeatedValue) )
-         , ( "repeatedListValue", Ok (Proto.Json.repeatedField Proto.Json.encodeListValue value.repeatedListValue) )
-         , ( "fieldname1", Ok (Proto.Json.implicitField 0 Json.Encode.int value.fieldname1) )
-         , ( "fieldName2", Ok (Proto.Json.implicitField 0 Json.Encode.int value.fieldName2) )
-         , ( "FieldName3", Ok (Proto.Json.implicitField 0 Json.Encode.int value.fieldName3) )
-         , ( "fieldName4", Ok (Proto.Json.implicitField 0 Json.Encode.int value.fieldName4) )
-         , ( "field0name5", Ok (Proto.Json.implicitField 0 Json.Encode.int value.field0name5) )
-         , ( "field0Name6", Ok (Proto.Json.implicitField 0 Json.Encode.int value.field0Name6) )
-         , ( "fieldName7", Ok (Proto.Json.implicitField 0 Json.Encode.int value.fieldName7) )
-         , ( "FieldName8", Ok (Proto.Json.implicitField 0 Json.Encode.int value.fieldName8) )
-         , ( "fieldName9", Ok (Proto.Json.implicitField 0 Json.Encode.int value.fieldName9) )
-         , ( "FieldName10", Ok (Proto.Json.implicitField 0 Json.Encode.int value.fieldName10) )
-         , ( "FIELDNAME11", Ok (Proto.Json.implicitField 0 Json.Encode.int value.fieldname11) )
-         , ( "FIELDName12", Ok (Proto.Json.implicitField 0 Json.Encode.int value.fieldName12) )
-         , ( "FieldName13", Ok (Proto.Json.implicitField 0 Json.Encode.int value.fieldName13) )
-         , ( "FieldName14", Ok (Proto.Json.implicitField 0 Json.Encode.int value.fieldName14) )
-         , ( "fieldName15", Ok (Proto.Json.implicitField 0 Json.Encode.int value.fieldName15) )
-         , ( "fieldName16", Ok (Proto.Json.implicitField 0 Json.Encode.int value.fieldName16) )
-         , ( "fieldName17", Ok (Proto.Json.implicitField 0 Json.Encode.int value.fieldName17) )
-         , ( "FieldName18", Ok (Proto.Json.implicitField 0 Json.Encode.int value.fieldName18) )
-         ]
-            ++ encodeTestAllTypesProto3OneofFieldWith types value.oneofField
-        )
+encodeTestAllTypesProto3 : TestAllTypesProto3 -> Proto.Json.Encoder
+encodeTestAllTypesProto3 value =
+    Proto.Json.writeFrom encodeTestAllTypesProto3At value
 
 
-{-| Encodes a [`TestAllTypesProto3_`](#TestAllTypesProto3_) as proto3 JSON, writing each `Any` it holds with the registry.
+{-| Encodes a [`TestAllTypesProto3`](#TestAllTypesProto3) at a level of its cycle, refused past the limit.
 -}
-encodeTestAllTypesProto3_With : Proto.Registry.Registry -> TestAllTypesProto3_ -> Result Proto.Error.Error Json.Encode.Value
-encodeTestAllTypesProto3_With types (TestAllTypesProto3_ value) =
-    encodeTestAllTypesProto3With types value
+encodeTestAllTypesProto3At : Int -> TestAllTypesProto3 -> Proto.Json.Encoder
+encodeTestAllTypesProto3At depth value =
+    if depth > Proto.Json.writeLimit then
+        Proto.Json.writeTooDeep "protobuf_test_messages.proto3.TestAllTypesProto3"
+
+    else
+        Proto.Json.writeObject
+            [ ( "optionalInt32", Proto.Json.implicitField 0 Json.Encode.int value.optionalInt32 )
+            , ( "optionalInt64", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.optionalInt64 )
+            , ( "optionalUint32", Proto.Json.implicitField 0 Json.Encode.int value.optionalUint32 )
+            , ( "optionalUint64", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.optionalUint64 )
+            , ( "optionalSint32", Proto.Json.implicitField 0 Json.Encode.int value.optionalSint32 )
+            , ( "optionalSint64", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.optionalSint64 )
+            , ( "optionalFixed32", Proto.Json.implicitField 0 Json.Encode.int value.optionalFixed32 )
+            , ( "optionalFixed64", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.optionalFixed64 )
+            , ( "optionalSfixed32", Proto.Json.implicitField 0 Json.Encode.int value.optionalSfixed32 )
+            , ( "optionalSfixed64", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.optionalSfixed64 )
+            , ( "optionalFloat", Proto.Json.implicitFloatField value.optionalFloat )
+            , ( "optionalDouble", Proto.Json.implicitFloatField value.optionalDouble )
+            , ( "optionalBool", Proto.Json.implicitField False Json.Encode.bool value.optionalBool )
+            , ( "optionalString", Proto.Json.implicitField "" Json.Encode.string value.optionalString )
+            , ( "optionalBytes", Proto.Json.implicitField "" Proto.Json.encodeBytes value.optionalBytes )
+            , ( "optionalForeignMessage", Maybe.map jsonForeignMessage value.optionalForeignMessage )
+            , ( "optionalNestedEnum", Proto.Json.implicitField TestAllTypesProto3NestedEnumFoo encodeTestAllTypesProto3NestedEnum value.optionalNestedEnum )
+            , ( "optionalForeignEnum", Proto.Json.implicitField ForeignEnumForeignFoo encodeForeignEnum value.optionalForeignEnum )
+            , ( "optionalAliasedEnum", Proto.Json.implicitField TestAllTypesProto3AliasedEnumAliasFoo encodeTestAllTypesProto3AliasedEnum value.optionalAliasedEnum )
+            , ( "optionalStringPiece", Proto.Json.implicitField "" Json.Encode.string value.optionalStringPiece )
+            , ( "optionalCord", Proto.Json.implicitField "" Json.Encode.string value.optionalCord )
+            , ( "repeatedInt32", Proto.Json.repeatedField Json.Encode.int value.repeatedInt32 )
+            , ( "repeatedInt64", Proto.Json.repeatedField Proto.Json.encodeInt64 value.repeatedInt64 )
+            , ( "repeatedUint32", Proto.Json.repeatedField Json.Encode.int value.repeatedUint32 )
+            , ( "repeatedUint64", Proto.Json.repeatedField Proto.Json.encodeInt64 value.repeatedUint64 )
+            , ( "repeatedSint32", Proto.Json.repeatedField Json.Encode.int value.repeatedSint32 )
+            , ( "repeatedSint64", Proto.Json.repeatedField Proto.Json.encodeInt64 value.repeatedSint64 )
+            , ( "repeatedFixed32", Proto.Json.repeatedField Json.Encode.int value.repeatedFixed32 )
+            , ( "repeatedFixed64", Proto.Json.repeatedField Proto.Json.encodeInt64 value.repeatedFixed64 )
+            , ( "repeatedSfixed32", Proto.Json.repeatedField Json.Encode.int value.repeatedSfixed32 )
+            , ( "repeatedSfixed64", Proto.Json.repeatedField Proto.Json.encodeInt64 value.repeatedSfixed64 )
+            , ( "repeatedFloat", Proto.Json.repeatedField Proto.Json.encodeFloat value.repeatedFloat )
+            , ( "repeatedDouble", Proto.Json.repeatedField Proto.Json.encodeFloat value.repeatedDouble )
+            , ( "repeatedBool", Proto.Json.repeatedField Json.Encode.bool value.repeatedBool )
+            , ( "repeatedString", Proto.Json.repeatedField Json.Encode.string value.repeatedString )
+            , ( "repeatedBytes", Proto.Json.repeatedField Proto.Json.encodeBytes value.repeatedBytes )
+            , ( "repeatedForeignMessage", Proto.Json.repeatedField jsonForeignMessage value.repeatedForeignMessage )
+            , ( "repeatedNestedEnum", Proto.Json.repeatedField encodeTestAllTypesProto3NestedEnum value.repeatedNestedEnum )
+            , ( "repeatedForeignEnum", Proto.Json.repeatedField encodeForeignEnum value.repeatedForeignEnum )
+            , ( "repeatedStringPiece", Proto.Json.repeatedField Json.Encode.string value.repeatedStringPiece )
+            , ( "repeatedCord", Proto.Json.repeatedField Json.Encode.string value.repeatedCord )
+            , ( "packedInt32", Proto.Json.repeatedField Json.Encode.int value.packedInt32 )
+            , ( "packedInt64", Proto.Json.repeatedField Proto.Json.encodeInt64 value.packedInt64 )
+            , ( "packedUint32", Proto.Json.repeatedField Json.Encode.int value.packedUint32 )
+            , ( "packedUint64", Proto.Json.repeatedField Proto.Json.encodeInt64 value.packedUint64 )
+            , ( "packedSint32", Proto.Json.repeatedField Json.Encode.int value.packedSint32 )
+            , ( "packedSint64", Proto.Json.repeatedField Proto.Json.encodeInt64 value.packedSint64 )
+            , ( "packedFixed32", Proto.Json.repeatedField Json.Encode.int value.packedFixed32 )
+            , ( "packedFixed64", Proto.Json.repeatedField Proto.Json.encodeInt64 value.packedFixed64 )
+            , ( "packedSfixed32", Proto.Json.repeatedField Json.Encode.int value.packedSfixed32 )
+            , ( "packedSfixed64", Proto.Json.repeatedField Proto.Json.encodeInt64 value.packedSfixed64 )
+            , ( "packedFloat", Proto.Json.repeatedField Proto.Json.encodeFloat value.packedFloat )
+            , ( "packedDouble", Proto.Json.repeatedField Proto.Json.encodeFloat value.packedDouble )
+            , ( "packedBool", Proto.Json.repeatedField Json.Encode.bool value.packedBool )
+            , ( "packedNestedEnum", Proto.Json.repeatedField encodeTestAllTypesProto3NestedEnum value.packedNestedEnum )
+            , ( "unpackedInt32", Proto.Json.repeatedField Json.Encode.int value.unpackedInt32 )
+            , ( "unpackedInt64", Proto.Json.repeatedField Proto.Json.encodeInt64 value.unpackedInt64 )
+            , ( "unpackedUint32", Proto.Json.repeatedField Json.Encode.int value.unpackedUint32 )
+            , ( "unpackedUint64", Proto.Json.repeatedField Proto.Json.encodeInt64 value.unpackedUint64 )
+            , ( "unpackedSint32", Proto.Json.repeatedField Json.Encode.int value.unpackedSint32 )
+            , ( "unpackedSint64", Proto.Json.repeatedField Proto.Json.encodeInt64 value.unpackedSint64 )
+            , ( "unpackedFixed32", Proto.Json.repeatedField Json.Encode.int value.unpackedFixed32 )
+            , ( "unpackedFixed64", Proto.Json.repeatedField Proto.Json.encodeInt64 value.unpackedFixed64 )
+            , ( "unpackedSfixed32", Proto.Json.repeatedField Json.Encode.int value.unpackedSfixed32 )
+            , ( "unpackedSfixed64", Proto.Json.repeatedField Proto.Json.encodeInt64 value.unpackedSfixed64 )
+            , ( "unpackedFloat", Proto.Json.repeatedField Proto.Json.encodeFloat value.unpackedFloat )
+            , ( "unpackedDouble", Proto.Json.repeatedField Proto.Json.encodeFloat value.unpackedDouble )
+            , ( "unpackedBool", Proto.Json.repeatedField Json.Encode.bool value.unpackedBool )
+            , ( "unpackedNestedEnum", Proto.Json.repeatedField encodeTestAllTypesProto3NestedEnum value.unpackedNestedEnum )
+            , ( "mapInt32Int32", Proto.Json.dictField String.fromInt Json.Encode.int value.mapInt32Int32 )
+            , ( "mapInt64Int64", Proto.Json.dictField identity Proto.Json.encodeInt64 value.mapInt64Int64 )
+            , ( "mapUint32Uint32", Proto.Json.dictField String.fromInt Json.Encode.int value.mapUint32Uint32 )
+            , ( "mapUint64Uint64", Proto.Json.dictField identity Proto.Json.encodeInt64 value.mapUint64Uint64 )
+            , ( "mapSint32Sint32", Proto.Json.dictField String.fromInt Json.Encode.int value.mapSint32Sint32 )
+            , ( "mapSint64Sint64", Proto.Json.dictField identity Proto.Json.encodeInt64 value.mapSint64Sint64 )
+            , ( "mapFixed32Fixed32", Proto.Json.dictField String.fromInt Json.Encode.int value.mapFixed32Fixed32 )
+            , ( "mapFixed64Fixed64", Proto.Json.dictField identity Proto.Json.encodeInt64 value.mapFixed64Fixed64 )
+            , ( "mapSfixed32Sfixed32", Proto.Json.dictField String.fromInt Json.Encode.int value.mapSfixed32Sfixed32 )
+            , ( "mapSfixed64Sfixed64", Proto.Json.dictField identity Proto.Json.encodeInt64 value.mapSfixed64Sfixed64 )
+            , ( "mapInt32Float", Proto.Json.dictField String.fromInt Proto.Json.encodeFloat value.mapInt32Float )
+            , ( "mapInt32Double", Proto.Json.dictField String.fromInt Proto.Json.encodeFloat value.mapInt32Double )
+            , ( "mapBoolBool", Proto.Json.boolMapField Json.Encode.bool value.mapBoolBool )
+            , ( "mapStringString", Proto.Json.dictField identity Json.Encode.string value.mapStringString )
+            , ( "mapStringBytes", Proto.Json.dictField identity Proto.Json.encodeBytes value.mapStringBytes )
+            , ( "mapStringForeignMessage", Proto.Json.dictField identity jsonForeignMessage value.mapStringForeignMessage )
+            , ( "mapStringNestedEnum", Proto.Json.dictField identity encodeTestAllTypesProto3NestedEnum value.mapStringNestedEnum )
+            , ( "mapStringForeignEnum", Proto.Json.dictField identity encodeForeignEnum value.mapStringForeignEnum )
+            , ( "optionalBoolWrapper", Maybe.map Json.Encode.bool value.optionalBoolWrapper )
+            , ( "optionalInt32Wrapper", Maybe.map Json.Encode.int value.optionalInt32Wrapper )
+            , ( "optionalInt64Wrapper", Maybe.map Proto.Json.encodeInt64 value.optionalInt64Wrapper )
+            , ( "optionalUint32Wrapper", Maybe.map Json.Encode.int value.optionalUint32Wrapper )
+            , ( "optionalUint64Wrapper", Maybe.map Proto.Json.encodeInt64 value.optionalUint64Wrapper )
+            , ( "optionalFloatWrapper", Maybe.map Proto.Json.encodeFloat value.optionalFloatWrapper )
+            , ( "optionalDoubleWrapper", Maybe.map Proto.Json.encodeFloat value.optionalDoubleWrapper )
+            , ( "optionalStringWrapper", Maybe.map Json.Encode.string value.optionalStringWrapper )
+            , ( "optionalBytesWrapper", Maybe.map Proto.Json.encodeBytes value.optionalBytesWrapper )
+            , ( "repeatedBoolWrapper", Proto.Json.repeatedField Json.Encode.bool value.repeatedBoolWrapper )
+            , ( "repeatedInt32Wrapper", Proto.Json.repeatedField Json.Encode.int value.repeatedInt32Wrapper )
+            , ( "repeatedInt64Wrapper", Proto.Json.repeatedField Proto.Json.encodeInt64 value.repeatedInt64Wrapper )
+            , ( "repeatedUint32Wrapper", Proto.Json.repeatedField Json.Encode.int value.repeatedUint32Wrapper )
+            , ( "repeatedUint64Wrapper", Proto.Json.repeatedField Proto.Json.encodeInt64 value.repeatedUint64Wrapper )
+            , ( "repeatedFloatWrapper", Proto.Json.repeatedField Proto.Json.encodeFloat value.repeatedFloatWrapper )
+            , ( "repeatedDoubleWrapper", Proto.Json.repeatedField Proto.Json.encodeFloat value.repeatedDoubleWrapper )
+            , ( "repeatedStringWrapper", Proto.Json.repeatedField Json.Encode.string value.repeatedStringWrapper )
+            , ( "repeatedBytesWrapper", Proto.Json.repeatedField Proto.Json.encodeBytes value.repeatedBytesWrapper )
+            , ( "optionalNullValue", Proto.Json.implicitField () Proto.Json.encodeNullValue value.optionalNullValue )
+            , ( "fieldname1", Proto.Json.implicitField 0 Json.Encode.int value.fieldname1 )
+            , ( "fieldName2", Proto.Json.implicitField 0 Json.Encode.int value.fieldName2 )
+            , ( "FieldName3", Proto.Json.implicitField 0 Json.Encode.int value.fieldName3 )
+            , ( "fieldName4", Proto.Json.implicitField 0 Json.Encode.int value.fieldName4 )
+            , ( "field0name5", Proto.Json.implicitField 0 Json.Encode.int value.field0name5 )
+            , ( "field0Name6", Proto.Json.implicitField 0 Json.Encode.int value.field0Name6 )
+            , ( "fieldName7", Proto.Json.implicitField 0 Json.Encode.int value.fieldName7 )
+            , ( "FieldName8", Proto.Json.implicitField 0 Json.Encode.int value.fieldName8 )
+            , ( "fieldName9", Proto.Json.implicitField 0 Json.Encode.int value.fieldName9 )
+            , ( "FieldName10", Proto.Json.implicitField 0 Json.Encode.int value.fieldName10 )
+            , ( "FIELDNAME11", Proto.Json.implicitField 0 Json.Encode.int value.fieldname11 )
+            , ( "FIELDName12", Proto.Json.implicitField 0 Json.Encode.int value.fieldName12 )
+            , ( "FieldName13", Proto.Json.implicitField 0 Json.Encode.int value.fieldName13 )
+            , ( "FieldName14", Proto.Json.implicitField 0 Json.Encode.int value.fieldName14 )
+            , ( "fieldName15", Proto.Json.implicitField 0 Json.Encode.int value.fieldName15 )
+            , ( "fieldName16", Proto.Json.implicitField 0 Json.Encode.int value.fieldName16 )
+            , ( "fieldName17", Proto.Json.implicitField 0 Json.Encode.int value.fieldName17 )
+            , ( "FieldName18", Proto.Json.implicitField 0 Json.Encode.int value.fieldName18 )
+            ]
+            ([ ( "optionalNestedMessage", Proto.Json.writeOptional (encodeTestAllTypesProto3NestedMessage_At (depth + 1)) value.optionalNestedMessage )
+             , ( "recursiveMessage", Proto.Json.writeOptional (encodeTestAllTypesProto3_At (depth + 1)) value.recursiveMessage )
+             , ( "repeatedNestedMessage", Proto.Json.writeRepeated (encodeTestAllTypesProto3NestedMessage_At (depth + 1)) value.repeatedNestedMessage )
+             , ( "mapStringNestedMessage", Proto.Json.writeDict identity (encodeTestAllTypesProto3NestedMessage_At (depth + 1)) value.mapStringNestedMessage )
+             , ( "optionalDuration", Proto.Json.writeOptional Proto.Json.writeDuration value.optionalDuration )
+             , ( "optionalTimestamp", Proto.Json.writeOptional Proto.Json.writeTimestamp value.optionalTimestamp )
+             , ( "optionalFieldMask", Proto.Json.writeOptional Proto.Json.writeFieldMask value.optionalFieldMask )
+             , ( "optionalStruct", Proto.Json.writeOptional Proto.Json.writeStruct value.optionalStruct )
+             , ( "optionalAny", Proto.Json.writeOptional (Proto.Json.writeAnyAt depth) value.optionalAny )
+             , ( "optionalValue", Proto.Json.writeOptional Proto.Json.writeValue value.optionalValue )
+             , ( "repeatedDuration", Proto.Json.writeRepeated Proto.Json.writeDuration value.repeatedDuration )
+             , ( "repeatedTimestamp", Proto.Json.writeRepeated Proto.Json.writeTimestamp value.repeatedTimestamp )
+             , ( "repeatedFieldmask", Proto.Json.writeRepeated Proto.Json.writeFieldMask value.repeatedFieldmask )
+             , ( "repeatedStruct", Proto.Json.writeRepeated Proto.Json.writeStruct value.repeatedStruct )
+             , ( "repeatedAny", Proto.Json.writeRepeated (Proto.Json.writeAnyAt depth) value.repeatedAny )
+             , ( "repeatedValue", Proto.Json.writeRepeated Proto.Json.writeValue value.repeatedValue )
+             , ( "repeatedListValue", Proto.Json.writeRepeated Proto.Json.writeListValue value.repeatedListValue )
+             ]
+                ++ encodeTestAllTypesProto3OneofFieldAt depth value.oneofField
+            )
 
 
-{-| Encodes a [`TestAllTypesProto3OneofField`](#TestAllTypesProto3OneofField) as the members of its message's JSON object.
+{-| Encodes a [`TestAllTypesProto3_`](#TestAllTypesProto3_) at a level of its cycle.
 -}
-encodeTestAllTypesProto3OneofFieldWith : Proto.Registry.Registry -> TestAllTypesProto3OneofField -> List ( String, Result Proto.Error.Error (Maybe Json.Encode.Value) )
-encodeTestAllTypesProto3OneofFieldWith types value =
+encodeTestAllTypesProto3_At : Int -> TestAllTypesProto3_ -> Proto.Json.Encoder
+encodeTestAllTypesProto3_At depth (TestAllTypesProto3_ value) =
+    encodeTestAllTypesProto3At depth value
+
+
+{-| Encodes a [`TestAllTypesProto3OneofField`](#TestAllTypesProto3OneofField) at a level of its message's cycle as the members of its message's JSON object.
+-}
+encodeTestAllTypesProto3OneofFieldAt : Int -> TestAllTypesProto3OneofField -> List ( String, Proto.Json.Encoder )
+encodeTestAllTypesProto3OneofFieldAt depth value =
     case value of
         TestAllTypesProto3OneofFieldUnset ->
             []
 
         TestAllTypesProto3OneofFieldOneofUint32 member ->
-            [ ( "oneofUint32", Ok (Just (Json.Encode.int member)) )
+            [ ( "oneofUint32", Proto.Json.ready (Json.Encode.int member) )
             ]
 
         TestAllTypesProto3OneofFieldOneofNestedMessage member ->
-            [ ( "oneofNestedMessage", Result.map Just (encodeTestAllTypesProto3NestedMessageWith (Proto.Json.registryDeeper types) member) )
+            [ ( "oneofNestedMessage", encodeTestAllTypesProto3NestedMessageAt (depth + 1) member )
             ]
 
         TestAllTypesProto3OneofFieldOneofString member ->
-            [ ( "oneofString", Ok (Just (Json.Encode.string member)) )
+            [ ( "oneofString", Proto.Json.ready (Json.Encode.string member) )
             ]
 
         TestAllTypesProto3OneofFieldOneofBytes member ->
-            [ ( "oneofBytes", Ok (Just (Proto.Json.encodeBytes member)) )
+            [ ( "oneofBytes", Proto.Json.ready (Proto.Json.encodeBytes member) )
             ]
 
         TestAllTypesProto3OneofFieldOneofBool member ->
-            [ ( "oneofBool", Ok (Just (Json.Encode.bool member)) )
+            [ ( "oneofBool", Proto.Json.ready (Json.Encode.bool member) )
             ]
 
         TestAllTypesProto3OneofFieldOneofUint64 member ->
-            [ ( "oneofUint64", Ok (Just (Proto.Json.encodeInt64 member)) )
+            [ ( "oneofUint64", Proto.Json.ready (Proto.Json.encodeInt64 member) )
             ]
 
         TestAllTypesProto3OneofFieldOneofFloat member ->
-            [ ( "oneofFloat", Ok (Just (Proto.Json.encodeFloat member)) )
+            [ ( "oneofFloat", Proto.Json.ready (Proto.Json.encodeFloat member) )
             ]
 
         TestAllTypesProto3OneofFieldOneofDouble member ->
-            [ ( "oneofDouble", Ok (Just (Proto.Json.encodeFloat member)) )
+            [ ( "oneofDouble", Proto.Json.ready (Proto.Json.encodeFloat member) )
             ]
 
         TestAllTypesProto3OneofFieldOneofEnum member ->
-            [ ( "oneofEnum", Ok (Just (encodeTestAllTypesProto3NestedEnum member)) )
+            [ ( "oneofEnum", Proto.Json.ready (encodeTestAllTypesProto3NestedEnum member) )
             ]
 
         TestAllTypesProto3OneofFieldOneofNullValue ->
-            [ ( "oneofNullValue", Ok (Just Json.Encode.null) )
+            [ ( "oneofNullValue", Proto.Json.ready Json.Encode.null )
             ]
 
 
-{-| Encodes a [`TestAllTypesProto3NestedMessage`](#TestAllTypesProto3NestedMessage) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
+{-| Encodes a [`TestAllTypesProto3NestedMessage`](#TestAllTypesProto3NestedMessage) as proto3 JSON, refusing a value it holds that has no proto3 JSON form, and writing each `Any` with the registry it is run with.
 -}
-encodeTestAllTypesProto3NestedMessageWith : Proto.Registry.Registry -> TestAllTypesProto3NestedMessage -> Result Proto.Error.Error Json.Encode.Value
-encodeTestAllTypesProto3NestedMessageWith types value =
-    Proto.Json.tryObjectOfFields
-        [ ( "a", Ok (Proto.Json.implicitField 0 Json.Encode.int value.a) )
-        , ( "corecursive", Proto.Json.tryOptionalField (encodeTestAllTypesProto3_With (Proto.Json.registryDeeper types)) value.corecursive )
-        ]
+encodeTestAllTypesProto3NestedMessage : TestAllTypesProto3NestedMessage -> Proto.Json.Encoder
+encodeTestAllTypesProto3NestedMessage value =
+    Proto.Json.writeFrom encodeTestAllTypesProto3NestedMessageAt value
 
 
-{-| Encodes a [`TestAllTypesProto3NestedMessage_`](#TestAllTypesProto3NestedMessage_) as proto3 JSON, writing each `Any` it holds with the registry.
+{-| Encodes a [`TestAllTypesProto3NestedMessage`](#TestAllTypesProto3NestedMessage) at a level of its cycle, refused past the limit.
 -}
-encodeTestAllTypesProto3NestedMessage_With : Proto.Registry.Registry -> TestAllTypesProto3NestedMessage_ -> Result Proto.Error.Error Json.Encode.Value
-encodeTestAllTypesProto3NestedMessage_With types (TestAllTypesProto3NestedMessage_ value) =
-    encodeTestAllTypesProto3NestedMessageWith types value
+encodeTestAllTypesProto3NestedMessageAt : Int -> TestAllTypesProto3NestedMessage -> Proto.Json.Encoder
+encodeTestAllTypesProto3NestedMessageAt depth value =
+    if depth > Proto.Json.writeLimit then
+        Proto.Json.writeTooDeep "protobuf_test_messages.proto3.TestAllTypesProto3.NestedMessage"
+
+    else
+        Proto.Json.writeObject
+            [ ( "a", Proto.Json.implicitField 0 Json.Encode.int value.a )
+            ]
+            [ ( "corecursive", Proto.Json.writeOptional (encodeTestAllTypesProto3_At (depth + 1)) value.corecursive )
+            ]
+
+
+{-| Encodes a [`TestAllTypesProto3NestedMessage_`](#TestAllTypesProto3NestedMessage_) at a level of its cycle.
+-}
+encodeTestAllTypesProto3NestedMessage_At : Int -> TestAllTypesProto3NestedMessage_ -> Proto.Json.Encoder
+encodeTestAllTypesProto3NestedMessage_At depth (TestAllTypesProto3NestedMessage_ value) =
+    encodeTestAllTypesProto3NestedMessageAt depth value
 
 
 {-| Encodes a [`ForeignMessage`](#ForeignMessage) as proto3 JSON.
 -}
-encodeForeignMessage : ForeignMessage -> Json.Encode.Value
+encodeForeignMessage : ForeignMessage -> Proto.Json.Encoder
 encodeForeignMessage value =
+    Proto.Json.ready (jsonForeignMessage value)
+
+
+{-| Writes a [`ForeignMessage`](#ForeignMessage) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonForeignMessage : ForeignMessage -> Json.Encode.Value
+jsonForeignMessage value =
     Proto.Json.objectOfFields
         [ ( "c", Proto.Json.implicitField 0 Json.Encode.int value.c )
         ]
@@ -1079,15 +1109,29 @@ encodeForeignMessage value =
 
 {-| Encodes a [`NullHypothesisProto3`](#NullHypothesisProto3) as proto3 JSON.
 -}
-encodeNullHypothesisProto3 : NullHypothesisProto3 -> Json.Encode.Value
-encodeNullHypothesisProto3 _ =
+encodeNullHypothesisProto3 : NullHypothesisProto3 -> Proto.Json.Encoder
+encodeNullHypothesisProto3 value =
+    Proto.Json.ready (jsonNullHypothesisProto3 value)
+
+
+{-| Writes a [`NullHypothesisProto3`](#NullHypothesisProto3) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonNullHypothesisProto3 : NullHypothesisProto3 -> Json.Encode.Value
+jsonNullHypothesisProto3 _ =
     Json.Encode.object []
 
 
 {-| Encodes an [`EnumOnlyProto3`](#EnumOnlyProto3) as proto3 JSON.
 -}
-encodeEnumOnlyProto3 : EnumOnlyProto3 -> Json.Encode.Value
-encodeEnumOnlyProto3 _ =
+encodeEnumOnlyProto3 : EnumOnlyProto3 -> Proto.Json.Encoder
+encodeEnumOnlyProto3 value =
+    Proto.Json.ready (jsonEnumOnlyProto3 value)
+
+
+{-| Writes an [`EnumOnlyProto3`](#EnumOnlyProto3) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonEnumOnlyProto3 : EnumOnlyProto3 -> Json.Encode.Value
+jsonEnumOnlyProto3 _ =
     Json.Encode.object []
 
 

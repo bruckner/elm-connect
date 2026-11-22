@@ -168,8 +168,15 @@ registry =
 
 {-| Encodes a [`Scalars`](#Scalars) as proto3 JSON.
 -}
-encodeScalars : Scalars -> Json.Encode.Value
+encodeScalars : Scalars -> Proto.Json.Encoder
 encodeScalars value =
+    Proto.Json.ready (jsonScalars value)
+
+
+{-| Writes a [`Scalars`](#Scalars) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonScalars : Scalars -> Json.Encode.Value
+jsonScalars value =
     Proto.Json.objectOfFields
         [ ( "doubleValue", Proto.Json.implicitFloatField value.doubleValue )
         , ( "floatValue", Proto.Json.implicitFloatField value.floatValue )
@@ -193,8 +200,15 @@ encodeScalars value =
 
 {-| Encodes an [`Empty`](#Empty) as proto3 JSON.
 -}
-encodeEmpty : Empty -> Json.Encode.Value
-encodeEmpty _ =
+encodeEmpty : Empty -> Proto.Json.Encoder
+encodeEmpty value =
+    Proto.Json.ready (jsonEmpty value)
+
+
+{-| Writes an [`Empty`](#Empty) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonEmpty : Empty -> Json.Encode.Value
+jsonEmpty _ =
     Json.Encode.object []
 
 

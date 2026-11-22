@@ -133,19 +133,33 @@ registry =
 
 {-| Encodes a [`Note`](#Note) as proto3 JSON.
 -}
-encodeNote : Note -> Json.Encode.Value
+encodeNote : Note -> Proto.Json.Encoder
 encodeNote value =
+    Proto.Json.ready (jsonNote value)
+
+
+{-| Writes a [`Note`](#Note) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonNote : Note -> Json.Encode.Value
+jsonNote value =
     Proto.Json.objectOfFields
         [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        , ( "author", Maybe.map Api.Example.People.encodeUser value.author )
+        , ( "author", Maybe.map Api.Example.People.jsonUser value.author )
         , ( "requiredRole", Proto.Json.implicitField Api.Example.People.RoleUnspecified Api.Example.People.encodeRole value.requiredRole )
         ]
 
 
 {-| Encodes a [`GetNoteRequest`](#GetNoteRequest) as proto3 JSON.
 -}
-encodeGetNoteRequest : GetNoteRequest -> Json.Encode.Value
+encodeGetNoteRequest : GetNoteRequest -> Proto.Json.Encoder
 encodeGetNoteRequest value =
+    Proto.Json.ready (jsonGetNoteRequest value)
+
+
+{-| Writes a [`GetNoteRequest`](#GetNoteRequest) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonGetNoteRequest : GetNoteRequest -> Json.Encode.Value
+jsonGetNoteRequest value =
     Proto.Json.objectOfFields
         [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
         ]
