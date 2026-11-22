@@ -293,6 +293,25 @@ message's decoder accepted any JSON; and `Proto.Duration`'s builders
 made any span, which `toString` wrote and `fromString` refused. Where:
 design §3.2, §3.4, §3.5.
 
+### A 64-bit JSON number read at its exact value
+
+*2026-11-20.*
+
+A 64-bit integer written as a JSON number reads as the exact decimal
+value of the double JavaScript's JSON parser made of it, as a runtime
+with big integers (protobuf-es with `BigInt`) reads the same input, and
+is then range-checked. Until then the decoder printed the number with
+`String.fromInt`, JavaScript's shortest form, which past 2^53 can end in
+zeros the value does not have: `9223372036854774784` read as
+`"9223372036854775000"`, and `-9223372036854775808` as
+`"-9223372036854776000"`, out of range. The printing, not the parser,
+lost those digits, so the six protobuf conformance cases filed as a
+design choice were a defect. What cannot be known stays so: a number no
+double holds is rounded by the parser before any decoder runs, and is
+read as the rounded value. Reading the response text instead of the
+parsed value was not considered: the decoders see only the parsed
+value. Where: design §3.4.
+
 ### Encoders leave defaults out
 
 *2026-10-15.*
