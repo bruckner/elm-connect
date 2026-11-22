@@ -19,6 +19,7 @@ import Generated.Deep.Outside.V1 as Outside
 import Generated.DeepKeep.Cycles.V1 as Keep
 import Http
 import Json.Decode
+import Json.Encode
 import Proto.Any
 import Proto.Binary
 import Proto.Bytes
@@ -44,6 +45,7 @@ suite =
         , farPast
         , oneBudget
         , mixedFarPast
+        , scrubbed
         ]
 
 
@@ -873,3 +875,67 @@ mixedFarPast =
 readEnvelopeBytesValue : Bytes.Bytes -> Result Proto.Error.Binary Deep.Envelope
 readEnvelopeBytesValue =
     Proto.Binary.decode Deep.decodeEnvelopeBytes
+
+
+{-| An error we return holds no JSON nested past 50 levels, so it prints
+short however deep the input: `Json.Decode.errorToString` of the `BadJson`
+itself, not only `Proto.Error.toString`, which scrubs before printing.
+-}
+scrubbed : Test
+scrubbed =
+    let
+        deep =
+            String.repeat 100000 "[" ++ String.repeat 100000 "]"
+
+        printsShort limit result =
+            case result of
+                Err (Proto.Error.BadJson error) ->
+                    Expect.all
+                        [ \_ -> Json.Decode.errorToString error |> String.length |> Expect.lessThan limit
+                        , \_ -> Proto.Error.toString (Proto.Error.BadJson error) |> String.length |> Expect.lessThan limit
+                        ]
+                        ()
+
+                _ ->
+                    Expect.fail "not BadJson"
+
+        parsed text =
+            Json.Decode.decodeString Json.Decode.value text |> Result.withDefault Json.Encode.null
+    in
+    describe "the error a read returns"
+        [ test "when it failed past the limit" <|
+            \_ ->
+                Proto.Message.decodeJson Deep.registry Deep.messageEnvelope (parsed (valueArraysJson 1 100000))
+                    |> printsShort 1200
+        , test "when a field was given a deep value of the wrong type" <|
+            \_ ->
+                Proto.Message.decodeJson Deep.registry Deep.messageChain (parsed ("{\"label\":" ++ deep ++ "}"))
+                    |> printsShort 300
+        , test "when an Any's message was given one" <|
+            \_ ->
+                Proto.Message.decodeJson Deep.registry Deep.messageEnvelope (parsed ("{\"payload\":{\"@type\":\"type.googleapis.com/cycles.v1.Chain\",\"label\":" ++ deep ++ "}}"))
+                    |> printsShort 400
+        , test "an error detail's" <|
+            \_ ->
+                let
+                    body =
+                        "{\"code\":\"internal\",\"message\":\"x\",\"details\":[{\"type\":" ++ deep ++ "}]}"
+
+                    method =
+                        Proto.Method.init "cycles.v1.Trees" "Get" (\_ -> Ok << Deep.encodeTree) (\_ -> Deep.decodeTree) Deep.encodeTreeBytes Deep.decodeTreeBytes
+
+                    answer =
+                        Http.BadStatus_ { url = "https://api.example.com/cycles.v1.Trees/Get", statusCode = 500, statusText = "Internal Server Error", headers = Dict.fromList [ ( "content-type", "application/json" ) ] } body
+                in
+                case Rpc.response (Rpc.client Rpc.Protocol.connect "https://api.example.com") (Rpc.call method Deep.defaultTree) answer of
+                    Err error ->
+                        case Rpc.Error.details error of
+                            [ detail ] ->
+                                printsShort 300 detail
+
+                            _ ->
+                                Expect.fail "not one detail"
+
+                    Ok _ ->
+                        Expect.fail "an error read as an answer"
+        ]

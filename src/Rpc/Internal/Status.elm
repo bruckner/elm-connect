@@ -15,6 +15,7 @@ import Json.Decode exposing (Decoder, Value)
 import Proto.Any exposing (Any)
 import Proto.Error
 import Proto.Internal.Any
+import Proto.Internal.JsonError as JsonError
 import Proto.Internal.Percent as Percent
 import Proto.Internal.Registry
 import Proto.Json
@@ -235,10 +236,10 @@ connectDetail detail =
                     -- elm/json's own error, at the field, holding the value.
                     Json.Decode.decodeValue (Json.Decode.field "value" (Json.Decode.fail "Expecting base64 text, standard or URL-safe")) detail
                         |> Result.map (\_ -> Proto.Internal.Any.empty)
-                        |> Result.mapError Proto.Error.BadJson
+                        |> Result.mapError (JsonError.scrub >> Proto.Error.BadJson)
 
         Err problem ->
-            Err (Proto.Error.BadJson problem)
+            Err (Proto.Error.BadJson (JsonError.scrub problem))
 
 
 {-| Base64 text in the form an `Any` holds its binary in, the standard
@@ -349,8 +350,9 @@ bodyDetails registry answer =
 
 
 {-| A JSON read's failure as the proto layer's error: `UnregisteredType` when
-an `Any` in it is of a type the registry lacks, else its `BadJson`. The
-response reader and the status-detail reader share it.
+an `Any` in it is of a type the registry lacks, else its `BadJson`, scrubbed
+of deeply nested JSON. The response reader and the status-detail reader share
+it.
 -}
 bodyProblem : Registry -> Json.Decode.Error -> Proto.Error.Error
 bodyProblem registry problem =
@@ -359,7 +361,7 @@ bodyProblem registry problem =
             Proto.Error.UnregisteredType url
 
         Nothing ->
-            Proto.Error.BadJson problem
+            Proto.Error.BadJson (JsonError.scrub problem)
 
 
 {-| A `google.rpc.Status` detail: a proto3 JSON `Any`, converted to its

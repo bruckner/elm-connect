@@ -3874,6 +3874,22 @@ toString : Error -> String              -- for a log, as Json.Decode.errorToStri
   but its field name. The `Any` in the caller's hand still has the URL.
   `BadJson` carries elm/json's error alone: its path locates the
   failure, and a type name would have to be plumbed from every caller.
+- **Scrubbed of deep JSON.** elm/json keeps, in each `Failure`, the
+  JSON the failing decoder ran on: for a read refused at the depth
+  limit, everything below the level it stopped at, and for a field
+  given a deep value of the wrong type, the whole value. Printing it
+  with `Json.Decode.errorToString` threw past about 2,000 (Firefox) to
+  12,000 (WebKit) input levels. So every `BadJson` the runtime returns
+  (`Proto.Message.decodeJson`, an answer's body and its error details,
+  an `Any`'s conversion and `tryUnpack`) holds, in place of a failure's
+  JSON nested more than 50 levels deep, the string `"(JSON nested more
+  than 50 levels deep, left out)"`; paths and texts are kept
+  (`Proto.Internal.JsonError.scrub`, a bounded walk that runs only on
+  a failure). `Proto.Error.toString` scrubs a `BadJson` before printing,
+  so one an application built prints too. An error from the
+  application's own `Json.Decode.decodeString` with a generated decoder
+  never passes through the runtime and is not scrubbed (decisions: "A
+  union for `google.protobuf.Value`, one depth budget").
 - **What each operation gives.**
 
   | Operation | Gives | Fails with |
