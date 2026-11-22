@@ -1,13 +1,13 @@
 # `buf generate --include-imports --template buf.gen.include-imports.yaml`,
-# run by `just live-gen` into a scratch directory: the whole workspace, so
-# the Elm of buf.gen.yaml and buf.gen.google-rpc.yaml in one run, with
+# run by `just live-gen` into a scratch directory: buf.gen.yaml's Elm, with
 # every import asked for too. The output must equal the committed
-# elm/generated: the vendored googleapis module is asked for whole, and
-# its `google/api` files carry only `google.api.http`, which the plugin
-# skips, while `google/protobuf` files map to the runtime.
+# elm/generated: the googleapis files the protos import, `google/api`'s,
+# carry only `google.api.http`, which the plugin skips, while
+# `google/protobuf` files map to the runtime.
 version: v2
 inputs:
-  - directory: .
+  - directory: proto
+  - directory: routes
 plugins:
   - local: protoc-gen-elm-connect
     out: elm/generated

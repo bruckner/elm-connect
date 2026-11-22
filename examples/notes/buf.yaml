@@ -3,8 +3,8 @@
 # cannot sit outside this directory); and the googleapis files they import,
 # vendored under third_party/googleapis (its README.md) so that generation
 # needs no network. The templates generate from `proto` and `routes` only,
-# so googleapis reaches the plugins as imports, except where
-# buf.gen.google-rpc.yaml asks for error_details.proto.
+# so googleapis reaches the plugins as imports; `just error-details-check`
+# alone asks for error_details.proto.
 version: v2
 modules:
   - path: proto

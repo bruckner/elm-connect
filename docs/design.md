@@ -4486,8 +4486,7 @@ Examples: `examples/notes/elm/` is a browser
 application (`Main.elm`) that lists, creates, edits with an update
 mask, archives and deletes notes, and shows each error's code, message,
 source and details (`google.rpc.BadRequest` and `ErrorInfo` by type,
-from `Google.Rpc`, which buf generates from googleapis'
-`error_details.proto` with `buf.gen.google-rpc.yaml`), with a toggle
+read with the runtime's `Proto.ErrorDetails`), with a toggle
 between the two protocols. Every call goes through one function,
 `Api.rpc`, the wrapper §5.1 describes. It reuses the generated
 tree the runner compiles, `examples/notes/elm/generated`, whose drift

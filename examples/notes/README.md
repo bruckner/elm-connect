@@ -16,12 +16,11 @@ proto/notes/v1/notes.proto   the API; its comments document each method's errors
 buf.yaml                     the modules: proto, routes and the vendored googleapis
 third_party/googleapis/      the googleapis files the API imports (README.md: provenance)
 buf.gen.yaml                 Go stubs into server/gen, Elm into elm/generated
-buf.gen.google-rpc.yaml      Elm for google.rpc's error details into elm/generated
-buf.gen.include-imports.yaml the Elm of both, run with --include-imports to check it adds nothing
+buf.gen.include-imports.yaml buf.gen.yaml's Elm, run with --include-imports to check it adds nothing
 buf.gen.gateway.yaml         grpc-gateway's proxies into server/gen
 buf.gen.gateway-apart.yaml   the one routes.v1 method it generates apart
 server/                      the Go server (connect-go, Vanguard and grpc-gateway); routes.go echoes routes.v1
-elm/generated/               the generated Elm: Notes.V1, Notes.V1.NotesService, Google.Rpc
+elm/generated/               the generated Elm: Notes.V1, Notes.V1.NotesService, Routes.V1
 elm/src/Main.elm             the application
 elm/src/Api.elm              the one function every call is sent through
 elm/src/Snippets/            the examples of the root README and docs/, compiled with the application
@@ -78,18 +77,13 @@ codecs) and `elm/generated/Notes/V1/NotesService.elm` (one function per
 method), each declaration documented with the proto's comment and its
 one-line declaration, a call with its Connect path and HTTP bindings
 too, and the two write the same files. googleapis reaches buf's plugins
-as imports only, so nothing is generated for it. The application
-also reads `google.rpc` error details, so `buf.gen.google-rpc.yaml`
-generates `google/rpc/error_details.proto` from the vendored googleapis
-module into `Google.Rpc`:
+as imports only, so nothing is generated for it. The application reads
+`google.rpc` error details with the runtime's `Proto.ErrorDetails`, so
+it generates nothing from `google/rpc/error_details.proto`.
 
-```sh
-buf generate --template buf.gen.google-rpc.yaml
-```
-
-`just live-gen` runs these two and the server's three, with every
-plugin built into its build directory, and fails if the output differs
-from what is committed. It then runs `buf generate --include-imports --template
+`just live-gen` runs `buf generate` and the server's three templates,
+with every plugin built into its build directory, and fails if the
+output differs from what is committed. It then runs `buf generate --include-imports --template
 buf.gen.include-imports.yaml` into a scratch directory and fails unless
 that gives the same files: with every import asked for, the plugin still
 writes no `Google.Api` module, since it skips `google/api/http.proto`
