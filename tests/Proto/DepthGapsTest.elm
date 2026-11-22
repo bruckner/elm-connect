@@ -16,7 +16,6 @@ import Proto.Any
 import Proto.Binary
 import Proto.Duration
 import Proto.Error
-import Proto.Internal.JsonError as JsonError
 import Proto.Json
 import Proto.Message
 import Proto.WellKnown
@@ -53,16 +52,6 @@ suite =
                     , \_ -> Proto.Any.toJson Proto.WellKnown.registry (packed 100) |> Result.map (\_ -> ()) |> Expect.equal (Ok ())
                     ]
                     ()
-        , test "a failure's JSON nested past 50 levels is left out, so the error prints" <|
-            \_ ->
-                case Json.Decode.decodeString Json.Decode.string (lists 100000) of
-                    Err error ->
-                        Proto.Error.toString (Proto.Error.BadJson (JsonError.scrub error))
-                            |> String.length
-                            |> Expect.lessThan 200
-
-                    Ok _ ->
-                        Expect.fail "decoded"
         ]
 
 

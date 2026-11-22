@@ -39,7 +39,6 @@ import Json.Encode
 import Proto.Error
 import Proto.Field as Field
 import Proto.Internal.Binary
-import Proto.Internal.JsonError as JsonError
 import Proto.Internal.Message as Internal
 import Proto.Internal.Registry as Registry exposing (Registry)
 
@@ -136,7 +135,7 @@ decodeJson registry (Internal.Message _ codecs) json =
                     Err (Proto.Error.UnregisteredType url)
 
                 Nothing ->
-                    Err (Proto.Error.BadJson (JsonError.scrub problem))
+                    Err (Proto.Error.BadJson problem)
 
 
 {-| A message read from protobuf binary. An `Any` it holds keeps its binary,

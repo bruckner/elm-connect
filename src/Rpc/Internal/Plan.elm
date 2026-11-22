@@ -21,7 +21,6 @@ import Http
 import Json.Decode exposing (Decoder)
 import Json.Encode
 import Proto.Error
-import Proto.Internal.JsonError as JsonError
 import Proto.Internal.Method exposing (Method(..), RouteShape(..))
 import Proto.Registry exposing (Registry)
 import Proto.Route exposing (PathError)
@@ -309,13 +308,7 @@ a type the registry lacks named as `UnregisteredType`.
 badText : Registry -> GoodText -> Json.Decode.Error -> Error
 badText registry good problem =
     Error.badBody
-        (case Status.bodyProblem registry problem of
-            Proto.Error.BadJson kept ->
-                Proto.Error.BadJson (JsonError.scrub kept)
-
-            other ->
-                other
-        )
+        (Status.bodyProblem registry problem)
         (Status.answerOf good.metadata good.raw)
 
 

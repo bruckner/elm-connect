@@ -28,7 +28,6 @@ one as `BadBinary`.
 
 import Json.Decode
 import Json.Encode
-import Proto.Internal.JsonError as JsonError
 
 
 {-| Why a message could not be read, written or unpacked:
@@ -149,7 +148,7 @@ toString error =
                 ++ "."
 
         BadJson jsonError ->
-            Json.Decode.errorToString (JsonError.scrub jsonError)
+            Json.Decode.errorToString jsonError
 
         TypeMismatch { expected, actual } ->
             "An Any holding " ++ actual ++ " was unpacked as " ++ expected ++ "."
