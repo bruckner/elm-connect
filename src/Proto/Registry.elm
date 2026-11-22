@@ -60,6 +60,7 @@ import Json.Decode
 import Proto.Bytes
 import Proto.Error exposing (Error(..))
 import Proto.Internal.Binary
+import Proto.Internal.JsonError as JsonError
 import Proto.Internal.Message as Message exposing (Message)
 import Proto.Internal.Registry as Internal
 
@@ -101,7 +102,7 @@ register (Message.Message name codecs) (Internal.Registry leniency depth entries
                 \registry json ->
                     Json.Decode.decodeValue (codecs.decodeJson registry) json
                         |> Result.map (codecs.encodeBinary >> Bytes.Encode.encode >> Proto.Bytes.toBase64)
-                        |> Result.mapError BadJson
+                        |> Result.mapError (JsonError.scrub >> BadJson)
             }
     in
     Internal.Registry leniency depth (Dict.insert name entry entries)

@@ -25,6 +25,11 @@
   read from binary to JSON counts the `Any`s and the messages around
   them as a read does, and one past the limit fails with `TooDeep`,
   named `google.protobuf.Any`, where it overflowed the stack.
+- An error the runtime returns no longer holds JSON nested more than 50
+  levels deep: a `BadJson` from `Proto.Message.decodeJson`, an answer's
+  body or error details, or an `Any`'s conversion holds a short marker in
+  its place, so printing it with `Json.Decode.errorToString` or
+  `Proto.Error.toString` no longer throws on deep input.
 - A message on a cycle that holds a `Struct`, `Value`, `ListValue` or
   `Any` reads it through new depth-taking helpers, which generated code
   calls: `Proto.Json.structAt`, `listValueAt`, `jsonValueAt`,

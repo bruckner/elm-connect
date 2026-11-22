@@ -207,6 +207,13 @@ accepts writes or fails. Telling a binary read its starting depth
 instead would have taken a field in every binary decoder, which every
 program pays for (31 bytes before minification in the priced spike).
 
+Every `BadJson` the runtime returns is scrubbed of JSON nested past 50
+levels. elm/json keeps the JSON a decoder failed on, so an error from a
+refused deep read, or from a field given a deep value of the wrong type,
+held JSON as deep as the input, and printing it threw past about 2,000
+(Firefox) to 12,000 (WebKit) levels. The walk runs only on a failure. A
+smaller value cannot be attached where elm/json builds the failure.
+
 No guard on entry points. Catching a throw inside elm/json's
 `decodeString` would have covered more, but it rests on how two kernel
 functions are written, not on the language, and with the union and the
