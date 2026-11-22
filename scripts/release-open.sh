@@ -151,8 +151,7 @@ if [ "$patch" -eq 0 ]; then
 STEPS
 fi
 cat <<STEPS
-  - just live-gen, just live-conformance-gen, just eliza-gen and
-    just protobuf-conformance-gen regenerate the committed Elm, whose
+  - just live-gen and just eliza-gen regenerate the committed Elm, whose
     headers carry the version.
   - just check.
 STEPS

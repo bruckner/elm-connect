@@ -4851,9 +4851,10 @@ Within a major version:
   trees keep the real version: the notes example's, which is what a
   user sees and whose drift `just live` fails on (and `just check`, for
   the modules of `routes.proto`, which the route test compares with the
-  placeholder in place of the version), and the conformance
-  suite's, which the plugin writes through buf; every release
-  regenerates them.
+  placeholder in place of the version), and the Eliza example's; every
+  release regenerates them.
+  The live suite's and the protobuf testee's generated Elm is not
+  committed: their recipes write it on every run.
 
 ### 8.5 The drift check
 
@@ -4940,8 +4941,7 @@ in no other:
    (§8.2): before 1.0 and at a major it replaces the previous values,
    from 1.0 on within a major it is added after them. It commits
    nothing, and prints what to run next: `just bless` for a new
-   sentinel, `just live-gen`, `just live-conformance-gen`,
-   `just eliza-gen` and `just protobuf-conformance-gen`, whose committed
+   sentinel, `just live-gen` and `just eliza-gen`, whose committed
    Elm names the version in its header, and the gate.
    `tests/lockstep.rs` fails until the numbers agree, in the gate and
    again in the release workflow. The maintainer commits all of it as

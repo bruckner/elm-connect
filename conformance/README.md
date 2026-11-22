@@ -85,8 +85,9 @@ and blessing writes it, so a patch release leaves the corpus alone. A
 minor or major release still re-blesses every expected module, for the
 header's minor and the `elmConnectVersion_` line. The
 other committed generated code keeps the real version: the notes
-example's, which is what a user sees, and the conformance suite's
-under `live/suite/elm`, which the plugin writes through buf.
+example's, which is what a user sees. The live suite's and the protobuf
+testee's generated code is not committed: their recipes write it on
+every run (below).
 
 To add a case, create `cases/<name>/input/` with its protos and bless. For
 a case that is meant to fail, create an empty `expected/diagnostics.txt`
@@ -376,6 +377,7 @@ live/
   suite/              buf.yaml and buf.gen.yaml, the suite's protos
                       (proto/, vendored; README.md: provenance), and the
                       Elm (elm/) and JavaScript (js/) generated from them
+                      by just live-conformance-gen (gitignored)
   package.json        @bufbuild/protobuf and protoc-gen-es, pinned with
                       package-lock.json
   build/              the compiled program and connectconformance (gitignored)
@@ -708,8 +710,11 @@ them and `sendTraced` gives them. The `sendTraced` run adds
 protos exported from `buf.build/connectrpc/conformance` at the commit its
 v1.0.7 label names (`just protos-refresh` re-exports them), so generation
 needs no network;
-`just live-conformance-gen` installs the npm packages with `npm ci`,
-regenerates, and fails if the output differs from what is committed.
+`just live-conformance-gen`, which `just live-build` runs first,
+installs the npm packages with `npm ci` and generates both into
+`suite/elm/` and `suite/js/`, which are gitignored: the plugin's output
+is reviewed in the corpus, and protoc-gen-es's is the pinned release's.
+
 ### The route fixtures, live
 
 The example server serves `routes/routes.proto` too
@@ -816,8 +821,9 @@ just protobuf-conformance
 ```
 
 fetches the runner (v32.0-rc2, prebuilt by bufbuild/protobuf-conformance,
-checked against its SHA-256), checks that `protobuf/generated/` and the
-committed proto are current, compiles the testee and runs the suite with
+checked against its SHA-256), generates `protobuf/generated/` (gitignored)
+with the CLI built from the checkout, checks that the committed proto is
+the runner's, compiles the testee and runs the suite with
 `--enforce_recommended`. It must fail exactly the cases in
 `protobuf/failure_list.txt`: an unlisted failure fails the run, and so
 does a listed case that passes. Protobuf binary and proto3 JSON run, in

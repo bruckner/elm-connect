@@ -3,7 +3,10 @@ elm-stuff/
 /conformance/harness/generated/
 /conformance/error-details/generated/
 /conformance/live/build/
+/conformance/live/suite/elm/
+/conformance/live/suite/js/
 /conformance/protobuf/build/
+/conformance/protobuf/generated/
 node_modules/
 .DS_Store
 mise.local.toml
