@@ -16,6 +16,7 @@ import Proto.Internal.Registry
 import Proto.Json
 import Proto.Message as Message exposing (Message)
 import Proto.Registry as Registry exposing (Registry)
+import Proto.Value
 import Proto.WellKnown as WellKnown
 import Test exposing (Test, describe, test)
 import Time
@@ -244,7 +245,7 @@ suite =
                 , Any.pack WellKnown.timestamp (Time.millisToPosix 0)
                 , Any.pack WellKnown.empty ()
                 , Any.pack WellKnown.fieldMask [ "a.b", "c" ]
-                , Any.pack WellKnown.struct (Dict.fromList [ ( "k", Json.Encode.int 1 ) ])
+                , Any.pack WellKnown.struct (Dict.fromList [ ( "k", Proto.Value.ValueNumber 1 ) ])
                 , Any.pack WellKnown.int64Value "5"
                 ]
                     |> List.map (Proto.Json.encodeAnyWith WellKnown.registry >> Result.map (Json.Encode.encode 0))

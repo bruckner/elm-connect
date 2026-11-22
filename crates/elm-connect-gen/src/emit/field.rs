@@ -3,8 +3,8 @@
 
 use super::scalar::{Holding, Repr};
 use super::{
-    CORE_DICT, CORE_STRING, Emitter, JSON_DECODE, JSON_ENCODE, PROTO_ANY, PROTO_DURATION,
-    PROTO_JSON, TIME, call, scalar,
+    CORE_DICT, CORE_STRING, Emitter, JSON_DECODE, PROTO_ANY, PROTO_DURATION, PROTO_JSON,
+    PROTO_VALUE, TIME, call, scalar,
 };
 use crate::elm::ast::{Expr, Type};
 use crate::elm::build::{apply, list, qualified, ty, var};
@@ -36,9 +36,9 @@ pub(super) enum FieldShape<'p> {
     /// `Dict` since Elm's `Bool` is not `comparable`; `[]` when absent or
     /// `null` (design §3.2).
     BoolMap(ValueShape<'p>),
-    /// `Maybe Json.Encode.Value`: a singular or `optional` field of
-    /// `google.protobuf.Value`, `Nothing` when absent and `Just` its JSON
-    /// otherwise, `null` included, since `null` is one of a `Value`'s own
+    /// `Maybe Proto.Value.Value`: a singular or `optional` field of
+    /// `google.protobuf.Value`, `Nothing` when absent and `Just` its value
+    /// otherwise, `ValueNull` included, since `null` is one of a `Value`'s own
     /// values and protobuf's parsers read a field holding it as set
     /// (design §3.5).
     Json,
@@ -101,7 +101,7 @@ pub(super) enum Zeroed<'p> {
     Scalar(Repr),
     /// A generated enum, whose zero value is this constructor.
     Enum(&'p TypeName, &'p str),
-    /// `google.protobuf.Value`: any JSON, held as a `Json.Encode.Value`.
+    /// `google.protobuf.Value`: any JSON, held as a `Proto.Value.Value`.
     /// A list, map or oneof member holds it bare; a singular or `optional`
     /// field holds it as [`FieldShape::Json`], never as
     /// [`FieldShape::Plain`], since `null` is a value it can be set to
@@ -140,10 +140,10 @@ pub(super) enum Present<'p> {
     /// `google.protobuf.FieldMask`: its paths, a `List String`.
     FieldMask,
     /// `google.protobuf.Struct`: a JSON object, a
-    /// `Dict String Json.Encode.Value`.
+    /// `Dict String Proto.Value.Value`.
     Struct,
     /// `google.protobuf.ListValue`: a JSON array, a
-    /// `List Json.Encode.Value`.
+    /// `List Proto.Value.Value`.
     ListValue,
     /// `google.protobuf.Any`: the runtime's `Proto.Any.Any`, holding JSON
     /// under `wire=json` and binary otherwise.
@@ -212,14 +212,17 @@ impl Emitter {
     /// the field is left out (design §3.2). A field without presence is
     /// left out at its proto3 default, a field with presence when
     /// `Nothing`, a repeated or map field when empty. A field of
-    /// `google.protobuf.Value` is its `Maybe Json.Encode.Value` itself, so
-    /// `Just Json.Encode.null` writes `null`. A field of
+    /// `google.protobuf.Value` is its value's JSON when `Just`, so
+    /// `Just ValueNull` writes `null`. A field of
     /// `google.protobuf.Empty` is always written, as `{}`: Elm holds it as
     /// `()`, without the presence its proto type has, and writing it keeps
     /// it set (design §3.5).
     pub(super) fn encode_field(&mut self, shape: FieldShape, value: Expr) -> Expr {
         let (helper, args) = match shape {
-            FieldShape::Json => return value,
+            FieldShape::Json => {
+                let encode = self.reference((PROTO_JSON, "encodeValue"));
+                return apply(qualified("Maybe", "map"), [encode, value]);
+            }
             FieldShape::Plain(Zeroed::Empty) => {
                 let encoded = self.encode_value(ValueShape::Zeroed(Zeroed::Empty), value);
                 return apply(var(self.core("Just")), [encoded]);
@@ -390,7 +393,7 @@ impl Emitter {
             | ValueShape::Present(Present::Wrapper(repr)) => self.scalar_type(repr),
             ValueShape::Zeroed(Zeroed::Enum(name, _))
             | ValueShape::Present(Present::Message(name)) => self.generated_type(name),
-            ValueShape::Zeroed(Zeroed::Json) => self.library_type(JSON_ENCODE, "Value", []),
+            ValueShape::Zeroed(Zeroed::Json) => self.library_type(PROTO_VALUE, "Value", []),
             ValueShape::Present(Present::Timestamp) => self.library_type(TIME, "Posix", []),
             ValueShape::Present(Present::Duration) => {
                 self.exposed_type(PROTO_DURATION, "Duration", [])
@@ -399,12 +402,12 @@ impl Emitter {
                 ty(self.core("List"), [ty(self.core("String"), [])])
             }
             ValueShape::Present(Present::Struct) => {
-                let value = self.library_type(JSON_ENCODE, "Value", []);
+                let value = self.library_type(PROTO_VALUE, "Value", []);
                 let key = ty(self.core("String"), []);
                 self.exposed_type(CORE_DICT, "Dict", [key, value])
             }
             ValueShape::Present(Present::ListValue) => {
-                let value = self.library_type(JSON_ENCODE, "Value", []);
+                let value = self.library_type(PROTO_VALUE, "Value", []);
                 ty(self.core("List"), [value])
             }
             ValueShape::Present(Present::Any) => self.library_type(PROTO_ANY, "Any", []),
@@ -413,13 +416,9 @@ impl Emitter {
         }
     }
 
-    /// The JSON of one value, `value`: its encoder applied to it, or the
-    /// value itself when it is JSON already.
+    /// The JSON of one value, `value`: its encoder applied to it.
     pub(super) fn encode_value(&mut self, shape: ValueShape, value: Expr) -> Expr {
-        match shape {
-            ValueShape::Zeroed(Zeroed::Json) => value,
-            shape => call(self.value_encoder(shape), [value]),
-        }
+        call(self.value_encoder(shape), [value])
     }
 
     /// The encoder of one value. One that reaches an `Any` takes the
@@ -436,7 +435,13 @@ impl Emitter {
                 }
                 _ => self.reference((PROTO_JSON, "encodeAnyWith")),
             };
-            return apply(encoder, [var(REGISTRY_ARGUMENT)]);
+            let registry = if self.deeper_registry {
+                let deeper = self.reference((PROTO_JSON, "registryDeeper"));
+                apply(deeper, [var(REGISTRY_ARGUMENT)])
+            } else {
+                var(REGISTRY_ARGUMENT)
+            };
+            return apply(encoder, [registry]);
         }
         match value {
             ValueShape::Zeroed(Zeroed::Scalar(repr))
@@ -445,7 +450,7 @@ impl Emitter {
             | ValueShape::Present(Present::Message(name)) => {
                 self.generated_value(&name.module, name.encoder_name())
             }
-            ValueShape::Zeroed(Zeroed::Json) => var("identity"),
+            ValueShape::Zeroed(Zeroed::Json) => self.reference((PROTO_JSON, "encodeValue")),
             ValueShape::Present(Present::Timestamp) => {
                 self.reference((PROTO_JSON, "encodeTimestamp"))
             }
@@ -501,6 +506,13 @@ impl Emitter {
                 ValueShape::Present(Present::Wrapped(wrapper, _)) => {
                     var(with_registry(wrapper.decoder_name()))
                 }
+                _ if self.deep.is_some() => {
+                    let nested = self.reference((PROTO_JSON, "nestedAnyWith"));
+                    return apply(
+                        nested,
+                        [var(super::recursion::DEPTH), var(REGISTRY_ARGUMENT)],
+                    );
+                }
                 _ => self.reference((PROTO_JSON, "anyWith")),
             };
             return apply(decoder, [var(REGISTRY_ARGUMENT)]);
@@ -512,10 +524,22 @@ impl Emitter {
             | ValueShape::Present(Present::Message(name)) => {
                 self.generated_value(&name.module, name.decoder_name())
             }
-            ValueShape::Zeroed(Zeroed::Json) => self.reference((JSON_DECODE, "value")),
+            ValueShape::Zeroed(Zeroed::Json) if self.deep.is_some() => {
+                let nested = self.reference((PROTO_JSON, "nestedValue"));
+                apply(nested, [var(super::recursion::DEPTH)])
+            }
+            ValueShape::Zeroed(Zeroed::Json) => self.reference((PROTO_JSON, "value")),
             ValueShape::Present(Present::Timestamp) => self.reference((PROTO_JSON, "timestamp")),
             ValueShape::Present(Present::Duration) => self.reference((PROTO_JSON, "duration")),
             ValueShape::Present(Present::FieldMask) => self.reference((PROTO_JSON, "fieldMask")),
+            ValueShape::Present(Present::Struct) if self.deep.is_some() => {
+                let nested = self.reference((PROTO_JSON, "nestedStruct"));
+                apply(nested, [var(super::recursion::DEPTH)])
+            }
+            ValueShape::Present(Present::ListValue) if self.deep.is_some() => {
+                let nested = self.reference((PROTO_JSON, "nestedListValue"));
+                apply(nested, [var(super::recursion::DEPTH)])
+            }
             ValueShape::Present(Present::Struct) => self.reference((PROTO_JSON, "struct")),
             ValueShape::Present(Present::ListValue) => self.reference((PROTO_JSON, "listValue")),
             ValueShape::Present(Present::Any) => self.reference((PROTO_JSON, "any")),

@@ -34,6 +34,7 @@ import Proto.Message
 import Proto.Query
 import Proto.Registry
 import Proto.Route
+import Proto.Value
 import Proto.Version
 import Proto.WellKnown
 import Time
@@ -95,7 +96,7 @@ type alias Note =
     , updateTime : Maybe Time.Posix
     , ttl : Maybe Duration
     , metadata : Dict String String
-    , extra : Maybe (Dict String Json.Encode.Value)
+    , extra : Maybe (Dict String Proto.Value.Value)
     , kind : NoteKind
     , attachment : Maybe Proto.Any.Any
     , revision : Maybe String

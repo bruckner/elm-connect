@@ -11,6 +11,7 @@ import Proto.Enum as Enum
 import Proto.Field as Field exposing (Cardinality(..), Kind(..), Scalar(..))
 import Proto.Json
 import Proto.Message as Message exposing (Message)
+import Proto.Value
 import Proto.WellKnown as WellKnown
 import Test exposing (Test, describe, test)
 import Time
@@ -42,8 +43,8 @@ suite =
                 , check WellKnown.timestamp (Time.millisToPosix 1500)
                 , check WellKnown.duration (Duration.fromMilliseconds 1500)
                 , check WellKnown.fieldMask [ "a.b" ]
-                , check WellKnown.struct (Dict.fromList [ ( "k", Json.Encode.string "v" ) ])
-                , check WellKnown.listValue [ Json.Encode.string "v" ]
+                , check WellKnown.struct (Dict.fromList [ ( "k", Proto.Value.ValueString "v" ) ])
+                , check WellKnown.listValue [ Proto.Value.ValueString "v" ]
                 , check WellKnown.doubleValue 1.5
                 , check WellKnown.floatValue 1.5
                 , check WellKnown.int64Value "-7"
@@ -78,7 +79,7 @@ suite =
         , test "Value, and Any inside Any" <|
             \_ ->
                 ( Message.typeName WellKnown.value
-                , Any.unpack WellKnown.value (Any.pack WellKnown.value Json.Encode.null) |> Maybe.map (Json.Encode.encode 0)
+                , Any.unpack WellKnown.value (Any.pack WellKnown.value Proto.Value.ValueNull) |> Maybe.map (Proto.Value.toJson >> Json.Encode.encode 0)
                 , Any.pack WellKnown.any (Any.pack WellKnown.boolValue True)
                     |> Any.unpack WellKnown.any
                     |> Maybe.andThen (Any.unpack WellKnown.boolValue)

@@ -341,6 +341,19 @@ impl Emitter {
                 let from_number = lambda([Pattern::Wildcard], Expr::Unit);
                 apply(codec, [to_number, from_number])
             }
+            (
+                TypeRef::WellKnown(
+                    known @ (WellKnown::Struct | WellKnown::ListValue | WellKnown::Value),
+                ),
+                _,
+            ) if self.binary_depth => {
+                let nested = match known {
+                    WellKnown::Struct => "nestedStruct",
+                    WellKnown::ListValue => "nestedListValue",
+                    _ => "nestedValue",
+                };
+                apply(self.binary(nested), [var(DEPTH)])
+            }
             (TypeRef::WellKnown(known), _) => self.binary(well_known_codec(*known, holding)),
         }
     }
@@ -516,6 +529,13 @@ impl Emitter {
     /// more: `Proto.Binary.memo (\depth -> merge)`, which makes the merge
     /// for each depth once.
     pub(super) fn message_merge_bytes(&mut self, shape: &MessageShape) -> Vec<Decl> {
+        self.binary_depth = shape.message.recursive;
+        let decls = self.message_merge_bytes_body(shape);
+        self.binary_depth = false;
+        decls
+    }
+
+    fn message_merge_bytes_body(&mut self, shape: &MessageShape) -> Vec<Decl> {
         let mut branches: Vec<(u32, Expr)> = Vec::new();
         let mut wires: Vec<(u32, u32)> = Vec::new();
         let mut reversed: Vec<String> = Vec::new();

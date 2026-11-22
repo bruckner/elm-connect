@@ -20,7 +20,9 @@ elmConnectVersion_ =
 
 
 {-| On a cycle and holding an `Any`: its JSON decoders take the registry, so
-they are built as they are entered rather than once.
+they are built as they are entered rather than once. The `Any`, and the
+arrays and objects of its `Struct`, `Value` and `ListValue`, count from the
+depth of the message holding them.
 
 `message cycles.v1.Envelope`
 
@@ -32,6 +34,9 @@ descriptor =
     Proto.Message.descriptor "cycles.v1.Envelope"
         [ payload
         , replies
+        , data
+        , value
+        , list
         ]
 
 
@@ -47,3 +52,24 @@ payload =
 replies : Proto.Field.Descriptor
 replies =
     Proto.Field.descriptor "replies" "replies" 2 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "cycles.v1.Envelope")
+
+
+{-| `google.protobuf.Struct data = 3;`
+-}
+data : Proto.Field.Descriptor
+data =
+    Proto.Field.descriptor "data" "data" 3 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Struct")
+
+
+{-| `google.protobuf.Value value = 4;`
+-}
+value : Proto.Field.Descriptor
+value =
+    Proto.Field.descriptor "value" "value" 4 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Value")
+
+
+{-| `google.protobuf.ListValue list = 5;`
+-}
+list : Proto.Field.Descriptor
+list =
+    Proto.Field.descriptor "list" "list" 5 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.ListValue")
