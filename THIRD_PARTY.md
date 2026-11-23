@@ -29,8 +29,9 @@ beside them in `examples/notes/third_party/googleapis/LICENSE`.
 
 ## Connect conformance suite
 
-`conformance/live/suite/elm/` and `conformance/live/suite/js/` are
-generated (by protoc-gen-elm-connect and protoc-gen-es) from the
+`conformance/live/suite/elm/` and `conformance/live/suite/js/`, which
+are not committed, are generated (by protoc-gen-elm-connect and
+protoc-gen-es) from the
 `connectrpc.conformance.v1` protos of the
 [Connect conformance suite](https://github.com/connectrpc/conformance),
 v1.0.7, which are Copyright The Connect Authors and licensed under the
@@ -52,8 +53,8 @@ is [protobuf](https://github.com/protocolbuffers/protobuf)'s
 is Copyright 2008 Google Inc. and licensed under the BSD 3-Clause License,
 as its header says; protobuf's `LICENSE` at v32.0 is beside it, in
 `conformance/protobuf/proto/LICENSE`. The Elm
-in `conformance/protobuf/generated/` is generated from it and keeps its
-comments. The conformance suite's runner, `conformance_test_runner`, is
+in `conformance/protobuf/generated/`, which is not committed, is
+generated from it and keeps its comments. The conformance suite's runner, `conformance_test_runner`, is
 fetched at run time and not kept in the repository.
 
 ## Eliza

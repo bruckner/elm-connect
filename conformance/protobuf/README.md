@@ -13,7 +13,7 @@ just protobuf-conformance
 ```
 proto/google/protobuf/test_messages_proto3.proto   the suite's proto3 test messages
 proto/LICENSE                                      protobuf's license (BSD 3-Clause), which covers it
-generated/                                         the Elm elm-connect generates from it, committed
+generated/                                         the Elm elm-connect generates from it, at each run (gitignored)
 src/Testee.elm                                     the Elm worker that reads and writes each message
 testee.mjs, testee.sh                              the Node driver conformance_test_runner starts
 fetch-runner.sh                                    fetches the runner, checked against its SHA-256
@@ -82,10 +82,9 @@ move the pin, change the version and both digests together.
 `src/google/protobuf/test_messages_proto3.proto`, unmodified: the same file
 as v32.0-rc2's, which the runner's archive carries in `include/`.
 
-`just protobuf-conformance` fails if it differs from the runner's copy,
-and if `generated/` is not what `elm-connect check` expects.
-`just protobuf-conformance-gen` regenerates `generated/` with the CLI built
-from the checkout, with every option at its default but `unknown_fields`,
+`just protobuf-conformance` fails if it differs from the runner's copy.
+Before each run it generates `generated/` afresh with the CLI built from
+the checkout, with every option at its default but `unknown_fields`,
 which is `keep`:
 
 ```sh

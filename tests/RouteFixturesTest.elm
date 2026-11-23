@@ -1,7 +1,7 @@
 module RouteFixturesTest exposing (suite)
 
+import Generated.Routes.Fixtures as RouteFixtures
 import Replay
-import RouteFixtures
 import Test exposing (Test, describe)
 
 

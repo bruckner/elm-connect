@@ -1,17 +1,19 @@
 module RouteShapesTest exposing (suite)
 
 {-| Every binding shape whose route function was once left to the
-interpreter (the corpus case `routes_typed_shapes`, generated into
-`tests/Shapes` by `crates/elm-connect-gen/tests/routes.rs`): each method's
-typed routes against the interpreter over the same bindings as data
-(`Proto.Method.withBindings`), through `Rpc.request` over transcoding, for
-every binding and a spread of requests. The two agree but where the typed
-route is deliberately different, which the last tests pin.
+interpreter (the corpus case `routes_typed_shapes`, written under
+`tests/Generated/Shapes` by `crates/elm-connect-gen/tests/routes.rs` at test
+time): each method's typed routes against the interpreter over the same
+bindings as data (`Proto.Method.withBindings`), through `Rpc.request` over
+transcoding, for every binding and a spread of requests. The two agree but
+where the typed route is deliberately different, which the last tests pin.
 -}
 
 import Bytes exposing (Bytes)
 import Bytes.Encode
 import Expect
+import Generated.Shapes.Blobs.V1 as B
+import Generated.Shapes.Blobs.V1.BlobService as Service
 import Json.Encode
 import Proto.Any
 import Proto.Method
@@ -20,8 +22,6 @@ import Rpc.Body
 import Rpc.Call
 import Rpc.Client
 import Rpc.Protocol
-import Shapes.Blobs.V1 as B
-import Shapes.Blobs.V1.BlobService as Service
 import Test exposing (Test, describe, test)
 
 

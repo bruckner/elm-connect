@@ -139,12 +139,14 @@ elm-check: tests-gen
 
 # Write the Elm the tests import under tests/Generated (gitignored): the
 # codec round trips' (the modules generated from conformance/codec under
-# each option set, the samples and the codec table) and the depth cycles'
-# (the depth_cycles cases under a module prefix). Their tests write them on
+# each option set, the samples and the codec table), the depth cycles' (the
+# depth_cycles cases under a module prefix), and the routes' (routes.proto's
+# modules and the routes_typed_shapes case under a module prefix, and the
+# route fixtures and properties as Elm data). Their tests write them on
 # every run, so `test` does too; elm-check depends on this so it works on a
 # fresh clone.
 tests-gen:
-    cargo test -p elm-connect-gen --test codec --test depth
+    cargo test -p elm-connect-gen --test codec --test depth --test routes
 
 # Hold Proto.ErrorDetails, written by hand in generated code's form, to
 # what the generator gives for google/rpc/error_details.proto
@@ -230,13 +232,10 @@ test-with elm:
     conformance/test-with.sh {{elm}}
 
 # Rewrite the conformance corpus's expected output (modules and warnings.txt, or
-# diagnostics.txt), the Elm replay of the route fixtures and the route
-# properties (tests/Routes, tests/RouteFixtures.elm, tests/RouteProperties.elm),
-# and the typed route shapes (tests/Shapes) to what the generator produces now.
-# Review the diff before committing it.
+# diagnostics.txt) to what the generator produces now. Review the diff before
+# committing it.
 bless:
     ELM_CONNECT_BLESS=1 cargo test -p elm-connect-gen --test conformance -- --exact golden diagnostics
-    ELM_CONNECT_BLESS=1 cargo test -p elm-connect-gen --test routes -- --exact the_elm_replay_is_current the_route_properties_are_current the_typed_shapes_are_current
 
 # The live suite (design section 7, conformance/README.md): the runtime,
 # compiled into conformance/live's headless program and run from Node,
@@ -344,9 +343,9 @@ envoy-install:
     func-e run --version > /dev/null
 
 # Regenerate the example's Elm client (buf.gen.yaml), Go stubs
-# (buf.gen.server.yaml), grpc-gateway's proxies (two templates;
-# buf.gen.gateway.yaml says why) and google.rpc's Elm with buf, and fail if
-# they differ from what is committed (or staged). The plugins are built into
+# (buf.gen.server.yaml) and grpc-gateway's proxies (two templates;
+# buf.gen.gateway.yaml says why) with buf, and fail if they differ from
+# what is committed (or staged). The plugins are built into
 # the build directory's live/bin: protoc-gen-go, protoc-gen-connect-go, protoc-gen-go-grpc and
 # protoc-gen-grpc-gateway at the versions the server's go.mod pins,
 # protoc-gen-elm-connect from this workspace.
@@ -365,16 +364,16 @@ live-gen:
     cd examples/notes && PATH="{{target}}/live/bin:$PATH" buf generate --template buf.gen.server.yaml
     cd examples/notes && PATH="{{target}}/live/bin:$PATH" buf generate --template buf.gen.gateway.yaml
     cd examples/notes && PATH="{{target}}/live/bin:$PATH" buf generate --template buf.gen.gateway-apart.yaml
-    cd examples/notes && PATH="{{target}}/live/bin:$PATH" buf generate --template buf.gen.google-rpc.yaml
     git diff --exit-code -- examples/notes/server/gen examples/notes/elm/generated
     @test -z "$(git ls-files --others --exclude-standard -- examples/notes/server/gen examples/notes/elm/generated)" || (echo "generated files not committed:"; git ls-files --others --exclude-standard -- examples/notes/server/gen examples/notes/elm/generated; exit 1)
     rm -rf {{target}}/live/include-imports
     cd examples/notes && PATH="{{target}}/live/bin:$PATH" buf generate --include-imports --template buf.gen.include-imports.yaml -o {{target}}/live/include-imports
     diff -r {{target}}/live/include-imports/elm/generated examples/notes/elm/generated
 
-# Build the example server and the live runner's Elm program. The bare
-# `elm make` resolves dependencies first, as in elm-check.
-live-build:
+# Build the example server and the live runner's Elm program, which
+# imports the conformance suite's generated Elm (live-conformance-gen). The
+# bare `elm make` resolves dependencies first, as in elm-check.
+live-build: live-conformance-gen
     cd examples/notes/server && go vet ./... && go build -o {{target}}/live/bin/notes-server .
     -@cd conformance/live && elm make >/dev/null 2>&1
     cd conformance/live && elm make src/Live.elm --output=build/elm.js
@@ -428,28 +427,27 @@ live-grpcweb: live-conformance-gen live-build
     "$runner" --mode client --conf conformance-grpcweb.yaml --known-failing @build/known-failing-grpcweb-send.txt -- node conformance.mjs --send sendTraced
 
 # Install the live runner's npm packages as package-lock.json pins them, and
-# regenerate the conformance suite's Elm and JavaScript with buf from its
-# vendored protos (conformance/live/suite/proto), failing if they differ
-# from what is committed (or staged). protoc-gen-elm-connect is built as in
-# live-gen.
+# generate the conformance suite's Elm and JavaScript with buf from its
+# vendored protos (conformance/live/suite/proto) into suite/elm and suite/js,
+# which are gitignored and rewritten on every run. protoc-gen-elm-connect is
+# built as in live-gen.
 live-conformance-gen:
     cd conformance/live && npm ci --ignore-scripts --no-audit --no-fund
     mkdir -p {{target}}/live/bin
     cargo build -p protoc-gen-elm-connect
     cp {{target}}/debug/protoc-gen-elm-connect {{target}}/live/bin/
+    rm -rf conformance/live/suite/elm conformance/live/suite/js
     cd conformance/live/suite && PATH="{{target}}/live/bin:$PWD/../node_modules/.bin:$PATH" buf generate
-    git diff --exit-code -- conformance/live/suite
-    @test -z "$(git ls-files --others --exclude-standard -- conformance/live/suite)" || (echo "generated files not committed:"; git ls-files --others --exclude-standard -- conformance/live/suite; exit 1)
 
 # The protobuf conformance suite (conformance/README.md): protobuf's
 # conformance_test_runner, fetched at its pinned release, drives the testee
 # in conformance/protobuf, the runtime and the Elm generated from
 # test_messages_proto3.proto, over the suite's proto3 cases
 # in protobuf binary and JSON; JSPB and text cases are answered skipped.
-# Before the run, the generated Elm
-# must be current (`elm-connect check`) and the committed proto must be the
-# runner's copy. The run must pass but for failure_list.txt, and a listed
-# case that passes fails it too. Not part of
+# Before the run, the CLI built from this checkout generates that Elm into
+# conformance/protobuf/generated (gitignored), and the committed proto must
+# be the runner's copy. The run must pass but for failure_list.txt, and a
+# listed case that passes fails it too. Not part of
 # `check` or `live`: it needs the network for the runner, and CI runs it only
 # when asked (protobuf-conformance.yml).
 protobuf-conformance:
@@ -457,7 +455,8 @@ protobuf-conformance:
     set -euo pipefail
     cargo build -p elm-connect
     cd conformance/protobuf
-    {{target}}/debug/elm-connect check -I proto google/protobuf/test_messages_proto3.proto --unknown-fields keep --out generated
+    rm -rf generated
+    {{target}}/debug/elm-connect gen -I proto google/protobuf/test_messages_proto3.proto --unknown-fields keep --out generated
     runner="$(./fetch-runner.sh)"
     diff "$runner/include/google/protobuf/test_messages_proto3.proto" proto/google/protobuf/test_messages_proto3.proto
     elm make > /dev/null 2>&1 || true
@@ -465,13 +464,6 @@ protobuf-conformance:
     mkdir -p build/run
     "$runner/bin/conformance_test_runner" --enforce_recommended --maximum_edition PROTO3 \
         --failure_list failure_list.txt --output_dir build/run ./testee.sh
-
-# Regenerate the protobuf conformance testee's Elm from its proto with the
-# CLI built from this checkout. The generated modules are committed; run
-# this after a generator change and commit what changed.
-protobuf-conformance-gen:
-    cargo build -p elm-connect
-    cd conformance/protobuf && {{target}}/debug/elm-connect gen -I proto google/protobuf/test_messages_proto3.proto --unknown-fields keep --out generated
 
 # The Buf Schema Registry modules the vendored protos come from, at the
 # commits they were exported from; protos-refresh re-exports them.
@@ -531,6 +523,6 @@ clean:
     cargo clean
     rm -rf conformance/harness/elm-stuff conformance/harness/generated elm-stuff tests/Generated
     rm -rf conformance/error-details/elm-stuff conformance/error-details/generated conformance/json-only/elm-stuff
-    rm -rf conformance/live/elm-stuff conformance/live/build conformance/live/node_modules
-    rm -rf conformance/protobuf/elm-stuff conformance/protobuf/build
+    rm -rf conformance/live/elm-stuff conformance/live/build conformance/live/node_modules conformance/live/suite/elm conformance/live/suite/js
+    rm -rf conformance/protobuf/elm-stuff conformance/protobuf/build conformance/protobuf/generated
     rm -rf examples/notes/elm/elm-stuff examples/notes/elm/dist

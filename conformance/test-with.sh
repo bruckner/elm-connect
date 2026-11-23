@@ -6,7 +6,8 @@
 # with the same sources. `just check` runs them with the pinned compiler;
 # this script checks another, such as 0.19.1 or 0.19.2 in CI (design section 8).
 # The modules under tests/Generated must exist first: `just tests-gen`
-# (cargo test -p elm-connect-gen --test codec --test depth) writes them.
+# (cargo test -p elm-connect-gen --test codec --test depth --test routes)
+# writes them.
 #
 #   conformance/test-with.sh path/to/elm
 set -euo pipefail
