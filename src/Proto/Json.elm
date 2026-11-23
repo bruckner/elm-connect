@@ -4,6 +4,7 @@ module Proto.Json exposing
     , objectOfFields
     , implicitField, implicitFloatField, implicitBytesField, repeatedField, dictField, boolMapField
     , tryObjectOfFields, tryOptionalField, tryRepeatedField, tryDictField, tryBoolMapField
+    , memo, deeperWith
     , oneof, members, Member, member, memberEither
     , emptyMember, emptyMemberEither, valueMember, valueMemberEither
     , nullValueMember, nullValueMemberEither
@@ -88,6 +89,33 @@ the first `Err` its values meet, else `Ok` of what the other would.
 @docs tryObjectOfFields, tryOptionalField, tryRepeatedField, tryDictField, tryBoolMapField
 
 
+# Recursive messages
+
+A message on a cycle of references, which can nest without bound, is read
+at most 100 levels deep, a level being each message entered along a field or
+oneof member of the cycle, the outermost at 1. Its generated decoder takes
+the depth, and reads each value on the cycle one level deeper:
+
+    decodeNode =
+        decodeNestedNode 1
+
+    decodeNestedNode =
+        Proto.Json.memo
+            (\depth ->
+                Proto.Json.message
+                    (Json.Decode.succeed Node
+                        |> Proto.Json.messageField "children" [] (Json.Decode.list (Json.Decode.map Node_ (Json.Decode.lazy (\_ -> decodeNestedNode (depth + 1)))))
+                    )
+            )
+
+Past the limit a decoder fails with "Expecting messages nested at most 100
+deep". A message that holds an `Any` takes the registry, so its decoder at
+a depth is built as the value is read instead, with
+[`deeperWith`](#deeperWith).
+
+@docs memo, deeperWith
+
+
 # Oneofs
 
 @docs oneof, members, Member, member, memberEither
@@ -162,6 +190,7 @@ their scalar's helpers.
 
 -}
 
+import Array exposing (Array)
 import Bytes exposing (Bytes)
 import Dict
 import Json.Decode exposing (Decoder)
@@ -2648,3 +2677,65 @@ hasJsonForm url =
         , "google.protobuf.StringValue"
         , "google.protobuf.BytesValue"
         ]
+
+
+
+-- RECURSIVE MESSAGES
+
+
+{-| A recursive message's decoder at a depth, the outermost message of its
+cycle at 1, from the decoder `build` makes for a depth. `memo build` makes
+the decoders for depths 1 to 100 once, so applied in a top-level value, as
+generated code applies it, it makes them once per program, and a read looks
+its decoder up; past 100 the decoder fails.
+
+    decodeNestedNode =
+        Proto.Json.memo (\depth -> ...)
+
+-}
+memo : (Int -> Decoder a) -> Int -> Decoder a
+memo build =
+    let
+        table =
+            Array.initialize depthLimit (\index -> build (index + 1))
+    in
+    \depth ->
+        case Array.get (depth - 1) table of
+            Just decoder ->
+                decoder
+
+            Nothing ->
+                tooDeep
+
+
+{-| A value on the cycle of a message that takes the registry, read by the
+message at `depth`: its decoder one level deeper is built from `build` as the
+value is read, since a decoder taking the registry cannot be built before it
+is given; past 100 levels it fails.
+
+    Proto.Json.deeperWith depth (decodeNestedNodeWith types)
+
+-}
+deeperWith : Int -> (Int -> Decoder a) -> Decoder a
+deeperWith depth build =
+    Json.Decode.lazy
+        (\_ ->
+            if depth < depthLimit then
+                build (depth + 1)
+
+            else
+                tooDeep
+        )
+
+
+{-| The most messages a cycle nests, the outermost included, as protobuf's
+own runtimes allow.
+-}
+depthLimit : Int
+depthLimit =
+    100
+
+
+tooDeep : Decoder a
+tooDeep =
+    Json.Decode.fail "Expecting messages nested at most 100 deep"

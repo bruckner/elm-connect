@@ -1506,13 +1506,23 @@ decodeOuterInner =
 -}
 decodeTree : Json.Decode.Decoder Tree
 decodeTree =
-    Proto.Json.message
-        (Json.Decode.succeed Tree
-            |> Proto.Json.messageField "label" "" Proto.Json.string
-            |> Proto.Json.messageField "left" Nothing (Json.Decode.map Just decodeTree_)
-            |> Proto.Json.messageField "children" [] (Json.Decode.list decodeTree_)
-            |> Proto.Json.messageField "named" Dict.empty (Proto.Json.stringDict decodeTree_)
-            |> Proto.Json.oneof decodeTreeLink
+    decodeNestedTree 1
+
+
+{-| [`decodeTree`](#decodeTree) for a [`Tree`](#Tree) held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.
+-}
+decodeNestedTree : Int -> Json.Decode.Decoder Tree
+decodeNestedTree =
+    Proto.Json.memo
+        (\depth ->
+            Proto.Json.message
+                (Json.Decode.succeed Tree
+                    |> Proto.Json.messageField "label" "" Proto.Json.string
+                    |> Proto.Json.messageField "left" Nothing (Json.Decode.map Just (Json.Decode.map Tree_ (Json.Decode.lazy (\_ -> decodeNestedTree (depth + 1)))))
+                    |> Proto.Json.messageField "children" [] (Json.Decode.list (Json.Decode.map Tree_ (Json.Decode.lazy (\_ -> decodeNestedTree (depth + 1)))))
+                    |> Proto.Json.messageField "named" Dict.empty (Proto.Json.stringDict (Json.Decode.map Tree_ (Json.Decode.lazy (\_ -> decodeNestedTree (depth + 1)))))
+                    |> Proto.Json.oneof (decodeNestedTreeLink depth)
+                )
         )
 
 
@@ -1527,9 +1537,16 @@ decodeTree_ =
 -}
 decodeTreeLink : Json.Decode.Decoder TreeLink
 decodeTreeLink =
+    decodeNestedTreeLink 1
+
+
+{-| [`decodeTreeLink`](#decodeTreeLink) for a [`TreeLink`](#TreeLink) held by a message `depth` levels deep inside its cycle. That message's decoder calls it at each depth.
+-}
+decodeNestedTreeLink : Int -> Json.Decode.Decoder TreeLink
+decodeNestedTreeLink depth =
     Proto.Json.members "link"
         TreeLinkUnset
-        [ Proto.Json.member "next" (Json.Decode.map TreeLinkNext (Json.Decode.lazy (\_ -> decodeTree)))
+        [ Proto.Json.member "next" (Json.Decode.map TreeLinkNext (Json.Decode.lazy (\_ -> decodeNestedTree (depth + 1))))
         , Proto.Json.member "end" (Json.Decode.map TreeLinkEnd Proto.Json.string)
         ]
 
@@ -1609,6 +1626,13 @@ decodeLeaf =
 -}
 decodeEverythingWith : Proto.Registry.Registry -> Json.Decode.Decoder Everything
 decodeEverythingWith types =
+    decodeNestedEverythingWith types 1
+
+
+{-| [`decodeEverythingWith`](#decodeEverythingWith) for an [`Everything`](#Everything) held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.
+-}
+decodeNestedEverythingWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder Everything
+decodeNestedEverythingWith types depth =
     Proto.Json.message
         (Json.Decode.succeed Everything
             |> Proto.Json.messageField "scalars" Nothing (Json.Decode.map Just decodeScalars)
@@ -1622,7 +1646,7 @@ decodeEverythingWith types =
             |> Proto.Json.messageFieldEither "wellKnown" "well_known" Nothing (Json.Decode.map Just (decodeWellKnownWith types))
             |> Proto.Json.messageField "wrappers" Nothing (Json.Decode.map Just decodeWrappers)
             |> Proto.Json.messageField "across" Nothing (Json.Decode.map Just decodeAcross)
-            |> Proto.Json.messageField "more" [] (Json.Decode.list (decodeEverything_With types))
+            |> Proto.Json.messageField "more" [] (Json.Decode.list (Json.Decode.map Everything_ (Proto.Json.deeperWith depth (decodeNestedEverythingWith types))))
         )
 
 
@@ -3829,114 +3853,124 @@ decodeOuterInnerBytes =
 -}
 mergeTreeBytes : Tree -> Proto.Binary.Decoder Tree
 mergeTreeBytes =
-    Proto.Binary.merge
-        "codec.v1.Tree"
-        (\number wire value ->
-            case number of
-                1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { label = v
-                            , left = value.left
-                            , children = value.children
-                            , named = value.named
-                            , link = value.link
-                            }
-                        )
-                        wire
-                        value
+    mergeNestedTreeBytes 1
 
-                2 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeTree_Bytes mergeTree_Bytes (Tree_ defaultTree))
-                        value.left
-                        (\v ->
-                            { label = value.label
-                            , left = Just v
-                            , children = value.children
-                            , named = value.named
-                            , link = value.link
-                            }
-                        )
-                        wire
-                        value
 
-                3 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeTree_Bytes mergeTree_Bytes (Tree_ defaultTree))
-                        (\v ->
-                            { label = value.label
-                            , left = value.left
-                            , children = v
-                            , named = value.named
-                            , link = value.link
-                            }
-                        )
-                        value.children
-                        wire
-                        value
+{-| [`mergeTreeBytes`](#mergeTreeBytes) for a [`Tree`](#Tree) held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.
+-}
+mergeNestedTreeBytes : Int -> Tree -> Proto.Binary.Decoder Tree
+mergeNestedTreeBytes =
+    Proto.Binary.memo
+        (\depth ->
+            Proto.Binary.merge
+                "codec.v1.Tree"
+                (\number wire value ->
+                    case number of
+                        1 ->
+                            Proto.Binary.field
+                                Proto.Binary.string
+                                (\v ->
+                                    { label = v
+                                    , left = value.left
+                                    , children = value.children
+                                    , named = value.named
+                                    , link = value.link
+                                    }
+                                )
+                                wire
+                                value
 
-                4 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.string
-                        (Proto.Binary.embedded encodeTree_Bytes mergeTree_Bytes (Tree_ defaultTree))
-                        (\k v ->
-                            { label = value.label
-                            , left = value.left
-                            , children = value.children
-                            , named = Dict.insert k v value.named
-                            , link = value.link
-                            }
-                        )
-                        wire
-                        value
+                        2 ->
+                            Proto.Binary.fieldInto
+                                (Proto.Binary.recursive depth encodeTree_Bytes mergeNestedTree_Bytes (Tree_ defaultTree))
+                                value.left
+                                (\v ->
+                                    { label = value.label
+                                    , left = Just v
+                                    , children = value.children
+                                    , named = value.named
+                                    , link = value.link
+                                    }
+                                )
+                                wire
+                                value
 
-                5 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeTreeBytes mergeTreeBytes defaultTree)
-                        (case value.link of
-                            TreeLinkNext member ->
-                                Just member
+                        3 ->
+                            Proto.Binary.repeated
+                                (Proto.Binary.recursive depth encodeTree_Bytes mergeNestedTree_Bytes (Tree_ defaultTree))
+                                (\v ->
+                                    { label = value.label
+                                    , left = value.left
+                                    , children = v
+                                    , named = value.named
+                                    , link = value.link
+                                    }
+                                )
+                                value.children
+                                wire
+                                value
 
-                            _ ->
-                                Nothing
-                        )
-                        (\v ->
-                            { label = value.label
-                            , left = value.left
-                            , children = value.children
-                            , named = value.named
-                            , link = TreeLinkNext v
-                            }
-                        )
-                        wire
-                        value
+                        4 ->
+                            Proto.Binary.mapEntry
+                                Proto.Binary.string
+                                (Proto.Binary.recursive depth encodeTree_Bytes mergeNestedTree_Bytes (Tree_ defaultTree))
+                                (\k v ->
+                                    { label = value.label
+                                    , left = value.left
+                                    , children = value.children
+                                    , named = Dict.insert k v value.named
+                                    , link = value.link
+                                    }
+                                )
+                                wire
+                                value
 
-                6 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { label = value.label
-                            , left = value.left
-                            , children = value.children
-                            , named = value.named
-                            , link = TreeLinkEnd v
-                            }
-                        )
-                        wire
-                        value
+                        5 ->
+                            Proto.Binary.fieldInto
+                                (Proto.Binary.recursive depth encodeTreeBytes mergeNestedTreeBytes defaultTree)
+                                (case value.link of
+                                    TreeLinkNext member ->
+                                        Just member
 
-                _ ->
-                    Proto.Binary.skip wire value
-        )
-        (\value ->
-            { label = value.label
-            , left = value.left
-            , children = List.reverse value.children
-            , named = value.named
-            , link = value.link
-            }
+                                    _ ->
+                                        Nothing
+                                )
+                                (\v ->
+                                    { label = value.label
+                                    , left = value.left
+                                    , children = value.children
+                                    , named = value.named
+                                    , link = TreeLinkNext v
+                                    }
+                                )
+                                wire
+                                value
+
+                        6 ->
+                            Proto.Binary.field
+                                Proto.Binary.string
+                                (\v ->
+                                    { label = value.label
+                                    , left = value.left
+                                    , children = value.children
+                                    , named = value.named
+                                    , link = TreeLinkEnd v
+                                    }
+                                )
+                                wire
+                                value
+
+                        _ ->
+                            Proto.Binary.skip wire value
+                )
+                (\value ->
+                    { label = value.label
+                    , left = value.left
+                    , children = List.reverse value.children
+                    , named = value.named
+                    , link = value.link
+                    }
+                )
         )
 
 
@@ -3952,6 +3986,13 @@ decodeTreeBytes =
 mergeTree_Bytes : Tree_ -> Proto.Binary.Decoder Tree_
 mergeTree_Bytes (Tree_ value) =
     Proto.Binary.map Tree_ (mergeTreeBytes value)
+
+
+{-| [`mergeTree_Bytes`](#mergeTree_Bytes) for a [`Tree_`](#Tree_) held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.
+-}
+mergeNestedTree_Bytes : Int -> Tree_ -> Proto.Binary.Decoder Tree_
+mergeNestedTree_Bytes depth (Tree_ value) =
+    Proto.Binary.map Tree_ (mergeNestedTreeBytes depth value)
 
 
 {-| Decodes a [`WellKnown`](#WellKnown) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
@@ -4875,291 +4916,301 @@ decodeLeafBytes =
 -}
 mergeEverythingBytes : Everything -> Proto.Binary.Decoder Everything
 mergeEverythingBytes =
-    Proto.Binary.merge
-        "codec.v1.Everything"
-        (\number wire value ->
-            case number of
-                1 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeScalarsBytes mergeScalarsBytes defaultScalars)
-                        value.scalars
-                        (\v ->
-                            { scalars = Just v
-                            , optionals = value.optionals
-                            , repeated = value.repeated
-                            , maps = value.maps
-                            , choice = value.choice
-                            , names = value.names
-                            , outer = value.outer
-                            , tree = value.tree
-                            , wellKnown = value.wellKnown
-                            , wrappers = value.wrappers
-                            , across = value.across
-                            , more = value.more
-                            }
-                        )
-                        wire
-                        value
+    mergeNestedEverythingBytes 1
 
-                2 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeOptionalsBytes mergeOptionalsBytes defaultOptionals)
-                        value.optionals
-                        (\v ->
-                            { scalars = value.scalars
-                            , optionals = Just v
-                            , repeated = value.repeated
-                            , maps = value.maps
-                            , choice = value.choice
-                            , names = value.names
-                            , outer = value.outer
-                            , tree = value.tree
-                            , wellKnown = value.wellKnown
-                            , wrappers = value.wrappers
-                            , across = value.across
-                            , more = value.more
-                            }
-                        )
-                        wire
-                        value
 
-                3 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeRepeatedBytes mergeRepeatedBytes defaultRepeated)
-                        value.repeated
-                        (\v ->
-                            { scalars = value.scalars
-                            , optionals = value.optionals
-                            , repeated = Just v
-                            , maps = value.maps
-                            , choice = value.choice
-                            , names = value.names
-                            , outer = value.outer
-                            , tree = value.tree
-                            , wellKnown = value.wellKnown
-                            , wrappers = value.wrappers
-                            , across = value.across
-                            , more = value.more
-                            }
-                        )
-                        wire
-                        value
+{-| [`mergeEverythingBytes`](#mergeEverythingBytes) for an [`Everything`](#Everything) held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.
+-}
+mergeNestedEverythingBytes : Int -> Everything -> Proto.Binary.Decoder Everything
+mergeNestedEverythingBytes =
+    Proto.Binary.memo
+        (\depth ->
+            Proto.Binary.merge
+                "codec.v1.Everything"
+                (\number wire value ->
+                    case number of
+                        1 ->
+                            Proto.Binary.fieldInto
+                                (Proto.Binary.embedded encodeScalarsBytes mergeScalarsBytes defaultScalars)
+                                value.scalars
+                                (\v ->
+                                    { scalars = Just v
+                                    , optionals = value.optionals
+                                    , repeated = value.repeated
+                                    , maps = value.maps
+                                    , choice = value.choice
+                                    , names = value.names
+                                    , outer = value.outer
+                                    , tree = value.tree
+                                    , wellKnown = value.wellKnown
+                                    , wrappers = value.wrappers
+                                    , across = value.across
+                                    , more = value.more
+                                    }
+                                )
+                                wire
+                                value
 
-                4 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeMapsBytes mergeMapsBytes defaultMaps)
-                        value.maps
-                        (\v ->
-                            { scalars = value.scalars
-                            , optionals = value.optionals
-                            , repeated = value.repeated
-                            , maps = Just v
-                            , choice = value.choice
-                            , names = value.names
-                            , outer = value.outer
-                            , tree = value.tree
-                            , wellKnown = value.wellKnown
-                            , wrappers = value.wrappers
-                            , across = value.across
-                            , more = value.more
-                            }
-                        )
-                        wire
-                        value
+                        2 ->
+                            Proto.Binary.fieldInto
+                                (Proto.Binary.embedded encodeOptionalsBytes mergeOptionalsBytes defaultOptionals)
+                                value.optionals
+                                (\v ->
+                                    { scalars = value.scalars
+                                    , optionals = Just v
+                                    , repeated = value.repeated
+                                    , maps = value.maps
+                                    , choice = value.choice
+                                    , names = value.names
+                                    , outer = value.outer
+                                    , tree = value.tree
+                                    , wellKnown = value.wellKnown
+                                    , wrappers = value.wrappers
+                                    , across = value.across
+                                    , more = value.more
+                                    }
+                                )
+                                wire
+                                value
 
-                5 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeChoiceBytes mergeChoiceBytes defaultChoice)
-                        value.choice
-                        (\v ->
-                            { scalars = value.scalars
-                            , optionals = value.optionals
-                            , repeated = value.repeated
-                            , maps = value.maps
-                            , choice = Just v
-                            , names = value.names
-                            , outer = value.outer
-                            , tree = value.tree
-                            , wellKnown = value.wellKnown
-                            , wrappers = value.wrappers
-                            , across = value.across
-                            , more = value.more
-                            }
-                        )
-                        wire
-                        value
+                        3 ->
+                            Proto.Binary.fieldInto
+                                (Proto.Binary.embedded encodeRepeatedBytes mergeRepeatedBytes defaultRepeated)
+                                value.repeated
+                                (\v ->
+                                    { scalars = value.scalars
+                                    , optionals = value.optionals
+                                    , repeated = Just v
+                                    , maps = value.maps
+                                    , choice = value.choice
+                                    , names = value.names
+                                    , outer = value.outer
+                                    , tree = value.tree
+                                    , wellKnown = value.wellKnown
+                                    , wrappers = value.wrappers
+                                    , across = value.across
+                                    , more = value.more
+                                    }
+                                )
+                                wire
+                                value
 
-                6 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeNamesBytes mergeNamesBytes defaultNames)
-                        value.names
-                        (\v ->
-                            { scalars = value.scalars
-                            , optionals = value.optionals
-                            , repeated = value.repeated
-                            , maps = value.maps
-                            , choice = value.choice
-                            , names = Just v
-                            , outer = value.outer
-                            , tree = value.tree
-                            , wellKnown = value.wellKnown
-                            , wrappers = value.wrappers
-                            , across = value.across
-                            , more = value.more
-                            }
-                        )
-                        wire
-                        value
+                        4 ->
+                            Proto.Binary.fieldInto
+                                (Proto.Binary.embedded encodeMapsBytes mergeMapsBytes defaultMaps)
+                                value.maps
+                                (\v ->
+                                    { scalars = value.scalars
+                                    , optionals = value.optionals
+                                    , repeated = value.repeated
+                                    , maps = Just v
+                                    , choice = value.choice
+                                    , names = value.names
+                                    , outer = value.outer
+                                    , tree = value.tree
+                                    , wellKnown = value.wellKnown
+                                    , wrappers = value.wrappers
+                                    , across = value.across
+                                    , more = value.more
+                                    }
+                                )
+                                wire
+                                value
 
-                7 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeOuterBytes mergeOuterBytes defaultOuter)
-                        value.outer
-                        (\v ->
-                            { scalars = value.scalars
-                            , optionals = value.optionals
-                            , repeated = value.repeated
-                            , maps = value.maps
-                            , choice = value.choice
-                            , names = value.names
-                            , outer = Just v
-                            , tree = value.tree
-                            , wellKnown = value.wellKnown
-                            , wrappers = value.wrappers
-                            , across = value.across
-                            , more = value.more
-                            }
-                        )
-                        wire
-                        value
+                        5 ->
+                            Proto.Binary.fieldInto
+                                (Proto.Binary.embedded encodeChoiceBytes mergeChoiceBytes defaultChoice)
+                                value.choice
+                                (\v ->
+                                    { scalars = value.scalars
+                                    , optionals = value.optionals
+                                    , repeated = value.repeated
+                                    , maps = value.maps
+                                    , choice = Just v
+                                    , names = value.names
+                                    , outer = value.outer
+                                    , tree = value.tree
+                                    , wellKnown = value.wellKnown
+                                    , wrappers = value.wrappers
+                                    , across = value.across
+                                    , more = value.more
+                                    }
+                                )
+                                wire
+                                value
 
-                8 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeTreeBytes mergeTreeBytes defaultTree)
-                        value.tree
-                        (\v ->
-                            { scalars = value.scalars
-                            , optionals = value.optionals
-                            , repeated = value.repeated
-                            , maps = value.maps
-                            , choice = value.choice
-                            , names = value.names
-                            , outer = value.outer
-                            , tree = Just v
-                            , wellKnown = value.wellKnown
-                            , wrappers = value.wrappers
-                            , across = value.across
-                            , more = value.more
-                            }
-                        )
-                        wire
-                        value
+                        6 ->
+                            Proto.Binary.fieldInto
+                                (Proto.Binary.embedded encodeNamesBytes mergeNamesBytes defaultNames)
+                                value.names
+                                (\v ->
+                                    { scalars = value.scalars
+                                    , optionals = value.optionals
+                                    , repeated = value.repeated
+                                    , maps = value.maps
+                                    , choice = value.choice
+                                    , names = Just v
+                                    , outer = value.outer
+                                    , tree = value.tree
+                                    , wellKnown = value.wellKnown
+                                    , wrappers = value.wrappers
+                                    , across = value.across
+                                    , more = value.more
+                                    }
+                                )
+                                wire
+                                value
 
-                9 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeWellKnownBytes mergeWellKnownBytes defaultWellKnown)
-                        value.wellKnown
-                        (\v ->
-                            { scalars = value.scalars
-                            , optionals = value.optionals
-                            , repeated = value.repeated
-                            , maps = value.maps
-                            , choice = value.choice
-                            , names = value.names
-                            , outer = value.outer
-                            , tree = value.tree
-                            , wellKnown = Just v
-                            , wrappers = value.wrappers
-                            , across = value.across
-                            , more = value.more
-                            }
-                        )
-                        wire
-                        value
+                        7 ->
+                            Proto.Binary.fieldInto
+                                (Proto.Binary.embedded encodeOuterBytes mergeOuterBytes defaultOuter)
+                                value.outer
+                                (\v ->
+                                    { scalars = value.scalars
+                                    , optionals = value.optionals
+                                    , repeated = value.repeated
+                                    , maps = value.maps
+                                    , choice = value.choice
+                                    , names = value.names
+                                    , outer = Just v
+                                    , tree = value.tree
+                                    , wellKnown = value.wellKnown
+                                    , wrappers = value.wrappers
+                                    , across = value.across
+                                    , more = value.more
+                                    }
+                                )
+                                wire
+                                value
 
-                10 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeWrappersBytes mergeWrappersBytes defaultWrappers)
-                        value.wrappers
-                        (\v ->
-                            { scalars = value.scalars
-                            , optionals = value.optionals
-                            , repeated = value.repeated
-                            , maps = value.maps
-                            , choice = value.choice
-                            , names = value.names
-                            , outer = value.outer
-                            , tree = value.tree
-                            , wellKnown = value.wellKnown
-                            , wrappers = Just v
-                            , across = value.across
-                            , more = value.more
-                            }
-                        )
-                        wire
-                        value
+                        8 ->
+                            Proto.Binary.fieldInto
+                                (Proto.Binary.embedded encodeTreeBytes mergeTreeBytes defaultTree)
+                                value.tree
+                                (\v ->
+                                    { scalars = value.scalars
+                                    , optionals = value.optionals
+                                    , repeated = value.repeated
+                                    , maps = value.maps
+                                    , choice = value.choice
+                                    , names = value.names
+                                    , outer = value.outer
+                                    , tree = Just v
+                                    , wellKnown = value.wellKnown
+                                    , wrappers = value.wrappers
+                                    , across = value.across
+                                    , more = value.more
+                                    }
+                                )
+                                wire
+                                value
 
-                11 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeAcrossBytes mergeAcrossBytes defaultAcross)
-                        value.across
-                        (\v ->
-                            { scalars = value.scalars
-                            , optionals = value.optionals
-                            , repeated = value.repeated
-                            , maps = value.maps
-                            , choice = value.choice
-                            , names = value.names
-                            , outer = value.outer
-                            , tree = value.tree
-                            , wellKnown = value.wellKnown
-                            , wrappers = value.wrappers
-                            , across = Just v
-                            , more = value.more
-                            }
-                        )
-                        wire
-                        value
+                        9 ->
+                            Proto.Binary.fieldInto
+                                (Proto.Binary.embedded encodeWellKnownBytes mergeWellKnownBytes defaultWellKnown)
+                                value.wellKnown
+                                (\v ->
+                                    { scalars = value.scalars
+                                    , optionals = value.optionals
+                                    , repeated = value.repeated
+                                    , maps = value.maps
+                                    , choice = value.choice
+                                    , names = value.names
+                                    , outer = value.outer
+                                    , tree = value.tree
+                                    , wellKnown = Just v
+                                    , wrappers = value.wrappers
+                                    , across = value.across
+                                    , more = value.more
+                                    }
+                                )
+                                wire
+                                value
 
-                12 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeEverything_Bytes mergeEverything_Bytes (Everything_ defaultEverything))
-                        (\v ->
-                            { scalars = value.scalars
-                            , optionals = value.optionals
-                            , repeated = value.repeated
-                            , maps = value.maps
-                            , choice = value.choice
-                            , names = value.names
-                            , outer = value.outer
-                            , tree = value.tree
-                            , wellKnown = value.wellKnown
-                            , wrappers = value.wrappers
-                            , across = value.across
-                            , more = v
-                            }
-                        )
-                        value.more
-                        wire
-                        value
+                        10 ->
+                            Proto.Binary.fieldInto
+                                (Proto.Binary.embedded encodeWrappersBytes mergeWrappersBytes defaultWrappers)
+                                value.wrappers
+                                (\v ->
+                                    { scalars = value.scalars
+                                    , optionals = value.optionals
+                                    , repeated = value.repeated
+                                    , maps = value.maps
+                                    , choice = value.choice
+                                    , names = value.names
+                                    , outer = value.outer
+                                    , tree = value.tree
+                                    , wellKnown = value.wellKnown
+                                    , wrappers = Just v
+                                    , across = value.across
+                                    , more = value.more
+                                    }
+                                )
+                                wire
+                                value
 
-                _ ->
-                    Proto.Binary.skip wire value
-        )
-        (\value ->
-            { scalars = value.scalars
-            , optionals = value.optionals
-            , repeated = value.repeated
-            , maps = value.maps
-            , choice = value.choice
-            , names = value.names
-            , outer = value.outer
-            , tree = value.tree
-            , wellKnown = value.wellKnown
-            , wrappers = value.wrappers
-            , across = value.across
-            , more = List.reverse value.more
-            }
+                        11 ->
+                            Proto.Binary.fieldInto
+                                (Proto.Binary.embedded encodeAcrossBytes mergeAcrossBytes defaultAcross)
+                                value.across
+                                (\v ->
+                                    { scalars = value.scalars
+                                    , optionals = value.optionals
+                                    , repeated = value.repeated
+                                    , maps = value.maps
+                                    , choice = value.choice
+                                    , names = value.names
+                                    , outer = value.outer
+                                    , tree = value.tree
+                                    , wellKnown = value.wellKnown
+                                    , wrappers = value.wrappers
+                                    , across = Just v
+                                    , more = value.more
+                                    }
+                                )
+                                wire
+                                value
+
+                        12 ->
+                            Proto.Binary.repeated
+                                (Proto.Binary.recursive depth encodeEverything_Bytes mergeNestedEverything_Bytes (Everything_ defaultEverything))
+                                (\v ->
+                                    { scalars = value.scalars
+                                    , optionals = value.optionals
+                                    , repeated = value.repeated
+                                    , maps = value.maps
+                                    , choice = value.choice
+                                    , names = value.names
+                                    , outer = value.outer
+                                    , tree = value.tree
+                                    , wellKnown = value.wellKnown
+                                    , wrappers = value.wrappers
+                                    , across = value.across
+                                    , more = v
+                                    }
+                                )
+                                value.more
+                                wire
+                                value
+
+                        _ ->
+                            Proto.Binary.skip wire value
+                )
+                (\value ->
+                    { scalars = value.scalars
+                    , optionals = value.optionals
+                    , repeated = value.repeated
+                    , maps = value.maps
+                    , choice = value.choice
+                    , names = value.names
+                    , outer = value.outer
+                    , tree = value.tree
+                    , wellKnown = value.wellKnown
+                    , wrappers = value.wrappers
+                    , across = value.across
+                    , more = List.reverse value.more
+                    }
+                )
         )
 
 
@@ -5175,3 +5226,10 @@ decodeEverythingBytes =
 mergeEverything_Bytes : Everything_ -> Proto.Binary.Decoder Everything_
 mergeEverything_Bytes (Everything_ value) =
     Proto.Binary.map Everything_ (mergeEverythingBytes value)
+
+
+{-| [`mergeEverything_Bytes`](#mergeEverything_Bytes) for an [`Everything_`](#Everything_) held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.
+-}
+mergeNestedEverything_Bytes : Int -> Everything_ -> Proto.Binary.Decoder Everything_
+mergeNestedEverything_Bytes depth (Everything_ value) =
+    Proto.Binary.map Everything_ (mergeNestedEverythingBytes depth value)

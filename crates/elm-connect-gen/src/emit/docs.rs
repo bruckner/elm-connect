@@ -62,6 +62,15 @@ pub(super) fn a_local(name: &str) -> String {
     format!("{article} {}", local(name))
 }
 
+/// The doc of `codec` at a nesting depth (`decodeNestedNode`), where
+/// `codec` reads values of `elm_name` on a cycle of messages.
+pub(super) fn nested(codec: &str, elm_name: &str) -> String {
+    format!(
+        "[`{codec}`](#{codec}) for {} held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.",
+        a_local(elm_name)
+    )
+}
+
 /// [`a_local`] at the start of a sentence: `An [`Author`](#Author)`.
 pub(super) fn a_local_capital(name: &str) -> String {
     let mut text = a_local(name);

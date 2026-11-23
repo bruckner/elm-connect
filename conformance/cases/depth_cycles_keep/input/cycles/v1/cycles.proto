@@ -1,0 +1,19 @@
+// Two of depth_cycles' cycles under unknown_fields=keep, where every merge is
+// Proto.Binary.mergeKeep, whatever the message's shape: it carries the depth
+// and keeps a message's unknown fields at every level. depth_cycles holds
+// every shape of cycle.
+syntax = "proto3";
+
+package cycles.v1;
+
+// A message that holds itself.
+message Chain {
+  string label = 1;
+  Chain next = 2;
+}
+
+// Through a list.
+message Tree {
+  string label = 1;
+  repeated Tree children = 2;
+}

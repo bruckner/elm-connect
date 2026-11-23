@@ -564,6 +564,24 @@ pub fn with_registry(codec_name: String) -> String {
 /// The suffix of [`with_registry`].
 pub const WITH_SUFFIX: &str = "With";
 
+/// A recursive message's codec, or its oneof's or wrapper's, given the
+/// nesting depth it reads at: its codec's name with `Nested` after the
+/// verb (`decodeNestedNode`, `decodeNestedNodeWith`,
+/// `mergeNestedNodeBytes`, `mergeNestedNode_Bytes`). Every name of a codec
+/// at a depth comes from here, so renaming them is a change to this
+/// function alone. Like [`with_registry`]'s suffix, the infix breaks the
+/// prefix rule of [`default_name`]: the codecs of a type `NestedNode`
+/// beside a recursive `Node` would take these names (its JSON decoder is
+/// `decodeNestedNode`, its merge `mergeNestedNodeBytes`), which no check
+/// reports; the compiler does, as a name defined twice.
+pub fn nested(codec_name: String) -> String {
+    let verb = codec_name
+        .find(|c: char| c.is_ascii_uppercase())
+        .expect("a codec's name is a verb and a type name");
+    let (verb, rest) = codec_name.split_at(verb);
+    format!("{verb}Nested{rest}")
+}
+
 /// The parameter a codec taking the registry binds it to. Like
 /// [`ENCODER_ARGUMENT`], it must not be the name of a top-level value of a
 /// generated module.

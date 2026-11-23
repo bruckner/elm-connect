@@ -4,7 +4,7 @@ module Codec.RoundTrip exposing (Codec, Form, Sample, codec, roundTrip, suite)
 prost-reflect wrote. `Generated.Codec.Data` and `Generated.Codec.DataInt64Int`
 hold the samples and `Generated.Codec.Codecs` each option set's codecs, all
 written under `tests/Generated/` by `crates/elm-connect-gen/tests/codec.rs`
-(`just codec-gen`); `Codec.RoundTripTest` runs them.
+(`just tests-gen`); `Codec.RoundTripTest` runs them.
 -}
 
 import Dict exposing (Dict)

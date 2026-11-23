@@ -41,7 +41,7 @@ use crate::ir::{
     Cardinality, Enum, Field, MapKey, Message, OneofVariant, ScalarKind, TypeRef, WellKnown,
     Wrapper,
 };
-use crate::naming::{ENCODER_ARGUMENT, ONEOF_MEMBER, UNKNOWN_FIELDS, default_name};
+use crate::naming::{ENCODER_ARGUMENT, ONEOF_MEMBER, UNKNOWN_FIELDS, default_name, nested};
 use crate::options::Int64;
 
 /// elm/bytes' encoders.
@@ -58,6 +58,9 @@ const NUMBER: &str = "number";
 const WIRE: &str = "wire";
 const ITEM: &str = "v";
 const KEY: &str = "k";
+/// The nesting depth a recursive message's merge is given, counted in
+/// reads of fields on its cycle.
+const DEPTH: &str = "depth";
 
 /// The binary codec's name beside a JSON codec's: `encodeNote` becomes
 /// `encodeNoteBytes`.
@@ -273,9 +276,38 @@ impl Emitter {
     }
 
     /// The `Proto.Binary.Codec` of one value of type `ty`, held as
-    /// `holding` says; in `wrapped`, when the field closes a cycle.
-    fn binary_codec(&mut self, ty: &TypeRef, holding: Holding, wrapped: Option<&Wrapper>) -> Expr {
+    /// `holding` says; in `wrapped`, when the field closes a cycle. A
+    /// message on the cycle of the message being read (`deep`) is read by
+    /// `Proto.Binary.recursive` at the merge's depth.
+    fn binary_codec(
+        &mut self,
+        ty: &TypeRef,
+        holding: Holding,
+        wrapped: Option<&Wrapper>,
+        deep: bool,
+    ) -> Expr {
         match (ty, wrapped) {
+            (TypeRef::Message(name), Some(wrapper)) if deep => {
+                let default = self.generated_value(&name.module, default_name(&name.name));
+                let recursive = self.binary("recursive");
+                apply(
+                    recursive,
+                    [
+                        var(DEPTH),
+                        var(bytes_name(wrapper.encoder_name())),
+                        var(nested(merge_name(wrapper.decoder_name()))),
+                        apply(var(wrapper.elm_name.clone()), [default]),
+                    ],
+                )
+            }
+            (TypeRef::Message(name), None) if deep => {
+                let encode = self.generated_value(&name.module, bytes_name(name.encoder_name()));
+                let decode =
+                    self.generated_value(&name.module, nested(merge_name(name.decoder_name())));
+                let default = self.generated_value(&name.module, default_name(&name.name));
+                let recursive = self.binary("recursive");
+                apply(recursive, [var(DEPTH), encode, decode, default])
+            }
             (TypeRef::Message(name), Some(wrapper)) => {
                 let default = self.generated_value(&name.module, default_name(&name.name));
                 let embedded = self.binary("embedded");
@@ -313,9 +345,14 @@ impl Emitter {
         }
     }
 
-    fn field_codec(&mut self, field: &Field, shape: FieldShape) -> Expr {
+    fn field_codec(&mut self, field: &Field, shape: FieldShape, deep: bool) -> Expr {
         let holding = field_holding(field.jstype, self.holding);
-        self.binary_codec(&field.ty, holding, wrapper_of(shape))
+        self.binary_codec(
+            &field.ty,
+            holding,
+            wrapper_of(shape),
+            deep && field.recursive,
+        )
     }
 
     fn bytes_encoder_type(&mut self) -> Type {
@@ -338,7 +375,7 @@ impl Emitter {
         for &(field, field_shape) in &shape.fields {
             let value = access(var(ENCODER_ARGUMENT), field.elm_name.clone());
             let number = int(field.number.into());
-            let codec = self.field_codec(field, field_shape);
+            let codec = self.field_codec(field, field_shape, false);
             let encoded = match field_shape {
                 // `()` has no presence to leave it out by; it is written,
                 // as the JSON encoder writes `{}`.
@@ -472,8 +509,13 @@ impl Emitter {
     }
 
     /// `mergeFooBytes : Foo -> Proto.Binary.Decoder Foo`: a `Foo` read
-    /// into the one given, as protobuf merges a message arriving twice.
-    pub(super) fn message_merge_bytes(&mut self, shape: &MessageShape) -> Decl {
+    /// into the one given, as protobuf merges a message arriving twice. A
+    /// recursive message's merge is `mergeNestedFooBytes 1`, and
+    /// `mergeNestedFooBytes : Int -> Foo -> Proto.Binary.Decoder Foo` is
+    /// given the nesting depth, which its fields on the cycle read at one
+    /// more: `Proto.Binary.memo (\depth -> merge)`, which makes the merge
+    /// for each depth once.
+    pub(super) fn message_merge_bytes(&mut self, shape: &MessageShape) -> Vec<Decl> {
         let mut branches: Vec<(u32, Expr)> = Vec::new();
         let mut wires: Vec<(u32, u32)> = Vec::new();
         let mut reversed: Vec<String> = Vec::new();
@@ -484,7 +526,7 @@ impl Emitter {
         for &(field, field_shape) in &shape.fields {
             let name = field.elm_name.as_str();
             let current = access(var(ENCODER_ARGUMENT), name);
-            let codec = self.field_codec(field, field_shape);
+            let codec = self.field_codec(field, field_shape, shape.message.recursive);
             let step = match field_shape {
                 FieldShape::Plain(_) => {
                     let set = lambda([pvar(ITEM)], update(name, var(ITEM)));
@@ -537,7 +579,8 @@ impl Emitter {
             let name = oneof.oneof.elm_field_name.as_str();
             for &(variant, value) in &oneof.variants {
                 let holding = field_holding(variant.jstype, self.holding);
-                let codec = self.binary_codec(&variant.ty, holding, None);
+                let deep = shape.message.recursive && variant.cyclic;
+                let codec = self.binary_codec(&variant.ty, holding, None, deep);
                 let set = if matches!(value, ValueShape::Zeroed(Zeroed::Empty | Zeroed::Null)) {
                     lambda(
                         [Pattern::Wildcard],
@@ -629,23 +672,46 @@ impl Emitter {
         } else {
             apply(self.binary("merge"), [full_name, step, finish])
         };
-        Decl::Value {
-            doc: Some(format!(
-                "Decodes {} from protobuf binary into the one given, as protobuf merges a message that arrives twice.",
-                docs::a_local(&shape.message.elm_name)
-            )),
-            name: merge_name(shape.message.decoder_name()),
-            annotation,
-            params: Vec::new(),
-            body,
+        let doc = Some(format!(
+            "Decodes {} from protobuf binary into the one given, as protobuf merges a message that arrives twice.",
+            docs::a_local(&shape.message.elm_name)
+        ));
+        let name = merge_name(shape.message.decoder_name());
+        if !shape.message.recursive {
+            return vec![Decl::Value {
+                doc,
+                name,
+                annotation,
+                params: Vec::new(),
+                body,
+            }];
         }
+        let int_type = ty(self.core("Int"), []);
+        let nested_type = Type::Function(Box::new(int_type), Box::new(annotation.clone()));
+        let nested_merge = nested(name.clone());
+        vec![
+            Decl::Value {
+                doc,
+                name: name.clone(),
+                annotation,
+                params: Vec::new(),
+                body: apply(var(nested_merge.clone()), [int(1)]),
+            },
+            Decl::Value {
+                doc: Some(docs::nested(&name, &shape.message.elm_name)),
+                name: nested_merge,
+                annotation: nested_type,
+                params: Vec::new(),
+                body: apply(self.binary("memo"), [lambda([pvar(DEPTH)], body)]),
+            },
+        ]
     }
 
     /// The `case` arm that writes a oneof's member: its field, written
     /// whatever its value.
     fn oneof_member_bytes(&mut self, variant: &OneofVariant, value: ValueShape) -> (Pattern, Expr) {
         let holding = field_holding(variant.jstype, self.holding);
-        let codec = self.binary_codec(&variant.ty, holding, None);
+        let codec = self.binary_codec(&variant.ty, holding, None, false);
         let number = int(variant.number.into());
         let present = self.binary("present");
         if matches!(value, ValueShape::Zeroed(Zeroed::Empty | Zeroed::Null)) {
@@ -714,10 +780,37 @@ impl Emitter {
     /// `mergeNode_Bytes (Node_ value) = Proto.Binary.map Node_
     /// (mergeNodeBytes value)`: a function, so the merges of a cycle refer
     /// to each other through functions only.
-    pub(super) fn wrapper_decoder_bytes(&mut self, message: &Message, wrapper: &Wrapper) -> Decl {
+    pub(super) fn wrapper_decoder_bytes(
+        &mut self,
+        message: &Message,
+        wrapper: &Wrapper,
+    ) -> Vec<Decl> {
         let map = self.binary("map");
         let annotation = self.bytes_merge_type(ty(wrapper.elm_name.clone(), []));
-        Decl::Value {
+        let int_type = ty(self.core("Int"), []);
+        let nested_decl = Decl::Value {
+            doc: Some(docs::nested(
+                &merge_name(wrapper.decoder_name()),
+                &wrapper.elm_name,
+            )),
+            name: nested(merge_name(wrapper.decoder_name())),
+            annotation: Type::Function(Box::new(int_type), Box::new(annotation.clone())),
+            params: vec![
+                pvar(DEPTH),
+                pctor(wrapper.elm_name.clone(), [pvar(ENCODER_ARGUMENT)]),
+            ],
+            body: apply(
+                map.clone(),
+                [
+                    var(wrapper.elm_name.clone()),
+                    apply(
+                        var(nested(merge_name(message.decoder_name()))),
+                        [var(DEPTH), var(ENCODER_ARGUMENT)],
+                    ),
+                ],
+            ),
+        };
+        let plain = Decl::Value {
             doc: Some(format!(
                 "Decodes {} from protobuf binary into the one given.",
                 docs::a_local(&wrapper.elm_name)
@@ -735,7 +828,8 @@ impl Emitter {
                     ),
                 ],
             ),
-        }
+        };
+        vec![plain, nested_decl]
     }
 
     /// `encodeStatusBytes : Status -> Int`: each constructor's number, the

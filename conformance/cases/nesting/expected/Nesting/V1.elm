@@ -594,11 +594,21 @@ decodeOuterInnerDeepest =
 -}
 decodeNode : Json.Decode.Decoder Node
 decodeNode =
-    Proto.Json.message
-        (Json.Decode.succeed Node
-            |> Proto.Json.messageField "label" "" Proto.Json.string
-            |> Proto.Json.messageField "children" [] (Json.Decode.list decodeNode_)
-            |> Proto.Json.messageFieldEither "byName" "by_name" Dict.empty (Proto.Json.stringDict decodeNode_)
+    decodeNestedNode 1
+
+
+{-| [`decodeNode`](#decodeNode) for a [`Node`](#Node) held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.
+-}
+decodeNestedNode : Int -> Json.Decode.Decoder Node
+decodeNestedNode =
+    Proto.Json.memo
+        (\depth ->
+            Proto.Json.message
+                (Json.Decode.succeed Node
+                    |> Proto.Json.messageField "label" "" Proto.Json.string
+                    |> Proto.Json.messageField "children" [] (Json.Decode.list (Json.Decode.map Node_ (Json.Decode.lazy (\_ -> decodeNestedNode (depth + 1)))))
+                    |> Proto.Json.messageFieldEither "byName" "by_name" Dict.empty (Proto.Json.stringDict (Json.Decode.map Node_ (Json.Decode.lazy (\_ -> decodeNestedNode (depth + 1)))))
+                )
         )
 
 
@@ -613,10 +623,20 @@ decodeNode_ =
 -}
 decodePerson : Json.Decode.Decoder Person
 decodePerson =
-    Proto.Json.message
-        (Json.Decode.succeed Person
-            |> Proto.Json.messageField "name" "" Proto.Json.string
-            |> Proto.Json.messageField "employer" Nothing (Json.Decode.map Just decodeCompany_)
+    decodeNestedPerson 1
+
+
+{-| [`decodePerson`](#decodePerson) for a [`Person`](#Person) held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.
+-}
+decodeNestedPerson : Int -> Json.Decode.Decoder Person
+decodeNestedPerson =
+    Proto.Json.memo
+        (\depth ->
+            Proto.Json.message
+                (Json.Decode.succeed Person
+                    |> Proto.Json.messageField "name" "" Proto.Json.string
+                    |> Proto.Json.messageField "employer" Nothing (Json.Decode.map Just (Json.Decode.map Company_ (Json.Decode.lazy (\_ -> decodeNestedCompany (depth + 1)))))
+                )
         )
 
 
@@ -631,10 +651,20 @@ decodePerson_ =
 -}
 decodeCompany : Json.Decode.Decoder Company
 decodeCompany =
-    Proto.Json.message
-        (Json.Decode.succeed Company
-            |> Proto.Json.messageField "name" "" Proto.Json.string
-            |> Proto.Json.messageField "staff" [] (Json.Decode.list decodePerson_)
+    decodeNestedCompany 1
+
+
+{-| [`decodeCompany`](#decodeCompany) for a [`Company`](#Company) held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.
+-}
+decodeNestedCompany : Int -> Json.Decode.Decoder Company
+decodeNestedCompany =
+    Proto.Json.memo
+        (\depth ->
+            Proto.Json.message
+                (Json.Decode.succeed Company
+                    |> Proto.Json.messageField "name" "" Proto.Json.string
+                    |> Proto.Json.messageField "staff" [] (Json.Decode.list (Json.Decode.map Person_ (Json.Decode.lazy (\_ -> decodeNestedPerson (depth + 1)))))
+                )
         )
 
 
@@ -659,18 +689,35 @@ decodeForest =
 -}
 decodeExpr : Json.Decode.Decoder Expr
 decodeExpr =
-    Json.Decode.succeed Expr
-        |> Proto.Json.oneof decodeExprValue
+    decodeNestedExpr 1
+
+
+{-| [`decodeExpr`](#decodeExpr) for an [`Expr`](#Expr) held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.
+-}
+decodeNestedExpr : Int -> Json.Decode.Decoder Expr
+decodeNestedExpr =
+    Proto.Json.memo
+        (\depth ->
+            Json.Decode.succeed Expr
+                |> Proto.Json.oneof (decodeNestedExprValue depth)
+        )
 
 
 {-| Decodes an [`ExprValue`](#ExprValue) from the members of its message's JSON object.
 -}
 decodeExprValue : Json.Decode.Decoder ExprValue
 decodeExprValue =
+    decodeNestedExprValue 1
+
+
+{-| [`decodeExprValue`](#decodeExprValue) for an [`ExprValue`](#ExprValue) held by a message `depth` levels deep inside its cycle. That message's decoder calls it at each depth.
+-}
+decodeNestedExprValue : Int -> Json.Decode.Decoder ExprValue
+decodeNestedExprValue depth =
     Proto.Json.members "value"
         ExprValueUnset
         [ Proto.Json.member "number" (Json.Decode.map ExprValueNumber Proto.Json.int64)
-        , Proto.Json.member "sum" (Json.Decode.map ExprValueSum (Json.Decode.lazy (\_ -> decodeSum)))
+        , Proto.Json.member "sum" (Json.Decode.map ExprValueSum (Json.Decode.lazy (\_ -> decodeNestedSum (depth + 1))))
         ]
 
 
@@ -678,9 +725,19 @@ decodeExprValue =
 -}
 decodeSum : Json.Decode.Decoder Sum
 decodeSum =
-    Proto.Json.message
-        (Json.Decode.succeed Sum
-            |> Proto.Json.messageField "terms" [] (Json.Decode.list decodeExpr)
+    decodeNestedSum 1
+
+
+{-| [`decodeSum`](#decodeSum) for a [`Sum`](#Sum) held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.
+-}
+decodeNestedSum : Int -> Json.Decode.Decoder Sum
+decodeNestedSum =
+    Proto.Json.memo
+        (\depth ->
+            Proto.Json.message
+                (Json.Decode.succeed Sum
+                    |> Proto.Json.messageField "terms" [] (Json.Decode.list (Json.Decode.lazy (\_ -> decodeNestedExpr (depth + 1))))
+                )
         )
 
 
@@ -976,56 +1033,66 @@ decodeOuterInnerDeepestBytes =
 -}
 mergeNodeBytes : Node -> Proto.Binary.Decoder Node
 mergeNodeBytes =
-    Proto.Binary.merge
-        "nesting.v1.Node"
-        (\number wire value ->
-            case number of
-                1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { label = v
-                            , children = value.children
-                            , byName = value.byName
-                            }
-                        )
-                        wire
-                        value
+    mergeNestedNodeBytes 1
 
-                2 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeNode_Bytes mergeNode_Bytes (Node_ defaultNode))
-                        (\v ->
-                            { label = value.label
-                            , children = v
-                            , byName = value.byName
-                            }
-                        )
-                        value.children
-                        wire
-                        value
 
-                3 ->
-                    Proto.Binary.mapEntry
-                        Proto.Binary.string
-                        (Proto.Binary.embedded encodeNode_Bytes mergeNode_Bytes (Node_ defaultNode))
-                        (\k v ->
-                            { label = value.label
-                            , children = value.children
-                            , byName = Dict.insert k v value.byName
-                            }
-                        )
-                        wire
-                        value
+{-| [`mergeNodeBytes`](#mergeNodeBytes) for a [`Node`](#Node) held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.
+-}
+mergeNestedNodeBytes : Int -> Node -> Proto.Binary.Decoder Node
+mergeNestedNodeBytes =
+    Proto.Binary.memo
+        (\depth ->
+            Proto.Binary.merge
+                "nesting.v1.Node"
+                (\number wire value ->
+                    case number of
+                        1 ->
+                            Proto.Binary.field
+                                Proto.Binary.string
+                                (\v ->
+                                    { label = v
+                                    , children = value.children
+                                    , byName = value.byName
+                                    }
+                                )
+                                wire
+                                value
 
-                _ ->
-                    Proto.Binary.skip wire value
-        )
-        (\value ->
-            { label = value.label
-            , children = List.reverse value.children
-            , byName = value.byName
-            }
+                        2 ->
+                            Proto.Binary.repeated
+                                (Proto.Binary.recursive depth encodeNode_Bytes mergeNestedNode_Bytes (Node_ defaultNode))
+                                (\v ->
+                                    { label = value.label
+                                    , children = v
+                                    , byName = value.byName
+                                    }
+                                )
+                                value.children
+                                wire
+                                value
+
+                        3 ->
+                            Proto.Binary.mapEntry
+                                Proto.Binary.string
+                                (Proto.Binary.recursive depth encodeNode_Bytes mergeNestedNode_Bytes (Node_ defaultNode))
+                                (\k v ->
+                                    { label = value.label
+                                    , children = value.children
+                                    , byName = Dict.insert k v value.byName
+                                    }
+                                )
+                                wire
+                                value
+
+                        _ ->
+                            Proto.Binary.skip wire value
+                )
+                (\value ->
+                    { label = value.label
+                    , children = List.reverse value.children
+                    , byName = value.byName
+                    }
+                )
         )
 
 
@@ -1043,41 +1110,58 @@ mergeNode_Bytes (Node_ value) =
     Proto.Binary.map Node_ (mergeNodeBytes value)
 
 
+{-| [`mergeNode_Bytes`](#mergeNode_Bytes) for a [`Node_`](#Node_) held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.
+-}
+mergeNestedNode_Bytes : Int -> Node_ -> Proto.Binary.Decoder Node_
+mergeNestedNode_Bytes depth (Node_ value) =
+    Proto.Binary.map Node_ (mergeNestedNodeBytes depth value)
+
+
 {-| Decodes a [`Person`](#Person) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
 mergePersonBytes : Person -> Proto.Binary.Decoder Person
 mergePersonBytes =
-    Proto.Binary.merge
-        "nesting.v1.Person"
-        (\number wire value ->
-            case number of
-                1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { name = v
-                            , employer = value.employer
-                            }
-                        )
-                        wire
-                        value
+    mergeNestedPersonBytes 1
 
-                2 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeCompany_Bytes mergeCompany_Bytes (Company_ defaultCompany))
-                        value.employer
-                        (\v ->
-                            { name = value.name
-                            , employer = Just v
-                            }
-                        )
-                        wire
-                        value
 
-                _ ->
-                    Proto.Binary.skip wire value
+{-| [`mergePersonBytes`](#mergePersonBytes) for a [`Person`](#Person) held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.
+-}
+mergeNestedPersonBytes : Int -> Person -> Proto.Binary.Decoder Person
+mergeNestedPersonBytes =
+    Proto.Binary.memo
+        (\depth ->
+            Proto.Binary.merge
+                "nesting.v1.Person"
+                (\number wire value ->
+                    case number of
+                        1 ->
+                            Proto.Binary.field
+                                Proto.Binary.string
+                                (\v ->
+                                    { name = v
+                                    , employer = value.employer
+                                    }
+                                )
+                                wire
+                                value
+
+                        2 ->
+                            Proto.Binary.fieldInto
+                                (Proto.Binary.recursive depth encodeCompany_Bytes mergeNestedCompany_Bytes (Company_ defaultCompany))
+                                value.employer
+                                (\v ->
+                                    { name = value.name
+                                    , employer = Just v
+                                    }
+                                )
+                                wire
+                                value
+
+                        _ ->
+                            Proto.Binary.skip wire value
+                )
+                identity
         )
-        identity
 
 
 {-| Decodes a [`Person`](#Person) from protobuf binary.
@@ -1094,44 +1178,61 @@ mergePerson_Bytes (Person_ value) =
     Proto.Binary.map Person_ (mergePersonBytes value)
 
 
+{-| [`mergePerson_Bytes`](#mergePerson_Bytes) for a [`Person_`](#Person_) held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.
+-}
+mergeNestedPerson_Bytes : Int -> Person_ -> Proto.Binary.Decoder Person_
+mergeNestedPerson_Bytes depth (Person_ value) =
+    Proto.Binary.map Person_ (mergeNestedPersonBytes depth value)
+
+
 {-| Decodes a [`Company`](#Company) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
 mergeCompanyBytes : Company -> Proto.Binary.Decoder Company
 mergeCompanyBytes =
-    Proto.Binary.merge
-        "nesting.v1.Company"
-        (\number wire value ->
-            case number of
-                1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { name = v
-                            , staff = value.staff
-                            }
-                        )
-                        wire
-                        value
+    mergeNestedCompanyBytes 1
 
-                2 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.embedded encodePerson_Bytes mergePerson_Bytes (Person_ defaultPerson))
-                        (\v ->
-                            { name = value.name
-                            , staff = v
-                            }
-                        )
-                        value.staff
-                        wire
-                        value
 
-                _ ->
-                    Proto.Binary.skip wire value
-        )
-        (\value ->
-            { name = value.name
-            , staff = List.reverse value.staff
-            }
+{-| [`mergeCompanyBytes`](#mergeCompanyBytes) for a [`Company`](#Company) held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.
+-}
+mergeNestedCompanyBytes : Int -> Company -> Proto.Binary.Decoder Company
+mergeNestedCompanyBytes =
+    Proto.Binary.memo
+        (\depth ->
+            Proto.Binary.merge
+                "nesting.v1.Company"
+                (\number wire value ->
+                    case number of
+                        1 ->
+                            Proto.Binary.field
+                                Proto.Binary.string
+                                (\v ->
+                                    { name = v
+                                    , staff = value.staff
+                                    }
+                                )
+                                wire
+                                value
+
+                        2 ->
+                            Proto.Binary.repeated
+                                (Proto.Binary.recursive depth encodePerson_Bytes mergeNestedPerson_Bytes (Person_ defaultPerson))
+                                (\v ->
+                                    { name = value.name
+                                    , staff = v
+                                    }
+                                )
+                                value.staff
+                                wire
+                                value
+
+                        _ ->
+                            Proto.Binary.skip wire value
+                )
+                (\value ->
+                    { name = value.name
+                    , staff = List.reverse value.staff
+                    }
+                )
         )
 
 
@@ -1147,6 +1248,13 @@ decodeCompanyBytes =
 mergeCompany_Bytes : Company_ -> Proto.Binary.Decoder Company_
 mergeCompany_Bytes (Company_ value) =
     Proto.Binary.map Company_ (mergeCompanyBytes value)
+
+
+{-| [`mergeCompany_Bytes`](#mergeCompany_Bytes) for a [`Company_`](#Company_) held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.
+-}
+mergeNestedCompany_Bytes : Int -> Company_ -> Proto.Binary.Decoder Company_
+mergeNestedCompany_Bytes depth (Company_ value) =
+    Proto.Binary.map Company_ (mergeNestedCompanyBytes depth value)
 
 
 {-| Decodes a [`Forest`](#Forest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
@@ -1188,41 +1296,51 @@ decodeForestBytes =
 -}
 mergeExprBytes : Expr -> Proto.Binary.Decoder Expr
 mergeExprBytes =
-    Proto.Binary.merge
-        "nesting.v1.Expr"
-        (\number wire value ->
-            case number of
-                1 ->
-                    Proto.Binary.field
-                        Proto.Binary.int64
-                        (\v ->
-                            { value = ExprValueNumber v
-                            }
-                        )
-                        wire
-                        value
+    mergeNestedExprBytes 1
 
-                2 ->
-                    Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeSumBytes mergeSumBytes defaultSum)
-                        (case value.value of
-                            ExprValueSum member ->
-                                Just member
 
-                            _ ->
-                                Nothing
-                        )
-                        (\v ->
-                            { value = ExprValueSum v
-                            }
-                        )
-                        wire
-                        value
+{-| [`mergeExprBytes`](#mergeExprBytes) for an [`Expr`](#Expr) held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.
+-}
+mergeNestedExprBytes : Int -> Expr -> Proto.Binary.Decoder Expr
+mergeNestedExprBytes =
+    Proto.Binary.memo
+        (\depth ->
+            Proto.Binary.merge
+                "nesting.v1.Expr"
+                (\number wire value ->
+                    case number of
+                        1 ->
+                            Proto.Binary.field
+                                Proto.Binary.int64
+                                (\v ->
+                                    { value = ExprValueNumber v
+                                    }
+                                )
+                                wire
+                                value
 
-                _ ->
-                    Proto.Binary.skip wire value
+                        2 ->
+                            Proto.Binary.fieldInto
+                                (Proto.Binary.recursive depth encodeSumBytes mergeNestedSumBytes defaultSum)
+                                (case value.value of
+                                    ExprValueSum member ->
+                                        Just member
+
+                                    _ ->
+                                        Nothing
+                                )
+                                (\v ->
+                                    { value = ExprValueSum v
+                                    }
+                                )
+                                wire
+                                value
+
+                        _ ->
+                            Proto.Binary.skip wire value
+                )
+                identity
         )
-        identity
 
 
 {-| Decodes an [`Expr`](#Expr) from protobuf binary.
@@ -1236,27 +1354,37 @@ decodeExprBytes =
 -}
 mergeSumBytes : Sum -> Proto.Binary.Decoder Sum
 mergeSumBytes =
-    Proto.Binary.merge
-        "nesting.v1.Sum"
-        (\number wire value ->
-            case number of
-                1 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeExprBytes mergeExprBytes defaultExpr)
-                        (\v ->
-                            { terms = v
-                            }
-                        )
-                        value.terms
-                        wire
-                        value
+    mergeNestedSumBytes 1
 
-                _ ->
-                    Proto.Binary.skip wire value
-        )
-        (\value ->
-            { terms = List.reverse value.terms
-            }
+
+{-| [`mergeSumBytes`](#mergeSumBytes) for a [`Sum`](#Sum) held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.
+-}
+mergeNestedSumBytes : Int -> Sum -> Proto.Binary.Decoder Sum
+mergeNestedSumBytes =
+    Proto.Binary.memo
+        (\depth ->
+            Proto.Binary.merge
+                "nesting.v1.Sum"
+                (\number wire value ->
+                    case number of
+                        1 ->
+                            Proto.Binary.repeated
+                                (Proto.Binary.recursive depth encodeExprBytes mergeNestedExprBytes defaultExpr)
+                                (\v ->
+                                    { terms = v
+                                    }
+                                )
+                                value.terms
+                                wire
+                                value
+
+                        _ ->
+                            Proto.Binary.skip wire value
+                )
+                (\value ->
+                    { terms = List.reverse value.terms
+                    }
+                )
         )
 
 
