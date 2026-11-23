@@ -203,7 +203,7 @@ type alias LocalizedMessage =
 -}
 errorInfo : Proto.Message.Message ErrorInfo
 errorInfo =
-    Proto.Message.init "google.rpc.ErrorInfo" encodeErrorInfo decodeErrorInfo encodeErrorInfoBytes decodeErrorInfoBytes
+    Proto.Message.init "google.rpc.ErrorInfo" (Proto.Json.ready << jsonErrorInfo) decodeErrorInfo encodeErrorInfoBytes decodeErrorInfoBytes
 
 
 {-| The typed value of [`RetryInfo`](#RetryInfo), to pack and unpack an `Any` with.
@@ -217,84 +217,84 @@ retryInfo =
 -}
 debugInfo : Proto.Message.Message DebugInfo
 debugInfo =
-    Proto.Message.init "google.rpc.DebugInfo" encodeDebugInfo decodeDebugInfo encodeDebugInfoBytes decodeDebugInfoBytes
+    Proto.Message.init "google.rpc.DebugInfo" (Proto.Json.ready << jsonDebugInfo) decodeDebugInfo encodeDebugInfoBytes decodeDebugInfoBytes
 
 
 {-| The typed value of [`QuotaFailure`](#QuotaFailure), to pack and unpack an `Any` with.
 -}
 quotaFailure : Proto.Message.Message QuotaFailure
 quotaFailure =
-    Proto.Message.init "google.rpc.QuotaFailure" encodeQuotaFailure decodeQuotaFailure encodeQuotaFailureBytes decodeQuotaFailureBytes
+    Proto.Message.init "google.rpc.QuotaFailure" (Proto.Json.ready << jsonQuotaFailure) decodeQuotaFailure encodeQuotaFailureBytes decodeQuotaFailureBytes
 
 
 {-| The typed value of [`QuotaFailureViolation`](#QuotaFailureViolation), to pack and unpack an `Any` with.
 -}
 quotaFailureViolation : Proto.Message.Message QuotaFailureViolation
 quotaFailureViolation =
-    Proto.Message.init "google.rpc.QuotaFailure.Violation" encodeQuotaFailureViolation decodeQuotaFailureViolation encodeQuotaFailureViolationBytes decodeQuotaFailureViolationBytes
+    Proto.Message.init "google.rpc.QuotaFailure.Violation" (Proto.Json.ready << jsonQuotaFailureViolation) decodeQuotaFailureViolation encodeQuotaFailureViolationBytes decodeQuotaFailureViolationBytes
 
 
 {-| The typed value of [`PreconditionFailure`](#PreconditionFailure), to pack and unpack an `Any` with.
 -}
 preconditionFailure : Proto.Message.Message PreconditionFailure
 preconditionFailure =
-    Proto.Message.init "google.rpc.PreconditionFailure" encodePreconditionFailure decodePreconditionFailure encodePreconditionFailureBytes decodePreconditionFailureBytes
+    Proto.Message.init "google.rpc.PreconditionFailure" (Proto.Json.ready << jsonPreconditionFailure) decodePreconditionFailure encodePreconditionFailureBytes decodePreconditionFailureBytes
 
 
 {-| The typed value of [`PreconditionFailureViolation`](#PreconditionFailureViolation), to pack and unpack an `Any` with.
 -}
 preconditionFailureViolation : Proto.Message.Message PreconditionFailureViolation
 preconditionFailureViolation =
-    Proto.Message.init "google.rpc.PreconditionFailure.Violation" encodePreconditionFailureViolation decodePreconditionFailureViolation encodePreconditionFailureViolationBytes decodePreconditionFailureViolationBytes
+    Proto.Message.init "google.rpc.PreconditionFailure.Violation" (Proto.Json.ready << jsonPreconditionFailureViolation) decodePreconditionFailureViolation encodePreconditionFailureViolationBytes decodePreconditionFailureViolationBytes
 
 
 {-| The typed value of [`BadRequest`](#BadRequest), to pack and unpack an `Any` with.
 -}
 badRequest : Proto.Message.Message BadRequest
 badRequest =
-    Proto.Message.init "google.rpc.BadRequest" encodeBadRequest decodeBadRequest encodeBadRequestBytes decodeBadRequestBytes
+    Proto.Message.init "google.rpc.BadRequest" (Proto.Json.ready << jsonBadRequest) decodeBadRequest encodeBadRequestBytes decodeBadRequestBytes
 
 
 {-| The typed value of [`BadRequestFieldViolation`](#BadRequestFieldViolation), to pack and unpack an `Any` with.
 -}
 badRequestFieldViolation : Proto.Message.Message BadRequestFieldViolation
 badRequestFieldViolation =
-    Proto.Message.init "google.rpc.BadRequest.FieldViolation" encodeBadRequestFieldViolation decodeBadRequestFieldViolation encodeBadRequestFieldViolationBytes decodeBadRequestFieldViolationBytes
+    Proto.Message.init "google.rpc.BadRequest.FieldViolation" (Proto.Json.ready << jsonBadRequestFieldViolation) decodeBadRequestFieldViolation encodeBadRequestFieldViolationBytes decodeBadRequestFieldViolationBytes
 
 
 {-| The typed value of [`RequestInfo`](#RequestInfo), to pack and unpack an `Any` with.
 -}
 requestInfo : Proto.Message.Message RequestInfo
 requestInfo =
-    Proto.Message.init "google.rpc.RequestInfo" encodeRequestInfo decodeRequestInfo encodeRequestInfoBytes decodeRequestInfoBytes
+    Proto.Message.init "google.rpc.RequestInfo" (Proto.Json.ready << jsonRequestInfo) decodeRequestInfo encodeRequestInfoBytes decodeRequestInfoBytes
 
 
 {-| The typed value of [`ResourceInfo`](#ResourceInfo), to pack and unpack an `Any` with.
 -}
 resourceInfo : Proto.Message.Message ResourceInfo
 resourceInfo =
-    Proto.Message.init "google.rpc.ResourceInfo" encodeResourceInfo decodeResourceInfo encodeResourceInfoBytes decodeResourceInfoBytes
+    Proto.Message.init "google.rpc.ResourceInfo" (Proto.Json.ready << jsonResourceInfo) decodeResourceInfo encodeResourceInfoBytes decodeResourceInfoBytes
 
 
 {-| The typed value of [`Help`](#Help), to pack and unpack an `Any` with.
 -}
 help : Proto.Message.Message Help
 help =
-    Proto.Message.init "google.rpc.Help" encodeHelp decodeHelp encodeHelpBytes decodeHelpBytes
+    Proto.Message.init "google.rpc.Help" (Proto.Json.ready << jsonHelp) decodeHelp encodeHelpBytes decodeHelpBytes
 
 
 {-| The typed value of [`HelpLink`](#HelpLink), to pack and unpack an `Any` with.
 -}
 helpLink : Proto.Message.Message HelpLink
 helpLink =
-    Proto.Message.init "google.rpc.Help.Link" encodeHelpLink decodeHelpLink encodeHelpLinkBytes decodeHelpLinkBytes
+    Proto.Message.init "google.rpc.Help.Link" (Proto.Json.ready << jsonHelpLink) decodeHelpLink encodeHelpLinkBytes decodeHelpLinkBytes
 
 
 {-| The typed value of [`LocalizedMessage`](#LocalizedMessage), to pack and unpack an `Any` with.
 -}
 localizedMessage : Proto.Message.Message LocalizedMessage
 localizedMessage =
-    Proto.Message.init "google.rpc.LocalizedMessage" encodeLocalizedMessage decodeLocalizedMessage encodeLocalizedMessageBytes decodeLocalizedMessageBytes
+    Proto.Message.init "google.rpc.LocalizedMessage" (Proto.Json.ready << jsonLocalizedMessage) decodeLocalizedMessage encodeLocalizedMessageBytes decodeLocalizedMessageBytes
 
 
 
@@ -433,8 +433,8 @@ defaultLocalizedMessage =
     }
 
 
-encodeErrorInfo : ErrorInfo -> Json.Encode.Value
-encodeErrorInfo value =
+jsonErrorInfo : ErrorInfo -> Json.Encode.Value
+jsonErrorInfo value =
     Proto.Json.objectOfFields
         [ ( "reason", Proto.Json.implicitField "" Json.Encode.string value.reason )
         , ( "domain", Proto.Json.implicitField "" Json.Encode.string value.domain )
@@ -442,30 +442,30 @@ encodeErrorInfo value =
         ]
 
 
-encodeRetryInfo : RetryInfo -> Json.Encode.Value
+encodeRetryInfo : RetryInfo -> Proto.Json.Encoder
 encodeRetryInfo value =
-    Proto.Json.objectOfFields
-        [ ( "retryDelay", Maybe.map Proto.Json.encodeDuration value.retryDelay )
+    Proto.Json.writeObject []
+        [ ( "retryDelay", Proto.Json.writeOptional Proto.Json.writeDuration value.retryDelay )
         ]
 
 
-encodeDebugInfo : DebugInfo -> Json.Encode.Value
-encodeDebugInfo value =
+jsonDebugInfo : DebugInfo -> Json.Encode.Value
+jsonDebugInfo value =
     Proto.Json.objectOfFields
         [ ( "stackEntries", Proto.Json.repeatedField Json.Encode.string value.stackEntries )
         , ( "detail", Proto.Json.implicitField "" Json.Encode.string value.detail )
         ]
 
 
-encodeQuotaFailure : QuotaFailure -> Json.Encode.Value
-encodeQuotaFailure value =
+jsonQuotaFailure : QuotaFailure -> Json.Encode.Value
+jsonQuotaFailure value =
     Proto.Json.objectOfFields
-        [ ( "violations", Proto.Json.repeatedField encodeQuotaFailureViolation value.violations )
+        [ ( "violations", Proto.Json.repeatedField jsonQuotaFailureViolation value.violations )
         ]
 
 
-encodeQuotaFailureViolation : QuotaFailureViolation -> Json.Encode.Value
-encodeQuotaFailureViolation value =
+jsonQuotaFailureViolation : QuotaFailureViolation -> Json.Encode.Value
+jsonQuotaFailureViolation value =
     Proto.Json.objectOfFields
         [ ( "subject", Proto.Json.implicitField "" Json.Encode.string value.subject )
         , ( "description", Proto.Json.implicitField "" Json.Encode.string value.description )
@@ -478,15 +478,15 @@ encodeQuotaFailureViolation value =
         ]
 
 
-encodePreconditionFailure : PreconditionFailure -> Json.Encode.Value
-encodePreconditionFailure value =
+jsonPreconditionFailure : PreconditionFailure -> Json.Encode.Value
+jsonPreconditionFailure value =
     Proto.Json.objectOfFields
-        [ ( "violations", Proto.Json.repeatedField encodePreconditionFailureViolation value.violations )
+        [ ( "violations", Proto.Json.repeatedField jsonPreconditionFailureViolation value.violations )
         ]
 
 
-encodePreconditionFailureViolation : PreconditionFailureViolation -> Json.Encode.Value
-encodePreconditionFailureViolation value =
+jsonPreconditionFailureViolation : PreconditionFailureViolation -> Json.Encode.Value
+jsonPreconditionFailureViolation value =
     Proto.Json.objectOfFields
         [ ( "type", Proto.Json.implicitField "" Json.Encode.string value.type_ )
         , ( "subject", Proto.Json.implicitField "" Json.Encode.string value.subject )
@@ -494,33 +494,33 @@ encodePreconditionFailureViolation value =
         ]
 
 
-encodeBadRequest : BadRequest -> Json.Encode.Value
-encodeBadRequest value =
+jsonBadRequest : BadRequest -> Json.Encode.Value
+jsonBadRequest value =
     Proto.Json.objectOfFields
-        [ ( "fieldViolations", Proto.Json.repeatedField encodeBadRequestFieldViolation value.fieldViolations )
+        [ ( "fieldViolations", Proto.Json.repeatedField jsonBadRequestFieldViolation value.fieldViolations )
         ]
 
 
-encodeBadRequestFieldViolation : BadRequestFieldViolation -> Json.Encode.Value
-encodeBadRequestFieldViolation value =
+jsonBadRequestFieldViolation : BadRequestFieldViolation -> Json.Encode.Value
+jsonBadRequestFieldViolation value =
     Proto.Json.objectOfFields
         [ ( "field", Proto.Json.implicitField "" Json.Encode.string value.field )
         , ( "description", Proto.Json.implicitField "" Json.Encode.string value.description )
         , ( "reason", Proto.Json.implicitField "" Json.Encode.string value.reason )
-        , ( "localizedMessage", Maybe.map encodeLocalizedMessage value.localizedMessage )
+        , ( "localizedMessage", Maybe.map jsonLocalizedMessage value.localizedMessage )
         ]
 
 
-encodeRequestInfo : RequestInfo -> Json.Encode.Value
-encodeRequestInfo value =
+jsonRequestInfo : RequestInfo -> Json.Encode.Value
+jsonRequestInfo value =
     Proto.Json.objectOfFields
         [ ( "requestId", Proto.Json.implicitField "" Json.Encode.string value.requestId )
         , ( "servingData", Proto.Json.implicitField "" Json.Encode.string value.servingData )
         ]
 
 
-encodeResourceInfo : ResourceInfo -> Json.Encode.Value
-encodeResourceInfo value =
+jsonResourceInfo : ResourceInfo -> Json.Encode.Value
+jsonResourceInfo value =
     Proto.Json.objectOfFields
         [ ( "resourceType", Proto.Json.implicitField "" Json.Encode.string value.resourceType )
         , ( "resourceName", Proto.Json.implicitField "" Json.Encode.string value.resourceName )
@@ -529,23 +529,23 @@ encodeResourceInfo value =
         ]
 
 
-encodeHelp : Help -> Json.Encode.Value
-encodeHelp value =
+jsonHelp : Help -> Json.Encode.Value
+jsonHelp value =
     Proto.Json.objectOfFields
-        [ ( "links", Proto.Json.repeatedField encodeHelpLink value.links )
+        [ ( "links", Proto.Json.repeatedField jsonHelpLink value.links )
         ]
 
 
-encodeHelpLink : HelpLink -> Json.Encode.Value
-encodeHelpLink value =
+jsonHelpLink : HelpLink -> Json.Encode.Value
+jsonHelpLink value =
     Proto.Json.objectOfFields
         [ ( "description", Proto.Json.implicitField "" Json.Encode.string value.description )
         , ( "url", Proto.Json.implicitField "" Json.Encode.string value.url )
         ]
 
 
-encodeLocalizedMessage : LocalizedMessage -> Json.Encode.Value
-encodeLocalizedMessage value =
+jsonLocalizedMessage : LocalizedMessage -> Json.Encode.Value
+jsonLocalizedMessage value =
     Proto.Json.objectOfFields
         [ ( "locale", Proto.Json.implicitField "" Json.Encode.string value.locale )
         , ( "message", Proto.Json.implicitField "" Json.Encode.string value.message )

@@ -1,6 +1,7 @@
 module Proto.Error exposing
     ( Error(..)
     , Binary, Reason(..)
+    , Unwritable
     , toString
     )
 
@@ -18,6 +19,11 @@ one as `BadBinary`.
 # Protobuf binary
 
 @docs Binary, Reason
+
+
+# Writing proto3 JSON
+
+@docs Unwritable
 
 
 # Describing
@@ -45,6 +51,7 @@ import Proto.Internal.JsonError as JsonError
   - `UnregisteredType`: a `google.protobuf.Any` of a type, its URL here,
     that the registry it was converted through has no entry for. Register
     the type.
+  - `NotWritable`: a value a proto3 JSON write refused ([`Unwritable`](#Unwritable)).
 
 -}
 type Error
@@ -52,6 +59,24 @@ type Error
     | BadJson Json.Decode.Error
     | TypeMismatch { expected : String, actual : String }
     | UnregisteredType String
+    | NotWritable Unwritable
+
+
+{-| A value a proto3 JSON write refused, because proto3 JSON has no form for
+it: a `Timestamp` outside years 1 to 9999, a `Duration` past ±315,576,000,000
+seconds, a `FieldMask` path whose lowerCamelCase form reads back as another
+path, a number in a `Value` that is NaN or infinite.
+
+  - `typeName`: the full name of the type of the value refused, such as
+    `google.protobuf.Timestamp`.
+  - `path`: the JSON field names and list indexes or map keys leading to it
+    from the message written, outermost first.
+
+-}
+type alias Unwritable =
+    { typeName : String
+    , path : List String
+    }
 
 
 {-| Why protobuf binary is not the message it was read as:
@@ -156,6 +181,15 @@ toString error =
 
         UnregisteredType typeUrl ->
             "An Any holding " ++ typeUrl ++ " was converted through a registry that has no entry for its type."
+
+        NotWritable { typeName, path } ->
+            ("A " ++ typeName ++ " holds a value proto3 JSON has no form for")
+                ++ (if List.isEmpty path then
+                        "."
+
+                    else
+                        ", at " ++ String.join "." path ++ "."
+                   )
 
 
 reasonText : Reason -> String
