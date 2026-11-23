@@ -1,0 +1,7 @@
+# Under module_prefix, every module goes inside the prefix (the list of
+# generated modules), and the module lines, imports and references use the
+# prefixed names; the runtime's modules are not prefixed.
+Api/Example/Notes/V1.elm module import Note
+Api/Example/Notes/V1/NotesService.elm module import getNote
+Api/Example/Notes/V1/Note.elm import author requiredRole
+Api/Example/People.elm module

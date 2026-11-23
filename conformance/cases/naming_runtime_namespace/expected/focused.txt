@@ -1,0 +1,36 @@
+-- An excerpt, not a module: what ../focus.txt names of the modules this
+-- case generates. Only it is compared; the modules are compiled and
+-- checked for elm-format's layout whole. `just bless` writes it.
+--
+-- Generated:
+--   Proto/Notes.elm
+--   Proto/Notes/Note.elm
+--   Rpc/V1.elm
+--   Rpc/V1/Ping.elm
+--   Rpc/V1/Pinger.elm
+
+
+-- Rpc/V1.elm: module
+
+module Rpc.V1 exposing (..)
+
+{-| A package whose module sits in a namespace of the runtime, `Rpc` or
+`Proto`, generates, with one warning listing every such module: the
+runtime may add a module of the same name in any release.
+-}
+
+
+-- Rpc/V1/Pinger.elm: module
+
+module Rpc.V1.Pinger exposing (..)
+
+{-| `service rpc.v1.Pinger`
+-}
+
+
+-- Proto/Notes.elm: module
+
+module Proto.Notes exposing (..)
+
+{-| `proto.notes` is `Proto.Notes`, in the runtime's other namespace.
+-}

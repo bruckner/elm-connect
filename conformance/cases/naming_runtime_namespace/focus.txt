@@ -1,0 +1,6 @@
+# Packages whose modules sit in the runtime's namespaces generate, with one
+# warning (warnings.txt) listing them: the generated modules and their
+# module lines.
+Rpc/V1.elm module
+Rpc/V1/Pinger.elm module
+Proto/Notes.elm module

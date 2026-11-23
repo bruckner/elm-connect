@@ -1,0 +1,134 @@
+-- An excerpt, not a module: what ../focus.txt names of the modules this
+-- case generates. Only it is compared; the modules are compiled and
+-- checked for elm-format's layout whole. `just bless` writes it.
+--
+-- Generated:
+--   Notes/V1.elm
+--   Notes/V1/Note.elm
+--   Users/V1.elm
+--   Users/V1/Role.elm
+--   Users/V1/User.elm
+
+
+-- Notes/V1.elm: import
+
+import Bytes.Encode
+import Dict exposing (Dict)
+import Json.Decode
+import Json.Encode
+import Notes.V1.Note
+import Proto.Binary
+import Proto.Descriptors
+import Proto.Json
+import Proto.Message
+import Proto.Registry
+import Proto.Version
+import Proto.WellKnown
+import Users.V1
+
+
+-- Notes/V1.elm: Note
+
+{-| [`message notes.v1.Note`](Notes-V1-Note#descriptor)
+
+  - [`title`](Notes-V1-Note#title)
+  - [`author`](Notes-V1-Note#author)
+  - [`requiredRole`](Notes-V1-Note#requiredRole): A plain enum field reads absence as the other module's zero value.
+  - [`readers`](Notes-V1-Note#readers)
+  - [`roles`](Notes-V1-Note#roles)
+  - `owner`: See [`NoteOwner`](#NoteOwner).
+
+-}
+type alias Note =
+    { title : String
+    , author : Maybe Users.V1.User
+    , requiredRole : Users.V1.Role
+    , readers : List Users.V1.User
+    , roles : Dict String Users.V1.Role
+    , owner : NoteOwner
+    }
+
+
+-- Notes/V1.elm: NoteOwner
+
+{-| `oneof owner` of `notes.v1.Note`
+
+  - `NoteOwnerUnset`: none of the fields is set.
+  - [`NoteOwnerUser`](Notes-V1-Note#user)
+  - [`NoteOwnerTeam`](Notes-V1-Note#team)
+
+-}
+type NoteOwner
+    = NoteOwnerUnset
+    | NoteOwnerUser Users.V1.User
+    | NoteOwnerTeam String
+
+
+-- Notes/V1.elm: defaultNote
+
+{-| A [`Note`](#Note) with every field at its default and every oneof unset.
+-}
+defaultNote : Note
+defaultNote =
+    { title = ""
+    , author = Nothing
+    , requiredRole = Users.V1.RoleUnspecified
+    , readers = []
+    , roles = Dict.empty
+    , owner = NoteOwnerUnset
+    }
+
+
+-- Notes/V1.elm: decodeNote
+
+{-| Decodes a [`Note`](#Note) from proto3 JSON.
+-}
+decodeNote : Json.Decode.Decoder Note
+decodeNote =
+    Proto.Json.message
+        (Json.Decode.succeed Note
+            |> Proto.Json.messageField "title" "" Proto.Json.string
+            |> Proto.Json.messageField "author" Nothing (Json.Decode.map Just Users.V1.decodeUser)
+            |> Proto.Json.messageFieldEither "requiredRole" "required_role" Users.V1.RoleUnspecified Users.V1.decodeRole
+            |> Proto.Json.messageField "readers" [] (Json.Decode.list Users.V1.decodeUser)
+            |> Proto.Json.messageField "roles" Dict.empty (Proto.Json.stringDict Users.V1.decodeRole)
+            |> Proto.Json.oneof decodeNoteOwner
+        )
+
+
+-- Notes/V1/Note.elm: import
+
+import Proto.Field
+import Proto.Message
+import Proto.Version
+import Users.V1.Role
+
+
+-- Notes/V1/Note.elm: author
+
+{-| `users.v1.User author = 2;`
+-}
+author : Proto.Field.Descriptor
+author =
+    Proto.Field.descriptor "author" "author" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "users.v1.User")
+
+
+-- Notes/V1/Note.elm: requiredRole
+
+{-| A plain enum field reads absence as the other module's zero value.
+
+`users.v1.Role required_role = 3;`
+
+-}
+requiredRole : Proto.Field.Descriptor
+requiredRole =
+    Proto.Field.descriptor "required_role" "requiredRole" 3 Proto.Field.CardinalitySingular (Proto.Field.KindEnum Users.V1.Role.descriptor)
+
+
+-- Notes/V1/Note.elm: roles
+
+{-| `map<string, users.v1.Role> roles = 5;`
+-}
+roles : Proto.Field.Descriptor
+roles =
+    Proto.Field.descriptor "roles" "roles" 5 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindEnum Users.V1.Role.descriptor)

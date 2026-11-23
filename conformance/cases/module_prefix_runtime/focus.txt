@@ -1,0 +1,5 @@
+# Under module_prefix=Proto every module sits in the runtime's namespace
+# and generates, with one warning (warnings.txt): the generated modules and
+# their module lines.
+Proto/Notes/V1.elm module
+Proto/Notes/V1/Note.elm module

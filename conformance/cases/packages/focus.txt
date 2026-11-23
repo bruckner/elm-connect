@@ -1,0 +1,5 @@
+# A package referring to another: the references are qualified with the
+# other module's name, which the module imports, an enum field's default
+# included.
+Notes/V1.elm import Note NoteOwner defaultNote decodeNote
+Notes/V1/Note.elm import author requiredRole roles

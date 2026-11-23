@@ -1,0 +1,4 @@
+# A package named like elm/html's module generates, with a warning
+# (warnings.txt): the generated modules and their module lines.
+Html.elm module
+Html/Attributes.elm module

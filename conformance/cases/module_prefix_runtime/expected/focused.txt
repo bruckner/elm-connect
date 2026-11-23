@@ -1,0 +1,25 @@
+-- An excerpt, not a module: what ../focus.txt names of the modules this
+-- case generates. Only it is compared; the modules are compiled and
+-- checked for elm-format's layout whole. `just bless` writes it.
+--
+-- Generated:
+--   Proto/Notes/V1.elm
+--   Proto/Notes/V1/Note.elm
+
+
+-- Proto/Notes/V1.elm: module
+
+module Proto.Notes.V1 exposing (..)
+
+{-| Under `module_prefix=Proto` (options.txt), every generated module sits
+in a namespace of the runtime: it generates, with one warning listing
+the modules.
+-}
+
+
+-- Proto/Notes/V1/Note.elm: module
+
+module Proto.Notes.V1.Note exposing (..)
+
+{-| The descriptor of `notes.v1.Note` and its fields.
+-}
