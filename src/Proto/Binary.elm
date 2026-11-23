@@ -9,7 +9,7 @@ module Proto.Binary exposing
     , int64, sint64, sfixed64, uint64, fixed64
     , int64AsInt, sint64AsInt, sfixed64AsInt, uint64AsInt, fixed64AsInt
     , bool, string, bytes, bytesAsBytes, enum
-    , embedded, recursive, memo, messageEncoder, messageDecoder
+    , embedded, recursive, memo, nestable, messageEncoder, messageDecoder
     , timestamp, duration, fieldMask, empty, struct, listValue, value, any
     , nestedStruct, nestedListValue, nestedValue
     , doubleValue, floatValue, int64Value, int64ValueAsInt, uint64Value, uint64ValueAsInt
@@ -79,7 +79,7 @@ Code generated with `unknown_fields=keep` reads and writes a message's
 
 # Messages
 
-@docs embedded, recursive, memo, messageEncoder, messageDecoder
+@docs embedded, recursive, memo, nestable, messageEncoder, messageDecoder
 
 
 # Well-known types
@@ -147,6 +147,7 @@ map f (Internal.Decoder d) =
         { name = d.name
         , fast = \width -> D.map f (d.fast width)
         , located = \width -> D.map (Result.map f) (d.located width)
+        , atDepth = Maybe.map (\at depth -> map f (at depth)) d.atDepth
         }
 
 
@@ -349,6 +350,7 @@ merge name step finish start =
         { name = name
         , fast = fastMessage first step finish
         , located = message name first step finish
+        , atDepth = Nothing
         }
 
 
@@ -2131,6 +2133,21 @@ memo build =
                 build depth
 
 
+{-| A recursive message's decoder from its merge at a depth and its default:
+the merge at depth 1, which an `Any` holding the message starts deeper, at
+the depth of the conversion it is read in.
+
+    decodeNodeBytes =
+        Proto.Binary.nestable mergeNestedNodeBytes defaultNode
+
+-}
+nestable : (Int -> a -> Decoder a) -> a -> Decoder a
+nestable into start =
+    case into 1 start of
+        Internal.Decoder d ->
+            Internal.Decoder { d | atDepth = Just (\depth -> into (max 1 depth) start) }
+
+
 {-| The most messages a cycle of messages nests, the outermost included.
 -}
 depthLimit : Int
@@ -2177,7 +2194,7 @@ method answers.
 -}
 messageDecoder : Codec a -> Decoder a
 messageDecoder (Codec c) =
-    Internal.Decoder { name = c.name (), fast = c.fastBody, located = c.readBody }
+    Internal.Decoder { name = c.name (), fast = c.fastBody, located = c.readBody, atDepth = Nothing }
 
 
 
@@ -2218,6 +2235,7 @@ wellKnown name start step finish =
         { name = name
         , fast = fastMessage start step identity >> D.map finish
         , located = message name start step identity >> D.map (Result.map finish)
+        , atDepth = Nothing
         }
 
 

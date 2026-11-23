@@ -514,10 +514,20 @@ impl Emitter {
             name: bytes_name(shape.message.decoder_name()),
             annotation,
             params: Vec::new(),
-            body: apply(
-                var(merge_name(shape.message.decoder_name())),
-                [var(shape.message.default_name())],
-            ),
+            body: if shape.message.recursive {
+                apply(
+                    self.binary("nestable"),
+                    [
+                        var(nested(merge_name(shape.message.decoder_name()))),
+                        var(shape.message.default_name()),
+                    ],
+                )
+            } else {
+                apply(
+                    var(merge_name(shape.message.decoder_name())),
+                    [var(shape.message.default_name())],
+                )
+            },
         }
     }
 

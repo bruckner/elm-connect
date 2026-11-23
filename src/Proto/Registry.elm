@@ -92,7 +92,7 @@ register (Message.Message name codecs) (Internal.Registry leniency depth entries
         entry =
             { toJson =
                 \registry base64 ->
-                    case Proto.Internal.Binary.runBase64 codecs.decodeBinary base64 of
+                    case Proto.Internal.Binary.runBase64At (Internal.depthOf registry) codecs.decodeBinary base64 of
                         Ok value ->
                             codecs.encodeJson registry value
 

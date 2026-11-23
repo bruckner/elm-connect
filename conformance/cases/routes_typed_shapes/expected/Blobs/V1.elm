@@ -700,7 +700,7 @@ mergeNestedFolderBytes =
 -}
 decodeFolderBytes : Proto.Binary.Decoder Folder
 decodeFolderBytes =
-    mergeFolderBytes defaultFolder
+    Proto.Binary.nestable mergeNestedFolderBytes defaultFolder
 
 
 {-| Decodes a [`Folder_`](#Folder_) from protobuf binary into the one given.

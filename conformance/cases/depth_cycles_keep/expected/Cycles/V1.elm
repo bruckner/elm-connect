@@ -364,7 +364,7 @@ mergeNestedChainBytes =
 -}
 decodeChainBytes : Proto.Binary.Decoder Chain
 decodeChainBytes =
-    mergeChainBytes defaultChain
+    Proto.Binary.nestable mergeNestedChainBytes defaultChain
 
 
 {-| Decodes a [`Chain_`](#Chain_) from protobuf binary into the one given.
@@ -457,7 +457,7 @@ mergeNestedTreeBytes =
 -}
 decodeTreeBytes : Proto.Binary.Decoder Tree
 decodeTreeBytes =
-    mergeTreeBytes defaultTree
+    Proto.Binary.nestable mergeNestedTreeBytes defaultTree
 
 
 {-| Decodes a [`Tree_`](#Tree_) from protobuf binary into the one given.

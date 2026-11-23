@@ -527,7 +527,7 @@ mergeNestedEntryBytes =
 -}
 decodeEntryBytes : Proto.Binary.Decoder Entry
 decodeEntryBytes =
-    mergeEntryBytes defaultEntry
+    Proto.Binary.nestable mergeNestedEntryBytes defaultEntry
 
 
 {-| Decodes a [`GetEntryRequest`](#GetEntryRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.

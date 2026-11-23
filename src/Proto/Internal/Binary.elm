@@ -1,4 +1,4 @@
-module Proto.Internal.Binary exposing (Decoder(..), Failure, crossed, run, runBase64)
+module Proto.Internal.Binary exposing (Decoder(..), Failure, crossed, run, runBase64, runBase64At)
 
 {-| The binary decoder type, defined here so that `Proto.Message` can run a
 decoder without importing `Proto.Binary`, which imports it through
@@ -29,6 +29,11 @@ type Decoder a
         { name : String
         , fast : Int -> Bytes.Decode.Decoder a
         , located : Int -> Bytes.Decode.Decoder (Result Failure a)
+
+        -- For a message on a cycle: the decoder starting at a nesting depth,
+        -- so a message inside an `Any` shares the depth of the reads around
+        -- it.
+        , atDepth : Maybe (Int -> Decoder a)
         }
 
 
@@ -111,3 +116,16 @@ runBase64 ((Decoder d) as decoder) base64 =
 
         Nothing ->
             Err { typeName = d.name, reason = Unlocated, path = [], offset = 0 }
+
+
+{-| [`runBase64`](#runBase64), the message read at nesting depth `depth` when
+it is on a cycle, as an `Any` inside other messages is.
+-}
+runBase64At : Int -> Decoder a -> String -> Result Proto.Error.Binary a
+runBase64At depth ((Decoder d) as decoder) base64 =
+    case d.atDepth of
+        Just at ->
+            runBase64 (at depth) base64
+
+        Nothing ->
+            runBase64 decoder base64

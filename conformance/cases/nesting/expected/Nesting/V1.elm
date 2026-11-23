@@ -1100,7 +1100,7 @@ mergeNestedNodeBytes =
 -}
 decodeNodeBytes : Proto.Binary.Decoder Node
 decodeNodeBytes =
-    mergeNodeBytes defaultNode
+    Proto.Binary.nestable mergeNestedNodeBytes defaultNode
 
 
 {-| Decodes a [`Node_`](#Node_) from protobuf binary into the one given.
@@ -1168,7 +1168,7 @@ mergeNestedPersonBytes =
 -}
 decodePersonBytes : Proto.Binary.Decoder Person
 decodePersonBytes =
-    mergePersonBytes defaultPerson
+    Proto.Binary.nestable mergeNestedPersonBytes defaultPerson
 
 
 {-| Decodes a [`Person_`](#Person_) from protobuf binary into the one given.
@@ -1240,7 +1240,7 @@ mergeNestedCompanyBytes =
 -}
 decodeCompanyBytes : Proto.Binary.Decoder Company
 decodeCompanyBytes =
-    mergeCompanyBytes defaultCompany
+    Proto.Binary.nestable mergeNestedCompanyBytes defaultCompany
 
 
 {-| Decodes a [`Company_`](#Company_) from protobuf binary into the one given.
@@ -1347,7 +1347,7 @@ mergeNestedExprBytes =
 -}
 decodeExprBytes : Proto.Binary.Decoder Expr
 decodeExprBytes =
-    mergeExprBytes defaultExpr
+    Proto.Binary.nestable mergeNestedExprBytes defaultExpr
 
 
 {-| Decodes a [`Sum`](#Sum) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
@@ -1392,4 +1392,4 @@ mergeNestedSumBytes =
 -}
 decodeSumBytes : Proto.Binary.Decoder Sum
 decodeSumBytes =
-    mergeSumBytes defaultSum
+    Proto.Binary.nestable mergeNestedSumBytes defaultSum

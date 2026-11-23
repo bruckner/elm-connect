@@ -3979,7 +3979,7 @@ mergeNestedTreeBytes =
 -}
 decodeTreeBytes : Proto.Binary.Decoder Tree
 decodeTreeBytes =
-    mergeTreeBytes defaultTree
+    Proto.Binary.nestable mergeNestedTreeBytes defaultTree
 
 
 {-| Decodes a [`Tree_`](#Tree_) from protobuf binary into the one given.
@@ -5219,7 +5219,7 @@ mergeNestedEverythingBytes =
 -}
 decodeEverythingBytes : Proto.Binary.Decoder Everything
 decodeEverythingBytes =
-    mergeEverythingBytes defaultEverything
+    Proto.Binary.nestable mergeNestedEverythingBytes defaultEverything
 
 
 {-| Decodes an [`Everything_`](#Everything_) from protobuf binary into the one given.
