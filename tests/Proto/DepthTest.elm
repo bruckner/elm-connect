@@ -1,30 +1,37 @@
 module Proto.DepthTest exposing (suite)
 
-{-| Messages on a cycle of references are read at most 100 levels deep, a
-level being each message entered along a field or oneof member of the
-cycle: every shape of cycle in `conformance/cases/depth_cycles`, and two
-under `unknown_fields=keep` in `conformance/cases/depth_cycles_keep`
-(generated under `tests/Generated/` by `crates/elm-connect-gen/tests/depth.rs`,
-`just tests-gen`), at 100 levels, at 101, and far past any engine's stack,
-built here without recursion.
+{-| Reads nest at most 100 levels deep, a level being each message entered
+along a field or oneof member of a cycle, each `Any`, and each array or
+object of a `Value`, `Struct` or `ListValue`, all counted against one
+budget: every shape of cycle in `conformance/cases/depth_cycles`, two under
+`unknown_fields=keep` in `conformance/cases/depth_cycles_keep` (generated
+under `tests/Generated/` by `crates/elm-connect-gen/tests/depth.rs`,
+`just tests-gen`), and the three kinds mixed, at 100 levels, at 101, and
+far past any engine's stack, built here without recursion.
 -}
 
 import Bytes exposing (Bytes)
 import Bytes.Encode
 import Dict
 import Expect exposing (Expectation)
+import Generated.Codec.Default.Codec.V1 as Codec
 import Generated.Deep.Cycles.V1 as Deep
 import Generated.Deep.Outside.V1 as Outside
 import Generated.DeepKeep.Cycles.V1 as Keep
 import Http
 import Json.Decode
+import Json.Encode
+import Proto.Any
 import Proto.Binary
 import Proto.Bytes
 import Proto.Error
+import Proto.Json
 import Proto.Message
 import Proto.Method
+import Proto.Value
 import Proto.WellKnown
 import Rpc
+import Rpc.Client
 import Rpc.Error
 import Rpc.Protocol
 import Test exposing (Test, describe, test)
@@ -39,6 +46,11 @@ suite =
         , mergedInto
         , keep
         , farPast
+        , oneBudget
+        , mixedFarPast
+        , scrubbed
+        , valueRefusals
+        , valueErrorsShort
         ]
 
 
@@ -467,4 +479,677 @@ farPast =
 
                     Ok _ ->
                         Expect.fail "read past the limit"
+        ]
+
+
+
+-- ONE BUDGET
+
+
+{-| The bytes of length-delimited layers, outermost first, around `core`:
+each layer gives its prefix from the size of what it holds.
+-}
+wrapped : List (Int -> List Int) -> List Int -> Bytes.Bytes
+wrapped layers core =
+    let
+        ( _, prefixes ) =
+            List.foldl
+                (\layer ( size, acc ) ->
+                    let
+                        p =
+                            layer size
+                    in
+                    ( size + List.length p, p :: acc )
+                )
+                ( List.length core, [] )
+                (List.reverse layers)
+    in
+    Bytes.Encode.encode (Bytes.Encode.sequence (List.map Bytes.Encode.unsignedInt8 (List.concat prefixes ++ core)))
+
+
+{-| An `Envelope`'s reply, its `value`, `data` and `list` fields, a `Value`'s
+list and a `ListValue`'s first element, a `Value`'s struct and a `Struct`'s
+member `"a"`, and an `Envelope`'s `payload`, an `Any` holding an `Envelope`.
+-}
+reply : Int -> List Int
+reply size =
+    0x12 :: varint size
+
+
+valueField : Int -> List Int
+valueField size =
+    0x22 :: varint size
+
+
+dataField : Int -> List Int
+dataField size =
+    0x1A :: varint size
+
+
+listInValue : Int -> List Int
+listInValue size =
+    0x32 :: varint size
+
+
+valueInList : Int -> List Int
+valueInList size =
+    0x0A :: varint size
+
+
+structInValue : Int -> List Int
+structInValue size =
+    0x2A :: varint size
+
+
+memberA : Int -> List Int
+memberA size =
+    let
+        entry =
+            [ 0x0A, 1, 0x61, 0x12 ] ++ varint size
+    in
+    0x0A :: varint (List.length entry + size) ++ entry
+
+
+envelopeUrl : List Int
+envelopeUrl =
+    List.map Char.toCode (String.toList "type.googleapis.com/cycles.v1.Envelope")
+
+
+payload : Int -> List Int
+payload size =
+    let
+        any =
+            0x0A :: varint (List.length envelopeUrl) ++ envelopeUrl ++ (0x12 :: varint size)
+    in
+    0x0A :: varint (List.length any + size) ++ any
+
+
+{-| `messages` envelopes, the innermost holding a `Value` of `arrays` nested
+arrays, in binary and in JSON.
+-}
+valueArraysBinary : Int -> Int -> Bytes.Bytes
+valueArraysBinary messages arrays =
+    wrapped
+        (List.repeat (messages - 1) reply
+            ++ valueField
+            :: List.concat (List.repeat (arrays - 1) [ listInValue, valueInList ])
+        )
+        [ 0x32, 0x00 ]
+
+
+valueArraysJson : Int -> Int -> String
+valueArraysJson messages arrays =
+    String.repeat (messages - 1) "{\"replies\":["
+        ++ "{\"value\":"
+        ++ (if arrays == 0 then
+                "1"
+
+            else
+                String.repeat arrays "[" ++ String.repeat arrays "]"
+           )
+        ++ "}"
+        ++ String.repeat (messages - 1) "]}"
+
+
+{-| `messages` envelopes, the innermost holding a `Struct` of `objects`
+nested objects, each the member `"a"` of the one around it.
+-}
+structBinary : Int -> Int -> Bytes.Bytes
+structBinary messages objects =
+    wrapped
+        (List.repeat (messages - 1) reply
+            ++ dataField
+            :: List.concat (List.repeat (objects - 1) [ memberA, structInValue ])
+        )
+        []
+
+
+structJson : Int -> Int -> String
+structJson messages objects =
+    String.repeat (messages - 1) "{\"replies\":["
+        ++ "{\"data\":"
+        ++ String.repeat (objects - 1) "{\"a\":"
+        ++ "{}"
+        ++ String.repeat (objects - 1) "}"
+        ++ "}"
+        ++ String.repeat (messages - 1) "]}"
+
+
+{-| Envelopes nested `levels` deep, each holding the next in an `Any` where
+`anyAt` its depth says so and as a reply otherwise; the innermost holds a
+`ListValue` of `arrays` nested arrays, or no field at 0.
+-}
+mixedJson : (Int -> Bool) -> Int -> Int -> String
+mixedJson anyAt levels arrays =
+    let
+        depths =
+            List.range 1 (levels - 1)
+
+        open depth =
+            if anyAt depth then
+                "\"payload\":{\"@type\":\"type.googleapis.com/cycles.v1.Envelope\","
+
+            else
+                "\"replies\":[{"
+
+        close depth =
+            if anyAt depth then
+                "}"
+
+            else
+                "}]"
+
+        inner =
+            if arrays == 0 then
+                "\"replies\":[]"
+
+            else
+                "\"list\":" ++ String.repeat arrays "[" ++ String.repeat arrays "]"
+    in
+    "{"
+        ++ String.concat (List.map open depths)
+        ++ inner
+        ++ String.concat (List.map close (List.reverse depths))
+        ++ "}"
+
+
+readEnvelope : String -> Result Json.Decode.Error ()
+readEnvelope =
+    Json.Decode.decodeString (Deep.decodeEnvelopeWith Deep.registry) >> ok
+
+
+readEnvelopeBytes : Bytes.Bytes -> Result Proto.Error.Binary ()
+readEnvelopeBytes =
+    Proto.Binary.decode Deep.decodeEnvelopeBytes >> ok
+
+
+tooDeepBinary : Result Proto.Error.Binary () -> Result Proto.Error.Reason ()
+tooDeepBinary =
+    Result.mapError .reason
+
+
+oneBudget : Test
+oneBudget =
+    describe "one budget for messages, Any and Value"
+        [ test "a Value's arrays count on from the message holding it, in JSON" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> readEnvelope (valueArraysJson 1 99) |> Expect.equal (Ok ())
+                    , \_ -> readEnvelope (valueArraysJson 1 100) |> failsTooDeep
+                    , \_ -> readEnvelope (valueArraysJson 50 50) |> Expect.equal (Ok ())
+                    , \_ -> readEnvelope (valueArraysJson 50 51) |> failsTooDeep
+                    , \_ -> readEnvelope (valueArraysJson 100 0) |> Expect.equal (Ok ())
+                    , \_ -> readEnvelope (valueArraysJson 100 1) |> failsTooDeep
+                    ]
+                    ()
+        , test "and in binary" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> readEnvelopeBytes (valueArraysBinary 1 99) |> Expect.equal (Ok ())
+                    , \_ -> readEnvelopeBytes (valueArraysBinary 1 100) |> tooDeepBinary |> Expect.equal (Err Proto.Error.TooDeep)
+                    , \_ -> readEnvelopeBytes (valueArraysBinary 50 50) |> Expect.equal (Ok ())
+                    , \_ -> readEnvelopeBytes (valueArraysBinary 50 51) |> tooDeepBinary |> Expect.equal (Err Proto.Error.TooDeep)
+                    ]
+                    ()
+        , test "a Struct's objects, in JSON and in binary" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> readEnvelope (structJson 60 40) |> Expect.equal (Ok ())
+                    , \_ -> readEnvelope (structJson 60 41) |> failsTooDeep
+                    , \_ -> readEnvelopeBytes (structBinary 60 40) |> Expect.equal (Ok ())
+                    , \_ -> readEnvelopeBytes (structBinary 60 41) |> tooDeepBinary |> Expect.equal (Err Proto.Error.TooDeep)
+                    ]
+                    ()
+        , test "an Any is a level, and the message it holds counts on from it" <|
+            \_ ->
+                let
+                    allAny =
+                        \_ -> True
+
+                    everyThird =
+                        \depth -> modBy 3 depth == 0
+                in
+                Expect.all
+                    [ \_ -> readEnvelope (mixedJson allAny 100 0) |> Expect.equal (Ok ())
+                    , \_ -> readEnvelope (mixedJson allAny 101 0) |> failsTooDeep
+                    , \_ -> readEnvelope (mixedJson everyThird 70 30) |> Expect.equal (Ok ())
+                    , \_ -> readEnvelope (mixedJson everyThird 70 31) |> failsTooDeep
+                    ]
+                    ()
+        , test "what is read at the limit writes in both codecs and reads back" <|
+            \_ ->
+                case Json.Decode.decodeString (Deep.decodeEnvelopeWith Deep.registry) (mixedJson (\depth -> modBy 2 depth == 0) 60 40) of
+                    Ok envelope ->
+                        Expect.all
+                            [ \_ ->
+                                Deep.encodeEnvelopeWith Deep.registry envelope
+                                    |> Result.toMaybe
+                                    |> Maybe.andThen (Json.Decode.decodeValue (Deep.decodeEnvelopeWith Deep.registry) >> Result.toMaybe)
+                                    |> Expect.equal (Just envelope)
+                            , \_ ->
+                                Proto.Binary.decode Deep.decodeEnvelopeBytes (Proto.Binary.encode Deep.encodeEnvelopeBytes envelope)
+                                    |> Expect.equal (Ok envelope)
+                            ]
+                            ()
+
+                    Err _ ->
+                        Expect.fail "did not read at the limit"
+        , test "an Any converted to JSON counts the Any it holds" <|
+            \_ ->
+                let
+                    packed depth =
+                        List.foldl (\_ inner -> Proto.Any.pack Proto.WellKnown.any inner)
+                            (Proto.Any.pack Proto.WellKnown.empty ())
+                            (List.range 2 depth)
+                in
+                Expect.all
+                    [ \_ -> Proto.Any.toJson Proto.WellKnown.registry (packed 100) |> ok |> Expect.equal (Ok ())
+                    , \_ ->
+                        Proto.Any.toJson Proto.WellKnown.registry (packed 101)
+                            |> ok
+                            |> Expect.equal (Err (Proto.Error.BadBinary { typeName = "google.protobuf.Any", reason = Proto.Error.TooDeep, path = [], offset = 0 }))
+                    ]
+                    ()
+        ]
+
+
+{-| 10,000 levels and more of the three kinds mixed fail with the error and
+throw nothing, through every way a program reads them.
+-}
+mixedFarPast : Test
+mixedFarPast =
+    let
+        jsonInputs =
+            [ ( "messages then a Value", valueArraysJson 5000 5000 )
+            , ( "a Struct", structJson 1 10000 )
+            , ( "Any in Any", mixedJson (\_ -> True) 10000 0 )
+            , ( "Any, messages and a ListValue", mixedJson (\depth -> modBy 3 depth == 0) 6000 6000 )
+            ]
+
+        binaryInputs =
+            [ ( "messages then a Value", valueArraysBinary 5000 5000 )
+            , ( "a Struct", structBinary 1 10000 )
+            ]
+
+        method =
+            Proto.Method.init "cycles.v1.Envelopes" "Get" Deep.encodeEnvelopeWith Deep.decodeEnvelopeWith Deep.encodeEnvelopeBytes Deep.decodeEnvelopeBytes
+
+        answer contentType body =
+            { url = "https://api.example.com/cycles.v1.Envelopes/Get", statusCode = 200, statusText = "OK", headers = Dict.fromList [ ( "content-type", contentType ) ] }
+                |> (\metadata -> ( metadata, body ))
+    in
+    describe "10,000 levels of the three kinds"
+        [ describe "JSON"
+            (List.map
+                (\( name, text ) ->
+                    test name <|
+                        \_ ->
+                            case Json.Decode.decodeString Json.Decode.value text of
+                                Ok json ->
+                                    Expect.all
+                                        [ \_ -> readEnvelope text |> failsTooDeep
+                                        , \_ -> Json.Decode.decodeValue (Deep.decodeEnvelopeWith Deep.registry) json |> ok |> failsTooDeep
+                                        , \_ ->
+                                            case Proto.Message.decodeJson Deep.registry Deep.messageEnvelope json of
+                                                Err (Proto.Error.BadJson error) ->
+                                                    failsTooDeep (Err error)
+
+                                                _ ->
+                                                    Expect.fail "not BadJson"
+                                        , \_ ->
+                                            let
+                                                ( metadata, body ) =
+                                                    answer "application/json" text
+                                            in
+                                            case Rpc.response (Rpc.client Rpc.Protocol.connect "https://api.example.com" |> Rpc.Client.withRegistry Deep.registry) (Rpc.call method Deep.defaultEnvelope) (Http.GoodStatus_ metadata body) of
+                                                Err error ->
+                                                    case Rpc.Error.protoError error of
+                                                        Just (Proto.Error.BadJson problem) ->
+                                                            failsTooDeep (Err problem)
+
+                                                        _ ->
+                                                            Expect.fail "not a BadJson body"
+
+                                                Ok _ ->
+                                                    Expect.fail "read past the limit"
+                                        ]
+                                        ()
+
+                                Err _ ->
+                                    Expect.fail "JSON.parse refused it"
+                )
+                jsonInputs
+            )
+        , describe "binary"
+            (List.map
+                (\( name, bytes ) ->
+                    test name <|
+                        \_ ->
+                            Expect.all
+                                [ \_ -> readEnvelopeBytes bytes |> tooDeepBinary |> Expect.equal (Err Proto.Error.TooDeep)
+                                , \_ ->
+                                    let
+                                        ( metadata, _ ) =
+                                            answer "application/proto" ""
+                                    in
+                                    case Rpc.responseBytes (Rpc.client Rpc.Protocol.connectProto "https://api.example.com") (Rpc.call method Deep.defaultEnvelope) (Http.GoodStatus_ metadata bytes) of
+                                        Err error ->
+                                            case Rpc.Error.protoError error of
+                                                Just (Proto.Error.BadBinary problem) ->
+                                                    problem.reason |> Expect.equal Proto.Error.TooDeep
+
+                                                _ ->
+                                                    Expect.fail "not a BadBinary body"
+
+                                        Ok _ ->
+                                            Expect.fail "read past the limit"
+                                ]
+                                ()
+                )
+                binaryInputs
+            )
+        , test "Anys each holding a deep message, read from binary, convert to JSON with the error" <|
+            \_ ->
+                case readEnvelopeBytesValue (wrapped (List.concat (List.repeat 60 (payload :: List.repeat 90 reply))) []) of
+                    Ok envelope ->
+                        case Deep.encodeEnvelopeWith Deep.registry envelope of
+                            Err (Proto.Error.BadBinary problem) ->
+                                problem.reason |> Expect.equal Proto.Error.TooDeep
+
+                            _ ->
+                                Expect.fail "converted past the limit"
+
+                    Err _ ->
+                        Expect.fail "did not read"
+        , test "an Any chain read from binary converts to JSON with the error" <|
+            \_ ->
+                case readEnvelopeBytesValue (wrapped (List.repeat 10000 payload) []) of
+                    Ok envelope ->
+                        case Deep.encodeEnvelopeWith Deep.registry envelope of
+                            Err (Proto.Error.BadBinary problem) ->
+                                problem.reason |> Expect.equal Proto.Error.TooDeep
+
+                            _ ->
+                                Expect.fail "converted past the limit"
+
+                    Err _ ->
+                        Expect.fail "an Any's binary is read unconverted"
+        ]
+
+
+readEnvelopeBytesValue : Bytes.Bytes -> Result Proto.Error.Binary Deep.Envelope
+readEnvelopeBytesValue =
+    Proto.Binary.decode Deep.decodeEnvelopeBytes
+
+
+{-| An error we return holds no JSON nested past 50 levels, so it prints
+short however deep the input: `Json.Decode.errorToString` of the `BadJson`
+itself, not only `Proto.Error.toString`, which scrubs before printing.
+-}
+scrubbed : Test
+scrubbed =
+    let
+        deep =
+            String.repeat 100000 "[" ++ String.repeat 100000 "]"
+
+        printsShort limit result =
+            case result of
+                Err (Proto.Error.BadJson error) ->
+                    Expect.all
+                        [ \_ -> Json.Decode.errorToString error |> String.length |> Expect.lessThan limit
+                        , \_ -> Proto.Error.toString (Proto.Error.BadJson error) |> String.length |> Expect.lessThan limit
+                        ]
+                        ()
+
+                _ ->
+                    Expect.fail "not BadJson"
+
+        parsed text =
+            Json.Decode.decodeString Json.Decode.value text |> Result.withDefault Json.Encode.null
+    in
+    describe "the error a read returns"
+        [ test "when it failed past the limit" <|
+            \_ ->
+                Proto.Message.decodeJson Deep.registry Deep.messageEnvelope (parsed (valueArraysJson 1 100000))
+                    |> printsShort 1200
+        , test "when a field was given a deep value of the wrong type" <|
+            \_ ->
+                Proto.Message.decodeJson Deep.registry Deep.messageChain (parsed ("{\"label\":" ++ deep ++ "}"))
+                    |> printsShort 300
+        , test "when an Any's message was given one" <|
+            \_ ->
+                Proto.Message.decodeJson Deep.registry Deep.messageEnvelope (parsed ("{\"payload\":{\"@type\":\"type.googleapis.com/cycles.v1.Chain\",\"label\":" ++ deep ++ "}}"))
+                    |> printsShort 400
+        , test "an error detail's" <|
+            \_ ->
+                let
+                    body =
+                        "{\"code\":\"internal\",\"message\":\"x\",\"details\":[{\"type\":" ++ deep ++ "}]}"
+
+                    method =
+                        Proto.Method.init "cycles.v1.Trees" "Get" (\_ -> Ok << Deep.encodeTree) (\_ -> Deep.decodeTree) Deep.encodeTreeBytes Deep.decodeTreeBytes
+
+                    answer =
+                        Http.BadStatus_ { url = "https://api.example.com/cycles.v1.Trees/Get", statusCode = 500, statusText = "Internal Server Error", headers = Dict.fromList [ ( "content-type", "application/json" ) ] } body
+                in
+                case Rpc.response (Rpc.client Rpc.Protocol.connect "https://api.example.com") (Rpc.call method Deep.defaultTree) answer of
+                    Err error ->
+                        case Rpc.Error.details error of
+                            [ detail ] ->
+                                printsShort 300 detail
+
+                            _ ->
+                                Expect.fail "not one detail"
+
+                    Ok _ ->
+                        Expect.fail "an error read as an answer"
+        ]
+
+
+
+-- VALUE REFUSALS
+
+
+{-| A `Value`, `Struct` or `ListValue` refused for its depth fails with the
+limit's text alone, at the field holding it, and one given JSON of the wrong
+kind fails as elm/json does for that kind, however deep the JSON is.
+-}
+valueRefusals : Test
+valueRefusals =
+    let
+        replies messages =
+            List.concat (List.repeat (messages - 1) [ "replies", "0" ])
+
+        listJson messages levels =
+            mixedJson (\_ -> False) messages levels
+
+        readsAt decoder text =
+            Json.Decode.decodeString decoder text |> ok |> Expect.equal (Ok ())
+
+        refusedAt path text result =
+            result |> Result.mapError failureAt |> Expect.equal (Err (Just ( path, text )))
+
+        readWellKnown =
+            Json.Decode.decodeString (Codec.decodeWellKnownWith Proto.WellKnown.registry)
+    in
+    describe "a Value, Struct or ListValue refused"
+        [ describe "past the limit says the limit, at the field"
+            [ test "a Value, read alone" <|
+                \_ ->
+                    Expect.all
+                        [ \_ -> readsAt Proto.Json.value (nestedArrays 100)
+                        , \_ -> readsAt Proto.Value.decoder (nestedArrays 100)
+                        , \_ -> Json.Decode.decodeString Proto.Json.value (nestedArrays 101) |> refusedAt [] tooDeepText
+                        , \_ -> Json.Decode.decodeString Proto.Value.decoder (nestedObjects 101) |> refusedAt [] tooDeepText
+                        ]
+                        ()
+            , test "a Struct, read alone" <|
+                \_ ->
+                    Expect.all
+                        [ \_ -> readsAt Proto.Json.struct (nestedObjects 100)
+                        , \_ -> Json.Decode.decodeString Proto.Json.struct (nestedObjects 101) |> refusedAt [] tooDeepText
+                        ]
+                        ()
+            , test "a ListValue, read alone" <|
+                \_ ->
+                    Expect.all
+                        [ \_ -> readsAt Proto.Json.listValue (nestedArrays 100)
+                        , \_ -> Json.Decode.decodeString Proto.Json.listValue (nestedArrays 101) |> refusedAt [] tooDeepText
+                        ]
+                        ()
+            , test "a Value in a message on a cycle" <|
+                \_ ->
+                    Expect.all
+                        [ \_ -> readEnvelope (valueArraysJson 40 60) |> Expect.equal (Ok ())
+                        , \_ -> readEnvelope (valueArraysJson 40 61) |> refusedAt (replies 40 ++ [ "value" ]) tooDeepText
+                        ]
+                        ()
+            , test "a Struct in a message on a cycle" <|
+                \_ ->
+                    Expect.all
+                        [ \_ -> readEnvelope (structJson 40 60) |> Expect.equal (Ok ())
+                        , \_ -> readEnvelope (structJson 40 61) |> refusedAt (replies 40 ++ [ "data" ]) tooDeepText
+                        , \_ -> readEnvelope (structJson 100 1) |> refusedAt (replies 100 ++ [ "data" ]) tooDeepText
+                        ]
+                        ()
+            , test "a ListValue in a message on a cycle" <|
+                \_ ->
+                    Expect.all
+                        [ \_ -> readEnvelope (listJson 40 60) |> Expect.equal (Ok ())
+                        , \_ -> readEnvelope (listJson 40 61) |> refusedAt (replies 40 ++ [ "list" ]) tooDeepText
+                        ]
+                        ()
+            ]
+        , describe "for its kind says the kind, however deep"
+            [ test "a Struct, read alone" <|
+                \_ ->
+                    Expect.all
+                        [ \_ -> Json.Decode.decodeString Proto.Json.struct "[1]" |> refusedAt [] "Expecting an OBJECT"
+                        , \_ -> Json.Decode.decodeString Proto.Json.struct "\"x\"" |> refusedAt [] "Expecting an OBJECT"
+                        , \_ -> Json.Decode.decodeString Proto.Json.struct "null" |> refusedAt [] "Expecting an OBJECT"
+                        , \_ -> Json.Decode.decodeString Proto.Json.struct (nestedArrays 200) |> refusedAt [] "Expecting an OBJECT"
+                        ]
+                        ()
+            , test "a ListValue, read alone" <|
+                \_ ->
+                    Expect.all
+                        [ \_ -> Json.Decode.decodeString Proto.Json.listValue "{\"a\":1}" |> refusedAt [] "Expecting a LIST"
+                        , \_ -> Json.Decode.decodeString Proto.Json.listValue "null" |> refusedAt [] "Expecting a LIST"
+                        , \_ -> Json.Decode.decodeString Proto.Json.listValue (nestedObjects 200) |> refusedAt [] "Expecting a LIST"
+                        ]
+                        ()
+            , test "a Struct or ListValue field, a map value and null" <|
+                \_ ->
+                    Expect.all
+                        [ \_ -> readWellKnown "{\"struct\":[1]}" |> refusedAt [ "struct" ] "Expecting an OBJECT"
+                        , \_ -> readWellKnown "{\"struct\":\"x\"}" |> refusedAt [ "struct" ] "Expecting an OBJECT"
+                        , \_ -> readWellKnown "{\"list\":{\"a\":1}}" |> refusedAt [ "list" ] "Expecting a LIST"
+                        , \_ -> readWellKnown "{\"structs\":{\"1\":[]}}" |> refusedAt [ "structs", "1" ] "Expecting an OBJECT"
+                        , \_ -> readWellKnown "{\"struct\":null,\"list\":null}" |> Result.map (\read -> ( read.struct, read.list )) |> Expect.equal (Ok ( Nothing, Nothing ))
+                        ]
+                        ()
+            , test "a Struct or ListValue field on a cycle, given deep JSON" <|
+                \_ ->
+                    Expect.all
+                        [ \_ -> readEnvelope ("{\"data\":" ++ nestedArrays 200 ++ "}") |> refusedAt [ "data" ] "Expecting an OBJECT"
+                        , \_ -> readEnvelope "{\"data\":\"x\"}" |> refusedAt [ "data" ] "Expecting an OBJECT"
+                        , \_ -> readEnvelope ("{\"list\":" ++ nestedObjects 200 ++ "}") |> refusedAt [ "list" ] "Expecting a LIST"
+                        , \_ -> readEnvelope (String.repeat 99 "{\"replies\":[" ++ "{\"data\":[]}" ++ String.repeat 99 "]}") |> refusedAt (replies 100 ++ [ "data" ]) "Expecting an OBJECT"
+                        ]
+                        ()
+            ]
+        ]
+
+
+{-| The path to the failure, as field names and indexes, and its text;
+`Nothing` for an error that failed in more than one way.
+-}
+failureAt : Json.Decode.Error -> Maybe ( List String, String )
+failureAt error =
+    case error of
+        Json.Decode.Field name inner ->
+            Maybe.map (Tuple.mapFirst ((::) name)) (failureAt inner)
+
+        Json.Decode.Index index inner ->
+            Maybe.map (Tuple.mapFirst ((::) (String.fromInt index))) (failureAt inner)
+
+        Json.Decode.Failure text _ ->
+            Just ( [], text )
+
+        Json.Decode.OneOf _ ->
+            Nothing
+
+
+{-| `levels` arrays nested.
+-}
+nestedArrays : Int -> String
+nestedArrays levels =
+    String.repeat levels "[" ++ String.repeat levels "]"
+
+
+{-| `levels` objects nested, each the member `"a"` of the one around it.
+-}
+nestedObjects : Int -> String
+nestedObjects levels =
+    String.repeat (levels - 1) "{\"a\":" ++ "{}" ++ String.repeat (levels - 1) "}"
+
+
+{-| A `Value`, `Struct` or `ListValue` refused for its depth gives an error of
+a few hundred characters through the library, however wide or deep the
+value: the levels' own failure, which holds every way each level failed, is
+never returned.
+-}
+valueErrorsShort : Test
+valueErrorsShort =
+    let
+        wide levels =
+            String.repeat levels "{\"k1\":[1,\"s\",true],\"k2\":[2,\"s\",true],\"k3\":[3,\"s\",true],\"z\":" ++ "1" ++ String.repeat levels "}"
+
+        printsWithin limit result =
+            case result of
+                Err (Proto.Error.BadJson error) ->
+                    Expect.all
+                        [ \_ -> Json.Decode.errorToString error |> String.length |> Expect.atMost limit
+                        , \_ -> Proto.Error.toString (Proto.Error.BadJson error) |> String.length |> Expect.atMost limit
+                        ]
+                        ()
+
+                _ ->
+                    Expect.fail "not BadJson"
+
+        parsed text =
+            Json.Decode.decodeString Json.Decode.value text |> Result.withDefault Json.Encode.null
+
+        method =
+            Proto.Method.init "cycles.v1.Envelopes" "Get" Deep.encodeEnvelopeWith Deep.decodeEnvelopeWith Deep.encodeEnvelopeBytes Deep.decodeEnvelopeBytes
+
+        answered text =
+            Http.GoodStatus_ { url = "https://api.example.com/cycles.v1.Envelopes/Get", statusCode = 200, statusText = "OK", headers = Dict.fromList [ ( "content-type", "application/json" ) ] } text
+                |> Rpc.response (Rpc.client Rpc.Protocol.connect "https://api.example.com" |> Rpc.Client.withRegistry Deep.registry) (Rpc.call method Deep.defaultEnvelope)
+                |> Result.mapError (Rpc.Error.protoError >> Maybe.withDefault (Proto.Error.BadJson (Json.Decode.Failure "not a protobuf error" Json.Encode.null)))
+
+        decodeValueMessage =
+            Proto.Message.decodeJson Proto.WellKnown.registry Proto.WellKnown.value
+    in
+    describe "a Value, Struct or ListValue refused prints short through the library"
+        [ test "refused at 101 levels" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> Proto.Message.decodeJson Deep.registry Deep.messageEnvelope (parsed (valueArraysJson 1 100)) |> printsWithin 300
+                    , \_ -> answered (valueArraysJson 1 100) |> printsWithin 300
+                    , \_ -> answered (structJson 1 101) |> printsWithin 300
+                    , \_ -> decodeValueMessage (parsed (nestedArrays 101)) |> printsWithin 300
+                    ]
+                    ()
+        , test "wide and too deep" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> Proto.Message.decodeJson Deep.registry Deep.messageEnvelope (parsed ("{\"value\":" ++ wide 101 ++ "}")) |> printsWithin 300
+                    , \_ -> answered ("{\"value\":" ++ wide 101 ++ "}") |> printsWithin 300
+                    , \_ -> answered ("{\"data\":" ++ wide 101 ++ "}") |> printsWithin 300
+                    , \_ -> decodeValueMessage (parsed (wide 101)) |> printsWithin 300
+                    ]
+                    ()
+        , test "100,000 levels" <|
+            \_ -> decodeValueMessage (parsed (nestedArrays 100000)) |> printsWithin 300
         ]

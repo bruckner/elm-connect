@@ -777,7 +777,11 @@ rpc shared call =
     `Json.Decode.lazy`.
   - Every message on a cycle of references, through fields or oneof
     members, is read at most 100 levels deep (§5.5 counts a level the
-    same way). Its JSON decoder takes the depth: `decodeNode =
+    same way), against one budget with the `Any`s and the arrays and
+    objects of the `Struct`, `Value` and `ListValue` it holds: those
+    count on from its depth (`Proto.Json.nestedStruct depth`,
+    `nestedListValue`, `nestedValue`, `nestedMessageValueField`,
+    `nestedAnyWith`). Its JSON decoder takes the depth: `decodeNode =
     decodeNestedNode 1`, and `decodeNestedNode = Proto.Json.memo (\depth
     -> …)`, whose fields on the cycle read `Json.Decode.lazy (\_ ->
     decodeNestedNode (depth + 1))`. `memo` makes the decoder for each
@@ -788,14 +792,17 @@ rpc shared call =
     each depth by its message's. A message that reaches an `Any` takes
     the registry, so its decoders cannot be made before it is given:
     `decodeNestedNodeWith types depth` builds the next level's as the
-    value is read (`Proto.Json.deeperWith`). Past 100 the read fails
-    with "Expecting messages nested at most 100 deep". The `Nested`
-    after the verb, like the `Bytes` and `With` suffixes, breaks the
-    prefix rule of §3.7's names: the codecs of a type `NestedNode`
-    beside a recursive `Node` would take `decodeNestedNode` and
-    `mergeNestedNodeBytes`, and the compiler, not the generator, reports
-    the name defined twice (`rename` is the escape). Every name at a
-    depth comes from one function of the generator, `naming::nested`.
+    value is read (`Proto.Json.deeperWith`), and `decodeNodeWith types`
+    starts at the depth the registry carries
+    (`Proto.Json.registryDepth`), so a message read inside an `Any`
+    counts on from it. Past 100 the read fails with "Expecting messages
+    nested at most 100 deep". The `Nested` after the verb, like the
+    `Bytes` and `With` suffixes, breaks the prefix rule of §3.7's names:
+    the codecs of a type `NestedNode` beside a recursive `Node` would
+    take `decodeNestedNode` and `mergeNestedNodeBytes`, and the
+    compiler, not the generator, reports the name defined twice
+    (`rename` is the escape). Every name at a depth comes from one
+    function of the generator, `naming::nested`.
   - No diagnostic: the wrapper is in the generated output, where the
     Elm compiler points at it the first time a record is built without
     it. A note at generation time would repeat what the types already
@@ -890,9 +897,8 @@ out:
   `Timestamp`, `Duration`, `FieldMask`, `Struct`, `ListValue`, `Value`,
   `Any`) is left out when `Nothing` and written when `Just`, at its
   default too (`Just 0` writes `0`, `Just` an empty message writes `{}`,
-  `Just Json.Encode.null` writes `null`): presence is what the `Maybe`
-  says (`Maybe.map encoder value`, or the `Value` field's own `Maybe
-  Json.Encode.Value`).
+  `Just ValueNull` writes `null`): presence is what the `Maybe` says
+  (`Maybe.map encoder value`).
 - A oneof's set member is always written, at its default too; an unset
   oneof writes nothing (§3.6).
 - A repeated or map field is left out when empty (`Proto.Json.repeatedField`,
@@ -1116,9 +1122,9 @@ The runtime provides the Elm types.
 | `google.protobuf.Duration` | `Proto.Duration` (opaque; `toSeconds : Duration -> Float`) | Elm has no duration type; `"1.5s"` on the wire |
 | `google.protobuf.FieldMask` | `List String` | comma-separated on the wire |
 | `google.protobuf.Empty` | `()`, without presence | see below |
-| `google.protobuf.Struct` | `Dict String Json.Encode.Value` | a JSON object; see below |
-| `google.protobuf.ListValue` | `List Json.Encode.Value` | a JSON array; see below |
-| `google.protobuf.Value` | `Json.Encode.Value`; a singular field `Maybe Json.Encode.Value` | it *is* JSON; see below |
+| `google.protobuf.Struct` | `Dict String Proto.Value.Value` | a JSON object; see below |
+| `google.protobuf.ListValue` | `List Proto.Value.Value` | a JSON array; see below |
+| `google.protobuf.Value` | `Proto.Value.Value`, a union of JSON's six kinds; a singular field `Maybe Proto.Value.Value` | any JSON; see below |
 | `google.protobuf.*Value` wrappers | `Maybe` of the scalar | null or the value on the wire |
 | `google.protobuf.Any` | `Proto.Any.Any` (opaque: type URL and the message's protobuf binary) | the message's JSON plus `"@type"` on the wire |
 | `google.protobuf.NullValue` (an enum) | `()`, without presence | `null` on the wire; see below |
@@ -1159,31 +1165,74 @@ In detail:
   says nothing `()` does not.
 - A wrapper is `Maybe` of its scalar directly (`Maybe Int`, never
   `Maybe (Maybe Int)`); repeated or as a map value it is the bare scalar.
-- `Struct` is `Dict String Json.Encode.Value` and `ListValue` is
-  `List Json.Encode.Value`. They are messages, so presence
-  is kept: a singular field of either is a `Maybe` like any message
-  field, and an absent or `null` field (`Nothing`) is distinct from an
-  empty object or array (`Just Dict.empty`, `Just []`). Their decoders
-  (`Proto.Json.struct`, `Proto.Json.listValue`) check the JSON shape
-  and fail on anything but an object or an array; their encoders are
-  `Proto.Json.encodeStruct` and `encodeListValue`. The members and
-  elements are passed through as received.
+- `Value` is `Proto.Value.Value`, a union of JSON's kinds:
+  `ValueNull | ValueBool Bool | ValueNumber Float | ValueString String
+  | ValueStruct (Dict String Value) | ValueList (List Value)`, the
+  constructors prefixed by the type's name (§3.1, rule 3). `Struct` is
+  `Dict String Proto.Value.Value` and `ListValue` is
+  `List Proto.Value.Value`. Both codecs convert at the read and the
+  write, so `==` compares content: an object's key order never matters
+  (a `Dict`), `1` equals `1.0` and `-0` equals `0`, and only NaN equals
+  nothing, as anywhere in Elm. elm/json's `Json.Encode.Value`, which
+  these were held as before, has a `==` that walks only the left
+  value's keys. Generated code writes the type qualified,
+  `Proto.Value.Value`, so it reserves no name in a user's module.
+  `Proto.Value.toJson` and `fromJson` convert to and from elm/json for
+  a port or the application's own decoders; `fromJson` gives `Nothing`
+  for what is not JSON and for nesting past the read limit, and
+  `Proto.Value.decoder` is the read to compose into the application's
+  own decoders, with the reason a read failed. Its depth-taking form,
+  `Proto.Value.nestedDecoder`, is what generated code reads a `Value`
+  inside a recursive message with, through `Proto.Json.nestedValue`.
+  (decisions.md: "A union for `google.protobuf.Value`, one depth budget".)
+- The conversion counts depth as it goes: each array and object is a
+  level, in JSON and in binary alike (a binary `Struct` or `ListValue`
+  is one, the `Value` holding it none), against the read budget of
+  §5.5, shared with the messages around it. A number that is not
+  finite, which only protobuf binary or the application can give, is
+  kept: binary writes it back as it came, and JSON, which has no form
+  for it, writes `null`, as `JSON.stringify` does. Whether a read
+  should refuse it is open. A `Dict` writes an object's keys sorted,
+  and of duplicate keys in JSON the last wins. A `__proto__` key is
+  kept, written as text and parsed rather than assigned.
+- The JSON read tries the six kinds in a `oneOf` at each level, in one
+  pass. A `oneOf` that fails keeps every way it failed, so a value
+  refused at the limit would carry six failures at each level above it;
+  each read from outside a value (a field, member, list or map element,
+  `Proto.Value.decoder`, `Proto.Json.value`, `struct`, `listValue` and
+  their `nested` forms) runs the levels with `Json.Decode.decodeValue`
+  and, when they fail, fails afresh with a short error. A `Value` fails
+  only past the limit, with "Expecting messages nested at most 100
+  deep" at the field holding it; where inside the value the limit was
+  passed is not said, since it is the deep part itself. A `Struct` or
+  `ListValue` given JSON of another kind fails as elm/json does
+  (`Expecting an OBJECT`, `Expecting a LIST`), however deep that JSON
+  is; the kind is looked at only after the levels failed. (decisions.md:
+  "A union for `google.protobuf.Value`, one depth budget".)
+- `Struct` and `ListValue` are messages, so presence is kept: a
+  singular field of either is a `Maybe` like any message field, and an
+  absent or `null` field (`Nothing`) is distinct from an empty object
+  or array (`Just Dict.empty`, `Just []`). Their decoders
+  (`Proto.Json.struct`, `Proto.Json.listValue`) fail on anything but an
+  object or an array; their encoders are `Proto.Json.encodeStruct` and
+  `encodeListValue`. A `Value`'s are `Proto.Json.value`, which
+  reads any JSON (the same decoder as `Proto.Value.decoder`), and
+  `encodeValue`.
 - A singular `Value` field, `optional` or not, is `Maybe
-  Json.Encode.Value`. `Value` is a message, and
-  `null` is one of its values: protojson reads `"payload": null` as set,
-  holding `NullValue`, and only a missing key as unset. So a missing key
-  is `Nothing`, and any JSON under the key is `Just` it, `null` included
-  (`Just Json.Encode.null`); `Nothing` leaves the field out and `Just`
-  writes its JSON, `null` too. The step is `Proto.Json.valueField`
+  Proto.Value.Value`. `Value` is a message, and `null` is one of its
+  values: protojson reads `"payload": null` as set, holding
+  `NullValue`, and only a missing key as unset. So a missing key is
+  `Nothing`, and any JSON under the key is `Just` it, `null` included
+  (`Just ValueNull`); `Nothing` leaves the field out and `Just` writes
+  its JSON, `null` too. The step is `Proto.Json.valueField`
   (`valueFieldEither` when the names differ), which reads `null` as set
   where `field` reads it as the default. This keeps a default message
   `{}` and matches `Struct` and `ListValue`, and a client that never
   touches the field never sends it (decisions.md: `google.protobuf.Value`
   fields as `Maybe`). Repeated, as a map value and as a oneof member it
-  stays a bare `Json.Encode.Value`, passed through as received
-  (`Json.Decode.value`, written back as is). A `Value` member of a oneof
-  that arrives as `null` is set and holds `null`, as protojson reads it,
-  unlike any other member (§3.6).
+  is a bare `Proto.Value.Value`. A `Value` member of a oneof that
+  arrives as `null` is set and holds `ValueNull`, as protojson reads
+  it, unlike any other member (§3.6).
 - `Timestamp` (`Proto.Timestamp`, elm/time): RFC 3339 with a fraction
   of up to nine digits and `Z` or an offset, which is applied; years 1
   to 9999. `Time.Posix` counts milliseconds, so finer digits are
@@ -1306,8 +1355,8 @@ In detail:
   - A member is present when its key holds a value other than `null`;
     a member present as `null` reads as absent. The exception, as in
     protojson, is a member of `google.protobuf.Value`: `null` is a
-    value of it, so a member present as `null` is set and holds the
-    JSON `null` (`Proto.Json.valueMember`).
+    value of it, so a member present as `null` is set and holds
+    `ValueNull` (`Proto.Json.valueMember`).
   - No member present decodes as the unset constructor.
   - A member present with a value its decoder rejects (`{"title": 1}`
     for a string member) fails the message, as a malformed plain field
@@ -2915,8 +2964,8 @@ milliseconds, the base URL's trailing slash, the binary protocols'
 before a request is sent, the read limits a successful answer is checked
 against before it is decoded). The data modules, which generated code
 calls whatever the protocol, are the codecs (`Proto.Json`,
-`Proto.Binary` (§5.5), `Proto.Timestamp`, `Proto.Duration`, `Proto.Int64`,
-`Proto.Bytes`), the typed values
+`Proto.Binary` (§5.5), `Proto.Timestamp`, `Proto.Duration`, `Proto.Value`,
+`Proto.Int64`, `Proto.Bytes`), the typed values
 and descriptor trees (`Proto.Message`, `Proto.Enum`, `Proto.Method`, and
 `Proto.Field` and `Proto.EnumValue` for the descriptors' parts), the
 HTTP bindings as data (`Proto.Http`), the route record and helpers
@@ -3839,6 +3888,23 @@ toString : Error -> String              -- for a log, as Json.Decode.errorToStri
   but its field name. The `Any` in the caller's hand still has the URL.
   `BadJson` carries elm/json's error alone: its path locates the
   failure, and a type name would have to be plumbed from every caller.
+- **Scrubbed of deep JSON.** elm/json keeps, in each `Failure`, the
+  JSON the failing decoder ran on: for a read refused at the depth
+  limit, everything below the level it stopped at (for a `Value`,
+  `Struct` or `ListValue`, the whole value), and for a field given a
+  deep value of the wrong type, the whole value. Printing it
+  with `Json.Decode.errorToString` threw past about 2,000 (Firefox) to
+  12,000 (WebKit) input levels. So every `BadJson` the runtime returns
+  (`Proto.Message.decodeJson`, an answer's body and its error details,
+  an `Any`'s conversion and `tryUnpack`) holds, in place of a failure's
+  JSON nested more than 50 levels deep, the string `"(JSON nested more
+  than 50 levels deep, left out)"`; paths and texts are kept
+  (`Proto.Internal.JsonError.scrub`, a bounded walk that runs only on
+  a failure). `Proto.Error.toString` scrubs a `BadJson` before printing,
+  so one an application built prints too. An error from the
+  application's own `Json.Decode.decodeString` with a generated decoder
+  never passes through the runtime and is not scrubbed (decisions: "A
+  union for `google.protobuf.Value`, one depth budget").
 - **What each operation gives.**
 
   | Operation | Gives | Fails with |
@@ -3846,7 +3912,7 @@ toString : Error -> String              -- for a log, as Json.Decode.errorToStri
   | `Proto.Binary.decode`, `Proto.Message.decodeBinary` | `Result Binary a` | the report |
   | `Proto.Message.decodeJson` | `Result Error a` | `UnregisteredType` for an `Any` the registry lacks, else `BadJson` |
   | `Proto.Any.tryUnpack` | `Result Error a` | `TypeMismatch`, `BadBinary` |
-  | `Proto.Any.toJson`, `Proto.Json.encodeAnyWith`, generated `encodeNoteWith` | `Result Error Value` | `UnregisteredType`, or the `BadBinary` of the `Any` that failed, at any depth, named by its own type; a JSON-alone `Any` that is not its message, `BadJson` (§3.10) |
+  | `Proto.Any.toJson`, `Proto.Json.encodeAnyWith`, generated `encodeNoteWith` | `Result Error Value` | `UnregisteredType`, or the `BadBinary` of the `Any` that failed, at any depth, named by its own type, or `TooDeep` named `google.protobuf.Any` for one nested past 100 (§5.5); a JSON-alone `Any` that is not its message, `BadJson` (§3.10) |
   | `Proto.Json.anyWith`, generated `decodeNoteWith` | `Json.Decode.Decoder` | elm/json's error, a registry miss named in its message |
   | `Rpc.Error.protoError` of a bad `Any` (`badAny`) | `Maybe Error` | as `encodeNoteWith` |
   | `Rpc.Error.details` | `List (Result Error Any)` | `UnregisteredType`, `BadJson`, `BadBinary` (above) |
@@ -4020,11 +4086,25 @@ Connect's proto codec sends them (§5.3).
   to 100 once, and a field on the cycle is read by `Proto.Binary.recursive depth …`, which
   reads it one level deeper and fails with `TooDeep` past 100, in the
   fast and the locating read alike. Only fields on a cycle count, so a
-  message that cannot recurse generates the code it did; the runtime's
-  `Struct`, `Value` and `ListValue` count one level each, so 100 is 50
-  levels of JSON nesting in binary. Writing is not limited, and `Any`
-  is not counted: it holds its message's bytes, read only when unpacked,
-  one level at a time (decisions: "A nesting depth limit on reads").
+  message that cannot recurse generates the code it did. The same
+  budget counts each array and object of a `Struct`, `Value` or
+  `ListValue`, a binary `Struct` or `ListValue` being one level and the
+  `Value` holding it none, so 100 levels read the same in binary and
+  JSON; a message on a cycle reads them on from its depth
+  (`Proto.Binary.nestedStruct depth`, `nestedListValue`, `nestedValue`). An `Any` read
+  from binary holds its message's bytes, unread, so it nests nothing
+  there. Writing it as JSON converts it through the registry, and that
+  counts as a read would: a generated encoder that takes the registry
+  writes a field or member on its message's cycle with the registry a
+  level deeper (`Proto.Json.registryDeeper`), each `Any` is a level,
+  and an `Any` past 100 fails with `TooDeep`, named
+  `google.protobuf.Any`. The binary read of the `Any`'s message starts
+  its own count at 1, since a binary read cannot be told a depth
+  without a field in every decoder, but the encoder counts its levels
+  on, so what a binary read accepts writes as JSON within about 200
+  levels or fails. Writing is otherwise not limited (decisions: "A
+  nesting depth limit on reads", "A union for `google.protobuf.Value`,
+  one depth budget").
 
 ## 6. Generator
 

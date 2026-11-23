@@ -198,7 +198,19 @@ impl Emitter {
                         params: vec![pvar(REGISTRY_ARGUMENT)],
                         body: apply(
                             var(nested_decoder.clone()),
-                            [var(REGISTRY_ARGUMENT), int(1)],
+                            [
+                                var(REGISTRY_ARGUMENT),
+                                apply(
+                                    var("max"),
+                                    [
+                                        int(1),
+                                        apply(
+                                            self.reference((PROTO_JSON, "registryDepth")),
+                                            [var(REGISTRY_ARGUMENT)],
+                                        ),
+                                    ],
+                                ),
+                            ],
                         ),
                     },
                     Decl::Value {

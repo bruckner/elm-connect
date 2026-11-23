@@ -60,6 +60,7 @@ import Json.Decode
 import Proto.Bytes
 import Proto.Error exposing (Error(..))
 import Proto.Internal.Binary
+import Proto.Internal.JsonError as JsonError
 import Proto.Internal.Message as Message exposing (Message)
 import Proto.Internal.Registry as Internal
 
@@ -75,7 +76,7 @@ type alias Registry =
 -}
 empty : Registry
 empty =
-    Internal.Registry Internal.Strict Dict.empty
+    Internal.Registry Internal.Strict 0 Dict.empty
 
 
 {-| The registry with a message's codecs too, by its full name. Of two
@@ -86,7 +87,7 @@ entries for one name, the later is kept.
 
 -}
 register : Message a -> Registry -> Registry
-register (Message.Message name codecs) (Internal.Registry leniency entries) =
+register (Message.Message name codecs) (Internal.Registry leniency depth entries) =
     let
         entry =
             { toJson =
@@ -101,17 +102,17 @@ register (Message.Message name codecs) (Internal.Registry leniency entries) =
                 \registry json ->
                     Json.Decode.decodeValue (codecs.decodeJson registry) json
                         |> Result.map (codecs.encodeBinary >> Bytes.Encode.encode >> Proto.Bytes.toBase64)
-                        |> Result.mapError BadJson
+                        |> Result.mapError (JsonError.scrub >> BadJson)
             }
     in
-    Internal.Registry leniency (Dict.insert name entry entries)
+    Internal.Registry leniency depth (Dict.insert name entry entries)
 
 
 {-| Both registries' entries. Of two for one name, the left one's is kept.
 The union is [`lenient`](#lenient) when either registry is.
 -}
 union : Registry -> Registry -> Registry
-union ((Internal.Registry _ left) as l) ((Internal.Registry _ right) as r) =
+union ((Internal.Registry _ _ left) as l) ((Internal.Registry _ _ right) as r) =
     Internal.Registry
         (if Internal.isLenient l || Internal.isLenient r then
             Internal.Lenient
@@ -119,6 +120,7 @@ union ((Internal.Registry _ left) as l) ((Internal.Registry _ right) as r) =
          else
             Internal.Strict
         )
+        0
         (Dict.union left right)
 
 
@@ -166,5 +168,5 @@ codecs.
 
 -}
 lenient : Registry -> Registry
-lenient (Internal.Registry _ entries) =
-    Internal.Registry Internal.Lenient entries
+lenient (Internal.Registry _ depth entries) =
+    Internal.Registry Internal.Lenient depth entries

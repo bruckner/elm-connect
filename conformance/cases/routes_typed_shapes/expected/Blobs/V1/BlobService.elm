@@ -16,6 +16,7 @@ import Blobs.V1.Labeled
 import Blobs.V1.Slots
 import Json.Encode
 import Proto.Http
+import Proto.Json
 import Proto.Method
 import Proto.Query
 import Proto.Route
@@ -359,7 +360,7 @@ routeSetValue0 request_ =
     { method = "POST"
     , path = "v1/" ++ Proto.Route.segments name_
     , query = []
-    , body = Just (Maybe.withDefault (Json.Encode.object []) request_.value)
+    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Proto.Json.encodeValue request_.value))
     , invalid = Proto.Route.checkSegments "name" [ "values", "*" ] name_
     }
 

@@ -40,9 +40,9 @@ otherwise.
 | `google.protobuf.Duration` | `Maybe Proto.Duration.Duration` |
 | `google.protobuf.FieldMask` | `Maybe (List String)`, the paths by proto name: `Just [ "create_time" ]`. A path is not checked: a camelCase one (`"createTime"`) passes through unchanged, and goes out as the same JSON, but a mask the client decodes holds proto names, so the two do not compare equal |
 | `google.protobuf.Empty` | `()`, as a field and as a request or response |
-| `google.protobuf.Struct` | `Maybe (Dict String Json.Encode.Value)` |
-| `google.protobuf.Value` | `Maybe Json.Encode.Value`; `Just` the JSON `null` is a `Value` set to null |
-| `google.protobuf.ListValue` | `Maybe (List Json.Encode.Value)` |
+| `google.protobuf.Struct` | `Maybe (Dict String Proto.Value.Value)` |
+| `google.protobuf.Value` | `Maybe Proto.Value.Value` (bare in a list, map or oneof), a union of JSON's six kinds whose `==` compares content; `Just ValueNull` is a `Value` set to null |
+| `google.protobuf.ListValue` | `Maybe (List Proto.Value.Value)` |
 | the wrappers (`StringValue`, `Int32Value`, …) | `Maybe` of the wrapped type's form: `Maybe String`, `Maybe Int`; `Int64Value` and `UInt64Value` follow `int64`, `BytesValue` follows `bytes` |
 | `google.protobuf.Any` | `Maybe Proto.Any.Any` ([descriptors.md](descriptors.md#any)) |
 | `google.protobuf.NullValue` | `()`, written `null`: a singular field, `optional` too, is never written, since its one value is the default; a list or map holds `null`s; a oneof member has no argument and `null` sets it |

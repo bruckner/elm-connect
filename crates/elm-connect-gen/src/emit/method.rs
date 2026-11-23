@@ -7,14 +7,14 @@
 //! bindings written out as data, which the call does not refer to. Both
 //! builders are stacked, one argument per line, however short.
 
-use super::field::{ValueShape, Zeroed, value_shape};
+use super::field::{ValueShape, value_shape};
 use super::route_fn::{JSON, Messages, PROTO_ROUTE, Queries, REQUEST};
 use super::scalar::Holding;
 use super::{Emitter, PROTO_HTTP, PROTO_JSON, PROTO_METHOD, RPC, docs};
 use crate::elm::ast::{BinOp, Decl, Expr, Pattern, Type};
 use crate::elm::build::{
-    apply, binop, inline_list, lambda, list, pipeline, pvar, qualified, record, stacked_apply,
-    string, ty_fn, var,
+    apply, binop, inline_list, lambda, list, pipeline, pvar, record, stacked_apply, string, ty_fn,
+    var,
 };
 use crate::ir::{Idempotency, Method, TypeRef};
 use crate::naming::with_registry;
@@ -244,12 +244,8 @@ impl Emitter {
     /// would bring the type's default and descriptor tree into every
     /// program that calls the method.
     pub(super) fn request_encoder(&mut self, ty: &TypeRef) -> Expr {
-        match method_shape(ty, self.holding) {
-            // Qualified: a method may be called `identity`, and its own
-            // name would then refer to itself.
-            ValueShape::Zeroed(Zeroed::Json) => qualified("Basics", "identity"),
-            shape => self.value_encoder(shape),
-        }
+        let shape = method_shape(ty, self.holding);
+        self.value_encoder(shape)
     }
 
     /// The JSON encoder of a method's request type taking the registry,

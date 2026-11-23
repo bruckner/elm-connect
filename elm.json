@@ -37,6 +37,7 @@
         "Proto.Int64",
         "Proto.Bytes",
         "Proto.Duration",
+        "Proto.Value",
         "Proto.Timestamp",
         "Proto.Version"
     ],
