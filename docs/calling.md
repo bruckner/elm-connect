@@ -256,6 +256,14 @@ limit them, against one budget for three kinds of level:
 - each array and object of a `Value`, `Struct` or `ListValue`, counting
   on from the message that holds it.
 
+A message inside an `Any` that cannot itself hold an `Any` (a `Value`,
+`Struct` or `ListValue`, or a message whose fields reach no `Any`) is
+read by its own decoder, which counts from 1 instead. Its levels are
+limited to 100 apart from those outside the `Any`, so the deepest such
+read is 200 levels: 99 messages, the `Any`, and 100 levels inside it.
+An `Any` read from binary holds the message's bytes unread; unpacking
+it, or writing it as JSON, reads them with the same count from 1.
+
 The unit is the same in JSON and binary, so 100 levels read in one read
 in the other. Past them a binary read fails with `Proto.Error.TooDeep`
 and a JSON read with "Expecting messages nested at most 100 deep"; over

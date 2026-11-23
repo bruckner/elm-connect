@@ -22,7 +22,8 @@ elmConnectVersion_ =
 {-| On a cycle and holding an `Any`: its JSON decoders take the registry, so
 they are built as they are entered rather than once. The `Any`, and the
 arrays and objects of its `Struct`, `Value` and `ListValue`, count from the
-depth of the message holding them.
+depth of the message holding them, in a singular field and in a map's
+values alike.
 
 `message cycles.v1.Envelope`
 
@@ -37,6 +38,9 @@ descriptor =
         , data
         , value
         , list
+        , values
+        , structs
+        , lists
         ]
 
 
@@ -73,3 +77,24 @@ value =
 list : Proto.Field.Descriptor
 list =
     Proto.Field.descriptor "list" "list" 5 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.ListValue")
+
+
+{-| `map<string, google.protobuf.Value> values = 6;`
+-}
+values : Proto.Field.Descriptor
+values =
+    Proto.Field.descriptor "values" "values" 6 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "google.protobuf.Value")
+
+
+{-| `map<string, google.protobuf.Struct> structs = 7;`
+-}
+structs : Proto.Field.Descriptor
+structs =
+    Proto.Field.descriptor "structs" "structs" 7 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "google.protobuf.Struct")
+
+
+{-| `map<string, google.protobuf.ListValue> lists = 8;`
+-}
+lists : Proto.Field.Descriptor
+lists =
+    Proto.Field.descriptor "lists" "lists" 8 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "google.protobuf.ListValue")

@@ -795,10 +795,16 @@ rpc shared call =
     value is read (`Proto.Json.deeperWith`), and `decodeNodeWith types`
     starts at the depth the registry carries
     (`Proto.Json.registryDepth`), so a message read inside an `Any`
-    counts on from it. Past 100 the read fails with "Expecting messages
-    nested at most 100 deep". The `Nested` after the verb, like the
-    `Bytes` and `With` suffixes, breaks the prefix rule of §3.7's names:
-    the codecs of a type `NestedNode` beside a recursive `Node` would
+    counts on from it. A type whose decoders take no registry (a
+    message that reaches no `Any`, and the well-known `Struct`, `Value`
+    and `ListValue`) is not given the depth and counts from 1 inside an
+    `Any`; it holds no `Any`, so what it adds is its own 100 levels, and
+    a read takes at most 200: 99 messages, the `Any` and 100 inside
+    (§5.5 bounds a binary read written as JSON alike). Past 100 the
+    read fails with "Expecting messages nested at most 100 deep". The
+    `Nested` after the verb, like the `Bytes` and `With` suffixes,
+    breaks the prefix rule of §3.7's names: the codecs of a type
+    `NestedNode` beside a recursive `Node` would
     take `decodeNestedNode` and `mergeNestedNodeBytes`, and the
     compiler, not the generator, reports the name defined twice
     (`rename` is the escape). Every name at a depth comes from one
