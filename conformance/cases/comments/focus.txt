@@ -1,0 +1,12 @@
+# Proto comments as the documentation of what each element becomes: the
+# package module's doc from every file, the types, the descriptors and
+# their values, and the service modules and methods, whose docs name their
+# Connect path and HTTP bindings.
+Notes/V1.elm module Visibility Legacy Note NoteLastEvent NoteEdit Draft
+Notes/V1/Visibility.elm descriptor
+Notes/V1/Legacy.elm descriptor
+Notes/V1/Draft.elm descriptor
+Notes/V1/Note.elm descriptor name title visibility tags subject archived edited
+Notes/V1/NoteEdit.elm descriptor author
+Notes/V1/NotesService.elm module getNote listNotes createNote replaceNote ping descriptorGetNote
+Notes/V1/LegacyService.elm module clear

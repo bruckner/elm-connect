@@ -1,0 +1,596 @@
+-- An excerpt, not a module: what ../focus.txt names of the modules this
+-- case generates. Only it is compared; the modules are compiled and
+-- checked for elm-format's layout whole. `just bless` writes it.
+--
+-- Generated:
+--   Notes/V1.elm
+--   Notes/V1/CreateNoteRequest.elm
+--   Notes/V1/Draft.elm
+--   Notes/V1/GetNoteRequest.elm
+--   Notes/V1/Legacy.elm
+--   Notes/V1/LegacyService.elm
+--   Notes/V1/ListNotesRequest.elm
+--   Notes/V1/ListNotesResponse.elm
+--   Notes/V1/Note.elm
+--   Notes/V1/NoteEdit.elm
+--   Notes/V1/NotesService.elm
+--   Notes/V1/Visibility.elm
+
+
+-- Notes/V1.elm: module
+
+module Notes.V1 exposing (..)
+
+{-| Proto comments become the documentation of what each element becomes,
+beside its one-line declaration: messages and nested messages, fields
+with options, `json_name` and deprecation, enums and their values with
+an alias, oneofs and their members, a service and its methods, whose
+docs name their Connect path and HTTP bindings. A leading comment and a
+trailing one are both kept; a detached comment is left out.
+
+A file whose package statement has no comment gives the one on its
+syntax statement instead.
+
+Each file of a package adds its comment to the package module's doc,
+in file order.
+
+-}
+
+
+-- Notes/V1.elm: Visibility
+
+{-| Who may read a note.
+
+A second paragraph, with `code` and a list:
+
+  - the author
+  - everyone
+
+[`enum notes.v1.Visibility`](Notes-V1-Visibility#descriptor)
+
+  - `VisibilityUnspecified` (`VISIBILITY_UNSPECIFIED`): Nobody said; read as private.
+  - `VisibilityPrivate` (`VISIBILITY_PRIVATE`): Only the author.
+  - `VisibilityPublic` (`VISIBILITY_PUBLIC`, also `VISIBILITY_OPEN`): Everyone. Deprecated.
+
+-}
+type Visibility
+    = VisibilityUnspecified
+    | VisibilityPrivate
+    | VisibilityPublic
+
+
+-- Notes/V1.elm: Legacy
+
+{-| Deprecated.
+
+Kept for older clients.
+
+[`enum notes.v1.Legacy`](Notes-V1-Legacy#descriptor)
+
+  - `LegacyUnspecified` (`LEGACY_UNSPECIFIED`)
+
+-}
+type Legacy
+    = LegacyUnspecified
+
+
+-- Notes/V1.elm: Note
+
+{-| A note.
+
+[`message notes.v1.Note`](Notes-V1-Note#descriptor)
+
+  - [`name`](Notes-V1-Note#name): The resource name, `notes/{note}`. Identifier.
+
+  - [`title`](Notes-V1-Note#title): The title, shown first. Required.
+
+  - [`visibility`](Notes-V1-Note#visibility): Who may read it.
+
+  - [`tags`](Notes-V1-Note#tags): Labels.
+
+    In no order.
+
+    Unordered.
+
+  - [`labels`](Notes-V1-Note#labels)
+
+  - [`pinned`](Notes-V1-Note#pinned)
+
+  - [`subject`](Notes-V1-Note#subject): Deprecated. Replaced by `title`.
+
+  - [`created`](Notes-V1-Note#created): Output only.
+
+  - `lastEvent`: What happened to the note last. See [`NoteLastEvent`](#NoteLastEvent).
+
+-}
+type alias Note =
+    { name : String
+    , title : String
+    , visibility : Visibility
+    , tags : List String
+    , labels : Dict String String
+    , pinned : Maybe Bool
+    , subject : String
+    , created : Maybe Time.Posix
+    , lastEvent : NoteLastEvent
+    }
+
+
+-- Notes/V1.elm: NoteLastEvent
+
+{-| What happened to the note last.
+
+`oneof last_event` of `notes.v1.Note`
+
+  - `NoteLastEventUnset`: none of the fields is set.
+  - [`NoteLastEventArchived`](Notes-V1-Note#archived): When it was archived.
+  - [`NoteLastEventEdited`](Notes-V1-Note#edited): The last edit.
+
+-}
+type NoteLastEvent
+    = NoteLastEventUnset
+    | NoteLastEventArchived Time.Posix
+    | NoteLastEventEdited NoteEdit
+
+
+-- Notes/V1.elm: NoteEdit
+
+{-| An edit of a note.
+
+[`message notes.v1.Note.Edit`](Notes-V1-NoteEdit#descriptor)
+
+  - [`author`](Notes-V1-NoteEdit#author): Who made it.
+
+-}
+type alias NoteEdit =
+    { author : String
+    }
+
+
+-- Notes/V1.elm: Draft
+
+{-| Deprecated.
+
+A note not yet saved.
+
+[`message notes.v1.Draft`](Notes-V1-Draft#descriptor)
+
+  - [`text`](Notes-V1-Draft#text)
+
+-}
+type alias Draft =
+    { text : String
+    }
+
+
+-- Notes/V1/Visibility.elm: descriptor
+
+{-| Who may read a note.
+
+A second paragraph, with `code` and a list:
+
+  - the author
+  - everyone
+
+`enum notes.v1.Visibility`
+
+Describes [`Notes.V1.Visibility`](Notes-V1#Visibility).
+
+  - `VISIBILITY_UNSPECIFIED = 0;` Nobody said; read as private.
+  - `VISIBILITY_PRIVATE = 1;` Only the author.
+  - `VISIBILITY_PUBLIC = 2 [deprecated = true];` Deprecated. Everyone.
+  - `VISIBILITY_OPEN = 2;` The old name of VISIBILITY\_PUBLIC.
+
+-}
+descriptor : Proto.Enum.Descriptor
+descriptor =
+    Proto.Enum.descriptor "notes.v1.Visibility"
+        [ Proto.EnumValue.descriptor "VISIBILITY_UNSPECIFIED" 0
+        , Proto.EnumValue.descriptor "VISIBILITY_PRIVATE" 1
+        , Proto.EnumValue.descriptor "VISIBILITY_PUBLIC" 2
+            |> Proto.EnumValue.withDeprecated
+        , Proto.EnumValue.descriptor "VISIBILITY_OPEN" 2
+        ]
+
+
+-- Notes/V1/Legacy.elm: descriptor
+
+{-| Deprecated.
+
+Kept for older clients.
+
+`enum notes.v1.Legacy`
+
+Describes [`Notes.V1.Legacy`](Notes-V1#Legacy).
+
+  - `LEGACY_UNSPECIFIED = 0;`
+
+-}
+descriptor : Proto.Enum.Descriptor
+descriptor =
+    Proto.Enum.descriptor "notes.v1.Legacy"
+        [ Proto.EnumValue.descriptor "LEGACY_UNSPECIFIED" 0
+        ]
+
+
+-- Notes/V1/Draft.elm: descriptor
+
+{-| Deprecated.
+
+A note not yet saved.
+
+`message notes.v1.Draft`
+
+Describes [`Notes.V1.Draft`](Notes-V1#Draft).
+
+-}
+descriptor : Proto.Message.Descriptor
+descriptor =
+    Proto.Message.descriptor "notes.v1.Draft"
+        [ text
+        ]
+
+
+-- Notes/V1/Note.elm: descriptor
+
+{-| A note.
+
+`message notes.v1.Note`
+
+Describes [`Notes.V1.Note`](Notes-V1#Note).
+
+-}
+descriptor : Proto.Message.Descriptor
+descriptor =
+    Proto.Message.descriptor "notes.v1.Note"
+        [ name
+        , title
+        , visibility
+        , tags
+        , labels
+        , pinned
+        , subject
+        , created
+        , archived
+        , edited
+        ]
+
+
+-- Notes/V1/Note.elm: name
+
+{-| The resource name, `notes/{note}`.
+
+`string name = 1 [(google.api.field_behavior) = IDENTIFIER];`
+
+-}
+name : Proto.Field.Descriptor
+name =
+    Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        |> Proto.Field.withBehavior [ Proto.Field.BehaviorIdentifier ]
+
+
+-- Notes/V1/Note.elm: title
+
+{-| The title, shown first.
+
+`string title = 2 [json_name = "heading", (google.api.field_behavior) = REQUIRED];`
+
+-}
+title : Proto.Field.Descriptor
+title =
+    Proto.Field.descriptor "title" "heading" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        |> Proto.Field.withBehavior [ Proto.Field.BehaviorRequired ]
+
+
+-- Notes/V1/Note.elm: visibility
+
+{-| Who may read it.
+
+`notes.v1.Visibility visibility = 3;`
+
+-}
+visibility : Proto.Field.Descriptor
+visibility =
+    Proto.Field.descriptor "visibility" "visibility" 3 Proto.Field.CardinalitySingular (Proto.Field.KindEnum Notes.V1.Visibility.descriptor)
+
+
+-- Notes/V1/Note.elm: tags
+
+{-| Labels.
+
+In no order.
+
+`repeated string tags = 4 [(google.api.field_behavior) = UNORDERED_LIST];`
+
+-}
+tags : Proto.Field.Descriptor
+tags =
+    Proto.Field.descriptor "tags" "tags" 4 Proto.Field.CardinalityRepeated (Proto.Field.KindScalar Proto.Field.ScalarString)
+        |> Proto.Field.withBehavior [ Proto.Field.BehaviorUnorderedList ]
+
+
+-- Notes/V1/Note.elm: subject
+
+{-| Deprecated.
+
+Replaced by `title`.
+
+`string subject = 7 [deprecated = true];`
+
+-}
+subject : Proto.Field.Descriptor
+subject =
+    Proto.Field.descriptor "subject" "subject" 7 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        |> Proto.Field.withDeprecated
+
+
+-- Notes/V1/Note.elm: archived
+
+{-| When it was archived.
+
+`google.protobuf.Timestamp archived = 9;`, in oneof `last_event`
+
+-}
+archived : Proto.Field.Descriptor
+archived =
+    Proto.Field.descriptor "archived" "archived" 9 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Timestamp")
+        |> Proto.Field.inOneof "last_event"
+
+
+-- Notes/V1/Note.elm: edited
+
+{-| The last edit.
+
+`notes.v1.Note.Edit edited = 10;`, in oneof `last_event`
+
+-}
+edited : Proto.Field.Descriptor
+edited =
+    Proto.Field.descriptor "edited" "edited" 10 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "notes.v1.Note.Edit")
+        |> Proto.Field.inOneof "last_event"
+
+
+-- Notes/V1/NoteEdit.elm: descriptor
+
+{-| An edit of a note.
+
+`message notes.v1.Note.Edit`
+
+Describes [`Notes.V1.NoteEdit`](Notes-V1#NoteEdit).
+
+-}
+descriptor : Proto.Message.Descriptor
+descriptor =
+    Proto.Message.descriptor "notes.v1.Note.Edit"
+        [ author
+        ]
+
+
+-- Notes/V1/NoteEdit.elm: author
+
+{-| Who made it.
+
+`string author = 1;`
+
+-}
+author : Proto.Field.Descriptor
+author =
+    Proto.Field.descriptor "author" "author" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+
+
+-- Notes/V1/NotesService.elm: module
+
+module Notes.V1.NotesService exposing (..)
+
+{-| The notes service.
+
+Every method reads or writes notes.
+
+`service notes.v1.NotesService`
+
+-}
+
+
+-- Notes/V1/NotesService.elm: getNote
+
+{-| Gets a note by name.
+
+`rpc GetNote(GetNoteRequest) returns (Note)`.
+Connect: `POST /notes.v1.NotesService/GetNote`.
+Transcode:
+
+  - binding 0: `GET /v1/{name=notes/*}`;
+  - binding 1: `GET /v1/{name=users/*/notes/*}`.
+
+Codecs: JSON and protobuf binary. Described by [`descriptorGetNote`](#descriptorGetNote).
+
+-}
+getNote : Notes.V1.GetNoteRequest -> Rpc.Call codec Notes.V1.GetNoteRequest Notes.V1.Note
+getNote =
+    Rpc.call
+        (Proto.Method.init "notes.v1.NotesService"
+            "GetNote"
+            (\_ -> Ok << Notes.V1.encodeGetNoteRequest)
+            (\_ -> Notes.V1.decodeNote)
+            Notes.V1.encodeGetNoteRequestBytes
+            Notes.V1.decodeNoteBytes
+            |> Proto.Method.withRoutes [ routeGetNote0, routeGetNote1 ]
+        )
+
+
+-- Notes/V1/NotesService.elm: listNotes
+
+{-| Lists a user's notes; the response is the list alone.
+
+`rpc ListNotes(ListNotesRequest) returns (ListNotesResponse)`.
+Connect: `POST /notes.v1.NotesService/ListNotes`.
+Transcode: `GET /v1/{parent=users/*}/notes` response body `notes`.
+
+Codecs: JSON and protobuf binary. Described by [`descriptorListNotes`](#descriptorListNotes).
+
+-}
+listNotes : Notes.V1.ListNotesRequest -> Rpc.Call codec Notes.V1.ListNotesRequest Notes.V1.ListNotesResponse
+listNotes =
+    Rpc.call
+        (Proto.Method.init "notes.v1.NotesService"
+            "ListNotes"
+            (\_ -> Ok << Notes.V1.encodeListNotesRequest)
+            (\_ -> Notes.V1.decodeListNotesResponse)
+            Notes.V1.encodeListNotesRequestBytes
+            Notes.V1.decodeListNotesResponseBytes
+            |> Proto.Method.withRoutes [ routeListNotes0 ]
+            |> Proto.Method.withResponseBody 0 "notes"
+        )
+
+
+-- Notes/V1/NotesService.elm: createNote
+
+{-| Creates a note from the `note` field.
+
+`rpc CreateNote(CreateNoteRequest) returns (Note)`.
+Connect: `POST /notes.v1.NotesService/CreateNote`.
+Transcode: `POST /v1/notes` body `note`.
+
+Codecs: JSON and protobuf binary. Described by [`descriptorCreateNote`](#descriptorCreateNote).
+
+-}
+createNote : Notes.V1.CreateNoteRequest -> Rpc.Call codec Notes.V1.CreateNoteRequest Notes.V1.Note
+createNote =
+    Rpc.call
+        (Proto.Method.init "notes.v1.NotesService"
+            "CreateNote"
+            (\_ -> Ok << Notes.V1.encodeCreateNoteRequest)
+            (\_ -> Notes.V1.decodeNote)
+            Notes.V1.encodeCreateNoteRequestBytes
+            Notes.V1.decodeNoteBytes
+            |> Proto.Method.withRoutes [ routeCreateNote0 ]
+        )
+
+
+-- Notes/V1/NotesService.elm: replaceNote
+
+{-| Deprecated.
+
+Replaces a note: the body is the whole request.
+
+`rpc ReplaceNote(Note) returns (Note)`.
+Connect: `POST /notes.v1.NotesService/ReplaceNote`.
+Transcode: `PUT /v1/{name=notes/*}` body `*`.
+
+Codecs: JSON and protobuf binary. Described by [`descriptorReplaceNote`](#descriptorReplaceNote).
+
+-}
+replaceNote : Notes.V1.Note -> Rpc.Call codec Notes.V1.Note Notes.V1.Note
+replaceNote =
+    Rpc.call
+        (Proto.Method.init "notes.v1.NotesService"
+            "ReplaceNote"
+            (\_ -> Ok << Notes.V1.encodeNote)
+            (\_ -> Notes.V1.decodeNote)
+            Notes.V1.encodeNoteBytes
+            Notes.V1.decodeNoteBytes
+            |> Proto.Method.withRoutes [ routeReplaceNote0 ]
+        )
+
+
+-- Notes/V1/NotesService.elm: ping
+
+{-| Answers without an HTTP rule, over the Connect path.
+
+`rpc Ping(google.protobuf.Empty) returns (google.protobuf.Empty)`.
+Connect: `POST /notes.v1.NotesService/Ping`.
+Transcode: no HTTP rule, follows the Connect path.
+
+Codecs: JSON and protobuf binary. Described by [`descriptorPing`](#descriptorPing).
+
+-}
+ping : () -> Rpc.Call codec () ()
+ping =
+    Rpc.call
+        (Proto.Method.init "notes.v1.NotesService"
+            "Ping"
+            (\_ -> Ok << Proto.Json.encodeEmpty)
+            (\_ -> Proto.Json.empty)
+            (Proto.Binary.messageEncoder Proto.Binary.empty)
+            (Proto.Binary.messageDecoder Proto.Binary.empty)
+        )
+
+
+-- Notes/V1/NotesService.elm: descriptorGetNote
+
+{-| Gets a note by name.
+
+`rpc GetNote(GetNoteRequest) returns (Note)`
+
+-}
+descriptorGetNote : Proto.Method.Descriptor
+descriptorGetNote =
+    Proto.Method.descriptor "notes.v1.NotesService"
+        "GetNote"
+        Proto.Method.IdempotencyUnknown
+        "notes.v1.GetNoteRequest"
+        "notes.v1.Note"
+        [ Proto.Http.binding
+            { method = "GET"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable
+                    { fieldPath = [ Notes.V1.GetNoteRequest.name ]
+                    , template = [ Proto.Http.literal "notes", Proto.Http.wildcard ]
+                    }
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query = []
+            }
+        , Proto.Http.binding
+            { method = "GET"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable
+                    { fieldPath = [ Notes.V1.GetNoteRequest.name ]
+                    , template = [ Proto.Http.literal "users", Proto.Http.wildcard, Proto.Http.literal "notes", Proto.Http.wildcard ]
+                    }
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query = []
+            }
+        ]
+
+
+-- Notes/V1/LegacyService.elm: module
+
+module Notes.V1.LegacyService exposing (..)
+
+{-| Deprecated.
+
+A service kept for older clients.
+
+`service notes.v1.LegacyService`
+
+-}
+
+
+-- Notes/V1/LegacyService.elm: clear
+
+{-| `rpc Clear(google.protobuf.Empty) returns (google.protobuf.Empty)`.
+Connect: `POST /notes.v1.LegacyService/Clear`.
+Transcode: `PURGE /v1/notes`.
+
+Codecs: JSON and protobuf binary. Described by [`descriptorClear`](#descriptorClear).
+
+-}
+clear : () -> Rpc.Call codec () ()
+clear =
+    Rpc.call
+        (Proto.Method.init "notes.v1.LegacyService"
+            "Clear"
+            (\_ -> Ok << Proto.Json.encodeEmpty)
+            (\_ -> Proto.Json.empty)
+            (Proto.Binary.messageEncoder Proto.Binary.empty)
+            (Proto.Binary.messageDecoder Proto.Binary.empty)
+            |> Proto.Method.withRoutes [ routeClear0 ]
+        )

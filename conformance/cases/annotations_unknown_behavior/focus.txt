@@ -1,0 +1,4 @@
+# A field behaviour this release does not name is kept as
+# Proto.Field.BehaviorUnknown with its number, in place; the unspecified
+# zero is dropped.
+Drafts/V1/Draft.elm name body owner

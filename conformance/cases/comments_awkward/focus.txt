@@ -1,0 +1,8 @@
+# Comments that Markdown, elm-format or Elm would read as more than text,
+# in every place a comment lands: the package module's doc, the types, the
+# descriptors and their values, the service module's doc and a method's.
+Awkward/V1.elm module Marks Delimiters Docs
+Awkward/V1/Delimiters.elm descriptor lists blocks code inline text whitespaceOnly unclosed
+Awkward/V1/Marks.elm descriptor
+Awkward/V1/Docs.elm descriptor field
+Awkward/V1/AwkwardService.elm module ping descriptorPing

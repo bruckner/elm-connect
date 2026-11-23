@@ -1,0 +1,7 @@
+# Field behaviour, deprecation and idempotency in the descriptors, as
+# modifiers written only where set, and in the docs of the types.
+Tasks/V1.elm State Task TaskDue
+Tasks/V1/State.elm descriptor
+Tasks/V1/Task.elm name title state labels owner notes made date never
+Tasks/V1/GetTaskRequest.elm name
+Tasks/V1/Tasks.elm descriptorGetTask descriptorPutTask descriptorCloseTask
