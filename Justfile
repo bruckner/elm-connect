@@ -223,7 +223,9 @@ package:
 
 # Compile the runtime package and the conformance corpus with another Elm
 # compiler, such as 0.19.0, 0.19.1 or 0.19.2, which CI checks (design section 8).
+# The focused cases' whole output is written first (conformance/README.md).
 compile-with elm:
+    cargo test -p elm-connect-gen --test conformance -- --exact the_focused_cases_are_written_whole
     conformance/compile-with.sh {{elm}}
 
 # Run the runtime package's and the notes example's Elm tests with another
@@ -231,9 +233,9 @@ compile-with elm:
 test-with elm:
     conformance/test-with.sh {{elm}}
 
-# Rewrite the conformance corpus's expected output (modules and warnings.txt, or
-# diagnostics.txt) to what the generator produces now. Review the diff before
-# committing it.
+# Rewrite the conformance corpus's expected output (modules and warnings.txt,
+# a focused case's focused.txt, or diagnostics.txt) to what the generator
+# produces now. Review the diff before committing it.
 bless:
     ELM_CONNECT_BLESS=1 cargo test -p elm-connect-gen --test conformance -- --exact golden diagnostics
 
@@ -521,7 +523,7 @@ example-notes addr="127.0.0.1:8080": example-notes-build
 # Remove build output (the cargo build directory and the Elm builds).
 clean:
     cargo clean
-    rm -rf conformance/harness/elm-stuff conformance/harness/generated elm-stuff tests/Generated
+    rm -rf conformance/harness/elm-stuff conformance/harness/generated conformance/harness/full elm-stuff tests/Generated
     rm -rf conformance/error-details/elm-stuff conformance/error-details/generated conformance/json-only/elm-stuff
     rm -rf conformance/live/elm-stuff conformance/live/build conformance/live/node_modules conformance/live/suite/elm conformance/live/suite/js
     rm -rf conformance/protobuf/elm-stuff conformance/protobuf/build conformance/protobuf/generated

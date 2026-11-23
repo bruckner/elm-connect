@@ -109,7 +109,7 @@ jobs:
   elm-compat:
     # Design section 8: Elm 0.19.3 is the development target; every
     # earlier 0.19 release is checked here. The runtime package and every
-    # case's expected output must compile with each of them too, and the
+    # case's output must compile with each of them too, and the
     # runtime's and the notes example's Elm tests must pass under each that
     # can run them. 0.19.0 cannot: elm-test-rs's runner package
     # (mpizenberg/elm-test-runner 6) requires Elm 0.19.1, so its tests are
@@ -153,18 +153,19 @@ jobs:
         with:
           path: ~/.elm
           key: compat-elm-${{ matrix.elm.version }}-${{ runner.os }}-${{ hashFiles('mise.toml', 'elm.json', 'conformance/harness/elm.json', 'examples/notes/elm/elm.json') }}
-      - run: conformance/compile-with.sh "$RUNNER_TEMP/elm"
-      # elm-test-rs, and node to run its compiled tests, as mise pins them;
-      # Rust for the codec, depth and route tests, which write the modules
-      # under tests/Generated that the Elm tests import (just tests-gen).
+      # Rust, as mise pins it, for the conformance test that writes the
+      # focused cases' whole output, which compile-with.sh compiles, and
+      # for the codec, depth and route tests, which write the modules
+      # under tests/Generated that the Elm tests import (just tests-gen);
+      # elm-test-rs, and node to run its compiled tests, where they run.
       - uses: jdx/mise-action@b44d12e7d0d8ee7461bb893e1b1993500433185b # v5.2.7
-        if: matrix.elm.tests
         with:
           # The mise release that wrote mise.lock; move the two together.
           version: 2026.9.4
-          install_args: rust node npm:elm-test-rs
+          install_args: ${{ matrix.elm.tests && 'rust node npm:elm-test-rs' || 'rust' }}
       - uses: Swatinem/rust-cache@d1527c8f67ef9af357290475d4af4b0fab8f12e0 # v2.9.3
-        if: matrix.elm.tests
+      - run: cargo test -p elm-connect-gen --test conformance -- --exact the_focused_cases_are_written_whole
+      - run: conformance/compile-with.sh "$RUNNER_TEMP/elm"
       - if: matrix.elm.tests
         run: cargo test -p elm-connect-gen --test codec --test depth --test routes
       - if: matrix.elm.tests

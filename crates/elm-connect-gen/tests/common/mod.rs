@@ -10,6 +10,8 @@ use std::path::{Path, PathBuf};
 use elm_connect_gen::Options;
 use elm_connect_gen::diagnostics::Diagnostics;
 
+pub mod focus;
+
 /// The file in `expected/` that makes a case a diagnostics case.
 pub const DIAGNOSTICS: &str = "diagnostics.txt";
 /// The file in `expected/` beside the modules that pins the warnings a

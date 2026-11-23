@@ -4035,7 +4035,8 @@ Connect's proto codec sends them (§5.3).
   (standalone CLI on `protox`, compiles `.proto` directly; no protoc).
 - Output is produced from a typed Elm AST and a printer tuned to match
   `elm-format` (`elm-connect-gen::elm`). The conformance suite runs
-  `elm-format --validate` on every golden file to keep that true.
+  `elm-format --validate` on every module the corpus generates to keep
+  that true.
   The printer is not Wadler-style: fixed rules choose
   one line or several per construct, laid out on a port of elm-format's
   own block model (text, tab stops, prefix, indent), and a corpus test
@@ -4132,12 +4133,17 @@ any, in `expected/warnings.txt`, rendered as `diagnostics.txt` is.
 - `conformance/cases/<case>/input/*.proto` and `expected/*.elm`. A test
   regenerates and diffs, the patch of the version on each module's
   header line read as a placeholder, `0.2.X` (§8.4); a second test runs
-  `elm make` over all expected output against the runtime at the repo's
-  version; a third runs `elm-format --validate`.
+  `elm make` over every case's output against the runtime at the repo's
+  version; a third runs `elm-format --validate`. A case about a few
+  declarations (a naming rule, a comment's place, an option variant) may
+  name them in `focus.txt`: its `expected/focused.txt` holds only those,
+  cut from the output by text, and the diff compares only them, while
+  the other two tests take its whole output generated afresh.
 - The plugin replays the corpus as protoc runs it
   (`crates/protoc-gen-elm-connect/tests/plugin.rs`): the built binary is
   sent each case's `CodeGeneratorRequest` on stdin, and its response must
-  carry the expected modules, or the problems in `error`, with warnings
+  carry the expected modules (for a focused case, its excerpt and the
+  generator's own modules), or the problems in `error`, with warnings
   on stderr. protoc sends no sources, so its rendering names the proto
   elements; it is compared with the generator's own without sources and,
   by problem code, with `diagnostics.txt` and `warnings.txt`.
@@ -4904,7 +4910,8 @@ Within a major version:
   official Linux binary (checksum pinned) and runs
   `conformance/compile-with.sh`, which compiles the runtime package (with
   `--docs`) and every case's expected output against a copy of the
-  harness set to that release. Nothing the 0.19.3 output needs is refused
+  harness set to that release; for a focused case, its whole output,
+  which the job writes first with the conformance test. Nothing the 0.19.3 output needs is refused
   by an earlier release so far. Decoders for messages with more than eight
   fields use the runtime's pipeline helpers rather than `map8` chunking.
 - The same job runs the runtime's and the notes example's Elm tests,
@@ -4964,7 +4971,8 @@ in no other:
 3. From 1.1 on, before the tag: check out the last release's tag beside
    this commit, compile its corpus's expected output against this
    commit's `src/` (`conformance/compile-with.sh` with the harness's
-   source directories pointed there), and run `elm diff <last tag>`,
+   source directories pointed there, after the tag's own conformance
+   test has written its focused cases' whole output), and run `elm diff <last tag>`,
    whose magnitude must not exceed the release's (§8.1). Code generated
    by the last minor must compile against this runtime (§8.3). This
    step stays manual; a CI job for it is on the

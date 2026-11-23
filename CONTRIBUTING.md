@@ -125,7 +125,8 @@ A pull request carries, besides the change itself (the
 - if generated code changes, the conformance corpus re-blessed with
   `just bless` ([`conformance/README.md`](conformance/README.md)) and its
   diff reviewed line by line: the corpus is how a reviewer sees what
-  users will get.
+  users will get. A focused case (one with a `focus.txt`) shows only the
+  declarations it is about; the README says when to focus one.
 
 The maintainer reviews every pull request. Reviews are best effort, with
 no fixed response time; if a pull request has heard nothing for two

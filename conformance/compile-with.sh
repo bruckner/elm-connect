@@ -4,7 +4,10 @@
 # harness whose `elm-version` is that compiler's. The conformance test
 # (`cargo test --test conformance`) does the same with the pinned
 # compiler; this script checks another one, such as the earlier 0.19
-# releases in CI (design section 8).
+# releases in CI (design section 8). A focused case's expected/ holds an
+# excerpt, so its whole output is compiled from conformance/harness/full/,
+# which the conformance test `the_focused_cases_are_written_whole` writes
+# (`just compile-with` runs it first).
 #
 #   conformance/compile-with.sh path/to/elm
 set -euo pipefail
@@ -34,12 +37,22 @@ status=0
 for case in "$root"/conformance/cases/*/; do
   name="$(basename "$case")"
   [ -d "$case/expected" ] || continue
-  modules="$(cd "$case/expected" && find . -name '*.elm' | sed 's|^\./||' | sort)"
+  source="$case/expected"
+  if [ -f "$case/focus.txt" ]; then
+    source="$root/conformance/harness/full/$name"
+    if [ ! -d "$source" ]; then
+      echo "FAIL $name: focused, and $source is missing; run"
+      echo "     cargo test -p elm-connect-gen --test conformance -- --exact the_focused_cases_are_written_whole"
+      status=1
+      continue
+    fi
+  fi
+  modules="$(cd "$source" && find . -name '*.elm' | sed 's|^\./||' | sort)"
   [ -n "$modules" ] || continue
   # Cases compile one at a time: two may define the same module.
   rm -rf "$work/generated"
   mkdir -p "$work/generated"
-  (cd "$case/expected" && cp -R . "$work/generated/")
+  (cd "$source" && cp -R . "$work/generated/")
   # shellcheck disable=SC2086 # one argument per module path
   if (cd "$work" && "$elm" make $(printf 'generated/%s ' $modules) --output=/dev/null >"$work/log" 2>&1); then
     echo "ok   $name"

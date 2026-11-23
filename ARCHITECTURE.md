@@ -136,10 +136,12 @@ Each layer proves one thing and has a known gap. A path that starts with
 
 - **The corpus** (`conformance/cases/`,
   `crates/elm-connect-gen/tests/conformance.rs`): each case's protos
-  generate exactly its expected modules or `diagnostics.txt`; every
-  expected module compiles against the runtime in `conformance/harness/`
+  generate exactly its expected modules or `diagnostics.txt`, or for a
+  focused case the declarations its `focus.txt` names; every module a
+  case generates compiles against the runtime in `conformance/harness/`
   and passes `elm-format --validate`. Gap: the modules are compiled and
-  diffed, never run.
+  diffed, never run, and a focused case's other declarations are not
+  diffed there.
 - **The plugin** (`crates/protoc-gen-elm-connect/tests/plugin.rs`): the
   built binary, sent each case as protoc would, gives the same modules,
   and the same problems by code. **The CLI**

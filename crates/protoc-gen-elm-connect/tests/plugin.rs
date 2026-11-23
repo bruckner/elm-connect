@@ -3,7 +3,8 @@
 //!
 //! Every case of the conformance corpus (`conformance/cases`) is sent as
 //! the request protoc would send for it, and the response must carry the
-//! case's expected modules, or its problems in `error`. The corpus's
+//! case's expected modules (for a focused case, give its expected excerpt,
+//! `focused.txt`), or its problems in `error`. The corpus's
 //! warnings and diagnostics are rendered with the proto sources attached;
 //! protoc sends none, so the plugin names the proto elements instead, and
 //! its rendering is compared with the generator's own without sources and,
@@ -22,6 +23,7 @@ use prost_types::compiler::{CodeGeneratorRequest, CodeGeneratorResponse};
 
 #[path = "../../elm-connect-gen/tests/common/mod.rs"]
 mod common;
+use common::focus::{FOCUSED, case_focus, excerpt};
 use common::{
     Compiled, DIAGNOSTICS, WARNINGS, case_name, case_parameter, cases, compile_case, files_under,
     is_diagnostics_case, placeholder_header,
@@ -182,24 +184,49 @@ fn check(case: &Path) -> Vec<String> {
             )
         })
         .collect();
-    let golden: BTreeMap<String, String> = files_under(&expected)
-        .into_iter()
-        .filter(|path| path != WARNINGS)
-        .map(|path| {
-            let text = read(&expected.join(&path));
-            (path, text)
-        })
-        .collect();
-    if generated.keys().ne(golden.keys()) {
-        problems.push(format!(
-            "files {:?}, expected {:?}",
-            generated.keys().collect::<Vec<_>>(),
-            golden.keys().collect::<Vec<_>>()
-        ));
-    }
-    for (path, content) in &generated {
-        if golden.get(path).is_some_and(|want| want != content) {
-            problems.push(format!("{path} differs from the expected module"));
+    match case_focus(case) {
+        Some(focus) => {
+            match focus
+                .and_then(|focus| excerpt(&focus, &generated).map_err(|stale| stale.join("\n")))
+            {
+                Ok(text) if text == read(&expected.join(FOCUSED)) => {}
+                Ok(_) => problems.push(format!("the excerpt differs from expected/{FOCUSED}")),
+                Err(problem) => problems.push(problem),
+            }
+            // The excerpt pins part of the output; the rest is held to the
+            // generator's own.
+            if let Ok(direct) = &direct {
+                let whole: BTreeMap<String, String> = direct
+                    .files
+                    .iter()
+                    .map(|file| (file.path.clone(), placeholder_header(&file.content)))
+                    .collect();
+                if whole != generated {
+                    problems.push("the modules differ from the generator's own".into());
+                }
+            }
+        }
+        None => {
+            let golden: BTreeMap<String, String> = files_under(&expected)
+                .into_iter()
+                .filter(|path| path != WARNINGS)
+                .map(|path| {
+                    let text = read(&expected.join(&path));
+                    (path, text)
+                })
+                .collect();
+            if generated.keys().ne(golden.keys()) {
+                problems.push(format!(
+                    "files {:?}, expected {:?}",
+                    generated.keys().collect::<Vec<_>>(),
+                    golden.keys().collect::<Vec<_>>()
+                ));
+            }
+            for (path, content) in &generated {
+                if golden.get(path).is_some_and(|want| want != content) {
+                    problems.push(format!("{path} differs from the expected module"));
+                }
+            }
         }
     }
     let warnings = match &direct {

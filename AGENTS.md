@@ -79,7 +79,11 @@ A generator change shows up as a diff in
 `conformance/cases/*/expected`. `just bless` rewrites the corpus from
 the current generator. Read the whole diff before committing it: it is what
 users will get, and a reviewer reads it line by line. A new behaviour
-gets a new case (`conformance/README.md` says how to add one).
+gets a new case (`conformance/README.md` says how to add one). A case
+with a `focus.txt` pins only the declarations it names, in
+`expected/focused.txt`; focus a case only when its point is a few
+declarations, never a codec, type or service case
+(`conformance/README.md`, "Focused cases").
 
 Generated code is also committed in `examples/notes/elm/generated/`.
 `just live-gen` regenerates it in place and then fails if it differs

@@ -1,6 +1,7 @@
 /target/
 elm-stuff/
 /conformance/harness/generated/
+/conformance/harness/full/
 /conformance/error-details/generated/
 /conformance/live/build/
 /conformance/live/suite/elm/
