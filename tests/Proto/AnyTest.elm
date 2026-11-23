@@ -41,7 +41,7 @@ descriptorNote =
 -}
 noteAs : String -> Message Note
 noteAs name =
-    Message.init name encodeNote decodeNote encodeNoteBytes (noteBytesAs name)
+    Message.init name (Proto.Json.ready << encodeNote) decodeNote encodeNoteBytes (noteBytesAs name)
 
 
 encodeNote : Note -> Json.Encode.Value
@@ -99,7 +99,7 @@ well-known types.
 registry : Registry
 registry =
     Registry.empty
-        |> Registry.register (Message.init "notes.v1.Note" encodeNote decodeNote encodeNoteBytes decodeNoteBytes)
+        |> Registry.register (Message.init "notes.v1.Note" (Proto.Json.ready << encodeNote) decodeNote encodeNoteBytes decodeNoteBytes)
         |> Registry.union WellKnown.registry
 
 
@@ -146,6 +146,9 @@ word =
 
                 UnregisteredType url ->
                     "unregistered " ++ url
+
+                NotWritable unwritable ->
+                    "unwritable " ++ unwritable.typeName
         )
 
 

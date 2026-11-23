@@ -717,18 +717,18 @@ omitDefaultsProperties : Test
 omitDefaultsProperties =
     let
         encode =
-            V1.encodeEverything >> Json.Encode.encode 0
+            (V1.encodeEverything >> writtenOrNull) >> Json.Encode.encode 0
     in
     describe "the generated codecs omit defaults"
-        [ defaultsTest "Everything" V1.encodeEverything V1.decodeEverything V1.defaultEverything
-        , defaultsTest "Inner" V1.encodeInner V1.decodeInner V1.defaultInner
-        , defaultsTest "Deep" V1.encodeDeep V1.decodeDeep V1.defaultDeep
-        , defaultsTest "GetMessageRequest" V1.encodeGetMessageRequest V1.decodeGetMessageRequest V1.defaultGetMessageRequest
-        , defaultsTest "Message" V1.encodeMessage V1.decodeMessage V1.defaultMessage
-        , defaultsTest "UpdateMessageRequest" V1.encodeUpdateMessageRequest V1.decodeUpdateMessageRequest V1.defaultUpdateMessageRequest
-        , defaultsTest "FileRequest" V1.encodeFileRequest V1.decodeFileRequest V1.defaultFileRequest
-        , defaultsTest "Resource" V1.encodeResource V1.decodeResource V1.defaultResource
-        , defaultsTest "UpdateResourceRequest" V1.encodeUpdateResourceRequest V1.decodeUpdateResourceRequest V1.defaultUpdateResourceRequest
+        [ defaultsTest "Everything" (V1.encodeEverything >> writtenOrNull) V1.decodeEverything V1.defaultEverything
+        , defaultsTest "Inner" (V1.encodeInner >> writtenOrNull) V1.decodeInner V1.defaultInner
+        , defaultsTest "Deep" (V1.encodeDeep >> writtenOrNull) V1.decodeDeep V1.defaultDeep
+        , defaultsTest "GetMessageRequest" (V1.encodeGetMessageRequest >> writtenOrNull) V1.decodeGetMessageRequest V1.defaultGetMessageRequest
+        , defaultsTest "Message" (V1.encodeMessage >> writtenOrNull) V1.decodeMessage V1.defaultMessage
+        , defaultsTest "UpdateMessageRequest" (V1.encodeUpdateMessageRequest >> writtenOrNull) V1.decodeUpdateMessageRequest V1.defaultUpdateMessageRequest
+        , defaultsTest "FileRequest" (V1.encodeFileRequest >> writtenOrNull) V1.decodeFileRequest V1.defaultFileRequest
+        , defaultsTest "Resource" (V1.encodeResource >> writtenOrNull) V1.decodeResource V1.defaultResource
+        , defaultsTest "UpdateResourceRequest" (V1.encodeUpdateResourceRequest >> writtenOrNull) V1.decodeUpdateResourceRequest V1.defaultUpdateResourceRequest
         , fuzz (Fuzzers.everything Fuzzers.nonNegativeZeroFloat) "encode (decode (encode x)) == encode x" <|
             \x ->
                 Json.Decode.decodeString V1.decodeEverything (encode x)
@@ -767,9 +767,9 @@ omitDefaultsProperties =
           <|
             \x ->
                 Expect.all
-                    [ roundTrips V1.encodeResource V1.decodeResource
+                    [ roundTrips (V1.encodeResource >> writtenOrNull) V1.decodeResource
                     , \_ ->
-                        Json.Decode.decodeValue (Json.Decode.keyValuePairs Json.Decode.value) (V1.encodeResource x)
+                        Json.Decode.decodeValue (Json.Decode.keyValuePairs Json.Decode.value) ((V1.encodeResource >> writtenOrNull) x)
                             |> Result.map (List.map Tuple.first >> List.filter (\key -> List.member key [ "labels", "kinds", "weights" ]))
                             |> Expect.equal
                                 (Ok
@@ -831,3 +831,8 @@ omitDefaultsProperties =
 toValue : Json.Encode.Value -> Proto.Value.Value
 toValue json =
     Proto.Value.fromJson json |> Maybe.withDefault Proto.Value.ValueNull
+
+
+writtenOrNull : Proto.Json.Encoder -> Json.Encode.Value
+writtenOrNull encoder =
+    Proto.Json.encode encoder |> Result.withDefault Json.Encode.null

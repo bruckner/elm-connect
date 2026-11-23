@@ -17,12 +17,15 @@ import Generated.Shapes.Blobs.V1 as B
 import Generated.Shapes.Blobs.V1.BlobService as Service
 import Json.Encode
 import Proto.Any
+import Proto.Error
 import Proto.Method
 import Proto.Value
 import Rpc
 import Rpc.Body
 import Rpc.Call
 import Rpc.Client
+import Rpc.Error
+import Rpc.Internal.Plan
 import Rpc.Protocol
 import Test exposing (Test, describe, test)
 
@@ -190,6 +193,14 @@ suite =
                 \_ ->
                     both withTypes Service.descriptorSetValue Service.setValue { name = "values/5", value = Just Proto.Value.ValueNull }
                         |> Expect.equal [ ( "POST https://api.example.com/x/v1/values/5 null", "POST https://api.example.com/x/v1/values/5 {}" ) ]
+            , test "a Value body field holding a number JSON has no form for refuses the call" <|
+                \_ ->
+                    let
+                        call =
+                            Service.setValue { name = "values/6", value = Just (Proto.Value.ValueList [ Proto.Value.ValueNumber (0 / 0) ]) }
+                    in
+                    Rpc.Internal.Plan.refused "https://api.example.com/x" (Rpc.Internal.Plan.plan withTypes call) (Rpc.request withTypes call)
+                        |> Expect.equal (Just (Rpc.Error.badAny (Proto.Error.NotWritable { typeName = "google.protobuf.Value", path = [ "value" ] })))
             , test "a request whose Any the client cannot write keeps its path and query, where the interpreter's has none" <|
                 \_ ->
                     both base Service.descriptorLabelBlob Service.labelBlob { labeled = Just { name = "labels/a", label = Just packed }, shelf = "shelves/s" }
