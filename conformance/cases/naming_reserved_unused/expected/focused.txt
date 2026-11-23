@@ -1,0 +1,112 @@
+-- An excerpt, not a module: what ../focus.txt names of the modules this
+-- case generates. Only it is compared; the modules are compiled and
+-- checked for elm-format's layout whole. `just bless` writes it.
+--
+-- Generated:
+--   Unused/V1.elm
+--   Unused/V1/Char.elm
+--   Unused/V1/Cmd.elm
+--   Unused/V1/Dict.elm
+--   Unused/V1/Never.elm
+--   Unused/V1/Order.elm
+--   Unused/V1/Result.elm
+--   Unused/V1/True.elm
+
+
+-- Unused/V1.elm: import
+
+import Bytes.Encode
+import Json.Decode
+import Json.Encode
+import Proto.Binary
+import Proto.Descriptors
+import Proto.Enum
+import Proto.Json
+import Proto.Message
+import Proto.Registry
+import Proto.Version
+import Proto.WellKnown
+import Unused.V1.Char
+import Unused.V1.Cmd
+import Unused.V1.Dict
+import Unused.V1.Never
+import Unused.V1.Order
+import Unused.V1.Result
+import Unused.V1.True
+
+
+-- Unused/V1.elm: Char
+
+{-| [`enum unused.v1.Char`](Unused-V1-Char#descriptor)
+
+  - `CharUnspecified` (`CHAR_UNSPECIFIED`)
+  - `CharA` (`CHAR_A`)
+
+-}
+type Char
+    = CharUnspecified
+    | CharA
+
+
+-- Unused/V1.elm: Dict
+
+{-| Names of elm/core types and constructors that this module's code does
+not use unqualified: no field is a map, so `Dict` is free, and `Result`,
+`Order`, `Never`, `Cmd`, `True` and `Char` are never used. Each compiles.
+
+[`message unused.v1.Dict`](Unused-V1-Dict#descriptor)
+
+  - [`name`](Unused-V1-Dict#name)
+
+-}
+type alias Dict =
+    { name : String
+    }
+
+
+-- Unused/V1.elm: Result
+
+{-| [`message unused.v1.Result`](Unused-V1-Result#descriptor)
+
+  - [`ok`](Unused-V1-Result#ok)
+  - [`dict`](Unused-V1-Result#dict)
+  - [`chars`](Unused-V1-Result#chars)
+
+-}
+type alias Result =
+    { ok : Bool
+    , dict : Maybe Dict
+    , chars : List Char
+    }
+
+
+-- Unused/V1.elm: Order
+
+{-| [`message unused.v1.Order`](Unused-V1-Order#descriptor)
+-}
+type alias Order =
+    {}
+
+
+-- Unused/V1.elm: Never
+
+{-| [`message unused.v1.Never`](Unused-V1-Never#descriptor)
+-}
+type alias Never =
+    {}
+
+
+-- Unused/V1.elm: Cmd
+
+{-| [`message unused.v1.Cmd`](Unused-V1-Cmd#descriptor)
+-}
+type alias Cmd =
+    {}
+
+
+-- Unused/V1.elm: True
+
+{-| [`message unused.v1.True`](Unused-V1-True#descriptor)
+-}
+type alias True =
+    {}

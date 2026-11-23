@@ -1,0 +1,213 @@
+-- An excerpt, not a module: what ../focus.txt names of the modules this
+-- case generates. Only it is compared; the modules are compiled and
+-- checked for elm-format's layout whole. `just bless` writes it.
+--
+-- Generated:
+--   First/V1.elm
+--   First/V1/Fetcher.elm
+--   First/V1/Link.elm
+--   First/V1/URLPath.elm
+
+
+-- First/V1.elm: URLPath
+
+{-| [`message first.v1.URLPath`](First-V1-URLPath#descriptor)
+
+  - [`label`](First-V1-URLPath#label)
+  - [`id`](First-V1-URLPath#id)
+  - [`url`](First-V1-URLPath#url)
+  - [`urlPath`](First-V1-URLPath#urlPath)
+  - [`httpRequest`](First-V1-URLPath#httpRequest)
+  - [`xCoord`](First-V1-URLPath#xCoord)
+  - [`abcDef`](First-V1-URLPath#abcDef)
+  - [`internal`](First-V1-URLPath#internal)
+  - [`displayName`](First-V1-URLPath#displayName)
+  - [`type_`](First-V1-URLPath#type_)
+  - [`ids`](First-V1-URLPath#ids): Plural acronyms: `ids`, `urls`, `apis`, `uuids`.
+  - [`urls`](First-V1-URLPath#urls)
+  - [`apis`](First-V1-URLPath#apis)
+  - [`uuids`](First-V1-URLPath#uuids)
+
+-}
+type alias URLPath =
+    { label : String
+    , id : String
+    , url : String
+    , urlPath : String
+    , httpRequest : String
+    , xCoord : Float
+    , abcDef : String
+    , internal : String
+    , displayName : String
+    , type_ : String
+    , ids : List String
+    , urls : List String
+    , apis : List String
+    , uuids : List String
+    }
+
+
+-- First/V1.elm: Link
+
+{-| `__Label` has the JSON name `Label`, so protoc refuses it beside a
+field `Label`. A oneof named `Target` is the record field `target`; its
+member `URL` has the constructor `LinkTargetURL` and the descriptor
+value `url`.
+
+[`message first.v1.Link`](First-V1-Link#descriptor)
+
+  - [`label`](First-V1-Link#label)
+  - `target`: See [`LinkTarget`](#LinkTarget).
+
+-}
+type alias Link =
+    { label : String
+    , target : LinkTarget
+    }
+
+
+-- First/V1.elm: LinkTarget
+
+{-| `oneof Target` of `first.v1.Link`
+
+  - `LinkTargetUnset`: none of the fields is set.
+  - [`LinkTargetURL`](First-V1-Link#url)
+  - [`LinkTargetCount`](First-V1-Link#count)
+
+-}
+type LinkTarget
+    = LinkTargetUnset
+    | LinkTargetURL String
+    | LinkTargetCount Int
+
+
+-- First/V1/URLPath.elm: descriptor
+
+{-| `message first.v1.URLPath`
+
+Describes [`First.V1.URLPath`](First-V1#URLPath).
+
+-}
+descriptor : Proto.Message.Descriptor
+descriptor =
+    Proto.Message.descriptor "first.v1.URLPath"
+        [ label
+        , id
+        , url
+        , urlPath
+        , httpRequest
+        , xCoord
+        , abcDef
+        , internal
+        , displayName
+        , type_
+        , ids
+        , urls
+        , apis
+        , uuids
+        ]
+
+
+-- First/V1/Link.elm: descriptor
+
+{-| `__Label` has the JSON name `Label`, so protoc refuses it beside a
+field `Label`. A oneof named `Target` is the record field `target`; its
+member `URL` has the constructor `LinkTargetURL` and the descriptor
+value `url`.
+
+`message first.v1.Link`
+
+Describes [`First.V1.Link`](First-V1#Link).
+
+-}
+descriptor : Proto.Message.Descriptor
+descriptor =
+    Proto.Message.descriptor "first.v1.Link"
+        [ label
+        , url
+        , count
+        ]
+
+
+-- First/V1/Fetcher.elm: getNote
+
+{-| `rpc GetNote(URLPath) returns (URLPath)`.
+Connect: `POST /first.v1.Fetcher/GetNote`.
+Transcode: no HTTP rule, follows the Connect path.
+
+Codecs: JSON and protobuf binary. Described by [`descriptorGetNote`](#descriptorGetNote).
+
+-}
+getNote : First.V1.URLPath -> Rpc.Call codec First.V1.URLPath First.V1.URLPath
+getNote =
+    Rpc.call
+        (Proto.Method.init "first.v1.Fetcher"
+            "GetNote"
+            (\_ -> Ok << First.V1.encodeURLPath)
+            (\_ -> First.V1.decodeURLPath)
+            First.V1.encodeURLPathBytes
+            First.V1.decodeURLPathBytes
+        )
+
+
+-- First/V1/Fetcher.elm: httpGet
+
+{-| `rpc HTTPGet(URLPath) returns (URLPath)`.
+Connect: `POST /first.v1.Fetcher/HTTPGet`.
+Transcode: no HTTP rule, follows the Connect path.
+
+Codecs: JSON and protobuf binary. Described by [`descriptorHttpGet`](#descriptorHttpGet).
+
+-}
+httpGet : First.V1.URLPath -> Rpc.Call codec First.V1.URLPath First.V1.URLPath
+httpGet =
+    Rpc.call
+        (Proto.Method.init "first.v1.Fetcher"
+            "HTTPGet"
+            (\_ -> Ok << First.V1.encodeURLPath)
+            (\_ -> First.V1.decodeURLPath)
+            First.V1.encodeURLPathBytes
+            First.V1.decodeURLPathBytes
+        )
+
+
+-- First/V1/Fetcher.elm: ping
+
+{-| `rpc _Ping(URLPath) returns (URLPath)`.
+Connect: `POST /first.v1.Fetcher/_Ping`.
+Transcode: no HTTP rule, follows the Connect path.
+
+Codecs: JSON and protobuf binary. Described by [`descriptorPing`](#descriptorPing).
+
+-}
+ping : First.V1.URLPath -> Rpc.Call codec First.V1.URLPath First.V1.URLPath
+ping =
+    Rpc.call
+        (Proto.Method.init "first.v1.Fetcher"
+            "_Ping"
+            (\_ -> Ok << First.V1.encodeURLPath)
+            (\_ -> First.V1.decodeURLPath)
+            First.V1.encodeURLPathBytes
+            First.V1.decodeURLPathBytes
+        )
+
+
+-- First/V1/Fetcher.elm: type_
+
+{-| `rpc Type(URLPath) returns (URLPath)`.
+Connect: `POST /first.v1.Fetcher/Type`.
+Transcode: no HTTP rule, follows the Connect path.
+
+Codecs: JSON and protobuf binary. Described by [`descriptorType_`](#descriptorType_).
+
+-}
+type_ : First.V1.URLPath -> Rpc.Call codec First.V1.URLPath First.V1.URLPath
+type_ =
+    Rpc.call
+        (Proto.Method.init "first.v1.Fetcher"
+            "Type"
+            (\_ -> Ok << First.V1.encodeURLPath)
+            (\_ -> First.V1.decodeURLPath)
+            First.V1.encodeURLPathBytes
+            First.V1.decodeURLPathBytes
+        )

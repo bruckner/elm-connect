@@ -1,0 +1,121 @@
+-- An excerpt, not a module: what ../focus.txt names of the modules this
+-- case generates. Only it is compared; the modules are compiled and
+-- checked for elm-format's layout whole. `just bless` writes it.
+--
+-- Generated:
+--   Events/V1.elm
+--   Events/V1/Event.elm
+--   Events/V1/EventService.elm
+--   Events/V1/ListEventsRequest.elm
+--   Events/V1/ListEventsResponse.elm
+
+
+-- Events/V1.elm: EventKind
+
+{-| `oneof kind` of `events.v1.Event`
+
+  - `EventKindUnset`: none of the fields is set.
+  - [`EventKindLegacy`](Events-V1-Event#legacy)
+  - [`EventKindCount`](Events-V1-Event#count)
+
+-}
+type EventKind
+    = EventKindUnset
+    | EventKindLegacy String
+    | EventKindCount Int
+
+
+-- Events/V1.elm: ListEventsRequestFilter
+
+{-| `oneof filter` of `events.v1.ListEventsRequest`
+
+  - `ListEventsRequestFilterUnset`: none of the fields is set.
+  - [`ListEventsRequestFilterLegacy`](Events-V1-ListEventsRequest#legacy)
+
+-}
+type ListEventsRequestFilter
+    = ListEventsRequestFilterUnset
+    | ListEventsRequestFilterLegacy String
+
+
+-- Events/V1.elm: decodeEventKind
+
+{-| Decodes an [`EventKind`](#EventKind) from the members of its message's JSON object.
+-}
+decodeEventKind : Json.Decode.Decoder EventKind
+decodeEventKind =
+    Proto.Json.members "kind"
+        EventKindUnset
+        [ Proto.Json.memberEither "Legacy" "_legacy" (Json.Decode.map EventKindLegacy Proto.Json.string)
+        , Proto.Json.member "count" (Json.Decode.map EventKindCount Proto.Json.int32)
+        ]
+
+
+-- Events/V1.elm: queryOfListEventsRequest
+
+{-| The query parameters of a [`ListEventsRequest`](#ListEventsRequest) for the HTTP bindings that put its fields in the query: those of its fields that hold a value, in declaration order.
+-}
+queryOfListEventsRequest : ListEventsRequest -> List ( String, String )
+queryOfListEventsRequest request_ =
+    Proto.Query.optional "_legacy"
+        (case request_.filter of
+            ListEventsRequestFilterLegacy member_ ->
+                Just member_
+
+            _ ->
+                Nothing
+        )
+
+
+-- Events/V1/Event.elm: descriptor
+
+{-| A oneof member with a leading underscore: its constructor is
+`EventKindLegacy`, and its descriptor `Events.V1.Event.legacy`.
+
+`message events.v1.Event`
+
+Describes [`Events.V1.Event`](Events-V1#Event).
+
+-}
+descriptor : Proto.Message.Descriptor
+descriptor =
+    Proto.Message.descriptor "events.v1.Event"
+        [ name
+        , legacy
+        , count
+        ]
+
+
+-- Events/V1/Event.elm: legacy
+
+{-| `string _legacy = 2;`, in oneof `kind`
+-}
+legacy : Proto.Field.Descriptor
+legacy =
+    Proto.Field.descriptor "_legacy" "Legacy" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        |> Proto.Field.inOneof "kind"
+
+
+-- Events/V1/ListEventsRequest.elm: descriptor
+
+{-| `message events.v1.ListEventsRequest`
+
+Describes [`Events.V1.ListEventsRequest`](Events-V1#ListEventsRequest).
+
+-}
+descriptor : Proto.Message.Descriptor
+descriptor =
+    Proto.Message.descriptor "events.v1.ListEventsRequest"
+        [ parent
+        , legacy
+        ]
+
+
+-- Events/V1/ListEventsRequest.elm: legacy
+
+{-| `string _legacy = 2;`, in oneof `filter`
+-}
+legacy : Proto.Field.Descriptor
+legacy =
+    Proto.Field.descriptor "_legacy" "Legacy" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        |> Proto.Field.inOneof "filter"

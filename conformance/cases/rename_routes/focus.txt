@@ -1,0 +1,7 @@
+# Renamed fields and a renamed message on a route: the descriptor module is
+# `Things.V1.Criteria`, and the route and its query name the descriptors by
+# the new names.
+Things/V1.elm GetThingRequest Criteria queryOfGetThingRequest
+Things/V1/GetThingRequest.elm descriptor resource limit
+Things/V1/Criteria.elm status
+Things/V1/ThingService.elm routeGetThing0 descriptorGetThing

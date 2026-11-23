@@ -1,0 +1,8 @@
+# A field or oneof member named `descriptor` takes the descriptor value
+# `descriptor_`, `descriptors` does not escape, and the route's query names
+# them by those values.
+Catalog/V1/Entry.elm descriptor descriptor_ descriptors
+Catalog/V1/Part.elm descriptor descriptor_
+Catalog/V1/GetEntryRequest.elm descriptor descriptor_
+Catalog/V1.elm queryOfGetEntryRequest
+Catalog/V1/CatalogService.elm descriptorGetEntry

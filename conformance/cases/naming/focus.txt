@@ -1,0 +1,6 @@
+# The naming rules (design section 3.7): enum constructors with and
+# without the prefix, reserved words, json_name, digits and acronyms, a
+# reserved-word oneof, as the types, the JSON field names and the
+# descriptor values show them.
+Naming/V1.elm Shape HttpMethod Tag TagCase decodeTag decodeTagCase
+Naming/V1/Tag.elm descriptor type_ if_ port_ alias displayName httpUrl v2Count then_ of_

@@ -1,0 +1,3 @@
+# Fields named like values Elm imports by default: their descriptor values
+# are top-level values that shadow the default import.
+Range/V1/Bounds.elm descriptor max min always

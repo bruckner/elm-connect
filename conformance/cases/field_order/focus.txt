@@ -1,0 +1,6 @@
+# A record's fields, and its descriptor's, follow the order the file
+# declares them in, not their numbers; the positional constructor makes
+# that order the generated API.
+FieldOrder/V1.elm Draft DraftBody DraftMargin defaultDraft
+FieldOrder/V1/Draft.elm descriptor
+FieldOrder/V1/DraftMargin.elm descriptor

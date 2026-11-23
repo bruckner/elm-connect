@@ -1,0 +1,7 @@
+# The rename map: the package's and the service's modules (the list of
+# generated modules and the module line), the types and constructors, the
+# names derived from a renamed one, the method's function and the renamed
+# fields' descriptor values.
+Notes/Api.elm module Audience Memo MemoBody Edit messageMemo encodeMemo decodeMemo
+Notes/Api/Memo.elm descriptor heading text link
+Notes/Api/Memos.elm fetchMemo

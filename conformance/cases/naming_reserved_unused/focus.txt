@@ -1,0 +1,4 @@
+# Messages and an enum named like elm/core types the module does not use
+# unqualified: their types, and the imports, which expose none of those
+# names. That it compiles is the compiles check's, over the whole output.
+Unused/V1.elm import Char Dict Result Order Never Cmd True

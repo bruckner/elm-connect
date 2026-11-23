@@ -1,0 +1,248 @@
+-- An excerpt, not a module: what ../focus.txt names of the modules this
+-- case generates. Only it is compared; the modules are compiled and
+-- checked for elm-format's layout whole. `just bless` writes it.
+--
+-- Generated:
+--   Naming/V1.elm
+--   Naming/V1/HttpMethod.elm
+--   Naming/V1/Shape.elm
+--   Naming/V1/Tag.elm
+
+
+-- Naming/V1.elm: Shape
+
+{-| Values with the conventional prefix lose it; values without it gain
+the enum's name; digits stay as written.
+
+[`enum naming.v1.Shape`](Naming-V1-Shape#descriptor)
+
+  - `ShapeUnspecified` (`SHAPE_UNSPECIFIED`)
+  - `Shape2d` (`SHAPE_2D`)
+  - `ShapeCube` (`CUBE`)
+  - `ShapeV3Mesh` (`SHAPE_V3_MESH`)
+
+-}
+type Shape
+    = ShapeUnspecified
+    | Shape2d
+    | ShapeCube
+    | ShapeV3Mesh
+
+
+-- Naming/V1.elm: HttpMethod
+
+{-| A multi-word enum name: its prefix is matched word by word.
+
+[`enum naming.v1.HttpMethod`](Naming-V1-HttpMethod#descriptor)
+
+  - `HttpMethodUnspecified` (`HTTP_METHOD_UNSPECIFIED`)
+  - `HttpMethodGet` (`HTTP_METHOD_GET`)
+  - `HttpMethodPost` (`POST`)
+
+-}
+type HttpMethod
+    = HttpMethodUnspecified
+    | HttpMethodGet
+    | HttpMethodPost
+
+
+-- Naming/V1.elm: Tag
+
+{-| [`message naming.v1.Tag`](Naming-V1-Tag#descriptor)
+
+  - [`type_`](Naming-V1-Tag#type_): Elm reserved words gain a trailing underscore; the wire keeps the
+    proto name.
+  - [`if_`](Naming-V1-Tag#if_)
+  - [`port_`](Naming-V1-Tag#port_)
+  - [`alias`](Naming-V1-Tag#alias): A word Elm does not reserve keeps its name.
+  - [`displayName`](Naming-V1-Tag#displayName): `json_name` changes the wire name only.
+  - [`httpUrl`](Naming-V1-Tag#httpUrl): Digits and acronyms are cased as written.
+  - [`v2Count`](Naming-V1-Tag#v2Count)
+  - [`shape`](Naming-V1-Tag#shape)
+  - [`method`](Naming-V1-Tag#method)
+  - `case_`: A oneof named by a reserved word, with reserved-word members. See [`TagCase`](#TagCase).
+
+-}
+type alias Tag =
+    { type_ : String
+    , if_ : Bool
+    , port_ : Int
+    , alias : String
+    , displayName : String
+    , httpUrl : String
+    , v2Count : Int
+    , shape : Shape
+    , method : HttpMethod
+    , case_ : TagCase
+    }
+
+
+-- Naming/V1.elm: TagCase
+
+{-| A oneof named by a reserved word, with reserved-word members.
+
+`oneof case` of `naming.v1.Tag`
+
+  - `TagCaseUnset`: none of the fields is set.
+  - [`TagCaseThen`](Naming-V1-Tag#then_)
+  - [`TagCaseOf`](Naming-V1-Tag#of_)
+
+-}
+type TagCase
+    = TagCaseUnset
+    | TagCaseThen String
+    | TagCaseOf Int
+
+
+-- Naming/V1.elm: decodeTag
+
+{-| Decodes a [`Tag`](#Tag) from proto3 JSON.
+-}
+decodeTag : Json.Decode.Decoder Tag
+decodeTag =
+    Proto.Json.message
+        (Json.Decode.succeed Tag
+            |> Proto.Json.messageField "type" "" Proto.Json.string
+            |> Proto.Json.messageField "if" False Json.Decode.bool
+            |> Proto.Json.messageField "port" 0 Proto.Json.int32
+            |> Proto.Json.messageField "alias" "" Proto.Json.string
+            |> Proto.Json.messageFieldEither "screenName" "display_name" "" Proto.Json.string
+            |> Proto.Json.messageFieldEither "httpUrl" "http_url" "" Proto.Json.string
+            |> Proto.Json.messageFieldEither "v2Count" "v2_count" 0 Proto.Json.int32
+            |> Proto.Json.messageField "shape" ShapeUnspecified decodeShape
+            |> Proto.Json.messageField "method" HttpMethodUnspecified decodeHttpMethod
+            |> Proto.Json.oneof decodeTagCase
+        )
+
+
+-- Naming/V1.elm: decodeTagCase
+
+{-| Decodes a [`TagCase`](#TagCase) from the members of its message's JSON object.
+-}
+decodeTagCase : Json.Decode.Decoder TagCase
+decodeTagCase =
+    Proto.Json.members "case"
+        TagCaseUnset
+        [ Proto.Json.member "then" (Json.Decode.map TagCaseThen Proto.Json.string)
+        , Proto.Json.member "of" (Json.Decode.map TagCaseOf Proto.Json.int32)
+        ]
+
+
+-- Naming/V1/Tag.elm: descriptor
+
+{-| `message naming.v1.Tag`
+
+Describes [`Naming.V1.Tag`](Naming-V1#Tag).
+
+-}
+descriptor : Proto.Message.Descriptor
+descriptor =
+    Proto.Message.descriptor "naming.v1.Tag"
+        [ type_
+        , if_
+        , port_
+        , alias
+        , displayName
+        , httpUrl
+        , v2Count
+        , shape
+        , method
+        , then_
+        , of_
+        ]
+
+
+-- Naming/V1/Tag.elm: type_
+
+{-| Elm reserved words gain a trailing underscore; the wire keeps the
+proto name.
+
+`string type = 1;`
+
+-}
+type_ : Proto.Field.Descriptor
+type_ =
+    Proto.Field.descriptor "type" "type" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+
+
+-- Naming/V1/Tag.elm: if_
+
+{-| `bool if = 2;`
+-}
+if_ : Proto.Field.Descriptor
+if_ =
+    Proto.Field.descriptor "if" "if" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBool)
+
+
+-- Naming/V1/Tag.elm: port_
+
+{-| `int32 port = 3;`
+-}
+port_ : Proto.Field.Descriptor
+port_ =
+    Proto.Field.descriptor "port" "port" 3 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
+
+
+-- Naming/V1/Tag.elm: alias
+
+{-| A word Elm does not reserve keeps its name.
+
+`string alias = 4;`
+
+-}
+alias : Proto.Field.Descriptor
+alias =
+    Proto.Field.descriptor "alias" "alias" 4 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+
+
+-- Naming/V1/Tag.elm: displayName
+
+{-| `json_name` changes the wire name only.
+
+`string display_name = 5 [json_name = "screenName"];`
+
+-}
+displayName : Proto.Field.Descriptor
+displayName =
+    Proto.Field.descriptor "display_name" "screenName" 5 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+
+
+-- Naming/V1/Tag.elm: httpUrl
+
+{-| Digits and acronyms are cased as written.
+
+`string http_url = 6;`
+
+-}
+httpUrl : Proto.Field.Descriptor
+httpUrl =
+    Proto.Field.descriptor "http_url" "httpUrl" 6 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+
+
+-- Naming/V1/Tag.elm: v2Count
+
+{-| `int32 v2_count = 7;`
+-}
+v2Count : Proto.Field.Descriptor
+v2Count =
+    Proto.Field.descriptor "v2_count" "v2Count" 7 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
+
+
+-- Naming/V1/Tag.elm: then_
+
+{-| `string then = 10;`, in oneof `case`
+-}
+then_ : Proto.Field.Descriptor
+then_ =
+    Proto.Field.descriptor "then" "then" 10 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        |> Proto.Field.inOneof "case"
+
+
+-- Naming/V1/Tag.elm: of_
+
+{-| `int32 of = 11;`, in oneof `case`
+-}
+of_ : Proto.Field.Descriptor
+of_ =
+    Proto.Field.descriptor "of" "of" 11 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
+        |> Proto.Field.inOneof "case"

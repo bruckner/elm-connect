@@ -1,0 +1,178 @@
+-- An excerpt, not a module: what ../focus.txt names of the modules this
+-- case generates. Only it is compared; the modules are compiled and
+-- checked for elm-format's layout whole. `just bless` writes it.
+--
+-- Generated:
+--   Catalog/V1.elm
+--   Catalog/V1/CatalogService.elm
+--   Catalog/V1/Entry.elm
+--   Catalog/V1/GetEntryRequest.elm
+--   Catalog/V1/Part.elm
+
+
+-- Catalog/V1/Entry.elm: descriptor
+
+{-| A field named `descriptor` takes the value `descriptor_` in
+`Catalog.V1.Entry`, whose `descriptor` is the message's own, and keeps
+`descriptor` as its record field.
+
+`message catalog.v1.Entry`
+
+Describes [`Catalog.V1.Entry`](Catalog-V1#Entry).
+
+-}
+descriptor : Proto.Message.Descriptor
+descriptor =
+    Proto.Message.descriptor "catalog.v1.Entry"
+        [ name
+        , descriptor_
+        , descriptors
+        ]
+
+
+-- Catalog/V1/Entry.elm: descriptor_
+
+{-| `string descriptor = 2;`
+-}
+descriptor_ : Proto.Field.Descriptor
+descriptor_ =
+    Proto.Field.descriptor "descriptor" "descriptor" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+
+
+-- Catalog/V1/Entry.elm: descriptors
+
+{-| `descriptors` is a value here and in `Catalog.V1`, which holds the
+package's descriptors, a module apart, so neither escapes.
+
+`string descriptors = 3;`
+
+-}
+descriptors : Proto.Field.Descriptor
+descriptors =
+    Proto.Field.descriptor "descriptors" "descriptors" 3 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+
+
+-- Catalog/V1/Part.elm: descriptor
+
+{-| A oneof member named `descriptor` takes `descriptor_` too.
+
+`message catalog.v1.Part`
+
+Describes [`Catalog.V1.Part`](Catalog-V1#Part).
+
+-}
+descriptor : Proto.Message.Descriptor
+descriptor =
+    Proto.Message.descriptor "catalog.v1.Part"
+        [ descriptor_
+        , count
+        ]
+
+
+-- Catalog/V1/Part.elm: descriptor_
+
+{-| `string descriptor = 1;`, in oneof `kind`
+-}
+descriptor_ : Proto.Field.Descriptor
+descriptor_ =
+    Proto.Field.descriptor "descriptor" "descriptor" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        |> Proto.Field.inOneof "kind"
+
+
+-- Catalog/V1/GetEntryRequest.elm: descriptor
+
+{-| `message catalog.v1.GetEntryRequest`
+
+Describes [`Catalog.V1.GetEntryRequest`](Catalog-V1#GetEntryRequest).
+
+-}
+descriptor : Proto.Message.Descriptor
+descriptor =
+    Proto.Message.descriptor "catalog.v1.GetEntryRequest"
+        [ name
+        , descriptor_
+        , part
+        ]
+
+
+-- Catalog/V1/GetEntryRequest.elm: descriptor_
+
+{-| `string descriptor = 2;`
+-}
+descriptor_ : Proto.Field.Descriptor
+descriptor_ =
+    Proto.Field.descriptor "descriptor" "descriptor" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+
+
+-- Catalog/V1.elm: queryOfGetEntryRequest
+
+{-| The query parameters of a [`GetEntryRequest`](#GetEntryRequest) for the HTTP bindings that put its fields in the query: those of its fields that hold a value, in declaration order.
+-}
+queryOfGetEntryRequest : GetEntryRequest -> List ( String, String )
+queryOfGetEntryRequest request_ =
+    List.concat
+        [ Proto.Query.string "descriptor" request_.descriptor
+        , Proto.Query.optional "part.descriptor"
+            (Maybe.andThen
+                (\message_ ->
+                    case message_.kind of
+                        PartKindDescriptor member_ ->
+                            Just member_
+
+                        _ ->
+                            Nothing
+                )
+                request_.part
+            )
+        , Proto.Query.optional "part.count"
+            (Maybe.map String.fromInt
+                (Maybe.andThen
+                    (\message_ ->
+                        case message_.kind of
+                            PartKindCount member_ ->
+                                Just member_
+
+                            _ ->
+                                Nothing
+                    )
+                    request_.part
+                )
+            )
+        ]
+
+
+-- Catalog/V1/CatalogService.elm: descriptorGetEntry
+
+{-| `descriptor` and `part.descriptor` are query parameters, named by
+`Catalog.V1.GetEntryRequest.descriptor_` and
+`Catalog.V1.Part.descriptor_`.
+
+`rpc GetEntry(GetEntryRequest) returns (Entry)`
+
+-}
+descriptorGetEntry : Proto.Method.Descriptor
+descriptorGetEntry =
+    Proto.Method.descriptor "catalog.v1.CatalogService"
+        "GetEntry"
+        Proto.Method.IdempotencyUnknown
+        "catalog.v1.GetEntryRequest"
+        "catalog.v1.Entry"
+        [ Proto.Http.binding
+            { method = "GET"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable
+                    { fieldPath = [ Catalog.V1.GetEntryRequest.name ]
+                    , template = [ Proto.Http.literal "entries", Proto.Http.wildcard ]
+                    }
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query =
+                [ Proto.Http.param [ Catalog.V1.GetEntryRequest.descriptor_ ]
+                , Proto.Http.param [ Catalog.V1.GetEntryRequest.part, Catalog.V1.Part.descriptor_ ]
+                , Proto.Http.param [ Catalog.V1.GetEntryRequest.part, Catalog.V1.Part.count ]
+                ]
+            }
+        ]

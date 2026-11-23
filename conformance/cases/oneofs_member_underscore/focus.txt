@@ -1,0 +1,5 @@
+# A oneof member with a leading underscore: its constructor, its
+# descriptor value, and the route's query, which names it by that value.
+Events/V1.elm EventKind ListEventsRequestFilter decodeEventKind queryOfListEventsRequest
+Events/V1/Event.elm descriptor legacy
+Events/V1/ListEventsRequest.elm descriptor legacy

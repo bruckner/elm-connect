@@ -1,0 +1,55 @@
+-- An excerpt, not a module: what ../focus.txt names of the modules this
+-- case generates. Only it is compared; the modules are compiled and
+-- checked for elm-format's layout whole. `just bless` writes it.
+--
+-- Generated:
+--   Range/V1.elm
+--   Range/V1/Bounds.elm
+
+
+-- Range/V1/Bounds.elm: descriptor
+
+{-| Fields named like values Elm imports by default (`Basics.max`,
+`Basics.min`, `Basics.always`): their descriptor values in
+`Range.V1.Bounds` are top-level values of that module, which Elm lets
+shadow a default import.
+
+`message range.v1.Bounds`
+
+Describes [`Range.V1.Bounds`](Range-V1#Bounds).
+
+-}
+descriptor : Proto.Message.Descriptor
+descriptor =
+    Proto.Message.descriptor "range.v1.Bounds"
+        [ max
+        , min
+        , always
+        ]
+
+
+-- Range/V1/Bounds.elm: max
+
+{-| `int32 max = 1;`
+-}
+max : Proto.Field.Descriptor
+max =
+    Proto.Field.descriptor "max" "max" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
+
+
+-- Range/V1/Bounds.elm: min
+
+{-| `int32 min = 2;`
+-}
+min : Proto.Field.Descriptor
+min =
+    Proto.Field.descriptor "min" "min" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
+
+
+-- Range/V1/Bounds.elm: always
+
+{-| `bool always = 3;`
+-}
+always : Proto.Field.Descriptor
+always =
+    Proto.Field.descriptor "always" "always" 3 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarBool)

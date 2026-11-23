@@ -1,0 +1,7 @@
+# Names starting with capitals or underscores: the record fields, the
+# oneof's field, type and constructors, the descriptor values and the
+# service's functions; the types keep their names.
+First/V1.elm URLPath Link LinkTarget
+First/V1/URLPath.elm descriptor
+First/V1/Link.elm descriptor
+First/V1/Fetcher.elm getNote httpGet ping type_

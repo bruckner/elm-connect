@@ -1,0 +1,151 @@
+-- An excerpt, not a module: what ../focus.txt names of the modules this
+-- case generates. Only it is compared; the modules are compiled and
+-- checked for elm-format's layout whole. `just bless` writes it.
+--
+-- Generated:
+--   Things/V1.elm
+--   Things/V1/Criteria.elm
+--   Things/V1/GetThingRequest.elm
+--   Things/V1/Thing.elm
+--   Things/V1/ThingService.elm
+
+
+-- Things/V1.elm: GetThingRequest
+
+{-| `name` is renamed to `resource` and `page_size` to `limit`
+(options.txt): the route names their descriptors by the new names.
+
+[`message things.v1.GetThingRequest`](Things-V1-GetThingRequest#descriptor)
+
+  - [`resource`](Things-V1-GetThingRequest#resource)
+  - [`limit`](Things-V1-GetThingRequest#limit)
+  - [`filter`](Things-V1-GetThingRequest#filter)
+
+-}
+type alias GetThingRequest =
+    { resource : String
+    , limit : Int
+    , filter : Maybe Criteria
+    }
+
+
+-- Things/V1.elm: Criteria
+
+{-| Renamed to `Criteria` (options.txt), so its descriptor module is
+`Things.V1.Criteria`; `state` is renamed to `status`.
+
+[`message things.v1.Filter`](Things-V1-Criteria#descriptor)
+
+  - [`status`](Things-V1-Criteria#status)
+
+-}
+type alias Criteria =
+    { status : String
+    }
+
+
+-- Things/V1.elm: queryOfGetThingRequest
+
+{-| The query parameters of a [`GetThingRequest`](#GetThingRequest) for the HTTP bindings that put its fields in the query: those of its fields that hold a value, in declaration order.
+-}
+queryOfGetThingRequest : GetThingRequest -> List ( String, String )
+queryOfGetThingRequest request_ =
+    List.concat
+        [ Proto.Query.int "page_size" request_.limit
+        , Proto.Query.string "filter.state" (Maybe.withDefault "" (Maybe.map .status request_.filter))
+        ]
+
+
+-- Things/V1/GetThingRequest.elm: descriptor
+
+{-| `name` is renamed to `resource` and `page_size` to `limit`
+(options.txt): the route names their descriptors by the new names.
+
+`message things.v1.GetThingRequest`
+
+Describes [`Things.V1.GetThingRequest`](Things-V1#GetThingRequest).
+
+-}
+descriptor : Proto.Message.Descriptor
+descriptor =
+    Proto.Message.descriptor "things.v1.GetThingRequest"
+        [ resource
+        , limit
+        , filter
+        ]
+
+
+-- Things/V1/GetThingRequest.elm: resource
+
+{-| `string name = 1;`
+-}
+resource : Proto.Field.Descriptor
+resource =
+    Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+
+
+-- Things/V1/GetThingRequest.elm: limit
+
+{-| `int32 page_size = 2;`
+-}
+limit : Proto.Field.Descriptor
+limit =
+    Proto.Field.descriptor "page_size" "pageSize" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt32)
+
+
+-- Things/V1/Criteria.elm: status
+
+{-| `string state = 1;`
+-}
+status : Proto.Field.Descriptor
+status =
+    Proto.Field.descriptor "state" "state" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+
+
+-- Things/V1/ThingService.elm: routeGetThing0
+
+{-| The route of [`getThing`](#getThing) over binding 0: `GET /v1/{name=things/*}`.
+-}
+routeGetThing0 : Things.V1.GetThingRequest -> Proto.Route.Route
+routeGetThing0 request_ =
+    let
+        name_ =
+            request_.resource
+    in
+    { method = "GET"
+    , path = "v1/" ++ Proto.Route.segments name_
+    , query = Things.V1.queryOfGetThingRequest request_
+    , body = Nothing
+    , invalid = Proto.Route.checkSegments "name" [ "things", "*" ] name_
+    }
+
+
+-- Things/V1/ThingService.elm: descriptorGetThing
+
+{-| `rpc GetThing(GetThingRequest) returns (Thing)`
+-}
+descriptorGetThing : Proto.Method.Descriptor
+descriptorGetThing =
+    Proto.Method.descriptor "things.v1.ThingService"
+        "GetThing"
+        Proto.Method.IdempotencyUnknown
+        "things.v1.GetThingRequest"
+        "things.v1.Thing"
+        [ Proto.Http.binding
+            { method = "GET"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable
+                    { fieldPath = [ Things.V1.GetThingRequest.resource ]
+                    , template = [ Proto.Http.literal "things", Proto.Http.wildcard ]
+                    }
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query =
+                [ Proto.Http.param [ Things.V1.GetThingRequest.limit ]
+                , Proto.Http.param [ Things.V1.GetThingRequest.filter, Things.V1.Criteria.status ]
+                ]
+            }
+        ]

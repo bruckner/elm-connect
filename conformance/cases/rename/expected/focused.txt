@@ -1,0 +1,190 @@
+-- An excerpt, not a module: what ../focus.txt names of the modules this
+-- case generates. Only it is compared; the modules are compiled and
+-- checked for elm-format's layout whole. `just bless` writes it.
+--
+-- Generated:
+--   Notes/Api.elm
+--   Notes/Api/Audience.elm
+--   Notes/Api/Edit.elm
+--   Notes/Api/GetNoteRequest.elm
+--   Notes/Api/Memo.elm
+--   Notes/Api/Memos.elm
+
+
+-- Notes/Api.elm: module
+
+module Notes.Api exposing (..)
+
+{-| The rename map gives Elm names in place of derived ones (options.txt):
+the package's module, a service's module, a method's value, a message's,
+a nested message's and an enum's type, a field, a oneof (its field and,
+through it, its type), a oneof's field (its constructor) and an enum
+value (its constructor). The names derived from a renamed one follow it:
+`Memo` has `encodeMemo` and `messageMemo`, `Audience` the constructor
+`AudienceUnspecified`, and the oneof `body` the type `MemoBody`.
+-}
+
+
+-- Notes/Api.elm: Audience
+
+{-| [`enum notes.v1.Visibility`](Notes-Api-Audience#descriptor)
+
+  - `AudienceUnspecified` (`VISIBILITY_UNSPECIFIED`)
+  - `Everyone` (`VISIBILITY_PUBLIC`)
+
+-}
+type Audience
+    = AudienceUnspecified
+    | Everyone
+
+
+-- Notes/Api.elm: Memo
+
+{-| [`message notes.v1.Note`](Notes-Api-Memo#descriptor)
+
+  - [`heading`](Notes-Api-Memo#heading)
+  - [`visibility`](Notes-Api-Memo#visibility)
+  - [`revisions`](Notes-Api-Memo#revisions)
+  - `body`: See [`MemoBody`](#MemoBody).
+
+-}
+type alias Memo =
+    { heading : String
+    , visibility : Audience
+    , revisions : List Edit
+    , body : MemoBody
+    }
+
+
+-- Notes/Api.elm: MemoBody
+
+{-| `oneof kind` of `notes.v1.Note`
+
+  - `MemoBodyUnset`: none of the fields is set.
+  - [`MemoBodyText`](Notes-Api-Memo#text)
+  - [`BodyUrl`](Notes-Api-Memo#link)
+
+-}
+type MemoBody
+    = MemoBodyUnset
+    | MemoBodyText String
+    | BodyUrl String
+
+
+-- Notes/Api.elm: Edit
+
+{-| [`message notes.v1.Note.Revision`](Notes-Api-Edit#descriptor)
+
+  - [`number`](Notes-Api-Edit#number)
+
+-}
+type alias Edit =
+    { number : Int
+    }
+
+
+-- Notes/Api.elm: messageMemo
+
+{-| The typed value of [`Memo`](#Memo): its full name and codecs.
+-}
+messageMemo : Proto.Message.Message Memo
+messageMemo =
+    Proto.Message.init "notes.v1.Note" encodeMemo decodeMemo encodeMemoBytes decodeMemoBytes
+
+
+-- Notes/Api.elm: encodeMemo
+
+{-| Encodes a [`Memo`](#Memo) as proto3 JSON.
+-}
+encodeMemo : Memo -> Json.Encode.Value
+encodeMemo value =
+    Proto.Json.objectOfFields
+        ([ ( "title", Proto.Json.implicitField "" Json.Encode.string value.heading )
+         , ( "visibility", Proto.Json.implicitField AudienceUnspecified encodeAudience value.visibility )
+         , ( "revisions", Proto.Json.repeatedField encodeEdit value.revisions )
+         ]
+            ++ encodeMemoBody value.body
+        )
+
+
+-- Notes/Api.elm: decodeMemo
+
+{-| Decodes a [`Memo`](#Memo) from proto3 JSON.
+-}
+decodeMemo : Json.Decode.Decoder Memo
+decodeMemo =
+    Proto.Json.message
+        (Json.Decode.succeed Memo
+            |> Proto.Json.messageField "title" "" Proto.Json.string
+            |> Proto.Json.messageField "visibility" AudienceUnspecified decodeAudience
+            |> Proto.Json.messageField "revisions" [] (Json.Decode.list decodeEdit)
+            |> Proto.Json.oneof decodeMemoBody
+        )
+
+
+-- Notes/Api/Memo.elm: descriptor
+
+{-| `message notes.v1.Note`
+
+Describes [`Notes.Api.Memo`](Notes-Api#Memo).
+
+-}
+descriptor : Proto.Message.Descriptor
+descriptor =
+    Proto.Message.descriptor "notes.v1.Note"
+        [ heading
+        , visibility
+        , revisions
+        , text
+        , link
+        ]
+
+
+-- Notes/Api/Memo.elm: heading
+
+{-| `string title = 1;`
+-}
+heading : Proto.Field.Descriptor
+heading =
+    Proto.Field.descriptor "title" "title" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+
+
+-- Notes/Api/Memo.elm: text
+
+{-| `string text = 4;`, in oneof `kind`
+-}
+text : Proto.Field.Descriptor
+text =
+    Proto.Field.descriptor "text" "text" 4 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        |> Proto.Field.inOneof "kind"
+
+
+-- Notes/Api/Memo.elm: link
+
+{-| `string link = 5;`, in oneof `kind`
+-}
+link : Proto.Field.Descriptor
+link =
+    Proto.Field.descriptor "link" "link" 5 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+        |> Proto.Field.inOneof "kind"
+
+
+-- Notes/Api/Memos.elm: fetchMemo
+
+{-| `rpc GetNote(GetNoteRequest) returns (Note)`.
+Connect: `POST /notes.v1.NotesService/GetNote`.
+Transcode: no HTTP rule, follows the Connect path.
+
+Codecs: JSON and protobuf binary. Described by [`descriptorFetchMemo`](#descriptorFetchMemo).
+
+-}
+fetchMemo : Notes.Api.GetNoteRequest -> Rpc.Call codec Notes.Api.GetNoteRequest Notes.Api.Memo
+fetchMemo =
+    Rpc.call
+        (Proto.Method.init "notes.v1.NotesService"
+            "GetNote"
+            (\_ -> Ok << Notes.Api.encodeGetNoteRequest)
+            (\_ -> Notes.Api.decodeMemo)
+            Notes.Api.encodeGetNoteRequestBytes
+            Notes.Api.decodeMemoBytes
+        )

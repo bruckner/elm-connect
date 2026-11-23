@@ -1,0 +1,114 @@
+-- An excerpt, not a module: what ../focus.txt names of the modules this
+-- case generates. Only it is compared; the modules are compiled and
+-- checked for elm-format's layout whole. `just bless` writes it.
+--
+-- Generated:
+--   FieldOrder/V1.elm
+--   FieldOrder/V1/Draft.elm
+--   FieldOrder/V1/DraftMargin.elm
+--   FieldOrder/V1/Mood.elm
+
+
+-- FieldOrder/V1.elm: Draft
+
+{-| [`message field_order.v1.Draft`](FieldOrder-V1-Draft#descriptor)
+
+  - [`title`](FieldOrder-V1-Draft#title)
+  - `body`: The oneof's record field sits where its first member is declared,
+    after `title`; by number, `blob` would put it first. See [`DraftBody`](#DraftBody).
+  - [`mood`](FieldOrder-V1-Draft#mood)
+  - [`margin`](FieldOrder-V1-Draft#margin)
+  - [`tags`](FieldOrder-V1-Draft#tags)
+
+-}
+type alias Draft =
+    { title : String
+    , body : DraftBody
+    , mood : Mood
+    , margin : Maybe DraftMargin
+    , tags : List String
+    }
+
+
+-- FieldOrder/V1.elm: DraftBody
+
+{-| The oneof's record field sits where its first member is declared,
+after `title`; by number, `blob` would put it first.
+
+`oneof body` of `field_order.v1.Draft`
+
+  - `DraftBodyUnset`: none of the fields is set.
+  - [`DraftBodyText`](FieldOrder-V1-Draft#text)
+  - [`DraftBodyBlob`](FieldOrder-V1-Draft#blob)
+
+-}
+type DraftBody
+    = DraftBodyUnset
+    | DraftBodyText String
+    | DraftBodyBlob String
+
+
+-- FieldOrder/V1.elm: DraftMargin
+
+{-| A nested message, declared before the fields that use it.
+
+[`message field_order.v1.Draft.Margin`](FieldOrder-V1-DraftMargin#descriptor)
+
+  - [`left`](FieldOrder-V1-DraftMargin#left)
+  - [`right`](FieldOrder-V1-DraftMargin#right)
+
+-}
+type alias DraftMargin =
+    { left : Int
+    , right : Int
+    }
+
+
+-- FieldOrder/V1.elm: defaultDraft
+
+{-| A [`Draft`](#Draft) with every field at its default and every oneof unset.
+-}
+defaultDraft : Draft
+defaultDraft =
+    { title = ""
+    , body = DraftBodyUnset
+    , mood = MoodUnspecified
+    , margin = Nothing
+    , tags = []
+    }
+
+
+-- FieldOrder/V1/Draft.elm: descriptor
+
+{-| `message field_order.v1.Draft`
+
+Describes [`FieldOrder.V1.Draft`](FieldOrder-V1#Draft).
+
+-}
+descriptor : Proto.Message.Descriptor
+descriptor =
+    Proto.Message.descriptor "field_order.v1.Draft"
+        [ title
+        , text
+        , blob
+        , mood
+        , margin
+        , tags
+        ]
+
+
+-- FieldOrder/V1/DraftMargin.elm: descriptor
+
+{-| A nested message, declared before the fields that use it.
+
+`message field_order.v1.Draft.Margin`
+
+Describes [`FieldOrder.V1.DraftMargin`](FieldOrder-V1#DraftMargin).
+
+-}
+descriptor : Proto.Message.Descriptor
+descriptor =
+    Proto.Message.descriptor "field_order.v1.Draft.Margin"
+        [ left
+        , right
+        ]
