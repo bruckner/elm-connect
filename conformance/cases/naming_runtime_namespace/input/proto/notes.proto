@@ -3,6 +3,4 @@ syntax = "proto3";
 
 package proto.notes;
 
-message Note {
-  string title = 1;
-}
+message Note {}

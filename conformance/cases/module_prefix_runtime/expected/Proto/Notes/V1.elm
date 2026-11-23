@@ -34,13 +34,9 @@ elmConnectVersion_ =
 
 
 {-| [`message notes.v1.Note`](Proto-Notes-V1-Note#descriptor)
-
-  - [`title`](Proto-Notes-V1-Note#title)
-
 -}
 type alias Note =
-    { title : String
-    }
+    {}
 
 
 
@@ -51,8 +47,7 @@ type alias Note =
 -}
 defaultNote : Note
 defaultNote =
-    { title = ""
-    }
+    {}
 
 
 
@@ -98,10 +93,8 @@ registry =
 {-| Encodes a [`Note`](#Note) as proto3 JSON.
 -}
 encodeNote : Note -> Json.Encode.Value
-encodeNote value =
-    Proto.Json.objectOfFields
-        [ ( "title", Proto.Json.implicitField "" Json.Encode.string value.title )
-        ]
+encodeNote _ =
+    Json.Encode.object []
 
 
 
@@ -112,10 +105,7 @@ encodeNote value =
 -}
 decodeNote : Json.Decode.Decoder Note
 decodeNote =
-    Proto.Json.message
-        (Json.Decode.succeed Note
-            |> Proto.Json.messageField "title" "" Proto.Json.string
-        )
+    Proto.Json.emptyMessage
 
 
 
@@ -125,10 +115,8 @@ decodeNote =
 {-| Encodes a [`Note`](#Note) as protobuf binary.
 -}
 encodeNoteBytes : Note -> Bytes.Encode.Encoder
-encodeNoteBytes value =
-    Bytes.Encode.sequence
-        [ Proto.Binary.implicit Proto.Binary.string 1 value.title
-        ]
+encodeNoteBytes _ =
+    Bytes.Encode.sequence []
 
 
 
@@ -139,24 +127,7 @@ encodeNoteBytes value =
 -}
 mergeNoteBytes : Note -> Proto.Binary.Decoder Note
 mergeNoteBytes =
-    Proto.Binary.merge
-        "notes.v1.Note"
-        (\number wire value ->
-            case number of
-                1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { title = v
-                            }
-                        )
-                        wire
-                        value
-
-                _ ->
-                    Proto.Binary.skip wire value
-        )
-        identity
+    Proto.Binary.merge "notes.v1.Note" (\_ wire value -> Proto.Binary.skip wire value) identity
 
 
 {-| Decodes a [`Note`](#Note) from protobuf binary.

@@ -40,25 +40,8 @@ getItem =
         (Proto.Method.initJson "vault.v1.VaultService"
             "GetItem"
             (\_ -> Ok << Vault.V1.encodeGetItemRequest)
-            Vault.V1.decodeItemWith
+            (\_ -> Vault.V1.decodeItem)
             |> Proto.Method.withRoutes [ routeGetItem0 ]
-        )
-
-
-{-| `rpc ListItems(ListItemsRequest) returns (ListItemsResponse)`.
-Connect: `POST /vault.v1.VaultService/ListItems`.
-Transcode: no HTTP rule, follows the Connect path.
-
-Codecs: JSON. Described by [`descriptorListItems`](#descriptorListItems).
-
--}
-listItems : Vault.V1.ListItemsRequest -> Rpc.Call Rpc.Json Vault.V1.ListItemsRequest Vault.V1.ListItemsResponse
-listItems =
-    Rpc.call
-        (Proto.Method.initJson "vault.v1.VaultService"
-            "ListItems"
-            (\_ -> Ok << Vault.V1.encodeListItemsRequest)
-            Vault.V1.decodeListItemsResponseWith
         )
 
 
@@ -74,8 +57,8 @@ putItem =
     Rpc.call
         (Proto.Method.initJson "vault.v1.VaultService"
             "PutItem"
-            Vault.V1.encodeItemWith
-            Vault.V1.decodeItemWith
+            (\_ -> Ok << Vault.V1.encodeItem)
+            (\_ -> Vault.V1.decodeItem)
         )
 
 
@@ -127,18 +110,6 @@ descriptorGetItem =
             , query = []
             }
         ]
-
-
-{-| `rpc ListItems(ListItemsRequest) returns (ListItemsResponse)`
--}
-descriptorListItems : Proto.Method.Descriptor
-descriptorListItems =
-    Proto.Method.descriptor "vault.v1.VaultService"
-        "ListItems"
-        Proto.Method.IdempotencyUnknown
-        "vault.v1.ListItemsRequest"
-        "vault.v1.ListItemsResponse"
-        []
 
 
 {-| `rpc PutItem(Item) returns (Item)`

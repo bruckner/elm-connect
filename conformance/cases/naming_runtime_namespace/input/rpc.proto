@@ -5,9 +5,7 @@ syntax = "proto3";
 
 package rpc.v1;
 
-message Ping {
-  string text = 1;
-}
+message Ping {}
 
 service Pinger {
   rpc Send(Ping) returns (Ping);

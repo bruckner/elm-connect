@@ -4,13 +4,12 @@
 
 module Enums.V1 exposing (..)
 
-{-| The enums case under enum\_unknown=zero: the same protos, and the same
-output but for each decoder, which is Proto.Json.enumOrZero, reading an
-unknown name as the zero value as it does an unknown number.
+{-| The enums case's Status under enum\_unknown=zero: its decoder is
+Proto.Json.enumOrZero, reading an unknown name as the zero value as it
+does an unknown number; the rest of the output is the enums case's.
 -}
 
 import Bytes.Encode
-import Enums.V1.Priority
 import Enums.V1.Status
 import Enums.V1.Task
 import Json.Decode
@@ -49,40 +48,13 @@ type Status
     | StatusArchived
 
 
-{-| Values without the conventional prefix, a negative number, and
-aliases: names sharing a number are one constructor, named for the
-first declared, which the encoder writes; the decoder reads them all.
-PRIORITY\_LOW would be the constructor PriorityLow, like LOW; as an
-alias it claims no name, so the two do not collide.
-
-[`enum enums.v1.Priority`](Enums-V1-Priority#descriptor)
-
-  - `PriorityNone` (`NONE`, also `UNSET`)
-  - `PriorityLow` (`LOW`, also `PRIORITY_LOW`)
-  - `PriorityHigh` (`HIGH`, also `URGENT`)
-  - `PriorityBelowZero` (`BELOW_ZERO`)
-
--}
-type Priority
-    = PriorityNone
-    | PriorityLow
-    | PriorityHigh
-    | PriorityBelowZero
-
-
 {-| [`message enums.v1.Task`](Enums-V1-Task#descriptor)
 
-  - [`status`](Enums-V1-Task#status): Without presence, an enum field reads absence as its zero value.
-  - [`priority`](Enums-V1-Task#priority): With presence, it is a Maybe.
-  - [`history`](Enums-V1-Task#history)
-  - [`previousStatus`](Enums-V1-Task#previousStatus)
+  - [`status`](Enums-V1-Task#status)
 
 -}
 type alias Task =
     { status : Status
-    , priority : Maybe Priority
-    , history : List Status
-    , previousStatus : Status
     }
 
 
@@ -95,9 +67,6 @@ type alias Task =
 defaultTask : Task
 defaultTask =
     { status = StatusUnspecified
-    , priority = Nothing
-    , history = []
-    , previousStatus = StatusUnspecified
     }
 
 
@@ -110,13 +79,6 @@ defaultTask =
 enumStatus : Proto.Enum.Enum Status
 enumStatus =
     Proto.Enum.enum encodeStatus decodeStatus StatusUnspecified Enums.V1.Status.descriptor
-
-
-{-| The typed value of [`Priority`](#Priority): its codecs, zero value and descriptor together.
--}
-enumPriority : Proto.Enum.Enum Priority
-enumPriority =
-    Proto.Enum.enum encodePriority decodePriority PriorityNone Enums.V1.Priority.descriptor
 
 
 {-| The typed value of [`Task`](#Task): its full name and codecs.
@@ -139,7 +101,6 @@ descriptors =
             [ Enums.V1.Task.descriptor
             ]
             [ Enums.V1.Status.descriptor
-            , Enums.V1.Priority.descriptor
             ]
         )
         Proto.WellKnown.descriptors
@@ -172,33 +133,12 @@ encodeStatus value =
             Json.Encode.string "STATUS_ARCHIVED"
 
 
-{-| Encodes a [`Priority`](#Priority) as proto3 JSON.
--}
-encodePriority : Priority -> Json.Encode.Value
-encodePriority value =
-    case value of
-        PriorityNone ->
-            Json.Encode.string "NONE"
-
-        PriorityLow ->
-            Json.Encode.string "LOW"
-
-        PriorityHigh ->
-            Json.Encode.string "HIGH"
-
-        PriorityBelowZero ->
-            Json.Encode.string "BELOW_ZERO"
-
-
 {-| Encodes a [`Task`](#Task) as proto3 JSON.
 -}
 encodeTask : Task -> Json.Encode.Value
 encodeTask value =
     Proto.Json.objectOfFields
         [ ( "status", Proto.Json.implicitField StatusUnspecified encodeStatus value.status )
-        , ( "priority", Maybe.map encodePriority value.priority )
-        , ( "history", Proto.Json.repeatedField encodeStatus value.history )
-        , ( "previousStatus", Proto.Json.implicitField StatusUnspecified encodeStatus value.previousStatus )
         ]
 
 
@@ -218,22 +158,6 @@ decodeStatus =
         ]
 
 
-{-| Decodes a [`Priority`](#Priority) from proto3 JSON.
--}
-decodePriority : Json.Decode.Decoder Priority
-decodePriority =
-    Proto.Json.enumOrZero "Priority"
-        PriorityNone
-        [ ( "NONE", 0, PriorityNone )
-        , ( "UNSET", 0, PriorityNone )
-        , ( "LOW", 1, PriorityLow )
-        , ( "PRIORITY_LOW", 1, PriorityLow )
-        , ( "HIGH", 2, PriorityHigh )
-        , ( "URGENT", 2, PriorityHigh )
-        , ( "BELOW_ZERO", -1, PriorityBelowZero )
-        ]
-
-
 {-| Decodes a [`Task`](#Task) from proto3 JSON.
 -}
 decodeTask : Json.Decode.Decoder Task
@@ -241,9 +165,6 @@ decodeTask =
     Proto.Json.message
         (Json.Decode.succeed Task
             |> Proto.Json.messageField "status" StatusUnspecified decodeStatus
-            |> Proto.Json.messageField "priority" Nothing (Json.Decode.map Just decodePriority)
-            |> Proto.Json.messageField "history" [] (Json.Decode.list decodeStatus)
-            |> Proto.Json.messageFieldEither "previousStatus" "previous_status" StatusUnspecified decodeStatus
         )
 
 
@@ -266,33 +187,12 @@ encodeStatusBytes value =
             2
 
 
-{-| The number protobuf binary writes a [`Priority`](#Priority) as.
--}
-encodePriorityBytes : Priority -> Int
-encodePriorityBytes value =
-    case value of
-        PriorityNone ->
-            0
-
-        PriorityLow ->
-            1
-
-        PriorityHigh ->
-            2
-
-        PriorityBelowZero ->
-            -1
-
-
 {-| Encodes a [`Task`](#Task) as protobuf binary.
 -}
 encodeTaskBytes : Task -> Bytes.Encode.Encoder
 encodeTaskBytes value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit (Proto.Binary.enum encodeStatusBytes decodeStatusBytes) 1 value.status
-        , Proto.Binary.optional (Proto.Binary.enum encodePriorityBytes decodePriorityBytes) 2 value.priority
-        , Proto.Binary.list (Proto.Binary.enum encodeStatusBytes decodeStatusBytes) 3 value.history
-        , Proto.Binary.implicit (Proto.Binary.enum encodeStatusBytes decodeStatusBytes) 4 value.previousStatus
         ]
 
 
@@ -315,25 +215,6 @@ decodeStatusBytes number =
             StatusUnspecified
 
 
-{-| A [`Priority`](#Priority) from the number protobuf binary carries.
--}
-decodePriorityBytes : Int -> Priority
-decodePriorityBytes number =
-    case number of
-        1 ->
-            PriorityLow
-
-        2 ->
-            PriorityHigh
-
-        _ ->
-            if number == -1 then
-                PriorityBelowZero
-
-            else
-                PriorityNone
-
-
 {-| Decodes a [`Task`](#Task) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
 mergeTaskBytes : Task -> Proto.Binary.Decoder Task
@@ -347,49 +228,6 @@ mergeTaskBytes =
                         (Proto.Binary.enum encodeStatusBytes decodeStatusBytes)
                         (\v ->
                             { status = v
-                            , priority = value.priority
-                            , history = value.history
-                            , previousStatus = value.previousStatus
-                            }
-                        )
-                        wire
-                        value
-
-                2 ->
-                    Proto.Binary.field
-                        (Proto.Binary.enum encodePriorityBytes decodePriorityBytes)
-                        (\v ->
-                            { status = value.status
-                            , priority = Just v
-                            , history = value.history
-                            , previousStatus = value.previousStatus
-                            }
-                        )
-                        wire
-                        value
-
-                3 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.enum encodeStatusBytes decodeStatusBytes)
-                        (\v ->
-                            { status = value.status
-                            , priority = value.priority
-                            , history = v
-                            , previousStatus = value.previousStatus
-                            }
-                        )
-                        value.history
-                        wire
-                        value
-
-                4 ->
-                    Proto.Binary.field
-                        (Proto.Binary.enum encodeStatusBytes decodeStatusBytes)
-                        (\v ->
-                            { status = value.status
-                            , priority = value.priority
-                            , history = value.history
-                            , previousStatus = v
                             }
                         )
                         wire
@@ -398,13 +236,7 @@ mergeTaskBytes =
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value ->
-            { status = value.status
-            , priority = value.priority
-            , history = List.reverse value.history
-            , previousStatus = value.previousStatus
-            }
-        )
+        identity
 
 
 {-| Decodes a [`Task`](#Task) from protobuf binary.

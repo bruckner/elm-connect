@@ -4,10 +4,9 @@
 
 module Proto.Notes.Note exposing (..)
 
-{-| The descriptor of `proto.notes.Note` and its fields.
+{-| The descriptor of `proto.notes.Note`.
 -}
 
-import Proto.Field
 import Proto.Message
 import Proto.Version
 
@@ -26,13 +25,4 @@ Describes [`Proto.Notes.Note`](Proto-Notes#Note).
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
-    Proto.Message.descriptor "proto.notes.Note"
-        [ title
-        ]
-
-
-{-| `string title = 1;`
--}
-title : Proto.Field.Descriptor
-title =
-    Proto.Field.descriptor "title" "title" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+    Proto.Message.descriptor "proto.notes.Note" []

@@ -4,22 +4,16 @@
 
 module Vault.V1 exposing (..)
 
-{-| A service whose messages hold an Any, generated under the default,
-wire=both, by services\_wire\_both and under wire=json by wire\_json. Under
-wire=both the methods are built by Proto.Method.init, with JSON and
-binary codecs and, for GetItem, its route; under wire=json by
-Proto.Method.initJson, with JSON codecs alone. Item's codecs write and
-read its Any fields through the registry a client gives.
+{-| services\_wire\_both's two kinds of method under wire=json: each is built
+by Proto.Method.initJson, with JSON codecs alone, where wire=both gives
+Proto.Method.init JSON and binary codecs; GetItem keeps its route.
 -}
 
 import Bytes.Encode
 import Json.Decode
 import Json.Encode
-import Proto.Any
 import Proto.Binary
 import Proto.Descriptors
-import Proto.Enum
-import Proto.Error
 import Proto.Json
 import Proto.Message
 import Proto.Registry
@@ -27,9 +21,6 @@ import Proto.Version
 import Proto.WellKnown
 import Vault.V1.GetItemRequest
 import Vault.V1.Item
-import Vault.V1.ListItemsRequest
-import Vault.V1.ListItemsResponse
-import Vault.V1.Status
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -43,34 +34,13 @@ elmConnectVersion_ =
 -- TYPES
 
 
-{-| [`enum vault.v1.Status`](Vault-V1-Status#descriptor)
-
-  - `StatusUnspecified` (`STATUS_UNSPECIFIED`)
-  - `StatusSealed` (`STATUS_SEALED`)
-  - `StatusOpen` (`STATUS_OPEN`)
-
--}
-type Status
-    = StatusUnspecified
-    | StatusSealed
-    | StatusOpen
-
-
 {-| [`message vault.v1.Item`](Vault-V1-Item#descriptor)
 
   - [`name`](Vault-V1-Item#name)
-  - [`size`](Vault-V1-Item#size)
-  - [`status`](Vault-V1-Item#status)
-  - [`payload`](Vault-V1-Item#payload)
-  - [`attachments`](Vault-V1-Item#attachments)
 
 -}
 type alias Item =
     { name : String
-    , size : String
-    , status : Status
-    , payload : Maybe Proto.Any.Any
-    , attachments : List Proto.Any.Any
     }
 
 
@@ -84,26 +54,6 @@ type alias GetItemRequest =
     }
 
 
-{-| [`message vault.v1.ListItemsRequest`](Vault-V1-ListItemsRequest#descriptor)
-
-  - [`pageSize`](Vault-V1-ListItemsRequest#pageSize)
-
--}
-type alias ListItemsRequest =
-    { pageSize : Int
-    }
-
-
-{-| [`message vault.v1.ListItemsResponse`](Vault-V1-ListItemsResponse#descriptor)
-
-  - [`items`](Vault-V1-ListItemsResponse#items)
-
--}
-type alias ListItemsResponse =
-    { items : List Item
-    }
-
-
 
 -- DEFAULTS
 
@@ -113,10 +63,6 @@ type alias ListItemsResponse =
 defaultItem : Item
 defaultItem =
     { name = ""
-    , size = "0"
-    , status = StatusUnspecified
-    , payload = Nothing
-    , attachments = []
     }
 
 
@@ -128,38 +74,15 @@ defaultGetItemRequest =
     }
 
 
-{-| A [`ListItemsRequest`](#ListItemsRequest) with every field at its default and every oneof unset.
--}
-defaultListItemsRequest : ListItemsRequest
-defaultListItemsRequest =
-    { pageSize = 0
-    }
-
-
-{-| A [`ListItemsResponse`](#ListItemsResponse) with every field at its default and every oneof unset.
--}
-defaultListItemsResponse : ListItemsResponse
-defaultListItemsResponse =
-    { items = []
-    }
-
-
 
 -- TYPED VALUES
-
-
-{-| The typed value of [`Status`](#Status): its codecs, zero value and descriptor together.
--}
-enumStatus : Proto.Enum.Enum Status
-enumStatus =
-    Proto.Enum.enum encodeStatus decodeStatus StatusUnspecified Vault.V1.Status.descriptor
 
 
 {-| The typed value of [`Item`](#Item): its full name and codecs.
 -}
 messageItem : Proto.Message.Message Item
 messageItem =
-    Proto.Message.initWith "vault.v1.Item" encodeItemWith decodeItemWith encodeItemBytes decodeItemBytes
+    Proto.Message.init "vault.v1.Item" encodeItem decodeItem encodeItemBytes decodeItemBytes
 
 
 {-| The typed value of [`GetItemRequest`](#GetItemRequest): its full name and codecs.
@@ -167,20 +90,6 @@ messageItem =
 messageGetItemRequest : Proto.Message.Message GetItemRequest
 messageGetItemRequest =
     Proto.Message.init "vault.v1.GetItemRequest" encodeGetItemRequest decodeGetItemRequest encodeGetItemRequestBytes decodeGetItemRequestBytes
-
-
-{-| The typed value of [`ListItemsRequest`](#ListItemsRequest): its full name and codecs.
--}
-messageListItemsRequest : Proto.Message.Message ListItemsRequest
-messageListItemsRequest =
-    Proto.Message.init "vault.v1.ListItemsRequest" encodeListItemsRequest decodeListItemsRequest encodeListItemsRequestBytes decodeListItemsRequestBytes
-
-
-{-| The typed value of [`ListItemsResponse`](#ListItemsResponse): its full name and codecs.
--}
-messageListItemsResponse : Proto.Message.Message ListItemsResponse
-messageListItemsResponse =
-    Proto.Message.initWith "vault.v1.ListItemsResponse" encodeListItemsResponseWith decodeListItemsResponseWith encodeListItemsResponseBytes decodeListItemsResponseBytes
 
 
 
@@ -195,11 +104,8 @@ descriptors =
         (Proto.Descriptors.fromDescriptors
             [ Vault.V1.Item.descriptor
             , Vault.V1.GetItemRequest.descriptor
-            , Vault.V1.ListItemsRequest.descriptor
-            , Vault.V1.ListItemsResponse.descriptor
             ]
-            [ Vault.V1.Status.descriptor
-            ]
+            []
         )
         Proto.WellKnown.descriptors
 
@@ -211,39 +117,18 @@ registry =
     Proto.Registry.empty
         |> Proto.Registry.register messageItem
         |> Proto.Registry.register messageGetItemRequest
-        |> Proto.Registry.register messageListItemsRequest
-        |> Proto.Registry.register messageListItemsResponse
 
 
 
 -- ENCODERS
 
 
-{-| Encodes a [`Status`](#Status) as proto3 JSON.
+{-| Encodes an [`Item`](#Item) as proto3 JSON.
 -}
-encodeStatus : Status -> Json.Encode.Value
-encodeStatus value =
-    case value of
-        StatusUnspecified ->
-            Json.Encode.string "STATUS_UNSPECIFIED"
-
-        StatusSealed ->
-            Json.Encode.string "STATUS_SEALED"
-
-        StatusOpen ->
-            Json.Encode.string "STATUS_OPEN"
-
-
-{-| Encodes an [`Item`](#Item) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
--}
-encodeItemWith : Proto.Registry.Registry -> Item -> Result Proto.Error.Error Json.Encode.Value
-encodeItemWith types value =
-    Proto.Json.tryObjectOfFields
-        [ ( "name", Ok (Proto.Json.implicitField "" Json.Encode.string value.name) )
-        , ( "size", Ok (Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.size) )
-        , ( "status", Ok (Proto.Json.implicitField StatusUnspecified encodeStatus value.status) )
-        , ( "payload", Proto.Json.tryOptionalField (Proto.Json.encodeAnyWith types) value.payload )
-        , ( "attachments", Proto.Json.tryRepeatedField (Proto.Json.encodeAnyWith types) value.attachments )
+encodeItem : Item -> Json.Encode.Value
+encodeItem value =
+    Proto.Json.objectOfFields
+        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
         ]
 
 
@@ -256,51 +141,17 @@ encodeGetItemRequest value =
         ]
 
 
-{-| Encodes a [`ListItemsRequest`](#ListItemsRequest) as proto3 JSON.
--}
-encodeListItemsRequest : ListItemsRequest -> Json.Encode.Value
-encodeListItemsRequest value =
-    Proto.Json.objectOfFields
-        [ ( "pageSize", Proto.Json.implicitField 0 Json.Encode.int value.pageSize )
-        ]
-
-
-{-| Encodes a [`ListItemsResponse`](#ListItemsResponse) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
--}
-encodeListItemsResponseWith : Proto.Registry.Registry -> ListItemsResponse -> Result Proto.Error.Error Json.Encode.Value
-encodeListItemsResponseWith types value =
-    Proto.Json.tryObjectOfFields
-        [ ( "items", Proto.Json.tryRepeatedField (encodeItemWith types) value.items )
-        ]
-
-
 
 -- DECODERS
 
 
-{-| Decodes a [`Status`](#Status) from proto3 JSON.
+{-| Decodes an [`Item`](#Item) from proto3 JSON.
 -}
-decodeStatus : Json.Decode.Decoder Status
-decodeStatus =
-    Proto.Json.enum "Status"
-        StatusUnspecified
-        [ ( "STATUS_UNSPECIFIED", 0, StatusUnspecified )
-        , ( "STATUS_SEALED", 1, StatusSealed )
-        , ( "STATUS_OPEN", 2, StatusOpen )
-        ]
-
-
-{-| Decodes an [`Item`](#Item) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
--}
-decodeItemWith : Proto.Registry.Registry -> Json.Decode.Decoder Item
-decodeItemWith types =
+decodeItem : Json.Decode.Decoder Item
+decodeItem =
     Proto.Json.message
         (Json.Decode.succeed Item
             |> Proto.Json.messageField "name" "" Proto.Json.string
-            |> Proto.Json.messageField "size" "0" Proto.Json.int64
-            |> Proto.Json.messageField "status" StatusUnspecified decodeStatus
-            |> Proto.Json.messageField "payload" Nothing (Json.Decode.map Just (Proto.Json.anyWith types))
-            |> Proto.Json.messageField "attachments" [] (Json.Decode.list (Proto.Json.anyWith types))
         )
 
 
@@ -314,43 +165,8 @@ decodeGetItemRequest =
         )
 
 
-{-| Decodes a [`ListItemsRequest`](#ListItemsRequest) from proto3 JSON.
--}
-decodeListItemsRequest : Json.Decode.Decoder ListItemsRequest
-decodeListItemsRequest =
-    Proto.Json.message
-        (Json.Decode.succeed ListItemsRequest
-            |> Proto.Json.messageFieldEither "pageSize" "page_size" 0 Proto.Json.int32
-        )
-
-
-{-| Decodes a [`ListItemsResponse`](#ListItemsResponse) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
--}
-decodeListItemsResponseWith : Proto.Registry.Registry -> Json.Decode.Decoder ListItemsResponse
-decodeListItemsResponseWith types =
-    Proto.Json.message
-        (Json.Decode.succeed ListItemsResponse
-            |> Proto.Json.messageField "items" [] (Json.Decode.list (decodeItemWith types))
-        )
-
-
 
 -- BINARY ENCODERS
-
-
-{-| The number protobuf binary writes a [`Status`](#Status) as.
--}
-encodeStatusBytes : Status -> Int
-encodeStatusBytes value =
-    case value of
-        StatusUnspecified ->
-            0
-
-        StatusSealed ->
-            1
-
-        StatusOpen ->
-            2
 
 
 {-| Encodes an [`Item`](#Item) as protobuf binary.
@@ -359,10 +175,6 @@ encodeItemBytes : Item -> Bytes.Encode.Encoder
 encodeItemBytes value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
-        , Proto.Binary.implicit Proto.Binary.int64 2 value.size
-        , Proto.Binary.implicit (Proto.Binary.enum encodeStatusBytes decodeStatusBytes) 3 value.status
-        , Proto.Binary.optional Proto.Binary.any 4 value.payload
-        , Proto.Binary.list Proto.Binary.any 5 value.attachments
         ]
 
 
@@ -375,41 +187,8 @@ encodeGetItemRequestBytes value =
         ]
 
 
-{-| Encodes a [`ListItemsRequest`](#ListItemsRequest) as protobuf binary.
--}
-encodeListItemsRequestBytes : ListItemsRequest -> Bytes.Encode.Encoder
-encodeListItemsRequestBytes value =
-    Bytes.Encode.sequence
-        [ Proto.Binary.implicit Proto.Binary.int32 1 value.pageSize
-        ]
-
-
-{-| Encodes a [`ListItemsResponse`](#ListItemsResponse) as protobuf binary.
--}
-encodeListItemsResponseBytes : ListItemsResponse -> Bytes.Encode.Encoder
-encodeListItemsResponseBytes value =
-    Bytes.Encode.sequence
-        [ Proto.Binary.list (Proto.Binary.embedded encodeItemBytes mergeItemBytes defaultItem) 1 value.items
-        ]
-
-
 
 -- BINARY DECODERS
-
-
-{-| A [`Status`](#Status) from the number protobuf binary carries.
--}
-decodeStatusBytes : Int -> Status
-decodeStatusBytes number =
-    case number of
-        1 ->
-            StatusSealed
-
-        2 ->
-            StatusOpen
-
-        _ ->
-            StatusUnspecified
 
 
 {-| Decodes an [`Item`](#Item) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
@@ -425,83 +204,15 @@ mergeItemBytes =
                         Proto.Binary.string
                         (\v ->
                             { name = v
-                            , size = value.size
-                            , status = value.status
-                            , payload = value.payload
-                            , attachments = value.attachments
                             }
                         )
-                        wire
-                        value
-
-                2 ->
-                    Proto.Binary.field
-                        Proto.Binary.int64
-                        (\v ->
-                            { name = value.name
-                            , size = v
-                            , status = value.status
-                            , payload = value.payload
-                            , attachments = value.attachments
-                            }
-                        )
-                        wire
-                        value
-
-                3 ->
-                    Proto.Binary.field
-                        (Proto.Binary.enum encodeStatusBytes decodeStatusBytes)
-                        (\v ->
-                            { name = value.name
-                            , size = value.size
-                            , status = v
-                            , payload = value.payload
-                            , attachments = value.attachments
-                            }
-                        )
-                        wire
-                        value
-
-                4 ->
-                    Proto.Binary.field
-                        Proto.Binary.any
-                        (\v ->
-                            { name = value.name
-                            , size = value.size
-                            , status = value.status
-                            , payload = Just v
-                            , attachments = value.attachments
-                            }
-                        )
-                        wire
-                        value
-
-                5 ->
-                    Proto.Binary.repeated
-                        Proto.Binary.any
-                        (\v ->
-                            { name = value.name
-                            , size = value.size
-                            , status = value.status
-                            , payload = value.payload
-                            , attachments = v
-                            }
-                        )
-                        value.attachments
                         wire
                         value
 
                 _ ->
                     Proto.Binary.skip wire value
         )
-        (\value ->
-            { name = value.name
-            , size = value.size
-            , status = value.status
-            , payload = value.payload
-            , attachments = List.reverse value.attachments
-            }
-        )
+        identity
 
 
 {-| Decodes an [`Item`](#Item) from protobuf binary.
@@ -540,69 +251,3 @@ mergeGetItemRequestBytes =
 decodeGetItemRequestBytes : Proto.Binary.Decoder GetItemRequest
 decodeGetItemRequestBytes =
     mergeGetItemRequestBytes defaultGetItemRequest
-
-
-{-| Decodes a [`ListItemsRequest`](#ListItemsRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
--}
-mergeListItemsRequestBytes : ListItemsRequest -> Proto.Binary.Decoder ListItemsRequest
-mergeListItemsRequestBytes =
-    Proto.Binary.merge
-        "vault.v1.ListItemsRequest"
-        (\number wire value ->
-            case number of
-                1 ->
-                    Proto.Binary.field
-                        Proto.Binary.int32
-                        (\v ->
-                            { pageSize = v
-                            }
-                        )
-                        wire
-                        value
-
-                _ ->
-                    Proto.Binary.skip wire value
-        )
-        identity
-
-
-{-| Decodes a [`ListItemsRequest`](#ListItemsRequest) from protobuf binary.
--}
-decodeListItemsRequestBytes : Proto.Binary.Decoder ListItemsRequest
-decodeListItemsRequestBytes =
-    mergeListItemsRequestBytes defaultListItemsRequest
-
-
-{-| Decodes a [`ListItemsResponse`](#ListItemsResponse) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
--}
-mergeListItemsResponseBytes : ListItemsResponse -> Proto.Binary.Decoder ListItemsResponse
-mergeListItemsResponseBytes =
-    Proto.Binary.merge
-        "vault.v1.ListItemsResponse"
-        (\number wire value ->
-            case number of
-                1 ->
-                    Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeItemBytes mergeItemBytes defaultItem)
-                        (\v ->
-                            { items = v
-                            }
-                        )
-                        value.items
-                        wire
-                        value
-
-                _ ->
-                    Proto.Binary.skip wire value
-        )
-        (\value ->
-            { items = List.reverse value.items
-            }
-        )
-
-
-{-| Decodes a [`ListItemsResponse`](#ListItemsResponse) from protobuf binary.
--}
-decodeListItemsResponseBytes : Proto.Binary.Decoder ListItemsResponse
-decodeListItemsResponseBytes =
-    mergeListItemsResponseBytes defaultListItemsResponse

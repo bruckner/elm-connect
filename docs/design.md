@@ -2126,8 +2126,8 @@ registry =
   per-package registries).
 - **Checked** by the binary round trips (§7), the corpus cases
   `codec_round_trips` (the codec protos under the default `wire=both`),
-  `wire_proto`, `services_wire_both` and `wire_json` (one service under
-  the default and under `wire=json`) and `any_field`,
+  `wire_proto`, `services_wire_both` and `wire_json` (a service under
+  the default, and its two kinds of method under `wire=json`) and `any_field`,
   and the protobuf conformance suite (§7).
 
 #### Lenient registries

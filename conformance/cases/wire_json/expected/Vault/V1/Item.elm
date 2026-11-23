@@ -10,7 +10,6 @@ module Vault.V1.Item exposing (..)
 import Proto.Field
 import Proto.Message
 import Proto.Version
-import Vault.V1.Status
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -29,10 +28,6 @@ descriptor : Proto.Message.Descriptor
 descriptor =
     Proto.Message.descriptor "vault.v1.Item"
         [ name
-        , size
-        , status
-        , payload
-        , attachments
         ]
 
 
@@ -41,31 +36,3 @@ descriptor =
 name : Proto.Field.Descriptor
 name =
     Proto.Field.descriptor "name" "name" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
-
-
-{-| `int64 size = 2;`
--}
-size : Proto.Field.Descriptor
-size =
-    Proto.Field.descriptor "size" "size" 2 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarInt64)
-
-
-{-| `vault.v1.Status status = 3;`
--}
-status : Proto.Field.Descriptor
-status =
-    Proto.Field.descriptor "status" "status" 3 Proto.Field.CardinalitySingular (Proto.Field.KindEnum Vault.V1.Status.descriptor)
-
-
-{-| `google.protobuf.Any payload = 4;`
--}
-payload : Proto.Field.Descriptor
-payload =
-    Proto.Field.descriptor "payload" "payload" 4 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Any")
-
-
-{-| `repeated google.protobuf.Any attachments = 5;`
--}
-attachments : Proto.Field.Descriptor
-attachments =
-    Proto.Field.descriptor "attachments" "attachments" 5 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.protobuf.Any")
