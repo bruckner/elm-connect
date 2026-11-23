@@ -131,6 +131,43 @@ bytes registry name fields =
         |> Maybe.map Proto.Bytes.toBase64
 
 
+{-| An `Any` of each type named, outermost first, each holding the next in
+`held`, the last holding `innermost`'s fields.
+-}
+chain : List String -> List ( String, Value ) -> Value
+chain names innermost =
+    case names of
+        [] ->
+            Json.Encode.object innermost
+
+        [ name ] ->
+            Json.Encode.object (( "@type", Json.Encode.string ("type.googleapis.com/" ++ name) ) :: innermost)
+
+        name :: rest ->
+            Json.Encode.object
+                [ ( "@type", Json.Encode.string ("type.googleapis.com/" ++ name) )
+                , ( "held", chain rest innermost )
+                ]
+
+
+{-| How a read of an `Any` through the registry came out: `"binary"` or
+`"json"` for what it holds, or the failure's text.
+-}
+readAs : Registry -> Value -> String
+readAs registry value =
+    case Json.Decode.decodeValue (Proto.Json.anyWith registry) value of
+        Ok any ->
+            case Any.bytes any of
+                Just _ ->
+                    "binary"
+
+                Nothing ->
+                    "json"
+
+        Err problem ->
+            Json.Decode.errorToString problem
+
+
 suite : Test
 suite =
     describe "Proto.Registry"
@@ -239,6 +276,45 @@ suite =
                 , json (Registry.unionAll []) "t.Leaf" binary
                 ]
                     |> Expect.equal [ Just """{"text":"hi"}""", Just "\"other\"", Just "\"other\"", Nothing ]
+        , test "a lenient registry holds an Any as JSON alone when a type inside it, at any depth, is one it lacks" <|
+            \_ ->
+                let
+                    registry =
+                        Registry.lenient (Registry.union (holder "t.H" Registry.empty) (leaf "t.L" Registry.empty))
+
+                    holders n =
+                        List.repeat n "t.H"
+
+                    text =
+                        [ ( "text", Json.Encode.string "hi" ) ]
+                in
+                [ readAs registry (chain (holders 3 ++ [ "t.L" ]) text)
+                , readAs registry (chain (holders 3 ++ [ "x.U" ]) text)
+                , readAs registry (chain (holders 98 ++ [ "x.U" ]) text)
+                , readAs registry (chain ([ "t.H", "x.U", "t.H" ] ++ [ "t.L" ]) text)
+                , readAs registry (chain ([ "x.U" ] ++ holders 3 ++ [ "t.L" ]) [ ( "text", Json.Encode.int 7 ) ])
+                , readAs registry (chain ([ "t.H", "x.U" ] ++ holders 40 ++ [ "x.U" ]) text)
+                ]
+                    |> Expect.equal [ "binary", "json", "json", "json", "json", "json" ]
+        , test "a lenient registry fails JSON that is not its message at any depth as a strict one does, and past 100 Anys" <|
+            \_ ->
+                let
+                    strict =
+                        Registry.union (holder "t.H" Registry.empty) (leaf "t.L" Registry.empty)
+
+                    notLeaf n =
+                        chain (List.repeat n "t.H" ++ [ "t.L" ]) [ ( "text", Json.Encode.int 7 ) ]
+
+                    beyond =
+                        chain (List.repeat 101 "t.H" ++ [ "t.L" ]) [ ( "text", Json.Encode.string "hi" ) ]
+
+                    both value =
+                        ( readAs strict value, readAs (Registry.lenient strict) value )
+                in
+                [ notLeaf 1, notLeaf 5, notLeaf 60, beyond ]
+                    |> List.map both
+                    |> List.map (\( s, l ) -> ( s == l, s /= "binary" && s /= "json" ))
+                    |> Expect.equal (List.repeat 4 ( True, True ))
         , test "the well-known types convert with their own JSON forms" <|
             \_ ->
                 [ Any.pack WellKnown.duration (Duration.fromMilliseconds 1500)

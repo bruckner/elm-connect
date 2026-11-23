@@ -1930,6 +1930,29 @@ that asked for strictness, and a type it had registered gained it no
 check. Passing `Any`s along through one lenient registry, the case
 above, is unchanged.
 
+*2026-11-23:* the lenient read of an `Any` whose strict read failed is a
+check: its binary is dropped and the `Any` is held as its JSON. Each
+`Any` inside it was read strictly first and then leniently too, as any
+lenient read does, so a chain of `Any`s whose innermost type the
+registry lacks was read about depth²/2 times, some 5,000 level
+conversions at the limit of 100. The check now reads under a third,
+internal state of the registry, in which an `Any` is read leniently at
+once: whether the read succeeds is all that is kept, and a strict read
+that succeeds implies a lenient one that does, so the outcome is the
+same and every `Any` is read at most twice. Checked: 1,692 inputs (random
+`Any` trees six deep of registered, unregistered and ill-formed types,
+and chains of 2 to 150 around each kind of innermost `Any`), each read
+through six strict and lenient registries, gave byte-identical results,
+what each `Any` holds and how it writes back included, before and after.
+Measured (node, a 100-deep chain read through a lenient registry, A/A
+within 1.2 %): with an unregistered innermost type and 3 KB of `bytes`
+at each level (300 KB), 67.4 ms before and 12.9 after; with nothing
+else in it, 13.7 ms and 0.83; a chain whose strict read succeeds, 0.97
+of before; a strict read, 1.01 when it succeeds and 1.03 when it fails
+at the innermost type (1.1 ms), the one cost the change adds. Simpler fixes weighed: reading
+leniently first loses the binary of a registered chain; telling an
+unregistered type from bad JSON by the strict error's text is not exact.
+
 ### Normalized per-package registries
 
 *2026-11-07.*

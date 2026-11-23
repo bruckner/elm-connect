@@ -2168,9 +2168,15 @@ cost: over JSON nothing is lost, and over binary a program tests
 the loss out of the binary state: an `Any` of a registered type is read
 strictly first, and only when that fails for an `Any` inside it is it
 read leniently, as JSON alone (so a known type holding an unknown `Any`
-never gets binary that drops it); `pack` writes the message's JSON
-through a table that refuses a JSON-alone `Any` first, and holds the
-packed `Any` as JSON alone when only that refusal failed. A message
+never gets binary that drops it). That lenient read only checks the
+message, its binary dropped, so the `Any`s inside it are read
+leniently at once rather than strictly first (a strict read that
+succeeds implies a lenient one that does): every `Any` is read at most
+twice, once strictly and once leniently, where reading each one inside
+strictly first made a chain of them quadratic in its depth. `pack`
+writes the message's JSON through a table that refuses a JSON-alone
+`Any` first, and holds the packed `Any` as JSON alone when only that
+refusal failed. A message
 that cannot hold an `Any`, built by `Proto.Message.init` (§3.9), is
 packed straight to binary, its JSON not written. A message
 holding both an `Any` read from binary and one held as JSON alone packs
