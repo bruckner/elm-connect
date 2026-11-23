@@ -135,8 +135,15 @@ registry =
 
 {-| Encodes a [`MessageRequest`](#MessageRequest) as proto3 JSON.
 -}
-encodeMessageRequest : MessageRequest -> Json.Encode.Value
+encodeMessageRequest : MessageRequest -> Proto.Json.Encoder
 encodeMessageRequest value =
+    Proto.Json.ready (jsonMessageRequest value)
+
+
+{-| Writes a [`MessageRequest`](#MessageRequest) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonMessageRequest : MessageRequest -> Json.Encode.Value
+jsonMessageRequest value =
     Proto.Json.objectOfFields
         [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
         , ( "id", Proto.Json.implicitField "" Json.Encode.string value.id )
@@ -146,8 +153,15 @@ encodeMessageRequest value =
 
 {-| Encodes a [`Message`](#Message) as proto3 JSON.
 -}
-encodeMessage : Message -> Json.Encode.Value
+encodeMessage : Message -> Proto.Json.Encoder
 encodeMessage value =
+    Proto.Json.ready (jsonMessage value)
+
+
+{-| Writes a [`Message`](#Message) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonMessage : Message -> Json.Encode.Value
+jsonMessage value =
     Proto.Json.objectOfFields
         [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
         ]

@@ -98,8 +98,15 @@ registry =
 
 {-| Encodes an [`Attributes`](#Attributes) as proto3 JSON.
 -}
-encodeAttributes : Attributes -> Json.Encode.Value
+encodeAttributes : Attributes -> Proto.Json.Encoder
 encodeAttributes value =
+    Proto.Json.ready (jsonAttributes value)
+
+
+{-| Writes an [`Attributes`](#Attributes) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonAttributes : Attributes -> Json.Encode.Value
+jsonAttributes value =
     Proto.Json.objectOfFields
         [ ( "class", Proto.Json.implicitField "" Json.Encode.string value.class )
         ]

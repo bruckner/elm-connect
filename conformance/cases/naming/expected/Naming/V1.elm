@@ -223,8 +223,15 @@ encodeHttpMethod value =
 
 {-| Encodes a [`Tag`](#Tag) as proto3 JSON.
 -}
-encodeTag : Tag -> Json.Encode.Value
+encodeTag : Tag -> Proto.Json.Encoder
 encodeTag value =
+    Proto.Json.ready (jsonTag value)
+
+
+{-| Writes a [`Tag`](#Tag) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonTag : Tag -> Json.Encode.Value
+jsonTag value =
     Proto.Json.objectOfFields
         ([ ( "type", Proto.Json.implicitField "" Json.Encode.string value.type_ )
          , ( "if", Proto.Json.implicitField False Json.Encode.bool value.if_ )

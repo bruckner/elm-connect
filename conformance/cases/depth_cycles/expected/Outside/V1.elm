@@ -99,11 +99,18 @@ registry =
 
 {-| Encodes a [`Holder`](#Holder) as proto3 JSON.
 -}
-encodeHolder : Holder -> Json.Encode.Value
+encodeHolder : Holder -> Proto.Json.Encoder
 encodeHolder value =
+    Proto.Json.ready (jsonHolder value)
+
+
+{-| Writes a [`Holder`](#Holder) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonHolder : Holder -> Json.Encode.Value
+jsonHolder value =
     Proto.Json.objectOfFields
-        [ ( "tree", Maybe.map Cycles.V1.encodeTree value.tree )
-        , ( "person", Maybe.map Cycles.V1.encodePerson value.person )
+        [ ( "tree", Maybe.map Cycles.V1.jsonTree value.tree )
+        , ( "person", Maybe.map Cycles.V1.jsonPerson value.person )
         ]
 
 

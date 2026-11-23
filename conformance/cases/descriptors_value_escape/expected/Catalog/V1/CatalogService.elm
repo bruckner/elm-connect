@@ -44,7 +44,7 @@ getEntry =
     Rpc.call
         (Proto.Method.init "catalog.v1.CatalogService"
             "GetEntry"
-            (\_ -> Ok << Catalog.V1.encodeGetEntryRequest)
+            Catalog.V1.encodeGetEntryRequest
             (\_ -> Catalog.V1.decodeEntry)
             Catalog.V1.encodeGetEntryRequestBytes
             Catalog.V1.decodeEntryBytes

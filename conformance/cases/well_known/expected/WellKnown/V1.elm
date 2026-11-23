@@ -219,42 +219,43 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes an [`Event`](#Event) as proto3 JSON.
+{-| Encodes an [`Event`](#Event) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for.
 -}
-encodeEvent : Event -> Json.Encode.Value
+encodeEvent : Event -> Proto.Json.Encoder
 encodeEvent value =
-    Proto.Json.objectOfFields
-        ([ ( "createdAt", Maybe.map Proto.Json.encodeTimestamp value.createdAt )
-         , ( "timeout", Maybe.map Proto.Json.encodeDuration value.timeout )
-         , ( "updateMask", Maybe.map Proto.Json.encodeFieldMask value.updateMask )
-         , ( "marker", Just (Proto.Json.encodeEmpty value.marker) )
-         , ( "metadata", Maybe.map Proto.Json.encodeStruct value.metadata )
-         , ( "payload", Maybe.map Proto.Json.encodeValue value.payload )
-         , ( "items", Maybe.map Proto.Json.encodeListValue value.items )
-         , ( "ratio", Maybe.map Proto.Json.encodeFloat value.ratio )
-         , ( "weight", Maybe.map Proto.Json.encodeFloat value.weight )
-         , ( "bigCount", Maybe.map Proto.Json.encodeInt64 value.bigCount )
-         , ( "bigTotal", Maybe.map Proto.Json.encodeInt64 value.bigTotal )
-         , ( "count", Maybe.map Json.Encode.int value.count )
-         , ( "total", Maybe.map Json.Encode.int value.total )
-         , ( "enabled", Maybe.map Json.Encode.bool value.enabled )
-         , ( "nickname", Maybe.map Json.Encode.string value.nickname )
-         , ( "avatar", Maybe.map Proto.Json.encodeBytes value.avatar )
-         , ( "history", Proto.Json.repeatedField Proto.Json.encodeTimestamp value.history )
-         , ( "limits", Proto.Json.dictField identity Proto.Json.encodeDuration value.limits )
-         , ( "values", Proto.Json.repeatedField Proto.Json.encodeValue value.values )
-         , ( "counts", Proto.Json.repeatedField Json.Encode.int value.counts )
-         , ( "acked", Just (Proto.Json.encodeEmpty value.acked) )
-         , ( "pings", Proto.Json.repeatedField Proto.Json.encodeEmpty value.pings )
-         , ( "seen", Proto.Json.dictField identity Proto.Json.encodeEmpty value.seen )
-         , ( "records", Proto.Json.repeatedField Proto.Json.encodeStruct value.records )
-         , ( "columns", Proto.Json.dictField identity Proto.Json.encodeListValue value.columns )
-         , ( "lastValue", Maybe.map Proto.Json.encodeValue value.lastValue )
-         , ( "settings", Proto.Json.dictField identity Proto.Json.encodeValue value.settings )
-         , ( "nothing", Proto.Json.implicitField () Proto.Json.encodeNullValue value.nothing )
-         , ( "maybeNothing", Proto.Json.implicitField () Proto.Json.encodeNullValue value.maybeNothing )
-         , ( "nulls", Proto.Json.repeatedField Proto.Json.encodeNullValue value.nulls )
-         , ( "nullMap", Proto.Json.dictField identity Proto.Json.encodeNullValue value.nullMap )
+    Proto.Json.writeObject
+        [ ( "marker", Just (Proto.Json.encodeEmpty value.marker) )
+        , ( "ratio", Maybe.map Proto.Json.encodeFloat value.ratio )
+        , ( "weight", Maybe.map Proto.Json.encodeFloat value.weight )
+        , ( "bigCount", Maybe.map Proto.Json.encodeInt64 value.bigCount )
+        , ( "bigTotal", Maybe.map Proto.Json.encodeInt64 value.bigTotal )
+        , ( "count", Maybe.map Json.Encode.int value.count )
+        , ( "total", Maybe.map Json.Encode.int value.total )
+        , ( "enabled", Maybe.map Json.Encode.bool value.enabled )
+        , ( "nickname", Maybe.map Json.Encode.string value.nickname )
+        , ( "avatar", Maybe.map Proto.Json.encodeBytes value.avatar )
+        , ( "counts", Proto.Json.repeatedField Json.Encode.int value.counts )
+        , ( "acked", Just (Proto.Json.encodeEmpty value.acked) )
+        , ( "pings", Proto.Json.repeatedField Proto.Json.encodeEmpty value.pings )
+        , ( "seen", Proto.Json.dictField identity Proto.Json.encodeEmpty value.seen )
+        , ( "nothing", Proto.Json.implicitField () Proto.Json.encodeNullValue value.nothing )
+        , ( "maybeNothing", Proto.Json.implicitField () Proto.Json.encodeNullValue value.maybeNothing )
+        , ( "nulls", Proto.Json.repeatedField Proto.Json.encodeNullValue value.nulls )
+        , ( "nullMap", Proto.Json.dictField identity Proto.Json.encodeNullValue value.nullMap )
+        ]
+        ([ ( "createdAt", Proto.Json.writeOptional Proto.Json.writeTimestamp value.createdAt )
+         , ( "timeout", Proto.Json.writeOptional Proto.Json.writeDuration value.timeout )
+         , ( "updateMask", Proto.Json.writeOptional Proto.Json.writeFieldMask value.updateMask )
+         , ( "metadata", Proto.Json.writeOptional Proto.Json.writeStruct value.metadata )
+         , ( "payload", Proto.Json.writeOptional Proto.Json.writeValue value.payload )
+         , ( "items", Proto.Json.writeOptional Proto.Json.writeListValue value.items )
+         , ( "history", Proto.Json.writeRepeated Proto.Json.writeTimestamp value.history )
+         , ( "limits", Proto.Json.writeDict identity Proto.Json.writeDuration value.limits )
+         , ( "values", Proto.Json.writeRepeated Proto.Json.writeValue value.values )
+         , ( "records", Proto.Json.writeRepeated Proto.Json.writeStruct value.records )
+         , ( "columns", Proto.Json.writeDict identity Proto.Json.writeListValue value.columns )
+         , ( "lastValue", Proto.Json.writeOptional Proto.Json.writeValue value.lastValue )
+         , ( "settings", Proto.Json.writeDict identity Proto.Json.writeValue value.settings )
          ]
             ++ encodeEventWhen value.when
         )
@@ -262,34 +263,34 @@ encodeEvent value =
 
 {-| Encodes an [`EventWhen`](#EventWhen) as the members of its message's JSON object.
 -}
-encodeEventWhen : EventWhen -> List ( String, Maybe Json.Encode.Value )
+encodeEventWhen : EventWhen -> List ( String, Proto.Json.Encoder )
 encodeEventWhen value =
     case value of
         EventWhenUnset ->
             []
 
         EventWhenAt member ->
-            [ ( "at", Just (Proto.Json.encodeTimestamp member) )
+            [ ( "at", Proto.Json.writeTimestamp member )
             ]
 
         EventWhenAfter member ->
-            [ ( "after", Just (Proto.Json.encodeDuration member) )
+            [ ( "after", Proto.Json.writeDuration member )
             ]
 
         EventWhenWhenever member ->
-            [ ( "whenever", Just (Proto.Json.encodeValue member) )
+            [ ( "whenever", Proto.Json.writeValue member )
             ]
 
         EventWhenSchedule member ->
-            [ ( "schedule", Just (Proto.Json.encodeStruct member) )
+            [ ( "schedule", Proto.Json.writeStruct member )
             ]
 
         EventWhenDates member ->
-            [ ( "dates", Just (Proto.Json.encodeListValue member) )
+            [ ( "dates", Proto.Json.writeListValue member )
             ]
 
         EventWhenNever ->
-            [ ( "never", Just Json.Encode.null )
+            [ ( "never", Proto.Json.ready Json.Encode.null )
             ]
 
 

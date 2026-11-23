@@ -39,7 +39,7 @@ getNote =
     Rpc.call
         (Proto.Method.init "notes.v1.NotesService"
             "GetNote"
-            (\_ -> Ok << Api.Example.Notes.V1.encodeGetNoteRequest)
+            Api.Example.Notes.V1.encodeGetNoteRequest
             (\_ -> Api.Example.Notes.V1.decodeNote)
             Api.Example.Notes.V1.encodeGetNoteRequestBytes
             Api.Example.Notes.V1.decodeNoteBytes

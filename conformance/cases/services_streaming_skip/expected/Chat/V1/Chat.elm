@@ -36,7 +36,7 @@ send =
     Rpc.call
         (Proto.Method.init "chat.v1.Chat"
             "Send"
-            (\_ -> Ok << Chat.V1.encodeLine)
+            Chat.V1.encodeLine
             (\_ -> Chat.V1.decodeLine)
             Chat.V1.encodeLineBytes
             Chat.V1.decodeLineBytes

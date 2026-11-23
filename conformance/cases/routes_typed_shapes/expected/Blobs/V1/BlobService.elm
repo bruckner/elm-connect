@@ -50,7 +50,7 @@ getBlob =
     Rpc.call
         (Proto.Method.init "blobs.v1.BlobService"
             "GetBlob"
-            (\_ -> Ok << Blobs.V1.encodeBlob)
+            Blobs.V1.encodeBlob
             (\_ -> Blobs.V1.decodeBlob)
             Blobs.V1.encodeBlobBytes
             Blobs.V1.decodeBlobBytes
@@ -70,7 +70,7 @@ findBlob =
     Rpc.call
         (Proto.Method.init "blobs.v1.BlobService"
             "FindBlob"
-            (\_ -> Ok << Blobs.V1.encodeBlob)
+            Blobs.V1.encodeBlob
             (\_ -> Blobs.V1.decodeBlob)
             Blobs.V1.encodeBlobBytes
             Blobs.V1.decodeBlobBytes
@@ -93,7 +93,7 @@ labelBlob =
     Rpc.call
         (Proto.Method.init "blobs.v1.BlobService"
             "LabelBlob"
-            Blobs.V1.encodeLabelBlobRequestWith
+            Blobs.V1.encodeLabelBlobRequest
             (\_ -> Blobs.V1.decodeBlob)
             Blobs.V1.encodeLabelBlobRequestBytes
             Blobs.V1.decodeBlobBytes
@@ -113,7 +113,7 @@ putLabel =
     Rpc.call
         (Proto.Method.init "blobs.v1.BlobService"
             "PutLabel"
-            Blobs.V1.encodeLabeledWith
+            Blobs.V1.encodeLabeled
             Blobs.V1.decodeLabeledWith
             Blobs.V1.encodeLabeledBytes
             Blobs.V1.decodeLabeledBytes
@@ -133,7 +133,7 @@ addFolder =
     Rpc.call
         (Proto.Method.init "blobs.v1.BlobService"
             "AddFolder"
-            (\_ -> Ok << Blobs.V1.encodeFolder)
+            Blobs.V1.encodeFolder
             (\_ -> Blobs.V1.decodeFolder)
             Blobs.V1.encodeFolderBytes
             Blobs.V1.decodeFolderBytes
@@ -153,7 +153,7 @@ moveFolder =
     Rpc.call
         (Proto.Method.init "blobs.v1.BlobService"
             "MoveFolder"
-            (\_ -> Ok << Blobs.V1.encodeFolder)
+            Blobs.V1.encodeFolder
             (\_ -> Blobs.V1.decodeFolder)
             Blobs.V1.encodeFolderBytes
             Blobs.V1.decodeFolderBytes
@@ -173,7 +173,7 @@ touch =
     Rpc.call
         (Proto.Method.init "blobs.v1.BlobService"
             "Touch"
-            (\_ -> Ok << Blobs.V1.encodeSlots)
+            Blobs.V1.encodeSlots
             (\_ -> Blobs.V1.decodeSlots)
             Blobs.V1.encodeSlotsBytes
             Blobs.V1.decodeSlotsBytes
@@ -193,11 +193,11 @@ setValue =
     Rpc.call
         (Proto.Method.init "blobs.v1.BlobService"
             "SetValue"
-            (\_ -> Ok << Blobs.V1.encodeFree)
+            Blobs.V1.encodeFree
             (\_ -> Blobs.V1.decodeFree)
             Blobs.V1.encodeFreeBytes
             Blobs.V1.decodeFreeBytes
-            |> Proto.Method.withRoutes [ routeSetValue0 ]
+            |> Proto.Method.withJsonRoutes [ routeSetValue0 ]
         )
 
 
@@ -248,7 +248,7 @@ routeFindBlob0 request_ =
     { method = "POST"
     , path = "v1/" ++ Proto.Route.segments name_ ++ ":find"
     , query = []
-    , body = Just (Proto.Route.without [ [ "name" ] ] (Blobs.V1.encodeBlob request_))
+    , body = Just (Proto.Route.without [ [ "name" ] ] (Blobs.V1.jsonBlob request_))
     , invalid = Proto.Route.checkSegments "name" [ "blobs", "*" ] name_
     }
 
@@ -312,7 +312,7 @@ routeAddFolder0 request_ =
     { method = "POST"
     , path = "v1/" ++ Proto.Route.segments parentName_ ++ "/children"
     , query = []
-    , body = Just (Proto.Route.without [ [ "parent", "name" ] ] (Blobs.V1.encodeFolder request_))
+    , body = Just (Proto.Route.without [ [ "parent", "name" ] ] (Blobs.V1.jsonFolder request_))
     , invalid = Proto.Route.checkSegments "parent.name" [ "folders", "*" ] parentName_
     }
 
@@ -328,7 +328,7 @@ routeMoveFolder0 request_ =
     { method = "POST"
     , path = "v1/" ++ Proto.Route.segments name_ ++ ":move"
     , query = []
-    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Blobs.V1.encodeFolder_ request_.parent))
+    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Blobs.V1.jsonFolder_ request_.parent))
     , invalid = Proto.Route.checkSegments "name" [ "folders", "*" ] name_
     }
 
@@ -351,8 +351,8 @@ routeTouch0 request_ =
 
 {-| The route of [`setValue`](#setValue) over binding 0: `POST /v1/{name=values/*}` body `value`.
 -}
-routeSetValue0 : Blobs.V1.Free -> Proto.Route.Route
-routeSetValue0 request_ =
+routeSetValue0 : Blobs.V1.Free -> Json.Encode.Value -> Proto.Route.Route
+routeSetValue0 request_ json_ =
     let
         name_ =
             request_.name

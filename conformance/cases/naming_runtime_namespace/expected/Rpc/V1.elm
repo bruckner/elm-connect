@@ -97,8 +97,15 @@ registry =
 
 {-| Encodes a [`Ping`](#Ping) as proto3 JSON.
 -}
-encodePing : Ping -> Json.Encode.Value
+encodePing : Ping -> Proto.Json.Encoder
 encodePing value =
+    Proto.Json.ready (jsonPing value)
+
+
+{-| Writes a [`Ping`](#Ping) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonPing : Ping -> Json.Encode.Value
+jsonPing value =
     Proto.Json.objectOfFields
         [ ( "text", Proto.Json.implicitField "" Json.Encode.string value.text )
         ]

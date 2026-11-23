@@ -9,6 +9,7 @@ module Clock.V1.Clock exposing (..)
 
 import Clock.V1
 import Clock.V1.Moment
+import Json.Encode
 import Proto.Duration
 import Proto.Http
 import Proto.Json
@@ -43,11 +44,11 @@ getMoment =
     Rpc.call
         (Proto.Method.init "clock.v1.Clock"
             "GetMoment"
-            (\_ -> Ok << Clock.V1.encodeMoment)
+            Clock.V1.encodeMoment
             (\_ -> Clock.V1.decodeMoment)
             Clock.V1.encodeMomentBytes
             Clock.V1.decodeMomentBytes
-            |> Proto.Method.withRoutes [ routeGetMoment0 ]
+            |> Proto.Method.withJsonRoutes [ routeGetMoment0 ]
         )
 
 
@@ -63,11 +64,11 @@ maskMoment =
     Rpc.call
         (Proto.Method.init "clock.v1.Clock"
             "MaskMoment"
-            (\_ -> Ok << Clock.V1.encodeMoment)
+            Clock.V1.encodeMoment
             (\_ -> Clock.V1.decodeMoment)
             Clock.V1.encodeMomentBytes
             Clock.V1.decodeMomentBytes
-            |> Proto.Method.withRoutes [ routeMaskMoment0 ]
+            |> Proto.Method.withJsonRoutes [ routeMaskMoment0 ]
         )
 
 
@@ -83,11 +84,11 @@ countMoment =
     Rpc.call
         (Proto.Method.init "clock.v1.Clock"
             "CountMoment"
-            (\_ -> Ok << Clock.V1.encodeMoment)
+            Clock.V1.encodeMoment
             (\_ -> Clock.V1.decodeMoment)
             Clock.V1.encodeMomentBytes
             Clock.V1.decodeMomentBytes
-            |> Proto.Method.withRoutes [ routeCountMoment0 ]
+            |> Proto.Method.withJsonRoutes [ routeCountMoment0 ]
         )
 
 
@@ -103,11 +104,11 @@ waitMoment =
     Rpc.call
         (Proto.Method.init "clock.v1.Clock"
             "WaitMoment"
-            (\_ -> Ok << Clock.V1.encodeMoment)
+            Clock.V1.encodeMoment
             (\_ -> Clock.V1.decodeMoment)
             Clock.V1.encodeMomentBytes
             Clock.V1.decodeMomentBytes
-            |> Proto.Method.withRoutes [ routeWaitMoment0 ]
+            |> Proto.Method.withJsonRoutes [ routeWaitMoment0 ]
         )
 
 
@@ -117,8 +118,8 @@ waitMoment =
 
 {-| The route of [`getMoment`](#getMoment) over binding 0: `GET /v1/at/{at}`.
 -}
-routeGetMoment0 : Clock.V1.Moment -> Proto.Route.Route
-routeGetMoment0 request_ =
+routeGetMoment0 : Clock.V1.Moment -> Json.Encode.Value -> Proto.Route.Route
+routeGetMoment0 request_ json_ =
     let
         at_ =
             Maybe.withDefault "" (Maybe.map Proto.Timestamp.toString request_.at)
@@ -133,8 +134,8 @@ routeGetMoment0 request_ =
 
 {-| The route of [`maskMoment`](#maskMoment) over binding 0: `GET /v1/at/{at}/mask/{mask}`.
 -}
-routeMaskMoment0 : Clock.V1.Moment -> Proto.Route.Route
-routeMaskMoment0 request_ =
+routeMaskMoment0 : Clock.V1.Moment -> Json.Encode.Value -> Proto.Route.Route
+routeMaskMoment0 request_ json_ =
     let
         at_ =
             Maybe.withDefault "" (Maybe.map Proto.Timestamp.toString request_.at)
@@ -156,8 +157,8 @@ routeMaskMoment0 request_ =
 
 {-| The route of [`countMoment`](#countMoment) over binding 0: `GET /v1/count/{count}/seen/{seen}`.
 -}
-routeCountMoment0 : Clock.V1.Moment -> Proto.Route.Route
-routeCountMoment0 request_ =
+routeCountMoment0 : Clock.V1.Moment -> Json.Encode.Value -> Proto.Route.Route
+routeCountMoment0 request_ json_ =
     let
         count_ =
             Maybe.withDefault "" (Maybe.map String.fromInt request_.count)
@@ -179,8 +180,8 @@ routeCountMoment0 request_ =
 
 {-| The route of [`waitMoment`](#waitMoment) over binding 0: `POST /v1/wait/{wait}` body `*`.
 -}
-routeWaitMoment0 : Clock.V1.Moment -> Proto.Route.Route
-routeWaitMoment0 request_ =
+routeWaitMoment0 : Clock.V1.Moment -> Json.Encode.Value -> Proto.Route.Route
+routeWaitMoment0 request_ json_ =
     let
         wait_ =
             Maybe.withDefault "" (Maybe.map Proto.Duration.toString request_.wait)
@@ -188,7 +189,7 @@ routeWaitMoment0 request_ =
     { method = "POST"
     , path = "v1/wait/" ++ Proto.Route.segment wait_
     , query = []
-    , body = Just (Proto.Route.without [ [ "wait" ] ] (Clock.V1.encodeMoment request_))
+    , body = Just (Proto.Route.without [ [ "wait" ] ] json_)
     , invalid = Proto.Route.checkSegment "wait" "*" wait_
     }
 

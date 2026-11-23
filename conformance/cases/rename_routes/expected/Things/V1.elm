@@ -161,8 +161,15 @@ registry =
 
 {-| Encodes a [`Thing`](#Thing) as proto3 JSON.
 -}
-encodeThing : Thing -> Json.Encode.Value
+encodeThing : Thing -> Proto.Json.Encoder
 encodeThing value =
+    Proto.Json.ready (jsonThing value)
+
+
+{-| Writes a [`Thing`](#Thing) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonThing : Thing -> Json.Encode.Value
+jsonThing value =
     Proto.Json.objectOfFields
         [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
         ]
@@ -170,8 +177,15 @@ encodeThing value =
 
 {-| Encodes a [`Criteria`](#Criteria) as proto3 JSON.
 -}
-encodeCriteria : Criteria -> Json.Encode.Value
+encodeCriteria : Criteria -> Proto.Json.Encoder
 encodeCriteria value =
+    Proto.Json.ready (jsonCriteria value)
+
+
+{-| Writes a [`Criteria`](#Criteria) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonCriteria : Criteria -> Json.Encode.Value
+jsonCriteria value =
     Proto.Json.objectOfFields
         [ ( "state", Proto.Json.implicitField "" Json.Encode.string value.status )
         ]
@@ -179,12 +193,19 @@ encodeCriteria value =
 
 {-| Encodes a [`GetThingRequest`](#GetThingRequest) as proto3 JSON.
 -}
-encodeGetThingRequest : GetThingRequest -> Json.Encode.Value
+encodeGetThingRequest : GetThingRequest -> Proto.Json.Encoder
 encodeGetThingRequest value =
+    Proto.Json.ready (jsonGetThingRequest value)
+
+
+{-| Writes a [`GetThingRequest`](#GetThingRequest) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonGetThingRequest : GetThingRequest -> Json.Encode.Value
+jsonGetThingRequest value =
     Proto.Json.objectOfFields
         [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.resource )
         , ( "pageSize", Proto.Json.implicitField 0 Json.Encode.int value.limit )
-        , ( "filter", Maybe.map encodeCriteria value.filter )
+        , ( "filter", Maybe.map jsonCriteria value.filter )
         ]
 
 

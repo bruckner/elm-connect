@@ -58,7 +58,7 @@ getMessage =
     Rpc.call
         (Proto.Method.init "routes.v1.Routes"
             "GetMessage"
-            (\_ -> Ok << Routes.V1.encodeGetMessageRequest)
+            Routes.V1.encodeGetMessageRequest
             (\_ -> Routes.V1.decodeMessage)
             Routes.V1.encodeGetMessageRequestBytes
             Routes.V1.decodeMessageBytes
@@ -80,7 +80,7 @@ updateMessage =
     Rpc.call
         (Proto.Method.init "routes.v1.Routes"
             "UpdateMessage"
-            (\_ -> Ok << Routes.V1.encodeUpdateMessageRequest)
+            Routes.V1.encodeUpdateMessageRequest
             (\_ -> Routes.V1.decodeMessage)
             Routes.V1.encodeUpdateMessageRequestBytes
             Routes.V1.decodeMessageBytes
@@ -100,7 +100,7 @@ updateMessageWhole =
     Rpc.call
         (Proto.Method.init "routes.v1.Routes"
             "UpdateMessageWhole"
-            (\_ -> Ok << Routes.V1.encodeMessage)
+            Routes.V1.encodeMessage
             (\_ -> Routes.V1.decodeMessage)
             Routes.V1.encodeMessageBytes
             Routes.V1.decodeMessageBytes
@@ -120,7 +120,7 @@ postSub =
     Rpc.call
         (Proto.Method.init "routes.v1.Routes"
             "PostSub"
-            (\_ -> Ok << Routes.V1.encodeGetMessageRequest)
+            Routes.V1.encodeGetMessageRequest
             (\_ -> Routes.V1.decodeMessage)
             Routes.V1.encodeGetMessageRequestBytes
             Routes.V1.decodeMessageBytes
@@ -140,11 +140,11 @@ query =
     Rpc.call
         (Proto.Method.init "routes.v1.Routes"
             "Query"
-            (\_ -> Ok << Routes.V1.encodeEverything)
+            Routes.V1.encodeEverything
             (\_ -> Routes.V1.decodeEverything)
             Routes.V1.encodeEverythingBytes
             Routes.V1.decodeEverythingBytes
-            |> Proto.Method.withRoutes [ routeQuery0 ]
+            |> Proto.Method.withJsonRoutes [ routeQuery0 ]
         )
 
 
@@ -160,11 +160,11 @@ single =
     Rpc.call
         (Proto.Method.init "routes.v1.Routes"
             "Single"
-            (\_ -> Ok << Routes.V1.encodeEverything)
+            Routes.V1.encodeEverything
             (\_ -> Routes.V1.decodeEverything)
             Routes.V1.encodeEverythingBytes
             Routes.V1.decodeEverythingBytes
-            |> Proto.Method.withRoutes [ routeSingle0 ]
+            |> Proto.Method.withJsonRoutes [ routeSingle0 ]
         )
 
 
@@ -180,11 +180,11 @@ multi =
     Rpc.call
         (Proto.Method.init "routes.v1.Routes"
             "Multi"
-            (\_ -> Ok << Routes.V1.encodeEverything)
+            Routes.V1.encodeEverything
             (\_ -> Routes.V1.decodeEverything)
             Routes.V1.encodeEverythingBytes
             Routes.V1.decodeEverythingBytes
-            |> Proto.Method.withRoutes [ routeMulti0 ]
+            |> Proto.Method.withJsonRoutes [ routeMulti0 ]
         )
 
 
@@ -200,11 +200,11 @@ typed =
     Rpc.call
         (Proto.Method.init "routes.v1.Routes"
             "Typed"
-            (\_ -> Ok << Routes.V1.encodeEverything)
+            Routes.V1.encodeEverything
             (\_ -> Routes.V1.decodeEverything)
             Routes.V1.encodeEverythingBytes
             Routes.V1.decodeEverythingBytes
-            |> Proto.Method.withRoutes [ routeTyped0 ]
+            |> Proto.Method.withJsonRoutes [ routeTyped0 ]
         )
 
 
@@ -220,7 +220,7 @@ files =
     Rpc.call
         (Proto.Method.init "routes.v1.Routes"
             "Files"
-            (\_ -> Ok << Routes.V1.encodeFileRequest)
+            Routes.V1.encodeFileRequest
             (\_ -> Routes.V1.decodeFileRequest)
             Routes.V1.encodeFileRequestBytes
             Routes.V1.decodeFileRequestBytes
@@ -240,7 +240,7 @@ cancel =
     Rpc.call
         (Proto.Method.init "routes.v1.Routes"
             "Cancel"
-            (\_ -> Ok << Routes.V1.encodeResource)
+            Routes.V1.encodeResource
             (\_ -> Routes.V1.decodeResource)
             Routes.V1.encodeResourceBytes
             Routes.V1.decodeResourceBytes
@@ -260,11 +260,11 @@ updateResource =
     Rpc.call
         (Proto.Method.init "routes.v1.Routes"
             "UpdateResource"
-            (\_ -> Ok << Routes.V1.encodeUpdateResourceRequest)
+            Routes.V1.encodeUpdateResourceRequest
             (\_ -> Routes.V1.decodeResource)
             Routes.V1.encodeUpdateResourceRequestBytes
             Routes.V1.decodeResourceBytes
-            |> Proto.Method.withRoutes [ routeUpdateResource0 ]
+            |> Proto.Method.withJsonRoutes [ routeUpdateResource0 ]
         )
 
 
@@ -280,7 +280,7 @@ head =
     Rpc.call
         (Proto.Method.init "routes.v1.Routes"
             "Head"
-            (\_ -> Ok << Routes.V1.encodeFileRequest)
+            Routes.V1.encodeFileRequest
             (\_ -> Routes.V1.decodeFileRequest)
             Routes.V1.encodeFileRequestBytes
             Routes.V1.decodeFileRequestBytes
@@ -303,11 +303,11 @@ bytesPath =
     Rpc.call
         (Proto.Method.init "routes.v1.Routes"
             "BytesPath"
-            (\_ -> Ok << Routes.V1.encodeEverything)
+            Routes.V1.encodeEverything
             (\_ -> Routes.V1.decodeEverything)
             Routes.V1.encodeEverythingBytes
             Routes.V1.decodeEverythingBytes
-            |> Proto.Method.withRoutes [ routeBytesPath0 ]
+            |> Proto.Method.withJsonRoutes [ routeBytesPath0 ]
         )
 
 
@@ -327,7 +327,7 @@ unbound =
     Rpc.call
         (Proto.Method.init "routes.v1.Routes"
             "Unbound"
-            (\_ -> Ok << Routes.V1.encodeGetMessageRequest)
+            Routes.V1.encodeGetMessageRequest
             (\_ -> Routes.V1.decodeMessage)
             Routes.V1.encodeGetMessageRequestBytes
             Routes.V1.decodeMessageBytes
@@ -427,7 +427,7 @@ routeUpdateMessage0 request_ =
     { method = "PATCH"
     , path = "v1/messages/" ++ Proto.Route.segment messageId_
     , query = []
-    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Routes.V1.encodeMessage request_.message))
+    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Routes.V1.jsonMessage request_.message))
     , invalid = Proto.Route.checkSegment "messageId" "*" messageId_
     }
 
@@ -443,7 +443,7 @@ routeUpdateMessageWhole0 request_ =
     { method = "PATCH"
     , path = "v1/messages/" ++ Proto.Route.segment messageId_
     , query = []
-    , body = Just (Proto.Route.without [ [ "messageId" ] ] (Routes.V1.encodeMessage request_))
+    , body = Just (Proto.Route.without [ [ "messageId" ] ] (Routes.V1.jsonMessage request_))
     , invalid = Proto.Route.checkSegment "messageId" "*" messageId_
     }
 
@@ -459,15 +459,15 @@ routePostSub0 request_ =
     { method = "POST"
     , path = "v1/subs/" ++ Proto.Route.segment subSubfield_
     , query = []
-    , body = Just (Proto.Route.without [ [ "sub", "subfield" ] ] (Routes.V1.encodeGetMessageRequest request_))
+    , body = Just (Proto.Route.without [ [ "sub", "subfield" ] ] (Routes.V1.jsonGetMessageRequest request_))
     , invalid = Proto.Route.checkSegment "sub.subfield" "*" subSubfield_
     }
 
 
 {-| The route of [`query`](#query) over binding 0: `GET /v1/query`.
 -}
-routeQuery0 : Routes.V1.Everything -> Proto.Route.Route
-routeQuery0 request_ =
+routeQuery0 : Routes.V1.Everything -> Json.Encode.Value -> Proto.Route.Route
+routeQuery0 request_ json_ =
     { method = "GET"
     , path = "v1/query"
     , query = Routes.V1.queryOfEverything request_
@@ -478,8 +478,8 @@ routeQuery0 request_ =
 
 {-| The route of [`single`](#single) over binding 0: `GET /v1/single/{name}`.
 -}
-routeSingle0 : Routes.V1.Everything -> Proto.Route.Route
-routeSingle0 request_ =
+routeSingle0 : Routes.V1.Everything -> Json.Encode.Value -> Proto.Route.Route
+routeSingle0 request_ json_ =
     let
         name_ =
             request_.name
@@ -494,8 +494,8 @@ routeSingle0 request_ =
 
 {-| The route of [`multi`](#multi) over binding 0: `GET /v1/{name=things/*}`.
 -}
-routeMulti0 : Routes.V1.Everything -> Proto.Route.Route
-routeMulti0 request_ =
+routeMulti0 : Routes.V1.Everything -> Json.Encode.Value -> Proto.Route.Route
+routeMulti0 request_ json_ =
     let
         name_ =
             request_.name
@@ -510,8 +510,8 @@ routeMulti0 request_ =
 
 {-| The route of [`typed`](#typed) over binding 0: `DELETE /v1/typed/{count}/{flag}/{kind}/{big}/{inner.deep.b}`.
 -}
-routeTyped0 : Routes.V1.Everything -> Proto.Route.Route
-routeTyped0 request_ =
+routeTyped0 : Routes.V1.Everything -> Json.Encode.Value -> Proto.Route.Route
+routeTyped0 request_ json_ =
     let
         count_ =
             String.fromInt request_.count
@@ -570,15 +570,15 @@ routeCancel0 request_ =
     { method = "POST"
     , path = "v1/" ++ Proto.Route.segments name_ ++ ":cancel"
     , query = []
-    , body = Just (Proto.Route.without [ [ "name" ] ] (Routes.V1.encodeResource request_))
+    , body = Just (Proto.Route.without [ [ "name" ] ] (Routes.V1.jsonResource request_))
     , invalid = Proto.Route.checkSegments "name" [ "operations", "*" ] name_
     }
 
 
 {-| The route of [`updateResource`](#updateResource) over binding 0: `PATCH /v1/{resource.name=resources/*}` body `resource`.
 -}
-routeUpdateResource0 : Routes.V1.UpdateResourceRequest -> Proto.Route.Route
-routeUpdateResource0 request_ =
+routeUpdateResource0 : Routes.V1.UpdateResourceRequest -> Json.Encode.Value -> Proto.Route.Route
+routeUpdateResource0 request_ json_ =
     let
         resourceName_ =
             Maybe.withDefault "" (Maybe.map .name request_.resource)
@@ -586,7 +586,7 @@ routeUpdateResource0 request_ =
     { method = "PATCH"
     , path = "v1/" ++ Proto.Route.segments resourceName_
     , query = Routes.V1.queryOfUpdateResourceRequest request_
-    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Routes.V1.encodeResource request_.resource))
+    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Routes.V1.jsonResource request_.resource))
     , invalid = Proto.Route.checkSegments "resource.name" [ "resources", "*" ] resourceName_
     }
 
@@ -609,8 +609,8 @@ routeHead0 request_ =
 
 {-| The route of [`bytesPath`](#bytesPath) over binding 0: `GET /v1/bytes/{data}`.
 -}
-routeBytesPath0 : Routes.V1.Everything -> Proto.Route.Route
-routeBytesPath0 request_ =
+routeBytesPath0 : Routes.V1.Everything -> Json.Encode.Value -> Proto.Route.Route
+routeBytesPath0 request_ json_ =
     let
         data_ =
             Proto.Route.viaJson Proto.Json.encodeBytes request_.data

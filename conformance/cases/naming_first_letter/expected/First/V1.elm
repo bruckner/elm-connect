@@ -186,8 +186,15 @@ registry =
 
 {-| Encodes a [`URLPath`](#URLPath) as proto3 JSON.
 -}
-encodeURLPath : URLPath -> Json.Encode.Value
+encodeURLPath : URLPath -> Proto.Json.Encoder
 encodeURLPath value =
+    Proto.Json.ready (jsonURLPath value)
+
+
+{-| Writes a [`URLPath`](#URLPath) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonURLPath : URLPath -> Json.Encode.Value
+jsonURLPath value =
     Proto.Json.objectOfFields
         [ ( "Label", Proto.Json.implicitField "" Json.Encode.string value.label )
         , ( "ID", Proto.Json.implicitField "" Json.Encode.string value.id )
@@ -208,8 +215,15 @@ encodeURLPath value =
 
 {-| Encodes a [`Link`](#Link) as proto3 JSON.
 -}
-encodeLink : Link -> Json.Encode.Value
+encodeLink : Link -> Proto.Json.Encoder
 encodeLink value =
+    Proto.Json.ready (jsonLink value)
+
+
+{-| Writes a [`Link`](#Link) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonLink : Link -> Json.Encode.Value
+jsonLink value =
     Proto.Json.objectOfFields
         ([ ( "Label", Proto.Json.implicitField "" Json.Encode.string value.label )
          ]

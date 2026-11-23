@@ -250,8 +250,15 @@ encodeColor value =
 
 {-| Encodes a [`Created`](#Created) as proto3 JSON.
 -}
-encodeCreated : Created -> Json.Encode.Value
+encodeCreated : Created -> Proto.Json.Encoder
 encodeCreated value =
+    Proto.Json.ready (jsonCreated value)
+
+
+{-| Writes a [`Created`](#Created) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonCreated : Created -> Json.Encode.Value
+jsonCreated value =
     Proto.Json.objectOfFields
         [ ( "title", Proto.Json.implicitField "" Json.Encode.string value.title )
         ]
@@ -259,8 +266,15 @@ encodeCreated value =
 
 {-| Encodes a [`NoteEvent`](#NoteEvent) as proto3 JSON.
 -}
-encodeNoteEvent : NoteEvent -> Json.Encode.Value
+encodeNoteEvent : NoteEvent -> Proto.Json.Encoder
 encodeNoteEvent value =
+    Proto.Json.ready (jsonNoteEvent value)
+
+
+{-| Writes a [`NoteEvent`](#NoteEvent) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonNoteEvent : NoteEvent -> Json.Encode.Value
+jsonNoteEvent value =
     Proto.Json.objectOfFields
         ([ ( "id", Proto.Json.implicitField "" Json.Encode.string value.id )
          , ( "tags", Proto.Json.repeatedField Json.Encode.string value.tags )
@@ -279,7 +293,7 @@ encodeNoteEventKind value =
             []
 
         NoteEventKindCreated member ->
-            [ ( "created", Just (encodeCreated member) )
+            [ ( "created", Just (jsonCreated member) )
             ]
 
         NoteEventKindTitleChanged member ->
@@ -322,8 +336,15 @@ encodeNoteEventSource value =
 
 {-| Encodes a [`Choice`](#Choice) as proto3 JSON.
 -}
-encodeChoice : Choice -> Json.Encode.Value
+encodeChoice : Choice -> Proto.Json.Encoder
 encodeChoice value =
+    Proto.Json.ready (jsonChoice value)
+
+
+{-| Writes a [`Choice`](#Choice) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonChoice : Choice -> Json.Encode.Value
+jsonChoice value =
     Proto.Json.objectOfFields (encodeChoiceValue value.value)
 
 

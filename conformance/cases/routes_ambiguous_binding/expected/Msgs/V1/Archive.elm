@@ -41,7 +41,7 @@ listArchived =
     Rpc.call
         (Proto.Method.init "msgs.v1.Archive"
             "ListArchived"
-            (\_ -> Ok << Msgs.V1.encodeMessageRequest)
+            Msgs.V1.encodeMessageRequest
             (\_ -> Msgs.V1.decodeMessage)
             Msgs.V1.encodeMessageRequestBytes
             Msgs.V1.decodeMessageBytes

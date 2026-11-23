@@ -36,7 +36,7 @@ fetchMemo =
     Rpc.call
         (Proto.Method.init "notes.v1.NotesService"
             "GetNote"
-            (\_ -> Ok << Notes.Api.encodeGetNoteRequest)
+            Notes.Api.encodeGetNoteRequest
             (\_ -> Notes.Api.decodeMemo)
             Notes.Api.encodeGetNoteRequestBytes
             Notes.Api.decodeMemoBytes

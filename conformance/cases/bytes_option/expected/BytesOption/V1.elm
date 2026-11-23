@@ -134,8 +134,15 @@ registry =
 
 {-| Encodes a [`Blob`](#Blob) as proto3 JSON.
 -}
-encodeBlob : Blob -> Json.Encode.Value
+encodeBlob : Blob -> Proto.Json.Encoder
 encodeBlob value =
+    Proto.Json.ready (jsonBlob value)
+
+
+{-| Writes a [`Blob`](#Blob) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonBlob : Blob -> Json.Encode.Value
+jsonBlob value =
     Proto.Json.objectOfFields
         ([ ( "data", Proto.Json.implicitBytesField value.data )
          , ( "maybeData", Maybe.map Proto.Json.encodeBytesAsBytes value.maybeData )

@@ -192,8 +192,15 @@ encodeKind value =
 
 {-| Encodes an [`Entry`](#Entry) as proto3 JSON.
 -}
-encodeEntry : Entry -> Json.Encode.Value
+encodeEntry : Entry -> Proto.Json.Encoder
 encodeEntry value =
+    Proto.Json.ready (jsonEntry value)
+
+
+{-| Writes an [`Entry`](#Entry) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonEntry : Entry -> Json.Encode.Value
+jsonEntry value =
     Proto.Json.objectOfFields
         ([ ( "memo", Proto.Json.implicitField "" Json.Encode.string value.memo )
          , ( "amount", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.amount )
@@ -218,14 +225,21 @@ encodeEntrySource value =
             ]
 
         EntrySourceReversal member ->
-            [ ( "reversal", Just (encodeEntry member) )
+            [ ( "reversal", Just (jsonEntry member) )
             ]
 
 
 {-| Encodes a [`GetEntryRequest`](#GetEntryRequest) as proto3 JSON.
 -}
-encodeGetEntryRequest : GetEntryRequest -> Json.Encode.Value
+encodeGetEntryRequest : GetEntryRequest -> Proto.Json.Encoder
 encodeGetEntryRequest value =
+    Proto.Json.ready (jsonGetEntryRequest value)
+
+
+{-| Writes a [`GetEntryRequest`](#GetEntryRequest) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonGetEntryRequest : GetEntryRequest -> Json.Encode.Value
+jsonGetEntryRequest value =
     Proto.Json.objectOfFields
         [ ( "memo", Proto.Json.implicitField "" Json.Encode.string value.memo )
         ]

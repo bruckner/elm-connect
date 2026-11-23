@@ -30,7 +30,6 @@ import Json.Encode
 import Proto.Any
 import Proto.Binary
 import Proto.Descriptors
-import Proto.Error
 import Proto.Json
 import Proto.Message
 import Proto.Registry
@@ -666,7 +665,7 @@ messageWide =
 -}
 messageEnvelope : Proto.Message.Message Envelope
 messageEnvelope =
-    Proto.Message.initWith "cycles.v1.Envelope" encodeEnvelopeWith decodeEnvelopeWith encodeEnvelopeBytes decodeEnvelopeBytes
+    Proto.Message.initWith "cycles.v1.Envelope" encodeEnvelope decodeEnvelopeWith encodeEnvelopeBytes decodeEnvelopeBytes
 
 
 
@@ -722,58 +721,86 @@ registry =
 
 {-| Encodes a [`Chain`](#Chain) as proto3 JSON.
 -}
-encodeChain : Chain -> Json.Encode.Value
+encodeChain : Chain -> Proto.Json.Encoder
 encodeChain value =
+    Proto.Json.ready (jsonChain value)
+
+
+{-| Writes a [`Chain`](#Chain) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonChain : Chain -> Json.Encode.Value
+jsonChain value =
     Proto.Json.objectOfFields
         [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
-        , ( "next", Maybe.map encodeChain_ value.next )
+        , ( "next", Maybe.map jsonChain_ value.next )
         ]
 
 
-{-| Encodes a [`Chain_`](#Chain_) as proto3 JSON.
+{-| Writes a [`Chain_`](#Chain_) as proto3 JSON.
 -}
-encodeChain_ : Chain_ -> Json.Encode.Value
-encodeChain_ (Chain_ value) =
-    encodeChain value
+jsonChain_ : Chain_ -> Json.Encode.Value
+jsonChain_ (Chain_ value) =
+    jsonChain value
 
 
 {-| Encodes a [`Tree`](#Tree) as proto3 JSON.
 -}
-encodeTree : Tree -> Json.Encode.Value
+encodeTree : Tree -> Proto.Json.Encoder
 encodeTree value =
+    Proto.Json.ready (jsonTree value)
+
+
+{-| Writes a [`Tree`](#Tree) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonTree : Tree -> Json.Encode.Value
+jsonTree value =
     Proto.Json.objectOfFields
         [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
-        , ( "children", Proto.Json.repeatedField encodeTree_ value.children )
+        , ( "children", Proto.Json.repeatedField jsonTree_ value.children )
         ]
 
 
-{-| Encodes a [`Tree_`](#Tree_) as proto3 JSON.
+{-| Writes a [`Tree_`](#Tree_) as proto3 JSON.
 -}
-encodeTree_ : Tree_ -> Json.Encode.Value
-encodeTree_ (Tree_ value) =
-    encodeTree value
+jsonTree_ : Tree_ -> Json.Encode.Value
+jsonTree_ (Tree_ value) =
+    jsonTree value
 
 
 {-| Encodes a [`Dir`](#Dir) as proto3 JSON.
 -}
-encodeDir : Dir -> Json.Encode.Value
+encodeDir : Dir -> Proto.Json.Encoder
 encodeDir value =
+    Proto.Json.ready (jsonDir value)
+
+
+{-| Writes a [`Dir`](#Dir) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonDir : Dir -> Json.Encode.Value
+jsonDir value =
     Proto.Json.objectOfFields
-        [ ( "entries", Proto.Json.dictField identity encodeDir_ value.entries )
+        [ ( "entries", Proto.Json.dictField identity jsonDir_ value.entries )
         ]
 
 
-{-| Encodes a [`Dir_`](#Dir_) as proto3 JSON.
+{-| Writes a [`Dir_`](#Dir_) as proto3 JSON.
 -}
-encodeDir_ : Dir_ -> Json.Encode.Value
-encodeDir_ (Dir_ value) =
-    encodeDir value
+jsonDir_ : Dir_ -> Json.Encode.Value
+jsonDir_ (Dir_ value) =
+    jsonDir value
 
 
 {-| Encodes an [`Expr`](#Expr) as proto3 JSON.
 -}
-encodeExpr : Expr -> Json.Encode.Value
+encodeExpr : Expr -> Proto.Json.Encoder
 encodeExpr value =
+    Proto.Json.ready (jsonExpr value)
+
+
+{-| Writes an [`Expr`](#Expr) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonExpr : Expr -> Json.Encode.Value
+jsonExpr value =
     Proto.Json.objectOfFields (encodeExprKind value.kind)
 
 
@@ -790,105 +817,154 @@ encodeExprKind value =
             ]
 
         ExprKindNegated member ->
-            [ ( "negated", Just (encodeExpr member) )
+            [ ( "negated", Just (jsonExpr member) )
             ]
 
 
 {-| Encodes a [`Person`](#Person) as proto3 JSON.
 -}
-encodePerson : Person -> Json.Encode.Value
+encodePerson : Person -> Proto.Json.Encoder
 encodePerson value =
+    Proto.Json.ready (jsonPerson value)
+
+
+{-| Writes a [`Person`](#Person) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonPerson : Person -> Json.Encode.Value
+jsonPerson value =
     Proto.Json.objectOfFields
         [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        , ( "team", Maybe.map encodeTeam_ value.team )
+        , ( "team", Maybe.map jsonTeam_ value.team )
         ]
 
 
-{-| Encodes a [`Person_`](#Person_) as proto3 JSON.
+{-| Writes a [`Person_`](#Person_) as proto3 JSON.
 -}
-encodePerson_ : Person_ -> Json.Encode.Value
-encodePerson_ (Person_ value) =
-    encodePerson value
+jsonPerson_ : Person_ -> Json.Encode.Value
+jsonPerson_ (Person_ value) =
+    jsonPerson value
 
 
 {-| Encodes a [`Team`](#Team) as proto3 JSON.
 -}
-encodeTeam : Team -> Json.Encode.Value
+encodeTeam : Team -> Proto.Json.Encoder
 encodeTeam value =
+    Proto.Json.ready (jsonTeam value)
+
+
+{-| Writes a [`Team`](#Team) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonTeam : Team -> Json.Encode.Value
+jsonTeam value =
     Proto.Json.objectOfFields
-        [ ( "members", Proto.Json.repeatedField encodePerson_ value.members )
+        [ ( "members", Proto.Json.repeatedField jsonPerson_ value.members )
         ]
 
 
-{-| Encodes a [`Team_`](#Team_) as proto3 JSON.
+{-| Writes a [`Team_`](#Team_) as proto3 JSON.
 -}
-encodeTeam_ : Team_ -> Json.Encode.Value
-encodeTeam_ (Team_ value) =
-    encodeTeam value
+jsonTeam_ : Team_ -> Json.Encode.Value
+jsonTeam_ (Team_ value) =
+    jsonTeam value
 
 
 {-| Encodes a [`First`](#First) as proto3 JSON.
 -}
-encodeFirst : First -> Json.Encode.Value
+encodeFirst : First -> Proto.Json.Encoder
 encodeFirst value =
+    Proto.Json.ready (jsonFirst value)
+
+
+{-| Writes a [`First`](#First) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonFirst : First -> Json.Encode.Value
+jsonFirst value =
     Proto.Json.objectOfFields
-        [ ( "second", Maybe.map encodeSecond_ value.second )
+        [ ( "second", Maybe.map jsonSecond_ value.second )
         ]
 
 
-{-| Encodes a [`First_`](#First_) as proto3 JSON.
+{-| Writes a [`First_`](#First_) as proto3 JSON.
 -}
-encodeFirst_ : First_ -> Json.Encode.Value
-encodeFirst_ (First_ value) =
-    encodeFirst value
+jsonFirst_ : First_ -> Json.Encode.Value
+jsonFirst_ (First_ value) =
+    jsonFirst value
 
 
 {-| Encodes a [`Second`](#Second) as proto3 JSON.
 -}
-encodeSecond : Second -> Json.Encode.Value
+encodeSecond : Second -> Proto.Json.Encoder
 encodeSecond value =
+    Proto.Json.ready (jsonSecond value)
+
+
+{-| Writes a [`Second`](#Second) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonSecond : Second -> Json.Encode.Value
+jsonSecond value =
     Proto.Json.objectOfFields
-        [ ( "third", Maybe.map encodeThird_ value.third )
+        [ ( "third", Maybe.map jsonThird_ value.third )
         ]
 
 
-{-| Encodes a [`Second_`](#Second_) as proto3 JSON.
+{-| Writes a [`Second_`](#Second_) as proto3 JSON.
 -}
-encodeSecond_ : Second_ -> Json.Encode.Value
-encodeSecond_ (Second_ value) =
-    encodeSecond value
+jsonSecond_ : Second_ -> Json.Encode.Value
+jsonSecond_ (Second_ value) =
+    jsonSecond value
 
 
 {-| Encodes a [`Third`](#Third) as proto3 JSON.
 -}
-encodeThird : Third -> Json.Encode.Value
+encodeThird : Third -> Proto.Json.Encoder
 encodeThird value =
+    Proto.Json.ready (jsonThird value)
+
+
+{-| Writes a [`Third`](#Third) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonThird : Third -> Json.Encode.Value
+jsonThird value =
     Proto.Json.objectOfFields
-        [ ( "firsts", Proto.Json.repeatedField encodeFirst_ value.firsts )
+        [ ( "firsts", Proto.Json.repeatedField jsonFirst_ value.firsts )
         ]
 
 
-{-| Encodes a [`Third_`](#Third_) as proto3 JSON.
+{-| Writes a [`Third_`](#Third_) as proto3 JSON.
 -}
-encodeThird_ : Third_ -> Json.Encode.Value
-encodeThird_ (Third_ value) =
-    encodeThird value
+jsonThird_ : Third_ -> Json.Encode.Value
+jsonThird_ (Third_ value) =
+    jsonThird value
 
 
 {-| Encodes a [`Forest`](#Forest) as proto3 JSON.
 -}
-encodeForest : Forest -> Json.Encode.Value
+encodeForest : Forest -> Proto.Json.Encoder
 encodeForest value =
+    Proto.Json.ready (jsonForest value)
+
+
+{-| Writes a [`Forest`](#Forest) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonForest : Forest -> Json.Encode.Value
+jsonForest value =
     Proto.Json.objectOfFields
-        [ ( "trees", Proto.Json.repeatedField encodeTree value.trees )
-        , ( "chain", Maybe.map encodeChain value.chain )
+        [ ( "trees", Proto.Json.repeatedField jsonTree value.trees )
+        , ( "chain", Maybe.map jsonChain value.chain )
         ]
 
 
 {-| Encodes a [`Wide`](#Wide) as proto3 JSON.
 -}
-encodeWide : Wide -> Json.Encode.Value
+encodeWide : Wide -> Proto.Json.Encoder
 encodeWide value =
+    Proto.Json.ready (jsonWide value)
+
+
+{-| Writes a [`Wide`](#Wide) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonWide : Wide -> Json.Encode.Value
+jsonWide value =
     Proto.Json.objectOfFields
         [ ( "f1", Proto.Json.implicitField 0 Json.Encode.int value.f1 )
         , ( "f2", Proto.Json.implicitField 0 Json.Encode.int value.f2 )
@@ -954,35 +1030,35 @@ encodeWide value =
         , ( "f62", Proto.Json.implicitField 0 Json.Encode.int value.f62 )
         , ( "f63", Proto.Json.implicitField 0 Json.Encode.int value.f63 )
         , ( "f64", Proto.Json.implicitField 0 Json.Encode.int value.f64 )
-        , ( "children", Proto.Json.repeatedField encodeWide_ value.children )
+        , ( "children", Proto.Json.repeatedField jsonWide_ value.children )
         ]
 
 
-{-| Encodes a [`Wide_`](#Wide_) as proto3 JSON.
+{-| Writes a [`Wide_`](#Wide_) as proto3 JSON.
 -}
-encodeWide_ : Wide_ -> Json.Encode.Value
-encodeWide_ (Wide_ value) =
-    encodeWide value
+jsonWide_ : Wide_ -> Json.Encode.Value
+jsonWide_ (Wide_ value) =
+    jsonWide value
 
 
-{-| Encodes an [`Envelope`](#Envelope) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
+{-| Encodes an [`Envelope`](#Envelope) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for, and writing each `Any` with the registry it is run with.
 -}
-encodeEnvelopeWith : Proto.Registry.Registry -> Envelope -> Result Proto.Error.Error Json.Encode.Value
-encodeEnvelopeWith types value =
-    Proto.Json.tryObjectOfFields
-        [ ( "payload", Proto.Json.tryOptionalField (Proto.Json.encodeAnyWith types) value.payload )
-        , ( "replies", Proto.Json.tryRepeatedField (encodeEnvelope_With (Proto.Json.registryDeeper types)) value.replies )
-        , ( "data", Ok (Maybe.map Proto.Json.encodeStruct value.data) )
-        , ( "value", Ok (Maybe.map Proto.Json.encodeValue value.value) )
-        , ( "list", Ok (Maybe.map Proto.Json.encodeListValue value.list) )
+encodeEnvelope : Envelope -> Proto.Json.Encoder
+encodeEnvelope value =
+    Proto.Json.writeObject []
+        [ ( "payload", Proto.Json.writeOptional Proto.Json.writeAny value.payload )
+        , ( "replies", Proto.Json.writeDeeper (Proto.Json.writeRepeated encodeEnvelope_ value.replies) )
+        , ( "data", Proto.Json.writeOptional Proto.Json.writeStruct value.data )
+        , ( "value", Proto.Json.writeOptional Proto.Json.writeValue value.value )
+        , ( "list", Proto.Json.writeOptional Proto.Json.writeListValue value.list )
         ]
 
 
-{-| Encodes an [`Envelope_`](#Envelope_) as proto3 JSON, writing each `Any` it holds with the registry.
+{-| Encodes an [`Envelope_`](#Envelope_) as proto3 JSON.
 -}
-encodeEnvelope_With : Proto.Registry.Registry -> Envelope_ -> Result Proto.Error.Error Json.Encode.Value
-encodeEnvelope_With types (Envelope_ value) =
-    encodeEnvelopeWith types value
+encodeEnvelope_ : Envelope_ -> Proto.Json.Encoder
+encodeEnvelope_ (Envelope_ value) =
+    encodeEnvelope value
 
 
 

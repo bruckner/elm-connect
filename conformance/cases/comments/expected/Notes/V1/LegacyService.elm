@@ -44,7 +44,7 @@ clear =
     Rpc.call
         (Proto.Method.init "notes.v1.LegacyService"
             "Clear"
-            (\_ -> Ok << Proto.Json.encodeEmpty)
+            (Proto.Json.ready << Proto.Json.encodeEmpty)
             (\_ -> Proto.Json.empty)
             (Proto.Binary.messageEncoder Proto.Binary.empty)
             (Proto.Binary.messageDecoder Proto.Binary.empty)

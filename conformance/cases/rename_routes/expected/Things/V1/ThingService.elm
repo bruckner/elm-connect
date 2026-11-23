@@ -40,7 +40,7 @@ getThing =
     Rpc.call
         (Proto.Method.init "things.v1.ThingService"
             "GetThing"
-            (\_ -> Ok << Things.V1.encodeGetThingRequest)
+            Things.V1.encodeGetThingRequest
             (\_ -> Things.V1.decodeThing)
             Things.V1.encodeGetThingRequestBytes
             Things.V1.decodeThingBytes

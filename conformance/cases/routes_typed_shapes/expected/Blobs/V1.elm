@@ -27,7 +27,6 @@ import Proto.Any
 import Proto.Binary
 import Proto.Bytes
 import Proto.Descriptors
-import Proto.Error
 import Proto.Json
 import Proto.Message
 import Proto.Query
@@ -203,14 +202,14 @@ messageBlob =
 -}
 messageLabeled : Proto.Message.Message Labeled
 messageLabeled =
-    Proto.Message.initWith "blobs.v1.Labeled" encodeLabeledWith decodeLabeledWith encodeLabeledBytes decodeLabeledBytes
+    Proto.Message.initWith "blobs.v1.Labeled" encodeLabeled decodeLabeledWith encodeLabeledBytes decodeLabeledBytes
 
 
 {-| The typed value of [`LabelBlobRequest`](#LabelBlobRequest): its full name and codecs.
 -}
 messageLabelBlobRequest : Proto.Message.Message LabelBlobRequest
 messageLabelBlobRequest =
-    Proto.Message.initWith "blobs.v1.LabelBlobRequest" encodeLabelBlobRequestWith decodeLabelBlobRequestWith encodeLabelBlobRequestBytes decodeLabelBlobRequestBytes
+    Proto.Message.initWith "blobs.v1.LabelBlobRequest" encodeLabelBlobRequest decodeLabelBlobRequestWith encodeLabelBlobRequestBytes decodeLabelBlobRequestBytes
 
 
 {-| The typed value of [`Folder`](#Folder): its full name and codecs.
@@ -275,8 +274,15 @@ registry =
 
 {-| Encodes a [`Blob`](#Blob) as proto3 JSON.
 -}
-encodeBlob : Blob -> Json.Encode.Value
+encodeBlob : Blob -> Proto.Json.Encoder
 encodeBlob value =
+    Proto.Json.ready (jsonBlob value)
+
+
+{-| Writes a [`Blob`](#Blob) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonBlob : Blob -> Json.Encode.Value
+jsonBlob value =
     Proto.Json.objectOfFields
         [ ( "digest", Proto.Json.implicitBytesField value.digest )
         , ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
@@ -284,60 +290,77 @@ encodeBlob value =
         ]
 
 
-{-| Encodes a [`Labeled`](#Labeled) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
+{-| Encodes a [`Labeled`](#Labeled) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for, and writing each `Any` with the registry it is run with.
 -}
-encodeLabeledWith : Proto.Registry.Registry -> Labeled -> Result Proto.Error.Error Json.Encode.Value
-encodeLabeledWith types value =
-    Proto.Json.tryObjectOfFields
-        [ ( "name", Ok (Proto.Json.implicitField "" Json.Encode.string value.name) )
-        , ( "label", Proto.Json.tryOptionalField (Proto.Json.encodeAnyWith types) value.label )
+encodeLabeled : Labeled -> Proto.Json.Encoder
+encodeLabeled value =
+    Proto.Json.writeObject
+        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+        ]
+        [ ( "label", Proto.Json.writeOptional Proto.Json.writeAny value.label )
         ]
 
 
-{-| Encodes a [`LabelBlobRequest`](#LabelBlobRequest) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
+{-| Encodes a [`LabelBlobRequest`](#LabelBlobRequest) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for, and writing each `Any` with the registry it is run with.
 -}
-encodeLabelBlobRequestWith : Proto.Registry.Registry -> LabelBlobRequest -> Result Proto.Error.Error Json.Encode.Value
-encodeLabelBlobRequestWith types value =
-    Proto.Json.tryObjectOfFields
-        [ ( "labeled", Proto.Json.tryOptionalField (encodeLabeledWith types) value.labeled )
-        , ( "shelf", Ok (Proto.Json.implicitField "" Json.Encode.string value.shelf) )
+encodeLabelBlobRequest : LabelBlobRequest -> Proto.Json.Encoder
+encodeLabelBlobRequest value =
+    Proto.Json.writeObject
+        [ ( "shelf", Proto.Json.implicitField "" Json.Encode.string value.shelf )
+        ]
+        [ ( "labeled", Proto.Json.writeOptional encodeLabeled value.labeled )
         ]
 
 
 {-| Encodes a [`Folder`](#Folder) as proto3 JSON.
 -}
-encodeFolder : Folder -> Json.Encode.Value
+encodeFolder : Folder -> Proto.Json.Encoder
 encodeFolder value =
+    Proto.Json.ready (jsonFolder value)
+
+
+{-| Writes a [`Folder`](#Folder) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonFolder : Folder -> Json.Encode.Value
+jsonFolder value =
     Proto.Json.objectOfFields
         [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        , ( "parent", Maybe.map encodeFolder_ value.parent )
+        , ( "parent", Maybe.map jsonFolder_ value.parent )
         ]
 
 
-{-| Encodes a [`Folder_`](#Folder_) as proto3 JSON.
+{-| Writes a [`Folder_`](#Folder_) as proto3 JSON.
 -}
-encodeFolder_ : Folder_ -> Json.Encode.Value
-encodeFolder_ (Folder_ value) =
-    encodeFolder value
+jsonFolder_ : Folder_ -> Json.Encode.Value
+jsonFolder_ (Folder_ value) =
+    jsonFolder value
 
 
 {-| Encodes a [`Slots`](#Slots) as proto3 JSON.
 -}
-encodeSlots : Slots -> Json.Encode.Value
+encodeSlots : Slots -> Proto.Json.Encoder
 encodeSlots value =
+    Proto.Json.ready (jsonSlots value)
+
+
+{-| Writes a [`Slots`](#Slots) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonSlots : Slots -> Json.Encode.Value
+jsonSlots value =
     Proto.Json.objectOfFields
         [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
         , ( "nothing", Just (Proto.Json.encodeEmpty value.nothing) )
         ]
 
 
-{-| Encodes a [`Free`](#Free) as proto3 JSON.
+{-| Encodes a [`Free`](#Free) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for.
 -}
-encodeFree : Free -> Json.Encode.Value
+encodeFree : Free -> Proto.Json.Encoder
 encodeFree value =
-    Proto.Json.objectOfFields
+    Proto.Json.writeObject
         [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        , ( "value", Maybe.map Proto.Json.encodeValue value.value )
+        ]
+        [ ( "value", Proto.Json.writeOptional Proto.Json.writeValue value.value )
         ]
 
 

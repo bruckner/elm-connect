@@ -255,8 +255,15 @@ encodeChar value =
 
 {-| Encodes a [`Dict`](#Dict) as proto3 JSON.
 -}
-encodeDict : Dict -> Json.Encode.Value
+encodeDict : Dict -> Proto.Json.Encoder
 encodeDict value =
+    Proto.Json.ready (jsonDict value)
+
+
+{-| Writes a [`Dict`](#Dict) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonDict : Dict -> Json.Encode.Value
+jsonDict value =
     Proto.Json.objectOfFields
         [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
         ]
@@ -264,40 +271,75 @@ encodeDict value =
 
 {-| Encodes a [`Result`](#Result) as proto3 JSON.
 -}
-encodeResult : Result -> Json.Encode.Value
+encodeResult : Result -> Proto.Json.Encoder
 encodeResult value =
+    Proto.Json.ready (jsonResult value)
+
+
+{-| Writes a [`Result`](#Result) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonResult : Result -> Json.Encode.Value
+jsonResult value =
     Proto.Json.objectOfFields
         [ ( "ok", Proto.Json.implicitField False Json.Encode.bool value.ok )
-        , ( "dict", Maybe.map encodeDict value.dict )
+        , ( "dict", Maybe.map jsonDict value.dict )
         , ( "chars", Proto.Json.repeatedField encodeChar value.chars )
         ]
 
 
 {-| Encodes an [`Order`](#Order) as proto3 JSON.
 -}
-encodeOrder : Order -> Json.Encode.Value
-encodeOrder _ =
+encodeOrder : Order -> Proto.Json.Encoder
+encodeOrder value =
+    Proto.Json.ready (jsonOrder value)
+
+
+{-| Writes an [`Order`](#Order) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonOrder : Order -> Json.Encode.Value
+jsonOrder _ =
     Json.Encode.object []
 
 
 {-| Encodes a [`Never`](#Never) as proto3 JSON.
 -}
-encodeNever : Never -> Json.Encode.Value
-encodeNever _ =
+encodeNever : Never -> Proto.Json.Encoder
+encodeNever value =
+    Proto.Json.ready (jsonNever value)
+
+
+{-| Writes a [`Never`](#Never) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonNever : Never -> Json.Encode.Value
+jsonNever _ =
     Json.Encode.object []
 
 
 {-| Encodes a [`Cmd`](#Cmd) as proto3 JSON.
 -}
-encodeCmd : Cmd -> Json.Encode.Value
-encodeCmd _ =
+encodeCmd : Cmd -> Proto.Json.Encoder
+encodeCmd value =
+    Proto.Json.ready (jsonCmd value)
+
+
+{-| Writes a [`Cmd`](#Cmd) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonCmd : Cmd -> Json.Encode.Value
+jsonCmd _ =
     Json.Encode.object []
 
 
 {-| Encodes a [`True`](#True) as proto3 JSON.
 -}
-encodeTrue : True -> Json.Encode.Value
-encodeTrue _ =
+encodeTrue : True -> Proto.Json.Encoder
+encodeTrue value =
+    Proto.Json.ready (jsonTrue value)
+
+
+{-| Writes a [`True`](#True) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonTrue : True -> Json.Encode.Value
+jsonTrue _ =
     Json.Encode.object []
 
 

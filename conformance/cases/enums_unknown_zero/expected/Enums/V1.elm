@@ -192,8 +192,15 @@ encodePriority value =
 
 {-| Encodes a [`Task`](#Task) as proto3 JSON.
 -}
-encodeTask : Task -> Json.Encode.Value
+encodeTask : Task -> Proto.Json.Encoder
 encodeTask value =
+    Proto.Json.ready (jsonTask value)
+
+
+{-| Writes a [`Task`](#Task) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonTask : Task -> Json.Encode.Value
+jsonTask value =
     Proto.Json.objectOfFields
         [ ( "status", Proto.Json.implicitField StatusUnspecified encodeStatus value.status )
         , ( "priority", Maybe.map encodePriority value.priority )

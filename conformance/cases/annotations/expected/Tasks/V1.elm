@@ -198,8 +198,15 @@ encodeState value =
 
 {-| Encodes a [`Task`](#Task) as proto3 JSON.
 -}
-encodeTask : Task -> Json.Encode.Value
+encodeTask : Task -> Proto.Json.Encoder
 encodeTask value =
+    Proto.Json.ready (jsonTask value)
+
+
+{-| Writes a [`Task`](#Task) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonTask : Task -> Json.Encode.Value
+jsonTask value =
     Proto.Json.objectOfFields
         ([ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
          , ( "title", Proto.Json.implicitField "" Json.Encode.string value.title )
@@ -232,8 +239,15 @@ encodeTaskDue value =
 
 {-| Encodes a [`GetTaskRequest`](#GetTaskRequest) as proto3 JSON.
 -}
-encodeGetTaskRequest : GetTaskRequest -> Json.Encode.Value
+encodeGetTaskRequest : GetTaskRequest -> Proto.Json.Encoder
 encodeGetTaskRequest value =
+    Proto.Json.ready (jsonGetTaskRequest value)
+
+
+{-| Writes a [`GetTaskRequest`](#GetTaskRequest) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonGetTaskRequest : GetTaskRequest -> Json.Encode.Value
+jsonGetTaskRequest value =
     Proto.Json.objectOfFields
         [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
         ]
