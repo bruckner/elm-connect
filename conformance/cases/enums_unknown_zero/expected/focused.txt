@@ -1,0 +1,41 @@
+-- An excerpt, not a module: what ../focus.txt names of the modules this
+-- case generates. Only it is compared; the modules are compiled and
+-- checked for elm-format's layout whole. `just bless` writes it.
+--
+-- Generated:
+--   Enums/V1.elm
+--   Enums/V1/Priority.elm
+--   Enums/V1/Status.elm
+--   Enums/V1/Task.elm
+
+
+-- Enums/V1.elm: decodeStatus
+
+{-| Decodes a [`Status`](#Status) from proto3 JSON.
+-}
+decodeStatus : Json.Decode.Decoder Status
+decodeStatus =
+    Proto.Json.enumOrZero "Status"
+        StatusUnspecified
+        [ ( "STATUS_UNSPECIFIED", 0, StatusUnspecified )
+        , ( "STATUS_ACTIVE", 1, StatusActive )
+        , ( "STATUS_ARCHIVED", 2, StatusArchived )
+        ]
+
+
+-- Enums/V1.elm: decodePriority
+
+{-| Decodes a [`Priority`](#Priority) from proto3 JSON.
+-}
+decodePriority : Json.Decode.Decoder Priority
+decodePriority =
+    Proto.Json.enumOrZero "Priority"
+        PriorityNone
+        [ ( "NONE", 0, PriorityNone )
+        , ( "UNSET", 0, PriorityNone )
+        , ( "LOW", 1, PriorityLow )
+        , ( "PRIORITY_LOW", 1, PriorityLow )
+        , ( "HIGH", 2, PriorityHigh )
+        , ( "URGENT", 2, PriorityHigh )
+        , ( "BELOW_ZERO", -1, PriorityBelowZero )
+        ]

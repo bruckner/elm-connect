@@ -1,0 +1,70 @@
+-- An excerpt, not a module: what ../focus.txt names of the modules this
+-- case generates. Only it is compared; the modules are compiled and
+-- checked for elm-format's layout whole. `just bless` writes it.
+--
+-- Generated:
+--   Vault/V1.elm
+--   Vault/V1/GetItemRequest.elm
+--   Vault/V1/Item.elm
+--   Vault/V1/ListItemsRequest.elm
+--   Vault/V1/ListItemsResponse.elm
+--   Vault/V1/Status.elm
+--   Vault/V1/VaultService.elm
+
+
+-- Vault/V1/VaultService.elm: getItem
+
+{-| `rpc GetItem(GetItemRequest) returns (Item)`.
+Connect: `POST /vault.v1.VaultService/GetItem`.
+Transcode: `GET /v1/{name=items/*}`.
+
+Codecs: JSON. Described by [`descriptorGetItem`](#descriptorGetItem).
+
+-}
+getItem : Vault.V1.GetItemRequest -> Rpc.Call Rpc.Json Vault.V1.GetItemRequest Vault.V1.Item
+getItem =
+    Rpc.call
+        (Proto.Method.initJson "vault.v1.VaultService"
+            "GetItem"
+            (\_ -> Ok << Vault.V1.encodeGetItemRequest)
+            Vault.V1.decodeItemWith
+            |> Proto.Method.withRoutes [ routeGetItem0 ]
+        )
+
+
+-- Vault/V1/VaultService.elm: listItems
+
+{-| `rpc ListItems(ListItemsRequest) returns (ListItemsResponse)`.
+Connect: `POST /vault.v1.VaultService/ListItems`.
+Transcode: no HTTP rule, follows the Connect path.
+
+Codecs: JSON. Described by [`descriptorListItems`](#descriptorListItems).
+
+-}
+listItems : Vault.V1.ListItemsRequest -> Rpc.Call Rpc.Json Vault.V1.ListItemsRequest Vault.V1.ListItemsResponse
+listItems =
+    Rpc.call
+        (Proto.Method.initJson "vault.v1.VaultService"
+            "ListItems"
+            (\_ -> Ok << Vault.V1.encodeListItemsRequest)
+            Vault.V1.decodeListItemsResponseWith
+        )
+
+
+-- Vault/V1/VaultService.elm: putItem
+
+{-| `rpc PutItem(Item) returns (Item)`.
+Connect: `POST /vault.v1.VaultService/PutItem`.
+Transcode: no HTTP rule, follows the Connect path.
+
+Codecs: JSON. Described by [`descriptorPutItem`](#descriptorPutItem).
+
+-}
+putItem : Vault.V1.Item -> Rpc.Call Rpc.Json Vault.V1.Item Vault.V1.Item
+putItem =
+    Rpc.call
+        (Proto.Method.initJson "vault.v1.VaultService"
+            "PutItem"
+            Vault.V1.encodeItemWith
+            Vault.V1.decodeItemWith
+        )

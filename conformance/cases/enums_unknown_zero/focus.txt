@@ -1,0 +1,4 @@
+# An option variant of `enums` (same protos, enum_unknown=zero): only the
+# JSON enum decoders differ, Proto.Json.enumOrZero in place of
+# Proto.Json.enum.
+Enums/V1.elm decodeStatus decodePriority

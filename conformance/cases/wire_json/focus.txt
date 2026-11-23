@@ -1,0 +1,3 @@
+# An option variant of `services_wire_both` (same proto, wire=json): only
+# the methods differ, built by Proto.Method.initJson with JSON codecs alone.
+Vault/V1/VaultService.elm getItem listItems putItem
