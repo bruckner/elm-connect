@@ -435,7 +435,7 @@ impl Emitter {
                 }
                 _ => self.reference((PROTO_JSON, "encodeAnyWith")),
             };
-            let registry = if self.deeper_registry {
+            let registry = if self.deeper_registry && counts_cycle_writes() {
                 let deeper = self.reference((PROTO_JSON, "registryDeeper"));
                 apply(deeper, [var(REGISTRY_ARGUMENT)])
             } else {
@@ -618,4 +618,12 @@ pub(super) fn value_shape(ty: &TypeRef, holding: Holding) -> ValueShape<'_> {
         TypeRef::Message(name) => ValueShape::Present(Present::Message(name)),
         TypeRef::WellKnown(known) => well_known(*known, holding),
     }
+}
+
+/// Whether an encoder taking the registry writes a value on its message's
+/// cycle with the registry one level deeper. A spike knob:
+/// `ELM_CONNECT_WRITE_DEPTH=any` writes it with the same registry, so a JSON
+/// write counts only the `Any` values it converts.
+fn counts_cycle_writes() -> bool {
+    std::env::var("ELM_CONNECT_WRITE_DEPTH").as_deref() != Ok("any")
 }
