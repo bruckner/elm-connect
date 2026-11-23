@@ -14,8 +14,10 @@ In short:
    ([The client and the protocol](#the-client-and-the-protocol)).
 3. Add the codec to the annotations that name `Rpc.Call`
    ([The codec in the type](#the-codec-in-the-type)).
-4. Follow the compiler through the rest: the pure halves, traces and
-   any method written by hand.
+4. Follow the compiler through the rest: the pure halves, traces, any
+   method written by hand, and JSON written with a generated encoder,
+   which now goes through `Proto.Json.encode`
+   ([Writing JSON](#writing-json)).
 
 The release notes ([CHANGELOG.md](../CHANGELOG.md)) list every change,
 including those that need no edit.
@@ -216,7 +218,7 @@ getNote =
     Rpc.call
         (Proto.Method.initJson "notes.v1.NotesService"
             "GetNote"
-            (\_ -> Ok << Notes.V1.encodeGetNoteRequest)
+            Notes.V1.encodeGetNoteRequest
             Notes.V1.decodeNoteWith
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
             |> Proto.Method.withBindings [ getNoteBinding ]
@@ -396,6 +398,34 @@ retryable error =
   `badAny`, `badResponse` and `badBody`, and they are `==` to the
   runtime's when they state the same things.
 
+## Writing JSON
+
+A generated encoder no longer gives a `Json.Encode.Value`. It gives a
+`Proto.Json.Encoder`, which `Proto.Json.encode` writes, or refuses a
+value proto3 JSON has no form for (a `Timestamp` outside years 1 to
+9999, a `Duration` past protobuf's range, a `FieldMask` path with no
+lowerCamelCase form, a number in a `Value` that is not finite) with
+`Proto.Error.NotWritable` ([calling.md](calling.md#writing-json)). 0.1
+wrote such values wrong without a word.
+
+| | 0.1 | 0.2 |
+|---|---|---|
+| a call through a generated service | `Rpc.send … (NotesService.getNote request)` | unchanged |
+| writing a message's JSON | `Json.Encode.encode 0 (Notes.V1.encodeNote note)` | `Proto.Json.encode (Notes.V1.encodeNote note) \|> Result.map (Json.Encode.encode 0)`; or, for a message holding nothing a write can refuse, `Json.Encode.encode 0 (Notes.V1.jsonNote note)` |
+| writing one that holds an `Any` | (0.1 held an `Any` as JSON) | `Proto.Json.encodeWith registry (Notes.V1.encodeEnvelope envelope)` |
+| a typed value written by hand | `Proto.Message.message encodeTitle …` | `Proto.Message.init "notes.v1.Title" (Proto.Json.ready << encodeTitle) …` for a `Title -> Json.Encode.Value` |
+| a method written by hand | `Proto.Method.method Notes.V1.encodeGetNoteRequest …` | `Proto.Method.initJson "notes.v1.NotesService" "GetNote" Notes.V1.encodeGetNoteRequest …` ([above](#methods-written-by-hand)) |
+| a test of a generated encoder | `Notes.V1.encodeNote note \|> Json.Encode.encode 0` | `Notes.V1.jsonNote note \|> Json.Encode.encode 0`, or `Proto.Json.encode` and a `Result` |
+
+`jsonNote` exists only for a message that holds nothing a write can
+refuse, at any depth: one with a `Timestamp`, `Duration`, `FieldMask`,
+`Struct`, `ListValue`, `Value` or `Any` field, or holding a message that
+has one, has `encodeNote` alone. An exhaustive `case` on
+`Proto.Error.Error` gains `NotWritable`. `Proto.Duration.fromParts`
+keeps a duration past protobuf's range, which 0.1 clamped to it, so that
+a duration read from binary is written back as it came and refused by a
+JSON write.
+
 ## Any, the registry and error details
 
 An `Any` holds its message's protobuf binary, as in protobuf's own
@@ -425,13 +455,14 @@ JSON.
 - A message's typed value holds its full name and both codecs:
   `Proto.Message.init "notes.v1.Note" encodeNote decodeNote
   encodeNoteBytes decodeNoteBytes` (`initWith` for one that reaches an
-  `Any`) replaces 0.1's `Proto.Message.message encode decoder default
+  `Any`, with `decodeNoteWith`) replaces 0.1's `Proto.Message.message encode decoder default
   descriptor`, and the readers `encode`, `decoder`, `default` and
   `toDescriptor` are gone: use the generated codecs, `defaultNote` and
   `Notes.V1.Note.descriptor`.
-- A generated message that reaches an `Any` has `decodeNoteWith` and
-  `encodeNoteWith`, which take the registry (the encoder gives a
-  `Result`), in place of `decodeNote` and `encodeNote`.
+- A generated message that reaches an `Any` has `decodeNoteWith`, which
+  takes the registry, in place of `decodeNote`; its encoder is
+  `encodeNote`, run with the registry by `Proto.Json.encodeWith`
+  ([Writing JSON](#writing-json)).
 - `Proto.Registry` is the table: each generated package's `registry`
   holds its own messages, `Proto.WellKnown.registry` the well-known
   types and `Proto.ErrorDetails.registry` `google.rpc`'s error details;
@@ -440,9 +471,10 @@ JSON.
   messages hold an `Any` needs one, and a request whose `Any` it cannot
   write fails unsent, a `BadCall` whose `Rpc.Error.protoError` is the
   `Proto.Error.Error` the write gave.
-- A method holds no registry: a hand-written method's JSON codecs take
-  the client's (`Proto.Method.initJson "notes.v1.NotesService" "GetNote"
-  (\_ -> Ok << encodeGetNoteRequest) (\_ -> decodeNote)`).
+- A method holds no registry: a hand-written method's JSON decoder takes
+  the client's, and its encoder is run with it (`Proto.Method.initJson
+  "notes.v1.NotesService" "GetNote" encodeGetNoteRequest (\_ ->
+  decodeNote)`).
   `Proto.Method.encodeRequest`, `responseDecoder`, `Rpc.Call.requestJson`
   and `Rpc.Call.toJson` take a registry, and the first, third and fourth
   give a `Result`.

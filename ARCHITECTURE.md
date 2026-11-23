@@ -115,7 +115,9 @@ not exposed. They exist for two reasons (§3.1, rule 4): an opaque type
 that two public modules must build or match keeps its constructor in one
 (`Rpc.Internal.Call`, built by `Rpc` and read by `Rpc.Call`;
 `Rpc.Internal.Protocol` and `Rpc.Internal.Client`, built by
-`Rpc.Protocol` and `Rpc.Client` and read by `Rpc`), and
+`Rpc.Protocol` and `Rpc.Client` and read by `Rpc`;
+`Proto.Internal.Writer`, the JSON encoder `Proto.Json` builds and
+`Proto.Message` and `Proto.Method` run), and
 implementation stays out of the public modules so that they read as API:
 `Rpc.Internal.Plan` plans a call over its client's protocol, its
 binding's route included,

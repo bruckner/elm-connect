@@ -243,6 +243,49 @@ otherwise, and connect-web, the browser transport, has no such knob.
 A limit below 1 is no limit: it removes one set earlier, as if none had
 been set.
 
+### Writing JSON
+
+Each message's generated encoder describes its proto3 JSON,
+`Notes.V1.encodeNote : Notes.V1.Note -> Proto.Json.Encoder`, and
+`Proto.Json.encode` writes it, or `Proto.Json.encodeWith registry` for a
+message holding a `google.protobuf.Any`, which converts through the
+registry:
+
+```elm src/Proto/Json.elm excerpt
+encode : Encoder -> Result Error Value
+```
+
+A write refuses a value proto3 JSON has no form for, where an encoder
+that cannot refuse would write something wrong: a `Timestamp` outside
+years 1 to 9999, a `Duration` past protobuf's ±315,576,000,000 seconds, a
+`FieldMask` path whose lowerCamelCase form reads back as another path,
+and a number in a `Value`, `Struct` or `ListValue` that is NaN or
+infinite. The error is `Proto.Error.NotWritable { typeName, path }`: the
+type refused and the JSON field names, list indexes and map keys leading
+to it, which `Proto.Error.toString` prints as "A google.protobuf.Timestamp
+holds a value proto3 JSON has no form for, at events.3.createTime." Such
+values come from the program (a `Time.Posix` of any instant, a division
+by zero in a `Value`) or from protobuf binary, which can carry them and
+which the binary codec reads and writes back unchanged, as protobuf's
+own runtimes do; only the JSON write refuses them. An `Any` it cannot
+write fails as before, with `UnregisteredType` or the `BadBinary` of
+its message.
+
+A message that holds nothing a write can refuse, at any depth, also has
+a total encoder, `Notes.V1.jsonGetNoteRequest : Notes.V1.GetNoteRequest ->
+Json.Encode.Value`, which `encodeGetNoteRequest` wraps; it is the one to
+use where a `Json.Encode.Value` is wanted directly. A message gains or
+loses it when its fields change: one that gains a `Timestamp` field has
+only `encodeNote` after regenerating.
+
+A call whose request cannot be written as JSON is not sent: it fails as a
+`BadCall`, code `Internal`, message `unwritable request`, with the
+`NotWritable` in `Rpc.Error.protoError`. Over transcoding the request is
+checked whole, whether the refused value would go to the path, the query
+or the body. `Rpc.request` of such a call still builds a request, with the
+JSON `null` in place of the request's JSON; sending it is what refuses. Over the proto codec the
+binary is written as it is.
+
 ### Nesting depth
 
 Reads are limited to 100 levels of nesting, as protobuf's own runtimes
@@ -280,7 +323,8 @@ end, is the application's own:
 
 | What the application does | Overflows past about (node, Chromium / Firefox / WebKit) |
 |---|---|
-| `Json.Encode.encode` of a message it built (generated encoder) | 780 / 910 / 5,700 levels |
+| `Proto.Json.encode` of a message it built (generated encoder) | 600 to 800 / 800 to 1,000 / 5,000 to 7,000 levels |
+| `Proto.Json.encode` of a `Struct` or `Value` it built, in a message | 400 to 600 / 600 to 800 / 10,000 to 20,000 levels |
 | binary encoding of a value it built (`Proto.Binary.encode`, `Proto.Any.pack`, `Rpc.request` of a binary call) | 480 / 610 / 5,500 levels |
 | `Json.Encode.encode` of a `Json.Encode.Value` it built | 5,000 to 6,000 / 3,700 / 40,000 levels |
 | `Json.Decode.errorToString` of an error from its own `Json.Decode.decodeString` or `decodeValue` with a generated decoder, which the runtime never sees to scrub | 2,600 to 3,100 / 2,050 / 11,700 input levels |
@@ -288,10 +332,12 @@ end, is the application's own:
 
 The depths are measured from the runtime's own encoders and elm/json;
 a `Proto.Value.Value` the program builds deeper than any it reads, written
-through `Proto.Value.toJson` or either codec, overflows too, at depths not
-measured. Writing is not limited, as in protobuf's own runtimes: a value
-read through the limit writes in both codecs, but one the program builds
-can be deeper. Bound the depth where the program builds such values, and
+through `Proto.Value.toJson` or the binary codec, overflows too, at depths
+not measured. Writing is not limited, as in protobuf's own runtimes: a
+JSON write refuses a value with no JSON form ([Writing
+JSON](#writing-json)), never one for its depth, and a value read through
+the limit writes in both codecs, but one the program builds can be
+deeper. Bound the depth where the program builds such values, and
 read a failure from its own decoders by following the error to its
 `Json.Decode.Failure` rather than printing the whole error. Its own
 recursive decoders and functions over deep values are its own to bound
@@ -716,11 +762,13 @@ it:
 protoError : Error -> Maybe Proto.Error.Error
 ```
 
-For a body that did not decode as the response message, and for an `Any`
-in the request that could not be written as JSON, `protoError` is the
+For a body that did not decode as the response message, and for a
+request that could not be written as JSON, `protoError` is the
 problem itself: `BadJson` with elm/json's error, `BadBinary` with the
-report of where and why, or `UnregisteredType` for an `Any` of a type the
-client's registry lacks. It is `Nothing` for every other error.
+report of where and why, `UnregisteredType` for an `Any` of a type the
+client's registry lacks, or `NotWritable` for a value proto3 JSON has no
+form for ([Writing JSON](#writing-json)). It is `Nothing` for every other
+error.
 `Proto.Error.toString` describes it in full; that text can quote the
 value that failed, and so hold the answer's or the request's data.
 

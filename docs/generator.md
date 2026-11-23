@@ -20,7 +20,7 @@ otherwise.
 
 | Proto | Elm |
 |---|---|
-| `message Note` | `type alias Note = { … }`, a record with a field per proto field in declaration order, named in lowerCamelCase (`create_time` → `createTime`); with it `defaultNote`, `encodeNote`, `decodeNote` and `messageNote : Proto.Message.Message Note`, its typed value. Build a message from its default by record update, `{ defaultNote | title = "x" }`, rather than as a record literal: the update keeps compiling when the message gains a field. Elm's record update takes an unqualified name, so `{ Notes.V1.defaultNote | … }` does not compile; bind the default first, `let note = Notes.V1.defaultNote in { note | title = "x" }` ([quick start](quickstart.md#4-send-a-call)). Under `unknown_fields=keep` the record ends in `unknownFields_ : Proto.Unknown.Fields`, the fields read from a protobuf binary whose field numbers or types are unrecognized |
+| `message Note` | `type alias Note = { … }`, a record with a field per proto field in declaration order, named in lowerCamelCase (`create_time` → `createTime`); with it `defaultNote`, `encodeNote : Note -> Proto.Json.Encoder` (run by `Proto.Json.encode`, which refuses a value proto3 JSON has no form for; [calling.md](calling.md#writing-json)), `decodeNote` and `messageNote : Proto.Message.Message Note`, its typed value; a message holding nothing a JSON write can refuse also gets `jsonNote : Note -> Json.Encode.Value`, its total encoder, which `encodeNote` wraps. Build a message from its default by record update, `{ defaultNote | title = "x" }`, rather than as a record literal: the update keeps compiling when the message gains a field. Elm's record update takes an unqualified name, so `{ Notes.V1.defaultNote | … }` does not compile; bind the default first, `let note = Notes.V1.defaultNote in { note | title = "x" }` ([quick start](quickstart.md#4-send-a-call)). Under `unknown_fields=keep` the record ends in `unknownFields_ : Proto.Unknown.Fields`, the fields read from a protobuf binary whose field numbers or types are unrecognized |
 | `string`, `bool` | `String`, `Bool` |
 | `int32`, `uint32`, `sint32`, `fixed32`, `sfixed32` | `Int` |
 | `double`, `float` | `Float` |
@@ -49,7 +49,7 @@ otherwise.
 | a recursive message (`repeated Node children`) | the field that closes the cycle holds a wrapper, `List Node_`, with `type Node_ = Node_ Node`; fields that close no cycle hold the record itself. Every message on the cycle also gets `decodeNestedNode : Int -> Json.Decode.Decoder Node` (`decodeNestedNodeWith` when it takes the registry), its decoder at a nesting depth, which reads at most 100 levels ([calling.md](calling.md#nesting-depth)); `decodeNode` is `decodeNestedNode 1`. A oneof with a member on the cycle gets `decodeNestedNodeKind` likewise |
 | a nested message or enum (`Outer.Inner`) | a type named by its path, `OuterInner`, in the package's module |
 | a type of another generated package | the type from that package's module, `Users.V1.User` |
-| `service NotesService` | a module `Notes.V1.NotesService`: per unary method a call, `getNote : Notes.V1.GetNoteRequest -> Rpc.Call Rpc.Json Notes.V1.GetNoteRequest Notes.V1.Note`; per binding of its `google.api.http` rule a route function, `routeGetNote0 : Notes.V1.GetNoteRequest -> Proto.Route.Route` (for a method whose bodies hold an `Any`, a function of the request and its JSON, `Notes.V1.CreateNoteRequest -> Json.Encode.Value -> Proto.Route.Route`), which the call holds ([transcoding.md](transcoding.md)); and its method descriptor, `descriptorGetNote`, the proto's facts about it as data, which the call does not hold |
+| `service NotesService` | a module `Notes.V1.NotesService`: per unary method a call, `getNote : Notes.V1.GetNoteRequest -> Rpc.Call Rpc.Json Notes.V1.GetNoteRequest Notes.V1.Note`; per binding of its `google.api.http` rule a route function, `routeGetNote0 : Notes.V1.GetNoteRequest -> Proto.Route.Route` (for a method whose request a JSON write can refuse, a function of the request and its JSON, `Notes.V1.CreateNoteRequest -> Json.Encode.Value -> Proto.Route.Route`), which the call holds ([transcoding.md](transcoding.md)); and its method descriptor, `descriptorGetNote`, the proto's facts about it as data, which the call does not hold |
 | a request message whose bindings put fields in the query | `queryOfListNotesRequest : ListNotesRequest -> List ( String, String )` in its package's module, the query parameters its route functions share. It exists when a service generated in the same run binds the message's fields to the query, so a service's module and its request messages' module generated in separate runs can disagree, and the compiler reports the missing `queryOf`: generate a service with the packages it uses in one run |
 | a streaming method | a diagnostic; under `streaming=skip`, left out with a warning |
 | comments and `deprecated` | each type, call and descriptor is documented with the proto's comment for it, its one-line declaration, and `Deprecated.` where the proto says so; a call also names its Connect path, its HTTP bindings and its codecs (`Codecs: JSON.`), and a package's module carries the comment on its `package` statement |
@@ -166,13 +166,14 @@ messageLeaf =
 ```
 
 and one whose fields reach a `google.protobuf.Any` by
-`Proto.Message.initWith`, from `encodeNoteWith` and `decodeNoteWith`,
-the JSON codecs that take a registry (below). The `wire` option says
+`Proto.Message.initWith`, from `encodeNote` and `decodeNoteWith`, the
+JSON decoder that takes a registry (below). The `wire` option says
 which codecs a method is wired with. Under `json` a method is built by
-`Proto.Method.initJson` from its service's full name, its name, and its
-request's JSON encoder and response's JSON decoder, each taking the
-client's registry (`\_ -> Ok << Notes.V1.encodeGetNoteRequest` and
-`\_ -> Notes.V1.decodeNote` for a type that reaches no `Any`). Under
+`Proto.Method.initJson` from its service's full name, its name, its
+request's JSON encoder (`Notes.V1.encodeGetNoteRequest`, which the
+method runs with the client's registry) and its response's JSON decoder,
+taking that registry (`\_ -> Notes.V1.decodeNote` for a type that
+reaches no `Any`). Under
 `both`, the default, it is built by `Proto.Method.init` from those, then
 the request type's `encode…Bytes` and the response type's
 `decode…Bytes`, and its idempotency and routes as under `json`. Under
@@ -214,12 +215,20 @@ A `google.protobuf.Any` holds its message's protobuf binary, so its
 binary codec (`Proto.Binary.any`) needs no table. Its proto3 JSON goes
 through a `Proto.Registry.Registry`: every message, oneof and recursion
 wrapper that reaches an `Any`, through its fields at any depth and
-across packages, has JSON codecs taking one, `decodeNoteWith :
-Proto.Registry.Registry -> Json.Decode.Decoder Note` and
-`encodeNoteWith : Proto.Registry.Registry -> Note -> Result
-Proto.Error.Error Json.Encode.Value`, and no `decodeNote` or
-`encodeNote`. A type named for one of them with `With` at the end
-(`NoteWith`) is `naming::codec_collision`.
+across packages, has a JSON decoder taking one, `decodeNoteWith :
+Proto.Registry.Registry -> Json.Decode.Decoder Note`, and no
+`decodeNote`. A type named for one with `With` at the end (`NoteWith`)
+is `naming::codec_collision`. Its encoder is `encodeNote :
+Note -> Proto.Json.Encoder`, like every message's: the registry is given
+when the encoder is run, `Proto.Json.encodeWith registry (encodeNote
+note)`, and a method or a typed value runs it with the client's.
+
+An encoder writes a field on the cycle of a recursive message that
+reaches an `Any` one level deeper (`Proto.Json.writeDeeper`), so that an
+`Any` read from binary, whose message is kept as bytes until it is
+written, counts the messages around it toward the limit of 100 as a read
+would ([calling.md](calling.md#nesting-depth)). No other write counts
+depth.
 
 Each package module holds `registry`, its own messages' typed values,
 nested ones included, and nothing else:

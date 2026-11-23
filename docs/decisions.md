@@ -255,6 +255,68 @@ five members, 1.08× for 1,000, 2.2× for a list of 300 small ones, 0.86 to
 converted back: 1.29× for 1,000 members, 12.4 to 70 µs for the tree. Where: design §3.2, §3.5, §5.4, §5.5; the calling guide,
 "Nesting depth"; docs/migrating.md.
 
+### JSON encoders that refuse what has no JSON form
+
+*2026-11-23.*
+
+A generated message's JSON encoder gives a `Proto.Json.Encoder`, which
+`Proto.Json.encode` (or `encodeWith registry`) runs into a `Result`:
+the JSON, or `Proto.Error.NotWritable { typeName, path }` for a value
+proto3 JSON has no form for (a `Timestamp` outside years 1 to 9999, a
+`Duration` past protobuf's range, a `FieldMask` path that does not
+round-trip, a number in a `Value` that is not finite). Reads stay as
+tolerant as protobuf's binary readers; the write is the one place that
+knows a value is headed for JSON, and it also sees the values the
+program built. Encoders that could not refuse wrote seven of protobuf's
+nine conformance cases of such values as wrong data and two as text a
+peer refuses; all nine now pass, and nothing else moved. Strict reads
+with total encoders, the alternative, passed none of the nine, refused
+binary that protobuf's readers accept, and still could not catch a
+value the program built. Making only some encoders fallible (a total
+`encodeNote` beside `encodeNoteWith`) flipped a message's signature
+whenever it gained a refusable field; with one shape, nothing a user
+writes depends on what a message holds, and the registry an `Any`
+needs is given when the encoder runs.
+
+The encoder is a tagged value (finished, left out, refused, or deferred
+until the registry is given), and a message that holds nothing a write
+can refuse is plain code, `jsonNote : Note -> Json.Encode.Value`,
+wrapped once by `encodeNote`. A naive form, every message and field an
+encoder, cost 31 % on a plain message and 47 % on a list of 300; static
+knowledge at the message and field level brought the common case to
+within about 10 % (JSON-encoder spike, 2026-11-22). `jsonNote` is
+exposed because it exists anyway and is the total encoder of such a
+message. A phantom type (`Encoder Total`) would bring the per-message
+flip back in a type parameter.
+
+There is no general depth check on writes, as protobuf's runtimes have
+none: a value the program builds too deep throws while it is written, as
+before. Counting every cycle statically cost 25 to 43 % on every
+recursive write. The count that stays is the narrow one that protects
+what a read accepted: an `Any` read from binary keeps its message as
+bytes, untraversed, so a JSON write is the first walk of it, and without
+a count 60 `Any`s each holding 90 levels overflowed the stack. A field on
+the cycle of a message that reaches an `Any` is written through
+`Proto.Json.writeDeeper`, which raises the registry's depth for a
+deferred part (the only kind that converts an `Any`) and passes any
+other part through, and the registry refuses past 100 `Any`s and
+levels. A message that reaches no `Any` has no such call.
+
+Costs, measured against the base (node 24.21.0, Elm 0.19.3, one build
+per process, 6 rounds of 3, two windows; the A/A controls agreed within
+3 %, and two builds of the same code differed by up to 8 %): writing a
+plain message is 1.00 to 1.09 times the base and a list of 300 of them
+1.00 to 1.05, the note 0.92 to 0.96 and a list of 300 notes 0.83 to 0.88
+(no `Ok` wrapper per field any more), a message with a valid `Timestamp`
+1.04 to 1.07, and a `Struct` 1.16 to 1.27 (the walk for non-finite
+numbers). A recursive message that reaches no `Any` writes as before;
+one that does is 0.72 to 0.77 without an `Any` set and 0.83 to 1.06
+with them, of which the count is 0 to 3 % and 3 to 7 %. A program that writes no JSON compiles to the same minified
+size and set of definitions, within 2 bytes gzipped; a client writing
+JSON with nothing refusable grows by 43 to 80 bytes gzipped, the notes
+example by 0.8 KB. Where: design §3.5, §5.1, §5.3, §5.5; the calling guide, "Writing JSON";
+docs/migrating.md, "Writing JSON".
+
 ### Unrecognised enum values: an option, never the default
 
 *2026-10-21.*

@@ -102,17 +102,22 @@ given after the routes by binding number, so reading an answer builds
 no route:
 
 ```elm conformance/cases/services/expected/Notes/V1/NotesService.elm excerpt
-            |> Proto.Method.withRoutes [ routeListNotes0 ]
+            |> Proto.Method.withJsonRoutes [ routeListNotes0 ]
             |> Proto.Method.withResponseBody 0 "notes"
 ```
 
 Every binding the generator accepts becomes a route function. A method
-whose bodies hold a `google.protobuf.Any`, which only the client's
-registry can write, gets route functions of the request and its proto3
-JSON, `routeCreateNote0 : Notes.V1.CreateNoteRequest -> Json.Encode.Value
--> Proto.Route.Route`, given to `Proto.Method.withJsonRoutes`: the path
-and query come from the typed request, and the body from the JSON the
-send encodes once, with the client's registry.
+whose request a JSON write can refuse (it holds a `google.protobuf.Any`,
+which only the client's registry can write, or a `Timestamp`, `Duration`,
+`FieldMask`, `Struct`, `ListValue` or `Value`, whose values can have no
+proto3 JSON form; [calling.md](calling.md#writing-json)) gets route
+functions of the request and its proto3 JSON, `routeCreateNote0 :
+Notes.V1.CreateNoteRequest -> Json.Encode.Value -> Proto.Route.Route`,
+given to `Proto.Method.withJsonRoutes`: the send encodes the JSON once,
+with the client's registry, and refuses the call when the request has no
+JSON form, whether the refused value goes to the path, the query or the
+body; the path and query come from the typed request, and a body that
+needs the JSON from it.
 
 A `bytes` field held as `Bytes` (`bytes=bytes`) goes into a path or a
 query as base64 in the URL-safe alphabet, padded (`-_8=`), which
