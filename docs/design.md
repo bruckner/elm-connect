@@ -4092,9 +4092,14 @@ Connect's proto codec sends them (§5.3).
   to 100 once, and a field on the cycle is read by `Proto.Binary.recursive depth …`, which
   reads it one level deeper and fails with `TooDeep` past 100, in the
   fast and the locating read alike. Only fields on a cycle count, so a
-  message that cannot recurse generates the code it did. The same
-  budget counts each array and object of a `Struct`, `Value` or
-  `ListValue`, a binary `Struct` or `ListValue` being one level and the
+  message that cannot recurse generates the code it did. A chain of
+  such messages is bounded by the schema, and the generator measures
+  its longest (a cycle along it counted as its members once, a
+  well-known type ending it) and warns past 100, the outermost counted
+  (`types::deep_nesting`), since most protobuf runtimes refuse such a
+  message and nothing counts it here.
+  The same budget counts each array and object of a `Struct`, `Value`
+  or `ListValue`, a binary `Struct` or `ListValue` being one level and the
   `Value` holding it none, so 100 levels read the same in binary and
   JSON; a message on a cycle reads them on from its depth
   (`Proto.Binary.nestedStruct depth`, `nestedListValue`, `nestedValue`). An `Any` read

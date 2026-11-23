@@ -15,7 +15,7 @@ use super::{
     HttpVerb, Idempotency, JsType, MapKey, Message, Method, ModuleName, Oneof, OneofVariant,
     Package, ScalarKind, Service, TypeName, TypeRef, WellKnown, Wrapper,
 };
-use super::{declaration, rename};
+use super::{declaration, nesting, rename};
 use crate::diagnostics::{Diagnostics, LineColSpan, Problem, Referrer, Site, Spans, closest, tag};
 use crate::naming::{self, NameError};
 use crate::options::{Options, Spelling, Streaming};
@@ -53,8 +53,9 @@ pub fn build(pool: &DescriptorPool, generate: &[&str]) -> Result<Vec<Package>, D
 pub struct Built {
     /// One package per proto package, as [`build`] gives them.
     pub packages: Vec<Package>,
-    /// The warnings, in the order found: what `options` left out, and the
-    /// module names that compile but put the application at risk.
+    /// The warnings, in the order found: what `options` left out, the
+    /// module names that compile but put the application at risk, and the
+    /// bindings and the nesting that other software refuses.
     pub warnings: Diagnostics,
 }
 
@@ -200,6 +201,7 @@ pub fn build_with_imports(
     mark_cycles(&mut packages);
     builder.check_import_cycles(&by_package);
     builder.check_ambiguous_bindings(pool, &packages);
+    builder.check_nesting(pool, &packages);
     if !builder.runtime_namespace.is_empty() {
         let modules: Vec<String> = builder.runtime_namespace.iter().cloned().collect();
         builder.diagnostics.push(Problem::runtime_namespace(
@@ -1186,6 +1188,32 @@ impl Builder {
                 site,
             ));
         }
+    }
+
+    /// A `types::deep_nesting` warning when the longest chain of messages
+    /// of `packages` (built from `pool`) is longer than the runtime's read
+    /// limit ([`nesting::longest`]).
+    fn check_nesting(&mut self, pool: &DescriptorPool, packages: &[Package]) {
+        let Some(chain) = nesting::longest(packages) else {
+            return;
+        };
+        if chain.messages.len() <= nesting::LIMIT {
+            return;
+        }
+        let site = pool.get_message_by_name(&chain.messages[0]).map(|message| {
+            let path = [message.path(), &[tag::MESSAGE_NAME]].concat();
+            self.site(
+                &message.parent_file(),
+                &path,
+                "the chain starts here".into(),
+            )
+        });
+        self.diagnostics.push(Problem::deep_nesting(
+            &chain.messages,
+            chain.recursive.as_deref(),
+            nesting::LIMIT,
+            site,
+        ));
     }
 
     /// A field of a generated message as generated code names its

@@ -264,6 +264,11 @@ read is 200 levels: 99 messages, the `Any`, and 100 levels inside it.
 An `Any` read from binary holds the message's bytes unread; unpacking
 it, or writing it as JSON, reads them with the same count from 1.
 
+Messages that hold each other in a chain, with no cycle, are not
+counted: the schema bounds their depth. The generator warns of a chain
+longer than 100 (`types::deep_nesting`), which most protobuf runtimes
+refuse to read.
+
 The unit is the same in JSON and binary, so 100 levels read in one read
 in the other. Past them a binary read fails with `Proto.Error.TooDeep`
 and a JSON read with "Expecting messages nested at most 100 deep"; over

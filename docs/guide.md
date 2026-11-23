@@ -64,6 +64,10 @@ the user:
 `naming::runtime_namespace` and `naming::shadowing_module` are
 warnings: the run succeeds, but a generated module may clash later or
 cannot be imported beside a package. The same two options settle them.
+`types::deep_nesting` is a warning too: messages nested in a chain
+longer than most protobuf runtimes read. The generated code is the same
+with it; shortening the chain is a change to the API, so put it to the
+user.
 
 ## The application's `elm.json`
 
