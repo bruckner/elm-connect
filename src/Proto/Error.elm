@@ -1,7 +1,7 @@
 module Proto.Error exposing
     ( Error(..)
     , Binary, Reason(..)
-    , Unwritable, WriteReason(..)
+    , Unwritable
     , toString
     )
 
@@ -23,7 +23,7 @@ one as `BadBinary`.
 
 # Writing proto3 JSON
 
-@docs Unwritable, WriteReason
+@docs Unwritable
 
 
 # Describing
@@ -62,36 +62,21 @@ type Error
     | NotWritable Unwritable
 
 
-{-| A value a proto3 JSON write refused:
+{-| A value a proto3 JSON write refused, because proto3 JSON has no form for
+it: a `Timestamp` outside years 1 to 9999, a `Duration` past ±315,576,000,000
+seconds, a `FieldMask` path whose lowerCamelCase form reads back as another
+path, a number in a `Value` that is NaN or infinite.
 
   - `typeName`: the full name of the type of the value refused, such as
-    `google.protobuf.Timestamp`, or of the message nested too deeply.
+    `google.protobuf.Timestamp`.
   - `path`: the JSON field names and list indexes or map keys leading to it
     from the message written, outermost first.
-  - `reason`: why ([`WriteReason`](#WriteReason)).
 
 -}
 type alias Unwritable =
     { typeName : String
     , path : List String
-    , reason : WriteReason
     }
-
-
-{-| Why a value could not be written as proto3 JSON:
-
-  - `NoJsonForm`: proto3 JSON has no form for it: a `Timestamp` outside years
-    1 to 9999, a `Duration` past ±315,576,000,000 seconds, a `FieldMask` path
-    whose lowerCamelCase form reads back as another path, a number in a
-    `Value` that is NaN or infinite.
-  - `NestedTooDeep`: messages on a cycle, `Any` values and the arrays and
-    objects of a `Value` nested more than 100 levels deep, which protobuf's
-    readers refuse.
-
--}
-type WriteReason
-    = NoJsonForm
-    | NestedTooDeep
 
 
 {-| Why protobuf binary is not the message it was read as:
@@ -197,14 +182,8 @@ toString error =
         UnregisteredType typeUrl ->
             "An Any holding " ++ typeUrl ++ " was converted through a registry that has no entry for its type."
 
-        NotWritable { typeName, path, reason } ->
-            (case reason of
-                NoJsonForm ->
-                    "A " ++ typeName ++ " holds a value proto3 JSON has no form for"
-
-                NestedTooDeep ->
-                    "A " ++ typeName ++ " is nested too deeply to write"
-            )
+        NotWritable { typeName, path } ->
+            ("A " ++ typeName ++ " holds a value proto3 JSON has no form for")
                 ++ (if List.isEmpty path then
                         "."
 

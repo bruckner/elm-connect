@@ -137,7 +137,7 @@ addFolder =
             (\_ -> Shapes.Blobs.V1.decodeFolder)
             Shapes.Blobs.V1.encodeFolderBytes
             Shapes.Blobs.V1.decodeFolderBytes
-            |> Proto.Method.withJsonRoutes [ routeAddFolder0 ]
+            |> Proto.Method.withRoutes [ routeAddFolder0 ]
         )
 
 
@@ -157,7 +157,7 @@ moveFolder =
             (\_ -> Shapes.Blobs.V1.decodeFolder)
             Shapes.Blobs.V1.encodeFolderBytes
             Shapes.Blobs.V1.decodeFolderBytes
-            |> Proto.Method.withJsonRoutes [ routeMoveFolder0 ]
+            |> Proto.Method.withRoutes [ routeMoveFolder0 ]
         )
 
 
@@ -303,8 +303,8 @@ routePutLabel0 request_ json_ =
 
 {-| The route of [`addFolder`](#addFolder) over binding 0: `POST /v1/{parent.name=folders/*}/children` body `*`.
 -}
-routeAddFolder0 : Shapes.Blobs.V1.Folder -> Json.Encode.Value -> Proto.Route.Route
-routeAddFolder0 request_ json_ =
+routeAddFolder0 : Shapes.Blobs.V1.Folder -> Proto.Route.Route
+routeAddFolder0 request_ =
     let
         parentName_ =
             Maybe.withDefault "" (Maybe.map .name (Maybe.map (\(Shapes.Blobs.V1.Folder_ message_) -> message_) request_.parent))
@@ -312,15 +312,15 @@ routeAddFolder0 request_ json_ =
     { method = "POST"
     , path = "v1/" ++ Proto.Route.segments parentName_ ++ "/children"
     , query = []
-    , body = Just (Proto.Route.without [ [ "parent", "name" ] ] json_)
+    , body = Just (Proto.Route.without [ [ "parent", "name" ] ] (Shapes.Blobs.V1.jsonFolder request_))
     , invalid = Proto.Route.checkSegments "parent.name" [ "folders", "*" ] parentName_
     }
 
 
 {-| The route of [`moveFolder`](#moveFolder) over binding 0: `POST /v1/{name=folders/*}:move` body `parent`.
 -}
-routeMoveFolder0 : Shapes.Blobs.V1.Folder -> Json.Encode.Value -> Proto.Route.Route
-routeMoveFolder0 request_ json_ =
+routeMoveFolder0 : Shapes.Blobs.V1.Folder -> Proto.Route.Route
+routeMoveFolder0 request_ =
     let
         name_ =
             request_.name
@@ -328,7 +328,7 @@ routeMoveFolder0 request_ json_ =
     { method = "POST"
     , path = "v1/" ++ Proto.Route.segments name_ ++ ":move"
     , query = []
-    , body = Just (Proto.Route.jsonField "parent" json_)
+    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Shapes.Blobs.V1.jsonFolder_ request_.parent))
     , invalid = Proto.Route.checkSegments "name" [ "folders", "*" ] name_
     }
 

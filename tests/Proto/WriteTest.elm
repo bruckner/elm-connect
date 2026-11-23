@@ -4,18 +4,18 @@ import Dict
 import Expect
 import Json.Encode
 import Proto.Duration
-import Proto.Error exposing (Error(..), WriteReason(..))
+import Proto.Error exposing (Error(..))
 import Proto.Json
 import Proto.Value exposing (Value(..))
 import Test exposing (Test, describe, test)
 import Time
 
 
-refusal : Proto.Json.Encoder -> Maybe ( String, List String, WriteReason )
+refusal : Proto.Json.Encoder -> Maybe ( String, List String )
 refusal encoder =
     case Proto.Json.encode encoder of
-        Err (NotWritable { typeName, path, reason }) ->
-            Just ( typeName, path, reason )
+        Err (NotWritable { typeName, path }) ->
+            Just ( typeName, path )
 
         _ ->
             Nothing
@@ -47,44 +47,11 @@ suite =
                 ]
                     |> List.map refusal
                     |> Expect.equal
-                        [ Just ( "google.protobuf.Timestamp", [ "when" ], NoJsonForm )
-                        , Just ( "google.protobuf.Duration", [ "ttl" ], NoJsonForm )
-                        , Just ( "google.protobuf.FieldMask", [ "mask" ], NoJsonForm )
-                        , Just ( "google.protobuf.Value", [ "items", "1" ], NoJsonForm )
-                        , Just ( "google.protobuf.Struct", [ "data" ], NoJsonForm )
+                        [ Just ( "google.protobuf.Timestamp", [ "when" ] )
+                        , Just ( "google.protobuf.Duration", [ "ttl" ] )
+                        , Just ( "google.protobuf.FieldMask", [ "mask" ] )
+                        , Just ( "google.protobuf.Value", [ "items", "1" ] )
+                        , Just ( "google.protobuf.Struct", [ "data" ] )
                         ]
-        , test "a Struct nested past the limit is refused, and one at it is written" <|
-            \_ ->
-                let
-                    nested n =
-                        List.foldl (\_ inner -> Dict.singleton "a" (ValueStruct inner)) Dict.empty (List.range 2 n)
-                in
-                [ refusal (Proto.Json.writeStruct (nested 100)), refusal (Proto.Json.writeStruct (nested 101)) ]
-                    |> Expect.equal [ Nothing, Just ( "google.protobuf.Struct", [], NestedTooDeep ) ]
-        , test "a message on a cycle nested past the limit is refused without being built" <|
-            \_ ->
-                let
-                    chain n =
-                        List.foldl (\_ inner -> Chain [ inner ]) (Chain []) (List.range 2 n)
-                in
-                [ refusal (encodeChain (chain 100)), refusal (encodeChain (chain 100000)) |> Maybe.map (\( name, _, why ) -> ( name, why )) |> Maybe.map (\( n, w ) -> ( n, [], w )) ]
-                    |> Expect.equal [ Nothing, Just ( "t.Chain", [], NestedTooDeep ) ]
         ]
 
-
-type Chain
-    = Chain (List Chain)
-
-
-encodeChain : Chain -> Proto.Json.Encoder
-encodeChain =
-    Proto.Json.writeFrom encodeChainAt
-
-
-encodeChainAt : Int -> Chain -> Proto.Json.Encoder
-encodeChainAt depth (Chain children) =
-    if depth > Proto.Json.writeLimit then
-        Proto.Json.writeTooDeep "t.Chain"
-
-    else
-        Proto.Json.writeObject [] [ ( "children", Proto.Json.writeRepeated (encodeChainAt (depth + 1)) children ) ]

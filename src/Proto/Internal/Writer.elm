@@ -2,28 +2,23 @@ module Proto.Internal.Writer exposing
     ( Encoder
     , absent
     , boolMap
-    , deeper
     , deferred
     , dict
     , field
-    , from
-    , limit
     , object
     , optional
     , ready
     , refuse
     , repeated
     , run
-    , tooDeep
     )
 
 {-| The proto3 JSON encoder that generated code builds and `Proto.Json.encode`
 runs: a finished value, a field left out, a refusal, or a part that needs the
-registry an `Any` converts through, or the depth a message on a cycle is
-written at.
+registry an `Any` converts through.
 
 Combinators stay on finished values while every part they are given is
-finished, so a message holding nothing that needs the registry or a depth is
+finished, so a message holding nothing that needs the registry is
 built as plain `Json.Encode.Value` code with one tag per part, and only a
 refusal or a deferred part leaves that path. A refusal names its type and
 gathers the path to it on the way out; a deferred part is run once, top down,
@@ -99,7 +94,7 @@ absent =
 -}
 refuse : String -> Encoder
 refuse typeName =
-    Failed (NotWritable { typeName = typeName, path = [], reason = Proto.Error.NoJsonForm })
+    Failed (NotWritable { typeName = typeName, path = [] })
 
 
 {-| A part that needs the registry.
@@ -119,14 +114,6 @@ field value =
 
         Nothing ->
             Absent
-
-
-{-| The deepest a write nests: messages on a cycle, `Any` values and the
-arrays and objects of a `Value`, as the reads count them.
--}
-limit : Int
-limit =
-    100
 
 
 under : String -> Error -> Error
@@ -294,42 +281,6 @@ boolMap encode pairs =
                 )
                 []
                 False
-
-
-{-| A value one level deeper on a cycle of messages, the message named: it
-is built and written only when run, so a value nested past the limit is
-refused there, before its deeper levels are built.
--}
-deeper : String -> (a -> Encoder) -> a -> Encoder
-deeper typeName encode value =
-    Deferred
-        (\registry ->
-            let
-                depth =
-                    Registry.depthOf registry
-            in
-            if depth + 2 > limit then
-                Err (NotWritable { typeName = typeName, path = [], reason = Proto.Error.NestedTooDeep })
-
-            else
-                run (Registry.atLeast (depth + 1) registry) (encode value)
-        )
-
-
-{-| A message on a cycle, from its encoder at a level: the level is one
-deeper than the registry it is run with, and the encoder passes it down,
-refusing past the limit, so it is counted while the value is built.
--}
-from : (Int -> a -> Encoder) -> a -> Encoder
-from encodeAt value =
-    Deferred (\registry -> run registry (encodeAt (Registry.depthOf registry + 1) value))
-
-
-{-| A message of the type named nested past the limit.
--}
-tooDeep : String -> Encoder
-tooDeep typeName =
-    Failed (NotWritable { typeName = typeName, path = [], reason = Proto.Error.NestedTooDeep })
 
 
 {-| An object from its pairs in reverse, told whether a key is `__proto__`,

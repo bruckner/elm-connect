@@ -10,6 +10,7 @@ module Outside.V1 exposing (..)
 import Bytes.Encode
 import Cycles.V1
 import Json.Decode
+import Json.Encode
 import Outside.V1.Holder
 import Proto.Binary
 import Proto.Descriptors
@@ -96,13 +97,20 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`Holder`](#Holder) as proto3 JSON, refusing a value it holds that has no proto3 JSON form, and writing each `Any` with the registry it is run with.
+{-| Encodes a [`Holder`](#Holder) as proto3 JSON.
 -}
 encodeHolder : Holder -> Proto.Json.Encoder
 encodeHolder value =
-    Proto.Json.writeObject []
-        [ ( "tree", Proto.Json.writeOptional Cycles.V1.encodeTree value.tree )
-        , ( "person", Proto.Json.writeOptional Cycles.V1.encodePerson value.person )
+    Proto.Json.ready (jsonHolder value)
+
+
+{-| Writes a [`Holder`](#Holder) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonHolder : Holder -> Json.Encode.Value
+jsonHolder value =
+    Proto.Json.objectOfFields
+        [ ( "tree", Maybe.map Cycles.V1.jsonTree value.tree )
+        , ( "person", Maybe.map Cycles.V1.jsonPerson value.person )
         ]
 
 

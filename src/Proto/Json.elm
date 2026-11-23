@@ -1,7 +1,6 @@
 module Proto.Json exposing
     ( Encoder, encode, encodeWith, ready
-    , writeObject, writeField, writeOptional, writeRepeated, writeDict, writeBoolMap, writeDeeper
-    , writeFrom, writeTooDeep, writeLimit, writeAnyAt
+    , writeObject, writeField, writeOptional, writeRepeated, writeDict, writeBoolMap
     , writeTimestamp, writeDuration, writeFieldMask, writeStruct, writeListValue, writeValue, writeAny
     , field, fieldEither, valueField, valueFieldEither, emptyMessage
     , message, messageField, messageFieldEither, messageValueField, messageValueFieldEither, messageValueFieldAt, messageValueFieldEitherAt
@@ -60,8 +59,7 @@ A message holding a value that can be refused (an `Any`, a `Timestamp`,
 cycle) is encoded with [`writeObject`](#writeObject): the fields that cannot be
 refused as the plain helpers give them, then those that can.
 
-@docs writeObject, writeField, writeOptional, writeRepeated, writeDict, writeBoolMap, writeDeeper
-@docs writeFrom, writeTooDeep, writeLimit, writeAnyAt
+@docs writeObject, writeField, writeOptional, writeRepeated, writeDict, writeBoolMap
 @docs writeTimestamp, writeDuration, writeFieldMask, writeStruct, writeListValue, writeValue, writeAny
 
 
@@ -2979,14 +2977,6 @@ writeBoolMap =
     Writer.boolMap
 
 
-{-| A value of the message named one level deeper along a cycle of messages,
-refused past 100 levels.
--}
-writeDeeper : String -> (a -> Encoder) -> a -> Encoder
-writeDeeper =
-    Writer.deeper
-
-
 {-| A `google.protobuf.Timestamp`, refused outside years 1 to 9999.
 -}
 writeTimestamp : Time.Posix -> Encoder
@@ -3032,7 +3022,7 @@ maskPathRoundTrips path =
 
 
 {-| A `google.protobuf.Struct`, refused when it holds a number that is NaN or
-infinite, or nests more than 100 levels.
+infinite.
 -}
 writeStruct : Dict.Dict String Proto.Value.Value -> Encoder
 writeStruct fields =
@@ -3055,71 +3045,30 @@ writeValue value =
 
 checkedValue : String -> Proto.Value.Value -> (() -> Value) -> Encoder
 checkedValue typeName value write =
-    case valueProblem 0 value of
-        0 ->
-            Writer.ready (write ())
+    if finite value then
+        Writer.ready (write ())
 
-        1 ->
-            Writer.refuse typeName
-
-        _ ->
-            Writer.deferred (\_ -> Err (Proto.Error.NotWritable { typeName = typeName, path = [], reason = Proto.Error.NestedTooDeep }))
+    else
+        Writer.refuse typeName
 
 
-{-| 0 when the value can be written, 1 when it holds a number that is not
-finite, 2 when its arrays and objects nest past the limit; it never walks
-deeper than the limit.
+{-| Whether every number the value holds is finite. It walks the whole value,
+however deeply it nests.
 -}
-valueProblem : Int -> Proto.Value.Value -> Int
-valueProblem depth value =
+finite : Proto.Value.Value -> Bool
+finite value =
     case value of
         Proto.Value.ValueNumber number ->
-            if isNaN number || isInfinite number then
-                1
-
-            else
-                0
+            not (isNaN number || isInfinite number)
 
         Proto.Value.ValueStruct structMembers ->
-            if depth >= Writer.limit then
-                2
-
-            else
-                Dict.foldl
-                    (\_ item found ->
-                        if found == 0 then
-                            valueProblem (depth + 1) item
-
-                        else
-                            found
-                    )
-                    0
-                    structMembers
+            Dict.foldl (\_ item ok -> ok && finite item) True structMembers
 
         Proto.Value.ValueList items ->
-            if depth >= Writer.limit then
-                2
-
-            else
-                listProblem (depth + 1) items
+            List.all finite items
 
         _ ->
-            0
-
-
-listProblem : Int -> List Proto.Value.Value -> Int
-listProblem depth items =
-    case items of
-        [] ->
-            0
-
-        item :: rest ->
-            case valueProblem depth item of
-                0 ->
-                    listProblem depth rest
-
-                found ->
-                    found
+            True
 
 
 {-| A `google.protobuf.Any`, converted through the registry the encoder is
@@ -3132,53 +3081,3 @@ writeAny ((InternalAny.Any url _) as value) =
 
     else
         Writer.deferred (\registry -> encodeAnyWith registry value)
-
-
-{-| A message on a cycle of messages, from its encoder at a level, as
-generated code writes it:
-
-    encodeNode : Node -> Encoder
-    encodeNode =
-        writeFrom encodeNodeAt
-
-    encodeNodeAt : Int -> Node -> Encoder
-    encodeNodeAt depth value =
-        if depth > writeLimit then
-            writeTooDeep "nesting.v1.Node"
-
-        else
-            writeObject [ ... ] [ ( "children", writeRepeated (encodeNode_At (depth + 1)) value.children ) ]
-
-The outermost level is one deeper than the registry the encoder is run with,
-so a message an `Any` holds counts on from the `Any`.
-
--}
-writeFrom : (Int -> a -> Encoder) -> a -> Encoder
-writeFrom =
-    Writer.from
-
-
-{-| A message of the type named nested past [`writeLimit`](#writeLimit).
--}
-writeTooDeep : String -> Encoder
-writeTooDeep =
-    Writer.tooDeep
-
-
-{-| The most levels a write nests, 100, as the reads count them.
--}
-writeLimit : Int
-writeLimit =
-    Writer.limit
-
-
-{-| [`writeAny`](#writeAny) held by a message on a cycle at a level: the
-`Any` counts on from it.
--}
-writeAnyAt : Int -> Any -> Encoder
-writeAnyAt depth ((InternalAny.Any url _) as value) =
-    if String.isEmpty url then
-        Writer.ready (Json.Encode.object [])
-
-    else
-        Writer.deferred (\registry -> encodeAnyWith (InternalRegistry.atLeast depth registry) value)

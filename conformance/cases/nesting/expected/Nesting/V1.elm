@@ -469,156 +469,140 @@ jsonOuterInnerDeepest value =
         ]
 
 
-{-| Encodes a [`Node`](#Node) as proto3 JSON, refusing a value it holds that has no proto3 JSON form, and writing each `Any` with the registry it is run with.
+{-| Encodes a [`Node`](#Node) as proto3 JSON.
 -}
 encodeNode : Node -> Proto.Json.Encoder
 encodeNode value =
-    Proto.Json.writeFrom encodeNodeAt value
+    Proto.Json.ready (jsonNode value)
 
 
-{-| Encodes a [`Node`](#Node) at a level of its cycle, refused past the limit.
+{-| Writes a [`Node`](#Node) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeNodeAt : Int -> Node -> Proto.Json.Encoder
-encodeNodeAt depth value =
-    if depth > Proto.Json.writeLimit then
-        Proto.Json.writeTooDeep "nesting.v1.Node"
-
-    else
-        Proto.Json.writeObject
-            [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
-            ]
-            [ ( "children", Proto.Json.writeRepeated (encodeNode_At (depth + 1)) value.children )
-            , ( "byName", Proto.Json.writeDict identity (encodeNode_At (depth + 1)) value.byName )
-            ]
-
-
-{-| Encodes a [`Node_`](#Node_) at a level of its cycle.
--}
-encodeNode_At : Int -> Node_ -> Proto.Json.Encoder
-encodeNode_At depth (Node_ value) =
-    encodeNodeAt depth value
-
-
-{-| Encodes a [`Person`](#Person) as proto3 JSON, refusing a value it holds that has no proto3 JSON form, and writing each `Any` with the registry it is run with.
--}
-encodePerson : Person -> Proto.Json.Encoder
-encodePerson value =
-    Proto.Json.writeFrom encodePersonAt value
-
-
-{-| Encodes a [`Person`](#Person) at a level of its cycle, refused past the limit.
--}
-encodePersonAt : Int -> Person -> Proto.Json.Encoder
-encodePersonAt depth value =
-    if depth > Proto.Json.writeLimit then
-        Proto.Json.writeTooDeep "nesting.v1.Person"
-
-    else
-        Proto.Json.writeObject
-            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-            ]
-            [ ( "employer", Proto.Json.writeOptional (encodeCompany_At (depth + 1)) value.employer )
-            ]
-
-
-{-| Encodes a [`Person_`](#Person_) at a level of its cycle.
--}
-encodePerson_At : Int -> Person_ -> Proto.Json.Encoder
-encodePerson_At depth (Person_ value) =
-    encodePersonAt depth value
-
-
-{-| Encodes a [`Company`](#Company) as proto3 JSON, refusing a value it holds that has no proto3 JSON form, and writing each `Any` with the registry it is run with.
--}
-encodeCompany : Company -> Proto.Json.Encoder
-encodeCompany value =
-    Proto.Json.writeFrom encodeCompanyAt value
-
-
-{-| Encodes a [`Company`](#Company) at a level of its cycle, refused past the limit.
--}
-encodeCompanyAt : Int -> Company -> Proto.Json.Encoder
-encodeCompanyAt depth value =
-    if depth > Proto.Json.writeLimit then
-        Proto.Json.writeTooDeep "nesting.v1.Company"
-
-    else
-        Proto.Json.writeObject
-            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-            ]
-            [ ( "staff", Proto.Json.writeRepeated (encodePerson_At (depth + 1)) value.staff )
-            ]
-
-
-{-| Encodes a [`Company_`](#Company_) at a level of its cycle.
--}
-encodeCompany_At : Int -> Company_ -> Proto.Json.Encoder
-encodeCompany_At depth (Company_ value) =
-    encodeCompanyAt depth value
-
-
-{-| Encodes a [`Forest`](#Forest) as proto3 JSON, refusing a value it holds that has no proto3 JSON form, and writing each `Any` with the registry it is run with.
--}
-encodeForest : Forest -> Proto.Json.Encoder
-encodeForest value =
-    Proto.Json.writeObject []
-        [ ( "trees", Proto.Json.writeRepeated encodeNode value.trees )
+jsonNode : Node -> Json.Encode.Value
+jsonNode value =
+    Proto.Json.objectOfFields
+        [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
+        , ( "children", Proto.Json.repeatedField jsonNode_ value.children )
+        , ( "byName", Proto.Json.dictField identity jsonNode_ value.byName )
         ]
 
 
-{-| Encodes an [`Expr`](#Expr) as proto3 JSON, refusing a value it holds that has no proto3 JSON form, and writing each `Any` with the registry it is run with.
+{-| Writes a [`Node_`](#Node_) as proto3 JSON.
+-}
+jsonNode_ : Node_ -> Json.Encode.Value
+jsonNode_ (Node_ value) =
+    jsonNode value
+
+
+{-| Encodes a [`Person`](#Person) as proto3 JSON.
+-}
+encodePerson : Person -> Proto.Json.Encoder
+encodePerson value =
+    Proto.Json.ready (jsonPerson value)
+
+
+{-| Writes a [`Person`](#Person) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonPerson : Person -> Json.Encode.Value
+jsonPerson value =
+    Proto.Json.objectOfFields
+        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+        , ( "employer", Maybe.map jsonCompany_ value.employer )
+        ]
+
+
+{-| Writes a [`Person_`](#Person_) as proto3 JSON.
+-}
+jsonPerson_ : Person_ -> Json.Encode.Value
+jsonPerson_ (Person_ value) =
+    jsonPerson value
+
+
+{-| Encodes a [`Company`](#Company) as proto3 JSON.
+-}
+encodeCompany : Company -> Proto.Json.Encoder
+encodeCompany value =
+    Proto.Json.ready (jsonCompany value)
+
+
+{-| Writes a [`Company`](#Company) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonCompany : Company -> Json.Encode.Value
+jsonCompany value =
+    Proto.Json.objectOfFields
+        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+        , ( "staff", Proto.Json.repeatedField jsonPerson_ value.staff )
+        ]
+
+
+{-| Writes a [`Company_`](#Company_) as proto3 JSON.
+-}
+jsonCompany_ : Company_ -> Json.Encode.Value
+jsonCompany_ (Company_ value) =
+    jsonCompany value
+
+
+{-| Encodes a [`Forest`](#Forest) as proto3 JSON.
+-}
+encodeForest : Forest -> Proto.Json.Encoder
+encodeForest value =
+    Proto.Json.ready (jsonForest value)
+
+
+{-| Writes a [`Forest`](#Forest) as proto3 JSON, which nothing it holds can refuse.
+-}
+jsonForest : Forest -> Json.Encode.Value
+jsonForest value =
+    Proto.Json.objectOfFields
+        [ ( "trees", Proto.Json.repeatedField jsonNode value.trees )
+        ]
+
+
+{-| Encodes an [`Expr`](#Expr) as proto3 JSON.
 -}
 encodeExpr : Expr -> Proto.Json.Encoder
 encodeExpr value =
-    Proto.Json.writeFrom encodeExprAt value
+    Proto.Json.ready (jsonExpr value)
 
 
-{-| Encodes an [`Expr`](#Expr) at a level of its cycle, refused past the limit.
+{-| Writes an [`Expr`](#Expr) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeExprAt : Int -> Expr -> Proto.Json.Encoder
-encodeExprAt depth value =
-    if depth > Proto.Json.writeLimit then
-        Proto.Json.writeTooDeep "nesting.v1.Expr"
-
-    else
-        Proto.Json.writeObject [] (encodeExprValueAt depth value.value)
+jsonExpr : Expr -> Json.Encode.Value
+jsonExpr value =
+    Proto.Json.objectOfFields (encodeExprValue value.value)
 
 
-{-| Encodes an [`ExprValue`](#ExprValue) at a level of its message's cycle as the members of its message's JSON object.
+{-| Encodes an [`ExprValue`](#ExprValue) as the members of its message's JSON object.
 -}
-encodeExprValueAt : Int -> ExprValue -> List ( String, Proto.Json.Encoder )
-encodeExprValueAt depth value =
+encodeExprValue : ExprValue -> List ( String, Maybe Json.Encode.Value )
+encodeExprValue value =
     case value of
         ExprValueUnset ->
             []
 
         ExprValueNumber member ->
-            [ ( "number", Proto.Json.ready (Proto.Json.encodeInt64 member) )
+            [ ( "number", Just (Proto.Json.encodeInt64 member) )
             ]
 
         ExprValueSum member ->
-            [ ( "sum", encodeSumAt (depth + 1) member )
+            [ ( "sum", Just (jsonSum member) )
             ]
 
 
-{-| Encodes a [`Sum`](#Sum) as proto3 JSON, refusing a value it holds that has no proto3 JSON form, and writing each `Any` with the registry it is run with.
+{-| Encodes a [`Sum`](#Sum) as proto3 JSON.
 -}
 encodeSum : Sum -> Proto.Json.Encoder
 encodeSum value =
-    Proto.Json.writeFrom encodeSumAt value
+    Proto.Json.ready (jsonSum value)
 
 
-{-| Encodes a [`Sum`](#Sum) at a level of its cycle, refused past the limit.
+{-| Writes a [`Sum`](#Sum) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeSumAt : Int -> Sum -> Proto.Json.Encoder
-encodeSumAt depth value =
-    if depth > Proto.Json.writeLimit then
-        Proto.Json.writeTooDeep "nesting.v1.Sum"
-
-    else
-        Proto.Json.writeObject []
-            [ ( "terms", Proto.Json.writeRepeated (encodeExprAt (depth + 1)) value.terms )
-            ]
+jsonSum : Sum -> Json.Encode.Value
+jsonSum value =
+    Proto.Json.objectOfFields
+        [ ( "terms", Proto.Json.repeatedField jsonExpr value.terms )
+        ]
 
 
 

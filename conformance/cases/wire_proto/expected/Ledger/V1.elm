@@ -190,45 +190,42 @@ encodeKind value =
             Json.Encode.string "KIND_DEBIT"
 
 
-{-| Encodes an [`Entry`](#Entry) as proto3 JSON, refusing a value it holds that has no proto3 JSON form, and writing each `Any` with the registry it is run with.
+{-| Encodes an [`Entry`](#Entry) as proto3 JSON.
 -}
 encodeEntry : Entry -> Proto.Json.Encoder
 encodeEntry value =
-    Proto.Json.writeFrom encodeEntryAt value
+    Proto.Json.ready (jsonEntry value)
 
 
-{-| Encodes an [`Entry`](#Entry) at a level of its cycle, refused past the limit.
+{-| Writes an [`Entry`](#Entry) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeEntryAt : Int -> Entry -> Proto.Json.Encoder
-encodeEntryAt depth value =
-    if depth > Proto.Json.writeLimit then
-        Proto.Json.writeTooDeep "ledger.v1.Entry"
-
-    else
-        Proto.Json.writeObject
-            [ ( "memo", Proto.Json.implicitField "" Json.Encode.string value.memo )
-            , ( "amount", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.amount )
-            , ( "kind", Proto.Json.implicitField KindUnspecified encodeKind value.kind )
-            , ( "tags", Proto.Json.dictField identity Json.Encode.int value.tags )
-            , ( "marks", Proto.Json.repeatedField Json.Encode.int value.marks )
-            ]
-            (encodeEntrySourceAt depth value.source)
+jsonEntry : Entry -> Json.Encode.Value
+jsonEntry value =
+    Proto.Json.objectOfFields
+        ([ ( "memo", Proto.Json.implicitField "" Json.Encode.string value.memo )
+         , ( "amount", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.amount )
+         , ( "kind", Proto.Json.implicitField KindUnspecified encodeKind value.kind )
+         , ( "tags", Proto.Json.dictField identity Json.Encode.int value.tags )
+         , ( "marks", Proto.Json.repeatedField Json.Encode.int value.marks )
+         ]
+            ++ encodeEntrySource value.source
+        )
 
 
-{-| Encodes an [`EntrySource`](#EntrySource) at a level of its message's cycle as the members of its message's JSON object.
+{-| Encodes an [`EntrySource`](#EntrySource) as the members of its message's JSON object.
 -}
-encodeEntrySourceAt : Int -> EntrySource -> List ( String, Proto.Json.Encoder )
-encodeEntrySourceAt depth value =
+encodeEntrySource : EntrySource -> List ( String, Maybe Json.Encode.Value )
+encodeEntrySource value =
     case value of
         EntrySourceUnset ->
             []
 
         EntrySourceAccount member ->
-            [ ( "account", Proto.Json.ready (Json.Encode.string member) )
+            [ ( "account", Just (Json.Encode.string member) )
             ]
 
         EntrySourceReversal member ->
-            [ ( "reversal", encodeEntryAt (depth + 1) member )
+            [ ( "reversal", Just (jsonEntry member) )
             ]
 
 

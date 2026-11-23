@@ -844,22 +844,6 @@ mixedFarPast =
                 )
                 binaryInputs
             )
-        , test "Anys each holding a deep message, read from binary, convert to JSON with the error" <|
-            \_ ->
-                case readEnvelopeBytesValue (wrapped (List.concat (List.repeat 60 (payload :: List.repeat 90 reply))) []) of
-                    Ok envelope ->
-                        case Proto.Json.encodeWith Deep.registry (Deep.encodeEnvelope envelope) of
-                            Err (Proto.Error.BadBinary problem) ->
-                                problem.reason |> Expect.equal Proto.Error.TooDeep
-
-                            Err (Proto.Error.NotWritable problem) ->
-                                problem.reason |> Expect.equal Proto.Error.NestedTooDeep
-
-                            _ ->
-                                Expect.fail "converted past the limit"
-
-                    Err _ ->
-                        Expect.fail "did not read"
         , test "an Any chain read from binary converts to JSON with the error" <|
             \_ ->
                 case readEnvelopeBytesValue (wrapped (List.repeat 10000 payload) []) of
@@ -868,8 +852,8 @@ mixedFarPast =
                             Err (Proto.Error.BadBinary problem) ->
                                 problem.reason |> Expect.equal Proto.Error.TooDeep
 
-                            Err (Proto.Error.NotWritable problem) ->
-                                problem.reason |> Expect.equal Proto.Error.NestedTooDeep
+                            Err (Proto.Error.NotWritable _) ->
+                                Expect.fail "refused as unwritable"
 
                             _ ->
                                 Expect.fail "converted past the limit"

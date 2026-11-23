@@ -355,8 +355,10 @@ pub fn emit_with_queries(
 
 /// What a JSON write refuses, chosen by `ELM_CONNECT_FALLIBLE`: `any` (an
 /// `Any` only), `checked` (and the well-known types with values proto3 JSON
-/// has no form for), `full` (and messages on a cycle; the default), or
-/// `every` (every message goes through the encoder combinators).
+/// has no form for; the default), `full` (and messages on a cycle), or
+/// `every` (every message goes through the encoder combinators). `full` and
+/// `every` count depth on cycles, which this runtime no longer offers: they
+/// generate code only `spike/json-encoder`'s runtime compiles.
 pub fn write_seeds() -> WriteSeeds {
     match std::env::var("ELM_CONNECT_FALLIBLE").as_deref() {
         Ok("any") => WriteSeeds::default(),
@@ -369,10 +371,14 @@ pub fn write_seeds() -> WriteSeeds {
             cycles: true,
             every: true,
         },
-        _ => WriteSeeds {
+        Ok("full") => WriteSeeds {
             checked: true,
             cycles: true,
             every: false,
+        },
+        _ => WriteSeeds {
+            checked: true,
+            ..WriteSeeds::default()
         },
     }
 }

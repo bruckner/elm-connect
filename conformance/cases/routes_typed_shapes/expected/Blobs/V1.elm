@@ -312,33 +312,28 @@ encodeLabelBlobRequest value =
         ]
 
 
-{-| Encodes a [`Folder`](#Folder) as proto3 JSON, refusing a value it holds that has no proto3 JSON form, and writing each `Any` with the registry it is run with.
+{-| Encodes a [`Folder`](#Folder) as proto3 JSON.
 -}
 encodeFolder : Folder -> Proto.Json.Encoder
 encodeFolder value =
-    Proto.Json.writeFrom encodeFolderAt value
+    Proto.Json.ready (jsonFolder value)
 
 
-{-| Encodes a [`Folder`](#Folder) at a level of its cycle, refused past the limit.
+{-| Writes a [`Folder`](#Folder) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeFolderAt : Int -> Folder -> Proto.Json.Encoder
-encodeFolderAt depth value =
-    if depth > Proto.Json.writeLimit then
-        Proto.Json.writeTooDeep "blobs.v1.Folder"
-
-    else
-        Proto.Json.writeObject
-            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-            ]
-            [ ( "parent", Proto.Json.writeOptional (encodeFolder_At (depth + 1)) value.parent )
-            ]
+jsonFolder : Folder -> Json.Encode.Value
+jsonFolder value =
+    Proto.Json.objectOfFields
+        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+        , ( "parent", Maybe.map jsonFolder_ value.parent )
+        ]
 
 
-{-| Encodes a [`Folder_`](#Folder_) at a level of its cycle.
+{-| Writes a [`Folder_`](#Folder_) as proto3 JSON.
 -}
-encodeFolder_At : Int -> Folder_ -> Proto.Json.Encoder
-encodeFolder_At depth (Folder_ value) =
-    encodeFolderAt depth value
+jsonFolder_ : Folder_ -> Json.Encode.Value
+jsonFolder_ (Folder_ value) =
+    jsonFolder value
 
 
 {-| Encodes a [`Slots`](#Slots) as proto3 JSON.

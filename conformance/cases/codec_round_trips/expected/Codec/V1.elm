@@ -1217,53 +1217,48 @@ jsonOuterInner value =
         ]
 
 
-{-| Encodes a [`Tree`](#Tree) as proto3 JSON, refusing a value it holds that has no proto3 JSON form, and writing each `Any` with the registry it is run with.
+{-| Encodes a [`Tree`](#Tree) as proto3 JSON.
 -}
 encodeTree : Tree -> Proto.Json.Encoder
 encodeTree value =
-    Proto.Json.writeFrom encodeTreeAt value
+    Proto.Json.ready (jsonTree value)
 
 
-{-| Encodes a [`Tree`](#Tree) at a level of its cycle, refused past the limit.
+{-| Writes a [`Tree`](#Tree) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeTreeAt : Int -> Tree -> Proto.Json.Encoder
-encodeTreeAt depth value =
-    if depth > Proto.Json.writeLimit then
-        Proto.Json.writeTooDeep "codec.v1.Tree"
-
-    else
-        Proto.Json.writeObject
-            [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
-            ]
-            ([ ( "left", Proto.Json.writeOptional (encodeTree_At (depth + 1)) value.left )
-             , ( "children", Proto.Json.writeRepeated (encodeTree_At (depth + 1)) value.children )
-             , ( "named", Proto.Json.writeDict identity (encodeTree_At (depth + 1)) value.named )
-             ]
-                ++ encodeTreeLinkAt depth value.link
-            )
+jsonTree : Tree -> Json.Encode.Value
+jsonTree value =
+    Proto.Json.objectOfFields
+        ([ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
+         , ( "left", Maybe.map jsonTree_ value.left )
+         , ( "children", Proto.Json.repeatedField jsonTree_ value.children )
+         , ( "named", Proto.Json.dictField identity jsonTree_ value.named )
+         ]
+            ++ encodeTreeLink value.link
+        )
 
 
-{-| Encodes a [`Tree_`](#Tree_) at a level of its cycle.
+{-| Writes a [`Tree_`](#Tree_) as proto3 JSON.
 -}
-encodeTree_At : Int -> Tree_ -> Proto.Json.Encoder
-encodeTree_At depth (Tree_ value) =
-    encodeTreeAt depth value
+jsonTree_ : Tree_ -> Json.Encode.Value
+jsonTree_ (Tree_ value) =
+    jsonTree value
 
 
-{-| Encodes a [`TreeLink`](#TreeLink) at a level of its message's cycle as the members of its message's JSON object.
+{-| Encodes a [`TreeLink`](#TreeLink) as the members of its message's JSON object.
 -}
-encodeTreeLinkAt : Int -> TreeLink -> List ( String, Proto.Json.Encoder )
-encodeTreeLinkAt depth value =
+encodeTreeLink : TreeLink -> List ( String, Maybe Json.Encode.Value )
+encodeTreeLink value =
     case value of
         TreeLinkUnset ->
             []
 
         TreeLinkNext member ->
-            [ ( "next", encodeTreeAt (depth + 1) member )
+            [ ( "next", Just (jsonTree member) )
             ]
 
         TreeLinkEnd member ->
-            [ ( "end", Proto.Json.ready (Json.Encode.string member) )
+            [ ( "end", Just (Json.Encode.string member) )
             ]
 
 
@@ -1360,39 +1355,28 @@ jsonLeaf value =
 -}
 encodeEverything : Everything -> Proto.Json.Encoder
 encodeEverything value =
-    Proto.Json.writeFrom encodeEverythingAt value
+    Proto.Json.writeObject
+        [ ( "scalars", Maybe.map jsonScalars value.scalars )
+        , ( "optionals", Maybe.map jsonOptionals value.optionals )
+        , ( "repeated", Maybe.map jsonRepeated value.repeated )
+        , ( "maps", Maybe.map jsonMaps value.maps )
+        , ( "names", Maybe.map jsonNames value.names )
+        , ( "outer", Maybe.map jsonOuter value.outer )
+        , ( "tree", Maybe.map jsonTree value.tree )
+        , ( "wrappers", Maybe.map jsonWrappers value.wrappers )
+        , ( "across", Maybe.map jsonAcross value.across )
+        ]
+        [ ( "choice", Proto.Json.writeOptional encodeChoice value.choice )
+        , ( "wellKnown", Proto.Json.writeOptional encodeWellKnown value.wellKnown )
+        , ( "more", Proto.Json.writeRepeated encodeEverything_ value.more )
+        ]
 
 
-{-| Encodes an [`Everything`](#Everything) at a level of its cycle, refused past the limit.
+{-| Encodes an [`Everything_`](#Everything_) as proto3 JSON.
 -}
-encodeEverythingAt : Int -> Everything -> Proto.Json.Encoder
-encodeEverythingAt depth value =
-    if depth > Proto.Json.writeLimit then
-        Proto.Json.writeTooDeep "codec.v1.Everything"
-
-    else
-        Proto.Json.writeObject
-            [ ( "scalars", Maybe.map jsonScalars value.scalars )
-            , ( "optionals", Maybe.map jsonOptionals value.optionals )
-            , ( "repeated", Maybe.map jsonRepeated value.repeated )
-            , ( "maps", Maybe.map jsonMaps value.maps )
-            , ( "names", Maybe.map jsonNames value.names )
-            , ( "outer", Maybe.map jsonOuter value.outer )
-            , ( "wrappers", Maybe.map jsonWrappers value.wrappers )
-            , ( "across", Maybe.map jsonAcross value.across )
-            ]
-            [ ( "choice", Proto.Json.writeOptional encodeChoice value.choice )
-            , ( "tree", Proto.Json.writeOptional encodeTree value.tree )
-            , ( "wellKnown", Proto.Json.writeOptional encodeWellKnown value.wellKnown )
-            , ( "more", Proto.Json.writeRepeated (encodeEverything_At (depth + 1)) value.more )
-            ]
-
-
-{-| Encodes an [`Everything_`](#Everything_) at a level of its cycle.
--}
-encodeEverything_At : Int -> Everything_ -> Proto.Json.Encoder
-encodeEverything_At depth (Everything_ value) =
-    encodeEverythingAt depth value
+encodeEverything_ : Everything_ -> Proto.Json.Encoder
+encodeEverything_ (Everything_ value) =
+    encodeEverything value
 
 
 

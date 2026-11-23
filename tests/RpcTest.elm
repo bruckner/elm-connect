@@ -860,7 +860,7 @@ responses =
                 , refusal (Rpc.client Rpc.Protocol.connectProto "https://api.example.com")
                 )
                     |> Expect.equal
-                        ( Just (Rpc.Error.badAny (Proto.Error.NotWritable { typeName = "google.protobuf.Timestamp", path = [], reason = Proto.Error.NoJsonForm }))
+                        ( Just (Rpc.Error.badAny (Proto.Error.NotWritable { typeName = "google.protobuf.Timestamp", path = [] }))
                         , Nothing
                         )
         , test "message and details are optional" <|
