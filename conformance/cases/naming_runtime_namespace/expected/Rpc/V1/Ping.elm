@@ -4,10 +4,9 @@
 
 module Rpc.V1.Ping exposing (..)
 
-{-| The descriptor of `rpc.v1.Ping` and its fields.
+{-| The descriptor of `rpc.v1.Ping`.
 -}
 
-import Proto.Field
 import Proto.Message
 import Proto.Version
 
@@ -26,13 +25,4 @@ Describes [`Rpc.V1.Ping`](Rpc-V1#Ping).
 -}
 descriptor : Proto.Message.Descriptor
 descriptor =
-    Proto.Message.descriptor "rpc.v1.Ping"
-        [ text
-        ]
-
-
-{-| `string text = 1;`
--}
-text : Proto.Field.Descriptor
-text =
-    Proto.Field.descriptor "text" "text" 1 Proto.Field.CardinalitySingular (Proto.Field.KindScalar Proto.Field.ScalarString)
+    Proto.Message.descriptor "rpc.v1.Ping" []

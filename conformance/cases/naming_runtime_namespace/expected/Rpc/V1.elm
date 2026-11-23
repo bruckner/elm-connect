@@ -34,13 +34,9 @@ elmConnectVersion_ =
 
 
 {-| [`message rpc.v1.Ping`](Rpc-V1-Ping#descriptor)
-
-  - [`text`](Rpc-V1-Ping#text)
-
 -}
 type alias Ping =
-    { text : String
-    }
+    {}
 
 
 
@@ -51,8 +47,7 @@ type alias Ping =
 -}
 defaultPing : Ping
 defaultPing =
-    { text = ""
-    }
+    {}
 
 
 
@@ -98,10 +93,8 @@ registry =
 {-| Encodes a [`Ping`](#Ping) as proto3 JSON.
 -}
 encodePing : Ping -> Json.Encode.Value
-encodePing value =
-    Proto.Json.objectOfFields
-        [ ( "text", Proto.Json.implicitField "" Json.Encode.string value.text )
-        ]
+encodePing _ =
+    Json.Encode.object []
 
 
 
@@ -112,10 +105,7 @@ encodePing value =
 -}
 decodePing : Json.Decode.Decoder Ping
 decodePing =
-    Proto.Json.message
-        (Json.Decode.succeed Ping
-            |> Proto.Json.messageField "text" "" Proto.Json.string
-        )
+    Proto.Json.emptyMessage
 
 
 
@@ -125,10 +115,8 @@ decodePing =
 {-| Encodes a [`Ping`](#Ping) as protobuf binary.
 -}
 encodePingBytes : Ping -> Bytes.Encode.Encoder
-encodePingBytes value =
-    Bytes.Encode.sequence
-        [ Proto.Binary.implicit Proto.Binary.string 1 value.text
-        ]
+encodePingBytes _ =
+    Bytes.Encode.sequence []
 
 
 
@@ -139,24 +127,7 @@ encodePingBytes value =
 -}
 mergePingBytes : Ping -> Proto.Binary.Decoder Ping
 mergePingBytes =
-    Proto.Binary.merge
-        "rpc.v1.Ping"
-        (\number wire value ->
-            case number of
-                1 ->
-                    Proto.Binary.field
-                        Proto.Binary.string
-                        (\v ->
-                            { text = v
-                            }
-                        )
-                        wire
-                        value
-
-                _ ->
-                    Proto.Binary.skip wire value
-        )
-        identity
+    Proto.Binary.merge "rpc.v1.Ping" (\_ wire value -> Proto.Binary.skip wire value) identity
 
 
 {-| Decodes a [`Ping`](#Ping) from protobuf binary.
