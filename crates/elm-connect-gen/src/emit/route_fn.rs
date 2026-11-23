@@ -149,34 +149,6 @@ impl Text {
 }
 
 impl Emitter {
-    /// Whether `route`'s body holds a `google.protobuf.Any`, so that its
-    /// method's routes read the body from the request's JSON.
-    pub(super) fn body_reaches(&self, messages: &Messages, input: &TypeRef, route: &Route) -> bool {
-        match &route.body {
-            Body::None => false,
-            Body::All => self.reaches(field::value_shape(input, self.holding)),
-            Body::Field(top) => {
-                let TypeRef::Message(name) = input else {
-                    return false;
-                };
-                let Some((request, _)) = messages.get(name.proto_full_name.as_str()) else {
-                    return false;
-                };
-                let Some(field) = request
-                    .fields
-                    .iter()
-                    .find(|f| f.proto_name == top.field.proto[0])
-                else {
-                    return false;
-                };
-                match body_shape(messages, field, self.holding) {
-                    Some(FieldShape::Maybe(value)) => self.reaches(value),
-                    _ => false,
-                }
-            }
-        }
-    }
-
     /// The body of a route function for `route`, of a method whose request
     /// type is `input`, or `None` when a field it reads cannot be typed.
     /// With `json`, the function takes the request's proto3 JSON too
@@ -321,18 +293,11 @@ impl Emitter {
                 };
                 apply(var(self.core("Just")), [body])
             }
-            Body::Field(top) if json => apply(
-                var(self.core("Just")),
-                [apply(
-                    self.reference((PROTO_ROUTE, "jsonField")),
-                    [string(top.field.json[0].clone()), var(JSON)],
-                )],
-            ),
             Body::All => {
                 let paths = body_paths(route);
-                // A request that reaches an `Any` has no total encoder:
-                // its routes take its JSON (`json`).
-                if self.reaches(field::value_shape(input, self.holding)) {
+                // A request whose write can be refused has no total
+                // encoder: its routes take its JSON (`json`).
+                if self.write_reaches(field::value_shape(input, self.holding)) {
                     return None;
                 }
                 let encode_request = self.request_encoder(input);
@@ -354,7 +319,7 @@ impl Emitter {
                     .find(|f| f.proto_name == top.field.proto[0])?;
                 let just = var(self.core("Just"));
                 let shape = match body_shape(messages, field, self.holding)? {
-                    FieldShape::Maybe(value) if !self.reaches(value) => value,
+                    FieldShape::Maybe(value) if !self.write_reaches(value) => value,
                     // `Empty`'s JSON is `{}`, whatever the field holds.
                     FieldShape::Plain(Zeroed::Empty) => {
                         let empty = apply(self.reference((JSON_ENCODE, "object")), [list([])]);
@@ -397,13 +362,30 @@ impl Emitter {
                             values,
                         ));
                     }
+                    // A value with no total encoder (an `Any`, or a
+                    // message that holds a value a write can refuse) is
+                    // read from the request's JSON, which the send checks.
+                    _ if json => {
+                        let body = apply(
+                            self.reference((PROTO_ROUTE, "jsonField")),
+                            [string(top.field.json[0].clone()), var(JSON)],
+                        );
+                        return Some(self.route_record(
+                            route,
+                            path,
+                            query,
+                            apply(just, [body]),
+                            checks,
+                            values,
+                        ));
+                    }
                     _ => return None,
                 };
                 let encoder = match shape {
                     // A wrapper's encoder is its package module's.
                     ValueShape::Present(Present::Wrapped(wrapper, full_name)) => {
                         let module = messages.get(full_name)?.1;
-                        self.generated_value(module, wrapper.encoder_name())
+                        self.generated_value(module, wrapper.plain_encoder_name())
                     }
                     shape => self.value_encoder(shape),
                 };
@@ -703,7 +685,7 @@ impl Emitter {
                 | Repr::Bytes
                 | Repr::Int64AsInt
                 | Repr::UInt64AsInt => {
-                    let encoder = emitter.value_encoder(value);
+                    let encoder = emitter.total_value_encoder(value);
                     Text::Fn(apply(
                         emitter.reference((PROTO_ROUTE, "viaJson")),
                         [encoder],
@@ -715,7 +697,7 @@ impl Emitter {
             ValueShape::Zeroed(Zeroed::Scalar(repr))
             | ValueShape::Present(Present::Wrapper(repr)) => repr_text(self, repr, value),
             ValueShape::Zeroed(Zeroed::Enum(..)) | ValueShape::Present(Present::FieldMask) => {
-                let encoder = self.value_encoder(value);
+                let encoder = self.total_value_encoder(value);
                 Some(Text::Fn(apply(
                     self.reference((PROTO_ROUTE, "viaJson")),
                     [encoder],
@@ -834,7 +816,7 @@ impl Emitter {
                         [string(name), value_expr],
                     ),
                     (None, ValueShape::Zeroed(Zeroed::Enum(..))) => {
-                        let encoder = self.value_encoder(value);
+                        let encoder = self.total_value_encoder(value);
                         apply(
                             self.reference((PROTO_QUERY, "enum")),
                             [string(name), zero, encoder, value_expr],

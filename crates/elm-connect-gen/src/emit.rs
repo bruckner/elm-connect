@@ -168,13 +168,22 @@
 //!   under `wire=both`.
 //! - An `Any` holds its message's binary, and its proto3
 //!   JSON goes through a registry ([`crate::ir::AnyReach`]): each message,
-//!   oneof and wrapper that reaches one has JSON codecs taking it,
-//!   `decodeFooWith` and `encodeFooWith`, the encoder giving a `Result`
-//!   through `Proto.Json`'s `try` helpers, and no `decodeFoo` or
-//!   `encodeFoo`. The package's `registry` holds its own messages' typed
-//!   values and nothing else; a method's JSON codecs take the client's
-//!   registry, and a route whose body reaches an `Any` is read from its
-//!   binding.
+//!   oneof and wrapper that reaches one has a JSON decoder taking it,
+//!   `decodeFooWith`, and no `decodeFoo`. The package's `registry` holds
+//!   its own messages' typed values and nothing else; a method's JSON
+//!   codecs take the client's registry, and a route whose body reaches an
+//!   `Any` is read from its binding.
+//! - Every message's JSON encoder is `encodeFoo : Foo -> Proto.Json.Encoder`,
+//!   which `Proto.Json.encode` or `encodeWith` runs. A message whose write
+//!   nothing it holds can refuse (no `Any`, and no `Timestamp`, `Duration`,
+//!   `FieldMask`, `Struct`, `ListValue` or `Value`, at any depth;
+//!   [`crate::ir::AnyReach::refusable`]) is written by plain code,
+//!   `jsonFoo : Foo -> Json.Encode.Value`, which `encodeFoo` wraps once;
+//!   the others are built from `Proto.Json.writeObject`, with their fields
+//!   that cannot be refused passed as plain JSON ([`field`]). A field on a
+//!   cycle of a message that reaches an `Any` is written one level deeper
+//!   (`Proto.Json.writeDeeper`), so an `Any` read from binary counts the
+//!   messages around it.
 //! - A message that the request of a generated method's binding puts in the
 //!   query gets a query encoder in its package's module, in a last
 //!   section, `queryOfListNotesRequest : ListNotesRequest -> List ( String,
@@ -257,9 +266,6 @@ const PROTO_DESCRIPTORS: &str = "Proto.Descriptors";
 const PROTO_REGISTRY: &str = "Proto.Registry";
 /// The runtime package's `google.protobuf.Any`.
 const PROTO_ANY: &str = "Proto.Any";
-/// The runtime package's error type, which an encoder writing an `Any`
-/// can fail with.
-const PROTO_ERROR: &str = "Proto.Error";
 /// The runtime package's typed values of the well-known types, home of
 /// `Proto.WellKnown.nullValue`, which a descriptor of a `NullValue` field
 /// names.
@@ -324,6 +330,7 @@ pub fn emit_with_queries(
     let messages = all_messages(package, packages);
     let mut emitter = Emitter::new(&package.module, options);
     emitter.reach = AnyReach::of(packages.iter().chain(std::iter::once(package)));
+    emitter.write_reach = AnyReach::refusable(packages.iter().chain(std::iter::once(package)));
     let mut decls = emitter.package(package);
     let mut encoders = Vec::new();
     // Route functions take JSON, which `wire=proto` does not generate,
@@ -475,6 +482,7 @@ pub fn emit_service(
     let messages = all_messages(package, packages);
     let mut emitter = Emitter::new(&service.module, options);
     emitter.reach = AnyReach::of(packages.iter().chain(std::iter::once(package)));
+    emitter.write_reach = AnyReach::refusable(packages.iter().chain(std::iter::once(package)));
     let mut decls = Vec::new();
     if !service.methods.is_empty() {
         let mut calls = Vec::new();
@@ -632,8 +640,16 @@ struct Emitter {
     /// Which codecs the option wires into methods; package modules emit
     /// both whatever it says.
     wiring: Wire,
-    /// The messages of the build that reach a `google.protobuf.Any`.
+    /// The messages of the build that reach a `google.protobuf.Any`, whose
+    /// JSON decoders take the registry.
     reach: AnyReach,
+    /// The messages whose JSON write can be refused, whose encoders are
+    /// built with `Proto.Json.writeObject`; the others are written by plain
+    /// code (`jsonFoo`) and wrapped once.
+    write_reach: AnyReach,
+    /// While a value is written for a route's path or query, which print
+    /// it unchecked: the plain encoder, whatever the write reach says.
+    plain_only: bool,
     /// The options as the header's second line records them.
     recorded: String,
     /// While a recursive message's JSON decoder is written: how its values
@@ -644,11 +660,6 @@ struct Emitter {
     /// While a recursive message's binary merge is written: its `Struct`,
     /// `Value` and `ListValue` fields read at the merge's depth.
     binary_depth: bool,
-    /// While a field or oneof member on its message's cycle is written by
-    /// an encoder taking the registry: the value is written with the
-    /// registry one level deeper, so converting an `Any` to JSON counts
-    /// the messages around it as a read does.
-    deeper_registry: bool,
 }
 
 /// How a recursive message's JSON decoder reads a value on its cycle one
@@ -674,6 +685,8 @@ impl Emitter {
             unknown_fields: options.unknown_fields,
             wiring: options.wire,
             reach: AnyReach::default(),
+            write_reach: AnyReach::default(),
+            plain_only: false,
             recorded: match options.recorded() {
                 pairs if pairs.is_empty() => DEFAULT_OPTIONS.to_owned(),
                 pairs => pairs.join(", "),
@@ -681,7 +694,6 @@ impl Emitter {
             deep: None,
             deep_value: false,
             binary_depth: false,
-            deeper_registry: false,
         }
     }
 
@@ -760,7 +772,7 @@ impl Emitter {
             types.push(self.message_alias(&package.module, shape));
             defaults.push(self.message_default(shape));
             values.push(self.message_record(&package.module, shape));
-            encoders.push(self.message_encoder(shape));
+            encoders.extend(self.message_encoder(shape));
             decoders.extend(self.message_decoder(shape));
             binary_encoders.push(self.message_encoder_bytes(shape));
             binary_decoders.extend(self.message_merge_bytes(shape));
@@ -1301,7 +1313,7 @@ mod tests {
             "{printed}"
         );
         assert!(
-            printed.contains("Maybe.map Other.V1.encodeB value.b"),
+            printed.contains("Maybe.map Other.V1.jsonB value.b"),
             "{printed}"
         );
         assert!(
@@ -1424,11 +1436,11 @@ mod tests {
         let printed = crate::elm::print::print_module(&module);
         for expected in [
             "(Proto.Method.initJson \"t.v1.S\"\n            \"Get\"\n            \
-             (\\_ -> Ok << T.V1.encodeA)\n            \
+             T.V1.encodeA\n            \
              (\\_ -> T.V1.decodeA)\n        )\n",
-            "\n            (\\_ -> Ok << Proto.Json.encodeValue)\n            (\\_ -> Proto.Json.empty)\n",
+            "\n            Proto.Json.writeValue\n            (\\_ -> Proto.Json.empty)\n",
             "\n            \"Ticks\"\n            \
-             (\\_ -> Ok << Proto.Json.encodeInt64AsInt)\n            Proto.Json.anyWith\n",
+             (Proto.Json.ready << Proto.Json.encodeInt64AsInt)\n            Proto.Json.anyWith\n",
             "descriptorGet : Proto.Method.Descriptor\ndescriptorGet =\n    \
              Proto.Method.descriptor \"t.v1.S\"\n        \"Get\"\n        \
              Proto.Method.IdempotencyUnknown\n        \"t.v1.A\"\n        \"t.v1.A\"\n        []\n",

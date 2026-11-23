@@ -11,21 +11,6 @@
 # first, then those whose input is JSON, each listing the cases written
 # back as binary beside those written back as JSON.
 
-# Design choice: an encoder is a function to a JSON value, with no way to
-# refuse its input, so a value read from binary that has no proto3 JSON form is written
-# rather than refused: a Timestamp or Duration past its range, a Value
-# holding NaN or an infinity, a FieldMask path that does not survive the
-# camelCase round trip.
-Required.Proto3.DurationProtoInputTooLarge.JsonOutput
-Required.Proto3.DurationProtoInputTooSmall.JsonOutput
-Required.Proto3.TimestampProtoInputTooLarge.JsonOutput
-Required.Proto3.TimestampProtoInputTooSmall.JsonOutput
-Recommended.Proto3.ValueRejectInfNumberValue.JsonOutput
-Recommended.Proto3.ValueRejectNanNumberValue.JsonOutput
-Recommended.Proto3.FieldMaskNumbersDontRoundTrip.JsonOutput
-Recommended.Proto3.FieldMaskPathsDontRoundTrip.JsonOutput
-Recommended.Proto3.FieldMaskTooManyUnderscore.JsonOutput
-
 # Design choice: a Timestamp is a Time.Posix, which holds milliseconds, so
 # digits past the third are dropped, in either output.
 Required.Proto3.JsonInput.TimestampLittleAfterEpochlValue.JsonOutput

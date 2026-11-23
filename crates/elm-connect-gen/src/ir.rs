@@ -300,6 +300,12 @@ impl TypeName {
         crate::naming::encoder_name(&self.name)
     }
 
+    /// The Elm name of a message's plain JSON encoder, such as `jsonNote`
+    /// (generated only when nothing the message holds can be refused).
+    pub fn plain_encoder_name(&self) -> String {
+        crate::naming::plain_encoder_name(&self.name)
+    }
+
     /// The Elm name of the type's JSON decoder, such as `decodeNote`.
     pub fn decoder_name(&self) -> String {
         crate::naming::decoder_name(&self.name)
@@ -357,6 +363,12 @@ impl Wrapper {
         crate::naming::encoder_name(&self.elm_name)
     }
 
+    /// The Elm name of the wrapper's plain JSON encoder, such as
+    /// `jsonNode_`.
+    pub fn plain_encoder_name(&self) -> String {
+        crate::naming::plain_encoder_name(&self.elm_name)
+    }
+
     /// The Elm name of the wrapper's JSON decoder, such as `decodeNode_`.
     pub fn decoder_name(&self) -> String {
         crate::naming::decoder_name(&self.elm_name)
@@ -367,6 +379,12 @@ impl Message {
     /// The Elm name of the message's JSON encoder, such as `encodeNote`.
     pub fn encoder_name(&self) -> String {
         crate::naming::encoder_name(&self.elm_name)
+    }
+
+    /// The Elm name of the message's plain JSON encoder, such as
+    /// `jsonNote`.
+    pub fn plain_encoder_name(&self) -> String {
+        crate::naming::plain_encoder_name(&self.elm_name)
     }
 
     /// The Elm name of the message's JSON decoder, such as `decodeNote`.

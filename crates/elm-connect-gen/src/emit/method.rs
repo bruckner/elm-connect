@@ -188,14 +188,12 @@ impl Emitter {
         if method.routes.is_empty() || self.wiring == Wire::Proto {
             return Ok((Vec::new(), Routes::None));
         }
-        // A body holding an `Any` is written by the client's registry, so
-        // such a method's routes read their bodies from the JSON the send
-        // encodes with it. Every binding of such a request holds the `Any`
-        // in its body, since no path or query holds one.
-        let json = method
-            .routes
-            .iter()
-            .any(|route| self.body_reaches(messages, &method.input, route));
+        // A request whose JSON write can be refused is encoded by the send,
+        // with the client's registry, and refused there whichever part of
+        // the route a refused value would go to: such a method's routes
+        // read their bodies from that JSON. Its paths and query print
+        // their values from it unchecked.
+        let json = self.write_reaches(method_shape(&method.input, self.holding));
         let mut decls = Vec::new();
         let mut untyped = Vec::new();
         for (index, route) in method.routes.iter().enumerate() {
@@ -248,23 +246,22 @@ impl Emitter {
         self.value_encoder(shape)
     }
 
-    /// The JSON encoder of a method's request type taking the registry,
-    /// which is the client's: the generated `encodeFooWith` of a message that
-    /// reaches an `Any`, `Proto.Json.encodeAnyWith` for an `Any`, and
-    /// otherwise [`Self::request_encoder`]'s under `\_ -> Ok <<`.
+    /// The JSON encoder of a method's request type, a `Proto.Json.Encoder`
+    /// the method runs with the client's registry: the generated
+    /// `encodeFoo` of a message, the `Proto.Json` `write` helper of a
+    /// well-known type whose write can be refused, and otherwise
+    /// [`Self::request_encoder`]'s under `Proto.Json.ready <<`.
     fn request_encoder_with(&mut self, ty: &TypeRef) -> Expr {
         let shape = method_shape(ty, self.holding);
-        if self.reaches(shape) {
-            return match ty {
-                TypeRef::Message(name) => {
-                    self.generated_value(&name.module, with_registry(name.encoder_name()))
-                }
-                _ => self.reference((PROTO_JSON, "encodeAnyWith")),
-            };
+        if let TypeRef::Message(name) = ty {
+            return self.generated_value(&name.module, name.encoder_name());
+        }
+        if self.write_reaches(shape) {
+            return self.value_encoder(shape);
         }
         let encoder = self.request_encoder(ty);
-        let ok = var(self.core("Ok"));
-        lambda([Pattern::Wildcard], binop(BinOp::ComposeL, ok, encoder))
+        let ready = self.reference((PROTO_JSON, "ready"));
+        binop(BinOp::ComposeL, ready, encoder)
     }
 
     /// The JSON decoder of a method's response type taking the registry, as [`Self::request_encoder_with`] finds the

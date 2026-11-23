@@ -389,6 +389,13 @@ pub fn encoder_name(type_elm_name: &str) -> String {
     format!("encode{type_elm_name}")
 }
 
+/// The plain JSON encoder of a message whose JSON write nothing it holds
+/// can refuse, `jsonNote : Note -> Json.Encode.Value`: `json` followed by
+/// the type's Elm name. Like [`default_name`], a prefix and a type name.
+pub fn plain_encoder_name(type_elm_name: &str) -> String {
+    format!("json{type_elm_name}")
+}
+
 /// The JSON decoder for a generated type: `decode` followed by the type's
 /// Elm name (`Note` becomes `decodeNote`). Type names are unique within a
 /// module, so decoder names are too.
@@ -402,7 +409,8 @@ pub fn decoder_name(type_elm_name: &str) -> String {
 ///
 /// The top-level values of a generated module share one namespace, and
 /// each is a prefix (`encode`, `decode`, `default`, `message`, `enum`,
-/// `queryOf` for a query encoder, and `merge` for a binary merge) followed
+/// `json` for a plain JSON encoder, `queryOf` for a query encoder, and
+/// `merge` for a binary merge) followed
 /// by a type name. Type names are
 /// unique within a module and start with an uppercase letter, and no
 /// prefix is another's, so two such names never collide: neither within
@@ -551,13 +559,12 @@ pub const DESCRIPTORS: &str = "descriptors";
 /// that no prefix and type name can take it.
 pub const REGISTRY: &str = "registry";
 
-/// The JSON codec of a message, oneof or wrapper that reaches a
-/// `google.protobuf.Any`, which takes the registry:
-/// its codec's name with `With` at the end (`encodeNoteWith`,
-/// `decodeNoteWith`). Like the binary codecs' `Bytes`, the suffix breaks
-/// the prefix rule of [`default_name`]: the JSON codecs of a type
-/// `NoteWith` would take these names, which the IR builder reports
-/// (`naming::codec_collision`).
+/// The JSON decoder of a message, oneof or wrapper that reaches a
+/// `google.protobuf.Any`, which takes the registry: its decoder's name
+/// with `With` at the end (`decodeNoteWith`). Like the binary codecs'
+/// `Bytes`, the suffix breaks the prefix rule of [`default_name`]: the
+/// JSON decoder of a type `NoteWith` would take this name, which the IR
+/// builder reports (`naming::codec_collision`).
 pub fn with_registry(codec_name: String) -> String {
     format!("{codec_name}{WITH_SUFFIX}")
 }

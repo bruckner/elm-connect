@@ -1033,6 +1033,7 @@ fn codecs_module(pool: &DescriptorPool) -> Module {
         import("Codec.RoundTrip"),
         import("Codec.BinaryRoundTrip"),
         import("Json.Encode"),
+        import("Proto.Json"),
         import("Proto.Registry"),
         import("Proto.WellKnown"),
     ];
@@ -1059,18 +1060,18 @@ fn codecs_module(pool: &DescriptorPool) -> Module {
         };
         let encoder = |descriptor: &MessageDescriptor| {
             let name = descriptor.name();
-            if reaches_any(descriptor, &mut Vec::new()) {
+            binop(
+                BinOp::ComposeR,
+                value(format!("encode{name}")),
                 binop(
                     BinOp::ComposeR,
-                    apply(value(format!("encode{name}With")), [types()]),
+                    apply(qualified("Proto.Json", "encodeWith"), [types()]),
                     apply(
                         qualified("Result", "withDefault"),
                         [qualified("Json.Encode", "null")],
                     ),
-                )
-            } else {
-                value(format!("encode{name}"))
-            }
+                ),
+            )
         };
         let decoder = |descriptor: &MessageDescriptor| {
             let name = descriptor.name();

@@ -1,8 +1,7 @@
-// Under wire=both, the default, the JSON codecs of a message or oneof that
-// holds a google.protobuf.Any take the registry and end in `With`: those
-// of `Box` are `encodeBoxWith` and `decodeBoxWith`, which are also the
-// JSON codecs of the message `BoxWith`. `Plain` holds no Any, so
-// `PlainWith` meets nothing.
+// Under wire=both, the default, the JSON decoder of a message or oneof
+// that holds a google.protobuf.Any takes the registry and ends in `With`:
+// that of `Box` is `decodeBoxWith`, which is also the JSON decoder of the
+// message `BoxWith`. `Plain` holds no Any, so `PlainWith` meets nothing.
 syntax = "proto3";
 
 package shelf.v1;
