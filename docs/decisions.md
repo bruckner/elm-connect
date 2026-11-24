@@ -1965,6 +1965,43 @@ at the innermost type (1.1 ms), the one cost the change adds. Simpler fixes weig
 leniently first loses the binary of a registered chain; telling an
 unregistered type from bad JSON by the strict error's text is not exact.
 
+### The work of converting nested `Any`s
+
+*2026-11-23.*
+
+Converting an `Any` between binary and JSON through the registry is not
+bounded in time, only in depth. Each level decodes the payload from
+base64, reads the message, writes the other format and, for a nested
+`Any`, encodes its payload to base64 again, so the work is the
+payload's size times the number of `Any`s around it, accepted or
+refused, in both directions. Measured in node 24.21.0, one build per
+process: a payload of 6.8 MB as base64 (a message holding a 5.1 MB
+string), read from binary and written as JSON, took 0.96 s one `Any`
+deep, 1.6 s two deep, 3.6 s five, 6.9 s ten, 19 s thirty and 63 s 99
+deep (accepted); a 6.8 MB string read from JSON and held as binary,
+1.0 s one deep, 4.8 s five, 97 s 99 deep; a chain of 100,000 `Any`s
+(6.8 MB) is refused at the 100th after 24 s. Most of a level is base64:
+for the 6.8 MB payload, about 0.2 s to decode, 0.5 s to encode and
+0.35 s to read the message.
+
+Three remedies were weighed. A work budget, each level's payload size
+charged against a budget for one top-level conversion and refused past
+it, bounds the time but refuses legitimate input, a large payload a few
+`Any`s deep, and needs a decision on which input accepted today to
+refuse. Keeping each nested payload as a slice of the outer bytes for
+the length of a conversion makes the work linear in the input whatever
+the depth; it is the structural fix, but an `Any` holds its payload,
+and a registry entry takes and gives it, as base64 text, so that `==`
+compares payloads exactly and a JSON-only program links no elm/bytes,
+and changing that is a change to how an `Any` holds its payload: a
+candidate for a later minor release. A pre-scan that finds the nesting
+before converting would speed only refusals, not the accepted 99-deep
+conversion, and adds a pass. None was taken now; the cost and what to
+do about it (keep large payloads out of nested `Any`s, prefer the proto
+codec for them, `Rpc.Protocol.withReadMaxBytes`) are documented
+instead. Where: descriptors.md, "What converting an Any costs"; the
+calling guide, "Nesting depth".
+
 ### Normalized per-package registries
 
 *2026-11-07.*

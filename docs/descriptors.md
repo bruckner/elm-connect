@@ -156,6 +156,35 @@ Notes.V1.messageNote`). Registering a message needs nothing else
 registered but the types its `Any`s hold: an entry converts a nested
 `Any` through the registry it is read through.
 
+### What converting an Any costs
+
+Converting an `Any` between JSON and binary reads its message and
+writes it again, base64 included, and an `Any` inside that message is
+converted again inside that conversion. A payload held `n` `Any`s deep
+is converted `n` times: the work is its size times the number of
+`Any`s around it, for input that is accepted as much as for input
+refused. In node on a laptop, a message holding a 5.1 MB string (6.8 MB
+as the base64 an `Any` holds), read from binary and written as JSON,
+takes about 1 second one `Any` deep, 3.6 seconds five deep and 63
+seconds 99 deep; a 6.8 MB string read from JSON 99 deep, 97 seconds.
+Most of each level's time is base64. The limit of 100
+nested `Any`s ([calling.md](calling.md#nesting-depth)) bounds the
+depth, not the time.
+
+The conversion happens when an `Any` is read from JSON
+(`Proto.Json.anyWith`, any JSON answer holding one) and when one is
+written as JSON (`Proto.Json.encodeAnyWith`, `Proto.Any.toJson`, a JSON
+request holding one). Over the proto codec an `Any` is read and sent as
+its bytes, unconverted, and `Proto.Any.unpack` reads its message once.
+So keep large payloads out of nested `Any`s: hold them in an ordinary
+field, or in an `Any` at the top of the message; prefer the proto codec
+for calls that carry them; and cap what an answer may hand the
+conversion with `Rpc.Protocol.withReadMaxBytes`
+([calling.md](calling.md#size-limits)), which refuses a larger body
+before it is decoded. The decision not to bound the work, and the
+remedies weighed, are in decisions.md ("The work of converting nested
+`Any`s").
+
 ## Error details
 
 A status's details are `List (Result Proto.Error.Error
