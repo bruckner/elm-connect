@@ -262,6 +262,73 @@ levels, so a read takes at most 200. Giving it the depth would take a
 depth-taking decoder for every such message reached from a cycle, a
 change to the plumbing left for later.
 
+*2026-11-24:* that change is made, as one rule that is a property of each
+message alone: every message that nests counts, from the outermost. A
+message nests when, through its fields, map values and oneof members at
+any depth, it reaches a message on a cycle, a `Value`, `Struct` or
+`ListValue`, or an `Any`. Two paths had started the count again: a
+message on a cycle read a message of another cycle from 1, so each
+recursive type chained in a schema had 100 levels of its own (three
+chained and a `Struct` read about 300; node overflowed at 264 and
+`decodeValue` threw), and a message on no cycle took no depth, so what it
+held started again. Now every codec that takes the depth reads each
+message it holds that nests one level deeper, and a message that nests
+gets codecs at a depth, its plain codecs being them at 1. A message that
+does not nest holds nothing a read could count and generates what it did.
+
+Ancestors count because the alternative needed two things not worth
+keeping. Counting only from the first message on a cycle down (carriers
+between a cycle and what nests counting, the messages above the first
+cycle not) made whether a message counts depend on what holds it, so one
+package's generated code changed with the packages built beside it; and
+it gave depth 0 the meaning "nothing above counts", which took three
+runtime helpers (`Proto.Json.carrier`, `Proto.Binary.carrier`,
+`Proto.Json.carrierRegistry`) and a `memo` that built depth 0 on demand.
+Whether a message nests depends only on the messages it reaches, which
+are its own package's and its imports', so a package generates the same
+modules whatever holds them (`crates/elm-connect-gen/tests/depth.rs` generates `cycles.v1` alone
+and beside a package holding its messages). The helpers are gone; what
+remains of the depth plumbing is what cycles already used, and
+`Proto.Json.deeper`, below. `Proto.Json.nestedRegistry`, which the note
+above added and no release carried, is gone too: every value it served
+now nests and counts directly.
+
+The price: a schema with no recursion now pays where a message holds a
+`Struct`, `Value`, `ListValue` or `Any`, since that message and every
+message holding it nests. Measured against the base (node 24.21.0, Elm
+0.19.3, `elm make --optimize`, terser 5.36.0, `gzip -9 -n`; times one
+build per process, 8 rounds, an A/A control within 1.1 % on every read
+and 1.8 % on start-up):
+
+| program | minified | gzip | reads | start-up |
+|---|---|---|---|---|
+| the notes example (4 of its 8 messages nest) | 125,704 → 126,339 | 39,426 → 39,641 (+215) | a `Note`, JSON and binary, and 20 in a `ListNotesResponse`: within 1 % | +2 % (quartile spread 4 %) |
+| the minimal clients (one `GetNote`, connect / connectProto / grpcWeb) | +218 to +226 | +27 / +60 / +55 | | |
+| 50 messages each holding a `Struct`, and one holding a list of them | 96,133 → 99,178 | 16,110 → 16,451 (+341) | one read at the top: within 2 %; 20 in a list: JSON +12 %, binary +1.5 % | +12 % (quartile spread 9 %) |
+| a program whose messages do not nest; the JSON-only client | the same bytes and the same definitions | | | |
+
+How the codecs of a message on no cycle are made was chosen by measuring
+four ways on the last two programs. Memoising every message that nests,
+as cycles are (a table of 100 decoders and 100 merges each), made the
+50-message program start 23 times slower (195 µs to 4,489 µs, about 86 µs
+a message) for depths a schema without recursion never reaches. Building
+the decoder when the holder's is built kept start-up and reads within
+the bound, but builds one decoder per path to the message, which a
+lattice of messages each holding two others makes exponential at start.
+Building it as the value is read (`Proto.Json.deeperWith`, as cycles that
+take the registry already do) costs nothing at start and never more than
+the input, at the 12 % above for a list read below a holder. So: a message
+on a cycle is memoised (`memo`); one on no cycle has codecs that are
+functions of the depth, read by a holder with `deeperWith` (JSON) and
+`Proto.Binary.recursive` (binary, which builds a field's codec as it is
+read already); and one on no cycle that takes the registry is built once
+as its holder's decoder is, with the new `Proto.Json.deeper`, since that
+holder is itself built as it is read, as such messages' plain decoders
+always were (read lazily, a `ListNotesResponse` read cost 12 % more).
+A table only as deep as the message can be reached was rejected: how deep
+a message on no cycle is reached depends on what holds it, the dependence
+this rule removes.
+
 Every `BadJson` the runtime returns is scrubbed of JSON nested past 50
 levels. elm/json keeps the JSON a decoder failed on, so an error from a
 refused deep read, or from a field given a deep value of the wrong type,

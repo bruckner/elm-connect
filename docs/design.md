@@ -775,39 +775,63 @@ rpc shared call =
     type already breaks the alias cycle), but its decoders still refer
     to each other, so the member that closes the cycle decodes through
     `Json.Decode.lazy`.
-  - Every message on a cycle of references, through fields or oneof
-    members, is read at most 100 levels deep (§5.5 counts a level the
-    same way), against one budget with the `Any`s and the arrays and
-    objects of the `Struct`, `Value` and `ListValue` it holds: those
-    count on from its depth (`Proto.Json.nestedStruct depth`,
-    `nestedListValue`, `nestedValue`, `nestedMessageValueField`,
-    `nestedAnyWith`). Its JSON decoder takes the depth: `decodeNode =
-    decodeNestedNode 1`, and `decodeNestedNode = Proto.Json.memo (\depth
-    -> …)`, whose fields on the cycle read `Json.Decode.lazy (\_ ->
-    decodeNestedNode (depth + 1))`. `memo` makes the decoder for each
-    depth from 1 to 100 once, when `decodeNestedNode` is evaluated, and
-    a read looks the next level's up (lazily, since the decoders are
-    being made when the decoder is). A oneof with a member on the cycle
-    takes the depth the same way (`decodeNestedNodeKind depth`), made at
-    each depth by its message's. A message that reaches an `Any` takes
-    the registry, so its decoders cannot be made before it is given:
-    `decodeNestedNodeWith types depth` builds the next level's as the
-    value is read (`Proto.Json.deeperWith`), and `decodeNodeWith types`
-    starts at the depth the registry carries
-    (`Proto.Json.registryDepth`), so a message read inside an `Any`
-    counts on from it. A value off the cycle whose decoder takes the
-    registry (a message that reaches an `Any`, or a oneof with no member
-    on the cycle) is given the registry at the message's depth,
-    `decodeMetaWith (Proto.Json.nestedRegistry depth types)`, so an
-    `Any` it holds, through any number of messages off the cycle, and
-    another cycle inside it count on from there; its encoder is given
-    `Proto.Json.nestedRegistry 1 types`, the message's depth as its
-    decoder starts it. A type whose decoders take no registry (a
-    message that reaches no `Any`, and the well-known `Struct`, `Value`
-    and `ListValue`) is not given the depth and counts from 1 inside an
-    `Any` or held off the cycle; it holds no `Any`, so what it adds is
-    its own 100 levels, and a read takes at most 200: 99 messages, the
-    `Any` and 100 inside (§5.5 bounds a binary read written as JSON
+  - Every message that nests is read at most 100 levels deep (§5.5
+    counts a level the same way). A message nests when, through its
+    fields, map values and oneof members, at any depth, it reaches a
+    message on a cycle of references, a `Value`, `Struct` or
+    `ListValue`, or an `Any`; a message on a cycle nests. Read at the
+    top it is level 1, and every message that nests below it is a level,
+    against one budget with the `Any`s and the arrays and objects of the
+    `Struct`, `Value` and `ListValue` it holds: those count on from its
+    depth (`Proto.Json.nestedStruct depth`, `nestedListValue`,
+    `nestedValue`, `nestedMessageValueField`, `nestedValueMember`,
+    `nestedAnyWith`). Its codecs take the depth: `decodeNode =
+    decodeNestedNode 1`, and so for every message that nests. A message
+    that does not nest holds nothing a read could count, and generates
+    what it would in a schema with nothing that nests (decisions: "A
+    union for `google.protobuf.Value`, one depth budget", the note of
+    2026-11-24). Whether a message nests is found as `ir::reach` finds
+    what reaches an `Any` (`ir::counted`), and depends only on the
+    messages it reaches, the packages it imports, so a package generates
+    the same code whatever else the build holds.
+  - A message on a cycle makes its decoders once: `decodeNestedNode =
+    Proto.Json.memo (\depth -> …)`, whose fields on the cycle read
+    `Json.Decode.lazy (\_ -> decodeNestedNode (depth + 1))`. `memo`
+    makes the decoder for each depth from 1 to 100 once, when
+    `decodeNestedNode` is evaluated, and a read looks the next level's
+    up (lazily, since the decoders are being made when the decoder is).
+    A message of another cycle is read at the next depth directly,
+    `decodeNestedTree (depth + 1)` (no `lazy`: nothing on its cycle
+    leads back). A message on no cycle that nests has a function of the
+    depth instead, `decodeNestedNote depth = …`, read by its holder with
+    `Proto.Json.deeperWith depth decodeNestedNote`, which builds it as
+    the value is read: a table of 100 decoders per such message costs
+    start-up for depths a schema without recursion never reaches (about
+    90 µs a message, measured), and a decoder built when its holder's is
+    would be built once for every path to it, which a lattice of
+    messages makes exponential. A oneof with a member that counts on
+    from the message (one that nests, a `Value`, `Struct`, `ListValue`
+    or `Any`) takes the depth the same way (`decodeNestedNodeKind
+    depth`), made at each depth by its message's. A message that reaches
+    an `Any` takes the registry, so its decoders cannot be made before
+    it is given: `decodeNestedNodeWith types depth` builds the next
+    level's as the value is read (`Proto.Json.deeperWith`, or
+    `Proto.Json.deeper` for one on no cycle, built once as its holder's
+    decoder is, which is itself built as it is read, as such a
+    message's plain decoder always was), and `decodeNodeWith types`
+    starts at the depth the registry carries, or 1 (`max 1
+    (Proto.Json.registryDepth types)`), so a message read inside an
+    `Any` counts on from it. The encoder of a message that reaches an
+    `Any` is given no depth, so it carries it in the registry, as the
+    decoder reads it: it writes the messages it holds that nest with
+    `Proto.Json.registryDeeper types` and an `Any` with
+    `Proto.Json.encodeNestedAnyWith`, so an `Any` is refused where a
+    read refuses it. A type whose decoders take no registry (a message
+    that reaches no `Any`, and the well-known `Struct`, `Value` and
+    `ListValue`) is read inside an `Any` by its plain decoder and counts
+    from 1 there; it holds no `Any`, so what it adds is its own 100
+    levels, and a read takes at most 200: 99 messages, the `Any` and 100
+    inside (§5.5 bounds a binary read written as JSON
     alike). Past 100 the
     read fails with "Expecting messages nested at most 100 deep". The
     `Nested` after the verb, like the `Bytes` and `With` suffixes,
@@ -4096,39 +4120,41 @@ Connect's proto codec sends them (§5.3).
 - **Depth.** A message on a cycle of references (through fields or
   oneof members) can nest without bound, and each level is a few frames
   of JavaScript stack, so deep enough input would overflow it (elm/bytes
-  catches the overflow, and the report would say `Unlocated`). Its reads
-  are limited to 100 levels instead, a level being each message entered
-  along a field or oneof member of the cycle, the outermost at 1, as
-  protobuf-es and prost count messages (protobuf-go counts a map entry
-  as a level too, and allows 10,000). The merge carries the depth:
-  `mergeNodeBytes = mergeNestedNodeBytes 1`, `mergeNestedNodeBytes =
-  Proto.Binary.memo (\depth -> …)`, which makes the merges for depths 1
-  to 100 once, and a field on the cycle is read by `Proto.Binary.recursive depth …`, which
-  reads it one level deeper and fails with `TooDeep` past 100, in the
-  fast and the locating read alike. Only fields on a cycle count, so a
-  message that cannot recurse generates the code it did. A chain of
-  such messages is bounded by the schema, and the generator measures
-  its longest (a cycle along it counted as its members once, a
-  well-known type ending it) and warns past 100, the outermost counted
-  (`types::deep_nesting`), since most protobuf runtimes refuse such a
-  message and nothing counts it here.
+  catches the overflow, and the report would say `Unlocated`). Reads
+  are limited to 100 levels instead: every message that nests (§3.2:
+  one that reaches a cycle, a `Value`, `Struct` or `ListValue`, or an
+  `Any`) is a level, the outermost at 1, as protobuf-es and prost count
+  messages (protobuf-go counts a map entry as a level too, and allows
+  10,000). The merge carries the depth: `mergeNodeBytes =
+  mergeNestedNodeBytes 1`; for a message on a cycle
+  `mergeNestedNodeBytes = Proto.Binary.memo (\depth -> …)`, which makes
+  the merges for depths 1 to 100 once, and for one on no cycle a
+  function of the depth, made as a holder reads it. A field of a message
+  whose merge takes the depth, of a message that nests, is read by
+  `Proto.Binary.recursive depth …`, which reads it one level deeper and
+  fails with `TooDeep` past 100, in the fast and the locating read
+  alike. A message that does not nest generates the code it did. A
+  chain of such messages is bounded by the schema, and the generator
+  measures the longest chain (a cycle along it counted as its members
+  once, a well-known type ending it) and warns past 100, the outermost
+  counted (`types::deep_nesting`), since most protobuf runtimes refuse
+  such a message: a chain whose messages nest is refused here too past
+  100, and one whose messages do not is read to its end.
   The same budget counts each array and object of a `Struct`, `Value`
   or `ListValue`, a binary `Struct` or `ListValue` being one level and the
   `Value` holding it none, so 100 levels read the same in binary and
-  JSON; a message on a cycle reads them on from its depth
+  JSON; a message that nests reads them on from its depth
   (`Proto.Binary.nestedStruct depth`, `nestedListValue`, `nestedValue`). An `Any` read
   from binary holds its message's bytes, unread, so it nests nothing
   there. Writing it as JSON converts it through the registry, and that
   counts the `Any`s as a read does: a generated encoder that takes the
-  registry writes a field or member on its message's cycle with the
-  registry a level deeper (`Proto.Json.registryDeeper`), an `Any`
-  its message holds with `Proto.Json.encodeNestedAnyWith`, and a value
-  off the cycle that takes the registry with `Proto.Json.nestedRegistry
-  1`, all counting from the message's depth, the registry's or 1,
-  whichever is more, as the decoder starts it (`max 1
-  (Proto.Json.registryDepth types)`); the decoder gives that value the
-  registry at its depth (§3.2), so an `Any` held through messages off
-  the cycle is counted where the write counts it. Each `Any` is a level, and an `Any` past 100 fails with
+  registry writes each message it holds that nests with the registry a
+  level deeper (`Proto.Json.registryDeeper`), and an `Any` with
+  `Proto.Json.encodeNestedAnyWith`, all counting from the message's
+  depth, the registry's or 1, whichever is more, as the decoder starts
+  it (`max 1 (Proto.Json.registryDepth types)`), so an `Any` held
+  through any messages is counted where the read counts it. Each `Any`
+  is a level, and an `Any` past 100 fails with
   `TooDeep`, named `google.protobuf.Any`, exactly where a JSON read of
   the same message refuses it. The binary read of the `Any`'s message
   starts its own count of messages at 1, since a binary read cannot be
@@ -4150,7 +4176,7 @@ Connect's proto codec sends them (§5.3).
   which a test holds to the limit); the doc strings of `Proto.Json`,
   `Proto.Binary`, `Proto.Value` and `Proto.Error`; `Code::DeepNesting`'s
   doc in `diagnostics.rs`; the calling guide's "Nesting depth", the
-  generator guide's recursive-message rows, `types::deep_nesting` in
+  generator guide's rows for messages that nest, `types::deep_nesting` in
   diagnostics.md, and this document (§3.2, §3.5, §4, §5.4, here); the
   corpus cases `depth_cycles` and `routes_query_depth`; the tests that
   pin the boundaries (`tests/Proto/DepthTest.elm`, `BinaryTest`,
