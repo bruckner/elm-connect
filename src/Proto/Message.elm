@@ -70,7 +70,7 @@ A message built by `init` is taken at its word that it holds no `Any`:
 looking for an `Any` that only JSON could carry (see [`initWith`](#initWith)).
 
 -}
-init : String -> (a -> Writer.Encoder) -> Json.Decode.Decoder a -> (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> Message a
+init : String -> (a -> Writer.Encoder Proto.Error.Error) -> Json.Decode.Decoder a -> (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> Message a
 init name jsonEncoder jsonDecoder binaryEncoder binaryDecoder =
     Internal.Message name
         { encodeJson = \registry value -> Writer.run registry (jsonEncoder value)
@@ -92,7 +92,7 @@ registry (`UnregisteredType`), or its binary is not that type's message
         Proto.Message.initWith "notes.v1.Envelope" encodeEnvelope decodeEnvelopeWith encodeEnvelopeBytes decodeEnvelopeBytes
 
 -}
-initWith : String -> (a -> Writer.Encoder) -> (Registry -> Json.Decode.Decoder a) -> (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> Message a
+initWith : String -> (a -> Writer.Encoder Proto.Error.Error) -> (Registry -> Json.Decode.Decoder a) -> (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> Message a
 initWith name jsonEncoder jsonDecoder binaryEncoder binaryDecoder =
     Internal.Message name
         { encodeJson = \registry value -> Writer.run registry (jsonEncoder value)

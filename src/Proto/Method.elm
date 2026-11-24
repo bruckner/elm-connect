@@ -107,7 +107,7 @@ until [`withRoutes`](#withRoutes) or [`withBindings`](#withBindings) gives
 them, so that transcoding sends it over the implicit route.
 
 -}
-initJson : String -> String -> (req -> Writer.Encoder) -> (Registry -> Json.Decode.Decoder res) -> Method Proto.Codec.Json req res
+initJson : String -> String -> (req -> Writer.Encoder Proto.Error.Error) -> (Registry -> Json.Decode.Decoder res) -> Method Proto.Codec.Json req res
 initJson serviceName methodName encode decoder =
     Internal.Method
         { service = serviceName
@@ -156,7 +156,7 @@ sent over JSON: it fails as a [`BadCall`](Rpc-Error#Cause) whose message
 describes the problem.
 
 -}
-init : String -> String -> (req -> Writer.Encoder) -> (Registry -> Json.Decode.Decoder res) -> (req -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder res -> Method codec req res
+init : String -> String -> (req -> Writer.Encoder Proto.Error.Error) -> (Registry -> Json.Decode.Decoder res) -> (req -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder res -> Method codec req res
 init serviceName methodName encode decoder encodeBinary binaryDecoder =
     Internal.Method
         { service = serviceName

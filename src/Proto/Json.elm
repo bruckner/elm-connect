@@ -1,11 +1,12 @@
 module Proto.Json exposing
-    ( Encoder, encode, encodeWith, ready
+    ( Encoder, encode, encodeWith, encodeTotal, ready
     , writeObject, writeField, writeOptional, writeRepeated, writeDict, writeBoolMap, writeDeeper
     , writeTimestamp, writeDuration, writeFieldMask, writeStruct, writeListValue, writeValue, writeAny
     , field, fieldEither, valueField, valueFieldEither, emptyMessage
     , message, messageField, messageFieldEither, messageValueField, messageValueFieldEither, nestedMessageValueField, nestedMessageValueFieldEither
     , objectOfFields
     , implicitField, implicitFloatField, implicitBytesField, repeatedField, dictField, boolMapField
+    , totalOptionalField, totalRepeatedField, totalDictField, totalBoolMapField
     , memo, deeperWith
     , oneof, members, Member, member, memberEither
     , emptyMember, emptyMemberEither, valueMember, valueMemberEither
@@ -50,11 +51,12 @@ not finite). A message holding an `Any` is written with
     encode (Notes.V1.encodeNote note)
     -- Ok <the JSON>, or Err (NotWritable { typeName = "google.protobuf.Timestamp", path = [ "createTime" ] })
 
-A message that holds nothing a write can refuse also has a plain encoder,
-`jsonNote : Note -> Json.Encode.Value`, which `encodeNote` wraps with
-[`ready`](#ready).
+The encoder of a message that holds nothing a write can refuse works for any
+`x`, so [`encodeTotal`](#encodeTotal) writes it with no `Result`:
 
-@docs Encoder, encode, encodeWith, ready
+    encodeTotal (Notes.V1.encodeGetNoteRequest request)
+
+@docs Encoder, encode, encodeWith, encodeTotal, ready
 
 
 # Writing fields that can be refused
@@ -64,7 +66,7 @@ A message holding a value a write can refuse (an `Any`, a `Timestamp`,
 holds one) is encoded with [`writeObject`](#writeObject): the fields that
 cannot be refused as the plain helpers below give them, then those that can.
 
-    encodeEvent : Event -> Encoder
+    encodeEvent : Event -> Encoder Proto.Error.Error
     encodeEvent value =
         writeObject
             [ ( "title", implicitField "" Json.Encode.string value.title ) ]
@@ -97,17 +99,23 @@ own JSON writers do: a field without presence at its zero value, a field with
 presence (`Maybe`) when `Nothing`, a repeated or map field when empty. A parser
 reads a missing field as its default, so nothing is lost.
 
-    jsonNote : Note -> Value
-    jsonNote value =
-        objectOfFields
-            [ ( "title", implicitField "" Json.Encode.string value.title )
-            , ( "score", implicitFloatField value.score )
-            , ( "author", Maybe.map jsonAuthor value.author )
-            , ( "tags", repeatedField Json.Encode.string value.tags )
-            ]
+    encodeNote : Note -> Encoder x
+    encodeNote value =
+        ready
+            (objectOfFields
+                [ ( "title", implicitField "" Json.Encode.string value.title )
+                , ( "score", implicitFloatField value.score )
+                , ( "author", totalOptionalField encodeAuthor value.author )
+                , ( "tags", repeatedField Json.Encode.string value.tags )
+                ]
+            )
+
+A field of a message that holds nothing a write can refuse unwraps its
+encoder with [`encodeTotal`](#encodeTotal), through the `total` helpers.
 
 @docs objectOfFields
 @docs implicitField, implicitFloatField, implicitBytesField, repeatedField, dictField, boolMapField
+@docs totalOptionalField, totalRepeatedField, totalDictField, totalBoolMapField
 
 
 # Recursive messages
@@ -854,6 +862,47 @@ boolMapField write pairs =
 
     else
         Just (encodeBoolMap write pairs)
+
+
+{-| A field with presence of a message that holds nothing a write can refuse:
+`Nothing` when `Nothing`, else its encoder's JSON ([`encodeTotal`](#encodeTotal)).
+-}
+totalOptionalField : (a -> Encoder Never) -> Maybe a -> Maybe Value
+totalOptionalField write held =
+    case held of
+        Just present ->
+            Just (Writer.total (write present))
+
+        Nothing ->
+            Nothing
+
+
+{-| [`repeatedField`](#repeatedField) of a message that holds nothing a write
+can refuse.
+-}
+totalRepeatedField : (a -> Encoder Never) -> List a -> Maybe Value
+totalRepeatedField write values =
+    if List.isEmpty values then
+        Nothing
+
+    else
+        Just (Json.Encode.list (\item -> Writer.total (write item)) values)
+
+
+{-| [`dictField`](#dictField) of a message that holds nothing a write can
+refuse.
+-}
+totalDictField : (k -> String) -> (v -> Encoder Never) -> Dict.Dict k v -> Maybe Value
+totalDictField key write entries =
+    dictField key (\item -> Writer.total (write item)) entries
+
+
+{-| [`boolMapField`](#boolMapField) of a message that holds nothing a write
+can refuse.
+-}
+totalBoolMapField : (a -> Encoder Never) -> List ( Bool, a ) -> Maybe Value
+totalBoolMapField write pairs =
+    boolMapField (\item -> Writer.total (write item)) pairs
 
 
 {-| Decode a oneof in a decoding pipeline: unlike [`field`](#field), the
@@ -2813,12 +2862,17 @@ registryDepth =
 -- ENCODERS
 
 
-{-| A proto3 JSON encoder: what a generated `encodeNote : Note -> Encoder`
+{-| A proto3 JSON encoder: what a generated `encodeNote : Note -> Encoder x`
 gives, written by [`encode`](#encode). It is opaque; the package site may show
 it as `Proto.Internal.Writer.Encoder`.
+
+`x` is what it can refuse with. The encoder of a message that holds nothing a
+write can refuse works for any `x`, and [`encodeTotal`](#encodeTotal) writes it
+with `x` as `Never`; the others are `Encoder Proto.Error.Error`.
+
 -}
-type alias Encoder =
-    Writer.Encoder
+type alias Encoder x =
+    Writer.Encoder x
 
 
 {-| Write an encoder's JSON, or the first value it refuses, one proto3 JSON
@@ -2832,7 +2886,7 @@ JavaScript stack allows throws while it is written, as it would through
 `Json.Encode`; the calling guide's "Nesting depth" says where.
 
 -}
-encode : Encoder -> Result Error Value
+encode : Encoder Error -> Result Error Value
 encode =
     Writer.run (InternalRegistry.Registry InternalRegistry.Strict 0 Dict.empty)
 
@@ -2842,14 +2896,28 @@ encode =
 cycle around them, is refused with [`TooDeep`](Proto-Error#Reason), as a read
 refuses it.
 -}
-encodeWith : Registry -> Encoder -> Result Error Value
+encodeWith : Registry -> Encoder Error -> Result Error Value
 encodeWith =
     Writer.run
 
 
+{-| The JSON of an encoder that cannot refuse, such as a generated
+`encodeNote : Note -> Encoder x` of a message that holds nothing a write can
+refuse:
+
+    Json.Encode.encode 0 (encodeTotal (Notes.V1.encodeGetNoteRequest request))
+
+The compiler rejects an encoder that can refuse, so this never fails.
+
+-}
+encodeTotal : Encoder Never -> Value
+encodeTotal =
+    Writer.total
+
+
 {-| An encoder of JSON already written, which it gives as it is.
 -}
-ready : Value -> Encoder
+ready : Value -> Encoder x
 ready =
     Writer.ready
 
@@ -2857,42 +2925,42 @@ ready =
 {-| A message's JSON object: its fields that cannot be refused, as the plain
 helpers give them (`Nothing` leaving one out), then those that can.
 -}
-writeObject : List ( String, Maybe Value ) -> List ( String, Encoder ) -> Encoder
+writeObject : List ( String, Maybe Value ) -> List ( String, Encoder x ) -> Encoder x
 writeObject =
     Writer.object
 
 
 {-| A field from what a plain helper gives: left out when `Nothing`.
 -}
-writeField : Maybe Value -> Encoder
+writeField : Maybe Value -> Encoder x
 writeField =
     Writer.field
 
 
 {-| A field with presence: left out when `Nothing`.
 -}
-writeOptional : (a -> Encoder) -> Maybe a -> Encoder
+writeOptional : (a -> Encoder x) -> Maybe a -> Encoder x
 writeOptional =
     Writer.optional
 
 
 {-| A repeated field: left out when empty.
 -}
-writeRepeated : (a -> Encoder) -> List a -> Encoder
+writeRepeated : (a -> Encoder x) -> List a -> Encoder x
 writeRepeated =
     Writer.repeated
 
 
 {-| A map field: left out when empty.
 -}
-writeDict : (k -> String) -> (v -> Encoder) -> Dict.Dict k v -> Encoder
+writeDict : (k -> String) -> (v -> Encoder x) -> Dict.Dict k v -> Encoder x
 writeDict =
     Writer.dict
 
 
 {-| A map field with `bool` keys: left out when empty.
 -}
-writeBoolMap : (a -> Encoder) -> List ( Bool, a ) -> Encoder
+writeBoolMap : (a -> Encoder x) -> List ( Bool, a ) -> Encoder x
 writeBoolMap =
     Writer.boolMap
 
@@ -2907,14 +2975,14 @@ with no count.
     ( "replies", writeDeeper (writeRepeated encodeEnvelope_ value.replies) )
 
 -}
-writeDeeper : Encoder -> Encoder
+writeDeeper : Encoder x -> Encoder x
 writeDeeper =
     Writer.deeper
 
 
 {-| A `google.protobuf.Timestamp`, refused outside years 1 to 9999.
 -}
-writeTimestamp : Time.Posix -> Encoder
+writeTimestamp : Time.Posix -> Encoder Error
 writeTimestamp posix =
     let
         millis =
@@ -2930,7 +2998,7 @@ writeTimestamp posix =
 
 {-| A `google.protobuf.Duration`, refused past protobuf's range.
 -}
-writeDuration : Duration -> Encoder
+writeDuration : Duration -> Encoder Error
 writeDuration held =
     -- Protobuf's range, ±315,576,000,000 seconds, which only
     -- Proto.Duration.fromParts can pass.
@@ -2944,7 +3012,7 @@ writeDuration held =
 {-| A `google.protobuf.FieldMask`, refused when a path's lowerCamelCase form
 reads back as another path.
 -}
-writeFieldMask : List String -> Encoder
+writeFieldMask : List String -> Encoder Error
 writeFieldMask paths =
     if List.all maskPathRoundTrips paths then
         Writer.ready (encodeFieldMask paths)
@@ -2961,26 +3029,26 @@ maskPathRoundTrips path =
 {-| A `google.protobuf.Struct`, refused when it holds a number that is NaN or
 infinite.
 -}
-writeStruct : Dict.Dict String Proto.Value.Value -> Encoder
+writeStruct : Dict.Dict String Proto.Value.Value -> Encoder Error
 writeStruct fields =
     checkedValue "google.protobuf.Struct" (Proto.Value.ValueStruct fields) (\() -> encodeStruct fields)
 
 
 {-| A `google.protobuf.ListValue`, refused as [`writeStruct`](#writeStruct) is.
 -}
-writeListValue : List Proto.Value.Value -> Encoder
+writeListValue : List Proto.Value.Value -> Encoder Error
 writeListValue items =
     checkedValue "google.protobuf.ListValue" (Proto.Value.ValueList items) (\() -> encodeListValue items)
 
 
 {-| A `google.protobuf.Value`, refused as [`writeStruct`](#writeStruct) is.
 -}
-writeValue : Proto.Value.Value -> Encoder
+writeValue : Proto.Value.Value -> Encoder Error
 writeValue held =
     checkedValue "google.protobuf.Value" held (\() -> encodeValue held)
 
 
-checkedValue : String -> Proto.Value.Value -> (() -> Value) -> Encoder
+checkedValue : String -> Proto.Value.Value -> (() -> Value) -> Encoder Error
 checkedValue typeName held write =
     if finite held then
         Writer.ready (write ())
@@ -3011,7 +3079,7 @@ finite held =
 {-| A `google.protobuf.Any`, converted through the registry the encoder is
 run with ([`encodeAnyWith`](#encodeAnyWith)).
 -}
-writeAny : Any -> Encoder
+writeAny : Any -> Encoder Error
 writeAny ((InternalAny.Any url _) as held) =
     if String.isEmpty url then
         Writer.ready (Json.Encode.object [])

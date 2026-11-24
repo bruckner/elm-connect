@@ -12,18 +12,24 @@ module Proto.Internal.Writer exposing
     , refuse
     , repeated
     , run
+    , total
     )
 
 {-| The proto3 JSON encoder that generated code builds and `Proto.Json.encode`
 runs: a finished value, a field left out, a refusal, or a part that needs the
 registry an `Any` converts through.
 
+The type parameter is what the encoder can refuse with: `Proto.Error.Error`
+for one built from a part that can be refused or needs the registry, and any
+type for one that cannot, so that `Never` makes a total encoder the compiler
+checks ([`total`](#total)).
+
 Combinators stay on finished values while every part they are given is
 finished, so a message holding nothing that needs the registry is
 built as plain `Json.Encode.Value` code with one tag per part, and only a
-refusal or a deferred part leaves that path. A refusal names its type and
-gathers the path to it on the way out; a deferred part is run once, top down,
-by [`run`](#run), with the registry.
+refusal or a deferred part leaves that path. A refusal gathers the path to it,
+outermost first, on the way out, apart from the refusal itself, which a
+combinator cannot look into; [`run`](#run) puts the path into the error.
 
 -}
 
@@ -34,18 +40,18 @@ import Proto.Error exposing (Error(..))
 import Proto.Internal.Registry as Registry exposing (Registry)
 
 
-{-| A proto3 JSON encoder.
+{-| A proto3 JSON encoder that refuses with `x`.
 -}
-type Encoder
+type Encoder x
     = Ready Value
     | Absent
-    | Failed Error
-    | Deferred (Registry -> Result Error Value)
+    | Failed (List String) x
+    | Deferred (Registry -> Result ( List String, x ) Value)
 
 
 {-| Run an encoder with the registry its `Any` values convert through.
 -}
-run : Registry -> Encoder -> Result Error Value
+run : Registry -> Encoder Error -> Result Error Value
 run registry encoder =
     case encoder of
         Ready value ->
@@ -54,14 +60,54 @@ run registry encoder =
         Absent ->
             Ok Json.Encode.null
 
-        Failed problem ->
-            Err problem
+        Failed path problem ->
+            Err (at path problem)
 
         Deferred write ->
-            write registry
+            Result.mapError (\( path, problem ) -> at path problem) (write registry)
 
 
-runField : Registry -> Encoder -> Result Error (Maybe Value)
+{-| The JSON of an encoder that cannot refuse. Only a part that needs the
+registry is deferred, and every such part can refuse, so the deferred case
+runs with an empty registry for completeness.
+-}
+total : Encoder Never -> Value
+total encoder =
+    case encoder of
+        Ready value ->
+            value
+
+        Absent ->
+            Json.Encode.null
+
+        Failed _ problem ->
+            never problem
+
+        Deferred write ->
+            case write (Registry.Registry Registry.Strict 0 Dict.empty) of
+                Ok value ->
+                    value
+
+                Err ( _, problem ) ->
+                    never problem
+
+
+{-| A refusal's error with the path to it in front of its own.
+-}
+at : List String -> Error -> Error
+at path problem =
+    case ( path, problem ) of
+        ( [], _ ) ->
+            problem
+
+        ( _, NotWritable unwritable ) ->
+            NotWritable { unwritable | path = path ++ unwritable.path }
+
+        _ ->
+            problem
+
+
+runField : Registry -> Encoder x -> Result ( List String, x ) (Maybe Value)
 runField registry encoder =
     case encoder of
         Ready value ->
@@ -70,46 +116,62 @@ runField registry encoder =
         Absent ->
             Ok Nothing
 
-        Failed problem ->
-            Err problem
+        Failed path problem ->
+            Err ( path, problem )
 
         Deferred write ->
             Result.map Just (write registry)
 
 
+runPart : Registry -> Encoder x -> Result ( List String, x ) Value
+runPart registry encoder =
+    case encoder of
+        Ready value ->
+            Ok value
+
+        Absent ->
+            Ok Json.Encode.null
+
+        Failed path problem ->
+            Err ( path, problem )
+
+        Deferred write ->
+            write registry
+
+
 {-| A finished value.
 -}
-ready : Value -> Encoder
+ready : Value -> Encoder x
 ready =
     Ready
 
 
 {-| A field left out.
 -}
-absent : Encoder
+absent : Encoder x
 absent =
     Absent
 
 
 {-| A value of the type named that proto3 JSON has no form for.
 -}
-refuse : String -> Encoder
+refuse : String -> Encoder Error
 refuse typeName =
-    Failed (NotWritable { typeName = typeName, path = [] })
+    Failed [] (NotWritable { typeName = typeName, path = [] })
 
 
 {-| A part that needs the registry.
 -}
-deferred : (Registry -> Result Error Value) -> Encoder
-deferred =
-    Deferred
+deferred : (Registry -> Result Error Value) -> Encoder Error
+deferred write =
+    Deferred (\registry -> Result.mapError (\problem -> ( [], problem )) (write registry))
 
 
 {-| A part one level deeper in the registry's count, which an `Any` it
 holds converts from. Only a deferred part converts an `Any`, so the others
 are given as they are.
 -}
-deeper : Encoder -> Encoder
+deeper : Encoder x -> Encoder x
 deeper encoder =
     case encoder of
         Deferred write ->
@@ -121,7 +183,7 @@ deeper encoder =
 
 {-| A field written by the plain helpers: left out when `Nothing`.
 -}
-field : Maybe Value -> Encoder
+field : Maybe Value -> Encoder x
 field value =
     case value of
         Just json ->
@@ -131,25 +193,20 @@ field value =
             Absent
 
 
-under : String -> Error -> Error
-under key problem =
-    case problem of
-        NotWritable unwritable ->
-            NotWritable { unwritable | path = key :: unwritable.path }
-
-        _ ->
-            problem
+under : String -> ( List String, x ) -> ( List String, x )
+under key ( path, problem ) =
+    ( key :: path, problem )
 
 
 {-| A message's object: the fields that cannot fail, as the plain helpers
 give them, then those that can.
 -}
-object : List ( String, Maybe Value ) -> List ( String, Encoder ) -> Encoder
+object : List ( String, Maybe Value ) -> List ( String, Encoder x ) -> Encoder x
 object plain checked =
     plainPairs plain checked [] False
 
 
-plainPairs : List ( String, Maybe Value ) -> List ( String, Encoder ) -> List ( String, Value ) -> Bool -> Encoder
+plainPairs : List ( String, Maybe Value ) -> List ( String, Encoder x ) -> List ( String, Value ) -> Bool -> Encoder x
 plainPairs plain checked done proto =
     case plain of
         ( key, Just value ) :: rest ->
@@ -162,7 +219,7 @@ plainPairs plain checked done proto =
             checkedPairs checked done proto
 
 
-checkedPairs : List ( String, Encoder ) -> List ( String, Value ) -> Bool -> Encoder
+checkedPairs : List ( String, Encoder x ) -> List ( String, Value ) -> Bool -> Encoder x
 checkedPairs checked done proto =
     case checked of
         [] ->
@@ -176,14 +233,14 @@ checkedPairs checked done proto =
                 Absent ->
                     checkedPairs rest done proto
 
-                Failed problem ->
-                    Failed (under key problem)
+                Failed path problem ->
+                    Failed (key :: path) problem
 
                 Deferred _ ->
                     Deferred (\registry -> slowPairs registry checked done proto)
 
 
-slowPairs : Registry -> List ( String, Encoder ) -> List ( String, Value ) -> Bool -> Result Error Value
+slowPairs : Registry -> List ( String, Encoder x ) -> List ( String, Value ) -> Bool -> Result ( List String, x ) Value
 slowPairs registry checked done proto =
     case checked of
         [] ->
@@ -203,7 +260,7 @@ slowPairs registry checked done proto =
 
 {-| A field with presence: left out when `Nothing`.
 -}
-optional : (a -> Encoder) -> Maybe a -> Encoder
+optional : (a -> Encoder x) -> Maybe a -> Encoder x
 optional encode value =
     case value of
         Just present ->
@@ -215,7 +272,7 @@ optional encode value =
 
 {-| A repeated field: left out when empty.
 -}
-repeated : (a -> Encoder) -> List a -> Encoder
+repeated : (a -> Encoder x) -> List a -> Encoder x
 repeated encode items =
     case items of
         [] ->
@@ -225,7 +282,7 @@ repeated encode items =
             repeatedFast encode items 0 []
 
 
-repeatedFast : (a -> Encoder) -> List a -> Int -> List Value -> Encoder
+repeatedFast : (a -> Encoder x) -> List a -> Int -> List Value -> Encoder x
 repeatedFast encode items index done =
     case items of
         [] ->
@@ -239,16 +296,16 @@ repeatedFast encode items index done =
                 Absent ->
                     repeatedFast encode rest (index + 1) (Json.Encode.null :: done)
 
-                Failed problem ->
-                    Failed (under (String.fromInt index) problem)
+                Failed path problem ->
+                    Failed (String.fromInt index :: path) problem
 
                 (Deferred _) as first ->
                     Deferred (\registry -> repeatedSlow registry encode first rest index done)
 
 
-repeatedSlow : Registry -> (a -> Encoder) -> Encoder -> List a -> Int -> List Value -> Result Error Value
+repeatedSlow : Registry -> (a -> Encoder x) -> Encoder x -> List a -> Int -> List Value -> Result ( List String, x ) Value
 repeatedSlow registry encode current rest index done =
-    case run registry current of
+    case runPart registry current of
         Ok value ->
             case rest of
                 [] ->
@@ -263,7 +320,7 @@ repeatedSlow registry encode current rest index done =
 
 {-| A map field: left out when empty, keyed as given.
 -}
-dict : (k -> String) -> (v -> Encoder) -> Dict k v -> Encoder
+dict : (k -> String) -> (v -> Encoder x) -> Dict k v -> Encoder x
 dict key encode entries =
     if Dict.isEmpty entries then
         Absent
@@ -274,7 +331,7 @@ dict key encode entries =
 
 {-| A map field with `bool` keys: left out when empty.
 -}
-boolMap : (a -> Encoder) -> List ( Bool, a ) -> Encoder
+boolMap : (a -> Encoder x) -> List ( Bool, a ) -> Encoder x
 boolMap encode pairs =
     case pairs of
         [] ->
