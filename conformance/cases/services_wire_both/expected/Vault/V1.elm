@@ -242,8 +242,8 @@ encodeItemWith types value =
         [ ( "name", Ok (Proto.Json.implicitField "" Json.Encode.string value.name) )
         , ( "size", Ok (Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.size) )
         , ( "status", Ok (Proto.Json.implicitField StatusUnspecified encodeStatus value.status) )
-        , ( "payload", Proto.Json.tryOptionalField (Proto.Json.encodeAnyWith types) value.payload )
-        , ( "attachments", Proto.Json.tryRepeatedField (Proto.Json.encodeAnyWith types) value.attachments )
+        , ( "payload", Proto.Json.tryOptionalField (Proto.Json.encodeNestedAnyWith types) value.payload )
+        , ( "attachments", Proto.Json.tryRepeatedField (Proto.Json.encodeNestedAnyWith types) value.attachments )
         ]
 
 
@@ -270,7 +270,7 @@ encodeListItemsRequest value =
 encodeListItemsResponseWith : Proto.Registry.Registry -> ListItemsResponse -> Result Proto.Error.Error Json.Encode.Value
 encodeListItemsResponseWith types value =
     Proto.Json.tryObjectOfFields
-        [ ( "items", Proto.Json.tryRepeatedField (encodeItemWith types) value.items )
+        [ ( "items", Proto.Json.tryRepeatedField (encodeItemWith (Proto.Json.registryDeeper types)) value.items )
         ]
 
 
@@ -294,13 +294,20 @@ decodeStatus =
 -}
 decodeItemWith : Proto.Registry.Registry -> Json.Decode.Decoder Item
 decodeItemWith types =
+    decodeNestedItemWith types (max 1 (Proto.Json.registryDepth types))
+
+
+{-| [`decodeItemWith`](#decodeItemWith) for an [`Item`](#Item) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+-}
+decodeNestedItemWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder Item
+decodeNestedItemWith types depth =
     Proto.Json.message
         (Json.Decode.succeed Item
             |> Proto.Json.messageField "name" "" Proto.Json.string
             |> Proto.Json.messageField "size" "0" Proto.Json.int64
             |> Proto.Json.messageField "status" StatusUnspecified decodeStatus
-            |> Proto.Json.messageField "payload" Nothing (Json.Decode.map Just (Proto.Json.anyWith types))
-            |> Proto.Json.messageField "attachments" [] (Json.Decode.list (Proto.Json.anyWith types))
+            |> Proto.Json.messageField "payload" Nothing (Json.Decode.map Just (Proto.Json.nestedAnyWith depth types))
+            |> Proto.Json.messageField "attachments" [] (Json.Decode.list (Proto.Json.nestedAnyWith depth types))
         )
 
 
@@ -328,9 +335,16 @@ decodeListItemsRequest =
 -}
 decodeListItemsResponseWith : Proto.Registry.Registry -> Json.Decode.Decoder ListItemsResponse
 decodeListItemsResponseWith types =
+    decodeNestedListItemsResponseWith types (max 1 (Proto.Json.registryDepth types))
+
+
+{-| [`decodeListItemsResponseWith`](#decodeListItemsResponseWith) for a [`ListItemsResponse`](#ListItemsResponse) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+-}
+decodeNestedListItemsResponseWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder ListItemsResponse
+decodeNestedListItemsResponseWith types depth =
     Proto.Json.message
         (Json.Decode.succeed ListItemsResponse
-            |> Proto.Json.messageField "items" [] (Json.Decode.list (decodeItemWith types))
+            |> Proto.Json.messageField "items" [] (Json.Decode.list (Proto.Json.deeper depth (decodeNestedItemWith types)))
         )
 
 
@@ -416,6 +430,13 @@ decodeStatusBytes number =
 -}
 mergeItemBytes : Item -> Proto.Binary.Decoder Item
 mergeItemBytes =
+    mergeNestedItemBytes 1
+
+
+{-| [`mergeItemBytes`](#mergeItemBytes) for an [`Item`](#Item) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+-}
+mergeNestedItemBytes : Int -> Item -> Proto.Binary.Decoder Item
+mergeNestedItemBytes depth =
     Proto.Binary.merge
         "vault.v1.Item"
         (\number wire value ->
@@ -577,13 +598,20 @@ decodeListItemsRequestBytes =
 -}
 mergeListItemsResponseBytes : ListItemsResponse -> Proto.Binary.Decoder ListItemsResponse
 mergeListItemsResponseBytes =
+    mergeNestedListItemsResponseBytes 1
+
+
+{-| [`mergeListItemsResponseBytes`](#mergeListItemsResponseBytes) for a [`ListItemsResponse`](#ListItemsResponse) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+-}
+mergeNestedListItemsResponseBytes : Int -> ListItemsResponse -> Proto.Binary.Decoder ListItemsResponse
+mergeNestedListItemsResponseBytes depth =
     Proto.Binary.merge
         "vault.v1.ListItemsResponse"
         (\number wire value ->
             case number of
                 1 ->
                     Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeItemBytes mergeItemBytes defaultItem)
+                        (Proto.Binary.recursive depth encodeItemBytes mergeNestedItemBytes defaultItem)
                         (\v ->
                             { items = v
                             }

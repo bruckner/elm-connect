@@ -19,7 +19,8 @@ elmConnectVersion_ =
     Proto.Version.v0_2
 
 
-{-| Through a map's values.
+{-| Through a map's values; and holding a carrier, which is a level of its
+own, as the messages of the cycles it holds are.
 
 `message cycles.v1.Dir`
 
@@ -30,6 +31,7 @@ descriptor : Proto.Message.Descriptor
 descriptor =
     Proto.Message.descriptor "cycles.v1.Dir"
         [ entries
+        , forest
         ]
 
 
@@ -38,3 +40,10 @@ descriptor =
 entries : Proto.Field.Descriptor
 entries =
     Proto.Field.descriptor "entries" "entries" 1 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "cycles.v1.Dir")
+
+
+{-| `cycles.v1.Forest forest = 2;`
+-}
+forest : Proto.Field.Descriptor
+forest =
+    Proto.Field.descriptor "forest" "forest" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "cycles.v1.Forest")

@@ -100,7 +100,7 @@ depthOf (Registry _ d _) =
     d
 
 
-{-| The registry for a read at `d`, as a message on a cycle passes it to an
+{-| The registry for a read at `d`, as a message that nests passes it to an
 `Any` it holds, so the `Any` counts from there.
 -}
 atLeast : Int -> Registry -> Registry

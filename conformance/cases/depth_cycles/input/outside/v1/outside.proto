@@ -1,4 +1,5 @@
-// A cycle reached from another package: its decoders start at depth 1.
+// Cycles reached from another package: the message holding them nests, so
+// it is the first level and they count on from it.
 syntax = "proto3";
 
 package outside.v1;

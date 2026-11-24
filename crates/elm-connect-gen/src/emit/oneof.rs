@@ -59,13 +59,11 @@ impl Emitter {
     /// A oneof with a member that reaches an `Any` gets
     /// `encodeFooKindWith`, taking the registry first, whose members' JSON
     /// is a `Result`: a member that reaches one gives its encoder's, the
-    /// others `Ok`. For a oneof of a recursive message (`recursive`) whose
-    /// decoder takes the message's depth ([`Self::oneof_counts`]), an
-    /// `Any` member counts from that depth as it is read, and a member
-    /// whose codecs take the depth is written a level deeper.
-    pub(super) fn oneof_encoder(&mut self, shape: &OneofShape, recursive: bool) -> Decl {
+    /// others `Ok`. The members are written with the registry as the
+    /// fields of the message holding the oneof are, by whether its codecs
+    /// take the depth (`counts`), so each `Any` counts as it is read.
+    pub(super) fn oneof_encoder(&mut self, shape: &OneofShape, counts: bool) -> Decl {
         let with = self.oneof_reaches(shape);
-        let counts = recursive && self.oneof_counts(shape);
         let unset = (pctor(shape.oneof.unset_ctor.clone(), []), list([]));
         let members: Vec<_> = shape
             .variants
@@ -81,8 +79,8 @@ impl Emitter {
                     let null = self.reference((JSON_ENCODE, "null"));
                     (pctor(variant.elm_ctor.clone(), []), null)
                 } else {
-                    self.deeper_registry =
-                        variant.cyclic || (recursive && self.counted.type_ref(&variant.ty));
+                    let counted = variant.cyclic || self.counted.type_ref(&variant.ty);
+                    self.deeper_registry = counts && counted;
                     self.nested_any = counts;
                     let encoded = self.encode_value(value, var(ONEOF_MEMBER));
                     self.deeper_registry = false;
@@ -166,12 +164,12 @@ impl Emitter {
     /// `google.protobuf.NullValue` a `nullValueMember` step likewise. A oneof
     /// with a member that reaches an `Any` gets
     /// `decodeFooKindWith`, taking the registry.
-    /// For a oneof of a recursive message (`recursive`) with a member that
-    /// counts on from it ([`Self::oneof_counts`]), the decoders take the
-    /// depth as the message's do, and a message member is read one level
-    /// deeper.
-    pub(super) fn oneof_decoder(&mut self, shape: &OneofShape, recursive: bool) -> Vec<Decl> {
-        let deep = (recursive && self.oneof_counts(shape)).then(|| {
+    /// For a oneof of a message whose codecs take the depth (`counts`)
+    /// with a member that counts on from it ([`Self::oneof_counts`]), the
+    /// decoders take the depth as the message's do, and a message member is
+    /// read one level deeper.
+    pub(super) fn oneof_decoder(&mut self, shape: &OneofShape, counts: bool) -> Vec<Decl> {
+        let deep = self.oneof_counts(counts, shape).then(|| {
             if self.oneof_reaches(shape) {
                 Deep::Built
             } else {

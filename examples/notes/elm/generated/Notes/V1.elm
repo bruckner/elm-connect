@@ -425,7 +425,7 @@ encodeNoteWith types value =
          , ( "ttl", Ok (Maybe.map Proto.Json.encodeDuration value.ttl) )
          , ( "metadata", Ok (Proto.Json.dictField identity Json.Encode.string value.metadata) )
          , ( "extra", Ok (Maybe.map Proto.Json.encodeStruct value.extra) )
-         , ( "attachment", Proto.Json.tryOptionalField (Proto.Json.encodeAnyWith types) value.attachment )
+         , ( "attachment", Proto.Json.tryOptionalField (Proto.Json.encodeNestedAnyWith types) value.attachment )
          , ( "revision", Ok (Maybe.map Proto.Json.encodeInt64 value.revision) )
          ]
             ++ List.map (Tuple.mapSecond Ok) (encodeNoteKind value.kind)
@@ -475,7 +475,7 @@ encodeListNotesRequest value =
 encodeListNotesResponseWith : Proto.Registry.Registry -> ListNotesResponse -> Result Proto.Error.Error Json.Encode.Value
 encodeListNotesResponseWith types value =
     Proto.Json.tryObjectOfFields
-        [ ( "notes", Proto.Json.tryRepeatedField (encodeNoteWith types) value.notes )
+        [ ( "notes", Proto.Json.tryRepeatedField (encodeNoteWith (Proto.Json.registryDeeper types)) value.notes )
         , ( "nextPageToken", Ok (Proto.Json.implicitField "" Json.Encode.string value.nextPageToken) )
         ]
 
@@ -485,7 +485,7 @@ encodeListNotesResponseWith types value =
 encodeCreateNoteRequestWith : Proto.Registry.Registry -> CreateNoteRequest -> Result Proto.Error.Error Json.Encode.Value
 encodeCreateNoteRequestWith types value =
     Proto.Json.tryObjectOfFields
-        [ ( "note", Proto.Json.tryOptionalField (encodeNoteWith types) value.note )
+        [ ( "note", Proto.Json.tryOptionalField (encodeNoteWith (Proto.Json.registryDeeper types)) value.note )
         ]
 
 
@@ -494,7 +494,7 @@ encodeCreateNoteRequestWith types value =
 encodeUpdateNoteRequestWith : Proto.Registry.Registry -> UpdateNoteRequest -> Result Proto.Error.Error Json.Encode.Value
 encodeUpdateNoteRequestWith types value =
     Proto.Json.tryObjectOfFields
-        [ ( "note", Proto.Json.tryOptionalField (encodeNoteWith types) value.note )
+        [ ( "note", Proto.Json.tryOptionalField (encodeNoteWith (Proto.Json.registryDeeper types)) value.note )
         , ( "updateMask", Ok (Maybe.map Proto.Json.encodeFieldMask value.updateMask) )
         ]
 
@@ -537,6 +537,13 @@ decodeVisibility =
 -}
 decodeNoteWith : Proto.Registry.Registry -> Json.Decode.Decoder Note
 decodeNoteWith types =
+    decodeNestedNoteWith types (max 1 (Proto.Json.registryDepth types))
+
+
+{-| [`decodeNoteWith`](#decodeNoteWith) for a [`Note`](#Note) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+-}
+decodeNestedNoteWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder Note
+decodeNestedNoteWith types depth =
     Proto.Json.message
         (Json.Decode.succeed Note
             |> Proto.Json.messageField "name" "" Proto.Json.string
@@ -548,9 +555,9 @@ decodeNoteWith types =
             |> Proto.Json.messageFieldEither "updateTime" "update_time" Nothing (Json.Decode.map Just Proto.Json.timestamp)
             |> Proto.Json.messageField "ttl" Nothing (Json.Decode.map Just Proto.Json.duration)
             |> Proto.Json.messageField "metadata" Dict.empty (Proto.Json.stringDict Proto.Json.string)
-            |> Proto.Json.messageField "extra" Nothing (Json.Decode.map Just Proto.Json.struct)
+            |> Proto.Json.messageField "extra" Nothing (Json.Decode.map Just (Proto.Json.nestedStruct depth))
             |> Proto.Json.oneof decodeNoteKind
-            |> Proto.Json.messageField "attachment" Nothing (Json.Decode.map Just (Proto.Json.anyWith types))
+            |> Proto.Json.messageField "attachment" Nothing (Json.Decode.map Just (Proto.Json.nestedAnyWith depth types))
             |> Proto.Json.messageField "revision" Nothing (Json.Decode.map Just Proto.Json.int64)
         )
 
@@ -593,9 +600,16 @@ decodeListNotesRequest =
 -}
 decodeListNotesResponseWith : Proto.Registry.Registry -> Json.Decode.Decoder ListNotesResponse
 decodeListNotesResponseWith types =
+    decodeNestedListNotesResponseWith types (max 1 (Proto.Json.registryDepth types))
+
+
+{-| [`decodeListNotesResponseWith`](#decodeListNotesResponseWith) for a [`ListNotesResponse`](#ListNotesResponse) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+-}
+decodeNestedListNotesResponseWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder ListNotesResponse
+decodeNestedListNotesResponseWith types depth =
     Proto.Json.message
         (Json.Decode.succeed ListNotesResponse
-            |> Proto.Json.messageField "notes" [] (Json.Decode.list (decodeNoteWith types))
+            |> Proto.Json.messageField "notes" [] (Json.Decode.list (Proto.Json.deeper depth (decodeNestedNoteWith types)))
             |> Proto.Json.messageFieldEither "nextPageToken" "next_page_token" "" Proto.Json.string
         )
 
@@ -604,9 +618,16 @@ decodeListNotesResponseWith types =
 -}
 decodeCreateNoteRequestWith : Proto.Registry.Registry -> Json.Decode.Decoder CreateNoteRequest
 decodeCreateNoteRequestWith types =
+    decodeNestedCreateNoteRequestWith types (max 1 (Proto.Json.registryDepth types))
+
+
+{-| [`decodeCreateNoteRequestWith`](#decodeCreateNoteRequestWith) for a [`CreateNoteRequest`](#CreateNoteRequest) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+-}
+decodeNestedCreateNoteRequestWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder CreateNoteRequest
+decodeNestedCreateNoteRequestWith types depth =
     Proto.Json.message
         (Json.Decode.succeed CreateNoteRequest
-            |> Proto.Json.messageField "note" Nothing (Json.Decode.map Just (decodeNoteWith types))
+            |> Proto.Json.messageField "note" Nothing (Json.Decode.map Just (Proto.Json.deeper depth (decodeNestedNoteWith types)))
         )
 
 
@@ -614,9 +635,16 @@ decodeCreateNoteRequestWith types =
 -}
 decodeUpdateNoteRequestWith : Proto.Registry.Registry -> Json.Decode.Decoder UpdateNoteRequest
 decodeUpdateNoteRequestWith types =
+    decodeNestedUpdateNoteRequestWith types (max 1 (Proto.Json.registryDepth types))
+
+
+{-| [`decodeUpdateNoteRequestWith`](#decodeUpdateNoteRequestWith) for an [`UpdateNoteRequest`](#UpdateNoteRequest) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+-}
+decodeNestedUpdateNoteRequestWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder UpdateNoteRequest
+decodeNestedUpdateNoteRequestWith types depth =
     Proto.Json.message
         (Json.Decode.succeed UpdateNoteRequest
-            |> Proto.Json.messageField "note" Nothing (Json.Decode.map Just (decodeNoteWith types))
+            |> Proto.Json.messageField "note" Nothing (Json.Decode.map Just (Proto.Json.deeper depth (decodeNestedNoteWith types)))
             |> Proto.Json.messageFieldEither "updateMask" "update_mask" Nothing (Json.Decode.map Just Proto.Json.fieldMask)
         )
 
@@ -787,6 +815,13 @@ decodeVisibilityBytes number =
 -}
 mergeNoteBytes : Note -> Proto.Binary.Decoder Note
 mergeNoteBytes =
+    mergeNestedNoteBytes 1
+
+
+{-| [`mergeNoteBytes`](#mergeNoteBytes) for a [`Note`](#Note) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+-}
+mergeNestedNoteBytes : Int -> Note -> Proto.Binary.Decoder Note
+mergeNestedNoteBytes depth =
     Proto.Binary.merge
         "notes.v1.Note"
         (\number wire value ->
@@ -993,7 +1028,7 @@ mergeNoteBytes =
 
                 10 ->
                     Proto.Binary.field
-                        Proto.Binary.struct
+                        (Proto.Binary.nestedStruct depth)
                         (\v ->
                             { name = value.name
                             , title = value.title
@@ -1237,13 +1272,20 @@ decodeListNotesRequestBytes =
 -}
 mergeListNotesResponseBytes : ListNotesResponse -> Proto.Binary.Decoder ListNotesResponse
 mergeListNotesResponseBytes =
+    mergeNestedListNotesResponseBytes 1
+
+
+{-| [`mergeListNotesResponseBytes`](#mergeListNotesResponseBytes) for a [`ListNotesResponse`](#ListNotesResponse) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+-}
+mergeNestedListNotesResponseBytes : Int -> ListNotesResponse -> Proto.Binary.Decoder ListNotesResponse
+mergeNestedListNotesResponseBytes depth =
     Proto.Binary.merge
         "notes.v1.ListNotesResponse"
         (\number wire value ->
             case number of
                 1 ->
                     Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeNoteBytes mergeNoteBytes defaultNote)
+                        (Proto.Binary.recursive depth encodeNoteBytes mergeNestedNoteBytes defaultNote)
                         (\v ->
                             { notes = v
                             , nextPageToken = value.nextPageToken
@@ -1285,13 +1327,20 @@ decodeListNotesResponseBytes =
 -}
 mergeCreateNoteRequestBytes : CreateNoteRequest -> Proto.Binary.Decoder CreateNoteRequest
 mergeCreateNoteRequestBytes =
+    mergeNestedCreateNoteRequestBytes 1
+
+
+{-| [`mergeCreateNoteRequestBytes`](#mergeCreateNoteRequestBytes) for a [`CreateNoteRequest`](#CreateNoteRequest) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+-}
+mergeNestedCreateNoteRequestBytes : Int -> CreateNoteRequest -> Proto.Binary.Decoder CreateNoteRequest
+mergeNestedCreateNoteRequestBytes depth =
     Proto.Binary.merge
         "notes.v1.CreateNoteRequest"
         (\number wire value ->
             case number of
                 1 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeNoteBytes mergeNoteBytes defaultNote)
+                        (Proto.Binary.recursive depth encodeNoteBytes mergeNestedNoteBytes defaultNote)
                         value.note
                         (\v ->
                             { note = Just v
@@ -1317,13 +1366,20 @@ decodeCreateNoteRequestBytes =
 -}
 mergeUpdateNoteRequestBytes : UpdateNoteRequest -> Proto.Binary.Decoder UpdateNoteRequest
 mergeUpdateNoteRequestBytes =
+    mergeNestedUpdateNoteRequestBytes 1
+
+
+{-| [`mergeUpdateNoteRequestBytes`](#mergeUpdateNoteRequestBytes) for an [`UpdateNoteRequest`](#UpdateNoteRequest) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+-}
+mergeNestedUpdateNoteRequestBytes : Int -> UpdateNoteRequest -> Proto.Binary.Decoder UpdateNoteRequest
+mergeNestedUpdateNoteRequestBytes depth =
     Proto.Binary.merge
         "notes.v1.UpdateNoteRequest"
         (\number wire value ->
             case number of
                 1 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeNoteBytes mergeNoteBytes defaultNote)
+                        (Proto.Binary.recursive depth encodeNoteBytes mergeNestedNoteBytes defaultNote)
                         value.note
                         (\v ->
                             { note = Just v

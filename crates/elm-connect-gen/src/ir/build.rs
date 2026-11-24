@@ -15,7 +15,7 @@ use super::{
     HttpVerb, Idempotency, JsType, MapKey, Message, Method, ModuleName, Oneof, OneofVariant,
     Package, ScalarKind, Service, TypeName, TypeRef, WellKnown, Wrapper,
 };
-use super::{declaration, nesting, rename};
+use super::{Counted, declaration, nesting, rename};
 use crate::diagnostics::{Diagnostics, LineColSpan, Problem, Referrer, Site, Spans, closest, tag};
 use crate::naming::{self, NameError};
 use crate::options::{Options, Spelling, Streaming};
@@ -1192,7 +1192,9 @@ impl Builder {
 
     /// A `types::deep_nesting` warning when the longest chain of messages
     /// of `packages` (built from `pool`) is longer than the runtime's read
-    /// limit ([`nesting::longest`]).
+    /// limit ([`nesting::longest`]), saying whether a read counts its
+    /// messages: those that nest ([`Counted`]), a prefix of the chain, since
+    /// a message holding one that nests nests too.
     fn check_nesting(&mut self, pool: &DescriptorPool, packages: &[Package]) {
         let Some(chain) = nesting::longest(packages) else {
             return;
@@ -1208,9 +1210,16 @@ impl Builder {
                 "the chain starts here".into(),
             )
         });
+        let nests = Counted::of(packages);
+        let counted = chain
+            .messages
+            .iter()
+            .take_while(|name| nests.message(name))
+            .count();
         self.diagnostics.push(Problem::deep_nesting(
             &chain.messages,
             chain.recursive.as_deref(),
+            counted,
             nesting::LIMIT,
             site,
         ));

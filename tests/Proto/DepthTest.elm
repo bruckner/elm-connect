@@ -52,7 +52,7 @@ suite =
         , mapValues
         , anyOwnCount
         , offCycle
-        , anotherCycle
+        , everyNestingMessage
         , mixedFarPast
         , scrubbed
         , valueRefusals
@@ -350,17 +350,17 @@ binaryFailure =
 
                     [] ->
                         Expect.fail "no shape"
-        , test "a message off the cycle starts it at 1, in another package too" <|
+        , test "a message on no cycle above one is the first level, in another package too" <|
             \_ ->
                 let
                     tree depth =
                         "{\"tree\":" ++ jsonOf treeShape depth ++ "}"
                 in
                 Expect.all
-                    [ \_ -> Json.Decode.decodeString Deep.decodeForest ("{\"trees\":[" ++ jsonOf treeShape 100 ++ "]}") |> ok |> Expect.equal (Ok ())
-                    , \_ -> Json.Decode.decodeString Deep.decodeForest ("{\"trees\":[" ++ jsonOf treeShape 101 ++ "]}") |> ok |> failsTooDeep
-                    , \_ -> Json.Decode.decodeString Outside.decodeHolder (tree 100) |> ok |> Expect.equal (Ok ())
-                    , \_ -> Json.Decode.decodeString Outside.decodeHolder (tree 101) |> ok |> failsTooDeep
+                    [ \_ -> Json.Decode.decodeString Deep.decodeForest ("{\"trees\":[" ++ jsonOf treeShape 99 ++ "]}") |> ok |> Expect.equal (Ok ())
+                    , \_ -> Json.Decode.decodeString Deep.decodeForest ("{\"trees\":[" ++ jsonOf treeShape 100 ++ "]}") |> ok |> failsTooDeep
+                    , \_ -> Json.Decode.decodeString Outside.decodeHolder (tree 99) |> ok |> Expect.equal (Ok ())
+                    , \_ -> Json.Decode.decodeString Outside.decodeHolder (tree 100) |> ok |> failsTooDeep
                     ]
                     ()
         ]
@@ -920,8 +920,9 @@ mapValues =
 the message of an `Any` held by a `Sealed` the last envelope of the segment
 before holds, under `field`: `"sealed"`, a field, or `"note"`, a oneof's
 member. The innermost envelope holds one more such `Any`, of an empty
-envelope. The last `Any` is at the total of the lengths plus 1, since the
-message an `Any` holds counts at the `Any`'s level.
+envelope. The last `Any` is at the total of the lengths, plus 1 for each
+`Sealed`, a level of its own, plus 1, since the message an `Any` holds
+counts at the `Any`'s level.
 -}
 offCycleJson : String -> List Int -> String
 offCycleJson field lengths =
@@ -975,10 +976,10 @@ offCycle =
                                 , \_ -> writtenFromBinary (offCycleBinary tag refused) |> Expect.equal (Err anyTooDeep)
                                 ]
                             )
-                            [ ( [ 99 ], [ 100 ] )
-                            , ( [ 1, 98 ], [ 1, 99 ] )
-                            , ( [ 50, 49 ], [ 50, 50 ] )
-                            , ( List.repeat 33 3, List.repeat 33 3 ++ [ 1 ] )
+                            [ ( [ 98 ], [ 99 ] )
+                            , ( [ 1, 96 ], [ 1, 97 ] )
+                            , ( [ 50, 47 ], [ 50, 48 ] )
+                            , ( List.repeat 33 2, List.repeat 32 2 ++ [ 3 ] )
                             ]
                         )
                         ()
@@ -1021,7 +1022,7 @@ offCycle =
                         Err _ ->
                             Expect.fail "JSON.parse refused it"
     in
-    describe "an Any held by a message off the cycle counts on from the message on it"
+    describe "a message off the cycle holding an Any is a level, and the Any counts on from it"
         [ describe "read from JSON, and read from binary and written as JSON, refuse it at the same place"
             (List.map boundaries ways)
         , describe "100,000 levels fail with the error and throw nothing"
@@ -1030,7 +1031,7 @@ offCycle =
 
 
 
--- ANOTHER CYCLE
+-- ANOTHER CYCLE, AND MESSAGES ON NO CYCLE THAT NEST
 
 
 {-| One message entered along a path: its JSON around what it holds, and its
@@ -1050,7 +1051,8 @@ pathBinary steps =
     wrapped (List.map .prefix steps) []
 
 
-{-| `Chain`'s `next` and `tree`, and `Tree`'s `children`.
+{-| `Chain`'s `next` and `tree`, `Tree`'s `children`, `Dir`'s entry `"a"` and
+`forest`, and `Forest`'s `chain` and `trees`.
 -}
 chainNext : Step
 chainNext =
@@ -1065,6 +1067,63 @@ chainTree =
 treeChild : Step
 treeChild =
     Step "\"children\":[{" "}]" (\size -> 0x12 :: varint size)
+
+
+dirEntry : Step
+dirEntry =
+    Step "\"entries\":{\"a\":{" "}}" (mapEntry 0x0A)
+
+
+dirForest : Step
+dirForest =
+    Step "\"forest\":{" "}" (\size -> 0x12 :: varint size)
+
+
+forestChain : Step
+forestChain =
+    Step "\"chain\":{" "}" (\size -> 0x12 :: varint size)
+
+
+forestTree : Step
+forestTree =
+    Step "\"trees\":[{" "}]" (\size -> 0x0A :: varint size)
+
+
+{-| `Library`'s `doc`, `Doc`'s `root`, `Card`'s `meta`, `Meta`'s `data` (a
+`Struct`), and one object of a `Struct` inside another: the member `"a"` and
+the `Value` holding the inner object.
+-}
+libraryDoc : Step
+libraryDoc =
+    Step "\"doc\":{" "}" (\size -> 0x0A :: varint size)
+
+
+docRoot : Step
+docRoot =
+    Step "\"root\":{" "}" (\size -> 0x0A :: varint size)
+
+
+cardMeta : Step
+cardMeta =
+    Step "\"meta\":{" "}" (\size -> 0x0A :: varint size)
+
+
+metaData : Step
+metaData =
+    Step "\"data\":{" "}" (\size -> 0x0A :: varint size)
+
+
+structObject : Step
+structObject =
+    Step "\"a\":{"
+        "}"
+        (\size ->
+            let
+                inner =
+                    structInValue size
+            in
+            memberA (List.length inner + size) ++ inner
+        )
 
 
 {-| `count` messages of one type, each holding the next through `step`: the
@@ -1083,8 +1142,25 @@ chainThenTrees chains trees =
     run chains chainNext ++ chainTree :: run trees treeChild
 
 
-anotherCycle : Test
-anotherCycle =
+{-| From a `Dir`: `dirs` dirs, the last holding a `Forest`, on no cycle, which
+holds `chains` chains, the last holding `trees` trees: three cycles and a
+message on none between them, `dirs + 1 + chains + trees` levels.
+-}
+threeCycles : Int -> Int -> Int -> List Step
+threeCycles dirs chains trees =
+    run dirs dirEntry ++ dirForest :: forestChain :: chainThenTrees chains trees
+
+
+{-| From a `Dir`: `dirs` dirs, then the `Forest`, holding `trees` trees in its
+list: `dirs + 1 + trees` levels.
+-}
+forestTrees : Int -> Int -> List Step
+forestTrees dirs trees =
+    run dirs dirEntry ++ dirForest :: forestTree :: run trees treeChild
+
+
+everyNestingMessage : Test
+everyNestingMessage =
     let
         boundaries name jsonRead binaryRead path pairs =
             test name <|
@@ -1121,15 +1197,102 @@ anotherCycle =
                         Err _ ->
                             Expect.fail "JSON.parse refused it"
     in
-    describe "a message of another cycle held by one on a cycle counts one level deeper"
+    describe "every message that nests counts, from the outermost"
         [ boundaries "a message of another cycle, held directly"
             Deep.decodeChain
             Deep.decodeChainBytes
             (\( chains, trees ) -> chainThenTrees chains trees)
             [ ( ( 99, 1 ), ( 99, 2 ) ), ( ( 1, 99 ), ( 1, 100 ) ), ( ( 50, 50 ), ( 50, 51 ) ) ]
+        , boundaries "a message on no cycle, held in a field, holding another cycle in a list"
+            Deep.decodeDir
+            Deep.decodeDirBytes
+            (\( dirs, trees ) -> forestTrees dirs trees)
+            [ ( ( 98, 1 ), ( 99, 1 ) ), ( ( 1, 98 ), ( 1, 99 ) ), ( ( 50, 49 ), ( 50, 50 ) ) ]
+        , boundaries "three cycles, a message on none between the first two"
+            Deep.decodeDir
+            Deep.decodeDirBytes
+            (\( dirs, ( chains, trees ) ) -> threeCycles dirs chains trees)
+            [ ( ( 33, ( 33, 33 ) ), ( 33, ( 33, 34 ) ) ), ( ( 1, ( 1, 97 ) ), ( 1, ( 1, 98 ) ) ), ( ( 97, ( 1, 1 ) ), ( 98, ( 1, 1 ) ) ) ]
+        , boundaries "the same message on no cycle read at the top is the first level"
+            Deep.decodeForest
+            Deep.decodeForestBytes
+            (\( chains, trees ) -> forestChain :: chainThenTrees chains trees)
+            [ ( ( 98, 1 ), ( 98, 2 ) ), ( ( 1, 98 ), ( 1, 99 ) ) ]
+        , boundaries "a message on no cycle above one"
+            Deep.decodeDoc
+            Deep.decodeDocBytes
+            (\chains -> docRoot :: run chains chainNext)
+            [ ( 99, 100 ) ]
+        , boundaries "two messages on no cycle above one"
+            Deep.decodeLibrary
+            Deep.decodeLibraryBytes
+            (\chains -> libraryDoc :: docRoot :: run chains chainNext)
+            [ ( 98, 99 ) ]
+        , boundaries "a message on no cycle above one holding a Struct"
+            Deep.decodeCard
+            Deep.decodeCardBytes
+            (\objects -> cardMeta :: metaData :: run objects structObject)
+            [ ( 98, 99 ) ]
         , describe "100,000 levels fail with the error and throw nothing"
             [ far "another cycle" Deep.decodeChain Deep.decodeChainBytes (chainThenTrees 50000 50000)
+            , far "three cycles and a message on none" Deep.decodeDir Deep.decodeDirBytes (threeCycles 30000 30000 40000)
+            , far "two messages on no cycle above one" Deep.decodeLibrary Deep.decodeLibraryBytes (libraryDoc :: docRoot :: run 100000 chainNext)
+            , far "a Struct below two messages on no cycle" Deep.decodeCard Deep.decodeCardBytes (cardMeta :: metaData :: run 100000 structObject)
             ]
+        , letter
+        ]
+
+
+{-| From a `Letter`: its `Sealed`, whose `Any` holds `envelopes` envelopes,
+each the next's reply, the innermost holding an empty envelope in an `Any`.
+The `Letter`, the `Sealed` and each `Any` are a level each, the envelope in
+an `Any` sharing its level: `3 + envelopes` levels.
+-}
+letterJson : Int -> String
+letterJson envelopes =
+    let
+        any =
+            "\"payload\":{\"@type\":\"type.googleapis.com/cycles.v1.Envelope\""
+    in
+    "{\"sealed\":{"
+        ++ any
+        ++ ","
+        ++ String.repeat (envelopes - 1) "\"replies\":[{"
+        ++ any
+        ++ "}"
+        ++ String.repeat (envelopes - 1) "}]"
+        ++ "}}}"
+
+
+letterBinary : Int -> Bytes.Bytes
+letterBinary envelopes =
+    wrapped ((\size -> 0x0A :: varint size) :: payload :: List.repeat (envelopes - 1) reply ++ [ payload ]) []
+
+
+letter : Test
+letter =
+    let
+        read =
+            Json.Decode.decodeString (Deep.decodeLetterWith Deep.registry) >> ok
+
+        written bytes =
+            case Proto.Binary.decode Deep.decodeLetterBytes bytes of
+                Ok value ->
+                    Deep.encodeLetterWith Deep.registry value |> ok
+
+                Err _ ->
+                    Err (Proto.Error.BadJson (Json.Decode.Failure "did not read" Json.Encode.null))
+    in
+    describe "two messages on no cycle above an Any are a level each"
+        [ test "read from JSON, and read from binary and written as JSON, refuse it at the same place" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> read (letterJson 97) |> Expect.equal (Ok ())
+                    , \_ -> read (letterJson 98) |> failsTooDeep
+                    , \_ -> written (letterBinary 97) |> Expect.equal (Ok ())
+                    , \_ -> written (letterBinary 98) |> Expect.equal (Err anyTooDeep)
+                    ]
+                    ()
         ]
 
 

@@ -19,7 +19,8 @@ elmConnectVersion_ =
     Proto.Version.v0_2
 
 
-{-| Off every cycle, holding messages on two of them.
+{-| Off every cycle, holding messages on two of them: it nests, so it is a
+level read at the top and held by `Dir` alike.
 
 `message cycles.v1.Forest`
 

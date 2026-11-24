@@ -1,8 +1,9 @@
 //! The `types::deep_nesting` warning: a chain of messages longer than the
 //! runtime's read limit of 100, counted from the outermost message at 1,
 //! through every kind of message reference and across packages, ended by a
-//! well-known type and passing through a cycle once; and its rendering, as
-//! a corpus `warnings.txt` would hold it.
+//! well-known type and passing through a cycle once; its help, by how many
+//! of the chain's messages a read counts; and its rendering, as a corpus
+//! `warnings.txt` would hold it.
 
 use elm_connect_gen::Options;
 use elm_connect_gen::diagnostics::{Code, Problem};
@@ -209,11 +210,12 @@ const RENDERED: &str = r#"types::deep_nesting
    ╰────
   help: Most protobuf runtimes refuse to parse a message nested more than 100
         deep, so a server or client on one of them fails on a message that
-        fills this chain. elm-connect's reads count only the messages on a
-        cycle of references, so they read it to its end, and a chain deep
-        enough overflows the JavaScript stack. Shorten the chain to 100
-        messages: merge levels into one message, or hold the deep part as
-        `bytes`.
+        fills this chain. elm-connect's reads count only the messages that
+        reach something that nests (a message on a cycle of references, a
+        `Value`, `Struct` or `ListValue`, or an `Any`), and none of this
+        chain's messages does, so they read it to its end; a chain deep enough
+        overflows the JavaScript stack. Shorten the chain to 100 messages:
+        merge levels into one message, or hold the deep part as `bytes`.
 "#;
 
 #[test]
@@ -239,10 +241,40 @@ const RENDERED_CYCLE: &str = r#"types::deep_nesting
  6 │   Level2 next = 1;
    ╰────
   help: Most protobuf runtimes refuse to parse a message nested more than 100
-        deep, so a server or client on one of them fails on a message that
-        fills this chain. elm-connect's reads count only the messages on a
-        cycle of references, so they read it to its end, and a chain deep
-        enough overflows the JavaScript stack. Shorten the chain to 100
-        messages: merge levels into one message, or hold the deep part as
-        `bytes`.
+        deep, and so do elm-connect's reads: they count each message that
+        reaches something that nests (a message on a cycle of references, a
+        `Value`, `Struct` or `ListValue`, or an `Any`), the first 101 of this
+        chain, so a message that fills it fails to read past 100 levels.
+        Shorten the chain to 100 messages: merge levels into one message, or
+        hold the deep part as `bytes`.
 "#;
+
+#[test]
+fn the_help_says_whether_reads_count_the_chain() {
+    // Every message reaches the `Struct` at the end: all 101 are counted.
+    let source = chain("a.v1", 1, 101, singular, "google.protobuf.Struct data = 1;");
+    let found = warnings(&[("a.proto", &source), ("other.proto", &other(""))]);
+    assert_eq!(found.len(), 1, "{found:#?}");
+    assert!(
+        found[0]
+            .help_text()
+            .contains("and so do elm-connect's reads: they count each message that reaches"),
+        "{}",
+        found[0].help_text()
+    );
+    assert!(found[0].help_text().contains("the first 101 of this chain"));
+    // Only `L1` and `L2` reach the `Struct` `L2` holds beside the chain.
+    let source = chain("a.v1", 1, 101, singular, "").replace(
+        "message L2 { L3 next = 1; }",
+        "message L2 { L3 next = 1; google.protobuf.Struct data = 2; }",
+    );
+    let found = warnings(&[("a.proto", &source), ("other.proto", &other(""))]);
+    assert_eq!(found.len(), 1, "{found:#?}");
+    assert!(
+        found[0].help_text().contains(
+            "only the first 2 of this chain's messages do, so they read the rest to its end"
+        ),
+        "{}",
+        found[0].help_text()
+    );
+}
