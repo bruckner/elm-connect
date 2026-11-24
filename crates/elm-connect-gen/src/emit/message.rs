@@ -9,7 +9,7 @@ use super::{
 };
 use crate::elm::ast::{BinOp, Decl, Expr, Pattern, Type};
 use crate::elm::build::{
-    access, apply, binop, lambda, list, pipeline, pvar, qualified, record, string, tuple2, ty,
+    access, apply, binop, int, lambda, list, pipeline, pvar, qualified, record, string, tuple2, ty,
     ty_fn, var,
 };
 use crate::ir::ModuleName;
@@ -207,9 +207,18 @@ impl Emitter {
             .map(|oneof| {
                 let field_value = access(var(ENCODER_ARGUMENT), oneof.oneof.elm_field_name.clone());
                 if self.oneof_reaches(oneof) {
+                    // A oneof with no member on the cycle is written off
+                    // it, counting from the message's depth.
+                    let on_cycle = shape.message.recursive
+                        && oneof.variants.iter().any(|(variant, _)| variant.cyclic);
+                    let registry = if shape.message.recursive && !on_cycle {
+                        self.nested_registry(int(1))
+                    } else {
+                        var(REGISTRY_ARGUMENT)
+                    };
                     apply(
                         var(with_registry(oneof.oneof.encoder_name())),
-                        [var(REGISTRY_ARGUMENT), field_value],
+                        [registry, field_value],
                     )
                 } else {
                     // A oneof that reaches no `Any` gives its members' JSON;
@@ -367,10 +376,12 @@ impl Emitter {
                                 apply(var(nested(oneof.oneof.decoder_name())), [var(DEPTH)])
                             }
                         } else if self.oneof_reaches(oneof) {
-                            apply(
-                                var(with_registry(oneof.oneof.decoder_name())),
-                                [var(REGISTRY_ARGUMENT)],
-                            )
+                            let registry = if deep.is_some() {
+                                self.nested_registry(var(DEPTH))
+                            } else {
+                                var(REGISTRY_ARGUMENT)
+                            };
+                            apply(var(with_registry(oneof.oneof.decoder_name())), [registry])
                         } else {
                             var(oneof.oneof.decoder_name())
                         };

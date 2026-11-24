@@ -237,6 +237,31 @@ refuses an `Any` exactly where the read does; it cannot refuse what a
 read in the same format accepted, since a value read from JSON had
 every `Any` counted the same way.
 
+*2026-11-23, later:* a message on a cycle handed a message off its cycle
+(or a oneof with no member on it) the registry as the outermost message
+was given it, not at its own depth, so an `Any` reached through it was
+counted from the registry's depth, and so was the message of the same
+cycle inside that `Any`. Each such `Any` added one level where it should
+have added the whole cycle's, and a JSON read accepted about 5,000
+levels in one read where the budget promised 100: a read of about 500
+such levels overflowed the stack in node 24, Chromium and Firefox (WebKit
+read all 5,150), which `decodeString` reports
+as invalid JSON and `decodeValue`, `Proto.Message.decodeJson` and a
+transcoded call with a `response_body` threw. The write deepened its
+registry along the cycle, so it counted the same `Any` from the
+message's depth (one level low for the outermost message), and the two
+refused at different places. Both now give such a value the registry at
+the message's depth, through one new helper, `Proto.Json.nestedRegistry
+depth types` (the decoder's depth, or 1 in an encoder, which knows the
+depth only from the registry); `nestedAnyWith` and
+`encodeNestedAnyWith` were kept, being the same for an `Any` held
+directly. A `Value`, `Struct` or `ListValue` held by a message off the
+cycle still counts from 1, as one inside an `Any` does: its decoder
+takes no registry to carry the depth, and what it adds is bounded at 100
+levels, so a read takes at most 200. Giving it the depth would take a
+depth-taking decoder for every such message reached from a cycle, a
+change to the plumbing left for later.
+
 Every `BadJson` the runtime returns is scrubbed of JSON nested past 50
 levels. elm/json keeps the JSON a decoder failed on, so an error from a
 refused deep read, or from a field given a deep value of the wrong type,

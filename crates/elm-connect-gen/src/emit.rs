@@ -653,7 +653,9 @@ struct Emitter {
     /// takes its message's depth, is written by an encoder taking the
     /// registry: an `Any` is written with `Proto.Json.encodeNestedAnyWith`,
     /// which counts it from the message's depth as the decoder's
-    /// `nestedAnyWith` reads it.
+    /// `nestedAnyWith` reads it, and a message off the cycle is given
+    /// `Proto.Json.nestedRegistry 1`, the registry at that depth, as the
+    /// decoder gives it the registry at its own.
     nested_any: bool,
 }
 
