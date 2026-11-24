@@ -2599,36 +2599,55 @@ holds the JSON alone. It fails for JSON that is not its message, lenient
 or not.
 -}
 anyWith : Registry -> Decoder Any
-anyWith registry =
+anyWith (InternalRegistry.Registry leniency depth entries) =
     anyParts
         |> Json.Decode.andThen
             (\parts ->
                 case parts of
                     Just ( url, messageJson ) ->
-                        case InternalRegistry.toBytes (InternalRegistry.strict registry) (InternalAny.nameOf url) messageJson of
-                            Just (Ok base64) ->
-                                Json.Decode.succeed (InternalAny.Any url (InternalAny.Binary base64))
+                        let
+                            read readLeniency =
+                                InternalRegistry.toBytes (InternalRegistry.Registry readLeniency depth entries) (InternalAny.nameOf url) messageJson
 
-                            Just (Err problem) ->
-                                if InternalRegistry.isLenient registry then
-                                    -- Read leniently, it may hold an `Any` its binary
-                                    -- would lose: it is held as JSON alone.
-                                    case InternalRegistry.toBytes registry (InternalAny.nameOf url) messageJson of
-                                        Just (Ok _) ->
-                                            Json.Decode.succeed (InternalAny.Any url (InternalAny.Json messageJson))
-
-                                        _ ->
-                                            notItsMessage url problem
-
-                                else
+                            json =
+                                Json.Decode.succeed (InternalAny.Any url (InternalAny.Json messageJson))
+                        in
+                        if leniency == InternalRegistry.Checking then
+                            -- Only whether the read succeeds is kept, and held as
+                            -- JSON this `Any` adds nothing to the binary around it.
+                            case read InternalRegistry.Checking of
+                                Just (Err problem) ->
                                     notItsMessage url problem
 
-                            Nothing ->
-                                if InternalRegistry.isLenient registry then
-                                    Json.Decode.succeed (InternalAny.Any url (InternalAny.Json messageJson))
+                                _ ->
+                                    json
 
-                                else
-                                    Json.Decode.fail "Expecting an Any of a type the registry has"
+                        else
+                            case read InternalRegistry.Strict of
+                                Just (Ok base64) ->
+                                    Json.Decode.succeed (InternalAny.Any url (InternalAny.Binary base64))
+
+                                Just (Err problem) ->
+                                    if leniency == InternalRegistry.Lenient then
+                                        -- Read leniently, it may hold an `Any` its binary
+                                        -- would lose: it is held as JSON alone. That read
+                                        -- is a check, its binary dropped.
+                                        case read InternalRegistry.Checking of
+                                            Just (Ok _) ->
+                                                json
+
+                                            _ ->
+                                                notItsMessage url problem
+
+                                    else
+                                        notItsMessage url problem
+
+                                Nothing ->
+                                    if leniency == InternalRegistry.Lenient then
+                                        json
+
+                                    else
+                                        Json.Decode.fail "Expecting an Any of a type the registry has"
 
                     Nothing ->
                         Json.Decode.succeed InternalAny.empty

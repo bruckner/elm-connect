@@ -1,4 +1,4 @@
-module Proto.Internal.Registry exposing (Entry, Leniency(..), Registry(..), atLeast, depthOf, isLenient, member, strict, toBytes, toJson, unregistered)
+module Proto.Internal.Registry exposing (Entry, Leniency(..), Registry(..), atLeast, depthOf, isLenient, member, toBytes, toJson, unregistered)
 
 {-| The `Registry` type, which `Proto.Registry` names by an alias, and the
 conversions through one, which `Proto.Registry` does not expose: `Proto.Any`
@@ -30,10 +30,21 @@ type Registry
 {-| `Strict` fails to read an `Any` of a type the registry has no entry for,
 and to write one held as JSON alone; `Lenient` reads it as that `Any`'s JSON
 alone, and writes it as that JSON.
+
+`Checking` is lenient, for a read whose result only says whether a lenient
+read succeeds and is then dropped: a lenient read of an `Any` whose strict
+read failed, which holds the `Any` as its JSON alone if this succeeds. An
+`Any` read under it is read leniently at once, without the strict read
+first, which only chooses between holding binary and holding JSON alone; a
+strict read that succeeds implies a lenient one that does. So every `Any`
+is read at most twice, once strictly and once leniently, not twice more
+for every `Any` around it.
+
 -}
 type Leniency
     = Strict
     | Lenient
+    | Checking
 
 
 {-| A message's conversions: its binary, as the base64 text an `Any` holds,
@@ -118,14 +129,7 @@ JSON alone.
 -}
 isLenient : Registry -> Bool
 isLenient (Registry leniency _ _) =
-    leniency == Lenient
-
-
-{-| The registry with its entries, strict.
--}
-strict : Registry -> Registry
-strict (Registry _ depth entries) =
-    Registry Strict depth entries
+    leniency /= Strict
 
 
 {-| The type URL of the `Any` a JSON read failed on because the registry has
