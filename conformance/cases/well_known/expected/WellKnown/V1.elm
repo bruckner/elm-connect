@@ -18,6 +18,7 @@ import Json.Encode
 import Proto.Binary
 import Proto.Descriptors
 import Proto.Duration exposing (Duration)
+import Proto.Error
 import Proto.Json
 import Proto.Message
 import Proto.Registry
@@ -221,7 +222,7 @@ registry =
 
 {-| Encodes an [`Event`](#Event) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for.
 -}
-encodeEvent : Event -> Proto.Json.Encoder
+encodeEvent : Event -> Proto.Json.Encoder Proto.Error.Error
 encodeEvent value =
     Proto.Json.writeObject
         [ ( "marker", Just (Proto.Json.encodeEmpty value.marker) )
@@ -263,7 +264,7 @@ encodeEvent value =
 
 {-| Encodes an [`EventWhen`](#EventWhen) as the members of its message's JSON object.
 -}
-encodeEventWhen : EventWhen -> List ( String, Proto.Json.Encoder )
+encodeEventWhen : EventWhen -> List ( String, Proto.Json.Encoder Proto.Error.Error )
 encodeEventWhen value =
     case value of
         EventWhenUnset ->

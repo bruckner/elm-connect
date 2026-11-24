@@ -180,21 +180,16 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes an [`Event`](#Event) as proto3 JSON.
+{-| Encodes an [`Event`](#Event) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeEvent : Event -> Proto.Json.Encoder
+encodeEvent : Event -> Proto.Json.Encoder x
 encodeEvent value =
-    Proto.Json.ready (jsonEvent value)
-
-
-{-| Writes an [`Event`](#Event) as proto3 JSON, which nothing it holds can refuse.
--}
-jsonEvent : Event -> Json.Encode.Value
-jsonEvent value =
-    Proto.Json.objectOfFields
-        ([ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-         ]
-            ++ encodeEventKind value.kind
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            ([ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+             ]
+                ++ encodeEventKind value.kind
+            )
         )
 
 
@@ -215,21 +210,16 @@ encodeEventKind value =
             ]
 
 
-{-| Encodes a [`ListEventsRequest`](#ListEventsRequest) as proto3 JSON.
+{-| Encodes a [`ListEventsRequest`](#ListEventsRequest) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeListEventsRequest : ListEventsRequest -> Proto.Json.Encoder
+encodeListEventsRequest : ListEventsRequest -> Proto.Json.Encoder x
 encodeListEventsRequest value =
-    Proto.Json.ready (jsonListEventsRequest value)
-
-
-{-| Writes a [`ListEventsRequest`](#ListEventsRequest) as proto3 JSON, which nothing it holds can refuse.
--}
-jsonListEventsRequest : ListEventsRequest -> Json.Encode.Value
-jsonListEventsRequest value =
-    Proto.Json.objectOfFields
-        ([ ( "parent", Proto.Json.implicitField "" Json.Encode.string value.parent )
-         ]
-            ++ encodeListEventsRequestFilter value.filter
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            ([ ( "parent", Proto.Json.implicitField "" Json.Encode.string value.parent )
+             ]
+                ++ encodeListEventsRequestFilter value.filter
+            )
         )
 
 
@@ -246,20 +236,15 @@ encodeListEventsRequestFilter value =
             ]
 
 
-{-| Encodes a [`ListEventsResponse`](#ListEventsResponse) as proto3 JSON.
+{-| Encodes a [`ListEventsResponse`](#ListEventsResponse) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeListEventsResponse : ListEventsResponse -> Proto.Json.Encoder
+encodeListEventsResponse : ListEventsResponse -> Proto.Json.Encoder x
 encodeListEventsResponse value =
-    Proto.Json.ready (jsonListEventsResponse value)
-
-
-{-| Writes a [`ListEventsResponse`](#ListEventsResponse) as proto3 JSON, which nothing it holds can refuse.
--}
-jsonListEventsResponse : ListEventsResponse -> Json.Encode.Value
-jsonListEventsResponse value =
-    Proto.Json.objectOfFields
-        [ ( "events", Proto.Json.repeatedField jsonEvent value.events )
-        ]
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "events", Proto.Json.totalRepeatedField encodeEvent value.events )
+            ]
+        )
 
 
 

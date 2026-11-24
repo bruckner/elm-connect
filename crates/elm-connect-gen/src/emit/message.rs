@@ -100,18 +100,17 @@ impl Emitter {
         }
     }
 
-    /// A message's JSON encoder, `encodeFoo : Foo -> Proto.Json.Encoder`.
-    ///
-    /// For a message whose write nothing it holds can refuse, also the
-    /// plain `jsonFoo : Foo -> Json.Encode.Value`, which `encodeFoo` wraps
-    /// with `Proto.Json.ready`: `Proto.Json.objectOfFields` of every field
+    /// A message's JSON encoder, `encodeFoo : Foo -> Proto.Json.Encoder x`
+    /// for a message whose write nothing it holds can refuse:
+    /// `Proto.Json.ready` of `Proto.Json.objectOfFields` of every field
     /// under its JSON name, each as a `Maybe Json.Encode.Value` that is
     /// `Nothing` when the field is left out
     /// ([`encode_field`](Self::encode_field)), followed by the members
     /// each oneof's encoder gives (none when it is unset). Key order means
     /// nothing in JSON, so the fields come first, whatever the declaration
-    /// order. Its parents call `jsonFoo` directly, so the common case is
-    /// plain code with no tag per field.
+    /// order. It works for any refusal type `x`, so its parents unwrap it
+    /// with `Proto.Json.encodeTotal` and stay plain code with no tag per
+    /// field.
     pub(super) fn message_encoder(&mut self, shape: &MessageShape) -> Vec<Decl> {
         if self.message_write_reaches(shape) {
             return self.message_encoder_with(shape);
@@ -158,38 +157,21 @@ impl Emitter {
         } else {
             self.reference((PROTO_JSON, "objectOfFields"))
         };
-        let value_type = self.library_type(JSON_ENCODE, "Value", []);
-        let encoder_type = self.library_type(PROTO_JSON, "Encoder", []);
-        let plain = shape.message.plain_encoder_name();
+        let encoder_type = self.json_encoder_type(false);
         let ready = self.reference((PROTO_JSON, "ready"));
-        vec![
-            Decl::Value {
-                doc: Some(format!(
-                    "Encodes {} as proto3 JSON.",
-                    docs::a_local(&shape.message.elm_name)
-                )),
-                name: shape.message.encoder_name(),
-                annotation: Type::Function(
-                    Box::new(ty(shape.message.elm_name.clone(), [])),
-                    Box::new(encoder_type),
-                ),
-                params: vec![pvar(ENCODER_ARGUMENT)],
-                body: apply(ready, [apply(var(plain.clone()), [var(ENCODER_ARGUMENT)])]),
-            },
-            Decl::Value {
-                doc: Some(format!(
-                    "Writes {} as proto3 JSON, which nothing it holds can refuse.",
-                    docs::a_local(&shape.message.elm_name)
-                )),
-                name: plain,
-                annotation: Type::Function(
-                    Box::new(ty(shape.message.elm_name.clone(), [])),
-                    Box::new(value_type),
-                ),
-                params: vec![param],
-                body: apply(object, [members]),
-            },
-        ]
+        vec![Decl::Value {
+            doc: Some(format!(
+                "Encodes {} as proto3 JSON, which nothing it holds can refuse.",
+                docs::a_local(&shape.message.elm_name)
+            )),
+            name: shape.message.encoder_name(),
+            annotation: Type::Function(
+                Box::new(ty(shape.message.elm_name.clone(), [])),
+                Box::new(encoder_type),
+            ),
+            params: vec![param],
+            body: apply(ready, [apply(object, [members])]),
+        }]
     }
 
     /// Whether a message reaches an `Any`: one of its
@@ -207,8 +189,8 @@ impl Emitter {
         self.write_reach.message(&shape.message.proto_full_name)
     }
 
-    /// `encodeFoo : Foo -> Proto.Json.Encoder` for a message whose write can
-    /// be refused: `Proto.Json.writeObject` of the fields that cannot be
+    /// `encodeFoo : Foo -> Proto.Json.Encoder Proto.Error.Error` for a
+    /// message whose write can be refused: `Proto.Json.writeObject` of the fields that cannot be
     /// refused, as plain code, and of those that can, each a
     /// `Proto.Json.Encoder` ([`Self::write_field`]), then each oneof's
     /// members in the list its encoder gives.
@@ -251,7 +233,7 @@ impl Emitter {
         let plain = join(plain, plain_oneofs);
         let checked = join(checked, checked_oneofs);
         let object = self.reference((PROTO_JSON, "writeObject"));
-        let encoder_type = self.library_type(PROTO_JSON, "Encoder", []);
+        let encoder_type = self.json_encoder_type(true);
         let any = if self.message_reaches(shape) {
             ", and writing each `Any` with the registry it is run with"
         } else {

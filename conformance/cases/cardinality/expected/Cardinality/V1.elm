@@ -158,48 +158,38 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes an [`Author`](#Author) as proto3 JSON.
+{-| Encodes an [`Author`](#Author) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeAuthor : Author -> Proto.Json.Encoder
+encodeAuthor : Author -> Proto.Json.Encoder x
 encodeAuthor value =
-    Proto.Json.ready (jsonAuthor value)
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            ]
+        )
 
 
-{-| Writes an [`Author`](#Author) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Note`](#Note) as proto3 JSON, which nothing it holds can refuse.
 -}
-jsonAuthor : Author -> Json.Encode.Value
-jsonAuthor value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        ]
-
-
-{-| Encodes a [`Note`](#Note) as proto3 JSON.
--}
-encodeNote : Note -> Proto.Json.Encoder
+encodeNote : Note -> Proto.Json.Encoder x
 encodeNote value =
-    Proto.Json.ready (jsonNote value)
-
-
-{-| Writes a [`Note`](#Note) as proto3 JSON, which nothing it holds can refuse.
--}
-jsonNote : Note -> Json.Encode.Value
-jsonNote value =
-    Proto.Json.objectOfFields
-        [ ( "subtitle", Maybe.map Json.Encode.string value.subtitle )
-        , ( "stars", Maybe.map Json.Encode.int value.stars )
-        , ( "score", Maybe.map Proto.Json.encodeFloat value.score )
-        , ( "views", Maybe.map Proto.Json.encodeInt64 value.views )
-        , ( "author", Maybe.map jsonAuthor value.author )
-        , ( "editor", Maybe.map jsonAuthor value.editor )
-        , ( "tags", Proto.Json.repeatedField Json.Encode.string value.tags )
-        , ( "counts", Proto.Json.repeatedField Json.Encode.int value.counts )
-        , ( "weights", Proto.Json.repeatedField Proto.Json.encodeFloat value.weights )
-        , ( "reviewers", Proto.Json.repeatedField jsonAuthor value.reviewers )
-        , ( "relatedLinks", Proto.Json.repeatedField Json.Encode.string value.relatedLinks )
-        , ( "isDraft", Maybe.map Json.Encode.bool value.isDraft )
-        , ( "title", Proto.Json.implicitField "" Json.Encode.string value.title )
-        ]
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "subtitle", Maybe.map Json.Encode.string value.subtitle )
+            , ( "stars", Maybe.map Json.Encode.int value.stars )
+            , ( "score", Maybe.map Proto.Json.encodeFloat value.score )
+            , ( "views", Maybe.map Proto.Json.encodeInt64 value.views )
+            , ( "author", Proto.Json.totalOptionalField encodeAuthor value.author )
+            , ( "editor", Proto.Json.totalOptionalField encodeAuthor value.editor )
+            , ( "tags", Proto.Json.repeatedField Json.Encode.string value.tags )
+            , ( "counts", Proto.Json.repeatedField Json.Encode.int value.counts )
+            , ( "weights", Proto.Json.repeatedField Proto.Json.encodeFloat value.weights )
+            , ( "reviewers", Proto.Json.totalRepeatedField encodeAuthor value.reviewers )
+            , ( "relatedLinks", Proto.Json.repeatedField Json.Encode.string value.relatedLinks )
+            , ( "isDraft", Maybe.map Json.Encode.bool value.isDraft )
+            , ( "title", Proto.Json.implicitField "" Json.Encode.string value.title )
+            ]
+        )
 
 
 

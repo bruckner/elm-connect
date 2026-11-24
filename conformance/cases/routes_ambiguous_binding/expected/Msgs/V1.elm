@@ -133,38 +133,28 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`MessageRequest`](#MessageRequest) as proto3 JSON.
+{-| Encodes a [`MessageRequest`](#MessageRequest) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeMessageRequest : MessageRequest -> Proto.Json.Encoder
+encodeMessageRequest : MessageRequest -> Proto.Json.Encoder x
 encodeMessageRequest value =
-    Proto.Json.ready (jsonMessageRequest value)
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            , ( "id", Proto.Json.implicitField "" Json.Encode.string value.id )
+            , ( "sub", Proto.Json.implicitField "" Json.Encode.string value.sub )
+            ]
+        )
 
 
-{-| Writes a [`MessageRequest`](#MessageRequest) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Message`](#Message) as proto3 JSON, which nothing it holds can refuse.
 -}
-jsonMessageRequest : MessageRequest -> Json.Encode.Value
-jsonMessageRequest value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        , ( "id", Proto.Json.implicitField "" Json.Encode.string value.id )
-        , ( "sub", Proto.Json.implicitField "" Json.Encode.string value.sub )
-        ]
-
-
-{-| Encodes a [`Message`](#Message) as proto3 JSON.
--}
-encodeMessage : Message -> Proto.Json.Encoder
+encodeMessage : Message -> Proto.Json.Encoder x
 encodeMessage value =
-    Proto.Json.ready (jsonMessage value)
-
-
-{-| Writes a [`Message`](#Message) as proto3 JSON, which nothing it holds can refuse.
--}
-jsonMessage : Message -> Json.Encode.Value
-jsonMessage value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        ]
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            ]
+        )
 
 
 

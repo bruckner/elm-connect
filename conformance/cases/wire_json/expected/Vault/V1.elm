@@ -19,6 +19,7 @@ import Proto.Any
 import Proto.Binary
 import Proto.Descriptors
 import Proto.Enum
+import Proto.Error
 import Proto.Json
 import Proto.Message
 import Proto.Registry
@@ -235,7 +236,7 @@ encodeStatus value =
 
 {-| Encodes an [`Item`](#Item) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for, and writing each `Any` with the registry it is run with.
 -}
-encodeItem : Item -> Proto.Json.Encoder
+encodeItem : Item -> Proto.Json.Encoder Proto.Error.Error
 encodeItem value =
     Proto.Json.writeObject
         [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
@@ -247,41 +248,31 @@ encodeItem value =
         ]
 
 
-{-| Encodes a [`GetItemRequest`](#GetItemRequest) as proto3 JSON.
+{-| Encodes a [`GetItemRequest`](#GetItemRequest) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeGetItemRequest : GetItemRequest -> Proto.Json.Encoder
+encodeGetItemRequest : GetItemRequest -> Proto.Json.Encoder x
 encodeGetItemRequest value =
-    Proto.Json.ready (jsonGetItemRequest value)
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            ]
+        )
 
 
-{-| Writes a [`GetItemRequest`](#GetItemRequest) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`ListItemsRequest`](#ListItemsRequest) as proto3 JSON, which nothing it holds can refuse.
 -}
-jsonGetItemRequest : GetItemRequest -> Json.Encode.Value
-jsonGetItemRequest value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        ]
-
-
-{-| Encodes a [`ListItemsRequest`](#ListItemsRequest) as proto3 JSON.
--}
-encodeListItemsRequest : ListItemsRequest -> Proto.Json.Encoder
+encodeListItemsRequest : ListItemsRequest -> Proto.Json.Encoder x
 encodeListItemsRequest value =
-    Proto.Json.ready (jsonListItemsRequest value)
-
-
-{-| Writes a [`ListItemsRequest`](#ListItemsRequest) as proto3 JSON, which nothing it holds can refuse.
--}
-jsonListItemsRequest : ListItemsRequest -> Json.Encode.Value
-jsonListItemsRequest value =
-    Proto.Json.objectOfFields
-        [ ( "pageSize", Proto.Json.implicitField 0 Json.Encode.int value.pageSize )
-        ]
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "pageSize", Proto.Json.implicitField 0 Json.Encode.int value.pageSize )
+            ]
+        )
 
 
 {-| Encodes a [`ListItemsResponse`](#ListItemsResponse) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for, and writing each `Any` with the registry it is run with.
 -}
-encodeListItemsResponse : ListItemsResponse -> Proto.Json.Encoder
+encodeListItemsResponse : ListItemsResponse -> Proto.Json.Encoder Proto.Error.Error
 encodeListItemsResponse value =
     Proto.Json.writeObject []
         [ ( "items", Proto.Json.writeRepeated encodeItem value.items )

@@ -173,13 +173,15 @@
 //!   its own messages' typed values and nothing else; a method's JSON
 //!   codecs take the client's registry, and a route whose body reaches an
 //!   `Any` is read from its binding.
-//! - Every message's JSON encoder is `encodeFoo : Foo -> Proto.Json.Encoder`,
-//!   which `Proto.Json.encode` or `encodeWith` runs. A message whose write
+//! - Every message has one JSON encoder, `encodeFoo`, which
+//!   `Proto.Json.encode` or `encodeWith` runs. A message whose write
 //!   nothing it holds can refuse (no `Any`, and no `Timestamp`, `Duration`,
 //!   `FieldMask`, `Struct`, `ListValue` or `Value`, at any depth;
-//!   [`crate::ir::AnyReach::refusable`]) is written by plain code,
-//!   `jsonFoo : Foo -> Json.Encode.Value`, which `encodeFoo` wraps once;
-//!   the others are built from `Proto.Json.writeObject`, with their fields
+//!   [`crate::ir::AnyReach::refusable`]) gets `Foo -> Proto.Json.Encoder x`,
+//!   plain code wrapped once, which works for any refusal type, so its
+//!   plain parents unwrap it with `Proto.Json.encodeTotal`; the others get
+//!   `Foo -> Proto.Json.Encoder Proto.Error.Error`, built from
+//!   `Proto.Json.writeObject`, with their fields
 //!   that cannot be refused passed as plain JSON ([`field`]). A field on a
 //!   cycle of a message that reaches an `Any` is written one level deeper
 //!   (`Proto.Json.writeDeeper`), so an `Any` read from binary counts the
@@ -227,6 +229,12 @@ const JSON_DECODE: &str = "Json.Decode";
 const JSON_ENCODE: &str = "Json.Encode";
 /// The runtime package's proto3 JSON helpers.
 const PROTO_JSON: &str = "Proto.Json";
+/// The runtime package's error type, what a JSON encoder that can refuse
+/// refuses with.
+const PROTO_ERROR: &str = "Proto.Error";
+/// The type variable of a JSON encoder that cannot refuse,
+/// `Proto.Json.Encoder x`.
+const TOTAL_ERROR_VAR: &str = "x";
 /// elm/core's `Dict`, imported as `import Dict exposing (Dict)` so the
 /// type reads `Dict String V`, as Elm code conventionally writes it.
 const CORE_DICT: &str = "Dict";
@@ -645,7 +653,7 @@ struct Emitter {
     reach: AnyReach,
     /// The messages whose JSON write can be refused, whose encoders are
     /// built with `Proto.Json.writeObject`; the others are written by plain
-    /// code (`jsonFoo`) and wrapped once.
+    /// code and wrapped once.
     write_reach: AnyReach,
     /// While a value is written for a route's path or query, which print
     /// it unchecked: the plain encoder, whatever the write reach says.
@@ -951,6 +959,18 @@ impl Emitter {
             }
         }
         reserved
+    }
+
+    /// `Proto.Json.Encoder Proto.Error.Error` for an encoder that can refuse
+    /// (`refusable`), else `Proto.Json.Encoder x`, which works for any
+    /// refusal type, `Never` included.
+    fn json_encoder_type(&mut self, refusable: bool) -> Type {
+        let error = if refusable {
+            self.library_type(PROTO_ERROR, "Error", [])
+        } else {
+            Type::Var(TOTAL_ERROR_VAR.to_owned())
+        };
+        self.library_type(PROTO_JSON, "Encoder", [error])
     }
 
     /// The library type `module.name args`, which the module then imports.
@@ -1292,7 +1312,6 @@ mod tests {
             [
                 "Bytes.Encode",
                 "Json.Decode",
-                "Json.Encode",
                 "Other.V1",
                 "Proto.Binary",
                 "Proto.Descriptors",
@@ -1313,7 +1332,7 @@ mod tests {
             "{printed}"
         );
         assert!(
-            printed.contains("Maybe.map Other.V1.jsonB value.b"),
+            printed.contains("Proto.Json.totalOptionalField Other.V1.encodeB value.b"),
             "{printed}"
         );
         assert!(

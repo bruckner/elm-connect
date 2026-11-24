@@ -184,50 +184,40 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`URLPath`](#URLPath) as proto3 JSON.
+{-| Encodes a [`URLPath`](#URLPath) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeURLPath : URLPath -> Proto.Json.Encoder
+encodeURLPath : URLPath -> Proto.Json.Encoder x
 encodeURLPath value =
-    Proto.Json.ready (jsonURLPath value)
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "Label", Proto.Json.implicitField "" Json.Encode.string value.label )
+            , ( "ID", Proto.Json.implicitField "" Json.Encode.string value.id )
+            , ( "URL", Proto.Json.implicitField "" Json.Encode.string value.url )
+            , ( "URLPath", Proto.Json.implicitField "" Json.Encode.string value.urlPath )
+            , ( "HTTPRequest", Proto.Json.implicitField "" Json.Encode.string value.httpRequest )
+            , ( "XCoord", Proto.Json.implicitFloatField value.xCoord )
+            , ( "ABCDef", Proto.Json.implicitField "" Json.Encode.string value.abcDef )
+            , ( "Internal", Proto.Json.implicitField "" Json.Encode.string value.internal )
+            , ( "displayName", Proto.Json.implicitField "" Json.Encode.string value.displayName )
+            , ( "Type", Proto.Json.implicitField "" Json.Encode.string value.type_ )
+            , ( "IDs", Proto.Json.repeatedField Json.Encode.string value.ids )
+            , ( "URLs", Proto.Json.repeatedField Json.Encode.string value.urls )
+            , ( "APIs", Proto.Json.repeatedField Json.Encode.string value.apis )
+            , ( "UUIDs", Proto.Json.repeatedField Json.Encode.string value.uuids )
+            ]
+        )
 
 
-{-| Writes a [`URLPath`](#URLPath) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Link`](#Link) as proto3 JSON, which nothing it holds can refuse.
 -}
-jsonURLPath : URLPath -> Json.Encode.Value
-jsonURLPath value =
-    Proto.Json.objectOfFields
-        [ ( "Label", Proto.Json.implicitField "" Json.Encode.string value.label )
-        , ( "ID", Proto.Json.implicitField "" Json.Encode.string value.id )
-        , ( "URL", Proto.Json.implicitField "" Json.Encode.string value.url )
-        , ( "URLPath", Proto.Json.implicitField "" Json.Encode.string value.urlPath )
-        , ( "HTTPRequest", Proto.Json.implicitField "" Json.Encode.string value.httpRequest )
-        , ( "XCoord", Proto.Json.implicitFloatField value.xCoord )
-        , ( "ABCDef", Proto.Json.implicitField "" Json.Encode.string value.abcDef )
-        , ( "Internal", Proto.Json.implicitField "" Json.Encode.string value.internal )
-        , ( "displayName", Proto.Json.implicitField "" Json.Encode.string value.displayName )
-        , ( "Type", Proto.Json.implicitField "" Json.Encode.string value.type_ )
-        , ( "IDs", Proto.Json.repeatedField Json.Encode.string value.ids )
-        , ( "URLs", Proto.Json.repeatedField Json.Encode.string value.urls )
-        , ( "APIs", Proto.Json.repeatedField Json.Encode.string value.apis )
-        , ( "UUIDs", Proto.Json.repeatedField Json.Encode.string value.uuids )
-        ]
-
-
-{-| Encodes a [`Link`](#Link) as proto3 JSON.
--}
-encodeLink : Link -> Proto.Json.Encoder
+encodeLink : Link -> Proto.Json.Encoder x
 encodeLink value =
-    Proto.Json.ready (jsonLink value)
-
-
-{-| Writes a [`Link`](#Link) as proto3 JSON, which nothing it holds can refuse.
--}
-jsonLink : Link -> Json.Encode.Value
-jsonLink value =
-    Proto.Json.objectOfFields
-        ([ ( "Label", Proto.Json.implicitField "" Json.Encode.string value.label )
-         ]
-            ++ encodeLinkTarget value.target
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            ([ ( "Label", Proto.Json.implicitField "" Json.Encode.string value.label )
+             ]
+                ++ encodeLinkTarget value.target
+            )
         )
 
 

@@ -153,52 +153,42 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`Chain`](#Chain) as proto3 JSON.
+{-| Encodes a [`Chain`](#Chain) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeChain : Chain -> Proto.Json.Encoder
+encodeChain : Chain -> Proto.Json.Encoder x
 encodeChain value =
-    Proto.Json.ready (jsonChain value)
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
+            , ( "next", Proto.Json.totalOptionalField encodeChain_ value.next )
+            ]
+        )
 
 
-{-| Writes a [`Chain`](#Chain) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Chain_`](#Chain_) as proto3 JSON.
 -}
-jsonChain : Chain -> Json.Encode.Value
-jsonChain value =
-    Proto.Json.objectOfFields
-        [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
-        , ( "next", Maybe.map jsonChain_ value.next )
-        ]
+encodeChain_ : Chain_ -> Proto.Json.Encoder x
+encodeChain_ (Chain_ value) =
+    encodeChain value
 
 
-{-| Writes a [`Chain_`](#Chain_) as proto3 JSON.
+{-| Encodes a [`Tree`](#Tree) as proto3 JSON, which nothing it holds can refuse.
 -}
-jsonChain_ : Chain_ -> Json.Encode.Value
-jsonChain_ (Chain_ value) =
-    jsonChain value
-
-
-{-| Encodes a [`Tree`](#Tree) as proto3 JSON.
--}
-encodeTree : Tree -> Proto.Json.Encoder
+encodeTree : Tree -> Proto.Json.Encoder x
 encodeTree value =
-    Proto.Json.ready (jsonTree value)
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
+            , ( "children", Proto.Json.totalRepeatedField encodeTree_ value.children )
+            ]
+        )
 
 
-{-| Writes a [`Tree`](#Tree) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Tree_`](#Tree_) as proto3 JSON.
 -}
-jsonTree : Tree -> Json.Encode.Value
-jsonTree value =
-    Proto.Json.objectOfFields
-        [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
-        , ( "children", Proto.Json.repeatedField jsonTree_ value.children )
-        ]
-
-
-{-| Writes a [`Tree_`](#Tree_) as proto3 JSON.
--}
-jsonTree_ : Tree_ -> Json.Encode.Value
-jsonTree_ (Tree_ value) =
-    jsonTree value
+encodeTree_ : Tree_ -> Proto.Json.Encoder x
+encodeTree_ (Tree_ value) =
+    encodeTree value
 
 
 

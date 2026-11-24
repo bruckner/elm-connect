@@ -56,9 +56,9 @@ impl Emitter {
     /// of `google.protobuf.NullValue` as `null`.
     ///
     /// A oneof with a member whose write can be refused gives each member
-    /// as a `Proto.Json.Encoder` instead, for `Proto.Json.writeObject`: a
-    /// member that can be refused gives its encoder, the others their JSON
-    /// in `Proto.Json.ready`.
+    /// as a `Proto.Json.Encoder Proto.Error.Error` instead, for
+    /// `Proto.Json.writeObject`: a member that can be refused, or a message,
+    /// gives its encoder, the others their JSON in `Proto.Json.ready`.
     pub(super) fn oneof_encoder(&mut self, shape: &OneofShape) -> Decl {
         let with = self.oneof_write_reaches(shape);
         let unset = (pctor(shape.oneof.unset_ctor.clone(), []), list([]));
@@ -88,6 +88,10 @@ impl Emitter {
                 } else if self.write_reaches(value) {
                     let reaches = self.reaches(value);
                     self.deeper_if_cyclic(variant.cyclic, reaches, encoded)
+                } else if let Some(encoder) = self.total_message_encoder(value) {
+                    // A message that cannot refuse is an encoder for any
+                    // refusal type already.
+                    apply(encoder, [var(ONEOF_MEMBER)])
                 } else {
                     let ready = self.reference((super::PROTO_JSON, "ready"));
                     apply(ready, [encoded])
@@ -99,7 +103,7 @@ impl Emitter {
             })
             .collect();
         let member = if with {
-            self.library_type(super::PROTO_JSON, "Encoder", [])
+            self.json_encoder_type(true)
         } else {
             let value_type = self.library_type(JSON_ENCODE, "Value", []);
             ty(self.core("Maybe"), [value_type])

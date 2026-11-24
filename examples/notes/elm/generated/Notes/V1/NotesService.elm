@@ -295,7 +295,7 @@ routeArchiveNote0 request_ =
     { method = "POST"
     , path = "v1/" ++ Proto.Route.segments name_ ++ ":archive"
     , query = []
-    , body = Just (Proto.Route.without [ [ "name" ] ] (Notes.V1.jsonArchiveNoteRequest request_))
+    , body = Just (Proto.Route.without [ [ "name" ] ] (Proto.Json.encodeTotal (Notes.V1.encodeArchiveNoteRequest request_)))
     , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] name_
     }
 

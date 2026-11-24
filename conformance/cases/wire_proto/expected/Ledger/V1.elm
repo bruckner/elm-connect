@@ -190,25 +190,20 @@ encodeKind value =
             Json.Encode.string "KIND_DEBIT"
 
 
-{-| Encodes an [`Entry`](#Entry) as proto3 JSON.
+{-| Encodes an [`Entry`](#Entry) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeEntry : Entry -> Proto.Json.Encoder
+encodeEntry : Entry -> Proto.Json.Encoder x
 encodeEntry value =
-    Proto.Json.ready (jsonEntry value)
-
-
-{-| Writes an [`Entry`](#Entry) as proto3 JSON, which nothing it holds can refuse.
--}
-jsonEntry : Entry -> Json.Encode.Value
-jsonEntry value =
-    Proto.Json.objectOfFields
-        ([ ( "memo", Proto.Json.implicitField "" Json.Encode.string value.memo )
-         , ( "amount", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.amount )
-         , ( "kind", Proto.Json.implicitField KindUnspecified encodeKind value.kind )
-         , ( "tags", Proto.Json.dictField identity Json.Encode.int value.tags )
-         , ( "marks", Proto.Json.repeatedField Json.Encode.int value.marks )
-         ]
-            ++ encodeEntrySource value.source
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            ([ ( "memo", Proto.Json.implicitField "" Json.Encode.string value.memo )
+             , ( "amount", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.amount )
+             , ( "kind", Proto.Json.implicitField KindUnspecified encodeKind value.kind )
+             , ( "tags", Proto.Json.dictField identity Json.Encode.int value.tags )
+             , ( "marks", Proto.Json.repeatedField Json.Encode.int value.marks )
+             ]
+                ++ encodeEntrySource value.source
+            )
         )
 
 
@@ -225,24 +220,19 @@ encodeEntrySource value =
             ]
 
         EntrySourceReversal member ->
-            [ ( "reversal", Just (jsonEntry member) )
+            [ ( "reversal", Just (Proto.Json.encodeTotal (encodeEntry member)) )
             ]
 
 
-{-| Encodes a [`GetEntryRequest`](#GetEntryRequest) as proto3 JSON.
+{-| Encodes a [`GetEntryRequest`](#GetEntryRequest) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeGetEntryRequest : GetEntryRequest -> Proto.Json.Encoder
+encodeGetEntryRequest : GetEntryRequest -> Proto.Json.Encoder x
 encodeGetEntryRequest value =
-    Proto.Json.ready (jsonGetEntryRequest value)
-
-
-{-| Writes a [`GetEntryRequest`](#GetEntryRequest) as proto3 JSON, which nothing it holds can refuse.
--}
-jsonGetEntryRequest : GetEntryRequest -> Json.Encode.Value
-jsonGetEntryRequest value =
-    Proto.Json.objectOfFields
-        [ ( "memo", Proto.Json.implicitField "" Json.Encode.string value.memo )
-        ]
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "memo", Proto.Json.implicitField "" Json.Encode.string value.memo )
+            ]
+        )
 
 
 

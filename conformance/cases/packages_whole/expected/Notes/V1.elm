@@ -128,37 +128,27 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`Note`](#Note) as proto3 JSON.
+{-| Encodes a [`Note`](#Note) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeNote : Note -> Proto.Json.Encoder
+encodeNote : Note -> Proto.Json.Encoder x
 encodeNote value =
-    Proto.Json.ready (jsonNote value)
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "title", Proto.Json.implicitField "" Json.Encode.string value.title )
+            , ( "tags", Proto.Json.totalRepeatedField encodeTag value.tags )
+            ]
+        )
 
 
-{-| Writes a [`Note`](#Note) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Tag`](#Tag) as proto3 JSON, which nothing it holds can refuse.
 -}
-jsonNote : Note -> Json.Encode.Value
-jsonNote value =
-    Proto.Json.objectOfFields
-        [ ( "title", Proto.Json.implicitField "" Json.Encode.string value.title )
-        , ( "tags", Proto.Json.repeatedField jsonTag value.tags )
-        ]
-
-
-{-| Encodes a [`Tag`](#Tag) as proto3 JSON.
--}
-encodeTag : Tag -> Proto.Json.Encoder
+encodeTag : Tag -> Proto.Json.Encoder x
 encodeTag value =
-    Proto.Json.ready (jsonTag value)
-
-
-{-| Writes a [`Tag`](#Tag) as proto3 JSON, which nothing it holds can refuse.
--}
-jsonTag : Tag -> Json.Encode.Value
-jsonTag value =
-    Proto.Json.objectOfFields
-        [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
-        ]
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
+            ]
+        )
 
 
 

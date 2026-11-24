@@ -131,38 +131,28 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`Note`](#Note) as proto3 JSON.
+{-| Encodes a [`Note`](#Note) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeNote : Note -> Proto.Json.Encoder
+encodeNote : Note -> Proto.Json.Encoder x
 encodeNote value =
-    Proto.Json.ready (jsonNote value)
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            , ( "author", Proto.Json.totalOptionalField Api.Example.People.encodeUser value.author )
+            , ( "requiredRole", Proto.Json.implicitField Api.Example.People.RoleUnspecified Api.Example.People.encodeRole value.requiredRole )
+            ]
+        )
 
 
-{-| Writes a [`Note`](#Note) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`GetNoteRequest`](#GetNoteRequest) as proto3 JSON, which nothing it holds can refuse.
 -}
-jsonNote : Note -> Json.Encode.Value
-jsonNote value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        , ( "author", Maybe.map Api.Example.People.jsonUser value.author )
-        , ( "requiredRole", Proto.Json.implicitField Api.Example.People.RoleUnspecified Api.Example.People.encodeRole value.requiredRole )
-        ]
-
-
-{-| Encodes a [`GetNoteRequest`](#GetNoteRequest) as proto3 JSON.
--}
-encodeGetNoteRequest : GetNoteRequest -> Proto.Json.Encoder
+encodeGetNoteRequest : GetNoteRequest -> Proto.Json.Encoder x
 encodeGetNoteRequest value =
-    Proto.Json.ready (jsonGetNoteRequest value)
-
-
-{-| Writes a [`GetNoteRequest`](#GetNoteRequest) as proto3 JSON, which nothing it holds can refuse.
--}
-jsonGetNoteRequest : GetNoteRequest -> Json.Encode.Value
-jsonGetNoteRequest value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        ]
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            ]
+        )
 
 
 

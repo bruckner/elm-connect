@@ -13,7 +13,7 @@ import Test exposing (Test, describe, test)
 import Time
 
 
-refusal : Proto.Json.Encoder -> Maybe ( String, List String )
+refusal : Proto.Json.Encoder Error -> Maybe ( String, List String )
 refusal encoder =
     case Proto.Json.encode encoder of
         Err (NotWritable { typeName, path }) ->
@@ -23,12 +23,12 @@ refusal encoder =
             Nothing
 
 
-written : Proto.Json.Encoder -> Result Error String
+written : Proto.Json.Encoder Error -> Result Error String
 written =
     Proto.Json.encode >> Result.map (Json.Encode.encode 0)
 
 
-writtenWith : Proto.Json.Encoder -> Result Error String
+writtenWith : Proto.Json.Encoder Error -> Result Error String
 writtenWith =
     Proto.Json.encodeWith Proto.WellKnown.registry >> Result.map (Json.Encode.encode 0)
 
@@ -43,7 +43,7 @@ farFuture =
 {-| An encoder of an `Int` that refuses negative numbers, as a timestamp too
 far out.
 -}
-positive : Int -> Proto.Json.Encoder
+positive : Int -> Proto.Json.Encoder Error
 positive n =
     if n < 0 then
         Proto.Json.writeTimestamp farFuture
@@ -61,7 +61,7 @@ packed =
 
 {-| An `Any` inside `levels` levels of a message on a cycle.
 -}
-deeperAny : Int -> Proto.Json.Encoder
+deeperAny : Int -> Proto.Json.Encoder Error
 deeperAny levels =
     if levels <= 0 then
         Proto.Json.writeAny packed

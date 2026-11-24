@@ -101,22 +101,17 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`Bounds`](#Bounds) as proto3 JSON.
+{-| Encodes a [`Bounds`](#Bounds) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeBounds : Bounds -> Proto.Json.Encoder
+encodeBounds : Bounds -> Proto.Json.Encoder x
 encodeBounds value =
-    Proto.Json.ready (jsonBounds value)
-
-
-{-| Writes a [`Bounds`](#Bounds) as proto3 JSON, which nothing it holds can refuse.
--}
-jsonBounds : Bounds -> Json.Encode.Value
-jsonBounds value =
-    Proto.Json.objectOfFields
-        [ ( "max", Proto.Json.implicitField 0 Json.Encode.int value.max )
-        , ( "min", Proto.Json.implicitField 0 Json.Encode.int value.min )
-        , ( "always", Proto.Json.implicitField False Json.Encode.bool value.always )
-        ]
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "max", Proto.Json.implicitField 0 Json.Encode.int value.max )
+            , ( "min", Proto.Json.implicitField 0 Json.Encode.int value.min )
+            , ( "always", Proto.Json.implicitField False Json.Encode.bool value.always )
+            ]
+        )
 
 
 

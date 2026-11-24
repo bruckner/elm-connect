@@ -138,22 +138,17 @@ encodeShade value =
             Json.Encode.string "SHADE_DARK"
 
 
-{-| Encodes a [`Remote`](#Remote) as proto3 JSON.
+{-| Encodes a [`Remote`](#Remote) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeRemote : Remote -> Proto.Json.Encoder
+encodeRemote : Remote -> Proto.Json.Encoder x
 encodeRemote value =
-    Proto.Json.ready (jsonRemote value)
-
-
-{-| Writes a [`Remote`](#Remote) as proto3 JSON, which nothing it holds can refuse.
--}
-jsonRemote : Remote -> Json.Encode.Value
-jsonRemote value =
-    Proto.Json.objectOfFields
-        [ ( "id", Proto.Json.implicitField "" Json.Encode.string value.id )
-        , ( "shade", Proto.Json.implicitField ShadeUnspecified encodeShade value.shade )
-        , ( "version", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.version )
-        ]
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "id", Proto.Json.implicitField "" Json.Encode.string value.id )
+            , ( "shade", Proto.Json.implicitField ShadeUnspecified encodeShade value.shade )
+            , ( "version", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.version )
+            ]
+        )
 
 
 

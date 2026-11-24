@@ -95,20 +95,15 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`Ping`](#Ping) as proto3 JSON.
+{-| Encodes a [`Ping`](#Ping) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodePing : Ping -> Proto.Json.Encoder
+encodePing : Ping -> Proto.Json.Encoder x
 encodePing value =
-    Proto.Json.ready (jsonPing value)
-
-
-{-| Writes a [`Ping`](#Ping) as proto3 JSON, which nothing it holds can refuse.
--}
-jsonPing : Ping -> Json.Encode.Value
-jsonPing value =
-    Proto.Json.objectOfFields
-        [ ( "text", Proto.Json.implicitField "" Json.Encode.string value.text )
-        ]
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "text", Proto.Json.implicitField "" Json.Encode.string value.text )
+            ]
+        )
 
 
 

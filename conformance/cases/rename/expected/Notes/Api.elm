@@ -210,23 +210,18 @@ encodeAudience value =
             Json.Encode.string "VISIBILITY_PUBLIC"
 
 
-{-| Encodes a [`Memo`](#Memo) as proto3 JSON.
+{-| Encodes a [`Memo`](#Memo) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeMemo : Memo -> Proto.Json.Encoder
+encodeMemo : Memo -> Proto.Json.Encoder x
 encodeMemo value =
-    Proto.Json.ready (jsonMemo value)
-
-
-{-| Writes a [`Memo`](#Memo) as proto3 JSON, which nothing it holds can refuse.
--}
-jsonMemo : Memo -> Json.Encode.Value
-jsonMemo value =
-    Proto.Json.objectOfFields
-        ([ ( "title", Proto.Json.implicitField "" Json.Encode.string value.heading )
-         , ( "visibility", Proto.Json.implicitField AudienceUnspecified encodeAudience value.visibility )
-         , ( "revisions", Proto.Json.repeatedField jsonEdit value.revisions )
-         ]
-            ++ encodeMemoBody value.body
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            ([ ( "title", Proto.Json.implicitField "" Json.Encode.string value.heading )
+             , ( "visibility", Proto.Json.implicitField AudienceUnspecified encodeAudience value.visibility )
+             , ( "revisions", Proto.Json.totalRepeatedField encodeEdit value.revisions )
+             ]
+                ++ encodeMemoBody value.body
+            )
         )
 
 
@@ -247,36 +242,26 @@ encodeMemoBody value =
             ]
 
 
-{-| Encodes an [`Edit`](#Edit) as proto3 JSON.
+{-| Encodes an [`Edit`](#Edit) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeEdit : Edit -> Proto.Json.Encoder
+encodeEdit : Edit -> Proto.Json.Encoder x
 encodeEdit value =
-    Proto.Json.ready (jsonEdit value)
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "number", Proto.Json.implicitField 0 Json.Encode.int value.number )
+            ]
+        )
 
 
-{-| Writes an [`Edit`](#Edit) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`GetNoteRequest`](#GetNoteRequest) as proto3 JSON, which nothing it holds can refuse.
 -}
-jsonEdit : Edit -> Json.Encode.Value
-jsonEdit value =
-    Proto.Json.objectOfFields
-        [ ( "number", Proto.Json.implicitField 0 Json.Encode.int value.number )
-        ]
-
-
-{-| Encodes a [`GetNoteRequest`](#GetNoteRequest) as proto3 JSON.
--}
-encodeGetNoteRequest : GetNoteRequest -> Proto.Json.Encoder
+encodeGetNoteRequest : GetNoteRequest -> Proto.Json.Encoder x
 encodeGetNoteRequest value =
-    Proto.Json.ready (jsonGetNoteRequest value)
-
-
-{-| Writes a [`GetNoteRequest`](#GetNoteRequest) as proto3 JSON, which nothing it holds can refuse.
--}
-jsonGetNoteRequest : GetNoteRequest -> Json.Encode.Value
-jsonGetNoteRequest value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        ]
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            ]
+        )
 
 
 

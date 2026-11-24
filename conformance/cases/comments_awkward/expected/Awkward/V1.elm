@@ -261,42 +261,32 @@ encodeMarks value =
             Json.Encode.string "MARKS_DELIMITED"
 
 
-{-| Encodes a [`Delimiters`](#Delimiters) as proto3 JSON.
+{-| Encodes a [`Delimiters`](#Delimiters) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeDelimiters : Delimiters -> Proto.Json.Encoder
+encodeDelimiters : Delimiters -> Proto.Json.Encoder x
 encodeDelimiters value =
-    Proto.Json.ready (jsonDelimiters value)
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "lists", Proto.Json.implicitField "" Json.Encode.string value.lists )
+            , ( "blocks", Proto.Json.implicitField "" Json.Encode.string value.blocks )
+            , ( "code", Proto.Json.implicitField "" Json.Encode.string value.code )
+            , ( "inline", Proto.Json.implicitField "" Json.Encode.string value.inline )
+            , ( "text", Proto.Json.implicitField "" Json.Encode.string value.text )
+            , ( "whitespaceOnly", Proto.Json.implicitField "" Json.Encode.string value.whitespaceOnly )
+            , ( "unclosed", Proto.Json.implicitField "" Json.Encode.string value.unclosed )
+            ]
+        )
 
 
-{-| Writes a [`Delimiters`](#Delimiters) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Docs`](#Docs) as proto3 JSON, which nothing it holds can refuse.
 -}
-jsonDelimiters : Delimiters -> Json.Encode.Value
-jsonDelimiters value =
-    Proto.Json.objectOfFields
-        [ ( "lists", Proto.Json.implicitField "" Json.Encode.string value.lists )
-        , ( "blocks", Proto.Json.implicitField "" Json.Encode.string value.blocks )
-        , ( "code", Proto.Json.implicitField "" Json.Encode.string value.code )
-        , ( "inline", Proto.Json.implicitField "" Json.Encode.string value.inline )
-        , ( "text", Proto.Json.implicitField "" Json.Encode.string value.text )
-        , ( "whitespaceOnly", Proto.Json.implicitField "" Json.Encode.string value.whitespaceOnly )
-        , ( "unclosed", Proto.Json.implicitField "" Json.Encode.string value.unclosed )
-        ]
-
-
-{-| Encodes a [`Docs`](#Docs) as proto3 JSON.
--}
-encodeDocs : Docs -> Proto.Json.Encoder
+encodeDocs : Docs -> Proto.Json.Encoder x
 encodeDocs value =
-    Proto.Json.ready (jsonDocs value)
-
-
-{-| Writes a [`Docs`](#Docs) as proto3 JSON, which nothing it holds can refuse.
--}
-jsonDocs : Docs -> Json.Encode.Value
-jsonDocs value =
-    Proto.Json.objectOfFields
-        [ ( "field", Proto.Json.implicitField "" Json.Encode.string value.field )
-        ]
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "field", Proto.Json.implicitField "" Json.Encode.string value.field )
+            ]
+        )
 
 
 

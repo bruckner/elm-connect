@@ -145,32 +145,27 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`Counters`](#Counters) as proto3 JSON.
+{-| Encodes a [`Counters`](#Counters) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeCounters : Counters -> Proto.Json.Encoder
+encodeCounters : Counters -> Proto.Json.Encoder x
 encodeCounters value =
-    Proto.Json.ready (jsonCounters value)
-
-
-{-| Writes a [`Counters`](#Counters) as proto3 JSON, which nothing it holds can refuse.
--}
-jsonCounters : Counters -> Json.Encode.Value
-jsonCounters value =
-    Proto.Json.objectOfFields
-        ([ ( "int64Value", Proto.Json.implicitField 0 Proto.Json.encodeInt64AsInt value.int64Value )
-         , ( "uint64Value", Proto.Json.implicitField 0 Proto.Json.encodeInt64AsInt value.uint64Value )
-         , ( "sint64Value", Proto.Json.implicitField 0 Proto.Json.encodeInt64AsInt value.sint64Value )
-         , ( "fixed64Value", Proto.Json.implicitField 0 Proto.Json.encodeInt64AsInt value.fixed64Value )
-         , ( "sfixed64Value", Proto.Json.implicitField 0 Proto.Json.encodeInt64AsInt value.sfixed64Value )
-         , ( "exactId", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.exactId )
-         , ( "normal", Proto.Json.implicitField 0 Proto.Json.encodeInt64AsInt value.normal )
-         , ( "maybeCount", Maybe.map Proto.Json.encodeInt64AsInt value.maybeCount )
-         , ( "samples", Proto.Json.repeatedField Proto.Json.encodeInt64AsInt value.samples )
-         , ( "exactSamples", Proto.Json.repeatedField Proto.Json.encodeInt64 value.exactSamples )
-         , ( "byId", Proto.Json.dictField identity Proto.Json.encodeInt64AsInt value.byId )
-         , ( "wrapped", Maybe.map Proto.Json.encodeInt64AsInt value.wrapped )
-         ]
-            ++ encodeCountersLimit value.limit
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            ([ ( "int64Value", Proto.Json.implicitField 0 Proto.Json.encodeInt64AsInt value.int64Value )
+             , ( "uint64Value", Proto.Json.implicitField 0 Proto.Json.encodeInt64AsInt value.uint64Value )
+             , ( "sint64Value", Proto.Json.implicitField 0 Proto.Json.encodeInt64AsInt value.sint64Value )
+             , ( "fixed64Value", Proto.Json.implicitField 0 Proto.Json.encodeInt64AsInt value.fixed64Value )
+             , ( "sfixed64Value", Proto.Json.implicitField 0 Proto.Json.encodeInt64AsInt value.sfixed64Value )
+             , ( "exactId", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.exactId )
+             , ( "normal", Proto.Json.implicitField 0 Proto.Json.encodeInt64AsInt value.normal )
+             , ( "maybeCount", Maybe.map Proto.Json.encodeInt64AsInt value.maybeCount )
+             , ( "samples", Proto.Json.repeatedField Proto.Json.encodeInt64AsInt value.samples )
+             , ( "exactSamples", Proto.Json.repeatedField Proto.Json.encodeInt64 value.exactSamples )
+             , ( "byId", Proto.Json.dictField identity Proto.Json.encodeInt64AsInt value.byId )
+             , ( "wrapped", Maybe.map Proto.Json.encodeInt64AsInt value.wrapped )
+             ]
+                ++ encodeCountersLimit value.limit
+            )
         )
 
 

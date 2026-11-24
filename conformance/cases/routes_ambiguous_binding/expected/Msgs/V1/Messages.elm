@@ -10,6 +10,7 @@ module Msgs.V1.Messages exposing (..)
 import Msgs.V1
 import Msgs.V1.MessageRequest
 import Proto.Http
+import Proto.Json
 import Proto.Method
 import Proto.Query
 import Proto.Route
@@ -251,7 +252,7 @@ routeUpdateMessage0 request_ =
     { method = "PATCH"
     , path = "v1/" ++ Proto.Route.segments name_
     , query = []
-    , body = Just (Proto.Route.without [ [ "name" ] ] (Msgs.V1.jsonMessageRequest request_))
+    , body = Just (Proto.Route.without [ [ "name" ] ] (Proto.Json.encodeTotal (Msgs.V1.encodeMessageRequest request_)))
     , invalid = Proto.Route.checkSegments "name" [ "messages", "*" ] name_
     }
 
@@ -307,7 +308,7 @@ routeTouch0 request_ =
     { method = "POST"
     , path = "msgs.v1.Messages/ListMessages"
     , query = []
-    , body = Just (Msgs.V1.jsonMessageRequest request_)
+    , body = Just (Proto.Json.encodeTotal (Msgs.V1.encodeMessageRequest request_))
     , invalid = Nothing
     }
 

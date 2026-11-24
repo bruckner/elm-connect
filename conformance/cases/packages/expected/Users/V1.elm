@@ -129,21 +129,16 @@ encodeRole value =
             Json.Encode.string "ROLE_EDITOR"
 
 
-{-| Encodes a [`User`](#User) as proto3 JSON.
+{-| Encodes a [`User`](#User) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeUser : User -> Proto.Json.Encoder
+encodeUser : User -> Proto.Json.Encoder x
 encodeUser value =
-    Proto.Json.ready (jsonUser value)
-
-
-{-| Writes a [`User`](#User) as proto3 JSON, which nothing it holds can refuse.
--}
-jsonUser : User -> Json.Encode.Value
-jsonUser value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        , ( "role", Proto.Json.implicitField RoleUnspecified encodeRole value.role )
-        ]
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            , ( "role", Proto.Json.implicitField RoleUnspecified encodeRole value.role )
+            ]
+        )
 
 
 

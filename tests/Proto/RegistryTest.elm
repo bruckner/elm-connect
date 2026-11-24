@@ -30,7 +30,7 @@ type alias Holder =
     { held : Maybe Any }
 
 
-encodeHolder : Holder -> Proto.Json.Encoder
+encodeHolder : Holder -> Proto.Json.Encoder Error
 encodeHolder value =
     Proto.Json.writeObject []
         [ ( "held", Proto.Json.writeOptional Proto.Json.writeAny value.held ) ]

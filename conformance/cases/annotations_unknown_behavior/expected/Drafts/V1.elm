@@ -101,22 +101,17 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`Draft`](#Draft) as proto3 JSON.
+{-| Encodes a [`Draft`](#Draft) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeDraft : Draft -> Proto.Json.Encoder
+encodeDraft : Draft -> Proto.Json.Encoder x
 encodeDraft value =
-    Proto.Json.ready (jsonDraft value)
-
-
-{-| Writes a [`Draft`](#Draft) as proto3 JSON, which nothing it holds can refuse.
--}
-jsonDraft : Draft -> Json.Encode.Value
-jsonDraft value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        , ( "body", Proto.Json.implicitField "" Json.Encode.string value.body )
-        , ( "owner", Proto.Json.implicitField "" Json.Encode.string value.owner )
-        ]
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            , ( "body", Proto.Json.implicitField "" Json.Encode.string value.body )
+            , ( "owner", Proto.Json.implicitField "" Json.Encode.string value.owner )
+            ]
+        )
 
 
 

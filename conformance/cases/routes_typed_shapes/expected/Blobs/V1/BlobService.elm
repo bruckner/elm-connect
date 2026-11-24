@@ -248,7 +248,7 @@ routeFindBlob0 request_ =
     { method = "POST"
     , path = "v1/" ++ Proto.Route.segments name_ ++ ":find"
     , query = []
-    , body = Just (Proto.Route.without [ [ "name" ] ] (Blobs.V1.jsonBlob request_))
+    , body = Just (Proto.Route.without [ [ "name" ] ] (Proto.Json.encodeTotal (Blobs.V1.encodeBlob request_)))
     , invalid = Proto.Route.checkSegments "name" [ "blobs", "*" ] name_
     }
 
@@ -312,7 +312,7 @@ routeAddFolder0 request_ =
     { method = "POST"
     , path = "v1/" ++ Proto.Route.segments parentName_ ++ "/children"
     , query = []
-    , body = Just (Proto.Route.without [ [ "parent", "name" ] ] (Blobs.V1.jsonFolder request_))
+    , body = Just (Proto.Route.without [ [ "parent", "name" ] ] (Proto.Json.encodeTotal (Blobs.V1.encodeFolder request_)))
     , invalid = Proto.Route.checkSegments "parent.name" [ "folders", "*" ] parentName_
     }
 
@@ -328,7 +328,7 @@ routeMoveFolder0 request_ =
     { method = "POST"
     , path = "v1/" ++ Proto.Route.segments name_ ++ ":move"
     , query = []
-    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Blobs.V1.jsonFolder_ request_.parent))
+    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map (Proto.Json.encodeTotal << Blobs.V1.encodeFolder_) request_.parent))
     , invalid = Proto.Route.checkSegments "name" [ "folders", "*" ] name_
     }
 

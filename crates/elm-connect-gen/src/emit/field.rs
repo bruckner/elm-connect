@@ -244,30 +244,56 @@ impl Emitter {
                     vec![zero, encoder],
                 )
             }
-            FieldShape::Maybe(inner) => {
-                let encoder = self.value_encoder(inner);
-                (qualified("Maybe", "map"), vec![encoder])
-            }
-            FieldShape::List(inner) => {
-                let encoder = self.value_encoder(inner);
-                (self.reference((PROTO_JSON, "repeatedField")), vec![encoder])
-            }
+            FieldShape::Maybe(inner) => match self.total_message_encoder(inner) {
+                Some(encoder) => (
+                    self.reference((PROTO_JSON, "totalOptionalField")),
+                    vec![encoder],
+                ),
+                None => {
+                    let encoder = self.value_encoder(inner);
+                    (qualified("Maybe", "map"), vec![encoder])
+                }
+            },
+            FieldShape::List(inner) => match self.total_message_encoder(inner) {
+                Some(encoder) => (
+                    self.reference((PROTO_JSON, "totalRepeatedField")),
+                    vec![encoder],
+                ),
+                None => {
+                    let encoder = self.value_encoder(inner);
+                    (self.reference((PROTO_JSON, "repeatedField")), vec![encoder])
+                }
+            },
             FieldShape::Dict(key, inner) => {
-                let encoder = self.value_encoder(inner);
                 let key = if key.is_int() {
                     qualified(CORE_STRING, "fromInt")
                 } else {
                     var("identity")
                 };
-                (
-                    self.reference((PROTO_JSON, "dictField")),
-                    vec![key, encoder],
-                )
+                match self.total_message_encoder(inner) {
+                    Some(encoder) => (
+                        self.reference((PROTO_JSON, "totalDictField")),
+                        vec![key, encoder],
+                    ),
+                    None => {
+                        let encoder = self.value_encoder(inner);
+                        (
+                            self.reference((PROTO_JSON, "dictField")),
+                            vec![key, encoder],
+                        )
+                    }
+                }
             }
-            FieldShape::BoolMap(inner) => {
-                let encoder = self.value_encoder(inner);
-                (self.reference((PROTO_JSON, "boolMapField")), vec![encoder])
-            }
+            FieldShape::BoolMap(inner) => match self.total_message_encoder(inner) {
+                Some(encoder) => (
+                    self.reference((PROTO_JSON, "totalBoolMapField")),
+                    vec![encoder],
+                ),
+                None => {
+                    let encoder = self.value_encoder(inner);
+                    (self.reference((PROTO_JSON, "boolMapField")), vec![encoder])
+                }
+            },
         };
         apply(helper, args.into_iter().chain([value]))
     }
@@ -461,13 +487,36 @@ impl Emitter {
         }
     }
 
-    /// The JSON of one value, `value`: its encoder applied to it.
+    /// The JSON of one value, `value`: its encoder applied to it, and for a
+    /// message whose write cannot be refused, unwrapped with
+    /// `Proto.Json.encodeTotal`.
     pub(super) fn encode_value(&mut self, shape: ValueShape, value: Expr) -> Expr {
+        if let Some(encoder) = self.total_message_encoder(shape) {
+            let total = self.reference((PROTO_JSON, "encodeTotal"));
+            return apply(total, [apply(encoder, [value])]);
+        }
         call(self.value_encoder(shape), [value])
     }
 
+    /// The `Proto.Json.Encoder x` of a message whose write cannot be
+    /// refused, which plain code unwraps with `Proto.Json.encodeTotal`;
+    /// `None` for any other value.
+    pub(super) fn total_message_encoder(&mut self, value: ValueShape) -> Option<Expr> {
+        if self.write_reaches(value) {
+            return None;
+        }
+        match value {
+            ValueShape::Present(Present::Message(name)) => {
+                Some(self.generated_value(&name.module, name.encoder_name()))
+            }
+            ValueShape::Present(Present::Wrapped(wrapper, _)) => Some(var(wrapper.encoder_name())),
+            _ => None,
+        }
+    }
+
     /// The encoder of one value: a `Proto.Json.Encoder` when its write can
-    /// be refused ([`Self::write_reaches`]), else its plain JSON.
+    /// be refused ([`Self::write_reaches`]), else its plain JSON; for a
+    /// message, `Proto.Json.encodeTotal << encodeFoo`.
     pub(super) fn value_encoder(&mut self, value: ValueShape) -> Expr {
         if self.write_reaches(value) {
             let encoder = match value {
@@ -499,8 +548,12 @@ impl Emitter {
             ValueShape::Zeroed(Zeroed::Enum(name, _)) => {
                 self.generated_value(&name.module, name.encoder_name())
             }
-            ValueShape::Present(Present::Message(name)) => {
-                self.generated_value(&name.module, name.plain_encoder_name())
+            ValueShape::Present(Present::Message(_) | Present::Wrapped(..)) => {
+                let encoder = self
+                    .total_message_encoder(value)
+                    .expect("a message whose write cannot be refused");
+                let total = self.reference((PROTO_JSON, "encodeTotal"));
+                crate::elm::build::binop(crate::elm::ast::BinOp::ComposeL, total, encoder)
             }
             ValueShape::Zeroed(Zeroed::Json) => self.reference((PROTO_JSON, "encodeValue")),
             ValueShape::Present(Present::Timestamp) => {
@@ -519,7 +572,6 @@ impl Emitter {
             ValueShape::Present(Present::Any) => self.reference((PROTO_JSON, "encodeAny")),
             ValueShape::Zeroed(Zeroed::Empty) => self.reference((PROTO_JSON, "encodeEmpty")),
             ValueShape::Zeroed(Zeroed::Null) => self.reference((PROTO_JSON, "encodeNullValue")),
-            ValueShape::Present(Present::Wrapped(wrapper, _)) => var(wrapper.plain_encoder_name()),
         }
     }
 

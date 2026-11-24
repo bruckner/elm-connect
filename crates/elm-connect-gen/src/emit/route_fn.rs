@@ -300,8 +300,7 @@ impl Emitter {
                 if self.write_reaches(field::value_shape(input, self.holding)) {
                     return None;
                 }
-                let encode_request = self.request_encoder(input);
-                let json = apply(encode_request, [var(REQUEST)]);
+                let json = self.encode_value(field::value_shape(input, self.holding), var(REQUEST));
                 let json = if paths.is_empty() {
                     json
                 } else {
@@ -385,7 +384,9 @@ impl Emitter {
                     // A wrapper's encoder is its package module's.
                     ValueShape::Present(Present::Wrapped(wrapper, full_name)) => {
                         let module = messages.get(full_name)?.1;
-                        self.generated_value(module, wrapper.plain_encoder_name())
+                        let encoder = self.generated_value(module, wrapper.encoder_name());
+                        let total = self.reference((super::PROTO_JSON, "encodeTotal"));
+                        crate::elm::build::binop(crate::elm::ast::BinOp::ComposeL, total, encoder)
                     }
                     shape => self.value_encoder(shape),
                 };

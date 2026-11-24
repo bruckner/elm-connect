@@ -1,7 +1,7 @@
 //! A recursive message's wrapper: its custom type, encoder and decoder
 //! (design §3.2).
 
-use super::{Deep, Emitter, JSON_DECODE, JSON_ENCODE, PROTO_JSON, PROTO_REGISTRY, docs};
+use super::{Deep, Emitter, JSON_DECODE, PROTO_JSON, PROTO_REGISTRY, docs};
 use crate::elm::ast::{BinOp, Decl, Expr, Pattern, Type, Variant};
 use crate::elm::build::{apply, binop, int, lambda, pctor, pvar, ty, var};
 use crate::ir::{Message, Wrapper};
@@ -31,38 +31,23 @@ impl Emitter {
         self.reach.message(&message.proto_full_name)
     }
 
-    /// `jsonNode_ (Node_ value) = jsonNode value`; for a message whose
-    /// write can be refused, `encodeNode_ (Node_ value) = encodeNode value`.
+    /// `encodeNode_ (Node_ value) = encodeNode value`, of the type
+    /// `encodeNode` has.
     pub(super) fn wrapper_encoder(&mut self, message: &Message, wrapper: &Wrapper) -> Decl {
-        if self.write_reach.message(&message.proto_full_name) {
-            let annotation = self.library_type(super::PROTO_JSON, "Encoder", []);
-            return Decl::Value {
-                doc: Some(format!(
-                    "Encodes {} as proto3 JSON.",
-                    docs::a_local(&wrapper.elm_name)
-                )),
-                name: wrapper.encoder_name(),
-                annotation: Type::Function(
-                    Box::new(ty(wrapper.elm_name.clone(), [])),
-                    Box::new(annotation),
-                ),
-                params: vec![pctor(wrapper.elm_name.clone(), [pvar(ENCODER_ARGUMENT)])],
-                body: apply(var(message.encoder_name()), [var(ENCODER_ARGUMENT)]),
-            };
-        }
-        let value_type = self.library_type(JSON_ENCODE, "Value", []);
+        let refusable = self.write_reach.message(&message.proto_full_name);
+        let annotation = self.json_encoder_type(refusable);
         Decl::Value {
             doc: Some(format!(
-                "Writes {} as proto3 JSON.",
+                "Encodes {} as proto3 JSON.",
                 docs::a_local(&wrapper.elm_name)
             )),
-            name: wrapper.plain_encoder_name(),
+            name: wrapper.encoder_name(),
             annotation: Type::Function(
                 Box::new(ty(wrapper.elm_name.clone(), [])),
-                Box::new(value_type),
+                Box::new(annotation),
             ),
             params: vec![pctor(wrapper.elm_name.clone(), [pvar(ENCODER_ARGUMENT)])],
-            body: apply(var(message.plain_encoder_name()), [var(ENCODER_ARGUMENT)]),
+            body: apply(var(message.encoder_name()), [var(ENCODER_ARGUMENT)]),
         }
     }
 

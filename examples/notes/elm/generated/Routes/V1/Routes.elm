@@ -427,7 +427,7 @@ routeUpdateMessage0 request_ =
     { method = "PATCH"
     , path = "v1/messages/" ++ Proto.Route.segment messageId_
     , query = []
-    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Routes.V1.jsonMessage request_.message))
+    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map (Proto.Json.encodeTotal << Routes.V1.encodeMessage) request_.message))
     , invalid = Proto.Route.checkSegment "messageId" "*" messageId_
     }
 
@@ -443,7 +443,7 @@ routeUpdateMessageWhole0 request_ =
     { method = "PATCH"
     , path = "v1/messages/" ++ Proto.Route.segment messageId_
     , query = []
-    , body = Just (Proto.Route.without [ [ "messageId" ] ] (Routes.V1.jsonMessage request_))
+    , body = Just (Proto.Route.without [ [ "messageId" ] ] (Proto.Json.encodeTotal (Routes.V1.encodeMessage request_)))
     , invalid = Proto.Route.checkSegment "messageId" "*" messageId_
     }
 
@@ -459,7 +459,7 @@ routePostSub0 request_ =
     { method = "POST"
     , path = "v1/subs/" ++ Proto.Route.segment subSubfield_
     , query = []
-    , body = Just (Proto.Route.without [ [ "sub", "subfield" ] ] (Routes.V1.jsonGetMessageRequest request_))
+    , body = Just (Proto.Route.without [ [ "sub", "subfield" ] ] (Proto.Json.encodeTotal (Routes.V1.encodeGetMessageRequest request_)))
     , invalid = Proto.Route.checkSegment "sub.subfield" "*" subSubfield_
     }
 
@@ -570,7 +570,7 @@ routeCancel0 request_ =
     { method = "POST"
     , path = "v1/" ++ Proto.Route.segments name_ ++ ":cancel"
     , query = []
-    , body = Just (Proto.Route.without [ [ "name" ] ] (Routes.V1.jsonResource request_))
+    , body = Just (Proto.Route.without [ [ "name" ] ] (Proto.Json.encodeTotal (Routes.V1.encodeResource request_)))
     , invalid = Proto.Route.checkSegments "name" [ "operations", "*" ] name_
     }
 
@@ -586,7 +586,7 @@ routeUpdateResource0 request_ json_ =
     { method = "PATCH"
     , path = "v1/" ++ Proto.Route.segments resourceName_
     , query = Routes.V1.queryOfUpdateResourceRequest request_
-    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Routes.V1.jsonResource request_.resource))
+    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map (Proto.Json.encodeTotal << Routes.V1.encodeResource) request_.resource))
     , invalid = Proto.Route.checkSegments "resource.name" [ "resources", "*" ] resourceName_
     }
 

@@ -159,54 +159,39 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`Thing`](#Thing) as proto3 JSON.
+{-| Encodes a [`Thing`](#Thing) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeThing : Thing -> Proto.Json.Encoder
+encodeThing : Thing -> Proto.Json.Encoder x
 encodeThing value =
-    Proto.Json.ready (jsonThing value)
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            ]
+        )
 
 
-{-| Writes a [`Thing`](#Thing) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Criteria`](#Criteria) as proto3 JSON, which nothing it holds can refuse.
 -}
-jsonThing : Thing -> Json.Encode.Value
-jsonThing value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        ]
-
-
-{-| Encodes a [`Criteria`](#Criteria) as proto3 JSON.
--}
-encodeCriteria : Criteria -> Proto.Json.Encoder
+encodeCriteria : Criteria -> Proto.Json.Encoder x
 encodeCriteria value =
-    Proto.Json.ready (jsonCriteria value)
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "state", Proto.Json.implicitField "" Json.Encode.string value.status )
+            ]
+        )
 
 
-{-| Writes a [`Criteria`](#Criteria) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`GetThingRequest`](#GetThingRequest) as proto3 JSON, which nothing it holds can refuse.
 -}
-jsonCriteria : Criteria -> Json.Encode.Value
-jsonCriteria value =
-    Proto.Json.objectOfFields
-        [ ( "state", Proto.Json.implicitField "" Json.Encode.string value.status )
-        ]
-
-
-{-| Encodes a [`GetThingRequest`](#GetThingRequest) as proto3 JSON.
--}
-encodeGetThingRequest : GetThingRequest -> Proto.Json.Encoder
+encodeGetThingRequest : GetThingRequest -> Proto.Json.Encoder x
 encodeGetThingRequest value =
-    Proto.Json.ready (jsonGetThingRequest value)
-
-
-{-| Writes a [`GetThingRequest`](#GetThingRequest) as proto3 JSON, which nothing it holds can refuse.
--}
-jsonGetThingRequest : GetThingRequest -> Json.Encode.Value
-jsonGetThingRequest value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.resource )
-        , ( "pageSize", Proto.Json.implicitField 0 Json.Encode.int value.limit )
-        , ( "filter", Maybe.map jsonCriteria value.filter )
-        ]
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.resource )
+            , ( "pageSize", Proto.Json.implicitField 0 Json.Encode.int value.limit )
+            , ( "filter", Proto.Json.totalOptionalField encodeCriteria value.filter )
+            ]
+        )
 
 
 

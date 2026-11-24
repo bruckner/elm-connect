@@ -389,13 +389,6 @@ pub fn encoder_name(type_elm_name: &str) -> String {
     format!("encode{type_elm_name}")
 }
 
-/// The plain JSON encoder of a message whose JSON write nothing it holds
-/// can refuse, `jsonNote : Note -> Json.Encode.Value`: `json` followed by
-/// the type's Elm name. Like [`default_name`], a prefix and a type name.
-pub fn plain_encoder_name(type_elm_name: &str) -> String {
-    format!("json{type_elm_name}")
-}
-
 /// The JSON decoder for a generated type: `decode` followed by the type's
 /// Elm name (`Note` becomes `decodeNote`). Type names are unique within a
 /// module, so decoder names are too.
@@ -409,7 +402,7 @@ pub fn decoder_name(type_elm_name: &str) -> String {
 ///
 /// The top-level values of a generated module share one namespace, and
 /// each is a prefix (`encode`, `decode`, `default`, `message`, `enum`,
-/// `json` for a plain JSON encoder, `queryOf` for a query encoder, and
+/// `queryOf` for a query encoder, and
 /// `merge` for a binary merge) followed
 /// by a type name. Type names are
 /// unique within a module and start with an uppercase letter, and no

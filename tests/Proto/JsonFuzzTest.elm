@@ -16,6 +16,7 @@ import Generated.Routes.Routes.V1 as V1
 import Json.Decode exposing (Decoder)
 import Json.Encode exposing (Value)
 import Proto.Duration
+import Proto.Error
 import Proto.Int64
 import Proto.Json
 import Proto.Timestamp
@@ -833,6 +834,6 @@ toValue json =
     Proto.Value.fromJson json |> Maybe.withDefault Proto.Value.ValueNull
 
 
-writtenOrNull : Proto.Json.Encoder -> Json.Encode.Value
+writtenOrNull : Proto.Json.Encoder Proto.Error.Error -> Json.Encode.Value
 writtenOrNull encoder =
     Proto.Json.encode encoder |> Result.withDefault Json.Encode.null

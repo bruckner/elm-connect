@@ -179,36 +179,24 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes an [`Entry`](#Entry) as proto3 JSON.
+{-| Encodes an [`Entry`](#Entry) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeEntry : Entry -> Proto.Json.Encoder
+encodeEntry : Entry -> Proto.Json.Encoder x
 encodeEntry value =
-    Proto.Json.ready (jsonEntry value)
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            , ( "descriptor", Proto.Json.implicitField "" Json.Encode.string value.descriptor )
+            , ( "descriptors", Proto.Json.implicitField "" Json.Encode.string value.descriptors )
+            ]
+        )
 
 
-{-| Writes an [`Entry`](#Entry) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Part`](#Part) as proto3 JSON, which nothing it holds can refuse.
 -}
-jsonEntry : Entry -> Json.Encode.Value
-jsonEntry value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        , ( "descriptor", Proto.Json.implicitField "" Json.Encode.string value.descriptor )
-        , ( "descriptors", Proto.Json.implicitField "" Json.Encode.string value.descriptors )
-        ]
-
-
-{-| Encodes a [`Part`](#Part) as proto3 JSON.
--}
-encodePart : Part -> Proto.Json.Encoder
+encodePart : Part -> Proto.Json.Encoder x
 encodePart value =
-    Proto.Json.ready (jsonPart value)
-
-
-{-| Writes a [`Part`](#Part) as proto3 JSON, which nothing it holds can refuse.
--}
-jsonPart : Part -> Json.Encode.Value
-jsonPart value =
-    Proto.Json.objectOfFields (encodePartKind value.kind)
+    Proto.Json.ready (Proto.Json.objectOfFields (encodePartKind value.kind))
 
 
 {-| Encodes a [`PartKind`](#PartKind) as the members of its message's JSON object.
@@ -228,22 +216,17 @@ encodePartKind value =
             ]
 
 
-{-| Encodes a [`GetEntryRequest`](#GetEntryRequest) as proto3 JSON.
+{-| Encodes a [`GetEntryRequest`](#GetEntryRequest) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeGetEntryRequest : GetEntryRequest -> Proto.Json.Encoder
+encodeGetEntryRequest : GetEntryRequest -> Proto.Json.Encoder x
 encodeGetEntryRequest value =
-    Proto.Json.ready (jsonGetEntryRequest value)
-
-
-{-| Writes a [`GetEntryRequest`](#GetEntryRequest) as proto3 JSON, which nothing it holds can refuse.
--}
-jsonGetEntryRequest : GetEntryRequest -> Json.Encode.Value
-jsonGetEntryRequest value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        , ( "descriptor", Proto.Json.implicitField "" Json.Encode.string value.descriptor )
-        , ( "part", Maybe.map jsonPart value.part )
-        ]
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            , ( "descriptor", Proto.Json.implicitField "" Json.Encode.string value.descriptor )
+            , ( "part", Proto.Json.totalOptionalField encodePart value.part )
+            ]
+        )
 
 
 

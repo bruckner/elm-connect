@@ -13,6 +13,7 @@ import Clock.V1.Alarm
 import Json.Decode
 import Proto.Binary
 import Proto.Descriptors
+import Proto.Error
 import Proto.Json
 import Proto.Message
 import Proto.Registry
@@ -96,7 +97,7 @@ registry =
 
 {-| Encodes an [`Alarm`](#Alarm) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for.
 -}
-encodeAlarm : Alarm -> Proto.Json.Encoder
+encodeAlarm : Alarm -> Proto.Json.Encoder Proto.Error.Error
 encodeAlarm value =
     Proto.Json.writeObject []
         [ ( "at", Proto.Json.writeOptional Proto.Json.writeTimestamp value.at )

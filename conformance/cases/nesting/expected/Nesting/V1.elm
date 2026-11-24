@@ -419,157 +419,115 @@ encodeOuterInnerKind value =
             Json.Encode.string "OUTER_INNER_KIND_PUBLISHED"
 
 
-{-| Encodes an [`Outer`](#Outer) as proto3 JSON.
+{-| Encodes an [`Outer`](#Outer) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeOuter : Outer -> Proto.Json.Encoder
+encodeOuter : Outer -> Proto.Json.Encoder x
 encodeOuter value =
-    Proto.Json.ready (jsonOuter value)
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "inner", Proto.Json.totalOptionalField encodeOuterInner value.inner )
+            , ( "kind", Proto.Json.implicitField OuterInnerKindUnspecified encodeOuterInnerKind value.kind )
+            , ( "all", Proto.Json.totalRepeatedField encodeOuterInnerDeepest value.all )
+            ]
+        )
 
 
-{-| Writes an [`Outer`](#Outer) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes an [`OuterInner`](#OuterInner) as proto3 JSON, which nothing it holds can refuse.
 -}
-jsonOuter : Outer -> Json.Encode.Value
-jsonOuter value =
-    Proto.Json.objectOfFields
-        [ ( "inner", Maybe.map jsonOuterInner value.inner )
-        , ( "kind", Proto.Json.implicitField OuterInnerKindUnspecified encodeOuterInnerKind value.kind )
-        , ( "all", Proto.Json.repeatedField jsonOuterInnerDeepest value.all )
-        ]
-
-
-{-| Encodes an [`OuterInner`](#OuterInner) as proto3 JSON.
--}
-encodeOuterInner : OuterInner -> Proto.Json.Encoder
+encodeOuterInner : OuterInner -> Proto.Json.Encoder x
 encodeOuterInner value =
-    Proto.Json.ready (jsonOuterInner value)
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "deepest", Proto.Json.totalOptionalField encodeOuterInnerDeepest value.deepest )
+            ]
+        )
 
 
-{-| Writes an [`OuterInner`](#OuterInner) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes an [`OuterInnerDeepest`](#OuterInnerDeepest) as proto3 JSON, which nothing it holds can refuse.
 -}
-jsonOuterInner : OuterInner -> Json.Encode.Value
-jsonOuterInner value =
-    Proto.Json.objectOfFields
-        [ ( "deepest", Maybe.map jsonOuterInnerDeepest value.deepest )
-        ]
-
-
-{-| Encodes an [`OuterInnerDeepest`](#OuterInnerDeepest) as proto3 JSON.
--}
-encodeOuterInnerDeepest : OuterInnerDeepest -> Proto.Json.Encoder
+encodeOuterInnerDeepest : OuterInnerDeepest -> Proto.Json.Encoder x
 encodeOuterInnerDeepest value =
-    Proto.Json.ready (jsonOuterInnerDeepest value)
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "kind", Proto.Json.implicitField OuterInnerKindUnspecified encodeOuterInnerKind value.kind )
+            ]
+        )
 
 
-{-| Writes an [`OuterInnerDeepest`](#OuterInnerDeepest) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Node`](#Node) as proto3 JSON, which nothing it holds can refuse.
 -}
-jsonOuterInnerDeepest : OuterInnerDeepest -> Json.Encode.Value
-jsonOuterInnerDeepest value =
-    Proto.Json.objectOfFields
-        [ ( "kind", Proto.Json.implicitField OuterInnerKindUnspecified encodeOuterInnerKind value.kind )
-        ]
-
-
-{-| Encodes a [`Node`](#Node) as proto3 JSON.
--}
-encodeNode : Node -> Proto.Json.Encoder
+encodeNode : Node -> Proto.Json.Encoder x
 encodeNode value =
-    Proto.Json.ready (jsonNode value)
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
+            , ( "children", Proto.Json.totalRepeatedField encodeNode_ value.children )
+            , ( "byName", Proto.Json.totalDictField identity encodeNode_ value.byName )
+            ]
+        )
 
 
-{-| Writes a [`Node`](#Node) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Node_`](#Node_) as proto3 JSON.
 -}
-jsonNode : Node -> Json.Encode.Value
-jsonNode value =
-    Proto.Json.objectOfFields
-        [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
-        , ( "children", Proto.Json.repeatedField jsonNode_ value.children )
-        , ( "byName", Proto.Json.dictField identity jsonNode_ value.byName )
-        ]
+encodeNode_ : Node_ -> Proto.Json.Encoder x
+encodeNode_ (Node_ value) =
+    encodeNode value
 
 
-{-| Writes a [`Node_`](#Node_) as proto3 JSON.
+{-| Encodes a [`Person`](#Person) as proto3 JSON, which nothing it holds can refuse.
 -}
-jsonNode_ : Node_ -> Json.Encode.Value
-jsonNode_ (Node_ value) =
-    jsonNode value
-
-
-{-| Encodes a [`Person`](#Person) as proto3 JSON.
--}
-encodePerson : Person -> Proto.Json.Encoder
+encodePerson : Person -> Proto.Json.Encoder x
 encodePerson value =
-    Proto.Json.ready (jsonPerson value)
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            , ( "employer", Proto.Json.totalOptionalField encodeCompany_ value.employer )
+            ]
+        )
 
 
-{-| Writes a [`Person`](#Person) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Person_`](#Person_) as proto3 JSON.
 -}
-jsonPerson : Person -> Json.Encode.Value
-jsonPerson value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        , ( "employer", Maybe.map jsonCompany_ value.employer )
-        ]
+encodePerson_ : Person_ -> Proto.Json.Encoder x
+encodePerson_ (Person_ value) =
+    encodePerson value
 
 
-{-| Writes a [`Person_`](#Person_) as proto3 JSON.
+{-| Encodes a [`Company`](#Company) as proto3 JSON, which nothing it holds can refuse.
 -}
-jsonPerson_ : Person_ -> Json.Encode.Value
-jsonPerson_ (Person_ value) =
-    jsonPerson value
-
-
-{-| Encodes a [`Company`](#Company) as proto3 JSON.
--}
-encodeCompany : Company -> Proto.Json.Encoder
+encodeCompany : Company -> Proto.Json.Encoder x
 encodeCompany value =
-    Proto.Json.ready (jsonCompany value)
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            , ( "staff", Proto.Json.totalRepeatedField encodePerson_ value.staff )
+            ]
+        )
 
 
-{-| Writes a [`Company`](#Company) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Company_`](#Company_) as proto3 JSON.
 -}
-jsonCompany : Company -> Json.Encode.Value
-jsonCompany value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        , ( "staff", Proto.Json.repeatedField jsonPerson_ value.staff )
-        ]
+encodeCompany_ : Company_ -> Proto.Json.Encoder x
+encodeCompany_ (Company_ value) =
+    encodeCompany value
 
 
-{-| Writes a [`Company_`](#Company_) as proto3 JSON.
+{-| Encodes a [`Forest`](#Forest) as proto3 JSON, which nothing it holds can refuse.
 -}
-jsonCompany_ : Company_ -> Json.Encode.Value
-jsonCompany_ (Company_ value) =
-    jsonCompany value
-
-
-{-| Encodes a [`Forest`](#Forest) as proto3 JSON.
--}
-encodeForest : Forest -> Proto.Json.Encoder
+encodeForest : Forest -> Proto.Json.Encoder x
 encodeForest value =
-    Proto.Json.ready (jsonForest value)
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "trees", Proto.Json.totalRepeatedField encodeNode value.trees )
+            ]
+        )
 
 
-{-| Writes a [`Forest`](#Forest) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes an [`Expr`](#Expr) as proto3 JSON, which nothing it holds can refuse.
 -}
-jsonForest : Forest -> Json.Encode.Value
-jsonForest value =
-    Proto.Json.objectOfFields
-        [ ( "trees", Proto.Json.repeatedField jsonNode value.trees )
-        ]
-
-
-{-| Encodes an [`Expr`](#Expr) as proto3 JSON.
--}
-encodeExpr : Expr -> Proto.Json.Encoder
+encodeExpr : Expr -> Proto.Json.Encoder x
 encodeExpr value =
-    Proto.Json.ready (jsonExpr value)
-
-
-{-| Writes an [`Expr`](#Expr) as proto3 JSON, which nothing it holds can refuse.
--}
-jsonExpr : Expr -> Json.Encode.Value
-jsonExpr value =
-    Proto.Json.objectOfFields (encodeExprValue value.value)
+    Proto.Json.ready (Proto.Json.objectOfFields (encodeExprValue value.value))
 
 
 {-| Encodes an [`ExprValue`](#ExprValue) as the members of its message's JSON object.
@@ -585,24 +543,19 @@ encodeExprValue value =
             ]
 
         ExprValueSum member ->
-            [ ( "sum", Just (jsonSum member) )
+            [ ( "sum", Just (Proto.Json.encodeTotal (encodeSum member)) )
             ]
 
 
-{-| Encodes a [`Sum`](#Sum) as proto3 JSON.
+{-| Encodes a [`Sum`](#Sum) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeSum : Sum -> Proto.Json.Encoder
+encodeSum : Sum -> Proto.Json.Encoder x
 encodeSum value =
-    Proto.Json.ready (jsonSum value)
-
-
-{-| Writes a [`Sum`](#Sum) as proto3 JSON, which nothing it holds can refuse.
--}
-jsonSum : Sum -> Json.Encode.Value
-jsonSum value =
-    Proto.Json.objectOfFields
-        [ ( "terms", Proto.Json.repeatedField jsonExpr value.terms )
-        ]
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "terms", Proto.Json.totalRepeatedField encodeExpr value.terms )
+            ]
+        )
 
 
 

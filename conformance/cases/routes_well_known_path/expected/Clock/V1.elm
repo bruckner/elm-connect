@@ -16,6 +16,7 @@ import Json.Encode
 import Proto.Binary
 import Proto.Descriptors
 import Proto.Duration exposing (Duration)
+import Proto.Error
 import Proto.Json
 import Proto.Message
 import Proto.Query
@@ -117,7 +118,7 @@ registry =
 
 {-| Encodes a [`Moment`](#Moment) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for.
 -}
-encodeMoment : Moment -> Proto.Json.Encoder
+encodeMoment : Moment -> Proto.Json.Encoder Proto.Error.Error
 encodeMoment value =
     Proto.Json.writeObject
         [ ( "count", Maybe.map Json.Encode.int value.count )

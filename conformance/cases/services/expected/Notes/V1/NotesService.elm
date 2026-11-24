@@ -309,7 +309,7 @@ routeCreateNote0 request_ =
     { method = "POST"
     , path = "v1/" ++ Proto.Route.segments parent_ ++ "/notes"
     , query = []
-    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Notes.V1.jsonNote request_.note))
+    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map (Proto.Json.encodeTotal << Notes.V1.encodeNote) request_.note))
     , invalid = Proto.Route.checkSegments "parent" [ "users", "*" ] parent_
     }
 
@@ -325,7 +325,7 @@ routeUpdateNote0 request_ json_ =
     { method = "PATCH"
     , path = "v1/" ++ Proto.Route.segments noteName_
     , query = Notes.V1.queryOfUpdateNoteRequest request_
-    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Notes.V1.jsonNote request_.note))
+    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map (Proto.Json.encodeTotal << Notes.V1.encodeNote) request_.note))
     , invalid = Proto.Route.checkSegments "note.name" [ "notes", "*" ] noteName_
     }
 
@@ -341,7 +341,7 @@ routeReplaceNote0 request_ =
     { method = "PUT"
     , path = "v1/" ++ Proto.Route.segments name_
     , query = []
-    , body = Just (Proto.Route.without [ [ "name" ] ] (Notes.V1.jsonNote request_))
+    , body = Just (Proto.Route.without [ [ "name" ] ] (Proto.Json.encodeTotal (Notes.V1.encodeNote request_)))
     , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] name_
     }
 
@@ -373,7 +373,7 @@ routeArchiveNote0 request_ =
     { method = "POST"
     , path = "v1/" ++ Proto.Route.segments name_ ++ ":archive"
     , query = []
-    , body = Just (Proto.Route.without [ [ "name" ] ] (Notes.V1.jsonArchiveNoteRequest request_))
+    , body = Just (Proto.Route.without [ [ "name" ] ] (Proto.Json.encodeTotal (Notes.V1.encodeArchiveNoteRequest request_)))
     , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] name_
     }
 

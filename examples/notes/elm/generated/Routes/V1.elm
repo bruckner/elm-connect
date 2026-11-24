@@ -19,6 +19,7 @@ import Proto.Binary
 import Proto.Descriptors
 import Proto.Duration exposing (Duration)
 import Proto.Enum
+import Proto.Error
 import Proto.Json
 import Proto.Message
 import Proto.Query
@@ -511,79 +512,59 @@ encodeKind value =
             Json.Encode.string "KIND_IMAGE"
 
 
-{-| Encodes a [`GetMessageRequest`](#GetMessageRequest) as proto3 JSON.
+{-| Encodes a [`GetMessageRequest`](#GetMessageRequest) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeGetMessageRequest : GetMessageRequest -> Proto.Json.Encoder
+encodeGetMessageRequest : GetMessageRequest -> Proto.Json.Encoder x
 encodeGetMessageRequest value =
-    Proto.Json.ready (jsonGetMessageRequest value)
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "messageId", Proto.Json.implicitField "" Json.Encode.string value.messageId )
+            , ( "revision", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.revision )
+            , ( "sub", Proto.Json.totalOptionalField encodeGetMessageRequestSubMessage value.sub )
+            , ( "userId", Proto.Json.implicitField "" Json.Encode.string value.userId )
+            , ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            ]
+        )
 
 
-{-| Writes a [`GetMessageRequest`](#GetMessageRequest) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`GetMessageRequestSubMessage`](#GetMessageRequestSubMessage) as proto3 JSON, which nothing it holds can refuse.
 -}
-jsonGetMessageRequest : GetMessageRequest -> Json.Encode.Value
-jsonGetMessageRequest value =
-    Proto.Json.objectOfFields
-        [ ( "messageId", Proto.Json.implicitField "" Json.Encode.string value.messageId )
-        , ( "revision", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.revision )
-        , ( "sub", Maybe.map jsonGetMessageRequestSubMessage value.sub )
-        , ( "userId", Proto.Json.implicitField "" Json.Encode.string value.userId )
-        , ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        ]
-
-
-{-| Encodes a [`GetMessageRequestSubMessage`](#GetMessageRequestSubMessage) as proto3 JSON.
--}
-encodeGetMessageRequestSubMessage : GetMessageRequestSubMessage -> Proto.Json.Encoder
+encodeGetMessageRequestSubMessage : GetMessageRequestSubMessage -> Proto.Json.Encoder x
 encodeGetMessageRequestSubMessage value =
-    Proto.Json.ready (jsonGetMessageRequestSubMessage value)
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "subfield", Proto.Json.implicitField "" Json.Encode.string value.subfield )
+            ]
+        )
 
 
-{-| Writes a [`GetMessageRequestSubMessage`](#GetMessageRequestSubMessage) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Message`](#Message) as proto3 JSON, which nothing it holds can refuse.
 -}
-jsonGetMessageRequestSubMessage : GetMessageRequestSubMessage -> Json.Encode.Value
-jsonGetMessageRequestSubMessage value =
-    Proto.Json.objectOfFields
-        [ ( "subfield", Proto.Json.implicitField "" Json.Encode.string value.subfield )
-        ]
-
-
-{-| Encodes a [`Message`](#Message) as proto3 JSON.
--}
-encodeMessage : Message -> Proto.Json.Encoder
+encodeMessage : Message -> Proto.Json.Encoder x
 encodeMessage value =
-    Proto.Json.ready (jsonMessage value)
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "messageId", Proto.Json.implicitField "" Json.Encode.string value.messageId )
+            , ( "text", Proto.Json.implicitField "" Json.Encode.string value.text )
+            ]
+        )
 
 
-{-| Writes a [`Message`](#Message) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes an [`UpdateMessageRequest`](#UpdateMessageRequest) as proto3 JSON, which nothing it holds can refuse.
 -}
-jsonMessage : Message -> Json.Encode.Value
-jsonMessage value =
-    Proto.Json.objectOfFields
-        [ ( "messageId", Proto.Json.implicitField "" Json.Encode.string value.messageId )
-        , ( "text", Proto.Json.implicitField "" Json.Encode.string value.text )
-        ]
-
-
-{-| Encodes an [`UpdateMessageRequest`](#UpdateMessageRequest) as proto3 JSON.
--}
-encodeUpdateMessageRequest : UpdateMessageRequest -> Proto.Json.Encoder
+encodeUpdateMessageRequest : UpdateMessageRequest -> Proto.Json.Encoder x
 encodeUpdateMessageRequest value =
-    Proto.Json.ready (jsonUpdateMessageRequest value)
-
-
-{-| Writes an [`UpdateMessageRequest`](#UpdateMessageRequest) as proto3 JSON, which nothing it holds can refuse.
--}
-jsonUpdateMessageRequest : UpdateMessageRequest -> Json.Encode.Value
-jsonUpdateMessageRequest value =
-    Proto.Json.objectOfFields
-        [ ( "messageId", Proto.Json.implicitField "" Json.Encode.string value.messageId )
-        , ( "message", Maybe.map jsonMessage value.message )
-        ]
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "messageId", Proto.Json.implicitField "" Json.Encode.string value.messageId )
+            , ( "message", Proto.Json.totalOptionalField encodeMessage value.message )
+            ]
+        )
 
 
 {-| Encodes an [`Everything`](#Everything) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for.
 -}
-encodeEverything : Everything -> Proto.Json.Encoder
+encodeEverything : Everything -> Proto.Json.Encoder Proto.Error.Error
 encodeEverything value =
     Proto.Json.writeObject
         ([ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
@@ -602,7 +583,7 @@ encodeEverything value =
          , ( "maybeName", Maybe.map Json.Encode.string value.maybeName )
          , ( "limit", Maybe.map Json.Encode.int value.limit )
          , ( "label", Maybe.map Json.Encode.string value.label )
-         , ( "inner", Maybe.map jsonInner value.inner )
+         , ( "inner", Proto.Json.totalOptionalField encodeInner value.inner )
          ]
             ++ encodeEverythingChoice value.choice
         )
@@ -629,82 +610,62 @@ encodeEverythingChoice value =
             ]
 
 
-{-| Encodes an [`Inner`](#Inner) as proto3 JSON.
+{-| Encodes an [`Inner`](#Inner) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeInner : Inner -> Proto.Json.Encoder
+encodeInner : Inner -> Proto.Json.Encoder x
 encodeInner value =
-    Proto.Json.ready (jsonInner value)
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "a", Proto.Json.implicitField "" Json.Encode.string value.a )
+            , ( "deep", Proto.Json.totalOptionalField encodeDeep value.deep )
+            ]
+        )
 
 
-{-| Writes an [`Inner`](#Inner) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Deep`](#Deep) as proto3 JSON, which nothing it holds can refuse.
 -}
-jsonInner : Inner -> Json.Encode.Value
-jsonInner value =
-    Proto.Json.objectOfFields
-        [ ( "a", Proto.Json.implicitField "" Json.Encode.string value.a )
-        , ( "deep", Maybe.map jsonDeep value.deep )
-        ]
-
-
-{-| Encodes a [`Deep`](#Deep) as proto3 JSON.
--}
-encodeDeep : Deep -> Proto.Json.Encoder
+encodeDeep : Deep -> Proto.Json.Encoder x
 encodeDeep value =
-    Proto.Json.ready (jsonDeep value)
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "b", Proto.Json.implicitField 0 Json.Encode.int value.b )
+            , ( "c", Proto.Json.repeatedField Json.Encode.string value.c )
+            ]
+        )
 
 
-{-| Writes a [`Deep`](#Deep) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`FileRequest`](#FileRequest) as proto3 JSON, which nothing it holds can refuse.
 -}
-jsonDeep : Deep -> Json.Encode.Value
-jsonDeep value =
-    Proto.Json.objectOfFields
-        [ ( "b", Proto.Json.implicitField 0 Json.Encode.int value.b )
-        , ( "c", Proto.Json.repeatedField Json.Encode.string value.c )
-        ]
-
-
-{-| Encodes a [`FileRequest`](#FileRequest) as proto3 JSON.
--}
-encodeFileRequest : FileRequest -> Proto.Json.Encoder
+encodeFileRequest : FileRequest -> Proto.Json.Encoder x
 encodeFileRequest value =
-    Proto.Json.ready (jsonFileRequest value)
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "path", Proto.Json.implicitField "" Json.Encode.string value.path )
+            ]
+        )
 
 
-{-| Writes a [`FileRequest`](#FileRequest) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Resource`](#Resource) as proto3 JSON, which nothing it holds can refuse.
 -}
-jsonFileRequest : FileRequest -> Json.Encode.Value
-jsonFileRequest value =
-    Proto.Json.objectOfFields
-        [ ( "path", Proto.Json.implicitField "" Json.Encode.string value.path )
-        ]
-
-
-{-| Encodes a [`Resource`](#Resource) as proto3 JSON.
--}
-encodeResource : Resource -> Proto.Json.Encoder
+encodeResource : Resource -> Proto.Json.Encoder x
 encodeResource value =
-    Proto.Json.ready (jsonResource value)
-
-
-{-| Writes a [`Resource`](#Resource) as proto3 JSON, which nothing it holds can refuse.
--}
-jsonResource : Resource -> Json.Encode.Value
-jsonResource value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        , ( "displayName", Proto.Json.implicitField "" Json.Encode.string value.displayName )
-        , ( "labels", Proto.Json.dictField identity Json.Encode.string value.labels )
-        , ( "kinds", Proto.Json.dictField identity encodeKind value.kinds )
-        , ( "weights", Proto.Json.boolMapField Proto.Json.encodeFloat value.weights )
-        ]
+    Proto.Json.ready
+        (Proto.Json.objectOfFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            , ( "displayName", Proto.Json.implicitField "" Json.Encode.string value.displayName )
+            , ( "labels", Proto.Json.dictField identity Json.Encode.string value.labels )
+            , ( "kinds", Proto.Json.dictField identity encodeKind value.kinds )
+            , ( "weights", Proto.Json.boolMapField Proto.Json.encodeFloat value.weights )
+            ]
+        )
 
 
 {-| Encodes an [`UpdateResourceRequest`](#UpdateResourceRequest) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for.
 -}
-encodeUpdateResourceRequest : UpdateResourceRequest -> Proto.Json.Encoder
+encodeUpdateResourceRequest : UpdateResourceRequest -> Proto.Json.Encoder Proto.Error.Error
 encodeUpdateResourceRequest value =
     Proto.Json.writeObject
-        [ ( "resource", Maybe.map jsonResource value.resource )
+        [ ( "resource", Proto.Json.totalOptionalField encodeResource value.resource )
         ]
         [ ( "updateMask", Proto.Json.writeOptional Proto.Json.writeFieldMask value.updateMask )
         ]
