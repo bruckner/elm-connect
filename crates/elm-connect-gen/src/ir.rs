@@ -41,7 +41,7 @@ mod build;
 pub mod comments;
 pub mod declaration;
 mod graph;
-mod nesting;
+pub mod nesting;
 mod reach;
 mod rename;
 

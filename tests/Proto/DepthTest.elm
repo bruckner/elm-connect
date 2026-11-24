@@ -25,6 +25,7 @@ import Proto.Any
 import Proto.Binary
 import Proto.Bytes
 import Proto.Error
+import Proto.Internal.Depth
 import Proto.Json
 import Proto.Message
 import Proto.Method
@@ -54,6 +55,7 @@ suite =
         , scrubbed
         , valueRefusals
         , valueErrorsShort
+        , theFailureStatesTheLimit
         ]
 
 
@@ -233,6 +235,17 @@ varint n =
 tooDeepText : String
 tooDeepText =
     "Expecting messages nested at most 100 deep"
+
+
+{-| The runtime writes the limit's failure text once, beside the limit; it
+states the limit.
+-}
+theFailureStatesTheLimit : Test
+theFailureStatesTheLimit =
+    test "the failure past the limit states the limit" <|
+        \_ ->
+            Proto.Internal.Depth.tooDeepText
+                |> Expect.equal ("Expecting messages nested at most " ++ String.fromInt Proto.Internal.Depth.limit ++ " deep")
 
 
 {-| The failure's text, found by following its path rather than through
