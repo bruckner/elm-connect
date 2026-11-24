@@ -512,6 +512,11 @@ impl Emitter {
                 };
             }
         }
+        if self.deep.is_some()
+            && let Some(name) = self.counted_message(value)
+        {
+            return self.counted_decoder(name);
+        }
         if self.reaches(value) {
             let decoder = match value {
                 ValueShape::Present(Present::Message(name)) => {

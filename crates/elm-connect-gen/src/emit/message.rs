@@ -193,7 +193,8 @@ impl Emitter {
             .iter()
             .map(|&(field, value)| {
                 let field_value = access(var(ENCODER_ARGUMENT), field.elm_name.clone());
-                self.deeper_registry = shape.message.recursive && field.recursive;
+                self.deeper_registry = shape.message.recursive
+                    && (field.recursive || self.counted.type_ref(&field.ty));
                 self.nested_any = shape.message.recursive;
                 let encoded = self.try_encode_field(value, field_value);
                 self.deeper_registry = false;
@@ -207,11 +208,11 @@ impl Emitter {
             .map(|oneof| {
                 let field_value = access(var(ENCODER_ARGUMENT), oneof.oneof.elm_field_name.clone());
                 if self.oneof_reaches(oneof) {
-                    // A oneof with no member on the cycle is written off
-                    // it, counting from the message's depth.
-                    let on_cycle = shape.message.recursive
-                        && oneof.variants.iter().any(|(variant, _)| variant.cyclic);
-                    let registry = if shape.message.recursive && !on_cycle {
+                    // A oneof with no member that counts on from the
+                    // message is written off its cycle, counting from the
+                    // message's depth.
+                    let counts = shape.message.recursive && self.oneof_counts(oneof);
+                    let registry = if shape.message.recursive && !counts {
                         self.nested_registry(int(1))
                     } else {
                         var(REGISTRY_ARGUMENT)
@@ -364,9 +365,8 @@ impl Emitter {
                     },
                     RecordField::Oneof(oneof) => {
                         let step = self.reference((PROTO_JSON, "oneof"));
-                        let on_cycle = deep.is_some()
-                            && oneof.variants.iter().any(|(variant, _)| variant.cyclic);
-                        let decoder = if on_cycle {
+                        let counts = deep.is_some() && self.oneof_counts(oneof);
+                        let decoder = if counts {
                             if self.oneof_reaches(oneof) {
                                 apply(
                                     var(nested(with_registry(oneof.oneof.decoder_name()))),

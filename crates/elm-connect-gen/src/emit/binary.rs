@@ -277,7 +277,8 @@ impl Emitter {
 
     /// The `Proto.Binary.Codec` of one value of type `ty`, held as
     /// `holding` says; in `wrapped`, when the field closes a cycle. A
-    /// message on the cycle of the message being read (`deep`) is read by
+    /// message whose codecs take the depth, on the cycle of the message
+    /// being read or on another (`deep`), is read by
     /// `Proto.Binary.recursive` at the merge's depth.
     fn binary_codec(
         &mut self,
@@ -358,14 +359,12 @@ impl Emitter {
         }
     }
 
+    /// The codec of a field's values; `deep` when its message's merge
+    /// takes the depth.
     fn field_codec(&mut self, field: &Field, shape: FieldShape, deep: bool) -> Expr {
         let holding = field_holding(field.jstype, self.holding);
-        self.binary_codec(
-            &field.ty,
-            holding,
-            wrapper_of(shape),
-            deep && field.recursive,
-        )
+        let counted = field.recursive || self.counted.type_ref(&field.ty);
+        self.binary_codec(&field.ty, holding, wrapper_of(shape), deep && counted)
     }
 
     fn bytes_encoder_type(&mut self) -> Type {
@@ -599,7 +598,8 @@ impl Emitter {
             let name = oneof.oneof.elm_field_name.as_str();
             for &(variant, value) in &oneof.variants {
                 let holding = field_holding(variant.jstype, self.holding);
-                let deep = shape.message.recursive && variant.cyclic;
+                let deep = shape.message.recursive
+                    && (variant.cyclic || self.counted.type_ref(&variant.ty));
                 let codec = self.binary_codec(&variant.ty, holding, None, deep);
                 let set = if matches!(value, ValueShape::Zeroed(Zeroed::Empty | Zeroed::Null)) {
                     lambda(

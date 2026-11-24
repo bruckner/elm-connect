@@ -52,6 +52,7 @@ suite =
         , mapValues
         , anyOwnCount
         , offCycle
+        , anotherCycle
         , mixedFarPast
         , scrubbed
         , valueRefusals
@@ -1025,6 +1026,110 @@ offCycle =
             (List.map boundaries ways)
         , describe "100,000 levels fail with the error and throw nothing"
             (List.map deep ways)
+        ]
+
+
+
+-- ANOTHER CYCLE
+
+
+{-| One message entered along a path: its JSON around what it holds, and its
+binary prefix given the size of what it holds.
+-}
+type alias Step =
+    { open : String, close : String, prefix : Int -> List Int }
+
+
+pathJson : List Step -> String
+pathJson steps =
+    "{" ++ String.concat (List.map .open steps) ++ String.concat (List.reverse (List.map .close steps)) ++ "}"
+
+
+pathBinary : List Step -> Bytes.Bytes
+pathBinary steps =
+    wrapped (List.map .prefix steps) []
+
+
+{-| `Chain`'s `next` and `tree`, and `Tree`'s `children`.
+-}
+chainNext : Step
+chainNext =
+    Step "\"next\":{" "}" (\size -> 0x12 :: varint size)
+
+
+chainTree : Step
+chainTree =
+    Step "\"tree\":{" "}" (\size -> 0x1A :: varint size)
+
+
+treeChild : Step
+treeChild =
+    Step "\"children\":[{" "}]" (\size -> 0x12 :: varint size)
+
+
+{-| `count` messages of one type, each holding the next through `step`: the
+steps below the first.
+-}
+run : Int -> Step -> List Step
+run count step =
+    List.repeat (count - 1) step
+
+
+{-| From a `Chain`: `chains` chains, the last holding a run of `trees` trees,
+another cycle. `chains + trees` levels.
+-}
+chainThenTrees : Int -> Int -> List Step
+chainThenTrees chains trees =
+    run chains chainNext ++ chainTree :: run trees treeChild
+
+
+anotherCycle : Test
+anotherCycle =
+    let
+        boundaries name jsonRead binaryRead path pairs =
+            test name <|
+                \_ ->
+                    Expect.all
+                        (List.concatMap
+                            (\( accepted, refused ) ->
+                                [ \_ -> Json.Decode.decodeString jsonRead (pathJson (path accepted)) |> ok |> Expect.equal (Ok ())
+                                , \_ -> Json.Decode.decodeString jsonRead (pathJson (path refused)) |> ok |> failsTooDeep
+                                , \_ -> Proto.Binary.decode binaryRead (pathBinary (path accepted)) |> ok |> Expect.equal (Ok ())
+                                , \_ -> Proto.Binary.decode binaryRead (pathBinary (path refused)) |> ok |> tooDeepBinary |> Expect.equal (Err Proto.Error.TooDeep)
+                                ]
+                            )
+                            pairs
+                        )
+                        ()
+
+        far name jsonRead binaryRead steps =
+            let
+                text =
+                    pathJson steps
+            in
+            test name <|
+                \_ ->
+                    case Json.Decode.decodeString Json.Decode.value text of
+                        Ok json ->
+                            Expect.all
+                                [ \_ -> Json.Decode.decodeString jsonRead text |> ok |> failsTooDeep
+                                , \_ -> Json.Decode.decodeValue jsonRead json |> ok |> failsTooDeep
+                                , \_ -> Proto.Binary.decode binaryRead (pathBinary steps) |> ok |> tooDeepBinary |> Expect.equal (Err Proto.Error.TooDeep)
+                                ]
+                                ()
+
+                        Err _ ->
+                            Expect.fail "JSON.parse refused it"
+    in
+    describe "a message of another cycle held by one on a cycle counts one level deeper"
+        [ boundaries "a message of another cycle, held directly"
+            Deep.decodeChain
+            Deep.decodeChainBytes
+            (\( chains, trees ) -> chainThenTrees chains trees)
+            [ ( ( 99, 1 ), ( 99, 2 ) ), ( ( 1, 99 ), ( 1, 100 ) ), ( ( 50, 50 ), ( 50, 51 ) ) ]
+        , describe "100,000 levels fail with the error and throw nothing"
+            [ far "another cycle" Deep.decodeChain Deep.decodeChainBytes (chainThenTrees 50000 50000)
+            ]
         ]
 
 

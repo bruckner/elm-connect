@@ -1,8 +1,8 @@
 // Every shape of a cycle of references, whose decoders read at most 100
 // levels deep: a merge and a JSON decoder given the depth
 // (`mergeNestedChainBytes`, `decodeNestedChain`), each made once per
-// depth by `memo`, each field on the cycle read one level deeper. A
-// message off every cycle generates as it always has.
+// depth by `memo`, each message they hold on the cycle or on another read
+// one level deeper. A message off every cycle generates as it always has.
 syntax = "proto3";
 
 package cycles.v1;
@@ -10,10 +10,12 @@ package cycles.v1;
 import "google/protobuf/any.proto";
 import "google/protobuf/struct.proto";
 
-// A message that holds itself.
+// A message that holds itself, and a message of another cycle, read one
+// level deeper as its own are.
 message Chain {
   string label = 1;
   Chain next = 2;
+  Tree tree = 3;
 }
 
 // Through a list.

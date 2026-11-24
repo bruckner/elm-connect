@@ -7,8 +7,8 @@ module Cycles.V1 exposing (..)
 {-| Every shape of a cycle of references, whose decoders read at most 100
 levels deep: a merge and a JSON decoder given the depth
 (`mergeNestedChainBytes`, `decodeNestedChain`), each made once per
-depth by `memo`, each field on the cycle read one level deeper. A
-message off every cycle generates as it always has.
+depth by `memo`, each message they hold on the cycle or on another read
+one level deeper. A message off every cycle generates as it always has.
 -}
 
 import Bytes.Encode
@@ -51,17 +51,20 @@ elmConnectVersion_ =
 -- TYPES
 
 
-{-| A message that holds itself.
+{-| A message that holds itself, and a message of another cycle, read one
+level deeper as its own are.
 
 [`message cycles.v1.Chain`](Cycles-V1-Chain#descriptor)
 
   - [`label`](Cycles-V1-Chain#label)
   - [`next`](Cycles-V1-Chain#next)
+  - [`tree`](Cycles-V1-Chain#tree)
 
 -}
 type alias Chain =
     { label : String
     , next : Maybe Chain_
+    , tree : Maybe Tree
     }
 
 
@@ -456,6 +459,7 @@ defaultChain : Chain
 defaultChain =
     { label = ""
     , next = Nothing
+    , tree = Nothing
     }
 
 
@@ -786,6 +790,7 @@ encodeChain value =
     Proto.Json.objectOfFields
         [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
         , ( "next", Maybe.map encodeChain_ value.next )
+        , ( "tree", Maybe.map encodeTree value.tree )
         ]
 
 
@@ -1093,6 +1098,7 @@ decodeNestedChain =
                 (Json.Decode.succeed Chain
                     |> Proto.Json.messageField "label" "" Proto.Json.string
                     |> Proto.Json.messageField "next" Nothing (Json.Decode.map Just (Json.Decode.map Chain_ (Json.Decode.lazy (\_ -> decodeNestedChain (depth + 1)))))
+                    |> Proto.Json.messageField "tree" Nothing (Json.Decode.map Just (decodeNestedTree (depth + 1)))
                 )
         )
 
@@ -1497,6 +1503,7 @@ encodeChainBytes value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.label
         , Proto.Binary.optional (Proto.Binary.embedded encodeChain_Bytes mergeChain_Bytes (Chain_ defaultChain)) 2 value.next
+        , Proto.Binary.optional (Proto.Binary.embedded encodeTreeBytes mergeTreeBytes defaultTree) 3 value.tree
         ]
 
 
@@ -1808,6 +1815,7 @@ mergeNestedChainBytes =
                                 (\v ->
                                     { label = v
                                     , next = value.next
+                                    , tree = value.tree
                                     }
                                 )
                                 wire
@@ -1820,6 +1828,20 @@ mergeNestedChainBytes =
                                 (\v ->
                                     { label = value.label
                                     , next = Just v
+                                    , tree = value.tree
+                                    }
+                                )
+                                wire
+                                value
+
+                        3 ->
+                            Proto.Binary.fieldInto
+                                (Proto.Binary.recursive depth encodeTreeBytes mergeNestedTreeBytes defaultTree)
+                                value.tree
+                                (\v ->
+                                    { label = value.label
+                                    , next = value.next
+                                    , tree = Just v
                                     }
                                 )
                                 wire

@@ -1,10 +1,13 @@
 //! A recursive message's wrapper: its custom type, encoder and decoder
 //! (design §3.2).
 
-use super::{Deep, Emitter, JSON_DECODE, JSON_ENCODE, PROTO_JSON, PROTO_REGISTRY, docs};
+use super::field::{Present, ValueShape, Zeroed};
+use super::{
+    Deep, Emitter, JSON_DECODE, JSON_ENCODE, OneofShape, PROTO_JSON, PROTO_REGISTRY, docs,
+};
 use crate::elm::ast::{BinOp, Decl, Expr, Pattern, Type, Variant};
 use crate::elm::build::{apply, binop, int, lambda, pctor, pvar, ty, var};
-use crate::ir::{Message, Wrapper};
+use crate::ir::{Message, TypeName, Wrapper};
 use crate::naming::{ENCODER_ARGUMENT, REGISTRY_ARGUMENT, decoder_name, nested, with_registry};
 
 impl Emitter {
@@ -145,6 +148,54 @@ impl Emitter {
         }
     }
 
+    /// The message a value is, when its codecs take the depth.
+    pub(super) fn counted_message<'v>(&self, value: ValueShape<'v>) -> Option<&'v TypeName> {
+        match value {
+            ValueShape::Present(Present::Message(name))
+                if self.counted.message(&name.proto_full_name) =>
+            {
+                Some(name)
+            }
+            _ => None,
+        }
+    }
+
+    /// Whether a oneof of a message on a cycle takes the message's depth:
+    /// a member is a message whose codecs take the depth, a `Value`,
+    /// `Struct` or `ListValue`, or an `Any`, each of which counts on from
+    /// the message.
+    pub(super) fn oneof_counts(&self, shape: &OneofShape) -> bool {
+        shape.variants.iter().any(|&(variant, value)| {
+            variant.cyclic
+                || self.counted_message(value).is_some()
+                || matches!(
+                    value,
+                    ValueShape::Zeroed(Zeroed::Json)
+                        | ValueShape::Present(Present::Struct | Present::ListValue | Present::Any)
+                )
+        })
+    }
+
+    /// A message of another cycle than the message being decoded, read one
+    /// level deeper: `decodeNestedTree (depth + 1)`, or
+    /// `Proto.Json.deeperWith depth (decodeNestedTreeWith types)` for one
+    /// that takes the registry. The holder's memoised decoders reach the
+    /// other's directly, as nothing on the other's cycle leads back.
+    pub(super) fn counted_decoder(&mut self, name: &TypeName) -> Expr {
+        if self.reach.message(&name.proto_full_name) {
+            let decoder = nested(with_registry(name.decoder_name()));
+            let build = apply(
+                self.generated_value(&name.module, decoder),
+                [var(REGISTRY_ARGUMENT)],
+            );
+            let deeper = self.reference((PROTO_JSON, "deeperWith"));
+            apply(deeper, [var(DEPTH), build])
+        } else {
+            let decoder = self.generated_value(&name.module, nested(name.decoder_name()));
+            apply(decoder, [binop(BinOp::Add, var(DEPTH), int(1))])
+        }
+    }
+
     /// The decoders of a recursive message, from the decoder `body` built
     /// for the depth `depth`: under `Deep::Memo`, `decodeNode =
     /// decodeNestedNode 1` and `decodeNestedNode = Proto.Json.memo
@@ -228,8 +279,9 @@ impl Emitter {
         }
     }
 
-    /// The decoders of a oneof of a recursive message with a member on its
-    /// cycle: `decodeExprValue = decodeNestedExprValue 1` and
+    /// The decoders of a oneof of a recursive message with a member that
+    /// counts on from it ([`Self::oneof_counts`]): `decodeExprValue =
+    /// decodeNestedExprValue 1` and
     /// `decodeNestedExprValue depth = body`, built at each depth by its message's decoder (it is
     /// not memoised itself); under `Deep::Built`, as
     /// [`Self::nested_decoders`] writes them.

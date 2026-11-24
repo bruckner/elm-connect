@@ -19,7 +19,8 @@ elmConnectVersion_ =
     Proto.Version.v0_2
 
 
-{-| A message that holds itself.
+{-| A message that holds itself, and a message of another cycle, read one
+level deeper as its own are.
 
 `message cycles.v1.Chain`
 
@@ -31,6 +32,7 @@ descriptor =
     Proto.Message.descriptor "cycles.v1.Chain"
         [ label
         , next
+        , tree
         ]
 
 
@@ -46,3 +48,10 @@ label =
 next : Proto.Field.Descriptor
 next =
     Proto.Field.descriptor "next" "next" 2 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "cycles.v1.Chain")
+
+
+{-| `cycles.v1.Tree tree = 3;`
+-}
+tree : Proto.Field.Descriptor
+tree =
+    Proto.Field.descriptor "tree" "tree" 3 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "cycles.v1.Tree")

@@ -2086,10 +2086,11 @@ embedded write into zero =
         }
 
 
-{-| A message field on a cycle of the message holding it, which can nest
-without bound: [`embedded`](#embedded), from the nesting depth of the
-message holding it (the outermost message of the cycle is at 1) and the
-message's merge given the depth its own fields are read at. A field read
+{-| A message field read one level deeper than the message holding it: one on
+a cycle of that message, which can nest without bound, or on another cycle
+below it. [`embedded`](#embedded), from the nesting depth of the message
+holding it (the outermost message on a cycle is at 1) and the message's
+merge given the depth its own fields are read at. A field read
 past 100 levels fails with [`TooDeep`](Proto-Error#Reason), as protobuf
 implementations refuse a message nested past 100 levels; writing is not
 limited.

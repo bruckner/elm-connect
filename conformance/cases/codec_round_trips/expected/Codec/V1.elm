@@ -1643,7 +1643,7 @@ decodeNestedEverythingWith types depth =
             |> Proto.Json.messageField "choice" Nothing (Json.Decode.map Just decodeChoice)
             |> Proto.Json.messageField "names" Nothing (Json.Decode.map Just decodeNames)
             |> Proto.Json.messageField "outer" Nothing (Json.Decode.map Just decodeOuter)
-            |> Proto.Json.messageField "tree" Nothing (Json.Decode.map Just decodeTree)
+            |> Proto.Json.messageField "tree" Nothing (Json.Decode.map Just (decodeNestedTree (depth + 1)))
             |> Proto.Json.messageFieldEither "wellKnown" "well_known" Nothing (Json.Decode.map Just (decodeWellKnownWith (Proto.Json.nestedRegistry depth types)))
             |> Proto.Json.messageField "wrappers" Nothing (Json.Decode.map Just decodeWrappers)
             |> Proto.Json.messageField "across" Nothing (Json.Decode.map Just decodeAcross)
@@ -5086,7 +5086,7 @@ mergeNestedEverythingBytes =
 
                         8 ->
                             Proto.Binary.fieldInto
-                                (Proto.Binary.embedded encodeTreeBytes mergeTreeBytes defaultTree)
+                                (Proto.Binary.recursive depth encodeTreeBytes mergeNestedTreeBytes defaultTree)
                                 value.tree
                                 (\v ->
                                     { scalars = value.scalars

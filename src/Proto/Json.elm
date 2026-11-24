@@ -6,7 +6,7 @@ module Proto.Json exposing
     , tryObjectOfFields, tryOptionalField, tryRepeatedField, tryDictField, tryBoolMapField
     , memo, deeperWith
     , oneof, members, Member, member, memberEither
-    , emptyMember, emptyMemberEither, valueMember, valueMemberEither
+    , emptyMember, emptyMemberEither, valueMember, valueMemberEither, nestedValueMember, nestedValueMemberEither
     , nullValueMember, nullValueMemberEither
     , enum, enumOrZero
     , stringDict, int32Dict, uint32Dict, int64Dict, uint64Dict, boolMap, encodeBoolMap
@@ -119,7 +119,7 @@ a depth is built as the value is read instead, with
 # Oneofs
 
 @docs oneof, members, Member, member, memberEither
-@docs emptyMember, emptyMemberEither, valueMember, valueMemberEither
+@docs emptyMember, emptyMemberEither, valueMember, valueMemberEither, nestedValueMember, nestedValueMemberEither
 @docs nullValueMember, nullValueMemberEither
 
 
@@ -1151,11 +1151,28 @@ valueMember name =
 proto name: the JSON name first, then the proto name.
 -}
 valueMemberEither : String -> String -> (Proto.Value.Value -> a) -> Member a
-valueMemberEither jsonName protoName constructor =
+valueMemberEither jsonName protoName =
+    nestedValueMemberEither jsonName protoName 0
+
+
+{-| [`valueMember`](#valueMember) for a oneof of a message at `depth` whose
+decoder counts the levels of nesting, which the `Value`'s arrays and objects
+count on from.
+-}
+nestedValueMember : String -> Int -> (Proto.Value.Value -> a) -> Member a
+nestedValueMember name =
+    nestedValueMemberEither name name
+
+
+{-| [`valueMemberEither`](#valueMemberEither) at a depth, as
+[`nestedValueMember`](#nestedValueMember).
+-}
+nestedValueMemberEither : String -> String -> Int -> (Proto.Value.Value -> a) -> Member a
+nestedValueMemberEither jsonName protoName depth constructor =
     Member
         { names = spellings jsonName protoName
         , nullIsSet = True
-        , decoder = Json.Decode.map constructor value
+        , decoder = Json.Decode.map constructor (nestedValue depth)
         }
 
 
