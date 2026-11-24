@@ -246,13 +246,13 @@ been set.
 ### Writing JSON
 
 Each message's generated encoder describes its proto3 JSON,
-`Notes.V1.encodeNote : Notes.V1.Note -> Proto.Json.Encoder`, and
+`Notes.V1.encodeNote : Notes.V1.Note -> Proto.Json.Encoder Proto.Error.Error`, and
 `Proto.Json.encode` writes it, or `Proto.Json.encodeWith registry` for a
 message holding a `google.protobuf.Any`, which converts through the
 registry:
 
 ```elm src/Proto/Json.elm excerpt
-encode : Encoder -> Result Error Value
+encode : Encoder Error -> Result Error Value
 ```
 
 A write refuses a value proto3 JSON has no form for, where an encoder
@@ -271,12 +271,14 @@ own runtimes do; only the JSON write refuses them. An `Any` it cannot
 write fails as before, with `UnregisteredType` or the `BadBinary` of
 its message.
 
-A message that holds nothing a write can refuse, at any depth, also has
-a total encoder, `Notes.V1.jsonGetNoteRequest : Notes.V1.GetNoteRequest ->
-Json.Encode.Value`, which `encodeGetNoteRequest` wraps; it is the one to
-use where a `Json.Encode.Value` is wanted directly. A message gains or
-loses it when its fields change: one that gains a `Timestamp` field has
-only `encodeNote` after regenerating.
+The encoder of a message that holds nothing a write can refuse, at any
+depth, works for any refusal type, `Notes.V1.encodeGetNoteRequest :
+Notes.V1.GetNoteRequest -> Proto.Json.Encoder x`, so
+`Proto.Json.encodeTotal` writes it with no `Result` where a
+`Json.Encode.Value` is wanted directly. The others are
+`Proto.Json.Encoder Proto.Error.Error`, which the compiler refuses to
+`encodeTotal`: a message that gains a `Timestamp` field, at any depth,
+needs `Proto.Json.encode` after regenerating.
 
 A call whose request cannot be written as JSON is not sent: it fails as a
 `BadCall`, code `Internal`, message `unwritable request`, with the

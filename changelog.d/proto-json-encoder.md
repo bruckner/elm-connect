@@ -13,9 +13,11 @@
   the refused value would go. Reads and the binary codec keep such
   values, as protobuf's runtimes do. The nine protobuf conformance cases
   of values with no JSON form now pass.
-- A message whose JSON write nothing it holds can refuse also gets
-  `jsonNote : Note -> Json.Encode.Value`, the total encoder
-  `encodeNote` wraps (docs/migrating.md, "Writing JSON").
+- `Proto.Json.Encoder x` names what it can refuse with. A message whose
+  JSON write nothing it holds can refuse gets `encodeNote : Note ->
+  Proto.Json.Encoder x`, which `Proto.Json.encodeTotal` writes with no
+  `Result`; the others get `Proto.Json.Encoder Proto.Error.Error`
+  (docs/migrating.md, "Writing JSON").
 - Breaking: `encodeNoteWith` is gone, with `Proto.Json.tryObjectOfFields`,
   `tryOptionalField`, `tryRepeatedField`, `tryDictField` and
   `tryBoolMapField`; `Proto.Message.init` and `initWith`, and

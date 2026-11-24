@@ -411,16 +411,17 @@ wrote such values wrong without a word.
 | | 0.1 | 0.2 |
 |---|---|---|
 | a call through a generated service | `Rpc.send … (NotesService.getNote request)` | unchanged |
-| writing a message's JSON | `Json.Encode.encode 0 (Notes.V1.encodeNote note)` | `Proto.Json.encode (Notes.V1.encodeNote note) \|> Result.map (Json.Encode.encode 0)`; or, for a message holding nothing a write can refuse, `Json.Encode.encode 0 (Notes.V1.jsonNote note)` |
+| writing a message's JSON | `Json.Encode.encode 0 (Notes.V1.encodeNote note)` | `Proto.Json.encode (Notes.V1.encodeNote note) \|> Result.map (Json.Encode.encode 0)`; or, for a message holding nothing a write can refuse, `Json.Encode.encode 0 (Proto.Json.encodeTotal (Notes.V1.encodeNote note))` |
 | writing one that holds an `Any` | (0.1 held an `Any` as JSON) | `Proto.Json.encodeWith registry (Notes.V1.encodeEnvelope envelope)` |
 | a typed value written by hand | `Proto.Message.message encodeTitle …` | `Proto.Message.init "notes.v1.Title" (Proto.Json.ready << encodeTitle) …` for a `Title -> Json.Encode.Value` |
 | a method written by hand | `Proto.Method.method Notes.V1.encodeGetNoteRequest …` | `Proto.Method.initJson "notes.v1.NotesService" "GetNote" Notes.V1.encodeGetNoteRequest …` ([above](#methods-written-by-hand)) |
-| a test of a generated encoder | `Notes.V1.encodeNote note \|> Json.Encode.encode 0` | `Notes.V1.jsonNote note \|> Json.Encode.encode 0`, or `Proto.Json.encode` and a `Result` |
+| a test of a generated encoder | `Notes.V1.encodeNote note \|> Json.Encode.encode 0` | `Proto.Json.encodeTotal (Notes.V1.encodeNote note) \|> Json.Encode.encode 0`, or `Proto.Json.encode` and a `Result` |
 
-`jsonNote` exists only for a message that holds nothing a write can
-refuse, at any depth: one with a `Timestamp`, `Duration`, `FieldMask`,
-`Struct`, `ListValue`, `Value` or `Any` field, or holding a message that
-has one, has `encodeNote` alone. An exhaustive `case` on
+`encodeTotal` takes only the encoder of a message that holds nothing a
+write can refuse, at any depth: one with a `Timestamp`, `Duration`,
+`FieldMask`, `Struct`, `ListValue`, `Value` or `Any` field, or holding a
+message that has one, gives `Proto.Json.Encoder Proto.Error.Error`, which
+the compiler refuses there. An exhaustive `case` on
 `Proto.Error.Error` gains `NotWritable`. `Proto.Duration.fromParts`
 keeps a duration past protobuf's range, which 0.1 clamped to it, so that
 a duration read from binary is written back as it came and refused by a

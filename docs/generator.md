@@ -20,7 +20,7 @@ otherwise.
 
 | Proto | Elm |
 |---|---|
-| `message Note` | `type alias Note = { … }`, a record with a field per proto field in declaration order, named in lowerCamelCase (`create_time` → `createTime`); with it `defaultNote`, `encodeNote : Note -> Proto.Json.Encoder` (run by `Proto.Json.encode`, which refuses a value proto3 JSON has no form for; [calling.md](calling.md#writing-json)), `decodeNote` and `messageNote : Proto.Message.Message Note`, its typed value; a message holding nothing a JSON write can refuse also gets `jsonNote : Note -> Json.Encode.Value`, its total encoder, which `encodeNote` wraps. Build a message from its default by record update, `{ defaultNote | title = "x" }`, rather than as a record literal: the update keeps compiling when the message gains a field. Elm's record update takes an unqualified name, so `{ Notes.V1.defaultNote | … }` does not compile; bind the default first, `let note = Notes.V1.defaultNote in { note | title = "x" }` ([quick start](quickstart.md#4-send-a-call)). Under `unknown_fields=keep` the record ends in `unknownFields_ : Proto.Unknown.Fields`, the fields read from a protobuf binary whose field numbers or types are unrecognized |
+| `message Note` | `type alias Note = { … }`, a record with a field per proto field in declaration order, named in lowerCamelCase (`create_time` → `createTime`); with it `defaultNote`, `encodeNote : Note -> Proto.Json.Encoder Proto.Error.Error` (run by `Proto.Json.encode`, which refuses a value proto3 JSON has no form for; [calling.md](calling.md#writing-json)), `decodeNote` and `messageNote : Proto.Message.Message Note`, its typed value; for a message holding nothing a JSON write can refuse the encoder is `Note -> Proto.Json.Encoder x`, which `Proto.Json.encodeTotal` writes with no `Result`. Build a message from its default by record update, `{ defaultNote | title = "x" }`, rather than as a record literal: the update keeps compiling when the message gains a field. Elm's record update takes an unqualified name, so `{ Notes.V1.defaultNote | … }` does not compile; bind the default first, `let note = Notes.V1.defaultNote in { note | title = "x" }` ([quick start](quickstart.md#4-send-a-call)). Under `unknown_fields=keep` the record ends in `unknownFields_ : Proto.Unknown.Fields`, the fields read from a protobuf binary whose field numbers or types are unrecognized |
 | `string`, `bool` | `String`, `Bool` |
 | `int32`, `uint32`, `sint32`, `fixed32`, `sfixed32` | `Int` |
 | `double`, `float` | `Float` |
@@ -219,7 +219,7 @@ across packages, has a JSON decoder taking one, `decodeNoteWith :
 Proto.Registry.Registry -> Json.Decode.Decoder Note`, and no
 `decodeNote`. A type named for one with `With` at the end (`NoteWith`)
 is `naming::codec_collision`. Its encoder is `encodeNote :
-Note -> Proto.Json.Encoder`, like every message's: the registry is given
+Note -> Proto.Json.Encoder Proto.Error.Error`, as every refusable message's is: the registry is given
 when the encoder is run, `Proto.Json.encodeWith registry (encodeNote
 note)`, and a method or a typed value runs it with the client's.
 

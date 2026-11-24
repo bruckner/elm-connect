@@ -41,7 +41,7 @@ which gives `Nothing` to leave the field out, ends in `Field`
 
 # Encoders
 
-A message's encoder, `encodeNote : Note -> Encoder`, describes its JSON;
+A message's encoder, `encodeNote : Note -> Encoder Error`, describes its JSON;
 [`encode`](#encode) writes it, or refuses a value proto3 JSON has no form for
 (a `Timestamp` outside years 1 to 9999, a `Duration` past protobuf's range, a
 `FieldMask` path with no lowerCamelCase form, a number in a `Value` that is

@@ -400,13 +400,12 @@ rpc shared call =
   ([decisions.md](decisions.md#no-package-split)).
 
 - **Generated codecs are `encodeX` and `decodeX`.** A package module's codecs for a message are the
-  pair `encodeNote : Note -> Proto.Json.Encoder` and
+  pair `encodeNote : Note -> Proto.Json.Encoder x` and
   `decodeNote : Json.Decode.Decoder Note` (an enum's encoder gives its
   `Json.Encode.Value`), so a type's two codecs sit
   together in a search and the ENCODERS and DECODERS sections each read
-  as one prefix. A message whose JSON write nothing it holds can refuse
-  also has `jsonNote : Note -> Json.Encode.Value`, the plain code
-  `encodeNote` wraps (§3.5); `json` is a prefix like the others. The noun convention of rule 6 applies to the runtime,
+  as one prefix. A message whose JSON write can be refused has
+  `Proto.Json.Encoder Proto.Error.Error` in place of `x` (§3.5). The noun convention of rule 6 applies to the runtime,
   whose decoders each read a kind.
 - One Elm module per proto **package**: `notes.v1` → `Notes.V1`.
   Per-file modules would leak the server's file layout into the
@@ -1329,7 +1328,7 @@ In detail:
   (`ir::reach`), has a JSON decoder taking the registry,
   `decodeNoteWith : Registry -> Decoder Note`, and no `decodeNote`: a
   decoder bound to the package's own registry would read only that
-  package's `Any`s. Its encoder is `encodeNote : Note -> Proto.Json.Encoder`
+  package's `Any`s. Its encoder is `encodeNote : Note -> Proto.Json.Encoder Proto.Error.Error`
   like every message's: the `Any` is a deferred part, converted when the
   encoder is run with a registry (`Proto.Json.encodeWith`), so the
   registry reaches the encoder at the one place that writes. A message
@@ -1341,8 +1340,8 @@ In detail:
 - An `Any` field has no query form: its JSON is the packed message's,
   whose fields the route cannot know (`route::query_field`, §5.3).
 - **A JSON write refuses what has no JSON form.** Every generated
-  message's encoder is `encodeNote : Note -> Proto.Json.Encoder`, which
-  `Proto.Json.encode` (or `encodeWith registry`) runs into `Result
+  message's encoder is `encodeNote : Note -> Proto.Json.Encoder x` (`x` being
+  `Proto.Error.Error` for one that can refuse), which `Proto.Json.encode` (or `encodeWith registry`) runs into `Result
   Proto.Error.Error Json.Encode.Value`. The four values above with no
   proto3 JSON form (a `Timestamp` outside years 1 to 9999, a `Duration`
   past protobuf's range, a `FieldMask` path that does not round-trip, a
@@ -1358,10 +1357,13 @@ In detail:
   `Any` is), and the combinators stay on finished values while every part
   is finished. A message that holds nothing a write can refuse, at any
   depth (`ir::reach`, seeded with `Any` and the four types), is written
-  by plain code, `jsonNote : Note -> Json.Encode.Value`, which
-  `encodeNote` wraps once and its parents call directly; one that can
-  refuse is built with `Proto.Json.writeObject`, its fields that cannot
-  passed as plain JSON and the rest as encoders. There is no general
+  by plain code wrapped once, `encodeNote : Note -> Proto.Json.Encoder x`,
+  whose refusal type is free, so its plain parents unwrap it with
+  `Proto.Json.encodeTotal` (a wrap and an unwrap per nested message); one
+  that can refuse, `Proto.Json.Encoder Proto.Error.Error`, is built with
+  `Proto.Json.writeObject`, its fields that cannot passed as plain JSON
+  and the rest as encoders. A refusal keeps its path apart from the
+  error, which a combinator cannot look into, until the encoder is run. There is no general
   depth check on writes, as in protobuf's runtimes; the one count is an
   `Any`'s, through the registry (§5.5). Decisions: "JSON encoders that
   refuse what has no JSON form".

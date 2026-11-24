@@ -280,14 +280,16 @@ needs is given when the encoder runs.
 
 The encoder is a tagged value (finished, left out, refused, or deferred
 until the registry is given), and a message that holds nothing a write
-can refuse is plain code, `jsonNote : Note -> Json.Encode.Value`,
-wrapped once by `encodeNote`. A naive form, every message and field an
+can refuse is plain code wrapped once, `encodeNote : Note ->
+Proto.Json.Encoder x`, free in its refusal type. A naive form, every message and field an
 encoder, cost 31 % on a plain message and 47 % on a list of 300; static
 knowledge at the message and field level brought the common case to
-within about 10 % (JSON-encoder spike, 2026-11-22). `jsonNote` is
-exposed because it exists anyway and is the total encoder of such a
-message. A phantom type (`Encoder Total`) would bring the per-message
-flip back in a type parameter.
+within about 10 % (JSON-encoder spike, 2026-11-22). The refusal type
+gives one function per message and a total write the compiler checks
+(`Proto.Json.encodeTotal : Encoder Never -> Value`) at the price of a
+wrap and an unwrap per nested message, against a second, plain
+function per message that disappears when the message gains a
+refusable field.
 
 There is no general depth check on writes, as protobuf's runtimes have
 none: a value the program builds too deep throws while it is written, as
