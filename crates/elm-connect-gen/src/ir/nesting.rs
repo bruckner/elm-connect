@@ -8,9 +8,18 @@ use std::collections::HashMap;
 use super::graph::strongly_connected;
 use super::{Package, TypeRef};
 
-/// The runtime's read limit, in its unit: messages nested, the outermost
-/// at 1.
-pub(crate) const LIMIT: usize = 100;
+/// Protobuf's nesting limit, the generator's one definition of it: the
+/// most levels a read nests, as the runtime limits them
+/// (`Proto.Internal.Depth.limit`, held to this by `tests/lockstep.rs`) and
+/// as protobuf's own parsers do
+/// (<https://protobuf.dev/programming-guides/proto-limits/>). Its users
+/// count from different starting points: the `types::deep_nesting`
+/// warning counts messages the outermost at 1, the runtime's unit, and
+/// warns past `LIMIT`; the route checker (`crate::route`) counts messages
+/// below the request, and refuses past `LIMIT` of them, so at
+/// `LIMIT + 2` counted the runtime's way. The places that write the
+/// number out are listed in design §5.5.
+pub const LIMIT: usize = 100;
 
 /// A longest chain of messages, each held by the one before it through a
 /// field (singular, repeated or a map's values) or a oneof member.

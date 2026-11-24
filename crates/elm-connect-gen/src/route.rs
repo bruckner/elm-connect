@@ -36,7 +36,9 @@
 //!   is refused. `**` may only be the last segment of the template.
 //! - A message held deeper than [`NESTING_LIMIT`] messages below the
 //!   request is past what a protobuf parser reads, and a path variable or
-//!   query parameter through it is refused.
+//!   query parameter through it is refused. The count starts below the
+//!   request, where a read's starts at it, so the first message refused
+//!   is at `NESTING_LIMIT + 2` counting the request as 1.
 //! - `body` is empty (no body), `*` (every field not in the path), or the
 //!   name of a top-level singular message field of the request.
 //! - `response_body` is empty or the name of a top-level field of the
@@ -58,14 +60,8 @@ use std::fmt;
 
 use prost_reflect::{FieldDescriptor, Kind, MessageDescriptor};
 
+use crate::ir::nesting::LIMIT as NESTING_LIMIT;
 use crate::ir::{HttpRule, HttpVerb, ModuleName, WellKnown, declared_fields};
-
-/// How deep a message may hold other messages: protobuf's nesting limit
-/// for parsing, counted in messages below the top-level one
-/// (<https://protobuf.dev/programming-guides/proto-limits/>). A message
-/// held deeper is one a parser refuses, so a field through it has no
-/// form a server reads, and refusing it bounds the walk of a deep chain.
-pub const NESTING_LIMIT: usize = 100;
 
 /// A path template as written, parsed but not yet checked against a
 /// request.

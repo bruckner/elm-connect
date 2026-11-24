@@ -104,6 +104,7 @@ import Proto.Duration exposing (Duration)
 import Proto.Error exposing (Reason(..))
 import Proto.Internal.Any as InternalAny exposing (Any)
 import Proto.Internal.Binary as Internal exposing (Failure)
+import Proto.Internal.Depth as Depth
 import Proto.Internal.Unknown as InternalUnknown
 import Proto.Unknown
 import Proto.Value exposing (Value(..))
@@ -2098,7 +2099,7 @@ limited.
 -}
 recursive : Int -> (a -> Encoder) -> (Int -> a -> Decoder a) -> a -> Codec a
 recursive depth write into zero =
-    if depth < depthLimit then
+    if depth < Depth.limit then
         embedded write (into (depth + 1)) zero
 
     else
@@ -2120,7 +2121,7 @@ memo : (Int -> a -> Decoder a) -> Int -> a -> Decoder a
 memo build =
     let
         table =
-            Array.initialize depthLimit (\index -> build (index + 1))
+            Array.initialize Depth.limit (\index -> build (index + 1))
     in
     \depth ->
         case Array.get (depth - 1) table of
@@ -2129,13 +2130,6 @@ memo build =
 
             Nothing ->
                 build depth
-
-
-{-| The most messages a cycle of messages nests, the outermost included.
--}
-depthLimit : Int
-depthLimit =
-    100
 
 
 {-| A message field read one level past the depth limit: it fails without

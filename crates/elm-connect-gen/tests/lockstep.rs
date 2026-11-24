@@ -1,12 +1,15 @@
 //! The version numbers that must move together (design §8.1, §8.2): the
 //! Cargo workspace's version, `elm.json`'s, the newest value of the
 //! runtime's `Proto.Version`, which generated code names
-//! (`elm_connect_gen::SENTINEL`), and the corpus's header placeholder; and
-//! the workspace's `rust-version`, which is the toolchain mise pins.
+//! (`elm_connect_gen::SENTINEL`), and the corpus's header placeholder; the
+//! workspace's `rust-version`, which is the toolchain mise pins; and the
+//! nesting limit, which the generator warns and refuses by and the runtime
+//! reads by (design §5.5).
 
 use std::fs;
 use std::path::{Path, PathBuf};
 
+use elm_connect_gen::ir::nesting;
 use elm_connect_gen::{HEADER_PREFIX, HEADER_VERSION_PLACEHOLDER, SENTINEL, VERSION};
 
 mod common;
@@ -207,5 +210,23 @@ fn the_corpus_placeholder_is_the_sentinels_release() {
     assert!(
         naming_the_sentinel > 0,
         "no expected module names the sentinel"
+    );
+}
+
+#[test]
+fn the_generator_and_the_runtime_share_one_nesting_limit() {
+    let path = repo_root().join("src/Proto/Internal/Depth.elm");
+    let source = read(&path);
+    let limit: usize = source
+        .split_once("\nlimit : Int\nlimit =\n")
+        .and_then(|(_, rest)| rest.lines().next())
+        .and_then(|value| value.trim().parse().ok())
+        .unwrap_or_else(|| panic!("{}: no `limit : Int` defined as a number", path.display()));
+    assert_eq!(
+        limit,
+        nesting::LIMIT,
+        "Proto.Internal.Depth.limit, which the runtime reads by, is the generator's \
+         ir::nesting::LIMIT, which the deep_nesting warning and the route checker use; change \
+         them together, with the places design §5.5 lists"
     );
 }

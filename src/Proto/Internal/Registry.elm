@@ -17,6 +17,7 @@ import Json.Decode
 import Json.Encode exposing (Value)
 import Proto.Error exposing (Error)
 import Proto.Internal.Any
+import Proto.Internal.Depth as Depth
 
 
 {-| How it reads an `Any` of a type it has no entry for, how deeply the
@@ -68,11 +69,11 @@ toJson (Registry leniency depth entries) name base64 =
     Dict.get name entries
         |> Maybe.map
             (\entry ->
-                if depth >= anyLimit then
-                    Err (Proto.Error.BadBinary { typeName = "google.protobuf.Any", reason = Proto.Error.TooDeep, path = [], offset = 0 })
+                if depth < Depth.limit then
+                    entry.toJson (Registry leniency (depth + 1) entries) base64
 
                 else
-                    entry.toJson (Registry leniency (depth + 1) entries) base64
+                    Err (Proto.Error.BadBinary { typeName = "google.protobuf.Any", reason = Proto.Error.TooDeep, path = [], offset = 0 })
             )
 
 
@@ -84,22 +85,12 @@ toBytes (Registry leniency depth entries) name json =
     Dict.get name entries
         |> Maybe.map
             (\entry ->
-                if depth >= anyLimit then
-                    Err (Proto.Error.BadJson (Json.Decode.Failure "Expecting messages nested at most 100 deep" Json.Encode.null))
+                if depth < Depth.limit then
+                    entry.toBytes (Registry leniency (depth + 1) entries) json
 
                 else
-                    entry.toBytes (Registry leniency (depth + 1) entries) json
+                    Err (Proto.Error.BadJson (Json.Decode.Failure Depth.tooDeepText Json.Encode.null))
             )
-
-
-{-| The most levels a read nests, counted in messages entered along a cycle,
-`Any` values and the arrays and objects of a `Value`: one budget of 100 for
-all three, which the registry's depth carries from an `Any` to the message it
-holds.
--}
-anyLimit : Int
-anyLimit =
-    100
 
 
 {-| How deep the conversion this registry is passed to has nested.

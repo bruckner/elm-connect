@@ -4111,17 +4111,43 @@ Connect's proto codec sends them (§5.3).
   (`Proto.Binary.nestedStruct depth`, `nestedListValue`, `nestedValue`). An `Any` read
   from binary holds its message's bytes, unread, so it nests nothing
   there. Writing it as JSON converts it through the registry, and that
-  counts as a read would: a generated encoder that takes the registry
-  writes a field or member on its message's cycle with the registry a
-  level deeper (`Proto.Json.registryDeeper`), each `Any` is a level,
-  and an `Any` past 100 fails with `TooDeep`, named
-  `google.protobuf.Any`. The binary read of the `Any`'s message starts
-  its own count at 1, since a binary read cannot be told a depth
-  without a field in every decoder, but the encoder counts its levels
-  on, so what a binary read accepts writes as JSON within about 200
-  levels or fails. Writing is otherwise not limited (decisions: "A
-  nesting depth limit on reads", "A union for `google.protobuf.Value`,
-  one depth budget").
+  counts the `Any`s as a read does: a generated encoder that takes the
+  registry writes a field or member on its message's cycle with the
+  registry a level deeper (`Proto.Json.registryDeeper`), and an `Any`
+  its message holds with `Proto.Json.encodeNestedAnyWith`, both
+  counting from the message's depth, the registry's or 1, whichever is
+  more, as the decoder starts it (`max 1 (Proto.Json.registryDepth
+  types)`). Each `Any` is a level, and an `Any` past 100 fails with
+  `TooDeep`, named `google.protobuf.Any`, exactly where a JSON read of
+  the same message refuses it. The binary read of the `Any`'s message
+  starts its own count of messages at 1, since a binary read cannot be
+  told a depth without a field in every decoder, and the write counts
+  only `Any`s, so the messages inside an `Any` read from binary are
+  limited to 100 of their own: what a binary read accepts writes as
+  JSON within about 200 levels or fails. Writing is otherwise not
+  limited (decisions: "A nesting depth limit on reads", "A union for
+  `google.protobuf.Value`, one depth budget").
+  The limit is defined once on each side: `Proto.Internal.Depth.limit`
+  in the runtime, from which every comparison, table of readers and
+  failure takes it (a read at depth `d` enters the level below only
+  while `d < limit`, so the 101st level is the first refused), and
+  `ir::nesting::LIMIT` in the generator, which the `types::deep_nesting`
+  warning and the route checker (§4) use, each from its own starting
+  point; `crates/elm-connect-gen/tests/lockstep.rs` holds the two equal.
+  The number is written out for readers too, and a change of the limit
+  changes them: the failure text (`Proto.Internal.Depth.tooDeepText`,
+  which a test holds to the limit); the doc strings of `Proto.Json`,
+  `Proto.Binary`, `Proto.Value` and `Proto.Error`; `Code::DeepNesting`'s
+  doc in `diagnostics.rs`; the calling guide's "Nesting depth", the
+  generator guide's recursive-message rows, `types::deep_nesting` in
+  diagnostics.md, and this document (§3.2, §3.5, §4, §5.4, here); the
+  corpus cases `depth_cycles` and `routes_query_depth`; the tests that
+  pin the boundaries (`tests/Proto/DepthTest.elm`, `BinaryTest`,
+  `BinaryCorpus`, `ErrorTest`, `RegistryTest`, `ValueTest`, and
+  `crates/elm-connect-gen/tests/ir/nesting.rs` and `routes.rs`). Dated
+  decisions and released notes keep the number they were written with.
+  The 50 levels past which an error's JSON is left out
+  (`Proto.Internal.JsonError`) is a separate number.
 
 ## 6. Generator
 

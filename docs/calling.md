@@ -263,6 +263,10 @@ limited to 100 apart from those outside the `Any`, so the deepest such
 read is 200 levels: 99 messages, the `Any`, and 100 levels inside it.
 An `Any` read from binary holds the message's bytes unread; unpacking
 it, or writing it as JSON, reads them with the same count from 1.
+The limit bounds the depth of nested `Any`s, not the work of converting
+them: each conversion re-reads the payload inside it, so a large payload
+held many `Any`s deep takes seconds to minutes even when it is accepted
+([descriptors.md](descriptors.md#what-converting-an-any-costs)).
 
 Messages that hold each other in a chain, with no cycle, are not
 counted: the schema bounds their depth. The generator warns of a chain

@@ -980,7 +980,7 @@ encodeWide_ (Wide_ value) =
 encodeEnvelopeWith : Proto.Registry.Registry -> Envelope -> Result Proto.Error.Error Json.Encode.Value
 encodeEnvelopeWith types value =
     Proto.Json.tryObjectOfFields
-        [ ( "payload", Proto.Json.tryOptionalField (Proto.Json.encodeAnyWith types) value.payload )
+        [ ( "payload", Proto.Json.tryOptionalField (Proto.Json.encodeNestedAnyWith types) value.payload )
         , ( "replies", Proto.Json.tryRepeatedField (encodeEnvelope_With (Proto.Json.registryDeeper types)) value.replies )
         , ( "data", Ok (Maybe.map Proto.Json.encodeStruct value.data) )
         , ( "value", Ok (Maybe.map Proto.Json.encodeValue value.value) )

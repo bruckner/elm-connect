@@ -25,6 +25,7 @@ import Proto.Any
 import Proto.Binary
 import Proto.Bytes
 import Proto.Error
+import Proto.Internal.Depth
 import Proto.Json
 import Proto.Message
 import Proto.Method
@@ -54,6 +55,7 @@ suite =
         , scrubbed
         , valueRefusals
         , valueErrorsShort
+        , theFailureStatesTheLimit
         ]
 
 
@@ -233,6 +235,17 @@ varint n =
 tooDeepText : String
 tooDeepText =
     "Expecting messages nested at most 100 deep"
+
+
+{-| The runtime writes the limit's failure text once, beside the limit; it
+states the limit.
+-}
+theFailureStatesTheLimit : Test
+theFailureStatesTheLimit =
+    test "the failure past the limit states the limit" <|
+        \_ ->
+            Proto.Internal.Depth.tooDeepText
+                |> Expect.equal ("Expecting messages nested at most " ++ String.fromInt Proto.Internal.Depth.limit ++ " deep")
 
 
 {-| The failure's text, found by following its path rather than through
@@ -668,6 +681,35 @@ readEnvelope =
     Json.Decode.decodeString (Deep.decodeEnvelopeWith Deep.registry) >> ok
 
 
+{-| Holds an `Any` only at depth `depth`, as `mixedJson`'s `anyAt`: with
+`depth + 1` levels, the innermost message is held in an `Any` by the one
+around it.
+-}
+lastAt : Int -> Int -> Bool
+lastAt depth =
+    \at -> at == depth
+
+
+{-| Envelopes read from binary, which holds each `Any`'s bytes unread, and
+written as JSON, which converts them through the registry.
+-}
+writtenFromBinary : Bytes.Bytes -> Result Proto.Error.Error ()
+writtenFromBinary bytes =
+    case readEnvelopeBytesValue bytes of
+        Ok envelope ->
+            Deep.encodeEnvelopeWith Deep.registry envelope |> ok
+
+        Err _ ->
+            Err (Proto.Error.BadJson (Json.Decode.Failure "did not read" Json.Encode.null))
+
+
+{-| The error of a write converting an `Any` past the limit.
+-}
+anyTooDeep : Proto.Error.Error
+anyTooDeep =
+    Proto.Error.BadBinary { typeName = "google.protobuf.Any", reason = Proto.Error.TooDeep, path = [], offset = 0 }
+
+
 readEnvelopeBytes : Bytes.Bytes -> Result Proto.Error.Binary ()
 readEnvelopeBytes =
     Proto.Binary.decode Deep.decodeEnvelopeBytes >> ok
@@ -724,26 +766,55 @@ oneBudget =
                     , \_ -> readEnvelope (mixedJson allAny 101 0) |> failsTooDeep
                     , \_ -> readEnvelope (mixedJson everyThird 70 30) |> Expect.equal (Ok ())
                     , \_ -> readEnvelope (mixedJson everyThird 70 31) |> failsTooDeep
+                    , \_ -> readEnvelope (mixedJson (lastAt 99) 100 0) |> Expect.equal (Ok ())
+                    , \_ -> readEnvelope (mixedJson (lastAt 100) 101 0) |> failsTooDeep
                     ]
                     ()
-        , test "what is read at the limit writes in both codecs and reads back" <|
+        , test "an Any read from binary and written as JSON counts where a JSON read does" <|
             \_ ->
-                case Json.Decode.decodeString (Deep.decodeEnvelopeWith Deep.registry) (mixedJson (\depth -> modBy 2 depth == 0) 60 40) of
-                    Ok envelope ->
-                        Expect.all
-                            [ \_ ->
-                                Deep.encodeEnvelopeWith Deep.registry envelope
-                                    |> Result.toMaybe
-                                    |> Maybe.andThen (Json.Decode.decodeValue (Deep.decodeEnvelopeWith Deep.registry) >> Result.toMaybe)
-                                    |> Expect.equal (Just envelope)
-                            , \_ ->
-                                Proto.Binary.decode Deep.decodeEnvelopeBytes (Proto.Binary.encode Deep.encodeEnvelopeBytes envelope)
-                                    |> Expect.equal (Ok envelope)
-                            ]
-                            ()
+                Expect.all
+                    [ \_ -> writtenFromBinary (wrapped (List.repeat 99 payload) []) |> Expect.equal (Ok ())
+                    , \_ -> writtenFromBinary (wrapped (List.repeat 100 payload) []) |> Expect.equal (Err anyTooDeep)
+                    , \_ -> writtenFromBinary (wrapped (List.repeat 98 reply ++ [ payload ]) []) |> Expect.equal (Ok ())
+                    , \_ -> writtenFromBinary (wrapped (List.repeat 99 reply ++ [ payload ]) []) |> Expect.equal (Err anyTooDeep)
+                    , \_ -> writtenFromBinary (wrapped (payload :: List.repeat 97 reply ++ [ payload ]) []) |> Expect.equal (Ok ())
+                    , \_ -> writtenFromBinary (wrapped (payload :: List.repeat 98 reply ++ [ payload ]) []) |> Expect.equal (Err anyTooDeep)
+                    ]
+                    ()
+        , describe "what is read at the limit writes in both codecs and reads back"
+            (List.map
+                (\( name, json ) ->
+                    test name <|
+                        \_ ->
+                            case Json.Decode.decodeString (Deep.decodeEnvelopeWith Deep.registry) json of
+                                Ok envelope ->
+                                    Expect.all
+                                        [ \_ ->
+                                            Deep.encodeEnvelopeWith Deep.registry envelope
+                                                |> Result.toMaybe
+                                                |> Maybe.andThen (Json.Decode.decodeValue (Deep.decodeEnvelopeWith Deep.registry) >> Result.toMaybe)
+                                                |> Expect.equal (Just envelope)
+                                        , \_ ->
+                                            Proto.Binary.decode Deep.decodeEnvelopeBytes (Proto.Binary.encode Deep.encodeEnvelopeBytes envelope)
+                                                |> Expect.equal (Ok envelope)
+                                        , \_ ->
+                                            Proto.Binary.decode Deep.decodeEnvelopeBytes (Proto.Binary.encode Deep.encodeEnvelopeBytes envelope)
+                                                |> Result.toMaybe
+                                                |> Maybe.andThen (Deep.encodeEnvelopeWith Deep.registry >> Result.toMaybe)
+                                                |> Maybe.andThen (Json.Decode.decodeValue (Deep.decodeEnvelopeWith Deep.registry) >> Result.toMaybe)
+                                                |> Expect.equal (Just envelope)
+                                        ]
+                                        ()
 
-                    Err _ ->
-                        Expect.fail "did not read at the limit"
+                                Err _ ->
+                                    Expect.fail "did not read at the limit"
+                )
+                [ ( "Anys, messages and a ListValue", mixedJson (\depth -> modBy 2 depth == 0) 60 40 )
+                , ( "100 Anys", mixedJson (\_ -> True) 100 0 )
+                , ( "an Any held at 99, its message at 100", mixedJson (lastAt 99) 100 0 )
+                , ( "an Any, then 98 messages and an Any", mixedJson (\depth -> depth == 1 || depth == 99) 100 0 )
+                ]
+            )
         , test "an Any converted to JSON counts the Any it holds" <|
             \_ ->
                 let
@@ -965,6 +1036,7 @@ anyOwnCount =
                                 , \_ -> written (binaryOfAny typeName (levels 101) 1) |> refusedWriting typeName
                                 , \_ -> written (binaryOfAny typeName (levels 100) 99) |> Expect.equal (Ok ())
                                 , \_ -> written (binaryOfAny typeName (levels 101) 99) |> refusedWriting typeName
+                                , \_ -> written (binaryOfAny typeName (levels 1) 100) |> refusedWriting "google.protobuf.Any"
                                 ]
                                 ()
                 )
