@@ -433,6 +433,7 @@ impl Emitter {
                 ValueShape::Present(Present::Wrapped(wrapper, _)) => {
                     var(with_registry(wrapper.encoder_name()))
                 }
+                _ if self.nested_any => self.reference((PROTO_JSON, "encodeNestedAnyWith")),
                 _ => self.reference((PROTO_JSON, "encodeAnyWith")),
             };
             let registry = if self.deeper_registry {

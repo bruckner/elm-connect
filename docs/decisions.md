@@ -225,6 +225,18 @@ accepts writes or fails. Telling a binary read its starting depth
 instead would have taken a field in every binary decoder, which every
 program pays for (31 bytes before minification in the priced spike).
 
+*2026-11-23:* the write counted an `Any` held by a message on a cycle
+one level lower than the read: the read starts that message at the
+registry's depth or 1, whichever is more, and the write started at the
+registry's depth, 0 for the application's registry, so a message 100
+deep on its cycle holding an `Any`, refused by a JSON read, wrote as
+JSON after a binary read. That allowance erred towards accepting, and
+a write now counts from the read's start
+(`Proto.Json.encodeNestedAnyWith`, and `registryDeeper` from 1), so it
+refuses an `Any` exactly where the read does; it cannot refuse what a
+read in the same format accepted, since a value read from JSON had
+every `Any` counted the same way.
+
 Every `BadJson` the runtime returns is scrubbed of JSON nested past 50
 levels. elm/json keeps the JSON a decoder failed on, so an error from a
 refused deep read, or from a field given a deep value of the wrong type,

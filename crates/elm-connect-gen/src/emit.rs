@@ -649,6 +649,12 @@ struct Emitter {
     /// registry one level deeper, so converting an `Any` to JSON counts
     /// the messages around it as a read does.
     deeper_registry: bool,
+    /// While a value of a recursive message, or of a oneof whose decoder
+    /// takes its message's depth, is written by an encoder taking the
+    /// registry: an `Any` is written with `Proto.Json.encodeNestedAnyWith`,
+    /// which counts it from the message's depth as the decoder's
+    /// `nestedAnyWith` reads it.
+    nested_any: bool,
 }
 
 /// How a recursive message's JSON decoder reads a value on its cycle one
@@ -682,6 +688,7 @@ impl Emitter {
             deep_value: false,
             binary_depth: false,
             deeper_registry: false,
+            nested_any: false,
         }
     }
 
@@ -774,7 +781,7 @@ impl Emitter {
             }
             for oneof in &shape.oneofs {
                 types.push(self.oneof_type(&package.module, shape.message, oneof));
-                encoders.push(self.oneof_encoder(oneof));
+                encoders.push(self.oneof_encoder(oneof, shape.message.recursive));
                 decoders.extend(self.oneof_decoder(oneof, shape.message.recursive));
                 binary_encoders.push(self.oneof_encoder_bytes(oneof));
             }

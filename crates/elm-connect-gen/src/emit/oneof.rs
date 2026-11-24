@@ -58,9 +58,12 @@ impl Emitter {
     /// A oneof with a member that reaches an `Any` gets
     /// `encodeFooKindWith`, taking the registry first, whose members' JSON
     /// is a `Result`: a member that reaches one gives its encoder's, the
-    /// others `Ok`.
-    pub(super) fn oneof_encoder(&mut self, shape: &OneofShape) -> Decl {
+    /// others `Ok`. For a oneof of a recursive message with a member on
+    /// its cycle (`recursive`), whose decoder takes the message's depth,
+    /// an `Any` member counts from that depth as it is read.
+    pub(super) fn oneof_encoder(&mut self, shape: &OneofShape, recursive: bool) -> Decl {
         let with = self.oneof_reaches(shape);
+        let on_cycle = recursive && shape.variants.iter().any(|(variant, _)| variant.cyclic);
         let unset = (pctor(shape.oneof.unset_ctor.clone(), []), list([]));
         let members: Vec<_> = shape
             .variants
@@ -77,8 +80,10 @@ impl Emitter {
                     (pctor(variant.elm_ctor.clone(), []), null)
                 } else {
                     self.deeper_registry = variant.cyclic;
+                    self.nested_any = on_cycle;
                     let encoded = self.encode_value(value, var(ONEOF_MEMBER));
                     self.deeper_registry = false;
+                    self.nested_any = false;
                     (
                         pctor(variant.elm_ctor.clone(), [pvar(ONEOF_MEMBER)]),
                         encoded,

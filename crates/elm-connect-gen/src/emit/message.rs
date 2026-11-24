@@ -194,8 +194,10 @@ impl Emitter {
             .map(|&(field, value)| {
                 let field_value = access(var(ENCODER_ARGUMENT), field.elm_name.clone());
                 self.deeper_registry = shape.message.recursive && field.recursive;
+                self.nested_any = shape.message.recursive;
                 let encoded = self.try_encode_field(value, field_value);
                 self.deeper_registry = false;
+                self.nested_any = false;
                 tuple2(string(field.json_name.clone()), encoded)
             })
             .collect();
