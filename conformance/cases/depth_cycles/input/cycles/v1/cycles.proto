@@ -137,11 +137,15 @@ message Wide {
 // On a cycle and holding an `Any`: its JSON decoders take the registry, so
 // they are built as they are entered rather than once. The `Any`, and the
 // arrays and objects of its `Struct`, `Value` and `ListValue`, count from the
-// depth of the message holding them.
+// depth of the message holding them, in a singular field and in a map's
+// values alike.
 message Envelope {
   google.protobuf.Any payload = 1;
   repeated Envelope replies = 2;
   google.protobuf.Struct data = 3;
   google.protobuf.Value value = 4;
   google.protobuf.ListValue list = 5;
+  map<string, google.protobuf.Value> values = 6;
+  map<string, google.protobuf.Struct> structs = 7;
+  map<string, google.protobuf.ListValue> lists = 8;
 }

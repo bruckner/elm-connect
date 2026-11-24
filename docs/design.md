@@ -795,10 +795,16 @@ rpc shared call =
     value is read (`Proto.Json.deeperWith`), and `decodeNodeWith types`
     starts at the depth the registry carries
     (`Proto.Json.registryDepth`), so a message read inside an `Any`
-    counts on from it. Past 100 the read fails with "Expecting messages
-    nested at most 100 deep". The `Nested` after the verb, like the
-    `Bytes` and `With` suffixes, breaks the prefix rule of §3.7's names:
-    the codecs of a type `NestedNode` beside a recursive `Node` would
+    counts on from it. A type whose decoders take no registry (a
+    message that reaches no `Any`, and the well-known `Struct`, `Value`
+    and `ListValue`) is not given the depth and counts from 1 inside an
+    `Any`; it holds no `Any`, so what it adds is its own 100 levels, and
+    a read takes at most 200: 99 messages, the `Any` and 100 inside
+    (§5.5 bounds a binary read written as JSON alike). Past 100 the
+    read fails with "Expecting messages nested at most 100 deep". The
+    `Nested` after the verb, like the `Bytes` and `With` suffixes,
+    breaks the prefix rule of §3.7's names: the codecs of a type
+    `NestedNode` beside a recursive `Node` would
     take `decodeNestedNode` and `mergeNestedNodeBytes`, and the
     compiler, not the generator, reports the name defined twice
     (`rename` is the escape). Every name at a depth comes from one
@@ -4086,9 +4092,14 @@ Connect's proto codec sends them (§5.3).
   to 100 once, and a field on the cycle is read by `Proto.Binary.recursive depth …`, which
   reads it one level deeper and fails with `TooDeep` past 100, in the
   fast and the locating read alike. Only fields on a cycle count, so a
-  message that cannot recurse generates the code it did. The same
-  budget counts each array and object of a `Struct`, `Value` or
-  `ListValue`, a binary `Struct` or `ListValue` being one level and the
+  message that cannot recurse generates the code it did. A chain of
+  such messages is bounded by the schema, and the generator measures
+  its longest (a cycle along it counted as its members once, a
+  well-known type ending it) and warns past 100, the outermost counted
+  (`types::deep_nesting`), since most protobuf runtimes refuse such a
+  message and nothing counts it here.
+  The same budget counts each array and object of a `Struct`, `Value`
+  or `ListValue`, a binary `Struct` or `ListValue` being one level and the
   `Value` holding it none, so 100 levels read the same in binary and
   JSON; a message on a cycle reads them on from its depth
   (`Proto.Binary.nestedStruct depth`, `nestedListValue`, `nestedValue`). An `Any` read

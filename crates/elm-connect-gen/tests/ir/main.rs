@@ -6,6 +6,7 @@ mod codec;
 mod common;
 mod docs;
 mod module_prefix;
+mod nesting;
 mod rename;
 mod render;
 mod routes;

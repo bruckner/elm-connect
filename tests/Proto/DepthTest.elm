@@ -28,6 +28,7 @@ import Proto.Error
 import Proto.Json
 import Proto.Message
 import Proto.Method
+import Proto.Registry
 import Proto.Value
 import Proto.WellKnown
 import Rpc
@@ -47,6 +48,8 @@ suite =
         , keep
         , farPast
         , oneBudget
+        , mapValues
+        , anyOwnCount
         , mixedFarPast
         , scrubbed
         , valueRefusals
@@ -542,12 +545,19 @@ structInValue size =
 
 
 memberA : Int -> List Int
-memberA size =
+memberA =
+    mapEntry 0x0A
+
+
+{-| The entry of key `"a"` in the map field whose tag byte is `tag`.
+-}
+mapEntry : Int -> Int -> List Int
+mapEntry tag size =
     let
         entry =
             [ 0x0A, 1, 0x61, 0x12 ] ++ varint size
     in
-    0x0A :: varint (List.length entry + size) ++ entry
+    tag :: varint (List.length entry + size) ++ entry
 
 
 envelopeUrl : List Int
@@ -750,6 +760,216 @@ oneBudget =
                             |> Expect.equal (Err (Proto.Error.BadBinary { typeName = "google.protobuf.Any", reason = Proto.Error.TooDeep, path = [], offset = 0 }))
                     ]
                     ()
+        ]
+
+
+
+-- MAP VALUES
+
+
+{-| `messages` envelopes, the innermost holding under key `"a"` of `field`
+the JSON `inner`.
+-}
+inMapJson : String -> Int -> String -> String
+inMapJson field messages inner =
+    String.repeat (messages - 1) "{\"replies\":["
+        ++ ("{\"" ++ field ++ "\":{\"a\":" ++ inner ++ "}}")
+        ++ String.repeat (messages - 1) "]}"
+
+
+{-| `messages` envelopes, the innermost holding a map entry of key `"a"`
+in the field whose tag byte is `tag`, its value `levels` deep: each level
+past the first wraps the one inside in the two layers `step` gives, and
+`core` is the innermost level's own bytes.
+-}
+inMapBinary : Int -> List (Int -> List Int) -> List Int -> Int -> Int -> Bytes.Bytes
+inMapBinary tag step core messages levels =
+    wrapped
+        (List.repeat (messages - 1) reply
+            ++ mapEntry tag
+            :: List.concat (List.repeat (levels - 1) step)
+        )
+        core
+
+
+mapValues : Test
+mapValues =
+    let
+        values =
+            inMapBinary 0x32 [ listInValue, valueInList ] [ 0x32, 0x00 ]
+
+        structs =
+            inMapBinary 0x3A [ memberA, structInValue ] []
+
+        lists =
+            inMapBinary 0x42 [ valueInList, listInValue ] []
+
+        refused =
+            tooDeepBinary >> Expect.equal (Err Proto.Error.TooDeep)
+    in
+    describe "a map's Value, Struct and ListValue values count on from the message holding them"
+        [ test "in JSON" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> readEnvelope (inMapJson "values" 1 (nestedArrays 99)) |> Expect.equal (Ok ())
+                    , \_ -> readEnvelope (inMapJson "values" 1 (nestedArrays 100)) |> failsTooDeep
+                    , \_ -> readEnvelope (inMapJson "values" 60 (nestedArrays 40)) |> Expect.equal (Ok ())
+                    , \_ -> readEnvelope (inMapJson "values" 60 (nestedArrays 41)) |> failsTooDeep
+                    , \_ -> readEnvelope (inMapJson "values" 100 "1") |> Expect.equal (Ok ())
+                    , \_ -> readEnvelope (inMapJson "values" 100 "[]") |> failsTooDeep
+                    , \_ -> readEnvelope (inMapJson "structs" 60 (nestedObjects 40)) |> Expect.equal (Ok ())
+                    , \_ -> readEnvelope (inMapJson "structs" 60 (nestedObjects 41)) |> failsTooDeep
+                    , \_ -> readEnvelope (inMapJson "lists" 60 (nestedArrays 40)) |> Expect.equal (Ok ())
+                    , \_ -> readEnvelope (inMapJson "lists" 60 (nestedArrays 41)) |> failsTooDeep
+                    ]
+                    ()
+        , test "in binary" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> readEnvelopeBytes (values 1 99) |> Expect.equal (Ok ())
+                    , \_ -> readEnvelopeBytes (values 1 100) |> refused
+                    , \_ -> readEnvelopeBytes (values 60 40) |> Expect.equal (Ok ())
+                    , \_ -> readEnvelopeBytes (values 60 41) |> refused
+                    , \_ -> readEnvelopeBytes (structs 60 40) |> Expect.equal (Ok ())
+                    , \_ -> readEnvelopeBytes (structs 60 41) |> refused
+                    , \_ -> readEnvelopeBytes (lists 60 40) |> Expect.equal (Ok ())
+                    , \_ -> readEnvelopeBytes (lists 60 41) |> refused
+                    ]
+                    ()
+        ]
+
+
+
+-- AN ANY OF A TYPE WITHOUT THE REGISTRY
+
+
+{-| An `Any` holding a type whose codecs take no registry: a recursive
+message that reaches no `Any` (`Chain`), and the well-known `Value`, `Struct`
+and `ListValue`, registered through `Proto.WellKnown`. The type is read with
+its own codecs, whose count starts at 1, so the levels inside the `Any` are
+limited apart from those around it: 100 levels outside, the `Any` among
+them, and 100 inside.
+-}
+anyOwnCount : Test
+anyOwnCount =
+    let
+        types =
+            Proto.Registry.union Deep.registry Proto.WellKnown.registry
+
+        url name =
+            "\"@type\":\"type.googleapis.com/" ++ name ++ "\""
+
+        -- The `Any`'s JSON holding `levels` levels of each type.
+        kinds =
+            [ ( "a Chain", \levels -> "{" ++ url "cycles.v1.Chain" ++ String.repeat (levels - 1) ",\"next\":{\"label\":\"\"" ++ String.repeat levels "}" )
+            , ( "a Value", \levels -> "{" ++ url "google.protobuf.Value" ++ ",\"value\":" ++ nestedArrays levels ++ "}" )
+            , ( "a Struct", \levels -> "{" ++ url "google.protobuf.Struct" ++ ",\"value\":" ++ nestedObjects levels ++ "}" )
+            , ( "a ListValue", \levels -> "{" ++ url "google.protobuf.ListValue" ++ ",\"value\":" ++ nestedArrays levels ++ "}" )
+            ]
+
+        holding messages any =
+            String.repeat (messages - 1) "{\"replies\":["
+                ++ ("{\"payload\":" ++ any ++ "}")
+                ++ String.repeat (messages - 1) "]}"
+
+        read =
+            Json.Decode.decodeString (Deep.decodeEnvelopeWith types) >> ok
+
+        -- The same in binary: each level past the first as the layers
+        -- around the one inside, and the innermost level's own bytes. A
+        -- Chain's `next` has the tag of an Envelope's `replies`.
+        chainBytes levels =
+            List.repeat (levels - 1) reply
+
+        binaryKinds =
+            [ ( "a Chain", "cycles.v1.Chain", \levels -> ( chainBytes levels, [] ) )
+            , ( "a Value", "google.protobuf.Value", \levels -> ( List.concat (List.repeat (levels - 1) [ listInValue, valueInList ]), [ 0x32, 0x00 ] ) )
+            , ( "a Struct", "google.protobuf.Struct", \levels -> ( List.concat (List.repeat (levels - 1) [ memberA, structInValue ]), [] ) )
+            , ( "a ListValue", "google.protobuf.ListValue", \levels -> ( List.concat (List.repeat (levels - 1) [ valueInList, listInValue ]), [] ) )
+            ]
+
+        anyOf name size =
+            let
+                typeUrl =
+                    List.map Char.toCode (String.toList ("type.googleapis.com/" ++ name))
+
+                any =
+                    0x0A :: varint (List.length typeUrl) ++ typeUrl ++ (0x12 :: varint size)
+            in
+            0x0A :: varint (List.length any + size) ++ any
+
+        binaryOfAny name ( inside, core ) messages =
+            wrapped (List.repeat (messages - 1) reply ++ anyOf name :: inside) core
+
+        written bytes =
+            case readEnvelopeBytesValue bytes of
+                Ok envelope ->
+                    Deep.encodeEnvelopeWith types envelope |> ok
+
+                Err _ ->
+                    Err (Proto.Error.BadJson (Json.Decode.Failure "did not read" Json.Encode.null))
+
+        refusedWriting name =
+            Expect.equal (Err name)
+                << Result.mapError
+                    (\error ->
+                        case error of
+                            Proto.Error.BadBinary problem ->
+                                if problem.reason == Proto.Error.TooDeep then
+                                    problem.typeName
+
+                                else
+                                    "another reason"
+
+                            _ ->
+                                "another error"
+                    )
+    in
+    describe "an Any of a type whose codecs take no registry counts its message from 1"
+        [ describe "read from JSON"
+            (List.map
+                (\( name, any ) ->
+                    test name <|
+                        \_ ->
+                            Expect.all
+                                [ \_ -> read (holding 1 (any 100)) |> Expect.equal (Ok ())
+                                , \_ -> read (holding 1 (any 101)) |> failsTooDeep
+                                , \_ -> read (holding 99 (any 100)) |> Expect.equal (Ok ())
+                                , \_ -> read (holding 99 (any 101)) |> failsTooDeep
+                                , \_ -> read (holding 100 (any 1)) |> failsTooDeep
+                                ]
+                                ()
+                )
+                kinds
+            )
+        , describe "read from binary, which holds the message's bytes unread"
+            (List.map
+                (\( name, typeName, levels ) ->
+                    test name <|
+                        \_ ->
+                            Expect.all
+                                [ \_ -> readEnvelopeBytes (binaryOfAny typeName (levels 101) 100) |> Expect.equal (Ok ())
+                                , \_ -> readEnvelopeBytes (binaryOfAny typeName (levels 1) 101) |> tooDeepBinary |> Expect.equal (Err Proto.Error.TooDeep)
+                                ]
+                                ()
+                )
+                binaryKinds
+            )
+        , describe "read from binary and written as JSON"
+            (List.map
+                (\( name, typeName, levels ) ->
+                    test name <|
+                        \_ ->
+                            Expect.all
+                                [ \_ -> written (binaryOfAny typeName (levels 100) 1) |> Expect.equal (Ok ())
+                                , \_ -> written (binaryOfAny typeName (levels 101) 1) |> refusedWriting typeName
+                                , \_ -> written (binaryOfAny typeName (levels 100) 99) |> Expect.equal (Ok ())
+                                , \_ -> written (binaryOfAny typeName (levels 101) 99) |> refusedWriting typeName
+                                ]
+                                ()
+                )
+                binaryKinds
+            )
         ]
 
 

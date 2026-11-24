@@ -122,8 +122,9 @@ pub struct Generated {
     /// One file per module, sorted by path.
     pub files: Vec<GeneratedFile>,
     /// The warnings, in the order found: what the options left out, such
-    /// as the streaming methods `streaming=skip` skips. Empty under the
-    /// default options. Rendering them is the caller's business; both
+    /// as the streaming methods `streaming=skip` skips, and what generates
+    /// but is a risk, such as messages nested deeper than most protobuf
+    /// runtimes read. Rendering them is the caller's business; both
     /// binaries print them to stderr.
     pub warnings: Diagnostics,
 }

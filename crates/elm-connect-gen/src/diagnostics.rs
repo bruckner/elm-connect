@@ -14,8 +14,9 @@
 //! reported beside a successful run: what an option told the generator to
 //! leave out (`streaming=skip`), so the omission is never silent, a
 //! module name that compiles but is a risk to the application (one in the
-//! runtime's namespaces, or one an elm/* package has), and two HTTP
-//! bindings that match the same requests.
+//! runtime's namespaces, or one an elm/* package has), two HTTP
+//! bindings that match the same requests, and messages nested deeper than
+//! most protobuf runtimes read.
 
 mod field_names;
 mod spans;
@@ -140,6 +141,10 @@ codes! {
     ShadowingModule => "naming::shadowing_module",
     /// A field uses a `google.protobuf` type with no Elm mapping.
     UnsupportedWellKnown => "types::unsupported_well_known",
+    /// Messages hold each other in a chain more than 100 long, which a
+    /// read does not count off a cycle of references and most protobuf
+    /// runtimes refuse: a warning.
+    DeepNesting => "types::deep_nesting",
     /// A method streams requests or responses.
     Streaming => "services::streaming",
     /// A method has no `google.api.http` rule, under
@@ -1153,6 +1158,53 @@ impl Problem {
              Vanguard refuses the second, and grpc-gateway lets one of them win. The client \
              cannot tell which it faces and sends its method's binding regardless. Give one \
              of them a different path or HTTP method.",
+            site.into_iter().collect(),
+        )
+        .warning()
+    }
+
+    /// The messages `chain` (full names, the outermost first) each hold
+    /// the next, more than `limit` of them; `recursive` is the first of
+    /// them on a cycle of references, if any. `site` is the first
+    /// message's name. A warning.
+    pub fn deep_nesting(
+        chain: &[String],
+        recursive: Option<&str>,
+        limit: usize,
+        site: Option<Site>,
+    ) -> Self {
+        const SHOWN: usize = 3;
+        let named: Vec<String> = chain.iter().map(|name| format!("`{name}`")).collect();
+        let listed = if named.len() > 2 * SHOWN + 1 {
+            format!(
+                "{}, …, {}",
+                named[..SHOWN].join(", "),
+                named[named.len() - SHOWN..].join(", ")
+            )
+        } else {
+            named.join(", ")
+        };
+        let through = recursive.map_or_else(String::new, |name| {
+            format!(
+                " It passes through `{name}`, which is on a cycle of references, so it can \
+                 nest deeper still."
+            )
+        });
+        Problem::new(
+            Code::DeepNesting,
+            format!(
+                "The message `{}` holds messages nested {} deep: {listed}.{through}",
+                chain[0],
+                chain.len()
+            ),
+            format!(
+                "Most protobuf runtimes refuse to parse a message nested more than {limit} \
+                 deep, so a server or client on one of them fails on a message that fills this \
+                 chain. elm-connect's reads count only the messages on a cycle of references, \
+                 so they read it to its end, and a chain deep enough overflows the JavaScript \
+                 stack. Shorten the chain to {limit} messages: merge levels into one message, \
+                 or hold the deep part as `bytes`."
+            ),
             site.into_iter().collect(),
         )
         .warning()

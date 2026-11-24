@@ -383,7 +383,8 @@ type Wide_
 {-| On a cycle and holding an `Any`: its JSON decoders take the registry, so
 they are built as they are entered rather than once. The `Any`, and the
 arrays and objects of its `Struct`, `Value` and `ListValue`, count from the
-depth of the message holding them.
+depth of the message holding them, in a singular field and in a map's
+values alike.
 
 [`message cycles.v1.Envelope`](Cycles-V1-Envelope#descriptor)
 
@@ -392,6 +393,9 @@ depth of the message holding them.
   - [`data`](Cycles-V1-Envelope#data)
   - [`value`](Cycles-V1-Envelope#value)
   - [`list`](Cycles-V1-Envelope#list)
+  - [`values`](Cycles-V1-Envelope#values)
+  - [`structs`](Cycles-V1-Envelope#structs)
+  - [`lists`](Cycles-V1-Envelope#lists)
 
 -}
 type alias Envelope =
@@ -400,6 +404,9 @@ type alias Envelope =
     , data : Maybe (Dict String Proto.Value.Value)
     , value : Maybe Proto.Value.Value
     , list : Maybe (List Proto.Value.Value)
+    , values : Dict String Proto.Value.Value
+    , structs : Dict String (Dict String Proto.Value.Value)
+    , lists : Dict String (List Proto.Value.Value)
     }
 
 
@@ -578,6 +585,9 @@ defaultEnvelope =
     , data = Nothing
     , value = Nothing
     , list = Nothing
+    , values = Dict.empty
+    , structs = Dict.empty
+    , lists = Dict.empty
     }
 
 
@@ -975,6 +985,9 @@ encodeEnvelopeWith types value =
         , ( "data", Ok (Maybe.map Proto.Json.encodeStruct value.data) )
         , ( "value", Ok (Maybe.map Proto.Json.encodeValue value.value) )
         , ( "list", Ok (Maybe.map Proto.Json.encodeListValue value.list) )
+        , ( "values", Ok (Proto.Json.dictField identity Proto.Json.encodeValue value.values) )
+        , ( "structs", Ok (Proto.Json.dictField identity Proto.Json.encodeStruct value.structs) )
+        , ( "lists", Ok (Proto.Json.dictField identity Proto.Json.encodeListValue value.lists) )
         ]
 
 
@@ -1364,6 +1377,9 @@ decodeNestedEnvelopeWith types depth =
             |> Proto.Json.messageField "data" Nothing (Json.Decode.map Just (Proto.Json.nestedStruct depth))
             |> Proto.Json.nestedMessageValueField "value" depth
             |> Proto.Json.messageField "list" Nothing (Json.Decode.map Just (Proto.Json.nestedListValue depth))
+            |> Proto.Json.messageField "values" Dict.empty (Proto.Json.stringDict (Proto.Json.nestedValue depth))
+            |> Proto.Json.messageField "structs" Dict.empty (Proto.Json.stringDict (Proto.Json.nestedStruct depth))
+            |> Proto.Json.messageField "lists" Dict.empty (Proto.Json.stringDict (Proto.Json.nestedListValue depth))
         )
 
 
@@ -1633,6 +1649,9 @@ encodeEnvelopeBytes value =
         , Proto.Binary.optional Proto.Binary.struct 3 value.data
         , Proto.Binary.optional Proto.Binary.value 4 value.value
         , Proto.Binary.optional Proto.Binary.listValue 5 value.list
+        , Proto.Binary.dict Proto.Binary.string Proto.Binary.value 6 value.values
+        , Proto.Binary.dict Proto.Binary.string Proto.Binary.struct 7 value.structs
+        , Proto.Binary.dict Proto.Binary.string Proto.Binary.listValue 8 value.lists
         ]
 
 
@@ -2514,6 +2533,9 @@ mergeNestedEnvelopeBytes =
                                     , data = value.data
                                     , value = value.value
                                     , list = value.list
+                                    , values = value.values
+                                    , structs = value.structs
+                                    , lists = value.lists
                                     }
                                 )
                                 wire
@@ -2528,6 +2550,9 @@ mergeNestedEnvelopeBytes =
                                     , data = value.data
                                     , value = value.value
                                     , list = value.list
+                                    , values = value.values
+                                    , structs = value.structs
+                                    , lists = value.lists
                                     }
                                 )
                                 value.replies
@@ -2543,6 +2568,9 @@ mergeNestedEnvelopeBytes =
                                     , data = Just v
                                     , value = value.value
                                     , list = value.list
+                                    , values = value.values
+                                    , structs = value.structs
+                                    , lists = value.lists
                                     }
                                 )
                                 wire
@@ -2557,6 +2585,9 @@ mergeNestedEnvelopeBytes =
                                     , data = value.data
                                     , value = Just v
                                     , list = value.list
+                                    , values = value.values
+                                    , structs = value.structs
+                                    , lists = value.lists
                                     }
                                 )
                                 wire
@@ -2571,6 +2602,63 @@ mergeNestedEnvelopeBytes =
                                     , data = value.data
                                     , value = value.value
                                     , list = Just v
+                                    , values = value.values
+                                    , structs = value.structs
+                                    , lists = value.lists
+                                    }
+                                )
+                                wire
+                                value
+
+                        6 ->
+                            Proto.Binary.mapEntry
+                                Proto.Binary.string
+                                (Proto.Binary.nestedValue depth)
+                                (\k v ->
+                                    { payload = value.payload
+                                    , replies = value.replies
+                                    , data = value.data
+                                    , value = value.value
+                                    , list = value.list
+                                    , values = Dict.insert k v value.values
+                                    , structs = value.structs
+                                    , lists = value.lists
+                                    }
+                                )
+                                wire
+                                value
+
+                        7 ->
+                            Proto.Binary.mapEntry
+                                Proto.Binary.string
+                                (Proto.Binary.nestedStruct depth)
+                                (\k v ->
+                                    { payload = value.payload
+                                    , replies = value.replies
+                                    , data = value.data
+                                    , value = value.value
+                                    , list = value.list
+                                    , values = value.values
+                                    , structs = Dict.insert k v value.structs
+                                    , lists = value.lists
+                                    }
+                                )
+                                wire
+                                value
+
+                        8 ->
+                            Proto.Binary.mapEntry
+                                Proto.Binary.string
+                                (Proto.Binary.nestedListValue depth)
+                                (\k v ->
+                                    { payload = value.payload
+                                    , replies = value.replies
+                                    , data = value.data
+                                    , value = value.value
+                                    , list = value.list
+                                    , values = value.values
+                                    , structs = value.structs
+                                    , lists = Dict.insert k v value.lists
                                     }
                                 )
                                 wire
@@ -2585,6 +2673,9 @@ mergeNestedEnvelopeBytes =
                     , data = value.data
                     , value = value.value
                     , list = value.list
+                    , values = value.values
+                    , structs = value.structs
+                    , lists = value.lists
                     }
                 )
         )
