@@ -19,6 +19,7 @@ import Cycles.V1.Expr
 import Cycles.V1.First
 import Cycles.V1.Forest
 import Cycles.V1.Person
+import Cycles.V1.Sealed
 import Cycles.V1.Second
 import Cycles.V1.Team
 import Cycles.V1.Third
@@ -396,6 +397,10 @@ values alike.
   - [`values`](Cycles-V1-Envelope#values)
   - [`structs`](Cycles-V1-Envelope#structs)
   - [`lists`](Cycles-V1-Envelope#lists)
+  - [`sealed`](Cycles-V1-Envelope#sealed): Off the cycle and holding an `Any`, singly and as a oneof's member: the
+    message is given the registry at the envelope's depth, so its `Any`
+    counts on from there too.
+  - `aside`: See [`EnvelopeAside`](#EnvelopeAside).
 
 -}
 type alias Envelope =
@@ -407,6 +412,8 @@ type alias Envelope =
     , values : Dict String Proto.Value.Value
     , structs : Dict String (Dict String Proto.Value.Value)
     , lists : Dict String (List Proto.Value.Value)
+    , sealed : Maybe Sealed
+    , aside : EnvelopeAside
     }
 
 
@@ -414,6 +421,29 @@ type alias Envelope =
 -}
 type Envelope_
     = Envelope_ Envelope
+
+
+{-| `oneof aside` of `cycles.v1.Envelope`
+
+  - `EnvelopeAsideUnset`: none of the fields is set.
+  - [`EnvelopeAsideNote`](Cycles-V1-Envelope#note)
+
+-}
+type EnvelopeAside
+    = EnvelopeAsideUnset
+    | EnvelopeAsideNote Sealed
+
+
+{-| Off every cycle, holding an `Any`.
+
+[`message cycles.v1.Sealed`](Cycles-V1-Sealed#descriptor)
+
+  - [`payload`](Cycles-V1-Sealed#payload)
+
+-}
+type alias Sealed =
+    { payload : Maybe Proto.Any.Any
+    }
 
 
 
@@ -588,6 +618,16 @@ defaultEnvelope =
     , values = Dict.empty
     , structs = Dict.empty
     , lists = Dict.empty
+    , sealed = Nothing
+    , aside = EnvelopeAsideUnset
+    }
+
+
+{-| A [`Sealed`](#Sealed) with every field at its default and every oneof unset.
+-}
+defaultSealed : Sealed
+defaultSealed =
+    { payload = Nothing
     }
 
 
@@ -679,6 +719,13 @@ messageEnvelope =
     Proto.Message.initWith "cycles.v1.Envelope" encodeEnvelopeWith decodeEnvelopeWith encodeEnvelopeBytes decodeEnvelopeBytes
 
 
+{-| The typed value of [`Sealed`](#Sealed): its full name and codecs.
+-}
+messageSealed : Proto.Message.Message Sealed
+messageSealed =
+    Proto.Message.initWith "cycles.v1.Sealed" encodeSealedWith decodeSealedWith encodeSealedBytes decodeSealedBytes
+
+
 
 -- REGISTRY
 
@@ -701,6 +748,7 @@ descriptors =
             , Cycles.V1.Forest.descriptor
             , Cycles.V1.Wide.descriptor
             , Cycles.V1.Envelope.descriptor
+            , Cycles.V1.Sealed.descriptor
             ]
             []
         )
@@ -724,6 +772,7 @@ registry =
         |> Proto.Registry.register messageForest
         |> Proto.Registry.register messageWide
         |> Proto.Registry.register messageEnvelope
+        |> Proto.Registry.register messageSealed
 
 
 
@@ -980,15 +1029,18 @@ encodeWide_ (Wide_ value) =
 encodeEnvelopeWith : Proto.Registry.Registry -> Envelope -> Result Proto.Error.Error Json.Encode.Value
 encodeEnvelopeWith types value =
     Proto.Json.tryObjectOfFields
-        [ ( "payload", Proto.Json.tryOptionalField (Proto.Json.encodeNestedAnyWith types) value.payload )
-        , ( "replies", Proto.Json.tryRepeatedField (encodeEnvelope_With (Proto.Json.registryDeeper types)) value.replies )
-        , ( "data", Ok (Maybe.map Proto.Json.encodeStruct value.data) )
-        , ( "value", Ok (Maybe.map Proto.Json.encodeValue value.value) )
-        , ( "list", Ok (Maybe.map Proto.Json.encodeListValue value.list) )
-        , ( "values", Ok (Proto.Json.dictField identity Proto.Json.encodeValue value.values) )
-        , ( "structs", Ok (Proto.Json.dictField identity Proto.Json.encodeStruct value.structs) )
-        , ( "lists", Ok (Proto.Json.dictField identity Proto.Json.encodeListValue value.lists) )
-        ]
+        ([ ( "payload", Proto.Json.tryOptionalField (Proto.Json.encodeNestedAnyWith types) value.payload )
+         , ( "replies", Proto.Json.tryRepeatedField (encodeEnvelope_With (Proto.Json.registryDeeper types)) value.replies )
+         , ( "data", Ok (Maybe.map Proto.Json.encodeStruct value.data) )
+         , ( "value", Ok (Maybe.map Proto.Json.encodeValue value.value) )
+         , ( "list", Ok (Maybe.map Proto.Json.encodeListValue value.list) )
+         , ( "values", Ok (Proto.Json.dictField identity Proto.Json.encodeValue value.values) )
+         , ( "structs", Ok (Proto.Json.dictField identity Proto.Json.encodeStruct value.structs) )
+         , ( "lists", Ok (Proto.Json.dictField identity Proto.Json.encodeListValue value.lists) )
+         , ( "sealed", Proto.Json.tryOptionalField (encodeSealedWith (Proto.Json.nestedRegistry 1 types)) value.sealed )
+         ]
+            ++ encodeEnvelopeAsideWith (Proto.Json.nestedRegistry 1 types) value.aside
+        )
 
 
 {-| Encodes an [`Envelope_`](#Envelope_) as proto3 JSON, writing each `Any` it holds with the registry.
@@ -996,6 +1048,28 @@ encodeEnvelopeWith types value =
 encodeEnvelope_With : Proto.Registry.Registry -> Envelope_ -> Result Proto.Error.Error Json.Encode.Value
 encodeEnvelope_With types (Envelope_ value) =
     encodeEnvelopeWith types value
+
+
+{-| Encodes an [`EnvelopeAside`](#EnvelopeAside) as the members of its message's JSON object.
+-}
+encodeEnvelopeAsideWith : Proto.Registry.Registry -> EnvelopeAside -> List ( String, Result Proto.Error.Error (Maybe Json.Encode.Value) )
+encodeEnvelopeAsideWith types value =
+    case value of
+        EnvelopeAsideUnset ->
+            []
+
+        EnvelopeAsideNote member ->
+            [ ( "note", Result.map Just (encodeSealedWith types member) )
+            ]
+
+
+{-| Encodes a [`Sealed`](#Sealed) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
+-}
+encodeSealedWith : Proto.Registry.Registry -> Sealed -> Result Proto.Error.Error Json.Encode.Value
+encodeSealedWith types value =
+    Proto.Json.tryObjectOfFields
+        [ ( "payload", Proto.Json.tryOptionalField (Proto.Json.encodeAnyWith types) value.payload )
+        ]
 
 
 
@@ -1380,6 +1454,8 @@ decodeNestedEnvelopeWith types depth =
             |> Proto.Json.messageField "values" Dict.empty (Proto.Json.stringDict (Proto.Json.nestedValue depth))
             |> Proto.Json.messageField "structs" Dict.empty (Proto.Json.stringDict (Proto.Json.nestedStruct depth))
             |> Proto.Json.messageField "lists" Dict.empty (Proto.Json.stringDict (Proto.Json.nestedListValue depth))
+            |> Proto.Json.messageField "sealed" Nothing (Json.Decode.map Just (decodeSealedWith (Proto.Json.nestedRegistry depth types)))
+            |> Proto.Json.oneof (decodeEnvelopeAsideWith (Proto.Json.nestedRegistry depth types))
         )
 
 
@@ -1388,6 +1464,26 @@ decodeNestedEnvelopeWith types depth =
 decodeEnvelope_With : Proto.Registry.Registry -> Json.Decode.Decoder Envelope_
 decodeEnvelope_With types =
     Json.Decode.map Envelope_ (Json.Decode.lazy (\_ -> decodeEnvelopeWith types))
+
+
+{-| Decodes an [`EnvelopeAside`](#EnvelopeAside) from the members of its message's JSON object.
+-}
+decodeEnvelopeAsideWith : Proto.Registry.Registry -> Json.Decode.Decoder EnvelopeAside
+decodeEnvelopeAsideWith types =
+    Proto.Json.members "aside"
+        EnvelopeAsideUnset
+        [ Proto.Json.member "note" (Json.Decode.map EnvelopeAsideNote (decodeSealedWith types))
+        ]
+
+
+{-| Decodes a [`Sealed`](#Sealed) from proto3 JSON, reading each `Any` it holds with the registry: one of a type the registry lacks fails.
+-}
+decodeSealedWith : Proto.Registry.Registry -> Json.Decode.Decoder Sealed
+decodeSealedWith types =
+    Proto.Json.message
+        (Json.Decode.succeed Sealed
+            |> Proto.Json.messageField "payload" Nothing (Json.Decode.map Just (Proto.Json.anyWith types))
+        )
 
 
 
@@ -1652,6 +1748,8 @@ encodeEnvelopeBytes value =
         , Proto.Binary.dict Proto.Binary.string Proto.Binary.value 6 value.values
         , Proto.Binary.dict Proto.Binary.string Proto.Binary.struct 7 value.structs
         , Proto.Binary.dict Proto.Binary.string Proto.Binary.listValue 8 value.lists
+        , Proto.Binary.optional (Proto.Binary.embedded encodeSealedBytes mergeSealedBytes defaultSealed) 9 value.sealed
+        , encodeEnvelopeAsideBytes value.aside
         ]
 
 
@@ -1660,6 +1758,27 @@ encodeEnvelopeBytes value =
 encodeEnvelope_Bytes : Envelope_ -> Bytes.Encode.Encoder
 encodeEnvelope_Bytes (Envelope_ value) =
     encodeEnvelopeBytes value
+
+
+{-| Encodes an [`EnvelopeAside`](#EnvelopeAside) as protobuf binary: its set member's field.
+-}
+encodeEnvelopeAsideBytes : EnvelopeAside -> Bytes.Encode.Encoder
+encodeEnvelopeAsideBytes value =
+    case value of
+        EnvelopeAsideUnset ->
+            Bytes.Encode.sequence []
+
+        EnvelopeAsideNote member ->
+            Proto.Binary.present (Proto.Binary.embedded encodeSealedBytes mergeSealedBytes defaultSealed) 10 member
+
+
+{-| Encodes a [`Sealed`](#Sealed) as protobuf binary.
+-}
+encodeSealedBytes : Sealed -> Bytes.Encode.Encoder
+encodeSealedBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.optional Proto.Binary.any 1 value.payload
+        ]
 
 
 
@@ -2536,6 +2655,8 @@ mergeNestedEnvelopeBytes =
                                     , values = value.values
                                     , structs = value.structs
                                     , lists = value.lists
+                                    , sealed = value.sealed
+                                    , aside = value.aside
                                     }
                                 )
                                 wire
@@ -2553,6 +2674,8 @@ mergeNestedEnvelopeBytes =
                                     , values = value.values
                                     , structs = value.structs
                                     , lists = value.lists
+                                    , sealed = value.sealed
+                                    , aside = value.aside
                                     }
                                 )
                                 value.replies
@@ -2571,6 +2694,8 @@ mergeNestedEnvelopeBytes =
                                     , values = value.values
                                     , structs = value.structs
                                     , lists = value.lists
+                                    , sealed = value.sealed
+                                    , aside = value.aside
                                     }
                                 )
                                 wire
@@ -2588,6 +2713,8 @@ mergeNestedEnvelopeBytes =
                                     , values = value.values
                                     , structs = value.structs
                                     , lists = value.lists
+                                    , sealed = value.sealed
+                                    , aside = value.aside
                                     }
                                 )
                                 wire
@@ -2605,6 +2732,8 @@ mergeNestedEnvelopeBytes =
                                     , values = value.values
                                     , structs = value.structs
                                     , lists = value.lists
+                                    , sealed = value.sealed
+                                    , aside = value.aside
                                     }
                                 )
                                 wire
@@ -2623,6 +2752,8 @@ mergeNestedEnvelopeBytes =
                                     , values = Dict.insert k v value.values
                                     , structs = value.structs
                                     , lists = value.lists
+                                    , sealed = value.sealed
+                                    , aside = value.aside
                                     }
                                 )
                                 wire
@@ -2641,6 +2772,8 @@ mergeNestedEnvelopeBytes =
                                     , values = value.values
                                     , structs = Dict.insert k v value.structs
                                     , lists = value.lists
+                                    , sealed = value.sealed
+                                    , aside = value.aside
                                     }
                                 )
                                 wire
@@ -2659,6 +2792,54 @@ mergeNestedEnvelopeBytes =
                                     , values = value.values
                                     , structs = value.structs
                                     , lists = Dict.insert k v value.lists
+                                    , sealed = value.sealed
+                                    , aside = value.aside
+                                    }
+                                )
+                                wire
+                                value
+
+                        9 ->
+                            Proto.Binary.fieldInto
+                                (Proto.Binary.embedded encodeSealedBytes mergeSealedBytes defaultSealed)
+                                value.sealed
+                                (\v ->
+                                    { payload = value.payload
+                                    , replies = value.replies
+                                    , data = value.data
+                                    , value = value.value
+                                    , list = value.list
+                                    , values = value.values
+                                    , structs = value.structs
+                                    , lists = value.lists
+                                    , sealed = Just v
+                                    , aside = value.aside
+                                    }
+                                )
+                                wire
+                                value
+
+                        10 ->
+                            Proto.Binary.fieldInto
+                                (Proto.Binary.embedded encodeSealedBytes mergeSealedBytes defaultSealed)
+                                (case value.aside of
+                                    EnvelopeAsideNote member ->
+                                        Just member
+
+                                    _ ->
+                                        Nothing
+                                )
+                                (\v ->
+                                    { payload = value.payload
+                                    , replies = value.replies
+                                    , data = value.data
+                                    , value = value.value
+                                    , list = value.list
+                                    , values = value.values
+                                    , structs = value.structs
+                                    , lists = value.lists
+                                    , sealed = value.sealed
+                                    , aside = EnvelopeAsideNote v
                                     }
                                 )
                                 wire
@@ -2676,6 +2857,8 @@ mergeNestedEnvelopeBytes =
                     , values = value.values
                     , structs = value.structs
                     , lists = value.lists
+                    , sealed = value.sealed
+                    , aside = value.aside
                     }
                 )
         )
@@ -2700,3 +2883,34 @@ mergeEnvelope_Bytes (Envelope_ value) =
 mergeNestedEnvelope_Bytes : Int -> Envelope_ -> Proto.Binary.Decoder Envelope_
 mergeNestedEnvelope_Bytes depth (Envelope_ value) =
     Proto.Binary.map Envelope_ (mergeNestedEnvelopeBytes depth value)
+
+
+{-| Decodes a [`Sealed`](#Sealed) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeSealedBytes : Sealed -> Proto.Binary.Decoder Sealed
+mergeSealedBytes =
+    Proto.Binary.merge
+        "cycles.v1.Sealed"
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.any
+                        (\v ->
+                            { payload = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`Sealed`](#Sealed) from protobuf binary.
+-}
+decodeSealedBytes : Proto.Binary.Decoder Sealed
+decodeSealedBytes =
+    mergeSealedBytes defaultSealed

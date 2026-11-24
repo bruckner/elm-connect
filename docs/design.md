@@ -795,12 +795,20 @@ rpc shared call =
     value is read (`Proto.Json.deeperWith`), and `decodeNodeWith types`
     starts at the depth the registry carries
     (`Proto.Json.registryDepth`), so a message read inside an `Any`
-    counts on from it. A type whose decoders take no registry (a
+    counts on from it. A value off the cycle whose decoder takes the
+    registry (a message that reaches an `Any`, or a oneof with no member
+    on the cycle) is given the registry at the message's depth,
+    `decodeMetaWith (Proto.Json.nestedRegistry depth types)`, so an
+    `Any` it holds, through any number of messages off the cycle, and
+    another cycle inside it count on from there; its encoder is given
+    `Proto.Json.nestedRegistry 1 types`, the message's depth as its
+    decoder starts it. A type whose decoders take no registry (a
     message that reaches no `Any`, and the well-known `Struct`, `Value`
     and `ListValue`) is not given the depth and counts from 1 inside an
-    `Any`; it holds no `Any`, so what it adds is its own 100 levels, and
-    a read takes at most 200: 99 messages, the `Any` and 100 inside
-    (§5.5 bounds a binary read written as JSON alike). Past 100 the
+    `Any` or held off the cycle; it holds no `Any`, so what it adds is
+    its own 100 levels, and a read takes at most 200: 99 messages, the
+    `Any` and 100 inside (§5.5 bounds a binary read written as JSON
+    alike). Past 100 the
     read fails with "Expecting messages nested at most 100 deep". The
     `Nested` after the verb, like the `Bytes` and `With` suffixes,
     breaks the prefix rule of §3.7's names: the codecs of a type
@@ -4113,11 +4121,14 @@ Connect's proto codec sends them (§5.3).
   there. Writing it as JSON converts it through the registry, and that
   counts the `Any`s as a read does: a generated encoder that takes the
   registry writes a field or member on its message's cycle with the
-  registry a level deeper (`Proto.Json.registryDeeper`), and an `Any`
-  its message holds with `Proto.Json.encodeNestedAnyWith`, both
-  counting from the message's depth, the registry's or 1, whichever is
-  more, as the decoder starts it (`max 1 (Proto.Json.registryDepth
-  types)`). Each `Any` is a level, and an `Any` past 100 fails with
+  registry a level deeper (`Proto.Json.registryDeeper`), an `Any`
+  its message holds with `Proto.Json.encodeNestedAnyWith`, and a value
+  off the cycle that takes the registry with `Proto.Json.nestedRegistry
+  1`, all counting from the message's depth, the registry's or 1,
+  whichever is more, as the decoder starts it (`max 1
+  (Proto.Json.registryDepth types)`); the decoder gives that value the
+  registry at its depth (§3.2), so an `Any` held through messages off
+  the cycle is counted where the write counts it. Each `Any` is a level, and an `Any` past 100 fails with
   `TooDeep`, named `google.protobuf.Any`, exactly where a JSON read of
   the same message refuses it. The binary read of the `Any`'s message
   starts its own count of messages at 1, since a binary read cannot be

@@ -51,6 +51,7 @@ suite =
         , oneBudget
         , mapValues
         , anyOwnCount
+        , offCycle
         , mixedFarPast
         , scrubbed
         , valueRefusals
@@ -907,6 +908,123 @@ mapValues =
                     , \_ -> readEnvelopeBytes (lists 60 41) |> refused
                     ]
                     ()
+        ]
+
+
+
+-- AN ANY OFF THE CYCLE
+
+
+{-| Envelopes in segments of the given lengths, each segment past the first
+the message of an `Any` held by a `Sealed` the last envelope of the segment
+before holds, under `field`: `"sealed"`, a field, or `"note"`, a oneof's
+member. The innermost envelope holds one more such `Any`, of an empty
+envelope. The last `Any` is at the total of the lengths plus 1, since the
+message an `Any` holds counts at the `Any`'s level.
+-}
+offCycleJson : String -> List Int -> String
+offCycleJson field lengths =
+    let
+        segment length =
+            String.repeat (length - 1) "\"replies\":[{"
+
+        any =
+            "\"" ++ field ++ "\":{\"payload\":{\"@type\":\"type.googleapis.com/cycles.v1.Envelope\""
+
+        closeSegment length =
+            String.repeat (length - 1) "}]"
+    in
+    "{"
+        ++ String.concat (List.map (\length -> segment length ++ any ++ ",") lengths)
+        ++ "\"replies\":[]"
+        ++ String.concat (List.map (\length -> "}}" ++ closeSegment length) (List.reverse lengths))
+        ++ "}"
+
+
+{-| The same in binary, the `Sealed` in the field whose tag byte is `tag`.
+-}
+offCycleBinary : Int -> List Int -> Bytes.Bytes
+offCycleBinary tag lengths =
+    wrapped
+        (List.concatMap (\length -> List.repeat (length - 1) reply ++ [ \size -> tag :: varint size, payload ]) lengths)
+        []
+
+
+offCycle : Test
+offCycle =
+    let
+        ways =
+            [ ( "a field", "sealed", 0x4A ), ( "a oneof's member", "note", 0x52 ) ]
+
+        method =
+            Proto.Method.init "cycles.v1.Envelopes" "Get" Deep.encodeEnvelopeWith Deep.decodeEnvelopeWith Deep.encodeEnvelopeBytes Deep.decodeEnvelopeBytes
+
+        answer text =
+            Http.GoodStatus_ { url = "https://api.example.com/cycles.v1.Envelopes/Get", statusCode = 200, statusText = "OK", headers = Dict.fromList [ ( "content-type", "application/json" ) ] } text
+
+        boundaries ( name, field, tag ) =
+            test name <|
+                \_ ->
+                    Expect.all
+                        (List.concatMap
+                            (\( accepted, refused ) ->
+                                [ \_ -> readEnvelope (offCycleJson field accepted) |> Expect.equal (Ok ())
+                                , \_ -> readEnvelope (offCycleJson field refused) |> failsTooDeep
+                                , \_ -> writtenFromBinary (offCycleBinary tag accepted) |> Expect.equal (Ok ())
+                                , \_ -> writtenFromBinary (offCycleBinary tag refused) |> Expect.equal (Err anyTooDeep)
+                                ]
+                            )
+                            [ ( [ 99 ], [ 100 ] )
+                            , ( [ 1, 98 ], [ 1, 99 ] )
+                            , ( [ 50, 49 ], [ 50, 50 ] )
+                            , ( List.repeat 33 3, List.repeat 33 3 ++ [ 1 ] )
+                            ]
+                        )
+                        ()
+
+        deep ( name, field, tag ) =
+            let
+                text =
+                    offCycleJson field (List.repeat 2000 50)
+            in
+            test name <|
+                \_ ->
+                    case Json.Decode.decodeString Json.Decode.value text of
+                        Ok json ->
+                            Expect.all
+                                [ \_ -> readEnvelope text |> failsTooDeep
+                                , \_ -> Json.Decode.decodeValue (Deep.decodeEnvelopeWith Deep.registry) json |> ok |> failsTooDeep
+                                , \_ ->
+                                    case Proto.Message.decodeJson Deep.registry Deep.messageEnvelope json of
+                                        Err (Proto.Error.BadJson error) ->
+                                            failsTooDeep (Err error)
+
+                                        _ ->
+                                            Expect.fail "not BadJson"
+                                , \_ ->
+                                    case Rpc.response (Rpc.client Rpc.Protocol.connect "https://api.example.com" |> Rpc.Client.withRegistry Deep.registry) (Rpc.call method Deep.defaultEnvelope) (answer text) of
+                                        Err error ->
+                                            case Rpc.Error.protoError error of
+                                                Just (Proto.Error.BadJson problem) ->
+                                                    failsTooDeep (Err problem)
+
+                                                _ ->
+                                                    Expect.fail "not a BadJson body"
+
+                                        Ok _ ->
+                                            Expect.fail "read past the limit"
+                                , \_ -> writtenFromBinary (offCycleBinary tag (List.repeat 2000 50)) |> Expect.equal (Err anyTooDeep)
+                                ]
+                                ()
+
+                        Err _ ->
+                            Expect.fail "JSON.parse refused it"
+    in
+    describe "an Any held by a message off the cycle counts on from the message on it"
+        [ describe "read from JSON, and read from binary and written as JSON, refuse it at the same place"
+            (List.map boundaries ways)
+        , describe "100,000 levels fail with the error and throw nothing"
+            (List.map deep ways)
         ]
 
 

@@ -41,6 +41,8 @@ descriptor =
         , values
         , structs
         , lists
+        , sealed
+        , note
         ]
 
 
@@ -98,3 +100,23 @@ structs =
 lists : Proto.Field.Descriptor
 lists =
     Proto.Field.descriptor "lists" "lists" 8 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "google.protobuf.ListValue")
+
+
+{-| Off the cycle and holding an `Any`, singly and as a oneof's member: the
+message is given the registry at the envelope's depth, so its `Any`
+counts on from there too.
+
+`cycles.v1.Sealed sealed = 9;`
+
+-}
+sealed : Proto.Field.Descriptor
+sealed =
+    Proto.Field.descriptor "sealed" "sealed" 9 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "cycles.v1.Sealed")
+
+
+{-| `cycles.v1.Sealed note = 10;`, in oneof `aside`
+-}
+note : Proto.Field.Descriptor
+note =
+    Proto.Field.descriptor "note" "note" 10 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "cycles.v1.Sealed")
+        |> Proto.Field.inOneof "aside"

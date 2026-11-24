@@ -148,4 +148,16 @@ message Envelope {
   map<string, google.protobuf.Value> values = 6;
   map<string, google.protobuf.Struct> structs = 7;
   map<string, google.protobuf.ListValue> lists = 8;
+  // Off the cycle and holding an `Any`, singly and as a oneof's member: the
+  // message is given the registry at the envelope's depth, so its `Any`
+  // counts on from there too.
+  Sealed sealed = 9;
+  oneof aside {
+    Sealed note = 10;
+  }
+}
+
+// Off every cycle, holding an `Any`.
+message Sealed {
+  google.protobuf.Any payload = 1;
 }

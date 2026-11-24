@@ -256,11 +256,19 @@ limit them, against one budget for three kinds of level:
 - each array and object of a `Value`, `Struct` or `ListValue`, counting
   on from the message that holds it.
 
+A message off the cycle held by one on it is not a level, but an `Any`
+it holds counts on from the message on the cycle, however many messages
+off the cycle lie between them, and so do the messages of another cycle
+inside it that reach an `Any`.
+
 A message inside an `Any` that cannot itself hold an `Any` (a `Value`,
 `Struct` or `ListValue`, or a message whose fields reach no `Any`) is
 read by its own decoder, which counts from 1 instead. Its levels are
 limited to 100 apart from those outside the `Any`, so the deepest such
 read is 200 levels: 99 messages, the `Any`, and 100 levels inside it.
+The same holds for a `Value`, `Struct` or `ListValue` held by a message
+off the cycle, and for a message of another cycle whose fields reach no
+`Any`: 99 messages, then 100 levels of its own.
 An `Any` read from binary holds the message's bytes unread; unpacking
 it, or writing it as JSON, reads them with the same count from 1.
 The limit bounds the depth of nested `Any`s, not the work of converting
