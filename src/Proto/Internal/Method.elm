@@ -9,7 +9,10 @@ exposes its constructors. Its types are elm/core's, elm/json's, elm/bytes',
 
 A method holds its identity (service, name, idempotency), its two codec
 halves and, per HTTP binding, a route function and the response field its
-answer is read from, not its descriptor: the descriptor's type names and
+answer is read from, and whether a send writes its request's JSON to check
+it before building a typed route that would not otherwise read it
+(`checkBeforeRoute`, `False` only after `Proto.Method.withoutRequestCheck`);
+not its descriptor: the descriptor's type names and
 bindings as data are a separate value a program keeps only if it names it.
 
 The `codec` parameter is a phantom: `Proto.Method.initJson` gives a method
@@ -44,6 +47,7 @@ type Method idempotency codec req res
         , json : JsonHalf req res
         , binary : BinaryHalf req res
         , routes : List (RouteOf req)
+        , checkBeforeRoute : Bool
         }
 
 

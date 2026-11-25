@@ -1,5 +1,5 @@
 module Proto.Method exposing
-    ( Method, init, initJson, initProto, withIdempotency, withRoutes, withJsonRoutes, withResponseBody, withBindings
+    ( Method, init, initJson, initProto, withoutRequestCheck, withIdempotency, withRoutes, withJsonRoutes, withResponseBody, withBindings
     , encodeRequest, responseDecoder
     , Descriptor, descriptor
     , service, name, idempotency, input, output, bindings
@@ -32,7 +32,7 @@ The idempotency is a union whose constructors carry its name as a prefix
 (`IdempotencyNoSideEffects`), so it can be exposed with `(..)` beside any
 other union.
 
-@docs Method, init, initJson, initProto, withIdempotency, withRoutes, withJsonRoutes, withResponseBody, withBindings
+@docs Method, init, initJson, initProto, withoutRequestCheck, withIdempotency, withRoutes, withJsonRoutes, withResponseBody, withBindings
 
 
 # Reading a typed value
@@ -117,6 +117,7 @@ initJson serviceName methodName encode decoder =
         , json = { encode = \registry request -> Writer.run registry (encode request), decoder = decoder }
         , binary = Internal.noBinary
         , routes = []
+        , checkBeforeRoute = True
         }
 
 
@@ -135,6 +136,7 @@ initProto serviceName methodName encode decoder =
         , json = Internal.noJson
         , binary = binaryHalf encode decoder
         , routes = []
+        , checkBeforeRoute = True
         }
 
 
@@ -166,7 +168,45 @@ init serviceName methodName encode decoder encodeBinary binaryDecoder =
         , json = { encode = \registry request -> Writer.run registry (encode request), decoder = decoder }
         , binary = binaryHalf encodeBinary binaryDecoder
         , routes = []
+        , checkBeforeRoute = True
         }
+
+
+{-| Do not write the request's proto3 JSON only to check it before building
+one of the method's typed routes. Generated code sets it on a method with
+routes whose request holds nothing a JSON write can refuse (no `Any`,
+`Timestamp`, `Duration`, `FieldMask`, `Struct`, `ListValue` or `Value`):
+
+    Proto.Method.init "notes.v1.NotesService"
+        "GetNote"
+        Notes.V1.encodeGetNoteRequest
+        (\_ -> Notes.V1.decodeNote)
+        Notes.V1.encodeGetNoteRequestBytes
+        Notes.V1.decodeNoteBytes
+        |> Proto.Method.withoutRequestCheck
+        |> Proto.Method.withRoutes [ routeGetNote0 ]
+
+A route function ([`withRoutes`](#withRoutes)) prints its path and query
+values in their proto3 JSON forms without checking them, so a send over
+JSON writes the request's JSON first and refuses a request that has none
+before any route is built. With this flag, a send whose typed route holds
+its own path, query and body, under no write limit, skips that write: a
+transcoded `GET` writes no JSON, and a route holding the body writes it
+once.
+
+Nothing checks that the request cannot refuse. Wherever the JSON is written
+anyway it is still checked, as for a method without the flag: over Connect
+or the implicit route, over a route that takes the JSON
+([`withJsonRoutes`](#withJsonRoutes), [`withBindings`](#withBindings)), and
+under a write limit, which measures it. On a method whose request can
+refuse, the flag's only effect is that a typed route holding its own path
+and query prints values that were not checked: a value with no JSON form is
+sent in whatever form the route prints instead of refused.
+
+-}
+withoutRequestCheck : Method codec req res -> Method codec req res
+withoutRequestCheck (Internal.Method m) =
+    Internal.Method { m | checkBeforeRoute = False }
 
 
 binaryHalf : (req -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder res -> Internal.BinaryHalf req res
@@ -191,7 +231,8 @@ then its `additional_bindings` in order, as generated code writes them
 request holds, with the first path value its variable's template cannot
 match, which sending refuses. It prints its path and query values in their
 proto3 JSON forms without checking them: a send writes the request's JSON
-first and refuses a request that has none, before any route is built. The
+first and refuses a request that has none, before any route is built, unless
+the method is [`withoutRequestCheck`](#withoutRequestCheck). The
 routes replace any the method had, and their answers are read whole until
 [`withResponseBody`](#withResponseBody) names a field.
 -}

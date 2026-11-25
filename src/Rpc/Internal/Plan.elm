@@ -47,7 +47,9 @@ import Rpc.Request exposing (Request)
   - `unencodable`: over JSON, why its request has no proto3 JSON: a value
     proto3 JSON has no form for, or an `Any` the client's registry cannot
     write. Every call over JSON is checked so, whatever its route holds,
-    since a path and a query print values in their JSON forms.
+    since a path and a query print values in their JSON forms, but one whose
+    method is `withoutRequestCheck` over a typed route with no write limit,
+    whose JSON nothing else reads.
   - `tooLarge`: whether its message is over the protocol's write limit,
     measured when asked for.
   - `reader`: how its answer is read, as text or as bytes.
@@ -100,6 +102,14 @@ that reads it is handed that one value: the check that it has a JSON form,
 the route (a route of `FromJson` shape takes it whole), the body and the
 write limit. Its route is built once, from that JSON, and only when there is
 one.
+
+A method `withoutRequestCheck` skips that write only when nothing but the
+check would read the JSON: over a typed route, which holds the body, with no
+write limit. Its route is then built from the typed request alone, and its
+path and query values are not checked. Anywhere else it is written and
+checked as any request is, so a refusal is still reported and no request is
+built without the JSON it sends.
+
 -}
 toSend : Client codec -> Call codec req res -> Plan res
 toSend =
@@ -168,14 +178,34 @@ make forSend (Client cl over _ registry) (Call c) =
                         )
                         routeOf
 
+                -- A method that asks not to be checked is not encoded for
+                -- a send whose JSON nothing else reads: over a typed route,
+                -- which holds the body, under no write limit. Wherever the
+                -- JSON is read it is encoded and checked, flag or not.
+                unchecked =
+                    not m.checkBeforeRoute
+                        && (case ( p.options.writeMaxBytes, Maybe.map .shape routeOf ) of
+                                ( Nothing, Just (Typed _) ) ->
+                                    True
+
+                                _ ->
+                                    False
+                           )
+
                 -- For a send, the JSON is encoded here, in the branch
                 -- taken, and the route built from it once; else each part
-                -- encodes and builds when it is asked.
+                -- encodes and builds when it is asked. An unchecked send's
+                -- `Ok null` is read by nothing: its typed route is built
+                -- from the request alone, and holds the body.
                 ( encoded, route ) =
                     if forSend then
                         let
                             once =
-                                encode ()
+                                if unchecked then
+                                    Ok Json.Encode.null
+
+                                else
+                                    encode ()
 
                             onceRouted =
                                 Result.map routeWith once
