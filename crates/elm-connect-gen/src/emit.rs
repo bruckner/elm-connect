@@ -175,13 +175,13 @@
 //!   codecs take the client's registry, and a route whose body reaches an
 //!   `Any` is read from its binding.
 //! - Every message has one JSON encoder, `encodeFoo`, which
-//!   `Proto.Json.encode` or `encodeWith` runs. A message whose write
+//!   `Proto.Json.Encode.encode` or `encodeWith` runs. A message whose write
 //!   nothing it holds can refuse (no `Any`, and no `Timestamp`, `Duration`,
 //!   `FieldMask`, `Struct`, `ListValue` or `Value`, at any depth;
-//!   [`crate::ir::AnyReach::refusable`]) gets `Foo -> Proto.Json.Encoder x`,
+//!   [`crate::ir::AnyReach::refusable`]) gets `Foo -> Proto.Json.Encode.Encoder x`,
 //!   plain code wrapped once, which works for any refusal type, so its
-//!   plain parents unwrap it with `Proto.Json.encodeTotal`; the others get
-//!   `Foo -> Proto.Json.Encoder Proto.Error.Error`, built from
+//!   plain parents unwrap it with `Proto.Json.Encode.encodeTotal`; the others get
+//!   `Foo -> Proto.Json.Encode.Encoder Proto.Error.Error`, built from
 //!   `Proto.Json.writeObject` of their fields in declaration order, in runs
 //!   of plain fields and of fields that can be refused ([`field`]). A field
 //!   of a message that nests, counting a level and reaching an `Any`, is
@@ -228,13 +228,19 @@ use self::scalar::Holding;
 const JSON_DECODE: &str = "Json.Decode";
 /// elm/json's encoders.
 const JSON_ENCODE: &str = "Json.Encode";
-/// The runtime package's proto3 JSON helpers.
+/// The runtime package's proto3 JSON helpers for generated code.
 const PROTO_JSON: &str = "Proto.Json";
+/// The runtime package's proto3 JSON encoders: the `Encoder` type, `succeed`,
+/// `encodeTotal` and the well-known types' encoders.
+const PROTO_JSON_ENCODE: &str = "Proto.Json.Encode";
+/// The runtime package's proto3 JSON decoders of scalar and well-known
+/// values.
+const PROTO_JSON_DECODE: &str = "Proto.Json.Decode";
 /// The runtime package's error type, what a JSON encoder that can refuse
 /// refuses with.
 const PROTO_ERROR: &str = "Proto.Error";
 /// The type variable of a JSON encoder that cannot refuse,
-/// `Proto.Json.Encoder x`.
+/// `Proto.Json.Encode.Encoder x`.
 const TOTAL_ERROR_VAR: &str = "x";
 /// The end of the doc sentence of a JSON encoder that can refuse.
 const FAILS: &str = ", or fails if the input contains a bad value";
@@ -972,8 +978,8 @@ impl Emitter {
         reserved
     }
 
-    /// `Proto.Json.Encoder Proto.Error.Error` for an encoder that can refuse
-    /// (`refusable`), else `Proto.Json.Encoder x`, which works for any
+    /// `Proto.Json.Encode.Encoder Proto.Error.Error` for an encoder that can refuse
+    /// (`refusable`), else `Proto.Json.Encode.Encoder x`, which works for any
     /// refusal type, `Never` included.
     fn json_encoder_type(&mut self, refusable: bool) -> Type {
         let error = if refusable {
@@ -981,7 +987,7 @@ impl Emitter {
         } else {
             Type::Var(TOTAL_ERROR_VAR.to_owned())
         };
-        self.library_type(PROTO_JSON, "Encoder", [error])
+        self.library_type(PROTO_JSON_ENCODE, "Encoder", [error])
     }
 
     /// The library type `module.name args`, which the module then imports.
@@ -1136,6 +1142,8 @@ mod tests {
                 "Proto.Binary",
                 "Proto.Descriptors",
                 "Proto.Json",
+                "Proto.Json.Decode",
+                "Proto.Json.Encode",
                 "Proto.Message",
                 "Proto.Registry",
                 "Proto.Version",
@@ -1165,6 +1173,7 @@ mod tests {
                 "Proto.Binary",
                 "Proto.Descriptors",
                 "Proto.Json",
+                "Proto.Json.Encode",
                 "Proto.Message",
                 "Proto.Registry",
                 "Proto.Version",
@@ -1327,6 +1336,7 @@ mod tests {
                 "Proto.Binary",
                 "Proto.Descriptors",
                 "Proto.Json",
+                "Proto.Json.Encode",
                 "Proto.Message",
                 "Proto.Registry",
                 "Proto.Version",
@@ -1446,6 +1456,8 @@ mod tests {
             [
                 "Proto.Any",
                 "Proto.Json",
+                "Proto.Json.Decode",
+                "Proto.Json.Encode",
                 "Proto.Method",
                 "Proto.Value",
                 "Proto.Version",
@@ -1468,9 +1480,9 @@ mod tests {
             "(Proto.Method.initJson \"t.v1.S\"\n            \"Get\"\n            \
              T.V1.encodeA\n            \
              (\\_ -> T.V1.decodeA)\n        )\n",
-            "\n            Proto.Json.writeValue\n            (\\_ -> Proto.Json.empty)\n",
+            "\n            Proto.Json.Encode.value\n            (\\_ -> Proto.Json.Decode.empty)\n",
             "\n            \"Ticks\"\n            \
-             (Proto.Json.succeed << Proto.Json.encodeInt64AsInt)\n            Proto.Json.anyWith\n",
+             (Proto.Json.Encode.succeed << Proto.Json.encodeInt64AsInt)\n            Proto.Json.Decode.anyWith\n",
             "descriptorGet : Proto.Method.Descriptor\ndescriptorGet =\n    \
              Proto.Method.descriptor \"t.v1.S\"\n        \"Get\"\n        \
              Proto.Method.IdempotencyUnknown\n        \"t.v1.A\"\n        \"t.v1.A\"\n        []\n",

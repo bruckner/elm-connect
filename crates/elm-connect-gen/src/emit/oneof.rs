@@ -4,7 +4,10 @@
 use super::Deep;
 use super::field::{ValueShape, Zeroed};
 use super::recursion::DEPTH;
-use super::{Emitter, FAILS, JSON_DECODE, JSON_ENCODE, OneofShape, PROTO_ERROR, PROTO_JSON, docs};
+use super::{
+    Emitter, FAILS, JSON_DECODE, JSON_ENCODE, OneofShape, PROTO_ERROR, PROTO_JSON,
+    PROTO_JSON_ENCODE, docs,
+};
 use crate::elm::ast::{Decl, Expr, Type, Variant};
 use crate::elm::build::{apply, case, list, pctor, pvar, string, ty, ty_fn, var};
 use crate::ir::{Message, ModuleName};
@@ -60,7 +63,7 @@ impl Emitter {
     /// as a `Proto.Json.Field Proto.Error.Error` instead, for a run of
     /// `Proto.Json.checkedFields`: `Proto.Json.writeMember` of a message's
     /// encoder or of a member that can be refused, else of its JSON in
-    /// `Proto.Json.succeed`. A member that counts a level, of a message
+    /// `Proto.Json.Encode.succeed`. A member that counts a level, of a message
     /// whose codecs take the depth (`counts`), and reaches an `Any` is
     /// written one level deeper, as the message's fields are.
     pub(super) fn oneof_encoder(&mut self, shape: &OneofShape, counts: bool) -> Decl {
@@ -97,7 +100,7 @@ impl Emitter {
                         // any refusal type already.
                         apply(encoder, [var(ONEOF_MEMBER)])
                     } else {
-                        apply(self.reference((PROTO_JSON, "succeed")), [encoded])
+                        apply(self.reference((PROTO_JSON_ENCODE, "succeed")), [encoded])
                     };
                     let member = apply(self.reference((PROTO_JSON, "writeMember")), [encoder]);
                     let counted = variant.cyclic || self.counted.type_ref(&variant.ty);

@@ -4,8 +4,8 @@
 use super::Deep;
 use super::recursion::DEPTH;
 use super::{
-    Emitter, FAILS, JSON_DECODE, JSON_ENCODE, MessageShape, PROTO_JSON, PROTO_REGISTRY,
-    PROTO_UNKNOWN, RecordField, call, docs,
+    Emitter, FAILS, JSON_DECODE, JSON_ENCODE, MessageShape, PROTO_JSON, PROTO_JSON_ENCODE,
+    PROTO_REGISTRY, PROTO_UNKNOWN, RecordField, call, docs,
 };
 use crate::elm::ast::{BinOp, Decl, Expr, Pattern, Type};
 use crate::elm::build::{
@@ -100,16 +100,16 @@ impl Emitter {
         }
     }
 
-    /// A message's JSON encoder, `encodeFoo : Foo -> Proto.Json.Encoder x`
+    /// A message's JSON encoder, `encodeFoo : Foo -> Proto.Json.Encode.Encoder x`
     /// for a message whose write nothing it holds can refuse:
-    /// `Proto.Json.succeed` of `Proto.Json.objectOfFields` of every field
+    /// `Proto.Json.Encode.succeed` of `Proto.Json.objectOfFields` of every field
     /// under its JSON name, each as a `Maybe Json.Encode.Value` that is
     /// `Nothing` when the field is left out
     /// ([`encode_field`](Self::encode_field)), followed by the members
     /// each oneof's encoder gives (none when it is unset). Key order means
     /// nothing in JSON, so the fields come first, whatever the declaration
     /// order. It works for any refusal type `x`, so its parents unwrap it
-    /// with `Proto.Json.encodeTotal` and stay plain code with no tag per
+    /// with `Proto.Json.Encode.encodeTotal` and stay plain code with no tag per
     /// field.
     pub(super) fn message_encoder(&mut self, shape: &MessageShape) -> Vec<Decl> {
         if self.message_write_reaches(shape) {
@@ -158,7 +158,7 @@ impl Emitter {
             self.reference((PROTO_JSON, "objectOfFields"))
         };
         let encoder_type = self.json_encoder_type(false);
-        let succeed = self.reference((PROTO_JSON, "succeed"));
+        let succeed = self.reference((PROTO_JSON_ENCODE, "succeed"));
         vec![Decl::Value {
             doc: Some(format!(
                 "Encodes {} as proto3 JSON.",
@@ -189,7 +189,7 @@ impl Emitter {
         self.write_reach.message(&shape.message.proto_full_name)
     }
 
-    /// `encodeFoo : Foo -> Proto.Json.Encoder Proto.Error.Error` for a
+    /// `encodeFoo : Foo -> Proto.Json.Encode.Encoder Proto.Error.Error` for a
     /// message whose write can be refused: `Proto.Json.writeObject` of its
     /// fields in declaration order, grouped into runs, each consecutive
     /// group of fields that cannot be refused a `Proto.Json.plainFields` of

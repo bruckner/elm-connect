@@ -1,7 +1,9 @@
 //! The Elm side of each proto scalar (design §3.4): its type, its zero
 //! value, and the library functions that encode and decode it.
 
-use super::{ELM_BYTES, Emitter, JSON_DECODE, JSON_ENCODE, PROTO_BYTES, PROTO_JSON};
+use super::{
+    ELM_BYTES, Emitter, JSON_DECODE, JSON_ENCODE, PROTO_BYTES, PROTO_JSON, PROTO_JSON_DECODE,
+};
 use crate::elm::ast::{Expr, Type};
 use crate::elm::build::{int, string, ty, var};
 use crate::ir::ScalarKind;
@@ -135,17 +137,17 @@ pub(super) fn encoder(repr: Repr) -> (&'static str, &'static str) {
 /// The library decoder for a scalar: its module and name.
 pub(super) fn decoder(repr: Repr) -> (&'static str, &'static str) {
     match repr {
-        Repr::Float => (PROTO_JSON, "float"),
-        Repr::Float32 => (PROTO_JSON, "float32"),
-        Repr::Int32 => (PROTO_JSON, "int32"),
-        Repr::UInt32 => (PROTO_JSON, "uint32"),
-        Repr::Int64 => (PROTO_JSON, "int64"),
-        Repr::Int64AsInt => (PROTO_JSON, "int64AsInt"),
-        Repr::UInt64 => (PROTO_JSON, "uint64"),
-        Repr::UInt64AsInt => (PROTO_JSON, "uint64AsInt"),
+        Repr::Float => (PROTO_JSON_DECODE, "float"),
+        Repr::Float32 => (PROTO_JSON_DECODE, "float32"),
+        Repr::Int32 => (PROTO_JSON_DECODE, "int32"),
+        Repr::UInt32 => (PROTO_JSON_DECODE, "uint32"),
+        Repr::Int64 => (PROTO_JSON_DECODE, "int64"),
+        Repr::Int64AsInt => (PROTO_JSON_DECODE, "int64AsInt"),
+        Repr::UInt64 => (PROTO_JSON_DECODE, "uint64"),
+        Repr::UInt64AsInt => (PROTO_JSON_DECODE, "uint64AsInt"),
         Repr::Bool => (JSON_DECODE, "bool"),
-        Repr::String => (PROTO_JSON, "string"),
-        Repr::Bytes => (PROTO_JSON, "bytes"),
-        Repr::BytesAsBytes => (PROTO_JSON, "bytesAsBytes"),
+        Repr::String => (PROTO_JSON_DECODE, "string"),
+        Repr::Bytes => (PROTO_JSON_DECODE, "bytes"),
+        Repr::BytesAsBytes => (PROTO_JSON_DECODE, "bytesAsBytes"),
     }
 }

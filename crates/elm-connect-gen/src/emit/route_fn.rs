@@ -400,7 +400,7 @@ impl Emitter {
                     ValueShape::Present(Present::Wrapped(wrapper, full_name)) => {
                         let module = messages.get(full_name)?.1;
                         let encoder = self.generated_value(module, wrapper.encoder_name());
-                        let total = self.reference((super::PROTO_JSON, "encodeTotal"));
+                        let total = self.reference((super::PROTO_JSON_ENCODE, "encodeTotal"));
                         binop(BinOp::ComposeL, total, encoder)
                     }
                     shape => self.value_encoder(shape),

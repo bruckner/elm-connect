@@ -10,7 +10,7 @@
 use super::field::{ValueShape, value_shape};
 use super::route_fn::{JSON, Messages, PROTO_ROUTE, Queries, REQUEST};
 use super::scalar::Holding;
-use super::{Emitter, PROTO_HTTP, PROTO_JSON, PROTO_METHOD, RPC, docs};
+use super::{Emitter, PROTO_HTTP, PROTO_JSON_DECODE, PROTO_JSON_ENCODE, PROTO_METHOD, RPC, docs};
 use crate::elm::ast::{BinOp, Decl, Expr, Pattern, Type};
 use crate::elm::build::{
     apply, binop, inline_list, lambda, list, pipeline, pvar, record, stacked_apply, string, ty_fn,
@@ -250,11 +250,12 @@ impl Emitter {
         self.value_encoder(shape)
     }
 
-    /// The JSON encoder of a method's request type, a `Proto.Json.Encoder`
-    /// the method runs with the client's registry: the generated
-    /// `encodeFoo` of a message, the `Proto.Json` `write` helper of a
-    /// well-known type whose write can be refused, and otherwise
-    /// [`Self::request_encoder`]'s under `Proto.Json.succeed <<`.
+    /// The JSON encoder of a method's request type, a
+    /// `Proto.Json.Encode.Encoder` the method runs with the client's
+    /// registry: the generated `encodeFoo` of a message, the encoder of a
+    /// well-known type whose write can be refused (`Proto.Json.Encode`'s,
+    /// or `Proto.Any.encode`), and otherwise [`Self::request_encoder`]'s
+    /// under `Proto.Json.Encode.succeed <<`.
     fn request_encoder_with(&mut self, ty: &TypeRef) -> Expr {
         let shape = method_shape(ty, self.holding);
         if let TypeRef::Message(name) = ty {
@@ -264,7 +265,7 @@ impl Emitter {
             return self.value_encoder(shape);
         }
         let encoder = self.request_encoder(ty);
-        let succeed = self.reference((PROTO_JSON, "succeed"));
+        let succeed = self.reference((PROTO_JSON_ENCODE, "succeed"));
         binop(BinOp::ComposeL, succeed, encoder)
     }
 
@@ -277,7 +278,7 @@ impl Emitter {
                 TypeRef::Message(name) => {
                     self.generated_value(&name.module, with_registry(name.decoder_name()))
                 }
-                _ => self.reference((PROTO_JSON, "anyWith")),
+                _ => self.reference((PROTO_JSON_DECODE, "anyWith")),
             };
         }
         let decoder = self.response_decoder(ty);
