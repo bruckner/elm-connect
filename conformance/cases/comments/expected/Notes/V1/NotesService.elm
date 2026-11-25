@@ -60,6 +60,7 @@ getNote =
             (\_ -> Notes.V1.decodeNote)
             Notes.V1.encodeGetNoteRequestBytes
             Notes.V1.decodeNoteBytes
+            |> Proto.Method.withoutRequestCheck
             |> Proto.Method.withRoutes [ routeGetNote0, routeGetNote1 ]
         )
 
@@ -82,6 +83,7 @@ listNotes =
             (\_ -> Notes.V1.decodeListNotesResponse)
             Notes.V1.encodeListNotesRequestBytes
             Notes.V1.decodeListNotesResponseBytes
+            |> Proto.Method.withoutRequestCheck
             |> Proto.Method.withRoutes [ routeListNotes0 ]
             |> Proto.Method.withResponseBody 0 "notes"
         )

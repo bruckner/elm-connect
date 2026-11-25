@@ -48,6 +48,7 @@ clear =
             (\_ -> Proto.Json.empty)
             (Proto.Binary.messageEncoder Proto.Binary.empty)
             (Proto.Binary.messageDecoder Proto.Binary.empty)
+            |> Proto.Method.withoutRequestCheck
             |> Proto.Method.withRoutes [ routeClear0 ]
         )
 

@@ -46,6 +46,7 @@ listEvents =
             (\_ -> Events.V1.decodeListEventsResponse)
             Events.V1.encodeListEventsRequestBytes
             Events.V1.decodeListEventsResponseBytes
+            |> Proto.Method.withoutRequestCheck
             |> Proto.Method.withRoutes [ routeListEvents0 ]
         )
 

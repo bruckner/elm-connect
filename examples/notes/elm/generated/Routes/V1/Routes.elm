@@ -62,6 +62,7 @@ getMessage =
             (\_ -> Routes.V1.decodeMessage)
             Routes.V1.encodeGetMessageRequestBytes
             Routes.V1.decodeMessageBytes
+            |> Proto.Method.withoutRequestCheck
             |> Proto.Method.withRoutes [ routeGetMessage0, routeGetMessage1, routeGetMessage2, routeGetMessage3 ]
         )
 
@@ -84,6 +85,7 @@ updateMessage =
             (\_ -> Routes.V1.decodeMessage)
             Routes.V1.encodeUpdateMessageRequestBytes
             Routes.V1.decodeMessageBytes
+            |> Proto.Method.withoutRequestCheck
             |> Proto.Method.withRoutes [ routeUpdateMessage0 ]
         )
 
@@ -104,6 +106,7 @@ updateMessageWhole =
             (\_ -> Routes.V1.decodeMessage)
             Routes.V1.encodeMessageBytes
             Routes.V1.decodeMessageBytes
+            |> Proto.Method.withoutRequestCheck
             |> Proto.Method.withRoutes [ routeUpdateMessageWhole0 ]
         )
 
@@ -124,6 +127,7 @@ postSub =
             (\_ -> Routes.V1.decodeMessage)
             Routes.V1.encodeGetMessageRequestBytes
             Routes.V1.decodeMessageBytes
+            |> Proto.Method.withoutRequestCheck
             |> Proto.Method.withRoutes [ routePostSub0 ]
         )
 
@@ -224,6 +228,7 @@ files =
             (\_ -> Routes.V1.decodeFileRequest)
             Routes.V1.encodeFileRequestBytes
             Routes.V1.decodeFileRequestBytes
+            |> Proto.Method.withoutRequestCheck
             |> Proto.Method.withRoutes [ routeFiles0 ]
         )
 
@@ -244,6 +249,7 @@ cancel =
             (\_ -> Routes.V1.decodeResource)
             Routes.V1.encodeResourceBytes
             Routes.V1.decodeResourceBytes
+            |> Proto.Method.withoutRequestCheck
             |> Proto.Method.withRoutes [ routeCancel0 ]
         )
 
@@ -284,6 +290,7 @@ head =
             (\_ -> Routes.V1.decodeFileRequest)
             Routes.V1.encodeFileRequestBytes
             Routes.V1.decodeFileRequestBytes
+            |> Proto.Method.withoutRequestCheck
             |> Proto.Method.withRoutes [ routeHead0 ]
         )
 

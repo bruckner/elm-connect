@@ -58,6 +58,7 @@ getNote =
             (\_ -> Notes.V1.decodeNote)
             Notes.V1.encodeGetNoteRequestBytes
             Notes.V1.decodeNoteBytes
+            |> Proto.Method.withoutRequestCheck
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
             |> Proto.Method.withRoutes [ routeGetNote0, routeGetNote1 ]
         )
@@ -101,6 +102,7 @@ createNote =
             (\_ -> Notes.V1.decodeNote)
             Notes.V1.encodeCreateNoteRequestBytes
             Notes.V1.decodeNoteBytes
+            |> Proto.Method.withoutRequestCheck
             |> Proto.Method.withRoutes [ routeCreateNote0 ]
         )
 
@@ -141,6 +143,7 @@ replaceNote =
             (\_ -> Notes.V1.decodeNote)
             Notes.V1.encodeNoteBytes
             Notes.V1.decodeNoteBytes
+            |> Proto.Method.withoutRequestCheck
             |> Proto.Method.withRoutes [ routeReplaceNote0 ]
         )
 
@@ -161,6 +164,7 @@ deleteNote =
             (\_ -> Proto.Json.empty)
             Notes.V1.encodeDeleteNoteRequestBytes
             (Proto.Binary.messageDecoder Proto.Binary.empty)
+            |> Proto.Method.withoutRequestCheck
             |> Proto.Method.withRoutes [ routeDeleteNote0 ]
         )
 
@@ -181,6 +185,7 @@ archiveNote =
             (\_ -> Notes.V1.decodeNote)
             Notes.V1.encodeArchiveNoteRequestBytes
             Notes.V1.decodeNoteBytes
+            |> Proto.Method.withoutRequestCheck
             |> Proto.Method.withRoutes [ routeArchiveNote0 ]
         )
 
@@ -201,6 +206,7 @@ readFile =
             (\_ -> Notes.V1.decodeSummary)
             Notes.V1.encodeReadFileRequestBytes
             Notes.V1.decodeSummaryBytes
+            |> Proto.Method.withoutRequestCheck
             |> Proto.Method.withRoutes [ routeReadFile0 ]
         )
 
@@ -221,6 +227,7 @@ ping =
             (\_ -> Proto.Json.empty)
             (Proto.Binary.messageEncoder Proto.Binary.empty)
             (Proto.Binary.messageDecoder Proto.Binary.empty)
+            |> Proto.Method.withoutRequestCheck
             |> Proto.Method.withRoutes [ routePing0 ]
         )
 

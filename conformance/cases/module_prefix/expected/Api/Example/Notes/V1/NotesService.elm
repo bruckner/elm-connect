@@ -43,6 +43,7 @@ getNote =
             (\_ -> Api.Example.Notes.V1.decodeNote)
             Api.Example.Notes.V1.encodeGetNoteRequestBytes
             Api.Example.Notes.V1.decodeNoteBytes
+            |> Proto.Method.withoutRequestCheck
             |> Proto.Method.withRoutes [ routeGetNote0 ]
         )
 

@@ -45,6 +45,7 @@ listArchived =
             (\_ -> Msgs.V1.decodeMessage)
             Msgs.V1.encodeMessageRequestBytes
             Msgs.V1.decodeMessageBytes
+            |> Proto.Method.withoutRequestCheck
             |> Proto.Method.withRoutes [ routeListArchived0 ]
         )
 

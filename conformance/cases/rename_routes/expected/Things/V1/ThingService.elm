@@ -44,6 +44,7 @@ getThing =
             (\_ -> Things.V1.decodeThing)
             Things.V1.encodeGetThingRequestBytes
             Things.V1.decodeThingBytes
+            |> Proto.Method.withoutRequestCheck
             |> Proto.Method.withRoutes [ routeGetThing0 ]
         )
 

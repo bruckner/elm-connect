@@ -57,6 +57,7 @@ getBlob =
             (\_ -> Blobs.V1.decodeBlob)
             Blobs.V1.encodeBlobBytes
             Blobs.V1.decodeBlobBytes
+            |> Proto.Method.withoutRequestCheck
             |> Proto.Method.withRoutes [ routeGetBlob0, routeGetBlob1 ]
         )
 
@@ -77,6 +78,7 @@ findBlob =
             (\_ -> Blobs.V1.decodeBlob)
             Blobs.V1.encodeBlobBytes
             Blobs.V1.decodeBlobBytes
+            |> Proto.Method.withoutRequestCheck
             |> Proto.Method.withRoutes [ routeFindBlob0 ]
         )
 
@@ -140,6 +142,7 @@ addFolder =
             (\_ -> Blobs.V1.decodeFolder)
             Blobs.V1.encodeFolderBytes
             Blobs.V1.decodeFolderBytes
+            |> Proto.Method.withoutRequestCheck
             |> Proto.Method.withRoutes [ routeAddFolder0 ]
         )
 
@@ -160,6 +163,7 @@ moveFolder =
             (\_ -> Blobs.V1.decodeFolder)
             Blobs.V1.encodeFolderBytes
             Blobs.V1.decodeFolderBytes
+            |> Proto.Method.withoutRequestCheck
             |> Proto.Method.withRoutes [ routeMoveFolder0 ]
         )
 
@@ -180,6 +184,7 @@ touch =
             (\_ -> Blobs.V1.decodeSlots)
             Blobs.V1.encodeSlotsBytes
             Blobs.V1.decodeSlotsBytes
+            |> Proto.Method.withoutRequestCheck
             |> Proto.Method.withRoutes [ routeTouch0 ]
         )
 

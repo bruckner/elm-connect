@@ -41,6 +41,7 @@ getItem =
             "GetItem"
             Vault.V1.encodeGetItemRequest
             (\_ -> Vault.V1.decodeItem)
+            |> Proto.Method.withoutRequestCheck
             |> Proto.Method.withRoutes [ routeGetItem0 ]
         )
 

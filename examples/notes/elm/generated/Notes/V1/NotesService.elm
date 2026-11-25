@@ -67,6 +67,7 @@ getNote =
             Notes.V1.decodeNoteWith
             Notes.V1.encodeGetNoteRequestBytes
             Notes.V1.decodeNoteBytes
+            |> Proto.Method.withoutRequestCheck
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
             |> Proto.Method.withRoutes [ routeGetNote0 ]
         )
@@ -90,6 +91,7 @@ listNotes =
             Notes.V1.decodeListNotesResponseWith
             Notes.V1.encodeListNotesRequestBytes
             Notes.V1.decodeListNotesResponseBytes
+            |> Proto.Method.withoutRequestCheck
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
             |> Proto.Method.withRoutes [ routeListNotes0 ]
         )
@@ -159,6 +161,7 @@ deleteNote =
             (\_ -> Proto.Json.empty)
             Notes.V1.encodeDeleteNoteRequestBytes
             (Proto.Binary.messageDecoder Proto.Binary.empty)
+            |> Proto.Method.withoutRequestCheck
             |> Proto.Method.withRoutes [ routeDeleteNote0 ]
         )
 
@@ -181,6 +184,7 @@ archiveNote =
             Notes.V1.decodeNoteWith
             Notes.V1.encodeArchiveNoteRequestBytes
             Notes.V1.decodeNoteBytes
+            |> Proto.Method.withoutRequestCheck
             |> Proto.Method.withRoutes [ routeArchiveNote0 ]
         )
 

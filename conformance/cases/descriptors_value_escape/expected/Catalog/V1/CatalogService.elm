@@ -48,6 +48,7 @@ getEntry =
             (\_ -> Catalog.V1.decodeEntry)
             Catalog.V1.encodeGetEntryRequestBytes
             Catalog.V1.decodeEntryBytes
+            |> Proto.Method.withoutRequestCheck
             |> Proto.Method.withRoutes [ routeGetEntry0 ]
         )
 
