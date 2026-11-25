@@ -519,7 +519,8 @@ request bodies now hold only what the message holds. Where: design
 
 ### Accept on read what the wire admits, refuse on a JSON write
 
-*2026-11-24.*
+*2026-11-24. Since 2026-11-25 the encoder type and the calls that run it
+are `Proto.Json.Encode`'s (`Proto.Json` split by reader).*
 
 A read accepts whatever the wire admits; a JSON write refuses a value
 proto3 JSON has no form for, as protobuf's own JSON writers do: a
@@ -1025,8 +1026,8 @@ modifier and accessor, a minor. Where: design §3.1, §3.9, §5.1, §8.3.
 
 ### The runtime's module rules
 
-*2026-10-16; rules 4 and 5 2026-10-17; rule 6 2026-10-19; rule 7
-2026-10-21.*
+*2026-10-16; rules 4 and 5 2026-10-17; rule 6 2026-10-19, revised
+2026-11-25 (`Proto.Json` split by reader); rule 7 2026-10-21.*
 
 The seven rules the runtime's modules follow: a module per proto
 concept, builders named for what they build, union constructors
@@ -1036,6 +1037,53 @@ one direction. Before rule 6, the helpers `object`, `dict` and
 `boolDict` shared their names with elm/json functions of another type
 (`Json.Encode.object`, `Json.Encode.dict`). Rule 7 keeps a package
 split possible (above, "No package split"). Where: design §3.1.
+
+### `Proto.Json` split by reader
+
+*2026-11-25.*
+
+`Proto.Json` held 103 names, 3,100 lines of the decoders and encoders an
+application calls beside the field-by-field helpers generated code
+calls. It is three modules now. `Proto.Json.Encode` and
+`Proto.Json.Decode` mirror elm/json and hold the application's part: the
+encoder type `Encoder`, `encode`, `encodeWith`, `encodeTotal` and
+`succeed`, and the well-known types' encoders, renamed for their type as
+elm/json names its encoders (`writeTimestamp` is `timestamp`,
+`writeStruct` is `struct`); and the twenty scalar and well-known
+decoders, names unchanged (`int64`, `timestamp`, `anyWith`).
+`Proto.Json` keeps the 71 names generated code calls, documented as
+that. Each function has one name: `Proto.Json` keeps no alias of a moved
+one, and a generated module imports the new modules where it uses a
+moved name. The alternative, aliases in `Proto.Json` so that generated
+code would not change, was rejected: two names for one function in the
+docs, and a definition more in every program that uses one.
+
+The encoder type is `Proto.Json.Encode.Encoder`, and the leaf module
+`Proto.Json.Encoder` that held it is gone. `Proto.Message` and
+`Proto.Method` name the type, so `Proto.Json.Encode` imports neither
+them nor `Proto.Any`, which imports `Proto.Message`: the registry's
+type is `Proto.Registry`'s, which imports only internal modules, and
+each well-known encoder's type is its own module's (`Proto.Duration`,
+`Proto.Value`, elm/time's `Posix`). Only `Any`'s encoder stood in the
+way, and it went to `Proto.Any`, as `Proto.Any.encode`, beside
+`toJson` and the `Any`'s other conversions, rather than staying in
+`Proto.Json` under its old name, `writeAny`: an application writing a
+lone `Any` (`Proto.Json.Encode.encodeWith registry (Proto.Any.encode
+any)`) then calls no module documented as generated code's. A decoder
+type of its own, if one comes, would sit in `Proto.Json.Decode` on the
+same terms, with `anyWith` moving beside `Proto.Any.encode`.
+
+What a program links did not change: the moved definitions are the
+same code under new names. Where `Proto.Json.Decode` and `Proto.Json`
+share code, it is in the internal `Proto.Internal.JsonRead`; the three
+`nested` decoders of `Struct`, `ListValue` and `Value` are each a
+one-line definition in `Proto.Json` naming that code, one definition
+more (a few bytes minified) in a program whose generated code reads one
+of these types at a depth. The notes example, which does, measured 6
+bytes more minified and 17 fewer gzipped; a program that writes no
+JSON, one writing a message that cannot refuse, and a JSON-only client
+link the same definitions as before, within 6 bytes gzipped. Where:
+design §3.1 (rule 6), §3.5.
 
 ### `Rpc` and `Proto` as the top-level names
 

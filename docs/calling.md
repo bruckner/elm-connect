@@ -35,8 +35,9 @@ calling:
 | `Rpc.Request`, `Rpc.Response`, `Rpc.Body` | a request and an answer as data, in the pure halves and errors |
 | `Rpc.Error` | why a call failed: its kind, code, message and details |
 | `Rpc.Code` | the codes an RPC fails with |
-| `Proto.Json` | the proto3 JSON helpers generated codecs call, and writing a message's JSON yourself ([below](#writing-json-yourself)) |
-| `Proto.Json.Encoder` | the encoder's type, which `Proto.Json` names `Proto.Json.Encoder` |
+| `Proto.Json.Encode` | writing a message's proto3 JSON yourself ([below](#writing-json-yourself)), and the encoder's type |
+| `Proto.Json.Decode` | reading proto3 JSON's scalar and well-known values in a decoder you write |
+| `Proto.Json` | the proto3 JSON helpers generated codecs call |
 | `Proto.Binary` | the protobuf binary wire format over elm/bytes, for binary codecs |
 | `Proto.Unknown` | the fields read from a protobuf binary whose field numbers or types are unrecognized, kept under `unknown_fields=keep` ([generator.md](generator.md#options)) |
 | `Proto.Timestamp`, `Proto.Duration`, `Proto.Value`, `Proto.Int64`, `Proto.Bytes` | the well-known types' Elm forms (`Proto.Value` for `Value`, `Struct` and `ListValue`), and conversions for 64-bit integers and bytes |
@@ -331,7 +332,7 @@ end, is the application's own:
 
 | What the application does | Overflows past about (node, Chromium / Firefox / WebKit) |
 |---|---|
-| `Proto.Json.encode` of a message it built (generated encoder): a recursive message, a `Struct` | 600 to 800, 400 to 600 / 800 to 1,000, 600 to 800 / 3,000 to 5,000, 10,000 to 20,000 levels |
+| `Proto.Json.Encode.encode` of a message it built (generated encoder): a recursive message, a `Struct` | 600 to 800, 400 to 600 / 800 to 1,000, 600 to 800 / 3,000 to 5,000, 10,000 to 20,000 levels |
 | binary encoding of a value it built (`Proto.Binary.encode`, `Proto.Any.pack`, `Rpc.request` of a binary call) | 480 / 610 / 5,500 levels |
 | `Json.Encode.encode` of a `Json.Encode.Value` it built | 5,000 to 6,000 / 3,700 / 40,000 levels |
 | `Json.Decode.errorToString` of an error from its own `Json.Decode.decodeString` or `decodeValue` with a generated decoder, which the runtime never sees to scrub | 2,600 to 3,100 / 2,050 / 11,700 input levels |
@@ -992,31 +993,40 @@ traced send gives them as trailers.
 
 A call writes its request itself. To write a message's proto3 JSON
 outside a call, to store it or send it some other way, run its
-generated encoder with `Proto.Json`:
+generated encoder with `Proto.Json.Encode`:
 
 ```text
-Proto.Json.encodeTotal (Notes.V1.encodeGetNoteRequest request)
+Proto.Json.Encode.encodeTotal (Notes.V1.encodeGetNoteRequest request)
 --> a Json.Encode.Value
 
-Proto.Json.encode (encodeEvent event)
+Proto.Json.Encode.encode (encodeEvent event)
 --> Result Proto.Error.Error Json.Encode.Value, for an event holding a Timestamp
 
-Proto.Json.encodeWith registry (Notes.V1.encodeNote note)
+Proto.Json.Encode.encodeWith registry (Notes.V1.encodeNote note)
 --> the same, an Any in the note converted through registry
 ```
 
-A generated `encodeNote : Note -> Proto.Json.Encoder x` describes the
-JSON and writes nothing until one of the three runs it. Its type says
+A generated `encodeNote : Note -> Proto.Json.Encode.Encoder x` describes
+the JSON and writes nothing until one of the three runs it. Its type says
 whether the write can be refused:
 
-- `Proto.Json.Encoder x`, free in `x`: the message holds nothing a write
-  can refuse, and `encodeTotal` writes it with no `Result`.
-- `Proto.Json.Encoder Proto.Error.Error`: the message holds, at any depth,
+- `Proto.Json.Encode.Encoder x`, free in `x`: the message holds nothing a
+  write can refuse, and `encodeTotal` writes it with no `Result`.
+- `Proto.Json.Encode.Encoder Proto.Error.Error`: the message holds, at any depth,
   a `Timestamp`, `Duration`, `FieldMask`, `Struct`, `Value`, `ListValue`
   or `Any`. `encode` writes it, or refuses; `encodeWith registry` does
   the same with the registry an `Any` it holds converts through
   ([descriptors.md](descriptors.md#registries)), where `encode` has an
   empty one.
+
+A well-known value written alone, outside a message, has its encoder in
+`Proto.Json.Encode` too, named for its type
+(`Proto.Json.Encode.encode (Proto.Json.Encode.timestamp posix)`), and a
+lone `Any` has `Proto.Any.encode`, run with `encodeWith` and the registry
+it converts through. Reading goes the other way through
+`Proto.Json.Decode`, whose decoders read proto3 JSON's scalar and
+well-known values (`Proto.Json.Decode.int64`, `timestamp`) in a decoder
+you write; a message is read with its generated decoder.
 
 A refusal is `Proto.Error.BadValue { typeName, path, message }` for a
 value proto3 JSON has no form for: a `Timestamp` outside years 1 to
@@ -1048,10 +1058,10 @@ is not sent. The call fails as a `BadCall`: `Rpc.Error.badValue`'s
 query included ([transcoding.md](transcoding.md#what-a-call-sends)).
 Over protobuf binary the call is sent.
 
-Hand-written values go in as encoders too: `Proto.Json.succeed` makes an
+Hand-written values go in as encoders too: `Proto.Json.Encode.succeed` makes an
 encoder of JSON already written, for a `Proto.Message` or a method built
 by hand (`Proto.Method.initJson "notes.v1.Notes" "GetNote"
-(Proto.Json.succeed << encodeMine) decoder`).
+(Proto.Json.Encode.succeed << encodeMine) decoder`).
 
 ## Wrapping the sending once
 

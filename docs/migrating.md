@@ -422,9 +422,12 @@ JSON.
   binary and `toJson registry` its proto3 JSON, failing with
   `UnregisteredType` or `BadBinary`, of a nested `Any` named by its own
   type.
-- Proto3 JSON of an `Any` goes through a registry: `Proto.Json.anyWith
-  registry` replaces `any`, and a message holding an `Any` is written
-  with `Proto.Json.encodeWith registry`, where 0.1 had `encodeAny`.
+- Proto3 JSON of an `Any` goes through a registry:
+  `Proto.Json.Decode.anyWith registry` replaces `Proto.Json.any`, and a
+  message holding an `Any` is written with
+  `Proto.Json.Encode.encodeWith registry`, a lone `Any` with
+  `Proto.Json.Encode.encodeWith registry (Proto.Any.encode any)`, where
+  0.1 had `encodeAny`.
   An `"@type"` the registry lacks fails the read, naming the URL, and
   the write gives `UnregisteredType`, as protojson does; 0.1 kept such
   an `Any` as JSON. `Proto.Registry.lenient` makes a registry keep it as
@@ -439,10 +442,10 @@ JSON.
   `Notes.V1.Note.descriptor`.
 - A generated message that reaches an `Any` has `decodeNoteWith`, which
   takes the registry, in place of `decodeNote`.
-- A generated encoder gives a `Proto.Json.Encoder`, not a
-  `Json.Encode.Value`: `Proto.Json.encodeTotal (encodeNote note)` writes
-  one that nothing it holds can refuse, as `encodeNote note` did, and
-  `Proto.Json.encode` or `encodeWith registry` one that can (a message
+- A generated encoder gives a `Proto.Json.Encode.Encoder`, not a
+  `Json.Encode.Value`: `Proto.Json.Encode.encodeTotal (encodeNote note)`
+  writes one that nothing it holds can refuse, as `encodeNote note` did,
+  and `Proto.Json.Encode.encode` or `encodeWith registry` one that can (a message
   holding an `Any`, a `Timestamp`, `Duration`, `FieldMask`, `Struct`,
   `Value` or `ListValue`), giving a `Result`: a value proto3 JSON has no
   form for is refused with `Proto.Error.BadValue`, where 0.1 wrote it.
@@ -462,7 +465,7 @@ JSON.
 - A method holds no registry: a hand-written method's JSON codecs take
   the client's (`Proto.Method.initJson "notes.v1.NotesService" "GetNote"
   encodeGetNoteRequest (\_ -> decodeNote)`); a hand-written encoder `f :
-  a -> Json.Encode.Value` is given as `Proto.Json.succeed << f`.
+  a -> Json.Encode.Value` is given as `Proto.Json.Encode.succeed << f`.
   `Proto.Method.encodeRequest`, `responseDecoder`, `Rpc.Call.requestJson`
   and `Rpc.Call.toJson` take a registry, and the first, third and fourth
   give a `Result`.
@@ -534,6 +537,26 @@ extraJson note =
 A singular `Value` field stays a `Maybe`: `Nothing` is absent, and the
 JSON `null` is `Just ValueNull` where it was `Just Json.Encode.null`.
 
+## The JSON modules
+
+`Proto.Json` is three modules. `Proto.Json.Encode` writes a message's
+JSON and holds the well-known types' encoders; `Proto.Json.Decode` holds
+the scalar and well-known types' decoders, for a decoder written by hand;
+`Proto.Json` keeps the helpers generated code calls. Regenerating moves
+generated code; code of your own that named a moved helper changes its
+module:
+
+| 0.1 | 0.2 |
+|---|---|
+| `Proto.Json.int32`, `uint32`, `int64`, `uint64`, `int64AsInt`, `uint64AsInt`, `float`, `bytes`, `bytesAsBytes` | `Proto.Json.Decode.int32` and the rest, names unchanged |
+| `Proto.Json.timestamp`, `duration`, `fieldMask`, `empty`, `struct`, `listValue` | `Proto.Json.Decode.timestamp` and the rest, names unchanged |
+| `Proto.Json.any` | `Proto.Json.Decode.anyWith registry` (above) |
+| `Proto.Json.encodeTimestamp t`, `encodeDuration`, `encodeFieldMask`, `encodeStruct`, `encodeListValue` | `Proto.Json.Encode.encode (Proto.Json.Encode.timestamp t)` and the rest (`duration`, `fieldMask`, `struct`, `listValue`), which refuse a value proto3 JSON has no form for |
+| `Proto.Json.encodeAny` | `Proto.Any.encode`, written with `Proto.Json.Encode.encodeWith registry` |
+
+New decoders are there too: `string`, which refuses a lone surrogate,
+`float32`, `nullValue` and `value`.
+
 ## The generator
 
 - Every message gets both codecs, proto3 JSON and protobuf binary, its
@@ -571,8 +594,8 @@ close though:
 
     Proto.Version.v0_2
     Proto.Json.enum
-    Proto.Json.bytes
-    Proto.Json.empty
+    Proto.Json.memo
+    Proto.Json.field
 ```
 
 Regenerate with the 0.2 binary, with the options used before.
@@ -587,12 +610,16 @@ that changed again before the release:
 
 | On `main` | In 0.2 |
 |---|---|
-| `encodeNoteWith registry note` (a generated encoder taking the registry, giving a `Result`) | `Proto.Json.encodeWith registry (encodeNote note)` |
-| `encodeNote note : Json.Encode.Value` | `Proto.Json.encodeTotal (encodeNote note)`, or `Proto.Json.encode (encodeNote note)` when `encodeNote` can refuse |
-| `Proto.Json.encodeAnyWith registry any` | `Proto.Json.encodeWith registry (Proto.Json.writeAny any)`, or `Proto.Any.toJson registry any` for its message's JSON alone |
-| `Proto.Json.encodeTimestamp`, `encodeDuration`, `encodeFieldMask`, `encodeStruct`, `encodeValue`, `encodeListValue` | `Proto.Json.encode (Proto.Json.writeTimestamp t)` and the other `write` helpers; `Proto.Value.toJson` writes a `Value` unchecked |
-| `Proto.Json.encodeNestedAnyWith`, `registryDeeper`, `tryObjectOfFields` and the other `try` helpers | generated code's `writeAny`, `writeDeeper`, `writeObject` and the `write` helpers |
-| `Proto.Message.init name f …`, `Proto.Method.initJson s m (\_ -> Ok << f) …` with `f : a -> Json.Encode.Value` | `Proto.Message.init name (Proto.Json.succeed << f) …`, `Proto.Method.initJson s m (Proto.Json.succeed << f) …`, or the generated `encodeNote` |
+| `encodeNoteWith registry note` (a generated encoder taking the registry, giving a `Result`) | `Proto.Json.Encode.encodeWith registry (encodeNote note)` |
+| `encodeNote note : Json.Encode.Value` | `Proto.Json.Encode.encodeTotal (encodeNote note)`, or `Proto.Json.Encode.encode (encodeNote note)` when `encodeNote` can refuse |
+| `Proto.Json.encodeAnyWith registry any` | `Proto.Json.Encode.encodeWith registry (Proto.Any.encode any)`, or `Proto.Any.toJson registry any` for its message's JSON alone |
+| `Proto.Json.encodeTimestamp`, `encodeDuration`, `encodeFieldMask`, `encodeStruct`, `encodeValue`, `encodeListValue` | `Proto.Json.Encode.encode (Proto.Json.Encode.timestamp t)` and the other well-known encoders (`duration`, `fieldMask`, `struct`, `value`, `listValue`); `Proto.Value.toJson` writes a `Value` unchecked |
+| `Proto.Json.encodeNestedAnyWith`, `registryDeeper`, `tryObjectOfFields` and the other `try` helpers | generated code's `Proto.Any.encode`, `writeDeeper`, `writeObject` and the `write` helpers |
+| `Proto.Json.Encoder`, `Proto.Json.Encoder.Encoder`, `Proto.Json.encode`, `encodeWith`, `encodeTotal`, `succeed` | `Proto.Json.Encode.Encoder`, `Proto.Json.Encode.encode`, `encodeWith`, `encodeTotal`, `succeed` |
+| `Proto.Json.writeTimestamp`, `writeDuration`, `writeFieldMask`, `writeStruct`, `writeListValue`, `writeValue` | `Proto.Json.Encode.timestamp`, `duration`, `fieldMask`, `struct`, `listValue`, `value` |
+| `Proto.Json.writeAny` | `Proto.Any.encode` |
+| `Proto.Json.string`, `float32`, `nullValue`, `value`, `anyWith` and the other scalar and well-known decoders | `Proto.Json.Decode.string` and the rest, names unchanged ([The JSON modules](#the-json-modules)) |
+| `Proto.Message.init name f …`, `Proto.Method.initJson s m (\_ -> Ok << f) …` with `f : a -> Json.Encode.Value` | `Proto.Message.init name (Proto.Json.Encode.succeed << f) …`, `Proto.Method.initJson s m (Proto.Json.Encode.succeed << f) …`, or the generated `encodeNote` |
 | `Rpc.request client call : Rpc.Request` | `Rpc.request client call : Result Rpc.Error Rpc.Request` |
 | a request value with no JSON form, written wrongly and sent | refused before sending: `Rpc.Error.badValue { typeName, path, message }` (`InvalidArgument`) |
 | a route function of a `Value` body, `Free -> Proto.Route.Route` | `Free -> Json.Encode.Value -> Proto.Route.Route`, given to `Proto.Method.withJsonRoutes` (regenerate) |

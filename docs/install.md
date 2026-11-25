@@ -334,9 +334,9 @@ The `Proto.Version` module does not expose a `v0_1` variable. These names seem
 close though:
 
     Proto.Version.v0_2
-    Proto.Json.any
     Proto.Json.enum
-    Proto.Json.int32
+    Proto.Json.memo
+    Proto.Json.field
 
 Hint: Read <https://elm-lang.org/0.19.3/imports> to see how `import`
 declarations work in Elm.
