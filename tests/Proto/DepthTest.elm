@@ -58,6 +58,8 @@ suite =
         , valueRefusals
         , valueErrorsShort
         , theFailureStatesTheLimit
+        , failurePaths
+        , severalMessages
         ]
 
 
@@ -1830,4 +1832,259 @@ valueErrorsShort =
                     ()
         , test "100,000 levels" <|
             \_ -> decodeValueMessage (parsed (nestedArrays 100000)) |> printsWithin 300
+        ]
+
+
+
+-- WHERE THE FAILURE IS, AND CYCLES OF SEVERAL MESSAGES
+
+
+{-| A cycle read from one of its messages: how to read it from binary and
+from JSON, the binary prefix of the message at a depth holding the next
+level, the JSON around the next level, and the keys leading from the
+message at a depth to the next level.
+-}
+type alias Entered =
+    { name : String
+    , binary : Bytes -> Result Proto.Error.Binary ()
+    , json : String -> Result Json.Decode.Error ()
+    , prefix : Int -> Int -> List Int
+    , open : Int -> String
+    , close : Int -> String
+    , keys : Int -> List String
+    }
+
+
+asShape : Entered -> Shape
+asShape entered =
+    { name = entered.name
+    , binary = entered.binary
+    , json = entered.json
+    , prefix = entered.prefix
+    , open = entered.open
+    , close = entered.close
+    }
+
+
+{-| The two messages that hold each other, read from `Person` (`offset` 0)
+or from `Team` (1): the message at a depth is a `Person` when
+`modBy 2 (depth + offset)` is 1.
+-}
+personTeam : String -> Int -> (String -> Result Json.Decode.Error ()) -> (Bytes -> Result Proto.Error.Binary ()) -> Entered
+personTeam name offset json binary =
+    let
+        isPerson depth =
+            modBy 2 (depth + offset) == 1
+    in
+    { name = name
+    , binary = binary
+    , json = json
+    , prefix =
+        \depth size ->
+            if isPerson depth then
+                0x12 :: varint size
+
+            else
+                0x0A :: varint size
+    , open =
+        \depth ->
+            if isPerson depth then
+                "{\"team\":"
+
+            else
+                "{\"members\":["
+    , close =
+        \depth ->
+            if isPerson depth then
+                "}"
+
+            else
+                "]}"
+    , keys =
+        \depth ->
+            if isPerson depth then
+                [ "team" ]
+
+            else
+                [ "members", "0" ]
+    }
+
+
+{-| The three messages, read from `First` (`offset` 0), `Second` (1) or
+`Third` (2).
+-}
+firstSecondThird : String -> Int -> (String -> Result Json.Decode.Error ()) -> (Bytes -> Result Proto.Error.Binary ()) -> Entered
+firstSecondThird name offset json binary =
+    let
+        which depth =
+            modBy 3 (depth + offset)
+    in
+    { name = name
+    , binary = binary
+    , json = json
+    , prefix = \_ size -> 0x0A :: varint size
+    , open =
+        \depth ->
+            case which depth of
+                1 ->
+                    "{\"second\":"
+
+                2 ->
+                    "{\"third\":"
+
+                _ ->
+                    "{\"firsts\":["
+    , close =
+        \depth ->
+            if which depth == 0 then
+                "]}"
+
+            else
+                "}"
+    , keys =
+        \depth ->
+            case which depth of
+                1 ->
+                    [ "second" ]
+
+                2 ->
+                    [ "third" ]
+
+                _ ->
+                    [ "firsts", "0" ]
+    }
+
+
+enteredShapes : List Entered
+enteredShapes =
+    [ { name = "a message that holds itself"
+      , binary = Proto.Binary.decode Deep.decodeChainBytes >> ok
+      , json = Json.Decode.decodeString Deep.decodeChain >> ok
+      , prefix = \_ size -> 0x12 :: varint size
+      , open = \_ -> "{\"next\":"
+      , close = \_ -> "}"
+      , keys = \_ -> [ "next" ]
+      }
+    , { name = "through a list"
+      , binary = Proto.Binary.decode Deep.decodeTreeBytes >> ok
+      , json = Json.Decode.decodeString Deep.decodeTree >> ok
+      , prefix = \_ size -> 0x12 :: varint size
+      , open = \_ -> "{\"children\":["
+      , close = \_ -> "]}"
+      , keys = \_ -> [ "children", "0" ]
+      }
+    , { name = "through a map's values"
+      , binary = Proto.Binary.decode Deep.decodeDirBytes >> ok
+      , json = Json.Decode.decodeString Deep.decodeDir >> ok
+      , prefix =
+            \_ size ->
+                let
+                    entry =
+                        [ 0x0A, 1, 0x61, 0x12 ] ++ varint size
+                in
+                0x0A :: varint (List.length entry + size) ++ entry
+      , open = \_ -> "{\"entries\":{\"a\":"
+      , close = \_ -> "}}"
+      , keys = \_ -> [ "entries", "a" ]
+      }
+    , { name = "through a oneof member"
+      , binary = Proto.Binary.decode Deep.decodeExprBytes >> ok
+      , json = Json.Decode.decodeString Deep.decodeExpr >> ok
+      , prefix = \_ size -> 0x12 :: varint size
+      , open = \_ -> "{\"negated\":"
+      , close = \_ -> "}"
+      , keys = \_ -> [ "negated" ]
+      }
+    , personTeam "two messages, read from the first" 0 (Json.Decode.decodeString Deep.decodePerson >> ok) (Proto.Binary.decode Deep.decodePersonBytes >> ok)
+    , personTeam "two messages, read from the second" 1 (Json.Decode.decodeString Deep.decodeTeam >> ok) (Proto.Binary.decode Deep.decodeTeamBytes >> ok)
+    , firstSecondThird "three messages, read from the first" 0 (Json.Decode.decodeString Deep.decodeFirst >> ok) (Proto.Binary.decode Deep.decodeFirstBytes >> ok)
+    , firstSecondThird "three messages, read from the second" 1 (Json.Decode.decodeString Deep.decodeSecond >> ok) (Proto.Binary.decode Deep.decodeSecondBytes >> ok)
+    , firstSecondThird "three messages, read from the third" 2 (Json.Decode.decodeString Deep.decodeThird >> ok) (Proto.Binary.decode Deep.decodeThirdBytes >> ok)
+    , { name = "wider than a record literal"
+      , binary = Proto.Binary.decode Deep.decodeWideBytes >> ok
+      , json = Json.Decode.decodeString Deep.decodeWide >> ok
+      , prefix = \_ size -> 0x8A :: 0x04 :: varint size
+      , open = \_ -> "{\"children\":["
+      , close = \_ -> "]}"
+      , keys = \_ -> [ "children", "0" ]
+      }
+    ]
+
+
+{-| A JSON read one level past the limit fails at the value one level too
+deep, the 101st message, and nowhere else.
+-}
+failurePaths : Test
+failurePaths =
+    describe "the JSON failure is at the 101st message"
+        (List.map
+            (\shape ->
+                test shape.name <|
+                    \_ ->
+                        case shape.json (jsonOf (asShape shape) 101) of
+                            Ok () ->
+                                Expect.fail "read past the limit"
+
+                            Err error ->
+                                failureAt error
+                                    |> Expect.equal (Just ( List.concatMap shape.keys (List.range 1 100), tooDeepText ))
+            )
+            enteredShapes
+        )
+
+
+severalMessages : Test
+severalMessages =
+    describe "cycles of several messages"
+        [ describe "read from each of their messages, binary" (List.map (asShape >> binaryShape) enteredShapes)
+        , describe "read from each of their messages, JSON" (List.map (asShape >> jsonShape) enteredShapes)
+        , test "a value read" <|
+            \_ ->
+                Json.Decode.decodeString Deep.decodePerson
+                    "{\"name\":\"a\",\"team\":{\"members\":[{\"name\":\"b\"},{\"name\":\"c\",\"team\":{}}]}}"
+                    |> Expect.equal
+                        (Ok
+                            { name = "a"
+                            , team =
+                                Just
+                                    (Deep.Team_
+                                        { members =
+                                            [ Deep.Person_ { name = "b", team = Nothing }
+                                            , Deep.Person_ { name = "c", team = Just (Deep.Team_ { members = [] }) }
+                                            ]
+                                        }
+                                    )
+                            }
+                        )
+        , test "three messages, a value read" <|
+            \_ ->
+                Json.Decode.decodeString Deep.decodeThird
+                    "{\"firsts\":[{},{\"second\":{\"third\":{}}}]}"
+                    |> Expect.equal
+                        (Ok
+                            { firsts =
+                                [ Deep.First_ { second = Nothing }
+                                , Deep.First_ { second = Just (Deep.Second_ { third = Just (Deep.Third_ { firsts = [] }) }) }
+                                ]
+                            }
+                        )
+        , test "read held at a depth" <|
+            \_ ->
+                let
+                    reads decoder json =
+                        Json.Decode.decodeString decoder json |> ok
+                in
+                Expect.all
+                    [ \_ -> reads (Deep.decodeNestedTeam 100) "{\"members\":[]}" |> Expect.equal (Ok ())
+                    , \_ -> reads (Deep.decodeNestedTeam 100) "{\"members\":[{}]}" |> failsTooDeep
+                    , \_ -> reads (Deep.decodeNestedPerson 99) "{\"team\":{}}" |> Expect.equal (Ok ())
+                    , \_ -> reads (Deep.decodeNestedPerson 99) "{\"team\":{\"members\":[{}]}}" |> failsTooDeep
+                    , \_ -> reads (Deep.decodeNestedSecond 50) "{\"third\":{}}" |> Expect.equal (Ok ())
+                    , \_ -> reads (Deep.decodeNestedPerson 101) "{}" |> failsTooDeep
+                    , \_ -> reads (Deep.decodeNestedThird 101) "{}" |> failsTooDeep
+                    , \_ -> reads (Deep.decodeNestedTeam 0) "{}" |> failsTooDeep
+                    , \_ -> reads (Deep.decodeNestedTree 0) "{}" |> failsTooDeep
+                    , \_ -> reads (Deep.decodeNestedTree 101) "{}" |> failsTooDeep
+                    ]
+                    ()
         ]
