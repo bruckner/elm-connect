@@ -2377,8 +2377,10 @@ Both builders put one argument per line however short their
 arguments, so a method without bindings (`[]`) reads like one with
 them; the emitter asks the printer for that layout, which elm-format
 keeps. The modifiers follow one per line, each only when it says
-something: `withIdempotency` when the proto declares a level other
-than `IDEMPOTENCY_UNKNOWN`, `withRoutes` (`withJsonRoutes` when its
+something: `withoutRequestCheck` when the method has typed routes and
+nothing its request holds can refuse a JSON write, `withIdempotency`
+when the proto declares a level other than `IDEMPOTENCY_UNKNOWN`,
+`withRoutes` (`withJsonRoutes` when its
 bodies hold an `Any`) when the method has a rule (never under
 `wire=proto`), and after it `withResponseBody n "field"` for each
 binding whose rule names a `response_body`:
@@ -2443,7 +2445,8 @@ binding whose rule names a `response_body`:
   `Proto.Json.empty` for `Empty`, `Proto.Json.succeed <<
   Proto.Json.encodeInt64AsInt` for `Int64Value` under `int64=int`, `Basics.identity` qualified for
   `Value` so that a method called `identity` cannot capture it); then
-  `withIdempotency` with its level and
+  `withoutRequestCheck` for a method with typed routes whose request
+  cannot refuse a write, `withIdempotency` with its level and
   `withRoutes` with its route functions (below).
   Under `wire=both`, the default, it is built by `Proto.Method.init`
   from the names, those two codecs and the request type's `encode…Bytes` and the response type's
@@ -2503,7 +2506,10 @@ binding whose rule names a `response_body`:
   refuses a request with none (§3.4), so a route prints its path and
   query values unchecked, in their JSON text forms: what a request
   cannot carry as JSON is refused once, by that write, whatever the
-  binding. A method with a binding whose body holds a value the write
+  binding. A method whose request cannot refuse is generated
+  `withoutRequestCheck` and not written for that check, so its typed
+  route, `*` body included, is the only writer of what it sends. A
+  method with a binding whose body holds a value the write
   can refuse (an `Any`, a well-known value with no JSON form, `Value`
   included, or a message holding one) takes route functions of the
   request and that JSON (`withJsonRoutes`): such a body has no other
@@ -3029,7 +3035,7 @@ value (a route built once for a send, by the method's route function,
 check that its request has proto3 JSON,
 the write-limit check and the answer's reader, monomorphic from there
 on. Over JSON a send's plan (`toSend`, which `Rpc.request` and every way
-of sending make) encodes the request exactly once, as it is made and
+of sending make) encodes the request at most once, as it is made and
 before any route is built, and hands that one value to each part that
 reads it: the check, the route (a route read from the JSON by
 `withJsonRoutes` or `withBindings`), the body and the write limit. A
@@ -3040,7 +3046,17 @@ send makes in order, turns into the call's `BadCall`. The check runs on
 every call over JSON, whatever its route, since a method's encoder does
 not say whether its type can refuse and a path and a query print values
 in their JSON forms; a `GET` over a typed route pays one encode it did
-not need before. A plan made only to read an answer (`Rpc.response`)
+not need before. A method `withoutRequestCheck` (generated for a method
+with typed routes whose request cannot refuse) skips that encode only
+where nothing else reads the JSON, over a typed route under no write
+limit: its route is built from the typed request alone and its path and
+query are not checked, so a `GET` encodes nothing and a typed `*` body is
+written once. Wherever the JSON is read anyway, the body over Connect,
+the implicit route or a route of `FromJson` shape, or the write limit,
+it is encoded and checked as for any method, and no request is built
+without the JSON it sends; the flag is not verified, and on a request
+that can refuse its only cost is those unchecked path and query values.
+A plan made only to read an answer (`Rpc.response`)
 encodes nothing and builds no route: the response field is the method's
 data, not the route's.
 The functions a protocol is built of are one module per protocol, each

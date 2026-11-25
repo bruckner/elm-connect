@@ -1693,6 +1693,31 @@ which makes a `GET` of a message holding a `Timestamp` take the JSON it
 does not use and changes those methods' route types for nothing the
 check does not already give.
 
+2026-11-25: a method may ask not to have its request checked
+(`Proto.Method.withoutRequestCheck`): a send then does not write the
+request's JSON only to check it before building a typed route. The flag
+changes nothing else: wherever the JSON is written anyway (the body over
+Connect, the implicit route or a route that takes the JSON; the
+measurement under a write limit) a refusal is reported as for any
+method, so a wrong flag costs only that a typed route holding its own
+path, query and body prints values that were not checked. Generated code
+sets it on a method with typed routes whose request holds nothing a JSON
+write can refuse, which a corpus test holds it to; a transcoded `GET` of
+such a request then writes no JSON, and a typed `body: "*"` route, which
+the generator gives only such a request, is again the one writer of its
+body. Three shapes were considered. The request's encoder given again as
+`Encoder Never`, which the compiler checks but which repeats the encoder
+the method was built with. Builders of their own (`initTotal`,
+`initJsonTotal`), checked and not repeated, at the price of two more
+builders. And the bare flag, kept: nothing checks it, so it is named for
+what it does rather than for a property of the encoder, and its
+semantics are kept narrow so that it cannot hide a refusal the send
+would otherwise make. Also considered, and not adopted: making every
+`*` route a function of the request and the checked JSON, which removes
+the second write too but changes the type of every route of those
+methods, its siblings without a body included, and still writes the
+JSON for a request that needs no check.
+
 ### A binding's response field is the method's
 
 *2026-11-19.*

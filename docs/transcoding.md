@@ -43,12 +43,17 @@ holding a value proto3 JSON has no form for (a `Timestamp` outside years
 holding an `Any` the client's registry cannot write with
 `Rpc.Error.badAny` ([calling.md](calling.md#writing-json-yourself)). A
 path and a query write a value in its JSON form, so the check covers
-them as it covers the body, whichever binding the call takes. Its cost
-is one JSON encode of the request per call, which a `GET` did not need
-before: preparing the notes example's `GetNote`, one string, took 0.1 µs
-longer (0.44 to 0.54 µs in node), and `ListNotes` with four query fields
-0.2 µs longer (2.16 to 2.37 µs), against the milliseconds of the request
-itself.
+them as it covers the body, whichever binding the call takes. A
+generated method whose request holds nothing a write can refuse is
+`Proto.Method.withoutRequestCheck`: over one of its typed routes, with
+no write limit, the request is not written for the check, so the route
+is the only writer of what it sends: a `GET` writes no JSON and a
+`body: "*"` is written once. Elsewhere the JSON is written and checked
+as for any request. A hand-written method can set the flag too; nothing
+verifies it, and on a request that can refuse it lets such a route send
+path and query values that were not checked. Only a request that is
+checked pays the check, one JSON encode per call, which a `GET` did not
+need before, against the milliseconds of the request itself.
 
 The two kinds of body leave the path's fields in or out. `body: "*"`
 sends the request without the fields the path holds, since

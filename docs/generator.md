@@ -177,7 +177,11 @@ registry (`\_ -> Notes.V1.decodeNote` for a type that reaches no
 `Any`). Under
 `both`, the default, it is built by `Proto.Method.init` from those, then
 the request type's `encode…Bytes` and the response type's
-`decode…Bytes`, and its idempotency and routes as under `json`. Under
+`decode…Bytes`, and its idempotency and routes as under `json`. A
+method with typed routes whose request holds nothing a JSON write can
+refuse is piped through `Proto.Method.withoutRequestCheck`, so a send
+over one of its typed routes does not write the request first to check
+it. Under
 `wire=proto` it is built from the binary codecs alone (the `wire_proto`
 case):
 
