@@ -67,7 +67,7 @@ import Proto.Internal.Binding
 import Proto.Internal.Interpret
 import Proto.Internal.Method as Internal
 import Proto.Internal.Writer as Writer
-import Proto.Json.Encoder
+import Proto.Json.Encode
 import Proto.Registry exposing (Registry)
 import Proto.Route exposing (Route)
 
@@ -108,7 +108,7 @@ until [`withRoutes`](#withRoutes) or [`withBindings`](#withBindings) gives
 them, so that transcoding sends it over the implicit route.
 
 -}
-initJson : String -> String -> (req -> Proto.Json.Encoder.Encoder Proto.Error.Error) -> (Registry -> Json.Decode.Decoder res) -> Method Proto.Codec.Json req res
+initJson : String -> String -> (req -> Proto.Json.Encode.Encoder Proto.Error.Error) -> (Registry -> Json.Decode.Decoder res) -> Method Proto.Codec.Json req res
 initJson serviceName methodName encode decoder =
     Internal.Method
         { service = serviceName
@@ -157,7 +157,7 @@ sent over JSON: it fails as a [`BadCall`](Rpc-Error#Cause) whose message
 describes the problem.
 
 -}
-init : String -> String -> (req -> Proto.Json.Encoder.Encoder Proto.Error.Error) -> (Registry -> Json.Decode.Decoder res) -> (req -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder res -> Method codec req res
+init : String -> String -> (req -> Proto.Json.Encode.Encoder Proto.Error.Error) -> (Registry -> Json.Decode.Decoder res) -> (req -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder res -> Method codec req res
 init serviceName methodName encode decoder encodeBinary binaryDecoder =
     Internal.Method
         { service = serviceName

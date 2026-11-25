@@ -1,4 +1,4 @@
-module Proto.Internal.Any exposing (Any(..), Payload(..), base64Of, empty, nameOf)
+module Proto.Internal.Any exposing (Any(..), Payload(..), base64Of, empty, hasJsonForm, nameOf)
 
 {-| The `Any` type, defined here so that `Rpc` can build one from an error
 detail, which `Proto.Any` exposes only opaquely.
@@ -53,3 +53,29 @@ nameOf url =
         |> List.reverse
         |> List.head
         |> Maybe.withDefault url
+
+
+{-| The well-known types whose proto3 JSON is not an object of their fields. An
+`Any` holding one writes that form under `"value"`, beside `"@type"`.
+-}
+hasJsonForm : String -> Bool
+hasJsonForm url =
+    List.member (nameOf url)
+        [ "google.protobuf.Any"
+        , "google.protobuf.Timestamp"
+        , "google.protobuf.Duration"
+        , "google.protobuf.FieldMask"
+        , "google.protobuf.Empty"
+        , "google.protobuf.Struct"
+        , "google.protobuf.Value"
+        , "google.protobuf.ListValue"
+        , "google.protobuf.DoubleValue"
+        , "google.protobuf.FloatValue"
+        , "google.protobuf.Int64Value"
+        , "google.protobuf.UInt64Value"
+        , "google.protobuf.Int32Value"
+        , "google.protobuf.UInt32Value"
+        , "google.protobuf.BoolValue"
+        , "google.protobuf.StringValue"
+        , "google.protobuf.BytesValue"
+        ]

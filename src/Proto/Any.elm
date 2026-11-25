@@ -3,7 +3,7 @@ module Proto.Any exposing
     , pack, packWith
     , unpack, tryUnpack
     , bytes
-    , toJson
+    , toJson, encode
     , describe
     )
 
@@ -37,7 +37,7 @@ generated code gives each message:
 
 # Converting
 
-@docs toJson
+@docs toJson, encode
 
 
 # Describing
@@ -59,6 +59,8 @@ import Proto.Internal.Binary
 import Proto.Internal.JsonError as JsonError
 import Proto.Internal.Message as InternalMessage
 import Proto.Internal.Registry as InternalRegistry
+import Proto.Internal.Writer as Writer
+import Proto.Json.Encode
 import Proto.Message as Message exposing (Message)
 import Proto.Registry exposing (Registry)
 
@@ -223,7 +225,7 @@ bytes (Internal.Any _ payload) =
 {-| The packed message's proto3 JSON (for a well-known type with a JSON form
 of its own, such as `google.protobuf.Timestamp`, that form), converted from
 its binary through the registry's entry for its type: for showing an `Any`,
-and what [`Proto.Json.writeAny`](Proto-Json#writeAny) writes with
+and what [`encode`](#encode) writes with
 its `"@type"`. The empty `Any`, with no type URL, gives `{}`. It fails with
 [`UnregisteredType`](Proto-Error#Error) for a type the registry has no entry
 for, and with [`BadBinary`](Proto-Error#Error) when the binary is not that
@@ -276,6 +278,77 @@ toJson registry ((Internal.Any url payload) as any) =
         ( False, Internal.Binary base64 ) ->
             InternalRegistry.toJson registry (typeName any) base64
                 |> Maybe.withDefault (Err (UnregisteredType url))
+
+
+{-| The proto3 JSON encoder of an `Any`, for
+[`Proto.Json.Encode.encodeWith`](Proto-Json-Encode#encodeWith) to write with
+the registry it converts through:
+
+    Proto.Json.Encode.encodeWith registry (Proto.Any.encode detail)
+
+It writes the message's own JSON object with `"@type"` added, or
+`{"@type": …, "value": …}` for a well-known type with a JSON form of its own,
+its message's JSON converted from the binary by the registry
+([`toJson`](#toJson), which gives that JSON without `"@type"`). Written alone,
+as here or as a method's request, it counts nesting from the registry's own
+depth, as [`Proto.Json.Decode.anyWith`](Proto-Json-Decode#anyWith) reads one;
+held by a message, it counts on from its message's depth, as a read does. The
+empty `Any`, with no type URL, is `{}`. As protobuf's own JSON writers do, it fails for a type the
+registry has no entry for, with [`UnregisteredType`](Proto-Error#Error) naming
+its type URL, and for a binary that is not that message, with its
+[`BadBinary`](Proto-Error#Error); an `Any` the message holds fails the same
+ways, at any depth, named by its own type. An `Any` held as JSON alone, which
+a [lenient](Proto-Registry#lenient) registry reads, is written as that JSON:
+read through the registry's entry for its type first, and refused as
+`UnregisteredType` by a strict registry without one.
+
+-}
+encode : Any -> Proto.Json.Encode.Encoder Error
+encode ((Internal.Any url _) as held) =
+    if String.isEmpty url then
+        Writer.succeed (Json.Encode.object [])
+
+    else
+        Writer.deferred (\registry -> anyJson registry held)
+
+
+{-| An `Any`'s proto3 JSON: the message's own JSON object with `"@type"`
+added, or `{"@type": …, "value": …}` for a well-known type with a JSON form of
+its own; `{}` for the empty `Any`.
+-}
+anyJson : Registry -> Any -> Result Error Json.Encode.Value
+anyJson registry ((Internal.Any url _) as any) =
+    if String.isEmpty url then
+        Ok (Json.Encode.object [])
+
+    else
+        toJson registry any
+            |> Result.map (anyObject url)
+
+
+{-| An `Any`'s JSON object, from its type URL and its message's JSON.
+-}
+anyObject : String -> Json.Encode.Value -> Json.Encode.Value
+anyObject url json =
+    let
+        typed =
+            ( "@type", Json.Encode.string url )
+    in
+    if String.isEmpty url then
+        Json.Encode.object []
+
+    else if Internal.hasJsonForm url then
+        Json.Encode.object [ typed, ( "value", json ) ]
+
+    else
+        case Json.Decode.decodeValue (Json.Decode.keyValuePairs Json.Decode.value) json of
+            Ok pairs ->
+                Json.Encode.object (typed :: pairs)
+
+            Err _ ->
+                -- Only a hand-built record writes a message as other
+                -- than an object; this keeps its JSON whole.
+                Json.Encode.object [ typed, ( "value", json ) ]
 
 
 

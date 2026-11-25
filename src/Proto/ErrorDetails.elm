@@ -64,6 +64,8 @@ import Proto.Binary
 import Proto.Duration exposing (Duration)
 import Proto.Error
 import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 
@@ -434,9 +436,9 @@ defaultLocalizedMessage =
     }
 
 
-encodeErrorInfo : ErrorInfo -> Proto.Json.Encoder x
+encodeErrorInfo : ErrorInfo -> Proto.Json.Encode.Encoder x
 encodeErrorInfo value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "reason", Proto.Json.implicitField "" Json.Encode.string value.reason )
             , ( "domain", Proto.Json.implicitField "" Json.Encode.string value.domain )
@@ -445,18 +447,18 @@ encodeErrorInfo value =
         )
 
 
-encodeRetryInfo : RetryInfo -> Proto.Json.Encoder Proto.Error.Error
+encodeRetryInfo : RetryInfo -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeRetryInfo value =
     Proto.Json.writeObject
         [ Proto.Json.checkedFields
-            [ ( "retryDelay", Proto.Json.writeOptional Proto.Json.writeDuration value.retryDelay )
+            [ ( "retryDelay", Proto.Json.writeOptional Proto.Json.Encode.duration value.retryDelay )
             ]
         ]
 
 
-encodeDebugInfo : DebugInfo -> Proto.Json.Encoder x
+encodeDebugInfo : DebugInfo -> Proto.Json.Encode.Encoder x
 encodeDebugInfo value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "stackEntries", Proto.Json.repeatedField Json.Encode.string value.stackEntries )
             , ( "detail", Proto.Json.implicitField "" Json.Encode.string value.detail )
@@ -464,18 +466,18 @@ encodeDebugInfo value =
         )
 
 
-encodeQuotaFailure : QuotaFailure -> Proto.Json.Encoder x
+encodeQuotaFailure : QuotaFailure -> Proto.Json.Encode.Encoder x
 encodeQuotaFailure value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "violations", Proto.Json.totalRepeatedField encodeQuotaFailureViolation value.violations )
             ]
         )
 
 
-encodeQuotaFailureViolation : QuotaFailureViolation -> Proto.Json.Encoder x
+encodeQuotaFailureViolation : QuotaFailureViolation -> Proto.Json.Encode.Encoder x
 encodeQuotaFailureViolation value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "subject", Proto.Json.implicitField "" Json.Encode.string value.subject )
             , ( "description", Proto.Json.implicitField "" Json.Encode.string value.description )
@@ -489,18 +491,18 @@ encodeQuotaFailureViolation value =
         )
 
 
-encodePreconditionFailure : PreconditionFailure -> Proto.Json.Encoder x
+encodePreconditionFailure : PreconditionFailure -> Proto.Json.Encode.Encoder x
 encodePreconditionFailure value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "violations", Proto.Json.totalRepeatedField encodePreconditionFailureViolation value.violations )
             ]
         )
 
 
-encodePreconditionFailureViolation : PreconditionFailureViolation -> Proto.Json.Encoder x
+encodePreconditionFailureViolation : PreconditionFailureViolation -> Proto.Json.Encode.Encoder x
 encodePreconditionFailureViolation value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "type", Proto.Json.implicitField "" Json.Encode.string value.type_ )
             , ( "subject", Proto.Json.implicitField "" Json.Encode.string value.subject )
@@ -509,18 +511,18 @@ encodePreconditionFailureViolation value =
         )
 
 
-encodeBadRequest : BadRequest -> Proto.Json.Encoder x
+encodeBadRequest : BadRequest -> Proto.Json.Encode.Encoder x
 encodeBadRequest value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "fieldViolations", Proto.Json.totalRepeatedField encodeBadRequestFieldViolation value.fieldViolations )
             ]
         )
 
 
-encodeBadRequestFieldViolation : BadRequestFieldViolation -> Proto.Json.Encoder x
+encodeBadRequestFieldViolation : BadRequestFieldViolation -> Proto.Json.Encode.Encoder x
 encodeBadRequestFieldViolation value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "field", Proto.Json.implicitField "" Json.Encode.string value.field )
             , ( "description", Proto.Json.implicitField "" Json.Encode.string value.description )
@@ -530,9 +532,9 @@ encodeBadRequestFieldViolation value =
         )
 
 
-encodeRequestInfo : RequestInfo -> Proto.Json.Encoder x
+encodeRequestInfo : RequestInfo -> Proto.Json.Encode.Encoder x
 encodeRequestInfo value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "requestId", Proto.Json.implicitField "" Json.Encode.string value.requestId )
             , ( "servingData", Proto.Json.implicitField "" Json.Encode.string value.servingData )
@@ -540,9 +542,9 @@ encodeRequestInfo value =
         )
 
 
-encodeResourceInfo : ResourceInfo -> Proto.Json.Encoder x
+encodeResourceInfo : ResourceInfo -> Proto.Json.Encode.Encoder x
 encodeResourceInfo value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "resourceType", Proto.Json.implicitField "" Json.Encode.string value.resourceType )
             , ( "resourceName", Proto.Json.implicitField "" Json.Encode.string value.resourceName )
@@ -552,18 +554,18 @@ encodeResourceInfo value =
         )
 
 
-encodeHelp : Help -> Proto.Json.Encoder x
+encodeHelp : Help -> Proto.Json.Encode.Encoder x
 encodeHelp value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "links", Proto.Json.totalRepeatedField encodeHelpLink value.links )
             ]
         )
 
 
-encodeHelpLink : HelpLink -> Proto.Json.Encoder x
+encodeHelpLink : HelpLink -> Proto.Json.Encode.Encoder x
 encodeHelpLink value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "description", Proto.Json.implicitField "" Json.Encode.string value.description )
             , ( "url", Proto.Json.implicitField "" Json.Encode.string value.url )
@@ -571,9 +573,9 @@ encodeHelpLink value =
         )
 
 
-encodeLocalizedMessage : LocalizedMessage -> Proto.Json.Encoder x
+encodeLocalizedMessage : LocalizedMessage -> Proto.Json.Encode.Encoder x
 encodeLocalizedMessage value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "locale", Proto.Json.implicitField "" Json.Encode.string value.locale )
             , ( "message", Proto.Json.implicitField "" Json.Encode.string value.message )
@@ -585,9 +587,9 @@ decodeErrorInfo : Json.Decode.Decoder ErrorInfo
 decodeErrorInfo =
     Proto.Json.message
         (Json.Decode.succeed ErrorInfo
-            |> Proto.Json.messageField "reason" "" Proto.Json.string
-            |> Proto.Json.messageField "domain" "" Proto.Json.string
-            |> Proto.Json.messageField "metadata" Dict.empty (Proto.Json.stringDict Proto.Json.string)
+            |> Proto.Json.messageField "reason" "" Proto.Json.Decode.string
+            |> Proto.Json.messageField "domain" "" Proto.Json.Decode.string
+            |> Proto.Json.messageField "metadata" Dict.empty (Proto.Json.stringDict Proto.Json.Decode.string)
         )
 
 
@@ -595,7 +597,7 @@ decodeRetryInfo : Json.Decode.Decoder RetryInfo
 decodeRetryInfo =
     Proto.Json.message
         (Json.Decode.succeed RetryInfo
-            |> Proto.Json.messageFieldEither "retryDelay" "retry_delay" Nothing (Json.Decode.map Just Proto.Json.duration)
+            |> Proto.Json.messageFieldEither "retryDelay" "retry_delay" Nothing (Json.Decode.map Just Proto.Json.Decode.duration)
         )
 
 
@@ -603,8 +605,8 @@ decodeDebugInfo : Json.Decode.Decoder DebugInfo
 decodeDebugInfo =
     Proto.Json.message
         (Json.Decode.succeed DebugInfo
-            |> Proto.Json.messageFieldEither "stackEntries" "stack_entries" [] (Json.Decode.list Proto.Json.string)
-            |> Proto.Json.messageField "detail" "" Proto.Json.string
+            |> Proto.Json.messageFieldEither "stackEntries" "stack_entries" [] (Json.Decode.list Proto.Json.Decode.string)
+            |> Proto.Json.messageField "detail" "" Proto.Json.Decode.string
         )
 
 
@@ -620,14 +622,14 @@ decodeQuotaFailureViolation : Json.Decode.Decoder QuotaFailureViolation
 decodeQuotaFailureViolation =
     Proto.Json.message
         (Json.Decode.succeed QuotaFailureViolation
-            |> Proto.Json.messageField "subject" "" Proto.Json.string
-            |> Proto.Json.messageField "description" "" Proto.Json.string
-            |> Proto.Json.messageFieldEither "apiService" "api_service" "" Proto.Json.string
-            |> Proto.Json.messageFieldEither "quotaMetric" "quota_metric" "" Proto.Json.string
-            |> Proto.Json.messageFieldEither "quotaId" "quota_id" "" Proto.Json.string
-            |> Proto.Json.messageFieldEither "quotaDimensions" "quota_dimensions" Dict.empty (Proto.Json.stringDict Proto.Json.string)
-            |> Proto.Json.messageFieldEither "quotaValue" "quota_value" "0" Proto.Json.int64
-            |> Proto.Json.messageFieldEither "futureQuotaValue" "future_quota_value" Nothing (Json.Decode.map Just Proto.Json.int64)
+            |> Proto.Json.messageField "subject" "" Proto.Json.Decode.string
+            |> Proto.Json.messageField "description" "" Proto.Json.Decode.string
+            |> Proto.Json.messageFieldEither "apiService" "api_service" "" Proto.Json.Decode.string
+            |> Proto.Json.messageFieldEither "quotaMetric" "quota_metric" "" Proto.Json.Decode.string
+            |> Proto.Json.messageFieldEither "quotaId" "quota_id" "" Proto.Json.Decode.string
+            |> Proto.Json.messageFieldEither "quotaDimensions" "quota_dimensions" Dict.empty (Proto.Json.stringDict Proto.Json.Decode.string)
+            |> Proto.Json.messageFieldEither "quotaValue" "quota_value" "0" Proto.Json.Decode.int64
+            |> Proto.Json.messageFieldEither "futureQuotaValue" "future_quota_value" Nothing (Json.Decode.map Just Proto.Json.Decode.int64)
         )
 
 
@@ -643,9 +645,9 @@ decodePreconditionFailureViolation : Json.Decode.Decoder PreconditionFailureViol
 decodePreconditionFailureViolation =
     Proto.Json.message
         (Json.Decode.succeed PreconditionFailureViolation
-            |> Proto.Json.messageField "type" "" Proto.Json.string
-            |> Proto.Json.messageField "subject" "" Proto.Json.string
-            |> Proto.Json.messageField "description" "" Proto.Json.string
+            |> Proto.Json.messageField "type" "" Proto.Json.Decode.string
+            |> Proto.Json.messageField "subject" "" Proto.Json.Decode.string
+            |> Proto.Json.messageField "description" "" Proto.Json.Decode.string
         )
 
 
@@ -661,9 +663,9 @@ decodeBadRequestFieldViolation : Json.Decode.Decoder BadRequestFieldViolation
 decodeBadRequestFieldViolation =
     Proto.Json.message
         (Json.Decode.succeed BadRequestFieldViolation
-            |> Proto.Json.messageField "field" "" Proto.Json.string
-            |> Proto.Json.messageField "description" "" Proto.Json.string
-            |> Proto.Json.messageField "reason" "" Proto.Json.string
+            |> Proto.Json.messageField "field" "" Proto.Json.Decode.string
+            |> Proto.Json.messageField "description" "" Proto.Json.Decode.string
+            |> Proto.Json.messageField "reason" "" Proto.Json.Decode.string
             |> Proto.Json.messageFieldEither "localizedMessage" "localized_message" Nothing (Json.Decode.map Just decodeLocalizedMessage)
         )
 
@@ -672,8 +674,8 @@ decodeRequestInfo : Json.Decode.Decoder RequestInfo
 decodeRequestInfo =
     Proto.Json.message
         (Json.Decode.succeed RequestInfo
-            |> Proto.Json.messageFieldEither "requestId" "request_id" "" Proto.Json.string
-            |> Proto.Json.messageFieldEither "servingData" "serving_data" "" Proto.Json.string
+            |> Proto.Json.messageFieldEither "requestId" "request_id" "" Proto.Json.Decode.string
+            |> Proto.Json.messageFieldEither "servingData" "serving_data" "" Proto.Json.Decode.string
         )
 
 
@@ -681,10 +683,10 @@ decodeResourceInfo : Json.Decode.Decoder ResourceInfo
 decodeResourceInfo =
     Proto.Json.message
         (Json.Decode.succeed ResourceInfo
-            |> Proto.Json.messageFieldEither "resourceType" "resource_type" "" Proto.Json.string
-            |> Proto.Json.messageFieldEither "resourceName" "resource_name" "" Proto.Json.string
-            |> Proto.Json.messageField "owner" "" Proto.Json.string
-            |> Proto.Json.messageField "description" "" Proto.Json.string
+            |> Proto.Json.messageFieldEither "resourceType" "resource_type" "" Proto.Json.Decode.string
+            |> Proto.Json.messageFieldEither "resourceName" "resource_name" "" Proto.Json.Decode.string
+            |> Proto.Json.messageField "owner" "" Proto.Json.Decode.string
+            |> Proto.Json.messageField "description" "" Proto.Json.Decode.string
         )
 
 
@@ -700,8 +702,8 @@ decodeHelpLink : Json.Decode.Decoder HelpLink
 decodeHelpLink =
     Proto.Json.message
         (Json.Decode.succeed HelpLink
-            |> Proto.Json.messageField "description" "" Proto.Json.string
-            |> Proto.Json.messageField "url" "" Proto.Json.string
+            |> Proto.Json.messageField "description" "" Proto.Json.Decode.string
+            |> Proto.Json.messageField "url" "" Proto.Json.Decode.string
         )
 
 
@@ -709,8 +711,8 @@ decodeLocalizedMessage : Json.Decode.Decoder LocalizedMessage
 decodeLocalizedMessage =
     Proto.Json.message
         (Json.Decode.succeed LocalizedMessage
-            |> Proto.Json.messageField "locale" "" Proto.Json.string
-            |> Proto.Json.messageField "message" "" Proto.Json.string
+            |> Proto.Json.messageField "locale" "" Proto.Json.Decode.string
+            |> Proto.Json.messageField "message" "" Proto.Json.Decode.string
         )
 
 

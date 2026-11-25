@@ -18,7 +18,7 @@ module Proto.Internal.Writer exposing
     , total
     )
 
-{-| The proto3 JSON encoder that generated code builds and `Proto.Json.encode`
+{-| The proto3 JSON encoder that generated code builds and `Proto.Json.Encode.encode`
 runs: a finished value, a refusal, or a part that needs the registry an `Any`
 converts through.
 
