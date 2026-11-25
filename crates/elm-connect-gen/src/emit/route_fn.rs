@@ -10,14 +10,16 @@
 //! Every binding the route resolver accepts is typed. A send over JSON
 //! writes the request's proto3 JSON first, refusing a request that has
 //! none, so a route prints its path and query from the typed request
-//! with the unchecked text forms. A method with a binding whose body
-//! holds a value a JSON write can refuse (a `google.protobuf.Any`, which
-//! only the client's registry can write, or a well-known value with no
-//! JSON form, `Value` included) takes its routes as functions of the
-//! request and that JSON (`routeCreateNote0 : CreateNoteRequest ->
-//! Json.Encode.Value -> Proto.Route.Route`, given to
-//! `Proto.Method.withJsonRoutes`): the body is read from the JSON, which
-//! has no unchecked writer to give it again.
+//! with the unchecked text forms; a method whose request cannot refuse is
+//! generated `Proto.Method.withoutRequestCheck` and not written for that
+//! check, so a typed `*` body, which only such a request has, is written
+//! once. A method with a binding whose body holds a value a JSON write
+//! can refuse (a `google.protobuf.Any`, which only the client's registry
+//! can write, or a well-known value with no JSON form, `Value` included)
+//! takes its routes as functions of the request and that JSON
+//! (`routeCreateNote0 : CreateNoteRequest -> Json.Encode.Value ->
+//! Proto.Route.Route`, given to `Proto.Method.withJsonRoutes`): the body
+//! is read from the JSON, which has no unchecked writer to give it again.
 
 use std::collections::HashMap;
 

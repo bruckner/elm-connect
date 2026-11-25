@@ -79,6 +79,9 @@ impl Emitter {
     /// `Proto.Method.init` (the JSON codecs and the binary codecs) as the
     /// `wire` option says, the JSON codecs taking the client's registry
     /// (ignored by a type that reaches no `Any`), then
+    /// `withoutRequestCheck` for a method with typed routes whose request
+    /// holds nothing that can refuse its write, so that a send over such a
+    /// route does not write the request only to check it,
     /// `withIdempotency` when the proto declares one, `withRoutes` with its
     /// route functions ([`Self::method_routes`]), or `withJsonRoutes` when
     /// they take the request's JSON too, and `withResponseBody` for each
@@ -113,6 +116,14 @@ impl Emitter {
         };
         let built = stacked_apply(self.reference((PROTO_METHOD, builder)), codecs);
         let mut steps = Vec::new();
+        // Only a typed route can spare a send its JSON: over Connect, the
+        // implicit route or a route that takes the JSON, the body is the
+        // request's JSON whatever the flag says.
+        if matches!(routes, Routes::Functions(_))
+            && !self.write_reaches(method_shape(&method.input, self.holding))
+        {
+            steps.push(self.reference((PROTO_METHOD, "withoutRequestCheck")));
+        }
         if method.idempotency != Idempotency::Unknown {
             let level = self.idempotency(method);
             steps.push(apply(

@@ -40,6 +40,8 @@
 //!   service's full name and its own, the encoder of its request and the
 //!   decoder of its response (`Notes.V1.encodeGetNoteRequest`, or the
 //!   runtime's for a well-known type), then piped through
+//!   `Proto.Method.withoutRequestCheck` when the method has typed routes
+//!   and its request cannot refuse a JSON write,
 //!   `Proto.Method.withIdempotency` when the proto declares one and
 //!   `Proto.Method.withRoutes` with its route functions. Each route
 //!   function, `routeGetNote0 : GetNoteRequest -> Proto.Route.Route`,
