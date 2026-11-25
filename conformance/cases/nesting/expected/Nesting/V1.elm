@@ -613,7 +613,7 @@ decodeNode =
     decodeNestedNode 1
 
 
-{-| [`decodeNode`](#decodeNode) for a [`Node`](#Node) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeNode`](#decodeNode) for a [`Node`](#Node) held `depth` levels deep.
 -}
 decodeNestedNode : Int -> Json.Decode.Decoder Node
 decodeNestedNode =
@@ -642,7 +642,7 @@ decodePerson =
     decodeNestedPerson 1
 
 
-{-| [`decodePerson`](#decodePerson) for a [`Person`](#Person) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodePerson`](#decodePerson) for a [`Person`](#Person) held `depth` levels deep.
 -}
 decodeNestedPerson : Int -> Json.Decode.Decoder Person
 decodeNestedPerson =
@@ -670,7 +670,7 @@ decodeCompany =
     decodeNestedCompany 1
 
 
-{-| [`decodeCompany`](#decodeCompany) for a [`Company`](#Company) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeCompany`](#decodeCompany) for a [`Company`](#Company) held `depth` levels deep.
 -}
 decodeNestedCompany : Int -> Json.Decode.Decoder Company
 decodeNestedCompany =
@@ -698,7 +698,7 @@ decodeForest =
     decodeNestedForest 1
 
 
-{-| [`decodeForest`](#decodeForest) for a [`Forest`](#Forest) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeForest`](#decodeForest) for a [`Forest`](#Forest) held `depth` levels deep.
 -}
 decodeNestedForest : Int -> Json.Decode.Decoder Forest
 decodeNestedForest depth =
@@ -715,7 +715,7 @@ decodeExpr =
     decodeNestedExpr 1
 
 
-{-| [`decodeExpr`](#decodeExpr) for an [`Expr`](#Expr) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeExpr`](#decodeExpr) for an [`Expr`](#Expr) held `depth` levels deep.
 -}
 decodeNestedExpr : Int -> Json.Decode.Decoder Expr
 decodeNestedExpr =
@@ -733,7 +733,7 @@ decodeExprValue =
     decodeNestedExprValue 1
 
 
-{-| [`decodeExprValue`](#decodeExprValue) for an [`ExprValue`](#ExprValue) held by a message `depth` levels deep. That message's decoder calls it at each depth.
+{-| [`decodeExprValue`](#decodeExprValue) for an [`ExprValue`](#ExprValue) held by a message `depth` levels deep.
 -}
 decodeNestedExprValue : Int -> Json.Decode.Decoder ExprValue
 decodeNestedExprValue depth =
@@ -751,7 +751,7 @@ decodeSum =
     decodeNestedSum 1
 
 
-{-| [`decodeSum`](#decodeSum) for a [`Sum`](#Sum) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeSum`](#decodeSum) for a [`Sum`](#Sum) held `depth` levels deep.
 -}
 decodeNestedSum : Int -> Json.Decode.Decoder Sum
 decodeNestedSum =
@@ -1059,7 +1059,7 @@ mergeNodeBytes =
     mergeNestedNodeBytes 1
 
 
-{-| [`mergeNodeBytes`](#mergeNodeBytes) for a [`Node`](#Node) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeNodeBytes`](#mergeNodeBytes) for a [`Node`](#Node) held `depth` levels deep.
 -}
 mergeNestedNodeBytes : Int -> Node -> Proto.Binary.Decoder Node
 mergeNestedNodeBytes =
@@ -1133,7 +1133,7 @@ mergeNode_Bytes (Node_ value) =
     Proto.Binary.map Node_ (mergeNodeBytes value)
 
 
-{-| [`mergeNode_Bytes`](#mergeNode_Bytes) for a [`Node_`](#Node_) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeNode_Bytes`](#mergeNode_Bytes) for a [`Node_`](#Node_) held `depth` levels deep.
 -}
 mergeNestedNode_Bytes : Int -> Node_ -> Proto.Binary.Decoder Node_
 mergeNestedNode_Bytes depth (Node_ value) =
@@ -1147,7 +1147,7 @@ mergePersonBytes =
     mergeNestedPersonBytes 1
 
 
-{-| [`mergePersonBytes`](#mergePersonBytes) for a [`Person`](#Person) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergePersonBytes`](#mergePersonBytes) for a [`Person`](#Person) held `depth` levels deep.
 -}
 mergeNestedPersonBytes : Int -> Person -> Proto.Binary.Decoder Person
 mergeNestedPersonBytes =
@@ -1201,7 +1201,7 @@ mergePerson_Bytes (Person_ value) =
     Proto.Binary.map Person_ (mergePersonBytes value)
 
 
-{-| [`mergePerson_Bytes`](#mergePerson_Bytes) for a [`Person_`](#Person_) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergePerson_Bytes`](#mergePerson_Bytes) for a [`Person_`](#Person_) held `depth` levels deep.
 -}
 mergeNestedPerson_Bytes : Int -> Person_ -> Proto.Binary.Decoder Person_
 mergeNestedPerson_Bytes depth (Person_ value) =
@@ -1215,7 +1215,7 @@ mergeCompanyBytes =
     mergeNestedCompanyBytes 1
 
 
-{-| [`mergeCompanyBytes`](#mergeCompanyBytes) for a [`Company`](#Company) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeCompanyBytes`](#mergeCompanyBytes) for a [`Company`](#Company) held `depth` levels deep.
 -}
 mergeNestedCompanyBytes : Int -> Company -> Proto.Binary.Decoder Company
 mergeNestedCompanyBytes =
@@ -1273,7 +1273,7 @@ mergeCompany_Bytes (Company_ value) =
     Proto.Binary.map Company_ (mergeCompanyBytes value)
 
 
-{-| [`mergeCompany_Bytes`](#mergeCompany_Bytes) for a [`Company_`](#Company_) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeCompany_Bytes`](#mergeCompany_Bytes) for a [`Company_`](#Company_) held `depth` levels deep.
 -}
 mergeNestedCompany_Bytes : Int -> Company_ -> Proto.Binary.Decoder Company_
 mergeNestedCompany_Bytes depth (Company_ value) =
@@ -1287,7 +1287,7 @@ mergeForestBytes =
     mergeNestedForestBytes 1
 
 
-{-| [`mergeForestBytes`](#mergeForestBytes) for a [`Forest`](#Forest) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeForestBytes`](#mergeForestBytes) for a [`Forest`](#Forest) held `depth` levels deep.
 -}
 mergeNestedForestBytes : Int -> Forest -> Proto.Binary.Decoder Forest
 mergeNestedForestBytes depth =
@@ -1329,7 +1329,7 @@ mergeExprBytes =
     mergeNestedExprBytes 1
 
 
-{-| [`mergeExprBytes`](#mergeExprBytes) for an [`Expr`](#Expr) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeExprBytes`](#mergeExprBytes) for an [`Expr`](#Expr) held `depth` levels deep.
 -}
 mergeNestedExprBytes : Int -> Expr -> Proto.Binary.Decoder Expr
 mergeNestedExprBytes =
@@ -1387,7 +1387,7 @@ mergeSumBytes =
     mergeNestedSumBytes 1
 
 
-{-| [`mergeSumBytes`](#mergeSumBytes) for a [`Sum`](#Sum) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeSumBytes`](#mergeSumBytes) for a [`Sum`](#Sum) held `depth` levels deep.
 -}
 mergeNestedSumBytes : Int -> Sum -> Proto.Binary.Decoder Sum
 mergeNestedSumBytes =

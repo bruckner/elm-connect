@@ -307,7 +307,7 @@ decodeItemWith types =
     decodeNestedItemWith types (max 1 (Proto.Json.registryDepth types))
 
 
-{-| [`decodeItemWith`](#decodeItemWith) for an [`Item`](#Item) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeItemWith`](#decodeItemWith) for an [`Item`](#Item) held `depth` levels deep.
 -}
 decodeNestedItemWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder Item
 decodeNestedItemWith types depth =
@@ -348,7 +348,7 @@ decodeListItemsResponseWith types =
     decodeNestedListItemsResponseWith types (max 1 (Proto.Json.registryDepth types))
 
 
-{-| [`decodeListItemsResponseWith`](#decodeListItemsResponseWith) for a [`ListItemsResponse`](#ListItemsResponse) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeListItemsResponseWith`](#decodeListItemsResponseWith) for a [`ListItemsResponse`](#ListItemsResponse) held `depth` levels deep.
 -}
 decodeNestedListItemsResponseWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder ListItemsResponse
 decodeNestedListItemsResponseWith types depth =
@@ -443,7 +443,7 @@ mergeItemBytes =
     mergeNestedItemBytes 1
 
 
-{-| [`mergeItemBytes`](#mergeItemBytes) for an [`Item`](#Item) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeItemBytes`](#mergeItemBytes) for an [`Item`](#Item) held `depth` levels deep.
 -}
 mergeNestedItemBytes : Int -> Item -> Proto.Binary.Decoder Item
 mergeNestedItemBytes depth =
@@ -611,7 +611,7 @@ mergeListItemsResponseBytes =
     mergeNestedListItemsResponseBytes 1
 
 
-{-| [`mergeListItemsResponseBytes`](#mergeListItemsResponseBytes) for a [`ListItemsResponse`](#ListItemsResponse) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeListItemsResponseBytes`](#mergeListItemsResponseBytes) for a [`ListItemsResponse`](#ListItemsResponse) held `depth` levels deep.
 -}
 mergeNestedListItemsResponseBytes : Int -> ListItemsResponse -> Proto.Binary.Decoder ListItemsResponse
 mergeNestedListItemsResponseBytes depth =

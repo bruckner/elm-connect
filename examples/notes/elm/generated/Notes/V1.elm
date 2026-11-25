@@ -565,7 +565,7 @@ decodeNoteWith types =
     decodeNestedNoteWith types (max 1 (Proto.Json.registryDepth types))
 
 
-{-| [`decodeNoteWith`](#decodeNoteWith) for a [`Note`](#Note) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeNoteWith`](#decodeNoteWith) for a [`Note`](#Note) held `depth` levels deep.
 -}
 decodeNestedNoteWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder Note
 decodeNestedNoteWith types depth =
@@ -628,7 +628,7 @@ decodeListNotesResponseWith types =
     decodeNestedListNotesResponseWith types (max 1 (Proto.Json.registryDepth types))
 
 
-{-| [`decodeListNotesResponseWith`](#decodeListNotesResponseWith) for a [`ListNotesResponse`](#ListNotesResponse) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeListNotesResponseWith`](#decodeListNotesResponseWith) for a [`ListNotesResponse`](#ListNotesResponse) held `depth` levels deep.
 -}
 decodeNestedListNotesResponseWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder ListNotesResponse
 decodeNestedListNotesResponseWith types depth =
@@ -646,7 +646,7 @@ decodeCreateNoteRequestWith types =
     decodeNestedCreateNoteRequestWith types (max 1 (Proto.Json.registryDepth types))
 
 
-{-| [`decodeCreateNoteRequestWith`](#decodeCreateNoteRequestWith) for a [`CreateNoteRequest`](#CreateNoteRequest) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeCreateNoteRequestWith`](#decodeCreateNoteRequestWith) for a [`CreateNoteRequest`](#CreateNoteRequest) held `depth` levels deep.
 -}
 decodeNestedCreateNoteRequestWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder CreateNoteRequest
 decodeNestedCreateNoteRequestWith types depth =
@@ -663,7 +663,7 @@ decodeUpdateNoteRequestWith types =
     decodeNestedUpdateNoteRequestWith types (max 1 (Proto.Json.registryDepth types))
 
 
-{-| [`decodeUpdateNoteRequestWith`](#decodeUpdateNoteRequestWith) for an [`UpdateNoteRequest`](#UpdateNoteRequest) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeUpdateNoteRequestWith`](#decodeUpdateNoteRequestWith) for an [`UpdateNoteRequest`](#UpdateNoteRequest) held `depth` levels deep.
 -}
 decodeNestedUpdateNoteRequestWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder UpdateNoteRequest
 decodeNestedUpdateNoteRequestWith types depth =
@@ -843,7 +843,7 @@ mergeNoteBytes =
     mergeNestedNoteBytes 1
 
 
-{-| [`mergeNoteBytes`](#mergeNoteBytes) for a [`Note`](#Note) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeNoteBytes`](#mergeNoteBytes) for a [`Note`](#Note) held `depth` levels deep.
 -}
 mergeNestedNoteBytes : Int -> Note -> Proto.Binary.Decoder Note
 mergeNestedNoteBytes depth =
@@ -1300,7 +1300,7 @@ mergeListNotesResponseBytes =
     mergeNestedListNotesResponseBytes 1
 
 
-{-| [`mergeListNotesResponseBytes`](#mergeListNotesResponseBytes) for a [`ListNotesResponse`](#ListNotesResponse) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeListNotesResponseBytes`](#mergeListNotesResponseBytes) for a [`ListNotesResponse`](#ListNotesResponse) held `depth` levels deep.
 -}
 mergeNestedListNotesResponseBytes : Int -> ListNotesResponse -> Proto.Binary.Decoder ListNotesResponse
 mergeNestedListNotesResponseBytes depth =
@@ -1355,7 +1355,7 @@ mergeCreateNoteRequestBytes =
     mergeNestedCreateNoteRequestBytes 1
 
 
-{-| [`mergeCreateNoteRequestBytes`](#mergeCreateNoteRequestBytes) for a [`CreateNoteRequest`](#CreateNoteRequest) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeCreateNoteRequestBytes`](#mergeCreateNoteRequestBytes) for a [`CreateNoteRequest`](#CreateNoteRequest) held `depth` levels deep.
 -}
 mergeNestedCreateNoteRequestBytes : Int -> CreateNoteRequest -> Proto.Binary.Decoder CreateNoteRequest
 mergeNestedCreateNoteRequestBytes depth =
@@ -1394,7 +1394,7 @@ mergeUpdateNoteRequestBytes =
     mergeNestedUpdateNoteRequestBytes 1
 
 
-{-| [`mergeUpdateNoteRequestBytes`](#mergeUpdateNoteRequestBytes) for an [`UpdateNoteRequest`](#UpdateNoteRequest) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeUpdateNoteRequestBytes`](#mergeUpdateNoteRequestBytes) for an [`UpdateNoteRequest`](#UpdateNoteRequest) held `depth` levels deep.
 -}
 mergeNestedUpdateNoteRequestBytes : Int -> UpdateNoteRequest -> Proto.Binary.Decoder UpdateNoteRequest
 mergeNestedUpdateNoteRequestBytes depth =

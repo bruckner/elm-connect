@@ -477,7 +477,7 @@ decodeLabeledWith types =
     decodeNestedLabeledWith types (max 1 (Proto.Json.registryDepth types))
 
 
-{-| [`decodeLabeledWith`](#decodeLabeledWith) for a [`Labeled`](#Labeled) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeLabeledWith`](#decodeLabeledWith) for a [`Labeled`](#Labeled) held `depth` levels deep.
 -}
 decodeNestedLabeledWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder Labeled
 decodeNestedLabeledWith types depth =
@@ -495,7 +495,7 @@ decodeLabelBlobRequestWith types =
     decodeNestedLabelBlobRequestWith types (max 1 (Proto.Json.registryDepth types))
 
 
-{-| [`decodeLabelBlobRequestWith`](#decodeLabelBlobRequestWith) for a [`LabelBlobRequest`](#LabelBlobRequest) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeLabelBlobRequestWith`](#decodeLabelBlobRequestWith) for a [`LabelBlobRequest`](#LabelBlobRequest) held `depth` levels deep.
 -}
 decodeNestedLabelBlobRequestWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder LabelBlobRequest
 decodeNestedLabelBlobRequestWith types depth =
@@ -513,7 +513,7 @@ decodeFolder =
     decodeNestedFolder 1
 
 
-{-| [`decodeFolder`](#decodeFolder) for a [`Folder`](#Folder) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeFolder`](#decodeFolder) for a [`Folder`](#Folder) held `depth` levels deep.
 -}
 decodeNestedFolder : Int -> Json.Decode.Decoder Folder
 decodeNestedFolder =
@@ -552,7 +552,7 @@ decodeFree =
     decodeNestedFree 1
 
 
-{-| [`decodeFree`](#decodeFree) for a [`Free`](#Free) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeFree`](#decodeFree) for a [`Free`](#Free) held `depth` levels deep.
 -}
 decodeNestedFree : Int -> Json.Decode.Decoder Free
 decodeNestedFree depth =
@@ -745,7 +745,7 @@ mergeLabeledBytes =
     mergeNestedLabeledBytes 1
 
 
-{-| [`mergeLabeledBytes`](#mergeLabeledBytes) for a [`Labeled`](#Labeled) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeLabeledBytes`](#mergeLabeledBytes) for a [`Labeled`](#Labeled) held `depth` levels deep.
 -}
 mergeNestedLabeledBytes : Int -> Labeled -> Proto.Binary.Decoder Labeled
 mergeNestedLabeledBytes depth =
@@ -795,7 +795,7 @@ mergeLabelBlobRequestBytes =
     mergeNestedLabelBlobRequestBytes 1
 
 
-{-| [`mergeLabelBlobRequestBytes`](#mergeLabelBlobRequestBytes) for a [`LabelBlobRequest`](#LabelBlobRequest) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeLabelBlobRequestBytes`](#mergeLabelBlobRequestBytes) for a [`LabelBlobRequest`](#LabelBlobRequest) held `depth` levels deep.
 -}
 mergeNestedLabelBlobRequestBytes : Int -> LabelBlobRequest -> Proto.Binary.Decoder LabelBlobRequest
 mergeNestedLabelBlobRequestBytes depth =
@@ -846,7 +846,7 @@ mergeFolderBytes =
     mergeNestedFolderBytes 1
 
 
-{-| [`mergeFolderBytes`](#mergeFolderBytes) for a [`Folder`](#Folder) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeFolderBytes`](#mergeFolderBytes) for a [`Folder`](#Folder) held `depth` levels deep.
 -}
 mergeNestedFolderBytes : Int -> Folder -> Proto.Binary.Decoder Folder
 mergeNestedFolderBytes =
@@ -900,7 +900,7 @@ mergeFolder_Bytes (Folder_ value) =
     Proto.Binary.map Folder_ (mergeFolderBytes value)
 
 
-{-| [`mergeFolder_Bytes`](#mergeFolder_Bytes) for a [`Folder_`](#Folder_) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeFolder_Bytes`](#mergeFolder_Bytes) for a [`Folder_`](#Folder_) held `depth` levels deep.
 -}
 mergeNestedFolder_Bytes : Int -> Folder_ -> Proto.Binary.Decoder Folder_
 mergeNestedFolder_Bytes depth (Folder_ value) =
@@ -957,7 +957,7 @@ mergeFreeBytes =
     mergeNestedFreeBytes 1
 
 
-{-| [`mergeFreeBytes`](#mergeFreeBytes) for a [`Free`](#Free) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeFreeBytes`](#mergeFreeBytes) for a [`Free`](#Free) held `depth` levels deep.
 -}
 mergeNestedFreeBytes : Int -> Free -> Proto.Binary.Decoder Free
 mergeNestedFreeBytes depth =

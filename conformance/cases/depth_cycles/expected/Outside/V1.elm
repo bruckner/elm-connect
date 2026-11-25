@@ -120,7 +120,7 @@ decodeHolder =
     decodeNestedHolder 1
 
 
-{-| [`decodeHolder`](#decodeHolder) for a [`Holder`](#Holder) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeHolder`](#decodeHolder) for a [`Holder`](#Holder) held `depth` levels deep.
 -}
 decodeNestedHolder : Int -> Json.Decode.Decoder Holder
 decodeNestedHolder depth =
@@ -156,7 +156,7 @@ mergeHolderBytes =
     mergeNestedHolderBytes 1
 
 
-{-| [`mergeHolderBytes`](#mergeHolderBytes) for a [`Holder`](#Holder) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeHolderBytes`](#mergeHolderBytes) for a [`Holder`](#Holder) held `depth` levels deep.
 -}
 mergeNestedHolderBytes : Int -> Holder -> Proto.Binary.Decoder Holder
 mergeNestedHolderBytes depth =

@@ -202,7 +202,7 @@ decodeChain =
     decodeNestedChain 1
 
 
-{-| [`decodeChain`](#decodeChain) for a [`Chain`](#Chain) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeChain`](#decodeChain) for a [`Chain`](#Chain) held `depth` levels deep.
 -}
 decodeNestedChain : Int -> Json.Decode.Decoder Chain
 decodeNestedChain =
@@ -231,7 +231,7 @@ decodeTree =
     decodeNestedTree 1
 
 
-{-| [`decodeTree`](#decodeTree) for a [`Tree`](#Tree) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeTree`](#decodeTree) for a [`Tree`](#Tree) held `depth` levels deep.
 -}
 decodeNestedTree : Int -> Json.Decode.Decoder Tree
 decodeNestedTree =
@@ -304,7 +304,7 @@ mergeChainBytes =
     mergeNestedChainBytes 1
 
 
-{-| [`mergeChainBytes`](#mergeChainBytes) for a [`Chain`](#Chain) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeChainBytes`](#mergeChainBytes) for a [`Chain`](#Chain) held `depth` levels deep.
 -}
 mergeNestedChainBytes : Int -> Chain -> Proto.Binary.Decoder Chain
 mergeNestedChainBytes =
@@ -378,7 +378,7 @@ mergeChain_Bytes (Chain_ value) =
     Proto.Binary.map Chain_ (mergeChainBytes value)
 
 
-{-| [`mergeChain_Bytes`](#mergeChain_Bytes) for a [`Chain_`](#Chain_) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeChain_Bytes`](#mergeChain_Bytes) for a [`Chain_`](#Chain_) held `depth` levels deep.
 -}
 mergeNestedChain_Bytes : Int -> Chain_ -> Proto.Binary.Decoder Chain_
 mergeNestedChain_Bytes depth (Chain_ value) =
@@ -392,7 +392,7 @@ mergeTreeBytes =
     mergeNestedTreeBytes 1
 
 
-{-| [`mergeTreeBytes`](#mergeTreeBytes) for a [`Tree`](#Tree) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeTreeBytes`](#mergeTreeBytes) for a [`Tree`](#Tree) held `depth` levels deep.
 -}
 mergeNestedTreeBytes : Int -> Tree -> Proto.Binary.Decoder Tree
 mergeNestedTreeBytes =
@@ -471,7 +471,7 @@ mergeTree_Bytes (Tree_ value) =
     Proto.Binary.map Tree_ (mergeTreeBytes value)
 
 
-{-| [`mergeTree_Bytes`](#mergeTree_Bytes) for a [`Tree_`](#Tree_) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeTree_Bytes`](#mergeTree_Bytes) for a [`Tree_`](#Tree_) held `depth` levels deep.
 -}
 mergeNestedTree_Bytes : Int -> Tree_ -> Proto.Binary.Decoder Tree_
 mergeNestedTree_Bytes depth (Tree_ value) =

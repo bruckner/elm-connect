@@ -322,7 +322,7 @@ impl Emitter {
             },
             Decl::Value {
                 doc: Some(format!(
-                    "[`{decoder_name}`](#{decoder_name}) for {} held by a message `depth` levels deep. That message's decoder calls it at each depth.",
+                    "[`{decoder_name}`](#{decoder_name}) for {} held by a message `depth` levels deep.",
                     docs::a_local(elm_name)
                 )),
                 name: nested_decoder,

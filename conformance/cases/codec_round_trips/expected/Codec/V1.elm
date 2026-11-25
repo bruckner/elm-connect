@@ -1472,7 +1472,7 @@ decodeChoice =
     decodeNestedChoice 1
 
 
-{-| [`decodeChoice`](#decodeChoice) for a [`Choice`](#Choice) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeChoice`](#decodeChoice) for a [`Choice`](#Choice) held `depth` levels deep.
 -}
 decodeNestedChoice : Int -> Json.Decode.Decoder Choice
 decodeNestedChoice depth =
@@ -1491,7 +1491,7 @@ decodeChoicePick =
     decodeNestedChoicePick 1
 
 
-{-| [`decodeChoicePick`](#decodeChoicePick) for a [`ChoicePick`](#ChoicePick) held by a message `depth` levels deep. That message's decoder calls it at each depth.
+{-| [`decodeChoicePick`](#decodeChoicePick) for a [`ChoicePick`](#ChoicePick) held by a message `depth` levels deep.
 -}
 decodeNestedChoicePick : Int -> Json.Decode.Decoder ChoicePick
 decodeNestedChoicePick depth =
@@ -1571,7 +1571,7 @@ decodeTree =
     decodeNestedTree 1
 
 
-{-| [`decodeTree`](#decodeTree) for a [`Tree`](#Tree) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeTree`](#decodeTree) for a [`Tree`](#Tree) held `depth` levels deep.
 -}
 decodeNestedTree : Int -> Json.Decode.Decoder Tree
 decodeNestedTree =
@@ -1602,7 +1602,7 @@ decodeTreeLink =
     decodeNestedTreeLink 1
 
 
-{-| [`decodeTreeLink`](#decodeTreeLink) for a [`TreeLink`](#TreeLink) held by a message `depth` levels deep. That message's decoder calls it at each depth.
+{-| [`decodeTreeLink`](#decodeTreeLink) for a [`TreeLink`](#TreeLink) held by a message `depth` levels deep.
 -}
 decodeNestedTreeLink : Int -> Json.Decode.Decoder TreeLink
 decodeNestedTreeLink depth =
@@ -1620,7 +1620,7 @@ decodeWellKnownWith types =
     decodeNestedWellKnownWith types (max 1 (Proto.Json.registryDepth types))
 
 
-{-| [`decodeWellKnownWith`](#decodeWellKnownWith) for a [`WellKnown`](#WellKnown) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeWellKnownWith`](#decodeWellKnownWith) for a [`WellKnown`](#WellKnown) held `depth` levels deep.
 -}
 decodeNestedWellKnownWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder WellKnown
 decodeNestedWellKnownWith types depth =
@@ -1698,7 +1698,7 @@ decodeEverythingWith types =
     decodeNestedEverythingWith types (max 1 (Proto.Json.registryDepth types))
 
 
-{-| [`decodeEverythingWith`](#decodeEverythingWith) for an [`Everything`](#Everything) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeEverythingWith`](#decodeEverythingWith) for an [`Everything`](#Everything) held `depth` levels deep.
 -}
 decodeNestedEverythingWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder Everything
 decodeNestedEverythingWith types depth =
@@ -3445,7 +3445,7 @@ mergeChoiceBytes =
     mergeNestedChoiceBytes 1
 
 
-{-| [`mergeChoiceBytes`](#mergeChoiceBytes) for a [`Choice`](#Choice) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeChoiceBytes`](#mergeChoiceBytes) for a [`Choice`](#Choice) held `depth` levels deep.
 -}
 mergeNestedChoiceBytes : Int -> Choice -> Proto.Binary.Decoder Choice
 mergeNestedChoiceBytes depth =
@@ -3932,7 +3932,7 @@ mergeTreeBytes =
     mergeNestedTreeBytes 1
 
 
-{-| [`mergeTreeBytes`](#mergeTreeBytes) for a [`Tree`](#Tree) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeTreeBytes`](#mergeTreeBytes) for a [`Tree`](#Tree) held `depth` levels deep.
 -}
 mergeNestedTreeBytes : Int -> Tree -> Proto.Binary.Decoder Tree
 mergeNestedTreeBytes =
@@ -4064,7 +4064,7 @@ mergeTree_Bytes (Tree_ value) =
     Proto.Binary.map Tree_ (mergeTreeBytes value)
 
 
-{-| [`mergeTree_Bytes`](#mergeTree_Bytes) for a [`Tree_`](#Tree_) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeTree_Bytes`](#mergeTree_Bytes) for a [`Tree_`](#Tree_) held `depth` levels deep.
 -}
 mergeNestedTree_Bytes : Int -> Tree_ -> Proto.Binary.Decoder Tree_
 mergeNestedTree_Bytes depth (Tree_ value) =
@@ -4078,7 +4078,7 @@ mergeWellKnownBytes =
     mergeNestedWellKnownBytes 1
 
 
-{-| [`mergeWellKnownBytes`](#mergeWellKnownBytes) for a [`WellKnown`](#WellKnown) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeWellKnownBytes`](#mergeWellKnownBytes) for a [`WellKnown`](#WellKnown) held `depth` levels deep.
 -}
 mergeNestedWellKnownBytes : Int -> WellKnown -> Proto.Binary.Decoder WellKnown
 mergeNestedWellKnownBytes depth =
@@ -5002,7 +5002,7 @@ mergeEverythingBytes =
     mergeNestedEverythingBytes 1
 
 
-{-| [`mergeEverythingBytes`](#mergeEverythingBytes) for an [`Everything`](#Everything) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeEverythingBytes`](#mergeEverythingBytes) for an [`Everything`](#Everything) held `depth` levels deep.
 -}
 mergeNestedEverythingBytes : Int -> Everything -> Proto.Binary.Decoder Everything
 mergeNestedEverythingBytes =
@@ -5311,7 +5311,7 @@ mergeEverything_Bytes (Everything_ value) =
     Proto.Binary.map Everything_ (mergeEverythingBytes value)
 
 
-{-| [`mergeEverything_Bytes`](#mergeEverything_Bytes) for an [`Everything_`](#Everything_) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeEverything_Bytes`](#mergeEverything_Bytes) for an [`Everything_`](#Everything_) held `depth` levels deep.
 -}
 mergeNestedEverything_Bytes : Int -> Everything_ -> Proto.Binary.Decoder Everything_
 mergeNestedEverything_Bytes depth (Everything_ value) =

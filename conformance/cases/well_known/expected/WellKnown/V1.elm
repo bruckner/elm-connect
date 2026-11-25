@@ -320,7 +320,7 @@ decodeEvent =
     decodeNestedEvent 1
 
 
-{-| [`decodeEvent`](#decodeEvent) for an [`Event`](#Event) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeEvent`](#decodeEvent) for an [`Event`](#Event) held `depth` levels deep.
 -}
 decodeNestedEvent : Int -> Json.Decode.Decoder Event
 decodeNestedEvent depth =
@@ -368,7 +368,7 @@ decodeEventWhen =
     decodeNestedEventWhen 1
 
 
-{-| [`decodeEventWhen`](#decodeEventWhen) for an [`EventWhen`](#EventWhen) held by a message `depth` levels deep. That message's decoder calls it at each depth.
+{-| [`decodeEventWhen`](#decodeEventWhen) for an [`EventWhen`](#EventWhen) held by a message `depth` levels deep.
 -}
 decodeNestedEventWhen : Int -> Json.Decode.Decoder EventWhen
 decodeNestedEventWhen depth =
@@ -491,7 +491,7 @@ mergeEventBytes =
     mergeNestedEventBytes 1
 
 
-{-| [`mergeEventBytes`](#mergeEventBytes) for an [`Event`](#Event) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeEventBytes`](#mergeEventBytes) for an [`Event`](#Event) held `depth` levels deep.
 -}
 mergeNestedEventBytes : Int -> Event -> Proto.Binary.Decoder Event
 mergeNestedEventBytes depth =

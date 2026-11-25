@@ -168,7 +168,7 @@ decodeEnvelopeWith types =
     decodeNestedEnvelopeWith types (max 1 (Proto.Json.registryDepth types))
 
 
-{-| [`decodeEnvelopeWith`](#decodeEnvelopeWith) for an [`Envelope`](#Envelope) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeEnvelopeWith`](#decodeEnvelopeWith) for an [`Envelope`](#Envelope) held `depth` levels deep.
 -}
 decodeNestedEnvelopeWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder Envelope
 decodeNestedEnvelopeWith types depth =
@@ -189,7 +189,7 @@ decodeEnvelopeBodyWith types =
     decodeNestedEnvelopeBodyWith types (max 1 (Proto.Json.registryDepth types))
 
 
-{-| [`decodeEnvelopeBodyWith`](#decodeEnvelopeBodyWith) for an [`EnvelopeBody`](#EnvelopeBody) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeEnvelopeBodyWith`](#decodeEnvelopeBodyWith) for an [`EnvelopeBody`](#EnvelopeBody) held `depth` levels deep.
 -}
 decodeNestedEnvelopeBodyWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder EnvelopeBody
 decodeNestedEnvelopeBodyWith types depth =
@@ -243,7 +243,7 @@ mergeEnvelopeBytes =
     mergeNestedEnvelopeBytes 1
 
 
-{-| [`mergeEnvelopeBytes`](#mergeEnvelopeBytes) for an [`Envelope`](#Envelope) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeEnvelopeBytes`](#mergeEnvelopeBytes) for an [`Envelope`](#Envelope) held `depth` levels deep.
 -}
 mergeNestedEnvelopeBytes : Int -> Envelope -> Proto.Binary.Decoder Envelope
 mergeNestedEnvelopeBytes depth =
