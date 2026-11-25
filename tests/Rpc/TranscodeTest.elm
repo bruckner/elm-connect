@@ -24,6 +24,7 @@ import Rpc.Error exposing (Cause(..), Error, Source(..))
 import Rpc.Internal.Plan
 import Rpc.Protocol
 import Test exposing (Test, describe, test)
+import Time
 
 
 type alias Rule =
@@ -140,6 +141,7 @@ suite =
         , queries
         , bodies
         , routes
+        , requestCheck
         , responses
         , errors
         ]
@@ -525,6 +527,117 @@ routes =
                 [ Rpc.Call.viaBinding 2 twice, Rpc.Call.viaBinding -1 twice, Rpc.Call.viaBinding 0 unbound, Rpc.Call.viaBinding 1 unbound ]
                     |> List.map (Maybe.map Rpc.Call.methodName)
                     |> Expect.equal [ Nothing, Nothing, Nothing, Nothing ]
+        ]
+
+
+requestCheck : Test
+requestCheck =
+    let
+        route verb held r =
+            { method = verb, path = "v1/" ++ r, query = [ ( "q", r ) ], body = held, invalid = Nothing }
+
+        -- A flagged method whose encoder stops the test if a send ever
+        -- writes the request through it.
+        unwritten given =
+            Proto.Method.initJson "t.v1.T" "M" (\_ -> Debug.todo "the request was written") (\_ -> Json.Decode.field "title" Json.Decode.string)
+                |> Proto.Method.withoutRequestCheck
+                |> Proto.Method.withRoutes given
+
+        -- A flagged method whose encoder cannot refuse.
+        written =
+            Proto.Method.initJson "t.v1.T" "M" (\r -> Proto.Json.succeed (Json.Encode.object [ ( "r", Json.Encode.string r ) ])) (\_ -> Json.Decode.field "title" Json.Decode.string)
+                |> Proto.Method.withoutRequestCheck
+
+        shown client c =
+            case Rpc.request client c of
+                Ok sent ->
+                    Ok ( sent.method, sent.url, Rpc.Body.toText sent.body )
+
+                Err error ->
+                    Err (Rpc.Error.toString error)
+
+        connect =
+            Rpc.client Rpc.Protocol.connect "https://api.example.com"
+
+        limited =
+            Rpc.client (Rpc.Protocol.withWriteMaxBytes 5 Rpc.Protocol.transcode) "https://api.example.com"
+
+        -- A request whose encoder refuses: a time outside years 1 to 9999,
+        -- in milliseconds, which a typed route prints as a number.
+        far =
+            300000000000000
+
+        refusing =
+            Proto.Method.initJson "t.v1.T" "M" (\ms -> Proto.Json.writeTimestamp (Time.millisToPosix ms)) (\_ -> Json.Decode.field "title" Json.Decode.string)
+
+        timeRoute ms =
+            route "GET" Nothing (String.fromInt ms)
+
+        -- What `Rpc.request` and the check of an application's own
+        -- request give a call of the method, flagged and not.
+        outcomes client method =
+            let
+                outcome m =
+                    let
+                        c =
+                            Rpc.call m far
+                    in
+                    ( Result.map (\_ -> ()) (Rpc.request client c)
+                    , Rpc.Internal.Plan.refused "https://api.example.com" (Rpc.Internal.Plan.toSend client c) (builtOf connect (Rpc.call written "x"))
+                    )
+            in
+            ( outcome method, outcome (Proto.Method.withoutRequestCheck method) )
+
+        refusal =
+            Rpc.Error.badValue { typeName = "google.protobuf.Timestamp", path = [], message = "the time is outside years 1 to 9999" }
+
+        refusedAlike client method =
+            outcomes client method
+                |> Expect.equal ( ( Err refusal, Just refusal ), ( Err refusal, Just refusal ) )
+    in
+    describe "a method withoutRequestCheck"
+        [ test "over a typed route without a body does not write its request" <|
+            \_ ->
+                shown transcoding (Rpc.call (unwritten [ route "GET" Nothing ]) "x")
+                    |> Expect.equal (Ok ( "GET", "https://api.example.com/v1/x?q=x", Nothing ))
+        , test "over a typed route holding its body is written by the route alone" <|
+            \_ ->
+                shown transcoding (Rpc.call (unwritten [ route "POST" (Just (Json.Encode.object [ ( "body", Json.Encode.string "route" ) ])) ]) "x")
+                    |> Expect.equal (Ok ( "POST", "https://api.example.com/v1/x?q=x", Just """{"body":"route"}""" ))
+        , test "is written where the body is its JSON: over Connect, a route reading the JSON and the implicit route" <|
+            \_ ->
+                [ shown connect (Rpc.call written "x")
+                , shown transcoding (Rpc.call (written |> Proto.Method.withJsonRoutes [ \r j -> route "POST" (Just j) r ]) "x")
+                , shown transcoding (Rpc.call written "x")
+                ]
+                    |> Expect.equal
+                        [ Ok ( "POST", "https://api.example.com/t.v1.T/M", Just """{"r":"x"}""" )
+                        , Ok ( "POST", "https://api.example.com/v1/x?q=x", Just """{"r":"x"}""" )
+                        , Ok ( "POST", "https://api.example.com/t.v1.T/M", Just """{"r":"x"}""" )
+                        ]
+        , test "is written to be measured under a write limit" <|
+            \_ ->
+                shown limited (Rpc.call (written |> Proto.Method.withRoutes [ route "GET" Nothing ]) "x")
+                    |> Expect.equal (Err "resource_exhausted: message size 9 is larger than configured writeMaxBytes 5")
+        , describe "on a request that refuses"
+            [ test "over Connect, is refused as without the flag" <|
+                \_ -> refusedAlike connect refusing
+            , test "over the implicit route, is refused as without the flag" <|
+                \_ -> refusedAlike transcoding refusing
+            , test "over a route reading the JSON, is refused as without the flag" <|
+                \_ -> refusedAlike transcoding (refusing |> Proto.Method.withJsonRoutes [ \ms _ -> timeRoute ms ])
+            , test "over a typed route under a write limit, is refused as without the flag" <|
+                \_ -> refusedAlike limited (refusing |> Proto.Method.withRoutes [ timeRoute ])
+            , test "over a typed route holding its own path and query, is sent with the values unchecked" <|
+                \_ ->
+                    ( shown transcoding (Rpc.call (refusing |> Proto.Method.withRoutes [ timeRoute ]) far)
+                    , shown transcoding (Rpc.call (refusing |> Proto.Method.withoutRequestCheck |> Proto.Method.withRoutes [ timeRoute ]) far)
+                    )
+                        |> Expect.equal
+                            ( Err (Rpc.Error.toString refusal)
+                            , Ok ( "GET", "https://api.example.com/v1/300000000000000?q=300000000000000", Nothing )
+                            )
+            ]
         ]
 
 
