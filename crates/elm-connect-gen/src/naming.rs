@@ -402,7 +402,8 @@ pub fn decoder_name(type_elm_name: &str) -> String {
 ///
 /// The top-level values of a generated module share one namespace, and
 /// each is a prefix (`encode`, `decode`, `default`, `message`, `enum`,
-/// `queryOf` for a query encoder, and `merge` for a binary merge) followed
+/// `queryOf` for a query encoder, `merge` for a binary merge, and `cycle`
+/// for the JSON decoders of a cycle of several messages) followed
 /// by a type name. Type names are
 /// unique within a module and start with an uppercase letter, and no
 /// prefix is another's, so two such names never collide: neither within
@@ -582,6 +583,17 @@ pub fn nested(codec_name: String) -> String {
     let (verb, rest) = codec_name.split_at(verb);
     format!("{verb}Nested{rest}")
 }
+
+/// The value holding the JSON decoders, for each depth, of a cycle of
+/// several messages: `cycle` followed by the Elm name of the cycle's first
+/// declared message (`cyclePerson`). Like [`default_name`], a prefix and a
+/// type name.
+pub fn cycle_table_name(first_elm_name: &str) -> String {
+    format!("{CYCLE_PREFIX}{first_elm_name}")
+}
+
+/// The prefix of [`cycle_table_name`].
+const CYCLE_PREFIX: &str = "cycle";
 
 /// The parameter a codec taking the registry binds it to. Like
 /// [`ENCODER_ARGUMENT`], it must not be the name of a top-level value of a

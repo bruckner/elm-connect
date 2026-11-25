@@ -6,7 +6,7 @@ use super::{
     Deep, Emitter, JSON_DECODE, JSON_ENCODE, OneofShape, PROTO_JSON, PROTO_REGISTRY, docs,
 };
 use crate::elm::ast::{BinOp, Decl, Expr, Pattern, Type, Variant};
-use crate::elm::build::{apply, binop, int, lambda, pctor, pvar, ty, var};
+use crate::elm::build::{access, apply, binop, int, lambda, pctor, pvar, ty, var};
 use crate::ir::{Message, TypeName, Wrapper};
 use crate::naming::{ENCODER_ARGUMENT, REGISTRY_ARGUMENT, decoder_name, nested, with_registry};
 
@@ -123,15 +123,30 @@ impl Emitter {
 /// The depth a recursive message's JSON decoder is built for.
 pub(super) const DEPTH: &str = "depth";
 
+/// The decoder, or record of decoders, one level below the one being made
+/// by `Proto.Json.memo`.
+pub(super) const NEXT: &str = "next";
+
 impl Emitter {
     /// A value on the cycle of the message being decoded, of the message
-    /// `elm_name`, read one level deeper: `Json.Decode.lazy (\_ ->
-    /// decodeNestedNode (depth + 1))`, the lazy step keeping the memoised
-    /// decoders from being needed while they are made; or
-    /// `Proto.Json.deeperWith depth (decodeNestedNodeWith types)` for a
-    /// message that takes the registry.
+    /// `elm_name`, read one level deeper: while `Proto.Json.memo` makes the
+    /// cycle's decoders, the one below, `next` for a message that holds
+    /// itself and `next.decodeTeam` in a cycle of several; otherwise
+    /// `Json.Decode.lazy (\_ -> decodeNestedNode (depth + 1))`, the lazy
+    /// step keeping the memoised decoders from being needed while they are
+    /// made; or `Proto.Json.deeperWith depth (decodeNestedNodeWith types)`
+    /// for a message that takes the registry.
     pub(super) fn deeper(&mut self, deep: Deep, elm_name: &str) -> Expr {
         let decoder = decoder_name(elm_name);
+        if let (Deep::Memo, Some(members)) = (deep, &self.cycle)
+            && members.iter().any(|member| member == elm_name)
+        {
+            return if members.len() == 1 {
+                var(NEXT)
+            } else {
+                access(var(NEXT), decoder)
+            };
+        }
         match deep {
             Deep::Memo | Deep::Called => {
                 let next = binop(BinOp::Add, var(DEPTH), int(1));
@@ -225,13 +240,16 @@ impl Emitter {
     /// The decoders of a message that nests, from the decoder `body` built
     /// for the depth `depth`: under `Deep::Memo`, `decodeNode =
     /// decodeNestedNode 1` and `decodeNestedNode = Proto.Json.memo
-    /// (\depth -> body)`; under `Deep::Called`, `decodeNestedNote depth =
+    /// (\next depth -> body) Proto.Json.tooDeep`, or for a message of a cycle
+    /// of `several`, `decodeNestedPerson depth = body`, its decoder read
+    /// from the cycle's; under `Deep::Called`, `decodeNestedNote depth =
     /// body`; under `Deep::Built`, `decodeNodeWith types =
     /// decodeNestedNodeWith types 1` and `decodeNestedNodeWith types depth
     /// = body`.
     pub(super) fn nested_decoders(
         &mut self,
         deep: Deep,
+        several: bool,
         elm_name: &str,
         decoder_name: String,
         doc: String,
@@ -243,9 +261,13 @@ impl Emitter {
         match deep {
             Deep::Memo | Deep::Called => {
                 let nested_decoder = nested(decoder_name.clone());
-                let (params, body) = if deep == Deep::Memo {
+                let (params, body) = if deep == Deep::Memo && !several {
                     let memo = self.reference((PROTO_JSON, "memo"));
-                    (Vec::new(), apply(memo, [lambda([pvar(DEPTH)], body)]))
+                    let past = self.reference((PROTO_JSON, "tooDeep"));
+                    (
+                        Vec::new(),
+                        apply(memo, [lambda([pvar(NEXT), pvar(DEPTH)], body), past]),
+                    )
                 } else {
                     (vec![pvar(DEPTH)], body)
                 };
@@ -326,7 +348,7 @@ impl Emitter {
         body: Expr,
     ) -> Vec<Decl> {
         if deep == Deep::Built {
-            return self.nested_decoders(deep, elm_name, decoder_name, doc, body);
+            return self.nested_decoders(deep, false, elm_name, decoder_name, doc, body);
         }
         let of = ty(elm_name.to_owned(), []);
         let decoder = self.library_type(JSON_DECODE, "Decoder", [of]);

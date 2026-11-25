@@ -646,6 +646,13 @@ struct Emitter {
     deep: Option<Deep>,
     /// Whether the value whose decoder is being written is on that cycle.
     deep_value: bool,
+    /// The messages of each cycle of the package whose JSON decoders are
+    /// made by `Proto.Json.memo`, by the Elm name of each member: its
+    /// cycle's members, in declaration order.
+    cycles: HashMap<String, Vec<String>>,
+    /// While the decoders of such a cycle are written for one depth: its
+    /// members, whose decoders one level deeper are the builder's `next`.
+    cycle: Option<Vec<String>>,
     /// While the binary merge of a message whose codecs take the depth is
     /// written: its `Struct`, `Value` and `ListValue` fields read at the
     /// merge's depth.
@@ -666,8 +673,8 @@ struct Emitter {
 /// for each depth.
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Deep {
-    /// Once for every depth, by `Proto.Json.memo` (`decodeNestedNode`):
-    /// a message on a cycle.
+    /// Once for every depth, from the deepest up, by `Proto.Json.memo`
+    /// (`decodeNestedNode`): a message on a cycle.
     Memo,
     /// When asked for, by a function of the depth (`decodeNestedNote
     /// depth`): a message on no cycle, whose depth the schema bounds.
@@ -696,6 +703,8 @@ impl Emitter {
             },
             deep: None,
             deep_value: false,
+            cycles: HashMap::new(),
+            cycle: None,
             binary_depth: false,
             deeper_registry: false,
             nested_any: false,
@@ -773,7 +782,22 @@ impl Emitter {
             binary_encoders.push(self.enum_encoder_bytes(enumeration));
             binary_decoders.push(self.enum_decoder_bytes(enumeration));
         }
+        self.cycles = self.memo_cycles(&messages);
         for shape in &messages {
+            if let Some(members) = self.cycles.get(&shape.message.elm_name).cloned()
+                && members.len() > 1
+                && members[0] == shape.message.elm_name
+            {
+                let shapes: Vec<&MessageShape> = members
+                    .iter()
+                    .filter_map(|member| {
+                        messages
+                            .iter()
+                            .find(|other| other.message.elm_name == *member)
+                    })
+                    .collect();
+                decoders.push(self.cycle_decoders(&shapes));
+            }
             types.push(self.message_alias(&package.module, shape));
             defaults.push(self.message_default(shape));
             values.push(self.message_record(&package.module, shape));

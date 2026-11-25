@@ -4,7 +4,7 @@ module Proto.Json exposing
     , objectOfFields
     , implicitField, implicitFloatField, implicitBytesField, repeatedField, dictField, boolMapField
     , tryObjectOfFields, tryOptionalField, tryRepeatedField, tryDictField, tryBoolMapField
-    , memo, deeper, deeperWith
+    , memo, tooDeep, deeper, deeperWith
     , oneof, members, Member, member, memberEither
     , emptyMember, emptyMemberEither, valueMember, valueMemberEither, nestedValueMember, nestedValueMemberEither
     , nullValueMember, nullValueMemberEither
@@ -102,22 +102,26 @@ takes the depth, and reads each message it holds that nests one level deeper:
 
     decodeNestedNode =
         Proto.Json.memo
-            (\depth ->
+            (\next depth ->
                 Proto.Json.message
                     (Json.Decode.succeed Node
-                        |> Proto.Json.messageField "children" [] (Json.Decode.list (Json.Decode.map Node_ (Json.Decode.lazy (\_ -> decodeNestedNode (depth + 1)))))
+                        |> Proto.Json.messageField "children" [] (Json.Decode.list (Json.Decode.map Node_ next))
                     )
             )
+            Proto.Json.tooDeep
 
 A message on a cycle makes its decoder for each depth once, with
-[`memo`](#memo), as above. A message on no cycle, whose depth the schema
+[`memo`](#memo), as above, from the deepest up: each is given the one a level
+below it, `next`, and past the limit [`tooDeep`](#tooDeep). The messages of a
+cycle of several make theirs together, a record of one decoder each per
+depth. A message on no cycle, whose depth the schema
 bounds, has a function of the depth instead, and the message holding it reads
 it with [`deeperWith`](#deeperWith). A message that holds an `Any` takes the
 registry, so its decoder at a depth is built as the value is read, with
 [`deeperWith`](#deeperWith) on a cycle and [`deeper`](#deeper) off one. Past
 the limit a decoder fails with "Expecting messages nested at most 100 deep".
 
-@docs memo, deeper, deeperWith
+@docs memo, tooDeep, deeper, deeperWith
 
 
 # Oneofs
@@ -2860,29 +2864,59 @@ hasJsonForm url =
 -- MESSAGES THAT NEST
 
 
-{-| The decoder at a depth of a message on a cycle, the outermost message at 1,
-from the decoder `build` makes for a depth. `memo build` makes
-the decoders for depths 1 to 100 once, so applied in a top-level value, as
-generated code applies it, it makes them once per program, and a read looks
-its decoder up; past 100 the decoder fails.
+{-| The decoders at a depth of the messages on a cycle, the outermost message
+at 1. `memo build past` makes them for depths 1 to 100 once, from the
+deepest up: `build next depth` makes those at `depth` from `next`, those
+one level below, which at 100 is `past`, the decoders past the limit. Applied
+in a top-level value, as generated code applies it, it makes them once per
+program, and a read goes from each straight to the next, with nothing looked
+up; past 100 it gives `past`.
 
     decodeNestedNode =
-        Proto.Json.memo (\depth -> ...)
+        Proto.Json.memo (\next depth -> ...) Proto.Json.tooDeep
+
+The decoders of a cycle of several messages are a record, one per message:
+
+    cyclePerson =
+        Proto.Json.memo
+            (\next depth -> { decodePerson = ..., decodeTeam = ... })
+            { decodePerson = Proto.Json.tooDeep, decodeTeam = Proto.Json.tooDeep }
 
 -}
-memo : (Int -> Decoder a) -> Int -> Decoder a
-memo build =
+memo : (level -> Int -> level) -> level -> Int -> level
+memo build past =
     let
         table =
-            Array.initialize Depth.limit (\index -> build (index + 1))
+            Array.fromList (levelsUp build Depth.limit past [])
     in
     \depth ->
         case Array.get (depth - 1) table of
-            Just decoder ->
-                decoder
+            Just level ->
+                level
 
             Nothing ->
-                Depth.tooDeep
+                past
+
+
+levelsUp : (level -> Int -> level) -> Int -> level -> List level -> List level
+levelsUp build depth next built =
+    if depth < 1 then
+        built
+
+    else
+        let
+            level =
+                build next depth
+        in
+        levelsUp build (depth - 1) level (level :: built)
+
+
+{-| A message read past the limit: it fails with "Expecting messages nested at
+most 100 deep".
+-}
+tooDeep : Decoder a
+tooDeep =
+    Depth.tooDeep
 
 
 {-| A message on no cycle that nests and takes the registry, read by a message

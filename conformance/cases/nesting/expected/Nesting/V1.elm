@@ -602,14 +602,15 @@ decodeNode =
 decodeNestedNode : Int -> Json.Decode.Decoder Node
 decodeNestedNode =
     Proto.Json.memo
-        (\depth ->
+        (\next depth ->
             Proto.Json.message
                 (Json.Decode.succeed Node
                     |> Proto.Json.messageField "label" "" Proto.Json.string
-                    |> Proto.Json.messageField "children" [] (Json.Decode.list (Json.Decode.map Node_ (Json.Decode.lazy (\_ -> decodeNestedNode (depth + 1)))))
-                    |> Proto.Json.messageFieldEither "byName" "by_name" Dict.empty (Proto.Json.stringDict (Json.Decode.map Node_ (Json.Decode.lazy (\_ -> decodeNestedNode (depth + 1)))))
+                    |> Proto.Json.messageField "children" [] (Json.Decode.list (Json.Decode.map Node_ next))
+                    |> Proto.Json.messageFieldEither "byName" "by_name" Dict.empty (Proto.Json.stringDict (Json.Decode.map Node_ next))
                 )
         )
+        Proto.Json.tooDeep
 
 
 {-| Decodes a [`Node_`](#Node_) from proto3 JSON.
@@ -617,6 +618,31 @@ decodeNestedNode =
 decodeNode_ : Json.Decode.Decoder Node_
 decodeNode_ =
     Json.Decode.map Node_ (Json.Decode.lazy (\_ -> decodeNode))
+
+
+{-| The JSON decoders of the messages of one cycle, [`Person`](#Person), [`Company`](#Company), for a message of it held `depth` levels deep, the outermost message read at 1: each reads the others one level deeper. Each message's decoder at a depth is read from here.
+-}
+cyclePerson : Int -> { decodePerson : Json.Decode.Decoder Person, decodeCompany : Json.Decode.Decoder Company }
+cyclePerson =
+    Proto.Json.memo
+        (\next depth ->
+            { decodePerson =
+                Proto.Json.message
+                    (Json.Decode.succeed Person
+                        |> Proto.Json.messageField "name" "" Proto.Json.string
+                        |> Proto.Json.messageField "employer" Nothing (Json.Decode.map Just (Json.Decode.map Company_ next.decodeCompany))
+                    )
+            , decodeCompany =
+                Proto.Json.message
+                    (Json.Decode.succeed Company
+                        |> Proto.Json.messageField "name" "" Proto.Json.string
+                        |> Proto.Json.messageField "staff" [] (Json.Decode.list (Json.Decode.map Person_ next.decodePerson))
+                    )
+            }
+        )
+        { decodePerson = Proto.Json.tooDeep
+        , decodeCompany = Proto.Json.tooDeep
+        }
 
 
 {-| Decodes a [`Person`](#Person) from proto3 JSON.
@@ -629,15 +655,8 @@ decodePerson =
 {-| [`decodePerson`](#decodePerson) for a [`Person`](#Person) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
 -}
 decodeNestedPerson : Int -> Json.Decode.Decoder Person
-decodeNestedPerson =
-    Proto.Json.memo
-        (\depth ->
-            Proto.Json.message
-                (Json.Decode.succeed Person
-                    |> Proto.Json.messageField "name" "" Proto.Json.string
-                    |> Proto.Json.messageField "employer" Nothing (Json.Decode.map Just (Json.Decode.map Company_ (Json.Decode.lazy (\_ -> decodeNestedCompany (depth + 1)))))
-                )
-        )
+decodeNestedPerson depth =
+    (cyclePerson depth).decodePerson
 
 
 {-| Decodes a [`Person_`](#Person_) from proto3 JSON.
@@ -657,15 +676,8 @@ decodeCompany =
 {-| [`decodeCompany`](#decodeCompany) for a [`Company`](#Company) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
 -}
 decodeNestedCompany : Int -> Json.Decode.Decoder Company
-decodeNestedCompany =
-    Proto.Json.memo
-        (\depth ->
-            Proto.Json.message
-                (Json.Decode.succeed Company
-                    |> Proto.Json.messageField "name" "" Proto.Json.string
-                    |> Proto.Json.messageField "staff" [] (Json.Decode.list (Json.Decode.map Person_ (Json.Decode.lazy (\_ -> decodeNestedPerson (depth + 1)))))
-                )
-        )
+decodeNestedCompany depth =
+    (cyclePerson depth).decodeCompany
 
 
 {-| Decodes a [`Company_`](#Company_) from proto3 JSON.
@@ -692,6 +704,33 @@ decodeNestedForest depth =
         )
 
 
+{-| The JSON decoders of the messages of one cycle, [`Expr`](#Expr), [`Sum`](#Sum), for a message of it held `depth` levels deep, the outermost message read at 1: each reads the others one level deeper. Each message's decoder at a depth is read from here.
+-}
+cycleExpr : Int -> { decodeExpr : Json.Decode.Decoder Expr, decodeSum : Json.Decode.Decoder Sum }
+cycleExpr =
+    Proto.Json.memo
+        (\next depth ->
+            { decodeExpr =
+                Json.Decode.succeed Expr
+                    |> Proto.Json.oneof
+                        (Proto.Json.members "value"
+                            ExprValueUnset
+                            [ Proto.Json.member "number" (Json.Decode.map ExprValueNumber Proto.Json.int64)
+                            , Proto.Json.member "sum" (Json.Decode.map ExprValueSum next.decodeSum)
+                            ]
+                        )
+            , decodeSum =
+                Proto.Json.message
+                    (Json.Decode.succeed Sum
+                        |> Proto.Json.messageField "terms" [] (Json.Decode.list next.decodeExpr)
+                    )
+            }
+        )
+        { decodeExpr = Proto.Json.tooDeep
+        , decodeSum = Proto.Json.tooDeep
+        }
+
+
 {-| Decodes an [`Expr`](#Expr) from proto3 JSON.
 -}
 decodeExpr : Json.Decode.Decoder Expr
@@ -702,12 +741,8 @@ decodeExpr =
 {-| [`decodeExpr`](#decodeExpr) for an [`Expr`](#Expr) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
 -}
 decodeNestedExpr : Int -> Json.Decode.Decoder Expr
-decodeNestedExpr =
-    Proto.Json.memo
-        (\depth ->
-            Json.Decode.succeed Expr
-                |> Proto.Json.oneof (decodeNestedExprValue depth)
-        )
+decodeNestedExpr depth =
+    (cycleExpr depth).decodeExpr
 
 
 {-| Decodes an [`ExprValue`](#ExprValue) from the members of its message's JSON object.
@@ -738,14 +773,8 @@ decodeSum =
 {-| [`decodeSum`](#decodeSum) for a [`Sum`](#Sum) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
 -}
 decodeNestedSum : Int -> Json.Decode.Decoder Sum
-decodeNestedSum =
-    Proto.Json.memo
-        (\depth ->
-            Proto.Json.message
-                (Json.Decode.succeed Sum
-                    |> Proto.Json.messageField "terms" [] (Json.Decode.list (Json.Decode.lazy (\_ -> decodeNestedExpr (depth + 1))))
-                )
-        )
+decodeNestedSum depth =
+    (cycleExpr depth).decodeSum
 
 
 

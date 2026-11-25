@@ -2,7 +2,7 @@
 //! value, its encoder and its decoder.
 
 use super::Deep;
-use super::recursion::DEPTH;
+use super::recursion::{DEPTH, NEXT};
 use super::{
     Emitter, JSON_DECODE, JSON_ENCODE, MessageShape, PROTO_ERROR, PROTO_JSON, PROTO_REGISTRY,
     PROTO_UNKNOWN, RecordField, call, docs,
@@ -12,9 +12,12 @@ use crate::elm::build::{
     access, apply, binop, lambda, list, pipeline, pvar, qualified, record, string, tuple2, ty,
     ty_fn, var,
 };
-use crate::ir::ModuleName;
-use crate::naming::{ENCODER_ARGUMENT, REGISTRY_ARGUMENT, UNKNOWN_FIELDS, nested, with_registry};
+use crate::ir::{ModuleName, TypeRef};
+use crate::naming::{
+    ENCODER_ARGUMENT, REGISTRY_ARGUMENT, UNKNOWN_FIELDS, cycle_table_name, nested, with_registry,
+};
 use crate::options::UnknownFields;
+use std::collections::HashMap;
 
 impl Emitter {
     /// `type alias Foo = { ... }`, one record field per proto field and per
@@ -307,8 +310,80 @@ impl Emitter {
     /// the package's `registry` would read only that package's `Any`s.
     pub(super) fn message_decoder(&mut self, shape: &MessageShape) -> Vec<Decl> {
         let name = &shape.message.elm_name;
-        let counts = self.counts(shape.message);
-        let deep = counts.then(|| {
+        let deep = self.message_deep(shape);
+        let members = self.cycles.get(name).cloned();
+        let body = match (&members, deep) {
+            // A message of a cycle of several: its decoders are made with
+            // the others', by `cycle_decoders`.
+            (Some(members), Some(Deep::Memo)) if members.len() > 1 => {
+                let table = cycle_table_name(&members[0]);
+                access(
+                    apply(var(table), [var(DEPTH)]),
+                    shape.message.decoder_name(),
+                )
+            }
+            _ => {
+                self.deep = deep;
+                self.cycle = members.clone().filter(|_| deep == Some(Deep::Memo));
+                let body = self.message_body(shape);
+                self.cycle = None;
+                self.deep = None;
+                body
+            }
+        };
+        let doc = format!(
+            "Decodes {} from proto3 JSON.",
+            docs::a_local(&shape.message.elm_name)
+        );
+        if let Some(deep) = deep {
+            let doc = if deep == Deep::Built {
+                format!(
+                    "Decodes {} from proto3 JSON, reading each `Any` it holds with the \
+                     registry: one of a type the registry lacks fails.",
+                    docs::a_local(&shape.message.elm_name)
+                )
+            } else {
+                doc
+            };
+            let several = members.as_ref().is_some_and(|members| members.len() > 1);
+            return self.nested_decoders(
+                deep,
+                several,
+                name,
+                shape.message.decoder_name(),
+                doc,
+                body,
+            );
+        }
+        if !self.message_reaches(shape) {
+            let annotation = self.library_type(JSON_DECODE, "Decoder", [ty(name.clone(), [])]);
+            return vec![Decl::Value {
+                doc: Some(doc),
+                name: shape.message.decoder_name(),
+                annotation,
+                params: Vec::new(),
+                body,
+            }];
+        }
+        let with = with_registry(shape.message.decoder_name());
+        let annotation = self.decoder_with_type(ty(name.clone(), []));
+        vec![Decl::Value {
+            doc: Some(format!(
+                "Decodes {} from proto3 JSON, reading each `Any` it holds with the \
+                 registry: one of a type the registry lacks fails.",
+                docs::a_local(&shape.message.elm_name)
+            )),
+            name: with,
+            annotation,
+            params: vec![pvar(REGISTRY_ARGUMENT)],
+            body,
+        }]
+    }
+
+    /// How the JSON decoder of a message whose codecs take the depth is
+    /// made for each depth, or `None` for one whose codecs do not.
+    pub(super) fn message_deep(&self, shape: &MessageShape) -> Option<Deep> {
+        self.counts(shape.message).then(|| {
             if self.message_reaches(shape) {
                 Deep::Built
             } else if shape.message.recursive {
@@ -316,9 +391,15 @@ impl Emitter {
             } else {
                 Deep::Called
             }
-        });
-        self.deep = deep;
-        let body = if shape.fields.is_empty() && shape.oneofs.is_empty() {
+        })
+    }
+
+    /// The JSON decoder of a message, at the depth `depth` when its codecs
+    /// take it (`self.deep`).
+    fn message_body(&mut self, shape: &MessageShape) -> Expr {
+        let name = &shape.message.elm_name;
+        let counts = self.counts(shape.message);
+        if shape.fields.is_empty() && shape.oneofs.is_empty() {
             // An empty message decodes to the empty record, from a JSON
             // object only, as a message with fields does.
             let empty = self.reference((PROTO_JSON, "emptyMessage"));
@@ -360,7 +441,14 @@ impl Emitter {
                     },
                     RecordField::Oneof(oneof) => {
                         let step = self.reference((PROTO_JSON, "oneof"));
-                        let decoder = if self.oneof_counts(counts, oneof) {
+                        let decoder = if self.cycle.is_some()
+                            && oneof.variants.iter().any(|&(variant, _)| variant.cyclic)
+                        {
+                            // Written out here, its members on the cycle
+                            // read from `next`, which the oneof's own
+                            // decoder at a depth cannot be given.
+                            self.oneof_members(oneof, Some(Deep::Memo))
+                        } else if self.oneof_counts(counts, oneof) {
                             if self.oneof_reaches(oneof) {
                                 apply(
                                     var(nested(with_registry(oneof.oneof.decoder_name()))),
@@ -403,47 +491,7 @@ impl Emitter {
                 let message = self.reference((PROTO_JSON, "message"));
                 apply(message, [decoder])
             }
-        };
-        self.deep = None;
-        let doc = format!(
-            "Decodes {} from proto3 JSON.",
-            docs::a_local(&shape.message.elm_name)
-        );
-        if let Some(deep) = deep {
-            let doc = if deep == Deep::Built {
-                format!(
-                    "Decodes {} from proto3 JSON, reading each `Any` it holds with the \
-                     registry: one of a type the registry lacks fails.",
-                    docs::a_local(&shape.message.elm_name)
-                )
-            } else {
-                doc
-            };
-            return self.nested_decoders(deep, name, shape.message.decoder_name(), doc, body);
         }
-        if !self.message_reaches(shape) {
-            let annotation = self.library_type(JSON_DECODE, "Decoder", [ty(name.clone(), [])]);
-            return vec![Decl::Value {
-                doc: Some(doc),
-                name: shape.message.decoder_name(),
-                annotation,
-                params: Vec::new(),
-                body,
-            }];
-        }
-        let with = with_registry(shape.message.decoder_name());
-        let annotation = self.decoder_with_type(ty(name.clone(), []));
-        vec![Decl::Value {
-            doc: Some(format!(
-                "Decodes {} from proto3 JSON, reading each `Any` it holds with the \
-                 registry: one of a type the registry lacks fails.",
-                docs::a_local(&shape.message.elm_name)
-            )),
-            name: with,
-            annotation,
-            params: vec![pvar(REGISTRY_ARGUMENT)],
-            body,
-        }]
     }
 
     /// A field's decoder ([`Self::field_decoder`]), its values read one
@@ -462,5 +510,123 @@ impl Emitter {
     /// Whether messages hold their unknown fields (`unknown_fields=keep`).
     pub(super) fn keeps_unknown(&self) -> bool {
         self.unknown_fields == UnknownFields::Keep
+    }
+}
+
+impl Emitter {
+    /// The cycles of `messages` whose JSON decoders `Proto.Json.memo`
+    /// makes, by the Elm name of each member: the cycle's members in
+    /// declaration order. A field or oneof member on its message's cycle
+    /// joins two messages of one cycle.
+    pub(super) fn memo_cycles(&self, messages: &[MessageShape]) -> HashMap<String, Vec<String>> {
+        let memo: Vec<&MessageShape> = messages
+            .iter()
+            .filter(|shape| self.message_deep(shape) == Some(Deep::Memo))
+            .collect();
+        let index: HashMap<&str, usize> = memo
+            .iter()
+            .enumerate()
+            .map(|(i, shape)| (shape.message.proto_full_name.as_str(), i))
+            .collect();
+        let mut parent: Vec<usize> = (0..memo.len()).collect();
+        fn root(parent: &mut [usize], mut i: usize) -> usize {
+            while parent[i] != i {
+                parent[i] = parent[parent[i]];
+                i = parent[i];
+            }
+            i
+        }
+        for (i, shape) in memo.iter().enumerate() {
+            let fields = shape
+                .message
+                .fields
+                .iter()
+                .filter(|field| field.recursive)
+                .map(|field| &field.ty);
+            let members = shape
+                .message
+                .oneofs
+                .iter()
+                .flat_map(|oneof| oneof.variants.iter())
+                .filter(|variant| variant.cyclic)
+                .map(|variant| &variant.ty);
+            for ty in fields.chain(members) {
+                if let TypeRef::Message(name) = ty
+                    && let Some(&j) = index.get(name.proto_full_name.as_str())
+                {
+                    let (a, b) = (root(&mut parent, i), root(&mut parent, j));
+                    parent[a.max(b)] = a.min(b);
+                }
+            }
+        }
+        let mut cycles: HashMap<String, Vec<String>> = HashMap::new();
+        let roots: Vec<usize> = (0..memo.len()).map(|i| root(&mut parent, i)).collect();
+        for (i, shape) in memo.iter().enumerate() {
+            let members = memo
+                .iter()
+                .zip(&roots)
+                .filter(|&(_, &r)| r == roots[i])
+                .map(|(other, _)| other.message.elm_name.clone())
+                .collect();
+            cycles.insert(shape.message.elm_name.clone(), members);
+        }
+        cycles
+    }
+
+    /// The JSON decoders, for each depth, of a cycle of several messages,
+    /// `shapes` in declaration order: `cyclePerson = Proto.Json.memo (\next
+    /// depth -> { decodePerson = ..., decodeTeam = ... }) { decodePerson =
+    /// Proto.Json.tooDeep, ... }`, a record of one decoder per member, each
+    /// reading the others from `next`, the record one level deeper. Elm
+    /// rejects a record whose fields refer to each other, so the members'
+    /// decoders are made together, from the deepest level up.
+    pub(super) fn cycle_decoders(&mut self, shapes: &[&MessageShape]) -> Decl {
+        let members: Vec<String> = shapes
+            .iter()
+            .map(|shape| shape.message.elm_name.clone())
+            .collect();
+        let mut fields = Vec::new();
+        let mut types = Vec::new();
+        let mut past = Vec::new();
+        for shape in shapes {
+            self.deep = Some(Deep::Memo);
+            self.cycle = Some(members.clone());
+            let body = self.message_body(shape);
+            self.cycle = None;
+            self.deep = None;
+            let name = shape.message.decoder_name();
+            let of = ty(shape.message.elm_name.clone(), []);
+            types.push((
+                name.clone(),
+                self.library_type(JSON_DECODE, "Decoder", [of]),
+            ));
+            past.push((name.clone(), self.reference((PROTO_JSON, "tooDeep"))));
+            fields.push((name, body));
+        }
+        let memo = self.reference((PROTO_JSON, "memo"));
+        let int_type = ty(self.core("Int"), []);
+        let listed = members
+            .iter()
+            .map(|member| format!("[`{member}`](#{member})"))
+            .collect::<Vec<_>>()
+            .join(", ");
+        Decl::Value {
+            doc: Some(format!(
+                "The JSON decoders of the messages of one cycle, {listed}, for a message \
+                 of it held `depth` levels deep, the outermost message read at 1: each \
+                 reads the others one level deeper. Each message's decoder at a depth \
+                 is read from here."
+            )),
+            name: cycle_table_name(&members[0]),
+            annotation: Type::Function(Box::new(int_type), Box::new(Type::Record(types))),
+            params: Vec::new(),
+            body: apply(
+                memo,
+                [
+                    lambda([pvar(NEXT), pvar(DEPTH)], record(fields)),
+                    record(past),
+                ],
+            ),
+        }
     }
 }

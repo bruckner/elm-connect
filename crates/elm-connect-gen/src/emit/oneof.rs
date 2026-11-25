@@ -176,6 +176,48 @@ impl Emitter {
                 Deep::Memo
             }
         });
+        let body = self.oneof_members(shape, deep);
+        let doc = format!(
+            "Decodes {} from the members of its message's JSON object.",
+            docs::a_local(&shape.oneof.elm_type_name)
+        );
+        if let Some(deep) = deep {
+            let elm_name = shape.oneof.elm_type_name.clone();
+            return self.nested_oneof_decoders(
+                deep,
+                &elm_name,
+                shape.oneof.decoder_name(),
+                doc,
+                body,
+            );
+        }
+        let oneof = ty(shape.oneof.elm_type_name.clone(), []);
+        let (name, annotation, params) = if self.oneof_reaches(shape) {
+            (
+                with_registry(shape.oneof.decoder_name()),
+                self.decoder_with_type(oneof),
+                vec![pvar(REGISTRY_ARGUMENT)],
+            )
+        } else {
+            (
+                shape.oneof.decoder_name(),
+                self.library_type(JSON_DECODE, "Decoder", [oneof]),
+                Vec::new(),
+            )
+        };
+        vec![Decl::Value {
+            doc: Some(doc),
+            name,
+            annotation,
+            params,
+            body,
+        }]
+    }
+
+    /// The `Proto.Json.members` decoder of a oneof, its members read as
+    /// `deep` says (see [`Self::oneof_decoder`]).
+    pub(super) fn oneof_members(&mut self, shape: &OneofShape, deep: Option<Deep>) -> Expr {
+        let outer = self.deep;
         self.deep = deep;
         let steps: Vec<Expr> = shape
             .variants
@@ -219,51 +261,16 @@ impl Emitter {
                 apply(step, names.into_iter().chain(args).chain([arg]))
             })
             .collect();
-        self.deep = None;
+        self.deep = outer;
         let members = self.reference((PROTO_JSON, "members"));
-        let body = apply(
+        apply(
             members,
             [
                 string(shape.oneof.proto_name.clone()),
                 var(shape.oneof.unset_ctor.clone()),
                 list(steps),
             ],
-        );
-        let doc = format!(
-            "Decodes {} from the members of its message's JSON object.",
-            docs::a_local(&shape.oneof.elm_type_name)
-        );
-        if let Some(deep) = deep {
-            let elm_name = shape.oneof.elm_type_name.clone();
-            return self.nested_oneof_decoders(
-                deep,
-                &elm_name,
-                shape.oneof.decoder_name(),
-                doc,
-                body,
-            );
-        }
-        let oneof = ty(shape.oneof.elm_type_name.clone(), []);
-        let (name, annotation, params) = if self.oneof_reaches(shape) {
-            (
-                with_registry(shape.oneof.decoder_name()),
-                self.decoder_with_type(oneof),
-                vec![pvar(REGISTRY_ARGUMENT)],
-            )
-        } else {
-            (
-                shape.oneof.decoder_name(),
-                self.library_type(JSON_DECODE, "Decoder", [oneof]),
-                Vec::new(),
-            )
-        };
-        vec![Decl::Value {
-            doc: Some(doc),
-            name,
-            annotation,
-            params,
-            body,
-        }]
+        )
     }
 }
 

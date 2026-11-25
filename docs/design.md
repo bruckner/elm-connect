@@ -795,12 +795,23 @@ rpc shared call =
     messages it reaches, the packages it imports, so a package generates
     the same code whatever else the build holds.
   - A message on a cycle makes its decoders once: `decodeNestedNode =
-    Proto.Json.memo (\depth -> …)`, whose fields on the cycle read
-    `Json.Decode.lazy (\_ -> decodeNestedNode (depth + 1))`. `memo`
-    makes the decoder for each depth from 1 to 100 once, when
-    `decodeNestedNode` is evaluated, and a read looks the next level's
-    up (lazily, since the decoders are being made when the decoder is).
-    A message of another cycle is read at the next depth directly,
+    Proto.Json.memo (\next depth -> …) Proto.Json.tooDeep`, whose
+    fields on the cycle read `next`. `memo` makes the decoder for each
+    depth once, when `decodeNestedNode` is evaluated, from 100 up to 1,
+    each given the one a level below (at 100, `tooDeep`), so a read goes
+    from one level to the next with nothing looked up and no `lazy`. A
+    oneof with a member on the cycle is written out in the message's
+    decoder, its member reading `next`; its own `decodeNestedNodeKind
+    depth` still reads the member through `Json.Decode.lazy`. The
+    messages of a cycle of several make theirs together, since Elm
+    rejects values defined in terms of each other: `cyclePerson =
+    Proto.Json.memo (\next depth -> { decodePerson = …, decodeTeam = …
+    }) { decodePerson = Proto.Json.tooDeep, … }`, named for the cycle's
+    first message, one record per depth with one decoder per message,
+    each reading the others from `next`; `decodeNestedPerson depth =
+    (cyclePerson depth).decodePerson`. The decoders made are those the
+    messages' separate tables made, one per message per depth. A
+    message of another cycle is read at the next depth directly,
     `decodeNestedTree (depth + 1)` (no `lazy`: nothing on its cycle
     leads back). A message on no cycle that nests has a function of the
     depth instead, `decodeNestedNote depth = …`, read by its holder with

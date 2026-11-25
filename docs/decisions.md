@@ -995,7 +995,9 @@ reading one level deeper, and every other message generates the code it
 did before.
 Making a decoder as each level is entered costs a JSON read about a
 third more, so the runtime's `memo` makes the decoder for each depth
-once and a read looks it up; the table stays inside the runtime, so
+once and a read looks it up (since made from the deepest level up, each
+given the next, so a read follows them with nothing looked up; design
+§3.2); the table stays inside the runtime, so
 generated code holds one name per format for it. A message that holds an `Any` builds
 its JSON decoders as they are entered, since they take the registry.
 Writing is not limited: no peer limits it, a limit there would cost

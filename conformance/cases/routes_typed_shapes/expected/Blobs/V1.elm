@@ -405,13 +405,14 @@ decodeFolder =
 decodeNestedFolder : Int -> Json.Decode.Decoder Folder
 decodeNestedFolder =
     Proto.Json.memo
-        (\depth ->
+        (\next depth ->
             Proto.Json.message
                 (Json.Decode.succeed Folder
                     |> Proto.Json.messageField "name" "" Proto.Json.string
-                    |> Proto.Json.messageField "parent" Nothing (Json.Decode.map Just (Json.Decode.map Folder_ (Json.Decode.lazy (\_ -> decodeNestedFolder (depth + 1)))))
+                    |> Proto.Json.messageField "parent" Nothing (Json.Decode.map Just (Json.Decode.map Folder_ next))
                 )
         )
+        Proto.Json.tooDeep
 
 
 {-| Decodes a [`Folder_`](#Folder_) from proto3 JSON.

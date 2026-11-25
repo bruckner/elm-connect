@@ -1376,14 +1376,15 @@ decodeChain =
 decodeNestedChain : Int -> Json.Decode.Decoder Chain
 decodeNestedChain =
     Proto.Json.memo
-        (\depth ->
+        (\next depth ->
             Proto.Json.message
                 (Json.Decode.succeed Chain
                     |> Proto.Json.messageField "label" "" Proto.Json.string
-                    |> Proto.Json.messageField "next" Nothing (Json.Decode.map Just (Json.Decode.map Chain_ (Json.Decode.lazy (\_ -> decodeNestedChain (depth + 1)))))
+                    |> Proto.Json.messageField "next" Nothing (Json.Decode.map Just (Json.Decode.map Chain_ next))
                     |> Proto.Json.messageField "tree" Nothing (Json.Decode.map Just (decodeNestedTree (depth + 1)))
                 )
         )
+        Proto.Json.tooDeep
 
 
 {-| Decodes a [`Chain_`](#Chain_) from proto3 JSON.
@@ -1405,13 +1406,14 @@ decodeTree =
 decodeNestedTree : Int -> Json.Decode.Decoder Tree
 decodeNestedTree =
     Proto.Json.memo
-        (\depth ->
+        (\next depth ->
             Proto.Json.message
                 (Json.Decode.succeed Tree
                     |> Proto.Json.messageField "label" "" Proto.Json.string
-                    |> Proto.Json.messageField "children" [] (Json.Decode.list (Json.Decode.map Tree_ (Json.Decode.lazy (\_ -> decodeNestedTree (depth + 1)))))
+                    |> Proto.Json.messageField "children" [] (Json.Decode.list (Json.Decode.map Tree_ next))
                 )
         )
+        Proto.Json.tooDeep
 
 
 {-| Decodes a [`Tree_`](#Tree_) from proto3 JSON.
@@ -1433,13 +1435,14 @@ decodeDir =
 decodeNestedDir : Int -> Json.Decode.Decoder Dir
 decodeNestedDir =
     Proto.Json.memo
-        (\depth ->
+        (\next depth ->
             Proto.Json.message
                 (Json.Decode.succeed Dir
-                    |> Proto.Json.messageField "entries" Dict.empty (Proto.Json.stringDict (Json.Decode.map Dir_ (Json.Decode.lazy (\_ -> decodeNestedDir (depth + 1)))))
+                    |> Proto.Json.messageField "entries" Dict.empty (Proto.Json.stringDict (Json.Decode.map Dir_ next))
                     |> Proto.Json.messageField "forest" Nothing (Json.Decode.map Just (Proto.Json.deeperWith depth decodeNestedForest))
                 )
         )
+        Proto.Json.tooDeep
 
 
 {-| Decodes a [`Dir_`](#Dir_) from proto3 JSON.
@@ -1461,10 +1464,17 @@ decodeExpr =
 decodeNestedExpr : Int -> Json.Decode.Decoder Expr
 decodeNestedExpr =
     Proto.Json.memo
-        (\depth ->
+        (\next depth ->
             Json.Decode.succeed Expr
-                |> Proto.Json.oneof (decodeNestedExprKind depth)
+                |> Proto.Json.oneof
+                    (Proto.Json.members "kind"
+                        ExprKindUnset
+                        [ Proto.Json.member "number" (Json.Decode.map ExprKindNumber Proto.Json.int32)
+                        , Proto.Json.member "negated" (Json.Decode.map ExprKindNegated next)
+                        ]
+                    )
         )
+        Proto.Json.tooDeep
 
 
 {-| Decodes an [`ExprKind`](#ExprKind) from the members of its message's JSON object.
@@ -1485,6 +1495,30 @@ decodeNestedExprKind depth =
         ]
 
 
+{-| The JSON decoders of the messages of one cycle, [`Person`](#Person), [`Team`](#Team), for a message of it held `depth` levels deep, the outermost message read at 1: each reads the others one level deeper. Each message's decoder at a depth is read from here.
+-}
+cyclePerson : Int -> { decodePerson : Json.Decode.Decoder Person, decodeTeam : Json.Decode.Decoder Team }
+cyclePerson =
+    Proto.Json.memo
+        (\next depth ->
+            { decodePerson =
+                Proto.Json.message
+                    (Json.Decode.succeed Person
+                        |> Proto.Json.messageField "name" "" Proto.Json.string
+                        |> Proto.Json.messageField "team" Nothing (Json.Decode.map Just (Json.Decode.map Team_ next.decodeTeam))
+                    )
+            , decodeTeam =
+                Proto.Json.message
+                    (Json.Decode.succeed Team
+                        |> Proto.Json.messageField "members" [] (Json.Decode.list (Json.Decode.map Person_ next.decodePerson))
+                    )
+            }
+        )
+        { decodePerson = Proto.Json.tooDeep
+        , decodeTeam = Proto.Json.tooDeep
+        }
+
+
 {-| Decodes a [`Person`](#Person) from proto3 JSON.
 -}
 decodePerson : Json.Decode.Decoder Person
@@ -1495,15 +1529,8 @@ decodePerson =
 {-| [`decodePerson`](#decodePerson) for a [`Person`](#Person) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
 -}
 decodeNestedPerson : Int -> Json.Decode.Decoder Person
-decodeNestedPerson =
-    Proto.Json.memo
-        (\depth ->
-            Proto.Json.message
-                (Json.Decode.succeed Person
-                    |> Proto.Json.messageField "name" "" Proto.Json.string
-                    |> Proto.Json.messageField "team" Nothing (Json.Decode.map Just (Json.Decode.map Team_ (Json.Decode.lazy (\_ -> decodeNestedTeam (depth + 1)))))
-                )
-        )
+decodeNestedPerson depth =
+    (cyclePerson depth).decodePerson
 
 
 {-| Decodes a [`Person_`](#Person_) from proto3 JSON.
@@ -1523,14 +1550,8 @@ decodeTeam =
 {-| [`decodeTeam`](#decodeTeam) for a [`Team`](#Team) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
 -}
 decodeNestedTeam : Int -> Json.Decode.Decoder Team
-decodeNestedTeam =
-    Proto.Json.memo
-        (\depth ->
-            Proto.Json.message
-                (Json.Decode.succeed Team
-                    |> Proto.Json.messageField "members" [] (Json.Decode.list (Json.Decode.map Person_ (Json.Decode.lazy (\_ -> decodeNestedPerson (depth + 1)))))
-                )
-        )
+decodeNestedTeam depth =
+    (cyclePerson depth).decodeTeam
 
 
 {-| Decodes a [`Team_`](#Team_) from proto3 JSON.
@@ -1538,6 +1559,35 @@ decodeNestedTeam =
 decodeTeam_ : Json.Decode.Decoder Team_
 decodeTeam_ =
     Json.Decode.map Team_ (Json.Decode.lazy (\_ -> decodeTeam))
+
+
+{-| The JSON decoders of the messages of one cycle, [`First`](#First), [`Second`](#Second), [`Third`](#Third), for a message of it held `depth` levels deep, the outermost message read at 1: each reads the others one level deeper. Each message's decoder at a depth is read from here.
+-}
+cycleFirst : Int -> { decodeFirst : Json.Decode.Decoder First, decodeSecond : Json.Decode.Decoder Second, decodeThird : Json.Decode.Decoder Third }
+cycleFirst =
+    Proto.Json.memo
+        (\next depth ->
+            { decodeFirst =
+                Proto.Json.message
+                    (Json.Decode.succeed First
+                        |> Proto.Json.messageField "second" Nothing (Json.Decode.map Just (Json.Decode.map Second_ next.decodeSecond))
+                    )
+            , decodeSecond =
+                Proto.Json.message
+                    (Json.Decode.succeed Second
+                        |> Proto.Json.messageField "third" Nothing (Json.Decode.map Just (Json.Decode.map Third_ next.decodeThird))
+                    )
+            , decodeThird =
+                Proto.Json.message
+                    (Json.Decode.succeed Third
+                        |> Proto.Json.messageField "firsts" [] (Json.Decode.list (Json.Decode.map First_ next.decodeFirst))
+                    )
+            }
+        )
+        { decodeFirst = Proto.Json.tooDeep
+        , decodeSecond = Proto.Json.tooDeep
+        , decodeThird = Proto.Json.tooDeep
+        }
 
 
 {-| Decodes a [`First`](#First) from proto3 JSON.
@@ -1550,14 +1600,8 @@ decodeFirst =
 {-| [`decodeFirst`](#decodeFirst) for a [`First`](#First) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
 -}
 decodeNestedFirst : Int -> Json.Decode.Decoder First
-decodeNestedFirst =
-    Proto.Json.memo
-        (\depth ->
-            Proto.Json.message
-                (Json.Decode.succeed First
-                    |> Proto.Json.messageField "second" Nothing (Json.Decode.map Just (Json.Decode.map Second_ (Json.Decode.lazy (\_ -> decodeNestedSecond (depth + 1)))))
-                )
-        )
+decodeNestedFirst depth =
+    (cycleFirst depth).decodeFirst
 
 
 {-| Decodes a [`First_`](#First_) from proto3 JSON.
@@ -1577,14 +1621,8 @@ decodeSecond =
 {-| [`decodeSecond`](#decodeSecond) for a [`Second`](#Second) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
 -}
 decodeNestedSecond : Int -> Json.Decode.Decoder Second
-decodeNestedSecond =
-    Proto.Json.memo
-        (\depth ->
-            Proto.Json.message
-                (Json.Decode.succeed Second
-                    |> Proto.Json.messageField "third" Nothing (Json.Decode.map Just (Json.Decode.map Third_ (Json.Decode.lazy (\_ -> decodeNestedThird (depth + 1)))))
-                )
-        )
+decodeNestedSecond depth =
+    (cycleFirst depth).decodeSecond
 
 
 {-| Decodes a [`Second_`](#Second_) from proto3 JSON.
@@ -1604,14 +1642,8 @@ decodeThird =
 {-| [`decodeThird`](#decodeThird) for a [`Third`](#Third) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
 -}
 decodeNestedThird : Int -> Json.Decode.Decoder Third
-decodeNestedThird =
-    Proto.Json.memo
-        (\depth ->
-            Proto.Json.message
-                (Json.Decode.succeed Third
-                    |> Proto.Json.messageField "firsts" [] (Json.Decode.list (Json.Decode.map First_ (Json.Decode.lazy (\_ -> decodeNestedFirst (depth + 1)))))
-                )
-        )
+decodeNestedThird depth =
+    (cycleFirst depth).decodeThird
 
 
 {-| Decodes a [`Third_`](#Third_) from proto3 JSON.
@@ -1651,7 +1683,7 @@ decodeWide =
 decodeNestedWide : Int -> Json.Decode.Decoder Wide
 decodeNestedWide =
     Proto.Json.memo
-        (\depth ->
+        (\next depth ->
             Proto.Json.message
                 (Json.Decode.succeed Wide
                     |> Proto.Json.messageField "f1" 0 Proto.Json.int32
@@ -1718,9 +1750,10 @@ decodeNestedWide =
                     |> Proto.Json.messageField "f62" 0 Proto.Json.int32
                     |> Proto.Json.messageField "f63" 0 Proto.Json.int32
                     |> Proto.Json.messageField "f64" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "children" [] (Json.Decode.list (Json.Decode.map Wide_ (Json.Decode.lazy (\_ -> decodeNestedWide (depth + 1)))))
+                    |> Proto.Json.messageField "children" [] (Json.Decode.list (Json.Decode.map Wide_ next))
                 )
         )
+        Proto.Json.tooDeep
 
 
 {-| Decodes a [`Wide_`](#Wide_) from proto3 JSON.

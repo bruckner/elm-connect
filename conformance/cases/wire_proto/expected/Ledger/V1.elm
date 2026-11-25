@@ -259,17 +259,24 @@ decodeEntry =
 decodeNestedEntry : Int -> Json.Decode.Decoder Entry
 decodeNestedEntry =
     Proto.Json.memo
-        (\depth ->
+        (\next depth ->
             Proto.Json.message
                 (Json.Decode.succeed Entry
                     |> Proto.Json.messageField "memo" "" Proto.Json.string
                     |> Proto.Json.messageField "amount" "0" Proto.Json.int64
                     |> Proto.Json.messageField "kind" KindUnspecified decodeKind
                     |> Proto.Json.messageField "tags" Dict.empty (Proto.Json.stringDict Proto.Json.int32)
-                    |> Proto.Json.oneof (decodeNestedEntrySource depth)
+                    |> Proto.Json.oneof
+                        (Proto.Json.members "source"
+                            EntrySourceUnset
+                            [ Proto.Json.member "account" (Json.Decode.map EntrySourceAccount Proto.Json.string)
+                            , Proto.Json.member "reversal" (Json.Decode.map EntrySourceReversal next)
+                            ]
+                        )
                     |> Proto.Json.messageField "marks" [] (Json.Decode.list Proto.Json.int32)
                 )
         )
+        Proto.Json.tooDeep
 
 
 {-| Decodes an [`EntrySource`](#EntrySource) from the members of its message's JSON object.
