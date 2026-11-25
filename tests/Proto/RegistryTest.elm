@@ -14,6 +14,8 @@ import Proto.Error exposing (Error(..), Reason(..))
 import Proto.Internal.Any
 import Proto.Internal.Registry
 import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message as Message exposing (Message)
 import Proto.Registry as Registry exposing (Registry)
 import Proto.Value
@@ -30,16 +32,16 @@ type alias Holder =
     { held : Maybe Any }
 
 
-encodeHolder : Holder -> Proto.Json.Encoder Error
+encodeHolder : Holder -> Proto.Json.Encode.Encoder Error
 encodeHolder value =
     Proto.Json.writeObject
-        [ Proto.Json.checkedFields [ ( "held", Proto.Json.writeOptional Proto.Json.writeAny value.held ) ] ]
+        [ Proto.Json.checkedFields [ ( "held", Proto.Json.writeOptional Any.encode value.held ) ] ]
 
 
 decodeHolderWith : Registry -> Json.Decode.Decoder Holder
 decodeHolderWith types =
     Json.Decode.succeed Holder
-        |> Proto.Json.field "held" Nothing (Json.Decode.map Just (Proto.Json.anyWith types))
+        |> Proto.Json.field "held" Nothing (Json.Decode.map Just (Proto.Json.Decode.anyWith types))
 
 
 encodeHolderBytes : Holder -> Bytes.Encode.Encoder
@@ -103,7 +105,7 @@ leafBytes name =
 messageLeaf : String -> Message String
 messageLeaf name =
     Message.init name
-        (\t -> Proto.Json.succeed (Json.Encode.object [ ( "text", Json.Encode.string t ) ]))
+        (\t -> Proto.Json.Encode.succeed (Json.Encode.object [ ( "text", Json.Encode.string t ) ]))
         (Json.Decode.field "text" Json.Decode.string)
         (\t -> Bytes.Encode.sequence [ Proto.Binary.implicit Proto.Binary.string 1 t ])
         (leafBytes name)
@@ -124,7 +126,7 @@ registry, as an `Any` of it converts.
 -}
 bytes : Registry -> String -> List ( String, Value ) -> Maybe String
 bytes registry name fields =
-    Json.Decode.decodeValue (Proto.Json.anyWith registry)
+    Json.Decode.decodeValue (Proto.Json.Decode.anyWith registry)
         (Json.Encode.object (( "@type", Json.Encode.string ("type.googleapis.com/" ++ name) ) :: fields))
         |> Result.toMaybe
         |> Maybe.andThen Any.bytes
@@ -155,7 +157,7 @@ chain names innermost =
 -}
 readAs : Registry -> Value -> String
 readAs registry value =
-    case Json.Decode.decodeValue (Proto.Json.anyWith registry) value of
+    case Json.Decode.decodeValue (Proto.Json.Decode.anyWith registry) value of
         Ok any ->
             case Any.bytes any of
                 Just _ ->
@@ -209,7 +211,7 @@ suite =
                             { held = Just (Any.pack (messageHolder "ext.Ext") { held = Just (Any.pack (messageLeaf "ext2.Leaf") "deep") }) }
 
                     written registry =
-                        Proto.Json.encodeWith registry (Proto.Json.writeAny packed) |> Result.map (Json.Encode.encode 0)
+                        Proto.Json.Encode.encodeWith registry (Any.encode packed) |> Result.map (Json.Encode.encode 0)
 
                     expected =
                         """{"@type":"type.googleapis.com/core.Core","held":{"@type":"type.googleapis.com/ext.Ext","held":{"@type":"type.googleapis.com/ext2.Leaf","text":"deep"}}}"""
@@ -217,15 +219,15 @@ suite =
                 ( written wide
                 , written (Registry.unionAll [ core, ext ])
                 , Result.toMaybe (written wide)
-                    |> Maybe.andThen (Json.Decode.decodeString (Proto.Json.anyWith wide) >> Result.toMaybe)
+                    |> Maybe.andThen (Json.Decode.decodeString (Proto.Json.Decode.anyWith wide) >> Result.toMaybe)
                     |> Maybe.map ((==) packed)
                 )
                     |> Expect.equal ( Ok expected, Err (UnregisteredType "type.googleapis.com/ext2.Leaf"), Just True )
         , test "a missing type is named by its URL, and binary that is not the message is its BadBinary" <|
             \_ ->
-                ( Proto.Json.encodeWith Registry.empty (Proto.Json.writeAny (Any.pack (messageLeaf "t.Leaf") "hi"))
+                ( Proto.Json.Encode.encodeWith Registry.empty (Any.encode (Any.pack (messageLeaf "t.Leaf") "hi"))
                 , Any.toJson (leaf "t.Leaf" Registry.empty) (Proto.Internal.Any.Any "type.googleapis.com/t.Leaf" (Proto.Internal.Any.Binary "/w=="))
-                , Json.Decode.decodeString (Proto.Json.anyWith Registry.empty) """{"@type":"example.com/t.Leaf","text":"hi"}"""
+                , Json.Decode.decodeString (Proto.Json.Decode.anyWith Registry.empty) """{"@type":"example.com/t.Leaf","text":"hi"}"""
                     |> Result.mapError (Json.Decode.errorToString >> String.contains "\"example.com/t.Leaf\"")
                 )
                     |> Expect.equal
@@ -237,7 +239,7 @@ suite =
             \_ ->
                 let
                     failure registry text =
-                        case Json.Decode.decodeString (Json.Decode.field "x" (Json.Decode.list (Proto.Json.anyWith registry))) text of
+                        case Json.Decode.decodeString (Json.Decode.field "x" (Json.Decode.list (Proto.Json.Decode.anyWith registry))) text of
                             Err problem ->
                                 Proto.Internal.Registry.unregistered registry problem
 
@@ -263,7 +265,7 @@ suite =
                     other =
                         Registry.register
                             (Message.init "t.Leaf"
-                                (\_ -> Proto.Json.succeed (Json.Encode.string "other"))
+                                (\_ -> Proto.Json.Encode.succeed (Json.Encode.string "other"))
                                 (Json.Decode.succeed "")
                                 (\_ -> Bytes.Encode.sequence [])
                                 (leafBytes "t.Leaf")
@@ -324,7 +326,7 @@ suite =
                 , Any.pack WellKnown.struct (Dict.fromList [ ( "k", Proto.Value.ValueNumber 1 ) ])
                 , Any.pack WellKnown.int64Value "5"
                 ]
-                    |> List.map (Proto.Json.writeAny >> Proto.Json.encodeWith WellKnown.registry >> Result.map (Json.Encode.encode 0))
+                    |> List.map (Any.encode >> Proto.Json.Encode.encodeWith WellKnown.registry >> Result.map (Json.Encode.encode 0))
                     |> Expect.equal
                         [ Ok """{"@type":"type.googleapis.com/google.protobuf.Duration","value":"1.500s"}"""
                         , Ok """{"@type":"type.googleapis.com/google.protobuf.Timestamp","value":"1970-01-01T00:00:00Z"}"""

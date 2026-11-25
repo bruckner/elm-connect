@@ -11,7 +11,7 @@ import Json.Decode
 import Json.Encode
 import Notes.V1
 import Proto.Error
-import Proto.Json
+import Proto.Json.Encode
 import Proto.Registry
 import Test exposing (Test, describe, test)
 
@@ -28,21 +28,21 @@ fullNoAny =
 
 {-| Decode `input` and write it again, as text.
 -}
-rewritten : (Proto.Registry.Registry -> Json.Decode.Decoder a) -> (a -> Proto.Json.Encoder Proto.Error.Error) -> String -> Result String String
+rewritten : (Proto.Registry.Registry -> Json.Decode.Decoder a) -> (a -> Proto.Json.Encode.Encoder Proto.Error.Error) -> String -> Result String String
 rewritten decode encode input =
     Json.Decode.decodeString (decode Notes.V1.registry) input
         |> Result.mapError Json.Decode.errorToString
-        |> Result.andThen (encode >> Proto.Json.encodeWith Notes.V1.registry >> Result.mapError Proto.Error.toString)
+        |> Result.andThen (encode >> Proto.Json.Encode.encodeWith Notes.V1.registry >> Result.mapError Proto.Error.toString)
         |> Result.map (Json.Encode.encode 0)
 
 
 {-| Decode `input` and write it again with the encoder that cannot refuse.
 -}
-rewrittenTotal : Json.Decode.Decoder a -> (a -> Proto.Json.Encoder Never) -> String -> Result String String
+rewrittenTotal : Json.Decode.Decoder a -> (a -> Proto.Json.Encode.Encoder Never) -> String -> Result String String
 rewrittenTotal decode encode input =
     Json.Decode.decodeString decode input
         |> Result.mapError Json.Decode.errorToString
-        |> Result.map (encode >> Proto.Json.encodeTotal >> Json.Encode.encode 0)
+        |> Result.map (encode >> Proto.Json.Encode.encodeTotal >> Json.Encode.encode 0)
 
 
 suite : Test

@@ -21,7 +21,7 @@ import Json.Encode
 import Proto.Binary
 import Proto.Bytes
 import Proto.Error
-import Proto.Json
+import Proto.Json.Encode
 import Proto.Registry exposing (Registry)
 import Proto.WellKnown
 import ProtobufTestMessages.Proto3 as Proto3
@@ -80,7 +80,7 @@ answer request =
                         reply kind problem
 
                     Ok message ->
-                        case Proto.Json.encodeWith registry (Proto3.encodeTestAllTypesProto3 message) of
+                        case Proto.Json.Encode.encodeWith registry (Proto3.encodeTestAllTypesProto3 message) of
                             Ok json ->
                                 reply "json" (Json.Encode.encode 0 json)
 

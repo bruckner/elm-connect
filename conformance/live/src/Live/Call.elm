@@ -25,7 +25,7 @@ import Proto.Binary
 import Proto.Bytes
 import Proto.Error
 import Proto.ErrorDetails
-import Proto.Json
+import Proto.Json.Encode
 import Proto.Message exposing (Message)
 import Proto.Registry
 import Rpc
@@ -442,7 +442,7 @@ detailWith registry detail =
         Ok any ->
             case Proto.Any.bytes any of
                 Just binary ->
-                    case Proto.Json.encodeWith registry (Proto.Json.writeAny any) of
+                    case Proto.Json.Encode.encodeWith registry (Proto.Any.encode any) of
                         Ok json ->
                             json
 
@@ -453,7 +453,7 @@ detailWith registry detail =
                                 ]
 
                 Nothing ->
-                    case unpackedDetail any |> Maybe.andThen (Proto.Json.writeAny >> Proto.Json.encodeWith registry >> Result.toMaybe) of
+                    case unpackedDetail any |> Maybe.andThen (Proto.Any.encode >> Proto.Json.Encode.encodeWith registry >> Result.toMaybe) of
                         Just json ->
                             json
 

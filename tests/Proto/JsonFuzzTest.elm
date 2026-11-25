@@ -19,6 +19,8 @@ import Proto.Duration
 import Proto.Error
 import Proto.Int64
 import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Timestamp
 import Proto.Value
 import Test exposing (Test, describe, fuzz, fuzz2, test)
@@ -77,29 +79,29 @@ int32Properties =
         [ fuzz (Fuzz.intRange -2147483648 2147483647) "an int32 round-trips, and decodes from its string" <|
             \n ->
                 Expect.all
-                    [ roundTrips Json.Encode.int Proto.Json.int32
-                    , \_ -> decodes Proto.Json.int32 (Json.Encode.string (String.fromInt n)) n
+                    [ roundTrips Json.Encode.int Proto.Json.Decode.int32
+                    , \_ -> decodes Proto.Json.Decode.int32 (Json.Encode.string (String.fromInt n)) n
                     ]
                     n
         , fuzz (Fuzz.intRange 0 4294967295) "a uint32 round-trips, and decodes from its string" <|
             \n ->
                 Expect.all
-                    [ roundTrips Json.Encode.int Proto.Json.uint32
-                    , \_ -> decodes Proto.Json.uint32 (Json.Encode.string (String.fromInt n)) n
+                    [ roundTrips Json.Encode.int Proto.Json.Decode.uint32
+                    , \_ -> decodes Proto.Json.Decode.uint32 (Json.Encode.string (String.fromInt n)) n
                     ]
                     n
         , fuzz (Fuzz.intRange 1 1099511627776) "an int32 out of range fails" <|
             \n ->
                 Expect.all
-                    [ \_ -> fails Proto.Json.int32 (Json.Encode.int (2147483647 + n))
-                    , \_ -> fails Proto.Json.int32 (Json.Encode.int (-2147483648 - n))
+                    [ \_ -> fails Proto.Json.Decode.int32 (Json.Encode.int (2147483647 + n))
+                    , \_ -> fails Proto.Json.Decode.int32 (Json.Encode.int (-2147483648 - n))
                     ]
                     ()
         , fuzz (Fuzz.intRange 1 1099511627776) "a uint32 out of range fails" <|
             \n ->
                 Expect.all
-                    [ \_ -> fails Proto.Json.uint32 (Json.Encode.int (4294967295 + n))
-                    , \_ -> fails Proto.Json.uint32 (Json.Encode.int -n)
+                    [ \_ -> fails Proto.Json.Decode.uint32 (Json.Encode.int (4294967295 + n))
+                    , \_ -> fails Proto.Json.Decode.uint32 (Json.Encode.int -n)
                     ]
                     ()
         ]
@@ -153,15 +155,15 @@ int64Properties : Test
 int64Properties =
     describe "64-bit integers as strings"
         [ fuzz Fuzzers.int64Text "an int64 round-trips with every digit, past 2^53 too" <|
-            roundTrips Proto.Json.encodeInt64 Proto.Json.int64
+            roundTrips Proto.Json.encodeInt64 Proto.Json.Decode.int64
         , fuzz Fuzzers.uint64Text "a uint64 round-trips with every digit" <|
-            roundTrips Proto.Json.encodeInt64 Proto.Json.uint64
+            roundTrips Proto.Json.encodeInt64 Proto.Json.Decode.uint64
         , fuzz Fuzzers.int64Text "an int64 in exponent notation reads as its canonical string" <|
             \text ->
                 Expect.all
-                    [ \_ -> decodes Proto.Json.int64 (Json.Encode.string (scientific text)) text
-                    , \_ -> decodes Proto.Json.int64 (Json.Encode.string (text ++ "e0")) text
-                    , \_ -> decodes Proto.Json.int64 (Json.Encode.string (text ++ ".0")) text
+                    [ \_ -> decodes Proto.Json.Decode.int64 (Json.Encode.string (scientific text)) text
+                    , \_ -> decodes Proto.Json.Decode.int64 (Json.Encode.string (text ++ "e0")) text
+                    , \_ -> decodes Proto.Json.Decode.int64 (Json.Encode.string (text ++ ".0")) text
                     ]
                     ()
         , fuzz Fuzzers.int64Text "leading zeros are dropped" <|
@@ -174,18 +176,18 @@ int64Properties =
                         else
                             "00" ++ text
                 in
-                decodes Proto.Json.int64 (Json.Encode.string padded) text
+                decodes Proto.Json.Decode.int64 (Json.Encode.string padded) text
         , fuzz Fuzzers.safeInt "a JSON number within 2^53 reads as its decimal string" <|
-            \n -> decodes Proto.Json.int64 (Json.Encode.int n) (String.fromInt n)
+            \n -> decodes Proto.Json.Decode.int64 (Json.Encode.int n) (String.fromInt n)
         , fuzz Fuzzers.uint64Text "a negative uint64 fails" <|
             \text ->
                 if text == "0" then
                     Expect.pass
 
                 else
-                    fails Proto.Json.uint64 (Json.Encode.string ("-" ++ text))
+                    fails Proto.Json.Decode.uint64 (Json.Encode.string ("-" ++ text))
         , fuzz Fuzzers.int64Text "a fraction fails" <|
-            \text -> fails Proto.Json.int64 (Json.Encode.string (text ++ ".5"))
+            \text -> fails Proto.Json.Decode.int64 (Json.Encode.string (text ++ ".5"))
         ]
 
 
@@ -195,18 +197,18 @@ int64AsIntProperties =
         [ fuzz Fuzzers.safeInt "an Int within ±(2^53 − 1) round-trips, and reads from a number" <|
             \n ->
                 Expect.all
-                    [ roundTrips Proto.Json.encodeInt64AsInt Proto.Json.int64AsInt
-                    , \_ -> decodes Proto.Json.int64AsInt (Json.Encode.int n) n
+                    [ roundTrips Proto.Json.encodeInt64AsInt Proto.Json.Decode.int64AsInt
+                    , \_ -> decodes Proto.Json.Decode.int64AsInt (Json.Encode.int n) n
                     , \_ -> Proto.Int64.toInt (Proto.Int64.fromInt n) |> Expect.equal (Just n)
                     ]
                     n
         , fuzz (Fuzz.map abs Fuzzers.safeInt) "a uint64 Int round-trips" <|
-            roundTrips Proto.Json.encodeInt64AsInt Proto.Json.uint64AsInt
+            roundTrips Proto.Json.encodeInt64AsInt Proto.Json.Decode.uint64AsInt
         , fuzz Fuzzers.unsafeInt64Text "past ±(2^53 − 1) it fails rather than round" <|
             \text ->
                 Expect.all
-                    [ \_ -> fails Proto.Json.int64AsInt (Json.Encode.string text)
-                    , \_ -> fails Proto.Json.uint64AsInt (Json.Encode.string text)
+                    [ \_ -> fails Proto.Json.Decode.int64AsInt (Json.Encode.string text)
+                    , \_ -> fails Proto.Json.Decode.uint64AsInt (Json.Encode.string text)
                     , \_ -> Proto.Int64.toInt text |> Expect.equal Nothing
                     ]
                     ()
@@ -239,7 +241,7 @@ floatProperties =
         [ fuzz Fuzzers.float "a double round-trips, NaN and the infinities included" <|
             \x ->
                 Json.Encode.encode 0 (Proto.Json.encodeFloat x)
-                    |> Json.Decode.decodeString Proto.Json.float
+                    |> Json.Decode.decodeString Proto.Json.Decode.float
                     |> Result.mapError Json.Decode.errorToString
                     |> sameFloat x
         , fuzz Fuzzers.float "a double reads from its string form too" <|
@@ -258,7 +260,7 @@ floatProperties =
                         else
                             String.fromFloat x
                 in
-                Json.Decode.decodeValue Proto.Json.float (Json.Encode.string text)
+                Json.Decode.decodeValue Proto.Json.Decode.float (Json.Encode.string text)
                     |> Result.mapError Json.Decode.errorToString
                     |> sameFloat x
         , fuzz Fuzzers.float "a non-finite double is written as proto3 JSON's string" <|
@@ -311,7 +313,7 @@ bytesProperties =
                         Fuzzers.base64 bytes
                 in
                 Expect.all
-                    (List.map (\form _ -> roundTrips Proto.Json.encodeBytes Proto.Json.bytes form)
+                    (List.map (\form _ -> roundTrips Proto.Json.encodeBytes Proto.Json.Decode.bytes form)
                         [ text, urlSafe text, unpadded text, unpadded (urlSafe text) ]
                     )
                     ()
@@ -321,7 +323,7 @@ bytesProperties =
                     text =
                         unpadded (Fuzzers.base64 before) ++ "+-" ++ unpadded (Fuzzers.base64 after)
                 in
-                fails Proto.Json.bytes (Json.Encode.string text)
+                fails Proto.Json.Decode.bytes (Json.Encode.string text)
         , fuzz (Fuzz.list (Fuzz.intRange 0 255)) "a length no base64 has fails" <|
             \bytes ->
                 let
@@ -329,7 +331,7 @@ bytesProperties =
                         unpadded (Fuzzers.base64 bytes)
                 in
                 if modBy 4 (String.length text) == 0 then
-                    fails Proto.Json.bytes (Json.Encode.string (text ++ "A"))
+                    fails Proto.Json.Decode.bytes (Json.Encode.string (text ++ "A"))
 
                 else
                     Expect.pass
@@ -344,7 +346,7 @@ timestampProperties : Test
 timestampProperties =
     describe "timestamps"
         [ fuzz Fuzzers.posix "a Time.Posix from 0001 to 9999 round-trips" <|
-            roundTrips encodeTimestamp Proto.Json.timestamp
+            roundTrips encodeTimestamp Proto.Json.Decode.timestamp
         , fuzz2 Fuzzers.posix (Fuzz.listOfLengthBetween 1 6 (Fuzz.intRange 0 9)) "finer fractional digits are truncated, not rounded" <|
             \posix extra ->
                 let
@@ -405,7 +407,7 @@ durationProperties =
             \d ->
                 Expect.all
                     [ \_ -> Proto.Duration.fromString d.text |> Expect.notEqual Nothing
-                    , \_ -> roundTrips encodeDuration Proto.Json.duration d.value
+                    , \_ -> roundTrips encodeDuration Proto.Json.Decode.duration d.value
                     ]
                     ()
         , fuzz Fuzzers.duration "it is written with 0, 3, 6 or 9 fractional digits, the fewest that keep every nanosecond" <|
@@ -475,7 +477,7 @@ fieldMaskProperties =
         [ fuzz (Fuzz.list Fuzzers.fieldMaskPath) "paths with proto field names round-trip through lowerCamelCase" <|
             \paths ->
                 Expect.all
-                    [ roundTrips encodeFieldMask Proto.Json.fieldMask
+                    [ roundTrips encodeFieldMask Proto.Json.Decode.fieldMask
                     , \_ ->
                         Json.Decode.decodeValue Json.Decode.string (encodeFieldMask paths)
                             |> Result.map (String.contains "_")
@@ -564,7 +566,7 @@ mapProperties =
                         Dict.isEmpty entries |> Expect.equal True
 
                     Just json ->
-                        decodes (Json.Decode.dict Proto.Json.int64) json entries
+                        decodes (Json.Decode.dict Proto.Json.Decode.int64) json entries
         , fuzz (Fuzz.list (Fuzz.pair (Fuzz.intRange -2147483648 2147483647) Fuzzers.awkwardString)) "an int-keyed map round-trips" <|
             \pairs ->
                 let
@@ -647,7 +649,7 @@ valueProperties =
                     struct =
                         Dict.fromList (List.map (Tuple.mapSecond toValue) members)
                 in
-                Json.Decode.decodeValue Proto.Json.struct (encodeStruct struct)
+                Json.Decode.decodeValue Proto.Json.Decode.struct (encodeStruct struct)
                     |> Result.map encodeStruct
                     |> encoded
                     |> Expect.equal (Ok (Json.Encode.encode 0 (encodeStruct struct)))
@@ -657,7 +659,7 @@ valueProperties =
                     items =
                         List.map toValue jsonItems
                 in
-                Json.Decode.decodeValue Proto.Json.listValue (encodeListValue items)
+                Json.Decode.decodeValue Proto.Json.Decode.listValue (encodeListValue items)
                     |> Result.map encodeListValue
                     |> encoded
                     |> Expect.equal (Ok (Json.Encode.encode 0 (encodeListValue items)))
@@ -669,8 +671,8 @@ valueProperties =
         , fuzz (Fuzz.list (Fuzzers.json 1)) "Struct refuses an array and ListValue an object" <|
             \items ->
                 Expect.all
-                    [ \_ -> fails Proto.Json.struct (Json.Encode.list identity items)
-                    , \_ -> fails Proto.Json.listValue (Json.Encode.object (List.indexedMap (\i v -> ( String.fromInt i, v )) items))
+                    [ \_ -> fails Proto.Json.Decode.struct (Json.Encode.list identity items)
+                    , \_ -> fails Proto.Json.Decode.listValue (Json.Encode.object (List.indexedMap (\i v -> ( String.fromInt i, v )) items))
                     ]
                     ()
         ]
@@ -834,38 +836,38 @@ toValue json =
     Proto.Value.fromJson json |> Maybe.withDefault Proto.Value.ValueNull
 
 
-writtenOrNull : Proto.Json.Encoder Proto.Error.Error -> Json.Encode.Value
+writtenOrNull : Proto.Json.Encode.Encoder Proto.Error.Error -> Json.Encode.Value
 writtenOrNull encoder =
-    Proto.Json.encode encoder |> Result.withDefault Json.Encode.null
+    Proto.Json.Encode.encode encoder |> Result.withDefault Json.Encode.null
 
 
 {-| The JSON a checked write gives a valid value, `null` for one it refuses.
 -}
-writes : Proto.Json.Encoder Proto.Error.Error -> Json.Encode.Value
+writes : Proto.Json.Encode.Encoder Proto.Error.Error -> Json.Encode.Value
 writes encoder =
-    Proto.Json.encode encoder |> Result.withDefault Json.Encode.null
+    Proto.Json.Encode.encode encoder |> Result.withDefault Json.Encode.null
 
 
 encodeStruct : Dict.Dict String Proto.Value.Value -> Json.Encode.Value
 encodeStruct =
-    writes << Proto.Json.writeStruct
+    writes << Proto.Json.Encode.struct
 
 
 encodeListValue : List Proto.Value.Value -> Json.Encode.Value
 encodeListValue =
-    writes << Proto.Json.writeListValue
+    writes << Proto.Json.Encode.listValue
 
 
 encodeTimestamp : Time.Posix -> Json.Encode.Value
 encodeTimestamp =
-    writes << Proto.Json.writeTimestamp
+    writes << Proto.Json.Encode.timestamp
 
 
 encodeDuration : Proto.Duration.Duration -> Json.Encode.Value
 encodeDuration =
-    writes << Proto.Json.writeDuration
+    writes << Proto.Json.Encode.duration
 
 
 encodeFieldMask : List String -> Json.Encode.Value
 encodeFieldMask =
-    writes << Proto.Json.writeFieldMask
+    writes << Proto.Json.Encode.fieldMask

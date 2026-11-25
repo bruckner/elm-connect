@@ -7,7 +7,7 @@ import Live.Call exposing (Entry)
 import Live.Codec exposing (entry)
 import Notes.V1
 import Notes.V1.NotesService as Service
-import Proto.Json
+import Proto.Json.Decode
 
 
 {-| Each method by its service and name.
@@ -21,5 +21,5 @@ table =
         , ( "UpdateNote", entry Service.updateNote Service.updateNote (Notes.V1.decodeUpdateNoteRequestWith Live.Codec.registry) Notes.V1.messageNote )
         , ( "DeleteNote", entry Service.deleteNote Service.deleteNote Notes.V1.decodeDeleteNoteRequest Live.Codec.empty )
         , ( "ArchiveNote", entry Service.archiveNote Service.archiveNote Notes.V1.decodeArchiveNoteRequest Notes.V1.messageNote )
-        , ( "Ping", entry Service.ping Service.ping Proto.Json.empty Live.Codec.empty )
+        , ( "Ping", entry Service.ping Service.ping Proto.Json.Decode.empty Live.Codec.empty )
         ]

@@ -8,7 +8,8 @@ import Proto.Any as Any exposing (Any)
 import Proto.Binary
 import Proto.Bytes
 import Proto.Error exposing (Error(..), Reason(..))
-import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message as Message exposing (Message)
 import Proto.Registry as Registry exposing (Registry)
 import Proto.WellKnown as WellKnown
@@ -49,7 +50,7 @@ decodeTitle =
 -}
 messageTitle : Message String
 messageTitle =
-    Message.init "notes.v1.Title" (Proto.Json.succeed << encodeTitle) decodeTitle encodeTitleBytes decodeTitleBytes
+    Message.init "notes.v1.Title" (Proto.Json.Encode.succeed << encodeTitle) decodeTitle encodeTitleBytes decodeTitleBytes
 
 
 {-| The registry generated code gives a package of
@@ -79,7 +80,7 @@ base64 any =
 -}
 readWith : Registry -> String -> Result String Any
 readWith reg text =
-    Json.Decode.decodeString (Proto.Json.anyWith reg) text
+    Json.Decode.decodeString (Proto.Json.Decode.anyWith reg) text
         |> Result.mapError Json.Decode.errorToString
 
 
@@ -110,7 +111,7 @@ isBadJson result =
 
 writtenWith : Registry -> Any -> Result Error String
 writtenWith reg any =
-    Proto.Json.encodeWith reg (Proto.Json.writeAny any) |> Result.map (Json.Encode.encode 0)
+    Proto.Json.Encode.encodeWith reg (Any.encode any) |> Result.map (Json.Encode.encode 0)
 
 
 suite : Test

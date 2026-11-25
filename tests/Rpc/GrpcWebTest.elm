@@ -12,7 +12,7 @@ import Proto.Any
 import Proto.Binary
 import Proto.Bytes
 import Proto.Error
-import Proto.Json
+import Proto.Json.Encode
 import Proto.Method exposing (Idempotency(..))
 import Proto.Registry
 import Requests exposing (refusalOf, requestOf)
@@ -70,7 +70,7 @@ both =
     Rpc.call
         (Proto.Method.init "notes.v1.Notes"
             "GetNote"
-            (\r -> Proto.Json.succeed (Json.Encode.object [ ( "name", Json.Encode.string r.name ) ]))
+            (\r -> Proto.Json.Encode.succeed (Json.Encode.object [ ( "name", Json.Encode.string r.name ) ]))
             (\_ -> Json.Decode.field "title" Json.Decode.string)
             encodeGetNoteBytes
             decodeTitleBytes

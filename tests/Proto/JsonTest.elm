@@ -9,6 +9,8 @@ import Json.Encode
 import Proto.Duration
 import Proto.Error
 import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Value
 import Test exposing (Test, describe, test)
 import Time
@@ -338,7 +340,7 @@ lookupTests =
         , test "an unknown hasOwnProperty key is ignored by a oneof" <|
             \_ -> decodes decodeEvent """{"hasOwnProperty":1,"text":"t"}""" (Event "" (EventKindText "t"))
         , test "an unknown hasOwnProperty key is ignored by Empty" <|
-            \_ -> decodes Proto.Json.empty """{"hasOwnProperty":1}""" ()
+            \_ -> decodes Proto.Json.Decode.empty """{"hasOwnProperty":1}""" ()
         , test "unknown keys named after Object.prototype's properties are ignored" <|
             \_ -> decodes decodePair """{"constructor":"c","toString":1,"__proto__":{},"valueOf":null}""" (Pair "" 0)
         , test "a field an array has reads from an object" <|
@@ -352,7 +354,7 @@ lookupTests =
         , test "a oneof fails on every JSON value that is not an object" <|
             \_ -> failsOnEach decodeEvent notObjects
         , test "Empty fails on every JSON value that is not an object" <|
-            \_ -> failsOnEach Proto.Json.empty notObjects
+            \_ -> failsOnEach Proto.Json.Decode.empty notObjects
         , test "a non-object fails as elm/json words it" <|
             \_ -> failsWith decodePair "42" "Expecting an OBJECT"
         , test "an empty object gives every default" <|
@@ -389,7 +391,7 @@ type alias Shapes =
 decodeShapes : Decoder Shapes
 decodeShapes =
     Json.Decode.succeed Shapes
-        |> Proto.Json.field "count" Nothing (Json.Decode.map Just Proto.Json.int32)
+        |> Proto.Json.field "count" Nothing (Json.Decode.map Just Proto.Json.Decode.int32)
         |> Proto.Json.field "tags" [] (Json.Decode.list Json.Decode.string)
 
 
@@ -899,46 +901,46 @@ int32Tests : Test
 int32Tests =
     describe "int32"
         [ test "a number" <|
-            \_ -> decodes Proto.Json.int32 "42" 42
+            \_ -> decodes Proto.Json.Decode.int32 "42" 42
         , test "a negative number" <|
-            \_ -> decodes Proto.Json.int32 "-7" -7
+            \_ -> decodes Proto.Json.Decode.int32 "-7" -7
         , test "an integral number written with a fraction" <|
-            \_ -> decodes Proto.Json.int32 "4.0" 4
+            \_ -> decodes Proto.Json.Decode.int32 "4.0" 4
         , test "a number in exponent notation" <|
-            \_ -> decodes Proto.Json.int32 "1e2" 100
+            \_ -> decodes Proto.Json.Decode.int32 "1e2" 100
         , test "a string" <|
-            \_ -> decodes Proto.Json.int32 "\"42\"" 42
+            \_ -> decodes Proto.Json.Decode.int32 "\"42\"" 42
         , test "a negative string" <|
-            \_ -> decodes Proto.Json.int32 "\"-42\"" -42
+            \_ -> decodes Proto.Json.Decode.int32 "\"-42\"" -42
         , test "a string in exponent notation" <|
-            \_ -> decodes Proto.Json.int32 "\"1e2\"" 100
+            \_ -> decodes Proto.Json.Decode.int32 "\"1e2\"" 100
         , test "a fractional number fails" <|
-            \_ -> fails Proto.Json.int32 "4.5"
+            \_ -> fails Proto.Json.Decode.int32 "4.5"
         , test "a fractional string fails" <|
-            \_ -> fails Proto.Json.int32 "\"4.5\""
+            \_ -> fails Proto.Json.Decode.int32 "\"4.5\""
         , test "an empty string fails" <|
-            \_ -> fails Proto.Json.int32 "\"\""
+            \_ -> fails Proto.Json.Decode.int32 "\"\""
         , test "\"Infinity\" fails" <|
-            \_ -> fails Proto.Json.int32 "\"Infinity\""
+            \_ -> fails Proto.Json.Decode.int32 "\"Infinity\""
         , test "a boolean fails" <|
-            \_ -> fails Proto.Json.int32 "true"
+            \_ -> fails Proto.Json.Decode.int32 "true"
         , test "the bounds decode" <|
             \_ ->
                 Expect.all
-                    [ \_ -> decodes Proto.Json.int32 "2147483647" 2147483647
-                    , \_ -> decodes Proto.Json.int32 "-2147483648" -2147483648
-                    , \_ -> decodes Proto.Json.int32 "\"-2147483648\"" -2147483648
+                    [ \_ -> decodes Proto.Json.Decode.int32 "2147483647" 2147483647
+                    , \_ -> decodes Proto.Json.Decode.int32 "-2147483648" -2147483648
+                    , \_ -> decodes Proto.Json.Decode.int32 "\"-2147483648\"" -2147483648
                     ]
                     ()
         , test "past the upper bound fails" <|
-            \_ -> fails Proto.Json.int32 "2147483648"
+            \_ -> fails Proto.Json.Decode.int32 "2147483648"
         , test "past the lower bound fails" <|
-            \_ -> fails Proto.Json.int32 "\"-2147483649\""
+            \_ -> fails Proto.Json.Decode.int32 "\"-2147483649\""
         , test "a huge number fails" <|
-            \_ -> fails Proto.Json.int32 "1e30"
+            \_ -> fails Proto.Json.Decode.int32 "1e30"
         , test "says why it fails" <|
             \_ ->
-                Json.Decode.decodeString Proto.Json.int32 "2147483648"
+                Json.Decode.decodeString Proto.Json.Decode.int32 "2147483648"
                     |> Result.mapError Json.Decode.errorToString
                     |> Result.mapError (String.contains "Expecting an int32 (-2147483648 to 2147483647)")
                     |> Expect.equal (Err True)
@@ -981,30 +983,30 @@ int32StringTests =
         [ test "a string reads as int64 reads one" <|
             \_ ->
                 int32Strings
-                    |> List.filter (\( text, int ) -> Json.Decode.decodeValue Proto.Json.int32 (Json.Encode.string text) /= Ok int)
+                    |> List.filter (\( text, int ) -> Json.Decode.decodeValue Proto.Json.Decode.int32 (Json.Encode.string text) /= Ok int)
                     |> Expect.equal []
         , test "a string int64 rejects, or past the range, fails" <|
             \_ ->
                 notInt32Strings
-                    |> List.filter (\text -> Result.toMaybe (Json.Decode.decodeValue Proto.Json.int32 (Json.Encode.string text)) /= Nothing)
+                    |> List.filter (\text -> Result.toMaybe (Json.Decode.decodeValue Proto.Json.Decode.int32 (Json.Encode.string text)) /= Nothing)
                     |> Expect.equal []
         , test "a leading + fails, naming the string" <|
-            \_ -> failsWith Proto.Json.int32 "\"+5\"" "Expecting an integer"
+            \_ -> failsWith Proto.Json.Decode.int32 "\"+5\"" "Expecting an integer"
         , test "a string past the range fails, naming the range" <|
-            \_ -> failsWith Proto.Json.int32 "\"2147483648\"" "Expecting an int32 (-2147483648 to 2147483647)"
+            \_ -> failsWith Proto.Json.Decode.int32 "\"2147483648\"" "Expecting an int32 (-2147483648 to 2147483647)"
         , test "uint32 reads the same forms within its range" <|
             \_ ->
                 Expect.all
-                    [ \_ -> decodes Proto.Json.uint32 "\"4294967295\"" 4294967295
-                    , \_ -> decodes Proto.Json.uint32 "\"004294967295\"" 4294967295
-                    , \_ -> decodes Proto.Json.uint32 "\"4.294967295e9\"" 4294967295
-                    , \_ -> decodes Proto.Json.uint32 "\"-0\"" 0
-                    , \_ -> decodes Proto.Json.uint32 "\"1e2\"" 100
-                    , \_ -> failsWith Proto.Json.uint32 "\"4294967296\"" "Expecting a uint32 (0 to 4294967295)"
-                    , \_ -> fails Proto.Json.uint32 "\"-1\""
-                    , \_ -> fails Proto.Json.uint32 "\"+5\""
-                    , \_ -> fails Proto.Json.uint32 "\" 12\""
-                    , \_ -> fails Proto.Json.uint32 "\"0x10\""
+                    [ \_ -> decodes Proto.Json.Decode.uint32 "\"4294967295\"" 4294967295
+                    , \_ -> decodes Proto.Json.Decode.uint32 "\"004294967295\"" 4294967295
+                    , \_ -> decodes Proto.Json.Decode.uint32 "\"4.294967295e9\"" 4294967295
+                    , \_ -> decodes Proto.Json.Decode.uint32 "\"-0\"" 0
+                    , \_ -> decodes Proto.Json.Decode.uint32 "\"1e2\"" 100
+                    , \_ -> failsWith Proto.Json.Decode.uint32 "\"4294967296\"" "Expecting a uint32 (0 to 4294967295)"
+                    , \_ -> fails Proto.Json.Decode.uint32 "\"-1\""
+                    , \_ -> fails Proto.Json.Decode.uint32 "\"+5\""
+                    , \_ -> fails Proto.Json.Decode.uint32 "\" 12\""
+                    , \_ -> fails Proto.Json.Decode.uint32 "\"0x10\""
                     ]
                     ()
         ]
@@ -1014,23 +1016,23 @@ uint32Tests : Test
 uint32Tests =
     describe "uint32"
         [ test "a number" <|
-            \_ -> decodes Proto.Json.uint32 "42" 42
+            \_ -> decodes Proto.Json.Decode.uint32 "42" 42
         , test "a string" <|
-            \_ -> decodes Proto.Json.uint32 "\"42\"" 42
+            \_ -> decodes Proto.Json.Decode.uint32 "\"42\"" 42
         , test "the bounds decode" <|
             \_ ->
                 Expect.all
-                    [ \_ -> decodes Proto.Json.uint32 "0" 0
-                    , \_ -> decodes Proto.Json.uint32 "4294967295" 4294967295
-                    , \_ -> decodes Proto.Json.uint32 "\"4294967295\"" 4294967295
+                    [ \_ -> decodes Proto.Json.Decode.uint32 "0" 0
+                    , \_ -> decodes Proto.Json.Decode.uint32 "4294967295" 4294967295
+                    , \_ -> decodes Proto.Json.Decode.uint32 "\"4294967295\"" 4294967295
                     ]
                     ()
         , test "a negative number fails" <|
-            \_ -> fails Proto.Json.uint32 "-1"
+            \_ -> fails Proto.Json.Decode.uint32 "-1"
         , test "past the upper bound fails" <|
-            \_ -> fails Proto.Json.uint32 "4294967296"
+            \_ -> fails Proto.Json.Decode.uint32 "4294967296"
         , test "a fractional number fails" <|
-            \_ -> fails Proto.Json.uint32 "1.5"
+            \_ -> fails Proto.Json.Decode.uint32 "1.5"
         ]
 
 
@@ -1038,152 +1040,152 @@ int64Tests : Test
 int64Tests =
     describe "int64"
         [ test "a string" <|
-            \_ -> decodes Proto.Json.int64 "\"9007199254740993\"" "9007199254740993"
+            \_ -> decodes Proto.Json.Decode.int64 "\"9007199254740993\"" "9007199254740993"
         , test "a negative string" <|
-            \_ -> decodes Proto.Json.int64 "\"-42\"" "-42"
+            \_ -> decodes Proto.Json.Decode.int64 "\"-42\"" "-42"
         , test "a number" <|
-            \_ -> decodes Proto.Json.int64 "42" "42"
+            \_ -> decodes Proto.Json.Decode.int64 "42" "42"
         , test "a negative number" <|
-            \_ -> decodes Proto.Json.int64 "-7" "-7"
+            \_ -> decodes Proto.Json.Decode.int64 "-7" "-7"
         , test "a string that is not an integer fails" <|
-            \_ -> fails Proto.Json.int64 "\"4.2\""
+            \_ -> fails Proto.Json.Decode.int64 "\"4.2\""
         , test "a string in exponent notation" <|
-            \_ -> decodes Proto.Json.int64 "\"1e3\"" "1000"
+            \_ -> decodes Proto.Json.Decode.int64 "\"1e3\"" "1000"
         , test "a string with a fraction and an exponent" <|
-            \_ -> decodes Proto.Json.int64 "\"1.5e3\"" "1500"
+            \_ -> decodes Proto.Json.Decode.int64 "\"1.5e3\"" "1500"
         , test "a number in exponent notation" <|
-            \_ -> decodes Proto.Json.int64 "1E2" "100"
+            \_ -> decodes Proto.Json.Decode.int64 "1E2" "100"
         , test "a negative string with a zero exponent" <|
-            \_ -> decodes Proto.Json.int64 "\"-2e0\"" "-2"
+            \_ -> decodes Proto.Json.Decode.int64 "\"-2e0\"" "-2"
         , test "a signed exponent" <|
             \_ ->
                 Expect.all
-                    [ \_ -> decodes Proto.Json.int64 "\"15E+1\"" "150"
-                    , \_ -> decodes Proto.Json.int64 "\"1500e-2\"" "15"
-                    , \_ -> decodes Proto.Json.int64 "\"0.0025e4\"" "25"
+                    [ \_ -> decodes Proto.Json.Decode.int64 "\"15E+1\"" "150"
+                    , \_ -> decodes Proto.Json.Decode.int64 "\"1500e-2\"" "15"
+                    , \_ -> decodes Proto.Json.Decode.int64 "\"0.0025e4\"" "25"
                     ]
                     ()
         , test "exponent notation keeps every digit past 2^53" <|
-            \_ -> decodes Proto.Json.int64 "\"9.223372036854775807e18\"" "9223372036854775807"
+            \_ -> decodes Proto.Json.Decode.int64 "\"9.223372036854775807e18\"" "9223372036854775807"
         , test "an integral decimal fraction" <|
-            \_ -> decodes Proto.Json.int64 "\"4.0\"" "4"
+            \_ -> decodes Proto.Json.Decode.int64 "\"4.0\"" "4"
         , test "leading zeros and negative zero are made canonical" <|
             \_ ->
                 Expect.all
-                    [ \_ -> decodes Proto.Json.int64 "\"007\"" "7"
-                    , \_ -> decodes Proto.Json.int64 "\"-0\"" "0"
-                    , \_ -> decodes Proto.Json.int64 "\"0e999\"" "0"
+                    [ \_ -> decodes Proto.Json.Decode.int64 "\"007\"" "7"
+                    , \_ -> decodes Proto.Json.Decode.int64 "\"-0\"" "0"
+                    , \_ -> decodes Proto.Json.Decode.int64 "\"0e999\"" "0"
                     ]
                     ()
         , test "exponent notation that leaves a fraction fails" <|
             \_ ->
-                failsWith Proto.Json.int64 "\"1.5e0\"" "Expecting an integer"
+                failsWith Proto.Json.Decode.int64 "\"1.5e0\"" "Expecting an integer"
         , test "a negative exponent that leaves a fraction fails" <|
-            \_ -> fails Proto.Json.int64 "\"15e-2\""
+            \_ -> fails Proto.Json.Decode.int64 "\"15e-2\""
         , test "more than 20 digits fails" <|
             \_ ->
                 Expect.all
-                    [ \_ -> failsWith Proto.Json.int64 "\"1e21\"" "Expecting an int64 (-9223372036854775808 to 9223372036854775807)"
-                    , \_ -> fails Proto.Json.int64 "\"1e999999999999\""
-                    , \_ -> fails Proto.Json.int64 "1e21"
+                    [ \_ -> failsWith Proto.Json.Decode.int64 "\"1e21\"" "Expecting an int64 (-9223372036854775808 to 9223372036854775807)"
+                    , \_ -> fails Proto.Json.Decode.int64 "\"1e999999999999\""
+                    , \_ -> fails Proto.Json.Decode.int64 "1e21"
                     ]
                     ()
         , test "the bounds decode as strings, every digit kept" <|
             \_ ->
                 Expect.all
-                    [ \_ -> decodes Proto.Json.int64 "\"9223372036854775807\"" "9223372036854775807"
-                    , \_ -> decodes Proto.Json.int64 "\"-9223372036854775808\"" "-9223372036854775808"
-                    , \_ -> decodes Proto.Json.int64 "\"0009223372036854775807\"" "9223372036854775807"
-                    , \_ -> decodes Proto.Json.int64 "\"-9.223372036854775808e18\"" "-9223372036854775808"
+                    [ \_ -> decodes Proto.Json.Decode.int64 "\"9223372036854775807\"" "9223372036854775807"
+                    , \_ -> decodes Proto.Json.Decode.int64 "\"-9223372036854775808\"" "-9223372036854775808"
+                    , \_ -> decodes Proto.Json.Decode.int64 "\"0009223372036854775807\"" "9223372036854775807"
+                    , \_ -> decodes Proto.Json.Decode.int64 "\"-9.223372036854775808e18\"" "-9223372036854775808"
                     ]
                     ()
         , test "one past each bound fails as a string, naming the range" <|
             \_ ->
                 Expect.all
-                    [ \_ -> failsWith Proto.Json.int64 "\"9223372036854775808\"" "Expecting an int64 (-9223372036854775808 to 9223372036854775807)"
-                    , \_ -> failsWith Proto.Json.int64 "\"-9223372036854775809\"" "Expecting an int64 (-9223372036854775808 to 9223372036854775807)"
-                    , \_ -> fails Proto.Json.int64 "\"18446744073709551615\""
-                    , \_ -> fails Proto.Json.int64 "\"99999999999999999999\""
-                    , \_ -> fails Proto.Json.int64 "\"1e19\""
-                    , \_ -> fails Proto.Json.int64 "\"-1e19\""
+                    [ \_ -> failsWith Proto.Json.Decode.int64 "\"9223372036854775808\"" "Expecting an int64 (-9223372036854775808 to 9223372036854775807)"
+                    , \_ -> failsWith Proto.Json.Decode.int64 "\"-9223372036854775809\"" "Expecting an int64 (-9223372036854775808 to 9223372036854775807)"
+                    , \_ -> fails Proto.Json.Decode.int64 "\"18446744073709551615\""
+                    , \_ -> fails Proto.Json.Decode.int64 "\"99999999999999999999\""
+                    , \_ -> fails Proto.Json.Decode.int64 "\"1e19\""
+                    , \_ -> fails Proto.Json.Decode.int64 "\"-1e19\""
                     ]
                     ()
         , test "a number reads as the exact value of its double" <|
             \_ ->
                 Expect.all
-                    [ \_ -> decodes Proto.Json.int64 "1e18" "1000000000000000000"
-                    , \_ -> decodes Proto.Json.int64 "-1e18" "-1000000000000000000"
-                    , \_ -> failsWith Proto.Json.int64 "1e19" "Expecting an int64 (-9223372036854775808 to 9223372036854775807)"
+                    [ \_ -> decodes Proto.Json.Decode.int64 "1e18" "1000000000000000000"
+                    , \_ -> decodes Proto.Json.Decode.int64 "-1e18" "-1000000000000000000"
+                    , \_ -> failsWith Proto.Json.Decode.int64 "1e19" "Expecting an int64 (-9223372036854775808 to 9223372036854775807)"
 
                     -- JavaScript writes these as 9223372036854775000 and
                     -- -9223372036854776000.
-                    , \_ -> decodes Proto.Json.int64 "9223372036854774784" "9223372036854774784"
-                    , \_ -> decodes Proto.Json.int64 "-9223372036854775808" "-9223372036854775808"
-                    , \_ -> decodes Proto.Json.int64 "-9223372036854774784" "-9223372036854774784"
+                    , \_ -> decodes Proto.Json.Decode.int64 "9223372036854774784" "9223372036854774784"
+                    , \_ -> decodes Proto.Json.Decode.int64 "-9223372036854775808" "-9223372036854775808"
+                    , \_ -> decodes Proto.Json.Decode.int64 "-9223372036854774784" "-9223372036854774784"
                     ]
                     ()
         , test "a number on either side of 2^53" <|
             \_ ->
                 Expect.all
-                    [ \_ -> decodes Proto.Json.int64 "9007199254740991" "9007199254740991"
-                    , \_ -> decodes Proto.Json.int64 "9007199254740992" "9007199254740992"
-                    , \_ -> decodes Proto.Json.int64 "9007199254740994" "9007199254740994"
-                    , \_ -> decodes Proto.Json.int64 "-9007199254740994" "-9007199254740994"
+                    [ \_ -> decodes Proto.Json.Decode.int64 "9007199254740991" "9007199254740991"
+                    , \_ -> decodes Proto.Json.Decode.int64 "9007199254740992" "9007199254740992"
+                    , \_ -> decodes Proto.Json.Decode.int64 "9007199254740994" "9007199254740994"
+                    , \_ -> decodes Proto.Json.Decode.int64 "-9007199254740994" "-9007199254740994"
 
                     -- 2^60 + 2^8, which JavaScript writes as 1152921504606847000.
-                    , \_ -> decodes Proto.Json.int64 "1152921504606847232" "1152921504606847232"
+                    , \_ -> decodes Proto.Json.Decode.int64 "1152921504606847232" "1152921504606847232"
                     ]
                     ()
         , test "a number no double holds reads as the double the parser made" <|
             \_ ->
                 Expect.all
-                    [ \_ -> decodes Proto.Json.int64 "9007199254740993" "9007199254740992"
+                    [ \_ -> decodes Proto.Json.Decode.int64 "9007199254740993" "9007199254740992"
 
                     -- Both round to 2^63, one past the bound.
-                    , \_ -> failsWith Proto.Json.int64 "9223372036854775807" "Expecting an int64 (-9223372036854775808 to 9223372036854775807)"
-                    , \_ -> fails Proto.Json.int64 "9223372036854775808"
+                    , \_ -> failsWith Proto.Json.Decode.int64 "9223372036854775807" "Expecting an int64 (-9223372036854775808 to 9223372036854775807)"
+                    , \_ -> fails Proto.Json.Decode.int64 "9223372036854775808"
 
                     -- Rounds to -2^63, the bound itself.
-                    , \_ -> decodes Proto.Json.int64 "-9223372036854775809" "-9223372036854775808"
+                    , \_ -> decodes Proto.Json.Decode.int64 "-9223372036854775809" "-9223372036854775808"
                     ]
                     ()
         , test "zero and small numbers read as before" <|
             \_ ->
                 Expect.all
-                    [ \_ -> decodes Proto.Json.int64 "0" "0"
-                    , \_ -> decodes Proto.Json.int64 "-0" "0"
-                    , \_ -> decodes Proto.Json.int64 "1" "1"
-                    , \_ -> decodes Proto.Json.int64 "-1" "-1"
-                    , \_ -> decodes Proto.Json.int64 "4294967296" "4294967296"
-                    , \_ -> decodes Proto.Json.int64 "1.0" "1"
+                    [ \_ -> decodes Proto.Json.Decode.int64 "0" "0"
+                    , \_ -> decodes Proto.Json.Decode.int64 "-0" "0"
+                    , \_ -> decodes Proto.Json.Decode.int64 "1" "1"
+                    , \_ -> decodes Proto.Json.Decode.int64 "-1" "-1"
+                    , \_ -> decodes Proto.Json.Decode.int64 "4294967296" "4294967296"
+                    , \_ -> decodes Proto.Json.Decode.int64 "1.0" "1"
                     ]
                     ()
         , test "a number with a fraction fails" <|
             \_ ->
                 Expect.all
-                    [ \_ -> fails Proto.Json.int64 "4503599627370495.5"
-                    , \_ -> fails Proto.Json.int64 "-0.5"
-                    , \_ -> fails Proto.Json.int64 "1.5e0"
+                    [ \_ -> fails Proto.Json.Decode.int64 "4503599627370495.5"
+                    , \_ -> fails Proto.Json.Decode.int64 "-0.5"
+                    , \_ -> fails Proto.Json.Decode.int64 "1.5e0"
                     ]
                     ()
         , test "malformed exponent notation fails" <|
             \_ ->
                 Expect.all
-                    [ \_ -> fails Proto.Json.int64 "\"1e\""
-                    , \_ -> fails Proto.Json.int64 "\"e3\""
-                    , \_ -> fails Proto.Json.int64 "\"1.e3\""
-                    , \_ -> fails Proto.Json.int64 "\".5e1\""
-                    , \_ -> fails Proto.Json.int64 "\"1e+\""
-                    , \_ -> fails Proto.Json.int64 "\"1e3e1\""
-                    , \_ -> fails Proto.Json.int64 "\"--1\""
+                    [ \_ -> fails Proto.Json.Decode.int64 "\"1e\""
+                    , \_ -> fails Proto.Json.Decode.int64 "\"e3\""
+                    , \_ -> fails Proto.Json.Decode.int64 "\"1.e3\""
+                    , \_ -> fails Proto.Json.Decode.int64 "\".5e1\""
+                    , \_ -> fails Proto.Json.Decode.int64 "\"1e+\""
+                    , \_ -> fails Proto.Json.Decode.int64 "\"1e3e1\""
+                    , \_ -> fails Proto.Json.Decode.int64 "\"--1\""
                     ]
                     ()
         , test "an empty string fails" <|
-            \_ -> fails Proto.Json.int64 "\"\""
+            \_ -> fails Proto.Json.Decode.int64 "\"\""
         , test "a fractional number fails" <|
-            \_ -> fails Proto.Json.int64 "4.2"
+            \_ -> fails Proto.Json.Decode.int64 "4.2"
         , test "a boolean fails" <|
-            \_ -> fails Proto.Json.int64 "true"
+            \_ -> fails Proto.Json.Decode.int64 "true"
         , test "encodes as a string" <|
             \_ ->
                 Proto.Json.encodeInt64 "9007199254740993"
@@ -1196,46 +1198,46 @@ int64AsIntTests : Test
 int64AsIntTests =
     describe "int64AsInt"
         [ test "a number" <|
-            \_ -> decodes Proto.Json.int64AsInt "42" 42
+            \_ -> decodes Proto.Json.Decode.int64AsInt "42" 42
         , test "a string" <|
-            \_ -> decodes Proto.Json.int64AsInt "\"-42\"" -42
+            \_ -> decodes Proto.Json.Decode.int64AsInt "\"-42\"" -42
         , test "the largest exact Int, as a string and a number" <|
             \_ ->
                 Expect.all
-                    [ \_ -> decodes Proto.Json.int64AsInt "\"9007199254740991\"" 9007199254740991
-                    , \_ -> decodes Proto.Json.int64AsInt "9007199254740991" 9007199254740991
-                    , \_ -> decodes Proto.Json.int64AsInt "\"-9007199254740991\"" -9007199254740991
-                    , \_ -> decodes Proto.Json.int64AsInt "-9007199254740991" -9007199254740991
+                    [ \_ -> decodes Proto.Json.Decode.int64AsInt "\"9007199254740991\"" 9007199254740991
+                    , \_ -> decodes Proto.Json.Decode.int64AsInt "9007199254740991" 9007199254740991
+                    , \_ -> decodes Proto.Json.Decode.int64AsInt "\"-9007199254740991\"" -9007199254740991
+                    , \_ -> decodes Proto.Json.Decode.int64AsInt "-9007199254740991" -9007199254740991
                     ]
                     ()
         , test "2^53 as a string fails" <|
-            \_ -> fails Proto.Json.int64AsInt "\"9007199254740992\""
+            \_ -> fails Proto.Json.Decode.int64AsInt "\"9007199254740992\""
         , test "2^53 as a number fails" <|
-            \_ -> fails Proto.Json.int64AsInt "9007199254740992"
+            \_ -> fails Proto.Json.Decode.int64AsInt "9007199254740992"
         , test "-2^53 fails" <|
-            \_ -> fails Proto.Json.int64AsInt "\"-9007199254740992\""
+            \_ -> fails Proto.Json.Decode.int64AsInt "\"-9007199254740992\""
         , test "a fractional number fails" <|
-            \_ -> fails Proto.Json.int64AsInt "4.5"
+            \_ -> fails Proto.Json.Decode.int64AsInt "4.5"
         , test "a string in exponent notation" <|
             \_ ->
                 Expect.all
-                    [ \_ -> decodes Proto.Json.int64AsInt "\"1e3\"" 1000
-                    , \_ -> decodes Proto.Json.int64AsInt "\"-4.2e1\"" -42
-                    , \_ -> decodes Proto.Json.int64AsInt "1.5E3" 1500
-                    , \_ -> decodes Proto.Json.int64AsInt "\"9.007199254740991e15\"" 9007199254740991
+                    [ \_ -> decodes Proto.Json.Decode.int64AsInt "\"1e3\"" 1000
+                    , \_ -> decodes Proto.Json.Decode.int64AsInt "\"-4.2e1\"" -42
+                    , \_ -> decodes Proto.Json.Decode.int64AsInt "1.5E3" 1500
+                    , \_ -> decodes Proto.Json.Decode.int64AsInt "\"9.007199254740991e15\"" 9007199254740991
                     ]
                     ()
         , test "exponent notation out of range fails" <|
-            \_ -> fails Proto.Json.int64AsInt "\"9.007199254740992e15\""
+            \_ -> fails Proto.Json.Decode.int64AsInt "\"9.007199254740992e15\""
         , test "exponent notation that leaves a fraction fails" <|
-            \_ -> fails Proto.Json.int64AsInt "\"1.5e0\""
+            \_ -> fails Proto.Json.Decode.int64AsInt "\"1.5e0\""
         , test "an empty string fails" <|
-            \_ -> fails Proto.Json.int64AsInt "\"\""
+            \_ -> fails Proto.Json.Decode.int64AsInt "\"\""
         , test "a boolean fails" <|
-            \_ -> fails Proto.Json.int64AsInt "true"
+            \_ -> fails Proto.Json.Decode.int64AsInt "true"
         , test "says why it fails" <|
             \_ ->
-                Json.Decode.decodeString Proto.Json.int64AsInt "\"9007199254740992\""
+                Json.Decode.decodeString Proto.Json.Decode.int64AsInt "\"9007199254740992\""
                     |> Result.mapError Json.Decode.errorToString
                     |> Result.mapError (String.contains "Expecting an integer from -9007199254740991 to 9007199254740991, the 64-bit integers an Elm Int holds exactly")
                     |> Expect.equal (Err True)
@@ -1251,28 +1253,28 @@ floatTests : Test
 floatTests =
     describe "float"
         [ test "a number" <|
-            \_ -> decodes Proto.Json.float "1.5" 1.5
+            \_ -> decodes Proto.Json.Decode.float "1.5" 1.5
         , test "an integral number" <|
-            \_ -> decodes Proto.Json.float "2" 2
+            \_ -> decodes Proto.Json.Decode.float "2" 2
         , test "a numeric string" <|
-            \_ -> decodes Proto.Json.float "\"1.5\"" 1.5
+            \_ -> decodes Proto.Json.Decode.float "\"1.5\"" 1.5
         , test "\"NaN\"" <|
             \_ ->
-                Json.Decode.decodeString Proto.Json.float "\"NaN\""
+                Json.Decode.decodeString Proto.Json.Decode.float "\"NaN\""
                     |> Result.map isNaN
                     |> Expect.equal (Ok True)
         , test "\"Infinity\"" <|
-            \_ -> decodes Proto.Json.float "\"Infinity\"" (1 / 0)
+            \_ -> decodes Proto.Json.Decode.float "\"Infinity\"" (1 / 0)
         , test "\"-Infinity\"" <|
-            \_ -> decodes Proto.Json.float "\"-Infinity\"" -(1 / 0)
+            \_ -> decodes Proto.Json.Decode.float "\"-Infinity\"" -(1 / 0)
         , test "another string fails" <|
-            \_ -> fails Proto.Json.float "\"infinity\""
+            \_ -> fails Proto.Json.Decode.float "\"infinity\""
         , test "a boolean fails" <|
-            \_ -> fails Proto.Json.float "false"
+            \_ -> fails Proto.Json.Decode.float "false"
         , test "a number past a double's range fails" <|
-            \_ -> failsOnEach Proto.Json.float [ "1.89769e+308", "-1.89769e+308", "1e999", "\"1e999\"" ]
+            \_ -> failsOnEach Proto.Json.Decode.float [ "1.89769e+308", "-1.89769e+308", "1e999", "\"1e999\"" ]
         , test "the largest double decodes" <|
-            \_ -> decodes Proto.Json.float "1.7976931348623157e308" 1.7976931348623157e308
+            \_ -> decodes Proto.Json.Decode.float "1.7976931348623157e308" 1.7976931348623157e308
         , test "encodes a finite value as a number" <|
             \_ -> encodesTo (Proto.Json.encodeFloat 1.5) "1.5"
         , test "encodes NaN as a string" <|
@@ -1290,11 +1292,11 @@ stringTests =
         [ test "text, a surrogate pair included" <|
             \_ ->
                 [ "\"\"", "\"note\"", "\"\\ud83d\\ude00\"", "\"a😀b\"", "\"\\ud800\\udc00\"", "\"\\udbff\\udfff\"" ]
-                    |> List.map (Json.Decode.decodeString Proto.Json.string)
+                    |> List.map (Json.Decode.decodeString Proto.Json.Decode.string)
                     |> Expect.equal [ Ok "", Ok "note", Ok "😀", Ok "a😀b", Ok "𐀀", Ok "\u{10FFFF}" ]
         , test "a surrogate without its pair fails, wherever it is" <|
             \_ ->
-                failsOnEach Proto.Json.string
+                failsOnEach Proto.Json.Decode.string
                     [ "\"\\udc00\""
                     , "\"\\ud800\""
                     , "\"\\ude01\\ud83d\""
@@ -1312,16 +1314,16 @@ stringTests =
                         "\"" ++ String.repeat 40 "x" ++ inner ++ String.repeat 40 "y" ++ "\""
                 in
                 Expect.all
-                    [ \_ -> failsOnEach Proto.Json.string (List.map long [ "\\udc00", "\\ud800", "\\ude01\\ud83d", "😀\\udc00" ])
+                    [ \_ -> failsOnEach Proto.Json.Decode.string (List.map long [ "\\udc00", "\\ud800", "\\ude01\\ud83d", "😀\\udc00" ])
                     , \_ ->
                         [ "\\ud83d\\ude00", "\\\\ud800", "\\\\\\ud83d\\ude00" ]
-                            |> List.map (long >> Json.Decode.decodeString Proto.Json.string >> Result.map (String.slice 40 -40))
+                            |> List.map (long >> Json.Decode.decodeString Proto.Json.Decode.string >> Result.map (String.slice 40 -40))
                             |> Expect.equal [ Ok "😀", Ok "\\ud800", Ok "\\😀" ]
                     ]
                     ()
         , Test.fuzz Fuzz.string "every string of Unicode text decodes as it is" <|
             \text ->
-                Json.Decode.decodeString Proto.Json.string (Json.Encode.encode 0 (Json.Encode.string text))
+                Json.Decode.decodeString Proto.Json.Decode.string (Json.Encode.encode 0 (Json.Encode.string text))
                     |> Expect.equal (Ok text)
         , test "a map key with a surrogate without its pair fails" <|
             \_ ->
@@ -1341,16 +1343,16 @@ nullValueTests =
         [ test "reads null, the name and the number" <|
             \_ ->
                 [ "null", "\"NULL_VALUE\"", "0" ]
-                    |> List.map (Json.Decode.decodeString Proto.Json.nullValue)
+                    |> List.map (Json.Decode.decodeString Proto.Json.Decode.nullValue)
                     |> Expect.equal [ Ok (), Ok (), Ok () ]
         , test "fails on another name, a string or an object" <|
-            \_ -> failsOnEach Proto.Json.nullValue [ "\"NULL\"", "\"\"", "{}", "false" ]
+            \_ -> failsOnEach Proto.Json.Decode.nullValue [ "\"NULL\"", "\"\"", "{}", "false" ]
         , test "encodes as null" <|
             \_ -> encodesTo (Proto.Json.encodeNullValue ()) "null"
         , test "a list and a map of it hold nulls" <|
             \_ ->
-                ( Json.Decode.decodeString (Json.Decode.list Proto.Json.nullValue) "[null,\"NULL_VALUE\"]"
-                , Json.Decode.decodeString (Json.Decode.dict Proto.Json.nullValue) "{\"a\":null}"
+                ( Json.Decode.decodeString (Json.Decode.list Proto.Json.Decode.nullValue) "[null,\"NULL_VALUE\"]"
+                , Json.Decode.decodeString (Json.Decode.dict Proto.Json.Decode.nullValue) "{\"a\":null}"
                 )
                     |> Expect.equal ( Ok [ (), () ], Ok (Dict.fromList [ ( "a", () ) ]) )
         ]
@@ -1360,24 +1362,24 @@ float32Tests : Test
 float32Tests =
     describe "float32"
         [ test "a number" <|
-            \_ -> decodes Proto.Json.float32 "1.5" 1.5
+            \_ -> decodes Proto.Json.Decode.float32 "1.5" 1.5
         , test "the names of the values a number cannot write" <|
             \_ ->
                 [ "\"NaN\"", "\"Infinity\"", "\"-Infinity\"" ]
-                    |> List.map (Json.Decode.decodeString Proto.Json.float32 >> Result.map (\n -> isNaN n || isInfinite n))
+                    |> List.map (Json.Decode.decodeString Proto.Json.Decode.float32 >> Result.map (\n -> isNaN n || isInfinite n))
                     |> Expect.equal [ Ok True, Ok True, Ok True ]
         , test "the largest float, as a number and as a string" <|
             \_ ->
                 [ "3.4028234663852886e38", "-3.4028234663852886e38", "\"3.4028234663852886e38\"" ]
-                    |> List.map (Json.Decode.decodeString Proto.Json.float32)
+                    |> List.map (Json.Decode.decodeString Proto.Json.Decode.float32)
                     |> Expect.equal [ Ok 3.4028234663852886e38, Ok -3.4028234663852886e38, Ok 3.4028234663852886e38 ]
         , test "a number past a float's range fails" <|
-            \_ -> failsOnEach Proto.Json.float32 [ "3.502823e+38", "-3.502823e+38", "\"3.502823e+38\"", "1e999" ]
+            \_ -> failsOnEach Proto.Json.Decode.float32 [ "3.502823e+38", "-3.502823e+38", "\"3.502823e+38\"", "1e999" ]
         , test "a finite value within range is kept, not rounded to a float" <|
-            \_ -> decodes Proto.Json.float32 "0.1" 0.1
+            \_ -> decodes Proto.Json.Decode.float32 "0.1" 0.1
         , Test.fuzz float32Value "every finite float decodes, as written" <|
             \value ->
-                Json.Decode.decodeString Proto.Json.float32 (Json.Encode.encode 0 (Json.Encode.float value))
+                Json.Decode.decodeString Proto.Json.Decode.float32 (Json.Encode.encode 0 (Json.Encode.float value))
                     |> Expect.equal (Ok value)
         ]
 
@@ -1413,11 +1415,11 @@ bytesTests =
     let
         accepts text =
             test ("accepts \"" ++ text ++ "\"") <|
-                \_ -> decodes Proto.Json.bytes ("\"" ++ text ++ "\"") text
+                \_ -> decodes Proto.Json.Decode.bytes ("\"" ++ text ++ "\"") text
 
         rejects text =
             test ("rejects \"" ++ text ++ "\"") <|
-                \_ -> fails Proto.Json.bytes ("\"" ++ text ++ "\"")
+                \_ -> fails Proto.Json.Decode.bytes ("\"" ++ text ++ "\"")
     in
     describe "bytes"
         [ accepts ""
@@ -1447,17 +1449,17 @@ bytesTests =
         , rejects "aGk\\ud800="
         , Test.fuzz Fuzzers.base64Like "accepts exactly the text a character-by-character check accepts" <|
             \text ->
-                Json.Decode.decodeValue Proto.Json.bytes (Json.Encode.string text)
+                Json.Decode.decodeValue Proto.Json.Decode.bytes (Json.Encode.string text)
                     |> Result.map (\_ -> True)
                     |> Result.withDefault False
                     |> Expect.equal (Fuzzers.canonicalBase64 text /= Nothing)
         , test "keeps the string as received" <|
-            \_ -> decodes Proto.Json.bytes "\"-_8\"" "-_8"
+            \_ -> decodes Proto.Json.Decode.bytes "\"-_8\"" "-_8"
         , test "a number fails" <|
-            \_ -> fails Proto.Json.bytes "1"
+            \_ -> fails Proto.Json.Decode.bytes "1"
         , test "says why it fails" <|
             \_ ->
-                Json.Decode.decodeString Proto.Json.bytes "\"a\""
+                Json.Decode.decodeString Proto.Json.Decode.bytes "\"a\""
                     |> Result.mapError (Json.Decode.errorToString >> String.contains "Expecting base64 (standard or URL-safe, padding optional)")
                     |> Expect.equal (Err True)
         , test "encodes as a string" <|
@@ -1476,13 +1478,13 @@ wellKnownTests =
     describe "well-known types"
         [ test "struct reads an object" <|
             \_ ->
-                Json.Decode.decodeString Proto.Json.struct """{"a":1,"b":null}"""
+                Json.Decode.decodeString Proto.Json.Decode.struct """{"a":1,"b":null}"""
                     |> Result.map (Dict.map (\_ value -> Json.Encode.encode 0 (Proto.Value.toJson value)) >> Dict.toList)
                     |> Expect.equal (Ok [ ( "a", "1" ), ( "b", "null" ) ])
         , test "struct fails on an array" <|
-            \_ -> fails Proto.Json.struct "[1]"
+            \_ -> fails Proto.Json.Decode.struct "[1]"
         , test "struct fails on null" <|
-            \_ -> fails Proto.Json.struct "null"
+            \_ -> fails Proto.Json.Decode.struct "null"
         , test "encodeStruct writes an object" <|
             \_ ->
                 encodesTo
@@ -1490,39 +1492,39 @@ wellKnownTests =
                     """{"a":1}"""
         , test "listValue reads an array" <|
             \_ ->
-                Json.Decode.decodeString Proto.Json.listValue """[1,"x",null]"""
+                Json.Decode.decodeString Proto.Json.Decode.listValue """[1,"x",null]"""
                     |> Result.map (List.map (Proto.Value.toJson >> Json.Encode.encode 0))
                     |> Expect.equal (Ok [ "1", "\"x\"", "null" ])
         , test "listValue fails on an object" <|
-            \_ -> fails Proto.Json.listValue """{"a":1}"""
+            \_ -> fails Proto.Json.Decode.listValue """{"a":1}"""
         , test "encodeListValue writes an array" <|
             \_ ->
                 encodesTo
                     (encodeListValue [ Proto.Value.ValueNumber 1, Proto.Value.ValueNull ])
                     "[1,null]"
         , test "a timestamp" <|
-            \_ -> decodes Proto.Json.timestamp "\"1970-01-01T00:00:01.5Z\"" (Time.millisToPosix 1500)
+            \_ -> decodes Proto.Json.Decode.timestamp "\"1970-01-01T00:00:01.5Z\"" (Time.millisToPosix 1500)
         , test "a malformed timestamp fails" <|
-            \_ -> fails Proto.Json.timestamp "\"yesterday\""
+            \_ -> fails Proto.Json.Decode.timestamp "\"yesterday\""
         , test "a timestamp as a number fails" <|
-            \_ -> fails Proto.Json.timestamp "1500"
+            \_ -> fails Proto.Json.Decode.timestamp "1500"
         , test "encodes a timestamp" <|
             \_ -> encodesTo (encodeTimestamp (Time.millisToPosix 1500)) "\"1970-01-01T00:00:01.500Z\""
         , test "a duration" <|
-            \_ -> decodes Proto.Json.duration "\"-1.5s\"" (Proto.Duration.fromSeconds -1.5)
+            \_ -> decodes Proto.Json.Decode.duration "\"-1.5s\"" (Proto.Duration.fromSeconds -1.5)
         , test "a malformed duration fails" <|
-            \_ -> fails Proto.Json.duration "\"1.5\""
+            \_ -> fails Proto.Json.Decode.duration "\"1.5\""
         , test "encodes a duration" <|
             \_ -> encodesTo (encodeDuration (Proto.Duration.fromSeconds 1.5)) "\"1.500s\""
         , test "a field mask comes back with proto field names" <|
             \_ ->
-                decodes Proto.Json.fieldMask
+                decodes Proto.Json.Decode.fieldMask
                     "\"displayName,author.emailAddress,id\""
                     [ "display_name", "author.email_address", "id" ]
         , test "the empty field mask" <|
-            \_ -> decodes Proto.Json.fieldMask "\"\"" []
+            \_ -> decodes Proto.Json.Decode.fieldMask "\"\"" []
         , test "a field mask path with an underscore fails" <|
-            \_ -> failsOnEach Proto.Json.fieldMask [ "\"foo,bar_bar\"", "\"display_name\"", "\"author.email_address\"", "\"_\"" ]
+            \_ -> failsOnEach Proto.Json.Decode.fieldMask [ "\"foo,bar_bar\"", "\"display_name\"", "\"author.email_address\"", "\"_\"" ]
         , test "encodes a field mask in lowerCamelCase" <|
             \_ ->
                 encodesTo (encodeFieldMask [ "display_name", "author.email_address" ])
@@ -1530,9 +1532,9 @@ wellKnownTests =
         , test "encodes the empty field mask" <|
             \_ -> encodesTo (encodeFieldMask []) "\"\""
         , test "Empty is any object" <|
-            \_ -> decodes Proto.Json.empty """{"ignored":1}""" ()
+            \_ -> decodes Proto.Json.Decode.empty """{"ignored":1}""" ()
         , test "Empty is not an array" <|
-            \_ -> fails Proto.Json.empty "[]"
+            \_ -> fails Proto.Json.Decode.empty "[]"
         , test "encodes Empty as {}" <|
             \_ -> encodesTo (Proto.Json.encodeEmpty ()) "{}"
         ]
@@ -1544,49 +1546,49 @@ uint64Tests =
         [ test "the forms int64 takes, up to the uint64 bound" <|
             \_ ->
                 Expect.all
-                    [ \_ -> decodes Proto.Json.uint64 "\"18446744073709551615\"" "18446744073709551615"
-                    , \_ -> decodes Proto.Json.uint64 "42" "42"
-                    , \_ -> decodes Proto.Json.uint64 "\"1e3\"" "1000"
-                    , \_ -> decodes Proto.Json.uint64 "\"-0\"" "0"
+                    [ \_ -> decodes Proto.Json.Decode.uint64 "\"18446744073709551615\"" "18446744073709551615"
+                    , \_ -> decodes Proto.Json.Decode.uint64 "42" "42"
+                    , \_ -> decodes Proto.Json.Decode.uint64 "\"1e3\"" "1000"
+                    , \_ -> decodes Proto.Json.Decode.uint64 "\"-0\"" "0"
                     ]
                     ()
         , test "a negative value fails" <|
-            \_ -> failsWith Proto.Json.uint64 "\"-1\"" "Expecting a uint64 (0 to 18446744073709551615)"
+            \_ -> failsWith Proto.Json.Decode.uint64 "\"-1\"" "Expecting a uint64 (0 to 18446744073709551615)"
         , test "one past the bound fails, naming the range" <|
             \_ ->
                 Expect.all
-                    [ \_ -> failsWith Proto.Json.uint64 "\"18446744073709551616\"" "Expecting a uint64 (0 to 18446744073709551615)"
-                    , \_ -> fails Proto.Json.uint64 "\"99999999999999999999\""
-                    , \_ -> fails Proto.Json.uint64 "\"1e20\""
+                    [ \_ -> failsWith Proto.Json.Decode.uint64 "\"18446744073709551616\"" "Expecting a uint64 (0 to 18446744073709551615)"
+                    , \_ -> fails Proto.Json.Decode.uint64 "\"99999999999999999999\""
+                    , \_ -> fails Proto.Json.Decode.uint64 "\"1e20\""
                     ]
                     ()
         , test "a number reads as the exact value of its double" <|
             \_ ->
                 Expect.all
-                    [ \_ -> decodes Proto.Json.uint64 "1e19" "10000000000000000000"
-                    , \_ -> fails Proto.Json.uint64 "2e19"
+                    [ \_ -> decodes Proto.Json.Decode.uint64 "1e19" "10000000000000000000"
+                    , \_ -> fails Proto.Json.Decode.uint64 "2e19"
 
                     -- The largest double below 2^64, which JavaScript writes
                     -- as 18446744073709550000.
-                    , \_ -> decodes Proto.Json.uint64 "18446744073709549568" "18446744073709549568"
-                    , \_ -> decodes Proto.Json.uint64 "9223372036854775808" "9223372036854775808"
-                    , \_ -> decodes Proto.Json.uint64 "9007199254740994" "9007199254740994"
+                    , \_ -> decodes Proto.Json.Decode.uint64 "18446744073709549568" "18446744073709549568"
+                    , \_ -> decodes Proto.Json.Decode.uint64 "9223372036854775808" "9223372036854775808"
+                    , \_ -> decodes Proto.Json.Decode.uint64 "9007199254740994" "9007199254740994"
 
                     -- Rounds to 2^64, one past the bound.
-                    , \_ -> failsWith Proto.Json.uint64 "18446744073709551615" "Expecting a uint64 (0 to 18446744073709551615)"
-                    , \_ -> fails Proto.Json.uint64 "18446744073709551616"
+                    , \_ -> failsWith Proto.Json.Decode.uint64 "18446744073709551615" "Expecting a uint64 (0 to 18446744073709551615)"
+                    , \_ -> fails Proto.Json.Decode.uint64 "18446744073709551616"
                     ]
                     ()
         , test "quoted values keep every digit, as before" <|
             \_ ->
                 Expect.all
-                    [ \_ -> decodes Proto.Json.uint64 "\"18446744073709549568\"" "18446744073709549568"
-                    , \_ -> decodes Proto.Json.uint64 "\"9007199254740993\"" "9007199254740993"
-                    , \_ -> decodes Proto.Json.uint64 "\"0\"" "0"
+                    [ \_ -> decodes Proto.Json.Decode.uint64 "\"18446744073709549568\"" "18446744073709549568"
+                    , \_ -> decodes Proto.Json.Decode.uint64 "\"9007199254740993\"" "9007199254740993"
+                    , \_ -> decodes Proto.Json.Decode.uint64 "\"0\"" "0"
                     ]
                     ()
         , test "a negative number fails" <|
-            \_ -> fails Proto.Json.uint64 "-42"
+            \_ -> fails Proto.Json.Decode.uint64 "-42"
         ]
 
 
@@ -1596,17 +1598,17 @@ uint64AsIntTests =
         [ test "the forms int64AsInt takes, zero or more" <|
             \_ ->
                 Expect.all
-                    [ \_ -> decodes Proto.Json.uint64AsInt "\"9007199254740991\"" 9007199254740991
-                    , \_ -> decodes Proto.Json.uint64AsInt "0" 0
-                    , \_ -> decodes Proto.Json.uint64AsInt "\"4.2e1\"" 42
+                    [ \_ -> decodes Proto.Json.Decode.uint64AsInt "\"9007199254740991\"" 9007199254740991
+                    , \_ -> decodes Proto.Json.Decode.uint64AsInt "0" 0
+                    , \_ -> decodes Proto.Json.Decode.uint64AsInt "\"4.2e1\"" 42
                     ]
                     ()
         , test "a negative value fails" <|
-            \_ -> fails Proto.Json.uint64AsInt "\"-1\""
+            \_ -> fails Proto.Json.Decode.uint64AsInt "\"-1\""
         , test "a negative number fails" <|
-            \_ -> fails Proto.Json.uint64AsInt "-42"
+            \_ -> fails Proto.Json.Decode.uint64AsInt "-42"
         , test "2^53 fails" <|
-            \_ -> fails Proto.Json.uint64AsInt "\"9007199254740992\""
+            \_ -> fails Proto.Json.Decode.uint64AsInt "\"9007199254740992\""
         ]
 
 
@@ -1648,31 +1650,31 @@ protoKeyTests =
 
 {-| The JSON a checked write gives a valid value, `null` for one it refuses.
 -}
-writes : Proto.Json.Encoder Proto.Error.Error -> Json.Encode.Value
+writes : Proto.Json.Encode.Encoder Proto.Error.Error -> Json.Encode.Value
 writes encoder =
-    Proto.Json.encode encoder |> Result.withDefault Json.Encode.null
+    Proto.Json.Encode.encode encoder |> Result.withDefault Json.Encode.null
 
 
 encodeStruct : Dict.Dict String Proto.Value.Value -> Json.Encode.Value
 encodeStruct =
-    writes << Proto.Json.writeStruct
+    writes << Proto.Json.Encode.struct
 
 
 encodeListValue : List Proto.Value.Value -> Json.Encode.Value
 encodeListValue =
-    writes << Proto.Json.writeListValue
+    writes << Proto.Json.Encode.listValue
 
 
 encodeTimestamp : Time.Posix -> Json.Encode.Value
 encodeTimestamp =
-    writes << Proto.Json.writeTimestamp
+    writes << Proto.Json.Encode.timestamp
 
 
 encodeDuration : Proto.Duration.Duration -> Json.Encode.Value
 encodeDuration =
-    writes << Proto.Json.writeDuration
+    writes << Proto.Json.Encode.duration
 
 
 encodeFieldMask : List String -> Json.Encode.Value
 encodeFieldMask =
-    writes << Proto.Json.writeFieldMask
+    writes << Proto.Json.Encode.fieldMask

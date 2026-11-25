@@ -26,7 +26,8 @@ import Proto.Binary
 import Proto.Bytes
 import Proto.Error
 import Proto.Internal.Depth
-import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Method
 import Proto.Registry
@@ -699,7 +700,7 @@ writtenFromBinary : Bytes.Bytes -> Result Proto.Error.Error ()
 writtenFromBinary bytes =
     case readEnvelopeBytesValue bytes of
         Ok envelope ->
-            Proto.Json.encodeWith Deep.registry (Deep.encodeEnvelope envelope) |> ok
+            Proto.Json.Encode.encodeWith Deep.registry (Deep.encodeEnvelope envelope) |> ok
 
         Err _ ->
             Err (Proto.Error.BadJson (Json.Decode.Failure "did not read" Json.Encode.null))
@@ -792,7 +793,7 @@ oneBudget =
                                 Ok envelope ->
                                     Expect.all
                                         [ \_ ->
-                                            Proto.Json.encodeWith Deep.registry (Deep.encodeEnvelope envelope)
+                                            Proto.Json.Encode.encodeWith Deep.registry (Deep.encodeEnvelope envelope)
                                                 |> Result.toMaybe
                                                 |> Maybe.andThen (Json.Decode.decodeValue (Deep.decodeEnvelopeWith Deep.registry) >> Result.toMaybe)
                                                 |> Expect.equal (Just envelope)
@@ -802,7 +803,7 @@ oneBudget =
                                         , \_ ->
                                             Proto.Binary.decode Deep.decodeEnvelopeBytes (Proto.Binary.encode Deep.encodeEnvelopeBytes envelope)
                                                 |> Result.toMaybe
-                                                |> Maybe.andThen (Deep.encodeEnvelope >> Proto.Json.encodeWith Deep.registry >> Result.toMaybe)
+                                                |> Maybe.andThen (Deep.encodeEnvelope >> Proto.Json.Encode.encodeWith Deep.registry >> Result.toMaybe)
                                                 |> Maybe.andThen (Json.Decode.decodeValue (Deep.decodeEnvelopeWith Deep.registry) >> Result.toMaybe)
                                                 |> Expect.equal (Just envelope)
                                         ]
@@ -847,10 +848,10 @@ oneBudget =
                             (List.range 2 depth)
 
                     read depth =
-                        Json.Decode.decodeString (Proto.Json.anyWith Proto.WellKnown.registry) (text depth) |> Result.map (always ()) |> Result.mapError (always ())
+                        Json.Decode.decodeString (Proto.Json.Decode.anyWith Proto.WellKnown.registry) (text depth) |> Result.map (always ()) |> Result.mapError (always ())
 
                     write depth =
-                        Proto.Json.encodeWith Proto.WellKnown.registry (Proto.Json.writeAny (packed depth)) |> ok
+                        Proto.Json.Encode.encodeWith Proto.WellKnown.registry (Proto.Any.encode (packed depth)) |> ok
                 in
                 ( List.map read [ 100, 101 ], List.map write [ 100, 101 ] )
                     |> Expect.equal
@@ -1302,7 +1303,7 @@ letter =
         written bytes =
             case Proto.Binary.decode Deep.decodeLetterBytes bytes of
                 Ok value ->
-                    Proto.Json.encodeWith Deep.registry (Deep.encodeLetter value) |> ok
+                    Proto.Json.Encode.encodeWith Deep.registry (Deep.encodeLetter value) |> ok
 
                 Err _ ->
                     Err (Proto.Error.BadJson (Json.Decode.Failure "did not read" Json.Encode.null))
@@ -1385,7 +1386,7 @@ anyOwnCount =
         written bytes =
             case readEnvelopeBytesValue bytes of
                 Ok envelope ->
-                    Proto.Json.encodeWith types (Deep.encodeEnvelope envelope) |> ok
+                    Proto.Json.Encode.encodeWith types (Deep.encodeEnvelope envelope) |> ok
 
                 Err _ ->
                     Err (Proto.Error.BadJson (Json.Decode.Failure "did not read" Json.Encode.null))
@@ -1554,7 +1555,7 @@ mixedFarPast =
             \_ ->
                 case readEnvelopeBytesValue (wrapped (List.concat (List.repeat 60 (payload :: List.repeat 90 reply))) []) of
                     Ok envelope ->
-                        case Proto.Json.encodeWith Deep.registry (Deep.encodeEnvelope envelope) of
+                        case Proto.Json.Encode.encodeWith Deep.registry (Deep.encodeEnvelope envelope) of
                             Err (Proto.Error.BadBinary problem) ->
                                 ( problem.typeName, problem.reason ) |> Expect.equal ( "google.protobuf.Any", Proto.Error.TooDeep )
 
@@ -1567,7 +1568,7 @@ mixedFarPast =
             \_ ->
                 case readEnvelopeBytesValue (wrapped (List.repeat 10000 payload) []) of
                     Ok envelope ->
-                        case Proto.Json.encodeWith Deep.registry (Deep.encodeEnvelope envelope) of
+                        case Proto.Json.Encode.encodeWith Deep.registry (Deep.encodeEnvelope envelope) of
                             Err (Proto.Error.BadBinary problem) ->
                                 problem.reason |> Expect.equal Proto.Error.TooDeep
 
@@ -1682,24 +1683,24 @@ valueRefusals =
             [ test "a Value, read alone" <|
                 \_ ->
                     Expect.all
-                        [ \_ -> readsAt Proto.Json.value (nestedArrays 100)
+                        [ \_ -> readsAt Proto.Json.Decode.value (nestedArrays 100)
                         , \_ -> readsAt Proto.Value.decoder (nestedArrays 100)
-                        , \_ -> Json.Decode.decodeString Proto.Json.value (nestedArrays 101) |> refusedAt [] tooDeepText
+                        , \_ -> Json.Decode.decodeString Proto.Json.Decode.value (nestedArrays 101) |> refusedAt [] tooDeepText
                         , \_ -> Json.Decode.decodeString Proto.Value.decoder (nestedObjects 101) |> refusedAt [] tooDeepText
                         ]
                         ()
             , test "a Struct, read alone" <|
                 \_ ->
                     Expect.all
-                        [ \_ -> readsAt Proto.Json.struct (nestedObjects 100)
-                        , \_ -> Json.Decode.decodeString Proto.Json.struct (nestedObjects 101) |> refusedAt [] tooDeepText
+                        [ \_ -> readsAt Proto.Json.Decode.struct (nestedObjects 100)
+                        , \_ -> Json.Decode.decodeString Proto.Json.Decode.struct (nestedObjects 101) |> refusedAt [] tooDeepText
                         ]
                         ()
             , test "a ListValue, read alone" <|
                 \_ ->
                     Expect.all
-                        [ \_ -> readsAt Proto.Json.listValue (nestedArrays 100)
-                        , \_ -> Json.Decode.decodeString Proto.Json.listValue (nestedArrays 101) |> refusedAt [] tooDeepText
+                        [ \_ -> readsAt Proto.Json.Decode.listValue (nestedArrays 100)
+                        , \_ -> Json.Decode.decodeString Proto.Json.Decode.listValue (nestedArrays 101) |> refusedAt [] tooDeepText
                         ]
                         ()
             , test "a Value in a message on a cycle" <|
@@ -1729,18 +1730,18 @@ valueRefusals =
             [ test "a Struct, read alone" <|
                 \_ ->
                     Expect.all
-                        [ \_ -> Json.Decode.decodeString Proto.Json.struct "[1]" |> refusedAt [] "Expecting an OBJECT"
-                        , \_ -> Json.Decode.decodeString Proto.Json.struct "\"x\"" |> refusedAt [] "Expecting an OBJECT"
-                        , \_ -> Json.Decode.decodeString Proto.Json.struct "null" |> refusedAt [] "Expecting an OBJECT"
-                        , \_ -> Json.Decode.decodeString Proto.Json.struct (nestedArrays 200) |> refusedAt [] "Expecting an OBJECT"
+                        [ \_ -> Json.Decode.decodeString Proto.Json.Decode.struct "[1]" |> refusedAt [] "Expecting an OBJECT"
+                        , \_ -> Json.Decode.decodeString Proto.Json.Decode.struct "\"x\"" |> refusedAt [] "Expecting an OBJECT"
+                        , \_ -> Json.Decode.decodeString Proto.Json.Decode.struct "null" |> refusedAt [] "Expecting an OBJECT"
+                        , \_ -> Json.Decode.decodeString Proto.Json.Decode.struct (nestedArrays 200) |> refusedAt [] "Expecting an OBJECT"
                         ]
                         ()
             , test "a ListValue, read alone" <|
                 \_ ->
                     Expect.all
-                        [ \_ -> Json.Decode.decodeString Proto.Json.listValue "{\"a\":1}" |> refusedAt [] "Expecting a LIST"
-                        , \_ -> Json.Decode.decodeString Proto.Json.listValue "null" |> refusedAt [] "Expecting a LIST"
-                        , \_ -> Json.Decode.decodeString Proto.Json.listValue (nestedObjects 200) |> refusedAt [] "Expecting a LIST"
+                        [ \_ -> Json.Decode.decodeString Proto.Json.Decode.listValue "{\"a\":1}" |> refusedAt [] "Expecting a LIST"
+                        , \_ -> Json.Decode.decodeString Proto.Json.Decode.listValue "null" |> refusedAt [] "Expecting a LIST"
+                        , \_ -> Json.Decode.decodeString Proto.Json.Decode.listValue (nestedObjects 200) |> refusedAt [] "Expecting a LIST"
                         ]
                         ()
             , test "a Struct or ListValue field, a map value and null" <|

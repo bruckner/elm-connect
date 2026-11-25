@@ -10,7 +10,8 @@ import Proto.Descriptors as Descriptors
 import Proto.Duration as Duration
 import Proto.Error exposing (Error(..))
 import Proto.Field as Field exposing (Cardinality(..), Kind(..), Scalar(..))
-import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message as Message exposing (Message)
 import Proto.Registry as Registry exposing (Registry)
 import Proto.WellKnown as WellKnown
@@ -41,7 +42,7 @@ descriptorNote =
 -}
 noteAs : String -> Message Note
 noteAs name =
-    Message.init name (Proto.Json.succeed << encodeNote) decodeNote encodeNoteBytes (noteBytesAs name)
+    Message.init name (Proto.Json.Encode.succeed << encodeNote) decodeNote encodeNoteBytes (noteBytesAs name)
 
 
 encodeNote : Note -> Json.Encode.Value
@@ -99,7 +100,7 @@ well-known types.
 registry : Registry
 registry =
     Registry.empty
-        |> Registry.register (Message.init "notes.v1.Note" (Proto.Json.succeed << encodeNote) decodeNote encodeNoteBytes decodeNoteBytes)
+        |> Registry.register (Message.init "notes.v1.Note" (Proto.Json.Encode.succeed << encodeNote) decodeNote encodeNoteBytes decodeNoteBytes)
         |> Registry.union WellKnown.registry
 
 
@@ -110,14 +111,14 @@ note =
 
 written : Any -> String
 written any =
-    Proto.Json.encodeWith registry (Proto.Json.writeAny any)
+    Proto.Json.Encode.encodeWith registry (Any.encode any)
         |> Result.map (Json.Encode.encode 0)
         |> Result.withDefault "unwritable"
 
 
 read : String -> Result String Any
 read text =
-    Json.Decode.decodeString (Proto.Json.anyWith registry) text
+    Json.Decode.decodeString (Proto.Json.Decode.anyWith registry) text
         |> Result.mapError Json.Decode.errorToString
 
 
