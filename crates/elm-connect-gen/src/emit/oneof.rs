@@ -6,7 +6,7 @@ use super::field::{ValueShape, Zeroed};
 use super::recursion::DEPTH;
 use super::{Emitter, JSON_DECODE, JSON_ENCODE, OneofShape, PROTO_ERROR, PROTO_JSON, docs};
 use crate::elm::ast::{Decl, Expr, Type, Variant};
-use crate::elm::build::{apply, case, list, pctor, pvar, qualified, string, ty, ty_fn, var};
+use crate::elm::build::{apply, case, list, pctor, pvar, string, ty, ty_fn, var};
 use crate::ir::{Message, ModuleName};
 use crate::naming::{ENCODER_ARGUMENT, ONEOF_MEMBER, REGISTRY_ARGUMENT, with_registry};
 
@@ -56,14 +56,15 @@ impl Emitter {
     /// oneof says. A member of `google.protobuf.Empty` encodes as `{}`, one
     /// of `google.protobuf.NullValue` as `null`.
     ///
-    /// A oneof with a member that reaches an `Any` gets
-    /// `encodeFooKindWith`, taking the registry first, whose members' JSON
-    /// is a `Result`: a member that reaches one gives its encoder's, the
-    /// others `Ok`. The members are written with the registry as the
-    /// fields of the message holding the oneof are, by whether its codecs
-    /// take the depth (`counts`), so each `Any` counts as it is read.
+    /// A oneof with a member whose write can be refused gives each member
+    /// as a `Proto.Json.Field Proto.Error.Error` instead, for a run of
+    /// `Proto.Json.checkedFields`: `Proto.Json.writeMember` of a message's
+    /// encoder or of a member that can be refused, else of its JSON in
+    /// `Proto.Json.succeed`. A member that counts a level, of a message
+    /// whose codecs take the depth (`counts`), and reaches an `Any` is
+    /// written one level deeper, as the message's fields are.
     pub(super) fn oneof_encoder(&mut self, shape: &OneofShape, counts: bool) -> Decl {
-        let with = self.oneof_reaches(shape);
+        let with = self.oneof_write_reaches(shape);
         let unset = (pctor(shape.oneof.unset_ctor.clone(), []), list([]));
         let members: Vec<_> = shape
             .variants
@@ -79,25 +80,29 @@ impl Emitter {
                     let null = self.reference((JSON_ENCODE, "null"));
                     (pctor(variant.elm_ctor.clone(), []), null)
                 } else {
-                    let counted = variant.cyclic || self.counted.type_ref(&variant.ty);
-                    self.deeper_registry = counts && counted;
-                    self.nested_any = counts;
                     let encoded = self.encode_value(value, var(ONEOF_MEMBER));
-                    self.deeper_registry = false;
-                    self.nested_any = false;
                     (
                         pctor(variant.elm_ctor.clone(), [pvar(ONEOF_MEMBER)]),
                         encoded,
                     )
                 };
-                let just = var(self.core("Just"));
                 let json = if !with {
+                    let just = var(self.core("Just"));
                     apply(just, [encoded])
-                } else if self.reaches(value) {
-                    apply(qualified("Result", "map"), [just, encoded])
                 } else {
-                    let ok = var(self.core("Ok"));
-                    apply(ok, [apply(just, [encoded])])
+                    let encoder = if self.write_reaches(value) {
+                        encoded
+                    } else if let Some(encoder) = self.total_message_encoder(value) {
+                        // A message that cannot refuse is an encoder for
+                        // any refusal type already.
+                        apply(encoder, [var(ONEOF_MEMBER)])
+                    } else {
+                        apply(self.reference((PROTO_JSON, "succeed")), [encoded])
+                    };
+                    let member = apply(self.reference((PROTO_JSON, "writeMember")), [encoder]);
+                    let counted = variant.cyclic || self.counted.type_ref(&variant.ty);
+                    let reaches = self.reaches(value);
+                    self.deeper_if_counted(counts && counted, reaches, member)
                 };
                 (
                     pattern,
@@ -105,41 +110,34 @@ impl Emitter {
                 )
             })
             .collect();
-        let value_type = self.library_type(JSON_ENCODE, "Value", []);
-        let maybe = ty(self.core("Maybe"), [value_type]);
         let member = if with {
             let problem = self.library_type(PROTO_ERROR, "Error", []);
-            ty(self.core("Result"), [problem, maybe])
+            self.library_type(PROTO_JSON, "Field", [problem])
         } else {
-            maybe
+            let value_type = self.library_type(JSON_ENCODE, "Value", []);
+            ty(self.core("Maybe"), [value_type])
         };
         let pair = Type::Tuple(vec![ty(self.core("String"), []), member]);
         let oneof = ty(shape.oneof.elm_type_name.clone(), []);
         let members_type = ty(self.core("List"), [pair]);
-        let (name, annotation, params) = if with {
-            let registry = self.library_type(super::PROTO_REGISTRY, "Registry", []);
-            (
-                with_registry(shape.oneof.encoder_name()),
-                ty_fn([registry, oneof], members_type),
-                vec![pvar(REGISTRY_ARGUMENT), pvar(ENCODER_ARGUMENT)],
-            )
-        } else {
-            (
-                shape.oneof.encoder_name(),
-                ty_fn([oneof], members_type),
-                vec![pvar(ENCODER_ARGUMENT)],
-            )
-        };
         Decl::Value {
             doc: Some(format!(
                 "Encodes {} as the members of its message's JSON object.",
                 docs::a_local(&shape.oneof.elm_type_name)
             )),
-            name,
-            annotation,
-            params,
+            name: shape.oneof.encoder_name(),
+            annotation: ty_fn([oneof], members_type),
+            params: vec![pvar(ENCODER_ARGUMENT)],
             body: case(var(ENCODER_ARGUMENT), std::iter::once(unset).chain(members)),
         }
+    }
+
+    /// Whether a member of a oneof has a write that can be refused.
+    pub(super) fn oneof_write_reaches(&self, shape: &OneofShape) -> bool {
+        shape
+            .variants
+            .iter()
+            .any(|&(_, value)| self.write_reaches(value))
     }
 
     /// Whether a member of a oneof reaches an `Any`.

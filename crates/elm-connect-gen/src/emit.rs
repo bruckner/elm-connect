@@ -168,13 +168,24 @@
 //!   under `wire=both`.
 //! - An `Any` holds its message's binary, and its proto3
 //!   JSON goes through a registry ([`crate::ir::AnyReach`]): each message,
-//!   oneof and wrapper that reaches one has JSON codecs taking it,
-//!   `decodeFooWith` and `encodeFooWith`, the encoder giving a `Result`
-//!   through `Proto.Json`'s `try` helpers, and no `decodeFoo` or
-//!   `encodeFoo`. The package's `registry` holds its own messages' typed
-//!   values and nothing else; a method's JSON codecs take the client's
-//!   registry, and a route whose body reaches an `Any` is read from its
-//!   binding.
+//!   oneof and wrapper that reaches one has a JSON decoder taking it,
+//!   `decodeFooWith`, and no `decodeFoo`. The package's `registry` holds
+//!   its own messages' typed values and nothing else; a method's JSON
+//!   codecs take the client's registry, and a route whose body reaches an
+//!   `Any` is read from its binding.
+//! - Every message has one JSON encoder, `encodeFoo`, which
+//!   `Proto.Json.encode` or `encodeWith` runs. A message whose write
+//!   nothing it holds can refuse (no `Any`, and no `Timestamp`, `Duration`,
+//!   `FieldMask`, `Struct`, `ListValue` or `Value`, at any depth;
+//!   [`crate::ir::AnyReach::refusable`]) gets `Foo -> Proto.Json.Encoder x`,
+//!   plain code wrapped once, which works for any refusal type, so its
+//!   plain parents unwrap it with `Proto.Json.encodeTotal`; the others get
+//!   `Foo -> Proto.Json.Encoder Proto.Error.Error`, built from
+//!   `Proto.Json.writeObject` of their fields in declaration order, in runs
+//!   of plain fields and of fields that can be refused ([`field`]). A field
+//!   of a message that nests, counting a level and reaching an `Any`, is
+//!   written one level deeper (`Proto.Json.writeDeeper`), so an `Any`
+//!   written as JSON counts the messages around it as a read does.
 //! - A message that the request of a generated method's binding puts in the
 //!   query gets a query encoder in its package's module, in a last
 //!   section, `queryOfListNotesRequest : ListNotesRequest -> List ( String,
@@ -218,6 +229,12 @@ const JSON_DECODE: &str = "Json.Decode";
 const JSON_ENCODE: &str = "Json.Encode";
 /// The runtime package's proto3 JSON helpers.
 const PROTO_JSON: &str = "Proto.Json";
+/// The runtime package's error type, what a JSON encoder that can refuse
+/// refuses with.
+const PROTO_ERROR: &str = "Proto.Error";
+/// The type variable of a JSON encoder that cannot refuse,
+/// `Proto.Json.Encoder x`.
+const TOTAL_ERROR_VAR: &str = "x";
 /// elm/core's `Dict`, imported as `import Dict exposing (Dict)` so the
 /// type reads `Dict String V`, as Elm code conventionally writes it.
 const CORE_DICT: &str = "Dict";
@@ -257,9 +274,6 @@ const PROTO_DESCRIPTORS: &str = "Proto.Descriptors";
 const PROTO_REGISTRY: &str = "Proto.Registry";
 /// The runtime package's `google.protobuf.Any`.
 const PROTO_ANY: &str = "Proto.Any";
-/// The runtime package's error type, which an encoder writing an `Any`
-/// can fail with.
-const PROTO_ERROR: &str = "Proto.Error";
 /// The runtime package's typed values of the well-known types, home of
 /// `Proto.WellKnown.nullValue`, which a descriptor of a `NullValue` field
 /// names.
@@ -325,6 +339,7 @@ pub fn emit_with_queries(
     let mut emitter = Emitter::new(&package.module, options);
     emitter.reach = AnyReach::of(packages.iter().chain(std::iter::once(package)));
     emitter.counted = Counted::of(packages.iter().chain(std::iter::once(package)));
+    emitter.write_reach = AnyReach::refusable(packages.iter().chain(std::iter::once(package)));
     let mut decls = emitter.package(package);
     let mut encoders = Vec::new();
     // Route functions take JSON, which `wire=proto` does not generate,
@@ -477,6 +492,7 @@ pub fn emit_service(
     let mut emitter = Emitter::new(&service.module, options);
     emitter.reach = AnyReach::of(packages.iter().chain(std::iter::once(package)));
     emitter.counted = Counted::of(packages.iter().chain(std::iter::once(package)));
+    emitter.write_reach = AnyReach::refusable(packages.iter().chain(std::iter::once(package)));
     let mut decls = Vec::new();
     if !service.methods.is_empty() {
         let mut calls = Vec::new();
@@ -634,11 +650,16 @@ struct Emitter {
     /// Which codecs the option wires into methods; package modules emit
     /// both whatever it says.
     wiring: Wire,
-    /// The messages of the build that reach a `google.protobuf.Any`.
+    /// The messages of the build that reach a `google.protobuf.Any`, whose
+    /// JSON decoders take the registry.
     reach: AnyReach,
     /// The messages of the build that nest, whose codecs take the nesting
     /// depth.
     counted: Counted,
+    /// The messages whose JSON write can be refused, whose encoders are
+    /// built with `Proto.Json.writeObject`; the others are written by plain
+    /// code and wrapped once.
+    write_reach: AnyReach,
     /// The options as the header's second line records them.
     recorded: String,
     /// While the JSON decoder of a message whose codecs take the depth is
@@ -650,16 +671,6 @@ struct Emitter {
     /// written: its `Struct`, `Value` and `ListValue` fields read at the
     /// merge's depth.
     binary_depth: bool,
-    /// While a message whose codecs take the depth is written by the
-    /// encoder, taking the registry, of another such message: the value is
-    /// written with the registry one level deeper, so converting an `Any`
-    /// to JSON counts the messages around it as a read does.
-    deeper_registry: bool,
-    /// While a value of a message whose codecs take the depth is written
-    /// by an encoder taking the registry: an `Any` is written with
-    /// `Proto.Json.encodeNestedAnyWith`, which counts it from the message's
-    /// depth as the decoder's `nestedAnyWith` reads it.
-    nested_any: bool,
 }
 
 /// How the JSON decoder of a message whose codecs take the depth is made
@@ -690,6 +701,7 @@ impl Emitter {
             wiring: options.wire,
             reach: AnyReach::default(),
             counted: Counted::default(),
+            write_reach: AnyReach::default(),
             recorded: match options.recorded() {
                 pairs if pairs.is_empty() => DEFAULT_OPTIONS.to_owned(),
                 pairs => pairs.join(", "),
@@ -697,8 +709,6 @@ impl Emitter {
             deep: None,
             deep_value: false,
             binary_depth: false,
-            deeper_registry: false,
-            nested_any: false,
         }
     }
 
@@ -777,7 +787,7 @@ impl Emitter {
             types.push(self.message_alias(&package.module, shape));
             defaults.push(self.message_default(shape));
             values.push(self.message_record(&package.module, shape));
-            encoders.push(self.message_encoder(shape));
+            encoders.extend(self.message_encoder(shape));
             decoders.extend(self.message_decoder(shape));
             binary_encoders.push(self.message_encoder_bytes(shape));
             binary_decoders.extend(self.message_merge_bytes(shape));
@@ -957,6 +967,18 @@ impl Emitter {
             }
         }
         reserved
+    }
+
+    /// `Proto.Json.Encoder Proto.Error.Error` for an encoder that can refuse
+    /// (`refusable`), else `Proto.Json.Encoder x`, which works for any
+    /// refusal type, `Never` included.
+    fn json_encoder_type(&mut self, refusable: bool) -> Type {
+        let error = if refusable {
+            self.library_type(PROTO_ERROR, "Error", [])
+        } else {
+            Type::Var(TOTAL_ERROR_VAR.to_owned())
+        };
+        self.library_type(PROTO_JSON, "Encoder", [error])
     }
 
     /// The library type `module.name args`, which the module then imports.
@@ -1298,7 +1320,6 @@ mod tests {
             [
                 "Bytes.Encode",
                 "Json.Decode",
-                "Json.Encode",
                 "Other.V1",
                 "Proto.Binary",
                 "Proto.Descriptors",
@@ -1319,7 +1340,7 @@ mod tests {
             "{printed}"
         );
         assert!(
-            printed.contains("Maybe.map Other.V1.encodeB value.b"),
+            printed.contains("Proto.Json.totalOptionalField Other.V1.encodeB value.b"),
             "{printed}"
         );
         assert!(
@@ -1442,11 +1463,11 @@ mod tests {
         let printed = crate::elm::print::print_module(&module);
         for expected in [
             "(Proto.Method.initJson \"t.v1.S\"\n            \"Get\"\n            \
-             (\\_ -> Ok << T.V1.encodeA)\n            \
+             T.V1.encodeA\n            \
              (\\_ -> T.V1.decodeA)\n        )\n",
-            "\n            (\\_ -> Ok << Proto.Json.encodeValue)\n            (\\_ -> Proto.Json.empty)\n",
+            "\n            Proto.Json.writeValue\n            (\\_ -> Proto.Json.empty)\n",
             "\n            \"Ticks\"\n            \
-             (\\_ -> Ok << Proto.Json.encodeInt64AsInt)\n            Proto.Json.anyWith\n",
+             (Proto.Json.succeed << Proto.Json.encodeInt64AsInt)\n            Proto.Json.anyWith\n",
             "descriptorGet : Proto.Method.Descriptor\ndescriptorGet =\n    \
              Proto.Method.descriptor \"t.v1.S\"\n        \"Get\"\n        \
              Proto.Method.IdempotencyUnknown\n        \"t.v1.A\"\n        \"t.v1.A\"\n        []\n",

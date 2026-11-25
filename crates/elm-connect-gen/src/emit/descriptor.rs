@@ -99,7 +99,7 @@ impl Emitter {
         let (builder, encoder, decoder) = if self.message_reaches(shape) {
             (
                 "initWith",
-                with_registry(message.encoder_name()),
+                message.encoder_name(),
                 with_registry(message.decoder_name()),
             )
         } else {

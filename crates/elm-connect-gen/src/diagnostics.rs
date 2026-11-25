@@ -750,7 +750,7 @@ impl Problem {
 
     /// A type of `package` named for a message or oneof
     /// that reaches a `google.protobuf.Any` with `With` at the end, whose
-    /// JSON codecs take the names of the other's codecs that take the
+    /// JSON decoder takes the name of the other's decoder that takes the
     /// registry.
     pub fn registry_codec_collision(
         package: &str,
@@ -767,11 +767,11 @@ impl Problem {
                  {values}."
             ),
             format!(
-                "The JSON codecs of a message or oneof that holds a \
-                 `google.protobuf.Any`, directly or through its fields, take the registry and \
-                 are named with `With` at the end (`encodeNoteWith`), so the JSON codecs of a \
-                 type named for it with `With` at the end (`NoteWith` beside `Note`) take the \
-                 same names, and a module cannot define two values with one name. {}",
+                "The JSON decoder of a message or oneof that holds a \
+                 `google.protobuf.Any`, directly or through its fields, takes the registry and \
+                 is named with `With` at the end (`decodeNoteWith`), so the JSON decoder of a \
+                 type named for it with `With` at the end (`NoteWith` beside `Note`) takes the \
+                 same name, and a module cannot define two values with one name. {}",
                 rename_escape(
                     renamed,
                     format!("Rename one of them in the proto, or rename one with {rename}.")

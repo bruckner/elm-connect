@@ -9,6 +9,7 @@ use super::{
 use crate::elm::ast::{Expr, Type};
 use crate::elm::build::{apply, list, qualified, ty, var};
 use crate::naming::{REGISTRY_ARGUMENT, with_registry};
+
 use std::collections::HashMap;
 
 use crate::options::Int64;
@@ -219,10 +220,7 @@ impl Emitter {
     /// it set (design §3.5).
     pub(super) fn encode_field(&mut self, shape: FieldShape, value: Expr) -> Expr {
         let (helper, args) = match shape {
-            FieldShape::Json => {
-                let encode = self.reference((PROTO_JSON, "encodeValue"));
-                return apply(qualified("Maybe", "map"), [encode, value]);
-            }
+            FieldShape::Json => unreachable!("a field of google.protobuf.Value can be refused"),
             FieldShape::Plain(Zeroed::Empty) => {
                 let encoded = self.encode_value(ValueShape::Zeroed(Zeroed::Empty), value);
                 return apply(var(self.core("Just")), [encoded]);
@@ -243,13 +241,76 @@ impl Emitter {
                     vec![zero, encoder],
                 )
             }
+            FieldShape::Maybe(inner) => match self.total_message_encoder(inner) {
+                Some(encoder) => (
+                    self.reference((PROTO_JSON, "totalOptionalField")),
+                    vec![encoder],
+                ),
+                None => {
+                    let encoder = self.value_encoder(inner);
+                    (qualified("Maybe", "map"), vec![encoder])
+                }
+            },
+            FieldShape::List(inner) => match self.total_message_encoder(inner) {
+                Some(encoder) => (
+                    self.reference((PROTO_JSON, "totalRepeatedField")),
+                    vec![encoder],
+                ),
+                None => {
+                    let encoder = self.value_encoder(inner);
+                    (self.reference((PROTO_JSON, "repeatedField")), vec![encoder])
+                }
+            },
+            FieldShape::Dict(key, inner) => {
+                let key = if key.is_int() {
+                    qualified(CORE_STRING, "fromInt")
+                } else {
+                    var("identity")
+                };
+                match self.total_message_encoder(inner) {
+                    Some(encoder) => (
+                        self.reference((PROTO_JSON, "totalDictField")),
+                        vec![key, encoder],
+                    ),
+                    None => {
+                        let encoder = self.value_encoder(inner);
+                        (
+                            self.reference((PROTO_JSON, "dictField")),
+                            vec![key, encoder],
+                        )
+                    }
+                }
+            }
+            FieldShape::BoolMap(inner) => match self.total_message_encoder(inner) {
+                Some(encoder) => (
+                    self.reference((PROTO_JSON, "totalBoolMapField")),
+                    vec![encoder],
+                ),
+                None => {
+                    let encoder = self.value_encoder(inner);
+                    (self.reference((PROTO_JSON, "boolMapField")), vec![encoder])
+                }
+            },
+        };
+        apply(helper, args.into_iter().chain([value]))
+    }
+
+    /// A field whose write can be refused, as a `Proto.Json.Field` for a
+    /// run of `Proto.Json.checkedFields`: the `write` helper of its kind
+    /// with its values' encoder.
+    pub(super) fn write_field(&mut self, shape: FieldShape, value: Expr) -> Expr {
+        let (helper, args) = match shape {
+            FieldShape::Json => {
+                let encoder = self.reference((PROTO_JSON, "writeValue"));
+                ("writeOptional", vec![encoder])
+            }
             FieldShape::Maybe(inner) => {
                 let encoder = self.value_encoder(inner);
-                (qualified("Maybe", "map"), vec![encoder])
+                ("writeOptional", vec![encoder])
             }
             FieldShape::List(inner) => {
                 let encoder = self.value_encoder(inner);
-                (self.reference((PROTO_JSON, "repeatedField")), vec![encoder])
+                ("writeRepeated", vec![encoder])
             }
             FieldShape::Dict(key, inner) => {
                 let encoder = self.value_encoder(inner);
@@ -258,54 +319,53 @@ impl Emitter {
                 } else {
                     var("identity")
                 };
-                (
-                    self.reference((PROTO_JSON, "dictField")),
-                    vec![key, encoder],
-                )
+                ("writeDict", vec![key, encoder])
             }
             FieldShape::BoolMap(inner) => {
                 let encoder = self.value_encoder(inner);
-                (self.reference((PROTO_JSON, "boolMapField")), vec![encoder])
+                ("writeBoolMap", vec![encoder])
             }
-        };
-        apply(helper, args.into_iter().chain([value]))
-    }
-
-    /// The JSON of a field of a message that reaches an `Any`, as a
-    /// `Result Proto.Error.Error (Maybe Json.Encode.Value)` for
-    /// `Proto.Json.tryObjectOfFields`: the `try` helper of its kind when its
-    /// values reach one, else what [`Self::encode_field`] gives, in `Ok`.
-    pub(super) fn try_encode_field(&mut self, shape: FieldShape, value: Expr) -> Expr {
-        let (helper, args) = match shape {
-            FieldShape::Maybe(inner) if self.reaches(inner) => {
-                let encoder = self.value_encoder(inner);
-                ("tryOptionalField", vec![encoder])
-            }
-            FieldShape::List(inner) if self.reaches(inner) => {
-                let encoder = self.value_encoder(inner);
-                ("tryRepeatedField", vec![encoder])
-            }
-            FieldShape::Dict(key, inner) if self.reaches(inner) => {
-                let encoder = self.value_encoder(inner);
-                let key = if key.is_int() {
-                    qualified(CORE_STRING, "fromInt")
-                } else {
-                    var("identity")
-                };
-                ("tryDictField", vec![key, encoder])
-            }
-            FieldShape::BoolMap(inner) if self.reaches(inner) => {
-                let encoder = self.value_encoder(inner);
-                ("tryBoolMapField", vec![encoder])
-            }
-            shape => {
-                let encoded = self.encode_field(shape, value);
-                let ok = self.core("Ok");
-                return apply(var(ok), [encoded]);
-            }
+            FieldShape::Plain(_) => unreachable!("a field without presence cannot be refused"),
         };
         let helper = self.reference((PROTO_JSON, helper));
         apply(helper, args.into_iter().chain([value]))
+    }
+
+    /// Whether a field's write can be refused ([`Self::write_reaches`]).
+    pub(super) fn field_write_reaches(&self, shape: FieldShape) -> bool {
+        match shape {
+            FieldShape::Maybe(value)
+            | FieldShape::List(value)
+            | FieldShape::Dict(_, value)
+            | FieldShape::BoolMap(value) => self.write_reaches(value),
+            FieldShape::Json => true,
+            FieldShape::Plain(_) => false,
+        }
+    }
+
+    /// Whether a value's JSON write can be refused: an `Any`; a well-known
+    /// type whose Elm values can have no proto3 JSON form
+    /// ([`crate::ir::reach::checked`]); a message that holds one of these,
+    /// at any depth.
+    pub(super) fn write_reaches(&self, value: ValueShape) -> bool {
+        match value {
+            ValueShape::Present(Present::Any) => true,
+            ValueShape::Present(Present::Message(name)) => {
+                self.write_reach.message(&name.proto_full_name)
+            }
+            ValueShape::Present(Present::Wrapped(_, full_name)) => {
+                self.write_reach.message(full_name)
+            }
+            ValueShape::Present(
+                Present::Timestamp
+                | Present::Duration
+                | Present::FieldMask
+                | Present::Struct
+                | Present::ListValue,
+            )
+            | ValueShape::Zeroed(Zeroed::Json) => true,
+            ValueShape::Present(Present::Wrapper(_)) | ValueShape::Zeroed(_) => false,
+        }
     }
 
     /// Whether a field's values reach an `Any` ([`Self::reaches`]).
@@ -416,59 +476,101 @@ impl Emitter {
         }
     }
 
-    /// The JSON of one value, `value`: its encoder applied to it.
+    /// The JSON of one value, `value`: its encoder applied to it, and for a
+    /// message whose write cannot be refused, unwrapped with
+    /// `Proto.Json.encodeTotal`.
     pub(super) fn encode_value(&mut self, shape: ValueShape, value: Expr) -> Expr {
+        if let Some(encoder) = self.total_message_encoder(shape) {
+            let total = self.reference((PROTO_JSON, "encodeTotal"));
+            return apply(total, [apply(encoder, [value])]);
+        }
         call(self.value_encoder(shape), [value])
     }
 
-    /// The encoder of one value. One that reaches an `Any` takes the
-    /// registry and gives a `Result`
-    /// ([`Self::reaches`]).
+    /// The `Proto.Json.Encoder x` of a message whose write cannot be
+    /// refused, which plain code unwraps with `Proto.Json.encodeTotal`;
+    /// `None` for any other value.
+    pub(super) fn total_message_encoder(&mut self, value: ValueShape) -> Option<Expr> {
+        if self.write_reaches(value) {
+            return None;
+        }
+        match value {
+            ValueShape::Present(Present::Message(name)) => {
+                Some(self.generated_value(&name.module, name.encoder_name()))
+            }
+            ValueShape::Present(Present::Wrapped(wrapper, _)) => Some(var(wrapper.encoder_name())),
+            _ => None,
+        }
+    }
+
+    /// The encoder of one value: a `Proto.Json.Encoder` when its write can
+    /// be refused ([`Self::write_reaches`]), else its plain JSON; for a
+    /// message, `Proto.Json.encodeTotal << encodeFoo`.
     pub(super) fn value_encoder(&mut self, value: ValueShape) -> Expr {
-        if self.reaches(value) {
+        if self.write_reaches(value) {
             let encoder = match value {
                 ValueShape::Present(Present::Message(name)) => {
-                    self.generated_value(&name.module, with_registry(name.encoder_name()))
+                    self.generated_value(&name.module, name.encoder_name())
                 }
-                ValueShape::Present(Present::Wrapped(wrapper, _)) => {
-                    var(with_registry(wrapper.encoder_name()))
+                ValueShape::Present(Present::Wrapped(wrapper, _)) => var(wrapper.encoder_name()),
+                ValueShape::Present(Present::Timestamp) => {
+                    self.reference((PROTO_JSON, "writeTimestamp"))
                 }
-                _ if self.nested_any => self.reference((PROTO_JSON, "encodeNestedAnyWith")),
-                _ => self.reference((PROTO_JSON, "encodeAnyWith")),
+                ValueShape::Present(Present::Duration) => {
+                    self.reference((PROTO_JSON, "writeDuration"))
+                }
+                ValueShape::Present(Present::FieldMask) => {
+                    self.reference((PROTO_JSON, "writeFieldMask"))
+                }
+                ValueShape::Present(Present::Struct) => self.reference((PROTO_JSON, "writeStruct")),
+                ValueShape::Present(Present::ListValue) => {
+                    self.reference((PROTO_JSON, "writeListValue"))
+                }
+                ValueShape::Zeroed(Zeroed::Json) => self.reference((PROTO_JSON, "writeValue")),
+                _ => self.reference((PROTO_JSON, "writeAny")),
             };
-            let registry = if self.deeper_registry {
-                let deeper = self.reference((PROTO_JSON, "registryDeeper"));
-                apply(deeper, [var(REGISTRY_ARGUMENT)])
-            } else {
-                var(REGISTRY_ARGUMENT)
-            };
-            return apply(encoder, [registry]);
+            return encoder;
         }
         match value {
             ValueShape::Zeroed(Zeroed::Scalar(repr))
             | ValueShape::Present(Present::Wrapper(repr)) => self.reference(scalar::encoder(repr)),
-            ValueShape::Zeroed(Zeroed::Enum(name, _))
-            | ValueShape::Present(Present::Message(name)) => {
+            ValueShape::Zeroed(Zeroed::Enum(name, _)) => {
                 self.generated_value(&name.module, name.encoder_name())
             }
-            ValueShape::Zeroed(Zeroed::Json) => self.reference((PROTO_JSON, "encodeValue")),
-            ValueShape::Present(Present::Timestamp) => {
-                self.reference((PROTO_JSON, "encodeTimestamp"))
+            ValueShape::Present(Present::Message(_) | Present::Wrapped(..)) => {
+                let encoder = self
+                    .total_message_encoder(value)
+                    .expect("a message whose write cannot be refused");
+                let total = self.reference((PROTO_JSON, "encodeTotal"));
+                crate::elm::build::binop(crate::elm::ast::BinOp::ComposeL, total, encoder)
             }
-            ValueShape::Present(Present::Duration) => {
-                self.reference((PROTO_JSON, "encodeDuration"))
-            }
-            ValueShape::Present(Present::FieldMask) => {
-                self.reference((PROTO_JSON, "encodeFieldMask"))
-            }
-            ValueShape::Present(Present::Struct) => self.reference((PROTO_JSON, "encodeStruct")),
-            ValueShape::Present(Present::ListValue) => {
-                self.reference((PROTO_JSON, "encodeListValue"))
-            }
-            ValueShape::Present(Present::Any) => self.reference((PROTO_JSON, "encodeAny")),
+            ValueShape::Zeroed(Zeroed::Json)
+            | ValueShape::Present(
+                Present::Timestamp
+                | Present::Duration
+                | Present::FieldMask
+                | Present::Struct
+                | Present::ListValue
+                | Present::Any,
+            ) => unreachable!("a value whose write can be refused has no plain encoder"),
             ValueShape::Zeroed(Zeroed::Empty) => self.reference((PROTO_JSON, "encodeEmpty")),
             ValueShape::Zeroed(Zeroed::Null) => self.reference((PROTO_JSON, "encodeNullValue")),
-            ValueShape::Present(Present::Wrapped(wrapper, _)) => var(wrapper.encoder_name()),
+        }
+    }
+
+    /// `field`, a field's or oneof member's `Proto.Json.Field`, written one
+    /// level deeper when its message counts nesting and the value counts a
+    /// level (`counted`) and reaches an `Any`: `Proto.Json.writeDeeper
+    /// field`, so that converting an `Any` to JSON counts the messages
+    /// around it as a read does. The level is raised once for the field,
+    /// not per element: every element of a field is one level below its
+    /// message.
+    pub(super) fn deeper_if_counted(&mut self, counted: bool, reaches: bool, field: Expr) -> Expr {
+        if counted && reaches {
+            let deeper = self.reference((PROTO_JSON, "writeDeeper"));
+            apply(deeper, [field])
+        } else {
+            field
         }
     }
 

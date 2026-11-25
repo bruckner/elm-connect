@@ -1658,10 +1658,10 @@ impl Builder {
 
     /// Reports each type of `package` named for a message or oneof that
     /// reaches a `google.protobuf.Any` with `With` at the end (`NoteWith`
-    /// beside `Note`): the JSON codecs of such a
-    /// message or oneof take the registry and are named with `With` at the
-    /// end (`encodeNoteWith`, `decodeNoteWith`), so the JSON codecs of the
-    /// other take those names.
+    /// beside `Note`): the JSON decoder of such a
+    /// message or oneof takes the registry and is named with `With` at the
+    /// end (`decodeNoteWith`), so the JSON decoder of the other takes that
+    /// name.
     fn check_registry_codec_names(
         &mut self,
         package: &str,
@@ -1709,24 +1709,16 @@ impl Builder {
                 continue;
             }
             let second = &types.claimed[name.as_str()];
-            let values = [
-                naming::with_registry(naming::encoder_name(stem)),
-                naming::with_registry(naming::decoder_name(stem)),
-            ];
-            let listed = values
-                .iter()
-                .map(|value| format!("`{value}`"))
-                .collect::<Vec<_>>()
-                .join(" and ");
+            let listed = format!("`{}`", naming::with_registry(naming::decoder_name(stem)));
             let first_site = Site {
                 label: format!(
-                    "the JSON codecs of {} taking the registry become {listed}",
+                    "the JSON decoder of {} taking the registry becomes {listed}",
                     first.what
                 ),
                 ..first.site.clone()
             };
             let second_site = Site {
-                label: format!("and so do the JSON codecs of {}", second.what),
+                label: format!("and so does the JSON decoder of {}", second.what),
                 ..second.site.clone()
             };
             let renamed = [second, first]
@@ -1740,7 +1732,7 @@ impl Builder {
                 .and_then(|claim| Some((claim.proto.clone()?, claim.given.clone()?.0)));
             self.diagnostics.push(Problem::registry_codec_collision(
                 package,
-                &format!("values {listed}"),
+                &format!("value {listed}"),
                 first_site,
                 second_site,
                 &self.rename_of(second.proto.as_deref().or(first.proto.as_deref())),
