@@ -481,13 +481,21 @@ badCall c text =
     clientError BadCall c text Nothing
 
 
-{-| A call that could not be made because an [`Any`](Proto-Any) in its request
-could not be written as JSON, for this reason: a `BadCall`, `Internal`,
-`bad Any`, the reason in [`protoError`](#protoError).
+{-| A call that could not be made because its request could not be written as
+JSON, for this reason: a `BadCall`, `Internal`, the reason in
+[`protoError`](#protoError). The message is `bad Any` when an
+[`Any`](Proto-Any) in the request could not be written, and `unwritable
+request` when the request holds a value proto3 JSON has no form for
+([`BadValue`](Proto-Error#Error)).
 -}
 badAny : Proto.Error.Error -> Error
 badAny problem =
-    clientError BadCall Code.Internal "bad Any" (Just problem)
+    case problem of
+        Proto.Error.BadValue _ ->
+            clientError BadCall Code.Internal "unwritable request" (Just problem)
+
+        _ ->
+            clientError BadCall Code.Internal "bad Any" (Just problem)
 
 
 {-| A success that could not be used, with its code, its message and the

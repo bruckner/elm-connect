@@ -37,8 +37,9 @@ import Proto.Internal.ValueJson as ValueJson
 holds it.
 
 A number that is not finite can only come from protobuf binary or from the
-application. It is kept: protobuf binary writes it back as it came, and
-proto3 JSON, which has no form for it, writes `null`.
+application. It is kept: protobuf binary writes it back as it came, and a
+proto3 JSON write, which has no form for it, refuses it
+([`Proto.Json.encode`](Proto-Json#encode)); [`toJson`](#toJson) writes `null`.
 
 -}
 type Value

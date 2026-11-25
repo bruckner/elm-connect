@@ -169,7 +169,7 @@ applies it to each method's [`Method`](Proto-Method#Method):
         Rpc.call
             (Method.initJson "notes.v1.NotesService"
                 "GetNote"
-                (\_ -> Ok << Notes.V1.encodeGetNoteRequest)
+                Notes.V1.encodeGetNoteRequest
                 (\_ -> Notes.V1.decodeNote)
                 |> Method.withIdempotency Method.IdempotencyNoSideEffects
                 |> Method.withRoutes [ routeGetNote0 ]
