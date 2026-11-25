@@ -15,6 +15,7 @@ import Generated.Routes.Routes.V1 as V1
 import Generated.Routes.Routes.V1.Routes as Service
 import Json.Decode
 import Json.Encode
+import Requests exposing (builtOf)
 import Rpc
 import Rpc.Body
 import Rpc.Call
@@ -42,7 +43,7 @@ transcode =
 
 send : (req -> Rpc.Call Rpc.Json req res) -> req -> Rpc.Request
 send method message =
-    Rpc.request transcode (method message)
+    builtOf transcode (method message)
 
 
 {-| The request over binding `index`; the binding of binding 0 when the method
@@ -52,7 +53,7 @@ sendVia : Int -> (req -> Rpc.Call Rpc.Json req res) -> req -> Rpc.Request
 sendVia index method message =
     Rpc.Call.viaBinding index (method message)
         |> Maybe.withDefault (method message)
-        |> Rpc.request transcode
+        |> builtOf transcode
 
 
 {-| A request's URL as its path, split at `/`, and its query pairs, both still

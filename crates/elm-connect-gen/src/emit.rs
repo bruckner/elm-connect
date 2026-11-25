@@ -44,7 +44,8 @@
 //!   `Proto.Method.withRoutes` with its route functions. Each route
 //!   function, `routeGetNote0 : GetNoteRequest -> Proto.Route.Route`,
 //!   builds one binding's path, query and body from the typed request
-//!   ([`route_fn`]); a method whose bodies hold a `google.protobuf.Any`
+//!   ([`route_fn`]); a method with a body that holds a value a JSON
+//!   write can refuse (an `Any`, or a well-known value with no JSON form)
 //!   takes route functions of the request and its JSON instead
 //!   (`Proto.Method.withJsonRoutes`). A binding's `response_body` is not
 //!   in its route but piped after the routes as

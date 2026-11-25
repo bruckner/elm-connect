@@ -157,9 +157,11 @@ list model =
     )
 ```
 
-`record` keeps `Rpc.request (Api.client shared) call`, the HTTP request
-the call becomes, built without sending anything; the page lists the
-last few under "Sent".
+`record` keeps what `Rpc.request (Api.client shared) call` gives, the
+HTTP request the call becomes, built without sending anything; the page
+lists the last few under "Sent". A call `Rpc.request` refuses, such as
+one whose note holds a time past the year 9999, sends nothing and keeps
+nothing: `Api.rpc` fails with the same error.
 
 ## Reading an error
 

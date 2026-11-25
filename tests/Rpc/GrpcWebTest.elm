@@ -15,6 +15,7 @@ import Proto.Error
 import Proto.Json
 import Proto.Method exposing (Idempotency(..))
 import Proto.Registry
+import Requests exposing (refusalOf, requestOf)
 import Rpc
 import Rpc.Body
 import Rpc.Client
@@ -239,7 +240,7 @@ requests =
     describe "requests"
         [ test "a POST of one framed message, with gRPC-Web's headers" <|
             \_ ->
-                Rpc.request grpcWeb (getNote { name = "hi" })
+                requestOf grpcWeb (getNote { name = "hi" })
                     |> Expect.all
                         [ \r -> r.method |> Expect.equal "POST"
                         , \r -> r.url |> Expect.equal "https://api.example.com/notes.v1.Notes/GetNote"
@@ -249,17 +250,17 @@ requests =
                         ]
         , test "an empty message is a frame of length 0" <|
             \_ ->
-                (Rpc.request grpcWeb (getNote { name = "" })).body
+                (requestOf grpcWeb (getNote { name = "" })).body
                     |> Rpc.Body.toBytes
                     |> Maybe.map decodeAll
                     |> Expect.equal (Just [ 0, 0, 0, 0, 0 ])
         , test "the client's headers come first, then the call's, then gRPC-Web's" <|
             \_ ->
-                (Rpc.request (grpcWeb |> Rpc.Client.withHeaders [ ( "A", "1" ) ]) (getNote { name = "" })).headers
+                (requestOf (grpcWeb |> Rpc.Client.withHeaders [ ( "A", "1" ) ]) (getNote { name = "" })).headers
                     |> Expect.equal [ ( "A", "1" ), ( "X-Grpc-Web", "1" ) ]
         , test "a timeout is grpc-timeout, milliseconds rounded up" <|
             \_ ->
-                Rpc.request (Rpc.Client.withTimeout 1500.2 grpcWeb) (getNote { name = "" })
+                requestOf (Rpc.Client.withTimeout 1500.2 grpcWeb) (getNote { name = "" })
                     |> Expect.all
                         [ headerNamed "grpc-timeout" >> Expect.equal [ ( "grpc-timeout", "1501m" ) ]
                         , headerNamed "Connect-Timeout-Ms" >> Expect.equal []
@@ -268,11 +269,11 @@ requests =
         , test "a timeout past eight digits of milliseconds is in seconds, past eight of seconds in hours" <|
             \_ ->
                 [ 99999999, 100000000, 1.0e12 ]
-                    |> List.map (\ms -> headerNamed "grpc-timeout" (Rpc.request (Rpc.Client.withTimeout ms grpcWeb) (getNote { name = "" })))
+                    |> List.map (\ms -> headerNamed "grpc-timeout" (requestOf (Rpc.Client.withTimeout ms grpcWeb) (getNote { name = "" })))
                     |> Expect.equal [ [ ( "grpc-timeout", "99999999m" ) ], [ ( "grpc-timeout", "100000S" ) ], [ ( "grpc-timeout", "277778H" ) ] ]
         , test "a timeout that is not a positive number is none, and no header" <|
             \_ ->
-                Rpc.request (Rpc.Client.withTimeout 0 grpcWeb) (getNote { name = "" })
+                requestOf (Rpc.Client.withTimeout 0 grpcWeb) (getNote { name = "" })
                     |> headerNamed "grpc-timeout"
                     |> Expect.equal []
         , test "a retry budget rewrites grpc-timeout" <|
@@ -284,7 +285,7 @@ requests =
                     client =
                         Rpc.Client.withTimeout 1000 grpcWeb
                 in
-                Rpc.request client c
+                requestOf client c
                     |> Rpc.Internal.Plan.withBudget (Rpc.Internal.Plan.plan client c) (Just 299.5)
                     |> Expect.all
                         [ headerNamed "grpc-timeout" >> Expect.equal [ ( "grpc-timeout", "300m" ) ]
@@ -292,13 +293,13 @@ requests =
                         ]
         , test "withConnectGet and withMaxGetUrl leave it as it was: a method without side effects is POSTed" <|
             \_ ->
-                ( (Rpc.request (over (Rpc.Protocol.grpcWeb |> Rpc.Protocol.withConnectGet |> Rpc.Protocol.withMaxGetUrl 10)) (getNote { name = "hi" })).method
+                ( (requestOf (over (Rpc.Protocol.grpcWeb |> Rpc.Protocol.withConnectGet |> Rpc.Protocol.withMaxGetUrl 10)) (getNote { name = "hi" })).method
                 , (Rpc.Protocol.grpcWeb |> Rpc.Protocol.withConnectGet |> Rpc.Protocol.withMaxGetUrl 10) == Rpc.Protocol.grpcWeb
                 )
                     |> Expect.equal ( "POST", True )
         , test "a method with both codecs is sent as its binary" <|
             \_ ->
-                (Rpc.request grpcWeb (both { name = "hi" })).body
+                (requestOf grpcWeb (both { name = "hi" })).body
                     |> Rpc.Body.toBytes
                     |> Maybe.map decodeAll
                     |> Expect.equal (Just [ 0, 0, 0, 0, 4, 0x0A, 0x02, 0x68, 0x69 ])
@@ -552,7 +553,7 @@ traces =
                         TextReader _ ->
                             ( Nothing, Err (Rpc.Error.badResponse Internal "read as text" { url = "", statusCode = 0, statusText = "", headers = Dict.empty, body = Rpc.Body.none }) )
             in
-            Rpc.Internal.Trace.init (Rpc.Client.protocol grpcWeb) c plan (plan.request ()) { attempts = 1, metadata = read, result = result } 1
+            Rpc.Internal.Trace.init (Rpc.Client.protocol grpcWeb) c plan (Result.withDefault (plan.unwritten ()) (plan.request ())) { attempts = 1, metadata = read, result = result } 1
     in
     describe "a trace of a call"
         [ test "names the protocol and codec, and gives the request's frame as base64" <|

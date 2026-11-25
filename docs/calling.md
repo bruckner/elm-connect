@@ -1015,12 +1015,13 @@ Anything a client cannot say is a function between `Rpc.request` and
 ```elm examples/notes/elm/src/Snippets/Signed.elm#signed
 signed : Rpc.Client codec -> Rpc.Call codec req res -> Task Rpc.Error res
 signed client call =
-    let
-        request =
-            Rpc.request client call
-    in
-    { request | headers = ( "X-Signature", sign request ) :: request.headers }
-        |> Rpc.taskFromRequest client call
+    case Rpc.request client call of
+        Ok request ->
+            { request | headers = ( "X-Signature", sign request ) :: request.headers }
+                |> Rpc.taskFromRequest client call
+
+        Err error ->
+            Task.fail error
 ```
 
 A request's body is sent as its content type, which elm/http adds:

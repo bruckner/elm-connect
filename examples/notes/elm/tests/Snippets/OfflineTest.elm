@@ -40,8 +40,9 @@ suite =
     describe "GetNote"
         [ test "is a POST to its Connect path" <|
             \_ ->
-                (Rpc.request client (Notes.getNote { name = "notes/42" })).url
-                    |> Expect.equal "https://api.example.com/notes.v1.NotesService/GetNote"
+                Rpc.request client (Notes.getNote { name = "notes/42" })
+                    |> Result.map .url
+                    |> Expect.equal (Ok "https://api.example.com/notes.v1.NotesService/GetNote")
         , test "reads a note" <|
             \_ ->
                 answer 200 """{"name": "notes/42", "title": "groceries"}"""

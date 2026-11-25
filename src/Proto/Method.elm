@@ -189,9 +189,11 @@ request per binding of its `google.api.http` rule, the rule's own first and
 then its `additional_bindings` in order, as generated code writes them
 (`routeGetNote0`). A route function gives its binding's route whatever the
 request holds, with the first path value its variable's template cannot
-match, which sending refuses. The routes replace any the method had, and
-their answers are read whole until [`withResponseBody`](#withResponseBody)
-names a field.
+match, which sending refuses. It prints its path and query values in their
+proto3 JSON forms without checking them: a send writes the request's JSON
+first and refuses a request that has none, before any route is built. The
+routes replace any the method had, and their answers are read whole until
+[`withResponseBody`](#withResponseBody) names a field.
 -}
 withRoutes : List (req -> Route) -> Method codec req res -> Method codec req res
 withRoutes routes (Internal.Method m) =
@@ -200,13 +202,14 @@ withRoutes routes (Internal.Method m) =
 
 {-| The method's routes for HTTP transcoding as functions of the typed
 request and its proto3 JSON, one per binding as for
-[`withRoutes`](#withRoutes): what generated code writes for a method whose
-bodies hold a value a JSON write can refuse: a `google.protobuf.Any`, which
-only the client's registry can write, or a value proto3 JSON may have no form
-for, such as a `Timestamp`. The send encodes the JSON once, with the client's
-registry, for the route and the body alike; the path and query are read from
-the typed request. As with `withRoutes`, the routes replace any the method
-had.
+[`withRoutes`](#withRoutes): what generated code writes for a method with a
+body that holds a value a JSON write can refuse: a `google.protobuf.Any`,
+which only the client's registry can write, or a value proto3 JSON may have
+no form for, such as a `Timestamp` or a `Value`. The send writes the JSON
+once, with the client's registry, refuses the request if it has none, and
+gives it to the route, which reads its body from it; the path and query are
+read from the typed request. As with `withRoutes`, the routes replace any the
+method had.
 -}
 withJsonRoutes : List (req -> Json.Encode.Value -> Route) -> Method codec req res -> Method codec req res
 withJsonRoutes routes (Internal.Method m) =

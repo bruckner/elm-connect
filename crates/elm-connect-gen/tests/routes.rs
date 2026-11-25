@@ -19,7 +19,9 @@
 //!   and rewritten by every run, as the codec test's modules are (`just
 //!   tests-gen`), and the fixtures as Elm data beside them
 //!   (`Generated.Routes.Fixtures`); `tests/RouteFixturesTest.elm` replays
-//!   them through `Rpc.request` over the transcoding protocol, choosing the
+//!   them through the request a call's plan builds over the transcoding
+//!   protocol (`Rpc.request`'s, before it refuses a path value its template
+//!   cannot match, so that such a value is printed too), choosing the
 //!   binding with `Rpc.Call.viaBinding`; a fixture naming a binding the
 //!   generated method lacks fails there.
 //!

@@ -7,10 +7,13 @@ module Blobs.V1 exposing (..)
 {-| Generated with the `bytes=bytes` option (options.txt): every binding shape
 the route resolver accepts is a route function. A bytes field held as
 Bytes is base64 text in a path or query; a path through a message on a
-cycle reads through its wrapper; a body field of `Empty` or `Value`, or on
-a cycle, has its encoder; a body that holds an `Any`, which only the
-client's registry can write, is read from the request's JSON, which the
-route function takes beside the request (`Proto.Method.withJsonRoutes`).
+cycle reads through its wrapper; a body field of `Empty`, or on a cycle,
+has its encoder; a body that holds an `Any`, which only the client's
+registry can write, or a value whose write can be refused (a `Value`, a
+`Timestamp`), is read from the request's JSON, which the route function
+takes beside the request (`Proto.Method.withJsonRoutes`); a `Timestamp`
+in a path or a query is printed from the typed request, behind the
+send's check of that JSON.
 -}
 
 import Blobs.V1.Blob
@@ -18,7 +21,9 @@ import Blobs.V1.Folder
 import Blobs.V1.Free
 import Blobs.V1.LabelBlobRequest
 import Blobs.V1.Labeled
+import Blobs.V1.Moment
 import Blobs.V1.Slots
+import Blobs.V1.StampRequest
 import Bytes
 import Bytes.Encode
 import Json.Decode
@@ -33,9 +38,11 @@ import Proto.Message
 import Proto.Query
 import Proto.Registry
 import Proto.Route
+import Proto.Timestamp
 import Proto.Value
 import Proto.Version
 import Proto.WellKnown
+import Time
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -129,6 +136,30 @@ type alias Free =
     }
 
 
+{-| [`message blobs.v1.Moment`](Blobs-V1-Moment#descriptor)
+
+  - [`name`](Blobs-V1-Moment#name)
+  - [`at`](Blobs-V1-Moment#at)
+
+-}
+type alias Moment =
+    { name : String
+    , at : Maybe Time.Posix
+    }
+
+
+{-| [`message blobs.v1.StampRequest`](Blobs-V1-StampRequest#descriptor)
+
+  - [`shelf`](Blobs-V1-StampRequest#shelf)
+  - [`moment`](Blobs-V1-StampRequest#moment)
+
+-}
+type alias StampRequest =
+    { shelf : String
+    , moment : Maybe Moment
+    }
+
+
 
 -- DEFAULTS
 
@@ -188,6 +219,24 @@ defaultFree =
     }
 
 
+{-| A [`Moment`](#Moment) with every field at its default and every oneof unset.
+-}
+defaultMoment : Moment
+defaultMoment =
+    { name = ""
+    , at = Nothing
+    }
+
+
+{-| A [`StampRequest`](#StampRequest) with every field at its default and every oneof unset.
+-}
+defaultStampRequest : StampRequest
+defaultStampRequest =
+    { shelf = ""
+    , moment = Nothing
+    }
+
+
 
 -- TYPED VALUES
 
@@ -234,6 +283,20 @@ messageFree =
     Proto.Message.init "blobs.v1.Free" encodeFree decodeFree encodeFreeBytes decodeFreeBytes
 
 
+{-| The typed value of [`Moment`](#Moment): its full name and codecs.
+-}
+messageMoment : Proto.Message.Message Moment
+messageMoment =
+    Proto.Message.init "blobs.v1.Moment" encodeMoment decodeMoment encodeMomentBytes decodeMomentBytes
+
+
+{-| The typed value of [`StampRequest`](#StampRequest): its full name and codecs.
+-}
+messageStampRequest : Proto.Message.Message StampRequest
+messageStampRequest =
+    Proto.Message.init "blobs.v1.StampRequest" encodeStampRequest decodeStampRequest encodeStampRequestBytes decodeStampRequestBytes
+
+
 
 -- REGISTRY
 
@@ -250,6 +313,8 @@ descriptors =
             , Blobs.V1.Folder.descriptor
             , Blobs.V1.Slots.descriptor
             , Blobs.V1.Free.descriptor
+            , Blobs.V1.Moment.descriptor
+            , Blobs.V1.StampRequest.descriptor
             ]
             []
         )
@@ -267,6 +332,8 @@ registry =
         |> Proto.Registry.register messageFolder
         |> Proto.Registry.register messageSlots
         |> Proto.Registry.register messageFree
+        |> Proto.Registry.register messageMoment
+        |> Proto.Registry.register messageStampRequest
 
 
 
@@ -355,6 +422,34 @@ encodeFree value =
             ]
         , Proto.Json.checkedFields
             [ ( "value", Proto.Json.writeOptional Proto.Json.writeValue value.value )
+            ]
+        ]
+
+
+{-| Encodes a [`Moment`](#Moment) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for.
+-}
+encodeMoment : Moment -> Proto.Json.Encoder Proto.Error.Error
+encodeMoment value =
+    Proto.Json.writeObject
+        [ Proto.Json.plainFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            ]
+        , Proto.Json.checkedFields
+            [ ( "at", Proto.Json.writeOptional Proto.Json.writeTimestamp value.at )
+            ]
+        ]
+
+
+{-| Encodes a [`StampRequest`](#StampRequest) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for.
+-}
+encodeStampRequest : StampRequest -> Proto.Json.Encoder Proto.Error.Error
+encodeStampRequest value =
+    Proto.Json.writeObject
+        [ Proto.Json.plainFields
+            [ ( "shelf", Proto.Json.implicitField "" Json.Encode.string value.shelf )
+            ]
+        , Proto.Json.checkedFields
+            [ ( "moment", Proto.Json.writeOptional encodeMoment value.moment )
             ]
         ]
 
@@ -468,6 +563,28 @@ decodeNestedFree depth =
         )
 
 
+{-| Decodes a [`Moment`](#Moment) from proto3 JSON.
+-}
+decodeMoment : Json.Decode.Decoder Moment
+decodeMoment =
+    Proto.Json.message
+        (Json.Decode.succeed Moment
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.messageField "at" Nothing (Json.Decode.map Just Proto.Json.timestamp)
+        )
+
+
+{-| Decodes a [`StampRequest`](#StampRequest) from proto3 JSON.
+-}
+decodeStampRequest : Json.Decode.Decoder StampRequest
+decodeStampRequest =
+    Proto.Json.message
+        (Json.Decode.succeed StampRequest
+            |> Proto.Json.messageField "shelf" "" Proto.Json.string
+            |> Proto.Json.messageField "moment" Nothing (Json.Decode.map Just decodeMoment)
+        )
+
+
 
 -- BINARY ENCODERS
 
@@ -537,6 +654,26 @@ encodeFreeBytes value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         , Proto.Binary.optional Proto.Binary.value 2 value.value
+        ]
+
+
+{-| Encodes a [`Moment`](#Moment) as protobuf binary.
+-}
+encodeMomentBytes : Moment -> Bytes.Encode.Encoder
+encodeMomentBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.name
+        , Proto.Binary.optional Proto.Binary.timestamp 2 value.at
+        ]
+
+
+{-| Encodes a [`StampRequest`](#StampRequest) as protobuf binary.
+-}
+encodeStampRequestBytes : StampRequest -> Bytes.Encode.Encoder
+encodeStampRequestBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.shelf
+        , Proto.Binary.optional (Proto.Binary.embedded encodeMomentBytes mergeMomentBytes defaultMoment) 2 value.moment
         ]
 
 
@@ -863,6 +1000,93 @@ decodeFreeBytes =
     mergeFreeBytes defaultFree
 
 
+{-| Decodes a [`Moment`](#Moment) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeMomentBytes : Moment -> Proto.Binary.Decoder Moment
+mergeMomentBytes =
+    Proto.Binary.merge
+        "blobs.v1.Moment"
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { name = v
+                            , at = value.at
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.timestamp
+                        (\v ->
+                            { name = value.name
+                            , at = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`Moment`](#Moment) from protobuf binary.
+-}
+decodeMomentBytes : Proto.Binary.Decoder Moment
+decodeMomentBytes =
+    mergeMomentBytes defaultMoment
+
+
+{-| Decodes a [`StampRequest`](#StampRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeStampRequestBytes : StampRequest -> Proto.Binary.Decoder StampRequest
+mergeStampRequestBytes =
+    Proto.Binary.merge
+        "blobs.v1.StampRequest"
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { shelf = v
+                            , moment = value.moment
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeMomentBytes mergeMomentBytes defaultMoment)
+                        value.moment
+                        (\v ->
+                            { shelf = value.shelf
+                            , moment = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`StampRequest`](#StampRequest) from protobuf binary.
+-}
+decodeStampRequestBytes : Proto.Binary.Decoder StampRequest
+decodeStampRequestBytes =
+    mergeStampRequestBytes defaultStampRequest
+
+
 
 -- QUERY ENCODERS
 
@@ -883,3 +1107,13 @@ queryOfBlob request_ =
 queryOfLabelBlobRequest : LabelBlobRequest -> List ( String, String )
 queryOfLabelBlobRequest request_ =
     Proto.Query.string "shelf" request_.shelf
+
+
+{-| The query parameters of a [`Moment`](#Moment) for the HTTP bindings that put its fields in the query: those of its fields that hold a value, in declaration order.
+-}
+queryOfMoment : Moment -> List ( String, String )
+queryOfMoment request_ =
+    List.concat
+        [ Proto.Query.string "name" request_.name
+        , Proto.Query.optional "at" (Maybe.map Proto.Timestamp.toString request_.at)
+        ]

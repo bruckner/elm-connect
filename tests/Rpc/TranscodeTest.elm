@@ -14,6 +14,7 @@ import Proto.Http
 import Proto.Json
 import Proto.Method exposing (Idempotency(..), Method)
 import Proto.Registry
+import Requests exposing (builtOf, refusalOf)
 import Rpc
 import Rpc.Body
 import Rpc.Call
@@ -123,12 +124,12 @@ json text =
 
 url : Rule -> String -> String
 url r request =
-    (Rpc.request transcoding (bound r request)).url
+    (builtOf transcoding (bound r request)).url
 
 
 body : Rule -> String -> Maybe String
 body r request =
-    Rpc.Body.toText (Rpc.request transcoding (bound r request)).body
+    Rpc.Body.toText (builtOf transcoding (bound r request)).body
 
 
 suite : Test
@@ -202,7 +203,7 @@ paths =
                     |> Expect.equal "https://api.example.com/v1/x/42/1.5/true:cancel"
         , test "an absent string is empty, and a trailing slash on the base URL is dropped" <|
             \_ ->
-                (Rpc.request (Rpc.client Rpc.Protocol.transcode "/api/")
+                (builtOf (Rpc.client Rpc.Protocol.transcode "/api/")
                     (bound { rule | path = [ Proto.Http.literal "v1", var [ sub "sub" "sub", string "subfield" "subfield" ] ] } """{"sub":null}""")
                 ).url
                     |> Expect.equal "/api/v1/"
@@ -341,10 +342,12 @@ pathValues =
                     }
                     """{"id":"1","theNote":{"name":"notes/a/b"}}"""
                     |> Expect.equal (Just { field = "theNote.name", template = "notes/*" })
-        , test "the pure request is still built" <|
+        , test "Rpc.request refuses it, though its URL can be printed" <|
             \_ ->
-                url (named notes) """{"name":"notes/a/b"}"""
-                    |> Expect.equal "https://api.example.com/v1/notes/a/b"
+                ( url (named notes) """{"name":"notes/a/b"}"""
+                , refusalOf transcoding (bound (named notes) """{"name":"notes/a/b"}""") |> Maybe.map Rpc.Error.code
+                )
+                    |> Expect.equal ( "https://api.example.com/v1/notes/a/b", Just InvalidArgument )
         , test "Connect, and a method without a rule, have no path to refuse" <|
             \_ ->
                 [ invalidPathValue (Rpc.client Rpc.Protocol.connect "https://api.example.com") (bound (named notes) """{"name":""}""")
@@ -357,7 +360,7 @@ pathValues =
                     c =
                         bound (named notes) """{"name":"secret/a"}"""
                 in
-                Rpc.Internal.Plan.refused "https://api.example.com" (Rpc.Internal.Plan.plan transcoding c) (Rpc.request transcoding c)
+                refusalOf transcoding c
                     |> Expect.equal (Just (Rpc.Error.badCall InvalidArgument "path field \"name\" does not match notes/*"))
         ]
 
@@ -459,7 +462,7 @@ bodies =
                 bound { rule | method = "PATCH" } "{}"
                     |> Rpc.Call.withHeaders [ ( "X-Call", "1" ) ]
                     |> Rpc.Call.withTimeout 10
-                    |> Rpc.request
+                    |> builtOf
                         (transcoding
                             |> Rpc.Client.withHeaders [ ( "Authorization", "Bearer t" ) ]
                             |> Rpc.Client.withTimeout 30
@@ -488,29 +491,29 @@ routes =
     describe "routes"
         [ test "the rule's own binding by default" <|
             \_ ->
-                (Rpc.request transcoding twice).url
+                (builtOf transcoding twice).url
                     |> Expect.equal "https://api.example.com/v1/first"
         , test "viaBinding picks an additional binding" <|
             \_ ->
                 Rpc.Call.viaBinding 1 twice
-                    |> Maybe.map (Rpc.request transcoding >> (\r -> ( r.method, r.url, Rpc.Body.toText r.body )))
+                    |> Maybe.map (builtOf transcoding >> (\r -> ( r.method, r.url, Rpc.Body.toText r.body )))
                     |> Expect.equal (Just ( "POST", "https://api.example.com/v1/second", Just """{"a":1}""" ))
         , test "viaBinding 0 is the rule's own" <|
             \_ ->
                 Rpc.Call.viaBinding 0 twice
-                    |> Maybe.map (Rpc.request transcoding >> .url)
+                    |> Maybe.map (builtOf transcoding >> .url)
                     |> Expect.equal (Just "https://api.example.com/v1/first")
         , test "a method without a rule is the Connect POST, verbatim" <|
             \_ ->
-                Rpc.request (Rpc.Client.withTimeout 20 transcoding) unbound
+                builtOf (Rpc.Client.withTimeout 20 transcoding) unbound
                     |> Expect.equal
-                        (Rpc.request
+                        (builtOf
                             (Rpc.client Rpc.Protocol.connect "https://api.example.com" |> Rpc.Client.withTimeout 20)
                             unbound
                         )
         , test "the implicit route is a POST to the service and method" <|
             \_ ->
-                Rpc.request transcoding unbound
+                builtOf transcoding unbound
                     |> (\r -> ( r.method, r.url, r.headers ))
                     |> Expect.equal ( "POST", "https://api.example.com/t.v1.T/M", [ ( "Connect-Protocol-Version", "1" ) ] )
         , test "the implicit route reads any 2xx, an empty body as {}" <|

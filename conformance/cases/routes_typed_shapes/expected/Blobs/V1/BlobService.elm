@@ -13,14 +13,16 @@ import Blobs.V1.Folder
 import Blobs.V1.Free
 import Blobs.V1.LabelBlobRequest
 import Blobs.V1.Labeled
+import Blobs.V1.Moment
 import Blobs.V1.Slots
+import Blobs.V1.StampRequest
 import Json.Encode
 import Proto.Http
 import Proto.Json
 import Proto.Method
 import Proto.Query
 import Proto.Route
-import Proto.Value
+import Proto.Timestamp
 import Proto.Version
 import Rpc
 
@@ -198,7 +200,70 @@ setValue =
             (\_ -> Blobs.V1.decodeFree)
             Blobs.V1.encodeFreeBytes
             Blobs.V1.decodeFreeBytes
-            |> Proto.Method.withRoutes [ routeSetValue0 ]
+            |> Proto.Method.withJsonRoutes [ routeSetValue0 ]
+        )
+
+
+{-| `rpc GetMoment(Moment) returns (Moment)`.
+Connect: `POST /blobs.v1.BlobService/GetMoment`.
+Transcode:
+
+  - binding 0: `GET /v1/moments/{at}`;
+  - binding 1: `GET /v1/{name=moments/*}:find`.
+
+Codecs: JSON and protobuf binary. Described by [`descriptorGetMoment`](#descriptorGetMoment).
+
+-}
+getMoment : Blobs.V1.Moment -> Rpc.Call codec Blobs.V1.Moment Blobs.V1.Moment
+getMoment =
+    Rpc.call
+        (Proto.Method.init "blobs.v1.BlobService"
+            "GetMoment"
+            Blobs.V1.encodeMoment
+            (\_ -> Blobs.V1.decodeMoment)
+            Blobs.V1.encodeMomentBytes
+            Blobs.V1.decodeMomentBytes
+            |> Proto.Method.withRoutes [ routeGetMoment0, routeGetMoment1 ]
+        )
+
+
+{-| `rpc PutMoment(Moment) returns (Moment)`.
+Connect: `POST /blobs.v1.BlobService/PutMoment`.
+Transcode: `PUT /v1/{name=moments/*}` body `*`.
+
+Codecs: JSON and protobuf binary. Described by [`descriptorPutMoment`](#descriptorPutMoment).
+
+-}
+putMoment : Blobs.V1.Moment -> Rpc.Call codec Blobs.V1.Moment Blobs.V1.Moment
+putMoment =
+    Rpc.call
+        (Proto.Method.init "blobs.v1.BlobService"
+            "PutMoment"
+            Blobs.V1.encodeMoment
+            (\_ -> Blobs.V1.decodeMoment)
+            Blobs.V1.encodeMomentBytes
+            Blobs.V1.decodeMomentBytes
+            |> Proto.Method.withJsonRoutes [ routePutMoment0 ]
+        )
+
+
+{-| `rpc Stamp(StampRequest) returns (Moment)`.
+Connect: `POST /blobs.v1.BlobService/Stamp`.
+Transcode: `POST /v1/{shelf=shelves/*}/moments` body `moment`.
+
+Codecs: JSON and protobuf binary. Described by [`descriptorStamp`](#descriptorStamp).
+
+-}
+stamp : Blobs.V1.StampRequest -> Rpc.Call codec Blobs.V1.StampRequest Blobs.V1.Moment
+stamp =
+    Rpc.call
+        (Proto.Method.init "blobs.v1.BlobService"
+            "Stamp"
+            Blobs.V1.encodeStampRequest
+            (\_ -> Blobs.V1.decodeMoment)
+            Blobs.V1.encodeStampRequestBytes
+            Blobs.V1.decodeMomentBytes
+            |> Proto.Method.withJsonRoutes [ routeStamp0 ]
         )
 
 
@@ -352,8 +417,8 @@ routeTouch0 request_ =
 
 {-| The route of [`setValue`](#setValue) over binding 0: `POST /v1/{name=values/*}` body `value`.
 -}
-routeSetValue0 : Blobs.V1.Free -> Proto.Route.Route
-routeSetValue0 request_ =
+routeSetValue0 : Blobs.V1.Free -> Json.Encode.Value -> Proto.Route.Route
+routeSetValue0 request_ json_ =
     let
         name_ =
             request_.name
@@ -361,8 +426,72 @@ routeSetValue0 request_ =
     { method = "POST"
     , path = "v1/" ++ Proto.Route.segments name_
     , query = []
-    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Proto.Value.toJson request_.value))
+    , body = Just (Proto.Route.jsonValueField "value" json_)
     , invalid = Proto.Route.checkSegments "name" [ "values", "*" ] name_
+    }
+
+
+{-| The route of [`getMoment`](#getMoment) over binding 0: `GET /v1/moments/{at}`.
+-}
+routeGetMoment0 : Blobs.V1.Moment -> Proto.Route.Route
+routeGetMoment0 request_ =
+    let
+        at_ =
+            Maybe.withDefault "" (Maybe.map Proto.Timestamp.toString request_.at)
+    in
+    { method = "GET"
+    , path = "v1/moments/" ++ Proto.Route.segment at_
+    , query = Proto.Query.except [ "at" ] (Blobs.V1.queryOfMoment request_)
+    , body = Nothing
+    , invalid = Proto.Route.checkSegment "at" "*" at_
+    }
+
+
+{-| The route of [`getMoment`](#getMoment) over binding 1: `GET /v1/{name=moments/*}:find`.
+-}
+routeGetMoment1 : Blobs.V1.Moment -> Proto.Route.Route
+routeGetMoment1 request_ =
+    let
+        name_ =
+            request_.name
+    in
+    { method = "GET"
+    , path = "v1/" ++ Proto.Route.segments name_ ++ ":find"
+    , query = Proto.Query.except [ "name" ] (Blobs.V1.queryOfMoment request_)
+    , body = Nothing
+    , invalid = Proto.Route.checkSegments "name" [ "moments", "*" ] name_
+    }
+
+
+{-| The route of [`putMoment`](#putMoment) over binding 0: `PUT /v1/{name=moments/*}` body `*`.
+-}
+routePutMoment0 : Blobs.V1.Moment -> Json.Encode.Value -> Proto.Route.Route
+routePutMoment0 request_ json_ =
+    let
+        name_ =
+            request_.name
+    in
+    { method = "PUT"
+    , path = "v1/" ++ Proto.Route.segments name_
+    , query = []
+    , body = Just (Proto.Route.without [ [ "name" ] ] json_)
+    , invalid = Proto.Route.checkSegments "name" [ "moments", "*" ] name_
+    }
+
+
+{-| The route of [`stamp`](#stamp) over binding 0: `POST /v1/{shelf=shelves/*}/moments` body `moment`.
+-}
+routeStamp0 : Blobs.V1.StampRequest -> Json.Encode.Value -> Proto.Route.Route
+routeStamp0 request_ json_ =
+    let
+        shelf_ =
+            request_.shelf
+    in
+    { method = "POST"
+    , path = "v1/" ++ Proto.Route.segments shelf_ ++ "/moments"
+    , query = []
+    , body = Just (Proto.Route.jsonField "moment" json_)
+    , invalid = Proto.Route.checkSegments "shelf" [ "shelves", "*" ] shelf_
     }
 
 
@@ -611,6 +740,104 @@ descriptorSetValue =
                 ]
             , customVerb = Nothing
             , body = Proto.Http.bodyField Blobs.V1.Free.value
+            , responseBody = Nothing
+            , query = []
+            }
+        ]
+
+
+{-| `rpc GetMoment(Moment) returns (Moment)`
+-}
+descriptorGetMoment : Proto.Method.Descriptor
+descriptorGetMoment =
+    Proto.Method.descriptor "blobs.v1.BlobService"
+        "GetMoment"
+        Proto.Method.IdempotencyUnknown
+        "blobs.v1.Moment"
+        "blobs.v1.Moment"
+        [ Proto.Http.binding
+            { method = "GET"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.literal "moments"
+                , Proto.Http.variable
+                    { fieldPath = [ Blobs.V1.Moment.at ]
+                    , template = []
+                    }
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query =
+                [ Proto.Http.param [ Blobs.V1.Moment.name ]
+                ]
+            }
+        , Proto.Http.binding
+            { method = "GET"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable
+                    { fieldPath = [ Blobs.V1.Moment.name ]
+                    , template = [ Proto.Http.literal "moments", Proto.Http.wildcard ]
+                    }
+                ]
+            , customVerb = Just "find"
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query =
+                [ Proto.Http.param [ Blobs.V1.Moment.at ]
+                ]
+            }
+        ]
+
+
+{-| `rpc PutMoment(Moment) returns (Moment)`
+-}
+descriptorPutMoment : Proto.Method.Descriptor
+descriptorPutMoment =
+    Proto.Method.descriptor "blobs.v1.BlobService"
+        "PutMoment"
+        Proto.Method.IdempotencyUnknown
+        "blobs.v1.Moment"
+        "blobs.v1.Moment"
+        [ Proto.Http.binding
+            { method = "PUT"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable
+                    { fieldPath = [ Blobs.V1.Moment.name ]
+                    , template = [ Proto.Http.literal "moments", Proto.Http.wildcard ]
+                    }
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.wholeBody
+            , responseBody = Nothing
+            , query = []
+            }
+        ]
+
+
+{-| `rpc Stamp(StampRequest) returns (Moment)`
+-}
+descriptorStamp : Proto.Method.Descriptor
+descriptorStamp =
+    Proto.Method.descriptor "blobs.v1.BlobService"
+        "Stamp"
+        Proto.Method.IdempotencyUnknown
+        "blobs.v1.StampRequest"
+        "blobs.v1.Moment"
+        [ Proto.Http.binding
+            { method = "POST"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.variable
+                    { fieldPath = [ Blobs.V1.StampRequest.shelf ]
+                    , template = [ Proto.Http.literal "shelves", Proto.Http.wildcard ]
+                    }
+                , Proto.Http.literal "moments"
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.bodyField Blobs.V1.StampRequest.moment
             , responseBody = Nothing
             , query = []
             }

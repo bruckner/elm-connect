@@ -152,7 +152,7 @@ Each layer proves one thing and has a known gap. A path that starts with
   `crates/elm-connect-gen/tests/routes.rs`): a request under a
   `google.api.http` rule becomes the expected path, query and body,
   checked in Rust against a reference built on prost-reflect and in Elm
-  by replaying each fixture through `Rpc.request`
+  by replaying each fixture through the request `Rpc.request` builds
   (`tests/RouteFixturesTest.elm`). Gap: the fixtures are chosen by hand.
 - **The route properties** (same test file): requests sampled from a
   fixed seed for every binding, replayed the same way; the Elm data is

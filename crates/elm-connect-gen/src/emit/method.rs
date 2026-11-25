@@ -188,10 +188,12 @@ impl Emitter {
         if method.routes.is_empty() || self.wiring == Wire::Proto {
             return Ok((Vec::new(), Routes::None));
         }
-        // A body holding a value whose write can be refused is written by
-        // the send, with the client's registry, so such a method's routes
-        // read their bodies from the JSON the send encodes. Its paths and
-        // query print their values unchecked.
+        // A send over JSON writes and checks the request's JSON before
+        // it builds a route. A body holding a value whose write can be
+        // refused has no other writer, so such a method's routes read
+        // their bodies from that JSON; every other route is typed, and
+        // its path and query print their values unchecked behind the
+        // check.
         let json = method
             .routes
             .iter()

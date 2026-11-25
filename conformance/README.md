@@ -142,8 +142,9 @@ so a server-side implementation can check itself against the same file.
   `Generated.Routes`, and the fixtures as Elm data
   (`Generated.Routes.Fixtures`) are written into `tests/Generated/Routes/`
   at test time, as the codec round trips' are (below), and
-  `tests/RouteFixturesTest.elm` replays each fixture through `Rpc.request`
-  with a client of `Rpc.Protocol.transcode`, applying the generated function of the
+  `tests/RouteFixturesTest.elm` replays each fixture through the request
+  a call's plan builds, which is `Rpc.request`'s before it refuses a path
+  value its template cannot match, with a client of `Rpc.Protocol.transcode`, applying the generated function of the
   fixture's method and choosing its binding with `Rpc.Call.viaBinding`; a
   fixture naming a binding the method lacks fails.
 
@@ -158,13 +159,16 @@ The same test writes the corpus case `routes_typed_shapes`, which holds
 every binding shape whose route function once fell back to the
 interpreter (`bytes` held as `Bytes`, a path through a message on a
 cycle, a body field of `Empty` or `Value` or on a cycle, a body holding
-an `Any`), generated again under `module_prefix=Generated.Shapes` into
+an `Any`) and the shapes a `Timestamp` takes (in a path, in a query, in a
+body), generated again under `module_prefix=Generated.Shapes` into
 `tests/Generated/Shapes/` at test time; its text is reviewed in the
 corpus.
 `tests/RouteShapesTest.elm` holds each of its methods' typed routes to
 the interpreter (`Proto.Method.withBindings` over the method's
 descriptor) through `Rpc.request`, every binding over a spread of
-requests, and pins the three places they differ on purpose.
+requests, pins the three places they differ on purpose, and checks that a
+value a JSON write refuses is refused in each shape before a route is
+built.
 
 To add a fixture, add it to a `routes/*.json` file (and a method to
 `routes.proto` if no rule fits) and check that the reference agrees;
@@ -199,7 +203,7 @@ are not run against the live server.
 The runtime's own laws, independent of the reference, are Elm fuzz
 tests: `tests/Proto/JsonFuzzTest.elm` (the proto3 JSON codecs, and the
 generated codecs of `routes.proto` leaving out defaults) and
-`tests/RpcFuzzTest.elm` (`Rpc.request` over `transcode`), with their
+`tests/RpcFuzzTest.elm` (the request `Rpc.request` builds over `transcode`), with their
 fuzzers in `tests/Fuzzers.elm`; `just check` runs them with the other
 Elm tests.
 
