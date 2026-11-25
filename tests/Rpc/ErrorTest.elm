@@ -161,6 +161,21 @@ suite =
                 [ Rpc.Error.badBody (Proto.Error.UnregisteredType "x/a.B") (answer 200 ""), Rpc.Error.badAny (Proto.Error.UnregisteredType "x/a.B") ]
                     |> List.map (\error -> ( Rpc.Error.code error, Rpc.Error.message error, isBadResponse error ))
                     |> Expect.equal [ ( Internal, "bad response body", True ), ( Internal, "bad Any", False ) ]
+        , test "a bad value is an InvalidArgument BadCall naming its type alone, its BadValue in protoError" <|
+            \_ ->
+                let
+                    error =
+                        Rpc.Error.badValue { typeName = "google.protobuf.Timestamp", path = [ "byDay", "2026-01-01" ] }
+                in
+                ( ( Rpc.Error.code error, Rpc.Error.message error, Rpc.Error.cause error == Rpc.Error.BadCall )
+                , Rpc.Error.protoError error
+                , keepsInvariant error
+                )
+                    |> Expect.equal
+                        ( ( InvalidArgument, "bad value: a google.protobuf.Timestamp with no JSON form", True )
+                        , Just (Proto.Error.BadValue { typeName = "google.protobuf.Timestamp", path = [ "byDay", "2026-01-01" ] })
+                        , True
+                        )
         , test "fromStatus carries details, ones that failed to read included" <|
             \_ ->
                 let

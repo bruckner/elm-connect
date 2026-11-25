@@ -374,8 +374,13 @@ afterBuilding p sent =
 form, or an `Any` it holds cannot be written.
 -}
 unwritable : Proto.Error.Error -> Error
-unwritable =
-    Error.badAny
+unwritable problem =
+    case problem of
+        Proto.Error.BadValue value ->
+            Error.badValue value
+
+        _ ->
+            Error.badAny problem
 
 
 {-| The request an attempt sends with `left` milliseconds of a retry deadline
