@@ -5,5 +5,5 @@
   101) but written after a binary read. The write now refuses it with
   `TooDeep`, named `google.protobuf.Any`, exactly where the read does;
   nothing a JSON read accepts is refused. Generated code writes such an
-  `Any` with the new `Proto.Json.encodeNestedAnyWith`, and
-  `Proto.Json.registryDeeper` counts from 1 as a read does; regenerate.
+  `Any` with `Proto.Json.writeAny`, and `Proto.Json.writeDeeper` counts
+  from 1 as a read does; regenerate.

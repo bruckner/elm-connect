@@ -517,6 +517,54 @@ defaults included and `Nothing` as `null`; proto3 JSON allows both, and
 request bodies now hold only what the message holds. Where: design
 §3.4.
 
+### One JSON encoder per message, refusal in its type
+
+*2026-11-24.*
+
+A message's generated JSON encoder is `encodeNote : Note ->
+Proto.Json.Encoder x`, one opaque type whose parameter is what the write
+can refuse with: any `x` for a message that holds nothing refusable,
+`Proto.Error.Error` for one that holds an `Any`, a `Timestamp`,
+`Duration`, `FieldMask`, `Struct`, `ListValue` or `Value`, at any depth.
+`Proto.Json.encode` and `encodeWith` run an `Encoder Proto.Error.Error`
+and give a `Result`; `encodeTotal : Encoder Never -> Value` runs one
+that cannot refuse, so the compiler, not a convention, says where no
+`Result` is needed. The encoders were total functions to `Value`, so a
+value proto3 JSON has no form for (a `Timestamp` outside years 1 to
+9999, a non-finite number in a `Value`, a mask path that does not
+survive lowerCamelCase) was written wrongly and silently, where
+protobuf's own writers refuse it. A refusal is `Proto.Error.BadValue {
+typeName, path }`; the path is gathered only when a write fails.
+
+Rejected: a plain twin beside every encoder (`jsonNote : Note -> Value`
+next to a fallible `encodeNote`), which doubled the public names and
+made a message lose its twin when it gained a refusable field at any
+depth; and encoders giving a `Result` everywhere, which costs every
+plain message a tag per field. A message that cannot refuse is plain
+code wrapped once, so it pays one wrap at the top and one unwrap per
+nested message. A message that can refuse writes its fields in
+declaration order as runs of plain and checked fields, so its output is
+the text the plain encoder writes.
+
+A plain twin for messages on a cycle alone (`encodePlainNode`, which the
+message's own recursion calls, so the wrap happens once at the top) was
+built and measured, and left out. Against the encoders before this change,
+one encoder per message writes a 601-node tree of a recursive message
+that reaches no `Any` 6–10 % slower (paired builds, node, two windows),
+and the twin brought it back to within 2 %; a 99-deep chain did not move
+past the noise either way, and nothing else moved. That buys back a few percent on a form that
+is not a performance-sensitive one, at the price of a second exposed
+encoder for every such message, which it loses when it gains a
+refusable field: the twin problem this design removes.
+
+Depth stays as the nesting rule has
+it: nothing general is counted on writes, a value the program built too
+deep is the program's, and only the levels around an `Any` written
+through the registry are counted, as a read counts them.
+`Proto.Duration.fromParts` still clamps, so a `Duration` is never
+refused yet; the well-known types get their own pass. Where: design
+§3.2, §3.4, §3.5, §5.5.
+
 ### Decoder steps
 
 *2026-10-10.*

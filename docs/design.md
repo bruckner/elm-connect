@@ -204,7 +204,7 @@ getNote =
     Rpc.call
         (Proto.Method.initJson "notes.v1.NotesService"
             "GetNote"
-            (\_ -> Ok << Notes.V1.encodeGetNoteRequest)
+            Notes.V1.encodeGetNoteRequest
             (\_ -> Notes.V1.decodeNote)
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
             |> Proto.Method.withRoutes [ routeGetNote0 ]
@@ -216,7 +216,7 @@ summarize =
     Rpc.call
         (Proto.Method.initJson "notes.v1.NotesService"
             "Summarize"
-            (\_ -> Ok << Notes.V1.encodeSummarizeRequest)
+            Notes.V1.encodeSummarizeRequest
             (\_ -> Notes.V1.decodeSummary)
         )
 
@@ -378,12 +378,13 @@ rpc shared call =
   helpers (`Proto.Json`) are named by role: a decoder is a noun naming
   what it reads (`int64`, `timestamp`, `boolMap`), a value's
   encoder is `encode` and that noun (`encodeInt64`, `encodeBoolMap`),
-  with `With` at the end of both for a codec taking a registry
-  (`anyWith`, `encodeAnyWith`), a field's encoder that can fail begins
-  with `try` (`tryOptionalField`), and a field's encoder, which gives `Nothing` to leave
-  the field out, ends in `Field` (`implicitField`, `repeatedField`,
-  `dictField`, `boolMapField`), with `objectOfFields` building a
-  message's object from them. So a decoder and its encoders share a
+  with `With` at the end of a decoder taking a registry (`anyWith`), a
+  field's encoder, which gives `Nothing` to leave the field out, ends in
+  `Field` (`implicitField`, `repeatedField`, `dictField`,
+  `boolMapField`), with `objectOfFields` building a message's object from
+  them, and an encoder that can refuse begins with `write`
+  (`writeTimestamp`, `writeOptional`), with `writeObject` building a
+  message's object from runs of fields (§3.4). So a decoder and its encoders share a
   noun, and no helper shares a name with an elm/json function of
   another type (`Json.Encode.object`, `Json.Encode.dict`). Every well-known type's codecs are
   there, `Any`'s included. (7) The imports point one way: no `Proto`
@@ -399,7 +400,7 @@ rpc shared call =
   ([decisions.md](decisions.md#no-package-split)).
 
 - **Generated codecs are `encodeX` and `decodeX`.** A package module's codecs for a message or enum are the
-  pair `encodeNote : Note -> Json.Encode.Value` and
+  pair `encodeNote : Note -> Proto.Json.Encoder x` and
   `decodeNote : Json.Decode.Decoder Note`, so a type's two codecs sit
   together in a search and the ENCODERS and DECODERS sections each read
   as one prefix. The noun convention of rule 6 applies to the runtime,
@@ -822,11 +823,12 @@ rpc shared call =
     starts at the depth the registry carries, or 1 (`max 1
     (Proto.Json.registryDepth types)`), so a message read inside an
     `Any` counts on from it. The encoder of a message that reaches an
-    `Any` is given no depth, so it carries it in the registry, as the
-    decoder reads it: it writes the messages it holds that nest with
-    `Proto.Json.registryDeeper types` and an `Any` with
-    `Proto.Json.encodeNestedAnyWith`, so an `Any` is refused where a
-    read refuses it. A type whose decoders take no registry (a message
+    `Any` is given no depth: the registry it is run with carries it, as
+    the decoder reads it. It writes each field holding a message that
+    nests and reaches an `Any` one level deeper
+    (`Proto.Json.writeDeeper`, once per field), and an `Any` counting on
+    from its message's depth (`Proto.Json.writeAny`), so an `Any` is
+    refused where a read refuses it. A type whose decoders take no registry (a message
     that reaches no `Any`, and the well-known `Struct`, `Value` and
     `ListValue`) is read inside an `Any` by its plain decoder and counts
     from 1 there; it holds no `Any`, so what it adds is its own 100
@@ -920,10 +922,34 @@ rpc shared call =
 | `string` | `String` | |
 | `bytes` | `String` (base64, as on the wire), or `Bytes` under `bytes=bytes` | see below |
 
-Encoders leave out every field at its default.
-A message's encoder is `Proto.Json.objectOfFields` over `( jsonName, Maybe
-Json.Encode.Value )` pairs, one per field, `Nothing` leaving the field
-out:
+A message's encoder is a `Proto.Json.Encoder x`, which
+`Proto.Json.encode` writes, and whose type says whether the write can
+refuse the value (decisions.md: "One JSON encoder per message, refusal
+in its type"):
+
+- A message that holds nothing a write can refuse, at any depth
+  (`AnyReach::refusable`), is written by plain code wrapped once:
+  `encodeNote : Note -> Proto.Json.Encoder x`, `Proto.Json.succeed` of
+  `Proto.Json.objectOfFields` over `( jsonName, Maybe Json.Encode.Value
+  )` pairs, one per field, `Nothing` leaving the field out. It works for
+  any `x`, so `Proto.Json.encodeTotal` writes it with no `Result`, and a
+  message holding it unwraps it in place (`Proto.Json.totalOptionalField
+  encodeAuthor value.author`).
+- A message that holds an `Any`, or a `Timestamp`, `Duration`,
+  `FieldMask`, `Struct`, `ListValue` or `Value`, at any depth, is
+  `encodeNote : Note -> Proto.Json.Encoder Proto.Error.Error`: its
+  fields in declaration order, given to `Proto.Json.writeObject` as runs,
+  each run of consecutive fields that cannot be refused a
+  `Proto.Json.plainFields` of the same pairs and each run of those that
+  can a `Proto.Json.checkedFields` of `Proto.Json.Field`s
+  (`Proto.Json.writeOptional Proto.Json.writeTimestamp value.at`), then
+  each oneof's members as a run of its own. It writes the same text as
+  the plain form would, in the same order; a refusal stops the write
+  with `Proto.Error.BadValue { typeName, path }`, the path to the value
+  gathered on the way out. Only a part that converts an `Any` waits for
+  the registry the encoder is run with.
+
+Encoders leave out every field at its default:
 
 - A field without presence (a plain scalar or enum) is left out at its
   proto3 default (`Proto.Json.implicitField zero encoder value`: `0`, `"0"`,
@@ -936,7 +962,8 @@ out:
   `Any`) is left out when `Nothing` and written when `Just`, at its
   default too (`Just 0` writes `0`, `Just` an empty message writes `{}`,
   `Just ValueNull` writes `null`): presence is what the `Maybe` says
-  (`Maybe.map encoder value`).
+  (`Maybe.map encoder value`, or `Proto.Json.writeOptional` for a value a
+  write can refuse).
 - A oneof's set member is always written, at its default too; an unset
   oneof writes nothing (§3.6).
 - A repeated or map field is left out when empty (`Proto.Json.repeatedField`,
@@ -1228,9 +1255,10 @@ In detail:
   is one, the `Value` holding it none), against the read budget of
   §5.5, shared with the messages around it. A number that is not
   finite, which only protobuf binary or the application can give, is
-  kept: binary writes it back as it came, and JSON, which has no form
-  for it, writes `null`, as `JSON.stringify` does. Whether a read
-  should refuse it is open. A `Dict` writes an object's keys sorted,
+  kept: binary writes it back as it came, and a proto3 JSON write, which
+  has no form for it, refuses it (`Proto.Error.BadValue`), as protobuf's
+  writers do; `Proto.Value.toJson` writes it as `null`, as
+  `JSON.stringify` does. Whether a read should refuse it is open. A `Dict` writes an object's keys sorted,
   and of duplicate keys in JSON the last wins. A `__proto__` key is
   kept, written as text and parsed rather than assigned.
 - The JSON read tries the six kinds in a `oneOf` at each level, in one
@@ -1252,10 +1280,10 @@ In detail:
   absent or `null` field (`Nothing`) is distinct from an empty object
   or array (`Just Dict.empty`, `Just []`). Their decoders
   (`Proto.Json.struct`, `Proto.Json.listValue`) fail on anything but an
-  object or an array; their encoders are `Proto.Json.encodeStruct` and
-  `encodeListValue`. A `Value`'s are `Proto.Json.value`, which
-  reads any JSON (the same decoder as `Proto.Value.decoder`), and
-  `encodeValue`.
+  object or an array; their encoders are `Proto.Json.writeStruct` and
+  `writeListValue`, which refuse a number that is not finite. A `Value`'s
+  are `Proto.Json.value`, which reads any JSON (the same decoder as
+  `Proto.Value.decoder`), and `writeValue`.
 - A singular `Value` field, `optional` or not, is `Maybe
   Proto.Value.Value`. `Value` is a message, and `null` is one of its
   values: protojson reads `"payload": null` as set, holding
@@ -1332,8 +1360,9 @@ In detail:
   `ListValue`, the wrappers and `Any` itself), `{"@type": …, "value":
   <that form>}`. The codecs are `Proto.Json.anyWith registry`, which
   converts the JSON to binary through the registry's entry for the type,
-  and `Proto.Json.encodeAnyWith registry`, which converts back, beside
-  every other well-known type's codecs. Both are strict, as protojson,
+  and `Proto.Json.writeAny`, which converts back through the registry the
+  write is run with (`Proto.Json.encodeWith registry`), beside every other
+  well-known type's codecs. Both are strict, as protojson,
   Java's `JsonFormat` and protobuf-es are: an `"@type"` the registry
   lacks fails the read, naming the URL, and an unregistered type fails
   the write with `UnregisteredType`; there is no `{"type", "value"}`
@@ -1351,13 +1380,13 @@ In detail:
   value `Dict K Proto.Any.Any`, and a oneof member holds it bare. Every
   message, oneof and recursion wrapper that reaches an `Any`, through its
   fields at any depth and across packages, recursion included
-  (`ir::reach`), has JSON codecs taking the registry:
-  `decodeNoteWith : Registry -> Decoder Note` and `encodeNoteWith :
-  Registry -> Note -> Result Proto.Error.Error Value`, built from `Proto.Json`'s
-  `try` field encoders, and no `decodeNote` or `encodeNote`: a total
-  encoder would need a fallback form, and a decoder bound to the
-  package's own registry would read only that package's `Any`s. A
-  message that reaches no `Any` keeps its plain codecs. A method's calls
+  (`ir::reach`), has a JSON decoder taking the registry,
+  `decodeNoteWith : Registry -> Decoder Note`, and no `decodeNote`: a
+  decoder bound to the package's own registry would read only that
+  package's `Any`s. Its encoder, `encodeNote : Note -> Proto.Json.Encoder
+  Proto.Error.Error`, takes no registry: `Proto.Json.encodeWith registry`
+  runs it, and an `Any` that cannot be written refuses the write. A
+  message that reaches no `Any` keeps its plain decoder. A method's calls
   pass the client's registry (§5.1). Its descriptor kind is `Message
   "google.protobuf.Any"`. A method taking or returning one uses the same
   codecs (`any_field` case). Unpacking is left to the application, which
@@ -1382,7 +1411,9 @@ In detail:
 - The oneof's encoder gives the set member as a one-element list of
   `( jsonName, Just value )`, or `[]` when unset, and the message's
   encoder appends it to its fields: `Proto.Json.objectOfFields ([ ... ] ++
-  encodeNoteEventKind value.kind)`. The member is written at its
+  encodeNoteEventKind value.kind)`; in a message that can refuse, the
+  list is a run of its own, and a oneof with a member that can be refused
+  gives its member as a `Proto.Json.Field` (`Proto.Json.writeMember`). The member is written at its
   default too: being set is what a oneof says (§3.4).
 - The oneof's decoder is `Proto.Json.members "kind"
   NoteEventKindUnset [ ... ]`, given the oneof's proto name (for error
@@ -1879,8 +1910,8 @@ registry =
 - **The typed values are opaque**, built by positional functions and
   read by functions of the same module: `Proto.Message.init name encode
   decoder encodeBytes decodeBytes`, and `initWith` for a message that
-  reaches an `Any`, whose JSON codecs take the registry and whose
-  encoder gives a `Result` (read by `typeName`; `Proto.Any` and
+  reaches an `Any`, whose JSON decoder takes the registry, both taking
+  the encoder as `a -> Proto.Json.Encoder Proto.Error.Error` (read by `typeName`; `Proto.Any` and
   `Proto.Registry` reach the codecs), `Proto.Enum.enum encode decoder
   zero descriptor` (read by `encode`, `decoder`, `default`,
   `toDescriptor`, `toName`, `fromName`, `toNumber`, `fromNumber`) and
@@ -2115,10 +2146,11 @@ registry =
   with it. Under `json` each method is built by
   `Proto.Method.initJson`, under `proto` by `Proto.Method.initProto`
   from its binary codecs, under `both` by `Proto.Method.init` from all
-  four, the arguments stacked. A method's JSON codecs take the client's
-  registry (§5.1): `Notes.V1.encodeGetNoteRequestWith` for a type that
-  reaches an `Any`, else the plain codec under the generator's ignoring
-  wrapper, `\_ -> Ok << Notes.V1.encodeGetNoteRequest` and `\_ ->
+  four, the arguments stacked. A method's request encoder is the
+  generated `Notes.V1.encodeGetNoteRequest`, run with the client's
+  registry (§5.1), and its response decoder takes that registry:
+  `Notes.V1.decodeNoteWith` for a type that reaches an `Any`, else the
+  plain decoder under the generator's ignoring wrapper, `\_ ->
   Notes.V1.decodeNote`. A method wired with `proto` gets no route
   functions, nor its messages query encoders: transcoding takes JSON
   (§5.3). A method's codec is in its type, and so in its call's (§4):
@@ -2237,7 +2269,7 @@ also a binary read and a JSON write, and gives JSON the type's codec
 has just accepted. A lenient registry with no entry writes it unread.
 Before, every registry wrote it unread, so a JSON-alone `Any` read
 from an unchecked source went out through a strict one unchecked.
-`Proto.Json.encodeAnyWith` and generated `encode…With` write an `Any`
+`Proto.Json.writeAny`, and so every generated encoder, writes an `Any`
 through `toJson`, so a request does the same. `Proto.Any.tryUnpack`
 takes no registry: it reads the JSON with the typed value's own
 decoder, which is the same check.
@@ -2278,7 +2310,7 @@ getNote =
     Rpc.call
         (Proto.Method.initJson "notes.v1.NotesService"
             "GetNote"
-            (\_ -> Ok << Notes.V1.encodeGetNoteRequest)
+            Notes.V1.encodeGetNoteRequest
             (\_ -> Notes.V1.decodeNote)
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
             |> Proto.Method.withRoutes [ routeGetNote0, routeGetNote1 ]
@@ -2399,15 +2431,15 @@ binding whose rule names a `response_body`:
   (§3.9), built under `wire=json` by `Proto.Method.initJson` from the
   fully-qualified service name and the method's name as declared,
   together its Connect path,
-  then its request type's encoder and its
-  response type's decoder, each taking the client's registry (§5.1):
-  `Notes.V1.encodeGetNoteRequestWith` for a type that reaches an `Any`,
-  else the plain codec under the ignoring wrapper (`\_ -> Ok <<
-  Notes.V1.encodeGetNoteRequest`, `\_ -> Notes.V1.decodeNote`; for a
-  well-known type the runtime's codecs a
-  field of that type uses, `Proto.Json.encodeEmpty` and
-  `Proto.Json.empty` for `Empty`, `Proto.Json.encodeInt64AsInt` for
-  `Int64Value` under `int64=int`, `Basics.identity` qualified for
+  then its request type's encoder, run with the client's registry, and
+  its response type's decoder, taking that registry (§5.1): the
+  generated `Notes.V1.encodeGetNoteRequest`, and `Notes.V1.decodeNoteWith`
+  for a type that reaches an `Any`, else the plain decoder under the
+  ignoring wrapper (`\_ -> Notes.V1.decodeNote`; for a well-known type
+  the runtime's codecs a field of that type uses, `Proto.Json.writeValue`
+  for `Value`, `Proto.Json.succeed << Proto.Json.encodeEmpty` and
+  `Proto.Json.empty` for `Empty`, `Proto.Json.succeed <<
+  Proto.Json.encodeInt64AsInt` for `Int64Value` under `int64=int`, `Basics.identity` qualified for
   `Value` so that a method called `identity` cannot capture it); then
   `withIdempotency` with its level and
   `withRoutes` with its route functions (below).
@@ -2504,15 +2536,18 @@ binding whose rule names a `response_body`:
 - **A body holding an `Any` is read from the JSON.** Every binding the
   route resolver accepts is typed (`routes_typed_shapes` case holds the
   shapes once left to an interpreter). A body that reaches a
-  `google.protobuf.Any` can be written only by the client's registry, so
+  `google.protobuf.Any` can be written only by the client's registry, and
+  one holding a value a write can refuse only by its checked encoder, so
   every route of such a method is a function of the request and its
   proto3 JSON, `routeCreateNote0 : CreateNoteRequest -> Json.Encode.Value
   -> Proto.Route.Route`, held by `withJsonRoutes`: the path and query
   from the typed request, the body from the JSON (`Proto.Route.jsonField`
   for one field, `without` for `*`), which a send encodes once, with the
-  client's registry, and checks for an `Any` it cannot write
-  (`unencodable`, §5.1). Every binding of such a method takes the JSON,
-  which is exact, since no path or query holds an `Any`. A binding the
+  client's registry, and checks for an `Any` it cannot write or a value
+  it refuses (`unencodable`, §5.1). Every binding of such a method takes
+  the JSON. A path or query prints its values from the typed request,
+  unchecked (a mask with `Proto.Route.fieldMaskText`); a `Value` body is
+  written as `Proto.Value.toJson` writes it. A binding the
   resolver accepts that the emitter cannot type is a bug, reported as
   `internal::untyped_route`. A method written by hand gives its own
   `Proto.Http` bindings to `withBindings`, which the runtime's
@@ -3956,9 +3991,9 @@ toString : Error -> String              -- for a log, as Json.Decode.errorToStri
   | `Proto.Binary.decode`, `Proto.Message.decodeBinary` | `Result Binary a` | the report |
   | `Proto.Message.decodeJson` | `Result Error a` | `UnregisteredType` for an `Any` the registry lacks, else `BadJson` |
   | `Proto.Any.tryUnpack` | `Result Error a` | `TypeMismatch`, `BadBinary` |
-  | `Proto.Any.toJson`, `Proto.Json.encodeAnyWith`, generated `encodeNoteWith` | `Result Error Value` | `UnregisteredType`, or the `BadBinary` of the `Any` that failed, at any depth, named by its own type, or `TooDeep` named `google.protobuf.Any` for one nested past 100 (§5.5); a JSON-alone `Any` that is not its message, `BadJson` (§3.10) |
+  | `Proto.Any.toJson`, `Proto.Json.encode`, `encodeWith` | `Result Error Value` | `BadValue { typeName, path }` for a value proto3 JSON has no form for (§3.5); for an `Any`, `UnregisteredType`, or the `BadBinary` of the `Any` that failed, at any depth, named by its own type, or `TooDeep` named `google.protobuf.Any` for one nested past 100 (§5.5); a JSON-alone `Any` that is not its message, `BadJson` (§3.10) |
   | `Proto.Json.anyWith`, generated `decodeNoteWith` | `Json.Decode.Decoder` | elm/json's error, a registry miss named in its message |
-  | `Rpc.Error.protoError` of a bad `Any` (`badAny`) | `Maybe Error` | as `encodeNoteWith` |
+  | `Rpc.Error.protoError` of a request that cannot be written (`badAny`) | `Maybe Error` | as `encodeWith` |
   | `Rpc.Error.details` | `List (Result Error Any)` | `UnregisteredType`, `BadJson`, `BadBinary` (above) |
 
   An answer whose body is not the response stays a `BadResponse`, an
@@ -4147,12 +4182,12 @@ Connect's proto codec sends them (§5.3).
   (`Proto.Binary.nestedStruct depth`, `nestedListValue`, `nestedValue`). An `Any` read
   from binary holds its message's bytes, unread, so it nests nothing
   there. Writing it as JSON converts it through the registry, and that
-  counts the `Any`s as a read does: a generated encoder that takes the
-  registry writes each message it holds that nests with the registry a
-  level deeper (`Proto.Json.registryDeeper`), and an `Any` with
-  `Proto.Json.encodeNestedAnyWith`, all counting from the message's
-  depth, the registry's or 1, whichever is more, as the decoder starts
-  it (`max 1 (Proto.Json.registryDepth types)`), so an `Any` held
+  counts the `Any`s as a read does: a generated encoder of a message that
+  reaches an `Any` writes each field holding a message that nests one
+  level deeper in the registry it is run with (`Proto.Json.writeDeeper`),
+  and an `Any` with `Proto.Json.writeAny`, all counting from the
+  message's depth, the registry's or 1, whichever is more, as the decoder
+  starts it (`max 1 (Proto.Json.registryDepth types)`), so an `Any` held
   through any messages is counted where the read counts it. Each `Any`
   is a level, and an `Any` past 100 fails with
   `TooDeep`, named `google.protobuf.Any`, exactly where a JSON read of

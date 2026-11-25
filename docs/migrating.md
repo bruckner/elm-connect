@@ -216,7 +216,7 @@ getNote =
     Rpc.call
         (Proto.Method.initJson "notes.v1.NotesService"
             "GetNote"
-            (\_ -> Ok << Notes.V1.encodeGetNoteRequest)
+            Notes.V1.encodeGetNoteRequest
             Notes.V1.decodeNoteWith
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
             |> Proto.Method.withBindings [ getNoteBinding ]
@@ -416,7 +416,8 @@ JSON.
   `UnregisteredType` or `BadBinary`, of a nested `Any` named by its own
   type.
 - Proto3 JSON of an `Any` goes through a registry: `Proto.Json.anyWith
-  registry` and `encodeAnyWith registry` replace `any` and `encodeAny`.
+  registry` replaces `any`, and a message holding an `Any` is written
+  with `Proto.Json.encodeWith registry`, where 0.1 had `encodeAny`.
   An `"@type"` the registry lacks fails the read, naming the URL, and
   the write gives `UnregisteredType`, as protojson does; 0.1 kept such
   an `Any` as JSON. `Proto.Registry.lenient` makes a registry keep it as
@@ -429,9 +430,15 @@ JSON.
   descriptor`, and the readers `encode`, `decoder`, `default` and
   `toDescriptor` are gone: use the generated codecs, `defaultNote` and
   `Notes.V1.Note.descriptor`.
-- A generated message that reaches an `Any` has `decodeNoteWith` and
-  `encodeNoteWith`, which take the registry (the encoder gives a
-  `Result`), in place of `decodeNote` and `encodeNote`.
+- A generated message that reaches an `Any` has `decodeNoteWith`, which
+  takes the registry, in place of `decodeNote`.
+- A generated encoder gives a `Proto.Json.Encoder`, not a
+  `Json.Encode.Value`: `Proto.Json.encodeTotal (encodeNote note)` writes
+  one that nothing it holds can refuse, as `encodeNote note` did, and
+  `Proto.Json.encode` or `encodeWith registry` one that can (a message
+  holding an `Any`, a `Timestamp`, `Duration`, `FieldMask`, `Struct`,
+  `Value` or `ListValue`), giving a `Result`: a value proto3 JSON has no
+  form for is refused with `Proto.Error.BadValue`, where 0.1 wrote it.
 - `Proto.Registry` is the table: each generated package's `registry`
   holds its own messages, `Proto.WellKnown.registry` the well-known
   types and `Proto.ErrorDetails.registry` `google.rpc`'s error details;
@@ -442,7 +449,8 @@ JSON.
   `Proto.Error.Error` the write gave.
 - A method holds no registry: a hand-written method's JSON codecs take
   the client's (`Proto.Method.initJson "notes.v1.NotesService" "GetNote"
-  (\_ -> Ok << encodeGetNoteRequest) (\_ -> decodeNote)`).
+  encodeGetNoteRequest (\_ -> decodeNote)`); a hand-written encoder `f :
+  a -> Json.Encode.Value` is given as `Proto.Json.succeed << f`.
   `Proto.Method.encodeRequest`, `responseDecoder`, `Rpc.Call.requestJson`
   and `Rpc.Call.toJson` take a registry, and the first, third and fourth
   give a `Result`.
