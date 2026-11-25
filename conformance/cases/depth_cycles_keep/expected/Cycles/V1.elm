@@ -153,7 +153,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`Chain`](#Chain) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Chain`](#Chain) as proto3 JSON.
 -}
 encodeChain : Chain -> Proto.Json.Encoder x
 encodeChain value =
@@ -172,7 +172,7 @@ encodeChain_ (Chain_ value) =
     encodeChain value
 
 
-{-| Encodes a [`Tree`](#Tree) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Tree`](#Tree) as proto3 JSON.
 -}
 encodeTree : Tree -> Proto.Json.Encoder x
 encodeTree value =

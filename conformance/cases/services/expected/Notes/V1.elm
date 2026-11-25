@@ -458,7 +458,7 @@ encodeVisibility value =
             Json.Encode.string "VISIBILITY_PUBLIC"
 
 
-{-| Encodes a [`Note`](#Note) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Note`](#Note) as proto3 JSON.
 -}
 encodeNote : Note -> Proto.Json.Encoder x
 encodeNote value =
@@ -472,7 +472,7 @@ encodeNote value =
         )
 
 
-{-| Encodes a [`GetNoteRequest`](#GetNoteRequest) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`GetNoteRequest`](#GetNoteRequest) as proto3 JSON.
 -}
 encodeGetNoteRequest : GetNoteRequest -> Proto.Json.Encoder x
 encodeGetNoteRequest value =
@@ -483,7 +483,7 @@ encodeGetNoteRequest value =
         )
 
 
-{-| Encodes a [`ListNotesRequest`](#ListNotesRequest) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for.
+{-| Encodes a [`ListNotesRequest`](#ListNotesRequest) as proto3 JSON, or fails if the input contains a bad value.
 -}
 encodeListNotesRequest : ListNotesRequest -> Proto.Json.Encoder Proto.Error.Error
 encodeListNotesRequest value =
@@ -504,7 +504,7 @@ encodeListNotesRequest value =
         ]
 
 
-{-| Encodes a [`ListNotesRequestFilter`](#ListNotesRequestFilter) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for.
+{-| Encodes a [`ListNotesRequestFilter`](#ListNotesRequestFilter) as proto3 JSON, or fails if the input contains a bad value.
 -}
 encodeListNotesRequestFilter : ListNotesRequestFilter -> Proto.Json.Encoder Proto.Error.Error
 encodeListNotesRequestFilter value =
@@ -518,7 +518,7 @@ encodeListNotesRequestFilter value =
         ]
 
 
-{-| Encodes a [`ListNotesResponse`](#ListNotesResponse) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`ListNotesResponse`](#ListNotesResponse) as proto3 JSON.
 -}
 encodeListNotesResponse : ListNotesResponse -> Proto.Json.Encoder x
 encodeListNotesResponse value =
@@ -530,7 +530,7 @@ encodeListNotesResponse value =
         )
 
 
-{-| Encodes a [`CreateNoteRequest`](#CreateNoteRequest) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`CreateNoteRequest`](#CreateNoteRequest) as proto3 JSON.
 -}
 encodeCreateNoteRequest : CreateNoteRequest -> Proto.Json.Encoder x
 encodeCreateNoteRequest value =
@@ -542,7 +542,7 @@ encodeCreateNoteRequest value =
         )
 
 
-{-| Encodes an [`UpdateNoteRequest`](#UpdateNoteRequest) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for.
+{-| Encodes an [`UpdateNoteRequest`](#UpdateNoteRequest) as proto3 JSON, or fails if the input contains a bad value.
 -}
 encodeUpdateNoteRequest : UpdateNoteRequest -> Proto.Json.Encoder Proto.Error.Error
 encodeUpdateNoteRequest value =
@@ -556,7 +556,7 @@ encodeUpdateNoteRequest value =
         ]
 
 
-{-| Encodes a [`DeleteNoteRequest`](#DeleteNoteRequest) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`DeleteNoteRequest`](#DeleteNoteRequest) as proto3 JSON.
 -}
 encodeDeleteNoteRequest : DeleteNoteRequest -> Proto.Json.Encoder x
 encodeDeleteNoteRequest value =
@@ -568,7 +568,7 @@ encodeDeleteNoteRequest value =
         )
 
 
-{-| Encodes an [`ArchiveNoteRequest`](#ArchiveNoteRequest) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes an [`ArchiveNoteRequest`](#ArchiveNoteRequest) as proto3 JSON.
 -}
 encodeArchiveNoteRequest : ArchiveNoteRequest -> Proto.Json.Encoder x
 encodeArchiveNoteRequest value =
@@ -580,7 +580,7 @@ encodeArchiveNoteRequest value =
         )
 
 
-{-| Encodes a [`ReadFileRequest`](#ReadFileRequest) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`ReadFileRequest`](#ReadFileRequest) as proto3 JSON.
 -}
 encodeReadFileRequest : ReadFileRequest -> Proto.Json.Encoder x
 encodeReadFileRequest value =
@@ -591,7 +591,7 @@ encodeReadFileRequest value =
         )
 
 
-{-| Encodes a [`Summary`](#Summary) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Summary`](#Summary) as proto3 JSON.
 -}
 encodeSummary : Summary -> Proto.Json.Encoder x
 encodeSummary value =

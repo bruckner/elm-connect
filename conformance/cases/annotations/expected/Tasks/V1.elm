@@ -196,7 +196,7 @@ encodeState value =
             Json.Encode.string "STATE_STALE"
 
 
-{-| Encodes a [`Task`](#Task) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Task`](#Task) as proto3 JSON.
 -}
 encodeTask : Task -> Proto.Json.Encoder x
 encodeTask value =
@@ -232,7 +232,7 @@ encodeTaskDue value =
             ]
 
 
-{-| Encodes a [`GetTaskRequest`](#GetTaskRequest) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`GetTaskRequest`](#GetTaskRequest) as proto3 JSON.
 -}
 encodeGetTaskRequest : GetTaskRequest -> Proto.Json.Encoder x
 encodeGetTaskRequest value =

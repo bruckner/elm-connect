@@ -132,7 +132,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`Blob`](#Blob) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Blob`](#Blob) as proto3 JSON.
 -}
 encodeBlob : Blob -> Proto.Json.Encoder x
 encodeBlob value =

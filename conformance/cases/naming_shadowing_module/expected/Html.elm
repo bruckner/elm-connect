@@ -96,7 +96,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes an [`Attributes`](#Attributes) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes an [`Attributes`](#Attributes) as proto3 JSON.
 -}
 encodeAttributes : Attributes -> Proto.Json.Encoder x
 encodeAttributes value =

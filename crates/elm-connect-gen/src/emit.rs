@@ -236,6 +236,8 @@ const PROTO_ERROR: &str = "Proto.Error";
 /// The type variable of a JSON encoder that cannot refuse,
 /// `Proto.Json.Encoder x`.
 const TOTAL_ERROR_VAR: &str = "x";
+/// The end of the doc sentence of a JSON encoder that can refuse.
+const FAILS: &str = ", or fails if the input contains a bad value";
 /// elm/core's `Dict`, imported as `import Dict exposing (Dict)` so the
 /// type reads `Dict String V`, as Elm code conventionally writes it.
 const CORE_DICT: &str = "Dict";

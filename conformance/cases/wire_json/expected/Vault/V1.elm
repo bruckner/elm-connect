@@ -123,7 +123,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes an [`Item`](#Item) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes an [`Item`](#Item) as proto3 JSON.
 -}
 encodeItem : Item -> Proto.Json.Encoder x
 encodeItem value =
@@ -134,7 +134,7 @@ encodeItem value =
         )
 
 
-{-| Encodes a [`GetItemRequest`](#GetItemRequest) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`GetItemRequest`](#GetItemRequest) as proto3 JSON.
 -}
 encodeGetItemRequest : GetItemRequest -> Proto.Json.Encoder x
 encodeGetItemRequest value =

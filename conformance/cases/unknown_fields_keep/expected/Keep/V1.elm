@@ -417,7 +417,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`Note`](#Note) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Note`](#Note) as proto3 JSON.
 -}
 encodeNote : Note -> Proto.Json.Encoder x
 encodeNote value =
@@ -452,7 +452,7 @@ encodeNoteOrigin value =
             ]
 
 
-{-| Encodes a [`Detail`](#Detail) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Detail`](#Detail) as proto3 JSON.
 -}
 encodeDetail : Detail -> Proto.Json.Encoder x
 encodeDetail value =
@@ -464,14 +464,14 @@ encodeDetail value =
         )
 
 
-{-| Encodes an [`Empty`](#Empty) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes an [`Empty`](#Empty) as proto3 JSON.
 -}
 encodeEmpty : Empty -> Proto.Json.Encoder x
 encodeEmpty _ =
     Proto.Json.succeed (Json.Encode.object [])
 
 
-{-| Encodes a [`Wide`](#Wide) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Wide`](#Wide) as proto3 JSON.
 -}
 encodeWide : Wide -> Proto.Json.Encoder x
 encodeWide value =

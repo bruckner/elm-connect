@@ -234,7 +234,7 @@ encodeStatus value =
             Json.Encode.string "STATUS_OPEN"
 
 
-{-| Encodes an [`Item`](#Item) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for, and writing each `Any` with the registry it is run with.
+{-| Encodes an [`Item`](#Item) as proto3 JSON, or fails if the input contains a bad value.
 -}
 encodeItem : Item -> Proto.Json.Encoder Proto.Error.Error
 encodeItem value =
@@ -251,7 +251,7 @@ encodeItem value =
         ]
 
 
-{-| Encodes a [`GetItemRequest`](#GetItemRequest) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`GetItemRequest`](#GetItemRequest) as proto3 JSON.
 -}
 encodeGetItemRequest : GetItemRequest -> Proto.Json.Encoder x
 encodeGetItemRequest value =
@@ -262,7 +262,7 @@ encodeGetItemRequest value =
         )
 
 
-{-| Encodes a [`ListItemsRequest`](#ListItemsRequest) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`ListItemsRequest`](#ListItemsRequest) as proto3 JSON.
 -}
 encodeListItemsRequest : ListItemsRequest -> Proto.Json.Encoder x
 encodeListItemsRequest value =
@@ -273,7 +273,7 @@ encodeListItemsRequest value =
         )
 
 
-{-| Encodes a [`ListItemsResponse`](#ListItemsResponse) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for, and writing each `Any` with the registry it is run with.
+{-| Encodes a [`ListItemsResponse`](#ListItemsResponse) as proto3 JSON, or fails if the input contains a bad value.
 -}
 encodeListItemsResponse : ListItemsResponse -> Proto.Json.Encoder Proto.Error.Error
 encodeListItemsResponse value =

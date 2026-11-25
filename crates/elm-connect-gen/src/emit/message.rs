@@ -4,8 +4,8 @@
 use super::Deep;
 use super::recursion::DEPTH;
 use super::{
-    Emitter, JSON_DECODE, JSON_ENCODE, MessageShape, PROTO_JSON, PROTO_REGISTRY, PROTO_UNKNOWN,
-    RecordField, call, docs,
+    Emitter, FAILS, JSON_DECODE, JSON_ENCODE, MessageShape, PROTO_JSON, PROTO_REGISTRY,
+    PROTO_UNKNOWN, RecordField, call, docs,
 };
 use crate::elm::ast::{BinOp, Decl, Expr, Pattern, Type};
 use crate::elm::build::{
@@ -161,7 +161,7 @@ impl Emitter {
         let succeed = self.reference((PROTO_JSON, "succeed"));
         vec![Decl::Value {
             doc: Some(format!(
-                "Encodes {} as proto3 JSON, which nothing it holds can refuse.",
+                "Encodes {} as proto3 JSON.",
                 docs::a_local(&shape.message.elm_name)
             )),
             name: shape.message.encoder_name(),
@@ -244,16 +244,10 @@ impl Emitter {
         }
         let object = self.reference((PROTO_JSON, "writeObject"));
         let encoder_type = self.json_encoder_type(true);
-        let any = if self.message_reaches(shape) {
-            ", and writing each `Any` with the registry it is run with"
-        } else {
-            ""
-        };
         let body = apply(object, [list(parts)]);
         vec![Decl::Value {
             doc: Some(format!(
-                "Encodes {} as proto3 JSON, refusing a value it holds that proto3 JSON has \
-                 no form for{any}.",
+                "Encodes {} as proto3 JSON{FAILS}.",
                 docs::a_local(&shape.message.elm_name)
             )),
             name: shape.message.encoder_name(),

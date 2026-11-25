@@ -959,7 +959,7 @@ encodeOuterMode value =
             Json.Encode.string "MODE_OFF"
 
 
-{-| Encodes a [`Scalars`](#Scalars) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Scalars`](#Scalars) as proto3 JSON.
 -}
 encodeScalars : Scalars -> Proto.Json.Encoder x
 encodeScalars value =
@@ -985,7 +985,7 @@ encodeScalars value =
         )
 
 
-{-| Encodes an [`Optionals`](#Optionals) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes an [`Optionals`](#Optionals) as proto3 JSON.
 -}
 encodeOptionals : Optionals -> Proto.Json.Encoder x
 encodeOptionals value =
@@ -1005,7 +1005,7 @@ encodeOptionals value =
         )
 
 
-{-| Encodes a [`Repeated`](#Repeated) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Repeated`](#Repeated) as proto3 JSON.
 -}
 encodeRepeated : Repeated -> Proto.Json.Encoder x
 encodeRepeated value =
@@ -1026,7 +1026,7 @@ encodeRepeated value =
         )
 
 
-{-| Encodes a [`Maps`](#Maps) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Maps`](#Maps) as proto3 JSON.
 -}
 encodeMaps : Maps -> Proto.Json.Encoder x
 encodeMaps value =
@@ -1050,7 +1050,7 @@ encodeMaps value =
         )
 
 
-{-| Encodes a [`Choice`](#Choice) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for.
+{-| Encodes a [`Choice`](#Choice) as proto3 JSON, or fails if the input contains a bad value.
 -}
 encodeChoice : Choice -> Proto.Json.Encoder Proto.Error.Error
 encodeChoice value =
@@ -1063,7 +1063,7 @@ encodeChoice value =
         ]
 
 
-{-| Encodes a [`ChoicePick`](#ChoicePick) as the members of its message's JSON object.
+{-| Encodes a [`ChoicePick`](#ChoicePick) as the members of its message's JSON object, or fails if the input contains a bad value.
 -}
 encodeChoicePick : ChoicePick -> List ( String, Proto.Json.Field Proto.Error.Error )
 encodeChoicePick value =
@@ -1124,7 +1124,7 @@ encodeChoicePick value =
             ]
 
 
-{-| Encodes a [`Names`](#Names) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Names`](#Names) as proto3 JSON.
 -}
 encodeNames : Names -> Proto.Json.Encoder x
 encodeNames value =
@@ -1158,7 +1158,7 @@ encodeNamesNamed value =
             ]
 
 
-{-| Encodes an [`Outer`](#Outer) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes an [`Outer`](#Outer) as proto3 JSON.
 -}
 encodeOuter : Outer -> Proto.Json.Encoder x
 encodeOuter value =
@@ -1173,7 +1173,7 @@ encodeOuter value =
         )
 
 
-{-| Encodes an [`OuterInner`](#OuterInner) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes an [`OuterInner`](#OuterInner) as proto3 JSON.
 -}
 encodeOuterInner : OuterInner -> Proto.Json.Encoder x
 encodeOuterInner value =
@@ -1185,7 +1185,7 @@ encodeOuterInner value =
         )
 
 
-{-| Encodes a [`Tree`](#Tree) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Tree`](#Tree) as proto3 JSON.
 -}
 encodeTree : Tree -> Proto.Json.Encoder x
 encodeTree value =
@@ -1225,7 +1225,7 @@ encodeTreeLink value =
             ]
 
 
-{-| Encodes a [`WellKnown`](#WellKnown) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for, and writing each `Any` with the registry it is run with.
+{-| Encodes a [`WellKnown`](#WellKnown) as proto3 JSON, or fails if the input contains a bad value.
 -}
 encodeWellKnown : WellKnown -> Proto.Json.Encoder Proto.Error.Error
 encodeWellKnown value =
@@ -1263,7 +1263,7 @@ encodeWellKnown value =
         ]
 
 
-{-| Encodes a [`Wrappers`](#Wrappers) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Wrappers`](#Wrappers) as proto3 JSON.
 -}
 encodeWrappers : Wrappers -> Proto.Json.Encoder x
 encodeWrappers value =
@@ -1284,7 +1284,7 @@ encodeWrappers value =
         )
 
 
-{-| Encodes an [`Across`](#Across) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes an [`Across`](#Across) as proto3 JSON.
 -}
 encodeAcross : Across -> Proto.Json.Encoder x
 encodeAcross value =
@@ -1298,7 +1298,7 @@ encodeAcross value =
         )
 
 
-{-| Encodes a [`Leaf`](#Leaf) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Leaf`](#Leaf) as proto3 JSON.
 -}
 encodeLeaf : Leaf -> Proto.Json.Encoder x
 encodeLeaf value =
@@ -1310,7 +1310,7 @@ encodeLeaf value =
         )
 
 
-{-| Encodes an [`Everything`](#Everything) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for, and writing each `Any` with the registry it is run with.
+{-| Encodes an [`Everything`](#Everything) as proto3 JSON, or fails if the input contains a bad value.
 -}
 encodeEverything : Everything -> Proto.Json.Encoder Proto.Error.Error
 encodeEverything value =
@@ -1342,7 +1342,7 @@ encodeEverything value =
         ]
 
 
-{-| Encodes an [`Everything_`](#Everything_) as proto3 JSON.
+{-| Encodes an [`Everything_`](#Everything_) as proto3 JSON, or fails if the input contains a bad value.
 -}
 encodeEverything_ : Everything_ -> Proto.Json.Encoder Proto.Error.Error
 encodeEverything_ (Everything_ value) =

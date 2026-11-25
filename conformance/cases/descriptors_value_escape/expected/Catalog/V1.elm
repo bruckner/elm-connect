@@ -179,7 +179,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes an [`Entry`](#Entry) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes an [`Entry`](#Entry) as proto3 JSON.
 -}
 encodeEntry : Entry -> Proto.Json.Encoder x
 encodeEntry value =
@@ -192,7 +192,7 @@ encodeEntry value =
         )
 
 
-{-| Encodes a [`Part`](#Part) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Part`](#Part) as proto3 JSON.
 -}
 encodePart : Part -> Proto.Json.Encoder x
 encodePart value =
@@ -216,7 +216,7 @@ encodePartKind value =
             ]
 
 
-{-| Encodes a [`GetEntryRequest`](#GetEntryRequest) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`GetEntryRequest`](#GetEntryRequest) as proto3 JSON.
 -}
 encodeGetEntryRequest : GetEntryRequest -> Proto.Json.Encoder x
 encodeGetEntryRequest value =

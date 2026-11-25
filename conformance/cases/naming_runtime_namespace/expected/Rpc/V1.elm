@@ -90,7 +90,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`Ping`](#Ping) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Ping`](#Ping) as proto3 JSON.
 -}
 encodePing : Ping -> Proto.Json.Encoder x
 encodePing _ =

@@ -121,7 +121,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`ZoneRequest`](#ZoneRequest) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`ZoneRequest`](#ZoneRequest) as proto3 JSON.
 -}
 encodeZoneRequest : ZoneRequest -> Proto.Json.Encoder x
 encodeZoneRequest value =
@@ -132,7 +132,7 @@ encodeZoneRequest value =
         )
 
 
-{-| Encodes a [`Zone`](#Zone) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Zone`](#Zone) as proto3 JSON.
 -}
 encodeZone : Zone -> Proto.Json.Encoder x
 encodeZone value =

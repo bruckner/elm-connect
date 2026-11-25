@@ -184,7 +184,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`URLPath`](#URLPath) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`URLPath`](#URLPath) as proto3 JSON.
 -}
 encodeURLPath : URLPath -> Proto.Json.Encoder x
 encodeURLPath value =
@@ -208,7 +208,7 @@ encodeURLPath value =
         )
 
 
-{-| Encodes a [`Link`](#Link) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Link`](#Link) as proto3 JSON.
 -}
 encodeLink : Link -> Proto.Json.Encoder x
 encodeLink value =

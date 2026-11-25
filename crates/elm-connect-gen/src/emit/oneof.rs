@@ -4,7 +4,7 @@
 use super::Deep;
 use super::field::{ValueShape, Zeroed};
 use super::recursion::DEPTH;
-use super::{Emitter, JSON_DECODE, JSON_ENCODE, OneofShape, PROTO_ERROR, PROTO_JSON, docs};
+use super::{Emitter, FAILS, JSON_DECODE, JSON_ENCODE, OneofShape, PROTO_ERROR, PROTO_JSON, docs};
 use crate::elm::ast::{Decl, Expr, Type, Variant};
 use crate::elm::build::{apply, case, list, pctor, pvar, string, ty, ty_fn, var};
 use crate::ir::{Message, ModuleName};
@@ -122,8 +122,9 @@ impl Emitter {
         let members_type = ty(self.core("List"), [pair]);
         Decl::Value {
             doc: Some(format!(
-                "Encodes {} as the members of its message's JSON object.",
-                docs::a_local(&shape.oneof.elm_type_name)
+                "Encodes {} as the members of its message's JSON object{}.",
+                docs::a_local(&shape.oneof.elm_type_name),
+                if with { FAILS } else { "" }
             )),
             name: shape.oneof.encoder_name(),
             annotation: ty_fn([oneof], members_type),

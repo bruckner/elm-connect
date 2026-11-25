@@ -210,7 +210,7 @@ encodeAudience value =
             Json.Encode.string "VISIBILITY_PUBLIC"
 
 
-{-| Encodes a [`Memo`](#Memo) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Memo`](#Memo) as proto3 JSON.
 -}
 encodeMemo : Memo -> Proto.Json.Encoder x
 encodeMemo value =
@@ -242,7 +242,7 @@ encodeMemoBody value =
             ]
 
 
-{-| Encodes an [`Edit`](#Edit) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes an [`Edit`](#Edit) as proto3 JSON.
 -}
 encodeEdit : Edit -> Proto.Json.Encoder x
 encodeEdit value =
@@ -253,7 +253,7 @@ encodeEdit value =
         )
 
 
-{-| Encodes a [`GetNoteRequest`](#GetNoteRequest) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`GetNoteRequest`](#GetNoteRequest) as proto3 JSON.
 -}
 encodeGetNoteRequest : GetNoteRequest -> Proto.Json.Encoder x
 encodeGetNoteRequest value =

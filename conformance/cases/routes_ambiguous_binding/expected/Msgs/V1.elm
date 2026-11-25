@@ -133,7 +133,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`MessageRequest`](#MessageRequest) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`MessageRequest`](#MessageRequest) as proto3 JSON.
 -}
 encodeMessageRequest : MessageRequest -> Proto.Json.Encoder x
 encodeMessageRequest value =
@@ -146,7 +146,7 @@ encodeMessageRequest value =
         )
 
 
-{-| Encodes a [`Message`](#Message) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Message`](#Message) as proto3 JSON.
 -}
 encodeMessage : Message -> Proto.Json.Encoder x
 encodeMessage value =

@@ -190,7 +190,7 @@ encodePriority value =
             Json.Encode.string "BELOW_ZERO"
 
 
-{-| Encodes a [`Task`](#Task) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Task`](#Task) as proto3 JSON.
 -}
 encodeTask : Task -> Proto.Json.Encoder x
 encodeTask value =

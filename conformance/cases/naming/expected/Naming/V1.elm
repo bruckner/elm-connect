@@ -221,7 +221,7 @@ encodeHttpMethod value =
             Json.Encode.string "POST"
 
 
-{-| Encodes a [`Tag`](#Tag) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Tag`](#Tag) as proto3 JSON.
 -}
 encodeTag : Tag -> Proto.Json.Encoder x
 encodeTag value =

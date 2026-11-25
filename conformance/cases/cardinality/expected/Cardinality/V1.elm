@@ -158,7 +158,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes an [`Author`](#Author) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes an [`Author`](#Author) as proto3 JSON.
 -}
 encodeAuthor : Author -> Proto.Json.Encoder x
 encodeAuthor value =
@@ -169,7 +169,7 @@ encodeAuthor value =
         )
 
 
-{-| Encodes a [`Note`](#Note) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Note`](#Note) as proto3 JSON.
 -}
 encodeNote : Note -> Proto.Json.Encoder x
 encodeNote value =

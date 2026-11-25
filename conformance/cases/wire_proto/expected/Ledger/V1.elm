@@ -190,7 +190,7 @@ encodeKind value =
             Json.Encode.string "KIND_DEBIT"
 
 
-{-| Encodes an [`Entry`](#Entry) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes an [`Entry`](#Entry) as proto3 JSON.
 -}
 encodeEntry : Entry -> Proto.Json.Encoder x
 encodeEntry value =
@@ -224,7 +224,7 @@ encodeEntrySource value =
             ]
 
 
-{-| Encodes a [`GetEntryRequest`](#GetEntryRequest) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`GetEntryRequest`](#GetEntryRequest) as proto3 JSON.
 -}
 encodeGetEntryRequest : GetEntryRequest -> Proto.Json.Encoder x
 encodeGetEntryRequest value =

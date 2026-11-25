@@ -261,7 +261,7 @@ encodeMarks value =
             Json.Encode.string "MARKS_DELIMITED"
 
 
-{-| Encodes a [`Delimiters`](#Delimiters) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Delimiters`](#Delimiters) as proto3 JSON.
 -}
 encodeDelimiters : Delimiters -> Proto.Json.Encoder x
 encodeDelimiters value =
@@ -278,7 +278,7 @@ encodeDelimiters value =
         )
 
 
-{-| Encodes a [`Docs`](#Docs) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Docs`](#Docs) as proto3 JSON.
 -}
 encodeDocs : Docs -> Proto.Json.Encoder x
 encodeDocs value =

@@ -166,7 +166,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`Scalars`](#Scalars) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Scalars`](#Scalars) as proto3 JSON.
 -}
 encodeScalars : Scalars -> Proto.Json.Encoder x
 encodeScalars value =
@@ -193,7 +193,7 @@ encodeScalars value =
         )
 
 
-{-| Encodes an [`Empty`](#Empty) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes an [`Empty`](#Empty) as proto3 JSON.
 -}
 encodeEmpty : Empty -> Proto.Json.Encoder x
 encodeEmpty _ =

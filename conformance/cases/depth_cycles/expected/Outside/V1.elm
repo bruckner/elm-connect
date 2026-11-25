@@ -97,7 +97,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`Holder`](#Holder) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Holder`](#Holder) as proto3 JSON.
 -}
 encodeHolder : Holder -> Proto.Json.Encoder x
 encodeHolder value =

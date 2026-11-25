@@ -131,7 +131,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`Note`](#Note) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Note`](#Note) as proto3 JSON.
 -}
 encodeNote : Note -> Proto.Json.Encoder x
 encodeNote value =
@@ -144,7 +144,7 @@ encodeNote value =
         )
 
 
-{-| Encodes a [`GetNoteRequest`](#GetNoteRequest) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`GetNoteRequest`](#GetNoteRequest) as proto3 JSON.
 -}
 encodeGetNoteRequest : GetNoteRequest -> Proto.Json.Encoder x
 encodeGetNoteRequest value =

@@ -1001,7 +1001,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`Chain`](#Chain) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Chain`](#Chain) as proto3 JSON.
 -}
 encodeChain : Chain -> Proto.Json.Encoder x
 encodeChain value =
@@ -1021,7 +1021,7 @@ encodeChain_ (Chain_ value) =
     encodeChain value
 
 
-{-| Encodes a [`Tree`](#Tree) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Tree`](#Tree) as proto3 JSON.
 -}
 encodeTree : Tree -> Proto.Json.Encoder x
 encodeTree value =
@@ -1040,7 +1040,7 @@ encodeTree_ (Tree_ value) =
     encodeTree value
 
 
-{-| Encodes a [`Dir`](#Dir) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Dir`](#Dir) as proto3 JSON.
 -}
 encodeDir : Dir -> Proto.Json.Encoder x
 encodeDir value =
@@ -1059,7 +1059,7 @@ encodeDir_ (Dir_ value) =
     encodeDir value
 
 
-{-| Encodes an [`Expr`](#Expr) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes an [`Expr`](#Expr) as proto3 JSON.
 -}
 encodeExpr : Expr -> Proto.Json.Encoder x
 encodeExpr value =
@@ -1083,7 +1083,7 @@ encodeExprKind value =
             ]
 
 
-{-| Encodes a [`Person`](#Person) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Person`](#Person) as proto3 JSON.
 -}
 encodePerson : Person -> Proto.Json.Encoder x
 encodePerson value =
@@ -1102,7 +1102,7 @@ encodePerson_ (Person_ value) =
     encodePerson value
 
 
-{-| Encodes a [`Team`](#Team) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Team`](#Team) as proto3 JSON.
 -}
 encodeTeam : Team -> Proto.Json.Encoder x
 encodeTeam value =
@@ -1120,7 +1120,7 @@ encodeTeam_ (Team_ value) =
     encodeTeam value
 
 
-{-| Encodes a [`First`](#First) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`First`](#First) as proto3 JSON.
 -}
 encodeFirst : First -> Proto.Json.Encoder x
 encodeFirst value =
@@ -1138,7 +1138,7 @@ encodeFirst_ (First_ value) =
     encodeFirst value
 
 
-{-| Encodes a [`Second`](#Second) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Second`](#Second) as proto3 JSON.
 -}
 encodeSecond : Second -> Proto.Json.Encoder x
 encodeSecond value =
@@ -1156,7 +1156,7 @@ encodeSecond_ (Second_ value) =
     encodeSecond value
 
 
-{-| Encodes a [`Third`](#Third) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Third`](#Third) as proto3 JSON.
 -}
 encodeThird : Third -> Proto.Json.Encoder x
 encodeThird value =
@@ -1174,7 +1174,7 @@ encodeThird_ (Third_ value) =
     encodeThird value
 
 
-{-| Encodes a [`Forest`](#Forest) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Forest`](#Forest) as proto3 JSON.
 -}
 encodeForest : Forest -> Proto.Json.Encoder x
 encodeForest value =
@@ -1186,7 +1186,7 @@ encodeForest value =
         )
 
 
-{-| Encodes a [`Wide`](#Wide) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Wide`](#Wide) as proto3 JSON.
 -}
 encodeWide : Wide -> Proto.Json.Encoder x
 encodeWide value =
@@ -1268,7 +1268,7 @@ encodeWide_ (Wide_ value) =
     encodeWide value
 
 
-{-| Encodes an [`Envelope`](#Envelope) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for, and writing each `Any` with the registry it is run with.
+{-| Encodes an [`Envelope`](#Envelope) as proto3 JSON, or fails if the input contains a bad value.
 -}
 encodeEnvelope : Envelope -> Proto.Json.Encoder Proto.Error.Error
 encodeEnvelope value =
@@ -1288,14 +1288,14 @@ encodeEnvelope value =
         ]
 
 
-{-| Encodes an [`Envelope_`](#Envelope_) as proto3 JSON.
+{-| Encodes an [`Envelope_`](#Envelope_) as proto3 JSON, or fails if the input contains a bad value.
 -}
 encodeEnvelope_ : Envelope_ -> Proto.Json.Encoder Proto.Error.Error
 encodeEnvelope_ (Envelope_ value) =
     encodeEnvelope value
 
 
-{-| Encodes an [`EnvelopeAside`](#EnvelopeAside) as the members of its message's JSON object.
+{-| Encodes an [`EnvelopeAside`](#EnvelopeAside) as the members of its message's JSON object, or fails if the input contains a bad value.
 -}
 encodeEnvelopeAside : EnvelopeAside -> List ( String, Proto.Json.Field Proto.Error.Error )
 encodeEnvelopeAside value =
@@ -1308,7 +1308,7 @@ encodeEnvelopeAside value =
             ]
 
 
-{-| Encodes a [`Sealed`](#Sealed) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for, and writing each `Any` with the registry it is run with.
+{-| Encodes a [`Sealed`](#Sealed) as proto3 JSON, or fails if the input contains a bad value.
 -}
 encodeSealed : Sealed -> Proto.Json.Encoder Proto.Error.Error
 encodeSealed value =
@@ -1319,7 +1319,7 @@ encodeSealed value =
         ]
 
 
-{-| Encodes a [`Doc`](#Doc) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Doc`](#Doc) as proto3 JSON.
 -}
 encodeDoc : Doc -> Proto.Json.Encoder x
 encodeDoc value =
@@ -1330,7 +1330,7 @@ encodeDoc value =
         )
 
 
-{-| Encodes a [`Library`](#Library) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Library`](#Library) as proto3 JSON.
 -}
 encodeLibrary : Library -> Proto.Json.Encoder x
 encodeLibrary value =
@@ -1341,7 +1341,7 @@ encodeLibrary value =
         )
 
 
-{-| Encodes a [`Card`](#Card) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for.
+{-| Encodes a [`Card`](#Card) as proto3 JSON, or fails if the input contains a bad value.
 -}
 encodeCard : Card -> Proto.Json.Encoder Proto.Error.Error
 encodeCard value =
@@ -1352,7 +1352,7 @@ encodeCard value =
         ]
 
 
-{-| Encodes a [`Meta`](#Meta) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for.
+{-| Encodes a [`Meta`](#Meta) as proto3 JSON, or fails if the input contains a bad value.
 -}
 encodeMeta : Meta -> Proto.Json.Encoder Proto.Error.Error
 encodeMeta value =
@@ -1363,7 +1363,7 @@ encodeMeta value =
         ]
 
 
-{-| Encodes a [`Letter`](#Letter) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for, and writing each `Any` with the registry it is run with.
+{-| Encodes a [`Letter`](#Letter) as proto3 JSON, or fails if the input contains a bad value.
 -}
 encodeLetter : Letter -> Proto.Json.Encoder Proto.Error.Error
 encodeLetter value =
@@ -1374,7 +1374,7 @@ encodeLetter value =
         ]
 
 
-{-| Encodes a [`Label`](#Label) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Label`](#Label) as proto3 JSON.
 -}
 encodeLabel : Label -> Proto.Json.Encoder x
 encodeLabel value =
@@ -1386,7 +1386,7 @@ encodeLabel value =
         )
 
 
-{-| Encodes a [`Plain`](#Plain) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Plain`](#Plain) as proto3 JSON.
 -}
 encodePlain : Plain -> Proto.Json.Encoder x
 encodePlain value =

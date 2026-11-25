@@ -197,7 +197,7 @@ encodeRole value =
             Json.Encode.string "ROLE_OWNER"
 
 
-{-| Encodes a [`Member`](#Member) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Member`](#Member) as proto3 JSON.
 -}
 encodeMember : Member -> Proto.Json.Encoder x
 encodeMember value =
@@ -208,7 +208,7 @@ encodeMember value =
         )
 
 
-{-| Encodes a [`Team`](#Team) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Team`](#Team) as proto3 JSON.
 -}
 encodeTeam : Team -> Proto.Json.Encoder x
 encodeTeam value =

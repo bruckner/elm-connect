@@ -248,7 +248,7 @@ encodeColor value =
             Json.Encode.string "COLOR_RED"
 
 
-{-| Encodes a [`Created`](#Created) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Created`](#Created) as proto3 JSON.
 -}
 encodeCreated : Created -> Proto.Json.Encoder x
 encodeCreated value =
@@ -259,7 +259,7 @@ encodeCreated value =
         )
 
 
-{-| Encodes a [`NoteEvent`](#NoteEvent) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`NoteEvent`](#NoteEvent) as proto3 JSON.
 -}
 encodeNoteEvent : NoteEvent -> Proto.Json.Encoder x
 encodeNoteEvent value =
@@ -324,7 +324,7 @@ encodeNoteEventSource value =
             ]
 
 
-{-| Encodes a [`Choice`](#Choice) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Choice`](#Choice) as proto3 JSON.
 -}
 encodeChoice : Choice -> Proto.Json.Encoder x
 encodeChoice value =

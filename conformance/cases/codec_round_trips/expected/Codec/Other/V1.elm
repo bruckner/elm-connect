@@ -138,7 +138,7 @@ encodeShade value =
             Json.Encode.string "SHADE_DARK"
 
 
-{-| Encodes a [`Remote`](#Remote) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Remote`](#Remote) as proto3 JSON.
 -}
 encodeRemote : Remote -> Proto.Json.Encoder x
 encodeRemote value =

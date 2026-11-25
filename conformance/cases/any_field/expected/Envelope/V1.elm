@@ -123,7 +123,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes an [`Envelope`](#Envelope) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for, and writing each `Any` with the registry it is run with.
+{-| Encodes an [`Envelope`](#Envelope) as proto3 JSON, or fails if the input contains a bad value.
 -}
 encodeEnvelope : Envelope -> Proto.Json.Encoder Proto.Error.Error
 encodeEnvelope value =
@@ -140,7 +140,7 @@ encodeEnvelope value =
         ]
 
 
-{-| Encodes an [`EnvelopeBody`](#EnvelopeBody) as the members of its message's JSON object.
+{-| Encodes an [`EnvelopeBody`](#EnvelopeBody) as the members of its message's JSON object, or fails if the input contains a bad value.
 -}
 encodeEnvelopeBody : EnvelopeBody -> List ( String, Proto.Json.Field Proto.Error.Error )
 encodeEnvelopeBody value =

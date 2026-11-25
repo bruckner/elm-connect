@@ -411,7 +411,7 @@ encodeLegacy value =
             Json.Encode.string "LEGACY_UNSPECIFIED"
 
 
-{-| Encodes a [`Note`](#Note) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for.
+{-| Encodes a [`Note`](#Note) as proto3 JSON, or fails if the input contains a bad value.
 -}
 encodeNote : Note -> Proto.Json.Encoder Proto.Error.Error
 encodeNote value =
@@ -432,7 +432,7 @@ encodeNote value =
         ]
 
 
-{-| Encodes a [`NoteLastEvent`](#NoteLastEvent) as the members of its message's JSON object.
+{-| Encodes a [`NoteLastEvent`](#NoteLastEvent) as the members of its message's JSON object, or fails if the input contains a bad value.
 -}
 encodeNoteLastEvent : NoteLastEvent -> List ( String, Proto.Json.Field Proto.Error.Error )
 encodeNoteLastEvent value =
@@ -449,7 +449,7 @@ encodeNoteLastEvent value =
             ]
 
 
-{-| Encodes a [`NoteEdit`](#NoteEdit) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`NoteEdit`](#NoteEdit) as proto3 JSON.
 -}
 encodeNoteEdit : NoteEdit -> Proto.Json.Encoder x
 encodeNoteEdit value =
@@ -460,7 +460,7 @@ encodeNoteEdit value =
         )
 
 
-{-| Encodes a [`Draft`](#Draft) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Draft`](#Draft) as proto3 JSON.
 -}
 encodeDraft : Draft -> Proto.Json.Encoder x
 encodeDraft value =
@@ -471,7 +471,7 @@ encodeDraft value =
         )
 
 
-{-| Encodes a [`GetNoteRequest`](#GetNoteRequest) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`GetNoteRequest`](#GetNoteRequest) as proto3 JSON.
 -}
 encodeGetNoteRequest : GetNoteRequest -> Proto.Json.Encoder x
 encodeGetNoteRequest value =
@@ -482,7 +482,7 @@ encodeGetNoteRequest value =
         )
 
 
-{-| Encodes a [`ListNotesRequest`](#ListNotesRequest) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`ListNotesRequest`](#ListNotesRequest) as proto3 JSON.
 -}
 encodeListNotesRequest : ListNotesRequest -> Proto.Json.Encoder x
 encodeListNotesRequest value =
@@ -493,7 +493,7 @@ encodeListNotesRequest value =
         )
 
 
-{-| Encodes a [`ListNotesResponse`](#ListNotesResponse) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for.
+{-| Encodes a [`ListNotesResponse`](#ListNotesResponse) as proto3 JSON, or fails if the input contains a bad value.
 -}
 encodeListNotesResponse : ListNotesResponse -> Proto.Json.Encoder Proto.Error.Error
 encodeListNotesResponse value =
@@ -504,7 +504,7 @@ encodeListNotesResponse value =
         ]
 
 
-{-| Encodes a [`CreateNoteRequest`](#CreateNoteRequest) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for.
+{-| Encodes a [`CreateNoteRequest`](#CreateNoteRequest) as proto3 JSON, or fails if the input contains a bad value.
 -}
 encodeCreateNoteRequest : CreateNoteRequest -> Proto.Json.Encoder Proto.Error.Error
 encodeCreateNoteRequest value =

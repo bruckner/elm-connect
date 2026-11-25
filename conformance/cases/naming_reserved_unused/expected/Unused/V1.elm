@@ -253,7 +253,7 @@ encodeChar value =
             Json.Encode.string "CHAR_A"
 
 
-{-| Encodes a [`Dict`](#Dict) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Dict`](#Dict) as proto3 JSON.
 -}
 encodeDict : Dict -> Proto.Json.Encoder x
 encodeDict value =
@@ -264,7 +264,7 @@ encodeDict value =
         )
 
 
-{-| Encodes a [`Result`](#Result) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Result`](#Result) as proto3 JSON.
 -}
 encodeResult : Result -> Proto.Json.Encoder x
 encodeResult value =
@@ -277,28 +277,28 @@ encodeResult value =
         )
 
 
-{-| Encodes an [`Order`](#Order) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes an [`Order`](#Order) as proto3 JSON.
 -}
 encodeOrder : Order -> Proto.Json.Encoder x
 encodeOrder _ =
     Proto.Json.succeed (Json.Encode.object [])
 
 
-{-| Encodes a [`Never`](#Never) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Never`](#Never) as proto3 JSON.
 -}
 encodeNever : Never -> Proto.Json.Encoder x
 encodeNever _ =
     Proto.Json.succeed (Json.Encode.object [])
 
 
-{-| Encodes a [`Cmd`](#Cmd) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Cmd`](#Cmd) as proto3 JSON.
 -}
 encodeCmd : Cmd -> Proto.Json.Encoder x
 encodeCmd _ =
     Proto.Json.succeed (Json.Encode.object [])
 
 
-{-| Encodes a [`True`](#True) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`True`](#True) as proto3 JSON.
 -}
 encodeTrue : True -> Proto.Json.Encoder x
 encodeTrue _ =

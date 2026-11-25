@@ -2,7 +2,7 @@
 //! (design §3.2).
 
 use super::field::{Present, ValueShape, Zeroed};
-use super::{Deep, Emitter, JSON_DECODE, OneofShape, PROTO_JSON, PROTO_REGISTRY, docs};
+use super::{Deep, Emitter, FAILS, JSON_DECODE, OneofShape, PROTO_JSON, PROTO_REGISTRY, docs};
 use crate::elm::ast::{BinOp, Decl, Expr, Pattern, Type, Variant};
 use crate::elm::build::{apply, binop, int, lambda, pctor, pvar, ty, var};
 use crate::ir::{Message, TypeName, Wrapper};
@@ -39,8 +39,9 @@ impl Emitter {
         let annotation = self.json_encoder_type(refusable);
         Decl::Value {
             doc: Some(format!(
-                "Encodes {} as proto3 JSON.",
-                docs::a_local(&wrapper.elm_name)
+                "Encodes {} as proto3 JSON{}.",
+                docs::a_local(&wrapper.elm_name),
+                if refusable { FAILS } else { "" }
             )),
             name: wrapper.encoder_name(),
             annotation: Type::Function(

@@ -116,7 +116,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`Moment`](#Moment) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for.
+{-| Encodes a [`Moment`](#Moment) as proto3 JSON, or fails if the input contains a bad value.
 -}
 encodeMoment : Moment -> Proto.Json.Encoder Proto.Error.Error
 encodeMoment value =

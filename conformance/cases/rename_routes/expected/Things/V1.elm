@@ -159,7 +159,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`Thing`](#Thing) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Thing`](#Thing) as proto3 JSON.
 -}
 encodeThing : Thing -> Proto.Json.Encoder x
 encodeThing value =
@@ -170,7 +170,7 @@ encodeThing value =
         )
 
 
-{-| Encodes a [`Criteria`](#Criteria) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Criteria`](#Criteria) as proto3 JSON.
 -}
 encodeCriteria : Criteria -> Proto.Json.Encoder x
 encodeCriteria value =
@@ -181,7 +181,7 @@ encodeCriteria value =
         )
 
 
-{-| Encodes a [`GetThingRequest`](#GetThingRequest) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`GetThingRequest`](#GetThingRequest) as proto3 JSON.
 -}
 encodeGetThingRequest : GetThingRequest -> Proto.Json.Encoder x
 encodeGetThingRequest value =

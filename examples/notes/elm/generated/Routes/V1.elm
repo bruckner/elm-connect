@@ -512,7 +512,7 @@ encodeKind value =
             Json.Encode.string "KIND_IMAGE"
 
 
-{-| Encodes a [`GetMessageRequest`](#GetMessageRequest) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`GetMessageRequest`](#GetMessageRequest) as proto3 JSON.
 -}
 encodeGetMessageRequest : GetMessageRequest -> Proto.Json.Encoder x
 encodeGetMessageRequest value =
@@ -527,7 +527,7 @@ encodeGetMessageRequest value =
         )
 
 
-{-| Encodes a [`GetMessageRequestSubMessage`](#GetMessageRequestSubMessage) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`GetMessageRequestSubMessage`](#GetMessageRequestSubMessage) as proto3 JSON.
 -}
 encodeGetMessageRequestSubMessage : GetMessageRequestSubMessage -> Proto.Json.Encoder x
 encodeGetMessageRequestSubMessage value =
@@ -538,7 +538,7 @@ encodeGetMessageRequestSubMessage value =
         )
 
 
-{-| Encodes a [`Message`](#Message) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Message`](#Message) as proto3 JSON.
 -}
 encodeMessage : Message -> Proto.Json.Encoder x
 encodeMessage value =
@@ -550,7 +550,7 @@ encodeMessage value =
         )
 
 
-{-| Encodes an [`UpdateMessageRequest`](#UpdateMessageRequest) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes an [`UpdateMessageRequest`](#UpdateMessageRequest) as proto3 JSON.
 -}
 encodeUpdateMessageRequest : UpdateMessageRequest -> Proto.Json.Encoder x
 encodeUpdateMessageRequest value =
@@ -562,7 +562,7 @@ encodeUpdateMessageRequest value =
         )
 
 
-{-| Encodes an [`Everything`](#Everything) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for.
+{-| Encodes an [`Everything`](#Everything) as proto3 JSON, or fails if the input contains a bad value.
 -}
 encodeEverything : Everything -> Proto.Json.Encoder Proto.Error.Error
 encodeEverything value =
@@ -614,7 +614,7 @@ encodeEverythingChoice value =
             ]
 
 
-{-| Encodes an [`Inner`](#Inner) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes an [`Inner`](#Inner) as proto3 JSON.
 -}
 encodeInner : Inner -> Proto.Json.Encoder x
 encodeInner value =
@@ -626,7 +626,7 @@ encodeInner value =
         )
 
 
-{-| Encodes a [`Deep`](#Deep) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Deep`](#Deep) as proto3 JSON.
 -}
 encodeDeep : Deep -> Proto.Json.Encoder x
 encodeDeep value =
@@ -638,7 +638,7 @@ encodeDeep value =
         )
 
 
-{-| Encodes a [`FileRequest`](#FileRequest) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`FileRequest`](#FileRequest) as proto3 JSON.
 -}
 encodeFileRequest : FileRequest -> Proto.Json.Encoder x
 encodeFileRequest value =
@@ -649,7 +649,7 @@ encodeFileRequest value =
         )
 
 
-{-| Encodes a [`Resource`](#Resource) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Resource`](#Resource) as proto3 JSON.
 -}
 encodeResource : Resource -> Proto.Json.Encoder x
 encodeResource value =
@@ -664,7 +664,7 @@ encodeResource value =
         )
 
 
-{-| Encodes an [`UpdateResourceRequest`](#UpdateResourceRequest) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for.
+{-| Encodes an [`UpdateResourceRequest`](#UpdateResourceRequest) as proto3 JSON, or fails if the input contains a bad value.
 -}
 encodeUpdateResourceRequest : UpdateResourceRequest -> Proto.Json.Encoder Proto.Error.Error
 encodeUpdateResourceRequest value =

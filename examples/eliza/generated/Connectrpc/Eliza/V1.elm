@@ -244,7 +244,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`SayRequest`](#SayRequest) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`SayRequest`](#SayRequest) as proto3 JSON.
 -}
 encodeSayRequest : SayRequest -> Proto.Json.Encoder x
 encodeSayRequest value =
@@ -255,7 +255,7 @@ encodeSayRequest value =
         )
 
 
-{-| Encodes a [`SayResponse`](#SayResponse) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`SayResponse`](#SayResponse) as proto3 JSON.
 -}
 encodeSayResponse : SayResponse -> Proto.Json.Encoder x
 encodeSayResponse value =
@@ -266,7 +266,7 @@ encodeSayResponse value =
         )
 
 
-{-| Encodes a [`ConverseRequest`](#ConverseRequest) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`ConverseRequest`](#ConverseRequest) as proto3 JSON.
 -}
 encodeConverseRequest : ConverseRequest -> Proto.Json.Encoder x
 encodeConverseRequest value =
@@ -277,7 +277,7 @@ encodeConverseRequest value =
         )
 
 
-{-| Encodes a [`ConverseResponse`](#ConverseResponse) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`ConverseResponse`](#ConverseResponse) as proto3 JSON.
 -}
 encodeConverseResponse : ConverseResponse -> Proto.Json.Encoder x
 encodeConverseResponse value =
@@ -288,7 +288,7 @@ encodeConverseResponse value =
         )
 
 
-{-| Encodes an [`IntroduceRequest`](#IntroduceRequest) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes an [`IntroduceRequest`](#IntroduceRequest) as proto3 JSON.
 -}
 encodeIntroduceRequest : IntroduceRequest -> Proto.Json.Encoder x
 encodeIntroduceRequest value =
@@ -299,7 +299,7 @@ encodeIntroduceRequest value =
         )
 
 
-{-| Encodes an [`IntroduceResponse`](#IntroduceResponse) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes an [`IntroduceResponse`](#IntroduceResponse) as proto3 JSON.
 -}
 encodeIntroduceResponse : IntroduceResponse -> Proto.Json.Encoder x
 encodeIntroduceResponse value =

@@ -190,7 +190,7 @@ encodeMood value =
             Json.Encode.string "MOOD_CALM"
 
 
-{-| Encodes a [`Draft`](#Draft) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Draft`](#Draft) as proto3 JSON.
 -}
 encodeDraft : Draft -> Proto.Json.Encoder x
 encodeDraft value =
@@ -223,7 +223,7 @@ encodeDraftBody value =
             ]
 
 
-{-| Encodes a [`DraftMargin`](#DraftMargin) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`DraftMargin`](#DraftMargin) as proto3 JSON.
 -}
 encodeDraftMargin : DraftMargin -> Proto.Json.Encoder x
 encodeDraftMargin value =

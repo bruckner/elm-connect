@@ -419,7 +419,7 @@ encodeOuterInnerKind value =
             Json.Encode.string "OUTER_INNER_KIND_PUBLISHED"
 
 
-{-| Encodes an [`Outer`](#Outer) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes an [`Outer`](#Outer) as proto3 JSON.
 -}
 encodeOuter : Outer -> Proto.Json.Encoder x
 encodeOuter value =
@@ -432,7 +432,7 @@ encodeOuter value =
         )
 
 
-{-| Encodes an [`OuterInner`](#OuterInner) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes an [`OuterInner`](#OuterInner) as proto3 JSON.
 -}
 encodeOuterInner : OuterInner -> Proto.Json.Encoder x
 encodeOuterInner value =
@@ -443,7 +443,7 @@ encodeOuterInner value =
         )
 
 
-{-| Encodes an [`OuterInnerDeepest`](#OuterInnerDeepest) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes an [`OuterInnerDeepest`](#OuterInnerDeepest) as proto3 JSON.
 -}
 encodeOuterInnerDeepest : OuterInnerDeepest -> Proto.Json.Encoder x
 encodeOuterInnerDeepest value =
@@ -454,7 +454,7 @@ encodeOuterInnerDeepest value =
         )
 
 
-{-| Encodes a [`Node`](#Node) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Node`](#Node) as proto3 JSON.
 -}
 encodeNode : Node -> Proto.Json.Encoder x
 encodeNode value =
@@ -474,7 +474,7 @@ encodeNode_ (Node_ value) =
     encodeNode value
 
 
-{-| Encodes a [`Person`](#Person) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Person`](#Person) as proto3 JSON.
 -}
 encodePerson : Person -> Proto.Json.Encoder x
 encodePerson value =
@@ -493,7 +493,7 @@ encodePerson_ (Person_ value) =
     encodePerson value
 
 
-{-| Encodes a [`Company`](#Company) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Company`](#Company) as proto3 JSON.
 -}
 encodeCompany : Company -> Proto.Json.Encoder x
 encodeCompany value =
@@ -512,7 +512,7 @@ encodeCompany_ (Company_ value) =
     encodeCompany value
 
 
-{-| Encodes a [`Forest`](#Forest) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Forest`](#Forest) as proto3 JSON.
 -}
 encodeForest : Forest -> Proto.Json.Encoder x
 encodeForest value =
@@ -523,7 +523,7 @@ encodeForest value =
         )
 
 
-{-| Encodes an [`Expr`](#Expr) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes an [`Expr`](#Expr) as proto3 JSON.
 -}
 encodeExpr : Expr -> Proto.Json.Encoder x
 encodeExpr value =
@@ -547,7 +547,7 @@ encodeExprValue value =
             ]
 
 
-{-| Encodes a [`Sum`](#Sum) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Sum`](#Sum) as proto3 JSON.
 -}
 encodeSum : Sum -> Proto.Json.Encoder x
 encodeSum value =

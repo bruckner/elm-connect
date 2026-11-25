@@ -95,7 +95,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes an [`Alarm`](#Alarm) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for.
+{-| Encodes an [`Alarm`](#Alarm) as proto3 JSON, or fails if the input contains a bad value.
 -}
 encodeAlarm : Alarm -> Proto.Json.Encoder Proto.Error.Error
 encodeAlarm value =

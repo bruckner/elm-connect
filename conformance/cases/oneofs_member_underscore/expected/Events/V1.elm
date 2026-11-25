@@ -180,7 +180,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes an [`Event`](#Event) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes an [`Event`](#Event) as proto3 JSON.
 -}
 encodeEvent : Event -> Proto.Json.Encoder x
 encodeEvent value =
@@ -210,7 +210,7 @@ encodeEventKind value =
             ]
 
 
-{-| Encodes a [`ListEventsRequest`](#ListEventsRequest) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`ListEventsRequest`](#ListEventsRequest) as proto3 JSON.
 -}
 encodeListEventsRequest : ListEventsRequest -> Proto.Json.Encoder x
 encodeListEventsRequest value =
@@ -236,7 +236,7 @@ encodeListEventsRequestFilter value =
             ]
 
 
-{-| Encodes a [`ListEventsResponse`](#ListEventsResponse) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`ListEventsResponse`](#ListEventsResponse) as proto3 JSON.
 -}
 encodeListEventsResponse : ListEventsResponse -> Proto.Json.Encoder x
 encodeListEventsResponse value =

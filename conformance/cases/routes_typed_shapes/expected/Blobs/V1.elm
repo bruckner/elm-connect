@@ -340,7 +340,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`Blob`](#Blob) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Blob`](#Blob) as proto3 JSON.
 -}
 encodeBlob : Blob -> Proto.Json.Encoder x
 encodeBlob value =
@@ -353,7 +353,7 @@ encodeBlob value =
         )
 
 
-{-| Encodes a [`Labeled`](#Labeled) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for, and writing each `Any` with the registry it is run with.
+{-| Encodes a [`Labeled`](#Labeled) as proto3 JSON, or fails if the input contains a bad value.
 -}
 encodeLabeled : Labeled -> Proto.Json.Encoder Proto.Error.Error
 encodeLabeled value =
@@ -367,7 +367,7 @@ encodeLabeled value =
         ]
 
 
-{-| Encodes a [`LabelBlobRequest`](#LabelBlobRequest) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for, and writing each `Any` with the registry it is run with.
+{-| Encodes a [`LabelBlobRequest`](#LabelBlobRequest) as proto3 JSON, or fails if the input contains a bad value.
 -}
 encodeLabelBlobRequest : LabelBlobRequest -> Proto.Json.Encoder Proto.Error.Error
 encodeLabelBlobRequest value =
@@ -381,7 +381,7 @@ encodeLabelBlobRequest value =
         ]
 
 
-{-| Encodes a [`Folder`](#Folder) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Folder`](#Folder) as proto3 JSON.
 -}
 encodeFolder : Folder -> Proto.Json.Encoder x
 encodeFolder value =
@@ -400,7 +400,7 @@ encodeFolder_ (Folder_ value) =
     encodeFolder value
 
 
-{-| Encodes a [`Slots`](#Slots) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Slots`](#Slots) as proto3 JSON.
 -}
 encodeSlots : Slots -> Proto.Json.Encoder x
 encodeSlots value =
@@ -412,7 +412,7 @@ encodeSlots value =
         )
 
 
-{-| Encodes a [`Free`](#Free) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for.
+{-| Encodes a [`Free`](#Free) as proto3 JSON, or fails if the input contains a bad value.
 -}
 encodeFree : Free -> Proto.Json.Encoder Proto.Error.Error
 encodeFree value =
@@ -426,7 +426,7 @@ encodeFree value =
         ]
 
 
-{-| Encodes a [`Moment`](#Moment) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for.
+{-| Encodes a [`Moment`](#Moment) as proto3 JSON, or fails if the input contains a bad value.
 -}
 encodeMoment : Moment -> Proto.Json.Encoder Proto.Error.Error
 encodeMoment value =
@@ -440,7 +440,7 @@ encodeMoment value =
         ]
 
 
-{-| Encodes a [`StampRequest`](#StampRequest) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for.
+{-| Encodes a [`StampRequest`](#StampRequest) as proto3 JSON, or fails if the input contains a bad value.
 -}
 encodeStampRequest : StampRequest -> Proto.Json.Encoder Proto.Error.Error
 encodeStampRequest value =

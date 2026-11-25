@@ -133,7 +133,7 @@ encodeStatus value =
             Json.Encode.string "STATUS_ARCHIVED"
 
 
-{-| Encodes a [`Task`](#Task) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Task`](#Task) as proto3 JSON.
 -}
 encodeTask : Task -> Proto.Json.Encoder x
 encodeTask value =

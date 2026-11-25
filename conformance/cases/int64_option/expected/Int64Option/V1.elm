@@ -145,7 +145,7 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`Counters`](#Counters) as proto3 JSON, which nothing it holds can refuse.
+{-| Encodes a [`Counters`](#Counters) as proto3 JSON.
 -}
 encodeCounters : Counters -> Proto.Json.Encoder x
 encodeCounters value =
