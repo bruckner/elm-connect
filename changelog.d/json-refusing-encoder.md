@@ -42,9 +42,33 @@
   `writeAny`, `totalOptionalField`, `totalRepeatedField`,
   `totalDictField` and `totalBoolMapField`; and `Proto.Route.fieldMaskText`,
   with which a route prints a mask in its path or query.
-- `Rpc.Error.badAny` says `unwritable request` for a request holding a
-  value proto3 JSON has no form for (`Proto.Error.BadValue`), and `bad
-  Any` as before for an `Any` that cannot be written.
+- Breaking: a call over JSON writes its request's JSON once before it
+  builds any route, and is not sent when the request has none, over
+  every binding: a value proto3 JSON has no form for in a path, a query
+  or a typed `Value` body was sent unchecked. It fails with the new
+  `Rpc.Error.badValue { typeName, path }`, a `BadCall` with
+  `InvalidArgument`, the message `bad value: a <type> with no JSON form`
+  and the `BadValue` in `protoError`; `Rpc.Error.badAny` stays the error
+  of an `Any` that cannot be written (`bad Any`, `Internal`). Over
+  protobuf binary such a call is sent. A call over a transcoded route
+  without a body pays one JSON encode of its request it did not before.
+- Breaking: `Rpc.request` gives `Result Rpc.Error Rpc.Request`: the error
+  of every refusal sending makes (a base URL with a query or a fragment,
+  a request with no proto3 JSON, a path value its template cannot match,
+  a header a request cannot carry, a request over the write limit), so
+  what it gives `Ok` is what `Rpc.task` and `Rpc.send` send, and no
+  refused request is built with `null` for its message. Rewriting a
+  request becomes a `case` before `Rpc.taskFromRequest`.
+- Breaking (generated code): a method with a `body:` field of type
+  `google.protobuf.Value` takes its routes as functions of the request
+  and its JSON (`Proto.Method.withJsonRoutes`), read by the new
+  `Proto.Route.jsonValueField`, which keeps a `NullValue` as `null`.
+- `Proto.Json.Encoder` is `Proto.Json.Encoder.Encoder`, in a module of its
+  own, so that `Proto.Message.init` and `initWith` and `Proto.Method.init`
+  and `initJson` show a public name in their signatures.
+- An `Any` written alone, as a method whose request is an `Any` writes
+  it, counts 100 nested `Any`s, as a read of one does; a message's `Any`
+  fields count from the message, as before.
 - The protobuf conformance suite passes seven more cases: the
   out-of-range `Timestamp`, non-finite `Value` and unmappable
   `FieldMask` outputs.

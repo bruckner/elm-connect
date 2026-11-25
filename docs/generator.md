@@ -50,7 +50,7 @@ otherwise.
 | a message that nests: one that reaches, through its fields at any depth, a message on a cycle, a `Value`, `Struct` or `ListValue`, or an `Any` (a recursive message does) | `decodeNestedNote : Int -> Json.Decode.Decoder Note` (`decodeNestedNoteWith` when it takes the registry), its decoder at a nesting depth, which reads at most 100 levels counting it as one ([calling.md](calling.md#nesting-depth)); `decodeNote` is `decodeNestedNote 1`, and the message holding it reads it one level deeper. A oneof of it with a member that counts on from the message (one that nests, a `Value`, `Struct`, `ListValue` or `Any`) gets `decodeNestedNoteKind` likewise. A message that does not nest gets none of these |
 | a nested message or enum (`Outer.Inner`) | a type named by its path, `OuterInner`, in the package's module |
 | a type of another generated package | the type from that package's module, `Users.V1.User` |
-| `service NotesService` | a module `Notes.V1.NotesService`: per unary method a call, `getNote : Notes.V1.GetNoteRequest -> Rpc.Call Rpc.Json Notes.V1.GetNoteRequest Notes.V1.Note`; per binding of its `google.api.http` rule a route function, `routeGetNote0 : Notes.V1.GetNoteRequest -> Proto.Route.Route` (for a method whose bodies hold a value a JSON write can refuse, such as an `Any` or a `Timestamp`, a function of the request and its JSON, `Notes.V1.CreateNoteRequest -> Json.Encode.Value -> Proto.Route.Route`), which the call holds ([transcoding.md](transcoding.md)); and its method descriptor, `descriptorGetNote`, the proto's facts about it as data, which the call does not hold |
+| `service NotesService` | a module `Notes.V1.NotesService`: per unary method a call, `getNote : Notes.V1.GetNoteRequest -> Rpc.Call Rpc.Json Notes.V1.GetNoteRequest Notes.V1.Note`; per binding of its `google.api.http` rule a route function, `routeGetNote0 : Notes.V1.GetNoteRequest -> Proto.Route.Route` (for a method with a body that holds a value a JSON write can refuse, such as an `Any`, a `Timestamp` or a `Value`, a function of the request and the JSON the send writes, `Notes.V1.CreateNoteRequest -> Json.Encode.Value -> Proto.Route.Route`), which the call holds ([transcoding.md](transcoding.md)); and its method descriptor, `descriptorGetNote`, the proto's facts about it as data, which the call does not hold |
 | a request message whose bindings put fields in the query | `queryOfListNotesRequest : ListNotesRequest -> List ( String, String )` in its package's module, the query parameters its route functions share. It exists when a service generated in the same run binds the message's fields to the query, so a service's module and its request messages' module generated in separate runs can disagree, and the compiler reports the missing `queryOf`: generate a service with the packages it uses in one run |
 | a streaming method | a diagnostic; under `streaming=skip`, left out with a warning |
 | comments and `deprecated` | each type, call and descriptor is documented with the proto's comment for it, its one-line declaration, and `Deprecated.` where the proto says so; a call also names its Connect path, its HTTP bindings and its codecs (`Codecs: JSON.`), and a package's module carries the comment on its `package` statement |
@@ -239,7 +239,13 @@ encodeEvent : Event -> Proto.Json.Encoder Proto.Error.Error
 
 A message that gains a refusable field, at any depth, changes its
 encoder's type: `encode` and `encodeWith` take both, and only an
-`encodeTotal` of it stops compiling.
+`encodeTotal` of it stops compiling. `Proto.Json.Encoder` is
+`Proto.Json.Encoder.Encoder`, its own module so that `Proto.Message` and
+`Proto.Method`, whose builders take an encoder, can name it; the package
+site shows that name in their signatures. A method's call writes its
+request with the same encoder and, over JSON, refuses a request it
+refuses before sending anything
+([calling.md](calling.md#writing-json-yourself)).
 
 ## `Any` and the registry
 

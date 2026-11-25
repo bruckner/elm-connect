@@ -35,7 +35,8 @@ calling:
 | `Rpc.Request`, `Rpc.Response`, `Rpc.Body` | a request and an answer as data, in the pure halves and errors |
 | `Rpc.Error` | why a call failed: its kind, code, message and details |
 | `Rpc.Code` | the codes an RPC fails with |
-| `Proto.Json` | the proto3 JSON helpers generated codecs call |
+| `Proto.Json` | the proto3 JSON helpers generated codecs call, and writing a message's JSON yourself ([below](#writing-json-yourself)) |
+| `Proto.Json.Encoder` | the encoder's type, which `Proto.Json` names `Proto.Json.Encoder` |
 | `Proto.Binary` | the protobuf binary wire format over elm/bytes, for binary codecs |
 | `Proto.Unknown` | the fields read from a protobuf binary whose field numbers or types are unrecognized, kept under `unknown_fields=keep` ([generator.md](generator.md#options)) |
 | `Proto.Timestamp`, `Proto.Duration`, `Proto.Value`, `Proto.Int64`, `Proto.Bytes` | the well-known types' Elm forms (`Proto.Value` for `Value`, `Struct` and `ListValue`), and conversions for 64-bit integers and bytes |
@@ -103,8 +104,9 @@ Nothing checks a client before its calls: whatever is wrong with one
 fails the call, where the error reaches the code that handles every
 other. A base URL holding `?` or `#` makes every call fail unsent, its
 `Rpc.Error.cause` `BadCall`, and a URL the browser refuses comes back as
-a `BadCall` too; so does a call with a header a request cannot carry. Whether a base URL reaches the right server only a
-request can show.
+a `BadCall` too; so does a call with a header a request cannot carry. `Rpc.request` gives the same error without sending
+anything. Whether a base URL reaches the right server only a request can
+show.
 
 ## Protocols
 
@@ -329,7 +331,7 @@ end, is the application's own:
 
 | What the application does | Overflows past about (node, Chromium / Firefox / WebKit) |
 |---|---|
-| `Json.Encode.encode` of a message it built (generated encoder) | 780 / 910 / 5,700 levels |
+| `Proto.Json.encode` of a message it built (generated encoder): a recursive message, a `Struct` | 600 to 800, 400 to 600 / 800 to 1,000, 600 to 800 / 3,000 to 5,000, 10,000 to 20,000 levels |
 | binary encoding of a value it built (`Proto.Binary.encode`, `Proto.Any.pack`, `Rpc.request` of a binary call) | 480 / 610 / 5,500 levels |
 | `Json.Encode.encode` of a `Json.Encode.Value` it built | 5,000 to 6,000 / 3,700 / 40,000 levels |
 | `Json.Decode.errorToString` of an error from its own `Json.Decode.decodeString` or `decodeValue` with a generated decoder, which the runtime never sees to scrub | 2,600 to 3,100 / 2,050 / 11,700 input levels |
@@ -662,8 +664,8 @@ Every error has a code, an `Rpc.Code.Code`, and a message.
   network failure `Unavailable`, which is also how a browser's CORS
   refusal arrives; a call that could not be made `Internal`, or
   `InvalidArgument` for a transcoded call's path value its template
-  cannot match, or `ResourceExhausted` for a request over its size
-  limit; an answer that could not be used `Internal`, or
+  cannot match and for a request value proto3 JSON has no form for, or
+  `ResourceExhausted` for a request over its size limit; an answer that could not be used `Internal`, or
   `ResourceExhausted` for one over its size limit, `Unknown` for a
   success that is not the protocol's answer, and `Unimplemented` for a
   unary gRPC-Web answer with status 0 and no message or more than one.
@@ -673,6 +675,9 @@ message a server stated, so every one is safe to log or show: a body
 that did not decode is `bad response body`, a bad URL is `bad URL: the
 base URL holds a query or a fragment` or `bad URL: the browser could
 not read it`, and a header is named without its value.
+
+A request value with no proto3 JSON form is `bad value: a
+google.protobuf.Timestamp with no JSON form`, naming the type alone.
 
 The client's codes and the inferred ones have server meanings too: a
 request over the client's write limit is `ResourceExhausted`, as a
@@ -765,13 +770,15 @@ it:
 protoError : Error -> Maybe Proto.Error.Error
 ```
 
-For a body that did not decode as the response message, and for an `Any`
-in the request that could not be written as JSON, `protoError` is the
-problem itself: `BadJson` with elm/json's error, `BadBinary` with the
-report of where and why, or `UnregisteredType` for an `Any` of a type the
-client's registry lacks. It is `Nothing` for every other error.
-`Proto.Error.toString` describes it in full; that text can quote the
-value that failed, and so hold the answer's or the request's data.
+For a body that did not decode as the response message, and for a
+request that could not be written as JSON, `protoError` is the problem
+itself: `BadJson` with elm/json's error, `BadBinary` with the report of
+where and why, `UnregisteredType` for an `Any` of a type the client's
+registry lacks, or `BadValue` for a request value proto3 JSON has no form
+for, with its type and the path to it. It is `Nothing` for every other
+error. `Proto.Error.toString` describes it in full; that text can quote
+the value that failed, and so hold the answer's or the request's data,
+and a `BadValue`'s path holds the keys of the maps it passes through.
 
 For a report that must not carry that data, walk the `Json.Decode.Error`
 for its path and its text and leave out the value beside them. This
@@ -792,6 +799,10 @@ decodeReport error =
     case Rpc.Error.protoError error of
         Just (Proto.Error.BadJson problem) ->
             Just (located "json" problem)
+
+        Just (Proto.Error.BadValue value) ->
+            -- A request value with no JSON form: its path can hold a map's keys.
+            Just ("no JSON form: " ++ value.typeName)
 
         Just other ->
             -- A binary report, a type URL or a type mismatch: no value.
@@ -828,7 +839,7 @@ failures, and map into it where the application sends its calls, with
 once](#wrapping-the-sending-once)) and `Task.andThen` failing with its
 own constructor when the answer does not serve. `Rpc.Error`'s builders
 (`fromStatus`, `fromCode`, `fromResponse`, `timeout`, `networkError`,
-`badCall`, `badAny`, `badResponse`, `badBody`, `withMessage`) make errors
+`badCall`, `badAny`, `badValue`, `badResponse`, `badBody`, `withMessage`) make errors
 for tests and previews, and for application code: an application that
 fails a call itself before sending, such as an auth layer that will not
 send without a session, builds `Rpc.Error.badCall Rpc.Code.Unauthenticated
@@ -926,7 +937,7 @@ notes.v1.NotesService/GetNote over connect: ok, HTTP 200, 1 attempt, 12 ms
 ## The pure halves
 
 ```elm src/Rpc.elm excerpt
-request : Client codec -> Call codec req res -> Request
+request : Client codec -> Call codec req res -> Result Error Request
 response : Client Json -> Call Json req res -> Http.Response String -> Result Error res
 responseBytes : Client Proto -> Call Proto req res -> Http.Response Bytes -> Result Error res
 taskFromRequest : Client codec -> Call codec req res -> Request -> Task Error res
@@ -941,6 +952,14 @@ sends and how it reads an answer without a server
 ([quickstart.md](quickstart.md#7-test-without-a-server)), and
 `Rpc.taskFromRequest` sends a request in place of the call's own and
 reads the answer as the call's, with the client's retry policy.
+
+`Rpc.request` gives `Err` with the error sending would fail with, for
+every call sending refuses: a base URL holding `?` or `#`, a request
+with no proto3 JSON ([Writing JSON yourself](#writing-json-yourself)), a
+path value its template cannot match, a header a request cannot carry,
+or a request over the write limit. So what it gives `Ok` is exactly what
+`Rpc.task` and `Rpc.send` would send, and a refused call has no request
+to show: each refusal is a `BadCall` naming what is wrong.
 
 Under the proto codec a successful answer is binary, which text cannot
 hold (the browser has replaced what is not UTF-8 by then), so a call
@@ -965,6 +984,69 @@ carries its metadata, the `trailer-` ones apart, for an application that
 reads answers through the halves. A gRPC-Web answer's trailers are in
 its body: `Rpc.responseBytes` reads the status from them, and only a
 traced send gives them as trailers.
+
+## Writing JSON yourself
+
+A call writes its request itself. To write a message's proto3 JSON
+outside a call, to store it or send it some other way, run its
+generated encoder with `Proto.Json`:
+
+```text
+Proto.Json.encodeTotal (Notes.V1.encodeGetNoteRequest request)
+--> a Json.Encode.Value
+
+Proto.Json.encode (encodeEvent event)
+--> Result Proto.Error.Error Json.Encode.Value, for an event holding a Timestamp
+
+Proto.Json.encodeWith registry (Notes.V1.encodeNote note)
+--> the same, an Any in the note converted through registry
+```
+
+A generated `encodeNote : Note -> Proto.Json.Encoder x` describes the
+JSON and writes nothing until one of the three runs it. Its type says
+whether the write can be refused:
+
+- `Proto.Json.Encoder x`, free in `x`: the message holds nothing a write
+  can refuse, and `encodeTotal` writes it with no `Result`.
+- `Proto.Json.Encoder Proto.Error.Error`: the message holds, at any depth,
+  a `Timestamp`, `Duration`, `FieldMask`, `Struct`, `Value`, `ListValue`
+  or `Any`. `encode` writes it, or refuses; `encodeWith registry` does
+  the same with the registry an `Any` it holds converts through
+  ([descriptors.md](descriptors.md#registries)), where `encode` has an
+  empty one.
+
+A refusal is `Proto.Error.BadValue { typeName, path }` for a value
+proto3 JSON has no form for: a `Timestamp` outside years 1 to 9999, a
+`FieldMask` path with no lowerCamelCase form, or a number in a `Value`,
+`Struct` or `ListValue` that is NaN or infinite. `path` leads from the
+message to the value by JSON field names, list indexes and map keys
+(`[ "events", "3", "createTime" ]`). An `Any` fails as converting it
+does, `UnregisteredType` for a type the registry lacks or its message's
+`BadBinary`. Protobuf's own JSON writers refuse the same values; the
+binary codec writes any of them, since binary has a form for each.
+
+The refusal is in the type so that it cannot be forgotten and cannot
+break code that handles it: when a message gains a refusable field, at
+any depth, its encoder becomes `Encoder Proto.Error.Error`, code that
+writes it with `encode` or `encodeWith` compiles as before, and only an
+`encodeTotal` of it stops compiling, at the place the new failure has to
+be handled. A `Duration` is typed as refusable, though none is refused
+today (`Proto.Duration` clamps a value past protobuf's range as it is
+built), so that a message holding one keeps its type when one can be.
+
+Over a call the same check runs before anything is sent: over a JSON
+protocol the request's JSON is written first, and a request with no JSON
+is not sent. The call fails as a `BadCall`: `Rpc.Error.badValue`'s
+`InvalidArgument` for a value with no JSON form, `Rpc.Error.badAny`'s
+`Internal` for an `Any` that cannot be written, the problem in
+`Rpc.Error.protoError`. That holds over every binding, the path and the
+query included ([transcoding.md](transcoding.md#what-a-call-sends)).
+Over protobuf binary the call is sent.
+
+Hand-written values go in as encoders too: `Proto.Json.succeed` makes an
+encoder of JSON already written, for a `Proto.Message` or a method built
+by hand (`Proto.Method.initJson "notes.v1.Notes" "GetNote"
+(Proto.Json.succeed << encodeMine) decoder`).
 
 ## Wrapping the sending once
 
@@ -1010,7 +1092,8 @@ codes such as `Unavailable`, the client's retry policy
 ## Rewriting a request
 
 Anything a client cannot say is a function between `Rpc.request` and
-`Rpc.taskFromRequest`:
+`Rpc.taskFromRequest`. A call `Rpc.request` refuses has no request to
+rewrite, so its error is the task's:
 
 ```elm examples/notes/elm/src/Snippets/Signed.elm#signed
 signed : Rpc.Client codec -> Rpc.Call codec req res -> Task Rpc.Error res

@@ -368,7 +368,8 @@ rpc shared call =
   on lives in a leaf module that imports nothing above it, so that none
   of them imports the facade: `Rpc.Request` and `Rpc.Response`. The
   functions that make them stay in `Rpc`, because they take a `Client`
-  and a `Call`: `Rpc.request` builds a `Request`, and `Rpc.response`
+  and a `Call`: `Rpc.request` builds a `Request` (or the error sending
+  it would fail with), and `Rpc.response`
   reads an answer into the errors that keep a `Response`. The codec
   tags are such a leaf too, `Proto.Codec`: `Proto.Method` indexes a
   method by them and `Rpc.Protocol` and `Rpc` alias them, so they sit
@@ -924,8 +925,8 @@ rpc shared call =
 
 A message's encoder is a `Proto.Json.Encoder x`, which
 `Proto.Json.encode` writes, and whose type says whether the write can
-refuse the value (decisions.md: "One JSON encoder per message, refusal
-in its type"):
+refuse the value (decisions.md: "Accept on read what the wire admits,
+refuse on a JSON write"):
 
 - A message that holds nothing a write can refuse, at any depth
   (`AnyReach::refusable`), is written by plain code wrapped once:
@@ -2490,14 +2491,23 @@ binding whose rule names a `response_body`:
   and the call holds them (`withRoutes`). A route is the verb, the path
   percent-encoded without a leading slash, the query pairs, the body as
   JSON, and `invalid`, the first path value its variable's template
-  cannot match: the route is built whatever the request holds, so
-  `Rpc.request` can show any request, and sending refuses an invalid one
-  (a `BadCall`, §5.1). The response field a binding's answer is read
+  cannot match: the route is built whatever the request holds, and
+  sending, and `Rpc.request` with it, refuses an invalid one (a
+  `BadCall`, §5.1). The response field a binding's answer is read
   from is not in its route: it is fixed per binding, so the method holds
   it as data (`withResponseBody n "field"`, `n` counting bindings as
   `withRoutes` lists them), and reading an answer builds no route
-  (decisions.md: A binding's response field is the method's). Encoders are total: they cannot refuse a value, so what a
-  request cannot carry is found by sending, never by encoding. The
+  (decisions.md: A binding's response field is the method's). A send
+  over JSON writes the request's JSON before it builds a route and
+  refuses a request with none (§3.4), so a route prints its path and
+  query values unchecked, in their JSON text forms: what a request
+  cannot carry as JSON is refused once, by that write, whatever the
+  binding. A method with a binding whose body holds a value the write
+  can refuse (an `Any`, a well-known value with no JSON form, `Value`
+  included, or a message holding one) takes route functions of the
+  request and that JSON (`withJsonRoutes`): such a body has no other
+  writer. A `Value` body field is read with `Proto.Route.jsonValueField`,
+  which keeps a `NullValue`'s `null`. The
   path reads each variable's field (through `Maybe.map` for a
   message on the way, a `case` for a oneof member, the field's default
   when unset) and checks it with `Proto.Route.checkSegment` or
@@ -2542,12 +2552,16 @@ binding whose rule names a `response_body`:
   proto3 JSON, `routeCreateNote0 : CreateNoteRequest -> Json.Encode.Value
   -> Proto.Route.Route`, held by `withJsonRoutes`: the path and query
   from the typed request, the body from the JSON (`Proto.Route.jsonField`
-  for one field, `without` for `*`), which a send encodes once, with the
-  client's registry, and checks for an `Any` it cannot write or a value
-  it refuses (`unencodable`, §5.1). Every binding of such a method takes
-  the JSON. A path or query prints its values from the typed request,
-  unchecked (a mask with `Proto.Route.fieldMaskText`); a `Value` body is
-  written as `Proto.Value.toJson` writes it. A binding the
+  for one field, `Proto.Route.jsonValueField` for a `Value` field, which
+  keeps its `null`, `without` for `*`), which a send encodes once, with
+  the client's registry, before any route is built, and checks for an
+  `Any` it cannot write or a value it refuses (`unencodable`, §5.1). Every
+  binding of such a method takes the JSON; a `Value` body field counts
+  as one a write can refuse. A path or query prints its values from the
+  typed request, unchecked (a mask with `Proto.Route.fieldMaskText`):
+  the send's check of the whole request's JSON, made on every call over
+  JSON, has refused a value with no JSON form before the route is built.
+  A binding the
   resolver accepts that the emitter cannot type is a bug, reported as
   `internal::untyped_route`. A method written by hand gives its own
   `Proto.Http` bindings to `withBindings`, which the runtime's
@@ -2824,7 +2838,8 @@ something else:
   traced send returns, and refreshing a token is the application
   shell's job, single-flight, before it builds the client;
 - onto the pure halves: arbitrary rewriting of a request is
-  `Rpc.request`, then any change, then `Rpc.taskFromRequest`.
+  `Rpc.request`, then any change, then `Rpc.taskFromRequest`; a call
+  `Rpc.request` refuses has no request to rewrite.
 
 [calling.md](calling.md) shows the wrapper pattern this asks of an
 application: one function, `rpc shared call = Rpc.task (client shared)
@@ -2896,8 +2911,7 @@ appears, each a field of the opaque record and a minor (roadmap).
   sent: every way of sending fails it as a `BadCall` whose message,
   `bad URL: the base URL holds a query or a fragment`, prints no URL
   (one can hold credentials, and over Connect's GET the request), and it
-  is never retried. The pure `Rpc.request` still builds that URL, since
-  it has no error to give. A URL the browser refuses comes back from
+  is never retried. `Rpc.request` gives the same error. A URL the browser refuses comes back from
   elm/http as `BadUrl_`, a `BadCall` too, `bad URL: the browser could
   not read it`. Nothing checks a
   client where it is built: the check is syntactic alone, and whether
@@ -2917,8 +2931,7 @@ appears, each a field of the opaque record and a minor (roadmap).
   as a `BadCall` naming the header, nothing sent and never retried
   (the trace's `attempts` is `0`, as for a bad `baseUrl`). A header is
   never altered to fit: a changed credential would fail later and less
-  clearly. The pure `Rpc.request` still builds the request, which has
-  no error to give.
+  clearly. `Rpc.request` gives the same error.
 - A transcoded call whose path value its variable's template cannot
   match is never handed to elm/http either: every way of sending checks
   the call's path values, and one that cannot match fails with
@@ -2935,7 +2948,7 @@ appears, each a field of the opaque record and a minor (roadmap).
   can never reach the method: `GET /v1/` or `/v1/notes/a/b` for
   `{name=notes/*}` meets no route, or another method's, and the 404
   reads as `Unimplemented`. The value is never altered to fit, as a
-  header is not, and the pure `Rpc.request` still builds the URL.
+  header is not, and `Rpc.request` gives the same error.
   Connect, and the implicit route, have no path variables.
 - A retry policy is `Rpc.Retry.on codes`: the codes are always the
   caller's, and the rest has defaults. It applies to any error whose
@@ -3012,19 +3025,23 @@ client's protocol, a `plan` made by one `case` on the wire kind (text
 or bytes) that holds the request to build, the route's invalid path
 value (a route built once for a send, by the method's route function,
 §4), the binding's `response_body`, which the method holds as data, the
-check that its request's `Any`s can be written,
+check that its request has proto3 JSON,
 the write-limit check and the answer's reader, monomorphic from there
-on. Over JSON a send's plan (`toSend`) encodes the request at most once,
-as it is made and only when a part of the send reads the JSON (the
-body, a route read from the JSON by `withJsonRoutes` or `withBindings`,
-the check, or a write limit), and hands that one value to each; a plan made only to read
-an answer (`Rpc.response`) encodes nothing, and one made to build the
-request (`Rpc.request`) encodes it when the body or the route reads it.
-The check runs whenever the JSON is what is sent, since a method's
-encoder does not say whether its type reaches an `Any`; a typed route
-holds its own body and is not checked. A plan made to read an answer
-builds no route: the response field is the method's data, not the
-route's.
+on. Over JSON a send's plan (`toSend`, which `Rpc.request` and every way
+of sending make) encodes the request exactly once, as it is made and
+before any route is built, and hands that one value to each part that
+reads it: the check, the route (a route read from the JSON by
+`withJsonRoutes` or `withBindings`), the body and the write limit. A
+request with no JSON (a value proto3 JSON has no form for, an `Any` the
+client's registry cannot write) builds no route and no request: the
+plan's request is that error, which `Plan.checked`, the checks every
+send makes in order, turns into the call's `BadCall`. The check runs on
+every call over JSON, whatever its route, since a method's encoder does
+not say whether its type can refuse and a path and a query print values
+in their JSON forms; a `GET` over a typed route pays one encode it did
+not need before. A plan made only to read an answer (`Rpc.response`)
+encodes nothing and builds no route: the response field is the method's
+data, not the route's.
 The functions a protocol is built of are one module per protocol, each
 holding every function `Rpc.Protocol` installs for it:
 `Rpc.Internal.Connect` Connect's POST and GET builders, for either
@@ -3114,7 +3131,7 @@ cancel : String -> Cmd msg                   -- Http.cancel by tracker; reports 
 -- pure halves
 type alias Request = Rpc.Request.Request
 type alias Response = Rpc.Response.Response
-request : Client codec -> Call codec req res -> Request
+request : Client codec -> Call codec req res -> Result Error Request   -- Err: what sending would refuse
 response : Client Json -> Call Json req res -> Http.Response String -> Result Error res
 responseBytes : Client Proto -> Call Proto req res -> Http.Response Bytes -> Result Error res
 taskFromRequest : Client codec -> Call codec req res -> Request -> Task Error res
@@ -3141,8 +3158,9 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
   program whose messages hold an `Any` configures one, as protojson and
   connect-es require; over binary no table is needed. A request whose
   `Any` the registry cannot write is refused before anything is sent,
-  a `BadCall` built by `Rpc.Error.badAny problem`, reading the JSON the
-  send encodes for its body, not an encoding of its own; a response
+  a `BadCall` built by `Rpc.Error.badAny problem` (a value with no JSON
+  form by `Rpc.Error.badValue`), from the one JSON write the send makes,
+  not an encoding of its own; a response
   holding an `Any` of a type the registry lacks fails to decode, a
   `BadResponse` whose `protoError` is `UnregisteredType url`.
   `Rpc.Call.requestJson` and `toJson` take the registry too and give a
@@ -3666,7 +3684,8 @@ fromResponse : Response -> Error        -- states no status: BadStatus, or BadRe
 timeout : Error
 networkError : Error
 badCall : Code -> String -> Error
-badAny : Proto.Error.Error -> Error
+badAny : Proto.Error.Error -> Error         -- an Any the registry cannot write: BadCall, Internal
+badValue : { typeName : String, path : List String } -> Error   -- a request value with no JSON form: BadCall, InvalidArgument
 badResponse : Code -> String -> Response -> Error
 badBody : Proto.Error.Error -> Response -> Error
 withMessage : String -> Error -> Error
@@ -3993,7 +4012,7 @@ toString : Error -> String              -- for a log, as Json.Decode.errorToStri
   | `Proto.Any.tryUnpack` | `Result Error a` | `TypeMismatch`, `BadBinary` |
   | `Proto.Any.toJson`, `Proto.Json.encode`, `encodeWith` | `Result Error Value` | `BadValue { typeName, path }` for a value proto3 JSON has no form for (§3.5); for an `Any`, `UnregisteredType`, or the `BadBinary` of the `Any` that failed, at any depth, named by its own type, or `TooDeep` named `google.protobuf.Any` for one nested past 100 (§5.5); a JSON-alone `Any` that is not its message, `BadJson` (§3.10) |
   | `Proto.Json.anyWith`, generated `decodeNoteWith` | `Json.Decode.Decoder` | elm/json's error, a registry miss named in its message |
-  | `Rpc.Error.protoError` of a request that cannot be written (`badAny`) | `Maybe Error` | as `encodeWith` |
+  | `Rpc.Error.protoError` of a request that cannot be written (`badValue`, `badAny`) | `Maybe Error` | as `encodeWith` |
   | `Rpc.Error.details` | `List (Result Error Any)` | `UnregisteredType`, `BadJson`, `BadBinary` (above) |
 
   An answer whose body is not the response stays a `BadResponse`, an
@@ -4359,7 +4378,9 @@ any, in `expected/warnings.txt`, rendered as `diagnostics.txt` is.
   Both ends are checked: in Rust against a reference built on
   prost-reflect's proto3 JSON parser and field presence, independent of
   the JSON walk the runtime does, and in Elm by replaying each fixture
-  through `Rpc.request` with a transcode client, the call built by the
+  through the request a call's plan builds with a transcode client
+  (`Rpc.request`'s, before it refuses a path value its template cannot
+  match, which the fixtures print too), the call built by the
   generated service module and its binding chosen with
   `Rpc.Call.viaBinding` (a fixture naming a binding the method lacks fails
   rather than falling back to the implicit route). Bodies compare with
@@ -4376,7 +4397,7 @@ any, in `expected/warnings.txt`, rendered as `diagnostics.txt` is.
   defaults (a default message is `{}`, which holds for every message
   but one with an `Empty` field, always written as `{}` (§3.5); `{}`
   decodes to it, and
-  `encode (decode (encode x)) == encode x`), and `Rpc.request` over
+  `encode (decode (encode x)) == encode x`), and the request built over
   Transcode keeps structural laws (a path segment percent-decodes to its
   field's value, a field bound in the path is in neither the query nor
   a `*` body, a body field is not in the query, the URL holds only
@@ -4387,8 +4408,8 @@ any, in `expected/warnings.txt`, rendered as `diagnostics.txt` is.
   messages, repeated and map fields, wrappers at their defaults,
   well-known types): the reference gives each one's HTTP request,
   written as Elm data at test time (`tests/Generated/Routes/`, as the
-  codec round trips' samples are) and replayed through `Rpc.request` as
-  the fixtures are, which also runs the generated decoders and encoders
+  codec round trips' samples are) and replayed through the request a
+  call's plan builds as the fixtures are, which also runs the generated decoders and encoders
   on prost-reflect's proto3 JSON (written with and without defaults,
   under JSON and proto names). Neither layer proves a server agrees: the
   samples are not sent live, the second layer is only as right as the
