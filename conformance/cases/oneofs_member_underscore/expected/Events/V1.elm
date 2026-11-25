@@ -13,6 +13,8 @@ import Json.Encode
 import Proto.Binary
 import Proto.Descriptors
 import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Query
 import Proto.Registry
@@ -182,9 +184,9 @@ registry =
 
 {-| Encodes an [`Event`](#Event) as proto3 JSON.
 -}
-encodeEvent : Event -> Proto.Json.Encoder x
+encodeEvent : Event -> Proto.Json.Encode.Encoder x
 encodeEvent value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             ([ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
              ]
@@ -212,9 +214,9 @@ encodeEventKind value =
 
 {-| Encodes a [`ListEventsRequest`](#ListEventsRequest) as proto3 JSON.
 -}
-encodeListEventsRequest : ListEventsRequest -> Proto.Json.Encoder x
+encodeListEventsRequest : ListEventsRequest -> Proto.Json.Encode.Encoder x
 encodeListEventsRequest value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             ([ ( "parent", Proto.Json.implicitField "" Json.Encode.string value.parent )
              ]
@@ -238,9 +240,9 @@ encodeListEventsRequestFilter value =
 
 {-| Encodes a [`ListEventsResponse`](#ListEventsResponse) as proto3 JSON.
 -}
-encodeListEventsResponse : ListEventsResponse -> Proto.Json.Encoder x
+encodeListEventsResponse : ListEventsResponse -> Proto.Json.Encode.Encoder x
 encodeListEventsResponse value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "events", Proto.Json.totalRepeatedField encodeEvent value.events )
             ]
@@ -257,7 +259,7 @@ decodeEvent : Json.Decode.Decoder Event
 decodeEvent =
     Proto.Json.message
         (Json.Decode.succeed Event
-            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.messageField "name" "" Proto.Json.Decode.string
             |> Proto.Json.oneof decodeEventKind
         )
 
@@ -268,8 +270,8 @@ decodeEventKind : Json.Decode.Decoder EventKind
 decodeEventKind =
     Proto.Json.members "kind"
         EventKindUnset
-        [ Proto.Json.memberEither "Legacy" "_legacy" (Json.Decode.map EventKindLegacy Proto.Json.string)
-        , Proto.Json.member "count" (Json.Decode.map EventKindCount Proto.Json.int32)
+        [ Proto.Json.memberEither "Legacy" "_legacy" (Json.Decode.map EventKindLegacy Proto.Json.Decode.string)
+        , Proto.Json.member "count" (Json.Decode.map EventKindCount Proto.Json.Decode.int32)
         ]
 
 
@@ -279,7 +281,7 @@ decodeListEventsRequest : Json.Decode.Decoder ListEventsRequest
 decodeListEventsRequest =
     Proto.Json.message
         (Json.Decode.succeed ListEventsRequest
-            |> Proto.Json.messageField "parent" "" Proto.Json.string
+            |> Proto.Json.messageField "parent" "" Proto.Json.Decode.string
             |> Proto.Json.oneof decodeListEventsRequestFilter
         )
 
@@ -290,7 +292,7 @@ decodeListEventsRequestFilter : Json.Decode.Decoder ListEventsRequestFilter
 decodeListEventsRequestFilter =
     Proto.Json.members "filter"
         ListEventsRequestFilterUnset
-        [ Proto.Json.memberEither "Legacy" "_legacy" (Json.Decode.map ListEventsRequestFilterLegacy Proto.Json.string)
+        [ Proto.Json.memberEither "Legacy" "_legacy" (Json.Decode.map ListEventsRequestFilterLegacy Proto.Json.Decode.string)
         ]
 
 

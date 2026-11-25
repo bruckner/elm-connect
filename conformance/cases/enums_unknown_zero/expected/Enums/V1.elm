@@ -18,6 +18,7 @@ import Proto.Binary
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Version
@@ -135,9 +136,9 @@ encodeStatus value =
 
 {-| Encodes a [`Task`](#Task) as proto3 JSON.
 -}
-encodeTask : Task -> Proto.Json.Encoder x
+encodeTask : Task -> Proto.Json.Encode.Encoder x
 encodeTask value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "status", Proto.Json.implicitField StatusUnspecified encodeStatus value.status )
             ]

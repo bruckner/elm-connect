@@ -13,6 +13,8 @@ import Json.Encode
 import Proto.Binary
 import Proto.Descriptors
 import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Query
 import Proto.Registry
@@ -181,9 +183,9 @@ registry =
 
 {-| Encodes an [`Entry`](#Entry) as proto3 JSON.
 -}
-encodeEntry : Entry -> Proto.Json.Encoder x
+encodeEntry : Entry -> Proto.Json.Encode.Encoder x
 encodeEntry value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
             , ( "descriptor", Proto.Json.implicitField "" Json.Encode.string value.descriptor )
@@ -194,9 +196,9 @@ encodeEntry value =
 
 {-| Encodes a [`Part`](#Part) as proto3 JSON.
 -}
-encodePart : Part -> Proto.Json.Encoder x
+encodePart : Part -> Proto.Json.Encode.Encoder x
 encodePart value =
-    Proto.Json.succeed (Proto.Json.objectOfFields (encodePartKind value.kind))
+    Proto.Json.Encode.succeed (Proto.Json.objectOfFields (encodePartKind value.kind))
 
 
 {-| Encodes a [`PartKind`](#PartKind) as the members of its message's JSON object.
@@ -218,9 +220,9 @@ encodePartKind value =
 
 {-| Encodes a [`GetEntryRequest`](#GetEntryRequest) as proto3 JSON.
 -}
-encodeGetEntryRequest : GetEntryRequest -> Proto.Json.Encoder x
+encodeGetEntryRequest : GetEntryRequest -> Proto.Json.Encode.Encoder x
 encodeGetEntryRequest value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
             , ( "descriptor", Proto.Json.implicitField "" Json.Encode.string value.descriptor )
@@ -239,9 +241,9 @@ decodeEntry : Json.Decode.Decoder Entry
 decodeEntry =
     Proto.Json.message
         (Json.Decode.succeed Entry
-            |> Proto.Json.messageField "name" "" Proto.Json.string
-            |> Proto.Json.messageField "descriptor" "" Proto.Json.string
-            |> Proto.Json.messageField "descriptors" "" Proto.Json.string
+            |> Proto.Json.messageField "name" "" Proto.Json.Decode.string
+            |> Proto.Json.messageField "descriptor" "" Proto.Json.Decode.string
+            |> Proto.Json.messageField "descriptors" "" Proto.Json.Decode.string
         )
 
 
@@ -259,8 +261,8 @@ decodePartKind : Json.Decode.Decoder PartKind
 decodePartKind =
     Proto.Json.members "kind"
         PartKindUnset
-        [ Proto.Json.member "descriptor" (Json.Decode.map PartKindDescriptor Proto.Json.string)
-        , Proto.Json.member "count" (Json.Decode.map PartKindCount Proto.Json.int32)
+        [ Proto.Json.member "descriptor" (Json.Decode.map PartKindDescriptor Proto.Json.Decode.string)
+        , Proto.Json.member "count" (Json.Decode.map PartKindCount Proto.Json.Decode.int32)
         ]
 
 
@@ -270,8 +272,8 @@ decodeGetEntryRequest : Json.Decode.Decoder GetEntryRequest
 decodeGetEntryRequest =
     Proto.Json.message
         (Json.Decode.succeed GetEntryRequest
-            |> Proto.Json.messageField "name" "" Proto.Json.string
-            |> Proto.Json.messageField "descriptor" "" Proto.Json.string
+            |> Proto.Json.messageField "name" "" Proto.Json.Decode.string
+            |> Proto.Json.messageField "descriptor" "" Proto.Json.Decode.string
             |> Proto.Json.messageField "part" Nothing (Json.Decode.map Just decodePart)
         )
 

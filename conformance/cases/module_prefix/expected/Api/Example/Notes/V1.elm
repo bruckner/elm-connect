@@ -19,6 +19,8 @@ import Json.Encode
 import Proto.Binary
 import Proto.Descriptors
 import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Version
@@ -133,9 +135,9 @@ registry =
 
 {-| Encodes a [`Note`](#Note) as proto3 JSON.
 -}
-encodeNote : Note -> Proto.Json.Encoder x
+encodeNote : Note -> Proto.Json.Encode.Encoder x
 encodeNote value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
             , ( "author", Proto.Json.totalOptionalField Api.Example.People.encodeUser value.author )
@@ -146,9 +148,9 @@ encodeNote value =
 
 {-| Encodes a [`GetNoteRequest`](#GetNoteRequest) as proto3 JSON.
 -}
-encodeGetNoteRequest : GetNoteRequest -> Proto.Json.Encoder x
+encodeGetNoteRequest : GetNoteRequest -> Proto.Json.Encode.Encoder x
 encodeGetNoteRequest value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
             ]
@@ -165,7 +167,7 @@ decodeNote : Json.Decode.Decoder Note
 decodeNote =
     Proto.Json.message
         (Json.Decode.succeed Note
-            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.messageField "name" "" Proto.Json.Decode.string
             |> Proto.Json.messageField "author" Nothing (Json.Decode.map Just Api.Example.People.decodeUser)
             |> Proto.Json.messageFieldEither "requiredRole" "required_role" Api.Example.People.RoleUnspecified Api.Example.People.decodeRole
         )
@@ -177,7 +179,7 @@ decodeGetNoteRequest : Json.Decode.Decoder GetNoteRequest
 decodeGetNoteRequest =
     Proto.Json.message
         (Json.Decode.succeed GetNoteRequest
-            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.messageField "name" "" Proto.Json.Decode.string
         )
 
 

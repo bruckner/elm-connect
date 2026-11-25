@@ -21,6 +21,8 @@ import Proto.Binary
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Version
@@ -199,9 +201,9 @@ encodeRole value =
 
 {-| Encodes a [`Member`](#Member) as proto3 JSON.
 -}
-encodeMember : Member -> Proto.Json.Encoder x
+encodeMember : Member -> Proto.Json.Encode.Encoder x
 encodeMember value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
             ]
@@ -210,9 +212,9 @@ encodeMember value =
 
 {-| Encodes a [`Team`](#Team) as proto3 JSON.
 -}
-encodeTeam : Team -> Proto.Json.Encoder x
+encodeTeam : Team -> Proto.Json.Encode.Encoder x
 encodeTeam value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "labels", Proto.Json.dictField identity Json.Encode.string value.labels )
             , ( "bySeat", Proto.Json.dictField String.fromInt Json.Encode.string value.bySeat )
@@ -253,7 +255,7 @@ decodeMember : Json.Decode.Decoder Member
 decodeMember =
     Proto.Json.message
         (Json.Decode.succeed Member
-            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.messageField "name" "" Proto.Json.Decode.string
         )
 
 
@@ -263,20 +265,20 @@ decodeTeam : Json.Decode.Decoder Team
 decodeTeam =
     Proto.Json.message
         (Json.Decode.succeed Team
-            |> Proto.Json.messageField "labels" Dict.empty (Proto.Json.stringDict Proto.Json.string)
-            |> Proto.Json.messageFieldEither "bySeat" "by_seat" Dict.empty (Proto.Json.int32Dict Proto.Json.string)
-            |> Proto.Json.messageField "scores" Dict.empty (Proto.Json.uint32Dict Proto.Json.float)
+            |> Proto.Json.messageField "labels" Dict.empty (Proto.Json.stringDict Proto.Json.Decode.string)
+            |> Proto.Json.messageFieldEither "bySeat" "by_seat" Dict.empty (Proto.Json.int32Dict Proto.Json.Decode.string)
+            |> Proto.Json.messageField "scores" Dict.empty (Proto.Json.uint32Dict Proto.Json.Decode.float)
             |> Proto.Json.messageField "flags" Dict.empty (Proto.Json.int32Dict Json.Decode.bool)
-            |> Proto.Json.messageField "totals" Dict.empty (Proto.Json.uint32Dict Proto.Json.int64)
-            |> Proto.Json.messageFieldEither "byId" "by_id" Dict.empty (Proto.Json.int64Dict Proto.Json.string)
-            |> Proto.Json.messageField "counts" Dict.empty (Proto.Json.uint64Dict Proto.Json.int32)
+            |> Proto.Json.messageField "totals" Dict.empty (Proto.Json.uint32Dict Proto.Json.Decode.int64)
+            |> Proto.Json.messageFieldEither "byId" "by_id" Dict.empty (Proto.Json.int64Dict Proto.Json.Decode.string)
+            |> Proto.Json.messageField "counts" Dict.empty (Proto.Json.uint64Dict Proto.Json.Decode.int32)
             |> Proto.Json.messageField "members" Dict.empty (Proto.Json.stringDict decodeMember)
             |> Proto.Json.messageField "roles" Dict.empty (Proto.Json.int32Dict decodeRole)
-            |> Proto.Json.messageFieldEither "byFlag" "by_flag" [] (Proto.Json.boolMap Proto.Json.string)
-            |> Proto.Json.messageFieldEither "byOffset" "by_offset" Dict.empty (Proto.Json.int32Dict Proto.Json.string)
-            |> Proto.Json.messageField "deltas" Dict.empty (Proto.Json.int64Dict Proto.Json.string)
-            |> Proto.Json.messageFieldEither "byHash" "by_hash" Dict.empty (Proto.Json.uint64Dict Proto.Json.string)
-            |> Proto.Json.messageFieldEither "byStamp" "by_stamp" Dict.empty (Proto.Json.int64Dict Proto.Json.string)
+            |> Proto.Json.messageFieldEither "byFlag" "by_flag" [] (Proto.Json.boolMap Proto.Json.Decode.string)
+            |> Proto.Json.messageFieldEither "byOffset" "by_offset" Dict.empty (Proto.Json.int32Dict Proto.Json.Decode.string)
+            |> Proto.Json.messageField "deltas" Dict.empty (Proto.Json.int64Dict Proto.Json.Decode.string)
+            |> Proto.Json.messageFieldEither "byHash" "by_hash" Dict.empty (Proto.Json.uint64Dict Proto.Json.Decode.string)
+            |> Proto.Json.messageFieldEither "byStamp" "by_stamp" Dict.empty (Proto.Json.int64Dict Proto.Json.Decode.string)
         )
 
 

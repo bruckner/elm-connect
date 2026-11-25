@@ -43,6 +43,8 @@ import Proto.Binary
 import Proto.Descriptors
 import Proto.Error
 import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Value
@@ -1003,9 +1005,9 @@ registry =
 
 {-| Encodes a [`Chain`](#Chain) as proto3 JSON.
 -}
-encodeChain : Chain -> Proto.Json.Encoder x
+encodeChain : Chain -> Proto.Json.Encode.Encoder x
 encodeChain value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
             , ( "next", Proto.Json.totalOptionalField encodeChain_ value.next )
@@ -1016,16 +1018,16 @@ encodeChain value =
 
 {-| Encodes a [`Chain_`](#Chain_) as proto3 JSON.
 -}
-encodeChain_ : Chain_ -> Proto.Json.Encoder x
+encodeChain_ : Chain_ -> Proto.Json.Encode.Encoder x
 encodeChain_ (Chain_ value) =
     encodeChain value
 
 
 {-| Encodes a [`Tree`](#Tree) as proto3 JSON.
 -}
-encodeTree : Tree -> Proto.Json.Encoder x
+encodeTree : Tree -> Proto.Json.Encode.Encoder x
 encodeTree value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
             , ( "children", Proto.Json.totalRepeatedField encodeTree_ value.children )
@@ -1035,16 +1037,16 @@ encodeTree value =
 
 {-| Encodes a [`Tree_`](#Tree_) as proto3 JSON.
 -}
-encodeTree_ : Tree_ -> Proto.Json.Encoder x
+encodeTree_ : Tree_ -> Proto.Json.Encode.Encoder x
 encodeTree_ (Tree_ value) =
     encodeTree value
 
 
 {-| Encodes a [`Dir`](#Dir) as proto3 JSON.
 -}
-encodeDir : Dir -> Proto.Json.Encoder x
+encodeDir : Dir -> Proto.Json.Encode.Encoder x
 encodeDir value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "entries", Proto.Json.totalDictField identity encodeDir_ value.entries )
             , ( "forest", Proto.Json.totalOptionalField encodeForest value.forest )
@@ -1054,16 +1056,16 @@ encodeDir value =
 
 {-| Encodes a [`Dir_`](#Dir_) as proto3 JSON.
 -}
-encodeDir_ : Dir_ -> Proto.Json.Encoder x
+encodeDir_ : Dir_ -> Proto.Json.Encode.Encoder x
 encodeDir_ (Dir_ value) =
     encodeDir value
 
 
 {-| Encodes an [`Expr`](#Expr) as proto3 JSON.
 -}
-encodeExpr : Expr -> Proto.Json.Encoder x
+encodeExpr : Expr -> Proto.Json.Encode.Encoder x
 encodeExpr value =
-    Proto.Json.succeed (Proto.Json.objectOfFields (encodeExprKind value.kind))
+    Proto.Json.Encode.succeed (Proto.Json.objectOfFields (encodeExprKind value.kind))
 
 
 {-| Encodes an [`ExprKind`](#ExprKind) as the members of its message's JSON object.
@@ -1079,15 +1081,15 @@ encodeExprKind value =
             ]
 
         ExprKindNegated member ->
-            [ ( "negated", Just (Proto.Json.encodeTotal (encodeExpr member)) )
+            [ ( "negated", Just (Proto.Json.Encode.encodeTotal (encodeExpr member)) )
             ]
 
 
 {-| Encodes a [`Person`](#Person) as proto3 JSON.
 -}
-encodePerson : Person -> Proto.Json.Encoder x
+encodePerson : Person -> Proto.Json.Encode.Encoder x
 encodePerson value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
             , ( "team", Proto.Json.totalOptionalField encodeTeam_ value.team )
@@ -1097,16 +1099,16 @@ encodePerson value =
 
 {-| Encodes a [`Person_`](#Person_) as proto3 JSON.
 -}
-encodePerson_ : Person_ -> Proto.Json.Encoder x
+encodePerson_ : Person_ -> Proto.Json.Encode.Encoder x
 encodePerson_ (Person_ value) =
     encodePerson value
 
 
 {-| Encodes a [`Team`](#Team) as proto3 JSON.
 -}
-encodeTeam : Team -> Proto.Json.Encoder x
+encodeTeam : Team -> Proto.Json.Encode.Encoder x
 encodeTeam value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "members", Proto.Json.totalRepeatedField encodePerson_ value.members )
             ]
@@ -1115,16 +1117,16 @@ encodeTeam value =
 
 {-| Encodes a [`Team_`](#Team_) as proto3 JSON.
 -}
-encodeTeam_ : Team_ -> Proto.Json.Encoder x
+encodeTeam_ : Team_ -> Proto.Json.Encode.Encoder x
 encodeTeam_ (Team_ value) =
     encodeTeam value
 
 
 {-| Encodes a [`First`](#First) as proto3 JSON.
 -}
-encodeFirst : First -> Proto.Json.Encoder x
+encodeFirst : First -> Proto.Json.Encode.Encoder x
 encodeFirst value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "second", Proto.Json.totalOptionalField encodeSecond_ value.second )
             ]
@@ -1133,16 +1135,16 @@ encodeFirst value =
 
 {-| Encodes a [`First_`](#First_) as proto3 JSON.
 -}
-encodeFirst_ : First_ -> Proto.Json.Encoder x
+encodeFirst_ : First_ -> Proto.Json.Encode.Encoder x
 encodeFirst_ (First_ value) =
     encodeFirst value
 
 
 {-| Encodes a [`Second`](#Second) as proto3 JSON.
 -}
-encodeSecond : Second -> Proto.Json.Encoder x
+encodeSecond : Second -> Proto.Json.Encode.Encoder x
 encodeSecond value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "third", Proto.Json.totalOptionalField encodeThird_ value.third )
             ]
@@ -1151,16 +1153,16 @@ encodeSecond value =
 
 {-| Encodes a [`Second_`](#Second_) as proto3 JSON.
 -}
-encodeSecond_ : Second_ -> Proto.Json.Encoder x
+encodeSecond_ : Second_ -> Proto.Json.Encode.Encoder x
 encodeSecond_ (Second_ value) =
     encodeSecond value
 
 
 {-| Encodes a [`Third`](#Third) as proto3 JSON.
 -}
-encodeThird : Third -> Proto.Json.Encoder x
+encodeThird : Third -> Proto.Json.Encode.Encoder x
 encodeThird value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "firsts", Proto.Json.totalRepeatedField encodeFirst_ value.firsts )
             ]
@@ -1169,16 +1171,16 @@ encodeThird value =
 
 {-| Encodes a [`Third_`](#Third_) as proto3 JSON.
 -}
-encodeThird_ : Third_ -> Proto.Json.Encoder x
+encodeThird_ : Third_ -> Proto.Json.Encode.Encoder x
 encodeThird_ (Third_ value) =
     encodeThird value
 
 
 {-| Encodes a [`Forest`](#Forest) as proto3 JSON.
 -}
-encodeForest : Forest -> Proto.Json.Encoder x
+encodeForest : Forest -> Proto.Json.Encode.Encoder x
 encodeForest value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "trees", Proto.Json.totalRepeatedField encodeTree value.trees )
             , ( "chain", Proto.Json.totalOptionalField encodeChain value.chain )
@@ -1188,9 +1190,9 @@ encodeForest value =
 
 {-| Encodes a [`Wide`](#Wide) as proto3 JSON.
 -}
-encodeWide : Wide -> Proto.Json.Encoder x
+encodeWide : Wide -> Proto.Json.Encode.Encoder x
 encodeWide value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "f1", Proto.Json.implicitField 0 Json.Encode.int value.f1 )
             , ( "f2", Proto.Json.implicitField 0 Json.Encode.int value.f2 )
@@ -1263,25 +1265,25 @@ encodeWide value =
 
 {-| Encodes a [`Wide_`](#Wide_) as proto3 JSON.
 -}
-encodeWide_ : Wide_ -> Proto.Json.Encoder x
+encodeWide_ : Wide_ -> Proto.Json.Encode.Encoder x
 encodeWide_ (Wide_ value) =
     encodeWide value
 
 
 {-| Encodes an [`Envelope`](#Envelope) as proto3 JSON, or fails if the input contains a bad value.
 -}
-encodeEnvelope : Envelope -> Proto.Json.Encoder Proto.Error.Error
+encodeEnvelope : Envelope -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeEnvelope value =
     Proto.Json.writeObject
         [ Proto.Json.checkedFields
-            [ ( "payload", Proto.Json.writeOptional Proto.Json.writeAny value.payload )
+            [ ( "payload", Proto.Json.writeOptional Proto.Any.encode value.payload )
             , ( "replies", Proto.Json.writeDeeper (Proto.Json.writeRepeated encodeEnvelope_ value.replies) )
-            , ( "data", Proto.Json.writeOptional Proto.Json.writeStruct value.data )
-            , ( "value", Proto.Json.writeOptional Proto.Json.writeValue value.value )
-            , ( "list", Proto.Json.writeOptional Proto.Json.writeListValue value.list )
-            , ( "values", Proto.Json.writeDict identity Proto.Json.writeValue value.values )
-            , ( "structs", Proto.Json.writeDict identity Proto.Json.writeStruct value.structs )
-            , ( "lists", Proto.Json.writeDict identity Proto.Json.writeListValue value.lists )
+            , ( "data", Proto.Json.writeOptional Proto.Json.Encode.struct value.data )
+            , ( "value", Proto.Json.writeOptional Proto.Json.Encode.value value.value )
+            , ( "list", Proto.Json.writeOptional Proto.Json.Encode.listValue value.list )
+            , ( "values", Proto.Json.writeDict identity Proto.Json.Encode.value value.values )
+            , ( "structs", Proto.Json.writeDict identity Proto.Json.Encode.struct value.structs )
+            , ( "lists", Proto.Json.writeDict identity Proto.Json.Encode.listValue value.lists )
             , ( "sealed", Proto.Json.writeDeeper (Proto.Json.writeOptional encodeSealed value.sealed) )
             ]
         , Proto.Json.checkedFields (encodeEnvelopeAside value.aside)
@@ -1290,7 +1292,7 @@ encodeEnvelope value =
 
 {-| Encodes an [`Envelope_`](#Envelope_) as proto3 JSON, or fails if the input contains a bad value.
 -}
-encodeEnvelope_ : Envelope_ -> Proto.Json.Encoder Proto.Error.Error
+encodeEnvelope_ : Envelope_ -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeEnvelope_ (Envelope_ value) =
     encodeEnvelope value
 
@@ -1310,20 +1312,20 @@ encodeEnvelopeAside value =
 
 {-| Encodes a [`Sealed`](#Sealed) as proto3 JSON, or fails if the input contains a bad value.
 -}
-encodeSealed : Sealed -> Proto.Json.Encoder Proto.Error.Error
+encodeSealed : Sealed -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeSealed value =
     Proto.Json.writeObject
         [ Proto.Json.checkedFields
-            [ ( "payload", Proto.Json.writeOptional Proto.Json.writeAny value.payload )
+            [ ( "payload", Proto.Json.writeOptional Proto.Any.encode value.payload )
             ]
         ]
 
 
 {-| Encodes a [`Doc`](#Doc) as proto3 JSON.
 -}
-encodeDoc : Doc -> Proto.Json.Encoder x
+encodeDoc : Doc -> Proto.Json.Encode.Encoder x
 encodeDoc value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "root", Proto.Json.totalOptionalField encodeChain value.root )
             ]
@@ -1332,9 +1334,9 @@ encodeDoc value =
 
 {-| Encodes a [`Library`](#Library) as proto3 JSON.
 -}
-encodeLibrary : Library -> Proto.Json.Encoder x
+encodeLibrary : Library -> Proto.Json.Encode.Encoder x
 encodeLibrary value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "doc", Proto.Json.totalOptionalField encodeDoc value.doc )
             ]
@@ -1343,7 +1345,7 @@ encodeLibrary value =
 
 {-| Encodes a [`Card`](#Card) as proto3 JSON, or fails if the input contains a bad value.
 -}
-encodeCard : Card -> Proto.Json.Encoder Proto.Error.Error
+encodeCard : Card -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeCard value =
     Proto.Json.writeObject
         [ Proto.Json.checkedFields
@@ -1354,18 +1356,18 @@ encodeCard value =
 
 {-| Encodes a [`Meta`](#Meta) as proto3 JSON, or fails if the input contains a bad value.
 -}
-encodeMeta : Meta -> Proto.Json.Encoder Proto.Error.Error
+encodeMeta : Meta -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeMeta value =
     Proto.Json.writeObject
         [ Proto.Json.checkedFields
-            [ ( "data", Proto.Json.writeOptional Proto.Json.writeStruct value.data )
+            [ ( "data", Proto.Json.writeOptional Proto.Json.Encode.struct value.data )
             ]
         ]
 
 
 {-| Encodes a [`Letter`](#Letter) as proto3 JSON, or fails if the input contains a bad value.
 -}
-encodeLetter : Letter -> Proto.Json.Encoder Proto.Error.Error
+encodeLetter : Letter -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeLetter value =
     Proto.Json.writeObject
         [ Proto.Json.checkedFields
@@ -1376,9 +1378,9 @@ encodeLetter value =
 
 {-| Encodes a [`Label`](#Label) as proto3 JSON.
 -}
-encodeLabel : Label -> Proto.Json.Encoder x
+encodeLabel : Label -> Proto.Json.Encode.Encoder x
 encodeLabel value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "text", Proto.Json.implicitField "" Json.Encode.string value.text )
             , ( "plain", Proto.Json.totalOptionalField encodePlain value.plain )
@@ -1388,9 +1390,9 @@ encodeLabel value =
 
 {-| Encodes a [`Plain`](#Plain) as proto3 JSON.
 -}
-encodePlain : Plain -> Proto.Json.Encoder x
+encodePlain : Plain -> Proto.Json.Encode.Encoder x
 encodePlain value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "n", Proto.Json.implicitField 0 Json.Encode.int value.n )
             ]
@@ -1416,7 +1418,7 @@ decodeNestedChain =
         (\depth ->
             Proto.Json.message
                 (Json.Decode.succeed Chain
-                    |> Proto.Json.messageField "label" "" Proto.Json.string
+                    |> Proto.Json.messageField "label" "" Proto.Json.Decode.string
                     |> Proto.Json.messageField "next" Nothing (Json.Decode.map Just (Json.Decode.map Chain_ (Json.Decode.lazy (\_ -> decodeNestedChain (depth + 1)))))
                     |> Proto.Json.messageField "tree" Nothing (Json.Decode.map Just (decodeNestedTree (depth + 1)))
                 )
@@ -1445,7 +1447,7 @@ decodeNestedTree =
         (\depth ->
             Proto.Json.message
                 (Json.Decode.succeed Tree
-                    |> Proto.Json.messageField "label" "" Proto.Json.string
+                    |> Proto.Json.messageField "label" "" Proto.Json.Decode.string
                     |> Proto.Json.messageField "children" [] (Json.Decode.list (Json.Decode.map Tree_ (Json.Decode.lazy (\_ -> decodeNestedTree (depth + 1)))))
                 )
         )
@@ -1517,7 +1519,7 @@ decodeNestedExprKind : Int -> Json.Decode.Decoder ExprKind
 decodeNestedExprKind depth =
     Proto.Json.members "kind"
         ExprKindUnset
-        [ Proto.Json.member "number" (Json.Decode.map ExprKindNumber Proto.Json.int32)
+        [ Proto.Json.member "number" (Json.Decode.map ExprKindNumber Proto.Json.Decode.int32)
         , Proto.Json.member "negated" (Json.Decode.map ExprKindNegated (Json.Decode.lazy (\_ -> decodeNestedExpr (depth + 1))))
         ]
 
@@ -1537,7 +1539,7 @@ decodeNestedPerson =
         (\depth ->
             Proto.Json.message
                 (Json.Decode.succeed Person
-                    |> Proto.Json.messageField "name" "" Proto.Json.string
+                    |> Proto.Json.messageField "name" "" Proto.Json.Decode.string
                     |> Proto.Json.messageField "team" Nothing (Json.Decode.map Just (Json.Decode.map Team_ (Json.Decode.lazy (\_ -> decodeNestedTeam (depth + 1)))))
                 )
         )
@@ -1691,70 +1693,70 @@ decodeNestedWide =
         (\depth ->
             Proto.Json.message
                 (Json.Decode.succeed Wide
-                    |> Proto.Json.messageField "f1" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f2" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f3" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f4" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f5" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f6" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f7" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f8" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f9" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f10" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f11" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f12" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f13" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f14" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f15" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f16" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f17" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f18" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f19" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f20" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f21" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f22" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f23" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f24" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f25" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f26" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f27" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f28" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f29" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f30" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f31" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f32" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f33" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f34" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f35" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f36" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f37" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f38" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f39" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f40" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f41" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f42" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f43" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f44" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f45" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f46" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f47" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f48" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f49" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f50" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f51" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f52" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f53" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f54" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f55" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f56" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f57" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f58" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f59" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f60" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f61" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f62" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f63" 0 Proto.Json.int32
-                    |> Proto.Json.messageField "f64" 0 Proto.Json.int32
+                    |> Proto.Json.messageField "f1" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f2" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f3" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f4" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f5" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f6" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f7" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f8" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f9" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f10" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f11" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f12" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f13" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f14" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f15" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f16" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f17" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f18" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f19" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f20" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f21" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f22" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f23" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f24" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f25" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f26" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f27" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f28" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f29" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f30" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f31" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f32" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f33" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f34" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f35" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f36" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f37" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f38" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f39" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f40" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f41" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f42" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f43" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f44" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f45" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f46" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f47" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f48" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f49" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f50" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f51" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f52" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f53" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f54" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f55" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f56" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f57" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f58" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f59" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f60" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f61" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f62" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f63" 0 Proto.Json.Decode.int32
+                    |> Proto.Json.messageField "f64" 0 Proto.Json.Decode.int32
                     |> Proto.Json.messageField "children" [] (Json.Decode.list (Json.Decode.map Wide_ (Json.Decode.lazy (\_ -> decodeNestedWide (depth + 1)))))
                 )
         )
@@ -1925,7 +1927,7 @@ decodeLabel : Json.Decode.Decoder Label
 decodeLabel =
     Proto.Json.message
         (Json.Decode.succeed Label
-            |> Proto.Json.messageField "text" "" Proto.Json.string
+            |> Proto.Json.messageField "text" "" Proto.Json.Decode.string
             |> Proto.Json.messageField "plain" Nothing (Json.Decode.map Just decodePlain)
         )
 
@@ -1936,7 +1938,7 @@ decodePlain : Json.Decode.Decoder Plain
 decodePlain =
     Proto.Json.message
         (Json.Decode.succeed Plain
-            |> Proto.Json.messageField "n" 0 Proto.Json.int32
+            |> Proto.Json.messageField "n" 0 Proto.Json.Decode.int32
         )
 
 

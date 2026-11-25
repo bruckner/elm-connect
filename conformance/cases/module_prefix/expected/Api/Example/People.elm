@@ -16,6 +16,8 @@ import Proto.Binary
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Version
@@ -131,9 +133,9 @@ encodeRole value =
 
 {-| Encodes a [`User`](#User) as proto3 JSON.
 -}
-encodeUser : User -> Proto.Json.Encoder x
+encodeUser : User -> Proto.Json.Encode.Encoder x
 encodeUser value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
             , ( "role", Proto.Json.implicitField RoleUnspecified encodeRole value.role )
@@ -162,7 +164,7 @@ decodeUser : Json.Decode.Decoder User
 decodeUser =
     Proto.Json.message
         (Json.Decode.succeed User
-            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.messageField "name" "" Proto.Json.Decode.string
             |> Proto.Json.messageField "role" RoleUnspecified decodeRole
         )
 

@@ -19,6 +19,8 @@ import Proto.Binary
 import Proto.Bytes
 import Proto.Descriptors
 import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Version
@@ -134,9 +136,9 @@ registry =
 
 {-| Encodes a [`Blob`](#Blob) as proto3 JSON.
 -}
-encodeBlob : Blob -> Proto.Json.Encoder x
+encodeBlob : Blob -> Proto.Json.Encode.Encoder x
 encodeBlob value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             ([ ( "data", Proto.Json.implicitBytesField value.data )
              , ( "maybeData", Maybe.map Proto.Json.encodeBytesAsBytes value.maybeData )
@@ -178,14 +180,14 @@ decodeBlob : Json.Decode.Decoder Blob
 decodeBlob =
     Proto.Json.message
         (Json.Decode.succeed Blob
-            |> Proto.Json.messageField "data" Proto.Bytes.empty Proto.Json.bytesAsBytes
-            |> Proto.Json.messageFieldEither "maybeData" "maybe_data" Nothing (Json.Decode.map Just Proto.Json.bytesAsBytes)
-            |> Proto.Json.messageField "chunks" [] (Json.Decode.list Proto.Json.bytesAsBytes)
-            |> Proto.Json.messageFieldEither "byName" "by_name" Dict.empty (Proto.Json.stringDict Proto.Json.bytesAsBytes)
-            |> Proto.Json.messageField "wrapped" Nothing (Json.Decode.map Just Proto.Json.bytesAsBytes)
-            |> Proto.Json.messageFieldEither "wrappedChunks" "wrapped_chunks" [] (Json.Decode.list Proto.Json.bytesAsBytes)
+            |> Proto.Json.messageField "data" Proto.Bytes.empty Proto.Json.Decode.bytesAsBytes
+            |> Proto.Json.messageFieldEither "maybeData" "maybe_data" Nothing (Json.Decode.map Just Proto.Json.Decode.bytesAsBytes)
+            |> Proto.Json.messageField "chunks" [] (Json.Decode.list Proto.Json.Decode.bytesAsBytes)
+            |> Proto.Json.messageFieldEither "byName" "by_name" Dict.empty (Proto.Json.stringDict Proto.Json.Decode.bytesAsBytes)
+            |> Proto.Json.messageField "wrapped" Nothing (Json.Decode.map Just Proto.Json.Decode.bytesAsBytes)
+            |> Proto.Json.messageFieldEither "wrappedChunks" "wrapped_chunks" [] (Json.Decode.list Proto.Json.Decode.bytesAsBytes)
             |> Proto.Json.oneof decodeBlobSource
-            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.messageField "name" "" Proto.Json.Decode.string
         )
 
 
@@ -195,8 +197,8 @@ decodeBlobSource : Json.Decode.Decoder BlobSource
 decodeBlobSource =
     Proto.Json.members "source"
         BlobSourceUnset
-        [ Proto.Json.member "inline" (Json.Decode.map BlobSourceInline Proto.Json.bytesAsBytes)
-        , Proto.Json.member "url" (Json.Decode.map BlobSourceUrl Proto.Json.string)
+        [ Proto.Json.member "inline" (Json.Decode.map BlobSourceInline Proto.Json.Decode.bytesAsBytes)
+        , Proto.Json.member "url" (Json.Decode.map BlobSourceUrl Proto.Json.Decode.string)
         ]
 
 

@@ -19,6 +19,8 @@ import Proto.Binary
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Version
@@ -192,9 +194,9 @@ encodeMood value =
 
 {-| Encodes a [`Draft`](#Draft) as proto3 JSON.
 -}
-encodeDraft : Draft -> Proto.Json.Encoder x
+encodeDraft : Draft -> Proto.Json.Encode.Encoder x
 encodeDraft value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             ([ ( "title", Proto.Json.implicitField "" Json.Encode.string value.title )
              , ( "mood", Proto.Json.implicitField MoodUnspecified encodeMood value.mood )
@@ -225,9 +227,9 @@ encodeDraftBody value =
 
 {-| Encodes a [`DraftMargin`](#DraftMargin) as proto3 JSON.
 -}
-encodeDraftMargin : DraftMargin -> Proto.Json.Encoder x
+encodeDraftMargin : DraftMargin -> Proto.Json.Encode.Encoder x
 encodeDraftMargin value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "left", Proto.Json.implicitField 0 Json.Encode.int value.left )
             , ( "right", Proto.Json.implicitField 0 Json.Encode.int value.right )
@@ -256,11 +258,11 @@ decodeDraft : Json.Decode.Decoder Draft
 decodeDraft =
     Proto.Json.message
         (Json.Decode.succeed Draft
-            |> Proto.Json.messageField "title" "" Proto.Json.string
+            |> Proto.Json.messageField "title" "" Proto.Json.Decode.string
             |> Proto.Json.oneof decodeDraftBody
             |> Proto.Json.messageField "mood" MoodUnspecified decodeMood
             |> Proto.Json.messageField "margin" Nothing (Json.Decode.map Just decodeDraftMargin)
-            |> Proto.Json.messageField "tags" [] (Json.Decode.list Proto.Json.string)
+            |> Proto.Json.messageField "tags" [] (Json.Decode.list Proto.Json.Decode.string)
         )
 
 
@@ -270,8 +272,8 @@ decodeDraftBody : Json.Decode.Decoder DraftBody
 decodeDraftBody =
     Proto.Json.members "body"
         DraftBodyUnset
-        [ Proto.Json.member "text" (Json.Decode.map DraftBodyText Proto.Json.string)
-        , Proto.Json.member "blob" (Json.Decode.map DraftBodyBlob Proto.Json.bytes)
+        [ Proto.Json.member "text" (Json.Decode.map DraftBodyText Proto.Json.Decode.string)
+        , Proto.Json.member "blob" (Json.Decode.map DraftBodyBlob Proto.Json.Decode.bytes)
         ]
 
 
@@ -281,8 +283,8 @@ decodeDraftMargin : Json.Decode.Decoder DraftMargin
 decodeDraftMargin =
     Proto.Json.message
         (Json.Decode.succeed DraftMargin
-            |> Proto.Json.messageField "left" 0 Proto.Json.int32
-            |> Proto.Json.messageField "right" 0 Proto.Json.int32
+            |> Proto.Json.messageField "left" 0 Proto.Json.Decode.int32
+            |> Proto.Json.messageField "right" 0 Proto.Json.Decode.int32
         )
 
 

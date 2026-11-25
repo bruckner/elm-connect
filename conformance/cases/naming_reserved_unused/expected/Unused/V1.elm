@@ -11,6 +11,8 @@ import Proto.Binary
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Version
@@ -255,9 +257,9 @@ encodeChar value =
 
 {-| Encodes a [`Dict`](#Dict) as proto3 JSON.
 -}
-encodeDict : Dict -> Proto.Json.Encoder x
+encodeDict : Dict -> Proto.Json.Encode.Encoder x
 encodeDict value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
             ]
@@ -266,9 +268,9 @@ encodeDict value =
 
 {-| Encodes a [`Result`](#Result) as proto3 JSON.
 -}
-encodeResult : Result -> Proto.Json.Encoder x
+encodeResult : Result -> Proto.Json.Encode.Encoder x
 encodeResult value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "ok", Proto.Json.implicitField False Json.Encode.bool value.ok )
             , ( "dict", Proto.Json.totalOptionalField encodeDict value.dict )
@@ -279,30 +281,30 @@ encodeResult value =
 
 {-| Encodes an [`Order`](#Order) as proto3 JSON.
 -}
-encodeOrder : Order -> Proto.Json.Encoder x
+encodeOrder : Order -> Proto.Json.Encode.Encoder x
 encodeOrder _ =
-    Proto.Json.succeed (Json.Encode.object [])
+    Proto.Json.Encode.succeed (Json.Encode.object [])
 
 
 {-| Encodes a [`Never`](#Never) as proto3 JSON.
 -}
-encodeNever : Never -> Proto.Json.Encoder x
+encodeNever : Never -> Proto.Json.Encode.Encoder x
 encodeNever _ =
-    Proto.Json.succeed (Json.Encode.object [])
+    Proto.Json.Encode.succeed (Json.Encode.object [])
 
 
 {-| Encodes a [`Cmd`](#Cmd) as proto3 JSON.
 -}
-encodeCmd : Cmd -> Proto.Json.Encoder x
+encodeCmd : Cmd -> Proto.Json.Encode.Encoder x
 encodeCmd _ =
-    Proto.Json.succeed (Json.Encode.object [])
+    Proto.Json.Encode.succeed (Json.Encode.object [])
 
 
 {-| Encodes a [`True`](#True) as proto3 JSON.
 -}
-encodeTrue : True -> Proto.Json.Encoder x
+encodeTrue : True -> Proto.Json.Encode.Encoder x
 encodeTrue _ =
-    Proto.Json.succeed (Json.Encode.object [])
+    Proto.Json.Encode.succeed (Json.Encode.object [])
 
 
 
@@ -326,7 +328,7 @@ decodeDict : Json.Decode.Decoder Dict
 decodeDict =
     Proto.Json.message
         (Json.Decode.succeed Dict
-            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.messageField "name" "" Proto.Json.Decode.string
         )
 
 

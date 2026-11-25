@@ -15,6 +15,8 @@ import Proto.Binary
 import Proto.Descriptors
 import Proto.Error
 import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Version
@@ -97,11 +99,11 @@ registry =
 
 {-| Encodes an [`Alarm`](#Alarm) as proto3 JSON, or fails if the input contains a bad value.
 -}
-encodeAlarm : Alarm -> Proto.Json.Encoder Proto.Error.Error
+encodeAlarm : Alarm -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeAlarm value =
     Proto.Json.writeObject
         [ Proto.Json.checkedFields
-            [ ( "at", Proto.Json.writeOptional Proto.Json.writeTimestamp value.at )
+            [ ( "at", Proto.Json.writeOptional Proto.Json.Encode.timestamp value.at )
             ]
         ]
 
@@ -116,7 +118,7 @@ decodeAlarm : Json.Decode.Decoder Alarm
 decodeAlarm =
     Proto.Json.message
         (Json.Decode.succeed Alarm
-            |> Proto.Json.messageField "at" Nothing (Json.Decode.map Just Proto.Json.timestamp)
+            |> Proto.Json.messageField "at" Nothing (Json.Decode.map Just Proto.Json.Decode.timestamp)
         )
 
 

@@ -18,6 +18,8 @@ import Json.Encode
 import Proto.Binary
 import Proto.Descriptors
 import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Unknown
@@ -155,9 +157,9 @@ registry =
 
 {-| Encodes a [`Chain`](#Chain) as proto3 JSON.
 -}
-encodeChain : Chain -> Proto.Json.Encoder x
+encodeChain : Chain -> Proto.Json.Encode.Encoder x
 encodeChain value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
             , ( "next", Proto.Json.totalOptionalField encodeChain_ value.next )
@@ -167,16 +169,16 @@ encodeChain value =
 
 {-| Encodes a [`Chain_`](#Chain_) as proto3 JSON.
 -}
-encodeChain_ : Chain_ -> Proto.Json.Encoder x
+encodeChain_ : Chain_ -> Proto.Json.Encode.Encoder x
 encodeChain_ (Chain_ value) =
     encodeChain value
 
 
 {-| Encodes a [`Tree`](#Tree) as proto3 JSON.
 -}
-encodeTree : Tree -> Proto.Json.Encoder x
+encodeTree : Tree -> Proto.Json.Encode.Encoder x
 encodeTree value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
             , ( "children", Proto.Json.totalRepeatedField encodeTree_ value.children )
@@ -186,7 +188,7 @@ encodeTree value =
 
 {-| Encodes a [`Tree_`](#Tree_) as proto3 JSON.
 -}
-encodeTree_ : Tree_ -> Proto.Json.Encoder x
+encodeTree_ : Tree_ -> Proto.Json.Encode.Encoder x
 encodeTree_ (Tree_ value) =
     encodeTree value
 
@@ -210,7 +212,7 @@ decodeNestedChain =
         (\depth ->
             Proto.Json.message
                 (Json.Decode.succeed Chain
-                    |> Proto.Json.messageField "label" "" Proto.Json.string
+                    |> Proto.Json.messageField "label" "" Proto.Json.Decode.string
                     |> Proto.Json.messageField "next" Nothing (Json.Decode.map Just (Json.Decode.map Chain_ (Json.Decode.lazy (\_ -> decodeNestedChain (depth + 1)))))
                     |> Json.Decode.map (\value -> value Proto.Unknown.empty)
                 )
@@ -239,7 +241,7 @@ decodeNestedTree =
         (\depth ->
             Proto.Json.message
                 (Json.Decode.succeed Tree
-                    |> Proto.Json.messageField "label" "" Proto.Json.string
+                    |> Proto.Json.messageField "label" "" Proto.Json.Decode.string
                     |> Proto.Json.messageField "children" [] (Json.Decode.list (Json.Decode.map Tree_ (Json.Decode.lazy (\_ -> decodeNestedTree (depth + 1)))))
                     |> Json.Decode.map (\value -> value Proto.Unknown.empty)
                 )

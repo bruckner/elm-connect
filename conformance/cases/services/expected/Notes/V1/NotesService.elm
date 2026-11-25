@@ -22,6 +22,8 @@ import Notes.V1.UpdateNoteRequest
 import Proto.Binary
 import Proto.Http
 import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Method
 import Proto.Route
 import Proto.Version
@@ -158,7 +160,7 @@ deleteNote =
         (Proto.Method.init "notes.v1.NotesService"
             "DeleteNote"
             Notes.V1.encodeDeleteNoteRequest
-            (\_ -> Proto.Json.empty)
+            (\_ -> Proto.Json.Decode.empty)
             Notes.V1.encodeDeleteNoteRequestBytes
             (Proto.Binary.messageDecoder Proto.Binary.empty)
             |> Proto.Method.withRoutes [ routeDeleteNote0 ]
@@ -217,8 +219,8 @@ ping =
     Rpc.call
         (Proto.Method.init "notes.v1.NotesService"
             "Ping"
-            (Proto.Json.succeed << Proto.Json.encodeEmpty)
-            (\_ -> Proto.Json.empty)
+            (Proto.Json.Encode.succeed << Proto.Json.encodeEmpty)
+            (\_ -> Proto.Json.Decode.empty)
             (Proto.Binary.messageEncoder Proto.Binary.empty)
             (Proto.Binary.messageDecoder Proto.Binary.empty)
             |> Proto.Method.withRoutes [ routePing0 ]
@@ -309,7 +311,7 @@ routeCreateNote0 request_ =
     { method = "POST"
     , path = "v1/" ++ Proto.Route.segments parent_ ++ "/notes"
     , query = []
-    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map (Proto.Json.encodeTotal << Notes.V1.encodeNote) request_.note))
+    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map (Proto.Json.Encode.encodeTotal << Notes.V1.encodeNote) request_.note))
     , invalid = Proto.Route.checkSegments "parent" [ "users", "*" ] parent_
     }
 
@@ -325,7 +327,7 @@ routeUpdateNote0 request_ =
     { method = "PATCH"
     , path = "v1/" ++ Proto.Route.segments noteName_
     , query = Notes.V1.queryOfUpdateNoteRequest request_
-    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map (Proto.Json.encodeTotal << Notes.V1.encodeNote) request_.note))
+    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map (Proto.Json.Encode.encodeTotal << Notes.V1.encodeNote) request_.note))
     , invalid = Proto.Route.checkSegments "note.name" [ "notes", "*" ] noteName_
     }
 
@@ -341,7 +343,7 @@ routeReplaceNote0 request_ =
     { method = "PUT"
     , path = "v1/" ++ Proto.Route.segments name_
     , query = []
-    , body = Just (Proto.Route.without [ [ "name" ] ] (Proto.Json.encodeTotal (Notes.V1.encodeNote request_)))
+    , body = Just (Proto.Route.without [ [ "name" ] ] (Proto.Json.Encode.encodeTotal (Notes.V1.encodeNote request_)))
     , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] name_
     }
 
@@ -373,7 +375,7 @@ routeArchiveNote0 request_ =
     { method = "POST"
     , path = "v1/" ++ Proto.Route.segments name_ ++ ":archive"
     , query = []
-    , body = Just (Proto.Route.without [ [ "name" ] ] (Proto.Json.encodeTotal (Notes.V1.encodeArchiveNoteRequest request_)))
+    , body = Just (Proto.Route.without [ [ "name" ] ] (Proto.Json.Encode.encodeTotal (Notes.V1.encodeArchiveNoteRequest request_)))
     , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] name_
     }
 

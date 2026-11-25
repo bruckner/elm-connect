@@ -20,6 +20,8 @@ import Msgs.V1.MessageRequest
 import Proto.Binary
 import Proto.Descriptors
 import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Query
 import Proto.Registry
@@ -135,9 +137,9 @@ registry =
 
 {-| Encodes a [`MessageRequest`](#MessageRequest) as proto3 JSON.
 -}
-encodeMessageRequest : MessageRequest -> Proto.Json.Encoder x
+encodeMessageRequest : MessageRequest -> Proto.Json.Encode.Encoder x
 encodeMessageRequest value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
             , ( "id", Proto.Json.implicitField "" Json.Encode.string value.id )
@@ -148,9 +150,9 @@ encodeMessageRequest value =
 
 {-| Encodes a [`Message`](#Message) as proto3 JSON.
 -}
-encodeMessage : Message -> Proto.Json.Encoder x
+encodeMessage : Message -> Proto.Json.Encode.Encoder x
 encodeMessage value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
             ]
@@ -167,9 +169,9 @@ decodeMessageRequest : Json.Decode.Decoder MessageRequest
 decodeMessageRequest =
     Proto.Json.message
         (Json.Decode.succeed MessageRequest
-            |> Proto.Json.messageField "name" "" Proto.Json.string
-            |> Proto.Json.messageField "id" "" Proto.Json.string
-            |> Proto.Json.messageField "sub" "" Proto.Json.string
+            |> Proto.Json.messageField "name" "" Proto.Json.Decode.string
+            |> Proto.Json.messageField "id" "" Proto.Json.Decode.string
+            |> Proto.Json.messageField "sub" "" Proto.Json.Decode.string
         )
 
 
@@ -179,7 +181,7 @@ decodeMessage : Json.Decode.Decoder Message
 decodeMessage =
     Proto.Json.message
         (Json.Decode.succeed Message
-            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.messageField "name" "" Proto.Json.Decode.string
         )
 
 

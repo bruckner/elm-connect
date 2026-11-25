@@ -37,6 +37,8 @@ import Proto.Descriptors
 import Proto.Enum
 import Proto.Error
 import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Version
@@ -413,7 +415,7 @@ encodeLegacy value =
 
 {-| Encodes a [`Note`](#Note) as proto3 JSON, or fails if the input contains a bad value.
 -}
-encodeNote : Note -> Proto.Json.Encoder Proto.Error.Error
+encodeNote : Note -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeNote value =
     Proto.Json.writeObject
         [ Proto.Json.plainFields
@@ -426,7 +428,7 @@ encodeNote value =
             , ( "subject", Proto.Json.implicitField "" Json.Encode.string value.subject )
             ]
         , Proto.Json.checkedFields
-            [ ( "created", Proto.Json.writeOptional Proto.Json.writeTimestamp value.created )
+            [ ( "created", Proto.Json.writeOptional Proto.Json.Encode.timestamp value.created )
             ]
         , Proto.Json.checkedFields (encodeNoteLastEvent value.lastEvent)
         ]
@@ -441,7 +443,7 @@ encodeNoteLastEvent value =
             []
 
         NoteLastEventArchived member ->
-            [ ( "archived", Proto.Json.writeMember (Proto.Json.writeTimestamp member) )
+            [ ( "archived", Proto.Json.writeMember (Proto.Json.Encode.timestamp member) )
             ]
 
         NoteLastEventEdited member ->
@@ -451,9 +453,9 @@ encodeNoteLastEvent value =
 
 {-| Encodes a [`NoteEdit`](#NoteEdit) as proto3 JSON.
 -}
-encodeNoteEdit : NoteEdit -> Proto.Json.Encoder x
+encodeNoteEdit : NoteEdit -> Proto.Json.Encode.Encoder x
 encodeNoteEdit value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "author", Proto.Json.implicitField "" Json.Encode.string value.author )
             ]
@@ -462,9 +464,9 @@ encodeNoteEdit value =
 
 {-| Encodes a [`Draft`](#Draft) as proto3 JSON.
 -}
-encodeDraft : Draft -> Proto.Json.Encoder x
+encodeDraft : Draft -> Proto.Json.Encode.Encoder x
 encodeDraft value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "text", Proto.Json.implicitField "" Json.Encode.string value.text )
             ]
@@ -473,9 +475,9 @@ encodeDraft value =
 
 {-| Encodes a [`GetNoteRequest`](#GetNoteRequest) as proto3 JSON.
 -}
-encodeGetNoteRequest : GetNoteRequest -> Proto.Json.Encoder x
+encodeGetNoteRequest : GetNoteRequest -> Proto.Json.Encode.Encoder x
 encodeGetNoteRequest value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
             ]
@@ -484,9 +486,9 @@ encodeGetNoteRequest value =
 
 {-| Encodes a [`ListNotesRequest`](#ListNotesRequest) as proto3 JSON.
 -}
-encodeListNotesRequest : ListNotesRequest -> Proto.Json.Encoder x
+encodeListNotesRequest : ListNotesRequest -> Proto.Json.Encode.Encoder x
 encodeListNotesRequest value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "parent", Proto.Json.implicitField "" Json.Encode.string value.parent )
             ]
@@ -495,7 +497,7 @@ encodeListNotesRequest value =
 
 {-| Encodes a [`ListNotesResponse`](#ListNotesResponse) as proto3 JSON, or fails if the input contains a bad value.
 -}
-encodeListNotesResponse : ListNotesResponse -> Proto.Json.Encoder Proto.Error.Error
+encodeListNotesResponse : ListNotesResponse -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeListNotesResponse value =
     Proto.Json.writeObject
         [ Proto.Json.checkedFields
@@ -506,7 +508,7 @@ encodeListNotesResponse value =
 
 {-| Encodes a [`CreateNoteRequest`](#CreateNoteRequest) as proto3 JSON, or fails if the input contains a bad value.
 -}
-encodeCreateNoteRequest : CreateNoteRequest -> Proto.Json.Encoder Proto.Error.Error
+encodeCreateNoteRequest : CreateNoteRequest -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeCreateNoteRequest value =
     Proto.Json.writeObject
         [ Proto.Json.checkedFields
@@ -548,14 +550,14 @@ decodeNote : Json.Decode.Decoder Note
 decodeNote =
     Proto.Json.message
         (Json.Decode.succeed Note
-            |> Proto.Json.messageField "name" "" Proto.Json.string
-            |> Proto.Json.messageFieldEither "heading" "title" "" Proto.Json.string
+            |> Proto.Json.messageField "name" "" Proto.Json.Decode.string
+            |> Proto.Json.messageFieldEither "heading" "title" "" Proto.Json.Decode.string
             |> Proto.Json.messageField "visibility" VisibilityUnspecified decodeVisibility
-            |> Proto.Json.messageField "tags" [] (Json.Decode.list Proto.Json.string)
-            |> Proto.Json.messageField "labels" Dict.empty (Proto.Json.stringDict Proto.Json.string)
+            |> Proto.Json.messageField "tags" [] (Json.Decode.list Proto.Json.Decode.string)
+            |> Proto.Json.messageField "labels" Dict.empty (Proto.Json.stringDict Proto.Json.Decode.string)
             |> Proto.Json.messageField "pinned" Nothing (Json.Decode.map Just Json.Decode.bool)
-            |> Proto.Json.messageField "subject" "" Proto.Json.string
-            |> Proto.Json.messageField "created" Nothing (Json.Decode.map Just Proto.Json.timestamp)
+            |> Proto.Json.messageField "subject" "" Proto.Json.Decode.string
+            |> Proto.Json.messageField "created" Nothing (Json.Decode.map Just Proto.Json.Decode.timestamp)
             |> Proto.Json.oneof decodeNoteLastEvent
         )
 
@@ -566,7 +568,7 @@ decodeNoteLastEvent : Json.Decode.Decoder NoteLastEvent
 decodeNoteLastEvent =
     Proto.Json.members "last_event"
         NoteLastEventUnset
-        [ Proto.Json.member "archived" (Json.Decode.map NoteLastEventArchived Proto.Json.timestamp)
+        [ Proto.Json.member "archived" (Json.Decode.map NoteLastEventArchived Proto.Json.Decode.timestamp)
         , Proto.Json.member "edited" (Json.Decode.map NoteLastEventEdited decodeNoteEdit)
         ]
 
@@ -577,7 +579,7 @@ decodeNoteEdit : Json.Decode.Decoder NoteEdit
 decodeNoteEdit =
     Proto.Json.message
         (Json.Decode.succeed NoteEdit
-            |> Proto.Json.messageField "author" "" Proto.Json.string
+            |> Proto.Json.messageField "author" "" Proto.Json.Decode.string
         )
 
 
@@ -587,7 +589,7 @@ decodeDraft : Json.Decode.Decoder Draft
 decodeDraft =
     Proto.Json.message
         (Json.Decode.succeed Draft
-            |> Proto.Json.messageField "text" "" Proto.Json.string
+            |> Proto.Json.messageField "text" "" Proto.Json.Decode.string
         )
 
 
@@ -597,7 +599,7 @@ decodeGetNoteRequest : Json.Decode.Decoder GetNoteRequest
 decodeGetNoteRequest =
     Proto.Json.message
         (Json.Decode.succeed GetNoteRequest
-            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.messageField "name" "" Proto.Json.Decode.string
         )
 
 
@@ -607,7 +609,7 @@ decodeListNotesRequest : Json.Decode.Decoder ListNotesRequest
 decodeListNotesRequest =
     Proto.Json.message
         (Json.Decode.succeed ListNotesRequest
-            |> Proto.Json.messageField "parent" "" Proto.Json.string
+            |> Proto.Json.messageField "parent" "" Proto.Json.Decode.string
         )
 
 

@@ -20,6 +20,8 @@ import Proto.Binary
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Version
@@ -192,9 +194,9 @@ encodeKind value =
 
 {-| Encodes an [`Entry`](#Entry) as proto3 JSON.
 -}
-encodeEntry : Entry -> Proto.Json.Encoder x
+encodeEntry : Entry -> Proto.Json.Encode.Encoder x
 encodeEntry value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             ([ ( "memo", Proto.Json.implicitField "" Json.Encode.string value.memo )
              , ( "amount", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.amount )
@@ -220,15 +222,15 @@ encodeEntrySource value =
             ]
 
         EntrySourceReversal member ->
-            [ ( "reversal", Just (Proto.Json.encodeTotal (encodeEntry member)) )
+            [ ( "reversal", Just (Proto.Json.Encode.encodeTotal (encodeEntry member)) )
             ]
 
 
 {-| Encodes a [`GetEntryRequest`](#GetEntryRequest) as proto3 JSON.
 -}
-encodeGetEntryRequest : GetEntryRequest -> Proto.Json.Encoder x
+encodeGetEntryRequest : GetEntryRequest -> Proto.Json.Encode.Encoder x
 encodeGetEntryRequest value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "memo", Proto.Json.implicitField "" Json.Encode.string value.memo )
             ]
@@ -266,12 +268,12 @@ decodeNestedEntry =
         (\depth ->
             Proto.Json.message
                 (Json.Decode.succeed Entry
-                    |> Proto.Json.messageField "memo" "" Proto.Json.string
-                    |> Proto.Json.messageField "amount" "0" Proto.Json.int64
+                    |> Proto.Json.messageField "memo" "" Proto.Json.Decode.string
+                    |> Proto.Json.messageField "amount" "0" Proto.Json.Decode.int64
                     |> Proto.Json.messageField "kind" KindUnspecified decodeKind
-                    |> Proto.Json.messageField "tags" Dict.empty (Proto.Json.stringDict Proto.Json.int32)
+                    |> Proto.Json.messageField "tags" Dict.empty (Proto.Json.stringDict Proto.Json.Decode.int32)
                     |> Proto.Json.oneof (decodeNestedEntrySource depth)
-                    |> Proto.Json.messageField "marks" [] (Json.Decode.list Proto.Json.int32)
+                    |> Proto.Json.messageField "marks" [] (Json.Decode.list Proto.Json.Decode.int32)
                 )
         )
 
@@ -289,7 +291,7 @@ decodeNestedEntrySource : Int -> Json.Decode.Decoder EntrySource
 decodeNestedEntrySource depth =
     Proto.Json.members "source"
         EntrySourceUnset
-        [ Proto.Json.member "account" (Json.Decode.map EntrySourceAccount Proto.Json.string)
+        [ Proto.Json.member "account" (Json.Decode.map EntrySourceAccount Proto.Json.Decode.string)
         , Proto.Json.member "reversal" (Json.Decode.map EntrySourceReversal (Json.Decode.lazy (\_ -> decodeNestedEntry (depth + 1))))
         ]
 
@@ -300,7 +302,7 @@ decodeGetEntryRequest : Json.Decode.Decoder GetEntryRequest
 decodeGetEntryRequest =
     Proto.Json.message
         (Json.Decode.succeed GetEntryRequest
-            |> Proto.Json.messageField "memo" "" Proto.Json.string
+            |> Proto.Json.messageField "memo" "" Proto.Json.Decode.string
         )
 
 

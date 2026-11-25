@@ -15,6 +15,7 @@ import Json.Encode
 import Proto.Binary
 import Proto.Descriptors
 import Proto.Json
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Version
@@ -92,9 +93,9 @@ registry =
 
 {-| Encodes a [`Ping`](#Ping) as proto3 JSON.
 -}
-encodePing : Ping -> Proto.Json.Encoder x
+encodePing : Ping -> Proto.Json.Encode.Encoder x
 encodePing _ =
-    Proto.Json.succeed (Json.Encode.object [])
+    Proto.Json.Encode.succeed (Json.Encode.object [])
 
 
 

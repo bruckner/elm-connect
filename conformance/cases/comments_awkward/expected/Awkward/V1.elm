@@ -22,6 +22,8 @@ import Proto.Binary
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Version
@@ -263,9 +265,9 @@ encodeMarks value =
 
 {-| Encodes a [`Delimiters`](#Delimiters) as proto3 JSON.
 -}
-encodeDelimiters : Delimiters -> Proto.Json.Encoder x
+encodeDelimiters : Delimiters -> Proto.Json.Encode.Encoder x
 encodeDelimiters value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "lists", Proto.Json.implicitField "" Json.Encode.string value.lists )
             , ( "blocks", Proto.Json.implicitField "" Json.Encode.string value.blocks )
@@ -280,9 +282,9 @@ encodeDelimiters value =
 
 {-| Encodes a [`Docs`](#Docs) as proto3 JSON.
 -}
-encodeDocs : Docs -> Proto.Json.Encoder x
+encodeDocs : Docs -> Proto.Json.Encode.Encoder x
 encodeDocs value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "field", Proto.Json.implicitField "" Json.Encode.string value.field )
             ]
@@ -311,13 +313,13 @@ decodeDelimiters : Json.Decode.Decoder Delimiters
 decodeDelimiters =
     Proto.Json.message
         (Json.Decode.succeed Delimiters
-            |> Proto.Json.messageField "lists" "" Proto.Json.string
-            |> Proto.Json.messageField "blocks" "" Proto.Json.string
-            |> Proto.Json.messageField "code" "" Proto.Json.string
-            |> Proto.Json.messageField "inline" "" Proto.Json.string
-            |> Proto.Json.messageField "text" "" Proto.Json.string
-            |> Proto.Json.messageFieldEither "whitespaceOnly" "whitespace_only" "" Proto.Json.string
-            |> Proto.Json.messageField "unclosed" "" Proto.Json.string
+            |> Proto.Json.messageField "lists" "" Proto.Json.Decode.string
+            |> Proto.Json.messageField "blocks" "" Proto.Json.Decode.string
+            |> Proto.Json.messageField "code" "" Proto.Json.Decode.string
+            |> Proto.Json.messageField "inline" "" Proto.Json.Decode.string
+            |> Proto.Json.messageField "text" "" Proto.Json.Decode.string
+            |> Proto.Json.messageFieldEither "whitespaceOnly" "whitespace_only" "" Proto.Json.Decode.string
+            |> Proto.Json.messageField "unclosed" "" Proto.Json.Decode.string
         )
 
 
@@ -327,7 +329,7 @@ decodeDocs : Json.Decode.Decoder Docs
 decodeDocs =
     Proto.Json.message
         (Json.Decode.succeed Docs
-            |> Proto.Json.messageField "field" "" Proto.Json.string
+            |> Proto.Json.messageField "field" "" Proto.Json.Decode.string
         )
 
 

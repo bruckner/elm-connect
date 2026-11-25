@@ -17,6 +17,8 @@ import Proto.Binary
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Version
@@ -223,9 +225,9 @@ encodeHttpMethod value =
 
 {-| Encodes a [`Tag`](#Tag) as proto3 JSON.
 -}
-encodeTag : Tag -> Proto.Json.Encoder x
+encodeTag : Tag -> Proto.Json.Encode.Encoder x
 encodeTag value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             ([ ( "type", Proto.Json.implicitField "" Json.Encode.string value.type_ )
              , ( "if", Proto.Json.implicitField False Json.Encode.bool value.if_ )
@@ -294,13 +296,13 @@ decodeTag : Json.Decode.Decoder Tag
 decodeTag =
     Proto.Json.message
         (Json.Decode.succeed Tag
-            |> Proto.Json.messageField "type" "" Proto.Json.string
+            |> Proto.Json.messageField "type" "" Proto.Json.Decode.string
             |> Proto.Json.messageField "if" False Json.Decode.bool
-            |> Proto.Json.messageField "port" 0 Proto.Json.int32
-            |> Proto.Json.messageField "alias" "" Proto.Json.string
-            |> Proto.Json.messageFieldEither "screenName" "display_name" "" Proto.Json.string
-            |> Proto.Json.messageFieldEither "httpUrl" "http_url" "" Proto.Json.string
-            |> Proto.Json.messageFieldEither "v2Count" "v2_count" 0 Proto.Json.int32
+            |> Proto.Json.messageField "port" 0 Proto.Json.Decode.int32
+            |> Proto.Json.messageField "alias" "" Proto.Json.Decode.string
+            |> Proto.Json.messageFieldEither "screenName" "display_name" "" Proto.Json.Decode.string
+            |> Proto.Json.messageFieldEither "httpUrl" "http_url" "" Proto.Json.Decode.string
+            |> Proto.Json.messageFieldEither "v2Count" "v2_count" 0 Proto.Json.Decode.int32
             |> Proto.Json.messageField "shape" ShapeUnspecified decodeShape
             |> Proto.Json.messageField "method" HttpMethodUnspecified decodeHttpMethod
             |> Proto.Json.oneof decodeTagCase
@@ -313,8 +315,8 @@ decodeTagCase : Json.Decode.Decoder TagCase
 decodeTagCase =
     Proto.Json.members "case"
         TagCaseUnset
-        [ Proto.Json.member "then" (Json.Decode.map TagCaseThen Proto.Json.string)
-        , Proto.Json.member "of" (Json.Decode.map TagCaseOf Proto.Json.int32)
+        [ Proto.Json.member "then" (Json.Decode.map TagCaseThen Proto.Json.Decode.string)
+        , Proto.Json.member "of" (Json.Decode.map TagCaseOf Proto.Json.Decode.int32)
         ]
 
 

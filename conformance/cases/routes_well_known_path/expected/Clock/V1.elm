@@ -18,6 +18,8 @@ import Proto.Descriptors
 import Proto.Duration exposing (Duration)
 import Proto.Error
 import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Query
 import Proto.Registry
@@ -118,19 +120,19 @@ registry =
 
 {-| Encodes a [`Moment`](#Moment) as proto3 JSON, or fails if the input contains a bad value.
 -}
-encodeMoment : Moment -> Proto.Json.Encoder Proto.Error.Error
+encodeMoment : Moment -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeMoment value =
     Proto.Json.writeObject
         [ Proto.Json.checkedFields
-            [ ( "at", Proto.Json.writeOptional Proto.Json.writeTimestamp value.at )
-            , ( "mask", Proto.Json.writeOptional Proto.Json.writeFieldMask value.mask )
+            [ ( "at", Proto.Json.writeOptional Proto.Json.Encode.timestamp value.at )
+            , ( "mask", Proto.Json.writeOptional Proto.Json.Encode.fieldMask value.mask )
             ]
         , Proto.Json.plainFields
             [ ( "count", Maybe.map Json.Encode.int value.count )
             , ( "seen", Maybe.map Json.Encode.bool value.seen )
             ]
         , Proto.Json.checkedFields
-            [ ( "wait", Proto.Json.writeOptional Proto.Json.writeDuration value.wait )
+            [ ( "wait", Proto.Json.writeOptional Proto.Json.Encode.duration value.wait )
             ]
         , Proto.Json.plainFields
             [ ( "note", Proto.Json.implicitField "" Json.Encode.string value.note )
@@ -148,12 +150,12 @@ decodeMoment : Json.Decode.Decoder Moment
 decodeMoment =
     Proto.Json.message
         (Json.Decode.succeed Moment
-            |> Proto.Json.messageField "at" Nothing (Json.Decode.map Just Proto.Json.timestamp)
-            |> Proto.Json.messageField "mask" Nothing (Json.Decode.map Just Proto.Json.fieldMask)
-            |> Proto.Json.messageField "count" Nothing (Json.Decode.map Just Proto.Json.int32)
+            |> Proto.Json.messageField "at" Nothing (Json.Decode.map Just Proto.Json.Decode.timestamp)
+            |> Proto.Json.messageField "mask" Nothing (Json.Decode.map Just Proto.Json.Decode.fieldMask)
+            |> Proto.Json.messageField "count" Nothing (Json.Decode.map Just Proto.Json.Decode.int32)
             |> Proto.Json.messageField "seen" Nothing (Json.Decode.map Just Json.Decode.bool)
-            |> Proto.Json.messageField "wait" Nothing (Json.Decode.map Just Proto.Json.duration)
-            |> Proto.Json.messageField "note" "" Proto.Json.string
+            |> Proto.Json.messageField "wait" Nothing (Json.Decode.map Just Proto.Json.Decode.duration)
+            |> Proto.Json.messageField "note" "" Proto.Json.Decode.string
         )
 
 

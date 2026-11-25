@@ -17,6 +17,8 @@ import Proto.Binary
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Version
@@ -140,9 +142,9 @@ encodeShade value =
 
 {-| Encodes a [`Remote`](#Remote) as proto3 JSON.
 -}
-encodeRemote : Remote -> Proto.Json.Encoder x
+encodeRemote : Remote -> Proto.Json.Encode.Encoder x
 encodeRemote value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "id", Proto.Json.implicitField "" Json.Encode.string value.id )
             , ( "shade", Proto.Json.implicitField ShadeUnspecified encodeShade value.shade )
@@ -173,9 +175,9 @@ decodeRemote : Json.Decode.Decoder Remote
 decodeRemote =
     Proto.Json.message
         (Json.Decode.succeed Remote
-            |> Proto.Json.messageField "id" "" Proto.Json.string
+            |> Proto.Json.messageField "id" "" Proto.Json.Decode.string
             |> Proto.Json.messageField "shade" ShadeUnspecified decodeShade
-            |> Proto.Json.messageField "version" "0" Proto.Json.int64
+            |> Proto.Json.messageField "version" "0" Proto.Json.Decode.int64
         )
 
 

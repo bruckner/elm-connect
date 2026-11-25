@@ -18,6 +18,8 @@ import Json.Encode
 import Proto.Binary
 import Proto.Descriptors
 import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Version
@@ -186,9 +188,9 @@ registry =
 
 {-| Encodes a [`URLPath`](#URLPath) as proto3 JSON.
 -}
-encodeURLPath : URLPath -> Proto.Json.Encoder x
+encodeURLPath : URLPath -> Proto.Json.Encode.Encoder x
 encodeURLPath value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "Label", Proto.Json.implicitField "" Json.Encode.string value.label )
             , ( "ID", Proto.Json.implicitField "" Json.Encode.string value.id )
@@ -210,9 +212,9 @@ encodeURLPath value =
 
 {-| Encodes a [`Link`](#Link) as proto3 JSON.
 -}
-encodeLink : Link -> Proto.Json.Encoder x
+encodeLink : Link -> Proto.Json.Encode.Encoder x
 encodeLink value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             ([ ( "Label", Proto.Json.implicitField "" Json.Encode.string value.label )
              ]
@@ -248,20 +250,20 @@ decodeURLPath : Json.Decode.Decoder URLPath
 decodeURLPath =
     Proto.Json.message
         (Json.Decode.succeed URLPath
-            |> Proto.Json.messageField "Label" "" Proto.Json.string
-            |> Proto.Json.messageField "ID" "" Proto.Json.string
-            |> Proto.Json.messageField "URL" "" Proto.Json.string
-            |> Proto.Json.messageField "URLPath" "" Proto.Json.string
-            |> Proto.Json.messageField "HTTPRequest" "" Proto.Json.string
-            |> Proto.Json.messageField "XCoord" 0.0 Proto.Json.float
-            |> Proto.Json.messageField "ABCDef" "" Proto.Json.string
-            |> Proto.Json.messageFieldEither "Internal" "_internal" "" Proto.Json.string
-            |> Proto.Json.messageFieldEither "displayName" "display_name" "" Proto.Json.string
-            |> Proto.Json.messageField "Type" "" Proto.Json.string
-            |> Proto.Json.messageField "IDs" [] (Json.Decode.list Proto.Json.string)
-            |> Proto.Json.messageField "URLs" [] (Json.Decode.list Proto.Json.string)
-            |> Proto.Json.messageField "APIs" [] (Json.Decode.list Proto.Json.string)
-            |> Proto.Json.messageField "UUIDs" [] (Json.Decode.list Proto.Json.string)
+            |> Proto.Json.messageField "Label" "" Proto.Json.Decode.string
+            |> Proto.Json.messageField "ID" "" Proto.Json.Decode.string
+            |> Proto.Json.messageField "URL" "" Proto.Json.Decode.string
+            |> Proto.Json.messageField "URLPath" "" Proto.Json.Decode.string
+            |> Proto.Json.messageField "HTTPRequest" "" Proto.Json.Decode.string
+            |> Proto.Json.messageField "XCoord" 0.0 Proto.Json.Decode.float
+            |> Proto.Json.messageField "ABCDef" "" Proto.Json.Decode.string
+            |> Proto.Json.messageFieldEither "Internal" "_internal" "" Proto.Json.Decode.string
+            |> Proto.Json.messageFieldEither "displayName" "display_name" "" Proto.Json.Decode.string
+            |> Proto.Json.messageField "Type" "" Proto.Json.Decode.string
+            |> Proto.Json.messageField "IDs" [] (Json.Decode.list Proto.Json.Decode.string)
+            |> Proto.Json.messageField "URLs" [] (Json.Decode.list Proto.Json.Decode.string)
+            |> Proto.Json.messageField "APIs" [] (Json.Decode.list Proto.Json.Decode.string)
+            |> Proto.Json.messageField "UUIDs" [] (Json.Decode.list Proto.Json.Decode.string)
         )
 
 
@@ -271,7 +273,7 @@ decodeLink : Json.Decode.Decoder Link
 decodeLink =
     Proto.Json.message
         (Json.Decode.succeed Link
-            |> Proto.Json.messageFieldEither "Label" "__Label" "" Proto.Json.string
+            |> Proto.Json.messageFieldEither "Label" "__Label" "" Proto.Json.Decode.string
             |> Proto.Json.oneof decodeLinkTarget
         )
 
@@ -282,8 +284,8 @@ decodeLinkTarget : Json.Decode.Decoder LinkTarget
 decodeLinkTarget =
     Proto.Json.members "Target"
         LinkTargetUnset
-        [ Proto.Json.member "URL" (Json.Decode.map LinkTargetURL Proto.Json.string)
-        , Proto.Json.member "Count" (Json.Decode.map LinkTargetCount Proto.Json.int32)
+        [ Proto.Json.member "URL" (Json.Decode.map LinkTargetURL Proto.Json.Decode.string)
+        , Proto.Json.member "Count" (Json.Decode.map LinkTargetCount Proto.Json.Decode.int32)
         ]
 
 

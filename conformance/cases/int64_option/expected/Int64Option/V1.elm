@@ -17,6 +17,8 @@ import Json.Encode
 import Proto.Binary
 import Proto.Descriptors
 import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Version
@@ -147,9 +149,9 @@ registry =
 
 {-| Encodes a [`Counters`](#Counters) as proto3 JSON.
 -}
-encodeCounters : Counters -> Proto.Json.Encoder x
+encodeCounters : Counters -> Proto.Json.Encode.Encoder x
 encodeCounters value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             ([ ( "int64Value", Proto.Json.implicitField 0 Proto.Json.encodeInt64AsInt value.int64Value )
              , ( "uint64Value", Proto.Json.implicitField 0 Proto.Json.encodeInt64AsInt value.uint64Value )
@@ -196,18 +198,18 @@ decodeCounters : Json.Decode.Decoder Counters
 decodeCounters =
     Proto.Json.message
         (Json.Decode.succeed Counters
-            |> Proto.Json.messageFieldEither "int64Value" "int64_value" 0 Proto.Json.int64AsInt
-            |> Proto.Json.messageFieldEither "uint64Value" "uint64_value" 0 Proto.Json.uint64AsInt
-            |> Proto.Json.messageFieldEither "sint64Value" "sint64_value" 0 Proto.Json.int64AsInt
-            |> Proto.Json.messageFieldEither "fixed64Value" "fixed64_value" 0 Proto.Json.uint64AsInt
-            |> Proto.Json.messageFieldEither "sfixed64Value" "sfixed64_value" 0 Proto.Json.int64AsInt
-            |> Proto.Json.messageFieldEither "exactId" "exact_id" "0" Proto.Json.int64
-            |> Proto.Json.messageField "normal" 0 Proto.Json.int64AsInt
-            |> Proto.Json.messageFieldEither "maybeCount" "maybe_count" Nothing (Json.Decode.map Just Proto.Json.int64AsInt)
-            |> Proto.Json.messageField "samples" [] (Json.Decode.list Proto.Json.int64AsInt)
-            |> Proto.Json.messageFieldEither "exactSamples" "exact_samples" [] (Json.Decode.list Proto.Json.uint64)
-            |> Proto.Json.messageFieldEither "byId" "by_id" Dict.empty (Proto.Json.int64Dict Proto.Json.int64AsInt)
-            |> Proto.Json.messageField "wrapped" Nothing (Json.Decode.map Just Proto.Json.int64AsInt)
+            |> Proto.Json.messageFieldEither "int64Value" "int64_value" 0 Proto.Json.Decode.int64AsInt
+            |> Proto.Json.messageFieldEither "uint64Value" "uint64_value" 0 Proto.Json.Decode.uint64AsInt
+            |> Proto.Json.messageFieldEither "sint64Value" "sint64_value" 0 Proto.Json.Decode.int64AsInt
+            |> Proto.Json.messageFieldEither "fixed64Value" "fixed64_value" 0 Proto.Json.Decode.uint64AsInt
+            |> Proto.Json.messageFieldEither "sfixed64Value" "sfixed64_value" 0 Proto.Json.Decode.int64AsInt
+            |> Proto.Json.messageFieldEither "exactId" "exact_id" "0" Proto.Json.Decode.int64
+            |> Proto.Json.messageField "normal" 0 Proto.Json.Decode.int64AsInt
+            |> Proto.Json.messageFieldEither "maybeCount" "maybe_count" Nothing (Json.Decode.map Just Proto.Json.Decode.int64AsInt)
+            |> Proto.Json.messageField "samples" [] (Json.Decode.list Proto.Json.Decode.int64AsInt)
+            |> Proto.Json.messageFieldEither "exactSamples" "exact_samples" [] (Json.Decode.list Proto.Json.Decode.uint64)
+            |> Proto.Json.messageFieldEither "byId" "by_id" Dict.empty (Proto.Json.int64Dict Proto.Json.Decode.int64AsInt)
+            |> Proto.Json.messageField "wrapped" Nothing (Json.Decode.map Just Proto.Json.Decode.int64AsInt)
             |> Proto.Json.oneof decodeCountersLimit
         )
 
@@ -218,8 +220,8 @@ decodeCountersLimit : Json.Decode.Decoder CountersLimit
 decodeCountersLimit =
     Proto.Json.members "limit"
         CountersLimitUnset
-        [ Proto.Json.memberEither "atMost" "at_most" (Json.Decode.map CountersLimitAtMost Proto.Json.int64AsInt)
-        , Proto.Json.member "exactly" (Json.Decode.map CountersLimitExactly Proto.Json.int64)
+        [ Proto.Json.memberEither "atMost" "at_most" (Json.Decode.map CountersLimitAtMost Proto.Json.Decode.int64AsInt)
+        , Proto.Json.member "exactly" (Json.Decode.map CountersLimitExactly Proto.Json.Decode.int64)
         ]
 
 

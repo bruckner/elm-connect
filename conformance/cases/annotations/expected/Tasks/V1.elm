@@ -17,6 +17,8 @@ import Proto.Binary
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Version
@@ -198,9 +200,9 @@ encodeState value =
 
 {-| Encodes a [`Task`](#Task) as proto3 JSON.
 -}
-encodeTask : Task -> Proto.Json.Encoder x
+encodeTask : Task -> Proto.Json.Encode.Encoder x
 encodeTask value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             ([ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
              , ( "title", Proto.Json.implicitField "" Json.Encode.string value.title )
@@ -234,9 +236,9 @@ encodeTaskDue value =
 
 {-| Encodes a [`GetTaskRequest`](#GetTaskRequest) as proto3 JSON.
 -}
-encodeGetTaskRequest : GetTaskRequest -> Proto.Json.Encoder x
+encodeGetTaskRequest : GetTaskRequest -> Proto.Json.Encode.Encoder x
 encodeGetTaskRequest value =
-    Proto.Json.succeed
+    Proto.Json.Encode.succeed
         (Proto.Json.objectOfFields
             [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
             ]
@@ -265,13 +267,13 @@ decodeTask : Json.Decode.Decoder Task
 decodeTask =
     Proto.Json.message
         (Json.Decode.succeed Task
-            |> Proto.Json.messageField "name" "" Proto.Json.string
-            |> Proto.Json.messageField "title" "" Proto.Json.string
+            |> Proto.Json.messageField "name" "" Proto.Json.Decode.string
+            |> Proto.Json.messageField "title" "" Proto.Json.Decode.string
             |> Proto.Json.messageField "state" StateUnspecified decodeState
-            |> Proto.Json.messageField "labels" [] (Json.Decode.list Proto.Json.string)
-            |> Proto.Json.messageField "owner" "" Proto.Json.string
-            |> Proto.Json.messageField "notes" "" Proto.Json.string
-            |> Proto.Json.messageField "made" "" Proto.Json.string
+            |> Proto.Json.messageField "labels" [] (Json.Decode.list Proto.Json.Decode.string)
+            |> Proto.Json.messageField "owner" "" Proto.Json.Decode.string
+            |> Proto.Json.messageField "notes" "" Proto.Json.Decode.string
+            |> Proto.Json.messageField "made" "" Proto.Json.Decode.string
             |> Proto.Json.oneof decodeTaskDue
         )
 
@@ -282,8 +284,8 @@ decodeTaskDue : Json.Decode.Decoder TaskDue
 decodeTaskDue =
     Proto.Json.members "due"
         TaskDueUnset
-        [ Proto.Json.member "date" (Json.Decode.map TaskDueDate Proto.Json.string)
-        , Proto.Json.member "never" (Json.Decode.map TaskDueNever Proto.Json.string)
+        [ Proto.Json.member "date" (Json.Decode.map TaskDueDate Proto.Json.Decode.string)
+        , Proto.Json.member "never" (Json.Decode.map TaskDueNever Proto.Json.Decode.string)
         ]
 
 
@@ -293,7 +295,7 @@ decodeGetTaskRequest : Json.Decode.Decoder GetTaskRequest
 decodeGetTaskRequest =
     Proto.Json.message
         (Json.Decode.succeed GetTaskRequest
-            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.messageField "name" "" Proto.Json.Decode.string
         )
 
 

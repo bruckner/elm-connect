@@ -10,7 +10,7 @@ module Envelope.V1.Relay exposing (..)
 import Envelope.V1
 import Proto.Any
 import Proto.Binary
-import Proto.Json
+import Proto.Json.Decode
 import Proto.Method
 import Proto.Version
 import Rpc
@@ -39,8 +39,8 @@ forward =
     Rpc.call
         (Proto.Method.init "envelope.v1.Relay"
             "Forward"
-            Proto.Json.writeAny
-            Proto.Json.anyWith
+            Proto.Any.encode
+            Proto.Json.Decode.anyWith
             (Proto.Binary.messageEncoder Proto.Binary.any)
             (Proto.Binary.messageDecoder Proto.Binary.any)
         )

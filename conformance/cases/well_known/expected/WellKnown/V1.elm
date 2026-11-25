@@ -20,6 +20,8 @@ import Proto.Descriptors
 import Proto.Duration exposing (Duration)
 import Proto.Error
 import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Value
@@ -222,21 +224,21 @@ registry =
 
 {-| Encodes an [`Event`](#Event) as proto3 JSON, or fails if the input contains a bad value.
 -}
-encodeEvent : Event -> Proto.Json.Encoder Proto.Error.Error
+encodeEvent : Event -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeEvent value =
     Proto.Json.writeObject
         [ Proto.Json.checkedFields
-            [ ( "createdAt", Proto.Json.writeOptional Proto.Json.writeTimestamp value.createdAt )
-            , ( "timeout", Proto.Json.writeOptional Proto.Json.writeDuration value.timeout )
-            , ( "updateMask", Proto.Json.writeOptional Proto.Json.writeFieldMask value.updateMask )
+            [ ( "createdAt", Proto.Json.writeOptional Proto.Json.Encode.timestamp value.createdAt )
+            , ( "timeout", Proto.Json.writeOptional Proto.Json.Encode.duration value.timeout )
+            , ( "updateMask", Proto.Json.writeOptional Proto.Json.Encode.fieldMask value.updateMask )
             ]
         , Proto.Json.plainFields
             [ ( "marker", Just (Proto.Json.encodeEmpty value.marker) )
             ]
         , Proto.Json.checkedFields
-            [ ( "metadata", Proto.Json.writeOptional Proto.Json.writeStruct value.metadata )
-            , ( "payload", Proto.Json.writeOptional Proto.Json.writeValue value.payload )
-            , ( "items", Proto.Json.writeOptional Proto.Json.writeListValue value.items )
+            [ ( "metadata", Proto.Json.writeOptional Proto.Json.Encode.struct value.metadata )
+            , ( "payload", Proto.Json.writeOptional Proto.Json.Encode.value value.payload )
+            , ( "items", Proto.Json.writeOptional Proto.Json.Encode.listValue value.items )
             ]
         , Proto.Json.plainFields
             [ ( "ratio", Maybe.map Proto.Json.encodeFloat value.ratio )
@@ -250,9 +252,9 @@ encodeEvent value =
             , ( "avatar", Maybe.map Proto.Json.encodeBytes value.avatar )
             ]
         , Proto.Json.checkedFields
-            [ ( "history", Proto.Json.writeRepeated Proto.Json.writeTimestamp value.history )
-            , ( "limits", Proto.Json.writeDict identity Proto.Json.writeDuration value.limits )
-            , ( "values", Proto.Json.writeRepeated Proto.Json.writeValue value.values )
+            [ ( "history", Proto.Json.writeRepeated Proto.Json.Encode.timestamp value.history )
+            , ( "limits", Proto.Json.writeDict identity Proto.Json.Encode.duration value.limits )
+            , ( "values", Proto.Json.writeRepeated Proto.Json.Encode.value value.values )
             ]
         , Proto.Json.plainFields
             [ ( "counts", Proto.Json.repeatedField Json.Encode.int value.counts )
@@ -261,10 +263,10 @@ encodeEvent value =
             , ( "seen", Proto.Json.dictField identity Proto.Json.encodeEmpty value.seen )
             ]
         , Proto.Json.checkedFields
-            [ ( "records", Proto.Json.writeRepeated Proto.Json.writeStruct value.records )
-            , ( "columns", Proto.Json.writeDict identity Proto.Json.writeListValue value.columns )
-            , ( "lastValue", Proto.Json.writeOptional Proto.Json.writeValue value.lastValue )
-            , ( "settings", Proto.Json.writeDict identity Proto.Json.writeValue value.settings )
+            [ ( "records", Proto.Json.writeRepeated Proto.Json.Encode.struct value.records )
+            , ( "columns", Proto.Json.writeDict identity Proto.Json.Encode.listValue value.columns )
+            , ( "lastValue", Proto.Json.writeOptional Proto.Json.Encode.value value.lastValue )
+            , ( "settings", Proto.Json.writeDict identity Proto.Json.Encode.value value.settings )
             ]
         , Proto.Json.plainFields
             [ ( "nothing", Proto.Json.implicitField () Proto.Json.encodeNullValue value.nothing )
@@ -285,27 +287,27 @@ encodeEventWhen value =
             []
 
         EventWhenAt member ->
-            [ ( "at", Proto.Json.writeMember (Proto.Json.writeTimestamp member) )
+            [ ( "at", Proto.Json.writeMember (Proto.Json.Encode.timestamp member) )
             ]
 
         EventWhenAfter member ->
-            [ ( "after", Proto.Json.writeMember (Proto.Json.writeDuration member) )
+            [ ( "after", Proto.Json.writeMember (Proto.Json.Encode.duration member) )
             ]
 
         EventWhenWhenever member ->
-            [ ( "whenever", Proto.Json.writeMember (Proto.Json.writeValue member) )
+            [ ( "whenever", Proto.Json.writeMember (Proto.Json.Encode.value member) )
             ]
 
         EventWhenSchedule member ->
-            [ ( "schedule", Proto.Json.writeMember (Proto.Json.writeStruct member) )
+            [ ( "schedule", Proto.Json.writeMember (Proto.Json.Encode.struct member) )
             ]
 
         EventWhenDates member ->
-            [ ( "dates", Proto.Json.writeMember (Proto.Json.writeListValue member) )
+            [ ( "dates", Proto.Json.writeMember (Proto.Json.Encode.listValue member) )
             ]
 
         EventWhenNever ->
-            [ ( "never", Proto.Json.writeMember (Proto.Json.succeed Json.Encode.null) )
+            [ ( "never", Proto.Json.writeMember (Proto.Json.Encode.succeed Json.Encode.null) )
             ]
 
 
@@ -326,37 +328,37 @@ decodeNestedEvent : Int -> Json.Decode.Decoder Event
 decodeNestedEvent depth =
     Proto.Json.message
         (Json.Decode.succeed Event
-            |> Proto.Json.messageFieldEither "createdAt" "created_at" Nothing (Json.Decode.map Just Proto.Json.timestamp)
-            |> Proto.Json.messageField "timeout" Nothing (Json.Decode.map Just Proto.Json.duration)
-            |> Proto.Json.messageFieldEither "updateMask" "update_mask" Nothing (Json.Decode.map Just Proto.Json.fieldMask)
-            |> Proto.Json.messageField "marker" () Proto.Json.empty
+            |> Proto.Json.messageFieldEither "createdAt" "created_at" Nothing (Json.Decode.map Just Proto.Json.Decode.timestamp)
+            |> Proto.Json.messageField "timeout" Nothing (Json.Decode.map Just Proto.Json.Decode.duration)
+            |> Proto.Json.messageFieldEither "updateMask" "update_mask" Nothing (Json.Decode.map Just Proto.Json.Decode.fieldMask)
+            |> Proto.Json.messageField "marker" () Proto.Json.Decode.empty
             |> Proto.Json.messageField "metadata" Nothing (Json.Decode.map Just (Proto.Json.nestedStruct depth))
             |> Proto.Json.nestedMessageValueField "payload" depth
             |> Proto.Json.messageField "items" Nothing (Json.Decode.map Just (Proto.Json.nestedListValue depth))
-            |> Proto.Json.messageField "ratio" Nothing (Json.Decode.map Just Proto.Json.float)
-            |> Proto.Json.messageField "weight" Nothing (Json.Decode.map Just Proto.Json.float32)
-            |> Proto.Json.messageFieldEither "bigCount" "big_count" Nothing (Json.Decode.map Just Proto.Json.int64)
-            |> Proto.Json.messageFieldEither "bigTotal" "big_total" Nothing (Json.Decode.map Just Proto.Json.uint64)
-            |> Proto.Json.messageField "count" Nothing (Json.Decode.map Just Proto.Json.int32)
-            |> Proto.Json.messageField "total" Nothing (Json.Decode.map Just Proto.Json.uint32)
+            |> Proto.Json.messageField "ratio" Nothing (Json.Decode.map Just Proto.Json.Decode.float)
+            |> Proto.Json.messageField "weight" Nothing (Json.Decode.map Just Proto.Json.Decode.float32)
+            |> Proto.Json.messageFieldEither "bigCount" "big_count" Nothing (Json.Decode.map Just Proto.Json.Decode.int64)
+            |> Proto.Json.messageFieldEither "bigTotal" "big_total" Nothing (Json.Decode.map Just Proto.Json.Decode.uint64)
+            |> Proto.Json.messageField "count" Nothing (Json.Decode.map Just Proto.Json.Decode.int32)
+            |> Proto.Json.messageField "total" Nothing (Json.Decode.map Just Proto.Json.Decode.uint32)
             |> Proto.Json.messageField "enabled" Nothing (Json.Decode.map Just Json.Decode.bool)
-            |> Proto.Json.messageField "nickname" Nothing (Json.Decode.map Just Proto.Json.string)
-            |> Proto.Json.messageField "avatar" Nothing (Json.Decode.map Just Proto.Json.bytes)
-            |> Proto.Json.messageField "history" [] (Json.Decode.list Proto.Json.timestamp)
-            |> Proto.Json.messageField "limits" Dict.empty (Proto.Json.stringDict Proto.Json.duration)
+            |> Proto.Json.messageField "nickname" Nothing (Json.Decode.map Just Proto.Json.Decode.string)
+            |> Proto.Json.messageField "avatar" Nothing (Json.Decode.map Just Proto.Json.Decode.bytes)
+            |> Proto.Json.messageField "history" [] (Json.Decode.list Proto.Json.Decode.timestamp)
+            |> Proto.Json.messageField "limits" Dict.empty (Proto.Json.stringDict Proto.Json.Decode.duration)
             |> Proto.Json.messageField "values" [] (Json.Decode.list (Proto.Json.nestedValue depth))
-            |> Proto.Json.messageField "counts" [] (Json.Decode.list Proto.Json.int32)
-            |> Proto.Json.messageField "acked" () Proto.Json.empty
-            |> Proto.Json.messageField "pings" [] (Json.Decode.list Proto.Json.empty)
-            |> Proto.Json.messageField "seen" Dict.empty (Proto.Json.stringDict Proto.Json.empty)
+            |> Proto.Json.messageField "counts" [] (Json.Decode.list Proto.Json.Decode.int32)
+            |> Proto.Json.messageField "acked" () Proto.Json.Decode.empty
+            |> Proto.Json.messageField "pings" [] (Json.Decode.list Proto.Json.Decode.empty)
+            |> Proto.Json.messageField "seen" Dict.empty (Proto.Json.stringDict Proto.Json.Decode.empty)
             |> Proto.Json.messageField "records" [] (Json.Decode.list (Proto.Json.nestedStruct depth))
             |> Proto.Json.messageField "columns" Dict.empty (Proto.Json.stringDict (Proto.Json.nestedListValue depth))
             |> Proto.Json.nestedMessageValueFieldEither "lastValue" "last_value" depth
             |> Proto.Json.messageField "settings" Dict.empty (Proto.Json.stringDict (Proto.Json.nestedValue depth))
-            |> Proto.Json.messageField "nothing" () Proto.Json.nullValue
-            |> Proto.Json.messageFieldEither "maybeNothing" "maybe_nothing" () Proto.Json.nullValue
-            |> Proto.Json.messageField "nulls" [] (Json.Decode.list Proto.Json.nullValue)
-            |> Proto.Json.messageFieldEither "nullMap" "null_map" Dict.empty (Proto.Json.stringDict Proto.Json.nullValue)
+            |> Proto.Json.messageField "nothing" () Proto.Json.Decode.nullValue
+            |> Proto.Json.messageFieldEither "maybeNothing" "maybe_nothing" () Proto.Json.Decode.nullValue
+            |> Proto.Json.messageField "nulls" [] (Json.Decode.list Proto.Json.Decode.nullValue)
+            |> Proto.Json.messageFieldEither "nullMap" "null_map" Dict.empty (Proto.Json.stringDict Proto.Json.Decode.nullValue)
             |> Proto.Json.oneof (decodeNestedEventWhen depth)
         )
 
@@ -374,8 +376,8 @@ decodeNestedEventWhen : Int -> Json.Decode.Decoder EventWhen
 decodeNestedEventWhen depth =
     Proto.Json.members "when"
         EventWhenUnset
-        [ Proto.Json.member "at" (Json.Decode.map EventWhenAt Proto.Json.timestamp)
-        , Proto.Json.member "after" (Json.Decode.map EventWhenAfter Proto.Json.duration)
+        [ Proto.Json.member "at" (Json.Decode.map EventWhenAt Proto.Json.Decode.timestamp)
+        , Proto.Json.member "after" (Json.Decode.map EventWhenAfter Proto.Json.Decode.duration)
         , Proto.Json.nestedValueMember "whenever" depth EventWhenWhenever
         , Proto.Json.member "schedule" (Json.Decode.map EventWhenSchedule (Proto.Json.nestedStruct depth))
         , Proto.Json.member "dates" (Json.Decode.map EventWhenDates (Proto.Json.nestedListValue depth))
