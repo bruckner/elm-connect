@@ -12,7 +12,9 @@ use crate::elm::build::{
     access, apply, binop, lambda, list, pipeline, pvar, record, string, tuple2, ty, ty_fn, var,
 };
 use crate::ir::ModuleName;
-use crate::naming::{ENCODER_ARGUMENT, REGISTRY_ARGUMENT, UNKNOWN_FIELDS, nested, with_registry};
+use crate::naming::{
+    ENCODER_ARGUMENT, REGISTRY_ARGUMENT, UNKNOWN_FIELDS, nested, plain, with_registry,
+};
 use crate::options::UnknownFields;
 
 impl Emitter {
@@ -115,6 +117,8 @@ impl Emitter {
         if self.message_write_reaches(shape) {
             return self.message_encoder_with(shape);
         }
+        let twinned = self.twinned.contains(&shape.message.proto_full_name);
+        self.plain_twin = twinned;
         let pairs: Vec<Expr> = shape
             .fields
             .iter()
@@ -157,8 +161,44 @@ impl Emitter {
         } else {
             self.reference((PROTO_JSON, "objectOfFields"))
         };
+        self.plain_twin = false;
         let encoder_type = self.json_encoder_type(false);
         let succeed = self.reference((PROTO_JSON, "succeed"));
+        let message_type = ty(shape.message.elm_name.clone(), []);
+        if twinned {
+            // The message's recursion goes through the plain encoder, so a
+            // nested value is wrapped once, at the top.
+            let plain_name = plain(shape.message.encoder_name());
+            let value_type = self.library_type(JSON_ENCODE, "Value", []);
+            return vec![
+                Decl::Value {
+                    doc: Some(format!(
+                        "Encodes {} as proto3 JSON, which nothing it holds can refuse.",
+                        docs::a_local(&shape.message.elm_name)
+                    )),
+                    name: shape.message.encoder_name(),
+                    annotation: Type::Function(
+                        Box::new(message_type.clone()),
+                        Box::new(encoder_type),
+                    ),
+                    params: vec![pvar(ENCODER_ARGUMENT)],
+                    body: apply(
+                        succeed,
+                        [apply(var(plain_name.clone()), [var(ENCODER_ARGUMENT)])],
+                    ),
+                },
+                Decl::Value {
+                    doc: Some(format!(
+                        "The JSON of {}, which its own recursion writes.",
+                        docs::a_local(&shape.message.elm_name)
+                    )),
+                    name: plain_name,
+                    annotation: Type::Function(Box::new(message_type), Box::new(value_type)),
+                    params: vec![param],
+                    body: apply(object, [members]),
+                },
+            ];
+        }
         vec![Decl::Value {
             doc: Some(format!(
                 "Encodes {} as proto3 JSON, which nothing it holds can refuse.",

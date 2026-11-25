@@ -237,6 +237,14 @@ same text for the same value (the `well_known` corpus case):
 encodeEvent : Event -> Proto.Json.Encoder Proto.Error.Error
 ```
 
+A message on a cycle of references that holds nothing refusable also has
+a plain encoder, `encodePlainNode : Node -> Json.Encode.Value`, which its
+own recursion and its oneofs call, so a deep tree is wrapped once, at the
+top, by `encodeNode = Proto.Json.succeed << encodePlainNode`, and not once
+per node. Both write the same JSON. A message that gains a refusable field
+loses its plain encoder: in the `depth_cycles` corpus case `Tree` has one, and
+`Envelope`, which holds an `Any`, has none.
+
 A message that gains a refusable field, at any depth, changes its
 encoder's type: `encode` and `encodeWith` take both, and only an
 `encodeTotal` of it stops compiling. `Proto.Json.Encoder` is

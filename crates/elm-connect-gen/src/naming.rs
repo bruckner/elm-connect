@@ -583,6 +583,21 @@ pub fn nested(codec_name: String) -> String {
     format!("{verb}Nested{rest}")
 }
 
+/// The plain JSON encoder of a message on a cycle that nothing it holds can
+/// refuse, or of its wrapper, which the message's own recursion calls: its
+/// encoder's name with `Plain` after the verb (`encodePlainNode`,
+/// `encodePlainNode_`). Like [`nested`]'s infix, it breaks the prefix rule
+/// of [`default_name`]: the encoder of a type `PlainNode` beside a
+/// recursive `Node` would take the name, which no check reports; the
+/// compiler does, as a name defined twice.
+pub fn plain(encoder_name: String) -> String {
+    let verb = encoder_name
+        .find(|c: char| c.is_ascii_uppercase())
+        .expect("an encoder's name is a verb and a type name");
+    let (verb, rest) = encoder_name.split_at(verb);
+    format!("{verb}Plain{rest}")
+}
+
 /// The parameter a codec taking the registry binds it to. Like
 /// [`ENCODER_ARGUMENT`], it must not be the name of a top-level value of a
 /// generated module.

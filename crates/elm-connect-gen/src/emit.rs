@@ -341,6 +341,10 @@ pub fn emit_with_queries(
     emitter.reach = AnyReach::of(packages.iter().chain(std::iter::once(package)));
     emitter.counted = Counted::of(packages.iter().chain(std::iter::once(package)));
     emitter.write_reach = AnyReach::refusable(packages.iter().chain(std::iter::once(package)));
+    emitter.twinned = twinned(
+        packages.iter().chain(std::iter::once(package)),
+        &emitter.write_reach,
+    );
     let mut decls = emitter.package(package);
     let mut encoders = Vec::new();
     // Route functions take JSON, which `wire=proto` does not generate,
@@ -494,6 +498,10 @@ pub fn emit_service(
     emitter.reach = AnyReach::of(packages.iter().chain(std::iter::once(package)));
     emitter.counted = Counted::of(packages.iter().chain(std::iter::once(package)));
     emitter.write_reach = AnyReach::refusable(packages.iter().chain(std::iter::once(package)));
+    emitter.twinned = twinned(
+        packages.iter().chain(std::iter::once(package)),
+        &emitter.write_reach,
+    );
     let mut decls = Vec::new();
     if !service.methods.is_empty() {
         let mut calls = Vec::new();
@@ -548,6 +556,20 @@ fn untyped_route(service: &Service, method: &Method, binding: usize) -> UntypedR
 }
 
 /// Every message of `packages` and `package` by full proto name.
+/// The messages of `packages` on a cycle whose write nothing they hold can
+/// refuse ([`Emitter::twinned`]).
+fn twinned<'p>(
+    packages: impl IntoIterator<Item = &'p Package>,
+    write_reach: &AnyReach,
+) -> BTreeSet<String> {
+    packages
+        .into_iter()
+        .flat_map(|package| &package.messages)
+        .filter(|message| message.recursive && !write_reach.message(&message.proto_full_name))
+        .map(|message| message.proto_full_name.clone())
+        .collect()
+}
+
 fn all_messages<'p>(package: &'p Package, packages: &'p [Package]) -> route_fn::Messages<'p> {
     packages
         .iter()
@@ -661,6 +683,14 @@ struct Emitter {
     /// built with `Proto.Json.writeObject`; the others are written by plain
     /// code and wrapped once.
     write_reach: AnyReach,
+    /// The messages on a cycle whose write nothing they hold can refuse,
+    /// by full proto name: each also gets a plain encoder,
+    /// `encodePlainFoo`, which its own recursion calls.
+    twinned: BTreeSet<String>,
+    /// While the plain encoder of a message in [`Emitter::twinned`] is
+    /// written: a value of a message in it is written by its plain
+    /// encoder.
+    plain_twin: bool,
     /// The options as the header's second line records them.
     recorded: String,
     /// While the JSON decoder of a message whose codecs take the depth is
@@ -703,6 +733,8 @@ impl Emitter {
             reach: AnyReach::default(),
             counted: Counted::default(),
             write_reach: AnyReach::default(),
+            twinned: BTreeSet::new(),
+            plain_twin: false,
             recorded: match options.recorded() {
                 pairs if pairs.is_empty() => DEFAULT_OPTIONS.to_owned(),
                 pairs => pairs.join(", "),
@@ -795,7 +827,7 @@ impl Emitter {
             binary_decoders.push(self.message_decoder_bytes(shape));
             if let Some(wrapper) = &shape.message.wrapper {
                 types.push(self.wrapper_type(shape.message, wrapper));
-                encoders.push(self.wrapper_encoder(shape.message, wrapper));
+                encoders.extend(self.wrapper_encoder(shape.message, wrapper));
                 decoders.push(self.wrapper_decoder(shape.message, wrapper));
                 binary_encoders.push(self.wrapper_encoder_bytes(shape.message, wrapper));
                 binary_decoders.extend(self.wrapper_decoder_bytes(shape.message, wrapper));
@@ -803,7 +835,11 @@ impl Emitter {
             let counts = self.counts(shape.message);
             for oneof in &shape.oneofs {
                 types.push(self.oneof_type(&package.module, shape.message, oneof));
+                // A twinned message's oneofs are written by its plain
+                // encoder alone, so their members recurse plainly too.
+                self.plain_twin = self.twinned.contains(&shape.message.proto_full_name);
                 encoders.push(self.oneof_encoder(oneof, counts));
+                self.plain_twin = false;
                 decoders.extend(self.oneof_decoder(oneof, counts));
                 binary_encoders.push(self.oneof_encoder_bytes(oneof));
             }

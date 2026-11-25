@@ -8,7 +8,7 @@ use super::{
 };
 use crate::elm::ast::{Expr, Type};
 use crate::elm::build::{apply, list, qualified, ty, var};
-use crate::naming::{REGISTRY_ARGUMENT, with_registry};
+use crate::naming::{REGISTRY_ARGUMENT, plain, with_registry};
 
 use std::collections::HashMap;
 
@@ -491,7 +491,7 @@ impl Emitter {
     /// refused, which plain code unwraps with `Proto.Json.encodeTotal`;
     /// `None` for any other value.
     pub(super) fn total_message_encoder(&mut self, value: ValueShape) -> Option<Expr> {
-        if self.write_reaches(value) {
+        if self.write_reaches(value) || self.plain_twin_of(value).is_some() {
             return None;
         }
         match value {
@@ -537,6 +537,11 @@ impl Emitter {
             ValueShape::Zeroed(Zeroed::Enum(name, _)) => {
                 self.generated_value(&name.module, name.encoder_name())
             }
+            ValueShape::Present(Present::Message(_) | Present::Wrapped(..))
+                if self.plain_twin_of(value).is_some() =>
+            {
+                self.plain_twin_of(value).expect("checked")
+            }
             ValueShape::Present(Present::Message(_) | Present::Wrapped(..)) => {
                 let encoder = self
                     .total_message_encoder(value)
@@ -555,6 +560,28 @@ impl Emitter {
             ) => unreachable!("a value whose write can be refused has no plain encoder"),
             ValueShape::Zeroed(Zeroed::Empty) => self.reference((PROTO_JSON, "encodeEmpty")),
             ValueShape::Zeroed(Zeroed::Null) => self.reference((PROTO_JSON, "encodeNullValue")),
+        }
+    }
+
+    /// While a plain twin is written ([`Emitter::plain_twin`]), the plain
+    /// encoder of a value of a message with one, `encodePlainFoo` or
+    /// `encodePlainFoo_`; `None` otherwise.
+    fn plain_twin_of(&mut self, value: ValueShape) -> Option<Expr> {
+        if !self.plain_twin {
+            return None;
+        }
+        match value {
+            ValueShape::Present(Present::Message(name))
+                if self.twinned.contains(&name.proto_full_name) =>
+            {
+                Some(self.generated_value(&name.module, plain(name.encoder_name())))
+            }
+            ValueShape::Present(Present::Wrapped(wrapper, full_name))
+                if self.twinned.contains(full_name) =>
+            {
+                Some(var(plain(wrapper.encoder_name())))
+            }
+            _ => None,
         }
     }
 

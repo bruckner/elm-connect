@@ -385,12 +385,17 @@ encodeLabelBlobRequest value =
 -}
 encodeFolder : Folder -> Proto.Json.Encoder x
 encodeFolder value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-            , ( "parent", Proto.Json.totalOptionalField encodeFolder_ value.parent )
-            ]
-        )
+    Proto.Json.succeed (encodePlainFolder value)
+
+
+{-| The JSON of a [`Folder`](#Folder), which its own recursion writes.
+-}
+encodePlainFolder : Folder -> Json.Encode.Value
+encodePlainFolder value =
+    Proto.Json.objectOfFields
+        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+        , ( "parent", Maybe.map encodePlainFolder_ value.parent )
+        ]
 
 
 {-| Encodes a [`Folder_`](#Folder_) as proto3 JSON.
@@ -398,6 +403,13 @@ encodeFolder value =
 encodeFolder_ : Folder_ -> Proto.Json.Encoder x
 encodeFolder_ (Folder_ value) =
     encodeFolder value
+
+
+{-| The JSON of a [`Folder_`](#Folder_), which its own recursion writes.
+-}
+encodePlainFolder_ : Folder_ -> Json.Encode.Value
+encodePlainFolder_ (Folder_ value) =
+    encodePlainFolder value
 
 
 {-| Encodes a [`Slots`](#Slots) as proto3 JSON, which nothing it holds can refuse.

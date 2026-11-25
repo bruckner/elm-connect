@@ -194,16 +194,21 @@ encodeKind value =
 -}
 encodeEntry : Entry -> Proto.Json.Encoder x
 encodeEntry value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            ([ ( "memo", Proto.Json.implicitField "" Json.Encode.string value.memo )
-             , ( "amount", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.amount )
-             , ( "kind", Proto.Json.implicitField KindUnspecified encodeKind value.kind )
-             , ( "tags", Proto.Json.dictField identity Json.Encode.int value.tags )
-             , ( "marks", Proto.Json.repeatedField Json.Encode.int value.marks )
-             ]
-                ++ encodeEntrySource value.source
-            )
+    Proto.Json.succeed (encodePlainEntry value)
+
+
+{-| The JSON of an [`Entry`](#Entry), which its own recursion writes.
+-}
+encodePlainEntry : Entry -> Json.Encode.Value
+encodePlainEntry value =
+    Proto.Json.objectOfFields
+        ([ ( "memo", Proto.Json.implicitField "" Json.Encode.string value.memo )
+         , ( "amount", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.amount )
+         , ( "kind", Proto.Json.implicitField KindUnspecified encodeKind value.kind )
+         , ( "tags", Proto.Json.dictField identity Json.Encode.int value.tags )
+         , ( "marks", Proto.Json.repeatedField Json.Encode.int value.marks )
+         ]
+            ++ encodeEntrySource value.source
         )
 
 
@@ -220,7 +225,7 @@ encodeEntrySource value =
             ]
 
         EntrySourceReversal member ->
-            [ ( "reversal", Just (Proto.Json.encodeTotal (encodeEntry member)) )
+            [ ( "reversal", Just (encodePlainEntry member) )
             ]
 
 

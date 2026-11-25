@@ -458,13 +458,18 @@ encodeOuterInnerDeepest value =
 -}
 encodeNode : Node -> Proto.Json.Encoder x
 encodeNode value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
-            , ( "children", Proto.Json.totalRepeatedField encodeNode_ value.children )
-            , ( "byName", Proto.Json.totalDictField identity encodeNode_ value.byName )
-            ]
-        )
+    Proto.Json.succeed (encodePlainNode value)
+
+
+{-| The JSON of a [`Node`](#Node), which its own recursion writes.
+-}
+encodePlainNode : Node -> Json.Encode.Value
+encodePlainNode value =
+    Proto.Json.objectOfFields
+        [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
+        , ( "children", Proto.Json.repeatedField encodePlainNode_ value.children )
+        , ( "byName", Proto.Json.dictField identity encodePlainNode_ value.byName )
+        ]
 
 
 {-| Encodes a [`Node_`](#Node_) as proto3 JSON.
@@ -474,16 +479,28 @@ encodeNode_ (Node_ value) =
     encodeNode value
 
 
+{-| The JSON of a [`Node_`](#Node_), which its own recursion writes.
+-}
+encodePlainNode_ : Node_ -> Json.Encode.Value
+encodePlainNode_ (Node_ value) =
+    encodePlainNode value
+
+
 {-| Encodes a [`Person`](#Person) as proto3 JSON, which nothing it holds can refuse.
 -}
 encodePerson : Person -> Proto.Json.Encoder x
 encodePerson value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-            , ( "employer", Proto.Json.totalOptionalField encodeCompany_ value.employer )
-            ]
-        )
+    Proto.Json.succeed (encodePlainPerson value)
+
+
+{-| The JSON of a [`Person`](#Person), which its own recursion writes.
+-}
+encodePlainPerson : Person -> Json.Encode.Value
+encodePlainPerson value =
+    Proto.Json.objectOfFields
+        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+        , ( "employer", Maybe.map encodePlainCompany_ value.employer )
+        ]
 
 
 {-| Encodes a [`Person_`](#Person_) as proto3 JSON.
@@ -493,16 +510,28 @@ encodePerson_ (Person_ value) =
     encodePerson value
 
 
+{-| The JSON of a [`Person_`](#Person_), which its own recursion writes.
+-}
+encodePlainPerson_ : Person_ -> Json.Encode.Value
+encodePlainPerson_ (Person_ value) =
+    encodePlainPerson value
+
+
 {-| Encodes a [`Company`](#Company) as proto3 JSON, which nothing it holds can refuse.
 -}
 encodeCompany : Company -> Proto.Json.Encoder x
 encodeCompany value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-            , ( "staff", Proto.Json.totalRepeatedField encodePerson_ value.staff )
-            ]
-        )
+    Proto.Json.succeed (encodePlainCompany value)
+
+
+{-| The JSON of a [`Company`](#Company), which its own recursion writes.
+-}
+encodePlainCompany : Company -> Json.Encode.Value
+encodePlainCompany value =
+    Proto.Json.objectOfFields
+        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+        , ( "staff", Proto.Json.repeatedField encodePlainPerson_ value.staff )
+        ]
 
 
 {-| Encodes a [`Company_`](#Company_) as proto3 JSON.
@@ -510,6 +539,13 @@ encodeCompany value =
 encodeCompany_ : Company_ -> Proto.Json.Encoder x
 encodeCompany_ (Company_ value) =
     encodeCompany value
+
+
+{-| The JSON of a [`Company_`](#Company_), which its own recursion writes.
+-}
+encodePlainCompany_ : Company_ -> Json.Encode.Value
+encodePlainCompany_ (Company_ value) =
+    encodePlainCompany value
 
 
 {-| Encodes a [`Forest`](#Forest) as proto3 JSON, which nothing it holds can refuse.
@@ -527,7 +563,14 @@ encodeForest value =
 -}
 encodeExpr : Expr -> Proto.Json.Encoder x
 encodeExpr value =
-    Proto.Json.succeed (Proto.Json.objectOfFields (encodeExprValue value.value))
+    Proto.Json.succeed (encodePlainExpr value)
+
+
+{-| The JSON of an [`Expr`](#Expr), which its own recursion writes.
+-}
+encodePlainExpr : Expr -> Json.Encode.Value
+encodePlainExpr value =
+    Proto.Json.objectOfFields (encodeExprValue value.value)
 
 
 {-| Encodes an [`ExprValue`](#ExprValue) as the members of its message's JSON object.
@@ -543,7 +586,7 @@ encodeExprValue value =
             ]
 
         ExprValueSum member ->
-            [ ( "sum", Just (Proto.Json.encodeTotal (encodeSum member)) )
+            [ ( "sum", Just (encodePlainSum member) )
             ]
 
 
@@ -551,11 +594,16 @@ encodeExprValue value =
 -}
 encodeSum : Sum -> Proto.Json.Encoder x
 encodeSum value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "terms", Proto.Json.totalRepeatedField encodeExpr value.terms )
-            ]
-        )
+    Proto.Json.succeed (encodePlainSum value)
+
+
+{-| The JSON of a [`Sum`](#Sum), which its own recursion writes.
+-}
+encodePlainSum : Sum -> Json.Encode.Value
+encodePlainSum value =
+    Proto.Json.objectOfFields
+        [ ( "terms", Proto.Json.repeatedField encodePlainExpr value.terms )
+        ]
 
 
 

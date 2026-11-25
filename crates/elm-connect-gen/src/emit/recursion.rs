@@ -6,7 +6,9 @@ use super::{Deep, Emitter, JSON_DECODE, OneofShape, PROTO_JSON, PROTO_REGISTRY, 
 use crate::elm::ast::{BinOp, Decl, Expr, Pattern, Type, Variant};
 use crate::elm::build::{apply, binop, int, lambda, pctor, pvar, ty, var};
 use crate::ir::{Message, TypeName, Wrapper};
-use crate::naming::{ENCODER_ARGUMENT, REGISTRY_ARGUMENT, decoder_name, nested, with_registry};
+use crate::naming::{
+    ENCODER_ARGUMENT, REGISTRY_ARGUMENT, decoder_name, nested, plain, with_registry,
+};
 
 impl Emitter {
     /// `type Node_ = Node_ Node`.
@@ -34,22 +36,43 @@ impl Emitter {
 
     /// `encodeNode_ (Node_ value) = encodeNode value`, of the type
     /// `encodeNode` has.
-    pub(super) fn wrapper_encoder(&mut self, message: &Message, wrapper: &Wrapper) -> Decl {
+    pub(super) fn wrapper_encoder(&mut self, message: &Message, wrapper: &Wrapper) -> Vec<Decl> {
         let refusable = self.write_reach.message(&message.proto_full_name);
         let annotation = self.json_encoder_type(refusable);
-        Decl::Value {
-            doc: Some(format!(
-                "Encodes {} as proto3 JSON.",
-                docs::a_local(&wrapper.elm_name)
-            )),
-            name: wrapper.encoder_name(),
-            annotation: Type::Function(
-                Box::new(ty(wrapper.elm_name.clone(), [])),
-                Box::new(annotation),
-            ),
-            params: vec![pctor(wrapper.elm_name.clone(), [pvar(ENCODER_ARGUMENT)])],
-            body: apply(var(message.encoder_name()), [var(ENCODER_ARGUMENT)]),
+        let mut decls = Vec::new();
+        if self.twinned.contains(&message.proto_full_name) {
+            let value_type = self.library_type(super::JSON_ENCODE, "Value", []);
+            decls.push(Decl::Value {
+                doc: Some(format!(
+                    "The JSON of {}, which its own recursion writes.",
+                    docs::a_local(&wrapper.elm_name)
+                )),
+                name: plain(wrapper.encoder_name()),
+                annotation: Type::Function(
+                    Box::new(ty(wrapper.elm_name.clone(), [])),
+                    Box::new(value_type),
+                ),
+                params: vec![pctor(wrapper.elm_name.clone(), [pvar(ENCODER_ARGUMENT)])],
+                body: apply(var(plain(message.encoder_name())), [var(ENCODER_ARGUMENT)]),
+            });
         }
+        decls.insert(
+            0,
+            Decl::Value {
+                doc: Some(format!(
+                    "Encodes {} as proto3 JSON.",
+                    docs::a_local(&wrapper.elm_name)
+                )),
+                name: wrapper.encoder_name(),
+                annotation: Type::Function(
+                    Box::new(ty(wrapper.elm_name.clone(), [])),
+                    Box::new(annotation),
+                ),
+                params: vec![pctor(wrapper.elm_name.clone(), [pvar(ENCODER_ARGUMENT)])],
+                body: apply(var(message.encoder_name()), [var(ENCODER_ARGUMENT)]),
+            },
+        );
+        decls
     }
 
     /// `decodeNode_ = Json.Decode.map Node_ (Json.Decode.lazy (\_ ->

@@ -44,6 +44,7 @@ suite =
     describe "nesting depth"
         [ describe "binary" (List.map binaryShape shapes)
         , describe "JSON" (List.map jsonShape shapes)
+        , plainTwins
         , binaryFailure
         , mergedInto
         , keep
@@ -1858,3 +1859,31 @@ valueErrorsShort =
         , test "100,000 levels" <|
             \_ -> decodeValueMessage (parsed (nestedArrays 100000)) |> printsWithin 300
         ]
+
+
+{-| A message on a cycle whose write nothing can refuse writes through its
+plain encoder, which its own recursion calls: the same JSON as its
+encoder's.
+-}
+plainTwins : Test
+plainTwins =
+    let
+        leaf label =
+            { label = label, children = [] }
+
+        tree =
+            { label = "root", children = List.map (\i -> Deep.Tree_ { label = String.fromInt i, children = [ Deep.Tree_ (leaf "x") ] }) (List.range 1 3) }
+
+        chain =
+            List.foldl (\i next -> { label = String.fromInt i, next = Just (Deep.Chain_ next), tree = Just tree }) { label = "end", next = Nothing, tree = Nothing } (List.range 1 5)
+
+        text =
+            Json.Encode.encode 0
+    in
+    test "a recursive message's plain encoder writes what its encoder writes" <|
+        \_ ->
+            ( text (Deep.encodePlainTree tree), text (Deep.encodePlainChain chain) )
+                |> Expect.equal
+                    ( text (Proto.Json.encodeTotal (Deep.encodeTree tree))
+                    , text (Proto.Json.encodeTotal (Deep.encodeChain chain))
+                    )

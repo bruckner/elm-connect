@@ -1189,15 +1189,20 @@ encodeOuterInner value =
 -}
 encodeTree : Tree -> Proto.Json.Encoder x
 encodeTree value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            ([ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
-             , ( "left", Proto.Json.totalOptionalField encodeTree_ value.left )
-             , ( "children", Proto.Json.totalRepeatedField encodeTree_ value.children )
-             , ( "named", Proto.Json.totalDictField identity encodeTree_ value.named )
-             ]
-                ++ encodeTreeLink value.link
-            )
+    Proto.Json.succeed (encodePlainTree value)
+
+
+{-| The JSON of a [`Tree`](#Tree), which its own recursion writes.
+-}
+encodePlainTree : Tree -> Json.Encode.Value
+encodePlainTree value =
+    Proto.Json.objectOfFields
+        ([ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
+         , ( "left", Maybe.map encodePlainTree_ value.left )
+         , ( "children", Proto.Json.repeatedField encodePlainTree_ value.children )
+         , ( "named", Proto.Json.dictField identity encodePlainTree_ value.named )
+         ]
+            ++ encodeTreeLink value.link
         )
 
 
@@ -1206,6 +1211,13 @@ encodeTree value =
 encodeTree_ : Tree_ -> Proto.Json.Encoder x
 encodeTree_ (Tree_ value) =
     encodeTree value
+
+
+{-| The JSON of a [`Tree_`](#Tree_), which its own recursion writes.
+-}
+encodePlainTree_ : Tree_ -> Json.Encode.Value
+encodePlainTree_ (Tree_ value) =
+    encodePlainTree value
 
 
 {-| Encodes a [`TreeLink`](#TreeLink) as the members of its message's JSON object.
@@ -1217,7 +1229,7 @@ encodeTreeLink value =
             []
 
         TreeLinkNext member ->
-            [ ( "next", Just (Proto.Json.encodeTotal (encodeTree member)) )
+            [ ( "next", Just (encodePlainTree member) )
             ]
 
         TreeLinkEnd member ->

@@ -157,12 +157,17 @@ registry =
 -}
 encodeChain : Chain -> Proto.Json.Encoder x
 encodeChain value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
-            , ( "next", Proto.Json.totalOptionalField encodeChain_ value.next )
-            ]
-        )
+    Proto.Json.succeed (encodePlainChain value)
+
+
+{-| The JSON of a [`Chain`](#Chain), which its own recursion writes.
+-}
+encodePlainChain : Chain -> Json.Encode.Value
+encodePlainChain value =
+    Proto.Json.objectOfFields
+        [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
+        , ( "next", Maybe.map encodePlainChain_ value.next )
+        ]
 
 
 {-| Encodes a [`Chain_`](#Chain_) as proto3 JSON.
@@ -172,16 +177,28 @@ encodeChain_ (Chain_ value) =
     encodeChain value
 
 
+{-| The JSON of a [`Chain_`](#Chain_), which its own recursion writes.
+-}
+encodePlainChain_ : Chain_ -> Json.Encode.Value
+encodePlainChain_ (Chain_ value) =
+    encodePlainChain value
+
+
 {-| Encodes a [`Tree`](#Tree) as proto3 JSON, which nothing it holds can refuse.
 -}
 encodeTree : Tree -> Proto.Json.Encoder x
 encodeTree value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
-            , ( "children", Proto.Json.totalRepeatedField encodeTree_ value.children )
-            ]
-        )
+    Proto.Json.succeed (encodePlainTree value)
+
+
+{-| The JSON of a [`Tree`](#Tree), which its own recursion writes.
+-}
+encodePlainTree : Tree -> Json.Encode.Value
+encodePlainTree value =
+    Proto.Json.objectOfFields
+        [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
+        , ( "children", Proto.Json.repeatedField encodePlainTree_ value.children )
+        ]
 
 
 {-| Encodes a [`Tree_`](#Tree_) as proto3 JSON.
@@ -189,6 +206,13 @@ encodeTree value =
 encodeTree_ : Tree_ -> Proto.Json.Encoder x
 encodeTree_ (Tree_ value) =
     encodeTree value
+
+
+{-| The JSON of a [`Tree_`](#Tree_), which its own recursion writes.
+-}
+encodePlainTree_ : Tree_ -> Json.Encode.Value
+encodePlainTree_ (Tree_ value) =
+    encodePlainTree value
 
 
 
