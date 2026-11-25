@@ -7,7 +7,7 @@ use super::{
     PROTO_VALUE, TIME, call, scalar,
 };
 use crate::elm::ast::{Expr, Type};
-use crate::elm::build::{apply, int, list, qualified, ty, var};
+use crate::elm::build::{apply, list, qualified, ty, var};
 use crate::naming::{REGISTRY_ARGUMENT, with_registry};
 use std::collections::HashMap;
 
@@ -436,12 +436,9 @@ impl Emitter {
                 _ if self.nested_any => self.reference((PROTO_JSON, "encodeNestedAnyWith")),
                 _ => self.reference((PROTO_JSON, "encodeAnyWith")),
             };
-            let off_cycle = matches!(value, ValueShape::Present(Present::Message(_)));
             let registry = if self.deeper_registry {
                 let deeper = self.reference((PROTO_JSON, "registryDeeper"));
                 apply(deeper, [var(REGISTRY_ARGUMENT)])
-            } else if self.nested_any && off_cycle {
-                self.nested_registry(int(1))
             } else {
                 var(REGISTRY_ARGUMENT)
             };
@@ -475,16 +472,6 @@ impl Emitter {
         }
     }
 
-    /// `Proto.Json.nestedRegistry depth types`: the registry for a value
-    /// off its cycle that a recursive message holds, when the value's
-    /// codecs take the registry, so the `Any`s and the cycles inside it
-    /// count on from the message's depth. A decoder passes its depth, an
-    /// encoder 1, the message's depth then being the registry's or 1.
-    pub(super) fn nested_registry(&mut self, depth: Expr) -> Expr {
-        let nested = self.reference((PROTO_JSON, "nestedRegistry"));
-        apply(nested, [depth, var(REGISTRY_ARGUMENT)])
-    }
-
     /// The decoder of one value, taking the registry when it reaches an
     /// `Any`.
     pub(super) fn value_decoder(&mut self, value: ValueShape) -> Expr {
@@ -512,6 +499,11 @@ impl Emitter {
                 };
             }
         }
+        if self.deep.is_some()
+            && let Some(name) = self.counted_message(value)
+        {
+            return self.counted_decoder(name);
+        }
         if self.reaches(value) {
             let decoder = match value {
                 ValueShape::Present(Present::Message(name)) => {
@@ -529,14 +521,7 @@ impl Emitter {
                 }
                 _ => self.reference((PROTO_JSON, "anyWith")),
             };
-            // A message off the cycle that takes the registry is given the
-            // depth in it, so what nests inside counts on from here.
-            let registry = if self.deep.is_some() {
-                self.nested_registry(var(super::recursion::DEPTH))
-            } else {
-                var(REGISTRY_ARGUMENT)
-            };
-            return apply(decoder, [registry]);
+            return apply(decoder, [var(REGISTRY_ARGUMENT)]);
         }
         match value {
             ValueShape::Zeroed(Zeroed::Scalar(repr))

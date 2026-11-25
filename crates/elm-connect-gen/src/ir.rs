@@ -39,6 +39,7 @@
 
 mod build;
 pub mod comments;
+mod counted;
 pub mod declaration;
 mod graph;
 pub mod nesting;
@@ -49,6 +50,7 @@ use std::fmt;
 
 pub(crate) use build::declared_fields;
 pub use build::{Built, build, build_with, build_with_imports, name_site, unbound_methods};
+pub use counted::Counted;
 pub use reach::AnyReach;
 
 /// Everything generated from one proto package, across all of its files:

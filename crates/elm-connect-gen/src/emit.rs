@@ -202,8 +202,8 @@ use crate::diagnostics::{Problem, Site};
 use crate::elm::ast::{Decl, Exposed, Exposing, Expr, Import, Module, ModuleName, Type};
 use crate::elm::build::{apply, qualified, ty, ty_qualified, var};
 use crate::ir::{
-    AnyReach, Element, Field, Message, Method, ModuleName as IrModule, Oneof, OneofVariant,
-    Package, Service, TypeName,
+    AnyReach, Counted, Element, Field, Message, Method, ModuleName as IrModule, Oneof,
+    OneofVariant, Package, Service, TypeName,
 };
 use crate::naming::VERSION_VALUE;
 use crate::options::{EnumUnknown, Options, UnknownFields, Wire};
@@ -324,6 +324,7 @@ pub fn emit_with_queries(
     let messages = all_messages(package, packages);
     let mut emitter = Emitter::new(&package.module, options);
     emitter.reach = AnyReach::of(packages.iter().chain(std::iter::once(package)));
+    emitter.counted = Counted::of(packages.iter().chain(std::iter::once(package)));
     let mut decls = emitter.package(package);
     let mut encoders = Vec::new();
     // Route functions take JSON, which `wire=proto` does not generate,
@@ -475,6 +476,7 @@ pub fn emit_service(
     let messages = all_messages(package, packages);
     let mut emitter = Emitter::new(&service.module, options);
     emitter.reach = AnyReach::of(packages.iter().chain(std::iter::once(package)));
+    emitter.counted = Counted::of(packages.iter().chain(std::iter::once(package)));
     let mut decls = Vec::new();
     if !service.methods.is_empty() {
         let mut calls = Vec::new();
@@ -634,40 +636,45 @@ struct Emitter {
     wiring: Wire,
     /// The messages of the build that reach a `google.protobuf.Any`.
     reach: AnyReach,
+    /// The messages of the build that nest, whose codecs take the nesting
+    /// depth.
+    counted: Counted,
     /// The options as the header's second line records them.
     recorded: String,
-    /// While a recursive message's JSON decoder is written: how its values
-    /// on the cycle are read one level deeper.
+    /// While the JSON decoder of a message whose codecs take the depth is
+    /// written: how its values on its own cycle are read one level deeper.
     deep: Option<Deep>,
     /// Whether the value whose decoder is being written is on that cycle.
     deep_value: bool,
-    /// While a recursive message's binary merge is written: its `Struct`,
-    /// `Value` and `ListValue` fields read at the merge's depth.
+    /// While the binary merge of a message whose codecs take the depth is
+    /// written: its `Struct`, `Value` and `ListValue` fields read at the
+    /// merge's depth.
     binary_depth: bool,
-    /// While a field or oneof member on its message's cycle is written by
-    /// an encoder taking the registry: the value is written with the
-    /// registry one level deeper, so converting an `Any` to JSON counts
-    /// the messages around it as a read does.
+    /// While a message whose codecs take the depth is written by the
+    /// encoder, taking the registry, of another such message: the value is
+    /// written with the registry one level deeper, so converting an `Any`
+    /// to JSON counts the messages around it as a read does.
     deeper_registry: bool,
-    /// While a value of a recursive message, or of a oneof whose decoder
-    /// takes its message's depth, is written by an encoder taking the
-    /// registry: an `Any` is written with `Proto.Json.encodeNestedAnyWith`,
-    /// which counts it from the message's depth as the decoder's
-    /// `nestedAnyWith` reads it, and a message off the cycle is given
-    /// `Proto.Json.nestedRegistry 1`, the registry at that depth, as the
-    /// decoder gives it the registry at its own.
+    /// While a value of a message whose codecs take the depth is written
+    /// by an encoder taking the registry: an `Any` is written with
+    /// `Proto.Json.encodeNestedAnyWith`, which counts it from the message's
+    /// depth as the decoder's `nestedAnyWith` reads it.
     nested_any: bool,
 }
 
-/// How a recursive message's JSON decoder reads a value on its cycle one
-/// level deeper.
+/// How the JSON decoder of a message whose codecs take the depth is made
+/// for each depth.
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Deep {
-    /// From the decoders `Proto.Json.memo` makes once for every depth
-    /// (`decodeNestedNode`).
+    /// Once for every depth, by `Proto.Json.memo` (`decodeNestedNode`):
+    /// a message on a cycle.
     Memo,
-    /// From the decoder built as the value is read
-    /// (`decodeNestedNodeWith`), for a message that takes the registry.
+    /// When asked for, by a function of the depth (`decodeNestedNote
+    /// depth`): a message on no cycle, whose depth the schema bounds.
+    Called,
+    /// When asked for, by a function of the registry and the depth
+    /// (`decodeNestedNodeWith types depth`): a message that takes the
+    /// registry, whose decoders cannot be made before it is given.
     Built,
 }
 
@@ -682,6 +689,7 @@ impl Emitter {
             unknown_fields: options.unknown_fields,
             wiring: options.wire,
             reach: AnyReach::default(),
+            counted: Counted::default(),
             recorded: match options.recorded() {
                 pairs if pairs.is_empty() => DEFAULT_OPTIONS.to_owned(),
                 pairs => pairs.join(", "),
@@ -781,10 +789,11 @@ impl Emitter {
                 binary_encoders.push(self.wrapper_encoder_bytes(shape.message, wrapper));
                 binary_decoders.extend(self.wrapper_decoder_bytes(shape.message, wrapper));
             }
+            let counts = self.counts(shape.message);
             for oneof in &shape.oneofs {
                 types.push(self.oneof_type(&package.module, shape.message, oneof));
-                encoders.push(self.oneof_encoder(oneof, shape.message.recursive));
-                decoders.extend(self.oneof_decoder(oneof, shape.message.recursive));
+                encoders.push(self.oneof_encoder(oneof, counts));
+                decoders.extend(self.oneof_decoder(oneof, counts));
                 binary_encoders.push(self.oneof_encoder_bytes(oneof));
             }
         }

@@ -2086,10 +2086,10 @@ embedded write into zero =
         }
 
 
-{-| A message field on a cycle of the message holding it, which can nest
-without bound: [`embedded`](#embedded), from the nesting depth of the
-message holding it (the outermost message of the cycle is at 1) and the
-message's merge given the depth its own fields are read at. A field read
+{-| A field of a message that nests, read one level deeper than the message
+holding it, which nests too: [`embedded`](#embedded), from the nesting depth
+of the message holding it (the outermost message is at 1) and the message's
+merge given the depth its own fields are read at. A field read
 past 100 levels fails with [`TooDeep`](Proto-Error#Reason), as protobuf
 implementations refuse a message nested past 100 levels; writing is not
 limited.
@@ -2106,12 +2106,12 @@ recursive depth write into zero =
         tooDeep write zero
 
 
-{-| A recursive message's merge at a depth, the outermost message of its
-cycle at 1, from the merge `build` makes for a depth. `memo build` makes the
+{-| The merge at a depth of a message on a cycle, the outermost message at 1,
+from the merge `build` makes for a depth. `memo build` makes the
 merges for depths 1 to 100 once, so applied in a top-level value, as
 generated code applies it, it makes them once per program, and a read looks
-its merge up. Past 100 the merge is made when asked for, and each field on
-the cycle it reads fails with [`TooDeep`](Proto-Error#Reason).
+its merge up. Past 100 the merge is made when asked for, and each field it
+reads at a depth fails with [`TooDeep`](Proto-Error#Reason).
 
     mergeNestedNodeBytes =
         Proto.Binary.memo (\depth -> Proto.Binary.merge ...)
@@ -2348,7 +2348,7 @@ valueCodec () =
 
 
 {-| A `Struct`, a `ListValue` or a `Value` read as a field of a message at
-`depth`, as a message on a cycle reads one: the object or array is one level
+`depth`, as a message that nests reads one: the object or array is one level
 deeper.
 -}
 nestedStruct : Int -> Codec (Dict String Value)

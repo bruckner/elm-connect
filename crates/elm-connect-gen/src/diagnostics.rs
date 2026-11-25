@@ -141,9 +141,9 @@ codes! {
     ShadowingModule => "naming::shadowing_module",
     /// A field uses a `google.protobuf` type with no Elm mapping.
     UnsupportedWellKnown => "types::unsupported_well_known",
-    /// Messages hold each other in a chain more than 100 long, which a
-    /// read does not count off a cycle of references and most protobuf
-    /// runtimes refuse: a warning.
+    /// Messages hold each other in a chain more than 100 long, which most
+    /// protobuf runtimes refuse, and a read here refuses too when its
+    /// messages nest and reads to its end when they do not: a warning.
     DeepNesting => "types::deep_nesting",
     /// A method streams requests or responses.
     Streaming => "services::streaming",
@@ -1165,15 +1165,19 @@ impl Problem {
 
     /// The messages `chain` (full names, the outermost first) each hold
     /// the next, more than `limit` of them; `recursive` is the first of
-    /// them on a cycle of references, if any. `site` is the first
-    /// message's name. A warning.
+    /// them on a cycle of references, if any, and `counted` how many of
+    /// them, from the outermost, a read counts as levels: those that nest.
+    /// `site` is the first message's name. A warning.
     pub fn deep_nesting(
         chain: &[String],
         recursive: Option<&str>,
+        counted: usize,
         limit: usize,
         site: Option<Site>,
     ) -> Self {
         const SHOWN: usize = 3;
+        const NESTS: &str = "a message on a cycle of references, a `Value`, `Struct` or \
+                             `ListValue`, or an `Any`";
         let named: Vec<String> = chain.iter().map(|name| format!("`{name}`")).collect();
         let listed = if named.len() > 2 * SHOWN + 1 {
             format!(
@@ -1190,6 +1194,34 @@ impl Problem {
                  nest deeper still."
             )
         });
+        let shorten = format!(
+            "Shorten the chain to {limit} messages: merge levels into one message, or hold \
+             the deep part as `bytes`."
+        );
+        let help = if counted > limit {
+            format!(
+                "Most protobuf runtimes refuse to parse a message nested more than {limit} \
+                 deep, and so do elm-connect's reads: they count each message that reaches \
+                 something that nests ({NESTS}), the first {counted} of this chain, so a \
+                 message that fills it fails to read past {limit} levels. {shorten}"
+            )
+        } else {
+            let which = if counted == 0 {
+                "none of this chain's messages does, so they read it to its end".to_owned()
+            } else {
+                format!(
+                    "only the first {counted} of this chain's messages do, so they read the \
+                     rest to its end"
+                )
+            };
+            format!(
+                "Most protobuf runtimes refuse to parse a message nested more than {limit} \
+                 deep, so a server or client on one of them fails on a message that fills this \
+                 chain. elm-connect's reads count only the messages that reach something that \
+                 nests ({NESTS}), and {which}; a chain deep enough overflows the JavaScript \
+                 stack. {shorten}"
+            )
+        };
         Problem::new(
             Code::DeepNesting,
             format!(
@@ -1197,14 +1229,7 @@ impl Problem {
                 chain[0],
                 chain.len()
             ),
-            format!(
-                "Most protobuf runtimes refuse to parse a message nested more than {limit} \
-                 deep, so a server or client on one of them fails on a message that fills this \
-                 chain. elm-connect's reads count only the messages on a cycle of references, \
-                 so they read it to its end, and a chain deep enough overflows the JavaScript \
-                 stack. Shorten the chain to {limit} messages: merge levels into one message, \
-                 or hold the deep part as `bytes`."
-            ),
+            help,
             site.into_iter().collect(),
         )
         .warning()

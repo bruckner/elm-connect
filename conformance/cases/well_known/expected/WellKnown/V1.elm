@@ -301,15 +301,22 @@ encodeEventWhen value =
 -}
 decodeEvent : Json.Decode.Decoder Event
 decodeEvent =
+    decodeNestedEvent 1
+
+
+{-| [`decodeEvent`](#decodeEvent) for an [`Event`](#Event) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+-}
+decodeNestedEvent : Int -> Json.Decode.Decoder Event
+decodeNestedEvent depth =
     Proto.Json.message
         (Json.Decode.succeed Event
             |> Proto.Json.messageFieldEither "createdAt" "created_at" Nothing (Json.Decode.map Just Proto.Json.timestamp)
             |> Proto.Json.messageField "timeout" Nothing (Json.Decode.map Just Proto.Json.duration)
             |> Proto.Json.messageFieldEither "updateMask" "update_mask" Nothing (Json.Decode.map Just Proto.Json.fieldMask)
             |> Proto.Json.messageField "marker" () Proto.Json.empty
-            |> Proto.Json.messageField "metadata" Nothing (Json.Decode.map Just Proto.Json.struct)
-            |> Proto.Json.messageValueField "payload"
-            |> Proto.Json.messageField "items" Nothing (Json.Decode.map Just Proto.Json.listValue)
+            |> Proto.Json.messageField "metadata" Nothing (Json.Decode.map Just (Proto.Json.nestedStruct depth))
+            |> Proto.Json.nestedMessageValueField "payload" depth
+            |> Proto.Json.messageField "items" Nothing (Json.Decode.map Just (Proto.Json.nestedListValue depth))
             |> Proto.Json.messageField "ratio" Nothing (Json.Decode.map Just Proto.Json.float)
             |> Proto.Json.messageField "weight" Nothing (Json.Decode.map Just Proto.Json.float32)
             |> Proto.Json.messageFieldEither "bigCount" "big_count" Nothing (Json.Decode.map Just Proto.Json.int64)
@@ -321,20 +328,20 @@ decodeEvent =
             |> Proto.Json.messageField "avatar" Nothing (Json.Decode.map Just Proto.Json.bytes)
             |> Proto.Json.messageField "history" [] (Json.Decode.list Proto.Json.timestamp)
             |> Proto.Json.messageField "limits" Dict.empty (Proto.Json.stringDict Proto.Json.duration)
-            |> Proto.Json.messageField "values" [] (Json.Decode.list Proto.Json.value)
+            |> Proto.Json.messageField "values" [] (Json.Decode.list (Proto.Json.nestedValue depth))
             |> Proto.Json.messageField "counts" [] (Json.Decode.list Proto.Json.int32)
             |> Proto.Json.messageField "acked" () Proto.Json.empty
             |> Proto.Json.messageField "pings" [] (Json.Decode.list Proto.Json.empty)
             |> Proto.Json.messageField "seen" Dict.empty (Proto.Json.stringDict Proto.Json.empty)
-            |> Proto.Json.messageField "records" [] (Json.Decode.list Proto.Json.struct)
-            |> Proto.Json.messageField "columns" Dict.empty (Proto.Json.stringDict Proto.Json.listValue)
-            |> Proto.Json.messageValueFieldEither "lastValue" "last_value"
-            |> Proto.Json.messageField "settings" Dict.empty (Proto.Json.stringDict Proto.Json.value)
+            |> Proto.Json.messageField "records" [] (Json.Decode.list (Proto.Json.nestedStruct depth))
+            |> Proto.Json.messageField "columns" Dict.empty (Proto.Json.stringDict (Proto.Json.nestedListValue depth))
+            |> Proto.Json.nestedMessageValueFieldEither "lastValue" "last_value" depth
+            |> Proto.Json.messageField "settings" Dict.empty (Proto.Json.stringDict (Proto.Json.nestedValue depth))
             |> Proto.Json.messageField "nothing" () Proto.Json.nullValue
             |> Proto.Json.messageFieldEither "maybeNothing" "maybe_nothing" () Proto.Json.nullValue
             |> Proto.Json.messageField "nulls" [] (Json.Decode.list Proto.Json.nullValue)
             |> Proto.Json.messageFieldEither "nullMap" "null_map" Dict.empty (Proto.Json.stringDict Proto.Json.nullValue)
-            |> Proto.Json.oneof decodeEventWhen
+            |> Proto.Json.oneof (decodeNestedEventWhen depth)
         )
 
 
@@ -342,13 +349,20 @@ decodeEvent =
 -}
 decodeEventWhen : Json.Decode.Decoder EventWhen
 decodeEventWhen =
+    decodeNestedEventWhen 1
+
+
+{-| [`decodeEventWhen`](#decodeEventWhen) for an [`EventWhen`](#EventWhen) held by a message `depth` levels deep. That message's decoder calls it at each depth.
+-}
+decodeNestedEventWhen : Int -> Json.Decode.Decoder EventWhen
+decodeNestedEventWhen depth =
     Proto.Json.members "when"
         EventWhenUnset
         [ Proto.Json.member "at" (Json.Decode.map EventWhenAt Proto.Json.timestamp)
         , Proto.Json.member "after" (Json.Decode.map EventWhenAfter Proto.Json.duration)
-        , Proto.Json.valueMember "whenever" EventWhenWhenever
-        , Proto.Json.member "schedule" (Json.Decode.map EventWhenSchedule Proto.Json.struct)
-        , Proto.Json.member "dates" (Json.Decode.map EventWhenDates Proto.Json.listValue)
+        , Proto.Json.nestedValueMember "whenever" depth EventWhenWhenever
+        , Proto.Json.member "schedule" (Json.Decode.map EventWhenSchedule (Proto.Json.nestedStruct depth))
+        , Proto.Json.member "dates" (Json.Decode.map EventWhenDates (Proto.Json.nestedListValue depth))
         , Proto.Json.nullValueMember "never" EventWhenNever
         ]
 
@@ -458,6 +472,13 @@ encodeEventWhenBytes value =
 -}
 mergeEventBytes : Event -> Proto.Binary.Decoder Event
 mergeEventBytes =
+    mergeNestedEventBytes 1
+
+
+{-| [`mergeEventBytes`](#mergeEventBytes) for an [`Event`](#Event) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+-}
+mergeNestedEventBytes : Int -> Event -> Proto.Binary.Decoder Event
+mergeNestedEventBytes depth =
     Proto.Binary.merge
         "well_known.v1.Event"
         (\number wire value ->
@@ -628,7 +649,7 @@ mergeEventBytes =
 
                 5 ->
                     Proto.Binary.field
-                        Proto.Binary.struct
+                        (Proto.Binary.nestedStruct depth)
                         (\v ->
                             { createdAt = value.createdAt
                             , timeout = value.timeout
@@ -669,7 +690,7 @@ mergeEventBytes =
 
                 6 ->
                     Proto.Binary.field
-                        Proto.Binary.value
+                        (Proto.Binary.nestedValue depth)
                         (\v ->
                             { createdAt = value.createdAt
                             , timeout = value.timeout
@@ -710,7 +731,7 @@ mergeEventBytes =
 
                 7 ->
                     Proto.Binary.field
-                        Proto.Binary.listValue
+                        (Proto.Binary.nestedListValue depth)
                         (\v ->
                             { createdAt = value.createdAt
                             , timeout = value.timeout
@@ -1204,7 +1225,7 @@ mergeEventBytes =
 
                 19 ->
                     Proto.Binary.repeated
-                        Proto.Binary.value
+                        (Proto.Binary.nestedValue depth)
                         (\v ->
                             { createdAt = value.createdAt
                             , timeout = value.timeout
@@ -1370,7 +1391,7 @@ mergeEventBytes =
 
                 23 ->
                     Proto.Binary.field
-                        Proto.Binary.value
+                        (Proto.Binary.nestedValue depth)
                         (\v ->
                             { createdAt = value.createdAt
                             , timeout = value.timeout
@@ -1536,7 +1557,7 @@ mergeEventBytes =
 
                 27 ->
                     Proto.Binary.repeated
-                        Proto.Binary.struct
+                        (Proto.Binary.nestedStruct depth)
                         (\v ->
                             { createdAt = value.createdAt
                             , timeout = value.timeout
@@ -1579,7 +1600,7 @@ mergeEventBytes =
                 28 ->
                     Proto.Binary.mapEntry
                         Proto.Binary.string
-                        Proto.Binary.listValue
+                        (Proto.Binary.nestedListValue depth)
                         (\k v ->
                             { createdAt = value.createdAt
                             , timeout = value.timeout
@@ -1620,7 +1641,7 @@ mergeEventBytes =
 
                 29 ->
                     Proto.Binary.field
-                        Proto.Binary.struct
+                        (Proto.Binary.nestedStruct depth)
                         (\v ->
                             { createdAt = value.createdAt
                             , timeout = value.timeout
@@ -1661,7 +1682,7 @@ mergeEventBytes =
 
                 30 ->
                     Proto.Binary.field
-                        Proto.Binary.listValue
+                        (Proto.Binary.nestedListValue depth)
                         (\v ->
                             { createdAt = value.createdAt
                             , timeout = value.timeout
@@ -1702,7 +1723,7 @@ mergeEventBytes =
 
                 31 ->
                     Proto.Binary.field
-                        Proto.Binary.value
+                        (Proto.Binary.nestedValue depth)
                         (\v ->
                             { createdAt = value.createdAt
                             , timeout = value.timeout
@@ -1744,7 +1765,7 @@ mergeEventBytes =
                 32 ->
                     Proto.Binary.mapEntry
                         Proto.Binary.string
-                        Proto.Binary.value
+                        (Proto.Binary.nestedValue depth)
                         (\k v ->
                             { createdAt = value.createdAt
                             , timeout = value.timeout

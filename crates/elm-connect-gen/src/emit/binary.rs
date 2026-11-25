@@ -277,8 +277,9 @@ impl Emitter {
 
     /// The `Proto.Binary.Codec` of one value of type `ty`, held as
     /// `holding` says; in `wrapped`, when the field closes a cycle. A
-    /// message on the cycle of the message being read (`deep`) is read by
-    /// `Proto.Binary.recursive` at the merge's depth.
+    /// message whose codecs take the depth, held by one that does (`deep`),
+    /// is read one level deeper than the merge's depth, by
+    /// `Proto.Binary.recursive`.
     fn binary_codec(
         &mut self,
         ty: &TypeRef,
@@ -358,14 +359,12 @@ impl Emitter {
         }
     }
 
+    /// The codec of a field's values; `deep` when its message's merge
+    /// takes the depth.
     fn field_codec(&mut self, field: &Field, shape: FieldShape, deep: bool) -> Expr {
         let holding = field_holding(field.jstype, self.holding);
-        self.binary_codec(
-            &field.ty,
-            holding,
-            wrapper_of(shape),
-            deep && field.recursive,
-        )
+        let counted = field.recursive || self.counted.type_ref(&field.ty);
+        self.binary_codec(&field.ty, holding, wrapper_of(shape), deep && counted)
     }
 
     fn bytes_encoder_type(&mut self) -> Type {
@@ -523,13 +522,15 @@ impl Emitter {
 
     /// `mergeFooBytes : Foo -> Proto.Binary.Decoder Foo`: a `Foo` read
     /// into the one given, as protobuf merges a message arriving twice. A
-    /// recursive message's merge is `mergeNestedFooBytes 1`, and
+    /// merge of a message that nests is `mergeNestedFooBytes 1`, and
     /// `mergeNestedFooBytes : Int -> Foo -> Proto.Binary.Decoder Foo` is
-    /// given the nesting depth, which its fields on the cycle read at one
-    /// more: `Proto.Binary.memo (\depth -> merge)`, which makes the merge
-    /// for each depth once.
+    /// given the nesting depth, which the messages it holds that nest read
+    /// at one more: for a message on a cycle `Proto.Binary.memo (\depth ->
+    /// merge)`, which makes the merge for each depth once, and for one on
+    /// no cycle a function of the depth, `mergeNestedNoteBytes depth =
+    /// merge`, made when a holder reads it.
     pub(super) fn message_merge_bytes(&mut self, shape: &MessageShape) -> Vec<Decl> {
-        self.binary_depth = shape.message.recursive;
+        self.binary_depth = self.counts(shape.message);
         let decls = self.message_merge_bytes_body(shape);
         self.binary_depth = false;
         decls
@@ -539,6 +540,7 @@ impl Emitter {
         let mut branches: Vec<(u32, Expr)> = Vec::new();
         let mut wires: Vec<(u32, u32)> = Vec::new();
         let mut reversed: Vec<String> = Vec::new();
+        let deep = self.counts(shape.message);
         let setter = Setter::new(shape, self.keeps_unknown());
         let update = |name: &str, value: Expr| setter.update(name, value);
         let wire = || var(WIRE);
@@ -546,7 +548,7 @@ impl Emitter {
         for &(field, field_shape) in &shape.fields {
             let name = field.elm_name.as_str();
             let current = access(var(ENCODER_ARGUMENT), name);
-            let codec = self.field_codec(field, field_shape, shape.message.recursive);
+            let codec = self.field_codec(field, field_shape, deep);
             let step = match field_shape {
                 FieldShape::Plain(_) => {
                     let set = lambda([pvar(ITEM)], update(name, var(ITEM)));
@@ -599,8 +601,8 @@ impl Emitter {
             let name = oneof.oneof.elm_field_name.as_str();
             for &(variant, value) in &oneof.variants {
                 let holding = field_holding(variant.jstype, self.holding);
-                let deep = shape.message.recursive && variant.cyclic;
-                let codec = self.binary_codec(&variant.ty, holding, None, deep);
+                let counted = variant.cyclic || self.counted.type_ref(&variant.ty);
+                let codec = self.binary_codec(&variant.ty, holding, None, deep && counted);
                 let set = if matches!(value, ValueShape::Zeroed(Zeroed::Empty | Zeroed::Null)) {
                     lambda(
                         [Pattern::Wildcard],
@@ -697,7 +699,7 @@ impl Emitter {
             docs::a_local(&shape.message.elm_name)
         ));
         let name = merge_name(shape.message.decoder_name());
-        if !shape.message.recursive {
+        if !deep {
             return vec![Decl::Value {
                 doc,
                 name,
@@ -709,6 +711,16 @@ impl Emitter {
         let int_type = ty(self.core("Int"), []);
         let nested_type = Type::Function(Box::new(int_type), Box::new(annotation.clone()));
         let nested_merge = nested(name.clone());
+        // A message on a cycle makes its merge for each depth once; one on
+        // no cycle when asked for, as a holder reads it.
+        let memoised = if shape.message.recursive {
+            (
+                Vec::new(),
+                apply(self.binary("memo"), [lambda([pvar(DEPTH)], body)]),
+            )
+        } else {
+            (vec![pvar(DEPTH)], body)
+        };
         vec![
             Decl::Value {
                 doc,
@@ -721,8 +733,8 @@ impl Emitter {
                 doc: Some(docs::nested(&name, &shape.message.elm_name)),
                 name: nested_merge,
                 annotation: nested_type,
-                params: Vec::new(),
-                body: apply(self.binary("memo"), [lambda([pvar(DEPTH)], body)]),
+                params: memoised.0,
+                body: memoised.1,
             },
         ]
     }

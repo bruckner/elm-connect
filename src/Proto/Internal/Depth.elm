@@ -5,9 +5,9 @@ from: `Proto.Binary`, `Proto.Json`, `Proto.Value`, `Proto.Internal.ValueJson`
 and `Proto.Internal.Registry`. It imports nothing of the package, so any of
 them can import it, and a program links only what it uses of it.
 
-A level is a message entered along a field or oneof member of a cycle, the
-outermost at 1, an `Any`, or an array or object of a `Value`, `Struct` or
-`ListValue`; all count against [`limit`](#limit). Every reader compares the
+A level is a message that nests (one that reaches a cycle of references, a
+`Value`, `Struct` or `ListValue`, or an `Any`), the outermost at 1, an
+`Any`, or an array or object of a `Value`, `Struct` or `ListValue`; all count against [`limit`](#limit). Every reader compares the
 same way: a read at depth `d` enters the level below only while
 `d < limit`, at `d + 1`, so 100 levels read and the 101st is the first
 refused. A table of readers by depth holds one per depth a read can be at:
@@ -22,8 +22,8 @@ in design §5.5.
 import Json.Decode exposing (Decoder)
 
 
-{-| The most levels a read nests: messages entered along a cycle, `Any`
-values and the arrays and objects of a `Value` count against one budget, as
+{-| The most levels a read nests: messages that nest, `Any` values and the
+arrays and objects of a `Value` count against one budget, as
 protobuf's own runtimes allow. The generator's `ir::nesting::LIMIT` is the
 same number, held to it by `crates/elm-connect-gen/tests/lockstep.rs`.
 -}

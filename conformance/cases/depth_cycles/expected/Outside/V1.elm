@@ -4,7 +4,8 @@
 
 module Outside.V1 exposing (..)
 
-{-| A cycle reached from another package: its decoders start at depth 1.
+{-| Cycles reached from another package: the message holding them nests, so
+it is the first level and they count on from it.
 -}
 
 import Bytes.Encode
@@ -115,10 +116,17 @@ encodeHolder value =
 -}
 decodeHolder : Json.Decode.Decoder Holder
 decodeHolder =
+    decodeNestedHolder 1
+
+
+{-| [`decodeHolder`](#decodeHolder) for a [`Holder`](#Holder) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+-}
+decodeNestedHolder : Int -> Json.Decode.Decoder Holder
+decodeNestedHolder depth =
     Proto.Json.message
         (Json.Decode.succeed Holder
-            |> Proto.Json.messageField "tree" Nothing (Json.Decode.map Just Cycles.V1.decodeTree)
-            |> Proto.Json.messageField "person" Nothing (Json.Decode.map Just Cycles.V1.decodePerson)
+            |> Proto.Json.messageField "tree" Nothing (Json.Decode.map Just (Cycles.V1.decodeNestedTree (depth + 1)))
+            |> Proto.Json.messageField "person" Nothing (Json.Decode.map Just (Cycles.V1.decodeNestedPerson (depth + 1)))
         )
 
 
@@ -144,13 +152,20 @@ encodeHolderBytes value =
 -}
 mergeHolderBytes : Holder -> Proto.Binary.Decoder Holder
 mergeHolderBytes =
+    mergeNestedHolderBytes 1
+
+
+{-| [`mergeHolderBytes`](#mergeHolderBytes) for a [`Holder`](#Holder) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+-}
+mergeNestedHolderBytes : Int -> Holder -> Proto.Binary.Decoder Holder
+mergeNestedHolderBytes depth =
     Proto.Binary.merge
         "outside.v1.Holder"
         (\number wire value ->
             case number of
                 1 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.embedded Cycles.V1.encodeTreeBytes Cycles.V1.mergeTreeBytes Cycles.V1.defaultTree)
+                        (Proto.Binary.recursive depth Cycles.V1.encodeTreeBytes Cycles.V1.mergeNestedTreeBytes Cycles.V1.defaultTree)
                         value.tree
                         (\v ->
                             { tree = Just v
@@ -162,7 +177,7 @@ mergeHolderBytes =
 
                 2 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.embedded Cycles.V1.encodePersonBytes Cycles.V1.mergePersonBytes Cycles.V1.defaultPerson)
+                        (Proto.Binary.recursive depth Cycles.V1.encodePersonBytes Cycles.V1.mergeNestedPersonBytes Cycles.V1.defaultPerson)
                         value.person
                         (\v ->
                             { tree = value.tree

@@ -1213,7 +1213,7 @@ encodeTreeLink value =
 encodeWellKnownWith : Proto.Registry.Registry -> WellKnown -> Result Proto.Error.Error Json.Encode.Value
 encodeWellKnownWith types value =
     Proto.Json.tryObjectOfFields
-        [ ( "any", Proto.Json.tryOptionalField (Proto.Json.encodeAnyWith types) value.any )
+        [ ( "any", Proto.Json.tryOptionalField (Proto.Json.encodeNestedAnyWith types) value.any )
         , ( "struct", Ok (Maybe.map Proto.Json.encodeStruct value.struct) )
         , ( "list", Ok (Maybe.map Proto.Json.encodeListValue value.list) )
         , ( "value", Ok (Maybe.map Proto.Json.encodeValue value.value) )
@@ -1221,7 +1221,7 @@ encodeWellKnownWith types value =
         , ( "duration", Ok (Maybe.map Proto.Json.encodeDuration value.duration) )
         , ( "mask", Ok (Maybe.map Proto.Json.encodeFieldMask value.mask) )
         , ( "empty", Ok (Just (Proto.Json.encodeEmpty value.empty)) )
-        , ( "anys", Proto.Json.tryRepeatedField (Proto.Json.encodeAnyWith types) value.anys )
+        , ( "anys", Proto.Json.tryRepeatedField (Proto.Json.encodeNestedAnyWith types) value.anys )
         , ( "values", Ok (Proto.Json.repeatedField Proto.Json.encodeValue value.values) )
         , ( "valueMap", Ok (Proto.Json.dictField identity Proto.Json.encodeValue value.valueMap) )
         , ( "timestamps", Ok (Proto.Json.repeatedField Proto.Json.encodeTimestamp value.timestamps) )
@@ -1288,7 +1288,7 @@ encodeEverythingWith types value =
         , ( "names", Ok (Maybe.map encodeNames value.names) )
         , ( "outer", Ok (Maybe.map encodeOuter value.outer) )
         , ( "tree", Ok (Maybe.map encodeTree value.tree) )
-        , ( "wellKnown", Proto.Json.tryOptionalField (encodeWellKnownWith (Proto.Json.nestedRegistry 1 types)) value.wellKnown )
+        , ( "wellKnown", Proto.Json.tryOptionalField (encodeWellKnownWith (Proto.Json.registryDeeper types)) value.wellKnown )
         , ( "wrappers", Ok (Maybe.map encodeWrappers value.wrappers) )
         , ( "across", Ok (Maybe.map encodeAcross value.across) )
         , ( "more", Proto.Json.tryRepeatedField (encodeEverything_With (Proto.Json.registryDeeper types)) value.more )
@@ -1422,10 +1422,17 @@ decodeMaps =
 -}
 decodeChoice : Json.Decode.Decoder Choice
 decodeChoice =
+    decodeNestedChoice 1
+
+
+{-| [`decodeChoice`](#decodeChoice) for a [`Choice`](#Choice) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+-}
+decodeNestedChoice : Int -> Json.Decode.Decoder Choice
+decodeNestedChoice depth =
     Proto.Json.message
         (Json.Decode.succeed Choice
             |> Proto.Json.messageField "before" "" Proto.Json.string
-            |> Proto.Json.oneof decodeChoicePick
+            |> Proto.Json.oneof (decodeNestedChoicePick depth)
             |> Proto.Json.messageField "after" 0 Proto.Json.int32
         )
 
@@ -1434,6 +1441,13 @@ decodeChoice =
 -}
 decodeChoicePick : Json.Decode.Decoder ChoicePick
 decodeChoicePick =
+    decodeNestedChoicePick 1
+
+
+{-| [`decodeChoicePick`](#decodeChoicePick) for a [`ChoicePick`](#ChoicePick) held by a message `depth` levels deep. That message's decoder calls it at each depth.
+-}
+decodeNestedChoicePick : Int -> Json.Decode.Decoder ChoicePick
+decodeNestedChoicePick depth =
     Proto.Json.members "pick"
         ChoicePickUnset
         [ Proto.Json.member "text" (Json.Decode.map ChoicePickText Proto.Json.string)
@@ -1444,7 +1458,7 @@ decodeChoicePick =
         , Proto.Json.member "kind" (Json.Decode.map ChoicePickKind decodeKind)
         , Proto.Json.member "leaf" (Json.Decode.map ChoicePickLeaf decodeLeaf)
         , Proto.Json.emptyMember "nothing" ChoicePickNothing
-        , Proto.Json.valueMember "json" ChoicePickJson
+        , Proto.Json.nestedValueMember "json" depth ChoicePickJson
         , Proto.Json.member "at" (Json.Decode.map ChoicePickAt Proto.Json.timestamp)
         , Proto.Json.member "wrapped" (Json.Decode.map ChoicePickWrapped Proto.Json.int32)
         , Proto.Json.memberEither "twoWords" "two_words" (Json.Decode.map ChoicePickTwoWords Proto.Json.string)
@@ -1510,7 +1524,7 @@ decodeTree =
     decodeNestedTree 1
 
 
-{-| [`decodeTree`](#decodeTree) for a [`Tree`](#Tree) held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.
+{-| [`decodeTree`](#decodeTree) for a [`Tree`](#Tree) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
 -}
 decodeNestedTree : Int -> Json.Decode.Decoder Tree
 decodeNestedTree =
@@ -1541,7 +1555,7 @@ decodeTreeLink =
     decodeNestedTreeLink 1
 
 
-{-| [`decodeTreeLink`](#decodeTreeLink) for a [`TreeLink`](#TreeLink) held by a message `depth` levels deep inside its cycle. That message's decoder calls it at each depth.
+{-| [`decodeTreeLink`](#decodeTreeLink) for a [`TreeLink`](#TreeLink) held by a message `depth` levels deep. That message's decoder calls it at each depth.
 -}
 decodeNestedTreeLink : Int -> Json.Decode.Decoder TreeLink
 decodeNestedTreeLink depth =
@@ -1556,23 +1570,30 @@ decodeNestedTreeLink depth =
 -}
 decodeWellKnownWith : Proto.Registry.Registry -> Json.Decode.Decoder WellKnown
 decodeWellKnownWith types =
+    decodeNestedWellKnownWith types (max 1 (Proto.Json.registryDepth types))
+
+
+{-| [`decodeWellKnownWith`](#decodeWellKnownWith) for a [`WellKnown`](#WellKnown) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+-}
+decodeNestedWellKnownWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder WellKnown
+decodeNestedWellKnownWith types depth =
     Proto.Json.message
         (Json.Decode.succeed WellKnown
-            |> Proto.Json.messageField "any" Nothing (Json.Decode.map Just (Proto.Json.anyWith types))
-            |> Proto.Json.messageField "struct" Nothing (Json.Decode.map Just Proto.Json.struct)
-            |> Proto.Json.messageField "list" Nothing (Json.Decode.map Just Proto.Json.listValue)
-            |> Proto.Json.messageValueField "value"
+            |> Proto.Json.messageField "any" Nothing (Json.Decode.map Just (Proto.Json.nestedAnyWith depth types))
+            |> Proto.Json.messageField "struct" Nothing (Json.Decode.map Just (Proto.Json.nestedStruct depth))
+            |> Proto.Json.messageField "list" Nothing (Json.Decode.map Just (Proto.Json.nestedListValue depth))
+            |> Proto.Json.nestedMessageValueField "value" depth
             |> Proto.Json.messageField "timestamp" Nothing (Json.Decode.map Just Proto.Json.timestamp)
             |> Proto.Json.messageField "duration" Nothing (Json.Decode.map Just Proto.Json.duration)
             |> Proto.Json.messageField "mask" Nothing (Json.Decode.map Just Proto.Json.fieldMask)
             |> Proto.Json.messageField "empty" () Proto.Json.empty
-            |> Proto.Json.messageField "anys" [] (Json.Decode.list (Proto.Json.anyWith types))
-            |> Proto.Json.messageField "values" [] (Json.Decode.list Proto.Json.value)
-            |> Proto.Json.messageFieldEither "valueMap" "value_map" Dict.empty (Proto.Json.stringDict Proto.Json.value)
+            |> Proto.Json.messageField "anys" [] (Json.Decode.list (Proto.Json.nestedAnyWith depth types))
+            |> Proto.Json.messageField "values" [] (Json.Decode.list (Proto.Json.nestedValue depth))
+            |> Proto.Json.messageFieldEither "valueMap" "value_map" Dict.empty (Proto.Json.stringDict (Proto.Json.nestedValue depth))
             |> Proto.Json.messageField "timestamps" [] (Json.Decode.list Proto.Json.timestamp)
             |> Proto.Json.messageField "durations" [] (Json.Decode.list Proto.Json.duration)
             |> Proto.Json.messageField "empties" [] (Json.Decode.list Proto.Json.empty)
-            |> Proto.Json.messageField "structs" Dict.empty (Proto.Json.int32Dict Proto.Json.struct)
+            |> Proto.Json.messageField "structs" Dict.empty (Proto.Json.int32Dict (Proto.Json.nestedStruct depth))
             |> Proto.Json.messageFieldEither "nullValue" "null_value" () Proto.Json.nullValue
             |> Proto.Json.messageFieldEither "nullValues" "null_values" [] (Json.Decode.list Proto.Json.nullValue)
             |> Proto.Json.messageFieldEither "nullMap" "null_map" Dict.empty (Proto.Json.stringDict Proto.Json.nullValue)
@@ -1630,7 +1651,7 @@ decodeEverythingWith types =
     decodeNestedEverythingWith types (max 1 (Proto.Json.registryDepth types))
 
 
-{-| [`decodeEverythingWith`](#decodeEverythingWith) for an [`Everything`](#Everything) held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.
+{-| [`decodeEverythingWith`](#decodeEverythingWith) for an [`Everything`](#Everything) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
 -}
 decodeNestedEverythingWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder Everything
 decodeNestedEverythingWith types depth =
@@ -1640,11 +1661,11 @@ decodeNestedEverythingWith types depth =
             |> Proto.Json.messageField "optionals" Nothing (Json.Decode.map Just decodeOptionals)
             |> Proto.Json.messageField "repeated" Nothing (Json.Decode.map Just decodeRepeated)
             |> Proto.Json.messageField "maps" Nothing (Json.Decode.map Just decodeMaps)
-            |> Proto.Json.messageField "choice" Nothing (Json.Decode.map Just decodeChoice)
+            |> Proto.Json.messageField "choice" Nothing (Json.Decode.map Just (Proto.Json.deeperWith depth decodeNestedChoice))
             |> Proto.Json.messageField "names" Nothing (Json.Decode.map Just decodeNames)
             |> Proto.Json.messageField "outer" Nothing (Json.Decode.map Just decodeOuter)
-            |> Proto.Json.messageField "tree" Nothing (Json.Decode.map Just decodeTree)
-            |> Proto.Json.messageFieldEither "wellKnown" "well_known" Nothing (Json.Decode.map Just (decodeWellKnownWith (Proto.Json.nestedRegistry depth types)))
+            |> Proto.Json.messageField "tree" Nothing (Json.Decode.map Just (decodeNestedTree (depth + 1)))
+            |> Proto.Json.messageFieldEither "wellKnown" "well_known" Nothing (Json.Decode.map Just (Proto.Json.deeper depth (decodeNestedWellKnownWith types)))
             |> Proto.Json.messageField "wrappers" Nothing (Json.Decode.map Just decodeWrappers)
             |> Proto.Json.messageField "across" Nothing (Json.Decode.map Just decodeAcross)
             |> Proto.Json.messageField "more" [] (Json.Decode.list (Json.Decode.map Everything_ (Proto.Json.deeperWith depth (decodeNestedEverythingWith types))))
@@ -3374,6 +3395,13 @@ decodeMapsBytes =
 -}
 mergeChoiceBytes : Choice -> Proto.Binary.Decoder Choice
 mergeChoiceBytes =
+    mergeNestedChoiceBytes 1
+
+
+{-| [`mergeChoiceBytes`](#mergeChoiceBytes) for a [`Choice`](#Choice) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+-}
+mergeNestedChoiceBytes : Int -> Choice -> Proto.Binary.Decoder Choice
+mergeNestedChoiceBytes depth =
     Proto.Binary.merge
         "codec.v1.Choice"
         (\number wire value ->
@@ -3495,7 +3523,7 @@ mergeChoiceBytes =
 
                 10 ->
                     Proto.Binary.field
-                        Proto.Binary.value
+                        (Proto.Binary.nestedValue depth)
                         (\v ->
                             { before = value.before
                             , pick = ChoicePickJson v
@@ -3857,7 +3885,7 @@ mergeTreeBytes =
     mergeNestedTreeBytes 1
 
 
-{-| [`mergeTreeBytes`](#mergeTreeBytes) for a [`Tree`](#Tree) held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.
+{-| [`mergeTreeBytes`](#mergeTreeBytes) for a [`Tree`](#Tree) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
 -}
 mergeNestedTreeBytes : Int -> Tree -> Proto.Binary.Decoder Tree
 mergeNestedTreeBytes =
@@ -3989,7 +4017,7 @@ mergeTree_Bytes (Tree_ value) =
     Proto.Binary.map Tree_ (mergeTreeBytes value)
 
 
-{-| [`mergeTree_Bytes`](#mergeTree_Bytes) for a [`Tree_`](#Tree_) held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.
+{-| [`mergeTree_Bytes`](#mergeTree_Bytes) for a [`Tree_`](#Tree_) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
 -}
 mergeNestedTree_Bytes : Int -> Tree_ -> Proto.Binary.Decoder Tree_
 mergeNestedTree_Bytes depth (Tree_ value) =
@@ -4000,6 +4028,13 @@ mergeNestedTree_Bytes depth (Tree_ value) =
 -}
 mergeWellKnownBytes : WellKnown -> Proto.Binary.Decoder WellKnown
 mergeWellKnownBytes =
+    mergeNestedWellKnownBytes 1
+
+
+{-| [`mergeWellKnownBytes`](#mergeWellKnownBytes) for a [`WellKnown`](#WellKnown) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+-}
+mergeNestedWellKnownBytes : Int -> WellKnown -> Proto.Binary.Decoder WellKnown
+mergeNestedWellKnownBytes depth =
     Proto.Binary.merge
         "codec.v1.WellKnown"
         (\number wire value ->
@@ -4033,7 +4068,7 @@ mergeWellKnownBytes =
 
                 2 ->
                     Proto.Binary.field
-                        Proto.Binary.struct
+                        (Proto.Binary.nestedStruct depth)
                         (\v ->
                             { any = value.any
                             , struct = Just v
@@ -4060,7 +4095,7 @@ mergeWellKnownBytes =
 
                 3 ->
                     Proto.Binary.field
-                        Proto.Binary.listValue
+                        (Proto.Binary.nestedListValue depth)
                         (\v ->
                             { any = value.any
                             , struct = value.struct
@@ -4087,7 +4122,7 @@ mergeWellKnownBytes =
 
                 4 ->
                     Proto.Binary.field
-                        Proto.Binary.value
+                        (Proto.Binary.nestedValue depth)
                         (\v ->
                             { any = value.any
                             , struct = value.struct
@@ -4250,7 +4285,7 @@ mergeWellKnownBytes =
 
                 10 ->
                     Proto.Binary.repeated
-                        Proto.Binary.value
+                        (Proto.Binary.nestedValue depth)
                         (\v ->
                             { any = value.any
                             , struct = value.struct
@@ -4279,7 +4314,7 @@ mergeWellKnownBytes =
                 11 ->
                     Proto.Binary.mapEntry
                         Proto.Binary.string
-                        Proto.Binary.value
+                        (Proto.Binary.nestedValue depth)
                         (\k v ->
                             { any = value.any
                             , struct = value.struct
@@ -4391,7 +4426,7 @@ mergeWellKnownBytes =
                 15 ->
                     Proto.Binary.mapEntry
                         Proto.Binary.int32
-                        Proto.Binary.struct
+                        (Proto.Binary.nestedStruct depth)
                         (\k v ->
                             { any = value.any
                             , struct = value.struct
@@ -4920,7 +4955,7 @@ mergeEverythingBytes =
     mergeNestedEverythingBytes 1
 
 
-{-| [`mergeEverythingBytes`](#mergeEverythingBytes) for an [`Everything`](#Everything) held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.
+{-| [`mergeEverythingBytes`](#mergeEverythingBytes) for an [`Everything`](#Everything) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
 -}
 mergeNestedEverythingBytes : Int -> Everything -> Proto.Binary.Decoder Everything
 mergeNestedEverythingBytes =
@@ -5020,7 +5055,7 @@ mergeNestedEverythingBytes =
 
                         5 ->
                             Proto.Binary.fieldInto
-                                (Proto.Binary.embedded encodeChoiceBytes mergeChoiceBytes defaultChoice)
+                                (Proto.Binary.recursive depth encodeChoiceBytes mergeNestedChoiceBytes defaultChoice)
                                 value.choice
                                 (\v ->
                                     { scalars = value.scalars
@@ -5086,7 +5121,7 @@ mergeNestedEverythingBytes =
 
                         8 ->
                             Proto.Binary.fieldInto
-                                (Proto.Binary.embedded encodeTreeBytes mergeTreeBytes defaultTree)
+                                (Proto.Binary.recursive depth encodeTreeBytes mergeNestedTreeBytes defaultTree)
                                 value.tree
                                 (\v ->
                                     { scalars = value.scalars
@@ -5108,7 +5143,7 @@ mergeNestedEverythingBytes =
 
                         9 ->
                             Proto.Binary.fieldInto
-                                (Proto.Binary.embedded encodeWellKnownBytes mergeWellKnownBytes defaultWellKnown)
+                                (Proto.Binary.recursive depth encodeWellKnownBytes mergeNestedWellKnownBytes defaultWellKnown)
                                 value.wellKnown
                                 (\v ->
                                     { scalars = value.scalars
@@ -5229,7 +5264,7 @@ mergeEverything_Bytes (Everything_ value) =
     Proto.Binary.map Everything_ (mergeEverythingBytes value)
 
 
-{-| [`mergeEverything_Bytes`](#mergeEverything_Bytes) for an [`Everything_`](#Everything_) held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.
+{-| [`mergeEverything_Bytes`](#mergeEverything_Bytes) for an [`Everything_`](#Everything_) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
 -}
 mergeNestedEverything_Bytes : Int -> Everything_ -> Proto.Binary.Decoder Everything_
 mergeNestedEverything_Bytes depth (Everything_ value) =

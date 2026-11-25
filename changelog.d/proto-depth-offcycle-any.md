@@ -7,7 +7,6 @@
   Firefox) to a few thousand (WebKit) the JavaScript stack overflowed,
   and `Json.Decode.decodeValue`,
   `Proto.Message.decodeJson` and a call with a `response_body` threw.
-  Generated code now passes such a value the registry at the message's
-  depth with the new `Proto.Json.nestedRegistry`, in its decoder and its
-  encoder, so a read refuses past 100 levels and a JSON write refuses the
-  same `Any` at the same place; regenerate.
+  Generated code now counts such an `Any` on from the message's depth,
+  in its decoder and its encoder, so a read refuses past 100 levels and
+  a JSON write refuses the same `Any` at the same place; regenerate.

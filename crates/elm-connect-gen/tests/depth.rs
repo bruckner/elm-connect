@@ -62,3 +62,28 @@ fn the_cycle_shapes_are_written() {
     write("depth_cycles", "Generated.Deep");
     write("depth_cycles_keep", "Generated.DeepKeep");
 }
+
+/// Whether a message nests depends only on the messages it reaches, never
+/// on what holds it, so a package generates the same modules alone as
+/// beside a package that holds its messages: `cycles.v1` alone, and with
+/// `outside.v1`, whose `Holder` holds a `Tree` and a `Person`.
+#[test]
+fn a_package_generates_the_same_whatever_holds_its_messages() {
+    let case = repo_root().join("conformance/cases/depth_cycles");
+    let compiled = compile_case(&case);
+    let pool = compiled.compiler.descriptor_pool();
+    let cycles = |names: &[&str]| {
+        let generated = generate(&pool, names, &Options::default())
+            .unwrap_or_else(|d| panic!("{}", elm_connect_gen::diagnostics::render_narrow(&d)));
+        generated
+            .files
+            .into_iter()
+            .filter(|module| module.path.starts_with("Cycles/"))
+            .map(|module| (module.path, module.content))
+            .collect::<Vec<_>>()
+    };
+    let alone = cycles(&["cycles/v1/cycles.proto"]);
+    let beside = cycles(&["cycles/v1/cycles.proto", "outside/v1/outside.proto"]);
+    assert!(!alone.is_empty());
+    assert_eq!(alone, beside);
+}

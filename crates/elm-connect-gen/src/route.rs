@@ -36,9 +36,11 @@
 //!   is refused. `**` may only be the last segment of the template.
 //! - A message held deeper than [`NESTING_LIMIT`] messages below the
 //!   request is past what a protobuf parser reads, and a path variable or
-//!   query parameter through it is refused. The count starts below the
-//!   request, where a read's starts at it, so the first message refused
-//!   is at `NESTING_LIMIT + 2` counting the request as 1.
+//!   query parameter through it is refused. This bounds what the server's
+//!   parser is asked to read, not this runtime's reads, so the count is
+//!   its own: it starts below the request, where elm-connect's read of a
+//!   request that nests starts at the request, so the first message
+//!   refused is at `NESTING_LIMIT + 2` counting the request as 1.
 //! - `body` is empty (no body), `*` (every field not in the path), or the
 //!   name of a top-level singular message field of the request.
 //! - `response_body` is empty or the name of a top-level field of the

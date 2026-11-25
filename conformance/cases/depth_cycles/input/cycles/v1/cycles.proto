@@ -1,8 +1,11 @@
-// Every shape of a cycle of references, whose decoders read at most 100
+// Every shape of a message that nests, whose decoders read at most 100
 // levels deep: a merge and a JSON decoder given the depth
-// (`mergeNestedChainBytes`, `decodeNestedChain`), each made once per
-// depth by `memo`, each field on the cycle read one level deeper. A
-// message off every cycle generates as it always has.
+// (`mergeNestedChainBytes`, `decodeNestedChain`), each message they hold
+// that nests read one level deeper. A message on a cycle is made once per
+// depth by `memo`; one on no cycle that nests, because it reaches a cycle,
+// a `Struct` or an `Any` (`Forest`, `Sealed`, `Doc`, `Card` here), is made
+// as it is entered. A message that does not nest generates as it always
+// has.
 syntax = "proto3";
 
 package cycles.v1;
@@ -10,10 +13,12 @@ package cycles.v1;
 import "google/protobuf/any.proto";
 import "google/protobuf/struct.proto";
 
-// A message that holds itself.
+// A message that holds itself, and a message of another cycle, read one
+// level deeper as its own are.
 message Chain {
   string label = 1;
   Chain next = 2;
+  Tree tree = 3;
 }
 
 // Through a list.
@@ -22,9 +27,11 @@ message Tree {
   repeated Tree children = 2;
 }
 
-// Through a map's values.
+// Through a map's values; and holding a carrier, which is a level of its
+// own, as the messages of the cycles it holds are.
 message Dir {
   map<string, Dir> entries = 1;
+  Forest forest = 2;
 }
 
 // Through a oneof member, which needs no wrapper type.
@@ -58,7 +65,8 @@ message Third {
   repeated First firsts = 1;
 }
 
-// Off every cycle, holding messages on two of them.
+// Off every cycle, holding messages on two of them: it nests, so it is a
+// level read at the top and held by `Dir` alike.
 message Forest {
   repeated Tree trees = 1;
   Chain chain = 2;
@@ -148,9 +156,8 @@ message Envelope {
   map<string, google.protobuf.Value> values = 6;
   map<string, google.protobuf.Struct> structs = 7;
   map<string, google.protobuf.ListValue> lists = 8;
-  // Off the cycle and holding an `Any`, singly and as a oneof's member: the
-  // message is given the registry at the envelope's depth, so its `Any`
-  // counts on from there too.
+  // Off the cycle and holding an `Any`, singly and as a oneof's member: a
+  // level one deeper than the envelope, its `Any` one deeper still.
   Sealed sealed = 9;
   oneof aside {
     Sealed note = 10;
@@ -160,4 +167,40 @@ message Envelope {
 // Off every cycle, holding an `Any`.
 message Sealed {
   google.protobuf.Any payload = 1;
+}
+
+// Off every cycle, above one: read at the top it is the first level, and
+// the cycle counts on from it.
+message Doc {
+  Chain root = 1;
+}
+
+// Two messages off every cycle above it.
+message Library {
+  Doc doc = 1;
+}
+
+// Off every cycle, holding a `Struct`, and a message above it.
+message Card {
+  Meta meta = 1;
+}
+
+message Meta {
+  google.protobuf.Struct data = 1;
+}
+
+// Above `Sealed`, which holds an `Any`.
+message Letter {
+  Sealed sealed = 1;
+}
+
+// Off every cycle and holding nothing that nests: generated as it always
+// has.
+message Label {
+  string text = 1;
+  Plain plain = 2;
+}
+
+message Plain {
+  int32 n = 1;
 }

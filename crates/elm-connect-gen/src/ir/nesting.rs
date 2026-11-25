@@ -1,7 +1,9 @@
-//! The longest chain of nested messages a schema allows. A read counts the
-//! nesting of the messages on a cycle of references alone (design §5.5),
-//! so a chain off every cycle is read to its end however long it is; the
-//! generator measures it here and warns past the runtime's limit.
+//! The longest chain of nested messages a schema allows. A read counts
+//! the messages that nest, those that reach a cycle of references, a
+//! `Value`, `Struct` or `ListValue`, or an `Any` (design §5.5), and refuses
+//! past the limit; a chain of messages that do not nest is read to its end
+//! however long it is. Most protobuf runtimes refuse either past the limit,
+//! so the generator measures the longest chain here and warns past it.
 
 use std::collections::HashMap;
 
@@ -14,10 +16,10 @@ use super::{Package, TypeRef};
 /// as protobuf's own parsers do
 /// (<https://protobuf.dev/programming-guides/proto-limits/>). Its users
 /// count from different starting points: the `types::deep_nesting`
-/// warning counts messages the outermost at 1, the runtime's unit, and
-/// warns past `LIMIT`; the route checker (`crate::route`) counts messages
-/// below the request, and refuses past `LIMIT` of them, so at
-/// `LIMIT + 2` counted the runtime's way. The places that write the
+/// warning counts messages the outermost at 1, the runtime's unit for a
+/// message that nests, and warns past `LIMIT`; the route checker
+/// (`crate::route`) counts messages below the request, and refuses past
+/// `LIMIT` of them, so at `LIMIT + 2` counted the runtime's way. The places that write the
 /// number out are listed in design §5.5.
 pub const LIMIT: usize = 100;
 

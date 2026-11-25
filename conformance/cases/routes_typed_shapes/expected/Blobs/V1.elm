@@ -290,7 +290,7 @@ encodeLabeledWith : Proto.Registry.Registry -> Labeled -> Result Proto.Error.Err
 encodeLabeledWith types value =
     Proto.Json.tryObjectOfFields
         [ ( "name", Ok (Proto.Json.implicitField "" Json.Encode.string value.name) )
-        , ( "label", Proto.Json.tryOptionalField (Proto.Json.encodeAnyWith types) value.label )
+        , ( "label", Proto.Json.tryOptionalField (Proto.Json.encodeNestedAnyWith types) value.label )
         ]
 
 
@@ -299,7 +299,7 @@ encodeLabeledWith types value =
 encodeLabelBlobRequestWith : Proto.Registry.Registry -> LabelBlobRequest -> Result Proto.Error.Error Json.Encode.Value
 encodeLabelBlobRequestWith types value =
     Proto.Json.tryObjectOfFields
-        [ ( "labeled", Proto.Json.tryOptionalField (encodeLabeledWith types) value.labeled )
+        [ ( "labeled", Proto.Json.tryOptionalField (encodeLabeledWith (Proto.Json.registryDeeper types)) value.labeled )
         , ( "shelf", Ok (Proto.Json.implicitField "" Json.Encode.string value.shelf) )
         ]
 
@@ -361,10 +361,17 @@ decodeBlob =
 -}
 decodeLabeledWith : Proto.Registry.Registry -> Json.Decode.Decoder Labeled
 decodeLabeledWith types =
+    decodeNestedLabeledWith types (max 1 (Proto.Json.registryDepth types))
+
+
+{-| [`decodeLabeledWith`](#decodeLabeledWith) for a [`Labeled`](#Labeled) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+-}
+decodeNestedLabeledWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder Labeled
+decodeNestedLabeledWith types depth =
     Proto.Json.message
         (Json.Decode.succeed Labeled
             |> Proto.Json.messageField "name" "" Proto.Json.string
-            |> Proto.Json.messageField "label" Nothing (Json.Decode.map Just (Proto.Json.anyWith types))
+            |> Proto.Json.messageField "label" Nothing (Json.Decode.map Just (Proto.Json.nestedAnyWith depth types))
         )
 
 
@@ -372,9 +379,16 @@ decodeLabeledWith types =
 -}
 decodeLabelBlobRequestWith : Proto.Registry.Registry -> Json.Decode.Decoder LabelBlobRequest
 decodeLabelBlobRequestWith types =
+    decodeNestedLabelBlobRequestWith types (max 1 (Proto.Json.registryDepth types))
+
+
+{-| [`decodeLabelBlobRequestWith`](#decodeLabelBlobRequestWith) for a [`LabelBlobRequest`](#LabelBlobRequest) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+-}
+decodeNestedLabelBlobRequestWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder LabelBlobRequest
+decodeNestedLabelBlobRequestWith types depth =
     Proto.Json.message
         (Json.Decode.succeed LabelBlobRequest
-            |> Proto.Json.messageField "labeled" Nothing (Json.Decode.map Just (decodeLabeledWith types))
+            |> Proto.Json.messageField "labeled" Nothing (Json.Decode.map Just (Proto.Json.deeper depth (decodeNestedLabeledWith types)))
             |> Proto.Json.messageField "shelf" "" Proto.Json.string
         )
 
@@ -386,7 +400,7 @@ decodeFolder =
     decodeNestedFolder 1
 
 
-{-| [`decodeFolder`](#decodeFolder) for a [`Folder`](#Folder) held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.
+{-| [`decodeFolder`](#decodeFolder) for a [`Folder`](#Folder) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
 -}
 decodeNestedFolder : Int -> Json.Decode.Decoder Folder
 decodeNestedFolder =
@@ -422,10 +436,17 @@ decodeSlots =
 -}
 decodeFree : Json.Decode.Decoder Free
 decodeFree =
+    decodeNestedFree 1
+
+
+{-| [`decodeFree`](#decodeFree) for a [`Free`](#Free) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+-}
+decodeNestedFree : Int -> Json.Decode.Decoder Free
+decodeNestedFree depth =
     Proto.Json.message
         (Json.Decode.succeed Free
             |> Proto.Json.messageField "name" "" Proto.Json.string
-            |> Proto.Json.messageValueField "value"
+            |> Proto.Json.nestedMessageValueField "value" depth
         )
 
 
@@ -566,6 +587,13 @@ decodeBlobBytes =
 -}
 mergeLabeledBytes : Labeled -> Proto.Binary.Decoder Labeled
 mergeLabeledBytes =
+    mergeNestedLabeledBytes 1
+
+
+{-| [`mergeLabeledBytes`](#mergeLabeledBytes) for a [`Labeled`](#Labeled) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+-}
+mergeNestedLabeledBytes : Int -> Labeled -> Proto.Binary.Decoder Labeled
+mergeNestedLabeledBytes depth =
     Proto.Binary.merge
         "blobs.v1.Labeled"
         (\number wire value ->
@@ -609,13 +637,20 @@ decodeLabeledBytes =
 -}
 mergeLabelBlobRequestBytes : LabelBlobRequest -> Proto.Binary.Decoder LabelBlobRequest
 mergeLabelBlobRequestBytes =
+    mergeNestedLabelBlobRequestBytes 1
+
+
+{-| [`mergeLabelBlobRequestBytes`](#mergeLabelBlobRequestBytes) for a [`LabelBlobRequest`](#LabelBlobRequest) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+-}
+mergeNestedLabelBlobRequestBytes : Int -> LabelBlobRequest -> Proto.Binary.Decoder LabelBlobRequest
+mergeNestedLabelBlobRequestBytes depth =
     Proto.Binary.merge
         "blobs.v1.LabelBlobRequest"
         (\number wire value ->
             case number of
                 1 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeLabeledBytes mergeLabeledBytes defaultLabeled)
+                        (Proto.Binary.recursive depth encodeLabeledBytes mergeNestedLabeledBytes defaultLabeled)
                         value.labeled
                         (\v ->
                             { labeled = Just v
@@ -656,7 +691,7 @@ mergeFolderBytes =
     mergeNestedFolderBytes 1
 
 
-{-| [`mergeFolderBytes`](#mergeFolderBytes) for a [`Folder`](#Folder) held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.
+{-| [`mergeFolderBytes`](#mergeFolderBytes) for a [`Folder`](#Folder) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
 -}
 mergeNestedFolderBytes : Int -> Folder -> Proto.Binary.Decoder Folder
 mergeNestedFolderBytes =
@@ -710,7 +745,7 @@ mergeFolder_Bytes (Folder_ value) =
     Proto.Binary.map Folder_ (mergeFolderBytes value)
 
 
-{-| [`mergeFolder_Bytes`](#mergeFolder_Bytes) for a [`Folder_`](#Folder_) held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.
+{-| [`mergeFolder_Bytes`](#mergeFolder_Bytes) for a [`Folder_`](#Folder_) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
 -}
 mergeNestedFolder_Bytes : Int -> Folder_ -> Proto.Binary.Decoder Folder_
 mergeNestedFolder_Bytes depth (Folder_ value) =
@@ -764,6 +799,13 @@ decodeSlotsBytes =
 -}
 mergeFreeBytes : Free -> Proto.Binary.Decoder Free
 mergeFreeBytes =
+    mergeNestedFreeBytes 1
+
+
+{-| [`mergeFreeBytes`](#mergeFreeBytes) for a [`Free`](#Free) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+-}
+mergeNestedFreeBytes : Int -> Free -> Proto.Binary.Decoder Free
+mergeNestedFreeBytes depth =
     Proto.Binary.merge
         "blobs.v1.Free"
         (\number wire value ->
@@ -781,7 +823,7 @@ mergeFreeBytes =
 
                 2 ->
                     Proto.Binary.field
-                        Proto.Binary.value
+                        (Proto.Binary.nestedValue depth)
                         (\v ->
                             { name = value.name
                             , value = Just v

@@ -9,7 +9,7 @@ use super::{
 };
 use crate::elm::ast::{BinOp, Decl, Expr, Pattern, Type};
 use crate::elm::build::{
-    access, apply, binop, int, lambda, list, pipeline, pvar, qualified, record, string, tuple2, ty,
+    access, apply, binop, lambda, list, pipeline, pvar, qualified, record, string, tuple2, ty,
     ty_fn, var,
 };
 use crate::ir::ModuleName;
@@ -188,13 +188,15 @@ impl Emitter {
     /// first `Err` failing the whole. It has no `encodeFoo`: writing an
     /// `Any` can fail, and a total encoder would need a fallback form.
     fn message_encoder_with(&mut self, shape: &MessageShape) -> Decl {
+        let counts = self.counts(shape.message);
         let pairs: Vec<Expr> = shape
             .fields
             .iter()
             .map(|&(field, value)| {
                 let field_value = access(var(ENCODER_ARGUMENT), field.elm_name.clone());
-                self.deeper_registry = shape.message.recursive && field.recursive;
-                self.nested_any = shape.message.recursive;
+                let counted = field.recursive || self.counted.type_ref(&field.ty);
+                self.deeper_registry = counts && counted;
+                self.nested_any = counts;
                 let encoded = self.try_encode_field(value, field_value);
                 self.deeper_registry = false;
                 self.nested_any = false;
@@ -207,18 +209,9 @@ impl Emitter {
             .map(|oneof| {
                 let field_value = access(var(ENCODER_ARGUMENT), oneof.oneof.elm_field_name.clone());
                 if self.oneof_reaches(oneof) {
-                    // A oneof with no member on the cycle is written off
-                    // it, counting from the message's depth.
-                    let on_cycle = shape.message.recursive
-                        && oneof.variants.iter().any(|(variant, _)| variant.cyclic);
-                    let registry = if shape.message.recursive && !on_cycle {
-                        self.nested_registry(int(1))
-                    } else {
-                        var(REGISTRY_ARGUMENT)
-                    };
                     apply(
                         var(with_registry(oneof.oneof.encoder_name())),
-                        [registry, field_value],
+                        [var(REGISTRY_ARGUMENT), field_value],
                     )
                 } else {
                     // A oneof that reaches no `Any` gives its members' JSON;
@@ -314,11 +307,14 @@ impl Emitter {
     /// the package's `registry` would read only that package's `Any`s.
     pub(super) fn message_decoder(&mut self, shape: &MessageShape) -> Vec<Decl> {
         let name = &shape.message.elm_name;
-        let deep = shape.message.recursive.then(|| {
+        let counts = self.counts(shape.message);
+        let deep = counts.then(|| {
             if self.message_reaches(shape) {
                 Deep::Built
-            } else {
+            } else if shape.message.recursive {
                 Deep::Memo
+            } else {
+                Deep::Called
             }
         });
         self.deep = deep;
@@ -364,9 +360,7 @@ impl Emitter {
                     },
                     RecordField::Oneof(oneof) => {
                         let step = self.reference((PROTO_JSON, "oneof"));
-                        let on_cycle = deep.is_some()
-                            && oneof.variants.iter().any(|(variant, _)| variant.cyclic);
-                        let decoder = if on_cycle {
+                        let decoder = if self.oneof_counts(counts, oneof) {
                             if self.oneof_reaches(oneof) {
                                 apply(
                                     var(nested(with_registry(oneof.oneof.decoder_name()))),
@@ -376,12 +370,10 @@ impl Emitter {
                                 apply(var(nested(oneof.oneof.decoder_name())), [var(DEPTH)])
                             }
                         } else if self.oneof_reaches(oneof) {
-                            let registry = if deep.is_some() {
-                                self.nested_registry(var(DEPTH))
-                            } else {
-                                var(REGISTRY_ARGUMENT)
-                            };
-                            apply(var(with_registry(oneof.oneof.decoder_name())), [registry])
+                            apply(
+                                var(with_registry(oneof.oneof.decoder_name())),
+                                [var(REGISTRY_ARGUMENT)],
+                            )
                         } else {
                             var(oneof.oneof.decoder_name())
                         };

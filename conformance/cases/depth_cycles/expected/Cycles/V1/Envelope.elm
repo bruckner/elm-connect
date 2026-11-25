@@ -102,9 +102,8 @@ lists =
     Proto.Field.descriptor "lists" "lists" 8 (Proto.Field.CardinalityMap Proto.Field.ScalarString) (Proto.Field.KindMessage "google.protobuf.ListValue")
 
 
-{-| Off the cycle and holding an `Any`, singly and as a oneof's member: the
-message is given the registry at the envelope's depth, so its `Any`
-counts on from there too.
+{-| Off the cycle and holding an `Any`, singly and as a oneof's member: a
+level one deeper than the envelope, its `Any` one deeper still.
 
 `cycles.v1.Sealed sealed = 9;`
 

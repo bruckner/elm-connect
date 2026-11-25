@@ -63,10 +63,10 @@ pub(super) fn a_local(name: &str) -> String {
 }
 
 /// The doc of `codec` at a nesting depth (`decodeNestedNode`), where
-/// `codec` reads values of `elm_name` on a cycle of messages.
+/// `codec` reads values of `elm_name`, a message that nests.
 pub(super) fn nested(codec: &str, elm_name: &str) -> String {
     format!(
-        "[`{codec}`](#{codec}) for {} held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.",
+        "[`{codec}`](#{codec}) for {} held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.",
         a_local(elm_name)
     )
 }

@@ -254,7 +254,7 @@ decodeEntry =
     decodeNestedEntry 1
 
 
-{-| [`decodeEntry`](#decodeEntry) for an [`Entry`](#Entry) held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.
+{-| [`decodeEntry`](#decodeEntry) for an [`Entry`](#Entry) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
 -}
 decodeNestedEntry : Int -> Json.Decode.Decoder Entry
 decodeNestedEntry =
@@ -279,7 +279,7 @@ decodeEntrySource =
     decodeNestedEntrySource 1
 
 
-{-| [`decodeEntrySource`](#decodeEntrySource) for an [`EntrySource`](#EntrySource) held by a message `depth` levels deep inside its cycle. That message's decoder calls it at each depth.
+{-| [`decodeEntrySource`](#decodeEntrySource) for an [`EntrySource`](#EntrySource) held by a message `depth` levels deep. That message's decoder calls it at each depth.
 -}
 decodeNestedEntrySource : Int -> Json.Decode.Decoder EntrySource
 decodeNestedEntrySource depth =
@@ -384,7 +384,7 @@ mergeEntryBytes =
     mergeNestedEntryBytes 1
 
 
-{-| [`mergeEntryBytes`](#mergeEntryBytes) for an [`Entry`](#Entry) held `depth` levels deep inside its cycle, the outermost at 1. Generated code calls it to read the cycle one level deeper at a time; past the runtime's nesting limit it fails.
+{-| [`mergeEntryBytes`](#mergeEntryBytes) for an [`Entry`](#Entry) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
 -}
 mergeNestedEntryBytes : Int -> Entry -> Proto.Binary.Decoder Entry
 mergeNestedEntryBytes =

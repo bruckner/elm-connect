@@ -246,40 +246,64 @@ been set.
 ### Nesting depth
 
 Reads are limited to 100 levels of nesting, as protobuf's own runtimes
-limit them, against one budget for three kinds of level:
+limit them, against one budget. What counts is every message that
+*nests*: one that, through its fields, map values and oneof members at
+any depth, reaches a message on a cycle of references (a message that
+holds itself, directly or through other messages), a
+`google.protobuf.Value`, `Struct` or `ListValue`, or an `Any`. A message
+on a cycle nests. Read at the top, such a message is level 1, and below
+it every level counts:
 
-- each message entered along a field or oneof member of a cycle of
-  references (a message that holds itself, directly or through other
-  messages), the outermost at 1;
+- each message that nests, whether on the same cycle, on another cycle,
+  or on none;
 - each `google.protobuf.Any`, the message it holds counting on from it
   (in a JSON read, which converts it through the registry);
 - each array and object of a `Value`, `Struct` or `ListValue`, counting
   on from the message that holds it.
 
-A message off the cycle held by one on it is not a level, but an `Any`
-it holds counts on from the message on the cycle, however many messages
-off the cycle lie between them, and so do the messages of another cycle
-inside it that reach an `Any`.
+So a read of 100 levels succeeds and one of 101 fails, however many
+kinds of message the path passes through: a `Tree` holding a `Node`,
+both recursive, takes 100 levels between them, not 100 each, and in
+`message Doc { Tree root = 1; }`, read as a `Doc`, the `Doc` is level 1
+and the outermost `Tree` level 2. A call whose binding has a
+`response_body` reads the answer as a response holding that one field
+([transcoding.md](transcoding.md)), so when the response nests it is
+level 1 and the answer counts from 2.
+
+A message that does not nest is not counted: nothing it holds can nest,
+so the schema bounds its depth, and its codecs are what they would be
+in a schema with nothing that nests. The generator warns of a chain of
+more than 100 messages (`types::deep_nesting`), which most protobuf
+runtimes refuse to read: reads here refuse it too when its messages
+nest, and read it to its end when they do not. Whether a message nests
+depends only on the messages it reaches, never on what holds it, so a
+package's generated code is the same whatever else is generated beside
+it.
+
+A schema with no recursion pays for this where a message holds a
+`Struct`, a `Value`, a `ListValue` or an `Any`: that message, and every
+message holding it, nests, so its codecs take the depth. A message on no
+cycle has no table of decoders: its decoder at a depth is built as the
+value is read. In the notes example, where 4 of the 8 messages nest, the
+program grows by 215 bytes optimized, minified and gzipped, and reads
+within 1 %; a schema of 50 messages each holding a `Struct` grows
+by about 7 bytes gzipped a message, and reading 20 of them in a list
+below another message takes about 12 % longer in JSON
+([decisions.md](decisions.md#a-union-for-googleprotobufvalue-one-depth-budget)
+has the measurements). A program whose messages do not nest compiles to
+what it did.
 
 A message inside an `Any` that cannot itself hold an `Any` (a `Value`,
 `Struct` or `ListValue`, or a message whose fields reach no `Any`) is
 read by its own decoder, which counts from 1 instead. Its levels are
 limited to 100 apart from those outside the `Any`, so the deepest such
 read is 200 levels: 99 messages, the `Any`, and 100 levels inside it.
-The same holds for a `Value`, `Struct` or `ListValue` held by a message
-off the cycle, and for a message of another cycle whose fields reach no
-`Any`: 99 messages, then 100 levels of its own.
 An `Any` read from binary holds the message's bytes unread; unpacking
 it, or writing it as JSON, reads them with the same count from 1.
 The limit bounds the depth of nested `Any`s, not the work of converting
 them: each conversion re-reads the payload inside it, so a large payload
 held many `Any`s deep takes seconds to minutes even when it is accepted
 ([descriptors.md](descriptors.md#what-converting-an-any-costs)).
-
-Messages that hold each other in a chain, with no cycle, are not
-counted: the schema bounds their depth. The generator warns of a chain
-longer than 100 (`types::deep_nesting`), which most protobuf runtimes
-refuse to read.
 
 The unit is the same in JSON and binary, so 100 levels read in one read
 in the other. Past them a binary read fails with `Proto.Error.TooDeep`

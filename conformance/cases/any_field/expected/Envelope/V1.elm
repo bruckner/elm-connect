@@ -129,9 +129,9 @@ encodeEnvelopeWith : Proto.Registry.Registry -> Envelope -> Result Proto.Error.E
 encodeEnvelopeWith types value =
     Proto.Json.tryObjectOfFields
         ([ ( "id", Ok (Proto.Json.implicitField "" Json.Encode.string value.id) )
-         , ( "payload", Proto.Json.tryOptionalField (Proto.Json.encodeAnyWith types) value.payload )
-         , ( "attachments", Proto.Json.tryRepeatedField (Proto.Json.encodeAnyWith types) value.attachments )
-         , ( "headers", Proto.Json.tryDictField identity (Proto.Json.encodeAnyWith types) value.headers )
+         , ( "payload", Proto.Json.tryOptionalField (Proto.Json.encodeNestedAnyWith types) value.payload )
+         , ( "attachments", Proto.Json.tryRepeatedField (Proto.Json.encodeNestedAnyWith types) value.attachments )
+         , ( "headers", Proto.Json.tryDictField identity (Proto.Json.encodeNestedAnyWith types) value.headers )
          ]
             ++ encodeEnvelopeBodyWith types value.body
         )
@@ -146,7 +146,7 @@ encodeEnvelopeBodyWith types value =
             []
 
         EnvelopeBodyPacked member ->
-            [ ( "packed", Result.map Just (Proto.Json.encodeAnyWith types member) )
+            [ ( "packed", Result.map Just (Proto.Json.encodeNestedAnyWith types member) )
             ]
 
         EnvelopeBodyText member ->
@@ -162,13 +162,20 @@ encodeEnvelopeBodyWith types value =
 -}
 decodeEnvelopeWith : Proto.Registry.Registry -> Json.Decode.Decoder Envelope
 decodeEnvelopeWith types =
+    decodeNestedEnvelopeWith types (max 1 (Proto.Json.registryDepth types))
+
+
+{-| [`decodeEnvelopeWith`](#decodeEnvelopeWith) for an [`Envelope`](#Envelope) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+-}
+decodeNestedEnvelopeWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder Envelope
+decodeNestedEnvelopeWith types depth =
     Proto.Json.message
         (Json.Decode.succeed Envelope
             |> Proto.Json.messageField "id" "" Proto.Json.string
-            |> Proto.Json.messageField "payload" Nothing (Json.Decode.map Just (Proto.Json.anyWith types))
-            |> Proto.Json.messageField "attachments" [] (Json.Decode.list (Proto.Json.anyWith types))
-            |> Proto.Json.messageField "headers" Dict.empty (Proto.Json.stringDict (Proto.Json.anyWith types))
-            |> Proto.Json.oneof (decodeEnvelopeBodyWith types)
+            |> Proto.Json.messageField "payload" Nothing (Json.Decode.map Just (Proto.Json.nestedAnyWith depth types))
+            |> Proto.Json.messageField "attachments" [] (Json.Decode.list (Proto.Json.nestedAnyWith depth types))
+            |> Proto.Json.messageField "headers" Dict.empty (Proto.Json.stringDict (Proto.Json.nestedAnyWith depth types))
+            |> Proto.Json.oneof (decodeNestedEnvelopeBodyWith types depth)
         )
 
 
@@ -176,9 +183,16 @@ decodeEnvelopeWith types =
 -}
 decodeEnvelopeBodyWith : Proto.Registry.Registry -> Json.Decode.Decoder EnvelopeBody
 decodeEnvelopeBodyWith types =
+    decodeNestedEnvelopeBodyWith types (max 1 (Proto.Json.registryDepth types))
+
+
+{-| [`decodeEnvelopeBodyWith`](#decodeEnvelopeBodyWith) for an [`EnvelopeBody`](#EnvelopeBody) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+-}
+decodeNestedEnvelopeBodyWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder EnvelopeBody
+decodeNestedEnvelopeBodyWith types depth =
     Proto.Json.members "body"
         EnvelopeBodyUnset
-        [ Proto.Json.member "packed" (Json.Decode.map EnvelopeBodyPacked (Proto.Json.anyWith types))
+        [ Proto.Json.member "packed" (Json.Decode.map EnvelopeBodyPacked (Proto.Json.nestedAnyWith depth types))
         , Proto.Json.member "text" (Json.Decode.map EnvelopeBodyText Proto.Json.string)
         ]
 
@@ -223,6 +237,13 @@ encodeEnvelopeBodyBytes value =
 -}
 mergeEnvelopeBytes : Envelope -> Proto.Binary.Decoder Envelope
 mergeEnvelopeBytes =
+    mergeNestedEnvelopeBytes 1
+
+
+{-| [`mergeEnvelopeBytes`](#mergeEnvelopeBytes) for an [`Envelope`](#Envelope) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+-}
+mergeNestedEnvelopeBytes : Int -> Envelope -> Proto.Binary.Decoder Envelope
+mergeNestedEnvelopeBytes depth =
     Proto.Binary.merge
         "envelope.v1.Envelope"
         (\number wire value ->
