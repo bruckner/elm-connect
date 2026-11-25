@@ -12,6 +12,7 @@ import Proto.Any
 import Proto.Binary
 import Proto.Bytes
 import Proto.Error
+import Proto.Json
 import Proto.Method exposing (Idempotency(..))
 import Proto.Registry
 import Rpc
@@ -68,7 +69,7 @@ both =
     Rpc.call
         (Proto.Method.init "notes.v1.Notes"
             "GetNote"
-            (\_ r -> Ok (Json.Encode.object [ ( "name", Json.Encode.string r.name ) ]))
+            (\r -> Proto.Json.succeed (Json.Encode.object [ ( "name", Json.Encode.string r.name ) ]))
             (\_ -> Json.Decode.field "title" Json.Decode.string)
             encodeGetNoteBytes
             decodeTitleBytes

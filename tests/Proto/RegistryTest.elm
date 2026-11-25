@@ -30,10 +30,10 @@ type alias Holder =
     { held : Maybe Any }
 
 
-encodeHolderWith : Registry -> Holder -> Result Error Value
-encodeHolderWith types value =
-    Proto.Json.tryObjectOfFields
-        [ ( "held", Proto.Json.tryOptionalField (Proto.Json.encodeAnyWith types) value.held ) ]
+encodeHolder : Holder -> Proto.Json.Encoder Error
+encodeHolder value =
+    Proto.Json.writeObject
+        [ Proto.Json.checkedFields [ ( "held", Proto.Json.writeOptional Proto.Json.writeAny value.held ) ] ]
 
 
 decodeHolderWith : Registry -> Json.Decode.Decoder Holder
@@ -74,7 +74,7 @@ holder name =
 
 messageHolder : String -> Message Holder
 messageHolder name =
-    Message.initWith name encodeHolderWith decodeHolderWith encodeHolderBytes (holderBytes name)
+    Message.initWith name encodeHolder decodeHolderWith encodeHolderBytes (holderBytes name)
 
 
 {-| A message holding no `Any`: a string at field 1, `{"text": …}` in JSON.
@@ -103,7 +103,7 @@ leafBytes name =
 messageLeaf : String -> Message String
 messageLeaf name =
     Message.init name
-        (\t -> Json.Encode.object [ ( "text", Json.Encode.string t ) ])
+        (\t -> Proto.Json.succeed (Json.Encode.object [ ( "text", Json.Encode.string t ) ]))
         (Json.Decode.field "text" Json.Decode.string)
         (\t -> Bytes.Encode.sequence [ Proto.Binary.implicit Proto.Binary.string 1 t ])
         (leafBytes name)
@@ -209,7 +209,7 @@ suite =
                             { held = Just (Any.pack (messageHolder "ext.Ext") { held = Just (Any.pack (messageLeaf "ext2.Leaf") "deep") }) }
 
                     written registry =
-                        Proto.Json.encodeAnyWith registry packed |> Result.map (Json.Encode.encode 0)
+                        Proto.Json.encodeWith registry (Proto.Json.writeAny packed) |> Result.map (Json.Encode.encode 0)
 
                     expected =
                         """{"@type":"type.googleapis.com/core.Core","held":{"@type":"type.googleapis.com/ext.Ext","held":{"@type":"type.googleapis.com/ext2.Leaf","text":"deep"}}}"""
@@ -223,7 +223,7 @@ suite =
                     |> Expect.equal ( Ok expected, Err (UnregisteredType "type.googleapis.com/ext2.Leaf"), Just True )
         , test "a missing type is named by its URL, and binary that is not the message is its BadBinary" <|
             \_ ->
-                ( Proto.Json.encodeAnyWith Registry.empty (Any.pack (messageLeaf "t.Leaf") "hi")
+                ( Proto.Json.encodeWith Registry.empty (Proto.Json.writeAny (Any.pack (messageLeaf "t.Leaf") "hi"))
                 , Any.toJson (leaf "t.Leaf" Registry.empty) (Proto.Internal.Any.Any "type.googleapis.com/t.Leaf" (Proto.Internal.Any.Binary "/w=="))
                 , Json.Decode.decodeString (Proto.Json.anyWith Registry.empty) """{"@type":"example.com/t.Leaf","text":"hi"}"""
                     |> Result.mapError (Json.Decode.errorToString >> String.contains "\"example.com/t.Leaf\"")
@@ -263,7 +263,7 @@ suite =
                     other =
                         Registry.register
                             (Message.init "t.Leaf"
-                                (\_ -> Json.Encode.string "other")
+                                (\_ -> Proto.Json.succeed (Json.Encode.string "other"))
                                 (Json.Decode.succeed "")
                                 (\_ -> Bytes.Encode.sequence [])
                                 (leafBytes "t.Leaf")
@@ -324,7 +324,7 @@ suite =
                 , Any.pack WellKnown.struct (Dict.fromList [ ( "k", Proto.Value.ValueNumber 1 ) ])
                 , Any.pack WellKnown.int64Value "5"
                 ]
-                    |> List.map (Proto.Json.encodeAnyWith WellKnown.registry >> Result.map (Json.Encode.encode 0))
+                    |> List.map (Proto.Json.writeAny >> Proto.Json.encodeWith WellKnown.registry >> Result.map (Json.Encode.encode 0))
                     |> Expect.equal
                         [ Ok """{"@type":"type.googleapis.com/google.protobuf.Duration","value":"1.500s"}"""
                         , Ok """{"@type":"type.googleapis.com/google.protobuf.Timestamp","value":"1970-01-01T00:00:00Z"}"""

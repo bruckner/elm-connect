@@ -429,7 +429,7 @@ detailWith registry detail =
         Ok any ->
             case Proto.Any.bytes any of
                 Just binary ->
-                    case Proto.Json.encodeAnyWith registry any of
+                    case Proto.Json.encodeWith registry (Proto.Json.writeAny any) of
                         Ok json ->
                             json
 
@@ -440,7 +440,7 @@ detailWith registry detail =
                                 ]
 
                 Nothing ->
-                    case unpackedDetail any |> Maybe.andThen (Proto.Json.encodeAnyWith registry >> Result.toMaybe) of
+                    case unpackedDetail any |> Maybe.andThen (Proto.Json.writeAny >> Proto.Json.encodeWith registry >> Result.toMaybe) of
                         Just json ->
                             json
 

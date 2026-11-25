@@ -7,6 +7,7 @@ import Fuzzers
 import Json.Decode exposing (Decoder)
 import Json.Encode
 import Proto.Duration
+import Proto.Error
 import Proto.Json
 import Proto.Value
 import Test exposing (Test, describe, test)
@@ -1485,7 +1486,7 @@ wellKnownTests =
         , test "encodeStruct writes an object" <|
             \_ ->
                 encodesTo
-                    (Proto.Json.encodeStruct (Dict.fromList [ ( "a", Proto.Value.ValueNumber 1 ) ]))
+                    (encodeStruct (Dict.fromList [ ( "a", Proto.Value.ValueNumber 1 ) ]))
                     """{"a":1}"""
         , test "listValue reads an array" <|
             \_ ->
@@ -1497,7 +1498,7 @@ wellKnownTests =
         , test "encodeListValue writes an array" <|
             \_ ->
                 encodesTo
-                    (Proto.Json.encodeListValue [ Proto.Value.ValueNumber 1, Proto.Value.ValueNull ])
+                    (encodeListValue [ Proto.Value.ValueNumber 1, Proto.Value.ValueNull ])
                     "[1,null]"
         , test "a timestamp" <|
             \_ -> decodes Proto.Json.timestamp "\"1970-01-01T00:00:01.5Z\"" (Time.millisToPosix 1500)
@@ -1506,13 +1507,13 @@ wellKnownTests =
         , test "a timestamp as a number fails" <|
             \_ -> fails Proto.Json.timestamp "1500"
         , test "encodes a timestamp" <|
-            \_ -> encodesTo (Proto.Json.encodeTimestamp (Time.millisToPosix 1500)) "\"1970-01-01T00:00:01.500Z\""
+            \_ -> encodesTo (encodeTimestamp (Time.millisToPosix 1500)) "\"1970-01-01T00:00:01.500Z\""
         , test "a duration" <|
             \_ -> decodes Proto.Json.duration "\"-1.5s\"" (Proto.Duration.fromSeconds -1.5)
         , test "a malformed duration fails" <|
             \_ -> fails Proto.Json.duration "\"1.5\""
         , test "encodes a duration" <|
-            \_ -> encodesTo (Proto.Json.encodeDuration (Proto.Duration.fromSeconds 1.5)) "\"1.500s\""
+            \_ -> encodesTo (encodeDuration (Proto.Duration.fromSeconds 1.5)) "\"1.500s\""
         , test "a field mask comes back with proto field names" <|
             \_ ->
                 decodes Proto.Json.fieldMask
@@ -1524,10 +1525,10 @@ wellKnownTests =
             \_ -> failsOnEach Proto.Json.fieldMask [ "\"foo,bar_bar\"", "\"display_name\"", "\"author.email_address\"", "\"_\"" ]
         , test "encodes a field mask in lowerCamelCase" <|
             \_ ->
-                encodesTo (Proto.Json.encodeFieldMask [ "display_name", "author.email_address" ])
+                encodesTo (encodeFieldMask [ "display_name", "author.email_address" ])
                     "\"displayName,author.emailAddress\""
         , test "encodes the empty field mask" <|
-            \_ -> encodesTo (Proto.Json.encodeFieldMask []) "\"\""
+            \_ -> encodesTo (encodeFieldMask []) "\"\""
         , test "Empty is any object" <|
             \_ -> decodes Proto.Json.empty """{"ignored":1}""" ()
         , test "Empty is not an array" <|
@@ -1629,7 +1630,7 @@ protoKeyTests =
         , test "is written by encodeStruct" <|
             \_ ->
                 Dict.map (\_ -> Proto.Value.ValueString) pairs
-                    |> Proto.Json.encodeStruct
+                    |> encodeStruct
                     |> Json.Encode.encode 0
                     |> Expect.equal "{\"__proto__\":\"x\",\"a\":\"b\"}"
         , test "is written by object" <|
@@ -1643,3 +1644,35 @@ protoKeyTests =
                     |> Maybe.andThen (Json.Decode.decodeValue (Json.Decode.dict Json.Decode.string) >> Result.toMaybe)
                     |> Expect.equal (Just pairs)
         ]
+
+
+{-| The JSON a checked write gives a valid value, `null` for one it refuses.
+-}
+writes : Proto.Json.Encoder Proto.Error.Error -> Json.Encode.Value
+writes encoder =
+    Proto.Json.encode encoder |> Result.withDefault Json.Encode.null
+
+
+encodeStruct : Dict.Dict String Proto.Value.Value -> Json.Encode.Value
+encodeStruct =
+    writes << Proto.Json.writeStruct
+
+
+encodeListValue : List Proto.Value.Value -> Json.Encode.Value
+encodeListValue =
+    writes << Proto.Json.writeListValue
+
+
+encodeTimestamp : Time.Posix -> Json.Encode.Value
+encodeTimestamp =
+    writes << Proto.Json.writeTimestamp
+
+
+encodeDuration : Proto.Duration.Duration -> Json.Encode.Value
+encodeDuration =
+    writes << Proto.Json.writeDuration
+
+
+encodeFieldMask : List String -> Json.Encode.Value
+encodeFieldMask =
+    writes << Proto.Json.writeFieldMask

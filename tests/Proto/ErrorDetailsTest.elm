@@ -36,7 +36,7 @@ suite =
                     |> List.map
                         (Json.Decode.decodeString (Proto.Json.anyWith ErrorDetails.registry)
                             >> Result.mapError Json.Decode.errorToString
-                            >> Result.andThen (Proto.Json.encodeAnyWith ErrorDetails.registry >> Result.mapError (\_ -> "unwritable"))
+                            >> Result.andThen (Proto.Json.writeAny >> Proto.Json.encodeWith ErrorDetails.registry >> Result.mapError (\_ -> "unwritable"))
                             >> Result.map (Json.Encode.encode 0)
                         )
                     |> Expect.equal
@@ -46,7 +46,7 @@ suite =
                         ]
         , test "the registry holds no well-known type" <|
             \_ ->
-                Proto.Json.encodeAnyWith ErrorDetails.registry (Any.pack Proto.WellKnown.duration (Duration.fromMilliseconds 1))
+                Proto.Json.encodeWith ErrorDetails.registry (Proto.Json.writeAny (Any.pack Proto.WellKnown.duration (Duration.fromMilliseconds 1)))
                     |> Expect.equal (Err (Proto.Error.UnregisteredType "type.googleapis.com/google.protobuf.Duration"))
         , test "a RetryInfo's delay unpacks" <|
             \_ ->

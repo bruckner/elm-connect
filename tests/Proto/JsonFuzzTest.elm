@@ -16,6 +16,7 @@ import Generated.Routes.Routes.V1 as V1
 import Json.Decode exposing (Decoder)
 import Json.Encode exposing (Value)
 import Proto.Duration
+import Proto.Error
 import Proto.Int64
 import Proto.Json
 import Proto.Timestamp
@@ -343,7 +344,7 @@ timestampProperties : Test
 timestampProperties =
     describe "timestamps"
         [ fuzz Fuzzers.posix "a Time.Posix from 0001 to 9999 round-trips" <|
-            roundTrips Proto.Json.encodeTimestamp Proto.Json.timestamp
+            roundTrips encodeTimestamp Proto.Json.timestamp
         , fuzz2 Fuzzers.posix (Fuzz.listOfLengthBetween 1 6 (Fuzz.intRange 0 9)) "finer fractional digits are truncated, not rounded" <|
             \posix extra ->
                 let
@@ -404,7 +405,7 @@ durationProperties =
             \d ->
                 Expect.all
                     [ \_ -> Proto.Duration.fromString d.text |> Expect.notEqual Nothing
-                    , \_ -> roundTrips Proto.Json.encodeDuration Proto.Json.duration d.value
+                    , \_ -> roundTrips encodeDuration Proto.Json.duration d.value
                     ]
                     ()
         , fuzz Fuzzers.duration "it is written with 0, 3, 6 or 9 fractional digits, the fewest that keep every nanosecond" <|
@@ -474,9 +475,9 @@ fieldMaskProperties =
         [ fuzz (Fuzz.list Fuzzers.fieldMaskPath) "paths with proto field names round-trip through lowerCamelCase" <|
             \paths ->
                 Expect.all
-                    [ roundTrips Proto.Json.encodeFieldMask Proto.Json.fieldMask
+                    [ roundTrips encodeFieldMask Proto.Json.fieldMask
                     , \_ ->
-                        Json.Decode.decodeValue Json.Decode.string (Proto.Json.encodeFieldMask paths)
+                        Json.Decode.decodeValue Json.Decode.string (encodeFieldMask paths)
                             |> Result.map (String.contains "_")
                             |> Expect.equal (Ok False)
                     ]
@@ -646,20 +647,20 @@ valueProperties =
                     struct =
                         Dict.fromList (List.map (Tuple.mapSecond toValue) members)
                 in
-                Json.Decode.decodeValue Proto.Json.struct (Proto.Json.encodeStruct struct)
-                    |> Result.map Proto.Json.encodeStruct
+                Json.Decode.decodeValue Proto.Json.struct (encodeStruct struct)
+                    |> Result.map encodeStruct
                     |> encoded
-                    |> Expect.equal (Ok (Json.Encode.encode 0 (Proto.Json.encodeStruct struct)))
+                    |> Expect.equal (Ok (Json.Encode.encode 0 (encodeStruct struct)))
         , fuzz (Fuzz.list (Fuzzers.json 2)) "a ListValue round-trips" <|
             \jsonItems ->
                 let
                     items =
                         List.map toValue jsonItems
                 in
-                Json.Decode.decodeValue Proto.Json.listValue (Proto.Json.encodeListValue items)
-                    |> Result.map Proto.Json.encodeListValue
+                Json.Decode.decodeValue Proto.Json.listValue (encodeListValue items)
+                    |> Result.map encodeListValue
                     |> encoded
-                    |> Expect.equal (Ok (Json.Encode.encode 0 (Proto.Json.encodeListValue items)))
+                    |> Expect.equal (Ok (Json.Encode.encode 0 (encodeListValue items)))
         , fuzz (Fuzzers.json 3) "a Value passes through as it is" <|
             \value ->
                 Json.Decode.decodeString Json.Decode.value (Json.Encode.encode 0 value)
@@ -717,18 +718,18 @@ omitDefaultsProperties : Test
 omitDefaultsProperties =
     let
         encode =
-            V1.encodeEverything >> Json.Encode.encode 0
+            (V1.encodeEverything >> writtenOrNull) >> Json.Encode.encode 0
     in
     describe "the generated codecs omit defaults"
-        [ defaultsTest "Everything" V1.encodeEverything V1.decodeEverything V1.defaultEverything
-        , defaultsTest "Inner" V1.encodeInner V1.decodeInner V1.defaultInner
-        , defaultsTest "Deep" V1.encodeDeep V1.decodeDeep V1.defaultDeep
-        , defaultsTest "GetMessageRequest" V1.encodeGetMessageRequest V1.decodeGetMessageRequest V1.defaultGetMessageRequest
-        , defaultsTest "Message" V1.encodeMessage V1.decodeMessage V1.defaultMessage
-        , defaultsTest "UpdateMessageRequest" V1.encodeUpdateMessageRequest V1.decodeUpdateMessageRequest V1.defaultUpdateMessageRequest
-        , defaultsTest "FileRequest" V1.encodeFileRequest V1.decodeFileRequest V1.defaultFileRequest
-        , defaultsTest "Resource" V1.encodeResource V1.decodeResource V1.defaultResource
-        , defaultsTest "UpdateResourceRequest" V1.encodeUpdateResourceRequest V1.decodeUpdateResourceRequest V1.defaultUpdateResourceRequest
+        [ defaultsTest "Everything" (V1.encodeEverything >> writtenOrNull) V1.decodeEverything V1.defaultEverything
+        , defaultsTest "Inner" (V1.encodeInner >> writtenOrNull) V1.decodeInner V1.defaultInner
+        , defaultsTest "Deep" (V1.encodeDeep >> writtenOrNull) V1.decodeDeep V1.defaultDeep
+        , defaultsTest "GetMessageRequest" (V1.encodeGetMessageRequest >> writtenOrNull) V1.decodeGetMessageRequest V1.defaultGetMessageRequest
+        , defaultsTest "Message" (V1.encodeMessage >> writtenOrNull) V1.decodeMessage V1.defaultMessage
+        , defaultsTest "UpdateMessageRequest" (V1.encodeUpdateMessageRequest >> writtenOrNull) V1.decodeUpdateMessageRequest V1.defaultUpdateMessageRequest
+        , defaultsTest "FileRequest" (V1.encodeFileRequest >> writtenOrNull) V1.decodeFileRequest V1.defaultFileRequest
+        , defaultsTest "Resource" (V1.encodeResource >> writtenOrNull) V1.decodeResource V1.defaultResource
+        , defaultsTest "UpdateResourceRequest" (V1.encodeUpdateResourceRequest >> writtenOrNull) V1.decodeUpdateResourceRequest V1.defaultUpdateResourceRequest
         , fuzz (Fuzzers.everything Fuzzers.nonNegativeZeroFloat) "encode (decode (encode x)) == encode x" <|
             \x ->
                 Json.Decode.decodeString V1.decodeEverything (encode x)
@@ -767,9 +768,9 @@ omitDefaultsProperties =
           <|
             \x ->
                 Expect.all
-                    [ roundTrips V1.encodeResource V1.decodeResource
+                    [ roundTrips (V1.encodeResource >> writtenOrNull) V1.decodeResource
                     , \_ ->
-                        Json.Decode.decodeValue (Json.Decode.keyValuePairs Json.Decode.value) (V1.encodeResource x)
+                        Json.Decode.decodeValue (Json.Decode.keyValuePairs Json.Decode.value) ((V1.encodeResource >> writtenOrNull) x)
                             |> Result.map (List.map Tuple.first >> List.filter (\key -> List.member key [ "labels", "kinds", "weights" ]))
                             |> Expect.equal
                                 (Ok
@@ -831,3 +832,40 @@ omitDefaultsProperties =
 toValue : Json.Encode.Value -> Proto.Value.Value
 toValue json =
     Proto.Value.fromJson json |> Maybe.withDefault Proto.Value.ValueNull
+
+
+writtenOrNull : Proto.Json.Encoder Proto.Error.Error -> Json.Encode.Value
+writtenOrNull encoder =
+    Proto.Json.encode encoder |> Result.withDefault Json.Encode.null
+
+
+{-| The JSON a checked write gives a valid value, `null` for one it refuses.
+-}
+writes : Proto.Json.Encoder Proto.Error.Error -> Json.Encode.Value
+writes encoder =
+    Proto.Json.encode encoder |> Result.withDefault Json.Encode.null
+
+
+encodeStruct : Dict.Dict String Proto.Value.Value -> Json.Encode.Value
+encodeStruct =
+    writes << Proto.Json.writeStruct
+
+
+encodeListValue : List Proto.Value.Value -> Json.Encode.Value
+encodeListValue =
+    writes << Proto.Json.writeListValue
+
+
+encodeTimestamp : Time.Posix -> Json.Encode.Value
+encodeTimestamp =
+    writes << Proto.Json.writeTimestamp
+
+
+encodeDuration : Proto.Duration.Duration -> Json.Encode.Value
+encodeDuration =
+    writes << Proto.Json.writeDuration
+
+
+encodeFieldMask : List String -> Json.Encode.Value
+encodeFieldMask =
+    writes << Proto.Json.writeFieldMask

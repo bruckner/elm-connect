@@ -49,7 +49,7 @@ decodeTitle =
 -}
 messageTitle : Message String
 messageTitle =
-    Message.init "notes.v1.Title" encodeTitle decodeTitle encodeTitleBytes decodeTitleBytes
+    Message.init "notes.v1.Title" (Proto.Json.succeed << encodeTitle) decodeTitle encodeTitleBytes decodeTitleBytes
 
 
 {-| The registry generated code gives a package of
@@ -110,7 +110,7 @@ isBadJson result =
 
 writtenWith : Registry -> Any -> Result Error String
 writtenWith reg any =
-    Proto.Json.encodeAnyWith reg any |> Result.map (Json.Encode.encode 0)
+    Proto.Json.encodeWith reg (Proto.Json.writeAny any) |> Result.map (Json.Encode.encode 0)
 
 
 suite : Test

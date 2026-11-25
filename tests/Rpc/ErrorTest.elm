@@ -12,6 +12,7 @@ import Json.Decode
 import Json.Encode
 import Proto.Any
 import Proto.Error
+import Proto.Json
 import Proto.Method
 import Proto.WellKnown
 import Rpc
@@ -62,7 +63,7 @@ connect =
 
 call : Rpc.Call Rpc.Json () String
 call =
-    Rpc.call (Proto.Method.initJson "t.v1.S" "Get" (\_ _ -> Ok Json.Encode.null) (\_ -> stringDecoder)) ()
+    Rpc.call (Proto.Method.initJson "t.v1.S" "Get" (\_ -> Proto.Json.succeed Json.Encode.null) (\_ -> stringDecoder)) ()
 
 
 stringDecoder : Json.Decode.Decoder String
