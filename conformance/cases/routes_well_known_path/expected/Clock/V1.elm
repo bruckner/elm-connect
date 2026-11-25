@@ -16,6 +16,7 @@ import Json.Encode
 import Proto.Binary
 import Proto.Descriptors
 import Proto.Duration exposing (Duration)
+import Proto.Error
 import Proto.Json
 import Proto.Message
 import Proto.Query
@@ -115,17 +116,25 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`Moment`](#Moment) as proto3 JSON.
+{-| Encodes a [`Moment`](#Moment) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for.
 -}
-encodeMoment : Moment -> Json.Encode.Value
+encodeMoment : Moment -> Proto.Json.Encoder Proto.Error.Error
 encodeMoment value =
-    Proto.Json.objectOfFields
-        [ ( "at", Maybe.map Proto.Json.encodeTimestamp value.at )
-        , ( "mask", Maybe.map Proto.Json.encodeFieldMask value.mask )
-        , ( "count", Maybe.map Json.Encode.int value.count )
-        , ( "seen", Maybe.map Json.Encode.bool value.seen )
-        , ( "wait", Maybe.map Proto.Json.encodeDuration value.wait )
-        , ( "note", Proto.Json.implicitField "" Json.Encode.string value.note )
+    Proto.Json.writeObject
+        [ Proto.Json.checkedFields
+            [ ( "at", Proto.Json.writeOptional Proto.Json.writeTimestamp value.at )
+            , ( "mask", Proto.Json.writeOptional Proto.Json.writeFieldMask value.mask )
+            ]
+        , Proto.Json.plainFields
+            [ ( "count", Maybe.map Json.Encode.int value.count )
+            , ( "seen", Maybe.map Json.Encode.bool value.seen )
+            ]
+        , Proto.Json.checkedFields
+            [ ( "wait", Proto.Json.writeOptional Proto.Json.writeDuration value.wait )
+            ]
+        , Proto.Json.plainFields
+            [ ( "note", Proto.Json.implicitField "" Json.Encode.string value.note )
+            ]
         ]
 
 
@@ -291,7 +300,7 @@ queryOfMoment : Moment -> List ( String, String )
 queryOfMoment request_ =
     List.concat
         [ Proto.Query.optional "at" (Maybe.map Proto.Timestamp.toString request_.at)
-        , Proto.Query.optional "mask" (Maybe.map (Proto.Route.viaJson Proto.Json.encodeFieldMask) request_.mask)
+        , Proto.Query.optional "mask" (Maybe.map Proto.Route.fieldMaskText request_.mask)
         , Proto.Query.optional "count" (Maybe.map String.fromInt request_.count)
         , Proto.Query.optional "seen" (Maybe.map Proto.Route.boolText request_.seen)
         , Proto.Query.optional "wait" (Maybe.map Proto.Duration.toString request_.wait)

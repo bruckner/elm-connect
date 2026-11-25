@@ -261,28 +261,32 @@ encodeMarks value =
             Json.Encode.string "MARKS_DELIMITED"
 
 
-{-| Encodes a [`Delimiters`](#Delimiters) as proto3 JSON.
+{-| Encodes a [`Delimiters`](#Delimiters) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeDelimiters : Delimiters -> Json.Encode.Value
+encodeDelimiters : Delimiters -> Proto.Json.Encoder x
 encodeDelimiters value =
-    Proto.Json.objectOfFields
-        [ ( "lists", Proto.Json.implicitField "" Json.Encode.string value.lists )
-        , ( "blocks", Proto.Json.implicitField "" Json.Encode.string value.blocks )
-        , ( "code", Proto.Json.implicitField "" Json.Encode.string value.code )
-        , ( "inline", Proto.Json.implicitField "" Json.Encode.string value.inline )
-        , ( "text", Proto.Json.implicitField "" Json.Encode.string value.text )
-        , ( "whitespaceOnly", Proto.Json.implicitField "" Json.Encode.string value.whitespaceOnly )
-        , ( "unclosed", Proto.Json.implicitField "" Json.Encode.string value.unclosed )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "lists", Proto.Json.implicitField "" Json.Encode.string value.lists )
+            , ( "blocks", Proto.Json.implicitField "" Json.Encode.string value.blocks )
+            , ( "code", Proto.Json.implicitField "" Json.Encode.string value.code )
+            , ( "inline", Proto.Json.implicitField "" Json.Encode.string value.inline )
+            , ( "text", Proto.Json.implicitField "" Json.Encode.string value.text )
+            , ( "whitespaceOnly", Proto.Json.implicitField "" Json.Encode.string value.whitespaceOnly )
+            , ( "unclosed", Proto.Json.implicitField "" Json.Encode.string value.unclosed )
+            ]
+        )
 
 
-{-| Encodes a [`Docs`](#Docs) as proto3 JSON.
+{-| Encodes a [`Docs`](#Docs) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeDocs : Docs -> Json.Encode.Value
+encodeDocs : Docs -> Proto.Json.Encoder x
 encodeDocs value =
-    Proto.Json.objectOfFields
-        [ ( "field", Proto.Json.implicitField "" Json.Encode.string value.field )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "field", Proto.Json.implicitField "" Json.Encode.string value.field )
+            ]
+        )
 
 
 

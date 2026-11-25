@@ -131,24 +131,28 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`Note`](#Note) as proto3 JSON.
+{-| Encodes a [`Note`](#Note) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeNote : Note -> Json.Encode.Value
+encodeNote : Note -> Proto.Json.Encoder x
 encodeNote value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        , ( "author", Maybe.map Api.Example.People.encodeUser value.author )
-        , ( "requiredRole", Proto.Json.implicitField Api.Example.People.RoleUnspecified Api.Example.People.encodeRole value.requiredRole )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            , ( "author", Proto.Json.totalOptionalField Api.Example.People.encodeUser value.author )
+            , ( "requiredRole", Proto.Json.implicitField Api.Example.People.RoleUnspecified Api.Example.People.encodeRole value.requiredRole )
+            ]
+        )
 
 
-{-| Encodes a [`GetNoteRequest`](#GetNoteRequest) as proto3 JSON.
+{-| Encodes a [`GetNoteRequest`](#GetNoteRequest) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeGetNoteRequest : GetNoteRequest -> Json.Encode.Value
+encodeGetNoteRequest : GetNoteRequest -> Proto.Json.Encoder x
 encodeGetNoteRequest value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            ]
+        )
 
 
 

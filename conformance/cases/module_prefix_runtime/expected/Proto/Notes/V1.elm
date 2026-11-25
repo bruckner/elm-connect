@@ -90,11 +90,11 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`Note`](#Note) as proto3 JSON.
+{-| Encodes a [`Note`](#Note) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeNote : Note -> Json.Encode.Value
+encodeNote : Note -> Proto.Json.Encoder x
 encodeNote _ =
-    Json.Encode.object []
+    Proto.Json.succeed (Json.Encode.object [])
 
 
 

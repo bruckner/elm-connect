@@ -95,13 +95,15 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`Line`](#Line) as proto3 JSON.
+{-| Encodes a [`Line`](#Line) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeLine : Line -> Json.Encode.Value
+encodeLine : Line -> Proto.Json.Encoder x
 encodeLine value =
-    Proto.Json.objectOfFields
-        [ ( "text", Proto.Json.implicitField "" Json.Encode.string value.text )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "text", Proto.Json.implicitField "" Json.Encode.string value.text )
+            ]
+        )
 
 
 

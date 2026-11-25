@@ -22,6 +22,7 @@ import Notes.V1.Visibility
 import Proto.Binary
 import Proto.Descriptors
 import Proto.Enum
+import Proto.Error
 import Proto.Json
 import Proto.Message
 import Proto.Query
@@ -457,118 +458,148 @@ encodeVisibility value =
             Json.Encode.string "VISIBILITY_PUBLIC"
 
 
-{-| Encodes a [`Note`](#Note) as proto3 JSON.
+{-| Encodes a [`Note`](#Note) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeNote : Note -> Json.Encode.Value
+encodeNote : Note -> Proto.Json.Encoder x
 encodeNote value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        , ( "title", Proto.Json.implicitField "" Json.Encode.string value.title )
-        , ( "visibility", Proto.Json.implicitField VisibilityUnspecified encodeVisibility value.visibility )
-        , ( "tags", Proto.Json.repeatedField Json.Encode.string value.tags )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            , ( "title", Proto.Json.implicitField "" Json.Encode.string value.title )
+            , ( "visibility", Proto.Json.implicitField VisibilityUnspecified encodeVisibility value.visibility )
+            , ( "tags", Proto.Json.repeatedField Json.Encode.string value.tags )
+            ]
+        )
 
 
-{-| Encodes a [`GetNoteRequest`](#GetNoteRequest) as proto3 JSON.
+{-| Encodes a [`GetNoteRequest`](#GetNoteRequest) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeGetNoteRequest : GetNoteRequest -> Json.Encode.Value
+encodeGetNoteRequest : GetNoteRequest -> Proto.Json.Encoder x
 encodeGetNoteRequest value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            ]
+        )
 
 
-{-| Encodes a [`ListNotesRequest`](#ListNotesRequest) as proto3 JSON.
+{-| Encodes a [`ListNotesRequest`](#ListNotesRequest) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for.
 -}
-encodeListNotesRequest : ListNotesRequest -> Json.Encode.Value
+encodeListNotesRequest : ListNotesRequest -> Proto.Json.Encoder Proto.Error.Error
 encodeListNotesRequest value =
-    Proto.Json.objectOfFields
-        [ ( "parent", Proto.Json.implicitField "" Json.Encode.string value.parent )
-        , ( "pageSize", Proto.Json.implicitField 0 Json.Encode.int value.pageSize )
-        , ( "pageToken", Proto.Json.implicitField "" Json.Encode.string value.pageToken )
-        , ( "filter", Maybe.map encodeListNotesRequestFilter value.filter )
-        , ( "tags", Proto.Json.repeatedField Json.Encode.string value.tags )
-        , ( "archived", Maybe.map Json.Encode.bool value.archived )
-        , ( "revision", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.revision )
+    Proto.Json.writeObject
+        [ Proto.Json.plainFields
+            [ ( "parent", Proto.Json.implicitField "" Json.Encode.string value.parent )
+            , ( "pageSize", Proto.Json.implicitField 0 Json.Encode.int value.pageSize )
+            , ( "pageToken", Proto.Json.implicitField "" Json.Encode.string value.pageToken )
+            ]
+        , Proto.Json.checkedFields
+            [ ( "filter", Proto.Json.writeOptional encodeListNotesRequestFilter value.filter )
+            ]
+        , Proto.Json.plainFields
+            [ ( "tags", Proto.Json.repeatedField Json.Encode.string value.tags )
+            , ( "archived", Maybe.map Json.Encode.bool value.archived )
+            , ( "revision", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.revision )
+            ]
         ]
 
 
-{-| Encodes a [`ListNotesRequestFilter`](#ListNotesRequestFilter) as proto3 JSON.
+{-| Encodes a [`ListNotesRequestFilter`](#ListNotesRequestFilter) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for.
 -}
-encodeListNotesRequestFilter : ListNotesRequestFilter -> Json.Encode.Value
+encodeListNotesRequestFilter : ListNotesRequestFilter -> Proto.Json.Encoder Proto.Error.Error
 encodeListNotesRequestFilter value =
-    Proto.Json.objectOfFields
-        [ ( "visibility", Proto.Json.implicitField VisibilityUnspecified encodeVisibility value.visibility )
-        , ( "since", Maybe.map Proto.Json.encodeTimestamp value.since )
+    Proto.Json.writeObject
+        [ Proto.Json.plainFields
+            [ ( "visibility", Proto.Json.implicitField VisibilityUnspecified encodeVisibility value.visibility )
+            ]
+        , Proto.Json.checkedFields
+            [ ( "since", Proto.Json.writeOptional Proto.Json.writeTimestamp value.since )
+            ]
         ]
 
 
-{-| Encodes a [`ListNotesResponse`](#ListNotesResponse) as proto3 JSON.
+{-| Encodes a [`ListNotesResponse`](#ListNotesResponse) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeListNotesResponse : ListNotesResponse -> Json.Encode.Value
+encodeListNotesResponse : ListNotesResponse -> Proto.Json.Encoder x
 encodeListNotesResponse value =
-    Proto.Json.objectOfFields
-        [ ( "notes", Proto.Json.repeatedField encodeNote value.notes )
-        , ( "nextPageToken", Proto.Json.implicitField "" Json.Encode.string value.nextPageToken )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "notes", Proto.Json.totalRepeatedField encodeNote value.notes )
+            , ( "nextPageToken", Proto.Json.implicitField "" Json.Encode.string value.nextPageToken )
+            ]
+        )
 
 
-{-| Encodes a [`CreateNoteRequest`](#CreateNoteRequest) as proto3 JSON.
+{-| Encodes a [`CreateNoteRequest`](#CreateNoteRequest) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeCreateNoteRequest : CreateNoteRequest -> Json.Encode.Value
+encodeCreateNoteRequest : CreateNoteRequest -> Proto.Json.Encoder x
 encodeCreateNoteRequest value =
-    Proto.Json.objectOfFields
-        [ ( "parent", Proto.Json.implicitField "" Json.Encode.string value.parent )
-        , ( "note", Maybe.map encodeNote value.note )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "parent", Proto.Json.implicitField "" Json.Encode.string value.parent )
+            , ( "note", Proto.Json.totalOptionalField encodeNote value.note )
+            ]
+        )
 
 
-{-| Encodes an [`UpdateNoteRequest`](#UpdateNoteRequest) as proto3 JSON.
+{-| Encodes an [`UpdateNoteRequest`](#UpdateNoteRequest) as proto3 JSON, refusing a value it holds that proto3 JSON has no form for.
 -}
-encodeUpdateNoteRequest : UpdateNoteRequest -> Json.Encode.Value
+encodeUpdateNoteRequest : UpdateNoteRequest -> Proto.Json.Encoder Proto.Error.Error
 encodeUpdateNoteRequest value =
-    Proto.Json.objectOfFields
-        [ ( "note", Maybe.map encodeNote value.note )
-        , ( "updateMask", Maybe.map Proto.Json.encodeFieldMask value.updateMask )
+    Proto.Json.writeObject
+        [ Proto.Json.plainFields
+            [ ( "note", Proto.Json.totalOptionalField encodeNote value.note )
+            ]
+        , Proto.Json.checkedFields
+            [ ( "updateMask", Proto.Json.writeOptional Proto.Json.writeFieldMask value.updateMask )
+            ]
         ]
 
 
-{-| Encodes a [`DeleteNoteRequest`](#DeleteNoteRequest) as proto3 JSON.
+{-| Encodes a [`DeleteNoteRequest`](#DeleteNoteRequest) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeDeleteNoteRequest : DeleteNoteRequest -> Json.Encode.Value
+encodeDeleteNoteRequest : DeleteNoteRequest -> Proto.Json.Encoder x
 encodeDeleteNoteRequest value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        , ( "force", Proto.Json.implicitField False Json.Encode.bool value.force )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            , ( "force", Proto.Json.implicitField False Json.Encode.bool value.force )
+            ]
+        )
 
 
-{-| Encodes an [`ArchiveNoteRequest`](#ArchiveNoteRequest) as proto3 JSON.
+{-| Encodes an [`ArchiveNoteRequest`](#ArchiveNoteRequest) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeArchiveNoteRequest : ArchiveNoteRequest -> Json.Encode.Value
+encodeArchiveNoteRequest : ArchiveNoteRequest -> Proto.Json.Encoder x
 encodeArchiveNoteRequest value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        , ( "reason", Proto.Json.implicitField "" Json.Encode.string value.reason )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            , ( "reason", Proto.Json.implicitField "" Json.Encode.string value.reason )
+            ]
+        )
 
 
-{-| Encodes a [`ReadFileRequest`](#ReadFileRequest) as proto3 JSON.
+{-| Encodes a [`ReadFileRequest`](#ReadFileRequest) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeReadFileRequest : ReadFileRequest -> Json.Encode.Value
+encodeReadFileRequest : ReadFileRequest -> Proto.Json.Encoder x
 encodeReadFileRequest value =
-    Proto.Json.objectOfFields
-        [ ( "path", Proto.Json.implicitField "" Json.Encode.string value.path )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "path", Proto.Json.implicitField "" Json.Encode.string value.path )
+            ]
+        )
 
 
-{-| Encodes a [`Summary`](#Summary) as proto3 JSON.
+{-| Encodes a [`Summary`](#Summary) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeSummary : Summary -> Json.Encode.Value
+encodeSummary : Summary -> Proto.Json.Encoder x
 encodeSummary value =
-    Proto.Json.objectOfFields
-        [ ( "text", Proto.Json.implicitField "" Json.Encode.string value.text )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "text", Proto.Json.implicitField "" Json.Encode.string value.text )
+            ]
+        )
 
 
 
@@ -1469,7 +1500,7 @@ queryOfListNotesRequest request_ =
 -}
 queryOfUpdateNoteRequest : UpdateNoteRequest -> List ( String, String )
 queryOfUpdateNoteRequest request_ =
-    Proto.Query.optional "update_mask" (Maybe.map (Proto.Route.viaJson Proto.Json.encodeFieldMask) request_.updateMask)
+    Proto.Query.optional "update_mask" (Maybe.map Proto.Route.fieldMaskText request_.updateMask)
 
 
 {-| The query parameters of a [`DeleteNoteRequest`](#DeleteNoteRequest) for the HTTP bindings that put its fields in the query: those of its fields that hold a value, in declaration order.

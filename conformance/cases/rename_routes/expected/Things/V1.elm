@@ -159,33 +159,39 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`Thing`](#Thing) as proto3 JSON.
+{-| Encodes a [`Thing`](#Thing) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeThing : Thing -> Json.Encode.Value
+encodeThing : Thing -> Proto.Json.Encoder x
 encodeThing value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            ]
+        )
 
 
-{-| Encodes a [`Criteria`](#Criteria) as proto3 JSON.
+{-| Encodes a [`Criteria`](#Criteria) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeCriteria : Criteria -> Json.Encode.Value
+encodeCriteria : Criteria -> Proto.Json.Encoder x
 encodeCriteria value =
-    Proto.Json.objectOfFields
-        [ ( "state", Proto.Json.implicitField "" Json.Encode.string value.status )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "state", Proto.Json.implicitField "" Json.Encode.string value.status )
+            ]
+        )
 
 
-{-| Encodes a [`GetThingRequest`](#GetThingRequest) as proto3 JSON.
+{-| Encodes a [`GetThingRequest`](#GetThingRequest) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeGetThingRequest : GetThingRequest -> Json.Encode.Value
+encodeGetThingRequest : GetThingRequest -> Proto.Json.Encoder x
 encodeGetThingRequest value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.resource )
-        , ( "pageSize", Proto.Json.implicitField 0 Json.Encode.int value.limit )
-        , ( "filter", Maybe.map encodeCriteria value.filter )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.resource )
+            , ( "pageSize", Proto.Json.implicitField 0 Json.Encode.int value.limit )
+            , ( "filter", Proto.Json.totalOptionalField encodeCriteria value.filter )
+            ]
+        )
 
 
 

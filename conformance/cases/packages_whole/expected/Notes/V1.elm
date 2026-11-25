@@ -128,23 +128,27 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`Note`](#Note) as proto3 JSON.
+{-| Encodes a [`Note`](#Note) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeNote : Note -> Json.Encode.Value
+encodeNote : Note -> Proto.Json.Encoder x
 encodeNote value =
-    Proto.Json.objectOfFields
-        [ ( "title", Proto.Json.implicitField "" Json.Encode.string value.title )
-        , ( "tags", Proto.Json.repeatedField encodeTag value.tags )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "title", Proto.Json.implicitField "" Json.Encode.string value.title )
+            , ( "tags", Proto.Json.totalRepeatedField encodeTag value.tags )
+            ]
+        )
 
 
-{-| Encodes a [`Tag`](#Tag) as proto3 JSON.
+{-| Encodes a [`Tag`](#Tag) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeTag : Tag -> Json.Encode.Value
+encodeTag : Tag -> Proto.Json.Encoder x
 encodeTag value =
-    Proto.Json.objectOfFields
-        [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
+            ]
+        )
 
 
 

@@ -190,17 +190,19 @@ encodeMood value =
             Json.Encode.string "MOOD_CALM"
 
 
-{-| Encodes a [`Draft`](#Draft) as proto3 JSON.
+{-| Encodes a [`Draft`](#Draft) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeDraft : Draft -> Json.Encode.Value
+encodeDraft : Draft -> Proto.Json.Encoder x
 encodeDraft value =
-    Proto.Json.objectOfFields
-        ([ ( "title", Proto.Json.implicitField "" Json.Encode.string value.title )
-         , ( "mood", Proto.Json.implicitField MoodUnspecified encodeMood value.mood )
-         , ( "margin", Maybe.map encodeDraftMargin value.margin )
-         , ( "tags", Proto.Json.repeatedField Json.Encode.string value.tags )
-         ]
-            ++ encodeDraftBody value.body
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            ([ ( "title", Proto.Json.implicitField "" Json.Encode.string value.title )
+             , ( "mood", Proto.Json.implicitField MoodUnspecified encodeMood value.mood )
+             , ( "margin", Proto.Json.totalOptionalField encodeDraftMargin value.margin )
+             , ( "tags", Proto.Json.repeatedField Json.Encode.string value.tags )
+             ]
+                ++ encodeDraftBody value.body
+            )
         )
 
 
@@ -221,14 +223,16 @@ encodeDraftBody value =
             ]
 
 
-{-| Encodes a [`DraftMargin`](#DraftMargin) as proto3 JSON.
+{-| Encodes a [`DraftMargin`](#DraftMargin) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeDraftMargin : DraftMargin -> Json.Encode.Value
+encodeDraftMargin : DraftMargin -> Proto.Json.Encoder x
 encodeDraftMargin value =
-    Proto.Json.objectOfFields
-        [ ( "left", Proto.Json.implicitField 0 Json.Encode.int value.left )
-        , ( "right", Proto.Json.implicitField 0 Json.Encode.int value.right )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "left", Proto.Json.implicitField 0 Json.Encode.int value.left )
+            , ( "right", Proto.Json.implicitField 0 Json.Encode.int value.right )
+            ]
+        )
 
 
 

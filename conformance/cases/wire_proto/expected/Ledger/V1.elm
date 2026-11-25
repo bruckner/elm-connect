@@ -190,18 +190,20 @@ encodeKind value =
             Json.Encode.string "KIND_DEBIT"
 
 
-{-| Encodes an [`Entry`](#Entry) as proto3 JSON.
+{-| Encodes an [`Entry`](#Entry) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeEntry : Entry -> Json.Encode.Value
+encodeEntry : Entry -> Proto.Json.Encoder x
 encodeEntry value =
-    Proto.Json.objectOfFields
-        ([ ( "memo", Proto.Json.implicitField "" Json.Encode.string value.memo )
-         , ( "amount", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.amount )
-         , ( "kind", Proto.Json.implicitField KindUnspecified encodeKind value.kind )
-         , ( "tags", Proto.Json.dictField identity Json.Encode.int value.tags )
-         , ( "marks", Proto.Json.repeatedField Json.Encode.int value.marks )
-         ]
-            ++ encodeEntrySource value.source
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            ([ ( "memo", Proto.Json.implicitField "" Json.Encode.string value.memo )
+             , ( "amount", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.amount )
+             , ( "kind", Proto.Json.implicitField KindUnspecified encodeKind value.kind )
+             , ( "tags", Proto.Json.dictField identity Json.Encode.int value.tags )
+             , ( "marks", Proto.Json.repeatedField Json.Encode.int value.marks )
+             ]
+                ++ encodeEntrySource value.source
+            )
         )
 
 
@@ -218,17 +220,19 @@ encodeEntrySource value =
             ]
 
         EntrySourceReversal member ->
-            [ ( "reversal", Just (encodeEntry member) )
+            [ ( "reversal", Just (Proto.Json.encodeTotal (encodeEntry member)) )
             ]
 
 
-{-| Encodes a [`GetEntryRequest`](#GetEntryRequest) as proto3 JSON.
+{-| Encodes a [`GetEntryRequest`](#GetEntryRequest) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeGetEntryRequest : GetEntryRequest -> Json.Encode.Value
+encodeGetEntryRequest : GetEntryRequest -> Proto.Json.Encoder x
 encodeGetEntryRequest value =
-    Proto.Json.objectOfFields
-        [ ( "memo", Proto.Json.implicitField "" Json.Encode.string value.memo )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "memo", Proto.Json.implicitField "" Json.Encode.string value.memo )
+            ]
+        )
 
 
 

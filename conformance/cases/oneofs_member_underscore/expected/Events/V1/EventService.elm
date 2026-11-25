@@ -42,7 +42,7 @@ listEvents =
     Rpc.call
         (Proto.Method.init "events.v1.EventService"
             "ListEvents"
-            (\_ -> Ok << Events.V1.encodeListEventsRequest)
+            Events.V1.encodeListEventsRequest
             (\_ -> Events.V1.decodeListEventsResponse)
             Events.V1.encodeListEventsRequestBytes
             Events.V1.decodeListEventsResponseBytes

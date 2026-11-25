@@ -121,23 +121,27 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`ZoneRequest`](#ZoneRequest) as proto3 JSON.
+{-| Encodes a [`ZoneRequest`](#ZoneRequest) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeZoneRequest : ZoneRequest -> Json.Encode.Value
+encodeZoneRequest : ZoneRequest -> Proto.Json.Encoder x
 encodeZoneRequest value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            ]
+        )
 
 
-{-| Encodes a [`Zone`](#Zone) as proto3 JSON.
+{-| Encodes a [`Zone`](#Zone) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeZone : Zone -> Json.Encode.Value
+encodeZone : Zone -> Proto.Json.Encoder x
 encodeZone value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        , ( "offsetSeconds", Proto.Json.implicitField 0 Proto.Json.encodeInt64AsInt value.offsetSeconds )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            , ( "offsetSeconds", Proto.Json.implicitField 0 Proto.Json.encodeInt64AsInt value.offsetSeconds )
+            ]
+        )
 
 
 

@@ -197,35 +197,39 @@ encodeRole value =
             Json.Encode.string "ROLE_OWNER"
 
 
-{-| Encodes a [`Member`](#Member) as proto3 JSON.
+{-| Encodes a [`Member`](#Member) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeMember : Member -> Json.Encode.Value
+encodeMember : Member -> Proto.Json.Encoder x
 encodeMember value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            ]
+        )
 
 
-{-| Encodes a [`Team`](#Team) as proto3 JSON.
+{-| Encodes a [`Team`](#Team) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeTeam : Team -> Json.Encode.Value
+encodeTeam : Team -> Proto.Json.Encoder x
 encodeTeam value =
-    Proto.Json.objectOfFields
-        [ ( "labels", Proto.Json.dictField identity Json.Encode.string value.labels )
-        , ( "bySeat", Proto.Json.dictField String.fromInt Json.Encode.string value.bySeat )
-        , ( "scores", Proto.Json.dictField String.fromInt Proto.Json.encodeFloat value.scores )
-        , ( "flags", Proto.Json.dictField String.fromInt Json.Encode.bool value.flags )
-        , ( "totals", Proto.Json.dictField String.fromInt Proto.Json.encodeInt64 value.totals )
-        , ( "byId", Proto.Json.dictField identity Json.Encode.string value.byId )
-        , ( "counts", Proto.Json.dictField identity Json.Encode.int value.counts )
-        , ( "members", Proto.Json.dictField identity encodeMember value.members )
-        , ( "roles", Proto.Json.dictField String.fromInt encodeRole value.roles )
-        , ( "byFlag", Proto.Json.boolMapField Json.Encode.string value.byFlag )
-        , ( "byOffset", Proto.Json.dictField String.fromInt Json.Encode.string value.byOffset )
-        , ( "deltas", Proto.Json.dictField identity Json.Encode.string value.deltas )
-        , ( "byHash", Proto.Json.dictField identity Json.Encode.string value.byHash )
-        , ( "byStamp", Proto.Json.dictField identity Json.Encode.string value.byStamp )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "labels", Proto.Json.dictField identity Json.Encode.string value.labels )
+            , ( "bySeat", Proto.Json.dictField String.fromInt Json.Encode.string value.bySeat )
+            , ( "scores", Proto.Json.dictField String.fromInt Proto.Json.encodeFloat value.scores )
+            , ( "flags", Proto.Json.dictField String.fromInt Json.Encode.bool value.flags )
+            , ( "totals", Proto.Json.dictField String.fromInt Proto.Json.encodeInt64 value.totals )
+            , ( "byId", Proto.Json.dictField identity Json.Encode.string value.byId )
+            , ( "counts", Proto.Json.dictField identity Json.Encode.int value.counts )
+            , ( "members", Proto.Json.totalDictField identity encodeMember value.members )
+            , ( "roles", Proto.Json.dictField String.fromInt encodeRole value.roles )
+            , ( "byFlag", Proto.Json.boolMapField Json.Encode.string value.byFlag )
+            , ( "byOffset", Proto.Json.dictField String.fromInt Json.Encode.string value.byOffset )
+            , ( "deltas", Proto.Json.dictField identity Json.Encode.string value.deltas )
+            , ( "byHash", Proto.Json.dictField identity Json.Encode.string value.byHash )
+            , ( "byStamp", Proto.Json.dictField identity Json.Encode.string value.byStamp )
+            ]
+        )
 
 
 

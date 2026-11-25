@@ -210,16 +210,18 @@ encodeAudience value =
             Json.Encode.string "VISIBILITY_PUBLIC"
 
 
-{-| Encodes a [`Memo`](#Memo) as proto3 JSON.
+{-| Encodes a [`Memo`](#Memo) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeMemo : Memo -> Json.Encode.Value
+encodeMemo : Memo -> Proto.Json.Encoder x
 encodeMemo value =
-    Proto.Json.objectOfFields
-        ([ ( "title", Proto.Json.implicitField "" Json.Encode.string value.heading )
-         , ( "visibility", Proto.Json.implicitField AudienceUnspecified encodeAudience value.visibility )
-         , ( "revisions", Proto.Json.repeatedField encodeEdit value.revisions )
-         ]
-            ++ encodeMemoBody value.body
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            ([ ( "title", Proto.Json.implicitField "" Json.Encode.string value.heading )
+             , ( "visibility", Proto.Json.implicitField AudienceUnspecified encodeAudience value.visibility )
+             , ( "revisions", Proto.Json.totalRepeatedField encodeEdit value.revisions )
+             ]
+                ++ encodeMemoBody value.body
+            )
         )
 
 
@@ -240,22 +242,26 @@ encodeMemoBody value =
             ]
 
 
-{-| Encodes an [`Edit`](#Edit) as proto3 JSON.
+{-| Encodes an [`Edit`](#Edit) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeEdit : Edit -> Json.Encode.Value
+encodeEdit : Edit -> Proto.Json.Encoder x
 encodeEdit value =
-    Proto.Json.objectOfFields
-        [ ( "number", Proto.Json.implicitField 0 Json.Encode.int value.number )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "number", Proto.Json.implicitField 0 Json.Encode.int value.number )
+            ]
+        )
 
 
-{-| Encodes a [`GetNoteRequest`](#GetNoteRequest) as proto3 JSON.
+{-| Encodes a [`GetNoteRequest`](#GetNoteRequest) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeGetNoteRequest : GetNoteRequest -> Json.Encode.Value
+encodeGetNoteRequest : GetNoteRequest -> Proto.Json.Encoder x
 encodeGetNoteRequest value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            ]
+        )
 
 
 

@@ -153,36 +153,40 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes a [`Chain`](#Chain) as proto3 JSON.
+{-| Encodes a [`Chain`](#Chain) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeChain : Chain -> Json.Encode.Value
+encodeChain : Chain -> Proto.Json.Encoder x
 encodeChain value =
-    Proto.Json.objectOfFields
-        [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
-        , ( "next", Maybe.map encodeChain_ value.next )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
+            , ( "next", Proto.Json.totalOptionalField encodeChain_ value.next )
+            ]
+        )
 
 
 {-| Encodes a [`Chain_`](#Chain_) as proto3 JSON.
 -}
-encodeChain_ : Chain_ -> Json.Encode.Value
+encodeChain_ : Chain_ -> Proto.Json.Encoder x
 encodeChain_ (Chain_ value) =
     encodeChain value
 
 
-{-| Encodes a [`Tree`](#Tree) as proto3 JSON.
+{-| Encodes a [`Tree`](#Tree) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeTree : Tree -> Json.Encode.Value
+encodeTree : Tree -> Proto.Json.Encoder x
 encodeTree value =
-    Proto.Json.objectOfFields
-        [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
-        , ( "children", Proto.Json.repeatedField encodeTree_ value.children )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
+            , ( "children", Proto.Json.totalRepeatedField encodeTree_ value.children )
+            ]
+        )
 
 
 {-| Encodes a [`Tree_`](#Tree_) as proto3 JSON.
 -}
-encodeTree_ : Tree_ -> Json.Encode.Value
+encodeTree_ : Tree_ -> Proto.Json.Encoder x
 encodeTree_ (Tree_ value) =
     encodeTree value
 

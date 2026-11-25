@@ -179,22 +179,24 @@ registry =
 -- ENCODERS
 
 
-{-| Encodes an [`Entry`](#Entry) as proto3 JSON.
+{-| Encodes an [`Entry`](#Entry) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeEntry : Entry -> Json.Encode.Value
+encodeEntry : Entry -> Proto.Json.Encoder x
 encodeEntry value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        , ( "descriptor", Proto.Json.implicitField "" Json.Encode.string value.descriptor )
-        , ( "descriptors", Proto.Json.implicitField "" Json.Encode.string value.descriptors )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            , ( "descriptor", Proto.Json.implicitField "" Json.Encode.string value.descriptor )
+            , ( "descriptors", Proto.Json.implicitField "" Json.Encode.string value.descriptors )
+            ]
+        )
 
 
-{-| Encodes a [`Part`](#Part) as proto3 JSON.
+{-| Encodes a [`Part`](#Part) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodePart : Part -> Json.Encode.Value
+encodePart : Part -> Proto.Json.Encoder x
 encodePart value =
-    Proto.Json.objectOfFields (encodePartKind value.kind)
+    Proto.Json.succeed (Proto.Json.objectOfFields (encodePartKind value.kind))
 
 
 {-| Encodes a [`PartKind`](#PartKind) as the members of its message's JSON object.
@@ -214,15 +216,17 @@ encodePartKind value =
             ]
 
 
-{-| Encodes a [`GetEntryRequest`](#GetEntryRequest) as proto3 JSON.
+{-| Encodes a [`GetEntryRequest`](#GetEntryRequest) as proto3 JSON, which nothing it holds can refuse.
 -}
-encodeGetEntryRequest : GetEntryRequest -> Json.Encode.Value
+encodeGetEntryRequest : GetEntryRequest -> Proto.Json.Encoder x
 encodeGetEntryRequest value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        , ( "descriptor", Proto.Json.implicitField "" Json.Encode.string value.descriptor )
-        , ( "part", Maybe.map encodePart value.part )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            , ( "descriptor", Proto.Json.implicitField "" Json.Encode.string value.descriptor )
+            , ( "part", Proto.Json.totalOptionalField encodePart value.part )
+            ]
+        )
 
 
 
