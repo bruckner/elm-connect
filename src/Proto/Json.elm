@@ -51,7 +51,7 @@ that is not finite) with [`BadValue`](Proto-Error#Error). A message holding an
 converts through.
 
     encode (Notes.V1.encodeNote note)
-    -- Ok <the JSON>, or Err (BadValue { typeName = "google.protobuf.Timestamp", path = [ "createTime" ] })
+    -- Ok <the JSON>, or Err (BadValue { typeName = "google.protobuf.Timestamp", path = [ "createTime" ], message = "the time is outside years 1 to 9999" })
 
 The encoder of a message that holds nothing a write can refuse works for any
 `x`, so [`encodeTotal`](#encodeTotal) writes it with no `Result`:
@@ -3032,7 +3032,7 @@ writeTimestamp posix =
     in
     -- 0001-01-01T00:00:00Z and 9999-12-31T23:59:59.999Z.
     if millis < -62135596800000 || millis > 253402300799999 then
-        Writer.refuse "google.protobuf.Timestamp"
+        Writer.refuse "google.protobuf.Timestamp" "the time is outside years 1 to 9999"
 
     else
         Writer.succeed (encodeTimestamp posix)
@@ -3048,7 +3048,7 @@ writeDuration held =
         Writer.succeed (encodeDuration held)
 
     else
-        Writer.refuse "google.protobuf.Duration"
+        Writer.refuse "google.protobuf.Duration" "the duration is outside -315,576,000,000 to 315,576,000,000 seconds"
 
 
 {-| A `google.protobuf.FieldMask`, refused when a path's lowerCamelCase form
@@ -3060,7 +3060,7 @@ writeFieldMask paths =
         Writer.succeed (encodeFieldMask paths)
 
     else
-        Writer.refuse "google.protobuf.FieldMask"
+        Writer.refuse "google.protobuf.FieldMask" "a path's JSON form does not read back as the same path"
 
 
 {-| A `google.protobuf.Struct`, refused when it holds a number that is NaN or
@@ -3091,7 +3091,7 @@ checkedValue typeName held write =
         Writer.succeed (write ())
 
     else
-        Writer.refuse typeName
+        Writer.refuse typeName "a number is NaN or infinite"
 
 
 {-| Whether every number the value holds is finite. It walks the whole value,

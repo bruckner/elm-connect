@@ -538,7 +538,10 @@ at any depth. `Proto.Json.encode` and `encodeWith` run an `Encoder
 Proto.Error.Error` and give a `Result`; `encodeTotal : Encoder Never ->
 Value` runs one that cannot refuse, with no `Result`, and the compiler
 rejects it for one that can. A refusal is `Proto.Error.BadValue {
-typeName, path }`, the path gathered only when a write fails. Why one
+typeName, path, message }`, the path gathered only when a write fails and
+the message a fixed text per check that says what is wrong without
+quoting the value, so `Rpc.Error.badValue` can carry it where a path,
+which can hold a map's keys, would leak the request's data. Why one
 opaque encoder and not encoders giving a `Result`:
 
 - New checks stay non-breaking. A check added later (a `Duration` past

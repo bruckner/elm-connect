@@ -115,11 +115,12 @@ succeed =
     Ready
 
 
-{-| A value of the type named that proto3 JSON has no form for.
+{-| A value of the type named that proto3 JSON has no form for, and what is
+wrong with it.
 -}
-refuse : String -> Encoder Error
-refuse typeName =
-    Refused [] (\path -> Proto.Error.BadValue { typeName = typeName, path = path })
+refuse : String -> String -> Encoder Error
+refuse typeName message =
+    Refused [] (\path -> Proto.Error.BadValue { typeName = typeName, path = path, message = message })
 
 
 {-| A part that needs the registry.

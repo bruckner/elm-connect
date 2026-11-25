@@ -23,6 +23,16 @@ refusal encoder =
             Nothing
 
 
+refusalMessage : Proto.Json.Encoder Error -> Maybe String
+refusalMessage encoder =
+    case Proto.Json.encode encoder of
+        Err (BadValue { message }) ->
+            Just message
+
+        _ ->
+            Nothing
+
+
 written : Proto.Json.Encoder Error -> Result Error String
 written =
     Proto.Json.encode >> Result.map (Json.Encode.encode 0)
@@ -127,12 +137,36 @@ suite =
                         , Just ( "google.protobuf.Struct", [ "data" ] )
                         , Just ( "google.protobuf.ListValue", [ "list" ] )
                         ]
+        , test "each refusal says what is wrong with the value, without quoting it" <|
+            \_ ->
+                [ Proto.Json.writeTimestamp farFuture
+                , Proto.Json.writeTimestamp (Time.millisToPosix -62135596800001)
+                , Proto.Json.writeFieldMask [ "fooBar" ]
+                , Proto.Json.writeValue (ValueNumber (0 / 0))
+                , Proto.Json.writeStruct (Dict.singleton "secret" (ValueStruct (Dict.singleton "x" (ValueNumber (1 / 0)))))
+                , Proto.Json.writeListValue [ ValueNumber (-1 / 0) ]
+                ]
+                    |> List.map refusalMessage
+                    |> Expect.equal
+                        [ Just "the time is outside years 1 to 9999"
+                        , Just "the time is outside years 1 to 9999"
+                        , Just "a path's JSON form does not read back as the same path"
+                        , Just "a number is NaN or infinite"
+                        , Just "a number is NaN or infinite"
+                        , Just "a number is NaN or infinite"
+                        ]
         , test "a refusal says what and where" <|
             \_ ->
                 checked [ ( "events", Proto.Json.writeRepeated Proto.Json.writeTimestamp [ Time.millisToPosix 0, farFuture ] ) ]
                     |> Proto.Json.encode
                     |> Result.mapError Proto.Error.toString
-                    |> Expect.equal (Err "A google.protobuf.Timestamp holds a value proto3 JSON has no form for, at events.1.")
+                    |> Expect.equal (Err "A google.protobuf.Timestamp holds a value proto3 JSON has no form for, at events.1: the time is outside years 1 to 9999.")
+        , test "a refusal at the top says what without a path" <|
+            \_ ->
+                Proto.Json.writeFieldMask [ "fooBar" ]
+                    |> Proto.Json.encode
+                    |> Result.mapError Proto.Error.toString
+                    |> Expect.equal (Err "A google.protobuf.FieldMask holds a value proto3 JSON has no form for: a path's JSON form does not read back as the same path.")
         , test "the limits themselves are written" <|
             \_ ->
                 [ Proto.Json.writeTimestamp (Time.millisToPosix -62135596800000)
@@ -211,7 +245,7 @@ suite =
                     |> Expect.equal
                         [ Err (UnregisteredType "type.googleapis.com/google.protobuf.StringValue")
                         , Ok """{"l":[1,{"@type":"type.googleapis.com/google.protobuf.StringValue","value":"hi"},3]}"""
-                        , Err (BadValue { typeName = "google.protobuf.Timestamp", path = [ "l", "2" ] })
+                        , Err (BadValue { typeName = "google.protobuf.Timestamp", path = [ "l", "2" ], message = "the time is outside years 1 to 9999" })
                         ]
         , test "levels written deeper count toward an Any's limit of 100" <|
             \_ ->

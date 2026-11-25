@@ -677,7 +677,9 @@ base URL holds a query or a fragment` or `bad URL: the browser could
 not read it`, and a header is named without its value.
 
 A request value with no proto3 JSON form is `bad value: a
-google.protobuf.Timestamp with no JSON form`, naming the type alone.
+google.protobuf.Timestamp with no JSON form (the time is outside years 1
+to 9999)`, naming the type and what is wrong, never the value or where
+it is.
 
 The client's codes and the inferred ones have server meanings too: a
 request over the client's write limit is `ResourceExhausted`, as a
@@ -801,8 +803,9 @@ decodeReport error =
             Just (located "json" problem)
 
         Just (Proto.Error.BadValue value) ->
-            -- A request value with no JSON form: its path can hold a map's keys.
-            Just ("no JSON form: " ++ value.typeName)
+            -- A request value with no JSON form: its path can hold a map's
+            -- keys; the message never quotes the value.
+            Just ("no JSON form: " ++ value.typeName ++ ", " ++ value.message)
 
         Just other ->
             -- A binary report, a type URL or a type mismatch: no value.
@@ -1015,12 +1018,14 @@ whether the write can be refused:
   ([descriptors.md](descriptors.md#registries)), where `encode` has an
   empty one.
 
-A refusal is `Proto.Error.BadValue { typeName, path }` for a value
-proto3 JSON has no form for: a `Timestamp` outside years 1 to 9999, a
-`FieldMask` path with no lowerCamelCase form, or a number in a `Value`,
-`Struct` or `ListValue` that is NaN or infinite. `path` leads from the
-message to the value by JSON field names, list indexes and map keys
-(`[ "events", "3", "createTime" ]`). An `Any` fails as converting it
+A refusal is `Proto.Error.BadValue { typeName, path, message }` for a
+value proto3 JSON has no form for: a `Timestamp` outside years 1 to
+9999, a `FieldMask` path with no lowerCamelCase form, or a number in a
+`Value`, `Struct` or `ListValue` that is NaN or infinite. `path` leads
+from the message to the value by JSON field names, list indexes and map
+keys (`[ "events", "3", "createTime" ]`); `message` says which of these
+is wrong (`"the time is outside years 1 to 9999"`), and never quotes the
+value or a map key. An `Any` fails as converting it
 does, `UnregisteredType` for a type the registry lacks or its message's
 `BadBinary`. Protobuf's own JSON writers refuse the same values; the
 binary codec writes any of them, since binary has a form for each.

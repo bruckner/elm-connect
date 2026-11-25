@@ -210,27 +210,27 @@ suite =
             [ test "in a path variable, and in the query over another binding" <|
                 \_ ->
                     refusals Service.getMoment { name = "moments/1", at = Just tooLate }
-                        |> Expect.equal (List.repeat 2 (Just (Rpc.Error.badValue { typeName = "google.protobuf.Timestamp", path = [ "at" ] })))
+                        |> Expect.equal (List.repeat 2 (Just (Rpc.Error.badValue { typeName = "google.protobuf.Timestamp", path = [ "at" ], message = "the time is outside years 1 to 9999" })))
             , test "in a body *" <|
                 \_ ->
                     refusals Service.putMoment { name = "moments/1", at = Just tooLate }
-                        |> Expect.equal [ Just (Rpc.Error.badValue { typeName = "google.protobuf.Timestamp", path = [ "at" ] }) ]
+                        |> Expect.equal [ Just (Rpc.Error.badValue { typeName = "google.protobuf.Timestamp", path = [ "at" ], message = "the time is outside years 1 to 9999" }) ]
             , test "in a body field" <|
                 \_ ->
                     refusals Service.stamp { shelf = "shelves/s", moment = Just { name = "moments/1", at = Just tooLate } }
-                        |> Expect.equal [ Just (Rpc.Error.badValue { typeName = "google.protobuf.Timestamp", path = [ "moment", "at" ] }) ]
+                        |> Expect.equal [ Just (Rpc.Error.badValue { typeName = "google.protobuf.Timestamp", path = [ "moment", "at" ], message = "the time is outside years 1 to 9999" }) ]
             , test "in a Value body" <|
                 \_ ->
                     refusals Service.setValue { name = "values/1", value = Just (Proto.Value.ValueList [ Proto.Value.ValueNumber 1, Proto.Value.ValueNumber (0 / 0) ]) }
-                        |> Expect.equal [ Just (Rpc.Error.badValue { typeName = "google.protobuf.Value", path = [ "value" ] }) ]
+                        |> Expect.equal [ Just (Rpc.Error.badValue { typeName = "google.protobuf.Value", path = [ "value" ], message = "a number is NaN or infinite" }) ]
             , test "the interpreter's route of the same binding is refused the same" <|
                 \_ ->
                     [ refusalOf withTypes (interpreted Service.descriptorGetMoment (Service.getMoment { name = "moments/1", at = Just tooLate }))
                     , refusalOf withTypes (interpreted Service.descriptorSetValue (Service.setValue { name = "values/1", value = Just (Proto.Value.ValueNumber (1 / 0)) }))
                     ]
                         |> Expect.equal
-                            [ Just (Rpc.Error.badValue { typeName = "google.protobuf.Timestamp", path = [ "at" ] })
-                            , Just (Rpc.Error.badValue { typeName = "google.protobuf.Value", path = [ "value" ] })
+                            [ Just (Rpc.Error.badValue { typeName = "google.protobuf.Timestamp", path = [ "at" ], message = "the time is outside years 1 to 9999" })
+                            , Just (Rpc.Error.badValue { typeName = "google.protobuf.Value", path = [ "value" ], message = "a number is NaN or infinite" })
                             ]
             , test "over a binary protocol, which writes any value, it is sent" <|
                 \_ ->

@@ -946,9 +946,10 @@ refuse on a JSON write"):
   (`Proto.Json.writeOptional Proto.Json.writeTimestamp value.at`), then
   each oneof's members as a run of its own. It writes the same text as
   the plain form would, in the same order; a refusal stops the write
-  with `Proto.Error.BadValue { typeName, path }`, the path to the value
-  gathered on the way out. Only a part that converts an `Any` waits for
-  the registry the encoder is run with.
+  with `Proto.Error.BadValue { typeName, path, message }`, the path to
+  the value gathered on the way out and the message saying what is wrong
+  with it. Only a part that converts an `Any` waits for the registry the
+  encoder is run with.
 
 Encoders leave out every field at its default:
 
@@ -3685,7 +3686,7 @@ timeout : Error
 networkError : Error
 badCall : Code -> String -> Error
 badAny : Proto.Error.Error -> Error         -- an Any the registry cannot write: BadCall, Internal
-badValue : { typeName : String, path : List String } -> Error   -- a request value with no JSON form: BadCall, InvalidArgument
+badValue : { typeName : String, path : List String, message : String } -> Error   -- a request value with no JSON form: BadCall, InvalidArgument
 badResponse : Code -> String -> Response -> Error
 badBody : Proto.Error.Error -> Response -> Error
 withMessage : String -> Error -> Error
@@ -4010,7 +4011,7 @@ toString : Error -> String              -- for a log, as Json.Decode.errorToStri
   | `Proto.Binary.decode`, `Proto.Message.decodeBinary` | `Result Binary a` | the report |
   | `Proto.Message.decodeJson` | `Result Error a` | `UnregisteredType` for an `Any` the registry lacks, else `BadJson` |
   | `Proto.Any.tryUnpack` | `Result Error a` | `TypeMismatch`, `BadBinary` |
-  | `Proto.Any.toJson`, `Proto.Json.encode`, `encodeWith` | `Result Error Value` | `BadValue { typeName, path }` for a value proto3 JSON has no form for (§3.5); for an `Any`, `UnregisteredType`, or the `BadBinary` of the `Any` that failed, at any depth, named by its own type, or `TooDeep` named `google.protobuf.Any` for one nested past 100 (§5.5); a JSON-alone `Any` that is not its message, `BadJson` (§3.10) |
+  | `Proto.Any.toJson`, `Proto.Json.encode`, `encodeWith` | `Result Error Value` | `BadValue { typeName, path, message }` for a value proto3 JSON has no form for (§3.5); for an `Any`, `UnregisteredType`, or the `BadBinary` of the `Any` that failed, at any depth, named by its own type, or `TooDeep` named `google.protobuf.Any` for one nested past 100 (§5.5); a JSON-alone `Any` that is not its message, `BadJson` (§3.10) |
   | `Proto.Json.anyWith`, generated `decodeNoteWith` | `Json.Decode.Decoder` | elm/json's error, a registry miss named in its message |
   | `Rpc.Error.protoError` of a request that cannot be written (`badValue`, `badAny`) | `Maybe Error` | as `encodeWith` |
   | `Rpc.Error.details` | `List (Result Error Any)` | `UnregisteredType`, `BadJson`, `BadBinary` (above) |

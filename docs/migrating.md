@@ -594,7 +594,7 @@ that changed again before the release:
 | `Proto.Json.encodeNestedAnyWith`, `registryDeeper`, `tryObjectOfFields` and the other `try` helpers | generated code's `writeAny`, `writeDeeper`, `writeObject` and the `write` helpers |
 | `Proto.Message.init name f …`, `Proto.Method.initJson s m (\_ -> Ok << f) …` with `f : a -> Json.Encode.Value` | `Proto.Message.init name (Proto.Json.succeed << f) …`, `Proto.Method.initJson s m (Proto.Json.succeed << f) …`, or the generated `encodeNote` |
 | `Rpc.request client call : Rpc.Request` | `Rpc.request client call : Result Rpc.Error Rpc.Request` |
-| a request value with no JSON form, written wrongly and sent | refused before sending: `Rpc.Error.badValue { typeName, path }` (`InvalidArgument`) |
+| a request value with no JSON form, written wrongly and sent | refused before sending: `Rpc.Error.badValue { typeName, path, message }` (`InvalidArgument`) |
 | a route function of a `Value` body, `Free -> Proto.Route.Route` | `Free -> Json.Encode.Value -> Proto.Route.Route`, given to `Proto.Method.withJsonRoutes` (regenerate) |
 
 ## Also

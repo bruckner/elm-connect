@@ -861,7 +861,7 @@ responses =
                 , refusal (Rpc.client Rpc.Protocol.connectProto "https://api.example.com")
                 )
                     |> Expect.equal
-                        ( Just (Rpc.Error.badValue { typeName = "google.protobuf.Timestamp", path = [] })
+                        ( Just (Rpc.Error.badValue { typeName = "google.protobuf.Timestamp", path = [], message = "the time is outside years 1 to 9999" })
                         , Nothing
                         )
         , test "message and details are optional" <|

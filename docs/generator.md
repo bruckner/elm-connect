@@ -226,7 +226,7 @@ can refuse the value:
   `Struct`, `Value` or `ListValue`) or an `Any`. A write refuses a
   `Timestamp` outside years 1 to 9999, a `FieldMask` path that does not
   survive lowerCamelCase and a number in a `Value` that is NaN or
-  infinite, with `Proto.Error.BadValue { typeName, path }`.
+  infinite, with `Proto.Error.BadValue { typeName, path, message }`.
 
 A message holding nothing refusable is written by plain code, wrapped
 once; one that can refuse writes its fields in declaration order, as runs

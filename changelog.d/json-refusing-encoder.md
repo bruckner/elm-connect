@@ -4,9 +4,11 @@
   `Value`, `Struct` or `ListValue` that is NaN or infinite (written as
   `null` before), and a `FieldMask` path whose lowerCamelCase form reads
   back as another path. The refusal is the new
-  `Proto.Error.BadValue { typeName, path }`, `path` leading to the value
-  from the message written (`"events.3.createTime"` in
-  `Proto.Error.toString`). A `Duration` past protobuf's range is still
+  `Proto.Error.BadValue { typeName, path, message }`, `path` leading to
+  the value from the message written (`"events.3.createTime"` in
+  `Proto.Error.toString`) and `message` saying what is wrong with it
+  (`"the time is outside years 1 to 9999"`), never quoting the value. A
+  `Duration` past protobuf's range is still
   clamped when it is built, so it is never refused.
 - Breaking: every message has one JSON encoder, `encodeNote : Note ->
   Proto.Json.Encoder x` when nothing it holds can be refused and `Note ->
@@ -46,9 +48,9 @@
   builds any route, and is not sent when the request has none, over
   every binding: a value proto3 JSON has no form for in a path, a query
   or a typed `Value` body was sent unchecked. It fails with the new
-  `Rpc.Error.badValue { typeName, path }`, a `BadCall` with
-  `InvalidArgument`, the message `bad value: a <type> with no JSON form`
-  and the `BadValue` in `protoError`; `Rpc.Error.badAny` stays the error
+  `Rpc.Error.badValue { typeName, path, message }`, a `BadCall` with
+  `InvalidArgument`, the message `bad value: a <type> with no JSON form
+  (<what is wrong>)` and the `BadValue` in `protoError`; `Rpc.Error.badAny` stays the error
   of an `Any` that cannot be written (`bad Any`, `Internal`). Over
   protobuf binary such a call is sent. A call over a transcoded route
   without a body pays one JSON encode of its request it did not before.

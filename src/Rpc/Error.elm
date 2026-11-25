@@ -494,17 +494,22 @@ badAny problem =
 {-| A call that could not be made because its request holds a value proto3
 JSON has no form for, such as a `Timestamp` past the year 9999: a `BadCall`,
 `InvalidArgument`, the code a server checking the value gives, with the
-message `bad value: a <type name> with no JSON form`
-and the value's [`BadValue`](Proto-Error#Error), its type and where it is, in
-[`protoError`](#protoError). The message names the type alone: the path can
-hold a map's keys, which are the request's data.
+message `bad value: a <type name> with no JSON form (<what is wrong>)`
+and the value's [`BadValue`](Proto-Error#Error), its type, where it is and
+what is wrong with it, in [`protoError`](#protoError). The message leaves out
+the path: it can hold a map's keys, which are the request's data.
 
-    Rpc.Error.badValue { typeName = "google.protobuf.Timestamp", path = [ "createTime" ] }
+    Rpc.Error.badValue
+        { typeName = "google.protobuf.Timestamp"
+        , path = [ "createTime" ]
+        , message = "the time is outside years 1 to 9999"
+        }
+    -- message: "bad value: a google.protobuf.Timestamp with no JSON form (the time is outside years 1 to 9999)"
 
 -}
-badValue : { typeName : String, path : List String } -> Error
+badValue : { typeName : String, path : List String, message : String } -> Error
 badValue value =
-    clientError BadCall Code.InvalidArgument ("bad value: a " ++ value.typeName ++ " with no JSON form") (Just (Proto.Error.BadValue value))
+    clientError BadCall Code.InvalidArgument ("bad value: a " ++ value.typeName ++ " with no JSON form (" ++ value.message ++ ")") (Just (Proto.Error.BadValue value))
 
 
 {-| A success that could not be used, with its code, its message and the

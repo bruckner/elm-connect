@@ -19,8 +19,9 @@ decodeReport error =
             Just (located "json" problem)
 
         Just (Proto.Error.BadValue value) ->
-            -- A request value with no JSON form: its path can hold a map's keys.
-            Just ("no JSON form: " ++ value.typeName)
+            -- A request value with no JSON form: its path can hold a map's
+            -- keys; the message never quotes the value.
+            Just ("no JSON form: " ++ value.typeName ++ ", " ++ value.message)
 
         Just other ->
             -- A binary report, a type URL or a type mismatch: no value.
