@@ -10,9 +10,9 @@ module Ping.V1.Ping exposing (..)
 import Proto.Binary
 import Proto.Json
 import Proto.Method
+import Proto.Timestamp
 import Proto.Version
 import Rpc
-import Time
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -33,7 +33,7 @@ Transcode: no HTTP rule, follows the Connect path.
 Codecs: JSON and protobuf binary. Described by [`descriptorPing`](#descriptorPing).
 
 -}
-ping : () -> Rpc.Call codec () Time.Posix
+ping : () -> Rpc.Call codec () Proto.Timestamp.Timestamp
 ping =
     Rpc.call
         (Proto.Method.init "ping.v1.Ping"

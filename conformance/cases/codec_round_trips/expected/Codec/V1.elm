@@ -41,10 +41,10 @@ import Proto.Error
 import Proto.Json
 import Proto.Message
 import Proto.Registry
+import Proto.Timestamp
 import Proto.Value
 import Proto.Version
 import Proto.WellKnown
-import Time
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -271,7 +271,7 @@ type ChoicePick
     | ChoicePickLeaf Leaf
     | ChoicePickNothing
     | ChoicePickJson Proto.Value.Value
-    | ChoicePickAt Time.Posix
+    | ChoicePickAt Proto.Timestamp.Timestamp
     | ChoicePickWrapped Int
     | ChoicePickTwoWords String
     | ChoicePickNone
@@ -413,14 +413,14 @@ type alias WellKnown =
     , struct : Maybe (Dict String Proto.Value.Value)
     , list : Maybe (List Proto.Value.Value)
     , value : Maybe Proto.Value.Value
-    , timestamp : Maybe Time.Posix
+    , timestamp : Maybe Proto.Timestamp.Timestamp
     , duration : Maybe Proto.Duration.Duration
     , mask : Maybe (List String)
     , empty : ()
     , anys : List Proto.Any.Any
     , values : List Proto.Value.Value
     , valueMap : Dict String Proto.Value.Value
-    , timestamps : List Time.Posix
+    , timestamps : List Proto.Timestamp.Timestamp
     , durations : List Proto.Duration.Duration
     , empties : List ()
     , structs : Dict Int (Dict String Proto.Value.Value)

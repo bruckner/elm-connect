@@ -34,10 +34,10 @@ import Proto.Message
 import Proto.Query
 import Proto.Registry
 import Proto.Route
+import Proto.Timestamp
 import Proto.Value
 import Proto.Version
 import Proto.WellKnown
-import Time
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -92,8 +92,8 @@ type alias Note =
     , body : String
     , tags : List String
     , visibility : Visibility
-    , createTime : Maybe Time.Posix
-    , updateTime : Maybe Time.Posix
+    , createTime : Maybe Proto.Timestamp.Timestamp
+    , updateTime : Maybe Proto.Timestamp.Timestamp
     , ttl : Maybe Proto.Duration.Duration
     , metadata : Dict String String
     , extra : Maybe (Dict String Proto.Value.Value)

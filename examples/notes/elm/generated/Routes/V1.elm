@@ -39,7 +39,6 @@ import Routes.V1.Message
 import Routes.V1.Resource
 import Routes.V1.UpdateMessageRequest
 import Routes.V1.UpdateResourceRequest
-import Time
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -162,7 +161,7 @@ type alias Everything =
     , numbers : List Int
     , maybeCount : Maybe Int
     , maybeName : Maybe String
-    , at : Maybe Time.Posix
+    , at : Maybe Proto.Timestamp.Timestamp
     , wait : Maybe Proto.Duration.Duration
     , mask : Maybe (List String)
     , limit : Maybe Int
@@ -2236,7 +2235,7 @@ queryOfEverything request_ =
         , Proto.Query.repeated "numbers" (List.map String.fromInt request_.numbers)
         , Proto.Query.optional "maybe_count" (Maybe.map String.fromInt request_.maybeCount)
         , Proto.Query.optional "maybe_name" request_.maybeName
-        , Proto.Query.optional "at" (Maybe.map Proto.Timestamp.toString request_.at)
+        , Proto.Query.optional "at" (Maybe.andThen Proto.Timestamp.toString request_.at)
         , Proto.Query.optional "wait" (Maybe.andThen Proto.Duration.toString request_.wait)
         , Proto.Query.optional "mask" (Maybe.map Proto.Route.fieldMaskText request_.mask)
         , Proto.Query.optional "limit" (Maybe.map String.fromInt request_.limit)

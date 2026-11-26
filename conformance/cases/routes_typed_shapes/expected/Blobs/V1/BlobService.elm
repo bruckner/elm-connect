@@ -437,7 +437,7 @@ routeGetMoment0 : Blobs.V1.Moment -> Proto.Route.Route
 routeGetMoment0 request_ =
     let
         at_ =
-            Maybe.withDefault "" (Maybe.map Proto.Timestamp.toString request_.at)
+            Maybe.withDefault "" (Maybe.andThen Proto.Timestamp.toString request_.at)
     in
     { method = "GET"
     , path = "v1/moments/" ++ Proto.Route.segment at_

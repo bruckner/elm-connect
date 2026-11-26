@@ -7,8 +7,9 @@ module Clock.V1 exposing (..)
 {-| Path variables of well-known types whose JSON is one string or scalar:
 the variable's text is that JSON value, and the field is not repeated
 in the query. And query parameters of a type whose text a value may
-lack (a Duration that is not valid): a singular one is left out as an
-unset one is, and a repeated one leaves that element out.
+lack (a Timestamp or a Duration that is not valid): a singular one is
+left out as an unset one is, and a repeated one leaves that element
+out.
 -}
 
 import Bytes.Encode
@@ -28,7 +29,6 @@ import Proto.Route
 import Proto.Timestamp
 import Proto.Version
 import Proto.WellKnown
-import Time
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -53,7 +53,7 @@ elmConnectVersion_ =
 
 -}
 type alias Moment =
-    { at : Maybe Time.Posix
+    { at : Maybe Proto.Timestamp.Timestamp
     , mask : Maybe (List String)
     , count : Maybe Int
     , seen : Maybe Bool
@@ -66,11 +66,15 @@ type alias Moment =
 
   - [`wait`](Clock-V1-Pauses#wait)
   - [`waits`](Clock-V1-Pauses#waits)
+  - [`after`](Clock-V1-Pauses#after)
+  - [`marks`](Clock-V1-Pauses#marks)
 
 -}
 type alias Pauses =
     { wait : Maybe Proto.Duration.Duration
     , waits : List Proto.Duration.Duration
+    , after : Maybe Proto.Timestamp.Timestamp
+    , marks : List Proto.Timestamp.Timestamp
     }
 
 
@@ -97,6 +101,8 @@ defaultPauses : Pauses
 defaultPauses =
     { wait = Nothing
     , waits = []
+    , after = Nothing
+    , marks = []
     }
 
 
@@ -179,6 +185,8 @@ encodePauses value =
         [ Proto.Json.checkedFields
             [ ( "wait", Proto.Json.writeOptional Proto.Json.writeDuration value.wait )
             , ( "waits", Proto.Json.writeRepeated Proto.Json.writeDuration value.waits )
+            , ( "after", Proto.Json.writeOptional Proto.Json.writeTimestamp value.after )
+            , ( "marks", Proto.Json.writeRepeated Proto.Json.writeTimestamp value.marks )
             ]
         ]
 
@@ -210,6 +218,8 @@ decodePauses =
         (Json.Decode.succeed Pauses
             |> Proto.Json.messageField "wait" Nothing (Json.Decode.map Just Proto.Json.duration)
             |> Proto.Json.messageField "waits" [] (Json.Decode.list Proto.Json.duration)
+            |> Proto.Json.messageField "after" Nothing (Json.Decode.map Just Proto.Json.timestamp)
+            |> Proto.Json.messageField "marks" [] (Json.Decode.list Proto.Json.timestamp)
         )
 
 
@@ -238,6 +248,8 @@ encodePausesBytes value =
     Bytes.Encode.sequence
         [ Proto.Binary.optional Proto.Binary.duration 1 value.wait
         , Proto.Binary.list Proto.Binary.duration 2 value.waits
+        , Proto.Binary.optional Proto.Binary.timestamp 3 value.after
+        , Proto.Binary.list Proto.Binary.timestamp 4 value.marks
         ]
 
 
@@ -370,6 +382,8 @@ mergePausesBytes =
                         (\v ->
                             { wait = Just v
                             , waits = value.waits
+                            , after = value.after
+                            , marks = value.marks
                             }
                         )
                         wire
@@ -381,9 +395,38 @@ mergePausesBytes =
                         (\v ->
                             { wait = value.wait
                             , waits = v
+                            , after = value.after
+                            , marks = value.marks
                             }
                         )
                         value.waits
+                        wire
+                        value
+
+                3 ->
+                    Proto.Binary.field
+                        Proto.Binary.timestamp
+                        (\v ->
+                            { wait = value.wait
+                            , waits = value.waits
+                            , after = Just v
+                            , marks = value.marks
+                            }
+                        )
+                        wire
+                        value
+
+                4 ->
+                    Proto.Binary.repeated
+                        Proto.Binary.timestamp
+                        (\v ->
+                            { wait = value.wait
+                            , waits = value.waits
+                            , after = value.after
+                            , marks = v
+                            }
+                        )
+                        value.marks
                         wire
                         value
 
@@ -393,6 +436,8 @@ mergePausesBytes =
         (\value ->
             { wait = value.wait
             , waits = List.reverse value.waits
+            , after = value.after
+            , marks = List.reverse value.marks
             }
         )
 
@@ -413,7 +458,7 @@ decodePausesBytes =
 queryOfMoment : Moment -> List ( String, String )
 queryOfMoment request_ =
     List.concat
-        [ Proto.Query.optional "at" (Maybe.map Proto.Timestamp.toString request_.at)
+        [ Proto.Query.optional "at" (Maybe.andThen Proto.Timestamp.toString request_.at)
         , Proto.Query.optional "mask" (Maybe.map Proto.Route.fieldMaskText request_.mask)
         , Proto.Query.optional "count" (Maybe.map String.fromInt request_.count)
         , Proto.Query.optional "seen" (Maybe.map Proto.Route.boolText request_.seen)
@@ -429,4 +474,6 @@ queryOfPauses request_ =
     List.concat
         [ Proto.Query.optional "wait" (Maybe.andThen Proto.Duration.toString request_.wait)
         , Proto.Query.repeated "waits" (List.filterMap Proto.Duration.toString request_.waits)
+        , Proto.Query.optional "after" (Maybe.andThen Proto.Timestamp.toString request_.after)
+        , Proto.Query.repeated "marks" (List.filterMap Proto.Timestamp.toString request_.marks)
         ]

@@ -15,10 +15,10 @@ import Proto.Binary
 import Proto.Duration
 import Proto.Json
 import Proto.Method
+import Proto.Timestamp
 import Proto.Value
 import Proto.Version
 import Rpc
-import Time
 import Zones.V1
 
 
@@ -40,7 +40,7 @@ Transcode: no HTTP rule, follows the Connect path.
 Codecs: JSON and protobuf binary. Described by [`descriptorNow`](#descriptorNow).
 
 -}
-now : () -> Rpc.Call codec () Time.Posix
+now : () -> Rpc.Call codec () Proto.Timestamp.Timestamp
 now =
     Rpc.call
         (Proto.Method.init "clock.v1.Clock"

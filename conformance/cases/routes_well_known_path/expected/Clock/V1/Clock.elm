@@ -142,7 +142,7 @@ routeGetMoment0 : Clock.V1.Moment -> Proto.Route.Route
 routeGetMoment0 request_ =
     let
         at_ =
-            Maybe.withDefault "" (Maybe.map Proto.Timestamp.toString request_.at)
+            Maybe.withDefault "" (Maybe.andThen Proto.Timestamp.toString request_.at)
     in
     { method = "GET"
     , path = "v1/at/" ++ Proto.Route.segment at_
@@ -158,7 +158,7 @@ routeMaskMoment0 : Clock.V1.Moment -> Proto.Route.Route
 routeMaskMoment0 request_ =
     let
         at_ =
-            Maybe.withDefault "" (Maybe.map Proto.Timestamp.toString request_.at)
+            Maybe.withDefault "" (Maybe.andThen Proto.Timestamp.toString request_.at)
 
         mask_ =
             Maybe.withDefault "" (Maybe.map Proto.Route.fieldMaskText request_.mask)
@@ -385,6 +385,8 @@ descriptorListPauses =
             , query =
                 [ Proto.Http.param [ Clock.V1.Pauses.wait ]
                 , Proto.Http.param [ Clock.V1.Pauses.waits ]
+                , Proto.Http.param [ Clock.V1.Pauses.after ]
+                , Proto.Http.param [ Clock.V1.Pauses.marks ]
                 ]
             }
         ]
