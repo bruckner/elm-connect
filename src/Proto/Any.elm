@@ -56,10 +56,10 @@ import Proto.Descriptors as Descriptors exposing (Descriptors)
 import Proto.Error exposing (Error(..))
 import Proto.Internal.Any as Internal
 import Proto.Internal.Binary
+import Proto.Internal.Json.Encoder as Encoder
 import Proto.Internal.JsonError as JsonError
 import Proto.Internal.Message as InternalMessage
 import Proto.Internal.Registry as InternalRegistry
-import Proto.Internal.Writer as Writer
 import Proto.Json.Encode
 import Proto.Message as Message exposing (Message)
 import Proto.Registry exposing (Registry)
@@ -306,10 +306,10 @@ read through the registry's entry for its type first, and refused as
 encode : Any -> Proto.Json.Encode.Encoder Error
 encode ((Internal.Any url _) as held) =
     if String.isEmpty url then
-        Writer.succeed (Json.Encode.object [])
+        Encoder.succeed (Json.Encode.object [])
 
     else
-        Writer.deferred (\registry -> anyJson registry held)
+        Encoder.deferred (\registry -> anyJson registry held)
 
 
 {-| An `Any`'s proto3 JSON: the message's own JSON object with `"@type"`

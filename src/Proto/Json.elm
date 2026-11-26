@@ -176,9 +176,9 @@ import Proto.Any exposing (Any)
 import Proto.Bytes
 import Proto.Int64
 import Proto.Internal.Depth as Depth
-import Proto.Internal.JsonRead as JsonRead
+import Proto.Internal.Json.Decode as Decode
+import Proto.Internal.Json.Encoder as Encoder
 import Proto.Internal.Registry as InternalRegistry
-import Proto.Internal.Writer as Writer
 import Proto.Json.Decode
 import Proto.Json.Encode exposing (Encoder)
 import Proto.Registry exposing (Registry)
@@ -270,7 +270,7 @@ jsonAt names =
             (\object_ ->
                 case spelledAs names object_ of
                     NotAnObject ->
-                        JsonRead.notAnObject
+                        Decode.notAnObject
 
                     Spelled (Err problem) ->
                         Json.Decode.fail problem
@@ -315,11 +315,11 @@ message fields =
     Json.Decode.value
         |> Json.Decode.andThen
             (\json ->
-                if JsonRead.isObject json then
+                if Decode.isObject json then
                     fields
 
                 else
-                    JsonRead.notAnObject
+                    Decode.notAnObject
             )
 
 
@@ -416,7 +416,7 @@ valueAt names default decoder =
             (\object_ ->
                 case spelledAs names object_ of
                     NotAnObject ->
-                        JsonRead.notAnObject
+                        Decode.notAnObject
 
                     Spelled (Err problem) ->
                         Json.Decode.fail problem
@@ -476,14 +476,14 @@ spelledAs names json =
             else
                 case probe name json of
                     Nothing ->
-                        if JsonRead.isObject json then
+                        if Decode.isObject json then
                             Spelled (Ok Nothing)
 
                         else
                             NotAnObject
 
                     Just found ->
-                        if JsonRead.isArray json then
+                        if Decode.isArray json then
                             NotAnObject
 
                         else
@@ -513,14 +513,14 @@ spelledByProbes : List String -> Value -> Spelled
 spelledByProbes names json =
     case List.filterMap (\name -> probe name json) names of
         [] ->
-            if JsonRead.isObject json then
+            if Decode.isObject json then
                 Spelled (Ok Nothing)
 
             else
                 NotAnObject
 
         found ->
-            if JsonRead.isArray json then
+            if Decode.isArray json then
                 NotAnObject
 
             else
@@ -537,7 +537,7 @@ oneSpelling names found =
             Ok (Just one)
 
         _ ->
-            Err ("Expecting " ++ String.join " or " (List.map JsonRead.quote names) ++ ", but got both")
+            Err ("Expecting " ++ String.join " or " (List.map Decode.quote names) ++ ", but got both")
 
 
 {-| The value under `name`, when JavaScript's `in` finds it in `json`.
@@ -769,7 +769,7 @@ totalOptionalField : (a -> Encoder Never) -> Maybe a -> Maybe Value
 totalOptionalField write held =
     case held of
         Just present ->
-            Just (Writer.total (write present))
+            Just (Encoder.total (write present))
 
         Nothing ->
             Nothing
@@ -784,7 +784,7 @@ totalRepeatedField write values =
         Nothing
 
     else
-        Just (Json.Encode.list (\item -> Writer.total (write item)) values)
+        Just (Json.Encode.list (\item -> Encoder.total (write item)) values)
 
 
 {-| [`dictField`](#dictField) of a message that holds nothing a write can
@@ -792,7 +792,7 @@ refuse.
 -}
 totalDictField : (k -> String) -> (v -> Encoder Never) -> Dict.Dict k v -> Maybe Value
 totalDictField key write entries =
-    dictField key (\item -> Writer.total (write item)) entries
+    dictField key (\item -> Encoder.total (write item)) entries
 
 
 {-| [`boolMapField`](#boolMapField) of a message that holds nothing a write
@@ -800,7 +800,7 @@ can refuse.
 -}
 totalBoolMapField : (a -> Encoder Never) -> List ( Bool, a ) -> Maybe Value
 totalBoolMapField write pairs =
-    boolMapField (\item -> Writer.total (write item)) pairs
+    boolMapField (\item -> Encoder.total (write item)) pairs
 
 
 {-| Decode a oneof in a decoding pipeline: unlike [`field`](#field), the
@@ -855,7 +855,7 @@ members oneofName unset candidates =
             (\object_ ->
                 case presentMembers object_ candidates of
                     Nothing ->
-                        JsonRead.notAnObject
+                        Decode.notAnObject
 
                     Just (Err problem) ->
                         Json.Decode.fail problem
@@ -869,9 +869,9 @@ members oneofName unset candidates =
                     Just (Ok several) ->
                         Json.Decode.fail
                             ("Expecting at most one member of oneof "
-                                ++ JsonRead.quote oneofName
+                                ++ Decode.quote oneofName
                                 ++ ", but got "
-                                ++ listing (List.map (\( name, _ ) -> JsonRead.quote name) several)
+                                ++ listing (List.map (\( name, _ ) -> Decode.quote name) several)
                             )
             )
 
@@ -881,7 +881,7 @@ members oneofName unset candidates =
 -}
 presentMembers : Value -> List (Member a) -> Maybe (Result String (List ( String, Decoder a )))
 presentMembers json candidates =
-    if JsonRead.isObject json then
+    if Decode.isObject json then
         Just (presentIn json candidates [])
 
     else
@@ -1047,7 +1047,7 @@ nestedValueMemberEither jsonName protoName depth constructor =
     Member
         { names = spellings jsonName protoName
         , nullIsSet = True
-        , decoder = Json.Decode.map constructor (JsonRead.nestedValue depth)
+        , decoder = Json.Decode.map constructor (Decode.nestedValue depth)
         }
 
 
@@ -1112,8 +1112,8 @@ names decode to it. When two rows share a name or a number, the first wins.
 -}
 enum : String -> a -> List ( String, Int, a ) -> Decoder a
 enum enumName zero values =
-    JsonRead.enumWith
-        (\text -> Json.Decode.fail ("Expecting a value of enum " ++ JsonRead.quote enumName))
+    Decode.enumWith
+        (\text -> Json.Decode.fail ("Expecting a value of enum " ++ Decode.quote enumName))
         zero
         values
 
@@ -1135,7 +1135,7 @@ zero value's name.
 -}
 enumOrZero : String -> a -> List ( String, Int, a ) -> Decoder a
 enumOrZero _ zero values =
-    JsonRead.enumWith (\_ -> Json.Decode.succeed zero) zero values
+    Decode.enumWith (\_ -> Json.Decode.succeed zero) zero values
 
 
 {-| Decode a map with `string` keys, each key as [`Proto.Json.Decode.string`](Proto-Json-Decode#string) reads a
@@ -1146,7 +1146,7 @@ stringDict decoder =
     Json.Decode.dict decoder
         |> Json.Decode.andThen
             (\dict ->
-                if Dict.foldl (\key _ ok -> ok && JsonRead.isScalarText key) True dict then
+                if Dict.foldl (\key _ ok -> ok && Decode.isScalarText key) True dict then
                     Json.Decode.succeed dict
 
                 else
@@ -1197,7 +1197,7 @@ Encode one with `Json.Encode.dict identity`.
 -}
 int64Dict : Decoder a -> Decoder (Dict.Dict String a)
 int64Dict =
-    keyedDict (wideKey "an int64 map key" JsonRead.Signed)
+    keyedDict (wideKey "an int64 map key" Decode.Signed)
 
 
 {-| Decode a map with unsigned 64-bit integer keys (`uint64`, `fixed64`): the
@@ -1206,7 +1206,7 @@ keys [`int64Dict`](#int64Dict) accepts, within 0 to 18446744073709551615
 -}
 uint64Dict : Decoder a -> Decoder (Dict.Dict String a)
 uint64Dict =
-    keyedDict (wideKey "a uint64 map key" JsonRead.Unsigned)
+    keyedDict (wideKey "a uint64 map key" Decode.Unsigned)
 
 
 {-| A map whose keys `readKey` reads from their text, failing on a key it
@@ -1243,17 +1243,17 @@ is.
 -}
 boundedKey : String -> Int -> Int -> String -> Result String Int
 boundedKey what low high text =
-    JsonRead.narrowInteger low high text
+    Decode.narrowInteger low high text
         |> Result.mapError (\_ -> "Expecting " ++ what)
 
 
 {-| A 64-bit integer map key in its canonical decimal form, within the range
 of `width`.
 -}
-wideKey : String -> JsonRead.Width -> String -> Result String String
+wideKey : String -> Decode.Width -> String -> Result String String
 wideKey what width text =
-    JsonRead.wideInteger width text
-        |> Result.mapError (\_ -> "Expecting " ++ what ++ " " ++ JsonRead.widthRange width)
+    Decode.wideInteger width text
+        |> Result.mapError (\_ -> "Expecting " ++ what ++ " " ++ Decode.widthRange width)
 
 
 {-| Decode a map with `bool` keys as an association list, since Elm's `Bool`
@@ -1408,7 +1408,7 @@ nestedCheckedJson : Int -> Maybe ( String, Value ) -> Decoder (Maybe Proto.Value
 nestedCheckedJson depth found =
     case found of
         Just ( name, _ ) ->
-            Json.Decode.field name (Json.Decode.map Just (JsonRead.nestedValue depth))
+            Json.Decode.field name (Json.Decode.map Just (Decode.nestedValue depth))
 
         Nothing ->
             Json.Decode.succeed Nothing
@@ -1490,7 +1490,7 @@ message's depth: the object is one level deeper.
 -}
 nestedStruct : Int -> Decoder (Dict.Dict String Proto.Value.Value)
 nestedStruct =
-    JsonRead.nestedStruct
+    Decode.nestedStruct
 
 
 {-| A `google.protobuf.ListValue` held by a message that nests, read as
@@ -1499,7 +1499,7 @@ message's depth.
 -}
 nestedListValue : Int -> Decoder (List Proto.Value.Value)
 nestedListValue =
-    JsonRead.nestedListValue
+    Decode.nestedListValue
 
 
 {-| A `google.protobuf.Value` held by a message that nests, read as
@@ -1508,7 +1508,7 @@ message's depth: its arrays and objects are a level deeper each.
 -}
 nestedValue : Int -> Decoder Proto.Value.Value
 nestedValue =
-    JsonRead.nestedValue
+    Decode.nestedValue
 
 
 {-| [`Proto.Json.Decode.anyWith`](Proto-Json-Decode#anyWith) for an `Any` held by a message at `depth`: the `Any`, and what it holds, count on from there.
@@ -1534,13 +1534,13 @@ registryDepth =
 -}
 writeObject : List (Fields x) -> Encoder x
 writeObject =
-    Writer.object
+    Encoder.object
 
 
 {-| A run of a message's fields, plain or ones that can be refused.
 -}
 type alias Fields x =
-    Writer.Fields x
+    Encoder.Fields x
 
 
 {-| A run of fields that cannot be refused, as the plain helpers give them:
@@ -1548,55 +1548,55 @@ type alias Fields x =
 -}
 plainFields : List ( String, Maybe Value ) -> Fields x
 plainFields =
-    Writer.plainFields
+    Encoder.plainFields
 
 
 {-| A run of fields that can be refused.
 -}
 checkedFields : List ( String, Field x ) -> Fields x
 checkedFields =
-    Writer.checkedFields
+    Encoder.checkedFields
 
 
 {-| A field that can be refused, left out or written by its value's encoder.
 -}
 type alias Field x =
-    Writer.Field x
+    Encoder.Field x
 
 
 {-| A field with presence: left out when `Nothing`.
 -}
 writeOptional : (a -> Encoder x) -> Maybe a -> Field x
 writeOptional =
-    Writer.optional
+    Encoder.optional
 
 
 {-| A repeated field: left out when empty.
 -}
 writeRepeated : (a -> Encoder x) -> List a -> Field x
 writeRepeated =
-    Writer.repeated
+    Encoder.repeated
 
 
 {-| A map field: left out when empty.
 -}
 writeDict : (k -> String) -> (v -> Encoder x) -> Dict.Dict k v -> Field x
 writeDict =
-    Writer.dict
+    Encoder.dict
 
 
 {-| A map field with `bool` keys: left out when empty.
 -}
 writeBoolMap : (a -> Encoder x) -> List ( Bool, a ) -> Field x
 writeBoolMap =
-    Writer.boolMap
+    Encoder.boolMap
 
 
 {-| A oneof's set member, always written.
 -}
 writeMember : Encoder x -> Field x
 writeMember =
-    Writer.member
+    Encoder.member
 
 
 {-| A field of a message that nests, holding a message that nests, written one
@@ -1610,4 +1610,4 @@ as it is, with no count.
 -}
 writeDeeper : Field x -> Field x
 writeDeeper =
-    Writer.deeper
+    Encoder.deeper

@@ -65,8 +65,8 @@ import Proto.Error
 import Proto.Http exposing (Binding)
 import Proto.Internal.Binding
 import Proto.Internal.Interpret
+import Proto.Internal.Json.Encoder as Encoder
 import Proto.Internal.Method as Internal
-import Proto.Internal.Writer as Writer
 import Proto.Json.Encode
 import Proto.Registry exposing (Registry)
 import Proto.Route exposing (Route)
@@ -114,7 +114,7 @@ initJson serviceName methodName encode decoder =
         { service = serviceName
         , name = methodName
         , idempotency = IdempotencyUnknown
-        , json = { encode = \registry request -> Writer.run registry (encode request), decoder = decoder }
+        , json = { encode = \registry request -> Encoder.run registry (encode request), decoder = decoder }
         , binary = Internal.noBinary
         , routes = []
         }
@@ -163,7 +163,7 @@ init serviceName methodName encode decoder encodeBinary binaryDecoder =
         { service = serviceName
         , name = methodName
         , idempotency = IdempotencyUnknown
-        , json = { encode = \registry request -> Writer.run registry (encode request), decoder = decoder }
+        , json = { encode = \registry request -> Encoder.run registry (encode request), decoder = decoder }
         , binary = binaryHalf encodeBinary binaryDecoder
         , routes = []
         }

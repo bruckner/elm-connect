@@ -85,7 +85,7 @@ import Proto.Error exposing (Error)
 import Proto.Int64
 import Proto.Internal.Any as InternalAny
 import Proto.Internal.FieldMask as FieldMask
-import Proto.Internal.JsonRead as JsonRead
+import Proto.Internal.Json.Decode as Decode
 import Proto.Internal.Registry as InternalRegistry
 import Proto.Registry exposing (Registry)
 import Proto.Timestamp
@@ -103,7 +103,7 @@ string =
     Json.Decode.string
         |> Json.Decode.andThen
             (\text ->
-                if JsonRead.isScalarText text then
+                if Decode.isScalarText text then
                     Json.Decode.succeed text
 
                 else
@@ -175,11 +175,11 @@ boundedInt what low high =
                                     Json.Decode.succeed (round number)
 
                     StringForm text ->
-                        case JsonRead.narrowInteger low high text of
+                        case Decode.narrowInteger low high text of
                             Ok int ->
                                 Json.Decode.succeed int
 
-                            Err JsonRead.OutOfRange ->
+                            Err Decode.OutOfRange ->
                                 outOfRange form
 
                             Err _ ->
@@ -242,13 +242,13 @@ decoder saw it, and reads as the rounded value: `9223372036854775807` as
 -}
 int64 : Decoder String
 int64 =
-    wide JsonRead.Signed
+    wide Decode.Signed
 
 
 {-| A 64-bit integer as its canonical decimal string, within the range of
 `width`.
 -}
-wide : JsonRead.Width -> Decoder String
+wide : Decode.Width -> Decoder String
 wide width =
     Json.Decode.oneOf
         [ Json.Decode.string
@@ -256,18 +256,18 @@ wide width =
         ]
         |> Json.Decode.andThen
             (\text ->
-                case JsonRead.wideInteger width text of
+                case Decode.wideInteger width text of
                     Ok decimal ->
                         Json.Decode.succeed decimal
 
-                    Err JsonRead.NotDecimal ->
+                    Err Decode.NotDecimal ->
                         Json.Decode.fail "Expecting a decimal integer"
 
-                    Err JsonRead.NotInteger ->
+                    Err Decode.NotInteger ->
                         Json.Decode.fail "Expecting an integer"
 
-                    Err JsonRead.OutOfRange ->
-                        Json.Decode.fail ("Expecting " ++ widthName width ++ " " ++ JsonRead.widthRange width)
+                    Err Decode.OutOfRange ->
+                        Json.Decode.fail ("Expecting " ++ widthName width ++ " " ++ Decode.widthRange width)
             )
 
 
@@ -316,13 +316,13 @@ exactDecimal number =
         sign ++ String.fromInt millions ++ String.padLeft 6 '0' (String.fromInt ones)
 
 
-widthName : JsonRead.Width -> String
+widthName : Decode.Width -> String
 widthName width =
     case width of
-        JsonRead.Signed ->
+        Decode.Signed ->
             "an int64"
 
-        JsonRead.Unsigned ->
+        Decode.Unsigned ->
             "a uint64"
 
 
@@ -348,7 +348,7 @@ string: the forms [`int64`](#int64) accepts, within 0 to 18446744073709551615
 -}
 uint64 : Decoder String
 uint64 =
-    wide JsonRead.Unsigned
+    wide Decode.Unsigned
 
 
 {-| Decode an unsigned 64-bit integer as an `Int`, under the `int64=int`
@@ -389,14 +389,14 @@ int64Form form =
                         Json.Decode.succeed (round number)
 
         StringForm text ->
-            case JsonRead.canonicalInteger text of
-                Err JsonRead.NotDecimal ->
+            case Decode.canonicalInteger text of
+                Err Decode.NotDecimal ->
                     Json.Decode.fail "Expecting a decimal integer"
 
-                Err JsonRead.NotInteger ->
+                Err Decode.NotInteger ->
                     Json.Decode.fail "Expecting an integer"
 
-                Err JsonRead.OutOfRange ->
+                Err Decode.OutOfRange ->
                     outOfRange
 
                 Ok decimal ->
@@ -669,11 +669,11 @@ empty =
     Json.Decode.value
         |> Json.Decode.andThen
             (\json ->
-                if JsonRead.isObject json then
+                if Decode.isObject json then
                     Json.Decode.succeed ()
 
                 else
-                    JsonRead.notAnObject
+                    Decode.notAnObject
             )
 
 
@@ -683,7 +683,7 @@ as it does for any enum ([`Proto.Json.enum`](Proto-Json#enum)).
 -}
 nullValue : Decoder ()
 nullValue =
-    Json.Decode.nullable (JsonRead.enumWith (\_ -> Json.Decode.fail ("Expecting a value of enum " ++ JsonRead.quote "NullValue")) () [ ( "NULL_VALUE", 0, () ) ])
+    Json.Decode.nullable (Decode.enumWith (\_ -> Json.Decode.fail ("Expecting a value of enum " ++ Decode.quote "NullValue")) () [ ( "NULL_VALUE", 0, () ) ])
         |> Json.Decode.map (\_ -> ())
 
 
@@ -698,7 +698,7 @@ most 100 deep", which does not say where inside it the limit was passed.
 -}
 struct : Decoder (Dict.Dict String Proto.Value.Value)
 struct =
-    JsonRead.nestedStruct 0
+    Decode.nestedStruct 0
 
 
 {-| Decode a `google.protobuf.ListValue`, a JSON array, into its elements. Any
@@ -707,7 +707,7 @@ an array nested more than 100 deep as [`struct`](#struct) says.
 -}
 listValue : Decoder (List Proto.Value.Value)
 listValue =
-    JsonRead.nestedListValue 0
+    Decode.nestedListValue 0
 
 
 {-| Decode a `google.protobuf.Value`: any JSON, its arrays and objects
@@ -722,7 +722,7 @@ of both count against one limit (design section 3.5). The same decoder as
 -}
 value : Decoder Proto.Value.Value
 value =
-    JsonRead.nestedValue 0
+    Decode.nestedValue 0
 
 
 {-| Decode a `google.protobuf.Any` into one holding its message's protobuf
@@ -809,7 +809,7 @@ notItsMessage url problem =
                 failAgain inner
 
         _ ->
-            Json.Decode.fail ("Expecting an Any of " ++ JsonRead.quote url ++ " to hold that message")
+            Json.Decode.fail ("Expecting an Any of " ++ Decode.quote url ++ " to hold that message")
 
 
 {-| A decoder that fails as `error` did, on the same JSON.

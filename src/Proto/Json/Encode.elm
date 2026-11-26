@@ -43,8 +43,8 @@ import Json.Encode exposing (Value)
 import Proto.Duration exposing (Duration)
 import Proto.Error exposing (Error)
 import Proto.Internal.FieldMask as FieldMask
+import Proto.Internal.Json.Encoder as Encoder
 import Proto.Internal.Registry as InternalRegistry
-import Proto.Internal.Writer as Writer
 import Proto.Registry exposing (Registry)
 import Proto.Timestamp
 import Proto.Value
@@ -53,7 +53,7 @@ import Time
 
 {-| A proto3 JSON encoder: what a generated `encodeNote : Note -> Encoder x`
 gives, written by [`encode`](#encode). It is opaque. The package site and
-compiler errors may show it as `Proto.Internal.Writer.Encoder`, its name
+compiler errors may show it as `Proto.Internal.Json.Encoder.Encoder`, its name
 inside the package.
 
 `x` is what it can refuse with. The encoder of a message that holds nothing a
@@ -62,7 +62,7 @@ with `x` as `Never`; the others are `Encoder Proto.Error.Error`.
 
 -}
 type alias Encoder x =
-    Writer.Encoder x
+    Encoder.Encoder x
 
 
 {-| Write an encoder's JSON, or refuse the first value it holds that proto3
@@ -78,7 +78,7 @@ JavaScript stack allows throws while it is written, as it would through
 -}
 encode : Encoder Error -> Result Error Value
 encode =
-    Writer.run (InternalRegistry.Registry InternalRegistry.Strict 0 Dict.empty)
+    Encoder.run (InternalRegistry.Registry InternalRegistry.Strict 0 Dict.empty)
 
 
 {-| [`encode`](#encode), converting each `Any` through the registry, as
@@ -88,7 +88,7 @@ refused with [`TooDeep`](Proto-Error#Reason), as a read refuses it.
 -}
 encodeWith : Registry -> Encoder Error -> Result Error Value
 encodeWith =
-    Writer.run
+    Encoder.run
 
 
 {-| The JSON of an encoder that cannot refuse, such as a generated
@@ -102,7 +102,7 @@ The compiler rejects an encoder that can refuse, so this never fails.
 -}
 encodeTotal : Encoder Never -> Value
 encodeTotal =
-    Writer.total
+    Encoder.total
 
 
 {-| An encoder of JSON already written, which it gives as it is: for a value
@@ -113,7 +113,7 @@ written by hand, such as a [`Proto.Message`](Proto-Message)'s.
 -}
 succeed : Value -> Encoder x
 succeed =
-    Writer.succeed
+    Encoder.succeed
 
 
 {-| A `google.protobuf.Timestamp`, refused outside years 1 to 9999.
@@ -126,10 +126,10 @@ timestamp posix =
     in
     -- 0001-01-01T00:00:00Z and 9999-12-31T23:59:59.999Z.
     if millis < -62135596800000 || millis > 253402300799999 then
-        Writer.refuse "google.protobuf.Timestamp" "the time is outside years 1 to 9999"
+        Encoder.refuse "google.protobuf.Timestamp" "the time is outside years 1 to 9999"
 
     else
-        Writer.succeed (encodeTimestamp posix)
+        Encoder.succeed (encodeTimestamp posix)
 
 
 {-| A `google.protobuf.Duration`, refused past protobuf's range.
@@ -139,10 +139,10 @@ duration held =
     -- Protobuf's range, ±315,576,000,000 seconds, which only
     -- Proto.Duration.fromParts can pass.
     if abs (Proto.Duration.toParts held).seconds <= 315576000000 then
-        Writer.succeed (encodeDuration held)
+        Encoder.succeed (encodeDuration held)
 
     else
-        Writer.refuse "google.protobuf.Duration" "the duration is outside -315,576,000,000 to 315,576,000,000 seconds"
+        Encoder.refuse "google.protobuf.Duration" "the duration is outside -315,576,000,000 to 315,576,000,000 seconds"
 
 
 {-| A `google.protobuf.FieldMask`, refused when a path's lowerCamelCase form
@@ -151,10 +151,10 @@ reads back as another path.
 fieldMask : List String -> Encoder Error
 fieldMask paths =
     if List.all FieldMask.roundTrips paths then
-        Writer.succeed (encodeFieldMask paths)
+        Encoder.succeed (encodeFieldMask paths)
 
     else
-        Writer.refuse "google.protobuf.FieldMask" "a path's JSON form does not read back as the same path"
+        Encoder.refuse "google.protobuf.FieldMask" "a path's JSON form does not read back as the same path"
 
 
 {-| A `google.protobuf.Struct`, refused when it holds a number that is NaN or
@@ -182,10 +182,10 @@ value held =
 checkedValue : String -> Proto.Value.Value -> (() -> Value) -> Encoder Error
 checkedValue typeName held write =
     if finite held then
-        Writer.succeed (write ())
+        Encoder.succeed (write ())
 
     else
-        Writer.refuse typeName "a number is NaN or infinite"
+        Encoder.refuse typeName "a number is NaN or infinite"
 
 
 {-| Whether every number the value holds is finite. It walks the whole value,

@@ -1,4 +1,4 @@
-module Proto.Internal.Writer exposing
+module Proto.Internal.Json.Encoder exposing
     ( Encoder
     , Field
     , Fields

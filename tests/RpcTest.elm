@@ -15,9 +15,9 @@ import Proto.Duration
 import Proto.Error
 import Proto.Field exposing (Cardinality(..), Kind(..), Scalar(..))
 import Proto.Http
+import Proto.Internal.Json.Encoder
 import Proto.Internal.Percent
 import Proto.Internal.Registry
-import Proto.Internal.Writer
 import Proto.Json.Decode
 import Proto.Json.Encode
 import Proto.Message exposing (Message)
@@ -1719,7 +1719,7 @@ encodings =
         -- A request whose JSON says which registry wrote it, in the field
         -- its path binds and the field its body holds alike.
         tagged r =
-            Proto.Internal.Writer.deferred (\registry -> taggedWith registry r)
+            Proto.Internal.Json.Encoder.deferred (\registry -> taggedWith registry r)
 
         taggedWith registry r =
             let

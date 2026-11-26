@@ -1,4 +1,4 @@
-module Proto.Internal.JsonRead exposing
+module Proto.Internal.Json.Decode exposing
     ( IntegerProblem(..)
     , Width(..)
     , atMost
