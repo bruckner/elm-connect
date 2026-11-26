@@ -1,7 +1,7 @@
 module Proto.Route exposing
     ( Route, PathError
     , segment, segments, checkSegment, checkSegments, firstInvalid
-    , boolText, bytesText, fieldMaskText, viaJson, jsonText, without, jsonField, jsonValueField
+    , boolText, bytesText, fieldMaskText, durationText, viaJson, jsonText, without, jsonField, jsonValueField
     )
 
 {-| Where a call goes over one binding of its `google.api.http` rule, as
@@ -21,7 +21,7 @@ reads a `Route` and does not build one.
 
 # Values and bodies
 
-@docs boolText, bytesText, fieldMaskText, viaJson, jsonText, without, jsonField, jsonValueField
+@docs boolText, bytesText, fieldMaskText, durationText, viaJson, jsonText, without, jsonField, jsonValueField
 
 -}
 
@@ -29,6 +29,8 @@ import Bytes exposing (Bytes)
 import Json.Decode
 import Json.Encode exposing (Value)
 import Proto.Bytes
+import Proto.Duration exposing (Duration)
+import Proto.Internal.Duration as InternalDuration
 import Proto.Internal.FieldMask as FieldMask
 import Proto.Internal.Percent as Internal
 
@@ -190,6 +192,16 @@ text, each field name in lowerCamelCase and the paths joined by commas.
 fieldMaskText : List String -> String
 fieldMaskText =
     FieldMask.toText
+
+
+{-| A `google.protobuf.Duration` as path or query text: its proto3 JSON
+text, such as `1.500s`. A send over JSON refuses a request holding a
+duration that is not valid before it builds a route; unchecked, such a
+duration prints its normal form.
+-}
+durationText : Duration -> String
+durationText =
+    InternalDuration.print
 
 
 {-| A value's path or query text, by its proto3 JSON encoder: for the types

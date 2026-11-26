@@ -61,7 +61,7 @@ import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
 import Proto.Binary
-import Proto.Duration exposing (Duration)
+import Proto.Duration
 import Proto.Error
 import Proto.Json
 import Proto.Message
@@ -85,7 +85,7 @@ type alias ErrorInfo =
 {-| `google.rpc.RetryInfo`: how long to wait before retrying the call.
 -}
 type alias RetryInfo =
-    { retryDelay : Maybe Duration
+    { retryDelay : Maybe Proto.Duration.Duration
     }
 
 

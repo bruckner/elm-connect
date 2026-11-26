@@ -105,6 +105,7 @@ import Proto.Error exposing (Reason(..))
 import Proto.Internal.Any as InternalAny exposing (Any)
 import Proto.Internal.Binary as Internal exposing (Failure)
 import Proto.Internal.Depth as Depth
+import Proto.Internal.Duration as InternalDuration
 import Proto.Internal.Unknown as InternalUnknown
 import Proto.Unknown
 import Proto.Value exposing (Value(..))
@@ -2242,34 +2243,30 @@ writeTimestamp posix =
     E.sequence [ implicit int64AsInt 1 seconds, implicit int32 2 ((millis - seconds * 1000) * 1000000) ]
 
 
-{-| `google.protobuf.Duration`, exact. One that arrives twice is merged field
-by field: the seconds or the nanoseconds the later one carries replace the
-earlier one's, and the two are then given one sign as
-[`Proto.Duration.fromParts`](Proto-Duration#fromParts) does.
+{-| `google.protobuf.Duration`, exact: the seconds and nanoseconds are held
+as the wire carries them, neither normalised nor clamped, and written back
+as held, so a duration a peer wrote that is not valid survives a read and a
+write unchanged
+([`Proto.Duration.isValid`](Proto-Duration#isValid) says whether it is).
+One that arrives twice is merged field by field: the seconds or the
+nanoseconds the later one carries replace the earlier one's. Seconds past
+2^53 from zero are held only as closely as a `Float` holds them.
 -}
 duration : Codec Duration
 duration =
-    embedded writeDuration durationInto (Proto.Duration.fromParts 0 0)
+    embedded writeDuration durationInto (InternalDuration.Duration { seconds = 0, nanos = 0 })
 
 
 durationInto : Duration -> Decoder Duration
-durationInto existing =
-    let
-        parts =
-            Proto.Duration.toParts existing
-    in
+durationInto (InternalDuration.Duration parts) =
     wellKnown "google.protobuf.Duration"
         ( parts.seconds, parts.nanos )
         partsStep
-        (\( seconds, nanos ) -> Proto.Duration.fromParts seconds nanos)
+        (\( seconds, nanos ) -> InternalDuration.Duration { seconds = seconds, nanos = nanos })
 
 
 writeDuration : Duration -> Encoder
-writeDuration d =
-    let
-        parts =
-            Proto.Duration.toParts d
-    in
+writeDuration (InternalDuration.Duration parts) =
     E.sequence [ implicit int64AsInt 1 parts.seconds, implicit int32 2 parts.nanos ]
 
 

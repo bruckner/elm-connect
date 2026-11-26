@@ -245,6 +245,7 @@ import Proto.Error exposing (Error)
 import Proto.Int64
 import Proto.Internal.Any as InternalAny
 import Proto.Internal.Depth as Depth
+import Proto.Internal.Duration as InternalDuration
 import Proto.Internal.FieldMask as FieldMask
 import Proto.Internal.Percent as Percent
 import Proto.Internal.Registry as InternalRegistry
@@ -2312,12 +2313,12 @@ duration =
             )
 
 
-{-| Encode a `google.protobuf.Duration`; see
+{-| Encode a valid `google.protobuf.Duration`; see
 [`Proto.Duration.toString`](Proto-Duration#toString).
 -}
 encodeDuration : Duration -> Value
 encodeDuration span =
-    Json.Encode.string (Proto.Duration.toString span)
+    Json.Encode.string (InternalDuration.print span)
 
 
 {-| Decode a `google.protobuf.FieldMask` into its paths. proto3 JSON writes a
@@ -3038,17 +3039,27 @@ writeTimestamp posix =
         Writer.succeed (encodeTimestamp posix)
 
 
-{-| A `google.protobuf.Duration`, refused past protobuf's range.
+{-| A `google.protobuf.Duration`, refused when it is not valid
+([`Proto.Duration.isValid`](Proto-Duration#isValid)): past protobuf's range,
+or with nanoseconds of a second or more or of the other sign than the
+seconds, which only a duration read from protobuf binary can be.
 -}
 writeDuration : Duration -> Encoder Error
-writeDuration held =
-    -- Protobuf's range, ±315,576,000,000 seconds, which only
-    -- Proto.Duration.fromParts can pass.
-    if abs (Proto.Duration.toParts held).seconds <= 315576000000 then
+writeDuration ((InternalDuration.Duration parts) as held) =
+    if InternalDuration.isValid held then
         Writer.succeed (encodeDuration held)
 
     else
-        Writer.refuse "google.protobuf.Duration" "the duration is outside -315,576,000,000 to 315,576,000,000 seconds"
+        Writer.refuse "google.protobuf.Duration"
+            (if abs parts.seconds > InternalDuration.maxSeconds then
+                "the duration is outside -315,576,000,000 to 315,576,000,000 seconds"
+
+             else if abs parts.nanos >= 1000000000 then
+                "the nanoseconds are outside -999,999,999 to 999,999,999"
+
+             else
+                "the seconds and the nanoseconds have opposite signs"
+            )
 
 
 {-| A `google.protobuf.FieldMask`, refused when a path's lowerCamelCase form
