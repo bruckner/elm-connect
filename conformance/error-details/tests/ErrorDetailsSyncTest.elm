@@ -192,7 +192,7 @@ errorInfo =
 
 retryInfo : Generated.RetryInfo
 retryInfo =
-    { retryDelay = Just (Duration.fromParts 3 250000000)
+    { retryDelay = Just (Duration.fromMillis 3250)
     }
 
 

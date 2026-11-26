@@ -171,8 +171,8 @@ suite =
             \_ ->
                 [ Proto.Json.writeTimestamp (Time.millisToPosix -62135596800000)
                 , Proto.Json.writeTimestamp (Time.millisToPosix 253402300799999)
-                , Proto.Json.writeDuration (Proto.Duration.fromParts 315576000000 999999999)
-                , Proto.Json.writeDuration (Proto.Duration.fromParts -315576000000 -999999999)
+                , Proto.Json.writeDuration (exactDuration 315576000000 999999999)
+                , Proto.Json.writeDuration (exactDuration -315576000000 -999999999)
                 , Proto.Json.writeFieldMask [ "foo_bar.baz" ]
                 ]
                     |> List.map written
@@ -269,3 +269,9 @@ suite =
                     |> Json.Encode.encode 0
                     |> Expect.equal """{"a":1}"""
         ]
+
+
+exactDuration : Int -> Int -> Proto.Duration.Duration
+exactDuration seconds nanos =
+    Proto.Duration.fromSecondsAndNanos seconds nanos
+        |> Maybe.withDefault (Proto.Duration.fromSeconds 0)

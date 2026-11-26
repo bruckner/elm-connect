@@ -351,7 +351,7 @@ duration =
             , text = text
             , value =
                 Proto.Duration.fromString text
-                    |> Maybe.withDefault (Proto.Duration.fromMilliseconds 0)
+                    |> Maybe.withDefault (Proto.Duration.fromMillis 0)
             }
         )
         Fuzz.bool

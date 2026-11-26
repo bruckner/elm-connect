@@ -46,7 +46,7 @@ suite =
                         ]
         , test "the registry holds no well-known type" <|
             \_ ->
-                Proto.Json.encodeWith ErrorDetails.registry (Proto.Json.writeAny (Any.pack Proto.WellKnown.duration (Duration.fromMilliseconds 1)))
+                Proto.Json.encodeWith ErrorDetails.registry (Proto.Json.writeAny (Any.pack Proto.WellKnown.duration (Duration.fromMillis 1)))
                     |> Expect.equal (Err (Proto.Error.UnregisteredType "type.googleapis.com/google.protobuf.Duration"))
         , test "a RetryInfo's delay unpacks" <|
             \_ ->
@@ -54,6 +54,6 @@ suite =
                     |> Result.toMaybe
                     |> Maybe.andThen (Any.unpack ErrorDetails.retryInfo)
                     |> Maybe.andThen .retryDelay
-                    |> Maybe.map Duration.toMilliseconds
+                    |> Maybe.map Duration.toMillis
                     |> Expect.equal (Just 2000)
         ]

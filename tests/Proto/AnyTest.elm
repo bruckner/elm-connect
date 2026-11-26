@@ -166,7 +166,7 @@ suite =
                     |> Expect.equal (Ok (Just note))
         , test "a well-known type with a JSON form of its own is under value" <|
             \_ ->
-                [ Any.pack WellKnown.duration (Duration.fromMilliseconds 1500)
+                [ Any.pack WellKnown.duration (Duration.fromMillis 1500)
                 , Any.pack WellKnown.empty ()
                 , Any.pack WellKnown.stringValue "hi"
                 ]
@@ -178,8 +178,8 @@ suite =
                         ]
         , test "a well-known type unpacks after a round trip through JSON" <|
             \_ ->
-                roundTrip (Any.pack WellKnown.duration (Duration.fromMilliseconds 1500))
-                    |> Result.map (Any.unpack WellKnown.duration >> Maybe.map Duration.toMilliseconds)
+                roundTrip (Any.pack WellKnown.duration (Duration.fromMillis 1500))
+                    |> Result.map (Any.unpack WellKnown.duration >> Maybe.map Duration.toMillis)
                     |> Expect.equal (Ok (Just 1500))
         , test "an Any packs inside an Any" <|
             \_ ->

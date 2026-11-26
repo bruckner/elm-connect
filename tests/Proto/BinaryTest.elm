@@ -754,9 +754,9 @@ wellKnown =
         , test "Duration, exact, both parts signed" <|
             \_ ->
                 Expect.all
-                    [ \_ -> wire B.duration (Proto.Duration.fromParts 0 0) Proto.Duration.toString (Proto.Duration.fromParts -1 -500000000) "0a16 08ffffffffffffffffff01 1080b6ca91feffffffff01"
-                    , \_ -> reads B.duration (Proto.Duration.fromParts 0 0) Proto.Duration.toString "0a08 0801 1080cab5ee01" (Just "1.500s")
-                    , \_ -> reads B.duration (Proto.Duration.fromParts 0 0) Proto.Duration.toString "0a06 1081cab5ee01" (Just "0.500000001s")
+                    [ \_ -> wire B.duration (Proto.Duration.fromSeconds 0) durationText (Proto.Duration.fromSeconds -1.5) "0a16 08ffffffffffffffffff01 1080b6ca91feffffffff01"
+                    , \_ -> reads B.duration (Proto.Duration.fromSeconds 0) durationText "0a08 0801 1080cab5ee01" (Just "1.500s")
+                    , \_ -> reads B.duration (Proto.Duration.fromSeconds 0) durationText "0a06 1081cab5ee01" (Just "0.500000001s")
                     ]
                     ()
         , test "Value, Struct and ListValue as JSON, an object's members in key order" <|
@@ -821,15 +821,15 @@ wellKnownMerges =
                     , \_ -> mergesTo B.timestamp posixText "0a0808011080cab5ee01 0a051080e59a77" (Just "1250")
                     ]
                     ()
-        , test "Duration merges field by field, then takes one sign" <|
+        , test "Duration merges field by field, as read" <|
             \_ ->
                 Expect.all
-                    [ \_ -> mergesTo B.duration Proto.Duration.toString "0a0808011080cab5ee01 0a020803" (Just "3.500s")
-                    , \_ -> mergesTo B.duration Proto.Duration.toString "0a0808011080cab5ee01 0a051080e59a77" (Just "1.250s")
+                    [ \_ -> mergesTo B.duration durationText "0a0808011080cab5ee01 0a020803" (Just "3.500s")
+                    , \_ -> mergesTo B.duration durationText "0a0808011080cab5ee01 0a051080e59a77" (Just "1.250s")
 
-                    -- protobuf-go keeps seconds 3 and nanos -500000000, a
-                    -- Duration its JSON writer refuses; one sign makes it 2.5s.
-                    , \_ -> mergesTo B.duration Proto.Duration.toString "0a1608ffffffffffffffffff011080b6ca91feffffffff01 0a020803" (Just "2.500s")
+                    -- Seconds 3 and nanos -500000000, as protobuf-go keeps
+                    -- them: held as merged, not given one sign.
+                    , \_ -> mergesTo B.duration durationText "0a1608ffffffffffffffffff011080b6ca91feffffffff01 0a020803" (Just "invalid 3 -500000000")
                     ]
                     ()
         , test "a wrapper takes the later value, and keeps the earlier when the later is empty" <|
@@ -875,6 +875,22 @@ wellKnownMerges =
                     ]
                     ()
         ]
+
+
+{-| A duration's text, or its fields as held when it has none.
+-}
+durationText : Proto.Duration.Duration -> String
+durationText d =
+    case Proto.Duration.toString d of
+        Just text ->
+            text
+
+        Nothing ->
+            let
+                parts =
+                    Proto.Duration.toSecondsAndNanos d
+            in
+            "invalid " ++ String.fromInt parts.seconds ++ " " ++ String.fromInt parts.nanos
 
 
 {-| `hex` read as a message whose field 1, of `codec`, is read into the value

@@ -762,7 +762,7 @@ responses =
                             |> Result.mapError
                                 (\error ->
                                     ( detailsOf title error
-                                    , detailsOf Proto.WellKnown.duration error |> List.map Proto.Duration.toMilliseconds
+                                    , detailsOf Proto.WellKnown.duration error |> List.map Proto.Duration.toMillis
                                     , problemsOf error
                                     )
                                 )
@@ -798,7 +798,7 @@ responses =
                             |> Result.mapError
                                 (\error ->
                                     ( ( detailsOf title error
-                                      , detailsOf Proto.WellKnown.duration error |> List.map Proto.Duration.toMilliseconds
+                                      , detailsOf Proto.WellKnown.duration error |> List.map Proto.Duration.toMillis
                                       )
                                     , List.map (Result.map (Proto.Any.bytes >> (/=) Nothing)) (Rpc.Error.details error)
                                         |> List.map (Result.mapError (\_ -> ()))
