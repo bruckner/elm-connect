@@ -1040,18 +1040,20 @@ split possible (above, "No package split"). Where: design §3.1.
 
 ### `Proto.Json` split by reader
 
-*2026-11-25.*
+*2026-11-25; the checked-field encoders and the internal modules'
+names 2026-11-26.*
 
 `Proto.Json` held 103 names, 3,100 lines of the decoders and encoders an
 application calls beside the field-by-field helpers generated code
 calls. It is three modules now. `Proto.Json.Encode` and
 `Proto.Json.Decode` mirror elm/json and hold the application's part: the
 encoder type `Encoder`, `encode`, `encodeWith`, `encodeTotal` and
-`succeed`, and the well-known types' encoders, renamed for their type as
+`succeed`, the well-known types' encoders, renamed for their type as
 elm/json names its encoders (`writeTimestamp` is `timestamp`,
-`writeStruct` is `struct`); and the twenty scalar and well-known
+`writeStruct` is `struct`), and what a refusing encoder is built from
+(below); and the twenty scalar and well-known
 decoders, names unchanged (`int64`, `timestamp`, `anyWith`).
-`Proto.Json` keeps the 71 names generated code calls, documented as
+`Proto.Json` keeps the 60 names generated code calls, documented as
 that. Each function has one name: `Proto.Json` keeps no alias of a moved
 one, and a generated module imports the new modules where it uses a
 moved name. The alternative, aliases in `Proto.Json` so that generated
@@ -1073,9 +1075,33 @@ any)`) then calls no module documented as generated code's. A decoder
 type of its own, if one comes, would sit in `Proto.Json.Decode` on the
 same terms, with `anyWith` moving beside `Proto.Any.encode`.
 
+What a refusing encoder is built from is `Proto.Json.Encode`'s too:
+`object` of runs of fields, `plainFields` and `checkedFields`, each
+checked field a `Field` given by `optional`, `list`, `dict`, `boolMap`,
+`member` or `deeper`. Generated code builds each message that can refuse
+from them, and so does a message written by hand, so they sit beside the
+type rather than among generated code's plumbing, under the names
+elm/json gives what they build. They were `Proto.Json.writeObject`,
+`writeOptional`, `writeRepeated` and so on, the `write` prefix telling
+them from the plain helpers beside them; no exposed name of `Proto.Json`
+begins with `write` now. Rule 6 kept `Proto.Json`'s helpers from sharing
+a name with an elm/json function of another type; in a module that
+mirrors elm/json, `object`, `list` and `dict` build what elm/json's do,
+of encoders that can refuse. The fast-path helpers for messages that
+cannot refuse (`objectOfFields`, `implicitField`, the `total` helpers)
+stay in `Proto.Json`: only generated code calls them. None of the
+moved helpers needs an import `Proto.Json.Encode` did not have.
+
+The internal modules are named for the public ones they serve:
+`Proto.Internal.Json.Encoder` holds the type behind
+`Proto.Json.Encode.Encoder`, which the package site and compiler errors
+may show (it was `Proto.Internal.Writer`), and
+`Proto.Internal.Json.Decode` what the decoders share (it was
+`Proto.Internal.JsonRead`).
+
 What a program links did not change: the moved definitions are the
 same code under new names. Where `Proto.Json.Decode` and `Proto.Json`
-share code, it is in the internal `Proto.Internal.JsonRead`; the three
+share code, it is in the internal `Proto.Internal.Json.Decode`; the three
 `nested` decoders of `Struct`, `ListValue` and `Value` are each a
 one-line definition in `Proto.Json` naming that code, one definition
 more (a few bytes minified) in a program whose generated code reads one

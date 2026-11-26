@@ -1028,6 +1028,34 @@ it converts through. Reading goes the other way through
 well-known values (`Proto.Json.Decode.int64`, `timestamp`) in a decoder
 you write; a message is read with its generated decoder.
 
+A message of your own, such as the `encodeEvent` above, is written from
+`Proto.Json.Encode` as generated code writes one that can refuse: its
+fields in runs, `plainFields` for those written already (`Nothing`
+leaves one out) and `checkedFields` for those an encoder writes, each a
+`Field` (`optional`, `list`, `dict`, `boolMap`, `member`), made into an
+object by `object`:
+
+```elm examples/notes/elm/src/Snippets/Writing.elm#writing
+import Json.Encode
+import Proto.Error
+import Proto.Json.Encode
+import Time
+
+
+type alias Event =
+    { title : String, at : Maybe Time.Posix }
+
+
+encodeEvent : Event -> Proto.Json.Encode.Encoder Proto.Error.Error
+encodeEvent event =
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.plainFields
+            [ ( "title", Just (Json.Encode.string event.title) ) ]
+        , Proto.Json.Encode.checkedFields
+            [ ( "at", Proto.Json.Encode.optional Proto.Json.Encode.timestamp event.at ) ]
+        ]
+```
+
 A refusal is `Proto.Error.BadValue { typeName, path, message }` for a
 value proto3 JSON has no form for: a `Timestamp` outside years 1 to
 9999, a `FieldMask` path with no lowerCamelCase form, or a number in a

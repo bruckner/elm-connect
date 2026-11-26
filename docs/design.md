@@ -379,8 +379,11 @@ rpc shared call =
   modules are split by reader. `Proto.Json.Encode` and
   `Proto.Json.Decode` mirror elm/json and hold what an application calls:
   the encoder type, the calls that write one (`encode`, `encodeWith`,
-  `encodeTotal`) and the well-known types' encoders, named for their type
-  (`timestamp`, `struct`); and the scalar and well-known types' decoders
+  `encodeTotal`), the well-known types' encoders, named for their type
+  (`timestamp`, `struct`), and what a refusing encoder is built from,
+  by generated code and by hand: `object` of runs of fields,
+  `plainFields` and `checkedFields`, each checked field a `Field`
+  (`optional`, `list`, `dict`, `boolMap`, `member`, `deeper`); and the scalar and well-known types' decoders
   (`int64`, `timestamp`, `anyWith`, with `With` at the end of a decoder
   taking a registry). A lone `Any`'s encoder is `Proto.Any.encode`, since
   `Proto.Json.Encode` holds the type `Proto.Message` and `Proto.Method`
@@ -391,11 +394,11 @@ rpc shared call =
   field's encoder, which gives `Nothing` to leave the field out, ends in
   `Field` (`implicitField`, `repeatedField`, `dictField`,
   `boolMapField`), with `objectOfFields` building a message's object from
-  them, and a field encoder that can refuse begins with `write`
-  (`writeOptional`, `writeRepeated`), with `writeObject` building a
-  message's object from runs of fields (§3.4). So a decoder and its encoders share a
-  noun, and no helper shares a name with an elm/json function of
-  another type (`Json.Encode.object`, `Json.Encode.dict`). Every well-known type's codecs are
+  them (§3.4). So a decoder and its encoders share a
+  noun, and no helper of `Proto.Json` shares a name with an elm/json
+  function of another type (`Json.Encode.object`, `Json.Encode.dict`);
+  `Proto.Json.Encode`'s `object`, `list` and `dict` build what elm/json's
+  do, of encoders that can refuse. Every well-known type's codecs are
   in these modules, `Any`'s with `Proto.Any`. (7) The imports point one way: no `Proto`
   module imports an `Rpc` one, and `Rpc` reads four internal modules of
   the `Proto` side, `Proto.Internal.Any`, `Proto.Internal.Method` (a
@@ -835,7 +838,7 @@ rpc shared call =
     `Any` is given no depth: the registry it is run with carries it, as
     the decoder reads it. It writes each field holding a message that
     nests and reaches an `Any` one level deeper
-    (`Proto.Json.writeDeeper`, once per field), and an `Any` counting on
+    (`Proto.Json.Encode.deeper`, once per field), and an `Any` counting on
     from its message's depth (`Proto.Any.encode`), so an `Any` is
     refused where a read refuses it. A type whose decoders take no registry (a message
     that reaches no `Any`, and the well-known `Struct`, `Value` and
@@ -947,11 +950,11 @@ refuse on a JSON write"):
 - A message that holds an `Any`, or a `Timestamp`, `Duration`,
   `FieldMask`, `Struct`, `ListValue` or `Value`, at any depth, is
   `encodeNote : Note -> Proto.Json.Encode.Encoder Proto.Error.Error`: its
-  fields in declaration order, given to `Proto.Json.writeObject` as runs,
+  fields in declaration order, given to `Proto.Json.Encode.object` as runs,
   each run of consecutive fields that cannot be refused a
-  `Proto.Json.plainFields` of the same pairs and each run of those that
-  can a `Proto.Json.checkedFields` of `Proto.Json.Field`s
-  (`Proto.Json.writeOptional Proto.Json.Encode.timestamp value.at`), then
+  `Proto.Json.Encode.plainFields` of the same pairs and each run of those that
+  can a `Proto.Json.Encode.checkedFields` of `Proto.Json.Encode.Field`s
+  (`Proto.Json.Encode.optional Proto.Json.Encode.timestamp value.at`), then
   each oneof's members as a run of its own. It writes the same text as
   the plain form would, in the same order; a refusal stops the write
   with `Proto.Error.BadValue { typeName, path, message }`, the path to
@@ -972,7 +975,7 @@ Encoders leave out every field at its default:
   `Any`) is left out when `Nothing` and written when `Just`, at its
   default too (`Just 0` writes `0`, `Just` an empty message writes `{}`,
   `Just ValueNull` writes `null`): presence is what the `Maybe` says
-  (`Maybe.map encoder value`, or `Proto.Json.writeOptional` for a value a
+  (`Maybe.map encoder value`, or `Proto.Json.Encode.optional` for a value a
   write can refuse).
 - A oneof's set member is always written, at its default too; an unset
   oneof writes nothing (§3.6).
@@ -1424,7 +1427,7 @@ In detail:
   encoder appends it to its fields: `Proto.Json.objectOfFields ([ ... ] ++
   encodeNoteEventKind value.kind)`; in a message that can refuse, the
   list is a run of its own, and a oneof with a member that can be refused
-  gives its member as a `Proto.Json.Field` (`Proto.Json.writeMember`). The member is written at its
+  gives its member as a `Proto.Json.Encode.Field` (`Proto.Json.Encode.member`). The member is written at its
   default too: being set is what a oneof says (§3.4).
 - The oneof's decoder is `Proto.Json.members "kind"
   NoteEventKindUnset [ ... ]`, given the oneof's proto name (for error
@@ -4214,7 +4217,7 @@ Connect's proto codec sends them (§5.3).
   there. Writing it as JSON converts it through the registry, and that
   counts the `Any`s as a read does: a generated encoder of a message that
   reaches an `Any` writes each field holding a message that nests one
-  level deeper in the registry it is run with (`Proto.Json.writeDeeper`),
+  level deeper in the registry it is run with (`Proto.Json.Encode.deeper`),
   and an `Any` with `Proto.Any.encode`, all counting from the
   message's depth, the registry's or 1, whichever is more, as the decoder
   starts it (`max 1 (Proto.Json.registryDepth types)`), so an `Any` held

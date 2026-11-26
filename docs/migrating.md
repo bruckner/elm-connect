@@ -540,7 +540,8 @@ JSON `null` is `Just ValueNull` where it was `Just Json.Encode.null`.
 ## The JSON modules
 
 `Proto.Json` is three modules. `Proto.Json.Encode` writes a message's
-JSON and holds the well-known types' encoders; `Proto.Json.Decode` holds
+JSON and holds the well-known types' encoders and what a message that
+can refuse is written from; `Proto.Json.Decode` holds
 the scalar and well-known types' decoders, for a decoder written by hand;
 `Proto.Json` keeps the helpers generated code calls. Regenerating moves
 generated code; code of your own that named a moved helper changes its
@@ -614,10 +615,12 @@ that changed again before the release:
 | `encodeNote note : Json.Encode.Value` | `Proto.Json.Encode.encodeTotal (encodeNote note)`, or `Proto.Json.Encode.encode (encodeNote note)` when `encodeNote` can refuse |
 | `Proto.Json.encodeAnyWith registry any` | `Proto.Json.Encode.encodeWith registry (Proto.Any.encode any)`, or `Proto.Any.toJson registry any` for its message's JSON alone |
 | `Proto.Json.encodeTimestamp`, `encodeDuration`, `encodeFieldMask`, `encodeStruct`, `encodeValue`, `encodeListValue` | `Proto.Json.Encode.encode (Proto.Json.Encode.timestamp t)` and the other well-known encoders (`duration`, `fieldMask`, `struct`, `value`, `listValue`); `Proto.Value.toJson` writes a `Value` unchecked |
-| `Proto.Json.encodeNestedAnyWith`, `registryDeeper`, `tryObjectOfFields` and the other `try` helpers | generated code's `Proto.Any.encode`, `writeDeeper`, `writeObject` and the `write` helpers |
+| `Proto.Json.encodeNestedAnyWith`, `registryDeeper`, `tryObjectOfFields` and the other `try` helpers | `Proto.Any.encode`, and `Proto.Json.Encode.deeper`, `object` and the other checked-field encoders (below) |
 | `Proto.Json.Encoder`, `Proto.Json.Encoder.Encoder`, `Proto.Json.encode`, `encodeWith`, `encodeTotal`, `succeed` | `Proto.Json.Encode.Encoder`, `Proto.Json.Encode.encode`, `encodeWith`, `encodeTotal`, `succeed` |
 | `Proto.Json.writeTimestamp`, `writeDuration`, `writeFieldMask`, `writeStruct`, `writeListValue`, `writeValue` | `Proto.Json.Encode.timestamp`, `duration`, `fieldMask`, `struct`, `listValue`, `value` |
 | `Proto.Json.writeAny` | `Proto.Any.encode` |
+| `Proto.Json.writeObject`, `writeOptional`, `writeRepeated`, `writeDict`, `writeBoolMap`, `writeMember`, `writeDeeper` | `Proto.Json.Encode.object`, `optional`, `list`, `dict`, `boolMap`, `member`, `deeper` |
+| `Proto.Json.plainFields`, `checkedFields`, `Field`, `Fields` | `Proto.Json.Encode.plainFields`, `checkedFields`, `Field`, `Fields` |
 | `Proto.Json.string`, `float32`, `nullValue`, `value`, `anyWith` and the other scalar and well-known decoders | `Proto.Json.Decode.string` and the rest, names unchanged ([The JSON modules](#the-json-modules)) |
 | `Proto.Message.init name f …`, `Proto.Method.initJson s m (\_ -> Ok << f) …` with `f : a -> Json.Encode.Value` | `Proto.Message.init name (Proto.Json.Encode.succeed << f) …`, `Proto.Method.initJson s m (Proto.Json.Encode.succeed << f) …`, or the generated `encodeNote` |
 | `Rpc.request client call : Rpc.Request` | `Rpc.request client call : Result Rpc.Error Rpc.Request` |
