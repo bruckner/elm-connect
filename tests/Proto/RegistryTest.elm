@@ -34,8 +34,8 @@ type alias Holder =
 
 encodeHolder : Holder -> Proto.Json.Encode.Encoder Error
 encodeHolder value =
-    Proto.Json.writeObject
-        [ Proto.Json.checkedFields [ ( "held", Proto.Json.writeOptional Any.encode value.held ) ] ]
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.checkedFields [ ( "held", Proto.Json.Encode.optional Any.encode value.held ) ] ]
 
 
 decodeHolderWith : Registry -> Json.Decode.Decoder Holder
