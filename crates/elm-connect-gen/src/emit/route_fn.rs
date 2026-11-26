@@ -747,9 +747,9 @@ impl Emitter {
                     [encoder],
                 )))
             }
-            ValueShape::Present(Present::Timestamp) => {
-                Some(Text::Fn(self.reference(("Proto.Timestamp", "toString"))))
-            }
+            ValueShape::Present(Present::Timestamp) => Some(Text::Partial(
+                self.reference(("Proto.Timestamp", "toString")),
+            )),
             ValueShape::Present(Present::Duration) => Some(Text::Partial(
                 self.reference(("Proto.Duration", "toString")),
             )),

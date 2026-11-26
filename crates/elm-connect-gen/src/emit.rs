@@ -145,7 +145,8 @@
 //!   (design §3.6).
 //! - A field or member whose JSON name differs from its proto name is
 //!   read under either, and an object holding both fails (design §3.4).
-//! - The well-known types map to `Time.Posix`, `Proto.Duration.Duration`,
+//! - The well-known types map to `Proto.Timestamp.Timestamp`,
+//!   `Proto.Duration.Duration`,
 //!   `List String` (field masks), `()` (`Empty`), `Proto.Any.Any`, holding
 //!   its message's binary,
 //!   `Dict String Proto.Value.Value` (`Struct`), `List Proto.Value.Value`
@@ -244,8 +245,6 @@ const FAILS: &str = ", or fails if the input contains a bad value";
 const CORE_DICT: &str = "Dict";
 /// elm/core's `String`, which every Elm module imports by default.
 const CORE_STRING: &str = "String";
-/// elm/time's `Time`, for `Time.Posix`.
-const TIME: &str = "Time";
 /// elm/bytes' `Bytes`, for `Bytes.Bytes` under `bytes=bytes`.
 const ELM_BYTES: &str = "Bytes";
 /// The runtime package's bytes conversions, home of `Proto.Bytes.empty`.
@@ -254,6 +253,8 @@ const PROTO_BYTES: &str = "Proto.Bytes";
 const PROTO_UNKNOWN: &str = "Proto.Unknown";
 /// The runtime package's `Duration`, written `Proto.Duration.Duration`.
 const PROTO_DURATION: &str = "Proto.Duration";
+/// The runtime package's `Timestamp`, written `Proto.Timestamp.Timestamp`.
+const PROTO_TIMESTAMP: &str = "Proto.Timestamp";
 /// The runtime's `google.protobuf.Value`, `Struct` and `ListValue` as Elm data.
 const PROTO_VALUE: &str = "Proto.Value";
 /// The runtime package's calls, home of `Rpc.Call`.

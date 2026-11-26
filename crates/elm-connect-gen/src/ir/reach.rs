@@ -88,8 +88,8 @@ impl AnyReach {
 }
 
 /// Whether a well-known type's Elm values can hold what proto3 JSON has no
-/// form for: a `Timestamp` outside years 1 to 9999, a `Duration` past
-/// protobuf's range, a `FieldMask` path that does not round-trip through
+/// form for: a `Timestamp` or a `Duration` that is not valid (only one
+/// read from binary can be), a `FieldMask` path that does not round-trip through
 /// lowerCamelCase, a number in a `Value` that is not finite.
 pub fn checked(known: WellKnown) -> bool {
     matches!(
