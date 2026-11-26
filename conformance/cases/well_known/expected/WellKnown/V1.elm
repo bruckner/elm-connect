@@ -226,21 +226,21 @@ registry =
 -}
 encodeEvent : Event -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeEvent value =
-    Proto.Json.writeObject
-        [ Proto.Json.checkedFields
-            [ ( "createdAt", Proto.Json.writeOptional Proto.Json.Encode.timestamp value.createdAt )
-            , ( "timeout", Proto.Json.writeOptional Proto.Json.Encode.duration value.timeout )
-            , ( "updateMask", Proto.Json.writeOptional Proto.Json.Encode.fieldMask value.updateMask )
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.checkedFields
+            [ ( "createdAt", Proto.Json.Encode.optional Proto.Json.Encode.timestamp value.createdAt )
+            , ( "timeout", Proto.Json.Encode.optional Proto.Json.Encode.duration value.timeout )
+            , ( "updateMask", Proto.Json.Encode.optional Proto.Json.Encode.fieldMask value.updateMask )
             ]
-        , Proto.Json.plainFields
+        , Proto.Json.Encode.plainFields
             [ ( "marker", Just (Proto.Json.encodeEmpty value.marker) )
             ]
-        , Proto.Json.checkedFields
-            [ ( "metadata", Proto.Json.writeOptional Proto.Json.Encode.struct value.metadata )
-            , ( "payload", Proto.Json.writeOptional Proto.Json.Encode.value value.payload )
-            , ( "items", Proto.Json.writeOptional Proto.Json.Encode.listValue value.items )
+        , Proto.Json.Encode.checkedFields
+            [ ( "metadata", Proto.Json.Encode.optional Proto.Json.Encode.struct value.metadata )
+            , ( "payload", Proto.Json.Encode.optional Proto.Json.Encode.value value.payload )
+            , ( "items", Proto.Json.Encode.optional Proto.Json.Encode.listValue value.items )
             ]
-        , Proto.Json.plainFields
+        , Proto.Json.Encode.plainFields
             [ ( "ratio", Maybe.map Proto.Json.encodeFloat value.ratio )
             , ( "weight", Maybe.map Proto.Json.encodeFloat value.weight )
             , ( "bigCount", Maybe.map Proto.Json.encodeInt64 value.bigCount )
@@ -251,63 +251,63 @@ encodeEvent value =
             , ( "nickname", Maybe.map Json.Encode.string value.nickname )
             , ( "avatar", Maybe.map Proto.Json.encodeBytes value.avatar )
             ]
-        , Proto.Json.checkedFields
-            [ ( "history", Proto.Json.writeRepeated Proto.Json.Encode.timestamp value.history )
-            , ( "limits", Proto.Json.writeDict identity Proto.Json.Encode.duration value.limits )
-            , ( "values", Proto.Json.writeRepeated Proto.Json.Encode.value value.values )
+        , Proto.Json.Encode.checkedFields
+            [ ( "history", Proto.Json.Encode.list Proto.Json.Encode.timestamp value.history )
+            , ( "limits", Proto.Json.Encode.dict identity Proto.Json.Encode.duration value.limits )
+            , ( "values", Proto.Json.Encode.list Proto.Json.Encode.value value.values )
             ]
-        , Proto.Json.plainFields
+        , Proto.Json.Encode.plainFields
             [ ( "counts", Proto.Json.repeatedField Json.Encode.int value.counts )
             , ( "acked", Just (Proto.Json.encodeEmpty value.acked) )
             , ( "pings", Proto.Json.repeatedField Proto.Json.encodeEmpty value.pings )
             , ( "seen", Proto.Json.dictField identity Proto.Json.encodeEmpty value.seen )
             ]
-        , Proto.Json.checkedFields
-            [ ( "records", Proto.Json.writeRepeated Proto.Json.Encode.struct value.records )
-            , ( "columns", Proto.Json.writeDict identity Proto.Json.Encode.listValue value.columns )
-            , ( "lastValue", Proto.Json.writeOptional Proto.Json.Encode.value value.lastValue )
-            , ( "settings", Proto.Json.writeDict identity Proto.Json.Encode.value value.settings )
+        , Proto.Json.Encode.checkedFields
+            [ ( "records", Proto.Json.Encode.list Proto.Json.Encode.struct value.records )
+            , ( "columns", Proto.Json.Encode.dict identity Proto.Json.Encode.listValue value.columns )
+            , ( "lastValue", Proto.Json.Encode.optional Proto.Json.Encode.value value.lastValue )
+            , ( "settings", Proto.Json.Encode.dict identity Proto.Json.Encode.value value.settings )
             ]
-        , Proto.Json.plainFields
+        , Proto.Json.Encode.plainFields
             [ ( "nothing", Proto.Json.implicitField () Proto.Json.encodeNullValue value.nothing )
             , ( "maybeNothing", Proto.Json.implicitField () Proto.Json.encodeNullValue value.maybeNothing )
             , ( "nulls", Proto.Json.repeatedField Proto.Json.encodeNullValue value.nulls )
             , ( "nullMap", Proto.Json.dictField identity Proto.Json.encodeNullValue value.nullMap )
             ]
-        , Proto.Json.checkedFields (encodeEventWhen value.when)
+        , Proto.Json.Encode.checkedFields (encodeEventWhen value.when)
         ]
 
 
 {-| Encodes an [`EventWhen`](#EventWhen) as the members of its message's JSON object, or fails if the input contains a bad value.
 -}
-encodeEventWhen : EventWhen -> List ( String, Proto.Json.Field Proto.Error.Error )
+encodeEventWhen : EventWhen -> List ( String, Proto.Json.Encode.Field Proto.Error.Error )
 encodeEventWhen value =
     case value of
         EventWhenUnset ->
             []
 
         EventWhenAt member ->
-            [ ( "at", Proto.Json.writeMember (Proto.Json.Encode.timestamp member) )
+            [ ( "at", Proto.Json.Encode.member (Proto.Json.Encode.timestamp member) )
             ]
 
         EventWhenAfter member ->
-            [ ( "after", Proto.Json.writeMember (Proto.Json.Encode.duration member) )
+            [ ( "after", Proto.Json.Encode.member (Proto.Json.Encode.duration member) )
             ]
 
         EventWhenWhenever member ->
-            [ ( "whenever", Proto.Json.writeMember (Proto.Json.Encode.value member) )
+            [ ( "whenever", Proto.Json.Encode.member (Proto.Json.Encode.value member) )
             ]
 
         EventWhenSchedule member ->
-            [ ( "schedule", Proto.Json.writeMember (Proto.Json.Encode.struct member) )
+            [ ( "schedule", Proto.Json.Encode.member (Proto.Json.Encode.struct member) )
             ]
 
         EventWhenDates member ->
-            [ ( "dates", Proto.Json.writeMember (Proto.Json.Encode.listValue member) )
+            [ ( "dates", Proto.Json.Encode.member (Proto.Json.Encode.listValue member) )
             ]
 
         EventWhenNever ->
-            [ ( "never", Proto.Json.writeMember (Proto.Json.Encode.succeed Json.Encode.null) )
+            [ ( "never", Proto.Json.Encode.member (Proto.Json.Encode.succeed Json.Encode.null) )
             ]
 
 

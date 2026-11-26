@@ -240,15 +240,15 @@ encodeStatus value =
 -}
 encodeItem : Item -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeItem value =
-    Proto.Json.writeObject
-        [ Proto.Json.plainFields
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.plainFields
             [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
             , ( "size", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.size )
             , ( "status", Proto.Json.implicitField StatusUnspecified encodeStatus value.status )
             ]
-        , Proto.Json.checkedFields
-            [ ( "payload", Proto.Json.writeOptional Proto.Any.encode value.payload )
-            , ( "attachments", Proto.Json.writeRepeated Proto.Any.encode value.attachments )
+        , Proto.Json.Encode.checkedFields
+            [ ( "payload", Proto.Json.Encode.optional Proto.Any.encode value.payload )
+            , ( "attachments", Proto.Json.Encode.list Proto.Any.encode value.attachments )
             ]
         ]
 
@@ -279,9 +279,9 @@ encodeListItemsRequest value =
 -}
 encodeListItemsResponse : ListItemsResponse -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeListItemsResponse value =
-    Proto.Json.writeObject
-        [ Proto.Json.checkedFields
-            [ ( "items", Proto.Json.writeDeeper (Proto.Json.writeRepeated encodeItem value.items) )
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.checkedFields
+            [ ( "items", Proto.Json.Encode.deeper (Proto.Json.Encode.list encodeItem value.items) )
             ]
         ]
 

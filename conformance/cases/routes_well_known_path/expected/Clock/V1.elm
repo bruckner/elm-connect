@@ -122,19 +122,19 @@ registry =
 -}
 encodeMoment : Moment -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeMoment value =
-    Proto.Json.writeObject
-        [ Proto.Json.checkedFields
-            [ ( "at", Proto.Json.writeOptional Proto.Json.Encode.timestamp value.at )
-            , ( "mask", Proto.Json.writeOptional Proto.Json.Encode.fieldMask value.mask )
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.checkedFields
+            [ ( "at", Proto.Json.Encode.optional Proto.Json.Encode.timestamp value.at )
+            , ( "mask", Proto.Json.Encode.optional Proto.Json.Encode.fieldMask value.mask )
             ]
-        , Proto.Json.plainFields
+        , Proto.Json.Encode.plainFields
             [ ( "count", Maybe.map Json.Encode.int value.count )
             , ( "seen", Maybe.map Json.Encode.bool value.seen )
             ]
-        , Proto.Json.checkedFields
-            [ ( "wait", Proto.Json.writeOptional Proto.Json.Encode.duration value.wait )
+        , Proto.Json.Encode.checkedFields
+            [ ( "wait", Proto.Json.Encode.optional Proto.Json.Encode.duration value.wait )
             ]
-        , Proto.Json.plainFields
+        , Proto.Json.Encode.plainFields
             [ ( "note", Proto.Json.implicitField "" Json.Encode.string value.note )
             ]
         ]

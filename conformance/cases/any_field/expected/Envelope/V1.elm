@@ -129,33 +129,33 @@ registry =
 -}
 encodeEnvelope : Envelope -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeEnvelope value =
-    Proto.Json.writeObject
-        [ Proto.Json.plainFields
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.plainFields
             [ ( "id", Proto.Json.implicitField "" Json.Encode.string value.id )
             ]
-        , Proto.Json.checkedFields
-            [ ( "payload", Proto.Json.writeOptional Proto.Any.encode value.payload )
-            , ( "attachments", Proto.Json.writeRepeated Proto.Any.encode value.attachments )
-            , ( "headers", Proto.Json.writeDict identity Proto.Any.encode value.headers )
+        , Proto.Json.Encode.checkedFields
+            [ ( "payload", Proto.Json.Encode.optional Proto.Any.encode value.payload )
+            , ( "attachments", Proto.Json.Encode.list Proto.Any.encode value.attachments )
+            , ( "headers", Proto.Json.Encode.dict identity Proto.Any.encode value.headers )
             ]
-        , Proto.Json.checkedFields (encodeEnvelopeBody value.body)
+        , Proto.Json.Encode.checkedFields (encodeEnvelopeBody value.body)
         ]
 
 
 {-| Encodes an [`EnvelopeBody`](#EnvelopeBody) as the members of its message's JSON object, or fails if the input contains a bad value.
 -}
-encodeEnvelopeBody : EnvelopeBody -> List ( String, Proto.Json.Field Proto.Error.Error )
+encodeEnvelopeBody : EnvelopeBody -> List ( String, Proto.Json.Encode.Field Proto.Error.Error )
 encodeEnvelopeBody value =
     case value of
         EnvelopeBodyUnset ->
             []
 
         EnvelopeBodyPacked member ->
-            [ ( "packed", Proto.Json.writeMember (Proto.Any.encode member) )
+            [ ( "packed", Proto.Json.Encode.member (Proto.Any.encode member) )
             ]
 
         EnvelopeBodyText member ->
-            [ ( "text", Proto.Json.writeMember (Proto.Json.Encode.succeed (Json.Encode.string member)) )
+            [ ( "text", Proto.Json.Encode.member (Proto.Json.Encode.succeed (Json.Encode.string member)) )
             ]
 
 

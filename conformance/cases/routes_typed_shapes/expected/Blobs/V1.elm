@@ -359,12 +359,12 @@ encodeBlob value =
 -}
 encodeLabeled : Labeled -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeLabeled value =
-    Proto.Json.writeObject
-        [ Proto.Json.plainFields
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.plainFields
             [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
             ]
-        , Proto.Json.checkedFields
-            [ ( "label", Proto.Json.writeOptional Proto.Any.encode value.label )
+        , Proto.Json.Encode.checkedFields
+            [ ( "label", Proto.Json.Encode.optional Proto.Any.encode value.label )
             ]
         ]
 
@@ -373,11 +373,11 @@ encodeLabeled value =
 -}
 encodeLabelBlobRequest : LabelBlobRequest -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeLabelBlobRequest value =
-    Proto.Json.writeObject
-        [ Proto.Json.checkedFields
-            [ ( "labeled", Proto.Json.writeDeeper (Proto.Json.writeOptional encodeLabeled value.labeled) )
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.checkedFields
+            [ ( "labeled", Proto.Json.Encode.deeper (Proto.Json.Encode.optional encodeLabeled value.labeled) )
             ]
-        , Proto.Json.plainFields
+        , Proto.Json.Encode.plainFields
             [ ( "shelf", Proto.Json.implicitField "" Json.Encode.string value.shelf )
             ]
         ]
@@ -418,12 +418,12 @@ encodeSlots value =
 -}
 encodeFree : Free -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeFree value =
-    Proto.Json.writeObject
-        [ Proto.Json.plainFields
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.plainFields
             [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
             ]
-        , Proto.Json.checkedFields
-            [ ( "value", Proto.Json.writeOptional Proto.Json.Encode.value value.value )
+        , Proto.Json.Encode.checkedFields
+            [ ( "value", Proto.Json.Encode.optional Proto.Json.Encode.value value.value )
             ]
         ]
 
@@ -432,12 +432,12 @@ encodeFree value =
 -}
 encodeMoment : Moment -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeMoment value =
-    Proto.Json.writeObject
-        [ Proto.Json.plainFields
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.plainFields
             [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
             ]
-        , Proto.Json.checkedFields
-            [ ( "at", Proto.Json.writeOptional Proto.Json.Encode.timestamp value.at )
+        , Proto.Json.Encode.checkedFields
+            [ ( "at", Proto.Json.Encode.optional Proto.Json.Encode.timestamp value.at )
             ]
         ]
 
@@ -446,12 +446,12 @@ encodeMoment value =
 -}
 encodeStampRequest : StampRequest -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeStampRequest value =
-    Proto.Json.writeObject
-        [ Proto.Json.plainFields
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.plainFields
             [ ( "shelf", Proto.Json.implicitField "" Json.Encode.string value.shelf )
             ]
-        , Proto.Json.checkedFields
-            [ ( "moment", Proto.Json.writeOptional encodeMoment value.moment )
+        , Proto.Json.Encode.checkedFields
+            [ ( "moment", Proto.Json.Encode.optional encodeMoment value.moment )
             ]
         ]
 

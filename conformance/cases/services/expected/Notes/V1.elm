@@ -489,16 +489,16 @@ encodeGetNoteRequest value =
 -}
 encodeListNotesRequest : ListNotesRequest -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeListNotesRequest value =
-    Proto.Json.writeObject
-        [ Proto.Json.plainFields
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.plainFields
             [ ( "parent", Proto.Json.implicitField "" Json.Encode.string value.parent )
             , ( "pageSize", Proto.Json.implicitField 0 Json.Encode.int value.pageSize )
             , ( "pageToken", Proto.Json.implicitField "" Json.Encode.string value.pageToken )
             ]
-        , Proto.Json.checkedFields
-            [ ( "filter", Proto.Json.writeOptional encodeListNotesRequestFilter value.filter )
+        , Proto.Json.Encode.checkedFields
+            [ ( "filter", Proto.Json.Encode.optional encodeListNotesRequestFilter value.filter )
             ]
-        , Proto.Json.plainFields
+        , Proto.Json.Encode.plainFields
             [ ( "tags", Proto.Json.repeatedField Json.Encode.string value.tags )
             , ( "archived", Maybe.map Json.Encode.bool value.archived )
             , ( "revision", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.revision )
@@ -510,12 +510,12 @@ encodeListNotesRequest value =
 -}
 encodeListNotesRequestFilter : ListNotesRequestFilter -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeListNotesRequestFilter value =
-    Proto.Json.writeObject
-        [ Proto.Json.plainFields
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.plainFields
             [ ( "visibility", Proto.Json.implicitField VisibilityUnspecified encodeVisibility value.visibility )
             ]
-        , Proto.Json.checkedFields
-            [ ( "since", Proto.Json.writeOptional Proto.Json.Encode.timestamp value.since )
+        , Proto.Json.Encode.checkedFields
+            [ ( "since", Proto.Json.Encode.optional Proto.Json.Encode.timestamp value.since )
             ]
         ]
 
@@ -548,12 +548,12 @@ encodeCreateNoteRequest value =
 -}
 encodeUpdateNoteRequest : UpdateNoteRequest -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeUpdateNoteRequest value =
-    Proto.Json.writeObject
-        [ Proto.Json.plainFields
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.plainFields
             [ ( "note", Proto.Json.totalOptionalField encodeNote value.note )
             ]
-        , Proto.Json.checkedFields
-            [ ( "updateMask", Proto.Json.writeOptional Proto.Json.Encode.fieldMask value.updateMask )
+        , Proto.Json.Encode.checkedFields
+            [ ( "updateMask", Proto.Json.Encode.optional Proto.Json.Encode.fieldMask value.updateMask )
             ]
         ]
 

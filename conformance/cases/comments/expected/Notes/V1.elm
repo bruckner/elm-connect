@@ -417,8 +417,8 @@ encodeLegacy value =
 -}
 encodeNote : Note -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeNote value =
-    Proto.Json.writeObject
-        [ Proto.Json.plainFields
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.plainFields
             [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
             , ( "heading", Proto.Json.implicitField "" Json.Encode.string value.title )
             , ( "visibility", Proto.Json.implicitField VisibilityUnspecified encodeVisibility value.visibility )
@@ -427,27 +427,27 @@ encodeNote value =
             , ( "pinned", Maybe.map Json.Encode.bool value.pinned )
             , ( "subject", Proto.Json.implicitField "" Json.Encode.string value.subject )
             ]
-        , Proto.Json.checkedFields
-            [ ( "created", Proto.Json.writeOptional Proto.Json.Encode.timestamp value.created )
+        , Proto.Json.Encode.checkedFields
+            [ ( "created", Proto.Json.Encode.optional Proto.Json.Encode.timestamp value.created )
             ]
-        , Proto.Json.checkedFields (encodeNoteLastEvent value.lastEvent)
+        , Proto.Json.Encode.checkedFields (encodeNoteLastEvent value.lastEvent)
         ]
 
 
 {-| Encodes a [`NoteLastEvent`](#NoteLastEvent) as the members of its message's JSON object, or fails if the input contains a bad value.
 -}
-encodeNoteLastEvent : NoteLastEvent -> List ( String, Proto.Json.Field Proto.Error.Error )
+encodeNoteLastEvent : NoteLastEvent -> List ( String, Proto.Json.Encode.Field Proto.Error.Error )
 encodeNoteLastEvent value =
     case value of
         NoteLastEventUnset ->
             []
 
         NoteLastEventArchived member ->
-            [ ( "archived", Proto.Json.writeMember (Proto.Json.Encode.timestamp member) )
+            [ ( "archived", Proto.Json.Encode.member (Proto.Json.Encode.timestamp member) )
             ]
 
         NoteLastEventEdited member ->
-            [ ( "edited", Proto.Json.writeMember (encodeNoteEdit member) )
+            [ ( "edited", Proto.Json.Encode.member (encodeNoteEdit member) )
             ]
 
 
@@ -499,9 +499,9 @@ encodeListNotesRequest value =
 -}
 encodeListNotesResponse : ListNotesResponse -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeListNotesResponse value =
-    Proto.Json.writeObject
-        [ Proto.Json.checkedFields
-            [ ( "notes", Proto.Json.writeRepeated encodeNote value.notes )
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.checkedFields
+            [ ( "notes", Proto.Json.Encode.list encodeNote value.notes )
             ]
         ]
 
@@ -510,9 +510,9 @@ encodeListNotesResponse value =
 -}
 encodeCreateNoteRequest : CreateNoteRequest -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeCreateNoteRequest value =
-    Proto.Json.writeObject
-        [ Proto.Json.checkedFields
-            [ ( "note", Proto.Json.writeOptional encodeNote value.note )
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.checkedFields
+            [ ( "note", Proto.Json.Encode.optional encodeNote value.note )
             ]
         ]
 

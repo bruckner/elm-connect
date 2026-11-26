@@ -568,8 +568,8 @@ encodeUpdateMessageRequest value =
 -}
 encodeEverything : Everything -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeEverything value =
-    Proto.Json.writeObject
-        [ Proto.Json.plainFields
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.plainFields
             [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
             , ( "count", Proto.Json.implicitField 0 Json.Encode.int value.count )
             , ( "big", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.big )
@@ -585,17 +585,17 @@ encodeEverything value =
             , ( "maybeCount", Maybe.map Json.Encode.int value.maybeCount )
             , ( "maybeName", Maybe.map Json.Encode.string value.maybeName )
             ]
-        , Proto.Json.checkedFields
-            [ ( "at", Proto.Json.writeOptional Proto.Json.Encode.timestamp value.at )
-            , ( "wait", Proto.Json.writeOptional Proto.Json.Encode.duration value.wait )
-            , ( "mask", Proto.Json.writeOptional Proto.Json.Encode.fieldMask value.mask )
+        , Proto.Json.Encode.checkedFields
+            [ ( "at", Proto.Json.Encode.optional Proto.Json.Encode.timestamp value.at )
+            , ( "wait", Proto.Json.Encode.optional Proto.Json.Encode.duration value.wait )
+            , ( "mask", Proto.Json.Encode.optional Proto.Json.Encode.fieldMask value.mask )
             ]
-        , Proto.Json.plainFields
+        , Proto.Json.Encode.plainFields
             [ ( "limit", Maybe.map Json.Encode.int value.limit )
             , ( "label", Maybe.map Json.Encode.string value.label )
             , ( "inner", Proto.Json.totalOptionalField encodeInner value.inner )
             ]
-        , Proto.Json.plainFields (encodeEverythingChoice value.choice)
+        , Proto.Json.Encode.plainFields (encodeEverythingChoice value.choice)
         ]
 
 
@@ -670,12 +670,12 @@ encodeResource value =
 -}
 encodeUpdateResourceRequest : UpdateResourceRequest -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeUpdateResourceRequest value =
-    Proto.Json.writeObject
-        [ Proto.Json.plainFields
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.plainFields
             [ ( "resource", Proto.Json.totalOptionalField encodeResource value.resource )
             ]
-        , Proto.Json.checkedFields
-            [ ( "updateMask", Proto.Json.writeOptional Proto.Json.Encode.fieldMask value.updateMask )
+        , Proto.Json.Encode.checkedFields
+            [ ( "updateMask", Proto.Json.Encode.optional Proto.Json.Encode.fieldMask value.updateMask )
             ]
         ]
 

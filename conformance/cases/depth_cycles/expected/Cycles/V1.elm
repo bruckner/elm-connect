@@ -1274,19 +1274,19 @@ encodeWide_ (Wide_ value) =
 -}
 encodeEnvelope : Envelope -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeEnvelope value =
-    Proto.Json.writeObject
-        [ Proto.Json.checkedFields
-            [ ( "payload", Proto.Json.writeOptional Proto.Any.encode value.payload )
-            , ( "replies", Proto.Json.writeDeeper (Proto.Json.writeRepeated encodeEnvelope_ value.replies) )
-            , ( "data", Proto.Json.writeOptional Proto.Json.Encode.struct value.data )
-            , ( "value", Proto.Json.writeOptional Proto.Json.Encode.value value.value )
-            , ( "list", Proto.Json.writeOptional Proto.Json.Encode.listValue value.list )
-            , ( "values", Proto.Json.writeDict identity Proto.Json.Encode.value value.values )
-            , ( "structs", Proto.Json.writeDict identity Proto.Json.Encode.struct value.structs )
-            , ( "lists", Proto.Json.writeDict identity Proto.Json.Encode.listValue value.lists )
-            , ( "sealed", Proto.Json.writeDeeper (Proto.Json.writeOptional encodeSealed value.sealed) )
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.checkedFields
+            [ ( "payload", Proto.Json.Encode.optional Proto.Any.encode value.payload )
+            , ( "replies", Proto.Json.Encode.deeper (Proto.Json.Encode.list encodeEnvelope_ value.replies) )
+            , ( "data", Proto.Json.Encode.optional Proto.Json.Encode.struct value.data )
+            , ( "value", Proto.Json.Encode.optional Proto.Json.Encode.value value.value )
+            , ( "list", Proto.Json.Encode.optional Proto.Json.Encode.listValue value.list )
+            , ( "values", Proto.Json.Encode.dict identity Proto.Json.Encode.value value.values )
+            , ( "structs", Proto.Json.Encode.dict identity Proto.Json.Encode.struct value.structs )
+            , ( "lists", Proto.Json.Encode.dict identity Proto.Json.Encode.listValue value.lists )
+            , ( "sealed", Proto.Json.Encode.deeper (Proto.Json.Encode.optional encodeSealed value.sealed) )
             ]
-        , Proto.Json.checkedFields (encodeEnvelopeAside value.aside)
+        , Proto.Json.Encode.checkedFields (encodeEnvelopeAside value.aside)
         ]
 
 
@@ -1299,14 +1299,14 @@ encodeEnvelope_ (Envelope_ value) =
 
 {-| Encodes an [`EnvelopeAside`](#EnvelopeAside) as the members of its message's JSON object, or fails if the input contains a bad value.
 -}
-encodeEnvelopeAside : EnvelopeAside -> List ( String, Proto.Json.Field Proto.Error.Error )
+encodeEnvelopeAside : EnvelopeAside -> List ( String, Proto.Json.Encode.Field Proto.Error.Error )
 encodeEnvelopeAside value =
     case value of
         EnvelopeAsideUnset ->
             []
 
         EnvelopeAsideNote member ->
-            [ ( "note", Proto.Json.writeDeeper (Proto.Json.writeMember (encodeSealed member)) )
+            [ ( "note", Proto.Json.Encode.deeper (Proto.Json.Encode.member (encodeSealed member)) )
             ]
 
 
@@ -1314,9 +1314,9 @@ encodeEnvelopeAside value =
 -}
 encodeSealed : Sealed -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeSealed value =
-    Proto.Json.writeObject
-        [ Proto.Json.checkedFields
-            [ ( "payload", Proto.Json.writeOptional Proto.Any.encode value.payload )
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.checkedFields
+            [ ( "payload", Proto.Json.Encode.optional Proto.Any.encode value.payload )
             ]
         ]
 
@@ -1347,9 +1347,9 @@ encodeLibrary value =
 -}
 encodeCard : Card -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeCard value =
-    Proto.Json.writeObject
-        [ Proto.Json.checkedFields
-            [ ( "meta", Proto.Json.writeOptional encodeMeta value.meta )
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.checkedFields
+            [ ( "meta", Proto.Json.Encode.optional encodeMeta value.meta )
             ]
         ]
 
@@ -1358,9 +1358,9 @@ encodeCard value =
 -}
 encodeMeta : Meta -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeMeta value =
-    Proto.Json.writeObject
-        [ Proto.Json.checkedFields
-            [ ( "data", Proto.Json.writeOptional Proto.Json.Encode.struct value.data )
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.checkedFields
+            [ ( "data", Proto.Json.Encode.optional Proto.Json.Encode.struct value.data )
             ]
         ]
 
@@ -1369,9 +1369,9 @@ encodeMeta value =
 -}
 encodeLetter : Letter -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeLetter value =
-    Proto.Json.writeObject
-        [ Proto.Json.checkedFields
-            [ ( "sealed", Proto.Json.writeDeeper (Proto.Json.writeOptional encodeSealed value.sealed) )
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.checkedFields
+            [ ( "sealed", Proto.Json.Encode.deeper (Proto.Json.Encode.optional encodeSealed value.sealed) )
             ]
         ]
 

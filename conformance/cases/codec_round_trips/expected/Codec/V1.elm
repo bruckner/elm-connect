@@ -1056,73 +1056,73 @@ encodeMaps value =
 -}
 encodeChoice : Choice -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeChoice value =
-    Proto.Json.writeObject
-        [ Proto.Json.plainFields
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.plainFields
             [ ( "before", Proto.Json.implicitField "" Json.Encode.string value.before )
             , ( "after", Proto.Json.implicitField 0 Json.Encode.int value.after )
             ]
-        , Proto.Json.checkedFields (encodeChoicePick value.pick)
+        , Proto.Json.Encode.checkedFields (encodeChoicePick value.pick)
         ]
 
 
 {-| Encodes a [`ChoicePick`](#ChoicePick) as the members of its message's JSON object, or fails if the input contains a bad value.
 -}
-encodeChoicePick : ChoicePick -> List ( String, Proto.Json.Field Proto.Error.Error )
+encodeChoicePick : ChoicePick -> List ( String, Proto.Json.Encode.Field Proto.Error.Error )
 encodeChoicePick value =
     case value of
         ChoicePickUnset ->
             []
 
         ChoicePickText member ->
-            [ ( "text", Proto.Json.writeMember (Proto.Json.Encode.succeed (Json.Encode.string member)) )
+            [ ( "text", Proto.Json.Encode.member (Proto.Json.Encode.succeed (Json.Encode.string member)) )
             ]
 
         ChoicePickBig member ->
-            [ ( "big", Proto.Json.writeMember (Proto.Json.Encode.succeed (Proto.Json.encodeInt64 member)) )
+            [ ( "big", Proto.Json.Encode.member (Proto.Json.Encode.succeed (Proto.Json.encodeInt64 member)) )
             ]
 
         ChoicePickRatio member ->
-            [ ( "ratio", Proto.Json.writeMember (Proto.Json.Encode.succeed (Proto.Json.encodeFloat member)) )
+            [ ( "ratio", Proto.Json.Encode.member (Proto.Json.Encode.succeed (Proto.Json.encodeFloat member)) )
             ]
 
         ChoicePickFlag member ->
-            [ ( "flag", Proto.Json.writeMember (Proto.Json.Encode.succeed (Json.Encode.bool member)) )
+            [ ( "flag", Proto.Json.Encode.member (Proto.Json.Encode.succeed (Json.Encode.bool member)) )
             ]
 
         ChoicePickData member ->
-            [ ( "data", Proto.Json.writeMember (Proto.Json.Encode.succeed (Proto.Json.encodeBytes member)) )
+            [ ( "data", Proto.Json.Encode.member (Proto.Json.Encode.succeed (Proto.Json.encodeBytes member)) )
             ]
 
         ChoicePickKind member ->
-            [ ( "kind", Proto.Json.writeMember (Proto.Json.Encode.succeed (encodeKind member)) )
+            [ ( "kind", Proto.Json.Encode.member (Proto.Json.Encode.succeed (encodeKind member)) )
             ]
 
         ChoicePickLeaf member ->
-            [ ( "leaf", Proto.Json.writeMember (encodeLeaf member) )
+            [ ( "leaf", Proto.Json.Encode.member (encodeLeaf member) )
             ]
 
         ChoicePickNothing ->
-            [ ( "nothing", Proto.Json.writeMember (Proto.Json.Encode.succeed (Json.Encode.object [])) )
+            [ ( "nothing", Proto.Json.Encode.member (Proto.Json.Encode.succeed (Json.Encode.object [])) )
             ]
 
         ChoicePickJson member ->
-            [ ( "json", Proto.Json.writeMember (Proto.Json.Encode.value member) )
+            [ ( "json", Proto.Json.Encode.member (Proto.Json.Encode.value member) )
             ]
 
         ChoicePickAt member ->
-            [ ( "at", Proto.Json.writeMember (Proto.Json.Encode.timestamp member) )
+            [ ( "at", Proto.Json.Encode.member (Proto.Json.Encode.timestamp member) )
             ]
 
         ChoicePickWrapped member ->
-            [ ( "wrapped", Proto.Json.writeMember (Proto.Json.Encode.succeed (Json.Encode.int member)) )
+            [ ( "wrapped", Proto.Json.Encode.member (Proto.Json.Encode.succeed (Json.Encode.int member)) )
             ]
 
         ChoicePickTwoWords member ->
-            [ ( "twoWords", Proto.Json.writeMember (Proto.Json.Encode.succeed (Json.Encode.string member)) )
+            [ ( "twoWords", Proto.Json.Encode.member (Proto.Json.Encode.succeed (Json.Encode.string member)) )
             ]
 
         ChoicePickNone ->
-            [ ( "none", Proto.Json.writeMember (Proto.Json.Encode.succeed Json.Encode.null) )
+            [ ( "none", Proto.Json.Encode.member (Proto.Json.Encode.succeed Json.Encode.null) )
             ]
 
 
@@ -1231,33 +1231,33 @@ encodeTreeLink value =
 -}
 encodeWellKnown : WellKnown -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeWellKnown value =
-    Proto.Json.writeObject
-        [ Proto.Json.checkedFields
-            [ ( "any", Proto.Json.writeOptional Proto.Any.encode value.any )
-            , ( "struct", Proto.Json.writeOptional Proto.Json.Encode.struct value.struct )
-            , ( "list", Proto.Json.writeOptional Proto.Json.Encode.listValue value.list )
-            , ( "value", Proto.Json.writeOptional Proto.Json.Encode.value value.value )
-            , ( "timestamp", Proto.Json.writeOptional Proto.Json.Encode.timestamp value.timestamp )
-            , ( "duration", Proto.Json.writeOptional Proto.Json.Encode.duration value.duration )
-            , ( "mask", Proto.Json.writeOptional Proto.Json.Encode.fieldMask value.mask )
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.checkedFields
+            [ ( "any", Proto.Json.Encode.optional Proto.Any.encode value.any )
+            , ( "struct", Proto.Json.Encode.optional Proto.Json.Encode.struct value.struct )
+            , ( "list", Proto.Json.Encode.optional Proto.Json.Encode.listValue value.list )
+            , ( "value", Proto.Json.Encode.optional Proto.Json.Encode.value value.value )
+            , ( "timestamp", Proto.Json.Encode.optional Proto.Json.Encode.timestamp value.timestamp )
+            , ( "duration", Proto.Json.Encode.optional Proto.Json.Encode.duration value.duration )
+            , ( "mask", Proto.Json.Encode.optional Proto.Json.Encode.fieldMask value.mask )
             ]
-        , Proto.Json.plainFields
+        , Proto.Json.Encode.plainFields
             [ ( "empty", Just (Proto.Json.encodeEmpty value.empty) )
             ]
-        , Proto.Json.checkedFields
-            [ ( "anys", Proto.Json.writeRepeated Proto.Any.encode value.anys )
-            , ( "values", Proto.Json.writeRepeated Proto.Json.Encode.value value.values )
-            , ( "valueMap", Proto.Json.writeDict identity Proto.Json.Encode.value value.valueMap )
-            , ( "timestamps", Proto.Json.writeRepeated Proto.Json.Encode.timestamp value.timestamps )
-            , ( "durations", Proto.Json.writeRepeated Proto.Json.Encode.duration value.durations )
+        , Proto.Json.Encode.checkedFields
+            [ ( "anys", Proto.Json.Encode.list Proto.Any.encode value.anys )
+            , ( "values", Proto.Json.Encode.list Proto.Json.Encode.value value.values )
+            , ( "valueMap", Proto.Json.Encode.dict identity Proto.Json.Encode.value value.valueMap )
+            , ( "timestamps", Proto.Json.Encode.list Proto.Json.Encode.timestamp value.timestamps )
+            , ( "durations", Proto.Json.Encode.list Proto.Json.Encode.duration value.durations )
             ]
-        , Proto.Json.plainFields
+        , Proto.Json.Encode.plainFields
             [ ( "empties", Proto.Json.repeatedField Proto.Json.encodeEmpty value.empties )
             ]
-        , Proto.Json.checkedFields
-            [ ( "structs", Proto.Json.writeDict String.fromInt Proto.Json.Encode.struct value.structs )
+        , Proto.Json.Encode.checkedFields
+            [ ( "structs", Proto.Json.Encode.dict String.fromInt Proto.Json.Encode.struct value.structs )
             ]
-        , Proto.Json.plainFields
+        , Proto.Json.Encode.plainFields
             [ ( "nullValue", Proto.Json.implicitField () Proto.Json.encodeNullValue value.nullValue )
             , ( "nullValues", Proto.Json.repeatedField Proto.Json.encodeNullValue value.nullValues )
             , ( "nullMap", Proto.Json.dictField identity Proto.Json.encodeNullValue value.nullMap )
@@ -1316,30 +1316,30 @@ encodeLeaf value =
 -}
 encodeEverything : Everything -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeEverything value =
-    Proto.Json.writeObject
-        [ Proto.Json.plainFields
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.plainFields
             [ ( "scalars", Proto.Json.totalOptionalField encodeScalars value.scalars )
             , ( "optionals", Proto.Json.totalOptionalField encodeOptionals value.optionals )
             , ( "repeated", Proto.Json.totalOptionalField encodeRepeated value.repeated )
             , ( "maps", Proto.Json.totalOptionalField encodeMaps value.maps )
             ]
-        , Proto.Json.checkedFields
-            [ ( "choice", Proto.Json.writeOptional encodeChoice value.choice )
+        , Proto.Json.Encode.checkedFields
+            [ ( "choice", Proto.Json.Encode.optional encodeChoice value.choice )
             ]
-        , Proto.Json.plainFields
+        , Proto.Json.Encode.plainFields
             [ ( "names", Proto.Json.totalOptionalField encodeNames value.names )
             , ( "outer", Proto.Json.totalOptionalField encodeOuter value.outer )
             , ( "tree", Proto.Json.totalOptionalField encodeTree value.tree )
             ]
-        , Proto.Json.checkedFields
-            [ ( "wellKnown", Proto.Json.writeDeeper (Proto.Json.writeOptional encodeWellKnown value.wellKnown) )
+        , Proto.Json.Encode.checkedFields
+            [ ( "wellKnown", Proto.Json.Encode.deeper (Proto.Json.Encode.optional encodeWellKnown value.wellKnown) )
             ]
-        , Proto.Json.plainFields
+        , Proto.Json.Encode.plainFields
             [ ( "wrappers", Proto.Json.totalOptionalField encodeWrappers value.wrappers )
             , ( "across", Proto.Json.totalOptionalField encodeAcross value.across )
             ]
-        , Proto.Json.checkedFields
-            [ ( "more", Proto.Json.writeDeeper (Proto.Json.writeRepeated encodeEverything_ value.more) )
+        , Proto.Json.Encode.checkedFields
+            [ ( "more", Proto.Json.Encode.deeper (Proto.Json.Encode.list encodeEverything_ value.more) )
             ]
         ]
 

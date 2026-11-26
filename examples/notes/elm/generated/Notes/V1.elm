@@ -416,30 +416,30 @@ encodeVisibility value =
 -}
 encodeNote : Note -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeNote value =
-    Proto.Json.writeObject
-        [ Proto.Json.plainFields
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.plainFields
             [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
             , ( "title", Proto.Json.implicitField "" Json.Encode.string value.title )
             , ( "body", Proto.Json.implicitField "" Json.Encode.string value.body )
             , ( "tags", Proto.Json.repeatedField Json.Encode.string value.tags )
             , ( "visibility", Proto.Json.implicitField VisibilityUnspecified encodeVisibility value.visibility )
             ]
-        , Proto.Json.checkedFields
-            [ ( "createTime", Proto.Json.writeOptional Proto.Json.Encode.timestamp value.createTime )
-            , ( "updateTime", Proto.Json.writeOptional Proto.Json.Encode.timestamp value.updateTime )
-            , ( "ttl", Proto.Json.writeOptional Proto.Json.Encode.duration value.ttl )
+        , Proto.Json.Encode.checkedFields
+            [ ( "createTime", Proto.Json.Encode.optional Proto.Json.Encode.timestamp value.createTime )
+            , ( "updateTime", Proto.Json.Encode.optional Proto.Json.Encode.timestamp value.updateTime )
+            , ( "ttl", Proto.Json.Encode.optional Proto.Json.Encode.duration value.ttl )
             ]
-        , Proto.Json.plainFields
+        , Proto.Json.Encode.plainFields
             [ ( "metadata", Proto.Json.dictField identity Json.Encode.string value.metadata )
             ]
-        , Proto.Json.checkedFields
-            [ ( "extra", Proto.Json.writeOptional Proto.Json.Encode.struct value.extra )
-            , ( "attachment", Proto.Json.writeOptional Proto.Any.encode value.attachment )
+        , Proto.Json.Encode.checkedFields
+            [ ( "extra", Proto.Json.Encode.optional Proto.Json.Encode.struct value.extra )
+            , ( "attachment", Proto.Json.Encode.optional Proto.Any.encode value.attachment )
             ]
-        , Proto.Json.plainFields
+        , Proto.Json.Encode.plainFields
             [ ( "revision", Maybe.map Proto.Json.encodeInt64 value.revision )
             ]
-        , Proto.Json.plainFields (encodeNoteKind value.kind)
+        , Proto.Json.Encode.plainFields (encodeNoteKind value.kind)
         ]
 
 
@@ -489,11 +489,11 @@ encodeListNotesRequest value =
 -}
 encodeListNotesResponse : ListNotesResponse -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeListNotesResponse value =
-    Proto.Json.writeObject
-        [ Proto.Json.checkedFields
-            [ ( "notes", Proto.Json.writeDeeper (Proto.Json.writeRepeated encodeNote value.notes) )
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.checkedFields
+            [ ( "notes", Proto.Json.Encode.deeper (Proto.Json.Encode.list encodeNote value.notes) )
             ]
-        , Proto.Json.plainFields
+        , Proto.Json.Encode.plainFields
             [ ( "nextPageToken", Proto.Json.implicitField "" Json.Encode.string value.nextPageToken )
             ]
         ]
@@ -503,9 +503,9 @@ encodeListNotesResponse value =
 -}
 encodeCreateNoteRequest : CreateNoteRequest -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeCreateNoteRequest value =
-    Proto.Json.writeObject
-        [ Proto.Json.checkedFields
-            [ ( "note", Proto.Json.writeDeeper (Proto.Json.writeOptional encodeNote value.note) )
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.checkedFields
+            [ ( "note", Proto.Json.Encode.deeper (Proto.Json.Encode.optional encodeNote value.note) )
             ]
         ]
 
@@ -514,10 +514,10 @@ encodeCreateNoteRequest value =
 -}
 encodeUpdateNoteRequest : UpdateNoteRequest -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeUpdateNoteRequest value =
-    Proto.Json.writeObject
-        [ Proto.Json.checkedFields
-            [ ( "note", Proto.Json.writeDeeper (Proto.Json.writeOptional encodeNote value.note) )
-            , ( "updateMask", Proto.Json.writeOptional Proto.Json.Encode.fieldMask value.updateMask )
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.checkedFields
+            [ ( "note", Proto.Json.Encode.deeper (Proto.Json.Encode.optional encodeNote value.note) )
+            , ( "updateMask", Proto.Json.Encode.optional Proto.Json.Encode.fieldMask value.updateMask )
             ]
         ]
 
