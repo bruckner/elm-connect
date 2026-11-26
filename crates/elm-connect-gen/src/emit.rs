@@ -145,12 +145,13 @@
 //!   (design §3.6).
 //! - A field or member whose JSON name differs from its proto name is
 //!   read under either, and an object holding both fails (design §3.4).
-//! - The well-known types map to `Time.Posix`, the runtime's `Duration`,
+//! - The well-known types map to `Time.Posix`, `Proto.Duration.Duration`,
 //!   `List String` (field masks), `()` (`Empty`), `Proto.Any.Any`, holding
 //!   its message's binary,
 //!   `Dict String Proto.Value.Value` (`Struct`), `List Proto.Value.Value`
-//!   (`ListValue`), `Proto.Value.Value` (`Value`), written qualified so
-//!   that they reserve no name, and the wrappers' scalars (design §3.5).
+//!   (`ListValue`), `Proto.Value.Value` (`Value`), every runtime type
+//!   written qualified so that none reserves a name, and the wrappers'
+//!   scalars (design §3.5).
 //!   All but `Empty` are held with presence, a `Value`'s `Nothing` being
 //!   absent and `Just ValueNull` a JSON `null`; `Empty`
 //!   has no presence, and a oneof member of it is a constructor without
@@ -251,8 +252,7 @@ const ELM_BYTES: &str = "Bytes";
 const PROTO_BYTES: &str = "Proto.Bytes";
 /// The runtime's unknown fields, held under `unknown_fields=keep`.
 const PROTO_UNKNOWN: &str = "Proto.Unknown";
-/// The runtime package's `Duration`, imported as
-/// `import Proto.Duration exposing (Duration)`.
+/// The runtime package's `Duration`, written `Proto.Duration.Duration`.
 const PROTO_DURATION: &str = "Proto.Duration";
 /// The runtime's `google.protobuf.Value`, `Struct` and `ListValue` as Elm data.
 const PROTO_VALUE: &str = "Proto.Value";
@@ -641,7 +641,7 @@ struct Emitter {
     /// Each module imported, with the types its import exposes.
     imports: BTreeMap<String, BTreeSet<String>>,
     /// Every name of a library the code refers to unqualified, a default
-    /// import's or an exposed type's, with the module it comes from.
+    /// import's or `Dict`, with the module it comes from.
     unqualified: BTreeMap<(Kind, String), &'static str>,
     /// How the scalars the options govern are held where a field does not
     /// say.
@@ -859,21 +859,18 @@ impl Emitter {
         qualified(module, name)
     }
 
-    /// The library type `name args`, unqualified, exposed by the module's
-    /// import of `module`.
-    fn exposed_type(
-        &mut self,
-        module: &'static str,
-        name: &str,
-        args: impl IntoIterator<Item = Type>,
-    ) -> Type {
+    /// elm/core's `Dict key value`, unqualified, exposed by the module's
+    /// import of `Dict`. It is the one type generated code imports
+    /// exposed; every runtime type is written qualified, so that none
+    /// reserves a name in a generated module.
+    fn dict(&mut self, key: Type, value: Type) -> Type {
         self.imports
-            .entry(module.to_owned())
+            .entry(CORE_DICT.to_owned())
             .or_default()
-            .insert(name.to_owned());
+            .insert("Dict".to_owned());
         self.unqualified
-            .insert((Kind::Type, name.to_owned()), module);
-        ty(name, args)
+            .insert((Kind::Type, "Dict".to_owned()), CORE_DICT);
+        ty("Dict", [key, value])
     }
 
     /// `name`, one of elm/core's [`DEFAULT_IMPORTS`], which the code then

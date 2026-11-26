@@ -988,10 +988,10 @@ impl Problem {
                  `{home}.{name}` as `{name}`."
             ),
             format!(
-                "Generated code refers to some types and constructors of elm/core and of the \
-                 runtime unqualified, as Elm code conventionally does, so a {kind} of the same \
-                 name in the same module takes their place and the module does not compile. \
-                 Rename it with {rename}."
+                "Generated code refers to some types and constructors of elm/core \
+                 unqualified, as Elm code conventionally does, so a {kind} of the same name in \
+                 the same module takes their place and the module does not compile. Rename it \
+                 with {rename}."
             ),
             site.into_iter().collect(),
         )

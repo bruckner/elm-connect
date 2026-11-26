@@ -728,7 +728,7 @@ impl Emitter {
                 Some(Text::Fn(self.reference(("Proto.Timestamp", "toString"))))
             }
             ValueShape::Present(Present::Duration) => {
-                Some(Text::Fn(self.reference(("Proto.Duration", "toString"))))
+                Some(Text::Fn(self.reference((PROTO_ROUTE, "durationText"))))
             }
             _ => None,
         }
