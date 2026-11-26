@@ -105,8 +105,8 @@ License; protobuf's `LICENSE` is beside it (`THIRD_PARTY.md`).
 groups. A group's comment says why its cases fail and classifies them:
 
 - **Design choice**: elm-connect does something on purpose that the
-  suite disagrees with, and the documentation says so (a `Timestamp` is
-  a millisecond `Time.Posix`, for one).
+  suite disagrees with, and the documentation says so (an unknown enum
+  number read as the zero value, for one).
 - **Fix candidate**: the runtime or the generator could do what the
   suite asks (most were inputs the JSON decoders accept and the
   specification refuses). None remain since 2026-10-25.

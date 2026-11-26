@@ -1020,7 +1020,8 @@ whether the write can be refused:
 
 A refusal is `Proto.Error.BadValue { typeName, path, message }` for a
 value proto3 JSON has no form for: a `Timestamp` outside years 1 to
-9999, a `FieldMask` path with no lowerCamelCase form, or a number in a
+9999 or with nanoseconds out of form, a `Duration` that is not valid, a
+`FieldMask` path with no lowerCamelCase form, or a number in a
 `Value`, `Struct` or `ListValue` that is NaN or infinite. `path` leads
 from the message to the value by JSON field names, list indexes and map
 keys (`[ "events", "3", "createTime" ]`); `message` says which of these
@@ -1035,10 +1036,12 @@ break code that handles it: when a message gains a refusable field, at
 any depth, its encoder becomes `Encoder Proto.Error.Error`, code that
 writes it with `encode` or `encodeWith` compiles as before, and only an
 `encodeTotal` of it stops compiling, at the place the new failure has to
-be handled. A `Duration` the application builds is always valid; one
-read from protobuf binary is held as the peer wrote it and is refused
-when it is not valid (past protobuf's range, or its nanoseconds of a
-second or more or of the other sign than its seconds).
+be handled. A `Timestamp` or `Duration` the application builds is
+always valid; one read from protobuf binary is held as the peer wrote
+it and is refused when it is not valid (a timestamp outside years 1 to
+9999 or with nanoseconds outside 0 to 999,999,999; a duration past
+protobuf's range, or its nanoseconds of a second or more or of the
+other sign than its seconds).
 
 Over a call the same check runs before anything is sent: over a JSON
 protocol the request's JSON is written first, and a request with no JSON

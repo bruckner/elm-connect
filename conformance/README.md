@@ -184,8 +184,8 @@ same test file samples requests for every binding of every method of
 rule) from a fixed seed: strings with what a URL, JSON or an Elm literal
 must escape, integers at their bounds and past 2^53, floats' special
 values, messages unset and set but empty, repeated and map fields,
-wrappers at their defaults, timestamps (to the millisecond, which
-`Time.Posix` holds), durations and field masks. Each request's JSON is
+wrappers at their defaults, timestamps (whole, and to the millisecond,
+microsecond and nanosecond), durations and field masks. Each request's JSON is
 written by prost-reflect, usually without defaults and sometimes with
 them or under proto field names. The reference gives each one's HTTP
 request, and the test writes the samples as Elm data at test time

@@ -1,4 +1,4 @@
-module Snippets.Migrating exposing (client, clientFor, color, describe, extraJson, fetch, getNote, getNoteBinding, noteFields, procedure, retryable, withColor)
+module Snippets.Migrating exposing (byInstant, client, clientFor, color, createdText, describe, extraJson, fetch, getNote, getNoteBinding, newestFirst, noteFields, procedure, retryable, touch, withColor)
 
 {-| docs/migrating.md's code: what a 0.1 application writes in 0.2.
 
@@ -18,6 +18,7 @@ import Proto.Http
 import Proto.Message
 import Proto.Method
 import Proto.Registry
+import Proto.Timestamp
 import Proto.Value exposing (Value(..))
 import Rpc
 import Rpc.Call
@@ -27,6 +28,7 @@ import Rpc.Error
 import Rpc.Protocol
 import Rpc.Retry
 import Rpc.Trace
+import Time
 
 
 
@@ -302,3 +304,82 @@ extraJson note =
 
 
 -- endregion extra
+{-
+   -- region before-timestamps
+   createdText : Time.Zone -> Notes.V1.Note -> String
+   createdText zone note =
+       case note.createTime of
+           Just posix ->
+               clock zone posix
+
+           Nothing ->
+               ""
+
+
+   touch : Time.Posix -> Notes.V1.Note -> Notes.V1.Note
+   touch now note =
+       { note | updateTime = Just now }
+
+
+   newestFirst : List Notes.V1.Note -> List Notes.V1.Note
+   newestFirst =
+       List.sortBy (.updateTime >> Maybe.map Time.posixToMillis >> Maybe.withDefault 0)
+           >> List.reverse
+
+
+   byInstant : List Notes.V1.Note -> Dict.Dict String Notes.V1.Note
+   byInstant notes =
+       notes
+           |> List.filterMap (\note -> Maybe.map (\t -> ( String.fromInt (Time.posixToMillis t), note )) note.createTime)
+           |> Dict.fromList
+   -- endregion before-timestamps
+-}
+-- region timestamps
+
+
+createdText : Time.Zone -> Notes.V1.Note -> String
+createdText zone note =
+    case note.createTime of
+        Just created ->
+            clock zone (Proto.Timestamp.toPosix created)
+
+        Nothing ->
+            ""
+
+
+touch : Time.Posix -> Notes.V1.Note -> Notes.V1.Note
+touch now note =
+    { note | updateTime = Just (Proto.Timestamp.fromPosix now) }
+
+
+newestFirst : List Notes.V1.Note -> List Notes.V1.Note
+newestFirst =
+    List.sortBy (.updateTime >> Maybe.map instantKey >> Maybe.withDefault ( 0, 0 ))
+        >> List.reverse
+
+
+byInstant : List Notes.V1.Note -> Dict.Dict ( Int, Int ) Notes.V1.Note
+byInstant notes =
+    notes
+        |> List.filterMap (\note -> Maybe.map (\t -> ( instantKey t, note )) note.createTime)
+        |> Dict.fromList
+
+
+instantKey : Proto.Timestamp.Timestamp -> ( Int, Int )
+instantKey timestamp =
+    let
+        parts =
+            Proto.Timestamp.toSecondsAndNanos timestamp
+    in
+    ( parts.seconds, parts.nanos )
+
+
+
+-- endregion timestamps
+
+
+{-| An application's own way of showing a time of day.
+-}
+clock : Time.Zone -> Time.Posix -> String
+clock zone posix =
+    String.fromInt (Time.toHour zone posix) ++ ":" ++ String.padLeft 2 '0' (String.fromInt (Time.toMinute zone posix))

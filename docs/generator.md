@@ -36,7 +36,7 @@ otherwise.
 | `map<bool, V>` | `List ( Bool, V )`, since `Bool` is not `comparable` |
 | `enum Visibility` | `type Visibility = VisibilityUnspecified \| VisibilityPrivate \| …`: one constructor per value, the type's name in front of the value's with the enum's own prefix dropped (`VISIBILITY_PRIVATE` → `VisibilityPrivate`), an alias folded into its first value; with it `encodeVisibility`, `decodeVisibility` and `enumVisibility : Proto.Enum.Enum Visibility`. An unknown number decodes as the zero value; an unknown name fails, or under `enum_unknown=zero` is the zero value too |
 | `oneof kind { string text = 11; string link = 12; }` | a field `kind : NoteKind`, with `type NoteKind = NoteKindUnset \| NoteKindText String \| NoteKindLink String`; a `google.protobuf.Empty` member has no argument |
-| `google.protobuf.Timestamp` | `Maybe Time.Posix` (`Time.Posix` in a list, map or oneof). Code that held instants as RFC 3339 strings, from another generator or by hand, and keyed a `Dict` or a DOM id with them or sorted them, needs another key, since a `Time.Posix` is not `comparable`: `Time.posixToMillis` gives an `Int` to key with (through `String.fromInt` for an id) and to `compare`, which orders by the instant, where the strings ordered by their text |
+| `google.protobuf.Timestamp` | `Maybe Proto.Timestamp.Timestamp` (bare in a list, map or oneof): seconds and nanoseconds, exact; `Proto.Timestamp.toPosix` and `fromPosix` convert at the edges. One read from protobuf binary is held as the peer wrote it, which may not be a valid timestamp; `Proto.Timestamp.isValid` says, and a proto3 JSON write refuses one that is not. A timestamp is not `comparable`, and its text does not sort by the instant (it has 0, 3, 6 or 9 fractional digits), so code that keyed a `Dict` or sorted by RFC 3339 strings uses the fields `Proto.Timestamp.toSecondsAndNanos` gives |
 | `google.protobuf.Duration` | `Maybe Proto.Duration.Duration` (bare in a list, map or oneof): seconds and nanoseconds, exact. One read from protobuf binary is held as the peer wrote it, which may not be a valid duration; `Proto.Duration.isValid` says, and a proto3 JSON write refuses one that is not |
 | `google.protobuf.FieldMask` | `Maybe (List String)`, the paths by proto name: `Just [ "create_time" ]`. A path is not checked: a camelCase one (`"createTime"`) passes through unchanged, and goes out as the same JSON, but a mask the client decodes holds proto names, so the two do not compare equal |
 | `google.protobuf.Empty` | `()`, as a field and as a request or response |
@@ -51,7 +51,7 @@ otherwise.
 | a nested message or enum (`Outer.Inner`) | a type named by its path, `OuterInner`, in the package's module |
 | a type of another generated package | the type from that package's module, `Users.V1.User` |
 | `service NotesService` | a module `Notes.V1.NotesService`: per unary method a call, `getNote : Notes.V1.GetNoteRequest -> Rpc.Call Rpc.Json Notes.V1.GetNoteRequest Notes.V1.Note`; per binding of its `google.api.http` rule a route function, `routeGetNote0 : Notes.V1.GetNoteRequest -> Proto.Route.Route` (for a method with a body that holds a value a JSON write can refuse, such as an `Any`, a `Timestamp` or a `Value`, a function of the request and the JSON the send writes, `Notes.V1.CreateNoteRequest -> Json.Encode.Value -> Proto.Route.Route`), which the call holds ([transcoding.md](transcoding.md)); and its method descriptor, `descriptorGetNote`, the proto's facts about it as data, which the call does not hold |
-| a request message whose bindings put fields in the query | `queryOfListNotesRequest : ListNotesRequest -> List ( String, String )` in its package's module, the query parameters its route functions share. It exists when a service generated in the same run binds the message's fields to the query, so a service's module and its request messages' module generated in separate runs can disagree, and the compiler reports the missing `queryOf`: generate a service with the packages it uses in one run. A `Duration` parameter's text is its `Proto.Duration.toString`, which has none for a duration that is not valid: a singular one is then left out, as an unset one is (`Maybe.andThen`), and a repeated parameter leaves that element out and keeps the rest (`List.filterMap`). A send over JSON refuses such a request before it builds the route |
+| a request message whose bindings put fields in the query | `queryOfListNotesRequest : ListNotesRequest -> List ( String, String )` in its package's module, the query parameters its route functions share. It exists when a service generated in the same run binds the message's fields to the query, so a service's module and its request messages' module generated in separate runs can disagree, and the compiler reports the missing `queryOf`: generate a service with the packages it uses in one run. A `Timestamp` or `Duration` parameter's text is its type's `toString`, which has none for a value that is not valid: a singular one is then left out, as an unset one is (`Maybe.andThen`), and a repeated parameter leaves that element out and keeps the rest (`List.filterMap`). A send over JSON refuses such a request before it builds the route |
 | a streaming method | a diagnostic; under `streaming=skip`, left out with a warning |
 | comments and `deprecated` | each type, call and descriptor is documented with the proto's comment for it, its one-line declaration, and `Deprecated.` where the proto says so; a call also names its Connect path, its HTTP bindings and its codecs (`Codecs: JSON.`), and a package's module carries the comment on its `package` statement |
 | `google.protobuf` itself | nothing: the well-known types map to the runtime |
@@ -82,10 +82,10 @@ The Elm names follow from the proto's, by a fixed rule:
   whole nesting path, whichever it starts with, and takes the type's
   name in front: in `message Note { enum Kind { … } }`, both
   `KIND_DRAFT` and `NOTE_KIND_DRAFT` become `NoteKindDraft`.
-- The runtime's types are written qualified (`Proto.Duration.Duration`,
-  `Proto.Any.Any`, `Proto.Value.Value`), so a message may share a name
-  with one: a `message Duration` holding a `google.protobuf.Duration`
-  generates as it is. Only elm/core's names that generated code writes
+- The runtime's types are written qualified (`Proto.Timestamp.Timestamp`,
+  `Proto.Duration.Duration`, `Proto.Any.Any`, `Proto.Value.Value`), so a
+  message may share a name with one: a `message Duration` holding a
+  `google.protobuf.Duration` generates as it is. Only elm/core's names that generated code writes
   bare (`String`, `Maybe`, `Just`, `Dict` in a module with a map field,
   and the like) are refused as `naming::reserved_name`.
 
@@ -230,9 +230,8 @@ can refuse the value:
   message that holds, at any depth and across packages, a value proto3
   JSON may have no form for (a `Timestamp`, `Duration`, `FieldMask`,
   `Struct`, `Value` or `ListValue`) or an `Any`. A write refuses a
-  `Timestamp` outside years 1 to 9999, a `Duration` that is not valid
-  (one read from protobuf binary past protobuf's range or with
-  nanoseconds out of form), a `FieldMask` path that does not survive
+  `Timestamp` or a `Duration` that is not valid (one read from protobuf
+  binary outside protobuf's range or with nanoseconds out of form), a `FieldMask` path that does not survive
   lowerCamelCase and a number in a `Value` that is NaN or infinite, with
   `Proto.Error.BadValue { typeName, path, message }`.
 
