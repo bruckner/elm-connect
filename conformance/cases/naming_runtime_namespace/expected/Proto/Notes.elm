@@ -90,9 +90,9 @@ registry =
 
 {-| Encodes a [`Note`](#Note) as proto3 JSON.
 -}
-encodeNote : Note -> Json.Encode.Value
+encodeNote : Note -> Proto.Json.Encoder x
 encodeNote _ =
-    Json.Encode.object []
+    Proto.Json.succeed (Json.Encode.object [])
 
 
 

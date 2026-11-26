@@ -246,56 +246,68 @@ registry =
 
 {-| Encodes a [`SayRequest`](#SayRequest) as proto3 JSON.
 -}
-encodeSayRequest : SayRequest -> Json.Encode.Value
+encodeSayRequest : SayRequest -> Proto.Json.Encoder x
 encodeSayRequest value =
-    Proto.Json.objectOfFields
-        [ ( "sentence", Proto.Json.implicitField "" Json.Encode.string value.sentence )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "sentence", Proto.Json.implicitField "" Json.Encode.string value.sentence )
+            ]
+        )
 
 
 {-| Encodes a [`SayResponse`](#SayResponse) as proto3 JSON.
 -}
-encodeSayResponse : SayResponse -> Json.Encode.Value
+encodeSayResponse : SayResponse -> Proto.Json.Encoder x
 encodeSayResponse value =
-    Proto.Json.objectOfFields
-        [ ( "sentence", Proto.Json.implicitField "" Json.Encode.string value.sentence )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "sentence", Proto.Json.implicitField "" Json.Encode.string value.sentence )
+            ]
+        )
 
 
 {-| Encodes a [`ConverseRequest`](#ConverseRequest) as proto3 JSON.
 -}
-encodeConverseRequest : ConverseRequest -> Json.Encode.Value
+encodeConverseRequest : ConverseRequest -> Proto.Json.Encoder x
 encodeConverseRequest value =
-    Proto.Json.objectOfFields
-        [ ( "sentence", Proto.Json.implicitField "" Json.Encode.string value.sentence )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "sentence", Proto.Json.implicitField "" Json.Encode.string value.sentence )
+            ]
+        )
 
 
 {-| Encodes a [`ConverseResponse`](#ConverseResponse) as proto3 JSON.
 -}
-encodeConverseResponse : ConverseResponse -> Json.Encode.Value
+encodeConverseResponse : ConverseResponse -> Proto.Json.Encoder x
 encodeConverseResponse value =
-    Proto.Json.objectOfFields
-        [ ( "sentence", Proto.Json.implicitField "" Json.Encode.string value.sentence )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "sentence", Proto.Json.implicitField "" Json.Encode.string value.sentence )
+            ]
+        )
 
 
 {-| Encodes an [`IntroduceRequest`](#IntroduceRequest) as proto3 JSON.
 -}
-encodeIntroduceRequest : IntroduceRequest -> Json.Encode.Value
+encodeIntroduceRequest : IntroduceRequest -> Proto.Json.Encoder x
 encodeIntroduceRequest value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            ]
+        )
 
 
 {-| Encodes an [`IntroduceResponse`](#IntroduceResponse) as proto3 JSON.
 -}
-encodeIntroduceResponse : IntroduceResponse -> Json.Encode.Value
+encodeIntroduceResponse : IntroduceResponse -> Proto.Json.Encoder x
 encodeIntroduceResponse value =
-    Proto.Json.objectOfFields
-        [ ( "sentence", Proto.Json.implicitField "" Json.Encode.string value.sentence )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "sentence", Proto.Json.implicitField "" Json.Encode.string value.sentence )
+            ]
+        )
 
 
 

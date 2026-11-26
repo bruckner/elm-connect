@@ -182,12 +182,14 @@ registry =
 
 {-| Encodes an [`Event`](#Event) as proto3 JSON.
 -}
-encodeEvent : Event -> Json.Encode.Value
+encodeEvent : Event -> Proto.Json.Encoder x
 encodeEvent value =
-    Proto.Json.objectOfFields
-        ([ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-         ]
-            ++ encodeEventKind value.kind
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            ([ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+             ]
+                ++ encodeEventKind value.kind
+            )
         )
 
 
@@ -210,12 +212,14 @@ encodeEventKind value =
 
 {-| Encodes a [`ListEventsRequest`](#ListEventsRequest) as proto3 JSON.
 -}
-encodeListEventsRequest : ListEventsRequest -> Json.Encode.Value
+encodeListEventsRequest : ListEventsRequest -> Proto.Json.Encoder x
 encodeListEventsRequest value =
-    Proto.Json.objectOfFields
-        ([ ( "parent", Proto.Json.implicitField "" Json.Encode.string value.parent )
-         ]
-            ++ encodeListEventsRequestFilter value.filter
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            ([ ( "parent", Proto.Json.implicitField "" Json.Encode.string value.parent )
+             ]
+                ++ encodeListEventsRequestFilter value.filter
+            )
         )
 
 
@@ -234,11 +238,13 @@ encodeListEventsRequestFilter value =
 
 {-| Encodes a [`ListEventsResponse`](#ListEventsResponse) as proto3 JSON.
 -}
-encodeListEventsResponse : ListEventsResponse -> Json.Encode.Value
+encodeListEventsResponse : ListEventsResponse -> Proto.Json.Encoder x
 encodeListEventsResponse value =
-    Proto.Json.objectOfFields
-        [ ( "events", Proto.Json.repeatedField encodeEvent value.events )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "events", Proto.Json.totalRepeatedField encodeEvent value.events )
+            ]
+        )
 
 
 

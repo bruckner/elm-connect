@@ -3,4 +3,4 @@
   longer sent: it fails as a `BadCall`, code `InvalidArgument`, naming
   the field and the template. It used to go out as `GET /v1/`
   or `/v1/notes/a/b` and come back a 404, read as `Unimplemented`.
-  `Rpc.request` still builds the URL.
+  `Rpc.request` gives the same error.

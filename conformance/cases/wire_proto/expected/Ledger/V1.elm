@@ -192,16 +192,18 @@ encodeKind value =
 
 {-| Encodes an [`Entry`](#Entry) as proto3 JSON.
 -}
-encodeEntry : Entry -> Json.Encode.Value
+encodeEntry : Entry -> Proto.Json.Encoder x
 encodeEntry value =
-    Proto.Json.objectOfFields
-        ([ ( "memo", Proto.Json.implicitField "" Json.Encode.string value.memo )
-         , ( "amount", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.amount )
-         , ( "kind", Proto.Json.implicitField KindUnspecified encodeKind value.kind )
-         , ( "tags", Proto.Json.dictField identity Json.Encode.int value.tags )
-         , ( "marks", Proto.Json.repeatedField Json.Encode.int value.marks )
-         ]
-            ++ encodeEntrySource value.source
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            ([ ( "memo", Proto.Json.implicitField "" Json.Encode.string value.memo )
+             , ( "amount", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.amount )
+             , ( "kind", Proto.Json.implicitField KindUnspecified encodeKind value.kind )
+             , ( "tags", Proto.Json.dictField identity Json.Encode.int value.tags )
+             , ( "marks", Proto.Json.repeatedField Json.Encode.int value.marks )
+             ]
+                ++ encodeEntrySource value.source
+            )
         )
 
 
@@ -218,17 +220,19 @@ encodeEntrySource value =
             ]
 
         EntrySourceReversal member ->
-            [ ( "reversal", Just (encodeEntry member) )
+            [ ( "reversal", Just (Proto.Json.encodeTotal (encodeEntry member)) )
             ]
 
 
 {-| Encodes a [`GetEntryRequest`](#GetEntryRequest) as proto3 JSON.
 -}
-encodeGetEntryRequest : GetEntryRequest -> Json.Encode.Value
+encodeGetEntryRequest : GetEntryRequest -> Proto.Json.Encoder x
 encodeGetEntryRequest value =
-    Proto.Json.objectOfFields
-        [ ( "memo", Proto.Json.implicitField "" Json.Encode.string value.memo )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "memo", Proto.Json.implicitField "" Json.Encode.string value.memo )
+            ]
+        )
 
 
 
@@ -254,7 +258,7 @@ decodeEntry =
     decodeNestedEntry 1
 
 
-{-| [`decodeEntry`](#decodeEntry) for an [`Entry`](#Entry) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeEntry`](#decodeEntry) for an [`Entry`](#Entry) held `depth` levels deep.
 -}
 decodeNestedEntry : Int -> Json.Decode.Decoder Entry
 decodeNestedEntry =
@@ -279,7 +283,7 @@ decodeEntrySource =
     decodeNestedEntrySource 1
 
 
-{-| [`decodeEntrySource`](#decodeEntrySource) for an [`EntrySource`](#EntrySource) held by a message `depth` levels deep. That message's decoder calls it at each depth.
+{-| [`decodeEntrySource`](#decodeEntrySource) for an [`EntrySource`](#EntrySource) held by a message `depth` levels deep.
 -}
 decodeNestedEntrySource : Int -> Json.Decode.Decoder EntrySource
 decodeNestedEntrySource depth =
@@ -384,7 +388,7 @@ mergeEntryBytes =
     mergeNestedEntryBytes 1
 
 
-{-| [`mergeEntryBytes`](#mergeEntryBytes) for an [`Entry`](#Entry) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeEntryBytes`](#mergeEntryBytes) for an [`Entry`](#Entry) held `depth` levels deep.
 -}
 mergeNestedEntryBytes : Int -> Entry -> Proto.Binary.Decoder Entry
 mergeNestedEntryBytes =

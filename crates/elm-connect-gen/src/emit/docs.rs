@@ -66,7 +66,7 @@ pub(super) fn a_local(name: &str) -> String {
 /// `codec` reads values of `elm_name`, a message that nests.
 pub(super) fn nested(codec: &str, elm_name: &str) -> String {
     format!(
-        "[`{codec}`](#{codec}) for {} held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.",
+        "[`{codec}`](#{codec}) for {} held `depth` levels deep.",
         a_local(elm_name)
     )
 }

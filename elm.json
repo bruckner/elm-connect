@@ -32,6 +32,7 @@
         "Proto.Any",
         "Proto.Error",
         "Proto.Json",
+        "Proto.Json.Encoder",
         "Proto.Binary",
         "Proto.Unknown",
         "Proto.Int64",

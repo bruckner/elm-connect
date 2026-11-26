@@ -1,7 +1,7 @@
 module Proto.Route exposing
     ( Route, PathError
     , segment, segments, checkSegment, checkSegments, firstInvalid
-    , boolText, bytesText, viaJson, jsonText, without, jsonField
+    , boolText, bytesText, fieldMaskText, viaJson, jsonText, without, jsonField, jsonValueField
     )
 
 {-| Where a call goes over one binding of its `google.api.http` rule, as
@@ -21,7 +21,7 @@ reads a `Route` and does not build one.
 
 # Values and bodies
 
-@docs boolText, bytesText, viaJson, jsonText, without, jsonField
+@docs boolText, bytesText, fieldMaskText, viaJson, jsonText, without, jsonField, jsonValueField
 
 -}
 
@@ -29,6 +29,7 @@ import Bytes exposing (Bytes)
 import Json.Decode
 import Json.Encode exposing (Value)
 import Proto.Bytes
+import Proto.Internal.FieldMask as FieldMask
 import Proto.Internal.Percent as Internal
 
 
@@ -183,9 +184,16 @@ urlSafe char =
             char
 
 
+{-| A `google.protobuf.FieldMask` as path or query text: its proto3 JSON
+text, each field name in lowerCamelCase and the paths joined by commas.
+-}
+fieldMaskText : List String -> String
+fieldMaskText =
+    FieldMask.toText
+
+
 {-| A value's path or query text, by its proto3 JSON encoder: for the types
-whose text is their JSON's (enums, floating-point numbers, bytes, field
-masks).
+whose text is their JSON's (enums, floating-point numbers, bytes).
 -}
 viaJson : (a -> Value) -> a -> String
 viaJson encode value =
@@ -261,4 +269,19 @@ jsonField key json =
             value
 
         _ ->
+            Json.Encode.object []
+
+
+{-| The body of `body: "field"` for a `google.protobuf.Value` field, from the
+request's proto3 JSON: the field's value, `null` (its `NullValue`) included,
+or `{}` when the JSON leaves it out, as [`jsonField`](#jsonField) gives an
+unset message.
+-}
+jsonValueField : String -> Value -> Value
+jsonValueField key json =
+    case Json.Decode.decodeValue (Json.Decode.field key Json.Decode.value) json of
+        Ok value ->
+            value
+
+        Err _ ->
             Json.Encode.object []

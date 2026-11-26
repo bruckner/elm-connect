@@ -36,7 +36,7 @@ getTask =
     Rpc.call
         (Proto.Method.init "tasks.v1.Tasks"
             "GetTask"
-            (\_ -> Ok << Tasks.V1.encodeGetTaskRequest)
+            Tasks.V1.encodeGetTaskRequest
             (\_ -> Tasks.V1.decodeTask)
             Tasks.V1.encodeGetTaskRequestBytes
             Tasks.V1.decodeTaskBytes
@@ -56,7 +56,7 @@ putTask =
     Rpc.call
         (Proto.Method.init "tasks.v1.Tasks"
             "PutTask"
-            (\_ -> Ok << Tasks.V1.encodeTask)
+            Tasks.V1.encodeTask
             (\_ -> Tasks.V1.decodeTask)
             Tasks.V1.encodeTaskBytes
             Tasks.V1.decodeTaskBytes
@@ -76,7 +76,7 @@ closeTask =
     Rpc.call
         (Proto.Method.init "tasks.v1.Tasks"
             "CloseTask"
-            (\_ -> Ok << Tasks.V1.encodeGetTaskRequest)
+            Tasks.V1.encodeGetTaskRequest
             (\_ -> Tasks.V1.decodeTask)
             Tasks.V1.encodeGetTaskRequestBytes
             Tasks.V1.decodeTaskBytes

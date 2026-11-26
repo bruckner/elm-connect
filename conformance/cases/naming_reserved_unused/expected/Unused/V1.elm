@@ -255,50 +255,54 @@ encodeChar value =
 
 {-| Encodes a [`Dict`](#Dict) as proto3 JSON.
 -}
-encodeDict : Dict -> Json.Encode.Value
+encodeDict : Dict -> Proto.Json.Encoder x
 encodeDict value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            ]
+        )
 
 
 {-| Encodes a [`Result`](#Result) as proto3 JSON.
 -}
-encodeResult : Result -> Json.Encode.Value
+encodeResult : Result -> Proto.Json.Encoder x
 encodeResult value =
-    Proto.Json.objectOfFields
-        [ ( "ok", Proto.Json.implicitField False Json.Encode.bool value.ok )
-        , ( "dict", Maybe.map encodeDict value.dict )
-        , ( "chars", Proto.Json.repeatedField encodeChar value.chars )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "ok", Proto.Json.implicitField False Json.Encode.bool value.ok )
+            , ( "dict", Proto.Json.totalOptionalField encodeDict value.dict )
+            , ( "chars", Proto.Json.repeatedField encodeChar value.chars )
+            ]
+        )
 
 
 {-| Encodes an [`Order`](#Order) as proto3 JSON.
 -}
-encodeOrder : Order -> Json.Encode.Value
+encodeOrder : Order -> Proto.Json.Encoder x
 encodeOrder _ =
-    Json.Encode.object []
+    Proto.Json.succeed (Json.Encode.object [])
 
 
 {-| Encodes a [`Never`](#Never) as proto3 JSON.
 -}
-encodeNever : Never -> Json.Encode.Value
+encodeNever : Never -> Proto.Json.Encoder x
 encodeNever _ =
-    Json.Encode.object []
+    Proto.Json.succeed (Json.Encode.object [])
 
 
 {-| Encodes a [`Cmd`](#Cmd) as proto3 JSON.
 -}
-encodeCmd : Cmd -> Json.Encode.Value
+encodeCmd : Cmd -> Proto.Json.Encoder x
 encodeCmd _ =
-    Json.Encode.object []
+    Proto.Json.succeed (Json.Encode.object [])
 
 
 {-| Encodes a [`True`](#True) as proto3 JSON.
 -}
-encodeTrue : True -> Json.Encode.Value
+encodeTrue : True -> Proto.Json.Encoder x
 encodeTrue _ =
-    Json.Encode.object []
+    Proto.Json.succeed (Json.Encode.object [])
 
 
 

@@ -32,8 +32,23 @@ A path value must match its variable's template as `google/api/http.proto`
 defines it, and one that cannot, an empty one or `notes/a/b` for
 `{name=notes/*}`, is not sent; nor is one holding a surrogate without
 its pair, which no URL can carry: the call fails with
-a `BadCall` whose message names the field and the template, while
-`Rpc.request` still builds the URL it would have used.
+a `BadCall` whose message names the field and the template, and
+`Rpc.request` gives the same error.
+
+Before any of that, the request is written as proto3 JSON, as a call
+over Connect writes it, and a request with no JSON is not sent: one
+holding a value proto3 JSON has no form for (a `Timestamp` outside years
+1 to 9999, a `FieldMask` path with no lowerCamelCase form, a number in a
+`Value` that is not finite) fails with `Rpc.Error.badValue`, and one
+holding an `Any` the client's registry cannot write with
+`Rpc.Error.badAny` ([calling.md](calling.md#writing-json-yourself)). A
+path and a query write a value in its JSON form, so the check covers
+them as it covers the body, whichever binding the call takes. Its cost
+is one JSON encode of the request per call, which a `GET` did not need
+before: preparing the notes example's `GetNote`, one string, took 0.1 µs
+longer (0.44 to 0.54 µs in node), and `ListNotes` with four query fields
+0.2 µs longer (2.16 to 2.37 µs), against the milliseconds of the request
+itself.
 
 The two kinds of body leave the path's fields in or out. `body: "*"`
 sends the request without the fields the path holds, since
@@ -106,13 +121,24 @@ no route:
             |> Proto.Method.withResponseBody 0 "notes"
 ```
 
-Every binding the generator accepts becomes a route function. A method
-whose bodies hold a `google.protobuf.Any`, which only the client's
-registry can write, gets route functions of the request and its proto3
-JSON, `routeCreateNote0 : Notes.V1.CreateNoteRequest -> Json.Encode.Value
--> Proto.Route.Route`, given to `Proto.Method.withJsonRoutes`: the path
-and query come from the typed request, and the body from the JSON the
-send encodes once, with the client's registry.
+Every binding the generator accepts becomes a route function. A route
+prints its path and query values from the typed request, unchecked:
+the send has already written the request's JSON and refused a request
+without one ([above](#what-a-call-sends)), and the text forms are the
+JSON's. A method with a binding whose body holds a value a JSON write
+can refuse (a `google.protobuf.Any`, which only the client's registry
+can write, a `Timestamp`, `Duration`, `FieldMask`, `Struct`, `ListValue`
+or `Value`, or a message holding one) gets route functions of the
+request and that JSON, `routeCreateNote0 : Notes.V1.CreateNoteRequest ->
+Json.Encode.Value -> Proto.Route.Route`, given to
+`Proto.Method.withJsonRoutes`: the body is read from the JSON the send
+wrote, since only that write can give it, and the path and query come
+from the typed request. Every other route takes the request alone: a
+route without a body, and one whose body nothing in it can refuse,
+which its generated encoder writes (so a call over it writes that body
+twice, once whole for the check). A `Value` body holding a
+`NullValue` is sent as `null`, read by `Proto.Route.jsonValueField`;
+another message body left unset is `{}`.
 
 A `bytes` field held as `Bytes` (`bytes=bytes`) goes into a path or a
 query as base64 in the URL-safe alphabet, padded (`-_8=`), which

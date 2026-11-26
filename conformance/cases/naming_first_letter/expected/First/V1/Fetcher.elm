@@ -36,7 +36,7 @@ getNote =
     Rpc.call
         (Proto.Method.init "first.v1.Fetcher"
             "GetNote"
-            (\_ -> Ok << First.V1.encodeURLPath)
+            First.V1.encodeURLPath
             (\_ -> First.V1.decodeURLPath)
             First.V1.encodeURLPathBytes
             First.V1.decodeURLPathBytes
@@ -55,7 +55,7 @@ httpGet =
     Rpc.call
         (Proto.Method.init "first.v1.Fetcher"
             "HTTPGet"
-            (\_ -> Ok << First.V1.encodeURLPath)
+            First.V1.encodeURLPath
             (\_ -> First.V1.decodeURLPath)
             First.V1.encodeURLPathBytes
             First.V1.decodeURLPathBytes
@@ -74,7 +74,7 @@ ping =
     Rpc.call
         (Proto.Method.init "first.v1.Fetcher"
             "_Ping"
-            (\_ -> Ok << First.V1.encodeURLPath)
+            First.V1.encodeURLPath
             (\_ -> First.V1.decodeURLPath)
             First.V1.encodeURLPathBytes
             First.V1.decodeURLPathBytes
@@ -93,7 +93,7 @@ type_ =
     Rpc.call
         (Proto.Method.init "first.v1.Fetcher"
             "Type"
-            (\_ -> Ok << First.V1.encodeURLPath)
+            First.V1.encodeURLPath
             (\_ -> First.V1.decodeURLPath)
             First.V1.encodeURLPathBytes
             First.V1.decodeURLPathBytes

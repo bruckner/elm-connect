@@ -42,6 +42,8 @@ import Proto.Internal.Binary
 import Proto.Internal.JsonError as JsonError
 import Proto.Internal.Message as Internal
 import Proto.Internal.Registry as Registry exposing (Registry)
+import Proto.Internal.Writer as Writer
+import Proto.Json.Encoder
 
 
 {-| A message type whose Elm values are `a`, with both its codecs: proto3 JSON
@@ -69,10 +71,10 @@ A message built by `init` is taken at its word that it holds no `Any`:
 looking for an `Any` that only JSON could carry (see [`initWith`](#initWith)).
 
 -}
-init : String -> (a -> Json.Encode.Value) -> Json.Decode.Decoder a -> (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> Message a
+init : String -> (a -> Proto.Json.Encoder.Encoder Proto.Error.Error) -> Json.Decode.Decoder a -> (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> Message a
 init name jsonEncoder jsonDecoder binaryEncoder binaryDecoder =
     Internal.Message name
-        { encodeJson = \_ value -> Ok (jsonEncoder value)
+        { encodeJson = \registry value -> Writer.run registry (jsonEncoder value)
         , decodeJson = \_ -> jsonDecoder
         , encodeBinary = binaryEncoder
         , decodeBinary = binaryDecoder
@@ -88,13 +90,13 @@ registry (`UnregisteredType`), or its binary is not that type's message
 (`BadBinary`), at any depth.
 
     messageEnvelope =
-        Proto.Message.initWith "notes.v1.Envelope" encodeEnvelopeWith decodeEnvelopeWith encodeEnvelopeBytes decodeEnvelopeBytes
+        Proto.Message.initWith "notes.v1.Envelope" encodeEnvelope decodeEnvelopeWith encodeEnvelopeBytes decodeEnvelopeBytes
 
 -}
-initWith : String -> (Registry -> a -> Result Proto.Error.Error Json.Encode.Value) -> (Registry -> Json.Decode.Decoder a) -> (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> Message a
+initWith : String -> (a -> Proto.Json.Encoder.Encoder Proto.Error.Error) -> (Registry -> Json.Decode.Decoder a) -> (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> Message a
 initWith name jsonEncoder jsonDecoder binaryEncoder binaryDecoder =
     Internal.Message name
-        { encodeJson = jsonEncoder
+        { encodeJson = \registry value -> Writer.run registry (jsonEncoder value)
         , decodeJson = jsonDecoder
         , encodeBinary = binaryEncoder
         , decodeBinary = binaryDecoder

@@ -37,4 +37,4 @@
   `nestedAnyWith` and `registryDepth`, `Proto.Value.nestedDecoder`, and
   `Proto.Binary.nestedStruct`, `nestedListValue` and `nestedValue`;
   one that holds an `Any` writes a field on its cycle with
-  `Proto.Json.registryDeeper`. Other messages generate what they did.
+  `Proto.Json.writeDeeper`. Other messages generate what they did.

@@ -46,7 +46,7 @@ say =
     Rpc.call
         (Proto.Method.init "connectrpc.eliza.v1.ElizaService"
             "Say"
-            (\_ -> Ok << Connectrpc.Eliza.V1.encodeSayRequest)
+            Connectrpc.Eliza.V1.encodeSayRequest
             (\_ -> Connectrpc.Eliza.V1.decodeSayResponse)
             Connectrpc.Eliza.V1.encodeSayRequestBytes
             Connectrpc.Eliza.V1.decodeSayResponseBytes

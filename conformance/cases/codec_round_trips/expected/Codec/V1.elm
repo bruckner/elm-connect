@@ -838,7 +838,7 @@ messageTree =
 -}
 messageWellKnown : Proto.Message.Message WellKnown
 messageWellKnown =
-    Proto.Message.initWith "codec.v1.WellKnown" encodeWellKnownWith decodeWellKnownWith encodeWellKnownBytes decodeWellKnownBytes
+    Proto.Message.initWith "codec.v1.WellKnown" encodeWellKnown decodeWellKnownWith encodeWellKnownBytes decodeWellKnownBytes
 
 
 {-| The typed value of [`Wrappers`](#Wrappers): its full name and codecs.
@@ -866,7 +866,7 @@ messageLeaf =
 -}
 messageEverything : Proto.Message.Message Everything
 messageEverything =
-    Proto.Message.initWith "codec.v1.Everything" encodeEverythingWith decodeEverythingWith encodeEverythingBytes decodeEverythingBytes
+    Proto.Message.initWith "codec.v1.Everything" encodeEverything decodeEverythingWith encodeEverythingBytes decodeEverythingBytes
 
 
 
@@ -961,172 +961,183 @@ encodeOuterMode value =
 
 {-| Encodes a [`Scalars`](#Scalars) as proto3 JSON.
 -}
-encodeScalars : Scalars -> Json.Encode.Value
+encodeScalars : Scalars -> Proto.Json.Encoder x
 encodeScalars value =
-    Proto.Json.objectOfFields
-        [ ( "double", Proto.Json.implicitFloatField value.double )
-        , ( "float", Proto.Json.implicitFloatField value.float )
-        , ( "int32", Proto.Json.implicitField 0 Json.Encode.int value.int32 )
-        , ( "int64", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.int64 )
-        , ( "uint32", Proto.Json.implicitField 0 Json.Encode.int value.uint32 )
-        , ( "uint64", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.uint64 )
-        , ( "sint32", Proto.Json.implicitField 0 Json.Encode.int value.sint32 )
-        , ( "sint64", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.sint64 )
-        , ( "fixed32", Proto.Json.implicitField 0 Json.Encode.int value.fixed32 )
-        , ( "fixed64", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.fixed64 )
-        , ( "sfixed32", Proto.Json.implicitField 0 Json.Encode.int value.sfixed32 )
-        , ( "sfixed64", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.sfixed64 )
-        , ( "bool", Proto.Json.implicitField False Json.Encode.bool value.bool )
-        , ( "string", Proto.Json.implicitField "" Json.Encode.string value.string )
-        , ( "bytes", Proto.Json.implicitField "" Proto.Json.encodeBytes value.bytes )
-        , ( "kind", Proto.Json.implicitField KindUnspecified encodeKind value.kind )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "double", Proto.Json.implicitFloatField value.double )
+            , ( "float", Proto.Json.implicitFloatField value.float )
+            , ( "int32", Proto.Json.implicitField 0 Json.Encode.int value.int32 )
+            , ( "int64", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.int64 )
+            , ( "uint32", Proto.Json.implicitField 0 Json.Encode.int value.uint32 )
+            , ( "uint64", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.uint64 )
+            , ( "sint32", Proto.Json.implicitField 0 Json.Encode.int value.sint32 )
+            , ( "sint64", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.sint64 )
+            , ( "fixed32", Proto.Json.implicitField 0 Json.Encode.int value.fixed32 )
+            , ( "fixed64", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.fixed64 )
+            , ( "sfixed32", Proto.Json.implicitField 0 Json.Encode.int value.sfixed32 )
+            , ( "sfixed64", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.sfixed64 )
+            , ( "bool", Proto.Json.implicitField False Json.Encode.bool value.bool )
+            , ( "string", Proto.Json.implicitField "" Json.Encode.string value.string )
+            , ( "bytes", Proto.Json.implicitField "" Proto.Json.encodeBytes value.bytes )
+            , ( "kind", Proto.Json.implicitField KindUnspecified encodeKind value.kind )
+            ]
+        )
 
 
 {-| Encodes an [`Optionals`](#Optionals) as proto3 JSON.
 -}
-encodeOptionals : Optionals -> Json.Encode.Value
+encodeOptionals : Optionals -> Proto.Json.Encoder x
 encodeOptionals value =
-    Proto.Json.objectOfFields
-        [ ( "double", Maybe.map Proto.Json.encodeFloat value.double )
-        , ( "float", Maybe.map Proto.Json.encodeFloat value.float )
-        , ( "int32", Maybe.map Json.Encode.int value.int32 )
-        , ( "int64", Maybe.map Proto.Json.encodeInt64 value.int64 )
-        , ( "uint64", Maybe.map Proto.Json.encodeInt64 value.uint64 )
-        , ( "sint32", Maybe.map Json.Encode.int value.sint32 )
-        , ( "bool", Maybe.map Json.Encode.bool value.bool )
-        , ( "string", Maybe.map Json.Encode.string value.string )
-        , ( "bytes", Maybe.map Proto.Json.encodeBytes value.bytes )
-        , ( "kind", Maybe.map encodeKind value.kind )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "double", Maybe.map Proto.Json.encodeFloat value.double )
+            , ( "float", Maybe.map Proto.Json.encodeFloat value.float )
+            , ( "int32", Maybe.map Json.Encode.int value.int32 )
+            , ( "int64", Maybe.map Proto.Json.encodeInt64 value.int64 )
+            , ( "uint64", Maybe.map Proto.Json.encodeInt64 value.uint64 )
+            , ( "sint32", Maybe.map Json.Encode.int value.sint32 )
+            , ( "bool", Maybe.map Json.Encode.bool value.bool )
+            , ( "string", Maybe.map Json.Encode.string value.string )
+            , ( "bytes", Maybe.map Proto.Json.encodeBytes value.bytes )
+            , ( "kind", Maybe.map encodeKind value.kind )
+            ]
+        )
 
 
 {-| Encodes a [`Repeated`](#Repeated) as proto3 JSON.
 -}
-encodeRepeated : Repeated -> Json.Encode.Value
+encodeRepeated : Repeated -> Proto.Json.Encoder x
 encodeRepeated value =
-    Proto.Json.objectOfFields
-        [ ( "doubles", Proto.Json.repeatedField Proto.Json.encodeFloat value.doubles )
-        , ( "floats", Proto.Json.repeatedField Proto.Json.encodeFloat value.floats )
-        , ( "int32s", Proto.Json.repeatedField Json.Encode.int value.int32s )
-        , ( "int64s", Proto.Json.repeatedField Proto.Json.encodeInt64 value.int64s )
-        , ( "uint64s", Proto.Json.repeatedField Proto.Json.encodeInt64 value.uint64s )
-        , ( "fixed32s", Proto.Json.repeatedField Json.Encode.int value.fixed32s )
-        , ( "bools", Proto.Json.repeatedField Json.Encode.bool value.bools )
-        , ( "strings", Proto.Json.repeatedField Json.Encode.string value.strings )
-        , ( "bytes", Proto.Json.repeatedField Proto.Json.encodeBytes value.bytes )
-        , ( "kinds", Proto.Json.repeatedField encodeKind value.kinds )
-        , ( "leaves", Proto.Json.repeatedField encodeLeaf value.leaves )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "doubles", Proto.Json.repeatedField Proto.Json.encodeFloat value.doubles )
+            , ( "floats", Proto.Json.repeatedField Proto.Json.encodeFloat value.floats )
+            , ( "int32s", Proto.Json.repeatedField Json.Encode.int value.int32s )
+            , ( "int64s", Proto.Json.repeatedField Proto.Json.encodeInt64 value.int64s )
+            , ( "uint64s", Proto.Json.repeatedField Proto.Json.encodeInt64 value.uint64s )
+            , ( "fixed32s", Proto.Json.repeatedField Json.Encode.int value.fixed32s )
+            , ( "bools", Proto.Json.repeatedField Json.Encode.bool value.bools )
+            , ( "strings", Proto.Json.repeatedField Json.Encode.string value.strings )
+            , ( "bytes", Proto.Json.repeatedField Proto.Json.encodeBytes value.bytes )
+            , ( "kinds", Proto.Json.repeatedField encodeKind value.kinds )
+            , ( "leaves", Proto.Json.totalRepeatedField encodeLeaf value.leaves )
+            ]
+        )
 
 
 {-| Encodes a [`Maps`](#Maps) as proto3 JSON.
 -}
-encodeMaps : Maps -> Json.Encode.Value
+encodeMaps : Maps -> Proto.Json.Encoder x
 encodeMaps value =
-    Proto.Json.objectOfFields
-        [ ( "stringString", Proto.Json.dictField identity Json.Encode.string value.stringString )
-        , ( "int32Kind", Proto.Json.dictField String.fromInt encodeKind value.int32Kind )
-        , ( "int64Double", Proto.Json.dictField identity Proto.Json.encodeFloat value.int64Double )
-        , ( "uint32Int64", Proto.Json.dictField String.fromInt Proto.Json.encodeInt64 value.uint32Int64 )
-        , ( "uint64String", Proto.Json.dictField identity Json.Encode.string value.uint64String )
-        , ( "sint32Bool", Proto.Json.dictField String.fromInt Json.Encode.bool value.sint32Bool )
-        , ( "sint64Float", Proto.Json.dictField identity Proto.Json.encodeFloat value.sint64Float )
-        , ( "fixed32Uint64", Proto.Json.dictField String.fromInt Proto.Json.encodeInt64 value.fixed32Uint64 )
-        , ( "fixed64Leaf", Proto.Json.dictField identity encodeLeaf value.fixed64Leaf )
-        , ( "sfixed32Bytes", Proto.Json.dictField String.fromInt Proto.Json.encodeBytes value.sfixed32Bytes )
-        , ( "sfixed64Int32", Proto.Json.dictField identity Json.Encode.int value.sfixed64Int32 )
-        , ( "boolString", Proto.Json.boolMapField Json.Encode.string value.boolString )
-        , ( "boolLeaf", Proto.Json.boolMapField encodeLeaf value.boolLeaf )
-        , ( "stringLeaf", Proto.Json.dictField identity encodeLeaf value.stringLeaf )
-        ]
-
-
-{-| Encodes a [`Choice`](#Choice) as proto3 JSON.
--}
-encodeChoice : Choice -> Json.Encode.Value
-encodeChoice value =
-    Proto.Json.objectOfFields
-        ([ ( "before", Proto.Json.implicitField "" Json.Encode.string value.before )
-         , ( "after", Proto.Json.implicitField 0 Json.Encode.int value.after )
-         ]
-            ++ encodeChoicePick value.pick
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "stringString", Proto.Json.dictField identity Json.Encode.string value.stringString )
+            , ( "int32Kind", Proto.Json.dictField String.fromInt encodeKind value.int32Kind )
+            , ( "int64Double", Proto.Json.dictField identity Proto.Json.encodeFloat value.int64Double )
+            , ( "uint32Int64", Proto.Json.dictField String.fromInt Proto.Json.encodeInt64 value.uint32Int64 )
+            , ( "uint64String", Proto.Json.dictField identity Json.Encode.string value.uint64String )
+            , ( "sint32Bool", Proto.Json.dictField String.fromInt Json.Encode.bool value.sint32Bool )
+            , ( "sint64Float", Proto.Json.dictField identity Proto.Json.encodeFloat value.sint64Float )
+            , ( "fixed32Uint64", Proto.Json.dictField String.fromInt Proto.Json.encodeInt64 value.fixed32Uint64 )
+            , ( "fixed64Leaf", Proto.Json.totalDictField identity encodeLeaf value.fixed64Leaf )
+            , ( "sfixed32Bytes", Proto.Json.dictField String.fromInt Proto.Json.encodeBytes value.sfixed32Bytes )
+            , ( "sfixed64Int32", Proto.Json.dictField identity Json.Encode.int value.sfixed64Int32 )
+            , ( "boolString", Proto.Json.boolMapField Json.Encode.string value.boolString )
+            , ( "boolLeaf", Proto.Json.totalBoolMapField encodeLeaf value.boolLeaf )
+            , ( "stringLeaf", Proto.Json.totalDictField identity encodeLeaf value.stringLeaf )
+            ]
         )
 
 
-{-| Encodes a [`ChoicePick`](#ChoicePick) as the members of its message's JSON object.
+{-| Encodes a [`Choice`](#Choice) as proto3 JSON, or fails if the input contains a bad value.
 -}
-encodeChoicePick : ChoicePick -> List ( String, Maybe Json.Encode.Value )
+encodeChoice : Choice -> Proto.Json.Encoder Proto.Error.Error
+encodeChoice value =
+    Proto.Json.writeObject
+        [ Proto.Json.plainFields
+            [ ( "before", Proto.Json.implicitField "" Json.Encode.string value.before )
+            , ( "after", Proto.Json.implicitField 0 Json.Encode.int value.after )
+            ]
+        , Proto.Json.checkedFields (encodeChoicePick value.pick)
+        ]
+
+
+{-| Encodes a [`ChoicePick`](#ChoicePick) as the members of its message's JSON object, or fails if the input contains a bad value.
+-}
+encodeChoicePick : ChoicePick -> List ( String, Proto.Json.Field Proto.Error.Error )
 encodeChoicePick value =
     case value of
         ChoicePickUnset ->
             []
 
         ChoicePickText member ->
-            [ ( "text", Just (Json.Encode.string member) )
+            [ ( "text", Proto.Json.writeMember (Proto.Json.succeed (Json.Encode.string member)) )
             ]
 
         ChoicePickBig member ->
-            [ ( "big", Just (Proto.Json.encodeInt64 member) )
+            [ ( "big", Proto.Json.writeMember (Proto.Json.succeed (Proto.Json.encodeInt64 member)) )
             ]
 
         ChoicePickRatio member ->
-            [ ( "ratio", Just (Proto.Json.encodeFloat member) )
+            [ ( "ratio", Proto.Json.writeMember (Proto.Json.succeed (Proto.Json.encodeFloat member)) )
             ]
 
         ChoicePickFlag member ->
-            [ ( "flag", Just (Json.Encode.bool member) )
+            [ ( "flag", Proto.Json.writeMember (Proto.Json.succeed (Json.Encode.bool member)) )
             ]
 
         ChoicePickData member ->
-            [ ( "data", Just (Proto.Json.encodeBytes member) )
+            [ ( "data", Proto.Json.writeMember (Proto.Json.succeed (Proto.Json.encodeBytes member)) )
             ]
 
         ChoicePickKind member ->
-            [ ( "kind", Just (encodeKind member) )
+            [ ( "kind", Proto.Json.writeMember (Proto.Json.succeed (encodeKind member)) )
             ]
 
         ChoicePickLeaf member ->
-            [ ( "leaf", Just (encodeLeaf member) )
+            [ ( "leaf", Proto.Json.writeMember (encodeLeaf member) )
             ]
 
         ChoicePickNothing ->
-            [ ( "nothing", Just (Json.Encode.object []) )
+            [ ( "nothing", Proto.Json.writeMember (Proto.Json.succeed (Json.Encode.object [])) )
             ]
 
         ChoicePickJson member ->
-            [ ( "json", Just (Proto.Json.encodeValue member) )
+            [ ( "json", Proto.Json.writeMember (Proto.Json.writeValue member) )
             ]
 
         ChoicePickAt member ->
-            [ ( "at", Just (Proto.Json.encodeTimestamp member) )
+            [ ( "at", Proto.Json.writeMember (Proto.Json.writeTimestamp member) )
             ]
 
         ChoicePickWrapped member ->
-            [ ( "wrapped", Just (Json.Encode.int member) )
+            [ ( "wrapped", Proto.Json.writeMember (Proto.Json.succeed (Json.Encode.int member)) )
             ]
 
         ChoicePickTwoWords member ->
-            [ ( "twoWords", Just (Json.Encode.string member) )
+            [ ( "twoWords", Proto.Json.writeMember (Proto.Json.succeed (Json.Encode.string member)) )
             ]
 
         ChoicePickNone ->
-            [ ( "none", Just Json.Encode.null )
+            [ ( "none", Proto.Json.writeMember (Proto.Json.succeed Json.Encode.null) )
             ]
 
 
 {-| Encodes a [`Names`](#Names) as proto3 JSON.
 -}
-encodeNames : Names -> Json.Encode.Value
+encodeNames : Names -> Proto.Json.Encoder x
 encodeNames value =
-    Proto.Json.objectOfFields
-        ([ ( "plain", Proto.Json.implicitField "" Json.Encode.string value.plain )
-         , ( "twoWords", Proto.Json.implicitField "" Json.Encode.string value.twoWords )
-         , ( "overridden", Proto.Json.implicitField "" Json.Encode.string value.withOverride )
-         , ( "Big_Value", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.bigOverride )
-         , ( "leafy", Maybe.map encodeLeaf value.leafOverride )
-         ]
-            ++ encodeNamesNamed value.named
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            ([ ( "plain", Proto.Json.implicitField "" Json.Encode.string value.plain )
+             , ( "twoWords", Proto.Json.implicitField "" Json.Encode.string value.twoWords )
+             , ( "overridden", Proto.Json.implicitField "" Json.Encode.string value.withOverride )
+             , ( "Big_Value", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.bigOverride )
+             , ( "leafy", Proto.Json.totalOptionalField encodeLeaf value.leafOverride )
+             ]
+                ++ encodeNamesNamed value.named
+            )
         )
 
 
@@ -1149,44 +1160,50 @@ encodeNamesNamed value =
 
 {-| Encodes an [`Outer`](#Outer) as proto3 JSON.
 -}
-encodeOuter : Outer -> Json.Encode.Value
+encodeOuter : Outer -> Proto.Json.Encoder x
 encodeOuter value =
-    Proto.Json.objectOfFields
-        [ ( "mode", Proto.Json.implicitField OuterModeUnspecified encodeOuterMode value.mode )
-        , ( "inner", Maybe.map encodeOuterInner value.inner )
-        , ( "inners", Proto.Json.repeatedField encodeOuterInner value.inners )
-        , ( "modes", Proto.Json.repeatedField encodeOuterMode value.modes )
-        , ( "namedModes", Proto.Json.dictField identity encodeOuterMode value.namedModes )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "mode", Proto.Json.implicitField OuterModeUnspecified encodeOuterMode value.mode )
+            , ( "inner", Proto.Json.totalOptionalField encodeOuterInner value.inner )
+            , ( "inners", Proto.Json.totalRepeatedField encodeOuterInner value.inners )
+            , ( "modes", Proto.Json.repeatedField encodeOuterMode value.modes )
+            , ( "namedModes", Proto.Json.dictField identity encodeOuterMode value.namedModes )
+            ]
+        )
 
 
 {-| Encodes an [`OuterInner`](#OuterInner) as proto3 JSON.
 -}
-encodeOuterInner : OuterInner -> Json.Encode.Value
+encodeOuterInner : OuterInner -> Proto.Json.Encoder x
 encodeOuterInner value =
-    Proto.Json.objectOfFields
-        [ ( "mode", Proto.Json.implicitField OuterModeUnspecified encodeOuterMode value.mode )
-        , ( "note", Proto.Json.implicitField "" Json.Encode.string value.note )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "mode", Proto.Json.implicitField OuterModeUnspecified encodeOuterMode value.mode )
+            , ( "note", Proto.Json.implicitField "" Json.Encode.string value.note )
+            ]
+        )
 
 
 {-| Encodes a [`Tree`](#Tree) as proto3 JSON.
 -}
-encodeTree : Tree -> Json.Encode.Value
+encodeTree : Tree -> Proto.Json.Encoder x
 encodeTree value =
-    Proto.Json.objectOfFields
-        ([ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
-         , ( "left", Maybe.map encodeTree_ value.left )
-         , ( "children", Proto.Json.repeatedField encodeTree_ value.children )
-         , ( "named", Proto.Json.dictField identity encodeTree_ value.named )
-         ]
-            ++ encodeTreeLink value.link
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            ([ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
+             , ( "left", Proto.Json.totalOptionalField encodeTree_ value.left )
+             , ( "children", Proto.Json.totalRepeatedField encodeTree_ value.children )
+             , ( "named", Proto.Json.totalDictField identity encodeTree_ value.named )
+             ]
+                ++ encodeTreeLink value.link
+            )
         )
 
 
 {-| Encodes a [`Tree_`](#Tree_) as proto3 JSON.
 -}
-encodeTree_ : Tree_ -> Json.Encode.Value
+encodeTree_ : Tree_ -> Proto.Json.Encoder x
 encodeTree_ (Tree_ value) =
     encodeTree value
 
@@ -1200,7 +1217,7 @@ encodeTreeLink value =
             []
 
         TreeLinkNext member ->
-            [ ( "next", Just (encodeTree member) )
+            [ ( "next", Just (Proto.Json.encodeTotal (encodeTree member)) )
             ]
 
         TreeLinkEnd member ->
@@ -1208,98 +1225,128 @@ encodeTreeLink value =
             ]
 
 
-{-| Encodes a [`WellKnown`](#WellKnown) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
+{-| Encodes a [`WellKnown`](#WellKnown) as proto3 JSON, or fails if the input contains a bad value.
 -}
-encodeWellKnownWith : Proto.Registry.Registry -> WellKnown -> Result Proto.Error.Error Json.Encode.Value
-encodeWellKnownWith types value =
-    Proto.Json.tryObjectOfFields
-        [ ( "any", Proto.Json.tryOptionalField (Proto.Json.encodeNestedAnyWith types) value.any )
-        , ( "struct", Ok (Maybe.map Proto.Json.encodeStruct value.struct) )
-        , ( "list", Ok (Maybe.map Proto.Json.encodeListValue value.list) )
-        , ( "value", Ok (Maybe.map Proto.Json.encodeValue value.value) )
-        , ( "timestamp", Ok (Maybe.map Proto.Json.encodeTimestamp value.timestamp) )
-        , ( "duration", Ok (Maybe.map Proto.Json.encodeDuration value.duration) )
-        , ( "mask", Ok (Maybe.map Proto.Json.encodeFieldMask value.mask) )
-        , ( "empty", Ok (Just (Proto.Json.encodeEmpty value.empty)) )
-        , ( "anys", Proto.Json.tryRepeatedField (Proto.Json.encodeNestedAnyWith types) value.anys )
-        , ( "values", Ok (Proto.Json.repeatedField Proto.Json.encodeValue value.values) )
-        , ( "valueMap", Ok (Proto.Json.dictField identity Proto.Json.encodeValue value.valueMap) )
-        , ( "timestamps", Ok (Proto.Json.repeatedField Proto.Json.encodeTimestamp value.timestamps) )
-        , ( "durations", Ok (Proto.Json.repeatedField Proto.Json.encodeDuration value.durations) )
-        , ( "empties", Ok (Proto.Json.repeatedField Proto.Json.encodeEmpty value.empties) )
-        , ( "structs", Ok (Proto.Json.dictField String.fromInt Proto.Json.encodeStruct value.structs) )
-        , ( "nullValue", Ok (Proto.Json.implicitField () Proto.Json.encodeNullValue value.nullValue) )
-        , ( "nullValues", Ok (Proto.Json.repeatedField Proto.Json.encodeNullValue value.nullValues) )
-        , ( "nullMap", Ok (Proto.Json.dictField identity Proto.Json.encodeNullValue value.nullMap) )
+encodeWellKnown : WellKnown -> Proto.Json.Encoder Proto.Error.Error
+encodeWellKnown value =
+    Proto.Json.writeObject
+        [ Proto.Json.checkedFields
+            [ ( "any", Proto.Json.writeOptional Proto.Json.writeAny value.any )
+            , ( "struct", Proto.Json.writeOptional Proto.Json.writeStruct value.struct )
+            , ( "list", Proto.Json.writeOptional Proto.Json.writeListValue value.list )
+            , ( "value", Proto.Json.writeOptional Proto.Json.writeValue value.value )
+            , ( "timestamp", Proto.Json.writeOptional Proto.Json.writeTimestamp value.timestamp )
+            , ( "duration", Proto.Json.writeOptional Proto.Json.writeDuration value.duration )
+            , ( "mask", Proto.Json.writeOptional Proto.Json.writeFieldMask value.mask )
+            ]
+        , Proto.Json.plainFields
+            [ ( "empty", Just (Proto.Json.encodeEmpty value.empty) )
+            ]
+        , Proto.Json.checkedFields
+            [ ( "anys", Proto.Json.writeRepeated Proto.Json.writeAny value.anys )
+            , ( "values", Proto.Json.writeRepeated Proto.Json.writeValue value.values )
+            , ( "valueMap", Proto.Json.writeDict identity Proto.Json.writeValue value.valueMap )
+            , ( "timestamps", Proto.Json.writeRepeated Proto.Json.writeTimestamp value.timestamps )
+            , ( "durations", Proto.Json.writeRepeated Proto.Json.writeDuration value.durations )
+            ]
+        , Proto.Json.plainFields
+            [ ( "empties", Proto.Json.repeatedField Proto.Json.encodeEmpty value.empties )
+            ]
+        , Proto.Json.checkedFields
+            [ ( "structs", Proto.Json.writeDict String.fromInt Proto.Json.writeStruct value.structs )
+            ]
+        , Proto.Json.plainFields
+            [ ( "nullValue", Proto.Json.implicitField () Proto.Json.encodeNullValue value.nullValue )
+            , ( "nullValues", Proto.Json.repeatedField Proto.Json.encodeNullValue value.nullValues )
+            , ( "nullMap", Proto.Json.dictField identity Proto.Json.encodeNullValue value.nullMap )
+            ]
         ]
 
 
 {-| Encodes a [`Wrappers`](#Wrappers) as proto3 JSON.
 -}
-encodeWrappers : Wrappers -> Json.Encode.Value
+encodeWrappers : Wrappers -> Proto.Json.Encoder x
 encodeWrappers value =
-    Proto.Json.objectOfFields
-        [ ( "double", Maybe.map Proto.Json.encodeFloat value.double )
-        , ( "float", Maybe.map Proto.Json.encodeFloat value.float )
-        , ( "int64", Maybe.map Proto.Json.encodeInt64 value.int64 )
-        , ( "uint64", Maybe.map Proto.Json.encodeInt64 value.uint64 )
-        , ( "int32", Maybe.map Json.Encode.int value.int32 )
-        , ( "uint32", Maybe.map Json.Encode.int value.uint32 )
-        , ( "bool", Maybe.map Json.Encode.bool value.bool )
-        , ( "string", Maybe.map Json.Encode.string value.string )
-        , ( "bytes", Maybe.map Proto.Json.encodeBytes value.bytes )
-        , ( "int64s", Proto.Json.repeatedField Proto.Json.encodeInt64 value.int64s )
-        , ( "bytesMap", Proto.Json.dictField identity Proto.Json.encodeBytes value.bytesMap )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "double", Maybe.map Proto.Json.encodeFloat value.double )
+            , ( "float", Maybe.map Proto.Json.encodeFloat value.float )
+            , ( "int64", Maybe.map Proto.Json.encodeInt64 value.int64 )
+            , ( "uint64", Maybe.map Proto.Json.encodeInt64 value.uint64 )
+            , ( "int32", Maybe.map Json.Encode.int value.int32 )
+            , ( "uint32", Maybe.map Json.Encode.int value.uint32 )
+            , ( "bool", Maybe.map Json.Encode.bool value.bool )
+            , ( "string", Maybe.map Json.Encode.string value.string )
+            , ( "bytes", Maybe.map Proto.Json.encodeBytes value.bytes )
+            , ( "int64s", Proto.Json.repeatedField Proto.Json.encodeInt64 value.int64s )
+            , ( "bytesMap", Proto.Json.dictField identity Proto.Json.encodeBytes value.bytesMap )
+            ]
+        )
 
 
 {-| Encodes an [`Across`](#Across) as proto3 JSON.
 -}
-encodeAcross : Across -> Json.Encode.Value
+encodeAcross : Across -> Proto.Json.Encoder x
 encodeAcross value =
-    Proto.Json.objectOfFields
-        [ ( "remote", Maybe.map Codec.Other.V1.encodeRemote value.remote )
-        , ( "shade", Proto.Json.implicitField Codec.Other.V1.ShadeUnspecified Codec.Other.V1.encodeShade value.shade )
-        , ( "remotes", Proto.Json.repeatedField Codec.Other.V1.encodeRemote value.remotes )
-        , ( "shades", Proto.Json.dictField identity Codec.Other.V1.encodeShade value.shades )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "remote", Proto.Json.totalOptionalField Codec.Other.V1.encodeRemote value.remote )
+            , ( "shade", Proto.Json.implicitField Codec.Other.V1.ShadeUnspecified Codec.Other.V1.encodeShade value.shade )
+            , ( "remotes", Proto.Json.totalRepeatedField Codec.Other.V1.encodeRemote value.remotes )
+            , ( "shades", Proto.Json.dictField identity Codec.Other.V1.encodeShade value.shades )
+            ]
+        )
 
 
 {-| Encodes a [`Leaf`](#Leaf) as proto3 JSON.
 -}
-encodeLeaf : Leaf -> Json.Encode.Value
+encodeLeaf : Leaf -> Proto.Json.Encoder x
 encodeLeaf value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        , ( "count", Proto.Json.implicitField 0 Json.Encode.int value.count )
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            , ( "count", Proto.Json.implicitField 0 Json.Encode.int value.count )
+            ]
+        )
+
+
+{-| Encodes an [`Everything`](#Everything) as proto3 JSON, or fails if the input contains a bad value.
+-}
+encodeEverything : Everything -> Proto.Json.Encoder Proto.Error.Error
+encodeEverything value =
+    Proto.Json.writeObject
+        [ Proto.Json.plainFields
+            [ ( "scalars", Proto.Json.totalOptionalField encodeScalars value.scalars )
+            , ( "optionals", Proto.Json.totalOptionalField encodeOptionals value.optionals )
+            , ( "repeated", Proto.Json.totalOptionalField encodeRepeated value.repeated )
+            , ( "maps", Proto.Json.totalOptionalField encodeMaps value.maps )
+            ]
+        , Proto.Json.checkedFields
+            [ ( "choice", Proto.Json.writeOptional encodeChoice value.choice )
+            ]
+        , Proto.Json.plainFields
+            [ ( "names", Proto.Json.totalOptionalField encodeNames value.names )
+            , ( "outer", Proto.Json.totalOptionalField encodeOuter value.outer )
+            , ( "tree", Proto.Json.totalOptionalField encodeTree value.tree )
+            ]
+        , Proto.Json.checkedFields
+            [ ( "wellKnown", Proto.Json.writeDeeper (Proto.Json.writeOptional encodeWellKnown value.wellKnown) )
+            ]
+        , Proto.Json.plainFields
+            [ ( "wrappers", Proto.Json.totalOptionalField encodeWrappers value.wrappers )
+            , ( "across", Proto.Json.totalOptionalField encodeAcross value.across )
+            ]
+        , Proto.Json.checkedFields
+            [ ( "more", Proto.Json.writeDeeper (Proto.Json.writeRepeated encodeEverything_ value.more) )
+            ]
         ]
 
 
-{-| Encodes an [`Everything`](#Everything) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
+{-| Encodes an [`Everything_`](#Everything_) as proto3 JSON, or fails if the input contains a bad value.
 -}
-encodeEverythingWith : Proto.Registry.Registry -> Everything -> Result Proto.Error.Error Json.Encode.Value
-encodeEverythingWith types value =
-    Proto.Json.tryObjectOfFields
-        [ ( "scalars", Ok (Maybe.map encodeScalars value.scalars) )
-        , ( "optionals", Ok (Maybe.map encodeOptionals value.optionals) )
-        , ( "repeated", Ok (Maybe.map encodeRepeated value.repeated) )
-        , ( "maps", Ok (Maybe.map encodeMaps value.maps) )
-        , ( "choice", Ok (Maybe.map encodeChoice value.choice) )
-        , ( "names", Ok (Maybe.map encodeNames value.names) )
-        , ( "outer", Ok (Maybe.map encodeOuter value.outer) )
-        , ( "tree", Ok (Maybe.map encodeTree value.tree) )
-        , ( "wellKnown", Proto.Json.tryOptionalField (encodeWellKnownWith (Proto.Json.registryDeeper types)) value.wellKnown )
-        , ( "wrappers", Ok (Maybe.map encodeWrappers value.wrappers) )
-        , ( "across", Ok (Maybe.map encodeAcross value.across) )
-        , ( "more", Proto.Json.tryRepeatedField (encodeEverything_With (Proto.Json.registryDeeper types)) value.more )
-        ]
-
-
-{-| Encodes an [`Everything_`](#Everything_) as proto3 JSON, writing each `Any` it holds with the registry.
--}
-encodeEverything_With : Proto.Registry.Registry -> Everything_ -> Result Proto.Error.Error Json.Encode.Value
-encodeEverything_With types (Everything_ value) =
-    encodeEverythingWith types value
+encodeEverything_ : Everything_ -> Proto.Json.Encoder Proto.Error.Error
+encodeEverything_ (Everything_ value) =
+    encodeEverything value
 
 
 
@@ -1425,7 +1472,7 @@ decodeChoice =
     decodeNestedChoice 1
 
 
-{-| [`decodeChoice`](#decodeChoice) for a [`Choice`](#Choice) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeChoice`](#decodeChoice) for a [`Choice`](#Choice) held `depth` levels deep.
 -}
 decodeNestedChoice : Int -> Json.Decode.Decoder Choice
 decodeNestedChoice depth =
@@ -1444,7 +1491,7 @@ decodeChoicePick =
     decodeNestedChoicePick 1
 
 
-{-| [`decodeChoicePick`](#decodeChoicePick) for a [`ChoicePick`](#ChoicePick) held by a message `depth` levels deep. That message's decoder calls it at each depth.
+{-| [`decodeChoicePick`](#decodeChoicePick) for a [`ChoicePick`](#ChoicePick) held by a message `depth` levels deep.
 -}
 decodeNestedChoicePick : Int -> Json.Decode.Decoder ChoicePick
 decodeNestedChoicePick depth =
@@ -1524,7 +1571,7 @@ decodeTree =
     decodeNestedTree 1
 
 
-{-| [`decodeTree`](#decodeTree) for a [`Tree`](#Tree) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeTree`](#decodeTree) for a [`Tree`](#Tree) held `depth` levels deep.
 -}
 decodeNestedTree : Int -> Json.Decode.Decoder Tree
 decodeNestedTree =
@@ -1555,7 +1602,7 @@ decodeTreeLink =
     decodeNestedTreeLink 1
 
 
-{-| [`decodeTreeLink`](#decodeTreeLink) for a [`TreeLink`](#TreeLink) held by a message `depth` levels deep. That message's decoder calls it at each depth.
+{-| [`decodeTreeLink`](#decodeTreeLink) for a [`TreeLink`](#TreeLink) held by a message `depth` levels deep.
 -}
 decodeNestedTreeLink : Int -> Json.Decode.Decoder TreeLink
 decodeNestedTreeLink depth =
@@ -1573,7 +1620,7 @@ decodeWellKnownWith types =
     decodeNestedWellKnownWith types (max 1 (Proto.Json.registryDepth types))
 
 
-{-| [`decodeWellKnownWith`](#decodeWellKnownWith) for a [`WellKnown`](#WellKnown) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeWellKnownWith`](#decodeWellKnownWith) for a [`WellKnown`](#WellKnown) held `depth` levels deep.
 -}
 decodeNestedWellKnownWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder WellKnown
 decodeNestedWellKnownWith types depth =
@@ -1651,7 +1698,7 @@ decodeEverythingWith types =
     decodeNestedEverythingWith types (max 1 (Proto.Json.registryDepth types))
 
 
-{-| [`decodeEverythingWith`](#decodeEverythingWith) for an [`Everything`](#Everything) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeEverythingWith`](#decodeEverythingWith) for an [`Everything`](#Everything) held `depth` levels deep.
 -}
 decodeNestedEverythingWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder Everything
 decodeNestedEverythingWith types depth =
@@ -3398,7 +3445,7 @@ mergeChoiceBytes =
     mergeNestedChoiceBytes 1
 
 
-{-| [`mergeChoiceBytes`](#mergeChoiceBytes) for a [`Choice`](#Choice) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeChoiceBytes`](#mergeChoiceBytes) for a [`Choice`](#Choice) held `depth` levels deep.
 -}
 mergeNestedChoiceBytes : Int -> Choice -> Proto.Binary.Decoder Choice
 mergeNestedChoiceBytes depth =
@@ -3885,7 +3932,7 @@ mergeTreeBytes =
     mergeNestedTreeBytes 1
 
 
-{-| [`mergeTreeBytes`](#mergeTreeBytes) for a [`Tree`](#Tree) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeTreeBytes`](#mergeTreeBytes) for a [`Tree`](#Tree) held `depth` levels deep.
 -}
 mergeNestedTreeBytes : Int -> Tree -> Proto.Binary.Decoder Tree
 mergeNestedTreeBytes =
@@ -4017,7 +4064,7 @@ mergeTree_Bytes (Tree_ value) =
     Proto.Binary.map Tree_ (mergeTreeBytes value)
 
 
-{-| [`mergeTree_Bytes`](#mergeTree_Bytes) for a [`Tree_`](#Tree_) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeTree_Bytes`](#mergeTree_Bytes) for a [`Tree_`](#Tree_) held `depth` levels deep.
 -}
 mergeNestedTree_Bytes : Int -> Tree_ -> Proto.Binary.Decoder Tree_
 mergeNestedTree_Bytes depth (Tree_ value) =
@@ -4031,7 +4078,7 @@ mergeWellKnownBytes =
     mergeNestedWellKnownBytes 1
 
 
-{-| [`mergeWellKnownBytes`](#mergeWellKnownBytes) for a [`WellKnown`](#WellKnown) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeWellKnownBytes`](#mergeWellKnownBytes) for a [`WellKnown`](#WellKnown) held `depth` levels deep.
 -}
 mergeNestedWellKnownBytes : Int -> WellKnown -> Proto.Binary.Decoder WellKnown
 mergeNestedWellKnownBytes depth =
@@ -4955,7 +5002,7 @@ mergeEverythingBytes =
     mergeNestedEverythingBytes 1
 
 
-{-| [`mergeEverythingBytes`](#mergeEverythingBytes) for an [`Everything`](#Everything) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeEverythingBytes`](#mergeEverythingBytes) for an [`Everything`](#Everything) held `depth` levels deep.
 -}
 mergeNestedEverythingBytes : Int -> Everything -> Proto.Binary.Decoder Everything
 mergeNestedEverythingBytes =
@@ -5264,7 +5311,7 @@ mergeEverything_Bytes (Everything_ value) =
     Proto.Binary.map Everything_ (mergeEverythingBytes value)
 
 
-{-| [`mergeEverything_Bytes`](#mergeEverything_Bytes) for an [`Everything_`](#Everything_) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeEverything_Bytes`](#mergeEverything_Bytes) for an [`Everything_`](#Everything_) held `depth` levels deep.
 -}
 mergeNestedEverything_Bytes : Int -> Everything_ -> Proto.Binary.Decoder Everything_
 mergeNestedEverything_Bytes depth (Everything_ value) =

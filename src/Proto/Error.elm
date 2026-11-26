@@ -45,6 +45,14 @@ import Proto.Internal.JsonError as JsonError
   - `UnregisteredType`: a `google.protobuf.Any` of a type, its URL here,
     that the registry it was converted through has no entry for. Register
     the type.
+  - `BadValue`: a value a proto3 JSON write refused, because proto3 JSON has
+    no form for it: a `Timestamp` outside years 1 to 9999, a `FieldMask` path
+    whose lowerCamelCase form reads back as another path, a number in a
+    `Value` that is NaN or infinite. `typeName` is the full name of its type, such as
+    `google.protobuf.Timestamp`; `path` holds the JSON field names and list
+    indexes or map keys leading to it from the message written, outermost
+    first; `message` says what is wrong with the value, such as `the time is
+    outside years 1 to 9999`, and never quotes the value.
 
 -}
 type Error
@@ -52,6 +60,7 @@ type Error
     | BadJson Json.Decode.Error
     | TypeMismatch { expected : String, actual : String }
     | UnregisteredType String
+    | BadValue { typeName : String, path : List String, message : String }
 
 
 {-| Why protobuf binary is not the message it was read as:
@@ -156,6 +165,17 @@ toString error =
 
         UnregisteredType typeUrl ->
             "An Any holding " ++ typeUrl ++ " was converted through a registry that has no entry for its type."
+
+        BadValue { typeName, path, message } ->
+            ("A " ++ typeName ++ " holds a value proto3 JSON has no form for")
+                ++ (if List.isEmpty path then
+                        ": "
+
+                    else
+                        ", at " ++ String.join "." path ++ ": "
+                   )
+                ++ message
+                ++ "."
 
 
 reasonText : Reason -> String

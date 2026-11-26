@@ -517,6 +517,113 @@ defaults included and `Nothing` as `null`; proto3 JSON allows both, and
 request bodies now hold only what the message holds. Where: design
 §3.4.
 
+### Accept on read what the wire admits, refuse on a JSON write
+
+*2026-11-24.*
+
+A read accepts whatever the wire admits; a JSON write refuses a value
+proto3 JSON has no form for, as protobuf's own JSON writers do: a
+`Timestamp` outside years 1 to 9999, a non-finite number in a `Value`,
+`Struct` or `ListValue`, a `FieldMask` path that does not survive
+lowerCamelCase. The encoders were total functions to `Value` and wrote
+such a value wrongly and silently (a NaN as `null`). The binary codec
+has a form for every value and writes them all.
+
+The refusal is in the encoder's type: one opaque `Proto.Json.Encoder x`
+per message, `encodeNote : Note -> Proto.Json.Encoder x`, where `x` is
+what the write can refuse with: free for a message that holds nothing
+refusable, `Proto.Error.Error` for one that holds an `Any`, a
+`Timestamp`, `Duration`, `FieldMask`, `Struct`, `ListValue` or `Value`,
+at any depth. `Proto.Json.encode` and `encodeWith` run an `Encoder
+Proto.Error.Error` and give a `Result`; `encodeTotal : Encoder Never ->
+Value` runs one that cannot refuse, with no `Result`, and the compiler
+rejects it for one that can. A refusal is `Proto.Error.BadValue {
+typeName, path, message }`, the path gathered only when a write fails and
+the message a fixed text per check that says what is wrong without
+quoting the value, so `Rpc.Error.badValue` can carry it where a path,
+which can hold a map's keys, would leak the request's data. Why one
+opaque encoder and not encoders giving a `Result`:
+
+- New checks stay non-breaking. A check added later (a `Duration` past
+  protobuf's range, once the well-known types allow one) changes no
+  signature where the type already says the write can refuse, and a
+  message that gains a refusable field breaks only its `encodeTotal`
+  call sites, where the new failure has to be handled.
+- Correct by default: the common call, `encode`, checks, and the
+  unchecked writers are gone from the public surface; a writer that
+  skips the check (`Proto.Value.toJson`) says so in its name and docs.
+- The registry stays hidden: an `Any` needs one, but a message's encoder
+  takes none; `encodeWith` gives it at the top, so a message that gains
+  an `Any` does not change how its encoder is called.
+
+Encoders giving a `Result` everywhere were rejected: every plain
+message pays a tag per field and every caller a `case`, and a new
+check is a new `Result` in a signature. So was a plain twin beside
+every encoder (`jsonNote : Note -> Value` next to `encodeNote`), which
+doubles the public names and makes a message lose its twin when it gains
+a refusable field. A message that can refuse writes its fields in
+declaration order as runs of plain and checked fields, so it writes the
+text the plain encoder wrote.
+
+Over a call the same check runs once, before any route is built, on
+every call over JSON: a request with no JSON is not sent
+(`Rpc.Error.badValue`, `InvalidArgument`; `Rpc.Error.badAny` for an
+`Any`). Over binary the call is sent.
+
+The costs, measured for this change against the commit before it (paired
+builds, five layout variants each, four node windows, node 24.21.0, Elm
+0.19.3; A/A noise 2 to 3 % at most):
+
+- A message that cannot refuse pays one wrap at the top and one unwrap
+  per nested message: a flat message of 8 scalars writes 10 to 11 %
+  slower (about 30 ns of 0.29 µs; the compiled difference is the
+  `Ready` allocation and the three-way `case` that unwraps it), three
+  nested levels 2 to 3 %, 300 flat messages in a list between 2 and
+  12 % (the base's own figure moved 9 % between task slots).
+- A message holding a value that can refuse: a valid `Timestamp` 3 %
+  faster alone and 5 % slower 300 in a list; a `Struct` 13 to 22 %
+  slower (the finiteness walk); the note, which reaches an `Any`, 6 to
+  8 % faster.
+- Refusing is cheaper than writing: a flat message with one bad
+  `Timestamp` is refused in 62 % of the time the base took to write it
+  unchecked; the same bad `Timestamp` in the 300th of 300 messages costs
+  what writing the 300 does (within 1 %).
+- Preparing a call over a route without a body (a `GET`) encodes the
+  request it did not encode before: 0.1 µs (+21 %) for a one-field
+  request, 0.2 µs (+10 %) for four query fields. A Connect `POST` was
+  already encoding: it prepares 15 % faster.
+- In Chromium 148 (two windows of the same builds) the signs are the
+  same but for the flat message, within 1 % there, and a recursive tree
+  costs 12 to 13 % where node shows 7; Firefox and WebKit, whose timers
+  are coarse outside an isolated page, agree within their noise.
+- Bundles (`elm make --optimize`, terser, `gzip -9`): a program that
+  writes no JSON is unchanged (the same definitions, gzip +2 B); one
+  writing a message that cannot refuse grows by 183 B; a JSON-only client
+  by 200 B, the encoder's runner and the request check's error paths,
+  which every program sending over JSON links; the notes example by
+  1.2 KB (the run writer).
+
+A plain twin for messages on a cycle alone (`encodePlainNode`, which the
+message's own recursion calls, so the wrap happens once at the top) was
+built and measured, and left out: a 601-node tree of a recursive message
+that reaches no `Any` writes 7 to 8 % slower with one encoder per
+message, and the twin brought it back within 1 %; a 99-deep chain did
+not move past the noise either way, and nothing else moved. It buys
+back a few per cent on a form that is not performance-sensitive, at the
+price of a second exposed encoder for every such message, which it
+loses when it gains a refusable field: the twin problem this design
+removes.
+
+Depth stays as the nesting rule has it: nothing general is counted on
+writes, a value the program built too deep is the program's (it
+overflows the stack while written), and only the levels around an
+`Any` written through the registry are counted, as a read counts them;
+an `Any` written alone counts from the top, as a read of one does.
+Waiting for the well-known types pass: `Proto.Duration.fromParts`
+clamps, so a `Duration` is never refused yet, though it is typed as
+refusable; the two out-of-range `Duration` conformance cases stay
+expected failures. Where: design §3.2, §3.4, §3.5, §4, §5.5.
+
 ### Decoder steps
 
 *2026-10-10.*
@@ -798,6 +905,24 @@ call carrying every binding has nothing to fuse,
 `Rpc.Call.viaBinding n` picks a binding without a name for it, and a
 method without a rule takes the implicit route. The same shape is
 connect-es's in its second version. Where: design §2, §4, §5.2.
+
+2026-11-24: `Rpc.request` gives `Result Rpc.Error Rpc.Request`. It was
+kept total on purpose, building a request whatever the call held (a bad
+base URL, a header a request cannot carry, a path value its template
+cannot match) and leaving the refusing to sending, so that any call
+could be shown (A path value that cannot match is not sent, below).
+Once a JSON write can refuse the request itself, a refused request has
+nothing truthful to build: the total `Rpc.request` carried `null` in the
+message's place. And the pure-halves pattern sends what it is given
+(`Rpc.request`, a rewrite, `Rpc.taskFromRequest`; elm/http directly), so
+what `Rpc.request` gives must be what sending would send. It gives the
+error of every refusal `send` and `task` make, not only the unbuildable
+request, so that `Ok` means exactly that; rejected: an error for the
+unbuildable request alone, which would leave an `Ok` request that
+sending refuses. The cost: a refused request can no longer be inspected,
+and a test of a path value its template cannot match reads the error,
+not the URL (the runtime's own replay of the route fixtures reads the
+request the internal plan builds, which still prints it).
 
 ### A module per service
 
@@ -1545,6 +1670,28 @@ design §4, §5.1, §5.3.
 2026-11-19: the follow-up above was built as a spike and not adopted;
 both route shapes stay (A binding's response field is the method's,
 below).
+
+2026-11-24: a typed route never ran the request's encoder, so once a
+JSON write could refuse a value, a refusable value in a path, a query or
+a typed `Value` body went out unchecked while the same value in a JSON
+body was refused. A send over JSON now writes the request's JSON once,
+before it builds any route, and refuses a request that has none; path
+and query text use the JSON forms, so the one check covers every
+binding, and a route with no body keeps printing them unchecked behind
+it. A route whose body holds a value the write can refuse takes the JSON
+the check wrote (`withJsonRoutes`), as an `Any` body did, since only that
+write gives the body; a `Value` body joins them, read by
+`Proto.Route.jsonValueField`, which keeps a `NullValue`'s `null` where
+`jsonField` reads an unset message as `{}`. The JSON shape was not widened
+to every route of a refusable request: a route with no body, or with a
+body nothing in it can refuse, has its own writer. The cost is one JSON
+encode per call over a typed route that did not need one, a `GET`
+(Accept on read what the wire admits, refuse on a JSON write, above,
+has the figures). Considered: JSON routes
+for every refusable request (the first build of the encoder had them),
+which makes a `GET` of a message holding a `Timestamp` take the JSON it
+does not use and changes those methods' route types for nothing the
+check does not already give.
 
 ### A binding's response field is the method's
 

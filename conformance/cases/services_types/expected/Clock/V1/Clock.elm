@@ -45,7 +45,7 @@ now =
     Rpc.call
         (Proto.Method.init "clock.v1.Clock"
             "Now"
-            (\_ -> Ok << Proto.Json.encodeEmpty)
+            (Proto.Json.succeed << Proto.Json.encodeEmpty)
             (\_ -> Proto.Json.timestamp)
             (Proto.Binary.messageEncoder Proto.Binary.empty)
             (Proto.Binary.messageDecoder Proto.Binary.timestamp)
@@ -64,7 +64,7 @@ sleep =
     Rpc.call
         (Proto.Method.init "clock.v1.Clock"
             "Sleep"
-            (\_ -> Ok << Proto.Json.encodeDuration)
+            Proto.Json.writeDuration
             (\_ -> Proto.Json.empty)
             (Proto.Binary.messageEncoder Proto.Binary.duration)
             (Proto.Binary.messageDecoder Proto.Binary.empty)
@@ -83,7 +83,7 @@ mask =
     Rpc.call
         (Proto.Method.init "clock.v1.Clock"
             "Mask"
-            (\_ -> Ok << Proto.Json.encodeFieldMask)
+            Proto.Json.writeFieldMask
             (\_ -> Proto.Json.struct)
             (Proto.Binary.messageEncoder Proto.Binary.fieldMask)
             (Proto.Binary.messageDecoder Proto.Binary.struct)
@@ -102,7 +102,7 @@ echo =
     Rpc.call
         (Proto.Method.init "clock.v1.Clock"
             "Echo"
-            (\_ -> Ok << Proto.Json.encodeValue)
+            Proto.Json.writeValue
             (\_ -> Proto.Json.listValue)
             (Proto.Binary.messageEncoder Proto.Binary.value)
             (Proto.Binary.messageDecoder Proto.Binary.listValue)
@@ -121,7 +121,7 @@ ticks =
     Rpc.call
         (Proto.Method.init "clock.v1.Clock"
             "Ticks"
-            (\_ -> Ok << Proto.Json.encodeInt64AsInt)
+            (Proto.Json.succeed << Proto.Json.encodeInt64AsInt)
             (\_ -> Proto.Json.uint64AsInt)
             (Proto.Binary.messageEncoder Proto.Binary.int64ValueAsInt)
             (Proto.Binary.messageDecoder Proto.Binary.uint64ValueAsInt)
@@ -140,7 +140,7 @@ count =
     Rpc.call
         (Proto.Method.init "clock.v1.Clock"
             "Count"
-            (\_ -> Ok << Json.Encode.int)
+            (Proto.Json.succeed << Json.Encode.int)
             (\_ -> Proto.Json.uint32)
             (Proto.Binary.messageEncoder Proto.Binary.int32Value)
             (Proto.Binary.messageDecoder Proto.Binary.uint32Value)
@@ -159,7 +159,7 @@ ratio =
     Rpc.call
         (Proto.Method.init "clock.v1.Clock"
             "Ratio"
-            (\_ -> Ok << Proto.Json.encodeFloat)
+            (Proto.Json.succeed << Proto.Json.encodeFloat)
             (\_ -> Proto.Json.float32)
             (Proto.Binary.messageEncoder Proto.Binary.doubleValue)
             (Proto.Binary.messageDecoder Proto.Binary.floatValue)
@@ -178,7 +178,7 @@ name =
     Rpc.call
         (Proto.Method.init "clock.v1.Clock"
             "Name"
-            (\_ -> Ok << Json.Encode.string)
+            (Proto.Json.succeed << Json.Encode.string)
             (\_ -> Json.Decode.bool)
             (Proto.Binary.messageEncoder Proto.Binary.stringValue)
             (Proto.Binary.messageDecoder Proto.Binary.boolValue)
@@ -197,7 +197,7 @@ raw =
     Rpc.call
         (Proto.Method.init "clock.v1.Clock"
             "Raw"
-            (\_ -> Ok << Proto.Json.encodeBytes)
+            (Proto.Json.succeed << Proto.Json.encodeBytes)
             (\_ -> Proto.Json.bytes)
             (Proto.Binary.messageEncoder Proto.Binary.bytesValue)
             (Proto.Binary.messageDecoder Proto.Binary.bytesValue)
@@ -216,7 +216,7 @@ zone =
     Rpc.call
         (Proto.Method.init "clock.v1.Clock"
             "Zone"
-            (\_ -> Ok << Zones.V1.encodeZoneRequest)
+            Zones.V1.encodeZoneRequest
             (\_ -> Zones.V1.decodeZone)
             Zones.V1.encodeZoneRequestBytes
             Zones.V1.decodeZoneBytes
@@ -235,7 +235,7 @@ set =
     Rpc.call
         (Proto.Method.init "clock.v1.Clock"
             "Set"
-            (\_ -> Ok << Clock.V1.encodeAlarm)
+            Clock.V1.encodeAlarm
             (\_ -> Clock.V1.decodeAlarm)
             Clock.V1.encodeAlarmBytes
             Clock.V1.decodeAlarmBytes

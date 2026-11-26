@@ -125,20 +125,24 @@ registry =
 
 {-| Encodes an [`Item`](#Item) as proto3 JSON.
 -}
-encodeItem : Item -> Json.Encode.Value
+encodeItem : Item -> Proto.Json.Encoder x
 encodeItem value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            ]
+        )
 
 
 {-| Encodes a [`GetItemRequest`](#GetItemRequest) as proto3 JSON.
 -}
-encodeGetItemRequest : GetItemRequest -> Json.Encode.Value
+encodeGetItemRequest : GetItemRequest -> Proto.Json.Encoder x
 encodeGetItemRequest value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            ]
+        )
 
 
 

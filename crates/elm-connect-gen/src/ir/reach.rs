@@ -1,18 +1,26 @@
 //! Which messages reach a `google.protobuf.Any`: those holding one in a
 //! field, a map value or a oneof member, or holding a message that does,
 //! across packages. Under `wire=both` an `Any` holds its message's binary,
-//! and writing it as proto3 JSON can fail, so the JSON codecs of these
-//! messages take a registry and their encoders give a `Result` (design
-//! §3.5).
+//! so the JSON decoders of these messages take a registry (design §3.5).
+//!
+//! The same walk, seeded also with the well-known types whose Elm values
+//! can hold what proto3 JSON has no form for, finds the messages whose JSON
+//! write can be refused: their encoders are built from
+//! `Proto.Json.writeObject`, and the others are written by plain code.
 
 use std::collections::BTreeSet;
 
 use super::{Message, Oneof, Package, TypeRef, WellKnown};
 
-/// The messages that reach a `google.protobuf.Any`, by full proto name.
+/// The messages that reach a `google.protobuf.Any`, or, built by
+/// [`AnyReach::refusable`], whose JSON write can be refused; by full proto
+/// name.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct AnyReach {
     messages: BTreeSet<String>,
+    /// Whether the well-known types whose Elm values can hold what proto3
+    /// JSON cannot write seed the walk beside `Any`.
+    checked: bool,
 }
 
 impl AnyReach {
@@ -20,11 +28,25 @@ impl AnyReach {
     /// holds one directly does; then, until nothing changes, so does one
     /// holding a message that does, so a cycle of messages ends.
     pub fn of<'p>(packages: impl IntoIterator<Item = &'p Package>) -> Self {
+        Self::walk(packages, false)
+    }
+
+    /// The messages of `packages` whose JSON write can be refused: those
+    /// that reach an `Any` or a well-known type with values proto3 JSON has
+    /// no form for ([`checked`]).
+    pub fn refusable<'p>(packages: impl IntoIterator<Item = &'p Package>) -> Self {
+        Self::walk(packages, true)
+    }
+
+    fn walk<'p>(packages: impl IntoIterator<Item = &'p Package>, checked: bool) -> Self {
         let messages: Vec<&Message> = packages
             .into_iter()
             .flat_map(|package| &package.messages)
             .collect();
-        let mut reach = AnyReach::default();
+        let mut reach = AnyReach {
+            checked,
+            ..AnyReach::default()
+        };
         loop {
             let found: Vec<&str> = messages
                 .iter()
@@ -39,27 +61,46 @@ impl AnyReach {
         }
     }
 
-    /// Whether the message `full_name` reaches an `Any`.
+    /// Whether the message `full_name` is in the set.
     pub fn message(&self, full_name: &str) -> bool {
         self.messages.contains(full_name)
     }
 
-    /// Whether a value of `ty` is or reaches an `Any`.
+    /// Whether a value of `ty` is or reaches an `Any` (or, for
+    /// [`AnyReach::refusable`], something refusable).
     pub fn type_ref(&self, ty: &TypeRef) -> bool {
         match ty {
             TypeRef::WellKnown(WellKnown::Any) => true,
+            TypeRef::WellKnown(known) if self.checked => checked(*known),
             TypeRef::Message(name) => self.message(&name.proto_full_name),
             TypeRef::Scalar(_) | TypeRef::Enum { .. } | TypeRef::WellKnown(_) => false,
         }
     }
 
-    /// Whether a member of `oneof` is or reaches an `Any`.
+    /// Whether a member of `oneof` is or reaches an `Any` (as
+    /// [`AnyReach::type_ref`]).
     pub fn oneof(&self, oneof: &Oneof) -> bool {
         oneof
             .variants
             .iter()
             .any(|variant| self.type_ref(&variant.ty))
     }
+}
+
+/// Whether a well-known type's Elm values can hold what proto3 JSON has no
+/// form for: a `Timestamp` outside years 1 to 9999, a `Duration` past
+/// protobuf's range, a `FieldMask` path that does not round-trip through
+/// lowerCamelCase, a number in a `Value` that is not finite.
+pub fn checked(known: WellKnown) -> bool {
+    matches!(
+        known,
+        WellKnown::Timestamp
+            | WellKnown::Duration
+            | WellKnown::FieldMask
+            | WellKnown::Value
+            | WellKnown::Struct
+            | WellKnown::ListValue
+    )
 }
 
 /// The type of each field and oneof member of `message`.
@@ -254,5 +295,42 @@ mod tests {
         assert!(reach.message("a.Tree"));
         assert!(reach.message("a.Node"));
         assert!(!reach.message("a.Loop"));
+    }
+
+    #[test]
+    fn a_checked_well_known_type_makes_a_write_refusable_but_not_an_any_reach() {
+        let packages = [package(
+            "A",
+            vec![
+                message(
+                    "a.Stamped",
+                    vec![field(
+                        Cardinality::Singular,
+                        TypeRef::WellKnown(WellKnown::Timestamp),
+                    )],
+                    vec![],
+                ),
+                message(
+                    "a.Holder",
+                    vec![field(Cardinality::Repeated, of("a.Stamped"))],
+                    vec![],
+                ),
+                message(
+                    "a.Wrapped",
+                    vec![field(
+                        Cardinality::Singular,
+                        TypeRef::WellKnown(WellKnown::StringValue),
+                    )],
+                    vec![oneof(TypeRef::WellKnown(WellKnown::Empty))],
+                ),
+            ],
+        )];
+        let refusable = AnyReach::refusable(&packages);
+        assert!(refusable.message("a.Stamped"));
+        assert!(refusable.message("a.Holder"));
+        assert!(!refusable.message("a.Wrapped"));
+        let reach = AnyReach::of(&packages);
+        assert!(!reach.message("a.Stamped"));
+        assert!(!reach.message("a.Holder"));
     }
 }

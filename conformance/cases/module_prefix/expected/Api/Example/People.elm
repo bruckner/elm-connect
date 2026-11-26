@@ -131,12 +131,14 @@ encodeRole value =
 
 {-| Encodes a [`User`](#User) as proto3 JSON.
 -}
-encodeUser : User -> Json.Encode.Value
+encodeUser : User -> Proto.Json.Encoder x
 encodeUser value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        , ( "role", Proto.Json.implicitField RoleUnspecified encodeRole value.role )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            , ( "role", Proto.Json.implicitField RoleUnspecified encodeRole value.role )
+            ]
+        )
 
 
 

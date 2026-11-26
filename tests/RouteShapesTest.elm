@@ -17,14 +17,18 @@ import Generated.Shapes.Blobs.V1 as B
 import Generated.Shapes.Blobs.V1.BlobService as Service
 import Json.Encode
 import Proto.Any
+import Proto.Error
 import Proto.Method
 import Proto.Value
+import Requests exposing (builtOf, refusalOf)
 import Rpc
 import Rpc.Body
 import Rpc.Call
 import Rpc.Client
+import Rpc.Error
 import Rpc.Protocol
 import Test exposing (Test, describe, test)
+import Time
 
 
 base : Rpc.Client Rpc.Json
@@ -41,7 +45,7 @@ show : Rpc.Client Rpc.Json -> Rpc.Call Rpc.Json req res -> String
 show client call =
     let
         request =
-            Rpc.request client call
+            builtOf client call
     in
     request.method ++ " " ++ request.url ++ " " ++ Maybe.withDefault "<none>" (Rpc.Body.toText request.body)
 
@@ -154,6 +158,31 @@ folders =
     ]
 
 
+moments : List B.Moment
+moments =
+    [ { name = "moments/1", at = Nothing }
+    , { name = "moments/2", at = Just (Time.millisToPosix 1700000000500) }
+    , { name = "", at = Just (Time.millisToPosix 0) }
+    ]
+
+
+{-| A time proto3 JSON has no form for: past the year 9999.
+-}
+tooLate : Time.Posix
+tooLate =
+    Time.millisToPosix 300000000000000
+
+
+{-| The error `Rpc.request` refuses a call over each of its bindings with:
+nothing is sent.
+-}
+refusals : (req -> Rpc.Call Rpc.Json req res) -> req -> List (Maybe Rpc.Error)
+refusals toCall request =
+    List.range 0 2
+        |> List.filterMap (\index -> Rpc.Call.viaBinding index (toCall request))
+        |> List.map (refusalOf withTypes)
+
+
 frees : List B.Free
 frees =
     [ { name = "values/1", value = Nothing }
@@ -174,6 +203,41 @@ suite =
         , agree "a body field on a cycle" Service.descriptorMoveFolder Service.moveFolder folders
         , agree "a body field of Empty" Service.descriptorTouch Service.touch [ { name = "slots/1", nothing = () }, { name = "", nothing = () } ]
         , agree "a body field of Value" Service.descriptorSetValue Service.setValue frees
+        , agree "a Timestamp in a path and in the query" Service.descriptorGetMoment Service.getMoment moments
+        , agree "a body * holding a Timestamp" Service.descriptorPutMoment Service.putMoment moments
+        , agree "a body field holding a Timestamp" Service.descriptorStamp Service.stamp (List.map (\moment -> { shelf = "shelves/s", moment = Just moment }) moments)
+        , describe "a value a JSON write refuses is refused before a route is built, typed or not"
+            [ test "in a path variable, and in the query over another binding" <|
+                \_ ->
+                    refusals Service.getMoment { name = "moments/1", at = Just tooLate }
+                        |> Expect.equal (List.repeat 2 (Just (Rpc.Error.badValue { typeName = "google.protobuf.Timestamp", path = [ "at" ], message = "the time is outside years 1 to 9999" })))
+            , test "in a body *" <|
+                \_ ->
+                    refusals Service.putMoment { name = "moments/1", at = Just tooLate }
+                        |> Expect.equal [ Just (Rpc.Error.badValue { typeName = "google.protobuf.Timestamp", path = [ "at" ], message = "the time is outside years 1 to 9999" }) ]
+            , test "in a body field" <|
+                \_ ->
+                    refusals Service.stamp { shelf = "shelves/s", moment = Just { name = "moments/1", at = Just tooLate } }
+                        |> Expect.equal [ Just (Rpc.Error.badValue { typeName = "google.protobuf.Timestamp", path = [ "moment", "at" ], message = "the time is outside years 1 to 9999" }) ]
+            , test "in a Value body" <|
+                \_ ->
+                    refusals Service.setValue { name = "values/1", value = Just (Proto.Value.ValueList [ Proto.Value.ValueNumber 1, Proto.Value.ValueNumber (0 / 0) ]) }
+                        |> Expect.equal [ Just (Rpc.Error.badValue { typeName = "google.protobuf.Value", path = [ "value" ], message = "a number is NaN or infinite" }) ]
+            , test "the interpreter's route of the same binding is refused the same" <|
+                \_ ->
+                    [ refusalOf withTypes (interpreted Service.descriptorGetMoment (Service.getMoment { name = "moments/1", at = Just tooLate }))
+                    , refusalOf withTypes (interpreted Service.descriptorSetValue (Service.setValue { name = "values/1", value = Just (Proto.Value.ValueNumber (1 / 0)) }))
+                    ]
+                        |> Expect.equal
+                            [ Just (Rpc.Error.badValue { typeName = "google.protobuf.Timestamp", path = [ "at" ], message = "the time is outside years 1 to 9999" })
+                            , Just (Rpc.Error.badValue { typeName = "google.protobuf.Value", path = [ "value" ], message = "a number is NaN or infinite" })
+                            ]
+            , test "over a binary protocol, which writes any value, it is sent" <|
+                \_ ->
+                    Rpc.request (Rpc.client Rpc.Protocol.connectProto "https://api.example.com") (Service.getMoment { name = "moments/1", at = Just tooLate })
+                        |> Result.map .method
+                        |> Expect.equal (Ok "POST")
+            ]
         , describe "where the typed route is deliberately different"
             [ test "bytes are URL-safe base64 in a path and in the query, where the interpreter writes standard base64" <|
                 \_ ->
@@ -190,13 +254,14 @@ suite =
                 \_ ->
                     both withTypes Service.descriptorSetValue Service.setValue { name = "values/5", value = Just Proto.Value.ValueNull }
                         |> Expect.equal [ ( "POST https://api.example.com/x/v1/values/5 null", "POST https://api.example.com/x/v1/values/5 {}" ) ]
-            , test "a request whose Any the client cannot write keeps its path and query, where the interpreter's has none" <|
+            , test "a request whose Any the client cannot write is refused before either builds a route" <|
                 \_ ->
-                    both base Service.descriptorLabelBlob Service.labelBlob { labeled = Just { name = "labels/a", label = Just packed }, shelf = "shelves/s" }
-                        |> List.map (Tuple.mapBoth withoutBody withoutBody)
-                        |> Expect.equal
-                            [ ( "POST https://api.example.com/x/v1/shelves/s/labels", "POST https://api.example.com/x/v1//labels" )
-                            , ( "PUT https://api.example.com/x/v1/labels/a?shelf=shelves%2Fs", "PUT https://api.example.com/x/v1/" )
-                            ]
+                    let
+                        typed =
+                            Service.labelBlob { labeled = Just { name = "labels/a", label = Just packed }, shelf = "shelves/s" }
+                    in
+                    [ refusalOf base typed, refusalOf base (interpreted Service.descriptorLabelBlob typed) ]
+                        |> List.map (Maybe.map Rpc.Error.protoError)
+                        |> Expect.equal (List.repeat 2 (Just (Just (Proto.Error.UnregisteredType "type.googleapis.com/blobs.v1.Blob"))))
             ]
         ]

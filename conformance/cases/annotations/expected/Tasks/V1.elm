@@ -198,18 +198,20 @@ encodeState value =
 
 {-| Encodes a [`Task`](#Task) as proto3 JSON.
 -}
-encodeTask : Task -> Json.Encode.Value
+encodeTask : Task -> Proto.Json.Encoder x
 encodeTask value =
-    Proto.Json.objectOfFields
-        ([ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-         , ( "title", Proto.Json.implicitField "" Json.Encode.string value.title )
-         , ( "state", Proto.Json.implicitField StateUnspecified encodeState value.state )
-         , ( "labels", Proto.Json.repeatedField Json.Encode.string value.labels )
-         , ( "owner", Proto.Json.implicitField "" Json.Encode.string value.owner )
-         , ( "notes", Proto.Json.implicitField "" Json.Encode.string value.notes )
-         , ( "made", Proto.Json.implicitField "" Json.Encode.string value.made )
-         ]
-            ++ encodeTaskDue value.due
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            ([ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+             , ( "title", Proto.Json.implicitField "" Json.Encode.string value.title )
+             , ( "state", Proto.Json.implicitField StateUnspecified encodeState value.state )
+             , ( "labels", Proto.Json.repeatedField Json.Encode.string value.labels )
+             , ( "owner", Proto.Json.implicitField "" Json.Encode.string value.owner )
+             , ( "notes", Proto.Json.implicitField "" Json.Encode.string value.notes )
+             , ( "made", Proto.Json.implicitField "" Json.Encode.string value.made )
+             ]
+                ++ encodeTaskDue value.due
+            )
         )
 
 
@@ -232,11 +234,13 @@ encodeTaskDue value =
 
 {-| Encodes a [`GetTaskRequest`](#GetTaskRequest) as proto3 JSON.
 -}
-encodeGetTaskRequest : GetTaskRequest -> Json.Encode.Value
+encodeGetTaskRequest : GetTaskRequest -> Proto.Json.Encoder x
 encodeGetTaskRequest value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            ]
+        )
 
 
 

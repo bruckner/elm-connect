@@ -51,7 +51,7 @@ pub const REPOSITORY_BLOBS: &str = repository_blobs!();
 pub const REPOSITORY_FILES: &str = concat!(repository_blobs!(), env!("CARGO_PKG_VERSION"), "/");
 
 /// The runtime package's exposed modules, as its `elm.json` lists them.
-pub const RUNTIME_MODULES: [&str; 35] = [
+pub const RUNTIME_MODULES: [&str; 36] = [
     "Rpc",
     "Rpc.Call",
     "Rpc.Code",
@@ -79,6 +79,7 @@ pub const RUNTIME_MODULES: [&str; 35] = [
     "Proto.Any",
     "Proto.Error",
     "Proto.Json",
+    "Proto.Json.Encoder",
     "Proto.Binary",
     "Proto.Unknown",
     "Proto.Int64",
@@ -551,13 +552,12 @@ pub const DESCRIPTORS: &str = "descriptors";
 /// that no prefix and type name can take it.
 pub const REGISTRY: &str = "registry";
 
-/// The JSON codec of a message, oneof or wrapper that reaches a
-/// `google.protobuf.Any`, which takes the registry:
-/// its codec's name with `With` at the end (`encodeNoteWith`,
-/// `decodeNoteWith`). Like the binary codecs' `Bytes`, the suffix breaks
-/// the prefix rule of [`default_name`]: the JSON codecs of a type
-/// `NoteWith` would take these names, which the IR builder reports
-/// (`naming::codec_collision`).
+/// The JSON decoder of a message, oneof or wrapper that reaches a
+/// `google.protobuf.Any`, which takes the registry: its decoder's name
+/// with `With` at the end (`decodeNoteWith`). Like the binary codecs'
+/// `Bytes`, the suffix breaks the prefix rule of [`default_name`]: the
+/// JSON decoder of a type `NoteWith` would take this name, which the IR
+/// builder reports (`naming::codec_collision`).
 pub fn with_registry(codec_name: String) -> String {
     format!("{codec_name}{WITH_SUFFIX}")
 }

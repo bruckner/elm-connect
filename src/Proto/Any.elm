@@ -223,7 +223,7 @@ bytes (Internal.Any _ payload) =
 {-| The packed message's proto3 JSON (for a well-known type with a JSON form
 of its own, such as `google.protobuf.Timestamp`, that form), converted from
 its binary through the registry's entry for its type: for showing an `Any`,
-and what [`Proto.Json.encodeAnyWith`](Proto-Json#encodeAnyWith) writes with
+and what [`Proto.Json.writeAny`](Proto-Json#writeAny) writes with
 its `"@type"`. The empty `Any`, with no type URL, gives `{}`. It fails with
 [`UnregisteredType`](Proto-Error#Error) for a type the registry has no entry
 for, and with [`BadBinary`](Proto-Error#Error) when the binary is not that

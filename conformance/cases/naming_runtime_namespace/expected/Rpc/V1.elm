@@ -92,9 +92,9 @@ registry =
 
 {-| Encodes a [`Ping`](#Ping) as proto3 JSON.
 -}
-encodePing : Ping -> Json.Encode.Value
+encodePing : Ping -> Proto.Json.Encoder x
 encodePing _ =
-    Json.Encode.object []
+    Proto.Json.succeed (Json.Encode.object [])
 
 
 

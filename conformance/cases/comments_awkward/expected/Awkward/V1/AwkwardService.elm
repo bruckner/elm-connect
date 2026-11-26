@@ -54,7 +54,7 @@ ping =
     Rpc.call
         (Proto.Method.init "awkward.v1.AwkwardService"
             "Ping"
-            (\_ -> Ok << Proto.Json.encodeEmpty)
+            (Proto.Json.succeed << Proto.Json.encodeEmpty)
             (\_ -> Proto.Json.empty)
             (Proto.Binary.messageEncoder Proto.Binary.empty)
             (Proto.Binary.messageDecoder Proto.Binary.empty)

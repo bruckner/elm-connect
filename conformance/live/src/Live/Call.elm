@@ -318,9 +318,14 @@ sendWith client reading envelope respond toMsg c =
             uncancellable "taskFromRequest"
                 |> Result.map
                     (Sent
-                        (Rpc.request client tracked
-                            |> rewriteHeaders envelope.rewrite
-                            |> Rpc.taskFromRequest client tracked
+                        ((case Rpc.request client tracked of
+                            Ok sent ->
+                                rewriteHeaders envelope.rewrite sent
+                                    |> Rpc.taskFromRequest client tracked
+
+                            Err error ->
+                                Task.fail error
+                         )
                             |> Task.attempt (report Encode.null)
                         )
                     )
@@ -352,14 +357,22 @@ rewriteHeaders rewrites sent =
 
 {-| Send a call as `Rpc.request` describes it, with elm/http directly, and read
 the answer with `Rpc.response` or `Rpc.responseBytes`, keeping the answer's
-status and headers.
+status and headers; a call `Rpc.request` refuses is not sent, and gives its
+error with no answer.
 -}
 sendHalves : Rpc.Client codec -> Reading codec req res msg -> Rpc.Call codec req res -> Maybe String -> (( Value, Result Rpc.Error res ) -> msg) -> Cmd msg
 sendHalves client reading c tracker toMsg =
-    let
-        sent =
-            Rpc.request client c
+    case Rpc.request client c of
+        Ok sent ->
+            sendRequest reading c sent tracker toMsg
 
+        Err error ->
+            Task.perform toMsg (Task.succeed ( Encode.null, Err error ))
+
+
+sendRequest : Reading codec req res msg -> Rpc.Call codec req res -> Rpc.Request -> Maybe String -> (( Value, Result Rpc.Error res ) -> msg) -> Cmd msg
+sendRequest reading c sent tracker toMsg =
+    let
         perform =
             if sent.withCredentials then
                 Http.riskyRequest
@@ -429,7 +442,7 @@ detailWith registry detail =
         Ok any ->
             case Proto.Any.bytes any of
                 Just binary ->
-                    case Proto.Json.encodeAnyWith registry any of
+                    case Proto.Json.encodeWith registry (Proto.Json.writeAny any) of
                         Ok json ->
                             json
 
@@ -440,7 +453,7 @@ detailWith registry detail =
                                 ]
 
                 Nothing ->
-                    case unpackedDetail any |> Maybe.andThen (Proto.Json.encodeAnyWith registry >> Result.toMaybe) of
+                    case unpackedDetail any |> Maybe.andThen (Proto.Json.writeAny >> Proto.Json.encodeWith registry >> Result.toMaybe) of
                         Just json ->
                             json
 

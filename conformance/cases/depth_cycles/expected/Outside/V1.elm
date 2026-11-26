@@ -11,7 +11,6 @@ it is the first level and they count on from it.
 import Bytes.Encode
 import Cycles.V1
 import Json.Decode
-import Json.Encode
 import Outside.V1.Holder
 import Proto.Binary
 import Proto.Descriptors
@@ -100,12 +99,14 @@ registry =
 
 {-| Encodes a [`Holder`](#Holder) as proto3 JSON.
 -}
-encodeHolder : Holder -> Json.Encode.Value
+encodeHolder : Holder -> Proto.Json.Encoder x
 encodeHolder value =
-    Proto.Json.objectOfFields
-        [ ( "tree", Maybe.map Cycles.V1.encodeTree value.tree )
-        , ( "person", Maybe.map Cycles.V1.encodePerson value.person )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "tree", Proto.Json.totalOptionalField Cycles.V1.encodeTree value.tree )
+            , ( "person", Proto.Json.totalOptionalField Cycles.V1.encodePerson value.person )
+            ]
+        )
 
 
 
@@ -119,7 +120,7 @@ decodeHolder =
     decodeNestedHolder 1
 
 
-{-| [`decodeHolder`](#decodeHolder) for a [`Holder`](#Holder) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeHolder`](#decodeHolder) for a [`Holder`](#Holder) held `depth` levels deep.
 -}
 decodeNestedHolder : Int -> Json.Decode.Decoder Holder
 decodeNestedHolder depth =
@@ -155,7 +156,7 @@ mergeHolderBytes =
     mergeNestedHolderBytes 1
 
 
-{-| [`mergeHolderBytes`](#mergeHolderBytes) for a [`Holder`](#Holder) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeHolderBytes`](#mergeHolderBytes) for a [`Holder`](#Holder) held `depth` levels deep.
 -}
 mergeNestedHolderBytes : Int -> Holder -> Proto.Binary.Decoder Holder
 mergeNestedHolderBytes depth =

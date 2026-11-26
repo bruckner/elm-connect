@@ -209,19 +209,19 @@ error`. [calling.md](calling.md#errors) has the layers in full.
 ## 6. Try it in `elm repl`
 
 `Rpc.request` gives the HTTP request a call stands for, without sending
-it. From the application's directory, `elm repl` shows what each
-protocol sends:
+it, or the error sending it would fail with. From the application's
+directory, `elm repl` shows what each protocol sends:
 
 ```text
 > import Notes.V1.NotesService as Notes
 > import Rpc
 > import Rpc.Protocol
 > Rpc.request (Rpc.client Rpc.Protocol.connect "https://api.example.com") (Notes.getNote { name = "notes/42" })
-{ body = Text "{\"name\":\"notes/42\"}", headers = [("Connect-Protocol-Version","1")], method = "POST", timeout = Nothing, url = "https://api.example.com/notes.v1.NotesService/GetNote", withCredentials = False }
-    : Rpc.Request
+Ok { body = Text "{\"name\":\"notes/42\"}", headers = [("Connect-Protocol-Version","1")], method = "POST", timeout = Nothing, url = "https://api.example.com/notes.v1.NotesService/GetNote", withCredentials = False }
+    : Result Rpc.Error Rpc.Request
 > Rpc.request (Rpc.client Rpc.Protocol.transcode "https://api.example.com") (Notes.getNote { name = "notes/42" })
-{ body = None, headers = [], method = "GET", timeout = Nothing, url = "https://api.example.com/v1/notes/42", withCredentials = False }
-    : Rpc.Request
+Ok { body = None, headers = [], method = "GET", timeout = Nothing, url = "https://api.example.com/v1/notes/42", withCredentials = False }
+    : Result Rpc.Error Rpc.Request
 ```
 
 Over Connect the call is a POST to the method's path with the request as
@@ -292,8 +292,9 @@ suite =
     describe "GetNote"
         [ test "is a POST to its Connect path" <|
             \_ ->
-                (Rpc.request client (Notes.getNote { name = "notes/42" })).url
-                    |> Expect.equal "https://api.example.com/notes.v1.NotesService/GetNote"
+                Rpc.request client (Notes.getNote { name = "notes/42" })
+                    |> Result.map .url
+                    |> Expect.equal (Ok "https://api.example.com/notes.v1.NotesService/GetNote")
         , test "reads a note" <|
             \_ ->
                 answer 200 """{"name": "notes/42", "title": "groceries"}"""

@@ -875,14 +875,14 @@ messageWide =
 -}
 messageEnvelope : Proto.Message.Message Envelope
 messageEnvelope =
-    Proto.Message.initWith "cycles.v1.Envelope" encodeEnvelopeWith decodeEnvelopeWith encodeEnvelopeBytes decodeEnvelopeBytes
+    Proto.Message.initWith "cycles.v1.Envelope" encodeEnvelope decodeEnvelopeWith encodeEnvelopeBytes decodeEnvelopeBytes
 
 
 {-| The typed value of [`Sealed`](#Sealed): its full name and codecs.
 -}
 messageSealed : Proto.Message.Message Sealed
 messageSealed =
-    Proto.Message.initWith "cycles.v1.Sealed" encodeSealedWith decodeSealedWith encodeSealedBytes decodeSealedBytes
+    Proto.Message.initWith "cycles.v1.Sealed" encodeSealed decodeSealedWith encodeSealedBytes decodeSealedBytes
 
 
 {-| The typed value of [`Doc`](#Doc): its full name and codecs.
@@ -917,7 +917,7 @@ messageMeta =
 -}
 messageLetter : Proto.Message.Message Letter
 messageLetter =
-    Proto.Message.initWith "cycles.v1.Letter" encodeLetterWith decodeLetterWith encodeLetterBytes decodeLetterBytes
+    Proto.Message.initWith "cycles.v1.Letter" encodeLetter decodeLetterWith encodeLetterBytes decodeLetterBytes
 
 
 {-| The typed value of [`Label`](#Label): its full name and codecs.
@@ -1003,61 +1003,67 @@ registry =
 
 {-| Encodes a [`Chain`](#Chain) as proto3 JSON.
 -}
-encodeChain : Chain -> Json.Encode.Value
+encodeChain : Chain -> Proto.Json.Encoder x
 encodeChain value =
-    Proto.Json.objectOfFields
-        [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
-        , ( "next", Maybe.map encodeChain_ value.next )
-        , ( "tree", Maybe.map encodeTree value.tree )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
+            , ( "next", Proto.Json.totalOptionalField encodeChain_ value.next )
+            , ( "tree", Proto.Json.totalOptionalField encodeTree value.tree )
+            ]
+        )
 
 
 {-| Encodes a [`Chain_`](#Chain_) as proto3 JSON.
 -}
-encodeChain_ : Chain_ -> Json.Encode.Value
+encodeChain_ : Chain_ -> Proto.Json.Encoder x
 encodeChain_ (Chain_ value) =
     encodeChain value
 
 
 {-| Encodes a [`Tree`](#Tree) as proto3 JSON.
 -}
-encodeTree : Tree -> Json.Encode.Value
+encodeTree : Tree -> Proto.Json.Encoder x
 encodeTree value =
-    Proto.Json.objectOfFields
-        [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
-        , ( "children", Proto.Json.repeatedField encodeTree_ value.children )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
+            , ( "children", Proto.Json.totalRepeatedField encodeTree_ value.children )
+            ]
+        )
 
 
 {-| Encodes a [`Tree_`](#Tree_) as proto3 JSON.
 -}
-encodeTree_ : Tree_ -> Json.Encode.Value
+encodeTree_ : Tree_ -> Proto.Json.Encoder x
 encodeTree_ (Tree_ value) =
     encodeTree value
 
 
 {-| Encodes a [`Dir`](#Dir) as proto3 JSON.
 -}
-encodeDir : Dir -> Json.Encode.Value
+encodeDir : Dir -> Proto.Json.Encoder x
 encodeDir value =
-    Proto.Json.objectOfFields
-        [ ( "entries", Proto.Json.dictField identity encodeDir_ value.entries )
-        , ( "forest", Maybe.map encodeForest value.forest )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "entries", Proto.Json.totalDictField identity encodeDir_ value.entries )
+            , ( "forest", Proto.Json.totalOptionalField encodeForest value.forest )
+            ]
+        )
 
 
 {-| Encodes a [`Dir_`](#Dir_) as proto3 JSON.
 -}
-encodeDir_ : Dir_ -> Json.Encode.Value
+encodeDir_ : Dir_ -> Proto.Json.Encoder x
 encodeDir_ (Dir_ value) =
     encodeDir value
 
 
 {-| Encodes an [`Expr`](#Expr) as proto3 JSON.
 -}
-encodeExpr : Expr -> Json.Encode.Value
+encodeExpr : Expr -> Proto.Json.Encoder x
 encodeExpr value =
-    Proto.Json.objectOfFields (encodeExprKind value.kind)
+    Proto.Json.succeed (Proto.Json.objectOfFields (encodeExprKind value.kind))
 
 
 {-| Encodes an [`ExprKind`](#ExprKind) as the members of its message's JSON object.
@@ -1073,291 +1079,322 @@ encodeExprKind value =
             ]
 
         ExprKindNegated member ->
-            [ ( "negated", Just (encodeExpr member) )
+            [ ( "negated", Just (Proto.Json.encodeTotal (encodeExpr member)) )
             ]
 
 
 {-| Encodes a [`Person`](#Person) as proto3 JSON.
 -}
-encodePerson : Person -> Json.Encode.Value
+encodePerson : Person -> Proto.Json.Encoder x
 encodePerson value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        , ( "team", Maybe.map encodeTeam_ value.team )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            , ( "team", Proto.Json.totalOptionalField encodeTeam_ value.team )
+            ]
+        )
 
 
 {-| Encodes a [`Person_`](#Person_) as proto3 JSON.
 -}
-encodePerson_ : Person_ -> Json.Encode.Value
+encodePerson_ : Person_ -> Proto.Json.Encoder x
 encodePerson_ (Person_ value) =
     encodePerson value
 
 
 {-| Encodes a [`Team`](#Team) as proto3 JSON.
 -}
-encodeTeam : Team -> Json.Encode.Value
+encodeTeam : Team -> Proto.Json.Encoder x
 encodeTeam value =
-    Proto.Json.objectOfFields
-        [ ( "members", Proto.Json.repeatedField encodePerson_ value.members )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "members", Proto.Json.totalRepeatedField encodePerson_ value.members )
+            ]
+        )
 
 
 {-| Encodes a [`Team_`](#Team_) as proto3 JSON.
 -}
-encodeTeam_ : Team_ -> Json.Encode.Value
+encodeTeam_ : Team_ -> Proto.Json.Encoder x
 encodeTeam_ (Team_ value) =
     encodeTeam value
 
 
 {-| Encodes a [`First`](#First) as proto3 JSON.
 -}
-encodeFirst : First -> Json.Encode.Value
+encodeFirst : First -> Proto.Json.Encoder x
 encodeFirst value =
-    Proto.Json.objectOfFields
-        [ ( "second", Maybe.map encodeSecond_ value.second )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "second", Proto.Json.totalOptionalField encodeSecond_ value.second )
+            ]
+        )
 
 
 {-| Encodes a [`First_`](#First_) as proto3 JSON.
 -}
-encodeFirst_ : First_ -> Json.Encode.Value
+encodeFirst_ : First_ -> Proto.Json.Encoder x
 encodeFirst_ (First_ value) =
     encodeFirst value
 
 
 {-| Encodes a [`Second`](#Second) as proto3 JSON.
 -}
-encodeSecond : Second -> Json.Encode.Value
+encodeSecond : Second -> Proto.Json.Encoder x
 encodeSecond value =
-    Proto.Json.objectOfFields
-        [ ( "third", Maybe.map encodeThird_ value.third )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "third", Proto.Json.totalOptionalField encodeThird_ value.third )
+            ]
+        )
 
 
 {-| Encodes a [`Second_`](#Second_) as proto3 JSON.
 -}
-encodeSecond_ : Second_ -> Json.Encode.Value
+encodeSecond_ : Second_ -> Proto.Json.Encoder x
 encodeSecond_ (Second_ value) =
     encodeSecond value
 
 
 {-| Encodes a [`Third`](#Third) as proto3 JSON.
 -}
-encodeThird : Third -> Json.Encode.Value
+encodeThird : Third -> Proto.Json.Encoder x
 encodeThird value =
-    Proto.Json.objectOfFields
-        [ ( "firsts", Proto.Json.repeatedField encodeFirst_ value.firsts )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "firsts", Proto.Json.totalRepeatedField encodeFirst_ value.firsts )
+            ]
+        )
 
 
 {-| Encodes a [`Third_`](#Third_) as proto3 JSON.
 -}
-encodeThird_ : Third_ -> Json.Encode.Value
+encodeThird_ : Third_ -> Proto.Json.Encoder x
 encodeThird_ (Third_ value) =
     encodeThird value
 
 
 {-| Encodes a [`Forest`](#Forest) as proto3 JSON.
 -}
-encodeForest : Forest -> Json.Encode.Value
+encodeForest : Forest -> Proto.Json.Encoder x
 encodeForest value =
-    Proto.Json.objectOfFields
-        [ ( "trees", Proto.Json.repeatedField encodeTree value.trees )
-        , ( "chain", Maybe.map encodeChain value.chain )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "trees", Proto.Json.totalRepeatedField encodeTree value.trees )
+            , ( "chain", Proto.Json.totalOptionalField encodeChain value.chain )
+            ]
+        )
 
 
 {-| Encodes a [`Wide`](#Wide) as proto3 JSON.
 -}
-encodeWide : Wide -> Json.Encode.Value
+encodeWide : Wide -> Proto.Json.Encoder x
 encodeWide value =
-    Proto.Json.objectOfFields
-        [ ( "f1", Proto.Json.implicitField 0 Json.Encode.int value.f1 )
-        , ( "f2", Proto.Json.implicitField 0 Json.Encode.int value.f2 )
-        , ( "f3", Proto.Json.implicitField 0 Json.Encode.int value.f3 )
-        , ( "f4", Proto.Json.implicitField 0 Json.Encode.int value.f4 )
-        , ( "f5", Proto.Json.implicitField 0 Json.Encode.int value.f5 )
-        , ( "f6", Proto.Json.implicitField 0 Json.Encode.int value.f6 )
-        , ( "f7", Proto.Json.implicitField 0 Json.Encode.int value.f7 )
-        , ( "f8", Proto.Json.implicitField 0 Json.Encode.int value.f8 )
-        , ( "f9", Proto.Json.implicitField 0 Json.Encode.int value.f9 )
-        , ( "f10", Proto.Json.implicitField 0 Json.Encode.int value.f10 )
-        , ( "f11", Proto.Json.implicitField 0 Json.Encode.int value.f11 )
-        , ( "f12", Proto.Json.implicitField 0 Json.Encode.int value.f12 )
-        , ( "f13", Proto.Json.implicitField 0 Json.Encode.int value.f13 )
-        , ( "f14", Proto.Json.implicitField 0 Json.Encode.int value.f14 )
-        , ( "f15", Proto.Json.implicitField 0 Json.Encode.int value.f15 )
-        , ( "f16", Proto.Json.implicitField 0 Json.Encode.int value.f16 )
-        , ( "f17", Proto.Json.implicitField 0 Json.Encode.int value.f17 )
-        , ( "f18", Proto.Json.implicitField 0 Json.Encode.int value.f18 )
-        , ( "f19", Proto.Json.implicitField 0 Json.Encode.int value.f19 )
-        , ( "f20", Proto.Json.implicitField 0 Json.Encode.int value.f20 )
-        , ( "f21", Proto.Json.implicitField 0 Json.Encode.int value.f21 )
-        , ( "f22", Proto.Json.implicitField 0 Json.Encode.int value.f22 )
-        , ( "f23", Proto.Json.implicitField 0 Json.Encode.int value.f23 )
-        , ( "f24", Proto.Json.implicitField 0 Json.Encode.int value.f24 )
-        , ( "f25", Proto.Json.implicitField 0 Json.Encode.int value.f25 )
-        , ( "f26", Proto.Json.implicitField 0 Json.Encode.int value.f26 )
-        , ( "f27", Proto.Json.implicitField 0 Json.Encode.int value.f27 )
-        , ( "f28", Proto.Json.implicitField 0 Json.Encode.int value.f28 )
-        , ( "f29", Proto.Json.implicitField 0 Json.Encode.int value.f29 )
-        , ( "f30", Proto.Json.implicitField 0 Json.Encode.int value.f30 )
-        , ( "f31", Proto.Json.implicitField 0 Json.Encode.int value.f31 )
-        , ( "f32", Proto.Json.implicitField 0 Json.Encode.int value.f32 )
-        , ( "f33", Proto.Json.implicitField 0 Json.Encode.int value.f33 )
-        , ( "f34", Proto.Json.implicitField 0 Json.Encode.int value.f34 )
-        , ( "f35", Proto.Json.implicitField 0 Json.Encode.int value.f35 )
-        , ( "f36", Proto.Json.implicitField 0 Json.Encode.int value.f36 )
-        , ( "f37", Proto.Json.implicitField 0 Json.Encode.int value.f37 )
-        , ( "f38", Proto.Json.implicitField 0 Json.Encode.int value.f38 )
-        , ( "f39", Proto.Json.implicitField 0 Json.Encode.int value.f39 )
-        , ( "f40", Proto.Json.implicitField 0 Json.Encode.int value.f40 )
-        , ( "f41", Proto.Json.implicitField 0 Json.Encode.int value.f41 )
-        , ( "f42", Proto.Json.implicitField 0 Json.Encode.int value.f42 )
-        , ( "f43", Proto.Json.implicitField 0 Json.Encode.int value.f43 )
-        , ( "f44", Proto.Json.implicitField 0 Json.Encode.int value.f44 )
-        , ( "f45", Proto.Json.implicitField 0 Json.Encode.int value.f45 )
-        , ( "f46", Proto.Json.implicitField 0 Json.Encode.int value.f46 )
-        , ( "f47", Proto.Json.implicitField 0 Json.Encode.int value.f47 )
-        , ( "f48", Proto.Json.implicitField 0 Json.Encode.int value.f48 )
-        , ( "f49", Proto.Json.implicitField 0 Json.Encode.int value.f49 )
-        , ( "f50", Proto.Json.implicitField 0 Json.Encode.int value.f50 )
-        , ( "f51", Proto.Json.implicitField 0 Json.Encode.int value.f51 )
-        , ( "f52", Proto.Json.implicitField 0 Json.Encode.int value.f52 )
-        , ( "f53", Proto.Json.implicitField 0 Json.Encode.int value.f53 )
-        , ( "f54", Proto.Json.implicitField 0 Json.Encode.int value.f54 )
-        , ( "f55", Proto.Json.implicitField 0 Json.Encode.int value.f55 )
-        , ( "f56", Proto.Json.implicitField 0 Json.Encode.int value.f56 )
-        , ( "f57", Proto.Json.implicitField 0 Json.Encode.int value.f57 )
-        , ( "f58", Proto.Json.implicitField 0 Json.Encode.int value.f58 )
-        , ( "f59", Proto.Json.implicitField 0 Json.Encode.int value.f59 )
-        , ( "f60", Proto.Json.implicitField 0 Json.Encode.int value.f60 )
-        , ( "f61", Proto.Json.implicitField 0 Json.Encode.int value.f61 )
-        , ( "f62", Proto.Json.implicitField 0 Json.Encode.int value.f62 )
-        , ( "f63", Proto.Json.implicitField 0 Json.Encode.int value.f63 )
-        , ( "f64", Proto.Json.implicitField 0 Json.Encode.int value.f64 )
-        , ( "children", Proto.Json.repeatedField encodeWide_ value.children )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "f1", Proto.Json.implicitField 0 Json.Encode.int value.f1 )
+            , ( "f2", Proto.Json.implicitField 0 Json.Encode.int value.f2 )
+            , ( "f3", Proto.Json.implicitField 0 Json.Encode.int value.f3 )
+            , ( "f4", Proto.Json.implicitField 0 Json.Encode.int value.f4 )
+            , ( "f5", Proto.Json.implicitField 0 Json.Encode.int value.f5 )
+            , ( "f6", Proto.Json.implicitField 0 Json.Encode.int value.f6 )
+            , ( "f7", Proto.Json.implicitField 0 Json.Encode.int value.f7 )
+            , ( "f8", Proto.Json.implicitField 0 Json.Encode.int value.f8 )
+            , ( "f9", Proto.Json.implicitField 0 Json.Encode.int value.f9 )
+            , ( "f10", Proto.Json.implicitField 0 Json.Encode.int value.f10 )
+            , ( "f11", Proto.Json.implicitField 0 Json.Encode.int value.f11 )
+            , ( "f12", Proto.Json.implicitField 0 Json.Encode.int value.f12 )
+            , ( "f13", Proto.Json.implicitField 0 Json.Encode.int value.f13 )
+            , ( "f14", Proto.Json.implicitField 0 Json.Encode.int value.f14 )
+            , ( "f15", Proto.Json.implicitField 0 Json.Encode.int value.f15 )
+            , ( "f16", Proto.Json.implicitField 0 Json.Encode.int value.f16 )
+            , ( "f17", Proto.Json.implicitField 0 Json.Encode.int value.f17 )
+            , ( "f18", Proto.Json.implicitField 0 Json.Encode.int value.f18 )
+            , ( "f19", Proto.Json.implicitField 0 Json.Encode.int value.f19 )
+            , ( "f20", Proto.Json.implicitField 0 Json.Encode.int value.f20 )
+            , ( "f21", Proto.Json.implicitField 0 Json.Encode.int value.f21 )
+            , ( "f22", Proto.Json.implicitField 0 Json.Encode.int value.f22 )
+            , ( "f23", Proto.Json.implicitField 0 Json.Encode.int value.f23 )
+            , ( "f24", Proto.Json.implicitField 0 Json.Encode.int value.f24 )
+            , ( "f25", Proto.Json.implicitField 0 Json.Encode.int value.f25 )
+            , ( "f26", Proto.Json.implicitField 0 Json.Encode.int value.f26 )
+            , ( "f27", Proto.Json.implicitField 0 Json.Encode.int value.f27 )
+            , ( "f28", Proto.Json.implicitField 0 Json.Encode.int value.f28 )
+            , ( "f29", Proto.Json.implicitField 0 Json.Encode.int value.f29 )
+            , ( "f30", Proto.Json.implicitField 0 Json.Encode.int value.f30 )
+            , ( "f31", Proto.Json.implicitField 0 Json.Encode.int value.f31 )
+            , ( "f32", Proto.Json.implicitField 0 Json.Encode.int value.f32 )
+            , ( "f33", Proto.Json.implicitField 0 Json.Encode.int value.f33 )
+            , ( "f34", Proto.Json.implicitField 0 Json.Encode.int value.f34 )
+            , ( "f35", Proto.Json.implicitField 0 Json.Encode.int value.f35 )
+            , ( "f36", Proto.Json.implicitField 0 Json.Encode.int value.f36 )
+            , ( "f37", Proto.Json.implicitField 0 Json.Encode.int value.f37 )
+            , ( "f38", Proto.Json.implicitField 0 Json.Encode.int value.f38 )
+            , ( "f39", Proto.Json.implicitField 0 Json.Encode.int value.f39 )
+            , ( "f40", Proto.Json.implicitField 0 Json.Encode.int value.f40 )
+            , ( "f41", Proto.Json.implicitField 0 Json.Encode.int value.f41 )
+            , ( "f42", Proto.Json.implicitField 0 Json.Encode.int value.f42 )
+            , ( "f43", Proto.Json.implicitField 0 Json.Encode.int value.f43 )
+            , ( "f44", Proto.Json.implicitField 0 Json.Encode.int value.f44 )
+            , ( "f45", Proto.Json.implicitField 0 Json.Encode.int value.f45 )
+            , ( "f46", Proto.Json.implicitField 0 Json.Encode.int value.f46 )
+            , ( "f47", Proto.Json.implicitField 0 Json.Encode.int value.f47 )
+            , ( "f48", Proto.Json.implicitField 0 Json.Encode.int value.f48 )
+            , ( "f49", Proto.Json.implicitField 0 Json.Encode.int value.f49 )
+            , ( "f50", Proto.Json.implicitField 0 Json.Encode.int value.f50 )
+            , ( "f51", Proto.Json.implicitField 0 Json.Encode.int value.f51 )
+            , ( "f52", Proto.Json.implicitField 0 Json.Encode.int value.f52 )
+            , ( "f53", Proto.Json.implicitField 0 Json.Encode.int value.f53 )
+            , ( "f54", Proto.Json.implicitField 0 Json.Encode.int value.f54 )
+            , ( "f55", Proto.Json.implicitField 0 Json.Encode.int value.f55 )
+            , ( "f56", Proto.Json.implicitField 0 Json.Encode.int value.f56 )
+            , ( "f57", Proto.Json.implicitField 0 Json.Encode.int value.f57 )
+            , ( "f58", Proto.Json.implicitField 0 Json.Encode.int value.f58 )
+            , ( "f59", Proto.Json.implicitField 0 Json.Encode.int value.f59 )
+            , ( "f60", Proto.Json.implicitField 0 Json.Encode.int value.f60 )
+            , ( "f61", Proto.Json.implicitField 0 Json.Encode.int value.f61 )
+            , ( "f62", Proto.Json.implicitField 0 Json.Encode.int value.f62 )
+            , ( "f63", Proto.Json.implicitField 0 Json.Encode.int value.f63 )
+            , ( "f64", Proto.Json.implicitField 0 Json.Encode.int value.f64 )
+            , ( "children", Proto.Json.totalRepeatedField encodeWide_ value.children )
+            ]
+        )
 
 
 {-| Encodes a [`Wide_`](#Wide_) as proto3 JSON.
 -}
-encodeWide_ : Wide_ -> Json.Encode.Value
+encodeWide_ : Wide_ -> Proto.Json.Encoder x
 encodeWide_ (Wide_ value) =
     encodeWide value
 
 
-{-| Encodes an [`Envelope`](#Envelope) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
+{-| Encodes an [`Envelope`](#Envelope) as proto3 JSON, or fails if the input contains a bad value.
 -}
-encodeEnvelopeWith : Proto.Registry.Registry -> Envelope -> Result Proto.Error.Error Json.Encode.Value
-encodeEnvelopeWith types value =
-    Proto.Json.tryObjectOfFields
-        ([ ( "payload", Proto.Json.tryOptionalField (Proto.Json.encodeNestedAnyWith types) value.payload )
-         , ( "replies", Proto.Json.tryRepeatedField (encodeEnvelope_With (Proto.Json.registryDeeper types)) value.replies )
-         , ( "data", Ok (Maybe.map Proto.Json.encodeStruct value.data) )
-         , ( "value", Ok (Maybe.map Proto.Json.encodeValue value.value) )
-         , ( "list", Ok (Maybe.map Proto.Json.encodeListValue value.list) )
-         , ( "values", Ok (Proto.Json.dictField identity Proto.Json.encodeValue value.values) )
-         , ( "structs", Ok (Proto.Json.dictField identity Proto.Json.encodeStruct value.structs) )
-         , ( "lists", Ok (Proto.Json.dictField identity Proto.Json.encodeListValue value.lists) )
-         , ( "sealed", Proto.Json.tryOptionalField (encodeSealedWith (Proto.Json.registryDeeper types)) value.sealed )
-         ]
-            ++ encodeEnvelopeAsideWith types value.aside
-        )
+encodeEnvelope : Envelope -> Proto.Json.Encoder Proto.Error.Error
+encodeEnvelope value =
+    Proto.Json.writeObject
+        [ Proto.Json.checkedFields
+            [ ( "payload", Proto.Json.writeOptional Proto.Json.writeAny value.payload )
+            , ( "replies", Proto.Json.writeDeeper (Proto.Json.writeRepeated encodeEnvelope_ value.replies) )
+            , ( "data", Proto.Json.writeOptional Proto.Json.writeStruct value.data )
+            , ( "value", Proto.Json.writeOptional Proto.Json.writeValue value.value )
+            , ( "list", Proto.Json.writeOptional Proto.Json.writeListValue value.list )
+            , ( "values", Proto.Json.writeDict identity Proto.Json.writeValue value.values )
+            , ( "structs", Proto.Json.writeDict identity Proto.Json.writeStruct value.structs )
+            , ( "lists", Proto.Json.writeDict identity Proto.Json.writeListValue value.lists )
+            , ( "sealed", Proto.Json.writeDeeper (Proto.Json.writeOptional encodeSealed value.sealed) )
+            ]
+        , Proto.Json.checkedFields (encodeEnvelopeAside value.aside)
+        ]
 
 
-{-| Encodes an [`Envelope_`](#Envelope_) as proto3 JSON, writing each `Any` it holds with the registry.
+{-| Encodes an [`Envelope_`](#Envelope_) as proto3 JSON, or fails if the input contains a bad value.
 -}
-encodeEnvelope_With : Proto.Registry.Registry -> Envelope_ -> Result Proto.Error.Error Json.Encode.Value
-encodeEnvelope_With types (Envelope_ value) =
-    encodeEnvelopeWith types value
+encodeEnvelope_ : Envelope_ -> Proto.Json.Encoder Proto.Error.Error
+encodeEnvelope_ (Envelope_ value) =
+    encodeEnvelope value
 
 
-{-| Encodes an [`EnvelopeAside`](#EnvelopeAside) as the members of its message's JSON object.
+{-| Encodes an [`EnvelopeAside`](#EnvelopeAside) as the members of its message's JSON object, or fails if the input contains a bad value.
 -}
-encodeEnvelopeAsideWith : Proto.Registry.Registry -> EnvelopeAside -> List ( String, Result Proto.Error.Error (Maybe Json.Encode.Value) )
-encodeEnvelopeAsideWith types value =
+encodeEnvelopeAside : EnvelopeAside -> List ( String, Proto.Json.Field Proto.Error.Error )
+encodeEnvelopeAside value =
     case value of
         EnvelopeAsideUnset ->
             []
 
         EnvelopeAsideNote member ->
-            [ ( "note", Result.map Just (encodeSealedWith (Proto.Json.registryDeeper types) member) )
+            [ ( "note", Proto.Json.writeDeeper (Proto.Json.writeMember (encodeSealed member)) )
             ]
 
 
-{-| Encodes a [`Sealed`](#Sealed) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
+{-| Encodes a [`Sealed`](#Sealed) as proto3 JSON, or fails if the input contains a bad value.
 -}
-encodeSealedWith : Proto.Registry.Registry -> Sealed -> Result Proto.Error.Error Json.Encode.Value
-encodeSealedWith types value =
-    Proto.Json.tryObjectOfFields
-        [ ( "payload", Proto.Json.tryOptionalField (Proto.Json.encodeNestedAnyWith types) value.payload )
+encodeSealed : Sealed -> Proto.Json.Encoder Proto.Error.Error
+encodeSealed value =
+    Proto.Json.writeObject
+        [ Proto.Json.checkedFields
+            [ ( "payload", Proto.Json.writeOptional Proto.Json.writeAny value.payload )
+            ]
         ]
 
 
 {-| Encodes a [`Doc`](#Doc) as proto3 JSON.
 -}
-encodeDoc : Doc -> Json.Encode.Value
+encodeDoc : Doc -> Proto.Json.Encoder x
 encodeDoc value =
-    Proto.Json.objectOfFields
-        [ ( "root", Maybe.map encodeChain value.root )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "root", Proto.Json.totalOptionalField encodeChain value.root )
+            ]
+        )
 
 
 {-| Encodes a [`Library`](#Library) as proto3 JSON.
 -}
-encodeLibrary : Library -> Json.Encode.Value
+encodeLibrary : Library -> Proto.Json.Encoder x
 encodeLibrary value =
-    Proto.Json.objectOfFields
-        [ ( "doc", Maybe.map encodeDoc value.doc )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "doc", Proto.Json.totalOptionalField encodeDoc value.doc )
+            ]
+        )
 
 
-{-| Encodes a [`Card`](#Card) as proto3 JSON.
+{-| Encodes a [`Card`](#Card) as proto3 JSON, or fails if the input contains a bad value.
 -}
-encodeCard : Card -> Json.Encode.Value
+encodeCard : Card -> Proto.Json.Encoder Proto.Error.Error
 encodeCard value =
-    Proto.Json.objectOfFields
-        [ ( "meta", Maybe.map encodeMeta value.meta )
+    Proto.Json.writeObject
+        [ Proto.Json.checkedFields
+            [ ( "meta", Proto.Json.writeOptional encodeMeta value.meta )
+            ]
         ]
 
 
-{-| Encodes a [`Meta`](#Meta) as proto3 JSON.
+{-| Encodes a [`Meta`](#Meta) as proto3 JSON, or fails if the input contains a bad value.
 -}
-encodeMeta : Meta -> Json.Encode.Value
+encodeMeta : Meta -> Proto.Json.Encoder Proto.Error.Error
 encodeMeta value =
-    Proto.Json.objectOfFields
-        [ ( "data", Maybe.map Proto.Json.encodeStruct value.data )
+    Proto.Json.writeObject
+        [ Proto.Json.checkedFields
+            [ ( "data", Proto.Json.writeOptional Proto.Json.writeStruct value.data )
+            ]
         ]
 
 
-{-| Encodes a [`Letter`](#Letter) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
+{-| Encodes a [`Letter`](#Letter) as proto3 JSON, or fails if the input contains a bad value.
 -}
-encodeLetterWith : Proto.Registry.Registry -> Letter -> Result Proto.Error.Error Json.Encode.Value
-encodeLetterWith types value =
-    Proto.Json.tryObjectOfFields
-        [ ( "sealed", Proto.Json.tryOptionalField (encodeSealedWith (Proto.Json.registryDeeper types)) value.sealed )
+encodeLetter : Letter -> Proto.Json.Encoder Proto.Error.Error
+encodeLetter value =
+    Proto.Json.writeObject
+        [ Proto.Json.checkedFields
+            [ ( "sealed", Proto.Json.writeDeeper (Proto.Json.writeOptional encodeSealed value.sealed) )
+            ]
         ]
 
 
 {-| Encodes a [`Label`](#Label) as proto3 JSON.
 -}
-encodeLabel : Label -> Json.Encode.Value
+encodeLabel : Label -> Proto.Json.Encoder x
 encodeLabel value =
-    Proto.Json.objectOfFields
-        [ ( "text", Proto.Json.implicitField "" Json.Encode.string value.text )
-        , ( "plain", Maybe.map encodePlain value.plain )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "text", Proto.Json.implicitField "" Json.Encode.string value.text )
+            , ( "plain", Proto.Json.totalOptionalField encodePlain value.plain )
+            ]
+        )
 
 
 {-| Encodes a [`Plain`](#Plain) as proto3 JSON.
 -}
-encodePlain : Plain -> Json.Encode.Value
+encodePlain : Plain -> Proto.Json.Encoder x
 encodePlain value =
-    Proto.Json.objectOfFields
-        [ ( "n", Proto.Json.implicitField 0 Json.Encode.int value.n )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "n", Proto.Json.implicitField 0 Json.Encode.int value.n )
+            ]
+        )
 
 
 
@@ -1371,7 +1408,7 @@ decodeChain =
     decodeNestedChain 1
 
 
-{-| [`decodeChain`](#decodeChain) for a [`Chain`](#Chain) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeChain`](#decodeChain) for a [`Chain`](#Chain) held `depth` levels deep.
 -}
 decodeNestedChain : Int -> Json.Decode.Decoder Chain
 decodeNestedChain =
@@ -1400,7 +1437,7 @@ decodeTree =
     decodeNestedTree 1
 
 
-{-| [`decodeTree`](#decodeTree) for a [`Tree`](#Tree) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeTree`](#decodeTree) for a [`Tree`](#Tree) held `depth` levels deep.
 -}
 decodeNestedTree : Int -> Json.Decode.Decoder Tree
 decodeNestedTree =
@@ -1428,7 +1465,7 @@ decodeDir =
     decodeNestedDir 1
 
 
-{-| [`decodeDir`](#decodeDir) for a [`Dir`](#Dir) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeDir`](#decodeDir) for a [`Dir`](#Dir) held `depth` levels deep.
 -}
 decodeNestedDir : Int -> Json.Decode.Decoder Dir
 decodeNestedDir =
@@ -1456,7 +1493,7 @@ decodeExpr =
     decodeNestedExpr 1
 
 
-{-| [`decodeExpr`](#decodeExpr) for an [`Expr`](#Expr) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeExpr`](#decodeExpr) for an [`Expr`](#Expr) held `depth` levels deep.
 -}
 decodeNestedExpr : Int -> Json.Decode.Decoder Expr
 decodeNestedExpr =
@@ -1474,7 +1511,7 @@ decodeExprKind =
     decodeNestedExprKind 1
 
 
-{-| [`decodeExprKind`](#decodeExprKind) for an [`ExprKind`](#ExprKind) held by a message `depth` levels deep. That message's decoder calls it at each depth.
+{-| [`decodeExprKind`](#decodeExprKind) for an [`ExprKind`](#ExprKind) held by a message `depth` levels deep.
 -}
 decodeNestedExprKind : Int -> Json.Decode.Decoder ExprKind
 decodeNestedExprKind depth =
@@ -1492,7 +1529,7 @@ decodePerson =
     decodeNestedPerson 1
 
 
-{-| [`decodePerson`](#decodePerson) for a [`Person`](#Person) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodePerson`](#decodePerson) for a [`Person`](#Person) held `depth` levels deep.
 -}
 decodeNestedPerson : Int -> Json.Decode.Decoder Person
 decodeNestedPerson =
@@ -1520,7 +1557,7 @@ decodeTeam =
     decodeNestedTeam 1
 
 
-{-| [`decodeTeam`](#decodeTeam) for a [`Team`](#Team) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeTeam`](#decodeTeam) for a [`Team`](#Team) held `depth` levels deep.
 -}
 decodeNestedTeam : Int -> Json.Decode.Decoder Team
 decodeNestedTeam =
@@ -1547,7 +1584,7 @@ decodeFirst =
     decodeNestedFirst 1
 
 
-{-| [`decodeFirst`](#decodeFirst) for a [`First`](#First) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeFirst`](#decodeFirst) for a [`First`](#First) held `depth` levels deep.
 -}
 decodeNestedFirst : Int -> Json.Decode.Decoder First
 decodeNestedFirst =
@@ -1574,7 +1611,7 @@ decodeSecond =
     decodeNestedSecond 1
 
 
-{-| [`decodeSecond`](#decodeSecond) for a [`Second`](#Second) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeSecond`](#decodeSecond) for a [`Second`](#Second) held `depth` levels deep.
 -}
 decodeNestedSecond : Int -> Json.Decode.Decoder Second
 decodeNestedSecond =
@@ -1601,7 +1638,7 @@ decodeThird =
     decodeNestedThird 1
 
 
-{-| [`decodeThird`](#decodeThird) for a [`Third`](#Third) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeThird`](#decodeThird) for a [`Third`](#Third) held `depth` levels deep.
 -}
 decodeNestedThird : Int -> Json.Decode.Decoder Third
 decodeNestedThird =
@@ -1628,7 +1665,7 @@ decodeForest =
     decodeNestedForest 1
 
 
-{-| [`decodeForest`](#decodeForest) for a [`Forest`](#Forest) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeForest`](#decodeForest) for a [`Forest`](#Forest) held `depth` levels deep.
 -}
 decodeNestedForest : Int -> Json.Decode.Decoder Forest
 decodeNestedForest depth =
@@ -1646,7 +1683,7 @@ decodeWide =
     decodeNestedWide 1
 
 
-{-| [`decodeWide`](#decodeWide) for a [`Wide`](#Wide) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeWide`](#decodeWide) for a [`Wide`](#Wide) held `depth` levels deep.
 -}
 decodeNestedWide : Int -> Json.Decode.Decoder Wide
 decodeNestedWide =
@@ -1737,7 +1774,7 @@ decodeEnvelopeWith types =
     decodeNestedEnvelopeWith types (max 1 (Proto.Json.registryDepth types))
 
 
-{-| [`decodeEnvelopeWith`](#decodeEnvelopeWith) for an [`Envelope`](#Envelope) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeEnvelopeWith`](#decodeEnvelopeWith) for an [`Envelope`](#Envelope) held `depth` levels deep.
 -}
 decodeNestedEnvelopeWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder Envelope
 decodeNestedEnvelopeWith types depth =
@@ -1770,7 +1807,7 @@ decodeEnvelopeAsideWith types =
     decodeNestedEnvelopeAsideWith types (max 1 (Proto.Json.registryDepth types))
 
 
-{-| [`decodeEnvelopeAsideWith`](#decodeEnvelopeAsideWith) for an [`EnvelopeAside`](#EnvelopeAside) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeEnvelopeAsideWith`](#decodeEnvelopeAsideWith) for an [`EnvelopeAside`](#EnvelopeAside) held `depth` levels deep.
 -}
 decodeNestedEnvelopeAsideWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder EnvelopeAside
 decodeNestedEnvelopeAsideWith types depth =
@@ -1787,7 +1824,7 @@ decodeSealedWith types =
     decodeNestedSealedWith types (max 1 (Proto.Json.registryDepth types))
 
 
-{-| [`decodeSealedWith`](#decodeSealedWith) for a [`Sealed`](#Sealed) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeSealedWith`](#decodeSealedWith) for a [`Sealed`](#Sealed) held `depth` levels deep.
 -}
 decodeNestedSealedWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder Sealed
 decodeNestedSealedWith types depth =
@@ -1804,7 +1841,7 @@ decodeDoc =
     decodeNestedDoc 1
 
 
-{-| [`decodeDoc`](#decodeDoc) for a [`Doc`](#Doc) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeDoc`](#decodeDoc) for a [`Doc`](#Doc) held `depth` levels deep.
 -}
 decodeNestedDoc : Int -> Json.Decode.Decoder Doc
 decodeNestedDoc depth =
@@ -1821,7 +1858,7 @@ decodeLibrary =
     decodeNestedLibrary 1
 
 
-{-| [`decodeLibrary`](#decodeLibrary) for a [`Library`](#Library) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeLibrary`](#decodeLibrary) for a [`Library`](#Library) held `depth` levels deep.
 -}
 decodeNestedLibrary : Int -> Json.Decode.Decoder Library
 decodeNestedLibrary depth =
@@ -1838,7 +1875,7 @@ decodeCard =
     decodeNestedCard 1
 
 
-{-| [`decodeCard`](#decodeCard) for a [`Card`](#Card) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeCard`](#decodeCard) for a [`Card`](#Card) held `depth` levels deep.
 -}
 decodeNestedCard : Int -> Json.Decode.Decoder Card
 decodeNestedCard depth =
@@ -1855,7 +1892,7 @@ decodeMeta =
     decodeNestedMeta 1
 
 
-{-| [`decodeMeta`](#decodeMeta) for a [`Meta`](#Meta) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeMeta`](#decodeMeta) for a [`Meta`](#Meta) held `depth` levels deep.
 -}
 decodeNestedMeta : Int -> Json.Decode.Decoder Meta
 decodeNestedMeta depth =
@@ -1872,7 +1909,7 @@ decodeLetterWith types =
     decodeNestedLetterWith types (max 1 (Proto.Json.registryDepth types))
 
 
-{-| [`decodeLetterWith`](#decodeLetterWith) for a [`Letter`](#Letter) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeLetterWith`](#decodeLetterWith) for a [`Letter`](#Letter) held `depth` levels deep.
 -}
 decodeNestedLetterWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder Letter
 decodeNestedLetterWith types depth =
@@ -2275,7 +2312,7 @@ mergeChainBytes =
     mergeNestedChainBytes 1
 
 
-{-| [`mergeChainBytes`](#mergeChainBytes) for a [`Chain`](#Chain) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeChainBytes`](#mergeChainBytes) for a [`Chain`](#Chain) held `depth` levels deep.
 -}
 mergeNestedChainBytes : Int -> Chain -> Proto.Binary.Decoder Chain
 mergeNestedChainBytes =
@@ -2344,7 +2381,7 @@ mergeChain_Bytes (Chain_ value) =
     Proto.Binary.map Chain_ (mergeChainBytes value)
 
 
-{-| [`mergeChain_Bytes`](#mergeChain_Bytes) for a [`Chain_`](#Chain_) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeChain_Bytes`](#mergeChain_Bytes) for a [`Chain_`](#Chain_) held `depth` levels deep.
 -}
 mergeNestedChain_Bytes : Int -> Chain_ -> Proto.Binary.Decoder Chain_
 mergeNestedChain_Bytes depth (Chain_ value) =
@@ -2358,7 +2395,7 @@ mergeTreeBytes =
     mergeNestedTreeBytes 1
 
 
-{-| [`mergeTreeBytes`](#mergeTreeBytes) for a [`Tree`](#Tree) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeTreeBytes`](#mergeTreeBytes) for a [`Tree`](#Tree) held `depth` levels deep.
 -}
 mergeNestedTreeBytes : Int -> Tree -> Proto.Binary.Decoder Tree
 mergeNestedTreeBytes =
@@ -2416,7 +2453,7 @@ mergeTree_Bytes (Tree_ value) =
     Proto.Binary.map Tree_ (mergeTreeBytes value)
 
 
-{-| [`mergeTree_Bytes`](#mergeTree_Bytes) for a [`Tree_`](#Tree_) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeTree_Bytes`](#mergeTree_Bytes) for a [`Tree_`](#Tree_) held `depth` levels deep.
 -}
 mergeNestedTree_Bytes : Int -> Tree_ -> Proto.Binary.Decoder Tree_
 mergeNestedTree_Bytes depth (Tree_ value) =
@@ -2430,7 +2467,7 @@ mergeDirBytes =
     mergeNestedDirBytes 1
 
 
-{-| [`mergeDirBytes`](#mergeDirBytes) for a [`Dir`](#Dir) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeDirBytes`](#mergeDirBytes) for a [`Dir`](#Dir) held `depth` levels deep.
 -}
 mergeNestedDirBytes : Int -> Dir -> Proto.Binary.Decoder Dir
 mergeNestedDirBytes =
@@ -2485,7 +2522,7 @@ mergeDir_Bytes (Dir_ value) =
     Proto.Binary.map Dir_ (mergeDirBytes value)
 
 
-{-| [`mergeDir_Bytes`](#mergeDir_Bytes) for a [`Dir_`](#Dir_) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeDir_Bytes`](#mergeDir_Bytes) for a [`Dir_`](#Dir_) held `depth` levels deep.
 -}
 mergeNestedDir_Bytes : Int -> Dir_ -> Proto.Binary.Decoder Dir_
 mergeNestedDir_Bytes depth (Dir_ value) =
@@ -2499,7 +2536,7 @@ mergeExprBytes =
     mergeNestedExprBytes 1
 
 
-{-| [`mergeExprBytes`](#mergeExprBytes) for an [`Expr`](#Expr) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeExprBytes`](#mergeExprBytes) for an [`Expr`](#Expr) held `depth` levels deep.
 -}
 mergeNestedExprBytes : Int -> Expr -> Proto.Binary.Decoder Expr
 mergeNestedExprBytes =
@@ -2557,7 +2594,7 @@ mergePersonBytes =
     mergeNestedPersonBytes 1
 
 
-{-| [`mergePersonBytes`](#mergePersonBytes) for a [`Person`](#Person) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergePersonBytes`](#mergePersonBytes) for a [`Person`](#Person) held `depth` levels deep.
 -}
 mergeNestedPersonBytes : Int -> Person -> Proto.Binary.Decoder Person
 mergeNestedPersonBytes =
@@ -2611,7 +2648,7 @@ mergePerson_Bytes (Person_ value) =
     Proto.Binary.map Person_ (mergePersonBytes value)
 
 
-{-| [`mergePerson_Bytes`](#mergePerson_Bytes) for a [`Person_`](#Person_) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergePerson_Bytes`](#mergePerson_Bytes) for a [`Person_`](#Person_) held `depth` levels deep.
 -}
 mergeNestedPerson_Bytes : Int -> Person_ -> Proto.Binary.Decoder Person_
 mergeNestedPerson_Bytes depth (Person_ value) =
@@ -2625,7 +2662,7 @@ mergeTeamBytes =
     mergeNestedTeamBytes 1
 
 
-{-| [`mergeTeamBytes`](#mergeTeamBytes) for a [`Team`](#Team) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeTeamBytes`](#mergeTeamBytes) for a [`Team`](#Team) held `depth` levels deep.
 -}
 mergeNestedTeamBytes : Int -> Team -> Proto.Binary.Decoder Team
 mergeNestedTeamBytes =
@@ -2670,7 +2707,7 @@ mergeTeam_Bytes (Team_ value) =
     Proto.Binary.map Team_ (mergeTeamBytes value)
 
 
-{-| [`mergeTeam_Bytes`](#mergeTeam_Bytes) for a [`Team_`](#Team_) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeTeam_Bytes`](#mergeTeam_Bytes) for a [`Team_`](#Team_) held `depth` levels deep.
 -}
 mergeNestedTeam_Bytes : Int -> Team_ -> Proto.Binary.Decoder Team_
 mergeNestedTeam_Bytes depth (Team_ value) =
@@ -2684,7 +2721,7 @@ mergeFirstBytes =
     mergeNestedFirstBytes 1
 
 
-{-| [`mergeFirstBytes`](#mergeFirstBytes) for a [`First`](#First) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeFirstBytes`](#mergeFirstBytes) for a [`First`](#First) held `depth` levels deep.
 -}
 mergeNestedFirstBytes : Int -> First -> Proto.Binary.Decoder First
 mergeNestedFirstBytes =
@@ -2726,7 +2763,7 @@ mergeFirst_Bytes (First_ value) =
     Proto.Binary.map First_ (mergeFirstBytes value)
 
 
-{-| [`mergeFirst_Bytes`](#mergeFirst_Bytes) for a [`First_`](#First_) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeFirst_Bytes`](#mergeFirst_Bytes) for a [`First_`](#First_) held `depth` levels deep.
 -}
 mergeNestedFirst_Bytes : Int -> First_ -> Proto.Binary.Decoder First_
 mergeNestedFirst_Bytes depth (First_ value) =
@@ -2740,7 +2777,7 @@ mergeSecondBytes =
     mergeNestedSecondBytes 1
 
 
-{-| [`mergeSecondBytes`](#mergeSecondBytes) for a [`Second`](#Second) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeSecondBytes`](#mergeSecondBytes) for a [`Second`](#Second) held `depth` levels deep.
 -}
 mergeNestedSecondBytes : Int -> Second -> Proto.Binary.Decoder Second
 mergeNestedSecondBytes =
@@ -2782,7 +2819,7 @@ mergeSecond_Bytes (Second_ value) =
     Proto.Binary.map Second_ (mergeSecondBytes value)
 
 
-{-| [`mergeSecond_Bytes`](#mergeSecond_Bytes) for a [`Second_`](#Second_) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeSecond_Bytes`](#mergeSecond_Bytes) for a [`Second_`](#Second_) held `depth` levels deep.
 -}
 mergeNestedSecond_Bytes : Int -> Second_ -> Proto.Binary.Decoder Second_
 mergeNestedSecond_Bytes depth (Second_ value) =
@@ -2796,7 +2833,7 @@ mergeThirdBytes =
     mergeNestedThirdBytes 1
 
 
-{-| [`mergeThirdBytes`](#mergeThirdBytes) for a [`Third`](#Third) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeThirdBytes`](#mergeThirdBytes) for a [`Third`](#Third) held `depth` levels deep.
 -}
 mergeNestedThirdBytes : Int -> Third -> Proto.Binary.Decoder Third
 mergeNestedThirdBytes =
@@ -2841,7 +2878,7 @@ mergeThird_Bytes (Third_ value) =
     Proto.Binary.map Third_ (mergeThirdBytes value)
 
 
-{-| [`mergeThird_Bytes`](#mergeThird_Bytes) for a [`Third_`](#Third_) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeThird_Bytes`](#mergeThird_Bytes) for a [`Third_`](#Third_) held `depth` levels deep.
 -}
 mergeNestedThird_Bytes : Int -> Third_ -> Proto.Binary.Decoder Third_
 mergeNestedThird_Bytes depth (Third_ value) =
@@ -2855,7 +2892,7 @@ mergeForestBytes =
     mergeNestedForestBytes 1
 
 
-{-| [`mergeForestBytes`](#mergeForestBytes) for a [`Forest`](#Forest) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeForestBytes`](#mergeForestBytes) for a [`Forest`](#Forest) held `depth` levels deep.
 -}
 mergeNestedForestBytes : Int -> Forest -> Proto.Binary.Decoder Forest
 mergeNestedForestBytes depth =
@@ -2911,7 +2948,7 @@ mergeWideBytes =
     mergeNestedWideBytes 1
 
 
-{-| [`mergeWideBytes`](#mergeWideBytes) for a [`Wide`](#Wide) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeWideBytes`](#mergeWideBytes) for a [`Wide`](#Wide) held `depth` levels deep.
 -}
 mergeNestedWideBytes : Int -> Wide -> Proto.Binary.Decoder Wide
 mergeNestedWideBytes =
@@ -3137,7 +3174,7 @@ mergeWide_Bytes (Wide_ value) =
     Proto.Binary.map Wide_ (mergeWideBytes value)
 
 
-{-| [`mergeWide_Bytes`](#mergeWide_Bytes) for a [`Wide_`](#Wide_) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeWide_Bytes`](#mergeWide_Bytes) for a [`Wide_`](#Wide_) held `depth` levels deep.
 -}
 mergeNestedWide_Bytes : Int -> Wide_ -> Proto.Binary.Decoder Wide_
 mergeNestedWide_Bytes depth (Wide_ value) =
@@ -3151,7 +3188,7 @@ mergeEnvelopeBytes =
     mergeNestedEnvelopeBytes 1
 
 
-{-| [`mergeEnvelopeBytes`](#mergeEnvelopeBytes) for an [`Envelope`](#Envelope) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeEnvelopeBytes`](#mergeEnvelopeBytes) for an [`Envelope`](#Envelope) held `depth` levels deep.
 -}
 mergeNestedEnvelopeBytes : Int -> Envelope -> Proto.Binary.Decoder Envelope
 mergeNestedEnvelopeBytes =
@@ -3396,7 +3433,7 @@ mergeEnvelope_Bytes (Envelope_ value) =
     Proto.Binary.map Envelope_ (mergeEnvelopeBytes value)
 
 
-{-| [`mergeEnvelope_Bytes`](#mergeEnvelope_Bytes) for an [`Envelope_`](#Envelope_) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeEnvelope_Bytes`](#mergeEnvelope_Bytes) for an [`Envelope_`](#Envelope_) held `depth` levels deep.
 -}
 mergeNestedEnvelope_Bytes : Int -> Envelope_ -> Proto.Binary.Decoder Envelope_
 mergeNestedEnvelope_Bytes depth (Envelope_ value) =
@@ -3410,7 +3447,7 @@ mergeSealedBytes =
     mergeNestedSealedBytes 1
 
 
-{-| [`mergeSealedBytes`](#mergeSealedBytes) for a [`Sealed`](#Sealed) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeSealedBytes`](#mergeSealedBytes) for a [`Sealed`](#Sealed) held `depth` levels deep.
 -}
 mergeNestedSealedBytes : Int -> Sealed -> Proto.Binary.Decoder Sealed
 mergeNestedSealedBytes depth =
@@ -3448,7 +3485,7 @@ mergeDocBytes =
     mergeNestedDocBytes 1
 
 
-{-| [`mergeDocBytes`](#mergeDocBytes) for a [`Doc`](#Doc) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeDocBytes`](#mergeDocBytes) for a [`Doc`](#Doc) held `depth` levels deep.
 -}
 mergeNestedDocBytes : Int -> Doc -> Proto.Binary.Decoder Doc
 mergeNestedDocBytes depth =
@@ -3487,7 +3524,7 @@ mergeLibraryBytes =
     mergeNestedLibraryBytes 1
 
 
-{-| [`mergeLibraryBytes`](#mergeLibraryBytes) for a [`Library`](#Library) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeLibraryBytes`](#mergeLibraryBytes) for a [`Library`](#Library) held `depth` levels deep.
 -}
 mergeNestedLibraryBytes : Int -> Library -> Proto.Binary.Decoder Library
 mergeNestedLibraryBytes depth =
@@ -3526,7 +3563,7 @@ mergeCardBytes =
     mergeNestedCardBytes 1
 
 
-{-| [`mergeCardBytes`](#mergeCardBytes) for a [`Card`](#Card) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeCardBytes`](#mergeCardBytes) for a [`Card`](#Card) held `depth` levels deep.
 -}
 mergeNestedCardBytes : Int -> Card -> Proto.Binary.Decoder Card
 mergeNestedCardBytes depth =
@@ -3565,7 +3602,7 @@ mergeMetaBytes =
     mergeNestedMetaBytes 1
 
 
-{-| [`mergeMetaBytes`](#mergeMetaBytes) for a [`Meta`](#Meta) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeMetaBytes`](#mergeMetaBytes) for a [`Meta`](#Meta) held `depth` levels deep.
 -}
 mergeNestedMetaBytes : Int -> Meta -> Proto.Binary.Decoder Meta
 mergeNestedMetaBytes depth =
@@ -3603,7 +3640,7 @@ mergeLetterBytes =
     mergeNestedLetterBytes 1
 
 
-{-| [`mergeLetterBytes`](#mergeLetterBytes) for a [`Letter`](#Letter) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeLetterBytes`](#mergeLetterBytes) for a [`Letter`](#Letter) held `depth` levels deep.
 -}
 mergeNestedLetterBytes : Int -> Letter -> Proto.Binary.Decoder Letter
 mergeNestedLetterBytes depth =

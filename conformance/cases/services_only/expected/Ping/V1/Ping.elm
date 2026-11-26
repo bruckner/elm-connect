@@ -38,7 +38,7 @@ ping =
     Rpc.call
         (Proto.Method.init "ping.v1.Ping"
             "Ping"
-            (\_ -> Ok << Proto.Json.encodeEmpty)
+            (Proto.Json.succeed << Proto.Json.encodeEmpty)
             (\_ -> Proto.Json.timestamp)
             (Proto.Binary.messageEncoder Proto.Binary.empty)
             (Proto.Binary.messageDecoder Proto.Binary.timestamp)

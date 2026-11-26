@@ -7,10 +7,13 @@ module Blobs.V1 exposing (..)
 {-| Generated with the `bytes=bytes` option (options.txt): every binding shape
 the route resolver accepts is a route function. A bytes field held as
 Bytes is base64 text in a path or query; a path through a message on a
-cycle reads through its wrapper; a body field of `Empty` or `Value`, or on
-a cycle, has its encoder; a body that holds an `Any`, which only the
-client's registry can write, is read from the request's JSON, which the
-route function takes beside the request (`Proto.Method.withJsonRoutes`).
+cycle reads through its wrapper; a body field of `Empty`, or on a cycle,
+has its encoder; a body that holds an `Any`, which only the client's
+registry can write, or a value whose write can be refused (a `Value`, a
+`Timestamp`), is read from the request's JSON, which the route function
+takes beside the request (`Proto.Method.withJsonRoutes`); a `Timestamp`
+in a path or a query is printed from the typed request, behind the
+send's check of that JSON.
 -}
 
 import Blobs.V1.Blob
@@ -18,7 +21,9 @@ import Blobs.V1.Folder
 import Blobs.V1.Free
 import Blobs.V1.LabelBlobRequest
 import Blobs.V1.Labeled
+import Blobs.V1.Moment
 import Blobs.V1.Slots
+import Blobs.V1.StampRequest
 import Bytes
 import Bytes.Encode
 import Json.Decode
@@ -33,9 +38,11 @@ import Proto.Message
 import Proto.Query
 import Proto.Registry
 import Proto.Route
+import Proto.Timestamp
 import Proto.Value
 import Proto.Version
 import Proto.WellKnown
+import Time
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -129,6 +136,30 @@ type alias Free =
     }
 
 
+{-| [`message blobs.v1.Moment`](Blobs-V1-Moment#descriptor)
+
+  - [`name`](Blobs-V1-Moment#name)
+  - [`at`](Blobs-V1-Moment#at)
+
+-}
+type alias Moment =
+    { name : String
+    , at : Maybe Time.Posix
+    }
+
+
+{-| [`message blobs.v1.StampRequest`](Blobs-V1-StampRequest#descriptor)
+
+  - [`shelf`](Blobs-V1-StampRequest#shelf)
+  - [`moment`](Blobs-V1-StampRequest#moment)
+
+-}
+type alias StampRequest =
+    { shelf : String
+    , moment : Maybe Moment
+    }
+
+
 
 -- DEFAULTS
 
@@ -188,6 +219,24 @@ defaultFree =
     }
 
 
+{-| A [`Moment`](#Moment) with every field at its default and every oneof unset.
+-}
+defaultMoment : Moment
+defaultMoment =
+    { name = ""
+    , at = Nothing
+    }
+
+
+{-| A [`StampRequest`](#StampRequest) with every field at its default and every oneof unset.
+-}
+defaultStampRequest : StampRequest
+defaultStampRequest =
+    { shelf = ""
+    , moment = Nothing
+    }
+
+
 
 -- TYPED VALUES
 
@@ -203,14 +252,14 @@ messageBlob =
 -}
 messageLabeled : Proto.Message.Message Labeled
 messageLabeled =
-    Proto.Message.initWith "blobs.v1.Labeled" encodeLabeledWith decodeLabeledWith encodeLabeledBytes decodeLabeledBytes
+    Proto.Message.initWith "blobs.v1.Labeled" encodeLabeled decodeLabeledWith encodeLabeledBytes decodeLabeledBytes
 
 
 {-| The typed value of [`LabelBlobRequest`](#LabelBlobRequest): its full name and codecs.
 -}
 messageLabelBlobRequest : Proto.Message.Message LabelBlobRequest
 messageLabelBlobRequest =
-    Proto.Message.initWith "blobs.v1.LabelBlobRequest" encodeLabelBlobRequestWith decodeLabelBlobRequestWith encodeLabelBlobRequestBytes decodeLabelBlobRequestBytes
+    Proto.Message.initWith "blobs.v1.LabelBlobRequest" encodeLabelBlobRequest decodeLabelBlobRequestWith encodeLabelBlobRequestBytes decodeLabelBlobRequestBytes
 
 
 {-| The typed value of [`Folder`](#Folder): its full name and codecs.
@@ -234,6 +283,20 @@ messageFree =
     Proto.Message.init "blobs.v1.Free" encodeFree decodeFree encodeFreeBytes decodeFreeBytes
 
 
+{-| The typed value of [`Moment`](#Moment): its full name and codecs.
+-}
+messageMoment : Proto.Message.Message Moment
+messageMoment =
+    Proto.Message.init "blobs.v1.Moment" encodeMoment decodeMoment encodeMomentBytes decodeMomentBytes
+
+
+{-| The typed value of [`StampRequest`](#StampRequest): its full name and codecs.
+-}
+messageStampRequest : Proto.Message.Message StampRequest
+messageStampRequest =
+    Proto.Message.init "blobs.v1.StampRequest" encodeStampRequest decodeStampRequest encodeStampRequestBytes decodeStampRequestBytes
+
+
 
 -- REGISTRY
 
@@ -250,6 +313,8 @@ descriptors =
             , Blobs.V1.Folder.descriptor
             , Blobs.V1.Slots.descriptor
             , Blobs.V1.Free.descriptor
+            , Blobs.V1.Moment.descriptor
+            , Blobs.V1.StampRequest.descriptor
             ]
             []
         )
@@ -267,6 +332,8 @@ registry =
         |> Proto.Registry.register messageFolder
         |> Proto.Registry.register messageSlots
         |> Proto.Registry.register messageFree
+        |> Proto.Registry.register messageMoment
+        |> Proto.Registry.register messageStampRequest
 
 
 
@@ -275,69 +342,115 @@ registry =
 
 {-| Encodes a [`Blob`](#Blob) as proto3 JSON.
 -}
-encodeBlob : Blob -> Json.Encode.Value
+encodeBlob : Blob -> Proto.Json.Encoder x
 encodeBlob value =
-    Proto.Json.objectOfFields
-        [ ( "digest", Proto.Json.implicitBytesField value.digest )
-        , ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        , ( "salt", Proto.Json.implicitBytesField value.salt )
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "digest", Proto.Json.implicitBytesField value.digest )
+            , ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            , ( "salt", Proto.Json.implicitBytesField value.salt )
+            ]
+        )
+
+
+{-| Encodes a [`Labeled`](#Labeled) as proto3 JSON, or fails if the input contains a bad value.
+-}
+encodeLabeled : Labeled -> Proto.Json.Encoder Proto.Error.Error
+encodeLabeled value =
+    Proto.Json.writeObject
+        [ Proto.Json.plainFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            ]
+        , Proto.Json.checkedFields
+            [ ( "label", Proto.Json.writeOptional Proto.Json.writeAny value.label )
+            ]
         ]
 
 
-{-| Encodes a [`Labeled`](#Labeled) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
+{-| Encodes a [`LabelBlobRequest`](#LabelBlobRequest) as proto3 JSON, or fails if the input contains a bad value.
 -}
-encodeLabeledWith : Proto.Registry.Registry -> Labeled -> Result Proto.Error.Error Json.Encode.Value
-encodeLabeledWith types value =
-    Proto.Json.tryObjectOfFields
-        [ ( "name", Ok (Proto.Json.implicitField "" Json.Encode.string value.name) )
-        , ( "label", Proto.Json.tryOptionalField (Proto.Json.encodeNestedAnyWith types) value.label )
-        ]
-
-
-{-| Encodes a [`LabelBlobRequest`](#LabelBlobRequest) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
--}
-encodeLabelBlobRequestWith : Proto.Registry.Registry -> LabelBlobRequest -> Result Proto.Error.Error Json.Encode.Value
-encodeLabelBlobRequestWith types value =
-    Proto.Json.tryObjectOfFields
-        [ ( "labeled", Proto.Json.tryOptionalField (encodeLabeledWith (Proto.Json.registryDeeper types)) value.labeled )
-        , ( "shelf", Ok (Proto.Json.implicitField "" Json.Encode.string value.shelf) )
+encodeLabelBlobRequest : LabelBlobRequest -> Proto.Json.Encoder Proto.Error.Error
+encodeLabelBlobRequest value =
+    Proto.Json.writeObject
+        [ Proto.Json.checkedFields
+            [ ( "labeled", Proto.Json.writeDeeper (Proto.Json.writeOptional encodeLabeled value.labeled) )
+            ]
+        , Proto.Json.plainFields
+            [ ( "shelf", Proto.Json.implicitField "" Json.Encode.string value.shelf )
+            ]
         ]
 
 
 {-| Encodes a [`Folder`](#Folder) as proto3 JSON.
 -}
-encodeFolder : Folder -> Json.Encode.Value
+encodeFolder : Folder -> Proto.Json.Encoder x
 encodeFolder value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        , ( "parent", Maybe.map encodeFolder_ value.parent )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            , ( "parent", Proto.Json.totalOptionalField encodeFolder_ value.parent )
+            ]
+        )
 
 
 {-| Encodes a [`Folder_`](#Folder_) as proto3 JSON.
 -}
-encodeFolder_ : Folder_ -> Json.Encode.Value
+encodeFolder_ : Folder_ -> Proto.Json.Encoder x
 encodeFolder_ (Folder_ value) =
     encodeFolder value
 
 
 {-| Encodes a [`Slots`](#Slots) as proto3 JSON.
 -}
-encodeSlots : Slots -> Json.Encode.Value
+encodeSlots : Slots -> Proto.Json.Encoder x
 encodeSlots value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        , ( "nothing", Just (Proto.Json.encodeEmpty value.nothing) )
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            , ( "nothing", Just (Proto.Json.encodeEmpty value.nothing) )
+            ]
+        )
+
+
+{-| Encodes a [`Free`](#Free) as proto3 JSON, or fails if the input contains a bad value.
+-}
+encodeFree : Free -> Proto.Json.Encoder Proto.Error.Error
+encodeFree value =
+    Proto.Json.writeObject
+        [ Proto.Json.plainFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            ]
+        , Proto.Json.checkedFields
+            [ ( "value", Proto.Json.writeOptional Proto.Json.writeValue value.value )
+            ]
         ]
 
 
-{-| Encodes a [`Free`](#Free) as proto3 JSON.
+{-| Encodes a [`Moment`](#Moment) as proto3 JSON, or fails if the input contains a bad value.
 -}
-encodeFree : Free -> Json.Encode.Value
-encodeFree value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        , ( "value", Maybe.map Proto.Json.encodeValue value.value )
+encodeMoment : Moment -> Proto.Json.Encoder Proto.Error.Error
+encodeMoment value =
+    Proto.Json.writeObject
+        [ Proto.Json.plainFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            ]
+        , Proto.Json.checkedFields
+            [ ( "at", Proto.Json.writeOptional Proto.Json.writeTimestamp value.at )
+            ]
+        ]
+
+
+{-| Encodes a [`StampRequest`](#StampRequest) as proto3 JSON, or fails if the input contains a bad value.
+-}
+encodeStampRequest : StampRequest -> Proto.Json.Encoder Proto.Error.Error
+encodeStampRequest value =
+    Proto.Json.writeObject
+        [ Proto.Json.plainFields
+            [ ( "shelf", Proto.Json.implicitField "" Json.Encode.string value.shelf )
+            ]
+        , Proto.Json.checkedFields
+            [ ( "moment", Proto.Json.writeOptional encodeMoment value.moment )
+            ]
         ]
 
 
@@ -364,7 +477,7 @@ decodeLabeledWith types =
     decodeNestedLabeledWith types (max 1 (Proto.Json.registryDepth types))
 
 
-{-| [`decodeLabeledWith`](#decodeLabeledWith) for a [`Labeled`](#Labeled) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeLabeledWith`](#decodeLabeledWith) for a [`Labeled`](#Labeled) held `depth` levels deep.
 -}
 decodeNestedLabeledWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder Labeled
 decodeNestedLabeledWith types depth =
@@ -382,7 +495,7 @@ decodeLabelBlobRequestWith types =
     decodeNestedLabelBlobRequestWith types (max 1 (Proto.Json.registryDepth types))
 
 
-{-| [`decodeLabelBlobRequestWith`](#decodeLabelBlobRequestWith) for a [`LabelBlobRequest`](#LabelBlobRequest) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeLabelBlobRequestWith`](#decodeLabelBlobRequestWith) for a [`LabelBlobRequest`](#LabelBlobRequest) held `depth` levels deep.
 -}
 decodeNestedLabelBlobRequestWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder LabelBlobRequest
 decodeNestedLabelBlobRequestWith types depth =
@@ -400,7 +513,7 @@ decodeFolder =
     decodeNestedFolder 1
 
 
-{-| [`decodeFolder`](#decodeFolder) for a [`Folder`](#Folder) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeFolder`](#decodeFolder) for a [`Folder`](#Folder) held `depth` levels deep.
 -}
 decodeNestedFolder : Int -> Json.Decode.Decoder Folder
 decodeNestedFolder =
@@ -439,7 +552,7 @@ decodeFree =
     decodeNestedFree 1
 
 
-{-| [`decodeFree`](#decodeFree) for a [`Free`](#Free) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeFree`](#decodeFree) for a [`Free`](#Free) held `depth` levels deep.
 -}
 decodeNestedFree : Int -> Json.Decode.Decoder Free
 decodeNestedFree depth =
@@ -447,6 +560,28 @@ decodeNestedFree depth =
         (Json.Decode.succeed Free
             |> Proto.Json.messageField "name" "" Proto.Json.string
             |> Proto.Json.nestedMessageValueField "value" depth
+        )
+
+
+{-| Decodes a [`Moment`](#Moment) from proto3 JSON.
+-}
+decodeMoment : Json.Decode.Decoder Moment
+decodeMoment =
+    Proto.Json.message
+        (Json.Decode.succeed Moment
+            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.messageField "at" Nothing (Json.Decode.map Just Proto.Json.timestamp)
+        )
+
+
+{-| Decodes a [`StampRequest`](#StampRequest) from proto3 JSON.
+-}
+decodeStampRequest : Json.Decode.Decoder StampRequest
+decodeStampRequest =
+    Proto.Json.message
+        (Json.Decode.succeed StampRequest
+            |> Proto.Json.messageField "shelf" "" Proto.Json.string
+            |> Proto.Json.messageField "moment" Nothing (Json.Decode.map Just decodeMoment)
         )
 
 
@@ -522,6 +657,26 @@ encodeFreeBytes value =
         ]
 
 
+{-| Encodes a [`Moment`](#Moment) as protobuf binary.
+-}
+encodeMomentBytes : Moment -> Bytes.Encode.Encoder
+encodeMomentBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.name
+        , Proto.Binary.optional Proto.Binary.timestamp 2 value.at
+        ]
+
+
+{-| Encodes a [`StampRequest`](#StampRequest) as protobuf binary.
+-}
+encodeStampRequestBytes : StampRequest -> Bytes.Encode.Encoder
+encodeStampRequestBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.implicit Proto.Binary.string 1 value.shelf
+        , Proto.Binary.optional (Proto.Binary.embedded encodeMomentBytes mergeMomentBytes defaultMoment) 2 value.moment
+        ]
+
+
 
 -- BINARY DECODERS
 
@@ -590,7 +745,7 @@ mergeLabeledBytes =
     mergeNestedLabeledBytes 1
 
 
-{-| [`mergeLabeledBytes`](#mergeLabeledBytes) for a [`Labeled`](#Labeled) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeLabeledBytes`](#mergeLabeledBytes) for a [`Labeled`](#Labeled) held `depth` levels deep.
 -}
 mergeNestedLabeledBytes : Int -> Labeled -> Proto.Binary.Decoder Labeled
 mergeNestedLabeledBytes depth =
@@ -640,7 +795,7 @@ mergeLabelBlobRequestBytes =
     mergeNestedLabelBlobRequestBytes 1
 
 
-{-| [`mergeLabelBlobRequestBytes`](#mergeLabelBlobRequestBytes) for a [`LabelBlobRequest`](#LabelBlobRequest) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeLabelBlobRequestBytes`](#mergeLabelBlobRequestBytes) for a [`LabelBlobRequest`](#LabelBlobRequest) held `depth` levels deep.
 -}
 mergeNestedLabelBlobRequestBytes : Int -> LabelBlobRequest -> Proto.Binary.Decoder LabelBlobRequest
 mergeNestedLabelBlobRequestBytes depth =
@@ -691,7 +846,7 @@ mergeFolderBytes =
     mergeNestedFolderBytes 1
 
 
-{-| [`mergeFolderBytes`](#mergeFolderBytes) for a [`Folder`](#Folder) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeFolderBytes`](#mergeFolderBytes) for a [`Folder`](#Folder) held `depth` levels deep.
 -}
 mergeNestedFolderBytes : Int -> Folder -> Proto.Binary.Decoder Folder
 mergeNestedFolderBytes =
@@ -745,7 +900,7 @@ mergeFolder_Bytes (Folder_ value) =
     Proto.Binary.map Folder_ (mergeFolderBytes value)
 
 
-{-| [`mergeFolder_Bytes`](#mergeFolder_Bytes) for a [`Folder_`](#Folder_) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeFolder_Bytes`](#mergeFolder_Bytes) for a [`Folder_`](#Folder_) held `depth` levels deep.
 -}
 mergeNestedFolder_Bytes : Int -> Folder_ -> Proto.Binary.Decoder Folder_
 mergeNestedFolder_Bytes depth (Folder_ value) =
@@ -802,7 +957,7 @@ mergeFreeBytes =
     mergeNestedFreeBytes 1
 
 
-{-| [`mergeFreeBytes`](#mergeFreeBytes) for a [`Free`](#Free) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeFreeBytes`](#mergeFreeBytes) for a [`Free`](#Free) held `depth` levels deep.
 -}
 mergeNestedFreeBytes : Int -> Free -> Proto.Binary.Decoder Free
 mergeNestedFreeBytes depth =
@@ -845,6 +1000,93 @@ decodeFreeBytes =
     mergeFreeBytes defaultFree
 
 
+{-| Decodes a [`Moment`](#Moment) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeMomentBytes : Moment -> Proto.Binary.Decoder Moment
+mergeMomentBytes =
+    Proto.Binary.merge
+        "blobs.v1.Moment"
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { name = v
+                            , at = value.at
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.field
+                        Proto.Binary.timestamp
+                        (\v ->
+                            { name = value.name
+                            , at = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`Moment`](#Moment) from protobuf binary.
+-}
+decodeMomentBytes : Proto.Binary.Decoder Moment
+decodeMomentBytes =
+    mergeMomentBytes defaultMoment
+
+
+{-| Decodes a [`StampRequest`](#StampRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeStampRequestBytes : StampRequest -> Proto.Binary.Decoder StampRequest
+mergeStampRequestBytes =
+    Proto.Binary.merge
+        "blobs.v1.StampRequest"
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.string
+                        (\v ->
+                            { shelf = v
+                            , moment = value.moment
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.fieldInto
+                        (Proto.Binary.embedded encodeMomentBytes mergeMomentBytes defaultMoment)
+                        value.moment
+                        (\v ->
+                            { shelf = value.shelf
+                            , moment = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`StampRequest`](#StampRequest) from protobuf binary.
+-}
+decodeStampRequestBytes : Proto.Binary.Decoder StampRequest
+decodeStampRequestBytes =
+    mergeStampRequestBytes defaultStampRequest
+
+
 
 -- QUERY ENCODERS
 
@@ -865,3 +1107,13 @@ queryOfBlob request_ =
 queryOfLabelBlobRequest : LabelBlobRequest -> List ( String, String )
 queryOfLabelBlobRequest request_ =
     Proto.Query.string "shelf" request_.shelf
+
+
+{-| The query parameters of a [`Moment`](#Moment) for the HTTP bindings that put its fields in the query: those of its fields that hold a value, in declaration order.
+-}
+queryOfMoment : Moment -> List ( String, String )
+queryOfMoment request_ =
+    List.concat
+        [ Proto.Query.string "name" request_.name
+        , Proto.Query.optional "at" (Maybe.map Proto.Timestamp.toString request_.at)
+        ]

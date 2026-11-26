@@ -134,18 +134,20 @@ registry =
 
 {-| Encodes a [`Blob`](#Blob) as proto3 JSON.
 -}
-encodeBlob : Blob -> Json.Encode.Value
+encodeBlob : Blob -> Proto.Json.Encoder x
 encodeBlob value =
-    Proto.Json.objectOfFields
-        ([ ( "data", Proto.Json.implicitBytesField value.data )
-         , ( "maybeData", Maybe.map Proto.Json.encodeBytesAsBytes value.maybeData )
-         , ( "chunks", Proto.Json.repeatedField Proto.Json.encodeBytesAsBytes value.chunks )
-         , ( "byName", Proto.Json.dictField identity Proto.Json.encodeBytesAsBytes value.byName )
-         , ( "wrapped", Maybe.map Proto.Json.encodeBytesAsBytes value.wrapped )
-         , ( "wrappedChunks", Proto.Json.repeatedField Proto.Json.encodeBytesAsBytes value.wrappedChunks )
-         , ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-         ]
-            ++ encodeBlobSource value.source
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            ([ ( "data", Proto.Json.implicitBytesField value.data )
+             , ( "maybeData", Maybe.map Proto.Json.encodeBytesAsBytes value.maybeData )
+             , ( "chunks", Proto.Json.repeatedField Proto.Json.encodeBytesAsBytes value.chunks )
+             , ( "byName", Proto.Json.dictField identity Proto.Json.encodeBytesAsBytes value.byName )
+             , ( "wrapped", Maybe.map Proto.Json.encodeBytesAsBytes value.wrapped )
+             , ( "wrappedChunks", Proto.Json.repeatedField Proto.Json.encodeBytesAsBytes value.wrappedChunks )
+             , ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+             ]
+                ++ encodeBlobSource value.source
+            )
         )
 
 

@@ -103,7 +103,13 @@ binding (Internal.Trace t) =
 {-| The request sent. Under a retry policy with a deadline
 ([`Rpc.Retry.withDeadline`](Rpc-Retry#withDeadline)) it is the first
 attempt's, its timeout bounded by the deadline; a later attempt's is bounded
-by what is left of it.
+by what is left of it. A call not sent is shown with the request it would have
+sent, but for one whose request has no proto3 JSON, which has none: it is shown
+with `null` in place of the message's JSON. Over Connect its body is `null`. A
+generated route prints its path and query from the request as it does for any
+call and reads its body from that `null`: `null` for `body: "*"`, `{}` for one
+field, as for an unset field. A route written as
+[`Proto.Http`](Proto-Http) data reads its path and query from the `null` too.
 -}
 request : Trace -> Request
 request (Internal.Trace t) =
@@ -155,8 +161,9 @@ duration (Internal.Trace t) =
 
 
 {-| How many times the call was sent, retries included: `0` when it was not
-sent at all, for a bad `baseUrl`, a header a request cannot carry or a
-request over the protocol's
+sent at all, for any refusal [`Rpc.request`](Rpc#request) gives: a bad
+`baseUrl`, a request with no proto3 JSON, a path value its template cannot
+match, a header a request cannot carry or a request over the protocol's
 [`withWriteMaxBytes`](Rpc-Protocol#withWriteMaxBytes).
 -}
 attempts : Trace -> Int

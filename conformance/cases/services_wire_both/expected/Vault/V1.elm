@@ -159,7 +159,7 @@ enumStatus =
 -}
 messageItem : Proto.Message.Message Item
 messageItem =
-    Proto.Message.initWith "vault.v1.Item" encodeItemWith decodeItemWith encodeItemBytes decodeItemBytes
+    Proto.Message.initWith "vault.v1.Item" encodeItem decodeItemWith encodeItemBytes decodeItemBytes
 
 
 {-| The typed value of [`GetItemRequest`](#GetItemRequest): its full name and codecs.
@@ -180,7 +180,7 @@ messageListItemsRequest =
 -}
 messageListItemsResponse : Proto.Message.Message ListItemsResponse
 messageListItemsResponse =
-    Proto.Message.initWith "vault.v1.ListItemsResponse" encodeListItemsResponseWith decodeListItemsResponseWith encodeListItemsResponseBytes decodeListItemsResponseBytes
+    Proto.Message.initWith "vault.v1.ListItemsResponse" encodeListItemsResponse decodeListItemsResponseWith encodeListItemsResponseBytes decodeListItemsResponseBytes
 
 
 
@@ -234,43 +234,53 @@ encodeStatus value =
             Json.Encode.string "STATUS_OPEN"
 
 
-{-| Encodes an [`Item`](#Item) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
+{-| Encodes an [`Item`](#Item) as proto3 JSON, or fails if the input contains a bad value.
 -}
-encodeItemWith : Proto.Registry.Registry -> Item -> Result Proto.Error.Error Json.Encode.Value
-encodeItemWith types value =
-    Proto.Json.tryObjectOfFields
-        [ ( "name", Ok (Proto.Json.implicitField "" Json.Encode.string value.name) )
-        , ( "size", Ok (Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.size) )
-        , ( "status", Ok (Proto.Json.implicitField StatusUnspecified encodeStatus value.status) )
-        , ( "payload", Proto.Json.tryOptionalField (Proto.Json.encodeNestedAnyWith types) value.payload )
-        , ( "attachments", Proto.Json.tryRepeatedField (Proto.Json.encodeNestedAnyWith types) value.attachments )
+encodeItem : Item -> Proto.Json.Encoder Proto.Error.Error
+encodeItem value =
+    Proto.Json.writeObject
+        [ Proto.Json.plainFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            , ( "size", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.size )
+            , ( "status", Proto.Json.implicitField StatusUnspecified encodeStatus value.status )
+            ]
+        , Proto.Json.checkedFields
+            [ ( "payload", Proto.Json.writeOptional Proto.Json.writeAny value.payload )
+            , ( "attachments", Proto.Json.writeRepeated Proto.Json.writeAny value.attachments )
+            ]
         ]
 
 
 {-| Encodes a [`GetItemRequest`](#GetItemRequest) as proto3 JSON.
 -}
-encodeGetItemRequest : GetItemRequest -> Json.Encode.Value
+encodeGetItemRequest : GetItemRequest -> Proto.Json.Encoder x
 encodeGetItemRequest value =
-    Proto.Json.objectOfFields
-        [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+            ]
+        )
 
 
 {-| Encodes a [`ListItemsRequest`](#ListItemsRequest) as proto3 JSON.
 -}
-encodeListItemsRequest : ListItemsRequest -> Json.Encode.Value
+encodeListItemsRequest : ListItemsRequest -> Proto.Json.Encoder x
 encodeListItemsRequest value =
-    Proto.Json.objectOfFields
-        [ ( "pageSize", Proto.Json.implicitField 0 Json.Encode.int value.pageSize )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "pageSize", Proto.Json.implicitField 0 Json.Encode.int value.pageSize )
+            ]
+        )
 
 
-{-| Encodes a [`ListItemsResponse`](#ListItemsResponse) as proto3 JSON, writing each `Any` it holds with the registry: an `Err` names the first type the registry cannot write.
+{-| Encodes a [`ListItemsResponse`](#ListItemsResponse) as proto3 JSON, or fails if the input contains a bad value.
 -}
-encodeListItemsResponseWith : Proto.Registry.Registry -> ListItemsResponse -> Result Proto.Error.Error Json.Encode.Value
-encodeListItemsResponseWith types value =
-    Proto.Json.tryObjectOfFields
-        [ ( "items", Proto.Json.tryRepeatedField (encodeItemWith (Proto.Json.registryDeeper types)) value.items )
+encodeListItemsResponse : ListItemsResponse -> Proto.Json.Encoder Proto.Error.Error
+encodeListItemsResponse value =
+    Proto.Json.writeObject
+        [ Proto.Json.checkedFields
+            [ ( "items", Proto.Json.writeDeeper (Proto.Json.writeRepeated encodeItem value.items) )
+            ]
         ]
 
 
@@ -297,7 +307,7 @@ decodeItemWith types =
     decodeNestedItemWith types (max 1 (Proto.Json.registryDepth types))
 
 
-{-| [`decodeItemWith`](#decodeItemWith) for an [`Item`](#Item) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeItemWith`](#decodeItemWith) for an [`Item`](#Item) held `depth` levels deep.
 -}
 decodeNestedItemWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder Item
 decodeNestedItemWith types depth =
@@ -338,7 +348,7 @@ decodeListItemsResponseWith types =
     decodeNestedListItemsResponseWith types (max 1 (Proto.Json.registryDepth types))
 
 
-{-| [`decodeListItemsResponseWith`](#decodeListItemsResponseWith) for a [`ListItemsResponse`](#ListItemsResponse) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`decodeListItemsResponseWith`](#decodeListItemsResponseWith) for a [`ListItemsResponse`](#ListItemsResponse) held `depth` levels deep.
 -}
 decodeNestedListItemsResponseWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder ListItemsResponse
 decodeNestedListItemsResponseWith types depth =
@@ -433,7 +443,7 @@ mergeItemBytes =
     mergeNestedItemBytes 1
 
 
-{-| [`mergeItemBytes`](#mergeItemBytes) for an [`Item`](#Item) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeItemBytes`](#mergeItemBytes) for an [`Item`](#Item) held `depth` levels deep.
 -}
 mergeNestedItemBytes : Int -> Item -> Proto.Binary.Decoder Item
 mergeNestedItemBytes depth =
@@ -601,7 +611,7 @@ mergeListItemsResponseBytes =
     mergeNestedListItemsResponseBytes 1
 
 
-{-| [`mergeListItemsResponseBytes`](#mergeListItemsResponseBytes) for a [`ListItemsResponse`](#ListItemsResponse) held `depth` levels deep, the outermost message read at 1. Generated code calls it to read it one level below the message holding it; past the runtime's nesting limit it fails.
+{-| [`mergeListItemsResponseBytes`](#mergeListItemsResponseBytes) for a [`ListItemsResponse`](#ListItemsResponse) held `depth` levels deep.
 -}
 mergeNestedListItemsResponseBytes : Int -> ListItemsResponse -> Proto.Binary.Decoder ListItemsResponse
 mergeNestedListItemsResponseBytes depth =

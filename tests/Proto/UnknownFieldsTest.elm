@@ -12,6 +12,7 @@ import Generated.Codec.Keep.Codec.V1 as Keep
 import Json.Decode
 import Json.Encode
 import Proto.Binary
+import Proto.Json
 import Proto.Unknown exposing (Value(..))
 import Test exposing (Test, describe, test)
 
@@ -98,7 +99,7 @@ suite =
         , test "proto3 JSON leaves them out" <|
             \_ ->
                 leaf "0a01611805"
-                    |> Result.map (Keep.encodeLeaf >> Json.Encode.encode 0)
+                    |> Result.map (Keep.encodeLeaf >> Proto.Json.encode >> Result.map (Json.Encode.encode 0) >> Result.withDefault "")
                     |> Expect.equal (Ok "{\"name\":\"a\"}")
         , test "proto3 JSON reads none" <|
             \_ ->

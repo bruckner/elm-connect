@@ -419,17 +419,19 @@ registry =
 
 {-| Encodes a [`Note`](#Note) as proto3 JSON.
 -}
-encodeNote : Note -> Json.Encode.Value
+encodeNote : Note -> Proto.Json.Encoder x
 encodeNote value =
-    Proto.Json.objectOfFields
-        ([ ( "title", Proto.Json.implicitField "" Json.Encode.string value.title )
-         , ( "tags", Proto.Json.repeatedField Json.Encode.string value.tags )
-         , ( "counts", Proto.Json.dictField identity Proto.Json.encodeInt64 value.counts )
-         , ( "detail", Maybe.map encodeDetail value.detail )
-         , ( "marks", Proto.Json.repeatedField Json.Encode.int value.marks )
-         , ( "weight", Proto.Json.implicitFloatField value.weight )
-         ]
-            ++ encodeNoteOrigin value.origin
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            ([ ( "title", Proto.Json.implicitField "" Json.Encode.string value.title )
+             , ( "tags", Proto.Json.repeatedField Json.Encode.string value.tags )
+             , ( "counts", Proto.Json.dictField identity Proto.Json.encodeInt64 value.counts )
+             , ( "detail", Proto.Json.totalOptionalField encodeDetail value.detail )
+             , ( "marks", Proto.Json.repeatedField Json.Encode.int value.marks )
+             , ( "weight", Proto.Json.implicitFloatField value.weight )
+             ]
+                ++ encodeNoteOrigin value.origin
+            )
         )
 
 
@@ -446,97 +448,101 @@ encodeNoteOrigin value =
             ]
 
         NoteOriginCopiedFrom member ->
-            [ ( "copiedFrom", Just (encodeDetail member) )
+            [ ( "copiedFrom", Just (Proto.Json.encodeTotal (encodeDetail member)) )
             ]
 
 
 {-| Encodes a [`Detail`](#Detail) as proto3 JSON.
 -}
-encodeDetail : Detail -> Json.Encode.Value
+encodeDetail : Detail -> Proto.Json.Encoder x
 encodeDetail value =
-    Proto.Json.objectOfFields
-        [ ( "body", Proto.Json.implicitField "" Proto.Json.encodeBytes value.body )
-        , ( "crc", Proto.Json.implicitField 0 Json.Encode.int value.crc )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "body", Proto.Json.implicitField "" Proto.Json.encodeBytes value.body )
+            , ( "crc", Proto.Json.implicitField 0 Json.Encode.int value.crc )
+            ]
+        )
 
 
 {-| Encodes an [`Empty`](#Empty) as proto3 JSON.
 -}
-encodeEmpty : Empty -> Json.Encode.Value
+encodeEmpty : Empty -> Proto.Json.Encoder x
 encodeEmpty _ =
-    Json.Encode.object []
+    Proto.Json.succeed (Json.Encode.object [])
 
 
 {-| Encodes a [`Wide`](#Wide) as proto3 JSON.
 -}
-encodeWide : Wide -> Json.Encode.Value
+encodeWide : Wide -> Proto.Json.Encoder x
 encodeWide value =
-    Proto.Json.objectOfFields
-        [ ( "f1", Proto.Json.implicitField 0 Json.Encode.int value.f1 )
-        , ( "f2", Proto.Json.implicitField 0 Json.Encode.int value.f2 )
-        , ( "f3", Proto.Json.implicitField 0 Json.Encode.int value.f3 )
-        , ( "f4", Proto.Json.implicitField 0 Json.Encode.int value.f4 )
-        , ( "f5", Proto.Json.implicitField 0 Json.Encode.int value.f5 )
-        , ( "f6", Proto.Json.implicitField 0 Json.Encode.int value.f6 )
-        , ( "f7", Proto.Json.implicitField 0 Json.Encode.int value.f7 )
-        , ( "f8", Proto.Json.implicitField 0 Json.Encode.int value.f8 )
-        , ( "f9", Proto.Json.implicitField 0 Json.Encode.int value.f9 )
-        , ( "f10", Proto.Json.implicitField 0 Json.Encode.int value.f10 )
-        , ( "f11", Proto.Json.implicitField 0 Json.Encode.int value.f11 )
-        , ( "f12", Proto.Json.implicitField 0 Json.Encode.int value.f12 )
-        , ( "f13", Proto.Json.implicitField 0 Json.Encode.int value.f13 )
-        , ( "f14", Proto.Json.implicitField 0 Json.Encode.int value.f14 )
-        , ( "f15", Proto.Json.implicitField 0 Json.Encode.int value.f15 )
-        , ( "f16", Proto.Json.implicitField 0 Json.Encode.int value.f16 )
-        , ( "f17", Proto.Json.implicitField 0 Json.Encode.int value.f17 )
-        , ( "f18", Proto.Json.implicitField 0 Json.Encode.int value.f18 )
-        , ( "f19", Proto.Json.implicitField 0 Json.Encode.int value.f19 )
-        , ( "f20", Proto.Json.implicitField 0 Json.Encode.int value.f20 )
-        , ( "f21", Proto.Json.implicitField 0 Json.Encode.int value.f21 )
-        , ( "f22", Proto.Json.implicitField 0 Json.Encode.int value.f22 )
-        , ( "f23", Proto.Json.implicitField 0 Json.Encode.int value.f23 )
-        , ( "f24", Proto.Json.implicitField 0 Json.Encode.int value.f24 )
-        , ( "f25", Proto.Json.implicitField 0 Json.Encode.int value.f25 )
-        , ( "f26", Proto.Json.implicitField 0 Json.Encode.int value.f26 )
-        , ( "f27", Proto.Json.implicitField 0 Json.Encode.int value.f27 )
-        , ( "f28", Proto.Json.implicitField 0 Json.Encode.int value.f28 )
-        , ( "f29", Proto.Json.implicitField 0 Json.Encode.int value.f29 )
-        , ( "f30", Proto.Json.implicitField 0 Json.Encode.int value.f30 )
-        , ( "f31", Proto.Json.implicitField 0 Json.Encode.int value.f31 )
-        , ( "f32", Proto.Json.implicitField 0 Json.Encode.int value.f32 )
-        , ( "f33", Proto.Json.implicitField 0 Json.Encode.int value.f33 )
-        , ( "f34", Proto.Json.implicitField 0 Json.Encode.int value.f34 )
-        , ( "f35", Proto.Json.implicitField 0 Json.Encode.int value.f35 )
-        , ( "f36", Proto.Json.implicitField 0 Json.Encode.int value.f36 )
-        , ( "f37", Proto.Json.implicitField 0 Json.Encode.int value.f37 )
-        , ( "f38", Proto.Json.implicitField 0 Json.Encode.int value.f38 )
-        , ( "f39", Proto.Json.implicitField 0 Json.Encode.int value.f39 )
-        , ( "f40", Proto.Json.implicitField 0 Json.Encode.int value.f40 )
-        , ( "f41", Proto.Json.implicitField 0 Json.Encode.int value.f41 )
-        , ( "f42", Proto.Json.implicitField 0 Json.Encode.int value.f42 )
-        , ( "f43", Proto.Json.implicitField 0 Json.Encode.int value.f43 )
-        , ( "f44", Proto.Json.implicitField 0 Json.Encode.int value.f44 )
-        , ( "f45", Proto.Json.implicitField 0 Json.Encode.int value.f45 )
-        , ( "f46", Proto.Json.implicitField 0 Json.Encode.int value.f46 )
-        , ( "f47", Proto.Json.implicitField 0 Json.Encode.int value.f47 )
-        , ( "f48", Proto.Json.implicitField 0 Json.Encode.int value.f48 )
-        , ( "f49", Proto.Json.implicitField 0 Json.Encode.int value.f49 )
-        , ( "f50", Proto.Json.implicitField 0 Json.Encode.int value.f50 )
-        , ( "f51", Proto.Json.implicitField 0 Json.Encode.int value.f51 )
-        , ( "f52", Proto.Json.implicitField 0 Json.Encode.int value.f52 )
-        , ( "f53", Proto.Json.implicitField 0 Json.Encode.int value.f53 )
-        , ( "f54", Proto.Json.implicitField 0 Json.Encode.int value.f54 )
-        , ( "f55", Proto.Json.implicitField 0 Json.Encode.int value.f55 )
-        , ( "f56", Proto.Json.implicitField 0 Json.Encode.int value.f56 )
-        , ( "f57", Proto.Json.implicitField 0 Json.Encode.int value.f57 )
-        , ( "f58", Proto.Json.implicitField 0 Json.Encode.int value.f58 )
-        , ( "f59", Proto.Json.implicitField 0 Json.Encode.int value.f59 )
-        , ( "f60", Proto.Json.implicitField 0 Json.Encode.int value.f60 )
-        , ( "f61", Proto.Json.implicitField 0 Json.Encode.int value.f61 )
-        , ( "f62", Proto.Json.implicitField 0 Json.Encode.int value.f62 )
-        , ( "f63", Proto.Json.implicitField 0 Json.Encode.int value.f63 )
-        , ( "f64", Proto.Json.implicitField 0 Json.Encode.int value.f64 )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "f1", Proto.Json.implicitField 0 Json.Encode.int value.f1 )
+            , ( "f2", Proto.Json.implicitField 0 Json.Encode.int value.f2 )
+            , ( "f3", Proto.Json.implicitField 0 Json.Encode.int value.f3 )
+            , ( "f4", Proto.Json.implicitField 0 Json.Encode.int value.f4 )
+            , ( "f5", Proto.Json.implicitField 0 Json.Encode.int value.f5 )
+            , ( "f6", Proto.Json.implicitField 0 Json.Encode.int value.f6 )
+            , ( "f7", Proto.Json.implicitField 0 Json.Encode.int value.f7 )
+            , ( "f8", Proto.Json.implicitField 0 Json.Encode.int value.f8 )
+            , ( "f9", Proto.Json.implicitField 0 Json.Encode.int value.f9 )
+            , ( "f10", Proto.Json.implicitField 0 Json.Encode.int value.f10 )
+            , ( "f11", Proto.Json.implicitField 0 Json.Encode.int value.f11 )
+            , ( "f12", Proto.Json.implicitField 0 Json.Encode.int value.f12 )
+            , ( "f13", Proto.Json.implicitField 0 Json.Encode.int value.f13 )
+            , ( "f14", Proto.Json.implicitField 0 Json.Encode.int value.f14 )
+            , ( "f15", Proto.Json.implicitField 0 Json.Encode.int value.f15 )
+            , ( "f16", Proto.Json.implicitField 0 Json.Encode.int value.f16 )
+            , ( "f17", Proto.Json.implicitField 0 Json.Encode.int value.f17 )
+            , ( "f18", Proto.Json.implicitField 0 Json.Encode.int value.f18 )
+            , ( "f19", Proto.Json.implicitField 0 Json.Encode.int value.f19 )
+            , ( "f20", Proto.Json.implicitField 0 Json.Encode.int value.f20 )
+            , ( "f21", Proto.Json.implicitField 0 Json.Encode.int value.f21 )
+            , ( "f22", Proto.Json.implicitField 0 Json.Encode.int value.f22 )
+            , ( "f23", Proto.Json.implicitField 0 Json.Encode.int value.f23 )
+            , ( "f24", Proto.Json.implicitField 0 Json.Encode.int value.f24 )
+            , ( "f25", Proto.Json.implicitField 0 Json.Encode.int value.f25 )
+            , ( "f26", Proto.Json.implicitField 0 Json.Encode.int value.f26 )
+            , ( "f27", Proto.Json.implicitField 0 Json.Encode.int value.f27 )
+            , ( "f28", Proto.Json.implicitField 0 Json.Encode.int value.f28 )
+            , ( "f29", Proto.Json.implicitField 0 Json.Encode.int value.f29 )
+            , ( "f30", Proto.Json.implicitField 0 Json.Encode.int value.f30 )
+            , ( "f31", Proto.Json.implicitField 0 Json.Encode.int value.f31 )
+            , ( "f32", Proto.Json.implicitField 0 Json.Encode.int value.f32 )
+            , ( "f33", Proto.Json.implicitField 0 Json.Encode.int value.f33 )
+            , ( "f34", Proto.Json.implicitField 0 Json.Encode.int value.f34 )
+            , ( "f35", Proto.Json.implicitField 0 Json.Encode.int value.f35 )
+            , ( "f36", Proto.Json.implicitField 0 Json.Encode.int value.f36 )
+            , ( "f37", Proto.Json.implicitField 0 Json.Encode.int value.f37 )
+            , ( "f38", Proto.Json.implicitField 0 Json.Encode.int value.f38 )
+            , ( "f39", Proto.Json.implicitField 0 Json.Encode.int value.f39 )
+            , ( "f40", Proto.Json.implicitField 0 Json.Encode.int value.f40 )
+            , ( "f41", Proto.Json.implicitField 0 Json.Encode.int value.f41 )
+            , ( "f42", Proto.Json.implicitField 0 Json.Encode.int value.f42 )
+            , ( "f43", Proto.Json.implicitField 0 Json.Encode.int value.f43 )
+            , ( "f44", Proto.Json.implicitField 0 Json.Encode.int value.f44 )
+            , ( "f45", Proto.Json.implicitField 0 Json.Encode.int value.f45 )
+            , ( "f46", Proto.Json.implicitField 0 Json.Encode.int value.f46 )
+            , ( "f47", Proto.Json.implicitField 0 Json.Encode.int value.f47 )
+            , ( "f48", Proto.Json.implicitField 0 Json.Encode.int value.f48 )
+            , ( "f49", Proto.Json.implicitField 0 Json.Encode.int value.f49 )
+            , ( "f50", Proto.Json.implicitField 0 Json.Encode.int value.f50 )
+            , ( "f51", Proto.Json.implicitField 0 Json.Encode.int value.f51 )
+            , ( "f52", Proto.Json.implicitField 0 Json.Encode.int value.f52 )
+            , ( "f53", Proto.Json.implicitField 0 Json.Encode.int value.f53 )
+            , ( "f54", Proto.Json.implicitField 0 Json.Encode.int value.f54 )
+            , ( "f55", Proto.Json.implicitField 0 Json.Encode.int value.f55 )
+            , ( "f56", Proto.Json.implicitField 0 Json.Encode.int value.f56 )
+            , ( "f57", Proto.Json.implicitField 0 Json.Encode.int value.f57 )
+            , ( "f58", Proto.Json.implicitField 0 Json.Encode.int value.f58 )
+            , ( "f59", Proto.Json.implicitField 0 Json.Encode.int value.f59 )
+            , ( "f60", Proto.Json.implicitField 0 Json.Encode.int value.f60 )
+            , ( "f61", Proto.Json.implicitField 0 Json.Encode.int value.f61 )
+            , ( "f62", Proto.Json.implicitField 0 Json.Encode.int value.f62 )
+            , ( "f63", Proto.Json.implicitField 0 Json.Encode.int value.f63 )
+            , ( "f64", Proto.Json.implicitField 0 Json.Encode.int value.f64 )
+            ]
+        )
 
 
 

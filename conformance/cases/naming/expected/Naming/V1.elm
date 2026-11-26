@@ -223,20 +223,22 @@ encodeHttpMethod value =
 
 {-| Encodes a [`Tag`](#Tag) as proto3 JSON.
 -}
-encodeTag : Tag -> Json.Encode.Value
+encodeTag : Tag -> Proto.Json.Encoder x
 encodeTag value =
-    Proto.Json.objectOfFields
-        ([ ( "type", Proto.Json.implicitField "" Json.Encode.string value.type_ )
-         , ( "if", Proto.Json.implicitField False Json.Encode.bool value.if_ )
-         , ( "port", Proto.Json.implicitField 0 Json.Encode.int value.port_ )
-         , ( "alias", Proto.Json.implicitField "" Json.Encode.string value.alias )
-         , ( "screenName", Proto.Json.implicitField "" Json.Encode.string value.displayName )
-         , ( "httpUrl", Proto.Json.implicitField "" Json.Encode.string value.httpUrl )
-         , ( "v2Count", Proto.Json.implicitField 0 Json.Encode.int value.v2Count )
-         , ( "shape", Proto.Json.implicitField ShapeUnspecified encodeShape value.shape )
-         , ( "method", Proto.Json.implicitField HttpMethodUnspecified encodeHttpMethod value.method )
-         ]
-            ++ encodeTagCase value.case_
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            ([ ( "type", Proto.Json.implicitField "" Json.Encode.string value.type_ )
+             , ( "if", Proto.Json.implicitField False Json.Encode.bool value.if_ )
+             , ( "port", Proto.Json.implicitField 0 Json.Encode.int value.port_ )
+             , ( "alias", Proto.Json.implicitField "" Json.Encode.string value.alias )
+             , ( "screenName", Proto.Json.implicitField "" Json.Encode.string value.displayName )
+             , ( "httpUrl", Proto.Json.implicitField "" Json.Encode.string value.httpUrl )
+             , ( "v2Count", Proto.Json.implicitField 0 Json.Encode.int value.v2Count )
+             , ( "shape", Proto.Json.implicitField ShapeUnspecified encodeShape value.shape )
+             , ( "method", Proto.Json.implicitField HttpMethodUnspecified encodeHttpMethod value.method )
+             ]
+                ++ encodeTagCase value.case_
+            )
         )
 
 

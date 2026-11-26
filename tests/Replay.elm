@@ -1,7 +1,10 @@
 module Replay exposing (Expected, Fixture, fixture, normalize, replay)
 
 {-| Replaying the route fixtures (`conformance/routes`) and the route
-properties through `Rpc.request` over the Transcode protocol:
+properties through the request a call's plan builds over the Transcode
+protocol, which is `Rpc.request`'s before the checks that refuse a call, so
+that a path value its template cannot match is printed as the reference
+prints it:
 `Generated.Routes.Fixtures` and `Generated.Routes.Properties` are written
 from them at test time, and `RouteFixturesTest` and `RoutePropertiesTest`
 check each.
@@ -10,9 +13,11 @@ check each.
 import Expect
 import Json.Decode exposing (Decoder)
 import Json.Encode exposing (Value)
+import Proto.Error
 import Rpc
 import Rpc.Body
 import Rpc.Call
+import Rpc.Internal.Plan
 import Rpc.Protocol
 import Test exposing (Test, test)
 
@@ -56,12 +61,12 @@ fixture name decoder method binding json expected =
                             Rpc.Call.viaBinding index (method message)
                                 |> Result.fromMaybe ("the method has no binding " ++ String.fromInt index)
                 )
-            |> Result.map (Rpc.request transcode)
+            |> Result.andThen (\call -> (Rpc.Internal.Plan.toSend transcode call).request () |> Result.mapError (\problem -> "the request has no JSON: " ++ Proto.Error.toString problem))
     , expected = expected
     }
 
 
-{-| A fixture's test: the request `Rpc.request` builds is the one expected,
+{-| A fixture's test: the request the plan builds is the one expected,
 bodies compared once normalized.
 -}
 replay : Fixture -> Test

@@ -56,7 +56,7 @@ getNote =
     Rpc.call
         (Proto.Method.init "notes.v1.NotesService"
             "GetNote"
-            (\_ -> Ok << Notes.V1.encodeGetNoteRequest)
+            Notes.V1.encodeGetNoteRequest
             (\_ -> Notes.V1.decodeNote)
             Notes.V1.encodeGetNoteRequestBytes
             Notes.V1.decodeNoteBytes
@@ -78,7 +78,7 @@ listNotes =
     Rpc.call
         (Proto.Method.init "notes.v1.NotesService"
             "ListNotes"
-            (\_ -> Ok << Notes.V1.encodeListNotesRequest)
+            Notes.V1.encodeListNotesRequest
             (\_ -> Notes.V1.decodeListNotesResponse)
             Notes.V1.encodeListNotesRequestBytes
             Notes.V1.decodeListNotesResponseBytes
@@ -101,11 +101,11 @@ createNote =
     Rpc.call
         (Proto.Method.init "notes.v1.NotesService"
             "CreateNote"
-            (\_ -> Ok << Notes.V1.encodeCreateNoteRequest)
+            Notes.V1.encodeCreateNoteRequest
             (\_ -> Notes.V1.decodeNote)
             Notes.V1.encodeCreateNoteRequestBytes
             Notes.V1.decodeNoteBytes
-            |> Proto.Method.withRoutes [ routeCreateNote0 ]
+            |> Proto.Method.withJsonRoutes [ routeCreateNote0 ]
         )
 
 
@@ -125,11 +125,11 @@ replaceNote =
     Rpc.call
         (Proto.Method.init "notes.v1.NotesService"
             "ReplaceNote"
-            (\_ -> Ok << Notes.V1.encodeNote)
+            Notes.V1.encodeNote
             (\_ -> Notes.V1.decodeNote)
             Notes.V1.encodeNoteBytes
             Notes.V1.decodeNoteBytes
-            |> Proto.Method.withRoutes [ routeReplaceNote0 ]
+            |> Proto.Method.withJsonRoutes [ routeReplaceNote0 ]
         )
 
 
@@ -147,7 +147,7 @@ ping =
     Rpc.call
         (Proto.Method.init "notes.v1.NotesService"
             "Ping"
-            (\_ -> Ok << Proto.Json.encodeEmpty)
+            (Proto.Json.succeed << Proto.Json.encodeEmpty)
             (\_ -> Proto.Json.empty)
             (Proto.Binary.messageEncoder Proto.Binary.empty)
             (Proto.Binary.messageDecoder Proto.Binary.empty)
@@ -208,20 +208,20 @@ routeListNotes0 request_ =
 
 {-| The route of [`createNote`](#createNote) over binding 0: `POST /v1/notes` body `note`.
 -}
-routeCreateNote0 : Notes.V1.CreateNoteRequest -> Proto.Route.Route
-routeCreateNote0 request_ =
+routeCreateNote0 : Notes.V1.CreateNoteRequest -> Json.Encode.Value -> Proto.Route.Route
+routeCreateNote0 request_ json_ =
     { method = "POST"
     , path = "v1/notes"
     , query = []
-    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map Notes.V1.encodeNote request_.note))
+    , body = Just (Proto.Route.jsonField "note" json_)
     , invalid = Nothing
     }
 
 
 {-| The route of [`replaceNote`](#replaceNote) over binding 0: `PUT /v1/{name=notes/*}` body `*`.
 -}
-routeReplaceNote0 : Notes.V1.Note -> Proto.Route.Route
-routeReplaceNote0 request_ =
+routeReplaceNote0 : Notes.V1.Note -> Json.Encode.Value -> Proto.Route.Route
+routeReplaceNote0 request_ json_ =
     let
         name_ =
             request_.name
@@ -229,7 +229,7 @@ routeReplaceNote0 request_ =
     { method = "PUT"
     , path = "v1/" ++ Proto.Route.segments name_
     , query = []
-    , body = Just (Proto.Route.without [ [ "name" ] ] (Notes.V1.encodeNote request_))
+    , body = Just (Proto.Route.without [ [ "name" ] ] json_)
     , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] name_
     }
 

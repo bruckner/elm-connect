@@ -221,11 +221,17 @@ change model call =
 
 
 {-| Keeps the HTTP request a call becomes under the current client, to show it.
-`Rpc.request` builds it without sending anything; `Api.rpc` sends the same.
+`Rpc.request` builds it without sending anything; `Api.rpc` sends the same. A
+call it refuses sends nothing, so nothing is kept: `Api.rpc` reports its error.
 -}
 record : Rpc.Call Rpc.Json req res -> Model -> Model
 record call model =
-    { model | sent = List.take 5 (Rpc.request (Api.client model.shared) call :: model.sent) }
+    case Rpc.request (Api.client model.shared) call of
+        Ok sent ->
+            { model | sent = List.take 5 (sent :: model.sent) }
+
+        Err _ ->
+            model
 
 
 

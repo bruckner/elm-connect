@@ -169,7 +169,7 @@ applies it to each method's [`Method`](Proto-Method#Method):
         Rpc.call
             (Method.initJson "notes.v1.NotesService"
                 "GetNote"
-                (\_ -> Ok << Notes.V1.encodeGetNoteRequest)
+                Notes.V1.encodeGetNoteRequest
                 (\_ -> Notes.V1.decodeNote)
                 |> Method.withIdempotency Method.IdempotencyNoSideEffects
                 |> Method.withRoutes [ routeGetNote0 ]
@@ -222,18 +222,20 @@ attempt's result. A task ignores the call's tracker, so [`cancel`](#cancel)
 cannot stop it.
 
 A call whose URL or headers cannot be sent, whose path value cannot match its
-variable's template, or whose request is over the protocol's
-[`withWriteMaxBytes`](Rpc-Protocol#withWriteMaxBytes), is not: it fails with
-a [`BadCall`](Rpc-Error#Cause), and nothing reaches elm/http.
+variable's template, whose request is over the protocol's
+[`withWriteMaxBytes`](Rpc-Protocol#withWriteMaxBytes), or, over JSON, whose
+request has no proto3 JSON (a value with no JSON form, or an `Any` the
+client's registry cannot write), is not: it fails with a
+[`BadCall`](Rpc-Error#Cause), and nothing reaches elm/http.
 
 -}
 task : Client codec -> Call codec req res -> Task Error res
-task cl c =
+task ((Client.Client cl _ _ _) as client_) c =
     let
         plan =
-            Plan.toSend cl c
+            Plan.toSend client_ c
     in
-    fromPlan cl c plan (plan.request ())
+    fromPlan client_ c plan (Plan.checked cl.baseUrl plan)
 
 
 {-| Send a call, giving the result to `toMsg`.
@@ -252,23 +254,24 @@ send ((Client.Client cl _ policy _) as client_) toMsg ((Rpc.Internal.Call.Call f
         plan =
             Plan.toSend client_ c
 
-        sent =
-            plan.request ()
+        checked =
+            Plan.checked cl.baseUrl plan
     in
-    if Rpc.Internal.Call.retryIn policy c == Nothing && Plan.refused cl.baseUrl plan sent == Nothing then
-        Internal.send
-            (case plan.reader of
-                TextReader read ->
-                    Http.expectStringResponse toMsg read
+    case ( checked, Rpc.Internal.Call.retryIn policy c ) of
+        ( Ok sent, Nothing ) ->
+            Internal.send
+                (case plan.reader of
+                    TextReader read ->
+                        Http.expectStringResponse toMsg read
 
-                BytesReader read ->
-                    Http.expectBytesResponse toMsg (read >> Tuple.second)
-            )
-            fields.tracker
-            sent
+                    BytesReader read ->
+                        Http.expectBytesResponse toMsg (read >> Tuple.second)
+                )
+                fields.tracker
+                sent
 
-    else
-        Task.attempt toMsg (fromPlan client_ c plan sent)
+        _ ->
+            Task.attempt toMsg (fromPlan client_ c plan checked)
 
 
 {-| Cancel a call sent with [`send`](#send) through a tracker
@@ -320,24 +323,33 @@ policy in effect applies, and the trace counts every attempt and the
 milliseconds from before the first to after the last, waits included.
 -}
 taskTraced : Client codec -> Call codec req res -> Task Never ( Trace, Result Error res )
-taskTraced ((Client.Client _ over _ _) as client_) c =
+taskTraced ((Client.Client cl over _ _) as client_) c =
     let
         plan =
             Plan.toSend client_ c
 
-        sent =
-            plan.request ()
+        checked =
+            Plan.checked cl.baseUrl plan
+
+        -- The request the trace shows: the one built, refused or not.
+        shown =
+            case plan.request () of
+                Ok sent ->
+                    sent
+
+                Err _ ->
+                    plan.unwritten ()
     in
     Time.now
         |> Task.andThen
             (\start ->
-                attempt client_ c plan sent
+                attempt client_ c plan checked
                     |> Task.andThen
                         (\outcome ->
                             Time.now
                                 |> Task.map
                                     (\end ->
-                                        ( Rpc.Internal.Trace.init over c plan (firstAttempt client_ c plan sent) outcome (toFloat (Time.posixToMillis end - Time.posixToMillis start))
+                                        ( Rpc.Internal.Trace.init over c plan (firstAttempt client_ c plan shown) outcome (toFloat (Time.posixToMillis end - Time.posixToMillis start))
                                         , outcome.result
                                         )
                                     )
@@ -382,14 +394,26 @@ type alias Request =
     Rpc.Request.Request
 
 
-{-| The request a call sends over a client. It is built whatever the client
-and the call hold, a base URL with a query, a header a request cannot carry
-or a path value its template cannot match included; sending it is what
-refuses those.
+{-| The request a call sends over a client, or the error sending it would
+fail with: what is `Ok` is exactly what [`task`](#task) and [`send`](#send)
+would send. A call is refused, as they refuse it, for a base URL holding a
+query or a fragment, a path value its template cannot match, a header a
+request cannot carry, a request over the protocol's
+[`withWriteMaxBytes`](Rpc-Protocol#withWriteMaxBytes), and, over JSON, a
+request with no proto3 JSON: a value with no JSON form, or an `Any` the
+client's registry cannot write. Each is a [`BadCall`](Rpc-Error#Cause).
+
+    case Rpc.request client (Notes.V1.NotesService.getNote { name = "notes/42" }) of
+        Ok sent ->
+            sent.url == "https://api.example.com/notes.v1.NotesService/GetNote"
+
+        Err _ ->
+            False
+
 -}
-request : Client codec -> Call codec req res -> Request
-request cl c =
-    (Plan.plan cl c).request ()
+request : Client codec -> Call codec req res -> Result Error Request
+request ((Client.Client cl _ _ _) as client_) c =
+    Plan.checked cl.baseUrl (Plan.toSend client_ c)
 
 
 {-| What an answer read as text means, for a client speaking JSON: the decoded
@@ -463,16 +487,44 @@ splitTrailers =
 
 {-| Send a request in place of the one a call would send, and read the answer
 as the call's. The retry policy in effect applies, and the call's tracker is
-ignored, as with [`task`](#task).
+ignored, as with [`task`](#task). The request is usually one
+[`request`](#request) gave, rewritten:
+
+    case Rpc.request client call of
+        Ok sent ->
+            { sent | headers = sent.headers ++ [ ( "x-signature", sign sent ) ] }
+                |> Rpc.taskFromRequest client call
+
+        Err error ->
+            Task.fail error
+
+It is refused as [`task`](#task) refuses the call: the checks of the call's
+own values (its request's JSON, its path values) are of the call, whatever
+`sent` carries, and the checks of the request (its URL, its headers, its
+size) are of `sent`.
+
 -}
 taskFromRequest : Client codec -> Call codec req res -> Request -> Task Error res
-taskFromRequest cl c sent =
-    fromPlan cl c (Plan.toSend cl c) sent
+taskFromRequest ((Client.Client cl _ _ _) as client_) c sent =
+    let
+        plan =
+            Plan.toSend client_ c
+    in
+    fromPlan client_
+        c
+        plan
+        (case Plan.refused cl.baseUrl plan sent of
+            Just error ->
+                Err error
+
+            Nothing ->
+                Ok sent
+        )
 
 
-fromPlan : Client codec -> Call codec req res -> Plan res -> Request -> Task Error res
-fromPlan cl c plan sent =
-    attempt cl c plan sent
+fromPlan : Client codec -> Call codec req res -> Plan res -> Result Error Request -> Task Error res
+fromPlan cl c plan checked =
+    attempt cl c plan checked
         |> Task.mapError never
         |> Task.andThen
             (\outcome ->
@@ -485,15 +537,16 @@ fromPlan cl c plan sent =
             )
 
 
-{-| Send `sent` until it succeeds or the retry policy says to stop.
+{-| Send a checked request until it succeeds or the retry policy says to
+stop; a refused one is not sent.
 -}
-attempt : Client codec -> Call codec req res -> Plan res -> Request -> Task Never (Rpc.Internal.Retry.Outcome Error res)
-attempt (Client.Client cl _ policy _) c plan sent =
-    case Plan.refused cl.baseUrl plan sent of
-        Just error ->
+attempt : Client codec -> Call codec req res -> Plan res -> Result Error Request -> Task Never (Rpc.Internal.Retry.Outcome Error res)
+attempt (Client.Client _ _ policy _) c plan checked =
+    case checked of
+        Err error ->
             Task.succeed { attempts = 0, metadata = Nothing, result = Err error }
 
-        Nothing ->
+        Ok sent ->
             Rpc.Internal.Retry.run (Rpc.Internal.Call.retryIn policy c)
                 (Rpc.Call.idempotency c)
                 Rpc.Internal.Retry.retryable

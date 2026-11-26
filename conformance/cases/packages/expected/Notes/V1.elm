@@ -126,16 +126,18 @@ registry =
 
 {-| Encodes a [`Note`](#Note) as proto3 JSON.
 -}
-encodeNote : Note -> Json.Encode.Value
+encodeNote : Note -> Proto.Json.Encoder x
 encodeNote value =
-    Proto.Json.objectOfFields
-        ([ ( "title", Proto.Json.implicitField "" Json.Encode.string value.title )
-         , ( "author", Maybe.map Users.V1.encodeUser value.author )
-         , ( "requiredRole", Proto.Json.implicitField Users.V1.RoleUnspecified Users.V1.encodeRole value.requiredRole )
-         , ( "readers", Proto.Json.repeatedField Users.V1.encodeUser value.readers )
-         , ( "roles", Proto.Json.dictField identity Users.V1.encodeRole value.roles )
-         ]
-            ++ encodeNoteOwner value.owner
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            ([ ( "title", Proto.Json.implicitField "" Json.Encode.string value.title )
+             , ( "author", Proto.Json.totalOptionalField Users.V1.encodeUser value.author )
+             , ( "requiredRole", Proto.Json.implicitField Users.V1.RoleUnspecified Users.V1.encodeRole value.requiredRole )
+             , ( "readers", Proto.Json.totalRepeatedField Users.V1.encodeUser value.readers )
+             , ( "roles", Proto.Json.dictField identity Users.V1.encodeRole value.roles )
+             ]
+                ++ encodeNoteOwner value.owner
+            )
         )
 
 
@@ -148,7 +150,7 @@ encodeNoteOwner value =
             []
 
         NoteOwnerUser member ->
-            [ ( "user", Just (Users.V1.encodeUser member) )
+            [ ( "user", Just (Proto.Json.encodeTotal (Users.V1.encodeUser member)) )
             ]
 
         NoteOwnerTeam member ->

@@ -106,8 +106,11 @@ its descriptor.
 
 An `Any`'s proto3 JSON is converted from and to its binary through a
 `Proto.Registry`: reading an `Any` from JSON (`Proto.Json.anyWith`),
-writing one as JSON (`Proto.Json.encodeAnyWith`), and
-`Proto.Any.toJson`. A type the registry lacks is a loud miss, as in
+writing one as JSON (a message holding one, or one alone with
+`Proto.Json.writeAny`, run by `Proto.Json.encodeWith`), and
+`Proto.Any.toJson`. An `Any` written alone, as a method whose request is
+an `Any` writes it, counts its nesting as a read of one does: 100 nested
+`Any`s write, 101 fail. A type the registry lacks is a loud miss, as in
 protobuf's own runtimes: the read fails naming its type URL, and the
 write gives `UnregisteredType` with it. Over protobuf binary no
 registry is needed.
@@ -173,7 +176,7 @@ depth, not the time.
 
 The conversion happens when an `Any` is read from JSON
 (`Proto.Json.anyWith`, any JSON answer holding one) and when one is
-written as JSON (`Proto.Json.encodeAnyWith`, `Proto.Any.toJson`, a JSON
+written as JSON (`Proto.Json.encodeWith`, `Proto.Any.toJson`, a JSON
 request holding one). Over the proto codec an `Any` is read and sent as
 its bytes, unconverted, and `Proto.Any.unpack` reads its message once.
 So keep large payloads out of nested `Any`s: hold them in an ordinary

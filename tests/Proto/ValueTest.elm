@@ -133,7 +133,7 @@ roundTrips =
                         case fromText text of
                             Ok value ->
                                 Expect.all
-                                    [ \_ -> Json.Decode.decodeValue Proto.Json.value (Proto.Json.encodeValue value) |> Expect.equal (Ok value)
+                                    [ \_ -> Json.Decode.decodeValue Proto.Json.value (Proto.Value.toJson value) |> Expect.equal (Ok value)
                                     , \_ -> Proto.Binary.decode (Proto.Binary.messageDecoder Proto.Binary.value) (Proto.Binary.encode (Proto.Binary.messageEncoder Proto.Binary.value) value) |> Expect.equal (Ok value)
                                     ]
                                     ()

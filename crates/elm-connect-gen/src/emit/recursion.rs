@@ -2,9 +2,7 @@
 //! (design §3.2).
 
 use super::field::{Present, ValueShape, Zeroed};
-use super::{
-    Deep, Emitter, JSON_DECODE, JSON_ENCODE, OneofShape, PROTO_JSON, PROTO_REGISTRY, docs,
-};
+use super::{Deep, Emitter, FAILS, JSON_DECODE, OneofShape, PROTO_JSON, PROTO_REGISTRY, docs};
 use crate::elm::ast::{BinOp, Decl, Expr, Pattern, Type, Variant};
 use crate::elm::build::{apply, binop, int, lambda, pctor, pvar, ty, var};
 use crate::ir::{Message, TypeName, Wrapper};
@@ -34,38 +32,21 @@ impl Emitter {
         self.reach.message(&message.proto_full_name)
     }
 
-    /// `encodeNode_ (Node_ value) = encodeNode value`; for a message that reaches an `Any`, `encodeNode_With types (Node_
-    /// value) = encodeNodeWith types value`.
+    /// `encodeNode_ (Node_ value) = encodeNode value`, of the type
+    /// `encodeNode` has.
     pub(super) fn wrapper_encoder(&mut self, message: &Message, wrapper: &Wrapper) -> Decl {
-        if self.wrapper_reaches(message) {
-            let annotation = self.encoder_with_type(ty(wrapper.elm_name.clone(), []));
-            return Decl::Value {
-                doc: Some(format!(
-                    "Encodes {} as proto3 JSON, writing each `Any` it holds with the registry.",
-                    docs::a_local(&wrapper.elm_name)
-                )),
-                name: with_registry(wrapper.encoder_name()),
-                annotation,
-                params: vec![
-                    pvar(REGISTRY_ARGUMENT),
-                    pctor(wrapper.elm_name.clone(), [pvar(ENCODER_ARGUMENT)]),
-                ],
-                body: apply(
-                    var(with_registry(message.encoder_name())),
-                    [var(REGISTRY_ARGUMENT), var(ENCODER_ARGUMENT)],
-                ),
-            };
-        }
-        let value_type = self.library_type(JSON_ENCODE, "Value", []);
+        let refusable = self.write_reach.message(&message.proto_full_name);
+        let annotation = self.json_encoder_type(refusable);
         Decl::Value {
             doc: Some(format!(
-                "Encodes {} as proto3 JSON.",
-                docs::a_local(&wrapper.elm_name)
+                "Encodes {} as proto3 JSON{}.",
+                docs::a_local(&wrapper.elm_name),
+                if refusable { FAILS } else { "" }
             )),
             name: wrapper.encoder_name(),
             annotation: Type::Function(
                 Box::new(ty(wrapper.elm_name.clone(), [])),
-                Box::new(value_type),
+                Box::new(annotation),
             ),
             params: vec![pctor(wrapper.elm_name.clone(), [pvar(ENCODER_ARGUMENT)])],
             body: apply(var(message.encoder_name()), [var(ENCODER_ARGUMENT)]),
@@ -342,7 +323,7 @@ impl Emitter {
             },
             Decl::Value {
                 doc: Some(format!(
-                    "[`{decoder_name}`](#{decoder_name}) for {} held by a message `depth` levels deep. That message's decoder calls it at each depth.",
+                    "[`{decoder_name}`](#{decoder_name}) for {} held by a message `depth` levels deep.",
                     docs::a_local(elm_name)
                 )),
                 name: nested_decoder,

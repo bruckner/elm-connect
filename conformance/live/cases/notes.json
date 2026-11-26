@@ -1005,6 +1005,84 @@
     }
   },
   {
+    "name": "connect request with no JSON is traced with a null body",
+    "note": "The attachment's type is not in the client's (empty) registry, so the request has no proto3 JSON: the call is refused before anything is sent, and its trace shows the request with null in place of the message's JSON.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "CreateNote",
+      "protocol": "connect",
+      "request": {
+        "note": {
+          "name": "notes/unwritten",
+          "attachment": {
+            "@type": "type.googleapis.com/google.protobuf.Duration",
+            "value": "1s"
+          }
+        }
+      }
+    },
+    "expect": {
+      "result": {
+        "badCall": {
+          "$match": "^internal: bad Any"
+        }
+      },
+      "trace": {
+        "attempts": 0,
+        "httpStatus": null,
+        "code": "internal",
+        "request": {
+          "method": "POST",
+          "url": {
+            "$match": "/notes\\.v1\\.NotesService/CreateNote$"
+          },
+          "body": "null"
+        }
+      },
+      "wire": []
+    }
+  },
+  {
+    "name": "transcode request with no JSON is traced with its route over a null",
+    "note": "As above over a route: the path and query are printed from the typed request, and the body field is read from null, which reads as {}.",
+    "call": {
+      "service": "notes.v1.NotesService",
+      "method": "UpdateNote",
+      "protocol": "transcode",
+      "request": {
+        "note": {
+          "name": "notes/unwritten",
+          "attachment": {
+            "@type": "type.googleapis.com/google.protobuf.Duration",
+            "value": "1s"
+          }
+        },
+        "updateMask": "attachment"
+      }
+    },
+    "expect": {
+      "result": {
+        "badCall": {
+          "$match": "^internal: bad Any"
+        }
+      },
+      "trace": {
+        "attempts": 0,
+        "httpStatus": null,
+        "code": "internal",
+        "binding": 0,
+        "request": {
+          "method": "PATCH",
+          "url": {
+            "$match": "/v1/notes/unwritten\\?update_mask=attachment$"
+          },
+          "body": "{}"
+        }
+      },
+      "wire": []
+    }
+  },
+  {
     "name": "connect Rpc.send with an invalid header name",
     "call": {
       "service": "notes.v1.NotesService",

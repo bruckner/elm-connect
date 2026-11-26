@@ -4,13 +4,12 @@
 use super::Deep;
 use super::recursion::DEPTH;
 use super::{
-    Emitter, JSON_DECODE, JSON_ENCODE, MessageShape, PROTO_ERROR, PROTO_JSON, PROTO_REGISTRY,
+    Emitter, FAILS, JSON_DECODE, JSON_ENCODE, MessageShape, PROTO_JSON, PROTO_REGISTRY,
     PROTO_UNKNOWN, RecordField, call, docs,
 };
 use crate::elm::ast::{BinOp, Decl, Expr, Pattern, Type};
 use crate::elm::build::{
-    access, apply, binop, lambda, list, pipeline, pvar, qualified, record, string, tuple2, ty,
-    ty_fn, var,
+    access, apply, binop, lambda, list, pipeline, pvar, record, string, tuple2, ty, ty_fn, var,
 };
 use crate::ir::ModuleName;
 use crate::naming::{ENCODER_ARGUMENT, REGISTRY_ARGUMENT, UNKNOWN_FIELDS, nested, with_registry};
@@ -101,15 +100,19 @@ impl Emitter {
         }
     }
 
-    /// `encodeFoo : Foo -> Json.Encode.Value`: `Proto.Json.objectOfFields` of every
-    /// field under its JSON name, each as a `Maybe Json.Encode.Value` that
-    /// is `Nothing` when the field is left out
+    /// A message's JSON encoder, `encodeFoo : Foo -> Proto.Json.Encoder x`
+    /// for a message whose write nothing it holds can refuse:
+    /// `Proto.Json.succeed` of `Proto.Json.objectOfFields` of every field
+    /// under its JSON name, each as a `Maybe Json.Encode.Value` that is
+    /// `Nothing` when the field is left out
     /// ([`encode_field`](Self::encode_field)), followed by the members
     /// each oneof's encoder gives (none when it is unset). Key order means
     /// nothing in JSON, so the fields come first, whatever the declaration
-    /// order.
-    pub(super) fn message_encoder(&mut self, shape: &MessageShape) -> Decl {
-        if self.message_reaches(shape) {
+    /// order. It works for any refusal type `x`, so its parents unwrap it
+    /// with `Proto.Json.encodeTotal` and stay plain code with no tag per
+    /// field.
+    pub(super) fn message_encoder(&mut self, shape: &MessageShape) -> Vec<Decl> {
+        if self.message_write_reaches(shape) {
             return self.message_encoder_with(shape);
         }
         let pairs: Vec<Expr> = shape
@@ -148,15 +151,15 @@ impl Emitter {
             .rev()
             .reduce(|right, left| binop(BinOp::Append, left, right))
             .expect("at least the fields' list");
-        // `Json.Encode.object []` when there is nothing to leave out, so a
-        // module of empty messages needs no `Proto.Json`.
+        // `Json.Encode.object []` when there is nothing to leave out.
         let object = if nothing {
             self.reference((JSON_ENCODE, "object"))
         } else {
             self.reference((PROTO_JSON, "objectOfFields"))
         };
-        let value_type = self.library_type(JSON_ENCODE, "Value", []);
-        Decl::Value {
+        let encoder_type = self.json_encoder_type(false);
+        let succeed = self.reference((PROTO_JSON, "succeed"));
+        vec![Decl::Value {
             doc: Some(format!(
                 "Encodes {} as proto3 JSON.",
                 docs::a_local(&shape.message.elm_name)
@@ -164,11 +167,11 @@ impl Emitter {
             name: shape.message.encoder_name(),
             annotation: Type::Function(
                 Box::new(ty(shape.message.elm_name.clone(), [])),
-                Box::new(value_type),
+                Box::new(encoder_type),
             ),
             params: vec![param],
-            body: apply(object, [members]),
-        }
+            body: apply(succeed, [apply(object, [members])]),
+        }]
     }
 
     /// Whether a message reaches an `Any`: one of its
@@ -181,83 +184,80 @@ impl Emitter {
             || shape.oneofs.iter().any(|oneof| self.oneof_reaches(oneof))
     }
 
-    /// `encodeFooWith : Proto.Registry.Registry -> Foo -> Result
-    /// Proto.Error.Error Json.Encode.Value`, for a message that reaches an
-    /// `Any`: `Proto.Json.tryObjectOfFields` of every
-    /// field ([`Self::try_encode_field`]) and of each oneof's members, the
-    /// first `Err` failing the whole. It has no `encodeFoo`: writing an
-    /// `Any` can fail, and a total encoder would need a fallback form.
-    fn message_encoder_with(&mut self, shape: &MessageShape) -> Decl {
-        let counts = self.counts(shape.message);
-        let pairs: Vec<Expr> = shape
-            .fields
-            .iter()
-            .map(|&(field, value)| {
-                let field_value = access(var(ENCODER_ARGUMENT), field.elm_name.clone());
-                let counted = field.recursive || self.counted.type_ref(&field.ty);
-                self.deeper_registry = counts && counted;
-                self.nested_any = counts;
-                let encoded = self.try_encode_field(value, field_value);
-                self.deeper_registry = false;
-                self.nested_any = false;
-                tuple2(string(field.json_name.clone()), encoded)
-            })
-            .collect();
-        let oneofs: Vec<Expr> = shape
-            .oneofs
-            .iter()
-            .map(|oneof| {
-                let field_value = access(var(ENCODER_ARGUMENT), oneof.oneof.elm_field_name.clone());
-                if self.oneof_reaches(oneof) {
-                    apply(
-                        var(with_registry(oneof.oneof.encoder_name())),
-                        [var(REGISTRY_ARGUMENT), field_value],
-                    )
-                } else {
-                    // A oneof that reaches no `Any` gives its members' JSON;
-                    // each is lifted into `Ok`.
-                    let ok = var(self.core("Ok"));
-                    apply(
-                        qualified("List", "map"),
-                        [
-                            apply(qualified("Tuple", "mapSecond"), [ok]),
-                            apply(var(oneof.oneof.encoder_name()), [field_value]),
-                        ],
-                    )
-                }
-            })
-            .collect();
-        let parts = (!pairs.is_empty() || oneofs.is_empty())
-            .then(|| list(pairs))
-            .into_iter()
-            .chain(oneofs);
-        let members = parts
-            .rev()
-            .reduce(|right, left| binop(BinOp::Append, left, right))
-            .expect("at least the fields' list");
-        let object = self.reference((PROTO_JSON, "tryObjectOfFields"));
-        let annotation = self.encoder_with_type(ty(shape.message.elm_name.clone(), []));
-        Decl::Value {
-            doc: Some(format!(
-                "Encodes {} as proto3 JSON, writing each `Any` it holds with the registry: \
-                 an `Err` names the first type the registry cannot write.",
-                docs::a_local(&shape.message.elm_name)
-            )),
-            name: with_registry(shape.message.encoder_name()),
-            annotation,
-            params: vec![pvar(REGISTRY_ARGUMENT), pvar(ENCODER_ARGUMENT)],
-            body: apply(object, [members]),
-        }
+    /// Whether a message's JSON write can be refused.
+    pub(super) fn message_write_reaches(&self, shape: &MessageShape) -> bool {
+        self.write_reach.message(&shape.message.proto_full_name)
     }
 
-    /// `Proto.Registry.Registry -> of -> Result Proto.Error.Error
-    /// Json.Encode.Value`: the type of an encoder taking the registry.
-    pub(super) fn encoder_with_type(&mut self, of: Type) -> Type {
-        let registry = self.library_type(PROTO_REGISTRY, "Registry", []);
-        let problem = self.library_type(PROTO_ERROR, "Error", []);
-        let value = self.library_type(JSON_ENCODE, "Value", []);
-        let result = ty(self.core("Result"), [problem, value]);
-        ty_fn([registry, of], result)
+    /// `encodeFoo : Foo -> Proto.Json.Encoder Proto.Error.Error` for a
+    /// message whose write can be refused: `Proto.Json.writeObject` of its
+    /// fields in declaration order, grouped into runs, each consecutive
+    /// group of fields that cannot be refused a `Proto.Json.plainFields` of
+    /// their plain JSON ([`Self::encode_field`]) and each group of those
+    /// that can a `Proto.Json.checkedFields` of their `Proto.Json.Field`s
+    /// ([`Self::write_field`]); then each oneof's members as a run of its
+    /// own. The output keeps the order the plain encoder writes. A field of
+    /// a message whose codecs take the depth that counts a level and reaches
+    /// an `Any` is written one level deeper (`Proto.Json.writeDeeper`).
+    fn message_encoder_with(&mut self, shape: &MessageShape) -> Vec<Decl> {
+        let counts = self.counts(shape.message);
+        // Each run: whether it holds fields that can be refused, and its
+        // pairs.
+        let mut runs: Vec<(bool, Vec<Expr>)> = Vec::new();
+        for &(field, value) in &shape.fields {
+            let field_value = access(var(ENCODER_ARGUMENT), field.elm_name.clone());
+            let checked = self.field_write_reaches(value);
+            let encoded = if checked {
+                let encoded = self.write_field(value, field_value);
+                let counted = field.recursive || self.counted.type_ref(&field.ty);
+                let reaches = self.field_reaches(value);
+                self.deeper_if_counted(counts && counted, reaches, encoded)
+            } else {
+                self.encode_field(value, field_value)
+            };
+            let pair = tuple2(string(field.json_name.clone()), encoded);
+            match runs.last_mut() {
+                Some((kind, pairs)) if *kind == checked => pairs.push(pair),
+                _ => runs.push((checked, vec![pair])),
+            }
+        }
+        let mut parts: Vec<Expr> = runs
+            .into_iter()
+            .map(|(checked, pairs)| {
+                let run = if checked {
+                    "checkedFields"
+                } else {
+                    "plainFields"
+                };
+                apply(self.reference((PROTO_JSON, run)), [list(pairs)])
+            })
+            .collect();
+        for oneof in &shape.oneofs {
+            let field_value = access(var(ENCODER_ARGUMENT), oneof.oneof.elm_field_name.clone());
+            let members = apply(var(oneof.oneof.encoder_name()), [field_value]);
+            let run = if self.oneof_write_reaches(oneof) {
+                "checkedFields"
+            } else {
+                "plainFields"
+            };
+            parts.push(apply(self.reference((PROTO_JSON, run)), [members]));
+        }
+        let object = self.reference((PROTO_JSON, "writeObject"));
+        let encoder_type = self.json_encoder_type(true);
+        let body = apply(object, [list(parts)]);
+        vec![Decl::Value {
+            doc: Some(format!(
+                "Encodes {} as proto3 JSON{FAILS}.",
+                docs::a_local(&shape.message.elm_name)
+            )),
+            name: shape.message.encoder_name(),
+            annotation: Type::Function(
+                Box::new(ty(shape.message.elm_name.clone(), [])),
+                Box::new(encoder_type),
+            ),
+            params: vec![pvar(ENCODER_ARGUMENT)],
+            body,
+        }]
     }
 
     /// `Proto.Registry.Registry -> Json.Decode.Decoder of`: the type of a

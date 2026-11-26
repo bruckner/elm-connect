@@ -135,11 +135,13 @@ encodeStatus value =
 
 {-| Encodes a [`Task`](#Task) as proto3 JSON.
 -}
-encodeTask : Task -> Json.Encode.Value
+encodeTask : Task -> Proto.Json.Encoder x
 encodeTask value =
-    Proto.Json.objectOfFields
-        [ ( "status", Proto.Json.implicitField StatusUnspecified encodeStatus value.status )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "status", Proto.Json.implicitField StatusUnspecified encodeStatus value.status )
+            ]
+        )
 
 
 

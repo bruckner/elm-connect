@@ -39,7 +39,7 @@ getItem =
     Rpc.call
         (Proto.Method.init "vault.v1.VaultService"
             "GetItem"
-            (\_ -> Ok << Vault.V1.encodeGetItemRequest)
+            Vault.V1.encodeGetItemRequest
             Vault.V1.decodeItemWith
             Vault.V1.encodeGetItemRequestBytes
             Vault.V1.decodeItemBytes
@@ -59,7 +59,7 @@ listItems =
     Rpc.call
         (Proto.Method.init "vault.v1.VaultService"
             "ListItems"
-            (\_ -> Ok << Vault.V1.encodeListItemsRequest)
+            Vault.V1.encodeListItemsRequest
             Vault.V1.decodeListItemsResponseWith
             Vault.V1.encodeListItemsRequestBytes
             Vault.V1.decodeListItemsResponseBytes
@@ -78,7 +78,7 @@ putItem =
     Rpc.call
         (Proto.Method.init "vault.v1.VaultService"
             "PutItem"
-            Vault.V1.encodeItemWith
+            Vault.V1.encodeItem
             Vault.V1.decodeItemWith
             Vault.V1.encodeItemBytes
             Vault.V1.decodeItemBytes

@@ -11,8 +11,10 @@ import Json.Encode
 import Proto.Binary
 import Proto.Bytes
 import Proto.Error
+import Proto.Json
 import Proto.Method exposing (Idempotency(..))
 import Proto.Registry
+import Requests exposing (refusalOf, requestOf)
 import Rpc
 import Rpc.Body
 import Rpc.Call
@@ -69,12 +71,12 @@ getNoteIn =
 -}
 both : GetNote -> Rpc.Call codec GetNote String
 both =
-    Rpc.call (getNoteIn (Proto.Method.init "notes.v1.Notes" "GetNote" (\_ -> encodeGetNote >> Ok) (\_ -> decodeTitle) encodeGetNoteBytes decodeTitleBytes))
+    Rpc.call (getNoteIn (Proto.Method.init "notes.v1.Notes" "GetNote" (encodeGetNote >> Proto.Json.succeed) (\_ -> decodeTitle) encodeGetNoteBytes decodeTitleBytes))
 
 
 jsonOnly : GetNote -> Rpc.Call Rpc.Json GetNote String
 jsonOnly =
-    Rpc.call (getNoteIn (Proto.Method.initJson "notes.v1.Notes" "GetNote" (\_ -> encodeGetNote >> Ok) (\_ -> decodeTitle)))
+    Rpc.call (getNoteIn (Proto.Method.initJson "notes.v1.Notes" "GetNote" (encodeGetNote >> Proto.Json.succeed) (\_ -> decodeTitle)))
 
 
 binaryOnly : GetNote -> Rpc.Call Rpc.Proto GetNote String
@@ -209,7 +211,7 @@ requests =
     describe "requests"
         [ test "Proto POSTs the request's binary, no text" <|
             \_ ->
-                Rpc.request proto (both { name = "x" })
+                requestOf proto (both { name = "x" })
                     |> (\r -> ( ( r.method, r.url, r.headers ), Rpc.Body.toText r.body, Maybe.map Proto.Bytes.toBase64 (Rpc.Body.toBytes r.body) ))
                     |> Expect.equal
                         ( ( "POST", "https://api.example.com/notes.v1.Notes/GetNote", [ ( "Connect-Protocol-Version", "1" ) ] )
@@ -223,7 +225,7 @@ requests =
         , test "Proto's GET carries the binary as unpadded URL-safe base64" <|
             \_ ->
                 [ "x", "?>" ]
-                    |> List.map (\name -> Rpc.request protoGet (both { name = name }) |> (\r -> ( r.method, r.url, Rpc.Body.toBytes r.body == Nothing )))
+                    |> List.map (\name -> requestOf protoGet (both { name = name }) |> (\r -> ( r.method, r.url, Rpc.Body.toBytes r.body == Nothing )))
                     |> Expect.equal
                         [ ( "GET", "https://api.example.com/notes.v1.Notes/GetNote?connect=v1&base64=1&encoding=proto&message=CgF4", True )
                         , ( "GET", "https://api.example.com/notes.v1.Notes/GetNote?connect=v1&base64=1&encoding=proto&message=CgI_Pg", True )
@@ -237,17 +239,17 @@ requests =
                     |> Expect.equal ( [ "json", "json", "json" ], [ "proto", "proto" ], [ "connect", "connect" ] )
         , test "a JSON call under a JSON protocol is unchanged by the binary codecs" <|
             \_ ->
-                ( Rpc.request base (both { name = "x" })
-                , Rpc.request (over Rpc.Protocol.transcode) (both { name = "x" })
+                ( requestOf base (both { name = "x" })
+                , requestOf (over Rpc.Protocol.transcode) (both { name = "x" })
                 )
                     |> Expect.equal
-                        ( Rpc.request base (jsonOnly { name = "x" })
-                        , Rpc.request (over Rpc.Protocol.transcode) (jsonOnly { name = "x" })
+                        ( requestOf base (jsonOnly { name = "x" })
+                        , requestOf (over Rpc.Protocol.transcode) (jsonOnly { name = "x" })
                         )
         , test "a Proto call is unchanged by the JSON codecs" <|
             \_ ->
-                ( Rpc.request proto (both { name = "x" }), Rpc.request protoGet (both { name = "x" }) )
-                    |> Expect.equal ( Rpc.request proto (binaryOnly { name = "x" }), Rpc.request protoGet (binaryOnly { name = "x" }) )
+                ( requestOf proto (both { name = "x" }), requestOf protoGet (both { name = "x" }) )
+                    |> Expect.equal ( requestOf proto (binaryOnly { name = "x" }), requestOf protoGet (binaryOnly { name = "x" }) )
         ]
 
 
@@ -271,7 +273,7 @@ methods =
                         )
         , test "a binary-only call over Connect proto sends the method's binary and reads the answer by responseBytes" <|
             \_ ->
-                ( Rpc.request proto (binaryOnly { name = "x" })
+                ( requestOf proto (binaryOnly { name = "x" })
                     |> (\r -> ( r.method, Rpc.Body.contentType r.body, Maybe.map Proto.Bytes.toBase64 (Rpc.Body.toBytes r.body) ))
                 , Rpc.responseBytes proto (binaryOnly { name = "x" }) (Http.GoodStatus_ (metadata 200 [ ( "content-type", "application/proto" ) ]) titleHi)
                 )
@@ -281,7 +283,7 @@ methods =
                         )
         , test "a binary-only method without side effects is a GET under withConnectGet" <|
             \_ ->
-                Rpc.request protoGet (binaryOnly { name = "x" })
+                requestOf protoGet (binaryOnly { name = "x" })
                     |> (\r -> ( r.method, r.url ))
                     |> Expect.equal ( "GET", "https://api.example.com/notes.v1.Notes/GetNote?connect=v1&base64=1&encoding=proto&message=CgF4" )
         ]
@@ -435,7 +437,7 @@ bodies =
                     |> Expect.equal ( Nothing, Just "CgJoaQ==" )
         , test "a Proto request's body is application/proto, a JSON one's application/json" <|
             \_ ->
-                [ Rpc.request proto (both { name = "x" }), Rpc.request base (both { name = "x" }) ]
+                [ requestOf proto (both { name = "x" }), requestOf base (both { name = "x" }) ]
                     |> List.map (.body >> Rpc.Body.contentType)
                     |> Expect.equal [ Just "application/proto", Just "application/json" ]
         , test "binary protocols built alike compare equal, and differ by their options" <|
@@ -456,7 +458,7 @@ traces =
                 plan =
                     Rpc.Internal.Plan.plan client (both { name = "x" })
             in
-            Rpc.Internal.Trace.init (Rpc.Client.protocol client) (both { name = "x" }) plan (plan.request ()) { attempts = 1, metadata = Nothing, result = Ok "hi" } 1
+            Rpc.Internal.Trace.init (Rpc.Client.protocol client) (both { name = "x" }) plan (Result.withDefault (plan.unwritten ()) (plan.request ())) { attempts = 1, metadata = Nothing, result = Ok "hi" } 1
                 |> Rpc.Trace.toJson
                 |> Json.Decode.decodeValue
                     (Json.Decode.field "request"

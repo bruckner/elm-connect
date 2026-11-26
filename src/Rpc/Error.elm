@@ -4,7 +4,7 @@ module Rpc.Error exposing
     , cause, Cause(..), httpStatus
     , protoError
     , toString
-    , fromStatus, fromCode, fromResponse, timeout, networkError, badCall, badAny, badResponse, badBody, withMessage
+    , fromStatus, fromCode, fromResponse, timeout, networkError, badCall, badAny, badValue, badResponse, badBody, withMessage
     )
 
 {-| Why a call failed: what [`Rpc.task`](Rpc#task), [`Rpc.send`](Rpc#send) and
@@ -38,7 +38,7 @@ HTTP statuses, as one calling a REST API over transcoding may:
             showMessage (Rpc.Error.message error)
 
 Underneath that is the codec: for a body that did not decode, or a request
-`Any` that could not be written, [`protoError`](#protoError) holds the
+that could not be written as JSON, [`protoError`](#protoError) holds the
 problem itself.
 
 @docs Error
@@ -76,7 +76,7 @@ send without a session, builds a [`badCall`](#badCall) with the code it means.
 
 Nothing was sent, and such an error is never retried.
 
-@docs fromStatus, fromCode, fromResponse, timeout, networkError, badCall, badAny, badResponse, badBody, withMessage
+@docs fromStatus, fromCode, fromResponse, timeout, networkError, badCall, badAny, badValue, badResponse, badBody, withMessage
 
 -}
 
@@ -116,8 +116,8 @@ code is inferred from the HTTP status by
 
 Otherwise the client produced the code itself: a timeout is
 `DeadlineExceeded`; a network failure `Unavailable`; a call that could not be
-made `Internal`, `InvalidArgument` for a path value its template cannot match,
-or `ResourceExhausted` for a request over its limit; an answer that could not
+made `Internal`, `InvalidArgument` for a path value its template cannot match
+or a request value with no JSON form, or `ResourceExhausted` for a request over its limit; an answer that could not
 be used `Internal`, `ResourceExhausted` for one over its limit,
 `Unimplemented` for a unary gRPC-Web answer that carried no message or more
 than one, and `Unknown` for a success that is not the protocol's answer at
@@ -274,8 +274,9 @@ answer kept.
     gives one for a base URL holding `?` or `#`, or a URL the browser
     refuses; a header a request cannot carry; a path value its template
     cannot match; a request over the protocol's write limit
-    ([`withWriteMaxBytes`](Rpc-Protocol#withWriteMaxBytes)); or an
-    [`Any`](Proto-Any) the client's registry cannot write as JSON
+    ([`withWriteMaxBytes`](Rpc-Protocol#withWriteMaxBytes)); over JSON, a
+    request holding a value proto3 JSON has no form for, or an
+    [`Any`](Proto-Any) the client's registry cannot write
     ([`Rpc.Client.withRegistry`](Rpc-Client#withRegistry)). An application
     that refuses to send a call builds one too ([`badCall`](#badCall)). The
     [`message`](#message) says which.
@@ -348,8 +349,8 @@ httpStatus (Error e) =
 
 
 {-| The problem with a body that did not decode as the response message, or
-with an `Any` in the request that could not be written as JSON; `Nothing` for
-every other error.
+with a request that could not be written as JSON (a value with no JSON form,
+or an `Any`); `Nothing` for every other error.
 
 [`Proto.Error.toString`](Proto-Error#toString) describes it in full:
 
@@ -488,6 +489,27 @@ could not be written as JSON, for this reason: a `BadCall`, `Internal`,
 badAny : Proto.Error.Error -> Error
 badAny problem =
     clientError BadCall Code.Internal "bad Any" (Just problem)
+
+
+{-| A call that could not be made because its request holds a value proto3
+JSON has no form for, such as a `Timestamp` past the year 9999: a `BadCall`,
+`InvalidArgument`, the code a server checking the value gives, with the
+message `bad value: a <type name> with no JSON form (<what is wrong>)`
+and the value's [`BadValue`](Proto-Error#Error), its type, where it is and
+what is wrong with it, in [`protoError`](#protoError). The message leaves out
+the path: it can hold a map's keys, which are the request's data.
+
+    Rpc.Error.badValue
+        { typeName = "google.protobuf.Timestamp"
+        , path = [ "createTime" ]
+        , message = "the time is outside years 1 to 9999"
+        }
+    -- message: "bad value: a google.protobuf.Timestamp with no JSON form (the time is outside years 1 to 9999)"
+
+-}
+badValue : { typeName : String, path : List String, message : String } -> Error
+badValue value =
+    clientError BadCall Code.InvalidArgument ("bad value: a " ++ value.typeName ++ " with no JSON form (" ++ value.message ++ ")") (Just (Proto.Error.BadValue value))
 
 
 {-| A success that could not be used, with its code, its message and the

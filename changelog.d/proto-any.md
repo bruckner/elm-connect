@@ -10,8 +10,8 @@
   inside the message cannot be written), each documented with what to do
   about it. `==` on `Any` compares content.
 - Breaking: `Proto.Json.anyWith : Registry -> Decoder Any` and
-  `encodeAnyWith : Registry -> Any -> Result Problem Value` replace
-  `any` and `encodeAny`. Both are strict, as protojson is: an `"@type"`
+  `writeAny`, which a JSON write runs with its registry, replace `any`
+  and `encodeAny`. Both are strict, as protojson is: an `"@type"`
   the registry lacks fails the read, naming the URL, and an unregistered
   type fails the write; there is no `{"type", "value"}` fallback.
   `Proto.Binary.any` needs no registry; `Proto.Binary.anyWith` is
@@ -37,13 +37,13 @@
 - Every package gets both codecs, its typed values and `registry`
   whatever the `wire` option says, and `naming::codec_collision`
   applies under every option. A message that
-  reaches an `Any` has `encodeNoteWith` and `decodeNoteWith`, taking the
-  registry, in place of `encodeNote` and `decodeNote`; a type named for
-  one with `With` at the end is `naming::codec_collision`.
+  reaches an `Any` has `decodeNoteWith`, taking the registry, in place
+  of `decodeNote`; a type named for one with `With` at the end is
+  `naming::codec_collision`.
 - Breaking: methods are built by `Proto.Method.initJson`, `initProto`
   and `init`, in place of `json`, `proto` and `both`, and a method's JSON
   codecs take the registry at use time (`Proto.Method.initJson
-  "notes.v1.NotesService" "GetNote" (\_ -> Ok << encodeGetNoteRequest)
+  "notes.v1.NotesService" "GetNote" encodeGetNoteRequest
   (\_ -> decodeNote)`). A method holds no registry: the client's is the
   one table. `Proto.Method.encodeRequest` and `responseDecoder` take a
   registry, the former giving a `Result`; `Rpc.Call.requestJson` and

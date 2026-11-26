@@ -250,23 +250,27 @@ encodeColor value =
 
 {-| Encodes a [`Created`](#Created) as proto3 JSON.
 -}
-encodeCreated : Created -> Json.Encode.Value
+encodeCreated : Created -> Proto.Json.Encoder x
 encodeCreated value =
-    Proto.Json.objectOfFields
-        [ ( "title", Proto.Json.implicitField "" Json.Encode.string value.title )
-        ]
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            [ ( "title", Proto.Json.implicitField "" Json.Encode.string value.title )
+            ]
+        )
 
 
 {-| Encodes a [`NoteEvent`](#NoteEvent) as proto3 JSON.
 -}
-encodeNoteEvent : NoteEvent -> Json.Encode.Value
+encodeNoteEvent : NoteEvent -> Proto.Json.Encoder x
 encodeNoteEvent value =
-    Proto.Json.objectOfFields
-        ([ ( "id", Proto.Json.implicitField "" Json.Encode.string value.id )
-         , ( "tags", Proto.Json.repeatedField Json.Encode.string value.tags )
-         ]
-            ++ encodeNoteEventKind value.kind
-            ++ encodeNoteEventSource value.source
+    Proto.Json.succeed
+        (Proto.Json.objectOfFields
+            ([ ( "id", Proto.Json.implicitField "" Json.Encode.string value.id )
+             , ( "tags", Proto.Json.repeatedField Json.Encode.string value.tags )
+             ]
+                ++ encodeNoteEventKind value.kind
+                ++ encodeNoteEventSource value.source
+            )
         )
 
 
@@ -279,7 +283,7 @@ encodeNoteEventKind value =
             []
 
         NoteEventKindCreated member ->
-            [ ( "created", Just (encodeCreated member) )
+            [ ( "created", Just (Proto.Json.encodeTotal (encodeCreated member)) )
             ]
 
         NoteEventKindTitleChanged member ->
@@ -322,9 +326,9 @@ encodeNoteEventSource value =
 
 {-| Encodes a [`Choice`](#Choice) as proto3 JSON.
 -}
-encodeChoice : Choice -> Json.Encode.Value
+encodeChoice : Choice -> Proto.Json.Encoder x
 encodeChoice value =
-    Proto.Json.objectOfFields (encodeChoiceValue value.value)
+    Proto.Json.succeed (Proto.Json.objectOfFields (encodeChoiceValue value.value))
 
 
 {-| Encodes a [`ChoiceValue`](#ChoiceValue) as the members of its message's JSON object.
