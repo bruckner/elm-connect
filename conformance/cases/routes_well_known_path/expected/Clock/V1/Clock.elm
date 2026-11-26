@@ -10,7 +10,6 @@ module Clock.V1.Clock exposing (..)
 import Clock.V1
 import Clock.V1.Moment
 import Json.Encode
-import Proto.Duration
 import Proto.Http
 import Proto.Method
 import Proto.Query
@@ -183,7 +182,7 @@ routeWaitMoment0 : Clock.V1.Moment -> Json.Encode.Value -> Proto.Route.Route
 routeWaitMoment0 request_ json_ =
     let
         wait_ =
-            Maybe.withDefault "" (Maybe.map Proto.Duration.toString request_.wait)
+            Maybe.withDefault "" (Maybe.map Proto.Route.durationText request_.wait)
     in
     { method = "POST"
     , path = "v1/wait/" ++ Proto.Route.segment wait_

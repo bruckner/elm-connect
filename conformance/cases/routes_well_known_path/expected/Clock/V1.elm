@@ -15,7 +15,7 @@ import Json.Decode
 import Json.Encode
 import Proto.Binary
 import Proto.Descriptors
-import Proto.Duration exposing (Duration)
+import Proto.Duration
 import Proto.Error
 import Proto.Json
 import Proto.Message
@@ -54,7 +54,7 @@ type alias Moment =
     , mask : Maybe (List String)
     , count : Maybe Int
     , seen : Maybe Bool
-    , wait : Maybe Duration
+    , wait : Maybe Proto.Duration.Duration
     , note : String
     }
 
@@ -303,6 +303,6 @@ queryOfMoment request_ =
         , Proto.Query.optional "mask" (Maybe.map Proto.Route.fieldMaskText request_.mask)
         , Proto.Query.optional "count" (Maybe.map String.fromInt request_.count)
         , Proto.Query.optional "seen" (Maybe.map Proto.Route.boolText request_.seen)
-        , Proto.Query.optional "wait" (Maybe.map Proto.Duration.toString request_.wait)
+        , Proto.Query.optional "wait" (Maybe.map Proto.Route.durationText request_.wait)
         , Proto.Query.string "note" request_.note
         ]

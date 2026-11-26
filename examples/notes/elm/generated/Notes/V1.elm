@@ -26,7 +26,7 @@ import Notes.V1.Visibility
 import Proto.Any
 import Proto.Binary
 import Proto.Descriptors
-import Proto.Duration exposing (Duration)
+import Proto.Duration
 import Proto.Enum
 import Proto.Error
 import Proto.Json
@@ -94,7 +94,7 @@ type alias Note =
     , visibility : Visibility
     , createTime : Maybe Time.Posix
     , updateTime : Maybe Time.Posix
-    , ttl : Maybe Duration
+    , ttl : Maybe Proto.Duration.Duration
     , metadata : Dict String String
     , extra : Maybe (Dict String Proto.Value.Value)
     , kind : NoteKind

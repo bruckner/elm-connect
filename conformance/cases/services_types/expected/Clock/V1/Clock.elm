@@ -12,7 +12,7 @@ import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode
 import Proto.Binary
-import Proto.Duration exposing (Duration)
+import Proto.Duration
 import Proto.Json
 import Proto.Method
 import Proto.Value
@@ -59,7 +59,7 @@ Transcode: no HTTP rule, follows the Connect path.
 Codecs: JSON and protobuf binary. Described by [`descriptorSleep`](#descriptorSleep).
 
 -}
-sleep : Duration -> Rpc.Call codec Duration ()
+sleep : Proto.Duration.Duration -> Rpc.Call codec Proto.Duration.Duration ()
 sleep =
     Rpc.call
         (Proto.Method.init "clock.v1.Clock"

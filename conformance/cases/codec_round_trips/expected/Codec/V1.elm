@@ -35,7 +35,7 @@ import Json.Encode
 import Proto.Any
 import Proto.Binary
 import Proto.Descriptors
-import Proto.Duration exposing (Duration)
+import Proto.Duration
 import Proto.Enum
 import Proto.Error
 import Proto.Json
@@ -414,14 +414,14 @@ type alias WellKnown =
     , list : Maybe (List Proto.Value.Value)
     , value : Maybe Proto.Value.Value
     , timestamp : Maybe Time.Posix
-    , duration : Maybe Duration
+    , duration : Maybe Proto.Duration.Duration
     , mask : Maybe (List String)
     , empty : ()
     , anys : List Proto.Any.Any
     , values : List Proto.Value.Value
     , valueMap : Dict String Proto.Value.Value
     , timestamps : List Time.Posix
-    , durations : List Duration
+    , durations : List Proto.Duration.Duration
     , empties : List ()
     , structs : Dict Int (Dict String Proto.Value.Value)
     , nullValue : ()
