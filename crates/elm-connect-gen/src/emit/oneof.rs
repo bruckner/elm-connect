@@ -60,8 +60,8 @@ impl Emitter {
     /// of `google.protobuf.NullValue` as `null`.
     ///
     /// A oneof with a member whose write can be refused gives each member
-    /// as a `Proto.Json.Field Proto.Error.Error` instead, for a run of
-    /// `Proto.Json.checkedFields`: `Proto.Json.writeMember` of a message's
+    /// as a `Proto.Json.Encode.Field Proto.Error.Error` instead, for a run of
+    /// `Proto.Json.Encode.checkedFields`: `Proto.Json.Encode.member` of a message's
     /// encoder or of a member that can be refused, else of its JSON in
     /// `Proto.Json.Encode.succeed`. A member that counts a level, of a message
     /// whose codecs take the depth (`counts`), and reaches an `Any` is
@@ -102,7 +102,7 @@ impl Emitter {
                     } else {
                         apply(self.reference((PROTO_JSON_ENCODE, "succeed")), [encoded])
                     };
-                    let member = apply(self.reference((PROTO_JSON, "writeMember")), [encoder]);
+                    let member = apply(self.reference((PROTO_JSON_ENCODE, "member")), [encoder]);
                     let counted = variant.cyclic || self.counted.type_ref(&variant.ty);
                     let reaches = self.reaches(value);
                     self.deeper_if_counted(counts && counted, reaches, member)
@@ -115,7 +115,7 @@ impl Emitter {
             .collect();
         let member = if with {
             let problem = self.library_type(PROTO_ERROR, "Error", []);
-            self.library_type(PROTO_JSON, "Field", [problem])
+            self.library_type(PROTO_JSON_ENCODE, "Field", [problem])
         } else {
             let value_type = self.library_type(JSON_ENCODE, "Value", []);
             ty(self.core("Maybe"), [value_type])

@@ -295,22 +295,22 @@ impl Emitter {
         apply(helper, args.into_iter().chain([value]))
     }
 
-    /// A field whose write can be refused, as a `Proto.Json.Field` for a
-    /// run of `Proto.Json.checkedFields`: the `write` helper of its kind
-    /// with its values' encoder.
+    /// A field whose write can be refused, as a `Proto.Json.Encode.Field`
+    /// for a run of `Proto.Json.Encode.checkedFields`: the helper of its
+    /// kind with its values' encoder.
     pub(super) fn write_field(&mut self, shape: FieldShape, value: Expr) -> Expr {
         let (helper, args) = match shape {
             FieldShape::Json => {
                 let encoder = self.reference((PROTO_JSON_ENCODE, "value"));
-                ("writeOptional", vec![encoder])
+                ("optional", vec![encoder])
             }
             FieldShape::Maybe(inner) => {
                 let encoder = self.value_encoder(inner);
-                ("writeOptional", vec![encoder])
+                ("optional", vec![encoder])
             }
             FieldShape::List(inner) => {
                 let encoder = self.value_encoder(inner);
-                ("writeRepeated", vec![encoder])
+                ("list", vec![encoder])
             }
             FieldShape::Dict(key, inner) => {
                 let encoder = self.value_encoder(inner);
@@ -319,15 +319,15 @@ impl Emitter {
                 } else {
                     var("identity")
                 };
-                ("writeDict", vec![key, encoder])
+                ("dict", vec![key, encoder])
             }
             FieldShape::BoolMap(inner) => {
                 let encoder = self.value_encoder(inner);
-                ("writeBoolMap", vec![encoder])
+                ("boolMap", vec![encoder])
             }
             FieldShape::Plain(_) => unreachable!("a field without presence cannot be refused"),
         };
-        let helper = self.reference((PROTO_JSON, helper));
+        let helper = self.reference((PROTO_JSON_ENCODE, helper));
         apply(helper, args.into_iter().chain([value]))
     }
 
@@ -560,16 +560,16 @@ impl Emitter {
         }
     }
 
-    /// `field`, a field's or oneof member's `Proto.Json.Field`, written one
+    /// `field`, a field's or oneof member's `Proto.Json.Encode.Field`, written one
     /// level deeper when its message counts nesting and the value counts a
-    /// level (`counted`) and reaches an `Any`: `Proto.Json.writeDeeper
+    /// level (`counted`) and reaches an `Any`: `Proto.Json.Encode.deeper
     /// field`, so that converting an `Any` to JSON counts the messages
     /// around it as a read does. The level is raised once for the field,
     /// not per element: every element of a field is one level below its
     /// message.
     pub(super) fn deeper_if_counted(&mut self, counted: bool, reaches: bool, field: Expr) -> Expr {
         if counted && reaches {
-            let deeper = self.reference((PROTO_JSON, "writeDeeper"));
+            let deeper = self.reference((PROTO_JSON_ENCODE, "deeper"));
             apply(deeper, [field])
         } else {
             field

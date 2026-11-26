@@ -190,15 +190,16 @@ impl Emitter {
     }
 
     /// `encodeFoo : Foo -> Proto.Json.Encode.Encoder Proto.Error.Error` for a
-    /// message whose write can be refused: `Proto.Json.writeObject` of its
+    /// message whose write can be refused: `Proto.Json.Encode.object` of its
     /// fields in declaration order, grouped into runs, each consecutive
-    /// group of fields that cannot be refused a `Proto.Json.plainFields` of
+    /// group of fields that cannot be refused a `Proto.Json.Encode.plainFields` of
     /// their plain JSON ([`Self::encode_field`]) and each group of those
-    /// that can a `Proto.Json.checkedFields` of their `Proto.Json.Field`s
+    /// that can a `Proto.Json.Encode.checkedFields` of their
+    /// `Proto.Json.Encode.Field`s
     /// ([`Self::write_field`]); then each oneof's members as a run of its
     /// own. The output keeps the order the plain encoder writes. A field of
     /// a message whose codecs take the depth that counts a level and reaches
-    /// an `Any` is written one level deeper (`Proto.Json.writeDeeper`).
+    /// an `Any` is written one level deeper (`Proto.Json.Encode.deeper`).
     fn message_encoder_with(&mut self, shape: &MessageShape) -> Vec<Decl> {
         let counts = self.counts(shape.message);
         // Each run: whether it holds fields that can be refused, and its
@@ -229,7 +230,7 @@ impl Emitter {
                 } else {
                     "plainFields"
                 };
-                apply(self.reference((PROTO_JSON, run)), [list(pairs)])
+                apply(self.reference((PROTO_JSON_ENCODE, run)), [list(pairs)])
             })
             .collect();
         for oneof in &shape.oneofs {
@@ -240,9 +241,9 @@ impl Emitter {
             } else {
                 "plainFields"
             };
-            parts.push(apply(self.reference((PROTO_JSON, run)), [members]));
+            parts.push(apply(self.reference((PROTO_JSON_ENCODE, run)), [members]));
         }
-        let object = self.reference((PROTO_JSON, "writeObject"));
+        let object = self.reference((PROTO_JSON_ENCODE, "object"));
         let encoder_type = self.json_encoder_type(true);
         let body = apply(object, [list(parts)]);
         vec![Decl::Value {

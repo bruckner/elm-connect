@@ -182,10 +182,10 @@
 //!   plain code wrapped once, which works for any refusal type, so its
 //!   plain parents unwrap it with `Proto.Json.Encode.encodeTotal`; the others get
 //!   `Foo -> Proto.Json.Encode.Encoder Proto.Error.Error`, built from
-//!   `Proto.Json.writeObject` of their fields in declaration order, in runs
+//!   `Proto.Json.Encode.object` of their fields in declaration order, in runs
 //!   of plain fields and of fields that can be refused ([`field`]). A field
 //!   of a message that nests, counting a level and reaching an `Any`, is
-//!   written one level deeper (`Proto.Json.writeDeeper`), so an `Any`
+//!   written one level deeper (`Proto.Json.Encode.deeper`), so an `Any`
 //!   written as JSON counts the messages around it as a read does.
 //! - A message that the request of a generated method's binding puts in the
 //!   query gets a query encoder in its package's module, in a last
@@ -666,7 +666,7 @@ struct Emitter {
     /// depth.
     counted: Counted,
     /// The messages whose JSON write can be refused, whose encoders are
-    /// built with `Proto.Json.writeObject`; the others are written by plain
+    /// built with `Proto.Json.Encode.object`; the others are written by plain
     /// code and wrapped once.
     write_reach: AnyReach,
     /// The options as the header's second line records them.
