@@ -1,7 +1,5 @@
 module Proto.Json exposing
-    ( writeObject, Fields, plainFields, checkedFields
-    , Field, writeOptional, writeRepeated, writeDict, writeBoolMap, writeMember, writeDeeper
-    , field, fieldEither, valueField, valueFieldEither, emptyMessage
+    ( field, fieldEither, valueField, valueFieldEither, emptyMessage
     , message, messageField, messageFieldEither, messageValueField, messageValueFieldEither, nestedMessageValueField, nestedMessageValueFieldEither
     , objectOfFields
     , implicitField, implicitFloatField, implicitBytesField, repeatedField, dictField, boolMapField
@@ -30,29 +28,6 @@ value with [`Proto.Json.Decode`](Proto-Json-Decode).
 A decoder is named for what it reads (`int64Dict`), a value's encoder is
 `encode` and that name (`encodeInt64`), and a field's encoder, which gives
 `Nothing` to leave the field out, ends in `Field` (`repeatedField`).
-
-
-# Writing fields that can be refused
-
-A message holding a value a write can refuse (an `Any`, a `Timestamp`,
-`Duration`, `FieldMask`, `Struct`, `ListValue` or `Value`, or a message that
-holds one) is encoded with [`writeObject`](#writeObject) from its fields in
-declaration order, in runs: those that cannot be refused as the plain helpers
-below give them, and those that can as a [`Field`](#Field) each, each value
-written by its [`Proto.Json.Encode`](Proto-Json-Encode) encoder.
-
-    encodeEvent : Event -> Proto.Json.Encode.Encoder Proto.Error.Error
-    encodeEvent value =
-        writeObject
-            [ plainFields [ ( "title", implicitField "" Json.Encode.string value.title ) ]
-            , checkedFields
-                [ ( "at", writeOptional Proto.Json.Encode.timestamp value.at )
-                , ( "payload", writeOptional Proto.Any.encode value.payload )
-                ]
-            ]
-
-@docs writeObject, Fields, plainFields, checkedFields
-@docs Field, writeOptional, writeRepeated, writeDict, writeBoolMap, writeMember, writeDeeper
 
 
 # Fields
@@ -91,6 +66,24 @@ A field holding a message that holds nothing a write can refuse unwraps that
 message's encoder with
 [`Proto.Json.Encode.encodeTotal`](Proto-Json-Encode#encodeTotal), through the
 `total` helpers.
+
+A message holding a value a write can refuse (an `Any`, a `Timestamp`,
+`Duration`, `FieldMask`, `Struct`, `ListValue` or `Value`, or a message that
+holds one) is built with
+[`Proto.Json.Encode.object`](Proto-Json-Encode#object) from its fields in
+declaration order, in runs: those that cannot be refused as the helpers here
+give them, and those that can as a
+[`Proto.Json.Encode.Field`](Proto-Json-Encode#Field) each.
+
+    encodeEvent : Event -> Proto.Json.Encode.Encoder Proto.Error.Error
+    encodeEvent value =
+        Proto.Json.Encode.object
+            [ Proto.Json.Encode.plainFields [ ( "title", implicitField "" Json.Encode.string value.title ) ]
+            , Proto.Json.Encode.checkedFields
+                [ ( "at", Proto.Json.Encode.optional Proto.Json.Encode.timestamp value.at )
+                , ( "payload", Proto.Json.Encode.optional Proto.Any.encode value.payload )
+                ]
+            ]
 
 @docs objectOfFields
 @docs implicitField, implicitFloatField, implicitBytesField, repeatedField, dictField, boolMapField
@@ -1524,90 +1517,3 @@ inside an `Any` starts counting.
 registryDepth : Registry -> Int
 registryDepth =
     InternalRegistry.depthOf
-
-
-
--- ENCODERS
-
-
-{-| A message's JSON object, from its runs of fields in declaration order.
--}
-writeObject : List (Fields x) -> Encoder x
-writeObject =
-    Encoder.object
-
-
-{-| A run of a message's fields, plain or ones that can be refused.
--}
-type alias Fields x =
-    Encoder.Fields x
-
-
-{-| A run of fields that cannot be refused, as the plain helpers give them:
-`Nothing` leaves a field out.
--}
-plainFields : List ( String, Maybe Value ) -> Fields x
-plainFields =
-    Encoder.plainFields
-
-
-{-| A run of fields that can be refused.
--}
-checkedFields : List ( String, Field x ) -> Fields x
-checkedFields =
-    Encoder.checkedFields
-
-
-{-| A field that can be refused, left out or written by its value's encoder.
--}
-type alias Field x =
-    Encoder.Field x
-
-
-{-| A field with presence: left out when `Nothing`.
--}
-writeOptional : (a -> Encoder x) -> Maybe a -> Field x
-writeOptional =
-    Encoder.optional
-
-
-{-| A repeated field: left out when empty.
--}
-writeRepeated : (a -> Encoder x) -> List a -> Field x
-writeRepeated =
-    Encoder.repeated
-
-
-{-| A map field: left out when empty.
--}
-writeDict : (k -> String) -> (v -> Encoder x) -> Dict.Dict k v -> Field x
-writeDict =
-    Encoder.dict
-
-
-{-| A map field with `bool` keys: left out when empty.
--}
-writeBoolMap : (a -> Encoder x) -> List ( Bool, a ) -> Field x
-writeBoolMap =
-    Encoder.boolMap
-
-
-{-| A oneof's set member, always written.
--}
-writeMember : Encoder x -> Field x
-writeMember =
-    Encoder.member
-
-
-{-| A field of a message that nests, holding a message that nests, written one
-level deeper than its message, so that converting an `Any` it holds to JSON
-counts the messages around it as a read does. Generated code uses it only on
-fields that reach an `Any`, once per field; a field holding no `Any` is written
-as it is, with no count.
-
-    ( "replies", writeDeeper (writeRepeated encodeEnvelope_ value.replies) )
-
--}
-writeDeeper : Field x -> Field x
-writeDeeper =
-    Encoder.deeper

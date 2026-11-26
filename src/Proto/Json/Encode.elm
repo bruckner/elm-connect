@@ -1,6 +1,8 @@
 module Proto.Json.Encode exposing
     ( Encoder, encode, encodeWith, encodeTotal, succeed
     , timestamp, duration, fieldMask, struct, listValue, value
+    , object, Fields, plainFields, checkedFields
+    , Field, optional, list, dict, boolMap, member, deeper
     )
 
 {-| Writing proto3 JSON. Generated code gives each message an encoder, such as
@@ -35,6 +37,35 @@ named for its type as elm/json names its encoders:
 A lone `Any` is written with [`Proto.Any.encode`](Proto-Any#encode).
 
 @docs timestamp, duration, fieldMask, struct, listValue, value
+
+
+# Messages written by hand
+
+A message's encoder is built from its fields in declaration order, in runs:
+those that cannot be refused as JSON already written, in
+[`plainFields`](#plainFields) (`Nothing` leaves a field out), and those that
+can as a [`Field`](#Field) each, in [`checkedFields`](#checkedFields),
+written by its value's encoder. [`object`](#object) makes the message's JSON
+object of them, or refuses with the first value refused. Generated code
+writes each message that holds a value a write can refuse this way.
+
+    type alias Event =
+        { title : String, at : Maybe Time.Posix }
+
+    encodeEvent : Event -> Proto.Json.Encode.Encoder Proto.Error.Error
+    encodeEvent event =
+        Proto.Json.Encode.object
+            [ Proto.Json.Encode.plainFields
+                [ ( "title", Just (Json.Encode.string event.title) ) ]
+            , Proto.Json.Encode.checkedFields
+                [ ( "at", Proto.Json.Encode.optional Proto.Json.Encode.timestamp event.at ) ]
+            ]
+
+    Proto.Json.Encode.encode (encodeEvent { title = "launch", at = Just posix })
+    -- Ok {"title":"launch","at":"2026-10-10T17:19:45.250Z"}
+
+@docs object, Fields, plainFields, checkedFields
+@docs Field, optional, list, dict, boolMap, member, deeper
 
 -}
 
@@ -251,3 +282,90 @@ encodeListValue =
 encodeValue : Proto.Value.Value -> Value
 encodeValue =
     Proto.Value.toJson
+
+
+
+-- MESSAGES
+
+
+{-| A message's JSON object, from its runs of fields in declaration order.
+-}
+object : List (Fields x) -> Encoder x
+object =
+    Encoder.object
+
+
+{-| A run of a message's fields, plain or ones that can be refused.
+-}
+type alias Fields x =
+    Encoder.Fields x
+
+
+{-| A run of fields that cannot be refused, as JSON already written:
+`Nothing` leaves a field out.
+-}
+plainFields : List ( String, Maybe Value ) -> Fields x
+plainFields =
+    Encoder.plainFields
+
+
+{-| A run of fields that can be refused.
+-}
+checkedFields : List ( String, Field x ) -> Fields x
+checkedFields =
+    Encoder.checkedFields
+
+
+{-| A field that can be refused, left out or written by its value's encoder.
+-}
+type alias Field x =
+    Encoder.Field x
+
+
+{-| A field with presence: left out when `Nothing`.
+-}
+optional : (a -> Encoder x) -> Maybe a -> Field x
+optional =
+    Encoder.optional
+
+
+{-| A repeated field: left out when empty.
+-}
+list : (a -> Encoder x) -> List a -> Field x
+list =
+    Encoder.repeated
+
+
+{-| A map field: left out when empty.
+-}
+dict : (k -> String) -> (v -> Encoder x) -> Dict.Dict k v -> Field x
+dict =
+    Encoder.dict
+
+
+{-| A map field with `bool` keys: left out when empty.
+-}
+boolMap : (a -> Encoder x) -> List ( Bool, a ) -> Field x
+boolMap =
+    Encoder.boolMap
+
+
+{-| A oneof's set member, always written.
+-}
+member : Encoder x -> Field x
+member =
+    Encoder.member
+
+
+{-| A field of a message that nests, holding a message that nests, written one
+level deeper than its message, so that converting an `Any` it holds to JSON
+counts the messages around it as a read does. Generated code uses it only on
+fields that reach an `Any`, once per field; a field holding no `Any` is written
+as it is, with no count.
+
+    ( "replies", deeper (list encodeEnvelope_ value.replies) )
+
+-}
+deeper : Field x -> Field x
+deeper =
+    Encoder.deeper

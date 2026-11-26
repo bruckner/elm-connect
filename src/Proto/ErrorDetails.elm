@@ -449,9 +449,9 @@ encodeErrorInfo value =
 
 encodeRetryInfo : RetryInfo -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeRetryInfo value =
-    Proto.Json.writeObject
-        [ Proto.Json.checkedFields
-            [ ( "retryDelay", Proto.Json.writeOptional Proto.Json.Encode.duration value.retryDelay )
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.checkedFields
+            [ ( "retryDelay", Proto.Json.Encode.optional Proto.Json.Encode.duration value.retryDelay )
             ]
         ]
 
