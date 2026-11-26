@@ -37,7 +37,7 @@ otherwise.
 | `enum Visibility` | `type Visibility = VisibilityUnspecified \| VisibilityPrivate \| …`: one constructor per value, the type's name in front of the value's with the enum's own prefix dropped (`VISIBILITY_PRIVATE` → `VisibilityPrivate`), an alias folded into its first value; with it `encodeVisibility`, `decodeVisibility` and `enumVisibility : Proto.Enum.Enum Visibility`. An unknown number decodes as the zero value; an unknown name fails, or under `enum_unknown=zero` is the zero value too |
 | `oneof kind { string text = 11; string link = 12; }` | a field `kind : NoteKind`, with `type NoteKind = NoteKindUnset \| NoteKindText String \| NoteKindLink String`; a `google.protobuf.Empty` member has no argument |
 | `google.protobuf.Timestamp` | `Maybe Time.Posix` (`Time.Posix` in a list, map or oneof). Code that held instants as RFC 3339 strings, from another generator or by hand, and keyed a `Dict` or a DOM id with them or sorted them, needs another key, since a `Time.Posix` is not `comparable`: `Time.posixToMillis` gives an `Int` to key with (through `String.fromInt` for an id) and to `compare`, which orders by the instant, where the strings ordered by their text |
-| `google.protobuf.Duration` | `Maybe Proto.Duration.Duration` |
+| `google.protobuf.Duration` | `Maybe Proto.Duration.Duration` (bare in a list, map or oneof): seconds and nanoseconds, exact. One read from protobuf binary is held as the peer wrote it, which may not be a valid duration; `Proto.Duration.isValid` says, and a proto3 JSON write refuses one that is not |
 | `google.protobuf.FieldMask` | `Maybe (List String)`, the paths by proto name: `Just [ "create_time" ]`. A path is not checked: a camelCase one (`"createTime"`) passes through unchanged, and goes out as the same JSON, but a mask the client decodes holds proto names, so the two do not compare equal |
 | `google.protobuf.Empty` | `()`, as a field and as a request or response |
 | `google.protobuf.Struct` | `Maybe (Dict String Proto.Value.Value)` |
@@ -82,6 +82,12 @@ The Elm names follow from the proto's, by a fixed rule:
   whole nesting path, whichever it starts with, and takes the type's
   name in front: in `message Note { enum Kind { … } }`, both
   `KIND_DRAFT` and `NOTE_KIND_DRAFT` become `NoteKindDraft`.
+- The runtime's types are written qualified (`Proto.Duration.Duration`,
+  `Proto.Any.Any`, `Proto.Value.Value`), so a message may share a name
+  with one: a `message Duration` holding a `google.protobuf.Duration`
+  generates as it is. Only elm/core's names that generated code writes
+  bare (`String`, `Maybe`, `Just`, `Dict` in a module with a map field,
+  and the like) are refused as `naming::reserved_name`.
 
 Two names that meet after these rules are a diagnostic, never a silent
 rename ([diagnostics.md](diagnostics.md)), and `rename` (below) gives
@@ -224,9 +230,11 @@ can refuse the value:
   message that holds, at any depth and across packages, a value proto3
   JSON may have no form for (a `Timestamp`, `Duration`, `FieldMask`,
   `Struct`, `Value` or `ListValue`) or an `Any`. A write refuses a
-  `Timestamp` outside years 1 to 9999, a `FieldMask` path that does not
-  survive lowerCamelCase and a number in a `Value` that is NaN or
-  infinite, with `Proto.Error.BadValue { typeName, path, message }`.
+  `Timestamp` outside years 1 to 9999, a `Duration` that is not valid
+  (one read from protobuf binary past protobuf's range or with
+  nanoseconds out of form), a `FieldMask` path that does not survive
+  lowerCamelCase and a number in a `Value` that is NaN or infinite, with
+  `Proto.Error.BadValue { typeName, path, message }`.
 
 A message holding nothing refusable is written by plain code, wrapped
 once; one that can refuse writes its fields in declaration order, as runs

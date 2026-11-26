@@ -1035,9 +1035,10 @@ break code that handles it: when a message gains a refusable field, at
 any depth, its encoder becomes `Encoder Proto.Error.Error`, code that
 writes it with `encode` or `encodeWith` compiles as before, and only an
 `encodeTotal` of it stops compiling, at the place the new failure has to
-be handled. A `Duration` is typed as refusable, though none is refused
-today (`Proto.Duration` clamps a value past protobuf's range as it is
-built), so that a message holding one keeps its type when one can be.
+be handled. A `Duration` the application builds is always valid; one
+read from protobuf binary is held as the peer wrote it and is refused
+when it is not valid (past protobuf's range, or its nanoseconds of a
+second or more or of the other sign than its seconds).
 
 Over a call the same check runs before anything is sent: over a JSON
 protocol the request's JSON is written first, and a request with no JSON

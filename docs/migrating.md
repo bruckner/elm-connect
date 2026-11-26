@@ -534,8 +534,32 @@ extraJson note =
 A singular `Value` field stays a `Maybe`: `Nothing` is absent, and the
 JSON `null` is `Just ValueNull` where it was `Just Json.Encode.null`.
 
+## Durations
+
+`Proto.Duration`'s names follow elm/time's (`millisToPosix`), and
+`toString` gives a `Maybe`:
+
+| 0.1 | 0.2 |
+|---|---|
+| `Proto.Duration.fromMilliseconds` | `Proto.Duration.fromMillis` |
+| `Proto.Duration.toMilliseconds` | `Proto.Duration.toMillis` |
+| `Proto.Duration.toString d : String` | `Proto.Duration.toString d : Maybe String`, `Nothing` for a duration that is not valid |
+
+Every duration the application builds, and every one read from proto3
+JSON, is valid, so `toString` of one gives `Just`. A duration read from
+protobuf binary is held as the peer wrote it, which may not be valid
+(`Proto.Duration.isValid`); 0.1 had no binary codec. A proto3 JSON
+write refuses one that is not valid, with `Proto.Error.BadValue`.
+`normalize` gives a duration's normal form. To sort durations or key a
+`Dict` by them, use the fields `toSecondsAndNanos` gives.
+
 ## The generator
 
+- A `google.protobuf.Duration` field is written
+  `Proto.Duration.Duration`, qualified, as `Proto.Any.Any` and
+  `Proto.Value.Value` are, and generated modules no longer import
+  `Proto.Duration exposing (Duration)`. A message named `Duration`
+  beside a `Duration` field generates without a `rename`.
 - Every message gets both codecs, proto3 JSON and protobuf binary, its
   typed value and its package's `registry`, whatever the options say.
   The new option `wire` says what each method's calls are wired with:
@@ -592,6 +616,9 @@ that changed again before the release:
 | `Proto.Json.encodeAnyWith registry any` | `Proto.Json.encodeWith registry (Proto.Json.writeAny any)`, or `Proto.Any.toJson registry any` for its message's JSON alone |
 | `Proto.Json.encodeTimestamp`, `encodeDuration`, `encodeFieldMask`, `encodeStruct`, `encodeValue`, `encodeListValue` | `Proto.Json.encode (Proto.Json.writeTimestamp t)` and the other `write` helpers; `Proto.Value.toJson` writes a `Value` unchecked |
 | `Proto.Json.encodeNestedAnyWith`, `registryDeeper`, `tryObjectOfFields` and the other `try` helpers | generated code's `writeAny`, `writeDeeper`, `writeObject` and the `write` helpers |
+| `Proto.Duration.fromParts s n` (clamped past the range) | `Proto.Duration.fromSecondsAndNanos s n : Maybe Duration`, `Nothing` past the range |
+| `Proto.Duration.toParts` | `Proto.Duration.toSecondsAndNanos`, the fields as held |
+| `Proto.Duration.fromMilliseconds`, `toMilliseconds`, `toString d : String` | `fromMillis`, `toMillis`, `toString d : Maybe String` ([Durations](#durations)) |
 | `Proto.Message.init name f …`, `Proto.Method.initJson s m (\_ -> Ok << f) …` with `f : a -> Json.Encode.Value` | `Proto.Message.init name (Proto.Json.succeed << f) …`, `Proto.Method.initJson s m (Proto.Json.succeed << f) …`, or the generated `encodeNote` |
 | `Rpc.request client call : Rpc.Request` | `Rpc.request client call : Result Rpc.Error Rpc.Request` |
 | a request value with no JSON form, written wrongly and sent | refused before sending: `Rpc.Error.badValue { typeName, path, message }` (`InvalidArgument`) |
