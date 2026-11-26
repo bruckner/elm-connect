@@ -625,6 +625,24 @@ clamps, so a `Duration` is never refused yet, though it is typed as
 refusable; the two out-of-range `Duration` conformance cases stay
 expected failures. Where: design §3.2, §3.4, §3.5, §4, §5.5.
 
+### The request check has no skip
+
+*2026-11-26.*
+
+A call over JSON writes its request's JSON before it builds the route,
+so a value with no JSON form is refused wherever the route would put
+it, even where the route holds its own path, query and body and the
+JSON is then thrown away. A marker to skip that write for a request
+that cannot refuse was built twice, as an encoder typed
+`Encoder Never` and then as a bare flag on the method, and measured:
+against the commit before the check, a transcoded `GET` went from 21 %
+slower to 8 %, a `body: "*"` `POST` from 35 % to 2 %, saving 0.06 to
+0.8 µs a call. It was not merged: the saving is not noticeable beside a network
+round trip, and it cost a public flag that nothing verifies for a
+hand-written method, and 49 B gzipped in every program that sends JSON.
+The work is at the tag `archive/rpc/skip-total-check`. Where: design
+§4.
+
 ### Decoder steps
 
 *2026-10-10.*
