@@ -23,6 +23,7 @@ import Proto.Codec exposing (Proto)
 import Proto.Duration
 import Proto.Error
 import Proto.Internal.Any
+import Proto.Timestamp
 import Proto.Value
 import Test exposing (Test, describe, fuzz, test)
 import Time
@@ -742,13 +743,13 @@ wellKnown =
                     , \_ -> decoded 300 |> Result.mapError .reason |> Result.map (\_ -> ()) |> Expect.equal (Err Proto.Error.TooDeep)
                     ]
                     ()
-        , test "Timestamp, to the millisecond, nanoseconds past it dropped" <|
+        , test "Timestamp, exact, nanoseconds forward from the second" <|
             \_ ->
                 Expect.all
-                    [ \_ -> wire B.timestamp (Time.millisToPosix 0) posixText (Time.millisToPosix 1500) "0a08 0801 1080cab5ee01"
-                    , \_ -> wire B.timestamp (Time.millisToPosix 0) posixText (Time.millisToPosix -1) "0a11 08ffffffffffffffffff01 10c08faedc03"
-                    , \_ -> reads B.timestamp (Time.millisToPosix 0) posixText "0a08 0801 1081cab5ee01" (Just "1500")
-                    , \_ -> wire B.timestamp (Time.millisToPosix 0) posixText (Time.millisToPosix 0) "0a00"
+                    [ \_ -> wire B.timestamp epoch timestampText (instant 1 500000000) "0a08 0801 1080cab5ee01"
+                    , \_ -> wire B.timestamp epoch timestampText (instant -1 999000000) "0a11 08ffffffffffffffffff01 10c08faedc03"
+                    , \_ -> reads B.timestamp epoch timestampText "0a08 0801 1081cab5ee01" (Just "1 500000001")
+                    , \_ -> wire B.timestamp epoch timestampText epoch "0a00"
                     ]
                     ()
         , test "Duration, exact, both parts signed" <|
@@ -817,8 +818,11 @@ wellKnownMerges =
         [ test "Timestamp merges field by field" <|
             \_ ->
                 Expect.all
-                    [ \_ -> mergesTo B.timestamp posixText "0a0808011080cab5ee01 0a020802" (Just "2500")
-                    , \_ -> mergesTo B.timestamp posixText "0a0808011080cab5ee01 0a051080e59a77" (Just "1250")
+                    [ \_ -> mergesTo B.timestamp timestampText "0a0808011080cab5ee01 0a020802" (Just "2 500000000")
+                    , \_ -> mergesTo B.timestamp timestampText "0a0808011080cab5ee01 0a051080e59a77" (Just "1 250000000")
+                    , \_ -> mergesTo B.timestamp timestampText "0a0a08808080808080808040 0a021005" (Just "4611686018427388000 5")
+                    , \_ -> mergesTo B.timestamp timestampText "0a0a08808080808080808040 0a020803" (Just "3 0")
+                    , \_ -> mergesTo B.timestamp timestampText "0a0408031005 0a0a08808080808080808040" (Just "4611686018427388000 5")
                     ]
                     ()
         , test "Duration merges field by field, as read" <|
@@ -920,9 +924,25 @@ mergesTo codec show hex expected =
         |> Expect.equal expected
 
 
-posixText : Time.Posix -> String
-posixText =
-    String.fromInt << Time.posixToMillis
+{-| A timestamp's fields as held, seconds then nanoseconds.
+-}
+timestampText : Proto.Timestamp.Timestamp -> String
+timestampText t =
+    let
+        parts =
+            Proto.Timestamp.toSecondsAndNanos t
+    in
+    String.fromInt parts.seconds ++ " " ++ String.fromInt parts.nanos
+
+
+instant : Int -> Int -> Proto.Timestamp.Timestamp
+instant seconds nanos =
+    Proto.Timestamp.fromSecondsAndNanos seconds nanos |> Maybe.withDefault epoch
+
+
+epoch : Proto.Timestamp.Timestamp
+epoch =
+    Proto.Timestamp.fromPosix (Time.millisToPosix 0)
 
 
 anyText : Proto.Any.Any -> String

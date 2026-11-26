@@ -18,6 +18,7 @@ module Fuzzers exposing
     , posix
     , resource
     , safeInt
+    , timestamp
     , uint64Text
     , unsafeInt64Text
     )
@@ -34,6 +35,7 @@ import Fuzz exposing (Fuzzer)
 import Generated.Routes.Routes.V1 as V1
 import Json.Encode
 import Proto.Duration
+import Proto.Timestamp
 import Time
 
 
@@ -324,6 +326,36 @@ posix =
         ]
 
 
+{-| A timestamp anywhere in proto's range, 0001-01-01T00:00:00Z to
+9999-12-31T23:59:59.999999999Z, its nanoseconds whole seconds, milliseconds,
+microseconds or any, so that each length of fraction is printed. Days since
+1970 are drawn apart from the second of the day, since Fuzz draws at most
+32 bits at once.
+-}
+timestamp : Fuzzer Proto.Timestamp.Timestamp
+timestamp =
+    let
+        build seconds nanos =
+            Proto.Timestamp.fromSecondsAndNanos seconds nanos
+                |> Maybe.withDefault (Proto.Timestamp.fromPosix (Time.millisToPosix 0))
+    in
+    Fuzz.oneOf
+        [ Fuzz.map3 (\day second nanos -> build (day * 86400 + second) nanos)
+            (Fuzz.intRange -719162 2932896)
+            (Fuzz.intRange 0 86399)
+            (Fuzz.oneOf
+                [ Fuzz.constant 0
+                , Fuzz.map ((*) 1000000) (Fuzz.intRange 0 999)
+                , Fuzz.map ((*) 1000) (Fuzz.intRange 0 999999)
+                , Fuzz.intRange 0 999999999
+                ]
+            )
+        , Fuzz.map2 build
+            (Fuzz.oneOfValues [ -62135596800, 253402300799, 0, -1 ])
+            (Fuzz.oneOfValues [ 0, 1, 999999999 ])
+        ]
+
+
 {-| A duration as its seconds and nanoseconds, of the same sign, within
 protobuf's ±315,576,000,000 s, and the text that writes it with all nine
 fractional digits.
@@ -451,7 +483,7 @@ everything floats =
         |> Fuzz.andMap (short (Fuzz.intRange -2147483648 2147483647))
         |> Fuzz.andMap (Fuzz.maybe (Fuzz.intRange -2147483648 2147483647))
         |> Fuzz.andMap (Fuzz.maybe awkwardString)
-        |> Fuzz.andMap (Fuzz.maybe posix)
+        |> Fuzz.andMap (Fuzz.maybe timestamp)
         |> Fuzz.andMap (Fuzz.maybe (Fuzz.map .value duration))
         |> Fuzz.andMap (Fuzz.maybe (short fieldMaskPath))
         |> Fuzz.andMap (Fuzz.maybe (Fuzz.oneOf [ Fuzz.constant 0, Fuzz.intRange -2147483648 2147483647 ]))

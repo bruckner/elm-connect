@@ -16,6 +16,7 @@ import Proto.Internal.Registry
 import Proto.Json
 import Proto.Message as Message exposing (Message)
 import Proto.Registry as Registry exposing (Registry)
+import Proto.Timestamp
 import Proto.Value
 import Proto.WellKnown as WellKnown
 import Test exposing (Test, describe, test)
@@ -318,7 +319,7 @@ suite =
         , test "the well-known types convert with their own JSON forms" <|
             \_ ->
                 [ Any.pack WellKnown.duration (Duration.fromMillis 1500)
-                , Any.pack WellKnown.timestamp (Time.millisToPosix 0)
+                , Any.pack WellKnown.timestamp (Proto.Timestamp.fromPosix (Time.millisToPosix 0))
                 , Any.pack WellKnown.empty ()
                 , Any.pack WellKnown.fieldMask [ "a.b", "c" ]
                 , Any.pack WellKnown.struct (Dict.fromList [ ( "k", Proto.Value.ValueNumber 1 ) ])

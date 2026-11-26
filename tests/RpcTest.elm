@@ -17,6 +17,7 @@ import Proto.Field exposing (Cardinality(..), Kind(..), Scalar(..))
 import Proto.Http
 import Proto.Internal.Percent
 import Proto.Internal.Registry
+import Proto.Internal.Timestamp
 import Proto.Internal.Writer
 import Proto.Json
 import Proto.Message exposing (Message)
@@ -849,7 +850,7 @@ responses =
                         Rpc.call
                             (Proto.Method.init "notes.v1.Notes"
                                 "GetNote"
-                                (\_ -> Proto.Json.writeTimestamp (Time.millisToPosix 300000000000000))
+                                (\_ -> Proto.Json.writeTimestamp (Proto.Internal.Timestamp.Timestamp { seconds = 300000000000, nanos = 0, wideHigh = 0 }))
                                 (\_ -> decodeTitle)
                                 (\_ -> Bytes.Encode.sequence [])
                                 decodeTitleBytes

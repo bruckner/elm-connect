@@ -9,6 +9,7 @@ import Json.Encode
 import Proto.Duration
 import Proto.Error
 import Proto.Json
+import Proto.Timestamp
 import Proto.Value
 import Test exposing (Test, describe, test)
 import Time
@@ -1501,13 +1502,18 @@ wellKnownTests =
                     (encodeListValue [ Proto.Value.ValueNumber 1, Proto.Value.ValueNull ])
                     "[1,null]"
         , test "a timestamp" <|
-            \_ -> decodes Proto.Json.timestamp "\"1970-01-01T00:00:01.5Z\"" (Time.millisToPosix 1500)
+            \_ -> decodes Proto.Json.timestamp "\"1970-01-01T00:00:01.5Z\"" (Proto.Timestamp.fromPosix (Time.millisToPosix 1500))
+        , test "a timestamp keeps every nanosecond" <|
+            \_ ->
+                Json.Decode.decodeString Proto.Json.timestamp "\"1970-01-01T00:00:01.000000001Z\""
+                    |> Result.map Proto.Timestamp.toSecondsAndNanos
+                    |> Expect.equal (Ok { seconds = 1, nanos = 1 })
         , test "a malformed timestamp fails" <|
             \_ -> fails Proto.Json.timestamp "\"yesterday\""
         , test "a timestamp as a number fails" <|
             \_ -> fails Proto.Json.timestamp "1500"
         , test "encodes a timestamp" <|
-            \_ -> encodesTo (encodeTimestamp (Time.millisToPosix 1500)) "\"1970-01-01T00:00:01.500Z\""
+            \_ -> encodesTo (encodeTimestamp (Proto.Timestamp.fromPosix (Time.millisToPosix 1500))) "\"1970-01-01T00:00:01.500Z\""
         , test "a duration" <|
             \_ -> decodes Proto.Json.duration "\"-1.5s\"" (Proto.Duration.fromSeconds -1.5)
         , test "a malformed duration fails" <|
@@ -1663,7 +1669,7 @@ encodeListValue =
     writes << Proto.Json.writeListValue
 
 
-encodeTimestamp : Time.Posix -> Json.Encode.Value
+encodeTimestamp : Proto.Timestamp.Timestamp -> Json.Encode.Value
 encodeTimestamp =
     writes << Proto.Json.writeTimestamp
 

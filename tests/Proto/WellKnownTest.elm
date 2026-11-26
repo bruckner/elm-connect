@@ -11,6 +11,7 @@ import Proto.Enum as Enum
 import Proto.Field as Field exposing (Cardinality(..), Kind(..), Scalar(..))
 import Proto.Json
 import Proto.Message as Message exposing (Message)
+import Proto.Timestamp
 import Proto.Value
 import Proto.WellKnown as WellKnown
 import Test exposing (Test, describe, test)
@@ -40,7 +41,7 @@ suite =
         [ test "each is the well-known type it says, and a value survives an Any" <|
             \_ ->
                 [ check WellKnown.empty ()
-                , check WellKnown.timestamp (Time.millisToPosix 1500)
+                , check WellKnown.timestamp (Proto.Timestamp.fromPosix (Time.millisToPosix 1500))
                 , check WellKnown.duration (Duration.fromMillis 1500)
                 , check WellKnown.fieldMask [ "a.b" ]
                 , check WellKnown.struct (Dict.fromList [ ( "k", Proto.Value.ValueString "v" ) ])
@@ -107,7 +108,7 @@ suite =
         , test "the wire forms are the well-known types' own" <|
             \_ ->
                 [ Any.pack WellKnown.empty ()
-                , Any.pack WellKnown.timestamp (Time.millisToPosix 1500)
+                , Any.pack WellKnown.timestamp (Proto.Timestamp.fromPosix (Time.millisToPosix 1500))
                 , Any.pack WellKnown.duration (Duration.fromMillis 1500)
                 , Any.pack WellKnown.fieldMask [ "display_name", "author.email" ]
                 , Any.pack WellKnown.int64ValueAsInt 7

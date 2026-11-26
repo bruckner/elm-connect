@@ -187,6 +187,9 @@ type store struct {
 
 func newStore() *store {
 	created := timestamppb.New(time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC))
+	// To the nanosecond, so a client that reads and writes the note
+	// shows whether it keeps every digit.
+	updated := timestamppb.New(time.Date(2026, 1, 1, 0, 0, 1, 123456789, time.UTC))
 	attachment, err := anypb.New(timestamppb.New(time.Date(2026, 1, 2, 3, 4, 5, 0, time.UTC)))
 	if err != nil {
 		panic(err)
@@ -204,7 +207,7 @@ func newStore() *store {
 			Tags:       []string{"intro", "example"},
 			Visibility: notesv1.Visibility_VISIBILITY_PUBLIC,
 			CreateTime: created,
-			UpdateTime: created,
+			UpdateTime: updated,
 			Ttl:        durationpb.New(90 * time.Second),
 			Metadata:   map[string]string{"lang": "en"},
 			Extra:      extra,
