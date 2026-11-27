@@ -36,8 +36,9 @@ Protocols built alike are `==`.
 import Json.Encode exposing (Value)
 import Proto.Codec exposing (Json, Proto)
 import Rpc.Internal.Connect as Connect
+import Rpc.Internal.Envelope as Envelope
 import Rpc.Internal.GrpcWeb as GrpcWeb
-import Rpc.Internal.Http as Http
+import Rpc.Internal.Limit as Limit
 import Rpc.Internal.Protocol as Internal exposing (Options, Wire(..))
 import Rpc.Internal.Transcode as Transcode
 
@@ -92,8 +93,8 @@ connect =
         (Text
             { build = Connect.connectPost
             , message = Connect.connectMessage
-            , tooLarge = Http.textUnlimited
-            , overRead = Http.textUnlimited
+            , tooLarge = Limit.textUnlimited
+            , overRead = Limit.textUnlimited
             , timeoutHeader = Connect.connectTimeout
             }
         )
@@ -110,13 +111,13 @@ connectProto =
         (Binary
             { build = Connect.connectPostBinary
             , message = Connect.connectProtoMessage
-            , tooLarge = Http.bytesUnlimited
-            , overRead = Http.bytesUnlimited
+            , tooLarge = Limit.bytesUnlimited
+            , overRead = Limit.bytesUnlimited
             , timeoutHeader = Connect.connectTimeout False
-            , base64 = Http.base64
-            , encode = Http.encode
-            , encodedWidth = Http.encodedWidth
-            , width = Http.width
+            , base64 = Envelope.base64
+            , encode = Envelope.encode
+            , encodedWidth = Limit.encodedWidth
+            , width = Limit.width
             }
         )
 
@@ -133,8 +134,8 @@ transcode =
         (Text
             { build = Transcode.transcode
             , message = Transcode.transcodeMessage
-            , tooLarge = Http.textUnlimited
-            , overRead = Http.textUnlimited
+            , tooLarge = Limit.textUnlimited
+            , overRead = Limit.textUnlimited
             , timeoutHeader = Transcode.transcodeTimeout
             }
         )
@@ -163,13 +164,13 @@ grpcWeb =
         (Binary
             { build = GrpcWeb.grpcWeb
             , message = GrpcWeb.grpcWebMessage
-            , tooLarge = Http.bytesUnlimited
-            , overRead = Http.bytesUnlimited
+            , tooLarge = Limit.bytesUnlimited
+            , overRead = Limit.bytesUnlimited
             , timeoutHeader = GrpcWeb.grpcWebTimeout
-            , base64 = Http.base64
-            , encode = Http.encode
-            , encodedWidth = Http.encodedWidth
-            , width = Http.width
+            , base64 = Envelope.base64
+            , encode = Envelope.encode
+            , encodedWidth = Limit.encodedWidth
+            , width = Limit.width
             }
         )
 
@@ -258,10 +259,10 @@ withReadMaxBytes limit (Internal.Protocol p wire) =
                     { text
                         | overRead =
                             if on then
-                                Http.textOverRead
+                                Limit.textOverRead
 
                             else
-                                Http.textUnlimited
+                                Limit.textUnlimited
                     }
 
             Binary binary ->
@@ -269,10 +270,10 @@ withReadMaxBytes limit (Internal.Protocol p wire) =
                     { binary
                         | overRead =
                             if on then
-                                Http.bytesOverRead
+                                Limit.bytesOverRead
 
                             else
-                                Http.bytesUnlimited
+                                Limit.bytesUnlimited
                     }
         )
 
@@ -313,10 +314,10 @@ withWriteMaxBytes limit (Internal.Protocol p wire) =
                     { text
                         | tooLarge =
                             if on then
-                                Http.jsonTooLarge
+                                Limit.jsonTooLarge
 
                             else
-                                Http.textUnlimited
+                                Limit.textUnlimited
                     }
 
             Binary binary ->
@@ -324,10 +325,10 @@ withWriteMaxBytes limit (Internal.Protocol p wire) =
                     { binary
                         | tooLarge =
                             if on then
-                                Http.bytesTooLarge
+                                Limit.bytesTooLarge
 
                             else
-                                Http.bytesUnlimited
+                                Limit.bytesUnlimited
                     }
         )
 

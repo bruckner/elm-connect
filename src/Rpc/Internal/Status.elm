@@ -1,4 +1,4 @@
-module Rpc.Internal.Status exposing (answerOf, bodyProblem, bytesFailure, canonicalBase64, completeDetails, failure, header, otherFailure)
+module Rpc.Internal.Status exposing (answerOf, bodyProblem, bytesFailure, canonicalBase64, completeDetails, failure, otherFailure)
 
 {-| A failure's status as an `Rpc.Error`, from a Connect error body, a
 `google.rpc.Status` body, or gRPC status headers and trailers, whatever the
@@ -9,7 +9,6 @@ that is not its success, and `Rpc.response` and `Rpc.responseBytes` reach
 -}
 
 import Bytes exposing (Bytes)
-import Dict
 import Http
 import Json.Decode exposing (Decoder, Value)
 import Proto.Any exposing (Any)
@@ -23,7 +22,7 @@ import Proto.Registry exposing (Registry)
 import Rpc.Body
 import Rpc.Code as Code exposing (Code)
 import Rpc.Error as Error exposing (Error)
-import Rpc.Internal.Http as Internal
+import Rpc.Internal.Envelope as Envelope
 import Rpc.Response exposing (Response)
 
 
@@ -34,10 +33,10 @@ bytesFailure : Http.Response Bytes -> Error
 bytesFailure answer =
     case answer of
         Http.GoodStatus_ metadata raw ->
-            failure metadata (Internal.bytesText raw)
+            failure metadata (Envelope.bytesText raw)
 
         Http.BadStatus_ metadata raw ->
-            failure metadata (Internal.bytesText raw)
+            failure metadata (Envelope.bytesText raw)
 
         Http.BadUrl_ _ ->
             unreadableUrl
@@ -106,12 +105,12 @@ failure metadata raw =
             Error.fromStatus read answer
 
         Err _ ->
-            case header "grpc-status" metadata |> Maybe.andThen (String.trim >> String.toInt) of
+            case Envelope.header "grpc-status" metadata |> Maybe.andThen (String.trim >> String.toInt) of
                 Just number ->
                     Error.fromStatus
                         { code = fromGrpc number
                         , message =
-                            header "grpc-message" metadata
+                            Envelope.header "grpc-message" metadata
                                 |> Maybe.map (\text -> Percent.percentDecode text |> Maybe.withDefault text)
                                 |> Maybe.withDefault (Error.message (Error.fromResponse answer))
                         , details = []
@@ -121,17 +120,6 @@ failure metadata raw =
 
                 Nothing ->
                     Error.fromResponse answer
-
-
-{-| A response header by name, whatever its case.
--}
-header : String -> Http.Metadata -> Maybe String
-header key metadata =
-    metadata.headers
-        |> Dict.toList
-        |> List.filter (\( k, _ ) -> String.toLower k == key)
-        |> List.head
-        |> Maybe.map Tuple.second
 
 
 {-| A status as a body or the headers state it.

@@ -123,8 +123,9 @@ binding's route included,
 `Transcode` and `GrpcWeb` each hold one protocol's request builders and
 answer readers (gRPC-Web's framing and trailers among them), `Status`
 reads a failure's status into an error whatever the protocol, `Retry`
-runs the attempts, `Http` adapts elm/http and holds what the protocols
-share, the read and write limits among it (§5.2). They
+runs the attempts, `Http` adapts elm/http and says whether a request can
+be sent, `Envelope` holds what the protocols share around a message, and
+`Limit` the read and write limits (§5.2). They
 are one module per shared type, not one `Rpc.Internal`, because a single
 module would form an import cycle.
 

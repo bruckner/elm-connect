@@ -2012,7 +2012,7 @@ decoder that the notes program already carries. Where: design §5.1,
 
 ### Internal runtime modules by protocol
 
-*2026-10-29.*
+*2026-10-29; `Rpc.Internal.Http` split by job, 2026-11-27.*
 
 The runtime's internal modules are one protocol, one module:
 `Rpc.Internal.Connect`, `Rpc.Internal.Transcode` and
@@ -2037,7 +2037,22 @@ shared until the same pass dissolved it, so that each internal module's
 name says what it holds: the read limits and the checks applying them
 joined the write limits in `Http`, Connect's content-type reading went
 to `Connect`, and what remained, a failure's status read from any
-protocol's error shapes, is `Rpc.Internal.Status`. Where: design §5.2.
+protocol's error shapes, is `Rpc.Internal.Status`.
+
+`Http` then held four jobs, and gRPC-Web imported `Connect` for two
+helpers that were not Connect's. It is now three modules, by the same
+rule that a name says what a module holds: `Rpc.Internal.Http` is the
+elm/http adapter and the checks that say whether a request can be sent;
+`Rpc.Internal.Limit` the read and write limits; and
+`Rpc.Internal.Envelope` what the protocols share around a message,
+which took the procedure URL and the content-type reading from
+`Connect` and the header lookup from `Status`, and sits below both, so
+a protocol's module imports another's only for what is that protocol's
+(transcoding's implicit route is Connect's POST). The alternative,
+leaving the shared helpers in `Connect`, keeps every protocol's module
+depending on one protocol's. This move changes no definition either:
+the examples' `--optimize` builds hold the same definitions under the
+new module names. Where: design §5.2.
 
 ### Descriptors apart from the registry
 

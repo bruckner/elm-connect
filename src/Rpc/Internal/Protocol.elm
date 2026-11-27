@@ -32,9 +32,11 @@ codecs, which the call holds, do the rest.
 This module holds the types only. A protocol's module
 (`Rpc.Internal.Connect`, `Rpc.Internal.Transcode`, `Rpc.Internal.GrpcWeb`)
 holds every function `Rpc.Protocol` installs for it; `Rpc.Internal.Status`
-reads a failure's status whatever the protocol; `Rpc.Internal.Http` holds what
-every builder shares, the read and write limits, and what elm/http accepts; and `Rpc.Internal.Plan` is the one place a
-method's codecs meet the protocol's functions.
+reads a failure's status whatever the protocol; `Rpc.Internal.Envelope` holds
+what the protocols share around a message, `Rpc.Internal.Limit` the read and
+write limits, and `Rpc.Internal.Http` what elm/http accepts; and
+`Rpc.Internal.Plan` is the one place a method's codecs meet the protocol's
+functions.
 
 -}
 
