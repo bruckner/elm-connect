@@ -1248,10 +1248,10 @@ milliseconds (below).
    what a value that is not valid means, which is the application's to
    say, over the fields `toSecondsAndNanos` gives.
    Seconds outside ±(2^53 − 1), which an Elm `Int` does not hold
-   exactly, are held exactly all the same: the internal record's third
-   field, `high`, is 0 for seconds an `Int` holds and otherwise their
-   upper 32 bits, with `seconds` the lower 32, as the binary reader read
-   them. The read does not fail, a write gives the same bytes and `==`
+   exactly, are held exactly all the same: a second internal
+   constructor, `Wide high low nanos`, holds their upper and lower 32
+   bits as the binary reader read them, and is built for those seconds
+   alone. The read does not fail, a write gives the same bytes and `==`
    stays exact. Such a value is never valid; `toSecondsAndNanos` gives
    the nearest `Int`, the lossy views clamp by sign, and `normalize`
    gives it back as it is.

@@ -1,4 +1,4 @@
-module Proto.Internal.Duration exposing (Duration(..), isValid, maxSeconds, nearestSeconds, normalize, print, towardZero)
+module Proto.Internal.Duration exposing (Duration(..), isValid, maxSeconds, nanos, nearestSeconds, normalize, print, towardZero, withNanos)
 
 {-| The `Duration` type, defined here so that the binary reader can hold the
 fields a peer wrote, which `Proto.Duration` exposes only opaquely and whose
@@ -6,33 +6,60 @@ builders always give a valid value.
 -}
 
 
-{-| Whole seconds and nanoseconds, as the binary form carries them.
+{-| Whole seconds and nanoseconds, as the binary form carries them:
+`Duration seconds nanos`.
 
 The seconds are a 64-bit integer, and an `Int` holds one exactly only within
-±(2^53 − 1). For every such value `seconds` is the seconds and `high` is 0.
-For seconds past that, which only the binary reader gives, `high` and
-`seconds` are the upper and the lower 32 bits as the wire carries them, in
+±(2^53 − 1). `Wide high low nanos` holds seconds past that, which only the
+binary reader gives, as the upper and the lower 32 bits the wire carries, in
 two's complement, each 0 to 2^32 − 1: the reader keeps the two halves it
-read. `high` is never 0 there. Each duration has one representation either
-way, so `==` is exact.
+read. The reader builds `Wide` for no seconds an `Int` holds, so each
+duration has one representation and `==` is exact.
 
 -}
 type Duration
-    = Duration { seconds : Int, nanos : Int, high : Int }
+    = Duration Int Int
+    | Wide Int Int Int
 
 
-{-| The seconds as an `Int`: exactly, or the nearest one when `high` is not 0.
+{-| The nanoseconds as held.
+-}
+nanos : Duration -> Int
+nanos duration =
+    case duration of
+        Duration _ held ->
+            held
+
+        Wide _ _ held ->
+            held
+
+
+{-| The same seconds with other nanoseconds.
+-}
+withNanos : Int -> Duration -> Duration
+withNanos value duration =
+    case duration of
+        Duration seconds _ ->
+            Duration seconds value
+
+        Wide high low _ ->
+            Wide high low value
+
+
+{-| The seconds as an `Int`: exactly, or for `Wide` the nearest one.
 -}
 nearestSeconds : Duration -> Int
-nearestSeconds (Duration parts) =
-    if parts.high == 0 then
-        parts.seconds
+nearestSeconds duration =
+    case duration of
+        Duration seconds _ ->
+            seconds
 
-    else if parts.high >= 2147483648 then
-        (parts.high - 4294967296) * 4294967296 + parts.seconds
+        Wide high low _ ->
+            if high >= 2147483648 then
+                (high - 4294967296) * 4294967296 + low
 
-    else
-        parts.high * 4294967296 + parts.seconds
+            else
+                high * 4294967296 + low
 
 
 {-| The most seconds a valid duration holds either way, protobuf's limit of
@@ -47,11 +74,15 @@ maxSeconds =
 either way, and the two not of opposite signs.
 -}
 isValid : Duration -> Bool
-isValid (Duration parts) =
-    (parts.high == 0)
-        && (abs parts.seconds <= maxSeconds)
-        && (abs parts.nanos < 1000000000)
-        && not ((parts.seconds < 0 && parts.nanos > 0) || (parts.seconds > 0 && parts.nanos < 0))
+isValid duration =
+    case duration of
+        Duration seconds held ->
+            (abs seconds <= maxSeconds)
+                && (abs held < 1000000000)
+                && not ((seconds < 0 && held > 0) || (seconds > 0 && held < 0))
+
+        Wide _ _ _ ->
+            False
 
 
 {-| The nanoseconds carried into the seconds and both given one sign, with
@@ -60,25 +91,30 @@ are, or would end up, past what an `Int` holds exactly is left as it is: it
 is far from valid either way, and the carry would not be exact.
 -}
 normalize : Duration -> Duration
-normalize ((Duration parts) as duration) =
-    let
-        carried =
-            parts.seconds + towardZero (toFloat parts.nanos / 1.0e9)
+normalize duration =
+    case duration of
+        Wide _ _ _ ->
+            duration
 
-        rest =
-            remainderBy 1000000000 parts.nanos
-    in
-    if parts.high /= 0 || abs carried > maxExact then
-        duration
+        Duration seconds held ->
+            let
+                carried =
+                    seconds + towardZero (toFloat held / 1.0e9)
 
-    else if carried > 0 && rest < 0 then
-        Duration { seconds = carried - 1, nanos = rest + 1000000000, high = 0 }
+                rest =
+                    remainderBy 1000000000 held
+            in
+            if abs carried > maxExact then
+                duration
 
-    else if carried < 0 && rest > 0 then
-        Duration { seconds = carried + 1, nanos = rest - 1000000000, high = 0 }
+            else if carried > 0 && rest < 0 then
+                Duration (carried - 1) (rest + 1000000000)
 
-    else
-        Duration { seconds = carried, nanos = rest, high = 0 }
+            else if carried < 0 && rest > 0 then
+                Duration (carried + 1) (rest - 1000000000)
+
+            else
+                Duration carried rest
 
 
 {-| 2^53 − 1, the most an `Int` holds exactly.
@@ -96,38 +132,36 @@ read refuses. Callers that write JSON check validity first.
 -}
 print : Duration -> String
 print duration =
-    let
-        ((Duration parts) as normal) =
-            normalize duration
+    case normalize duration of
+        (Wide _ _ _) as wide ->
+            String.fromInt (nearestSeconds wide) ++ "s"
 
-        sign =
-            if parts.seconds < 0 || parts.nanos < 0 then
-                "-"
+        Duration seconds held ->
+            let
+                sign =
+                    if seconds < 0 || held < 0 then
+                        "-"
 
-            else
-                ""
+                    else
+                        ""
 
-        nanos =
-            abs parts.nanos
+                magnitude =
+                    abs held
 
-        fraction =
-            if nanos == 0 then
-                ""
+                fraction =
+                    if magnitude == 0 then
+                        ""
 
-            else if remainderBy 1000000 nanos == 0 then
-                "." ++ String.padLeft 3 '0' (String.fromInt (nanos // 1000000))
+                    else if remainderBy 1000000 magnitude == 0 then
+                        "." ++ String.padLeft 3 '0' (String.fromInt (magnitude // 1000000))
 
-            else if remainderBy 1000 nanos == 0 then
-                "." ++ String.padLeft 6 '0' (String.fromInt (nanos // 1000))
+                    else if remainderBy 1000 magnitude == 0 then
+                        "." ++ String.padLeft 6 '0' (String.fromInt (magnitude // 1000))
 
-            else
-                "." ++ String.padLeft 9 '0' (String.fromInt nanos)
-    in
-    if parts.high /= 0 then
-        String.fromInt (nearestSeconds normal) ++ "s"
-
-    else
-        sign ++ String.fromInt (abs parts.seconds) ++ fraction ++ "s"
+                    else
+                        "." ++ String.padLeft 9 '0' (String.fromInt magnitude)
+            in
+            sign ++ String.fromInt (abs seconds) ++ fraction ++ "s"
 
 
 {-| Elm's `truncate` works in 32 bits; this rounds toward zero at any size.

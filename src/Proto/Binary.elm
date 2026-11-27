@@ -2285,7 +2285,7 @@ the nearest `Int` for them.
 -}
 duration : Codec Duration
 duration =
-    embedded writeDuration durationInto (InternalDuration.Duration { seconds = 0, nanos = 0, high = 0 })
+    embedded writeDuration durationInto (InternalDuration.Duration 0 0)
 
 
 durationInto : Duration -> Decoder Duration
@@ -2297,31 +2297,35 @@ durationInto existing =
 (2).
 -}
 durationStep : Int -> Int -> Duration -> Field Duration
-durationStep number wire ((InternalDuration.Duration parts) as held) =
+durationStep number wire held =
     case number of
         1 ->
             field int64Split
-                (\( high, seconds ) -> InternalDuration.Duration { seconds = seconds, nanos = parts.nanos, high = high })
+                (\( high, low ) ->
+                    if high == 0 then
+                        InternalDuration.Duration low (InternalDuration.nanos held)
+
+                    else
+                        InternalDuration.Wide high low (InternalDuration.nanos held)
+                )
                 wire
                 held
 
         2 ->
-            field int32 (\v -> InternalDuration.Duration { seconds = parts.seconds, nanos = v, high = parts.high }) wire held
+            field int32 (\v -> InternalDuration.withNanos v held) wire held
 
         _ ->
             skip wire held
 
 
 writeDuration : Duration -> Encoder
-writeDuration (InternalDuration.Duration parts) =
-    E.sequence
-        [ if parts.high == 0 then
-            implicit int64AsInt 1 parts.seconds
+writeDuration held =
+    case held of
+        InternalDuration.Duration seconds nanos ->
+            E.sequence [ implicit int64AsInt 1 seconds, implicit int32 2 nanos ]
 
-          else
-            implicit int64Split 1 ( parts.high, parts.seconds )
-        , implicit int32 2 parts.nanos
-        ]
+        InternalDuration.Wide high low nanos ->
+            E.sequence [ implicit int64Split 1 ( high, low ), implicit int32 2 nanos ]
 
 
 {-| `google.protobuf.FieldMask` as its paths, proto field names as the

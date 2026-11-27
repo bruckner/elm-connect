@@ -3045,16 +3045,16 @@ or with nanoseconds of a second or more or of the other sign than the
 seconds, which only a duration read from protobuf binary can be.
 -}
 writeDuration : Duration -> Encoder Error
-writeDuration ((InternalDuration.Duration parts) as held) =
+writeDuration held =
     if InternalDuration.isValid held then
         Writer.succeed (encodeDuration held)
 
     else
         Writer.refuse "google.protobuf.Duration"
-            (if parts.high /= 0 || abs parts.seconds > InternalDuration.maxSeconds then
+            (if abs (InternalDuration.nearestSeconds held) > InternalDuration.maxSeconds then
                 "the duration is outside -315,576,000,000 to 315,576,000,000 seconds"
 
-             else if abs parts.nanos >= 1000000000 then
+             else if abs (InternalDuration.nanos held) >= 1000000000 then
                 "the nanoseconds are outside -999,999,999 to 999,999,999"
 
              else

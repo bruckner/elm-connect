@@ -87,14 +87,14 @@ exact as the `Float`.
 fromSeconds : Float -> Duration
 fromSeconds value =
     if isNaN value || isInfinite value then
-        Internal.Duration { seconds = 0, nanos = 0, high = 0 }
+        Internal.Duration 0 0
 
     else
         let
             whole =
                 towardZero value
         in
-        clamped (Internal.Duration { seconds = whole, nanos = Basics.round ((value - toFloat whole) * 1.0e9), high = 0 })
+        clampedDuration (Internal.Duration whole (Basics.round ((value - toFloat whole) * 1.0e9)))
 
 
 {-| The duration in seconds, a lossy view: as exact as a `Float` is, as for
@@ -104,7 +104,7 @@ then clamped to ±315,576,000,000 seconds.
 toSeconds : Duration -> Float
 toSeconds duration =
     let
-        (Internal.Duration parts) =
+        parts =
             clamped duration
     in
     toFloat parts.seconds + toFloat parts.nanos / 1.0e9
@@ -120,7 +120,7 @@ limit too.
 -}
 fromMillis : Int -> Duration
 fromMillis value =
-    clamped (Internal.Duration { seconds = towardZero (toFloat value / 1000), nanos = remainderBy 1000 value * 1000000, high = 0 })
+    clampedDuration (Internal.Duration (towardZero (toFloat value / 1000)) (remainderBy 1000 value * 1000000))
 
 
 {-| The duration in whole milliseconds, rounded toward zero, as
@@ -131,7 +131,7 @@ duration that is not valid is normalised, then clamped to
 toMillis : Duration -> Int
 toMillis duration =
     let
-        (Internal.Duration parts) =
+        parts =
             clamped duration
     in
     parts.seconds * 1000 + towardZero (toFloat parts.nanos / 1.0e6)
@@ -220,15 +220,16 @@ limit; at the limit the nanoseconds are kept, as protobuf keeps them.
 -}
 fromSecondsAndNanos : Int -> Int -> Maybe Duration
 fromSecondsAndNanos wholeSeconds nanos =
-    let
-        ((Internal.Duration parts) as normal) =
-            Internal.normalize (Internal.Duration { seconds = wholeSeconds, nanos = nanos, high = 0 })
-    in
-    if abs parts.seconds <= maxSeconds then
-        Just normal
+    case Internal.normalize (Internal.Duration wholeSeconds nanos) of
+        (Internal.Duration seconds _) as normal ->
+            if abs seconds <= maxSeconds then
+                Just normal
 
-    else
-        Nothing
+            else
+                Nothing
+
+        Internal.Wide _ _ _ ->
+            Nothing
 
 
 {-| The duration's two fields as it holds them, as protobuf's binary form
@@ -243,8 +244,8 @@ and writes them back to binary as read; this gives the nearest `Int`.
 
 -}
 toSecondsAndNanos : Duration -> { seconds : Int, nanos : Int }
-toSecondsAndNanos ((Internal.Duration parts) as duration) =
-    { seconds = Internal.nearestSeconds duration, nanos = parts.nanos }
+toSecondsAndNanos duration =
+    { seconds = Internal.nearestSeconds duration, nanos = Internal.nanos duration }
 
 
 {-| Whether the duration is valid by protobuf's rule: within
@@ -280,11 +281,11 @@ normalize =
 -- INTERNAL
 
 
-{-| Normalised, then clamped when the seconds are past protobuf's limit, for
-the builders that clamp and the lossy views. A valid duration is kept as it
-is.
+{-| The fields normalised, then clamped when the seconds are past protobuf's
+limit, for the builders that clamp and the lossy views. A valid duration's
+are kept as they are.
 -}
-clamped : Duration -> Duration
+clamped : Duration -> { seconds : Int, nanos : Int }
 clamped duration =
     let
         normal =
@@ -294,13 +295,22 @@ clamped duration =
             Internal.nearestSeconds normal
     in
     if seconds > maxSeconds then
-        Internal.Duration { seconds = maxSeconds, nanos = 0, high = 0 }
+        { seconds = maxSeconds, nanos = 0 }
 
     else if seconds < -maxSeconds then
-        Internal.Duration { seconds = -maxSeconds, nanos = 0, high = 0 }
+        { seconds = -maxSeconds, nanos = 0 }
 
     else
-        normal
+        { seconds = seconds, nanos = Internal.nanos normal }
+
+
+clampedDuration : Duration -> Duration
+clampedDuration duration =
+    let
+        parts =
+            clamped duration
+    in
+    Internal.Duration parts.seconds parts.nanos
 
 
 {-| Seconds and nanoseconds of the same sign, if within protobuf's range.
@@ -308,7 +318,7 @@ clamped duration =
 inRange : Int -> Int -> Maybe Duration
 inRange wholeSeconds nanos =
     if abs wholeSeconds <= maxSeconds then
-        Just (Internal.Duration { seconds = wholeSeconds, nanos = nanos, high = 0 })
+        Just (Internal.Duration wholeSeconds nanos)
 
     else
         Nothing

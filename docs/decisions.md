@@ -663,13 +663,13 @@ function gives an invalid value. The settled design is design §3.5,
   Elm `Int` holds one exactly only within ±(2^53 − 1). A read of
   seconds past that used to fail (`IntOutOfRange`), so one field no
   peer meant, over 28,000 times protobuf's limit, failed the whole
-  message. The internal record has a third field, `high`: 0 for every
-  seconds an `Int` holds, and for seconds past that the upper 32 bits
-  the reader read, with `seconds` the lower 32. The reader keeps the
-  two halves it already has, the write gives the same bytes, and `==`
-  stays exact, since `high` is 0 exactly when an `Int` holds the
-  seconds. One constructor still, so the compiled value stays the bare
-  record. Such a duration is never valid: the JSON write refuses it
+  message. The internal type is positional, `Duration seconds nanos`,
+  with a second constructor, `Wide high low nanos`, for seconds past
+  that: the upper and the lower 32 bits the reader read. The reader
+  keeps the two halves it already has, the write gives the same bytes,
+  and `==` stays exact, since the reader builds `Wide` for no seconds
+  an `Int` holds. Such a duration is never valid: the JSON write
+  refuses it
   for its range, `toString` is `Nothing`, and the lossy views clamp it
   by its sign. `toSecondsAndNanos` gives the nearest `Int`, the one
   lossy reading. `normalize` gives it back as it is, and so too a
