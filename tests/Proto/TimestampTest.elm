@@ -8,6 +8,7 @@ import Fuzz
 import Fuzzers
 import Proto.Binary as B
 import Proto.Error
+import Proto.Internal.Timestamp
 import Proto.Json
 import Proto.Timestamp as Timestamp exposing (Timestamp)
 import Test exposing (Test, describe, fuzz, fuzz2, test)
@@ -539,6 +540,37 @@ fromBinary =
                                         }
                                     )
                                 )
+               , test "seconds of 2^53 - 1 either way are not wide: the seconds field holds them whole, and they go back to binary as the same bytes" <|
+                    \_ ->
+                        [ 2 ^ 53 - 1, -(2 ^ 53 - 1) ]
+                            |> List.map
+                                (\seconds ->
+                                    read seconds 7
+                                        |> Result.map
+                                            (\held ->
+                                                { ordinary = held == Proto.Internal.Timestamp.Timestamp { seconds = seconds, nanos = 7, wideHigh = 0 }
+                                                , fields = Timestamp.toSecondsAndNanos held
+                                                , sameBytes = octets (B.encode (B.messageEncoder B.timestamp) held) == octets (written seconds 7)
+                                                , readAgain =
+                                                    B.decode (B.messageDecoder B.timestamp) (B.encode (B.messageEncoder B.timestamp) held)
+                                                        |> Result.map ((==) held)
+                                                        |> Result.toMaybe
+                                                }
+                                            )
+                                        |> Result.toMaybe
+                                )
+                            |> Expect.equal
+                                [ Just { ordinary = True, fields = { seconds = 2 ^ 53 - 1, nanos = 7 }, sameBytes = True, readAgain = Just True }
+                                , Just { ordinary = True, fields = { seconds = -(2 ^ 53 - 1), nanos = 7 }, sameBytes = True, readAgain = Just True }
+                                ]
+               , test "seconds of 2^53 either way, one past that, are wide: held as the two halves the wire carries" <|
+                    \_ ->
+                        [ wideBytes "9007199254740992" 7, wideBytes "-9007199254740992" 7 ]
+                            |> List.map (B.decode (B.messageDecoder B.timestamp) >> Result.toMaybe)
+                            |> Expect.equal
+                                [ Just (Proto.Internal.Timestamp.Timestamp { seconds = 0, nanos = 7, wideHigh = 0x00200000 })
+                                , Just (Proto.Internal.Timestamp.Timestamp { seconds = 0, nanos = 7, wideHigh = 0xFFE00000 })
+                                ]
                , test "seconds past what an Int holds exactly are held exactly: not valid, refused in JSON, and the same bytes back" <|
                     \_ ->
                         [ wideBytes "4611686018427387904" 0, wideBytes "-4611686018427387904" 0, wideBytes "9007199254740992" 0, wideBytes "9223372036854775807" 7, wideBytes "-9223372036854775807" 7 ]
