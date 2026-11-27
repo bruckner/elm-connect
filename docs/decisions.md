@@ -519,7 +519,8 @@ request bodies now hold only what the message holds. Where: design
 
 ### Accept on read what the wire admits, refuse on a JSON write
 
-*2026-11-24.*
+*2026-11-24. Since 2026-11-25 a `Duration` read from binary that is
+not valid is refused (Well-known types: validity by source).*
 
 A read accepts whatever the wire admits; a JSON write refuses a value
 proto3 JSON has no form for, as protobuf's own JSON writers do: a
@@ -544,8 +545,8 @@ quoting the value, so `Rpc.Error.badValue` can carry it where a path,
 which can hold a map's keys, would leak the request's data. Why one
 opaque encoder and not encoders giving a `Result`:
 
-- New checks stay non-breaking. A check added later (a `Duration` past
-  protobuf's range, once the well-known types allow one) changes no
+- New checks stay non-breaking. A check added later (a `Duration` that
+  is not valid, added 2026-11-25) changes no
   signature where the type already says the write can refuse, and a
   message that gains a refusable field breaks only its `encodeTotal`
   call sites, where the new failure has to be handled.
@@ -619,10 +620,116 @@ writes, a value the program built too deep is the program's (it
 overflows the stack while written), and only the levels around an
 `Any` written through the registry are counted, as a read counts them;
 an `Any` written alone counts from the top, as a read of one does.
-Waiting for the well-known types pass: `Proto.Duration.fromParts`
-clamps, so a `Duration` is never refused yet, though it is typed as
-refusable; the two out-of-range `Duration` conformance cases stay
-expected failures. Where: design §3.2, §3.4, §3.5, §4, §5.5.
+Until 2026-11-25 `Proto.Duration.fromParts` clamped, so a `Duration` was
+never refused, though it was typed as refusable; it is refused now
+when it is not valid, with no signature changed, and the two
+out-of-range `Duration` conformance cases pass. Where: design §3.2,
+§3.4, §3.5, §4, §5.5.
+
+### Well-known types: validity by source
+
+*2026-11-25.*
+
+The well-known types with an invariant are opaque runtime types whose
+validity depends on where a value comes from and where it goes. Every
+value the application builds is valid: the builders from Elm values
+(`Proto.Duration.fromSeconds`, `fromMillis`) clamp to protobuf's range,
+the exact builder (`fromSecondsAndNanos`) and the parser (`fromString`)
+give a `Maybe`. A proto3 JSON read is as strict as protojson, as
+before. A protobuf binary read keeps the fields as the wire carries
+them, neither normalised nor clamped. A proto3 JSON write refuses a
+value that is not valid (`Proto.Error.BadValue`), and a binary write
+writes any value as held. The type is defined in an internal module
+(`Proto.Internal.Duration`) whose constructor the binary reader uses,
+and the public module aliases it, as `Proto.Any` does, so no public
+function gives an invalid value. The settled design is design §3.5,
+"Representation and validity"; `Duration` is its first type.
+
+- **Where normalising happens.** In the application's builders, in
+  arithmetic (none yet), in the lossy views (`toSeconds`, `toMillis`:
+  normalise, clamp, convert), and in one explicit function,
+  `normalize`, which carries the nanoseconds and fixes the sign but
+  does not clamp, so a value past the range stays invalid and `isValid`
+  says so. Nowhere else: not in a read.
+- **Why the binary read keeps.** No peer normalises or clamps a binary
+  `Duration`: to protobuf's own runtimes it is an ordinary message,
+  whose two fields a binary read keeps as it finds them, and their JSON
+  writers refuse what is not valid.
+  Normalising or clamping on read would change a value the application
+  only passes through, and clamped, the two out-of-range conformance
+  cases wrote the limit where protobuf refuses. Kept, a value read and
+  written back is the same bytes.
+- **Seconds past the `Int` limit.** The seconds are an `int64`, and an
+  Elm `Int` holds one exactly only within ±(2^53 − 1). A read of
+  seconds past that used to fail (`IntOutOfRange`), so one field no
+  peer meant, over 28,000 times protobuf's limit, failed the whole
+  message. The internal record has a third field, `wideHigh`: 0 for
+  every seconds an `Int` holds, and for seconds past that the upper 32
+  bits the reader read, with `seconds` the lower 32. The reader keeps
+  the two halves it already has, the write gives the same bytes, and
+  `==` stays exact, since `wideHigh` is 0 exactly when an `Int` holds
+  the seconds. One constructor still, so the compiled value stays the
+  bare record, and only the internal module knows the encoding: the
+  codec passes the pair it reads through `fromWireSeconds` and
+  `wireSeconds`. Such a duration is never valid: the JSON write refuses
+  it
+  for its range, `toString` is `Nothing`, and the lossy views clamp it
+  by its sign. `toSecondsAndNanos` gives the nearest `Int`, the one
+  lossy reading. `normalize` gives it back as it is, and so too a
+  duration whose seconds the carry would take past the limit: carrying
+  exactly would need 64-bit arithmetic for a value that stays far from
+  valid.
+- **Why the JSON write refuses.** proto3 JSON has no form for a
+  duration out of range, and protojson refuses one with nanoseconds out
+  of form; writing the normal form instead would send a value the peer
+  did not write, and the refusing encoder was built so that this check
+  could arrive without changing a signature (Accept on read what the
+  wire admits, refuse on a JSON write).
+- **Why `toString` is a `Maybe`.** A value read from binary may have no
+  text, and `toString` says so rather than print a text a JSON read
+  refuses or a normal form the value is not; it is less handy for
+  display, but honest. It is the one printer: the JSON encoder writes
+  its `Just` and refuses on `Nothing`, and a generated route prints a
+  path or query value with it, as application code would, and gives a
+  value that is not valid what it gives an unset one; a request over
+  JSON holding such a value is refused before its route is built.
+- **`==` among read values.** Two durations read from binary that are
+  the same span written differently are not `==`; `normalize` makes
+  them `==`. Every value built or read from JSON is valid and normal,
+  so `==` is exact among those.
+- **Names.** `fromMilliseconds` and `toMilliseconds` became `fromMillis`
+  and `toMillis`, as elm/time's `millisToPosix` and `posixToMillis`
+  spell it; `fromParts` and `toParts` became `fromSecondsAndNanos` and
+  `toSecondsAndNanos`, which say what the parts are. No plain readers
+  `seconds` and `nanos`: `toSecondsAndNanos` gives the fields as held.
+- **A vessel for the wire: no order, key, sign or arithmetic.** An
+  order, a `comparable` key, a sign test and arithmetic must each say
+  what a value that is not valid means: whether two writings of one
+  span are equal or ordered, whether a result past the range clamps.
+  Those are choices for an application's domain, and this type settles
+  only how to hold what the wire carries, build a valid value and view
+  one. An application orders or keys durations by the fields
+  `toSecondsAndNanos` gives, after `normalize` if it wants two writings
+  of one span to meet, or by a lossy view.
+- **Qualified runtime names.** Generated code writes every runtime type
+  qualified (`Proto.Duration.Duration`, as `Proto.Any.Any` and
+  `Proto.Value.Value` already were) and imports no runtime module
+  exposing a name. Before, it imported `Proto.Duration exposing
+  (Duration)`, so a message named `Duration` in a module that held one
+  was refused as `naming::reserved_name`; now no runtime type reserves a
+  name in a generated module. The check stays for elm/core's names
+  (`String`, `Maybe`, `Dict` beside a map field), which Elm code
+  conventionally writes bare.
+- **No generator option** for these types in 0.2.
+
+What a program pays (`elm make --optimize`, terser, `gzip -9 -n`): one
+that uses no `Duration` links the same definitions as before, at the
+same minified size and within 4 bytes gzipped (a program that writes no
+JSON, one writing a message that cannot refuse, a JSON-only client);
+the notes example, which reads and writes durations, grows by 609 bytes
+minified and 169 gzipped: the binary read that holds seconds past the
+`Int` limit, and the JSON write's validity check with its three
+reasons. Where: design §3.5, §3.7, §4, §5.5.
 
 ### Decoder steps
 

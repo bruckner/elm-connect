@@ -79,7 +79,7 @@ reading =
         [ test "decodeJson reads a message's proto3 JSON" <|
             \_ ->
                 Message.decodeJson Proto.Registry.empty Proto.WellKnown.duration (Json.Encode.string "2.5s")
-                    |> Result.map Proto.Duration.toMilliseconds
+                    |> Result.map Proto.Duration.toMillis
                     |> Expect.equal (Ok 2500)
         , test "decodeJson converts an Any through the registry, and names a type it lacks" <|
             \_ ->
@@ -103,7 +103,7 @@ reading =
                 , Message.decodeJson Proto.WellKnown.registry
                     Proto.WellKnown.any
                     (Json.Encode.object [ ( "@type", Json.Encode.string "type.googleapis.com/google.protobuf.Duration" ), ( "value", Json.Encode.int 2 ) ])
-                    |> Result.map (\_ -> Proto.Duration.fromMilliseconds 0)
+                    |> Result.map (\_ -> Proto.Duration.fromMillis 0)
                 ]
                     |> List.map
                         (\result ->

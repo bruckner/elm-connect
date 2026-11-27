@@ -134,20 +134,43 @@ struct Leaf<'p> {
 enum Text {
     Same,
     Fn(Expr),
+    /// A function to `Maybe String`: the type's own printer, which has no
+    /// text for a value that is not valid. Such a value prints as an unset
+    /// one does.
+    Partial(Expr),
 }
 
 impl Text {
+    /// The text of a value.
     fn apply(&self, value: Expr) -> Expr {
         match self {
             Text::Same => value,
             Text::Fn(f) => super::call(f.clone(), [value]),
+            Text::Partial(f) => apply(
+                qualified("Maybe", "withDefault"),
+                [string(""), super::call(f.clone(), [value])],
+            ),
         }
     }
 
-    fn function(&self) -> Expr {
+    /// The text of a `Maybe` value, as a `Maybe String`.
+    fn over_maybe(&self, value: Expr) -> Expr {
         match self {
-            Text::Same => qualified("Basics", "identity"),
-            Text::Fn(f) => f.clone(),
+            Text::Same => apply(
+                qualified("Maybe", "map"),
+                [qualified("Basics", "identity"), value],
+            ),
+            Text::Fn(f) => apply(qualified("Maybe", "map"), [f.clone(), value]),
+            Text::Partial(f) => apply(qualified("Maybe", "andThen"), [f.clone(), value]),
+        }
+    }
+
+    /// The function from a value to its text, when every value has one.
+    fn total(&self) -> Option<Expr> {
+        match self {
+            Text::Same => Some(qualified("Basics", "identity")),
+            Text::Fn(f) => Some(f.clone()),
+            Text::Partial(_) => None,
         }
     }
 }
@@ -727,9 +750,9 @@ impl Emitter {
             ValueShape::Present(Present::Timestamp) => {
                 Some(Text::Fn(self.reference(("Proto.Timestamp", "toString"))))
             }
-            ValueShape::Present(Present::Duration) => {
-                Some(Text::Fn(self.reference(("Proto.Duration", "toString"))))
-            }
+            ValueShape::Present(Present::Duration) => Some(Text::Partial(
+                self.reference(("Proto.Duration", "toString")),
+            )),
             _ => None,
         }
     }
@@ -766,10 +789,7 @@ impl Emitter {
             Some(zero) => text.apply(apply(qualified("Maybe", "withDefault"), [zero, read.expr])),
             None => apply(
                 qualified("Maybe", "withDefault"),
-                [
-                    string(""),
-                    apply(qualified("Maybe", "map"), [text.function(), read.expr]),
-                ],
+                [string(""), text.over_maybe(read.expr)],
             ),
         })
     }
@@ -785,17 +805,17 @@ impl Emitter {
             presence,
         } = leaf;
         let text = self.text(value)?;
-        let mapped = |over: &str, values: Expr| match &text {
-            Text::Same => values,
-            Text::Fn(f) => apply(qualified(over, "map"), [f.clone(), values]),
-        };
         if repeated {
             let values = if read.maybe {
                 apply(qualified("Maybe", "withDefault"), [list([]), read.expr])
             } else {
                 read.expr
             };
-            let values = mapped("List", values);
+            let values = match &text {
+                Text::Same => values,
+                Text::Fn(f) => apply(qualified("List", "map"), [f.clone(), values]),
+                Text::Partial(f) => apply(qualified("List", "filterMap"), [f.clone(), values]),
+            };
             return Some(apply(
                 self.reference((PROTO_QUERY, "repeated")),
                 [string(name), values],
@@ -845,12 +865,15 @@ impl Emitter {
                     }
                     (None, _) => apply(
                         self.reference((PROTO_QUERY, "unlessZero")),
-                        [string(name), zero, text.function(), value_expr],
+                        [string(name), zero, text.total()?, value_expr],
                     ),
                 })
             }
             _ if read.maybe => {
-                let values = mapped("Maybe", read.expr);
+                let values = match &text {
+                    Text::Same => read.expr,
+                    _ => text.over_maybe(read.expr),
+                };
                 Some(apply(
                     self.reference((PROTO_QUERY, "optional")),
                     [string(name), values],

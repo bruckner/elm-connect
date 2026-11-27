@@ -50,7 +50,7 @@ suite =
                     |> Expect.equal []
         , test "a nested message's changed fields are named through it, by proto name" <|
             \_ ->
-                noteMask note { note | title = "errands", ttl = Just (Proto.Duration.fromMilliseconds 60000) }
+                noteMask note { note | title = "errands", ttl = Just (Proto.Duration.fromMillis 60000) }
                     |> Expect.equal [ "note.title", "note.ttl" ]
         , test "a field set back to its default is in the mask" <|
             \_ ->

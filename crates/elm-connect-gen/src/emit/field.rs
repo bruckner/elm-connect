@@ -196,7 +196,7 @@ impl Emitter {
                     ty(self.core("String"), [])
                 };
                 let value = self.value_type(value);
-                self.exposed_type(CORE_DICT, "Dict", [key, value])
+                self.dict(key, value)
             }
             FieldShape::BoolMap(value) => ty(
                 self.core("List"),
@@ -456,7 +456,7 @@ impl Emitter {
             ValueShape::Zeroed(Zeroed::Json) => self.library_type(PROTO_VALUE, "Value", []),
             ValueShape::Present(Present::Timestamp) => self.library_type(TIME, "Posix", []),
             ValueShape::Present(Present::Duration) => {
-                self.exposed_type(PROTO_DURATION, "Duration", [])
+                self.library_type(PROTO_DURATION, "Duration", [])
             }
             ValueShape::Present(Present::FieldMask) => {
                 ty(self.core("List"), [ty(self.core("String"), [])])
@@ -464,7 +464,7 @@ impl Emitter {
             ValueShape::Present(Present::Struct) => {
                 let value = self.library_type(PROTO_VALUE, "Value", []);
                 let key = ty(self.core("String"), []);
-                self.exposed_type(CORE_DICT, "Dict", [key, value])
+                self.dict(key, value)
             }
             ValueShape::Present(Present::ListValue) => {
                 let value = self.library_type(PROTO_VALUE, "Value", []);

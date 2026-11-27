@@ -317,7 +317,7 @@ suite =
                     |> Expect.equal (List.repeat 4 ( True, True ))
         , test "the well-known types convert with their own JSON forms" <|
             \_ ->
-                [ Any.pack WellKnown.duration (Duration.fromMilliseconds 1500)
+                [ Any.pack WellKnown.duration (Duration.fromMillis 1500)
                 , Any.pack WellKnown.timestamp (Time.millisToPosix 0)
                 , Any.pack WellKnown.empty ()
                 , Any.pack WellKnown.fieldMask [ "a.b", "c" ]

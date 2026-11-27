@@ -245,6 +245,7 @@ import Proto.Error exposing (Error)
 import Proto.Int64
 import Proto.Internal.Any as InternalAny
 import Proto.Internal.Depth as Depth
+import Proto.Internal.Duration as InternalDuration
 import Proto.Internal.FieldMask as FieldMask
 import Proto.Internal.Percent as Percent
 import Proto.Internal.Registry as InternalRegistry
@@ -2312,14 +2313,6 @@ duration =
             )
 
 
-{-| Encode a `google.protobuf.Duration`; see
-[`Proto.Duration.toString`](Proto-Duration#toString).
--}
-encodeDuration : Duration -> Value
-encodeDuration span =
-    Json.Encode.string (Proto.Duration.toString span)
-
-
 {-| Decode a `google.protobuf.FieldMask` into its paths. proto3 JSON writes a
 mask as one string, the paths joined by commas, each field name in
 lowerCamelCase; the paths come back with proto field names, as a server
@@ -3038,17 +3031,19 @@ writeTimestamp posix =
         Writer.succeed (encodeTimestamp posix)
 
 
-{-| A `google.protobuf.Duration`, refused past protobuf's range.
+{-| A `google.protobuf.Duration`, refused when it is not valid
+([`Proto.Duration.isValid`](Proto-Duration#isValid)): past protobuf's range,
+or with nanoseconds of a second or more or of the other sign than the
+seconds, which only a duration read from protobuf binary can be.
 -}
 writeDuration : Duration -> Encoder Error
 writeDuration held =
-    -- Protobuf's range, ±315,576,000,000 seconds, which only
-    -- Proto.Duration.fromParts can pass.
-    if abs (Proto.Duration.toParts held).seconds <= 315576000000 then
-        Writer.succeed (encodeDuration held)
+    case Proto.Duration.toString held of
+        Just text ->
+            Writer.succeed (Json.Encode.string text)
 
-    else
-        Writer.refuse "google.protobuf.Duration" "the duration is outside -315,576,000,000 to 315,576,000,000 seconds"
+        Nothing ->
+            Writer.refuse "google.protobuf.Duration" (InternalDuration.whyInvalid held)
 
 
 {-| A `google.protobuf.FieldMask`, refused when a path's lowerCamelCase form

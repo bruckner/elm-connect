@@ -105,6 +105,7 @@ import Proto.Error exposing (Reason(..))
 import Proto.Internal.Any as InternalAny exposing (Any)
 import Proto.Internal.Binary as Internal exposing (Failure)
 import Proto.Internal.Depth as Depth
+import Proto.Internal.Duration as InternalDuration
 import Proto.Internal.Unknown as InternalUnknown
 import Proto.Unknown
 import Proto.Value exposing (Value(..))
@@ -1699,6 +1700,34 @@ fixed64 =
     wide 1 fastFixed64 fixed64Read fixed64Write (Just << unsignedText) fromText "0"
 
 
+{-| `int64` as two `Int`s, exact for every value: `( 0, n )` for an `n`
+within ±(2^53 − 1), and past that the upper and the lower 32 bits as read,
+the upper never 0 there.
+-}
+int64Split : Codec ( Int, Int )
+int64Split =
+    wide 0
+        fastVarint64
+        varint64
+        writeVarint64
+        (\((U64 high low) as u) ->
+            case toInt64 u of
+                Just exact ->
+                    Just ( 0, exact )
+
+                Nothing ->
+                    Just ( high, low )
+        )
+        (\( high, low ) ->
+            if high == 0 then
+                fromInt64 low
+
+            else
+                U64 high low
+        )
+        ( 0, 0 )
+
+
 {-| `int64` held as an `Int`, within ±(2^53 − 1).
 -}
 int64AsInt : Codec Int
@@ -2242,35 +2271,47 @@ writeTimestamp posix =
     E.sequence [ implicit int64AsInt 1 seconds, implicit int32 2 ((millis - seconds * 1000) * 1000000) ]
 
 
-{-| `google.protobuf.Duration`, exact. One that arrives twice is merged field
-by field: the seconds or the nanoseconds the later one carries replace the
-earlier one's, and the two are then given one sign as
-[`Proto.Duration.fromParts`](Proto-Duration#fromParts) does.
+{-| `google.protobuf.Duration`, exact: the seconds and nanoseconds are held
+as the wire carries them, neither normalised nor clamped, and written back
+as held, so a duration a peer wrote that is not valid survives a read and a
+write unchanged
+([`Proto.Duration.isValid`](Proto-Duration#isValid) says whether it is).
+One that arrives twice is merged field by field: the seconds or the
+nanoseconds the later one carries replace the earlier one's. Seconds
+outside ±(2^53 − 1), which an Elm `Int` does not hold exactly, are held
+exactly too and written back as read;
+[`Proto.Duration.toSecondsAndNanos`](Proto-Duration#toSecondsAndNanos) gives
+the nearest `Int` for them.
 -}
 duration : Codec Duration
 duration =
-    embedded writeDuration durationInto (Proto.Duration.fromParts 0 0)
+    embedded writeDuration durationInto (InternalDuration.Duration { seconds = 0, nanos = 0, wideHigh = 0 })
 
 
 durationInto : Duration -> Decoder Duration
 durationInto existing =
-    let
-        parts =
-            Proto.Duration.toParts existing
-    in
-    wellKnown "google.protobuf.Duration"
-        ( parts.seconds, parts.nanos )
-        partsStep
-        (\( seconds, nanos ) -> Proto.Duration.fromParts seconds nanos)
+    wellKnown "google.protobuf.Duration" existing durationStep identity
+
+
+{-| A `Duration`'s fields: `seconds` (1), all 64 bits of them, and `nanos`
+(2).
+-}
+durationStep : Int -> Int -> Duration -> Field Duration
+durationStep number wire ((InternalDuration.Duration parts) as held) =
+    case number of
+        1 ->
+            field int64Split (\seconds -> InternalDuration.fromWireSeconds seconds held) wire held
+
+        2 ->
+            field int32 (\v -> InternalDuration.Duration { parts | nanos = v }) wire held
+
+        _ ->
+            skip wire held
 
 
 writeDuration : Duration -> Encoder
-writeDuration d =
-    let
-        parts =
-            Proto.Duration.toParts d
-    in
-    E.sequence [ implicit int64AsInt 1 parts.seconds, implicit int32 2 parts.nanos ]
+writeDuration ((InternalDuration.Duration parts) as held) =
+    E.sequence [ implicit int64Split 1 (InternalDuration.wireSeconds held), implicit int32 2 parts.nanos ]
 
 
 {-| `google.protobuf.FieldMask` as its paths, proto field names as the

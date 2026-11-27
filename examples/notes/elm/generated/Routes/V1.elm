@@ -17,7 +17,7 @@ import Json.Decode
 import Json.Encode
 import Proto.Binary
 import Proto.Descriptors
-import Proto.Duration exposing (Duration)
+import Proto.Duration
 import Proto.Enum
 import Proto.Error
 import Proto.Json
@@ -163,7 +163,7 @@ type alias Everything =
     , maybeCount : Maybe Int
     , maybeName : Maybe String
     , at : Maybe Time.Posix
-    , wait : Maybe Duration
+    , wait : Maybe Proto.Duration.Duration
     , mask : Maybe (List String)
     , limit : Maybe Int
     , label : Maybe String
@@ -2237,7 +2237,7 @@ queryOfEverything request_ =
         , Proto.Query.optional "maybe_count" (Maybe.map String.fromInt request_.maybeCount)
         , Proto.Query.optional "maybe_name" request_.maybeName
         , Proto.Query.optional "at" (Maybe.map Proto.Timestamp.toString request_.at)
-        , Proto.Query.optional "wait" (Maybe.map Proto.Duration.toString request_.wait)
+        , Proto.Query.optional "wait" (Maybe.andThen Proto.Duration.toString request_.wait)
         , Proto.Query.optional "mask" (Maybe.map Proto.Route.fieldMaskText request_.mask)
         , Proto.Query.optional "limit" (Maybe.map String.fromInt request_.limit)
         , Proto.Query.optional "label" request_.label

@@ -432,14 +432,14 @@ durationProperties =
                             ""
                 in
                 Proto.Duration.toString d.value
-                    |> Expect.equal (sign ++ String.fromInt d.seconds ++ fraction ++ "s")
+                    |> Expect.equal (Just (sign ++ String.fromInt d.seconds ++ fraction ++ "s"))
         , fuzz Fuzzers.duration "milliseconds are those of the seconds and nanoseconds, toward zero" <|
             \d ->
                 let
                     magnitude =
                         d.seconds * 1000 + d.nanos // 1000000
                 in
-                Proto.Duration.toMilliseconds d.value
+                Proto.Duration.toMillis d.value
                     |> Expect.equal
                         (if d.negative then
                             negate magnitude
@@ -447,8 +447,8 @@ durationProperties =
                          else
                             magnitude
                         )
-        , fuzz (Fuzz.map (\ms -> ms // 1000) Fuzzers.safeInt) "fromMilliseconds and toMilliseconds round-trip" <|
-            \ms -> Proto.Duration.toMilliseconds (Proto.Duration.fromMilliseconds ms) |> Expect.equal ms
+        , fuzz (Fuzz.map (\ms -> ms // 1000) Fuzzers.safeInt) "fromMillis and toMillis round-trip" <|
+            \ms -> Proto.Duration.toMillis (Proto.Duration.fromMillis ms) |> Expect.equal ms
         , fuzz2 Fuzz.bool (Fuzz.intRange 1 1000000) "past ±315,576,000,000 s it is refused" <|
             \negative extra ->
                 Proto.Duration.fromString

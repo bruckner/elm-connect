@@ -41,7 +41,7 @@ suite =
             \_ ->
                 [ check WellKnown.empty ()
                 , check WellKnown.timestamp (Time.millisToPosix 1500)
-                , check WellKnown.duration (Duration.fromMilliseconds 1500)
+                , check WellKnown.duration (Duration.fromMillis 1500)
                 , check WellKnown.fieldMask [ "a.b" ]
                 , check WellKnown.struct (Dict.fromList [ ( "k", Proto.Value.ValueString "v" ) ])
                 , check WellKnown.listValue [ Proto.Value.ValueString "v" ]
@@ -108,7 +108,7 @@ suite =
             \_ ->
                 [ Any.pack WellKnown.empty ()
                 , Any.pack WellKnown.timestamp (Time.millisToPosix 1500)
-                , Any.pack WellKnown.duration (Duration.fromMilliseconds 1500)
+                , Any.pack WellKnown.duration (Duration.fromMillis 1500)
                 , Any.pack WellKnown.fieldMask [ "display_name", "author.email" ]
                 , Any.pack WellKnown.int64ValueAsInt 7
                 ]

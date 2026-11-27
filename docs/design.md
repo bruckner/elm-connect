@@ -350,6 +350,8 @@ rpc shared call =
   read by `Rpc`; `Rpc.Internal.Retry`; `Proto.Internal.Binding`, built by
   `Proto.Http` and read by `Proto.Internal.Interpret`, the interpreter
   `Proto.Method.withBindings` reaches; `Proto.Internal.Any`;
+  `Proto.Internal.Duration`, which the binary reader builds and the
+  JSON writer and `Proto.Route` print, §3.5;
   `Proto.Internal.Method` and `Proto.Internal.Message`, the unions
   `Proto.Method.Method` and `Proto.Message.Message` alias, §8.3;
   `Proto.Internal.Binary`, the decoder type `Proto.Binary` aliases and
@@ -1187,7 +1189,7 @@ The runtime provides the Elm types.
 | proto | Elm | notes |
 |---|---|---|
 | `google.protobuf.Timestamp` | `Time.Posix` | RFC 3339 parse/print in the runtime; no third-party date package |
-| `google.protobuf.Duration` | `Proto.Duration` (opaque; `toSeconds : Duration -> Float`) | Elm has no duration type; `"1.5s"` on the wire |
+| `google.protobuf.Duration` | `Proto.Duration.Duration` (opaque: seconds and nanoseconds) | Elm has no duration type; `"1.5s"` on the wire |
 | `google.protobuf.FieldMask` | `List String` | comma-separated on the wire |
 | `google.protobuf.Empty` | `()`, without presence | see below |
 | `google.protobuf.Struct` | `Dict String Proto.Value.Value` | a JSON object; see below |
@@ -1200,11 +1202,87 @@ The runtime provides the Elm types.
 The runtime package is required anyway (§5), so the RFC 3339 parser
 lives there and a `Timestamp` is a `Time.Posix`, not a `String`.
 
+#### Representation and validity
+
+The well-known types follow these rules (decisions.md: "Well-known
+types: validity by source"). The opaque types they cover so far:
+`Duration`. `Timestamp` is still a `Time.Posix`, which holds
+milliseconds (below).
+
+1. **Representation.** Elm's own type where it is lossless and its `==`
+   is exact (the wrappers as `Maybe`, `Empty` and `NullValue` as `()`);
+   an opaque runtime type where the proto states an invariant
+   (`Duration`, `Any`); an exposed union where the proto is a choice of
+   kinds (`Value`).
+2. **Lossless.** Every valid value survives both codecs exactly. A
+   lossy view is a function that says what it drops (`toSeconds`,
+   `toMillis`).
+3. **Validity depends on where a value comes from and where it goes.**
+   - Built by the application: always valid. No public function gives
+     an invalid value. The builders from Elm values (`fromSeconds`,
+     `fromMillis`) are total and clamp to protobuf's range; the exact
+     two-part builder (`fromSecondsAndNanos`) returns a `Maybe`; text
+     parses to a `Maybe` (`fromString`).
+   - Read from proto3 JSON: as strict as protojson. A value out of
+     range or malformed fails the read.
+   - Read from protobuf binary: tolerant, and held as read. Whatever
+     fields the wire carries are kept, neither normalised (no peer
+     normalises them) nor clamped. The constructor that can hold such a
+     value is internal to the package.
+   - Written to proto3 JSON: refused (`Proto.Error.BadValue`, §5.4) when
+     the value is not valid, as protojson refuses it. Only JSON writes
+     refuse.
+   - Written to protobuf binary: total, as held.
+4. **Where normalising happens** (the nanoseconds carried into the
+   seconds and both parts given one sign): the application's builders;
+   arithmetic, when there is any; the lossy views, which normalise, then
+   clamp to the range, then convert; and one explicit function,
+   `normalize`, which carries and fixes the sign but does not clamp, so
+   a value whose seconds end up out of range stays invalid and
+   `isValid` still says so.
+5. **Consequences.** Two values read from binary that mean the same
+   span but were written differently are not `==`; `normalize` makes
+   them `==`. Every value the application built or read from JSON is
+   valid and in normal form, so `==` is exact among those. `toString`
+   gives a `Maybe`, `Nothing` for a value that is not valid. The types
+   give no order, `comparable` key or arithmetic: each would have to say
+   what a value that is not valid means, which is the application's to
+   say, over the fields `toSecondsAndNanos` gives.
+   Seconds outside ±(2^53 − 1), which an Elm `Int` does not hold
+   exactly, are held exactly all the same: the internal record's third
+   field, `wideHigh`, is 0 for seconds an `Int` holds and otherwise
+   their upper 32 bits, with `seconds` the lower 32, as the binary
+   reader read them; only the internal module knows that encoding. The
+   read does not fail, a write gives the same bytes and `==` stays
+   exact. Such a value is never valid; `toSecondsAndNanos` gives the
+   nearest `Int`, the lossy views clamp by sign, and `normalize` gives
+   it back as it is.
+6. **Vocabulary.** `fromX` and `toX` for conversions;
+   `fromString : String -> Maybe T`; one module per type; the JSON
+   codecs in `Proto.Json`, the decoder under the type's noun and the
+   encoder `write` and the noun (`duration`, `writeDuration`), the
+   binary codec in `Proto.Binary`, the typed value in `Proto.WellKnown`.
+   Generated code writes every runtime type qualified
+   (`Proto.Duration.Duration`, `Proto.Any.Any`, `Proto.Value.Value`) and
+   imports no runtime module exposing a name, so no runtime type
+   reserves a name in a generated module (§3.7).
+7. **No generator option** changes these types.
+
+Each opaque type is defined in an internal module
+(`Proto.Internal.Duration`) that exposes its constructor to the package,
+for the binary reader; the public module aliases it, as `Proto.Any.Any`
+aliases `Proto.Internal.Any.Any`, and exposes no way to reach an invalid
+value. Each type has one printer, its `toString`, which gives `Nothing`
+for a value that is not valid: the JSON encoder writes its `Just` and
+refuses on `Nothing`, with the reason the internal module gives
+(`whyInvalid`), and a route's path and query (§4) print with it too, a
+value that is not valid printing as an unset one does.
+
 In detail:
 
 - A field of `Timestamp`, `Duration` or `FieldMask` is a message
   field, so a singular one is a `Maybe` (§3.2): `Maybe Time.Posix`,
-  `Maybe Duration`, `Maybe (List String)`.
+  `Maybe Proto.Duration.Duration`, `Maybe (List String)`.
 - `Empty` carries nothing, presence included. A singular
   field of it, `optional` or not, is `()`: encoded as `{}` always,
   decoded as `()` whether the key holds an object, holds `null` or is
@@ -1310,24 +1388,29 @@ In detail:
   (`23:59:60`), which proto3 JSON parsers must accept, is read as
   `23:59:59` with its fraction. The `T` and the `Z` are uppercase only:
   RFC 3339 allows `t` and `z`, proto3 JSON does not.
-- `Duration` (`Proto.Duration`, opaque): held exactly, as seconds and
-  nanoseconds like protobuf, rather than as a `Float` of seconds. The
-  `Float` views (`fromSeconds`, `toSeconds`) are exact to the nanosecond
-  only below 2^53 ns (about 104 days); `fromMilliseconds` and
-  `toMilliseconds` are exact. Printed with 0, 3, 6 or 9 fractional
-  digits, the fewest that keep every nanosecond, as protobuf does;
-  `-0s` reads as zero and prints `0s`. `fromParts` and `toParts` take
-  and give the two parts as protobuf's binary form carries them, both
-  with the duration's sign. The range is protobuf's,
-  ±315,576,000,000 s. `fromString` refuses a duration past it;
-  `fromSeconds` and `fromMilliseconds` give the limit for one past it
-  (nanoseconds zero), and `fromSeconds` gives zero for NaN and the
-  infinities, so every `Duration` prints as text `fromString` reads.
-  The readers are `toSeconds` and
-  `toMilliseconds`, as `Proto.Int64.toInt` and `Proto.Bytes.toBase64`
-  are, and not the nouns `seconds` and `milliseconds`: elm-units names
-  its constructor `Duration.seconds`, so the noun would read as the
-  opposite conversion.
+- `Duration` (`Proto.Duration`, opaque, under the rules above): held
+  exactly, as seconds and nanoseconds like protobuf, rather than as a
+  `Float` of seconds. The range is protobuf's, ±315,576,000,000 s, and
+  a valid duration has nanoseconds below one second of the seconds'
+  sign (`isValid`). `fromSeconds` and `fromMillis` clamp: a value whose
+  whole seconds are past the range gives its limit (nanoseconds zero),
+  and `fromSeconds` gives zero for NaN and the infinities.
+  `fromSecondsAndNanos` normalises and is `Nothing` past the range. At
+  the limit all three keep the nanoseconds, as protobuf and `fromString`
+  do: a valid duration is never clamped. `toSecondsAndNanos` gives the
+  two fields
+  as held. The `Float` views (`fromSeconds`, `toSeconds`) are exact to
+  the nanosecond only below 2^53 ns (about 104 days); `fromMillis` and
+  `toMillis` are exact. `toString` prints with 0, 3, 6 or 9 fractional
+  digits, the fewest that keep every nanosecond, as protobuf does, and
+  is `Nothing` for a duration that is not valid; `-0s` reads as zero
+  and prints `0s`. There is no order, key or arithmetic on `Duration`,
+  and no plain readers `seconds` and `nanos`. The readers are `toSeconds` and `toMillis`, as
+  `Proto.Int64.toInt` and `Proto.Bytes.toBase64` are, and not the nouns
+  `seconds` and `milliseconds`: elm-units names its constructor
+  `Duration.seconds`, so the noun would read as the opposite conversion.
+  A proto3 JSON write refuses a duration that is not valid, saying
+  whether its range, its nanoseconds or their sign is wrong.
 - `FieldMask`: the Elm list holds paths with proto field names
   (`"author.email_address"`); the wire form joins them with commas and
   writes each field name in lowerCamelCase, as proto3 JSON requires.
@@ -1793,10 +1876,11 @@ case names it):
   uses unqualified (`naming::reserved_name`, `naming_reserved` case). The
   latter are the default imports of elm/core the emitter writes bare
   (`Int`, `Float`, `Bool`, `String`, `List`, `Maybe`, `Just`, `Nothing`,
-  `False`) and the types it imports exposed (`Dict`, `Proto.Duration`'s
-  `Duration`), and the check is of what the module uses: a message
-  `Dict` in a package without a map field compiles and is left alone
-  (`naming_reserved_unused` case), and gains the diagnostic with its
+  `False`) and the one type it imports exposed, elm/core's `Dict`; every
+  runtime type is written qualified (`Proto.Duration.Duration`), so a
+  message named `Duration` compiles. The check is of what the module
+  uses: a message `Dict` in a package without a map field compiles and
+  is left alone (both in the `naming_reserved_unused` case), and gains the diagnostic with its
   first map field. Both are errors, not warnings, as the output would
   not compile. A module that compiles but is a risk to the application,
   one inside the runtime's namespaces or one an elm/* package an
@@ -2515,8 +2599,14 @@ binding whose rule names a `response_body`:
   when unset) and checks it with `Proto.Route.checkSegment` or
   `checkSegments`; a value's text is its proto3 JSON text (a string as
   it is, `String.fromInt`, `Proto.Route.boolText`, an enum or float by
-  its encoder through `Proto.Route.viaJson`, a timestamp or duration by
-  `Proto.Timestamp.toString` and `Proto.Duration.toString`, `bytes` held
+  its encoder through `Proto.Route.viaJson`, a timestamp by
+  `Proto.Timestamp.toString`, a duration by `Proto.Duration.toString`,
+  which has no text for one that is not valid: the route then has what
+  it has for an unset one (an empty path value, no query parameter; a
+  repeated query parameter leaves that element out, by
+  `List.filterMap`; the `routes_well_known_path` case pins both), and a
+  request over JSON holding one is refused before its route is built
+  (§3.5), `bytes` held
   as `Bytes` by `Proto.Route.bytesText`, base64 in the URL-safe alphabet,
   padded, the one alphabet every transcoder reads in a path; §5.3). A path
   through a message on a recursion cycle reads through its wrapper. The
@@ -4104,8 +4194,8 @@ Connect's proto codec sends them (§5.3).
   (`insertBool` for a `bool`-keyed map). The well-known types held as
   Elm values merge as protobuf-go merges their messages: a `Timestamp`
   or a `Duration` field by field, its seconds or nanoseconds replacing
-  the earlier one's (a `Duration` then given one sign, as
-  `Proto.Duration.fromParts` does); a wrapper's value replaces the
+  the earlier one's (a `Duration` held as merged, not normalised,
+  §3.5); a wrapper's value replaces the
   earlier one when present; a `Struct`'s members joined, a member of
   the same name replacing; a `ListValue`'s elements and a `FieldMask`'s
   paths appended; a `Value` replaced unless both hold an object or both
@@ -5318,9 +5408,10 @@ unpublish, only yank: a published version stays.
 Two questions are open. The settled ones are recorded with their
 reasons in [decisions.md](decisions.md).
 
-- **Qualifying library names in an affected module.** A type or
-  constructor named like one its module uses unqualified is
-  `naming::reserved_name` (§3.8). Qualifying the library names in that
+- **Qualifying elm/core's names in an affected module.** A type or
+  constructor named like one of elm/core's that its module uses
+  unqualified is `naming::reserved_name` (§3.8); the runtime's types
+  are always written qualified. Qualifying the library names in that
   module would generate working code instead, but it makes a module's
   text depend on what its package declares, and a `rename` already gets
   past the clash.

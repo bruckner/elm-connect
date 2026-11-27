@@ -17,7 +17,7 @@ import Json.Decode
 import Json.Encode
 import Proto.Binary
 import Proto.Descriptors
-import Proto.Duration exposing (Duration)
+import Proto.Duration
 import Proto.Error
 import Proto.Json
 import Proto.Message
@@ -82,7 +82,7 @@ elmConnectVersion_ =
 -}
 type alias Event =
     { createdAt : Maybe Time.Posix
-    , timeout : Maybe Duration
+    , timeout : Maybe Proto.Duration.Duration
     , updateMask : Maybe (List String)
     , marker : ()
     , metadata : Maybe (Dict String Proto.Value.Value)
@@ -98,7 +98,7 @@ type alias Event =
     , nickname : Maybe String
     , avatar : Maybe String
     , history : List Time.Posix
-    , limits : Dict String Duration
+    , limits : Dict String Proto.Duration.Duration
     , values : List Proto.Value.Value
     , counts : List Int
     , acked : ()
@@ -130,7 +130,7 @@ type alias Event =
 type EventWhen
     = EventWhenUnset
     | EventWhenAt Time.Posix
-    | EventWhenAfter Duration
+    | EventWhenAfter Proto.Duration.Duration
     | EventWhenWhenever Proto.Value.Value
     | EventWhenSchedule (Dict String Proto.Value.Value)
     | EventWhenDates (List Proto.Value.Value)

@@ -9,6 +9,7 @@ module Clock.V1.Clock exposing (..)
 
 import Clock.V1
 import Clock.V1.Moment
+import Clock.V1.Pauses
 import Json.Encode
 import Proto.Duration
 import Proto.Http
@@ -111,6 +112,26 @@ waitMoment =
         )
 
 
+{-| `rpc ListPauses(Pauses) returns (Pauses)`.
+Connect: `POST /clock.v1.Clock/ListPauses`.
+Transcode: `GET /v1/pauses`.
+
+Codecs: JSON and protobuf binary. Described by [`descriptorListPauses`](#descriptorListPauses).
+
+-}
+listPauses : Clock.V1.Pauses -> Rpc.Call codec Clock.V1.Pauses Clock.V1.Pauses
+listPauses =
+    Rpc.call
+        (Proto.Method.init "clock.v1.Clock"
+            "ListPauses"
+            Clock.V1.encodePauses
+            (\_ -> Clock.V1.decodePauses)
+            Clock.V1.encodePausesBytes
+            Clock.V1.decodePausesBytes
+            |> Proto.Method.withRoutes [ routeListPauses0 ]
+        )
+
+
 
 -- ROUTES
 
@@ -183,13 +204,25 @@ routeWaitMoment0 : Clock.V1.Moment -> Json.Encode.Value -> Proto.Route.Route
 routeWaitMoment0 request_ json_ =
     let
         wait_ =
-            Maybe.withDefault "" (Maybe.map Proto.Duration.toString request_.wait)
+            Maybe.withDefault "" (Maybe.andThen Proto.Duration.toString request_.wait)
     in
     { method = "POST"
     , path = "v1/wait/" ++ Proto.Route.segment wait_
     , query = []
     , body = Just (Proto.Route.without [ [ "wait" ] ] json_)
     , invalid = Proto.Route.checkSegment "wait" "*" wait_
+    }
+
+
+{-| The route of [`listPauses`](#listPauses) over binding 0: `GET /v1/pauses`.
+-}
+routeListPauses0 : Clock.V1.Pauses -> Proto.Route.Route
+routeListPauses0 request_ =
+    { method = "GET"
+    , path = "v1/pauses"
+    , query = Clock.V1.queryOfPauses request_
+    , body = Nothing
+    , invalid = Nothing
     }
 
 
@@ -327,5 +360,31 @@ descriptorWaitMoment =
             , body = Proto.Http.wholeBody
             , responseBody = Nothing
             , query = []
+            }
+        ]
+
+
+{-| `rpc ListPauses(Pauses) returns (Pauses)`
+-}
+descriptorListPauses : Proto.Method.Descriptor
+descriptorListPauses =
+    Proto.Method.descriptor "clock.v1.Clock"
+        "ListPauses"
+        Proto.Method.IdempotencyUnknown
+        "clock.v1.Pauses"
+        "clock.v1.Pauses"
+        [ Proto.Http.binding
+            { method = "GET"
+            , path =
+                [ Proto.Http.literal "v1"
+                , Proto.Http.literal "pauses"
+                ]
+            , customVerb = Nothing
+            , body = Proto.Http.noBody
+            , responseBody = Nothing
+            , query =
+                [ Proto.Http.param [ Clock.V1.Pauses.wait ]
+                , Proto.Http.param [ Clock.V1.Pauses.waits ]
+                ]
             }
         ]

@@ -2,6 +2,8 @@ syntax = "proto3";
 
 package unused.v1;
 
+import "google/protobuf/duration.proto";
+
 // Names of elm/core types and constructors that this module's code does
 // not use unqualified: no field is a map, so `Dict` is free, and `Result`,
 // `Order`, `Never`, `Cmd`, `True` and `Char` are never used. Each compiles.
@@ -13,6 +15,12 @@ message Result {
   bool ok = 1;
   Dict dict = 2;
   repeated Char chars = 3;
+}
+
+// A runtime type's name compiles too, beside a field of that type: generated
+// code writes every runtime type qualified (`Proto.Duration.Duration`).
+message Duration {
+  google.protobuf.Duration length = 1;
 }
 
 message Order {}

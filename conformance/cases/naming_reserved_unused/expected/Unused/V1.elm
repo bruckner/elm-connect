@@ -9,7 +9,9 @@ import Json.Decode
 import Json.Encode
 import Proto.Binary
 import Proto.Descriptors
+import Proto.Duration
 import Proto.Enum
+import Proto.Error
 import Proto.Json
 import Proto.Message
 import Proto.Registry
@@ -18,6 +20,7 @@ import Proto.WellKnown
 import Unused.V1.Char
 import Unused.V1.Cmd
 import Unused.V1.Dict
+import Unused.V1.Duration
 import Unused.V1.Never
 import Unused.V1.Order
 import Unused.V1.Result
@@ -74,6 +77,19 @@ type alias Result =
     }
 
 
+{-| A runtime type's name compiles too, beside a field of that type: generated
+code writes every runtime type qualified (`Proto.Duration.Duration`).
+
+[`message unused.v1.Duration`](Unused-V1-Duration#descriptor)
+
+  - [`length`](Unused-V1-Duration#length)
+
+-}
+type alias Duration =
+    { length : Maybe Proto.Duration.Duration
+    }
+
+
 {-| [`message unused.v1.Order`](Unused-V1-Order#descriptor)
 -}
 type alias Order =
@@ -117,6 +133,14 @@ defaultResult =
     { ok = False
     , dict = Nothing
     , chars = []
+    }
+
+
+{-| A [`Duration`](#Duration) with every field at its default and every oneof unset.
+-}
+defaultDuration : Duration
+defaultDuration =
+    { length = Nothing
     }
 
 
@@ -173,6 +197,13 @@ messageResult =
     Proto.Message.init "unused.v1.Result" encodeResult decodeResult encodeResultBytes decodeResultBytes
 
 
+{-| The typed value of [`Duration`](#Duration): its full name and codecs.
+-}
+messageDuration : Proto.Message.Message Duration
+messageDuration =
+    Proto.Message.init "unused.v1.Duration" encodeDuration decodeDuration encodeDurationBytes decodeDurationBytes
+
+
 {-| The typed value of [`Order`](#Order): its full name and codecs.
 -}
 messageOrder : Proto.Message.Message Order
@@ -213,6 +244,7 @@ descriptors =
         (Proto.Descriptors.fromDescriptors
             [ Unused.V1.Dict.descriptor
             , Unused.V1.Result.descriptor
+            , Unused.V1.Duration.descriptor
             , Unused.V1.Order.descriptor
             , Unused.V1.Never.descriptor
             , Unused.V1.Cmd.descriptor
@@ -231,6 +263,7 @@ registry =
     Proto.Registry.empty
         |> Proto.Registry.register messageDict
         |> Proto.Registry.register messageResult
+        |> Proto.Registry.register messageDuration
         |> Proto.Registry.register messageOrder
         |> Proto.Registry.register messageNever
         |> Proto.Registry.register messageCmd
@@ -275,6 +308,17 @@ encodeResult value =
             , ( "chars", Proto.Json.repeatedField encodeChar value.chars )
             ]
         )
+
+
+{-| Encodes a [`Duration`](#Duration) as proto3 JSON, or fails if the input contains a bad value.
+-}
+encodeDuration : Duration -> Proto.Json.Encoder Proto.Error.Error
+encodeDuration value =
+    Proto.Json.writeObject
+        [ Proto.Json.checkedFields
+            [ ( "length", Proto.Json.writeOptional Proto.Json.writeDuration value.length )
+            ]
+        ]
 
 
 {-| Encodes an [`Order`](#Order) as proto3 JSON.
@@ -342,6 +386,16 @@ decodeResult =
         )
 
 
+{-| Decodes a [`Duration`](#Duration) from proto3 JSON.
+-}
+decodeDuration : Json.Decode.Decoder Duration
+decodeDuration =
+    Proto.Json.message
+        (Json.Decode.succeed Duration
+            |> Proto.Json.messageField "length" Nothing (Json.Decode.map Just Proto.Json.duration)
+        )
+
+
 {-| Decodes an [`Order`](#Order) from proto3 JSON.
 -}
 decodeOrder : Json.Decode.Decoder Order
@@ -403,6 +457,15 @@ encodeResultBytes value =
         [ Proto.Binary.implicit Proto.Binary.bool 1 value.ok
         , Proto.Binary.optional (Proto.Binary.embedded encodeDictBytes mergeDictBytes defaultDict) 2 value.dict
         , Proto.Binary.list (Proto.Binary.enum encodeCharBytes decodeCharBytes) 3 value.chars
+        ]
+
+
+{-| Encodes a [`Duration`](#Duration) as protobuf binary.
+-}
+encodeDurationBytes : Duration -> Bytes.Encode.Encoder
+encodeDurationBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.optional Proto.Binary.duration 1 value.length
         ]
 
 
@@ -543,6 +606,37 @@ mergeResultBytes =
 decodeResultBytes : Proto.Binary.Decoder Result
 decodeResultBytes =
     mergeResultBytes defaultResult
+
+
+{-| Decodes a [`Duration`](#Duration) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergeDurationBytes : Duration -> Proto.Binary.Decoder Duration
+mergeDurationBytes =
+    Proto.Binary.merge
+        "unused.v1.Duration"
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.duration
+                        (\v ->
+                            { length = Just v
+                            }
+                        )
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        identity
+
+
+{-| Decodes a [`Duration`](#Duration) from protobuf binary.
+-}
+decodeDurationBytes : Proto.Binary.Decoder Duration
+decodeDurationBytes =
+    mergeDurationBytes defaultDuration
 
 
 {-| Decodes an [`Order`](#Order) from protobuf binary into the one given, as protobuf merges a message that arrives twice.

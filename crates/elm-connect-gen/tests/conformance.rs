@@ -349,6 +349,28 @@ fn formatted() {
     );
 }
 
+/// No expected module imports a runtime module exposing anything: generated
+/// code writes every runtime type qualified (`Proto.Duration.Duration`), so
+/// that no runtime type reserves a name in a generated module.
+#[test]
+fn runtime_types_are_qualified() {
+    let mut exposing = Vec::new();
+    for (_, path, file) in expected_modules() {
+        let text = fs::read_to_string(&file).expect("read an expected module");
+        for line in text.lines() {
+            let runtime = line.starts_with("import Proto.") || line.starts_with("import Rpc");
+            if runtime && line.contains(" exposing ") {
+                exposing.push(format!("{path}: {line}"));
+            }
+        }
+    }
+    assert!(
+        exposing.is_empty(),
+        "runtime modules imported exposing:\n{}",
+        exposing.join("\n")
+    );
+}
+
 /// The diagnostics mechanism on a throwaway case, for the paths the corpus
 /// never takes: a mismatch fails with a diff, blessing writes the
 /// rendering, a case that generates fails.
