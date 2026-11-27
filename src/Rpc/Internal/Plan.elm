@@ -29,6 +29,7 @@ import Rpc.Error as Error exposing (Error)
 import Rpc.Internal.Call exposing (Call(..))
 import Rpc.Internal.Client exposing (Client(..))
 import Rpc.Internal.Http as Internal
+import Rpc.Internal.Limit as Limit
 import Rpc.Internal.Protocol exposing (GoodText, Protocol(..), Size, Wire(..))
 import Rpc.Internal.Retry as Retry
 import Rpc.Internal.Status as Status
@@ -367,7 +368,7 @@ afterBuilding p sent =
             Just (Error.badCall Code.Internal ("invalid header " ++ Json.Encode.encode 0 (Json.Encode.string name)))
 
         Nothing ->
-            p.tooLarge () |> Maybe.map (Internal.writeTooLargeText >> Error.badCall Code.ResourceExhausted)
+            p.tooLarge () |> Maybe.map (Limit.writeTooLargeText >> Error.badCall Code.ResourceExhausted)
 
 
 {-| The error of a request with no proto3 JSON: a value it holds has no JSON

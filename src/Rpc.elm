@@ -106,6 +106,7 @@ import Rpc.Client
 import Rpc.Error
 import Rpc.Internal.Call
 import Rpc.Internal.Client as Client
+import Rpc.Internal.Envelope as Envelope
 import Rpc.Internal.Http as Internal
 import Rpc.Internal.Plan as Plan exposing (Plan, Reader(..))
 import Rpc.Internal.Retry
@@ -482,7 +483,7 @@ prefixed `Grpc-Trailer-`, which stays a header.
 -}
 splitTrailers : Dict String String -> { headers : Dict String String, trailers : Dict String String }
 splitTrailers =
-    Internal.splitTrailers
+    Envelope.splitTrailers
 
 
 {-| Send a request in place of the one a call would send, and read the answer
@@ -554,7 +555,7 @@ attempt (Client.Client _ _ policy _) c plan checked =
                     Internal.task
                         (case plan.reader of
                             TextReader read ->
-                                Http.stringResolver (\answer -> Ok ( Internal.metadataOf answer, read answer ))
+                                Http.stringResolver (\answer -> Ok ( Envelope.metadataOf answer, read answer ))
 
                             BytesReader read ->
                                 Http.bytesResolver (read >> Ok)

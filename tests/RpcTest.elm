@@ -31,7 +31,9 @@ import Rpc.Client
 import Rpc.Code exposing (Code(..))
 import Rpc.Error exposing (Cause(..), Error, Source(..))
 import Rpc.Internal.Call
+import Rpc.Internal.Envelope
 import Rpc.Internal.Http
+import Rpc.Internal.Limit
 import Rpc.Internal.Plan
 import Rpc.Internal.Retry as Retry
 import Rpc.Internal.Status
@@ -1563,11 +1565,11 @@ receiveLimits =
         [ test "UTF-8 lengths: one to four bytes a character" <|
             \_ ->
                 [ "", "a", "é", "€", "😀", "a😀é" ]
-                    |> List.map Rpc.Internal.Http.utf8Length
+                    |> List.map Rpc.Internal.Limit.utf8Length
                     |> Expect.equal [ 0, 1, 2, 3, 4, 7 ]
         , test "a multi-megabyte body is counted without exhausting the stack" <|
             \_ ->
-                Rpc.Internal.Http.utf8Length (String.repeat 1000000 "aé€😀")
+                Rpc.Internal.Limit.utf8Length (String.repeat 1000000 "aé€😀")
                     |> Expect.equal 10000000
         , test "a body at the limit is read, one byte over is refused with both sizes" <|
             \_ ->
@@ -1985,7 +1987,7 @@ trailers =
 
         -- How taskTraced fills a Trace's headers and trailers from an answer.
         traceMetadata answer =
-            Rpc.Internal.Http.metadataOf answer
+            Rpc.Internal.Envelope.metadataOf answer
                 |> Maybe.map (.headers >> Rpc.splitTrailers)
     in
     describe "headers and trailers"

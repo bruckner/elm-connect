@@ -13,7 +13,7 @@ import Rpc.Call
 import Rpc.Code exposing (Code)
 import Rpc.Error as Error exposing (Error)
 import Rpc.Internal.Call exposing (Call)
-import Rpc.Internal.Http as Internal
+import Rpc.Internal.Envelope as Envelope
 import Rpc.Internal.Plan exposing (Plan)
 import Rpc.Internal.Protocol exposing (Protocol(..))
 import Rpc.Internal.Retry exposing (Outcome)
@@ -49,7 +49,7 @@ init (Protocol p _) c plan sent outcome duration =
     let
         metadata =
             outcome.metadata
-                |> Maybe.map (.headers >> Internal.splitTrailers)
+                |> Maybe.map (.headers >> Envelope.splitTrailers)
                 |> Maybe.withDefault { headers = Dict.empty, trailers = Dict.empty }
     in
     Trace

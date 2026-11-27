@@ -14,7 +14,8 @@ import Proto.Route exposing (Route)
 import Rpc.Body as Body
 import Rpc.Error exposing (Error)
 import Rpc.Internal.Connect as Connect
-import Rpc.Internal.Http as Internal
+import Rpc.Internal.Envelope as Envelope
+import Rpc.Internal.Limit as Limit
 import Rpc.Internal.Protocol exposing (GoodText, Options, Settings, Size)
 import Rpc.Internal.Status as Status
 import Rpc.Request exposing (Request)
@@ -33,7 +34,7 @@ transcode options settings route json =
     case route of
         Just r ->
             { method = r.method
-            , url = Internal.trimSlash settings.baseUrl ++ "/" ++ r.path ++ query r.query
+            , url = Envelope.trimSlash settings.baseUrl ++ "/" ++ r.path ++ query r.query
             , headers = settings.headers
             , body =
                 case r.body of
@@ -76,7 +77,7 @@ transcodeTimeout routed =
         Nothing
 
     else
-        Just ( "Connect-Timeout-Ms", Internal.timeoutMs )
+        Just ( "Connect-Timeout-Ms", Envelope.timeoutMs )
 
 
 
@@ -87,7 +88,7 @@ transcodeTimeout routed =
 -}
 transcodeMessage : (Options -> String -> Maybe Size) -> Options -> Maybe String -> Http.Response String -> Result Error GoodText
 transcodeMessage overRead options responseBody answer =
-    transcodeRead responseBody answer |> Result.andThen (Internal.withinText overRead options)
+    transcodeRead responseBody answer |> Result.andThen (Limit.withinText overRead options)
 
 
 {-| Transcoding's: success is any 2xx, an empty body reading as `{}`, and the

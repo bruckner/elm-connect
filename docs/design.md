@@ -357,7 +357,8 @@ rpc shared call =
   or implementation kept out of the public modules so that they read as
   API (`Rpc.Internal.Http`, the elm/http adapter; `Rpc.Internal.Plan`,
   the protocols' `Rpc.Internal.Connect`, `Rpc.Internal.Transcode` and
-  `Rpc.Internal.GrpcWeb`, and `Rpc.Internal.Status`, §5.2;
+  `Rpc.Internal.GrpcWeb`, and `Rpc.Internal.Status`,
+  `Rpc.Internal.Envelope` and `Rpc.Internal.Limit`, §5.2;
   `Proto.Internal.Percent`, the percent-encoding `Proto.Route` and the
   protocols share, under `Proto` so that the route helpers reach no
   `Rpc` module, rule 7). A type one
@@ -3055,9 +3056,15 @@ body, a `google.rpc.Status` body, gRPC status headers or trailers);
 `Rpc.Internal.Protocol` holds the types alone. `Rpc.Internal.Retry`
 holds the policy math and the attempt loop, and `Rpc.Internal.Http` is
 the elm/http adapter, with the checks that decide whether a request can
-be sent and what more than one protocol shares (the timeout header's
-milliseconds, the base URL's trailing slash, the binary protocols'
-`width` and `base64`, and both limit families: the write limits checked
+be sent. `Rpc.Internal.Envelope` holds what more than one protocol
+shares around a message: a procedure's URL, the timeout header's
+milliseconds, the binary protocols' `encode` and `base64`, an answer's
+metadata, its headers apart from its trailers, and what a 200's content
+type makes of it. It imports no protocol's module and not `Status`, so
+each of those imports it and none imports another for a helper;
+transcoding alone imports `Connect`, for the POST of its implicit
+route. `Rpc.Internal.Limit` holds both limit families, with the binary
+protocols' `width` and `encodedWidth` (the write limits checked
 before a request is sent, the read limits a successful answer is checked
 against before it is decoded). The data modules, which generated code
 calls whatever the protocol, are the codecs (`Proto.Json`,
