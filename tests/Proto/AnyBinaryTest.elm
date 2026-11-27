@@ -9,7 +9,7 @@ import Proto.Binary
 import Proto.Bytes
 import Proto.Error exposing (Error(..), Reason(..))
 import Proto.Json
-import Proto.Message as Message exposing (Message)
+import Proto.Message exposing (Message)
 import Proto.Registry as Registry exposing (Registry)
 import Proto.WellKnown as WellKnown
 import Test exposing (Test, describe, test)

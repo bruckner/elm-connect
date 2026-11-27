@@ -8,7 +8,7 @@ holds nothing a URL may not. The route fixtures (`RouteFixturesTest`) and the
 route properties (`RoutePropertiesTest`) pin exact requests.
 -}
 
-import Expect exposing (Expectation)
+import Expect
 import Fuzz exposing (Fuzzer)
 import Fuzzers
 import Generated.Routes.Routes.V1 as V1

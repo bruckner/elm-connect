@@ -32,7 +32,7 @@ import Rpc.Body
 import Rpc.Call
 import Rpc.Client
 import Rpc.Code exposing (Code(..))
-import Rpc.Error exposing (Cause(..), Error, Source(..))
+import Rpc.Error exposing (Error, Source(..))
 import Rpc.Internal.Call
 import Rpc.Internal.Envelope
 import Rpc.Internal.Http
@@ -380,7 +380,9 @@ calls =
             getNote { name = "notes/42" }
     in
     describe "calls"
-        [ test "read back" <|
+        [ test "cancel is a command of any message type" <|
+            \_ -> cancelGotNote |> always Expect.pass
+        , test "read back" <|
             \_ ->
                 ( ( Rpc.Call.serviceName c, Rpc.Call.methodName c ), ( Rpc.Call.idempotency c, Rpc.Call.requestMessage c ) )
                     |> Expect.equal ( ( "notes.v1.Notes", "GetNote" ), ( Proto.Method.IdempotencyNoSideEffects, { name = "notes/42" } ) )

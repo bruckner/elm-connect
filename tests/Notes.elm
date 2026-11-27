@@ -4,12 +4,9 @@ module Notes exposing
     , binaryOnly
     , both
     , decodeTitle
-    , decodeTitleBytes
     , decodeTitleBytesAs
     , encodeGetNote
     , encodeGetNoteBytes
-    , encodeTitle
-    , encodeTitleBytes
     , jsonOnly
     , over
     , title

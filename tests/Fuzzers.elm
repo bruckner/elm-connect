@@ -3,13 +3,11 @@ module Fuzzers exposing
     , base64
     , base64Like
     , canonicalBase64
-    , deep
     , duration
     , everything
     , fieldMaskPath
     , float
     , getMessageRequest
-    , inner
     , int64Text
     , json
     , kind

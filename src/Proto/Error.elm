@@ -27,7 +27,6 @@ one as `BadBinary`.
 -}
 
 import Json.Decode
-import Json.Encode
 import Proto.Internal.JsonError as JsonError
 
 

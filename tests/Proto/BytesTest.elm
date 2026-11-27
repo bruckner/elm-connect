@@ -10,7 +10,7 @@ directly: each expectation compares their contents as a list of integers.
 import Bytes exposing (Bytes)
 import Bytes.Decode
 import Bytes.Encode
-import Expect exposing (Expectation)
+import Expect
 import Fuzz exposing (Fuzzer)
 import Fuzzers
 import Json.Decode

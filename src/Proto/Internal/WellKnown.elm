@@ -1,24 +1,7 @@
 module Proto.Internal.WellKnown exposing
-    ( any
-    , boolValue
-    , bytesValue
-    , doubleValue
-    , duration
-    , empty
-    , enums
-    , fieldMask
-    , floatValue
-    , int32Value
-    , int64Value
-    , listValue
+    ( enums
     , messages
     , nullValue
-    , stringValue
-    , struct
-    , timestamp
-    , uint32Value
-    , uint64Value
-    , value
     )
 
 {-| The descriptors of the `google.protobuf` types elm-connect maps, as

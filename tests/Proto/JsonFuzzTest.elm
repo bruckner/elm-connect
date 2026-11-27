@@ -8,20 +8,17 @@ leaves out what is at its default. The examples beside it (`JsonTest`) pin
 exact forms and errors.
 -}
 
-import Bytes.Encode
 import Dict
 import Expect exposing (Expectation)
-import Fuzz exposing (Fuzzer)
+import Fuzz
 import Fuzzers
 import Generated.Routes.Routes.V1 as V1
 import Json.Decode exposing (Decoder)
 import Json.Encode exposing (Value)
-import Proto.Binary
 import Proto.Duration
 import Proto.Error
 import Proto.Int64
 import Proto.Json
-import Proto.Route
 import Proto.Timestamp
 import Proto.Value
 import Test exposing (Test, describe, fuzz, fuzz2, test)

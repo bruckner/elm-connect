@@ -1,4 +1,4 @@
-module Proto.BinaryCorpus exposing (Case, Expected(..), Seed(..), cases, input, seedHex)
+module Proto.BinaryCorpus exposing (Case, Expected(..), Seed(..), cases, input)
 
 {-| Binary inputs that fail to decode, and a few that decode, with the
 report each failure must give: 363 inputs.

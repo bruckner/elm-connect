@@ -20,7 +20,6 @@ import Octets exposing (fromHex, toHex)
 import Proto.Any
 import Proto.Binary as B
 import Proto.Bytes
-import Proto.Codec exposing (Proto)
 import Proto.Duration
 import Proto.Error
 import Proto.Internal.Any

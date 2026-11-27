@@ -13,8 +13,7 @@ import Octets exposing (bytesOf)
 import Proto.Any
 import Proto.Bytes
 import Proto.Error
-import Proto.Registry
-import Requests exposing (refusalOf, requestOf)
+import Requests exposing (requestOf)
 import Rpc
 import Rpc.Body
 import Rpc.Client

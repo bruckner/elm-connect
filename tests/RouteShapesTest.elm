@@ -15,7 +15,6 @@ import Dict
 import Expect
 import Generated.Shapes.Blobs.V1 as B
 import Generated.Shapes.Blobs.V1.BlobService as Service
-import Json.Encode
 import Octets exposing (bytesOf)
 import Proto.Any
 import Proto.Binary
@@ -92,13 +91,6 @@ agree label descriptor toCall requests =
             in
             List.map Tuple.first pairs
                 |> Expect.equalLists (List.map Tuple.second pairs)
-
-
-{-| A shown request's method and URL.
--}
-withoutBody : String -> String
-withoutBody shown =
-    String.join " " (List.take 2 (String.words shown))
 
 
 {-| Bytes whose base64 holds neither `+` nor `/`, which the two write alike;

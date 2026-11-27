@@ -1,4 +1,4 @@
-module Replay exposing (Expected, Fixture, fixture, normalize, replay)
+module Replay exposing (Expected, Fixture, fixture, replay)
 
 {-| Replaying the route fixtures (`conformance/routes`) and the route
 properties through the request a call's plan builds over the Transcode

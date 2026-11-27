@@ -17,7 +17,6 @@ import Proto.Field
 import Proto.Http
 import Proto.Message
 import Proto.Method
-import Proto.Registry
 import Proto.Timestamp
 import Proto.Value exposing (Value(..))
 import Rpc
