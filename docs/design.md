@@ -4047,9 +4047,10 @@ Connect's proto codec sends them (§5.3).
   the message's full name and two readers given that length (below),
   so the length stays plumbing and the representation can change
   without touching user code. It is defined in `Proto.Internal.Binary`,
-  since `Proto.Message` holds one and `Proto.Binary` imports
-  `Proto.Message` through `Proto.Json`, and the package site shows the
-  internal name.
+  with what runs one, since `Proto.Message`, `Proto.Any` and
+  `Proto.Registry` hold and run decoders and `Proto.Binary` builds them:
+  each imports that module and none the other side, and the package
+  site shows the internal name.
 - **A decoder reads twice, only when it fails.** `decode : Decoder a ->
   Bytes -> Result Proto.Error.Binary a`. Each decoder holds two readers
   built by the same combinators: a fast one, which reads as protobuf

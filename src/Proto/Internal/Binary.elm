@@ -1,8 +1,13 @@
 module Proto.Internal.Binary exposing (Decoder(..), Failure, crossed, run, runBase64)
 
-{-| The binary decoder type, defined here so that `Proto.Message` can run a
-decoder without importing `Proto.Binary`, which imports it through
-`Proto.Json` and `Proto.Any`.
+{-| The binary decoder type and what runs one, below every module that needs
+them: `Proto.Binary` builds decoders and aliases the type,
+`Proto.Internal.Message` holds a message's, and `Proto.Message`, `Proto.Any`
+and `Proto.Registry` run it (`run`, `runBase64`). Each imports this module, so
+the modules that hold a message's codecs and the wire format's module do not
+import one another. It also keeps what the package needs of a decoder and
+`Proto.Binary` does not expose: the constructor, `Failure`, `crossed` and
+`runBase64`.
 
 A decoder reads twice, only when it must. Its fast reader is what every
 message pays for: it reads as protobuf does and says only whether the bytes
