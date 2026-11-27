@@ -6,8 +6,10 @@ module Proto.Internal.Binding exposing
     , Segment(..)
     )
 
-{-| The HTTP binding types, defined here so that `Rpc` can read what
-`Proto.Http` exposes only to build.
+{-| The HTTP binding types, with their constructors. `Proto.Http` builds them
+and exposes the types alone, so an application builds a binding and cannot
+take one apart; `Proto.Method.withBindings` and the interpreter it calls,
+`Proto.Internal.Interpret`, match them here to make a request's route.
 -}
 
 

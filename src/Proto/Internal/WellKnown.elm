@@ -22,9 +22,10 @@ module Proto.Internal.WellKnown exposing
     )
 
 {-| The descriptors of the `google.protobuf` types elm-connect maps, as
-`descriptor.proto` and the well-known type files declare them. Here rather than
-in `Proto.WellKnown` so that `Proto.Descriptors` can hold them without depending
-on the codecs.
+`descriptor.proto` and the well-known type files declare them. `Proto.WellKnown`
+alone reads them, for its `descriptors` table and its `nullValue`. Each is
+named as its type is, the name `Proto.WellKnown` gives the type's codecs, so
+they are here rather than there, and that module reads as its API.
 -}
 
 import Proto.Enum as Enum
