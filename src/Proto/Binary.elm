@@ -97,8 +97,6 @@ import Bytes exposing (Bytes, Endianness(..))
 import Bytes.Decode as D exposing (Step(..))
 import Bytes.Encode as E exposing (Encoder)
 import Dict exposing (Dict)
-import Json.Decode
-import Json.Encode
 import Proto.Bytes
 import Proto.Duration exposing (Duration)
 import Proto.Error exposing (Reason(..))
