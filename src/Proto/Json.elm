@@ -249,13 +249,13 @@ import Proto.Internal.Duration as InternalDuration
 import Proto.Internal.FieldMask as FieldMask
 import Proto.Internal.Percent as Percent
 import Proto.Internal.Registry as InternalRegistry
+import Proto.Internal.Timestamp as InternalTimestamp
 import Proto.Internal.ValueJson as ValueJson
 import Proto.Internal.Writer as Writer
 import Proto.Json.Encoder
 import Proto.Registry exposing (Registry)
-import Proto.Timestamp
+import Proto.Timestamp exposing (Timestamp)
 import Proto.Value
-import Time
 
 
 {-| Decode one field of a message in a decoding pipeline. A missing key or a
@@ -2271,29 +2271,21 @@ encodeBytesAsBytes data =
     Json.Encode.string (Proto.Bytes.toBase64 data)
 
 
-{-| Decode a `google.protobuf.Timestamp`, an RFC 3339 string; see
+{-| Decode a `google.protobuf.Timestamp`, an RFC 3339 string, exactly; see
 [`Proto.Timestamp.fromString`](Proto-Timestamp#fromString).
 -}
-timestamp : Decoder Time.Posix
+timestamp : Decoder Timestamp
 timestamp =
     Json.Decode.string
         |> Json.Decode.andThen
             (\text ->
                 case Proto.Timestamp.fromString text of
-                    Just posix ->
-                        Json.Decode.succeed posix
+                    Just instant ->
+                        Json.Decode.succeed instant
 
                     Nothing ->
                         Json.Decode.fail "Expecting an RFC 3339 timestamp"
             )
-
-
-{-| Encode a `google.protobuf.Timestamp`; see
-[`Proto.Timestamp.toString`](Proto-Timestamp#toString).
--}
-encodeTimestamp : Time.Posix -> Value
-encodeTimestamp posix =
-    Json.Encode.string (Proto.Timestamp.toString posix)
 
 
 {-| Decode a `google.protobuf.Duration`, such as `"1.5s"`; see
@@ -3015,20 +3007,19 @@ writeDeeper =
     Writer.deeper
 
 
-{-| A `google.protobuf.Timestamp`, refused outside years 1 to 9999.
+{-| A `google.protobuf.Timestamp`, refused when it is not valid
+([`Proto.Timestamp.isValid`](Proto-Timestamp#isValid)): outside years 1 to
+9999, or with nanoseconds outside 0 to 999,999,999, which only a timestamp
+read from protobuf binary can be.
 -}
-writeTimestamp : Time.Posix -> Encoder Error
-writeTimestamp posix =
-    let
-        millis =
-            Time.posixToMillis posix
-    in
-    -- 0001-01-01T00:00:00Z and 9999-12-31T23:59:59.999Z.
-    if millis < -62135596800000 || millis > 253402300799999 then
-        Writer.refuse "google.protobuf.Timestamp" "the time is outside years 1 to 9999"
+writeTimestamp : Timestamp -> Encoder Error
+writeTimestamp held =
+    case Proto.Timestamp.toString held of
+        Just text ->
+            Writer.succeed (Json.Encode.string text)
 
-    else
-        Writer.succeed (encodeTimestamp posix)
+        Nothing ->
+            Writer.refuse "google.protobuf.Timestamp" (InternalTimestamp.whyInvalid held)
 
 
 {-| A `google.protobuf.Duration`, refused when it is not valid

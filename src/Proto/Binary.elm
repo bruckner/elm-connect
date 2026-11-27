@@ -106,10 +106,11 @@ import Proto.Internal.Any as InternalAny exposing (Any)
 import Proto.Internal.Binary as Internal exposing (Failure)
 import Proto.Internal.Depth as Depth
 import Proto.Internal.Duration as InternalDuration
+import Proto.Internal.Timestamp as InternalTimestamp
 import Proto.Internal.Unknown as InternalUnknown
+import Proto.Timestamp exposing (Timestamp)
 import Proto.Unknown
 import Proto.Value exposing (Value(..))
-import Time
 
 
 
@@ -2207,29 +2208,42 @@ messageDecoder (Codec c) =
 -- WELL-KNOWN TYPES
 
 
-{-| `google.protobuf.Timestamp` as `Time.Posix`: nanoseconds past the
-millisecond are dropped when read. One that arrives twice is merged field by
-field, as protobuf merges any message: the seconds or the nanoseconds the
-later one carries replace the earlier one's.
+{-| `google.protobuf.Timestamp`, exact: the seconds and nanoseconds are held
+as the wire carries them, neither normalised nor clamped, and written back
+as held, so a timestamp a peer wrote that is not valid survives a read and a
+write unchanged
+([`Proto.Timestamp.isValid`](Proto-Timestamp#isValid) says whether it is).
+One that arrives twice is merged field by field, as protobuf merges any
+message: the seconds or the nanoseconds the later one carries replace the
+earlier one's. Seconds outside ±(2^53 − 1), which an Elm `Int` does not hold
+exactly, are held exactly too and written back as read;
+[`Proto.Timestamp.toSecondsAndNanos`](Proto-Timestamp#toSecondsAndNanos)
+gives the nearest `Int` for them.
 -}
-timestamp : Codec Time.Posix
+timestamp : Codec Timestamp
 timestamp =
-    embedded writeTimestamp timestampInto (Time.millisToPosix 0)
+    embedded writeTimestamp timestampInto (InternalTimestamp.Timestamp { seconds = 0, nanos = 0, wideHigh = 0 })
 
 
-timestampInto : Time.Posix -> Decoder Time.Posix
+timestampInto : Timestamp -> Decoder Timestamp
 timestampInto existing =
-    let
-        millis =
-            Time.posixToMillis existing
+    wellKnown "google.protobuf.Timestamp" existing timestampStep identity
 
-        seconds =
-            floor (toFloat millis / 1000)
-    in
-    wellKnown "google.protobuf.Timestamp"
-        ( seconds, (millis - seconds * 1000) * 1000000 )
-        partsStep
-        (\( s, nanos ) -> Time.millisToPosix (s * 1000 + floor (toFloat nanos / 1.0e6)))
+
+{-| A `Timestamp`'s fields: `seconds` (1), all 64 bits of them, and `nanos`
+(2).
+-}
+timestampStep : Int -> Int -> Timestamp -> Field Timestamp
+timestampStep number wire ((InternalTimestamp.Timestamp parts) as held) =
+    case number of
+        1 ->
+            field int64Split (\seconds -> InternalTimestamp.fromWireSeconds seconds held) wire held
+
+        2 ->
+            field int32 (\v -> InternalTimestamp.Timestamp { parts | nanos = v }) wire held
+
+        _ ->
+            skip wire held
 
 
 {-| A well-known type's decoder from its full name, the value it starts
@@ -2244,31 +2258,9 @@ wellKnown name start step finish =
         }
 
 
-{-| A `Timestamp`'s or a `Duration`'s fields: `seconds` (1) and `nanos` (2).
--}
-partsStep : Int -> Int -> ( Int, Int ) -> Field ( Int, Int )
-partsStep number wire ( seconds, nanos ) =
-    case number of
-        1 ->
-            field int64AsInt (\v -> ( v, nanos )) wire ( seconds, nanos )
-
-        2 ->
-            field int32 (\v -> ( seconds, v )) wire ( seconds, nanos )
-
-        _ ->
-            skip wire ( seconds, nanos )
-
-
-writeTimestamp : Time.Posix -> Encoder
-writeTimestamp posix =
-    let
-        millis =
-            Time.posixToMillis posix
-
-        seconds =
-            floor (toFloat millis / 1000)
-    in
-    E.sequence [ implicit int64AsInt 1 seconds, implicit int32 2 ((millis - seconds * 1000) * 1000000) ]
+writeTimestamp : Timestamp -> Encoder
+writeTimestamp ((InternalTimestamp.Timestamp parts) as held) =
+    E.sequence [ implicit int64Split 1 (InternalTimestamp.wireSeconds held), implicit int32 2 parts.nanos ]
 
 
 {-| `google.protobuf.Duration`, exact: the seconds and nanoseconds are held
