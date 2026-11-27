@@ -104,6 +104,7 @@ import Proto.Duration exposing (Duration)
 import Proto.Error exposing (Reason(..))
 import Proto.Internal.Any as InternalAny exposing (Any)
 import Proto.Internal.Binary as Internal exposing (Failure)
+import Proto.Internal.Binary.Wire as Wire exposing (U64(..))
 import Proto.Internal.Depth as Depth
 import Proto.Internal.Duration as InternalDuration
 import Proto.Internal.Timestamp as InternalTimestamp
@@ -369,7 +370,7 @@ fastMessageStep step finish ( remaining, acc ) =
         D.fail
 
     else
-        fastVarint32
+        Wire.fastVarint32
             |> D.andThen
                 (\( keyWidth, tag ) ->
                     let
@@ -405,7 +406,7 @@ messageStep name width step finish ( remaining, acc ) =
         D.succeed (Done (Ok (finish acc)))
 
     else
-        varint32 remaining
+        Wire.varint32 remaining
             |> D.andThen
                 (\( keyWidth, tag ) ->
                     let
@@ -511,7 +512,7 @@ repeated (Codec c) set existing wire current =
     else if c.packable && wire == 2 then
         Field
             { fast =
-                fastVarint32
+                Wire.fastVarint32
                     |> D.andThen
                         (\( lengthWidth, length ) ->
                             D.loop ( length, existing ) (fastPackedStep c.fast)
@@ -526,7 +527,7 @@ repeated (Codec c) set existing wire current =
 
 packed : (Int -> Read v) -> (List v -> a) -> List v -> Int -> Read a
 packed read set existing bound =
-    varint32 bound
+    Wire.varint32 bound
         |> D.andThen
             (\( lengthWidth, length ) ->
                 if lengthWidth < 0 then
@@ -592,7 +593,7 @@ mapEntry (Codec k) (Codec v) insert wire current =
     else
         Field
             { fast =
-                fastVarint32
+                Wire.fastVarint32
                     |> D.andThen
                         (\( lengthWidth, length ) ->
                             D.loop ( length, ( k.zero, v.zero ) ) (fastEntryStep k.wire k.fast v.wire v.fast)
@@ -604,7 +605,7 @@ mapEntry (Codec k) (Codec v) insert wire current =
 
 locatedEntry : Int -> (Int -> Read k) -> k -> Int -> (Int -> Read v) -> v -> (k -> v -> a) -> Int -> Read a
 locatedEntry keyWire readKey keyZero valueWire readItem valueZero insert bound =
-    varint32 bound
+    Wire.varint32 bound
         |> D.andThen
             (\( lengthWidth, length ) ->
                 if lengthWidth < 0 then
@@ -643,7 +644,7 @@ fastEntryStep keyWire readKey valueWire readItem ( remaining, ( key_, item ) as 
         D.fail
 
     else
-        fastVarint32
+        Wire.fastVarint32
             |> D.andThen
                 (\( tagWidth, tag ) ->
                     let
@@ -663,7 +664,7 @@ fastEntryStep keyWire readKey valueWire readItem ( remaining, ( key_, item ) as 
                         D.fail
 
                     else
-                        D.map (\width -> Loop ( remaining - tagWidth - width, current )) (fastSkipValue wire)
+                        D.map (\width -> Loop ( remaining - tagWidth - width, current )) (Wire.fastSkipValue wire)
                 )
 
 
@@ -673,7 +674,7 @@ entryStep length keyWire readKey valueWire readItem ( remaining, ( key_, item ) 
         D.succeed (Done (Ok current))
 
     else
-        varint32 remaining
+        Wire.varint32 remaining
             |> D.andThen
                 (\( tagWidth, tag ) ->
                     let
@@ -710,7 +711,7 @@ entryStep length keyWire readKey valueWire readItem ( remaining, ( key_, item ) 
                         D.succeed (Done (Err { reason = InvalidWireType wire, path = [], offset = start }))
 
                     else
-                        D.map (\width -> after (skipped width current) identity) (skipValue wire (remaining - tagWidth))
+                        D.map (\width -> after (skipped width current) identity) (Wire.skipValue wire (remaining - tagWidth))
                 )
 
 
@@ -730,66 +731,9 @@ the located one at the field's key.
 skip : Int -> a -> Field a
 skip wire unchanged =
     Field
-        { fast = D.map (\width -> ( width, unchanged )) (fastSkipValue wire)
-        , located = \bound -> D.map (\width -> skipped width unchanged) (skipValue wire bound)
+        { fast = D.map (\width -> ( width, unchanged )) (Wire.fastSkipValue wire)
+        , located = \bound -> D.map (\width -> skipped width unchanged) (Wire.skipValue wire bound)
         }
-
-
-fastSkipValue : Int -> D.Decoder Int
-fastSkipValue wire =
-    case wire of
-        0 ->
-            D.map Tuple.first fastVarint32
-
-        1 ->
-            D.map (\_ -> 8) (D.bytes 8)
-
-        2 ->
-            fastVarint32 |> D.andThen (\( width, length ) -> D.map (\_ -> width + length) (D.bytes length))
-
-        5 ->
-            D.map (\_ -> 4) (D.bytes 4)
-
-        _ ->
-            D.fail
-
-
-skipValue : Int -> Int -> D.Decoder Int
-skipValue wire bound =
-    case wire of
-        0 ->
-            D.map Tuple.first (varint32 bound)
-
-        1 ->
-            if bound >= 8 then
-                D.map (\_ -> 8) (D.bytes 8)
-
-            else
-                D.succeed -2
-
-        2 ->
-            varint32 bound
-                |> D.andThen
-                    (\( width, length ) ->
-                        if width < 0 then
-                            D.succeed width
-
-                        else if length > bound - width then
-                            D.succeed -2
-
-                        else
-                            D.map (\_ -> width + length) (D.bytes length)
-                    )
-
-        5 ->
-            if bound >= 4 then
-                D.map (\_ -> 4) (D.bytes 4)
-
-            else
-                D.succeed -2
-
-        _ ->
-            D.succeed -2
 
 
 
@@ -887,12 +831,12 @@ settleUnknown get set value_ =
 
 unknownVarint : Codec U64
 unknownVarint =
-    scalar 0 10 fastVarint64 varint64 writeVarint64 (\_ -> False) (U64 0 0)
+    scalar 0 10 Wire.fastVarint64 Wire.varint64 Wire.writeVarint64 (\_ -> False) (U64 0 0)
 
 
 unknownFixed64 : Codec U64
 unknownFixed64 =
-    scalar 1 8 fastFixed64 fixed64Read fixed64Write (\_ -> False) (U64 0 0)
+    scalar 1 8 Wire.fastFixed64 Wire.fixed64Read Wire.fixed64Write (\_ -> False) (U64 0 0)
 
 
 {-| A message's [unknown fields](Proto-Unknown), written after its known ones
@@ -934,11 +878,6 @@ nothing =
     E.sequence []
 
 
-fieldKey : Int -> Int -> Encoder
-fieldKey number wire =
-    writeVarint32 (number * 8 + wire)
-
-
 {-| A field without presence: left out at its default.
 -}
 implicit : Codec v -> Int -> v -> Encoder
@@ -947,7 +886,7 @@ implicit (Codec c) number v =
         nothing
 
     else
-        E.sequence [ fieldKey number c.wire, c.write v ]
+        E.sequence [ Wire.fieldKey number c.wire, c.write v ]
 
 
 {-| A field with presence: left out when `Nothing`.
@@ -967,7 +906,7 @@ optional codec number maybe =
 -}
 present : Codec v -> Int -> v -> Encoder
 present (Codec c) number v =
-    E.sequence [ fieldKey number c.wire, c.write v ]
+    E.sequence [ Wire.fieldKey number c.wire, c.write v ]
 
 
 {-| A repeated field: packed when its elements are scalars, as proto3
@@ -981,7 +920,7 @@ list ((Codec c) as codec) number vs =
 
         _ ->
             if c.packable then
-                E.sequence [ fieldKey number 2, delimited (E.sequence (List.map c.write vs)) ]
+                E.sequence [ Wire.fieldKey number 2, Wire.delimited (E.sequence (List.map c.write vs)) ]
 
             else
                 E.sequence (List.map (present codec number) vs)
@@ -1016,528 +955,11 @@ boolMap v number entries =
 
 entry : Codec k -> Codec v -> Int -> k -> v -> Encoder
 entry k v number key_ item =
-    E.sequence [ fieldKey number 2, delimited (E.sequence [ implicit k 1 key_, implicit v 2 item ]) ]
+    E.sequence [ Wire.fieldKey number 2, Wire.delimited (E.sequence [ implicit k 1 key_, implicit v 2 item ]) ]
 
 
-{-| `body` after its length. elm/bytes cannot tell an encoder's width
-without running it, so the body is encoded first and copied in.
--}
-delimited : Encoder -> Encoder
-delimited body =
-    let
-        encoded =
-            E.encode body
-    in
-    E.sequence [ writeVarint32 (Bytes.width encoded), E.bytes encoded ]
 
-
-
--- VARINTS
-
-
-{-| A varint's width and its low 32 bits, unsigned, read from no more than
-`bound` bytes; up to ten bytes are read, the bits past the 32nd dropped. Its
-width is -1 when it is longer than ten bytes and -2 when it runs past
-`bound`.
--}
-varint32 : Int -> D.Decoder ( Int, Int )
-varint32 bound =
-    if bound >= 10 then
-        varint32Free
-
-    else
-        varint32Within bound
-
-
-varint32Free : D.Decoder ( Int, Int )
-varint32Free =
-    varint32Within 10
-
-
-varint32Within : Int -> D.Decoder ( Int, Int )
-varint32Within bound =
-    if bound < 1 then
-        D.succeed ( -2, 0 )
-
-    else
-        D.unsignedInt8
-            |> D.andThen
-                (\b ->
-                    if b < 128 then
-                        D.succeed ( 1, b )
-
-                    else
-                        D.loop ( 1, b - 128 ) (varint32Step bound)
-                )
-
-
-varint32Step : Int -> ( Int, Int ) -> D.Decoder (Step ( Int, Int ) ( Int, Int ))
-varint32Step bound ( index, low ) =
-    if index >= bound then
-        D.succeed (Done ( -2, 0 ))
-
-    else
-        D.unsignedInt8
-            |> D.andThen
-                (\b ->
-                    let
-                        bits =
-                            Bitwise.and 0x7F b
-
-                        next =
-                            if index < 4 then
-                                low + bits * shift7 index
-
-                            else if index == 4 then
-                                low + Bitwise.and 0x0F bits * 268435456
-
-                            else
-                                low
-                    in
-                    if b < 128 then
-                        D.succeed (Done ( index + 1, next ))
-
-                    else if index >= 9 then
-                        D.succeed (Done ( -1, 0 ))
-
-                    else
-                        D.succeed (Loop ( index + 1, next ))
-                )
-
-
-shift7 : Int -> Int
-shift7 index =
-    case index of
-        0 ->
-            1
-
-        1 ->
-            128
-
-        2 ->
-            16384
-
-        _ ->
-            2097152
-
-
-{-| A 64-bit value as two unsigned 32-bit halves, high then low.
--}
-type U64
-    = U64 Int Int
-
-
-varint64 : Int -> D.Decoder ( Int, U64 )
-varint64 bound =
-    if bound < 1 then
-        D.succeed ( -2, U64 0 0 )
-
-    else
-        D.unsignedInt8
-            |> D.andThen
-                (\b ->
-                    if b < 128 then
-                        D.succeed ( 1, U64 0 b )
-
-                    else
-                        D.loop ( 1, 0, b - 128 ) (varint64Step bound)
-                )
-
-
-varint64Step : Int -> ( Int, Int, Int ) -> D.Decoder (Step ( Int, Int, Int ) ( Int, U64 ))
-varint64Step bound ( index, high, low ) =
-    if index >= bound then
-        D.succeed (Done ( -2, U64 0 0 ))
-
-    else
-        D.unsignedInt8
-            |> D.andThen
-                (\b ->
-                    let
-                        bits =
-                            Bitwise.and 0x7F b
-
-                        ( nextHigh, nextLow ) =
-                            if index < 4 then
-                                ( high, low + bits * shift7 index )
-
-                            else if index == 4 then
-                                ( Bitwise.shiftRightZfBy 4 bits, low + Bitwise.and 0x0F bits * 268435456 )
-
-                            else if index < 9 then
-                                ( high + bits * (2 ^ (7 * index - 32)), low )
-
-                            else
-                                ( high + Bitwise.and 1 bits * 2147483648, low )
-                    in
-                    if b < 128 then
-                        D.succeed (Done ( index + 1, U64 nextHigh nextLow ))
-
-                    else if index >= 9 then
-                        D.succeed (Done ( -1, U64 0 0 ))
-
-                    else
-                        D.succeed (Loop ( index + 1, nextHigh, nextLow ))
-                )
-
-
-{-| A varint's width and its low 32 bits, unsigned, for the fast reader;
-up to ten bytes are read, the bits past the 32nd dropped.
--}
-fastVarint32 : D.Decoder ( Int, Int )
-fastVarint32 =
-    D.unsignedInt8
-        |> D.andThen
-            (\b ->
-                if b < 128 then
-                    D.succeed ( 1, b )
-
-                else
-                    D.loop ( 1, b - 128 ) fastVarint32Step
-            )
-
-
-fastVarint32Step : ( Int, Int ) -> D.Decoder (Step ( Int, Int ) ( Int, Int ))
-fastVarint32Step ( index, low ) =
-    D.unsignedInt8
-        |> D.andThen
-            (\b ->
-                let
-                    bits =
-                        Bitwise.and 0x7F b
-
-                    next =
-                        if index < 4 then
-                            low + bits * shift7 index
-
-                        else if index == 4 then
-                            low + Bitwise.and 0x0F bits * 268435456
-
-                        else
-                            low
-                in
-                if b < 128 then
-                    D.succeed (Done ( index + 1, next ))
-
-                else if index >= 9 then
-                    D.fail
-
-                else
-                    D.succeed (Loop ( index + 1, next ))
-            )
-
-
-fastVarint64 : D.Decoder ( Int, U64 )
-fastVarint64 =
-    D.unsignedInt8
-        |> D.andThen
-            (\b ->
-                if b < 128 then
-                    D.succeed ( 1, U64 0 b )
-
-                else
-                    D.loop ( 1, 0, b - 128 ) fastVarint64Step
-            )
-
-
-fastVarint64Step : ( Int, Int, Int ) -> D.Decoder (Step ( Int, Int, Int ) ( Int, U64 ))
-fastVarint64Step ( index, high, low ) =
-    D.unsignedInt8
-        |> D.andThen
-            (\b ->
-                let
-                    bits =
-                        Bitwise.and 0x7F b
-
-                    ( nextHigh, nextLow ) =
-                        if index < 4 then
-                            ( high, low + bits * shift7 index )
-
-                        else if index == 4 then
-                            ( Bitwise.shiftRightZfBy 4 bits, low + Bitwise.and 0x0F bits * 268435456 )
-
-                        else if index < 9 then
-                            ( high + bits * (2 ^ (7 * index - 32)), low )
-
-                        else
-                            ( high + Bitwise.and 1 bits * 2147483648, low )
-                in
-                if b < 128 then
-                    D.succeed (Done ( index + 1, U64 nextHigh nextLow ))
-
-                else if index >= 9 then
-                    D.fail
-
-                else
-                    D.succeed (Loop ( index + 1, nextHigh, nextLow ))
-            )
-
-
-{-| A varint of an unsigned value below 2^32.
--}
-writeVarint32 : Int -> Encoder
-writeVarint32 n =
-    if n < 128 then
-        E.unsignedInt8 n
-
-    else
-        E.sequence (List.map E.unsignedInt8 (varintBytes n))
-
-
-{-| The bytes of a varint of `n`, any non-negative `Int` below 2^53.
--}
-varintBytes : Int -> List Int
-varintBytes n =
-    if n < 128 then
-        [ n ]
-
-    else
-        (modBy 128 n + 128) :: varintBytes (floor (toFloat n / 128))
-
-
-writeVarint64 : U64 -> Encoder
-writeVarint64 (U64 high low) =
-    if high == 0 then
-        writeVarint32 low
-
-    else
-        -- The low 28 bits, then the rest, which an Int holds exactly.
-        E.sequence
-            (List.map E.unsignedInt8
-                ((Bitwise.and 0x7F low + 128)
-                    :: (Bitwise.and 0x7F (Bitwise.shiftRightZfBy 7 low) + 128)
-                    :: (Bitwise.and 0x7F (Bitwise.shiftRightZfBy 14 low) + 128)
-                    :: (Bitwise.and 0x7F (Bitwise.shiftRightZfBy 21 low) + 128)
-                    :: varintBytes (Bitwise.shiftRightZfBy 28 low + high * 16)
-                )
-            )
-
-
-{-| A signed 32-bit value, sign-extended to ten bytes when negative.
--}
-writeInt32 : Int -> Encoder
-writeInt32 n =
-    if n >= 0 then
-        writeVarint32 n
-
-    else
-        writeVarint64 (U64 0xFFFFFFFF (Bitwise.shiftRightZfBy 0 n))
-
-
-signed32 : Int -> Int
-signed32 n =
-    Bitwise.or n 0
-
-
-
--- 64-BIT VALUES
-
-
-negate64 : U64 -> U64
-negate64 (U64 high low) =
-    let
-        low_ =
-            Bitwise.shiftRightZfBy 0 (Bitwise.complement low + 1)
-
-        carry =
-            if low_ == 0 then
-                1
-
-            else
-                0
-    in
-    U64 (Bitwise.shiftRightZfBy 0 (Bitwise.complement high + carry)) low_
-
-
-isNegative64 : U64 -> Bool
-isNegative64 (U64 high _) =
-    high >= 2147483648
-
-
-{-| The decimal text of an unsigned 64-bit value.
--}
-unsignedText : U64 -> String
-unsignedText (U64 high low) =
-    if high < 2097152 then
-        String.fromInt (high * 4294967296 + low)
-
-    else
-        -- Four 16-bit limbs, divided by 10,000 until nothing is left.
-        decimalGroups
-            [ Bitwise.shiftRightZfBy 16 high
-            , Bitwise.and 0xFFFF high
-            , Bitwise.shiftRightZfBy 16 low
-            , Bitwise.and 0xFFFF low
-            ]
-            []
-
-
-decimalGroups : List Int -> List Int -> String
-decimalGroups limbs groups =
-    if List.all ((==) 0) limbs then
-        case groups of
-            [] ->
-                "0"
-
-            first :: rest ->
-                String.fromInt first ++ String.concat (List.map (String.padLeft 4 '0' << String.fromInt) rest)
-
-    else
-        let
-            ( quotient, remainder ) =
-                List.foldl
-                    (\limb ( done, carry ) ->
-                        let
-                            current =
-                                carry * 65536 + limb
-                        in
-                        ( (current // 10000) :: done, modBy 10000 current )
-                    )
-                    ( [], 0 )
-                    limbs
-        in
-        decimalGroups (List.reverse quotient) (remainder :: groups)
-
-
-signedText : U64 -> String
-signedText u =
-    if isNegative64 u then
-        "-" ++ unsignedText (negate64 u)
-
-    else
-        unsignedText u
-
-
-{-| A decimal integer as 64 bits, two's complement when negative. Text that
-is not one, which the generated code never holds, reads as 0.
--}
-fromText : String -> U64
-fromText text =
-    let
-        ( negative, digits ) =
-            if String.startsWith "-" text then
-                ( True, String.dropLeft 1 text )
-
-            else
-                ( False, text )
-
-        magnitude =
-            String.foldl
-                (\char (U64 high low) ->
-                    let
-                        digit =
-                            Char.toCode char - 48
-
-                        widened =
-                            low * 10 + digit
-
-                        carry =
-                            floor (toFloat widened / 4294967296)
-                    in
-                    if digit < 0 || digit > 9 then
-                        U64 0 0
-
-                    else
-                        U64 (Bitwise.shiftRightZfBy 0 (high * 10 + carry)) (widened - carry * 4294967296)
-                )
-                (U64 0 0)
-                digits
-    in
-    if negative then
-        negate64 magnitude
-
-    else
-        magnitude
-
-
-fromInt64 : Int -> U64
-fromInt64 n =
-    if n >= 0 then
-        let
-            high =
-                floor (toFloat n / 4294967296)
-        in
-        U64 high (n - high * 4294967296)
-
-    else
-        negate64 (fromInt64 (negate n))
-
-
-{-| The value as an `Int`, if within ±(2^53 − 1).
--}
-toInt64 : U64 -> Maybe Int
-toInt64 ((U64 high low) as u) =
-    if isNegative64 u then
-        case negate64 u of
-            U64 h l ->
-                if h < 2097152 then
-                    Just (negate (h * 4294967296 + l))
-
-                else
-                    Nothing
-
-    else if high < 2097152 then
-        Just (high * 4294967296 + low)
-
-    else
-        Nothing
-
-
-toUInt64 : U64 -> Maybe Int
-toUInt64 (U64 high low) =
-    if high < 2097152 then
-        Just (high * 4294967296 + low)
-
-    else
-        Nothing
-
-
-zigzag64 : U64 -> U64
-zigzag64 (U64 high low) =
-    let
-        mask =
-            Bitwise.shiftRightBy 31 high
-    in
-    U64
-        (Bitwise.shiftRightZfBy 0 (Bitwise.xor (Bitwise.or (Bitwise.shiftLeftBy 1 high) (Bitwise.shiftRightZfBy 31 low)) mask))
-        (Bitwise.shiftRightZfBy 0 (Bitwise.xor (Bitwise.shiftLeftBy 1 low) mask))
-
-
-unzigzag64 : U64 -> U64
-unzigzag64 (U64 high low) =
-    let
-        mask =
-            negate (Bitwise.and 1 low)
-    in
-    U64
-        (Bitwise.shiftRightZfBy 0 (Bitwise.xor (Bitwise.shiftRightZfBy 1 high) mask))
-        (Bitwise.shiftRightZfBy 0 (Bitwise.xor (Bitwise.or (Bitwise.shiftRightZfBy 1 low) (Bitwise.shiftLeftBy 31 high)) mask))
-
-
-fastFixed64 : D.Decoder ( Int, U64 )
-fastFixed64 =
-    D.map2 (\low high -> ( 8, U64 high low )) (D.unsignedInt32 LE) (D.unsignedInt32 LE)
-
-
-fixed64Read : Int -> D.Decoder ( Int, U64 )
-fixed64Read =
-    fixed 8 (U64 0 0) (D.map2 (\low high -> ( 8, U64 high low )) (D.unsignedInt32 LE) (D.unsignedInt32 LE))
-
-
-{-| A fixed-width read of `width` bytes, or -2 when fewer are left.
--}
-fixed : Int -> a -> D.Decoder ( Int, a ) -> Int -> D.Decoder ( Int, a )
-fixed width zero decoder bound =
-    if bound >= width then
-        decoder
-
-    else
-        D.succeed ( -2, zero )
-
-
-fixed64Write : U64 -> Encoder
-fixed64Write (U64 high low) =
-    E.sequence [ E.unsignedInt32 LE low, E.unsignedInt32 LE high ]
+-- SCALARS
 
 
 {-| A 64-bit codec from how the bits are read (fast, and given the bytes
@@ -1585,38 +1007,19 @@ wide wire fast read write hold unhold zero =
         zero
 
 
-{-| A varint's low 32 bits, as `f` reads them.
--}
-fromVarint32 : (Int -> a) -> a -> Int -> D.Decoder ( Int, a )
-fromVarint32 f zero bound =
-    D.map
-        (\( width, n ) ->
-            if width < 0 then
-                ( width, zero )
-
-            else
-                ( width, f n )
-        )
-        (varint32 bound)
-
-
-
--- SCALARS
-
-
 {-| `double`. NaN and the infinities travel as their bits; `-0` is left out
 as a default, as `0` is.
 -}
 double : Codec Float
 double =
-    scalar 1 8 (D.map (\x -> ( 8, x )) (D.float64 LE)) (fixed 8 0 (D.map (\x -> ( 8, x )) (D.float64 LE))) (E.float64 LE) isZero 0
+    scalar 1 8 (D.map (\x -> ( 8, x )) (D.float64 LE)) (Wire.fixed 8 0 (D.map (\x -> ( 8, x )) (D.float64 LE))) (E.float64 LE) isZero 0
 
 
 {-| `float`.
 -}
 float : Codec Float
 float =
-    scalar 5 4 (D.map (\x -> ( 4, x )) (D.float32 LE)) (fixed 4 0 (D.map (\x -> ( 4, x )) (D.float32 LE))) (E.float32 LE) isZero 0
+    scalar 5 4 (D.map (\x -> ( 4, x )) (D.float32 LE)) (Wire.fixed 4 0 (D.map (\x -> ( 4, x )) (D.float32 LE))) (E.float32 LE) isZero 0
 
 
 isZero : Float -> Bool
@@ -1629,7 +1032,7 @@ isZero x =
 -}
 int32 : Codec Int
 int32 =
-    scalar 0 10 (D.map (\( width, n ) -> ( width, signed32 n )) fastVarint32) (fromVarint32 signed32 0) writeInt32 ((==) 0) 0
+    scalar 0 10 (D.map (\( width, n ) -> ( width, Wire.signed32 n )) Wire.fastVarint32) (Wire.fromVarint32 Wire.signed32 0) Wire.writeInt32 ((==) 0) 0
 
 
 {-| `sint32`, zigzag-encoded.
@@ -1638,9 +1041,9 @@ sint32 : Codec Int
 sint32 =
     scalar 0
         10
-        (D.map (\( width, z ) -> ( width, Bitwise.xor (Bitwise.shiftRightZfBy 1 z) (negate (Bitwise.and 1 z)) )) fastVarint32)
-        (fromVarint32 (\z -> Bitwise.xor (Bitwise.shiftRightZfBy 1 z) (negate (Bitwise.and 1 z))) 0)
-        (\n -> writeVarint32 (Bitwise.shiftRightZfBy 0 (Bitwise.xor (Bitwise.shiftLeftBy 1 n) (Bitwise.shiftRightBy 31 n))))
+        (D.map (\( width, z ) -> ( width, Bitwise.xor (Bitwise.shiftRightZfBy 1 z) (negate (Bitwise.and 1 z)) )) Wire.fastVarint32)
+        (Wire.fromVarint32 (\z -> Bitwise.xor (Bitwise.shiftRightZfBy 1 z) (negate (Bitwise.and 1 z))) 0)
+        (\n -> Wire.writeVarint32 (Bitwise.shiftRightZfBy 0 (Bitwise.xor (Bitwise.shiftLeftBy 1 n) (Bitwise.shiftRightBy 31 n))))
         ((==) 0)
         0
 
@@ -1649,56 +1052,56 @@ sint32 =
 -}
 sfixed32 : Codec Int
 sfixed32 =
-    scalar 5 4 (D.map (\n -> ( 4, n )) (D.signedInt32 LE)) (fixed 4 0 (D.map (\n -> ( 4, n )) (D.signedInt32 LE))) (E.signedInt32 LE) ((==) 0) 0
+    scalar 5 4 (D.map (\n -> ( 4, n )) (D.signedInt32 LE)) (Wire.fixed 4 0 (D.map (\n -> ( 4, n )) (D.signedInt32 LE))) (E.signedInt32 LE) ((==) 0) 0
 
 
 {-| `uint32`, a varint.
 -}
 uint32 : Codec Int
 uint32 =
-    scalar 0 10 fastVarint32 varint32 writeVarint32 ((==) 0) 0
+    scalar 0 10 Wire.fastVarint32 Wire.varint32 Wire.writeVarint32 ((==) 0) 0
 
 
 {-| `fixed32`, four bytes.
 -}
 fixed32 : Codec Int
 fixed32 =
-    scalar 5 4 (D.map (\n -> ( 4, n )) (D.unsignedInt32 LE)) (fixed 4 0 (D.map (\n -> ( 4, n )) (D.unsignedInt32 LE))) (E.unsignedInt32 LE) ((==) 0) 0
+    scalar 5 4 (D.map (\n -> ( 4, n )) (D.unsignedInt32 LE)) (Wire.fixed 4 0 (D.map (\n -> ( 4, n )) (D.unsignedInt32 LE))) (E.unsignedInt32 LE) ((==) 0) 0
 
 
 {-| `int64` held as decimal text.
 -}
 int64 : Codec String
 int64 =
-    wide 0 fastVarint64 varint64 writeVarint64 (Just << signedText) fromText "0"
+    wide 0 Wire.fastVarint64 Wire.varint64 Wire.writeVarint64 (Just << Wire.signedText) Wire.fromText "0"
 
 
 {-| `sint64` held as decimal text.
 -}
 sint64 : Codec String
 sint64 =
-    wide 0 (D.map (Tuple.mapSecond unzigzag64) fastVarint64) (varint64 >> D.map (Tuple.mapSecond unzigzag64)) (writeVarint64 << zigzag64) (Just << signedText) fromText "0"
+    wide 0 (D.map (Tuple.mapSecond Wire.unzigzag64) Wire.fastVarint64) (Wire.varint64 >> D.map (Tuple.mapSecond Wire.unzigzag64)) (Wire.writeVarint64 << Wire.zigzag64) (Just << Wire.signedText) Wire.fromText "0"
 
 
 {-| `sfixed64` held as decimal text.
 -}
 sfixed64 : Codec String
 sfixed64 =
-    wide 1 fastFixed64 fixed64Read fixed64Write (Just << signedText) fromText "0"
+    wide 1 Wire.fastFixed64 Wire.fixed64Read Wire.fixed64Write (Just << Wire.signedText) Wire.fromText "0"
 
 
 {-| `uint64` held as decimal text.
 -}
 uint64 : Codec String
 uint64 =
-    wide 0 fastVarint64 varint64 writeVarint64 (Just << unsignedText) fromText "0"
+    wide 0 Wire.fastVarint64 Wire.varint64 Wire.writeVarint64 (Just << Wire.unsignedText) Wire.fromText "0"
 
 
 {-| `fixed64` held as decimal text.
 -}
 fixed64 : Codec String
 fixed64 =
-    wide 1 fastFixed64 fixed64Read fixed64Write (Just << unsignedText) fromText "0"
+    wide 1 Wire.fastFixed64 Wire.fixed64Read Wire.fixed64Write (Just << Wire.unsignedText) Wire.fromText "0"
 
 
 {-| `int64` as two `Int`s, exact for every value: `( 0, n )` for an `n`
@@ -1708,11 +1111,11 @@ the upper never 0 there.
 int64Split : Codec ( Int, Int )
 int64Split =
     wide 0
-        fastVarint64
-        varint64
-        writeVarint64
+        Wire.fastVarint64
+        Wire.varint64
+        Wire.writeVarint64
         (\((U64 high low) as u) ->
-            case toInt64 u of
+            case Wire.toInt64 u of
                 Just exact ->
                     Just ( 0, exact )
 
@@ -1721,7 +1124,7 @@ int64Split =
         )
         (\( high, low ) ->
             if high == 0 then
-                fromInt64 low
+                Wire.fromInt64 low
 
             else
                 U64 high low
@@ -1733,35 +1136,35 @@ int64Split =
 -}
 int64AsInt : Codec Int
 int64AsInt =
-    wide 0 fastVarint64 varint64 writeVarint64 toInt64 fromInt64 0
+    wide 0 Wire.fastVarint64 Wire.varint64 Wire.writeVarint64 Wire.toInt64 Wire.fromInt64 0
 
 
 {-| `sint64` held as an `Int`.
 -}
 sint64AsInt : Codec Int
 sint64AsInt =
-    wide 0 (D.map (Tuple.mapSecond unzigzag64) fastVarint64) (varint64 >> D.map (Tuple.mapSecond unzigzag64)) (writeVarint64 << zigzag64) toInt64 fromInt64 0
+    wide 0 (D.map (Tuple.mapSecond Wire.unzigzag64) Wire.fastVarint64) (Wire.varint64 >> D.map (Tuple.mapSecond Wire.unzigzag64)) (Wire.writeVarint64 << Wire.zigzag64) Wire.toInt64 Wire.fromInt64 0
 
 
 {-| `sfixed64` held as an `Int`.
 -}
 sfixed64AsInt : Codec Int
 sfixed64AsInt =
-    wide 1 fastFixed64 fixed64Read fixed64Write toInt64 fromInt64 0
+    wide 1 Wire.fastFixed64 Wire.fixed64Read Wire.fixed64Write Wire.toInt64 Wire.fromInt64 0
 
 
 {-| `uint64` held as an `Int`, within 0 to 2^53 − 1.
 -}
 uint64AsInt : Codec Int
 uint64AsInt =
-    wide 0 fastVarint64 varint64 writeVarint64 toUInt64 fromInt64 0
+    wide 0 Wire.fastVarint64 Wire.varint64 Wire.writeVarint64 Wire.toUInt64 Wire.fromInt64 0
 
 
 {-| `fixed64` held as an `Int`.
 -}
 fixed64AsInt : Codec Int
 fixed64AsInt =
-    wide 1 fastFixed64 fixed64Read fixed64Write toUInt64 fromInt64 0
+    wide 1 Wire.fastFixed64 Wire.fixed64Read Wire.fixed64Write Wire.toUInt64 Wire.fromInt64 0
 
 
 {-| `bool`, any non-zero varint reading as `True`.
@@ -1770,8 +1173,8 @@ bool : Codec Bool
 bool =
     scalar 0
         10
-        (D.map (\( width, n ) -> ( width, n /= 0 )) (D.map (\( width, U64 high low ) -> ( width, high + low )) fastVarint64))
-        (\bound -> D.map (\( width, U64 high low ) -> ( width, width >= 0 && high + low /= 0 )) (varint64 bound))
+        (D.map (\( width, n ) -> ( width, n /= 0 )) (D.map (\( width, U64 high low ) -> ( width, high + low )) Wire.fastVarint64))
+        (\bound -> D.map (\( width, U64 high low ) -> ( width, width >= 0 && high + low /= 0 )) (Wire.varint64 bound))
         (\b ->
             if b then
                 E.unsignedInt8 1
@@ -1783,244 +1186,16 @@ bool =
         False
 
 
-{-| A length-delimited value's raw reader: its length, checked against the
-bytes left, then `body` of that length.
--}
-delimitedRead : a -> (Int -> D.Decoder a) -> Int -> D.Decoder ( Int, a )
-delimitedRead zero body bound =
-    varint32 bound
-        |> D.andThen
-            (\( width, length ) ->
-                if width < 0 then
-                    D.succeed ( width, zero )
-
-                else if length > bound - width then
-                    D.succeed ( -2, zero )
-
-                else
-                    D.map (\v -> ( width + length, v )) (body length)
-            )
-
-
 {-| `string`, UTF-8. A string whose bytes are not UTF-8 fails the decode,
 as proto3 requires.
 -}
 string : Codec String
 string =
-    delimitedScalar fastString
-        utf8String
-        (\s -> E.sequence [ writeVarint32 (E.getStringWidth s), E.string s ])
+    delimitedScalar Wire.fastString
+        Wire.utf8String
+        (\s -> E.sequence [ Wire.writeVarint32 (E.getStringWidth s), E.string s ])
         String.isEmpty
         ""
-
-
-fastString : D.Decoder ( Int, String )
-fastString =
-    fastVarint32
-        |> D.andThen
-            (\( width, length ) ->
-                D.bytes length
-                    |> D.andThen
-                        (\slice ->
-                            case utf8 length slice of
-                                Just s ->
-                                    D.succeed ( width + length, s )
-
-                                Nothing ->
-                                    D.fail
-                        )
-            )
-
-
-{-| A string's raw reader: its length checked against the bytes left, then
-read as [`utf8`](#utf8) does, -4 when its bytes are not UTF-8.
--}
-utf8String : Int -> D.Decoder ( Int, String )
-utf8String bound =
-    varint32 bound
-        |> D.andThen
-            (\( width, length ) ->
-                if width < 0 then
-                    D.succeed ( width, "" )
-
-                else if length > bound - width then
-                    D.succeed ( -2, "" )
-
-                else
-                    D.map
-                        (\slice ->
-                            case utf8 length slice of
-                                Just s ->
-                                    ( width + length, s )
-
-                                Nothing ->
-                                    ( -4, "" )
-                        )
-                        (D.bytes length)
-            )
-
-
-{-| A string's bytes, `length` of them in a slice of their own, if they are
-UTF-8.
-
-The slice keeps elm/bytes inside the string: it reads a byte that does not
-begin a character as the lead of four, and as a string's last character
-would otherwise read on past its end. elm/bytes checks nothing else, so
-the bytes are checked here, only when they hold a byte past ASCII: elm/bytes
-gives fewer UTF-16 code units than bytes for any such byte, and one per
-byte for ASCII, so a string as long as its bytes is ASCII and valid.
-
--}
-utf8 : Int -> Bytes -> Maybe String
-utf8 length slice =
-    case D.decode (D.string length) slice of
-        Just s ->
-            if String.length s == length || D.decode (D.loop ( length, 0 ) utf8Step) slice == Just 0 then
-                Just s
-
-            else
-                Nothing
-
-        Nothing ->
-            Nothing
-
-
-{-| A UTF-8 check over the bytes left, sixteen at a time while they are
-ASCII: the state is 0 between characters, -1 once a byte is wrong, and
-otherwise the continuation bytes still owed times 8 plus the range the next
-must be in (see `utf8Byte`).
--}
-utf8Step : ( Int, Int ) -> D.Decoder (Step ( Int, Int ) Int)
-utf8Step ( remaining, state ) =
-    if state < 0 then
-        D.succeed (Done state)
-
-    else if remaining >= 16 then
-        D.map4
-            (\a b c d ->
-                if state == 0 && Bitwise.and (Bitwise.or (Bitwise.or a b) (Bitwise.or c d)) 0x80808080 == 0 then
-                    Loop ( remaining - 16, 0 )
-
-                else
-                    Loop ( remaining - 16, utf8Word d (utf8Word c (utf8Word b (utf8Word a state))) )
-            )
-            word
-            word
-            word
-            word
-
-    else if remaining >= 4 then
-        D.map (\w -> Loop ( remaining - 4, utf8Word w state )) word
-
-    else if remaining > 0 then
-        D.map (\b -> Loop ( remaining - 1, utf8Byte b state )) D.unsignedInt8
-
-    else
-        D.succeed (Done state)
-
-
-word : D.Decoder Int
-word =
-    D.unsignedInt32 BE
-
-
-utf8Word : Int -> Int -> Int
-utf8Word w state =
-    if state == 0 && Bitwise.and w 0x80808080 == 0 then
-        0
-
-    else
-        utf8Byte (Bitwise.and 0xFF w)
-            (utf8Byte (Bitwise.and 0xFF (Bitwise.shiftRightZfBy 8 w))
-                (utf8Byte (Bitwise.and 0xFF (Bitwise.shiftRightZfBy 16 w))
-                    (utf8Byte (Bitwise.shiftRightZfBy 24 w) state)
-                )
-            )
-
-
-{-| The state after one more byte. The ranges a continuation byte must be
-in: 0 is 80–BF, 1 A0–BF (after E0), 2 80–9F (after ED), 3 90–BF (after
-F0), 4 80–8F (after F4), which rules out overlong forms, surrogates and
-code points past U+10FFFF.
--}
-utf8Byte : Int -> Int -> Int
-utf8Byte b state =
-    if state < 0 then
-        -1
-
-    else if state == 0 then
-        if b < 0x80 then
-            0
-
-        else if b < 0xC2 then
-            -1
-
-        else if b < 0xE0 then
-            8
-
-        else if b == 0xE0 then
-            17
-
-        else if b == 0xED then
-            18
-
-        else if b < 0xF0 then
-            16
-
-        else if b == 0xF0 then
-            27
-
-        else if b < 0xF4 then
-            24
-
-        else if b == 0xF4 then
-            28
-
-        else
-            -1
-
-    else if outOfRange (Bitwise.and 7 state) b then
-        -1
-
-    else if state < 16 then
-        0
-
-    else
-        Bitwise.shiftRightBy 3 state * 8 - 8
-
-
-outOfRange : Int -> Int -> Bool
-outOfRange range b =
-    case range of
-        1 ->
-            b < 0xA0 || b > 0xBF
-
-        2 ->
-            b < 0x80 || b > 0x9F
-
-        3 ->
-            b < 0x90 || b > 0xBF
-
-        4 ->
-            b < 0x80 || b > 0x8F
-
-        _ ->
-            b < 0x80 || b > 0xBF
-
-
-fastRawBytes : D.Decoder ( Int, Bytes )
-fastRawBytes =
-    fastVarint32 |> D.andThen (\( width, length ) -> D.map (\b -> ( width + length, b )) (D.bytes length))
-
-
-rawBytes : Int -> D.Decoder ( Int, Bytes )
-rawBytes =
-    delimitedRead Proto.Bytes.empty D.bytes
-
-
-writeBytes : Bytes -> Encoder
-writeBytes b =
-    E.sequence [ writeVarint32 (Bytes.width b), E.bytes b ]
 
 
 {-| `bytes` held as base64 text, as the generated code holds it by default:
@@ -2029,9 +1204,9 @@ read as standard base64 with padding, written from either alphabet.
 bytes : Codec String
 bytes =
     delimitedScalar
-        (D.map (Tuple.mapSecond Proto.Bytes.toBase64) fastRawBytes)
-        (rawBytes >> D.map (Tuple.mapSecond Proto.Bytes.toBase64))
-        (\text -> writeBytes (Maybe.withDefault Proto.Bytes.empty (Proto.Bytes.fromBase64 text)))
+        (D.map (Tuple.mapSecond Proto.Bytes.toBase64) Wire.fastRawBytes)
+        (Wire.rawBytes >> D.map (Tuple.mapSecond Proto.Bytes.toBase64))
+        (\text -> Wire.writeBytes (Maybe.withDefault Proto.Bytes.empty (Proto.Bytes.fromBase64 text)))
         String.isEmpty
         ""
 
@@ -2040,7 +1215,7 @@ bytes =
 -}
 bytesAsBytes : Codec Bytes
 bytesAsBytes =
-    delimitedScalar fastRawBytes rawBytes writeBytes (\b -> Bytes.width b == 0) Proto.Bytes.empty
+    delimitedScalar Wire.fastRawBytes Wire.rawBytes Wire.writeBytes (\b -> Bytes.width b == 0) Proto.Bytes.empty
 
 
 {-| An enum, from its generated number conversions: a number it does not
@@ -2050,9 +1225,9 @@ enum : (a -> Int) -> (Int -> a) -> Codec a
 enum toNumber fromNumber =
     scalar 0
         10
-        (D.map (\( width, n ) -> ( width, fromNumber (signed32 n) )) fastVarint32)
-        (fromVarint32 (\n -> fromNumber (signed32 n)) (fromNumber 0))
-        (writeInt32 << toNumber)
+        (D.map (\( width, n ) -> ( width, fromNumber (Wire.signed32 n) )) Wire.fastVarint32)
+        (Wire.fromVarint32 (\n -> fromNumber (Wire.signed32 n)) (fromNumber 0))
+        (Wire.writeInt32 << toNumber)
         (\v -> toNumber v == 0)
         (fromNumber 0)
 
@@ -2069,7 +1244,7 @@ embedded : (a -> Encoder) -> (a -> Decoder a) -> a -> Codec a
 embedded write into zero =
     let
         readInto existing bound =
-            varint32 bound
+            Wire.varint32 bound
                 |> D.andThen
                     (\( width, length ) ->
                         if width < 0 then
@@ -2092,7 +1267,7 @@ embedded write into zero =
                     )
 
         fastInto existing =
-            fastVarint32 |> D.andThen (\( width, length ) -> D.map (\v -> ( width + length, v )) (fastRun (into existing) length))
+            Wire.fastVarint32 |> D.andThen (\( width, length ) -> D.map (\v -> ( width + length, v )) (fastRun (into existing) length))
 
         name () =
             case into zero of
@@ -2105,7 +1280,7 @@ embedded write into zero =
         , fastBody = \length -> fastRun (into zero) length
         , fastInto = fastInto
         , read = readInto zero
-        , write = \v -> delimited (write v)
+        , write = \v -> Wire.delimited (write v)
         , isDefault = \_ -> False
         , zero = zero
         , packable = False
@@ -2177,7 +1352,7 @@ tooDeep write zero =
         , fastBody = \_ -> D.fail
         , fastInto = \_ -> D.fail
         , read = \_ -> deep
-        , write = \v -> delimited (write v)
+        , write = \v -> Wire.delimited (write v)
         , isDefault = \_ -> False
         , zero = zero
         , packable = False

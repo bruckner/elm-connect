@@ -119,7 +119,10 @@ that two public modules must build or match keeps its constructor in one
 implementation stays out of the public modules so that they read as API:
 `Rpc.Internal.Plan` plans a call over its client's protocol, its
 binding's route included,
-`Proto.Internal.Interpret` reads a binding written as data, `Connect`,
+`Proto.Internal.Interpret` reads a binding written as data,
+`Proto.Internal.Binary.Wire` reads and writes the binary format's values
+as bytes (varints, 64-bit values, strings, a field's key) beneath
+`Proto.Binary`'s codecs and message loop (§5.5), `Connect`,
 `Transcode` and `GrpcWeb` each hold one protocol's request builders and
 answer readers (gRPC-Web's framing and trailers among them), `Status`
 reads a failure's status into an error whatever the protocol, `Retry`

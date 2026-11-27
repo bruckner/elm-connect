@@ -362,6 +362,8 @@ rpc shared call =
   the protocols' `Rpc.Internal.Connect`, `Rpc.Internal.Transcode` and
   `Rpc.Internal.GrpcWeb`, and `Rpc.Internal.Status`,
   `Rpc.Internal.Envelope` and `Rpc.Internal.Limit`, §5.2;
+  `Proto.Internal.Binary.Wire`, the binary format's values as bytes
+  beneath `Proto.Binary`'s codecs, §5.5;
   `Proto.Internal.Percent`, the percent-encoding `Proto.Route` and the
   protocols share, under `Proto` so that the route helpers reach no
   `Rpc` module, rule 7). A type one
@@ -4149,7 +4151,13 @@ read; `implicit`, `optional`, `present`, `list`, `listUnpacked`,
 `unknown_fields=keep`). Generated code calls it; an application
 meets `decode`, `encode` and `Decoder`. The generator writes binary
 codecs against it under `wire=proto` or `wire=both` (§3.10), and
-Connect's proto codec sends them (§5.3).
+Connect's proto codec sends them (§5.3). It holds the codecs, the
+message loop and the well-known types. The values as bytes are beneath
+it in `Proto.Internal.Binary.Wire`, which knows no codec, field or
+message: the varint, fixed-width and length-delimited reads and writes,
+each read in its fast and its bounded form (below), the UTF-8 check, a
+field's key and the skip of a value by its wire type, and a 64-bit
+value as two halves with its decimal text.
 
 - **A decoder knows its length.** elm/bytes has no end-of-input test,
   no position and no backtracking, so a decoder cannot find where a
