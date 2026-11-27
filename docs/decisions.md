@@ -2183,7 +2183,8 @@ decoder that the notes program already carries. Where: design §5.1,
 
 ### Internal runtime modules by protocol
 
-*2026-10-29; `Rpc.Internal.Http` split by job, 2026-11-27.*
+*2026-10-29; `Rpc.Internal.Http` split by job, 2026-11-27;
+`Proto.Internal.Binary.Wire`, 2026-11-27.*
 
 The runtime's internal modules are one protocol, one module:
 `Rpc.Internal.Connect`, `Rpc.Internal.Transcode` and
@@ -2224,6 +2225,16 @@ leaving the shared helpers in `Connect`, keeps every protocol's module
 depending on one protocol's. This move changes no definition either:
 the examples' `--optimize` builds hold the same definitions under the
 new module names. Where: design §5.2.
+
+`Proto.Binary` held three things: the codecs generated code names, the
+message loop, and the reading and writing of values as bytes, which
+referred to nothing above it. That last part is
+`Proto.Internal.Binary.Wire`, by the same rule and again without
+changing a definition. Its name is the wire level of the binary format,
+as Go's `protowire` is, and is qualified by `Binary` because `Wire`
+alone already means something else here: `Rpc.Internal.Protocol.Wire`
+and the generator's `wire=` are the choice between JSON and binary, and
+`Rpc.Internal.Wire` above was a third thing. Where: design §5.5.
 
 ### Descriptors apart from the registry
 
