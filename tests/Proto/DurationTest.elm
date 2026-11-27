@@ -134,8 +134,10 @@ range =
             \_ -> printsAs "315576000000s" (Duration.fromSeconds 315576000001)
         , test "one second past the smallest gives the smallest" <|
             \_ -> printsAs "-315576000000s" (Duration.fromSeconds -315576000001)
-        , test "a fraction past the largest gives the largest" <|
-            \_ -> printsAs "315576000000s" (Duration.fromSeconds 315576000000.5)
+        , test "a fraction past the largest second count is valid, and kept" <|
+            \_ -> printsAs "315576000000.500s" (Duration.fromSeconds 315576000000.5)
+        , test "a fraction past the smallest second count is valid, and kept" <|
+            \_ -> printsAs "-315576000000.500s" (Duration.fromSeconds -315576000000.5)
         , test "far past the largest gives the largest" <|
             \_ -> printsAs "315576000000s" (Duration.fromSeconds 1.0e12)
         , test "just inside the largest is kept" <|
@@ -157,10 +159,21 @@ range =
             \_ -> printsAs "315576000000s" (Duration.fromMillis 315576000000000)
         , test "the smallest millisecond count" <|
             \_ -> printsAs "-315576000000s" (Duration.fromMillis -315576000000000)
-        , test "one millisecond past the largest gives the largest" <|
-            \_ -> printsAs "315576000000s" (Duration.fromMillis 315576000000001)
-        , test "one millisecond past the smallest gives the smallest" <|
-            \_ -> printsAs "-315576000000s" (Duration.fromMillis -315576000000001)
+        , test "milliseconds past the largest second count are valid, and kept" <|
+            \_ -> printsAs "315576000000.999s" (Duration.fromMillis 315576000000999)
+        , test "milliseconds past the smallest second count are valid, and kept" <|
+            \_ -> printsAs "-315576000000.500s" (Duration.fromMillis -315576000000500)
+        , test "one second past the largest in milliseconds gives the largest" <|
+            \_ -> printsAs "315576000000s" (Duration.fromMillis 315576000001000)
+        , test "one second past the smallest in milliseconds gives the smallest" <|
+            \_ -> printsAs "-315576000000s" (Duration.fromMillis -315576000001000)
+        , test "the builders keep what fromSecondsAndNanos keeps at the limit" <|
+            \_ ->
+                ( Just (Duration.fromMillis 315576000000500), Just (Duration.fromSeconds -315576000000.5) )
+                    |> Expect.equal
+                        ( Duration.fromSecondsAndNanos 315576000000 500000000
+                        , Duration.fromSecondsAndNanos -315576000000 -500000000
+                        )
         , test "one millisecond inside the largest is kept" <|
             \_ -> printsAs "315575999999.999s" (Duration.fromMillis 315575999999999)
         , fuzz Fuzz.float "fromSeconds of any Float is valid" <|

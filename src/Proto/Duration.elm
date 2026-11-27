@@ -71,10 +71,12 @@ type alias Duration =
 
 
 {-| The duration of so many seconds, rounded to the nanosecond. It clamps: a
-value past ±315,576,000,000 seconds, protobuf's limit, gives that limit, and
-NaN or an infinity gives zero. Past 2^53 nanoseconds (about 104 days) a
-`Float` holds fewer than nine decimal places, so the nanoseconds of a longer
-duration are only as exact as the `Float`.
+value whose whole seconds are past ±315,576,000,000, protobuf's limit, gives
+exactly that many seconds, and NaN or an infinity gives zero. Every valid
+duration is kept, a fraction of a second past the limit too, which protobuf
+allows. Past 2^53 nanoseconds (about 104 days) a `Float` holds fewer than
+nine decimal places, so the nanoseconds of a longer duration are only as
+exact as the `Float`.
 
     fromSeconds 1.5 |> toString == Just "1.500s"
 
@@ -86,18 +88,12 @@ fromSeconds value =
     if isNaN value || isInfinite value then
         Internal.Duration { seconds = 0, nanos = 0 }
 
-    else if value >= toFloat maxSeconds then
-        Internal.Duration { seconds = maxSeconds, nanos = 0 }
-
-    else if value <= toFloat -maxSeconds then
-        Internal.Duration { seconds = -maxSeconds, nanos = 0 }
-
     else
         let
             whole =
                 towardZero value
         in
-        Internal.normalize (Internal.Duration { seconds = whole, nanos = Basics.round ((value - toFloat whole) * 1.0e9) })
+        clamped (Internal.Duration { seconds = whole, nanos = Basics.round ((value - toFloat whole) * 1.0e9) })
 
 
 {-| The duration in seconds, a lossy view: as exact as a `Float` is, as for
@@ -113,22 +109,17 @@ toSeconds duration =
     toFloat parts.seconds + toFloat parts.nanos / 1.0e9
 
 
-{-| The duration of so many milliseconds, exactly. It clamps: a value past
-±315,576,000,000 seconds, protobuf's limit, gives that limit.
+{-| The duration of so many milliseconds, exactly. It clamps: a value whose
+whole seconds are past ±315,576,000,000, protobuf's limit, gives exactly that
+many seconds. Every valid duration is kept, a fraction of a second past the
+limit too.
 
     fromMillis 1500 == fromSeconds 1.5
 
 -}
 fromMillis : Int -> Duration
 fromMillis value =
-    if value >= maxSeconds * 1000 then
-        Internal.Duration { seconds = maxSeconds, nanos = 0 }
-
-    else if value <= -maxSeconds * 1000 then
-        Internal.Duration { seconds = -maxSeconds, nanos = 0 }
-
-    else
-        Internal.normalize (Internal.Duration { seconds = towardZero (toFloat value / 1000), nanos = remainderBy 1000 value * 1000000 })
+    clamped (Internal.Duration { seconds = towardZero (toFloat value / 1000), nanos = remainderBy 1000 value * 1000000 })
 
 
 {-| The duration in whole milliseconds, rounded toward zero, as
@@ -283,7 +274,9 @@ normalize =
 -- INTERNAL
 
 
-{-| Normalised, then clamped to protobuf's limit, for the lossy views.
+{-| Normalised, then clamped when the seconds are past protobuf's limit, for
+the builders that clamp and the lossy views. A valid duration is kept as it
+is.
 -}
 clamped : Duration -> Duration
 clamped duration =

@@ -1384,11 +1384,13 @@ In detail:
   exactly, as seconds and nanoseconds like protobuf, rather than as a
   `Float` of seconds. The range is protobuf's, ±315,576,000,000 s, and
   a valid duration has nanoseconds below one second of the seconds'
-  sign (`isValid`). `fromSeconds` and `fromMillis` clamp: a value past
-  the range gives its limit (nanoseconds zero), and `fromSeconds` gives
-  zero for NaN and the infinities. `fromSecondsAndNanos` normalises and
-  is `Nothing` past the range; at the limit it keeps the nanoseconds, as
-  protobuf and `fromString` do. `toSecondsAndNanos` gives the two fields
+  sign (`isValid`). `fromSeconds` and `fromMillis` clamp: a value whose
+  whole seconds are past the range gives its limit (nanoseconds zero),
+  and `fromSeconds` gives zero for NaN and the infinities.
+  `fromSecondsAndNanos` normalises and is `Nothing` past the range. At
+  the limit all three keep the nanoseconds, as protobuf and `fromString`
+  do: a valid duration is never clamped. `toSecondsAndNanos` gives the
+  two fields
   as held. The `Float` views (`fromSeconds`, `toSeconds`) are exact to
   the nanosecond only below 2^53 ns (about 104 days); `fromMillis` and
   `toMillis` are exact. `toString` prints with 0, 3, 6 or 9 fractional
