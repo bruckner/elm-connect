@@ -1248,9 +1248,14 @@ milliseconds (below).
    what a value that is not valid means, which is the application's to
    say, over the fields `toSecondsAndNanos` gives.
    Seconds outside ±(2^53 − 1), which an Elm `Int` does not hold
-   exactly, fail a binary read (`IntOutOfRange`, §5.5), as any 64-bit
-   integer held as an `Int` does: a value is held as read or not at all,
-   never rounded.
+   exactly, are held exactly all the same: the internal record's third
+   field, `wideHigh`, is 0 for seconds an `Int` holds and otherwise
+   their upper 32 bits, with `seconds` the lower 32, as the binary
+   reader read them; only the internal module knows that encoding. The
+   read does not fail, a write gives the same bytes and `==` stays
+   exact. Such a value is never valid; `toSecondsAndNanos` gives the
+   nearest `Int`, the lossy views clamp by sign, and `normalize` gives
+   it back as it is.
 6. **Vocabulary.** `fromX` and `toX` for conversions;
    `fromString : String -> Maybe T`; one module per type; the JSON
    codecs in `Proto.Json`, the decoder under the type's noun and the

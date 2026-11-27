@@ -830,6 +830,9 @@ wellKnownMerges =
                     -- Seconds 3 and nanos -500000000, as protobuf-go keeps
                     -- them: held as merged, not given one sign.
                     , \_ -> mergesTo B.duration durationText "0a1608ffffffffffffffffff011080b6ca91feffffffff01 0a020803" (Just "invalid 3 -500000000")
+                    , \_ -> mergesTo B.duration durationText "0a0a08808080808080808040 0a021005" (Just "invalid 4611686018427388000 5")
+                    , \_ -> mergesTo B.duration durationText "0a0a08808080808080808040 0a020803" (Just "3s")
+                    , \_ -> mergesTo B.duration durationText "0a0408031005 0a0a08808080808080808040" (Just "invalid 4611686018427388000 5")
                     ]
                     ()
         , test "a wrapper takes the later value, and keeps the earlier when the later is empty" <|
