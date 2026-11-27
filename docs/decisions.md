@@ -723,12 +723,13 @@ function gives an invalid value. The settled design is design §3.5,
 - **No generator option** for these types in 0.2.
 
 What a program pays (`elm make --optimize`, terser, `gzip -9 -n`): one
-that uses no `Duration` links the same definitions as before, within 4
-bytes minified and 1 gzipped (a program that writes no JSON, one writing
-a message that cannot refuse, a JSON-only client); the notes example,
-which reads and writes durations, grows by 115 bytes minified and 46
-gzipped, the JSON write's validity check with its three reasons and
-the printer's normalising. Where: design §3.5, §3.7, §4, §5.5.
+that uses no `Duration` links the same definitions as before, at the
+same minified size and within 4 bytes gzipped (a program that writes no
+JSON, one writing a message that cannot refuse, a JSON-only client);
+the notes example, which reads and writes durations, grows by 609 bytes
+minified and 169 gzipped: the binary read that holds seconds past the
+`Int` limit, and the JSON write's validity check with its three
+reasons. Where: design §3.5, §3.7, §4, §5.5.
 
 ### Decoder steps
 
