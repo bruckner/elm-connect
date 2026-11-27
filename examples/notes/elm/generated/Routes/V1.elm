@@ -2237,7 +2237,7 @@ queryOfEverything request_ =
         , Proto.Query.optional "maybe_count" (Maybe.map String.fromInt request_.maybeCount)
         , Proto.Query.optional "maybe_name" request_.maybeName
         , Proto.Query.optional "at" (Maybe.map Proto.Timestamp.toString request_.at)
-        , Proto.Query.optional "wait" (Maybe.map Proto.Route.durationText request_.wait)
+        , Proto.Query.optional "wait" (Maybe.andThen Proto.Duration.toString request_.wait)
         , Proto.Query.optional "mask" (Maybe.map Proto.Route.fieldMaskText request_.mask)
         , Proto.Query.optional "limit" (Maybe.map String.fromInt request_.limit)
         , Proto.Query.optional "label" request_.label
