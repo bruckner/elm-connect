@@ -1271,11 +1271,11 @@ Each opaque type is defined in an internal module
 (`Proto.Internal.Duration`) that exposes its constructor to the package,
 for the binary reader; the public module aliases it, as `Proto.Any.Any`
 aliases `Proto.Internal.Any.Any`, and exposes no way to reach an invalid
-value. The JSON encoder, which prints a value it has checked, uses the
-internal printer (`Proto.Internal.Duration.print`), not the `Maybe` of
-`toString`. Generated code has only the public module: a route's path
-and query (§4) print with `toString`, and a value that is not valid
-prints as an unset one does.
+value. Each type has one printer, its `toString`, which gives `Nothing`
+for a value that is not valid: the JSON encoder writes its `Just` and
+refuses on `Nothing`, with the reason the internal module gives
+(`whyInvalid`), and a route's path and query (§4) print with it too, a
+value that is not valid printing as an unset one does.
 
 In detail:
 

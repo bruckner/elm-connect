@@ -1,4 +1,4 @@
-module Proto.Internal.Duration exposing (Duration(..), fromWireSeconds, isValid, maxSeconds, nearestSeconds, normalize, print, towardZero, wireSeconds)
+module Proto.Internal.Duration exposing (Duration(..), fromWireSeconds, isValid, maxSeconds, nearestSeconds, normalize, towardZero, whyInvalid, wireSeconds)
 
 {-| The `Duration` type, defined here so that the binary reader can hold the
 fields a peer wrote, which `Proto.Duration` exposes only opaquely and whose
@@ -128,46 +128,20 @@ maxExact =
     9007199254740991
 
 
-{-| The proto3 JSON text of a duration: seconds followed by `s`, with
-nothing, three, six or nine fractional digits, whichever is the fewest that
-keep every nanosecond. A valid duration is already in normal form; any
-other is printed normalised, and one out of range prints seconds a JSON
-read refuses. Callers that write JSON check validity first.
+{-| Why a duration that is not valid is not, as a proto3 JSON write says it
+when it refuses one: its range first, then its nanoseconds, then their sign,
+the order protojson checks them in.
 -}
-print : Duration -> String
-print duration =
-    let
-        ((Duration parts) as normal) =
-            normalize duration
+whyInvalid : Duration -> String
+whyInvalid ((Duration parts) as duration) =
+    if abs (nearestSeconds duration) > maxSeconds then
+        "the duration is outside -315,576,000,000 to 315,576,000,000 seconds"
 
-        sign =
-            if parts.seconds < 0 || parts.nanos < 0 then
-                "-"
-
-            else
-                ""
-
-        nanos =
-            abs parts.nanos
-
-        fraction =
-            if nanos == 0 then
-                ""
-
-            else if remainderBy 1000000 nanos == 0 then
-                "." ++ String.padLeft 3 '0' (String.fromInt (nanos // 1000000))
-
-            else if remainderBy 1000 nanos == 0 then
-                "." ++ String.padLeft 6 '0' (String.fromInt (nanos // 1000))
-
-            else
-                "." ++ String.padLeft 9 '0' (String.fromInt nanos)
-    in
-    if isWide normal then
-        String.fromInt (nearestSeconds normal) ++ "s"
+    else if abs parts.nanos >= 1000000000 then
+        "the nanoseconds are outside -999,999,999 to 999,999,999"
 
     else
-        sign ++ String.fromInt (abs parts.seconds) ++ fraction ++ "s"
+        "the seconds and the nanoseconds have opposite signs"
 
 
 {-| Elm's `truncate` works in 32 bits; this rounds toward zero at any size.

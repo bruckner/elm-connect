@@ -198,9 +198,36 @@ print one that is in range but not in normal form.
 
 -}
 toString : Duration -> Maybe String
-toString duration =
+toString ((Internal.Duration parts) as duration) =
     if Internal.isValid duration then
-        Just (Internal.print duration)
+        let
+            sign =
+                if parts.seconds < 0 || parts.nanos < 0 then
+                    "-"
+
+                else
+                    ""
+
+            fraction =
+                abs parts.nanos
+        in
+        Just
+            (sign
+                ++ String.fromInt (abs parts.seconds)
+                ++ (if fraction == 0 then
+                        ""
+
+                    else if remainderBy 1000000 fraction == 0 then
+                        "." ++ String.padLeft 3 '0' (String.fromInt (fraction // 1000000))
+
+                    else if remainderBy 1000 fraction == 0 then
+                        "." ++ String.padLeft 6 '0' (String.fromInt (fraction // 1000))
+
+                    else
+                        "." ++ String.padLeft 9 '0' (String.fromInt fraction)
+                   )
+                ++ "s"
+            )
 
     else
         Nothing

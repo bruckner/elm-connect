@@ -2313,14 +2313,6 @@ duration =
             )
 
 
-{-| Encode a valid `google.protobuf.Duration`; see
-[`Proto.Duration.toString`](Proto-Duration#toString).
--}
-encodeDuration : Duration -> Value
-encodeDuration span =
-    Json.Encode.string (InternalDuration.print span)
-
-
 {-| Decode a `google.protobuf.FieldMask` into its paths. proto3 JSON writes a
 mask as one string, the paths joined by commas, each field name in
 lowerCamelCase; the paths come back with proto field names, as a server
@@ -3045,21 +3037,13 @@ or with nanoseconds of a second or more or of the other sign than the
 seconds, which only a duration read from protobuf binary can be.
 -}
 writeDuration : Duration -> Encoder Error
-writeDuration ((InternalDuration.Duration parts) as held) =
-    if InternalDuration.isValid held then
-        Writer.succeed (encodeDuration held)
+writeDuration held =
+    case Proto.Duration.toString held of
+        Just text ->
+            Writer.succeed (Json.Encode.string text)
 
-    else
-        Writer.refuse "google.protobuf.Duration"
-            (if abs (InternalDuration.nearestSeconds held) > InternalDuration.maxSeconds then
-                "the duration is outside -315,576,000,000 to 315,576,000,000 seconds"
-
-             else if abs parts.nanos >= 1000000000 then
-                "the nanoseconds are outside -999,999,999 to 999,999,999"
-
-             else
-                "the seconds and the nanoseconds have opposite signs"
-            )
+        Nothing ->
+            Writer.refuse "google.protobuf.Duration" (InternalDuration.whyInvalid held)
 
 
 {-| A `google.protobuf.FieldMask`, refused when a path's lowerCamelCase form
