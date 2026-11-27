@@ -3051,7 +3051,7 @@ writeDuration ((InternalDuration.Duration parts) as held) =
 
     else
         Writer.refuse "google.protobuf.Duration"
-            (if abs parts.seconds > InternalDuration.maxSeconds then
+            (if parts.high /= 0 || abs parts.seconds > InternalDuration.maxSeconds then
                 "the duration is outside -315,576,000,000 to 315,576,000,000 seconds"
 
              else if abs parts.nanos >= 1000000000 then

@@ -1700,6 +1700,34 @@ fixed64 =
     wide 1 fastFixed64 fixed64Read fixed64Write (Just << unsignedText) fromText "0"
 
 
+{-| `int64` as two `Int`s, exact for every value: `( 0, n )` for an `n`
+within ±(2^53 − 1), and past that the upper and the lower 32 bits as read,
+the upper never 0 there.
+-}
+int64Split : Codec ( Int, Int )
+int64Split =
+    wide 0
+        fastVarint64
+        varint64
+        writeVarint64
+        (\((U64 high low) as u) ->
+            case toInt64 u of
+                Just exact ->
+                    Just ( 0, exact )
+
+                Nothing ->
+                    Just ( high, low )
+        )
+        (\( high, low ) ->
+            if high == 0 then
+                fromInt64 low
+
+            else
+                U64 high low
+        )
+        ( 0, 0 )
+
+
 {-| `int64` held as an `Int`, within ±(2^53 − 1).
 -}
 int64AsInt : Codec Int
@@ -2250,25 +2278,50 @@ write unchanged
 ([`Proto.Duration.isValid`](Proto-Duration#isValid) says whether it is).
 One that arrives twice is merged field by field: the seconds or the
 nanoseconds the later one carries replace the earlier one's. Seconds
-outside ±(2^53 − 1), over 28,000 times protobuf's limit, fail to decode
-with `IntOutOfRange`, as any 64-bit integer held as an `Int` does.
+outside ±(2^53 − 1), which an Elm `Int` does not hold exactly, are held
+exactly too and written back as read;
+[`Proto.Duration.toSecondsAndNanos`](Proto-Duration#toSecondsAndNanos) gives
+the nearest `Int` for them.
 -}
 duration : Codec Duration
 duration =
-    embedded writeDuration durationInto (InternalDuration.Duration { seconds = 0, nanos = 0 })
+    embedded writeDuration durationInto (InternalDuration.Duration { seconds = 0, nanos = 0, high = 0 })
 
 
 durationInto : Duration -> Decoder Duration
-durationInto (InternalDuration.Duration parts) =
-    wellKnown "google.protobuf.Duration"
-        ( parts.seconds, parts.nanos )
-        partsStep
-        (\( seconds, nanos ) -> InternalDuration.Duration { seconds = seconds, nanos = nanos })
+durationInto existing =
+    wellKnown "google.protobuf.Duration" existing durationStep identity
+
+
+{-| A `Duration`'s fields: `seconds` (1), all 64 bits of them, and `nanos`
+(2).
+-}
+durationStep : Int -> Int -> Duration -> Field Duration
+durationStep number wire ((InternalDuration.Duration parts) as held) =
+    case number of
+        1 ->
+            field int64Split
+                (\( high, seconds ) -> InternalDuration.Duration { seconds = seconds, nanos = parts.nanos, high = high })
+                wire
+                held
+
+        2 ->
+            field int32 (\v -> InternalDuration.Duration { seconds = parts.seconds, nanos = v, high = parts.high }) wire held
+
+        _ ->
+            skip wire held
 
 
 writeDuration : Duration -> Encoder
 writeDuration (InternalDuration.Duration parts) =
-    E.sequence [ implicit int64AsInt 1 parts.seconds, implicit int32 2 parts.nanos ]
+    E.sequence
+        [ if parts.high == 0 then
+            implicit int64AsInt 1 parts.seconds
+
+          else
+            implicit int64Split 1 ( parts.high, parts.seconds )
+        , implicit int32 2 parts.nanos
+        ]
 
 
 {-| `google.protobuf.FieldMask` as its paths, proto field names as the

@@ -296,6 +296,14 @@ written seconds nanos =
     B.encode (\() -> Bytes.Encode.sequence [ B.implicit B.int64AsInt 1 seconds, B.implicit B.int32 2 nanos ]) ()
 
 
+{-| The binary of a Duration whose seconds are this decimal text, which an
+`Int` may not hold, written as a peer may.
+-}
+wideBytes : String -> Int -> Bytes
+wideBytes seconds nanos =
+    B.encode (\() -> Bytes.Encode.sequence [ B.implicit B.int64 1 seconds, B.implicit B.int32 2 nanos ]) ()
+
+
 read : Int -> Int -> Result Proto.Error.Binary Duration
 read seconds nanos =
     B.decode (B.messageDecoder B.duration) (written seconds nanos)
@@ -471,18 +479,74 @@ fromBinary =
                                         }
                                     )
                                 )
-               , test "seconds past what an Int holds exactly, 2^62 either way, fail the read" <|
+               , test "seconds past what an Int holds exactly are held exactly: not valid, refused in JSON, and the same bytes back" <|
                     \_ ->
-                        Expect.all
-                            [ \_ ->
-                                octets (written (2 ^ 62) 0)
-                                    |> Expect.equal [ 0x08, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x40 ]
-                            , \_ ->
-                                [ 2 ^ 62, -(2 ^ 62), 2 ^ 53, -(2 ^ 53) ]
-                                    |> List.map (\seconds -> read seconds 0 |> Result.map Duration.toSecondsAndNanos |> Result.mapError .reason)
-                                    |> Expect.equal (List.repeat 4 (Err Proto.Error.IntOutOfRange))
-                            ]
-                            ()
+                        [ wideBytes "4611686018427387904" 0, wideBytes "-4611686018427387904" 0, wideBytes "9007199254740992" 0, wideBytes "9223372036854775807" 7, wideBytes "-9223372036854775807" -7 ]
+                            |> List.map
+                                (\bytes ->
+                                    case B.decode (B.messageDecoder B.duration) bytes of
+                                        Err _ ->
+                                            Err "the read failed"
+
+                                        Ok duration ->
+                                            let
+                                                again =
+                                                    B.encode (B.messageEncoder B.duration) duration
+                                            in
+                                            Ok
+                                                { valid = Duration.isValid duration
+                                                , text = Duration.toString duration
+                                                , json = jsonRefusal duration
+                                                , sameBytes = octets again == octets bytes
+                                                , readAgain =
+                                                    B.decode (B.messageDecoder B.duration) again
+                                                        |> Result.map (\d -> d == duration)
+                                                        |> Result.toMaybe
+                                                , normal = Duration.normalize duration == duration
+                                                }
+                                )
+                            |> Expect.equal
+                                (List.repeat 5
+                                    (Ok
+                                        { valid = False
+                                        , text = Nothing
+                                        , json = Err (refusedFor "the duration is outside -315,576,000,000 to 315,576,000,000 seconds")
+                                        , sameBytes = True
+                                        , readAgain = Just True
+                                        , normal = True
+                                        }
+                                    )
+                                )
+               , test "toSecondsAndNanos gives the nearest Int for seconds an Int does not hold, and the views clamp by sign" <|
+                    \_ ->
+                        [ wideBytes "4611686018427387904" 5, wideBytes "-4611686018427387904" -5, wideBytes "9223372036854775807" 0 ]
+                            |> List.map
+                                (\bytes ->
+                                    B.decode (B.messageDecoder B.duration) bytes
+                                        |> Result.map (\d -> ( Duration.toSecondsAndNanos d, Duration.toMillis d, Duration.toSeconds d ))
+                                        |> Result.toMaybe
+                                )
+                            |> Expect.equal
+                                [ Just ( { seconds = 2 ^ 62, nanos = 5 }, 315576000000000, 315576000000 )
+                                , Just ( { seconds = -(2 ^ 62), nanos = -5 }, -315576000000000, -315576000000 )
+                                , Just ( { seconds = 2 ^ 63, nanos = 0 }, 315576000000000, 315576000000 )
+                                ]
+               , test "normalize gives back a duration whose seconds the carry would take past what an Int holds" <|
+                    \_ ->
+                        [ read (2 ^ 53 - 1) 1500000000, read -(2 ^ 53 - 1) -1500000000, read (2 ^ 53 - 2) 1500000000 ]
+                            |> List.map (Result.map (\d -> ( Duration.normalize d == d, Duration.toSecondsAndNanos (Duration.normalize d) )) >> Result.toMaybe)
+                            |> Expect.equal
+                                [ Just ( True, { seconds = 2 ^ 53 - 1, nanos = 1500000000 } )
+                                , Just ( True, { seconds = -(2 ^ 53 - 1), nanos = -1500000000 } )
+                                , Just ( False, { seconds = 2 ^ 53 - 1, nanos = 500000000 } )
+                                ]
+               , test "two wide durations one second apart are not ==, though their nearest Ints are" <|
+                    \_ ->
+                        Result.map2 (\a b -> ( a == b, Duration.toSecondsAndNanos a == Duration.toSecondsAndNanos b ))
+                            (B.decode (B.messageDecoder B.duration) (wideBytes "4611686018427387904" 0))
+                            (B.decode (B.messageDecoder B.duration) (wideBytes "4611686018427387905" 0))
+                            |> Result.toMaybe
+                            |> Expect.equal (Just ( False, True ))
                , test "the lossy views normalise, then clamp" <|
                     \_ ->
                         [ read 1 -500000000, read 315576000001 0, read -400000000000 -1, read 315576000000 1500000000 ]

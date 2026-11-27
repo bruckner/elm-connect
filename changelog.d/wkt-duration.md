@@ -12,7 +12,10 @@
   as held; one arriving twice is merged field by field and not given
   one sign. A proto3 JSON write refuses one that is not valid (past
   protobuf's range, or its nanoseconds of a second or more or of the
-  other sign than its seconds) with `Proto.Error.BadValue`.
+  other sign than its seconds) with `Proto.Error.BadValue`. Seconds
+  outside ±(2^53 − 1), which an `Int` does not hold exactly, no longer
+  fail the read: they are held exactly and written back as read, and
+  `toSecondsAndNanos` gives the nearest `Int`.
 - `Proto.Duration.isValid` and `normalize`: protobuf's validity rule
   and the normal form (not clamped).
 - A generated route prints a duration in a path or query with
