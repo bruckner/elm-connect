@@ -1265,10 +1265,11 @@ Each opaque type is defined in an internal module
 (`Proto.Internal.Duration`) that exposes its constructor to the package,
 for the binary reader; the public module aliases it, as `Proto.Any.Any`
 aliases `Proto.Internal.Any.Any`, and exposes no way to reach an invalid
-value. Package code that prints a value it has checked, or prints
-unchecked behind a check (the JSON encoder; a route's path and query,
-§4), uses the internal printer (`Proto.Internal.Duration.print`), not
-the `Maybe` of `toString`.
+value. The JSON encoder, which prints a value it has checked, uses the
+internal printer (`Proto.Internal.Duration.print`), not the `Maybe` of
+`toString`. Generated code has only the public module: a route's path
+and query (§4) print with `toString`, and a value that is not valid
+prints as an unset one does.
 
 In detail:
 
@@ -2592,9 +2593,10 @@ binding whose rule names a `response_body`:
   `checkSegments`; a value's text is its proto3 JSON text (a string as
   it is, `String.fromInt`, `Proto.Route.boolText`, an enum or float by
   its encoder through `Proto.Route.viaJson`, a timestamp by
-  `Proto.Timestamp.toString`, a duration by `Proto.Route.durationText`
-  (the internal printer: a request over JSON is checked before its
-  route is built, §3.5), `bytes` held
+  `Proto.Timestamp.toString`, a duration by `Proto.Duration.toString`,
+  which has no text for one that is not valid: the route then has what
+  it has for an unset one, and a request over JSON holding one is
+  refused before its route is built (§3.5), `bytes` held
   as `Bytes` by `Proto.Route.bytesText`, base64 in the URL-safe alphabet,
   padded, the one alphabet every transcoder reads in a path; §5.3). A path
   through a message on a recursion cycle reads through its wrapper. The

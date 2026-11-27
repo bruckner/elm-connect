@@ -15,8 +15,10 @@
   other sign than its seconds) with `Proto.Error.BadValue`.
 - `Proto.Duration.isValid` and `normalize`: protobuf's validity rule
   and the normal form (not clamped).
-- `Proto.Route.durationText`, a duration's path and query text, which
-  generated routes call.
+- A generated route prints a duration in a path or query with
+  `Proto.Duration.toString`; one that is not valid has no text, and the
+  route has what it has for an unset one. A request over JSON holding
+  one is refused before its route is built.
 - Breaking: generated code writes `Proto.Duration.Duration` qualified
   and imports no runtime module exposing a name (regenerate), so a
   message named `Duration` no longer needs a `rename`. The protobuf

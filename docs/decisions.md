@@ -668,9 +668,13 @@ function gives an invalid value. The settled design is design §3.5,
 - **Why `toString` is a `Maybe`.** A value read from binary may have no
   text, and `toString` says so rather than print a text a JSON read
   refuses or a normal form the value is not; it is less handy for
-  display, but honest. Code inside the package that prints a value it
-  has checked, the JSON encoder and a route's path and query text, uses
-  an internal printer.
+  display, but honest. The JSON encoder, which prints a value it has
+  checked, uses an internal printer. A generated route prints a path or
+  query value
+  with `toString`, as application code would, and gives a value that is
+  not valid what it gives an unset one: the internal printer stays
+  internal, and a request over JSON holding such a value is refused
+  before its route is built.
 - **`==` among read values.** Two durations read from binary that are
   the same span written differently are not `==`; `normalize` makes
   them `==`. Every value built or read from JSON is valid and normal,
