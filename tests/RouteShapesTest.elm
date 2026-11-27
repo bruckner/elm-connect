@@ -17,8 +17,10 @@ import Generated.Shapes.Blobs.V1 as B
 import Generated.Shapes.Blobs.V1.BlobService as Service
 import Json.Encode
 import Proto.Any
+import Proto.Binary
 import Proto.Error
 import Proto.Method
+import Proto.Timestamp
 import Proto.Value
 import Requests exposing (builtOf, refusalOf)
 import Rpc
@@ -161,16 +163,20 @@ folders =
 moments : List B.Moment
 moments =
     [ { name = "moments/1", at = Nothing }
-    , { name = "moments/2", at = Just (Time.millisToPosix 1700000000500) }
-    , { name = "", at = Just (Time.millisToPosix 0) }
+    , { name = "moments/2", at = Proto.Timestamp.fromSecondsAndNanos 1700000000 500000000 }
+    , { name = "moments/3", at = Proto.Timestamp.fromSecondsAndNanos 1700000000 123456789 }
+    , { name = "", at = Proto.Timestamp.fromSecondsAndNanos 0 0 }
     ]
 
 
-{-| A time proto3 JSON has no form for: past the year 9999.
+{-| A time proto3 JSON has no form for: past the year 9999, as only a
+timestamp read from protobuf binary can be.
 -}
-tooLate : Time.Posix
+tooLate : Proto.Timestamp.Timestamp
 tooLate =
-    Time.millisToPosix 300000000000000
+    Proto.Binary.encode (\() -> Bytes.Encode.sequence [ Proto.Binary.implicit Proto.Binary.int64AsInt 1 300000000000 ]) ()
+        |> Proto.Binary.decode (Proto.Binary.messageDecoder Proto.Binary.timestamp)
+        |> Result.withDefault (Proto.Timestamp.fromPosix (Time.millisToPosix 0))
 
 
 {-| The error `Rpc.request` refuses a call over each of its bindings with:

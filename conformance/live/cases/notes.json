@@ -21,6 +21,7 @@
           ],
           "visibility": "VISIBILITY_PUBLIC",
           "createTime": "2026-01-01T00:00:00Z",
+          "updateTime": "2026-01-01T00:00:01.123456789Z",
           "ttl": "90s",
           "metadata": {
             "lang": "en"
@@ -1382,6 +1383,7 @@
           ],
           "visibility": "VISIBILITY_PUBLIC",
           "createTime": "2026-01-01T00:00:00Z",
+          "updateTime": "2026-01-01T00:00:01.123456789Z",
           "ttl": "90s",
           "metadata": {
             "lang": "en"

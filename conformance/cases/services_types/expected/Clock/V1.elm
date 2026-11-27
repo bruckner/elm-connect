@@ -17,9 +17,9 @@ import Proto.Error
 import Proto.Json
 import Proto.Message
 import Proto.Registry
+import Proto.Timestamp
 import Proto.Version
 import Proto.WellKnown
-import Time
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -39,7 +39,7 @@ elmConnectVersion_ =
 
 -}
 type alias Alarm =
-    { at : Maybe Time.Posix
+    { at : Maybe Proto.Timestamp.Timestamp
     }
 
 

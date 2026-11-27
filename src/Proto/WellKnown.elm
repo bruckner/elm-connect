@@ -60,8 +60,8 @@ import Proto.Internal.WellKnown as Descriptors
 import Proto.Json
 import Proto.Message exposing (Message, init, initWith)
 import Proto.Registry
+import Proto.Timestamp exposing (Timestamp)
 import Proto.Value
-import Time
 
 
 {-| `google.protobuf.Empty`: `()`, written `{}`.
@@ -71,9 +71,9 @@ empty =
     init "google.protobuf.Empty" (Proto.Json.succeed << Proto.Json.encodeEmpty) Proto.Json.empty (Proto.Binary.messageEncoder Proto.Binary.empty) (Proto.Binary.messageDecoder Proto.Binary.empty)
 
 
-{-| `google.protobuf.Timestamp`: a `Time.Posix`, written in RFC 3339.
+{-| `google.protobuf.Timestamp`, written in RFC 3339 (`"2026-10-10T17:19:45.250Z"`).
 -}
-timestamp : Message Time.Posix
+timestamp : Message Timestamp
 timestamp =
     init "google.protobuf.Timestamp" Proto.Json.writeTimestamp Proto.Json.timestamp (Proto.Binary.messageEncoder Proto.Binary.timestamp) (Proto.Binary.messageDecoder Proto.Binary.timestamp)
 

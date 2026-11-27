@@ -4,8 +4,8 @@
 
 module WellKnown.V1 exposing (..)
 
-{-| Well-known types (design §3.5): Timestamp as Time.Posix, Duration as the
-runtime's Duration, FieldMask as its paths, Empty as () without
+{-| Well-known types (design §3.5): Timestamp and Duration as the runtime's
+Timestamp and Duration, FieldMask as its paths, Empty as () without
 presence, Struct and ListValue as a Dict and a List of JSON values,
 Value as a Maybe of JSON, the wrappers as a Maybe of their scalar, and
 the enum NullValue as () without presence.
@@ -22,10 +22,10 @@ import Proto.Error
 import Proto.Json
 import Proto.Message
 import Proto.Registry
+import Proto.Timestamp
 import Proto.Value
 import Proto.Version
 import Proto.WellKnown
-import Time
 import WellKnown.V1.Event
 
 
@@ -81,7 +81,7 @@ elmConnectVersion_ =
 
 -}
 type alias Event =
-    { createdAt : Maybe Time.Posix
+    { createdAt : Maybe Proto.Timestamp.Timestamp
     , timeout : Maybe Proto.Duration.Duration
     , updateMask : Maybe (List String)
     , marker : ()
@@ -97,7 +97,7 @@ type alias Event =
     , enabled : Maybe Bool
     , nickname : Maybe String
     , avatar : Maybe String
-    , history : List Time.Posix
+    , history : List Proto.Timestamp.Timestamp
     , limits : Dict String Proto.Duration.Duration
     , values : List Proto.Value.Value
     , counts : List Int
@@ -129,7 +129,7 @@ type alias Event =
 -}
 type EventWhen
     = EventWhenUnset
-    | EventWhenAt Time.Posix
+    | EventWhenAt Proto.Timestamp.Timestamp
     | EventWhenAfter Proto.Duration.Duration
     | EventWhenWhenever Proto.Value.Value
     | EventWhenSchedule (Dict String Proto.Value.Value)

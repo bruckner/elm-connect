@@ -116,8 +116,9 @@ elm install bruckner/elm-connect
 
 and the runtime's own dependencies come with it. An application then
 lists `elm/http` and `elm/json`, which generated code and `Rpc` calls
-need, `elm/time` when a proto uses `google.protobuf.Timestamp`, and
-`elm/bytes` when it generates with `bytes=bytes`.
+need, `elm/time` when it converts a `google.protobuf.Timestamp` to or
+from a `Time.Posix` itself, and `elm/bytes` when it generates with
+`bytes=bytes`.
 
 The index takes no version below 1.0.0, so before then an application
 reads the runtime from a clone of this repository, checked out at the
@@ -190,9 +191,10 @@ Elm compiles a source directory's modules as the application's own:
 
 - `elm/http`: the runtime sends calls with it.
 - `elm/json`: the generated codecs and the runtime's JSON helpers.
-- `elm/time`: the runtime reads `google.protobuf.Timestamp` as a
-  `Time.Posix`, and its retry loop reads the clock, whether or not the
-  protos use a `Timestamp`.
+- `elm/time`: the runtime converts a `google.protobuf.Timestamp` to and
+  from a `Time.Posix` and reads the clock (`Proto.Timestamp.now`), and
+  its retry loop reads the clock, whether or not the protos use a
+  `Timestamp`.
 - `elm/bytes`: the runtime's `Proto.Bytes` and `Proto.Json` import it,
   whether or not the protos use `bytes`.
 - `elm/core`, and `elm/browser` and `elm/html` for a browser

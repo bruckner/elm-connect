@@ -1,8 +1,9 @@
 // Path variables of well-known types whose JSON is one string or scalar:
 // the variable's text is that JSON value, and the field is not repeated
 // in the query. And query parameters of a type whose text a value may
-// lack (a Duration that is not valid): a singular one is left out as an
-// unset one is, and a repeated one leaves that element out.
+// lack (a Timestamp or a Duration that is not valid): a singular one is
+// left out as an unset one is, and a repeated one leaves that element
+// out.
 syntax = "proto3";
 
 package clock.v1;
@@ -25,6 +26,8 @@ message Moment {
 message Pauses {
   google.protobuf.Duration wait = 1;
   repeated google.protobuf.Duration waits = 2;
+  google.protobuf.Timestamp after = 3;
+  repeated google.protobuf.Timestamp marks = 4;
 }
 
 service Clock {

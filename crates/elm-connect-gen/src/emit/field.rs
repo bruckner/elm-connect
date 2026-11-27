@@ -4,7 +4,7 @@
 use super::scalar::{Holding, Repr};
 use super::{
     CORE_DICT, CORE_STRING, Emitter, JSON_DECODE, PROTO_ANY, PROTO_DURATION, PROTO_JSON,
-    PROTO_VALUE, TIME, call, scalar,
+    PROTO_TIMESTAMP, PROTO_VALUE, call, scalar,
 };
 use crate::elm::ast::{Expr, Type};
 use crate::elm::build::{apply, list, qualified, ty, var};
@@ -134,7 +134,7 @@ pub(super) enum Present<'p> {
     /// A wrapper such as `google.protobuf.Int32Value`: its scalar, which
     /// is left out of the JSON when unset.
     Wrapper(Repr),
-    /// `google.protobuf.Timestamp`: `Time.Posix`.
+    /// `google.protobuf.Timestamp`: `Proto.Timestamp.Timestamp`.
     Timestamp,
     /// `google.protobuf.Duration`: the runtime's `Duration`.
     Duration,
@@ -454,7 +454,9 @@ impl Emitter {
             ValueShape::Zeroed(Zeroed::Enum(name, _))
             | ValueShape::Present(Present::Message(name)) => self.generated_type(name),
             ValueShape::Zeroed(Zeroed::Json) => self.library_type(PROTO_VALUE, "Value", []),
-            ValueShape::Present(Present::Timestamp) => self.library_type(TIME, "Posix", []),
+            ValueShape::Present(Present::Timestamp) => {
+                self.library_type(PROTO_TIMESTAMP, "Timestamp", [])
+            }
             ValueShape::Present(Present::Duration) => {
                 self.library_type(PROTO_DURATION, "Duration", [])
             }

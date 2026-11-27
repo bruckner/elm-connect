@@ -1,12 +1,15 @@
 module Proto.WriteTest exposing (suite)
 
+import Bytes.Encode
 import Dict
 import Expect
 import Json.Encode
 import Proto.Any
+import Proto.Binary
 import Proto.Duration
 import Proto.Error exposing (Error(..))
 import Proto.Json
+import Proto.Timestamp
 import Proto.Value exposing (Value(..))
 import Proto.WellKnown
 import Test exposing (Test, describe, test)
@@ -43,11 +46,32 @@ writtenWith =
     Proto.Json.encodeWith Proto.WellKnown.registry >> Result.map (Json.Encode.encode 0)
 
 
-{-| A timestamp proto3 JSON has no form for: past year 9999.
+{-| A timestamp proto3 JSON has no form for: past year 9999, as only one
+read from protobuf binary can be.
 -}
-farFuture : Time.Posix
+farFuture : Proto.Timestamp.Timestamp
 farFuture =
-    Time.millisToPosix 300000000000000
+    heldTimestamp 300000000000 0
+
+
+{-| A timestamp read from protobuf binary with these fields.
+-}
+heldTimestamp : Int -> Int -> Proto.Timestamp.Timestamp
+heldTimestamp seconds nanos =
+    Proto.Binary.encode (\() -> Bytes.Encode.sequence [ Proto.Binary.implicit Proto.Binary.int64AsInt 1 seconds, Proto.Binary.implicit Proto.Binary.int32 2 nanos ]) ()
+        |> Proto.Binary.decode (Proto.Binary.messageDecoder Proto.Binary.timestamp)
+        |> Result.withDefault epoch
+
+
+epoch : Proto.Timestamp.Timestamp
+epoch =
+    Proto.Timestamp.fromPosix (Time.millisToPosix 0)
+
+
+exactTimestamp : Int -> Int -> Proto.Timestamp.Timestamp
+exactTimestamp seconds nanos =
+    Proto.Timestamp.fromSecondsAndNanos seconds nanos
+        |> Maybe.withDefault epoch
 
 
 {-| An encoder of an `Int` that refuses negative numbers, as a timestamp too
@@ -103,7 +127,7 @@ suite =
                 Proto.Json.writeObject
                     [ Proto.Json.plainFields [ ( "a", Just (Json.Encode.int 1) ), ( "b", Nothing ) ]
                     , Proto.Json.checkedFields
-                        [ ( "t", Proto.Json.writeOptional Proto.Json.writeTimestamp (Just (Time.millisToPosix 0)) )
+                        [ ( "t", Proto.Json.writeOptional Proto.Json.writeTimestamp (Just epoch) )
                         , ( "u", Proto.Json.writeOptional Proto.Json.writeTimestamp Nothing )
                         ]
                     , Proto.Json.plainFields [ ( "c", Just (Json.Encode.int 3) ) ]
@@ -140,7 +164,10 @@ suite =
         , test "each refusal says what is wrong with the value, without quoting it" <|
             \_ ->
                 [ Proto.Json.writeTimestamp farFuture
-                , Proto.Json.writeTimestamp (Time.millisToPosix -62135596800001)
+                , Proto.Json.writeTimestamp (heldTimestamp -62135596801 999999999)
+                , Proto.Json.writeTimestamp (heldTimestamp 0 -1)
+                , Proto.Json.writeTimestamp (heldTimestamp 0 1000000000)
+                , Proto.Json.writeTimestamp (heldTimestamp 253402300800 -1)
                 , Proto.Json.writeFieldMask [ "fooBar" ]
                 , Proto.Json.writeValue (ValueNumber (0 / 0))
                 , Proto.Json.writeStruct (Dict.singleton "secret" (ValueStruct (Dict.singleton "x" (ValueNumber (1 / 0)))))
@@ -150,6 +177,9 @@ suite =
                     |> Expect.equal
                         [ Just "the time is outside years 1 to 9999"
                         , Just "the time is outside years 1 to 9999"
+                        , Just "the nanoseconds are outside 0 to 999,999,999"
+                        , Just "the nanoseconds are outside 0 to 999,999,999"
+                        , Just "the time is outside years 1 to 9999"
                         , Just "a path's JSON form does not read back as the same path"
                         , Just "a number is NaN or infinite"
                         , Just "a number is NaN or infinite"
@@ -157,7 +187,7 @@ suite =
                         ]
         , test "a refusal says what and where" <|
             \_ ->
-                checked [ ( "events", Proto.Json.writeRepeated Proto.Json.writeTimestamp [ Time.millisToPosix 0, farFuture ] ) ]
+                checked [ ( "events", Proto.Json.writeRepeated Proto.Json.writeTimestamp [ epoch, farFuture ] ) ]
                     |> Proto.Json.encode
                     |> Result.mapError Proto.Error.toString
                     |> Expect.equal (Err "A google.protobuf.Timestamp holds a value proto3 JSON has no form for, at events.1: the time is outside years 1 to 9999.")
@@ -169,8 +199,8 @@ suite =
                     |> Expect.equal (Err "A google.protobuf.FieldMask holds a value proto3 JSON has no form for: a path's JSON form does not read back as the same path.")
         , test "the limits themselves are written" <|
             \_ ->
-                [ Proto.Json.writeTimestamp (Time.millisToPosix -62135596800000)
-                , Proto.Json.writeTimestamp (Time.millisToPosix 253402300799999)
+                [ Proto.Json.writeTimestamp (exactTimestamp -62135596800 0)
+                , Proto.Json.writeTimestamp (exactTimestamp 253402300799 999999999)
                 , Proto.Json.writeDuration (exactDuration 315576000000 999999999)
                 , Proto.Json.writeDuration (exactDuration -315576000000 -999999999)
                 , Proto.Json.writeFieldMask [ "foo_bar.baz" ]
@@ -178,7 +208,7 @@ suite =
                     |> List.map written
                     |> Expect.equal
                         [ Ok "\"0001-01-01T00:00:00Z\""
-                        , Ok "\"9999-12-31T23:59:59.999Z\""
+                        , Ok "\"9999-12-31T23:59:59.999999999Z\""
                         , Ok "\"315576000000.999999999s\""
                         , Ok "\"-315576000000.999999999s\""
                         , Ok "\"fooBar.baz\""

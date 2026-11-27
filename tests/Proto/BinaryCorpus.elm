@@ -1,7 +1,7 @@
 module Proto.BinaryCorpus exposing (Case, Expected(..), Seed(..), cases, input, seedHex)
 
 {-| Binary inputs that fail to decode, and a few that decode, with the
-report each failure must give: 359 inputs.
+report each failure must give: 363 inputs.
 
 The inputs are mutations of three seed messages (`bench.v1.Envelope`,
 `bench.v1.Plain`, `protobuf_test_messages.proto3.TestAllTypesProto3`):
@@ -19,6 +19,12 @@ gave for it, validated against a generic walker over the same bytes; and 96
 inputs (`utf8cases.py`) whose `bench.v1.Plain.id` holds one byte sequence,
 valid or not, as Python's strict UTF-8 decoder judges it. A failure's
 expected report was not taken from the decoder these cases test.
+
+Four were added by hand since, for a 64-bit integer held as an `Int`
+(`optional_int64`, at the top and two messages deep), their reports worked
+out from the bytes: a `Timestamp`'s and a `Duration`'s seconds, which the
+generated inputs used for that, are now held past what an `Int` holds, and
+their cases are controls.
 
 -}
 
@@ -361,12 +367,16 @@ cases =
     , { seed = AllTypes, label = "map value cut by entry end", prefix = 97, middle = "03080110", suffix = 79, expected = Fails LengthOverrun [ ( "protobuf_test_messages.proto3.TestAllTypesProto3", 56 ) ] 101 }
     , { seed = AllTypes, label = "wire 6 in map value message", prefix = 104, middle = "080a016b1203080516", suffix = 69, expected = Fails (InvalidWireType 6) [ ( "protobuf_test_messages.proto3.TestAllTypesProto3", 71 ), ( "protobuf_test_messages.proto3.TestAllTypesProto3.NestedMessage", 2 ) ] 112 }
     , { seed = AllTypes, label = "wire 3 in Struct value", prefix = 165, middle = "0b0a090a016b12041a01732b", suffix = 5, expected = Fails (InvalidWireType 3) [ ( "protobuf_test_messages.proto3.TestAllTypesProto3", 304 ), ( "google.protobuf.Struct", 1 ), ( "google.protobuf.Value", 5 ) ] 176 }
-    , { seed = AllTypes, label = "Timestamp seconds 2^60", prefix = 154, middle = "0a08808080808080808010", suffix = 18, expected = Fails IntOutOfRange [ ( "protobuf_test_messages.proto3.TestAllTypesProto3", 302 ), ( "google.protobuf.Timestamp", 1 ) ] 156 }
+    , { seed = AllTypes, label = "control: Timestamp seconds 2^60, held wide", prefix = 154, middle = "0a08808080808080808010", suffix = 18, expected = Decodes }
     , { seed = AllTypes, label = "control: Duration seconds -2^60, held wide", prefix = 146, middle = "0b088080808080808080f001", suffix = 29, expected = Decodes }
-    , { seed = AllTypes, label = "Timestamp seconds 2^53", prefix = 154, middle = "09088080808080808010", suffix = 18, expected = Fails IntOutOfRange [ ( "protobuf_test_messages.proto3.TestAllTypesProto3", 302 ), ( "google.protobuf.Timestamp", 1 ) ] 156 }
+    , { seed = AllTypes, label = "control: Timestamp seconds 2^53, held wide", prefix = 154, middle = "09088080808080808010", suffix = 18, expected = Decodes }
     , { seed = AllTypes, label = "control: Timestamp seconds 2^53 - 1", prefix = 154, middle = "0908ffffffffffffff0f", suffix = 18, expected = Decodes }
     , { seed = AllTypes, label = "control: Duration seconds -(2^53 - 1)", prefix = 146, middle = "0b0881808080808080f0ff01", suffix = 29, expected = Decodes }
-    , { seed = AllTypes, label = "Timestamp out of range two deep", prefix = 36, middle = "130807120f0808f2120a08808080808080808010", suffix = 131, expected = Fails IntOutOfRange [ ( "protobuf_test_messages.proto3.TestAllTypesProto3", 18 ), ( "protobuf_test_messages.proto3.TestAllTypesProto3.NestedMessage", 2 ), ( "protobuf_test_messages.proto3.TestAllTypesProto3", 302 ), ( "google.protobuf.Timestamp", 1 ) ] 47 }
+    , { seed = AllTypes, label = "control: Timestamp seconds 2^60 two deep, held wide", prefix = 36, middle = "130807120f0808f2120a08808080808080808010", suffix = 131, expected = Decodes }
+    , { seed = AllTypes, label = "int64 2^60 held as an Int", prefix = 3, middle = "808080808080808010", suffix = 168, expected = Fails IntOutOfRange [ ( "protobuf_test_messages.proto3.TestAllTypesProto3", 2 ) ] 3 }
+    , { seed = AllTypes, label = "int64 2^53 held as an Int", prefix = 3, middle = "8080808080808010", suffix = 168, expected = Fails IntOutOfRange [ ( "protobuf_test_messages.proto3.TestAllTypesProto3", 2 ) ] 3 }
+    , { seed = AllTypes, label = "control: int64 2^53 - 1 held as an Int", prefix = 3, middle = "ffffffffffffff0f", suffix = 168, expected = Decodes }
+    , { seed = AllTypes, label = "int64 2^60 held as an Int, two deep", prefix = 36, middle = "100807120c080810808080808080808010", suffix = 131, expected = Fails IntOutOfRange [ ( "protobuf_test_messages.proto3.TestAllTypesProto3", 18 ), ( "protobuf_test_messages.proto3.TestAllTypesProto3.NestedMessage", 2 ), ( "protobuf_test_messages.proto3.TestAllTypesProto3", 2 ) ] 44 }
     , { seed = AllTypes, label = "control: int64 -1", prefix = 3, middle = "ff", suffix = 177, expected = Decodes }
     , { seed = Plain, label = "utf8: lead byte at end of input", prefix = 360, middle = "036162c3", suffix = 0, expected = Fails InvalidUtf8 [ ( "bench.v1.Plain", 4 ) ] 360 }
     , { seed = Plain, label = "utf8: lead byte mid message", prefix = 1, middle = "036162e2", suffix = 376, expected = Fails InvalidUtf8 [ ( "bench.v1.Plain", 1 ) ] 1 }

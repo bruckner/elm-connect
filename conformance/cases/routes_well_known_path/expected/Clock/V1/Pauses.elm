@@ -29,6 +29,8 @@ descriptor =
     Proto.Message.descriptor "clock.v1.Pauses"
         [ wait
         , waits
+        , after
+        , marks
         ]
 
 
@@ -44,3 +46,17 @@ wait =
 waits : Proto.Field.Descriptor
 waits =
     Proto.Field.descriptor "waits" "waits" 2 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.protobuf.Duration")
+
+
+{-| `google.protobuf.Timestamp after = 3;`
+-}
+after : Proto.Field.Descriptor
+after =
+    Proto.Field.descriptor "after" "after" 3 Proto.Field.CardinalitySingular (Proto.Field.KindMessage "google.protobuf.Timestamp")
+
+
+{-| `repeated google.protobuf.Timestamp marks = 4;`
+-}
+marks : Proto.Field.Descriptor
+marks =
+    Proto.Field.descriptor "marks" "marks" 4 Proto.Field.CardinalityRepeated (Proto.Field.KindMessage "google.protobuf.Timestamp")

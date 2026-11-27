@@ -225,13 +225,22 @@ pub fn sample_well_known(
 ) -> Option<DynamicMessage> {
     let mut message = DynamicMessage::new(descriptor.clone());
     match descriptor.full_name() {
-        // To the millisecond, which `Time.Posix` holds; finer digits are
-        // truncated by design (§3.5).
+        // Every precision proto3 JSON prints: whole seconds, then 3, 6 or
+        // 9 fractional digits, from one draw, so that the samples drawn
+        // after it, whose text `Codec.WrittenTextTest` pins, do not move.
         "google.protobuf.Timestamp" => {
             let any = rng.range(-62_135_596_800, 253_402_300_799);
             let seconds = rng.pick(&[-62_135_596_800, 253_402_300_799, 0, any, any]);
+            let draw = rng.next();
+            let digits = (draw % 1_000_000_000) as i32;
+            let nanos = match (draw / 1_000_000_000) % 4 {
+                0 => 0,
+                1 => digits / 1_000_000 * 1_000_000,
+                2 => digits / 1_000 * 1_000,
+                _ => digits,
+            };
             message.set_field_by_name("seconds", Value::I64(seconds));
-            message.set_field_by_name("nanos", Value::I32(rng.range(0, 999) as i32 * 1_000_000));
+            message.set_field_by_name("nanos", Value::I32(nanos));
         }
         "google.protobuf.Duration" => {
             let negative = rng.one_in(2);

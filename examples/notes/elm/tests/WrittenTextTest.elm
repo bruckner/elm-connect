@@ -18,7 +18,7 @@ import Test exposing (Test, describe, test)
 
 full : String
 full =
-    "{\"name\":\"notes/1\",\"title\":\"T\",\"body\":\"B\",\"tags\":[\"a\",\"b\"],\"visibility\":\"VISIBILITY_PUBLIC\",\"createTime\":\"2024-01-02T03:04:05Z\",\"updateTime\":\"2024-01-02T03:04:06.500Z\",\"ttl\":\"1.500s\",\"metadata\":{\"k\":\"v\",\"a\":\"b\"},\"extra\":{\"z\":1,\"a\":[true,null,\"s\",{\"n\":2.5}]},\"link\":\"https://x\",\"attachment\":{\"@type\":\"type.googleapis.com/notes.v1.GetNoteRequest\",\"name\":\"notes/2\"},\"revision\":\"7\"}"
+    "{\"name\":\"notes/1\",\"title\":\"T\",\"body\":\"B\",\"tags\":[\"a\",\"b\"],\"visibility\":\"VISIBILITY_PUBLIC\",\"createTime\":\"2024-01-02T03:04:05Z\",\"updateTime\":\"2024-01-02T03:04:06.123456789Z\",\"ttl\":\"1.500s\",\"metadata\":{\"k\":\"v\",\"a\":\"b\"},\"extra\":{\"z\":1,\"a\":[true,null,\"s\",{\"n\":2.5}]},\"link\":\"https://x\",\"attachment\":{\"@type\":\"type.googleapis.com/notes.v1.GetNoteRequest\",\"name\":\"notes/2\"},\"revision\":\"7\"}"
 
 
 fullNoAny : String
@@ -49,7 +49,7 @@ suite : Test
 suite =
     describe "the text the notes encoders write keeps the field order"
         [ test "a note with every field" <|
-            \_ -> rewritten Notes.V1.decodeNoteWith Notes.V1.encodeNote full |> Expect.equal (Ok "{\"name\":\"notes/1\",\"title\":\"T\",\"body\":\"B\",\"tags\":[\"a\",\"b\"],\"visibility\":\"VISIBILITY_PUBLIC\",\"createTime\":\"2024-01-02T03:04:05Z\",\"updateTime\":\"2024-01-02T03:04:06.500Z\",\"ttl\":\"1.500s\",\"metadata\":{\"a\":\"b\",\"k\":\"v\"},\"extra\":{\"a\":[true,null,\"s\",{\"n\":2.5}],\"z\":1},\"attachment\":{\"@type\":\"type.googleapis.com/notes.v1.GetNoteRequest\",\"name\":\"notes/2\"},\"revision\":\"7\",\"link\":\"https://x\"}")
+            \_ -> rewritten Notes.V1.decodeNoteWith Notes.V1.encodeNote full |> Expect.equal (Ok "{\"name\":\"notes/1\",\"title\":\"T\",\"body\":\"B\",\"tags\":[\"a\",\"b\"],\"visibility\":\"VISIBILITY_PUBLIC\",\"createTime\":\"2024-01-02T03:04:05Z\",\"updateTime\":\"2024-01-02T03:04:06.123456789Z\",\"ttl\":\"1.500s\",\"metadata\":{\"a\":\"b\",\"k\":\"v\"},\"extra\":{\"a\":[true,null,\"s\",{\"n\":2.5}],\"z\":1},\"attachment\":{\"@type\":\"type.googleapis.com/notes.v1.GetNoteRequest\",\"name\":\"notes/2\"},\"revision\":\"7\",\"link\":\"https://x\"}")
         , test "a note with a oneof member before a later field" <|
             \_ -> rewritten Notes.V1.decodeNoteWith Notes.V1.encodeNote fullNoAny |> Expect.equal (Ok "{\"name\":\"notes/1\",\"title\":\"T\",\"tags\":[\"a\"],\"createTime\":\"2024-01-02T03:04:05Z\",\"extra\":{},\"revision\":\"0\",\"text\":\"hello\"}")
         , test "an empty note" <|
@@ -57,7 +57,7 @@ suite =
         , test "a list of notes" <|
             \_ ->
                 rewritten Notes.V1.decodeListNotesResponseWith Notes.V1.encodeListNotesResponse ("{\"notes\":[" ++ full ++ "," ++ fullNoAny ++ ",{}],\"nextPageToken\":\"p\"}")
-                    |> Expect.equal (Ok "{\"notes\":[{\"name\":\"notes/1\",\"title\":\"T\",\"body\":\"B\",\"tags\":[\"a\",\"b\"],\"visibility\":\"VISIBILITY_PUBLIC\",\"createTime\":\"2024-01-02T03:04:05Z\",\"updateTime\":\"2024-01-02T03:04:06.500Z\",\"ttl\":\"1.500s\",\"metadata\":{\"a\":\"b\",\"k\":\"v\"},\"extra\":{\"a\":[true,null,\"s\",{\"n\":2.5}],\"z\":1},\"attachment\":{\"@type\":\"type.googleapis.com/notes.v1.GetNoteRequest\",\"name\":\"notes/2\"},\"revision\":\"7\",\"link\":\"https://x\"},{\"name\":\"notes/1\",\"title\":\"T\",\"tags\":[\"a\"],\"createTime\":\"2024-01-02T03:04:05Z\",\"extra\":{},\"revision\":\"0\",\"text\":\"hello\"},{}],\"nextPageToken\":\"p\"}")
+                    |> Expect.equal (Ok "{\"notes\":[{\"name\":\"notes/1\",\"title\":\"T\",\"body\":\"B\",\"tags\":[\"a\",\"b\"],\"visibility\":\"VISIBILITY_PUBLIC\",\"createTime\":\"2024-01-02T03:04:05Z\",\"updateTime\":\"2024-01-02T03:04:06.123456789Z\",\"ttl\":\"1.500s\",\"metadata\":{\"a\":\"b\",\"k\":\"v\"},\"extra\":{\"a\":[true,null,\"s\",{\"n\":2.5}],\"z\":1},\"attachment\":{\"@type\":\"type.googleapis.com/notes.v1.GetNoteRequest\",\"name\":\"notes/2\"},\"revision\":\"7\",\"link\":\"https://x\"},{\"name\":\"notes/1\",\"title\":\"T\",\"tags\":[\"a\"],\"createTime\":\"2024-01-02T03:04:05Z\",\"extra\":{},\"revision\":\"0\",\"text\":\"hello\"},{}],\"nextPageToken\":\"p\"}")
         , test "an update with a mask" <|
             \_ ->
                 rewritten Notes.V1.decodeUpdateNoteRequestWith Notes.V1.encodeUpdateNoteRequest ("{\"note\":" ++ fullNoAny ++ ",\"updateMask\":\"title,createTime\"}")

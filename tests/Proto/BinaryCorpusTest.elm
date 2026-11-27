@@ -239,7 +239,7 @@ allTypes () =
                     one B.int32 wire value
 
                 2 ->
-                    one B.int64 wire value
+                    one B.int64AsInt wire value
 
                 12 ->
                     one B.double wire value

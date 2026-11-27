@@ -8,6 +8,7 @@ leaves out what is at its default. The examples beside it (`JsonTest`) pin
 exact forms and errors.
 -}
 
+import Bytes.Encode
 import Dict
 import Expect exposing (Expectation)
 import Fuzz exposing (Fuzzer)
@@ -15,14 +16,15 @@ import Fuzzers
 import Generated.Routes.Routes.V1 as V1
 import Json.Decode exposing (Decoder)
 import Json.Encode exposing (Value)
+import Proto.Binary
 import Proto.Duration
 import Proto.Error
 import Proto.Int64
 import Proto.Json
+import Proto.Route
 import Proto.Timestamp
 import Proto.Value
 import Test exposing (Test, describe, fuzz, fuzz2, test)
-import Time
 
 
 suite : Test
@@ -343,28 +345,25 @@ bytesProperties =
 timestampProperties : Test
 timestampProperties =
     describe "timestamps"
-        [ fuzz Fuzzers.posix "a Time.Posix from 0001 to 9999 round-trips" <|
+        [ fuzz Fuzzers.timestamp "a timestamp from 0001 to 9999 round-trips, every nanosecond" <|
             roundTrips encodeTimestamp Proto.Json.timestamp
-        , fuzz2 Fuzzers.posix (Fuzz.listOfLengthBetween 1 6 (Fuzz.intRange 0 9)) "finer fractional digits are truncated, not rounded" <|
-            \posix extra ->
+        , fuzz Fuzzers.timestamp "nine fractional digits read as the same instant" <|
+            \instant ->
+                Proto.Timestamp.fromString
+                    (String.left 19 (printed instant)
+                        ++ "."
+                        ++ String.padLeft 9 '0' (String.fromInt (Proto.Timestamp.toSecondsAndNanos instant).nanos)
+                        ++ "Z"
+                    )
+                    |> Expect.equal (Just instant)
+        , fuzz2 Fuzzers.timestamp (Fuzz.intRange -1439 1439) "a local time with its offset reads as the same instant" <|
+            \instant minutes ->
                 let
-                    text =
-                        Proto.Timestamp.toString posix
+                    parts =
+                        Proto.Timestamp.toSecondsAndNanos instant
 
-                    withFraction =
-                        if String.contains "." text then
-                            String.dropRight 1 text
-
-                        else
-                            String.dropRight 1 text ++ ".000"
-                in
-                Proto.Timestamp.fromString (withFraction ++ String.concat (List.map String.fromInt extra) ++ "Z")
-                    |> Expect.equal (Just posix)
-        , fuzz2 Fuzzers.posix (Fuzz.intRange -1439 1439) "a local time with its offset reads as the same instant" <|
-            \posix minutes ->
-                let
                     local =
-                        Time.posixToMillis posix + minutes * 60000
+                        Proto.Timestamp.fromSecondsAndNanos (parts.seconds + minutes * 60) parts.nanos
 
                     offset =
                         (if minutes < 0 then
@@ -377,21 +376,36 @@ timestampProperties =
                             ++ ":"
                             ++ String.padLeft 2 '0' (String.fromInt (modBy 60 (abs minutes)))
                 in
-                if local < -62135596800000 || local > 253402300799999 then
-                    -- The local date would lie outside years 1 to 9999.
-                    Expect.pass
+                case local of
+                    Nothing ->
+                        -- The local date would lie outside years 1 to 9999.
+                        Expect.pass
 
-                else
-                    Proto.Timestamp.fromString (String.dropRight 1 (Proto.Timestamp.toString (Time.millisToPosix local)) ++ offset)
-                        |> Expect.equal (Just posix)
-        , fuzz (Fuzz.intRange 1 86400000) "a time outside years 1 to 9999 is refused" <|
-            \ms ->
+                    Just shifted ->
+                        Proto.Timestamp.fromString (String.dropRight 1 (printed shifted) ++ offset)
+                            |> Expect.equal (Just instant)
+        , fuzz (Fuzz.intRange 1 86400) "a time outside years 1 to 9999 is refused" <|
+            \seconds ->
                 Expect.all
-                    [ \_ -> Proto.Timestamp.fromString (Proto.Timestamp.toString (Time.millisToPosix (-62135596800000 - ms))) |> Expect.equal Nothing
-                    , \_ -> Proto.Timestamp.fromString (Proto.Timestamp.toString (Time.millisToPosix (253402300799999 + ms))) |> Expect.equal Nothing
+                    [ \_ -> Proto.Timestamp.fromString ("0000-12-31T" ++ clock (86400 - seconds) ++ "Z") |> Expect.equal Nothing
+                    , \_ -> Proto.Timestamp.fromString ("10000-01-01T" ++ clock (seconds - 1) ++ "Z") |> Expect.equal Nothing
                     ]
                     ()
         ]
+
+
+printed : Proto.Timestamp.Timestamp -> String
+printed instant =
+    Proto.Timestamp.toString instant |> Maybe.withDefault "not valid"
+
+
+{-| A time of day as RFC 3339 writes one, from its second of the day.
+-}
+clock : Int -> String
+clock ofDay =
+    [ ofDay // 3600, modBy 60 (ofDay // 60), modBy 60 ofDay ]
+        |> List.map (String.fromInt >> String.padLeft 2 '0')
+        |> String.join ":"
 
 
 
@@ -856,7 +870,7 @@ encodeListValue =
     writes << Proto.Json.writeListValue
 
 
-encodeTimestamp : Time.Posix -> Json.Encode.Value
+encodeTimestamp : Proto.Timestamp.Timestamp -> Json.Encode.Value
 encodeTimestamp =
     writes << Proto.Json.writeTimestamp
 

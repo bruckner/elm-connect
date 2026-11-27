@@ -520,7 +520,8 @@ request bodies now hold only what the message holds. Where: design
 ### Accept on read what the wire admits, refuse on a JSON write
 
 *2026-11-24. Since 2026-11-25 a `Duration` read from binary that is
-not valid is refused (Well-known types: validity by source).*
+not valid is refused (Well-known types: validity by source); since
+2026-11-26 a `Timestamp` too.*
 
 A read accepts whatever the wire admits; a JSON write refuses a value
 proto3 JSON has no form for, as protobuf's own JSON writers do: a
@@ -628,7 +629,7 @@ out-of-range `Duration` conformance cases pass. Where: design §3.2,
 
 ### Well-known types: validity by source
 
-*2026-11-25.*
+*2026-11-25; `Timestamp` joined on 2026-11-26 (below).*
 
 The well-known types with an invariant are opaque runtime types whose
 validity depends on where a value comes from and where it goes. Every
@@ -643,7 +644,8 @@ writes any value as held. The type is defined in an internal module
 (`Proto.Internal.Duration`) whose constructor the binary reader uses,
 and the public module aliases it, as `Proto.Any` does, so no public
 function gives an invalid value. The settled design is design §3.5,
-"Representation and validity"; `Duration` is its first type.
+"Representation and validity"; `Duration` was its first type, and
+`Timestamp` its second.
 
 - **Where normalising happens.** In the application's builders, in
   arithmetic (none yet), in the lossy views (`toSeconds`, `toMillis`:
@@ -730,6 +732,60 @@ the notes example, which reads and writes durations, grows by 609 bytes
 minified and 169 gzipped: the binary read that holds seconds past the
 `Int` limit, and the JSON write's validity check with its three
 reasons. Where: design §3.5, §3.7, §4, §5.5.
+
+*2026-11-26:* `Timestamp` follows the same rules, as
+`Proto.Timestamp.Timestamp` (`Proto.Internal.Timestamp` holds the
+constructor), replacing `Time.Posix` (`Timestamp` as `Time.Posix`,
+below):
+
+- **Exact.** It holds seconds and nanoseconds, so a fraction of six or
+  nine digits survives a read and a write, and the fourteen
+  sub-millisecond cases of the protobuf conformance suite pass.
+  `fromPosix` is exact (a `Time.Posix` is whole milliseconds) and
+  clamps outside years 1 to 9999 to `0001-01-01T00:00:00Z` or
+  `9999-12-31T23:59:59Z`, the limit's second with no nanoseconds, as
+  `Duration`'s builders clamp; `toPosix` normalises, clamps and
+  truncates toward the past, as before, so an instant never moves into
+  the next millisecond.
+- **Valid** means years 1 to 9999 and nanoseconds 0 to 999,999,999,
+  also before 1970, so normalising carries the nanoseconds forward from
+  the second rather than giving them the seconds' sign. The JSON write
+  refuses `the time is outside years 1 to 9999` before `the nanoseconds
+  are outside 0 to 999,999,999`, the order protojson checks them in.
+- **`toString` is a `Maybe`**, as for `Duration`. The text, of 0, 3, 6
+  or 9 fractional digits, does not sort chronologically (`…:45Z` sorts
+  after `…:45.5Z`), so an application sorts and keys by the fields
+  `toSecondsAndNanos` gives (a `Time.Posix` was not `comparable`
+  either).
+- **Seconds past the `Int` limit are held**, as `Duration` holds them:
+  the internal record's `wideHigh` field, 0 for every seconds an `Int`
+  holds, and otherwise the upper 32 bits as read. Such a timestamp is
+  never valid, `toPosix` clamps it by its sign, and `normalize` gives
+  it back as it is.
+- **A vessel for the wire: no order, key or arithmetic**, as for
+  `Duration`. An order, a key, `add` and `since` must each say what a
+  timestamp that is not valid means, and whether a result outside the
+  range clamps; those are an application's choices. `now` is `Time.now`
+  through `fromPosix`.
+- **No `timestamp=posix` option** in 0.2: an application converts at
+  the edges with `toPosix` and `fromPosix`. It can be added later
+  without changing the default.
+
+What a program pays (`elm make --optimize`, terser, `gzip -9 -n`): one
+that uses no `Timestamp` links the same definitions as before, within 4
+bytes minified and 13 gzipped (a program that writes no JSON, one
+writing a message that cannot refuse, a JSON-only client); the notes
+example, which reads and writes timestamps, grows by 316 bytes minified
+and shrinks by 12 gzipped, the nanosecond printer, the validity check
+and the seconds held past the `Int` limit in place of the millisecond
+printer. Timings were taken on an earlier form of the type, before its
+seconds past the `Int` limit were held: paired builds against the
+`Duration` landing (node and Chromium, A/A within 2.5 %) showed no
+change in reading a note holding two timestamps, as JSON or binary,
+singly or 100 at a time, nor in writing one as binary; writing one as
+JSON, now with nine fractional digits where it wrote three, was within
+2 % in node and 2 to 3 % slower in Chromium. Where: design §3.5, §4,
+§5.5.
 
 ### Decoder steps
 
@@ -855,12 +911,20 @@ design §3.2 and §5.5; generator.md, Options; `Proto.Unknown`.
 
 ### `Timestamp` as `Time.Posix`
 
-*2026-10-10.*
+*2026-10-10; superseded on 2026-11-26 by `Proto.Timestamp.Timestamp`
+(Well-known types: validity by source).*
 
 The in-house generator this one grew out of mapped `Timestamp` to
 `String` to avoid a dependency. With a runtime package required anyway,
 the RFC 3339 parser lives there and `Time.Posix` is the right type.
 Where: design §3.5.
+
+*2026-11-26:* `Time.Posix` counts milliseconds, so a timestamp lost
+every digit past the third, both ways, and fourteen protobuf
+conformance cases were listed as a design choice. A `Timestamp` is now
+the runtime's opaque `Proto.Timestamp.Timestamp`, exact to the
+nanosecond, with `toPosix` and `fromPosix` at the edges. The RFC 3339
+parser and printer stay in the runtime.
 
 ### Oneofs as a union with an unset constructor
 

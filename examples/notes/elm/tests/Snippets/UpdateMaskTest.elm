@@ -7,6 +7,7 @@ import Notes.V1 exposing (Note, NoteKind(..))
 import Notes.V1.UpdateNoteRequest
 import Proto.Duration
 import Proto.Json
+import Proto.Timestamp
 import Snippets.UpdateMask exposing (updateMask, validMask)
 import Test exposing (Test, describe, test)
 import Time
@@ -18,7 +19,7 @@ note =
         | name = "notes/1"
         , title = "groceries"
         , tags = [ "home" ]
-        , createTime = Just (Time.millisToPosix 1000)
+        , createTime = Just (Proto.Timestamp.fromPosix (Time.millisToPosix 1000))
         , metadata = Dict.fromList [ ( "color", "green" ) ]
         , kind = NoteKindText "milk"
     }
@@ -58,7 +59,7 @@ suite =
                     |> Expect.equal [ "note.title" ]
         , test "a well-known type is a leaf" <|
             \_ ->
-                noteMask note { note | createTime = Just (Time.millisToPosix 2000) }
+                noteMask note { note | createTime = Just (Proto.Timestamp.fromPosix (Time.millisToPosix 2000)) }
                     |> Expect.equal [ "note.create_time" ]
         , test "a repeated field and a map are named whole" <|
             \_ ->

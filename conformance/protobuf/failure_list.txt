@@ -11,23 +11,6 @@
 # first, then those whose input is JSON, each listing the cases written
 # back as binary beside those written back as JSON.
 
-# Design choice: a Timestamp is a Time.Posix, which holds milliseconds, so
-# digits past the third are dropped, in either output.
-Required.Proto3.JsonInput.TimestampLittleAfterEpochlValue.JsonOutput
-Required.Proto3.JsonInput.TimestampLittleAfterEpochlValue.ProtobufOutput
-Required.Proto3.JsonInput.TimestampLittleBeforeEpochValue.JsonOutput
-Required.Proto3.JsonInput.TimestampLittleBeforeEpochValue.ProtobufOutput
-Required.Proto3.JsonInput.TimestampMaxValue.JsonOutput
-Required.Proto3.JsonInput.TimestampMaxValue.ProtobufOutput
-Required.Proto3.JsonInput.TimestampNanoAfterEpochlValue.JsonOutput
-Required.Proto3.JsonInput.TimestampNanoAfterEpochlValue.ProtobufOutput
-Required.Proto3.JsonInput.TimestampNanoBeforeEpochValue.JsonOutput
-Required.Proto3.JsonInput.TimestampNanoBeforeEpochValue.ProtobufOutput
-Required.Proto3.JsonInput.TimestampRepeatedValue.JsonOutput
-Required.Proto3.JsonInput.TimestampRepeatedValue.ProtobufOutput
-Recommended.Proto3.JsonInput.TimestampHas6FractionalDigits.Validator
-Recommended.Proto3.JsonInput.TimestampHas9FractionalDigits.Validator
-
 # Design choice: an enum number the client does not know reads as the zero
 # value, which is not written back (the enum_unknown option).
 Required.Proto3.JsonInput.EnumFieldUnknownValue.Validator

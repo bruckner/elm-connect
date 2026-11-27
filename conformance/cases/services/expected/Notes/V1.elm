@@ -31,7 +31,6 @@ import Proto.Route
 import Proto.Timestamp
 import Proto.Version
 import Proto.WellKnown
-import Time
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -114,7 +113,7 @@ type alias ListNotesRequest =
 -}
 type alias ListNotesRequestFilter =
     { visibility : Visibility
-    , since : Maybe Time.Posix
+    , since : Maybe Proto.Timestamp.Timestamp
     }
 
 
@@ -1489,7 +1488,7 @@ queryOfListNotesRequest request_ =
         [ Proto.Query.int "page_size" request_.pageSize
         , Proto.Query.string "page_token" request_.pageToken
         , Proto.Query.enum "filter.visibility" VisibilityUnspecified encodeVisibility (Maybe.withDefault VisibilityUnspecified (Maybe.map .visibility request_.filter))
-        , Proto.Query.optional "filter.since" (Maybe.map Proto.Timestamp.toString (Maybe.andThen .since request_.filter))
+        , Proto.Query.optional "filter.since" (Maybe.andThen Proto.Timestamp.toString (Maybe.andThen .since request_.filter))
         , Proto.Query.repeated "tags" request_.tags
         , Proto.Query.optional "archived" (Maybe.map Proto.Route.boolText request_.archived)
         , Proto.Query.int64 "revision" request_.revision

@@ -42,7 +42,6 @@ import Proto.Timestamp
 import Proto.Value
 import Proto.Version
 import Proto.WellKnown
-import Time
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -144,7 +143,7 @@ type alias Free =
 -}
 type alias Moment =
     { name : String
-    , at : Maybe Time.Posix
+    , at : Maybe Proto.Timestamp.Timestamp
     }
 
 
@@ -1115,5 +1114,5 @@ queryOfMoment : Moment -> List ( String, String )
 queryOfMoment request_ =
     List.concat
         [ Proto.Query.string "name" request_.name
-        , Proto.Query.optional "at" (Maybe.map Proto.Timestamp.toString request_.at)
+        , Proto.Query.optional "at" (Maybe.andThen Proto.Timestamp.toString request_.at)
         ]

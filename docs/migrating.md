@@ -553,6 +553,108 @@ write refuses one that is not valid, with `Proto.Error.BadValue`.
 `normalize` gives a duration's normal form. To sort durations or key a
 `Dict` by them, use the fields `toSecondsAndNanos` gives.
 
+## Timestamps
+
+A `google.protobuf.Timestamp` was a `Time.Posix`, which counts
+milliseconds, so digits past the third were dropped. It is now
+`Proto.Timestamp.Timestamp`, exact to the nanosecond: a field is
+`Maybe Proto.Timestamp.Timestamp` (`Proto.Timestamp.Timestamp` in a
+list, map or oneof). Convert at the edges with `toPosix` and
+`fromPosix`:
+
+```elm examples/notes/elm/src/Snippets/Migrating.elm#before-timestamps
+createdText : Time.Zone -> Notes.V1.Note -> String
+createdText zone note =
+    case note.createTime of
+        Just posix ->
+            clock zone posix
+
+        Nothing ->
+            ""
+
+
+touch : Time.Posix -> Notes.V1.Note -> Notes.V1.Note
+touch now note =
+    { note | updateTime = Just now }
+
+
+newestFirst : List Notes.V1.Note -> List Notes.V1.Note
+newestFirst =
+    List.sortBy (.updateTime >> Maybe.map Time.posixToMillis >> Maybe.withDefault 0)
+        >> List.reverse
+
+
+byInstant : List Notes.V1.Note -> Dict.Dict String Notes.V1.Note
+byInstant notes =
+    notes
+        |> List.filterMap (\note -> Maybe.map (\t -> ( String.fromInt (Time.posixToMillis t), note )) note.createTime)
+        |> Dict.fromList
+```
+
+```elm examples/notes/elm/src/Snippets/Migrating.elm#timestamps
+createdText : Time.Zone -> Notes.V1.Note -> String
+createdText zone note =
+    case note.createTime of
+        Just created ->
+            clock zone (Proto.Timestamp.toPosix created)
+
+        Nothing ->
+            ""
+
+
+touch : Time.Posix -> Notes.V1.Note -> Notes.V1.Note
+touch now note =
+    { note | updateTime = Just (Proto.Timestamp.fromPosix now) }
+
+
+newestFirst : List Notes.V1.Note -> List Notes.V1.Note
+newestFirst =
+    List.sortBy (.updateTime >> Maybe.map instantKey >> Maybe.withDefault ( 0, 0 ))
+        >> List.reverse
+
+
+byInstant : List Notes.V1.Note -> Dict.Dict ( Int, Int ) Notes.V1.Note
+byInstant notes =
+    notes
+        |> List.filterMap (\note -> Maybe.map (\t -> ( instantKey t, note )) note.createTime)
+        |> Dict.fromList
+
+
+instantKey : Proto.Timestamp.Timestamp -> ( Int, Int )
+instantKey timestamp =
+    let
+        parts =
+            Proto.Timestamp.toSecondsAndNanos timestamp
+    in
+    ( parts.seconds, parts.nanos )
+```
+
+`clock` stands for an application's own helper. A `Time.Posix` was not
+`comparable`; a timestamp is not either, and its text does not sort
+chronologically (0, 3, 6 or 9 fractional digits, so `…:45Z` sorts after
+`…:45.5Z`). Sort and key by the fields `toSecondsAndNanos` gives, as
+`instantKey` does: for valid timestamps they order as the instants do.
+The package gives no order or key of its own, since one has to say what
+a timestamp that is not valid means.
+
+| 0.1 | 0.2 |
+|---|---|
+| `Maybe Time.Posix` field | `Maybe Proto.Timestamp.Timestamp` field |
+| `Proto.Timestamp.fromString s : Maybe Time.Posix` | `Proto.Timestamp.fromString s : Maybe Proto.Timestamp.Timestamp`, every digit kept |
+| `Proto.Timestamp.toString t : String` | `Proto.Timestamp.toString t : Maybe String`, `Nothing` for a timestamp that is not valid; 0, 3, 6 or 9 fractional digits |
+| `Time.now` for a field | `Proto.Timestamp.now`, or `Proto.Timestamp.fromPosix` of a `Time.Posix` |
+| `Time.posixToMillis` to compare or key | the fields of `Proto.Timestamp.toSecondsAndNanos`, or `Time.posixToMillis` of `toPosix` to the millisecond |
+
+`fromPosix` clamps a `Time.Posix` outside years 1 to 9999 to that
+range; `toPosix` drops the nanoseconds past the millisecond, toward
+the past.
+Every timestamp the application builds, and every one read from proto3
+JSON, is valid, so `toString` of one gives `Just`. A timestamp read
+from protobuf binary is held as the peer wrote it, which may not be
+valid (`Proto.Timestamp.isValid`); a proto3 JSON write refuses one that
+is not valid, with `Proto.Error.BadValue`, and `normalize` gives its
+normal form.
+
 ## The generator
 
 - A `google.protobuf.Duration` field is written
@@ -560,6 +662,10 @@ write refuses one that is not valid, with `Proto.Error.BadValue`.
   `Proto.Value.Value` are, and generated modules no longer import
   `Proto.Duration exposing (Duration)`. A message named `Duration`
   beside a `Duration` field generates without a `rename`.
+- A `google.protobuf.Timestamp` field is `Proto.Timestamp.Timestamp`,
+  written qualified, where it was `Time.Posix`
+  ([Timestamps](#timestamps)), and generated modules no longer import
+  `Time`.
 - Every message gets both codecs, proto3 JSON and protobuf binary, its
   typed value and its package's `registry`, whatever the options say.
   The new option `wire` says what each method's calls are wired with:
@@ -619,6 +725,7 @@ that changed again before the release:
 | `Proto.Duration.fromParts s n` (clamped past the range) | `Proto.Duration.fromSecondsAndNanos s n : Maybe Duration`, `Nothing` past the range |
 | `Proto.Duration.toParts` | `Proto.Duration.toSecondsAndNanos`, the fields as held |
 | `Proto.Duration.fromMilliseconds`, `toMilliseconds`, `toString d : String` | `fromMillis`, `toMillis`, `toString d : Maybe String` ([Durations](#durations)) |
+| `Time.Posix` for a `Timestamp`, `Proto.Timestamp.toString t : String` | `Proto.Timestamp.Timestamp`, `toString t : Maybe String` ([Timestamps](#timestamps)) |
 | `Proto.Message.init name f …`, `Proto.Method.initJson s m (\_ -> Ok << f) …` with `f : a -> Json.Encode.Value` | `Proto.Message.init name (Proto.Json.succeed << f) …`, `Proto.Method.initJson s m (Proto.Json.succeed << f) …`, or the generated `encodeNote` |
 | `Rpc.request client call : Rpc.Request` | `Rpc.request client call : Result Rpc.Error Rpc.Request` |
 | a request value with no JSON form, written wrongly and sent | refused before sending: `Rpc.Error.badValue { typeName, path, message }` (`InvalidArgument`) |

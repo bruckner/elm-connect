@@ -13,6 +13,7 @@ import Proto.Field as Field exposing (Cardinality(..), Kind(..), Scalar(..))
 import Proto.Json
 import Proto.Message as Message exposing (Message)
 import Proto.Registry as Registry exposing (Registry)
+import Proto.Timestamp
 import Proto.WellKnown as WellKnown
 import Test exposing (Test, describe, test)
 import Time
@@ -228,7 +229,7 @@ suite =
                         Descriptors.union (Descriptors.fromDescriptors [ descriptorNote ] []) WellKnown.descriptors
                 in
                 [ Any.pack messageNote note
-                , Any.pack WellKnown.timestamp (Time.millisToPosix 0)
+                , Any.pack WellKnown.timestamp (Proto.Timestamp.fromPosix (Time.millisToPosix 0))
                 , Any.packWith "example.com" (noteAs "other.v1.Thing") note
                 ]
                     |> List.map (Any.describe descriptors >> Maybe.map (\found -> ( Message.fullName found, List.map Field.jsonName (Message.fields found) )))

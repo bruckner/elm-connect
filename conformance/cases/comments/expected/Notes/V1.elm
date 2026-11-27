@@ -39,9 +39,9 @@ import Proto.Error
 import Proto.Json
 import Proto.Message
 import Proto.Registry
+import Proto.Timestamp
 import Proto.Version
 import Proto.WellKnown
-import Time
 
 
 {-| The elm-connect release this module was generated for: a compile error here means the runtime package is from another release.
@@ -123,7 +123,7 @@ type alias Note =
     , labels : Dict String String
     , pinned : Maybe Bool
     , subject : String
-    , created : Maybe Time.Posix
+    , created : Maybe Proto.Timestamp.Timestamp
     , lastEvent : NoteLastEvent
     }
 
@@ -139,7 +139,7 @@ type alias Note =
 -}
 type NoteLastEvent
     = NoteLastEventUnset
-    | NoteLastEventArchived Time.Posix
+    | NoteLastEventArchived Proto.Timestamp.Timestamp
     | NoteLastEventEdited NoteEdit
 
 
