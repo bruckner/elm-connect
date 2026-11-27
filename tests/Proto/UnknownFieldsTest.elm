@@ -6,11 +6,11 @@ written back, merged, compared with `==`, and left out of proto3 JSON.
 -}
 
 import Bytes.Encode
-import Codec.BinaryRoundTrip exposing (fromHex, toHex)
 import Expect
 import Generated.Codec.Keep.Codec.V1 as Keep
 import Json.Decode
 import Json.Encode
+import Octets exposing (fromHex, toHex)
 import Proto.Binary
 import Proto.Json
 import Proto.Unknown exposing (Value(..))

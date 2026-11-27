@@ -1,4 +1,4 @@
-module Codec.BinaryRoundTrip exposing (Codec, binaryOnly, both, fromHex, suite, suiteKeeping, toHex)
+module Codec.BinaryRoundTrip exposing (Codec, binaryOnly, both, suite, suiteKeeping)
 
 {-| Running the generated binary codecs of `conformance/codec/codec.proto` on
 the protobuf binary of each sample, written by
@@ -22,13 +22,13 @@ which has the codecs of every message and well-known type a sample packs.
 -}
 
 import Bytes exposing (Bytes)
-import Bytes.Decode
 import Bytes.Encode
 import Codec.RoundTrip exposing (Sample)
 import Dict
 import Expect exposing (Expectation)
 import Json.Decode
 import Json.Encode
+import Octets exposing (fromHex, toHex)
 import Proto.Binary
 import Test exposing (Test, describe, test)
 
@@ -178,62 +178,3 @@ orElse fallback maybe =
 
         Nothing ->
             fallback
-
-
-
--- HEX
-
-
-toHex : Bytes -> String
-toHex input =
-    Bytes.Decode.decode
-        (Bytes.Decode.loop ( Bytes.width input, [] )
-            (\( n, acc ) ->
-                if n == 0 then
-                    Bytes.Decode.succeed (Bytes.Decode.Done (String.concat (List.reverse acc)))
-
-                else
-                    Bytes.Decode.map (\b -> Bytes.Decode.Loop ( n - 1, hexByte b :: acc )) Bytes.Decode.unsignedInt8
-            )
-        )
-        input
-        |> Maybe.withDefault "?"
-
-
-hexByte : Int -> String
-hexByte b =
-    String.fromList [ hexDigit (b // 16), hexDigit (modBy 16 b) ]
-
-
-hexDigit : Int -> Char
-hexDigit n =
-    if n < 10 then
-        Char.fromCode (48 + n)
-
-    else
-        Char.fromCode (87 + n)
-
-
-fromHex : String -> Bytes
-fromHex text =
-    let
-        value c =
-            let
-                code =
-                    Char.toCode c
-            in
-            if code >= 97 then
-                code - 87
-
-            else
-                code - 48
-
-        go chars acc =
-            case chars of
-                hi :: lo :: rest ->
-                    go rest (Bytes.Encode.unsignedInt8 (value hi * 16 + value lo) :: acc)
-
-                _ ->
-                    List.reverse acc
-    in
-    Bytes.Encode.encode (Bytes.Encode.sequence (go (String.toList text) []))

@@ -16,6 +16,7 @@ import Expect
 import Generated.Shapes.Blobs.V1 as B
 import Generated.Shapes.Blobs.V1.BlobService as Service
 import Json.Encode
+import Octets exposing (bytesOf)
 import Proto.Any
 import Proto.Binary
 import Proto.Error
@@ -98,11 +99,6 @@ agree label descriptor toCall requests =
 withoutBody : String -> String
 withoutBody shown =
     String.join " " (List.take 2 (String.words shown))
-
-
-bytesOf : List Int -> Bytes
-bytesOf ints =
-    Bytes.Encode.encode (Bytes.Encode.sequence (List.map Bytes.Encode.unsignedInt8 ints))
 
 
 {-| Bytes whose base64 holds neither `+` nor `/`, which the two write alike;

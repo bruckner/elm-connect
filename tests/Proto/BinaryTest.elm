@@ -16,6 +16,7 @@ import Dict exposing (Dict)
 import Expect exposing (Expectation)
 import Fuzz
 import Json.Encode
+import Octets exposing (fromHex, toHex)
 import Proto.Any
 import Proto.Binary as B
 import Proto.Bytes
@@ -44,53 +45,6 @@ suite =
         , wellKnownMerges
         , properties
         ]
-
-
-
--- HEX
-
-
-toHex : Bytes -> String
-toHex input =
-    Bytes.Decode.decode
-        (Bytes.Decode.loop ( Bytes.width input, [] )
-            (\( n, acc ) ->
-                if n == 0 then
-                    Bytes.Decode.succeed (Bytes.Decode.Done (String.concat (List.reverse acc)))
-
-                else
-                    Bytes.Decode.map (\b -> Bytes.Decode.Loop ( n - 1, hexByte b :: acc )) Bytes.Decode.unsignedInt8
-            )
-        )
-        input
-        |> Maybe.withDefault "?"
-
-
-hexByte : Int -> String
-hexByte b =
-    String.fromList [ digit (b // 16), digit (modBy 16 b) ]
-
-
-digit : Int -> Char
-digit n =
-    String.toList "0123456789abcdef" |> List.drop n |> List.head |> Maybe.withDefault '?'
-
-
-fromHex : String -> Bytes
-fromHex text =
-    let
-        value c =
-            String.toList "0123456789abcdef" |> List.indexedMap Tuple.pair |> List.filter (\( _, d ) -> d == c) |> List.head |> Maybe.map Tuple.first |> Maybe.withDefault 0
-
-        go chars acc =
-            case chars of
-                hi :: lo :: rest ->
-                    go rest (Bytes.Encode.unsignedInt8 (value hi * 16 + value lo) :: acc)
-
-                _ ->
-                    List.reverse acc
-    in
-    Bytes.Encode.encode (Bytes.Encode.sequence (go (String.toList (String.replace " " "" text)) []))
 
 
 {-| The bytes of `hex` as a slice of a larger input that goes on with

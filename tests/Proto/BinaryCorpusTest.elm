@@ -11,6 +11,7 @@ import Bytes exposing (Bytes)
 import Bytes.Decode
 import Bytes.Encode
 import Expect
+import Octets exposing (fromHex)
 import Proto.Binary as B
 import Proto.BinaryCorpus as Corpus exposing (Case, Expected(..), Seed(..))
 import Proto.Error exposing (Reason(..))
@@ -289,20 +290,3 @@ allTypes () =
                 _ ->
                     B.skip wire value
         )
-
-
-fromHex : String -> Bytes
-fromHex text =
-    let
-        value c =
-            String.toList "0123456789abcdef" |> List.indexedMap Tuple.pair |> List.filter (\( _, d ) -> d == c) |> List.head |> Maybe.map Tuple.first |> Maybe.withDefault 0
-
-        go chars acc =
-            case chars of
-                hi :: lo :: rest ->
-                    go rest (Bytes.Encode.unsignedInt8 (value hi * 16 + value lo) :: acc)
-
-                _ ->
-                    List.reverse acc
-    in
-    Bytes.Encode.encode (Bytes.Encode.sequence (go (String.toList text) []))

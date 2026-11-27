@@ -1,5 +1,6 @@
 module Rpc.GrpcWebTest exposing (suite)
 
+import Answers exposing (metadata)
 import Bytes exposing (Bytes, Endianness(..))
 import Bytes.Decode
 import Bytes.Encode as E
@@ -7,13 +8,11 @@ import Dict
 import Expect
 import Http
 import Json.Decode
-import Json.Encode
+import Notes exposing (GetNote, binaryOnly, both, over, titleHi)
+import Octets exposing (bytesOf)
 import Proto.Any
-import Proto.Binary
 import Proto.Bytes
 import Proto.Error
-import Proto.Json
-import Proto.Method exposing (Idempotency(..))
 import Proto.Registry
 import Requests exposing (refusalOf, requestOf)
 import Rpc
@@ -28,73 +27,17 @@ import Rpc.Trace
 import Test exposing (Test, describe, test)
 
 
-type alias GetNote =
-    { name : String }
-
-
-encodeGetNoteBytes : GetNote -> E.Encoder
-encodeGetNoteBytes r =
-    E.sequence [ Proto.Binary.implicit Proto.Binary.string 1 r.name ]
-
-
-decodeTitleBytes : Proto.Binary.Decoder String
-decodeTitleBytes =
-    Proto.Binary.merge "notes.v1.Title"
-        (\number wire value ->
-            case number of
-                1 ->
-                    Proto.Binary.field Proto.Binary.string identity wire value
-
-                _ ->
-                    Proto.Binary.skip wire value
-        )
-        identity
-        ""
-
-
 {-| A method without side effects, so that a GET would be sent if the
 protocol sent one.
 -}
 getNote : GetNote -> Rpc.Call Rpc.Proto GetNote String
 getNote =
-    Rpc.call
-        (Proto.Method.initProto "notes.v1.Notes" "GetNote" encodeGetNoteBytes decodeTitleBytes
-            |> Proto.Method.withIdempotency IdempotencyNoSideEffects
-        )
-
-
-{-| The same method with both codecs, as `wire=both` generates it.
--}
-both : GetNote -> Rpc.Call codec GetNote String
-both =
-    Rpc.call
-        (Proto.Method.init "notes.v1.Notes"
-            "GetNote"
-            (\r -> Proto.Json.succeed (Json.Encode.object [ ( "name", Json.Encode.string r.name ) ]))
-            (\_ -> Json.Decode.field "title" Json.Decode.string)
-            encodeGetNoteBytes
-            decodeTitleBytes
-        )
-
-
-url : String
-url =
-    "https://api.example.com"
-
-
-over : Rpc.Protocol.Protocol Rpc.Proto -> Rpc.Client Rpc.Proto
-over protocol =
-    Rpc.client protocol url
+    binaryOnly
 
 
 grpcWeb : Rpc.Client Rpc.Proto
 grpcWeb =
     over Rpc.Protocol.grpcWeb
-
-
-bytesOf : List Int -> Bytes
-bytesOf =
-    List.map E.unsignedInt8 >> E.sequence >> E.encode
 
 
 decodeAll : Bytes -> List Int
@@ -119,22 +62,6 @@ frame flag payload =
 trailers : String -> E.Encoder
 trailers text =
     frame 0x80 (E.encode (E.string text))
-
-
-{-| A note whose title is "hi", in protobuf binary.
--}
-titleHi : Bytes
-titleHi =
-    bytesOf [ 0x0A, 0x02, 0x68, 0x69 ]
-
-
-metadata : Int -> List ( String, String ) -> Http.Metadata
-metadata status headers =
-    { url = "https://api.example.com/notes.v1.Notes/GetNote"
-    , statusCode = status
-    , statusText = ""
-    , headers = Dict.fromList headers
-    }
 
 
 body : List E.Encoder -> Bytes

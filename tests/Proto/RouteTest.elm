@@ -1,17 +1,11 @@
 module Proto.RouteTest exposing (suite)
 
-import Bytes exposing (Bytes)
-import Bytes.Encode
 import Expect
 import Json.Encode
+import Octets exposing (bytesOf)
 import Proto.Query
 import Proto.Route
 import Test exposing (Test, describe, test)
-
-
-bytesOf : List Int -> Bytes
-bytesOf ints =
-    Bytes.Encode.encode (Bytes.Encode.sequence (List.map Bytes.Encode.unsignedInt8 ints))
 
 
 suite : Test
