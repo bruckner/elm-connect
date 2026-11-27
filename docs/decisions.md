@@ -658,7 +658,9 @@ function gives an invalid value. The settled design is design §3.5,
   Normalising or clamping on read would change a value the application
   only passes through, and clamped, the two out-of-range conformance
   cases wrote the limit where protobuf refuses. Kept, a value read and
-  written back is the same bytes.
+  written back is the same bytes. Seconds an `Int` cannot hold exactly,
+  outside ±(2^53 − 1), still fail the read (`IntOutOfRange`) rather
+  than be held rounded.
 - **Why the JSON write refuses.** proto3 JSON has no form for a
   duration out of range, and protojson refuses one with nanoseconds out
   of form; writing the normal form instead would send a value the peer

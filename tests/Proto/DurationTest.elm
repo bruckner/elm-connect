@@ -433,6 +433,56 @@ fromBinary =
                             (read 1 -500000000)
                             (read 0 500000000)
                             |> Expect.equal (Ok ( False, True ))
+               , test "the most seconds an Int holds exactly, 2^53 - 1 either way, are held, not valid, refused in JSON and kept through binary" <|
+                    \_ ->
+                        [ 2 ^ 53 - 1, -(2 ^ 53 - 1) ]
+                            |> List.map
+                                (\seconds ->
+                                    case read seconds 0 of
+                                        Err _ ->
+                                            Err "the read failed"
+
+                                        Ok duration ->
+                                            let
+                                                again =
+                                                    B.encode (B.messageEncoder B.duration) duration
+                                            in
+                                            Ok
+                                                { held = Duration.toSecondsAndNanos duration == { seconds = seconds, nanos = 0 }
+                                                , valid = Duration.isValid duration
+                                                , text = Duration.toString duration
+                                                , json = jsonRefusal duration
+                                                , sameBytes = octets again == octets (written seconds 0)
+                                                , readAgain =
+                                                    B.decode (B.messageDecoder B.duration) again
+                                                        |> Result.map (\d -> ( d == duration, Duration.isValid d ))
+                                                        |> Result.toMaybe
+                                                }
+                                )
+                            |> Expect.equal
+                                (List.repeat 2
+                                    (Ok
+                                        { held = True
+                                        , valid = False
+                                        , text = Nothing
+                                        , json = Err (refusedFor "the duration is outside -315,576,000,000 to 315,576,000,000 seconds")
+                                        , sameBytes = True
+                                        , readAgain = Just ( True, False )
+                                        }
+                                    )
+                                )
+               , test "seconds past what an Int holds exactly, 2^62 either way, fail the read" <|
+                    \_ ->
+                        Expect.all
+                            [ \_ ->
+                                octets (written (2 ^ 62) 0)
+                                    |> Expect.equal [ 0x08, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x80, 0x40 ]
+                            , \_ ->
+                                [ 2 ^ 62, -(2 ^ 62), 2 ^ 53, -(2 ^ 53) ]
+                                    |> List.map (\seconds -> read seconds 0 |> Result.map Duration.toSecondsAndNanos |> Result.mapError .reason)
+                                    |> Expect.equal (List.repeat 4 (Err Proto.Error.IntOutOfRange))
+                            ]
+                            ()
                , test "the lossy views normalise, then clamp" <|
                     \_ ->
                         [ read 1 -500000000, read 315576000001 0, read -400000000000 -1, read 315576000000 1500000000 ]

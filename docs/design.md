@@ -1247,9 +1247,10 @@ milliseconds (below).
    give no order, `comparable` key or arithmetic: each would have to say
    what a value that is not valid means, which is the application's to
    say, over the fields `toSecondsAndNanos` gives.
-   Seconds further than 2^53 from zero, which only a binary read of a
-   value far outside the range can hold, are held only as closely as a
-   `Float` holds them.
+   Seconds outside ±(2^53 − 1), which an Elm `Int` does not hold
+   exactly, fail a binary read (`IntOutOfRange`, §5.5), as any 64-bit
+   integer held as an `Int` does: a value is held as read or not at all,
+   never rounded.
 6. **Vocabulary.** `fromX` and `toX` for conversions;
    `fromString : String -> Maybe T`; one module per type; the JSON
    codecs in `Proto.Json`, the decoder under the type's noun and the

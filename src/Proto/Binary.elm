@@ -2249,8 +2249,9 @@ as held, so a duration a peer wrote that is not valid survives a read and a
 write unchanged
 ([`Proto.Duration.isValid`](Proto-Duration#isValid) says whether it is).
 One that arrives twice is merged field by field: the seconds or the
-nanoseconds the later one carries replace the earlier one's. Seconds past
-2^53 from zero are held only as closely as a `Float` holds them.
+nanoseconds the later one carries replace the earlier one's. Seconds
+outside ±(2^53 − 1), over 28,000 times protobuf's limit, fail to decode
+with `IntOutOfRange`, as any 64-bit integer held as an `Int` does.
 -}
 duration : Codec Duration
 duration =

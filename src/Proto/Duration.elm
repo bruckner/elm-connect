@@ -261,8 +261,9 @@ not clamp, so a duration past protobuf's limit stays invalid, as
     -- d read from binary as 1 second and -500000000 nanoseconds
     toSecondsAndNanos (normalize d) == { seconds = 0, nanos = 500000000 }
 
-Past 2^53 seconds from zero an Elm `Int` holds the seconds only as closely
-as a `Float` does, so normalising such a value may round them.
+A duration read from protobuf binary holds seconds up to ±(2^53 − 1), the
+most an Elm `Int` holds exactly; normalising one within two seconds of that
+may round them.
 
 -}
 normalize : Duration -> Duration
