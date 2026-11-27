@@ -11,10 +11,10 @@ sample's binary.
 
 import Bytes exposing (Bytes)
 import Bytes.Encode
-import Codec.BinaryRoundTrip
 import Codec.RoundTrip exposing (Sample)
 import Dict
 import Expect
+import Octets exposing (fromHex, toHex)
 import Proto.Binary
 import Test exposing (Test, describe, test)
 
@@ -74,7 +74,7 @@ suite codecs samples =
                                 Expect.fail ("no codec for " ++ sample.message)
 
                             Just run ->
-                                case run (Codec.BinaryRoundTrip.fromHex sample.binary) of
+                                case run (fromHex sample.binary) of
                                     Err problem ->
                                         Expect.fail problem
 
@@ -82,7 +82,7 @@ suite codecs samples =
                                         Expect.all
                                             [ \r -> Expect.equal True r.same |> Expect.onFail "the newer schema reads another value"
                                             , \r -> Expect.equal True r.stable |> Expect.onFail "the older schema reads another value back"
-                                            , \r -> Expect.equal sample.binary (Codec.BinaryRoundTrip.toHex r.rewritten)
+                                            , \r -> Expect.equal sample.binary (toHex r.rewritten)
                                             ]
                                             result
             )

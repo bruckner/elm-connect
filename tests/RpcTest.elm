@@ -1,5 +1,6 @@
 module RpcTest exposing (suite)
 
+import Answers exposing (heldAnswer)
 import Bytes.Encode
 import Dict
 import Expect
@@ -8,6 +9,7 @@ import Fuzzers
 import Http
 import Json.Decode
 import Json.Encode
+import Notes exposing (GetNote, base, decodeTitle, decodeTitleBytesAs, encodeGetNote, over, titleAs)
 import Proto.Any
 import Proto.Binary
 import Proto.Bytes
@@ -46,47 +48,17 @@ import Test exposing (Test, describe, fuzz, test)
 import Time
 
 
-type alias GetNote =
-    { name : String }
-
-
-encodeGetNote : GetNote -> Json.Encode.Value
-encodeGetNote r =
-    Json.Encode.object [ ( "name", Json.Encode.string r.name ) ]
-
-
-decodeTitle : Json.Decode.Decoder String
-decodeTitle =
-    Json.Decode.field "title" Json.Decode.string
-
-
-encodeTitle : String -> Json.Encode.Value
-encodeTitle t =
-    Json.Encode.object [ ( "title", Json.Encode.string t ) ]
-
-
+{-| `GetNote`'s response under the type name the details and the `Any`s of
+these tests carry, `notes.v1.Note`.
+-}
 title : Message String
 title =
-    Proto.Message.init "notes.v1.Note" (Proto.Json.succeed << encodeTitle) decodeTitle encodeTitleBytes decodeTitleBytes
-
-
-encodeTitleBytes : String -> Bytes.Encode.Encoder
-encodeTitleBytes t =
-    Bytes.Encode.sequence [ Proto.Binary.implicit Proto.Binary.string 1 t ]
+    titleAs "notes.v1.Note"
 
 
 decodeTitleBytes : Proto.Binary.Decoder String
 decodeTitleBytes =
-    Proto.Binary.merge "notes.v1.Note"
-        (\number wire value ->
-            if number == 1 then
-                Proto.Binary.field Proto.Binary.string identity wire value
-
-            else
-                Proto.Binary.skip wire value
-        )
-        identity
-        ""
+    decodeTitleBytesAs "notes.v1.Note"
 
 
 {-| The registry generated code gives a package of
@@ -94,7 +66,7 @@ decodeTitleBytes =
 -}
 noteRegistry : Proto.Registry.Registry
 noteRegistry =
-    Proto.Registry.register (Proto.Message.init "notes.v1.Note" (Proto.Json.succeed << encodeTitle) decodeTitle encodeTitleBytes decodeTitleBytes) Proto.Registry.empty
+    Proto.Registry.register title Proto.Registry.empty
 
 
 notes : String -> Idempotency -> List Proto.Http.Binding -> GetNote -> Rpc.Call Rpc.Json GetNote String
@@ -132,18 +104,6 @@ listNotes =
         [ Proto.Http.binding { method = "GET", path = [ Proto.Http.literal "v1", Proto.Http.literal "notes" ], customVerb = Nothing, body = Proto.Http.noBody, responseBody = Nothing, query = [] }
         , Proto.Http.binding { method = "GET", path = [ Proto.Http.literal "v2", Proto.Http.literal "notes" ], customVerb = Nothing, body = Proto.Http.noBody, responseBody = Nothing, query = [] }
         ]
-
-
-base : Rpc.Client Rpc.Json
-base =
-    over Rpc.Protocol.connect
-
-
-{-| A client of the test server over a protocol, with nothing else set.
--}
-over : Rpc.Protocol.Protocol Rpc.Json -> Rpc.Client Rpc.Json
-over protocol =
-    Rpc.client protocol "https://api.example.com"
 
 
 connectGet : Rpc.Protocol.Protocol Rpc.Json
@@ -313,27 +273,6 @@ problemsOf error =
                     Nothing
         )
         (Rpc.Error.details error)
-
-
-{-| The answer an error holds, a failure's or a success it could not use.
--}
-heldAnswer : Error -> Maybe Rpc.Response
-heldAnswer error =
-    case Rpc.Error.cause error of
-        BadStatus answer ->
-            Just answer
-
-        BadResponse answer ->
-            Just answer
-
-        BadCall ->
-            Nothing
-
-        NetworkError ->
-            Nothing
-
-        Timeout ->
-            Nothing
 
 
 suite : Test

@@ -1,9 +1,9 @@
 module Proto.AnyBinaryTest exposing (suite)
 
-import Bytes.Encode
 import Expect
 import Json.Decode
 import Json.Encode
+import Notes exposing (decodeTitle)
 import Proto.Any as Any exposing (Any)
 import Proto.Binary
 import Proto.Bytes
@@ -15,41 +15,11 @@ import Proto.WellKnown as WellKnown
 import Test exposing (Test, describe, test)
 
 
-decodeTitleBytes : Proto.Binary.Decoder String
-decodeTitleBytes =
-    Proto.Binary.merge "notes.v1.Title"
-        (\number wire value ->
-            case number of
-                1 ->
-                    Proto.Binary.field Proto.Binary.string identity wire value
-
-                _ ->
-                    Proto.Binary.skip wire value
-        )
-        identity
-        ""
-
-
-encodeTitleBytes : String -> Bytes.Encode.Encoder
-encodeTitleBytes t =
-    Bytes.Encode.sequence [ Proto.Binary.implicit Proto.Binary.string 1 t ]
-
-
-encodeTitle : String -> Json.Encode.Value
-encodeTitle t =
-    Json.Encode.object [ ( "title", Json.Encode.string t ) ]
-
-
-decodeTitle : Json.Decode.Decoder String
-decodeTitle =
-    Json.Decode.field "title" Json.Decode.string
-
-
 {-| A message as generated code gives one.
 -}
 messageTitle : Message String
 messageTitle =
-    Message.init "notes.v1.Title" (Proto.Json.succeed << encodeTitle) decodeTitle encodeTitleBytes decodeTitleBytes
+    Notes.title
 
 
 {-| The registry generated code gives a package of

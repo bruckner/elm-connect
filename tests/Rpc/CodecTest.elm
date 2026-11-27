@@ -1,5 +1,6 @@
 module Rpc.CodecTest exposing (suite)
 
+import Answers exposing (heldAnswer, metadata)
 import Bytes exposing (Bytes)
 import Bytes.Decode
 import Bytes.Encode
@@ -8,11 +9,10 @@ import Expect
 import Http
 import Json.Decode
 import Json.Encode
-import Proto.Binary
+import Notes exposing (base, binaryOnly, both, encodeGetNoteBytes, jsonOnly, over, titleHi)
+import Octets exposing (bytesOf)
 import Proto.Bytes
 import Proto.Error
-import Proto.Json
-import Proto.Method exposing (Idempotency(..))
 import Proto.Registry
 import Requests exposing (refusalOf, requestOf)
 import Rpc
@@ -28,72 +28,6 @@ import Rpc.Trace
 import Test exposing (Test, describe, test)
 
 
-type alias GetNote =
-    { name : String }
-
-
-encodeGetNote : GetNote -> Json.Encode.Value
-encodeGetNote r =
-    Json.Encode.object [ ( "name", Json.Encode.string r.name ) ]
-
-
-encodeGetNoteBytes : GetNote -> Bytes.Encode.Encoder
-encodeGetNoteBytes r =
-    Bytes.Encode.sequence [ Proto.Binary.implicit Proto.Binary.string 1 r.name ]
-
-
-decodeTitle : Json.Decode.Decoder String
-decodeTitle =
-    Json.Decode.field "title" Json.Decode.string
-
-
-decodeTitleBytes : Proto.Binary.Decoder String
-decodeTitleBytes =
-    Proto.Binary.merge "notes.v1.Title"
-        (\number wire value ->
-            case number of
-                1 ->
-                    Proto.Binary.field Proto.Binary.string identity wire value
-
-                _ ->
-                    Proto.Binary.skip wire value
-        )
-        identity
-        ""
-
-
-getNoteIn : Proto.Method.Method codec GetNote String -> Proto.Method.Method codec GetNote String
-getNoteIn =
-    Proto.Method.withIdempotency IdempotencyNoSideEffects
-
-
-{-| A method with both codecs, with JSON alone, and with binary alone.
--}
-both : GetNote -> Rpc.Call codec GetNote String
-both =
-    Rpc.call (getNoteIn (Proto.Method.init "notes.v1.Notes" "GetNote" (encodeGetNote >> Proto.Json.succeed) (\_ -> decodeTitle) encodeGetNoteBytes decodeTitleBytes))
-
-
-jsonOnly : GetNote -> Rpc.Call Rpc.Json GetNote String
-jsonOnly =
-    Rpc.call (getNoteIn (Proto.Method.initJson "notes.v1.Notes" "GetNote" (encodeGetNote >> Proto.Json.succeed) (\_ -> decodeTitle)))
-
-
-binaryOnly : GetNote -> Rpc.Call Rpc.Proto GetNote String
-binaryOnly =
-    Rpc.call (getNoteIn (Proto.Method.initProto "notes.v1.Notes" "GetNote" encodeGetNoteBytes decodeTitleBytes))
-
-
-base : Rpc.Client Rpc.Json
-base =
-    over Rpc.Protocol.connect
-
-
-over : Rpc.Protocol.Protocol codec -> Rpc.Client codec
-over protocol =
-    Rpc.client protocol "https://api.example.com"
-
-
 proto : Rpc.Client Rpc.Proto
 proto =
     over Rpc.Protocol.connectProto
@@ -102,27 +36,6 @@ proto =
 protoGet : Rpc.Client Rpc.Proto
 protoGet =
     over (Rpc.Protocol.withConnectGet Rpc.Protocol.connectProto)
-
-
-bytesOf : List Int -> Bytes
-bytesOf =
-    List.map Bytes.Encode.unsignedInt8 >> Bytes.Encode.sequence >> Bytes.Encode.encode
-
-
-{-| A note whose title is "hi", in protobuf binary.
--}
-titleHi : Bytes
-titleHi =
-    bytesOf [ 0x0A, 0x02, 0x68, 0x69 ]
-
-
-metadata : Int -> List ( String, String ) -> Http.Metadata
-metadata status headers =
-    { url = "https://api.example.com/notes.v1.Notes/GetNote"
-    , statusCode = status
-    , statusText = ""
-    , headers = Dict.fromList headers
-    }
 
 
 utf8 : String -> Bytes
@@ -171,27 +84,6 @@ httpStatusOf result =
 bodyWidth : Error -> Maybe Int
 bodyWidth error =
     heldAnswer error |> Maybe.andThen (.body >> Rpc.Body.toBytes) |> Maybe.map Bytes.width
-
-
-{-| The answer an error holds, a failure's or a success it could not use.
--}
-heldAnswer : Error -> Maybe Rpc.Response
-heldAnswer error =
-    case Rpc.Error.cause error of
-        BadStatus answer ->
-            Just answer
-
-        BadResponse answer ->
-            Just answer
-
-        BadCall ->
-            Nothing
-
-        NetworkError ->
-            Nothing
-
-        Timeout ->
-            Nothing
 
 
 suite : Test
