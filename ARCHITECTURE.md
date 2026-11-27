@@ -46,11 +46,16 @@ imports.
 **The IR** (`ir.rs` and `ir/`) is one `Package` per proto package: its
 messages, enums and oneofs with every Elm name already decided, and its
 services with each method's route. `ir/build.rs` builds it from the pool
-and reports what has no Elm form; `naming.rs` holds the naming rules as
-pure functions (§3.7), `ir/rename.rs` the `rename` option, `ir/graph.rs`
-the strongly connected components behind recursive messages and import
-cycles, `ir/comments.rs` and `ir/declaration.rs` what each element's
-documentation says. `route.rs` parses `google.api.http` path templates
+and reports what has no Elm form, with the parts that stand apart in
+`ir/build/`: `read.rs` reads descriptors and their options, `renames.rs`
+checks the rename map, `modules.rs` claims the generated modules' names,
+`codecs.rs` finds codec names two types would share, and `routes.rs`
+resolves each method's routes and warns of ambiguous bindings.
+`ir/cycles.rs` marks the cycles of message references once every package
+is built. `naming.rs` holds the naming rules as pure functions (§3.7),
+`ir/rename.rs` the `rename` option, `ir/graph.rs` the strongly connected
+components behind recursive messages and import cycles, `ir/comments.rs`
+and `ir/declaration.rs` what each element's documentation says. `route.rs` parses `google.api.http` path templates
 and resolves each rule's fields against the request and response (§4,
 §5.3). `options.rs` parses the options (§6).
 
