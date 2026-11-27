@@ -394,8 +394,8 @@ impl Emitter {
 
     /// The decoder of a field, and the value an absent or `null` field
     /// reads as; `None` for [`FieldShape::Json`], which
-    /// `Proto.Json.valueField` reads whole, since for it `null` is not
-    /// absent.
+    /// `Proto.Json.nestedMessageValueField` reads whole, since for it `null`
+    /// is not absent.
     pub(super) fn field_decoder(&mut self, shape: FieldShape) -> Option<(Expr, Expr)> {
         let decoder = match shape {
             FieldShape::Json => return None,
@@ -652,7 +652,9 @@ impl Emitter {
             }
             ValueShape::Present(Present::Struct) => self.reference((PROTO_JSON, "struct")),
             ValueShape::Present(Present::ListValue) => self.reference((PROTO_JSON, "listValue")),
-            ValueShape::Present(Present::Any) => self.reference((PROTO_JSON, "any")),
+            ValueShape::Present(Present::Any) => {
+                unreachable!("an Any reaches an Any, so its decoder takes the registry")
+            }
             ValueShape::Zeroed(Zeroed::Empty) => self.reference((PROTO_JSON, "empty")),
             ValueShape::Zeroed(Zeroed::Null) => self.reference((PROTO_JSON, "nullValue")),
             ValueShape::Present(Present::Wrapped(wrapper, _)) => var(wrapper.decoder_name()),
