@@ -6,11 +6,14 @@ module Clock.V1 exposing (..)
 
 {-| Path variables of well-known types whose JSON is one string or scalar:
 the variable's text is that JSON value, and the field is not repeated
-in the query.
+in the query. And query parameters of a type whose text a value may
+lack (a Duration that is not valid): a singular one is left out as an
+unset one is, and a repeated one leaves that element out.
 -}
 
 import Bytes.Encode
 import Clock.V1.Moment
+import Clock.V1.Pauses
 import Json.Decode
 import Json.Encode
 import Proto.Binary
@@ -59,6 +62,18 @@ type alias Moment =
     }
 
 
+{-| [`message clock.v1.Pauses`](Clock-V1-Pauses#descriptor)
+
+  - [`wait`](Clock-V1-Pauses#wait)
+  - [`waits`](Clock-V1-Pauses#waits)
+
+-}
+type alias Pauses =
+    { wait : Maybe Proto.Duration.Duration
+    , waits : List Proto.Duration.Duration
+    }
+
+
 
 -- DEFAULTS
 
@@ -76,6 +91,15 @@ defaultMoment =
     }
 
 
+{-| A [`Pauses`](#Pauses) with every field at its default and every oneof unset.
+-}
+defaultPauses : Pauses
+defaultPauses =
+    { wait = Nothing
+    , waits = []
+    }
+
+
 
 -- TYPED VALUES
 
@@ -85,6 +109,13 @@ defaultMoment =
 messageMoment : Proto.Message.Message Moment
 messageMoment =
     Proto.Message.init "clock.v1.Moment" encodeMoment decodeMoment encodeMomentBytes decodeMomentBytes
+
+
+{-| The typed value of [`Pauses`](#Pauses): its full name and codecs.
+-}
+messagePauses : Proto.Message.Message Pauses
+messagePauses =
+    Proto.Message.init "clock.v1.Pauses" encodePauses decodePauses encodePausesBytes decodePausesBytes
 
 
 
@@ -98,6 +129,7 @@ descriptors =
     Proto.Descriptors.union
         (Proto.Descriptors.fromDescriptors
             [ Clock.V1.Moment.descriptor
+            , Clock.V1.Pauses.descriptor
             ]
             []
         )
@@ -110,6 +142,7 @@ registry : Proto.Registry.Registry
 registry =
     Proto.Registry.empty
         |> Proto.Registry.register messageMoment
+        |> Proto.Registry.register messagePauses
 
 
 
@@ -138,6 +171,18 @@ encodeMoment value =
         ]
 
 
+{-| Encodes a [`Pauses`](#Pauses) as proto3 JSON, or fails if the input contains a bad value.
+-}
+encodePauses : Pauses -> Proto.Json.Encoder Proto.Error.Error
+encodePauses value =
+    Proto.Json.writeObject
+        [ Proto.Json.checkedFields
+            [ ( "wait", Proto.Json.writeOptional Proto.Json.writeDuration value.wait )
+            , ( "waits", Proto.Json.writeRepeated Proto.Json.writeDuration value.waits )
+            ]
+        ]
+
+
 
 -- DECODERS
 
@@ -157,6 +202,17 @@ decodeMoment =
         )
 
 
+{-| Decodes a [`Pauses`](#Pauses) from proto3 JSON.
+-}
+decodePauses : Json.Decode.Decoder Pauses
+decodePauses =
+    Proto.Json.message
+        (Json.Decode.succeed Pauses
+            |> Proto.Json.messageField "wait" Nothing (Json.Decode.map Just Proto.Json.duration)
+            |> Proto.Json.messageField "waits" [] (Json.Decode.list Proto.Json.duration)
+        )
+
+
 
 -- BINARY ENCODERS
 
@@ -172,6 +228,16 @@ encodeMomentBytes value =
         , Proto.Binary.optional Proto.Binary.boolValue 4 value.seen
         , Proto.Binary.optional Proto.Binary.duration 5 value.wait
         , Proto.Binary.implicit Proto.Binary.string 6 value.note
+        ]
+
+
+{-| Encodes a [`Pauses`](#Pauses) as protobuf binary.
+-}
+encodePausesBytes : Pauses -> Bytes.Encode.Encoder
+encodePausesBytes value =
+    Bytes.Encode.sequence
+        [ Proto.Binary.optional Proto.Binary.duration 1 value.wait
+        , Proto.Binary.list Proto.Binary.duration 2 value.waits
         ]
 
 
@@ -290,6 +356,54 @@ decodeMomentBytes =
     mergeMomentBytes defaultMoment
 
 
+{-| Decodes a [`Pauses`](#Pauses) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
+-}
+mergePausesBytes : Pauses -> Proto.Binary.Decoder Pauses
+mergePausesBytes =
+    Proto.Binary.merge
+        "clock.v1.Pauses"
+        (\number wire value ->
+            case number of
+                1 ->
+                    Proto.Binary.field
+                        Proto.Binary.duration
+                        (\v ->
+                            { wait = Just v
+                            , waits = value.waits
+                            }
+                        )
+                        wire
+                        value
+
+                2 ->
+                    Proto.Binary.repeated
+                        Proto.Binary.duration
+                        (\v ->
+                            { wait = value.wait
+                            , waits = v
+                            }
+                        )
+                        value.waits
+                        wire
+                        value
+
+                _ ->
+                    Proto.Binary.skip wire value
+        )
+        (\value ->
+            { wait = value.wait
+            , waits = List.reverse value.waits
+            }
+        )
+
+
+{-| Decodes a [`Pauses`](#Pauses) from protobuf binary.
+-}
+decodePausesBytes : Proto.Binary.Decoder Pauses
+decodePausesBytes =
+    mergePausesBytes defaultPauses
+
+
 
 -- QUERY ENCODERS
 
@@ -305,4 +419,14 @@ queryOfMoment request_ =
         , Proto.Query.optional "seen" (Maybe.map Proto.Route.boolText request_.seen)
         , Proto.Query.optional "wait" (Maybe.andThen Proto.Duration.toString request_.wait)
         , Proto.Query.string "note" request_.note
+        ]
+
+
+{-| The query parameters of a [`Pauses`](#Pauses) for the HTTP bindings that put its fields in the query: those of its fields that hold a value, in declaration order.
+-}
+queryOfPauses : Pauses -> List ( String, String )
+queryOfPauses request_ =
+    List.concat
+        [ Proto.Query.optional "wait" (Maybe.andThen Proto.Duration.toString request_.wait)
+        , Proto.Query.repeated "waits" (List.filterMap Proto.Duration.toString request_.waits)
         ]

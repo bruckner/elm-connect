@@ -2596,8 +2596,11 @@ binding whose rule names a `response_body`:
   its encoder through `Proto.Route.viaJson`, a timestamp by
   `Proto.Timestamp.toString`, a duration by `Proto.Duration.toString`,
   which has no text for one that is not valid: the route then has what
-  it has for an unset one, and a request over JSON holding one is
-  refused before its route is built (§3.5), `bytes` held
+  it has for an unset one (an empty path value, no query parameter; a
+  repeated query parameter leaves that element out, by
+  `List.filterMap`; the `routes_well_known_path` case pins both), and a
+  request over JSON holding one is refused before its route is built
+  (§3.5), `bytes` held
   as `Bytes` by `Proto.Route.bytesText`, base64 in the URL-safe alphabet,
   padded, the one alphabet every transcoder reads in a path; §5.3). A path
   through a message on a recursion cycle reads through its wrapper. The
