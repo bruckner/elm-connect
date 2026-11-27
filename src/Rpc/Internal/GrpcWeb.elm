@@ -34,7 +34,6 @@ import Rpc.Internal.Limit as Limit
 import Rpc.Internal.Protocol exposing (BytesMessage, GoodBytes, Options, Settings, Size)
 import Rpc.Internal.Status as Status
 import Rpc.Request exposing (Request)
-import Rpc.Response exposing (Response)
 
 
 
@@ -144,7 +143,7 @@ read failure answer =
                             fromFrames metadata raw
 
                     Envelope.Unaccepted problem ->
-                        ( Just metadata, Err (Error.badResponse Code.Internal (Envelope.envelopeText problem) (answerOf metadata raw)) )
+                        ( Just metadata, Err (Error.badResponse Code.Internal (Envelope.envelopeText problem) (Envelope.bytesAnswer metadata raw)) )
 
                     Envelope.Foreign ->
                         ( Just metadata, Err (failure (Http.GoodStatus_ metadata (Envelope.bytesText raw))) )
@@ -178,10 +177,10 @@ fromFrames metadata raw =
             )
 
         Just ( _, Nothing ) ->
-            ( Just metadata, Err (Error.badResponse Code.Internal (Envelope.envelopeText "a gRPC-Web answer without trailers") (answerOf metadata raw)) )
+            ( Just metadata, Err (Error.badResponse Code.Internal (Envelope.envelopeText "a gRPC-Web answer without trailers") (Envelope.bytesAnswer metadata raw)) )
 
         Nothing ->
-            ( Just metadata, Err (Error.badResponse Code.Internal (Envelope.envelopeText "a gRPC-Web body that is not a sequence of uncompressed frames") (answerOf metadata raw)) )
+            ( Just metadata, Err (Error.badResponse Code.Internal (Envelope.envelopeText "a gRPC-Web body that is not a sequence of uncompressed frames") (Envelope.bytesAnswer metadata raw)) )
 
 
 {-| The result a status (`status`, names lowercased) and the message frames
@@ -191,7 +190,7 @@ settle : Error.Source -> Http.Metadata -> Bytes -> Dict String String -> List By
 settle source metadata raw status messages =
     let
         answer =
-            answerOf metadata raw
+            Envelope.bytesAnswer metadata raw
     in
     case ( Dict.get "grpc-status" status |> Maybe.map (String.trim >> String.toInt), messages ) of
         ( Just (Just 0), [ message ] ) ->
@@ -351,13 +350,3 @@ trailerLines text =
 lowered : Dict String String -> Dict String String
 lowered headers =
     Dict.foldl (\name value -> Dict.insert (String.toLower name) value) Dict.empty headers
-
-
-answerOf : Http.Metadata -> Bytes -> Response
-answerOf metadata raw =
-    { url = metadata.url
-    , statusCode = metadata.statusCode
-    , statusText = metadata.statusText
-    , headers = metadata.headers
-    , body = Rpc.Body.bytes raw
-    }
