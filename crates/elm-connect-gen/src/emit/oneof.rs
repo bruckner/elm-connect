@@ -158,9 +158,11 @@ impl Emitter {
     /// `Json.Decode.lazy`. A member of `google.protobuf.Empty` is an
     /// `emptyMember` step given its constructor, read as set when its key
     /// holds an object. A member of `google.protobuf.Value` is a
-    /// `valueMember` step given its constructor, for which `null` is set,
-    /// as protobuf's parsers read it, and a member of
-    /// `google.protobuf.NullValue` a `nullValueMember` step likewise. A oneof
+    /// `nestedValueMember` step given the depth and its constructor, for
+    /// which `null` is set, as protobuf's parsers read it; its message nests,
+    /// so the oneof's decoders always take the depth. A member of
+    /// `google.protobuf.NullValue` is a `nullValueMember` step, for which
+    /// `null` is set likewise. A oneof
     /// with a member that reaches an `Any` gets
     /// `decodeFooKindWith`, taking the registry.
     /// For a oneof of a message whose codecs take the depth (`counts`)
@@ -188,7 +190,9 @@ impl Emitter {
                         args.push(var(DEPTH));
                         ("nestedValueMember", ctor)
                     }
-                    ValueShape::Zeroed(Zeroed::Json) => ("valueMember", ctor),
+                    ValueShape::Zeroed(Zeroed::Json) => unreachable!(
+                        "a message with a google.protobuf.Value member nests, so its oneof's decoder takes the depth"
+                    ),
                     ValueShape::Zeroed(Zeroed::Null) => ("nullValueMember", ctor),
                     _ => {
                         self.deep_value = variant.cyclic;

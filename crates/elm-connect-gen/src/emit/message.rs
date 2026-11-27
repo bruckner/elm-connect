@@ -294,8 +294,10 @@ impl Emitter {
     /// `decodeFoo : Json.Decode.Decoder Foo`: `Proto.Json.message` of
     /// `Json.Decode.succeed Foo` with one step per record field, in record
     /// order: an [`Emitter::field_step`] per proto field
-    /// (`Proto.Json.messageField`, or `Proto.Json.messageValueField` for a
-    /// singular `google.protobuf.Value`), a `Proto.Json.oneof` per oneof;
+    /// (`Proto.Json.messageField`, or `Proto.Json.nestedMessageValueField`
+    /// for a singular `google.protobuf.Value`, read at the depth, which its
+    /// message takes since holding one it nests), a `Proto.Json.oneof` per
+    /// oneof;
     /// `Proto.Json.emptyMessage` for a message without fields.
     /// `Proto.Json.message` checks once that the JSON is an object, and the
     /// field steps trust it rather than each checking again; a message of
@@ -351,11 +353,8 @@ impl Emitter {
                             &field.proto_name,
                             [var(DEPTH)],
                         ),
-                        None => self.field_step(
-                            ("messageValueField", "messageValueFieldEither"),
-                            &field.json_name,
-                            &field.proto_name,
-                            [],
+                        None => unreachable!(
+                            "a message holding a google.protobuf.Value nests, so its decoder takes the depth"
                         ),
                     },
                     RecordField::Oneof(oneof) => {
