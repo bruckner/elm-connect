@@ -558,7 +558,7 @@ decodeNestedFree depth =
     Proto.Json.message
         (Json.Decode.succeed Free
             |> Proto.Json.messageField "name" "" Proto.Json.string
-            |> Proto.Json.nestedMessageValueField "value" depth
+            |> Proto.Json.messageNullField "value" (Proto.Json.nestedValue depth)
         )
 
 

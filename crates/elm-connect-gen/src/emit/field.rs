@@ -380,8 +380,8 @@ impl Emitter {
 
     /// The decoder of a field, and the value an absent or `null` field
     /// reads as; `None` for [`FieldShape::Json`], which
-    /// `Proto.Json.nestedMessageValueField` reads whole, since for it `null`
-    /// is not absent.
+    /// `Proto.Json.messageNullField` reads whole, since for it `null` is not
+    /// absent.
     pub(super) fn field_decoder(&mut self, shape: FieldShape) -> Option<(Expr, Expr)> {
         let decoder = match shape {
             FieldShape::Json => return None,

@@ -48,7 +48,7 @@ message Event {
   repeated google.protobuf.Struct records = 27;
   map<string, google.protobuf.ListValue> columns = 28;
   // An optional Value is the same Maybe; its JSON name differs, so it
-  // decodes with valueFieldEither. A map of Value holds it bare.
+  // decodes with messageNullFieldEither. A map of Value holds it bare.
   optional google.protobuf.Value last_value = 31;
   map<string, google.protobuf.Value> settings = 32;
   // NullValue's one value carries nothing: (), never written, `optional`

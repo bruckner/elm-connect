@@ -145,7 +145,7 @@ decodeSetting =
     Proto.Json.message
         (Json.Decode.succeed Setting
             |> Proto.Json.messageField "name" "" Json.Decode.string
-            |> Proto.Json.nestedMessageValueField "value" 0
+            |> Proto.Json.messageNullField "value" (Proto.Json.nestedValue 0)
         )
 
 
@@ -154,13 +154,21 @@ decodeSettingEither =
     Proto.Json.message
         (Json.Decode.succeed Setting
             |> Proto.Json.messageField "name" "" Json.Decode.string
-            |> Proto.Json.nestedMessageValueFieldEither "defaultValue" "default_value" 0
+            |> Proto.Json.messageNullFieldEither "defaultValue" "default_value" (Proto.Json.nestedValue 0)
+        )
+
+
+decodeCount : Decoder (Maybe Int)
+decodeCount =
+    Proto.Json.message
+        (Json.Decode.succeed identity
+            |> Proto.Json.messageNullField "count" Json.Decode.int
         )
 
 
 valueFieldTests : Test
 valueFieldTests =
-    describe "nestedMessageValueField at depth 0"
+    describe "messageNullField of nestedValue at depth 0"
         [ test "a missing key gives Nothing" <|
             \_ -> decodes decodeSetting """{"name":"a"}""" (Setting "a" Nothing)
         , test "null is set, holding null" <|
@@ -185,6 +193,14 @@ valueFieldTests =
                     ()
         , test "both names fail, even when one is null" <|
             \_ -> failsWith decodeSettingEither """{"defaultValue":null,"default_value":1}""" "Expecting \"defaultValue\" or \"default_value\", but got both"
+        , test "null is given to the decoder, which may refuse it" <|
+            \_ ->
+                Expect.all
+                    [ \_ -> fails decodeCount """{"count":null}"""
+                    , \_ -> decodes decodeCount """{"count":2}""" (Just 2)
+                    , \_ -> decodes decodeCount "{}" Nothing
+                    ]
+                    ()
         , test "Nothing leaves the field out, Just null writes null" <|
             \_ ->
                 Expect.all
@@ -270,7 +286,7 @@ checkedOnce =
             |> Proto.Json.messageFieldEither "displayName" "display_name" "" Json.Decode.string
             |> Proto.Json.messageField "constructor" "" Json.Decode.string
             |> Proto.Json.messageField "length" "" Json.Decode.string
-            |> Proto.Json.nestedMessageValueField "value" 0
+            |> Proto.Json.messageNullField "value" (Proto.Json.nestedValue 0)
         )
 
 

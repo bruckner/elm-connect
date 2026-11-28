@@ -6,9 +6,10 @@
   (for `fieldEither`), which take the same arguments.
 - `Proto.Json.valueField` and `valueFieldEither` are removed. Inside
   `Proto.Json.message`, read a `google.protobuf.Value` field with
-  `Proto.Json.nestedMessageValueField name 0` or
-  `nestedMessageValueFieldEither jsonName protoName 0`, which read it
-  as they did: a missing key is `Nothing`, `null` is `Just ValueNull`.
+  `Proto.Json.messageNullField name (Proto.Json.nestedValue 0)` or
+  `messageNullFieldEither jsonName protoName (Proto.Json.nestedValue 0)`,
+  which read it as they did: a missing key is `Nothing`, `null` is
+  `Just ValueNull`.
 - `Proto.Json.valueMember` and `valueMemberEither` are removed. Write
   `Proto.Json.nestedValueMember name 0 constructor` or
   `nestedValueMemberEither jsonName protoName 0 constructor`, which read

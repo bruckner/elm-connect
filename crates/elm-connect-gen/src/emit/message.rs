@@ -294,9 +294,10 @@ impl Emitter {
     /// `decodeFoo : Json.Decode.Decoder Foo`: `Proto.Json.message` of
     /// `Json.Decode.succeed Foo` with one step per record field, in record
     /// order: an [`Emitter::field_step`] per proto field
-    /// (`Proto.Json.messageField`, or `Proto.Json.nestedMessageValueField`
-    /// for a singular `google.protobuf.Value`, read at the depth, which its
-    /// message takes since holding one it nests), a `Proto.Json.oneof` per
+    /// (`Proto.Json.messageField`, or `Proto.Json.messageNullField` of
+    /// `Proto.Json.nestedValue depth` for a singular `google.protobuf.Value`,
+    /// for which `null` is set, read at the depth, which its message takes
+    /// since holding one it nests), a `Proto.Json.oneof` per
     /// oneof;
     /// `Proto.Json.emptyMessage` for a message without fields.
     /// `Proto.Json.message` checks once that the JSON is an object, and the
@@ -347,12 +348,15 @@ impl Emitter {
                             &field.proto_name,
                             [zero, decoder],
                         ),
-                        None if self.deep.is_some() => self.field_step(
-                            ("nestedMessageValueField", "nestedMessageValueFieldEither"),
-                            &field.json_name,
-                            &field.proto_name,
-                            [var(DEPTH)],
-                        ),
+                        None if self.deep.is_some() => {
+                            let nested = self.reference((PROTO_JSON, "nestedValue"));
+                            self.field_step(
+                                ("messageNullField", "messageNullFieldEither"),
+                                &field.json_name,
+                                &field.proto_name,
+                                [apply(nested, [var(DEPTH)])],
+                            )
+                        }
                         None => unreachable!(
                             "a message holding a google.protobuf.Value nests, so its decoder takes the depth"
                         ),

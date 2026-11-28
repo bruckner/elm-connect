@@ -1629,7 +1629,7 @@ decodeNestedWellKnownWith types depth =
             |> Proto.Json.messageField "any" Nothing (Json.Decode.map Just (Proto.Json.nestedAnyWith depth types))
             |> Proto.Json.messageField "struct" Nothing (Json.Decode.map Just (Proto.Json.nestedStruct depth))
             |> Proto.Json.messageField "list" Nothing (Json.Decode.map Just (Proto.Json.nestedListValue depth))
-            |> Proto.Json.nestedMessageValueField "value" depth
+            |> Proto.Json.messageNullField "value" (Proto.Json.nestedValue depth)
             |> Proto.Json.messageField "timestamp" Nothing (Json.Decode.map Just Proto.Json.timestamp)
             |> Proto.Json.messageField "duration" Nothing (Json.Decode.map Just Proto.Json.duration)
             |> Proto.Json.messageField "mask" Nothing (Json.Decode.map Just Proto.Json.fieldMask)

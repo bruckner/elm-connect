@@ -2914,6 +2914,14 @@ writes the general form.
   so a singular or repeated field allocates no closure, which is why
   they were added (decisions: "Accept on read what the wire admits,
   refuse on a JSON write").
+- `nestedMessageValueField` and `nestedMessageValueFieldEither` read a
+  `Value` field at a depth they carried, building `nestedValue depth`
+  inside. Every other step takes its decoder, depth and all
+  (`messageField "s" Nothing (Json.Decode.map Just (nestedStruct
+  depth))`), so the step is now `messageNullField` and
+  `messageNullFieldEither`, a field for which `null` is a value, given
+  a decoder: generated code writes `messageNullField "payload"
+  (nestedValue depth)`.
 
 Where: design §3.4, §3.5, §3.6.
 

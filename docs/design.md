@@ -791,8 +791,7 @@ rpc shared call =
     against one budget with the `Any`s and the arrays and objects of the
     `Struct`, `Value` and `ListValue` it holds: those count on from its
     depth (`Proto.Json.nestedStruct depth`, `nestedListValue`,
-    `nestedValue`, `nestedMessageValueField`, `nestedValueMember`,
-    `nestedAnyWith`). Its codecs take the depth: `decodeNode =
+    `nestedValue`, `nestedValueMember`, `nestedAnyWith`). Its codecs take the depth: `decodeNode =
     decodeNestedNode 1`, and so for every message that nests. A message
     that does not nest holds nothing a read could count, and generates
     what it would in a schema with nothing that nests (decisions: "A
@@ -1061,7 +1060,7 @@ just the form encoders write.
   as a duplicate field. The same holds for every two-name
   helper (`memberEither`,
   `nestedValueMemberEither`, `nullValueMemberEither`,
-  `nestedMessageValueFieldEither`). The
+  `messageNullFieldEither`). The
   two names are equal only for one-word fields without an explicit
   `json_name`, so in practice most multi-word fields use `messageFieldEither`. Two names are the most there can
   be (decisions.md: Decoder steps).
@@ -1339,9 +1338,9 @@ In detail:
   own decoders, with the reason a read failed. Generated code reads a
   `Value` held by a message, which then nests, at the message's depth,
   as `Proto.Value.decoder` reads one from the top:
-  `Proto.Json.nestedMessageValueField` for a singular field,
-  `nestedValueMember` for a oneof member and `nestedValue` for a list or
-  map of it.
+  `Proto.Json.nestedValue depth`, through `Proto.Json.messageNullField`
+  for a singular field, through `nestedValueMember` for a oneof member,
+  and as any other value in a list or map.
   (decisions.md: "A union for `google.protobuf.Value`, one depth budget".)
 - The conversion counts depth as it goes: each array and object is a
   level, in JSON and in binary alike (a binary `Struct` or `ListValue`
@@ -1383,11 +1382,11 @@ In detail:
   `NullValue`, and only a missing key as unset. So a missing key is
   `Nothing`, and any JSON under the key is `Just` it, `null` included
   (`Just ValueNull`); `Nothing` leaves the field out and `Just` writes
-  its JSON, `null` too. The step is
-  `Proto.Json.nestedMessageValueField`
-  (`nestedMessageValueFieldEither` when the names differ), at the
-  message's depth, since a message holding a `Value` nests; it reads
-  `null` as set where `messageField` reads it as the default. This keeps a default message
+  its JSON, `null` too. The step is `Proto.Json.messageNullField`
+  (`messageNullFieldEither` when the names differ) of
+  `Proto.Json.nestedValue depth`, at the message's depth, since a
+  message holding a `Value` nests; it gives `null` to the decoder where
+  `messageField` reads it as the default. This keeps a default message
   `{}` and matches `Struct` and `ListValue`, and a client that never
   touches the field never sends it (decisions.md: `google.protobuf.Value`
   fields as `Maybe`). Repeated, as a map value and as a oneof member it

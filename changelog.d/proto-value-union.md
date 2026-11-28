@@ -33,7 +33,6 @@
 - A message on a cycle that holds a `Struct`, `Value`, `ListValue` or
   `Any` reads it through new depth-taking helpers, which generated code
   calls: `Proto.Json.nestedStruct`, `nestedListValue`, `nestedValue`,
-  `nestedMessageValueField`, `nestedMessageValueFieldEither`,
   `nestedAnyWith` and `registryDepth`, and
   `Proto.Binary.nestedStruct`, `nestedListValue` and `nestedValue`;
   one that holds an `Any` writes a field on its cycle with
