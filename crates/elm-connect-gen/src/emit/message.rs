@@ -4,8 +4,8 @@
 use super::Deep;
 use super::recursion::DEPTH;
 use super::{
-    Emitter, FAILS, JSON_DECODE, JSON_ENCODE, MessageShape, PROTO_JSON, PROTO_REGISTRY,
-    PROTO_UNKNOWN, RecordField, call, docs,
+    Emitter, FAILS, JSON_DECODE, JSON_ENCODE, MessageShape, PROTO_JSON_DECODE, PROTO_JSON_ENCODE,
+    PROTO_REGISTRY, PROTO_UNKNOWN, RecordField, call, docs,
 };
 use crate::elm::ast::{BinOp, Decl, Expr, Pattern, Type};
 use crate::elm::build::{
@@ -100,16 +100,16 @@ impl Emitter {
         }
     }
 
-    /// A message's JSON encoder, `encodeFoo : Foo -> Proto.Json.Encoder x`
+    /// A message's JSON encoder, `encodeFoo : Foo -> Proto.Json.Encode.Encoder x`
     /// for a message whose write nothing it holds can refuse:
-    /// `Proto.Json.succeed` of `Proto.Json.objectOfFields` of every field
+    /// `Proto.Json.Encode.succeed` of `Proto.Json.Encode.plainObject` of every field
     /// under its JSON name, each as a `Maybe Json.Encode.Value` that is
     /// `Nothing` when the field is left out
     /// ([`encode_field`](Self::encode_field)), followed by the members
     /// each oneof's encoder gives (none when it is unset). Key order means
     /// nothing in JSON, so the fields come first, whatever the declaration
     /// order. It works for any refusal type `x`, so its parents unwrap it
-    /// with `Proto.Json.encodeTotal` and stay plain code with no tag per
+    /// with `Proto.Json.Encode.encodeTotal` and stay plain code with no tag per
     /// field.
     pub(super) fn message_encoder(&mut self, shape: &MessageShape) -> Vec<Decl> {
         if self.message_write_reaches(shape) {
@@ -155,10 +155,10 @@ impl Emitter {
         let object = if nothing {
             self.reference((JSON_ENCODE, "object"))
         } else {
-            self.reference((PROTO_JSON, "objectOfFields"))
+            self.reference((PROTO_JSON_ENCODE, "plainObject"))
         };
         let encoder_type = self.json_encoder_type(false);
-        let succeed = self.reference((PROTO_JSON, "succeed"));
+        let succeed = self.reference((PROTO_JSON_ENCODE, "succeed"));
         vec![Decl::Value {
             doc: Some(format!(
                 "Encodes {} as proto3 JSON.",
@@ -189,16 +189,16 @@ impl Emitter {
         self.write_reach.message(&shape.message.proto_full_name)
     }
 
-    /// `encodeFoo : Foo -> Proto.Json.Encoder Proto.Error.Error` for a
-    /// message whose write can be refused: `Proto.Json.writeObject` of its
+    /// `encodeFoo : Foo -> Proto.Json.Encode.Encoder Proto.Error.Error` for a
+    /// message whose write can be refused: `Proto.Json.Encode.object` of its
     /// fields in declaration order, grouped into runs, each consecutive
-    /// group of fields that cannot be refused a `Proto.Json.plainFields` of
+    /// group of fields that cannot be refused a `Proto.Json.Encode.plainFields` of
     /// their plain JSON ([`Self::encode_field`]) and each group of those
-    /// that can a `Proto.Json.checkedFields` of their `Proto.Json.Field`s
+    /// that can a `Proto.Json.Encode.checkedFields` of their `Proto.Json.Encode.Field`s
     /// ([`Self::write_field`]); then each oneof's members as a run of its
     /// own. The output keeps the order the plain encoder writes. A field of
     /// a message whose codecs take the depth that counts a level and reaches
-    /// an `Any` is written one level deeper (`Proto.Json.writeDeeper`).
+    /// an `Any` is written one level deeper (`Proto.Json.Encode.deeper`).
     fn message_encoder_with(&mut self, shape: &MessageShape) -> Vec<Decl> {
         let counts = self.counts(shape.message);
         // Each run: whether it holds fields that can be refused, and its
@@ -229,7 +229,7 @@ impl Emitter {
                 } else {
                     "plainFields"
                 };
-                apply(self.reference((PROTO_JSON, run)), [list(pairs)])
+                apply(self.reference((PROTO_JSON_ENCODE, run)), [list(pairs)])
             })
             .collect();
         for oneof in &shape.oneofs {
@@ -240,9 +240,9 @@ impl Emitter {
             } else {
                 "plainFields"
             };
-            parts.push(apply(self.reference((PROTO_JSON, run)), [members]));
+            parts.push(apply(self.reference((PROTO_JSON_ENCODE, run)), [members]));
         }
-        let object = self.reference((PROTO_JSON, "writeObject"));
+        let object = self.reference((PROTO_JSON_ENCODE, "object"));
         let encoder_type = self.json_encoder_type(true);
         let body = apply(object, [list(parts)]);
         vec![Decl::Value {
@@ -270,8 +270,8 @@ impl Emitter {
 
     /// A decoding pipeline step reading the field `json_name`, also
     /// accepted under `proto_name` as proto3 JSON requires:
-    /// `Proto.Json.<one> json_name ...` when the two are equal, else
-    /// `Proto.Json.<either> json_name proto_name ...`, followed by `args`,
+    /// `Proto.Json.Decode.<one> json_name ...` when the two are equal, else
+    /// `Proto.Json.Decode.<either> json_name proto_name ...`, followed by `args`,
     /// where `(one, either)` is `helpers`.
     fn field_step(
         &mut self,
@@ -282,25 +282,25 @@ impl Emitter {
     ) -> Expr {
         let (one, either) = helpers;
         let step = if json_name == proto_name {
-            let field = self.reference((PROTO_JSON, one));
+            let field = self.reference((PROTO_JSON_DECODE, one));
             apply(field, [string(json_name)])
         } else {
-            let field = self.reference((PROTO_JSON, either));
+            let field = self.reference((PROTO_JSON_DECODE, either));
             apply(field, [string(json_name), string(proto_name)])
         };
         call(step, args)
     }
 
-    /// `decodeFoo : Json.Decode.Decoder Foo`: `Proto.Json.message` of
+    /// `decodeFoo : Json.Decode.Decoder Foo`: `Proto.Json.Decode.message` of
     /// `Json.Decode.succeed Foo` with one step per record field, in record
     /// order: an [`Emitter::field_step`] per proto field
-    /// (`Proto.Json.messageField`, or `Proto.Json.messageNullField` of
-    /// `Proto.Json.nestedValue depth` for a singular `google.protobuf.Value`,
+    /// (`Proto.Json.Decode.messageField`, or `Proto.Json.Decode.messageNullField` of
+    /// `Proto.Json.Decode.nestedValue depth` for a singular `google.protobuf.Value`,
     /// for which `null` is set, read at the depth, which its message takes
-    /// since holding one it nests), a `Proto.Json.oneof` per
+    /// since holding one it nests), a `Proto.Json.Decode.oneof` per
     /// oneof;
-    /// `Proto.Json.emptyMessage` for a message without fields.
-    /// `Proto.Json.message` checks once that the JSON is an object, and the
+    /// `Proto.Json.Decode.emptyMessage` for a message without fields.
+    /// `Proto.Json.Decode.message` checks once that the JSON is an object, and the
     /// field steps trust it rather than each checking again; a message of
     /// oneofs alone is not wrapped, since a oneof step checks for itself.
     ///
@@ -324,7 +324,7 @@ impl Emitter {
         let body = if shape.fields.is_empty() && shape.oneofs.is_empty() {
             // An empty message decodes to the empty record, from a JSON
             // object only, as a message with fields does.
-            let empty = self.reference((PROTO_JSON, "emptyMessage"));
+            let empty = self.reference((PROTO_JSON_DECODE, "emptyMessage"));
             if self.keeps_unknown() {
                 // The record is not empty: its one field holds no unknown
                 // fields, as JSON carries none.
@@ -349,7 +349,7 @@ impl Emitter {
                             [zero, decoder],
                         ),
                         None if self.deep.is_some() => {
-                            let nested = self.reference((PROTO_JSON, "nestedValue"));
+                            let nested = self.reference((PROTO_JSON_DECODE, "nestedValue"));
                             self.field_step(
                                 ("messageNullField", "messageNullFieldEither"),
                                 &field.json_name,
@@ -362,7 +362,7 @@ impl Emitter {
                         ),
                     },
                     RecordField::Oneof(oneof) => {
-                        let step = self.reference((PROTO_JSON, "oneof"));
+                        let step = self.reference((PROTO_JSON_DECODE, "oneof"));
                         let decoder = if self.oneof_counts(counts, oneof) {
                             if self.oneof_reaches(oneof) {
                                 apply(
@@ -403,7 +403,7 @@ impl Emitter {
                 // oneofs alone needs no check of its own.
                 decoder
             } else {
-                let message = self.reference((PROTO_JSON, "message"));
+                let message = self.reference((PROTO_JSON_DECODE, "message"));
                 apply(message, [decoder])
             }
         };

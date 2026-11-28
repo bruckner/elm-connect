@@ -437,11 +437,11 @@ impl std::str::FromStr for Streaming {
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum EnumUnknown {
     /// An unknown name fails the decode, as protobuf's own parsers do
-    /// (`Proto.Json.enum`).
+    /// (`Proto.Json.Decode.enum`).
     #[default]
     Fail,
     /// An unknown name reads as the zero value too, so nothing an enum
-    /// field receives fails (`Proto.Json.enumOrZero`): for clients that
+    /// field receives fails (`Proto.Json.Decode.enumOrZero`): for clients that
     /// outlive the server's deploys.
     Zero,
 }

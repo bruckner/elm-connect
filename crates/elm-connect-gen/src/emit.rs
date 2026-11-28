@@ -97,49 +97,49 @@
 //!   (`Json.Decode.Decoder Foo`). Under `unknown_fields=keep` the record
 //!   ends in `unknownFields_ : Proto.Unknown.Fields`, empty in the default
 //!   and in whatever JSON decodes, and left out of the JSON encoding.
-//! - Encoders are `Proto.Json.objectOfFields` over one `( jsonName, Maybe Value )`
+//! - Encoders are `Proto.Json.Encode.plainObject` over one `( jsonName, Maybe Value )`
 //!   pair per field, and leave out every field at its default, as
 //!   protobuf-go's `protojson` does: a field without presence at its zero
 //!   value, a `Maybe` when `Nothing`, a list or map when empty (design
 //!   §3.4). A parser reads a missing field as its default.
-//! - Decoders are `Proto.Json.message` of a pipeline of
-//!   `Proto.Json.messageField` steps from `Json.Decode.succeed`, so they
+//! - Decoders are `Proto.Json.Decode.message` of a pipeline of
+//!   `Proto.Json.Decode.messageField` steps from `Json.Decode.succeed`, so they
 //!   read the same at any field count (design §8); `message` checks once
 //!   that the JSON is an object, and the steps trust it. A missing or `null`
 //!   field reads as its proto3 zero value. A field whose JSON name differs
-//!   from its proto name uses `Proto.Json.messageFieldEither`, which accepts
+//!   from its proto name uses `Proto.Json.Decode.messageFieldEither`, which accepts
 //!   both keys (design §3.4).
 //! - A field with presence (proto3 `optional`, or message-typed) is a
 //!   `Maybe`: `Nothing` is left out, and an absent or `null` field
 //!   decodes as `Nothing`. A repeated field is a `List`, encoded as an
 //!   array unless empty; absent or `null` decodes as `[]`. Both reuse the one
-//!   `Proto.Json.messageField` step with `Nothing` or `[]` as its zero value.
+//!   `Proto.Json.Decode.messageField` step with `Nothing` or `[]` as its zero value.
 //! - Scalars follow design §3.4: 32-bit integers are range-checked `Int`s;
 //!   64-bit integers are decimal `String`s, or range-checked `Int`s encoded
 //!   as strings under [`Int64::Int`](crate::options::Int64::Int), a
 //!   field's `jstype` overriding the option either way. `bytes` is a
 //!   `String` of base64, or elm/bytes' `Bytes` under
 //!   [`Bytes::Bytes`](crate::options::Bytes::Bytes), whose default is left
-//!   out by its width (`Proto.Json.implicitBytesField`) since Elm's `==` finds
+//!   out by its width (`Proto.Json.Encode.implicitBytes`) since Elm's `==` finds
 //!   any two `Bytes` equal.
 //! - A map field is a `Dict`, keyed by `String` (string and 64-bit integer
 //!   keys) or `Int` (32-bit integer keys), encoded with
-//!   `Proto.Json.dictField` and decoded by the key's kind
-//!   (`Json.Decode.dict`, `Proto.Json.int32Dict`, `uint32Dict`,
+//!   `Proto.Json.Encode.plainDict` and decoded by the key's kind
+//!   (`Json.Decode.dict`, `Proto.Json.Decode.int32Dict`, `uint32Dict`,
 //!   `int64Dict`, `uint64Dict`); absent or `null` decodes as `Dict.empty`. A map
 //!   with `bool` keys, which Elm cannot put in a `Dict`, is a
-//!   `List ( Bool, v )` read and written by `Proto.Json.boolMap` and
-//!   `boolMapField`; absent or `null` decodes as `[]`.
+//!   `List ( Bool, v )` read and written by `Proto.Json.Decode.boolMap` and
+//!   `Proto.Json.Encode.plainBoolMap`; absent or `null` decodes as `[]`.
 //! - An enum is a custom type, its zero value first, with an encoder that
-//!   writes each constructor's proto name and a `Proto.Json.enum`
+//!   writes each constructor's proto name and a `Proto.Json.Decode.enum`
 //!   decoder that reads a name or a number, an unknown number as the zero
 //!   value and an unknown name as a failure; under [`EnumUnknown::Zero`]
-//!   the decoder is `Proto.Json.enumOrZero`, which reads an unknown name
+//!   the decoder is `Proto.Json.Decode.enumOrZero`, which reads an unknown name
 //!   as the zero value too (design §3.3).
 //! - A oneof is a custom type whose first constructor is the unset case,
 //!   held in one record field where its first member was declared. Its
 //!   encoder gives the set member's key and value for the message's
-//!   object; its decoder is `Proto.Json.members`, which reads the one
+//!   object; its decoder is `Proto.Json.Decode.members`, which reads the one
 //!   member present, unset when none is, and fails on a malformed member,
 //!   on two members present, and on a member written under both its names
 //!   (design §3.6).
@@ -177,17 +177,17 @@
 //!   codecs take the client's registry, and a route whose body reaches an
 //!   `Any` is read from its binding.
 //! - Every message has one JSON encoder, `encodeFoo`, which
-//!   `Proto.Json.encode` or `encodeWith` runs. A message whose write
+//!   `Proto.Json.Encode.encode` or `encodeWith` runs. A message whose write
 //!   nothing it holds can refuse (no `Any`, and no `Timestamp`, `Duration`,
 //!   `FieldMask`, `Struct`, `ListValue` or `Value`, at any depth;
-//!   [`crate::ir::AnyReach::refusable`]) gets `Foo -> Proto.Json.Encoder x`,
+//!   [`crate::ir::AnyReach::refusable`]) gets `Foo -> Proto.Json.Encode.Encoder x`,
 //!   plain code wrapped once, which works for any refusal type, so its
-//!   plain parents unwrap it with `Proto.Json.encodeTotal`; the others get
-//!   `Foo -> Proto.Json.Encoder Proto.Error.Error`, built from
-//!   `Proto.Json.writeObject` of their fields in declaration order, in runs
+//!   plain parents unwrap it with `Proto.Json.Encode.encodeTotal`; the others get
+//!   `Foo -> Proto.Json.Encode.Encoder Proto.Error.Error`, built from
+//!   `Proto.Json.Encode.object` of their fields in declaration order, in runs
 //!   of plain fields and of fields that can be refused ([`field`]). A field
 //!   of a message that nests, counting a level and reaching an `Any`, is
-//!   written one level deeper (`Proto.Json.writeDeeper`), so an `Any`
+//!   written one level deeper (`Proto.Json.Encode.deeper`), so an `Any`
 //!   written as JSON counts the messages around it as a read does.
 //! - A message that the request of a generated method's binding puts in the
 //!   query gets a query encoder in its package's module, in a last
@@ -230,13 +230,18 @@ use self::scalar::Holding;
 const JSON_DECODE: &str = "Json.Decode";
 /// elm/json's encoders.
 const JSON_ENCODE: &str = "Json.Encode";
-/// The runtime package's proto3 JSON helpers.
-const PROTO_JSON: &str = "Proto.Json";
+/// The runtime package's proto3 JSON encoders. Every reference generated code
+/// makes to it goes through this constant, so that the module is named, or
+/// given an import alias, in one place.
+const PROTO_JSON_ENCODE: &str = "Proto.Json.Encode";
+/// The runtime package's proto3 JSON decoders, referenced only through this
+/// constant, as [`PROTO_JSON_ENCODE`] is.
+const PROTO_JSON_DECODE: &str = "Proto.Json.Decode";
 /// The runtime package's error type, what a JSON encoder that can refuse
 /// refuses with.
 const PROTO_ERROR: &str = "Proto.Error";
 /// The type variable of a JSON encoder that cannot refuse,
-/// `Proto.Json.Encoder x`.
+/// `Proto.Json.Encode.Encoder x`.
 const TOTAL_ERROR_VAR: &str = "x";
 /// The end of the doc sentence of a JSON encoder that can refuse.
 const FAILS: &str = ", or fails if the input contains a bad value";
@@ -661,7 +666,7 @@ struct Emitter {
     /// depth.
     counted: Counted,
     /// The messages whose JSON write can be refused, whose encoders are
-    /// built with `Proto.Json.writeObject`; the others are written by plain
+    /// built with `Proto.Json.Encode.object`; the others are written by plain
     /// code and wrapped once.
     write_reach: AnyReach,
     /// The options as the header's second line records them.
@@ -681,7 +686,7 @@ struct Emitter {
 /// for each depth.
 #[derive(Clone, Copy, PartialEq, Eq)]
 enum Deep {
-    /// Once for every depth, by `Proto.Json.memo` (`decodeNestedNode`):
+    /// Once for every depth, by `Proto.Json.Decode.memo` (`decodeNestedNode`):
     /// a message on a cycle.
     Memo,
     /// When asked for, by a function of the depth (`decodeNestedNote
@@ -970,8 +975,8 @@ impl Emitter {
         reserved
     }
 
-    /// `Proto.Json.Encoder Proto.Error.Error` for an encoder that can refuse
-    /// (`refusable`), else `Proto.Json.Encoder x`, which works for any
+    /// `Proto.Json.Encode.Encoder Proto.Error.Error` for an encoder that can refuse
+    /// (`refusable`), else `Proto.Json.Encode.Encoder x`, which works for any
     /// refusal type, `Never` included.
     fn json_encoder_type(&mut self, refusable: bool) -> Type {
         let error = if refusable {
@@ -979,7 +984,7 @@ impl Emitter {
         } else {
             Type::Var(TOTAL_ERROR_VAR.to_owned())
         };
-        self.library_type(PROTO_JSON, "Encoder", [error])
+        self.library_type(PROTO_JSON_ENCODE, "Encoder", [error])
     }
 
     /// The library type `module.name args`, which the module then imports.
@@ -1133,7 +1138,8 @@ mod tests {
                 "Json.Encode",
                 "Proto.Binary",
                 "Proto.Descriptors",
-                "Proto.Json",
+                "Proto.Json.Decode",
+                "Proto.Json.Encode",
                 "Proto.Message",
                 "Proto.Registry",
                 "Proto.Version",
@@ -1149,7 +1155,7 @@ mod tests {
             .collect();
         assert_eq!(imports, ["Proto.Field", "Proto.Message", "Proto.Version"]);
 
-        // An empty message's decoder is `Proto.Json.emptyMessage`; it has
+        // An empty message's decoder is `Proto.Json.Decode.emptyMessage`; it has
         // no fields to describe, so no `Proto.Field`.
         let empty = package(vec![message("E", Vec::new())]);
         let module = emit(&empty, &Options::default()).expect("emits");
@@ -1162,7 +1168,8 @@ mod tests {
                 "Json.Encode",
                 "Proto.Binary",
                 "Proto.Descriptors",
-                "Proto.Json",
+                "Proto.Json.Decode",
+                "Proto.Json.Encode",
                 "Proto.Message",
                 "Proto.Registry",
                 "Proto.Version",
@@ -1324,7 +1331,8 @@ mod tests {
                 "Other.V1",
                 "Proto.Binary",
                 "Proto.Descriptors",
-                "Proto.Json",
+                "Proto.Json.Decode",
+                "Proto.Json.Encode",
                 "Proto.Message",
                 "Proto.Registry",
                 "Proto.Version",
@@ -1341,7 +1349,7 @@ mod tests {
             "{printed}"
         );
         assert!(
-            printed.contains("Proto.Json.totalOptionalField Other.V1.encodeB value.b"),
+            printed.contains("Proto.Json.Encode.totalOptional Other.V1.encodeB value.b"),
             "{printed}"
         );
         assert!(
@@ -1373,7 +1381,7 @@ mod tests {
         assert!(printed.contains("level : Other.V1.Level"), "{printed}");
         assert!(
             printed.contains(
-                r#"Proto.Json.messageField "level" Other.V1.LevelNone Other.V1.decodeLevel"#
+                r#"Proto.Json.Decode.messageField "level" Other.V1.LevelNone Other.V1.decodeLevel"#
             ),
             "{printed}"
         );
@@ -1443,7 +1451,8 @@ mod tests {
             imports,
             [
                 "Proto.Any",
-                "Proto.Json",
+                "Proto.Json.Decode",
+                "Proto.Json.Encode",
                 "Proto.Method",
                 "Proto.Value",
                 "Proto.Version",
@@ -1466,9 +1475,9 @@ mod tests {
             "(Proto.Method.initJson \"t.v1.S\"\n            \"Get\"\n            \
              T.V1.encodeA\n            \
              (\\_ -> T.V1.decodeA)\n        )\n",
-            "\n            Proto.Json.writeValue\n            (\\_ -> Proto.Json.empty)\n",
+            "\n            Proto.Json.Encode.value\n            (\\_ -> Proto.Json.Decode.empty)\n",
             "\n            \"Ticks\"\n            \
-             (Proto.Json.succeed << Proto.Json.encodeInt64AsInt)\n            Proto.Json.anyWith\n",
+             (Proto.Json.Encode.succeed << Proto.Json.Encode.int64AsInt)\n            Proto.Json.Decode.anyWith\n",
             "descriptorGet : Proto.Method.Descriptor\ndescriptorGet =\n    \
              Proto.Method.descriptor \"t.v1.S\"\n        \"Get\"\n        \
              Proto.Method.IdempotencyUnknown\n        \"t.v1.A\"\n        \"t.v1.A\"\n        []\n",
