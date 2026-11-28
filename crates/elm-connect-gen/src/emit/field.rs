@@ -209,7 +209,7 @@ impl Emitter {
     }
 
     /// The JSON of a field whose Elm value is `value`, as a
-    /// `Maybe Json.Encode.Value` for `Proto.Json.Encode.plainObject`: `Nothing` when
+    /// `Maybe Json.Encode.Value` for `Proto.Json.Encode.object`: `Nothing` when
     /// the field is left out (design §3.2). A field without presence is
     /// left out at its proto3 default, a field with presence when
     /// `Nothing`, a repeated or map field when empty. A field of
@@ -265,7 +265,7 @@ impl Emitter {
                 None => {
                     let encoder = self.value_encoder(inner);
                     (
-                        self.reference((PROTO_JSON_ENCODE, "plainRepeated")),
+                        self.reference((PROTO_JSON_ENCODE, "repeated")),
                         vec![encoder],
                     )
                 }
@@ -278,14 +278,14 @@ impl Emitter {
                 };
                 let encoder = self.map_value_encoder(inner);
                 (
-                    self.reference((PROTO_JSON_ENCODE, "plainDict")),
+                    self.reference((PROTO_JSON_ENCODE, "dict")),
                     vec![key, encoder],
                 )
             }
             FieldShape::BoolMap(inner) => {
                 let encoder = self.map_value_encoder(inner);
                 (
-                    self.reference((PROTO_JSON_ENCODE, "plainBoolMap")),
+                    self.reference((PROTO_JSON_ENCODE, "boolMap")),
                     vec![encoder],
                 )
             }
@@ -308,7 +308,7 @@ impl Emitter {
             }
             FieldShape::List(inner) => {
                 let encoder = self.value_encoder(inner);
-                ("repeated", vec![encoder])
+                ("checkedRepeated", vec![encoder])
             }
             FieldShape::Dict(key, inner) => {
                 let encoder = self.value_encoder(inner);
@@ -317,11 +317,11 @@ impl Emitter {
                 } else {
                     var("identity")
                 };
-                ("dict", vec![key, encoder])
+                ("checkedDict", vec![key, encoder])
             }
             FieldShape::BoolMap(inner) => {
                 let encoder = self.value_encoder(inner);
-                ("boolMap", vec![encoder])
+                ("checkedBoolMap", vec![encoder])
             }
             FieldShape::Plain(_) => unreachable!("a field without presence cannot be refused"),
         };

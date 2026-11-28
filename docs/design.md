@@ -394,16 +394,16 @@ rpc shared call =
   encoder share a noun, named for what they read and write (`int64`,
   `timestamp`, `boolMap`, `double`, `any`); a decoder taking a
   registry takes it as its first argument (`Proto.Json.Decode.any
-  registry`). A field's encoder is one of
-  three kinds: plain, giving a `Maybe Json.Encode.Value` that is
-  `Nothing` to leave the field out, which cannot refuse and begins with
-  `plain` or `implicit` (`plainRepeated`, `implicit`, with `plainObject`
-  building a message's object from them); total, unwrapping a message
-  encoder that cannot refuse, which begins with `total`
-  (`totalOptional`); and checked, giving a `Field x`, which can refuse
-  and is a bare noun (`optional`, `repeated`, with `object` building a
-  message's object from runs of fields), as each checked value encoder
-  is (`timestamp`, `any`) (§3.4). Names may match elm/json's
+  registry`). An encoder that cannot refuse and gives plain JSON
+  (`Json.Encode.Value`, or a field's `Maybe Json.Encode.Value`,
+  `Nothing` to leave it out) has the bare name (`object`, `repeated`,
+  `dict`, `implicit`); where a name exists in both forms, the one that
+  can refuse, taking or giving an `Encoder x` or a `Field x`, is
+  prefixed `checked` (`checkedObject`, `checkedRepeated`,
+  `checkedFields`); a name that exists only in the checked form has no
+  prefix (`optional`, `timestamp`, `any`); and one that unwraps a
+  message encoder that cannot refuse begins with `total`
+  (`totalOptional`) (§3.4). Names may match elm/json's
   (`Proto.Json.Encode.object`, `Proto.Json.Decode.float`), since every
   reference, in generated code and in the runtime, is qualified. Every
   well-known type's codecs are there, `Any`'s included. (7) The imports point one way: no `Proto`
@@ -712,7 +712,7 @@ rpc shared call =
   An absent or `null` map decodes as `Dict.empty`.
 - `map<bool, V>` → `List ( Bool, V )`. The Elm form is an
   association list because `Bool` is not `comparable`; a map has at
-  most two entries. The encoder (`Proto.Json.Encode.plainBoolMap`) writes a
+  most two entries. The encoder (`Proto.Json.Encode.boolMap`) writes a
   JSON object keyed `"true"` and `"false"`; the decoder
   (`Proto.Json.Decode.boolMap`) reads one, fails on any key but exactly
   `"true"` or `"false"`, and gives the pairs in the object's key order.
@@ -947,20 +947,20 @@ refuse on a JSON write"):
 - A message that holds nothing a write can refuse, at any depth
   (`AnyReach::refusable`), is written by plain code wrapped once:
   `encodeNote : Note -> Proto.Json.Encode.Encoder x`, `Proto.Json.Encode.succeed` of
-  `Proto.Json.Encode.plainObject` over `( jsonName, Maybe Json.Encode.Value
+  `Proto.Json.Encode.object` over `( jsonName, Maybe Json.Encode.Value
   )` pairs, one per field, `Nothing` leaving the field out. It works for
   any `x`, so `Proto.Json.Encode.encodeTotal` writes it with no `Result`, and a
   message holding it unwraps it in place (`Proto.Json.Encode.totalOptional
   encodeAuthor value.author`, `totalRepeated` for a list; a map
   passes `\entry -> Proto.Json.Encode.encodeTotal (encodeAuthor entry)` to
-  `Proto.Json.Encode.plainDict` or `plainBoolMap`, which take a function per entry
+  `Proto.Json.Encode.dict` or `boolMap`, which take a function per entry
   anyway).
 - A message that holds an `Any`, or a `Timestamp`, `Duration`,
   `FieldMask`, `Struct`, `ListValue` or `Value`, at any depth, is
   `encodeNote : Note -> Proto.Json.Encode.Encoder Proto.Error.Error`: its
-  fields in declaration order, given to `Proto.Json.Encode.object` as runs,
+  fields in declaration order, given to `Proto.Json.Encode.checkedObject` as runs,
   each run of consecutive fields that cannot be refused a
-  `Proto.Json.Encode.plainFields` of the same pairs and each run of those that
+  `Proto.Json.Encode.fields` of the same pairs and each run of those that
   can a `Proto.Json.Encode.checkedFields` of `Proto.Json.Encode.Field`s
   (`Proto.Json.Encode.optional Proto.Json.Encode.timestamp value.at`), then
   each oneof's members as a run of its own. It writes the same text as
@@ -987,8 +987,8 @@ Encoders leave out every field at its default:
   write can refuse).
 - A oneof's set member is always written, at its default too; an unset
   oneof writes nothing (§3.6).
-- A repeated or map field is left out when empty (`Proto.Json.Encode.plainRepeated`,
-  `Proto.Json.Encode.plainDict`, `Proto.Json.Encode.plainBoolMap`).
+- A repeated or map field is left out when empty (`Proto.Json.Encode.repeated`,
+  `Proto.Json.Encode.dict`, `Proto.Json.Encode.boolMap`).
 - An `Empty` field always writes `{}` (§3.5).
 
 Why: request bodies shrink to what the message holds; protobuf-go's
@@ -1540,7 +1540,7 @@ In detail:
   proto.
 - The oneof's encoder gives the set member as a one-element list of
   `( jsonName, Just value )`, or `[]` when unset, and the message's
-  encoder appends it to its fields: `Proto.Json.Encode.plainObject ([ ... ] ++
+  encoder appends it to its fields: `Proto.Json.Encode.object ([ ... ] ++
   encodeNoteEventKind value.kind)`; in a message that can refuse, the
   list is a run of its own, and a oneof with a member that can be refused
   gives its member as a `Proto.Json.Encode.Field` (`Proto.Json.Encode.member`). The member is written at its

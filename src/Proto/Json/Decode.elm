@@ -278,7 +278,7 @@ holding it is set, as protobuf's own parsers read it.
 
 To encode one, `Nothing` leaves the field out and `Just` writes its JSON:
 
-    Proto.Json.Encode.object [ Proto.Json.Encode.checkedFields [ ( "value", Proto.Json.Encode.optional Proto.Json.Encode.value setting.value ) ] ]
+    Proto.Json.Encode.checkedObject [ Proto.Json.Encode.checkedFields [ ( "value", Proto.Json.Encode.optional Proto.Json.Encode.value setting.value ) ] ]
 
 -}
 nullField : String -> Json.Decode.Decoder a -> Json.Decode.Decoder (Maybe a -> b) -> Json.Decode.Decoder b

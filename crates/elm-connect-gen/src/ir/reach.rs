@@ -6,7 +6,7 @@
 //! The same walk, seeded also with the well-known types whose Elm values
 //! can hold what proto3 JSON has no form for, finds the messages whose JSON
 //! write can be refused: their encoders are built from
-//! `Proto.Json.Encode.object`, and the others are written by plain code.
+//! `Proto.Json.Encode.checkedObject`, and the others are written by plain code.
 
 use std::collections::BTreeSet;
 

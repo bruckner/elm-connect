@@ -16,6 +16,6 @@
   with the same decoder, which read
   the member as they did, `null` included.
 - `Proto.Json.encodeBoolMap` is no longer exposed. A field's encoder
-  writes a map with `bool` keys with `Proto.Json.Encode.plainBoolMap`, which
+  writes a map with `bool` keys with `Proto.Json.Encode.boolMap`, which
   gives `Nothing` for an empty map and otherwise `Just` the object
   `encodeBoolMap` wrote.

@@ -438,17 +438,17 @@ defaultLocalizedMessage =
 encodeErrorInfo : ErrorInfo -> Proto.Json.Encode.Encoder x
 encodeErrorInfo value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "reason", Proto.Json.Encode.implicit "" Json.Encode.string value.reason )
             , ( "domain", Proto.Json.Encode.implicit "" Json.Encode.string value.domain )
-            , ( "metadata", Proto.Json.Encode.plainDict identity Json.Encode.string value.metadata )
+            , ( "metadata", Proto.Json.Encode.dict identity Json.Encode.string value.metadata )
             ]
         )
 
 
 encodeRetryInfo : RetryInfo -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeRetryInfo value =
-    Proto.Json.Encode.object
+    Proto.Json.Encode.checkedObject
         [ Proto.Json.Encode.checkedFields
             [ ( "retryDelay", Proto.Json.Encode.optional Proto.Json.Encode.duration value.retryDelay )
             ]
@@ -458,8 +458,8 @@ encodeRetryInfo value =
 encodeDebugInfo : DebugInfo -> Proto.Json.Encode.Encoder x
 encodeDebugInfo value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
-            [ ( "stackEntries", Proto.Json.Encode.plainRepeated Json.Encode.string value.stackEntries )
+        (Proto.Json.Encode.object
+            [ ( "stackEntries", Proto.Json.Encode.repeated Json.Encode.string value.stackEntries )
             , ( "detail", Proto.Json.Encode.implicit "" Json.Encode.string value.detail )
             ]
         )
@@ -468,7 +468,7 @@ encodeDebugInfo value =
 encodeQuotaFailure : QuotaFailure -> Proto.Json.Encode.Encoder x
 encodeQuotaFailure value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "violations", Proto.Json.Encode.totalRepeated encodeQuotaFailureViolation value.violations )
             ]
         )
@@ -477,13 +477,13 @@ encodeQuotaFailure value =
 encodeQuotaFailureViolation : QuotaFailureViolation -> Proto.Json.Encode.Encoder x
 encodeQuotaFailureViolation value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "subject", Proto.Json.Encode.implicit "" Json.Encode.string value.subject )
             , ( "description", Proto.Json.Encode.implicit "" Json.Encode.string value.description )
             , ( "apiService", Proto.Json.Encode.implicit "" Json.Encode.string value.apiService )
             , ( "quotaMetric", Proto.Json.Encode.implicit "" Json.Encode.string value.quotaMetric )
             , ( "quotaId", Proto.Json.Encode.implicit "" Json.Encode.string value.quotaId )
-            , ( "quotaDimensions", Proto.Json.Encode.plainDict identity Json.Encode.string value.quotaDimensions )
+            , ( "quotaDimensions", Proto.Json.Encode.dict identity Json.Encode.string value.quotaDimensions )
             , ( "quotaValue", Proto.Json.Encode.implicit "0" Proto.Json.Encode.int64 value.quotaValue )
             , ( "futureQuotaValue", Maybe.map Proto.Json.Encode.int64 value.futureQuotaValue )
             ]
@@ -493,7 +493,7 @@ encodeQuotaFailureViolation value =
 encodePreconditionFailure : PreconditionFailure -> Proto.Json.Encode.Encoder x
 encodePreconditionFailure value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "violations", Proto.Json.Encode.totalRepeated encodePreconditionFailureViolation value.violations )
             ]
         )
@@ -502,7 +502,7 @@ encodePreconditionFailure value =
 encodePreconditionFailureViolation : PreconditionFailureViolation -> Proto.Json.Encode.Encoder x
 encodePreconditionFailureViolation value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "type", Proto.Json.Encode.implicit "" Json.Encode.string value.type_ )
             , ( "subject", Proto.Json.Encode.implicit "" Json.Encode.string value.subject )
             , ( "description", Proto.Json.Encode.implicit "" Json.Encode.string value.description )
@@ -513,7 +513,7 @@ encodePreconditionFailureViolation value =
 encodeBadRequest : BadRequest -> Proto.Json.Encode.Encoder x
 encodeBadRequest value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "fieldViolations", Proto.Json.Encode.totalRepeated encodeBadRequestFieldViolation value.fieldViolations )
             ]
         )
@@ -522,7 +522,7 @@ encodeBadRequest value =
 encodeBadRequestFieldViolation : BadRequestFieldViolation -> Proto.Json.Encode.Encoder x
 encodeBadRequestFieldViolation value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "field", Proto.Json.Encode.implicit "" Json.Encode.string value.field )
             , ( "description", Proto.Json.Encode.implicit "" Json.Encode.string value.description )
             , ( "reason", Proto.Json.Encode.implicit "" Json.Encode.string value.reason )
@@ -534,7 +534,7 @@ encodeBadRequestFieldViolation value =
 encodeRequestInfo : RequestInfo -> Proto.Json.Encode.Encoder x
 encodeRequestInfo value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "requestId", Proto.Json.Encode.implicit "" Json.Encode.string value.requestId )
             , ( "servingData", Proto.Json.Encode.implicit "" Json.Encode.string value.servingData )
             ]
@@ -544,7 +544,7 @@ encodeRequestInfo value =
 encodeResourceInfo : ResourceInfo -> Proto.Json.Encode.Encoder x
 encodeResourceInfo value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "resourceType", Proto.Json.Encode.implicit "" Json.Encode.string value.resourceType )
             , ( "resourceName", Proto.Json.Encode.implicit "" Json.Encode.string value.resourceName )
             , ( "owner", Proto.Json.Encode.implicit "" Json.Encode.string value.owner )
@@ -556,7 +556,7 @@ encodeResourceInfo value =
 encodeHelp : Help -> Proto.Json.Encode.Encoder x
 encodeHelp value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "links", Proto.Json.Encode.totalRepeated encodeHelpLink value.links )
             ]
         )
@@ -565,7 +565,7 @@ encodeHelp value =
 encodeHelpLink : HelpLink -> Proto.Json.Encode.Encoder x
 encodeHelpLink value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "description", Proto.Json.Encode.implicit "" Json.Encode.string value.description )
             , ( "url", Proto.Json.Encode.implicit "" Json.Encode.string value.url )
             ]
@@ -575,7 +575,7 @@ encodeHelpLink value =
 encodeLocalizedMessage : LocalizedMessage -> Proto.Json.Encode.Encoder x
 encodeLocalizedMessage value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "locale", Proto.Json.Encode.implicit "" Json.Encode.string value.locale )
             , ( "message", Proto.Json.Encode.implicit "" Json.Encode.string value.message )
             ]

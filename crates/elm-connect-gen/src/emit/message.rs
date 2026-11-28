@@ -102,7 +102,7 @@ impl Emitter {
 
     /// A message's JSON encoder, `encodeFoo : Foo -> Proto.Json.Encode.Encoder x`
     /// for a message whose write nothing it holds can refuse:
-    /// `Proto.Json.Encode.succeed` of `Proto.Json.Encode.plainObject` of every field
+    /// `Proto.Json.Encode.succeed` of `Proto.Json.Encode.object` of every field
     /// under its JSON name, each as a `Maybe Json.Encode.Value` that is
     /// `Nothing` when the field is left out
     /// ([`encode_field`](Self::encode_field)), followed by the members
@@ -155,7 +155,7 @@ impl Emitter {
         let object = if nothing {
             self.reference((JSON_ENCODE, "object"))
         } else {
-            self.reference((PROTO_JSON_ENCODE, "plainObject"))
+            self.reference((PROTO_JSON_ENCODE, "object"))
         };
         let encoder_type = self.json_encoder_type(false);
         let succeed = self.reference((PROTO_JSON_ENCODE, "succeed"));
@@ -190,9 +190,9 @@ impl Emitter {
     }
 
     /// `encodeFoo : Foo -> Proto.Json.Encode.Encoder Proto.Error.Error` for a
-    /// message whose write can be refused: `Proto.Json.Encode.object` of its
+    /// message whose write can be refused: `Proto.Json.Encode.checkedObject` of its
     /// fields in declaration order, grouped into runs, each consecutive
-    /// group of fields that cannot be refused a `Proto.Json.Encode.plainFields` of
+    /// group of fields that cannot be refused a `Proto.Json.Encode.fields` of
     /// their plain JSON ([`Self::encode_field`]) and each group of those
     /// that can a `Proto.Json.Encode.checkedFields` of their `Proto.Json.Encode.Field`s
     /// ([`Self::write_field`]); then each oneof's members as a run of its
@@ -224,11 +224,7 @@ impl Emitter {
         let mut parts: Vec<Expr> = runs
             .into_iter()
             .map(|(checked, pairs)| {
-                let run = if checked {
-                    "checkedFields"
-                } else {
-                    "plainFields"
-                };
+                let run = if checked { "checkedFields" } else { "fields" };
                 apply(self.reference((PROTO_JSON_ENCODE, run)), [list(pairs)])
             })
             .collect();
@@ -238,11 +234,11 @@ impl Emitter {
             let run = if self.oneof_write_reaches(oneof) {
                 "checkedFields"
             } else {
-                "plainFields"
+                "fields"
             };
             parts.push(apply(self.reference((PROTO_JSON_ENCODE, run)), [members]));
         }
-        let object = self.reference((PROTO_JSON_ENCODE, "object"));
+        let object = self.reference((PROTO_JSON_ENCODE, "checkedObject"));
         let encoder_type = self.json_encoder_type(true);
         let body = apply(object, [list(parts)]);
         vec![Decl::Value {

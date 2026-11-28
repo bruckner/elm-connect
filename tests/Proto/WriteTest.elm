@@ -97,7 +97,7 @@ packed =
 -}
 checked : List ( String, Proto.Json.Encode.Field Error ) -> Proto.Json.Encode.Encoder Error
 checked fields =
-    Proto.Json.Encode.object [ Proto.Json.Encode.checkedFields fields ]
+    Proto.Json.Encode.checkedObject [ Proto.Json.Encode.checkedFields fields ]
 
 
 {-| A field holding the value an encoder writes.
@@ -124,23 +124,23 @@ suite =
     describe "Proto.Json.Encode"
         [ test "a value with a JSON form is written, its fields in the order given, whichever can be refused" <|
             \_ ->
-                Proto.Json.Encode.object
-                    [ Proto.Json.Encode.plainFields [ ( "a", Just (Json.Encode.int 1) ), ( "b", Nothing ) ]
+                Proto.Json.Encode.checkedObject
+                    [ Proto.Json.Encode.fields [ ( "a", Just (Json.Encode.int 1) ), ( "b", Nothing ) ]
                     , Proto.Json.Encode.checkedFields
                         [ ( "t", Proto.Json.Encode.optional Proto.Json.Encode.timestamp (Just epoch) )
                         , ( "u", Proto.Json.Encode.optional Proto.Json.Encode.timestamp Nothing )
                         ]
-                    , Proto.Json.Encode.plainFields [ ( "c", Just (Json.Encode.int 3) ) ]
+                    , Proto.Json.Encode.fields [ ( "c", Just (Json.Encode.int 3) ) ]
                     , Proto.Json.Encode.checkedFields [ ( "d", holding (positive 4) ) ]
                     ]
                     |> written
                     |> Expect.equal (Ok """{"a":1,"t":"1970-01-01T00:00:00Z","c":3,"d":4}""")
         , test "a deferred object keeps the order of its runs" <|
             \_ ->
-                Proto.Json.Encode.object
-                    [ Proto.Json.Encode.plainFields [ ( "a", Just (Json.Encode.int 1) ) ]
+                Proto.Json.Encode.checkedObject
+                    [ Proto.Json.Encode.fields [ ( "a", Just (Json.Encode.int 1) ) ]
                     , Proto.Json.Encode.checkedFields [ ( "b", holding (Proto.Json.Encode.any packed) ) ]
-                    , Proto.Json.Encode.plainFields [ ( "c", Just (Json.Encode.int 3) ), ( "d", Nothing ) ]
+                    , Proto.Json.Encode.fields [ ( "c", Just (Json.Encode.int 3) ), ( "d", Nothing ) ]
                     , Proto.Json.Encode.checkedFields [ ( "e", holding (positive 5) ) ]
                     ]
                     |> writtenWith
@@ -149,7 +149,7 @@ suite =
             \_ ->
                 [ checked [ ( "when", holding (Proto.Json.Encode.timestamp farFuture) ) ]
                 , checked [ ( "mask", holding (Proto.Json.Encode.fieldMask [ "fooBar" ]) ) ]
-                , checked [ ( "items", Proto.Json.Encode.repeated Proto.Json.Encode.value [ ValueNumber 1, ValueNumber (0 / 0) ] ) ]
+                , checked [ ( "items", Proto.Json.Encode.checkedRepeated Proto.Json.Encode.value [ ValueNumber 1, ValueNumber (0 / 0) ] ) ]
                 , checked [ ( "data", holding (Proto.Json.Encode.struct (Dict.singleton "x" (ValueNumber (1 / 0)))) ) ]
                 , checked [ ( "list", holding (Proto.Json.Encode.listValue [ ValueList [ ValueNumber (-1 / 0) ] ]) ) ]
                 ]
@@ -187,7 +187,7 @@ suite =
                         ]
         , test "a refusal says what and where" <|
             \_ ->
-                checked [ ( "events", Proto.Json.Encode.repeated Proto.Json.Encode.timestamp [ epoch, farFuture ] ) ]
+                checked [ ( "events", Proto.Json.Encode.checkedRepeated Proto.Json.Encode.timestamp [ epoch, farFuture ] ) ]
                     |> Proto.Json.Encode.encode
                     |> Result.mapError Proto.Error.toString
                     |> Expect.equal (Err "A google.protobuf.Timestamp holds a value proto3 JSON has no form for, at events.1: the time is outside years 1 to 9999.")
@@ -215,13 +215,13 @@ suite =
                         ]
         , test "the path goes through nested objects, list indexes and map keys, outermost first" <|
             \_ ->
-                Proto.Json.Encode.object
-                    [ Proto.Json.Encode.plainFields [ ( "id", Just (Json.Encode.int 1) ) ]
+                Proto.Json.Encode.checkedObject
+                    [ Proto.Json.Encode.fields [ ( "id", Just (Json.Encode.int 1) ) ]
                     , Proto.Json.Encode.checkedFields
                         [ ( "inner"
                           , holding
                                 (checked
-                                    [ ( "byName", Proto.Json.Encode.dict identity (\items -> checked [ ( "items", Proto.Json.Encode.repeated positive items ) ]) (Dict.fromList [ ( "a", [ 1 ] ), ( "b", [ 2, -3 ] ) ]) ) ]
+                                    [ ( "byName", Proto.Json.Encode.checkedDict identity (\items -> checked [ ( "items", Proto.Json.Encode.checkedRepeated positive items ) ]) (Dict.fromList [ ( "a", [ 1 ] ), ( "b", [ 2, -3 ] ) ]) ) ]
                                 )
                           )
                         ]
@@ -230,9 +230,9 @@ suite =
                     |> Expect.equal (Just ( "google.protobuf.Timestamp", [ "inner", "byName", "b", "items", "1" ] ))
         , test "an object is refused at its first refused field, in order" <|
             \_ ->
-                Proto.Json.Encode.object
+                Proto.Json.Encode.checkedObject
                     [ Proto.Json.Encode.checkedFields [ ( "a", Proto.Json.Encode.optional positive Nothing ) ]
-                    , Proto.Json.Encode.plainFields [ ( "b", Just (Json.Encode.int 2) ) ]
+                    , Proto.Json.Encode.fields [ ( "b", Just (Json.Encode.int 2) ) ]
                     , Proto.Json.Encode.checkedFields [ ( "c", holding (positive -1) ), ( "d", holding (Proto.Json.Encode.fieldMask [ "fooBar" ]) ) ]
                     ]
                     |> refusal
@@ -241,18 +241,18 @@ suite =
             \_ ->
                 checked
                     [ ( "a", Proto.Json.Encode.optional positive Nothing )
-                    , ( "b", Proto.Json.Encode.repeated positive [] )
-                    , ( "c", Proto.Json.Encode.dict String.fromInt positive Dict.empty )
-                    , ( "d", Proto.Json.Encode.boolMap positive [] )
+                    , ( "b", Proto.Json.Encode.checkedRepeated positive [] )
+                    , ( "c", Proto.Json.Encode.checkedDict String.fromInt positive Dict.empty )
+                    , ( "d", Proto.Json.Encode.checkedBoolMap positive [] )
                     , ( "f", holding (positive 6) )
                     ]
                     |> written
                     |> Expect.equal (Ok """{"f":6}""")
         , test "a map field is keyed as given, a bool-keyed one false and true, and keeps a __proto__ key" <|
             \_ ->
-                [ checked [ ( "m", Proto.Json.Encode.dict String.fromInt positive (Dict.fromList [ ( 2, 20 ), ( 1, 10 ) ]) ) ]
-                , checked [ ( "m", Proto.Json.Encode.boolMap positive [ ( False, 0 ), ( True, 1 ) ] ) ]
-                , checked [ ( "m", Proto.Json.Encode.dict identity positive (Dict.fromList [ ( "__proto__", 1 ) ]) ) ]
+                [ checked [ ( "m", Proto.Json.Encode.checkedDict String.fromInt positive (Dict.fromList [ ( 2, 20 ), ( 1, 10 ) ]) ) ]
+                , checked [ ( "m", Proto.Json.Encode.checkedBoolMap positive [ ( False, 0 ), ( True, 1 ) ] ) ]
+                , checked [ ( "m", Proto.Json.Encode.checkedDict identity positive (Dict.fromList [ ( "__proto__", 1 ) ]) ) ]
                 , checked [ ( "__proto__", holding (positive 2) ) ]
                 ]
                     |> List.map written
@@ -269,8 +269,8 @@ suite =
         , test "a deferred object runs its fields in order, and a deferred list keeps its order and indexes" <|
             \_ ->
                 [ written (checked [ ( "a", holding (Proto.Json.Encode.any packed) ), ( "b", holding (positive -1) ) ])
-                , writtenWith (checked [ ( "l", Proto.Json.Encode.repeated identity [ positive 1, Proto.Json.Encode.any packed, positive 3 ] ) ])
-                , writtenWith (checked [ ( "l", Proto.Json.Encode.repeated identity [ positive 1, Proto.Json.Encode.any packed, positive -3 ] ) ])
+                , writtenWith (checked [ ( "l", Proto.Json.Encode.checkedRepeated identity [ positive 1, Proto.Json.Encode.any packed, positive 3 ] ) ])
+                , writtenWith (checked [ ( "l", Proto.Json.Encode.checkedRepeated identity [ positive 1, Proto.Json.Encode.any packed, positive -3 ] ) ])
                 ]
                     |> Expect.equal
                         [ Err (UnregisteredType "type.googleapis.com/google.protobuf.StringValue")
@@ -294,7 +294,7 @@ suite =
                     |> Expect.equal (Ok (150 * String.length """{"next":}""" + 1))
         , test "a total encoder is written without a Result" <|
             \_ ->
-                Proto.Json.Encode.object [ Proto.Json.Encode.plainFields [ ( "a", Just (Json.Encode.int 1) ) ] ]
+                Proto.Json.Encode.checkedObject [ Proto.Json.Encode.fields [ ( "a", Just (Json.Encode.int 1) ) ] ]
                     |> Proto.Json.Encode.encodeTotal
                     |> Json.Encode.encode 0
                     |> Expect.equal """{"a":1}"""

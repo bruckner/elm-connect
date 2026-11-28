@@ -525,7 +525,7 @@ not valid is refused (Well-known types: validity by source); since
 of its own, `Proto.Json.Encoder`, at first, is defined in `Proto.Json`
 since 2026-11-27 (`Proto.Json` below `Proto.Any`), and in
 `Proto.Json.Encode` since 2026-11-28, where `writeObject` and the
-`write` helpers are `object` and the checked encoders (`Proto.Json`
+`write` helpers are `checkedObject` and the checked encoders (`Proto.Json`
 split by direction).*
 
 A read accepts whatever the wire admits; a JSON write refuses a value
@@ -3046,12 +3046,20 @@ encoder share a noun, as elm/json's do (`Proto.Json.Decode.timestamp`,
 `float`), since every reference is qualified; rule 6 had forbidden
 that, which bent names (`objectOfFields`, `writeObject`) and gave the
 encoders three families whose suffix misled: the `Field` suffix sat on
-the helpers that do not give the type called `Field`. Now a checked
-encoder, which can refuse and gives a `Field x` or an `Encoder x`, is a
-bare noun (`object`, `optional`, `any`); a plain field encoder, giving
-`Maybe Json.Encode.Value`, begins with `plain` or `implicit`
-(`plainObject`, `plainRepeated`, `implicitDouble`); one that unwraps a
-total message encoder begins with `total`. The decoders keep their
+the helpers that do not give the type called `Field`. Now the bare name
+is the encoder that cannot refuse and gives plain JSON
+(`Json.Encode.Value` or `Maybe Json.Encode.Value`): `object`,
+`repeated`, `dict`, `boolMap`, `fields`, `implicit`. Where a name
+exists in both forms, the one that can refuse, taking or giving an
+`Encoder x` or a `Field x`, is prefixed `checked` (`checkedObject`,
+`checkedRepeated`, `checkedDict`, `checkedBoolMap`, `checkedFields`); a
+name that exists only in the checked form has no prefix (`optional`,
+`member`, `timestamp`, `any`), and one that unwraps a total message
+encoder begins with `total`. The modifier sits on the checked side, not
+on a `plain` prefix, because the plain form is the default: every
+message's encoder starts from it, most generated fields use it, and
+0.1's `objectOfFields`, `repeatedField`, `dictField` and `boolMapField`
+become the bare nouns. The decoders keep their
 names but three: `float` is `double` and `float32` is `float`, as
 `Proto.Binary` names them, and `deeperWith` is `deeperLazy`: it builds
 its decoder as the value is read and takes no registry. Names that had

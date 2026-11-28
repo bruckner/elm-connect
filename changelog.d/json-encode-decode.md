@@ -10,11 +10,10 @@
   `Proto.Json.Decode.double`; `Proto.Json.Decode.float` reads a `float`
   field, as `Proto.Binary.float` does.
 - Breaking: 0.1's encoders move to `Proto.Json.Encode` under names that
-  say what they give: `objectOfFields` is `plainObject`,
+  say what they give: `objectOfFields` is `object`, `repeatedField`
+  `repeated`, `dictField` `dict`, `boolMapField` `boolMap`,
   `implicitField` `implicit`, `implicitFloatField` `implicitDouble`,
-  `implicitBytesField` `implicitBytes`, `repeatedField`
-  `plainRepeated`, `dictField` `plainDict`, `boolMapField`
-  `plainBoolMap`, and the value encoders `encodeInt64`,
+  `implicitBytesField` `implicitBytes`, and the value encoders `encodeInt64`,
   `encodeInt64AsInt`, `encodeFloat`, `encodeBytes`,
   `encodeBytesAsBytes` and `encodeEmpty` are `int64`, `int64AsInt`,
   `double`, `bytes`, `bytesAsBytes` and `empty`. docs/migrating.md,

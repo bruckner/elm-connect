@@ -205,8 +205,8 @@ valueFieldTests =
         , test "Nothing leaves the field out, Just null writes null" <|
             \_ ->
                 Expect.all
-                    [ \_ -> encodesTo (Proto.Json.Encode.plainObject [ ( "value", Nothing ) ]) "{}"
-                    , \_ -> encodesTo (Proto.Json.Encode.plainObject [ ( "value", Just Json.Encode.null ) ]) """{"value":null}"""
+                    [ \_ -> encodesTo (Proto.Json.Encode.object [ ( "value", Nothing ) ]) "{}"
+                    , \_ -> encodesTo (Proto.Json.Encode.object [ ( "value", Just Json.Encode.null ) ]) """{"value":null}"""
                     ]
                     ()
         ]
@@ -439,13 +439,13 @@ encodingTests : Test
 encodingTests =
     let
         object fields =
-            Proto.Json.Encode.plainObject [ ( "f", fields ) ]
+            Proto.Json.Encode.object [ ( "f", fields ) ]
     in
     describe "encoding fields"
-        [ test "plainObject leaves out the fields given Nothing, in order otherwise" <|
+        [ test "object leaves out the fields given Nothing, in order otherwise" <|
             \_ ->
                 encodesTo
-                    (Proto.Json.Encode.plainObject
+                    (Proto.Json.Encode.object
                         [ ( "a", Just (Json.Encode.int 1) )
                         , ( "b", Nothing )
                         , ( "c", Just Json.Encode.null )
@@ -480,15 +480,15 @@ encodingTests =
                     , \_ -> encodesTo (object (Proto.Json.Encode.implicitDouble (-1 / 0))) """{"f":"-Infinity"}"""
                     ]
                     ()
-        , test "plainRepeated, plainDict and plainBoolMap leave out the empty" <|
+        , test "repeated, dict and boolMap leave out the empty" <|
             \_ ->
                 Expect.all
-                    [ \_ -> encodesTo (object (Proto.Json.Encode.plainRepeated Json.Encode.int [])) "{}"
-                    , \_ -> encodesTo (object (Proto.Json.Encode.plainRepeated Json.Encode.int [ 0 ])) """{"f":[0]}"""
-                    , \_ -> encodesTo (object (Proto.Json.Encode.plainDict String.fromInt Json.Encode.int Dict.empty)) "{}"
-                    , \_ -> encodesTo (object (Proto.Json.Encode.plainDict String.fromInt Json.Encode.int (Dict.singleton 1 0))) """{"f":{"1":0}}"""
-                    , \_ -> encodesTo (object (Proto.Json.Encode.plainBoolMap Json.Encode.int [])) "{}"
-                    , \_ -> encodesTo (object (Proto.Json.Encode.plainBoolMap Json.Encode.int [ ( True, 0 ) ])) """{"f":{"true":0}}"""
+                    [ \_ -> encodesTo (object (Proto.Json.Encode.repeated Json.Encode.int [])) "{}"
+                    , \_ -> encodesTo (object (Proto.Json.Encode.repeated Json.Encode.int [ 0 ])) """{"f":[0]}"""
+                    , \_ -> encodesTo (object (Proto.Json.Encode.dict String.fromInt Json.Encode.int Dict.empty)) "{}"
+                    , \_ -> encodesTo (object (Proto.Json.Encode.dict String.fromInt Json.Encode.int (Dict.singleton 1 0))) """{"f":{"1":0}}"""
+                    , \_ -> encodesTo (object (Proto.Json.Encode.boolMap Json.Encode.int [])) "{}"
+                    , \_ -> encodesTo (object (Proto.Json.Encode.boolMap Json.Encode.int [ ( True, 0 ) ])) """{"f":{"true":0}}"""
                     ]
                     ()
         ]
@@ -919,12 +919,12 @@ boolMapTests =
             \_ -> fails (Proto.Json.Decode.boolMap Json.Decode.string) """{"true":2}"""
         , test "encodes keys as true and false" <|
             \_ ->
-                Proto.Json.Encode.plainBoolMap Json.Encode.int [ ( True, 1 ), ( False, 0 ) ]
+                Proto.Json.Encode.boolMap Json.Encode.int [ ( True, 1 ), ( False, 0 ) ]
                     |> Maybe.map (Json.Encode.encode 0)
                     |> Expect.equal (Just """{"true":1,"false":0}""")
         , test "round-trips" <|
             \_ ->
-                Proto.Json.Encode.plainBoolMap Json.Encode.string [ ( False, "b" ), ( True, "a" ) ]
+                Proto.Json.Encode.boolMap Json.Encode.string [ ( False, "b" ), ( True, "a" ) ]
                     |> Maybe.map (Json.Decode.decodeValue (Proto.Json.Decode.boolMap Json.Decode.string))
                     |> Expect.equal (Just (Ok [ ( False, "b" ), ( True, "a" ) ]))
         ]
@@ -1662,9 +1662,9 @@ protoKeyTests =
             Dict.fromList [ ( "__proto__", "x" ), ( "a", "b" ) ]
     in
     describe "a __proto__ key"
-        [ test "is written by plainDict" <|
+        [ test "is written by dict" <|
             \_ ->
-                Proto.Json.Encode.plainDict identity Json.Encode.string pairs
+                Proto.Json.Encode.dict identity Json.Encode.string pairs
                     |> written
                     |> Expect.equal (Just "{\"__proto__\":\"x\",\"a\":\"b\"}")
         , test "is written by encodeStruct" <|
@@ -1673,14 +1673,14 @@ protoKeyTests =
                     |> encodeStruct
                     |> Json.Encode.encode 0
                     |> Expect.equal "{\"__proto__\":\"x\",\"a\":\"b\"}"
-        , test "is written by plainObject" <|
+        , test "is written by object" <|
             \_ ->
-                Proto.Json.Encode.plainObject [ ( "__proto__", Just (Json.Encode.string "x") ), ( "a", Nothing ) ]
+                Proto.Json.Encode.object [ ( "__proto__", Just (Json.Encode.string "x") ), ( "a", Nothing ) ]
                     |> Json.Encode.encode 0
                     |> Expect.equal "{\"__proto__\":\"x\"}"
-        , test "round-trips through plainDict" <|
+        , test "round-trips through dict" <|
             \_ ->
-                Proto.Json.Encode.plainDict identity Json.Encode.string pairs
+                Proto.Json.Encode.dict identity Json.Encode.string pairs
                     |> Maybe.andThen (Json.Decode.decodeValue (Json.Decode.dict Json.Decode.string) >> Result.toMaybe)
                     |> Expect.equal (Just pairs)
         ]

@@ -693,12 +693,15 @@ change only in what they call themselves: running a generated encoder
 match elm/json's (`Proto.Json.Encode.object`, `Proto.Json.Decode.float`),
 and every reference is written qualified.
 
-An encoder's name says what it gives. A checked encoder, which can
-refuse a value, is a bare noun (`object`, `optional`, `timestamp`); a
-plain field encoder, giving `Maybe Json.Encode.Value`, begins with
-`plain` or `implicit`; one that unwraps a message encoder that cannot
-refuse begins with `total`; a value encoder is named after the decoder
-it mirrors (`int64`, `bytes`). The decoder of a `double` field is
+An encoder's name says whether it can refuse. The bare name cannot,
+and gives plain JSON (`object`, `repeated`, `implicit`): 0.1's
+`objectOfFields`, `repeatedField`, `dictField` and `boolMapField` are
+`object`, `repeated`, `dict` and `boolMap`. Where a name exists in both
+forms, the one that can refuse is prefixed `checked`
+(`checkedObject`); a name that exists only in that form has no prefix
+(`optional`, `timestamp`); one that unwraps a message encoder that
+cannot refuse begins with `total`; a value encoder is named after the
+decoder it mirrors (`int64`, `bytes`). The decoder of a `double` field is
 `Proto.Json.Decode.double`, and of a `float` field `Proto.Json.Decode.float`,
 as `Proto.Binary` names them: 0.1's `Proto.Json.float`, which read a
 `double`, is `Proto.Json.Decode.double`, not `Proto.Json.Decode.float`. Likewise 0.1's
@@ -717,15 +720,15 @@ Every name `Proto.Json` has had, in 0.1.0 or on `main` before 0.2
 | `encodeWith` ¹ | `Proto.Json.Encode.encodeWith` |
 | `encodeTotal` ¹ | `Proto.Json.Encode.encodeTotal` |
 | `succeed` ¹ | `Proto.Json.Encode.succeed` |
-| `writeObject` ¹ | `Proto.Json.Encode.object` |
+| `writeObject` ¹ | `Proto.Json.Encode.checkedObject` |
 | `Fields` ¹ | `Proto.Json.Encode.Fields` |
-| `plainFields` ¹ | `Proto.Json.Encode.plainFields` |
+| `plainFields` ¹ | `Proto.Json.Encode.fields` |
 | `checkedFields` ¹ | `Proto.Json.Encode.checkedFields` |
 | `Field` ¹ | `Proto.Json.Encode.Field` |
 | `writeOptional` ¹ | `Proto.Json.Encode.optional` |
-| `writeRepeated` ¹ | `Proto.Json.Encode.repeated` |
-| `writeDict` ¹ | `Proto.Json.Encode.dict` |
-| `writeBoolMap` ¹ | `Proto.Json.Encode.boolMap` |
+| `writeRepeated` ¹ | `Proto.Json.Encode.checkedRepeated` |
+| `writeDict` ¹ | `Proto.Json.Encode.checkedDict` |
+| `writeBoolMap` ¹ | `Proto.Json.Encode.checkedBoolMap` |
 | `writeMember` ¹ | `Proto.Json.Encode.member` |
 | `writeDeeper` ¹ | `Proto.Json.Encode.deeper` |
 | `writeTimestamp` ¹ | `Proto.Json.Encode.timestamp` |
@@ -735,13 +738,13 @@ Every name `Proto.Json` has had, in 0.1.0 or on `main` before 0.2
 | `writeListValue` ¹ | `Proto.Json.Encode.listValue` |
 | `writeValue` ¹ | `Proto.Json.Encode.value` |
 | `writeAny` ¹ | `Proto.Json.Encode.any` |
-| `objectOfFields` | `Proto.Json.Encode.plainObject` |
+| `objectOfFields` | `Proto.Json.Encode.object` |
 | `implicitField` | `Proto.Json.Encode.implicit` |
 | `implicitFloatField` | `Proto.Json.Encode.implicitDouble` |
 | `implicitBytesField` | `Proto.Json.Encode.implicitBytes` |
-| `repeatedField` | `Proto.Json.Encode.plainRepeated` |
-| `dictField` | `Proto.Json.Encode.plainDict` |
-| `boolMapField` | `Proto.Json.Encode.plainBoolMap` |
+| `repeatedField` | `Proto.Json.Encode.repeated` |
+| `dictField` | `Proto.Json.Encode.dict` |
+| `boolMapField` | `Proto.Json.Encode.boolMap` |
 | `totalOptionalField` ¹ | `Proto.Json.Encode.totalOptional` |
 | `totalRepeatedField` ¹ | `Proto.Json.Encode.totalRepeated` |
 | `encodeInt64` | `Proto.Json.Encode.int64` |
@@ -808,7 +811,7 @@ Every name `Proto.Json` has had, in 0.1.0 or on `main` before 0.2
 | `emptyMemberEither` | `Proto.Json.Decode.memberEither`, as for `emptyMember` |
 | `valueMember` | `Proto.Json.Decode.nullMember name (Json.Decode.map Ctor (Proto.Json.Decode.nestedValue 0))` |
 | `valueMemberEither` | `Proto.Json.Decode.nullMemberEither`, as for `valueMember` |
-| `encodeBoolMap` | `Proto.Json.Encode.plainBoolMap` for a field |
+| `encodeBoolMap` | `Proto.Json.Encode.boolMap` for a field |
 | `encodeTimestamp` | `Proto.Json.Encode.timestamp`, which can refuse; run it with `Proto.Json.Encode.encode` |
 | `encodeDuration` | `Proto.Json.Encode.duration`, as for `encodeTimestamp` |
 | `encodeFieldMask` | `Proto.Json.Encode.fieldMask`, as for `encodeTimestamp` |
@@ -892,7 +895,7 @@ that changed again before the release:
 | `encodeNote note : Json.Encode.Value` | `Proto.Json.Encode.encodeTotal (encodeNote note)`, or `Proto.Json.Encode.encode (encodeNote note)` when `encodeNote` can refuse |
 | `Proto.Json.encodeAnyWith registry any` | `Proto.Json.Encode.encodeWith registry (Proto.Json.Encode.any any)`, or `Proto.Any.toJson registry any` for its message's JSON alone |
 | `Proto.Json.encodeTimestamp`, `encodeDuration`, `encodeFieldMask`, `encodeStruct`, `encodeValue`, `encodeListValue` | `Proto.Json.Encode.encode (Proto.Json.Encode.timestamp t)` and the other checked value encoders; `Proto.Value.toJson` writes a `Value` unchecked |
-| `Proto.Json.encodeNestedAnyWith`, `registryDeeper`, `tryObjectOfFields` and the other `try` helpers | generated code's `Proto.Json.Encode.any`, `deeper`, `object` and the checked field encoders |
+| `Proto.Json.encodeNestedAnyWith`, `registryDeeper`, `tryObjectOfFields` and the other `try` helpers | generated code's `Proto.Json.Encode.any`, `deeper`, `checkedObject` and the checked field encoders |
 | `Proto.Duration.fromParts s n` (clamped past the range) | `Proto.Duration.fromSecondsAndNanos s n : Maybe Duration`, `Nothing` past the range |
 | `Proto.Duration.toParts` | `Proto.Duration.toSecondsAndNanos`, the fields as held |
 | `Proto.Duration.fromMilliseconds`, `toMilliseconds`, `toString d : String` | `fromMillis`, `toMillis`, `toString d : Maybe String` ([Durations](#durations)) |

@@ -32,14 +32,15 @@
   `encodeWith`; `Proto.Any.toJson` gives an `Any`'s message JSON),
   `registryDeeper` (`Proto.Json.Encode.deeper`), the `try` helpers
   `tryObjectOfFields`, `tryOptionalField`, `tryRepeatedField`,
-  `tryDictField` and `tryBoolMapField` (`Proto.Json.Encode.object` and
+  `tryDictField` and `tryBoolMapField` (`Proto.Json.Encode.checkedObject` and
   the checked field encoders), and the unchecked `encodeTimestamp`,
   `encodeDuration`, `encodeFieldMask`, `encodeStruct`, `encodeValue` and
   `encodeListValue` (`Proto.Json.Encode.timestamp` and the other checked
   value encoders; `Proto.Value.toJson` writes a `Value` unchecked). New
   in `Proto.Json.Encode`, for generated code: `Encoder`, `Field`,
-  `Fields`, `succeed`, `object`, `plainFields`, `checkedFields`,
-  `optional`, `repeated`, `dict`, `boolMap`, `member`, `deeper`,
+  `Fields`, `succeed`, `checkedObject`, `fields`, `checkedFields`,
+  `optional`, `checkedRepeated`, `checkedDict`, `checkedBoolMap`,
+  `member`, `deeper`,
   `timestamp`, `duration`, `fieldMask`, `struct`, `listValue`, `value`,
   `any`, `totalOptional` and `totalRepeated`; and
   `Proto.Route.fieldMaskText`,

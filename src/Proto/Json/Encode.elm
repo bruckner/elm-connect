@@ -1,9 +1,9 @@
 module Proto.Json.Encode exposing
     ( Encoder, encode, encodeWith, encodeTotal, succeed
-    , Field, Fields, object, plainFields, checkedFields
-    , plainObject, implicit, implicitDouble, implicitBytes, plainRepeated, plainDict, plainBoolMap
+    , Field, Fields, object, checkedObject, fields, checkedFields
+    , repeated, checkedRepeated, dict, checkedDict, boolMap, checkedBoolMap
+    , implicit, implicitDouble, implicitBytes, optional, member, deeper
     , totalOptional, totalRepeated
-    , optional, repeated, dict, boolMap, member, deeper
     , timestamp, duration, fieldMask, struct, listValue, value, any
     , int64, int64AsInt, double, bytes, bytesAsBytes, empty, nullValue
     )
@@ -47,68 +47,73 @@ field without presence at its zero value, a field with presence (`Maybe`)
 when `Nothing`, a repeated or map field when empty. A parser reads a missing
 field as its default, so nothing is lost.
 
-A field's encoder is one of three kinds:
+An encoder's name says whether it can refuse:
 
-  - **plain**, giving a `Maybe Json.Encode.Value`, `Nothing` to leave the
-    field out. It cannot refuse. Its name begins with `plain` or `implicit`.
-  - **total**, giving a `Maybe Json.Encode.Value` from a message encoder that
-    cannot refuse, an `Encoder Never`. Its name begins with `total`.
-  - **checked**, giving a [`Field x`](#Field) from an `Encoder x`, which can
-    refuse. Its name is a bare noun, as is each checked value encoder's (an
-    `Encoder Proto.Error.Error`).
+  - The bare name cannot refuse and gives plain JSON: a
+    `Json.Encode.Value`, or for a field a `Maybe Json.Encode.Value`,
+    `Nothing` to leave the field out (`object`, `repeated`, `implicit`).
+  - Where a name exists in both forms, the one that can refuse, taking or
+    giving an `Encoder x` or a [`Field x`](#Field), is prefixed `checked`
+    (`checkedObject`, `checkedRepeated`).
+  - A name that exists only in the checked form has no prefix
+    (`optional`, `member`, and the well-known types' `timestamp`, `any` and
+    the rest, each an `Encoder Proto.Error.Error`).
+  - A `total` encoder gives plain JSON from a message encoder that cannot
+    refuse, an `Encoder Never` (`totalOptional`).
 
-A message whose fields are all plain or total is written with
-[`plainObject`](#plainObject), which cannot refuse:
+A message whose fields cannot refuse is written with
+[`object`](#object):
 
     encodeNote : Note -> Proto.Json.Encode.Encoder x
     encodeNote value =
         Proto.Json.Encode.succeed
-            (Proto.Json.Encode.plainObject
+            (Proto.Json.Encode.object
                 [ ( "title", Proto.Json.Encode.implicit "" Json.Encode.string value.title )
                 , ( "score", Proto.Json.Encode.implicitDouble value.score )
                 , ( "author", Proto.Json.Encode.totalOptional encodeAuthor value.author )
-                , ( "tags", Proto.Json.Encode.plainRepeated Json.Encode.string value.tags )
+                , ( "tags", Proto.Json.Encode.repeated Json.Encode.string value.tags )
                 ]
             )
 
 A message holding a value a write can refuse (an `Any`, a `Timestamp`,
 `Duration`, `FieldMask`, `Struct`, `ListValue` or `Value`, or a message that
-holds one) is written with [`object`](#object) from its fields in declaration
-order, in runs: plain and total fields in a [`plainFields`](#plainFields) run,
-checked ones in a [`checkedFields`](#checkedFields) run.
+holds one) is written with [`checkedObject`](#checkedObject) from its fields
+in declaration order, in runs: those that cannot refuse in a
+[`fields`](#fields) run, those that can in a
+[`checkedFields`](#checkedFields) run.
 
     encodeEvent : Event -> Proto.Json.Encode.Encoder Proto.Error.Error
     encodeEvent value =
-        Proto.Json.Encode.object
-            [ Proto.Json.Encode.plainFields [ ( "title", Proto.Json.Encode.implicit "" Json.Encode.string value.title ) ]
+        Proto.Json.Encode.checkedObject
+            [ Proto.Json.Encode.fields [ ( "title", Proto.Json.Encode.implicit "" Json.Encode.string value.title ) ]
             , Proto.Json.Encode.checkedFields
                 [ ( "at", Proto.Json.Encode.optional Proto.Json.Encode.timestamp value.at )
                 , ( "payload", Proto.Json.Encode.optional Proto.Json.Encode.any value.payload )
                 ]
             ]
 
-@docs Field, Fields, object, plainFields, checkedFields
+@docs Field, Fields, object, checkedObject, fields, checkedFields
 
 
-## Plain fields
+## Repeated and map fields
 
-@docs plainObject, implicit, implicitDouble, implicitBytes, plainRepeated, plainDict, plainBoolMap
+@docs repeated, checkedRepeated, dict, checkedDict, boolMap, checkedBoolMap
+
+
+## Other fields
+
+@docs implicit, implicitDouble, implicitBytes, optional, member, deeper
 
 
 ## Total fields
 
 A field holding a message that holds nothing a write can refuse unwraps that
 message's encoder with [`encodeTotal`](#encodeTotal): an optional or repeated
-one through these, a map through [`plainDict`](#plainDict).
+one through these, a map through [`dict`](#dict).
 
-    Proto.Json.Encode.plainDict identity (\entry -> Proto.Json.Encode.encodeTotal (encodeAuthor entry)) value.byName
+    Proto.Json.Encode.dict identity (\entry -> Proto.Json.Encode.encodeTotal (encodeAuthor entry)) value.byName
 
 @docs totalOptional, totalRepeated
-
-
-## Checked fields
-
-@docs optional, repeated, dict, boolMap, member, deeper
 
 
 # Well-known types
@@ -260,10 +265,12 @@ succeed =
     Ready
 
 
-{-| A message's JSON object, from its runs of fields in declaration order.
+{-| A message's JSON object, from its runs of fields in declaration order,
+for a message holding a field that can be refused. One whose fields cannot
+is written with [`object`](#object).
 -}
-object : List (Fields x) -> Encoder x
-object runs =
+checkedObject : List (Fields x) -> Encoder x
+checkedObject runs =
     fastRuns runs [] False
 
 
@@ -274,11 +281,11 @@ type Fields x
     | CheckedFields (List ( String, Field x ))
 
 
-{-| A run of fields that cannot be refused, as the plain helpers give them:
-`Nothing` leaves a field out.
+{-| A run of fields that cannot be refused, as the bare-named field encoders
+give them: `Nothing` leaves a field out.
 -}
-plainFields : List ( String, Maybe Json.Encode.Value ) -> Fields x
-plainFields =
+fields : List ( String, Maybe Json.Encode.Value ) -> Fields x
+fields =
     PlainFields
 
 
@@ -297,6 +304,10 @@ type Field x
 
 
 {-| A field with presence: left out when `Nothing`.
+
+It has no counterpart that cannot refuse: such a field is
+`Maybe.map encoder value.field`, as generated code writes it.
+
 -}
 optional : (a -> Encoder x) -> Maybe a -> Field x
 optional write held =
@@ -308,10 +319,11 @@ optional write held =
             Absent
 
 
-{-| A repeated field: left out when empty.
+{-| A repeated field that can be refused: left out when empty. One that cannot
+is written with [`repeated`](#repeated).
 -}
-repeated : (a -> Encoder x) -> List a -> Field x
-repeated write items =
+checkedRepeated : (a -> Encoder x) -> List a -> Field x
+checkedRepeated write items =
     case items of
         [] ->
             Absent
@@ -320,10 +332,11 @@ repeated write items =
             Present (repeatedFast write items 0 [])
 
 
-{-| A map field: left out when empty.
+{-| A map field that can be refused: left out when empty. One that cannot is
+written with [`dict`](#dict).
 -}
-dict : (k -> String) -> (v -> Encoder x) -> Dict.Dict k v -> Field x
-dict key write entries =
+checkedDict : (k -> String) -> (v -> Encoder x) -> Dict.Dict k v -> Field x
+checkedDict key write entries =
     if Dict.isEmpty entries then
         Absent
 
@@ -331,10 +344,11 @@ dict key write entries =
         Present (writePairs (Dict.foldr (\k v done -> ( key k, write v ) :: done) [] entries))
 
 
-{-| A map field with `bool` keys: left out when empty.
+{-| A map field with `bool` keys that can be refused: left out when empty. One
+that cannot is written with [`boolMap`](#boolMap).
 -}
-boolMap : (a -> Encoder x) -> List ( Bool, a ) -> Field x
-boolMap write entries =
+checkedBoolMap : (a -> Encoder x) -> List ( Bool, a ) -> Field x
+checkedBoolMap write entries =
     case entries of
         [] ->
             Absent
@@ -430,16 +444,16 @@ fastRuns runs done proto =
         [] ->
             Ready (objectOfReversed proto done)
 
-        (PlainFields fields) :: rest ->
-            fastPlain fields rest done proto
+        (PlainFields run) :: rest ->
+            fastPlain run rest done proto
 
-        (CheckedFields fields) :: rest ->
-            fastChecked fields rest done proto
+        (CheckedFields run) :: rest ->
+            fastChecked run rest done proto
 
 
 fastPlain : List ( String, Maybe Json.Encode.Value ) -> List (Fields x) -> List ( String, Json.Encode.Value ) -> Bool -> Encoder x
-fastPlain fields rest done proto =
-    case fields of
+fastPlain run rest done proto =
+    case run of
         [] ->
             fastRuns rest done proto
 
@@ -451,8 +465,8 @@ fastPlain fields rest done proto =
 
 
 fastChecked : List ( String, Field x ) -> List (Fields x) -> List ( String, Json.Encode.Value ) -> Bool -> Encoder x
-fastChecked fields rest done proto =
-    case fields of
+fastChecked run rest done proto =
+    case run of
         [] ->
             fastRuns rest done proto
 
@@ -468,7 +482,7 @@ fastChecked fields rest done proto =
                     Refused (key :: path) problem
 
                 Present (Deferred _) ->
-                    Deferred (\registry -> slowChecked (InternalRegistry.atLeast 1 registry) fields rest done proto)
+                    Deferred (\registry -> slowChecked (InternalRegistry.atLeast 1 registry) run rest done proto)
 
 
 slowRuns : Registry -> List (Fields x) -> List ( String, Json.Encode.Value ) -> Bool -> Result ( List String, List String -> x ) Json.Encode.Value
@@ -477,16 +491,16 @@ slowRuns registry runs done proto =
         [] ->
             Ok (objectOfReversed proto done)
 
-        (PlainFields fields) :: rest ->
-            slowPlain registry fields rest done proto
+        (PlainFields run) :: rest ->
+            slowPlain registry run rest done proto
 
-        (CheckedFields fields) :: rest ->
-            slowChecked registry fields rest done proto
+        (CheckedFields run) :: rest ->
+            slowChecked registry run rest done proto
 
 
 slowPlain : Registry -> List ( String, Maybe Json.Encode.Value ) -> List (Fields x) -> List ( String, Json.Encode.Value ) -> Bool -> Result ( List String, List String -> x ) Json.Encode.Value
-slowPlain registry fields rest done proto =
-    case fields of
+slowPlain registry run rest done proto =
+    case run of
         [] ->
             slowRuns registry rest done proto
 
@@ -498,8 +512,8 @@ slowPlain registry fields rest done proto =
 
 
 slowChecked : Registry -> List ( String, Field x ) -> List (Fields x) -> List ( String, Json.Encode.Value ) -> Bool -> Result ( List String, List String -> x ) Json.Encode.Value
-slowChecked registry fields rest done proto =
-    case fields of
+slowChecked registry run rest done proto =
+    case run of
         [] ->
             slowRuns registry rest done proto
 
@@ -636,8 +650,8 @@ fieldMask paths =
 infinite.
 -}
 struct : Dict.Dict String Proto.Value.Value -> Encoder Error
-struct fields =
-    checkedValue "google.protobuf.Struct" (Proto.Value.ValueStruct fields) (\() -> encodeStruct fields)
+struct members =
+    checkedValue "google.protobuf.Struct" (Proto.Value.ValueStruct members) (\() -> encodeStruct members)
 
 
 {-| A `google.protobuf.ListValue`, refused as [`struct`](#struct) is.
@@ -708,26 +722,27 @@ any ((InternalAny.Any url _) as held) =
 
 
 {-| A message's JSON object: each field that has a value, under its JSON name.
-A field given `Nothing` is left out.
+A field given `Nothing` is left out. A message holding a field that can be
+refused is written with [`checkedObject`](#checkedObject).
 
-    plainObject
+    object
         [ ( "title", Just (Json.Encode.string "Hi") )
         , ( "author", Nothing )
         ]
     -- {"title":"Hi"}
 
 -}
-plainObject : List ( String, Maybe Json.Encode.Value ) -> Json.Encode.Value
-plainObject fields =
-    presentPairs fields [] False
+object : List ( String, Maybe Json.Encode.Value ) -> Json.Encode.Value
+object pairs =
+    presentPairs pairs [] False
 
 
 {-| The pairs of the fields that have a value, gathered in reverse in one
 pass, noting whether a key is `__proto__`, and made an object.
 -}
 presentPairs : List ( String, Maybe Json.Encode.Value ) -> List ( String, Json.Encode.Value ) -> Bool -> Json.Encode.Value
-presentPairs fields done proto =
-    case fields of
+presentPairs pairs done proto =
+    case pairs of
         [] ->
             objectOfReversed proto done
 
@@ -825,8 +840,8 @@ implicitDouble number =
 
 {-| A repeated field: `Nothing` when empty, else a JSON array of its elements.
 -}
-plainRepeated : (a -> Json.Encode.Value) -> List a -> Maybe Json.Encode.Value
-plainRepeated write values =
+repeated : (a -> Json.Encode.Value) -> List a -> Maybe Json.Encode.Value
+repeated write values =
     if List.isEmpty values then
         Nothing
 
@@ -837,8 +852,8 @@ plainRepeated write values =
 {-| A map field: `Nothing` when empty, else a JSON object, keyed as
 `Json.Encode.dict` keys it. A key of `__proto__` is kept as an ordinary key.
 -}
-plainDict : (k -> String) -> (v -> Json.Encode.Value) -> Dict.Dict k v -> Maybe Json.Encode.Value
-plainDict key write entries =
+dict : (k -> String) -> (v -> Json.Encode.Value) -> Dict.Dict k v -> Maybe Json.Encode.Value
+dict key write entries =
     if Dict.isEmpty entries then
         Nothing
 
@@ -854,8 +869,8 @@ plainDict key write entries =
 empty, else a JSON object keyed `"true"` and `"false"`. When a key appears
 twice, the later pair is the one a parser keeps.
 -}
-plainBoolMap : (a -> Json.Encode.Value) -> List ( Bool, a ) -> Maybe Json.Encode.Value
-plainBoolMap write pairs =
+boolMap : (a -> Json.Encode.Value) -> List ( Bool, a ) -> Maybe Json.Encode.Value
+boolMap write pairs =
     if List.isEmpty pairs then
         Nothing
 
@@ -876,7 +891,7 @@ totalOptional write held =
             Nothing
 
 
-{-| [`plainRepeated`](#plainRepeated) of a message that holds nothing a write
+{-| [`repeated`](#repeated) of a message that holds nothing a write
 can refuse.
 -}
 totalRepeated : (a -> Encoder Never) -> List a -> Maybe Json.Encode.Value
@@ -987,8 +1002,8 @@ nullValue () =
 {-| Encode a `google.protobuf.Struct` from its members, as a JSON object.
 -}
 encodeStruct : Dict.Dict String Proto.Value.Value -> Json.Encode.Value
-encodeStruct fields =
-    Proto.Value.toJson (Proto.Value.ValueStruct fields)
+encodeStruct members =
+    Proto.Value.toJson (Proto.Value.ValueStruct members)
 
 
 {-| Encode a `google.protobuf.ListValue` from its elements, as a JSON array.

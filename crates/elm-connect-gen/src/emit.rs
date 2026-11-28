@@ -97,7 +97,7 @@
 //!   (`Json.Decode.Decoder Foo`). Under `unknown_fields=keep` the record
 //!   ends in `unknownFields_ : Proto.Unknown.Fields`, empty in the default
 //!   and in whatever JSON decodes, and left out of the JSON encoding.
-//! - Encoders are `Proto.Json.Encode.plainObject` over one `( jsonName, Maybe Value )`
+//! - Encoders are `Proto.Json.Encode.object` over one `( jsonName, Maybe Value )`
 //!   pair per field, and leave out every field at its default, as
 //!   protobuf-go's `protojson` does: a field without presence at its zero
 //!   value, a `Maybe` when `Nothing`, a list or map when empty (design
@@ -124,12 +124,12 @@
 //!   any two `Bytes` equal.
 //! - A map field is a `Dict`, keyed by `String` (string and 64-bit integer
 //!   keys) or `Int` (32-bit integer keys), encoded with
-//!   `Proto.Json.Encode.plainDict` and decoded by the key's kind
+//!   `Proto.Json.Encode.dict` and decoded by the key's kind
 //!   (`Json.Decode.dict`, `Proto.Json.Decode.int32Dict`, `uint32Dict`,
 //!   `int64Dict`, `uint64Dict`); absent or `null` decodes as `Dict.empty`. A map
 //!   with `bool` keys, which Elm cannot put in a `Dict`, is a
 //!   `List ( Bool, v )` read and written by `Proto.Json.Decode.boolMap` and
-//!   `Proto.Json.Encode.plainBoolMap`; absent or `null` decodes as `[]`.
+//!   `Proto.Json.Encode.boolMap`; absent or `null` decodes as `[]`.
 //! - An enum is a custom type, its zero value first, with an encoder that
 //!   writes each constructor's proto name and a `Proto.Json.Decode.enum`
 //!   decoder that reads a name or a number, an unknown number as the zero
@@ -184,7 +184,7 @@
 //!   plain code wrapped once, which works for any refusal type, so its
 //!   plain parents unwrap it with `Proto.Json.Encode.encodeTotal`; the others get
 //!   `Foo -> Proto.Json.Encode.Encoder Proto.Error.Error`, built from
-//!   `Proto.Json.Encode.object` of their fields in declaration order, in runs
+//!   `Proto.Json.Encode.checkedObject` of their fields in declaration order, in runs
 //!   of plain fields and of fields that can be refused ([`field`]). A field
 //!   of a message that nests, counting a level and reaching an `Any`, is
 //!   written one level deeper (`Proto.Json.Encode.deeper`), so an `Any`
@@ -666,7 +666,7 @@ struct Emitter {
     /// depth.
     counted: Counted,
     /// The messages whose JSON write can be refused, whose encoders are
-    /// built with `Proto.Json.Encode.object`; the others are written by plain
+    /// built with `Proto.Json.Encode.checkedObject`; the others are written by plain
     /// code and wrapped once.
     write_reach: AnyReach,
     /// The options as the header's second line records them.

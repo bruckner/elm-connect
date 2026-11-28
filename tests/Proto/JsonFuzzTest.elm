@@ -572,7 +572,7 @@ mapProperties =
                     entries =
                         Dict.fromList pairs
                 in
-                case Proto.Json.Encode.plainDict identity Proto.Json.Encode.int64 entries of
+                case Proto.Json.Encode.dict identity Proto.Json.Encode.int64 entries of
                     Nothing ->
                         Dict.isEmpty entries |> Expect.equal True
 
@@ -584,7 +584,7 @@ mapProperties =
                     entries =
                         Dict.fromList pairs
                 in
-                case Proto.Json.Encode.plainDict String.fromInt Json.Encode.string entries of
+                case Proto.Json.Encode.dict String.fromInt Json.Encode.string entries of
                     Nothing ->
                         Dict.isEmpty entries |> Expect.equal True
 
@@ -596,7 +596,7 @@ mapProperties =
                     entries =
                         Dict.fromList pairs
                 in
-                case Proto.Json.Encode.plainDict identity Json.Encode.string entries of
+                case Proto.Json.Encode.dict identity Json.Encode.string entries of
                     Nothing ->
                         Dict.isEmpty entries |> Expect.equal True
 
@@ -608,7 +608,7 @@ mapProperties =
                     pairs =
                         List.map2 Tuple.pair keys [ first, second ]
                 in
-                case Proto.Json.Encode.plainBoolMap Json.Encode.string pairs of
+                case Proto.Json.Encode.boolMap Json.Encode.string pairs of
                     Nothing ->
                         pairs |> Expect.equal []
 
@@ -626,7 +626,7 @@ repeatedProperties =
     describe "repeated fields"
         [ fuzz (Fuzz.list Fuzzers.awkwardString) "a list round-trips, and is left out when empty" <|
             \items ->
-                case Proto.Json.Encode.plainRepeated Json.Encode.string items of
+                case Proto.Json.Encode.repeated Json.Encode.string items of
                     Nothing ->
                         items |> Expect.equal []
 
