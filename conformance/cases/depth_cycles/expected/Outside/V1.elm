@@ -14,7 +14,8 @@ import Json.Decode
 import Outside.V1.Holder
 import Proto.Binary
 import Proto.Descriptors
-import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Version
@@ -99,12 +100,12 @@ registry =
 
 {-| Encodes a [`Holder`](#Holder) as proto3 JSON.
 -}
-encodeHolder : Holder -> Proto.Json.Encoder x
+encodeHolder : Holder -> Proto.Json.Encode.Encoder x
 encodeHolder value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "tree", Proto.Json.totalOptionalField Cycles.V1.encodeTree value.tree )
-            , ( "person", Proto.Json.totalOptionalField Cycles.V1.encodePerson value.person )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            [ ( "tree", Proto.Json.Encode.totalOptional Cycles.V1.encodeTree value.tree )
+            , ( "person", Proto.Json.Encode.totalOptional Cycles.V1.encodePerson value.person )
             ]
         )
 
@@ -124,10 +125,10 @@ decodeHolder =
 -}
 decodeNestedHolder : Int -> Json.Decode.Decoder Holder
 decodeNestedHolder depth =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Holder
-            |> Proto.Json.messageField "tree" Nothing (Json.Decode.map Just (Cycles.V1.decodeNestedTree (depth + 1)))
-            |> Proto.Json.messageField "person" Nothing (Json.Decode.map Just (Cycles.V1.decodeNestedPerson (depth + 1)))
+            |> Proto.Json.Decode.messageField "tree" Nothing (Json.Decode.map Just (Cycles.V1.decodeNestedTree (depth + 1)))
+            |> Proto.Json.Decode.messageField "person" Nothing (Json.Decode.map Just (Cycles.V1.decodeNestedPerson (depth + 1)))
         )
 
 

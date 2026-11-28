@@ -15,7 +15,8 @@ import Json.Decode
 import Json.Encode
 import Proto.Binary
 import Proto.Descriptors
-import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Version
@@ -160,34 +161,34 @@ registry =
 
 {-| Encodes an [`Author`](#Author) as proto3 JSON.
 -}
-encodeAuthor : Author -> Proto.Json.Encoder x
+encodeAuthor : Author -> Proto.Json.Encode.Encoder x
 encodeAuthor value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             ]
         )
 
 
 {-| Encodes a [`Note`](#Note) as proto3 JSON.
 -}
-encodeNote : Note -> Proto.Json.Encoder x
+encodeNote : Note -> Proto.Json.Encode.Encoder x
 encodeNote value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
             [ ( "subtitle", Maybe.map Json.Encode.string value.subtitle )
             , ( "stars", Maybe.map Json.Encode.int value.stars )
-            , ( "score", Maybe.map Proto.Json.encodeFloat value.score )
-            , ( "views", Maybe.map Proto.Json.encodeInt64 value.views )
-            , ( "author", Proto.Json.totalOptionalField encodeAuthor value.author )
-            , ( "editor", Proto.Json.totalOptionalField encodeAuthor value.editor )
-            , ( "tags", Proto.Json.repeatedField Json.Encode.string value.tags )
-            , ( "counts", Proto.Json.repeatedField Json.Encode.int value.counts )
-            , ( "weights", Proto.Json.repeatedField Proto.Json.encodeFloat value.weights )
-            , ( "reviewers", Proto.Json.totalRepeatedField encodeAuthor value.reviewers )
-            , ( "relatedLinks", Proto.Json.repeatedField Json.Encode.string value.relatedLinks )
+            , ( "score", Maybe.map Proto.Json.Encode.double value.score )
+            , ( "views", Maybe.map Proto.Json.Encode.int64 value.views )
+            , ( "author", Proto.Json.Encode.totalOptional encodeAuthor value.author )
+            , ( "editor", Proto.Json.Encode.totalOptional encodeAuthor value.editor )
+            , ( "tags", Proto.Json.Encode.plainRepeated Json.Encode.string value.tags )
+            , ( "counts", Proto.Json.Encode.plainRepeated Json.Encode.int value.counts )
+            , ( "weights", Proto.Json.Encode.plainRepeated Proto.Json.Encode.double value.weights )
+            , ( "reviewers", Proto.Json.Encode.totalRepeated encodeAuthor value.reviewers )
+            , ( "relatedLinks", Proto.Json.Encode.plainRepeated Json.Encode.string value.relatedLinks )
             , ( "isDraft", Maybe.map Json.Encode.bool value.isDraft )
-            , ( "title", Proto.Json.implicitField "" Json.Encode.string value.title )
+            , ( "title", Proto.Json.Encode.implicit "" Json.Encode.string value.title )
             ]
         )
 
@@ -200,9 +201,9 @@ encodeNote value =
 -}
 decodeAuthor : Json.Decode.Decoder Author
 decodeAuthor =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Author
-            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
         )
 
 
@@ -210,21 +211,21 @@ decodeAuthor =
 -}
 decodeNote : Json.Decode.Decoder Note
 decodeNote =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Note
-            |> Proto.Json.messageField "subtitle" Nothing (Json.Decode.map Just Proto.Json.string)
-            |> Proto.Json.messageField "stars" Nothing (Json.Decode.map Just Proto.Json.int32)
-            |> Proto.Json.messageField "score" Nothing (Json.Decode.map Just Proto.Json.float)
-            |> Proto.Json.messageField "views" Nothing (Json.Decode.map Just Proto.Json.int64)
-            |> Proto.Json.messageField "author" Nothing (Json.Decode.map Just decodeAuthor)
-            |> Proto.Json.messageField "editor" Nothing (Json.Decode.map Just decodeAuthor)
-            |> Proto.Json.messageField "tags" [] (Json.Decode.list Proto.Json.string)
-            |> Proto.Json.messageField "counts" [] (Json.Decode.list Proto.Json.int32)
-            |> Proto.Json.messageField "weights" [] (Json.Decode.list Proto.Json.float32)
-            |> Proto.Json.messageField "reviewers" [] (Json.Decode.list decodeAuthor)
-            |> Proto.Json.messageFieldEither "relatedLinks" "related_links" [] (Json.Decode.list Proto.Json.string)
-            |> Proto.Json.messageFieldEither "isDraft" "is_draft" Nothing (Json.Decode.map Just Json.Decode.bool)
-            |> Proto.Json.messageField "title" "" Proto.Json.string
+            |> Proto.Json.Decode.messageField "subtitle" Nothing (Json.Decode.map Just Proto.Json.Decode.string)
+            |> Proto.Json.Decode.messageField "stars" Nothing (Json.Decode.map Just Proto.Json.Decode.int32)
+            |> Proto.Json.Decode.messageField "score" Nothing (Json.Decode.map Just Proto.Json.Decode.double)
+            |> Proto.Json.Decode.messageField "views" Nothing (Json.Decode.map Just Proto.Json.Decode.int64)
+            |> Proto.Json.Decode.messageField "author" Nothing (Json.Decode.map Just decodeAuthor)
+            |> Proto.Json.Decode.messageField "editor" Nothing (Json.Decode.map Just decodeAuthor)
+            |> Proto.Json.Decode.messageField "tags" [] (Json.Decode.list Proto.Json.Decode.string)
+            |> Proto.Json.Decode.messageField "counts" [] (Json.Decode.list Proto.Json.Decode.int32)
+            |> Proto.Json.Decode.messageField "weights" [] (Json.Decode.list Proto.Json.Decode.float)
+            |> Proto.Json.Decode.messageField "reviewers" [] (Json.Decode.list decodeAuthor)
+            |> Proto.Json.Decode.messageFieldEither "relatedLinks" "related_links" [] (Json.Decode.list Proto.Json.Decode.string)
+            |> Proto.Json.Decode.messageFieldEither "isDraft" "is_draft" Nothing (Json.Decode.map Just Json.Decode.bool)
+            |> Proto.Json.Decode.messageField "title" "" Proto.Json.Decode.string
         )
 
 

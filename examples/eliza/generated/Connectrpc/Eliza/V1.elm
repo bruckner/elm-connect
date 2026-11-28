@@ -15,7 +15,8 @@ import Json.Decode
 import Json.Encode
 import Proto.Binary
 import Proto.Descriptors
-import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Version
@@ -246,66 +247,66 @@ registry =
 
 {-| Encodes a [`SayRequest`](#SayRequest) as proto3 JSON.
 -}
-encodeSayRequest : SayRequest -> Proto.Json.Encoder x
+encodeSayRequest : SayRequest -> Proto.Json.Encode.Encoder x
 encodeSayRequest value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "sentence", Proto.Json.implicitField "" Json.Encode.string value.sentence )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            [ ( "sentence", Proto.Json.Encode.implicit "" Json.Encode.string value.sentence )
             ]
         )
 
 
 {-| Encodes a [`SayResponse`](#SayResponse) as proto3 JSON.
 -}
-encodeSayResponse : SayResponse -> Proto.Json.Encoder x
+encodeSayResponse : SayResponse -> Proto.Json.Encode.Encoder x
 encodeSayResponse value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "sentence", Proto.Json.implicitField "" Json.Encode.string value.sentence )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            [ ( "sentence", Proto.Json.Encode.implicit "" Json.Encode.string value.sentence )
             ]
         )
 
 
 {-| Encodes a [`ConverseRequest`](#ConverseRequest) as proto3 JSON.
 -}
-encodeConverseRequest : ConverseRequest -> Proto.Json.Encoder x
+encodeConverseRequest : ConverseRequest -> Proto.Json.Encode.Encoder x
 encodeConverseRequest value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "sentence", Proto.Json.implicitField "" Json.Encode.string value.sentence )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            [ ( "sentence", Proto.Json.Encode.implicit "" Json.Encode.string value.sentence )
             ]
         )
 
 
 {-| Encodes a [`ConverseResponse`](#ConverseResponse) as proto3 JSON.
 -}
-encodeConverseResponse : ConverseResponse -> Proto.Json.Encoder x
+encodeConverseResponse : ConverseResponse -> Proto.Json.Encode.Encoder x
 encodeConverseResponse value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "sentence", Proto.Json.implicitField "" Json.Encode.string value.sentence )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            [ ( "sentence", Proto.Json.Encode.implicit "" Json.Encode.string value.sentence )
             ]
         )
 
 
 {-| Encodes an [`IntroduceRequest`](#IntroduceRequest) as proto3 JSON.
 -}
-encodeIntroduceRequest : IntroduceRequest -> Proto.Json.Encoder x
+encodeIntroduceRequest : IntroduceRequest -> Proto.Json.Encode.Encoder x
 encodeIntroduceRequest value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             ]
         )
 
 
 {-| Encodes an [`IntroduceResponse`](#IntroduceResponse) as proto3 JSON.
 -}
-encodeIntroduceResponse : IntroduceResponse -> Proto.Json.Encoder x
+encodeIntroduceResponse : IntroduceResponse -> Proto.Json.Encode.Encoder x
 encodeIntroduceResponse value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "sentence", Proto.Json.implicitField "" Json.Encode.string value.sentence )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            [ ( "sentence", Proto.Json.Encode.implicit "" Json.Encode.string value.sentence )
             ]
         )
 
@@ -318,9 +319,9 @@ encodeIntroduceResponse value =
 -}
 decodeSayRequest : Json.Decode.Decoder SayRequest
 decodeSayRequest =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed SayRequest
-            |> Proto.Json.messageField "sentence" "" Proto.Json.string
+            |> Proto.Json.Decode.messageField "sentence" "" Proto.Json.Decode.string
         )
 
 
@@ -328,9 +329,9 @@ decodeSayRequest =
 -}
 decodeSayResponse : Json.Decode.Decoder SayResponse
 decodeSayResponse =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed SayResponse
-            |> Proto.Json.messageField "sentence" "" Proto.Json.string
+            |> Proto.Json.Decode.messageField "sentence" "" Proto.Json.Decode.string
         )
 
 
@@ -338,9 +339,9 @@ decodeSayResponse =
 -}
 decodeConverseRequest : Json.Decode.Decoder ConverseRequest
 decodeConverseRequest =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed ConverseRequest
-            |> Proto.Json.messageField "sentence" "" Proto.Json.string
+            |> Proto.Json.Decode.messageField "sentence" "" Proto.Json.Decode.string
         )
 
 
@@ -348,9 +349,9 @@ decodeConverseRequest =
 -}
 decodeConverseResponse : Json.Decode.Decoder ConverseResponse
 decodeConverseResponse =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed ConverseResponse
-            |> Proto.Json.messageField "sentence" "" Proto.Json.string
+            |> Proto.Json.Decode.messageField "sentence" "" Proto.Json.Decode.string
         )
 
 
@@ -358,9 +359,9 @@ decodeConverseResponse =
 -}
 decodeIntroduceRequest : Json.Decode.Decoder IntroduceRequest
 decodeIntroduceRequest =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed IntroduceRequest
-            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
         )
 
 
@@ -368,9 +369,9 @@ decodeIntroduceRequest =
 -}
 decodeIntroduceResponse : Json.Decode.Decoder IntroduceResponse
 decodeIntroduceResponse =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed IntroduceResponse
-            |> Proto.Json.messageField "sentence" "" Proto.Json.string
+            |> Proto.Json.Decode.messageField "sentence" "" Proto.Json.Decode.string
         )
 
 

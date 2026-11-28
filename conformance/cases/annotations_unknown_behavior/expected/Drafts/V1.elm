@@ -15,7 +15,8 @@ import Json.Decode
 import Json.Encode
 import Proto.Binary
 import Proto.Descriptors
-import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Version
@@ -103,13 +104,13 @@ registry =
 
 {-| Encodes a [`Draft`](#Draft) as proto3 JSON.
 -}
-encodeDraft : Draft -> Proto.Json.Encoder x
+encodeDraft : Draft -> Proto.Json.Encode.Encoder x
 encodeDraft value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-            , ( "body", Proto.Json.implicitField "" Json.Encode.string value.body )
-            , ( "owner", Proto.Json.implicitField "" Json.Encode.string value.owner )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
+            , ( "body", Proto.Json.Encode.implicit "" Json.Encode.string value.body )
+            , ( "owner", Proto.Json.Encode.implicit "" Json.Encode.string value.owner )
             ]
         )
 
@@ -122,11 +123,11 @@ encodeDraft value =
 -}
 decodeDraft : Json.Decode.Decoder Draft
 decodeDraft =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Draft
-            |> Proto.Json.messageField "name" "" Proto.Json.string
-            |> Proto.Json.messageField "body" "" Proto.Json.string
-            |> Proto.Json.messageField "owner" "" Proto.Json.string
+            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.messageField "body" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.messageField "owner" "" Proto.Json.Decode.string
         )
 
 

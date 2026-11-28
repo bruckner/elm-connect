@@ -9,7 +9,8 @@ import Json.Decode
 import Json.Encode
 import Proto.Binary
 import Proto.Descriptors
-import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Version
@@ -103,13 +104,13 @@ registry =
 
 {-| Encodes a [`Bounds`](#Bounds) as proto3 JSON.
 -}
-encodeBounds : Bounds -> Proto.Json.Encoder x
+encodeBounds : Bounds -> Proto.Json.Encode.Encoder x
 encodeBounds value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "max", Proto.Json.implicitField 0 Json.Encode.int value.max )
-            , ( "min", Proto.Json.implicitField 0 Json.Encode.int value.min )
-            , ( "always", Proto.Json.implicitField False Json.Encode.bool value.always )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            [ ( "max", Proto.Json.Encode.implicit 0 Json.Encode.int value.max )
+            , ( "min", Proto.Json.Encode.implicit 0 Json.Encode.int value.min )
+            , ( "always", Proto.Json.Encode.implicit False Json.Encode.bool value.always )
             ]
         )
 
@@ -122,11 +123,11 @@ encodeBounds value =
 -}
 decodeBounds : Json.Decode.Decoder Bounds
 decodeBounds =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Bounds
-            |> Proto.Json.messageField "max" 0 Proto.Json.int32
-            |> Proto.Json.messageField "min" 0 Proto.Json.int32
-            |> Proto.Json.messageField "always" False Json.Decode.bool
+            |> Proto.Json.Decode.messageField "max" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.messageField "min" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.messageField "always" False Json.Decode.bool
         )
 
 

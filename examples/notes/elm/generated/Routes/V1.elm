@@ -20,7 +20,8 @@ import Proto.Descriptors
 import Proto.Duration
 import Proto.Enum
 import Proto.Error
-import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Query
 import Proto.Registry
@@ -513,86 +514,86 @@ encodeKind value =
 
 {-| Encodes a [`GetMessageRequest`](#GetMessageRequest) as proto3 JSON.
 -}
-encodeGetMessageRequest : GetMessageRequest -> Proto.Json.Encoder x
+encodeGetMessageRequest : GetMessageRequest -> Proto.Json.Encode.Encoder x
 encodeGetMessageRequest value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "messageId", Proto.Json.implicitField "" Json.Encode.string value.messageId )
-            , ( "revision", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.revision )
-            , ( "sub", Proto.Json.totalOptionalField encodeGetMessageRequestSubMessage value.sub )
-            , ( "userId", Proto.Json.implicitField "" Json.Encode.string value.userId )
-            , ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            [ ( "messageId", Proto.Json.Encode.implicit "" Json.Encode.string value.messageId )
+            , ( "revision", Proto.Json.Encode.implicit "0" Proto.Json.Encode.int64 value.revision )
+            , ( "sub", Proto.Json.Encode.totalOptional encodeGetMessageRequestSubMessage value.sub )
+            , ( "userId", Proto.Json.Encode.implicit "" Json.Encode.string value.userId )
+            , ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             ]
         )
 
 
 {-| Encodes a [`GetMessageRequestSubMessage`](#GetMessageRequestSubMessage) as proto3 JSON.
 -}
-encodeGetMessageRequestSubMessage : GetMessageRequestSubMessage -> Proto.Json.Encoder x
+encodeGetMessageRequestSubMessage : GetMessageRequestSubMessage -> Proto.Json.Encode.Encoder x
 encodeGetMessageRequestSubMessage value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "subfield", Proto.Json.implicitField "" Json.Encode.string value.subfield )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            [ ( "subfield", Proto.Json.Encode.implicit "" Json.Encode.string value.subfield )
             ]
         )
 
 
 {-| Encodes a [`Message`](#Message) as proto3 JSON.
 -}
-encodeMessage : Message -> Proto.Json.Encoder x
+encodeMessage : Message -> Proto.Json.Encode.Encoder x
 encodeMessage value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "messageId", Proto.Json.implicitField "" Json.Encode.string value.messageId )
-            , ( "text", Proto.Json.implicitField "" Json.Encode.string value.text )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            [ ( "messageId", Proto.Json.Encode.implicit "" Json.Encode.string value.messageId )
+            , ( "text", Proto.Json.Encode.implicit "" Json.Encode.string value.text )
             ]
         )
 
 
 {-| Encodes an [`UpdateMessageRequest`](#UpdateMessageRequest) as proto3 JSON.
 -}
-encodeUpdateMessageRequest : UpdateMessageRequest -> Proto.Json.Encoder x
+encodeUpdateMessageRequest : UpdateMessageRequest -> Proto.Json.Encode.Encoder x
 encodeUpdateMessageRequest value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "messageId", Proto.Json.implicitField "" Json.Encode.string value.messageId )
-            , ( "message", Proto.Json.totalOptionalField encodeMessage value.message )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            [ ( "messageId", Proto.Json.Encode.implicit "" Json.Encode.string value.messageId )
+            , ( "message", Proto.Json.Encode.totalOptional encodeMessage value.message )
             ]
         )
 
 
 {-| Encodes an [`Everything`](#Everything) as proto3 JSON, or fails if the input contains a bad value.
 -}
-encodeEverything : Everything -> Proto.Json.Encoder Proto.Error.Error
+encodeEverything : Everything -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeEverything value =
-    Proto.Json.writeObject
-        [ Proto.Json.plainFields
-            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-            , ( "count", Proto.Json.implicitField 0 Json.Encode.int value.count )
-            , ( "big", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.big )
-            , ( "ubig", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.ubig )
-            , ( "flag", Proto.Json.implicitField False Json.Encode.bool value.flag )
-            , ( "ratio", Proto.Json.implicitFloatField value.ratio )
-            , ( "scale", Proto.Json.implicitFloatField value.scale )
-            , ( "data", Proto.Json.implicitField "" Proto.Json.encodeBytes value.data )
-            , ( "kind", Proto.Json.implicitField KindUnspecified encodeKind value.kind )
-            , ( "tags", Proto.Json.repeatedField Json.Encode.string value.tags )
-            , ( "kinds", Proto.Json.repeatedField encodeKind value.kinds )
-            , ( "numbers", Proto.Json.repeatedField Json.Encode.int value.numbers )
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.plainFields
+            [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
+            , ( "count", Proto.Json.Encode.implicit 0 Json.Encode.int value.count )
+            , ( "big", Proto.Json.Encode.implicit "0" Proto.Json.Encode.int64 value.big )
+            , ( "ubig", Proto.Json.Encode.implicit "0" Proto.Json.Encode.int64 value.ubig )
+            , ( "flag", Proto.Json.Encode.implicit False Json.Encode.bool value.flag )
+            , ( "ratio", Proto.Json.Encode.implicitDouble value.ratio )
+            , ( "scale", Proto.Json.Encode.implicitDouble value.scale )
+            , ( "data", Proto.Json.Encode.implicit "" Proto.Json.Encode.bytes value.data )
+            , ( "kind", Proto.Json.Encode.implicit KindUnspecified encodeKind value.kind )
+            , ( "tags", Proto.Json.Encode.plainRepeated Json.Encode.string value.tags )
+            , ( "kinds", Proto.Json.Encode.plainRepeated encodeKind value.kinds )
+            , ( "numbers", Proto.Json.Encode.plainRepeated Json.Encode.int value.numbers )
             , ( "maybeCount", Maybe.map Json.Encode.int value.maybeCount )
             , ( "maybeName", Maybe.map Json.Encode.string value.maybeName )
             ]
-        , Proto.Json.checkedFields
-            [ ( "at", Proto.Json.writeOptional Proto.Json.writeTimestamp value.at )
-            , ( "wait", Proto.Json.writeOptional Proto.Json.writeDuration value.wait )
-            , ( "mask", Proto.Json.writeOptional Proto.Json.writeFieldMask value.mask )
+        , Proto.Json.Encode.checkedFields
+            [ ( "at", Proto.Json.Encode.optional Proto.Json.Encode.timestamp value.at )
+            , ( "wait", Proto.Json.Encode.optional Proto.Json.Encode.duration value.wait )
+            , ( "mask", Proto.Json.Encode.optional Proto.Json.Encode.fieldMask value.mask )
             ]
-        , Proto.Json.plainFields
+        , Proto.Json.Encode.plainFields
             [ ( "limit", Maybe.map Json.Encode.int value.limit )
             , ( "label", Maybe.map Json.Encode.string value.label )
-            , ( "inner", Proto.Json.totalOptionalField encodeInner value.inner )
+            , ( "inner", Proto.Json.Encode.totalOptional encodeInner value.inner )
             ]
-        , Proto.Json.plainFields (encodeEverythingChoice value.choice)
+        , Proto.Json.Encode.plainFields (encodeEverythingChoice value.choice)
         ]
 
 
@@ -615,64 +616,64 @@ encodeEverythingChoice value =
 
 {-| Encodes an [`Inner`](#Inner) as proto3 JSON.
 -}
-encodeInner : Inner -> Proto.Json.Encoder x
+encodeInner : Inner -> Proto.Json.Encode.Encoder x
 encodeInner value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "a", Proto.Json.implicitField "" Json.Encode.string value.a )
-            , ( "deep", Proto.Json.totalOptionalField encodeDeep value.deep )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            [ ( "a", Proto.Json.Encode.implicit "" Json.Encode.string value.a )
+            , ( "deep", Proto.Json.Encode.totalOptional encodeDeep value.deep )
             ]
         )
 
 
 {-| Encodes a [`Deep`](#Deep) as proto3 JSON.
 -}
-encodeDeep : Deep -> Proto.Json.Encoder x
+encodeDeep : Deep -> Proto.Json.Encode.Encoder x
 encodeDeep value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "b", Proto.Json.implicitField 0 Json.Encode.int value.b )
-            , ( "c", Proto.Json.repeatedField Json.Encode.string value.c )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            [ ( "b", Proto.Json.Encode.implicit 0 Json.Encode.int value.b )
+            , ( "c", Proto.Json.Encode.plainRepeated Json.Encode.string value.c )
             ]
         )
 
 
 {-| Encodes a [`FileRequest`](#FileRequest) as proto3 JSON.
 -}
-encodeFileRequest : FileRequest -> Proto.Json.Encoder x
+encodeFileRequest : FileRequest -> Proto.Json.Encode.Encoder x
 encodeFileRequest value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "path", Proto.Json.implicitField "" Json.Encode.string value.path )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            [ ( "path", Proto.Json.Encode.implicit "" Json.Encode.string value.path )
             ]
         )
 
 
 {-| Encodes a [`Resource`](#Resource) as proto3 JSON.
 -}
-encodeResource : Resource -> Proto.Json.Encoder x
+encodeResource : Resource -> Proto.Json.Encode.Encoder x
 encodeResource value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-            , ( "displayName", Proto.Json.implicitField "" Json.Encode.string value.displayName )
-            , ( "labels", Proto.Json.dictField identity Json.Encode.string value.labels )
-            , ( "kinds", Proto.Json.dictField identity encodeKind value.kinds )
-            , ( "weights", Proto.Json.boolMapField Proto.Json.encodeFloat value.weights )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
+            , ( "displayName", Proto.Json.Encode.implicit "" Json.Encode.string value.displayName )
+            , ( "labels", Proto.Json.Encode.plainDict identity Json.Encode.string value.labels )
+            , ( "kinds", Proto.Json.Encode.plainDict identity encodeKind value.kinds )
+            , ( "weights", Proto.Json.Encode.plainBoolMap Proto.Json.Encode.double value.weights )
             ]
         )
 
 
 {-| Encodes an [`UpdateResourceRequest`](#UpdateResourceRequest) as proto3 JSON, or fails if the input contains a bad value.
 -}
-encodeUpdateResourceRequest : UpdateResourceRequest -> Proto.Json.Encoder Proto.Error.Error
+encodeUpdateResourceRequest : UpdateResourceRequest -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeUpdateResourceRequest value =
-    Proto.Json.writeObject
-        [ Proto.Json.plainFields
-            [ ( "resource", Proto.Json.totalOptionalField encodeResource value.resource )
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.plainFields
+            [ ( "resource", Proto.Json.Encode.totalOptional encodeResource value.resource )
             ]
-        , Proto.Json.checkedFields
-            [ ( "updateMask", Proto.Json.writeOptional Proto.Json.writeFieldMask value.updateMask )
+        , Proto.Json.Encode.checkedFields
+            [ ( "updateMask", Proto.Json.Encode.optional Proto.Json.Encode.fieldMask value.updateMask )
             ]
         ]
 
@@ -685,7 +686,7 @@ encodeUpdateResourceRequest value =
 -}
 decodeKind : Json.Decode.Decoder Kind
 decodeKind =
-    Proto.Json.enum "Kind"
+    Proto.Json.Decode.enum "Kind"
         KindUnspecified
         [ ( "KIND_UNSPECIFIED", 0, KindUnspecified )
         , ( "KIND_TEXT", 1, KindText )
@@ -697,13 +698,13 @@ decodeKind =
 -}
 decodeGetMessageRequest : Json.Decode.Decoder GetMessageRequest
 decodeGetMessageRequest =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed GetMessageRequest
-            |> Proto.Json.messageFieldEither "messageId" "message_id" "" Proto.Json.string
-            |> Proto.Json.messageField "revision" "0" Proto.Json.int64
-            |> Proto.Json.messageField "sub" Nothing (Json.Decode.map Just decodeGetMessageRequestSubMessage)
-            |> Proto.Json.messageFieldEither "userId" "user_id" "" Proto.Json.string
-            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.Decode.messageFieldEither "messageId" "message_id" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.messageField "revision" "0" Proto.Json.Decode.int64
+            |> Proto.Json.Decode.messageField "sub" Nothing (Json.Decode.map Just decodeGetMessageRequestSubMessage)
+            |> Proto.Json.Decode.messageFieldEither "userId" "user_id" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
         )
 
 
@@ -711,9 +712,9 @@ decodeGetMessageRequest =
 -}
 decodeGetMessageRequestSubMessage : Json.Decode.Decoder GetMessageRequestSubMessage
 decodeGetMessageRequestSubMessage =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed GetMessageRequestSubMessage
-            |> Proto.Json.messageField "subfield" "" Proto.Json.string
+            |> Proto.Json.Decode.messageField "subfield" "" Proto.Json.Decode.string
         )
 
 
@@ -721,10 +722,10 @@ decodeGetMessageRequestSubMessage =
 -}
 decodeMessage : Json.Decode.Decoder Message
 decodeMessage =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Message
-            |> Proto.Json.messageFieldEither "messageId" "message_id" "" Proto.Json.string
-            |> Proto.Json.messageField "text" "" Proto.Json.string
+            |> Proto.Json.Decode.messageFieldEither "messageId" "message_id" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.messageField "text" "" Proto.Json.Decode.string
         )
 
 
@@ -732,10 +733,10 @@ decodeMessage =
 -}
 decodeUpdateMessageRequest : Json.Decode.Decoder UpdateMessageRequest
 decodeUpdateMessageRequest =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed UpdateMessageRequest
-            |> Proto.Json.messageFieldEither "messageId" "message_id" "" Proto.Json.string
-            |> Proto.Json.messageField "message" Nothing (Json.Decode.map Just decodeMessage)
+            |> Proto.Json.Decode.messageFieldEither "messageId" "message_id" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.messageField "message" Nothing (Json.Decode.map Just decodeMessage)
         )
 
 
@@ -743,29 +744,29 @@ decodeUpdateMessageRequest =
 -}
 decodeEverything : Json.Decode.Decoder Everything
 decodeEverything =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Everything
-            |> Proto.Json.messageField "name" "" Proto.Json.string
-            |> Proto.Json.messageField "count" 0 Proto.Json.int32
-            |> Proto.Json.messageField "big" "0" Proto.Json.int64
-            |> Proto.Json.messageField "ubig" "0" Proto.Json.uint64
-            |> Proto.Json.messageField "flag" False Json.Decode.bool
-            |> Proto.Json.messageField "ratio" 0.0 Proto.Json.float
-            |> Proto.Json.messageField "scale" 0.0 Proto.Json.float32
-            |> Proto.Json.messageField "data" "" Proto.Json.bytes
-            |> Proto.Json.messageField "kind" KindUnspecified decodeKind
-            |> Proto.Json.messageField "tags" [] (Json.Decode.list Proto.Json.string)
-            |> Proto.Json.messageField "kinds" [] (Json.Decode.list decodeKind)
-            |> Proto.Json.messageField "numbers" [] (Json.Decode.list Proto.Json.int32)
-            |> Proto.Json.messageFieldEither "maybeCount" "maybe_count" Nothing (Json.Decode.map Just Proto.Json.int32)
-            |> Proto.Json.messageFieldEither "maybeName" "maybe_name" Nothing (Json.Decode.map Just Proto.Json.string)
-            |> Proto.Json.messageField "at" Nothing (Json.Decode.map Just Proto.Json.timestamp)
-            |> Proto.Json.messageField "wait" Nothing (Json.Decode.map Just Proto.Json.duration)
-            |> Proto.Json.messageField "mask" Nothing (Json.Decode.map Just Proto.Json.fieldMask)
-            |> Proto.Json.messageField "limit" Nothing (Json.Decode.map Just Proto.Json.int32)
-            |> Proto.Json.messageField "label" Nothing (Json.Decode.map Just Proto.Json.string)
-            |> Proto.Json.messageField "inner" Nothing (Json.Decode.map Just decodeInner)
-            |> Proto.Json.oneof decodeEverythingChoice
+            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.messageField "count" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.messageField "big" "0" Proto.Json.Decode.int64
+            |> Proto.Json.Decode.messageField "ubig" "0" Proto.Json.Decode.uint64
+            |> Proto.Json.Decode.messageField "flag" False Json.Decode.bool
+            |> Proto.Json.Decode.messageField "ratio" 0.0 Proto.Json.Decode.double
+            |> Proto.Json.Decode.messageField "scale" 0.0 Proto.Json.Decode.float
+            |> Proto.Json.Decode.messageField "data" "" Proto.Json.Decode.bytes
+            |> Proto.Json.Decode.messageField "kind" KindUnspecified decodeKind
+            |> Proto.Json.Decode.messageField "tags" [] (Json.Decode.list Proto.Json.Decode.string)
+            |> Proto.Json.Decode.messageField "kinds" [] (Json.Decode.list decodeKind)
+            |> Proto.Json.Decode.messageField "numbers" [] (Json.Decode.list Proto.Json.Decode.int32)
+            |> Proto.Json.Decode.messageFieldEither "maybeCount" "maybe_count" Nothing (Json.Decode.map Just Proto.Json.Decode.int32)
+            |> Proto.Json.Decode.messageFieldEither "maybeName" "maybe_name" Nothing (Json.Decode.map Just Proto.Json.Decode.string)
+            |> Proto.Json.Decode.messageField "at" Nothing (Json.Decode.map Just Proto.Json.Decode.timestamp)
+            |> Proto.Json.Decode.messageField "wait" Nothing (Json.Decode.map Just Proto.Json.Decode.duration)
+            |> Proto.Json.Decode.messageField "mask" Nothing (Json.Decode.map Just Proto.Json.Decode.fieldMask)
+            |> Proto.Json.Decode.messageField "limit" Nothing (Json.Decode.map Just Proto.Json.Decode.int32)
+            |> Proto.Json.Decode.messageField "label" Nothing (Json.Decode.map Just Proto.Json.Decode.string)
+            |> Proto.Json.Decode.messageField "inner" Nothing (Json.Decode.map Just decodeInner)
+            |> Proto.Json.Decode.oneof decodeEverythingChoice
         )
 
 
@@ -773,10 +774,10 @@ decodeEverything =
 -}
 decodeEverythingChoice : Json.Decode.Decoder EverythingChoice
 decodeEverythingChoice =
-    Proto.Json.members "choice"
+    Proto.Json.Decode.members "choice"
         EverythingChoiceUnset
-        [ Proto.Json.member "text" (Json.Decode.map EverythingChoiceText Proto.Json.string)
-        , Proto.Json.member "number" (Json.Decode.map EverythingChoiceNumber Proto.Json.int32)
+        [ Proto.Json.Decode.member "text" (Json.Decode.map EverythingChoiceText Proto.Json.Decode.string)
+        , Proto.Json.Decode.member "number" (Json.Decode.map EverythingChoiceNumber Proto.Json.Decode.int32)
         ]
 
 
@@ -784,10 +785,10 @@ decodeEverythingChoice =
 -}
 decodeInner : Json.Decode.Decoder Inner
 decodeInner =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Inner
-            |> Proto.Json.messageField "a" "" Proto.Json.string
-            |> Proto.Json.messageField "deep" Nothing (Json.Decode.map Just decodeDeep)
+            |> Proto.Json.Decode.messageField "a" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.messageField "deep" Nothing (Json.Decode.map Just decodeDeep)
         )
 
 
@@ -795,10 +796,10 @@ decodeInner =
 -}
 decodeDeep : Json.Decode.Decoder Deep
 decodeDeep =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Deep
-            |> Proto.Json.messageField "b" 0 Proto.Json.int32
-            |> Proto.Json.messageField "c" [] (Json.Decode.list Proto.Json.string)
+            |> Proto.Json.Decode.messageField "b" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.messageField "c" [] (Json.Decode.list Proto.Json.Decode.string)
         )
 
 
@@ -806,9 +807,9 @@ decodeDeep =
 -}
 decodeFileRequest : Json.Decode.Decoder FileRequest
 decodeFileRequest =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed FileRequest
-            |> Proto.Json.messageField "path" "" Proto.Json.string
+            |> Proto.Json.Decode.messageField "path" "" Proto.Json.Decode.string
         )
 
 
@@ -816,13 +817,13 @@ decodeFileRequest =
 -}
 decodeResource : Json.Decode.Decoder Resource
 decodeResource =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Resource
-            |> Proto.Json.messageField "name" "" Proto.Json.string
-            |> Proto.Json.messageFieldEither "displayName" "display_name" "" Proto.Json.string
-            |> Proto.Json.messageField "labels" Dict.empty (Proto.Json.stringDict Proto.Json.string)
-            |> Proto.Json.messageField "kinds" Dict.empty (Proto.Json.int64Dict decodeKind)
-            |> Proto.Json.messageField "weights" [] (Proto.Json.boolMap Proto.Json.float)
+            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.messageFieldEither "displayName" "display_name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.messageField "labels" Dict.empty (Proto.Json.Decode.stringDict Proto.Json.Decode.string)
+            |> Proto.Json.Decode.messageField "kinds" Dict.empty (Proto.Json.Decode.int64Dict decodeKind)
+            |> Proto.Json.Decode.messageField "weights" [] (Proto.Json.Decode.boolMap Proto.Json.Decode.double)
         )
 
 
@@ -830,10 +831,10 @@ decodeResource =
 -}
 decodeUpdateResourceRequest : Json.Decode.Decoder UpdateResourceRequest
 decodeUpdateResourceRequest =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed UpdateResourceRequest
-            |> Proto.Json.messageField "resource" Nothing (Json.Decode.map Just decodeResource)
-            |> Proto.Json.messageFieldEither "updateMask" "update_mask" Nothing (Json.Decode.map Just Proto.Json.fieldMask)
+            |> Proto.Json.Decode.messageField "resource" Nothing (Json.Decode.map Just decodeResource)
+            |> Proto.Json.Decode.messageFieldEither "updateMask" "update_mask" Nothing (Json.Decode.map Just Proto.Json.Decode.fieldMask)
         )
 
 

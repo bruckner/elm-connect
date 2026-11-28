@@ -18,7 +18,8 @@ import Notes.V1.Note
 import Notes.V1.Tag
 import Proto.Binary
 import Proto.Descriptors
-import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Version
@@ -130,23 +131,23 @@ registry =
 
 {-| Encodes a [`Note`](#Note) as proto3 JSON.
 -}
-encodeNote : Note -> Proto.Json.Encoder x
+encodeNote : Note -> Proto.Json.Encode.Encoder x
 encodeNote value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "title", Proto.Json.implicitField "" Json.Encode.string value.title )
-            , ( "tags", Proto.Json.totalRepeatedField encodeTag value.tags )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            [ ( "title", Proto.Json.Encode.implicit "" Json.Encode.string value.title )
+            , ( "tags", Proto.Json.Encode.totalRepeated encodeTag value.tags )
             ]
         )
 
 
 {-| Encodes a [`Tag`](#Tag) as proto3 JSON.
 -}
-encodeTag : Tag -> Proto.Json.Encoder x
+encodeTag : Tag -> Proto.Json.Encode.Encoder x
 encodeTag value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            [ ( "label", Proto.Json.Encode.implicit "" Json.Encode.string value.label )
             ]
         )
 
@@ -159,10 +160,10 @@ encodeTag value =
 -}
 decodeNote : Json.Decode.Decoder Note
 decodeNote =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Note
-            |> Proto.Json.messageField "title" "" Proto.Json.string
-            |> Proto.Json.messageField "tags" [] (Json.Decode.list decodeTag)
+            |> Proto.Json.Decode.messageField "title" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.messageField "tags" [] (Json.Decode.list decodeTag)
         )
 
 
@@ -170,9 +171,9 @@ decodeNote =
 -}
 decodeTag : Json.Decode.Decoder Tag
 decodeTag =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Tag
-            |> Proto.Json.messageField "label" "" Proto.Json.string
+            |> Proto.Json.Decode.messageField "label" "" Proto.Json.Decode.string
         )
 
 

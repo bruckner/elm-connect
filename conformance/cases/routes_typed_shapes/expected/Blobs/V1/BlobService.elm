@@ -18,7 +18,7 @@ import Blobs.V1.Slots
 import Blobs.V1.StampRequest
 import Json.Encode
 import Proto.Http
-import Proto.Json
+import Proto.Json.Encode
 import Proto.Method
 import Proto.Query
 import Proto.Route
@@ -314,7 +314,7 @@ routeFindBlob0 request_ =
     { method = "POST"
     , path = "v1/" ++ Proto.Route.segments name_ ++ ":find"
     , query = []
-    , body = Just (Proto.Route.without [ [ "name" ] ] (Proto.Json.encodeTotal (Blobs.V1.encodeBlob request_)))
+    , body = Just (Proto.Route.without [ [ "name" ] ] (Proto.Json.Encode.encodeTotal (Blobs.V1.encodeBlob request_)))
     , invalid = Proto.Route.checkSegments "name" [ "blobs", "*" ] name_
     }
 
@@ -378,7 +378,7 @@ routeAddFolder0 request_ =
     { method = "POST"
     , path = "v1/" ++ Proto.Route.segments parentName_ ++ "/children"
     , query = []
-    , body = Just (Proto.Route.without [ [ "parent", "name" ] ] (Proto.Json.encodeTotal (Blobs.V1.encodeFolder request_)))
+    , body = Just (Proto.Route.without [ [ "parent", "name" ] ] (Proto.Json.Encode.encodeTotal (Blobs.V1.encodeFolder request_)))
     , invalid = Proto.Route.checkSegments "parent.name" [ "folders", "*" ] parentName_
     }
 
@@ -394,7 +394,7 @@ routeMoveFolder0 request_ =
     { method = "POST"
     , path = "v1/" ++ Proto.Route.segments name_ ++ ":move"
     , query = []
-    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map (Proto.Json.encodeTotal << Blobs.V1.encodeFolder_) request_.parent))
+    , body = Just (Maybe.withDefault (Json.Encode.object []) (Maybe.map (Proto.Json.Encode.encodeTotal << Blobs.V1.encodeFolder_) request_.parent))
     , invalid = Proto.Route.checkSegments "name" [ "folders", "*" ] name_
     }
 

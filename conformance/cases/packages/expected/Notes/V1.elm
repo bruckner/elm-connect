@@ -15,7 +15,8 @@ import Json.Encode
 import Notes.V1.Note
 import Proto.Binary
 import Proto.Descriptors
-import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Version
@@ -126,15 +127,15 @@ registry =
 
 {-| Encodes a [`Note`](#Note) as proto3 JSON.
 -}
-encodeNote : Note -> Proto.Json.Encoder x
+encodeNote : Note -> Proto.Json.Encode.Encoder x
 encodeNote value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            ([ ( "title", Proto.Json.implicitField "" Json.Encode.string value.title )
-             , ( "author", Proto.Json.totalOptionalField Users.V1.encodeUser value.author )
-             , ( "requiredRole", Proto.Json.implicitField Users.V1.RoleUnspecified Users.V1.encodeRole value.requiredRole )
-             , ( "readers", Proto.Json.totalRepeatedField Users.V1.encodeUser value.readers )
-             , ( "roles", Proto.Json.dictField identity Users.V1.encodeRole value.roles )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            ([ ( "title", Proto.Json.Encode.implicit "" Json.Encode.string value.title )
+             , ( "author", Proto.Json.Encode.totalOptional Users.V1.encodeUser value.author )
+             , ( "requiredRole", Proto.Json.Encode.implicit Users.V1.RoleUnspecified Users.V1.encodeRole value.requiredRole )
+             , ( "readers", Proto.Json.Encode.totalRepeated Users.V1.encodeUser value.readers )
+             , ( "roles", Proto.Json.Encode.plainDict identity Users.V1.encodeRole value.roles )
              ]
                 ++ encodeNoteOwner value.owner
             )
@@ -150,7 +151,7 @@ encodeNoteOwner value =
             []
 
         NoteOwnerUser member ->
-            [ ( "user", Just (Proto.Json.encodeTotal (Users.V1.encodeUser member)) )
+            [ ( "user", Just (Proto.Json.Encode.encodeTotal (Users.V1.encodeUser member)) )
             ]
 
         NoteOwnerTeam member ->
@@ -166,14 +167,14 @@ encodeNoteOwner value =
 -}
 decodeNote : Json.Decode.Decoder Note
 decodeNote =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Note
-            |> Proto.Json.messageField "title" "" Proto.Json.string
-            |> Proto.Json.messageField "author" Nothing (Json.Decode.map Just Users.V1.decodeUser)
-            |> Proto.Json.messageFieldEither "requiredRole" "required_role" Users.V1.RoleUnspecified Users.V1.decodeRole
-            |> Proto.Json.messageField "readers" [] (Json.Decode.list Users.V1.decodeUser)
-            |> Proto.Json.messageField "roles" Dict.empty (Proto.Json.stringDict Users.V1.decodeRole)
-            |> Proto.Json.oneof decodeNoteOwner
+            |> Proto.Json.Decode.messageField "title" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.messageField "author" Nothing (Json.Decode.map Just Users.V1.decodeUser)
+            |> Proto.Json.Decode.messageFieldEither "requiredRole" "required_role" Users.V1.RoleUnspecified Users.V1.decodeRole
+            |> Proto.Json.Decode.messageField "readers" [] (Json.Decode.list Users.V1.decodeUser)
+            |> Proto.Json.Decode.messageField "roles" Dict.empty (Proto.Json.Decode.stringDict Users.V1.decodeRole)
+            |> Proto.Json.Decode.oneof decodeNoteOwner
         )
 
 
@@ -181,10 +182,10 @@ decodeNote =
 -}
 decodeNoteOwner : Json.Decode.Decoder NoteOwner
 decodeNoteOwner =
-    Proto.Json.members "owner"
+    Proto.Json.Decode.members "owner"
         NoteOwnerUnset
-        [ Proto.Json.member "user" (Json.Decode.map NoteOwnerUser Users.V1.decodeUser)
-        , Proto.Json.member "team" (Json.Decode.map NoteOwnerTeam Proto.Json.string)
+        [ Proto.Json.Decode.member "user" (Json.Decode.map NoteOwnerUser Users.V1.decodeUser)
+        , Proto.Json.Decode.member "team" (Json.Decode.map NoteOwnerTeam Proto.Json.Decode.string)
         ]
 
 

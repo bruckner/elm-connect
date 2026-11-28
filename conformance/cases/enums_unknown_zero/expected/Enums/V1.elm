@@ -5,7 +5,7 @@
 module Enums.V1 exposing (..)
 
 {-| The enums case's Status under enum\_unknown=zero: its decoder is
-Proto.Json.enumOrZero, reading an unknown name as the zero value as it
+Proto.Json.Decode.enumOrZero, reading an unknown name as the zero value as it
 does an unknown number; the rest of the output is the enums case's.
 -}
 
@@ -17,7 +17,8 @@ import Json.Encode
 import Proto.Binary
 import Proto.Descriptors
 import Proto.Enum
-import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Version
@@ -135,11 +136,11 @@ encodeStatus value =
 
 {-| Encodes a [`Task`](#Task) as proto3 JSON.
 -}
-encodeTask : Task -> Proto.Json.Encoder x
+encodeTask : Task -> Proto.Json.Encode.Encoder x
 encodeTask value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "status", Proto.Json.implicitField StatusUnspecified encodeStatus value.status )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            [ ( "status", Proto.Json.Encode.implicit StatusUnspecified encodeStatus value.status )
             ]
         )
 
@@ -152,7 +153,7 @@ encodeTask value =
 -}
 decodeStatus : Json.Decode.Decoder Status
 decodeStatus =
-    Proto.Json.enumOrZero "Status"
+    Proto.Json.Decode.enumOrZero "Status"
         StatusUnspecified
         [ ( "STATUS_UNSPECIFIED", 0, StatusUnspecified )
         , ( "STATUS_ACTIVE", 1, StatusActive )
@@ -164,9 +165,9 @@ decodeStatus =
 -}
 decodeTask : Json.Decode.Decoder Task
 decodeTask =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Task
-            |> Proto.Json.messageField "status" StatusUnspecified decodeStatus
+            |> Proto.Json.Decode.messageField "status" StatusUnspecified decodeStatus
         )
 
 

@@ -13,7 +13,8 @@ import Json.Decode
 import Json.Encode
 import Proto.Binary
 import Proto.Duration
-import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Method
 import Proto.Timestamp
 import Proto.Value
@@ -45,8 +46,8 @@ now =
     Rpc.call
         (Proto.Method.init "clock.v1.Clock"
             "Now"
-            (Proto.Json.succeed << Proto.Json.encodeEmpty)
-            (\_ -> Proto.Json.timestamp)
+            (Proto.Json.Encode.succeed << Proto.Json.Encode.empty)
+            (\_ -> Proto.Json.Decode.timestamp)
             (Proto.Binary.messageEncoder Proto.Binary.empty)
             (Proto.Binary.messageDecoder Proto.Binary.timestamp)
         )
@@ -64,8 +65,8 @@ sleep =
     Rpc.call
         (Proto.Method.init "clock.v1.Clock"
             "Sleep"
-            Proto.Json.writeDuration
-            (\_ -> Proto.Json.empty)
+            Proto.Json.Encode.duration
+            (\_ -> Proto.Json.Decode.empty)
             (Proto.Binary.messageEncoder Proto.Binary.duration)
             (Proto.Binary.messageDecoder Proto.Binary.empty)
         )
@@ -83,8 +84,8 @@ mask =
     Rpc.call
         (Proto.Method.init "clock.v1.Clock"
             "Mask"
-            Proto.Json.writeFieldMask
-            (\_ -> Proto.Json.struct)
+            Proto.Json.Encode.fieldMask
+            (\_ -> Proto.Json.Decode.struct)
             (Proto.Binary.messageEncoder Proto.Binary.fieldMask)
             (Proto.Binary.messageDecoder Proto.Binary.struct)
         )
@@ -102,8 +103,8 @@ echo =
     Rpc.call
         (Proto.Method.init "clock.v1.Clock"
             "Echo"
-            Proto.Json.writeValue
-            (\_ -> Proto.Json.listValue)
+            Proto.Json.Encode.value
+            (\_ -> Proto.Json.Decode.listValue)
             (Proto.Binary.messageEncoder Proto.Binary.value)
             (Proto.Binary.messageDecoder Proto.Binary.listValue)
         )
@@ -121,8 +122,8 @@ ticks =
     Rpc.call
         (Proto.Method.init "clock.v1.Clock"
             "Ticks"
-            (Proto.Json.succeed << Proto.Json.encodeInt64AsInt)
-            (\_ -> Proto.Json.uint64AsInt)
+            (Proto.Json.Encode.succeed << Proto.Json.Encode.int64AsInt)
+            (\_ -> Proto.Json.Decode.uint64AsInt)
             (Proto.Binary.messageEncoder Proto.Binary.int64ValueAsInt)
             (Proto.Binary.messageDecoder Proto.Binary.uint64ValueAsInt)
         )
@@ -140,8 +141,8 @@ count =
     Rpc.call
         (Proto.Method.init "clock.v1.Clock"
             "Count"
-            (Proto.Json.succeed << Json.Encode.int)
-            (\_ -> Proto.Json.uint32)
+            (Proto.Json.Encode.succeed << Json.Encode.int)
+            (\_ -> Proto.Json.Decode.uint32)
             (Proto.Binary.messageEncoder Proto.Binary.int32Value)
             (Proto.Binary.messageDecoder Proto.Binary.uint32Value)
         )
@@ -159,8 +160,8 @@ ratio =
     Rpc.call
         (Proto.Method.init "clock.v1.Clock"
             "Ratio"
-            (Proto.Json.succeed << Proto.Json.encodeFloat)
-            (\_ -> Proto.Json.float32)
+            (Proto.Json.Encode.succeed << Proto.Json.Encode.double)
+            (\_ -> Proto.Json.Decode.float)
             (Proto.Binary.messageEncoder Proto.Binary.doubleValue)
             (Proto.Binary.messageDecoder Proto.Binary.floatValue)
         )
@@ -178,7 +179,7 @@ name =
     Rpc.call
         (Proto.Method.init "clock.v1.Clock"
             "Name"
-            (Proto.Json.succeed << Json.Encode.string)
+            (Proto.Json.Encode.succeed << Json.Encode.string)
             (\_ -> Json.Decode.bool)
             (Proto.Binary.messageEncoder Proto.Binary.stringValue)
             (Proto.Binary.messageDecoder Proto.Binary.boolValue)
@@ -197,8 +198,8 @@ raw =
     Rpc.call
         (Proto.Method.init "clock.v1.Clock"
             "Raw"
-            (Proto.Json.succeed << Proto.Json.encodeBytes)
-            (\_ -> Proto.Json.bytes)
+            (Proto.Json.Encode.succeed << Proto.Json.Encode.bytes)
+            (\_ -> Proto.Json.Decode.bytes)
             (Proto.Binary.messageEncoder Proto.Binary.bytesValue)
             (Proto.Binary.messageDecoder Proto.Binary.bytesValue)
         )

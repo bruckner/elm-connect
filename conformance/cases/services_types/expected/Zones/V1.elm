@@ -9,7 +9,8 @@ import Json.Decode
 import Json.Encode
 import Proto.Binary
 import Proto.Descriptors
-import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Version
@@ -123,23 +124,23 @@ registry =
 
 {-| Encodes a [`ZoneRequest`](#ZoneRequest) as proto3 JSON.
 -}
-encodeZoneRequest : ZoneRequest -> Proto.Json.Encoder x
+encodeZoneRequest : ZoneRequest -> Proto.Json.Encode.Encoder x
 encodeZoneRequest value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             ]
         )
 
 
 {-| Encodes a [`Zone`](#Zone) as proto3 JSON.
 -}
-encodeZone : Zone -> Proto.Json.Encoder x
+encodeZone : Zone -> Proto.Json.Encode.Encoder x
 encodeZone value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-            , ( "offsetSeconds", Proto.Json.implicitField 0 Proto.Json.encodeInt64AsInt value.offsetSeconds )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
+            , ( "offsetSeconds", Proto.Json.Encode.implicit 0 Proto.Json.Encode.int64AsInt value.offsetSeconds )
             ]
         )
 
@@ -152,9 +153,9 @@ encodeZone value =
 -}
 decodeZoneRequest : Json.Decode.Decoder ZoneRequest
 decodeZoneRequest =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed ZoneRequest
-            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
         )
 
 
@@ -162,10 +163,10 @@ decodeZoneRequest =
 -}
 decodeZone : Json.Decode.Decoder Zone
 decodeZone =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Zone
-            |> Proto.Json.messageField "name" "" Proto.Json.string
-            |> Proto.Json.messageFieldEither "offsetSeconds" "offset_seconds" 0 Proto.Json.int64AsInt
+            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.messageFieldEither "offsetSeconds" "offset_seconds" 0 Proto.Json.Decode.int64AsInt
         )
 
 

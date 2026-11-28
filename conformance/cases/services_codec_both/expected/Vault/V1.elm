@@ -20,7 +20,8 @@ import Proto.Binary
 import Proto.Descriptors
 import Proto.Enum
 import Proto.Error
-import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Version
@@ -236,50 +237,50 @@ encodeStatus value =
 
 {-| Encodes an [`Item`](#Item) as proto3 JSON, or fails if the input contains a bad value.
 -}
-encodeItem : Item -> Proto.Json.Encoder Proto.Error.Error
+encodeItem : Item -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeItem value =
-    Proto.Json.writeObject
-        [ Proto.Json.plainFields
-            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-            , ( "size", Proto.Json.implicitField "0" Proto.Json.encodeInt64 value.size )
-            , ( "status", Proto.Json.implicitField StatusUnspecified encodeStatus value.status )
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.plainFields
+            [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
+            , ( "size", Proto.Json.Encode.implicit "0" Proto.Json.Encode.int64 value.size )
+            , ( "status", Proto.Json.Encode.implicit StatusUnspecified encodeStatus value.status )
             ]
-        , Proto.Json.checkedFields
-            [ ( "payload", Proto.Json.writeOptional Proto.Json.writeAny value.payload )
-            , ( "attachments", Proto.Json.writeRepeated Proto.Json.writeAny value.attachments )
+        , Proto.Json.Encode.checkedFields
+            [ ( "payload", Proto.Json.Encode.optional Proto.Json.Encode.any value.payload )
+            , ( "attachments", Proto.Json.Encode.repeated Proto.Json.Encode.any value.attachments )
             ]
         ]
 
 
 {-| Encodes a [`GetItemRequest`](#GetItemRequest) as proto3 JSON.
 -}
-encodeGetItemRequest : GetItemRequest -> Proto.Json.Encoder x
+encodeGetItemRequest : GetItemRequest -> Proto.Json.Encode.Encoder x
 encodeGetItemRequest value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             ]
         )
 
 
 {-| Encodes a [`ListItemsRequest`](#ListItemsRequest) as proto3 JSON.
 -}
-encodeListItemsRequest : ListItemsRequest -> Proto.Json.Encoder x
+encodeListItemsRequest : ListItemsRequest -> Proto.Json.Encode.Encoder x
 encodeListItemsRequest value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "pageSize", Proto.Json.implicitField 0 Json.Encode.int value.pageSize )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            [ ( "pageSize", Proto.Json.Encode.implicit 0 Json.Encode.int value.pageSize )
             ]
         )
 
 
 {-| Encodes a [`ListItemsResponse`](#ListItemsResponse) as proto3 JSON, or fails if the input contains a bad value.
 -}
-encodeListItemsResponse : ListItemsResponse -> Proto.Json.Encoder Proto.Error.Error
+encodeListItemsResponse : ListItemsResponse -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeListItemsResponse value =
-    Proto.Json.writeObject
-        [ Proto.Json.checkedFields
-            [ ( "items", Proto.Json.writeDeeper (Proto.Json.writeRepeated encodeItem value.items) )
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.checkedFields
+            [ ( "items", Proto.Json.Encode.deeper (Proto.Json.Encode.repeated encodeItem value.items) )
             ]
         ]
 
@@ -292,7 +293,7 @@ encodeListItemsResponse value =
 -}
 decodeStatus : Json.Decode.Decoder Status
 decodeStatus =
-    Proto.Json.enum "Status"
+    Proto.Json.Decode.enum "Status"
         StatusUnspecified
         [ ( "STATUS_UNSPECIFIED", 0, StatusUnspecified )
         , ( "STATUS_SEALED", 1, StatusSealed )
@@ -304,20 +305,20 @@ decodeStatus =
 -}
 decodeItemWith : Proto.Registry.Registry -> Json.Decode.Decoder Item
 decodeItemWith types =
-    decodeNestedItemWith types (Proto.Json.registryDepth types)
+    decodeNestedItemWith types (Proto.Json.Decode.registryDepth types)
 
 
 {-| [`decodeItemWith`](#decodeItemWith) for an [`Item`](#Item) held `depth` levels deep.
 -}
 decodeNestedItemWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder Item
 decodeNestedItemWith types depth =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Item
-            |> Proto.Json.messageField "name" "" Proto.Json.string
-            |> Proto.Json.messageField "size" "0" Proto.Json.int64
-            |> Proto.Json.messageField "status" StatusUnspecified decodeStatus
-            |> Proto.Json.messageField "payload" Nothing (Json.Decode.map Just (Proto.Json.nestedAnyWith depth types))
-            |> Proto.Json.messageField "attachments" [] (Json.Decode.list (Proto.Json.nestedAnyWith depth types))
+            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.messageField "size" "0" Proto.Json.Decode.int64
+            |> Proto.Json.Decode.messageField "status" StatusUnspecified decodeStatus
+            |> Proto.Json.Decode.messageField "payload" Nothing (Json.Decode.map Just (Proto.Json.Decode.nestedAnyWith depth types))
+            |> Proto.Json.Decode.messageField "attachments" [] (Json.Decode.list (Proto.Json.Decode.nestedAnyWith depth types))
         )
 
 
@@ -325,9 +326,9 @@ decodeNestedItemWith types depth =
 -}
 decodeGetItemRequest : Json.Decode.Decoder GetItemRequest
 decodeGetItemRequest =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed GetItemRequest
-            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
         )
 
 
@@ -335,9 +336,9 @@ decodeGetItemRequest =
 -}
 decodeListItemsRequest : Json.Decode.Decoder ListItemsRequest
 decodeListItemsRequest =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed ListItemsRequest
-            |> Proto.Json.messageFieldEither "pageSize" "page_size" 0 Proto.Json.int32
+            |> Proto.Json.Decode.messageFieldEither "pageSize" "page_size" 0 Proto.Json.Decode.int32
         )
 
 
@@ -345,16 +346,16 @@ decodeListItemsRequest =
 -}
 decodeListItemsResponseWith : Proto.Registry.Registry -> Json.Decode.Decoder ListItemsResponse
 decodeListItemsResponseWith types =
-    decodeNestedListItemsResponseWith types (Proto.Json.registryDepth types)
+    decodeNestedListItemsResponseWith types (Proto.Json.Decode.registryDepth types)
 
 
 {-| [`decodeListItemsResponseWith`](#decodeListItemsResponseWith) for a [`ListItemsResponse`](#ListItemsResponse) held `depth` levels deep.
 -}
 decodeNestedListItemsResponseWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder ListItemsResponse
 decodeNestedListItemsResponseWith types depth =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed ListItemsResponse
-            |> Proto.Json.messageField "items" [] (Json.Decode.list (Proto.Json.deeper depth (decodeNestedItemWith types)))
+            |> Proto.Json.Decode.messageField "items" [] (Json.Decode.list (Proto.Json.Decode.deeper depth (decodeNestedItemWith types)))
         )
 
 

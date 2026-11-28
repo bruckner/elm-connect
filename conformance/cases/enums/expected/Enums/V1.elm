@@ -18,7 +18,8 @@ import Json.Encode
 import Proto.Binary
 import Proto.Descriptors
 import Proto.Enum
-import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Version
@@ -192,14 +193,14 @@ encodePriority value =
 
 {-| Encodes a [`Task`](#Task) as proto3 JSON.
 -}
-encodeTask : Task -> Proto.Json.Encoder x
+encodeTask : Task -> Proto.Json.Encode.Encoder x
 encodeTask value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "status", Proto.Json.implicitField StatusUnspecified encodeStatus value.status )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            [ ( "status", Proto.Json.Encode.implicit StatusUnspecified encodeStatus value.status )
             , ( "priority", Maybe.map encodePriority value.priority )
-            , ( "history", Proto.Json.repeatedField encodeStatus value.history )
-            , ( "previousStatus", Proto.Json.implicitField StatusUnspecified encodeStatus value.previousStatus )
+            , ( "history", Proto.Json.Encode.plainRepeated encodeStatus value.history )
+            , ( "previousStatus", Proto.Json.Encode.implicit StatusUnspecified encodeStatus value.previousStatus )
             ]
         )
 
@@ -212,7 +213,7 @@ encodeTask value =
 -}
 decodeStatus : Json.Decode.Decoder Status
 decodeStatus =
-    Proto.Json.enum "Status"
+    Proto.Json.Decode.enum "Status"
         StatusUnspecified
         [ ( "STATUS_UNSPECIFIED", 0, StatusUnspecified )
         , ( "STATUS_ACTIVE", 1, StatusActive )
@@ -224,7 +225,7 @@ decodeStatus =
 -}
 decodePriority : Json.Decode.Decoder Priority
 decodePriority =
-    Proto.Json.enum "Priority"
+    Proto.Json.Decode.enum "Priority"
         PriorityNone
         [ ( "NONE", 0, PriorityNone )
         , ( "UNSET", 0, PriorityNone )
@@ -240,12 +241,12 @@ decodePriority =
 -}
 decodeTask : Json.Decode.Decoder Task
 decodeTask =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Task
-            |> Proto.Json.messageField "status" StatusUnspecified decodeStatus
-            |> Proto.Json.messageField "priority" Nothing (Json.Decode.map Just decodePriority)
-            |> Proto.Json.messageField "history" [] (Json.Decode.list decodeStatus)
-            |> Proto.Json.messageFieldEither "previousStatus" "previous_status" StatusUnspecified decodeStatus
+            |> Proto.Json.Decode.messageField "status" StatusUnspecified decodeStatus
+            |> Proto.Json.Decode.messageField "priority" Nothing (Json.Decode.map Just decodePriority)
+            |> Proto.Json.Decode.messageField "history" [] (Json.Decode.list decodeStatus)
+            |> Proto.Json.Decode.messageFieldEither "previousStatus" "previous_status" StatusUnspecified decodeStatus
         )
 
 

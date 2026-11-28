@@ -1,5 +1,5 @@
 // The enums case's Status under enum_unknown=zero: its decoder is
-// Proto.Json.enumOrZero, reading an unknown name as the zero value as it
+// Proto.Json.Decode.enumOrZero, reading an unknown name as the zero value as it
 // does an unknown number; the rest of the output is the enums case's.
 syntax = "proto3";
 

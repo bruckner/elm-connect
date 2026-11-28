@@ -33,7 +33,8 @@ import Proto.Binary
 import Proto.Bytes
 import Proto.Descriptors
 import Proto.Error
-import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Query
 import Proto.Registry
@@ -341,114 +342,114 @@ registry =
 
 {-| Encodes a [`Blob`](#Blob) as proto3 JSON.
 -}
-encodeBlob : Blob -> Proto.Json.Encoder x
+encodeBlob : Blob -> Proto.Json.Encode.Encoder x
 encodeBlob value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "digest", Proto.Json.implicitBytesField value.digest )
-            , ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-            , ( "salt", Proto.Json.implicitBytesField value.salt )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            [ ( "digest", Proto.Json.Encode.implicitBytes value.digest )
+            , ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
+            , ( "salt", Proto.Json.Encode.implicitBytes value.salt )
             ]
         )
 
 
 {-| Encodes a [`Labeled`](#Labeled) as proto3 JSON, or fails if the input contains a bad value.
 -}
-encodeLabeled : Labeled -> Proto.Json.Encoder Proto.Error.Error
+encodeLabeled : Labeled -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeLabeled value =
-    Proto.Json.writeObject
-        [ Proto.Json.plainFields
-            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.plainFields
+            [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             ]
-        , Proto.Json.checkedFields
-            [ ( "label", Proto.Json.writeOptional Proto.Json.writeAny value.label )
+        , Proto.Json.Encode.checkedFields
+            [ ( "label", Proto.Json.Encode.optional Proto.Json.Encode.any value.label )
             ]
         ]
 
 
 {-| Encodes a [`LabelBlobRequest`](#LabelBlobRequest) as proto3 JSON, or fails if the input contains a bad value.
 -}
-encodeLabelBlobRequest : LabelBlobRequest -> Proto.Json.Encoder Proto.Error.Error
+encodeLabelBlobRequest : LabelBlobRequest -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeLabelBlobRequest value =
-    Proto.Json.writeObject
-        [ Proto.Json.checkedFields
-            [ ( "labeled", Proto.Json.writeDeeper (Proto.Json.writeOptional encodeLabeled value.labeled) )
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.checkedFields
+            [ ( "labeled", Proto.Json.Encode.deeper (Proto.Json.Encode.optional encodeLabeled value.labeled) )
             ]
-        , Proto.Json.plainFields
-            [ ( "shelf", Proto.Json.implicitField "" Json.Encode.string value.shelf )
+        , Proto.Json.Encode.plainFields
+            [ ( "shelf", Proto.Json.Encode.implicit "" Json.Encode.string value.shelf )
             ]
         ]
 
 
 {-| Encodes a [`Folder`](#Folder) as proto3 JSON.
 -}
-encodeFolder : Folder -> Proto.Json.Encoder x
+encodeFolder : Folder -> Proto.Json.Encode.Encoder x
 encodeFolder value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-            , ( "parent", Proto.Json.totalOptionalField encodeFolder_ value.parent )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
+            , ( "parent", Proto.Json.Encode.totalOptional encodeFolder_ value.parent )
             ]
         )
 
 
 {-| Encodes a [`Folder_`](#Folder_) as proto3 JSON.
 -}
-encodeFolder_ : Folder_ -> Proto.Json.Encoder x
+encodeFolder_ : Folder_ -> Proto.Json.Encode.Encoder x
 encodeFolder_ (Folder_ value) =
     encodeFolder value
 
 
 {-| Encodes a [`Slots`](#Slots) as proto3 JSON.
 -}
-encodeSlots : Slots -> Proto.Json.Encoder x
+encodeSlots : Slots -> Proto.Json.Encode.Encoder x
 encodeSlots value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-            , ( "nothing", Just (Proto.Json.encodeEmpty value.nothing) )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
+            , ( "nothing", Just (Proto.Json.Encode.empty value.nothing) )
             ]
         )
 
 
 {-| Encodes a [`Free`](#Free) as proto3 JSON, or fails if the input contains a bad value.
 -}
-encodeFree : Free -> Proto.Json.Encoder Proto.Error.Error
+encodeFree : Free -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeFree value =
-    Proto.Json.writeObject
-        [ Proto.Json.plainFields
-            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.plainFields
+            [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             ]
-        , Proto.Json.checkedFields
-            [ ( "value", Proto.Json.writeOptional Proto.Json.writeValue value.value )
+        , Proto.Json.Encode.checkedFields
+            [ ( "value", Proto.Json.Encode.optional Proto.Json.Encode.value value.value )
             ]
         ]
 
 
 {-| Encodes a [`Moment`](#Moment) as proto3 JSON, or fails if the input contains a bad value.
 -}
-encodeMoment : Moment -> Proto.Json.Encoder Proto.Error.Error
+encodeMoment : Moment -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeMoment value =
-    Proto.Json.writeObject
-        [ Proto.Json.plainFields
-            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.plainFields
+            [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             ]
-        , Proto.Json.checkedFields
-            [ ( "at", Proto.Json.writeOptional Proto.Json.writeTimestamp value.at )
+        , Proto.Json.Encode.checkedFields
+            [ ( "at", Proto.Json.Encode.optional Proto.Json.Encode.timestamp value.at )
             ]
         ]
 
 
 {-| Encodes a [`StampRequest`](#StampRequest) as proto3 JSON, or fails if the input contains a bad value.
 -}
-encodeStampRequest : StampRequest -> Proto.Json.Encoder Proto.Error.Error
+encodeStampRequest : StampRequest -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeStampRequest value =
-    Proto.Json.writeObject
-        [ Proto.Json.plainFields
-            [ ( "shelf", Proto.Json.implicitField "" Json.Encode.string value.shelf )
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.plainFields
+            [ ( "shelf", Proto.Json.Encode.implicit "" Json.Encode.string value.shelf )
             ]
-        , Proto.Json.checkedFields
-            [ ( "moment", Proto.Json.writeOptional encodeMoment value.moment )
+        , Proto.Json.Encode.checkedFields
+            [ ( "moment", Proto.Json.Encode.optional encodeMoment value.moment )
             ]
         ]
 
@@ -461,11 +462,11 @@ encodeStampRequest value =
 -}
 decodeBlob : Json.Decode.Decoder Blob
 decodeBlob =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Blob
-            |> Proto.Json.messageField "digest" Proto.Bytes.empty Proto.Json.bytesAsBytes
-            |> Proto.Json.messageField "name" "" Proto.Json.string
-            |> Proto.Json.messageField "salt" Proto.Bytes.empty Proto.Json.bytesAsBytes
+            |> Proto.Json.Decode.messageField "digest" Proto.Bytes.empty Proto.Json.Decode.bytesAsBytes
+            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.messageField "salt" Proto.Bytes.empty Proto.Json.Decode.bytesAsBytes
         )
 
 
@@ -473,17 +474,17 @@ decodeBlob =
 -}
 decodeLabeledWith : Proto.Registry.Registry -> Json.Decode.Decoder Labeled
 decodeLabeledWith types =
-    decodeNestedLabeledWith types (Proto.Json.registryDepth types)
+    decodeNestedLabeledWith types (Proto.Json.Decode.registryDepth types)
 
 
 {-| [`decodeLabeledWith`](#decodeLabeledWith) for a [`Labeled`](#Labeled) held `depth` levels deep.
 -}
 decodeNestedLabeledWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder Labeled
 decodeNestedLabeledWith types depth =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Labeled
-            |> Proto.Json.messageField "name" "" Proto.Json.string
-            |> Proto.Json.messageField "label" Nothing (Json.Decode.map Just (Proto.Json.nestedAnyWith depth types))
+            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.messageField "label" Nothing (Json.Decode.map Just (Proto.Json.Decode.nestedAnyWith depth types))
         )
 
 
@@ -491,17 +492,17 @@ decodeNestedLabeledWith types depth =
 -}
 decodeLabelBlobRequestWith : Proto.Registry.Registry -> Json.Decode.Decoder LabelBlobRequest
 decodeLabelBlobRequestWith types =
-    decodeNestedLabelBlobRequestWith types (Proto.Json.registryDepth types)
+    decodeNestedLabelBlobRequestWith types (Proto.Json.Decode.registryDepth types)
 
 
 {-| [`decodeLabelBlobRequestWith`](#decodeLabelBlobRequestWith) for a [`LabelBlobRequest`](#LabelBlobRequest) held `depth` levels deep.
 -}
 decodeNestedLabelBlobRequestWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder LabelBlobRequest
 decodeNestedLabelBlobRequestWith types depth =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed LabelBlobRequest
-            |> Proto.Json.messageField "labeled" Nothing (Json.Decode.map Just (Proto.Json.deeper depth (decodeNestedLabeledWith types)))
-            |> Proto.Json.messageField "shelf" "" Proto.Json.string
+            |> Proto.Json.Decode.messageField "labeled" Nothing (Json.Decode.map Just (Proto.Json.Decode.deeper depth (decodeNestedLabeledWith types)))
+            |> Proto.Json.Decode.messageField "shelf" "" Proto.Json.Decode.string
         )
 
 
@@ -516,12 +517,12 @@ decodeFolder =
 -}
 decodeNestedFolder : Int -> Json.Decode.Decoder Folder
 decodeNestedFolder =
-    Proto.Json.memo
+    Proto.Json.Decode.memo
         (\depth ->
-            Proto.Json.message
+            Proto.Json.Decode.message
                 (Json.Decode.succeed Folder
-                    |> Proto.Json.messageField "name" "" Proto.Json.string
-                    |> Proto.Json.messageField "parent" Nothing (Json.Decode.map Just (Json.Decode.map Folder_ (Json.Decode.lazy (\_ -> decodeNestedFolder (depth + 1)))))
+                    |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
+                    |> Proto.Json.Decode.messageField "parent" Nothing (Json.Decode.map Just (Json.Decode.map Folder_ (Json.Decode.lazy (\_ -> decodeNestedFolder (depth + 1)))))
                 )
         )
 
@@ -537,10 +538,10 @@ decodeFolder_ =
 -}
 decodeSlots : Json.Decode.Decoder Slots
 decodeSlots =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Slots
-            |> Proto.Json.messageField "name" "" Proto.Json.string
-            |> Proto.Json.messageField "nothing" () Proto.Json.empty
+            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.messageField "nothing" () Proto.Json.Decode.empty
         )
 
 
@@ -555,10 +556,10 @@ decodeFree =
 -}
 decodeNestedFree : Int -> Json.Decode.Decoder Free
 decodeNestedFree depth =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Free
-            |> Proto.Json.messageField "name" "" Proto.Json.string
-            |> Proto.Json.messageNullField "value" (Proto.Json.nestedValue depth)
+            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.messageNullField "value" (Proto.Json.Decode.nestedValue depth)
         )
 
 
@@ -566,10 +567,10 @@ decodeNestedFree depth =
 -}
 decodeMoment : Json.Decode.Decoder Moment
 decodeMoment =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Moment
-            |> Proto.Json.messageField "name" "" Proto.Json.string
-            |> Proto.Json.messageField "at" Nothing (Json.Decode.map Just Proto.Json.timestamp)
+            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.messageField "at" Nothing (Json.Decode.map Just Proto.Json.Decode.timestamp)
         )
 
 
@@ -577,10 +578,10 @@ decodeMoment =
 -}
 decodeStampRequest : Json.Decode.Decoder StampRequest
 decodeStampRequest =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed StampRequest
-            |> Proto.Json.messageField "shelf" "" Proto.Json.string
-            |> Proto.Json.messageField "moment" Nothing (Json.Decode.map Just decodeMoment)
+            |> Proto.Json.Decode.messageField "shelf" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.messageField "moment" Nothing (Json.Decode.map Just decodeMoment)
         )
 
 

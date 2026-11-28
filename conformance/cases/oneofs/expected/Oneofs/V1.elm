@@ -19,7 +19,8 @@ import Oneofs.V1.NoteEvent
 import Proto.Binary
 import Proto.Descriptors
 import Proto.Enum
-import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Version
@@ -250,23 +251,23 @@ encodeColor value =
 
 {-| Encodes a [`Created`](#Created) as proto3 JSON.
 -}
-encodeCreated : Created -> Proto.Json.Encoder x
+encodeCreated : Created -> Proto.Json.Encode.Encoder x
 encodeCreated value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "title", Proto.Json.implicitField "" Json.Encode.string value.title )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            [ ( "title", Proto.Json.Encode.implicit "" Json.Encode.string value.title )
             ]
         )
 
 
 {-| Encodes a [`NoteEvent`](#NoteEvent) as proto3 JSON.
 -}
-encodeNoteEvent : NoteEvent -> Proto.Json.Encoder x
+encodeNoteEvent : NoteEvent -> Proto.Json.Encode.Encoder x
 encodeNoteEvent value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            ([ ( "id", Proto.Json.implicitField "" Json.Encode.string value.id )
-             , ( "tags", Proto.Json.repeatedField Json.Encode.string value.tags )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            ([ ( "id", Proto.Json.Encode.implicit "" Json.Encode.string value.id )
+             , ( "tags", Proto.Json.Encode.plainRepeated Json.Encode.string value.tags )
              ]
                 ++ encodeNoteEventKind value.kind
                 ++ encodeNoteEventSource value.source
@@ -283,7 +284,7 @@ encodeNoteEventKind value =
             []
 
         NoteEventKindCreated member ->
-            [ ( "created", Just (Proto.Json.encodeTotal (encodeCreated member)) )
+            [ ( "created", Just (Proto.Json.Encode.encodeTotal (encodeCreated member)) )
             ]
 
         NoteEventKindTitleChanged member ->
@@ -295,7 +296,7 @@ encodeNoteEventKind value =
             ]
 
         NoteEventKindDeletedAt member ->
-            [ ( "deletedAt", Just (Proto.Json.encodeInt64 member) )
+            [ ( "deletedAt", Just (Proto.Json.Encode.int64 member) )
             ]
 
         NoteEventKindArchived ->
@@ -326,9 +327,9 @@ encodeNoteEventSource value =
 
 {-| Encodes a [`Choice`](#Choice) as proto3 JSON.
 -}
-encodeChoice : Choice -> Proto.Json.Encoder x
+encodeChoice : Choice -> Proto.Json.Encode.Encoder x
 encodeChoice value =
-    Proto.Json.succeed (Proto.Json.objectOfFields (encodeChoiceValue value.value))
+    Proto.Json.Encode.succeed (Proto.Json.Encode.plainObject (encodeChoiceValue value.value))
 
 
 {-| Encodes a [`ChoiceValue`](#ChoiceValue) as the members of its message's JSON object.
@@ -340,7 +341,7 @@ encodeChoiceValue value =
             []
 
         ChoiceValueNumber member ->
-            [ ( "number", Just (Proto.Json.encodeFloat member) )
+            [ ( "number", Just (Proto.Json.Encode.double member) )
             ]
 
         ChoiceValueText member ->
@@ -356,7 +357,7 @@ encodeChoiceValue value =
 -}
 decodeColor : Json.Decode.Decoder Color
 decodeColor =
-    Proto.Json.enum "Color"
+    Proto.Json.Decode.enum "Color"
         ColorUnspecified
         [ ( "COLOR_UNSPECIFIED", 0, ColorUnspecified )
         , ( "COLOR_RED", 1, ColorRed )
@@ -367,9 +368,9 @@ decodeColor =
 -}
 decodeCreated : Json.Decode.Decoder Created
 decodeCreated =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Created
-            |> Proto.Json.messageField "title" "" Proto.Json.string
+            |> Proto.Json.Decode.messageField "title" "" Proto.Json.Decode.string
         )
 
 
@@ -377,12 +378,12 @@ decodeCreated =
 -}
 decodeNoteEvent : Json.Decode.Decoder NoteEvent
 decodeNoteEvent =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed NoteEvent
-            |> Proto.Json.messageField "id" "" Proto.Json.string
-            |> Proto.Json.oneof decodeNoteEventKind
-            |> Proto.Json.oneof decodeNoteEventSource
-            |> Proto.Json.messageField "tags" [] (Json.Decode.list Proto.Json.string)
+            |> Proto.Json.Decode.messageField "id" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.oneof decodeNoteEventKind
+            |> Proto.Json.Decode.oneof decodeNoteEventSource
+            |> Proto.Json.Decode.messageField "tags" [] (Json.Decode.list Proto.Json.Decode.string)
         )
 
 
@@ -390,14 +391,14 @@ decodeNoteEvent =
 -}
 decodeNoteEventKind : Json.Decode.Decoder NoteEventKind
 decodeNoteEventKind =
-    Proto.Json.members "kind"
+    Proto.Json.Decode.members "kind"
         NoteEventKindUnset
-        [ Proto.Json.member "created" (Json.Decode.map NoteEventKindCreated decodeCreated)
-        , Proto.Json.memberEither "titleChanged" "title_changed" (Json.Decode.map NoteEventKindTitleChanged Proto.Json.string)
-        , Proto.Json.member "recolored" (Json.Decode.map NoteEventKindRecolored decodeColor)
-        , Proto.Json.memberEither "deletedAt" "deleted_at" (Json.Decode.map NoteEventKindDeletedAt Proto.Json.int64)
-        , Proto.Json.member "archived" (Json.Decode.map (\() -> NoteEventKindArchived) Proto.Json.empty)
-        , Proto.Json.memberEither "clearedAll" "cleared_all" (Json.Decode.map (\() -> NoteEventKindClearedAll) Proto.Json.empty)
+        [ Proto.Json.Decode.member "created" (Json.Decode.map NoteEventKindCreated decodeCreated)
+        , Proto.Json.Decode.memberEither "titleChanged" "title_changed" (Json.Decode.map NoteEventKindTitleChanged Proto.Json.Decode.string)
+        , Proto.Json.Decode.member "recolored" (Json.Decode.map NoteEventKindRecolored decodeColor)
+        , Proto.Json.Decode.memberEither "deletedAt" "deleted_at" (Json.Decode.map NoteEventKindDeletedAt Proto.Json.Decode.int64)
+        , Proto.Json.Decode.member "archived" (Json.Decode.map (\() -> NoteEventKindArchived) Proto.Json.Decode.empty)
+        , Proto.Json.Decode.memberEither "clearedAll" "cleared_all" (Json.Decode.map (\() -> NoteEventKindClearedAll) Proto.Json.Decode.empty)
         ]
 
 
@@ -405,10 +406,10 @@ decodeNoteEventKind =
 -}
 decodeNoteEventSource : Json.Decode.Decoder NoteEventSource
 decodeNoteEventSource =
-    Proto.Json.members "source"
+    Proto.Json.Decode.members "source"
         NoteEventSourceUnset
-        [ Proto.Json.member "user" (Json.Decode.map NoteEventSourceUser Proto.Json.string)
-        , Proto.Json.member "automated" (Json.Decode.map NoteEventSourceAutomated Json.Decode.bool)
+        [ Proto.Json.Decode.member "user" (Json.Decode.map NoteEventSourceUser Proto.Json.Decode.string)
+        , Proto.Json.Decode.member "automated" (Json.Decode.map NoteEventSourceAutomated Json.Decode.bool)
         ]
 
 
@@ -417,17 +418,17 @@ decodeNoteEventSource =
 decodeChoice : Json.Decode.Decoder Choice
 decodeChoice =
     Json.Decode.succeed Choice
-        |> Proto.Json.oneof decodeChoiceValue
+        |> Proto.Json.Decode.oneof decodeChoiceValue
 
 
 {-| Decodes a [`ChoiceValue`](#ChoiceValue) from the members of its message's JSON object.
 -}
 decodeChoiceValue : Json.Decode.Decoder ChoiceValue
 decodeChoiceValue =
-    Proto.Json.members "value"
+    Proto.Json.Decode.members "value"
         ChoiceValueUnset
-        [ Proto.Json.member "number" (Json.Decode.map ChoiceValueNumber Proto.Json.float)
-        , Proto.Json.memberEither "label" "text" (Json.Decode.map ChoiceValueText Proto.Json.string)
+        [ Proto.Json.Decode.member "number" (Json.Decode.map ChoiceValueNumber Proto.Json.Decode.double)
+        , Proto.Json.Decode.memberEither "label" "text" (Json.Decode.map ChoiceValueText Proto.Json.Decode.string)
         ]
 
 

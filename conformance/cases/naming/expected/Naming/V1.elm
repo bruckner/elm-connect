@@ -16,7 +16,8 @@ import Naming.V1.Tag
 import Proto.Binary
 import Proto.Descriptors
 import Proto.Enum
-import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Version
@@ -223,19 +224,19 @@ encodeHttpMethod value =
 
 {-| Encodes a [`Tag`](#Tag) as proto3 JSON.
 -}
-encodeTag : Tag -> Proto.Json.Encoder x
+encodeTag : Tag -> Proto.Json.Encode.Encoder x
 encodeTag value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            ([ ( "type", Proto.Json.implicitField "" Json.Encode.string value.type_ )
-             , ( "if", Proto.Json.implicitField False Json.Encode.bool value.if_ )
-             , ( "port", Proto.Json.implicitField 0 Json.Encode.int value.port_ )
-             , ( "alias", Proto.Json.implicitField "" Json.Encode.string value.alias )
-             , ( "screenName", Proto.Json.implicitField "" Json.Encode.string value.displayName )
-             , ( "httpUrl", Proto.Json.implicitField "" Json.Encode.string value.httpUrl )
-             , ( "v2Count", Proto.Json.implicitField 0 Json.Encode.int value.v2Count )
-             , ( "shape", Proto.Json.implicitField ShapeUnspecified encodeShape value.shape )
-             , ( "method", Proto.Json.implicitField HttpMethodUnspecified encodeHttpMethod value.method )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            ([ ( "type", Proto.Json.Encode.implicit "" Json.Encode.string value.type_ )
+             , ( "if", Proto.Json.Encode.implicit False Json.Encode.bool value.if_ )
+             , ( "port", Proto.Json.Encode.implicit 0 Json.Encode.int value.port_ )
+             , ( "alias", Proto.Json.Encode.implicit "" Json.Encode.string value.alias )
+             , ( "screenName", Proto.Json.Encode.implicit "" Json.Encode.string value.displayName )
+             , ( "httpUrl", Proto.Json.Encode.implicit "" Json.Encode.string value.httpUrl )
+             , ( "v2Count", Proto.Json.Encode.implicit 0 Json.Encode.int value.v2Count )
+             , ( "shape", Proto.Json.Encode.implicit ShapeUnspecified encodeShape value.shape )
+             , ( "method", Proto.Json.Encode.implicit HttpMethodUnspecified encodeHttpMethod value.method )
              ]
                 ++ encodeTagCase value.case_
             )
@@ -267,7 +268,7 @@ encodeTagCase value =
 -}
 decodeShape : Json.Decode.Decoder Shape
 decodeShape =
-    Proto.Json.enum "Shape"
+    Proto.Json.Decode.enum "Shape"
         ShapeUnspecified
         [ ( "SHAPE_UNSPECIFIED", 0, ShapeUnspecified )
         , ( "SHAPE_2D", 1, Shape2d )
@@ -280,7 +281,7 @@ decodeShape =
 -}
 decodeHttpMethod : Json.Decode.Decoder HttpMethod
 decodeHttpMethod =
-    Proto.Json.enum "HttpMethod"
+    Proto.Json.Decode.enum "HttpMethod"
         HttpMethodUnspecified
         [ ( "HTTP_METHOD_UNSPECIFIED", 0, HttpMethodUnspecified )
         , ( "HTTP_METHOD_GET", 1, HttpMethodGet )
@@ -292,18 +293,18 @@ decodeHttpMethod =
 -}
 decodeTag : Json.Decode.Decoder Tag
 decodeTag =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Tag
-            |> Proto.Json.messageField "type" "" Proto.Json.string
-            |> Proto.Json.messageField "if" False Json.Decode.bool
-            |> Proto.Json.messageField "port" 0 Proto.Json.int32
-            |> Proto.Json.messageField "alias" "" Proto.Json.string
-            |> Proto.Json.messageFieldEither "screenName" "display_name" "" Proto.Json.string
-            |> Proto.Json.messageFieldEither "httpUrl" "http_url" "" Proto.Json.string
-            |> Proto.Json.messageFieldEither "v2Count" "v2_count" 0 Proto.Json.int32
-            |> Proto.Json.messageField "shape" ShapeUnspecified decodeShape
-            |> Proto.Json.messageField "method" HttpMethodUnspecified decodeHttpMethod
-            |> Proto.Json.oneof decodeTagCase
+            |> Proto.Json.Decode.messageField "type" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.messageField "if" False Json.Decode.bool
+            |> Proto.Json.Decode.messageField "port" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.messageField "alias" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.messageFieldEither "screenName" "display_name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.messageFieldEither "httpUrl" "http_url" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.messageFieldEither "v2Count" "v2_count" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.messageField "shape" ShapeUnspecified decodeShape
+            |> Proto.Json.Decode.messageField "method" HttpMethodUnspecified decodeHttpMethod
+            |> Proto.Json.Decode.oneof decodeTagCase
         )
 
 
@@ -311,10 +312,10 @@ decodeTag =
 -}
 decodeTagCase : Json.Decode.Decoder TagCase
 decodeTagCase =
-    Proto.Json.members "case"
+    Proto.Json.Decode.members "case"
         TagCaseUnset
-        [ Proto.Json.member "then" (Json.Decode.map TagCaseThen Proto.Json.string)
-        , Proto.Json.member "of" (Json.Decode.map TagCaseOf Proto.Json.int32)
+        [ Proto.Json.Decode.member "then" (Json.Decode.map TagCaseThen Proto.Json.Decode.string)
+        , Proto.Json.Decode.member "of" (Json.Decode.map TagCaseOf Proto.Json.Decode.int32)
         ]
 
 

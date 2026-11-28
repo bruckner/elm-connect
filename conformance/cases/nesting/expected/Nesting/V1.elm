@@ -26,7 +26,8 @@ import Nesting.V1.Sum
 import Proto.Binary
 import Proto.Descriptors
 import Proto.Enum
-import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Version
@@ -421,113 +422,113 @@ encodeOuterInnerKind value =
 
 {-| Encodes an [`Outer`](#Outer) as proto3 JSON.
 -}
-encodeOuter : Outer -> Proto.Json.Encoder x
+encodeOuter : Outer -> Proto.Json.Encode.Encoder x
 encodeOuter value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "inner", Proto.Json.totalOptionalField encodeOuterInner value.inner )
-            , ( "kind", Proto.Json.implicitField OuterInnerKindUnspecified encodeOuterInnerKind value.kind )
-            , ( "all", Proto.Json.totalRepeatedField encodeOuterInnerDeepest value.all )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            [ ( "inner", Proto.Json.Encode.totalOptional encodeOuterInner value.inner )
+            , ( "kind", Proto.Json.Encode.implicit OuterInnerKindUnspecified encodeOuterInnerKind value.kind )
+            , ( "all", Proto.Json.Encode.totalRepeated encodeOuterInnerDeepest value.all )
             ]
         )
 
 
 {-| Encodes an [`OuterInner`](#OuterInner) as proto3 JSON.
 -}
-encodeOuterInner : OuterInner -> Proto.Json.Encoder x
+encodeOuterInner : OuterInner -> Proto.Json.Encode.Encoder x
 encodeOuterInner value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "deepest", Proto.Json.totalOptionalField encodeOuterInnerDeepest value.deepest )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            [ ( "deepest", Proto.Json.Encode.totalOptional encodeOuterInnerDeepest value.deepest )
             ]
         )
 
 
 {-| Encodes an [`OuterInnerDeepest`](#OuterInnerDeepest) as proto3 JSON.
 -}
-encodeOuterInnerDeepest : OuterInnerDeepest -> Proto.Json.Encoder x
+encodeOuterInnerDeepest : OuterInnerDeepest -> Proto.Json.Encode.Encoder x
 encodeOuterInnerDeepest value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "kind", Proto.Json.implicitField OuterInnerKindUnspecified encodeOuterInnerKind value.kind )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            [ ( "kind", Proto.Json.Encode.implicit OuterInnerKindUnspecified encodeOuterInnerKind value.kind )
             ]
         )
 
 
 {-| Encodes a [`Node`](#Node) as proto3 JSON.
 -}
-encodeNode : Node -> Proto.Json.Encoder x
+encodeNode : Node -> Proto.Json.Encode.Encoder x
 encodeNode value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
-            , ( "children", Proto.Json.totalRepeatedField encodeNode_ value.children )
-            , ( "byName", Proto.Json.dictField identity (\entry -> Proto.Json.encodeTotal (encodeNode_ entry)) value.byName )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            [ ( "label", Proto.Json.Encode.implicit "" Json.Encode.string value.label )
+            , ( "children", Proto.Json.Encode.totalRepeated encodeNode_ value.children )
+            , ( "byName", Proto.Json.Encode.plainDict identity (\entry -> Proto.Json.Encode.encodeTotal (encodeNode_ entry)) value.byName )
             ]
         )
 
 
 {-| Encodes a [`Node_`](#Node_) as proto3 JSON.
 -}
-encodeNode_ : Node_ -> Proto.Json.Encoder x
+encodeNode_ : Node_ -> Proto.Json.Encode.Encoder x
 encodeNode_ (Node_ value) =
     encodeNode value
 
 
 {-| Encodes a [`Person`](#Person) as proto3 JSON.
 -}
-encodePerson : Person -> Proto.Json.Encoder x
+encodePerson : Person -> Proto.Json.Encode.Encoder x
 encodePerson value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-            , ( "employer", Proto.Json.totalOptionalField encodeCompany_ value.employer )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
+            , ( "employer", Proto.Json.Encode.totalOptional encodeCompany_ value.employer )
             ]
         )
 
 
 {-| Encodes a [`Person_`](#Person_) as proto3 JSON.
 -}
-encodePerson_ : Person_ -> Proto.Json.Encoder x
+encodePerson_ : Person_ -> Proto.Json.Encode.Encoder x
 encodePerson_ (Person_ value) =
     encodePerson value
 
 
 {-| Encodes a [`Company`](#Company) as proto3 JSON.
 -}
-encodeCompany : Company -> Proto.Json.Encoder x
+encodeCompany : Company -> Proto.Json.Encode.Encoder x
 encodeCompany value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
-            , ( "staff", Proto.Json.totalRepeatedField encodePerson_ value.staff )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
+            , ( "staff", Proto.Json.Encode.totalRepeated encodePerson_ value.staff )
             ]
         )
 
 
 {-| Encodes a [`Company_`](#Company_) as proto3 JSON.
 -}
-encodeCompany_ : Company_ -> Proto.Json.Encoder x
+encodeCompany_ : Company_ -> Proto.Json.Encode.Encoder x
 encodeCompany_ (Company_ value) =
     encodeCompany value
 
 
 {-| Encodes a [`Forest`](#Forest) as proto3 JSON.
 -}
-encodeForest : Forest -> Proto.Json.Encoder x
+encodeForest : Forest -> Proto.Json.Encode.Encoder x
 encodeForest value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "trees", Proto.Json.totalRepeatedField encodeNode value.trees )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            [ ( "trees", Proto.Json.Encode.totalRepeated encodeNode value.trees )
             ]
         )
 
 
 {-| Encodes an [`Expr`](#Expr) as proto3 JSON.
 -}
-encodeExpr : Expr -> Proto.Json.Encoder x
+encodeExpr : Expr -> Proto.Json.Encode.Encoder x
 encodeExpr value =
-    Proto.Json.succeed (Proto.Json.objectOfFields (encodeExprValue value.value))
+    Proto.Json.Encode.succeed (Proto.Json.Encode.plainObject (encodeExprValue value.value))
 
 
 {-| Encodes an [`ExprValue`](#ExprValue) as the members of its message's JSON object.
@@ -539,21 +540,21 @@ encodeExprValue value =
             []
 
         ExprValueNumber member ->
-            [ ( "number", Just (Proto.Json.encodeInt64 member) )
+            [ ( "number", Just (Proto.Json.Encode.int64 member) )
             ]
 
         ExprValueSum member ->
-            [ ( "sum", Just (Proto.Json.encodeTotal (encodeSum member)) )
+            [ ( "sum", Just (Proto.Json.Encode.encodeTotal (encodeSum member)) )
             ]
 
 
 {-| Encodes a [`Sum`](#Sum) as proto3 JSON.
 -}
-encodeSum : Sum -> Proto.Json.Encoder x
+encodeSum : Sum -> Proto.Json.Encode.Encoder x
 encodeSum value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "terms", Proto.Json.totalRepeatedField encodeExpr value.terms )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            [ ( "terms", Proto.Json.Encode.totalRepeated encodeExpr value.terms )
             ]
         )
 
@@ -566,7 +567,7 @@ encodeSum value =
 -}
 decodeOuterInnerKind : Json.Decode.Decoder OuterInnerKind
 decodeOuterInnerKind =
-    Proto.Json.enum "Outer.Inner.Kind"
+    Proto.Json.Decode.enum "Outer.Inner.Kind"
         OuterInnerKindUnspecified
         [ ( "KIND_UNSPECIFIED", 0, OuterInnerKindUnspecified )
         , ( "KIND_DRAFT", 1, OuterInnerKindDraft )
@@ -578,11 +579,11 @@ decodeOuterInnerKind =
 -}
 decodeOuter : Json.Decode.Decoder Outer
 decodeOuter =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Outer
-            |> Proto.Json.messageField "inner" Nothing (Json.Decode.map Just decodeOuterInner)
-            |> Proto.Json.messageField "kind" OuterInnerKindUnspecified decodeOuterInnerKind
-            |> Proto.Json.messageField "all" [] (Json.Decode.list decodeOuterInnerDeepest)
+            |> Proto.Json.Decode.messageField "inner" Nothing (Json.Decode.map Just decodeOuterInner)
+            |> Proto.Json.Decode.messageField "kind" OuterInnerKindUnspecified decodeOuterInnerKind
+            |> Proto.Json.Decode.messageField "all" [] (Json.Decode.list decodeOuterInnerDeepest)
         )
 
 
@@ -590,9 +591,9 @@ decodeOuter =
 -}
 decodeOuterInner : Json.Decode.Decoder OuterInner
 decodeOuterInner =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed OuterInner
-            |> Proto.Json.messageField "deepest" Nothing (Json.Decode.map Just decodeOuterInnerDeepest)
+            |> Proto.Json.Decode.messageField "deepest" Nothing (Json.Decode.map Just decodeOuterInnerDeepest)
         )
 
 
@@ -600,9 +601,9 @@ decodeOuterInner =
 -}
 decodeOuterInnerDeepest : Json.Decode.Decoder OuterInnerDeepest
 decodeOuterInnerDeepest =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed OuterInnerDeepest
-            |> Proto.Json.messageField "kind" OuterInnerKindUnspecified decodeOuterInnerKind
+            |> Proto.Json.Decode.messageField "kind" OuterInnerKindUnspecified decodeOuterInnerKind
         )
 
 
@@ -617,13 +618,13 @@ decodeNode =
 -}
 decodeNestedNode : Int -> Json.Decode.Decoder Node
 decodeNestedNode =
-    Proto.Json.memo
+    Proto.Json.Decode.memo
         (\depth ->
-            Proto.Json.message
+            Proto.Json.Decode.message
                 (Json.Decode.succeed Node
-                    |> Proto.Json.messageField "label" "" Proto.Json.string
-                    |> Proto.Json.messageField "children" [] (Json.Decode.list (Json.Decode.map Node_ (Json.Decode.lazy (\_ -> decodeNestedNode (depth + 1)))))
-                    |> Proto.Json.messageFieldEither "byName" "by_name" Dict.empty (Proto.Json.stringDict (Json.Decode.map Node_ (Json.Decode.lazy (\_ -> decodeNestedNode (depth + 1)))))
+                    |> Proto.Json.Decode.messageField "label" "" Proto.Json.Decode.string
+                    |> Proto.Json.Decode.messageField "children" [] (Json.Decode.list (Json.Decode.map Node_ (Json.Decode.lazy (\_ -> decodeNestedNode (depth + 1)))))
+                    |> Proto.Json.Decode.messageFieldEither "byName" "by_name" Dict.empty (Proto.Json.Decode.stringDict (Json.Decode.map Node_ (Json.Decode.lazy (\_ -> decodeNestedNode (depth + 1)))))
                 )
         )
 
@@ -646,12 +647,12 @@ decodePerson =
 -}
 decodeNestedPerson : Int -> Json.Decode.Decoder Person
 decodeNestedPerson =
-    Proto.Json.memo
+    Proto.Json.Decode.memo
         (\depth ->
-            Proto.Json.message
+            Proto.Json.Decode.message
                 (Json.Decode.succeed Person
-                    |> Proto.Json.messageField "name" "" Proto.Json.string
-                    |> Proto.Json.messageField "employer" Nothing (Json.Decode.map Just (Json.Decode.map Company_ (Json.Decode.lazy (\_ -> decodeNestedCompany (depth + 1)))))
+                    |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
+                    |> Proto.Json.Decode.messageField "employer" Nothing (Json.Decode.map Just (Json.Decode.map Company_ (Json.Decode.lazy (\_ -> decodeNestedCompany (depth + 1)))))
                 )
         )
 
@@ -674,12 +675,12 @@ decodeCompany =
 -}
 decodeNestedCompany : Int -> Json.Decode.Decoder Company
 decodeNestedCompany =
-    Proto.Json.memo
+    Proto.Json.Decode.memo
         (\depth ->
-            Proto.Json.message
+            Proto.Json.Decode.message
                 (Json.Decode.succeed Company
-                    |> Proto.Json.messageField "name" "" Proto.Json.string
-                    |> Proto.Json.messageField "staff" [] (Json.Decode.list (Json.Decode.map Person_ (Json.Decode.lazy (\_ -> decodeNestedPerson (depth + 1)))))
+                    |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
+                    |> Proto.Json.Decode.messageField "staff" [] (Json.Decode.list (Json.Decode.map Person_ (Json.Decode.lazy (\_ -> decodeNestedPerson (depth + 1)))))
                 )
         )
 
@@ -702,9 +703,9 @@ decodeForest =
 -}
 decodeNestedForest : Int -> Json.Decode.Decoder Forest
 decodeNestedForest depth =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Forest
-            |> Proto.Json.messageField "trees" [] (Json.Decode.list (decodeNestedNode (depth + 1)))
+            |> Proto.Json.Decode.messageField "trees" [] (Json.Decode.list (decodeNestedNode (depth + 1)))
         )
 
 
@@ -719,10 +720,10 @@ decodeExpr =
 -}
 decodeNestedExpr : Int -> Json.Decode.Decoder Expr
 decodeNestedExpr =
-    Proto.Json.memo
+    Proto.Json.Decode.memo
         (\depth ->
             Json.Decode.succeed Expr
-                |> Proto.Json.oneof (decodeNestedExprValue depth)
+                |> Proto.Json.Decode.oneof (decodeNestedExprValue depth)
         )
 
 
@@ -737,10 +738,10 @@ decodeExprValue =
 -}
 decodeNestedExprValue : Int -> Json.Decode.Decoder ExprValue
 decodeNestedExprValue depth =
-    Proto.Json.members "value"
+    Proto.Json.Decode.members "value"
         ExprValueUnset
-        [ Proto.Json.member "number" (Json.Decode.map ExprValueNumber Proto.Json.int64)
-        , Proto.Json.member "sum" (Json.Decode.map ExprValueSum (Json.Decode.lazy (\_ -> decodeNestedSum (depth + 1))))
+        [ Proto.Json.Decode.member "number" (Json.Decode.map ExprValueNumber Proto.Json.Decode.int64)
+        , Proto.Json.Decode.member "sum" (Json.Decode.map ExprValueSum (Json.Decode.lazy (\_ -> decodeNestedSum (depth + 1))))
         ]
 
 
@@ -755,11 +756,11 @@ decodeSum =
 -}
 decodeNestedSum : Int -> Json.Decode.Decoder Sum
 decodeNestedSum =
-    Proto.Json.memo
+    Proto.Json.Decode.memo
         (\depth ->
-            Proto.Json.message
+            Proto.Json.Decode.message
                 (Json.Decode.succeed Sum
-                    |> Proto.Json.messageField "terms" [] (Json.Decode.list (Json.Decode.lazy (\_ -> decodeNestedExpr (depth + 1))))
+                    |> Proto.Json.Decode.messageField "terms" [] (Json.Decode.list (Json.Decode.lazy (\_ -> decodeNestedExpr (depth + 1))))
                 )
         )
 

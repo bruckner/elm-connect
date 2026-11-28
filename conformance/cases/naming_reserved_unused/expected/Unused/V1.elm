@@ -12,7 +12,8 @@ import Proto.Descriptors
 import Proto.Duration
 import Proto.Enum
 import Proto.Error
-import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Registry
 import Proto.Version
@@ -288,65 +289,65 @@ encodeChar value =
 
 {-| Encodes a [`Dict`](#Dict) as proto3 JSON.
 -}
-encodeDict : Dict -> Proto.Json.Encoder x
+encodeDict : Dict -> Proto.Json.Encode.Encoder x
 encodeDict value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             ]
         )
 
 
 {-| Encodes a [`Result`](#Result) as proto3 JSON.
 -}
-encodeResult : Result -> Proto.Json.Encoder x
+encodeResult : Result -> Proto.Json.Encode.Encoder x
 encodeResult value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "ok", Proto.Json.implicitField False Json.Encode.bool value.ok )
-            , ( "dict", Proto.Json.totalOptionalField encodeDict value.dict )
-            , ( "chars", Proto.Json.repeatedField encodeChar value.chars )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            [ ( "ok", Proto.Json.Encode.implicit False Json.Encode.bool value.ok )
+            , ( "dict", Proto.Json.Encode.totalOptional encodeDict value.dict )
+            , ( "chars", Proto.Json.Encode.plainRepeated encodeChar value.chars )
             ]
         )
 
 
 {-| Encodes a [`Duration`](#Duration) as proto3 JSON, or fails if the input contains a bad value.
 -}
-encodeDuration : Duration -> Proto.Json.Encoder Proto.Error.Error
+encodeDuration : Duration -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeDuration value =
-    Proto.Json.writeObject
-        [ Proto.Json.checkedFields
-            [ ( "length", Proto.Json.writeOptional Proto.Json.writeDuration value.length )
+    Proto.Json.Encode.object
+        [ Proto.Json.Encode.checkedFields
+            [ ( "length", Proto.Json.Encode.optional Proto.Json.Encode.duration value.length )
             ]
         ]
 
 
 {-| Encodes an [`Order`](#Order) as proto3 JSON.
 -}
-encodeOrder : Order -> Proto.Json.Encoder x
+encodeOrder : Order -> Proto.Json.Encode.Encoder x
 encodeOrder _ =
-    Proto.Json.succeed (Json.Encode.object [])
+    Proto.Json.Encode.succeed (Json.Encode.object [])
 
 
 {-| Encodes a [`Never`](#Never) as proto3 JSON.
 -}
-encodeNever : Never -> Proto.Json.Encoder x
+encodeNever : Never -> Proto.Json.Encode.Encoder x
 encodeNever _ =
-    Proto.Json.succeed (Json.Encode.object [])
+    Proto.Json.Encode.succeed (Json.Encode.object [])
 
 
 {-| Encodes a [`Cmd`](#Cmd) as proto3 JSON.
 -}
-encodeCmd : Cmd -> Proto.Json.Encoder x
+encodeCmd : Cmd -> Proto.Json.Encode.Encoder x
 encodeCmd _ =
-    Proto.Json.succeed (Json.Encode.object [])
+    Proto.Json.Encode.succeed (Json.Encode.object [])
 
 
 {-| Encodes a [`True`](#True) as proto3 JSON.
 -}
-encodeTrue : True -> Proto.Json.Encoder x
+encodeTrue : True -> Proto.Json.Encode.Encoder x
 encodeTrue _ =
-    Proto.Json.succeed (Json.Encode.object [])
+    Proto.Json.Encode.succeed (Json.Encode.object [])
 
 
 
@@ -357,7 +358,7 @@ encodeTrue _ =
 -}
 decodeChar : Json.Decode.Decoder Char
 decodeChar =
-    Proto.Json.enum "Char"
+    Proto.Json.Decode.enum "Char"
         CharUnspecified
         [ ( "CHAR_UNSPECIFIED", 0, CharUnspecified )
         , ( "CHAR_A", 1, CharA )
@@ -368,9 +369,9 @@ decodeChar =
 -}
 decodeDict : Json.Decode.Decoder Dict
 decodeDict =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Dict
-            |> Proto.Json.messageField "name" "" Proto.Json.string
+            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
         )
 
 
@@ -378,11 +379,11 @@ decodeDict =
 -}
 decodeResult : Json.Decode.Decoder Result
 decodeResult =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Result
-            |> Proto.Json.messageField "ok" False Json.Decode.bool
-            |> Proto.Json.messageField "dict" Nothing (Json.Decode.map Just decodeDict)
-            |> Proto.Json.messageField "chars" [] (Json.Decode.list decodeChar)
+            |> Proto.Json.Decode.messageField "ok" False Json.Decode.bool
+            |> Proto.Json.Decode.messageField "dict" Nothing (Json.Decode.map Just decodeDict)
+            |> Proto.Json.Decode.messageField "chars" [] (Json.Decode.list decodeChar)
         )
 
 
@@ -390,9 +391,9 @@ decodeResult =
 -}
 decodeDuration : Json.Decode.Decoder Duration
 decodeDuration =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Duration
-            |> Proto.Json.messageField "length" Nothing (Json.Decode.map Just Proto.Json.duration)
+            |> Proto.Json.Decode.messageField "length" Nothing (Json.Decode.map Just Proto.Json.Decode.duration)
         )
 
 
@@ -400,28 +401,28 @@ decodeDuration =
 -}
 decodeOrder : Json.Decode.Decoder Order
 decodeOrder =
-    Proto.Json.emptyMessage
+    Proto.Json.Decode.emptyMessage
 
 
 {-| Decodes a [`Never`](#Never) from proto3 JSON.
 -}
 decodeNever : Json.Decode.Decoder Never
 decodeNever =
-    Proto.Json.emptyMessage
+    Proto.Json.Decode.emptyMessage
 
 
 {-| Decodes a [`Cmd`](#Cmd) from proto3 JSON.
 -}
 decodeCmd : Json.Decode.Decoder Cmd
 decodeCmd =
-    Proto.Json.emptyMessage
+    Proto.Json.Decode.emptyMessage
 
 
 {-| Decodes a [`True`](#True) from proto3 JSON.
 -}
 decodeTrue : Json.Decode.Decoder True
 decodeTrue =
-    Proto.Json.emptyMessage
+    Proto.Json.Decode.emptyMessage
 
 
 

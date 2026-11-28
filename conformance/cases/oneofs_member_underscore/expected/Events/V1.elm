@@ -12,7 +12,8 @@ import Json.Decode
 import Json.Encode
 import Proto.Binary
 import Proto.Descriptors
-import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message
 import Proto.Query
 import Proto.Registry
@@ -182,11 +183,11 @@ registry =
 
 {-| Encodes an [`Event`](#Event) as proto3 JSON.
 -}
-encodeEvent : Event -> Proto.Json.Encoder x
+encodeEvent : Event -> Proto.Json.Encode.Encoder x
 encodeEvent value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            ([ ( "name", Proto.Json.implicitField "" Json.Encode.string value.name )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            ([ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
              ]
                 ++ encodeEventKind value.kind
             )
@@ -212,11 +213,11 @@ encodeEventKind value =
 
 {-| Encodes a [`ListEventsRequest`](#ListEventsRequest) as proto3 JSON.
 -}
-encodeListEventsRequest : ListEventsRequest -> Proto.Json.Encoder x
+encodeListEventsRequest : ListEventsRequest -> Proto.Json.Encode.Encoder x
 encodeListEventsRequest value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            ([ ( "parent", Proto.Json.implicitField "" Json.Encode.string value.parent )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            ([ ( "parent", Proto.Json.Encode.implicit "" Json.Encode.string value.parent )
              ]
                 ++ encodeListEventsRequestFilter value.filter
             )
@@ -238,11 +239,11 @@ encodeListEventsRequestFilter value =
 
 {-| Encodes a [`ListEventsResponse`](#ListEventsResponse) as proto3 JSON.
 -}
-encodeListEventsResponse : ListEventsResponse -> Proto.Json.Encoder x
+encodeListEventsResponse : ListEventsResponse -> Proto.Json.Encode.Encoder x
 encodeListEventsResponse value =
-    Proto.Json.succeed
-        (Proto.Json.objectOfFields
-            [ ( "events", Proto.Json.totalRepeatedField encodeEvent value.events )
+    Proto.Json.Encode.succeed
+        (Proto.Json.Encode.plainObject
+            [ ( "events", Proto.Json.Encode.totalRepeated encodeEvent value.events )
             ]
         )
 
@@ -255,10 +256,10 @@ encodeListEventsResponse value =
 -}
 decodeEvent : Json.Decode.Decoder Event
 decodeEvent =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed Event
-            |> Proto.Json.messageField "name" "" Proto.Json.string
-            |> Proto.Json.oneof decodeEventKind
+            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.oneof decodeEventKind
         )
 
 
@@ -266,10 +267,10 @@ decodeEvent =
 -}
 decodeEventKind : Json.Decode.Decoder EventKind
 decodeEventKind =
-    Proto.Json.members "kind"
+    Proto.Json.Decode.members "kind"
         EventKindUnset
-        [ Proto.Json.memberEither "Legacy" "_legacy" (Json.Decode.map EventKindLegacy Proto.Json.string)
-        , Proto.Json.member "count" (Json.Decode.map EventKindCount Proto.Json.int32)
+        [ Proto.Json.Decode.memberEither "Legacy" "_legacy" (Json.Decode.map EventKindLegacy Proto.Json.Decode.string)
+        , Proto.Json.Decode.member "count" (Json.Decode.map EventKindCount Proto.Json.Decode.int32)
         ]
 
 
@@ -277,10 +278,10 @@ decodeEventKind =
 -}
 decodeListEventsRequest : Json.Decode.Decoder ListEventsRequest
 decodeListEventsRequest =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed ListEventsRequest
-            |> Proto.Json.messageField "parent" "" Proto.Json.string
-            |> Proto.Json.oneof decodeListEventsRequestFilter
+            |> Proto.Json.Decode.messageField "parent" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.oneof decodeListEventsRequestFilter
         )
 
 
@@ -288,9 +289,9 @@ decodeListEventsRequest =
 -}
 decodeListEventsRequestFilter : Json.Decode.Decoder ListEventsRequestFilter
 decodeListEventsRequestFilter =
-    Proto.Json.members "filter"
+    Proto.Json.Decode.members "filter"
         ListEventsRequestFilterUnset
-        [ Proto.Json.memberEither "Legacy" "_legacy" (Json.Decode.map ListEventsRequestFilterLegacy Proto.Json.string)
+        [ Proto.Json.Decode.memberEither "Legacy" "_legacy" (Json.Decode.map ListEventsRequestFilterLegacy Proto.Json.Decode.string)
         ]
 
 
@@ -298,9 +299,9 @@ decodeListEventsRequestFilter =
 -}
 decodeListEventsResponse : Json.Decode.Decoder ListEventsResponse
 decodeListEventsResponse =
-    Proto.Json.message
+    Proto.Json.Decode.message
         (Json.Decode.succeed ListEventsResponse
-            |> Proto.Json.messageField "events" [] (Json.Decode.list decodeEvent)
+            |> Proto.Json.Decode.messageField "events" [] (Json.Decode.list decodeEvent)
         )
 
 
