@@ -44,8 +44,8 @@ listEvents =
             "ListEvents"
             Events.V1.encodeListEventsRequest
             (\_ -> Events.V1.decodeListEventsResponse)
-            Events.V1.encodeListEventsRequestBytes
-            Events.V1.decodeListEventsResponseBytes
+            Events.V1.encodeListEventsRequestBinary
+            Events.V1.decodeListEventsResponseBinary
             |> Proto.Method.withRoutes [ routeListEvents0 ]
         )
 

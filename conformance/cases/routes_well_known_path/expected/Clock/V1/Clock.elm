@@ -46,8 +46,8 @@ getMoment =
             "GetMoment"
             Clock.V1.encodeMoment
             (\_ -> Clock.V1.decodeMoment)
-            Clock.V1.encodeMomentBytes
-            Clock.V1.decodeMomentBytes
+            Clock.V1.encodeMomentBinary
+            Clock.V1.decodeMomentBinary
             |> Proto.Method.withRoutes [ routeGetMoment0 ]
         )
 
@@ -66,8 +66,8 @@ maskMoment =
             "MaskMoment"
             Clock.V1.encodeMoment
             (\_ -> Clock.V1.decodeMoment)
-            Clock.V1.encodeMomentBytes
-            Clock.V1.decodeMomentBytes
+            Clock.V1.encodeMomentBinary
+            Clock.V1.decodeMomentBinary
             |> Proto.Method.withRoutes [ routeMaskMoment0 ]
         )
 
@@ -86,8 +86,8 @@ countMoment =
             "CountMoment"
             Clock.V1.encodeMoment
             (\_ -> Clock.V1.decodeMoment)
-            Clock.V1.encodeMomentBytes
-            Clock.V1.decodeMomentBytes
+            Clock.V1.encodeMomentBinary
+            Clock.V1.decodeMomentBinary
             |> Proto.Method.withRoutes [ routeCountMoment0 ]
         )
 
@@ -106,8 +106,8 @@ waitMoment =
             "WaitMoment"
             Clock.V1.encodeMoment
             (\_ -> Clock.V1.decodeMoment)
-            Clock.V1.encodeMomentBytes
-            Clock.V1.decodeMomentBytes
+            Clock.V1.encodeMomentBinary
+            Clock.V1.decodeMomentBinary
             |> Proto.Method.withJsonRoutes [ routeWaitMoment0 ]
         )
 
@@ -126,8 +126,8 @@ listPauses =
             "ListPauses"
             Clock.V1.encodePauses
             (\_ -> Clock.V1.decodePauses)
-            Clock.V1.encodePausesBytes
-            Clock.V1.decodePausesBytes
+            Clock.V1.encodePausesBinary
+            Clock.V1.decodePausesBinary
             |> Proto.Method.withRoutes [ routeListPauses0 ]
         )
 

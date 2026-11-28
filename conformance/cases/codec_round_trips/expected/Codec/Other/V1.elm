@@ -90,7 +90,7 @@ enumShade =
 -}
 messageRemote : Proto.Message.Message Remote
 messageRemote =
-    Proto.Message.init "codec.other.v1.Remote" encodeRemote decodeRemote encodeRemoteBytes decodeRemoteBytes
+    Proto.Message.init "codec.other.v1.Remote" encodeRemote decodeRemote encodeRemoteBinary decodeRemoteBinary
 
 
 
@@ -185,8 +185,8 @@ decodeRemote =
 
 {-| The number protobuf binary writes a [`Shade`](#Shade) as.
 -}
-encodeShadeBytes : Shade -> Int
-encodeShadeBytes value =
+encodeShadeBinary : Shade -> Int
+encodeShadeBinary value =
     case value of
         ShadeUnspecified ->
             0
@@ -200,11 +200,11 @@ encodeShadeBytes value =
 
 {-| Encodes a [`Remote`](#Remote) as protobuf binary.
 -}
-encodeRemoteBytes : Remote -> Bytes.Encode.Encoder
-encodeRemoteBytes value =
+encodeRemoteBinary : Remote -> Bytes.Encode.Encoder
+encodeRemoteBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.id
-        , Proto.Binary.implicit (Proto.Binary.enum encodeShadeBytes decodeShadeBytes) 2 value.shade
+        , Proto.Binary.implicit (Proto.Binary.enum encodeShadeBinary decodeShadeBinary) 2 value.shade
         , Proto.Binary.implicit Proto.Binary.int64 3 value.version
         ]
 
@@ -215,8 +215,8 @@ encodeRemoteBytes value =
 
 {-| A [`Shade`](#Shade) from the number protobuf binary carries.
 -}
-decodeShadeBytes : Int -> Shade
-decodeShadeBytes number =
+decodeShadeBinary : Int -> Shade
+decodeShadeBinary number =
     case number of
         1 ->
             ShadeLight
@@ -230,8 +230,8 @@ decodeShadeBytes number =
 
 {-| Decodes a [`Remote`](#Remote) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeRemoteBytes : Remote -> Proto.Binary.Decoder Remote
-mergeRemoteBytes =
+mergeRemoteBinary : Remote -> Proto.Binary.Decoder Remote
+mergeRemoteBinary =
     Proto.Binary.merge
         "codec.other.v1.Remote"
         (\number wire value ->
@@ -250,7 +250,7 @@ mergeRemoteBytes =
 
                 2 ->
                     Proto.Binary.field
-                        (Proto.Binary.enum encodeShadeBytes decodeShadeBytes)
+                        (Proto.Binary.enum encodeShadeBinary decodeShadeBinary)
                         (\v ->
                             { id = value.id
                             , shade = v
@@ -280,6 +280,6 @@ mergeRemoteBytes =
 
 {-| Decodes a [`Remote`](#Remote) from protobuf binary.
 -}
-decodeRemoteBytes : Proto.Binary.Decoder Remote
-decodeRemoteBytes =
-    mergeRemoteBytes defaultRemote
+decodeRemoteBinary : Proto.Binary.Decoder Remote
+decodeRemoteBinary =
+    mergeRemoteBinary defaultRemote

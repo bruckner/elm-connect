@@ -38,8 +38,8 @@ send =
             "Send"
             Chat.V1.encodeLine
             (\_ -> Chat.V1.decodeLine)
-            Chat.V1.encodeLineBytes
-            Chat.V1.decodeLineBytes
+            Chat.V1.encodeLineBinary
+            Chat.V1.decodeLineBinary
         )
 
 

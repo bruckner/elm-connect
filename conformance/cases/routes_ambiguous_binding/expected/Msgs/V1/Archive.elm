@@ -43,8 +43,8 @@ listArchived =
             "ListArchived"
             Msgs.V1.encodeMessageRequest
             (\_ -> Msgs.V1.decodeMessage)
-            Msgs.V1.encodeMessageRequestBytes
-            Msgs.V1.decodeMessageBytes
+            Msgs.V1.encodeMessageRequestBinary
+            Msgs.V1.decodeMessageBinary
             |> Proto.Method.withRoutes [ routeListArchived0 ]
         )
 

@@ -58,7 +58,7 @@ defaultNote =
 -}
 messageNote : Proto.Message.Message Note
 messageNote =
-    Proto.Message.init "notes.v1.Note" encodeNote decodeNote encodeNoteBytes decodeNoteBytes
+    Proto.Message.init "notes.v1.Note" encodeNote decodeNote encodeNoteBinary decodeNoteBinary
 
 
 
@@ -114,8 +114,8 @@ decodeNote =
 
 {-| Encodes a [`Note`](#Note) as protobuf binary.
 -}
-encodeNoteBytes : Note -> Bytes.Encode.Encoder
-encodeNoteBytes _ =
+encodeNoteBinary : Note -> Bytes.Encode.Encoder
+encodeNoteBinary _ =
     Bytes.Encode.sequence []
 
 
@@ -125,13 +125,13 @@ encodeNoteBytes _ =
 
 {-| Decodes a [`Note`](#Note) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeNoteBytes : Note -> Proto.Binary.Decoder Note
-mergeNoteBytes =
+mergeNoteBinary : Note -> Proto.Binary.Decoder Note
+mergeNoteBinary =
     Proto.Binary.merge "notes.v1.Note" (\_ wire value -> Proto.Binary.skip wire value) identity
 
 
 {-| Decodes a [`Note`](#Note) from protobuf binary.
 -}
-decodeNoteBytes : Proto.Binary.Decoder Note
-decodeNoteBytes =
-    mergeNoteBytes defaultNote
+decodeNoteBinary : Proto.Binary.Decoder Note
+decodeNoteBinary =
+    mergeNoteBinary defaultNote

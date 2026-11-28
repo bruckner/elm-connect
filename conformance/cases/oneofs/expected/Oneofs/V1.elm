@@ -185,21 +185,21 @@ enumColor =
 -}
 messageCreated : Proto.Message.Message Created
 messageCreated =
-    Proto.Message.init "oneofs.v1.Created" encodeCreated decodeCreated encodeCreatedBytes decodeCreatedBytes
+    Proto.Message.init "oneofs.v1.Created" encodeCreated decodeCreated encodeCreatedBinary decodeCreatedBinary
 
 
 {-| The typed value of [`NoteEvent`](#NoteEvent): its full name and codecs.
 -}
 messageNoteEvent : Proto.Message.Message NoteEvent
 messageNoteEvent =
-    Proto.Message.init "oneofs.v1.NoteEvent" encodeNoteEvent decodeNoteEvent encodeNoteEventBytes decodeNoteEventBytes
+    Proto.Message.init "oneofs.v1.NoteEvent" encodeNoteEvent decodeNoteEvent encodeNoteEventBinary decodeNoteEventBinary
 
 
 {-| The typed value of [`Choice`](#Choice): its full name and codecs.
 -}
 messageChoice : Proto.Message.Message Choice
 messageChoice =
-    Proto.Message.init "oneofs.v1.Choice" encodeChoice decodeChoice encodeChoiceBytes decodeChoiceBytes
+    Proto.Message.init "oneofs.v1.Choice" encodeChoice decodeChoice encodeChoiceBinary decodeChoiceBinary
 
 
 
@@ -437,8 +437,8 @@ decodeChoiceValue =
 
 {-| The number protobuf binary writes a [`Color`](#Color) as.
 -}
-encodeColorBytes : Color -> Int
-encodeColorBytes value =
+encodeColorBinary : Color -> Int
+encodeColorBinary value =
     case value of
         ColorUnspecified ->
             0
@@ -449,8 +449,8 @@ encodeColorBytes value =
 
 {-| Encodes a [`Created`](#Created) as protobuf binary.
 -}
-encodeCreatedBytes : Created -> Bytes.Encode.Encoder
-encodeCreatedBytes value =
+encodeCreatedBinary : Created -> Bytes.Encode.Encoder
+encodeCreatedBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.title
         ]
@@ -458,26 +458,26 @@ encodeCreatedBytes value =
 
 {-| Encodes a [`NoteEvent`](#NoteEvent) as protobuf binary.
 -}
-encodeNoteEventBytes : NoteEvent -> Bytes.Encode.Encoder
-encodeNoteEventBytes value =
+encodeNoteEventBinary : NoteEvent -> Bytes.Encode.Encoder
+encodeNoteEventBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.id
         , case value.kind of
             NoteEventKindCreated member ->
-                Proto.Binary.present (Proto.Binary.embedded encodeCreatedBytes mergeCreatedBytes defaultCreated) 2 member
+                Proto.Binary.present (Proto.Binary.embedded encodeCreatedBinary mergeCreatedBinary defaultCreated) 2 member
 
             NoteEventKindTitleChanged member ->
                 Proto.Binary.present Proto.Binary.string 3 member
 
             NoteEventKindRecolored member ->
-                Proto.Binary.present (Proto.Binary.enum encodeColorBytes decodeColorBytes) 4 member
+                Proto.Binary.present (Proto.Binary.enum encodeColorBinary decodeColorBinary) 4 member
 
             NoteEventKindDeletedAt member ->
                 Proto.Binary.present Proto.Binary.int64 5 member
 
             _ ->
                 Bytes.Encode.sequence []
-        , encodeNoteEventSourceBytes value.source
+        , encodeNoteEventSourceBinary value.source
         , Proto.Binary.list Proto.Binary.string 8 value.tags
         , case value.kind of
             NoteEventKindArchived ->
@@ -493,20 +493,20 @@ encodeNoteEventBytes value =
 
 {-| Encodes a [`NoteEventKind`](#NoteEventKind) as protobuf binary: its set member's field.
 -}
-encodeNoteEventKindBytes : NoteEventKind -> Bytes.Encode.Encoder
-encodeNoteEventKindBytes value =
+encodeNoteEventKindBinary : NoteEventKind -> Bytes.Encode.Encoder
+encodeNoteEventKindBinary value =
     case value of
         NoteEventKindUnset ->
             Bytes.Encode.sequence []
 
         NoteEventKindCreated member ->
-            Proto.Binary.present (Proto.Binary.embedded encodeCreatedBytes mergeCreatedBytes defaultCreated) 2 member
+            Proto.Binary.present (Proto.Binary.embedded encodeCreatedBinary mergeCreatedBinary defaultCreated) 2 member
 
         NoteEventKindTitleChanged member ->
             Proto.Binary.present Proto.Binary.string 3 member
 
         NoteEventKindRecolored member ->
-            Proto.Binary.present (Proto.Binary.enum encodeColorBytes decodeColorBytes) 4 member
+            Proto.Binary.present (Proto.Binary.enum encodeColorBinary decodeColorBinary) 4 member
 
         NoteEventKindDeletedAt member ->
             Proto.Binary.present Proto.Binary.int64 5 member
@@ -520,8 +520,8 @@ encodeNoteEventKindBytes value =
 
 {-| Encodes a [`NoteEventSource`](#NoteEventSource) as protobuf binary: its set member's field.
 -}
-encodeNoteEventSourceBytes : NoteEventSource -> Bytes.Encode.Encoder
-encodeNoteEventSourceBytes value =
+encodeNoteEventSourceBinary : NoteEventSource -> Bytes.Encode.Encoder
+encodeNoteEventSourceBinary value =
     case value of
         NoteEventSourceUnset ->
             Bytes.Encode.sequence []
@@ -535,17 +535,17 @@ encodeNoteEventSourceBytes value =
 
 {-| Encodes a [`Choice`](#Choice) as protobuf binary.
 -}
-encodeChoiceBytes : Choice -> Bytes.Encode.Encoder
-encodeChoiceBytes value =
+encodeChoiceBinary : Choice -> Bytes.Encode.Encoder
+encodeChoiceBinary value =
     Bytes.Encode.sequence
-        [ encodeChoiceValueBytes value.value
+        [ encodeChoiceValueBinary value.value
         ]
 
 
 {-| Encodes a [`ChoiceValue`](#ChoiceValue) as protobuf binary: its set member's field.
 -}
-encodeChoiceValueBytes : ChoiceValue -> Bytes.Encode.Encoder
-encodeChoiceValueBytes value =
+encodeChoiceValueBinary : ChoiceValue -> Bytes.Encode.Encoder
+encodeChoiceValueBinary value =
     case value of
         ChoiceValueUnset ->
             Bytes.Encode.sequence []
@@ -563,8 +563,8 @@ encodeChoiceValueBytes value =
 
 {-| A [`Color`](#Color) from the number protobuf binary carries.
 -}
-decodeColorBytes : Int -> Color
-decodeColorBytes number =
+decodeColorBinary : Int -> Color
+decodeColorBinary number =
     case number of
         1 ->
             ColorRed
@@ -575,8 +575,8 @@ decodeColorBytes number =
 
 {-| Decodes a [`Created`](#Created) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeCreatedBytes : Created -> Proto.Binary.Decoder Created
-mergeCreatedBytes =
+mergeCreatedBinary : Created -> Proto.Binary.Decoder Created
+mergeCreatedBinary =
     Proto.Binary.merge
         "oneofs.v1.Created"
         (\number wire value ->
@@ -599,15 +599,15 @@ mergeCreatedBytes =
 
 {-| Decodes a [`Created`](#Created) from protobuf binary.
 -}
-decodeCreatedBytes : Proto.Binary.Decoder Created
-decodeCreatedBytes =
-    mergeCreatedBytes defaultCreated
+decodeCreatedBinary : Proto.Binary.Decoder Created
+decodeCreatedBinary =
+    mergeCreatedBinary defaultCreated
 
 
 {-| Decodes a [`NoteEvent`](#NoteEvent) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeNoteEventBytes : NoteEvent -> Proto.Binary.Decoder NoteEvent
-mergeNoteEventBytes =
+mergeNoteEventBinary : NoteEvent -> Proto.Binary.Decoder NoteEvent
+mergeNoteEventBinary =
     Proto.Binary.merge
         "oneofs.v1.NoteEvent"
         (\number wire value ->
@@ -627,7 +627,7 @@ mergeNoteEventBytes =
 
                 2 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeCreatedBytes mergeCreatedBytes defaultCreated)
+                        (Proto.Binary.embedded encodeCreatedBinary mergeCreatedBinary defaultCreated)
                         (case value.kind of
                             NoteEventKindCreated member ->
                                 Just member
@@ -660,7 +660,7 @@ mergeNoteEventBytes =
 
                 4 ->
                     Proto.Binary.field
-                        (Proto.Binary.enum encodeColorBytes decodeColorBytes)
+                        (Proto.Binary.enum encodeColorBinary decodeColorBinary)
                         (\v ->
                             { id = value.id
                             , kind = NoteEventKindRecolored v
@@ -764,15 +764,15 @@ mergeNoteEventBytes =
 
 {-| Decodes a [`NoteEvent`](#NoteEvent) from protobuf binary.
 -}
-decodeNoteEventBytes : Proto.Binary.Decoder NoteEvent
-decodeNoteEventBytes =
-    mergeNoteEventBytes defaultNoteEvent
+decodeNoteEventBinary : Proto.Binary.Decoder NoteEvent
+decodeNoteEventBinary =
+    mergeNoteEventBinary defaultNoteEvent
 
 
 {-| Decodes a [`Choice`](#Choice) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeChoiceBytes : Choice -> Proto.Binary.Decoder Choice
-mergeChoiceBytes =
+mergeChoiceBinary : Choice -> Proto.Binary.Decoder Choice
+mergeChoiceBinary =
     Proto.Binary.merge
         "oneofs.v1.Choice"
         (\number wire value ->
@@ -805,6 +805,6 @@ mergeChoiceBytes =
 
 {-| Decodes a [`Choice`](#Choice) from protobuf binary.
 -}
-decodeChoiceBytes : Proto.Binary.Decoder Choice
-decodeChoiceBytes =
-    mergeChoiceBytes defaultChoice
+decodeChoiceBinary : Proto.Binary.Decoder Choice
+decodeChoiceBinary =
+    mergeChoiceBinary defaultChoice

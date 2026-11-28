@@ -167,42 +167,42 @@ defaultIntroduceResponse =
 -}
 messageSayRequest : Proto.Message.Message SayRequest
 messageSayRequest =
-    Proto.Message.init "connectrpc.eliza.v1.SayRequest" encodeSayRequest decodeSayRequest encodeSayRequestBytes decodeSayRequestBytes
+    Proto.Message.init "connectrpc.eliza.v1.SayRequest" encodeSayRequest decodeSayRequest encodeSayRequestBinary decodeSayRequestBinary
 
 
 {-| The typed value of [`SayResponse`](#SayResponse): its full name and codecs.
 -}
 messageSayResponse : Proto.Message.Message SayResponse
 messageSayResponse =
-    Proto.Message.init "connectrpc.eliza.v1.SayResponse" encodeSayResponse decodeSayResponse encodeSayResponseBytes decodeSayResponseBytes
+    Proto.Message.init "connectrpc.eliza.v1.SayResponse" encodeSayResponse decodeSayResponse encodeSayResponseBinary decodeSayResponseBinary
 
 
 {-| The typed value of [`ConverseRequest`](#ConverseRequest): its full name and codecs.
 -}
 messageConverseRequest : Proto.Message.Message ConverseRequest
 messageConverseRequest =
-    Proto.Message.init "connectrpc.eliza.v1.ConverseRequest" encodeConverseRequest decodeConverseRequest encodeConverseRequestBytes decodeConverseRequestBytes
+    Proto.Message.init "connectrpc.eliza.v1.ConverseRequest" encodeConverseRequest decodeConverseRequest encodeConverseRequestBinary decodeConverseRequestBinary
 
 
 {-| The typed value of [`ConverseResponse`](#ConverseResponse): its full name and codecs.
 -}
 messageConverseResponse : Proto.Message.Message ConverseResponse
 messageConverseResponse =
-    Proto.Message.init "connectrpc.eliza.v1.ConverseResponse" encodeConverseResponse decodeConverseResponse encodeConverseResponseBytes decodeConverseResponseBytes
+    Proto.Message.init "connectrpc.eliza.v1.ConverseResponse" encodeConverseResponse decodeConverseResponse encodeConverseResponseBinary decodeConverseResponseBinary
 
 
 {-| The typed value of [`IntroduceRequest`](#IntroduceRequest): its full name and codecs.
 -}
 messageIntroduceRequest : Proto.Message.Message IntroduceRequest
 messageIntroduceRequest =
-    Proto.Message.init "connectrpc.eliza.v1.IntroduceRequest" encodeIntroduceRequest decodeIntroduceRequest encodeIntroduceRequestBytes decodeIntroduceRequestBytes
+    Proto.Message.init "connectrpc.eliza.v1.IntroduceRequest" encodeIntroduceRequest decodeIntroduceRequest encodeIntroduceRequestBinary decodeIntroduceRequestBinary
 
 
 {-| The typed value of [`IntroduceResponse`](#IntroduceResponse): its full name and codecs.
 -}
 messageIntroduceResponse : Proto.Message.Message IntroduceResponse
 messageIntroduceResponse =
-    Proto.Message.init "connectrpc.eliza.v1.IntroduceResponse" encodeIntroduceResponse decodeIntroduceResponse encodeIntroduceResponseBytes decodeIntroduceResponseBytes
+    Proto.Message.init "connectrpc.eliza.v1.IntroduceResponse" encodeIntroduceResponse decodeIntroduceResponse encodeIntroduceResponseBinary decodeIntroduceResponseBinary
 
 
 
@@ -380,8 +380,8 @@ decodeIntroduceResponse =
 
 {-| Encodes a [`SayRequest`](#SayRequest) as protobuf binary.
 -}
-encodeSayRequestBytes : SayRequest -> Bytes.Encode.Encoder
-encodeSayRequestBytes value =
+encodeSayRequestBinary : SayRequest -> Bytes.Encode.Encoder
+encodeSayRequestBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.sentence
         ]
@@ -389,8 +389,8 @@ encodeSayRequestBytes value =
 
 {-| Encodes a [`SayResponse`](#SayResponse) as protobuf binary.
 -}
-encodeSayResponseBytes : SayResponse -> Bytes.Encode.Encoder
-encodeSayResponseBytes value =
+encodeSayResponseBinary : SayResponse -> Bytes.Encode.Encoder
+encodeSayResponseBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.sentence
         ]
@@ -398,8 +398,8 @@ encodeSayResponseBytes value =
 
 {-| Encodes a [`ConverseRequest`](#ConverseRequest) as protobuf binary.
 -}
-encodeConverseRequestBytes : ConverseRequest -> Bytes.Encode.Encoder
-encodeConverseRequestBytes value =
+encodeConverseRequestBinary : ConverseRequest -> Bytes.Encode.Encoder
+encodeConverseRequestBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.sentence
         ]
@@ -407,8 +407,8 @@ encodeConverseRequestBytes value =
 
 {-| Encodes a [`ConverseResponse`](#ConverseResponse) as protobuf binary.
 -}
-encodeConverseResponseBytes : ConverseResponse -> Bytes.Encode.Encoder
-encodeConverseResponseBytes value =
+encodeConverseResponseBinary : ConverseResponse -> Bytes.Encode.Encoder
+encodeConverseResponseBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.sentence
         ]
@@ -416,8 +416,8 @@ encodeConverseResponseBytes value =
 
 {-| Encodes an [`IntroduceRequest`](#IntroduceRequest) as protobuf binary.
 -}
-encodeIntroduceRequestBytes : IntroduceRequest -> Bytes.Encode.Encoder
-encodeIntroduceRequestBytes value =
+encodeIntroduceRequestBinary : IntroduceRequest -> Bytes.Encode.Encoder
+encodeIntroduceRequestBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         ]
@@ -425,8 +425,8 @@ encodeIntroduceRequestBytes value =
 
 {-| Encodes an [`IntroduceResponse`](#IntroduceResponse) as protobuf binary.
 -}
-encodeIntroduceResponseBytes : IntroduceResponse -> Bytes.Encode.Encoder
-encodeIntroduceResponseBytes value =
+encodeIntroduceResponseBinary : IntroduceResponse -> Bytes.Encode.Encoder
+encodeIntroduceResponseBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.sentence
         ]
@@ -438,8 +438,8 @@ encodeIntroduceResponseBytes value =
 
 {-| Decodes a [`SayRequest`](#SayRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeSayRequestBytes : SayRequest -> Proto.Binary.Decoder SayRequest
-mergeSayRequestBytes =
+mergeSayRequestBinary : SayRequest -> Proto.Binary.Decoder SayRequest
+mergeSayRequestBinary =
     Proto.Binary.merge
         "connectrpc.eliza.v1.SayRequest"
         (\number wire value ->
@@ -462,15 +462,15 @@ mergeSayRequestBytes =
 
 {-| Decodes a [`SayRequest`](#SayRequest) from protobuf binary.
 -}
-decodeSayRequestBytes : Proto.Binary.Decoder SayRequest
-decodeSayRequestBytes =
-    mergeSayRequestBytes defaultSayRequest
+decodeSayRequestBinary : Proto.Binary.Decoder SayRequest
+decodeSayRequestBinary =
+    mergeSayRequestBinary defaultSayRequest
 
 
 {-| Decodes a [`SayResponse`](#SayResponse) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeSayResponseBytes : SayResponse -> Proto.Binary.Decoder SayResponse
-mergeSayResponseBytes =
+mergeSayResponseBinary : SayResponse -> Proto.Binary.Decoder SayResponse
+mergeSayResponseBinary =
     Proto.Binary.merge
         "connectrpc.eliza.v1.SayResponse"
         (\number wire value ->
@@ -493,15 +493,15 @@ mergeSayResponseBytes =
 
 {-| Decodes a [`SayResponse`](#SayResponse) from protobuf binary.
 -}
-decodeSayResponseBytes : Proto.Binary.Decoder SayResponse
-decodeSayResponseBytes =
-    mergeSayResponseBytes defaultSayResponse
+decodeSayResponseBinary : Proto.Binary.Decoder SayResponse
+decodeSayResponseBinary =
+    mergeSayResponseBinary defaultSayResponse
 
 
 {-| Decodes a [`ConverseRequest`](#ConverseRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeConverseRequestBytes : ConverseRequest -> Proto.Binary.Decoder ConverseRequest
-mergeConverseRequestBytes =
+mergeConverseRequestBinary : ConverseRequest -> Proto.Binary.Decoder ConverseRequest
+mergeConverseRequestBinary =
     Proto.Binary.merge
         "connectrpc.eliza.v1.ConverseRequest"
         (\number wire value ->
@@ -524,15 +524,15 @@ mergeConverseRequestBytes =
 
 {-| Decodes a [`ConverseRequest`](#ConverseRequest) from protobuf binary.
 -}
-decodeConverseRequestBytes : Proto.Binary.Decoder ConverseRequest
-decodeConverseRequestBytes =
-    mergeConverseRequestBytes defaultConverseRequest
+decodeConverseRequestBinary : Proto.Binary.Decoder ConverseRequest
+decodeConverseRequestBinary =
+    mergeConverseRequestBinary defaultConverseRequest
 
 
 {-| Decodes a [`ConverseResponse`](#ConverseResponse) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeConverseResponseBytes : ConverseResponse -> Proto.Binary.Decoder ConverseResponse
-mergeConverseResponseBytes =
+mergeConverseResponseBinary : ConverseResponse -> Proto.Binary.Decoder ConverseResponse
+mergeConverseResponseBinary =
     Proto.Binary.merge
         "connectrpc.eliza.v1.ConverseResponse"
         (\number wire value ->
@@ -555,15 +555,15 @@ mergeConverseResponseBytes =
 
 {-| Decodes a [`ConverseResponse`](#ConverseResponse) from protobuf binary.
 -}
-decodeConverseResponseBytes : Proto.Binary.Decoder ConverseResponse
-decodeConverseResponseBytes =
-    mergeConverseResponseBytes defaultConverseResponse
+decodeConverseResponseBinary : Proto.Binary.Decoder ConverseResponse
+decodeConverseResponseBinary =
+    mergeConverseResponseBinary defaultConverseResponse
 
 
 {-| Decodes an [`IntroduceRequest`](#IntroduceRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeIntroduceRequestBytes : IntroduceRequest -> Proto.Binary.Decoder IntroduceRequest
-mergeIntroduceRequestBytes =
+mergeIntroduceRequestBinary : IntroduceRequest -> Proto.Binary.Decoder IntroduceRequest
+mergeIntroduceRequestBinary =
     Proto.Binary.merge
         "connectrpc.eliza.v1.IntroduceRequest"
         (\number wire value ->
@@ -586,15 +586,15 @@ mergeIntroduceRequestBytes =
 
 {-| Decodes an [`IntroduceRequest`](#IntroduceRequest) from protobuf binary.
 -}
-decodeIntroduceRequestBytes : Proto.Binary.Decoder IntroduceRequest
-decodeIntroduceRequestBytes =
-    mergeIntroduceRequestBytes defaultIntroduceRequest
+decodeIntroduceRequestBinary : Proto.Binary.Decoder IntroduceRequest
+decodeIntroduceRequestBinary =
+    mergeIntroduceRequestBinary defaultIntroduceRequest
 
 
 {-| Decodes an [`IntroduceResponse`](#IntroduceResponse) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeIntroduceResponseBytes : IntroduceResponse -> Proto.Binary.Decoder IntroduceResponse
-mergeIntroduceResponseBytes =
+mergeIntroduceResponseBinary : IntroduceResponse -> Proto.Binary.Decoder IntroduceResponse
+mergeIntroduceResponseBinary =
     Proto.Binary.merge
         "connectrpc.eliza.v1.IntroduceResponse"
         (\number wire value ->
@@ -617,6 +617,6 @@ mergeIntroduceResponseBytes =
 
 {-| Decodes an [`IntroduceResponse`](#IntroduceResponse) from protobuf binary.
 -}
-decodeIntroduceResponseBytes : Proto.Binary.Decoder IntroduceResponse
-decodeIntroduceResponseBytes =
-    mergeIntroduceResponseBytes defaultIntroduceResponse
+decodeIntroduceResponseBinary : Proto.Binary.Decoder IntroduceResponse
+decodeIntroduceResponseBinary =
+    mergeIntroduceResponseBinary defaultIntroduceResponse

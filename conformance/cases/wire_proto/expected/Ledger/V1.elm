@@ -133,14 +133,14 @@ enumKind =
 -}
 messageEntry : Proto.Message.Message Entry
 messageEntry =
-    Proto.Message.init "ledger.v1.Entry" encodeEntry decodeEntry encodeEntryBytes decodeEntryBytes
+    Proto.Message.init "ledger.v1.Entry" encodeEntry decodeEntry encodeEntryBinary decodeEntryBinary
 
 
 {-| The typed value of [`GetEntryRequest`](#GetEntryRequest): its full name and codecs.
 -}
 messageGetEntryRequest : Proto.Message.Message GetEntryRequest
 messageGetEntryRequest =
-    Proto.Message.init "ledger.v1.GetEntryRequest" encodeGetEntryRequest decodeGetEntryRequest encodeGetEntryRequestBytes decodeGetEntryRequestBytes
+    Proto.Message.init "ledger.v1.GetEntryRequest" encodeGetEntryRequest decodeGetEntryRequest encodeGetEntryRequestBinary decodeGetEntryRequestBinary
 
 
 
@@ -310,8 +310,8 @@ decodeGetEntryRequest =
 
 {-| The number protobuf binary writes a [`Kind`](#Kind) as.
 -}
-encodeKindBytes : Kind -> Int
-encodeKindBytes value =
+encodeKindBinary : Kind -> Int
+encodeKindBinary value =
     case value of
         KindUnspecified ->
             0
@@ -325,22 +325,22 @@ encodeKindBytes value =
 
 {-| Encodes an [`Entry`](#Entry) as protobuf binary.
 -}
-encodeEntryBytes : Entry -> Bytes.Encode.Encoder
-encodeEntryBytes value =
+encodeEntryBinary : Entry -> Bytes.Encode.Encoder
+encodeEntryBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.memo
         , Proto.Binary.implicit Proto.Binary.sint64 2 value.amount
-        , Proto.Binary.implicit (Proto.Binary.enum encodeKindBytes decodeKindBytes) 3 value.kind
+        , Proto.Binary.implicit (Proto.Binary.enum encodeKindBinary decodeKindBinary) 3 value.kind
         , Proto.Binary.dict Proto.Binary.string Proto.Binary.int32 4 value.tags
-        , encodeEntrySourceBytes value.source
+        , encodeEntrySourceBinary value.source
         , Proto.Binary.listUnpacked Proto.Binary.int32 7 value.marks
         ]
 
 
 {-| Encodes an [`EntrySource`](#EntrySource) as protobuf binary: its set member's field.
 -}
-encodeEntrySourceBytes : EntrySource -> Bytes.Encode.Encoder
-encodeEntrySourceBytes value =
+encodeEntrySourceBinary : EntrySource -> Bytes.Encode.Encoder
+encodeEntrySourceBinary value =
     case value of
         EntrySourceUnset ->
             Bytes.Encode.sequence []
@@ -349,13 +349,13 @@ encodeEntrySourceBytes value =
             Proto.Binary.present Proto.Binary.string 5 member
 
         EntrySourceReversal member ->
-            Proto.Binary.present (Proto.Binary.embedded encodeEntryBytes mergeEntryBytes defaultEntry) 6 member
+            Proto.Binary.present (Proto.Binary.embedded encodeEntryBinary mergeEntryBinary defaultEntry) 6 member
 
 
 {-| Encodes a [`GetEntryRequest`](#GetEntryRequest) as protobuf binary.
 -}
-encodeGetEntryRequestBytes : GetEntryRequest -> Bytes.Encode.Encoder
-encodeGetEntryRequestBytes value =
+encodeGetEntryRequestBinary : GetEntryRequest -> Bytes.Encode.Encoder
+encodeGetEntryRequestBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.memo
         ]
@@ -367,8 +367,8 @@ encodeGetEntryRequestBytes value =
 
 {-| A [`Kind`](#Kind) from the number protobuf binary carries.
 -}
-decodeKindBytes : Int -> Kind
-decodeKindBytes number =
+decodeKindBinary : Int -> Kind
+decodeKindBinary number =
     case number of
         1 ->
             KindCredit
@@ -383,15 +383,15 @@ decodeKindBytes number =
 
 {-| Decodes an [`Entry`](#Entry) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeEntryBytes : Entry -> Proto.Binary.Decoder Entry
-mergeEntryBytes =
-    mergeNestedEntryBytes 1
+mergeEntryBinary : Entry -> Proto.Binary.Decoder Entry
+mergeEntryBinary =
+    mergeNestedEntryBinary 1
 
 
-{-| [`mergeEntryBytes`](#mergeEntryBytes) for an [`Entry`](#Entry) held `depth` levels deep.
+{-| [`mergeEntryBinary`](#mergeEntryBinary) for an [`Entry`](#Entry) held `depth` levels deep.
 -}
-mergeNestedEntryBytes : Int -> Entry -> Proto.Binary.Decoder Entry
-mergeNestedEntryBytes =
+mergeNestedEntryBinary : Int -> Entry -> Proto.Binary.Decoder Entry
+mergeNestedEntryBinary =
     Proto.Binary.memo
         (\depth ->
             Proto.Binary.merge
@@ -430,7 +430,7 @@ mergeNestedEntryBytes =
 
                         3 ->
                             Proto.Binary.field
-                                (Proto.Binary.enum encodeKindBytes decodeKindBytes)
+                                (Proto.Binary.enum encodeKindBinary decodeKindBinary)
                                 (\v ->
                                     { memo = value.memo
                                     , amount = value.amount
@@ -476,7 +476,7 @@ mergeNestedEntryBytes =
 
                         6 ->
                             Proto.Binary.fieldInto
-                                (Proto.Binary.recursive depth encodeEntryBytes mergeNestedEntryBytes defaultEntry)
+                                (Proto.Binary.recursive depth encodeEntryBinary mergeNestedEntryBinary defaultEntry)
                                 (case value.source of
                                     EntrySourceReversal member ->
                                         Just member
@@ -529,15 +529,15 @@ mergeNestedEntryBytes =
 
 {-| Decodes an [`Entry`](#Entry) from protobuf binary.
 -}
-decodeEntryBytes : Proto.Binary.Decoder Entry
-decodeEntryBytes =
-    mergeEntryBytes defaultEntry
+decodeEntryBinary : Proto.Binary.Decoder Entry
+decodeEntryBinary =
+    mergeEntryBinary defaultEntry
 
 
 {-| Decodes a [`GetEntryRequest`](#GetEntryRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeGetEntryRequestBytes : GetEntryRequest -> Proto.Binary.Decoder GetEntryRequest
-mergeGetEntryRequestBytes =
+mergeGetEntryRequestBinary : GetEntryRequest -> Proto.Binary.Decoder GetEntryRequest
+mergeGetEntryRequestBinary =
     Proto.Binary.merge
         "ledger.v1.GetEntryRequest"
         (\number wire value ->
@@ -560,6 +560,6 @@ mergeGetEntryRequestBytes =
 
 {-| Decodes a [`GetEntryRequest`](#GetEntryRequest) from protobuf binary.
 -}
-decodeGetEntryRequestBytes : Proto.Binary.Decoder GetEntryRequest
-decodeGetEntryRequestBytes =
-    mergeGetEntryRequestBytes defaultGetEntryRequest
+decodeGetEntryRequestBinary : Proto.Binary.Decoder GetEntryRequest
+decodeGetEntryRequestBinary =
+    mergeGetEntryRequestBinary defaultGetEntryRequest

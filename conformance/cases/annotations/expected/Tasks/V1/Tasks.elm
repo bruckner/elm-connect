@@ -38,8 +38,8 @@ getTask =
             "GetTask"
             Tasks.V1.encodeGetTaskRequest
             (\_ -> Tasks.V1.decodeTask)
-            Tasks.V1.encodeGetTaskRequestBytes
-            Tasks.V1.decodeTaskBytes
+            Tasks.V1.encodeGetTaskRequestBinary
+            Tasks.V1.decodeTaskBinary
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
         )
 
@@ -58,8 +58,8 @@ putTask =
             "PutTask"
             Tasks.V1.encodeTask
             (\_ -> Tasks.V1.decodeTask)
-            Tasks.V1.encodeTaskBytes
-            Tasks.V1.decodeTaskBytes
+            Tasks.V1.encodeTaskBinary
+            Tasks.V1.decodeTaskBinary
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyIdempotent
         )
 
@@ -78,8 +78,8 @@ closeTask =
             "CloseTask"
             Tasks.V1.encodeGetTaskRequest
             (\_ -> Tasks.V1.decodeTask)
-            Tasks.V1.encodeGetTaskRequestBytes
-            Tasks.V1.decodeTaskBytes
+            Tasks.V1.encodeGetTaskRequestBinary
+            Tasks.V1.decodeTaskBinary
         )
 
 

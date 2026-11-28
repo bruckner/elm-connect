@@ -130,21 +130,21 @@ defaultListEventsResponse =
 -}
 messageEvent : Proto.Message.Message Event
 messageEvent =
-    Proto.Message.init "events.v1.Event" encodeEvent decodeEvent encodeEventBytes decodeEventBytes
+    Proto.Message.init "events.v1.Event" encodeEvent decodeEvent encodeEventBinary decodeEventBinary
 
 
 {-| The typed value of [`ListEventsRequest`](#ListEventsRequest): its full name and codecs.
 -}
 messageListEventsRequest : Proto.Message.Message ListEventsRequest
 messageListEventsRequest =
-    Proto.Message.init "events.v1.ListEventsRequest" encodeListEventsRequest decodeListEventsRequest encodeListEventsRequestBytes decodeListEventsRequestBytes
+    Proto.Message.init "events.v1.ListEventsRequest" encodeListEventsRequest decodeListEventsRequest encodeListEventsRequestBinary decodeListEventsRequestBinary
 
 
 {-| The typed value of [`ListEventsResponse`](#ListEventsResponse): its full name and codecs.
 -}
 messageListEventsResponse : Proto.Message.Message ListEventsResponse
 messageListEventsResponse =
-    Proto.Message.init "events.v1.ListEventsResponse" encodeListEventsResponse decodeListEventsResponse encodeListEventsResponseBytes decodeListEventsResponseBytes
+    Proto.Message.init "events.v1.ListEventsResponse" encodeListEventsResponse decodeListEventsResponse encodeListEventsResponseBinary decodeListEventsResponseBinary
 
 
 
@@ -310,18 +310,18 @@ decodeListEventsResponse =
 
 {-| Encodes an [`Event`](#Event) as protobuf binary.
 -}
-encodeEventBytes : Event -> Bytes.Encode.Encoder
-encodeEventBytes value =
+encodeEventBinary : Event -> Bytes.Encode.Encoder
+encodeEventBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
-        , encodeEventKindBytes value.kind
+        , encodeEventKindBinary value.kind
         ]
 
 
 {-| Encodes an [`EventKind`](#EventKind) as protobuf binary: its set member's field.
 -}
-encodeEventKindBytes : EventKind -> Bytes.Encode.Encoder
-encodeEventKindBytes value =
+encodeEventKindBinary : EventKind -> Bytes.Encode.Encoder
+encodeEventKindBinary value =
     case value of
         EventKindUnset ->
             Bytes.Encode.sequence []
@@ -335,18 +335,18 @@ encodeEventKindBytes value =
 
 {-| Encodes a [`ListEventsRequest`](#ListEventsRequest) as protobuf binary.
 -}
-encodeListEventsRequestBytes : ListEventsRequest -> Bytes.Encode.Encoder
-encodeListEventsRequestBytes value =
+encodeListEventsRequestBinary : ListEventsRequest -> Bytes.Encode.Encoder
+encodeListEventsRequestBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.parent
-        , encodeListEventsRequestFilterBytes value.filter
+        , encodeListEventsRequestFilterBinary value.filter
         ]
 
 
 {-| Encodes a [`ListEventsRequestFilter`](#ListEventsRequestFilter) as protobuf binary: its set member's field.
 -}
-encodeListEventsRequestFilterBytes : ListEventsRequestFilter -> Bytes.Encode.Encoder
-encodeListEventsRequestFilterBytes value =
+encodeListEventsRequestFilterBinary : ListEventsRequestFilter -> Bytes.Encode.Encoder
+encodeListEventsRequestFilterBinary value =
     case value of
         ListEventsRequestFilterUnset ->
             Bytes.Encode.sequence []
@@ -357,10 +357,10 @@ encodeListEventsRequestFilterBytes value =
 
 {-| Encodes a [`ListEventsResponse`](#ListEventsResponse) as protobuf binary.
 -}
-encodeListEventsResponseBytes : ListEventsResponse -> Bytes.Encode.Encoder
-encodeListEventsResponseBytes value =
+encodeListEventsResponseBinary : ListEventsResponse -> Bytes.Encode.Encoder
+encodeListEventsResponseBinary value =
     Bytes.Encode.sequence
-        [ Proto.Binary.list (Proto.Binary.embedded encodeEventBytes mergeEventBytes defaultEvent) 1 value.events
+        [ Proto.Binary.list (Proto.Binary.embedded encodeEventBinary mergeEventBinary defaultEvent) 1 value.events
         ]
 
 
@@ -370,8 +370,8 @@ encodeListEventsResponseBytes value =
 
 {-| Decodes an [`Event`](#Event) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeEventBytes : Event -> Proto.Binary.Decoder Event
-mergeEventBytes =
+mergeEventBinary : Event -> Proto.Binary.Decoder Event
+mergeEventBinary =
     Proto.Binary.merge
         "events.v1.Event"
         (\number wire value ->
@@ -417,15 +417,15 @@ mergeEventBytes =
 
 {-| Decodes an [`Event`](#Event) from protobuf binary.
 -}
-decodeEventBytes : Proto.Binary.Decoder Event
-decodeEventBytes =
-    mergeEventBytes defaultEvent
+decodeEventBinary : Proto.Binary.Decoder Event
+decodeEventBinary =
+    mergeEventBinary defaultEvent
 
 
 {-| Decodes a [`ListEventsRequest`](#ListEventsRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeListEventsRequestBytes : ListEventsRequest -> Proto.Binary.Decoder ListEventsRequest
-mergeListEventsRequestBytes =
+mergeListEventsRequestBinary : ListEventsRequest -> Proto.Binary.Decoder ListEventsRequest
+mergeListEventsRequestBinary =
     Proto.Binary.merge
         "events.v1.ListEventsRequest"
         (\number wire value ->
@@ -460,22 +460,22 @@ mergeListEventsRequestBytes =
 
 {-| Decodes a [`ListEventsRequest`](#ListEventsRequest) from protobuf binary.
 -}
-decodeListEventsRequestBytes : Proto.Binary.Decoder ListEventsRequest
-decodeListEventsRequestBytes =
-    mergeListEventsRequestBytes defaultListEventsRequest
+decodeListEventsRequestBinary : Proto.Binary.Decoder ListEventsRequest
+decodeListEventsRequestBinary =
+    mergeListEventsRequestBinary defaultListEventsRequest
 
 
 {-| Decodes a [`ListEventsResponse`](#ListEventsResponse) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeListEventsResponseBytes : ListEventsResponse -> Proto.Binary.Decoder ListEventsResponse
-mergeListEventsResponseBytes =
+mergeListEventsResponseBinary : ListEventsResponse -> Proto.Binary.Decoder ListEventsResponse
+mergeListEventsResponseBinary =
     Proto.Binary.merge
         "events.v1.ListEventsResponse"
         (\number wire value ->
             case number of
                 1 ->
                     Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeEventBytes mergeEventBytes defaultEvent)
+                        (Proto.Binary.embedded encodeEventBinary mergeEventBinary defaultEvent)
                         (\v ->
                             { events = v
                             }
@@ -495,9 +495,9 @@ mergeListEventsResponseBytes =
 
 {-| Decodes a [`ListEventsResponse`](#ListEventsResponse) from protobuf binary.
 -}
-decodeListEventsResponseBytes : Proto.Binary.Decoder ListEventsResponse
-decodeListEventsResponseBytes =
-    mergeListEventsResponseBytes defaultListEventsResponse
+decodeListEventsResponseBinary : Proto.Binary.Decoder ListEventsResponse
+decodeListEventsResponseBinary =
+    mergeListEventsResponseBinary defaultListEventsResponse
 
 
 

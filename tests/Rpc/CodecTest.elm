@@ -8,7 +8,7 @@ import Expect
 import Http
 import Json.Decode
 import Json.Encode
-import Notes exposing (base, binaryOnly, both, encodeGetNoteBytes, jsonOnly, over, titleHi)
+import Notes exposing (base, binaryOnly, both, encodeGetNoteBinary, jsonOnly, over, titleHi)
 import Octets exposing (bytesOf)
 import Proto.Bytes
 import Proto.Error
@@ -169,7 +169,7 @@ methods =
                 , Rpc.responseBytes binary (binaryOnly { name = "x" }) (Http.GoodStatus_ (metadata 200 [ ( "content-type", "application/proto" ) ]) titleHi)
                 )
                     |> Expect.equal
-                        ( ( "POST", Just "application/proto", Just (Proto.Bytes.toBase64 (Bytes.Encode.encode (encodeGetNoteBytes { name = "x" }))) )
+                        ( ( "POST", Just "application/proto", Just (Proto.Bytes.toBase64 (Bytes.Encode.encode (encodeGetNoteBinary { name = "x" }))) )
                         , Ok "hi"
                         )
         , test "a binary-only method without side effects is a GET under withConnectGet" <|

@@ -187,49 +187,49 @@ enumChar =
 -}
 messageDict : Proto.Message.Message Dict
 messageDict =
-    Proto.Message.init "unused.v1.Dict" encodeDict decodeDict encodeDictBytes decodeDictBytes
+    Proto.Message.init "unused.v1.Dict" encodeDict decodeDict encodeDictBinary decodeDictBinary
 
 
 {-| The typed value of [`Result`](#Result): its full name and codecs.
 -}
 messageResult : Proto.Message.Message Result
 messageResult =
-    Proto.Message.init "unused.v1.Result" encodeResult decodeResult encodeResultBytes decodeResultBytes
+    Proto.Message.init "unused.v1.Result" encodeResult decodeResult encodeResultBinary decodeResultBinary
 
 
 {-| The typed value of [`Duration`](#Duration): its full name and codecs.
 -}
 messageDuration : Proto.Message.Message Duration
 messageDuration =
-    Proto.Message.init "unused.v1.Duration" encodeDuration decodeDuration encodeDurationBytes decodeDurationBytes
+    Proto.Message.init "unused.v1.Duration" encodeDuration decodeDuration encodeDurationBinary decodeDurationBinary
 
 
 {-| The typed value of [`Order`](#Order): its full name and codecs.
 -}
 messageOrder : Proto.Message.Message Order
 messageOrder =
-    Proto.Message.init "unused.v1.Order" encodeOrder decodeOrder encodeOrderBytes decodeOrderBytes
+    Proto.Message.init "unused.v1.Order" encodeOrder decodeOrder encodeOrderBinary decodeOrderBinary
 
 
 {-| The typed value of [`Never`](#Never): its full name and codecs.
 -}
 messageNever : Proto.Message.Message Never
 messageNever =
-    Proto.Message.init "unused.v1.Never" encodeNever decodeNever encodeNeverBytes decodeNeverBytes
+    Proto.Message.init "unused.v1.Never" encodeNever decodeNever encodeNeverBinary decodeNeverBinary
 
 
 {-| The typed value of [`Cmd`](#Cmd): its full name and codecs.
 -}
 messageCmd : Proto.Message.Message Cmd
 messageCmd =
-    Proto.Message.init "unused.v1.Cmd" encodeCmd decodeCmd encodeCmdBytes decodeCmdBytes
+    Proto.Message.init "unused.v1.Cmd" encodeCmd decodeCmd encodeCmdBinary decodeCmdBinary
 
 
 {-| The typed value of [`True`](#True): its full name and codecs.
 -}
 messageTrue : Proto.Message.Message True
 messageTrue =
-    Proto.Message.init "unused.v1.True" encodeTrue decodeTrue encodeTrueBytes decodeTrueBytes
+    Proto.Message.init "unused.v1.True" encodeTrue decodeTrue encodeTrueBinary decodeTrueBinary
 
 
 
@@ -430,8 +430,8 @@ decodeTrue =
 
 {-| The number protobuf binary writes a [`Char`](#Char) as.
 -}
-encodeCharBytes : Char -> Int
-encodeCharBytes value =
+encodeCharBinary : Char -> Int
+encodeCharBinary value =
     case value of
         CharUnspecified ->
             0
@@ -442,8 +442,8 @@ encodeCharBytes value =
 
 {-| Encodes a [`Dict`](#Dict) as protobuf binary.
 -}
-encodeDictBytes : Dict -> Bytes.Encode.Encoder
-encodeDictBytes value =
+encodeDictBinary : Dict -> Bytes.Encode.Encoder
+encodeDictBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         ]
@@ -451,19 +451,19 @@ encodeDictBytes value =
 
 {-| Encodes a [`Result`](#Result) as protobuf binary.
 -}
-encodeResultBytes : Result -> Bytes.Encode.Encoder
-encodeResultBytes value =
+encodeResultBinary : Result -> Bytes.Encode.Encoder
+encodeResultBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.bool 1 value.ok
-        , Proto.Binary.optional (Proto.Binary.embedded encodeDictBytes mergeDictBytes defaultDict) 2 value.dict
-        , Proto.Binary.list (Proto.Binary.enum encodeCharBytes decodeCharBytes) 3 value.chars
+        , Proto.Binary.optional (Proto.Binary.embedded encodeDictBinary mergeDictBinary defaultDict) 2 value.dict
+        , Proto.Binary.list (Proto.Binary.enum encodeCharBinary decodeCharBinary) 3 value.chars
         ]
 
 
 {-| Encodes a [`Duration`](#Duration) as protobuf binary.
 -}
-encodeDurationBytes : Duration -> Bytes.Encode.Encoder
-encodeDurationBytes value =
+encodeDurationBinary : Duration -> Bytes.Encode.Encoder
+encodeDurationBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.optional Proto.Binary.duration 1 value.length
         ]
@@ -471,29 +471,29 @@ encodeDurationBytes value =
 
 {-| Encodes an [`Order`](#Order) as protobuf binary.
 -}
-encodeOrderBytes : Order -> Bytes.Encode.Encoder
-encodeOrderBytes _ =
+encodeOrderBinary : Order -> Bytes.Encode.Encoder
+encodeOrderBinary _ =
     Bytes.Encode.sequence []
 
 
 {-| Encodes a [`Never`](#Never) as protobuf binary.
 -}
-encodeNeverBytes : Never -> Bytes.Encode.Encoder
-encodeNeverBytes _ =
+encodeNeverBinary : Never -> Bytes.Encode.Encoder
+encodeNeverBinary _ =
     Bytes.Encode.sequence []
 
 
 {-| Encodes a [`Cmd`](#Cmd) as protobuf binary.
 -}
-encodeCmdBytes : Cmd -> Bytes.Encode.Encoder
-encodeCmdBytes _ =
+encodeCmdBinary : Cmd -> Bytes.Encode.Encoder
+encodeCmdBinary _ =
     Bytes.Encode.sequence []
 
 
 {-| Encodes a [`True`](#True) as protobuf binary.
 -}
-encodeTrueBytes : True -> Bytes.Encode.Encoder
-encodeTrueBytes _ =
+encodeTrueBinary : True -> Bytes.Encode.Encoder
+encodeTrueBinary _ =
     Bytes.Encode.sequence []
 
 
@@ -503,8 +503,8 @@ encodeTrueBytes _ =
 
 {-| A [`Char`](#Char) from the number protobuf binary carries.
 -}
-decodeCharBytes : Int -> Char
-decodeCharBytes number =
+decodeCharBinary : Int -> Char
+decodeCharBinary number =
     case number of
         1 ->
             CharA
@@ -515,8 +515,8 @@ decodeCharBytes number =
 
 {-| Decodes a [`Dict`](#Dict) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeDictBytes : Dict -> Proto.Binary.Decoder Dict
-mergeDictBytes =
+mergeDictBinary : Dict -> Proto.Binary.Decoder Dict
+mergeDictBinary =
     Proto.Binary.merge
         "unused.v1.Dict"
         (\number wire value ->
@@ -539,15 +539,15 @@ mergeDictBytes =
 
 {-| Decodes a [`Dict`](#Dict) from protobuf binary.
 -}
-decodeDictBytes : Proto.Binary.Decoder Dict
-decodeDictBytes =
-    mergeDictBytes defaultDict
+decodeDictBinary : Proto.Binary.Decoder Dict
+decodeDictBinary =
+    mergeDictBinary defaultDict
 
 
 {-| Decodes a [`Result`](#Result) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeResultBytes : Result -> Proto.Binary.Decoder Result
-mergeResultBytes =
+mergeResultBinary : Result -> Proto.Binary.Decoder Result
+mergeResultBinary =
     Proto.Binary.merge
         "unused.v1.Result"
         (\number wire value ->
@@ -566,7 +566,7 @@ mergeResultBytes =
 
                 2 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeDictBytes mergeDictBytes defaultDict)
+                        (Proto.Binary.embedded encodeDictBinary mergeDictBinary defaultDict)
                         value.dict
                         (\v ->
                             { ok = value.ok
@@ -579,7 +579,7 @@ mergeResultBytes =
 
                 3 ->
                     Proto.Binary.repeated
-                        (Proto.Binary.enum encodeCharBytes decodeCharBytes)
+                        (Proto.Binary.enum encodeCharBinary decodeCharBinary)
                         (\v ->
                             { ok = value.ok
                             , dict = value.dict
@@ -603,15 +603,15 @@ mergeResultBytes =
 
 {-| Decodes a [`Result`](#Result) from protobuf binary.
 -}
-decodeResultBytes : Proto.Binary.Decoder Result
-decodeResultBytes =
-    mergeResultBytes defaultResult
+decodeResultBinary : Proto.Binary.Decoder Result
+decodeResultBinary =
+    mergeResultBinary defaultResult
 
 
 {-| Decodes a [`Duration`](#Duration) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeDurationBytes : Duration -> Proto.Binary.Decoder Duration
-mergeDurationBytes =
+mergeDurationBinary : Duration -> Proto.Binary.Decoder Duration
+mergeDurationBinary =
     Proto.Binary.merge
         "unused.v1.Duration"
         (\number wire value ->
@@ -634,62 +634,62 @@ mergeDurationBytes =
 
 {-| Decodes a [`Duration`](#Duration) from protobuf binary.
 -}
-decodeDurationBytes : Proto.Binary.Decoder Duration
-decodeDurationBytes =
-    mergeDurationBytes defaultDuration
+decodeDurationBinary : Proto.Binary.Decoder Duration
+decodeDurationBinary =
+    mergeDurationBinary defaultDuration
 
 
 {-| Decodes an [`Order`](#Order) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeOrderBytes : Order -> Proto.Binary.Decoder Order
-mergeOrderBytes =
+mergeOrderBinary : Order -> Proto.Binary.Decoder Order
+mergeOrderBinary =
     Proto.Binary.merge "unused.v1.Order" (\_ wire value -> Proto.Binary.skip wire value) identity
 
 
 {-| Decodes an [`Order`](#Order) from protobuf binary.
 -}
-decodeOrderBytes : Proto.Binary.Decoder Order
-decodeOrderBytes =
-    mergeOrderBytes defaultOrder
+decodeOrderBinary : Proto.Binary.Decoder Order
+decodeOrderBinary =
+    mergeOrderBinary defaultOrder
 
 
 {-| Decodes a [`Never`](#Never) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeNeverBytes : Never -> Proto.Binary.Decoder Never
-mergeNeverBytes =
+mergeNeverBinary : Never -> Proto.Binary.Decoder Never
+mergeNeverBinary =
     Proto.Binary.merge "unused.v1.Never" (\_ wire value -> Proto.Binary.skip wire value) identity
 
 
 {-| Decodes a [`Never`](#Never) from protobuf binary.
 -}
-decodeNeverBytes : Proto.Binary.Decoder Never
-decodeNeverBytes =
-    mergeNeverBytes defaultNever
+decodeNeverBinary : Proto.Binary.Decoder Never
+decodeNeverBinary =
+    mergeNeverBinary defaultNever
 
 
 {-| Decodes a [`Cmd`](#Cmd) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeCmdBytes : Cmd -> Proto.Binary.Decoder Cmd
-mergeCmdBytes =
+mergeCmdBinary : Cmd -> Proto.Binary.Decoder Cmd
+mergeCmdBinary =
     Proto.Binary.merge "unused.v1.Cmd" (\_ wire value -> Proto.Binary.skip wire value) identity
 
 
 {-| Decodes a [`Cmd`](#Cmd) from protobuf binary.
 -}
-decodeCmdBytes : Proto.Binary.Decoder Cmd
-decodeCmdBytes =
-    mergeCmdBytes defaultCmd
+decodeCmdBinary : Proto.Binary.Decoder Cmd
+decodeCmdBinary =
+    mergeCmdBinary defaultCmd
 
 
 {-| Decodes a [`True`](#True) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeTrueBytes : True -> Proto.Binary.Decoder True
-mergeTrueBytes =
+mergeTrueBinary : True -> Proto.Binary.Decoder True
+mergeTrueBinary =
     Proto.Binary.merge "unused.v1.True" (\_ wire value -> Proto.Binary.skip wire value) identity
 
 
 {-| Decodes a [`True`](#True) from protobuf binary.
 -}
-decodeTrueBytes : Proto.Binary.Decoder True
-decodeTrueBytes =
-    mergeTrueBytes defaultTrue
+decodeTrueBinary : Proto.Binary.Decoder True
+decodeTrueBinary =
+    mergeTrueBinary defaultTrue

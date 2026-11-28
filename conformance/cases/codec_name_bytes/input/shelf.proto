@@ -1,0 +1,26 @@
+// `Bytes` is no codec suffix: a type named for another with `Bytes` at the
+// end meets none of its codecs. The JSON codecs of `BookBytes` are
+// `encodeBookBytes` and `decodeBookBytes`, and the binary codecs of `Book`
+// `encodeBookBinary` and `decodeBookBinary`; likewise the enum `ShelfBytes`
+// beside the message `Shelf`.
+syntax = "proto3";
+
+package shelf.v1;
+
+message Book {
+  string title = 1;
+}
+
+message BookBytes {
+  bytes content = 1;
+}
+
+message Shelf {
+  repeated Book books = 1;
+  ShelfBytes kind = 2;
+}
+
+enum ShelfBytes {
+  SHELF_BYTES_UNSPECIFIED = 0;
+  SHELF_BYTES_RAW = 1;
+}

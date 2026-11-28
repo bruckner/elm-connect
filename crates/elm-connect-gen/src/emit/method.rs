@@ -103,8 +103,8 @@ impl Emitter {
             codecs.push(self.response_decoder_with(&method.output));
         }
         if self.wiring.binary() {
-            codecs.push(self.request_encoder_bytes(&method.input));
-            codecs.push(self.response_decoder_bytes(&method.output));
+            codecs.push(self.request_encoder_binary(&method.input));
+            codecs.push(self.response_decoder_binary(&method.output));
         }
         let (builder, tag) = match self.wiring {
             Wire::Json => ("initJson", Some("Json")),

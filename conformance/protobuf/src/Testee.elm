@@ -93,7 +93,7 @@ answer request =
                         reply kind problem
 
                     Ok message ->
-                        reply "protobuf" (Proto.Bytes.toBase64 (Proto.Binary.encode Proto3.encodeTestAllTypesProto3Bytes message))
+                        reply "protobuf" (Proto.Bytes.toBase64 (Proto.Binary.encode Proto3.encodeTestAllTypesProto3Binary message))
 
             other ->
                 reply "skipped" ("output format " ++ other)
@@ -105,7 +105,7 @@ read request =
         "protobuf" ->
             case Proto.Bytes.fromBase64 request.payload of
                 Just input ->
-                    Proto.Binary.decode Proto3.decodeTestAllTypesProto3Bytes input
+                    Proto.Binary.decode Proto3.decodeTestAllTypesProto3Binary input
                         |> Result.mapError (\problem -> ( "parseError", Proto.Error.toString (Proto.Error.BadBinary problem) ))
 
                 Nothing ->

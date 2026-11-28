@@ -38,8 +38,8 @@ getNote =
             "GetNote"
             First.V1.encodeURLPath
             (\_ -> First.V1.decodeURLPath)
-            First.V1.encodeURLPathBytes
-            First.V1.decodeURLPathBytes
+            First.V1.encodeURLPathBinary
+            First.V1.decodeURLPathBinary
         )
 
 
@@ -57,8 +57,8 @@ httpGet =
             "HTTPGet"
             First.V1.encodeURLPath
             (\_ -> First.V1.decodeURLPath)
-            First.V1.encodeURLPathBytes
-            First.V1.decodeURLPathBytes
+            First.V1.encodeURLPathBinary
+            First.V1.decodeURLPathBinary
         )
 
 
@@ -76,8 +76,8 @@ ping =
             "_Ping"
             First.V1.encodeURLPath
             (\_ -> First.V1.decodeURLPath)
-            First.V1.encodeURLPathBytes
-            First.V1.decodeURLPathBytes
+            First.V1.encodeURLPathBinary
+            First.V1.decodeURLPathBinary
         )
 
 
@@ -95,8 +95,8 @@ type_ =
             "Type"
             First.V1.encodeURLPath
             (\_ -> First.V1.decodeURLPath)
-            First.V1.encodeURLPathBytes
-            First.V1.decodeURLPathBytes
+            First.V1.encodeURLPathBinary
+            First.V1.decodeURLPathBinary
         )
 
 

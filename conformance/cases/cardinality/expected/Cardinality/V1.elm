@@ -117,14 +117,14 @@ defaultNote =
 -}
 messageAuthor : Proto.Message.Message Author
 messageAuthor =
-    Proto.Message.init "cardinality.v1.Author" encodeAuthor decodeAuthor encodeAuthorBytes decodeAuthorBytes
+    Proto.Message.init "cardinality.v1.Author" encodeAuthor decodeAuthor encodeAuthorBinary decodeAuthorBinary
 
 
 {-| The typed value of [`Note`](#Note): its full name and codecs.
 -}
 messageNote : Proto.Message.Message Note
 messageNote =
-    Proto.Message.init "cardinality.v1.Note" encodeNote decodeNote encodeNoteBytes decodeNoteBytes
+    Proto.Message.init "cardinality.v1.Note" encodeNote decodeNote encodeNoteBinary decodeNoteBinary
 
 
 
@@ -234,8 +234,8 @@ decodeNote =
 
 {-| Encodes an [`Author`](#Author) as protobuf binary.
 -}
-encodeAuthorBytes : Author -> Bytes.Encode.Encoder
-encodeAuthorBytes value =
+encodeAuthorBinary : Author -> Bytes.Encode.Encoder
+encodeAuthorBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         ]
@@ -243,19 +243,19 @@ encodeAuthorBytes value =
 
 {-| Encodes a [`Note`](#Note) as protobuf binary.
 -}
-encodeNoteBytes : Note -> Bytes.Encode.Encoder
-encodeNoteBytes value =
+encodeNoteBinary : Note -> Bytes.Encode.Encoder
+encodeNoteBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.optional Proto.Binary.string 1 value.subtitle
         , Proto.Binary.optional Proto.Binary.int32 2 value.stars
         , Proto.Binary.optional Proto.Binary.double 3 value.score
         , Proto.Binary.optional Proto.Binary.int64 4 value.views
-        , Proto.Binary.optional (Proto.Binary.embedded encodeAuthorBytes mergeAuthorBytes defaultAuthor) 5 value.author
-        , Proto.Binary.optional (Proto.Binary.embedded encodeAuthorBytes mergeAuthorBytes defaultAuthor) 6 value.editor
+        , Proto.Binary.optional (Proto.Binary.embedded encodeAuthorBinary mergeAuthorBinary defaultAuthor) 5 value.author
+        , Proto.Binary.optional (Proto.Binary.embedded encodeAuthorBinary mergeAuthorBinary defaultAuthor) 6 value.editor
         , Proto.Binary.list Proto.Binary.string 7 value.tags
         , Proto.Binary.list Proto.Binary.int32 8 value.counts
         , Proto.Binary.list Proto.Binary.float 9 value.weights
-        , Proto.Binary.list (Proto.Binary.embedded encodeAuthorBytes mergeAuthorBytes defaultAuthor) 10 value.reviewers
+        , Proto.Binary.list (Proto.Binary.embedded encodeAuthorBinary mergeAuthorBinary defaultAuthor) 10 value.reviewers
         , Proto.Binary.implicit Proto.Binary.string 11 value.title
         , Proto.Binary.list Proto.Binary.string 12 value.relatedLinks
         , Proto.Binary.optional Proto.Binary.bool 13 value.isDraft
@@ -268,8 +268,8 @@ encodeNoteBytes value =
 
 {-| Decodes an [`Author`](#Author) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeAuthorBytes : Author -> Proto.Binary.Decoder Author
-mergeAuthorBytes =
+mergeAuthorBinary : Author -> Proto.Binary.Decoder Author
+mergeAuthorBinary =
     Proto.Binary.merge
         "cardinality.v1.Author"
         (\number wire value ->
@@ -292,15 +292,15 @@ mergeAuthorBytes =
 
 {-| Decodes an [`Author`](#Author) from protobuf binary.
 -}
-decodeAuthorBytes : Proto.Binary.Decoder Author
-decodeAuthorBytes =
-    mergeAuthorBytes defaultAuthor
+decodeAuthorBinary : Proto.Binary.Decoder Author
+decodeAuthorBinary =
+    mergeAuthorBinary defaultAuthor
 
 
 {-| Decodes a [`Note`](#Note) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeNoteBytes : Note -> Proto.Binary.Decoder Note
-mergeNoteBytes =
+mergeNoteBinary : Note -> Proto.Binary.Decoder Note
+mergeNoteBinary =
     Proto.Binary.merge
         "cardinality.v1.Note"
         (\number wire value ->
@@ -395,7 +395,7 @@ mergeNoteBytes =
 
                 5 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeAuthorBytes mergeAuthorBytes defaultAuthor)
+                        (Proto.Binary.embedded encodeAuthorBinary mergeAuthorBinary defaultAuthor)
                         value.author
                         (\v ->
                             { subtitle = value.subtitle
@@ -418,7 +418,7 @@ mergeNoteBytes =
 
                 6 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeAuthorBytes mergeAuthorBytes defaultAuthor)
+                        (Proto.Binary.embedded encodeAuthorBinary mergeAuthorBinary defaultAuthor)
                         value.editor
                         (\v ->
                             { subtitle = value.subtitle
@@ -510,7 +510,7 @@ mergeNoteBytes =
 
                 10 ->
                     Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeAuthorBytes mergeAuthorBytes defaultAuthor)
+                        (Proto.Binary.embedded encodeAuthorBinary mergeAuthorBinary defaultAuthor)
                         (\v ->
                             { subtitle = value.subtitle
                             , stars = value.stars
@@ -621,6 +621,6 @@ mergeNoteBytes =
 
 {-| Decodes a [`Note`](#Note) from protobuf binary.
 -}
-decodeNoteBytes : Proto.Binary.Decoder Note
-decodeNoteBytes =
-    mergeNoteBytes defaultNote
+decodeNoteBinary : Proto.Binary.Decoder Note
+decodeNoteBinary =
+    mergeNoteBinary defaultNote

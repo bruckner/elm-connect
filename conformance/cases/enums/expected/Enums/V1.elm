@@ -123,7 +123,7 @@ enumPriority =
 -}
 messageTask : Proto.Message.Message Task
 messageTask =
-    Proto.Message.init "enums.v1.Task" encodeTask decodeTask encodeTaskBytes decodeTaskBytes
+    Proto.Message.init "enums.v1.Task" encodeTask decodeTask encodeTaskBinary decodeTaskBinary
 
 
 
@@ -255,8 +255,8 @@ decodeTask =
 
 {-| The number protobuf binary writes a [`Status`](#Status) as.
 -}
-encodeStatusBytes : Status -> Int
-encodeStatusBytes value =
+encodeStatusBinary : Status -> Int
+encodeStatusBinary value =
     case value of
         StatusUnspecified ->
             0
@@ -270,8 +270,8 @@ encodeStatusBytes value =
 
 {-| The number protobuf binary writes a [`Priority`](#Priority) as.
 -}
-encodePriorityBytes : Priority -> Int
-encodePriorityBytes value =
+encodePriorityBinary : Priority -> Int
+encodePriorityBinary value =
     case value of
         PriorityNone ->
             0
@@ -288,13 +288,13 @@ encodePriorityBytes value =
 
 {-| Encodes a [`Task`](#Task) as protobuf binary.
 -}
-encodeTaskBytes : Task -> Bytes.Encode.Encoder
-encodeTaskBytes value =
+encodeTaskBinary : Task -> Bytes.Encode.Encoder
+encodeTaskBinary value =
     Bytes.Encode.sequence
-        [ Proto.Binary.implicit (Proto.Binary.enum encodeStatusBytes decodeStatusBytes) 1 value.status
-        , Proto.Binary.optional (Proto.Binary.enum encodePriorityBytes decodePriorityBytes) 2 value.priority
-        , Proto.Binary.list (Proto.Binary.enum encodeStatusBytes decodeStatusBytes) 3 value.history
-        , Proto.Binary.implicit (Proto.Binary.enum encodeStatusBytes decodeStatusBytes) 4 value.previousStatus
+        [ Proto.Binary.implicit (Proto.Binary.enum encodeStatusBinary decodeStatusBinary) 1 value.status
+        , Proto.Binary.optional (Proto.Binary.enum encodePriorityBinary decodePriorityBinary) 2 value.priority
+        , Proto.Binary.list (Proto.Binary.enum encodeStatusBinary decodeStatusBinary) 3 value.history
+        , Proto.Binary.implicit (Proto.Binary.enum encodeStatusBinary decodeStatusBinary) 4 value.previousStatus
         ]
 
 
@@ -304,8 +304,8 @@ encodeTaskBytes value =
 
 {-| A [`Status`](#Status) from the number protobuf binary carries.
 -}
-decodeStatusBytes : Int -> Status
-decodeStatusBytes number =
+decodeStatusBinary : Int -> Status
+decodeStatusBinary number =
     case number of
         1 ->
             StatusActive
@@ -319,8 +319,8 @@ decodeStatusBytes number =
 
 {-| A [`Priority`](#Priority) from the number protobuf binary carries.
 -}
-decodePriorityBytes : Int -> Priority
-decodePriorityBytes number =
+decodePriorityBinary : Int -> Priority
+decodePriorityBinary number =
     case number of
         1 ->
             PriorityLow
@@ -338,15 +338,15 @@ decodePriorityBytes number =
 
 {-| Decodes a [`Task`](#Task) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeTaskBytes : Task -> Proto.Binary.Decoder Task
-mergeTaskBytes =
+mergeTaskBinary : Task -> Proto.Binary.Decoder Task
+mergeTaskBinary =
     Proto.Binary.merge
         "enums.v1.Task"
         (\number wire value ->
             case number of
                 1 ->
                     Proto.Binary.field
-                        (Proto.Binary.enum encodeStatusBytes decodeStatusBytes)
+                        (Proto.Binary.enum encodeStatusBinary decodeStatusBinary)
                         (\v ->
                             { status = v
                             , priority = value.priority
@@ -359,7 +359,7 @@ mergeTaskBytes =
 
                 2 ->
                     Proto.Binary.field
-                        (Proto.Binary.enum encodePriorityBytes decodePriorityBytes)
+                        (Proto.Binary.enum encodePriorityBinary decodePriorityBinary)
                         (\v ->
                             { status = value.status
                             , priority = Just v
@@ -372,7 +372,7 @@ mergeTaskBytes =
 
                 3 ->
                     Proto.Binary.repeated
-                        (Proto.Binary.enum encodeStatusBytes decodeStatusBytes)
+                        (Proto.Binary.enum encodeStatusBinary decodeStatusBinary)
                         (\v ->
                             { status = value.status
                             , priority = value.priority
@@ -386,7 +386,7 @@ mergeTaskBytes =
 
                 4 ->
                     Proto.Binary.field
-                        (Proto.Binary.enum encodeStatusBytes decodeStatusBytes)
+                        (Proto.Binary.enum encodeStatusBinary decodeStatusBinary)
                         (\v ->
                             { status = value.status
                             , priority = value.priority
@@ -411,6 +411,6 @@ mergeTaskBytes =
 
 {-| Decodes a [`Task`](#Task) from protobuf binary.
 -}
-decodeTaskBytes : Proto.Binary.Decoder Task
-decodeTaskBytes =
-    mergeTaskBytes defaultTask
+decodeTaskBinary : Proto.Binary.Decoder Task
+decodeTaskBinary =
+    mergeTaskBinary defaultTask

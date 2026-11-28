@@ -90,14 +90,14 @@ defaultGetNoteRequest =
 -}
 messageNote : Proto.Message.Message Note
 messageNote =
-    Proto.Message.init "notes.v1.Note" encodeNote decodeNote encodeNoteBytes decodeNoteBytes
+    Proto.Message.init "notes.v1.Note" encodeNote decodeNote encodeNoteBinary decodeNoteBinary
 
 
 {-| The typed value of [`GetNoteRequest`](#GetNoteRequest): its full name and codecs.
 -}
 messageGetNoteRequest : Proto.Message.Message GetNoteRequest
 messageGetNoteRequest =
-    Proto.Message.init "notes.v1.GetNoteRequest" encodeGetNoteRequest decodeGetNoteRequest encodeGetNoteRequestBytes decodeGetNoteRequestBytes
+    Proto.Message.init "notes.v1.GetNoteRequest" encodeGetNoteRequest decodeGetNoteRequest encodeGetNoteRequestBinary decodeGetNoteRequestBinary
 
 
 
@@ -187,19 +187,19 @@ decodeGetNoteRequest =
 
 {-| Encodes a [`Note`](#Note) as protobuf binary.
 -}
-encodeNoteBytes : Note -> Bytes.Encode.Encoder
-encodeNoteBytes value =
+encodeNoteBinary : Note -> Bytes.Encode.Encoder
+encodeNoteBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
-        , Proto.Binary.optional (Proto.Binary.embedded Api.Example.People.encodeUserBytes Api.Example.People.mergeUserBytes Api.Example.People.defaultUser) 2 value.author
-        , Proto.Binary.implicit (Proto.Binary.enum Api.Example.People.encodeRoleBytes Api.Example.People.decodeRoleBytes) 3 value.requiredRole
+        , Proto.Binary.optional (Proto.Binary.embedded Api.Example.People.encodeUserBinary Api.Example.People.mergeUserBinary Api.Example.People.defaultUser) 2 value.author
+        , Proto.Binary.implicit (Proto.Binary.enum Api.Example.People.encodeRoleBinary Api.Example.People.decodeRoleBinary) 3 value.requiredRole
         ]
 
 
 {-| Encodes a [`GetNoteRequest`](#GetNoteRequest) as protobuf binary.
 -}
-encodeGetNoteRequestBytes : GetNoteRequest -> Bytes.Encode.Encoder
-encodeGetNoteRequestBytes value =
+encodeGetNoteRequestBinary : GetNoteRequest -> Bytes.Encode.Encoder
+encodeGetNoteRequestBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         ]
@@ -211,8 +211,8 @@ encodeGetNoteRequestBytes value =
 
 {-| Decodes a [`Note`](#Note) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeNoteBytes : Note -> Proto.Binary.Decoder Note
-mergeNoteBytes =
+mergeNoteBinary : Note -> Proto.Binary.Decoder Note
+mergeNoteBinary =
     Proto.Binary.merge
         "notes.v1.Note"
         (\number wire value ->
@@ -231,7 +231,7 @@ mergeNoteBytes =
 
                 2 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.embedded Api.Example.People.encodeUserBytes Api.Example.People.mergeUserBytes Api.Example.People.defaultUser)
+                        (Proto.Binary.embedded Api.Example.People.encodeUserBinary Api.Example.People.mergeUserBinary Api.Example.People.defaultUser)
                         value.author
                         (\v ->
                             { name = value.name
@@ -244,7 +244,7 @@ mergeNoteBytes =
 
                 3 ->
                     Proto.Binary.field
-                        (Proto.Binary.enum Api.Example.People.encodeRoleBytes Api.Example.People.decodeRoleBytes)
+                        (Proto.Binary.enum Api.Example.People.encodeRoleBinary Api.Example.People.decodeRoleBinary)
                         (\v ->
                             { name = value.name
                             , author = value.author
@@ -262,15 +262,15 @@ mergeNoteBytes =
 
 {-| Decodes a [`Note`](#Note) from protobuf binary.
 -}
-decodeNoteBytes : Proto.Binary.Decoder Note
-decodeNoteBytes =
-    mergeNoteBytes defaultNote
+decodeNoteBinary : Proto.Binary.Decoder Note
+decodeNoteBinary =
+    mergeNoteBinary defaultNote
 
 
 {-| Decodes a [`GetNoteRequest`](#GetNoteRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeGetNoteRequestBytes : GetNoteRequest -> Proto.Binary.Decoder GetNoteRequest
-mergeGetNoteRequestBytes =
+mergeGetNoteRequestBinary : GetNoteRequest -> Proto.Binary.Decoder GetNoteRequest
+mergeGetNoteRequestBinary =
     Proto.Binary.merge
         "notes.v1.GetNoteRequest"
         (\number wire value ->
@@ -293,6 +293,6 @@ mergeGetNoteRequestBytes =
 
 {-| Decodes a [`GetNoteRequest`](#GetNoteRequest) from protobuf binary.
 -}
-decodeGetNoteRequestBytes : Proto.Binary.Decoder GetNoteRequest
-decodeGetNoteRequestBytes =
-    mergeGetNoteRequestBytes defaultGetNoteRequest
+decodeGetNoteRequestBinary : Proto.Binary.Decoder GetNoteRequest
+decodeGetNoteRequestBinary =
+    mergeGetNoteRequestBinary defaultGetNoteRequest

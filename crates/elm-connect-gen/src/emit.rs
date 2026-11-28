@@ -784,8 +784,8 @@ impl Emitter {
             values.push(self.enum_record(&package.module, enumeration));
             encoders.push(self.enum_encoder(enumeration));
             decoders.push(self.enum_decoder(enumeration));
-            binary_encoders.push(self.enum_encoder_bytes(enumeration));
-            binary_decoders.push(self.enum_decoder_bytes(enumeration));
+            binary_encoders.push(self.enum_encoder_binary(enumeration));
+            binary_decoders.push(self.enum_decoder_binary(enumeration));
         }
         for shape in &messages {
             types.push(self.message_alias(&package.module, shape));
@@ -793,22 +793,22 @@ impl Emitter {
             values.push(self.message_record(&package.module, shape));
             encoders.extend(self.message_encoder(shape));
             decoders.extend(self.message_decoder(shape));
-            binary_encoders.push(self.message_encoder_bytes(shape));
-            binary_decoders.extend(self.message_merge_bytes(shape));
-            binary_decoders.push(self.message_decoder_bytes(shape));
+            binary_encoders.push(self.message_encoder_binary(shape));
+            binary_decoders.extend(self.message_merge_binary(shape));
+            binary_decoders.push(self.message_decoder_binary(shape));
             if let Some(wrapper) = &shape.message.wrapper {
                 types.push(self.wrapper_type(shape.message, wrapper));
                 encoders.push(self.wrapper_encoder(shape.message, wrapper));
                 decoders.push(self.wrapper_decoder(shape.message, wrapper));
-                binary_encoders.push(self.wrapper_encoder_bytes(shape.message, wrapper));
-                binary_decoders.extend(self.wrapper_decoder_bytes(shape.message, wrapper));
+                binary_encoders.push(self.wrapper_encoder_binary(shape.message, wrapper));
+                binary_decoders.extend(self.wrapper_decoder_binary(shape.message, wrapper));
             }
             let counts = self.counts(shape.message);
             for oneof in &shape.oneofs {
                 types.push(self.oneof_type(&package.module, shape.message, oneof));
                 encoders.push(self.oneof_encoder(oneof, counts));
                 decoders.extend(self.oneof_decoder(oneof, counts));
-                binary_encoders.push(self.oneof_encoder_bytes(oneof));
+                binary_encoders.push(self.oneof_encoder_binary(oneof));
             }
         }
         // A package of enums alone has no defaults.
@@ -1218,7 +1218,7 @@ mod tests {
         );
         assert!(
             on.contains(
-                "messageA =\n    Proto.Message.init \"t.v1.A\" encodeA decodeA encodeABytes decodeABytes"
+                "messageA =\n    Proto.Message.init \"t.v1.A\" encodeA decodeA encodeABinary decodeABinary"
             ),
             "{on}"
         );

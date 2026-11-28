@@ -65,7 +65,7 @@ defaultHolder =
 -}
 messageHolder : Proto.Message.Message Holder
 messageHolder =
-    Proto.Message.init "outside.v1.Holder" encodeHolder decodeHolder encodeHolderBytes decodeHolderBytes
+    Proto.Message.init "outside.v1.Holder" encodeHolder decodeHolder encodeHolderBinary decodeHolderBinary
 
 
 
@@ -137,11 +137,11 @@ decodeNestedHolder depth =
 
 {-| Encodes a [`Holder`](#Holder) as protobuf binary.
 -}
-encodeHolderBytes : Holder -> Bytes.Encode.Encoder
-encodeHolderBytes value =
+encodeHolderBinary : Holder -> Bytes.Encode.Encoder
+encodeHolderBinary value =
     Bytes.Encode.sequence
-        [ Proto.Binary.optional (Proto.Binary.embedded Cycles.V1.encodeTreeBytes Cycles.V1.mergeTreeBytes Cycles.V1.defaultTree) 1 value.tree
-        , Proto.Binary.optional (Proto.Binary.embedded Cycles.V1.encodePersonBytes Cycles.V1.mergePersonBytes Cycles.V1.defaultPerson) 2 value.person
+        [ Proto.Binary.optional (Proto.Binary.embedded Cycles.V1.encodeTreeBinary Cycles.V1.mergeTreeBinary Cycles.V1.defaultTree) 1 value.tree
+        , Proto.Binary.optional (Proto.Binary.embedded Cycles.V1.encodePersonBinary Cycles.V1.mergePersonBinary Cycles.V1.defaultPerson) 2 value.person
         ]
 
 
@@ -151,22 +151,22 @@ encodeHolderBytes value =
 
 {-| Decodes a [`Holder`](#Holder) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeHolderBytes : Holder -> Proto.Binary.Decoder Holder
-mergeHolderBytes =
-    mergeNestedHolderBytes 1
+mergeHolderBinary : Holder -> Proto.Binary.Decoder Holder
+mergeHolderBinary =
+    mergeNestedHolderBinary 1
 
 
-{-| [`mergeHolderBytes`](#mergeHolderBytes) for a [`Holder`](#Holder) held `depth` levels deep.
+{-| [`mergeHolderBinary`](#mergeHolderBinary) for a [`Holder`](#Holder) held `depth` levels deep.
 -}
-mergeNestedHolderBytes : Int -> Holder -> Proto.Binary.Decoder Holder
-mergeNestedHolderBytes depth =
+mergeNestedHolderBinary : Int -> Holder -> Proto.Binary.Decoder Holder
+mergeNestedHolderBinary depth =
     Proto.Binary.merge
         "outside.v1.Holder"
         (\number wire value ->
             case number of
                 1 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.recursive depth Cycles.V1.encodeTreeBytes Cycles.V1.mergeNestedTreeBytes Cycles.V1.defaultTree)
+                        (Proto.Binary.recursive depth Cycles.V1.encodeTreeBinary Cycles.V1.mergeNestedTreeBinary Cycles.V1.defaultTree)
                         value.tree
                         (\v ->
                             { tree = Just v
@@ -178,7 +178,7 @@ mergeNestedHolderBytes depth =
 
                 2 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.recursive depth Cycles.V1.encodePersonBytes Cycles.V1.mergeNestedPersonBytes Cycles.V1.defaultPerson)
+                        (Proto.Binary.recursive depth Cycles.V1.encodePersonBinary Cycles.V1.mergeNestedPersonBinary Cycles.V1.defaultPerson)
                         value.person
                         (\v ->
                             { tree = value.tree
@@ -196,6 +196,6 @@ mergeNestedHolderBytes depth =
 
 {-| Decodes a [`Holder`](#Holder) from protobuf binary.
 -}
-decodeHolderBytes : Proto.Binary.Decoder Holder
-decodeHolderBytes =
-    mergeHolderBytes defaultHolder
+decodeHolderBinary : Proto.Binary.Decoder Holder
+decodeHolderBinary =
+    mergeHolderBinary defaultHolder

@@ -159,28 +159,28 @@ enumStatus =
 -}
 messageItem : Proto.Message.Message Item
 messageItem =
-    Proto.Message.initWith "vault.v1.Item" encodeItem decodeItemWith encodeItemBytes decodeItemBytes
+    Proto.Message.initWith "vault.v1.Item" encodeItem decodeItemWith encodeItemBinary decodeItemBinary
 
 
 {-| The typed value of [`GetItemRequest`](#GetItemRequest): its full name and codecs.
 -}
 messageGetItemRequest : Proto.Message.Message GetItemRequest
 messageGetItemRequest =
-    Proto.Message.init "vault.v1.GetItemRequest" encodeGetItemRequest decodeGetItemRequest encodeGetItemRequestBytes decodeGetItemRequestBytes
+    Proto.Message.init "vault.v1.GetItemRequest" encodeGetItemRequest decodeGetItemRequest encodeGetItemRequestBinary decodeGetItemRequestBinary
 
 
 {-| The typed value of [`ListItemsRequest`](#ListItemsRequest): its full name and codecs.
 -}
 messageListItemsRequest : Proto.Message.Message ListItemsRequest
 messageListItemsRequest =
-    Proto.Message.init "vault.v1.ListItemsRequest" encodeListItemsRequest decodeListItemsRequest encodeListItemsRequestBytes decodeListItemsRequestBytes
+    Proto.Message.init "vault.v1.ListItemsRequest" encodeListItemsRequest decodeListItemsRequest encodeListItemsRequestBinary decodeListItemsRequestBinary
 
 
 {-| The typed value of [`ListItemsResponse`](#ListItemsResponse): its full name and codecs.
 -}
 messageListItemsResponse : Proto.Message.Message ListItemsResponse
 messageListItemsResponse =
-    Proto.Message.initWith "vault.v1.ListItemsResponse" encodeListItemsResponse decodeListItemsResponseWith encodeListItemsResponseBytes decodeListItemsResponseBytes
+    Proto.Message.initWith "vault.v1.ListItemsResponse" encodeListItemsResponse decodeListItemsResponseWith encodeListItemsResponseBinary decodeListItemsResponseBinary
 
 
 
@@ -364,8 +364,8 @@ decodeNestedListItemsResponseWith types depth =
 
 {-| The number protobuf binary writes a [`Status`](#Status) as.
 -}
-encodeStatusBytes : Status -> Int
-encodeStatusBytes value =
+encodeStatusBinary : Status -> Int
+encodeStatusBinary value =
     case value of
         StatusUnspecified ->
             0
@@ -379,12 +379,12 @@ encodeStatusBytes value =
 
 {-| Encodes an [`Item`](#Item) as protobuf binary.
 -}
-encodeItemBytes : Item -> Bytes.Encode.Encoder
-encodeItemBytes value =
+encodeItemBinary : Item -> Bytes.Encode.Encoder
+encodeItemBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         , Proto.Binary.implicit Proto.Binary.int64 2 value.size
-        , Proto.Binary.implicit (Proto.Binary.enum encodeStatusBytes decodeStatusBytes) 3 value.status
+        , Proto.Binary.implicit (Proto.Binary.enum encodeStatusBinary decodeStatusBinary) 3 value.status
         , Proto.Binary.optional Proto.Binary.any 4 value.payload
         , Proto.Binary.list Proto.Binary.any 5 value.attachments
         ]
@@ -392,8 +392,8 @@ encodeItemBytes value =
 
 {-| Encodes a [`GetItemRequest`](#GetItemRequest) as protobuf binary.
 -}
-encodeGetItemRequestBytes : GetItemRequest -> Bytes.Encode.Encoder
-encodeGetItemRequestBytes value =
+encodeGetItemRequestBinary : GetItemRequest -> Bytes.Encode.Encoder
+encodeGetItemRequestBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         ]
@@ -401,8 +401,8 @@ encodeGetItemRequestBytes value =
 
 {-| Encodes a [`ListItemsRequest`](#ListItemsRequest) as protobuf binary.
 -}
-encodeListItemsRequestBytes : ListItemsRequest -> Bytes.Encode.Encoder
-encodeListItemsRequestBytes value =
+encodeListItemsRequestBinary : ListItemsRequest -> Bytes.Encode.Encoder
+encodeListItemsRequestBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.int32 1 value.pageSize
         ]
@@ -410,10 +410,10 @@ encodeListItemsRequestBytes value =
 
 {-| Encodes a [`ListItemsResponse`](#ListItemsResponse) as protobuf binary.
 -}
-encodeListItemsResponseBytes : ListItemsResponse -> Bytes.Encode.Encoder
-encodeListItemsResponseBytes value =
+encodeListItemsResponseBinary : ListItemsResponse -> Bytes.Encode.Encoder
+encodeListItemsResponseBinary value =
     Bytes.Encode.sequence
-        [ Proto.Binary.list (Proto.Binary.embedded encodeItemBytes mergeItemBytes defaultItem) 1 value.items
+        [ Proto.Binary.list (Proto.Binary.embedded encodeItemBinary mergeItemBinary defaultItem) 1 value.items
         ]
 
 
@@ -423,8 +423,8 @@ encodeListItemsResponseBytes value =
 
 {-| A [`Status`](#Status) from the number protobuf binary carries.
 -}
-decodeStatusBytes : Int -> Status
-decodeStatusBytes number =
+decodeStatusBinary : Int -> Status
+decodeStatusBinary number =
     case number of
         1 ->
             StatusSealed
@@ -438,15 +438,15 @@ decodeStatusBytes number =
 
 {-| Decodes an [`Item`](#Item) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeItemBytes : Item -> Proto.Binary.Decoder Item
-mergeItemBytes =
-    mergeNestedItemBytes 1
+mergeItemBinary : Item -> Proto.Binary.Decoder Item
+mergeItemBinary =
+    mergeNestedItemBinary 1
 
 
-{-| [`mergeItemBytes`](#mergeItemBytes) for an [`Item`](#Item) held `depth` levels deep.
+{-| [`mergeItemBinary`](#mergeItemBinary) for an [`Item`](#Item) held `depth` levels deep.
 -}
-mergeNestedItemBytes : Int -> Item -> Proto.Binary.Decoder Item
-mergeNestedItemBytes depth =
+mergeNestedItemBinary : Int -> Item -> Proto.Binary.Decoder Item
+mergeNestedItemBinary depth =
     Proto.Binary.merge
         "vault.v1.Item"
         (\number wire value ->
@@ -481,7 +481,7 @@ mergeNestedItemBytes depth =
 
                 3 ->
                     Proto.Binary.field
-                        (Proto.Binary.enum encodeStatusBytes decodeStatusBytes)
+                        (Proto.Binary.enum encodeStatusBinary decodeStatusBinary)
                         (\v ->
                             { name = value.name
                             , size = value.size
@@ -537,15 +537,15 @@ mergeNestedItemBytes depth =
 
 {-| Decodes an [`Item`](#Item) from protobuf binary.
 -}
-decodeItemBytes : Proto.Binary.Decoder Item
-decodeItemBytes =
-    mergeItemBytes defaultItem
+decodeItemBinary : Proto.Binary.Decoder Item
+decodeItemBinary =
+    mergeItemBinary defaultItem
 
 
 {-| Decodes a [`GetItemRequest`](#GetItemRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeGetItemRequestBytes : GetItemRequest -> Proto.Binary.Decoder GetItemRequest
-mergeGetItemRequestBytes =
+mergeGetItemRequestBinary : GetItemRequest -> Proto.Binary.Decoder GetItemRequest
+mergeGetItemRequestBinary =
     Proto.Binary.merge
         "vault.v1.GetItemRequest"
         (\number wire value ->
@@ -568,15 +568,15 @@ mergeGetItemRequestBytes =
 
 {-| Decodes a [`GetItemRequest`](#GetItemRequest) from protobuf binary.
 -}
-decodeGetItemRequestBytes : Proto.Binary.Decoder GetItemRequest
-decodeGetItemRequestBytes =
-    mergeGetItemRequestBytes defaultGetItemRequest
+decodeGetItemRequestBinary : Proto.Binary.Decoder GetItemRequest
+decodeGetItemRequestBinary =
+    mergeGetItemRequestBinary defaultGetItemRequest
 
 
 {-| Decodes a [`ListItemsRequest`](#ListItemsRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeListItemsRequestBytes : ListItemsRequest -> Proto.Binary.Decoder ListItemsRequest
-mergeListItemsRequestBytes =
+mergeListItemsRequestBinary : ListItemsRequest -> Proto.Binary.Decoder ListItemsRequest
+mergeListItemsRequestBinary =
     Proto.Binary.merge
         "vault.v1.ListItemsRequest"
         (\number wire value ->
@@ -599,29 +599,29 @@ mergeListItemsRequestBytes =
 
 {-| Decodes a [`ListItemsRequest`](#ListItemsRequest) from protobuf binary.
 -}
-decodeListItemsRequestBytes : Proto.Binary.Decoder ListItemsRequest
-decodeListItemsRequestBytes =
-    mergeListItemsRequestBytes defaultListItemsRequest
+decodeListItemsRequestBinary : Proto.Binary.Decoder ListItemsRequest
+decodeListItemsRequestBinary =
+    mergeListItemsRequestBinary defaultListItemsRequest
 
 
 {-| Decodes a [`ListItemsResponse`](#ListItemsResponse) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeListItemsResponseBytes : ListItemsResponse -> Proto.Binary.Decoder ListItemsResponse
-mergeListItemsResponseBytes =
-    mergeNestedListItemsResponseBytes 1
+mergeListItemsResponseBinary : ListItemsResponse -> Proto.Binary.Decoder ListItemsResponse
+mergeListItemsResponseBinary =
+    mergeNestedListItemsResponseBinary 1
 
 
-{-| [`mergeListItemsResponseBytes`](#mergeListItemsResponseBytes) for a [`ListItemsResponse`](#ListItemsResponse) held `depth` levels deep.
+{-| [`mergeListItemsResponseBinary`](#mergeListItemsResponseBinary) for a [`ListItemsResponse`](#ListItemsResponse) held `depth` levels deep.
 -}
-mergeNestedListItemsResponseBytes : Int -> ListItemsResponse -> Proto.Binary.Decoder ListItemsResponse
-mergeNestedListItemsResponseBytes depth =
+mergeNestedListItemsResponseBinary : Int -> ListItemsResponse -> Proto.Binary.Decoder ListItemsResponse
+mergeNestedListItemsResponseBinary depth =
     Proto.Binary.merge
         "vault.v1.ListItemsResponse"
         (\number wire value ->
             case number of
                 1 ->
                     Proto.Binary.repeated
-                        (Proto.Binary.recursive depth encodeItemBytes mergeNestedItemBytes defaultItem)
+                        (Proto.Binary.recursive depth encodeItemBinary mergeNestedItemBinary defaultItem)
                         (\v ->
                             { items = v
                             }
@@ -641,6 +641,6 @@ mergeNestedListItemsResponseBytes depth =
 
 {-| Decodes a [`ListItemsResponse`](#ListItemsResponse) from protobuf binary.
 -}
-decodeListItemsResponseBytes : Proto.Binary.Decoder ListItemsResponse
-decodeListItemsResponseBytes =
-    mergeListItemsResponseBytes defaultListItemsResponse
+decodeListItemsResponseBinary : Proto.Binary.Decoder ListItemsResponse
+decodeListItemsResponseBinary =
+    mergeListItemsResponseBinary defaultListItemsResponse

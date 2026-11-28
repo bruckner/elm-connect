@@ -129,21 +129,21 @@ defaultGetEntryRequest =
 -}
 messageEntry : Proto.Message.Message Entry
 messageEntry =
-    Proto.Message.init "catalog.v1.Entry" encodeEntry decodeEntry encodeEntryBytes decodeEntryBytes
+    Proto.Message.init "catalog.v1.Entry" encodeEntry decodeEntry encodeEntryBinary decodeEntryBinary
 
 
 {-| The typed value of [`Part`](#Part): its full name and codecs.
 -}
 messagePart : Proto.Message.Message Part
 messagePart =
-    Proto.Message.init "catalog.v1.Part" encodePart decodePart encodePartBytes decodePartBytes
+    Proto.Message.init "catalog.v1.Part" encodePart decodePart encodePartBinary decodePartBinary
 
 
 {-| The typed value of [`GetEntryRequest`](#GetEntryRequest): its full name and codecs.
 -}
 messageGetEntryRequest : Proto.Message.Message GetEntryRequest
 messageGetEntryRequest =
-    Proto.Message.init "catalog.v1.GetEntryRequest" encodeGetEntryRequest decodeGetEntryRequest encodeGetEntryRequestBytes decodeGetEntryRequestBytes
+    Proto.Message.init "catalog.v1.GetEntryRequest" encodeGetEntryRequest decodeGetEntryRequest encodeGetEntryRequestBinary decodeGetEntryRequestBinary
 
 
 
@@ -282,8 +282,8 @@ decodeGetEntryRequest =
 
 {-| Encodes an [`Entry`](#Entry) as protobuf binary.
 -}
-encodeEntryBytes : Entry -> Bytes.Encode.Encoder
-encodeEntryBytes value =
+encodeEntryBinary : Entry -> Bytes.Encode.Encoder
+encodeEntryBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         , Proto.Binary.implicit Proto.Binary.string 2 value.descriptor
@@ -293,17 +293,17 @@ encodeEntryBytes value =
 
 {-| Encodes a [`Part`](#Part) as protobuf binary.
 -}
-encodePartBytes : Part -> Bytes.Encode.Encoder
-encodePartBytes value =
+encodePartBinary : Part -> Bytes.Encode.Encoder
+encodePartBinary value =
     Bytes.Encode.sequence
-        [ encodePartKindBytes value.kind
+        [ encodePartKindBinary value.kind
         ]
 
 
 {-| Encodes a [`PartKind`](#PartKind) as protobuf binary: its set member's field.
 -}
-encodePartKindBytes : PartKind -> Bytes.Encode.Encoder
-encodePartKindBytes value =
+encodePartKindBinary : PartKind -> Bytes.Encode.Encoder
+encodePartKindBinary value =
     case value of
         PartKindUnset ->
             Bytes.Encode.sequence []
@@ -317,12 +317,12 @@ encodePartKindBytes value =
 
 {-| Encodes a [`GetEntryRequest`](#GetEntryRequest) as protobuf binary.
 -}
-encodeGetEntryRequestBytes : GetEntryRequest -> Bytes.Encode.Encoder
-encodeGetEntryRequestBytes value =
+encodeGetEntryRequestBinary : GetEntryRequest -> Bytes.Encode.Encoder
+encodeGetEntryRequestBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         , Proto.Binary.implicit Proto.Binary.string 2 value.descriptor
-        , Proto.Binary.optional (Proto.Binary.embedded encodePartBytes mergePartBytes defaultPart) 3 value.part
+        , Proto.Binary.optional (Proto.Binary.embedded encodePartBinary mergePartBinary defaultPart) 3 value.part
         ]
 
 
@@ -332,8 +332,8 @@ encodeGetEntryRequestBytes value =
 
 {-| Decodes an [`Entry`](#Entry) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeEntryBytes : Entry -> Proto.Binary.Decoder Entry
-mergeEntryBytes =
+mergeEntryBinary : Entry -> Proto.Binary.Decoder Entry
+mergeEntryBinary =
     Proto.Binary.merge
         "catalog.v1.Entry"
         (\number wire value ->
@@ -382,15 +382,15 @@ mergeEntryBytes =
 
 {-| Decodes an [`Entry`](#Entry) from protobuf binary.
 -}
-decodeEntryBytes : Proto.Binary.Decoder Entry
-decodeEntryBytes =
-    mergeEntryBytes defaultEntry
+decodeEntryBinary : Proto.Binary.Decoder Entry
+decodeEntryBinary =
+    mergeEntryBinary defaultEntry
 
 
 {-| Decodes a [`Part`](#Part) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergePartBytes : Part -> Proto.Binary.Decoder Part
-mergePartBytes =
+mergePartBinary : Part -> Proto.Binary.Decoder Part
+mergePartBinary =
     Proto.Binary.merge
         "catalog.v1.Part"
         (\number wire value ->
@@ -423,15 +423,15 @@ mergePartBytes =
 
 {-| Decodes a [`Part`](#Part) from protobuf binary.
 -}
-decodePartBytes : Proto.Binary.Decoder Part
-decodePartBytes =
-    mergePartBytes defaultPart
+decodePartBinary : Proto.Binary.Decoder Part
+decodePartBinary =
+    mergePartBinary defaultPart
 
 
 {-| Decodes a [`GetEntryRequest`](#GetEntryRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeGetEntryRequestBytes : GetEntryRequest -> Proto.Binary.Decoder GetEntryRequest
-mergeGetEntryRequestBytes =
+mergeGetEntryRequestBinary : GetEntryRequest -> Proto.Binary.Decoder GetEntryRequest
+mergeGetEntryRequestBinary =
     Proto.Binary.merge
         "catalog.v1.GetEntryRequest"
         (\number wire value ->
@@ -462,7 +462,7 @@ mergeGetEntryRequestBytes =
 
                 3 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodePartBytes mergePartBytes defaultPart)
+                        (Proto.Binary.embedded encodePartBinary mergePartBinary defaultPart)
                         value.part
                         (\v ->
                             { name = value.name
@@ -481,9 +481,9 @@ mergeGetEntryRequestBytes =
 
 {-| Decodes a [`GetEntryRequest`](#GetEntryRequest) from protobuf binary.
 -}
-decodeGetEntryRequestBytes : Proto.Binary.Decoder GetEntryRequest
-decodeGetEntryRequestBytes =
-    mergeGetEntryRequestBytes defaultGetEntryRequest
+decodeGetEntryRequestBinary : Proto.Binary.Decoder GetEntryRequest
+decodeGetEntryRequestBinary =
+    mergeGetEntryRequestBinary defaultGetEntryRequest
 
 
 

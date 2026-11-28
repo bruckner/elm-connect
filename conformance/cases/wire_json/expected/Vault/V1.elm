@@ -82,14 +82,14 @@ defaultGetItemRequest =
 -}
 messageItem : Proto.Message.Message Item
 messageItem =
-    Proto.Message.init "vault.v1.Item" encodeItem decodeItem encodeItemBytes decodeItemBytes
+    Proto.Message.init "vault.v1.Item" encodeItem decodeItem encodeItemBinary decodeItemBinary
 
 
 {-| The typed value of [`GetItemRequest`](#GetItemRequest): its full name and codecs.
 -}
 messageGetItemRequest : Proto.Message.Message GetItemRequest
 messageGetItemRequest =
-    Proto.Message.init "vault.v1.GetItemRequest" encodeGetItemRequest decodeGetItemRequest encodeGetItemRequestBytes decodeGetItemRequestBytes
+    Proto.Message.init "vault.v1.GetItemRequest" encodeGetItemRequest decodeGetItemRequest encodeGetItemRequestBinary decodeGetItemRequestBinary
 
 
 
@@ -175,8 +175,8 @@ decodeGetItemRequest =
 
 {-| Encodes an [`Item`](#Item) as protobuf binary.
 -}
-encodeItemBytes : Item -> Bytes.Encode.Encoder
-encodeItemBytes value =
+encodeItemBinary : Item -> Bytes.Encode.Encoder
+encodeItemBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         ]
@@ -184,8 +184,8 @@ encodeItemBytes value =
 
 {-| Encodes a [`GetItemRequest`](#GetItemRequest) as protobuf binary.
 -}
-encodeGetItemRequestBytes : GetItemRequest -> Bytes.Encode.Encoder
-encodeGetItemRequestBytes value =
+encodeGetItemRequestBinary : GetItemRequest -> Bytes.Encode.Encoder
+encodeGetItemRequestBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         ]
@@ -197,8 +197,8 @@ encodeGetItemRequestBytes value =
 
 {-| Decodes an [`Item`](#Item) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeItemBytes : Item -> Proto.Binary.Decoder Item
-mergeItemBytes =
+mergeItemBinary : Item -> Proto.Binary.Decoder Item
+mergeItemBinary =
     Proto.Binary.merge
         "vault.v1.Item"
         (\number wire value ->
@@ -221,15 +221,15 @@ mergeItemBytes =
 
 {-| Decodes an [`Item`](#Item) from protobuf binary.
 -}
-decodeItemBytes : Proto.Binary.Decoder Item
-decodeItemBytes =
-    mergeItemBytes defaultItem
+decodeItemBinary : Proto.Binary.Decoder Item
+decodeItemBinary =
+    mergeItemBinary defaultItem
 
 
 {-| Decodes a [`GetItemRequest`](#GetItemRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeGetItemRequestBytes : GetItemRequest -> Proto.Binary.Decoder GetItemRequest
-mergeGetItemRequestBytes =
+mergeGetItemRequestBinary : GetItemRequest -> Proto.Binary.Decoder GetItemRequest
+mergeGetItemRequestBinary =
     Proto.Binary.merge
         "vault.v1.GetItemRequest"
         (\number wire value ->
@@ -252,6 +252,6 @@ mergeGetItemRequestBytes =
 
 {-| Decodes a [`GetItemRequest`](#GetItemRequest) from protobuf binary.
 -}
-decodeGetItemRequestBytes : Proto.Binary.Decoder GetItemRequest
-decodeGetItemRequestBytes =
-    mergeGetItemRequestBytes defaultGetItemRequest
+decodeGetItemRequestBinary : Proto.Binary.Decoder GetItemRequest
+decodeGetItemRequestBinary =
+    mergeGetItemRequestBinary defaultGetItemRequest

@@ -481,7 +481,7 @@ pub enum Wire {
     /// proto3 JSON alone, which Connect's JSON codec and transcoding
     /// speak: `Rpc.Call Rpc.Json`.
     Json,
-    /// Protobuf binary alone (`encodeNoteBytes`, `decodeNoteBytes`), for
+    /// Protobuf binary alone (`encodeNoteBinary`, `decodeNoteBinary`), for
     /// Connect's proto codec and gRPC-Web: `Rpc.Call Rpc.Binary`.
     Proto,
 }

@@ -91,7 +91,7 @@ defaultEnvelope =
 -}
 messageEnvelope : Proto.Message.Message Envelope
 messageEnvelope =
-    Proto.Message.initWith "envelope.v1.Envelope" encodeEnvelope decodeEnvelopeWith encodeEnvelopeBytes decodeEnvelopeBytes
+    Proto.Message.initWith "envelope.v1.Envelope" encodeEnvelope decodeEnvelopeWith encodeEnvelopeBinary decodeEnvelopeBinary
 
 
 
@@ -206,21 +206,21 @@ decodeNestedEnvelopeBodyWith types depth =
 
 {-| Encodes an [`Envelope`](#Envelope) as protobuf binary.
 -}
-encodeEnvelopeBytes : Envelope -> Bytes.Encode.Encoder
-encodeEnvelopeBytes value =
+encodeEnvelopeBinary : Envelope -> Bytes.Encode.Encoder
+encodeEnvelopeBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.id
         , Proto.Binary.optional Proto.Binary.any 2 value.payload
         , Proto.Binary.list Proto.Binary.any 3 value.attachments
         , Proto.Binary.dict Proto.Binary.string Proto.Binary.any 4 value.headers
-        , encodeEnvelopeBodyBytes value.body
+        , encodeEnvelopeBodyBinary value.body
         ]
 
 
 {-| Encodes an [`EnvelopeBody`](#EnvelopeBody) as protobuf binary: its set member's field.
 -}
-encodeEnvelopeBodyBytes : EnvelopeBody -> Bytes.Encode.Encoder
-encodeEnvelopeBodyBytes value =
+encodeEnvelopeBodyBinary : EnvelopeBody -> Bytes.Encode.Encoder
+encodeEnvelopeBodyBinary value =
     case value of
         EnvelopeBodyUnset ->
             Bytes.Encode.sequence []
@@ -238,15 +238,15 @@ encodeEnvelopeBodyBytes value =
 
 {-| Decodes an [`Envelope`](#Envelope) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeEnvelopeBytes : Envelope -> Proto.Binary.Decoder Envelope
-mergeEnvelopeBytes =
-    mergeNestedEnvelopeBytes 1
+mergeEnvelopeBinary : Envelope -> Proto.Binary.Decoder Envelope
+mergeEnvelopeBinary =
+    mergeNestedEnvelopeBinary 1
 
 
-{-| [`mergeEnvelopeBytes`](#mergeEnvelopeBytes) for an [`Envelope`](#Envelope) held `depth` levels deep.
+{-| [`mergeEnvelopeBinary`](#mergeEnvelopeBinary) for an [`Envelope`](#Envelope) held `depth` levels deep.
 -}
-mergeNestedEnvelopeBytes : Int -> Envelope -> Proto.Binary.Decoder Envelope
-mergeNestedEnvelopeBytes depth =
+mergeNestedEnvelopeBinary : Int -> Envelope -> Proto.Binary.Decoder Envelope
+mergeNestedEnvelopeBinary depth =
     Proto.Binary.merge
         "envelope.v1.Envelope"
         (\number wire value ->
@@ -352,6 +352,6 @@ mergeNestedEnvelopeBytes depth =
 
 {-| Decodes an [`Envelope`](#Envelope) from protobuf binary.
 -}
-decodeEnvelopeBytes : Proto.Binary.Decoder Envelope
-decodeEnvelopeBytes =
-    mergeEnvelopeBytes defaultEnvelope
+decodeEnvelopeBinary : Proto.Binary.Decoder Envelope
+decodeEnvelopeBinary =
+    mergeEnvelopeBinary defaultEnvelope

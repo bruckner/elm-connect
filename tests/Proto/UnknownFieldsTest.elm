@@ -19,7 +19,7 @@ import Test exposing (Test, describe, test)
 
 leaf : String -> Result String Keep.Leaf
 leaf hex =
-    Proto.Binary.decode Keep.decodeLeafBytes (fromHex hex) |> Result.mapError (\_ -> "does not decode")
+    Proto.Binary.decode Keep.decodeLeafBinary (fromHex hex) |> Result.mapError (\_ -> "does not decode")
 
 
 rewritten : Proto.Binary.Decoder a -> (a -> Bytes.Encode.Encoder) -> String -> Result String String
@@ -40,10 +40,10 @@ suite : Test
 suite =
     describe "unknown_fields=keep"
         [ test "a message read and written back keeps them, after the known fields" <|
-            \_ -> rewritten Keep.decodeLeafBytes Keep.encodeLeafBytes ("0a0161" ++ "1805" ++ "1007") |> Expect.equal (Ok ("0a0161" ++ "1007" ++ "1805"))
+            \_ -> rewritten Keep.decodeLeafBinary Keep.encodeLeafBinary ("0a0161" ++ "1805" ++ "1007") |> Expect.equal (Ok ("0a0161" ++ "1007" ++ "1805"))
         , test "they are written by field number, in arrival order within one" <|
             \_ ->
-                rewritten Keep.decodeLeafBytes Keep.encodeLeafBytes ("2d01020304" ++ "1802" ++ "2201ff" ++ "1801")
+                rewritten Keep.decodeLeafBinary Keep.encodeLeafBinary ("2d01020304" ++ "1802" ++ "2201ff" ++ "1801")
                     |> Expect.equal (Ok ("1802" ++ "1801" ++ "2201ff" ++ "2d01020304"))
         , test "they are held as data" <|
             \_ ->
@@ -68,7 +68,7 @@ suite =
                     held =
                         { name = "", count = 0, unknownFields_ = Proto.Unknown.fromList [ ( 5, Fixed32 7 ), ( 3, Varint 0 9 ) ] }
                 in
-                Proto.Binary.decode (Keep.mergeLeafBytes held) (fromHex ("1801" ++ "2201ff" ++ "1802"))
+                Proto.Binary.decode (Keep.mergeLeafBinary held) (fromHex ("1801" ++ "2201ff" ++ "1802"))
                     |> Result.map (.unknownFields_ >> Proto.Unknown.toList)
                     |> Expect.equal (Ok [ ( 3, Varint 0 9 ), ( 3, Varint 0 1 ), ( 3, Varint 0 2 ), ( 4, Delimited "/w==" ), ( 5, Fixed32 7 ) ])
         , test "a known field of a wire type it does not take is kept as unknown" <|
@@ -78,7 +78,7 @@ suite =
                     |> Expect.equal (Ok ( 0, [ ( 2, Delimited "/w==" ) ] ))
         , test "a message field read twice keeps both occurrences' unknown fields" <|
             \_ ->
-                rewritten Keep.decodeOuterBytes Keep.encodeOuterBytes ("12021805" ++ "12021806")
+                rewritten Keep.decodeOuterBinary Keep.encodeOuterBinary ("12021805" ++ "12021806")
                     |> Expect.equal (Ok "120418051806")
         , describe "== on messages"
             [ test "differing only in an unknown field: not equal" <|
@@ -108,7 +108,7 @@ suite =
                     |> Expect.equal (Ok Proto.Unknown.empty)
         , test "a message built with some writes them after its known fields" <|
             \_ ->
-                Proto.Binary.encode Keep.encodeLeafBytes { name = "a", count = 0, unknownFields_ = Proto.Unknown.fromList [ ( 9, Fixed64 0 1 ), ( 3, Varint 1 0 ) ] }
+                Proto.Binary.encode Keep.encodeLeafBinary { name = "a", count = 0, unknownFields_ = Proto.Unknown.fromList [ ( 9, Fixed64 0 1 ), ( 3, Varint 1 0 ) ] }
                     |> toHex
                     |> Expect.equal ("0a0161" ++ "188080808010" ++ "490100000000000000")
         , test "fromList sorts by number, keeping the list's order within one" <|

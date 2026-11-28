@@ -10,11 +10,11 @@
   `Json.Decode.decodeValue` and `Proto.Message.decodeJson` used to throw.
   Writing is not limited; the calling guide's "Nesting depth" says what
   can still overflow.
-- A message on a cycle generates `mergeNestedFooBytes` beside
-  `mergeFooBytes` and `decodeNestedFoo` beside `decodeFoo`
+- A message on a cycle generates `mergeNestedFooBinary` beside
+  `mergeFooBinary` and `decodeNestedFoo` beside `decodeFoo`
   (`decodeNestedFooWith` beside `decodeFooWith` for one that holds an
   `Any`), its decoders at a nesting depth; a oneof with a member on the
   cycle, `decodeNestedFooKind`, and a recursive message's wrapper,
-  `mergeNestedFoo_Bytes`. Other messages generate what they did.
+  `mergeNestedFoo_Binary`. Other messages generate what they did.
   `Proto.Binary` gains `recursive` and `memo`, and `Proto.Json` gains
   `memo` and `deeperWith`, which generated code calls.

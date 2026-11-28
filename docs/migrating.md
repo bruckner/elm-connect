@@ -432,7 +432,7 @@ JSON.
   protobuf binary as its type URL alone.
 - A message's typed value holds its full name and both codecs:
   `Proto.Message.init "notes.v1.Note" encodeNote decodeNote
-  encodeNoteBytes decodeNoteBytes` (`initWith` for one that reaches an
+  encodeNoteBinary decodeNoteBinary` (`initWith` for one that reaches an
   `Any`) replaces 0.1's `Proto.Message.message encode decoder default
   descriptor`, and the readers `encode`, `decoder`, `default` and
   `toDescriptor` are gone: use the generated codecs, `defaultNote` and

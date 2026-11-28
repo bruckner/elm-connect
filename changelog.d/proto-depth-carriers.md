@@ -16,7 +16,7 @@
   message nests depends only on what it reaches, so a package generates
   the same code whatever else is generated with it.
 - A message that nests gets codecs at a depth (`decodeNestedNote`,
-  `decodeNestedNoteWith`, `mergeNestedNoteBytes`, and `decodeNestedNoteKind`
+  `decodeNestedNoteWith`, `mergeNestedNoteBinary`, and `decodeNestedNoteKind`
   for a oneof of it with a member that counts), its plain codecs being
   them at depth 1. This is new for a schema without recursion: a message
   holding a `Struct`, `Value`, `ListValue` or `Any`, and every message

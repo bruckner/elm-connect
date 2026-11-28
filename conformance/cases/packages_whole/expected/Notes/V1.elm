@@ -87,14 +87,14 @@ defaultTag =
 -}
 messageNote : Proto.Message.Message Note
 messageNote =
-    Proto.Message.init "notes.v1.Note" encodeNote decodeNote encodeNoteBytes decodeNoteBytes
+    Proto.Message.init "notes.v1.Note" encodeNote decodeNote encodeNoteBinary decodeNoteBinary
 
 
 {-| The typed value of [`Tag`](#Tag): its full name and codecs.
 -}
 messageTag : Proto.Message.Message Tag
 messageTag =
-    Proto.Message.init "notes.v1.Tag" encodeTag decodeTag encodeTagBytes decodeTagBytes
+    Proto.Message.init "notes.v1.Tag" encodeTag decodeTag encodeTagBinary decodeTagBinary
 
 
 
@@ -182,18 +182,18 @@ decodeTag =
 
 {-| Encodes a [`Note`](#Note) as protobuf binary.
 -}
-encodeNoteBytes : Note -> Bytes.Encode.Encoder
-encodeNoteBytes value =
+encodeNoteBinary : Note -> Bytes.Encode.Encoder
+encodeNoteBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.title
-        , Proto.Binary.list (Proto.Binary.embedded encodeTagBytes mergeTagBytes defaultTag) 2 value.tags
+        , Proto.Binary.list (Proto.Binary.embedded encodeTagBinary mergeTagBinary defaultTag) 2 value.tags
         ]
 
 
 {-| Encodes a [`Tag`](#Tag) as protobuf binary.
 -}
-encodeTagBytes : Tag -> Bytes.Encode.Encoder
-encodeTagBytes value =
+encodeTagBinary : Tag -> Bytes.Encode.Encoder
+encodeTagBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.label
         ]
@@ -205,8 +205,8 @@ encodeTagBytes value =
 
 {-| Decodes a [`Note`](#Note) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeNoteBytes : Note -> Proto.Binary.Decoder Note
-mergeNoteBytes =
+mergeNoteBinary : Note -> Proto.Binary.Decoder Note
+mergeNoteBinary =
     Proto.Binary.merge
         "notes.v1.Note"
         (\number wire value ->
@@ -224,7 +224,7 @@ mergeNoteBytes =
 
                 2 ->
                     Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeTagBytes mergeTagBytes defaultTag)
+                        (Proto.Binary.embedded encodeTagBinary mergeTagBinary defaultTag)
                         (\v ->
                             { title = value.title
                             , tags = v
@@ -246,15 +246,15 @@ mergeNoteBytes =
 
 {-| Decodes a [`Note`](#Note) from protobuf binary.
 -}
-decodeNoteBytes : Proto.Binary.Decoder Note
-decodeNoteBytes =
-    mergeNoteBytes defaultNote
+decodeNoteBinary : Proto.Binary.Decoder Note
+decodeNoteBinary =
+    mergeNoteBinary defaultNote
 
 
 {-| Decodes a [`Tag`](#Tag) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeTagBytes : Tag -> Proto.Binary.Decoder Tag
-mergeTagBytes =
+mergeTagBinary : Tag -> Proto.Binary.Decoder Tag
+mergeTagBinary =
     Proto.Binary.merge
         "notes.v1.Tag"
         (\number wire value ->
@@ -277,6 +277,6 @@ mergeTagBytes =
 
 {-| Decodes a [`Tag`](#Tag) from protobuf binary.
 -}
-decodeTagBytes : Proto.Binary.Decoder Tag
-decodeTagBytes =
-    mergeTagBytes defaultTag
+decodeTagBinary : Proto.Binary.Decoder Tag
+decodeTagBinary =
+    mergeTagBinary defaultTag

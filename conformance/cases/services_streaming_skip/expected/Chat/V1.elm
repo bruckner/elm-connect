@@ -63,7 +63,7 @@ defaultLine =
 -}
 messageLine : Proto.Message.Message Line
 messageLine =
-    Proto.Message.init "chat.v1.Line" encodeLine decodeLine encodeLineBytes decodeLineBytes
+    Proto.Message.init "chat.v1.Line" encodeLine decodeLine encodeLineBinary decodeLineBinary
 
 
 
@@ -126,8 +126,8 @@ decodeLine =
 
 {-| Encodes a [`Line`](#Line) as protobuf binary.
 -}
-encodeLineBytes : Line -> Bytes.Encode.Encoder
-encodeLineBytes value =
+encodeLineBinary : Line -> Bytes.Encode.Encoder
+encodeLineBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.text
         ]
@@ -139,8 +139,8 @@ encodeLineBytes value =
 
 {-| Decodes a [`Line`](#Line) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeLineBytes : Line -> Proto.Binary.Decoder Line
-mergeLineBytes =
+mergeLineBinary : Line -> Proto.Binary.Decoder Line
+mergeLineBinary =
     Proto.Binary.merge
         "chat.v1.Line"
         (\number wire value ->
@@ -163,6 +163,6 @@ mergeLineBytes =
 
 {-| Decodes a [`Line`](#Line) from protobuf binary.
 -}
-decodeLineBytes : Proto.Binary.Decoder Line
-decodeLineBytes =
-    mergeLineBytes defaultLine
+decodeLineBinary : Proto.Binary.Decoder Line
+decodeLineBinary =
+    mergeLineBinary defaultLine

@@ -10,9 +10,9 @@ use crate::common::pool;
 const BESIDE: &str = r#"syntax = "proto3";
 package t;
 message Note { string title = 1; }
-message NoteBytes { bytes content = 1; }
+message NoteBinary { bytes content = 1; }
 message Status { int32 code = 1; }
-enum StatusBytes { STATUS_BYTES_UNSPECIFIED = 0; }
+enum StatusBinary { STATUS_BINARY_UNSPECIFIED = 0; }
 "#;
 
 fn build(source: &str, wire: Wire, renames: &[&str]) -> Result<Vec<Package>, Diagnostics> {
@@ -34,22 +34,22 @@ fn collisions(diagnostics: &Diagnostics) -> Vec<String> {
 }
 
 #[test]
-fn both_codecs_meet_a_type_named_with_bytes() {
+fn both_codecs_meet_a_type_named_with_binary() {
     let diagnostics = build(BESIDE, Wire::Both, &[]).expect_err("two collisions");
     let messages = collisions(&diagnostics);
     assert_eq!(messages.len(), 2, "{messages:?}");
     assert!(
-        messages[0].contains("`encodeNoteBytes` and `decodeNoteBytes`"),
+        messages[0].contains("`encodeNoteBinary` and `decodeNoteBinary`"),
         "{messages:?}"
     );
     assert!(
-        messages[1].contains("`encodeStatusBytes` and `decodeStatusBytes`"),
+        messages[1].contains("`encodeStatusBinary` and `decodeStatusBinary`"),
         "{messages:?}"
     );
 }
 
 #[test]
-fn every_option_meets_a_type_named_with_bytes() {
+fn every_option_meets_a_type_named_with_binary() {
     // Package modules carry both codecs whatever the option.
     for wire in [Wire::Json, Wire::Proto] {
         let diagnostics = build(BESIDE, wire, &[]).expect_err("two collisions");
@@ -58,8 +58,21 @@ fn every_option_meets_a_type_named_with_bytes() {
 }
 
 #[test]
+fn a_type_named_with_bytes_meets_nothing() {
+    // `Bytes` is no codec suffix: `NoteBytes`'s JSON codecs are
+    // `encodeNoteBytes` and `decodeNoteBytes`, and `Note`'s binary codecs
+    // `encodeNoteBinary` and `decodeNoteBinary`.
+    let source = r#"syntax = "proto3";
+package t;
+message Note { string title = 1; }
+message NoteBytes { bytes content = 1; }
+"#;
+    assert!(build(source, Wire::Both, &[]).is_ok());
+}
+
+#[test]
 fn a_rename_parts_the_codecs() {
-    let renames = ["t.NoteBytes:NoteContent", "t.StatusBytes:StatusKind"];
+    let renames = ["t.NoteBinary:NoteContent", "t.StatusBinary:StatusKind"];
     assert!(build(BESIDE, Wire::Both, &renames).is_ok());
 }
 
@@ -70,7 +83,7 @@ package t;
 message Note { string title = 1; }
 message Memo { bytes content = 1; }
 "#;
-    let diagnostics = build(source, Wire::Both, &["t.Memo:NoteBytes"]).expect_err("a collision");
+    let diagnostics = build(source, Wire::Both, &["t.Memo:NoteBinary"]).expect_err("a collision");
     assert_eq!(collisions(&diagnostics).len(), 1);
     let help = diagnostics.iter().next().unwrap().help_text();
     assert!(help.contains("That name comes from"), "{help}");

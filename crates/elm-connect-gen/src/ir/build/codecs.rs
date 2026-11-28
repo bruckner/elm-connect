@@ -1,6 +1,6 @@
 //! The codec names two types of a package can share although their type
 //! names differ. A type's binary codecs are its JSON codecs' names with
-//! `Bytes` at the end, and the JSON decoder of a message or oneof that
+//! `Binary` at the end, and the JSON decoder of a message or oneof that
 //! reaches a `google.protobuf.Any` takes the registry and has `With` at
 //! the end, so a type named for another with that suffix can take one of
 //! the other's codec names. Both checks read a package's namespace of
@@ -14,11 +14,11 @@ use crate::ir::{Enum, Message, TypeRef, WellKnown};
 use crate::naming;
 
 impl Builder {
-    /// Reports each type of `package` named for another with `Bytes` at
-    /// the end (`NoteBytes` beside `Note`) whose JSON codecs take the
-    /// names of the other's binary codecs (`encodeNoteBytes`,
-    /// `decodeNoteBytes`). A type's binary codecs are its JSON codecs'
-    /// names with `Bytes` at the end, and only a message's merge starts
+    /// Reports each type of `package` named for another with `Binary` at
+    /// the end (`NoteBinary` beside `Note`) whose JSON codecs take the
+    /// names of the other's binary codecs (`encodeNoteBinary`,
+    /// `decodeNoteBinary`). A type's binary codecs are its JSON codecs'
+    /// names with `Binary` at the end, and only a message's merge starts
     /// with `merge`, which no JSON codec does, so these are the only
     /// generated values the binary codecs can meet.
     pub(super) fn check_codec_names(
@@ -31,7 +31,7 @@ impl Builder {
         let mut names: Vec<&String> = types.claimed.keys().collect();
         names.sort();
         for name in names {
-            let Some(stem) = name.strip_suffix("Bytes") else {
+            let Some(stem) = name.strip_suffix(naming::BINARY_SUFFIX) else {
                 continue;
             };
             let Some(first) = types.claimed.get(stem) else {

@@ -112,14 +112,14 @@ defaultTree =
 -}
 messageChain : Proto.Message.Message Chain
 messageChain =
-    Proto.Message.init "cycles.v1.Chain" encodeChain decodeChain encodeChainBytes decodeChainBytes
+    Proto.Message.init "cycles.v1.Chain" encodeChain decodeChain encodeChainBinary decodeChainBinary
 
 
 {-| The typed value of [`Tree`](#Tree): its full name and codecs.
 -}
 messageTree : Proto.Message.Message Tree
 messageTree =
-    Proto.Message.init "cycles.v1.Tree" encodeTree decodeTree encodeTreeBytes decodeTreeBytes
+    Proto.Message.init "cycles.v1.Tree" encodeTree decodeTree encodeTreeBinary decodeTreeBinary
 
 
 
@@ -259,38 +259,38 @@ decodeTree_ =
 
 {-| Encodes a [`Chain`](#Chain) as protobuf binary.
 -}
-encodeChainBytes : Chain -> Bytes.Encode.Encoder
-encodeChainBytes value =
+encodeChainBinary : Chain -> Bytes.Encode.Encoder
+encodeChainBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.label
-        , Proto.Binary.optional (Proto.Binary.embedded encodeChain_Bytes mergeChain_Bytes (Chain_ defaultChain)) 2 value.next
+        , Proto.Binary.optional (Proto.Binary.embedded encodeChain_Binary mergeChain_Binary (Chain_ defaultChain)) 2 value.next
         , Proto.Binary.unknown value.unknownFields_
         ]
 
 
 {-| Encodes a [`Chain_`](#Chain_) as protobuf binary.
 -}
-encodeChain_Bytes : Chain_ -> Bytes.Encode.Encoder
-encodeChain_Bytes (Chain_ value) =
-    encodeChainBytes value
+encodeChain_Binary : Chain_ -> Bytes.Encode.Encoder
+encodeChain_Binary (Chain_ value) =
+    encodeChainBinary value
 
 
 {-| Encodes a [`Tree`](#Tree) as protobuf binary.
 -}
-encodeTreeBytes : Tree -> Bytes.Encode.Encoder
-encodeTreeBytes value =
+encodeTreeBinary : Tree -> Bytes.Encode.Encoder
+encodeTreeBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.label
-        , Proto.Binary.list (Proto.Binary.embedded encodeTree_Bytes mergeTree_Bytes (Tree_ defaultTree)) 2 value.children
+        , Proto.Binary.list (Proto.Binary.embedded encodeTree_Binary mergeTree_Binary (Tree_ defaultTree)) 2 value.children
         , Proto.Binary.unknown value.unknownFields_
         ]
 
 
 {-| Encodes a [`Tree_`](#Tree_) as protobuf binary.
 -}
-encodeTree_Bytes : Tree_ -> Bytes.Encode.Encoder
-encodeTree_Bytes (Tree_ value) =
-    encodeTreeBytes value
+encodeTree_Binary : Tree_ -> Bytes.Encode.Encoder
+encodeTree_Binary (Tree_ value) =
+    encodeTreeBinary value
 
 
 
@@ -299,15 +299,15 @@ encodeTree_Bytes (Tree_ value) =
 
 {-| Decodes a [`Chain`](#Chain) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeChainBytes : Chain -> Proto.Binary.Decoder Chain
-mergeChainBytes =
-    mergeNestedChainBytes 1
+mergeChainBinary : Chain -> Proto.Binary.Decoder Chain
+mergeChainBinary =
+    mergeNestedChainBinary 1
 
 
-{-| [`mergeChainBytes`](#mergeChainBytes) for a [`Chain`](#Chain) held `depth` levels deep.
+{-| [`mergeChainBinary`](#mergeChainBinary) for a [`Chain`](#Chain) held `depth` levels deep.
 -}
-mergeNestedChainBytes : Int -> Chain -> Proto.Binary.Decoder Chain
-mergeNestedChainBytes =
+mergeNestedChainBinary : Int -> Chain -> Proto.Binary.Decoder Chain
+mergeNestedChainBinary =
     Proto.Binary.memo
         (\depth ->
             Proto.Binary.mergeKeep
@@ -346,7 +346,7 @@ mergeNestedChainBytes =
 
                         2 ->
                             Proto.Binary.fieldInto
-                                (Proto.Binary.recursive depth encodeChain_Bytes mergeNestedChain_Bytes (Chain_ defaultChain))
+                                (Proto.Binary.recursive depth encodeChain_Binary mergeNestedChain_Binary (Chain_ defaultChain))
                                 value.next
                                 (\v ->
                                     { label = value.label
@@ -366,36 +366,36 @@ mergeNestedChainBytes =
 
 {-| Decodes a [`Chain`](#Chain) from protobuf binary.
 -}
-decodeChainBytes : Proto.Binary.Decoder Chain
-decodeChainBytes =
-    mergeChainBytes defaultChain
+decodeChainBinary : Proto.Binary.Decoder Chain
+decodeChainBinary =
+    mergeChainBinary defaultChain
 
 
 {-| Decodes a [`Chain_`](#Chain_) from protobuf binary into the one given.
 -}
-mergeChain_Bytes : Chain_ -> Proto.Binary.Decoder Chain_
-mergeChain_Bytes (Chain_ value) =
-    Proto.Binary.map Chain_ (mergeChainBytes value)
+mergeChain_Binary : Chain_ -> Proto.Binary.Decoder Chain_
+mergeChain_Binary (Chain_ value) =
+    Proto.Binary.map Chain_ (mergeChainBinary value)
 
 
-{-| [`mergeChain_Bytes`](#mergeChain_Bytes) for a [`Chain_`](#Chain_) held `depth` levels deep.
+{-| [`mergeChain_Binary`](#mergeChain_Binary) for a [`Chain_`](#Chain_) held `depth` levels deep.
 -}
-mergeNestedChain_Bytes : Int -> Chain_ -> Proto.Binary.Decoder Chain_
-mergeNestedChain_Bytes depth (Chain_ value) =
-    Proto.Binary.map Chain_ (mergeNestedChainBytes depth value)
+mergeNestedChain_Binary : Int -> Chain_ -> Proto.Binary.Decoder Chain_
+mergeNestedChain_Binary depth (Chain_ value) =
+    Proto.Binary.map Chain_ (mergeNestedChainBinary depth value)
 
 
 {-| Decodes a [`Tree`](#Tree) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeTreeBytes : Tree -> Proto.Binary.Decoder Tree
-mergeTreeBytes =
-    mergeNestedTreeBytes 1
+mergeTreeBinary : Tree -> Proto.Binary.Decoder Tree
+mergeTreeBinary =
+    mergeNestedTreeBinary 1
 
 
-{-| [`mergeTreeBytes`](#mergeTreeBytes) for a [`Tree`](#Tree) held `depth` levels deep.
+{-| [`mergeTreeBinary`](#mergeTreeBinary) for a [`Tree`](#Tree) held `depth` levels deep.
 -}
-mergeNestedTreeBytes : Int -> Tree -> Proto.Binary.Decoder Tree
-mergeNestedTreeBytes =
+mergeNestedTreeBinary : Int -> Tree -> Proto.Binary.Decoder Tree
+mergeNestedTreeBinary =
     Proto.Binary.memo
         (\depth ->
             Proto.Binary.mergeKeep
@@ -434,7 +434,7 @@ mergeNestedTreeBytes =
 
                         2 ->
                             Proto.Binary.repeated
-                                (Proto.Binary.recursive depth encodeTree_Bytes mergeNestedTree_Bytes (Tree_ defaultTree))
+                                (Proto.Binary.recursive depth encodeTree_Binary mergeNestedTree_Binary (Tree_ defaultTree))
                                 (\v ->
                                     { label = value.label
                                     , children = v
@@ -459,20 +459,20 @@ mergeNestedTreeBytes =
 
 {-| Decodes a [`Tree`](#Tree) from protobuf binary.
 -}
-decodeTreeBytes : Proto.Binary.Decoder Tree
-decodeTreeBytes =
-    mergeTreeBytes defaultTree
+decodeTreeBinary : Proto.Binary.Decoder Tree
+decodeTreeBinary =
+    mergeTreeBinary defaultTree
 
 
 {-| Decodes a [`Tree_`](#Tree_) from protobuf binary into the one given.
 -}
-mergeTree_Bytes : Tree_ -> Proto.Binary.Decoder Tree_
-mergeTree_Bytes (Tree_ value) =
-    Proto.Binary.map Tree_ (mergeTreeBytes value)
+mergeTree_Binary : Tree_ -> Proto.Binary.Decoder Tree_
+mergeTree_Binary (Tree_ value) =
+    Proto.Binary.map Tree_ (mergeTreeBinary value)
 
 
-{-| [`mergeTree_Bytes`](#mergeTree_Bytes) for a [`Tree_`](#Tree_) held `depth` levels deep.
+{-| [`mergeTree_Binary`](#mergeTree_Binary) for a [`Tree_`](#Tree_) held `depth` levels deep.
 -}
-mergeNestedTree_Bytes : Int -> Tree_ -> Proto.Binary.Decoder Tree_
-mergeNestedTree_Bytes depth (Tree_ value) =
-    Proto.Binary.map Tree_ (mergeNestedTreeBytes depth value)
+mergeNestedTree_Binary : Int -> Tree_ -> Proto.Binary.Decoder Tree_
+mergeNestedTree_Binary depth (Tree_ value) =
+    Proto.Binary.map Tree_ (mergeNestedTreeBinary depth value)

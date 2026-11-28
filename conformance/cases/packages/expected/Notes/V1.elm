@@ -92,7 +92,7 @@ defaultNote =
 -}
 messageNote : Proto.Message.Message Note
 messageNote =
-    Proto.Message.init "notes.v1.Note" encodeNote decodeNote encodeNoteBytes decodeNoteBytes
+    Proto.Message.init "notes.v1.Note" encodeNote decodeNote encodeNoteBinary decodeNoteBinary
 
 
 
@@ -194,28 +194,28 @@ decodeNoteOwner =
 
 {-| Encodes a [`Note`](#Note) as protobuf binary.
 -}
-encodeNoteBytes : Note -> Bytes.Encode.Encoder
-encodeNoteBytes value =
+encodeNoteBinary : Note -> Bytes.Encode.Encoder
+encodeNoteBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.title
-        , Proto.Binary.optional (Proto.Binary.embedded Users.V1.encodeUserBytes Users.V1.mergeUserBytes Users.V1.defaultUser) 2 value.author
-        , Proto.Binary.implicit (Proto.Binary.enum Users.V1.encodeRoleBytes Users.V1.decodeRoleBytes) 3 value.requiredRole
-        , Proto.Binary.list (Proto.Binary.embedded Users.V1.encodeUserBytes Users.V1.mergeUserBytes Users.V1.defaultUser) 4 value.readers
-        , Proto.Binary.dict Proto.Binary.string (Proto.Binary.enum Users.V1.encodeRoleBytes Users.V1.decodeRoleBytes) 5 value.roles
-        , encodeNoteOwnerBytes value.owner
+        , Proto.Binary.optional (Proto.Binary.embedded Users.V1.encodeUserBinary Users.V1.mergeUserBinary Users.V1.defaultUser) 2 value.author
+        , Proto.Binary.implicit (Proto.Binary.enum Users.V1.encodeRoleBinary Users.V1.decodeRoleBinary) 3 value.requiredRole
+        , Proto.Binary.list (Proto.Binary.embedded Users.V1.encodeUserBinary Users.V1.mergeUserBinary Users.V1.defaultUser) 4 value.readers
+        , Proto.Binary.dict Proto.Binary.string (Proto.Binary.enum Users.V1.encodeRoleBinary Users.V1.decodeRoleBinary) 5 value.roles
+        , encodeNoteOwnerBinary value.owner
         ]
 
 
 {-| Encodes a [`NoteOwner`](#NoteOwner) as protobuf binary: its set member's field.
 -}
-encodeNoteOwnerBytes : NoteOwner -> Bytes.Encode.Encoder
-encodeNoteOwnerBytes value =
+encodeNoteOwnerBinary : NoteOwner -> Bytes.Encode.Encoder
+encodeNoteOwnerBinary value =
     case value of
         NoteOwnerUnset ->
             Bytes.Encode.sequence []
 
         NoteOwnerUser member ->
-            Proto.Binary.present (Proto.Binary.embedded Users.V1.encodeUserBytes Users.V1.mergeUserBytes Users.V1.defaultUser) 6 member
+            Proto.Binary.present (Proto.Binary.embedded Users.V1.encodeUserBinary Users.V1.mergeUserBinary Users.V1.defaultUser) 6 member
 
         NoteOwnerTeam member ->
             Proto.Binary.present Proto.Binary.string 7 member
@@ -227,8 +227,8 @@ encodeNoteOwnerBytes value =
 
 {-| Decodes a [`Note`](#Note) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeNoteBytes : Note -> Proto.Binary.Decoder Note
-mergeNoteBytes =
+mergeNoteBinary : Note -> Proto.Binary.Decoder Note
+mergeNoteBinary =
     Proto.Binary.merge
         "notes.v1.Note"
         (\number wire value ->
@@ -250,7 +250,7 @@ mergeNoteBytes =
 
                 2 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.embedded Users.V1.encodeUserBytes Users.V1.mergeUserBytes Users.V1.defaultUser)
+                        (Proto.Binary.embedded Users.V1.encodeUserBinary Users.V1.mergeUserBinary Users.V1.defaultUser)
                         value.author
                         (\v ->
                             { title = value.title
@@ -266,7 +266,7 @@ mergeNoteBytes =
 
                 3 ->
                     Proto.Binary.field
-                        (Proto.Binary.enum Users.V1.encodeRoleBytes Users.V1.decodeRoleBytes)
+                        (Proto.Binary.enum Users.V1.encodeRoleBinary Users.V1.decodeRoleBinary)
                         (\v ->
                             { title = value.title
                             , author = value.author
@@ -281,7 +281,7 @@ mergeNoteBytes =
 
                 4 ->
                     Proto.Binary.repeated
-                        (Proto.Binary.embedded Users.V1.encodeUserBytes Users.V1.mergeUserBytes Users.V1.defaultUser)
+                        (Proto.Binary.embedded Users.V1.encodeUserBinary Users.V1.mergeUserBinary Users.V1.defaultUser)
                         (\v ->
                             { title = value.title
                             , author = value.author
@@ -298,7 +298,7 @@ mergeNoteBytes =
                 5 ->
                     Proto.Binary.mapEntry
                         Proto.Binary.string
-                        (Proto.Binary.enum Users.V1.encodeRoleBytes Users.V1.decodeRoleBytes)
+                        (Proto.Binary.enum Users.V1.encodeRoleBinary Users.V1.decodeRoleBinary)
                         (\k v ->
                             { title = value.title
                             , author = value.author
@@ -313,7 +313,7 @@ mergeNoteBytes =
 
                 6 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.embedded Users.V1.encodeUserBytes Users.V1.mergeUserBytes Users.V1.defaultUser)
+                        (Proto.Binary.embedded Users.V1.encodeUserBinary Users.V1.mergeUserBinary Users.V1.defaultUser)
                         (case value.owner of
                             NoteOwnerUser member ->
                                 Just member
@@ -364,6 +364,6 @@ mergeNoteBytes =
 
 {-| Decodes a [`Note`](#Note) from protobuf binary.
 -}
-decodeNoteBytes : Proto.Binary.Decoder Note
-decodeNoteBytes =
-    mergeNoteBytes defaultNote
+decodeNoteBinary : Proto.Binary.Decoder Note
+decodeNoteBinary =
+    mergeNoteBinary defaultNote

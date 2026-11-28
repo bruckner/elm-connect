@@ -1100,8 +1100,8 @@ fn codecs_module(pool: &DescriptorPool) -> Module {
                     apply(
                         qualified("Codec.BinaryRoundTrip", "both"),
                         [
-                            value(format!("decode{name}Bytes")),
-                            value(format!("encode{name}Bytes")),
+                            value(format!("decode{name}Binary")),
+                            value(format!("encode{name}Binary")),
                             decoder(&descriptor),
                             encoder(&descriptor),
                         ],
@@ -1110,8 +1110,8 @@ fn codecs_module(pool: &DescriptorPool) -> Module {
                     apply(
                         qualified("Codec.BinaryRoundTrip", "binaryOnly"),
                         [
-                            value(format!("decode{name}Bytes")),
-                            value(format!("encode{name}Bytes")),
+                            value(format!("decode{name}Binary")),
+                            value(format!("encode{name}Binary")),
                         ],
                     )
                 };
@@ -1136,15 +1136,15 @@ fn codecs_module(pool: &DescriptorPool) -> Module {
             apply(
                 qualified("Codec.UnknownRoundTrip", "codec"),
                 [
-                    qualified(older.as_str(), format!("decode{name}Bytes")),
-                    qualified(older.as_str(), format!("encode{name}Bytes")),
+                    qualified(older.as_str(), format!("decode{name}Binary")),
+                    qualified(older.as_str(), format!("encode{name}Binary")),
                     qualified(
                         "Generated.Codec.Both.Codec.V1",
-                        format!("decode{name}Bytes"),
+                        format!("decode{name}Binary"),
                     ),
                     qualified(
                         "Generated.Codec.Both.Codec.V1",
-                        format!("encode{name}Bytes"),
+                        format!("encode{name}Binary"),
                     ),
                 ],
             ),

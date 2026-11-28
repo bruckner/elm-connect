@@ -204,98 +204,98 @@ type alias LocalizedMessage =
 -}
 errorInfo : Proto.Message.Message ErrorInfo
 errorInfo =
-    Proto.Message.init "google.rpc.ErrorInfo" encodeErrorInfo decodeErrorInfo encodeErrorInfoBytes decodeErrorInfoBytes
+    Proto.Message.init "google.rpc.ErrorInfo" encodeErrorInfo decodeErrorInfo encodeErrorInfoBinary decodeErrorInfoBinary
 
 
 {-| The typed value of [`RetryInfo`](#RetryInfo), to pack and unpack an `Any` with.
 -}
 retryInfo : Proto.Message.Message RetryInfo
 retryInfo =
-    Proto.Message.init "google.rpc.RetryInfo" encodeRetryInfo decodeRetryInfo encodeRetryInfoBytes decodeRetryInfoBytes
+    Proto.Message.init "google.rpc.RetryInfo" encodeRetryInfo decodeRetryInfo encodeRetryInfoBinary decodeRetryInfoBinary
 
 
 {-| The typed value of [`DebugInfo`](#DebugInfo), to pack and unpack an `Any` with.
 -}
 debugInfo : Proto.Message.Message DebugInfo
 debugInfo =
-    Proto.Message.init "google.rpc.DebugInfo" encodeDebugInfo decodeDebugInfo encodeDebugInfoBytes decodeDebugInfoBytes
+    Proto.Message.init "google.rpc.DebugInfo" encodeDebugInfo decodeDebugInfo encodeDebugInfoBinary decodeDebugInfoBinary
 
 
 {-| The typed value of [`QuotaFailure`](#QuotaFailure), to pack and unpack an `Any` with.
 -}
 quotaFailure : Proto.Message.Message QuotaFailure
 quotaFailure =
-    Proto.Message.init "google.rpc.QuotaFailure" encodeQuotaFailure decodeQuotaFailure encodeQuotaFailureBytes decodeQuotaFailureBytes
+    Proto.Message.init "google.rpc.QuotaFailure" encodeQuotaFailure decodeQuotaFailure encodeQuotaFailureBinary decodeQuotaFailureBinary
 
 
 {-| The typed value of [`QuotaFailureViolation`](#QuotaFailureViolation), to pack and unpack an `Any` with.
 -}
 quotaFailureViolation : Proto.Message.Message QuotaFailureViolation
 quotaFailureViolation =
-    Proto.Message.init "google.rpc.QuotaFailure.Violation" encodeQuotaFailureViolation decodeQuotaFailureViolation encodeQuotaFailureViolationBytes decodeQuotaFailureViolationBytes
+    Proto.Message.init "google.rpc.QuotaFailure.Violation" encodeQuotaFailureViolation decodeQuotaFailureViolation encodeQuotaFailureViolationBinary decodeQuotaFailureViolationBinary
 
 
 {-| The typed value of [`PreconditionFailure`](#PreconditionFailure), to pack and unpack an `Any` with.
 -}
 preconditionFailure : Proto.Message.Message PreconditionFailure
 preconditionFailure =
-    Proto.Message.init "google.rpc.PreconditionFailure" encodePreconditionFailure decodePreconditionFailure encodePreconditionFailureBytes decodePreconditionFailureBytes
+    Proto.Message.init "google.rpc.PreconditionFailure" encodePreconditionFailure decodePreconditionFailure encodePreconditionFailureBinary decodePreconditionFailureBinary
 
 
 {-| The typed value of [`PreconditionFailureViolation`](#PreconditionFailureViolation), to pack and unpack an `Any` with.
 -}
 preconditionFailureViolation : Proto.Message.Message PreconditionFailureViolation
 preconditionFailureViolation =
-    Proto.Message.init "google.rpc.PreconditionFailure.Violation" encodePreconditionFailureViolation decodePreconditionFailureViolation encodePreconditionFailureViolationBytes decodePreconditionFailureViolationBytes
+    Proto.Message.init "google.rpc.PreconditionFailure.Violation" encodePreconditionFailureViolation decodePreconditionFailureViolation encodePreconditionFailureViolationBinary decodePreconditionFailureViolationBinary
 
 
 {-| The typed value of [`BadRequest`](#BadRequest), to pack and unpack an `Any` with.
 -}
 badRequest : Proto.Message.Message BadRequest
 badRequest =
-    Proto.Message.init "google.rpc.BadRequest" encodeBadRequest decodeBadRequest encodeBadRequestBytes decodeBadRequestBytes
+    Proto.Message.init "google.rpc.BadRequest" encodeBadRequest decodeBadRequest encodeBadRequestBinary decodeBadRequestBinary
 
 
 {-| The typed value of [`BadRequestFieldViolation`](#BadRequestFieldViolation), to pack and unpack an `Any` with.
 -}
 badRequestFieldViolation : Proto.Message.Message BadRequestFieldViolation
 badRequestFieldViolation =
-    Proto.Message.init "google.rpc.BadRequest.FieldViolation" encodeBadRequestFieldViolation decodeBadRequestFieldViolation encodeBadRequestFieldViolationBytes decodeBadRequestFieldViolationBytes
+    Proto.Message.init "google.rpc.BadRequest.FieldViolation" encodeBadRequestFieldViolation decodeBadRequestFieldViolation encodeBadRequestFieldViolationBinary decodeBadRequestFieldViolationBinary
 
 
 {-| The typed value of [`RequestInfo`](#RequestInfo), to pack and unpack an `Any` with.
 -}
 requestInfo : Proto.Message.Message RequestInfo
 requestInfo =
-    Proto.Message.init "google.rpc.RequestInfo" encodeRequestInfo decodeRequestInfo encodeRequestInfoBytes decodeRequestInfoBytes
+    Proto.Message.init "google.rpc.RequestInfo" encodeRequestInfo decodeRequestInfo encodeRequestInfoBinary decodeRequestInfoBinary
 
 
 {-| The typed value of [`ResourceInfo`](#ResourceInfo), to pack and unpack an `Any` with.
 -}
 resourceInfo : Proto.Message.Message ResourceInfo
 resourceInfo =
-    Proto.Message.init "google.rpc.ResourceInfo" encodeResourceInfo decodeResourceInfo encodeResourceInfoBytes decodeResourceInfoBytes
+    Proto.Message.init "google.rpc.ResourceInfo" encodeResourceInfo decodeResourceInfo encodeResourceInfoBinary decodeResourceInfoBinary
 
 
 {-| The typed value of [`Help`](#Help), to pack and unpack an `Any` with.
 -}
 help : Proto.Message.Message Help
 help =
-    Proto.Message.init "google.rpc.Help" encodeHelp decodeHelp encodeHelpBytes decodeHelpBytes
+    Proto.Message.init "google.rpc.Help" encodeHelp decodeHelp encodeHelpBinary decodeHelpBinary
 
 
 {-| The typed value of [`HelpLink`](#HelpLink), to pack and unpack an `Any` with.
 -}
 helpLink : Proto.Message.Message HelpLink
 helpLink =
-    Proto.Message.init "google.rpc.Help.Link" encodeHelpLink decodeHelpLink encodeHelpLinkBytes decodeHelpLinkBytes
+    Proto.Message.init "google.rpc.Help.Link" encodeHelpLink decodeHelpLink encodeHelpLinkBinary decodeHelpLinkBinary
 
 
 {-| The typed value of [`LocalizedMessage`](#LocalizedMessage), to pack and unpack an `Any` with.
 -}
 localizedMessage : Proto.Message.Message LocalizedMessage
 localizedMessage =
-    Proto.Message.init "google.rpc.LocalizedMessage" encodeLocalizedMessage decodeLocalizedMessage encodeLocalizedMessageBytes decodeLocalizedMessageBytes
+    Proto.Message.init "google.rpc.LocalizedMessage" encodeLocalizedMessage decodeLocalizedMessage encodeLocalizedMessageBinary decodeLocalizedMessageBinary
 
 
 
@@ -714,8 +714,8 @@ decodeLocalizedMessage =
         )
 
 
-encodeErrorInfoBytes : ErrorInfo -> Bytes.Encode.Encoder
-encodeErrorInfoBytes value =
+encodeErrorInfoBinary : ErrorInfo -> Bytes.Encode.Encoder
+encodeErrorInfoBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.reason
         , Proto.Binary.implicit Proto.Binary.string 2 value.domain
@@ -723,30 +723,30 @@ encodeErrorInfoBytes value =
         ]
 
 
-encodeRetryInfoBytes : RetryInfo -> Bytes.Encode.Encoder
-encodeRetryInfoBytes value =
+encodeRetryInfoBinary : RetryInfo -> Bytes.Encode.Encoder
+encodeRetryInfoBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.optional Proto.Binary.duration 1 value.retryDelay
         ]
 
 
-encodeDebugInfoBytes : DebugInfo -> Bytes.Encode.Encoder
-encodeDebugInfoBytes value =
+encodeDebugInfoBinary : DebugInfo -> Bytes.Encode.Encoder
+encodeDebugInfoBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.list Proto.Binary.string 1 value.stackEntries
         , Proto.Binary.implicit Proto.Binary.string 2 value.detail
         ]
 
 
-encodeQuotaFailureBytes : QuotaFailure -> Bytes.Encode.Encoder
-encodeQuotaFailureBytes value =
+encodeQuotaFailureBinary : QuotaFailure -> Bytes.Encode.Encoder
+encodeQuotaFailureBinary value =
     Bytes.Encode.sequence
-        [ Proto.Binary.list (Proto.Binary.embedded encodeQuotaFailureViolationBytes mergeQuotaFailureViolationBytes defaultQuotaFailureViolation) 1 value.violations
+        [ Proto.Binary.list (Proto.Binary.embedded encodeQuotaFailureViolationBinary mergeQuotaFailureViolationBinary defaultQuotaFailureViolation) 1 value.violations
         ]
 
 
-encodeQuotaFailureViolationBytes : QuotaFailureViolation -> Bytes.Encode.Encoder
-encodeQuotaFailureViolationBytes value =
+encodeQuotaFailureViolationBinary : QuotaFailureViolation -> Bytes.Encode.Encoder
+encodeQuotaFailureViolationBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.subject
         , Proto.Binary.implicit Proto.Binary.string 2 value.description
@@ -759,15 +759,15 @@ encodeQuotaFailureViolationBytes value =
         ]
 
 
-encodePreconditionFailureBytes : PreconditionFailure -> Bytes.Encode.Encoder
-encodePreconditionFailureBytes value =
+encodePreconditionFailureBinary : PreconditionFailure -> Bytes.Encode.Encoder
+encodePreconditionFailureBinary value =
     Bytes.Encode.sequence
-        [ Proto.Binary.list (Proto.Binary.embedded encodePreconditionFailureViolationBytes mergePreconditionFailureViolationBytes defaultPreconditionFailureViolation) 1 value.violations
+        [ Proto.Binary.list (Proto.Binary.embedded encodePreconditionFailureViolationBinary mergePreconditionFailureViolationBinary defaultPreconditionFailureViolation) 1 value.violations
         ]
 
 
-encodePreconditionFailureViolationBytes : PreconditionFailureViolation -> Bytes.Encode.Encoder
-encodePreconditionFailureViolationBytes value =
+encodePreconditionFailureViolationBinary : PreconditionFailureViolation -> Bytes.Encode.Encoder
+encodePreconditionFailureViolationBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.type_
         , Proto.Binary.implicit Proto.Binary.string 2 value.subject
@@ -775,33 +775,33 @@ encodePreconditionFailureViolationBytes value =
         ]
 
 
-encodeBadRequestBytes : BadRequest -> Bytes.Encode.Encoder
-encodeBadRequestBytes value =
+encodeBadRequestBinary : BadRequest -> Bytes.Encode.Encoder
+encodeBadRequestBinary value =
     Bytes.Encode.sequence
-        [ Proto.Binary.list (Proto.Binary.embedded encodeBadRequestFieldViolationBytes mergeBadRequestFieldViolationBytes defaultBadRequestFieldViolation) 1 value.fieldViolations
+        [ Proto.Binary.list (Proto.Binary.embedded encodeBadRequestFieldViolationBinary mergeBadRequestFieldViolationBinary defaultBadRequestFieldViolation) 1 value.fieldViolations
         ]
 
 
-encodeBadRequestFieldViolationBytes : BadRequestFieldViolation -> Bytes.Encode.Encoder
-encodeBadRequestFieldViolationBytes value =
+encodeBadRequestFieldViolationBinary : BadRequestFieldViolation -> Bytes.Encode.Encoder
+encodeBadRequestFieldViolationBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.field
         , Proto.Binary.implicit Proto.Binary.string 2 value.description
         , Proto.Binary.implicit Proto.Binary.string 3 value.reason
-        , Proto.Binary.optional (Proto.Binary.embedded encodeLocalizedMessageBytes mergeLocalizedMessageBytes defaultLocalizedMessage) 4 value.localizedMessage
+        , Proto.Binary.optional (Proto.Binary.embedded encodeLocalizedMessageBinary mergeLocalizedMessageBinary defaultLocalizedMessage) 4 value.localizedMessage
         ]
 
 
-encodeRequestInfoBytes : RequestInfo -> Bytes.Encode.Encoder
-encodeRequestInfoBytes value =
+encodeRequestInfoBinary : RequestInfo -> Bytes.Encode.Encoder
+encodeRequestInfoBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.requestId
         , Proto.Binary.implicit Proto.Binary.string 2 value.servingData
         ]
 
 
-encodeResourceInfoBytes : ResourceInfo -> Bytes.Encode.Encoder
-encodeResourceInfoBytes value =
+encodeResourceInfoBinary : ResourceInfo -> Bytes.Encode.Encoder
+encodeResourceInfoBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.resourceType
         , Proto.Binary.implicit Proto.Binary.string 2 value.resourceName
@@ -810,31 +810,31 @@ encodeResourceInfoBytes value =
         ]
 
 
-encodeHelpBytes : Help -> Bytes.Encode.Encoder
-encodeHelpBytes value =
+encodeHelpBinary : Help -> Bytes.Encode.Encoder
+encodeHelpBinary value =
     Bytes.Encode.sequence
-        [ Proto.Binary.list (Proto.Binary.embedded encodeHelpLinkBytes mergeHelpLinkBytes defaultHelpLink) 1 value.links
+        [ Proto.Binary.list (Proto.Binary.embedded encodeHelpLinkBinary mergeHelpLinkBinary defaultHelpLink) 1 value.links
         ]
 
 
-encodeHelpLinkBytes : HelpLink -> Bytes.Encode.Encoder
-encodeHelpLinkBytes value =
+encodeHelpLinkBinary : HelpLink -> Bytes.Encode.Encoder
+encodeHelpLinkBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.description
         , Proto.Binary.implicit Proto.Binary.string 2 value.url
         ]
 
 
-encodeLocalizedMessageBytes : LocalizedMessage -> Bytes.Encode.Encoder
-encodeLocalizedMessageBytes value =
+encodeLocalizedMessageBinary : LocalizedMessage -> Bytes.Encode.Encoder
+encodeLocalizedMessageBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.locale
         , Proto.Binary.implicit Proto.Binary.string 2 value.message
         ]
 
 
-mergeErrorInfoBytes : ErrorInfo -> Proto.Binary.Decoder ErrorInfo
-mergeErrorInfoBytes =
+mergeErrorInfoBinary : ErrorInfo -> Proto.Binary.Decoder ErrorInfo
+mergeErrorInfoBinary =
     Proto.Binary.merge
         "google.rpc.ErrorInfo"
         (\number wire value ->
@@ -882,13 +882,13 @@ mergeErrorInfoBytes =
         identity
 
 
-decodeErrorInfoBytes : Proto.Binary.Decoder ErrorInfo
-decodeErrorInfoBytes =
-    mergeErrorInfoBytes defaultErrorInfo
+decodeErrorInfoBinary : Proto.Binary.Decoder ErrorInfo
+decodeErrorInfoBinary =
+    mergeErrorInfoBinary defaultErrorInfo
 
 
-mergeRetryInfoBytes : RetryInfo -> Proto.Binary.Decoder RetryInfo
-mergeRetryInfoBytes =
+mergeRetryInfoBinary : RetryInfo -> Proto.Binary.Decoder RetryInfo
+mergeRetryInfoBinary =
     Proto.Binary.merge
         "google.rpc.RetryInfo"
         (\number wire value ->
@@ -909,13 +909,13 @@ mergeRetryInfoBytes =
         identity
 
 
-decodeRetryInfoBytes : Proto.Binary.Decoder RetryInfo
-decodeRetryInfoBytes =
-    mergeRetryInfoBytes defaultRetryInfo
+decodeRetryInfoBinary : Proto.Binary.Decoder RetryInfo
+decodeRetryInfoBinary =
+    mergeRetryInfoBinary defaultRetryInfo
 
 
-mergeDebugInfoBytes : DebugInfo -> Proto.Binary.Decoder DebugInfo
-mergeDebugInfoBytes =
+mergeDebugInfoBinary : DebugInfo -> Proto.Binary.Decoder DebugInfo
+mergeDebugInfoBinary =
     Proto.Binary.merge
         "google.rpc.DebugInfo"
         (\number wire value ->
@@ -953,20 +953,20 @@ mergeDebugInfoBytes =
         )
 
 
-decodeDebugInfoBytes : Proto.Binary.Decoder DebugInfo
-decodeDebugInfoBytes =
-    mergeDebugInfoBytes defaultDebugInfo
+decodeDebugInfoBinary : Proto.Binary.Decoder DebugInfo
+decodeDebugInfoBinary =
+    mergeDebugInfoBinary defaultDebugInfo
 
 
-mergeQuotaFailureBytes : QuotaFailure -> Proto.Binary.Decoder QuotaFailure
-mergeQuotaFailureBytes =
+mergeQuotaFailureBinary : QuotaFailure -> Proto.Binary.Decoder QuotaFailure
+mergeQuotaFailureBinary =
     Proto.Binary.merge
         "google.rpc.QuotaFailure"
         (\number wire value ->
             case number of
                 1 ->
                     Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeQuotaFailureViolationBytes mergeQuotaFailureViolationBytes defaultQuotaFailureViolation)
+                        (Proto.Binary.embedded encodeQuotaFailureViolationBinary mergeQuotaFailureViolationBinary defaultQuotaFailureViolation)
                         (\v ->
                             { violations = v
                             }
@@ -984,13 +984,13 @@ mergeQuotaFailureBytes =
         )
 
 
-decodeQuotaFailureBytes : Proto.Binary.Decoder QuotaFailure
-decodeQuotaFailureBytes =
-    mergeQuotaFailureBytes defaultQuotaFailure
+decodeQuotaFailureBinary : Proto.Binary.Decoder QuotaFailure
+decodeQuotaFailureBinary =
+    mergeQuotaFailureBinary defaultQuotaFailure
 
 
-mergeQuotaFailureViolationBytes : QuotaFailureViolation -> Proto.Binary.Decoder QuotaFailureViolation
-mergeQuotaFailureViolationBytes =
+mergeQuotaFailureViolationBinary : QuotaFailureViolation -> Proto.Binary.Decoder QuotaFailureViolation
+mergeQuotaFailureViolationBinary =
     Proto.Binary.merge
         "google.rpc.QuotaFailure.Violation"
         (\number wire value ->
@@ -1138,20 +1138,20 @@ mergeQuotaFailureViolationBytes =
         identity
 
 
-decodeQuotaFailureViolationBytes : Proto.Binary.Decoder QuotaFailureViolation
-decodeQuotaFailureViolationBytes =
-    mergeQuotaFailureViolationBytes defaultQuotaFailureViolation
+decodeQuotaFailureViolationBinary : Proto.Binary.Decoder QuotaFailureViolation
+decodeQuotaFailureViolationBinary =
+    mergeQuotaFailureViolationBinary defaultQuotaFailureViolation
 
 
-mergePreconditionFailureBytes : PreconditionFailure -> Proto.Binary.Decoder PreconditionFailure
-mergePreconditionFailureBytes =
+mergePreconditionFailureBinary : PreconditionFailure -> Proto.Binary.Decoder PreconditionFailure
+mergePreconditionFailureBinary =
     Proto.Binary.merge
         "google.rpc.PreconditionFailure"
         (\number wire value ->
             case number of
                 1 ->
                     Proto.Binary.repeated
-                        (Proto.Binary.embedded encodePreconditionFailureViolationBytes mergePreconditionFailureViolationBytes defaultPreconditionFailureViolation)
+                        (Proto.Binary.embedded encodePreconditionFailureViolationBinary mergePreconditionFailureViolationBinary defaultPreconditionFailureViolation)
                         (\v ->
                             { violations = v
                             }
@@ -1169,13 +1169,13 @@ mergePreconditionFailureBytes =
         )
 
 
-decodePreconditionFailureBytes : Proto.Binary.Decoder PreconditionFailure
-decodePreconditionFailureBytes =
-    mergePreconditionFailureBytes defaultPreconditionFailure
+decodePreconditionFailureBinary : Proto.Binary.Decoder PreconditionFailure
+decodePreconditionFailureBinary =
+    mergePreconditionFailureBinary defaultPreconditionFailure
 
 
-mergePreconditionFailureViolationBytes : PreconditionFailureViolation -> Proto.Binary.Decoder PreconditionFailureViolation
-mergePreconditionFailureViolationBytes =
+mergePreconditionFailureViolationBinary : PreconditionFailureViolation -> Proto.Binary.Decoder PreconditionFailureViolation
+mergePreconditionFailureViolationBinary =
     Proto.Binary.merge
         "google.rpc.PreconditionFailure.Violation"
         (\number wire value ->
@@ -1222,20 +1222,20 @@ mergePreconditionFailureViolationBytes =
         identity
 
 
-decodePreconditionFailureViolationBytes : Proto.Binary.Decoder PreconditionFailureViolation
-decodePreconditionFailureViolationBytes =
-    mergePreconditionFailureViolationBytes defaultPreconditionFailureViolation
+decodePreconditionFailureViolationBinary : Proto.Binary.Decoder PreconditionFailureViolation
+decodePreconditionFailureViolationBinary =
+    mergePreconditionFailureViolationBinary defaultPreconditionFailureViolation
 
 
-mergeBadRequestBytes : BadRequest -> Proto.Binary.Decoder BadRequest
-mergeBadRequestBytes =
+mergeBadRequestBinary : BadRequest -> Proto.Binary.Decoder BadRequest
+mergeBadRequestBinary =
     Proto.Binary.merge
         "google.rpc.BadRequest"
         (\number wire value ->
             case number of
                 1 ->
                     Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeBadRequestFieldViolationBytes mergeBadRequestFieldViolationBytes defaultBadRequestFieldViolation)
+                        (Proto.Binary.embedded encodeBadRequestFieldViolationBinary mergeBadRequestFieldViolationBinary defaultBadRequestFieldViolation)
                         (\v ->
                             { fieldViolations = v
                             }
@@ -1253,13 +1253,13 @@ mergeBadRequestBytes =
         )
 
 
-decodeBadRequestBytes : Proto.Binary.Decoder BadRequest
-decodeBadRequestBytes =
-    mergeBadRequestBytes defaultBadRequest
+decodeBadRequestBinary : Proto.Binary.Decoder BadRequest
+decodeBadRequestBinary =
+    mergeBadRequestBinary defaultBadRequest
 
 
-mergeBadRequestFieldViolationBytes : BadRequestFieldViolation -> Proto.Binary.Decoder BadRequestFieldViolation
-mergeBadRequestFieldViolationBytes =
+mergeBadRequestFieldViolationBinary : BadRequestFieldViolation -> Proto.Binary.Decoder BadRequestFieldViolation
+mergeBadRequestFieldViolationBinary =
     Proto.Binary.merge
         "google.rpc.BadRequest.FieldViolation"
         (\number wire value ->
@@ -1305,7 +1305,7 @@ mergeBadRequestFieldViolationBytes =
 
                 4 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeLocalizedMessageBytes mergeLocalizedMessageBytes defaultLocalizedMessage)
+                        (Proto.Binary.embedded encodeLocalizedMessageBinary mergeLocalizedMessageBinary defaultLocalizedMessage)
                         value.localizedMessage
                         (\v ->
                             { field = value.field
@@ -1323,13 +1323,13 @@ mergeBadRequestFieldViolationBytes =
         identity
 
 
-decodeBadRequestFieldViolationBytes : Proto.Binary.Decoder BadRequestFieldViolation
-decodeBadRequestFieldViolationBytes =
-    mergeBadRequestFieldViolationBytes defaultBadRequestFieldViolation
+decodeBadRequestFieldViolationBinary : Proto.Binary.Decoder BadRequestFieldViolation
+decodeBadRequestFieldViolationBinary =
+    mergeBadRequestFieldViolationBinary defaultBadRequestFieldViolation
 
 
-mergeRequestInfoBytes : RequestInfo -> Proto.Binary.Decoder RequestInfo
-mergeRequestInfoBytes =
+mergeRequestInfoBinary : RequestInfo -> Proto.Binary.Decoder RequestInfo
+mergeRequestInfoBinary =
     Proto.Binary.merge
         "google.rpc.RequestInfo"
         (\number wire value ->
@@ -1362,13 +1362,13 @@ mergeRequestInfoBytes =
         identity
 
 
-decodeRequestInfoBytes : Proto.Binary.Decoder RequestInfo
-decodeRequestInfoBytes =
-    mergeRequestInfoBytes defaultRequestInfo
+decodeRequestInfoBinary : Proto.Binary.Decoder RequestInfo
+decodeRequestInfoBinary =
+    mergeRequestInfoBinary defaultRequestInfo
 
 
-mergeResourceInfoBytes : ResourceInfo -> Proto.Binary.Decoder ResourceInfo
-mergeResourceInfoBytes =
+mergeResourceInfoBinary : ResourceInfo -> Proto.Binary.Decoder ResourceInfo
+mergeResourceInfoBinary =
     Proto.Binary.merge
         "google.rpc.ResourceInfo"
         (\number wire value ->
@@ -1431,20 +1431,20 @@ mergeResourceInfoBytes =
         identity
 
 
-decodeResourceInfoBytes : Proto.Binary.Decoder ResourceInfo
-decodeResourceInfoBytes =
-    mergeResourceInfoBytes defaultResourceInfo
+decodeResourceInfoBinary : Proto.Binary.Decoder ResourceInfo
+decodeResourceInfoBinary =
+    mergeResourceInfoBinary defaultResourceInfo
 
 
-mergeHelpBytes : Help -> Proto.Binary.Decoder Help
-mergeHelpBytes =
+mergeHelpBinary : Help -> Proto.Binary.Decoder Help
+mergeHelpBinary =
     Proto.Binary.merge
         "google.rpc.Help"
         (\number wire value ->
             case number of
                 1 ->
                     Proto.Binary.repeated
-                        (Proto.Binary.embedded encodeHelpLinkBytes mergeHelpLinkBytes defaultHelpLink)
+                        (Proto.Binary.embedded encodeHelpLinkBinary mergeHelpLinkBinary defaultHelpLink)
                         (\v ->
                             { links = v
                             }
@@ -1462,13 +1462,13 @@ mergeHelpBytes =
         )
 
 
-decodeHelpBytes : Proto.Binary.Decoder Help
-decodeHelpBytes =
-    mergeHelpBytes defaultHelp
+decodeHelpBinary : Proto.Binary.Decoder Help
+decodeHelpBinary =
+    mergeHelpBinary defaultHelp
 
 
-mergeHelpLinkBytes : HelpLink -> Proto.Binary.Decoder HelpLink
-mergeHelpLinkBytes =
+mergeHelpLinkBinary : HelpLink -> Proto.Binary.Decoder HelpLink
+mergeHelpLinkBinary =
     Proto.Binary.merge
         "google.rpc.Help.Link"
         (\number wire value ->
@@ -1501,13 +1501,13 @@ mergeHelpLinkBytes =
         identity
 
 
-decodeHelpLinkBytes : Proto.Binary.Decoder HelpLink
-decodeHelpLinkBytes =
-    mergeHelpLinkBytes defaultHelpLink
+decodeHelpLinkBinary : Proto.Binary.Decoder HelpLink
+decodeHelpLinkBinary =
+    mergeHelpLinkBinary defaultHelpLink
 
 
-mergeLocalizedMessageBytes : LocalizedMessage -> Proto.Binary.Decoder LocalizedMessage
-mergeLocalizedMessageBytes =
+mergeLocalizedMessageBinary : LocalizedMessage -> Proto.Binary.Decoder LocalizedMessage
+mergeLocalizedMessageBinary =
     Proto.Binary.merge
         "google.rpc.LocalizedMessage"
         (\number wire value ->
@@ -1540,6 +1540,6 @@ mergeLocalizedMessageBytes =
         identity
 
 
-decodeLocalizedMessageBytes : Proto.Binary.Decoder LocalizedMessage
-decodeLocalizedMessageBytes =
-    mergeLocalizedMessageBytes defaultLocalizedMessage
+decodeLocalizedMessageBinary : Proto.Binary.Decoder LocalizedMessage
+decodeLocalizedMessageBinary =
+    mergeLocalizedMessageBinary defaultLocalizedMessage

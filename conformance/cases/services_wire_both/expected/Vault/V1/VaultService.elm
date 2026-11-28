@@ -41,8 +41,8 @@ getItem =
             "GetItem"
             Vault.V1.encodeGetItemRequest
             Vault.V1.decodeItemWith
-            Vault.V1.encodeGetItemRequestBytes
-            Vault.V1.decodeItemBytes
+            Vault.V1.encodeGetItemRequestBinary
+            Vault.V1.decodeItemBinary
             |> Proto.Method.withRoutes [ routeGetItem0 ]
         )
 
@@ -61,8 +61,8 @@ listItems =
             "ListItems"
             Vault.V1.encodeListItemsRequest
             Vault.V1.decodeListItemsResponseWith
-            Vault.V1.encodeListItemsRequestBytes
-            Vault.V1.decodeListItemsResponseBytes
+            Vault.V1.encodeListItemsRequestBinary
+            Vault.V1.decodeListItemsResponseBinary
         )
 
 
@@ -80,8 +80,8 @@ putItem =
             "PutItem"
             Vault.V1.encodeItem
             Vault.V1.decodeItemWith
-            Vault.V1.encodeItemBytes
-            Vault.V1.decodeItemBytes
+            Vault.V1.encodeItemBinary
+            Vault.V1.decodeItemBinary
         )
 
 

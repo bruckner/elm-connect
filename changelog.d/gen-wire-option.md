@@ -7,11 +7,11 @@
   application that speaks one codec: narrower call types, and the other
   codec's code behind the calls left out of its bundle. Every message
   gets protobuf binary codecs beside its JSON ones whatever the option
-  says: per message `encodeNoteBytes`, `decodeNoteBytes` and
-  `mergeNoteBytes`, per enum its number conversions, per oneof and
+  says: per message `encodeNoteBinary`, `decodeNoteBinary` and
+  `mergeNoteBinary`, per enum its number conversions, per oneof and
   recursion wrapper an encoder (and a merge), all written against
   `Proto.Binary`.
-- `naming::codec_collision`: whatever the `wire` option, a type named for another with `Bytes` at the end (`NoteBytes`
+- `naming::codec_collision`: whatever the `wire` option, a type named for another with `Binary` at the end (`NoteBinary`
   beside `Note`) has JSON codecs that take the other's binary codecs'
   names. It points at both types; `rename` one of them.
 - `Proto.Duration.fromParts` keeps the nanoseconds of a duration at

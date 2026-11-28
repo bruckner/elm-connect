@@ -4,9 +4,9 @@ module Notes exposing
     , binaryOnly
     , both
     , decodeTitle
-    , decodeTitleBytesAs
+    , decodeTitleBinaryAs
     , encodeGetNote
-    , encodeGetNoteBytes
+    , encodeGetNoteBinary
     , jsonOnly
     , over
     , title
@@ -22,7 +22,7 @@ of the test server.
 
 The response's type name appears in a binary failure's text and in an `Any`'s
 type URL, and the tests that read those do not all give it one name: it is
-`notes.v1.Title` unless a test names it with `decodeTitleBytesAs` or
+`notes.v1.Title` unless a test names it with `decodeTitleBinaryAs` or
 `titleAs`.
 
 -}
@@ -49,8 +49,8 @@ encodeGetNote r =
     Json.Encode.object [ ( "name", Json.Encode.string r.name ) ]
 
 
-encodeGetNoteBytes : GetNote -> Bytes.Encode.Encoder
-encodeGetNoteBytes r =
+encodeGetNoteBinary : GetNote -> Bytes.Encode.Encoder
+encodeGetNoteBinary r =
     Bytes.Encode.sequence [ Proto.Binary.implicit Proto.Binary.string 1 r.name ]
 
 
@@ -64,20 +64,20 @@ encodeTitle t =
     Json.Encode.object [ ( "title", Json.Encode.string t ) ]
 
 
-encodeTitleBytes : String -> Bytes.Encode.Encoder
-encodeTitleBytes t =
+encodeTitleBinary : String -> Bytes.Encode.Encoder
+encodeTitleBinary t =
     Bytes.Encode.sequence [ Proto.Binary.implicit Proto.Binary.string 1 t ]
 
 
-decodeTitleBytes : Proto.Binary.Decoder String
-decodeTitleBytes =
-    decodeTitleBytesAs "notes.v1.Title"
+decodeTitleBinary : Proto.Binary.Decoder String
+decodeTitleBinary =
+    decodeTitleBinaryAs "notes.v1.Title"
 
 
 {-| The response's binary decoder, under this type name.
 -}
-decodeTitleBytesAs : String -> Proto.Binary.Decoder String
-decodeTitleBytesAs typeName =
+decodeTitleBinaryAs : String -> Proto.Binary.Decoder String
+decodeTitleBinaryAs typeName =
     Proto.Binary.merge typeName
         (\number wire value ->
             case number of
@@ -102,7 +102,7 @@ title =
 -}
 titleAs : String -> Message String
 titleAs typeName =
-    Proto.Message.init typeName (Proto.Json.succeed << encodeTitle) decodeTitle encodeTitleBytes (decodeTitleBytesAs typeName)
+    Proto.Message.init typeName (Proto.Json.succeed << encodeTitle) decodeTitle encodeTitleBinary (decodeTitleBinaryAs typeName)
 
 
 {-| A note whose title is "hi", in protobuf binary.
@@ -124,7 +124,7 @@ getNoteIn =
 -}
 both : GetNote -> Rpc.Call codec GetNote String
 both =
-    Rpc.call (getNoteIn (Proto.Method.init "notes.v1.Notes" "GetNote" (encodeGetNote >> Proto.Json.succeed) (\_ -> decodeTitle) encodeGetNoteBytes decodeTitleBytes))
+    Rpc.call (getNoteIn (Proto.Method.init "notes.v1.Notes" "GetNote" (encodeGetNote >> Proto.Json.succeed) (\_ -> decodeTitle) encodeGetNoteBinary decodeTitleBinary))
 
 
 {-| The method with JSON alone.
@@ -138,7 +138,7 @@ jsonOnly =
 -}
 binaryOnly : GetNote -> Rpc.Call Rpc.Binary GetNote String
 binaryOnly =
-    Rpc.call (getNoteIn (Proto.Method.initBinary "notes.v1.Notes" "GetNote" encodeGetNoteBytes decodeTitleBytes))
+    Rpc.call (getNoteIn (Proto.Method.initBinary "notes.v1.Notes" "GetNote" encodeGetNoteBinary decodeTitleBinary))
 
 
 {-| A client of the test server over Connect with JSON.

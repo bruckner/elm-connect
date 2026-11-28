@@ -84,7 +84,7 @@ enumRole =
 -}
 messageUser : Proto.Message.Message User
 messageUser =
-    Proto.Message.init "users.v1.User" encodeUser decodeUser encodeUserBytes decodeUserBytes
+    Proto.Message.init "users.v1.User" encodeUser decodeUser encodeUserBinary decodeUserBinary
 
 
 
@@ -173,8 +173,8 @@ decodeUser =
 
 {-| The number protobuf binary writes a [`Role`](#Role) as.
 -}
-encodeRoleBytes : Role -> Int
-encodeRoleBytes value =
+encodeRoleBinary : Role -> Int
+encodeRoleBinary value =
     case value of
         RoleUnspecified ->
             0
@@ -185,11 +185,11 @@ encodeRoleBytes value =
 
 {-| Encodes a [`User`](#User) as protobuf binary.
 -}
-encodeUserBytes : User -> Bytes.Encode.Encoder
-encodeUserBytes value =
+encodeUserBinary : User -> Bytes.Encode.Encoder
+encodeUserBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
-        , Proto.Binary.implicit (Proto.Binary.enum encodeRoleBytes decodeRoleBytes) 2 value.role
+        , Proto.Binary.implicit (Proto.Binary.enum encodeRoleBinary decodeRoleBinary) 2 value.role
         ]
 
 
@@ -199,8 +199,8 @@ encodeUserBytes value =
 
 {-| A [`Role`](#Role) from the number protobuf binary carries.
 -}
-decodeRoleBytes : Int -> Role
-decodeRoleBytes number =
+decodeRoleBinary : Int -> Role
+decodeRoleBinary number =
     case number of
         1 ->
             RoleEditor
@@ -211,8 +211,8 @@ decodeRoleBytes number =
 
 {-| Decodes a [`User`](#User) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeUserBytes : User -> Proto.Binary.Decoder User
-mergeUserBytes =
+mergeUserBinary : User -> Proto.Binary.Decoder User
+mergeUserBinary =
     Proto.Binary.merge
         "users.v1.User"
         (\number wire value ->
@@ -230,7 +230,7 @@ mergeUserBytes =
 
                 2 ->
                     Proto.Binary.field
-                        (Proto.Binary.enum encodeRoleBytes decodeRoleBytes)
+                        (Proto.Binary.enum encodeRoleBinary decodeRoleBinary)
                         (\v ->
                             { name = value.name
                             , role = v
@@ -247,6 +247,6 @@ mergeUserBytes =
 
 {-| Decodes a [`User`](#User) from protobuf binary.
 -}
-decodeUserBytes : Proto.Binary.Decoder User
-decodeUserBytes =
-    mergeUserBytes defaultUser
+decodeUserBinary : Proto.Binary.Decoder User
+decodeUserBinary =
+    mergeUserBinary defaultUser

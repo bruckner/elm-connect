@@ -114,14 +114,14 @@ defaultPauses =
 -}
 messageMoment : Proto.Message.Message Moment
 messageMoment =
-    Proto.Message.init "clock.v1.Moment" encodeMoment decodeMoment encodeMomentBytes decodeMomentBytes
+    Proto.Message.init "clock.v1.Moment" encodeMoment decodeMoment encodeMomentBinary decodeMomentBinary
 
 
 {-| The typed value of [`Pauses`](#Pauses): its full name and codecs.
 -}
 messagePauses : Proto.Message.Message Pauses
 messagePauses =
-    Proto.Message.init "clock.v1.Pauses" encodePauses decodePauses encodePausesBytes decodePausesBytes
+    Proto.Message.init "clock.v1.Pauses" encodePauses decodePauses encodePausesBinary decodePausesBinary
 
 
 
@@ -229,8 +229,8 @@ decodePauses =
 
 {-| Encodes a [`Moment`](#Moment) as protobuf binary.
 -}
-encodeMomentBytes : Moment -> Bytes.Encode.Encoder
-encodeMomentBytes value =
+encodeMomentBinary : Moment -> Bytes.Encode.Encoder
+encodeMomentBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.optional Proto.Binary.timestamp 1 value.at
         , Proto.Binary.optional Proto.Binary.fieldMask 2 value.mask
@@ -243,8 +243,8 @@ encodeMomentBytes value =
 
 {-| Encodes a [`Pauses`](#Pauses) as protobuf binary.
 -}
-encodePausesBytes : Pauses -> Bytes.Encode.Encoder
-encodePausesBytes value =
+encodePausesBinary : Pauses -> Bytes.Encode.Encoder
+encodePausesBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.optional Proto.Binary.duration 1 value.wait
         , Proto.Binary.list Proto.Binary.duration 2 value.waits
@@ -259,8 +259,8 @@ encodePausesBytes value =
 
 {-| Decodes a [`Moment`](#Moment) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeMomentBytes : Moment -> Proto.Binary.Decoder Moment
-mergeMomentBytes =
+mergeMomentBinary : Moment -> Proto.Binary.Decoder Moment
+mergeMomentBinary =
     Proto.Binary.merge
         "clock.v1.Moment"
         (\number wire value ->
@@ -363,15 +363,15 @@ mergeMomentBytes =
 
 {-| Decodes a [`Moment`](#Moment) from protobuf binary.
 -}
-decodeMomentBytes : Proto.Binary.Decoder Moment
-decodeMomentBytes =
-    mergeMomentBytes defaultMoment
+decodeMomentBinary : Proto.Binary.Decoder Moment
+decodeMomentBinary =
+    mergeMomentBinary defaultMoment
 
 
 {-| Decodes a [`Pauses`](#Pauses) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergePausesBytes : Pauses -> Proto.Binary.Decoder Pauses
-mergePausesBytes =
+mergePausesBinary : Pauses -> Proto.Binary.Decoder Pauses
+mergePausesBinary =
     Proto.Binary.merge
         "clock.v1.Pauses"
         (\number wire value ->
@@ -444,9 +444,9 @@ mergePausesBytes =
 
 {-| Decodes a [`Pauses`](#Pauses) from protobuf binary.
 -}
-decodePausesBytes : Proto.Binary.Decoder Pauses
-decodePausesBytes =
-    mergePausesBytes defaultPauses
+decodePausesBinary : Proto.Binary.Decoder Pauses
+decodePausesBinary =
+    mergePausesBinary defaultPauses
 
 
 

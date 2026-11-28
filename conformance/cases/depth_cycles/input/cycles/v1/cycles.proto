@@ -1,6 +1,6 @@
 // Every shape of a message that nests, whose decoders read at most 100
 // levels deep: a merge and a JSON decoder given the depth
-// (`mergeNestedChainBytes`, `decodeNestedChain`), each message they hold
+// (`mergeNestedChainBinary`, `decodeNestedChain`), each message they hold
 // that nests read one level deeper. A message on a cycle is made once per
 // depth by `memo`; one on no cycle that nests, because it reaches a cycle,
 // a `Struct` or an `Any` (`Forest`, `Sealed`, `Doc`, `Card` here), is made

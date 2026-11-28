@@ -9,7 +9,7 @@ import Fuzzers
 import Http
 import Json.Decode
 import Json.Encode
-import Notes exposing (GetNote, base, decodeTitle, decodeTitleBytesAs, encodeGetNote, over, titleAs)
+import Notes exposing (GetNote, base, decodeTitle, decodeTitleBinaryAs, encodeGetNote, over, titleAs)
 import Proto.Any
 import Proto.Binary
 import Proto.Bytes
@@ -56,9 +56,9 @@ title =
     titleAs "notes.v1.Note"
 
 
-decodeTitleBytes : Proto.Binary.Decoder String
-decodeTitleBytes =
-    decodeTitleBytesAs "notes.v1.Note"
+decodeTitleBinary : Proto.Binary.Decoder String
+decodeTitleBinary =
+    decodeTitleBinaryAs "notes.v1.Note"
 
 
 {-| The registry generated code gives a package of
@@ -794,7 +794,7 @@ responses =
                                 (\_ -> Proto.Json.writeTimestamp (Proto.Internal.Timestamp.Timestamp { seconds = 300000000000, nanos = 0, wideHigh = 0 }))
                                 (\_ -> decodeTitle)
                                 (\_ -> Bytes.Encode.sequence [])
-                                decodeTitleBytes
+                                decodeTitleBinary
                             )
                             { name = "x" }
 
@@ -1643,7 +1643,7 @@ encodings =
                     (\_ -> Debug.todo "the message was encoded")
                     (\_ -> decodeTitle)
                     (\_ -> Bytes.Encode.sequence [])
-                    decodeTitleBytes
+                    decodeTitleBinary
                 )
             ]
 
@@ -1682,7 +1682,7 @@ encodings =
                     tagged
                     (\_ -> decodeTitle)
                     (\_ -> Bytes.Encode.sequence [])
-                    decodeTitleBytes
+                    decodeTitleBinary
                     |> Proto.Method.withBindings
                         [ Proto.Http.binding
                             { method = "PATCH"

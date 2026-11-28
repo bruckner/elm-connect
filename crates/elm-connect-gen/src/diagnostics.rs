@@ -116,7 +116,7 @@ codes! {
     /// one and the message's descriptor) get the same value name in its
     /// descriptor module.
     ValueCollision => "naming::value_collision",
-    /// A type named for another with `Bytes` at the end has JSON codecs
+    /// A type named for another with `Binary` at the end has JSON codecs
     /// that take the names of the other's binary codecs, or one named with
     /// `With` at the end those of the other's codecs that take the
     /// registry.
@@ -717,8 +717,8 @@ impl Problem {
     }
 
     /// Two types of `package` give codecs the same Elm `values` (`value
-    /// `encodeNoteBytes``): one's binary codecs and the JSON codecs of the
-    /// other, named for it with `Bytes` at the end.
+    /// `encodeNoteBinary``): one's binary codecs and the JSON codecs of the
+    /// other, named for it with `Binary` at the end.
     pub fn codec_collision(
         package: &str,
         values: &str,
@@ -734,9 +734,9 @@ impl Problem {
                  {values}."
             ),
             format!(
-                "A type's protobuf binary codecs are named for its JSON codecs with `Bytes` at \
-                 the end (`encodeNoteBytes` beside `encodeNote`), so the JSON codecs of a type \
-                 named for another with `Bytes` at the end (`NoteBytes` beside `Note`) take the \
+                "A type's protobuf binary codecs are named for its JSON codecs with `Binary` at \
+                 the end (`encodeNoteBinary` beside `encodeNote`), so the JSON codecs of a type \
+                 named for another with `Binary` at the end (`NoteBinary` beside `Note`) take the \
                  same names, and a module cannot define two values with one name. Every type \
                  has both codecs, whatever the `wire` option says. {}",
                 rename_escape(

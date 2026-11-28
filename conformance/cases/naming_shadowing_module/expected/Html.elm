@@ -64,7 +64,7 @@ defaultAttributes =
 -}
 messageAttributes : Proto.Message.Message Attributes
 messageAttributes =
-    Proto.Message.init "html.Attributes" encodeAttributes decodeAttributes encodeAttributesBytes decodeAttributesBytes
+    Proto.Message.init "html.Attributes" encodeAttributes decodeAttributes encodeAttributesBinary decodeAttributesBinary
 
 
 
@@ -127,8 +127,8 @@ decodeAttributes =
 
 {-| Encodes an [`Attributes`](#Attributes) as protobuf binary.
 -}
-encodeAttributesBytes : Attributes -> Bytes.Encode.Encoder
-encodeAttributesBytes value =
+encodeAttributesBinary : Attributes -> Bytes.Encode.Encoder
+encodeAttributesBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.class
         ]
@@ -140,8 +140,8 @@ encodeAttributesBytes value =
 
 {-| Decodes an [`Attributes`](#Attributes) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeAttributesBytes : Attributes -> Proto.Binary.Decoder Attributes
-mergeAttributesBytes =
+mergeAttributesBinary : Attributes -> Proto.Binary.Decoder Attributes
+mergeAttributesBinary =
     Proto.Binary.merge
         "html.Attributes"
         (\number wire value ->
@@ -164,6 +164,6 @@ mergeAttributesBytes =
 
 {-| Decodes an [`Attributes`](#Attributes) from protobuf binary.
 -}
-decodeAttributesBytes : Proto.Binary.Decoder Attributes
-decodeAttributesBytes =
-    mergeAttributesBytes defaultAttributes
+decodeAttributesBinary : Proto.Binary.Decoder Attributes
+decodeAttributesBinary =
+    mergeAttributesBinary defaultAttributes

@@ -299,56 +299,56 @@ enumVisibility =
 -}
 messageNote : Proto.Message.Message Note
 messageNote =
-    Proto.Message.initWith "notes.v1.Note" encodeNote decodeNoteWith encodeNoteBytes decodeNoteBytes
+    Proto.Message.initWith "notes.v1.Note" encodeNote decodeNoteWith encodeNoteBinary decodeNoteBinary
 
 
 {-| The typed value of [`GetNoteRequest`](#GetNoteRequest): its full name and codecs.
 -}
 messageGetNoteRequest : Proto.Message.Message GetNoteRequest
 messageGetNoteRequest =
-    Proto.Message.init "notes.v1.GetNoteRequest" encodeGetNoteRequest decodeGetNoteRequest encodeGetNoteRequestBytes decodeGetNoteRequestBytes
+    Proto.Message.init "notes.v1.GetNoteRequest" encodeGetNoteRequest decodeGetNoteRequest encodeGetNoteRequestBinary decodeGetNoteRequestBinary
 
 
 {-| The typed value of [`ListNotesRequest`](#ListNotesRequest): its full name and codecs.
 -}
 messageListNotesRequest : Proto.Message.Message ListNotesRequest
 messageListNotesRequest =
-    Proto.Message.init "notes.v1.ListNotesRequest" encodeListNotesRequest decodeListNotesRequest encodeListNotesRequestBytes decodeListNotesRequestBytes
+    Proto.Message.init "notes.v1.ListNotesRequest" encodeListNotesRequest decodeListNotesRequest encodeListNotesRequestBinary decodeListNotesRequestBinary
 
 
 {-| The typed value of [`ListNotesResponse`](#ListNotesResponse): its full name and codecs.
 -}
 messageListNotesResponse : Proto.Message.Message ListNotesResponse
 messageListNotesResponse =
-    Proto.Message.initWith "notes.v1.ListNotesResponse" encodeListNotesResponse decodeListNotesResponseWith encodeListNotesResponseBytes decodeListNotesResponseBytes
+    Proto.Message.initWith "notes.v1.ListNotesResponse" encodeListNotesResponse decodeListNotesResponseWith encodeListNotesResponseBinary decodeListNotesResponseBinary
 
 
 {-| The typed value of [`CreateNoteRequest`](#CreateNoteRequest): its full name and codecs.
 -}
 messageCreateNoteRequest : Proto.Message.Message CreateNoteRequest
 messageCreateNoteRequest =
-    Proto.Message.initWith "notes.v1.CreateNoteRequest" encodeCreateNoteRequest decodeCreateNoteRequestWith encodeCreateNoteRequestBytes decodeCreateNoteRequestBytes
+    Proto.Message.initWith "notes.v1.CreateNoteRequest" encodeCreateNoteRequest decodeCreateNoteRequestWith encodeCreateNoteRequestBinary decodeCreateNoteRequestBinary
 
 
 {-| The typed value of [`UpdateNoteRequest`](#UpdateNoteRequest): its full name and codecs.
 -}
 messageUpdateNoteRequest : Proto.Message.Message UpdateNoteRequest
 messageUpdateNoteRequest =
-    Proto.Message.initWith "notes.v1.UpdateNoteRequest" encodeUpdateNoteRequest decodeUpdateNoteRequestWith encodeUpdateNoteRequestBytes decodeUpdateNoteRequestBytes
+    Proto.Message.initWith "notes.v1.UpdateNoteRequest" encodeUpdateNoteRequest decodeUpdateNoteRequestWith encodeUpdateNoteRequestBinary decodeUpdateNoteRequestBinary
 
 
 {-| The typed value of [`DeleteNoteRequest`](#DeleteNoteRequest): its full name and codecs.
 -}
 messageDeleteNoteRequest : Proto.Message.Message DeleteNoteRequest
 messageDeleteNoteRequest =
-    Proto.Message.init "notes.v1.DeleteNoteRequest" encodeDeleteNoteRequest decodeDeleteNoteRequest encodeDeleteNoteRequestBytes decodeDeleteNoteRequestBytes
+    Proto.Message.init "notes.v1.DeleteNoteRequest" encodeDeleteNoteRequest decodeDeleteNoteRequest encodeDeleteNoteRequestBinary decodeDeleteNoteRequestBinary
 
 
 {-| The typed value of [`ArchiveNoteRequest`](#ArchiveNoteRequest): its full name and codecs.
 -}
 messageArchiveNoteRequest : Proto.Message.Message ArchiveNoteRequest
 messageArchiveNoteRequest =
-    Proto.Message.init "notes.v1.ArchiveNoteRequest" encodeArchiveNoteRequest decodeArchiveNoteRequest encodeArchiveNoteRequestBytes decodeArchiveNoteRequestBytes
+    Proto.Message.init "notes.v1.ArchiveNoteRequest" encodeArchiveNoteRequest decodeArchiveNoteRequest encodeArchiveNoteRequestBinary decodeArchiveNoteRequestBinary
 
 
 
@@ -700,8 +700,8 @@ decodeArchiveNoteRequest =
 
 {-| The number protobuf binary writes a [`Visibility`](#Visibility) as.
 -}
-encodeVisibilityBytes : Visibility -> Int
-encodeVisibilityBytes value =
+encodeVisibilityBinary : Visibility -> Int
+encodeVisibilityBinary value =
     case value of
         VisibilityUnspecified ->
             0
@@ -715,20 +715,20 @@ encodeVisibilityBytes value =
 
 {-| Encodes a [`Note`](#Note) as protobuf binary.
 -}
-encodeNoteBytes : Note -> Bytes.Encode.Encoder
-encodeNoteBytes value =
+encodeNoteBinary : Note -> Bytes.Encode.Encoder
+encodeNoteBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         , Proto.Binary.implicit Proto.Binary.string 2 value.title
         , Proto.Binary.implicit Proto.Binary.string 3 value.body
         , Proto.Binary.list Proto.Binary.string 4 value.tags
-        , Proto.Binary.implicit (Proto.Binary.enum encodeVisibilityBytes decodeVisibilityBytes) 5 value.visibility
+        , Proto.Binary.implicit (Proto.Binary.enum encodeVisibilityBinary decodeVisibilityBinary) 5 value.visibility
         , Proto.Binary.optional Proto.Binary.timestamp 6 value.createTime
         , Proto.Binary.optional Proto.Binary.timestamp 7 value.updateTime
         , Proto.Binary.optional Proto.Binary.duration 8 value.ttl
         , Proto.Binary.dict Proto.Binary.string Proto.Binary.string 9 value.metadata
         , Proto.Binary.optional Proto.Binary.struct 10 value.extra
-        , encodeNoteKindBytes value.kind
+        , encodeNoteKindBinary value.kind
         , Proto.Binary.optional Proto.Binary.any 13 value.attachment
         , Proto.Binary.optional Proto.Binary.int64 14 value.revision
         ]
@@ -736,8 +736,8 @@ encodeNoteBytes value =
 
 {-| Encodes a [`NoteKind`](#NoteKind) as protobuf binary: its set member's field.
 -}
-encodeNoteKindBytes : NoteKind -> Bytes.Encode.Encoder
-encodeNoteKindBytes value =
+encodeNoteKindBinary : NoteKind -> Bytes.Encode.Encoder
+encodeNoteKindBinary value =
     case value of
         NoteKindUnset ->
             Bytes.Encode.sequence []
@@ -751,8 +751,8 @@ encodeNoteKindBytes value =
 
 {-| Encodes a [`GetNoteRequest`](#GetNoteRequest) as protobuf binary.
 -}
-encodeGetNoteRequestBytes : GetNoteRequest -> Bytes.Encode.Encoder
-encodeGetNoteRequestBytes value =
+encodeGetNoteRequestBinary : GetNoteRequest -> Bytes.Encode.Encoder
+encodeGetNoteRequestBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         ]
@@ -760,49 +760,49 @@ encodeGetNoteRequestBytes value =
 
 {-| Encodes a [`ListNotesRequest`](#ListNotesRequest) as protobuf binary.
 -}
-encodeListNotesRequestBytes : ListNotesRequest -> Bytes.Encode.Encoder
-encodeListNotesRequestBytes value =
+encodeListNotesRequestBinary : ListNotesRequest -> Bytes.Encode.Encoder
+encodeListNotesRequestBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.int32 1 value.pageSize
         , Proto.Binary.implicit Proto.Binary.string 2 value.pageToken
         , Proto.Binary.implicit Proto.Binary.string 3 value.filter
-        , Proto.Binary.implicit (Proto.Binary.enum encodeVisibilityBytes decodeVisibilityBytes) 4 value.visibility
+        , Proto.Binary.implicit (Proto.Binary.enum encodeVisibilityBinary decodeVisibilityBinary) 4 value.visibility
         ]
 
 
 {-| Encodes a [`ListNotesResponse`](#ListNotesResponse) as protobuf binary.
 -}
-encodeListNotesResponseBytes : ListNotesResponse -> Bytes.Encode.Encoder
-encodeListNotesResponseBytes value =
+encodeListNotesResponseBinary : ListNotesResponse -> Bytes.Encode.Encoder
+encodeListNotesResponseBinary value =
     Bytes.Encode.sequence
-        [ Proto.Binary.list (Proto.Binary.embedded encodeNoteBytes mergeNoteBytes defaultNote) 1 value.notes
+        [ Proto.Binary.list (Proto.Binary.embedded encodeNoteBinary mergeNoteBinary defaultNote) 1 value.notes
         , Proto.Binary.implicit Proto.Binary.string 2 value.nextPageToken
         ]
 
 
 {-| Encodes a [`CreateNoteRequest`](#CreateNoteRequest) as protobuf binary.
 -}
-encodeCreateNoteRequestBytes : CreateNoteRequest -> Bytes.Encode.Encoder
-encodeCreateNoteRequestBytes value =
+encodeCreateNoteRequestBinary : CreateNoteRequest -> Bytes.Encode.Encoder
+encodeCreateNoteRequestBinary value =
     Bytes.Encode.sequence
-        [ Proto.Binary.optional (Proto.Binary.embedded encodeNoteBytes mergeNoteBytes defaultNote) 1 value.note
+        [ Proto.Binary.optional (Proto.Binary.embedded encodeNoteBinary mergeNoteBinary defaultNote) 1 value.note
         ]
 
 
 {-| Encodes an [`UpdateNoteRequest`](#UpdateNoteRequest) as protobuf binary.
 -}
-encodeUpdateNoteRequestBytes : UpdateNoteRequest -> Bytes.Encode.Encoder
-encodeUpdateNoteRequestBytes value =
+encodeUpdateNoteRequestBinary : UpdateNoteRequest -> Bytes.Encode.Encoder
+encodeUpdateNoteRequestBinary value =
     Bytes.Encode.sequence
-        [ Proto.Binary.optional (Proto.Binary.embedded encodeNoteBytes mergeNoteBytes defaultNote) 1 value.note
+        [ Proto.Binary.optional (Proto.Binary.embedded encodeNoteBinary mergeNoteBinary defaultNote) 1 value.note
         , Proto.Binary.optional Proto.Binary.fieldMask 2 value.updateMask
         ]
 
 
 {-| Encodes a [`DeleteNoteRequest`](#DeleteNoteRequest) as protobuf binary.
 -}
-encodeDeleteNoteRequestBytes : DeleteNoteRequest -> Bytes.Encode.Encoder
-encodeDeleteNoteRequestBytes value =
+encodeDeleteNoteRequestBinary : DeleteNoteRequest -> Bytes.Encode.Encoder
+encodeDeleteNoteRequestBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         ]
@@ -810,8 +810,8 @@ encodeDeleteNoteRequestBytes value =
 
 {-| Encodes an [`ArchiveNoteRequest`](#ArchiveNoteRequest) as protobuf binary.
 -}
-encodeArchiveNoteRequestBytes : ArchiveNoteRequest -> Bytes.Encode.Encoder
-encodeArchiveNoteRequestBytes value =
+encodeArchiveNoteRequestBinary : ArchiveNoteRequest -> Bytes.Encode.Encoder
+encodeArchiveNoteRequestBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.name
         ]
@@ -823,8 +823,8 @@ encodeArchiveNoteRequestBytes value =
 
 {-| A [`Visibility`](#Visibility) from the number protobuf binary carries.
 -}
-decodeVisibilityBytes : Int -> Visibility
-decodeVisibilityBytes number =
+decodeVisibilityBinary : Int -> Visibility
+decodeVisibilityBinary number =
     case number of
         1 ->
             VisibilityPrivate
@@ -838,15 +838,15 @@ decodeVisibilityBytes number =
 
 {-| Decodes a [`Note`](#Note) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeNoteBytes : Note -> Proto.Binary.Decoder Note
-mergeNoteBytes =
-    mergeNestedNoteBytes 1
+mergeNoteBinary : Note -> Proto.Binary.Decoder Note
+mergeNoteBinary =
+    mergeNestedNoteBinary 1
 
 
-{-| [`mergeNoteBytes`](#mergeNoteBytes) for a [`Note`](#Note) held `depth` levels deep.
+{-| [`mergeNoteBinary`](#mergeNoteBinary) for a [`Note`](#Note) held `depth` levels deep.
 -}
-mergeNestedNoteBytes : Int -> Note -> Proto.Binary.Decoder Note
-mergeNestedNoteBytes depth =
+mergeNestedNoteBinary : Int -> Note -> Proto.Binary.Decoder Note
+mergeNestedNoteBinary depth =
     Proto.Binary.merge
         "notes.v1.Note"
         (\number wire value ->
@@ -942,7 +942,7 @@ mergeNestedNoteBytes depth =
 
                 5 ->
                     Proto.Binary.field
-                        (Proto.Binary.enum encodeVisibilityBytes decodeVisibilityBytes)
+                        (Proto.Binary.enum encodeVisibilityBinary decodeVisibilityBinary)
                         (\v ->
                             { name = value.name
                             , title = value.title
@@ -1184,15 +1184,15 @@ mergeNestedNoteBytes depth =
 
 {-| Decodes a [`Note`](#Note) from protobuf binary.
 -}
-decodeNoteBytes : Proto.Binary.Decoder Note
-decodeNoteBytes =
-    mergeNoteBytes defaultNote
+decodeNoteBinary : Proto.Binary.Decoder Note
+decodeNoteBinary =
+    mergeNoteBinary defaultNote
 
 
 {-| Decodes a [`GetNoteRequest`](#GetNoteRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeGetNoteRequestBytes : GetNoteRequest -> Proto.Binary.Decoder GetNoteRequest
-mergeGetNoteRequestBytes =
+mergeGetNoteRequestBinary : GetNoteRequest -> Proto.Binary.Decoder GetNoteRequest
+mergeGetNoteRequestBinary =
     Proto.Binary.merge
         "notes.v1.GetNoteRequest"
         (\number wire value ->
@@ -1215,15 +1215,15 @@ mergeGetNoteRequestBytes =
 
 {-| Decodes a [`GetNoteRequest`](#GetNoteRequest) from protobuf binary.
 -}
-decodeGetNoteRequestBytes : Proto.Binary.Decoder GetNoteRequest
-decodeGetNoteRequestBytes =
-    mergeGetNoteRequestBytes defaultGetNoteRequest
+decodeGetNoteRequestBinary : Proto.Binary.Decoder GetNoteRequest
+decodeGetNoteRequestBinary =
+    mergeGetNoteRequestBinary defaultGetNoteRequest
 
 
 {-| Decodes a [`ListNotesRequest`](#ListNotesRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeListNotesRequestBytes : ListNotesRequest -> Proto.Binary.Decoder ListNotesRequest
-mergeListNotesRequestBytes =
+mergeListNotesRequestBinary : ListNotesRequest -> Proto.Binary.Decoder ListNotesRequest
+mergeListNotesRequestBinary =
     Proto.Binary.merge
         "notes.v1.ListNotesRequest"
         (\number wire value ->
@@ -1269,7 +1269,7 @@ mergeListNotesRequestBytes =
 
                 4 ->
                     Proto.Binary.field
-                        (Proto.Binary.enum encodeVisibilityBytes decodeVisibilityBytes)
+                        (Proto.Binary.enum encodeVisibilityBinary decodeVisibilityBinary)
                         (\v ->
                             { pageSize = value.pageSize
                             , pageToken = value.pageToken
@@ -1288,29 +1288,29 @@ mergeListNotesRequestBytes =
 
 {-| Decodes a [`ListNotesRequest`](#ListNotesRequest) from protobuf binary.
 -}
-decodeListNotesRequestBytes : Proto.Binary.Decoder ListNotesRequest
-decodeListNotesRequestBytes =
-    mergeListNotesRequestBytes defaultListNotesRequest
+decodeListNotesRequestBinary : Proto.Binary.Decoder ListNotesRequest
+decodeListNotesRequestBinary =
+    mergeListNotesRequestBinary defaultListNotesRequest
 
 
 {-| Decodes a [`ListNotesResponse`](#ListNotesResponse) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeListNotesResponseBytes : ListNotesResponse -> Proto.Binary.Decoder ListNotesResponse
-mergeListNotesResponseBytes =
-    mergeNestedListNotesResponseBytes 1
+mergeListNotesResponseBinary : ListNotesResponse -> Proto.Binary.Decoder ListNotesResponse
+mergeListNotesResponseBinary =
+    mergeNestedListNotesResponseBinary 1
 
 
-{-| [`mergeListNotesResponseBytes`](#mergeListNotesResponseBytes) for a [`ListNotesResponse`](#ListNotesResponse) held `depth` levels deep.
+{-| [`mergeListNotesResponseBinary`](#mergeListNotesResponseBinary) for a [`ListNotesResponse`](#ListNotesResponse) held `depth` levels deep.
 -}
-mergeNestedListNotesResponseBytes : Int -> ListNotesResponse -> Proto.Binary.Decoder ListNotesResponse
-mergeNestedListNotesResponseBytes depth =
+mergeNestedListNotesResponseBinary : Int -> ListNotesResponse -> Proto.Binary.Decoder ListNotesResponse
+mergeNestedListNotesResponseBinary depth =
     Proto.Binary.merge
         "notes.v1.ListNotesResponse"
         (\number wire value ->
             case number of
                 1 ->
                     Proto.Binary.repeated
-                        (Proto.Binary.recursive depth encodeNoteBytes mergeNestedNoteBytes defaultNote)
+                        (Proto.Binary.recursive depth encodeNoteBinary mergeNestedNoteBinary defaultNote)
                         (\v ->
                             { notes = v
                             , nextPageToken = value.nextPageToken
@@ -1343,29 +1343,29 @@ mergeNestedListNotesResponseBytes depth =
 
 {-| Decodes a [`ListNotesResponse`](#ListNotesResponse) from protobuf binary.
 -}
-decodeListNotesResponseBytes : Proto.Binary.Decoder ListNotesResponse
-decodeListNotesResponseBytes =
-    mergeListNotesResponseBytes defaultListNotesResponse
+decodeListNotesResponseBinary : Proto.Binary.Decoder ListNotesResponse
+decodeListNotesResponseBinary =
+    mergeListNotesResponseBinary defaultListNotesResponse
 
 
 {-| Decodes a [`CreateNoteRequest`](#CreateNoteRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeCreateNoteRequestBytes : CreateNoteRequest -> Proto.Binary.Decoder CreateNoteRequest
-mergeCreateNoteRequestBytes =
-    mergeNestedCreateNoteRequestBytes 1
+mergeCreateNoteRequestBinary : CreateNoteRequest -> Proto.Binary.Decoder CreateNoteRequest
+mergeCreateNoteRequestBinary =
+    mergeNestedCreateNoteRequestBinary 1
 
 
-{-| [`mergeCreateNoteRequestBytes`](#mergeCreateNoteRequestBytes) for a [`CreateNoteRequest`](#CreateNoteRequest) held `depth` levels deep.
+{-| [`mergeCreateNoteRequestBinary`](#mergeCreateNoteRequestBinary) for a [`CreateNoteRequest`](#CreateNoteRequest) held `depth` levels deep.
 -}
-mergeNestedCreateNoteRequestBytes : Int -> CreateNoteRequest -> Proto.Binary.Decoder CreateNoteRequest
-mergeNestedCreateNoteRequestBytes depth =
+mergeNestedCreateNoteRequestBinary : Int -> CreateNoteRequest -> Proto.Binary.Decoder CreateNoteRequest
+mergeNestedCreateNoteRequestBinary depth =
     Proto.Binary.merge
         "notes.v1.CreateNoteRequest"
         (\number wire value ->
             case number of
                 1 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.recursive depth encodeNoteBytes mergeNestedNoteBytes defaultNote)
+                        (Proto.Binary.recursive depth encodeNoteBinary mergeNestedNoteBinary defaultNote)
                         value.note
                         (\v ->
                             { note = Just v
@@ -1382,29 +1382,29 @@ mergeNestedCreateNoteRequestBytes depth =
 
 {-| Decodes a [`CreateNoteRequest`](#CreateNoteRequest) from protobuf binary.
 -}
-decodeCreateNoteRequestBytes : Proto.Binary.Decoder CreateNoteRequest
-decodeCreateNoteRequestBytes =
-    mergeCreateNoteRequestBytes defaultCreateNoteRequest
+decodeCreateNoteRequestBinary : Proto.Binary.Decoder CreateNoteRequest
+decodeCreateNoteRequestBinary =
+    mergeCreateNoteRequestBinary defaultCreateNoteRequest
 
 
 {-| Decodes an [`UpdateNoteRequest`](#UpdateNoteRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeUpdateNoteRequestBytes : UpdateNoteRequest -> Proto.Binary.Decoder UpdateNoteRequest
-mergeUpdateNoteRequestBytes =
-    mergeNestedUpdateNoteRequestBytes 1
+mergeUpdateNoteRequestBinary : UpdateNoteRequest -> Proto.Binary.Decoder UpdateNoteRequest
+mergeUpdateNoteRequestBinary =
+    mergeNestedUpdateNoteRequestBinary 1
 
 
-{-| [`mergeUpdateNoteRequestBytes`](#mergeUpdateNoteRequestBytes) for an [`UpdateNoteRequest`](#UpdateNoteRequest) held `depth` levels deep.
+{-| [`mergeUpdateNoteRequestBinary`](#mergeUpdateNoteRequestBinary) for an [`UpdateNoteRequest`](#UpdateNoteRequest) held `depth` levels deep.
 -}
-mergeNestedUpdateNoteRequestBytes : Int -> UpdateNoteRequest -> Proto.Binary.Decoder UpdateNoteRequest
-mergeNestedUpdateNoteRequestBytes depth =
+mergeNestedUpdateNoteRequestBinary : Int -> UpdateNoteRequest -> Proto.Binary.Decoder UpdateNoteRequest
+mergeNestedUpdateNoteRequestBinary depth =
     Proto.Binary.merge
         "notes.v1.UpdateNoteRequest"
         (\number wire value ->
             case number of
                 1 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.recursive depth encodeNoteBytes mergeNestedNoteBytes defaultNote)
+                        (Proto.Binary.recursive depth encodeNoteBinary mergeNestedNoteBinary defaultNote)
                         value.note
                         (\v ->
                             { note = Just v
@@ -1433,15 +1433,15 @@ mergeNestedUpdateNoteRequestBytes depth =
 
 {-| Decodes an [`UpdateNoteRequest`](#UpdateNoteRequest) from protobuf binary.
 -}
-decodeUpdateNoteRequestBytes : Proto.Binary.Decoder UpdateNoteRequest
-decodeUpdateNoteRequestBytes =
-    mergeUpdateNoteRequestBytes defaultUpdateNoteRequest
+decodeUpdateNoteRequestBinary : Proto.Binary.Decoder UpdateNoteRequest
+decodeUpdateNoteRequestBinary =
+    mergeUpdateNoteRequestBinary defaultUpdateNoteRequest
 
 
 {-| Decodes a [`DeleteNoteRequest`](#DeleteNoteRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeDeleteNoteRequestBytes : DeleteNoteRequest -> Proto.Binary.Decoder DeleteNoteRequest
-mergeDeleteNoteRequestBytes =
+mergeDeleteNoteRequestBinary : DeleteNoteRequest -> Proto.Binary.Decoder DeleteNoteRequest
+mergeDeleteNoteRequestBinary =
     Proto.Binary.merge
         "notes.v1.DeleteNoteRequest"
         (\number wire value ->
@@ -1464,15 +1464,15 @@ mergeDeleteNoteRequestBytes =
 
 {-| Decodes a [`DeleteNoteRequest`](#DeleteNoteRequest) from protobuf binary.
 -}
-decodeDeleteNoteRequestBytes : Proto.Binary.Decoder DeleteNoteRequest
-decodeDeleteNoteRequestBytes =
-    mergeDeleteNoteRequestBytes defaultDeleteNoteRequest
+decodeDeleteNoteRequestBinary : Proto.Binary.Decoder DeleteNoteRequest
+decodeDeleteNoteRequestBinary =
+    mergeDeleteNoteRequestBinary defaultDeleteNoteRequest
 
 
 {-| Decodes an [`ArchiveNoteRequest`](#ArchiveNoteRequest) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeArchiveNoteRequestBytes : ArchiveNoteRequest -> Proto.Binary.Decoder ArchiveNoteRequest
-mergeArchiveNoteRequestBytes =
+mergeArchiveNoteRequestBinary : ArchiveNoteRequest -> Proto.Binary.Decoder ArchiveNoteRequest
+mergeArchiveNoteRequestBinary =
     Proto.Binary.merge
         "notes.v1.ArchiveNoteRequest"
         (\number wire value ->
@@ -1495,9 +1495,9 @@ mergeArchiveNoteRequestBytes =
 
 {-| Decodes an [`ArchiveNoteRequest`](#ArchiveNoteRequest) from protobuf binary.
 -}
-decodeArchiveNoteRequestBytes : Proto.Binary.Decoder ArchiveNoteRequest
-decodeArchiveNoteRequestBytes =
-    mergeArchiveNoteRequestBytes defaultArchiveNoteRequest
+decodeArchiveNoteRequestBinary : Proto.Binary.Decoder ArchiveNoteRequest
+decodeArchiveNoteRequestBinary =
+    mergeArchiveNoteRequestBinary defaultArchiveNoteRequest
 
 
 

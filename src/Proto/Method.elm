@@ -149,8 +149,8 @@ for
         "GetNote"
         Notes.V1.encodeGetNoteRequest
         (\_ -> Notes.V1.decodeNote)
-        Notes.V1.encodeGetNoteRequestBytes
-        Notes.V1.decodeNoteBytes
+        Notes.V1.encodeGetNoteRequestBinary
+        Notes.V1.decodeNoteBinary
 
 A call whose request holds an `Any` the client's registry cannot write is not
 sent over JSON: it fails as a [`BadCall`](Rpc-Error#Cause) whose message

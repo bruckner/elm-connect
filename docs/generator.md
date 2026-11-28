@@ -156,11 +156,11 @@ speaks binary nor packs an `Any` drops them as dead code.
 
 | Proto | Elm |
 |---|---|
-| `message Note` | `encodeNoteBytes : Note -> Bytes.Encode.Encoder`; `decodeNoteBytes : Proto.Binary.Decoder Note`; `mergeNoteBytes : Note -> Proto.Binary.Decoder Note`, which reads a `Note` into the one given, as protobuf merges a message that arrives twice (`decodeNoteBytes` is `mergeNoteBytes defaultNote`) |
-| `enum Visibility` | `encodeVisibilityBytes : Visibility -> Int` and `decodeVisibilityBytes : Int -> Visibility`, the number conversions; an unknown number reads as the zero value |
-| a oneof | an encoder of its set member, `encodeNoteKindBytes` |
-| a recursive message's wrapper | `encodeNode_Bytes` and `mergeNode_Bytes`, and `mergeNestedNode_Bytes` |
-| a message that nests | `mergeNestedNoteBytes : Int -> Note -> Proto.Binary.Decoder Note`, its merge at a nesting depth, which reads at most 100 levels; `mergeNoteBytes` is `mergeNestedNoteBytes 1` |
+| `message Note` | `encodeNoteBinary : Note -> Bytes.Encode.Encoder`; `decodeNoteBinary : Proto.Binary.Decoder Note`; `mergeNoteBinary : Note -> Proto.Binary.Decoder Note`, which reads a `Note` into the one given, as protobuf merges a message that arrives twice (`decodeNoteBinary` is `mergeNoteBinary defaultNote`) |
+| `enum Visibility` | `encodeVisibilityBinary : Visibility -> Int` and `decodeVisibilityBinary : Int -> Visibility`, the number conversions; an unknown number reads as the zero value |
+| a oneof | an encoder of its set member, `encodeNoteKindBinary` |
+| a recursive message's wrapper | `encodeNode_Binary` and `mergeNode_Binary`, and `mergeNestedNode_Binary` |
+| a message that nests | `mergeNestedNoteBinary : Int -> Note -> Proto.Binary.Decoder Note`, its merge at a nesting depth, which reads at most 100 levels; `mergeNoteBinary` is `mergeNestedNoteBinary 1` |
 | `repeated int32 marks = 7 [packed = false];` | written one element per field, as declared; every other repeated scalar is packed |
 
 A message's typed value is built from both its codecs (the `codec_round_trips`
@@ -169,7 +169,7 @@ corpus case):
 ```elm conformance/cases/codec_round_trips/expected/Codec/V1.elm excerpt
 messageLeaf : Proto.Message.Message Leaf
 messageLeaf =
-    Proto.Message.init "codec.v1.Leaf" encodeLeaf decodeLeaf encodeLeafBytes decodeLeafBytes
+    Proto.Message.init "codec.v1.Leaf" encodeLeaf decodeLeaf encodeLeafBinary decodeLeafBinary
 ```
 
 and one whose fields reach a `google.protobuf.Any` by
@@ -182,8 +182,8 @@ client's registry) and its response's JSON decoder, taking the
 registry (`\_ -> Notes.V1.decodeNote` for a type that reaches no
 `Any`). Under
 `both`, the default, it is built by `Proto.Method.init` from those, then
-the request type's `encode…Bytes` and the response type's
-`decode…Bytes`, and its idempotency and routes as under `json`. Under
+the request type's `encode…Binary` and the response type's
+`decode…Binary`, and its idempotency and routes as under `json`. Under
 `wire=proto` it is built from the binary codecs alone (the `wire_proto`
 case):
 
@@ -193,8 +193,8 @@ getEntry =
     Rpc.call
         (Proto.Method.initBinary "ledger.v1.LedgerService"
             "GetEntry"
-            Ledger.V1.encodeGetEntryRequestBytes
-            Ledger.V1.decodeEntryBytes
+            Ledger.V1.encodeGetEntryRequestBinary
+            Ledger.V1.decodeEntryBinary
         )
 ```
 
@@ -211,8 +211,8 @@ give. A 64-bit integer held as `Int` fails to decode outside
 ±(2^53 − 1); `bytes=bytes` reads a `bytes` field without a base64 round
 trip.
 
-The binary names are the JSON ones with `Bytes` at the end. A type
-named for another with `Bytes` at the end, `NoteBytes` beside `Note`,
+The binary names are the JSON ones with `Binary` at the end. A type
+named for another with `Binary` at the end, `NoteBinary` beside `Note`,
 would have JSON codecs of the same names, which is
 `naming::codec_collision` under every option; `rename` one of the two.
 

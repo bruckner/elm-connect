@@ -358,28 +358,28 @@ defaultWide =
 -}
 messageNote : Proto.Message.Message Note
 messageNote =
-    Proto.Message.init "keep.v1.Note" encodeNote decodeNote encodeNoteBytes decodeNoteBytes
+    Proto.Message.init "keep.v1.Note" encodeNote decodeNote encodeNoteBinary decodeNoteBinary
 
 
 {-| The typed value of [`Detail`](#Detail): its full name and codecs.
 -}
 messageDetail : Proto.Message.Message Detail
 messageDetail =
-    Proto.Message.init "keep.v1.Detail" encodeDetail decodeDetail encodeDetailBytes decodeDetailBytes
+    Proto.Message.init "keep.v1.Detail" encodeDetail decodeDetail encodeDetailBinary decodeDetailBinary
 
 
 {-| The typed value of [`Empty`](#Empty): its full name and codecs.
 -}
 messageEmpty : Proto.Message.Message Empty
 messageEmpty =
-    Proto.Message.init "keep.v1.Empty" encodeEmpty decodeEmpty encodeEmptyBytes decodeEmptyBytes
+    Proto.Message.init "keep.v1.Empty" encodeEmpty decodeEmpty encodeEmptyBinary decodeEmptyBinary
 
 
 {-| The typed value of [`Wide`](#Wide): its full name and codecs.
 -}
 messageWide : Proto.Message.Message Wide
 messageWide =
-    Proto.Message.init "keep.v1.Wide" encodeWide decodeWide encodeWideBytes decodeWideBytes
+    Proto.Message.init "keep.v1.Wide" encodeWide decodeWide encodeWideBinary decodeWideBinary
 
 
 
@@ -676,14 +676,14 @@ decodeWide =
 
 {-| Encodes a [`Note`](#Note) as protobuf binary.
 -}
-encodeNoteBytes : Note -> Bytes.Encode.Encoder
-encodeNoteBytes value =
+encodeNoteBinary : Note -> Bytes.Encode.Encoder
+encodeNoteBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.title
         , Proto.Binary.list Proto.Binary.string 2 value.tags
         , Proto.Binary.dict Proto.Binary.string Proto.Binary.int64 3 value.counts
-        , Proto.Binary.optional (Proto.Binary.embedded encodeDetailBytes mergeDetailBytes defaultDetail) 4 value.detail
-        , encodeNoteOriginBytes value.origin
+        , Proto.Binary.optional (Proto.Binary.embedded encodeDetailBinary mergeDetailBinary defaultDetail) 4 value.detail
+        , encodeNoteOriginBinary value.origin
         , Proto.Binary.list Proto.Binary.sint32 7 value.marks
         , Proto.Binary.implicit Proto.Binary.double 8 value.weight
         , Proto.Binary.unknown value.unknownFields_
@@ -692,8 +692,8 @@ encodeNoteBytes value =
 
 {-| Encodes a [`NoteOrigin`](#NoteOrigin) as protobuf binary: its set member's field.
 -}
-encodeNoteOriginBytes : NoteOrigin -> Bytes.Encode.Encoder
-encodeNoteOriginBytes value =
+encodeNoteOriginBinary : NoteOrigin -> Bytes.Encode.Encoder
+encodeNoteOriginBinary value =
     case value of
         NoteOriginUnset ->
             Bytes.Encode.sequence []
@@ -702,13 +702,13 @@ encodeNoteOriginBytes value =
             Proto.Binary.present Proto.Binary.string 5 member
 
         NoteOriginCopiedFrom member ->
-            Proto.Binary.present (Proto.Binary.embedded encodeDetailBytes mergeDetailBytes defaultDetail) 6 member
+            Proto.Binary.present (Proto.Binary.embedded encodeDetailBinary mergeDetailBinary defaultDetail) 6 member
 
 
 {-| Encodes a [`Detail`](#Detail) as protobuf binary.
 -}
-encodeDetailBytes : Detail -> Bytes.Encode.Encoder
-encodeDetailBytes value =
+encodeDetailBinary : Detail -> Bytes.Encode.Encoder
+encodeDetailBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.bytes 1 value.body
         , Proto.Binary.implicit Proto.Binary.fixed32 2 value.crc
@@ -718,8 +718,8 @@ encodeDetailBytes value =
 
 {-| Encodes an [`Empty`](#Empty) as protobuf binary.
 -}
-encodeEmptyBytes : Empty -> Bytes.Encode.Encoder
-encodeEmptyBytes value =
+encodeEmptyBinary : Empty -> Bytes.Encode.Encoder
+encodeEmptyBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.unknown value.unknownFields_
         ]
@@ -727,8 +727,8 @@ encodeEmptyBytes value =
 
 {-| Encodes a [`Wide`](#Wide) as protobuf binary.
 -}
-encodeWideBytes : Wide -> Bytes.Encode.Encoder
-encodeWideBytes value =
+encodeWideBinary : Wide -> Bytes.Encode.Encoder
+encodeWideBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.int32 1 value.f1
         , Proto.Binary.implicit Proto.Binary.int32 2 value.f2
@@ -804,8 +804,8 @@ encodeWideBytes value =
 
 {-| Decodes a [`Note`](#Note) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeNoteBytes : Note -> Proto.Binary.Decoder Note
-mergeNoteBytes =
+mergeNoteBinary : Note -> Proto.Binary.Decoder Note
+mergeNoteBinary =
     Proto.Binary.mergeKeep
         "keep.v1.Note"
         (\number ->
@@ -906,7 +906,7 @@ mergeNoteBytes =
 
                 4 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeDetailBytes mergeDetailBytes defaultDetail)
+                        (Proto.Binary.embedded encodeDetailBinary mergeDetailBinary defaultDetail)
                         value.detail
                         (\v ->
                             { title = value.title
@@ -941,7 +941,7 @@ mergeNoteBytes =
 
                 6 ->
                     Proto.Binary.fieldInto
-                        (Proto.Binary.embedded encodeDetailBytes mergeDetailBytes defaultDetail)
+                        (Proto.Binary.embedded encodeDetailBinary mergeDetailBinary defaultDetail)
                         (case value.origin of
                             NoteOriginCopiedFrom member ->
                                 Just member
@@ -1016,15 +1016,15 @@ mergeNoteBytes =
 
 {-| Decodes a [`Note`](#Note) from protobuf binary.
 -}
-decodeNoteBytes : Proto.Binary.Decoder Note
-decodeNoteBytes =
-    mergeNoteBytes defaultNote
+decodeNoteBinary : Proto.Binary.Decoder Note
+decodeNoteBinary =
+    mergeNoteBinary defaultNote
 
 
 {-| Decodes a [`Detail`](#Detail) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeDetailBytes : Detail -> Proto.Binary.Decoder Detail
-mergeDetailBytes =
+mergeDetailBinary : Detail -> Proto.Binary.Decoder Detail
+mergeDetailBinary =
     Proto.Binary.mergeKeep
         "keep.v1.Detail"
         (\number ->
@@ -1079,15 +1079,15 @@ mergeDetailBytes =
 
 {-| Decodes a [`Detail`](#Detail) from protobuf binary.
 -}
-decodeDetailBytes : Proto.Binary.Decoder Detail
-decodeDetailBytes =
-    mergeDetailBytes defaultDetail
+decodeDetailBinary : Proto.Binary.Decoder Detail
+decodeDetailBinary =
+    mergeDetailBinary defaultDetail
 
 
 {-| Decodes an [`Empty`](#Empty) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeEmptyBytes : Empty -> Proto.Binary.Decoder Empty
-mergeEmptyBytes =
+mergeEmptyBinary : Empty -> Proto.Binary.Decoder Empty
+mergeEmptyBinary =
     Proto.Binary.mergeKeep
         "keep.v1.Empty"
         (\_ -> 0)
@@ -1102,15 +1102,15 @@ mergeEmptyBytes =
 
 {-| Decodes an [`Empty`](#Empty) from protobuf binary.
 -}
-decodeEmptyBytes : Proto.Binary.Decoder Empty
-decodeEmptyBytes =
-    mergeEmptyBytes defaultEmpty
+decodeEmptyBinary : Proto.Binary.Decoder Empty
+decodeEmptyBinary =
+    mergeEmptyBinary defaultEmpty
 
 
 {-| Decodes a [`Wide`](#Wide) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeWideBytes : Wide -> Proto.Binary.Decoder Wide
-mergeWideBytes =
+mergeWideBinary : Wide -> Proto.Binary.Decoder Wide
+mergeWideBinary =
     Proto.Binary.mergeKeep
         "keep.v1.Wide"
         (\number ->
@@ -1514,6 +1514,6 @@ mergeWideBytes =
 
 {-| Decodes a [`Wide`](#Wide) from protobuf binary.
 -}
-decodeWideBytes : Proto.Binary.Decoder Wide
-decodeWideBytes =
-    mergeWideBytes defaultWide
+decodeWideBinary : Proto.Binary.Decoder Wide
+decodeWideBinary =
+    mergeWideBinary defaultWide

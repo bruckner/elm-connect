@@ -36,8 +36,8 @@ getEntry =
     Rpc.call
         (Proto.Method.initBinary "ledger.v1.LedgerService"
             "GetEntry"
-            Ledger.V1.encodeGetEntryRequestBytes
-            Ledger.V1.decodeEntryBytes
+            Ledger.V1.encodeGetEntryRequestBinary
+            Ledger.V1.decodeEntryBinary
         )
 
 

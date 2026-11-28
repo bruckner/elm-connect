@@ -845,7 +845,7 @@ rpc shared call =
     `Nested` after the verb, like the `Bytes` and `With` suffixes,
     breaks the prefix rule of §3.7's names: the codecs of a type
     `NestedNode` beside a recursive `Node` would
-    take `decodeNestedNode` and `mergeNestedNodeBytes`, and the
+    take `decodeNestedNode` and `mergeNestedNodeBinary`, and the
     compiler, not the generator, reports the name defined twice
     (`rename` is the escape). Every name at a depth comes from one
     function of the generator, `naming::nested`.
@@ -1687,16 +1687,17 @@ As the `naming` and `naming_collision` cases show:
   service's module; `registry` is kept free on the same terms. The typed values
   take a prefix too, since under a suffix `encodeFooMessage` would be
   both the encoder of `FooMessage` and the typed value of `EncodeFoo`.
-- The binary codecs (§3.10) reserve `encodeFooBytes`, `decodeFooBytes`
-  and `mergeFooBytes`: named for the JSON codecs with a suffix, so that
+- The binary codecs (§3.10) reserve `encodeFooBinary`, `decodeFooBinary`
+  and `mergeFooBinary`: named for the JSON codecs with a suffix, so that
   the two sit side by side and read as a pair, at the cost the bullet
-  above names. A type `FooBytes` beside `Foo` has JSON codecs
-  `encodeFooBytes` and `decodeFooBytes`, which are `Foo`'s binary
+  above names. A type `FooBinary` beside `Foo` has JSON codecs
+  `encodeFooBinary` and `decodeFooBinary`, which are `Foo`'s binary
   codecs; whatever the `wire` option, since every type has both, that
   is `naming::codec_collision`, pointing at both types, its help naming
-  the `rename` of the `Bytes` one (`codec_name_clash` case). A oneof's
+  the `rename` of the `Binary` one (`codec_name_clash` case). A oneof's
   binary codec is an encoder alone, so a type named for a oneof's with
-  `Bytes` meets only that. `merge` begins no JSON codec, so a merge
+  `Binary` meets only that. `Bytes` is no codec suffix: `FooBytes`
+  beside `Foo` meets nothing (`codec_name_bytes` case). `merge` begins no JSON codec, so a merge
   never meets one.
 - A descriptor module's values are `descriptor` and one per field,
   named as its record field, but that a field or member named
@@ -1971,7 +1972,7 @@ enumVisibility =
 
 messageNote : Proto.Message.Message Note
 messageNote =
-    Proto.Message.init "notes.v1.Note" encodeNote decodeNote encodeNoteBytes decodeNoteBytes
+    Proto.Message.init "notes.v1.Note" encodeNote decodeNote encodeNoteBinary decodeNoteBinary
 
 
 descriptors : Proto.Descriptors.Descriptors
@@ -2212,11 +2213,11 @@ registry =
   generated (decisions.md: Binary is the Any's canonical form).
 - **Every package's binary codecs.** Two sections after the decoders,
   binary encoders and binary decoders, written against `Proto.Binary`
-  (§5.5): per message `encodeFooBytes : Foo -> Bytes.Encode.Encoder`,
-  `mergeFooBytes : Foo -> Proto.Binary.Decoder Foo` and
-  `decodeFooBytes = mergeFooBytes defaultFoo`; per enum its number
-  conversions, `encodeBarBytes : Bar -> Int` and
-  `decodeBarBytes : Int -> Bar` (an unknown number reads as the zero
+  (§5.5): per message `encodeFooBinary : Foo -> Bytes.Encode.Encoder`,
+  `mergeFooBinary : Foo -> Proto.Binary.Decoder Foo` and
+  `decodeFooBinary = mergeFooBinary defaultFoo`; per enum its number
+  conversions, `encodeBarBinary : Bar -> Int` and
+  `decodeBarBinary : Int -> Bar` (an unknown number reads as the zero
   value, a negative number is an `if` in the fallback, since Elm has no
   negative literal patterns); per oneof an encoder of its set member;
   per recursion wrapper a pair that unwraps and wraps through
@@ -2267,7 +2268,7 @@ registry =
   what reads a method's JSON half or takes its routes is typed at
   `Rpc.Json` (§5.1), so the type alone tells a method built with
   `initBinary`.
-- **Names** are §3.7's: the JSON names with `Bytes` at the end, and
+- **Names** are §3.7's: the JSON names with `Binary` at the end, and
   `naming::codec_collision` where a type's name meets them, under every
   option. The JSON codecs taking the registry end in `With`, and the same
   diagnostic meets a type named for one (`codec_name_clash_with` case).
@@ -2553,8 +2554,8 @@ binding whose rule names a `response_body`:
   `withIdempotency` with its level and
   `withRoutes` with its route functions (below).
   Under `wire=both`, the default, it is built by `Proto.Method.init`
-  from the names, those two codecs and the request type's `encode…Bytes` and the response type's
-  `decode…Bytes`; under `wire=proto` by `Proto.Method.initBinary` from the
+  from the names, those two codecs and the request type's `encode…Binary` and the response type's
+  `decode…Binary`; under `wire=proto` by `Proto.Method.initBinary` from the
   binary two alone (§3.10), with no routes. A method holds no registry:
   the client's is the one table (§5.1). A method whose route bodies hold
   an `Any`, which has no total encoder, takes route functions of the
@@ -4214,10 +4215,10 @@ value as two halves with its decimal text.
 - **Merge.** Fields are read in any order and the last of a singular
   field wins. A message field that arrives twice, or a oneof's message
   member set twice, is merged into the one read before it, as protobuf
-  merges: `mergeFooBytes : Foo -> Decoder Foo` is `merge step finish`,
+  merges: `mergeFooBinary : Foo -> Decoder Foo` is `merge step finish`,
   which starts from `finish existing`, since a finish that only reverses
   lists gives back the state the step conses onto, and
-  `decodeFooBytes = mergeFooBytes defaultFoo`. Repeated fields inside
+  `decodeFooBinary = mergeFooBinary defaultFoo`. Repeated fields inside
   it are joined, a later map entry replaces the earlier one for its key
   (`insertBool` for a `bool`-keyed map). The well-known types held as
   Elm values merge as protobuf-go merges their messages: a `Timestamp`
@@ -4303,9 +4304,9 @@ value as two halves with its decimal text.
   one that reaches a cycle, a `Value`, `Struct` or `ListValue`, or an
   `Any`) is a level, the outermost at 1, as protobuf-es and prost count
   messages (protobuf-go counts a map entry as a level too, and allows
-  10,000). The merge carries the depth: `mergeNodeBytes =
-  mergeNestedNodeBytes 1`; for a message on a cycle
-  `mergeNestedNodeBytes = Proto.Binary.memo (\depth -> …)`, which makes
+  10,000). The merge carries the depth: `mergeNodeBinary =
+  mergeNestedNodeBinary 1`; for a message on a cycle
+  `mergeNestedNodeBinary = Proto.Binary.memo (\depth -> …)`, which makes
   the merges for depths 1 to 100 once, and for one on no cycle a
   function of the depth, made as a holder reads it. A field of a message
   whose merge takes the depth, of a message that nests, is read by

@@ -48,8 +48,8 @@ getMessage =
             "GetMessage"
             Msgs.V1.encodeMessageRequest
             (\_ -> Msgs.V1.decodeMessage)
-            Msgs.V1.encodeMessageRequestBytes
-            Msgs.V1.decodeMessageBytes
+            Msgs.V1.encodeMessageRequestBinary
+            Msgs.V1.decodeMessageBinary
             |> Proto.Method.withRoutes [ routeGetMessage0, routeGetMessage1 ]
         )
 
@@ -70,8 +70,8 @@ getSub =
             "GetSub"
             Msgs.V1.encodeMessageRequest
             (\_ -> Msgs.V1.decodeMessage)
-            Msgs.V1.encodeMessageRequestBytes
-            Msgs.V1.decodeMessageBytes
+            Msgs.V1.encodeMessageRequestBinary
+            Msgs.V1.decodeMessageBinary
             |> Proto.Method.withRoutes [ routeGetSub0 ]
         )
 
@@ -92,8 +92,8 @@ updateMessage =
             "UpdateMessage"
             Msgs.V1.encodeMessageRequest
             (\_ -> Msgs.V1.decodeMessage)
-            Msgs.V1.encodeMessageRequestBytes
-            Msgs.V1.decodeMessageBytes
+            Msgs.V1.encodeMessageRequestBinary
+            Msgs.V1.decodeMessageBinary
             |> Proto.Method.withRoutes [ routeUpdateMessage0 ]
         )
 
@@ -112,8 +112,8 @@ listMessages =
             "ListMessages"
             Msgs.V1.encodeMessageRequest
             (\_ -> Msgs.V1.decodeMessage)
-            Msgs.V1.encodeMessageRequestBytes
-            Msgs.V1.decodeMessageBytes
+            Msgs.V1.encodeMessageRequestBinary
+            Msgs.V1.decodeMessageBinary
             |> Proto.Method.withRoutes [ routeListMessages0 ]
         )
 
@@ -134,8 +134,8 @@ checkMessage =
             "CheckMessage"
             Msgs.V1.encodeMessageRequest
             (\_ -> Msgs.V1.decodeMessage)
-            Msgs.V1.encodeMessageRequestBytes
-            Msgs.V1.decodeMessageBytes
+            Msgs.V1.encodeMessageRequestBinary
+            Msgs.V1.decodeMessageBinary
             |> Proto.Method.withRoutes [ routeCheckMessage0 ]
         )
 
@@ -154,8 +154,8 @@ checkById =
             "CheckById"
             Msgs.V1.encodeMessageRequest
             (\_ -> Msgs.V1.decodeMessage)
-            Msgs.V1.encodeMessageRequestBytes
-            Msgs.V1.decodeMessageBytes
+            Msgs.V1.encodeMessageRequestBinary
+            Msgs.V1.decodeMessageBinary
             |> Proto.Method.withRoutes [ routeCheckById0 ]
         )
 
@@ -176,8 +176,8 @@ touch =
             "Touch"
             Msgs.V1.encodeMessageRequest
             (\_ -> Msgs.V1.decodeMessage)
-            Msgs.V1.encodeMessageRequestBytes
-            Msgs.V1.decodeMessageBytes
+            Msgs.V1.encodeMessageRequestBinary
+            Msgs.V1.decodeMessageBinary
             |> Proto.Method.withRoutes [ routeTouch0 ]
         )
 

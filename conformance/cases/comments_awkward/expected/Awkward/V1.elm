@@ -204,14 +204,14 @@ enumMarks =
 -}
 messageDelimiters : Proto.Message.Message Delimiters
 messageDelimiters =
-    Proto.Message.init "awkward.v1.Delimiters" encodeDelimiters decodeDelimiters encodeDelimitersBytes decodeDelimitersBytes
+    Proto.Message.init "awkward.v1.Delimiters" encodeDelimiters decodeDelimiters encodeDelimitersBinary decodeDelimitersBinary
 
 
 {-| The typed value of [`Docs`](#Docs): its full name and codecs.
 -}
 messageDocs : Proto.Message.Message Docs
 messageDocs =
-    Proto.Message.init "awkward.v1.Docs" encodeDocs decodeDocs encodeDocsBytes decodeDocsBytes
+    Proto.Message.init "awkward.v1.Docs" encodeDocs decodeDocs encodeDocsBinary decodeDocsBinary
 
 
 
@@ -337,8 +337,8 @@ decodeDocs =
 
 {-| The number protobuf binary writes a [`Marks`](#Marks) as.
 -}
-encodeMarksBytes : Marks -> Int
-encodeMarksBytes value =
+encodeMarksBinary : Marks -> Int
+encodeMarksBinary value =
     case value of
         MarksUnspecified ->
             0
@@ -352,8 +352,8 @@ encodeMarksBytes value =
 
 {-| Encodes a [`Delimiters`](#Delimiters) as protobuf binary.
 -}
-encodeDelimitersBytes : Delimiters -> Bytes.Encode.Encoder
-encodeDelimitersBytes value =
+encodeDelimitersBinary : Delimiters -> Bytes.Encode.Encoder
+encodeDelimitersBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.lists
         , Proto.Binary.implicit Proto.Binary.string 2 value.blocks
@@ -367,8 +367,8 @@ encodeDelimitersBytes value =
 
 {-| Encodes a [`Docs`](#Docs) as protobuf binary.
 -}
-encodeDocsBytes : Docs -> Bytes.Encode.Encoder
-encodeDocsBytes value =
+encodeDocsBinary : Docs -> Bytes.Encode.Encoder
+encodeDocsBinary value =
     Bytes.Encode.sequence
         [ Proto.Binary.implicit Proto.Binary.string 1 value.field
         ]
@@ -380,8 +380,8 @@ encodeDocsBytes value =
 
 {-| A [`Marks`](#Marks) from the number protobuf binary carries.
 -}
-decodeMarksBytes : Int -> Marks
-decodeMarksBytes number =
+decodeMarksBinary : Int -> Marks
+decodeMarksBinary number =
     case number of
         1 ->
             MarksList
@@ -395,8 +395,8 @@ decodeMarksBytes number =
 
 {-| Decodes a [`Delimiters`](#Delimiters) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeDelimitersBytes : Delimiters -> Proto.Binary.Decoder Delimiters
-mergeDelimitersBytes =
+mergeDelimitersBinary : Delimiters -> Proto.Binary.Decoder Delimiters
+mergeDelimitersBinary =
     Proto.Binary.merge
         "awkward.v1.Delimiters"
         (\number wire value ->
@@ -521,15 +521,15 @@ mergeDelimitersBytes =
 
 {-| Decodes a [`Delimiters`](#Delimiters) from protobuf binary.
 -}
-decodeDelimitersBytes : Proto.Binary.Decoder Delimiters
-decodeDelimitersBytes =
-    mergeDelimitersBytes defaultDelimiters
+decodeDelimitersBinary : Proto.Binary.Decoder Delimiters
+decodeDelimitersBinary =
+    mergeDelimitersBinary defaultDelimiters
 
 
 {-| Decodes a [`Docs`](#Docs) from protobuf binary into the one given, as protobuf merges a message that arrives twice.
 -}
-mergeDocsBytes : Docs -> Proto.Binary.Decoder Docs
-mergeDocsBytes =
+mergeDocsBinary : Docs -> Proto.Binary.Decoder Docs
+mergeDocsBinary =
     Proto.Binary.merge
         "awkward.v1.Docs"
         (\number wire value ->
@@ -552,6 +552,6 @@ mergeDocsBytes =
 
 {-| Decodes a [`Docs`](#Docs) from protobuf binary.
 -}
-decodeDocsBytes : Proto.Binary.Decoder Docs
-decodeDocsBytes =
-    mergeDocsBytes defaultDocs
+decodeDocsBinary : Proto.Binary.Decoder Docs
+decodeDocsBinary =
+    mergeDocsBinary defaultDocs

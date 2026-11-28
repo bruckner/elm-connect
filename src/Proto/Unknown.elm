@@ -12,7 +12,7 @@ schema added, and `==` sees them. Without the option the field is not there
 and such fields are dropped.
 
 The fields are non-empty only in a message read from protobuf binary
-(`Proto.Binary.decode Notes.V1.decodeNoteBytes`, or the answer to a call over
+(`Proto.Binary.decode Notes.V1.decodeNoteBinary`, or the answer to a call over
 Connect's binary codec or gRPC-Web) that carried a field number its schema does
 not declare, or a declared field in a wire type the declaration does not take
 (an `int32` sent length-delimited). A message built in Elm holds none until
