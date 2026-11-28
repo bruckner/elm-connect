@@ -36,6 +36,7 @@ import Bytes exposing (Bytes)
 import Bytes.Encode
 import Json.Decode
 import Json.Encode
+import Proto.Binary
 import Proto.Error
 import Proto.Field as Field
 import Proto.Internal.Binary
@@ -62,15 +63,12 @@ a message that holds no `google.protobuf.Any`:
     messageNote =
         Proto.Message.init "notes.v1.Note" encodeNote decodeNote encodeNoteBinary decodeNoteBinary
 
-The binary decoder is a [`Proto.Binary.Decoder`](Proto-Binary#Decoder), which
-the package site may show as `Proto.Internal.Binary.Decoder`.
-
 A message built by `init` is taken at its word that it holds no `Any`:
 [`Proto.Any.pack`](Proto-Any#pack) writes its binary straight away, without
 looking for an `Any` that only JSON could carry (see [`initWith`](#initWith)).
 
 -}
-init : String -> (a -> Proto.Json.Encoder Proto.Error.Error) -> Json.Decode.Decoder a -> (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> Message a
+init : String -> (a -> Proto.Json.Encoder Proto.Error.Error) -> Json.Decode.Decoder a -> (a -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder a -> Message a
 init name jsonEncoder jsonDecoder binaryEncoder binaryDecoder =
     Internal.Message name
         { encodeJson = \registry value -> Proto.Json.encodeWith registry (jsonEncoder value)
@@ -92,7 +90,7 @@ registry (`UnregisteredType`), or its binary is not that type's message
         Proto.Message.initWith "notes.v1.Envelope" encodeEnvelope decodeEnvelopeWith encodeEnvelopeBinary decodeEnvelopeBinary
 
 -}
-initWith : String -> (a -> Proto.Json.Encoder Proto.Error.Error) -> (Registry -> Json.Decode.Decoder a) -> (a -> Bytes.Encode.Encoder) -> Proto.Internal.Binary.Decoder a -> Message a
+initWith : String -> (a -> Proto.Json.Encoder Proto.Error.Error) -> (Registry -> Json.Decode.Decoder a) -> (a -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder a -> Message a
 initWith name jsonEncoder jsonDecoder binaryEncoder binaryDecoder =
     Internal.Message name
         { encodeJson = \registry value -> Proto.Json.encodeWith registry (jsonEncoder value)
