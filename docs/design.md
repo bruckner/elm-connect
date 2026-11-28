@@ -349,7 +349,11 @@ rpc shared call =
   `Rpc.Internal.Client`, built by `Rpc.Protocol` and `Rpc.Client` and
   read by `Rpc`; `Rpc.Internal.Retry`; `Proto.Internal.Binding`, built by
   `Proto.Http`, which also holds the interpreter of binding data the
-  tests use as an oracle (`withBindings`, unexposed); `Proto.Internal.Any`;
+  tests use as an oracle (`withBindings`, unexposed); `Proto.Internal.Any`,
+  and `Proto.Internal.Registry`, whose conversion of an `Any` to proto3
+  JSON `Proto.Any.toJson` and `Proto.Json` share, so that `Proto.Json`
+  imports no `Proto.Any` and sits below `Proto.Message` and
+  `Proto.Method`, whose builders name its encoder;
   `Proto.Internal.Duration` and `Proto.Internal.Timestamp`, which the
   binary reader builds and the JSON writer and `Proto.Route` print,
   §3.5;

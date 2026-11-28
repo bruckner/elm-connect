@@ -521,7 +521,9 @@ request bodies now hold only what the message holds. Where: design
 
 *2026-11-24. Since 2026-11-25 a `Duration` read from binary that is
 not valid is refused (Well-known types: validity by source); since
-2026-11-26 a `Timestamp` too.*
+2026-11-26 a `Timestamp` too. The encoder's type, named from a module
+of its own, `Proto.Json.Encoder`, at first, is defined in `Proto.Json`
+since 2026-11-27 (`Proto.Json` below `Proto.Any`).*
 
 A read accepts whatever the wire admits; a JSON write refuses a value
 proto3 JSON has no form for, as protobuf's own JSON writers do: a
@@ -2988,6 +2990,39 @@ hundreds of steps in generated code, and is a separate question
 `totalRepeatedField` stay for the closure they save, as above.
 
 Where: design §3.4, §3.5, §3.6.
+
+### `Proto.Json` below `Proto.Any`
+
+*2026-11-27.*
+
+`Proto.Json` imports neither `Proto.Any` nor anything above it, so
+`Proto.Message` and `Proto.Method`, whose builders take a JSON encoder,
+import `Proto.Json` and name `Proto.Json.Encoder`. It had imported
+`Proto.Any` for two things, the `Any` type and the conversion
+`Proto.Any.toJson` that `writeAny` calls; `Proto.Any` imports
+`Proto.Message`, so `Proto.Message` could not import `Proto.Json`
+without a cycle. The encoder was therefore split three ways: its type
+and code in an internal `Proto.Internal.Writer`, an exposed module
+`Proto.Json.Encoder` holding only an alias of the type, for the builders'
+signatures to name, and `Proto.Json` aliasing that again. `Proto.Json`
+now names `Any` through `Proto.Internal.Any`, as `Proto.Binary`
+does, and the conversion lives in `Proto.Internal.Registry` beside the
+registry's other conversions, called by both `Proto.Any.toJson` and
+`writeAny`. `Proto.Json.Encoder` and `Proto.Internal.Writer` are gone;
+`Encoder`, `Fields` and `Field` are opaque types of `Proto.Json`, with
+the same names and signatures.
+
+The cost is in the package docs: `anyWith`, `nestedAnyWith` and
+`writeAny` show `Proto.Internal.Any.Any`, as `Proto.Binary.any` already
+did, where they showed `Proto.Any.Any`; `Proto.Any`'s docs say the name
+may show so. Keeping the public name would need `Proto.Json` to import
+`Proto.Any`, which is what this undoes. `Proto.Message.init` and
+`initWith` name `Proto.Binary.Decoder` now, as `Proto.Method` does,
+where they named the internal decoder type. No program pays: built with
+`elm make --optimize`, terser and `gzip -9 -n`, the JSON-only client,
+Eliza, the notes example and four one-call clients link the same code,
+renamed, less a forwarding definition or a few, and are the same size or
+up to 32 bytes smaller gzipped. Where: design §3.1.
 
 ### Binary codecs, faster within elm/bytes
 
