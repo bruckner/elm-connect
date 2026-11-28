@@ -44,7 +44,7 @@ calling:
 | `Proto.Field`, `Proto.EnumValue` | the parts of a descriptor: a field with its unions and its `google.api.field_behavior`, an enum value |
 | `Proto.Method` | a method's typed value (request encoder, response decoder, service and method name, idempotency and routes) and its descriptor as data |
 | `Proto.Route`, `Proto.Query` | the route a binding sends a call over, and the helpers generated route functions and query encoders call ([transcoding.md](transcoding.md)) |
-| `Proto.Http` | a method's `google.api.http` rule as data, in its descriptor or for a method written by hand |
+| `Proto.Http` | a method's `google.api.http` rule as data, in its descriptor |
 | `Proto.WellKnown` | the well-known types' typed values |
 | `Proto.Descriptors` | descriptors by full name |
 | `Proto.Registry` | the table an `Any` is converted through between proto3 JSON and protobuf binary, strict until made lenient |

@@ -15,10 +15,11 @@
   helpers route functions call) and `Proto.Query` (the query helpers).
 - `Proto.Method.json`, `proto` and `both` take the service's full name
   and the method's name (`"notes.v1.NotesService" "GetNote"`) in place
-  of a descriptor, and `Proto.Method.withIdempotency`,
-  `Proto.Method.withRoutes` and `Proto.Method.withBindings` set the rest;
-  `Proto.Method.toDescriptor` is gone. A method written by hand gives
-  its `Proto.Http` bindings to `withBindings`. The generated
+  of a descriptor, and `Proto.Method.withIdempotency` and
+  `Proto.Method.withRoutes` set the rest; `Proto.Method.toDescriptor` is
+  gone. A method written by hand gives route functions of its own to
+  `withRoutes`: its `Proto.Http` bindings no longer route a call, and
+  stay as the descriptor's data (`Proto.Method.bindings`). The generated
   `descriptorGetNote` keeps its form, and is no longer held by the call:
   a program that does not name it drops it.
 - `Rpc.Call.descriptor` is gone: name `descriptorGetNote` instead.

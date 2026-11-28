@@ -1,5 +1,5 @@
 module Proto.Method exposing
-    ( Method, init, initJson, initBinary, withIdempotency, withRoutes, withJsonRoutes, withResponseBody, withBindings
+    ( Method, init, initJson, initBinary, withIdempotency, withRoutes, withJsonRoutes, withResponseBody
     , encodeRequest, responseDecoder
     , Descriptor, descriptor
     , service, name, idempotency, input, output, bindings
@@ -32,7 +32,7 @@ The idempotency is a union whose constructors carry its name as a prefix
 (`IdempotencyNoSideEffects`), so it can be exposed with `(..)` beside any
 other union.
 
-@docs Method, init, initJson, initBinary, withIdempotency, withRoutes, withJsonRoutes, withResponseBody, withBindings
+@docs Method, init, initJson, initBinary, withIdempotency, withRoutes, withJsonRoutes, withResponseBody
 
 
 # Reading a typed value
@@ -63,8 +63,6 @@ import Proto.Binary
 import Proto.Codec
 import Proto.Error
 import Proto.Http exposing (Binding)
-import Proto.Internal.Binding
-import Proto.Internal.Interpret
 import Proto.Internal.Method as Internal
 import Proto.Internal.Writer as Writer
 import Proto.Json.Encoder
@@ -104,7 +102,7 @@ over a protocol speaking JSON.
 
 Its idempotency is `IdempotencyUnknown` until
 [`withIdempotency`](#withIdempotency) says otherwise, and it has no routes
-until [`withRoutes`](#withRoutes) or [`withBindings`](#withBindings) gives
+until [`withRoutes`](#withRoutes) or [`withJsonRoutes`](#withJsonRoutes) gives
 them, so that transcoding sends it over the implicit route.
 
 -}
@@ -220,12 +218,9 @@ withJsonRoutes routes (Internal.Method m) =
 whole of it: the field's JSON name, as the binding's `response_body` names
 it. The server answers with that field's value alone, and the response's
 decoder reads it as a response holding only that field. Bindings count
-from 0 in the order the routes were given. A method you
-write by hand with [`withRoutes`](#withRoutes) or
-[`withJsonRoutes`](#withJsonRoutes) needs it for each binding whose server
-answers with only that field; [`withBindings`](#withBindings) reads it from
-each binding already. Give it after the routes, which replace it; a binding
-the method has no route for changes nothing.
+from 0 in the order the routes were given. Generated code writes it for each
+binding whose `response_body` names a field. Give it after the routes, which
+replace it; a binding the method has no route for changes nothing.
 
     Proto.Method.initJson "notes.v1.NotesService"
         "GetNoteTitle"
@@ -249,36 +244,6 @@ withResponseBody n field (Internal.Method m) =
                             route
                     )
                     m.routes
-        }
-
-
-{-| The method's routes from its `google.api.http` bindings written as
-[`Proto.Http`](Proto-Http) data, for a method written by hand: each route is
-read from the request's proto3 JSON, written with the registry in use and
-encoded once per send for the route and the body alike, and each binding's
-answer is read from the response field its data names. Only a program
-naming this function carries the code that reads a binding.
-
-    Proto.Method.initJson "notes.v1.NotesService"
-        "GetNote"
-        encodeGetNoteRequest
-        (\_ -> decodeNote)
-        |> Proto.Method.withBindings
-            [ Proto.Http.binding { … } ]
-
--}
-withBindings : List Binding -> Method codec req res -> Method codec req res
-withBindings methodBindings (Internal.Method m) =
-    Internal.Method
-        { m
-            | routes =
-                List.map
-                    (\(Proto.Internal.Binding.Binding rule) ->
-                        { shape = Internal.FromJson (\_ json -> Proto.Internal.Interpret.route rule json)
-                        , responseBody = rule.responseBody
-                        }
-                    )
-                    methodBindings
         }
 
 
@@ -389,7 +354,8 @@ output (Descriptor m) =
 
 
 {-| Its `google.api.http` rule: the rule's own binding first, then its
-`additional_bindings` in order; `[]` for a method without one.
+`additional_bindings` in order; `[]` for a method without one. A call is not
+built from it: its requests follow the method's routes.
 -}
 bindings : Descriptor -> List Binding
 bindings (Descriptor m) =

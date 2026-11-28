@@ -44,8 +44,8 @@
   `methodBinary` and `method … |> withBinary`, and take the service's
   and the method's names first (`Proto.Method.json
   "notes.v1.NotesService" "GetNote" encodeGetNoteRequest decodeNote`);
-  `withIdempotency`,
-  `withRoutes` and `withBindings` follow as before. A method's type
+  `withIdempotency` and
+  `withRoutes` follow as before. A method's type
   gains its codec, `Proto.Method.Method codec req res`.
   `Proto.Method.encodeRequestBytes` and `responseBytesDecoder` are gone;
   `encodeRequest` and `responseDecoder` stay.

@@ -1,4 +1,4 @@
-module Snippets.Migrating exposing (byInstant, client, clientFor, color, createdText, describe, extraJson, fetch, getNote, getNoteBinding, newestFirst, noteFields, procedure, retryable, touch, withColor)
+module Snippets.Migrating exposing (byInstant, client, clientFor, color, createdText, describe, extraJson, fetch, getNote, getNoteBinding, newestFirst, noteFields, procedure, retryable, routeGetNote, touch, withColor)
 
 {-| docs/migrating.md's code: what a 0.1 application writes in 0.2.
 
@@ -17,6 +17,7 @@ import Proto.Field
 import Proto.Http
 import Proto.Message
 import Proto.Method
+import Proto.Route
 import Proto.Timestamp
 import Proto.Value exposing (Value(..))
 import Rpc
@@ -153,12 +154,28 @@ getNote =
             Notes.V1.encodeGetNoteRequest
             Notes.V1.decodeNoteWith
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
-            |> Proto.Method.withBindings [ getNoteBinding ]
+            |> Proto.Method.withRoutes [ routeGetNote ]
         )
 
 
 
 -- endregion method
+-- region route
+
+
+routeGetNote : Notes.V1.GetNoteRequest -> Proto.Route.Route
+routeGetNote request =
+    -- GET /v1/{name=notes/*}
+    { method = "GET"
+    , path = "v1/" ++ Proto.Route.segments request.name
+    , query = []
+    , body = Nothing
+    , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] request.name
+    }
+
+
+
+-- endregion route
 -- region binding
 
 

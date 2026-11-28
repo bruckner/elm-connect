@@ -4,8 +4,8 @@ module RouteShapesTest exposing (suite)
 interpreter (the corpus case `routes_typed_shapes`, written under
 `tests/Generated/Shapes` by `crates/elm-connect-gen/tests/routes.rs` at test
 time): each method's typed routes against the interpreter over the same
-bindings as data (`Proto.Method.withBindings`), through `Rpc.request` over
-transcoding, for every binding and a spread of requests. The two agree but
+bindings as data (`Proto.Internal.Binding.withBindings`), through
+`Rpc.request` over transcoding, for every binding and a spread of requests. The two agree but
 where the typed route is deliberately different, which the last tests pin.
 -}
 
@@ -19,6 +19,7 @@ import Octets exposing (bytesOf)
 import Proto.Any
 import Proto.Binary
 import Proto.Error
+import Proto.Internal.Binding
 import Proto.Method
 import Proto.Timestamp
 import Proto.Value
@@ -57,7 +58,7 @@ for these methods before every binding was typed.
 -}
 interpreted : Proto.Method.Descriptor -> Rpc.Call Rpc.Json req res -> Rpc.Call Rpc.Json req res
 interpreted descriptor typed =
-    Rpc.call (Proto.Method.withBindings (Proto.Method.bindings descriptor) (Rpc.Call.method typed)) (Rpc.Call.requestMessage typed)
+    Rpc.call (Proto.Internal.Binding.withBindings (Proto.Method.bindings descriptor) (Rpc.Call.method typed)) (Rpc.Call.requestMessage typed)
 
 
 {-| The typed and the interpreted request of each request over each binding,

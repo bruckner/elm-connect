@@ -147,10 +147,8 @@ be escaped as `%2F` in a single-segment variable, which grpc-gateway's
 default mux splits on and answers 404. A `bytes` field held as a
 `String` is sent as it holds it.
 
-A method written by hand takes its bindings as data instead,
-[`Proto.Http`](../src/Proto/Http.elm) values given to
-`Proto.Method.withBindings`, and the runtime reads each from the
-request's proto3 JSON into the same route.
+A method written by hand gives `Proto.Method.withRoutes` (or
+`withJsonRoutes`) route functions of its own, of the same form.
 
 ## Methods without an HTTP rule
 
