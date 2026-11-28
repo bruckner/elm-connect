@@ -216,7 +216,7 @@ encodeAudience value =
 encodeMemo : Memo -> Proto.Json.Encode.Encoder x
 encodeMemo value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             ([ ( "title", Proto.Json.Encode.implicit "" Json.Encode.string value.heading )
              , ( "visibility", Proto.Json.Encode.implicit AudienceUnspecified encodeAudience value.visibility )
              , ( "revisions", Proto.Json.Encode.totalRepeated encodeEdit value.revisions )
@@ -248,7 +248,7 @@ encodeMemoBody value =
 encodeEdit : Edit -> Proto.Json.Encode.Encoder x
 encodeEdit value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "number", Proto.Json.Encode.implicit 0 Json.Encode.int value.number )
             ]
         )
@@ -259,7 +259,7 @@ encodeEdit value =
 encodeGetNoteRequest : GetNoteRequest -> Proto.Json.Encode.Encoder x
 encodeGetNoteRequest value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             ]
         )

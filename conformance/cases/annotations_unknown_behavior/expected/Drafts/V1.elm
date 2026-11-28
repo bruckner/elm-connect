@@ -107,7 +107,7 @@ registry =
 encodeDraft : Draft -> Proto.Json.Encode.Encoder x
 encodeDraft value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             , ( "body", Proto.Json.Encode.implicit "" Json.Encode.string value.body )
             , ( "owner", Proto.Json.Encode.implicit "" Json.Encode.string value.owner )

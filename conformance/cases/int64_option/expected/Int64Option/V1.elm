@@ -151,7 +151,7 @@ registry =
 encodeCounters : Counters -> Proto.Json.Encode.Encoder x
 encodeCounters value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             ([ ( "int64Value", Proto.Json.Encode.implicit 0 Proto.Json.Encode.int64AsInt value.int64Value )
              , ( "uint64Value", Proto.Json.Encode.implicit 0 Proto.Json.Encode.int64AsInt value.uint64Value )
              , ( "sint64Value", Proto.Json.Encode.implicit 0 Proto.Json.Encode.int64AsInt value.sint64Value )
@@ -160,9 +160,9 @@ encodeCounters value =
              , ( "exactId", Proto.Json.Encode.implicit "0" Proto.Json.Encode.int64 value.exactId )
              , ( "normal", Proto.Json.Encode.implicit 0 Proto.Json.Encode.int64AsInt value.normal )
              , ( "maybeCount", Maybe.map Proto.Json.Encode.int64AsInt value.maybeCount )
-             , ( "samples", Proto.Json.Encode.plainRepeated Proto.Json.Encode.int64AsInt value.samples )
-             , ( "exactSamples", Proto.Json.Encode.plainRepeated Proto.Json.Encode.int64 value.exactSamples )
-             , ( "byId", Proto.Json.Encode.plainDict identity Proto.Json.Encode.int64AsInt value.byId )
+             , ( "samples", Proto.Json.Encode.repeated Proto.Json.Encode.int64AsInt value.samples )
+             , ( "exactSamples", Proto.Json.Encode.repeated Proto.Json.Encode.int64 value.exactSamples )
+             , ( "byId", Proto.Json.Encode.dict identity Proto.Json.Encode.int64AsInt value.byId )
              , ( "wrapped", Maybe.map Proto.Json.Encode.int64AsInt value.wrapped )
              ]
                 ++ encodeCountersLimit value.limit

@@ -239,15 +239,15 @@ encodeStatus value =
 -}
 encodeItem : Item -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeItem value =
-    Proto.Json.Encode.object
-        [ Proto.Json.Encode.plainFields
+    Proto.Json.Encode.checkedObject
+        [ Proto.Json.Encode.fields
             [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             , ( "size", Proto.Json.Encode.implicit "0" Proto.Json.Encode.int64 value.size )
             , ( "status", Proto.Json.Encode.implicit StatusUnspecified encodeStatus value.status )
             ]
         , Proto.Json.Encode.checkedFields
             [ ( "payload", Proto.Json.Encode.optional Proto.Json.Encode.any value.payload )
-            , ( "attachments", Proto.Json.Encode.repeated Proto.Json.Encode.any value.attachments )
+            , ( "attachments", Proto.Json.Encode.checkedRepeated Proto.Json.Encode.any value.attachments )
             ]
         ]
 
@@ -257,7 +257,7 @@ encodeItem value =
 encodeGetItemRequest : GetItemRequest -> Proto.Json.Encode.Encoder x
 encodeGetItemRequest value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             ]
         )
@@ -268,7 +268,7 @@ encodeGetItemRequest value =
 encodeListItemsRequest : ListItemsRequest -> Proto.Json.Encode.Encoder x
 encodeListItemsRequest value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "pageSize", Proto.Json.Encode.implicit 0 Json.Encode.int value.pageSize )
             ]
         )
@@ -278,9 +278,9 @@ encodeListItemsRequest value =
 -}
 encodeListItemsResponse : ListItemsResponse -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeListItemsResponse value =
-    Proto.Json.Encode.object
+    Proto.Json.Encode.checkedObject
         [ Proto.Json.Encode.checkedFields
-            [ ( "items", Proto.Json.Encode.deeper (Proto.Json.Encode.repeated encodeItem value.items) )
+            [ ( "items", Proto.Json.Encode.deeper (Proto.Json.Encode.checkedRepeated encodeItem value.items) )
             ]
         ]
 

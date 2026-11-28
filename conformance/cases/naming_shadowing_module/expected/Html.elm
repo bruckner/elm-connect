@@ -102,7 +102,7 @@ registry =
 encodeAttributes : Attributes -> Proto.Json.Encode.Encoder x
 encodeAttributes value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "class", Proto.Json.Encode.implicit "" Json.Encode.string value.class )
             ]
         )

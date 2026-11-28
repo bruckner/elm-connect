@@ -172,7 +172,7 @@ registry =
 encodeScalars : Scalars -> Proto.Json.Encode.Encoder x
 encodeScalars value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "doubleValue", Proto.Json.Encode.implicitDouble value.doubleValue )
             , ( "floatValue", Proto.Json.Encode.implicitDouble value.floatValue )
             , ( "int32Value", Proto.Json.Encode.implicit 0 Json.Encode.int value.int32Value )

@@ -225,13 +225,13 @@ registry =
 -}
 encodeEvent : Event -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeEvent value =
-    Proto.Json.Encode.object
+    Proto.Json.Encode.checkedObject
         [ Proto.Json.Encode.checkedFields
             [ ( "createdAt", Proto.Json.Encode.optional Proto.Json.Encode.timestamp value.createdAt )
             , ( "timeout", Proto.Json.Encode.optional Proto.Json.Encode.duration value.timeout )
             , ( "updateMask", Proto.Json.Encode.optional Proto.Json.Encode.fieldMask value.updateMask )
             ]
-        , Proto.Json.Encode.plainFields
+        , Proto.Json.Encode.fields
             [ ( "marker", Just (Proto.Json.Encode.empty value.marker) )
             ]
         , Proto.Json.Encode.checkedFields
@@ -239,7 +239,7 @@ encodeEvent value =
             , ( "payload", Proto.Json.Encode.optional Proto.Json.Encode.value value.payload )
             , ( "items", Proto.Json.Encode.optional Proto.Json.Encode.listValue value.items )
             ]
-        , Proto.Json.Encode.plainFields
+        , Proto.Json.Encode.fields
             [ ( "ratio", Maybe.map Proto.Json.Encode.double value.ratio )
             , ( "weight", Maybe.map Proto.Json.Encode.double value.weight )
             , ( "bigCount", Maybe.map Proto.Json.Encode.int64 value.bigCount )
@@ -251,27 +251,27 @@ encodeEvent value =
             , ( "avatar", Maybe.map Proto.Json.Encode.bytes value.avatar )
             ]
         , Proto.Json.Encode.checkedFields
-            [ ( "history", Proto.Json.Encode.repeated Proto.Json.Encode.timestamp value.history )
-            , ( "limits", Proto.Json.Encode.dict identity Proto.Json.Encode.duration value.limits )
-            , ( "values", Proto.Json.Encode.repeated Proto.Json.Encode.value value.values )
+            [ ( "history", Proto.Json.Encode.checkedRepeated Proto.Json.Encode.timestamp value.history )
+            , ( "limits", Proto.Json.Encode.checkedDict identity Proto.Json.Encode.duration value.limits )
+            , ( "values", Proto.Json.Encode.checkedRepeated Proto.Json.Encode.value value.values )
             ]
-        , Proto.Json.Encode.plainFields
-            [ ( "counts", Proto.Json.Encode.plainRepeated Json.Encode.int value.counts )
+        , Proto.Json.Encode.fields
+            [ ( "counts", Proto.Json.Encode.repeated Json.Encode.int value.counts )
             , ( "acked", Just (Proto.Json.Encode.empty value.acked) )
-            , ( "pings", Proto.Json.Encode.plainRepeated Proto.Json.Encode.empty value.pings )
-            , ( "seen", Proto.Json.Encode.plainDict identity Proto.Json.Encode.empty value.seen )
+            , ( "pings", Proto.Json.Encode.repeated Proto.Json.Encode.empty value.pings )
+            , ( "seen", Proto.Json.Encode.dict identity Proto.Json.Encode.empty value.seen )
             ]
         , Proto.Json.Encode.checkedFields
-            [ ( "records", Proto.Json.Encode.repeated Proto.Json.Encode.struct value.records )
-            , ( "columns", Proto.Json.Encode.dict identity Proto.Json.Encode.listValue value.columns )
+            [ ( "records", Proto.Json.Encode.checkedRepeated Proto.Json.Encode.struct value.records )
+            , ( "columns", Proto.Json.Encode.checkedDict identity Proto.Json.Encode.listValue value.columns )
             , ( "lastValue", Proto.Json.Encode.optional Proto.Json.Encode.value value.lastValue )
-            , ( "settings", Proto.Json.Encode.dict identity Proto.Json.Encode.value value.settings )
+            , ( "settings", Proto.Json.Encode.checkedDict identity Proto.Json.Encode.value value.settings )
             ]
-        , Proto.Json.Encode.plainFields
+        , Proto.Json.Encode.fields
             [ ( "nothing", Proto.Json.Encode.implicit () Proto.Json.Encode.nullValue value.nothing )
             , ( "maybeNothing", Proto.Json.Encode.implicit () Proto.Json.Encode.nullValue value.maybeNothing )
-            , ( "nulls", Proto.Json.Encode.plainRepeated Proto.Json.Encode.nullValue value.nulls )
-            , ( "nullMap", Proto.Json.Encode.plainDict identity Proto.Json.Encode.nullValue value.nullMap )
+            , ( "nulls", Proto.Json.Encode.repeated Proto.Json.Encode.nullValue value.nulls )
+            , ( "nullMap", Proto.Json.Encode.dict identity Proto.Json.Encode.nullValue value.nullMap )
             ]
         , Proto.Json.Encode.checkedFields (encodeEventWhen value.when)
         ]

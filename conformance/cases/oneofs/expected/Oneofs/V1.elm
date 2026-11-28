@@ -254,7 +254,7 @@ encodeColor value =
 encodeCreated : Created -> Proto.Json.Encode.Encoder x
 encodeCreated value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "title", Proto.Json.Encode.implicit "" Json.Encode.string value.title )
             ]
         )
@@ -265,9 +265,9 @@ encodeCreated value =
 encodeNoteEvent : NoteEvent -> Proto.Json.Encode.Encoder x
 encodeNoteEvent value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             ([ ( "id", Proto.Json.Encode.implicit "" Json.Encode.string value.id )
-             , ( "tags", Proto.Json.Encode.plainRepeated Json.Encode.string value.tags )
+             , ( "tags", Proto.Json.Encode.repeated Json.Encode.string value.tags )
              ]
                 ++ encodeNoteEventKind value.kind
                 ++ encodeNoteEventSource value.source
@@ -329,7 +329,7 @@ encodeNoteEventSource value =
 -}
 encodeChoice : Choice -> Proto.Json.Encode.Encoder x
 encodeChoice value =
-    Proto.Json.Encode.succeed (Proto.Json.Encode.plainObject (encodeChoiceValue value.value))
+    Proto.Json.Encode.succeed (Proto.Json.Encode.object (encodeChoiceValue value.value))
 
 
 {-| Encodes a [`ChoiceValue`](#ChoiceValue) as the members of its message's JSON object.

@@ -164,7 +164,7 @@ registry =
 encodeAuthor : Author -> Proto.Json.Encode.Encoder x
 encodeAuthor value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             ]
         )
@@ -175,18 +175,18 @@ encodeAuthor value =
 encodeNote : Note -> Proto.Json.Encode.Encoder x
 encodeNote value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "subtitle", Maybe.map Json.Encode.string value.subtitle )
             , ( "stars", Maybe.map Json.Encode.int value.stars )
             , ( "score", Maybe.map Proto.Json.Encode.double value.score )
             , ( "views", Maybe.map Proto.Json.Encode.int64 value.views )
             , ( "author", Proto.Json.Encode.totalOptional encodeAuthor value.author )
             , ( "editor", Proto.Json.Encode.totalOptional encodeAuthor value.editor )
-            , ( "tags", Proto.Json.Encode.plainRepeated Json.Encode.string value.tags )
-            , ( "counts", Proto.Json.Encode.plainRepeated Json.Encode.int value.counts )
-            , ( "weights", Proto.Json.Encode.plainRepeated Proto.Json.Encode.double value.weights )
+            , ( "tags", Proto.Json.Encode.repeated Json.Encode.string value.tags )
+            , ( "counts", Proto.Json.Encode.repeated Json.Encode.int value.counts )
+            , ( "weights", Proto.Json.Encode.repeated Proto.Json.Encode.double value.weights )
             , ( "reviewers", Proto.Json.Encode.totalRepeated encodeAuthor value.reviewers )
-            , ( "relatedLinks", Proto.Json.Encode.plainRepeated Json.Encode.string value.relatedLinks )
+            , ( "relatedLinks", Proto.Json.Encode.repeated Json.Encode.string value.relatedLinks )
             , ( "isDraft", Maybe.map Json.Encode.bool value.isDraft )
             , ( "title", Proto.Json.Encode.implicit "" Json.Encode.string value.title )
             ]

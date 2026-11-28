@@ -227,7 +227,7 @@ encodeHttpMethod value =
 encodeTag : Tag -> Proto.Json.Encode.Encoder x
 encodeTag value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             ([ ( "type", Proto.Json.Encode.implicit "" Json.Encode.string value.type_ )
              , ( "if", Proto.Json.Encode.implicit False Json.Encode.bool value.if_ )
              , ( "port", Proto.Json.Encode.implicit 0 Json.Encode.int value.port_ )

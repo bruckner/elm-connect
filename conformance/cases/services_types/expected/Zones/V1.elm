@@ -127,7 +127,7 @@ registry =
 encodeZoneRequest : ZoneRequest -> Proto.Json.Encode.Encoder x
 encodeZoneRequest value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             ]
         )
@@ -138,7 +138,7 @@ encodeZoneRequest value =
 encodeZone : Zone -> Proto.Json.Encode.Encoder x
 encodeZone value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             , ( "offsetSeconds", Proto.Json.Encode.implicit 0 Proto.Json.Encode.int64AsInt value.offsetSeconds )
             ]

@@ -416,13 +416,13 @@ encodeLegacy value =
 -}
 encodeNote : Note -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeNote value =
-    Proto.Json.Encode.object
-        [ Proto.Json.Encode.plainFields
+    Proto.Json.Encode.checkedObject
+        [ Proto.Json.Encode.fields
             [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             , ( "heading", Proto.Json.Encode.implicit "" Json.Encode.string value.title )
             , ( "visibility", Proto.Json.Encode.implicit VisibilityUnspecified encodeVisibility value.visibility )
-            , ( "tags", Proto.Json.Encode.plainRepeated Json.Encode.string value.tags )
-            , ( "labels", Proto.Json.Encode.plainDict identity Json.Encode.string value.labels )
+            , ( "tags", Proto.Json.Encode.repeated Json.Encode.string value.tags )
+            , ( "labels", Proto.Json.Encode.dict identity Json.Encode.string value.labels )
             , ( "pinned", Maybe.map Json.Encode.bool value.pinned )
             , ( "subject", Proto.Json.Encode.implicit "" Json.Encode.string value.subject )
             ]
@@ -455,7 +455,7 @@ encodeNoteLastEvent value =
 encodeNoteEdit : NoteEdit -> Proto.Json.Encode.Encoder x
 encodeNoteEdit value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "author", Proto.Json.Encode.implicit "" Json.Encode.string value.author )
             ]
         )
@@ -466,7 +466,7 @@ encodeNoteEdit value =
 encodeDraft : Draft -> Proto.Json.Encode.Encoder x
 encodeDraft value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "text", Proto.Json.Encode.implicit "" Json.Encode.string value.text )
             ]
         )
@@ -477,7 +477,7 @@ encodeDraft value =
 encodeGetNoteRequest : GetNoteRequest -> Proto.Json.Encode.Encoder x
 encodeGetNoteRequest value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             ]
         )
@@ -488,7 +488,7 @@ encodeGetNoteRequest value =
 encodeListNotesRequest : ListNotesRequest -> Proto.Json.Encode.Encoder x
 encodeListNotesRequest value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "parent", Proto.Json.Encode.implicit "" Json.Encode.string value.parent )
             ]
         )
@@ -498,9 +498,9 @@ encodeListNotesRequest value =
 -}
 encodeListNotesResponse : ListNotesResponse -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeListNotesResponse value =
-    Proto.Json.Encode.object
+    Proto.Json.Encode.checkedObject
         [ Proto.Json.Encode.checkedFields
-            [ ( "notes", Proto.Json.Encode.repeated encodeNote value.notes )
+            [ ( "notes", Proto.Json.Encode.checkedRepeated encodeNote value.notes )
             ]
         ]
 
@@ -509,7 +509,7 @@ encodeListNotesResponse value =
 -}
 encodeCreateNoteRequest : CreateNoteRequest -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeCreateNoteRequest value =
-    Proto.Json.Encode.object
+    Proto.Json.Encode.checkedObject
         [ Proto.Json.Encode.checkedFields
             [ ( "note", Proto.Json.Encode.optional encodeNote value.note )
             ]

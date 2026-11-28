@@ -267,7 +267,7 @@ encodeMarks value =
 encodeDelimiters : Delimiters -> Proto.Json.Encode.Encoder x
 encodeDelimiters value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "lists", Proto.Json.Encode.implicit "" Json.Encode.string value.lists )
             , ( "blocks", Proto.Json.Encode.implicit "" Json.Encode.string value.blocks )
             , ( "code", Proto.Json.Encode.implicit "" Json.Encode.string value.code )
@@ -284,7 +284,7 @@ encodeDelimiters value =
 encodeDocs : Docs -> Proto.Json.Encode.Encoder x
 encodeDocs value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "field", Proto.Json.Encode.implicit "" Json.Encode.string value.field )
             ]
         )

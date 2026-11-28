@@ -185,7 +185,7 @@ registry =
 encodeEntry : Entry -> Proto.Json.Encode.Encoder x
 encodeEntry value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             , ( "descriptor", Proto.Json.Encode.implicit "" Json.Encode.string value.descriptor )
             , ( "descriptors", Proto.Json.Encode.implicit "" Json.Encode.string value.descriptors )
@@ -197,7 +197,7 @@ encodeEntry value =
 -}
 encodePart : Part -> Proto.Json.Encode.Encoder x
 encodePart value =
-    Proto.Json.Encode.succeed (Proto.Json.Encode.plainObject (encodePartKind value.kind))
+    Proto.Json.Encode.succeed (Proto.Json.Encode.object (encodePartKind value.kind))
 
 
 {-| Encodes a [`PartKind`](#PartKind) as the members of its message's JSON object.
@@ -222,7 +222,7 @@ encodePartKind value =
 encodeGetEntryRequest : GetEntryRequest -> Proto.Json.Encode.Encoder x
 encodeGetEntryRequest value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             , ( "descriptor", Proto.Json.Encode.implicit "" Json.Encode.string value.descriptor )
             , ( "part", Proto.Json.Encode.totalOptional encodePart value.part )

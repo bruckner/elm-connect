@@ -250,7 +250,7 @@ registry =
 encodeSayRequest : SayRequest -> Proto.Json.Encode.Encoder x
 encodeSayRequest value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "sentence", Proto.Json.Encode.implicit "" Json.Encode.string value.sentence )
             ]
         )
@@ -261,7 +261,7 @@ encodeSayRequest value =
 encodeSayResponse : SayResponse -> Proto.Json.Encode.Encoder x
 encodeSayResponse value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "sentence", Proto.Json.Encode.implicit "" Json.Encode.string value.sentence )
             ]
         )
@@ -272,7 +272,7 @@ encodeSayResponse value =
 encodeConverseRequest : ConverseRequest -> Proto.Json.Encode.Encoder x
 encodeConverseRequest value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "sentence", Proto.Json.Encode.implicit "" Json.Encode.string value.sentence )
             ]
         )
@@ -283,7 +283,7 @@ encodeConverseRequest value =
 encodeConverseResponse : ConverseResponse -> Proto.Json.Encode.Encoder x
 encodeConverseResponse value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "sentence", Proto.Json.Encode.implicit "" Json.Encode.string value.sentence )
             ]
         )
@@ -294,7 +294,7 @@ encodeConverseResponse value =
 encodeIntroduceRequest : IntroduceRequest -> Proto.Json.Encode.Encoder x
 encodeIntroduceRequest value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             ]
         )
@@ -305,7 +305,7 @@ encodeIntroduceRequest value =
 encodeIntroduceResponse : IntroduceResponse -> Proto.Json.Encode.Encoder x
 encodeIntroduceResponse value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "sentence", Proto.Json.Encode.implicit "" Json.Encode.string value.sentence )
             ]
         )

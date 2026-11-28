@@ -195,7 +195,7 @@ encodeShelfBytes value =
 encodeBook : Book -> Proto.Json.Encode.Encoder x
 encodeBook value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "title", Proto.Json.Encode.implicit "" Json.Encode.string value.title )
             ]
         )
@@ -206,7 +206,7 @@ encodeBook value =
 encodeBookBytes : BookBytes -> Proto.Json.Encode.Encoder x
 encodeBookBytes value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "content", Proto.Json.Encode.implicit "" Proto.Json.Encode.bytes value.content )
             ]
         )
@@ -217,7 +217,7 @@ encodeBookBytes value =
 encodeShelf : Shelf -> Proto.Json.Encode.Encoder x
 encodeShelf value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "books", Proto.Json.Encode.totalRepeated encodeBook value.books )
             , ( "kind", Proto.Json.Encode.implicit ShelfBytesUnspecified encodeShelfBytes value.kind )
             ]

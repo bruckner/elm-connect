@@ -137,7 +137,7 @@ registry =
 encodeNote : Note -> Proto.Json.Encode.Encoder x
 encodeNote value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             , ( "author", Proto.Json.Encode.totalOptional Api.Example.People.encodeUser value.author )
             , ( "requiredRole", Proto.Json.Encode.implicit Api.Example.People.RoleUnspecified Api.Example.People.encodeRole value.requiredRole )
@@ -150,7 +150,7 @@ encodeNote value =
 encodeGetNoteRequest : GetNoteRequest -> Proto.Json.Encode.Encoder x
 encodeGetNoteRequest value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             ]
         )

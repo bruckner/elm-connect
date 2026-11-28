@@ -517,7 +517,7 @@ encodeKind value =
 encodeGetMessageRequest : GetMessageRequest -> Proto.Json.Encode.Encoder x
 encodeGetMessageRequest value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "messageId", Proto.Json.Encode.implicit "" Json.Encode.string value.messageId )
             , ( "revision", Proto.Json.Encode.implicit "0" Proto.Json.Encode.int64 value.revision )
             , ( "sub", Proto.Json.Encode.totalOptional encodeGetMessageRequestSubMessage value.sub )
@@ -532,7 +532,7 @@ encodeGetMessageRequest value =
 encodeGetMessageRequestSubMessage : GetMessageRequestSubMessage -> Proto.Json.Encode.Encoder x
 encodeGetMessageRequestSubMessage value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "subfield", Proto.Json.Encode.implicit "" Json.Encode.string value.subfield )
             ]
         )
@@ -543,7 +543,7 @@ encodeGetMessageRequestSubMessage value =
 encodeMessage : Message -> Proto.Json.Encode.Encoder x
 encodeMessage value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "messageId", Proto.Json.Encode.implicit "" Json.Encode.string value.messageId )
             , ( "text", Proto.Json.Encode.implicit "" Json.Encode.string value.text )
             ]
@@ -555,7 +555,7 @@ encodeMessage value =
 encodeUpdateMessageRequest : UpdateMessageRequest -> Proto.Json.Encode.Encoder x
 encodeUpdateMessageRequest value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "messageId", Proto.Json.Encode.implicit "" Json.Encode.string value.messageId )
             , ( "message", Proto.Json.Encode.totalOptional encodeMessage value.message )
             ]
@@ -566,8 +566,8 @@ encodeUpdateMessageRequest value =
 -}
 encodeEverything : Everything -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeEverything value =
-    Proto.Json.Encode.object
-        [ Proto.Json.Encode.plainFields
+    Proto.Json.Encode.checkedObject
+        [ Proto.Json.Encode.fields
             [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             , ( "count", Proto.Json.Encode.implicit 0 Json.Encode.int value.count )
             , ( "big", Proto.Json.Encode.implicit "0" Proto.Json.Encode.int64 value.big )
@@ -577,9 +577,9 @@ encodeEverything value =
             , ( "scale", Proto.Json.Encode.implicitDouble value.scale )
             , ( "data", Proto.Json.Encode.implicit "" Proto.Json.Encode.bytes value.data )
             , ( "kind", Proto.Json.Encode.implicit KindUnspecified encodeKind value.kind )
-            , ( "tags", Proto.Json.Encode.plainRepeated Json.Encode.string value.tags )
-            , ( "kinds", Proto.Json.Encode.plainRepeated encodeKind value.kinds )
-            , ( "numbers", Proto.Json.Encode.plainRepeated Json.Encode.int value.numbers )
+            , ( "tags", Proto.Json.Encode.repeated Json.Encode.string value.tags )
+            , ( "kinds", Proto.Json.Encode.repeated encodeKind value.kinds )
+            , ( "numbers", Proto.Json.Encode.repeated Json.Encode.int value.numbers )
             , ( "maybeCount", Maybe.map Json.Encode.int value.maybeCount )
             , ( "maybeName", Maybe.map Json.Encode.string value.maybeName )
             ]
@@ -588,12 +588,12 @@ encodeEverything value =
             , ( "wait", Proto.Json.Encode.optional Proto.Json.Encode.duration value.wait )
             , ( "mask", Proto.Json.Encode.optional Proto.Json.Encode.fieldMask value.mask )
             ]
-        , Proto.Json.Encode.plainFields
+        , Proto.Json.Encode.fields
             [ ( "limit", Maybe.map Json.Encode.int value.limit )
             , ( "label", Maybe.map Json.Encode.string value.label )
             , ( "inner", Proto.Json.Encode.totalOptional encodeInner value.inner )
             ]
-        , Proto.Json.Encode.plainFields (encodeEverythingChoice value.choice)
+        , Proto.Json.Encode.fields (encodeEverythingChoice value.choice)
         ]
 
 
@@ -619,7 +619,7 @@ encodeEverythingChoice value =
 encodeInner : Inner -> Proto.Json.Encode.Encoder x
 encodeInner value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "a", Proto.Json.Encode.implicit "" Json.Encode.string value.a )
             , ( "deep", Proto.Json.Encode.totalOptional encodeDeep value.deep )
             ]
@@ -631,9 +631,9 @@ encodeInner value =
 encodeDeep : Deep -> Proto.Json.Encode.Encoder x
 encodeDeep value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "b", Proto.Json.Encode.implicit 0 Json.Encode.int value.b )
-            , ( "c", Proto.Json.Encode.plainRepeated Json.Encode.string value.c )
+            , ( "c", Proto.Json.Encode.repeated Json.Encode.string value.c )
             ]
         )
 
@@ -643,7 +643,7 @@ encodeDeep value =
 encodeFileRequest : FileRequest -> Proto.Json.Encode.Encoder x
 encodeFileRequest value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "path", Proto.Json.Encode.implicit "" Json.Encode.string value.path )
             ]
         )
@@ -654,12 +654,12 @@ encodeFileRequest value =
 encodeResource : Resource -> Proto.Json.Encode.Encoder x
 encodeResource value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             , ( "displayName", Proto.Json.Encode.implicit "" Json.Encode.string value.displayName )
-            , ( "labels", Proto.Json.Encode.plainDict identity Json.Encode.string value.labels )
-            , ( "kinds", Proto.Json.Encode.plainDict identity encodeKind value.kinds )
-            , ( "weights", Proto.Json.Encode.plainBoolMap Proto.Json.Encode.double value.weights )
+            , ( "labels", Proto.Json.Encode.dict identity Json.Encode.string value.labels )
+            , ( "kinds", Proto.Json.Encode.dict identity encodeKind value.kinds )
+            , ( "weights", Proto.Json.Encode.boolMap Proto.Json.Encode.double value.weights )
             ]
         )
 
@@ -668,8 +668,8 @@ encodeResource value =
 -}
 encodeUpdateResourceRequest : UpdateResourceRequest -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeUpdateResourceRequest value =
-    Proto.Json.Encode.object
-        [ Proto.Json.Encode.plainFields
+    Proto.Json.Encode.checkedObject
+        [ Proto.Json.Encode.fields
             [ ( "resource", Proto.Json.Encode.totalOptional encodeResource value.resource )
             ]
         , Proto.Json.Encode.checkedFields

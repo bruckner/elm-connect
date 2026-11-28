@@ -292,7 +292,7 @@ encodeChar value =
 encodeDict : Dict -> Proto.Json.Encode.Encoder x
 encodeDict value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             ]
         )
@@ -303,10 +303,10 @@ encodeDict value =
 encodeResult : Result -> Proto.Json.Encode.Encoder x
 encodeResult value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "ok", Proto.Json.Encode.implicit False Json.Encode.bool value.ok )
             , ( "dict", Proto.Json.Encode.totalOptional encodeDict value.dict )
-            , ( "chars", Proto.Json.Encode.plainRepeated encodeChar value.chars )
+            , ( "chars", Proto.Json.Encode.repeated encodeChar value.chars )
             ]
         )
 
@@ -315,7 +315,7 @@ encodeResult value =
 -}
 encodeDuration : Duration -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeDuration value =
-    Proto.Json.Encode.object
+    Proto.Json.Encode.checkedObject
         [ Proto.Json.Encode.checkedFields
             [ ( "length", Proto.Json.Encode.optional Proto.Json.Encode.duration value.length )
             ]

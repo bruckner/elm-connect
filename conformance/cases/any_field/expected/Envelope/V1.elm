@@ -128,14 +128,14 @@ registry =
 -}
 encodeEnvelope : Envelope -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeEnvelope value =
-    Proto.Json.Encode.object
-        [ Proto.Json.Encode.plainFields
+    Proto.Json.Encode.checkedObject
+        [ Proto.Json.Encode.fields
             [ ( "id", Proto.Json.Encode.implicit "" Json.Encode.string value.id )
             ]
         , Proto.Json.Encode.checkedFields
             [ ( "payload", Proto.Json.Encode.optional Proto.Json.Encode.any value.payload )
-            , ( "attachments", Proto.Json.Encode.repeated Proto.Json.Encode.any value.attachments )
-            , ( "headers", Proto.Json.Encode.dict identity Proto.Json.Encode.any value.headers )
+            , ( "attachments", Proto.Json.Encode.checkedRepeated Proto.Json.Encode.any value.attachments )
+            , ( "headers", Proto.Json.Encode.checkedDict identity Proto.Json.Encode.any value.headers )
             ]
         , Proto.Json.Encode.checkedFields (encodeEnvelopeBody value.body)
         ]

@@ -196,11 +196,11 @@ encodeMood value =
 encodeDraft : Draft -> Proto.Json.Encode.Encoder x
 encodeDraft value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             ([ ( "title", Proto.Json.Encode.implicit "" Json.Encode.string value.title )
              , ( "mood", Proto.Json.Encode.implicit MoodUnspecified encodeMood value.mood )
              , ( "margin", Proto.Json.Encode.totalOptional encodeDraftMargin value.margin )
-             , ( "tags", Proto.Json.Encode.plainRepeated Json.Encode.string value.tags )
+             , ( "tags", Proto.Json.Encode.repeated Json.Encode.string value.tags )
              ]
                 ++ encodeDraftBody value.body
             )
@@ -229,7 +229,7 @@ encodeDraftBody value =
 encodeDraftMargin : DraftMargin -> Proto.Json.Encode.Encoder x
 encodeDraftMargin value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "left", Proto.Json.Encode.implicit 0 Json.Encode.int value.left )
             , ( "right", Proto.Json.Encode.implicit 0 Json.Encode.int value.right )
             ]

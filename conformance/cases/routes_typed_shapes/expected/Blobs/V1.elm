@@ -345,7 +345,7 @@ registry =
 encodeBlob : Blob -> Proto.Json.Encode.Encoder x
 encodeBlob value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "digest", Proto.Json.Encode.implicitBytes value.digest )
             , ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             , ( "salt", Proto.Json.Encode.implicitBytes value.salt )
@@ -357,8 +357,8 @@ encodeBlob value =
 -}
 encodeLabeled : Labeled -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeLabeled value =
-    Proto.Json.Encode.object
-        [ Proto.Json.Encode.plainFields
+    Proto.Json.Encode.checkedObject
+        [ Proto.Json.Encode.fields
             [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             ]
         , Proto.Json.Encode.checkedFields
@@ -371,11 +371,11 @@ encodeLabeled value =
 -}
 encodeLabelBlobRequest : LabelBlobRequest -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeLabelBlobRequest value =
-    Proto.Json.Encode.object
+    Proto.Json.Encode.checkedObject
         [ Proto.Json.Encode.checkedFields
             [ ( "labeled", Proto.Json.Encode.deeper (Proto.Json.Encode.optional encodeLabeled value.labeled) )
             ]
-        , Proto.Json.Encode.plainFields
+        , Proto.Json.Encode.fields
             [ ( "shelf", Proto.Json.Encode.implicit "" Json.Encode.string value.shelf )
             ]
         ]
@@ -386,7 +386,7 @@ encodeLabelBlobRequest value =
 encodeFolder : Folder -> Proto.Json.Encode.Encoder x
 encodeFolder value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             , ( "parent", Proto.Json.Encode.totalOptional encodeFolder_ value.parent )
             ]
@@ -405,7 +405,7 @@ encodeFolder_ (Folder_ value) =
 encodeSlots : Slots -> Proto.Json.Encode.Encoder x
 encodeSlots value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             , ( "nothing", Just (Proto.Json.Encode.empty value.nothing) )
             ]
@@ -416,8 +416,8 @@ encodeSlots value =
 -}
 encodeFree : Free -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeFree value =
-    Proto.Json.Encode.object
-        [ Proto.Json.Encode.plainFields
+    Proto.Json.Encode.checkedObject
+        [ Proto.Json.Encode.fields
             [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             ]
         , Proto.Json.Encode.checkedFields
@@ -430,8 +430,8 @@ encodeFree value =
 -}
 encodeMoment : Moment -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeMoment value =
-    Proto.Json.Encode.object
-        [ Proto.Json.Encode.plainFields
+    Proto.Json.Encode.checkedObject
+        [ Proto.Json.Encode.fields
             [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             ]
         , Proto.Json.Encode.checkedFields
@@ -444,8 +444,8 @@ encodeMoment value =
 -}
 encodeStampRequest : StampRequest -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeStampRequest value =
-    Proto.Json.Encode.object
-        [ Proto.Json.Encode.plainFields
+    Proto.Json.Encode.checkedObject
+        [ Proto.Json.Encode.fields
             [ ( "shelf", Proto.Json.Encode.implicit "" Json.Encode.string value.shelf )
             ]
         , Proto.Json.Encode.checkedFields

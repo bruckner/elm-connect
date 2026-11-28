@@ -101,7 +101,7 @@ registry =
 encodeLine : Line -> Proto.Json.Encode.Encoder x
 encodeLine value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "text", Proto.Json.Encode.implicit "" Json.Encode.string value.text )
             ]
         )

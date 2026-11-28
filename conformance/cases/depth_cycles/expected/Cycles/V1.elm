@@ -1007,7 +1007,7 @@ registry =
 encodeChain : Chain -> Proto.Json.Encode.Encoder x
 encodeChain value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "label", Proto.Json.Encode.implicit "" Json.Encode.string value.label )
             , ( "next", Proto.Json.Encode.totalOptional encodeChain_ value.next )
             , ( "tree", Proto.Json.Encode.totalOptional encodeTree value.tree )
@@ -1027,7 +1027,7 @@ encodeChain_ (Chain_ value) =
 encodeTree : Tree -> Proto.Json.Encode.Encoder x
 encodeTree value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "label", Proto.Json.Encode.implicit "" Json.Encode.string value.label )
             , ( "children", Proto.Json.Encode.totalRepeated encodeTree_ value.children )
             ]
@@ -1046,8 +1046,8 @@ encodeTree_ (Tree_ value) =
 encodeDir : Dir -> Proto.Json.Encode.Encoder x
 encodeDir value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
-            [ ( "entries", Proto.Json.Encode.plainDict identity (\entry -> Proto.Json.Encode.encodeTotal (encodeDir_ entry)) value.entries )
+        (Proto.Json.Encode.object
+            [ ( "entries", Proto.Json.Encode.dict identity (\entry -> Proto.Json.Encode.encodeTotal (encodeDir_ entry)) value.entries )
             , ( "forest", Proto.Json.Encode.totalOptional encodeForest value.forest )
             ]
         )
@@ -1064,7 +1064,7 @@ encodeDir_ (Dir_ value) =
 -}
 encodeExpr : Expr -> Proto.Json.Encode.Encoder x
 encodeExpr value =
-    Proto.Json.Encode.succeed (Proto.Json.Encode.plainObject (encodeExprKind value.kind))
+    Proto.Json.Encode.succeed (Proto.Json.Encode.object (encodeExprKind value.kind))
 
 
 {-| Encodes an [`ExprKind`](#ExprKind) as the members of its message's JSON object.
@@ -1089,7 +1089,7 @@ encodeExprKind value =
 encodePerson : Person -> Proto.Json.Encode.Encoder x
 encodePerson value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             , ( "team", Proto.Json.Encode.totalOptional encodeTeam_ value.team )
             ]
@@ -1108,7 +1108,7 @@ encodePerson_ (Person_ value) =
 encodeTeam : Team -> Proto.Json.Encode.Encoder x
 encodeTeam value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "members", Proto.Json.Encode.totalRepeated encodePerson_ value.members )
             ]
         )
@@ -1126,7 +1126,7 @@ encodeTeam_ (Team_ value) =
 encodeFirst : First -> Proto.Json.Encode.Encoder x
 encodeFirst value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "second", Proto.Json.Encode.totalOptional encodeSecond_ value.second )
             ]
         )
@@ -1144,7 +1144,7 @@ encodeFirst_ (First_ value) =
 encodeSecond : Second -> Proto.Json.Encode.Encoder x
 encodeSecond value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "third", Proto.Json.Encode.totalOptional encodeThird_ value.third )
             ]
         )
@@ -1162,7 +1162,7 @@ encodeSecond_ (Second_ value) =
 encodeThird : Third -> Proto.Json.Encode.Encoder x
 encodeThird value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "firsts", Proto.Json.Encode.totalRepeated encodeFirst_ value.firsts )
             ]
         )
@@ -1180,7 +1180,7 @@ encodeThird_ (Third_ value) =
 encodeForest : Forest -> Proto.Json.Encode.Encoder x
 encodeForest value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "trees", Proto.Json.Encode.totalRepeated encodeTree value.trees )
             , ( "chain", Proto.Json.Encode.totalOptional encodeChain value.chain )
             ]
@@ -1192,7 +1192,7 @@ encodeForest value =
 encodeWide : Wide -> Proto.Json.Encode.Encoder x
 encodeWide value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "f1", Proto.Json.Encode.implicit 0 Json.Encode.int value.f1 )
             , ( "f2", Proto.Json.Encode.implicit 0 Json.Encode.int value.f2 )
             , ( "f3", Proto.Json.Encode.implicit 0 Json.Encode.int value.f3 )
@@ -1273,16 +1273,16 @@ encodeWide_ (Wide_ value) =
 -}
 encodeEnvelope : Envelope -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeEnvelope value =
-    Proto.Json.Encode.object
+    Proto.Json.Encode.checkedObject
         [ Proto.Json.Encode.checkedFields
             [ ( "payload", Proto.Json.Encode.optional Proto.Json.Encode.any value.payload )
-            , ( "replies", Proto.Json.Encode.deeper (Proto.Json.Encode.repeated encodeEnvelope_ value.replies) )
+            , ( "replies", Proto.Json.Encode.deeper (Proto.Json.Encode.checkedRepeated encodeEnvelope_ value.replies) )
             , ( "data", Proto.Json.Encode.optional Proto.Json.Encode.struct value.data )
             , ( "value", Proto.Json.Encode.optional Proto.Json.Encode.value value.value )
             , ( "list", Proto.Json.Encode.optional Proto.Json.Encode.listValue value.list )
-            , ( "values", Proto.Json.Encode.dict identity Proto.Json.Encode.value value.values )
-            , ( "structs", Proto.Json.Encode.dict identity Proto.Json.Encode.struct value.structs )
-            , ( "lists", Proto.Json.Encode.dict identity Proto.Json.Encode.listValue value.lists )
+            , ( "values", Proto.Json.Encode.checkedDict identity Proto.Json.Encode.value value.values )
+            , ( "structs", Proto.Json.Encode.checkedDict identity Proto.Json.Encode.struct value.structs )
+            , ( "lists", Proto.Json.Encode.checkedDict identity Proto.Json.Encode.listValue value.lists )
             , ( "sealed", Proto.Json.Encode.deeper (Proto.Json.Encode.optional encodeSealed value.sealed) )
             ]
         , Proto.Json.Encode.checkedFields (encodeEnvelopeAside value.aside)
@@ -1313,7 +1313,7 @@ encodeEnvelopeAside value =
 -}
 encodeSealed : Sealed -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeSealed value =
-    Proto.Json.Encode.object
+    Proto.Json.Encode.checkedObject
         [ Proto.Json.Encode.checkedFields
             [ ( "payload", Proto.Json.Encode.optional Proto.Json.Encode.any value.payload )
             ]
@@ -1325,7 +1325,7 @@ encodeSealed value =
 encodeDoc : Doc -> Proto.Json.Encode.Encoder x
 encodeDoc value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "root", Proto.Json.Encode.totalOptional encodeChain value.root )
             ]
         )
@@ -1336,7 +1336,7 @@ encodeDoc value =
 encodeLibrary : Library -> Proto.Json.Encode.Encoder x
 encodeLibrary value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "doc", Proto.Json.Encode.totalOptional encodeDoc value.doc )
             ]
         )
@@ -1346,7 +1346,7 @@ encodeLibrary value =
 -}
 encodeCard : Card -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeCard value =
-    Proto.Json.Encode.object
+    Proto.Json.Encode.checkedObject
         [ Proto.Json.Encode.checkedFields
             [ ( "meta", Proto.Json.Encode.optional encodeMeta value.meta )
             ]
@@ -1357,7 +1357,7 @@ encodeCard value =
 -}
 encodeMeta : Meta -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeMeta value =
-    Proto.Json.Encode.object
+    Proto.Json.Encode.checkedObject
         [ Proto.Json.Encode.checkedFields
             [ ( "data", Proto.Json.Encode.optional Proto.Json.Encode.struct value.data )
             ]
@@ -1368,7 +1368,7 @@ encodeMeta value =
 -}
 encodeLetter : Letter -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeLetter value =
-    Proto.Json.Encode.object
+    Proto.Json.Encode.checkedObject
         [ Proto.Json.Encode.checkedFields
             [ ( "sealed", Proto.Json.Encode.deeper (Proto.Json.Encode.optional encodeSealed value.sealed) )
             ]
@@ -1380,7 +1380,7 @@ encodeLetter value =
 encodeLabel : Label -> Proto.Json.Encode.Encoder x
 encodeLabel value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "text", Proto.Json.Encode.implicit "" Json.Encode.string value.text )
             , ( "plain", Proto.Json.Encode.totalOptional encodePlain value.plain )
             ]
@@ -1392,7 +1392,7 @@ encodeLabel value =
 encodePlain : Plain -> Proto.Json.Encode.Encoder x
 encodePlain value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "n", Proto.Json.Encode.implicit 0 Json.Encode.int value.n )
             ]
         )

@@ -196,12 +196,12 @@ encodeKind value =
 encodeEntry : Entry -> Proto.Json.Encode.Encoder x
 encodeEntry value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             ([ ( "memo", Proto.Json.Encode.implicit "" Json.Encode.string value.memo )
              , ( "amount", Proto.Json.Encode.implicit "0" Proto.Json.Encode.int64 value.amount )
              , ( "kind", Proto.Json.Encode.implicit KindUnspecified encodeKind value.kind )
-             , ( "tags", Proto.Json.Encode.plainDict identity Json.Encode.int value.tags )
-             , ( "marks", Proto.Json.Encode.plainRepeated Json.Encode.int value.marks )
+             , ( "tags", Proto.Json.Encode.dict identity Json.Encode.int value.tags )
+             , ( "marks", Proto.Json.Encode.repeated Json.Encode.int value.marks )
              ]
                 ++ encodeEntrySource value.source
             )
@@ -230,7 +230,7 @@ encodeEntrySource value =
 encodeGetEntryRequest : GetEntryRequest -> Proto.Json.Encode.Encoder x
 encodeGetEntryRequest value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "memo", Proto.Json.Encode.implicit "" Json.Encode.string value.memo )
             ]
         )

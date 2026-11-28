@@ -103,7 +103,7 @@ registry =
 encodeHolder : Holder -> Proto.Json.Encode.Encoder x
 encodeHolder value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "tree", Proto.Json.Encode.totalOptional Cycles.V1.encodeTree value.tree )
             , ( "person", Proto.Json.Encode.totalOptional Cycles.V1.encodePerson value.person )
             ]

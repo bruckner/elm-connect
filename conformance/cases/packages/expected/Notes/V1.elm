@@ -130,12 +130,12 @@ registry =
 encodeNote : Note -> Proto.Json.Encode.Encoder x
 encodeNote value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             ([ ( "title", Proto.Json.Encode.implicit "" Json.Encode.string value.title )
              , ( "author", Proto.Json.Encode.totalOptional Users.V1.encodeUser value.author )
              , ( "requiredRole", Proto.Json.Encode.implicit Users.V1.RoleUnspecified Users.V1.encodeRole value.requiredRole )
              , ( "readers", Proto.Json.Encode.totalRepeated Users.V1.encodeUser value.readers )
-             , ( "roles", Proto.Json.Encode.plainDict identity Users.V1.encodeRole value.roles )
+             , ( "roles", Proto.Json.Encode.dict identity Users.V1.encodeRole value.roles )
              ]
                 ++ encodeNoteOwner value.owner
             )

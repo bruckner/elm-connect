@@ -159,7 +159,7 @@ registry =
 encodeChain : Chain -> Proto.Json.Encode.Encoder x
 encodeChain value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "label", Proto.Json.Encode.implicit "" Json.Encode.string value.label )
             , ( "next", Proto.Json.Encode.totalOptional encodeChain_ value.next )
             ]
@@ -178,7 +178,7 @@ encodeChain_ (Chain_ value) =
 encodeTree : Tree -> Proto.Json.Encode.Encoder x
 encodeTree value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "label", Proto.Json.Encode.implicit "" Json.Encode.string value.label )
             , ( "children", Proto.Json.Encode.totalRepeated encodeTree_ value.children )
             ]

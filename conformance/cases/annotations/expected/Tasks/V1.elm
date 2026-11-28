@@ -202,11 +202,11 @@ encodeState value =
 encodeTask : Task -> Proto.Json.Encode.Encoder x
 encodeTask value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             ([ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
              , ( "title", Proto.Json.Encode.implicit "" Json.Encode.string value.title )
              , ( "state", Proto.Json.Encode.implicit StateUnspecified encodeState value.state )
-             , ( "labels", Proto.Json.Encode.plainRepeated Json.Encode.string value.labels )
+             , ( "labels", Proto.Json.Encode.repeated Json.Encode.string value.labels )
              , ( "owner", Proto.Json.Encode.implicit "" Json.Encode.string value.owner )
              , ( "notes", Proto.Json.Encode.implicit "" Json.Encode.string value.notes )
              , ( "made", Proto.Json.Encode.implicit "" Json.Encode.string value.made )
@@ -238,7 +238,7 @@ encodeTaskDue value =
 encodeGetTaskRequest : GetTaskRequest -> Proto.Json.Encode.Encoder x
 encodeGetTaskRequest value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             ]
         )

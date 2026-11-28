@@ -100,7 +100,7 @@ registry =
 -}
 encodeAlarm : Alarm -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeAlarm value =
-    Proto.Json.Encode.object
+    Proto.Json.Encode.checkedObject
         [ Proto.Json.Encode.checkedFields
             [ ( "at", Proto.Json.Encode.optional Proto.Json.Encode.timestamp value.at )
             ]

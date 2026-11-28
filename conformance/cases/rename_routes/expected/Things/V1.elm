@@ -165,7 +165,7 @@ registry =
 encodeThing : Thing -> Proto.Json.Encode.Encoder x
 encodeThing value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             ]
         )
@@ -176,7 +176,7 @@ encodeThing value =
 encodeCriteria : Criteria -> Proto.Json.Encode.Encoder x
 encodeCriteria value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "state", Proto.Json.Encode.implicit "" Json.Encode.string value.status )
             ]
         )
@@ -187,7 +187,7 @@ encodeCriteria value =
 encodeGetThingRequest : GetThingRequest -> Proto.Json.Encode.Encoder x
 encodeGetThingRequest value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.resource )
             , ( "pageSize", Proto.Json.Encode.implicit 0 Json.Encode.int value.limit )
             , ( "filter", Proto.Json.Encode.totalOptional encodeCriteria value.filter )

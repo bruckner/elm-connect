@@ -118,7 +118,7 @@ registry =
 -}
 encodeReading : Reading -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeReading value =
-    Proto.Json.Encode.object
+    Proto.Json.Encode.checkedObject
         [ Proto.Json.Encode.checkedFields
             [ ( "rawValue", Proto.Json.Encode.optional Proto.Json.Encode.value value.rawValue )
             ]

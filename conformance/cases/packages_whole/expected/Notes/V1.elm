@@ -134,7 +134,7 @@ registry =
 encodeNote : Note -> Proto.Json.Encode.Encoder x
 encodeNote value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "title", Proto.Json.Encode.implicit "" Json.Encode.string value.title )
             , ( "tags", Proto.Json.Encode.totalRepeated encodeTag value.tags )
             ]
@@ -146,7 +146,7 @@ encodeNote value =
 encodeTag : Tag -> Proto.Json.Encode.Encoder x
 encodeTag value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "label", Proto.Json.Encode.implicit "" Json.Encode.string value.label )
             ]
         )

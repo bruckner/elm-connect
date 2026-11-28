@@ -190,7 +190,7 @@ registry =
 encodeURLPath : URLPath -> Proto.Json.Encode.Encoder x
 encodeURLPath value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "Label", Proto.Json.Encode.implicit "" Json.Encode.string value.label )
             , ( "ID", Proto.Json.Encode.implicit "" Json.Encode.string value.id )
             , ( "URL", Proto.Json.Encode.implicit "" Json.Encode.string value.url )
@@ -201,10 +201,10 @@ encodeURLPath value =
             , ( "Internal", Proto.Json.Encode.implicit "" Json.Encode.string value.internal )
             , ( "displayName", Proto.Json.Encode.implicit "" Json.Encode.string value.displayName )
             , ( "Type", Proto.Json.Encode.implicit "" Json.Encode.string value.type_ )
-            , ( "IDs", Proto.Json.Encode.plainRepeated Json.Encode.string value.ids )
-            , ( "URLs", Proto.Json.Encode.plainRepeated Json.Encode.string value.urls )
-            , ( "APIs", Proto.Json.Encode.plainRepeated Json.Encode.string value.apis )
-            , ( "UUIDs", Proto.Json.Encode.plainRepeated Json.Encode.string value.uuids )
+            , ( "IDs", Proto.Json.Encode.repeated Json.Encode.string value.ids )
+            , ( "URLs", Proto.Json.Encode.repeated Json.Encode.string value.urls )
+            , ( "APIs", Proto.Json.Encode.repeated Json.Encode.string value.apis )
+            , ( "UUIDs", Proto.Json.Encode.repeated Json.Encode.string value.uuids )
             ]
         )
 
@@ -214,7 +214,7 @@ encodeURLPath value =
 encodeLink : Link -> Proto.Json.Encode.Encoder x
 encodeLink value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             ([ ( "Label", Proto.Json.Encode.implicit "" Json.Encode.string value.label )
              ]
                 ++ encodeLinkTarget value.target

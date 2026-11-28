@@ -139,7 +139,7 @@ registry =
 encodeMessageRequest : MessageRequest -> Proto.Json.Encode.Encoder x
 encodeMessageRequest value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             , ( "id", Proto.Json.Encode.implicit "" Json.Encode.string value.id )
             , ( "sub", Proto.Json.Encode.implicit "" Json.Encode.string value.sub )
@@ -152,7 +152,7 @@ encodeMessageRequest value =
 encodeMessage : Message -> Proto.Json.Encode.Encoder x
 encodeMessage value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             ]
         )

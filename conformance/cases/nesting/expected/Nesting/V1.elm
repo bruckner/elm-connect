@@ -425,7 +425,7 @@ encodeOuterInnerKind value =
 encodeOuter : Outer -> Proto.Json.Encode.Encoder x
 encodeOuter value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "inner", Proto.Json.Encode.totalOptional encodeOuterInner value.inner )
             , ( "kind", Proto.Json.Encode.implicit OuterInnerKindUnspecified encodeOuterInnerKind value.kind )
             , ( "all", Proto.Json.Encode.totalRepeated encodeOuterInnerDeepest value.all )
@@ -438,7 +438,7 @@ encodeOuter value =
 encodeOuterInner : OuterInner -> Proto.Json.Encode.Encoder x
 encodeOuterInner value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "deepest", Proto.Json.Encode.totalOptional encodeOuterInnerDeepest value.deepest )
             ]
         )
@@ -449,7 +449,7 @@ encodeOuterInner value =
 encodeOuterInnerDeepest : OuterInnerDeepest -> Proto.Json.Encode.Encoder x
 encodeOuterInnerDeepest value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "kind", Proto.Json.Encode.implicit OuterInnerKindUnspecified encodeOuterInnerKind value.kind )
             ]
         )
@@ -460,10 +460,10 @@ encodeOuterInnerDeepest value =
 encodeNode : Node -> Proto.Json.Encode.Encoder x
 encodeNode value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "label", Proto.Json.Encode.implicit "" Json.Encode.string value.label )
             , ( "children", Proto.Json.Encode.totalRepeated encodeNode_ value.children )
-            , ( "byName", Proto.Json.Encode.plainDict identity (\entry -> Proto.Json.Encode.encodeTotal (encodeNode_ entry)) value.byName )
+            , ( "byName", Proto.Json.Encode.dict identity (\entry -> Proto.Json.Encode.encodeTotal (encodeNode_ entry)) value.byName )
             ]
         )
 
@@ -480,7 +480,7 @@ encodeNode_ (Node_ value) =
 encodePerson : Person -> Proto.Json.Encode.Encoder x
 encodePerson value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             , ( "employer", Proto.Json.Encode.totalOptional encodeCompany_ value.employer )
             ]
@@ -499,7 +499,7 @@ encodePerson_ (Person_ value) =
 encodeCompany : Company -> Proto.Json.Encode.Encoder x
 encodeCompany value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             , ( "staff", Proto.Json.Encode.totalRepeated encodePerson_ value.staff )
             ]
@@ -518,7 +518,7 @@ encodeCompany_ (Company_ value) =
 encodeForest : Forest -> Proto.Json.Encode.Encoder x
 encodeForest value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "trees", Proto.Json.Encode.totalRepeated encodeNode value.trees )
             ]
         )
@@ -528,7 +528,7 @@ encodeForest value =
 -}
 encodeExpr : Expr -> Proto.Json.Encode.Encoder x
 encodeExpr value =
-    Proto.Json.Encode.succeed (Proto.Json.Encode.plainObject (encodeExprValue value.value))
+    Proto.Json.Encode.succeed (Proto.Json.Encode.object (encodeExprValue value.value))
 
 
 {-| Encodes an [`ExprValue`](#ExprValue) as the members of its message's JSON object.
@@ -553,7 +553,7 @@ encodeExprValue value =
 encodeSum : Sum -> Proto.Json.Encode.Encoder x
 encodeSum value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "terms", Proto.Json.Encode.totalRepeated encodeExpr value.terms )
             ]
         )

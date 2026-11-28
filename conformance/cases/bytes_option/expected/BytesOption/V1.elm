@@ -138,13 +138,13 @@ registry =
 encodeBlob : Blob -> Proto.Json.Encode.Encoder x
 encodeBlob value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             ([ ( "data", Proto.Json.Encode.implicitBytes value.data )
              , ( "maybeData", Maybe.map Proto.Json.Encode.bytesAsBytes value.maybeData )
-             , ( "chunks", Proto.Json.Encode.plainRepeated Proto.Json.Encode.bytesAsBytes value.chunks )
-             , ( "byName", Proto.Json.Encode.plainDict identity Proto.Json.Encode.bytesAsBytes value.byName )
+             , ( "chunks", Proto.Json.Encode.repeated Proto.Json.Encode.bytesAsBytes value.chunks )
+             , ( "byName", Proto.Json.Encode.dict identity Proto.Json.Encode.bytesAsBytes value.byName )
              , ( "wrapped", Maybe.map Proto.Json.Encode.bytesAsBytes value.wrapped )
-             , ( "wrappedChunks", Proto.Json.Encode.plainRepeated Proto.Json.Encode.bytesAsBytes value.wrappedChunks )
+             , ( "wrappedChunks", Proto.Json.Encode.repeated Proto.Json.Encode.bytesAsBytes value.wrappedChunks )
              , ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
              ]
                 ++ encodeBlobSource value.source

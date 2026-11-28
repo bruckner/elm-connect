@@ -135,7 +135,7 @@ encodeRole value =
 encodeUser : User -> Proto.Json.Encode.Encoder x
 encodeUser value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "name", Proto.Json.Encode.implicit "" Json.Encode.string value.name )
             , ( "role", Proto.Json.Encode.implicit RoleUnspecified encodeRole value.role )
             ]

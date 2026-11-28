@@ -144,7 +144,7 @@ encodeShade value =
 encodeRemote : Remote -> Proto.Json.Encode.Encoder x
 encodeRemote value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "id", Proto.Json.Encode.implicit "" Json.Encode.string value.id )
             , ( "shade", Proto.Json.Encode.implicit ShadeUnspecified encodeShade value.shade )
             , ( "version", Proto.Json.Encode.implicit "0" Proto.Json.Encode.int64 value.version )

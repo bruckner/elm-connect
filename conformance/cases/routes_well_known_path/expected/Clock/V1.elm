@@ -160,19 +160,19 @@ registry =
 -}
 encodeMoment : Moment -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodeMoment value =
-    Proto.Json.Encode.object
+    Proto.Json.Encode.checkedObject
         [ Proto.Json.Encode.checkedFields
             [ ( "at", Proto.Json.Encode.optional Proto.Json.Encode.timestamp value.at )
             , ( "mask", Proto.Json.Encode.optional Proto.Json.Encode.fieldMask value.mask )
             ]
-        , Proto.Json.Encode.plainFields
+        , Proto.Json.Encode.fields
             [ ( "count", Maybe.map Json.Encode.int value.count )
             , ( "seen", Maybe.map Json.Encode.bool value.seen )
             ]
         , Proto.Json.Encode.checkedFields
             [ ( "wait", Proto.Json.Encode.optional Proto.Json.Encode.duration value.wait )
             ]
-        , Proto.Json.Encode.plainFields
+        , Proto.Json.Encode.fields
             [ ( "note", Proto.Json.Encode.implicit "" Json.Encode.string value.note )
             ]
         ]
@@ -182,12 +182,12 @@ encodeMoment value =
 -}
 encodePauses : Pauses -> Proto.Json.Encode.Encoder Proto.Error.Error
 encodePauses value =
-    Proto.Json.Encode.object
+    Proto.Json.Encode.checkedObject
         [ Proto.Json.Encode.checkedFields
             [ ( "wait", Proto.Json.Encode.optional Proto.Json.Encode.duration value.wait )
-            , ( "waits", Proto.Json.Encode.repeated Proto.Json.Encode.duration value.waits )
+            , ( "waits", Proto.Json.Encode.checkedRepeated Proto.Json.Encode.duration value.waits )
             , ( "after", Proto.Json.Encode.optional Proto.Json.Encode.timestamp value.after )
-            , ( "marks", Proto.Json.Encode.repeated Proto.Json.Encode.timestamp value.marks )
+            , ( "marks", Proto.Json.Encode.checkedRepeated Proto.Json.Encode.timestamp value.marks )
             ]
         ]
 

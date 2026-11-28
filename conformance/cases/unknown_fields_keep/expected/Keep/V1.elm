@@ -423,12 +423,12 @@ registry =
 encodeNote : Note -> Proto.Json.Encode.Encoder x
 encodeNote value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             ([ ( "title", Proto.Json.Encode.implicit "" Json.Encode.string value.title )
-             , ( "tags", Proto.Json.Encode.plainRepeated Json.Encode.string value.tags )
-             , ( "counts", Proto.Json.Encode.plainDict identity Proto.Json.Encode.int64 value.counts )
+             , ( "tags", Proto.Json.Encode.repeated Json.Encode.string value.tags )
+             , ( "counts", Proto.Json.Encode.dict identity Proto.Json.Encode.int64 value.counts )
              , ( "detail", Proto.Json.Encode.totalOptional encodeDetail value.detail )
-             , ( "marks", Proto.Json.Encode.plainRepeated Json.Encode.int value.marks )
+             , ( "marks", Proto.Json.Encode.repeated Json.Encode.int value.marks )
              , ( "weight", Proto.Json.Encode.implicitDouble value.weight )
              ]
                 ++ encodeNoteOrigin value.origin
@@ -458,7 +458,7 @@ encodeNoteOrigin value =
 encodeDetail : Detail -> Proto.Json.Encode.Encoder x
 encodeDetail value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "body", Proto.Json.Encode.implicit "" Proto.Json.Encode.bytes value.body )
             , ( "crc", Proto.Json.Encode.implicit 0 Json.Encode.int value.crc )
             ]
@@ -477,7 +477,7 @@ encodeEmpty _ =
 encodeWide : Wide -> Proto.Json.Encode.Encoder x
 encodeWide value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "f1", Proto.Json.Encode.implicit 0 Json.Encode.int value.f1 )
             , ( "f2", Proto.Json.Encode.implicit 0 Json.Encode.int value.f2 )
             , ( "f3", Proto.Json.Encode.implicit 0 Json.Encode.int value.f3 )

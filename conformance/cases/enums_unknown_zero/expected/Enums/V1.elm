@@ -139,7 +139,7 @@ encodeStatus value =
 encodeTask : Task -> Proto.Json.Encode.Encoder x
 encodeTask value =
     Proto.Json.Encode.succeed
-        (Proto.Json.Encode.plainObject
+        (Proto.Json.Encode.object
             [ ( "status", Proto.Json.Encode.implicit StatusUnspecified encodeStatus value.status )
             ]
         )
