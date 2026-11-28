@@ -1,5 +1,5 @@
 module Rpc exposing
-    ( Json, Proto
+    ( Json, Binary
     , Call, call
     , Client, client
     , task, send, cancel
@@ -33,7 +33,7 @@ give the HTTP request it stands for and read the answer, without sending
 anything.
 
 A call and a client carry their codec in their type, [`Json`](#Json) or
-[`Proto`](#Proto): a client sends only calls whose generated code has its
+[`Binary`](#Binary): a client sends only calls whose generated code has its
 codec, and the compiler says so where one does not. An application usually
 wraps the sending once:
 
@@ -49,7 +49,7 @@ instead.
 
 # Codecs
 
-@docs Json, Proto
+@docs Json, Binary
 
 
 # Calls
@@ -133,13 +133,13 @@ type alias Json =
     Proto.Codec.Json
 
 
-{-| The codec tag of protobuf binary: [`Proto.Codec.Proto`](Proto-Codec#Proto).
+{-| The codec tag of protobuf binary: [`Proto.Codec.Binary`](Proto-Codec#Binary).
 A client of [`Rpc.Protocol.connectProto`](Rpc-Protocol#connectProto) or
-[`Rpc.Protocol.grpcWeb`](Rpc-Protocol#grpcWeb) is a `Client Proto`, and sends calls of code generated with `wire=proto` or
+[`Rpc.Protocol.grpcWeb`](Rpc-Protocol#grpcWeb) is a `Client Binary`, and sends calls of code generated with `wire=proto` or
 `wire=both`.
 -}
-type alias Proto =
-    Proto.Codec.Proto
+type alias Binary =
+    Proto.Codec.Binary
 
 
 
@@ -156,7 +156,7 @@ It is [`Rpc.Call.Call`](Rpc-Call#Call), where a call is adjusted
 …).
 Code generated with the default `wire=both` gives calls free in the codec,
 as here, which any client sends; `wire=json` gives `Rpc.Call Rpc.Json` calls
-and `wire=proto` `Rpc.Call Rpc.Proto` ones.
+and `wire=proto` `Rpc.Call Rpc.Binary` ones.
 
 -}
 type alias Call codec req res =
@@ -441,7 +441,7 @@ response cl c answer =
         }
 
 -}
-responseBytes : Client Proto -> Call Proto req res -> Http.Response Bytes -> Result Error res
+responseBytes : Client Binary -> Call Binary req res -> Http.Response Bytes -> Result Error res
 responseBytes cl c answer =
     case (Plan.plan cl c).reader of
         BytesReader read ->

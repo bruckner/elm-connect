@@ -57,7 +57,7 @@ runtime passes the unary JSON test cases of the official
 (v1.0.7), with the features declared in
 [`conformance/live/conformance.yaml`](conformance/live/conformance.yaml):
 HTTP/1.1, the Connect protocol, the JSON codec, no compression, unary
-calls and Connect GET; with the proto codec
+calls and Connect GET; with the binary codec
 ([`conformance-proto.yaml`](conformance/live/conformance-proto.yaml))
 it passes all 56 cases (55 with `Rpc.sendTraced`, which cannot cancel a
 call); over gRPC-Web

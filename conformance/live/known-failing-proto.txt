@@ -1,8 +1,8 @@
 # Test cases of the Connect conformance suite (conformance-proto.yaml) that
-# elm-connect's runtime is known to fail under the proto codec, whichever way
+# elm-connect's runtime is known to fail under Connect's `proto` codec, whichever way
 # a call is sent; known-failing-send.txt adds those for Rpc.sendTraced. Format
 # as in known-failing.txt. The suite runs these error-body cases only when
-# the proto codec is listed, so the JSON run never meets them, but none is
+# Connect's `proto` codec is listed, so the JSON run never meets them, but none is
 # about the codec: each is how the runtime reads a Connect error body,
 # whatever the codec (conformance/README.md).
 

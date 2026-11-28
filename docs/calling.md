@@ -83,7 +83,7 @@ them:
 `Rpc.Client.protocol`, `baseUrl`, `headers`, `timeout`, `credentials`
 and `retry` read them back, and `Rpc.Client.toJson` gives the whole
 client as data, for logs and tests. A client's type carries its
-protocol's codec, `Rpc.Client Rpc.Json` or `Rpc.Client Rpc.Proto`
+protocol's codec, `Rpc.Client Rpc.Json` or `Rpc.Client Rpc.Binary`
 ([Choosing the codec](#choosing-the-codec)). A client holds its
 protocol's functions, so it belongs in code: a top-level value, one
 built in `init`, or one a wrapper builds per call from the
@@ -112,9 +112,9 @@ show.
 
 ```elm src/Rpc/Protocol.elm excerpt
 connect : Protocol Json
-connectProto : Protocol Proto
+connectProto : Protocol Binary
 transcode : Protocol Json
-grpcWeb : Protocol Proto
+grpcWeb : Protocol Binary
 withConnectGet : Protocol codec -> Protocol codec
 withMaxGetUrl : Int -> Protocol codec -> Protocol codec
 ```
@@ -166,7 +166,7 @@ options.
 
 ```elm src/Rpc.elm excerpt
 type alias Json =
-type alias Proto =
+type alias Binary =
 ```
 
 Messages travel as proto3 JSON over `connect` and `transcode`, and as
@@ -191,8 +191,8 @@ cross-origin answer only when the server exposes them
 traced call gives a body's trailers as the trace's trailers.
 
 The codec is in the types. A protocol is a `Protocol Rpc.Json` or a
-`Protocol Rpc.Proto`, the client built on it an `Rpc.Client Rpc.Json`
-or an `Rpc.Client Rpc.Proto`, and a call carries the codecs the
+`Protocol Rpc.Binary`, the client built on it an `Rpc.Client Rpc.Json`
+or an `Rpc.Client Rpc.Binary`, and a call carries the codecs the
 generator's `wire` option wired its method with
 ([generator.md](generator.md)):
 
@@ -200,7 +200,7 @@ generator's `wire` option wired its method with
 |---|---|---|
 | `wire=both` (the default) | `Rpc.Call codec req res` | any client |
 | `wire=json` | `Rpc.Call Rpc.Json req res` | a `connect` or `transcode` client |
-| `wire=proto` | `Rpc.Call Rpc.Proto req res` | a `connectProto` or `grpcWeb` client |
+| `wire=proto` | `Rpc.Call Rpc.Binary req res` | a `connectProto` or `grpcWeb` client |
 
 `both` is the default so that every call goes to every client, whichever
 protocol the application picks; `json` and `proto` are an opt-in for an
@@ -227,7 +227,7 @@ shows.
 ### Size limits
 
 `Rpc.Protocol.withReadMaxBytes n` caps a successful answer's body at
-`n` bytes (of UTF-8, or of the binary under the proto codec; over
+`n` bytes (of UTF-8, or of the binary under the binary codec; over
 gRPC-Web, of the response message, not its frame), on any protocol, as connect-go's
 `WithReadMaxBytes` and connect-node's `readMaxBytes` do. A body over it is
 dropped before decoding and the call fails as a `BadResponse` that
@@ -237,7 +237,7 @@ the body by then, so the limit bounds what is decoded and held, not what
 is downloaded.
 
 `Rpc.Protocol.withWriteMaxBytes n` caps the request message's JSON, or
-its binary under the proto codec, the same way, as connect-go's `WithSendMaxBytes` and connect-node's
+its binary under the binary codec, the same way, as connect-go's `WithSendMaxBytes` and connect-node's
 `writeMaxBytes` do: a call over it is never sent, and fails as a
 `BadCall`, code `ResourceExhausted`. Neither has a limit by
 default, as in connect-node; connect-go reads at most 4 MiB unless told
@@ -553,7 +553,7 @@ the rule's own, `1` and up its `additional_bindings`). Transcoding speaks
 JSON, so `viaBinding` takes a JSON call: one generated under `wire=both`
 becomes a `Call Rpc.Json` where it is applied. A call is one codec where it
 is used: a function that takes a call as its argument cannot both send it
-over `Rpc.Proto` and read its JSON. A generated call is free in the codec
+over `Rpc.Binary` and read its JSON. A generated call is free in the codec
 at each use, as is one bound in a `let`, so such a function takes the call
 twice, or the JSON beside it.
 
@@ -739,7 +739,7 @@ answer kept:
   and the answer could not be used: its body is not the response
   message, as when the schema drifted between client and server; its
   content type is another of the protocol's than the call reads
-  (`application/json` under the proto codec); a gRPC-Web answer's
+  (`application/json` under the binary codec); a gRPC-Web answer's
   framing or trailers are malformed; it is over the read limit, kept
   without its body ([Size limits](#size-limits)); or it is not the
   protocol's answer at all. Over Connect and gRPC-Web, a 200 whose
@@ -942,7 +942,7 @@ notes.v1.NotesService/GetNote over connect: ok, HTTP 200, 1 attempt, 12 ms
 ```elm src/Rpc.elm excerpt
 request : Client codec -> Call codec req res -> Result Error Request
 response : Client Json -> Call Json req res -> Http.Response String -> Result Error res
-responseBytes : Client Proto -> Call Proto req res -> Http.Response Bytes -> Result Error res
+responseBytes : Client Binary -> Call Binary req res -> Http.Response Bytes -> Result Error res
 taskFromRequest : Client codec -> Call codec req res -> Request -> Task Error res
 ```
 
@@ -964,9 +964,9 @@ or a request over the write limit. So what it gives `Ok` is exactly what
 `Rpc.task` and `Rpc.send` would send, and a refused call has no request
 to show: each refusal is a `BadCall` naming what is wrong.
 
-Under the proto codec a successful answer is binary, which text cannot
+Under the binary codec a successful answer is binary, which text cannot
 hold (the browser has replaced what is not UTF-8 by then), so a call
-sent by hand over a `Client Rpc.Proto` reads its answer as bytes, with
+sent by hand over a `Client Rpc.Binary` reads its answer as bytes, with
 `Http.expectBytesResponse` and `Rpc.responseBytes`. Over a
 `Client Rpc.Json`, `Rpc.response` reads it as text, paired with
 `Http.expectStringResponse`: the browser decodes the text natively, and
@@ -977,7 +977,7 @@ the type `Rpc.Body.contentType` gives.
 
 A request's `headers` are those the runtime and the client add, not all
 that go out: sending a request with a body adds its `Content-Type`
-(`application/json`, or `application/proto` under the proto codec, or
+(`application/json`, or `application/proto` under the binary codec, or
 `application/grpc-web+proto` over gRPC-Web), which
 elm/http sets from the body, and
 the browser adds its own, so a test of `Rpc.request` sees neither.

@@ -397,9 +397,9 @@ live/
                       front of the example server (docs/envoy.md)
   envoy/envoy-version the Envoy release func-e runs
   cases/envoy.json    Envoy's errors in grpc-status headers, and its own answers
-  cases/proto.json    every method over Connect's proto codec
+  cases/proto.json    every method over Connect's `proto` codec
   conformance-proto.yaml
-                      the suite's features with the proto codec
+                      the suite's features with Connect's `proto` codec
   known-failing-proto.txt
                       the suite's test cases the runtime fails under it
   cases/grpcweb.json  every method over gRPC-Web
@@ -662,19 +662,19 @@ case to fail, so the lists cannot go stale. One test case pattern per line
 `connectconformance` reads only the first `--known-failing` flag it is
 given, so the `sendTraced` run joins the two files in `build/`.
 
-### The proto codec, live
+### The binary codec, live
 
-`just live-proto` (part of `just live`) runs the proto codec's legs on
+`just live-proto` (part of `just live`) runs Connect's `proto` codec's legs on
 the same runner as the JSON legs. Its bindings, the example's and the
 suite's, are generated with the default `wire=both`, so each call is free
 in its codec, and `src/Live/Codec.elm` takes each generated call function
-at both codecs, so an envelope's `codec` picks a JSON or a proto client.
+at both codecs, so an envelope's `codec` picks a JSON or a binary client.
 It runs `cases/proto.json` against the example server, and the Connect
 conformance suite with
 `conformance-proto.yaml`, through the halves and with `sendTraced`, the
 envelope's `codec: "proto"` set from the suite's request and the result
 read back from `okBinary` and `detailsBinary`. The suite runs its
-error-body cases only when the proto codec is listed, so the proto run
+error-body cases only when Connect's `proto` codec is listed, so the proto run
 has 56 test cases to the JSON run's 40; `known-failing-proto.txt` lists
 none, and the `sendTraced` run adds `known-failing-send.txt`: 56 of 56
 pass through the halves and 55 with `sendTraced`. Transcoding is JSON

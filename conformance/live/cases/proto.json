@@ -328,7 +328,7 @@
   },
   {
     "name": "proto NOT_FOUND with ErrorInfo",
-    "note": "An error answer stays JSON under the proto codec, and reads as the same Rpc.Error.",
+    "note": "An error answer stays JSON under Connect's `proto` codec, and reads as the same Rpc.Error.",
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",

@@ -136,9 +136,9 @@ jsonOnly =
 
 {-| The method with binary alone.
 -}
-binaryOnly : GetNote -> Rpc.Call Rpc.Proto GetNote String
+binaryOnly : GetNote -> Rpc.Call Rpc.Binary GetNote String
 binaryOnly =
-    Rpc.call (getNoteIn (Proto.Method.initProto "notes.v1.Notes" "GetNote" encodeGetNoteBytes decodeTitleBytes))
+    Rpc.call (getNoteIn (Proto.Method.initBinary "notes.v1.Notes" "GetNote" encodeGetNoteBytes decodeTitleBytes))
 
 
 {-| A client of the test server over Connect with JSON.

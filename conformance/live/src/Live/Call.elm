@@ -86,14 +86,14 @@ type Protocol
 -}
 type Client
     = JsonClient (Rpc.Client Rpc.Json)
-    | ProtoClient (Rpc.Client Rpc.Proto)
+    | BinaryClient (Rpc.Client Rpc.Binary)
 
 
 {-| A method's generated call function, once per codec the bindings have it in.
 -}
 type alias Calls req res =
     { json : Maybe (req -> Rpc.Call Rpc.Json req res)
-    , proto : Maybe (req -> Rpc.Call Rpc.Proto req res)
+    , binary : Maybe (req -> Rpc.Call Rpc.Binary req res)
     }
 
 
@@ -165,8 +165,8 @@ entryWith calls requestDecoder respond envelope toMsg =
                         Nothing ->
                             missing "proto3 JSON"
 
-                ProtoClient client ->
-                    case calls.proto of
+                BinaryClient client ->
+                    case calls.binary of
                         Just toCall ->
                             prepare (\_ _ -> Err "a binding is chosen on a call over JSON") envelope (toCall request)
                                 |> Result.andThen

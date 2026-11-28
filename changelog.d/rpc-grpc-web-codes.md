@@ -6,6 +6,6 @@
   content type is still the answer, and transcoding still reads any
   success whatever its content type.
 - A 200 of another of the protocol's content types than the call reads
-  (`application/json` under Connect's proto codec, `application/proto`
+  (`application/json` under Connect's binary codec, `application/proto`
   under its JSON codec, `application/grpc-web+json` over gRPC-Web) is
   still a `BadResponse`, now naming both types under either codec.

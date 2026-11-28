@@ -482,7 +482,7 @@ pub enum Wire {
     /// speak: `Rpc.Call Rpc.Json`.
     Json,
     /// Protobuf binary alone (`encodeNoteBytes`, `decodeNoteBytes`), for
-    /// Connect's proto codec and gRPC-Web: `Rpc.Call Rpc.Proto`.
+    /// Connect's proto codec and gRPC-Web: `Rpc.Call Rpc.Binary`.
     Proto,
 }
 

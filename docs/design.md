@@ -115,7 +115,7 @@ Generated code carries no protocol. Three layers, the first two data:
    idempotency, the request and response codecs and the method's route
    functions (§4). Nothing in a call picks a protocol; its type says
    the codec its generated code has (free under the default
-   `wire=both`, `Rpc.Json` under `wire=json`, `Rpc.Proto` under
+   `wire=both`, `Rpc.Json` under `wire=json`, `Rpc.Binary` under
    `wire=proto`).
 3. **A client says where and how, and one runtime module sends.** An
    `Rpc.Client codec` holds a protocol (`Rpc.Protocol`: Connect over
@@ -2027,7 +2027,7 @@ registry =
   `Proto.Method.initJson service name encodeRequest responseDecoder`
   (§4, given its idempotency and routes by `withIdempotency` and
   `withRoutes`, and built from its binary codecs by
-  `Proto.Method.initProto` or from both by `Proto.Method.init`, §3.10).
+  `Proto.Method.initBinary` or from both by `Proto.Method.init`, §3.10).
   Why: an Elm record alias that generated code writes
   as a literal can never gain a field. The field is a major by Elm's
   package rules, and every module generated before it stops compiling
@@ -2253,7 +2253,7 @@ registry =
   import). The second header line records it like the others when it is
   not the default (`-- Options: wire=json`), and `check` regenerates
   with it. Under `json` each method is built by
-  `Proto.Method.initJson`, under `proto` by `Proto.Method.initProto`
+  `Proto.Method.initJson`, under `proto` by `Proto.Method.initBinary`
   from its binary codecs, under `both` by `Proto.Method.init` from all
   four, the arguments stacked. A method's request encoder is the
   generated `Notes.V1.encodeGetNoteRequest`, run with the client's
@@ -2263,10 +2263,10 @@ registry =
   Notes.V1.decodeNote`. A method wired with `proto` gets no route
   functions, nor its messages query encoders: transcoding takes JSON
   (§5.3). A method's codec is in its type, and so in its call's (§4):
-  `Rpc.Json` under `json`, `Rpc.Proto` under `proto`, free under `both`;
+  `Rpc.Json` under `json`, `Rpc.Binary` under `proto`, free under `both`;
   what reads a method's JSON half or takes its routes is typed at
   `Rpc.Json` (§5.1), so the type alone tells a method built with
-  `initProto`.
+  `initBinary`.
 - **Names** are §3.7's: the JSON names with `Bytes` at the end, and
   `naming::codec_collision` where a type's name meets them, under every
   option. The JSON codecs taking the registry end in `With`, and the same
@@ -2554,7 +2554,7 @@ binding whose rule names a `response_body`:
   `withRoutes` with its route functions (below).
   Under `wire=both`, the default, it is built by `Proto.Method.init`
   from the names, those two codecs and the request type's `encode…Bytes` and the response type's
-  `decode…Bytes`; under `wire=proto` by `Proto.Method.initProto` from the
+  `decode…Bytes`; under `wire=proto` by `Proto.Method.initBinary` from the
   binary two alone (§3.10), with no routes. A method holds no registry:
   the client's is the one table (§5.1). A method whose route bodies hold
   an `Any`, which has no total encoder, takes route functions of the
@@ -2564,7 +2564,7 @@ binding whose rule names a `response_body`:
   program whose methods have binary codecs carries their code. The
   builder fixes the method's codec, the first type parameter of
   `Proto.Method.Method` and of its calls: `Rpc.Call Rpc.Json` under
-  `json`, `Rpc.Call Rpc.Proto` under `proto`, free in it under `both`,
+  `json`, `Rpc.Call Rpc.Binary` under `proto`, free in it under `both`,
   so that a client of either codec sends it.
   No `Proto.Method.Method` value is generated; `Rpc.Call.method` reads
   the method back from any call of it, and `Rpc.Call.serviceName`,
@@ -2839,11 +2839,11 @@ the protocols belong in it too.
 ### 5.1 Protocol and client
 
 ```elm
--- Rpc.Protocol: opaque, indexed by codec (Proto.Codec's tags, Rpc.Json and Rpc.Proto)
+-- Rpc.Protocol: opaque, indexed by codec (Proto.Codec's tags, Rpc.Json and Rpc.Binary)
 connect : Protocol Json                   -- Connect, proto3 JSON, every call POSTed
-connectProto : Protocol Proto             -- Connect, protobuf binary (application/proto)
+connectProto : Protocol Binary            -- Connect, protobuf binary (application/proto)
 transcode : Protocol Json                 -- google.api.http REST; the implicit route without a rule
-grpcWeb : Protocol Proto                  -- gRPC-Web, unary, protobuf binary (application/grpc-web+proto)
+grpcWeb : Protocol Binary                 -- gRPC-Web, unary, protobuf binary (application/grpc-web+proto)
 withConnectGet : Protocol codec -> Protocol codec      -- Connect: NO_SIDE_EFFECTS as GET; others unchanged
 withMaxGetUrl, withReadMaxBytes, withWriteMaxBytes : Int -> Protocol codec -> Protocol codec   -- a limit below 1 is none
 name : Protocol codec -> String           -- "connect" | "transcode" | "grpc-web"
@@ -2874,10 +2874,10 @@ base URL, the headers, timeout, credentials and retry policy every
 call takes, and the registry its calls convert an `Any` through. A protocol says how: Connect over proto3 JSON or protobuf
 binary, HTTP transcoding, or gRPC-Web over protobuf binary, with its
 options. Both carry a codec in
-their type, `Rpc.Json` or `Rpc.Proto` (`Rpc` re-exports the tags, so
+their type, `Rpc.Json` or `Rpc.Binary` (`Rpc` re-exports the tags, so
 annotations and compiler errors read `Rpc.Json`), and a client sends
 only calls of its codec: a `Client Json` takes the calls of code
-generated with `wire=json` or `wire=both`, a `Client Proto` those of
+generated with `wire=json` or `wire=both`, a `Client Binary` those of
 `wire=proto` or `wire=both`. A pairing with no codecs in common is a
 type error where the call is sent, not a failure at run time
 (decisions.md: Protocol and client, indexed by codec).
@@ -3235,7 +3235,7 @@ toJson : Registry -> Call Json req res -> Result Proto.Error.Error Json.Encode.V
 
 -- Rpc
 type alias Json = Proto.Codec.Json   -- the codec tags; no values
-type alias Proto = Proto.Codec.Proto
+type alias Binary = Proto.Codec.Binary
 type alias Call codec req res = Rpc.Call.Call codec req res
 type alias Client codec = Rpc.Client.Client codec
 call : Proto.Method.Method codec req res -> req -> Call codec req res
@@ -3253,7 +3253,7 @@ type alias Request = Rpc.Request.Request
 type alias Response = Rpc.Response.Response
 request : Client codec -> Call codec req res -> Result Error Request   -- Err: what sending would refuse
 response : Client Json -> Call Json req res -> Http.Response String -> Result Error res
-responseBytes : Client Proto -> Call Proto req res -> Http.Response Bytes -> Result Error res
+responseBytes : Client Binary -> Call Binary req res -> Http.Response Bytes -> Result Error res
 taskFromRequest : Client codec -> Call codec req res -> Request -> Task Error res
 
 splitTrailers : Dict String String -> { headers : Dict String String, trailers : Dict String String }
@@ -3287,7 +3287,7 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
   `Result` (decisions.md: One table, the client's), and take a JSON
   call: a binary-only call has no JSON to write.
 - **The codec is in the type.** `Method`, `Call`, `Protocol` and
-  `Client` carry a phantom codec, `Rpc.Json` or `Rpc.Proto`, so a
+  `Client` carry a phantom codec, `Rpc.Json` or `Rpc.Binary`, so a
   client only sends a call whose method has the half its protocol
   speaks, and the send path reads that half without asking which halves
   are real (decisions.md: Protocol and client, indexed by codec;
@@ -3304,7 +3304,7 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
   `Rpc.Call` of the type, so generated code imports `Rpc` alone and
   its `Rpc.Call Rpc.Json req res` annotations name the alias, and
   `Rpc.Json`, an alias in `Rpc` too, so that annotations, the package
-  docs and compiler errors name the tags `Rpc.Json` and `Rpc.Proto`
+  docs and compiler errors name the tags `Rpc.Json` and `Rpc.Binary`
   rather than the internal module that defines them.
 - The readers are `method` (the `Method`), `procedure`,
   `serviceName`, `methodName` and `idempotency` (the method's, §4).
@@ -3329,7 +3329,7 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
   that the kinds streaming envelopes and compression need can arrive as
   more constructors, a minor, rather than as fields (roadmap).
 - `response` reads an answer elm/http read as text, `responseBytes` one
-  read as bytes (`Http.expectBytesResponse`): under the proto codec a
+  read as bytes (`Http.expectBytesResponse`): under the binary codec a
   successful answer is protobuf binary, which text cannot hold, since
   the browser has replaced what is not UTF-8 by then. Two functions
   rather than one reading bytes: a JSON answer read as text is decoded
@@ -3475,9 +3475,9 @@ all 40 passing.
   in the runtime rather than taken from elm/url, whose `percentEncode`
   keeps `!*'()`, which the transcoding rules require escaped.
 
-#### The proto codec
+#### The binary codec
 
-`Rpc.Protocol.connectProto` is Connect's proto codec, a `Protocol
+`Rpc.Protocol.connectProto` is Connect's binary codec, a `Protocol
 Proto`; `connect`, a `Protocol Json`, is everything above. Run by the
 live suite against connect-go (`cases/proto.json`: every method, the
 five ways of sending, errors with details, both size limits, GET), and
@@ -3681,7 +3681,7 @@ What follows says how a binding reads its fields, for both.
 
 `Rpc.Protocol.grpcWeb` is unary
 [gRPC-Web](https://github.com/grpc/grpc/blob/master/doc/PROTOCOL-WEB.md),
-a `Protocol Proto`. Run by the live suite against connect-go and against
+a `Protocol Binary`. Run by the live suite against connect-go and against
 Envoy's gRPC-Web filter in front of the same server (`cases/grpcweb.json`:
 every method, the five ways of sending, errors with details, both size
 limits, a timeout, the body's trailers in a trace), and by the Connect
@@ -4155,7 +4155,7 @@ read; `implicit`, `optional`, `present`, `list`, `listUnpacked`,
 `unknown_fields=keep`). Generated code calls it; an application
 meets `decode`, `encode` and `Decoder`. The generator writes binary
 codecs against it under `wire=proto` or `wire=both` (§3.10), and
-Connect's proto codec sends them (§5.3). It holds the codecs, the
+Connect's binary codec sends them (§5.3). It holds the codecs, the
 message loop and the well-known types. The values as bytes are beneath
 it in `Proto.Internal.Binary.Wire`, which knows no codec, field or
 message: the varint, fixed-width and length-delimited reads and writes,
@@ -4764,19 +4764,19 @@ suites (unexpected and empty answers, error end-streams) do not apply.
   with `withReadMaxBytes` (0 is no limit) and reports the answer over
   it, a `BadResponse`, by its code, `resource_exhausted`. v1.0.7 has no client-mode case that relies on
   it (its one such suite, Server Message Size, tests servers over the
-  proto codec), so the count stays 40; the live suite's `readMaxBytes`
+  `proto` codec), so the count stays 40; the live suite's `readMaxBytes`
   cases in `cases/notes.json` run the knob against the example server
   over Connect and transcoding. The suite has no client feature for the
   send limit; the `writeMaxBytes` cases there show a refused
   call sends nothing, and a GET's limit counts the JSON before
   it is percent-encoded.
-- The proto codec has a run of its own (`conformance-proto.yaml`, `just
+- The binary codec has a run of its own (`conformance-proto.yaml`, `just
   live-proto`): the same suite under `CODEC_PROTO`, through the halves
   and with `sendTraced`, each envelope's `codec: "proto"` set from the
   suite's request and the result read back from `okBinary` and
-  `detailsBinary` (§5.3, the proto codec). The suite runs its error-body
+  `detailsBinary` (§5.3, the binary codec). The suite runs its error-body
   cases (unexpected and empty answers, error end-streams) only when the
-  proto codec is listed, so it selects 56 test cases to the JSON run's
+  `proto` codec is listed, so it selects 56 test cases to the JSON run's
   40. 56 of 56 pass through the halves and 55 through `sendTraced`,
   which fails `known-failing-send.txt`'s cancellation case;
   `known-failing-proto.txt` lists none. Its three error-body cases
@@ -5127,7 +5127,7 @@ Within a major version:
   names `Rpc.Request` and `Rpc.Response`) and `Proto.Error.Binary`.
   A new knob goes where §5.1 routes it: a protocol's on `Protocol`, a
   client's on `Client`, a retry's on `Retry`, a call's on `Call`. The
-  codec tags `Rpc.Json` and `Rpc.Proto` have no values and gain none.
+  codec tags `Rpc.Json` and `Rpc.Binary` have no values and gain none.
   The public unions are
   frozen within a major, since users match on them exhaustively:
   `Proto.Field.Cardinality` (with `CardinalityRequired` reserved for

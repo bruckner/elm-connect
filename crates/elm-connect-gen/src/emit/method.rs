@@ -75,7 +75,7 @@ impl Emitter {
     /// Note`: `Rpc.call` of the method's `Proto.Method.Method`, built from
     /// its service's full name, its name and its codecs by
     /// `Proto.Method.initJson` (the request's JSON encoder, the response's
-    /// JSON decoder), `Proto.Method.initProto` (their binary codecs) or
+    /// JSON decoder), `Proto.Method.initBinary` (their binary codecs) or
     /// `Proto.Method.init` (the JSON codecs and the binary codecs) as the
     /// `wire` option says, the JSON codecs taking the client's registry
     /// (ignored by a type that reaches no `Any`), then
@@ -85,7 +85,7 @@ impl Emitter {
     /// binding whose rule names a response field. Under `wire=proto` it has no
     /// routes: its calls cannot be
     /// transcoded, which takes JSON. The call's codec is `Rpc.Json` under
-    /// `wire=json`, `Rpc.Proto` under `wire=proto`, and a type variable
+    /// `wire=json`, `Rpc.Binary` under `wire=proto`, and a type variable
     /// under `wire=both`, so that any client sends it.
     ///
     /// The value binds no locals and every library name in it is
@@ -108,7 +108,7 @@ impl Emitter {
         }
         let (builder, tag) = match self.wiring {
             Wire::Json => ("initJson", Some("Json")),
-            Wire::Proto => ("initProto", Some("Proto")),
+            Wire::Proto => ("initBinary", Some("Binary")),
             Wire::Both => ("init", None),
         };
         let built = stacked_apply(self.reference((PROTO_METHOD, builder)), codecs);

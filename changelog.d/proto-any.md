@@ -40,7 +40,7 @@
   reaches an `Any` has `decodeNoteWith`, taking the registry, in place
   of `decodeNote`; a type named for one with `With` at the end is
   `naming::codec_collision`.
-- Breaking: methods are built by `Proto.Method.initJson`, `initProto`
+- Breaking: methods are built by `Proto.Method.initJson`, `initBinary`
   and `init`, in place of `json`, `proto` and `both`, and a method's JSON
   codecs take the registry at use time (`Proto.Method.initJson
   "notes.v1.NotesService" "GetNote" encodeGetNoteRequest

@@ -11,7 +11,7 @@ what a [`Client`](Rpc-Client#Client) speaks.
     Rpc.client Rpc.Protocol.connect "https://api.example.com"
 
 A protocol's type says its codec: `Protocol Rpc.Json` for proto3 JSON,
-`Protocol Rpc.Proto` for protobuf binary (the [`Proto.Codec`](Proto-Codec)
+`Protocol Rpc.Binary` for protobuf binary (the [`Proto.Codec`](Proto-Codec)
 tags, which `Rpc` re-exports). A client of one only sends calls whose
 generated code has that codec (`wire=json`, `wire=proto` or `wire=both`),
 and the compiler says so where it does not.
@@ -34,7 +34,7 @@ Protocols built alike are `==`.
 -}
 
 import Json.Encode exposing (Value)
-import Proto.Codec exposing (Json, Proto)
+import Proto.Codec exposing (Binary, Json)
 import Rpc.Internal.Connect as Connect
 import Rpc.Internal.Envelope as Envelope
 import Rpc.Internal.GrpcWeb as GrpcWeb
@@ -104,7 +104,7 @@ connect =
 read as protobuf binary, and must come as `application/proto` or with no
 content type; an error answer is JSON, as the protocol sends it.
 -}
-connectProto : Protocol Proto
+connectProto : Protocol Binary
 connectProto =
     Internal.Protocol
         { name = "connect", codec = "proto", routed = False, options = noOptions }
@@ -157,7 +157,7 @@ call ([`Rpc.sendTraced`](Rpc#sendTraced)) gives the body's trailers in
 [`Rpc.Trace.trailers`](Rpc-Trace#trailers).
 
 -}
-grpcWeb : Protocol Proto
+grpcWeb : Protocol Binary
 grpcWeb =
     Internal.Protocol
         { name = "grpc-web", codec = "proto", routed = False, options = noOptions }
@@ -341,14 +341,17 @@ name (Internal.Protocol p _) =
     p.name
 
 
-{-| The codec's name: `"json"` or `"proto"`.
+{-| The codec's name in Connect's terms, as its content types spell it:
+`"json"` for [`Rpc.Json`](Rpc#Json), `"proto"` for [`Rpc.Binary`](Rpc#Binary)
+(Connect's name for the protobuf binary codec, as in `application/proto`).
 -}
 codec : Protocol codec -> String
 codec (Internal.Protocol p _) =
     p.codec
 
 
-{-| The protocol as JSON, for logs and tests: its name, codec and options.
+{-| The protocol as JSON, for logs and tests: its name, codec (as
+[`codec`](#codec) gives it) and options.
 -}
 toJson : Protocol codec -> Value
 toJson (Internal.Protocol p _) =

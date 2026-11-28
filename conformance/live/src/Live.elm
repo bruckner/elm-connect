@@ -289,7 +289,7 @@ config t =
             in
             case ( t, codec ) of
                 ( Connect, "proto" ) ->
-                    Decode.succeed (ProtoClient (over (connectOver Rpc.Protocol.connectProto)))
+                    Decode.succeed (BinaryClient (over (connectOver Rpc.Protocol.connectProto)))
 
                 ( Connect, _ ) ->
                     Decode.succeed (JsonClient (over (connectOver Rpc.Protocol.connect)))
@@ -304,7 +304,7 @@ config t =
                     Decode.fail "gRPC-Web is sent as protobuf binary alone"
 
                 ( GrpcWeb, _ ) ->
-                    Decode.succeed (ProtoClient (over Rpc.Protocol.grpcWeb))
+                    Decode.succeed (BinaryClient (over Rpc.Protocol.grpcWeb))
         )
         (Decode.field "baseUrl" Decode.string)
         (optional "headers" (Decode.list pair) [])

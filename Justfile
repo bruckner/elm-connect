@@ -251,7 +251,7 @@ bless:
 # route fixtures against its routes.v1 echo service under Vanguard; then the
 # transcoding cases and the route fixtures again under grpc-gateway, which
 # the server mounts at /gateway; then under Envoy (live-envoy); then the
-# Connect conformance suite; then the proto codec's legs (live-proto); then
+# Connect conformance suite; then the binary codec's legs (live-proto); then
 # gRPC-Web's (live-grpcweb). Not part of `check`: it needs Go, and the
 # network for Go's modules, npm's packages, Envoy and connectconformance
 # (buf generates from vendored protos); CI runs it as its own job. It builds
@@ -402,9 +402,9 @@ live-conformance: live-conformance-gen live-build
     cat known-failing.txt known-failing-send.txt > build/known-failing-send.txt
     "$runner" --mode client --conf conformance.yaml --known-failing @build/known-failing-send.txt -- node conformance.mjs --send sendTraced
 
-# The proto codec over Connect (conformance/README.md): the example server
+# The binary codec over Connect (conformance/README.md): the example server
 # called over application/proto (cases/proto.json), and the Connect
-# conformance suite with the proto codec (conformance-proto.yaml), through
+# conformance suite with the binary codec (conformance-proto.yaml), through
 # the pure halves and with Rpc.sendTraced. Transcoding speaks JSON alone, so
 # its legs above cover it.
 live-proto: live-conformance-gen live-build

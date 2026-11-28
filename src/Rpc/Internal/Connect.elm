@@ -66,7 +66,7 @@ connectPostBinary encode _ _ settings encoder =
     connectRequest settings (Body.bytes (encode encoder))
 
 
-{-| Connect's GET under the proto codec: the binary as unpadded URL-safe
+{-| Connect's GET under the binary codec: the binary as unpadded URL-safe
 base64 in the query.
 -}
 connectGetBinary : (Bytes.Encode.Encoder -> Bytes) -> (Bytes -> String) -> Options -> Settings -> Bytes.Encode.Encoder -> Request

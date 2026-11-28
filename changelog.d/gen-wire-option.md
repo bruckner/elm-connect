@@ -3,7 +3,7 @@
   method carries its JSON and protobuf binary codecs and its calls are
   free in the codec, `Rpc.Call codec req res`, so any client sends them;
   `json` wires proto3 JSON alone (`Rpc.Call Rpc.Json`, as 0.1's calls
-  were) and `proto` protobuf binary alone (`Rpc.Call Rpc.Proto`), for an
+  were) and `proto` protobuf binary alone (`Rpc.Call Rpc.Binary`), for an
   application that speaks one codec: narrower call types, and the other
   codec's code behind the calls left out of its bundle. Every message
   gets protobuf binary codecs beside its JSON ones whatever the option

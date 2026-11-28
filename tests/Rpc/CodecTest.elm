@@ -27,13 +27,13 @@ import Rpc.Trace
 import Test exposing (Test, describe, test)
 
 
-proto : Rpc.Client Rpc.Proto
-proto =
+binary : Rpc.Client Rpc.Binary
+binary =
     over Rpc.Protocol.connectProto
 
 
-protoGet : Rpc.Client Rpc.Proto
-protoGet =
+binaryGet : Rpc.Client Rpc.Binary
+binaryGet =
     over (Rpc.Protocol.withConnectGet Rpc.Protocol.connectProto)
 
 
@@ -100,9 +100,9 @@ suite =
 requests : Test
 requests =
     describe "requests"
-        [ test "Proto POSTs the request's binary, no text" <|
+        [ test "Binary POSTs the request's binary, no text" <|
             \_ ->
-                requestOf proto (both { name = "x" })
+                requestOf binary (both { name = "x" })
                     |> (\r -> ( ( r.method, r.url, r.headers ), Rpc.Body.toText r.body, Maybe.map Proto.Bytes.toBase64 (Rpc.Body.toBytes r.body) ))
                     |> Expect.equal
                         ( ( "POST", "https://api.example.com/notes.v1.Notes/GetNote", [ ( "Connect-Protocol-Version", "1" ) ] )
@@ -113,10 +113,10 @@ requests =
             \_ ->
                 ( Rpc.Body.toText (Rpc.Body.bytes titleHi), Maybe.map Proto.Bytes.toBase64 (Rpc.Body.toBytes (Rpc.Body.bytes titleHi)), Rpc.Body.toBytes (Rpc.Body.text "x") == Nothing )
                     |> Expect.equal ( Nothing, Just "CgJoaQ==", True )
-        , test "Proto's GET carries the binary as unpadded URL-safe base64" <|
+        , test "Binary's GET carries the binary as unpadded URL-safe base64" <|
             \_ ->
                 [ "x", "?>" ]
-                    |> List.map (\name -> requestOf protoGet (both { name = name }) |> (\r -> ( r.method, r.url, Rpc.Body.toBytes r.body == Nothing )))
+                    |> List.map (\name -> requestOf binaryGet (both { name = name }) |> (\r -> ( r.method, r.url, Rpc.Body.toBytes r.body == Nothing )))
                     |> Expect.equal
                         [ ( "GET", "https://api.example.com/notes.v1.Notes/GetNote?connect=v1&base64=1&encoding=proto&message=CgF4", True )
                         , ( "GET", "https://api.example.com/notes.v1.Notes/GetNote?connect=v1&base64=1&encoding=proto&message=CgI_Pg", True )
@@ -137,10 +137,10 @@ requests =
                         ( requestOf base (jsonOnly { name = "x" })
                         , requestOf (over Rpc.Protocol.transcode) (jsonOnly { name = "x" })
                         )
-        , test "a Proto call is unchanged by the JSON codecs" <|
+        , test "a Binary call is unchanged by the JSON codecs" <|
             \_ ->
-                ( requestOf proto (both { name = "x" }), requestOf protoGet (both { name = "x" }) )
-                    |> Expect.equal ( requestOf proto (binaryOnly { name = "x" }), requestOf protoGet (binaryOnly { name = "x" }) )
+                ( requestOf binary (both { name = "x" }), requestOf binaryGet (both { name = "x" }) )
+                    |> Expect.equal ( requestOf binary (binaryOnly { name = "x" }), requestOf binaryGet (binaryOnly { name = "x" }) )
         ]
 
 
@@ -162,11 +162,11 @@ methods =
                         ( Ok "{\"name\":\"x\"}"
                         , Ok "{\"service\":\"notes.v1.Notes\",\"method\":\"GetNote\",\"procedure\":\"/notes.v1.Notes/GetNote\",\"request\":{\"name\":\"x\"}}"
                         )
-        , test "a binary-only call over Connect proto sends the method's binary and reads the answer by responseBytes" <|
+        , test "a binary-only call over Connect binary sends the method's binary and reads the answer by responseBytes" <|
             \_ ->
-                ( requestOf proto (binaryOnly { name = "x" })
+                ( requestOf binary (binaryOnly { name = "x" })
                     |> (\r -> ( r.method, Rpc.Body.contentType r.body, Maybe.map Proto.Bytes.toBase64 (Rpc.Body.toBytes r.body) ))
-                , Rpc.responseBytes proto (binaryOnly { name = "x" }) (Http.GoodStatus_ (metadata 200 [ ( "content-type", "application/proto" ) ]) titleHi)
+                , Rpc.responseBytes binary (binaryOnly { name = "x" }) (Http.GoodStatus_ (metadata 200 [ ( "content-type", "application/proto" ) ]) titleHi)
                 )
                     |> Expect.equal
                         ( ( "POST", Just "application/proto", Just (Proto.Bytes.toBase64 (Bytes.Encode.encode (encodeGetNoteBytes { name = "x" }))) )
@@ -174,7 +174,7 @@ methods =
                         )
         , test "a binary-only method without side effects is a GET under withConnectGet" <|
             \_ ->
-                requestOf protoGet (binaryOnly { name = "x" })
+                requestOf binaryGet (binaryOnly { name = "x" })
                     |> (\r -> ( r.method, r.url ))
                     |> Expect.equal ( "GET", "https://api.example.com/notes.v1.Notes/GetNote?connect=v1&base64=1&encoding=proto&message=CgF4" )
         ]
@@ -192,14 +192,14 @@ answers =
     describe "answers"
         [ test "a 200 of application/proto, or of no content type, decodes as binary" <|
             \_ ->
-                [ readBytes proto (Http.GoodStatus_ (metadata 200 [ ( "Content-Type", "application/proto" ) ]) titleHi)
-                , readBytes proto (Http.GoodStatus_ (metadata 200 [ ( "content-type", "Application/Proto; charset=x" ) ]) titleHi)
-                , readBytes proto (Http.GoodStatus_ (metadata 200 []) titleHi)
+                [ readBytes binary (Http.GoodStatus_ (metadata 200 [ ( "Content-Type", "application/proto" ) ]) titleHi)
+                , readBytes binary (Http.GoodStatus_ (metadata 200 [ ( "content-type", "Application/Proto; charset=x" ) ]) titleHi)
+                , readBytes binary (Http.GoodStatus_ (metadata 200 []) titleHi)
                 ]
                     |> Expect.equal [ Ok "hi", Ok "hi", Ok "hi" ]
         , test "a 200 of another Connect codec's content type is a BadResponse keeping the bytes" <|
             \_ ->
-                readBytes proto (Http.GoodStatus_ (metadata 200 [ ( "content-type", "application/json" ) ]) (utf8 "{\"title\":\"hi\"}"))
+                readBytes binary (Http.GoodStatus_ (metadata 200 [ ( "content-type", "application/json" ) ]) (utf8 "{\"title\":\"hi\"}"))
                     -- Elm's == does not look into Bytes, so the body's width is read too.
                     |> Result.mapError (\error -> ( error, Rpc.Error.httpStatus error, bodyWidth error ))
                     |> Expect.equal
@@ -220,7 +220,7 @@ answers =
             \_ ->
                 [ readText (Http.GoodStatus_ (metadata 200 [ ( "content-type", "application/proto" ) ]) "{\"title\":\"hi\"}")
                 , readText (Http.GoodStatus_ (metadata 200 [ ( "content-type", "Application/Connect+JSON; charset=utf-8" ) ]) "{\"title\":\"hi\"}")
-                , readBytes proto (Http.GoodStatus_ (metadata 200 [ ( "content-type", "application/connect+proto" ) ]) titleHi)
+                , readBytes binary (Http.GoodStatus_ (metadata 200 [ ( "content-type", "application/connect+proto" ) ]) titleHi)
                 ]
                     |> List.map codeAndMessage
                     |> Expect.equal
@@ -244,7 +244,7 @@ answers =
                         "{\"code\":\"unavailable\",\"message\":\"down\"}"
                 in
                 [ readText (Http.GoodStatus_ jpeg errorBody)
-                , readBytes proto (Http.GoodStatus_ jpeg (utf8 errorBody))
+                , readBytes binary (Http.GoodStatus_ jpeg (utf8 errorBody))
                 ]
                     |> List.map statusOf
                     |> Expect.equal [ Just ( Unavailable, "down", Just ConnectBody ), Just ( Unavailable, "down", Just ConnectBody ) ]
@@ -256,8 +256,8 @@ answers =
                 in
                 [ readText (Http.GoodStatus_ (metadata 200 [ ( "content-type", "image/jpeg" ) ]) "")
                 , readText (Http.GoodStatus_ (metadata 200 [ ( "content-type", "text/html; charset=utf-8" ) ]) html)
-                , readBytes proto (Http.GoodStatus_ (metadata 200 [ ( "content-type", "image/jpeg" ) ]) (utf8 ""))
-                , readBytes proto (Http.GoodStatus_ (metadata 200 [ ( "content-type", "text/html" ) ]) (utf8 html))
+                , readBytes binary (Http.GoodStatus_ (metadata 200 [ ( "content-type", "image/jpeg" ) ]) (utf8 ""))
+                , readBytes binary (Http.GoodStatus_ (metadata 200 [ ( "content-type", "text/html" ) ]) (utf8 html))
                 ]
                     |> List.map httpStatusOf
                     |> Expect.equal
@@ -268,12 +268,12 @@ answers =
                         ]
         , test "bytes that are not the message are a BadResponse" <|
             \_ ->
-                readBytes proto (Http.GoodStatus_ (metadata 200 []) (bytesOf [ 0x0A, 0x05, 0x68 ]))
+                readBytes binary (Http.GoodStatus_ (metadata 200 []) (bytesOf [ 0x0A, 0x05, 0x68 ]))
                     |> Result.mapError (\error -> ( Rpc.Error.code error, Rpc.Error.message error, Rpc.Error.protoError error ))
                     |> Expect.equal (Err ( Internal, "bad response body", Just (Proto.Error.BadBinary { typeName = "notes.v1.Title", reason = Proto.Error.Truncated, path = [ ( "notes.v1.Title", 1 ) ], offset = 1 }) ))
         , test "an error answer is JSON whatever the codec, its body kept as text" <|
             \_ ->
-                readBytes proto (Http.BadStatus_ (metadata 404 [ ( "content-type", "application/json" ) ]) (utf8 "{\"code\":\"not_found\",\"message\":\"no note\"}"))
+                readBytes binary (Http.BadStatus_ (metadata 404 [ ( "content-type", "application/json" ) ]) (utf8 "{\"code\":\"not_found\",\"message\":\"no note\"}"))
                     |> Result.mapError
                         (\error ->
                             ( statusOf (Err error), heldAnswer error |> Maybe.andThen (.body >> Rpc.Body.toText) )
@@ -326,9 +326,9 @@ bodies =
                 Rpc.Body.bytesAs "application/octet-stream" titleHi
                     |> (\b -> ( Rpc.Body.toText b, Maybe.map Proto.Bytes.toBase64 (Rpc.Body.toBytes b) ))
                     |> Expect.equal ( Nothing, Just "CgJoaQ==" )
-        , test "a Proto request's body is application/proto, a JSON one's application/json" <|
+        , test "a Binary request's body is application/proto, a JSON one's application/json" <|
             \_ ->
-                [ requestOf proto (both { name = "x" }), requestOf base (both { name = "x" }) ]
+                [ requestOf binary (both { name = "x" }), requestOf base (both { name = "x" }) ]
                     |> List.map (.body >> Rpc.Body.contentType)
                     |> Expect.equal [ Just "application/proto", Just "application/json" ]
         , test "binary protocols built alike compare equal, and differ by their options" <|
@@ -362,7 +362,7 @@ traces =
     describe "a trace of a call"
         [ test "a binary request body is null as body and base64 as bodyBase64" <|
             \_ ->
-                traced proto
+                traced binary
                     |> Expect.equal (Ok ( Nothing, Just "CgF4" ))
         , test "a JSON request body has no bodyBase64" <|
             \_ ->

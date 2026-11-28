@@ -26,9 +26,9 @@ import Rpc
 decoder and its response's typed value: the response is written as its
 protobuf binary, and as the proto3 JSON the registries convert that to.
 -}
-entry : (req -> Rpc.Call Rpc.Json req res) -> (req -> Rpc.Call Rpc.Proto req res) -> Decoder req -> Message res -> Entry msg
-entry toJsonCall toProtoCall decoder message =
-    Live.Call.entryWith { json = Just toJsonCall, proto = Just toProtoCall }
+entry : (req -> Rpc.Call Rpc.Json req res) -> (req -> Rpc.Call Rpc.Binary req res) -> Decoder req -> Message res -> Entry msg
+entry toJsonCall toBinaryCall decoder message =
+    Live.Call.entryWith { json = Just toJsonCall, binary = Just toBinaryCall }
         decoder
         { response =
             \response ->

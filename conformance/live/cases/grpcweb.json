@@ -334,7 +334,7 @@
   },
   {
     "name": "grpc-web NOT_FOUND with ErrorInfo",
-    "note": "Over Connect: An error answer stays JSON under the proto codec, and reads as the same Rpc.Error. With the empty registry: grpc-status-details-bin carries each detail's binary, which reads into an Any with no table (the runner writes its JSON through its own).",
+    "note": "Over Connect: An error answer stays JSON under Connect's `proto` codec, and reads as the same Rpc.Error. With the empty registry: grpc-status-details-bin carries each detail's binary, which reads into an Any with no table (the runner writes its JSON through its own).",
     "call": {
       "service": "notes.v1.NotesService",
       "method": "GetNote",

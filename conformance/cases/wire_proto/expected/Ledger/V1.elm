@@ -4,8 +4,8 @@
 
 module Ledger.V1 exposing (..)
 
-{-| Under wire=proto methods are built by Proto.Method.initProto, with
-protobuf binary codecs alone, and their calls are Rpc.Call Rpc.Proto.
+{-| Under wire=proto methods are built by Proto.Method.initBinary, with
+protobuf binary codecs alone, and their calls are Rpc.Call Rpc.Binary.
 Messages and enums get both codecs whatever the option says.
 -}
 

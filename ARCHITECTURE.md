@@ -100,7 +100,7 @@ point of `elm-format`: the corpus's formatted check and
   error type, and
   `Proto.Version`, the compatibility sentinel every generated module
   names (§8.2), and `Proto.Codec`, the codec tags `Rpc.Json` and
-  `Rpc.Proto` alias (§3.1, rule 5).
+  `Rpc.Binary` alias (§3.1, rule 5).
 - `Rpc.*` is the calling: `Rpc` builds requests, sends them and reads
   answers, beside a module per type it takes or gives (`Rpc.Call`,
   `Rpc.Client`, `Rpc.Protocol`, `Rpc.Retry`, `Rpc.Trace`, `Rpc.Body`, `Rpc.Request`,

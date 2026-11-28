@@ -31,10 +31,10 @@ Transcode: no HTTP rule, follows the Connect path.
 Codecs: protobuf binary. Described by [`descriptorGetEntry`](#descriptorGetEntry).
 
 -}
-getEntry : Ledger.V1.GetEntryRequest -> Rpc.Call Rpc.Proto Ledger.V1.GetEntryRequest Ledger.V1.Entry
+getEntry : Ledger.V1.GetEntryRequest -> Rpc.Call Rpc.Binary Ledger.V1.GetEntryRequest Ledger.V1.Entry
 getEntry =
     Rpc.call
-        (Proto.Method.initProto "ledger.v1.LedgerService"
+        (Proto.Method.initBinary "ledger.v1.LedgerService"
             "GetEntry"
             Ledger.V1.encodeGetEntryRequestBytes
             Ledger.V1.decodeEntryBytes

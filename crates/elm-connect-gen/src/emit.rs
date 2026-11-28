@@ -165,9 +165,9 @@
 //! - Each message, enum, oneof and recursion wrapper also gets protobuf
 //!   binary codecs, in two sections after the decoders ([`binary`]),
 //!   whatever the `wire` option, which decides only which halves the
-//!   methods carry: `Proto.Method.initJson` (JSON), `initProto` (binary;
+//!   methods carry: `Proto.Method.initJson` (JSON), `initBinary` (binary;
 //!   no routes, which take JSON) or `init` (both). A call's type carries
-//!   its codec: `Rpc.Call Rpc.Json`, `Rpc.Call Rpc.Proto`, or free in it
+//!   its codec: `Rpc.Call Rpc.Json`, `Rpc.Call Rpc.Binary`, or free in it
 //!   under `wire=both`.
 //! - An `Any` holds its message's binary, and its proto3
 //!   JSON goes through a registry ([`crate::ir::AnyReach`]): each message,

@@ -1,4 +1,4 @@
-- Connect's proto codec: `Rpc.Protocol.connectProto` sends a call's
+- Connect's binary codec: `Rpc.Protocol.connectProto` sends a call's
   request as protobuf binary, `application/proto` (a GET as
   `connect=v1&base64=1&encoding=proto&message=…`), and reads a
   successful answer as binary; error answers stay JSON. It sends the
@@ -7,7 +7,7 @@
   Transcoding stays JSON. A program whose methods have no binary codecs
   carries none of the binary path.
 - `Rpc.responseBytes` reads an answer elm/http read as bytes, for a
-  binary call sent through `Rpc.request` with an `Rpc.Client Rpc.Proto`;
+  binary call sent through `Rpc.request` with an `Rpc.Client Rpc.Binary`;
   `Rpc.response` keeps reading text.
 - A call of a method without binary codecs over a binary protocol, or
   of one with binary codecs alone over JSON, is a compile error where it
