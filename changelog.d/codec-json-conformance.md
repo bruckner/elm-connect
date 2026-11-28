@@ -21,8 +21,7 @@
   `()`, decoded from `null`, `"NULL_VALUE"` or `0` and written `null`
   (a singular field, `optional` too, has no presence and is left out),
   and a oneof member of it has no argument and is set by `null`. The
-  runtime adds `Proto.Json.nullValue`, `encodeNullValue`,
-  `nullValueMember`, `nullValueMemberEither` and
+  runtime adds `Proto.Json.nullValue`, `encodeNullValue` and
   `Proto.WellKnown.nullValue`.
 - A `string` field, a `StringValue` and a `string` map key holding a
   UTF-16 surrogate without its pair (`"\udc00"`, which JavaScript's JSON

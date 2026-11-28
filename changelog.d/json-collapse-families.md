@@ -10,3 +10,11 @@
   reads. Generated code reads a singular `google.protobuf.Value` field
   with it, as `Proto.Json.messageNullField "payload"
   (Proto.Json.nestedValue depth)`.
+- New in `Proto.Json`: `nullMember` and `nullMemberEither`, a oneof
+  member for which `null` is a value: present when its key holds any
+  value, `null` included, which is given to its decoder. Generated code
+  reads a member of `google.protobuf.Value` with it, as
+  `Proto.Json.nullMember "payload" (Json.Decode.map Ctor
+  (Proto.Json.nestedValue depth))`, and one of
+  `google.protobuf.NullValue` as `Proto.Json.nullMember "none"
+  (Json.Decode.map (\() -> Ctor) Proto.Json.nullValue)`.

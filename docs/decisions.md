@@ -2922,6 +2922,13 @@ writes the general form.
   `messageNullFieldEither`, a field for which `null` is a value, given
   a decoder: generated code writes `messageNullField "payload"
   (nestedValue depth)`.
+- `nestedValueMember`, `nestedValueMemberEither`, `nullValueMember` and
+  `nullValueMemberEither` were each a member for which `null` is set,
+  with `Json.Decode.map constructor (nestedValue depth)` or
+  `Json.Decode.map (\() -> constructor) nullValue` built inside. They
+  are one pair, `nullMember` and `nullMemberEither`, given the decoder,
+  which generated code writes where the member list is built, as the
+  helpers built it.
 
 Where: design §3.4, §3.5, §3.6.
 

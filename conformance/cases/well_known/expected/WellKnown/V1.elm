@@ -376,10 +376,10 @@ decodeNestedEventWhen depth =
         EventWhenUnset
         [ Proto.Json.member "at" (Json.Decode.map EventWhenAt Proto.Json.timestamp)
         , Proto.Json.member "after" (Json.Decode.map EventWhenAfter Proto.Json.duration)
-        , Proto.Json.nestedValueMember "whenever" depth EventWhenWhenever
+        , Proto.Json.nullMember "whenever" (Json.Decode.map EventWhenWhenever (Proto.Json.nestedValue depth))
         , Proto.Json.member "schedule" (Json.Decode.map EventWhenSchedule (Proto.Json.nestedStruct depth))
         , Proto.Json.member "dates" (Json.Decode.map EventWhenDates (Proto.Json.nestedListValue depth))
-        , Proto.Json.nullValueMember "never" EventWhenNever
+        , Proto.Json.nullMember "never" (Json.Decode.map (\() -> EventWhenNever) Proto.Json.nullValue)
         ]
 
 

@@ -522,8 +522,8 @@ decodeEventKind =
         [ Proto.Json.member "text" (Json.Decode.map EventKindText Json.Decode.string)
         , Proto.Json.memberEither "titleChanged" "title_changed" (Json.Decode.map EventKindTitleChanged Json.Decode.string)
         , Proto.Json.memberEither "clearedAll" "cleared_all" (Json.Decode.map (\() -> EventKindCleared) Proto.Json.empty)
-        , Proto.Json.nestedValueMember "payload" 0 EventKindPayload
-        , Proto.Json.nullValueMemberEither "nothingAtAll" "nothing_at_all" EventKindNothing
+        , Proto.Json.nullMember "payload" (Json.Decode.map EventKindPayload (Proto.Json.nestedValue 0))
+        , Proto.Json.nullMemberEither "nothingAtAll" "nothing_at_all" (Json.Decode.map (\() -> EventKindNothing) Proto.Json.nullValue)
         ]
 
 
@@ -580,23 +580,23 @@ oneofTests =
             \_ -> decodes decodeEvent """{"clearedAll":null}""" (Event "" EventKindUnset)
         , test "an Empty member fails on a value that is not an object" <|
             \_ -> fails decodeEvent """{"clearedAll":1}"""
-        , test "nestedValueMember holds any JSON" <|
+        , test "a Value nullMember holds any JSON" <|
             \_ -> decodes decodeEvent """{"payload":[1]}""" (Event "" (EventKindPayload (Proto.Value.ValueList [ Proto.Value.ValueNumber 1 ])))
-        , test "nestedValueMember reads null as set, holding null" <|
+        , test "a Value nullMember reads null as set, holding null" <|
             \_ -> decodes decodeEvent """{"payload":null}""" (Event "" (EventKindPayload Proto.Value.ValueNull))
-        , test "a null nestedValueMember counts against another member" <|
+        , test "a null Value nullMember counts against another member" <|
             \_ ->
                 failsWith decodeEvent
                     """{"payload":null,"text":"t"}"""
                     "Expecting at most one member of oneof \"kind\", but got \"text\" and \"payload\""
-        , test "nullValueMember reads null, the name and the number as set" <|
+        , test "a NullValue nullMember reads null, the name and the number as set" <|
             \_ ->
                 [ """{"nothingAtAll":null}""", """{"nothing_at_all":"NULL_VALUE"}""", """{"nothingAtAll":0}""" ]
                     |> List.map (Json.Decode.decodeString decodeEvent)
                     |> Expect.equal (List.repeat 3 (Ok (Event "" EventKindNothing)))
-        , test "nullValueMember fails on another value" <|
+        , test "a NullValue nullMember fails on another value" <|
             \_ -> failsOnEach decodeEvent [ """{"nothingAtAll":"NOTHING"}""", """{"nothingAtAll":{}}""" ]
-        , test "a null nullValueMember counts against another member" <|
+        , test "a null NullValue nullMember counts against another member" <|
             \_ ->
                 failsWith decodeEvent
                     """{"nothingAtAll":null,"text":"t"}"""

@@ -157,12 +157,13 @@ impl Emitter {
     /// constructor; a member that closes a cycle decodes through
     /// `Json.Decode.lazy`. A member of `google.protobuf.Empty`, whose
     /// constructor carries nothing, maps `Proto.Json.empty` onto it, so it
-    /// is set when its key holds an object. A member of `google.protobuf.Value` is a
-    /// `nestedValueMember` step given the depth and its constructor, for
-    /// which `null` is set, as protobuf's parsers read it; its message nests,
-    /// so the oneof's decoders always take the depth. A member of
-    /// `google.protobuf.NullValue` is a `nullValueMember` step, for which
-    /// `null` is set likewise. A oneof
+    /// is set when its key holds an object. A member of
+    /// `google.protobuf.Value` is a `nullMember` step (`nullMemberEither`),
+    /// for which `null` is set, as protobuf's parsers read it, mapping
+    /// `Proto.Json.nestedValue depth` onto its constructor; its message
+    /// nests, so the oneof's decoders always take the depth. A member of
+    /// `google.protobuf.NullValue` is a `nullMember` step mapping
+    /// `Proto.Json.nullValue`, for which `null` is set likewise. A oneof
     /// with a member that reaches an `Any` gets
     /// `decodeFooKindWith`, taking the registry.
     /// For a oneof of a message whose codecs take the depth (`counts`)
@@ -183,7 +184,6 @@ impl Emitter {
             .iter()
             .map(|&(variant, value)| {
                 let ctor = var(variant.elm_ctor.clone());
-                let mut args = Vec::new();
                 let (helper, arg) = match value {
                     ValueShape::Zeroed(Zeroed::Empty) => {
                         let map = self.reference((JSON_DECODE, "map"));
@@ -191,13 +191,18 @@ impl Emitter {
                         ("member", apply(map, [lambda([Pattern::Unit], ctor), empty]))
                     }
                     ValueShape::Zeroed(Zeroed::Json) if deep.is_some() => {
-                        args.push(var(DEPTH));
-                        ("nestedValueMember", ctor)
+                        let map = self.reference((JSON_DECODE, "map"));
+                        let nested = self.reference((PROTO_JSON, "nestedValue"));
+                        ("nullMember", apply(map, [ctor, apply(nested, [var(DEPTH)])]))
                     }
                     ValueShape::Zeroed(Zeroed::Json) => unreachable!(
                         "a message with a google.protobuf.Value member nests, so its oneof's decoder takes the depth"
                     ),
-                    ValueShape::Zeroed(Zeroed::Null) => ("nullValueMember", ctor),
+                    ValueShape::Zeroed(Zeroed::Null) => {
+                        let map = self.reference((JSON_DECODE, "map"));
+                        let null = self.reference((PROTO_JSON, "nullValue"));
+                        ("nullMember", apply(map, [lambda([Pattern::Unit], ctor), null]))
+                    }
                     _ => {
                         self.deep_value = variant.cyclic;
                         let mut decode = self.value_decoder(value);
@@ -223,7 +228,7 @@ impl Emitter {
                     format!("{helper}Either")
                 };
                 let step = self.reference((PROTO_JSON, &helper));
-                apply(step, names.into_iter().chain(args).chain([arg]))
+                apply(step, names.into_iter().chain([arg]))
             })
             .collect();
         self.deep = None;

@@ -791,7 +791,7 @@ rpc shared call =
     against one budget with the `Any`s and the arrays and objects of the
     `Struct`, `Value` and `ListValue` it holds: those count on from its
     depth (`Proto.Json.nestedStruct depth`, `nestedListValue`,
-    `nestedValue`, `nestedValueMember`, `nestedAnyWith`). Its codecs take the depth: `decodeNode =
+    `nestedValue`, `nestedAnyWith`). Its codecs take the depth: `decodeNode =
     decodeNestedNode 1`, and so for every message that nests. A message
     that does not nest holds nothing a read could count, and generates
     what it would in a schema with nothing that nests (decisions: "A
@@ -1058,8 +1058,7 @@ just the form encoders write.
   "displayName" or "display_name", but got both`), even when one of them
   is `null`: protobuf's own parsers (protobuf-go's protojson) reject it
   as a duplicate field. The same holds for every two-name
-  helper (`memberEither`,
-  `nestedValueMemberEither`, `nullValueMemberEither`,
+  helper (`memberEither`, `nullMemberEither`,
   `messageNullFieldEither`). The
   two names are equal only for one-word fields without an explicit
   `json_name`, so in practice most multi-word fields use `messageFieldEither`. Two names are the most there can
@@ -1309,8 +1308,9 @@ In detail:
   `List ()` written as `null`s, as a map value `Dict K ()`. A oneof
   member of it is a constructor without an argument, written `null`,
   and `null` sets it, as protojson reads it
-  (`Proto.Json.nullValueMember`, the one member besides a `Value`'s for
-  which `null` is not absent). The codecs are `Proto.Json.nullValue`
+  (a `Proto.Json.nullMember` mapping `Proto.Json.nullValue` onto the
+  constructor; `nullMember` is the member for which `null` is not
+  absent, which a `Value`'s uses too). The codecs are `Proto.Json.nullValue`
   and `encodeNullValue`; a descriptor names it through
   `Proto.WellKnown.nullValue : Proto.Enum.Enum ()`, whose `toName` is
   `""` since its encoder writes no string. Why `()` and not a generated
@@ -1339,7 +1339,7 @@ In detail:
   `Value` held by a message, which then nests, at the message's depth,
   as `Proto.Value.decoder` reads one from the top:
   `Proto.Json.nestedValue depth`, through `Proto.Json.messageNullField`
-  for a singular field, through `nestedValueMember` for a oneof member,
+  for a singular field, through `Proto.Json.nullMember` for a oneof member,
   and as any other value in a list or map.
   (decisions.md: "A union for `google.protobuf.Value`, one depth budget".)
 - The conversion counts depth as it goes: each array and object is a
@@ -1542,7 +1542,8 @@ In detail:
     a member present as `null` reads as absent. The exception, as in
     protojson, is a member of `google.protobuf.Value`: `null` is a
     value of it, so a member present as `null` is set and holds
-    `ValueNull` (`Proto.Json.nestedValueMember`).
+    `ValueNull` (`Proto.Json.nullMember`, given `Json.Decode.map
+    NoteEventKindPayload (Proto.Json.nestedValue depth)`).
   - No member present decodes as the unset constructor.
   - A member present with a value its decoder rejects (`{"title": 1}`
     for a string member) fails the message, as a malformed plain field
