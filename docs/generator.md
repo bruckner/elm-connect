@@ -219,15 +219,15 @@ would have JSON codecs of the same names, which is
 
 ## JSON encoders
 
-Every message has one JSON encoder, which `Proto.Json.encode` (or
+Every message has one JSON encoder, which `Proto.Json.Encode.encode` (or
 `encodeWith`, with a registry) writes. Its type says whether the write
 can refuse the value:
 
-- `encodeGetNoteRequest : GetNoteRequest -> Proto.Json.Encoder x` for a
+- `encodeGetNoteRequest : GetNoteRequest -> Proto.Json.Encode.Encoder x` for a
   message that holds nothing a write can refuse. It works for any `x`,
-  so `Proto.Json.encodeTotal (encodeGetNoteRequest request)` gives its
+  so `Proto.Json.Encode.encodeTotal (encodeGetNoteRequest request)` gives its
   `Json.Encode.Value` with no `Result`.
-- `encodeNote : Note -> Proto.Json.Encoder Proto.Error.Error` for a
+- `encodeNote : Note -> Proto.Json.Encode.Encoder Proto.Error.Error` for a
   message that holds, at any depth and across packages, a value proto3
   JSON may have no form for (a `Timestamp`, `Duration`, `FieldMask`,
   `Struct`, `Value` or `ListValue`) or an `Any`. A write refuses a
@@ -242,7 +242,7 @@ of plain fields and of fields that can be refused, so both write the
 same text for the same value (the `well_known` corpus case):
 
 ```elm conformance/cases/well_known/expected/WellKnown/V1.elm excerpt
-encodeEvent : Event -> Proto.Json.Encoder Proto.Error.Error
+encodeEvent : Event -> Proto.Json.Encode.Encoder Proto.Error.Error
 ```
 
 A message that gains a refusable field, at any depth, changes its
@@ -260,7 +260,7 @@ through a `Proto.Registry.Registry`: every message, oneof and recursion
 wrapper that reaches an `Any`, through its fields at any depth and
 across packages, has a JSON decoder taking one, `decodeNoteWith :
 Proto.Registry.Registry -> Json.Decode.Decoder Note`, and no
-`decodeNote`; its encoder is written with `Proto.Json.encodeWith
+`decodeNote`; its encoder is written with `Proto.Json.Encode.encodeWith
 registry`. A type named for one of them with `With` at the end
 (`NoteWith`) is `naming::codec_collision`.
 

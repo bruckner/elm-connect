@@ -5,7 +5,7 @@
   while the decoders have no limit (protobuf implementations stop at
   100 levels). A `case` on a `Reason` must cover both. `Proto.Error.Error`, `Reason`
   and the `Binary` record are frozen within a major.
-- `Proto.Any.toJson`, and so `Proto.Json.writeAny` and every
+- `Proto.Any.toJson`, and so `Proto.Json.Encode.any` and every
   request holding an `Any`, writes an `Any` held as JSON alone through
   the registry given, as it does one holding binary: a registry with an
   entry for its type reads the JSON as that message first and writes it

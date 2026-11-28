@@ -5,7 +5,7 @@
   unpacked as and the type inside, or the `BadBinary` of binary that is
   not the message).
   `Proto.Any.toJson` and a JSON write of a message holding an `Any`
-  (`Proto.Json.encodeWith`) give `Result Proto.Error.Error Value`: `UnregisteredType url`, or the
+  (`Proto.Json.Encode.encodeWith`) give `Result Proto.Error.Error Value`: `UnregisteredType url`, or the
   `BadBinary` of the `Any` that failed, at any depth, named by its own
   type, where the old `UnwritableAny` named the outermost `Any`.
 - Breaking: a request `Any` that cannot be written fails with its

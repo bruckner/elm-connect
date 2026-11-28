@@ -523,7 +523,10 @@ request bodies now hold only what the message holds. Where: design
 not valid is refused (Well-known types: validity by source); since
 2026-11-26 a `Timestamp` too. The encoder's type, named from a module
 of its own, `Proto.Json.Encoder`, at first, is defined in `Proto.Json`
-since 2026-11-27 (`Proto.Json` below `Proto.Any`).*
+since 2026-11-27 (`Proto.Json` below `Proto.Any`), and in
+`Proto.Json.Encode` since 2026-11-28, where `writeObject` and the
+`write` helpers are `object` and the checked encoders (`Proto.Json`
+split by direction).*
 
 A read accepts whatever the wire admits; a JSON write refuses a value
 proto3 JSON has no form for, as protobuf's own JSON writers do: a
@@ -1198,8 +1201,8 @@ modifier and accessor, a minor. Where: design §3.1, §3.9, §5.1, §8.3.
 
 ### The runtime's module rules
 
-*2026-10-16; rules 4 and 5 2026-10-17; rule 6 2026-10-19; rule 7
-2026-10-21.*
+*2026-10-16; rules 4 and 5 2026-10-17; rule 6 2026-10-19, restated
+2026-11-28 (`Proto.Json` split by direction); rule 7 2026-10-21.*
 
 The seven rules the runtime's modules follow: a module per proto
 concept, builders named for what they build, union constructors
@@ -1227,7 +1230,9 @@ vendored rather than installed. Where: design §5.2.
 ### `Any` in the runtime
 
 *2026-10-13; its payload made binary alone on 2026-11-07 (Binary is
-the Any's canonical form).*
+the Any's canonical form); its JSON codecs are
+`Proto.Json.Decode.anyWith` and `Proto.Json.Encode.any` since
+2026-11-28 (`Proto.Json` split by direction).*
 
 `google.protobuf.Any` is the opaque `Proto.Any.Any`: it packs and
 unpacks through the typed values, describes its type through a
@@ -2929,7 +2934,10 @@ forms at depth 0. Where: design §3.1, §3.4, §3.5, §3.6.
 
 ### Specialised `Proto.Json` names collapsed
 
-*2026-11-27.*
+*2026-11-27. The names below are in `Proto.Json.Encode` and
+`Proto.Json.Decode` since 2026-11-28, `totalOptionalField` and
+`totalRepeatedField` as `totalOptional` and `totalRepeated`
+(`Proto.Json` split by direction).*
 
 Where a specialised `Proto.Json` name's body was already the general
 form applied to fixed arguments, the name is gone and generated code
@@ -2993,7 +3001,8 @@ Where: design §3.4, §3.5, §3.6.
 
 ### `Proto.Json` below `Proto.Any`
 
-*2026-11-27.*
+*2026-11-27. The encoder's module is `Proto.Json.Encode` since
+2026-11-28 (`Proto.Json` split by direction).*
 
 `Proto.Json` imports neither `Proto.Any` nor anything above it, so
 `Proto.Message` and `Proto.Method`, whose builders take a JSON encoder,
@@ -3023,6 +3032,55 @@ where they named the internal decoder type. No program pays: built with
 Eliza, the notes example and four one-call clients link the same code,
 renamed, less a forwarding definition or a few, and are the same size or
 up to 32 bytes smaller gzipped. Where: design §3.1.
+
+### `Proto.Json` split by direction
+
+*2026-11-28.*
+
+`Proto.Json` is two modules, `Proto.Json.Encode` and
+`Proto.Json.Decode`, as elm/json splits `Json.Encode` and
+`Json.Decode`, and no module `Proto.Json` remains. A decoder and its
+encoder share a noun, as elm/json's do (`Proto.Json.Decode.timestamp`,
+`Proto.Json.Encode.timestamp`), where the encoder was `write` or
+`encode` and the noun. Names may match elm/json's (`object`, `dict`,
+`float`), since every reference is qualified; rule 6 had forbidden
+that, which bent names (`objectOfFields`, `writeObject`) and gave the
+encoders three families whose suffix misled: the `Field` suffix sat on
+the helpers that do not give the type called `Field`. Now a checked
+encoder, which can refuse and gives a `Field x` or an `Encoder x`, is a
+bare noun (`object`, `optional`, `any`); a plain field encoder, giving
+`Maybe Json.Encode.Value`, begins with `plain` or `implicit`
+(`plainObject`, `plainRepeated`, `implicitDouble`); one that unwraps a
+total message encoder begins with `total`. The decoders keep their
+names but three: `float` is `double` and `float32` is `float`, as
+`Proto.Binary` names them, and `deeperWith` is `deeperLazy`: it builds
+its decoder as the value is read and takes no registry, which `With`
+names elsewhere (`anyWith`). Both modules write elm/json's types qualified,
+`Json.Encode.Value` and `Json.Decode.Decoder`, since a bare `Value`
+reads as `Proto.Value.Value` beside it.
+
+The split costs one exposed module: the writer and the module that held
+only the encoder's type alias had already folded into `Proto.Json`
+(`Proto.Json` below `Proto.Any`), so the count of exposed JSON modules
+stays at two. The two directions share one helper, the list of
+well-known types whose `Any` JSON holds their form under `"value"`,
+which moved to `Proto.Internal.Any` beside `nameOf`, the one function
+it calls; no new internal module. `Proto.Message` and `Proto.Method`
+import `Proto.Json.Encode` alone. Generated code writes
+`Proto.Json.Encode.x` and `Proto.Json.Decode.x` in full; the emitter
+names each module in one constant, so an import alias can be added in
+one place if it is wanted later.
+
+Two other shapes were considered. A split by audience, an application's
+module with the runners and a generated code's module with the
+helpers, was rejected because the names an application calls
+(`encode`, `encodeTotal`, `succeed`, `Encoder`) are also the ones
+generated code calls most. A three-way split, encode, decode and a
+residual `Proto.Json` for what both use, was rejected because the
+residual would have needed a shared internal module of its own for one
+helper. No program pays for the split: Elm links only what a program
+calls, and the programs measured link the same definitions, renamed.
+Where: design §3.1.
 
 ### Binary codecs, faster within elm/bytes
 

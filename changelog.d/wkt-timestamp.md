@@ -3,7 +3,7 @@
   which dropped every digit past the millisecond. Generated fields are
   `Maybe Proto.Timestamp.Timestamp` (bare in a list, map or oneof),
   written qualified, and generated modules no longer import `Time`
-  (regenerate). `Proto.Json.timestamp`, `Proto.Json.writeTimestamp`,
+  (regenerate). `Proto.Json.Decode.timestamp`, `Proto.Json.Encode.timestamp`,
   `Proto.Binary.timestamp` and `Proto.WellKnown.timestamp` take the new
   type. The protobuf
   conformance suite's fourteen sub-millisecond `Timestamp` cases now

@@ -9,8 +9,8 @@
   `UnregisteredType` (with the type URL) and `UnwritableAny` (an `Any`
   inside the message cannot be written), each documented with what to do
   about it. `==` on `Any` compares content.
-- Breaking: `Proto.Json.anyWith : Registry -> Decoder Any` and
-  `writeAny`, which a JSON write runs with its registry, replace `any`
+- Breaking: `Proto.Json.Decode.anyWith : Registry -> Decoder Any` and
+  `Proto.Json.Encode.any`, which a JSON write runs with its registry, replace `any`
   and `encodeAny`. Both are strict, as protojson is: an `"@type"`
   the registry lacks fails the read, naming the URL, and an unregistered
   type fails the write; there is no `{"type", "value"}` fallback.

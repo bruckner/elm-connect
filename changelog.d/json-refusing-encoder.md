@@ -11,37 +11,37 @@
   `Duration` past protobuf's range is still
   clamped when it is built, so it is never refused.
 - Breaking: every message has one JSON encoder, `encodeNote : Note ->
-  Proto.Json.Encoder x` when nothing it holds can be refused and `Note ->
-  Proto.Json.Encoder Proto.Error.Error` otherwise. `Proto.Json.encode`
+  Proto.Json.Encode.Encoder x` when nothing it holds can be refused and `Note ->
+  Proto.Json.Encode.Encoder Proto.Error.Error` otherwise. `Proto.Json.Encode.encode`
   writes it (`Result Proto.Error.Error Json.Encode.Value`, an `Any`
-  through an empty registry), `Proto.Json.encodeWith registry` writes one
-  holding an `Any`, and `Proto.Json.encodeTotal : Encoder Never ->
+  through an empty registry), `Proto.Json.Encode.encodeWith registry` writes one
+  holding an `Any`, and `Proto.Json.Encode.encodeTotal : Encoder Never ->
   Json.Encode.Value` writes one that cannot refuse, with no `Result`; the
   compiler rejects `encodeTotal` of an encoder that can refuse.
-  `encodeNoteWith` is gone: `Proto.Json.encodeWith registry (encodeNote
+  `encodeNoteWith` is gone: `Proto.Json.Encode.encodeWith registry (encodeNote
   note)` replaces it. A message that gains a refusable field, at any
   depth, changes its encoder's type, and only `encodeTotal` call sites
   break.
 - Breaking: `Proto.Message.init` and `initWith`, and `Proto.Method.init`
-  and `initJson`, take the request's encoder as `a -> Proto.Json.Encoder
+  and `initJson`, take the request's encoder as `a -> Proto.Json.Encode.Encoder
   Proto.Error.Error`: the generated `encodeNote` as it is, or
-  `Proto.Json.succeed << f` for a hand-written `f : a -> Value`, in place
+  `Proto.Json.Encode.succeed << f` for a hand-written `f : a -> Value`, in place
   of `\_ -> Ok << f`.
 - Breaking: removed from `Proto.Json`: `encodeAnyWith` and
-  `encodeNestedAnyWith` (`writeAny`, run by `encode` or `encodeWith`;
-  `Proto.Any.toJson` gives an `Any`'s message JSON), `registryDeeper`
-  (`writeDeeper`), the `try` helpers `tryObjectOfFields`,
-  `tryOptionalField`, `tryRepeatedField`, `tryDictField` and
-  `tryBoolMapField` (`writeObject` and the `write` helpers), and the
-  unchecked `encodeTimestamp`, `encodeDuration`, `encodeFieldMask`,
-  `encodeStruct`, `encodeValue` and `encodeListValue` (`writeTimestamp`
-  and the other `write` helpers; `Proto.Value.toJson` writes a `Value`
-  unchecked). New in `Proto.Json`, for generated code: `Encoder`, `Field`,
-  `Fields`, `succeed`, `writeObject`, `plainFields`, `checkedFields`,
-  `writeOptional`, `writeRepeated`, `writeDict`, `writeBoolMap`,
-  `writeMember`, `writeDeeper`, `writeTimestamp`, `writeDuration`,
-  `writeFieldMask`, `writeStruct`, `writeListValue`, `writeValue`,
-  `writeAny`, `totalOptionalField` and `totalRepeatedField`; and
+  `encodeNestedAnyWith` (`Proto.Json.Encode.any`, run by `encode` or
+  `encodeWith`; `Proto.Any.toJson` gives an `Any`'s message JSON),
+  `registryDeeper` (`Proto.Json.Encode.deeper`), the `try` helpers
+  `tryObjectOfFields`, `tryOptionalField`, `tryRepeatedField`,
+  `tryDictField` and `tryBoolMapField` (`Proto.Json.Encode.object` and
+  the checked field encoders), and the unchecked `encodeTimestamp`,
+  `encodeDuration`, `encodeFieldMask`, `encodeStruct`, `encodeValue` and
+  `encodeListValue` (`Proto.Json.Encode.timestamp` and the other checked
+  value encoders; `Proto.Value.toJson` writes a `Value` unchecked). New
+  in `Proto.Json.Encode`, for generated code: `Encoder`, `Field`,
+  `Fields`, `succeed`, `object`, `plainFields`, `checkedFields`,
+  `optional`, `repeated`, `dict`, `boolMap`, `member`, `deeper`,
+  `timestamp`, `duration`, `fieldMask`, `struct`, `listValue`, `value`,
+  `any`, `totalOptional` and `totalRepeated`; and
   `Proto.Route.fieldMaskText`,
   with which a route prints a mask in its path or query.
 - Breaking: a call over JSON writes its request's JSON once before it
