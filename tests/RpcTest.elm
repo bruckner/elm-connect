@@ -1663,7 +1663,8 @@ encodings =
         -- A request whose JSON says which registry wrote it, in the field
         -- its path binds and the field its body holds alike. No public
         -- encoder's JSON depends on the registry but by an `Any`, so the
-        -- method's JSON half is given it directly.
+        -- method's JSON half is given it directly, replacing the one its
+        -- placeholder encoder would give.
         taggedJson (Proto.Internal.Method.Method m) =
             Proto.Internal.Method.Method { m | json = { encode = taggedWith, decoder = m.json.decoder } }
 
@@ -1682,7 +1683,7 @@ encodings =
             Rpc.call
                 (Proto.Method.init "notes.v1.Notes"
                     "UpdateNote"
-                    (\_ -> Debug.todo "the method's JSON half is replaced")
+                    (\_ -> Proto.Json.succeed Json.Encode.null)
                     (\_ -> decodeTitle)
                     (\_ -> Bytes.Encode.sequence [])
                     decodeTitleBinary
