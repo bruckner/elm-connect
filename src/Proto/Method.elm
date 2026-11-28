@@ -64,8 +64,7 @@ import Proto.Codec
 import Proto.Error
 import Proto.Http exposing (Binding)
 import Proto.Internal.Method as Internal
-import Proto.Internal.Writer as Writer
-import Proto.Json.Encoder
+import Proto.Json
 import Proto.Registry exposing (Registry)
 import Proto.Route exposing (Route)
 
@@ -106,13 +105,13 @@ until [`withRoutes`](#withRoutes) or [`withJsonRoutes`](#withJsonRoutes) gives
 them, so that transcoding sends it over the implicit route.
 
 -}
-initJson : String -> String -> (req -> Proto.Json.Encoder.Encoder Proto.Error.Error) -> (Registry -> Json.Decode.Decoder res) -> Method Proto.Codec.Json req res
+initJson : String -> String -> (req -> Proto.Json.Encoder Proto.Error.Error) -> (Registry -> Json.Decode.Decoder res) -> Method Proto.Codec.Json req res
 initJson serviceName methodName encode decoder =
     Internal.Method
         { service = serviceName
         , name = methodName
         , idempotency = IdempotencyUnknown
-        , json = { encode = \registry request -> Writer.run registry (encode request), decoder = decoder }
+        , json = { encode = \registry request -> Proto.Json.encodeWith registry (encode request), decoder = decoder }
         , binary = Internal.noBinary
         , routes = []
         }
@@ -155,13 +154,13 @@ sent over JSON: it fails as a [`BadCall`](Rpc-Error#Cause) whose message
 describes the problem.
 
 -}
-init : String -> String -> (req -> Proto.Json.Encoder.Encoder Proto.Error.Error) -> (Registry -> Json.Decode.Decoder res) -> (req -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder res -> Method codec req res
+init : String -> String -> (req -> Proto.Json.Encoder Proto.Error.Error) -> (Registry -> Json.Decode.Decoder res) -> (req -> Bytes.Encode.Encoder) -> Proto.Binary.Decoder res -> Method codec req res
 init serviceName methodName encode decoder encodeBinary binaryDecoder =
     Internal.Method
         { service = serviceName
         , name = methodName
         , idempotency = IdempotencyUnknown
-        , json = { encode = \registry request -> Writer.run registry (encode request), decoder = decoder }
+        , json = { encode = \registry request -> Proto.Json.encodeWith registry (encode request), decoder = decoder }
         , binary = binaryHalf encodeBinary binaryDecoder
         , routes = []
         }

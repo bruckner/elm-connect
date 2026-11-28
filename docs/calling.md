@@ -36,7 +36,6 @@ calling:
 | `Rpc.Error` | why a call failed: its kind, code, message and details |
 | `Rpc.Code` | the codes an RPC fails with |
 | `Proto.Json` | the proto3 JSON helpers generated codecs call, and writing a message's JSON yourself ([below](#writing-json-yourself)) |
-| `Proto.Json.Encoder` | the encoder's type, which `Proto.Json` names `Proto.Json.Encoder` |
 | `Proto.Binary` | the protobuf binary wire format over elm/bytes, for binary codecs |
 | `Proto.Unknown` | the fields read from a protobuf binary whose field numbers or types are unrecognized, kept under `unknown_fields=keep` ([generator.md](generator.md#options)) |
 | `Proto.Timestamp`, `Proto.Duration`, `Proto.Value`, `Proto.Int64`, `Proto.Bytes` | the well-known types' Elm forms (`Proto.Value` for `Value`, `Struct` and `ListValue`), and conversions for 64-bit integers and bytes |

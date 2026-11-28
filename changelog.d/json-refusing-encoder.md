@@ -65,9 +65,6 @@
   `google.protobuf.Value` takes its routes as functions of the request
   and its JSON (`Proto.Method.withJsonRoutes`), read by the new
   `Proto.Route.jsonValueField`, which keeps a `NullValue` as `null`.
-- `Proto.Json.Encoder` is `Proto.Json.Encoder.Encoder`, in a module of its
-  own, so that `Proto.Message.init` and `initWith` and `Proto.Method.init`
-  and `initJson` show a public name in their signatures.
 - An `Any` written alone, as a method whose request is an `Any` writes
   it, counts 100 nested `Any`s, as a read of one does; a message's `Any`
   fields count from the message, as before.

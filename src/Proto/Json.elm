@@ -244,7 +244,6 @@ import Proto.Internal.Registry as InternalRegistry
 import Proto.Internal.Timestamp as InternalTimestamp
 import Proto.Internal.ValueJson as ValueJson
 import Proto.Internal.Writer as Writer
-import Proto.Json.Encoder
 import Proto.Registry exposing (Registry)
 import Proto.Timestamp exposing (Timestamp)
 import Proto.Value
@@ -2654,7 +2653,7 @@ with `x` as `Never`; the others are `Encoder Proto.Error.Error`.
 
 -}
 type alias Encoder x =
-    Proto.Json.Encoder.Encoder x
+    Writer.Encoder x
 
 
 {-| Write an encoder's JSON, or refuse the first value it holds that proto3
