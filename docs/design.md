@@ -2841,7 +2841,7 @@ the protocols belong in it too.
 ```elm
 -- Rpc.Protocol: opaque, indexed by codec (Proto.Codec's tags, Rpc.Json and Rpc.Binary)
 connect : Protocol Json                   -- Connect, proto3 JSON, every call POSTed
-connectProto : Protocol Binary            -- Connect, protobuf binary (application/proto)
+connectBinary : Protocol Binary           -- Connect, protobuf binary (application/proto)
 transcode : Protocol Json                 -- google.api.http REST; the implicit route without a rule
 grpcWeb : Protocol Binary                 -- gRPC-Web, unary, protobuf binary (application/grpc-web+proto)
 withConnectGet : Protocol codec -> Protocol codec      -- Connect: NO_SIDE_EFFECTS as GET; others unchanged
@@ -2980,7 +2980,7 @@ appears, each a field of the opaque record and a minor (roadmap).
   characters, for servers and proxies that cap URL length. `name` gives
   the protocol for traces and logs.
 - `withReadMaxBytes n` refuses a successful answer whose body is longer
-  than `n` bytes of UTF-8 (of protobuf binary over `connectProto`; over
+  than `n` bytes of UTF-8 (of protobuf binary over `connectBinary`; over
   `grpcWeb`, its response message, not the frame around it),
   before decoding it, on every protocol:
   connect-go's `WithReadMaxBytes` (4 MiB by default, 0 for none) and
@@ -3477,14 +3477,14 @@ all 40 passing.
 
 #### The binary codec
 
-`Rpc.Protocol.connectProto` is Connect's binary codec, a `Protocol
+`Rpc.Protocol.connectBinary` is Connect's binary codec, a `Protocol
 Proto`; `connect`, a `Protocol Json`, is everything above. Run by the
 live suite against connect-go (`cases/proto.json`: every method, the
 five ways of sending, errors with details, both size limits, GET), and
 by the Connect conformance suite's unary test cases with the proto
 codec (§7).
 
-- **The codec is the protocol's.** `connectProto`'s wire is `Binary`,
+- **The codec is the protocol's.** `connectBinary`'s wire is `Binary`,
   so only a call of a method with binary codecs (`wire=proto` or
   `wire=both`) can be sent over it, and the compiler says so of any
   other (§5.2). `transcode` is a `Protocol Json`: transcoding is JSON by
@@ -3509,7 +3509,7 @@ codec (§7).
   `bodyBase64`.
 - **The binary code lives in the protocol and the method.** The method
   holds its binary half as its request's encoder and a reading of its
-  response (§4); `connectProto`'s wire holds the functions that run them
+  response (§4); `connectBinary`'s wire holds the functions that run them
   (`Bytes.Encode.encode` of the request, the reading of a binary answer,
   `width` for the limits, base64 for a GET and a trace).
   Elm's dead-code elimination is by reference, so a program that names
@@ -3728,7 +3728,7 @@ conformance suite's gRPC-Web client cases (§7).
   and the rest `Internal` (decisions.md: A refused answer carries its
   code).
 - **Limits.** `withReadMaxBytes` measures the response message, not its
-  frame, so a limit means the same as over `connectProto`;
+  frame, so a limit means the same as over `connectBinary`;
   `withWriteMaxBytes` the request's binary. An error is read whatever
   its size.
 - **Trailers reach the trace.** The reader adds a body's trailers to the

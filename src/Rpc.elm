@@ -15,7 +15,7 @@ HTTP transcoding, the REST mapping `google.api.http` rules describe, as
 grpc-gateway, Envoy's gRPC-JSON transcoder and Vanguard serve it, or over
 gRPC-Web ([`Rpc.Protocol.grpcWeb`](Rpc-Protocol#grpcWeb)). Messages travel
 as proto3 JSON, or over Connect and gRPC-Web as protobuf binary
-([`Rpc.Protocol.connectProto`](Rpc-Protocol#connectProto)).
+([`Rpc.Protocol.connectBinary`](Rpc-Protocol#connectBinary)).
 
     client : Rpc.Client Rpc.Json
     client =
@@ -134,7 +134,7 @@ type alias Json =
 
 
 {-| The codec tag of protobuf binary: [`Proto.Codec.Binary`](Proto-Codec#Binary).
-A client of [`Rpc.Protocol.connectProto`](Rpc-Protocol#connectProto) or
+A client of [`Rpc.Protocol.connectBinary`](Rpc-Protocol#connectBinary) or
 [`Rpc.Protocol.grpcWeb`](Rpc-Protocol#grpcWeb) is a `Client Binary`, and sends calls of code generated with `wire=proto` or
 `wire=both`.
 -}

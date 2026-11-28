@@ -12,7 +12,7 @@ beside each link says what the runtime or the generator does about it.
   request and response over HTTP, `Connect-Protocol-Version`, the JSON
   error shape and its codes, the mapping from an HTTP status to a code,
   and GET for methods without side effects. `Rpc.Protocol.connect`,
-  `connectProto` and `withConnectGet` ([calling.md](calling.md)).
+  `connectBinary` and `withConnectGet` ([calling.md](calling.md)).
 - [Connect conformance suite](https://github.com/connectrpc/conformance):
   the official test runner; the live suite runs the runtime under it
   with the features

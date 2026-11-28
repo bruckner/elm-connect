@@ -201,7 +201,7 @@ getEntry =
 `Proto.Binary.encode` and `Proto.Binary.decode` run the binary codecs
 on a whole body. A method wired with `proto` is told apart by its type.
 Its calls are `Rpc.Call Rpc.Binary req res`, which only a
-`Rpc.Protocol.connectProto` or `grpcWeb` client sends: transcoding
+`Rpc.Protocol.connectBinary` or `grpcWeb` client sends: transcoding
 speaks JSON only, so such a method gets no route functions and its
 messages no query encoders.
 
@@ -284,11 +284,11 @@ need (`Proto.Registry.unionAll`, `Rpc.Client.withRegistry`,
 descriptors, so a program using one keeps nothing of the other.
 
 Calls go as protobuf binary over Connect with a client of
-`Rpc.Protocol.connectProto`
+`Rpc.Protocol.connectBinary`
 ([calling.md](calling.md#choosing-the-codec)). A call generated under
 the default `wire=both` goes to any client. One generated under
 `wire=proto` given to a client speaking JSON, or one generated under
-`wire=json` given to a `connectProto` client, does not compile.
+`wire=json` given to a `connectBinary` client, does not compile.
 
 ## Imported packages
 

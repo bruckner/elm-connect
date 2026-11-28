@@ -18,7 +18,7 @@
   `Rpc.Protocol.connect |> Rpc.Protocol.withConnectGet` (which leaves
   any other protocol unchanged), and `Rpc.Transport.connect |>
   Rpc.Transport.withCodec Rpc.Transport.Proto` is
-  `Rpc.Protocol.connectProto`. `withMaxGetUrl`, `withReadMaxBytes`,
+  `Rpc.Protocol.connectBinary`. `withMaxGetUrl`, `withReadMaxBytes`,
   `withWriteMaxBytes` and `name` keep their names on `Rpc.Protocol`,
   which adds `codec` (`"json"` or `"proto"`) and `toJson`.
   `Rpc.Transport.withCodec`, `Rpc.Transport.codec` and its `Json` and

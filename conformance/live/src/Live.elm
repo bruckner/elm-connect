@@ -289,7 +289,7 @@ config t =
             in
             case ( t, codec ) of
                 ( Connect, "proto" ) ->
-                    Decode.succeed (BinaryClient (over (connectOver Rpc.Protocol.connectProto)))
+                    Decode.succeed (BinaryClient (over (connectOver Rpc.Protocol.connectBinary)))
 
                 ( Connect, _ ) ->
                     Decode.succeed (JsonClient (over (connectOver Rpc.Protocol.connect)))

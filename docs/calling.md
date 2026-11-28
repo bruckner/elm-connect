@@ -112,7 +112,7 @@ show.
 
 ```elm src/Rpc/Protocol.elm excerpt
 connect : Protocol Json
-connectProto : Protocol Binary
+connectBinary : Protocol Binary
 transcode : Protocol Json
 grpcWeb : Protocol Binary
 withConnectGet : Protocol codec -> Protocol codec
@@ -122,7 +122,7 @@ withMaxGetUrl : Int -> Protocol codec -> Protocol codec
 - `Rpc.Protocol.connect`: the Connect protocol, every call a POST to
   `baseUrl/<package>.<Service>/<Method>` with the request's JSON as its
   body and `Connect-Protocol-Version: 1`.
-- `Rpc.Protocol.connectProto`: the Connect protocol over protobuf
+- `Rpc.Protocol.connectBinary`: the Connect protocol over protobuf
   binary ([Choosing the codec](#choosing-the-codec)).
 - `Rpc.Protocol.transcode`: HTTP transcoding, by the method's
   `google.api.http` rule: the rule's verb, the path filled from the
@@ -170,7 +170,7 @@ type alias Binary =
 ```
 
 Messages travel as proto3 JSON over `connect` and `transcode`, and as
-protobuf binary over `connectProto` and `grpcWeb`. Over `connectProto`, a POST carries the request's
+protobuf binary over `connectBinary` and `grpcWeb`. Over `connectBinary`, a POST carries the request's
 binary as `application/proto`, a GET the query
 `connect=v1&base64=1&encoding=proto&message=…` with the binary in
 unpadded URL-safe base64, and a successful answer is read as binary,
@@ -200,7 +200,7 @@ generator's `wire` option wired its method with
 |---|---|---|
 | `wire=both` (the default) | `Rpc.Call codec req res` | any client |
 | `wire=json` | `Rpc.Call Rpc.Json req res` | a `connect` or `transcode` client |
-| `wire=proto` | `Rpc.Call Rpc.Binary req res` | a `connectProto` or `grpcWeb` client |
+| `wire=proto` | `Rpc.Call Rpc.Binary req res` | a `connectBinary` or `grpcWeb` client |
 
 `both` is the default so that every call goes to every client, whichever
 protocol the application picks; `json` and `proto` are an opt-in for an

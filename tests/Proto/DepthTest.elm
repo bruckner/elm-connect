@@ -1534,7 +1534,7 @@ mixedFarPast =
                                         ( metadata, _ ) =
                                             answer "application/proto" ""
                                     in
-                                    case Rpc.responseBytes (Rpc.client Rpc.Protocol.connectProto "https://api.example.com") (Rpc.call method Deep.defaultEnvelope) (Http.GoodStatus_ metadata bytes) of
+                                    case Rpc.responseBytes (Rpc.client Rpc.Protocol.connectBinary "https://api.example.com") (Rpc.call method Deep.defaultEnvelope) (Http.GoodStatus_ metadata bytes) of
                                         Err error ->
                                             case Rpc.Error.protoError error of
                                                 Just (Proto.Error.BadBinary problem) ->

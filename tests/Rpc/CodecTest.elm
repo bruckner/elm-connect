@@ -29,12 +29,12 @@ import Test exposing (Test, describe, test)
 
 binary : Rpc.Client Rpc.Binary
 binary =
-    over Rpc.Protocol.connectProto
+    over Rpc.Protocol.connectBinary
 
 
 binaryGet : Rpc.Client Rpc.Binary
 binaryGet =
-    over (Rpc.Protocol.withConnectGet Rpc.Protocol.connectProto)
+    over (Rpc.Protocol.withConnectGet Rpc.Protocol.connectBinary)
 
 
 utf8 : String -> Bytes
@@ -124,8 +124,8 @@ requests =
         , test "each protocol names its codec" <|
             \_ ->
                 ( List.map Rpc.Protocol.codec [ Rpc.Protocol.connect, Rpc.Protocol.withConnectGet Rpc.Protocol.connect, Rpc.Protocol.transcode ]
-                , List.map Rpc.Protocol.codec [ Rpc.Protocol.connectProto, Rpc.Protocol.withConnectGet Rpc.Protocol.connectProto ]
-                , List.map Rpc.Protocol.name [ Rpc.Protocol.connectProto, Rpc.Protocol.withConnectGet Rpc.Protocol.connectProto ]
+                , List.map Rpc.Protocol.codec [ Rpc.Protocol.connectBinary, Rpc.Protocol.withConnectGet Rpc.Protocol.connectBinary ]
+                , List.map Rpc.Protocol.name [ Rpc.Protocol.connectBinary, Rpc.Protocol.withConnectGet Rpc.Protocol.connectBinary ]
                 )
                     |> Expect.equal ( [ "json", "json", "json" ], [ "proto", "proto" ], [ "connect", "connect" ] )
         , test "a JSON call under a JSON protocol is unchanged by the binary codecs" <|
@@ -290,7 +290,7 @@ limits =
                 [ 4, 3 ]
                     |> List.map
                         (\limit ->
-                            Rpc.responseBytes (over (Rpc.Protocol.withReadMaxBytes limit Rpc.Protocol.connectProto)) (both { name = "x" }) (Http.GoodStatus_ (metadata 200 []) titleHi)
+                            Rpc.responseBytes (over (Rpc.Protocol.withReadMaxBytes limit Rpc.Protocol.connectBinary)) (both { name = "x" }) (Http.GoodStatus_ (metadata 200 []) titleHi)
                         )
                     |> Expect.equal
                         [ Ok "hi"
@@ -303,7 +303,7 @@ limits =
         , test "write: the binary is measured, not the JSON" <|
             \_ ->
                 [ 3, 2 ]
-                    |> List.map (\limit -> (Rpc.Internal.Plan.plan (over (Rpc.Protocol.withWriteMaxBytes limit Rpc.Protocol.connectProto)) (both { name = "x" })).tooLarge ())
+                    |> List.map (\limit -> (Rpc.Internal.Plan.plan (over (Rpc.Protocol.withWriteMaxBytes limit Rpc.Protocol.connectBinary)) (both { name = "x" })).tooLarge ())
                     |> Expect.equal [ Nothing, Just { limit = 2, size = 3 } ]
         , test "write: a JSON protocol measures the JSON of the same call" <|
             \_ ->
@@ -333,8 +333,8 @@ bodies =
                     |> Expect.equal [ Just "application/proto", Just "application/json" ]
         , test "binary protocols built alike compare equal, and differ by their options" <|
             \_ ->
-                ( Rpc.Protocol.withConnectGet Rpc.Protocol.connectProto == Rpc.Protocol.withConnectGet Rpc.Protocol.connectProto
-                , Rpc.Protocol.withConnectGet Rpc.Protocol.connectProto == Rpc.Protocol.connectProto
+                ( Rpc.Protocol.withConnectGet Rpc.Protocol.connectBinary == Rpc.Protocol.withConnectGet Rpc.Protocol.connectBinary
+                , Rpc.Protocol.withConnectGet Rpc.Protocol.connectBinary == Rpc.Protocol.connectBinary
                 )
                     |> Expect.equal ( True, False )
         ]

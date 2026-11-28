@@ -472,7 +472,7 @@ own, `Rpc.Call.withHeaders`, sent after the client's), `send` (`sendTraced`, the
 default, `send`, `task`, `halves` or `taskFromRequest`), `rewrite`, `tracker` (`Rpc.Call.withTracker`) and
 `cancelAfterMs`. `config` builds the client: `protocol` and `codec`
 (`json`, the default, or `proto`) pick its `Rpc.Protocol`,
-`Rpc.Protocol.connect`, `connectProto`, `transcode` or `grpcWeb`
+`Rpc.Protocol.connect`, `connectBinary`, `transcode` or `grpcWeb`
 (`transcode` with `proto` is refused, since transcoding is JSON, and
 `grpcweb` with anything but `proto`, since gRPC-Web is binary); `useGet` and
 `maxGetUrl` apply `Rpc.Protocol.withConnectGet` and `withMaxGetUrl` over

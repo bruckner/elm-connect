@@ -1,4 +1,4 @@
-- Connect's binary codec: `Rpc.Protocol.connectProto` sends a call's
+- Connect's binary codec: `Rpc.Protocol.connectBinary` sends a call's
   request as protobuf binary, `application/proto` (a GET as
   `connect=v1&base64=1&encoding=proto&message=…`), and reads a
   successful answer as binary; error answers stay JSON. It sends the

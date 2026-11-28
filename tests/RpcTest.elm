@@ -802,7 +802,7 @@ responses =
                         refusalOf client unregistered
                 in
                 ( refusal base
-                , refusal (Rpc.client Rpc.Protocol.connectProto "https://api.example.com")
+                , refusal (Rpc.client Rpc.Protocol.connectBinary "https://api.example.com")
                 )
                     |> Expect.equal
                         ( Just (Rpc.Error.badValue { typeName = "google.protobuf.Timestamp", path = [], message = "the time is outside years 1 to 9999" })

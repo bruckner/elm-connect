@@ -1,6 +1,6 @@
 module Rpc.Protocol exposing
     ( Protocol
-    , connect, connectProto, transcode, grpcWeb
+    , connect, connectBinary, transcode, grpcWeb
     , withConnectGet, withMaxGetUrl, withReadMaxBytes, withWriteMaxBytes
     , name, codec, toJson
     )
@@ -19,7 +19,7 @@ and the compiler says so where it does not.
 Protocols built alike are `==`.
 
 @docs Protocol
-@docs connect, connectProto, transcode, grpcWeb
+@docs connect, connectBinary, transcode, grpcWeb
 
 
 # Options
@@ -104,13 +104,13 @@ connect =
 read as protobuf binary, and must come as `application/proto` or with no
 content type; an error answer is JSON, as the protocol sends it.
 -}
-connectProto : Protocol Binary
-connectProto =
+connectBinary : Protocol Binary
+connectBinary =
     Internal.Protocol
         { name = "connect", codec = "proto", routed = False, options = noOptions }
         (Binary
             { build = Connect.connectPostBinary
-            , message = Connect.connectProtoMessage
+            , message = Connect.connectBinaryMessage
             , tooLarge = Limit.bytesUnlimited
             , overRead = Limit.bytesUnlimited
             , timeoutHeader = Connect.connectTimeout False
