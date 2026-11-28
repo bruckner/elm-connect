@@ -57,9 +57,11 @@ type alias Pair =
 
 decodePair : Decoder Pair
 decodePair =
-    Json.Decode.succeed Pair
-        |> Proto.Json.field "name" "" Json.Decode.string
-        |> Proto.Json.field "count" 0 Json.Decode.int
+    Proto.Json.message
+        (Json.Decode.succeed Pair
+            |> Proto.Json.messageField "name" "" Json.Decode.string
+            |> Proto.Json.messageField "count" 0 Json.Decode.int
+        )
 
 
 decodes : Decoder a -> String -> a -> Expect.Expectation
@@ -80,7 +82,7 @@ fails decoder json =
 
 fieldTests : Test
 fieldTests =
-    describe "field"
+    describe "messageField"
         [ test "a present key decodes its value" <|
             \_ -> decodes decodePair """{"name":"a","count":3}""" (Pair "a" 3)
         , test "a missing key gives the default" <|
@@ -104,13 +106,15 @@ type alias Named =
 
 decodeNamed : Decoder Named
 decodeNamed =
-    Json.Decode.succeed Named
-        |> Proto.Json.fieldEither "displayName" "display_name" "" Json.Decode.string
+    Proto.Json.message
+        (Json.Decode.succeed Named
+            |> Proto.Json.messageFieldEither "displayName" "display_name" "" Json.Decode.string
+        )
 
 
 fieldEitherTests : Test
 fieldEitherTests =
-    describe "fieldEither"
+    describe "messageFieldEither"
         [ test "the JSON name" <|
             \_ -> decodes decodeNamed """{"displayName":"a"}""" (Named "a")
         , test "the proto name" <|
@@ -120,7 +124,7 @@ fieldEitherTests =
         , test "both names fail even when one is null" <|
             \_ -> fails decodeNamed """{"displayName":null,"display_name":"b"}"""
         , test "equal names are one key" <|
-            \_ -> decodes (Json.Decode.succeed Named |> Proto.Json.fieldEither "id" "id" "" Json.Decode.string) """{"id":"a"}""" (Named "a")
+            \_ -> decodes (Proto.Json.message (Json.Decode.succeed Named |> Proto.Json.messageFieldEither "id" "id" "" Json.Decode.string)) """{"id":"a"}""" (Named "a")
         , test "neither gives the default" <|
             \_ -> decodes decodeNamed "{}" (Named "")
         , test "null under the JSON name gives the default" <|
@@ -138,21 +142,25 @@ type alias Setting =
 
 decodeSetting : Decoder Setting
 decodeSetting =
-    Json.Decode.succeed Setting
-        |> Proto.Json.field "name" "" Json.Decode.string
-        |> Proto.Json.valueField "value"
+    Proto.Json.message
+        (Json.Decode.succeed Setting
+            |> Proto.Json.messageField "name" "" Json.Decode.string
+            |> Proto.Json.nestedMessageValueField "value" 0
+        )
 
 
 decodeSettingEither : Decoder Setting
 decodeSettingEither =
-    Json.Decode.succeed Setting
-        |> Proto.Json.field "name" "" Json.Decode.string
-        |> Proto.Json.valueFieldEither "defaultValue" "default_value"
+    Proto.Json.message
+        (Json.Decode.succeed Setting
+            |> Proto.Json.messageField "name" "" Json.Decode.string
+            |> Proto.Json.nestedMessageValueFieldEither "defaultValue" "default_value" 0
+        )
 
 
 valueFieldTests : Test
 valueFieldTests =
-    describe "valueField"
+    describe "nestedMessageValueField at depth 0"
         [ test "a missing key gives Nothing" <|
             \_ -> decodes decodeSetting """{"name":"a"}""" (Setting "a" Nothing)
         , test "null is set, holding null" <|
@@ -196,11 +204,13 @@ which every JavaScript object inherits.
 -}
 decodeInherited : Decoder Inherited
 decodeInherited =
-    Json.Decode.succeed Inherited
-        |> Proto.Json.field "constructor" "" Json.Decode.string
-        |> Proto.Json.fieldEither "toString" "to_string" "" Json.Decode.string
-        |> Proto.Json.field "__proto__" 0 Json.Decode.int
-        |> Proto.Json.field "hasOwnProperty" 0 Json.Decode.int
+    Proto.Json.message
+        (Json.Decode.succeed Inherited
+            |> Proto.Json.messageField "constructor" "" Json.Decode.string
+            |> Proto.Json.messageFieldEither "toString" "to_string" "" Json.Decode.string
+            |> Proto.Json.messageField "__proto__" 0 Json.Decode.int
+            |> Proto.Json.messageField "hasOwnProperty" 0 Json.Decode.int
+        )
 
 
 type alias Sized =
@@ -211,9 +221,11 @@ type alias Sized =
 -}
 decodeSized : Decoder Sized
 decodeSized =
-    Json.Decode.succeed Sized
-        |> Proto.Json.field "length" 0 Json.Decode.int
-        |> Proto.Json.field "name" "" Json.Decode.string
+    Proto.Json.message
+        (Json.Decode.succeed Sized
+            |> Proto.Json.messageField "length" 0 Json.Decode.int
+            |> Proto.Json.messageField "name" "" Json.Decode.string
+        )
 
 
 notObjects : List String
@@ -244,8 +256,7 @@ emptyMessageTests =
         ]
 
 
-{-| A message read through `Proto.Json.message` and its trusting steps, and
-the same message read through `field` steps that each check the object.
+{-| A message read through `Proto.Json.message` and its trusting steps.
 -}
 type alias Checked =
     { title : String, displayName : String, constructor : String, length : String, value : Maybe String }
@@ -259,52 +270,48 @@ checkedOnce =
             |> Proto.Json.messageFieldEither "displayName" "display_name" "" Json.Decode.string
             |> Proto.Json.messageField "constructor" "" Json.Decode.string
             |> Proto.Json.messageField "length" "" Json.Decode.string
-            |> Proto.Json.messageValueField "value"
+            |> Proto.Json.nestedMessageValueField "value" 0
         )
-
-
-checkedEach : Decoder Checked
-checkedEach =
-    Json.Decode.succeed (\title displayName constructor length value -> Checked title displayName constructor length (Maybe.map (Proto.Value.toJson >> Json.Encode.encode 0) value))
-        |> Proto.Json.field "title" "" Json.Decode.string
-        |> Proto.Json.fieldEither "displayName" "display_name" "" Json.Decode.string
-        |> Proto.Json.field "constructor" "" Json.Decode.string
-        |> Proto.Json.field "length" "" Json.Decode.string
-        |> Proto.Json.valueField "value"
 
 
 messageTests : Test
 messageTests =
     let
-        same json =
-            Json.Decode.decodeValue checkedOnce json
-                |> Result.mapError Json.Decode.errorToString
-                |> Expect.equal (Json.Decode.decodeValue checkedEach json |> Result.mapError Json.Decode.errorToString)
-
-        key =
-            Fuzz.oneOfValues [ "title", "displayName", "display_name", "constructor", "length", "value", "other" ]
+        isJsonObject text =
+            Result.toMaybe (Json.Decode.decodeString (Json.Decode.keyValuePairs Json.Decode.value) text) /= Nothing
     in
     describe "message"
-        [ test "reads its fields as field steps do" <|
+        [ test "reads its fields" <|
             \_ ->
                 decodes checkedOnce
                     """{"title":"a","display_name":"b","constructor":"c","length":"d","value":null}"""
                     (Checked "a" "b" "c" "d" (Just "null"))
-        , test "anything but an object fails as field steps do, an array whose properties a step names included" <|
+        , test "anything but an object fails as elm/json words it, an array whose properties a step names included" <|
             \_ ->
                 [ "5", "\"x\"", "[]", "[{}]", "null", "true" ]
-                    |> List.map (\json -> ( json, Json.Decode.decodeString checkedOnce json |> Result.mapError Json.Decode.errorToString ))
-                    |> Expect.equal
-                        (List.map (\json -> ( json, Json.Decode.decodeString checkedEach json |> Result.mapError Json.Decode.errorToString )) [ "5", "\"x\"", "[]", "[{}]", "null", "true" ])
-        , test "gives what field steps give on objects that fail, and on absent, null and inherited names" <|
+                    |> List.map (\json -> ( json, Json.Decode.decodeString checkedOnce json |> Result.map (\_ -> {}) |> Result.mapError Json.Decode.errorToString ))
+                    |> List.filter (\( _, result ) -> not (isObjectFailure result))
+                    |> Expect.equal []
+        , test "objects that fail, and absent, null and inherited names" <|
             \_ ->
                 [ "{}", """{"title":5}""", """{"displayName":"a","display_name":null}""", """{"constructor":1}""", """{"length":[]}""", """{"__proto__":"x","title":null}""", """{"hasOwnProperty":"x"}""" ]
-                    |> List.map (Json.Decode.decodeString Json.Decode.value >> Result.withDefault Json.Encode.null)
-                    |> List.map (\json -> ( Json.Decode.decodeValue checkedOnce json, Json.Decode.decodeValue checkedEach json ))
-                    |> List.filter (\( once, each ) -> Result.mapError Json.Decode.errorToString once /= Result.mapError Json.Decode.errorToString each)
-                    |> Expect.equal []
-        , Test.fuzz (Fuzzers.json 2) "gives what field steps give on any JSON" same
-        , Test.fuzz (Fuzz.listOfLengthBetween 0 4 (Fuzz.pair key (Fuzzers.json 1)) |> Fuzz.map Json.Encode.object) "gives what field steps give on objects of its keys" same
+                    |> List.map (\json -> Json.Decode.decodeString checkedOnce json |> Result.toMaybe)
+                    |> Expect.equal
+                        [ Just (Checked "" "" "" "" Nothing)
+                        , Nothing
+                        , Nothing
+                        , Nothing
+                        , Nothing
+                        , Just (Checked "" "" "" "" Nothing)
+                        , Just (Checked "" "" "" "" Nothing)
+                        ]
+        , Test.fuzz (Fuzz.map (Json.Encode.encode 0) (Fuzzers.json 2)) "fails as elm/json words it exactly on JSON text that is not an object" <|
+            \text ->
+                Json.Decode.decodeString checkedOnce text
+                    |> Result.map (\_ -> {})
+                    |> Result.mapError Json.Decode.errorToString
+                    |> isObjectFailure
+                    |> Expect.equal (not (isJsonObject text))
         ]
 
 
@@ -372,9 +379,10 @@ lookupTests =
 
                     wide =
                         List.foldl
-                            (\name acc -> Proto.Json.field name "" Json.Decode.string (Json.Decode.map (\xs x -> x :: xs) acc))
+                            (\name acc -> Proto.Json.messageField name "" Json.Decode.string (Json.Decode.map (\xs x -> x :: xs) acc))
                             (Json.Decode.succeed [])
                             names
+                            |> Proto.Json.message
                 in
                 Json.Encode.object (List.map (\name -> ( name, Json.Encode.string name )) names)
                     |> Json.Decode.decodeValue wide
@@ -389,9 +397,11 @@ type alias Shapes =
 
 decodeShapes : Decoder Shapes
 decodeShapes =
-    Json.Decode.succeed Shapes
-        |> Proto.Json.field "count" Nothing (Json.Decode.map Just Proto.Json.int32)
-        |> Proto.Json.field "tags" [] (Json.Decode.list Json.Decode.string)
+    Proto.Json.message
+        (Json.Decode.succeed Shapes
+            |> Proto.Json.messageField "count" Nothing (Json.Decode.map Just Proto.Json.int32)
+            |> Proto.Json.messageField "tags" [] (Json.Decode.list Json.Decode.string)
+        )
 
 
 presenceTests : Test
@@ -482,9 +492,11 @@ type EventKind
 
 decodeEvent : Decoder Event
 decodeEvent =
-    Json.Decode.succeed Event
-        |> Proto.Json.field "id" "" Json.Decode.string
-        |> Proto.Json.oneof decodeEventKind
+    Proto.Json.message
+        (Json.Decode.succeed Event
+            |> Proto.Json.messageField "id" "" Json.Decode.string
+            |> Proto.Json.oneof decodeEventKind
+        )
 
 
 decodeEventKind : Decoder EventKind
@@ -494,7 +506,7 @@ decodeEventKind =
         [ Proto.Json.member "text" (Json.Decode.map EventKindText Json.Decode.string)
         , Proto.Json.memberEither "titleChanged" "title_changed" (Json.Decode.map EventKindTitleChanged Json.Decode.string)
         , Proto.Json.emptyMemberEither "clearedAll" "cleared_all" EventKindCleared
-        , Proto.Json.valueMember "payload" EventKindPayload
+        , Proto.Json.nestedValueMember "payload" 0 EventKindPayload
         , Proto.Json.nullValueMemberEither "nothingAtAll" "nothing_at_all" EventKindNothing
         ]
 
@@ -552,11 +564,11 @@ oneofTests =
             \_ -> decodes decodeEvent """{"clearedAll":null}""" (Event "" EventKindUnset)
         , test "emptyMember fails on a value that is not an object" <|
             \_ -> fails decodeEvent """{"clearedAll":1}"""
-        , test "valueMember holds any JSON" <|
+        , test "nestedValueMember holds any JSON" <|
             \_ -> decodes decodeEvent """{"payload":[1]}""" (Event "" (EventKindPayload (Proto.Value.ValueList [ Proto.Value.ValueNumber 1 ])))
-        , test "valueMember reads null as set, holding null" <|
+        , test "nestedValueMember reads null as set, holding null" <|
             \_ -> decodes decodeEvent """{"payload":null}""" (Event "" (EventKindPayload Proto.Value.ValueNull))
-        , test "a null valueMember counts against another member" <|
+        , test "a null nestedValueMember counts against another member" <|
             \_ ->
                 failsWith decodeEvent
                     """{"payload":null,"text":"t"}"""
@@ -620,8 +632,10 @@ enumTests =
         , test "a field holding an enum reads absence as the zero value" <|
             \_ ->
                 decodes
-                    (Json.Decode.succeed identity
-                        |> Proto.Json.field "status" StatusUnspecified decodeStatus
+                    (Proto.Json.message
+                        (Json.Decode.succeed identity
+                            |> Proto.Json.messageField "status" StatusUnspecified decodeStatus
+                        )
                     )
                     """{"status":null}"""
                     StatusUnspecified
@@ -664,8 +678,10 @@ enumOrZeroTests =
         , test "a field holding an enum reads an unknown name as the zero value" <|
             \_ ->
                 decodes
-                    (Json.Decode.succeed identity
-                        |> Proto.Json.field "status" StatusActive decodeStatusOrZero
+                    (Proto.Json.message
+                        (Json.Decode.succeed identity
+                            |> Proto.Json.messageField "status" StatusActive decodeStatusOrZero
+                        )
                     )
                     """{"status":"STATUS_ARCHIVED"}"""
                     StatusUnspecified
@@ -886,13 +902,14 @@ boolMapTests =
             \_ -> fails (Proto.Json.boolMap Json.Decode.string) """{"true":2}"""
         , test "encodes keys as true and false" <|
             \_ ->
-                encodesTo (Proto.Json.encodeBoolMap Json.Encode.int [ ( True, 1 ), ( False, 0 ) ])
-                    """{"true":1,"false":0}"""
+                Proto.Json.boolMapField Json.Encode.int [ ( True, 1 ), ( False, 0 ) ]
+                    |> Maybe.map (Json.Encode.encode 0)
+                    |> Expect.equal (Just """{"true":1,"false":0}""")
         , test "round-trips" <|
             \_ ->
-                Proto.Json.encodeBoolMap Json.Encode.string [ ( False, "b" ), ( True, "a" ) ]
-                    |> Json.Decode.decodeValue (Proto.Json.boolMap Json.Decode.string)
-                    |> Expect.equal (Ok [ ( False, "b" ), ( True, "a" ) ])
+                Proto.Json.boolMapField Json.Encode.string [ ( False, "b" ), ( True, "a" ) ]
+                    |> Maybe.map (Json.Decode.decodeValue (Proto.Json.boolMap Json.Decode.string))
+                    |> Expect.equal (Just (Ok [ ( False, "b" ), ( True, "a" ) ]))
         ]
 
 

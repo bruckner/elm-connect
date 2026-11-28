@@ -3,17 +3,16 @@ module Proto.Json exposing
     , writeObject, Fields, plainFields, checkedFields
     , Field, writeOptional, writeRepeated, writeDict, writeBoolMap, writeMember, writeDeeper
     , writeTimestamp, writeDuration, writeFieldMask, writeStruct, writeListValue, writeValue, writeAny
-    , field, fieldEither, valueField, valueFieldEither, emptyMessage
-    , message, messageField, messageFieldEither, messageValueField, messageValueFieldEither, nestedMessageValueField, nestedMessageValueFieldEither
+    , message, messageField, messageFieldEither, nestedMessageValueField, nestedMessageValueFieldEither, emptyMessage
     , objectOfFields
     , implicitField, implicitFloatField, implicitBytesField, repeatedField, dictField, boolMapField
     , totalOptionalField, totalRepeatedField, totalDictField, totalBoolMapField
     , memo, deeper, deeperWith
     , oneof, members, Member, member, memberEither
-    , emptyMember, emptyMemberEither, valueMember, valueMemberEither, nestedValueMember, nestedValueMemberEither
+    , emptyMember, emptyMemberEither, nestedValueMember, nestedValueMemberEither
     , nullValueMember, nullValueMemberEither
     , enum, enumOrZero
-    , stringDict, int32Dict, uint32Dict, int64Dict, uint64Dict, boolMap, encodeBoolMap
+    , stringDict, int32Dict, uint32Dict, int64Dict, uint64Dict, boolMap
     , string
     , int32, uint32
     , int64, uint64, encodeInt64
@@ -84,18 +83,12 @@ below give them, and those that can as a [`Field`](#Field) each.
 @docs writeTimestamp, writeDuration, writeFieldMask, writeStruct, writeListValue, writeValue, writeAny
 
 
-# Fields
-
-@docs field, fieldEither, valueField, valueFieldEither, emptyMessage
-
-
 # Messages
 
-Generated decoders check once that the JSON is an object and then read each
-field without checking again, which makes a message decode faster than a
-pipeline of [`field`](#field) steps, each checking for itself.
+A generated decoder checks once, with [`message`](#message), that the JSON is
+an object, and then reads each field with a step that does not check it again.
 
-@docs message, messageField, messageFieldEither, messageValueField, messageValueFieldEither, nestedMessageValueField, nestedMessageValueFieldEither
+@docs message, messageField, messageFieldEither, nestedMessageValueField, nestedMessageValueFieldEither, emptyMessage
 
 
 # Encoding fields
@@ -159,7 +152,7 @@ the limit a decoder fails with "Expecting messages nested at most 100 deep".
 # Oneofs
 
 @docs oneof, members, Member, member, memberEither
-@docs emptyMember, emptyMemberEither, valueMember, valueMemberEither, nestedValueMember, nestedValueMemberEither
+@docs emptyMember, emptyMemberEither, nestedValueMember, nestedValueMemberEither
 @docs nullValueMember, nullValueMemberEither
 
 
@@ -170,7 +163,7 @@ the limit a decoder fails with "Expecting messages nested at most 100 deep".
 
 # Maps
 
-@docs stringDict, int32Dict, uint32Dict, int64Dict, uint64Dict, boolMap, encodeBoolMap
+@docs stringDict, int32Dict, uint32Dict, int64Dict, uint64Dict, boolMap
 
 
 # Strings
@@ -214,11 +207,13 @@ By default a `bytes` field is held as its base64 text. Code generated with the
 
 # Well-known types
 
-`Value` is any JSON, held as a [`Proto.Value.Value`](Proto-Value#Value): a
-field of it decodes with [`valueField`](#valueField), and a list or map of it,
-or a oneof member, with [`value`](#value). The `nested` forms read or write
-one held by a recursive message, counting its levels on from the message's
-depth.
+`Value` is any JSON, held as a [`Proto.Value.Value`](Proto-Value#Value). A
+message holding one nests, so a field of it decodes with
+[`nestedMessageValueField`](#nestedMessageValueField), a oneof member with
+[`nestedValueMember`](#nestedValueMember), and a list or map of it with
+[`nestedValue`](#nestedValue). The `nested` forms read one held by a message
+that nests, counting its levels on from the message's depth; [`value`](#value)
+reads one on its own.
 The wrapper types (`Int32Value` and the rest) use
 their scalar's helpers.
 
@@ -258,101 +253,6 @@ import Proto.Timestamp exposing (Timestamp)
 import Proto.Value
 
 
-{-| Decode one field of a message in a decoding pipeline. A missing key or a
-JSON `null` gives the default, the field's proto3 zero value; any other value
-must satisfy the decoder.
-
-    type alias Note =
-        { title : String, stars : Int }
-
-    decodeNote : Decoder Note
-    decodeNote =
-        Json.Decode.succeed Note
-            |> field "title" "" string
-            |> field "stars" 0 int32
-
-The value being decoded must be a JSON object.
-
-The default says what absence means, so one step serves every field shape: a
-field with presence (a message-typed or proto3 `optional` field) defaults to
-`Nothing` and maps its decoder with `Just`, a repeated field defaults to `[]`
-and decodes with `Json.Decode.list`.
-
-    |> field "author" Nothing (Json.Decode.map Just decodeAuthor)
-    |> field "tags" [] (Json.Decode.list string)
-
--}
-field : String -> a -> Decoder a -> Decoder (a -> b) -> Decoder b
-field name default decoder =
-    Json.Decode.map2 (|>) (valueAt [ name ] default decoder)
-
-
-{-| [`field`](#field) for a field whose JSON name differs from its proto name:
-the JSON name first, then the proto name. proto3 JSON parsers accept either
-key, but not both: an object holding both fails, even when one of them is
-`null`, as protobuf's own parsers reject a duplicate field.
-
-    |> fieldEither "displayName" "display_name" "" string
-
--}
-fieldEither : String -> String -> a -> Decoder a -> Decoder (a -> b) -> Decoder b
-fieldEither jsonName protoName default decoder =
-    Json.Decode.map2 (|>) (valueAt (spellings jsonName protoName) default decoder)
-
-
-{-| Decode a field of type `google.protobuf.Value`, held as a
-`Maybe Proto.Value.Value`. A missing key gives `Nothing`. Any value under the
-key gives `Just` it, `null` included: `null` is one of a `Value`'s own values,
-so a field holding it is set, as protobuf's own parsers read it.
-
-    type alias Setting =
-        { name : String, value : Maybe Proto.Value.Value }
-
-    decodeSetting : Decoder Setting
-    decodeSetting =
-        Json.Decode.succeed Setting
-            |> field "name" "" string
-            |> valueField "value"
-
-To encode one, `Nothing` leaves the field out and `Just` writes its JSON:
-
-    objectOfFields [ ( "value", Maybe.map encodeValue setting.value ) ]
-
--}
-valueField : String -> Decoder (Maybe Proto.Value.Value -> b) -> Decoder b
-valueField name =
-    valueFieldEither name name
-
-
-{-| [`valueField`](#valueField) for a field whose JSON name differs from its
-proto name: the JSON name first, then the proto name, as in
-[`fieldEither`](#fieldEither).
--}
-valueFieldEither : String -> String -> Decoder (Maybe Proto.Value.Value -> b) -> Decoder b
-valueFieldEither jsonName protoName =
-    Json.Decode.map2 (|>) (jsonAt (spellings jsonName protoName))
-
-
-{-| The JSON under whichever of `names`, the spellings of one field, the object
-holds, `null` included; `Nothing` when it holds none of them.
--}
-jsonAt : List String -> Decoder (Maybe Proto.Value.Value)
-jsonAt names =
-    Json.Decode.value
-        |> Json.Decode.andThen
-            (\object_ ->
-                case spelledAs names object_ of
-                    NotAnObject ->
-                        notAnObject
-
-                    Spelled (Err problem) ->
-                        Json.Decode.fail problem
-
-                    Spelled (Ok found) ->
-                        checkedJson found
-            )
-
-
 {-| Decode a message without fields: any JSON object, usually `{}`, whatever
 its keys. Anything else fails, as it does for a message with fields.
 
@@ -369,8 +269,7 @@ emptyMessage =
 {-| Decode a message: check that the JSON is an object, not an array, and
 then run `fields`, a pipeline from `Json.Decode.succeed` with a
 [`messageField`](#messageField) step per field. Anything that is not an
-object fails as a [`field`](#field) step does, with elm/json's
-`Expecting an OBJECT`.
+object fails with elm/json's `Expecting an OBJECT`.
 
     decodeNote : Decoder Note
     decodeNote =
@@ -396,49 +295,83 @@ message fields =
             )
 
 
-{-| [`field`](#field) inside [`message`](#message), which has checked that the
-JSON is an object: the step does not check it again. Outside `message` it may
-read JSON that is not an object as a message, every field absent.
+{-| Decode one field of a message inside [`message`](#message). A missing key
+or a JSON `null` gives the default, the field's proto3 zero value; any other
+value must satisfy the decoder.
+
+    type alias Note =
+        { title : String, stars : Int }
+
+    decodeNote : Decoder Note
+    decodeNote =
+        message
+            (Json.Decode.succeed Note
+                |> messageField "title" "" string
+                |> messageField "stars" 0 int32
+            )
+
+`message` has checked that the JSON is an object: the step does not check it
+again. Outside `message` it may read JSON that is not an object as a message,
+every field absent.
+
+The default says what absence means, so one step serves every field shape: a
+field with presence (a message-typed or proto3 `optional` field) defaults to
+`Nothing` and maps its decoder with `Just`, a repeated field defaults to `[]`
+and decodes with `Json.Decode.list`.
+
+    |> messageField "author" Nothing (Json.Decode.map Just decodeAuthor)
+    |> messageField "tags" [] (Json.Decode.list string)
+
 -}
 messageField : String -> a -> Decoder a -> Decoder (a -> b) -> Decoder b
 messageField name default decoder =
     Json.Decode.map2 (|>) (valueIn [ name ] default decoder)
 
 
-{-| [`fieldEither`](#fieldEither) inside [`message`](#message), as
-[`messageField`](#messageField) is `field`.
+{-| [`messageField`](#messageField) for a field whose JSON name differs from
+its proto name: the JSON name first, then the proto name. proto3 JSON parsers
+accept either key, but not both: an object holding both fails, even when one
+of them is `null`, as protobuf's own parsers reject a duplicate field.
+
+    |> messageFieldEither "displayName" "display_name" "" string
+
 -}
 messageFieldEither : String -> String -> a -> Decoder a -> Decoder (a -> b) -> Decoder b
 messageFieldEither jsonName protoName default decoder =
     Json.Decode.map2 (|>) (valueIn (spellings jsonName protoName) default decoder)
 
 
-{-| [`valueField`](#valueField) inside [`message`](#message), as
-[`messageField`](#messageField) is `field`.
--}
-messageValueField : String -> Decoder (Maybe Proto.Value.Value -> b) -> Decoder b
-messageValueField name =
-    messageValueFieldEither name name
+{-| Decode a field of type `google.protobuf.Value` inside
+[`message`](#message), held as a `Maybe Proto.Value.Value`, for a message at
+`depth`, which the value's arrays and objects count on from. A missing key
+gives `Nothing`. Any value under the key gives `Just` it, `null` included:
+`null` is one of a `Value`'s own values, so a field holding it is set, as
+protobuf's own parsers read it.
 
+    type alias Setting =
+        { name : String, value : Maybe Proto.Value.Value }
 
-{-| [`valueFieldEither`](#valueFieldEither) inside [`message`](#message), as
-[`messageField`](#messageField) is `field`.
--}
-messageValueFieldEither : String -> String -> Decoder (Maybe Proto.Value.Value -> b) -> Decoder b
-messageValueFieldEither jsonName protoName =
-    nestedMessageValueFieldEither jsonName protoName 0
+    decodeNestedSetting : Int -> Decoder Setting
+    decodeNestedSetting depth =
+        message
+            (Json.Decode.succeed Setting
+                |> messageField "name" "" string
+                |> nestedMessageValueField "value" depth
+            )
 
+To encode one, `Nothing` leaves the field out and `Just` writes its JSON:
 
-{-| [`messageValueField`](#messageValueField) for a message that nests, at
-`depth`, which the `Value` counts on from.
+    writeObject [ checkedFields [ ( "value", writeOptional writeValue setting.value ) ] ]
+
 -}
 nestedMessageValueField : String -> Int -> Decoder (Maybe Proto.Value.Value -> b) -> Decoder b
 nestedMessageValueField name =
     nestedMessageValueFieldEither name name
 
 
-{-| [`messageValueFieldEither`](#messageValueFieldEither) at a depth, as
-[`nestedMessageValueField`](#nestedMessageValueField).
+{-| [`nestedMessageValueField`](#nestedMessageValueField) for a field whose
+JSON name differs from its proto name: the JSON name first, then the proto
+name, as in [`messageFieldEither`](#messageFieldEither).
 -}
 nestedMessageValueFieldEither : String -> String -> Int -> Decoder (Maybe Proto.Value.Value -> b) -> Decoder b
 nestedMessageValueFieldEither jsonName protoName depth =
@@ -456,7 +389,9 @@ nestedMessageValueFieldEither jsonName protoName depth =
         )
 
 
-{-| [`valueAt`](#valueAt) for JSON already known to be an object, not an array.
+{-| The value under whichever of `names`, the spellings of one field, the
+object holds, decoded; `default` when it holds none of them or holds `null`.
+The JSON is already known to be an object, not an array.
 -}
 valueIn : List String -> a -> Decoder a -> Decoder a
 valueIn names default decoder =
@@ -471,33 +406,6 @@ valueIn names default decoder =
                         Json.Decode.succeed default
 
                     Ok (Just ( name, raw )) ->
-                        if isNull raw then
-                            Json.Decode.succeed default
-
-                        else
-                            Json.Decode.field name decoder
-            )
-
-
-{-| The value under whichever of `names`, the spellings of one field, the
-object holds, decoded; `default` when it holds none of them or holds `null`.
--}
-valueAt : List String -> a -> Decoder a -> Decoder a
-valueAt names default decoder =
-    Json.Decode.value
-        |> Json.Decode.andThen
-            (\object_ ->
-                case spelledAs names object_ of
-                    NotAnObject ->
-                        notAnObject
-
-                    Spelled (Err problem) ->
-                        Json.Decode.fail problem
-
-                    Spelled (Ok Nothing) ->
-                        Json.Decode.succeed default
-
-                    Spelled (Ok (Just ( name, raw ))) ->
                         if isNull raw then
                             Json.Decode.succeed default
 
@@ -527,49 +435,6 @@ type Spelled
     | Spelled (Result String (Maybe ( String, Value )))
 
 
-{-| Which of `names`, the spellings of one field, the value holds.
-
-`Json.Decode.field` finds a key with JavaScript's `in`, which takes constant
-time, so a message of F fields costs O(F) to decode rather than reading the
-whole object once per field. `in` also finds what an object inherits, which
-for a JSON object is only `Object.prototype`'s properties, so a spelling that
-names one of those is looked up among the object's own keys instead, as
-`Json.Decode.dict` lists them, which takes time in their number. And `in`
-finds an array's `length` and methods, so a key found is a field only when
-the JSON is not an array.
-
--}
-spelledAs : List String -> Value -> Spelled
-spelledAs names json =
-    case names of
-        [ name ] ->
-            if isInherited name then
-                spelledAmongKeys names json
-
-            else
-                case probe name json of
-                    Nothing ->
-                        if isObject json then
-                            Spelled (Ok Nothing)
-
-                        else
-                            NotAnObject
-
-                    Just found ->
-                        if isArray json then
-                            NotAnObject
-
-                        else
-                            Spelled (Ok (Just found))
-
-        _ ->
-            if List.any isInherited names then
-                spelledAmongKeys names json
-
-            else
-                spelledByProbes names json
-
-
 {-| Which of `names` an object holds, found among its own keys.
 -}
 spelledAmongKeys : List String -> Value -> Spelled
@@ -580,24 +445,6 @@ spelledAmongKeys names json =
 
         Err _ ->
             NotAnObject
-
-
-spelledByProbes : List String -> Value -> Spelled
-spelledByProbes names json =
-    case List.filterMap (\name -> probe name json) names of
-        [] ->
-            if isObject json then
-                Spelled (Ok Nothing)
-
-            else
-                NotAnObject
-
-        found ->
-            if isArray json then
-                NotAnObject
-
-            else
-                Spelled (oneSpelling names found)
 
 
 oneSpelling : List String -> List ( String, Value ) -> Result String (Maybe ( String, Value ))
@@ -867,8 +714,9 @@ dictField key write entries =
             |> Just
 
 
-{-| A map field with `bool` keys: `Nothing` when empty, else the object
-[`encodeBoolMap`](#encodeBoolMap) writes.
+{-| A map field with `bool` keys, held as an association list: `Nothing` when
+empty, else a JSON object keyed `"true"` and `"false"`. When a key appears
+twice, the later pair is the one a parser keeps.
 -}
 boolMapField : (a -> Value) -> List ( Bool, a ) -> Maybe Value
 boolMapField write pairs =
@@ -920,9 +768,10 @@ totalBoolMapField write pairs =
     boolMapField (\item -> Writer.total (write item)) pairs
 
 
-{-| Decode a oneof in a decoding pipeline: unlike [`field`](#field), the
-decoder reads the message object itself, since each member of a oneof is a
-key of the message. The decoder is usually [`members`](#members).
+{-| Decode a oneof in a decoding pipeline: unlike
+[`messageField`](#messageField), the decoder reads the message object itself,
+since each member of a oneof is a key of the message. The decoder is usually
+[`members`](#members).
 
     type NoteKind
         = NoteKindUnset
@@ -930,9 +779,11 @@ key of the message. The decoder is usually [`members`](#members).
 
     decodeNote : Decoder Note
     decodeNote =
-        Json.Decode.succeed Note
-            |> field "title" "" string
-            |> oneof decodeNoteKind
+        message
+            (Json.Decode.succeed Note
+                |> messageField "title" "" string
+                |> oneof decodeNoteKind
+            )
 
 -}
 oneof : Decoder a -> Decoder (a -> b) -> Decoder b
@@ -952,8 +803,10 @@ error messages), its unset value and its members:
             ]
 
 A member is present when the object holds its key with a value other than
-`null`, which proto3 JSON reads as absent; a [`valueMember`](#valueMember) is
-present when it holds `null` too. Then:
+`null`, which proto3 JSON reads as absent; a
+[`nestedValueMember`](#nestedValueMember) or
+[`nullValueMember`](#nullValueMember) is present when it holds `null` too.
+Then:
 
   - no member present decodes as the unset value;
   - one member present decodes as that member, and when its value does not
@@ -962,7 +815,7 @@ present when it holds `null` too. Then:
     `Expecting at most one member of oneof "kind", but got "text" and "pageCount"`.
 
 A member written under both its JSON name and its proto name fails, as a field
-does in [`fieldEither`](#fieldEither).
+does in [`messageFieldEither`](#messageFieldEither).
 
 -}
 members : String -> a -> List (Member a) -> Decoder a
@@ -1027,8 +880,18 @@ presentIn json candidates found =
                     Err problem
 
 
-{-| [`spelledAs`](#spelledAs) for JSON already known to be an object, not an
-array: its shape is not tested again.
+{-| Which of `names`, the spellings of one field, an object holds. The JSON is
+already known to be an object, not an array: its shape is not tested again.
+
+`Json.Decode.field` finds a key with JavaScript's `in`, which takes constant
+time, so a message of F fields costs O(F) to decode rather than reading the
+whole object once per field. `in` also finds what an object inherits, which
+for a JSON object is only `Object.prototype`'s properties, so a spelling that
+names one of those is looked up among the object's own keys instead, as
+`Json.Decode.dict` lists them, which takes time in their number. And `in`
+finds an array's `length` and methods, which is why the JSON must be known
+not to be an array.
+
 -}
 spelledInObject : List String -> Value -> Result String (Maybe ( String, Value ))
 spelledInObject names json =
@@ -1094,7 +957,7 @@ member name =
 
 {-| [`member`](#member) for a member whose JSON name differs from its proto
 name: the JSON name first, then the proto name, as in
-[`fieldEither`](#fieldEither).
+[`messageFieldEither`](#messageFieldEither).
 -}
 memberEither : String -> String -> Decoder a -> Member a
 memberEither jsonName protoName decoder =
@@ -1127,37 +990,22 @@ emptyMemberEither jsonName protoName constructor =
     memberEither jsonName protoName (Json.Decode.map (\_ -> constructor) empty)
 
 
-{-| A member of type `google.protobuf.Value`, given its constructor. Its value
-is any JSON, `null` included: unlike every other member, one present as `null`
-is set and holds the JSON `null`, as protobuf's own parsers read it.
+{-| A member of type `google.protobuf.Value`, given its constructor, for a
+oneof of a message at `depth`, which the value's arrays and objects count on
+from. Its value is any JSON, `null` included: unlike every member but a
+[`nullValueMember`](#nullValueMember), one present as `null` is set and holds
+the JSON `null`, as protobuf's own parsers read it.
 
-    valueMember "payload" NoteKindPayload
+    nestedValueMember "payload" depth NoteKindPayload
 
--}
-valueMember : String -> (Proto.Value.Value -> a) -> Member a
-valueMember name =
-    valueMemberEither name name
-
-
-{-| [`valueMember`](#valueMember) for a member whose JSON name differs from its
-proto name: the JSON name first, then the proto name.
--}
-valueMemberEither : String -> String -> (Proto.Value.Value -> a) -> Member a
-valueMemberEither jsonName protoName =
-    nestedValueMemberEither jsonName protoName 0
-
-
-{-| [`valueMember`](#valueMember) for a oneof of a message at `depth` whose
-decoder counts the levels of nesting, which the `Value`'s arrays and objects
-count on from.
 -}
 nestedValueMember : String -> Int -> (Proto.Value.Value -> a) -> Member a
 nestedValueMember name =
     nestedValueMemberEither name name
 
 
-{-| [`valueMemberEither`](#valueMemberEither) at a depth, as
-[`nestedValueMember`](#nestedValueMember).
+{-| [`nestedValueMember`](#nestedValueMember) for a member whose JSON name
+differs from its proto name: the JSON name first, then the proto name.
 -}
 nestedValueMemberEither : String -> String -> Int -> (Proto.Value.Value -> a) -> Member a
 nestedValueMemberEither jsonName protoName depth constructor =
@@ -1171,7 +1019,8 @@ nestedValueMemberEither jsonName protoName depth constructor =
 {-| A member of the enum `google.protobuf.NullValue`, whose constructor carries
 nothing: present when its key holds `null`, which proto3 JSON writes for it, or
 the value's name or number, as [`nullValue`](#nullValue) reads them. Unlike
-every member but a [`valueMember`](#valueMember), one present as `null` is set.
+every member but a [`nestedValueMember`](#nestedValueMember), one present as
+`null` is set.
 
     type ActionKind
         = ActionKindUnset
@@ -1480,12 +1329,8 @@ fromResult result =
             Json.Decode.fail problem
 
 
-{-| Encode a map with `bool` keys, held as an association list, as a JSON
-object keyed `"true"` and `"false"`. When a key appears twice, the later pair
-is the one a parser keeps.
-
-    encodeBoolMap Json.Encode.string [ ( True, "on" ) ] -- {"true":"on"}
-
+{-| A map with `bool` keys, held as an association list, as a JSON object
+keyed `"true"` and `"false"`.
 -}
 encodeBoolMap : (a -> Value) -> List ( Bool, a ) -> Value
 encodeBoolMap write pairs =
@@ -2517,14 +2362,9 @@ encodeValue =
     Proto.Value.toJson
 
 
-{-| A field of type `Value` found by its key, read as [`value`](#value)
-reads one.
+{-| A field of type `Value` found by its key, read as
+[`nestedValue`](#nestedValue) reads one at `depth`.
 -}
-checkedJson : Maybe ( String, Value ) -> Decoder (Maybe Proto.Value.Value)
-checkedJson =
-    nestedCheckedJson 0
-
-
 nestedCheckedJson : Int -> Maybe ( String, Value ) -> Decoder (Maybe Proto.Value.Value)
 nestedCheckedJson depth found =
     case found of

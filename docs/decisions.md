@@ -792,8 +792,8 @@ JSON, now with nine fractional digits where it wrote three, was within
 *2026-10-10.*
 
 A message's decoder reads each field with one step, which names the
-field once, or twice (`fieldEither`) when its JSON and proto names
-differ, and takes the value an absent field reads as. A list of names
+field once, or twice (`fieldEither`, inside `message` now
+`messageFieldEither`) when its JSON and proto names differ, and takes the value an absent field reads as. A list of names
 (`field [ "title" ]`) was the alternative; it puts brackets on every
 line to serve the minority case. Separate `optional` and `list` steps
 would read a little shorter but double the step functions (each needs
@@ -2757,7 +2757,9 @@ path it does not touch; the third change's encoder removes it.
 - The generated decoders wrap their steps in `Proto.Json.message` and
   read fields with `messageField`, `messageFieldEither`,
   `messageValueField` and `messageValueFieldEither`, additive names
-  that generated code alone needs; a step makes no check of its own, so
+  that generated code alone needs (the last two, and the self-checking
+  `field` steps, were removed on 2026-11-27: Unused `Proto.Json` names
+  removed); a step makes no check of its own, so
   outside `message` it can read something other than an object as a
   message. The alternative, dropping the array check from every found
   field without a regenerate, loosens what a decoder accepts (an array
@@ -2769,6 +2771,29 @@ path it does not touch; the third change's encoder removes it.
   size; the one-pass encoder does not depend on warm-up.
 
 Where: design §3.4, §5.3 (Transcode).
+
+### Unused `Proto.Json` names removed
+
+*2026-11-27.*
+
+`Proto.Json` stops exposing the names no generated code calls and the
+emitter cannot write: the self-checking field steps `field`,
+`fieldEither`, `valueField` and `valueFieldEither`; the unnested
+`Value` steps `messageValueField` and `messageValueFieldEither` and
+members `valueMember` and `valueMemberEither`; and `encodeBoolMap`,
+which stays private under `boolMapField`. `Proto.Value.nestedDecoder`
+goes too: it is the decoder `Proto.Json.nestedValue` is, and generated
+code calls that. The self-checking steps predate `Proto.Json.message`,
+which has made the object check once for every generated decoder since
+JSON fast paths, and a message holding a `Value` always nests, so
+the unnested `Value` forms are the nested ones at depth 0 and the
+emitter's arms for them cannot be reached. Keeping them would leave
+two ways to write each step, one of which nothing generates, tests or
+documents as the way. A program never paid for them, since Elm drops
+what it does not call; the cost is the API break, accepted before 0.2.
+A hand-written decoder wraps its steps in `message` and reads its
+fields with `messageField`, `messageFieldEither` and the `nested`
+forms at depth 0. Where: design §3.1, §3.4, §3.5, §3.6.
 
 ### Binary codecs, faster within elm/bytes
 

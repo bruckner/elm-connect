@@ -600,26 +600,18 @@ mapProperties =
 
                     Just json ->
                         decodes (Proto.Json.int64Dict Json.Decode.string) json entries
-        , fuzz2 uniqueBools (Fuzz.pair Fuzzers.awkwardString Fuzzers.awkwardString) "a bool-keyed map round-trips in order" <|
+        , fuzz2 uniqueBools (Fuzz.pair Fuzzers.awkwardString Fuzzers.awkwardString) "a bool-keyed map round-trips in order, and is left out when empty" <|
             \keys ( first, second ) ->
                 let
                     pairs =
                         List.map2 Tuple.pair keys [ first, second ]
                 in
-                Expect.all
-                    [ roundTrips (Proto.Json.encodeBoolMap Json.Encode.string) (Proto.Json.boolMap Json.Decode.string)
-                    , \_ ->
-                        Proto.Json.boolMapField Json.Encode.string pairs
-                            |> Maybe.map (Json.Encode.encode 0)
-                            |> Expect.equal
-                                (if List.isEmpty pairs then
-                                    Nothing
+                case Proto.Json.boolMapField Json.Encode.string pairs of
+                    Nothing ->
+                        pairs |> Expect.equal []
 
-                                 else
-                                    Just (Json.Encode.encode 0 (Proto.Json.encodeBoolMap Json.Encode.string pairs))
-                                )
-                    ]
-                    pairs
+                    Just json ->
+                        decodes (Proto.Json.boolMap Json.Decode.string) json pairs
         ]
 
 
