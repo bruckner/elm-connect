@@ -224,23 +224,7 @@ getNote =
         )
 ```
 
-In 0.2 it takes the service's full name and the method's name first,
-then its codecs, and modifiers set the rest:
-
-```elm examples/notes/elm/src/Snippets/Migrating.elm#method
-getNote : Notes.V1.GetNoteRequest -> Rpc.Call Rpc.Json Notes.V1.GetNoteRequest Notes.V1.Note
-getNote =
-    Rpc.call
-        (Proto.Method.initJson "notes.v1.NotesService"
-            "GetNote"
-            Notes.V1.encodeGetNoteRequest
-            Notes.V1.decodeNoteWith
-            |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
-            |> Proto.Method.withBindings [ getNoteBinding ]
-        )
-```
-
-The binding is the same `Proto.Http` value in both:
+where the binding was `Proto.Http` data:
 
 ```elm examples/notes/elm/src/Snippets/Migrating.elm#binding
 getNoteBinding : Proto.Http.Binding
@@ -262,20 +246,50 @@ getNoteBinding =
         }
 ```
 
+In 0.2 it takes the service's full name and the method's name first,
+then its codecs, and modifiers set the rest:
+
+```elm examples/notes/elm/src/Snippets/Migrating.elm#method
+getNote : Notes.V1.GetNoteRequest -> Rpc.Call Rpc.Json Notes.V1.GetNoteRequest Notes.V1.Note
+getNote =
+    Rpc.call
+        (Proto.Method.initJson "notes.v1.NotesService"
+            "GetNote"
+            Notes.V1.encodeGetNoteRequest
+            Notes.V1.decodeNoteWith
+            |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
+            |> Proto.Method.withRoutes [ routeGetNote ]
+        )
+```
+
+Its route for transcoding is a function of the typed request, as
+generated code writes one, rather than the binding as data:
+
+```elm examples/notes/elm/src/Snippets/Migrating.elm#route
+routeGetNote : Notes.V1.GetNoteRequest -> Proto.Route.Route
+routeGetNote request =
+    -- GET /v1/{name=notes/*}
+    { method = "GET"
+    , path = "v1/" ++ Proto.Route.segments request.name
+    , query = []
+    , body = Nothing
+    , invalid = Proto.Route.checkSegments "name" [ "notes", "*" ] request.name
+    }
+```
+
 - `Proto.Method.initJson` builds a method with JSON codecs,
   `Proto.Method.initBinary` one with binary codecs, and
   `Proto.Method.init` one with both. A method's type gains its codec,
   `Proto.Method.Method codec req res`.
 - A method's idempotency is `IdempotencyUnknown` unless
   `Proto.Method.withIdempotency` sets it.
-- `Proto.Method.withBindings` gives the routes for transcoding as
-  `Proto.Http` bindings, read from the request's JSON. Generated code
-  uses `Proto.Method.withRoutes` instead, with a generated route
-  function per binding (`Proto.Method.withJsonRoutes` for a method whose
-  bodies hold an `Any`), and `Proto.Method.withResponseBody n "field"`
-  for each binding whose rule names a `response_body`, which a route
-  record does not hold. A method that is never transcoded needs
-  neither.
+- `Proto.Method.withRoutes` gives the routes for transcoding, one
+  function per binding (`Proto.Method.withJsonRoutes` for routes that
+  also read the request's JSON), and `Proto.Method.withResponseBody n
+  "field"` names the field binding `n`'s answer is read from, for a rule
+  with a `response_body`. A method that is never transcoded needs
+  neither. `Proto.Http` bindings are the descriptor's data alone: no
+  call is built from them.
 - `Proto.Method.toDescriptor` is gone: a method no longer holds a
   descriptor. Build one with `Proto.Method.descriptor` where the data is
   needed.

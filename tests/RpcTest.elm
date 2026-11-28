@@ -17,6 +17,7 @@ import Proto.Duration
 import Proto.Error
 import Proto.Field exposing (Cardinality(..), Kind(..), Scalar(..))
 import Proto.Http
+import Proto.Internal.Binding
 import Proto.Internal.Percent
 import Proto.Internal.Registry
 import Proto.Internal.Timestamp
@@ -74,7 +75,7 @@ notes name idempotency bindings =
     Rpc.call
         (Proto.Method.initJson "notes.v1.Notes" name (encodeGetNote >> Proto.Json.succeed) (\_ -> decodeTitle)
             |> Proto.Method.withIdempotency idempotency
-            |> Proto.Method.withBindings bindings
+            |> Proto.Internal.Binding.withBindings bindings
         )
 
 
@@ -1652,7 +1653,7 @@ encodings =
         routedNeverEncoded =
             Rpc.call
                 (Proto.Method.initJson "notes.v1.Notes" "GetNote" (\_ -> Debug.todo "the message was encoded") (\_ -> decodeTitle)
-                    |> Proto.Method.withBindings
+                    |> Proto.Internal.Binding.withBindings
                         [ Proto.Http.binding { method = "GET", path = [ Proto.Http.literal "v1", Proto.Http.literal "notes" ], customVerb = Nothing, body = Proto.Http.noBody, responseBody = Just (Proto.Field.descriptor "title" "title" 1 CardinalitySingular (KindScalar ScalarString)), query = [] } ]
                 )
 
@@ -1683,7 +1684,7 @@ encodings =
                     (\_ -> decodeTitle)
                     (\_ -> Bytes.Encode.sequence [])
                     decodeTitleBinary
-                    |> Proto.Method.withBindings
+                    |> Proto.Internal.Binding.withBindings
                         [ Proto.Http.binding
                             { method = "PATCH"
                             , path =

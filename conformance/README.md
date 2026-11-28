@@ -164,8 +164,8 @@ body), generated again under `module_prefix=Generated.Shapes` into
 `tests/Generated/Shapes/` at test time; its text is reviewed in the
 corpus.
 `tests/RouteShapesTest.elm` holds each of its methods' typed routes to
-the interpreter (`Proto.Method.withBindings` over the method's
-descriptor) through `Rpc.request`, every binding over a spread of
+the interpreter (`Proto.Internal.Binding.withBindings` over the
+method's descriptor) through `Rpc.request`, every binding over a spread of
 requests, pins the three places they differ on purpose, and checks that a
 value a JSON write refuses is refused in each shape before a route is
 built.

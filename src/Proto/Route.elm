@@ -8,8 +8,9 @@ module Proto.Route exposing
 generated route functions build it from a typed request:
 `routeGetNote0 : GetNoteRequest -> Route`: the route, built whatever the
 request holds, with the first path value its variable's template cannot
-match. The helpers below are what such functions call; application code
-reads a `Route` and does not build one.
+match. The helpers below are what such functions call; a method written by
+hand gives a function of its own of this form to
+[`Proto.Method.withRoutes`](Proto-Method#withRoutes).
 
 @docs Route, PathError
 

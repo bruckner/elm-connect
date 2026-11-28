@@ -8,10 +8,12 @@ module Proto.Http exposing
 {-| A method's `google.api.http` rule as data: its bindings, each a verb, a
 path template, a body and query parameters. The generator parses the rule
 and writes these into the method's [descriptor](Proto-Method#Descriptor),
-for a program that reads them; a generated method transcodes over route
-functions built from the same rule. A method written by hand takes its
-bindings with [`Proto.Method.withBindings`](Proto-Method#withBindings), and
-`Rpc` builds the request from them over the transcode protocol.
+where [`Proto.Method.bindings`](Proto-Method#bindings) gives them back. The
+types are opaque: a program can hold a method's bindings and compare them
+with `==` to bindings built here, but not take one apart. A call is not built
+from them: a generated method transcodes over route functions the generator
+writes from the same rule, given to
+[`Proto.Method.withRoutes`](Proto-Method#withRoutes).
 
 @docs Binding, binding
 @docs Segment, literal, variable, wildcard, doubleWildcard
@@ -42,7 +44,7 @@ type alias Binding =
   - `body`: what the request body holds.
   - `responseBody`: the descriptor of the top-level response field the answer
     holds (`Notes.V1.ListNotesResponse.notes`), if it is not the whole
-    response. The answer is read as that field's JSON.
+    response. The server answers with that field's JSON.
   - `query`: the query parameters, every request field outside the path and the
     body.
 
@@ -96,10 +98,7 @@ JSON, or `null` there, as under an unset message, is the text of the field's
 proto3 default, read from the last descriptor's kind: `""` for a string or
 bytes, `false`, `0` for any number, and an enum's zero value's name. Proto3
 reads the field as its default, and a server parsing the segment as the
-field's type rejects an empty one. Sending refuses a call whose value the
-template cannot match, `""` included, as a
-[`BadCall`](Rpc-Error#Cause); [`Rpc.request`](Rpc#request) still
-builds its URL.
+field's type rejects an empty one.
 
 -}
 variable : { fieldPath : List Proto.Field.Descriptor, template : List Segment } -> Segment

@@ -11,6 +11,7 @@ import Proto.EnumValue
 import Proto.Error
 import Proto.Field exposing (Cardinality(..), Kind(..), Scalar(..))
 import Proto.Http
+import Proto.Internal.Binding
 import Proto.Json
 import Proto.Method exposing (Method)
 import Requests exposing (builtOf, refusalOf)
@@ -92,7 +93,7 @@ raw bindings =
         "M"
         (Proto.Json.succeed << identity)
         (\_ -> Json.Decode.field "title" Json.Decode.string)
-        |> Proto.Method.withBindings (List.map Proto.Http.binding bindings)
+        |> Proto.Internal.Binding.withBindings (List.map Proto.Http.binding bindings)
 
 
 {-| A call of the method bound by `r` alone.
@@ -553,7 +554,7 @@ responses =
                 Rpc.response transcoding
                     (Rpc.call
                         (Proto.Method.initJson "t" "m" (Proto.Json.succeed << identity) (\_ -> Json.Decode.succeed ())
-                            |> Proto.Method.withBindings [ Proto.Http.binding rule ]
+                            |> Proto.Internal.Binding.withBindings [ Proto.Http.binding rule ]
                         )
                         Json.Encode.null
                     )
@@ -592,7 +593,7 @@ responses =
                 Rpc.response transcoding
                     (Rpc.call
                         (Proto.Method.initJson "t" "m" (Proto.Json.succeed << identity) (\_ -> Json.Decode.field "title" Json.Decode.string)
-                            |> Proto.Method.withBindings [ Proto.Http.binding rule ]
+                            |> Proto.Internal.Binding.withBindings [ Proto.Http.binding rule ]
                             |> Proto.Method.withResponseBody 1 "title"
                         )
                         Json.Encode.null

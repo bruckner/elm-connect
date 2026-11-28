@@ -1842,6 +1842,9 @@ design §4, §5.1, §5.3.
 both route shapes stay (A binding's response field is the method's,
 below).
 
+2026-11-27: `withBindings` is no longer exposed; the interpreter stays
+as the tests' oracle (`withBindings` unexposed, below).
+
 2026-11-24: a typed route never ran the request's encoder, so once a
 JSON write could refuse a value, a refusable value in a path, a query or
 a typed `Value` body went out unchecked while the same value in a JSON
@@ -1863,6 +1866,39 @@ for every refusable request (the first build of the encoder had them),
 which makes a `GET` of a message holding a `Timestamp` take the JSON it
 does not use and changes those methods' route types for nothing the
 check does not already give.
+
+### `withBindings` unexposed
+
+*2026-11-27.*
+
+`Proto.Method.withBindings`, which gave a method its routes from
+`Proto.Http` bindings read over the request's proto3 JSON, is no longer
+exposed. The function stays in the package, in
+`Proto.Internal.Binding` beside the binding types, with the interpreter
+it calls merged in from `Proto.Internal.Interpret`, so the package's
+tests keep it as their oracle: `tests/RouteShapesTest.elm` holds every
+generated route to it, and the transcode tests build methods with it.
+`Proto.Http`, the descriptor's bindings and `Proto.Method.bindings` stay
+as they were; a method written by hand gives route functions of its own
+to `withRoutes` or `withJsonRoutes`. Why: generated code has not called
+it since routes became generated functions (above); writing transcoded
+methods by hand beside a code generator is not a need users have
+shown; and with it exposed there were two implementations of
+transcoding, the generator's route functions and the interpreter, that
+had to be kept in step as a promise to users rather than as a test.
+Readers for the binding data (taking a `Binding`, `Segment`, `Body` or
+`Param` apart) are deferred: the sub-types are opaque, so readers can
+be added in any minor once someone needs them.
+
+This reverses the November interface audit (2026-11-12), which said to
+leave `withBindings`: it saved a generated program nothing, it was
+no longer the only path for an `Any` body, and dropping it would make
+0.1 hand-writers rewrite their methods as route functions. They must
+rewrite them anyway, since 0.2 changes every method builder
+(docs/migrating.md), and `withBindings` never shipped: it is new in
+0.2, so removing it now costs no released user anything, while removing
+it after 0.2 would take another major. Where: design §3.1, §4, §5.2,
+§5.3.
 
 ### A binding's response field is the method's
 

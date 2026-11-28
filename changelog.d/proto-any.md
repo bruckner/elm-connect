@@ -70,6 +70,6 @@
   nested messages as `QuotaFailureViolation`, `BadRequestFieldViolation`
   and the like), and `registry` holding all of them.
 - Fixed: a send encodes its JSON request at most once: for its body, a
-  route read from bindings as data, the check that its `Any`s can be
-  written and the write limit alike. Reading an answer with
-  `Rpc.response` over a route read from bindings encodes nothing.
+  route read from the JSON, the check that its `Any`s can be written and
+  the write limit alike. Reading an answer with `Rpc.response` encodes
+  nothing.

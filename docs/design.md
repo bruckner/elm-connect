@@ -348,8 +348,8 @@ rpc shared call =
   `Rpc`, read by `Rpc.Trace`; `Rpc.Internal.Protocol` and
   `Rpc.Internal.Client`, built by `Rpc.Protocol` and `Rpc.Client` and
   read by `Rpc`; `Rpc.Internal.Retry`; `Proto.Internal.Binding`, built by
-  `Proto.Http`, which also holds the interpreter
-  `Proto.Method.withBindings` reaches; `Proto.Internal.Any`;
+  `Proto.Http`, which also holds the interpreter of binding data the
+  tests use as an oracle (`withBindings`, unexposed); `Proto.Internal.Any`;
   `Proto.Internal.Duration` and `Proto.Internal.Timestamp`, which the
   binary reader builds and the JSON writer and `Proto.Route` print,
   §3.5;
@@ -2685,11 +2685,11 @@ binding whose rule names a `response_body`:
   JSON, has refused a value with no JSON form before the route is built.
   A binding the
   resolver accepts that the emitter cannot type is a bug, reported as
-  `internal::untyped_route`. A method written by hand gives its own
-  `Proto.Http` bindings to `withBindings`, which the runtime's
-  interpreter (`Proto.Internal.Binding`) reads over the same JSON into
-  the same route; only a program naming `withBindings` carries the
-  interpreter, and no generated method names it.
+  `internal::untyped_route`. A method written by hand gives route
+  functions of its own to `withRoutes` or `withJsonRoutes`. The
+  runtime's interpreter of bindings as data
+  (`Proto.Internal.Binding.withBindings`) is not exposed: the tests hold
+  every generated route to it as an independent oracle.
 - **The implicit route.** A method without a rule has no routes and
   `bindings = []` in its descriptor, and nothing else is generated for
   it: over the transcode protocol
@@ -3154,7 +3154,7 @@ on. Over JSON a send's plan (`toSend`, which `Rpc.request` and every way
 of sending make) encodes the request exactly once, as it is made and
 before any route is built, and hands that one value to each part that
 reads it: the check, the route (a route read from the JSON by
-`withJsonRoutes` or `withBindings`), the body and the write limit. A
+`withJsonRoutes`), the body and the write limit. A
 request with no JSON (a value proto3 JSON has no form for, an `Any` the
 client's registry cannot write) builds no route and no request: the
 plan's request is that error, which `Plan.checked`, the checks every
@@ -3553,10 +3553,12 @@ of (§5.2). The request is the route the function builds: its verb, the
 base URL, its path and its query pairs percent-encoded, and its body.
 The bindings as data (`Proto.Http.binding`, with `literal`, `variable`,
 `wildcard`, `doubleWildcard`, `noBody`, `wholeBody`, `bodyField` and
-`param`) stay in the method's descriptor, for a program that reads
-them, and are what a method written by hand gives `withBindings`; the
-interpreter builds the same route from them over the request's JSON.
-What follows says how a binding reads its fields, for both.
+`param`) stay in the method's descriptor, which
+`Proto.Method.bindings` gives back; no call is built from them. The
+package's tests build the same route from them over the request's JSON
+with the interpreter (`Proto.Internal.Binding.withBindings`, unexposed),
+an oracle for the route functions. What follows says how a binding
+reads its fields, for both.
 
 - **Variables and parameters are paths of field descriptors.**
   A variable is `Proto.Http.variable { fieldPath,

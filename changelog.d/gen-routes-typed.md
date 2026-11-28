@@ -3,11 +3,10 @@
   as `Bytes` (`bytes=bytes`) in a path or query, a path through a
   recursive message, a body field of `google.protobuf.Empty` or `Value`,
   or a body holding a `google.protobuf.Any`, took its bindings as data
-  (`withBindings (Proto.Method.bindings descriptorX)`) and was read by
-  the runtime's interpreter; no generated method does now, so no
-  generated program carries the interpreter: the notes example's bundle
-  is 1.3 KB (3.3 %) smaller gzipped, and such requests are built 11 to
-  17 % faster.
+  and was read by the runtime's interpreter; no generated method does
+  now, so no generated program carries the interpreter: the notes
+  example's bundle is 1.3 KB (3.3 %) smaller gzipped, and such requests
+  are built 11 to 17 % faster.
 - A method whose bodies hold an `Any`, which only the client's registry
   can write, takes route functions of the request and its proto3 JSON
   (`routeCreateNote0 : CreateNoteRequest -> Json.Encode.Value ->

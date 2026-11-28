@@ -124,7 +124,8 @@ that two public modules must build or match keeps its constructor in one
 implementation stays out of the public modules so that they read as API:
 `Rpc.Internal.Plan` plans a call over its client's protocol, its
 binding's route included,
-`Proto.Internal.Binding` holds a binding written as data and reads it,
+`Proto.Internal.Binding` holds a binding written as data and the
+interpreter the tests hold generated routes to,
 `Proto.Internal.Binary.Wire` reads and writes the binary format's values
 as bytes (varints, 64-bit values, strings, a field's key) beneath
 `Proto.Binary`'s codecs and message loop (§5.5), `Connect`,

@@ -4,19 +4,28 @@ module Proto.Internal.Binding exposing
     , Param(..)
     , Rule
     , Segment(..)
-    , route
+    , withBindings
     )
 
 {-| The HTTP binding types, with their constructors, and the interpreter that
-reads them. `Proto.Http` builds the types and exposes them alone, so an
-application builds a binding and cannot take one apart.
-`Proto.Method.withBindings` matches them here, and [`route`](#route) gives the
-route a binding's data makes of a request's proto3 JSON. Generated route
-functions build the same route from the typed request.
+reads them.
+
+`Proto.Http` builds the types and exposes them alone, so an application builds
+a binding and cannot take one apart. Generated code writes each method's
+`google.api.http` rule as this data into its descriptor, and builds its
+routes with typed route functions instead.
+
+The interpreter, [`withBindings`](#withBindings), gives a method its routes
+from bindings as data, reading each route from the request's proto3 JSON. No
+generated code calls it, and it is not exposed: the package's tests use it as
+an oracle, an implementation of transcoding apart from the generator's, which
+the generated route functions must agree with.
+
 -}
 
 import Json.Decode
 import Json.Encode exposing (Value)
+import Proto.Internal.Method as Method exposing (Method)
 import Proto.Internal.Percent as Internal
 import Proto.Route exposing (PathError, Route)
 
@@ -50,6 +59,27 @@ type Body
 
 type Param
     = Param { name : String, path : List String, zero : Maybe String }
+
+
+{-| The method's routes from its `google.api.http` bindings as data: each
+route is read from the request's proto3 JSON, written with the registry in
+use and encoded once per send for the route and the body alike, and each
+binding's answer is read from the response field its data names. The routes
+replace any the method had.
+-}
+withBindings : List Binding -> Method idempotency codec req res -> Method idempotency codec req res
+withBindings methodBindings (Method.Method m) =
+    Method.Method
+        { m
+            | routes =
+                List.map
+                    (\(Binding rule) ->
+                        { shape = Method.FromJson (\_ json -> route rule json)
+                        , responseBody = rule.responseBody
+                        }
+                    )
+                    methodBindings
+        }
 
 
 {-| The route of a request over a binding, built whatever its path values,
