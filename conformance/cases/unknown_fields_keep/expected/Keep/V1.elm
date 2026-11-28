@@ -556,13 +556,13 @@ decodeNote : Json.Decode.Decoder Note
 decodeNote =
     Proto.Json.Decode.message
         (Json.Decode.succeed Note
-            |> Proto.Json.Decode.messageField "title" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageField "tags" [] (Json.Decode.list Proto.Json.Decode.string)
-            |> Proto.Json.Decode.messageField "counts" Dict.empty (Proto.Json.Decode.stringDict Proto.Json.Decode.int64)
-            |> Proto.Json.Decode.messageField "detail" Nothing (Json.Decode.map Just decodeDetail)
+            |> Proto.Json.Decode.field "title" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "tags" [] (Json.Decode.list Proto.Json.Decode.string)
+            |> Proto.Json.Decode.field "counts" Dict.empty (Proto.Json.Decode.stringDict Proto.Json.Decode.int64)
+            |> Proto.Json.Decode.field "detail" Nothing (Json.Decode.map Just decodeDetail)
             |> Proto.Json.Decode.oneof decodeNoteOrigin
-            |> Proto.Json.Decode.messageField "marks" [] (Json.Decode.list Proto.Json.Decode.int32)
-            |> Proto.Json.Decode.messageField "weight" 0.0 Proto.Json.Decode.double
+            |> Proto.Json.Decode.field "marks" [] (Json.Decode.list Proto.Json.Decode.int32)
+            |> Proto.Json.Decode.field "weight" 0.0 Proto.Json.Decode.double
             |> Json.Decode.map (\value -> value Proto.Unknown.empty)
         )
 
@@ -584,8 +584,8 @@ decodeDetail : Json.Decode.Decoder Detail
 decodeDetail =
     Proto.Json.Decode.message
         (Json.Decode.succeed Detail
-            |> Proto.Json.Decode.messageField "body" "" Proto.Json.Decode.bytes
-            |> Proto.Json.Decode.messageField "crc" 0 Proto.Json.Decode.uint32
+            |> Proto.Json.Decode.field "body" "" Proto.Json.Decode.bytes
+            |> Proto.Json.Decode.field "crc" 0 Proto.Json.Decode.uint32
             |> Json.Decode.map (\value -> value Proto.Unknown.empty)
         )
 
@@ -603,70 +603,70 @@ decodeWide : Json.Decode.Decoder Wide
 decodeWide =
     Proto.Json.Decode.message
         (Json.Decode.succeed Wide
-            |> Proto.Json.Decode.messageField "f1" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f2" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f3" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f4" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f5" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f6" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f7" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f8" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f9" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f10" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f11" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f12" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f13" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f14" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f15" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f16" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f17" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f18" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f19" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f20" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f21" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f22" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f23" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f24" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f25" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f26" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f27" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f28" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f29" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f30" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f31" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f32" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f33" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f34" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f35" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f36" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f37" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f38" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f39" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f40" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f41" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f42" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f43" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f44" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f45" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f46" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f47" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f48" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f49" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f50" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f51" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f52" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f53" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f54" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f55" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f56" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f57" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f58" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f59" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f60" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f61" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f62" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f63" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "f64" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f1" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f2" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f3" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f4" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f5" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f6" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f7" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f8" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f9" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f10" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f11" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f12" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f13" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f14" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f15" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f16" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f17" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f18" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f19" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f20" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f21" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f22" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f23" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f24" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f25" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f26" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f27" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f28" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f29" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f30" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f31" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f32" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f33" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f34" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f35" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f36" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f37" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f38" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f39" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f40" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f41" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f42" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f43" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f44" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f45" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f46" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f47" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f48" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f49" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f50" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f51" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f52" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f53" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f54" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f55" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f56" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f57" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f58" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f59" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f60" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f61" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f62" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f63" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "f64" 0 Proto.Json.Decode.int32
             |> Json.Decode.map (\value -> value Proto.Unknown.empty)
         )
 

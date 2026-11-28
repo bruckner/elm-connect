@@ -314,11 +314,11 @@ decodeNestedItemWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder Ite
 decodeNestedItemWith types depth =
     Proto.Json.Decode.message
         (Json.Decode.succeed Item
-            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageField "size" "0" Proto.Json.Decode.int64
-            |> Proto.Json.Decode.messageField "status" StatusUnspecified decodeStatus
-            |> Proto.Json.Decode.messageField "payload" Nothing (Json.Decode.map Just (Proto.Json.Decode.nestedAnyWith depth types))
-            |> Proto.Json.Decode.messageField "attachments" [] (Json.Decode.list (Proto.Json.Decode.nestedAnyWith depth types))
+            |> Proto.Json.Decode.field "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "size" "0" Proto.Json.Decode.int64
+            |> Proto.Json.Decode.field "status" StatusUnspecified decodeStatus
+            |> Proto.Json.Decode.field "payload" Nothing (Json.Decode.map Just (Proto.Json.Decode.nestedAny depth types))
+            |> Proto.Json.Decode.field "attachments" [] (Json.Decode.list (Proto.Json.Decode.nestedAny depth types))
         )
 
 
@@ -328,7 +328,7 @@ decodeGetItemRequest : Json.Decode.Decoder GetItemRequest
 decodeGetItemRequest =
     Proto.Json.Decode.message
         (Json.Decode.succeed GetItemRequest
-            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "name" "" Proto.Json.Decode.string
         )
 
 
@@ -338,7 +338,7 @@ decodeListItemsRequest : Json.Decode.Decoder ListItemsRequest
 decodeListItemsRequest =
     Proto.Json.Decode.message
         (Json.Decode.succeed ListItemsRequest
-            |> Proto.Json.Decode.messageFieldEither "pageSize" "page_size" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.fieldEither "pageSize" "page_size" 0 Proto.Json.Decode.int32
         )
 
 
@@ -355,7 +355,7 @@ decodeNestedListItemsResponseWith : Proto.Registry.Registry -> Int -> Json.Decod
 decodeNestedListItemsResponseWith types depth =
     Proto.Json.Decode.message
         (Json.Decode.succeed ListItemsResponse
-            |> Proto.Json.Decode.messageField "items" [] (Json.Decode.list (Proto.Json.Decode.deeper depth (decodeNestedItemWith types)))
+            |> Proto.Json.Decode.field "items" [] (Json.Decode.list (Proto.Json.Decode.deeper depth (decodeNestedItemWith types)))
         )
 
 

@@ -267,12 +267,12 @@ decodeNestedEntry =
         (\depth ->
             Proto.Json.Decode.message
                 (Json.Decode.succeed Entry
-                    |> Proto.Json.Decode.messageField "memo" "" Proto.Json.Decode.string
-                    |> Proto.Json.Decode.messageField "amount" "0" Proto.Json.Decode.int64
-                    |> Proto.Json.Decode.messageField "kind" KindUnspecified decodeKind
-                    |> Proto.Json.Decode.messageField "tags" Dict.empty (Proto.Json.Decode.stringDict Proto.Json.Decode.int32)
+                    |> Proto.Json.Decode.field "memo" "" Proto.Json.Decode.string
+                    |> Proto.Json.Decode.field "amount" "0" Proto.Json.Decode.int64
+                    |> Proto.Json.Decode.field "kind" KindUnspecified decodeKind
+                    |> Proto.Json.Decode.field "tags" Dict.empty (Proto.Json.Decode.stringDict Proto.Json.Decode.int32)
                     |> Proto.Json.Decode.oneof (decodeNestedEntrySource depth)
-                    |> Proto.Json.Decode.messageField "marks" [] (Json.Decode.list Proto.Json.Decode.int32)
+                    |> Proto.Json.Decode.field "marks" [] (Json.Decode.list Proto.Json.Decode.int32)
                 )
         )
 
@@ -301,7 +301,7 @@ decodeGetEntryRequest : Json.Decode.Decoder GetEntryRequest
 decodeGetEntryRequest =
     Proto.Json.Decode.message
         (Json.Decode.succeed GetEntryRequest
-            |> Proto.Json.Decode.messageField "memo" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "memo" "" Proto.Json.Decode.string
         )
 
 

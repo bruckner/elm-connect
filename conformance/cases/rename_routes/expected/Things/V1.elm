@@ -205,7 +205,7 @@ decodeThing : Json.Decode.Decoder Thing
 decodeThing =
     Proto.Json.Decode.message
         (Json.Decode.succeed Thing
-            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "name" "" Proto.Json.Decode.string
         )
 
 
@@ -215,7 +215,7 @@ decodeCriteria : Json.Decode.Decoder Criteria
 decodeCriteria =
     Proto.Json.Decode.message
         (Json.Decode.succeed Criteria
-            |> Proto.Json.Decode.messageField "state" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "state" "" Proto.Json.Decode.string
         )
 
 
@@ -225,9 +225,9 @@ decodeGetThingRequest : Json.Decode.Decoder GetThingRequest
 decodeGetThingRequest =
     Proto.Json.Decode.message
         (Json.Decode.succeed GetThingRequest
-            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageFieldEither "pageSize" "page_size" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "filter" Nothing (Json.Decode.map Just decodeCriteria)
+            |> Proto.Json.Decode.field "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.fieldEither "pageSize" "page_size" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "filter" Nothing (Json.Decode.map Just decodeCriteria)
         )
 
 

@@ -392,7 +392,7 @@ impl Emitter {
 
     /// The decoder of a field, and the value an absent or `null` field
     /// reads as; `None` for [`FieldShape::Json`], which
-    /// `Proto.Json.Decode.messageNullField` reads whole, since for it `null` is not
+    /// `Proto.Json.Decode.nullField` reads whole, since for it `null` is not
     /// absent.
     pub(super) fn field_decoder(&mut self, shape: FieldShape) -> Option<(Expr, Expr)> {
         let decoder = match shape {
@@ -635,13 +635,13 @@ impl Emitter {
                     var(with_registry(wrapper.decoder_name()))
                 }
                 _ if self.deep.is_some() => {
-                    let nested = self.reference((PROTO_JSON_DECODE, "nestedAnyWith"));
+                    let nested = self.reference((PROTO_JSON_DECODE, "nestedAny"));
                     return apply(
                         nested,
                         [var(super::recursion::DEPTH), var(REGISTRY_ARGUMENT)],
                     );
                 }
-                _ => self.reference((PROTO_JSON_DECODE, "anyWith")),
+                _ => self.reference((PROTO_JSON_DECODE, "any")),
             };
             return apply(decoder, [var(REGISTRY_ARGUMENT)]);
         }

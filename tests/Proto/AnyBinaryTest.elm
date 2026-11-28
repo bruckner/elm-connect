@@ -50,7 +50,7 @@ base64 any =
 -}
 readWith : Registry -> String -> Result String Any
 readWith reg text =
-    Json.Decode.decodeString (Proto.Json.Decode.anyWith reg) text
+    Json.Decode.decodeString (Proto.Json.Decode.any reg) text
         |> Result.mapError Json.Decode.errorToString
 
 

@@ -35,7 +35,7 @@ suite =
                 , """{"@type":"type.googleapis.com/google.rpc.Help.Link","description":"docs","url":"https://example.com"}"""
                 ]
                     |> List.map
-                        (Json.Decode.decodeString (Proto.Json.Decode.anyWith ErrorDetails.registry)
+                        (Json.Decode.decodeString (Proto.Json.Decode.any ErrorDetails.registry)
                             >> Result.mapError Json.Decode.errorToString
                             >> Result.andThen (Proto.Json.Encode.any >> Proto.Json.Encode.encodeWith ErrorDetails.registry >> Result.mapError (\_ -> "unwritable"))
                             >> Result.map (Json.Encode.encode 0)
@@ -51,7 +51,7 @@ suite =
                     |> Expect.equal (Err (Proto.Error.UnregisteredType "type.googleapis.com/google.protobuf.Duration"))
         , test "a RetryInfo's delay unpacks" <|
             \_ ->
-                Json.Decode.decodeString (Proto.Json.Decode.anyWith (Registry.union ErrorDetails.registry Registry.empty)) """{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"2s"}"""
+                Json.Decode.decodeString (Proto.Json.Decode.any (Registry.union ErrorDetails.registry Registry.empty)) """{"@type":"type.googleapis.com/google.rpc.RetryInfo","retryDelay":"2s"}"""
                     |> Result.toMaybe
                     |> Maybe.andThen (Any.unpack ErrorDetails.retryInfo)
                     |> Maybe.andThen .retryDelay

@@ -169,11 +169,11 @@ decodeNote : Json.Decode.Decoder Note
 decodeNote =
     Proto.Json.Decode.message
         (Json.Decode.succeed Note
-            |> Proto.Json.Decode.messageField "title" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageField "author" Nothing (Json.Decode.map Just Users.V1.decodeUser)
-            |> Proto.Json.Decode.messageFieldEither "requiredRole" "required_role" Users.V1.RoleUnspecified Users.V1.decodeRole
-            |> Proto.Json.Decode.messageField "readers" [] (Json.Decode.list Users.V1.decodeUser)
-            |> Proto.Json.Decode.messageField "roles" Dict.empty (Proto.Json.Decode.stringDict Users.V1.decodeRole)
+            |> Proto.Json.Decode.field "title" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "author" Nothing (Json.Decode.map Just Users.V1.decodeUser)
+            |> Proto.Json.Decode.fieldEither "requiredRole" "required_role" Users.V1.RoleUnspecified Users.V1.decodeRole
+            |> Proto.Json.Decode.field "readers" [] (Json.Decode.list Users.V1.decodeUser)
+            |> Proto.Json.Decode.field "roles" Dict.empty (Proto.Json.Decode.stringDict Users.V1.decodeRole)
             |> Proto.Json.Decode.oneof decodeNoteOwner
         )
 

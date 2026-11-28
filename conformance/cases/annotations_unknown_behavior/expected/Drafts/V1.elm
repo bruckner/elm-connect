@@ -125,9 +125,9 @@ decodeDraft : Json.Decode.Decoder Draft
 decodeDraft =
     Proto.Json.Decode.message
         (Json.Decode.succeed Draft
-            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageField "body" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageField "owner" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "body" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "owner" "" Proto.Json.Decode.string
         )
 
 

@@ -1,5 +1,5 @@
 module Proto.Json.Decode exposing
-    ( message, messageField, messageFieldEither, messageNullField, messageNullFieldEither, emptyMessage
+    ( message, field, fieldEither, nullField, nullFieldEither, emptyMessage
     , memo, deeper, deeperLazy
     , oneof, members, Member, member, memberEither, nullMember, nullMemberEither
     , enum, enumOrZero
@@ -18,7 +18,7 @@ module Proto.Json.Decode exposing
     , nullValue
     , struct, nestedStruct, value, nestedValue
     , listValue, nestedListValue
-    , anyWith, nestedAnyWith, registryDepth
+    , any, nestedAny, registryDepth
     )
 
 {-| Proto3 JSON decoders, the counterpart of `Json.Decode` for messages: what
@@ -37,7 +37,7 @@ which are wider than elm/json's (a number written as a string, `"NaN"`).
 A generated decoder checks once, with [`message`](#message), that the JSON is
 an object, and then reads each field with a step that does not check it again.
 
-@docs message, messageField, messageFieldEither, messageNullField, messageNullFieldEither, emptyMessage
+@docs message, field, fieldEither, nullField, nullFieldEither, emptyMessage
 
 
 # Messages that nest
@@ -56,7 +56,7 @@ takes the depth, and reads each message it holds that nests one level deeper:
             (\depth ->
                 Proto.Json.Decode.message
                     (Json.Decode.succeed Node
-                        |> Proto.Json.Decode.messageField "children" [] (Json.Decode.list (Json.Decode.map Node_ (Json.Decode.lazy (\_ -> decodeNestedNode (depth + 1)))))
+                        |> Proto.Json.Decode.field "children" [] (Json.Decode.list (Json.Decode.map Node_ (Json.Decode.lazy (\_ -> decodeNestedNode (depth + 1)))))
                     )
             )
 
@@ -128,7 +128,7 @@ By default a `bytes` field is held as its base64 text. Code generated with the
 
 `Value` is any JSON, held as a [`Proto.Value.Value`](Proto-Value#Value). A
 message holding one nests, so it decodes with [`nestedValue`](#nestedValue):
-a field of it through [`messageNullField`](#messageNullField), a oneof member
+a field of it through [`nullField`](#nullField), a oneof member
 through [`nullMember`](#nullMember), and a list or map of it as any other
 value. The `nested` forms read one held by a message
 that nests, counting its levels on from the message's depth; [`value`](#value)
@@ -143,7 +143,7 @@ their scalar's helpers.
 @docs nullValue
 @docs struct, nestedStruct, value, nestedValue
 @docs listValue, nestedListValue
-@docs anyWith, nestedAnyWith, registryDepth
+@docs any, nestedAny, registryDepth
 
 -}
 
@@ -182,15 +182,15 @@ emptyMessage =
 
 {-| Decode a message: check that the JSON is an object, not an array, and
 then run `fields`, a pipeline from `Json.Decode.succeed` with a
-[`messageField`](#messageField) step per field. Anything that is not an
+[`field`](#field) step per field. Anything that is not an
 object fails with elm/json's `Expecting an OBJECT`.
 
     decodeNote : Json.Decode.Decoder Note
     decodeNote =
         message
             (Json.Decode.succeed Note
-                |> messageField "title" "" string
-                |> messageField "stars" 0 int32
+                |> field "title" "" string
+                |> field "stars" 0 int32
             )
 
 A [`oneof`](#oneof) step reads the object as it does in any pipeline.
@@ -220,38 +220,39 @@ value must satisfy the decoder.
     decodeNote =
         message
             (Json.Decode.succeed Note
-                |> messageField "title" "" string
-                |> messageField "stars" 0 int32
+                |> field "title" "" string
+                |> field "stars" 0 int32
             )
 
 `message` has checked that the JSON is an object: the step does not check it
 again. Outside `message` it may read JSON that is not an object as a message,
-every field absent.
+every field absent. 0.1's `Proto.Json.field`, of the same type, checked for
+itself; a pipeline of it moves into `message`.
 
 The default says what absence means, so one step serves every field shape: a
 field with presence (a message-typed or proto3 `optional` field) defaults to
 `Nothing` and maps its decoder with `Just`, a repeated field defaults to `[]`
 and decodes with `Json.Decode.list`.
 
-    |> messageField "author" Nothing (Json.Decode.map Just decodeAuthor)
-    |> messageField "tags" [] (Json.Decode.list string)
+    |> field "author" Nothing (Json.Decode.map Just decodeAuthor)
+    |> field "tags" [] (Json.Decode.list string)
 
 -}
-messageField : String -> a -> Json.Decode.Decoder a -> Json.Decode.Decoder (a -> b) -> Json.Decode.Decoder b
-messageField name default decoder =
+field : String -> a -> Json.Decode.Decoder a -> Json.Decode.Decoder (a -> b) -> Json.Decode.Decoder b
+field name default decoder =
     Json.Decode.map2 (|>) (valueIn [ name ] default decoder)
 
 
-{-| [`messageField`](#messageField) for a field whose JSON name differs from
+{-| [`field`](#field) for a field whose JSON name differs from
 its proto name: the JSON name first, then the proto name. proto3 JSON parsers
 accept either key, but not both: an object holding both fails, even when one
 of them is `null`, as protobuf's own parsers reject a duplicate field.
 
-    |> messageFieldEither "displayName" "display_name" "" string
+    |> fieldEither "displayName" "display_name" "" string
 
 -}
-messageFieldEither : String -> String -> a -> Json.Decode.Decoder a -> Json.Decode.Decoder (a -> b) -> Json.Decode.Decoder b
-messageFieldEither jsonName protoName default decoder =
+fieldEither : String -> String -> a -> Json.Decode.Decoder a -> Json.Decode.Decoder (a -> b) -> Json.Decode.Decoder b
+fieldEither jsonName protoName default decoder =
     Json.Decode.map2 (|>) (valueIn (spellings jsonName protoName) default decoder)
 
 
@@ -271,8 +272,8 @@ holding it is set, as protobuf's own parsers read it.
     decodeNestedSetting depth =
         message
             (Json.Decode.succeed Setting
-                |> messageField "name" "" string
-                |> messageNullField "value" (nestedValue depth)
+                |> field "name" "" string
+                |> nullField "value" (nestedValue depth)
             )
 
 To encode one, `Nothing` leaves the field out and `Just` writes its JSON:
@@ -280,17 +281,17 @@ To encode one, `Nothing` leaves the field out and `Just` writes its JSON:
     Proto.Json.Encode.object [ Proto.Json.Encode.checkedFields [ ( "value", Proto.Json.Encode.optional Proto.Json.Encode.value setting.value ) ] ]
 
 -}
-messageNullField : String -> Json.Decode.Decoder a -> Json.Decode.Decoder (Maybe a -> b) -> Json.Decode.Decoder b
-messageNullField name =
-    messageNullFieldEither name name
+nullField : String -> Json.Decode.Decoder a -> Json.Decode.Decoder (Maybe a -> b) -> Json.Decode.Decoder b
+nullField name =
+    nullFieldEither name name
 
 
-{-| [`messageNullField`](#messageNullField) for a field whose JSON name differs
+{-| [`nullField`](#nullField) for a field whose JSON name differs
 from its proto name: the JSON name first, then the proto name, as in
-[`messageFieldEither`](#messageFieldEither).
+[`fieldEither`](#fieldEither).
 -}
-messageNullFieldEither : String -> String -> Json.Decode.Decoder a -> Json.Decode.Decoder (Maybe a -> b) -> Json.Decode.Decoder b
-messageNullFieldEither jsonName protoName decoder =
+nullFieldEither : String -> String -> Json.Decode.Decoder a -> Json.Decode.Decoder (Maybe a -> b) -> Json.Decode.Decoder b
+nullFieldEither jsonName protoName decoder =
     let
         names =
             spellings jsonName protoName
@@ -498,7 +499,7 @@ isNull raw =
 
 
 {-| Decode a oneof in a decoding pipeline: unlike
-[`messageField`](#messageField), the decoder reads the message object itself,
+[`field`](#field), the decoder reads the message object itself,
 since each member of a oneof is a key of the message. The decoder is usually
 [`members`](#members).
 
@@ -510,7 +511,7 @@ since each member of a oneof is a key of the message. The decoder is usually
     decodeNote =
         message
             (Json.Decode.succeed Note
-                |> messageField "title" "" string
+                |> field "title" "" string
                 |> oneof decodeNoteKind
             )
 
@@ -543,7 +544,7 @@ Then:
     `Expecting at most one member of oneof "kind", but got "text" and "pageCount"`.
 
 A member written under both its JSON name and its proto name fails, as a field
-does in [`messageFieldEither`](#messageFieldEither).
+does in [`fieldEither`](#fieldEither).
 
 -}
 members : String -> a -> List (Member a) -> Json.Decode.Decoder a
@@ -691,7 +692,7 @@ member name =
 
 {-| [`member`](#member) for a member whose JSON name differs from its proto
 name: the JSON name first, then the proto name, as in
-[`messageFieldEither`](#messageFieldEither).
+[`fieldEither`](#fieldEither).
 -}
 memberEither : String -> String -> Json.Decode.Decoder a -> Member a
 memberEither jsonName protoName decoder =
@@ -729,7 +730,7 @@ nullMember name =
 
 {-| [`nullMember`](#nullMember) for a member whose JSON name differs from its
 proto name: the JSON name first, then the proto name, as in
-[`messageFieldEither`](#messageFieldEither).
+[`fieldEither`](#fieldEither).
 -}
 nullMemberEither : String -> String -> Json.Decode.Decoder a -> Member a
 nullMemberEither jsonName protoName decoder =
@@ -1945,8 +1946,8 @@ unless the registry is [lenient](Proto-Registry#lenient): then the `Any`
 holds the JSON alone. It fails for JSON that is not its message, lenient
 or not.
 -}
-anyWith : Registry -> Json.Decode.Decoder Any
-anyWith (InternalRegistry.Registry leniency depth entries) =
+any : Registry -> Json.Decode.Decoder Any
+any (InternalRegistry.Registry leniency depth entries) =
     anyParts
         |> Json.Decode.andThen
             (\parts ->
@@ -2175,11 +2176,11 @@ deeperLazy depth build =
         )
 
 
-{-| [`anyWith`](#anyWith) for an `Any` held by a message at `depth`: the `Any`, and what it holds, count on from there.
+{-| [`any`](#any) for an `Any` held by a message at `depth`: the `Any`, and what it holds, count on from there.
 -}
-nestedAnyWith : Int -> Registry -> Json.Decode.Decoder Any
-nestedAnyWith depth registry =
-    anyWith (InternalRegistry.atLeast depth registry)
+nestedAny : Int -> Registry -> Json.Decode.Decoder Any
+nestedAny depth registry =
+    any (InternalRegistry.atLeast depth registry)
 
 
 {-| The depth a message that takes the registry starts counting from when it

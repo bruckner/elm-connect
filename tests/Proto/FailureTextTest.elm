@@ -53,9 +53,9 @@ rows =
     , row Proto.Json.Decode.timestamp "\"noon\"" "Expecting an RFC 3339 timestamp" "noon"
     , row Proto.Json.Decode.duration "\"soon\"" "Expecting a duration such as \"1.5s\"" "soon"
     , row Proto.Json.Decode.fieldMask "\"a_b\"" "Expecting a FieldMask of lowerCamelCase paths" "a_b"
-    , row (Proto.Json.Decode.anyWith Proto.Registry.empty) "{\"@type\":\"secret\"}" "Expecting an Any whose \"@type\" is a type URL, such as \"type.googleapis.com/notes.v1.Note\"" "secret"
-    , row (Proto.Json.Decode.anyWith Proto.Registry.empty) "{\"@type\":\"type.googleapis.com/secret.Thing\"}" "Expecting an Any of a type the registry has" "secret.Thing"
-    , row (Proto.Json.Decode.anyWith Proto.WellKnown.registry) "{\"@type\":\"type.googleapis.com/google.protobuf.Duration\",\"value\":\"secret\"}" "Expecting a duration such as \"1.5s\"" "secret"
+    , row (Proto.Json.Decode.any Proto.Registry.empty) "{\"@type\":\"secret\"}" "Expecting an Any whose \"@type\" is a type URL, such as \"type.googleapis.com/notes.v1.Note\"" "secret"
+    , row (Proto.Json.Decode.any Proto.Registry.empty) "{\"@type\":\"type.googleapis.com/secret.Thing\"}" "Expecting an Any of a type the registry has" "secret.Thing"
+    , row (Proto.Json.Decode.any Proto.WellKnown.registry) "{\"@type\":\"type.googleapis.com/google.protobuf.Duration\",\"value\":\"secret\"}" "Expecting a duration such as \"1.5s\"" "secret"
     ]
 
 

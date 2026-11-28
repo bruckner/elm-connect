@@ -2,12 +2,12 @@
   checked for themselves that the JSON is an object, are removed; no
   generated code called them. Wrap a hand-written pipeline in
   `Proto.Json.Decode.message`, which makes the check once, and read each field
-  with `Proto.Json.Decode.messageField` (for `field`) or `messageFieldEither`
-  (for `fieldEither`), which take the same arguments.
+  with `Proto.Json.Decode.field` or `fieldEither`, which take the same
+  arguments and do not check the object again.
 - `Proto.Json.valueField` and `valueFieldEither` are removed. Inside
   `Proto.Json.Decode.message`, read a `google.protobuf.Value` field with
-  `Proto.Json.Decode.messageNullField name (Proto.Json.Decode.nestedValue 0)` or
-  `messageNullFieldEither jsonName protoName (Proto.Json.Decode.nestedValue 0)`,
+  `Proto.Json.Decode.nullField name (Proto.Json.Decode.nestedValue 0)` or
+  `nullFieldEither jsonName protoName (Proto.Json.Decode.nestedValue 0)`,
   which read it as they did: a missing key is `Nothing`, `null` is
   `Just ValueNull`.
 - `Proto.Json.valueMember` and `valueMemberEither` are removed. Write

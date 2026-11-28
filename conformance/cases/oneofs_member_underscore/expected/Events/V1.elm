@@ -258,7 +258,7 @@ decodeEvent : Json.Decode.Decoder Event
 decodeEvent =
     Proto.Json.Decode.message
         (Json.Decode.succeed Event
-            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "name" "" Proto.Json.Decode.string
             |> Proto.Json.Decode.oneof decodeEventKind
         )
 
@@ -280,7 +280,7 @@ decodeListEventsRequest : Json.Decode.Decoder ListEventsRequest
 decodeListEventsRequest =
     Proto.Json.Decode.message
         (Json.Decode.succeed ListEventsRequest
-            |> Proto.Json.Decode.messageField "parent" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "parent" "" Proto.Json.Decode.string
             |> Proto.Json.Decode.oneof decodeListEventsRequestFilter
         )
 
@@ -301,7 +301,7 @@ decodeListEventsResponse : Json.Decode.Decoder ListEventsResponse
 decodeListEventsResponse =
     Proto.Json.Decode.message
         (Json.Decode.succeed ListEventsResponse
-            |> Proto.Json.Decode.messageField "events" [] (Json.Decode.list decodeEvent)
+            |> Proto.Json.Decode.field "events" [] (Json.Decode.list decodeEvent)
         )
 
 

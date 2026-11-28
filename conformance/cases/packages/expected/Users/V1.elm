@@ -163,8 +163,8 @@ decodeUser : Json.Decode.Decoder User
 decodeUser =
     Proto.Json.Decode.message
         (Json.Decode.succeed User
-            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageField "role" RoleUnspecified decodeRole
+            |> Proto.Json.Decode.field "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "role" RoleUnspecified decodeRole
         )
 
 

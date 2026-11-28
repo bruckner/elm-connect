@@ -1231,7 +1231,7 @@ vendored rather than installed. Where: design §5.2.
 
 *2026-10-13; its payload made binary alone on 2026-11-07 (Binary is
 the Any's canonical form); its JSON codecs are
-`Proto.Json.Decode.anyWith` and `Proto.Json.Encode.any` since
+`Proto.Json.Decode.any` and `Proto.Json.Encode.any` since
 2026-11-28 (`Proto.Json` split by direction).*
 
 `google.protobuf.Any` is the opaque `Proto.Any.Any`: it packs and
@@ -3054,8 +3054,15 @@ bare noun (`object`, `optional`, `any`); a plain field encoder, giving
 total message encoder begins with `total`. The decoders keep their
 names but three: `float` is `double` and `float32` is `float`, as
 `Proto.Binary` names them, and `deeperWith` is `deeperLazy`: it builds
-its decoder as the value is read and takes no registry, which `With`
-names elsewhere (`anyWith`). Both modules write elm/json's types qualified,
+its decoder as the value is read and takes no registry. Names that had
+been bent away from elm/json's are plain too: the field steps
+`messageField`, `messageFieldEither`, `messageNullField` and
+`messageNullFieldEither` are `field`, `fieldEither`, `nullField` and
+`nullFieldEither`, and `anyWith` and `nestedAnyWith` are `any` and
+`nestedAny`, taking the registry as before. `field` has the type of
+0.1's `Proto.Json.field`, which checked for itself that the JSON is an
+object, where `field` relies on `message` to; the migration guide says
+so beside the name. Both modules write elm/json's types qualified,
 `Json.Encode.Value` and `Json.Decode.Decoder`, since a bare `Value`
 reads as `Proto.Value.Value` beside it.
 

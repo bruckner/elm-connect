@@ -295,15 +295,15 @@ decodeTag : Json.Decode.Decoder Tag
 decodeTag =
     Proto.Json.Decode.message
         (Json.Decode.succeed Tag
-            |> Proto.Json.Decode.messageField "type" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageField "if" False Json.Decode.bool
-            |> Proto.Json.Decode.messageField "port" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "alias" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageFieldEither "screenName" "display_name" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageFieldEither "httpUrl" "http_url" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageFieldEither "v2Count" "v2_count" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "shape" ShapeUnspecified decodeShape
-            |> Proto.Json.Decode.messageField "method" HttpMethodUnspecified decodeHttpMethod
+            |> Proto.Json.Decode.field "type" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "if" False Json.Decode.bool
+            |> Proto.Json.Decode.field "port" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "alias" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.fieldEither "screenName" "display_name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.fieldEither "httpUrl" "http_url" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.fieldEither "v2Count" "v2_count" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "shape" ShapeUnspecified decodeShape
+            |> Proto.Json.Decode.field "method" HttpMethodUnspecified decodeHttpMethod
             |> Proto.Json.Decode.oneof decodeTagCase
         )
 

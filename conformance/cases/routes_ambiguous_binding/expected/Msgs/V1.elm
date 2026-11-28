@@ -168,9 +168,9 @@ decodeMessageRequest : Json.Decode.Decoder MessageRequest
 decodeMessageRequest =
     Proto.Json.Decode.message
         (Json.Decode.succeed MessageRequest
-            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageField "id" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageField "sub" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "id" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "sub" "" Proto.Json.Decode.string
         )
 
 
@@ -180,7 +180,7 @@ decodeMessage : Json.Decode.Decoder Message
 decodeMessage =
     Proto.Json.Decode.message
         (Json.Decode.succeed Message
-            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "name" "" Proto.Json.Decode.string
         )
 
 

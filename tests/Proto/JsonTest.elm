@@ -60,8 +60,8 @@ decodePair : Decoder Pair
 decodePair =
     Proto.Json.Decode.message
         (Json.Decode.succeed Pair
-            |> Proto.Json.Decode.messageField "name" "" Json.Decode.string
-            |> Proto.Json.Decode.messageField "count" 0 Json.Decode.int
+            |> Proto.Json.Decode.field "name" "" Json.Decode.string
+            |> Proto.Json.Decode.field "count" 0 Json.Decode.int
         )
 
 
@@ -83,7 +83,7 @@ fails decoder json =
 
 fieldTests : Test
 fieldTests =
-    describe "messageField"
+    describe "field"
         [ test "a present key decodes its value" <|
             \_ -> decodes decodePair """{"name":"a","count":3}""" (Pair "a" 3)
         , test "a missing key gives the default" <|
@@ -109,13 +109,13 @@ decodeNamed : Decoder Named
 decodeNamed =
     Proto.Json.Decode.message
         (Json.Decode.succeed Named
-            |> Proto.Json.Decode.messageFieldEither "displayName" "display_name" "" Json.Decode.string
+            |> Proto.Json.Decode.fieldEither "displayName" "display_name" "" Json.Decode.string
         )
 
 
 fieldEitherTests : Test
 fieldEitherTests =
-    describe "messageFieldEither"
+    describe "fieldEither"
         [ test "the JSON name" <|
             \_ -> decodes decodeNamed """{"displayName":"a"}""" (Named "a")
         , test "the proto name" <|
@@ -125,7 +125,7 @@ fieldEitherTests =
         , test "both names fail even when one is null" <|
             \_ -> fails decodeNamed """{"displayName":null,"display_name":"b"}"""
         , test "equal names are one key" <|
-            \_ -> decodes (Proto.Json.Decode.message (Json.Decode.succeed Named |> Proto.Json.Decode.messageFieldEither "id" "id" "" Json.Decode.string)) """{"id":"a"}""" (Named "a")
+            \_ -> decodes (Proto.Json.Decode.message (Json.Decode.succeed Named |> Proto.Json.Decode.fieldEither "id" "id" "" Json.Decode.string)) """{"id":"a"}""" (Named "a")
         , test "neither gives the default" <|
             \_ -> decodes decodeNamed "{}" (Named "")
         , test "null under the JSON name gives the default" <|
@@ -145,8 +145,8 @@ decodeSetting : Decoder Setting
 decodeSetting =
     Proto.Json.Decode.message
         (Json.Decode.succeed Setting
-            |> Proto.Json.Decode.messageField "name" "" Json.Decode.string
-            |> Proto.Json.Decode.messageNullField "value" (Proto.Json.Decode.nestedValue 0)
+            |> Proto.Json.Decode.field "name" "" Json.Decode.string
+            |> Proto.Json.Decode.nullField "value" (Proto.Json.Decode.nestedValue 0)
         )
 
 
@@ -154,8 +154,8 @@ decodeSettingEither : Decoder Setting
 decodeSettingEither =
     Proto.Json.Decode.message
         (Json.Decode.succeed Setting
-            |> Proto.Json.Decode.messageField "name" "" Json.Decode.string
-            |> Proto.Json.Decode.messageNullFieldEither "defaultValue" "default_value" (Proto.Json.Decode.nestedValue 0)
+            |> Proto.Json.Decode.field "name" "" Json.Decode.string
+            |> Proto.Json.Decode.nullFieldEither "defaultValue" "default_value" (Proto.Json.Decode.nestedValue 0)
         )
 
 
@@ -163,13 +163,13 @@ decodeCount : Decoder (Maybe Int)
 decodeCount =
     Proto.Json.Decode.message
         (Json.Decode.succeed identity
-            |> Proto.Json.Decode.messageNullField "count" Json.Decode.int
+            |> Proto.Json.Decode.nullField "count" Json.Decode.int
         )
 
 
 valueFieldTests : Test
 valueFieldTests =
-    describe "messageNullField of nestedValue at depth 0"
+    describe "nullField of nestedValue at depth 0"
         [ test "a missing key gives Nothing" <|
             \_ -> decodes decodeSetting """{"name":"a"}""" (Setting "a" Nothing)
         , test "null is set, holding null" <|
@@ -223,10 +223,10 @@ decodeInherited : Decoder Inherited
 decodeInherited =
     Proto.Json.Decode.message
         (Json.Decode.succeed Inherited
-            |> Proto.Json.Decode.messageField "constructor" "" Json.Decode.string
-            |> Proto.Json.Decode.messageFieldEither "toString" "to_string" "" Json.Decode.string
-            |> Proto.Json.Decode.messageField "__proto__" 0 Json.Decode.int
-            |> Proto.Json.Decode.messageField "hasOwnProperty" 0 Json.Decode.int
+            |> Proto.Json.Decode.field "constructor" "" Json.Decode.string
+            |> Proto.Json.Decode.fieldEither "toString" "to_string" "" Json.Decode.string
+            |> Proto.Json.Decode.field "__proto__" 0 Json.Decode.int
+            |> Proto.Json.Decode.field "hasOwnProperty" 0 Json.Decode.int
         )
 
 
@@ -240,8 +240,8 @@ decodeSized : Decoder Sized
 decodeSized =
     Proto.Json.Decode.message
         (Json.Decode.succeed Sized
-            |> Proto.Json.Decode.messageField "length" 0 Json.Decode.int
-            |> Proto.Json.Decode.messageField "name" "" Json.Decode.string
+            |> Proto.Json.Decode.field "length" 0 Json.Decode.int
+            |> Proto.Json.Decode.field "name" "" Json.Decode.string
         )
 
 
@@ -283,11 +283,11 @@ checkedOnce : Decoder Checked
 checkedOnce =
     Proto.Json.Decode.message
         (Json.Decode.succeed (\title displayName constructor length value -> Checked title displayName constructor length (Maybe.map (Proto.Value.toJson >> Json.Encode.encode 0) value))
-            |> Proto.Json.Decode.messageField "title" "" Json.Decode.string
-            |> Proto.Json.Decode.messageFieldEither "displayName" "display_name" "" Json.Decode.string
-            |> Proto.Json.Decode.messageField "constructor" "" Json.Decode.string
-            |> Proto.Json.Decode.messageField "length" "" Json.Decode.string
-            |> Proto.Json.Decode.messageNullField "value" (Proto.Json.Decode.nestedValue 0)
+            |> Proto.Json.Decode.field "title" "" Json.Decode.string
+            |> Proto.Json.Decode.fieldEither "displayName" "display_name" "" Json.Decode.string
+            |> Proto.Json.Decode.field "constructor" "" Json.Decode.string
+            |> Proto.Json.Decode.field "length" "" Json.Decode.string
+            |> Proto.Json.Decode.nullField "value" (Proto.Json.Decode.nestedValue 0)
         )
 
 
@@ -396,7 +396,7 @@ lookupTests =
 
                     wide =
                         List.foldl
-                            (\name acc -> Proto.Json.Decode.messageField name "" Json.Decode.string (Json.Decode.map (\xs x -> x :: xs) acc))
+                            (\name acc -> Proto.Json.Decode.field name "" Json.Decode.string (Json.Decode.map (\xs x -> x :: xs) acc))
                             (Json.Decode.succeed [])
                             names
                             |> Proto.Json.Decode.message
@@ -416,8 +416,8 @@ decodeShapes : Decoder Shapes
 decodeShapes =
     Proto.Json.Decode.message
         (Json.Decode.succeed Shapes
-            |> Proto.Json.Decode.messageField "count" Nothing (Json.Decode.map Just Proto.Json.Decode.int32)
-            |> Proto.Json.Decode.messageField "tags" [] (Json.Decode.list Json.Decode.string)
+            |> Proto.Json.Decode.field "count" Nothing (Json.Decode.map Just Proto.Json.Decode.int32)
+            |> Proto.Json.Decode.field "tags" [] (Json.Decode.list Json.Decode.string)
         )
 
 
@@ -511,7 +511,7 @@ decodeEvent : Decoder Event
 decodeEvent =
     Proto.Json.Decode.message
         (Json.Decode.succeed Event
-            |> Proto.Json.Decode.messageField "id" "" Json.Decode.string
+            |> Proto.Json.Decode.field "id" "" Json.Decode.string
             |> Proto.Json.Decode.oneof decodeEventKind
         )
 
@@ -651,7 +651,7 @@ enumTests =
                 decodes
                     (Proto.Json.Decode.message
                         (Json.Decode.succeed identity
-                            |> Proto.Json.Decode.messageField "status" StatusUnspecified decodeStatus
+                            |> Proto.Json.Decode.field "status" StatusUnspecified decodeStatus
                         )
                     )
                     """{"status":null}"""
@@ -697,7 +697,7 @@ enumOrZeroTests =
                 decodes
                     (Proto.Json.Decode.message
                         (Json.Decode.succeed identity
-                            |> Proto.Json.Decode.messageField "status" StatusActive decodeStatusOrZero
+                            |> Proto.Json.Decode.field "status" StatusActive decodeStatusOrZero
                         )
                     )
                     """{"status":"STATUS_ARCHIVED"}"""

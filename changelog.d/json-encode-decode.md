@@ -19,3 +19,9 @@
   `encodeBytesAsBytes` and `encodeEmpty` are `int64`, `int64AsInt`,
   `double`, `bytes`, `bytesAsBytes` and `empty`. docs/migrating.md,
   "The JSON codecs", has every old name beside its new one.
+- Breaking: `Proto.Json.Decode.field` and `fieldEither` have the names
+  and types of 0.1's `Proto.Json.field` and `fieldEither`, but leave
+  the check that the JSON is an object to `Proto.Json.Decode.message`,
+  as 0.1's did not: wrap a hand-written pipeline of them in `message`.
+  `Proto.Json.Decode.any` takes the registry, where 0.1's
+  `Proto.Json.any` took none.

@@ -586,9 +586,9 @@ decodeErrorInfo : Json.Decode.Decoder ErrorInfo
 decodeErrorInfo =
     Proto.Json.Decode.message
         (Json.Decode.succeed ErrorInfo
-            |> Proto.Json.Decode.messageField "reason" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageField "domain" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageField "metadata" Dict.empty (Proto.Json.Decode.stringDict Proto.Json.Decode.string)
+            |> Proto.Json.Decode.field "reason" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "domain" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "metadata" Dict.empty (Proto.Json.Decode.stringDict Proto.Json.Decode.string)
         )
 
 
@@ -596,7 +596,7 @@ decodeRetryInfo : Json.Decode.Decoder RetryInfo
 decodeRetryInfo =
     Proto.Json.Decode.message
         (Json.Decode.succeed RetryInfo
-            |> Proto.Json.Decode.messageFieldEither "retryDelay" "retry_delay" Nothing (Json.Decode.map Just Proto.Json.Decode.duration)
+            |> Proto.Json.Decode.fieldEither "retryDelay" "retry_delay" Nothing (Json.Decode.map Just Proto.Json.Decode.duration)
         )
 
 
@@ -604,8 +604,8 @@ decodeDebugInfo : Json.Decode.Decoder DebugInfo
 decodeDebugInfo =
     Proto.Json.Decode.message
         (Json.Decode.succeed DebugInfo
-            |> Proto.Json.Decode.messageFieldEither "stackEntries" "stack_entries" [] (Json.Decode.list Proto.Json.Decode.string)
-            |> Proto.Json.Decode.messageField "detail" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.fieldEither "stackEntries" "stack_entries" [] (Json.Decode.list Proto.Json.Decode.string)
+            |> Proto.Json.Decode.field "detail" "" Proto.Json.Decode.string
         )
 
 
@@ -613,7 +613,7 @@ decodeQuotaFailure : Json.Decode.Decoder QuotaFailure
 decodeQuotaFailure =
     Proto.Json.Decode.message
         (Json.Decode.succeed QuotaFailure
-            |> Proto.Json.Decode.messageField "violations" [] (Json.Decode.list decodeQuotaFailureViolation)
+            |> Proto.Json.Decode.field "violations" [] (Json.Decode.list decodeQuotaFailureViolation)
         )
 
 
@@ -621,14 +621,14 @@ decodeQuotaFailureViolation : Json.Decode.Decoder QuotaFailureViolation
 decodeQuotaFailureViolation =
     Proto.Json.Decode.message
         (Json.Decode.succeed QuotaFailureViolation
-            |> Proto.Json.Decode.messageField "subject" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageField "description" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageFieldEither "apiService" "api_service" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageFieldEither "quotaMetric" "quota_metric" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageFieldEither "quotaId" "quota_id" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageFieldEither "quotaDimensions" "quota_dimensions" Dict.empty (Proto.Json.Decode.stringDict Proto.Json.Decode.string)
-            |> Proto.Json.Decode.messageFieldEither "quotaValue" "quota_value" "0" Proto.Json.Decode.int64
-            |> Proto.Json.Decode.messageFieldEither "futureQuotaValue" "future_quota_value" Nothing (Json.Decode.map Just Proto.Json.Decode.int64)
+            |> Proto.Json.Decode.field "subject" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "description" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.fieldEither "apiService" "api_service" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.fieldEither "quotaMetric" "quota_metric" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.fieldEither "quotaId" "quota_id" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.fieldEither "quotaDimensions" "quota_dimensions" Dict.empty (Proto.Json.Decode.stringDict Proto.Json.Decode.string)
+            |> Proto.Json.Decode.fieldEither "quotaValue" "quota_value" "0" Proto.Json.Decode.int64
+            |> Proto.Json.Decode.fieldEither "futureQuotaValue" "future_quota_value" Nothing (Json.Decode.map Just Proto.Json.Decode.int64)
         )
 
 
@@ -636,7 +636,7 @@ decodePreconditionFailure : Json.Decode.Decoder PreconditionFailure
 decodePreconditionFailure =
     Proto.Json.Decode.message
         (Json.Decode.succeed PreconditionFailure
-            |> Proto.Json.Decode.messageField "violations" [] (Json.Decode.list decodePreconditionFailureViolation)
+            |> Proto.Json.Decode.field "violations" [] (Json.Decode.list decodePreconditionFailureViolation)
         )
 
 
@@ -644,9 +644,9 @@ decodePreconditionFailureViolation : Json.Decode.Decoder PreconditionFailureViol
 decodePreconditionFailureViolation =
     Proto.Json.Decode.message
         (Json.Decode.succeed PreconditionFailureViolation
-            |> Proto.Json.Decode.messageField "type" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageField "subject" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageField "description" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "type" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "subject" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "description" "" Proto.Json.Decode.string
         )
 
 
@@ -654,7 +654,7 @@ decodeBadRequest : Json.Decode.Decoder BadRequest
 decodeBadRequest =
     Proto.Json.Decode.message
         (Json.Decode.succeed BadRequest
-            |> Proto.Json.Decode.messageFieldEither "fieldViolations" "field_violations" [] (Json.Decode.list decodeBadRequestFieldViolation)
+            |> Proto.Json.Decode.fieldEither "fieldViolations" "field_violations" [] (Json.Decode.list decodeBadRequestFieldViolation)
         )
 
 
@@ -662,10 +662,10 @@ decodeBadRequestFieldViolation : Json.Decode.Decoder BadRequestFieldViolation
 decodeBadRequestFieldViolation =
     Proto.Json.Decode.message
         (Json.Decode.succeed BadRequestFieldViolation
-            |> Proto.Json.Decode.messageField "field" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageField "description" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageField "reason" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageFieldEither "localizedMessage" "localized_message" Nothing (Json.Decode.map Just decodeLocalizedMessage)
+            |> Proto.Json.Decode.field "field" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "description" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "reason" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.fieldEither "localizedMessage" "localized_message" Nothing (Json.Decode.map Just decodeLocalizedMessage)
         )
 
 
@@ -673,8 +673,8 @@ decodeRequestInfo : Json.Decode.Decoder RequestInfo
 decodeRequestInfo =
     Proto.Json.Decode.message
         (Json.Decode.succeed RequestInfo
-            |> Proto.Json.Decode.messageFieldEither "requestId" "request_id" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageFieldEither "servingData" "serving_data" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.fieldEither "requestId" "request_id" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.fieldEither "servingData" "serving_data" "" Proto.Json.Decode.string
         )
 
 
@@ -682,10 +682,10 @@ decodeResourceInfo : Json.Decode.Decoder ResourceInfo
 decodeResourceInfo =
     Proto.Json.Decode.message
         (Json.Decode.succeed ResourceInfo
-            |> Proto.Json.Decode.messageFieldEither "resourceType" "resource_type" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageFieldEither "resourceName" "resource_name" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageField "owner" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageField "description" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.fieldEither "resourceType" "resource_type" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.fieldEither "resourceName" "resource_name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "owner" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "description" "" Proto.Json.Decode.string
         )
 
 
@@ -693,7 +693,7 @@ decodeHelp : Json.Decode.Decoder Help
 decodeHelp =
     Proto.Json.Decode.message
         (Json.Decode.succeed Help
-            |> Proto.Json.Decode.messageField "links" [] (Json.Decode.list decodeHelpLink)
+            |> Proto.Json.Decode.field "links" [] (Json.Decode.list decodeHelpLink)
         )
 
 
@@ -701,8 +701,8 @@ decodeHelpLink : Json.Decode.Decoder HelpLink
 decodeHelpLink =
     Proto.Json.Decode.message
         (Json.Decode.succeed HelpLink
-            |> Proto.Json.Decode.messageField "description" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageField "url" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "description" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "url" "" Proto.Json.Decode.string
         )
 
 
@@ -710,8 +710,8 @@ decodeLocalizedMessage : Json.Decode.Decoder LocalizedMessage
 decodeLocalizedMessage =
     Proto.Json.Decode.message
         (Json.Decode.succeed LocalizedMessage
-            |> Proto.Json.Decode.messageField "locale" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageField "message" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "locale" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "message" "" Proto.Json.Decode.string
         )
 
 

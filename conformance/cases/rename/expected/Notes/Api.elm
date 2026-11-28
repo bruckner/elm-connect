@@ -286,9 +286,9 @@ decodeMemo : Json.Decode.Decoder Memo
 decodeMemo =
     Proto.Json.Decode.message
         (Json.Decode.succeed Memo
-            |> Proto.Json.Decode.messageField "title" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageField "visibility" AudienceUnspecified decodeAudience
-            |> Proto.Json.Decode.messageField "revisions" [] (Json.Decode.list decodeEdit)
+            |> Proto.Json.Decode.field "title" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "visibility" AudienceUnspecified decodeAudience
+            |> Proto.Json.Decode.field "revisions" [] (Json.Decode.list decodeEdit)
             |> Proto.Json.Decode.oneof decodeMemoBody
         )
 
@@ -310,7 +310,7 @@ decodeEdit : Json.Decode.Decoder Edit
 decodeEdit =
     Proto.Json.Decode.message
         (Json.Decode.succeed Edit
-            |> Proto.Json.Decode.messageField "number" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "number" 0 Proto.Json.Decode.int32
         )
 
 
@@ -320,7 +320,7 @@ decodeGetNoteRequest : Json.Decode.Decoder GetNoteRequest
 decodeGetNoteRequest =
     Proto.Json.Decode.message
         (Json.Decode.succeed GetNoteRequest
-            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "name" "" Proto.Json.Decode.string
         )
 
 

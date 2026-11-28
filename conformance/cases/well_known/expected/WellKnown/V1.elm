@@ -71,7 +71,7 @@ elmConnectVersion_ =
   - [`records`](WellKnown-V1-Event#records)
   - [`columns`](WellKnown-V1-Event#columns)
   - [`lastValue`](WellKnown-V1-Event#lastValue): An optional Value is the same Maybe; its JSON name differs, so it
-    decodes with messageNullFieldEither. A map of Value holds it bare.
+    decodes with nullFieldEither. A map of Value holds it bare.
   - [`settings`](WellKnown-V1-Event#settings)
   - [`nothing`](WellKnown-V1-Event#nothing): NullValue's one value carries nothing: (), never written, `optional`
     or not. Lists and maps hold it as null.
@@ -327,37 +327,37 @@ decodeNestedEvent : Int -> Json.Decode.Decoder Event
 decodeNestedEvent depth =
     Proto.Json.Decode.message
         (Json.Decode.succeed Event
-            |> Proto.Json.Decode.messageFieldEither "createdAt" "created_at" Nothing (Json.Decode.map Just Proto.Json.Decode.timestamp)
-            |> Proto.Json.Decode.messageField "timeout" Nothing (Json.Decode.map Just Proto.Json.Decode.duration)
-            |> Proto.Json.Decode.messageFieldEither "updateMask" "update_mask" Nothing (Json.Decode.map Just Proto.Json.Decode.fieldMask)
-            |> Proto.Json.Decode.messageField "marker" () Proto.Json.Decode.empty
-            |> Proto.Json.Decode.messageField "metadata" Nothing (Json.Decode.map Just (Proto.Json.Decode.nestedStruct depth))
-            |> Proto.Json.Decode.messageNullField "payload" (Proto.Json.Decode.nestedValue depth)
-            |> Proto.Json.Decode.messageField "items" Nothing (Json.Decode.map Just (Proto.Json.Decode.nestedListValue depth))
-            |> Proto.Json.Decode.messageField "ratio" Nothing (Json.Decode.map Just Proto.Json.Decode.double)
-            |> Proto.Json.Decode.messageField "weight" Nothing (Json.Decode.map Just Proto.Json.Decode.float)
-            |> Proto.Json.Decode.messageFieldEither "bigCount" "big_count" Nothing (Json.Decode.map Just Proto.Json.Decode.int64)
-            |> Proto.Json.Decode.messageFieldEither "bigTotal" "big_total" Nothing (Json.Decode.map Just Proto.Json.Decode.uint64)
-            |> Proto.Json.Decode.messageField "count" Nothing (Json.Decode.map Just Proto.Json.Decode.int32)
-            |> Proto.Json.Decode.messageField "total" Nothing (Json.Decode.map Just Proto.Json.Decode.uint32)
-            |> Proto.Json.Decode.messageField "enabled" Nothing (Json.Decode.map Just Json.Decode.bool)
-            |> Proto.Json.Decode.messageField "nickname" Nothing (Json.Decode.map Just Proto.Json.Decode.string)
-            |> Proto.Json.Decode.messageField "avatar" Nothing (Json.Decode.map Just Proto.Json.Decode.bytes)
-            |> Proto.Json.Decode.messageField "history" [] (Json.Decode.list Proto.Json.Decode.timestamp)
-            |> Proto.Json.Decode.messageField "limits" Dict.empty (Proto.Json.Decode.stringDict Proto.Json.Decode.duration)
-            |> Proto.Json.Decode.messageField "values" [] (Json.Decode.list (Proto.Json.Decode.nestedValue depth))
-            |> Proto.Json.Decode.messageField "counts" [] (Json.Decode.list Proto.Json.Decode.int32)
-            |> Proto.Json.Decode.messageField "acked" () Proto.Json.Decode.empty
-            |> Proto.Json.Decode.messageField "pings" [] (Json.Decode.list Proto.Json.Decode.empty)
-            |> Proto.Json.Decode.messageField "seen" Dict.empty (Proto.Json.Decode.stringDict Proto.Json.Decode.empty)
-            |> Proto.Json.Decode.messageField "records" [] (Json.Decode.list (Proto.Json.Decode.nestedStruct depth))
-            |> Proto.Json.Decode.messageField "columns" Dict.empty (Proto.Json.Decode.stringDict (Proto.Json.Decode.nestedListValue depth))
-            |> Proto.Json.Decode.messageNullFieldEither "lastValue" "last_value" (Proto.Json.Decode.nestedValue depth)
-            |> Proto.Json.Decode.messageField "settings" Dict.empty (Proto.Json.Decode.stringDict (Proto.Json.Decode.nestedValue depth))
-            |> Proto.Json.Decode.messageField "nothing" () Proto.Json.Decode.nullValue
-            |> Proto.Json.Decode.messageFieldEither "maybeNothing" "maybe_nothing" () Proto.Json.Decode.nullValue
-            |> Proto.Json.Decode.messageField "nulls" [] (Json.Decode.list Proto.Json.Decode.nullValue)
-            |> Proto.Json.Decode.messageFieldEither "nullMap" "null_map" Dict.empty (Proto.Json.Decode.stringDict Proto.Json.Decode.nullValue)
+            |> Proto.Json.Decode.fieldEither "createdAt" "created_at" Nothing (Json.Decode.map Just Proto.Json.Decode.timestamp)
+            |> Proto.Json.Decode.field "timeout" Nothing (Json.Decode.map Just Proto.Json.Decode.duration)
+            |> Proto.Json.Decode.fieldEither "updateMask" "update_mask" Nothing (Json.Decode.map Just Proto.Json.Decode.fieldMask)
+            |> Proto.Json.Decode.field "marker" () Proto.Json.Decode.empty
+            |> Proto.Json.Decode.field "metadata" Nothing (Json.Decode.map Just (Proto.Json.Decode.nestedStruct depth))
+            |> Proto.Json.Decode.nullField "payload" (Proto.Json.Decode.nestedValue depth)
+            |> Proto.Json.Decode.field "items" Nothing (Json.Decode.map Just (Proto.Json.Decode.nestedListValue depth))
+            |> Proto.Json.Decode.field "ratio" Nothing (Json.Decode.map Just Proto.Json.Decode.double)
+            |> Proto.Json.Decode.field "weight" Nothing (Json.Decode.map Just Proto.Json.Decode.float)
+            |> Proto.Json.Decode.fieldEither "bigCount" "big_count" Nothing (Json.Decode.map Just Proto.Json.Decode.int64)
+            |> Proto.Json.Decode.fieldEither "bigTotal" "big_total" Nothing (Json.Decode.map Just Proto.Json.Decode.uint64)
+            |> Proto.Json.Decode.field "count" Nothing (Json.Decode.map Just Proto.Json.Decode.int32)
+            |> Proto.Json.Decode.field "total" Nothing (Json.Decode.map Just Proto.Json.Decode.uint32)
+            |> Proto.Json.Decode.field "enabled" Nothing (Json.Decode.map Just Json.Decode.bool)
+            |> Proto.Json.Decode.field "nickname" Nothing (Json.Decode.map Just Proto.Json.Decode.string)
+            |> Proto.Json.Decode.field "avatar" Nothing (Json.Decode.map Just Proto.Json.Decode.bytes)
+            |> Proto.Json.Decode.field "history" [] (Json.Decode.list Proto.Json.Decode.timestamp)
+            |> Proto.Json.Decode.field "limits" Dict.empty (Proto.Json.Decode.stringDict Proto.Json.Decode.duration)
+            |> Proto.Json.Decode.field "values" [] (Json.Decode.list (Proto.Json.Decode.nestedValue depth))
+            |> Proto.Json.Decode.field "counts" [] (Json.Decode.list Proto.Json.Decode.int32)
+            |> Proto.Json.Decode.field "acked" () Proto.Json.Decode.empty
+            |> Proto.Json.Decode.field "pings" [] (Json.Decode.list Proto.Json.Decode.empty)
+            |> Proto.Json.Decode.field "seen" Dict.empty (Proto.Json.Decode.stringDict Proto.Json.Decode.empty)
+            |> Proto.Json.Decode.field "records" [] (Json.Decode.list (Proto.Json.Decode.nestedStruct depth))
+            |> Proto.Json.Decode.field "columns" Dict.empty (Proto.Json.Decode.stringDict (Proto.Json.Decode.nestedListValue depth))
+            |> Proto.Json.Decode.nullFieldEither "lastValue" "last_value" (Proto.Json.Decode.nestedValue depth)
+            |> Proto.Json.Decode.field "settings" Dict.empty (Proto.Json.Decode.stringDict (Proto.Json.Decode.nestedValue depth))
+            |> Proto.Json.Decode.field "nothing" () Proto.Json.Decode.nullValue
+            |> Proto.Json.Decode.fieldEither "maybeNothing" "maybe_nothing" () Proto.Json.Decode.nullValue
+            |> Proto.Json.Decode.field "nulls" [] (Json.Decode.list Proto.Json.Decode.nullValue)
+            |> Proto.Json.Decode.fieldEither "nullMap" "null_map" Dict.empty (Proto.Json.Decode.stringDict Proto.Json.Decode.nullValue)
             |> Proto.Json.Decode.oneof (decodeNestedEventWhen depth)
         )
 

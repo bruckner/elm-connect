@@ -156,7 +156,7 @@ decodeItem : Json.Decode.Decoder Item
 decodeItem =
     Proto.Json.Decode.message
         (Json.Decode.succeed Item
-            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "name" "" Proto.Json.Decode.string
         )
 
 
@@ -166,7 +166,7 @@ decodeGetItemRequest : Json.Decode.Decoder GetItemRequest
 decodeGetItemRequest =
     Proto.Json.Decode.message
         (Json.Decode.succeed GetItemRequest
-            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "name" "" Proto.Json.Decode.string
         )
 
 

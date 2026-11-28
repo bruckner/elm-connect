@@ -371,7 +371,7 @@ decodeDict : Json.Decode.Decoder Dict
 decodeDict =
     Proto.Json.Decode.message
         (Json.Decode.succeed Dict
-            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "name" "" Proto.Json.Decode.string
         )
 
 
@@ -381,9 +381,9 @@ decodeResult : Json.Decode.Decoder Result
 decodeResult =
     Proto.Json.Decode.message
         (Json.Decode.succeed Result
-            |> Proto.Json.Decode.messageField "ok" False Json.Decode.bool
-            |> Proto.Json.Decode.messageField "dict" Nothing (Json.Decode.map Just decodeDict)
-            |> Proto.Json.Decode.messageField "chars" [] (Json.Decode.list decodeChar)
+            |> Proto.Json.Decode.field "ok" False Json.Decode.bool
+            |> Proto.Json.Decode.field "dict" Nothing (Json.Decode.map Just decodeDict)
+            |> Proto.Json.Decode.field "chars" [] (Json.Decode.list decodeChar)
         )
 
 
@@ -393,7 +393,7 @@ decodeDuration : Json.Decode.Decoder Duration
 decodeDuration =
     Proto.Json.Decode.message
         (Json.Decode.succeed Duration
-            |> Proto.Json.Decode.messageField "length" Nothing (Json.Decode.map Just Proto.Json.Decode.duration)
+            |> Proto.Json.Decode.field "length" Nothing (Json.Decode.map Just Proto.Json.Decode.duration)
         )
 
 

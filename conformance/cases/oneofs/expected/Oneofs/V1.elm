@@ -370,7 +370,7 @@ decodeCreated : Json.Decode.Decoder Created
 decodeCreated =
     Proto.Json.Decode.message
         (Json.Decode.succeed Created
-            |> Proto.Json.Decode.messageField "title" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "title" "" Proto.Json.Decode.string
         )
 
 
@@ -380,10 +380,10 @@ decodeNoteEvent : Json.Decode.Decoder NoteEvent
 decodeNoteEvent =
     Proto.Json.Decode.message
         (Json.Decode.succeed NoteEvent
-            |> Proto.Json.Decode.messageField "id" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "id" "" Proto.Json.Decode.string
             |> Proto.Json.Decode.oneof decodeNoteEventKind
             |> Proto.Json.Decode.oneof decodeNoteEventSource
-            |> Proto.Json.Decode.messageField "tags" [] (Json.Decode.list Proto.Json.Decode.string)
+            |> Proto.Json.Decode.field "tags" [] (Json.Decode.list Proto.Json.Decode.string)
         )
 
 

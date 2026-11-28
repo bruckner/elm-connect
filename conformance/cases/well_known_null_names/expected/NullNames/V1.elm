@@ -6,7 +6,7 @@ module NullNames.V1 exposing (..)
 
 {-| A field and oneof members that null sets, each with a JSON name that
 differs from its proto name, so they decode with the two-name steps
-messageNullFieldEither and nullMemberEither (design §3.5, §3.6).
+nullFieldEither and nullMemberEither (design §3.5, §3.6).
 -}
 
 import Bytes.Encode
@@ -160,7 +160,7 @@ decodeNestedReading : Int -> Json.Decode.Decoder Reading
 decodeNestedReading depth =
     Proto.Json.Decode.message
         (Json.Decode.succeed Reading
-            |> Proto.Json.Decode.messageNullFieldEither "rawValue" "raw_value" (Proto.Json.Decode.nestedValue depth)
+            |> Proto.Json.Decode.nullFieldEither "rawValue" "raw_value" (Proto.Json.Decode.nestedValue depth)
             |> Proto.Json.Decode.oneof (decodeNestedReadingChoice depth)
         )
 

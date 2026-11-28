@@ -211,23 +211,23 @@ decodeScalars : Json.Decode.Decoder Scalars
 decodeScalars =
     Proto.Json.Decode.message
         (Json.Decode.succeed Scalars
-            |> Proto.Json.Decode.messageFieldEither "doubleValue" "double_value" 0.0 Proto.Json.Decode.double
-            |> Proto.Json.Decode.messageFieldEither "floatValue" "float_value" 0.0 Proto.Json.Decode.float
-            |> Proto.Json.Decode.messageFieldEither "int32Value" "int32_value" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageFieldEither "int64Value" "int64_value" "0" Proto.Json.Decode.int64
-            |> Proto.Json.Decode.messageFieldEither "uint32Value" "uint32_value" 0 Proto.Json.Decode.uint32
-            |> Proto.Json.Decode.messageFieldEither "uint64Value" "uint64_value" "0" Proto.Json.Decode.uint64
-            |> Proto.Json.Decode.messageFieldEither "sint32Value" "sint32_value" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageFieldEither "sint64Value" "sint64_value" "0" Proto.Json.Decode.int64
-            |> Proto.Json.Decode.messageFieldEither "fixed32Value" "fixed32_value" 0 Proto.Json.Decode.uint32
-            |> Proto.Json.Decode.messageFieldEither "fixed64Value" "fixed64_value" "0" Proto.Json.Decode.uint64
-            |> Proto.Json.Decode.messageFieldEither "sfixed32Value" "sfixed32_value" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageFieldEither "sfixed64Value" "sfixed64_value" "0" Proto.Json.Decode.int64
-            |> Proto.Json.Decode.messageFieldEither "boolValue" "bool_value" False Json.Decode.bool
-            |> Proto.Json.Decode.messageFieldEither "text" "string_value" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageFieldEither "bytesValue" "bytes_value" "" Proto.Json.Decode.bytes
-            |> Proto.Json.Decode.messageFieldEither "smallCount" "small_count" 0 Proto.Json.Decode.int64AsInt
-            |> Proto.Json.Decode.messageFieldEither "exactTotal" "exact_total" "0" Proto.Json.Decode.uint64
+            |> Proto.Json.Decode.fieldEither "doubleValue" "double_value" 0.0 Proto.Json.Decode.double
+            |> Proto.Json.Decode.fieldEither "floatValue" "float_value" 0.0 Proto.Json.Decode.float
+            |> Proto.Json.Decode.fieldEither "int32Value" "int32_value" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.fieldEither "int64Value" "int64_value" "0" Proto.Json.Decode.int64
+            |> Proto.Json.Decode.fieldEither "uint32Value" "uint32_value" 0 Proto.Json.Decode.uint32
+            |> Proto.Json.Decode.fieldEither "uint64Value" "uint64_value" "0" Proto.Json.Decode.uint64
+            |> Proto.Json.Decode.fieldEither "sint32Value" "sint32_value" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.fieldEither "sint64Value" "sint64_value" "0" Proto.Json.Decode.int64
+            |> Proto.Json.Decode.fieldEither "fixed32Value" "fixed32_value" 0 Proto.Json.Decode.uint32
+            |> Proto.Json.Decode.fieldEither "fixed64Value" "fixed64_value" "0" Proto.Json.Decode.uint64
+            |> Proto.Json.Decode.fieldEither "sfixed32Value" "sfixed32_value" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.fieldEither "sfixed64Value" "sfixed64_value" "0" Proto.Json.Decode.int64
+            |> Proto.Json.Decode.fieldEither "boolValue" "bool_value" False Json.Decode.bool
+            |> Proto.Json.Decode.fieldEither "text" "string_value" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.fieldEither "bytesValue" "bytes_value" "" Proto.Json.Decode.bytes
+            |> Proto.Json.Decode.fieldEither "smallCount" "small_count" 0 Proto.Json.Decode.int64AsInt
+            |> Proto.Json.Decode.fieldEither "exactTotal" "exact_total" "0" Proto.Json.Decode.uint64
         )
 
 

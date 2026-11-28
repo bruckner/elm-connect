@@ -166,9 +166,9 @@ decodeNote : Json.Decode.Decoder Note
 decodeNote =
     Proto.Json.Decode.message
         (Json.Decode.succeed Note
-            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageField "author" Nothing (Json.Decode.map Just Api.Example.People.decodeUser)
-            |> Proto.Json.Decode.messageFieldEither "requiredRole" "required_role" Api.Example.People.RoleUnspecified Api.Example.People.decodeRole
+            |> Proto.Json.Decode.field "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "author" Nothing (Json.Decode.map Just Api.Example.People.decodeUser)
+            |> Proto.Json.Decode.fieldEither "requiredRole" "required_role" Api.Example.People.RoleUnspecified Api.Example.People.decodeRole
         )
 
 
@@ -178,7 +178,7 @@ decodeGetNoteRequest : Json.Decode.Decoder GetNoteRequest
 decodeGetNoteRequest =
     Proto.Json.Decode.message
         (Json.Decode.succeed GetNoteRequest
-            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "name" "" Proto.Json.Decode.string
         )
 
 

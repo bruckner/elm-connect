@@ -277,7 +277,7 @@ impl Emitter {
                 TypeRef::Message(name) => {
                     self.generated_value(&name.module, with_registry(name.decoder_name()))
                 }
-                _ => self.reference((PROTO_JSON_DECODE, "anyWith")),
+                _ => self.reference((PROTO_JSON_DECODE, "any")),
             };
         }
         let decoder = self.response_decoder(ty);

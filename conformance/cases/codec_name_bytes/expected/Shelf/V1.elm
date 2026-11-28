@@ -245,7 +245,7 @@ decodeBook : Json.Decode.Decoder Book
 decodeBook =
     Proto.Json.Decode.message
         (Json.Decode.succeed Book
-            |> Proto.Json.Decode.messageField "title" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "title" "" Proto.Json.Decode.string
         )
 
 
@@ -255,7 +255,7 @@ decodeBookBytes : Json.Decode.Decoder BookBytes
 decodeBookBytes =
     Proto.Json.Decode.message
         (Json.Decode.succeed BookBytes
-            |> Proto.Json.Decode.messageField "content" "" Proto.Json.Decode.bytes
+            |> Proto.Json.Decode.field "content" "" Proto.Json.Decode.bytes
         )
 
 
@@ -265,8 +265,8 @@ decodeShelf : Json.Decode.Decoder Shelf
 decodeShelf =
     Proto.Json.Decode.message
         (Json.Decode.succeed Shelf
-            |> Proto.Json.Decode.messageField "books" [] (Json.Decode.list decodeBook)
-            |> Proto.Json.Decode.messageField "kind" ShelfBytesUnspecified decodeShelfBytes
+            |> Proto.Json.Decode.field "books" [] (Json.Decode.list decodeBook)
+            |> Proto.Json.Decode.field "kind" ShelfBytesUnspecified decodeShelfBytes
         )
 
 

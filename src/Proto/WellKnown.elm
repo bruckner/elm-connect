@@ -97,7 +97,7 @@ fieldMask =
 -}
 any : Message Any
 any =
-    initWith "google.protobuf.Any" Proto.Json.Encode.any Proto.Json.Decode.anyWith (Proto.Binary.messageEncoder Proto.Binary.any) (Proto.Binary.messageDecoder Proto.Binary.any)
+    initWith "google.protobuf.Any" Proto.Json.Encode.any Proto.Json.Decode.any (Proto.Binary.messageEncoder Proto.Binary.any) (Proto.Binary.messageDecoder Proto.Binary.any)
 
 
 {-| `google.protobuf.Struct`: a JSON object.

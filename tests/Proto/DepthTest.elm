@@ -834,7 +834,7 @@ oneBudget =
                             |> Expect.equal (Err (Proto.Error.BadBinary { typeName = "google.protobuf.Any", reason = Proto.Error.TooDeep, path = [], offset = 0 }))
                     ]
                     ()
-        , test "an Any written alone, as a method's request is, writes as many nested Anys as anyWith reads" <|
+        , test "an Any written alone, as a method's request is, writes as many nested Anys as any reads" <|
             \_ ->
                 let
                     packed depth =
@@ -848,7 +848,7 @@ oneBudget =
                             (List.range 2 depth)
 
                     read depth =
-                        Json.Decode.decodeString (Proto.Json.Decode.anyWith Proto.WellKnown.registry) (text depth) |> Result.map (always ()) |> Result.mapError (always ())
+                        Json.Decode.decodeString (Proto.Json.Decode.any Proto.WellKnown.registry) (text depth) |> Result.map (always ()) |> Result.mapError (always ())
 
                     write depth =
                         Proto.Json.Encode.encodeWith Proto.WellKnown.registry (Proto.Json.Encode.any (packed depth)) |> ok

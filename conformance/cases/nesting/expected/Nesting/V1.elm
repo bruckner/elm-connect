@@ -581,9 +581,9 @@ decodeOuter : Json.Decode.Decoder Outer
 decodeOuter =
     Proto.Json.Decode.message
         (Json.Decode.succeed Outer
-            |> Proto.Json.Decode.messageField "inner" Nothing (Json.Decode.map Just decodeOuterInner)
-            |> Proto.Json.Decode.messageField "kind" OuterInnerKindUnspecified decodeOuterInnerKind
-            |> Proto.Json.Decode.messageField "all" [] (Json.Decode.list decodeOuterInnerDeepest)
+            |> Proto.Json.Decode.field "inner" Nothing (Json.Decode.map Just decodeOuterInner)
+            |> Proto.Json.Decode.field "kind" OuterInnerKindUnspecified decodeOuterInnerKind
+            |> Proto.Json.Decode.field "all" [] (Json.Decode.list decodeOuterInnerDeepest)
         )
 
 
@@ -593,7 +593,7 @@ decodeOuterInner : Json.Decode.Decoder OuterInner
 decodeOuterInner =
     Proto.Json.Decode.message
         (Json.Decode.succeed OuterInner
-            |> Proto.Json.Decode.messageField "deepest" Nothing (Json.Decode.map Just decodeOuterInnerDeepest)
+            |> Proto.Json.Decode.field "deepest" Nothing (Json.Decode.map Just decodeOuterInnerDeepest)
         )
 
 
@@ -603,7 +603,7 @@ decodeOuterInnerDeepest : Json.Decode.Decoder OuterInnerDeepest
 decodeOuterInnerDeepest =
     Proto.Json.Decode.message
         (Json.Decode.succeed OuterInnerDeepest
-            |> Proto.Json.Decode.messageField "kind" OuterInnerKindUnspecified decodeOuterInnerKind
+            |> Proto.Json.Decode.field "kind" OuterInnerKindUnspecified decodeOuterInnerKind
         )
 
 
@@ -622,9 +622,9 @@ decodeNestedNode =
         (\depth ->
             Proto.Json.Decode.message
                 (Json.Decode.succeed Node
-                    |> Proto.Json.Decode.messageField "label" "" Proto.Json.Decode.string
-                    |> Proto.Json.Decode.messageField "children" [] (Json.Decode.list (Json.Decode.map Node_ (Json.Decode.lazy (\_ -> decodeNestedNode (depth + 1)))))
-                    |> Proto.Json.Decode.messageFieldEither "byName" "by_name" Dict.empty (Proto.Json.Decode.stringDict (Json.Decode.map Node_ (Json.Decode.lazy (\_ -> decodeNestedNode (depth + 1)))))
+                    |> Proto.Json.Decode.field "label" "" Proto.Json.Decode.string
+                    |> Proto.Json.Decode.field "children" [] (Json.Decode.list (Json.Decode.map Node_ (Json.Decode.lazy (\_ -> decodeNestedNode (depth + 1)))))
+                    |> Proto.Json.Decode.fieldEither "byName" "by_name" Dict.empty (Proto.Json.Decode.stringDict (Json.Decode.map Node_ (Json.Decode.lazy (\_ -> decodeNestedNode (depth + 1)))))
                 )
         )
 
@@ -651,8 +651,8 @@ decodeNestedPerson =
         (\depth ->
             Proto.Json.Decode.message
                 (Json.Decode.succeed Person
-                    |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
-                    |> Proto.Json.Decode.messageField "employer" Nothing (Json.Decode.map Just (Json.Decode.map Company_ (Json.Decode.lazy (\_ -> decodeNestedCompany (depth + 1)))))
+                    |> Proto.Json.Decode.field "name" "" Proto.Json.Decode.string
+                    |> Proto.Json.Decode.field "employer" Nothing (Json.Decode.map Just (Json.Decode.map Company_ (Json.Decode.lazy (\_ -> decodeNestedCompany (depth + 1)))))
                 )
         )
 
@@ -679,8 +679,8 @@ decodeNestedCompany =
         (\depth ->
             Proto.Json.Decode.message
                 (Json.Decode.succeed Company
-                    |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
-                    |> Proto.Json.Decode.messageField "staff" [] (Json.Decode.list (Json.Decode.map Person_ (Json.Decode.lazy (\_ -> decodeNestedPerson (depth + 1)))))
+                    |> Proto.Json.Decode.field "name" "" Proto.Json.Decode.string
+                    |> Proto.Json.Decode.field "staff" [] (Json.Decode.list (Json.Decode.map Person_ (Json.Decode.lazy (\_ -> decodeNestedPerson (depth + 1)))))
                 )
         )
 
@@ -705,7 +705,7 @@ decodeNestedForest : Int -> Json.Decode.Decoder Forest
 decodeNestedForest depth =
     Proto.Json.Decode.message
         (Json.Decode.succeed Forest
-            |> Proto.Json.Decode.messageField "trees" [] (Json.Decode.list (decodeNestedNode (depth + 1)))
+            |> Proto.Json.Decode.field "trees" [] (Json.Decode.list (decodeNestedNode (depth + 1)))
         )
 
 
@@ -760,7 +760,7 @@ decodeNestedSum =
         (\depth ->
             Proto.Json.Decode.message
                 (Json.Decode.succeed Sum
-                    |> Proto.Json.Decode.messageField "terms" [] (Json.Decode.list (Json.Decode.lazy (\_ -> decodeNestedExpr (depth + 1))))
+                    |> Proto.Json.Decode.field "terms" [] (Json.Decode.list (Json.Decode.lazy (\_ -> decodeNestedExpr (depth + 1))))
                 )
         )
 

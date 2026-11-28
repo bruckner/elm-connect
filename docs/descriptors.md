@@ -105,7 +105,7 @@ its descriptor.
 ### Registries
 
 An `Any`'s proto3 JSON is converted from and to its binary through a
-`Proto.Registry`: reading an `Any` from JSON (`Proto.Json.Decode.anyWith`),
+`Proto.Registry`: reading an `Any` from JSON (`Proto.Json.Decode.any`),
 writing one as JSON (a message holding one, or one alone with
 `Proto.Json.Encode.any`, run by `Proto.Json.Encode.encodeWith`), and
 `Proto.Any.toJson`. An `Any` written alone, as a method whose request is
@@ -175,7 +175,7 @@ nested `Any`s ([calling.md](calling.md#nesting-depth)) bounds the
 depth, not the time.
 
 The conversion happens when an `Any` is read from JSON
-(`Proto.Json.Decode.anyWith`, any JSON answer holding one) and when one is
+(`Proto.Json.Decode.any`, any JSON answer holding one) and when one is
 written as JSON (`Proto.Json.Encode.encodeWith`, `Proto.Any.toJson`, a JSON
 request holding one). Over the binary codec an `Any` is read and sent as
 its bytes, unconverted, and `Proto.Any.unpack` reads its message once.

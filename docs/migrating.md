@@ -449,7 +449,7 @@ JSON.
   binary and `toJson registry` its proto3 JSON, failing with
   `UnregisteredType` or `BadBinary`, of a nested `Any` named by its own
   type.
-- Proto3 JSON of an `Any` goes through a registry: `Proto.Json.Decode.anyWith
+- Proto3 JSON of an `Any` goes through a registry: `Proto.Json.Decode.any
   registry` replaces `any`, and a message holding an `Any` is written
   with `Proto.Json.Encode.encodeWith registry`, where 0.1 had `encodeAny`.
   An `"@type"` the registry lacks fails the read, naming the URL, and
@@ -701,7 +701,11 @@ refuse begins with `total`; a value encoder is named after the decoder
 it mirrors (`int64`, `bytes`). The decoder of a `double` field is
 `Proto.Json.Decode.double`, and of a `float` field `Proto.Json.Decode.float`,
 as `Proto.Binary` names them: 0.1's `Proto.Json.float`, which read a
-`double`, is `Proto.Json.Decode.double`, not `Proto.Json.Decode.float`.
+`double`, is `Proto.Json.Decode.double`, not `Proto.Json.Decode.float`. Likewise 0.1's
+`Proto.Json.field` and `fieldEither` checked for themselves that the
+JSON is an object; `Proto.Json.Decode.field` and `fieldEither`, of the
+same types, leave that to `Proto.Json.Decode.message`, so a pipeline of
+them is wrapped in it.
 
 Every name `Proto.Json` has had, in 0.1.0 or on `main` before 0.2
 (marked ¹):
@@ -748,10 +752,10 @@ Every name `Proto.Json` has had, in 0.1.0 or on `main` before 0.2
 | `encodeEmpty` | `Proto.Json.Encode.empty` |
 | `encodeNullValue` ¹ | `Proto.Json.Encode.nullValue` |
 | `message` ¹ | `Proto.Json.Decode.message` |
-| `messageField` ¹ | `Proto.Json.Decode.messageField` |
-| `messageFieldEither` ¹ | `Proto.Json.Decode.messageFieldEither` |
-| `messageNullField` ¹ | `Proto.Json.Decode.messageNullField` |
-| `messageNullFieldEither` ¹ | `Proto.Json.Decode.messageNullFieldEither` |
+| `messageField` ¹ | `Proto.Json.Decode.field` |
+| `messageFieldEither` ¹ | `Proto.Json.Decode.fieldEither` |
+| `messageNullField` ¹ | `Proto.Json.Decode.nullField` |
+| `messageNullFieldEither` ¹ | `Proto.Json.Decode.nullFieldEither` |
 | `emptyMessage` | `Proto.Json.Decode.emptyMessage` |
 | `memo` ¹ | `Proto.Json.Decode.memo` |
 | `deeper` ¹ | `Proto.Json.Decode.deeper` |
@@ -793,13 +797,13 @@ Every name `Proto.Json` has had, in 0.1.0 or on `main` before 0.2
 | `nestedValue` ¹ | `Proto.Json.Decode.nestedValue` |
 | `listValue` | `Proto.Json.Decode.listValue` |
 | `nestedListValue` ¹ | `Proto.Json.Decode.nestedListValue` |
-| `anyWith` ¹ | `Proto.Json.Decode.anyWith` |
-| `nestedAnyWith` ¹ | `Proto.Json.Decode.nestedAnyWith` |
+| `anyWith` ¹ | `Proto.Json.Decode.any` |
+| `nestedAnyWith` ¹ | `Proto.Json.Decode.nestedAny` |
 | `registryDepth` ¹ | `Proto.Json.Decode.registryDepth` |
-| `field` | `Proto.Json.Decode.messageField`, inside `Proto.Json.Decode.message` |
-| `fieldEither` | `Proto.Json.Decode.messageFieldEither`, inside `Proto.Json.Decode.message` |
-| `valueField` | `Proto.Json.Decode.messageNullField name (Proto.Json.Decode.nestedValue 0)` |
-| `valueFieldEither` | `Proto.Json.Decode.messageNullFieldEither jsonName protoName (Proto.Json.Decode.nestedValue 0)` |
+| `field` | `Proto.Json.Decode.field`, of the same type, inside `Proto.Json.Decode.message`: 0.1's checked that the JSON is an object, and this one leaves that to `message` |
+| `fieldEither` | `Proto.Json.Decode.fieldEither`, inside `Proto.Json.Decode.message` |
+| `valueField` | `Proto.Json.Decode.nullField name (Proto.Json.Decode.nestedValue 0)` |
+| `valueFieldEither` | `Proto.Json.Decode.nullFieldEither jsonName protoName (Proto.Json.Decode.nestedValue 0)` |
 | `emptyMember` | `Proto.Json.Decode.member name (Json.Decode.map (\() -> Ctor) Proto.Json.Decode.empty)` |
 | `emptyMemberEither` | `Proto.Json.Decode.memberEither`, as for `emptyMember` |
 | `valueMember` | `Proto.Json.Decode.nullMember name (Json.Decode.map Ctor (Proto.Json.Decode.nestedValue 0))` |
@@ -810,7 +814,7 @@ Every name `Proto.Json` has had, in 0.1.0 or on `main` before 0.2
 | `encodeFieldMask` | `Proto.Json.Encode.fieldMask`, as for `encodeTimestamp` |
 | `encodeStruct` | `Proto.Json.Encode.struct`, as for `encodeTimestamp`; `Proto.Value.toJson` unchecked |
 | `encodeListValue` | `Proto.Json.Encode.listValue`, as for `encodeTimestamp` |
-| `any` | `Proto.Json.Decode.anyWith registry` |
+| `any` | `Proto.Json.Decode.any registry` |
 | `encodeAny` | `Proto.Json.Encode.any`, run with `Proto.Json.Encode.encodeWith registry` |
 
 ¹ Not in 0.1.0: added on `main` before 0.2.

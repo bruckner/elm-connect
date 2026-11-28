@@ -175,10 +175,10 @@ decodeNestedEnvelopeWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder
 decodeNestedEnvelopeWith types depth =
     Proto.Json.Decode.message
         (Json.Decode.succeed Envelope
-            |> Proto.Json.Decode.messageField "id" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageField "payload" Nothing (Json.Decode.map Just (Proto.Json.Decode.nestedAnyWith depth types))
-            |> Proto.Json.Decode.messageField "attachments" [] (Json.Decode.list (Proto.Json.Decode.nestedAnyWith depth types))
-            |> Proto.Json.Decode.messageField "headers" Dict.empty (Proto.Json.Decode.stringDict (Proto.Json.Decode.nestedAnyWith depth types))
+            |> Proto.Json.Decode.field "id" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "payload" Nothing (Json.Decode.map Just (Proto.Json.Decode.nestedAny depth types))
+            |> Proto.Json.Decode.field "attachments" [] (Json.Decode.list (Proto.Json.Decode.nestedAny depth types))
+            |> Proto.Json.Decode.field "headers" Dict.empty (Proto.Json.Decode.stringDict (Proto.Json.Decode.nestedAny depth types))
             |> Proto.Json.Decode.oneof (decodeNestedEnvelopeBodyWith types depth)
         )
 
@@ -196,7 +196,7 @@ decodeNestedEnvelopeBodyWith : Proto.Registry.Registry -> Int -> Json.Decode.Dec
 decodeNestedEnvelopeBodyWith types depth =
     Proto.Json.Decode.members "body"
         EnvelopeBodyUnset
-        [ Proto.Json.Decode.member "packed" (Json.Decode.map EnvelopeBodyPacked (Proto.Json.Decode.nestedAnyWith depth types))
+        [ Proto.Json.Decode.member "packed" (Json.Decode.map EnvelopeBodyPacked (Proto.Json.Decode.nestedAny depth types))
         , Proto.Json.Decode.member "text" (Json.Decode.map EnvelopeBodyText Proto.Json.Decode.string)
         ]
 

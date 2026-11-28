@@ -174,9 +174,9 @@ decodeRemote : Json.Decode.Decoder Remote
 decodeRemote =
     Proto.Json.Decode.message
         (Json.Decode.succeed Remote
-            |> Proto.Json.Decode.messageField "id" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageField "shade" ShadeUnspecified decodeShade
-            |> Proto.Json.Decode.messageField "version" "0" Proto.Json.Decode.int64
+            |> Proto.Json.Decode.field "id" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "shade" ShadeUnspecified decodeShade
+            |> Proto.Json.Decode.field "version" "0" Proto.Json.Decode.int64
         )
 
 

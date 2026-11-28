@@ -257,11 +257,11 @@ decodeDraft : Json.Decode.Decoder Draft
 decodeDraft =
     Proto.Json.Decode.message
         (Json.Decode.succeed Draft
-            |> Proto.Json.Decode.messageField "title" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "title" "" Proto.Json.Decode.string
             |> Proto.Json.Decode.oneof decodeDraftBody
-            |> Proto.Json.Decode.messageField "mood" MoodUnspecified decodeMood
-            |> Proto.Json.Decode.messageField "margin" Nothing (Json.Decode.map Just decodeDraftMargin)
-            |> Proto.Json.Decode.messageField "tags" [] (Json.Decode.list Proto.Json.Decode.string)
+            |> Proto.Json.Decode.field "mood" MoodUnspecified decodeMood
+            |> Proto.Json.Decode.field "margin" Nothing (Json.Decode.map Just decodeDraftMargin)
+            |> Proto.Json.Decode.field "tags" [] (Json.Decode.list Proto.Json.Decode.string)
         )
 
 
@@ -282,8 +282,8 @@ decodeDraftMargin : Json.Decode.Decoder DraftMargin
 decodeDraftMargin =
     Proto.Json.Decode.message
         (Json.Decode.succeed DraftMargin
-            |> Proto.Json.Decode.messageField "left" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "right" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "left" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "right" 0 Proto.Json.Decode.int32
         )
 
 

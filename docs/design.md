@@ -392,8 +392,9 @@ rpc shared call =
   codecs live in two modules by direction, as elm/json's do:
   `Proto.Json.Encode` and `Proto.Json.Decode`. A decoder and its
   encoder share a noun, named for what they read and write (`int64`,
-  `timestamp`, `boolMap`, `double`), with `With` at the end of a
-  decoder taking a registry (`anyWith`). A field's encoder is one of
+  `timestamp`, `boolMap`, `double`, `any`); a decoder taking a
+  registry takes it as its first argument (`Proto.Json.Decode.any
+  registry`). A field's encoder is one of
   three kinds: plain, giving a `Maybe Json.Encode.Value` that is
   `Nothing` to leave the field out, which cannot refuse and begins with
   `plain` or `implicit` (`plainRepeated`, `implicit`, with `plainObject`
@@ -802,7 +803,7 @@ rpc shared call =
     against one budget with the `Any`s and the arrays and objects of the
     `Struct`, `Value` and `ListValue` it holds: those count on from its
     depth (`Proto.Json.Decode.nestedStruct depth`, `nestedListValue`,
-    `nestedValue`, `nestedAnyWith`). Its codecs take the depth: `decodeNode =
+    `nestedValue`, `nestedAny`). Its codecs take the depth: `decodeNode =
     decodeNestedNode 1`, and so for every message that nests. A message
     that does not nest holds nothing a read could count, and generates
     what it would in a schema with nothing that nests (decisions: "A
@@ -1061,8 +1062,8 @@ just the form encoders write.
   when they differ, JSON name first:
 
   ```elm
-  |> Proto.Json.Decode.messageField "title" "" Proto.Json.Decode.string
-  |> Proto.Json.Decode.messageFieldEither "displayName" "display_name" "" Proto.Json.Decode.string
+  |> Proto.Json.Decode.field "title" "" Proto.Json.Decode.string
+  |> Proto.Json.Decode.fieldEither "displayName" "display_name" "" Proto.Json.Decode.string
   ```
 
   An object holding both keys fails, naming them (`Expecting
@@ -1070,9 +1071,9 @@ just the form encoders write.
   is `null`: protobuf's own parsers (protobuf-go's protojson) reject it
   as a duplicate field. The same holds for every two-name
   helper (`memberEither`, `nullMemberEither`,
-  `messageNullFieldEither`). The
+  `nullFieldEither`). The
   two names are equal only for one-word fields without an explicit
-  `json_name`, so in practice most multi-word fields use `messageFieldEither`. Two names are the most there can
+  `json_name`, so in practice most multi-word fields use `fieldEither`. Two names are the most there can
   be (decisions.md: Decoder steps).
 - A key written twice in one object (`{"title":"a","title":"b"}`) is
   not refused, as protobuf's parsers refuse it: it reads as its last
@@ -1086,8 +1087,8 @@ just the form encoders write.
   protobuf writer produces.
 - One step serves every cardinality. Its second argument is the value
   an absent or `null` field reads as, so a field with presence reads
-  `messageField "author" Nothing (Json.Decode.map Just decodeAuthor)` and a
-  repeated one `messageField "tags" [] (Json.Decode.list Proto.Json.Decode.string)`,
+  `field "author" Nothing (Json.Decode.map Just decodeAuthor)` and a
+  repeated one `field "tags" [] (Json.Decode.list Proto.Json.Decode.string)`,
   and the reader sees the zero value.
 - A step finds its field with `Json.Decode.field` (JavaScript's `in`),
   in constant time, so a message decodes in time linear in its fields
@@ -1100,7 +1101,7 @@ just the form encoders write.
   too, and never lists the keys, and an empty message
   (`Proto.Json.Decode.emptyMessage`) makes the same check. A generated decoder
   makes it once: `Proto.Json.Decode.message` wraps the field steps
-  (`messageField` and its siblings), which then look a key up without
+  (`field` and its siblings), which then look a key up without
   checking the object again, and fail as elm/json does
   (`Expecting an OBJECT`) when it is not one. A oneof's
   decoder reads the message object on its own and makes its own check,
@@ -1350,7 +1351,7 @@ In detail:
   own decoders, with the reason a read failed. Generated code reads a
   `Value` held by a message, which then nests, at the message's depth,
   as `Proto.Value.decoder` reads one from the top:
-  `Proto.Json.Decode.nestedValue depth`, through `Proto.Json.Decode.messageNullField`
+  `Proto.Json.Decode.nestedValue depth`, through `Proto.Json.Decode.nullField`
   for a singular field, through `Proto.Json.Decode.nullMember` for a oneof member,
   and as any other value in a list or map.
   (decisions.md: "A union for `google.protobuf.Value`, one depth budget".)
@@ -1394,11 +1395,11 @@ In detail:
   `NullValue`, and only a missing key as unset. So a missing key is
   `Nothing`, and any JSON under the key is `Just` it, `null` included
   (`Just ValueNull`); `Nothing` leaves the field out and `Just` writes
-  its JSON, `null` too. The step is `Proto.Json.Decode.messageNullField`
-  (`messageNullFieldEither` when the names differ) of
+  its JSON, `null` too. The step is `Proto.Json.Decode.nullField`
+  (`nullFieldEither` when the names differ) of
   `Proto.Json.Decode.nestedValue depth`, at the message's depth, since a
   message holding a `Value` nests; it gives `null` to the decoder where
-  `messageField` reads it as the default. This keeps a default message
+  `field` reads it as the default. This keeps a default message
   `{}` and matches `Struct` and `ListValue`, and a client that never
   touches the field never sends it (decisions.md: `google.protobuf.Value`
   fields as `Maybe`). Repeated, as a map value and as a oneof member it
@@ -1487,7 +1488,7 @@ In detail:
   plus `"@type"`, or, for a well-known type with a JSON form of its own
   (`Timestamp`, `Duration`, `FieldMask`, `Empty`, `Struct`, `Value`,
   `ListValue`, the wrappers and `Any` itself), `{"@type": …, "value":
-  <that form>}`. The codecs are `Proto.Json.Decode.anyWith registry`, which
+  <that form>}`. The codecs are `Proto.Json.Decode.any registry`, which
   converts the JSON to binary through the registry's entry for the type,
   and `Proto.Json.Encode.any`, which converts back through the registry the
   write is run with (`Proto.Json.Encode.encodeWith registry`), beside every other
@@ -1497,7 +1498,7 @@ In detail:
   the write with `UnregisteredType`; there is no `{"type", "value"}`
   fallback, since every form but proto3 JSON's is one a reader mistakes
   or refuses. A lenient registry, the opt-in, reads an `"@type"` it lacks
-  as the `Any`'s JSON alone (§3.10). `anyWith` fails on an object without
+  as the `Any`'s JSON alone (§3.10). `Proto.Json.Decode.any` fails on an object without
   `"@type"`, except `{}`, which is the empty `Any` (no type URL), as
   protojson reads it, and on a `"@type"` that is not a type URL: empty,
   without a `/`, or with nothing after the last one. They are in
@@ -4155,7 +4156,7 @@ toString : Error -> String              -- for a log, as Json.Decode.errorToStri
   | `Proto.Message.decodeJson` | `Result Error a` | `UnregisteredType` for an `Any` the registry lacks, else `BadJson` |
   | `Proto.Any.tryUnpack` | `Result Error a` | `TypeMismatch`, `BadBinary` |
   | `Proto.Any.toJson`, `Proto.Json.Encode.encode`, `encodeWith` | `Result Error Value` | `BadValue { typeName, path, message }` for a value proto3 JSON has no form for (§3.5); for an `Any`, `UnregisteredType`, or the `BadBinary` of the `Any` that failed, at any depth, named by its own type, or `TooDeep` named `google.protobuf.Any` for one nested past 100 (§5.5); a JSON-alone `Any` that is not its message, `BadJson` (§3.10) |
-  | `Proto.Json.Decode.anyWith`, generated `decodeNoteWith` | `Json.Decode.Decoder` | elm/json's error, a registry miss named in its message |
+  | `Proto.Json.Decode.any`, generated `decodeNoteWith` | `Json.Decode.Decoder` | elm/json's error, a registry miss named in its message |
   | `Rpc.Error.protoError` of a request that cannot be written (`badValue`, `badAny`) | `Maybe Error` | as `encodeWith` |
   | `Rpc.Error.details` | `List (Result Error Any)` | `UnregisteredType`, `BadJson`, `BadBinary` (above) |
 

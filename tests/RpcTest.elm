@@ -620,7 +620,7 @@ responses =
             \_ ->
                 let
                     getAny =
-                        Rpc.call (Proto.Method.initJson "t.v1.S" "Get" (\_ -> Proto.Json.Encode.succeed (Json.Encode.object [])) Proto.Json.Decode.anyWith) ()
+                        Rpc.call (Proto.Method.initJson "t.v1.S" "Get" (\_ -> Proto.Json.Encode.succeed (Json.Encode.object [])) Proto.Json.Decode.any) ()
 
                     answer =
                         Http.GoodStatus_ (metadata 200 "OK") """{"@type":"type.googleapis.com/notes.v1.Note","title":"hi"}"""

@@ -41,7 +41,7 @@ forward =
         (Proto.Method.init "envelope.v1.Relay"
             "Forward"
             Proto.Json.Encode.any
-            Proto.Json.Decode.anyWith
+            Proto.Json.Decode.any
             (Proto.Binary.messageEncoder Proto.Binary.any)
             (Proto.Binary.messageDecoder Proto.Binary.any)
         )

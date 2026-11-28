@@ -1385,22 +1385,22 @@ decodeScalars : Json.Decode.Decoder Scalars
 decodeScalars =
     Proto.Json.Decode.message
         (Json.Decode.succeed Scalars
-            |> Proto.Json.Decode.messageField "double" 0.0 Proto.Json.Decode.double
-            |> Proto.Json.Decode.messageField "float" 0.0 Proto.Json.Decode.float
-            |> Proto.Json.Decode.messageField "int32" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "int64" "0" Proto.Json.Decode.int64
-            |> Proto.Json.Decode.messageField "uint32" 0 Proto.Json.Decode.uint32
-            |> Proto.Json.Decode.messageField "uint64" "0" Proto.Json.Decode.uint64
-            |> Proto.Json.Decode.messageField "sint32" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "sint64" "0" Proto.Json.Decode.int64
-            |> Proto.Json.Decode.messageField "fixed32" 0 Proto.Json.Decode.uint32
-            |> Proto.Json.Decode.messageField "fixed64" "0" Proto.Json.Decode.uint64
-            |> Proto.Json.Decode.messageField "sfixed32" 0 Proto.Json.Decode.int32
-            |> Proto.Json.Decode.messageField "sfixed64" "0" Proto.Json.Decode.int64
-            |> Proto.Json.Decode.messageField "bool" False Json.Decode.bool
-            |> Proto.Json.Decode.messageField "string" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageField "bytes" "" Proto.Json.Decode.bytes
-            |> Proto.Json.Decode.messageField "kind" KindUnspecified decodeKind
+            |> Proto.Json.Decode.field "double" 0.0 Proto.Json.Decode.double
+            |> Proto.Json.Decode.field "float" 0.0 Proto.Json.Decode.float
+            |> Proto.Json.Decode.field "int32" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "int64" "0" Proto.Json.Decode.int64
+            |> Proto.Json.Decode.field "uint32" 0 Proto.Json.Decode.uint32
+            |> Proto.Json.Decode.field "uint64" "0" Proto.Json.Decode.uint64
+            |> Proto.Json.Decode.field "sint32" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "sint64" "0" Proto.Json.Decode.int64
+            |> Proto.Json.Decode.field "fixed32" 0 Proto.Json.Decode.uint32
+            |> Proto.Json.Decode.field "fixed64" "0" Proto.Json.Decode.uint64
+            |> Proto.Json.Decode.field "sfixed32" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "sfixed64" "0" Proto.Json.Decode.int64
+            |> Proto.Json.Decode.field "bool" False Json.Decode.bool
+            |> Proto.Json.Decode.field "string" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "bytes" "" Proto.Json.Decode.bytes
+            |> Proto.Json.Decode.field "kind" KindUnspecified decodeKind
         )
 
 
@@ -1410,16 +1410,16 @@ decodeOptionals : Json.Decode.Decoder Optionals
 decodeOptionals =
     Proto.Json.Decode.message
         (Json.Decode.succeed Optionals
-            |> Proto.Json.Decode.messageField "double" Nothing (Json.Decode.map Just Proto.Json.Decode.double)
-            |> Proto.Json.Decode.messageField "float" Nothing (Json.Decode.map Just Proto.Json.Decode.float)
-            |> Proto.Json.Decode.messageField "int32" Nothing (Json.Decode.map Just Proto.Json.Decode.int32)
-            |> Proto.Json.Decode.messageField "int64" Nothing (Json.Decode.map Just Proto.Json.Decode.int64)
-            |> Proto.Json.Decode.messageField "uint64" Nothing (Json.Decode.map Just Proto.Json.Decode.uint64)
-            |> Proto.Json.Decode.messageField "sint32" Nothing (Json.Decode.map Just Proto.Json.Decode.int32)
-            |> Proto.Json.Decode.messageField "bool" Nothing (Json.Decode.map Just Json.Decode.bool)
-            |> Proto.Json.Decode.messageField "string" Nothing (Json.Decode.map Just Proto.Json.Decode.string)
-            |> Proto.Json.Decode.messageField "bytes" Nothing (Json.Decode.map Just Proto.Json.Decode.bytes)
-            |> Proto.Json.Decode.messageField "kind" Nothing (Json.Decode.map Just decodeKind)
+            |> Proto.Json.Decode.field "double" Nothing (Json.Decode.map Just Proto.Json.Decode.double)
+            |> Proto.Json.Decode.field "float" Nothing (Json.Decode.map Just Proto.Json.Decode.float)
+            |> Proto.Json.Decode.field "int32" Nothing (Json.Decode.map Just Proto.Json.Decode.int32)
+            |> Proto.Json.Decode.field "int64" Nothing (Json.Decode.map Just Proto.Json.Decode.int64)
+            |> Proto.Json.Decode.field "uint64" Nothing (Json.Decode.map Just Proto.Json.Decode.uint64)
+            |> Proto.Json.Decode.field "sint32" Nothing (Json.Decode.map Just Proto.Json.Decode.int32)
+            |> Proto.Json.Decode.field "bool" Nothing (Json.Decode.map Just Json.Decode.bool)
+            |> Proto.Json.Decode.field "string" Nothing (Json.Decode.map Just Proto.Json.Decode.string)
+            |> Proto.Json.Decode.field "bytes" Nothing (Json.Decode.map Just Proto.Json.Decode.bytes)
+            |> Proto.Json.Decode.field "kind" Nothing (Json.Decode.map Just decodeKind)
         )
 
 
@@ -1429,17 +1429,17 @@ decodeRepeated : Json.Decode.Decoder Repeated
 decodeRepeated =
     Proto.Json.Decode.message
         (Json.Decode.succeed Repeated
-            |> Proto.Json.Decode.messageField "doubles" [] (Json.Decode.list Proto.Json.Decode.double)
-            |> Proto.Json.Decode.messageField "floats" [] (Json.Decode.list Proto.Json.Decode.float)
-            |> Proto.Json.Decode.messageField "int32s" [] (Json.Decode.list Proto.Json.Decode.int32)
-            |> Proto.Json.Decode.messageField "int64s" [] (Json.Decode.list Proto.Json.Decode.int64)
-            |> Proto.Json.Decode.messageField "uint64s" [] (Json.Decode.list Proto.Json.Decode.uint64)
-            |> Proto.Json.Decode.messageField "fixed32s" [] (Json.Decode.list Proto.Json.Decode.uint32)
-            |> Proto.Json.Decode.messageField "bools" [] (Json.Decode.list Json.Decode.bool)
-            |> Proto.Json.Decode.messageField "strings" [] (Json.Decode.list Proto.Json.Decode.string)
-            |> Proto.Json.Decode.messageField "bytes" [] (Json.Decode.list Proto.Json.Decode.bytes)
-            |> Proto.Json.Decode.messageField "kinds" [] (Json.Decode.list decodeKind)
-            |> Proto.Json.Decode.messageField "leaves" [] (Json.Decode.list decodeLeaf)
+            |> Proto.Json.Decode.field "doubles" [] (Json.Decode.list Proto.Json.Decode.double)
+            |> Proto.Json.Decode.field "floats" [] (Json.Decode.list Proto.Json.Decode.float)
+            |> Proto.Json.Decode.field "int32s" [] (Json.Decode.list Proto.Json.Decode.int32)
+            |> Proto.Json.Decode.field "int64s" [] (Json.Decode.list Proto.Json.Decode.int64)
+            |> Proto.Json.Decode.field "uint64s" [] (Json.Decode.list Proto.Json.Decode.uint64)
+            |> Proto.Json.Decode.field "fixed32s" [] (Json.Decode.list Proto.Json.Decode.uint32)
+            |> Proto.Json.Decode.field "bools" [] (Json.Decode.list Json.Decode.bool)
+            |> Proto.Json.Decode.field "strings" [] (Json.Decode.list Proto.Json.Decode.string)
+            |> Proto.Json.Decode.field "bytes" [] (Json.Decode.list Proto.Json.Decode.bytes)
+            |> Proto.Json.Decode.field "kinds" [] (Json.Decode.list decodeKind)
+            |> Proto.Json.Decode.field "leaves" [] (Json.Decode.list decodeLeaf)
         )
 
 
@@ -1449,20 +1449,20 @@ decodeMaps : Json.Decode.Decoder Maps
 decodeMaps =
     Proto.Json.Decode.message
         (Json.Decode.succeed Maps
-            |> Proto.Json.Decode.messageFieldEither "stringString" "string_string" Dict.empty (Proto.Json.Decode.stringDict Proto.Json.Decode.string)
-            |> Proto.Json.Decode.messageFieldEither "int32Kind" "int32_kind" Dict.empty (Proto.Json.Decode.int32Dict decodeKind)
-            |> Proto.Json.Decode.messageFieldEither "int64Double" "int64_double" Dict.empty (Proto.Json.Decode.int64Dict Proto.Json.Decode.double)
-            |> Proto.Json.Decode.messageFieldEither "uint32Int64" "uint32_int64" Dict.empty (Proto.Json.Decode.uint32Dict Proto.Json.Decode.int64)
-            |> Proto.Json.Decode.messageFieldEither "uint64String" "uint64_string" Dict.empty (Proto.Json.Decode.uint64Dict Proto.Json.Decode.string)
-            |> Proto.Json.Decode.messageFieldEither "sint32Bool" "sint32_bool" Dict.empty (Proto.Json.Decode.int32Dict Json.Decode.bool)
-            |> Proto.Json.Decode.messageFieldEither "sint64Float" "sint64_float" Dict.empty (Proto.Json.Decode.int64Dict Proto.Json.Decode.float)
-            |> Proto.Json.Decode.messageFieldEither "fixed32Uint64" "fixed32_uint64" Dict.empty (Proto.Json.Decode.uint32Dict Proto.Json.Decode.uint64)
-            |> Proto.Json.Decode.messageFieldEither "fixed64Leaf" "fixed64_leaf" Dict.empty (Proto.Json.Decode.uint64Dict decodeLeaf)
-            |> Proto.Json.Decode.messageFieldEither "sfixed32Bytes" "sfixed32_bytes" Dict.empty (Proto.Json.Decode.int32Dict Proto.Json.Decode.bytes)
-            |> Proto.Json.Decode.messageFieldEither "sfixed64Int32" "sfixed64_int32" Dict.empty (Proto.Json.Decode.int64Dict Proto.Json.Decode.int32)
-            |> Proto.Json.Decode.messageFieldEither "boolString" "bool_string" [] (Proto.Json.Decode.boolMap Proto.Json.Decode.string)
-            |> Proto.Json.Decode.messageFieldEither "boolLeaf" "bool_leaf" [] (Proto.Json.Decode.boolMap decodeLeaf)
-            |> Proto.Json.Decode.messageFieldEither "stringLeaf" "string_leaf" Dict.empty (Proto.Json.Decode.stringDict decodeLeaf)
+            |> Proto.Json.Decode.fieldEither "stringString" "string_string" Dict.empty (Proto.Json.Decode.stringDict Proto.Json.Decode.string)
+            |> Proto.Json.Decode.fieldEither "int32Kind" "int32_kind" Dict.empty (Proto.Json.Decode.int32Dict decodeKind)
+            |> Proto.Json.Decode.fieldEither "int64Double" "int64_double" Dict.empty (Proto.Json.Decode.int64Dict Proto.Json.Decode.double)
+            |> Proto.Json.Decode.fieldEither "uint32Int64" "uint32_int64" Dict.empty (Proto.Json.Decode.uint32Dict Proto.Json.Decode.int64)
+            |> Proto.Json.Decode.fieldEither "uint64String" "uint64_string" Dict.empty (Proto.Json.Decode.uint64Dict Proto.Json.Decode.string)
+            |> Proto.Json.Decode.fieldEither "sint32Bool" "sint32_bool" Dict.empty (Proto.Json.Decode.int32Dict Json.Decode.bool)
+            |> Proto.Json.Decode.fieldEither "sint64Float" "sint64_float" Dict.empty (Proto.Json.Decode.int64Dict Proto.Json.Decode.float)
+            |> Proto.Json.Decode.fieldEither "fixed32Uint64" "fixed32_uint64" Dict.empty (Proto.Json.Decode.uint32Dict Proto.Json.Decode.uint64)
+            |> Proto.Json.Decode.fieldEither "fixed64Leaf" "fixed64_leaf" Dict.empty (Proto.Json.Decode.uint64Dict decodeLeaf)
+            |> Proto.Json.Decode.fieldEither "sfixed32Bytes" "sfixed32_bytes" Dict.empty (Proto.Json.Decode.int32Dict Proto.Json.Decode.bytes)
+            |> Proto.Json.Decode.fieldEither "sfixed64Int32" "sfixed64_int32" Dict.empty (Proto.Json.Decode.int64Dict Proto.Json.Decode.int32)
+            |> Proto.Json.Decode.fieldEither "boolString" "bool_string" [] (Proto.Json.Decode.boolMap Proto.Json.Decode.string)
+            |> Proto.Json.Decode.fieldEither "boolLeaf" "bool_leaf" [] (Proto.Json.Decode.boolMap decodeLeaf)
+            |> Proto.Json.Decode.fieldEither "stringLeaf" "string_leaf" Dict.empty (Proto.Json.Decode.stringDict decodeLeaf)
         )
 
 
@@ -1479,9 +1479,9 @@ decodeNestedChoice : Int -> Json.Decode.Decoder Choice
 decodeNestedChoice depth =
     Proto.Json.Decode.message
         (Json.Decode.succeed Choice
-            |> Proto.Json.Decode.messageField "before" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "before" "" Proto.Json.Decode.string
             |> Proto.Json.Decode.oneof (decodeNestedChoicePick depth)
-            |> Proto.Json.Decode.messageField "after" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "after" 0 Proto.Json.Decode.int32
         )
 
 
@@ -1520,11 +1520,11 @@ decodeNames : Json.Decode.Decoder Names
 decodeNames =
     Proto.Json.Decode.message
         (Json.Decode.succeed Names
-            |> Proto.Json.Decode.messageField "plain" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageFieldEither "twoWords" "two_words" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageFieldEither "overridden" "with_override" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageFieldEither "Big_Value" "big_override" "0" Proto.Json.Decode.int64
-            |> Proto.Json.Decode.messageFieldEither "leafy" "leaf_override" Nothing (Json.Decode.map Just decodeLeaf)
+            |> Proto.Json.Decode.field "plain" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.fieldEither "twoWords" "two_words" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.fieldEither "overridden" "with_override" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.fieldEither "Big_Value" "big_override" "0" Proto.Json.Decode.int64
+            |> Proto.Json.Decode.fieldEither "leafy" "leaf_override" Nothing (Json.Decode.map Just decodeLeaf)
             |> Proto.Json.Decode.oneof decodeNamesNamed
         )
 
@@ -1546,11 +1546,11 @@ decodeOuter : Json.Decode.Decoder Outer
 decodeOuter =
     Proto.Json.Decode.message
         (Json.Decode.succeed Outer
-            |> Proto.Json.Decode.messageField "mode" OuterModeUnspecified decodeOuterMode
-            |> Proto.Json.Decode.messageField "inner" Nothing (Json.Decode.map Just decodeOuterInner)
-            |> Proto.Json.Decode.messageField "inners" [] (Json.Decode.list decodeOuterInner)
-            |> Proto.Json.Decode.messageField "modes" [] (Json.Decode.list decodeOuterMode)
-            |> Proto.Json.Decode.messageFieldEither "namedModes" "named_modes" Dict.empty (Proto.Json.Decode.stringDict decodeOuterMode)
+            |> Proto.Json.Decode.field "mode" OuterModeUnspecified decodeOuterMode
+            |> Proto.Json.Decode.field "inner" Nothing (Json.Decode.map Just decodeOuterInner)
+            |> Proto.Json.Decode.field "inners" [] (Json.Decode.list decodeOuterInner)
+            |> Proto.Json.Decode.field "modes" [] (Json.Decode.list decodeOuterMode)
+            |> Proto.Json.Decode.fieldEither "namedModes" "named_modes" Dict.empty (Proto.Json.Decode.stringDict decodeOuterMode)
         )
 
 
@@ -1560,8 +1560,8 @@ decodeOuterInner : Json.Decode.Decoder OuterInner
 decodeOuterInner =
     Proto.Json.Decode.message
         (Json.Decode.succeed OuterInner
-            |> Proto.Json.Decode.messageField "mode" OuterModeUnspecified decodeOuterMode
-            |> Proto.Json.Decode.messageField "note" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "mode" OuterModeUnspecified decodeOuterMode
+            |> Proto.Json.Decode.field "note" "" Proto.Json.Decode.string
         )
 
 
@@ -1580,10 +1580,10 @@ decodeNestedTree =
         (\depth ->
             Proto.Json.Decode.message
                 (Json.Decode.succeed Tree
-                    |> Proto.Json.Decode.messageField "label" "" Proto.Json.Decode.string
-                    |> Proto.Json.Decode.messageField "left" Nothing (Json.Decode.map Just (Json.Decode.map Tree_ (Json.Decode.lazy (\_ -> decodeNestedTree (depth + 1)))))
-                    |> Proto.Json.Decode.messageField "children" [] (Json.Decode.list (Json.Decode.map Tree_ (Json.Decode.lazy (\_ -> decodeNestedTree (depth + 1)))))
-                    |> Proto.Json.Decode.messageField "named" Dict.empty (Proto.Json.Decode.stringDict (Json.Decode.map Tree_ (Json.Decode.lazy (\_ -> decodeNestedTree (depth + 1)))))
+                    |> Proto.Json.Decode.field "label" "" Proto.Json.Decode.string
+                    |> Proto.Json.Decode.field "left" Nothing (Json.Decode.map Just (Json.Decode.map Tree_ (Json.Decode.lazy (\_ -> decodeNestedTree (depth + 1)))))
+                    |> Proto.Json.Decode.field "children" [] (Json.Decode.list (Json.Decode.map Tree_ (Json.Decode.lazy (\_ -> decodeNestedTree (depth + 1)))))
+                    |> Proto.Json.Decode.field "named" Dict.empty (Proto.Json.Decode.stringDict (Json.Decode.map Tree_ (Json.Decode.lazy (\_ -> decodeNestedTree (depth + 1)))))
                     |> Proto.Json.Decode.oneof (decodeNestedTreeLink depth)
                 )
         )
@@ -1627,24 +1627,24 @@ decodeNestedWellKnownWith : Proto.Registry.Registry -> Int -> Json.Decode.Decode
 decodeNestedWellKnownWith types depth =
     Proto.Json.Decode.message
         (Json.Decode.succeed WellKnown
-            |> Proto.Json.Decode.messageField "any" Nothing (Json.Decode.map Just (Proto.Json.Decode.nestedAnyWith depth types))
-            |> Proto.Json.Decode.messageField "struct" Nothing (Json.Decode.map Just (Proto.Json.Decode.nestedStruct depth))
-            |> Proto.Json.Decode.messageField "list" Nothing (Json.Decode.map Just (Proto.Json.Decode.nestedListValue depth))
-            |> Proto.Json.Decode.messageNullField "value" (Proto.Json.Decode.nestedValue depth)
-            |> Proto.Json.Decode.messageField "timestamp" Nothing (Json.Decode.map Just Proto.Json.Decode.timestamp)
-            |> Proto.Json.Decode.messageField "duration" Nothing (Json.Decode.map Just Proto.Json.Decode.duration)
-            |> Proto.Json.Decode.messageField "mask" Nothing (Json.Decode.map Just Proto.Json.Decode.fieldMask)
-            |> Proto.Json.Decode.messageField "empty" () Proto.Json.Decode.empty
-            |> Proto.Json.Decode.messageField "anys" [] (Json.Decode.list (Proto.Json.Decode.nestedAnyWith depth types))
-            |> Proto.Json.Decode.messageField "values" [] (Json.Decode.list (Proto.Json.Decode.nestedValue depth))
-            |> Proto.Json.Decode.messageFieldEither "valueMap" "value_map" Dict.empty (Proto.Json.Decode.stringDict (Proto.Json.Decode.nestedValue depth))
-            |> Proto.Json.Decode.messageField "timestamps" [] (Json.Decode.list Proto.Json.Decode.timestamp)
-            |> Proto.Json.Decode.messageField "durations" [] (Json.Decode.list Proto.Json.Decode.duration)
-            |> Proto.Json.Decode.messageField "empties" [] (Json.Decode.list Proto.Json.Decode.empty)
-            |> Proto.Json.Decode.messageField "structs" Dict.empty (Proto.Json.Decode.int32Dict (Proto.Json.Decode.nestedStruct depth))
-            |> Proto.Json.Decode.messageFieldEither "nullValue" "null_value" () Proto.Json.Decode.nullValue
-            |> Proto.Json.Decode.messageFieldEither "nullValues" "null_values" [] (Json.Decode.list Proto.Json.Decode.nullValue)
-            |> Proto.Json.Decode.messageFieldEither "nullMap" "null_map" Dict.empty (Proto.Json.Decode.stringDict Proto.Json.Decode.nullValue)
+            |> Proto.Json.Decode.field "any" Nothing (Json.Decode.map Just (Proto.Json.Decode.nestedAny depth types))
+            |> Proto.Json.Decode.field "struct" Nothing (Json.Decode.map Just (Proto.Json.Decode.nestedStruct depth))
+            |> Proto.Json.Decode.field "list" Nothing (Json.Decode.map Just (Proto.Json.Decode.nestedListValue depth))
+            |> Proto.Json.Decode.nullField "value" (Proto.Json.Decode.nestedValue depth)
+            |> Proto.Json.Decode.field "timestamp" Nothing (Json.Decode.map Just Proto.Json.Decode.timestamp)
+            |> Proto.Json.Decode.field "duration" Nothing (Json.Decode.map Just Proto.Json.Decode.duration)
+            |> Proto.Json.Decode.field "mask" Nothing (Json.Decode.map Just Proto.Json.Decode.fieldMask)
+            |> Proto.Json.Decode.field "empty" () Proto.Json.Decode.empty
+            |> Proto.Json.Decode.field "anys" [] (Json.Decode.list (Proto.Json.Decode.nestedAny depth types))
+            |> Proto.Json.Decode.field "values" [] (Json.Decode.list (Proto.Json.Decode.nestedValue depth))
+            |> Proto.Json.Decode.fieldEither "valueMap" "value_map" Dict.empty (Proto.Json.Decode.stringDict (Proto.Json.Decode.nestedValue depth))
+            |> Proto.Json.Decode.field "timestamps" [] (Json.Decode.list Proto.Json.Decode.timestamp)
+            |> Proto.Json.Decode.field "durations" [] (Json.Decode.list Proto.Json.Decode.duration)
+            |> Proto.Json.Decode.field "empties" [] (Json.Decode.list Proto.Json.Decode.empty)
+            |> Proto.Json.Decode.field "structs" Dict.empty (Proto.Json.Decode.int32Dict (Proto.Json.Decode.nestedStruct depth))
+            |> Proto.Json.Decode.fieldEither "nullValue" "null_value" () Proto.Json.Decode.nullValue
+            |> Proto.Json.Decode.fieldEither "nullValues" "null_values" [] (Json.Decode.list Proto.Json.Decode.nullValue)
+            |> Proto.Json.Decode.fieldEither "nullMap" "null_map" Dict.empty (Proto.Json.Decode.stringDict Proto.Json.Decode.nullValue)
         )
 
 
@@ -1654,17 +1654,17 @@ decodeWrappers : Json.Decode.Decoder Wrappers
 decodeWrappers =
     Proto.Json.Decode.message
         (Json.Decode.succeed Wrappers
-            |> Proto.Json.Decode.messageField "double" Nothing (Json.Decode.map Just Proto.Json.Decode.double)
-            |> Proto.Json.Decode.messageField "float" Nothing (Json.Decode.map Just Proto.Json.Decode.float)
-            |> Proto.Json.Decode.messageField "int64" Nothing (Json.Decode.map Just Proto.Json.Decode.int64)
-            |> Proto.Json.Decode.messageField "uint64" Nothing (Json.Decode.map Just Proto.Json.Decode.uint64)
-            |> Proto.Json.Decode.messageField "int32" Nothing (Json.Decode.map Just Proto.Json.Decode.int32)
-            |> Proto.Json.Decode.messageField "uint32" Nothing (Json.Decode.map Just Proto.Json.Decode.uint32)
-            |> Proto.Json.Decode.messageField "bool" Nothing (Json.Decode.map Just Json.Decode.bool)
-            |> Proto.Json.Decode.messageField "string" Nothing (Json.Decode.map Just Proto.Json.Decode.string)
-            |> Proto.Json.Decode.messageField "bytes" Nothing (Json.Decode.map Just Proto.Json.Decode.bytes)
-            |> Proto.Json.Decode.messageField "int64s" [] (Json.Decode.list Proto.Json.Decode.int64)
-            |> Proto.Json.Decode.messageFieldEither "bytesMap" "bytes_map" Dict.empty (Proto.Json.Decode.stringDict Proto.Json.Decode.bytes)
+            |> Proto.Json.Decode.field "double" Nothing (Json.Decode.map Just Proto.Json.Decode.double)
+            |> Proto.Json.Decode.field "float" Nothing (Json.Decode.map Just Proto.Json.Decode.float)
+            |> Proto.Json.Decode.field "int64" Nothing (Json.Decode.map Just Proto.Json.Decode.int64)
+            |> Proto.Json.Decode.field "uint64" Nothing (Json.Decode.map Just Proto.Json.Decode.uint64)
+            |> Proto.Json.Decode.field "int32" Nothing (Json.Decode.map Just Proto.Json.Decode.int32)
+            |> Proto.Json.Decode.field "uint32" Nothing (Json.Decode.map Just Proto.Json.Decode.uint32)
+            |> Proto.Json.Decode.field "bool" Nothing (Json.Decode.map Just Json.Decode.bool)
+            |> Proto.Json.Decode.field "string" Nothing (Json.Decode.map Just Proto.Json.Decode.string)
+            |> Proto.Json.Decode.field "bytes" Nothing (Json.Decode.map Just Proto.Json.Decode.bytes)
+            |> Proto.Json.Decode.field "int64s" [] (Json.Decode.list Proto.Json.Decode.int64)
+            |> Proto.Json.Decode.fieldEither "bytesMap" "bytes_map" Dict.empty (Proto.Json.Decode.stringDict Proto.Json.Decode.bytes)
         )
 
 
@@ -1674,10 +1674,10 @@ decodeAcross : Json.Decode.Decoder Across
 decodeAcross =
     Proto.Json.Decode.message
         (Json.Decode.succeed Across
-            |> Proto.Json.Decode.messageField "remote" Nothing (Json.Decode.map Just Codec.Other.V1.decodeRemote)
-            |> Proto.Json.Decode.messageField "shade" Codec.Other.V1.ShadeUnspecified Codec.Other.V1.decodeShade
-            |> Proto.Json.Decode.messageField "remotes" [] (Json.Decode.list Codec.Other.V1.decodeRemote)
-            |> Proto.Json.Decode.messageField "shades" Dict.empty (Proto.Json.Decode.stringDict Codec.Other.V1.decodeShade)
+            |> Proto.Json.Decode.field "remote" Nothing (Json.Decode.map Just Codec.Other.V1.decodeRemote)
+            |> Proto.Json.Decode.field "shade" Codec.Other.V1.ShadeUnspecified Codec.Other.V1.decodeShade
+            |> Proto.Json.Decode.field "remotes" [] (Json.Decode.list Codec.Other.V1.decodeRemote)
+            |> Proto.Json.Decode.field "shades" Dict.empty (Proto.Json.Decode.stringDict Codec.Other.V1.decodeShade)
         )
 
 
@@ -1687,8 +1687,8 @@ decodeLeaf : Json.Decode.Decoder Leaf
 decodeLeaf =
     Proto.Json.Decode.message
         (Json.Decode.succeed Leaf
-            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageField "count" 0 Proto.Json.Decode.int32
+            |> Proto.Json.Decode.field "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "count" 0 Proto.Json.Decode.int32
         )
 
 
@@ -1705,18 +1705,18 @@ decodeNestedEverythingWith : Proto.Registry.Registry -> Int -> Json.Decode.Decod
 decodeNestedEverythingWith types depth =
     Proto.Json.Decode.message
         (Json.Decode.succeed Everything
-            |> Proto.Json.Decode.messageField "scalars" Nothing (Json.Decode.map Just decodeScalars)
-            |> Proto.Json.Decode.messageField "optionals" Nothing (Json.Decode.map Just decodeOptionals)
-            |> Proto.Json.Decode.messageField "repeated" Nothing (Json.Decode.map Just decodeRepeated)
-            |> Proto.Json.Decode.messageField "maps" Nothing (Json.Decode.map Just decodeMaps)
-            |> Proto.Json.Decode.messageField "choice" Nothing (Json.Decode.map Just (Proto.Json.Decode.deeperLazy depth decodeNestedChoice))
-            |> Proto.Json.Decode.messageField "names" Nothing (Json.Decode.map Just decodeNames)
-            |> Proto.Json.Decode.messageField "outer" Nothing (Json.Decode.map Just decodeOuter)
-            |> Proto.Json.Decode.messageField "tree" Nothing (Json.Decode.map Just (decodeNestedTree (depth + 1)))
-            |> Proto.Json.Decode.messageFieldEither "wellKnown" "well_known" Nothing (Json.Decode.map Just (Proto.Json.Decode.deeper depth (decodeNestedWellKnownWith types)))
-            |> Proto.Json.Decode.messageField "wrappers" Nothing (Json.Decode.map Just decodeWrappers)
-            |> Proto.Json.Decode.messageField "across" Nothing (Json.Decode.map Just decodeAcross)
-            |> Proto.Json.Decode.messageField "more" [] (Json.Decode.list (Json.Decode.map Everything_ (Proto.Json.Decode.deeperLazy depth (decodeNestedEverythingWith types))))
+            |> Proto.Json.Decode.field "scalars" Nothing (Json.Decode.map Just decodeScalars)
+            |> Proto.Json.Decode.field "optionals" Nothing (Json.Decode.map Just decodeOptionals)
+            |> Proto.Json.Decode.field "repeated" Nothing (Json.Decode.map Just decodeRepeated)
+            |> Proto.Json.Decode.field "maps" Nothing (Json.Decode.map Just decodeMaps)
+            |> Proto.Json.Decode.field "choice" Nothing (Json.Decode.map Just (Proto.Json.Decode.deeperLazy depth decodeNestedChoice))
+            |> Proto.Json.Decode.field "names" Nothing (Json.Decode.map Just decodeNames)
+            |> Proto.Json.Decode.field "outer" Nothing (Json.Decode.map Just decodeOuter)
+            |> Proto.Json.Decode.field "tree" Nothing (Json.Decode.map Just (decodeNestedTree (depth + 1)))
+            |> Proto.Json.Decode.fieldEither "wellKnown" "well_known" Nothing (Json.Decode.map Just (Proto.Json.Decode.deeper depth (decodeNestedWellKnownWith types)))
+            |> Proto.Json.Decode.field "wrappers" Nothing (Json.Decode.map Just decodeWrappers)
+            |> Proto.Json.Decode.field "across" Nothing (Json.Decode.map Just decodeAcross)
+            |> Proto.Json.Decode.field "more" [] (Json.Decode.list (Json.Decode.map Everything_ (Proto.Json.Decode.deeperLazy depth (decodeNestedEverythingWith types))))
         )
 
 

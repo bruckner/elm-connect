@@ -127,8 +127,8 @@ decodeNestedHolder : Int -> Json.Decode.Decoder Holder
 decodeNestedHolder depth =
     Proto.Json.Decode.message
         (Json.Decode.succeed Holder
-            |> Proto.Json.Decode.messageField "tree" Nothing (Json.Decode.map Just (Cycles.V1.decodeNestedTree (depth + 1)))
-            |> Proto.Json.Decode.messageField "person" Nothing (Json.Decode.map Just (Cycles.V1.decodeNestedPerson (depth + 1)))
+            |> Proto.Json.Decode.field "tree" Nothing (Json.Decode.map Just (Cycles.V1.decodeNestedTree (depth + 1)))
+            |> Proto.Json.Decode.field "person" Nothing (Json.Decode.map Just (Cycles.V1.decodeNestedPerson (depth + 1)))
         )
 
 

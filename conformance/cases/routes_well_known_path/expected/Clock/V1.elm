@@ -202,12 +202,12 @@ decodeMoment : Json.Decode.Decoder Moment
 decodeMoment =
     Proto.Json.Decode.message
         (Json.Decode.succeed Moment
-            |> Proto.Json.Decode.messageField "at" Nothing (Json.Decode.map Just Proto.Json.Decode.timestamp)
-            |> Proto.Json.Decode.messageField "mask" Nothing (Json.Decode.map Just Proto.Json.Decode.fieldMask)
-            |> Proto.Json.Decode.messageField "count" Nothing (Json.Decode.map Just Proto.Json.Decode.int32)
-            |> Proto.Json.Decode.messageField "seen" Nothing (Json.Decode.map Just Json.Decode.bool)
-            |> Proto.Json.Decode.messageField "wait" Nothing (Json.Decode.map Just Proto.Json.Decode.duration)
-            |> Proto.Json.Decode.messageField "note" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "at" Nothing (Json.Decode.map Just Proto.Json.Decode.timestamp)
+            |> Proto.Json.Decode.field "mask" Nothing (Json.Decode.map Just Proto.Json.Decode.fieldMask)
+            |> Proto.Json.Decode.field "count" Nothing (Json.Decode.map Just Proto.Json.Decode.int32)
+            |> Proto.Json.Decode.field "seen" Nothing (Json.Decode.map Just Json.Decode.bool)
+            |> Proto.Json.Decode.field "wait" Nothing (Json.Decode.map Just Proto.Json.Decode.duration)
+            |> Proto.Json.Decode.field "note" "" Proto.Json.Decode.string
         )
 
 
@@ -217,10 +217,10 @@ decodePauses : Json.Decode.Decoder Pauses
 decodePauses =
     Proto.Json.Decode.message
         (Json.Decode.succeed Pauses
-            |> Proto.Json.Decode.messageField "wait" Nothing (Json.Decode.map Just Proto.Json.Decode.duration)
-            |> Proto.Json.Decode.messageField "waits" [] (Json.Decode.list Proto.Json.Decode.duration)
-            |> Proto.Json.Decode.messageField "after" Nothing (Json.Decode.map Just Proto.Json.Decode.timestamp)
-            |> Proto.Json.Decode.messageField "marks" [] (Json.Decode.list Proto.Json.Decode.timestamp)
+            |> Proto.Json.Decode.field "wait" Nothing (Json.Decode.map Just Proto.Json.Decode.duration)
+            |> Proto.Json.Decode.field "waits" [] (Json.Decode.list Proto.Json.Decode.duration)
+            |> Proto.Json.Decode.field "after" Nothing (Json.Decode.map Just Proto.Json.Decode.timestamp)
+            |> Proto.Json.Decode.field "marks" [] (Json.Decode.list Proto.Json.Decode.timestamp)
         )
 
 

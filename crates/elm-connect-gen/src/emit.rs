@@ -103,17 +103,17 @@
 //!   value, a `Maybe` when `Nothing`, a list or map when empty (design
 //!   §3.4). A parser reads a missing field as its default.
 //! - Decoders are `Proto.Json.Decode.message` of a pipeline of
-//!   `Proto.Json.Decode.messageField` steps from `Json.Decode.succeed`, so they
+//!   `Proto.Json.Decode.field` steps from `Json.Decode.succeed`, so they
 //!   read the same at any field count (design §8); `message` checks once
 //!   that the JSON is an object, and the steps trust it. A missing or `null`
 //!   field reads as its proto3 zero value. A field whose JSON name differs
-//!   from its proto name uses `Proto.Json.Decode.messageFieldEither`, which accepts
+//!   from its proto name uses `Proto.Json.Decode.fieldEither`, which accepts
 //!   both keys (design §3.4).
 //! - A field with presence (proto3 `optional`, or message-typed) is a
 //!   `Maybe`: `Nothing` is left out, and an absent or `null` field
 //!   decodes as `Nothing`. A repeated field is a `List`, encoded as an
 //!   array unless empty; absent or `null` decodes as `[]`. Both reuse the one
-//!   `Proto.Json.Decode.messageField` step with `Nothing` or `[]` as its zero value.
+//!   `Proto.Json.Decode.field` step with `Nothing` or `[]` as its zero value.
 //! - Scalars follow design §3.4: 32-bit integers are range-checked `Int`s;
 //!   64-bit integers are decimal `String`s, or range-checked `Int`s encoded
 //!   as strings under [`Int64::Int`](crate::options::Int64::Int), a
@@ -1381,7 +1381,7 @@ mod tests {
         assert!(printed.contains("level : Other.V1.Level"), "{printed}");
         assert!(
             printed.contains(
-                r#"Proto.Json.Decode.messageField "level" Other.V1.LevelNone Other.V1.decodeLevel"#
+                r#"Proto.Json.Decode.field "level" Other.V1.LevelNone Other.V1.decodeLevel"#
             ),
             "{printed}"
         );
@@ -1477,7 +1477,7 @@ mod tests {
              (\\_ -> T.V1.decodeA)\n        )\n",
             "\n            Proto.Json.Encode.value\n            (\\_ -> Proto.Json.Decode.empty)\n",
             "\n            \"Ticks\"\n            \
-             (Proto.Json.Encode.succeed << Proto.Json.Encode.int64AsInt)\n            Proto.Json.Decode.anyWith\n",
+             (Proto.Json.Encode.succeed << Proto.Json.Encode.int64AsInt)\n            Proto.Json.Decode.any\n",
             "descriptorGet : Proto.Method.Descriptor\ndescriptorGet =\n    \
              Proto.Method.descriptor \"t.v1.S\"\n        \"Get\"\n        \
              Proto.Method.IdempotencyUnknown\n        \"t.v1.A\"\n        \"t.v1.A\"\n        []\n",

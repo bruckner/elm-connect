@@ -688,7 +688,7 @@ a JSON form of its own, its message's JSON converted from the binary by the
 registry the encoder is run with ([`Proto.Any.toJson`](Proto-Any#toJson)),
 counting on from its message's depth as a read does; written alone, as a
 method's request, it counts from the registry's own depth, as
-[`Proto.Json.Decode.anyWith`](Proto-Json-Decode#anyWith) reads one. The empty
+[`Proto.Json.Decode.any`](Proto-Json-Decode#any) reads one. The empty
 `Any`, with no type URL, is `{}`. As protobuf's own JSON writers do, it fails for a type the
 registry has no entry for, with [`UnregisteredType`](Proto-Error#Error) naming
 its type URL, and for a binary that is not that message, with its

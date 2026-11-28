@@ -155,7 +155,7 @@ decodeZoneRequest : Json.Decode.Decoder ZoneRequest
 decodeZoneRequest =
     Proto.Json.Decode.message
         (Json.Decode.succeed ZoneRequest
-            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "name" "" Proto.Json.Decode.string
         )
 
 
@@ -165,8 +165,8 @@ decodeZone : Json.Decode.Decoder Zone
 decodeZone =
     Proto.Json.Decode.message
         (Json.Decode.succeed Zone
-            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageFieldEither "offsetSeconds" "offset_seconds" 0 Proto.Json.Decode.int64AsInt
+            |> Proto.Json.Decode.field "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.fieldEither "offsetSeconds" "offset_seconds" 0 Proto.Json.Decode.int64AsInt
         )
 
 

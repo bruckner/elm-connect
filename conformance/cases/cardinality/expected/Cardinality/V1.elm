@@ -203,7 +203,7 @@ decodeAuthor : Json.Decode.Decoder Author
 decodeAuthor =
     Proto.Json.Decode.message
         (Json.Decode.succeed Author
-            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "name" "" Proto.Json.Decode.string
         )
 
 
@@ -213,19 +213,19 @@ decodeNote : Json.Decode.Decoder Note
 decodeNote =
     Proto.Json.Decode.message
         (Json.Decode.succeed Note
-            |> Proto.Json.Decode.messageField "subtitle" Nothing (Json.Decode.map Just Proto.Json.Decode.string)
-            |> Proto.Json.Decode.messageField "stars" Nothing (Json.Decode.map Just Proto.Json.Decode.int32)
-            |> Proto.Json.Decode.messageField "score" Nothing (Json.Decode.map Just Proto.Json.Decode.double)
-            |> Proto.Json.Decode.messageField "views" Nothing (Json.Decode.map Just Proto.Json.Decode.int64)
-            |> Proto.Json.Decode.messageField "author" Nothing (Json.Decode.map Just decodeAuthor)
-            |> Proto.Json.Decode.messageField "editor" Nothing (Json.Decode.map Just decodeAuthor)
-            |> Proto.Json.Decode.messageField "tags" [] (Json.Decode.list Proto.Json.Decode.string)
-            |> Proto.Json.Decode.messageField "counts" [] (Json.Decode.list Proto.Json.Decode.int32)
-            |> Proto.Json.Decode.messageField "weights" [] (Json.Decode.list Proto.Json.Decode.float)
-            |> Proto.Json.Decode.messageField "reviewers" [] (Json.Decode.list decodeAuthor)
-            |> Proto.Json.Decode.messageFieldEither "relatedLinks" "related_links" [] (Json.Decode.list Proto.Json.Decode.string)
-            |> Proto.Json.Decode.messageFieldEither "isDraft" "is_draft" Nothing (Json.Decode.map Just Json.Decode.bool)
-            |> Proto.Json.Decode.messageField "title" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "subtitle" Nothing (Json.Decode.map Just Proto.Json.Decode.string)
+            |> Proto.Json.Decode.field "stars" Nothing (Json.Decode.map Just Proto.Json.Decode.int32)
+            |> Proto.Json.Decode.field "score" Nothing (Json.Decode.map Just Proto.Json.Decode.double)
+            |> Proto.Json.Decode.field "views" Nothing (Json.Decode.map Just Proto.Json.Decode.int64)
+            |> Proto.Json.Decode.field "author" Nothing (Json.Decode.map Just decodeAuthor)
+            |> Proto.Json.Decode.field "editor" Nothing (Json.Decode.map Just decodeAuthor)
+            |> Proto.Json.Decode.field "tags" [] (Json.Decode.list Proto.Json.Decode.string)
+            |> Proto.Json.Decode.field "counts" [] (Json.Decode.list Proto.Json.Decode.int32)
+            |> Proto.Json.Decode.field "weights" [] (Json.Decode.list Proto.Json.Decode.float)
+            |> Proto.Json.Decode.field "reviewers" [] (Json.Decode.list decodeAuthor)
+            |> Proto.Json.Decode.fieldEither "relatedLinks" "related_links" [] (Json.Decode.list Proto.Json.Decode.string)
+            |> Proto.Json.Decode.fieldEither "isDraft" "is_draft" Nothing (Json.Decode.map Just Json.Decode.bool)
+            |> Proto.Json.Decode.field "title" "" Proto.Json.Decode.string
         )
 
 

@@ -464,9 +464,9 @@ decodeBlob : Json.Decode.Decoder Blob
 decodeBlob =
     Proto.Json.Decode.message
         (Json.Decode.succeed Blob
-            |> Proto.Json.Decode.messageField "digest" Proto.Bytes.empty Proto.Json.Decode.bytesAsBytes
-            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageField "salt" Proto.Bytes.empty Proto.Json.Decode.bytesAsBytes
+            |> Proto.Json.Decode.field "digest" Proto.Bytes.empty Proto.Json.Decode.bytesAsBytes
+            |> Proto.Json.Decode.field "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "salt" Proto.Bytes.empty Proto.Json.Decode.bytesAsBytes
         )
 
 
@@ -483,8 +483,8 @@ decodeNestedLabeledWith : Proto.Registry.Registry -> Int -> Json.Decode.Decoder 
 decodeNestedLabeledWith types depth =
     Proto.Json.Decode.message
         (Json.Decode.succeed Labeled
-            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageField "label" Nothing (Json.Decode.map Just (Proto.Json.Decode.nestedAnyWith depth types))
+            |> Proto.Json.Decode.field "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "label" Nothing (Json.Decode.map Just (Proto.Json.Decode.nestedAny depth types))
         )
 
 
@@ -501,8 +501,8 @@ decodeNestedLabelBlobRequestWith : Proto.Registry.Registry -> Int -> Json.Decode
 decodeNestedLabelBlobRequestWith types depth =
     Proto.Json.Decode.message
         (Json.Decode.succeed LabelBlobRequest
-            |> Proto.Json.Decode.messageField "labeled" Nothing (Json.Decode.map Just (Proto.Json.Decode.deeper depth (decodeNestedLabeledWith types)))
-            |> Proto.Json.Decode.messageField "shelf" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "labeled" Nothing (Json.Decode.map Just (Proto.Json.Decode.deeper depth (decodeNestedLabeledWith types)))
+            |> Proto.Json.Decode.field "shelf" "" Proto.Json.Decode.string
         )
 
 
@@ -521,8 +521,8 @@ decodeNestedFolder =
         (\depth ->
             Proto.Json.Decode.message
                 (Json.Decode.succeed Folder
-                    |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
-                    |> Proto.Json.Decode.messageField "parent" Nothing (Json.Decode.map Just (Json.Decode.map Folder_ (Json.Decode.lazy (\_ -> decodeNestedFolder (depth + 1)))))
+                    |> Proto.Json.Decode.field "name" "" Proto.Json.Decode.string
+                    |> Proto.Json.Decode.field "parent" Nothing (Json.Decode.map Just (Json.Decode.map Folder_ (Json.Decode.lazy (\_ -> decodeNestedFolder (depth + 1)))))
                 )
         )
 
@@ -540,8 +540,8 @@ decodeSlots : Json.Decode.Decoder Slots
 decodeSlots =
     Proto.Json.Decode.message
         (Json.Decode.succeed Slots
-            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageField "nothing" () Proto.Json.Decode.empty
+            |> Proto.Json.Decode.field "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "nothing" () Proto.Json.Decode.empty
         )
 
 
@@ -558,8 +558,8 @@ decodeNestedFree : Int -> Json.Decode.Decoder Free
 decodeNestedFree depth =
     Proto.Json.Decode.message
         (Json.Decode.succeed Free
-            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageNullField "value" (Proto.Json.Decode.nestedValue depth)
+            |> Proto.Json.Decode.field "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.nullField "value" (Proto.Json.Decode.nestedValue depth)
         )
 
 
@@ -569,8 +569,8 @@ decodeMoment : Json.Decode.Decoder Moment
 decodeMoment =
     Proto.Json.Decode.message
         (Json.Decode.succeed Moment
-            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageField "at" Nothing (Json.Decode.map Just Proto.Json.Decode.timestamp)
+            |> Proto.Json.Decode.field "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "at" Nothing (Json.Decode.map Just Proto.Json.Decode.timestamp)
         )
 
 
@@ -580,8 +580,8 @@ decodeStampRequest : Json.Decode.Decoder StampRequest
 decodeStampRequest =
     Proto.Json.Decode.message
         (Json.Decode.succeed StampRequest
-            |> Proto.Json.Decode.messageField "shelf" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageField "moment" Nothing (Json.Decode.map Just decodeMoment)
+            |> Proto.Json.Decode.field "shelf" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "moment" Nothing (Json.Decode.map Just decodeMoment)
         )
 
 

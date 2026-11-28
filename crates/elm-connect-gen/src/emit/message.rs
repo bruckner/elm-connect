@@ -294,7 +294,7 @@ impl Emitter {
     /// `decodeFoo : Json.Decode.Decoder Foo`: `Proto.Json.Decode.message` of
     /// `Json.Decode.succeed Foo` with one step per record field, in record
     /// order: an [`Emitter::field_step`] per proto field
-    /// (`Proto.Json.Decode.messageField`, or `Proto.Json.Decode.messageNullField` of
+    /// (`Proto.Json.Decode.field`, or `Proto.Json.Decode.nullField` of
     /// `Proto.Json.Decode.nestedValue depth` for a singular `google.protobuf.Value`,
     /// for which `null` is set, read at the depth, which its message takes
     /// since holding one it nests), a `Proto.Json.Decode.oneof` per
@@ -343,7 +343,7 @@ impl Emitter {
                     RecordField::Field(field, value) => match self.deep_field_decoder(field, value)
                     {
                         Some((decoder, zero)) => self.field_step(
-                            ("messageField", "messageFieldEither"),
+                            ("field", "fieldEither"),
                             &field.json_name,
                             &field.proto_name,
                             [zero, decoder],
@@ -351,7 +351,7 @@ impl Emitter {
                         None if self.deep.is_some() => {
                             let nested = self.reference((PROTO_JSON_DECODE, "nestedValue"));
                             self.field_step(
-                                ("messageNullField", "messageNullFieldEither"),
+                                ("nullField", "nullFieldEither"),
                                 &field.json_name,
                                 &field.proto_name,
                                 [apply(nested, [var(DEPTH)])],

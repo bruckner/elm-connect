@@ -167,7 +167,7 @@ decodeTask : Json.Decode.Decoder Task
 decodeTask =
     Proto.Json.Decode.message
         (Json.Decode.succeed Task
-            |> Proto.Json.Decode.messageField "status" StatusUnspecified decodeStatus
+            |> Proto.Json.Decode.field "status" StatusUnspecified decodeStatus
         )
 
 

@@ -42,7 +42,7 @@ decodeHolderWith : Registry -> Json.Decode.Decoder Holder
 decodeHolderWith types =
     Proto.Json.Decode.message
         (Json.Decode.succeed Holder
-            |> Proto.Json.Decode.messageField "held" Nothing (Json.Decode.map Just (Proto.Json.Decode.anyWith types))
+            |> Proto.Json.Decode.field "held" Nothing (Json.Decode.map Just (Proto.Json.Decode.any types))
         )
 
 
@@ -128,7 +128,7 @@ registry, as an `Any` of it converts.
 -}
 bytes : Registry -> String -> List ( String, Value ) -> Maybe String
 bytes registry name fields =
-    Json.Decode.decodeValue (Proto.Json.Decode.anyWith registry)
+    Json.Decode.decodeValue (Proto.Json.Decode.any registry)
         (Json.Encode.object (( "@type", Json.Encode.string ("type.googleapis.com/" ++ name) ) :: fields))
         |> Result.toMaybe
         |> Maybe.andThen Any.bytes
@@ -159,7 +159,7 @@ chain names innermost =
 -}
 readAs : Registry -> Value -> String
 readAs registry value =
-    case Json.Decode.decodeValue (Proto.Json.Decode.anyWith registry) value of
+    case Json.Decode.decodeValue (Proto.Json.Decode.any registry) value of
         Ok any ->
             case Any.bytes any of
                 Just _ ->
@@ -221,7 +221,7 @@ suite =
                 ( written wide
                 , written (Registry.unionAll [ core, ext ])
                 , Result.toMaybe (written wide)
-                    |> Maybe.andThen (Json.Decode.decodeString (Proto.Json.Decode.anyWith wide) >> Result.toMaybe)
+                    |> Maybe.andThen (Json.Decode.decodeString (Proto.Json.Decode.any wide) >> Result.toMaybe)
                     |> Maybe.map ((==) packed)
                 )
                     |> Expect.equal ( Ok expected, Err (UnregisteredType "type.googleapis.com/ext2.Leaf"), Just True )
@@ -229,7 +229,7 @@ suite =
             \_ ->
                 ( Proto.Json.Encode.encodeWith Registry.empty (Proto.Json.Encode.any (Any.pack (messageLeaf "t.Leaf") "hi"))
                 , Any.toJson (leaf "t.Leaf" Registry.empty) (Proto.Internal.Any.Any "type.googleapis.com/t.Leaf" (Proto.Internal.Any.Binary "/w=="))
-                , Json.Decode.decodeString (Proto.Json.Decode.anyWith Registry.empty) """{"@type":"example.com/t.Leaf","text":"hi"}"""
+                , Json.Decode.decodeString (Proto.Json.Decode.any Registry.empty) """{"@type":"example.com/t.Leaf","text":"hi"}"""
                     |> Result.mapError (Json.Decode.errorToString >> String.contains "\"example.com/t.Leaf\"")
                 )
                     |> Expect.equal
@@ -241,7 +241,7 @@ suite =
             \_ ->
                 let
                     failure registry text =
-                        case Json.Decode.decodeString (Json.Decode.field "x" (Json.Decode.list (Proto.Json.Decode.anyWith registry))) text of
+                        case Json.Decode.decodeString (Json.Decode.field "x" (Json.Decode.list (Proto.Json.Decode.any registry))) text of
                             Err problem ->
                                 Proto.Internal.Registry.unregistered registry problem
 

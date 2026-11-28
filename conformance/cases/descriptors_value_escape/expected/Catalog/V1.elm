@@ -240,9 +240,9 @@ decodeEntry : Json.Decode.Decoder Entry
 decodeEntry =
     Proto.Json.Decode.message
         (Json.Decode.succeed Entry
-            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageField "descriptor" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageField "descriptors" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "descriptor" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "descriptors" "" Proto.Json.Decode.string
         )
 
 
@@ -271,9 +271,9 @@ decodeGetEntryRequest : Json.Decode.Decoder GetEntryRequest
 decodeGetEntryRequest =
     Proto.Json.Decode.message
         (Json.Decode.succeed GetEntryRequest
-            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageField "descriptor" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageField "part" Nothing (Json.Decode.map Just decodePart)
+            |> Proto.Json.Decode.field "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "descriptor" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "part" Nothing (Json.Decode.map Just decodePart)
         )
 
 

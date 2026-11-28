@@ -549,14 +549,14 @@ decodeNote : Json.Decode.Decoder Note
 decodeNote =
     Proto.Json.Decode.message
         (Json.Decode.succeed Note
-            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageFieldEither "heading" "title" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageField "visibility" VisibilityUnspecified decodeVisibility
-            |> Proto.Json.Decode.messageField "tags" [] (Json.Decode.list Proto.Json.Decode.string)
-            |> Proto.Json.Decode.messageField "labels" Dict.empty (Proto.Json.Decode.stringDict Proto.Json.Decode.string)
-            |> Proto.Json.Decode.messageField "pinned" Nothing (Json.Decode.map Just Json.Decode.bool)
-            |> Proto.Json.Decode.messageField "subject" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageField "created" Nothing (Json.Decode.map Just Proto.Json.Decode.timestamp)
+            |> Proto.Json.Decode.field "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.fieldEither "heading" "title" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "visibility" VisibilityUnspecified decodeVisibility
+            |> Proto.Json.Decode.field "tags" [] (Json.Decode.list Proto.Json.Decode.string)
+            |> Proto.Json.Decode.field "labels" Dict.empty (Proto.Json.Decode.stringDict Proto.Json.Decode.string)
+            |> Proto.Json.Decode.field "pinned" Nothing (Json.Decode.map Just Json.Decode.bool)
+            |> Proto.Json.Decode.field "subject" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "created" Nothing (Json.Decode.map Just Proto.Json.Decode.timestamp)
             |> Proto.Json.Decode.oneof decodeNoteLastEvent
         )
 
@@ -578,7 +578,7 @@ decodeNoteEdit : Json.Decode.Decoder NoteEdit
 decodeNoteEdit =
     Proto.Json.Decode.message
         (Json.Decode.succeed NoteEdit
-            |> Proto.Json.Decode.messageField "author" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "author" "" Proto.Json.Decode.string
         )
 
 
@@ -588,7 +588,7 @@ decodeDraft : Json.Decode.Decoder Draft
 decodeDraft =
     Proto.Json.Decode.message
         (Json.Decode.succeed Draft
-            |> Proto.Json.Decode.messageField "text" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "text" "" Proto.Json.Decode.string
         )
 
 
@@ -598,7 +598,7 @@ decodeGetNoteRequest : Json.Decode.Decoder GetNoteRequest
 decodeGetNoteRequest =
     Proto.Json.Decode.message
         (Json.Decode.succeed GetNoteRequest
-            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "name" "" Proto.Json.Decode.string
         )
 
 
@@ -608,7 +608,7 @@ decodeListNotesRequest : Json.Decode.Decoder ListNotesRequest
 decodeListNotesRequest =
     Proto.Json.Decode.message
         (Json.Decode.succeed ListNotesRequest
-            |> Proto.Json.Decode.messageField "parent" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "parent" "" Proto.Json.Decode.string
         )
 
 
@@ -618,7 +618,7 @@ decodeListNotesResponse : Json.Decode.Decoder ListNotesResponse
 decodeListNotesResponse =
     Proto.Json.Decode.message
         (Json.Decode.succeed ListNotesResponse
-            |> Proto.Json.Decode.messageField "notes" [] (Json.Decode.list decodeNote)
+            |> Proto.Json.Decode.field "notes" [] (Json.Decode.list decodeNote)
         )
 
 
@@ -628,7 +628,7 @@ decodeCreateNoteRequest : Json.Decode.Decoder CreateNoteRequest
 decodeCreateNoteRequest =
     Proto.Json.Decode.message
         (Json.Decode.succeed CreateNoteRequest
-            |> Proto.Json.Decode.messageField "note" Nothing (Json.Decode.map Just decodeNote)
+            |> Proto.Json.Decode.field "note" Nothing (Json.Decode.map Just decodeNote)
         )
 
 

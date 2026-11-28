@@ -119,7 +119,7 @@ written any =
 
 read : String -> Result String Any
 read text =
-    Json.Decode.decodeString (Proto.Json.Decode.anyWith registry) text
+    Json.Decode.decodeString (Proto.Json.Decode.any registry) text
         |> Result.mapError Json.Decode.errorToString
 
 

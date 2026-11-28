@@ -179,14 +179,14 @@ decodeBlob : Json.Decode.Decoder Blob
 decodeBlob =
     Proto.Json.Decode.message
         (Json.Decode.succeed Blob
-            |> Proto.Json.Decode.messageField "data" Proto.Bytes.empty Proto.Json.Decode.bytesAsBytes
-            |> Proto.Json.Decode.messageFieldEither "maybeData" "maybe_data" Nothing (Json.Decode.map Just Proto.Json.Decode.bytesAsBytes)
-            |> Proto.Json.Decode.messageField "chunks" [] (Json.Decode.list Proto.Json.Decode.bytesAsBytes)
-            |> Proto.Json.Decode.messageFieldEither "byName" "by_name" Dict.empty (Proto.Json.Decode.stringDict Proto.Json.Decode.bytesAsBytes)
-            |> Proto.Json.Decode.messageField "wrapped" Nothing (Json.Decode.map Just Proto.Json.Decode.bytesAsBytes)
-            |> Proto.Json.Decode.messageFieldEither "wrappedChunks" "wrapped_chunks" [] (Json.Decode.list Proto.Json.Decode.bytesAsBytes)
+            |> Proto.Json.Decode.field "data" Proto.Bytes.empty Proto.Json.Decode.bytesAsBytes
+            |> Proto.Json.Decode.fieldEither "maybeData" "maybe_data" Nothing (Json.Decode.map Just Proto.Json.Decode.bytesAsBytes)
+            |> Proto.Json.Decode.field "chunks" [] (Json.Decode.list Proto.Json.Decode.bytesAsBytes)
+            |> Proto.Json.Decode.fieldEither "byName" "by_name" Dict.empty (Proto.Json.Decode.stringDict Proto.Json.Decode.bytesAsBytes)
+            |> Proto.Json.Decode.field "wrapped" Nothing (Json.Decode.map Just Proto.Json.Decode.bytesAsBytes)
+            |> Proto.Json.Decode.fieldEither "wrappedChunks" "wrapped_chunks" [] (Json.Decode.list Proto.Json.Decode.bytesAsBytes)
             |> Proto.Json.Decode.oneof decodeBlobSource
-            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "name" "" Proto.Json.Decode.string
         )
 
 

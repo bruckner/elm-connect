@@ -91,7 +91,7 @@ suite =
                 let
                     holding name =
                         Json.Decode.decodeString Json.Decode.value ("{\"@type\":\"type.googleapis.com/google.protobuf." ++ name ++ "\",\"value\":1e300}")
-                            |> Result.andThen (Json.Decode.decodeValue (Proto.Json.Decode.anyWith WellKnown.registry))
+                            |> Result.andThen (Json.Decode.decodeValue (Proto.Json.Decode.any WellKnown.registry))
                             |> Result.toMaybe
                 in
                 ( holding "FloatValue" |> Maybe.andThen (Any.unpack WellKnown.floatValue)

@@ -162,8 +162,8 @@ decodeNote : Json.Decode.Decoder Note
 decodeNote =
     Proto.Json.Decode.message
         (Json.Decode.succeed Note
-            |> Proto.Json.Decode.messageField "title" "" Proto.Json.Decode.string
-            |> Proto.Json.Decode.messageField "tags" [] (Json.Decode.list decodeTag)
+            |> Proto.Json.Decode.field "title" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "tags" [] (Json.Decode.list decodeTag)
         )
 
 
@@ -173,7 +173,7 @@ decodeTag : Json.Decode.Decoder Tag
 decodeTag =
     Proto.Json.Decode.message
         (Json.Decode.succeed Tag
-            |> Proto.Json.Decode.messageField "label" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "label" "" Proto.Json.Decode.string
         )
 
 

@@ -243,10 +243,10 @@ decodeTask : Json.Decode.Decoder Task
 decodeTask =
     Proto.Json.Decode.message
         (Json.Decode.succeed Task
-            |> Proto.Json.Decode.messageField "status" StatusUnspecified decodeStatus
-            |> Proto.Json.Decode.messageField "priority" Nothing (Json.Decode.map Just decodePriority)
-            |> Proto.Json.Decode.messageField "history" [] (Json.Decode.list decodeStatus)
-            |> Proto.Json.Decode.messageFieldEither "previousStatus" "previous_status" StatusUnspecified decodeStatus
+            |> Proto.Json.Decode.field "status" StatusUnspecified decodeStatus
+            |> Proto.Json.Decode.field "priority" Nothing (Json.Decode.map Just decodePriority)
+            |> Proto.Json.Decode.field "history" [] (Json.Decode.list decodeStatus)
+            |> Proto.Json.Decode.fieldEither "previousStatus" "previous_status" StatusUnspecified decodeStatus
         )
 
 

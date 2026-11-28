@@ -321,7 +321,7 @@ decodeSayRequest : Json.Decode.Decoder SayRequest
 decodeSayRequest =
     Proto.Json.Decode.message
         (Json.Decode.succeed SayRequest
-            |> Proto.Json.Decode.messageField "sentence" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "sentence" "" Proto.Json.Decode.string
         )
 
 
@@ -331,7 +331,7 @@ decodeSayResponse : Json.Decode.Decoder SayResponse
 decodeSayResponse =
     Proto.Json.Decode.message
         (Json.Decode.succeed SayResponse
-            |> Proto.Json.Decode.messageField "sentence" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "sentence" "" Proto.Json.Decode.string
         )
 
 
@@ -341,7 +341,7 @@ decodeConverseRequest : Json.Decode.Decoder ConverseRequest
 decodeConverseRequest =
     Proto.Json.Decode.message
         (Json.Decode.succeed ConverseRequest
-            |> Proto.Json.Decode.messageField "sentence" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "sentence" "" Proto.Json.Decode.string
         )
 
 
@@ -351,7 +351,7 @@ decodeConverseResponse : Json.Decode.Decoder ConverseResponse
 decodeConverseResponse =
     Proto.Json.Decode.message
         (Json.Decode.succeed ConverseResponse
-            |> Proto.Json.Decode.messageField "sentence" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "sentence" "" Proto.Json.Decode.string
         )
 
 
@@ -361,7 +361,7 @@ decodeIntroduceRequest : Json.Decode.Decoder IntroduceRequest
 decodeIntroduceRequest =
     Proto.Json.Decode.message
         (Json.Decode.succeed IntroduceRequest
-            |> Proto.Json.Decode.messageField "name" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "name" "" Proto.Json.Decode.string
         )
 
 
@@ -371,7 +371,7 @@ decodeIntroduceResponse : Json.Decode.Decoder IntroduceResponse
 decodeIntroduceResponse =
     Proto.Json.Decode.message
         (Json.Decode.succeed IntroduceResponse
-            |> Proto.Json.Decode.messageField "sentence" "" Proto.Json.Decode.string
+            |> Proto.Json.Decode.field "sentence" "" Proto.Json.Decode.string
         )
 
 
