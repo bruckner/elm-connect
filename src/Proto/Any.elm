@@ -243,39 +243,8 @@ no entry for its type gives the JSON unread when lenient, and fails with
 
 -}
 toJson : Registry -> Any -> Result Error Json.Encode.Value
-toJson registry ((Internal.Any url payload) as any) =
-    case ( String.isEmpty url, payload ) of
-        ( True, _ ) ->
-            Ok (Json.Encode.object [])
-
-        ( False, Internal.Json json ) ->
-            -- Read through the entry so that what is written is JSON the
-            -- type's codec accepts; the read's binary is not kept, and the
-            -- JSON is written as held.
-            case InternalRegistry.toBytes registry (typeName any) json of
-                Just (Ok _) ->
-                    Ok json
-
-                Just (Err (BadJson problem)) ->
-                    Err
-                        (InternalRegistry.unregistered registry problem
-                            |> Maybe.map UnregisteredType
-                            |> Maybe.withDefault (BadJson problem)
-                        )
-
-                Just (Err problem) ->
-                    Err problem
-
-                Nothing ->
-                    if InternalRegistry.isLenient registry then
-                        Ok json
-
-                    else
-                        Err (UnregisteredType url)
-
-        ( False, Internal.Binary base64 ) ->
-            InternalRegistry.toJson registry (typeName any) base64
-                |> Maybe.withDefault (Err (UnregisteredType url))
+toJson =
+    InternalRegistry.anyToJson
 
 
 

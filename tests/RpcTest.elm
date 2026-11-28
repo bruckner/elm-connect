@@ -18,10 +18,10 @@ import Proto.Error
 import Proto.Field exposing (Cardinality(..), Kind(..), Scalar(..))
 import Proto.Http
 import Proto.Internal.Binding
+import Proto.Internal.Method
 import Proto.Internal.Percent
 import Proto.Internal.Registry
 import Proto.Internal.Timestamp
-import Proto.Internal.Writer
 import Proto.Json
 import Proto.Message exposing (Message)
 import Proto.Method exposing (Idempotency(..))
@@ -1661,9 +1661,12 @@ encodings =
             Rpc.response client (c { name = "x" }) (Http.GoodStatus_ (metadata 200 "OK") body)
 
         -- A request whose JSON says which registry wrote it, in the field
-        -- its path binds and the field its body holds alike.
-        tagged r =
-            Proto.Internal.Writer.deferred (\registry -> taggedWith registry r)
+        -- its path binds and the field its body holds alike. No public
+        -- encoder's JSON depends on the registry but by an `Any`, so the
+        -- method's JSON half is given it directly, replacing the one its
+        -- placeholder encoder would give.
+        taggedJson (Proto.Internal.Method.Method m) =
+            Proto.Internal.Method.Method { m | json = { encode = taggedWith, decoder = m.json.decoder } }
 
         taggedWith registry r =
             let
@@ -1680,10 +1683,11 @@ encodings =
             Rpc.call
                 (Proto.Method.init "notes.v1.Notes"
                     "UpdateNote"
-                    tagged
+                    (\_ -> Proto.Json.succeed Json.Encode.null)
                     (\_ -> decodeTitle)
                     (\_ -> Bytes.Encode.sequence [])
                     decodeTitleBinary
+                    |> taggedJson
                     |> Proto.Internal.Binding.withBindings
                         [ Proto.Http.binding
                             { method = "PATCH"

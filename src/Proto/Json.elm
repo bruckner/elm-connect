@@ -231,12 +231,11 @@ import Bytes exposing (Bytes)
 import Dict
 import Json.Decode exposing (Decoder)
 import Json.Encode exposing (Value)
-import Proto.Any exposing (Any)
 import Proto.Bytes
 import Proto.Duration exposing (Duration)
 import Proto.Error exposing (Error)
 import Proto.Int64
-import Proto.Internal.Any as InternalAny
+import Proto.Internal.Any as InternalAny exposing (Any)
 import Proto.Internal.Depth as Depth
 import Proto.Internal.Duration as InternalDuration
 import Proto.Internal.FieldMask as FieldMask
@@ -244,8 +243,6 @@ import Proto.Internal.Percent as Percent
 import Proto.Internal.Registry as InternalRegistry
 import Proto.Internal.Timestamp as InternalTimestamp
 import Proto.Internal.ValueJson as ValueJson
-import Proto.Internal.Writer as Writer
-import Proto.Json.Encoder
 import Proto.Registry exposing (Registry)
 import Proto.Timestamp exposing (Timestamp)
 import Proto.Value
@@ -744,7 +741,7 @@ totalOptionalField : (a -> Encoder Never) -> Maybe a -> Maybe Value
 totalOptionalField write held =
     case held of
         Just present ->
-            Just (Writer.total (write present))
+            Just (encodeTotal (write present))
 
         Nothing ->
             Nothing
@@ -759,7 +756,7 @@ totalRepeatedField write values =
         Nothing
 
     else
-        Just (Json.Encode.list (\item -> Writer.total (write item)) values)
+        Just (Json.Encode.list (\item -> encodeTotal (write item)) values)
 
 
 {-| Decode a oneof in a decoding pipeline: unlike
@@ -2497,7 +2494,7 @@ anyJson registry ((InternalAny.Any url _) as any) =
         Ok (Json.Encode.object [])
 
     else
-        Proto.Any.toJson registry any
+        InternalRegistry.anyToJson registry any
             |> Result.map (anyObject url)
 
 
@@ -2644,6 +2641,20 @@ registryDepth (InternalRegistry.Registry _ depth _) =
 
 
 -- ENCODERS
+--
+-- An encoder is a finished value, a refusal, or a part that needs the
+-- registry an `Any` converts through. Its type parameter is what it can
+-- refuse with: `Proto.Error.Error` for one built from a part that can be
+-- refused or needs the registry, and any type for one that cannot, so that
+-- `Never` makes a total encoder the compiler checks (`encodeTotal`).
+--
+-- A message's fields are given as runs in declaration order, each run either
+-- plain JSON (`Maybe Value`, `Nothing` leaving a field out) or fields that
+-- can be refused (`Field`), so the output keeps the declaration order
+-- whichever fields can be refused. Combinators stay on finished values while
+-- every part they are given is finished, so only a refusal or a deferred
+-- part leaves that path. A refusal gathers the path to it, outermost first,
+-- on the way out, and builds its error from that path only when it is run.
 
 
 {-| A proto3 JSON encoder: what a generated `encodeNote : Note -> Encoder x`
@@ -2654,8 +2665,10 @@ write can refuse works for any `x`, and [`encodeTotal`](#encodeTotal) writes it
 with `x` as `Never`; the others are `Encoder Proto.Error.Error`.
 
 -}
-type alias Encoder x =
-    Proto.Json.Encoder.Encoder x
+type Encoder x
+    = Ready Value
+    | Refused (List String) (List String -> x)
+    | Deferred (Registry -> Result ( List String, List String -> x ) Value)
 
 
 {-| Write an encoder's JSON, or refuse the first value it holds that proto3
@@ -2671,7 +2684,7 @@ JavaScript stack allows throws while it is written, as it would through
 -}
 encode : Encoder Error -> Result Error Value
 encode =
-    Writer.run (InternalRegistry.Registry InternalRegistry.Strict 0 Dict.empty)
+    encodeWith (InternalRegistry.Registry InternalRegistry.Strict 0 Dict.empty)
 
 
 {-| [`encode`](#encode), converting each `Any` through the registry, as
@@ -2680,8 +2693,21 @@ levels deep, counting `Any`s and the messages that nest around them, is
 refused with [`TooDeep`](Proto-Error#Reason), as a read refuses it.
 -}
 encodeWith : Registry -> Encoder Error -> Result Error Value
-encodeWith =
-    Writer.run
+encodeWith registry encoder =
+    case encoder of
+        Ready json ->
+            Ok json
+
+        Refused path problem ->
+            Err (problem path)
+
+        Deferred write ->
+            case write registry of
+                Ok json ->
+                    Ok json
+
+                Err ( path, problem ) ->
+                    Err (problem path)
 
 
 {-| The JSON of an encoder that cannot refuse, such as a generated
@@ -2694,8 +2720,21 @@ The compiler rejects an encoder that can refuse, so this never fails.
 
 -}
 encodeTotal : Encoder Never -> Value
-encodeTotal =
-    Writer.total
+encodeTotal encoder =
+    case encoder of
+        Ready json ->
+            json
+
+        Refused path problem ->
+            never (problem path)
+
+        Deferred write ->
+            case write (InternalRegistry.Registry InternalRegistry.Strict 0 Dict.empty) of
+                Ok json ->
+                    json
+
+                Err ( path, problem ) ->
+                    never (problem path)
 
 
 {-| An encoder of JSON already written, which it gives as it is: for a value
@@ -2706,20 +2745,21 @@ written by hand, such as a [`Proto.Message`](Proto-Message)'s.
 -}
 succeed : Value -> Encoder x
 succeed =
-    Writer.succeed
+    Ready
 
 
 {-| A message's JSON object, from its runs of fields in declaration order.
 -}
 writeObject : List (Fields x) -> Encoder x
-writeObject =
-    Writer.object
+writeObject runs =
+    fastRuns runs [] False
 
 
 {-| A run of a message's fields, plain or ones that can be refused.
 -}
-type alias Fields x =
-    Writer.Fields x
+type Fields x
+    = PlainFields (List ( String, Maybe Value ))
+    | CheckedFields (List ( String, Field x ))
 
 
 {-| A run of fields that cannot be refused, as the plain helpers give them:
@@ -2727,55 +2767,89 @@ type alias Fields x =
 -}
 plainFields : List ( String, Maybe Value ) -> Fields x
 plainFields =
-    Writer.plainFields
+    PlainFields
 
 
 {-| A run of fields that can be refused.
 -}
 checkedFields : List ( String, Field x ) -> Fields x
 checkedFields =
-    Writer.checkedFields
+    CheckedFields
 
 
 {-| A field that can be refused, left out or written by its value's encoder.
 -}
-type alias Field x =
-    Writer.Field x
+type Field x
+    = Absent
+    | Present (Encoder x)
 
 
 {-| A field with presence: left out when `Nothing`.
 -}
 writeOptional : (a -> Encoder x) -> Maybe a -> Field x
-writeOptional =
-    Writer.optional
+writeOptional write held =
+    case held of
+        Just present ->
+            Present (write present)
+
+        Nothing ->
+            Absent
 
 
 {-| A repeated field: left out when empty.
 -}
 writeRepeated : (a -> Encoder x) -> List a -> Field x
-writeRepeated =
-    Writer.repeated
+writeRepeated write items =
+    case items of
+        [] ->
+            Absent
+
+        _ ->
+            Present (repeatedFast write items 0 [])
 
 
 {-| A map field: left out when empty.
 -}
 writeDict : (k -> String) -> (v -> Encoder x) -> Dict.Dict k v -> Field x
-writeDict =
-    Writer.dict
+writeDict key write entries =
+    if Dict.isEmpty entries then
+        Absent
+
+    else
+        Present (writePairs (Dict.foldr (\k v done -> ( key k, write v ) :: done) [] entries))
 
 
 {-| A map field with `bool` keys: left out when empty.
 -}
 writeBoolMap : (a -> Encoder x) -> List ( Bool, a ) -> Field x
-writeBoolMap =
-    Writer.boolMap
+writeBoolMap write entries =
+    case entries of
+        [] ->
+            Absent
+
+        _ ->
+            Present
+                (writePairs
+                    (List.map
+                        (\( k, v ) ->
+                            ( if k then
+                                "true"
+
+                              else
+                                "false"
+                            , write v
+                            )
+                        )
+                        entries
+                    )
+                )
 
 
 {-| A oneof's set member, always written.
 -}
 writeMember : Encoder x -> Field x
 writeMember =
-    Writer.member
+    Present
 
 
 {-| A field of a message that nests, holding a message that nests, written one
@@ -2788,8 +2862,220 @@ as it is, with no count.
 
 -}
 writeDeeper : Field x -> Field x
-writeDeeper =
-    Writer.deeper
+writeDeeper field =
+    case field of
+        Present (Deferred write) ->
+            Present (Deferred (\registry -> write (InternalRegistry.atLeast (max 1 (InternalRegistry.depthOf registry) + 1) registry)))
+
+        _ ->
+            field
+
+
+{-| A value of the type named that proto3 JSON has no form for, and what is
+wrong with it.
+-}
+refuse : String -> String -> Encoder Error
+refuse typeName text =
+    Refused [] (\path -> Proto.Error.BadValue { typeName = typeName, path = path, message = text })
+
+
+{-| A part that needs the registry.
+-}
+deferred : (Registry -> Result Error Value) -> Encoder Error
+deferred write =
+    Deferred
+        (\registry ->
+            case write registry of
+                Ok json ->
+                    Ok json
+
+                Err problem ->
+                    Err ( [], \_ -> problem )
+        )
+
+
+runPart : Registry -> Encoder x -> Result ( List String, List String -> x ) Value
+runPart registry encoder =
+    case encoder of
+        Ready json ->
+            Ok json
+
+        Refused path problem ->
+            Err ( path, problem )
+
+        Deferred write ->
+            write registry
+
+
+under : String -> ( List String, List String -> x ) -> ( List String, List String -> x )
+under key ( path, problem ) =
+    ( key :: path, problem )
+
+
+fastRuns : List (Fields x) -> List ( String, Value ) -> Bool -> Encoder x
+fastRuns runs done proto =
+    case runs of
+        [] ->
+            Ready (objectOfReversed proto done)
+
+        (PlainFields fields) :: rest ->
+            fastPlain fields rest done proto
+
+        (CheckedFields fields) :: rest ->
+            fastChecked fields rest done proto
+
+
+fastPlain : List ( String, Maybe Value ) -> List (Fields x) -> List ( String, Value ) -> Bool -> Encoder x
+fastPlain fields rest done proto =
+    case fields of
+        [] ->
+            fastRuns rest done proto
+
+        ( key, Just json ) :: more ->
+            fastPlain more rest (( key, json ) :: done) (proto || key == "__proto__")
+
+        ( _, Nothing ) :: more ->
+            fastPlain more rest done proto
+
+
+fastChecked : List ( String, Field x ) -> List (Fields x) -> List ( String, Value ) -> Bool -> Encoder x
+fastChecked fields rest done proto =
+    case fields of
+        [] ->
+            fastRuns rest done proto
+
+        ( key, field ) :: more ->
+            case field of
+                Absent ->
+                    fastChecked more rest done proto
+
+                Present (Ready json) ->
+                    fastChecked more rest (( key, json ) :: done) (proto || key == "__proto__")
+
+                Present (Refused path problem) ->
+                    Refused (key :: path) problem
+
+                Present (Deferred _) ->
+                    Deferred (\registry -> slowChecked (InternalRegistry.atLeast 1 registry) fields rest done proto)
+
+
+slowRuns : Registry -> List (Fields x) -> List ( String, Value ) -> Bool -> Result ( List String, List String -> x ) Value
+slowRuns registry runs done proto =
+    case runs of
+        [] ->
+            Ok (objectOfReversed proto done)
+
+        (PlainFields fields) :: rest ->
+            slowPlain registry fields rest done proto
+
+        (CheckedFields fields) :: rest ->
+            slowChecked registry fields rest done proto
+
+
+slowPlain : Registry -> List ( String, Maybe Value ) -> List (Fields x) -> List ( String, Value ) -> Bool -> Result ( List String, List String -> x ) Value
+slowPlain registry fields rest done proto =
+    case fields of
+        [] ->
+            slowRuns registry rest done proto
+
+        ( key, Just json ) :: more ->
+            slowPlain registry more rest (( key, json ) :: done) (proto || key == "__proto__")
+
+        ( _, Nothing ) :: more ->
+            slowPlain registry more rest done proto
+
+
+slowChecked : Registry -> List ( String, Field x ) -> List (Fields x) -> List ( String, Value ) -> Bool -> Result ( List String, List String -> x ) Value
+slowChecked registry fields rest done proto =
+    case fields of
+        [] ->
+            slowRuns registry rest done proto
+
+        ( key, field ) :: more ->
+            case field of
+                Absent ->
+                    slowChecked registry more rest done proto
+
+                Present encoder ->
+                    case runPart registry encoder of
+                        Ok json ->
+                            slowChecked registry more rest (( key, json ) :: done) (proto || key == "__proto__")
+
+                        Err problem ->
+                            Err (under key problem)
+
+
+{-| An object of pairs each written by its encoder, as a map's entries are.
+-}
+writePairs : List ( String, Encoder x ) -> Encoder x
+writePairs entries =
+    fastPairs entries [] False
+
+
+fastPairs : List ( String, Encoder x ) -> List ( String, Value ) -> Bool -> Encoder x
+fastPairs entries done proto =
+    case entries of
+        [] ->
+            Ready (objectOfReversed proto done)
+
+        ( key, encoder ) :: rest ->
+            case encoder of
+                Ready json ->
+                    fastPairs rest (( key, json ) :: done) (proto || key == "__proto__")
+
+                Refused path problem ->
+                    Refused (key :: path) problem
+
+                Deferred _ ->
+                    Deferred (\registry -> slowPairs registry entries done proto)
+
+
+slowPairs : Registry -> List ( String, Encoder x ) -> List ( String, Value ) -> Bool -> Result ( List String, List String -> x ) Value
+slowPairs registry entries done proto =
+    case entries of
+        [] ->
+            Ok (objectOfReversed proto done)
+
+        ( key, encoder ) :: rest ->
+            case runPart registry encoder of
+                Ok json ->
+                    slowPairs registry rest (( key, json ) :: done) (proto || key == "__proto__")
+
+                Err problem ->
+                    Err (under key problem)
+
+
+repeatedFast : (a -> Encoder x) -> List a -> Int -> List Value -> Encoder x
+repeatedFast write items index done =
+    case items of
+        [] ->
+            Ready (Json.Encode.list identity (List.reverse done))
+
+        item :: rest ->
+            case write item of
+                Ready json ->
+                    repeatedFast write rest (index + 1) (json :: done)
+
+                Refused path problem ->
+                    Refused (String.fromInt index :: path) problem
+
+                (Deferred _) as first ->
+                    Deferred (\registry -> repeatedSlow registry write first rest index done)
+
+
+repeatedSlow : Registry -> (a -> Encoder x) -> Encoder x -> List a -> Int -> List Value -> Result ( List String, List String -> x ) Value
+repeatedSlow registry write current rest index done =
+    case runPart registry current of
+        Ok json ->
+            case rest of
+                [] ->
+                    Ok (Json.Encode.list identity (List.reverse (json :: done)))
+
+                next :: more ->
+                    repeatedSlow registry write (write next) more (index + 1) (json :: done)
+
+        Err problem ->
+            Err (under (String.fromInt index) problem)
 
 
 {-| A `google.protobuf.Timestamp`, refused when it is not valid
@@ -2801,10 +3087,10 @@ writeTimestamp : Timestamp -> Encoder Error
 writeTimestamp held =
     case Proto.Timestamp.toString held of
         Just text ->
-            Writer.succeed (Json.Encode.string text)
+            succeed (Json.Encode.string text)
 
         Nothing ->
-            Writer.refuse "google.protobuf.Timestamp" (InternalTimestamp.whyInvalid held)
+            refuse "google.protobuf.Timestamp" (InternalTimestamp.whyInvalid held)
 
 
 {-| A `google.protobuf.Duration`, refused when it is not valid
@@ -2816,10 +3102,10 @@ writeDuration : Duration -> Encoder Error
 writeDuration held =
     case Proto.Duration.toString held of
         Just text ->
-            Writer.succeed (Json.Encode.string text)
+            succeed (Json.Encode.string text)
 
         Nothing ->
-            Writer.refuse "google.protobuf.Duration" (InternalDuration.whyInvalid held)
+            refuse "google.protobuf.Duration" (InternalDuration.whyInvalid held)
 
 
 {-| A `google.protobuf.FieldMask`, refused when a path's lowerCamelCase form
@@ -2828,10 +3114,10 @@ reads back as another path.
 writeFieldMask : List String -> Encoder Error
 writeFieldMask paths =
     if List.all FieldMask.roundTrips paths then
-        Writer.succeed (encodeFieldMask paths)
+        succeed (encodeFieldMask paths)
 
     else
-        Writer.refuse "google.protobuf.FieldMask" "a path's JSON form does not read back as the same path"
+        refuse "google.protobuf.FieldMask" "a path's JSON form does not read back as the same path"
 
 
 {-| A `google.protobuf.Struct`, refused when it holds a number that is NaN or
@@ -2859,10 +3145,10 @@ writeValue held =
 checkedValue : String -> Proto.Value.Value -> (() -> Value) -> Encoder Error
 checkedValue typeName held write =
     if finite held then
-        Writer.succeed (write ())
+        succeed (write ())
 
     else
-        Writer.refuse typeName "a number is NaN or infinite"
+        refuse typeName "a number is NaN or infinite"
 
 
 {-| Whether every number the value holds is finite. It walks the whole value,
@@ -2903,7 +3189,7 @@ read through the registry's entry for its type first, and refused as
 writeAny : Any -> Encoder Error
 writeAny ((InternalAny.Any url _) as held) =
     if String.isEmpty url then
-        Writer.succeed (Json.Encode.object [])
+        succeed (Json.Encode.object [])
 
     else
-        Writer.deferred (\registry -> anyJson registry held)
+        deferred (\registry -> anyJson registry held)

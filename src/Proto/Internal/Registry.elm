@@ -1,8 +1,12 @@
-module Proto.Internal.Registry exposing (Entry, Leniency(..), Registry(..), atLeast, depthOf, isLenient, member, toBytes, toJson, unregistered)
+module Proto.Internal.Registry exposing (Entry, Leniency(..), Registry(..), anyToJson, atLeast, depthOf, isLenient, member, toBytes, unregistered)
 
 {-| The `Registry` type, which `Proto.Registry` names by an alias, and the
 conversions through one, which `Proto.Registry` does not expose: `Proto.Any`
-and `Proto.Json` call them. The type is defined here because a message's
+and `Proto.Json` call them. An `Any`'s conversion to proto3 JSON is here,
+not in `Proto.Any`, so that `Proto.Json` writes an `Any` without importing
+`Proto.Any`, which imports `Proto.Message`; `Proto.Message` and
+`Proto.Method` name `Proto.Json`'s encoder, so `Proto.Json` sits below all
+three. The type is defined here because a message's
 codecs (`Proto.Internal.Message`) take a registry, and `Proto.Registry`
 builds entries from those codecs.
 
@@ -16,7 +20,7 @@ import Dict exposing (Dict)
 import Json.Decode
 import Json.Encode exposing (Value)
 import Proto.Error exposing (Error)
-import Proto.Internal.Any
+import Proto.Internal.Any exposing (Any)
 import Proto.Internal.Depth as Depth
 
 
@@ -91,6 +95,50 @@ toBytes (Registry leniency depth entries) name json =
                 else
                     Err (Proto.Error.BadJson (Json.Decode.Failure Depth.tooDeepText Json.Encode.null))
             )
+
+
+{-| An `Any`'s message as proto3 JSON, without its `"@type"`: what
+`Proto.Any.toJson` gives, and what `Proto.Json.writeAny` writes beside the
+type URL. The empty `Any` gives `{}`. An `Any` holding binary is converted
+through the entry for its type; one held as JSON alone is read through that
+entry, so that what is written is JSON the type's codec accepts, and given
+as it is held. Without an entry, a lenient registry gives the JSON unread
+and a strict one fails with `UnregisteredType`.
+-}
+anyToJson : Registry -> Any -> Result Error Value
+anyToJson registry (Proto.Internal.Any.Any url payload) =
+    case ( String.isEmpty url, payload ) of
+        ( True, _ ) ->
+            Ok (Json.Encode.object [])
+
+        ( False, Proto.Internal.Any.Json json ) ->
+            -- Read through the entry so that what is written is JSON the
+            -- type's codec accepts; the read's binary is not kept, and the
+            -- JSON is written as held.
+            case toBytes registry (Proto.Internal.Any.nameOf url) json of
+                Just (Ok _) ->
+                    Ok json
+
+                Just (Err (Proto.Error.BadJson problem)) ->
+                    Err
+                        (unregistered registry problem
+                            |> Maybe.map Proto.Error.UnregisteredType
+                            |> Maybe.withDefault (Proto.Error.BadJson problem)
+                        )
+
+                Just (Err problem) ->
+                    Err problem
+
+                Nothing ->
+                    if isLenient registry then
+                        Ok json
+
+                    else
+                        Err (Proto.Error.UnregisteredType url)
+
+        ( False, Proto.Internal.Any.Binary base64 ) ->
+            toJson registry (Proto.Internal.Any.nameOf url) base64
+                |> Maybe.withDefault (Err (Proto.Error.UnregisteredType url))
 
 
 {-| How deep the conversion this registry is passed to has nested.

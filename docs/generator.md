@@ -247,10 +247,7 @@ encodeEvent : Event -> Proto.Json.Encoder Proto.Error.Error
 
 A message that gains a refusable field, at any depth, changes its
 encoder's type: `encode` and `encodeWith` take both, and only an
-`encodeTotal` of it stops compiling. `Proto.Json.Encoder` is
-`Proto.Json.Encoder.Encoder`, its own module so that `Proto.Message` and
-`Proto.Method`, whose builders take an encoder, can name it; the package
-site shows that name in their signatures. A method's call writes its
+`encodeTotal` of it stops compiling. A method's call writes its
 request with the same encoder and, over JSON, refuses a request it
 refuses before sending anything
 ([calling.md](calling.md#writing-json-yourself)).
