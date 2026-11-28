@@ -9,7 +9,7 @@ through the functions a binary constructor built (`just json-only-check`).
 
 import Json.Decode
 import Json.Encode
-import Proto.Json
+import Proto.Json.Encode
 import Proto.Method
 import Rpc
 import Rpc.Client
@@ -42,7 +42,7 @@ echo =
     Rpc.call
         (Proto.Method.initJson "echo.v1.Echo"
             "Echo"
-            (\text -> Proto.Json.succeed (Json.Encode.string text))
+            (\text -> Proto.Json.Encode.succeed (Json.Encode.string text))
             (\_ -> Json.Decode.string)
             |> Proto.Method.withIdempotency Proto.Method.IdempotencyNoSideEffects
         )

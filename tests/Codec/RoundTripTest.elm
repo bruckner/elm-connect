@@ -19,7 +19,7 @@ import Generated.Codec.Default.Codec.V1 as Default
 import Generated.Codec.EnumZero.Codec.V1 as EnumZero
 import Generated.Codec.Int64Int.Codec.V1 as Int64Int
 import Json.Encode
-import Proto.Json
+import Proto.Json.Encode
 import Test exposing (Test, describe, test)
 
 
@@ -37,10 +37,10 @@ suite =
 
 scalars : { default : Codec, int64Int : Codec, enumZero : Codec, bytesBytes : Codec }
 scalars =
-    { default = codec Default.decodeScalars (Proto.Json.encodeTotal << Default.encodeScalars)
-    , int64Int = codec Int64Int.decodeScalars (Proto.Json.encodeTotal << Int64Int.encodeScalars)
-    , enumZero = codec EnumZero.decodeScalars (Proto.Json.encodeTotal << EnumZero.encodeScalars)
-    , bytesBytes = codec BytesBytes.decodeScalars (Proto.Json.encodeTotal << BytesBytes.encodeScalars)
+    { default = codec Default.decodeScalars (Proto.Json.Encode.encodeTotal << Default.encodeScalars)
+    , int64Int = codec Int64Int.decodeScalars (Proto.Json.Encode.encodeTotal << Int64Int.encodeScalars)
+    , enumZero = codec EnumZero.decodeScalars (Proto.Json.Encode.encodeTotal << EnumZero.encodeScalars)
+    , bytesBytes = codec BytesBytes.decodeScalars (Proto.Json.Encode.encodeTotal << BytesBytes.encodeScalars)
     }
 
 
@@ -64,7 +64,7 @@ options =
                 \_ -> roundTrip scalars.enumZero """{"kind":"KIND_LATER"}""" "{}"
             , test "zero reads an unknown name in a list as the zero value" <|
                 \_ ->
-                    roundTrip (codec EnumZero.decodeRepeated (Proto.Json.encodeTotal << EnumZero.encodeRepeated))
+                    roundTrip (codec EnumZero.decodeRepeated (Proto.Json.Encode.encodeTotal << EnumZero.encodeRepeated))
                         """{"kinds":["KIND_TEXT","KIND_LATER"]}"""
                         """{"kinds":["KIND_TEXT","KIND_UNSPECIFIED"]}"""
             , test "an unknown number reads as the zero value under either" <|

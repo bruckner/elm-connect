@@ -1,6 +1,7 @@
 module Proto.BytesTest exposing (suite)
 
-{-| `Proto.Bytes` and the `Proto.Json` codecs for bytes held as `Bytes`.
+{-| `Proto.Bytes` and the `Proto.Json.Encode` and `Proto.Json.Decode` codecs
+for bytes held as `Bytes`.
 
 Elm's `==` finds any two `Bytes` equal, so nothing here compares `Bytes`
 directly: each expectation compares their contents as a list of integers.
@@ -16,7 +17,8 @@ import Fuzzers
 import Json.Decode
 import Json.Encode
 import Proto.Bytes
-import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Test exposing (Test, describe, fuzz, test)
 
 
@@ -232,10 +234,10 @@ properties =
                 [ text, urlSafe text, unpadded text, unpadded (urlSafe text) ]
                     |> List.map (Proto.Bytes.fromBase64 >> Maybe.map toList)
                     |> Expect.equal (List.repeat 4 (Just ints))
-        , fuzz base64ish "accepts what Proto.Json.bytes accepts, and nothing else" <|
+        , fuzz base64ish "accepts what Proto.Json.Decode.bytes accepts, and nothing else" <|
             \text ->
                 isJust (Proto.Bytes.fromBase64 text)
-                    |> Expect.equal (isJust (Result.toMaybe (Json.Decode.decodeValue Proto.Json.bytes (Json.Encode.string text))))
+                    |> Expect.equal (isJust (Result.toMaybe (Json.Decode.decodeValue Proto.Json.Decode.bytes (Json.Encode.string text))))
         , fuzz byteList "a character outside base64 fails" <|
             \ints ->
                 let
@@ -288,23 +290,23 @@ jsonTests : Test
 jsonTests =
     let
         decoded json =
-            Json.Decode.decodeString Proto.Json.bytesAsBytes json |> Result.map toList
+            Json.Decode.decodeString Proto.Json.Decode.bytesAsBytes json |> Result.map toList
     in
-    describe "Proto.Json"
+    describe "Proto.Json.Decode and Proto.Json.Encode"
         [ test "bytesAsBytes reads base64" <|
             \_ -> decoded "\"aGk\"" |> Expect.equal (Ok [ 0x68, 0x69 ])
         , test "bytesAsBytes says why it fails" <|
             \_ ->
-                Json.Decode.decodeString Proto.Json.bytesAsBytes "\"a\""
+                Json.Decode.decodeString Proto.Json.Decode.bytesAsBytes "\"a\""
                     |> Result.mapError (Json.Decode.errorToString >> String.contains "Expecting base64 (standard or URL-safe, padding optional)")
                     |> Result.map toList
                     |> Expect.equal (Err True)
         , test "bytesAsBytes fails on a number" <|
             \_ -> decoded "1" |> Result.toMaybe |> Expect.equal Nothing
-        , test "encodeBytesAsBytes writes padded standard base64" <|
-            \_ -> Proto.Json.encodeBytesAsBytes (fromList [ 0xFB, 0xFF ]) |> Json.Encode.encode 0 |> Expect.equal "\"+/8=\""
-        , test "implicitBytesField leaves out no bytes" <|
-            \_ -> Proto.Json.implicitBytesField Proto.Bytes.empty |> Maybe.map (Json.Encode.encode 0) |> Expect.equal Nothing
-        , test "implicitBytesField writes any bytes" <|
-            \_ -> Proto.Json.implicitBytesField (fromList [ 0 ]) |> Maybe.map (Json.Encode.encode 0) |> Expect.equal (Just "\"AA==\"")
+        , test "bytesAsBytes writes padded standard base64" <|
+            \_ -> Proto.Json.Encode.bytesAsBytes (fromList [ 0xFB, 0xFF ]) |> Json.Encode.encode 0 |> Expect.equal "\"+/8=\""
+        , test "implicitBytes leaves out no bytes" <|
+            \_ -> Proto.Json.Encode.implicitBytes Proto.Bytes.empty |> Maybe.map (Json.Encode.encode 0) |> Expect.equal Nothing
+        , test "implicitBytes writes any bytes" <|
+            \_ -> Proto.Json.Encode.implicitBytes (fromList [ 0 ]) |> Maybe.map (Json.Encode.encode 0) |> Expect.equal (Just "\"AA==\"")
         ]

@@ -33,7 +33,7 @@ import Json.Decode
 import Json.Encode
 import Octets exposing (bytesOf)
 import Proto.Binary
-import Proto.Json
+import Proto.Json.Encode
 import Proto.Message exposing (Message)
 import Proto.Method exposing (Idempotency(..))
 import Rpc
@@ -102,7 +102,7 @@ title =
 -}
 titleAs : String -> Message String
 titleAs typeName =
-    Proto.Message.init typeName (Proto.Json.succeed << encodeTitle) decodeTitle encodeTitleBinary (decodeTitleBinaryAs typeName)
+    Proto.Message.init typeName (Proto.Json.Encode.succeed << encodeTitle) decodeTitle encodeTitleBinary (decodeTitleBinaryAs typeName)
 
 
 {-| A note whose title is "hi", in protobuf binary.
@@ -124,14 +124,14 @@ getNoteIn =
 -}
 both : GetNote -> Rpc.Call codec GetNote String
 both =
-    Rpc.call (getNoteIn (Proto.Method.init "notes.v1.Notes" "GetNote" (encodeGetNote >> Proto.Json.succeed) (\_ -> decodeTitle) encodeGetNoteBinary decodeTitleBinary))
+    Rpc.call (getNoteIn (Proto.Method.init "notes.v1.Notes" "GetNote" (encodeGetNote >> Proto.Json.Encode.succeed) (\_ -> decodeTitle) encodeGetNoteBinary decodeTitleBinary))
 
 
 {-| The method with JSON alone.
 -}
 jsonOnly : GetNote -> Rpc.Call Rpc.Json GetNote String
 jsonOnly =
-    Rpc.call (getNoteIn (Proto.Method.initJson "notes.v1.Notes" "GetNote" (encodeGetNote >> Proto.Json.succeed) (\_ -> decodeTitle)))
+    Rpc.call (getNoteIn (Proto.Method.initJson "notes.v1.Notes" "GetNote" (encodeGetNote >> Proto.Json.Encode.succeed) (\_ -> decodeTitle)))
 
 
 {-| The method with binary alone.

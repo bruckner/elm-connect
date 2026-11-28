@@ -22,7 +22,8 @@ import Proto.Internal.Method
 import Proto.Internal.Percent
 import Proto.Internal.Registry
 import Proto.Internal.Timestamp
-import Proto.Json
+import Proto.Json.Decode
+import Proto.Json.Encode
 import Proto.Message exposing (Message)
 import Proto.Method exposing (Idempotency(..))
 import Proto.Registry
@@ -73,7 +74,7 @@ noteRegistry =
 notes : String -> Idempotency -> List Proto.Http.Binding -> GetNote -> Rpc.Call Rpc.Json GetNote String
 notes name idempotency bindings =
     Rpc.call
-        (Proto.Method.initJson "notes.v1.Notes" name (encodeGetNote >> Proto.Json.succeed) (\_ -> decodeTitle)
+        (Proto.Method.initJson "notes.v1.Notes" name (encodeGetNote >> Proto.Json.Encode.succeed) (\_ -> decodeTitle)
             |> Proto.Method.withIdempotency idempotency
             |> Proto.Internal.Binding.withBindings bindings
         )
@@ -391,7 +392,7 @@ calls =
             \_ ->
                 let
                     bare =
-                        Rpc.call (Proto.Method.initJson "notes.v1.Notes" "GetNote" (encodeGetNote >> Proto.Json.succeed) (\_ -> decodeTitle)) { name = "x" }
+                        Rpc.call (Proto.Method.initJson "notes.v1.Notes" "GetNote" (encodeGetNote >> Proto.Json.Encode.succeed) (\_ -> decodeTitle)) { name = "x" }
                 in
                 ( Rpc.Call.idempotency bare, Rpc.Call.viaBinding 0 bare |> Maybe.map Rpc.Call.procedure )
                     |> Expect.equal ( IdempotencyUnknown, Nothing )
@@ -619,7 +620,7 @@ responses =
             \_ ->
                 let
                     getAny =
-                        Rpc.call (Proto.Method.initJson "t.v1.S" "Get" (\_ -> Proto.Json.succeed (Json.Encode.object [])) Proto.Json.anyWith) ()
+                        Rpc.call (Proto.Method.initJson "t.v1.S" "Get" (\_ -> Proto.Json.Encode.succeed (Json.Encode.object [])) Proto.Json.Decode.anyWith) ()
 
                     answer =
                         Http.GoodStatus_ (metadata 200 "OK") """{"@type":"type.googleapis.com/notes.v1.Note","title":"hi"}"""
@@ -792,7 +793,7 @@ responses =
                         Rpc.call
                             (Proto.Method.init "notes.v1.Notes"
                                 "GetNote"
-                                (\_ -> Proto.Json.writeTimestamp (Proto.Internal.Timestamp.Timestamp { seconds = 300000000000, nanos = 0, wideHigh = 0 }))
+                                (\_ -> Proto.Json.Encode.timestamp (Proto.Internal.Timestamp.Timestamp { seconds = 300000000000, nanos = 0, wideHigh = 0 }))
                                 (\_ -> decodeTitle)
                                 (\_ -> Bytes.Encode.sequence [])
                                 decodeTitleBinary
@@ -1683,7 +1684,7 @@ encodings =
             Rpc.call
                 (Proto.Method.init "notes.v1.Notes"
                     "UpdateNote"
-                    (\_ -> Proto.Json.succeed Json.Encode.null)
+                    (\_ -> Proto.Json.Encode.succeed Json.Encode.null)
                     (\_ -> decodeTitle)
                     (\_ -> Bytes.Encode.sequence [])
                     decodeTitleBinary
