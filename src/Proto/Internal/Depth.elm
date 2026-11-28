@@ -1,7 +1,7 @@
 module Proto.Internal.Depth exposing (limit, tooDeep, tooDeepText)
 
 {-| The nesting limit of a read, the one definition every reader takes it
-from: `Proto.Binary`, `Proto.Json`, `Proto.Value`, `Proto.Internal.ValueJson`
+from: `Proto.Binary`, `Proto.Json.Decode`, `Proto.Value`, `Proto.Internal.ValueJson`
 and `Proto.Internal.Registry`. It imports nothing of the package, so any of
 them can import it, and a program links only what it uses of it.
 

@@ -2,11 +2,11 @@ module Proto.Internal.Registry exposing (Entry, Leniency(..), Registry(..), anyT
 
 {-| The `Registry` type, which `Proto.Registry` names by an alias, and the
 conversions through one, which `Proto.Registry` does not expose: `Proto.Any`
-and `Proto.Json` call them. An `Any`'s conversion to proto3 JSON is here,
-not in `Proto.Any`, so that `Proto.Json` writes an `Any` without importing
-`Proto.Any`, which imports `Proto.Message`; `Proto.Message` and
-`Proto.Method` name `Proto.Json`'s encoder, so `Proto.Json` sits below all
-three. The type is defined here because a message's
+and `Proto.Json.Encode` and `Proto.Json.Decode` call them. An `Any`'s
+conversion to proto3 JSON is here, not in `Proto.Any`, so that
+`Proto.Json.Encode` writes an `Any` without importing `Proto.Any`, which
+imports `Proto.Message`; `Proto.Message` and `Proto.Method` name
+`Proto.Json.Encode`'s encoder, so it sits below all three. The type is defined here because a message's
 codecs (`Proto.Internal.Message`) take a registry, and `Proto.Registry`
 builds entries from those codecs.
 
@@ -98,7 +98,7 @@ toBytes (Registry leniency depth entries) name json =
 
 
 {-| An `Any`'s message as proto3 JSON, without its `"@type"`: what
-`Proto.Any.toJson` gives, and what `Proto.Json.writeAny` writes beside the
+`Proto.Any.toJson` gives, and what `Proto.Json.Encode.any` writes beside the
 type URL. The empty `Any` gives `{}`. An `Any` holding binary is converted
 through the entry for its type; one held as JSON alone is read through that
 entry, so that what is written is JSON the type's codec accepts, and given

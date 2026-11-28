@@ -1,8 +1,8 @@
 module Proto.Internal.ValueJson exposing (Kinds, level, read)
 
 {-| How a `google.protobuf.Value` is read from JSON, shared by `Proto.Value`
-and `Proto.Json`. Each builds its own table of decoders by depth with
-[`level`](#level), handing over the constructors as `Kinds`: `Proto.Json`
+and `Proto.Json.Decode`. Each builds its own table of decoders by depth with
+[`level`](#level), handing over the constructors as `Kinds`: `Proto.Json.Decode`
 imports `Proto.Value`, so neither can take the other's table.
 -}
 
