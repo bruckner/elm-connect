@@ -7,8 +7,8 @@ use super::{
     PROTO_TIMESTAMP, PROTO_VALUE, call, scalar,
 };
 use crate::elm::ast::{Expr, Type};
-use crate::elm::build::{apply, list, qualified, ty, var};
-use crate::naming::{REGISTRY_ARGUMENT, with_registry};
+use crate::elm::build::{apply, lambda, list, pvar, qualified, ty, var};
+use crate::naming::{MAP_VALUE, REGISTRY_ARGUMENT, with_registry};
 
 use std::collections::HashMap;
 
@@ -267,30 +267,16 @@ impl Emitter {
                 } else {
                     var("identity")
                 };
-                match self.total_message_encoder(inner) {
-                    Some(encoder) => (
-                        self.reference((PROTO_JSON, "totalDictField")),
-                        vec![key, encoder],
-                    ),
-                    None => {
-                        let encoder = self.value_encoder(inner);
-                        (
-                            self.reference((PROTO_JSON, "dictField")),
-                            vec![key, encoder],
-                        )
-                    }
-                }
+                let encoder = self.map_value_encoder(inner);
+                (
+                    self.reference((PROTO_JSON, "dictField")),
+                    vec![key, encoder],
+                )
             }
-            FieldShape::BoolMap(inner) => match self.total_message_encoder(inner) {
-                Some(encoder) => (
-                    self.reference((PROTO_JSON, "totalBoolMapField")),
-                    vec![encoder],
-                ),
-                None => {
-                    let encoder = self.value_encoder(inner);
-                    (self.reference((PROTO_JSON, "boolMapField")), vec![encoder])
-                }
-            },
+            FieldShape::BoolMap(inner) => {
+                let encoder = self.map_value_encoder(inner);
+                (self.reference((PROTO_JSON, "boolMapField")), vec![encoder])
+            }
         };
         apply(helper, args.into_iter().chain([value]))
     }
@@ -487,6 +473,24 @@ impl Emitter {
             return apply(total, [apply(encoder, [value])]);
         }
         call(self.value_encoder(shape), [value])
+    }
+
+    /// The plain encoder of a map's values. A message is written by `\entry
+    /// -> Proto.Json.encodeTotal (encodeFoo entry)`, one closure per write
+    /// of the field: `Proto.Json.encodeTotal << encodeFoo` builds a partial
+    /// application of two steps instead, which made writing a message
+    /// holding three empty maps of messages 12 % slower.
+    fn map_value_encoder(&mut self, value: ValueShape) -> Expr {
+        match self.total_message_encoder(value) {
+            Some(encoder) => {
+                let total = self.reference((PROTO_JSON, "encodeTotal"));
+                lambda(
+                    [pvar(MAP_VALUE)],
+                    apply(total, [apply(encoder, [var(MAP_VALUE)])]),
+                )
+            }
+            None => self.value_encoder(value),
+        }
     }
 
     /// The `Proto.Json.Encoder x` of a message whose write cannot be

@@ -462,7 +462,7 @@ encodeNode value =
         (Proto.Json.objectOfFields
             [ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
             , ( "children", Proto.Json.totalRepeatedField encodeNode_ value.children )
-            , ( "byName", Proto.Json.totalDictField identity encodeNode_ value.byName )
+            , ( "byName", Proto.Json.dictField identity (\entry -> Proto.Json.encodeTotal (encodeNode_ entry)) value.byName )
             ]
         )
 

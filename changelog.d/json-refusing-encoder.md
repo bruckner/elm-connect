@@ -41,8 +41,8 @@
   `writeOptional`, `writeRepeated`, `writeDict`, `writeBoolMap`,
   `writeMember`, `writeDeeper`, `writeTimestamp`, `writeDuration`,
   `writeFieldMask`, `writeStruct`, `writeListValue`, `writeValue`,
-  `writeAny`, `totalOptionalField`, `totalRepeatedField`,
-  `totalDictField` and `totalBoolMapField`; and `Proto.Route.fieldMaskText`,
+  `writeAny`, `totalOptionalField` and `totalRepeatedField`; and
+  `Proto.Route.fieldMaskText`,
   with which a route prints a mask in its path or query.
 - Breaking: a call over JSON writes its request's JSON once before it
   builds any route, and is not sent when the request has none, over

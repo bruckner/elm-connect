@@ -6,7 +6,7 @@ module Proto.Json exposing
     , message, messageField, messageFieldEither, nestedMessageValueField, nestedMessageValueFieldEither, emptyMessage
     , objectOfFields
     , implicitField, implicitFloatField, implicitBytesField, repeatedField, dictField, boolMapField
-    , totalOptionalField, totalRepeatedField, totalDictField, totalBoolMapField
+    , totalOptionalField, totalRepeatedField
     , memo, deeper, deeperWith
     , oneof, members, Member, member, memberEither
     , nestedValueMember, nestedValueMemberEither
@@ -110,12 +110,14 @@ reads a missing field as its default, so nothing is lost.
             )
 
 A field holding a message that holds nothing a write can refuse unwraps that
-message's encoder with [`encodeTotal`](#encodeTotal), through the `total`
-helpers.
+message's encoder with [`encodeTotal`](#encodeTotal): an optional or repeated
+one through the `total` helpers, a map through the plain helper.
+
+    dictField identity (\entry -> encodeTotal (encodeAuthor entry)) value.byName
 
 @docs objectOfFields
 @docs implicitField, implicitFloatField, implicitBytesField, repeatedField, dictField, boolMapField
-@docs totalOptionalField, totalRepeatedField, totalDictField, totalBoolMapField
+@docs totalOptionalField, totalRepeatedField
 
 
 # Messages that nest
@@ -750,22 +752,6 @@ totalRepeatedField write values =
 
     else
         Just (Json.Encode.list (\item -> Writer.total (write item)) values)
-
-
-{-| [`dictField`](#dictField) of a message that holds nothing a write can
-refuse.
--}
-totalDictField : (k -> String) -> (v -> Encoder Never) -> Dict.Dict k v -> Maybe Value
-totalDictField key write entries =
-    dictField key (\item -> Writer.total (write item)) entries
-
-
-{-| [`boolMapField`](#boolMapField) of a message that holds nothing a write
-can refuse.
--}
-totalBoolMapField : (a -> Encoder Never) -> List ( Bool, a ) -> Maybe Value
-totalBoolMapField write pairs =
-    boolMapField (\item -> Writer.total (write item)) pairs
 
 
 {-| Decode a oneof in a decoding pipeline: unlike

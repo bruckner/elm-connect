@@ -940,7 +940,10 @@ refuse on a JSON write"):
   )` pairs, one per field, `Nothing` leaving the field out. It works for
   any `x`, so `Proto.Json.encodeTotal` writes it with no `Result`, and a
   message holding it unwraps it in place (`Proto.Json.totalOptionalField
-  encodeAuthor value.author`).
+  encodeAuthor value.author`, `totalRepeatedField` for a list; a map
+  passes `\entry -> Proto.Json.encodeTotal (encodeAuthor entry)` to the
+  plain `dictField` or `boolMapField`, which take a function per entry
+  anyway).
 - A message that holds an `Any`, or a `Timestamp`, `Duration`,
   `FieldMask`, `Struct`, `ListValue` or `Value`, at any depth, is
   `encodeNote : Note -> Proto.Json.Encoder Proto.Error.Error`: its

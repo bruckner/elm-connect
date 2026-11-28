@@ -1040,12 +1040,12 @@ encodeMaps value =
             , ( "sint32Bool", Proto.Json.dictField String.fromInt Json.Encode.bool value.sint32Bool )
             , ( "sint64Float", Proto.Json.dictField identity Proto.Json.encodeFloat value.sint64Float )
             , ( "fixed32Uint64", Proto.Json.dictField String.fromInt Proto.Json.encodeInt64 value.fixed32Uint64 )
-            , ( "fixed64Leaf", Proto.Json.totalDictField identity encodeLeaf value.fixed64Leaf )
+            , ( "fixed64Leaf", Proto.Json.dictField identity (\entry -> Proto.Json.encodeTotal (encodeLeaf entry)) value.fixed64Leaf )
             , ( "sfixed32Bytes", Proto.Json.dictField String.fromInt Proto.Json.encodeBytes value.sfixed32Bytes )
             , ( "sfixed64Int32", Proto.Json.dictField identity Json.Encode.int value.sfixed64Int32 )
             , ( "boolString", Proto.Json.boolMapField Json.Encode.string value.boolString )
-            , ( "boolLeaf", Proto.Json.totalBoolMapField encodeLeaf value.boolLeaf )
-            , ( "stringLeaf", Proto.Json.totalDictField identity encodeLeaf value.stringLeaf )
+            , ( "boolLeaf", Proto.Json.boolMapField (\entry -> Proto.Json.encodeTotal (encodeLeaf entry)) value.boolLeaf )
+            , ( "stringLeaf", Proto.Json.dictField identity (\entry -> Proto.Json.encodeTotal (encodeLeaf entry)) value.stringLeaf )
             ]
         )
 
@@ -1194,7 +1194,7 @@ encodeTree value =
             ([ ( "label", Proto.Json.implicitField "" Json.Encode.string value.label )
              , ( "left", Proto.Json.totalOptionalField encodeTree_ value.left )
              , ( "children", Proto.Json.totalRepeatedField encodeTree_ value.children )
-             , ( "named", Proto.Json.totalDictField identity encodeTree_ value.named )
+             , ( "named", Proto.Json.dictField identity (\entry -> Proto.Json.encodeTotal (encodeTree_ entry)) value.named )
              ]
                 ++ encodeTreeLink value.link
             )

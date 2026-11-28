@@ -2901,8 +2901,21 @@ writes the general form.
   of `Json.Decode.map (\() -> constructor) empty`. Generated code writes
   that decoder, built where the member list is built, as the helper
   built it: the optimised JavaScript is the same but for names.
+- `totalDictField` and `totalBoolMapField` were `dictField` and
+  `boolMapField` given `\item -> encodeTotal (write item)`. Generated
+  code passes that closure, `\entry -> encodeTotal (encodeFoo entry)`,
+  built once per write of the field as the helper built it. Passing
+  `encodeTotal << encodeFoo` instead would build a
+  partial application of two steps per write and an extra call per
+  entry: writing a message holding three empty maps of messages took
+  0.21 µs that way against 0.18 µs (+12 %, against an A/A bound of
+  1.8 %), and +1 to +3 % with entries. `totalOptionalField` and
+  `totalRepeatedField` stay: their bodies unwrap the encoder in place,
+  so a singular or repeated field allocates no closure, which is why
+  they were added (decisions: "Accept on read what the wire admits,
+  refuse on a JSON write").
 
-Where: design §3.5, §3.6.
+Where: design §3.4, §3.5, §3.6.
 
 ### Binary codecs, faster within elm/bytes
 

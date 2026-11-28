@@ -620,6 +620,11 @@ pub const ENCODER_ARGUMENT: &str = "value";
 /// the name of a top-level value of a generated module.
 pub const ONEOF_MEMBER: &str = "member";
 
+/// The parameter of the function a message's encoder gives a map helper to
+/// write each value of a map of messages. Like [`ENCODER_ARGUMENT`], it
+/// must not be the name of a top-level value of a generated module.
+pub const MAP_VALUE: &str = "entry";
+
 /// The Elm value for an RPC method: its name converted as a field's is
 /// ([`field_name`]), so `GetNote` becomes `getNote`, `get_note` `getNote`,
 /// `HTTPGet` `httpGet` and `Type` `type_`.

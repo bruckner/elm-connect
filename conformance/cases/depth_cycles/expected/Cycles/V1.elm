@@ -1046,7 +1046,7 @@ encodeDir : Dir -> Proto.Json.Encoder x
 encodeDir value =
     Proto.Json.succeed
         (Proto.Json.objectOfFields
-            [ ( "entries", Proto.Json.totalDictField identity encodeDir_ value.entries )
+            [ ( "entries", Proto.Json.dictField identity (\entry -> Proto.Json.encodeTotal (encodeDir_ entry)) value.entries )
             , ( "forest", Proto.Json.totalOptionalField encodeForest value.forest )
             ]
         )
