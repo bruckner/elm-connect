@@ -3,8 +3,8 @@ port module Main exposing (main)
 {-| A client that speaks JSON alone, its method built with
 `Proto.Method.initJson`, over a protocol given every modifier. Compiled with
 `--optimize`, it must hold nothing of elm/bytes' kernel: a modifier installs
-both wires' functions, and the binary ones reach elm/bytes only through the
-wire a binary constructor built (`just json-only-check`).
+both kinds' functions, text and bytes, and the bytes ones reach elm/bytes only
+through the functions a binary constructor built (`just json-only-check`).
 -}
 
 import Json.Decode

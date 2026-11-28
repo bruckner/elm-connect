@@ -339,8 +339,9 @@ binary or its decoders disagree.
 application whose one method speaks JSON alone (`Proto.Method.initJson`)
 over a Connect protocol given every modifier, with `--optimize`, and fails
 if the output holds any definition of elm/bytes' kernel (`_Bytes_…`),
-listing them. A modifier installs both wires' functions, and the binary
-ones must reach elm/bytes only through the wire a binary constructor built
+listing them. A modifier installs both kinds' functions, text and bytes, and
+the bytes ones must reach elm/bytes only through the functions a binary
+constructor built
 (design §5.1), so a client that never speaks protobuf binary carries none
 of it.
 

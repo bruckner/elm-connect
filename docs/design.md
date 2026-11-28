@@ -2888,8 +2888,9 @@ type error where the call is sent, not a failure at run time
 **A protocol holds its code.** `Protocol codec` is one value with a data
 half (its name, its codec, whether it reads routes, and its options:
 `get`, `maxGetUrl`, `readMaxBytes`, `writeMaxBytes`) and, after it, a
-function half, its wire: `Text`
-(proto3 JSON) or `Binary` (protobuf binary), each a record of top-level
+function half, by the kind of body its messages travel in, as
+`Rpc.Body` names them: `Text` (proto3 JSON) or `Bytes` (protobuf
+binary), each a record of top-level
 functions that build a request and read an answer (`build`, `message`,
 the limit checks `tooLarge` and `overRead`, `timeoutHeader`, and for
 bytes `base64` and `width`). A constructor chooses them, so a program
@@ -2908,7 +2909,7 @@ them carries none of their code. Two rules keep this safe
 
 - every modifier that installs a function also writes the data, and the
   data comes first by position: a protocol is its data, then its
-  functions (`Protocol data wire`); a policy its knobs, then its math
+  functions (`Protocol data functions`); a policy its knobs, then its math
   (`Retry Policy Math`); a client its settings, then its protocol, its
   policy, and its registry last (`Client data protocol retry registry`).
   elm/core's `==` compares a constructor's arguments in order and stops
@@ -2928,10 +2929,10 @@ them carries none of their code. Two rules keep this safe
   (decisions.md: Modifiers install behaviour, 2026-11-13 and
   2026-11-19);
 - every binary function a modifier installs (the GET builder, the
-  limit checks) reaches elm/bytes only through the wire: it runs an
-  encoder with the wire's `encode` and measures with its `encodedWidth`
-  and `width`, never naming elm/bytes itself. A modifier names both
-  wires' functions, so a JSON program naming `withConnectGet` or a limit
+  limit checks) reaches elm/bytes only through the `Bytes` functions:
+  it runs an encoder with their `encode` and measures with their
+  `encodedWidth` and `width`, never naming elm/bytes itself. A modifier
+  names both kinds' functions, so a JSON program naming `withConnectGet` or a limit
   carries the binary one, but only a binary constructor names those
   three, so it still reaches no elm/bytes. `just json-only-check`
   compiles a JSON-only client naming every modifier and fails if its
@@ -3338,7 +3339,7 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
   rather than one reading bytes: a JSON answer read as text is decoded
   by the browser, natively, and a program that reads none as bytes
   carries no elm/bytes. `send`, `task` and `taskTraced` take the one
-  the protocol's wire installed.
+  the protocol's functions installed.
 - `task` is `taskFromRequest` of `request`; the retry loop lives in
   `taskFromRequest`, between attempts `Process.sleep`, so a rewritten
   request is retried too.
@@ -3484,10 +3485,10 @@ all 40 passing.
 Proto`; `connect`, a `Protocol Json`, is everything above. Run by the
 live suite against connect-go (`cases/proto.json`: every method, the
 five ways of sending, errors with details, both size limits, GET), and
-by the Connect conformance suite's unary test cases with the proto
-codec (§7).
+by the Connect conformance suite's unary test cases with Connect's
+`proto` codec (§7).
 
-- **The codec is the protocol's.** `connectBinary`'s wire is `Binary`,
+- **The codec is the protocol's.** `connectBinary`'s functions are `Bytes`,
   so only a call of a method with binary codecs (`codec=binary` or
   `codec=both`) can be sent over it, and the compiler says so of any
   other (§5.2). `transcode` is a `Protocol Json`: transcoding is JSON by
@@ -3512,7 +3513,7 @@ codec (§7).
   `bodyBase64`.
 - **The binary code lives in the protocol and the method.** The method
   holds its binary half as its request's encoder and a reading of its
-  response (§4); `connectBinary`'s wire holds the functions that run them
+  response (§4); `connectBinary`'s `Bytes` functions are those that run them
   (`Bytes.Encode.encode` of the request, the reading of a binary answer,
   `width` for the limits, base64 for a GET and a trace).
   Elm's dead-code elimination is by reference, so a program that names
@@ -3743,8 +3744,8 @@ conformance suite's gRPC-Web client cases (§7).
 - **Its code is the protocol's.** Every gRPC-Web function, the builder
   (`grpcWeb`), the reader (`grpcWebMessage`) and the timeout format, is
   a top-level function of `Rpc.Internal.GrpcWeb` that only the `grpcWeb`
-  value installs in its `Binary` wire, and `Plan.plan` keeps its one
-  `case` on the wire kind, with no gRPC-Web arm. A program that never
+  value installs in its `Bytes` functions, and `Plan.plan` keeps its one
+  `case` on their kind, with no gRPC-Web arm. A program that never
   names `grpcWeb` carries none of it: Eliza and the notes example over
   Connect, as JSON or as protobuf binary, compile to the same bytes with
   it as without. Naming it costs 689 B gzipped on a notes program over

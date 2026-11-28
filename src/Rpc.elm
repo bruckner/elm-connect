@@ -427,8 +427,8 @@ response cl c answer =
             read answer
 
         BytesReader _ ->
-            -- Not reached: a protocol speaking JSON holds a text wire. Read
-            -- as the failure it would be, so the branch adds no reader.
+            -- Not reached: a protocol speaking JSON holds `Text` functions.
+            -- Read as the failure it would be, so the branch adds no reader.
             Err (Rpc.Internal.Status.otherFailure answer)
 
 
@@ -448,8 +448,8 @@ responseBytes cl c answer =
             Tuple.second (read answer)
 
         TextReader _ ->
-            -- Not reached: a protocol speaking protobuf binary holds a bytes
-            -- wire. Read as the failure it would be, as `response` does.
+            -- Not reached: a protocol speaking protobuf binary holds `Bytes`
+            -- functions. Read as the failure it would be, as `response` does.
             Err (Rpc.Internal.Status.bytesFailure answer)
 
 

@@ -39,7 +39,7 @@ import Rpc.Internal.Connect as Connect
 import Rpc.Internal.Envelope as Envelope
 import Rpc.Internal.GrpcWeb as GrpcWeb
 import Rpc.Internal.Limit as Limit
-import Rpc.Internal.Protocol as Internal exposing (Options, Wire(..))
+import Rpc.Internal.Protocol as Internal exposing (Functions(..), Options)
 import Rpc.Internal.Transcode as Transcode
 
 
@@ -52,8 +52,8 @@ type alias Protocol codec =
 
 
 
--- A protocol is `Internal.Protocol data wire`: its data first, its functions
--- second. elm/core's `==` compares a constructor's arguments in order, stops at
+-- A protocol is `Internal.Protocol data functions`: its data first, its
+-- functions second. elm/core's `==` compares a constructor's arguments in order, stops at
 -- the first that differ, and throws on two functions that are not the same one
 -- (how its code works, not a guarantee of the language: `Rpc.Internal.Protocol`
 -- says more). A modifier that installs a function
@@ -68,9 +68,9 @@ type alias Protocol codec =
 -- `Rpc.Retry.on` keeps the same rule: a policy is its knobs, then its math.
 --
 -- A binary function a modifier installs (the GET builder, the limit checks)
--- reaches elm/bytes only through the wire it is installed on: it runs an
--- encoder with the wire's `encode` and measures with its `encodedWidth` and
--- `width`, never naming elm/bytes itself. A modifier names both wires'
+-- reaches elm/bytes only through the `Bytes` functions it is installed in: it
+-- runs an encoder with their `encode` and measures with their `encodedWidth`
+-- and `width`, never naming elm/bytes itself. A modifier names both kinds'
 -- functions, so a JSON program naming it carries the binary one; only a
 -- binary protocol's constructor names `encode`, `encodedWidth` and `width`,
 -- so that program still carries nothing of elm/bytes, whose kernel comes
@@ -108,7 +108,7 @@ connectBinary : Protocol Binary
 connectBinary =
     Internal.Protocol
         { name = "connect", codec = "proto", routed = False, options = noOptions }
-        (Binary
+        (Bytes
             { build = Connect.connectPostBinary
             , message = Connect.connectBinaryMessage
             , tooLarge = Limit.bytesUnlimited
@@ -161,7 +161,7 @@ grpcWeb : Protocol Binary
 grpcWeb =
     Internal.Protocol
         { name = "grpc-web", codec = "proto", routed = False, options = noOptions }
-        (Binary
+        (Bytes
             { build = GrpcWeb.grpcWeb
             , message = GrpcWeb.grpcWebMessage
             , tooLarge = Limit.bytesUnlimited
@@ -185,23 +185,23 @@ proxy logs. Servers and proxies cap URL length too;
 
 -}
 withConnectGet : Protocol codec -> Protocol codec
-withConnectGet (Internal.Protocol p wire) =
+withConnectGet (Internal.Protocol p functions) =
     if p.name == "connect" then
         let
             options =
                 p.options
         in
         Internal.Protocol { p | options = { options | get = True } }
-            (case wire of
+            (case functions of
                 Text text ->
                     Text { text | build = Connect.connectGet }
 
-                Binary binary ->
-                    Binary { binary | build = Connect.connectGetBinary }
+                Bytes bytes ->
+                    Bytes { bytes | build = Connect.connectGetBinary }
             )
 
     else
-        Internal.Protocol p wire
+        Internal.Protocol p functions
 
 
 {-| POST a call whose GET URL, the whole of it with its query, would be longer
@@ -210,16 +210,16 @@ is a common safe value). Only Connect with
 [`withConnectGet`](#withConnectGet) sends a GET, so others are unchanged.
 -}
 withMaxGetUrl : Int -> Protocol codec -> Protocol codec
-withMaxGetUrl limit (Internal.Protocol p wire) =
+withMaxGetUrl limit (Internal.Protocol p functions) =
     if p.name == "connect" then
         let
             options =
                 p.options
         in
-        Internal.Protocol { p | options = { options | maxGetUrl = Just limit } } wire
+        Internal.Protocol { p | options = { options | maxGetUrl = Just limit } } functions
 
     else
-        Internal.Protocol p wire
+        Internal.Protocol p functions
 
 
 {-| Refuse a successful answer whose body (over gRPC-Web, its response
@@ -233,7 +233,7 @@ protocol as it would be had no limit ever been set.
 
 -}
 withReadMaxBytes : Int -> Protocol codec -> Protocol codec
-withReadMaxBytes limit (Internal.Protocol p wire) =
+withReadMaxBytes limit (Internal.Protocol p functions) =
     let
         options =
             p.options
@@ -253,7 +253,7 @@ withReadMaxBytes limit (Internal.Protocol p wire) =
                             Nothing
                 }
         }
-        (case wire of
+        (case functions of
             Text text ->
                 Text
                     { text
@@ -265,9 +265,9 @@ withReadMaxBytes limit (Internal.Protocol p wire) =
                                 Limit.textUnlimited
                     }
 
-            Binary binary ->
-                Binary
-                    { binary
+            Bytes bytes ->
+                Bytes
+                    { bytes
                         | overRead =
                             if on then
                                 Limit.bytesOverRead
@@ -288,7 +288,7 @@ protocol as it would be had no limit ever been set.
 
 -}
 withWriteMaxBytes : Int -> Protocol codec -> Protocol codec
-withWriteMaxBytes limit (Internal.Protocol p wire) =
+withWriteMaxBytes limit (Internal.Protocol p functions) =
     let
         options =
             p.options
@@ -308,7 +308,7 @@ withWriteMaxBytes limit (Internal.Protocol p wire) =
                             Nothing
                 }
         }
-        (case wire of
+        (case functions of
             Text text ->
                 Text
                     { text
@@ -320,9 +320,9 @@ withWriteMaxBytes limit (Internal.Protocol p wire) =
                                 Limit.textUnlimited
                     }
 
-            Binary binary ->
-                Binary
-                    { binary
+            Bytes bytes ->
+                Bytes
+                    { bytes
                         | tooLarge =
                             if on then
                                 Limit.bytesTooLarge

@@ -21,7 +21,7 @@ of a call over either. Not exposed.
 `Rpc.Protocol` installs these functions in a protocol
 (`Rpc.Internal.Protocol`), each a top-level function, so a program carries
 only those its protocols and options reach: a constructor installs the
-`Unlimited` pair of its wire, `withReadMaxBytes` and `withWriteMaxBytes` the
+`Unlimited` pair of its kind, text or bytes, `withReadMaxBytes` and `withWriteMaxBytes` the
 ones that measure, and a binary protocol's constructor alone `width` and
 `encodedWidth`, the only two here that run elm/bytes. A protocol's reader
 (`Rpc.Internal.Connect`, `Rpc.Internal.Transcode`, `Rpc.Internal.GrpcWeb`)

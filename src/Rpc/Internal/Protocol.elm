@@ -1,4 +1,4 @@
-module Rpc.Internal.Protocol exposing (BinaryWire, BytesMessage, Data, GoodBytes, GoodText, Options, Protocol(..), Settings, Size, TextWire, Wire(..))
+module Rpc.Internal.Protocol exposing (BytesFunctions, BytesMessage, Data, Functions(..), GoodBytes, GoodText, Options, Protocol(..), Settings, Size, TextFunctions)
 
 {-| The protocol calls are sent over. Not exposed: `Rpc.Protocol` builds one
 and aliases the type, and `Rpc` sends a call through what it holds.
@@ -52,7 +52,7 @@ import Rpc.Request exposing (Request)
 
 
 type Protocol codec
-    = Protocol Data Wire
+    = Protocol Data Functions
 
 
 {-| The data half: the protocol's name, the codec it speaks, whether it
@@ -101,11 +101,12 @@ type alias Settings =
     }
 
 
-{-| The function half: text (proto3 JSON) or bytes (protobuf binary).
+{-| The function half, by the kind of body the protocol's messages travel
+in, as `Rpc.Body` names them: text (proto3 JSON) or bytes (protobuf binary).
 -}
-type Wire
-    = Text TextWire
-    | Binary BinaryWire
+type Functions
+    = Text TextFunctions
+    | Bytes BytesFunctions
 
 
 {-| A protocol speaking JSON:
@@ -129,7 +130,7 @@ type Wire
     deadline that shortens it.
 
 -}
-type alias TextWire =
+type alias TextFunctions =
     { build : Options -> Settings -> Maybe Route -> (() -> Value) -> Request
     , message : (Options -> String -> Maybe Size) -> Options -> Maybe String -> Http.Response String -> Result Error GoodText
     , tooLarge : Options -> (() -> Value) -> Maybe Size
@@ -150,7 +151,7 @@ type alias GoodText =
     }
 
 
-{-| A protocol speaking protobuf binary, as `TextWire` but over bytes; `build`
+{-| A protocol speaking protobuf binary, as `TextFunctions` but over bytes; `build`
 takes the protocol's own encoder runner and base64 writer, for a GET's
 query, and the request's encoder, which only these functions run; `message`
 takes the call's `service/method`, for the error of a body that is not its
@@ -160,13 +161,13 @@ writes a request's binary for a trace.
 What a modifier installs reaches elm/bytes only through this record:
 `build` runs an encoder with the protocol's `encode`, the write limit
 measures one with its `encodedWidth`, and the read limit measures bytes
-with its `width`. A modifier names both wires' functions, so a JSON program
+with its `width`. A modifier names both kinds' functions, so a JSON program
 naming one carries the binary function too, but only a binary protocol's
 constructor names these three, so that program still carries none of
 elm/bytes, whose kernel comes whole.
 
 -}
-type alias BinaryWire =
+type alias BytesFunctions =
     { build : (Bytes.Encode.Encoder -> Bytes) -> (Bytes -> String) -> Options -> Settings -> Bytes.Encode.Encoder -> Request
     , message : (Options -> Bytes -> Maybe Size) -> Options -> String -> Http.Response Bytes -> ( Maybe Http.Metadata, Result Error BytesMessage )
     , tooLarge : (Bytes.Encode.Encoder -> Int) -> Options -> (() -> Bytes.Encode.Encoder) -> Maybe Size
