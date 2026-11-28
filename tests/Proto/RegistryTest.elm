@@ -39,8 +39,10 @@ encodeHolder value =
 
 decodeHolderWith : Registry -> Json.Decode.Decoder Holder
 decodeHolderWith types =
-    Json.Decode.succeed Holder
-        |> Proto.Json.field "held" Nothing (Json.Decode.map Just (Proto.Json.anyWith types))
+    Proto.Json.message
+        (Json.Decode.succeed Holder
+            |> Proto.Json.messageField "held" Nothing (Json.Decode.map Just (Proto.Json.anyWith types))
+        )
 
 
 encodeHolderBytes : Holder -> Bytes.Encode.Encoder

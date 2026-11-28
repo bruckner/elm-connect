@@ -384,7 +384,7 @@ rpc shared call =
   name a module the package site documents (§5.1). (6) The JSON
   helpers (`Proto.Json`) are named by role: a decoder is a noun naming
   what it reads (`int64`, `timestamp`, `boolMap`), a value's
-  encoder is `encode` and that noun (`encodeInt64`, `encodeBoolMap`),
+  encoder is `encode` and that noun (`encodeInt64`, `encodeFloat`),
   with `With` at the end of a decoder taking a registry (`anyWith`), a
   field's encoder, which gives `Nothing` to leave the field out, ends in
   `Field` (`implicitField`, `repeatedField`, `dictField`,
@@ -700,8 +700,7 @@ rpc shared call =
   An absent or `null` map decodes as `Dict.empty`.
 - `map<bool, V>` → `List ( Bool, V )`. The Elm form is an
   association list because `Bool` is not `comparable`; a map has at
-  most two entries. The encoder (`Proto.Json.boolMapField`, through
-  `Proto.Json.encodeBoolMap`) writes a
+  most two entries. The encoder (`Proto.Json.boolMapField`) writes a
   JSON object keyed `"true"` and `"false"`; the decoder
   (`Proto.Json.boolMap`) reads one, fails on any key but exactly
   `"true"` or `"false"`, and gives the pairs in the object's key order.
@@ -1057,8 +1056,9 @@ just the form encoders write.
   "displayName" or "display_name", but got both`), even when one of them
   is `null`: protobuf's own parsers (protobuf-go's protojson) reject it
   as a duplicate field. The same holds for every two-name
-  helper (`fieldEither`, `memberEither`, `emptyMemberEither`,
-  `valueMemberEither`, `valueFieldEither`, `messageValueFieldEither`). The
+  helper (`memberEither`, `emptyMemberEither`,
+  `nestedValueMemberEither`, `nullValueMemberEither`,
+  `nestedMessageValueFieldEither`). The
   two names are equal only for one-word fields without an explicit
   `json_name`, so in practice most multi-word fields use `messageFieldEither`. Two names are the most there can
   be (decisions.md: Decoder steps).
@@ -1090,8 +1090,7 @@ just the form encoders write.
   makes it once: `Proto.Json.message` wraps the field steps
   (`messageField` and its siblings), which then look a key up without
   checking the object again, and fail as elm/json does
-  (`Expecting an OBJECT`) when it is not one. The `field` steps, for
-  pipelines written by hand, each make the check themselves. A oneof's
+  (`Expecting an OBJECT`) when it is not one. A oneof's
   decoder reads the message object on its own and makes its own check,
   so a message of oneofs alone is not wrapped. The package requires elm/json 1.1.4,
   which lists an object's keys without calling the object's own
@@ -1333,9 +1332,12 @@ In detail:
   a port or the application's own decoders; `fromJson` gives `Nothing`
   for what is not JSON and for nesting past the read limit, and
   `Proto.Value.decoder` is the read to compose into the application's
-  own decoders, with the reason a read failed. Its depth-taking form,
-  `Proto.Value.nestedDecoder`, is what generated code reads a `Value`
-  inside a recursive message with, through `Proto.Json.nestedValue`.
+  own decoders, with the reason a read failed. Generated code reads a
+  `Value` held by a message, which then nests, at the message's depth,
+  as `Proto.Value.decoder` reads one from the top:
+  `Proto.Json.nestedMessageValueField` for a singular field,
+  `nestedValueMember` for a oneof member and `nestedValue` for a list or
+  map of it.
   (decisions.md: "A union for `google.protobuf.Value`, one depth budget".)
 - The conversion counts depth as it goes: each array and object is a
   level, in JSON and in binary alike (a binary `Struct` or `ListValue`
@@ -1377,9 +1379,11 @@ In detail:
   `NullValue`, and only a missing key as unset. So a missing key is
   `Nothing`, and any JSON under the key is `Just` it, `null` included
   (`Just ValueNull`); `Nothing` leaves the field out and `Just` writes
-  its JSON, `null` too. The step is `Proto.Json.valueField`
-  (`valueFieldEither` when the names differ), which reads `null` as set
-  where `field` reads it as the default. This keeps a default message
+  its JSON, `null` too. The step is
+  `Proto.Json.nestedMessageValueField`
+  (`nestedMessageValueFieldEither` when the names differ), at the
+  message's depth, since a message holding a `Value` nests; it reads
+  `null` as set where `messageField` reads it as the default. This keeps a default message
   `{}` and matches `Struct` and `ListValue`, and a client that never
   touches the field never sends it (decisions.md: `google.protobuf.Value`
   fields as `Maybe`). Repeated, as a map value and as a oneof member it
@@ -1535,7 +1539,7 @@ In detail:
     a member present as `null` reads as absent. The exception, as in
     protojson, is a member of `google.protobuf.Value`: `null` is a
     value of it, so a member present as `null` is set and holds
-    `ValueNull` (`Proto.Json.valueMember`).
+    `ValueNull` (`Proto.Json.nestedValueMember`).
   - No member present decodes as the unset constructor.
   - A member present with a value its decoder rejects (`{"title": 1}`
     for a string member) fails the message, as a malformed plain field

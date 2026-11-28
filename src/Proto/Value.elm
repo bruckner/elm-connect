@@ -1,6 +1,6 @@
 module Proto.Value exposing
     ( Value(..)
-    , toJson, fromJson, decoder, nestedDecoder
+    , toJson, fromJson, decoder
     )
 
 {-| `google.protobuf.Value`, `Struct` and `ListValue` as Elm data. A
@@ -21,7 +21,7 @@ matters, `1` and `1.0` are equal, and so are `-0` and `0`.
 
 # JSON
 
-@docs toJson, fromJson, decoder, nestedDecoder
+@docs toJson, fromJson, decoder
 
 -}
 
@@ -120,18 +120,7 @@ inside the value the limit was passed.
 -}
 decoder : Decoder Value
 decoder =
-    nestedDecoder 0
-
-
-{-| [`decoder`](#decoder) for a value held `depth` levels deep: generated code
-reads a `Value` inside a recursive message with it, so that the message's
-levels and the value's arrays and objects count against one limit. Each array
-or object is one level deeper than the value holding it; at the limit an
-array or object fails.
--}
-nestedDecoder : Int -> Decoder Value
-nestedDecoder depth =
-    ValueJson.read (nodeDecoder depth) Depth.tooDeep
+    ValueJson.read (nodeDecoder 0) Depth.tooDeep
 
 
 nodeDecoder : Int -> Decoder Value
