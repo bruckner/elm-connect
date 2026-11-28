@@ -1,7 +1,7 @@
 module Live.Codec exposing (empty, entry, registry)
 
 {-| The dispatch tables' entries. The bindings are generated with the
-default `wire=both`, so a generated call is free in its codec: an entry has
+default `codec=both`, so a generated call is free in its codec: an entry has
 it as a JSON call and as a protobuf binary one, and sends an envelope in the
 codec it names.
 -}

@@ -34,8 +34,8 @@
 //! The binary oracle: each sample's protobuf binary too, written
 //! deterministically ([`encode_sorted`] of [`canonical_message`]), which
 //! prost-reflect must read back as the sample, under the binary sets
-//! (`wire=both`, also with `int64=int` and `bytes=bytes`, and
-//! `wire=proto`); `tests/Codec/BinaryRoundTripTest.elm` decodes it with
+//! (`codec=both`, also with `int64=int` and `bytes=bytes`, and
+//! `codec=binary`); `tests/Codec/BinaryRoundTripTest.elm` decodes it with
 //! the generated binary decoder and must re-encode the same bytes.
 
 use std::fs;
@@ -139,35 +139,35 @@ const SETS: [OptionSet; 9] = [
     },
     OptionSet {
         prefix: "Both",
-        parameter: "wire=both",
+        parameter: "codec=both",
         table: "both",
         json: true,
         binary: true,
     },
     OptionSet {
         prefix: "BothInt64Int",
-        parameter: "wire=both,int64=int",
+        parameter: "codec=both,int64=int",
         table: "bothInt64Int",
         json: true,
         binary: true,
     },
     OptionSet {
         prefix: "BothBytesBytes",
-        parameter: "wire=both,bytes=bytes",
+        parameter: "codec=both,bytes=bytes",
         table: "bothBytesBytes",
         json: true,
         binary: true,
     },
     OptionSet {
         prefix: "Binary",
-        parameter: "wire=proto",
+        parameter: "codec=binary",
         table: "binary",
         json: false,
         binary: true,
     },
     OptionSet {
         prefix: "Keep",
-        parameter: "wire=both,unknown_fields=keep",
+        parameter: "codec=both,unknown_fields=keep",
         table: "keep",
         json: true,
         binary: true,
@@ -1232,7 +1232,7 @@ fn the_codec_round_trips_are_written() {
         }
     }
     let older = Options::from_parameter(&format!(
-        "wire=proto,unknown_fields=keep,module_prefix=Generated.Codec.{OLDER}"
+        "codec=binary,unknown_fields=keep,module_prefix=Generated.Codec.{OLDER}"
     ))
     .expect("valid options");
     let generated = generate(&older_pool(&pool), &PROTOS, &older)

@@ -11,7 +11,7 @@
 //
 // A request for Connect's `proto` codec is sent with the envelope's `codec: "proto"`,
 // and one over gRPC-Web with `protocol: "grpcweb"` as well; the runner's
-// bindings, generated with the default `wire=both`, carry binary codecs.
+// bindings, generated with the default `codec=both`, carry binary codecs.
 // MODE is how the runner sends each call (an envelope's `send`): `halves`,
 // the default, through the runtime's pure halves (Rpc.request, elm/http,
 // Rpc.response), which give an application the answer's status and headers;

@@ -262,8 +262,8 @@ where prost-reflect's is not: fields in number order, a map's entries in
 the order of the Elm `Dict` holding them, every singular `Empty` set, every
 `Any`'s packed message re-encoded the same way and a kind-less `Value` given
 `null_value`; another test checks that prost-reflect reads each back as
-the sample. It generates the protos under `wire=both` (with `int64=int`,
-with `bytes=bytes` and with `unknown_fields=keep`) and `wire=proto` too, and
+the sample. It generates the protos under `codec=both` (with `int64=int`,
+with `bytes=bytes` and with `unknown_fields=keep`) and `codec=binary` too, and
 `tests/Codec/BinaryRoundTripTest.elm` decodes each sample's binary with the
 generated decoder and re-encodes it to the same bytes, with unknown fields
 of every wire type appended and without (under `unknown_fields=keep`,
@@ -666,7 +666,7 @@ given, so the `sendTraced` run joins the two files in `build/`.
 
 `just live-proto` (part of `just live`) runs Connect's `proto` codec's legs on
 the same runner as the JSON legs. Its bindings, the example's and the
-suite's, are generated with the default `wire=both`, so each call is free
+suite's, are generated with the default `codec=both`, so each call is free
 in its codec, and `src/Live/Codec.elm` takes each generated call function
 at both codecs, so an envelope's `codec` picks a JSON or a binary client.
 It runs `cases/proto.json` against the example server, and the Connect
@@ -816,7 +816,7 @@ caches `~/.local/share/func-e`, keyed on `envoy-version`.
 its `conformance_test_runner` sends the testee messages of
 `test_messages_proto3.proto` in one format and checks what it writes back,
 against protobuf's own parsers. The testee reads and writes them with the
-runtime and the Elm generated from that proto under `wire=both`, so the
+runtime and the Elm generated from that proto under `codec=both`, so the
 suite tests the protobuf binary and proto3 JSON codecs with an oracle
 independent of prost-reflect, which the codec round trips use.
 

@@ -62,8 +62,8 @@ or with buf, from a `buf.gen.yaml` naming the plugin
 buf generate
 ```
 
-Both write the same modules: `Notes.V1`, the types and their JSON
-codecs; `Notes.V1.NotesService`, one function per method; and a module of
+Both write the same modules: `Notes.V1`, the types and their codecs;
+`Notes.V1.NotesService`, one function per method; and a module of
 descriptors per message and enum, such as `Notes.V1.Note`. Each method's
 function gives a call:
 
@@ -72,9 +72,11 @@ getNote : Notes.V1.GetNoteRequest -> Rpc.Call codec Notes.V1.GetNoteRequest Note
 ping : () -> Rpc.Call codec () ()
 ```
 
-`codec` is the call's codec, left free: the generator wires each call
-with both codecs by default, so it travels as proto3 JSON or as protobuf
-binary, whichever the client speaks
+A codec is an encoder paired with the decoder that reads what it
+writes. Every message has two, one for proto3 JSON and one for protobuf
+binary, and a call's type names the codec it travels in: here `codec`,
+left free, since by default the generator gives each call both, so it
+travels as proto3 JSON or as protobuf binary, whichever the client speaks
 ([calling.md](calling.md#choosing-the-codec)).
 [generator.md](generator.md) lists what each proto construct becomes.
 

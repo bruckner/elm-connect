@@ -1,4 +1,4 @@
-// Under wire=proto methods are built by Proto.Method.initBinary, with
+// Under codec=binary methods are built by Proto.Method.initBinary, with
 // protobuf binary codecs alone, and their calls are Rpc.Call Rpc.Binary.
 // Messages and enums get both codecs whatever the option says.
 syntax = "proto3";

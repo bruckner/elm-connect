@@ -1,7 +1,7 @@
 // A service whose messages hold an Any, generated under the default,
-// wire=both, by services_wire_both and under wire=json by wire_json. Under
-// wire=both the methods are built by Proto.Method.init, with JSON and
-// binary codecs and, for GetItem, its route; under wire=json by
+// codec=both, by services_codec_both and under codec=json by codec_json.
+// Under codec=both the methods are built by Proto.Method.init, with JSON
+// and binary codecs and, for GetItem, its route; under codec=json by
 // Proto.Method.initJson, with JSON codecs alone. Item's codecs write and
 // read its Any fields through the registry a client gives.
 syntax = "proto3";

@@ -738,7 +738,7 @@ impl Problem {
                  the end (`encodeNoteBinary` beside `encodeNote`), so the JSON codecs of a type \
                  named for another with `Binary` at the end (`NoteBinary` beside `Note`) take the \
                  same names, and a module cannot define two values with one name. Every type \
-                 has both codecs, whatever the `wire` option says. {}",
+                 has both codecs, whatever the `codec` option says. {}",
                 rename_escape(
                     renamed,
                     format!("Rename one of them in the proto, or rename one with {rename}.")
@@ -1702,7 +1702,7 @@ fn rename_escape(renamed: Option<&str>, default: String) -> String {
 /// The options of the plugin parameter, as an option problem's help
 /// lists them.
 const OPTION_KEYS_HELP: &str = "The plugin parameter is comma-separated `key=value` pairs, and \
-     its options are `int64`, `bytes`, `unbound_methods`, `streaming`, `enum_unknown`, `wire`, \
+     its options are `int64`, `bytes`, `unbound_methods`, `streaming`, `enum_unknown`, `codec`, \
      `unknown_fields`, `rename` and `module_prefix`.";
 
 /// How a rename writes the element it names, as a rename problem's help

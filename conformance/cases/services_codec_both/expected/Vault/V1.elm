@@ -5,9 +5,9 @@
 module Vault.V1 exposing (..)
 
 {-| A service whose messages hold an Any, generated under the default,
-wire=both, by services\_wire\_both and under wire=json by wire\_json. Under
-wire=both the methods are built by Proto.Method.init, with JSON and
-binary codecs and, for GetItem, its route; under wire=json by
+codec=both, by services\_codec\_both and under codec=json by codec\_json.
+Under codec=both the methods are built by Proto.Method.init, with JSON
+and binary codecs and, for GetItem, its route; under codec=json by
 Proto.Method.initJson, with JSON codecs alone. Item's codecs write and
 read its Any fields through the registry a client gives.
 -}

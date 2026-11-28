@@ -127,7 +127,7 @@ import Time
 {-| The codec tag of proto3 JSON: [`Proto.Codec.Json`](Proto-Codec#Json).
 A client of [`Rpc.Protocol.connect`](Rpc-Protocol#connect) or
 [`transcode`](Rpc-Protocol#transcode) is a `Client Json`, and sends calls of
-code generated with `wire=both` (the default) or `wire=json`.
+code generated with `codec=both` (the default) or `codec=json`.
 -}
 type alias Json =
     Proto.Codec.Json
@@ -135,8 +135,8 @@ type alias Json =
 
 {-| The codec tag of protobuf binary: [`Proto.Codec.Binary`](Proto-Codec#Binary).
 A client of [`Rpc.Protocol.connectBinary`](Rpc-Protocol#connectBinary) or
-[`Rpc.Protocol.grpcWeb`](Rpc-Protocol#grpcWeb) is a `Client Binary`, and sends calls of code generated with `wire=proto` or
-`wire=both`.
+[`Rpc.Protocol.grpcWeb`](Rpc-Protocol#grpcWeb) is a `Client Binary`, and sends calls of code generated with `codec=binary` or
+`codec=both`.
 -}
 type alias Binary =
     Proto.Codec.Binary
@@ -154,9 +154,9 @@ It is [`Rpc.Call.Call`](Rpc-Call#Call), where a call is adjusted
 (`withHeaders`, `withTimeout`, `withRetry`, `withoutRetry`, `withTracker`,
 `viaBinding`) and read (`serviceName`, `methodName`, `procedure`, `toJson`,
 …).
-Code generated with the default `wire=both` gives calls free in the codec,
-as here, which any client sends; `wire=json` gives `Rpc.Call Rpc.Json` calls
-and `wire=proto` `Rpc.Call Rpc.Binary` ones.
+Code generated with the default `codec=both` gives calls free in the codec,
+as here, which any client sends; `codec=json` gives `Rpc.Call Rpc.Json` calls
+and `codec=binary` `Rpc.Call Rpc.Binary` ones.
 
 -}
 type alias Call codec req res =

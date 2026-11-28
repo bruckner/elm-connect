@@ -192,18 +192,17 @@ traced call gives a body's trailers as the trace's trailers.
 
 The codec is in the types. A protocol is a `Protocol Rpc.Json` or a
 `Protocol Rpc.Binary`, the client built on it an `Rpc.Client Rpc.Json`
-or an `Rpc.Client Rpc.Binary`, and a call carries the codecs the
-generator's `wire` option wired its method with
-([generator.md](generator.md)):
+or an `Rpc.Client Rpc.Binary`, and a call carries the codec the
+generator's `codec` option typed it at ([generator.md](generator.md)):
 
 | Generated with | A call's type | Sent by |
 |---|---|---|
-| `wire=both` (the default) | `Rpc.Call codec req res` | any client |
-| `wire=json` | `Rpc.Call Rpc.Json req res` | a `connect` or `transcode` client |
-| `wire=proto` | `Rpc.Call Rpc.Binary req res` | a `connectBinary` or `grpcWeb` client |
+| `codec=both` (the default) | `Rpc.Call codec req res` | any client |
+| `codec=json` | `Rpc.Call Rpc.Json req res` | a `connect` or `transcode` client |
+| `codec=binary` | `Rpc.Call Rpc.Binary req res` | a `connectBinary` or `grpcWeb` client |
 
 `both` is the default so that every call goes to every client, whichever
-protocol the application picks; `json` and `proto` are an opt-in for an
+protocol the application picks; `json` and `binary` are an opt-in for an
 application that speaks one codec alone, narrowing each call's type and
 leaving the other codec's code behind the calls out of its bundle. The
 default costs a program that names no typed value the most: a client of
@@ -550,7 +549,7 @@ a timeout in milliseconds in place of the client's, a retry policy in
 place of the client's (`withRetry`) or none (`withoutRetry`), a tracker
 for cancelling, and, for transcoding, another of the rule's bindings (`0` is
 the rule's own, `1` and up its `additional_bindings`). Transcoding speaks
-JSON, so `viaBinding` takes a JSON call: one generated under `wire=both`
+JSON, so `viaBinding` takes a JSON call: one generated under `codec=both`
 becomes a `Call Rpc.Json` where it is applied. A call is one codec where it
 is used: a function that takes a call as its argument cannot both send it
 over `Rpc.Binary` and read its JSON. A generated call is free in the codec
@@ -575,7 +574,7 @@ withdraw =
 `Rpc.Call` also reads a call back: `serviceName`, `methodName`,
 `procedure` (the Connect path, `/notes.v1.NotesService/GetNote`),
 `idempotency`, `requestMessage`, `requestJson` and `toJson`, the last
-two of a JSON call, since a call generated under `wire=proto` has no
+two of a JSON call, since a call generated under `codec=binary` has no
 JSON to write. The method's descriptor, with its type names and HTTP rule as data, is not
 on the call: name it, `Notes.V1.NotesService.descriptorGetNote`.
 

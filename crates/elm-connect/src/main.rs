@@ -5,8 +5,8 @@ use clap::{Args, Parser, Subcommand};
 use elm_connect_gen::diagnostics::Diagnostics;
 use elm_connect_gen::naming::REPOSITORY_FILES;
 use elm_connect_gen::{
-    Bytes, EnumUnknown, Generated, Int64, ModuleName, Options, Spelling, Streaming, UnboundMethods,
-    UnknownFields, Wire,
+    Bytes, Codec, EnumUnknown, Generated, Int64, ModuleName, Options, Spelling, Streaming,
+    UnboundMethods, UnknownFields,
 };
 use miette::Report;
 
@@ -126,16 +126,19 @@ struct GenArgs {
     /// its own `--out`.
     #[arg(long, value_name = "fail|zero", default_value = "fail")]
     enum_unknown: EnumUnknown,
-    /// What a method's generated calls are wired with: `both`, `json` or
-    /// `proto`. Messages get both codecs whatever it says.
+    /// The codec a method's generated calls are typed at: `both`, `json`
+    /// or `binary`. It does not decide which codecs exist: every message
+    /// gets both whatever it says.
     ///
-    /// `both`: either codec, so a method's calls go over any protocol.
-    /// `json`: proto3 JSON alone, for Connect's JSON codec and transcoding.
-    /// `proto`: protobuf binary alone, for Connect's proto codec and
-    /// gRPC-Web. Wiring one alone narrows each call's type to its codec,
-    /// and leaves the other's codecs out of a program's bundle.
-    #[arg(long, value_name = "both|json|proto", default_value = "both")]
-    wire: Wire,
+    /// It is the `codec` in each call's type, `Rpc.Call codec req res`,
+    /// and so decides which clients send the calls. `both`: free in the
+    /// codec, so a method's calls go over any protocol. `json`: proto3
+    /// JSON alone, for Connect's JSON codec and transcoding. `binary`:
+    /// protobuf binary alone, for Connect's binary codec and gRPC-Web.
+    /// One alone narrows each call's type to its codec, and leaves the
+    /// other's codecs out of a program's bundle.
+    #[arg(long, value_name = "both|json|binary", default_value = "both")]
+    codec: Codec,
     /// What a field protobuf binary carries and the schema does not know
     /// becomes: `drop` or `keep`.
     ///
@@ -179,7 +182,7 @@ impl GenArgs {
         options.unbound_methods = self.unbound_methods;
         options.streaming = self.streaming;
         options.enum_unknown = self.enum_unknown;
-        options.wire = self.wire;
+        options.codec = self.codec;
         options.unknown_fields = self.unknown_fields;
         options.module_prefix = self.module_prefix.clone();
         options.spelling = Spelling::Flags;

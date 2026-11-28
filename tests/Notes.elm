@@ -120,7 +120,7 @@ getNoteIn =
     Proto.Method.withIdempotency IdempotencyNoSideEffects
 
 
-{-| The method with both codecs, as `wire=both` generates it.
+{-| The method with both codecs, as `codec=both` generates it.
 -}
 both : GetNote -> Rpc.Call codec GetNote String
 both =

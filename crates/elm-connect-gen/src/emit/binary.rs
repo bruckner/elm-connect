@@ -1,4 +1,4 @@
-//! Protobuf binary codecs, under every `wire` option: per
+//! Protobuf binary codecs, under every `codec` option: per
 //! message `encodeFooBinary : Foo -> Bytes.Encode.Encoder`,
 //! `mergeFooBinary : Foo -> Proto.Binary.Decoder Foo` (reading into a value
 //! read before, as protobuf merges a message arriving twice) and

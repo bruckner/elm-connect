@@ -72,7 +72,7 @@ Releases before 1.0 carry prebuilt binaries and put the crates on
 crates.io; the Elm package reaches the package index at 1.0.
 Messages travel as proto3 JSON, or over Connect and gRPC-Web as
 protobuf binary: a generated call goes over either, unless the
-generator's `wire=json` or `wire=proto` narrows it to one
+generator's `codec=json` or `codec=binary` narrows it to one
 ([docs/calling.md](docs/calling.md#choosing-the-codec)). Streaming is
 out of scope for 1.x; [docs/roadmap.md](docs/roadmap.md)
 says what may come, and whether it would be a minor or a major
@@ -171,8 +171,8 @@ result, trying calls in `elm repl`, and testing without a server.
 - Unary methods only. A streaming method is a diagnostic, or is left
   out under `streaming=skip`.
 - Calls in proto3 JSON, or over Connect and gRPC-Web in protobuf
-  binary: the generator wires each call with both codecs, or with one
-  alone under `wire=json` or `wire=proto`
+  binary: the generator gives each call both codecs, or one alone
+  under `codec=json` or `codec=binary`
   ([docs/generator.md](docs/generator.md#binary-codecs)). Transcoding
   is JSON.
 - proto3 only. A proto2 file is the diagnostic `input::not_proto3`, and

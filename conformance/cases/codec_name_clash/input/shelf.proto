@@ -1,4 +1,4 @@
-// Under wire=both, the default, the binary codecs of `Book` are
+// Under codec=both, the default, the binary codecs of `Book` are
 // `encodeBookBinary` and `decodeBookBinary`, which are also the JSON codecs
 // of the message `BookBinary`. An enum keeps its JSON codecs, so the enum
 // `ShelfBinary` meets the binary codecs of the message `Shelf` the same

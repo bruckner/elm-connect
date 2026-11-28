@@ -115,8 +115,8 @@ Generated code carries no protocol. Three layers, the first two data:
    idempotency, the request and response codecs and the method's route
    functions (§4). Nothing in a call picks a protocol; its type says
    the codec its generated code has (free under the default
-   `wire=both`, `Rpc.Json` under `wire=json`, `Rpc.Binary` under
-   `wire=proto`).
+   `codec=both`, `Rpc.Json` under `codec=json`, `Rpc.Binary` under
+   `codec=binary`).
 3. **A client says where and how, and one runtime module sends.** An
    `Rpc.Client codec` holds a protocol (`Rpc.Protocol`: Connect over
    JSON or protobuf binary, or transcoding, with their options), base
@@ -1692,7 +1692,7 @@ As the `naming` and `naming_collision` cases show:
   the two sit side by side and read as a pair, at the cost the bullet
   above names. A type `FooBinary` beside `Foo` has JSON codecs
   `encodeFooBinary` and `decodeFooBinary`, which are `Foo`'s binary
-  codecs; whatever the `wire` option, since every type has both, that
+  codecs; whatever the `codec` option, since every type has both, that
   is `naming::codec_collision`, pointing at both types, its help naming
   the `rename` of the `Binary` one (`codec_name_clash` case). A oneof's
   binary codec is an encoder alone, so a type named for a oneof's with
@@ -2002,7 +2002,7 @@ registry =
   module's sections are types, defaults, typed values (each enum's,
   then each message's), the registry section (`descriptors` and
   `registry`), encoders and decoders, then binary encoders and binary
-  decoders (§3.10), whatever the `wire` option says; a package without
+  decoders (§3.10), whatever the `codec` option says; a package without
   types has `descriptors` alone.
 
 - The naming: `Proto.Thing.Descriptor` is the data-only tree,
@@ -2203,13 +2203,13 @@ registry =
 
 ### 3.10 Binary codecs and the registry
 
-- **Every message has both codecs.** Whatever the `wire` option says, a
+- **Every message has both codecs.** Whatever the `codec` option says, a
   package's module holds each message's proto3 JSON codecs and its
   protobuf binary codecs, its typed value built from both
   (`Proto.Message.init`, §3.9), and its `registry`. A program pays only
   for what it reaches: the binary codecs and typed values of a program
   that never packs an `Any` nor speaks binary are dead code, so a
-  `wire=json` program's bundle is what it was when they were not
+  `codec=json` program's bundle is what it was when they were not
   generated (decisions.md: Binary is the Any's canonical form).
 - **Every package's binary codecs.** Two sections after the decoders,
   binary encoders and binary decoders, written against `Proto.Binary`
@@ -2244,27 +2244,29 @@ registry =
   `Proto.Binary.messageEncoder` and `Proto.Binary.messageDecoder`.
   `int64=` and `bytes=` choose the codecs as they choose the JSON ones
   (`int64AsInt`, `bytesAsBytes`).
-- **The option is the wiring.** `wire=both|json|proto` (CLI `--wire`),
-  default `both`, says which codecs a method's calls are wired with,
-  and so which protocols they go over; it does not choose which codecs
-  a message gets. The default lets any client send any call; `json` and
-  `proto` are an opt-in for an application that speaks one codec,
-  narrowing the calls' types and leaving the other codec's code behind
-  them out of its bundle (decisions.md: Wire chosen by the client, not by
-  import). The second header line records it like the others when it is
-  not the default (`-- Options: wire=json`), and `check` regenerates
+- **The option is the calls' codec.** `codec=both|json|binary` (CLI
+  `--codec`), default `both`, says which codec a method's calls are typed
+  at, the `codec` parameter of `Rpc.Call codec req res`, and so which
+  codecs a method carries and which protocols its calls go over; it does
+  not choose which codecs a message gets. The default lets any client
+  send any call; `json` and `binary` are an opt-in for an application
+  that speaks one codec, narrowing the calls' types and leaving the other
+  codec's code behind them out of its bundle (decisions.md: Wire chosen
+  by the client, not by import; The option is `codec=` again). The
+  second header line records it like the others when it is
+  not the default (`-- Options: codec=json`), and `check` regenerates
   with it. Under `json` each method is built by
-  `Proto.Method.initJson`, under `proto` by `Proto.Method.initBinary`
+  `Proto.Method.initJson`, under `binary` by `Proto.Method.initBinary`
   from its binary codecs, under `both` by `Proto.Method.init` from all
   four, the arguments stacked. A method's request encoder is the
   generated `Notes.V1.encodeGetNoteRequest`, run with the client's
   registry (§5.1), and its response decoder takes that registry:
   `Notes.V1.decodeNoteWith` for a type that reaches an `Any`, else the
   plain decoder under the generator's ignoring wrapper, `\_ ->
-  Notes.V1.decodeNote`. A method wired with `proto` gets no route
+  Notes.V1.decodeNote`. A method generated under `binary` gets no route
   functions, nor its messages query encoders: transcoding takes JSON
   (§5.3). A method's codec is in its type, and so in its call's (§4):
-  `Rpc.Json` under `json`, `Rpc.Binary` under `proto`, free under `both`;
+  `Rpc.Json` under `json`, `Rpc.Binary` under `binary`, free under `both`;
   what reads a method's JSON half or takes its routes is typed at
   `Rpc.Json` (§5.1), so the type alone tells a method built with
   `initBinary`.
@@ -2305,9 +2307,9 @@ registry =
   and one reading descriptors keeps no codecs (decisions.md: Normalized
   per-package registries).
 - **Checked** by the binary round trips (§7), the corpus cases
-  `codec_round_trips` (the codec protos under the default `wire=both`),
-  `wire_proto`, `services_wire_both` and `wire_json` (a service under
-  the default, and its two kinds of method under `wire=json`) and `any_field`,
+  `codec_round_trips` (the codec protos under the default `codec=both`),
+  `codec_binary`, `services_codec_both` and `codec_json` (a service under
+  the default, and its two kinds of method under `codec=json`) and `any_field`,
   and the protobuf conformance suite (§7).
 
 #### Lenient registries
@@ -2488,7 +2490,7 @@ keeps. The modifiers follow one per line, each only when it says
 something: `withIdempotency` when the proto declares a level other
 than `IDEMPOTENCY_UNKNOWN`, `withRoutes` (`withJsonRoutes` when its
 bodies hold an `Any`) when the method has a rule (never under
-`wire=proto`), and after it `withResponseBody n "field"` for each
+`codec=binary`), and after it `withResponseBody n "field"` for each
 binding whose rule names a `response_body`:
 
 ```elm
@@ -2538,7 +2540,7 @@ binding whose rule names a `response_body`:
   `_` only as a reserved word's escape; a path value's local that would
   meet another gains a number.
 - `Rpc.call` takes the method's `Proto.Method.Method codec req res`
-  (§3.9), built under `wire=json` by `Proto.Method.initJson` from the
+  (§3.9), built under `codec=json` by `Proto.Method.initJson` from the
   fully-qualified service name and the method's name as declared,
   together its Connect path,
   then its request type's encoder, run with the client's registry, and
@@ -2553,9 +2555,9 @@ binding whose rule names a `response_body`:
   `Value` so that a method called `identity` cannot capture it); then
   `withIdempotency` with its level and
   `withRoutes` with its route functions (below).
-  Under `wire=both`, the default, it is built by `Proto.Method.init`
+  Under `codec=both`, the default, it is built by `Proto.Method.init`
   from the names, those two codecs and the request type's `encode…Binary` and the response type's
-  `decode…Binary`; under `wire=proto` by `Proto.Method.initBinary` from the
+  `decode…Binary`; under `codec=binary` by `Proto.Method.initBinary` from the
   binary two alone (§3.10), with no routes. A method holds no registry:
   the client's is the one table (§5.1). A method whose route bodies hold
   an `Any`, which has no total encoder, takes route functions of the
@@ -2565,13 +2567,13 @@ binding whose rule names a `response_body`:
   program whose methods have binary codecs carries their code. The
   builder fixes the method's codec, the first type parameter of
   `Proto.Method.Method` and of its calls: `Rpc.Call Rpc.Json` under
-  `json`, `Rpc.Call Rpc.Binary` under `proto`, free in it under `both`,
+  `json`, `Rpc.Call Rpc.Binary` under `binary`, free in it under `both`,
   so that a client of either codec sends it.
   No `Proto.Method.Method` value is generated; `Rpc.Call.method` reads
   the method back from any call of it, and `Rpc.Call.serviceName`,
   `methodName`, `procedure` (`/notes.v1.NotesService/GetNote`, the path
   the Connect URL is built from) and `idempotency` its identity. A
-  method carries only what the wire needs, the codecs of its wiring and
+  method carries only what its calls need, the codecs of its codec and
   not its types' typed values (§3.9), which hold both codecs and would
   bring the other into every program that calls it (decisions.md:
   Methods carry codecs only).
@@ -2878,8 +2880,8 @@ options. Both carry a codec in
 their type, `Rpc.Json` or `Rpc.Binary` (`Rpc` re-exports the tags, so
 annotations and compiler errors read `Rpc.Json`), and a client sends
 only calls of its codec: a `Client Json` takes the calls of code
-generated with `wire=json` or `wire=both`, a `Client Binary` those of
-`wire=proto` or `wire=both`. A pairing with no codecs in common is a
+generated with `codec=json` or `codec=both`, a `Client Binary` those of
+`codec=binary` or `codec=both`. A pairing with no codecs in common is a
 type error where the call is sent, not a failure at run time
 (decisions.md: Protocol and client, indexed by codec).
 
@@ -3312,7 +3314,7 @@ splitTrailers : Dict String String -> { headers : Dict String String, trailers :
 - `viaBinding n` is `Just` the call over binding `n` when the
   method has a route for it (`0` the rule's own, `1` and up its additional
   bindings), `Nothing` otherwise. It takes and gives a `Call Json`, since
-  transcoding speaks JSON: a call free in the codec (`wire=both`) is
+  transcoding speaks JSON: a call free in the codec (`codec=both`) is
   pinned to JSON by it, and a binary-only call is refused by the
   compiler. A method without a rule gives
   `Nothing` for every number, and its unadjusted call takes the
@@ -3486,8 +3488,8 @@ by the Connect conformance suite's unary test cases with the proto
 codec (§7).
 
 - **The codec is the protocol's.** `connectBinary`'s wire is `Binary`,
-  so only a call of a method with binary codecs (`wire=proto` or
-  `wire=both`) can be sent over it, and the compiler says so of any
+  so only a call of a method with binary codecs (`codec=binary` or
+  `codec=both`) can be sent over it, and the compiler says so of any
   other (§5.2). `transcode` is a `Protocol Json`: transcoding is JSON by
   definition, and so is the implicit route.
 - **Requests.** A POST carries the request's protobuf binary as an
@@ -3991,7 +3993,7 @@ saying `ok` takes the HTTP status's code, as an unknown name does
     detail reader calls the internal function rather than `decodeJson`
     over `Proto.WellKnown.any`, whose binary codecs would put the binary
     reader into every program that reads a failed answer (measured
-    +4.3 KB gzipped on a minimal Connect JSON client, `wire=json`), so
+    +4.3 KB gzipped on a minimal Connect JSON client, `codec=json`), so
     `Rpc.Internal.Status` reads `Proto.Internal.Registry`, the fourth
     internal module §3.1's rule 7 allows. The status is read
     without the registry where the protocol reads the answer, and its
@@ -4155,7 +4157,7 @@ read; `implicit`, `optional`, `present`, `list`, `listUnpacked`,
 `dict`, `boolMap` to write; `mergeKeep` and `unknown` under
 `unknown_fields=keep`). Generated code calls it; an application
 meets `decode`, `encode` and `Decoder`. The generator writes binary
-codecs against it under `wire=proto` or `wire=both` (§3.10), and
+codecs against it under `codec=binary` or `codec=both` (§3.10), and
 Connect's binary codec sends them (§5.3). It holds the codecs, the
 message loop and the well-known types. The values as bytes are beneath
 it in `Proto.Internal.Binary.Wire`, which knows no codec, field or
@@ -4381,7 +4383,7 @@ value as two halves with its decimal text.
   holds the output to `elm-format --validate` and `elm make`.
 - Options (`--elm-connect_opt=` or CLI flags): `int64=string|int`,
   `bytes=string|bytes`, `unbound_methods=implicit|error`, `streaming=error|skip`,
-  `enum_unknown=fail|zero`, `wire=both|json|proto`,
+  `enum_unknown=fail|zero`, `codec=both|json|binary`,
   `unknown_fields=drop|keep`,
   `rename=<proto full name>:<Elm name>` (repeatable) and
   `module_prefix=`; an option for unrecognised enum values (§3.3) is on
@@ -4394,8 +4396,8 @@ value as two halves with its decimal text.
   --unbound-methods error`), `streaming` (§3.8;
   `--elm-connect_opt=streaming=skip`, or `elm-connect gen --streaming
   skip`), `enum_unknown` (§3.3; `--elm-connect_opt=enum_unknown=zero`,
-  or `elm-connect gen --enum-unknown zero`), `wire` (§3.10;
-  `--elm-connect_opt=wire=json`, or `elm-connect gen --wire json`),
+  or `elm-connect gen --enum-unknown zero`), `codec` (§3.10;
+  `--elm-connect_opt=codec=json`, or `elm-connect gen --codec json`),
   `unknown_fields` (§3.2, §5.5;
   `--elm-connect_opt=unknown_fields=keep`, or `elm-connect gen
   --unknown-fields keep`), `rename` (§3.7; `--elm-connect_opt=rename=notes.v1.Note:Memo`,
@@ -4546,7 +4548,7 @@ any, in `expected/warnings.txt`, rendered as `diagnostics.txt` is.
   finding, not a case to exclude; `-0` is the one value the codec laws
   hold apart, since it is written as `0` (§3.4).
 - Codec round trips: the corpus's expected modules
-  are compiled and diffed, never run, so a construct wired wrong (a
+  are compiled and diffed, never run, so a construct built wrong (a
   wrong key, combinator, default or omission) passes once blessed.
   `conformance/codec/codec.proto` (with `other.proto`, a second package)
   holds every construct the codecs handle, one per message, and a
@@ -4586,9 +4588,9 @@ any, in `expected/warnings.txt`, rendered as `diagnostics.txt` is.
   `bool`-keyed map's `False` first; every singular `Empty` set, each
   `Any`'s packed message re-encoded the same way and a kind-less `Value`
   given `null_value`), and checks that prost-reflect reads each back as
-  the sample. The protos are generated under `wire=both` (also with
+  the sample. The protos are generated under `codec=both` (also with
   `int64=int`, with `bytes=bytes` and with `unknown_fields=keep`) and
-  `wire=proto`, and
+  `codec=binary`, and
   `tests/Codec/BinaryRoundTripTest.elm` decodes every sample's binary
   with the generated decoder and re-encodes it to the same bytes, with
   unknown fields of every wire type appended and without (under
@@ -4608,7 +4610,7 @@ any, in `expected/warnings.txt`, rendered as `diagnostics.txt` is.
 - The protobuf conformance suite: protobuf's `conformance_test_runner`
   (v32.0-rc2, as bufbuild/protobuf-conformance builds it) drives
   `conformance/protobuf/`, an Elm worker over the Elm generated under
-  `wire=both` and `unknown_fields=keep` from the suite's
+  `codec=both` and `unknown_fields=keep` from the suite's
   `test_messages_proto3.proto`, with an
   oracle independent of prost-reflect: protobuf's own parsers. Its
   registry is `Proto.Registry.unionAll [ Proto3.registry,
